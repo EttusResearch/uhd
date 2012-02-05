@@ -116,8 +116,7 @@
 #define UE_SR_TX_FRONT 54      // 5 regs (+0 to +4)
 
 #define UE_SR_REG_TEST32 60    // 1 reg
-#define UE_SR_CLEAR_RX_FIFO 61 // 1 reg
-#define UE_SR_CLEAR_TX_FIFO 62 // 1 reg
+#define UE_SR_CLEAR_FIFO 61    // 1 reg
 #define UE_SR_GLOBAL_RESET 63  // 1 reg
 #define UE_SR_USER_REGS 64     // 2 regs
 
@@ -131,8 +130,7 @@
 /////////////////////////////////////////////////
 // Magic reset regs
 ////////////////////////////////////////////////
-#define E100_REG_CLEAR_RX           E100_REG_SR_ADDR(UE_SR_CLEAR_RX_FIFO)
-#define E100_REG_CLEAR_TX           E100_REG_SR_ADDR(UE_SR_CLEAR_RX_FIFO)
+#define E100_REG_CLEAR_FIFO         E100_REG_SR_ADDR(UE_SR_CLEAR_FIFO)
 #define E100_REG_GLOBAL_RESET       E100_REG_SR_ADDR(UE_SR_GLOBAL_RESET)
 
 #endif

@@ -164,9 +164,8 @@ void e100_impl::io_init(void){
     _io_impl->demuxer = recv_packet_demuxer::make(_data_transport, _rx_dsps.size(), E100_RX_SID_BASE);
     _io_impl->iface = _fpga_ctrl;
 
-    //clear state machines
-    _fpga_ctrl->poke32(E100_REG_CLEAR_RX, 0);
-    _fpga_ctrl->poke32(E100_REG_CLEAR_TX, 0);
+    //clear fifo state machines
+    _fpga_ctrl->poke32(E100_REG_CLEAR_FIFO, 0);
 
     //allocate streamer weak ptrs containers
     _rx_streamers.resize(_rx_dsps.size());

@@ -103,8 +103,7 @@
 #define B100_SR_TX_FRONT 54      // 5 regs (+0 to +4)
 
 #define B100_SR_REG_TEST32 60    // 1 reg
-#define B100_SR_CLEAR_RX_FIFO 61 // 1 reg
-#define B100_SR_CLEAR_TX_FIFO 62 // 1 reg
+#define B100_SR_CLEAR_FIFO 61    // 1 reg
 #define B100_SR_GLOBAL_RESET 63  // 1 reg
 #define B100_SR_USER_REGS 64     // 2 regs
 
@@ -117,8 +116,7 @@
 /////////////////////////////////////////////////
 // Magic reset regs
 ////////////////////////////////////////////////
-#define B100_REG_CLEAR_RX           B100_REG_SR_ADDR(B100_SR_CLEAR_RX_FIFO)
-#define B100_REG_CLEAR_TX           B100_REG_SR_ADDR(B100_SR_CLEAR_RX_FIFO)
+#define B100_REG_CLEAR_FIFO         B100_REG_SR_ADDR(B100_SR_CLEAR_FIFO)
 #define B100_REG_GLOBAL_RESET       B100_REG_SR_ADDR(B100_SR_GLOBAL_RESET)
 
 #endif

@@ -54,9 +54,8 @@ struct b100_impl::io_impl{
  **********************************************************************/
 void b100_impl::io_init(void){
 
-    //clear state machines
-    _fpga_ctrl->poke32(B100_REG_CLEAR_RX, 0);
-    _fpga_ctrl->poke32(B100_REG_CLEAR_TX, 0);
+    //clear fifo state machines
+    _fpga_ctrl->poke32(B100_REG_CLEAR_FIFO, 0);
 
     //allocate streamer weak ptrs containers
     _rx_streamers.resize(_rx_dsps.size());
