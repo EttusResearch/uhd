@@ -19,7 +19,7 @@
 
 module duc_chain
   #(parameter BASE = 0, parameter DSPNO = 0)
-  (input clk, input rst,
+  (input clk, input rst, input clr,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
    input set_stb_user, input [7:0] set_addr_user, input [31:0] set_data_user,
 
@@ -148,7 +148,7 @@ module duc_chain
       );
 
    dsp_tx_glue #(.DSPNO(DSPNO)) dsp_tx_glue(
-    .clock(clk), .reset(rst), .enable(run),
+    .clock(clk), .reset(rst), .clear(clr), .enable(run),
     .set_stb(set_stb_user), .set_addr(set_addr_user), .set_data(set_data_user),
     .frontend_i(tx_fe_i), .frontend_q(tx_fe_q),
     .duc_out_i(prod_i[33:10]), .duc_out_q(prod_q[33:10]),

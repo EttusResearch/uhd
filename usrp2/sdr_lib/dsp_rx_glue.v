@@ -28,7 +28,7 @@ module dsp_rx_glue
 )
 (
     //control signals
-    input clock, input reset, input enable,
+    input clock, input reset, input clear, input enable,
 
     //user settings bus, controlled through user setting regs API
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
@@ -63,7 +63,7 @@ module dsp_rx_glue
             `else
             RX_DSP0_MODULE rx_dsp0_custom
             (
-                .clock(clock), .reset(reset), .enable(enable),
+                .clock(clock), .reset(reset), .clear(clear), .enable(enable),
                 .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
                 .frontend_i(frontend_i), .frontend_q(frontend_q),
                 .ddc_in_i(ddc_in_i), .ddc_in_q(ddc_in_q),
@@ -81,7 +81,7 @@ module dsp_rx_glue
             `else
             RX_DSP1_MODULE rx_dsp1_custom
             (
-                .clock(clock), .reset(reset), .enable(enable),
+                .clock(clock), .reset(reset), .clear(clear), .enable(enable),
                 .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
                 .frontend_i(frontend_i), .frontend_q(frontend_q),
                 .ddc_in_i(ddc_in_i), .ddc_in_q(ddc_in_q),

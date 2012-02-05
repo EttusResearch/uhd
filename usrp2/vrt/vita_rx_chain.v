@@ -28,9 +28,9 @@ module vita_rx_chain
     input [63:0] vita_time,
     input [31:0] sample, input strobe,
     output [35:0] rx_data_o, output rx_src_rdy_o, input rx_dst_rdy_i,
-    output overrun, output run,
+    output overrun, output run, output clear_o,
     output [31:0] debug );
-       
+
    wire [100:0] sample_data;
    wire 	sample_dst_rdy, sample_src_rdy;
    wire [31:0] 	vrc_debug, vrf_debug;
@@ -39,6 +39,7 @@ module vita_rx_chain
    wire 	rx_src_rdy_int, rx_dst_rdy_int;
 
    wire clear;
+   assign clear_o = clear;
 
    setting_reg #(.my_addr(BASE+3)) sr
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),

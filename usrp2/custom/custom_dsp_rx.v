@@ -36,7 +36,10 @@ module custom_dsp_rx
 )
 (
     //control signals
-    input clock, input reset, input enable,
+    input clock, //dsp clock
+    input reset, //active high synchronous reset
+    input clear, //active high on packet control init
+    input enable, //active high when streaming enabled
 
     //user settings bus, controlled through user setting regs API
     input set_stb, input [7:0] set_addr, input [31:0] set_data,

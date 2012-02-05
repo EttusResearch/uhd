@@ -578,13 +578,13 @@ module u2plus_core
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX 0
    wire [31:0] 	 sample_rx0;
-   wire 	 strobe_rx0;
+   wire 	 strobe_rx0, clear_rx0;
 
    always @(posedge dsp_clk)
      run_rx0_d1 <= run_rx0;
    
    ddc_chain #(.BASE(SR_RX_DSP0), .DSPNO(0)) ddc_chain0
-     (.clk(dsp_clk),.rst(dsp_rst),
+     (.clk(dsp_clk), .rst(dsp_rst), .clr(clear_rx0),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .rx_fe_i(rx_fe_i),.rx_fe_q(rx_fe_q),
@@ -596,20 +596,20 @@ module u2plus_core
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .vita_time(vita_time), .overrun(overrun0),
-      .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0),
+      .sample(sample_rx0), .run(run_rx0), .strobe(strobe_rx0), .clear_o(clear_rx0),
       .rx_data_o(wr1_dat), .rx_src_rdy_o(wr1_ready_i), .rx_dst_rdy_i(wr1_ready_o),
       .debug() );
 
    // /////////////////////////////////////////////////////////////////////////
    // DSP RX 1
    wire [31:0] 	 sample_rx1;
-   wire 	 strobe_rx1;
+   wire 	 strobe_rx1, clear_rx1;
 
    always @(posedge dsp_clk)
      run_rx1_d1 <= run_rx1;
    
    ddc_chain #(.BASE(SR_RX_DSP1), .DSPNO(1)) ddc_chain1
-     (.clk(dsp_clk),.rst(dsp_rst),
+     (.clk(dsp_clk), .rst(dsp_rst), .clr(clear_rx1),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .rx_fe_i(rx_fe_i),.rx_fe_q(rx_fe_q),
@@ -621,7 +621,7 @@ module u2plus_core
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .vita_time(vita_time), .overrun(overrun1),
-      .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1),
+      .sample(sample_rx1), .run(run_rx1), .strobe(strobe_rx1), .clear_o(clear_rx1),
       .rx_data_o(wr3_dat), .rx_src_rdy_o(wr3_ready_i), .rx_dst_rdy_i(wr3_ready_o),
       .debug() );
 
@@ -674,12 +674,11 @@ module u2plus_core
       .tx_data_i(tx_data), .tx_src_rdy_i(tx_src_rdy), .tx_dst_rdy_o(tx_dst_rdy),
       .err_data_o(tx_err_data), .err_src_rdy_o(tx_err_src_rdy), .err_dst_rdy_i(tx_err_dst_rdy),
       .sample(sample_tx), .strobe(strobe_tx),
-      .underrun(underrun), .run(run_tx),
-      .clear_vita(clear_tx), //output internal vita clear signal
+      .underrun(underrun), .run(run_tx), .clear_o(clear_tx),
       .debug(debug_vt));
 
    duc_chain #(.BASE(SR_TX_DSP), .DSPNO(0)) duc_chain
-     (.clk(dsp_clk),.rst(dsp_rst),
+     (.clk(dsp_clk),.rst(dsp_rst), .clr(clear_tx),
       .set_stb(set_stb_dsp),.set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .set_stb_user(set_stb_user), .set_addr_user(set_addr_user), .set_data_user(set_data_user),
       .tx_fe_i(tx_fe_i),.tx_fe_q(tx_fe_q),

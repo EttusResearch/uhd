@@ -32,8 +32,7 @@ module vita_tx_chain
     input [35:0] tx_data_i, input tx_src_rdy_i, output tx_dst_rdy_o,
     output [35:0] err_data_o, output err_src_rdy_o, input err_dst_rdy_i,
     output [31:0] sample, input strobe,
-    output underrun, output run,
-    output clear_vita,
+    output underrun, output run, output clear_o,
     output [31:0] debug);
 
    localparam MAXCHAN = 1;
@@ -51,7 +50,7 @@ module vita_tx_chain
    wire [31:0] 		current_seqnum;
 
    wire clear;
-   assign clear_vita = clear;
+   assign clear_o = clear;
    assign underrun = error;
    assign message = error_code;
    

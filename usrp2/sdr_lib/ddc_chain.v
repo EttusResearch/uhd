@@ -19,7 +19,7 @@
 
 module ddc_chain
   #(parameter BASE = 0, parameter DSPNO = 0)
-  (input clk, input rst,
+  (input clk, input rst, input clr,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
    input set_stb_user, input [7:0] set_addr_user, input [31:0] set_data_user,
 
@@ -166,7 +166,7 @@ module ddc_chain
      (.clk(clk),.reset(rst), .in(prod_reg_q),.strobe_in(strobe_mult), .out(ddc_chain_out[15:0]), .strobe_out());
 
    dsp_rx_glue #(.DSPNO(DSPNO)) custom(
-    .clock(clk), .reset(rst), .enable(run),
+    .clock(clk), .reset(rst), .clear(clr), .enable(run),
     .set_stb(set_stb_user), .set_addr(set_addr_user), .set_data(set_data_user),
     .frontend_i(rx_fe_i_mux), .frontend_q(rx_fe_q_mux),
     .ddc_in_i(to_cordic_i), .ddc_in_q(to_cordic_q),
