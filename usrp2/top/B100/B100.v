@@ -41,7 +41,8 @@ module B100
    input [11:0] adc, input RXSYNC,
   
    input PPS_IN,
-   input reset_n, output reset_codec
+   input reset_n, output reset_codec,
+   input ext_reset
    );
 
    assign reset_codec = 1;  // Believed to be active low
@@ -55,7 +56,7 @@ module B100
 
    BUFG clk_fpga_BUFG (.I(clk_fpga_in), .O(clk_fpga));
    
-   reset_sync reset_sync(.clk(clk_fpga), .reset_in(~reset_n), .reset_out(reset));
+   reset_sync reset_sync(.clk(clk_fpga), .reset_in((~reset_n) | (~ext_reset)), .reset_out(reset));
    
    // /////////////////////////////////////////////////////////////////////////
    // SPI

@@ -25,6 +25,9 @@ NET "reset_n"  LOC = "D5"  ;
 NET "PPS_IN"  LOC = "M14"  ;
 NET "reset_codec"  LOC = "B14"  ;
 
+## recycles fpga_cfg_cclk for reset from fw
+NET "ext_reset"  LOC = "R14"  ;
+
 ## GPIF
 NET "GPIF_D<15>"  LOC = "P7"  ;
 NET "GPIF_D<14>"  LOC = "N8"  ;
