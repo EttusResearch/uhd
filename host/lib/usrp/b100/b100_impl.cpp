@@ -181,6 +181,8 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     //load FPGA image, gpif is disabled while loading
     this->enable_gpif(false);
     _fx2_ctrl->usrp_load_fpga(b100_fpga_image);
+    this->set_reset_fpga(1);
+    this->set_reset_fpga(0);
     this->enable_gpif(true);
 
     //create the control transport
@@ -523,6 +525,10 @@ void b100_impl::enable_gpif(const bool en) {
 
 void b100_impl::clear_fpga_fifo(void) {
     _fx2_ctrl->usrp_control_write(VRQ_CLEAR_FPGA_FIFO, 0, 0, 0, 0);
+}
+
+void b100_impl::set_reset_fpga(const bool en) {
+    _fx2_ctrl->usrp_control_write(VRQ_FPGA_SET_RESET, en ? 0 : 1, 0, 0, 0);
 }
 
 sensor_value_t b100_impl::get_ref_locked(void){

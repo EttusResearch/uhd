@@ -65,6 +65,11 @@ xdata at USRP_HASH_SLOT_1_ADDR unsigned char hash1[USRP_HASH_SIZE];
 
 //void clear_fpga_data_fifo(void);
 
+//use the B100 fpga_config_cclk/ext_reset line to reset the FPGA
+void fpga_reset(int level) {
+    bitALTERA_DCLK = level;
+}
+
 static void
 get_ep0_data (void)
 {
@@ -169,7 +174,7 @@ app_vendor_cmd (void)
       break;
 
     case VRQ_FPGA_SET_RESET:
-      //fpga_set_reset (wValueL);
+      fpga_reset(wValueL);
       break;
 
     case VRQ_I2C_WRITE:

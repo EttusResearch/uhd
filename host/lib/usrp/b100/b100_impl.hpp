@@ -126,6 +126,7 @@ private:
     void reset_gpif(const boost::uint16_t);
     void enable_gpif(const bool);
     void clear_fpga_fifo(void);
+    void set_reset_fpga(const bool en);
     void handle_async_message(uhd::transport::managed_recv_buffer::sptr);
     uhd::sensor_value_t get_ref_locked(void);
     void set_rx_fe_corrections(const double);
