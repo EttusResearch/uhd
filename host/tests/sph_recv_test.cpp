@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
         BOOST_CHECK(metadata.has_time_spec);
-        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
         BOOST_CHECK_EQUAL(num_samps_ret, 10 + i%10);
         num_accum_samps += num_samps_ret;
     }
@@ -232,14 +232,14 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
         if (i == NUM_PKTS_TO_TEST/2){
             //must get the soft overflow here
             BOOST_REQUIRE(metadata.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
-            BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+            BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
             num_accum_samps += 10 + i%10;
         }
         else{
             BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
             BOOST_CHECK(not metadata.more_fragments);
             BOOST_CHECK(metadata.has_time_spec);
-            BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+            BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
             BOOST_CHECK_EQUAL(num_samps_ret, 10 + i%10);
             num_accum_samps += num_samps_ret;
         }
@@ -323,7 +323,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
         BOOST_CHECK(metadata.has_time_spec);
-        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
         BOOST_CHECK_EQUAL(num_samps_ret, 10 + i%10);
         num_accum_samps += num_samps_ret;
         if (i == NUM_PKTS_TO_TEST/2){
@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
             );
             std::cout << "metadata.error_code " << metadata.error_code << std::endl;
             BOOST_REQUIRE(metadata.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
-            BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+            BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
             BOOST_CHECK_EQUAL(overflow_handler.num_overflow, size_t(1));
         }
     }
@@ -414,7 +414,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
         BOOST_CHECK(metadata.has_time_spec);
-        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
         BOOST_CHECK_EQUAL(num_samps_ret, 10 + i%10);
         num_accum_samps += num_samps_ret;
     }
@@ -500,14 +500,14 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
         if (i == NUM_PKTS_TO_TEST/2){
             //must get the soft overflow here
             BOOST_REQUIRE(metadata.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
-            BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+            BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
             num_accum_samps += 10 + i%10;
         }
         else{
             BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
             BOOST_CHECK(not metadata.more_fragments);
             BOOST_CHECK(metadata.has_time_spec);
-            BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+            BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
             BOOST_CHECK_EQUAL(num_samps_ret, 10 + i%10);
             num_accum_samps += num_samps_ret;
         }
@@ -593,7 +593,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
         BOOST_CHECK(metadata.has_time_spec);
-        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
         BOOST_CHECK_EQUAL(num_samps_ret, 10 + i%10);
         num_accum_samps += num_samps_ret;
         if (i == NUM_PKTS_TO_TEST/2){
@@ -677,7 +677,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(metadata.has_time_spec);
-        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
         BOOST_CHECK_EQUAL(num_samps_ret, 10);
         num_accum_samps += num_samps_ret;
 
@@ -690,7 +690,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
         BOOST_CHECK(not metadata.more_fragments);
         BOOST_CHECK_EQUAL(metadata.fragment_offset, 10);
         BOOST_CHECK(metadata.has_time_spec);
-        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t(0, num_accum_samps, SAMP_RATE));
+        BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
         BOOST_CHECK_EQUAL(num_samps_ret, i%10);
         num_accum_samps += num_samps_ret;
     }

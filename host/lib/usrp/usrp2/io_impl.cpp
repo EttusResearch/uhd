@@ -202,10 +202,8 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 //fill in the async metadata
                 async_metadata_t metadata;
                 metadata.channel = index;
-                metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
-                metadata.time_spec = time_spec_t(
-                    time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), tick_rate
-                );
+                metadata.has_time_spec = if_packet_info.has_tsf;
+                metadata.time_spec = time_spec_t::from_ticks(if_packet_info.tsf, tick_rate);
                 metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
 
                 //catch the flow control packets and react
@@ -388,6 +386,7 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+        - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
     ;
     const size_t bpp = _mbc[_mbc.keys().front()].rx_dsp_xports[0]->get_recv_frame_size() - hdr_size;
     const size_t bpi = convert::get_bytes_per_item(args.otw_format);
@@ -454,6 +453,7 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
         - sizeof(vrt::if_packet_info_t().sid) //no stream id ever used
+        - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
     ;
     const size_t bpp = _mbc[_mbc.keys().front()].tx_dsp_xport->get_send_frame_size() - hdr_size;
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);

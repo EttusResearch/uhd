@@ -126,7 +126,7 @@ public:
     bool is_device_locked(void){
         boost::uint32_t lock_secs = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_TIME);
         boost::uint32_t lock_gpid = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_GPID);
-        boost::uint32_t curr_secs = this->peek32(U2_REG_TIME64_SECS_RB_IMM);
+        boost::uint32_t curr_secs = this->peek32(U2_REG_TIME64_LO_RB_IMM)/100e6;
 
         //if the difference is larger, assume not locked anymore
         if (curr_secs - lock_secs >= 3) return false;
@@ -137,7 +137,7 @@ public:
 
     void lock_task(void){
         //re-lock in task
-        boost::uint32_t curr_secs = this->peek32(U2_REG_TIME64_SECS_RB_IMM);
+        boost::uint32_t curr_secs = this->peek32(U2_REG_TIME64_LO_RB_IMM)/100e6;
         this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, curr_secs);
         //sleep for a bit
         boost::this_thread::sleep(boost::posix_time::milliseconds(1500));

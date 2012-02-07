@@ -36,8 +36,8 @@
 #define FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
 
 #define REG_RX_CTRL_STREAM_CMD     _ctrl_base + 0
-#define REG_RX_CTRL_TIME_SECS      _ctrl_base + 4
-#define REG_RX_CTRL_TIME_TICKS     _ctrl_base + 8
+#define REG_RX_CTRL_TIME_HI        _ctrl_base + 4
+#define REG_RX_CTRL_TIME_LO        _ctrl_base + 8
 #define REG_RX_CTRL_CLEAR          _ctrl_base + 12
 #define REG_RX_CTRL_VRT_HDR        _ctrl_base + 16
 #define REG_RX_CTRL_VRT_SID        _ctrl_base + 20
@@ -83,7 +83,6 @@ public:
         _iface->poke32(REG_RX_CTRL_VRT_HDR, 0
             | (0x1 << 28) //if data with stream id
             | (0x1 << 26) //has trailer
-            | (0x3 << 22) //integer time other
             | (0x1 << 20) //fractional time sample count
         );
         _iface->poke32(REG_RX_CTRL_VRT_SID, _sid);
@@ -122,8 +121,9 @@ public:
 
         //issue the stream command
         _iface->poke32(REG_RX_CTRL_STREAM_CMD, cmd_word);
-        _iface->poke32(REG_RX_CTRL_TIME_SECS, boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
-        _iface->poke32(REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(_tick_rate)); //latches the command
+        const boost::uint64_t ticks = stream_cmd.time_spec.to_ticks(_tick_rate);
+        _iface->poke32(REG_RX_CTRL_TIME_HI, boost::uint32_t(ticks >> 32));
+        _iface->poke32(REG_RX_CTRL_TIME_LO, boost::uint32_t(ticks >> 0)); //latches the command
     }
 
     void set_mux(const std::string &mode, const bool fe_swapped){

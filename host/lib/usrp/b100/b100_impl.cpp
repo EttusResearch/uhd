@@ -364,10 +364,10 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     // create time control objects
     ////////////////////////////////////////////////////////////////////
     time64_core_200::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_secs_now = B100_REG_RB_TIME_NOW_SECS;
-    time64_rb_bases.rb_ticks_now = B100_REG_RB_TIME_NOW_TICKS;
-    time64_rb_bases.rb_secs_pps = B100_REG_RB_TIME_PPS_SECS;
-    time64_rb_bases.rb_ticks_pps = B100_REG_RB_TIME_PPS_TICKS;
+    time64_rb_bases.rb_hi_now = B100_REG_RB_TIME_NOW_HI;
+    time64_rb_bases.rb_lo_now = B100_REG_RB_TIME_NOW_LO;
+    time64_rb_bases.rb_hi_pps = B100_REG_RB_TIME_PPS_HI;
+    time64_rb_bases.rb_lo_pps = B100_REG_RB_TIME_PPS_LO;
     _time64 = time64_core_200::make(
         _fpga_ctrl, B100_REG_SR_ADDR(B100_SR_TIME64), time64_rb_bases
     );

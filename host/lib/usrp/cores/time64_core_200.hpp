@@ -31,8 +31,8 @@ public:
     typedef boost::shared_ptr<time64_core_200> sptr;
 
     struct readback_bases_type{
-        size_t rb_secs_now, rb_ticks_now;
-        size_t rb_secs_pps, rb_ticks_pps;
+        size_t rb_hi_now, rb_lo_now;
+        size_t rb_hi_pps, rb_lo_pps;
     };
 
     //! makes a new time64 core from iface and slave base

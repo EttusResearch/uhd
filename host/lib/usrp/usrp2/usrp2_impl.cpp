@@ -546,10 +546,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create time control objects
         ////////////////////////////////////////////////////////////////
         time64_core_200::readback_bases_type time64_rb_bases;
-        time64_rb_bases.rb_secs_now = U2_REG_TIME64_SECS_RB_IMM;
-        time64_rb_bases.rb_ticks_now = U2_REG_TIME64_TICKS_RB_IMM;
-        time64_rb_bases.rb_secs_pps = U2_REG_TIME64_SECS_RB_PPS;
-        time64_rb_bases.rb_ticks_pps = U2_REG_TIME64_TICKS_RB_PPS;
+        time64_rb_bases.rb_hi_now = U2_REG_TIME64_HI_RB_IMM;
+        time64_rb_bases.rb_lo_now = U2_REG_TIME64_LO_RB_IMM;
+        time64_rb_bases.rb_hi_pps = U2_REG_TIME64_HI_RB_PPS;
+        time64_rb_bases.rb_lo_pps = U2_REG_TIME64_LO_RB_PPS;
         _mbc[mb].time64 = time64_core_200::make(
             _mbc[mb].iface, U2_REG_SR_ADDR(SR_TIME64), time64_rb_bases, mimo_clock_sync_delay_cycles
         );

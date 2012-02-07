@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -136,9 +136,7 @@ BOOST_AUTO_TEST_CASE(test_sph_send_one_channel_one_packet_mode){
         std::cout << "data check " << i << std::endl;
         dummy_send_xport.pop_front_packet(ifpi);
         BOOST_CHECK_EQUAL(ifpi.num_payload_words32, 10+i%10);
-        BOOST_CHECK(ifpi.has_tsi);
         BOOST_CHECK(ifpi.has_tsf);
-        BOOST_CHECK_EQUAL(ifpi.tsi, 0);
         BOOST_CHECK_EQUAL(ifpi.tsf, num_accum_samps*TICK_RATE/SAMP_RATE);
         BOOST_CHECK_EQUAL(ifpi.sob, i == 0);
         BOOST_CHECK_EQUAL(ifpi.eob, i == NUM_PKTS_TO_TEST-1);
@@ -191,9 +189,7 @@ BOOST_AUTO_TEST_CASE(test_sph_send_one_channel_full_buffer_mode){
         std::cout << "data check " << i << std::endl;
         dummy_send_xport.pop_front_packet(ifpi);
         BOOST_CHECK_EQUAL(ifpi.num_payload_words32, 20);
-        BOOST_CHECK(ifpi.has_tsi);
         BOOST_CHECK(ifpi.has_tsf);
-        BOOST_CHECK_EQUAL(ifpi.tsi, 0);
         BOOST_CHECK_EQUAL(ifpi.tsf, num_accum_samps*TICK_RATE/SAMP_RATE);
         BOOST_CHECK_EQUAL(ifpi.sob, i == 0);
         BOOST_CHECK_EQUAL(ifpi.eob, i == NUM_PKTS_TO_TEST-1);

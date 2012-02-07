@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,24 +16,13 @@
 //
 
 #include <uhd/types/time_spec.hpp>
+#include <inttypes.h> //imaxdiv, intmax_t
 
 using namespace uhd;
 
 /***********************************************************************
  * Time spec system time
  **********************************************************************/
-
-/*!
- * Creates a time spec from system counts:
- * TODO make part of API as a static factory function
- * The counts type is 64 bits and will overflow the ticks type of long.
- * Therefore, divmod the counts into seconds + sub-second counts first.
- */
-#include <inttypes.h> //imaxdiv, intmax_t
-static UHD_INLINE time_spec_t time_spec_t_from_counts(intmax_t counts, intmax_t freq){
-    imaxdiv_t divres = imaxdiv(counts, freq);
-    return time_spec_t(time_t(divres.quot), double(divres.rem)/freq);
-}
 
 #ifdef HAVE_CLOCK_GETTIME
 #include <time.h>
@@ -49,7 +38,7 @@ time_spec_t time_spec_t::get_system_time(void){
 time_spec_t time_spec_t::get_system_time(void){
     mach_timebase_info_data_t info; mach_timebase_info(&info);
     intmax_t nanosecs = mach_absolute_time()*info.numer/info.denom;
-    return time_spec_t_from_counts(nanosecs, intmax_t(1e9));
+    return time_spec_t::from_ticks(nanosecs, intmax_t(1e9));
 }
 #endif /* HAVE_MACH_ABSOLUTE_TIME */
 
@@ -60,7 +49,7 @@ time_spec_t time_spec_t::get_system_time(void){
     LARGE_INTEGER counts, freq;
     QueryPerformanceCounter(&counts);
     QueryPerformanceFrequency(&freq);
-    return time_spec_t_from_counts(counts.QuadPart, freq.QuadPart);
+    return time_spec_t::from_ticks(counts.QuadPart, freq.QuadPart);
 }
 #endif /* HAVE_QUERY_PERFORMANCE_COUNTER */
 
@@ -104,11 +93,21 @@ time_spec_t::time_spec_t(time_t full_secs, long tick_count, double tick_rate){
     time_spec_init(full_secs, frac_secs);
 }
 
+time_spec_t time_spec_t::from_ticks(long long ticks, double tick_rate){
+    const imaxdiv_t divres = imaxdiv(ticks, tick_rate);
+    return time_spec_t(time_t(divres.quot), double(divres.rem)/tick_rate);
+}
+
 /***********************************************************************
  * Time spec accessors
  **********************************************************************/
 long time_spec_t::get_tick_count(double tick_rate) const{
     return long(this->get_frac_secs()*tick_rate + 0.5);
+}
+
+long long time_spec_t::to_ticks(double tick_rate) const{
+    return (long long)(this->get_frac_secs()*tick_rate + 0.5) + \
+    (long long)((this->get_full_secs()) * (long long)(tick_rate));
 }
 
 double time_spec_t::get_real_secs(void) const{
