@@ -709,7 +709,7 @@ module u2plus_core
 
    wire [31:0] 	 debug_sync;
 
-   time_64bit #(.TICKS_PER_SEC(32'd100000000),.BASE(SR_TIME64)) time_64bit
+   time_64bit #(.BASE(SR_TIME64)) time_64bit
      (.clk(dsp_clk), .rst(dsp_rst), .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
       .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int),
       .exp_time_in(exp_time_in), .exp_time_out(exp_time_out), .good_sync(good_sync), .debug(debug_sync));

@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -214,7 +214,7 @@ module vita_tx_deframer
    
    always @(posedge clk)
      case(vita_state)
-       VITA_SECS :
+       VITA_TICS :
 	 send_time[63:32] <= data_i[31:0];
        VITA_TICS2 :
 	 send_time[31:0] <= data_i[31:0];
@@ -235,8 +235,8 @@ module vita_tx_deframer
       .datain(fifo_i), .src_rdy_i(store), .dst_rdy_o(fifo_space),
       .dataout(sample_fifo_o), .src_rdy_o(sample_fifo_src_rdy_o), .dst_rdy_i(sample_fifo_dst_rdy_i) );
 
-   // sob, eob, has_secs (send_at) ignored on all lines except first
-   assign fifo_i = {sample_d,sample_c,sample_b,sample_a,seqnum_err,has_secs_reg,is_sob_reg,is_eob_reg,eop,
+   // sob, eob, has_tics (send_at) ignored on all lines except first
+   assign fifo_i = {sample_d,sample_c,sample_b,sample_a,seqnum_err,has_tics_reg,is_sob_reg,is_eob_reg,eop,
 		    12'd0,seqnum_reg[3:0],send_time};
 
    assign dst_rdy_o = ~(vita_state == VITA_PAYLOAD) & ~((vita_state==VITA_STORE)& ~fifo_space) ;

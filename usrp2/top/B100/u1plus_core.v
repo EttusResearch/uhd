@@ -438,7 +438,7 @@ module u1plus_core
    // /////////////////////////////////////////////////////////////////////////
    // VITA Timing
 
-   time_64bit #(.TICKS_PER_SEC(32'd64000000),.BASE(SR_TIME64)) time_64bit
+   time_64bit #(.BASE(SR_TIME64)) time_64bit
      (.clk(wb_clk), .rst(wb_rst), .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps), .pps_int(pps_int),
       .exp_time_in(0));

@@ -50,11 +50,9 @@ module vita_tx_control
    
    wire        now, early, late, too_early;
 
-   // FIXME ignore too_early for now for timing reasons
-   assign too_early = 0;
    time_compare 
      time_compare (.time_now(vita_time), .trigger_time(send_time), 
-		   .now(now), .early(early), .late(late), .too_early());
+		   .now(now), .early(early), .late(late), .too_early(too_early));
 
    reg 	       late_qual, late_del;
 
