@@ -77,10 +77,14 @@ static void check_priority_range(float priority){
     void uhd::set_thread_priority(float priority, bool realtime){
         check_priority_range(priority);
 
+        /*
+         * Process wide priority is no longer set.
+         * This is the responsibility of the application.
         //set the priority class on the process
         int pri_class = (realtime)? REALTIME_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS;
         if (SetPriorityClass(GetCurrentProcess(), pri_class) == 0)
             throw uhd::os_error("error in SetPriorityClass");
+         */
 
         //scale the priority value to the constants
         int priorities[] = {
