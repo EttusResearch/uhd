@@ -62,8 +62,8 @@ double sbx_xcvr::sbx_version4::set_lo_freq(dboard_iface::unit_t unit, double tar
         (4,  adf4351_regs_t::RF_DIVIDER_SELECT_DIV4)
         (8,  adf4351_regs_t::RF_DIVIDER_SELECT_DIV8)
         (16, adf4351_regs_t::RF_DIVIDER_SELECT_DIV16)
-        (32, adf4351_regs_t::RF_DIVIDER_SELECT_DIV16)
-        (64, adf4351_regs_t::RF_DIVIDER_SELECT_DIV16)
+        (32, adf4351_regs_t::RF_DIVIDER_SELECT_DIV32)
+        (64, adf4351_regs_t::RF_DIVIDER_SELECT_DIV64)
     ;
 
     double actual_freq, pfd_freq;
