@@ -31,8 +31,9 @@ typedef std::complex<boost::int16_t> sc16_t;
 typedef std::complex<float> fc32_t;
 typedef std::complex<double> fc64_t;
 
-#define MY_CHECK_CLOSE(a, b, f) if ((std::abs(a) > (f))) \
-    BOOST_CHECK_CLOSE_FRACTION(a, b, f)
+#define MY_CHECK_CLOSE(a, b, f) { \
+    BOOST_CHECK_MESSAGE(std::abs((a)-(b)) < f, " " << #a << " (" << (a) << ") error " << #b << " (" << (b) << ")"); \
+}
 
 /***********************************************************************
  * Loopback runner:
@@ -134,8 +135,8 @@ static void test_convert_types_for_floats(
     std::swap(out_id.num_inputs, out_id.num_outputs);
     loopback(nsamps, in_id, out_id, input, output);
     for (size_t i = 0; i < nsamps; i++){
-        MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(0.01));
-        MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(0.01));
+        MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(1./32767));
+        MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(1./32767));
     }
 }
 
