@@ -219,34 +219,42 @@ void sbx_xcvr::update_atr(void){
     int tx_ant_led = _tx_ant == "TX/RX" ? 0 : TX_LED_TXRX;
 
     //setup the tx atr (this does not change with antenna)
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,
-        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | ANT_XX | TX_MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
+            dboard_iface::ATR_REG_IDLE, 0 | tx_lo_lpf_en \
+            | tx_ld_led | tx_ant_led | TX_POWER_UP | ANT_XX | TX_MIXER_DIS);
 
     //setup the rx atr (this does not change with antenna)
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,
-        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
+            dboard_iface::ATR_REG_IDLE, rx_pga0_iobits | rx_lo_lpf_en \
+            | rx_ld_led | rx_ant_led | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
 
     //set the RX atr regs that change with antenna setting
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,
-        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_ENB | 
-            ((_rx_ant != "RX2")? ANT_TXRX : ANT_RX2));
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,
-        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_DIS |
-            ((_rx_ant == "CAL")? ANT_TXRX : ANT_RX2));
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX,
-        rx_pga0_iobits | rx_lo_lpf_en | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_ENB |
-            ((_rx_ant == "CAL")? ANT_TXRX : ANT_RX2));
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
+            dboard_iface::ATR_REG_RX_ONLY, rx_pga0_iobits | rx_lo_lpf_en \
+            | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_ENB \
+            | ((_rx_ant != "RX2")? ANT_TXRX : ANT_RX2));
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
+            dboard_iface::ATR_REG_TX_ONLY, rx_pga0_iobits | rx_lo_lpf_en \
+            | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_DIS \
+            | ((_rx_ant == "CAL")? ANT_TXRX : ANT_RX2));
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
+            dboard_iface::ATR_REG_FULL_DUPLEX, rx_pga0_iobits | rx_lo_lpf_en \
+            | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_ENB \
+            | ((_rx_ant == "CAL")? ANT_TXRX : ANT_RX2));
 
     //set the TX atr regs that change with antenna setting
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,
-        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_DIS |
-            ((_rx_ant != "RX2")? ANT_RX : ANT_TX));
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,
-        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_ENB |
-            ((_tx_ant == "CAL")? ANT_RX : ANT_TX));
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX,
-        tx_pga0_iobits | tx_lo_lpf_en | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_ENB |
-            ((_tx_ant == "CAL")? ANT_RX : ANT_TX));
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
+            dboard_iface::ATR_REG_RX_ONLY, 0 | tx_lo_lpf_en \
+            | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_DIS \
+            | ((_rx_ant != "RX2")? ANT_RX : ANT_TX));
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
+            dboard_iface::ATR_REG_TX_ONLY, tx_pga0_iobits | tx_lo_lpf_en \
+            | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_ENB \
+            | ((_tx_ant == "CAL")? ANT_RX : ANT_TX));
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
+            dboard_iface::ATR_REG_FULL_DUPLEX, tx_pga0_iobits | tx_lo_lpf_en \
+            | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_ENB \
+            | ((_tx_ant == "CAL")? ANT_RX : ANT_TX));
 }
 
 void sbx_xcvr::set_rx_ant(const std::string &ant){
@@ -281,6 +289,7 @@ double sbx_xcvr::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
     return actual;
 }
 
+
 sensor_value_t sbx_xcvr::get_locked(dboard_iface::unit_t unit) {
     const bool locked = (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
     return sensor_value_t("LO", locked, "locked", "unlocked");
@@ -294,31 +303,18 @@ void sbx_xcvr::flash_leds(void) {
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|RX_LED_IO));
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
 
-    /*
-    //flash All LEDs
-    for (int i = 0; i < 3; i++) {
-        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_IO, RX_LED_IO);
-        this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_IO, TX_LED_IO);
-
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, 0, RX_LED_IO);
-        this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, 0, TX_LED_IO);
-
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-    }
-    */
-
     this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_LD, TX_LED_IO);
     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
 
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_TXRX|TX_LED_LD, TX_LED_IO);
+    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, \
+            TX_LED_TXRX|TX_LED_LD, TX_LED_IO);
     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
 
     this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_LD, RX_LED_IO);
     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
 
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_RX1RX2|RX_LED_LD, RX_LED_IO);
+    this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, \
+            RX_LED_RX1RX2|RX_LED_LD, RX_LED_IO);
     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
 
     this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_LD, RX_LED_IO);
@@ -333,20 +329,6 @@ void sbx_xcvr::flash_leds(void) {
     this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, 0, TX_LED_IO);
     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
 
-    /*
-    //flash All LEDs
-    for (int i = 0; i < 3; i++) {
-        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, 0, RX_LED_IO);
-        this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, 0, TX_LED_IO);
-
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_IO, RX_LED_IO);
-        this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_IO, TX_LED_IO);
-
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-    }
-    */
     //Put LED gpios back in ATR control and update atr
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
