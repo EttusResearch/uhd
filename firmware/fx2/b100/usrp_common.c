@@ -32,12 +32,11 @@ init_usrp (void)
   CPUCS = bmCLKSPD1;	// CPU runs @ 48 MHz
   CKCON = 0;		// MOVX takes 2 cycles
 
-  // IFCLK is generated internally and runs at 48 MHz; slave FIFO mode
+  // IFCLK is generated internally and runs at 48 MHz, external clk en
   IFCONFIG = bmIFCLKSRC | bm3048MHZ | bmIFCLKOE;
   SYNCDELAY;
 
   // configure IO ports (B and D are used by slave FIFO)
-
   IOA = bmPORT_A_INITIAL;	// Port A initial state
   OEA = bmPORT_A_OUTPUTS;	// Port A direction register
 
@@ -52,7 +51,6 @@ init_usrp (void)
   // SYNCDELAY;
   
   // configure end points
-
   EP1OUTCFG = bmVALID | bmBULK;				SYNCDELAY;
   EP1INCFG  = bmVALID | bmBULK | bmIN;			SYNCDELAY;
 
@@ -62,7 +60,6 @@ init_usrp (void)
   EP8CFG    = bmVALID | bmBULK | bmDOUBLEBUF | bmIN;	SYNCDELAY;	// 512 dbl bulk IN
 
   // reset FIFOs
-
   FIFORESET = bmNAKALL;					SYNCDELAY;
   FIFORESET = 2;					SYNCDELAY;
   FIFORESET = 4;					SYNCDELAY;
@@ -71,38 +68,49 @@ init_usrp (void)
   FIFORESET = 0;					SYNCDELAY;
   
   // configure end point FIFOs
-
-  // let core see 0 to 1 transistion of autoout bit
-
+  // let core see 0 to 1 transistion of autoin/out bit
   EP2FIFOCFG =             bmWORDWIDE;			SYNCDELAY;
   EP2FIFOCFG = bmAUTOOUT | bmWORDWIDE;			SYNCDELAY;
   EP6FIFOCFG = bmZEROLENIN            | bmWORDWIDE;			SYNCDELAY;
   EP6FIFOCFG = bmZEROLENIN | bmAUTOIN | bmWORDWIDE;			SYNCDELAY;
-  //EP6FIFOCFG = bmWORDWIDE;			SYNCDELAY;
   EP4FIFOCFG =             bmWORDWIDE;      SYNCDELAY;
   EP4FIFOCFG = bmAUTOOUT | bmWORDWIDE;      SYNCDELAY;
   EP8FIFOCFG = bmZEROLENIN |            bmWORDWIDE;      SYNCDELAY;
   EP8FIFOCFG = bmZEROLENIN | bmAUTOIN | bmWORDWIDE;      SYNCDELAY;
 
   EP0BCH = 0;			SYNCDELAY;
-
   // arm EP1OUT so we can receive "out" packets (TRM pg 8-8)
-
   EP1OUTBC = 0;			SYNCDELAY;
-/*
-  EP2GPIFFLGSEL = 0x00;		SYNCDELAY; // For EP2OUT, GPIF uses EF flag
-  EP6GPIFFLGSEL = 0x00;		SYNCDELAY; // For EP6IN,  GPIF uses FF flag
-  EP4GPIFFLGSEL = 0x00;   SYNCDELAY;
-  EP8GPIFFLGSEL = 0x00;   SYNCDELAY;
-*/
-  // set autoin length for EP6
-  // FIXME should be f(enumeration)
 
+  // set autoin length for EP6/EP8
   EP6AUTOINLENH = (512) >> 8;	SYNCDELAY;  // this is the length for high speed
   EP6AUTOINLENL = (512) & 0xff; SYNCDELAY;
-
   EP8AUTOINLENH = (32) >> 8; SYNCDELAY;
   EP8AUTOINLENL = (32) & 0xff; SYNCDELAY;
+
+  //set FLAGA, FLAGB, FLAGC, FLAGD to be EP2EF, EP4EF, EP6PF, EP8PF
+  PINFLAGSAB = (bmEP2EF) | (bmEP4EF << 4);
+  PINFLAGSCD = (bmEP6PF) | (bmEP8PF << 4);
+
+  //ok as far as i can tell, DECIS is reversed compared to the FX2 TRM.
+  //p15.34 says DECIS high implements [assert when (fill > level)], observed opposite
+  EP6FIFOPFH = 0x09;
+  SYNCDELAY;
+  EP6FIFOPFL = 0xFD;
+  SYNCDELAY;
+
+//  EP2FIFOPFH = 0x08;
+//  SYNCDELAY;
+// EP2FIFOPFL = 0x00;
+//  SYNCDELAY;
+
+  //assert FIFOEMPTY one cycle sooner so we get it in time at the FPGA
+  EP2FIFOCFG |= bmBIT5; 
+  
+  //set FIFOPINPOLAR to normal (active low) mode
+  FIFOPINPOLAR = 0x00;
+  SYNCDELAY;
+  PORTACFG = 0x80;
 
   init_board ();
 }

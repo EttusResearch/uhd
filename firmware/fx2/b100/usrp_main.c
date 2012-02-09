@@ -79,8 +79,7 @@ get_ep0_data (void)
     ;
 }
 
-static void initialize_gpif_buffer(int ep) {
-  //clear the GPIF buffers on startup to keep crap out of the data path
+static void clear_fifo(int ep) {
   FIFORESET = 0x80; SYNCDELAY; //activate NAKALL
   FIFORESET = ep; SYNCDELAY;
   FIFORESET = 0x00; SYNCDELAY;
@@ -184,7 +183,7 @@ app_vendor_cmd (void)
       break;
       
     case VRQ_RESET_GPIF:
-      initialize_gpif_buffer(wValueL);
+      clear_fifo(wValueL);
       break;
       
     case VRQ_ENABLE_GPIF:
@@ -281,31 +280,6 @@ main (void)
   EA = 1;		// global interrupt enable
 
   fx2_renumerate ();	// simulates disconnect / reconnect
-  
-  //set FLAGA, FLAGB, FLAGC, FLAGD to be EP2EF, EP4EF, EP6PF, EP8PF
-  PINFLAGSAB = (bmEP2EF) | (bmEP4EF << 4);
-  PINFLAGSCD = (bmEP6PF) | (bmEP8PF << 4);
-
-  //ok as far as i can tell, DECIS is reversed compared to the FX2 TRM.
-  //p15.34 says DECIS high implements [assert when (fill > level)], observed opposite
-
-  EP6FIFOPFH = 0x09;
-  SYNCDELAY;
-  EP6FIFOPFL = 0xFD;
-  SYNCDELAY;
-
-//  EP2FIFOPFH = 0x08;
-//  SYNCDELAY;
-// EP2FIFOPFL = 0x00;
-//  SYNCDELAY;
-
-  //assert FIFOEMPTY one cycle sooner so we get it in time at the FPGA
-  EP2FIFOCFG |= bmBIT5; 
-  
-  //set FIFOPINPOLAR to normal (active low) mode
-  FIFOPINPOLAR = 0x00;
-  SYNCDELAY;
-  PORTACFG = 0x80;
   
   main_loop ();
 }

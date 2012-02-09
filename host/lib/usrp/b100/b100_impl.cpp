@@ -181,9 +181,9 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     //load FPGA image, gpif is disabled while loading
     this->enable_gpif(false);
     _fx2_ctrl->usrp_load_fpga(b100_fpga_image);
+    this->enable_gpif(true);
     this->set_reset_fpga(1);
     this->set_reset_fpga(0);
-    this->enable_gpif(true);
 
     //create the control transport
     device_addr_t ctrl_xport_args;
