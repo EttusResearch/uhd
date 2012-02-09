@@ -32,7 +32,7 @@ typedef std::complex<float> fc32_t;
 typedef std::complex<double> fc64_t;
 
 #define MY_CHECK_CLOSE(a, b, f) { \
-    BOOST_CHECK_MESSAGE(std::abs((a)-(b)) < f, " " << #a << " (" << (a) << ") error " << #b << " (" << (b) << ")"); \
+    BOOST_CHECK_MESSAGE(std::abs((a)-(b)) < f, "\n\t" << #a << " (" << (a) << ") error " << #b << " (" << (b) << ")"); \
 }
 
 /***********************************************************************

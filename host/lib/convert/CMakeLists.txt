@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Ettus Research LLC
+# Copyright 2011-2012 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ IF(HAVE_EMMINTRIN_H)
     SET(convert_with_sse2_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc32_with_sse2.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc64_with_sse2.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc64_to_sc8_with_sse2.cpp
     )
     SET_SOURCE_FILES_PROPERTIES(
         ${convert_with_sse2_sources}
