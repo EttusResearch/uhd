@@ -73,6 +73,7 @@ IF(HAVE_EMMINTRIN_H)
     SET(convert_with_sse2_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc32_with_sse2.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc64_with_sse2.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc32_to_sc8_with_sse2.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc64_to_sc8_with_sse2.cpp
     )
     SET_SOURCE_FILES_PROPERTIES(
