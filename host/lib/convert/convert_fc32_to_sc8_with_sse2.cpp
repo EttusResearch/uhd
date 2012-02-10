@@ -68,7 +68,7 @@ DECLARE_CONVERTER(fc32, 1, sc8_item32_be, 1, PRIORITY_SIMD){
     const __m128 scalar = _mm_set_ps1(float(scale_factor));
 
     #define convert_fc32_1_to_sc8_item32_1_bswap_guts(_al_)             \
-    for (size_t j = 0; i+7 < nsamps; i+=8, j+=2){                       \
+    for (size_t j = 0; i+7 < nsamps; i+=8, j+=4){                       \
         /* load from input */                                           \
         __m128 tmp0 = _mm_load ## _al_ ## ps(reinterpret_cast<const float *>(input+i+0)); \
         __m128 tmp1 = _mm_load ## _al_ ## ps(reinterpret_cast<const float *>(input+i+2)); \
@@ -112,7 +112,7 @@ DECLARE_CONVERTER(fc32, 1, sc8_item32_le, 1, PRIORITY_SIMD){
     const __m128 scalar = _mm_set_ps1(float(scale_factor));
 
     #define convert_fc32_1_to_sc8_item32_1_nswap_guts(_al_)             \
-    for (size_t j = 0; i+7 < nsamps; i+=8, j+=2){                       \
+    for (size_t j = 0; i+7 < nsamps; i+=8, j+=4){                       \
         /* load from input */                                           \
         __m128 tmp0 = _mm_load ## _al_ ## ps(reinterpret_cast<const float *>(input+i+0)); \
         __m128 tmp1 = _mm_load ## _al_ ## ps(reinterpret_cast<const float *>(input+i+2)); \
