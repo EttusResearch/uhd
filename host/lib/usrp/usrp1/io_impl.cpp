@@ -221,17 +221,17 @@ void usrp1_impl::io_init(void){
 
     _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
 
-    //create a new vandal thread to poll xerflow conditions
-    _io_impl->vandal_task = task::make(boost::bind(
-        &usrp1_impl::vandal_conquest_loop, this
-    ));
-
     //init as disabled, then call the real function (uses restore)
     this->enable_rx(false);
     this->enable_tx(false);
     rx_stream_on_off(false);
     tx_stream_on_off(false);
     _io_impl->flush_send_buff();
+
+    //create a new vandal thread to poll xerflow conditions
+    _io_impl->vandal_task = task::make(boost::bind(
+        &usrp1_impl::vandal_conquest_loop, this
+    ));
 }
 
 void usrp1_impl::rx_stream_on_off(bool enb){

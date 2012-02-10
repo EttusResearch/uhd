@@ -419,7 +419,7 @@ public:
     {
         UHD_ASSERT_THROW(bytes.size() < max_i2c_data_bytes);
 
-        unsigned char buff[max_i2c_data_bytes];
+        unsigned char buff[max_i2c_data_bytes] = {};
         std::copy(bytes.begin(), bytes.end(), buff);
 
         int ret = this->usrp_i2c_write(addr & 0xff,
@@ -434,7 +434,7 @@ public:
     {
       UHD_ASSERT_THROW(num_bytes < max_i2c_data_bytes);
 
-      unsigned char buff[max_i2c_data_bytes];
+      unsigned char buff[max_i2c_data_bytes] = {};
       int ret = this->usrp_i2c_read(addr & 0xff,
                                             buff,
                                             num_bytes);

@@ -165,7 +165,7 @@ int b100_ctrl_impl::write(boost::uint32_t addr, const ctrl_data_t &data) {
     pkt.pkt_meta.seq = _seq++;
     pkt.pkt_meta.len = pkt.data.size();
     pkt.pkt_meta.addr = addr;
-    boost::uint16_t pkt_buff[CTRL_PACKET_LENGTH / sizeof(boost::uint16_t)];
+    boost::uint16_t pkt_buff[CTRL_PACKET_LENGTH / sizeof(boost::uint16_t)] = {};
 
     pack_ctrl_pkt(pkt_buff, pkt);
     size_t result = send_pkt(pkt_buff);
@@ -181,7 +181,7 @@ ctrl_data_t b100_ctrl_impl::read(boost::uint32_t addr, size_t len) {
     pkt.pkt_meta.seq = _seq++;
     pkt.pkt_meta.len = len;
     pkt.pkt_meta.addr = addr;
-    boost::uint16_t pkt_buff[CTRL_PACKET_LENGTH / sizeof(boost::uint16_t)];
+    boost::uint16_t pkt_buff[CTRL_PACKET_LENGTH / sizeof(boost::uint16_t)] = {};
 
     //flush anything that might be in the queue
     while (get_ctrl_data(pkt.data, 0.0)){
