@@ -135,7 +135,8 @@ private:
 struct usrp2_impl::io_impl{
 
     io_impl(void):
-        async_msg_fifo(100/*messages deep*/)
+        async_msg_fifo(1000/*messages deep*/),
+        tick_rate(1 /*non-zero default*/)
     {
         /* NOP */
     }

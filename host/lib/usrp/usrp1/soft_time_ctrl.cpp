@@ -39,8 +39,8 @@ public:
         _nsamps_remaining(0),
         _stream_mode(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS),
         _cmd_queue(2),
-        _async_msg_queue(100),
-        _inline_msg_queue(100),
+        _async_msg_queue(1000),
+        _inline_msg_queue(1000),
         _stream_on_off(stream_on_off)
     {
         //synchronously spawn a new thread

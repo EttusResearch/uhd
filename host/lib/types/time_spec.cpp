@@ -38,7 +38,7 @@ time_spec_t time_spec_t::get_system_time(void){
 time_spec_t time_spec_t::get_system_time(void){
     mach_timebase_info_data_t info; mach_timebase_info(&info);
     intmax_t nanosecs = mach_absolute_time()*info.numer/info.denom;
-    return time_spec_t::from_ticks(nanosecs, intmax_t(1e9));
+    return time_spec_t::from_ticks(nanosecs, 1e9);
 }
 #endif /* HAVE_MACH_ABSOLUTE_TIME */
 
@@ -80,6 +80,10 @@ time_spec_t time_spec_t::get_system_time(void){
     } \
 }
 
+UHD_INLINE long long fast_llround(const double x){
+    return (long long)(x + 0.5); // assumption of non-negativity
+}
+
 time_spec_t::time_spec_t(double secs){
     time_spec_init(0, secs);
 }
@@ -94,7 +98,7 @@ time_spec_t::time_spec_t(time_t full_secs, long tick_count, double tick_rate){
 }
 
 time_spec_t time_spec_t::from_ticks(long long ticks, double tick_rate){
-    const imaxdiv_t divres = imaxdiv(ticks, tick_rate);
+    const imaxdiv_t divres = imaxdiv(ticks, fast_llround(tick_rate));
     return time_spec_t(time_t(divres.quot), double(divres.rem)/tick_rate);
 }
 
@@ -102,12 +106,12 @@ time_spec_t time_spec_t::from_ticks(long long ticks, double tick_rate){
  * Time spec accessors
  **********************************************************************/
 long time_spec_t::get_tick_count(double tick_rate) const{
-    return long(this->get_frac_secs()*tick_rate + 0.5);
+    return long(fast_llround(this->get_frac_secs()*tick_rate));
 }
 
 long long time_spec_t::to_ticks(double tick_rate) const{
-    return (long long)(this->get_frac_secs()*tick_rate + 0.5) + \
-    (long long)((this->get_full_secs()) * (long long)(tick_rate));
+    return fast_llround(this->get_frac_secs()*tick_rate) + \
+    (this->get_full_secs() * fast_llround(tick_rate));
 }
 
 double time_spec_t::get_real_secs(void) const{

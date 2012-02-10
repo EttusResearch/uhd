@@ -41,7 +41,7 @@ using namespace uhd::transport;
  **********************************************************************/
 struct b100_impl::io_impl{
     io_impl(void):
-        async_msg_fifo(100/*messages deep*/)
+        async_msg_fifo(1000/*messages deep*/)
     { /* NOP */ }
 
     zero_copy_if::sptr data_transport;

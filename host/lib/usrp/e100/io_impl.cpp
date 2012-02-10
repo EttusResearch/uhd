@@ -50,7 +50,7 @@ using namespace uhd::transport;
  **********************************************************************/
 struct e100_impl::io_impl{
     io_impl(void):
-        false_alarm(0), async_msg_fifo(100/*messages deep*/)
+        false_alarm(0), async_msg_fifo(1000/*messages deep*/)
     { /* NOP */ }
 
     double tick_rate; //set by update tick rate method

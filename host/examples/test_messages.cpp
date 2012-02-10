@@ -26,6 +26,7 @@
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <cstdlib>
+#include <ctime>
 #include <complex>
 #include <iostream>
 
@@ -326,7 +327,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //run the tests, pick at random
-    std::srand(uhd::time_spec_t::get_system_time().get_full_secs());
+    std::srand((unsigned int) time(NULL));
     for (size_t n = 0; n < ntests; n++){
         std::string key = tests.keys()[std::rand() % tests.size()];
         bool pass = tests[key](usrp, rx_stream, tx_stream);

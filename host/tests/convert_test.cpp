@@ -124,8 +124,8 @@ static void test_convert_types_for_floats(
     //fill the input samples
     std::vector<data_type> input(nsamps), output(nsamps);
     BOOST_FOREACH(data_type &in, input) in = data_type(
-        ((std::rand()/value_type(RAND_MAX/2)) - 1)*extra_scale,
-        ((std::rand()/value_type(RAND_MAX/2)) - 1)*extra_scale
+        ((std::rand()/value_type(RAND_MAX/2)) - 1)*float(extra_scale),
+        ((std::rand()/value_type(RAND_MAX/2)) - 1)*float(extra_scale)
     );
 
     //run the loopback and test

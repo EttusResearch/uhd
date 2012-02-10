@@ -121,7 +121,7 @@ public:
 
         //issue the stream command
         _iface->poke32(REG_RX_CTRL_STREAM_CMD, cmd_word);
-        const boost::uint64_t ticks = stream_cmd.time_spec.to_ticks(_tick_rate);
+        const boost::uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(_tick_rate);
         _iface->poke32(REG_RX_CTRL_TIME_HI, boost::uint32_t(ticks >> 32));
         _iface->poke32(REG_RX_CTRL_TIME_LO, boost::uint32_t(ticks >> 0)); //latches the command
     }
