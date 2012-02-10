@@ -44,6 +44,7 @@ module dsp_rx_glue
     //strobed samples {I16,Q16} from the RX DDC chain
     input [31:0] ddc_out_sample,
     input ddc_out_strobe, //high on valid sample
+    output ddc_out_enable, //enables DDC module
 
     //strobbed baseband samples {I16,Q16} from this module
     output [31:0] bb_sample,
@@ -60,14 +61,15 @@ module dsp_rx_glue
             assign ddc_in_q = frontend_q;
             assign bb_sample = ddc_out_sample;
             assign bb_strobe = ddc_out_strobe;
+            assign ddc_out_enable = enable;
             `else
-            RX_DSP0_MODULE rx_dsp0_custom
+            `RX_DSP0_MODULE #(.WIDTH(WIDTH)) rx_dsp0_custom
             (
                 .clock(clock), .reset(reset), .clear(clear), .enable(enable),
                 .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
                 .frontend_i(frontend_i), .frontend_q(frontend_q),
                 .ddc_in_i(ddc_in_i), .ddc_in_q(ddc_in_q),
-                .ddc_out_sample(ddc_out_sample), .ddc_out_strobe(ddc_out_strobe),
+                .ddc_out_sample(ddc_out_sample), .ddc_out_strobe(ddc_out_strobe), .ddc_out_enable(ddc_out_enable),
                 .bb_sample(bb_sample), .bb_strobe(bb_strobe)
             );
             `endif
@@ -78,14 +80,15 @@ module dsp_rx_glue
             assign ddc_in_q = frontend_q;
             assign bb_sample = ddc_out_sample;
             assign bb_strobe = ddc_out_strobe;
+            assign ddc_out_enable = enable;
             `else
-            RX_DSP1_MODULE rx_dsp1_custom
+            `RX_DSP1_MODULE #(.WIDTH(WIDTH)) rx_dsp1_custom
             (
                 .clock(clock), .reset(reset), .clear(clear), .enable(enable),
                 .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
                 .frontend_i(frontend_i), .frontend_q(frontend_q),
                 .ddc_in_i(ddc_in_i), .ddc_in_q(ddc_in_q),
-                .ddc_out_sample(ddc_out_sample), .ddc_out_strobe(ddc_out_strobe),
+                .ddc_out_sample(ddc_out_sample), .ddc_out_strobe(ddc_out_strobe), .ddc_out_enable(ddc_out_enable),
                 .bb_sample(bb_sample), .bb_strobe(bb_strobe)
             );
             `endif

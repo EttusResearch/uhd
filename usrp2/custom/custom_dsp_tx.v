@@ -55,6 +55,7 @@ module custom_dsp_tx
     //strobed samples {I16,Q16} to the TX DUC chain
     output [31:0] duc_in_sample,
     input duc_in_strobe, //this is a backpressure signal
+    output duc_in_enable, //enables DUC module
 
     //strobbed baseband samples {I16,Q16} to this module
     input [31:0] bb_sample,
@@ -65,5 +66,6 @@ module custom_dsp_tx
     assign frontend_q = duc_out_q;
     assign duc_in_sample = bb_sample;
     assign bb_strobe = duc_in_strobe;
+    assign duc_in_enable = enable;
 
 endmodule //custom_dsp_tx

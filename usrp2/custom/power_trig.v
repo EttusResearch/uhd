@@ -15,41 +15,56 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-//CUSTOMIZE ME!
+// This a power trigger module implemented on top of the custom dsp template.
+// Power triggering is implemented after the existing DDC chain.
+// Triggering is controlled via user settings registers.
 
-//The following module effects the IO of the DDC chain.
-//By default, this entire module is a simple pass-through.
-
-//To implement DSP logic before the DDC:
-//Implement custom DSP between frontend and ddc input.
-
-//To implement DSP logic after the DDC:
-//Implement custom DSP between ddc output and baseband.
-
-//To bypass the DDC with custom logic:
-//Implement custom DSP between frontend and baseband.
+// Register 0:
+//  threshold for power trigger
+//  32 bit unsigned fixed-point number of some arbitrary scaling
 
 module power_trig
-  #(parameter BASE=0)
-   (//control signals
-    input clk, input reset, input enable,
+#(
+    //frontend bus width
+    parameter WIDTH = 24,
+    parameter BASE = 0
+)
+(
+    //control signals
+    input clock, //dsp clock
+    input reset, //active high synchronous reset
+    input clear, //active high on packet control init
+    input enable, //active high when streaming enabled
 
-    // Setting Bus
+    //user settings bus, controlled through user setting regs API
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
 
-    input run,
-    
+    //full rate inputs directly from the RX frontend
+    input [WIDTH-1:0] frontend_i,
+    input [WIDTH-1:0] frontend_q,
+
+    //full rate outputs directly to the DDC chain
+    output [WIDTH-1:0] ddc_in_i,
+    output [WIDTH-1:0] ddc_in_q,
+
     //strobed samples {I16,Q16} from the RX DDC chain
     input [31:0] ddc_out_sample,
     input ddc_out_strobe, //high on valid sample
+    output ddc_out_enable, //enables DDC module
 
-    //strobed baseband samples {I16,Q16} from this module
+    //strobbed baseband samples {I16,Q16} from this module
     output [31:0] bb_sample,
-    output bb_strobe, //high on valid sample
+    output bb_strobe //high on valid sample
+);
 
-    //debug output (optional)
-    output [31:0] debug
-    );
+    //leave frontend tied to existing ddc chain
+    assign ddc_in_i = frontend_i;
+    assign ddc_in_q = frontend_q;
+
+    //ddc enable remains tied to global enable
+    assign ddc_out_enable = enable;
+
+    //below we implement a power trigger between baseband samples and ddc output...
 
    reg [8:0] 	  wr_addr;
    wire [8:0] 	  rd_addr;
@@ -69,23 +84,23 @@ module power_trig
      (.clka(clk),.ena(1),.wea(ddc_out_strobe),.addra(wr_addr),.dia(ddc_out_sample),.doa(),
       .clkb(clk),.enb(ddc_out_strobe),.web(1'b0),.addrb(rd_addr),.dib(32'hFFFF),.dob(delayed_sample));
 
-   always @(posedge clk)
-     if(reset | ~run)
+   always @(posedge clock)
+     if(reset | ~enable)
        wr_addr <= 0;
      else
        if(ddc_out_strobe)
 	 wr_addr <= wr_addr + 1;
 
-   always @(posedge clk)
-     if(reset | ~run)
+   always @(posedge clock)
+     if(reset | ~enable)
        triggerable <= 0;
      else if(wr_addr == 9'h1FF)  // Wait till we're nearly full
        triggerable <= 1;
    
 
    reg 			      stb_d1, stb_d2;
-   always @(posedge clk) stb_d1 <= ddc_out_strobe;
-   always @(posedge clk) stb_d2 <= stb_d1;
+   always @(posedge clock) stb_d1 <= ddc_out_strobe;
+   always @(posedge clock) stb_d2 <= stb_d1;
    
    assign bb_sample = delayed_sample;
    assign bb_strobe = stb_d1 & triggered;
@@ -96,16 +111,16 @@ module power_trig
    wire [35:0] 		      prod;
    reg [31:0] 		      sum;
    
-   MULT18X18S mult (.P(prod), .A(mult_in), .B(mult_in), .C(clk), .CE(ddc_out_strobe | stb_d1), .R(reset) );
+   MULT18X18S mult (.P(prod), .A(mult_in), .B(mult_in), .C(clock), .CE(ddc_out_strobe | stb_d1), .R(reset) );
 
-   always @(posedge clk)
+   always @(posedge clock)
      if(stb_d1)
        sum <= prod[35:4];
      else if(stb_d2)
        sum <= sum + prod[35:4];
 
-   always @(posedge clk)
-     if(reset | ~run | ~triggerable)
+   always @(posedge clock)
+     if(reset | ~enable | ~triggerable)
        triggered <= 0;
      else if(trigger)
        triggered <= 1;

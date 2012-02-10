@@ -65,7 +65,7 @@ module vita_rx_engine_glue
               .access_skip_read(access_skip_read), .access_adr(access_adr), .access_len(access_len), 
               .access_dat_i(access_dat_i), .access_dat_o(access_dat_o));
             `else
-            RX_ENG0_MODULE #(.BUF_SIZE(BUF_SIZE)) rx_eng0_custom
+            `RX_ENG0_MODULE #(.BUF_SIZE(BUF_SIZE)) rx_eng0_custom
              (.clock(clock),.reset(reset),.clear(clear),
               .set_stb(set_stb_user), .set_addr(set_addr_user), .set_data(set_data_user),
               .access_we(access_we), .access_stb(access_stb), .access_ok(access_ok), .access_done(access_done), 
@@ -82,7 +82,7 @@ module vita_rx_engine_glue
               .access_skip_read(access_skip_read), .access_adr(access_adr), .access_len(access_len), 
               .access_dat_i(access_dat_i), .access_dat_o(access_dat_o));
             `else
-            RX_ENG1_MODULE #(.BUF_SIZE(BUF_SIZE)) rx_eng1_custom
+            `RX_ENG1_MODULE #(.BUF_SIZE(BUF_SIZE)) rx_eng1_custom
              (.clock(clock),.reset(reset),.clear(clear),
               .set_stb(set_stb_user), .set_addr(set_addr_user), .set_data(set_data_user),
               .access_we(access_we), .access_stb(access_stb), .access_ok(access_ok), .access_done(access_done), 

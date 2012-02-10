@@ -55,6 +55,7 @@ module custom_dsp_rx
     //strobed samples {I16,Q16} from the RX DDC chain
     input [31:0] ddc_out_sample,
     input ddc_out_strobe, //high on valid sample
+    output ddc_out_enable, //enables DDC module
 
     //strobbed baseband samples {I16,Q16} from this module
     output [31:0] bb_sample,
@@ -65,5 +66,6 @@ module custom_dsp_rx
     assign ddc_in_q = frontend_q;
     assign bb_sample = ddc_out_sample;
     assign bb_strobe = ddc_out_strobe;
+    assign ddc_out_enable = enable;
 
 endmodule //custom_dsp_rx

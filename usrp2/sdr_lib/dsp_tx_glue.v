@@ -44,6 +44,7 @@ module dsp_tx_glue
     //strobed samples {I16,Q16} to the TX DUC chain
     output [31:0] duc_in_sample,
     input duc_in_strobe, //this is a backpressure signal
+    output duc_in_enable, //enables DUC module
 
     //strobbed baseband samples {I16,Q16} to this module
     input [31:0] bb_sample,
@@ -60,14 +61,15 @@ module dsp_tx_glue
             assign frontend_q = duc_out_q;
             assign duc_in_sample = bb_sample;
             assign bb_strobe = duc_in_strobe;
+            assign duc_in_enable = enable;
             `else
-            TX_DSP0_MODULE tx_dsp0_custom
+            `TX_DSP0_MODULE #(.WIDTH(WIDTH)) tx_dsp0_custom
             (
                 .clock(clock), .reset(reset), .clear(clear), .enable(enable),
                 .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
                 .frontend_i(frontend_i), .frontend_q(frontend_q),
                 .duc_out_i(duc_out_i), .duc_out_q(duc_out_q),
-                .duc_in_sample(duc_in_sample), .duc_in_strobe(duc_in_strobe),
+                .duc_in_sample(duc_in_sample), .duc_in_strobe(duc_in_strobe), .duc_in_enable(duc_in_enable),
                 .bb_sample(bb_sample), .bb_strobe(bb_strobe)
             );
             `endif
@@ -78,14 +80,15 @@ module dsp_tx_glue
             assign frontend_q = duc_out_q;
             assign duc_in_sample = bb_sample;
             assign bb_strobe = duc_in_strobe;
+            assign duc_in_enable = enable;
             `else
-            TX_DSP1_MODULE tx_dsp1_custom
+            `TX_DSP1_MODULE #(.WIDTH(WIDTH)) tx_dsp1_custom
             (
                 .clock(clock), .reset(reset), .clear(clear), .enable(enable),
                 .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
                 .frontend_i(frontend_i), .frontend_q(frontend_q),
                 .duc_out_i(duc_out_i), .duc_out_q(duc_out_q),
-                .duc_in_sample(duc_in_sample), .duc_in_strobe(duc_in_strobe),
+                .duc_in_sample(duc_in_sample), .duc_in_strobe(duc_in_strobe), .duc_in_enable(duc_in_enable),
                 .bb_sample(bb_sample), .bb_strobe(bb_strobe)
             );
             `endif

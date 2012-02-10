@@ -18,14 +18,18 @@
 //! The USRP digital up-conversion chain
 
 module duc_chain
-  #(parameter BASE = 0, parameter DSPNO = 0)
+  #(
+    parameter BASE = 0,
+    parameter DSPNO = 0,
+    parameter WIDTH = 24
+  )
   (input clk, input rst, input clr,
    input set_stb, input [7:0] set_addr, input [31:0] set_data,
    input set_stb_user, input [7:0] set_addr_user, input [31:0] set_data_user,
 
    // To TX frontend
-   output [23:0] tx_fe_i,
-   output [23:0] tx_fe_q,
+   output [WIDTH-1:0] tx_fe_i,
+   output [WIDTH-1:0] tx_fe_q,
 
    // From TX control
    input [31:0] sample,
@@ -34,6 +38,7 @@ module duc_chain
    output [31:0] debug
    );
 
+   wire duc_enb;
    wire [17:0] scale_factor;
    wire [31:0] phase_inc;
    reg [31:0]  phase;
@@ -61,13 +66,13 @@ module duc_chain
    reg 	       strobe_hb2 = 1;
    
    cic_strober #(.WIDTH(8))
-     cic_strober(.clock(clk),.reset(rst),.enable(run & ~rate_change),.rate(interp_rate),
+     cic_strober(.clock(clk),.reset(rst),.enable(duc_enb & ~rate_change),.rate(interp_rate),
 		 .strobe_fast(1),.strobe_slow(strobe_cic_pre) );
    cic_strober #(.WIDTH(2))
-     hb2_strober(.clock(clk),.reset(rst),.enable(run & ~rate_change),.rate(enable_hb2 ? 2 : 1),
+     hb2_strober(.clock(clk),.reset(rst),.enable(duc_enb & ~rate_change),.rate(enable_hb2 ? 2 : 1),
 		 .strobe_fast(strobe_cic_pre),.strobe_slow(strobe_hb2_pre) );
    cic_strober #(.WIDTH(2))
-     hb1_strober(.clock(clk),.reset(rst),.enable(run & ~rate_change),.rate(enable_hb1 ? 2 : 1),
+     hb1_strober(.clock(clk),.reset(rst),.enable(duc_enb & ~rate_change),.rate(enable_hb1 ? 2 : 1),
 		 .strobe_fast(strobe_hb2_pre),.strobe_slow(strobe_hb1_pre) );
    
    always @(posedge clk) strobe_hb1 <= strobe_hb1_pre;
@@ -78,7 +83,7 @@ module duc_chain
    always @(posedge clk)
      if(rst)
        phase <= 0;
-     else if(~run)
+     else if(~duc_enb)
        phase <= 0;
      else
        phase <= phase + phase_inc;
@@ -96,9 +101,9 @@ module duc_chain
    // Note that max CIC rate is 128, which would give an overflow on cpo if enable_hb2 is true,
    //   but the default case inside hb_interp handles this
    
-   hb_interp #(.IWIDTH(18),.OWIDTH(18),.ACCWIDTH(24)) hb_interp_i
+   hb_interp #(.IWIDTH(18),.OWIDTH(18),.ACCWIDTH(WIDTH)) hb_interp_i
      (.clk(clk),.rst(rst),.bypass(~enable_hb1),.cpo(cpo),.stb_in(strobe_hb1),.data_in({bb_i, 2'b0}),.stb_out(strobe_hb2),.data_out(hb1_i));
-   hb_interp #(.IWIDTH(18),.OWIDTH(18),.ACCWIDTH(24)) hb_interp_q
+   hb_interp #(.IWIDTH(18),.OWIDTH(18),.ACCWIDTH(WIDTH)) hb_interp_q
      (.clk(clk),.rst(rst),.bypass(~enable_hb1),.cpo(cpo),.stb_in(strobe_hb1),.data_in({bb_q, 2'b0}),.stb_out(strobe_hb2),.data_out(hb1_q));
    
    small_hb_int #(.WIDTH(18)) small_hb_interp_i
@@ -109,22 +114,22 @@ module duc_chain
       .output_rate(interp_rate),.stb_out(strobe_cic),.data_out(hb2_q));
    
    cic_interp  #(.bw(18),.N(4),.log2_of_max_rate(7))
-     cic_interp_i(.clock(clk),.reset(rst),.enable(run & ~rate_change),.rate(interp_rate),
+     cic_interp_i(.clock(clk),.reset(rst),.enable(duc_enb & ~rate_change),.rate(interp_rate),
 		  .strobe_in(strobe_cic),.strobe_out(1),
 		  .signal_in(hb2_i),.signal_out(i_interp));
    
    cic_interp  #(.bw(18),.N(4),.log2_of_max_rate(7))
-     cic_interp_q(.clock(clk),.reset(rst),.enable(run & ~rate_change),.rate(interp_rate),
+     cic_interp_q(.clock(clk),.reset(rst),.enable(duc_enb & ~rate_change),.rate(interp_rate),
 		  .strobe_in(strobe_cic),.strobe_out(1),
 		  .signal_in(hb2_q),.signal_out(q_interp));
 
-   localparam  cwidth = 24;  // was 18
+   localparam  cwidth = WIDTH;  // was 18
    localparam  zwidth = 24;  // was 16
 
    wire [cwidth-1:0] da_c, db_c;
    
    cordic_z24 #(.bitwidth(cwidth))
-     cordic(.clock(clk), .reset(rst), .enable(run),
+     cordic(.clock(clk), .reset(rst), .enable(duc_enb),
 	    .xi({i_interp,{(cwidth-18){1'b0}}}),.yi({q_interp,{(cwidth-18){1'b0}}}),
 	    .zi(phase[31:32-zwidth]),
 	    .xo(da_c),.yo(db_c),.zo() );
@@ -147,12 +152,12 @@ module duc_chain
       .R(rst)     // Synchronous reset input
       );
 
-   dsp_tx_glue #(.DSPNO(DSPNO)) dsp_tx_glue(
+   dsp_tx_glue #(.DSPNO(DSPNO), .WIDTH(WIDTH)) dsp_tx_glue(
     .clock(clk), .reset(rst), .clear(clr), .enable(run),
     .set_stb(set_stb_user), .set_addr(set_addr_user), .set_data(set_data_user),
     .frontend_i(tx_fe_i), .frontend_q(tx_fe_q),
-    .duc_out_i(prod_i[33:10]), .duc_out_q(prod_q[33:10]),
-    .duc_in_sample({bb_i, bb_q}), .duc_in_strobe(strobe_hb1),
+    .duc_out_i(prod_i[33:34-WIDTH]), .duc_out_q(prod_q[33:34-WIDTH]),
+    .duc_in_sample({bb_i, bb_q}), .duc_in_strobe(strobe_hb1), .duc_in_enable(duc_enb),
     .bb_sample(sample), .bb_strobe(strobe));
 
    assign      debug = {strobe_cic, strobe_hb1, strobe_hb2,run};
