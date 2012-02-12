@@ -103,8 +103,8 @@ DECLARE_CONVERTER($(cpu_type), $(width), sc16_item16_usrp1, 1, PRIORITY_GENERAL)
 
     for (size_t i = 0, j = 0; i < nsamps; i++){
         #for $w in range($width)
-        output[j++] = $(to_wire)(boost::int16_t(input$(w)[i].real()$(do_scale)));
-        output[j++] = $(to_wire)(boost::int16_t(input$(w)[i].imag()$(do_scale)));
+        output[j++] = $(to_wire)(boost::uint16_t(boost::int16_t(input$(w)[i].real()$(do_scale))));
+        output[j++] = $(to_wire)(boost::uint16_t(boost::int16_t(input$(w)[i].imag()$(do_scale))));
         #end for
     }
 }
