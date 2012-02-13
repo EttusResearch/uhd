@@ -193,7 +193,8 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
     this->send_reg(0x0, 0x5);
 
     //set defaults for LO, gains, and filter bandwidth
-    _bandwidth = 33e6;
+    double codec_rate = this->get_iface()->get_codec_rate(dboard_iface::UNIT_RX);
+    _bandwidth = 0.8*codec_rate/2.0; // default to anti-alias at different codec_rate
 
     ////////////////////////////////////////////////////////////////////
     // Register properties
