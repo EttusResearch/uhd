@@ -39,6 +39,17 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 
 static const double CTRL_RECV_TIMEOUT = 1.0;
+static const size_t CTRL_RECV_RETRIES = 3;
+
+//custom timeout error for retry logic to catch/retry
+struct timeout_error : uhd::runtime_error
+{
+    timeout_error(const std::string &what):
+        uhd::runtime_error(what)
+    {
+        //NOP
+    }
+};
 
 static const boost::uint32_t MIN_PROTO_COMPAT_SPI = 7;
 static const boost::uint32_t MIN_PROTO_COMPAT_I2C = 7;
@@ -264,6 +275,25 @@ public:
     ){
         boost::mutex::scoped_lock lock(_ctrl_mutex);
 
+        for (size_t i = 0; i < CTRL_RECV_RETRIES; i++){
+            try{
+                return ctrl_send_and_recv_internal(out_data, lo, hi, CTRL_RECV_TIMEOUT/CTRL_RECV_RETRIES);
+            }
+            catch(const timeout_error &e){
+                UHD_MSG(error)
+                    << "Control packet attempt " << i
+                    << ", sequence number " << _ctrl_seq_num
+                    << ":\n" << e.what() << std::endl;
+            }
+        }
+        throw uhd::runtime_error("link dead: timeout waiting for control packet ACK");
+    }
+
+    usrp2_ctrl_data_t ctrl_send_and_recv_internal(
+        const usrp2_ctrl_data_t &out_data,
+        boost::uint32_t lo, boost::uint32_t hi,
+        const double timeout
+    ){
         //fill in the seq number and send
         usrp2_ctrl_data_t out_copy = out_data;
         out_copy.proto_ver = htonl(_protocol_compat);
@@ -274,7 +304,7 @@ public:
         boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
         const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
         while(true){
-            size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), CTRL_RECV_TIMEOUT);
+            size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), timeout);
             boost::uint32_t compat = ntohl(ctrl_data_in->proto_ver);
             if(len >= sizeof(boost::uint32_t) and (hi < compat or lo > compat)){
                 throw uhd::runtime_error(str(boost::format(
@@ -290,7 +320,7 @@ public:
             if (len == 0) break; //timeout
             //didnt get seq or bad packet, continue looking...
         }
-        throw uhd::runtime_error("no control response");
+        throw timeout_error("no control response, possible packet loss");
     }
 
     rev_type get_rev(void){
