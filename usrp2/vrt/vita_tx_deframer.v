@@ -85,7 +85,6 @@ module vita_tx_deframer
    localparam VITA_TICS 	 = 6;
    localparam VITA_TICS2 	 = 7;
    localparam VITA_PAYLOAD 	 = 8;
-   localparam VITA_STORE         = 9;
    localparam VITA_TRAILER 	 = 10;
    localparam VITA_DUMP          = 11;
    
@@ -205,15 +204,13 @@ module vita_tx_deframer
 	   VITA_DUMP :
 	     if(eof)
 	       vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
-	   VITA_STORE :
-	     ;
 	   default :
 	     vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
 	 endcase // case (vita_state)
 
      end //valid read
 
-   assign line_done = (vector_phase == numchan);
+   assign line_done = (MAXCHAN == 1)? 1 : (vector_phase == numchan);
    
    wire [FIFOWIDTH-1:0] fifo_i;
    reg [63:0] 		      send_time;
