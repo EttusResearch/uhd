@@ -139,6 +139,15 @@ public:
         _ctrl_transport = ctrl_transport;
     }
 
+    void usrp_fx2_reset(void){
+        unsigned char reset_y = 1;
+        unsigned char reset_n = 0;
+        usrp_control_write(FX2_FIRMWARE_LOAD, 0xe600, 0, &reset_y, 1);
+        usrp_control_write(FX2_FIRMWARE_LOAD, 0xe600, 0, &reset_n, 1);
+        //wait for things to settle
+        boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
+    }
+
     void usrp_load_firmware(std::string filestring, bool force)
     {
         const char *filename = filestring.c_str();

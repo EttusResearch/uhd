@@ -150,6 +150,10 @@ UHD_STATIC_BLOCK(register_b100_device){
  * Structors
  **********************************************************************/
 b100_impl::b100_impl(const device_addr_t &device_addr){
+    size_t initialization_count = 0;
+    b100_impl_constructor_begin:
+    initialization_count++;
+
     _tree = property_tree::make();
 
     //extract the FPGA path for the B100
@@ -205,6 +209,21 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     _fpga_ctrl = b100_ctrl::make(_ctrl_transport);
     _fpga_ctrl->poke32(B100_REG_GLOBAL_RESET, 0); //global fpga reset
+    //perform a test peek operation
+    try{
+        _fpga_ctrl->peek32(0);
+    }
+    //try reset once in the case of failure
+    catch(const uhd::exception &e){
+        if (initialization_count > 1) throw;
+        UHD_MSG(warning) <<
+            "The control endpoint was left in a bad state.\n"
+            "Attempting endpoint re-enumeration...\n" << std::endl;
+        _fpga_ctrl.reset();
+        _ctrl_transport.reset();
+        _fx2_ctrl->usrp_fx2_reset();
+        goto b100_impl_constructor_begin;
+    }
     this->check_fpga_compat(); //check after reset and making control
 
     ////////////////////////////////////////////////////////////////////

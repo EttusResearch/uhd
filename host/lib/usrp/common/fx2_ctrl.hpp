@@ -39,6 +39,9 @@ public:
     //! Call init after the fpga is loaded
     virtual void usrp_init(void) = 0;
 
+    //! For emergency situations
+    virtual void usrp_fx2_reset(void) = 0;
+
     /*!
      * Load firmware in Intel HEX Format onto device 
      * \param filename name of firmware file
