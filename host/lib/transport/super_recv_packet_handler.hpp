@@ -408,7 +408,7 @@ private:
 
             case PACKET_INLINE_MESSAGE:
                 std::swap(curr_info, next_info); //save progress from curr -> next
-                curr_info.metadata.has_time_spec = next_info[index].ifpi.has_tsi and next_info[index].ifpi.has_tsf;
+                curr_info.metadata.has_time_spec = next_info[index].ifpi.has_tsf;
                 curr_info.metadata.time_spec = next_info[index].time;
                 curr_info.metadata.more_fragments = false;
                 curr_info.metadata.fragment_offset = 0;
@@ -469,7 +469,7 @@ private:
         }
 
         //set the metadata from the buffer information at index zero
-        curr_info.metadata.has_time_spec = curr_info[0].ifpi.has_tsi and curr_info[0].ifpi.has_tsf;
+        curr_info.metadata.has_time_spec = curr_info[0].ifpi.has_tsf;
         curr_info.metadata.time_spec = curr_info[0].time;
         curr_info.metadata.more_fragments = false;
         curr_info.metadata.fragment_offset = 0;
