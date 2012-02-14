@@ -72,8 +72,11 @@ time_spec_t time_spec_t::get_system_time(void){
  * Time spec constructors
  **********************************************************************/
 #define time_spec_init(full, frac) { \
-    _full_secs = full + time_t(frac); \
-    _frac_secs = frac - time_t(frac); \
+    const time_t _full = time_t(full); \
+    const double _frac = double(frac); \
+    const int _frac_int = int(_frac); \
+    _full_secs = _full + _frac_int; \
+    _frac_secs = _frac - _frac_int; \
     if (_frac_secs < 0) {\
         _full_secs -= 1; \
         _frac_secs += 1; \
@@ -115,15 +118,7 @@ long long time_spec_t::to_ticks(double tick_rate) const{
 }
 
 double time_spec_t::get_real_secs(void) const{
-    return this->_full_secs + this->_frac_secs;
-}
-
-time_t time_spec_t::get_full_secs(void) const{
-    return this->_full_secs;
-}
-
-double time_spec_t::get_frac_secs(void) const{
-    return this->_frac_secs;
+    return this->get_full_secs() + this->get_frac_secs();
 }
 
 /***********************************************************************
@@ -131,16 +126,16 @@ double time_spec_t::get_frac_secs(void) const{
  **********************************************************************/
 time_spec_t &time_spec_t::operator+=(const time_spec_t &rhs){
     time_spec_init(
-        this->_full_secs + rhs.get_full_secs(),
-        this->_frac_secs + rhs.get_frac_secs()
+        this->get_full_secs() + rhs.get_full_secs(),
+        this->get_frac_secs() + rhs.get_frac_secs()
     );
     return *this;
 }
 
 time_spec_t &time_spec_t::operator-=(const time_spec_t &rhs){
     time_spec_init(
-        this->_full_secs - rhs.get_full_secs(),
-        this->_frac_secs - rhs.get_frac_secs()
+        this->get_full_secs() - rhs.get_full_secs(),
+        this->get_frac_secs() - rhs.get_frac_secs()
     );
     return *this;
 }

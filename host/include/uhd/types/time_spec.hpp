@@ -128,6 +128,14 @@ namespace uhd{
     //! Implement less_than_comparable interface
     UHD_API bool operator<(const time_spec_t &, const time_spec_t &);
 
+    UHD_INLINE time_t time_spec_t::get_full_secs(void) const{
+        return this->_full_secs;
+    }
+
+    UHD_INLINE double time_spec_t::get_frac_secs(void) const{
+        return this->_frac_secs;
+    }
+
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_TYPES_TIME_SPEC_HPP */
