@@ -116,6 +116,9 @@ public:
 
     //! enable/disable the tx path
     virtual void usrp_tx_enable(bool on) = 0;
+
+    //! reset the fpga
+    virtual void usrp_fpga_reset(bool on) = 0;
 };
 
 }} //namespace uhd::usrp

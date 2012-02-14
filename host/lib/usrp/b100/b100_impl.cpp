@@ -181,9 +181,9 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     //load FPGA image, gpif is disabled while loading
     this->enable_gpif(false);
     _fx2_ctrl->usrp_load_fpga(b100_fpga_image);
+    _fx2_ctrl->usrp_fpga_reset(false); //active low reset
+    _fx2_ctrl->usrp_fpga_reset(true);
     this->enable_gpif(true);
-    this->set_reset_fpga(1);
-    this->set_reset_fpga(0);
 
     //create the control transport
     device_addr_t ctrl_xport_args;
@@ -198,12 +198,12 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         3, 4, //interface, endpoint
         ctrl_xport_args
     );
+    while (_ctrl_transport->get_recv_buff(0.0)){} //flush ctrl xport
 
     ////////////////////////////////////////////////////////////////////
     // Initialize FPGA wishbone communication
     ////////////////////////////////////////////////////////////////////
     _fpga_ctrl = b100_ctrl::make(_ctrl_transport);
-    this->reset_gpif(6); //always reset first to ensure communication
     _fpga_ctrl->poke32(B100_REG_GLOBAL_RESET, 0); //global fpga reset
     this->check_fpga_compat(); //check after reset and making control
 
@@ -234,6 +234,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         ),
         B100_MAX_PKT_BYTE_LIMIT
     );
+    while (_data_transport->get_recv_buff(0.0)){} //flush data xport
 
     ////////////////////////////////////////////////////////////////////
     // Initialize the properties tree
@@ -515,20 +516,12 @@ void b100_impl::update_clock_source(const std::string &source){
 }
 
 ////////////////// some GPIF preparation related stuff /////////////////
-void b100_impl::reset_gpif(const boost::uint16_t ep) {
-    _fx2_ctrl->usrp_control_write(VRQ_RESET_GPIF, ep, ep, 0, 0);
-}
-
 void b100_impl::enable_gpif(const bool en) {
     _fx2_ctrl->usrp_control_write(VRQ_ENABLE_GPIF, en ? 1 : 0, 0, 0, 0);
 }
 
 void b100_impl::clear_fpga_fifo(void) {
     _fx2_ctrl->usrp_control_write(VRQ_CLEAR_FPGA_FIFO, 0, 0, 0, 0);
-}
-
-void b100_impl::set_reset_fpga(const bool en) {
-    _fx2_ctrl->usrp_control_write(VRQ_FPGA_SET_RESET, en ? 0 : 1, 0, 0, 0);
 }
 
 sensor_value_t b100_impl::get_ref_locked(void){
