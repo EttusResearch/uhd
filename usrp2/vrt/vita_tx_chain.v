@@ -49,27 +49,35 @@ module vita_tx_chain
    wire 		clear_seqnum;
    wire [31:0] 		current_seqnum;
 
-   wire clear;
+   wire clear, flush;
    assign clear_o = clear;
    assign underrun = error;
    assign message = error_code;
-   
-   setting_reg #(.my_addr(BASE+1)) sr
+
+   setting_reg #(.my_addr(BASE+0), .width(1)) sr
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(),.changed(clear));
+      .in(set_data),.out(flush),.changed(clear));
 
    setting_reg #(.my_addr(BASE+2), .at_reset(0)) sr_streamid
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(streamid),.changed(clear_seqnum));
+
+    //flush control - full rate vacuum of input until flush cleared
+    wire tx_dst_rdy_int, tx_src_rdy_int;
+    wire [35:0] tx_data_int;
+    valve36 flusher_valve
+    (.clk(clk), .reset(reset), .clear(clear & flush), .shutoff(flush),
+     .data_i(tx_data_i), .src_rdy_i(tx_src_rdy_i), .dst_rdy_o(tx_dst_rdy_o),
+     .data_o(tx_data_int), .src_rdy_o(tx_src_rdy_int), .dst_rdy_i(tx_dst_rdy_int));
 
    wire [35:0] tx_data_int1;
    wire tx_src_rdy_int1, tx_dst_rdy_int1;
 
     generate
     if (FIFOSIZE==0) begin
-        assign tx_data_int1 = tx_data_i;
-        assign tx_src_rdy_int1 = tx_src_rdy_i;
-        assign tx_dst_rdy_o = tx_dst_rdy_int1;
+        assign tx_data_int1 = tx_data_int;
+        assign tx_src_rdy_int1 = tx_src_rdy_int;
+        assign tx_dst_rdy_int = tx_dst_rdy_int1;
     end
     else begin
        wire [FIFOSIZE-1:0] access_adr, access_len;
@@ -84,7 +92,7 @@ module vita_tx_chain
           .access_skip_read(access_skip_read), .access_adr(access_adr), .access_len(access_len),
           .access_dat_i(dsp_to_buf), .access_dat_o(buf_to_dsp),
 
-          .data_i(tx_data_i), .src_rdy_i(tx_src_rdy_i), .dst_rdy_o(tx_dst_rdy_o),
+          .data_i(tx_data_int), .src_rdy_i(tx_src_rdy_int), .dst_rdy_o(tx_dst_rdy_int),
           .data_o(tx_data_int0), .src_rdy_o(tx_src_rdy_int0), .dst_rdy_i(tx_dst_rdy_int0));
 
        vita_tx_engine_glue #(.DSPNO(DSP_NUMBER), .MAIN_SETTINGS_BASE(BASE+1), .BUF_SIZE(FIFOSIZE), .HEADER_OFFSET(USE_TRANS_HEADER)) dspengine_tx
