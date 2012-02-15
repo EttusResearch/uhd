@@ -16,6 +16,7 @@
 //
 
 #include "validate_subdev_spec.hpp"
+#include "async_packet_handler.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include "usrp2_impl.hpp"
@@ -202,10 +203,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
 
                 //fill in the async metadata
                 async_metadata_t metadata;
-                metadata.channel = index;
-                metadata.has_time_spec = if_packet_info.has_tsf;
-                metadata.time_spec = time_spec_t::from_ticks(if_packet_info.tsf, tick_rate);
-                metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
+                load_metadata_from_buff(uhd::ntohx<boost::uint32_t>, metadata, if_packet_info, vrt_hdr, tick_rate, index);
 
                 //catch the flow control packets and react
                 if (metadata.event_code == 0){
@@ -216,17 +214,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 //else UHD_MSG(often) << "metadata.event_code " << metadata.event_code << std::endl;
                 async_msg_fifo.push_with_pop_on_full(metadata);
 
-                if (metadata.event_code &
-                    ( async_metadata_t::EVENT_CODE_UNDERFLOW
-                    | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
-                ) UHD_MSG(fastpath) << "U";
-                else if (metadata.event_code &
-                    ( async_metadata_t::EVENT_CODE_SEQ_ERROR
-                    | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
-                ) UHD_MSG(fastpath) << "S";
-                else if (metadata.event_code &
-                    async_metadata_t::EVENT_CODE_TIME_ERROR
-                ) UHD_MSG(fastpath) << "L";
+                standard_async_msg_prints(metadata);
             }
             else{
                 //TODO unknown received packet, may want to print error...

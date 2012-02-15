@@ -17,6 +17,7 @@
 
 #include "recv_packet_demuxer.hpp"
 #include "validate_subdev_spec.hpp"
+#include "async_packet_handler.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include "usrp_commands.h"
@@ -47,6 +48,7 @@ struct b100_impl::io_impl{
     zero_copy_if::sptr data_transport;
     bounded_buffer<async_metadata_t> async_msg_fifo;
     recv_packet_demuxer::sptr demuxer;
+    double tick_rate;
 };
 
 /***********************************************************************
@@ -81,24 +83,16 @@ void b100_impl::handle_async_message(managed_recv_buffer::sptr rbuf){
     }
 
     if (if_packet_info.sid == B100_TX_ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
+
         //fill in the async metadata
         async_metadata_t metadata;
-        metadata.channel = 0;
-        metadata.has_time_spec = if_packet_info.has_tsf;
-        metadata.time_spec = time_spec_t::from_ticks(if_packet_info.tsf, _clock_ctrl->get_fpga_clock_rate());
-        metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
+        load_metadata_from_buff(uhd::wtohx<boost::uint32_t>, metadata, if_packet_info, vrt_hdr, _io_impl->tick_rate);
+
+        //push the message onto the queue
         _io_impl->async_msg_fifo.push_with_pop_on_full(metadata);
-        if (metadata.event_code &
-            ( async_metadata_t::EVENT_CODE_UNDERFLOW
-            | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
-        ) UHD_MSG(fastpath) << "U";
-        else if (metadata.event_code &
-            ( async_metadata_t::EVENT_CODE_SEQ_ERROR
-            | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
-        ) UHD_MSG(fastpath) << "S";
-        else if (metadata.event_code &
-            async_metadata_t::EVENT_CODE_TIME_ERROR
-        ) UHD_MSG(fastpath) << "L";
+
+        //print some fastpath messages
+        standard_async_msg_prints(metadata);
     }
     else UHD_MSG(error) << "Unknown async packet" << std::endl;
 }
@@ -117,6 +111,8 @@ void b100_impl::update_rates(void){
 }
 
 void b100_impl::update_tick_rate(const double rate){
+    _io_impl->tick_rate = rate;
+
     //update the tick rate on all existing streamers -> thread safe
     for (size_t i = 0; i < _rx_streamers.size(); i++){
         boost::shared_ptr<sph::recv_packet_streamer> my_streamer =

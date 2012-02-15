@@ -17,6 +17,7 @@
 
 #include "recv_packet_demuxer.hpp"
 #include "validate_subdev_spec.hpp"
+#include "async_packet_handler.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include <linux/usrp_e.h> //ioctl structures and constants
@@ -123,26 +124,13 @@ void e100_impl::io_impl::handle_irq(void){
 
         //fill in the async metadata
         async_metadata_t metadata;
-        metadata.channel = 0;
-        metadata.has_time_spec = if_packet_info.has_tsf;
-        metadata.time_spec = time_spec_t::from_ticks(if_packet_info.tsf, tick_rate);
-        metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(data.buf, if_packet_info));
+        load_metadata_from_buff(uhd::wtohx<boost::uint32_t>, metadata, if_packet_info, data.buf, tick_rate);
 
         //push the message onto the queue
         async_msg_fifo.push_with_pop_on_full(metadata);
 
         //print some fastpath messages
-        if (metadata.event_code &
-            ( async_metadata_t::EVENT_CODE_UNDERFLOW
-            | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
-        ) UHD_MSG(fastpath) << "U";
-        else if (metadata.event_code &
-            ( async_metadata_t::EVENT_CODE_SEQ_ERROR
-            | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
-        ) UHD_MSG(fastpath) << "S";
-        else if (metadata.event_code &
-            async_metadata_t::EVENT_CODE_TIME_ERROR
-        ) UHD_MSG(fastpath) << "L";
+        standard_async_msg_prints(metadata);
     }
 
     //prepare for the next round
