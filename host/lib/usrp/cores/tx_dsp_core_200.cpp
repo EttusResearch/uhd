@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
+#include <boost/thread/thread.hpp> //sleep
 #include <algorithm>
 #include <cmath>
 
@@ -30,12 +31,12 @@
 #define REG_DSP_TX_SCALE_IQ      _dsp_base + 4
 #define REG_DSP_TX_INTERP        _dsp_base + 8
 
-#define REG_TX_CTRL_CLEAR           _ctrl_base + 4
+#define REG_TX_CTRL_CLEAR           _ctrl_base + 0
+#define REG_TX_CTRL_FORMAT          _ctrl_base + 4
 #define REG_TX_CTRL_REPORT_SID      _ctrl_base + 8
 #define REG_TX_CTRL_POLICY          _ctrl_base + 12
 #define REG_TX_CTRL_CYCLES_PER_UP   _ctrl_base + 16
 #define REG_TX_CTRL_PACKETS_PER_UP  _ctrl_base + 20
-#define REG_TX_CTRL_FORMAT          REG_TX_CTRL_CLEAR //re-use clear address
 
 #define FLAG_TX_CTRL_POLICY_WAIT          (0x1 << 0)
 #define FLAG_TX_CTRL_POLICY_NEXT_PACKET   (0x1 << 1)
@@ -69,7 +70,9 @@ public:
     }
 
     void clear(void){
-        _iface->poke32(REG_TX_CTRL_CLEAR, 1); //reset
+        _iface->poke32(REG_TX_CTRL_CLEAR, 1); //reset and flush technique
+        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+        _iface->poke32(REG_TX_CTRL_CLEAR, 0);
         _iface->poke32(REG_TX_CTRL_REPORT_SID, _sid);
     }
 
