@@ -112,6 +112,7 @@ class usb_zero_copy_wrapper : public usb_zero_copy{
 public:
     usb_zero_copy_wrapper(sptr usb_zc, const size_t frame_boundary):
         _internal_zc(usb_zc),
+        _frame_boundary(frame_boundary),
         _available_recv_buffs(this->get_num_recv_frames()),
         _mrb_pool(this->get_num_recv_frames(), usb_zero_copy_wrapper_mrb(_available_recv_buffs)),
         _the_only_msb(usb_zero_copy_wrapper_msb(usb_zc, frame_boundary))
@@ -157,7 +158,7 @@ public:
     }
 
     size_t get_recv_frame_size(void) const{
-        return _internal_zc->get_recv_frame_size();
+        return std::min(_frame_boundary, _internal_zc->get_recv_frame_size());
     }
 
     managed_send_buffer::sptr get_send_buff(double timeout){
@@ -169,11 +170,12 @@ public:
     }
 
     size_t get_send_frame_size(void) const{
-        return _internal_zc->get_send_frame_size();
+        return std::min(_frame_boundary, _internal_zc->get_send_frame_size());
     }
 
 private:
     sptr _internal_zc;
+    size_t _frame_boundary;
     bounded_buffer<usb_zero_copy_wrapper_mrb *> _available_recv_buffs;
     std::vector<usb_zero_copy_wrapper_mrb> _mrb_pool;
     usb_zero_copy_wrapper_msb _the_only_msb;
