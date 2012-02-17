@@ -44,13 +44,14 @@ module dspengine_8to16
    localparam DSP_IDLE_RD = 1;
    localparam DSP_PARSE_HEADER = 2;
    localparam DSP_READ = 3;
-   localparam DSP_WRITE_1 = 4;
-   localparam DSP_WRITE_0 = 5;
-   localparam DSP_READ_TRAILER = 6;
-   localparam DSP_WRITE_TRAILER = 7;
-   localparam DSP_WRITE_HEADER = 8;
-   localparam DSP_DONE = 9;
-
+   localparam DSP_READ_WAIT = 4;
+   localparam DSP_WRITE_1 = 5;
+   localparam DSP_WRITE_0 = 6;
+   localparam DSP_READ_TRAILER = 7;
+   localparam DSP_WRITE_TRAILER = 8;
+   localparam DSP_WRITE_HEADER = 9;
+   localparam DSP_DONE = 10;
+   
    // Parse VITA header
    wire 	 is_if_data = (access_dat_i[31:29] == 3'b000);
    wire 	 has_streamid = access_dat_i[28];
@@ -74,13 +75,13 @@ module dspengine_8to16
    wire [15:0] 	      data_in_lenx2 = {data_in_len[14:0], 1'b0} - is_odd;
 
    reg [7:0] 	      i8_0, q8_0;
-   wire [7:0] 	      i8_1 = access_dat_i[15:8];
-   wire [7:0] 	      q8_1 = access_dat_i[7:0];
+   wire [7:0] 	      i8_1 = access_dat_i[31:24];
+   wire [7:0] 	      q8_1 = access_dat_i[23:16];
    reg 		      skip;
    
 
    always @(posedge clk)
-     { i8_0, q8_0 } <= access_dat_i[31:16];
+     { i8_0, q8_0 } <= access_dat_i[15:0];
    
    always @(posedge clk)
      if(reset | clear)
@@ -137,23 +138,26 @@ module dspengine_8to16
 
 	 DSP_READ :
 	   begin
-	      dsp_state <= DSP_WRITE_1;
 	      read_adr <= read_adr - 1;
+	      if(odd)
+		dsp_state <= DSP_READ_WAIT;
+	      else
+		dsp_state <= DSP_WRITE_1;
+	      odd <= 0;
 	   end
 
+	 DSP_READ_WAIT :
+	   dsp_state <= DSP_WRITE_0;
+	 
 	 DSP_WRITE_1 :
 	   begin
 	      write_adr <= write_adr - 1;
-	      odd <= 0;
 	      if(write_adr == (hdr_length_reg+HEADER_OFFSET))
 		begin
 		   write_adr <= HEADER_OFFSET;
 		   dsp_state <= DSP_WRITE_HEADER;
 		end
-	      else if(odd)
-		dsp_state <= DSP_READ;
-	      else
-		dsp_state <= DSP_WRITE_0;
+	      dsp_state <= DSP_WRITE_0;
 	   end
 
 	 DSP_WRITE_0 :
