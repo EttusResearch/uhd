@@ -102,8 +102,7 @@ module dspengine_8to16
 	 DSP_PARSE_HEADER :
 	   begin
 	      has_trailer_reg <= has_trailer;
-	      new_header[31:16] <= access_dat_i[31:16];
-	      new_header[15:0] <= access_len-HEADER_OFFSET;
+	      new_header[31:0] <= access_dat_i[31:0];
 	      hdr_length_reg <= hdr_length;
 	      if(~is_if_data | ~convert | ~has_trailer)
 		// ~convert is valid (16 bit mode) but both ~trailer and ~is_if_data are both
@@ -111,10 +110,10 @@ module dspengine_8to16
 		dsp_state <= DSP_WRITE_HEADER;  
 	      else
 		begin
-		   read_adr <= access_len - 1; // point to trailer
+		   read_adr <= access_dat_i[15:0] + HEADER_OFFSET - 1; // point to trailer
 		   dsp_state <= DSP_READ_TRAILER;
 		   wait_for_trailer <= 0;
-		   data_in_len <= access_len - hdr_length - HEADER_OFFSET - 1 /*trailer*/;
+		   data_in_len <= access_dat_i[15:0] - hdr_length - 1 /*trailer*/;
 		end
 	   end
 	 
