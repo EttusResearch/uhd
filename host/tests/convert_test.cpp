@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,8 +31,9 @@ typedef std::complex<boost::int16_t> sc16_t;
 typedef std::complex<float> fc32_t;
 typedef std::complex<double> fc64_t;
 
-#define MY_CHECK_CLOSE(a, b, f) if ((std::abs(a) > (f))) \
-    BOOST_CHECK_CLOSE_FRACTION(a, b, f)
+#define MY_CHECK_CLOSE(a, b, f) { \
+    BOOST_CHECK_MESSAGE(std::abs((a)-(b)) < f, "\n\t" << #a << " (" << (a) << ") error " << #b << " (" << (b) << ")"); \
+}
 
 /***********************************************************************
  * Loopback runner:
@@ -67,13 +68,13 @@ template <typename Range> static void loopback(
  * Test short conversion
  **********************************************************************/
 static void test_convert_types_sc16(
-    size_t nsamps, convert::id_type &id
+    size_t nsamps, convert::id_type &id, const int extra_div = 1
 ){
     //fill the input samples
     std::vector<sc16_t> input(nsamps), output(nsamps);
     BOOST_FOREACH(sc16_t &in, input) in = sc16_t(
-        std::rand()-(RAND_MAX/2),
-        std::rand()-(RAND_MAX/2)
+        short(((std::rand()/double(RAND_MAX/2)) - 1)*32767/extra_div),
+        short(((std::rand()/double(RAND_MAX/2)) - 1)*32767/extra_div)
     );
 
     //run the loopback and test
@@ -116,15 +117,15 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16){
  **********************************************************************/
 template <typename data_type>
 static void test_convert_types_for_floats(
-    size_t nsamps, convert::id_type &id
+    size_t nsamps, convert::id_type &id, const double extra_scale = 1.0
 ){
     typedef typename data_type::value_type value_type;
 
     //fill the input samples
     std::vector<data_type> input(nsamps), output(nsamps);
     BOOST_FOREACH(data_type &in, input) in = data_type(
-        (std::rand()/value_type(RAND_MAX/2)) - 1,
-        (std::rand()/value_type(RAND_MAX/2)) - 1
+        ((std::rand()/value_type(RAND_MAX/2)) - 1)*float(extra_scale),
+        ((std::rand()/value_type(RAND_MAX/2)) - 1)*float(extra_scale)
     );
 
     //run the loopback and test
@@ -134,8 +135,8 @@ static void test_convert_types_for_floats(
     std::swap(out_id.num_inputs, out_id.num_outputs);
     loopback(nsamps, in_id, out_id, input, output);
     for (size_t i = 0; i < nsamps; i++){
-        MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(0.01));
-        MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(0.01));
+        MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(1./32767));
+        MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(1./32767));
     }
 }
 
@@ -278,5 +279,65 @@ BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
     for (size_t i = 0; i < nsamps; i++){
         MY_CHECK_CLOSE(input[i].real()/float(32767), output[i].real(), float(0.01));
         MY_CHECK_CLOSE(input[i].imag()/float(32767), output[i].imag(), float(0.01));
+    }
+}
+
+/***********************************************************************
+ * Test sc8 conversions
+ **********************************************************************/
+BOOST_AUTO_TEST_CASE(test_convert_types_fc64_and_sc8){
+    convert::id_type id;
+    id.input_format = "fc64";
+    id.num_inputs = 1;
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    id.output_format = "sc8_item32_le";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_for_floats<fc64_t>(nsamps, id, 1./256);
+    }
+
+    //try various lengths to test edge cases
+    id.output_format = "sc8_item32_be";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_for_floats<fc64_t>(nsamps, id, 1./256);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_sc8){
+    convert::id_type id;
+    id.input_format = "fc32";
+    id.num_inputs = 1;
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    id.output_format = "sc8_item32_le";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_for_floats<fc32_t>(nsamps, id, 1./256);
+    }
+
+    //try various lengths to test edge cases
+    id.output_format = "sc8_item32_be";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_for_floats<fc32_t>(nsamps, id, 1./256);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_sc16_and_sc8){
+    convert::id_type id;
+    id.input_format = "sc16";
+    id.num_inputs = 1;
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    id.output_format = "sc8_item32_le";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_sc16(nsamps, id, 256);
+    }
+
+    //try various lengths to test edge cases
+    id.output_format = "sc8_item32_be";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_sc16(nsamps, id, 256);
     }
 }

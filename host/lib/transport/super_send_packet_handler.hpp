@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -134,11 +134,10 @@ public:
         vrt::if_packet_info_t if_packet_info;
         if_packet_info.has_sid = false;
         if_packet_info.has_cid = false;
-        if_packet_info.has_tlr = false;
-        if_packet_info.has_tsi = metadata.has_time_spec;
+        if_packet_info.has_tlr = true;
+        if_packet_info.has_tsi = false;
         if_packet_info.has_tsf = metadata.has_time_spec;
-        if_packet_info.tsi     = boost::uint32_t(metadata.time_spec.get_full_secs());
-        if_packet_info.tsf     = boost::uint64_t(metadata.time_spec.get_tick_count(_tick_rate));
+        if_packet_info.tsf     = metadata.time_spec.to_ticks(_tick_rate);
         if_packet_info.sob     = metadata.start_of_burst;
         if_packet_info.eob     = metadata.end_of_burst;
 
@@ -174,9 +173,8 @@ public:
             if (num_samps_sent == 0) return total_num_samps_sent;
 
             //setup metadata for the next fragment
-            const time_spec_t time_spec = metadata.time_spec + time_spec_t(0, total_num_samps_sent, _samp_rate);
-            if_packet_info.tsi = boost::uint32_t(time_spec.get_full_secs());
-            if_packet_info.tsf = boost::uint64_t(time_spec.get_tick_count(_tick_rate));
+            const time_spec_t time_spec = metadata.time_spec + time_spec_t::from_ticks(total_num_samps_sent, _samp_rate);
+            if_packet_info.tsf = time_spec.to_ticks(_tick_rate);
             if_packet_info.sob = false;
 
         }

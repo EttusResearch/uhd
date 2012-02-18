@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,24 +16,13 @@
 //
 
 #include <uhd/types/time_spec.hpp>
+#include <inttypes.h> //imaxdiv, intmax_t
 
 using namespace uhd;
 
 /***********************************************************************
  * Time spec system time
  **********************************************************************/
-
-/*!
- * Creates a time spec from system counts:
- * TODO make part of API as a static factory function
- * The counts type is 64 bits and will overflow the ticks type of long.
- * Therefore, divmod the counts into seconds + sub-second counts first.
- */
-#include <inttypes.h> //imaxdiv, intmax_t
-static UHD_INLINE time_spec_t time_spec_t_from_counts(intmax_t counts, intmax_t freq){
-    imaxdiv_t divres = imaxdiv(counts, freq);
-    return time_spec_t(time_t(divres.quot), double(divres.rem)/freq);
-}
 
 #ifdef HAVE_CLOCK_GETTIME
 #include <time.h>
@@ -49,7 +38,7 @@ time_spec_t time_spec_t::get_system_time(void){
 time_spec_t time_spec_t::get_system_time(void){
     mach_timebase_info_data_t info; mach_timebase_info(&info);
     intmax_t nanosecs = mach_absolute_time()*info.numer/info.denom;
-    return time_spec_t_from_counts(nanosecs, intmax_t(1e9));
+    return time_spec_t::from_ticks(nanosecs, 1e9);
 }
 #endif /* HAVE_MACH_ABSOLUTE_TIME */
 
@@ -60,7 +49,7 @@ time_spec_t time_spec_t::get_system_time(void){
     LARGE_INTEGER counts, freq;
     QueryPerformanceCounter(&counts);
     QueryPerformanceFrequency(&freq);
-    return time_spec_t_from_counts(counts.QuadPart, freq.QuadPart);
+    return time_spec_t::from_ticks(counts.QuadPart, freq.QuadPart);
 }
 #endif /* HAVE_QUERY_PERFORMANCE_COUNTER */
 
@@ -83,12 +72,19 @@ time_spec_t time_spec_t::get_system_time(void){
  * Time spec constructors
  **********************************************************************/
 #define time_spec_init(full, frac) { \
-    _full_secs = full + time_t(frac); \
-    _frac_secs = frac - time_t(frac); \
+    const time_t _full = time_t(full); \
+    const double _frac = double(frac); \
+    const int _frac_int = int(_frac); \
+    _full_secs = _full + _frac_int; \
+    _frac_secs = _frac - _frac_int; \
     if (_frac_secs < 0) {\
         _full_secs -= 1; \
         _frac_secs += 1; \
     } \
+}
+
+UHD_INLINE long long fast_llround(const double x){
+    return (long long)(x + 0.5); // assumption of non-negativity
 }
 
 time_spec_t::time_spec_t(double secs){
@@ -104,23 +100,25 @@ time_spec_t::time_spec_t(time_t full_secs, long tick_count, double tick_rate){
     time_spec_init(full_secs, frac_secs);
 }
 
+time_spec_t time_spec_t::from_ticks(long long ticks, double tick_rate){
+    const imaxdiv_t divres = imaxdiv(ticks, fast_llround(tick_rate));
+    return time_spec_t(time_t(divres.quot), double(divres.rem)/tick_rate);
+}
+
 /***********************************************************************
  * Time spec accessors
  **********************************************************************/
 long time_spec_t::get_tick_count(double tick_rate) const{
-    return long(this->get_frac_secs()*tick_rate + 0.5);
+    return long(fast_llround(this->get_frac_secs()*tick_rate));
+}
+
+long long time_spec_t::to_ticks(double tick_rate) const{
+    return fast_llround(this->get_frac_secs()*tick_rate) + \
+    (this->get_full_secs() * fast_llround(tick_rate));
 }
 
 double time_spec_t::get_real_secs(void) const{
-    return this->_full_secs + this->_frac_secs;
-}
-
-time_t time_spec_t::get_full_secs(void) const{
-    return this->_full_secs;
-}
-
-double time_spec_t::get_frac_secs(void) const{
-    return this->_frac_secs;
+    return this->get_full_secs() + this->get_frac_secs();
 }
 
 /***********************************************************************
@@ -128,16 +126,16 @@ double time_spec_t::get_frac_secs(void) const{
  **********************************************************************/
 time_spec_t &time_spec_t::operator+=(const time_spec_t &rhs){
     time_spec_init(
-        this->_full_secs + rhs.get_full_secs(),
-        this->_frac_secs + rhs.get_frac_secs()
+        this->get_full_secs() + rhs.get_full_secs(),
+        this->get_frac_secs() + rhs.get_frac_secs()
     );
     return *this;
 }
 
 time_spec_t &time_spec_t::operator-=(const time_spec_t &rhs){
     time_spec_init(
-        this->_full_secs - rhs.get_full_secs(),
-        this->_frac_secs - rhs.get_frac_secs()
+        this->get_full_secs() - rhs.get_full_secs(),
+        this->get_frac_secs() - rhs.get_frac_secs()
     );
     return *this;
 }

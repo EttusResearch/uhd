@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ namespace uhd{
         time_spec_t(time_t full_secs, double frac_secs = 0);
 
         /*!
-         * Create a time_spec_t from whole and fractional seconds.
+         * Create a time_spec_t from whole seconds and fractional ticks.
          * Translation from clock-domain specific units.
          * \param full_secs the whole/integer seconds count
          * \param tick_count the fractional seconds tick count
@@ -69,12 +69,28 @@ namespace uhd{
         time_spec_t(time_t full_secs, long tick_count, double tick_rate);
 
         /*!
+         * Create a time_spec_t from a 64-bit tick count.
+         * Translation from clock-domain specific units.
+         * \param ticks an integer count of ticks
+         * \param tick_rate the number of ticks per second
+         */
+        static time_spec_t from_ticks(long long ticks, double tick_rate);
+
+        /*!
          * Convert the fractional seconds to clock ticks.
          * Translation into clock-domain specific units.
          * \param tick_rate the number of ticks per second
          * \return the fractional seconds tick count
          */
         long get_tick_count(double tick_rate) const;
+
+        /*!
+         * Convert the time spec into a 64-bit tick count.
+         * Translation into clock-domain specific units.
+         * \param tick_rate the number of ticks per second
+         * \return an integer number of ticks
+         */
+        long long to_ticks(const double tick_rate) const;
 
         /*!
          * Get the time as a real-valued seconds count.
@@ -111,6 +127,14 @@ namespace uhd{
 
     //! Implement less_than_comparable interface
     UHD_API bool operator<(const time_spec_t &, const time_spec_t &);
+
+    UHD_INLINE time_t time_spec_t::get_full_secs(void) const{
+        return this->_full_secs;
+    }
+
+    UHD_INLINE double time_spec_t::get_frac_secs(void) const{
+        return this->_frac_secs;
+    }
 
 } //namespace uhd
 

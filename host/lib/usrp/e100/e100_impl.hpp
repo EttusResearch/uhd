@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "rx_dsp_core_200.hpp"
 #include "tx_dsp_core_200.hpp"
 #include "time64_core_200.hpp"
+#include "user_settings_core_200.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/utils/pimpl.hpp>
@@ -48,7 +49,7 @@ static const double          E100_RX_LINK_RATE_BPS = 166e6/3/2*2;
 static const double          E100_TX_LINK_RATE_BPS = 166e6/3/1*2;
 static const std::string     E100_I2C_DEV_NODE = "/dev/i2c-3";
 static const std::string     E100_UART_DEV_NODE = "/dev/ttyO0";
-static const boost::uint16_t E100_FPGA_COMPAT_NUM = 0x08;
+static const boost::uint16_t E100_FPGA_COMPAT_NUM = 0x09;
 static const boost::uint32_t E100_RX_SID_BASE = 2;
 static const boost::uint32_t E100_TX_ASYNC_SID = 1;
 static const double          E100_DEFAULT_CLOCK_RATE = 64e6;
@@ -92,6 +93,7 @@ private:
     std::vector<rx_dsp_core_200::sptr> _rx_dsps;
     tx_dsp_core_200::sptr _tx_dsp;
     time64_core_200::sptr _time64;
+    user_settings_core_200::sptr _user;
     e100_clock_ctrl::sptr _clock_ctrl;
     e100_codec_ctrl::sptr _codec_ctrl;
     e100_ctrl::sptr _fpga_ctrl;

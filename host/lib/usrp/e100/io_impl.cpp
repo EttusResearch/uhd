@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 
 #include "recv_packet_demuxer.hpp"
 #include "validate_subdev_spec.hpp"
+#include "async_packet_handler.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include <linux/usrp_e.h> //ioctl structures and constants
@@ -50,7 +51,7 @@ using namespace uhd::transport;
  **********************************************************************/
 struct e100_impl::io_impl{
     io_impl(void):
-        false_alarm(0), async_msg_fifo(100/*messages deep*/)
+        false_alarm(0), async_msg_fifo(1000/*messages deep*/)
     { /* NOP */ }
 
     double tick_rate; //set by update tick rate method
@@ -123,28 +124,13 @@ void e100_impl::io_impl::handle_irq(void){
 
         //fill in the async metadata
         async_metadata_t metadata;
-        metadata.channel = 0;
-        metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
-        metadata.time_spec = time_spec_t(
-            time_t(if_packet_info.tsi), long(if_packet_info.tsf), tick_rate
-        );
-        metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(data.buf, if_packet_info));
+        load_metadata_from_buff(uhd::wtohx<boost::uint32_t>, metadata, if_packet_info, data.buf, tick_rate);
 
         //push the message onto the queue
         async_msg_fifo.push_with_pop_on_full(metadata);
 
         //print some fastpath messages
-        if (metadata.event_code &
-            ( async_metadata_t::EVENT_CODE_UNDERFLOW
-            | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
-        ) UHD_MSG(fastpath) << "U";
-        else if (metadata.event_code &
-            ( async_metadata_t::EVENT_CODE_SEQ_ERROR
-            | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
-        ) UHD_MSG(fastpath) << "S";
-        else if (metadata.event_code &
-            async_metadata_t::EVENT_CODE_TIME_ERROR
-        ) UHD_MSG(fastpath) << "L";
+        standard_async_msg_prints(metadata);
     }
 
     //prepare for the next round
@@ -164,9 +150,8 @@ void e100_impl::io_init(void){
     _io_impl->demuxer = recv_packet_demuxer::make(_data_transport, _rx_dsps.size(), E100_RX_SID_BASE);
     _io_impl->iface = _fpga_ctrl;
 
-    //clear state machines
-    _fpga_ctrl->poke32(E100_REG_CLEAR_RX, 0);
-    _fpga_ctrl->poke32(E100_REG_CLEAR_TX, 0);
+    //clear fifo state machines
+    _fpga_ctrl->poke32(E100_REG_CLEAR_FIFO, 0);
 
     //allocate streamer weak ptrs containers
     _rx_streamers.resize(_rx_dsps.size());
@@ -217,6 +202,8 @@ void e100_impl::update_tx_samp_rate(const size_t dspno, const double rate){
     if (my_streamer.get() == NULL) return;
 
     my_streamer->set_samp_rate(rate);
+    const double adj = _tx_dsp->get_scaling_adjustment();
+    my_streamer->set_scale_factor(adj);
 }
 
 void e100_impl::update_rates(void){
@@ -278,13 +265,13 @@ rx_streamer::sptr e100_impl::get_rx_stream(const uhd::stream_args_t &args_){
     //setup defaults for unspecified values
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
-    const unsigned sc8_scalar = unsigned(args.args.cast<double>("scalar", 0x400));
 
     //calculate packet size
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+        - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
     ;
     const size_t bpp = _data_transport->get_recv_frame_size() - hdr_size;
     const size_t bpi = convert::get_bytes_per_item(args.otw_format);
@@ -309,8 +296,7 @@ rx_streamer::sptr e100_impl::get_rx_stream(const uhd::stream_args_t &args_){
     for (size_t chan_i = 0; chan_i < args.channels.size(); chan_i++){
         const size_t dsp = args.channels[chan_i];
         _rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
-        if (not args.args.has_key("noclear")) _rx_dsps[dsp]->clear();
-        _rx_dsps[dsp]->set_format(args.otw_format, sc8_scalar);
+        _rx_dsps[dsp]->setup(args);
         my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
             &recv_packet_demuxer::get_recv_buff, _io_impl->demuxer, dsp, _1
         ), true /*flush*/);
@@ -336,14 +322,13 @@ tx_streamer::sptr e100_impl::get_tx_stream(const uhd::stream_args_t &args_){
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
-    if (args.otw_format != "sc16"){
-        throw uhd::value_error("USRP TX cannot handle requested wire format: " + args.otw_format);
-    }
-
     //calculate packet size
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
+        - sizeof(vrt::if_packet_info_t().sid) //no stream id ever used
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+        - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
     ;
     static const size_t bpp = _data_transport->get_send_frame_size() - hdr_size;
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
@@ -367,8 +352,7 @@ tx_streamer::sptr e100_impl::get_tx_stream(const uhd::stream_args_t &args_){
     for (size_t chan_i = 0; chan_i < args.channels.size(); chan_i++){
         const size_t dsp = args.channels[chan_i];
         UHD_ASSERT_THROW(dsp == 0); //always 0
-        if (not args.args.has_key("noclear")) _tx_dsp->clear();
-        if (args.args.has_key("underflow_policy")) _tx_dsp->set_underflow_policy(args.args["underflow_policy"]);
+        _tx_dsp->setup(args);
         my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
             &zero_copy_if::get_send_buff, _data_transport, _1
         ));

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
 #define SR_SIMTIMER   8   // 2
 #define SR_TIME64    10   // 6
 #define SR_BUF_POOL  16   // 4
-
+#define SR_USER_REGS 20   // 2
 #define SR_RX_FRONT  24   // 5
 #define SR_RX_CTRL0  32   // 9
 #define SR_RX_DSP0   48   // 7
@@ -97,11 +97,11 @@
 ////////////////////////////////////////////////
 #define U2_REG_STATUS READBACK_BASE + 4*8
 #define U2_REG_GPIO_RB READBACK_BASE + 4*9
-#define U2_REG_TIME64_SECS_RB_IMM READBACK_BASE + 4*10
-#define U2_REG_TIME64_TICKS_RB_IMM READBACK_BASE + 4*11
+#define U2_REG_TIME64_HI_RB_IMM READBACK_BASE + 4*10
+#define U2_REG_TIME64_LO_RB_IMM READBACK_BASE + 4*11
 #define U2_REG_COMPAT_NUM_RB READBACK_BASE + 4*12
 #define U2_REG_IRQ_RB READBACK_BASE + 4*13
-#define U2_REG_TIME64_SECS_RB_PPS READBACK_BASE + 4*14
-#define U2_REG_TIME64_TICKS_RB_PPS READBACK_BASE + 4*15
+#define U2_REG_TIME64_HI_RB_PPS READBACK_BASE + 4*14
+#define U2_REG_TIME64_LO_RB_PPS READBACK_BASE + 4*15
 
 #endif /* INCLUDED_USRP2_REGS_HPP */

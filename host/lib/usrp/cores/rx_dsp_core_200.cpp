@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #include "rx_dsp_core_200.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread/thread.hpp> //thread sleep
@@ -27,7 +28,7 @@
 #include <cmath>
 
 #define REG_DSP_RX_FREQ       _dsp_base + 0
-//skip one right here
+#define REG_DSP_RX_SCALE_IQ   _dsp_base + 4
 #define REG_DSP_RX_DECIM      _dsp_base + 8
 #define REG_DSP_RX_MUX        _dsp_base + 12
 
@@ -35,15 +36,15 @@
 #define FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
 
 #define REG_RX_CTRL_STREAM_CMD     _ctrl_base + 0
-#define REG_RX_CTRL_TIME_SECS      _ctrl_base + 4
-#define REG_RX_CTRL_TIME_TICKS     _ctrl_base + 8
+#define REG_RX_CTRL_TIME_HI        _ctrl_base + 4
+#define REG_RX_CTRL_TIME_LO        _ctrl_base + 8
 #define REG_RX_CTRL_CLEAR          _ctrl_base + 12
 #define REG_RX_CTRL_VRT_HDR        _ctrl_base + 16
 #define REG_RX_CTRL_VRT_SID        _ctrl_base + 20
 #define REG_RX_CTRL_VRT_TLR        _ctrl_base + 24
 #define REG_RX_CTRL_NSAMPS_PP      _ctrl_base + 28
 #define REG_RX_CTRL_NCHANNELS      _ctrl_base + 32
-#define REG_RX_CTRL_FORMAT         _ctrl_base + 36
+#define REG_RX_CTRL_FORMAT         REG_RX_CTRL_CLEAR //re-use clear address
 
 template <class T> T ceil_log2(T num){
     return std::ceil(std::log(num)/std::log(T(2)));
@@ -60,6 +61,10 @@ public:
     ):
         _iface(iface), _dsp_base(dsp_base), _ctrl_base(ctrl_base), _sid(sid)
     {
+        //init to something so update method has reasonable defaults
+        _scaling_adjustment = 1.0;
+        _dsp_extra_scaling = 1.0;
+
         //This is a hack/fix for the lingering packet problem.
         //The caller should also flush the recv transports
         if (lingering_packet){
@@ -78,7 +83,6 @@ public:
         _iface->poke32(REG_RX_CTRL_VRT_HDR, 0
             | (0x1 << 28) //if data with stream id
             | (0x1 << 26) //has trailer
-            | (0x3 << 22) //integer time other
             | (0x1 << 20) //fractional time sample count
         );
         _iface->poke32(REG_RX_CTRL_VRT_SID, _sid);
@@ -117,8 +121,9 @@ public:
 
         //issue the stream command
         _iface->poke32(REG_RX_CTRL_STREAM_CMD, cmd_word);
-        _iface->poke32(REG_RX_CTRL_TIME_SECS, boost::uint32_t(stream_cmd.time_spec.get_full_secs()));
-        _iface->poke32(REG_RX_CTRL_TIME_TICKS, stream_cmd.time_spec.get_tick_count(_tick_rate)); //latches the command
+        const boost::uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(_tick_rate);
+        _iface->poke32(REG_RX_CTRL_TIME_HI, boost::uint32_t(ticks >> 32));
+        _iface->poke32(REG_RX_CTRL_TIME_LO, boost::uint32_t(ticks >> 0)); //latches the command
     }
 
     void set_mux(const std::string &mode, const bool fe_swapped){
@@ -175,12 +180,20 @@ public:
         // Calculate closest multiplier constant to reverse gain absent scale multipliers
         const double rate_pow = std::pow(double(decim & 0xff), 4);
         _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.65*rate_pow);
+        this->update_scalar();
 
         return _tick_rate/decim_rate;
     }
 
+    void update_scalar(void){
+        const double target_scalar = (1 << 16)*_scaling_adjustment/_dsp_extra_scaling;
+        const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
+        _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
+        _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);
+    }
+
     double get_scaling_adjustment(void){
-        return _scaling_adjustment/_fxpt_scale_adj;
+        return _fxpt_scalar_correction*_host_extra_scaling/32767.;
     }
 
     double set_freq(const double freq_){
@@ -210,22 +223,27 @@ public:
         if (_continuous_streaming) issue_stream_command(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     }
 
-    void set_format(const std::string &format, const unsigned scale){
-        unsigned format_word = 0;
-        if (format == "sc16"){
-            format_word = 0;
-            _fxpt_scale_adj = 32767.;
-        }
-        else if (format == "sc8"){
-            format_word = (1 << 18);
-            _fxpt_scale_adj = 127. * scale;
-            _fxpt_scale_adj /= 256; //engine 16to8 drops lower 8 bits
-            _fxpt_scale_adj /= 4; //scale operation 2-bit pad
-        }
-        else throw uhd::value_error("USRP RX cannot handle requested wire format: " + format);
+    void setup(const uhd::stream_args_t &stream_args){
+        if (not stream_args.args.has_key("noclear")) this->clear();
 
-        const unsigned scale_word = scale & 0x3ffff; //18 bits;
-        _iface->poke32(REG_RX_CTRL_FORMAT, format_word | scale_word);
+        unsigned format_word = 0;
+        if (stream_args.otw_format == "sc16"){
+            format_word = 0;
+            _dsp_extra_scaling = 1.0;
+            _host_extra_scaling = 1.0;
+        }
+        else if (stream_args.otw_format == "sc8"){
+            format_word = (1 << 0);
+            double peak = stream_args.args.cast<double>("peak", 1.0);
+            peak = std::max(peak, 1.0/256);
+            _host_extra_scaling = peak*256;
+            _dsp_extra_scaling = peak*256;
+        }
+        else throw uhd::value_error("USRP RX cannot handle requested wire format: " + stream_args.otw_format);
+
+        this->update_scalar();
+
+        _iface->poke32(REG_RX_CTRL_FORMAT, format_word);
     }
 
 private:
@@ -233,7 +251,7 @@ private:
     const size_t _dsp_base, _ctrl_base;
     double _tick_rate, _link_rate;
     bool _continuous_streaming;
-    double _scaling_adjustment, _fxpt_scale_adj;
+    double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling, _fxpt_scalar_correction;
     const boost::uint32_t _sid;
 };
 

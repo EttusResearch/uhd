@@ -19,6 +19,7 @@
 #define INCLUDED_LIBUHD_USRP_TX_DSP_CORE_200_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/stream.hpp>
 #include <uhd/types/ranges.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -44,14 +45,15 @@ public:
 
     virtual uhd::meta_range_t get_host_rates(void) = 0;
 
+    virtual double get_scaling_adjustment(void) = 0;
+
     virtual uhd::meta_range_t get_freq_range(void) = 0;
 
     virtual double set_freq(const double freq) = 0;
 
     virtual void set_updates(const size_t cycles_per_up, const size_t packets_per_up) = 0;
 
-    virtual void set_underflow_policy(const std::string &policy) = 0;
-
+    virtual void setup(const uhd::stream_args_t &stream_args) = 0;
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_TX_DSP_CORE_200_HPP */

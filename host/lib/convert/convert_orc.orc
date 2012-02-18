@@ -61,3 +61,20 @@ x2 swapw dst, tmp
 .temp 4 tmp
 x2 swapw tmp, src
 swapl dst, tmp
+
+.function _convert_swap_byte_pairs_orc
+.source 4 src
+.dest 4 dst
+swapl dst, src
+
+.function _convert_fc32_1_to_sc8_1_nswap_orc
+.source 8 src
+.dest 2 dst
+.temp 8 tmp
+.temp 4 tmp2
+.floatparam 4 scalar
+x2 mulf tmp, src, scalar
+x2 convfl tmp, tmp
+swaplq tmp, tmp
+x2 convlw tmp2, tmp
+x2 convwb dst, tmp2

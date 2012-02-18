@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -546,10 +546,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create time control objects
         ////////////////////////////////////////////////////////////////
         time64_core_200::readback_bases_type time64_rb_bases;
-        time64_rb_bases.rb_secs_now = U2_REG_TIME64_SECS_RB_IMM;
-        time64_rb_bases.rb_ticks_now = U2_REG_TIME64_TICKS_RB_IMM;
-        time64_rb_bases.rb_secs_pps = U2_REG_TIME64_SECS_RB_PPS;
-        time64_rb_bases.rb_ticks_pps = U2_REG_TIME64_TICKS_RB_PPS;
+        time64_rb_bases.rb_hi_now = U2_REG_TIME64_HI_RB_IMM;
+        time64_rb_bases.rb_lo_now = U2_REG_TIME64_LO_RB_IMM;
+        time64_rb_bases.rb_hi_pps = U2_REG_TIME64_HI_RB_PPS;
+        time64_rb_bases.rb_lo_pps = U2_REG_TIME64_LO_RB_PPS;
         _mbc[mb].time64 = time64_core_200::make(
             _mbc[mb].iface, U2_REG_SR_ADDR(SR_TIME64), time64_rb_bases, mimo_clock_sync_delay_cycles
         );
@@ -571,6 +571,13 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             .subscribe(boost::bind(&usrp2_impl::update_clock_source, this, mb, _1));
         static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("mimo");
         _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
+
+        ////////////////////////////////////////////////////////////////////
+        // create user-defined control objects
+        ////////////////////////////////////////////////////////////////////
+        _mbc[mb].user = user_settings_core_200::make(_mbc[mb].iface, U2_REG_SR_ADDR(SR_USER_REGS));
+        _tree->create<user_settings_core_200::user_reg_t>(mb_path / "user/regs")
+            .subscribe(boost::bind(&user_settings_core_200::set_reg, _mbc[mb].user, _1));
 
         ////////////////////////////////////////////////////////////////
         // create dboard control objects

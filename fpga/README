@@ -1,4 +1,0 @@
-This is a placeholder for the fpga code (verilog, makefiles, corgens...)
-
-The layout should have a common library and various top level builds
-and testbenches that are organized hierarchically.

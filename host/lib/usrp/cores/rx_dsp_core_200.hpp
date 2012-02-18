@@ -19,6 +19,7 @@
 #define INCLUDED_LIBUHD_USRP_RX_DSP_CORE_200_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/stream.hpp>
 #include <uhd/types/ranges.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -60,7 +61,7 @@ public:
 
     virtual void handle_overflow(void) = 0;
 
-    virtual void set_format(const std::string &format, const unsigned scale) = 0;
+    virtual void setup(const uhd::stream_args_t &stream_args) = 0;
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_RX_DSP_CORE_200_HPP */

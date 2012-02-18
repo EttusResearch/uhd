@@ -21,7 +21,6 @@
 #include "usrp_common.h"
 #include "usrp_commands.h"
 #include "fpga.h"
-#include "usrp_gpif_inline.h"
 #include "timer.h"
 #include "i2c.h"
 #include "isr.h"
@@ -64,7 +63,12 @@ bit enable_gpif = 0;
 #define	  USRP_HASH_SIZE      16
 xdata at USRP_HASH_SLOT_1_ADDR unsigned char hash1[USRP_HASH_SIZE];
 
-void clear_fpga_data_fifo(void);
+//void clear_fpga_data_fifo(void);
+
+//use the B100 fpga_config_cclk/ext_reset line to reset the FPGA
+void fpga_reset(int level) {
+    bitALTERA_DCLK = level;
+}
 
 static void
 get_ep0_data (void)
@@ -75,11 +79,19 @@ get_ep0_data (void)
     ;
 }
 
-static void initialize_gpif_buffer(int ep) {
-  //clear the GPIF buffers on startup to keep crap out of the data path
+static void clear_fifo(int ep) {
   FIFORESET = 0x80; SYNCDELAY; //activate NAKALL
   FIFORESET = ep; SYNCDELAY;
   FIFORESET = 0x00; SYNCDELAY;
+}
+
+void enable_xfers(int enable) {
+    if(enable) {
+        IFCONFIG |= bmIFSLAVE;
+    } else {
+        IFCONFIG &= ~bmIFSLAVE;
+    }
+    set_led_0(enable);
 }
 
 /*
@@ -112,7 +124,7 @@ app_vendor_cmd (void)
 
     case VRQ_FW_COMPAT:
         EP0BCH = 0;
-        EP0BCL = 2;
+        EP0BCL = 3;
         break;
 
     default:
@@ -161,7 +173,7 @@ app_vendor_cmd (void)
       break;
 
     case VRQ_FPGA_SET_RESET:
-      //fpga_set_reset (wValueL);
+      fpga_reset(wValueL);
       break;
 
     case VRQ_I2C_WRITE:
@@ -171,16 +183,15 @@ app_vendor_cmd (void)
       break;
       
     case VRQ_RESET_GPIF:
-      initialize_gpif_buffer(wValueL);
+      clear_fifo(wValueL);
       break;
       
     case VRQ_ENABLE_GPIF:
-      enable_gpif = (wValueL != 0) ? 1 : 0;
-      set_led_1(enable_gpif);
+      enable_xfers(wValueL);
       break;
     
     case VRQ_CLEAR_FPGA_FIFO:
-        clear_fpga_data_fifo();
+        //clear_fpga_data_fifo();
         break;
 
     default:
@@ -194,125 +205,12 @@ app_vendor_cmd (void)
   return 1;
 }
 
-static int short_pkt_state = 0;
-#define SHORT_PACKET_DETECTED (short_pkt_state != bitSHORT_PACKET_SIGNAL)
-
-//yes, this is a little opaque
-//basically this is necessary because while all the logic to inform the FPGA
-//of what we're trying to do via the CTL pins is contained within the flowstates,
-//we need to assert the endpoint select pin one clock cycle before the flowstate starts.
-//this is the job of the wave descriptor. rather than switch between waves, since that
-//involves a little more setup, we just modify the wave table on the fly.
-inline static void setup_wave_data_read(void) {
-    GPIF_WAVE_DATA[80] = 0x06;
-    GPIF_WAVE_DATA[81] = 0x06;
-}
-
-inline static void setup_wave_ctrl_read(void) {
-    GPIF_WAVE_DATA[80] = 0x0E;
-    GPIF_WAVE_DATA[81] = 0x0E;
-}
-
-inline static void setup_wave_data_write(void) {
-    GPIF_WAVE_DATA[112] = 0x00;
-    GPIF_WAVE_DATA[113] = 0x00;
-}
-
-inline static void setup_wave_ctrl_write(void) {
-    GPIF_WAVE_DATA[112] = 0x08;
-    GPIF_WAVE_DATA[113] = 0x08;
-}
-
-inline static void handle_data_write(void) {
-    GPIFTCB1 = 0x01;	//SYNCDELAY;
-    GPIFTCB0 = 0x00;
-    setup_flowstate_data_write ();
-    setup_wave_data_write();
-    GPIFTRIG = bmGPIF_EP2_START | bmGPIF_WRITE; 	// start the xfer
-    SYNCDELAY;
-    while (!(GPIFTRIG & bmGPIF_IDLE));
-}
-
-inline static void handle_ctrl_write(void) {
-    GPIFTCB1 = 0x00;
-    GPIFTCB0 = 0x10;
-    setup_flowstate_ctrl_write ();
-    setup_wave_ctrl_write();
-    GPIFTRIG = bmGPIF_EP4_START | bmGPIF_WRITE; 	// start the xfer
-    SYNCDELAY;
-    while (!(GPIFTRIG & bmGPIF_IDLE));
-}
-
-inline static void handle_data_read(void) {
-    GPIFTCB1 = 0x01;
-    GPIFTCB0 = 0x00;
-    setup_flowstate_data_read ();
-    setup_wave_data_read();
-    short_pkt_state = bitSHORT_PACKET_SIGNAL;
-    GPIFTRIG = bmGPIF_EP6_START | bmGPIF_READ; 	// start the xfer
-    SYNCDELAY;
-    while (!(GPIFTRIG & bmGPIF_IDLE));
-    INPKTEND = 0x06;	// tell USB we filled buffer (6 is our endpoint num)
-    SYNCDELAY;
-    if(SHORT_PACKET_DETECTED) {
-        while(!(EP6CS & bmEPEMPTY)); //wait for packet to send
-        INPKTEND = 0x06; //send a ZLP
-        //toggle_led_1(); //FIXME DEBUG
-    }
-}
-
-inline static void handle_ctrl_read(void) {
-    GPIFTCB1 = 0x00;
-    GPIFTCB0 = 0x10;
-    setup_flowstate_ctrl_read ();
-    setup_wave_ctrl_read();
-    GPIFTRIG = bmGPIF_EP8_START | bmGPIF_READ; 	// start the xfer
-    SYNCDELAY;
-    while (!(GPIFTRIG & bmGPIF_IDLE));
-    INPKTEND = 8;	// tell USB we filled buffer (8 is our endpoint num)
-}
-
-//clear the FPGA datapath by reading but not submitting, instead clearing the FIFO after each transaction
-void clear_fpga_data_fifo(void) {
-    while(fpga_has_data_packet_avail()) {
-        GPIFTCB1 = 0x01;
-        GPIFTCB0 = 0x00;
-        setup_flowstate_data_read ();
-        setup_wave_data_read();
-        GPIFTRIG = bmGPIF_EP6_START | bmGPIF_READ; 	// start the xfer
-        SYNCDELAY;
-        while (!(GPIFTRIG & bmGPIF_IDLE));
-        initialize_gpif_buffer(6); //reset the FIFO instead of committing it
-    }
-}
-
 static void
 main_loop (void)
 {
   while (1){
     if (usb_setup_packet_avail ())
       usb_handle_setup_packet ();
-
-    if(enable_gpif){
-        if  (fx2_has_ctrl_packet_avail()    && fpga_has_room_for_ctrl_packet()) handle_ctrl_write();
-        if  (fx2_has_room_for_ctrl_packet() && fpga_has_ctrl_packet_avail())    handle_ctrl_read();
-        
-        //we do this
-        if  (fx2_has_data_packet_avail()    && fpga_has_room_for_data_packet()) handle_data_write();
-        if  (fx2_has_room_for_data_packet() && fpga_has_data_packet_avail())    handle_data_read();
-        //five times so that
-        if  (fx2_has_data_packet_avail()    && fpga_has_room_for_data_packet()) handle_data_write();
-        if  (fx2_has_room_for_data_packet() && fpga_has_data_packet_avail())    handle_data_read();
-        //we can piggyback
-        if  (fx2_has_data_packet_avail()    && fpga_has_room_for_data_packet()) handle_data_write();
-        if  (fx2_has_room_for_data_packet() && fpga_has_data_packet_avail())    handle_data_read();
-        //data transfers
-        if  (fx2_has_data_packet_avail()    && fpga_has_room_for_data_packet()) handle_data_write();
-        if  (fx2_has_room_for_data_packet() && fpga_has_data_packet_avail())    handle_data_read();
-        //without loop overhead
-        if  (fx2_has_data_packet_avail()    && fpga_has_room_for_data_packet()) handle_data_write();
-        if  (fx2_has_room_for_data_packet() && fpga_has_data_packet_avail())    handle_data_read();
-    }
   }
 }
 
@@ -363,15 +261,9 @@ patch_usb_descriptors(void)
 void
 main (void)
 {
-  enable_gpif = 0;
-
   memset (hash1, 0, USRP_HASH_SIZE);	// zero fpga bitstream hash.  This forces reload
   
   init_usrp ();
-  init_gpif ();
-  
-  // if (UC_START_WITH_GSTATE_OUTPUT_ENABLED)
-  //IFCONFIG |= bmGSTATE;			// no conflict, start with it on
 
   set_led_0 (0);
   set_led_1 (0);
@@ -388,7 +280,6 @@ main (void)
   EA = 1;		// global interrupt enable
 
   fx2_renumerate ();	// simulates disconnect / reconnect
-
-  setup_flowstate_common();
+  
   main_loop ();
 }

@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include "rx_dsp_core_200.hpp"
 #include "tx_dsp_core_200.hpp"
 #include "time64_core_200.hpp"
+#include "user_settings_core_200.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/utils/pimpl.hpp>
@@ -43,14 +44,15 @@
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <boost/weak_ptr.hpp>
 
-static const double          B100_LINK_RATE_BPS = 256e6/8; //pratical link rate (< 480 Mbps)
+static const double          B100_LINK_RATE_BPS = 256e6/5; //pratical link rate (< 480 Mbps)
 static const std::string     B100_FW_FILE_NAME = "usrp_b100_fw.ihx";
 static const std::string     B100_FPGA_FILE_NAME = "usrp_b100_fpga.bin";
-static const boost::uint16_t B100_FW_COMPAT_NUM = 0x02;
-static const boost::uint16_t B100_FPGA_COMPAT_NUM = 0x08;
+static const boost::uint16_t B100_FW_COMPAT_NUM = 0x03;
+static const boost::uint16_t B100_FPGA_COMPAT_NUM = 0x09;
 static const boost::uint32_t B100_RX_SID_BASE = 2;
 static const boost::uint32_t B100_TX_ASYNC_SID = 1;
 static const double          B100_DEFAULT_TICK_RATE = 64e6;
+static const size_t          B100_MAX_PKT_BYTE_LIMIT = 2048;
 
 //! Make a b100 dboard interface
 uhd::usrp::dboard_iface::sptr make_b100_dboard_iface(
@@ -84,6 +86,7 @@ private:
     std::vector<rx_dsp_core_200::sptr> _rx_dsps;
     tx_dsp_core_200::sptr _tx_dsp;
     time64_core_200::sptr _time64;
+    user_settings_core_200::sptr _user;
     b100_clock_ctrl::sptr _clock_ctrl;
     b100_codec_ctrl::sptr _codec_ctrl;
     b100_ctrl::sptr _fpga_ctrl;
@@ -120,7 +123,6 @@ private:
     void update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_clock_source(const std::string &);
-    void reset_gpif(const boost::uint16_t);
     void enable_gpif(const bool);
     void clear_fpga_fifo(void);
     void handle_async_message(uhd::transport::managed_recv_buffer::sptr);

@@ -91,7 +91,6 @@ EXTERN xdata _AT_(0xE60A) volatile BYTE REVID             ;  // Chip Revision
 EXTERN xdata _AT_(0xE60B) volatile BYTE REVCTL            ;  // Chip Revision Control
 
 // Endpoint Configuration
-
 EXTERN xdata _AT_(0xE610) volatile BYTE EP1OUTCFG         ;  // Endpoint 1-OUT Configuration
 EXTERN xdata _AT_(0xE611) volatile BYTE EP1INCFG          ;  // Endpoint 1-IN Configuration
 EXTERN xdata _AT_(0xE612) volatile BYTE EP2CFG            ;  // Endpoint 2 Configuration
@@ -654,6 +653,22 @@ sfr at 0xF8 EIP; // EIP Bit Values differ from Reg320
 #define bmIFCFG0      bmBIT0
 #define bmIFCFGMASK   (bmIFCFG0 | bmIFCFG1)
 #define bmIFGPIF      bmIFCFG1
+#define bmIFSLAVE     (bmIFCFG0 | bmIFCFG1)
+
+/* Slave FIFO pin flags configuration bits (PINFLAGS) */
+#define bmINDEXED     0x0 //which fifo selected by FIFOADR
+#define bmEP2PF       0x4
+#define bmEP4PF       0x5
+#define bmEP6PF       0x6
+#define bmEP8PF       0x7
+#define bmEP2EF       0x8
+#define bmEP4EF       0x9
+#define bmEP6EF       0xA
+#define bmEP8EF       0xB
+#define bmEP2FF       0xC
+#define bmEP4FF       0xD
+#define bmEP6FF       0xE
+#define bmEP8FF       0xF
 
 /* EP 2468 FIFO Configuration bits (EP2FIFOCFG,EP4FIFOCFG,EP6FIFOCFG,EP8FIFOCFG) */
 #define bmINFM       bmBIT6

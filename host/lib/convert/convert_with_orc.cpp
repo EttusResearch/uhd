@@ -27,6 +27,8 @@ extern void _convert_item32_1_to_fc32_1_nswap_orc(void *, const void *, float, i
 extern void _convert_item32_1_to_fc32_1_bswap_orc(void *, const void *, float, int);
 extern void _convert_sc16_1_to_item32_1_nswap_orc(void *, const void *, float, int);
 extern void _convert_item32_1_to_sc16_1_nswap_orc(void *, const void *, float, int);
+extern void _convert_fc32_1_to_sc8_1_nswap_orc(void *, const void *, float, int);
+extern void _convert_swap_byte_pairs_orc(void *, const void *, int);
 }
 
 DECLARE_CONVERTER(fc32, 1, sc16_item32_le, 1, PRIORITY_LIBORC){
@@ -51,4 +53,13 @@ DECLARE_CONVERTER(sc16, 1, sc16_item32_le, 1, PRIORITY_LIBORC){
 
 DECLARE_CONVERTER(sc16_item32_le, 1, sc16, 1, PRIORITY_LIBORC){
     _convert_item32_1_to_sc16_1_nswap_orc(outputs[0], inputs[0], scale_factor, nsamps);
+}
+
+DECLARE_CONVERTER(fc32, 1, sc8_item32_be, 1, PRIORITY_LIBORC){
+    _convert_fc32_1_to_sc8_1_nswap_orc(outputs[0], inputs[0], scale_factor, nsamps);
+    _convert_swap_byte_pairs_orc(outputs[0], outputs[0], (nsamps + 1)/2);
+}
+
+DECLARE_CONVERTER(fc32, 1, sc8_item32_le, 1, PRIORITY_LIBORC){
+    _convert_fc32_1_to_sc8_1_nswap_orc(outputs[0], inputs[0], scale_factor, nsamps);
 }

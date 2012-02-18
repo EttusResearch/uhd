@@ -1,4 +1,19 @@
-
+//
+// Copyright 2010-2012 Ettus Research LLC
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 ////////////////////////////////////////////////////////////////
 //
@@ -27,10 +42,6 @@
 #define B100_REG_MISC_SW         B100_REG_MISC_BASE + 2
 #define B100_REG_MISC_CGEN_CTRL  B100_REG_MISC_BASE + 4
 #define B100_REG_MISC_CGEN_ST    B100_REG_MISC_BASE + 6
-#define B100_REG_MISC_TEST       B100_REG_MISC_BASE + 8
-#define B100_REG_MISC_RX_LEN     B100_REG_MISC_BASE + 10
-#define B100_REG_MISC_TX_LEN     B100_REG_MISC_BASE + 12
-#define B100_REG_MISC_XFER_RATE  B100_REG_MISC_BASE + 14
 
 /////////////////////////////////////////////////////
 // Slave 1 -- UART
@@ -65,10 +76,10 @@
 
 #define B100_REG_RB_MUX_32_BASE  B100_REG_SLAVE(7)
 
-#define B100_REG_RB_TIME_NOW_SECS   B100_REG_RB_MUX_32_BASE + 0
-#define B100_REG_RB_TIME_NOW_TICKS  B100_REG_RB_MUX_32_BASE + 4
-#define B100_REG_RB_TIME_PPS_SECS   B100_REG_RB_MUX_32_BASE + 8
-#define B100_REG_RB_TIME_PPS_TICKS  B100_REG_RB_MUX_32_BASE + 12
+#define B100_REG_RB_TIME_NOW_HI     B100_REG_RB_MUX_32_BASE + 0
+#define B100_REG_RB_TIME_NOW_LO     B100_REG_RB_MUX_32_BASE + 4
+#define B100_REG_RB_TIME_PPS_HI     B100_REG_RB_MUX_32_BASE + 8
+#define B100_REG_RB_TIME_PPS_LO     B100_REG_RB_MUX_32_BASE + 12
 #define B100_REG_RB_MISC_TEST32     B100_REG_RB_MUX_32_BASE + 16
 #define B100_REG_RB_COMPAT          B100_REG_RB_MUX_32_BASE + 24
 #define B100_REG_RB_GPIO            B100_REG_RB_MUX_32_BASE + 28
@@ -92,9 +103,9 @@
 #define B100_SR_TX_FRONT 54      // 5 regs (+0 to +4)
 
 #define B100_SR_REG_TEST32 60    // 1 reg
-#define B100_SR_CLEAR_RX_FIFO 61 // 1 reg
-#define B100_SR_CLEAR_TX_FIFO 62 // 1 reg
+#define B100_SR_CLEAR_FIFO 61    // 1 reg
 #define B100_SR_GLOBAL_RESET 63  // 1 reg
+#define B100_SR_USER_REGS 64     // 2 regs
 
 #define B100_SR_GPIO 128
 
@@ -105,8 +116,7 @@
 /////////////////////////////////////////////////
 // Magic reset regs
 ////////////////////////////////////////////////
-#define B100_REG_CLEAR_RX           B100_REG_SR_ADDR(B100_SR_CLEAR_RX_FIFO)
-#define B100_REG_CLEAR_TX           B100_REG_SR_ADDR(B100_SR_CLEAR_RX_FIFO)
+#define B100_REG_CLEAR_FIFO         B100_REG_SR_ADDR(B100_SR_CLEAR_FIFO)
 #define B100_REG_GLOBAL_RESET       B100_REG_SR_ADDR(B100_SR_GLOBAL_RESET)
 
 #endif

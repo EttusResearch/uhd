@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -283,7 +283,7 @@ private:
         info.ifpi.num_packet_words32 = num_packet_words32 - _header_offset_words32;
         info.vrt_hdr = buff->cast<const boost::uint32_t *>() + _header_offset_words32;
         _vrt_unpacker(info.vrt_hdr, info.ifpi);
-        info.time = time_spec_t(time_t(info.ifpi.tsi), size_t(info.ifpi.tsf), _tick_rate); //assumes has_tsi and has_tsf are true
+        info.time = time_spec_t::from_ticks(info.ifpi.tsf, _tick_rate); //assumes has_tsf is true
         info.copy_buff = reinterpret_cast<const char *>(info.vrt_hdr + info.ifpi.num_header_words32);
 
         //--------------------------------------------------------------
@@ -408,7 +408,7 @@ private:
 
             case PACKET_INLINE_MESSAGE:
                 std::swap(curr_info, next_info); //save progress from curr -> next
-                curr_info.metadata.has_time_spec = next_info[index].ifpi.has_tsi and next_info[index].ifpi.has_tsf;
+                curr_info.metadata.has_time_spec = next_info[index].ifpi.has_tsf;
                 curr_info.metadata.time_spec = next_info[index].time;
                 curr_info.metadata.more_fragments = false;
                 curr_info.metadata.fragment_offset = 0;
@@ -436,7 +436,7 @@ private:
                 alignment_check(index, curr_info);
                 std::swap(curr_info, next_info); //save progress from curr -> next
                 curr_info.metadata.has_time_spec = prev_info.metadata.has_time_spec;
-                curr_info.metadata.time_spec = prev_info.metadata.time_spec + time_spec_t(0,
+                curr_info.metadata.time_spec = prev_info.metadata.time_spec + time_spec_t::from_ticks(
                     prev_info[index].ifpi.num_payload_words32*sizeof(boost::uint32_t)/_bytes_per_otw_item, _samp_rate);
                 curr_info.metadata.more_fragments = false;
                 curr_info.metadata.fragment_offset = 0;
@@ -469,7 +469,7 @@ private:
         }
 
         //set the metadata from the buffer information at index zero
-        curr_info.metadata.has_time_spec = curr_info[0].ifpi.has_tsi and curr_info[0].ifpi.has_tsf;
+        curr_info.metadata.has_time_spec = curr_info[0].ifpi.has_tsf;
         curr_info.metadata.time_spec = curr_info[0].time;
         curr_info.metadata.more_fragments = false;
         curr_info.metadata.fragment_offset = 0;
@@ -508,7 +508,7 @@ private:
         metadata = info.metadata;
 
         //interpolate the time spec (useful when this is a fragment)
-        metadata.time_spec += time_spec_t(0, info.fragment_offset_in_samps, _samp_rate);
+        metadata.time_spec += time_spec_t::from_ticks(info.fragment_offset_in_samps, _samp_rate);
 
         //extract the number of samples available to copy
         const size_t nsamps_available = info.data_bytes_to_copy/_bytes_per_otw_item;

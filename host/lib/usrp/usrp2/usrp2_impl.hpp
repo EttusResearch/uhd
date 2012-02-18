@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include "rx_dsp_core_200.hpp"
 #include "tx_dsp_core_200.hpp"
 #include "time64_core_200.hpp"
+#include "user_settings_core_200.hpp"
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/device.hpp>
@@ -91,6 +92,7 @@ private:
         std::vector<boost::weak_ptr<uhd::tx_streamer> > tx_streamers;
         tx_dsp_core_200::sptr tx_dsp;
         time64_core_200::sptr time64;
+        user_settings_core_200::sptr user;
         std::vector<uhd::transport::zero_copy_if::sptr> rx_dsp_xports;
         uhd::transport::zero_copy_if::sptr tx_dsp_xport;
         uhd::usrp::dboard_manager::sptr dboard_manager;

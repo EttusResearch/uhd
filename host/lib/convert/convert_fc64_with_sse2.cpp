@@ -28,7 +28,7 @@ DECLARE_CONVERTER(fc64, 1, sc16_item32_le, 1, PRIORITY_SIMD){
     const __m128d scalar = _mm_set1_pd(scale_factor);
 
     #define convert_fc64_1_to_item32_1_nswap_guts(_al_)                 \
-    for (; i+4 < nsamps; i+=4){                                         \
+    for (; i+3 < nsamps; i+=4){                                         \
         /* load from input */                                           \
         __m128d tmp0 = _mm_load ## _al_ ## pd(reinterpret_cast<const double *>(input+i+0)); \
         __m128d tmp1 = _mm_load ## _al_ ## pd(reinterpret_cast<const double *>(input+i+1)); \
@@ -75,7 +75,7 @@ DECLARE_CONVERTER(fc64, 1, sc16_item32_be, 1, PRIORITY_SIMD){
     const __m128d scalar = _mm_set1_pd(scale_factor);
 
     #define convert_fc64_1_to_item32_1_bswap_guts(_al_)                 \
-    for (; i+4 < nsamps; i+=4){                                         \
+    for (; i+3 < nsamps; i+=4){                                         \
         /* load from input */                                           \
         __m128d tmp0 = _mm_load ## _al_ ## pd(reinterpret_cast<const double *>(input+i+0)); \
         __m128d tmp1 = _mm_load ## _al_ ## pd(reinterpret_cast<const double *>(input+i+1)); \
@@ -122,7 +122,7 @@ DECLARE_CONVERTER(sc16_item32_le, 1, fc64, 1, PRIORITY_SIMD){
     const __m128i zeroi = _mm_setzero_si128();
 
     #define convert_item32_1_to_fc64_1_nswap_guts(_al_)                 \
-    for (; i+4 < nsamps; i+=4){                                         \
+    for (; i+3 < nsamps; i+=4){                                         \
         /* load from input */                                           \
         __m128i tmpi = _mm_loadu_si128(reinterpret_cast<const __m128i *>(input+i)); \
                                                                         \
@@ -171,7 +171,7 @@ DECLARE_CONVERTER(sc16_item32_be, 1, fc64, 1, PRIORITY_SIMD){
     const __m128i zeroi = _mm_setzero_si128();
 
     #define convert_item32_1_to_fc64_1_bswap_guts(_al_)                 \
-    for (; i+4 < nsamps; i+=4){                                         \
+    for (; i+3 < nsamps; i+=4){                                         \
         /* load from input */                                           \
         __m128i tmpi = _mm_loadu_si128(reinterpret_cast<const __m128i *>(input+i)); \
                                                                         \

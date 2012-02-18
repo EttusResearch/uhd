@@ -76,4 +76,4 @@ module dummy_rx
        q_out <= q_out + 1;
        
    
-endmodule // dsp_core_rx
+endmodule // ddc_chain

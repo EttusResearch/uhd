@@ -210,6 +210,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // Initialize the properties tree
     ////////////////////////////////////////////////////////////////////
+    _rx_dc_offset_shadow = 0;
     _tree = property_tree::make();
     _tree->create<std::string>("/name").set("USRP1 Device");
     const fs_path mb_path = "/mboards/0";

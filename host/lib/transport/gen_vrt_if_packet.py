@@ -137,7 +137,7 @@ void vrt::if_hdr_pack_$(suffix)(
         #if $pred & $tlr_p
             {
                 const size_t empty_bytes = if_packet_info.num_payload_words32*sizeof(boost::uint32_t) - if_packet_info.num_payload_bytes;
-                if_packet_info.tlr |= (0x3 << 22) | (occ_table[empty_bytes & 0x3] << 10);
+                if_packet_info.tlr = (0x3 << 22) | (occ_table[empty_bytes & 0x3] << 10);
             }
             packet_buff[$num_header_words+if_packet_info.num_payload_words32] = $(XE_MACRO)(if_packet_info.tlr);
             #set $flags |= (0x1 << 26);

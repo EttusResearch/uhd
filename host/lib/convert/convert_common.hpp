@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -188,6 +188,54 @@ static UHD_INLINE void item32_sc8_to_fc64(item32_t item, fc64_t &out0, fc64_t &o
         float(boost::int8_t(item >> 24)*scale_factor),
         float(boost::int8_t(item >> 16)*scale_factor)
     );
+}
+
+/***********************************************************************
+ * Convert complex char to items32 sc8 buffer
+ **********************************************************************/
+static UHD_INLINE item32_t sc8_to_item32_sc8(sc8_t in0, sc8_t in1, double){
+    return
+        (item32_t(boost::uint8_t(in0.real())) << 8) |
+        (item32_t(boost::uint8_t(in0.imag())) << 0) |
+        (item32_t(boost::uint8_t(in1.real())) << 24) |
+        (item32_t(boost::uint8_t(in1.imag())) << 16)
+    ;
+}
+
+/***********************************************************************
+ * Convert complex short to items32 sc8 buffer
+ **********************************************************************/
+static UHD_INLINE item32_t sc16_to_item32_sc8(sc16_t in0, sc16_t in1, double){
+    return
+        (item32_t(boost::uint8_t(in0.real())) << 8) |
+        (item32_t(boost::uint8_t(in0.imag())) << 0) |
+        (item32_t(boost::uint8_t(in1.real())) << 24) |
+        (item32_t(boost::uint8_t(in1.imag())) << 16)
+    ;
+}
+
+/***********************************************************************
+ * Convert complex float to items32 sc8 buffer
+ **********************************************************************/
+static UHD_INLINE item32_t fc32_to_item32_sc8(fc32_t in0, fc32_t in1, double scale_factor){
+    return
+        (item32_t(boost::uint8_t(in0.real()*float(scale_factor))) << 8) |
+        (item32_t(boost::uint8_t(in0.imag()*float(scale_factor))) << 0) |
+        (item32_t(boost::uint8_t(in1.real()*float(scale_factor))) << 24) |
+        (item32_t(boost::uint8_t(in1.imag()*float(scale_factor))) << 16)
+    ;
+}
+
+/***********************************************************************
+ * Convert complex double to items32 sc8 buffer
+ **********************************************************************/
+static UHD_INLINE item32_t fc64_to_item32_sc8(fc64_t in0, fc64_t in1, double scale_factor){
+    return
+        (item32_t(boost::uint8_t(in0.real()*(scale_factor))) << 8) |
+        (item32_t(boost::uint8_t(in0.imag()*(scale_factor))) << 0) |
+        (item32_t(boost::uint8_t(in1.real()*(scale_factor))) << 24) |
+        (item32_t(boost::uint8_t(in1.imag()*(scale_factor))) << 16)
+    ;
 }
 
 #endif /* INCLUDED_LIBUHD_CONVERT_COMMON_HPP */

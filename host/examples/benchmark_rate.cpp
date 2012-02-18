@@ -40,11 +40,11 @@ unsigned long long num_seq_errors = 0;
 /***********************************************************************
  * Benchmark RX Rate
  **********************************************************************/
-void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp){
+void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_otw){
     uhd::set_thread_priority_safe();
 
     //create a receive streamer
-    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::stream_args_t stream_args("fc32", rx_otw); //complex floats
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     //print pre-test summary
@@ -94,11 +94,11 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp){
 /***********************************************************************
  * Benchmark TX Rate
  **********************************************************************/
-void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp){
+void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &tx_otw){
     uhd::set_thread_priority_safe();
 
     //create a transmit streamer
-    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::stream_args_t stream_args("fc32", tx_otw); //complex floats
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //print pre-test summary
@@ -162,6 +162,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args;
     double duration;
     double rx_rate, tx_rate;
+    std::string rx_otw, tx_otw;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -171,6 +172,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("duration", po::value<double>(&duration)->default_value(10.0), "duration for the test in seconds")
         ("rx_rate", po::value<double>(&rx_rate), "specify to perform a RX rate test (sps)")
         ("tx_rate", po::value<double>(&tx_rate), "specify to perform a TX rate test (sps)")
+        ("rx_otw", po::value<std::string>(&rx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for RX")
+        ("tx_otw", po::value<std::string>(&tx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for TX")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -203,13 +206,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //spawn the receive test thread
     if (vm.count("rx_rate")){
         usrp->set_rx_rate(rx_rate);
-        thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp));
+        thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_otw));
     }
 
     //spawn the transmit test thread
     if (vm.count("tx_rate")){
         usrp->set_tx_rate(tx_rate);
-        thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp));
+        thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_otw));
         thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, usrp));
     }
 

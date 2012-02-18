@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,10 +18,12 @@
 #include "tx_dsp_core_200.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
+#include <boost/thread/thread.hpp> //sleep
 #include <algorithm>
 #include <cmath>
 
@@ -29,8 +31,8 @@
 #define REG_DSP_TX_SCALE_IQ      _dsp_base + 4
 #define REG_DSP_TX_INTERP        _dsp_base + 8
 
-#define REG_TX_CTRL_NUM_CHAN        _ctrl_base + 0
-#define REG_TX_CTRL_CLEAR_STATE     _ctrl_base + 4
+#define REG_TX_CTRL_CLEAR           _ctrl_base + 0
+#define REG_TX_CTRL_FORMAT          _ctrl_base + 4
 #define REG_TX_CTRL_REPORT_SID      _ctrl_base + 8
 #define REG_TX_CTRL_POLICY          _ctrl_base + 12
 #define REG_TX_CTRL_CYCLES_PER_UP   _ctrl_base + 16
@@ -58,14 +60,19 @@ public:
     ):
         _iface(iface), _dsp_base(dsp_base), _ctrl_base(ctrl_base), _sid(sid)
     {
+        //init to something so update method has reasonable defaults
+        _scaling_adjustment = 1.0;
+        _dsp_extra_scaling = 1.0;
+
         //init the tx control registers
         this->clear();
         this->set_underflow_policy("next_packet");
     }
 
     void clear(void){
-        _iface->poke32(REG_TX_CTRL_CLEAR_STATE, 1); //reset
-        _iface->poke32(REG_TX_CTRL_NUM_CHAN, 0);    //1 channel
+        _iface->poke32(REG_TX_CTRL_CLEAR, 1); //reset and flush technique
+        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+        _iface->poke32(REG_TX_CTRL_CLEAR, 0);
         _iface->poke32(REG_TX_CTRL_REPORT_SID, _sid);
     }
 
@@ -121,11 +128,22 @@ public:
 
         // Calculate CIC interpolation (i.e., without halfband interpolators)
         // Calculate closest multiplier constant to reverse gain absent scale multipliers
-        double rate_cubed = std::pow(double(interp & 0xff), 3);
-        const boost::int16_t scale = boost::math::iround((4096*std::pow(2, ceil_log2(rate_cubed)))/(1.65*rate_cubed));
-        _iface->poke32(REG_DSP_TX_SCALE_IQ, (boost::uint32_t(scale) << 16) | (boost::uint32_t(scale) << 0));
+        const double rate_pow = std::pow(double(interp & 0xff), 3);
+        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.65*rate_pow);
+        this->update_scalar();
 
         return _tick_rate/interp_rate;
+    }
+
+    void update_scalar(void){
+        const double target_scalar = (1 << 17)*_scaling_adjustment/_dsp_extra_scaling;
+        const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
+        _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
+        _iface->poke32(REG_DSP_TX_SCALE_IQ, actual_scalar);
+    }
+
+    double get_scaling_adjustment(void){
+        return _fxpt_scalar_correction*_host_extra_scaling*32767.;
     }
 
     double set_freq(const double freq_){
@@ -156,10 +174,38 @@ public:
         _iface->poke32(REG_TX_CTRL_PACKETS_PER_UP, (packets_per_up == 0)? 0 : (FLAG_TX_CTRL_UP_ENB | packets_per_up));
     }
 
+    void setup(const uhd::stream_args_t &stream_args){
+        if (not stream_args.args.has_key("noclear")) this->clear();
+
+        unsigned format_word = 0;
+        if (stream_args.otw_format == "sc16"){
+            format_word = 0;
+            _dsp_extra_scaling = 1.0;
+            _host_extra_scaling = 1.0;
+        }
+        else if (stream_args.otw_format == "sc8"){
+            format_word = (1 << 0);
+            double peak = stream_args.args.cast<double>("peak", 1.0);
+            peak = std::max(peak, 1.0/256);
+            _host_extra_scaling = 1.0/peak/256;
+            _dsp_extra_scaling = 1.0/peak;
+        }
+        else throw uhd::value_error("USRP TX cannot handle requested wire format: " + stream_args.otw_format);
+
+        this->update_scalar();
+
+        _iface->poke32(REG_TX_CTRL_FORMAT, format_word);
+
+        if (stream_args.args.has_key("underflow_policy")){
+            this->set_underflow_policy(stream_args.args["underflow_policy"]);
+        }
+    }
+
 private:
     wb_iface::sptr _iface;
     const size_t _dsp_base, _ctrl_base;
     double _tick_rate, _link_rate;
+    double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling, _fxpt_scalar_correction;
     const boost::uint32_t _sid;
 };
 

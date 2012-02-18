@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <boost/cstdint.hpp>
 
 namespace uhd{
 
@@ -140,13 +141,21 @@ namespace uhd{
             EVENT_CODE_UNDERFLOW  = 0x2,
             //! Packet loss between host and device.
             EVENT_CODE_SEQ_ERROR  = 0x4,
-            //! Packet had time that was late (or too early).
+            //! Packet had time that was late.
             EVENT_CODE_TIME_ERROR = 0x8,
             //! Underflow occurred inside a packet.
             EVENT_CODE_UNDERFLOW_IN_PACKET = 0x10,
             //! Packet loss within a burst.
-            EVENT_CODE_SEQ_ERROR_IN_BURST  = 0x20
+            EVENT_CODE_SEQ_ERROR_IN_BURST  = 0x20,
+            //! Some kind of custom user payload
+            EVENT_CODE_USER_PAYLOAD = 0x40
         } event_code;
+
+        /*!
+         * A special payload populated by custom FPGA fabric.
+         */
+        boost::uint32_t user_payload[4];
+
     };
 
 } //namespace uhd

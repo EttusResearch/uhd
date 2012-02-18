@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 //
 
 #include "validate_subdev_spec.hpp"
+#include "async_packet_handler.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include "usrp2_impl.hpp"
@@ -135,7 +136,8 @@ private:
 struct usrp2_impl::io_impl{
 
     io_impl(void):
-        async_msg_fifo(100/*messages deep*/)
+        async_msg_fifo(1000/*messages deep*/),
+        tick_rate(1 /*non-zero default*/)
     {
         /* NOP */
     }
@@ -201,12 +203,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
 
                 //fill in the async metadata
                 async_metadata_t metadata;
-                metadata.channel = index;
-                metadata.has_time_spec = if_packet_info.has_tsi and if_packet_info.has_tsf;
-                metadata.time_spec = time_spec_t(
-                    time_t(if_packet_info.tsi), size_t(if_packet_info.tsf), tick_rate
-                );
-                metadata.event_code = async_metadata_t::event_code_t(sph::get_context_code(vrt_hdr, if_packet_info));
+                load_metadata_from_buff(uhd::ntohx<boost::uint32_t>, metadata, if_packet_info, vrt_hdr, tick_rate, index);
 
                 //catch the flow control packets and react
                 if (metadata.event_code == 0){
@@ -217,17 +214,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 //else UHD_MSG(often) << "metadata.event_code " << metadata.event_code << std::endl;
                 async_msg_fifo.push_with_pop_on_full(metadata);
 
-                if (metadata.event_code &
-                    ( async_metadata_t::EVENT_CODE_UNDERFLOW
-                    | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
-                ) UHD_MSG(fastpath) << "U";
-                else if (metadata.event_code &
-                    ( async_metadata_t::EVENT_CODE_SEQ_ERROR
-                    | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
-                ) UHD_MSG(fastpath) << "S";
-                else if (metadata.event_code &
-                    async_metadata_t::EVENT_CODE_TIME_ERROR
-                ) UHD_MSG(fastpath) << "L";
+                standard_async_msg_prints(metadata);
             }
             else{
                 //TODO unknown received packet, may want to print error...
@@ -307,6 +294,8 @@ void usrp2_impl::update_tx_samp_rate(const std::string &mb, const size_t dsp, co
     if (my_streamer.get() == NULL) return;
 
     my_streamer->set_samp_rate(rate);
+    const double adj = _mbc[mb].tx_dsp->get_scaling_adjustment();
+    my_streamer->set_scale_factor(adj);
 }
 
 void usrp2_impl::update_rates(void){
@@ -380,13 +369,13 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
     //setup defaults for unspecified values
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
-    const unsigned sc8_scalar = unsigned(args.args.cast<double>("scalar", 0x400));
 
     //calculate packet size
     static const size_t hdr_size = 0
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+        - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
     ;
     const size_t bpp = _mbc[_mbc.keys().front()].rx_dsp_xports[0]->get_recv_frame_size() - hdr_size;
     const size_t bpi = convert::get_bytes_per_item(args.otw_format);
@@ -416,8 +405,7 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
             if (chan < num_chan_so_far){
                 const size_t dsp = chan + _mbc[mb].rx_chan_occ - num_chan_so_far;
                 _mbc[mb].rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
-                if (not args.args.has_key("noclear")) _mbc[mb].rx_dsps[dsp]->clear();
-                _mbc[mb].rx_dsps[dsp]->set_format(args.otw_format, sc8_scalar);
+                _mbc[mb].rx_dsps[dsp]->setup(args);
                 my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
                     &zero_copy_if::get_recv_buff, _mbc[mb].rx_dsp_xports[dsp], _1
                 ), true /*flush*/);
@@ -447,15 +435,14 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
     args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
-    if (args.otw_format != "sc16"){
-        throw uhd::value_error("USRP TX cannot handle requested wire format: " + args.otw_format);
-    }
-
     //calculate packet size
     static const size_t hdr_size = 0
-        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
+        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
+        - sizeof(vrt::if_packet_info_t().sid) //no stream id ever used
+        - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
     ;
     const size_t bpp = _mbc[_mbc.keys().front()].tx_dsp_xport->get_send_frame_size() - hdr_size;
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
@@ -485,10 +472,9 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
             if (chan < num_chan_so_far){
                 const size_t dsp = chan + _mbc[mb].tx_chan_occ - num_chan_so_far;
                 if (not args.args.has_key("noclear")){
-                    _mbc[mb].tx_dsp->clear();
                     _io_impl->fc_mons[abs]->clear();
                 }
-                if (args.args.has_key("underflow_policy")) _mbc[mb].tx_dsp->set_underflow_policy(args.args["underflow_policy"]);
+                _mbc[mb].tx_dsp->setup(args);
                 my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
                     &usrp2_impl::io_impl::get_send_buff, _io_impl.get(), abs, _1
                 ));

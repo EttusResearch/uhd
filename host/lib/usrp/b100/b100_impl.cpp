@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -150,6 +150,10 @@ UHD_STATIC_BLOCK(register_b100_device){
  * Structors
  **********************************************************************/
 b100_impl::b100_impl(const device_addr_t &device_addr){
+    size_t initialization_count = 0;
+    b100_impl_constructor_begin:
+    initialization_count++;
+
     _tree = property_tree::make();
 
     //extract the FPGA path for the B100
@@ -181,6 +185,8 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     //load FPGA image, gpif is disabled while loading
     this->enable_gpif(false);
     _fx2_ctrl->usrp_load_fpga(b100_fpga_image);
+    _fx2_ctrl->usrp_fpga_reset(false); //active low reset
+    _fx2_ctrl->usrp_fpga_reset(true);
     this->enable_gpif(true);
 
     //create the control transport
@@ -196,13 +202,28 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         3, 4, //interface, endpoint
         ctrl_xport_args
     );
+    while (_ctrl_transport->get_recv_buff(0.0)){} //flush ctrl xport
 
     ////////////////////////////////////////////////////////////////////
     // Initialize FPGA wishbone communication
     ////////////////////////////////////////////////////////////////////
     _fpga_ctrl = b100_ctrl::make(_ctrl_transport);
-    this->reset_gpif(6); //always reset first to ensure communication
     _fpga_ctrl->poke32(B100_REG_GLOBAL_RESET, 0); //global fpga reset
+    //perform a test peek operation
+    try{
+        _fpga_ctrl->peek32(0);
+    }
+    //try reset once in the case of failure
+    catch(const uhd::exception &e){
+        if (initialization_count > 1) throw;
+        UHD_MSG(warning) <<
+            "The control endpoint was left in a bad state.\n"
+            "Attempting endpoint re-enumeration...\n" << std::endl;
+        _fpga_ctrl.reset();
+        _ctrl_transport.reset();
+        _fx2_ctrl->usrp_fx2_reset();
+        goto b100_impl_constructor_begin;
+    }
     this->check_fpga_compat(); //check after reset and making control
 
     ////////////////////////////////////////////////////////////////////
@@ -229,8 +250,10 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
             2, 6,          // IN interface, endpoint
             1, 2,          // OUT interface, endpoint
             data_xport_args    // param hints
-        )
+        ),
+        B100_MAX_PKT_BYTE_LIMIT
     );
+    while (_data_transport->get_recv_buff(0.0)){} //flush data xport
 
     ////////////////////////////////////////////////////////////////////
     // Initialize the properties tree
@@ -361,10 +384,10 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     // create time control objects
     ////////////////////////////////////////////////////////////////////
     time64_core_200::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_secs_now = B100_REG_RB_TIME_NOW_SECS;
-    time64_rb_bases.rb_ticks_now = B100_REG_RB_TIME_NOW_TICKS;
-    time64_rb_bases.rb_secs_pps = B100_REG_RB_TIME_PPS_SECS;
-    time64_rb_bases.rb_ticks_pps = B100_REG_RB_TIME_PPS_TICKS;
+    time64_rb_bases.rb_hi_now = B100_REG_RB_TIME_NOW_HI;
+    time64_rb_bases.rb_lo_now = B100_REG_RB_TIME_NOW_LO;
+    time64_rb_bases.rb_hi_pps = B100_REG_RB_TIME_PPS_HI;
+    time64_rb_bases.rb_lo_pps = B100_REG_RB_TIME_PPS_LO;
     _time64 = time64_core_200::make(
         _fpga_ctrl, B100_REG_SR_ADDR(B100_SR_TIME64), time64_rb_bases
     );
@@ -386,6 +409,13 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         .subscribe(boost::bind(&b100_impl::update_clock_source, this, _1));
     static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("auto");
     _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
+
+    ////////////////////////////////////////////////////////////////////
+    // create user-defined control objects
+    ////////////////////////////////////////////////////////////////////
+    _user = user_settings_core_200::make(_fpga_ctrl, B100_REG_SR_ADDR(B100_SR_USER_REGS));
+    _tree->create<user_settings_core_200::user_reg_t>(mb_path / "user/regs")
+        .subscribe(boost::bind(&user_settings_core_200::set_reg, _user, _1));
 
     ////////////////////////////////////////////////////////////////////
     // create dboard control objects
@@ -505,10 +535,6 @@ void b100_impl::update_clock_source(const std::string &source){
 }
 
 ////////////////// some GPIF preparation related stuff /////////////////
-void b100_impl::reset_gpif(const boost::uint16_t ep) {
-    _fx2_ctrl->usrp_control_write(VRQ_RESET_GPIF, ep, ep, 0, 0);
-}
-
 void b100_impl::enable_gpif(const bool en) {
     _fx2_ctrl->usrp_control_write(VRQ_ENABLE_GPIF, en ? 1 : 0, 0, 0, 0);
 }

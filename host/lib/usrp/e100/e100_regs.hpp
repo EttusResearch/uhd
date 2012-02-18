@@ -1,4 +1,19 @@
-
+//
+// Copyright 2010-2012 Ettus Research LLC
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 ////////////////////////////////////////////////////////////////
 //
@@ -71,10 +86,10 @@
 
 #define E100_REG_RB_MUX_32_BASE  E100_REG_SLAVE(7)
 
-#define E100_REG_RB_TIME_NOW_SECS   E100_REG_RB_MUX_32_BASE + 0
-#define E100_REG_RB_TIME_NOW_TICKS  E100_REG_RB_MUX_32_BASE + 4
-#define E100_REG_RB_TIME_PPS_SECS   E100_REG_RB_MUX_32_BASE + 8
-#define E100_REG_RB_TIME_PPS_TICKS  E100_REG_RB_MUX_32_BASE + 12
+#define E100_REG_RB_TIME_NOW_HI     E100_REG_RB_MUX_32_BASE + 0
+#define E100_REG_RB_TIME_NOW_LO     E100_REG_RB_MUX_32_BASE + 4
+#define E100_REG_RB_TIME_PPS_HI     E100_REG_RB_MUX_32_BASE + 8
+#define E100_REG_RB_TIME_PPS_LO     E100_REG_RB_MUX_32_BASE + 12
 #define E100_REG_RB_MISC_TEST32     E100_REG_RB_MUX_32_BASE + 16
 #define E100_REG_RB_ERR_STATUS      E100_REG_RB_MUX_32_BASE + 20
 #define E100_REG_RB_COMPAT          E100_REG_RB_MUX_32_BASE + 24
@@ -101,9 +116,9 @@
 #define UE_SR_TX_FRONT 54      // 5 regs (+0 to +4)
 
 #define UE_SR_REG_TEST32 60    // 1 reg
-#define UE_SR_CLEAR_RX_FIFO 61 // 1 reg
-#define UE_SR_CLEAR_TX_FIFO 62 // 1 reg
+#define UE_SR_CLEAR_FIFO 61    // 1 reg
 #define UE_SR_GLOBAL_RESET 63  // 1 reg
+#define UE_SR_USER_REGS 64     // 2 regs
 
 #define UE_SR_GPIO 128
 
@@ -115,8 +130,7 @@
 /////////////////////////////////////////////////
 // Magic reset regs
 ////////////////////////////////////////////////
-#define E100_REG_CLEAR_RX           E100_REG_SR_ADDR(UE_SR_CLEAR_RX_FIFO)
-#define E100_REG_CLEAR_TX           E100_REG_SR_ADDR(UE_SR_CLEAR_RX_FIFO)
+#define E100_REG_CLEAR_FIFO         E100_REG_SR_ADDR(UE_SR_CLEAR_FIFO)
 #define E100_REG_GLOBAL_RESET       E100_REG_SR_ADDR(UE_SR_GLOBAL_RESET)
 
 #endif
