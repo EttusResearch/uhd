@@ -1,5 +1,5 @@
 #
-# Copyright 2008 Ettus Research LLC
+# Copyright 2008-2012 Ettus Research LLC
 #
 
 ##################################################
@@ -7,6 +7,10 @@
 ##################################################
 TOP_MODULE = u2_rev3
 BUILD_DIR = $(abspath build)
+
+# set me in a custom makefile
+CUSTOM_SRCS =
+CUSTOM_DEFS =
 
 ##################################################
 # Include other makefiles
@@ -52,7 +56,8 @@ u2_rev3.ucf
 SOURCES = $(abspath $(TOP_SRCS)) $(FIFO_SRCS) \
 $(CONTROL_LIB_SRCS) $(SDR_LIB_SRCS) $(SERDES_SRCS) \
 $(SIMPLE_GEMAC_SRCS) $(TIMING_SRCS) $(OPENCORES_SRCS) \
-$(VRT_SRCS) $(UDP_SRCS) $(COREGEN_SRCS) $(EXTRAM_SRCS)
+$(VRT_SRCS) $(UDP_SRCS) $(COREGEN_SRCS) $(EXTRAM_SRCS) \
+$(CUSTOM_SRCS)
 
 ##################################################
 # Process Properties
@@ -65,7 +70,8 @@ SYNTHESIZE_PROPERTIES = \
 "Register Balancing" Yes \
 "Use Clock Enable" Auto \
 "Use Synchronous Reset" Auto \
-"Use Synchronous Set" Auto
+"Use Synchronous Set" Auto \
+"Verilog Macros" "$(CUSTOM_DEFS)"
 
 TRANSLATE_PROPERTIES = \
 "Macro Search Path" "$(shell pwd)/../../coregen/"

@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -93,18 +93,16 @@ module vita_rx_framer
    localparam VITA_IDLE 	 = 0;
    localparam VITA_HEADER 	 = 1;
    localparam VITA_STREAMID 	 = 2;
-   localparam VITA_SECS 	 = 3;
-   localparam VITA_TICS 	 = 4;
-   localparam VITA_TICS2 	 = 5;
-   localparam VITA_PAYLOAD 	 = 6;
-   localparam VITA_TRAILER 	 = 7;
-   localparam VITA_ERR_HEADER 	 = 9;  // All ERR at 4'b1000 or'ed with base
-   localparam VITA_ERR_STREAMID  = 10;
-   localparam VITA_ERR_SECS 	 = 11;
-   localparam VITA_ERR_TICS 	 = 12;
-   localparam VITA_ERR_TICS2 	 = 13;
-   localparam VITA_ERR_PAYLOAD 	 = 14;
-   localparam VITA_ERR_TRAILER 	 = 15; // Extension context packets have no trailer
+   localparam VITA_TICS 	 = 3;
+   localparam VITA_TICS2 	 = 4;
+   localparam VITA_PAYLOAD 	 = 5;
+   localparam VITA_TRAILER 	 = 6;
+   localparam VITA_ERR_HEADER 	 = 7;  // All ERR at 4'b1000 or'ed with base
+   localparam VITA_ERR_STREAMID  = 8;
+   localparam VITA_ERR_TICS 	 = 9;
+   localparam VITA_ERR_TICS2 	 = 10;
+   localparam VITA_ERR_PAYLOAD 	 = 11;
+   localparam VITA_ERR_TRAILER 	 = 12; // Extension context packets have no trailer
       
    always @(posedge clk)
      if(reset | clear | clear_pkt_count)
@@ -122,17 +120,15 @@ module vita_rx_framer
        VITA_HEADER : pkt_fifo_line <= {2'b01,3'b000,vita_header[28],2'b01,vita_header[25:24],
 				       vita_header[23:20],pkt_count[3:0],vita_pkt_len[15:0]};
        VITA_STREAMID : pkt_fifo_line <= {2'b00,vita_streamid};
-       VITA_SECS : pkt_fifo_line <= {2'b00,vita_time_fifo_o[63:32]};
-       VITA_TICS : pkt_fifo_line <= {2'b00,32'd0};
+       VITA_TICS : pkt_fifo_line <= {2'b00,vita_time_fifo_o[63:32]};
        VITA_TICS2 : pkt_fifo_line <= {2'b00,vita_time_fifo_o[31:0]};
        VITA_PAYLOAD : pkt_fifo_line <= {2'b00,data_fifo_o};
        VITA_TRAILER : pkt_fifo_line <= {2'b10,vita_trailer[31:21],1'b1,vita_trailer[19:9],trl_eob,8'd0};
 
        // Error packets are Extension Context packets, which have no trailer
-       VITA_ERR_HEADER : pkt_fifo_line <= {2'b01,4'b0101,4'b0000,vita_header[23:20],pkt_count,16'd6};
+       VITA_ERR_HEADER : pkt_fifo_line <= {2'b01,4'b0101,4'b0000,vita_header[23:20],pkt_count,16'd5};
        VITA_ERR_STREAMID : pkt_fifo_line <= {2'b00,vita_streamid};
-       VITA_ERR_SECS : pkt_fifo_line <= {2'b00,vita_time_fifo_o[63:32]};
-       VITA_ERR_TICS : pkt_fifo_line <= {2'b00,32'd0};
+       VITA_ERR_TICS : pkt_fifo_line <= {2'b00,vita_time_fifo_o[63:32]};
        VITA_ERR_TICS2 : pkt_fifo_line <= {2'b00,vita_time_fifo_o[31:0]};
        VITA_ERR_PAYLOAD : pkt_fifo_line <= {2'b10,27'd0,flags_fifo_o};
        //VITA_ERR_TRAILER : pkt_fifo_line <= {2'b11,vita_trailer};
@@ -164,7 +160,7 @@ module vita_rx_framer
 	     if(has_streamid)
 	       vita_state <= VITA_STREAMID;
 	     else
-	       vita_state <= VITA_SECS;
+	       vita_state <= VITA_TICS;
 	   VITA_PAYLOAD :
 	     if(sample_fifo_src_rdy_i)
 	       begin
@@ -194,12 +190,12 @@ module vita_rx_framer
      case(vita_state)
        VITA_IDLE :
 	 req_write_pkt_fifo <= 0;
-       VITA_HEADER, VITA_STREAMID, VITA_SECS, VITA_TICS, VITA_TICS2, VITA_TRAILER :
+       VITA_HEADER, VITA_STREAMID, VITA_TICS, VITA_TICS2, VITA_TRAILER :
 	 req_write_pkt_fifo <= 1;
        VITA_PAYLOAD :
 	 // Write if sample ready and no error flags
      	 req_write_pkt_fifo <= (sample_fifo_src_rdy_i & ~|flags_fifo_o[4:1]);
-       VITA_ERR_HEADER, VITA_ERR_STREAMID, VITA_ERR_SECS, VITA_ERR_TICS, VITA_ERR_TICS2, VITA_ERR_PAYLOAD :
+       VITA_ERR_HEADER, VITA_ERR_STREAMID, VITA_ERR_TICS, VITA_ERR_TICS2, VITA_ERR_PAYLOAD :
 	 req_write_pkt_fifo <= 1;
        default :
 	 req_write_pkt_fifo <= 0;

@@ -1,5 +1,5 @@
 
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,13 +32,11 @@ module dspengine_16to8
     input [35:0] access_dat_i
     );
 
-   wire 	 convert;
-   wire [17:0] 	 scale_factor;
-   
-   setting_reg #(.my_addr(BASE),.width(19)) sr_16to8
+   wire convert;
+   setting_reg #(.my_addr(BASE),.width(1)) sr_16to8
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({convert,scale_factor}),.changed());
-   
+      .in(set_data),.out(convert),.changed());
+
    reg [2:0] 	 dsp_state;
    localparam DSP_IDLE = 0;
    localparam DSP_PARSE_HEADER = 1;
@@ -63,7 +61,7 @@ module dspengine_16to8
    wire [15:0] 	 scaled_i, scaled_q;
    wire [7:0] 	 i8, q8;
    reg [7:0] 	 i8_reg, q8_reg;
-   wire 	 stb_read, stb_mult, stb_clip, stb_round, val_read, val_mult, val_clip, val_round;
+   wire 	 stb_read, stb_clip, val_read, val_clip;
    wire 	 stb_out, stb_reg;
    reg 		 even;
    
@@ -193,29 +191,21 @@ module dspengine_16to8
    wire [15:0] i16 = access_dat_i[31:16];
    wire [15:0] q16 = access_dat_i[15:0];
 
-   pipectrl #(.STAGES(4), .TAGWIDTH(2)) pipectrl 
+   pipectrl #(.STAGES(2), .TAGWIDTH(2)) pipectrl
      (.clk(clk), .reset(reset),
       .src_rdy_i(send_to_pipe), .dst_rdy_o(), // dst_rdy_o will always be 1 since dst_rdy_i is 1, below
       .src_rdy_o(stb_out), .dst_rdy_i(1),   // always accept output of chain
-      .strobes({stb_round,stb_clip,stb_mult,stb_read}), .valids({val_round,val_clip,val_mult,val_read}),
+      .strobes({stb_clip,stb_read}), .valids({val_clip,val_read}),
       .tag_i({last,even}), .tag_o({last_o,even_o}));
 
    always @(posedge clk)
      if(stb_out & ~even_o)
        {i8_reg,q8_reg} <= {i8,q8};
-   
-   MULT18X18S mult_i 
-     (.P(prod_i), .A(scale_factor), .B({i16,2'b00}), .C(clk), .CE(stb_mult), .R(reset) ); 
-   clip_reg #(.bits_in(24),.bits_out(16),.STROBED(1)) clip_i 
-     (.clk(clk), .in(prod_i[35:12]), .out(scaled_i), .strobe_in(stb_clip), .strobe_out());
-   round_sd #(.WIDTH_IN(16),.WIDTH_OUT(8),.DISABLE_SD(1)) round_i
-     (.clk(clk), .reset(reset), .in(scaled_i), .strobe_in(stb_round), .out(i8), .strobe_out());
 
-   MULT18X18S mult_q 
-     (.P(prod_q), .A(scale_factor), .B({q16,2'b00}), .C(clk), .CE(stb_mult), .R(reset) ); 
-   clip_reg #(.bits_in(24),.bits_out(16),.STROBED(1)) clip_q 
-     (.clk(clk), .in(prod_q[35:12]), .out(scaled_q), .strobe_in(stb_clip), .strobe_out());
-   round_sd #(.WIDTH_IN(16),.WIDTH_OUT(8),.DISABLE_SD(1)) round_q
-     (.clk(clk), .reset(reset), .in(scaled_q), .strobe_in(stb_round), .out(q8), .strobe_out());
+   clip_reg #(.bits_in(16),.bits_out(8),.STROBED(1)) clip_i
+     (.clk(clk), .in(i16), .out(i8), .strobe_in(stb_clip), .strobe_out());
+
+   clip_reg #(.bits_in(16),.bits_out(8),.STROBED(1)) clip_q
+     (.clk(clk), .in(q16), .out(q8), .strobe_in(stb_clip), .strobe_out());
 
 endmodule // dspengine_16to8

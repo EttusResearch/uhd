@@ -1,6 +1,6 @@
 
 `timescale 1ns/1ns
-module dsp_core_rx_tb();
+module ddc_chain_tb();
    
    reg clk, rst;
 
@@ -9,8 +9,8 @@ module dsp_core_rx_tb();
    initial clk = 0;
    always #5 clk = ~clk;
    
-   initial $dumpfile("dsp_core_rx_tb.vcd");
-   initial $dumpvars(0,dsp_core_rx_tb);
+   initial $dumpfile("ddc_chain_tb.vcd");
+   initial $dumpvars(0,ddc_chain_tb);
    
    reg signed [23:0] adc_in;
    wire signed [15:0] adc_out_i, adc_out_q;
@@ -27,7 +27,7 @@ module dsp_core_rx_tb();
    reg [7:0] set_addr;
    reg [31:0] set_data;
    
-   dsp_core_rx #(.BASE(0)) dsp_core_rx
+   ddc_chain #(.BASE(0)) ddc_chain
      (.clk(clk),.rst(rst),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .adc_i(adc_in), .adc_ovf_i(0),
@@ -70,4 +70,4 @@ module dsp_core_rx_tb();
        adc_in <= adc_in + 4;
    //adc_in <= (($random % 473) + 23)/4;
 */   
-endmodule // dsp_core_rx_tb
+endmodule // ddc_chain_tb

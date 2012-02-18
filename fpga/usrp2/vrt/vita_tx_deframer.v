@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -85,7 +85,6 @@ module vita_tx_deframer
    localparam VITA_TICS 	 = 6;
    localparam VITA_TICS2 	 = 7;
    localparam VITA_PAYLOAD 	 = 8;
-   localparam VITA_STORE         = 9;
    localparam VITA_TRAILER 	 = 10;
    localparam VITA_DUMP          = 11;
    
@@ -118,21 +117,7 @@ module vita_tx_deframer
 	    <= 0;
 	  seqnum_err <= 0;
        end
-     else 
-       if((vita_state == VITA_STORE) & fifo_space)
-	 if(vita_eof)  
-	   if(eof)
-	     vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
-	   else if(has_trailer_reg)
-	     vita_state <= VITA_TRAILER;
-	   else
-	     vita_state <= VITA_DUMP;
-   	 else
-	   begin
-	      vita_state <= VITA_PAYLOAD;
-	      pkt_len <= pkt_len - 1;
-	   end
-       else if(src_rdy_i)
+     else if(src_rdy_i & dst_rdy_o) begin //valid read
 	 case(vita_state)
 	   VITA_TRANS_HEADER :
 	     begin
@@ -184,14 +169,33 @@ module vita_tx_deframer
 	     vita_state <= VITA_TICS2;
 	   VITA_TICS2 :
 	     vita_state <= VITA_PAYLOAD;
-	   VITA_PAYLOAD :
-	     if(line_done)
-	       begin
-		  vector_phase <= 0;
-		  vita_state <= VITA_STORE;
-	       end
-	     else
-	       vector_phase <= vector_phase + 1;
+
+        VITA_PAYLOAD : begin
+
+            //step through each element until line done, then reset
+            vector_phase <= (line_done)? 0: vector_phase + 1;
+
+            //decrement the packet count after each line
+            pkt_len <= (line_done)? pkt_len - 1 : pkt_len;
+
+            //end of frame reached, determine next state
+            //otherwise, keep processing through the payload
+            if (line_done && vita_eof) begin
+
+                if (eof) begin
+                    vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
+                end
+                else if (has_trailer_reg) begin
+                    vita_state <= VITA_TRAILER;
+                end
+                else begin
+                    vita_state <= VITA_DUMP;
+                end
+
+            end //line_done && vita_eof
+
+        end //end VITA_PAYLOAD
+
 	   VITA_TRAILER :
 	     if(eof)
 	       vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
@@ -200,46 +204,53 @@ module vita_tx_deframer
 	   VITA_DUMP :
 	     if(eof)
 	       vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
-	   VITA_STORE :
-	     ;
 	   default :
 	     vita_state <= (USE_TRANS_HEADER==1) ? VITA_TRANS_HEADER : VITA_HEADER;
 	 endcase // case (vita_state)
 
-   assign line_done = (vector_phase == numchan);
+     end //valid read
+
+   assign line_done = (MAXCHAN == 1)? 1 : (vector_phase == numchan);
    
    wire [FIFOWIDTH-1:0] fifo_i;
    reg [63:0] 		      send_time;
-   reg [31:0] 		      sample_a, sample_b, sample_c, sample_d;
    
    always @(posedge clk)
      case(vita_state)
-       VITA_SECS :
+       VITA_TICS :
 	 send_time[63:32] <= data_i[31:0];
        VITA_TICS2 :
 	 send_time[31:0] <= data_i[31:0];
      endcase // case (vita_state)
-   
+
+   //sample registers for de-framing a vector input
+   reg [31:0] sample_reg [1:0];
    always @(posedge clk)
-     if(vita_state == VITA_PAYLOAD)
-       case(vector_phase)
-	 0: sample_a <= data_i[31:0];
-	 1: sample_b <= data_i[31:0];
-	 2: sample_c <= data_i[31:0];
-	 3: sample_d <= data_i[31:0];
-       endcase // case (vector_phase)
-   
-   wire 		      store = (vita_state == VITA_STORE);
+     if(src_rdy_i && dst_rdy_o)
+        sample_reg[vector_phase] <= data_i[31:0];
+
+   wire store = (vita_state == VITA_PAYLOAD)? (src_rdy_i && line_done) : 0;
+   assign dst_rdy_o = (vita_state == VITA_PAYLOAD)? fifo_space : 1;
+
    fifo_short #(.WIDTH(FIFOWIDTH)) short_tx_q
      (.clk(clk), .reset(reset), .clear(clear),
       .datain(fifo_i), .src_rdy_i(store), .dst_rdy_o(fifo_space),
       .dataout(sample_fifo_o), .src_rdy_o(sample_fifo_src_rdy_o), .dst_rdy_i(sample_fifo_dst_rdy_i) );
 
-   // sob, eob, has_secs (send_at) ignored on all lines except first
-   assign fifo_i = {sample_d,sample_c,sample_b,sample_a,seqnum_err,has_secs_reg,is_sob_reg,is_eob_reg,eop,
-		    12'd0,seqnum_reg[3:0],send_time};
+    //assign registered/live data to the samples vector
+    //the numchan'th sample vector is muxed to live data
+    wire [(32*MAXCHAN)-1:0] samples;
+    generate
+    genvar i;
+    for (i=0; i < MAXCHAN; i = i +1) begin : assign_samples
+        wire live_data = (i == (MAXCHAN-1))? 1 : numchan == i;
+        assign samples[32*i + 31:32*i] = (live_data)? data_i[31:0] : sample_reg[i];
+    end
+    endgenerate
 
-   assign dst_rdy_o = ~(vita_state == VITA_PAYLOAD) & ~((vita_state==VITA_STORE)& ~fifo_space) ;
+   // sob, eob, has_tics (send_at) ignored on all lines except first
+   assign fifo_i = {samples,seqnum_err,has_tics_reg,is_sob_reg,is_eob_reg,eop,
+		    12'd0,seqnum_reg[3:0],send_time};
 
    assign debug = { { 8'b0 },
 		    { 8'b0 },

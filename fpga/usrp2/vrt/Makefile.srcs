@@ -15,4 +15,6 @@ vita_tx_chain.v \
 gen_context_pkt.v \
 trigger_context_pkt.v \
 vita_pkt_gen.v \
+vita_rx_engine_glue.v \
+vita_tx_engine_glue.v \
 ))

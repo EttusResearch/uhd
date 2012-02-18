@@ -25,6 +25,9 @@ NET "reset_n"  LOC = "D5"  ;
 NET "PPS_IN"  LOC = "M14"  ;
 NET "reset_codec"  LOC = "B14"  ;
 
+## recycles fpga_cfg_cclk for reset from fw
+NET "ext_reset"  LOC = "R14"  ;
+
 ## GPIF
 NET "GPIF_D<15>"  LOC = "P7"  ;
 NET "GPIF_D<14>"  LOC = "N8"  ;
@@ -43,17 +46,18 @@ NET "GPIF_D<2>"  LOC = "N9"  ;
 NET "GPIF_D<1>"  LOC = "P9"  ;
 NET "GPIF_D<0>"  LOC = "P8"  ;
 
-NET "GPIF_CTL<3>"  LOC = "N5"  ;
+##NET "GPIF_CTL<3>"  LOC = "N5"  ;
+NET "GPIF_CTL<3>"  LOC = "P12"  ;
 NET "GPIF_CTL<2>"  LOC = "M11"  ;
 NET "GPIF_CTL<1>"  LOC = "M9"  ;
 NET "GPIF_CTL<0>"  LOC = "M7"  ;
 
-NET "GPIF_RDY<3>"  LOC = "N11"  ;
-NET "GPIF_RDY<2>"  LOC = "T10"  ;
-NET "GPIF_RDY<1>"  LOC = "T4"  ;
-NET "GPIF_RDY<0>"  LOC = "R5"  ;
+##NET "GPIF_RDY<3>"  LOC = "N11"  ;
+##NET "GPIF_RDY<2>"  LOC = "T10"  ;
+NET "GPIF_SLWR"  LOC = "T4"  ;
+NET "GPIF_SLRD"  LOC = "R5"  ;
 
-NET "GPIF_CS"  LOC = "P12"  ;
+##NET "GPIF_CS"  LOC = "P12"  ;
 NET "GPIF_SLOE"  LOC = "R11"  ;
 NET "GPIF_PKTEND"  LOC = "P10"  ;
 NET "GPIF_ADR<0>"  LOC = "T11"  ;

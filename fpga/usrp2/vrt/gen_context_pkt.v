@@ -32,12 +32,11 @@ module gen_context_pkt
    localparam CTXT_PROT_ENG = 1;
    localparam CTXT_HEADER = 2;
    localparam CTXT_STREAMID = 3;
-   localparam CTXT_SECS = 4;
-   localparam CTXT_TICS = 5;
-   localparam CTXT_TICS2 = 6;
-   localparam CTXT_MESSAGE = 7;
-   localparam CTXT_FLOWCTRL = 8;
-   localparam CTXT_DONE = 9;
+   localparam CTXT_TICS = 4;
+   localparam CTXT_TICS2 = 5;
+   localparam CTXT_MESSAGE = 6;
+   localparam CTXT_FLOWCTRL = 7;
+   localparam CTXT_DONE = 8;
 
    reg [33:0] 	 data_int;
    wire 	 src_rdy_int, dst_rdy_int;
@@ -88,11 +87,10 @@ module gen_context_pkt
 
    always @*
      case(ctxt_state)
-       CTXT_PROT_ENG : data_int <= { 2'b01, 13'b0, DSP_NUMBER[0], 1'b1, 1'b1, 16'd28 }; // UDP port 1 or 3
-       CTXT_HEADER : data_int <= { 1'b0, (PROT_ENG_FLAGS ? 1'b0 : 1'b1), 12'b010100001101, seqno, 16'd7 };
+       CTXT_PROT_ENG : data_int <= { 2'b01, 13'b0, DSP_NUMBER[0], 1'b1, 1'b1, 16'd24 }; // UDP port 1 or 3
+       CTXT_HEADER : data_int <= { 1'b0, (PROT_ENG_FLAGS ? 1'b0 : 1'b1), 12'b010100000001, seqno, 16'd6 };
        CTXT_STREAMID : data_int <= { 2'b00, streamid };
-       CTXT_SECS : data_int <= { 2'b00, err_time[63:32] };
-       CTXT_TICS : data_int <= { 2'b00, 32'd0 };
+       CTXT_TICS : data_int <= { 2'b00, err_time[63:32] };
        CTXT_TICS2 : data_int <= { 2'b00, err_time[31:0] };
        CTXT_MESSAGE : data_int <= { 2'b00, message };
        CTXT_FLOWCTRL : data_int <= { 2'b10, seqnum };
