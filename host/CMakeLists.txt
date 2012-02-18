@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2012 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -80,6 +80,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
     IF(NOT WIN32)
         #only export symbols that are declared to be part of the uhd api (non dll platforms)
         UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
+        UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility-inlines-hidden HAVE_VISIBILITY_INLINES_HIDDEN)
     ENDIF(NOT WIN32)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
