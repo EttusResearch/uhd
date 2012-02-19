@@ -67,7 +67,7 @@ ENDFOREACH(util_source)
 IF(ENABLE_USRP2)
     IF(WIN32 AND UHD_RELEASE_MODE) #include dd.exe
         FILE(DOWNLOAD
-            "http://www.ettus.com/downloads/dd.exe"
+            "http://files.ettus.com/dd.exe"
             ${CMAKE_CURRENT_BINARY_DIR}/dd.exe
         )
         INSTALL(FILES
