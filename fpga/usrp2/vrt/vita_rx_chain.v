@@ -40,10 +40,10 @@ module vita_rx_chain
 
    wire clear;
    assign clear_o = clear;
-
+   wire clear_int;
    setting_reg #(.my_addr(BASE+3)) sr
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(),.changed(clear));
+      .in(set_data),.out(),.changed(clear_int));
 
    vita_rx_control #(.BASE(BASE), .WIDTH(32)) vita_rx_control
      (.clk(clk), .reset(reset), .clear(clear),
@@ -88,6 +88,26 @@ module vita_rx_chain
      (.clk(clk), .reset(reset), .clear(clear),
       .data_i(rx_data_int2), .src_rdy_i(rx_src_rdy_int2), .dst_rdy_o(rx_dst_rdy_int2),
       .data_o(rx_data_o), .src_rdy_o(rx_src_rdy_o), .dst_rdy_i(rx_dst_rdy_i) );
+
+    //only clear once a full packet has passed through the output interface
+    reg xfer_pkt, clear_oneshot;
+    assign clear = (clear_oneshot)? ~xfer_pkt : 0;
+    always @(posedge clk) begin
+
+        if (reset || clear) begin
+            clear_oneshot <= 0;
+        end
+        else if (clear_int) begin
+            clear_oneshot <= 1;
+        end
+
+        if (reset || clear) begin
+            xfer_pkt <= 0;
+        end
+        else if (rx_src_rdy_o && rx_dst_rdy_i) begin
+            xfer_pkt <= ~rx_data_o[33];
+        end
+    end
 
    assign debug = vrc_debug; //  | vrf_debug;
    
