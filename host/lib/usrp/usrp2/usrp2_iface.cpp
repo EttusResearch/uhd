@@ -135,11 +135,15 @@ public:
     }
 
     bool is_device_locked(void){
-        boost::uint32_t lock_secs = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_TIME);
+        boost::uint32_t lock_time = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_TIME);
         boost::uint32_t lock_gpid = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_GPID);
 
+        //may not be the right tick rate, but this is ok for locking purposes
+        const boost::uint32_t lock_timeout_time = boost::uint32_t(3*100e6);
+
         //if the difference is larger, assume not locked anymore
-        if (this->get_curr_secs() - lock_secs >= 3) return false;
+        const boost::uint32_t time_diff = this->get_curr_time() - lock_time;
+        if (time_diff >= lock_timeout_time) return false;
 
         //otherwise only lock if the device hash is different that ours
         return lock_gpid != boost::uint32_t(get_gpid());
@@ -147,14 +151,13 @@ public:
 
     void lock_task(void){
         //re-lock in task
-        this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, this->get_curr_secs());
+        this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, this->get_curr_time());
         //sleep for a bit
         boost::this_thread::sleep(boost::posix_time::milliseconds(1500));
     }
 
-    boost::uint32_t get_curr_secs(void){
-        //may not be the right tick rate, but this is ok for locking purposes
-        return boost::uint32_t(this->peek32(U2_REG_TIME64_LO_RB_IMM)/100e6);
+    boost::uint32_t get_curr_time(void){
+        return this->peek32(U2_REG_TIME64_LO_RB_IMM);
     }
 
 /***********************************************************************
