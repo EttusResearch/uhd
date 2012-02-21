@@ -11,6 +11,7 @@ FIND_PATH(LIBUSB_INCLUDE_DIRS
     HINTS $ENV{LIBUSB_DIR}/include ${PC_LIBUSB_INCLUDEDIR}
     PATHS /usr/local/include/libusb-1.0 /usr/local/include
     /usr/include/libusb-1.0 /usr/include
+    /opt/local/include/libusb-1.0
 
     #non-conforming naming convention,
     #backwards compatible with old script
@@ -28,7 +29,7 @@ endif()
 FIND_LIBRARY(LIBUSB_LIBRARIES
     NAMES ${libusb1_library_names}
     HINTS $ENV{LIBUSB_DIR}/lib ${PC_LIBUSB_LIBDIR}
-    PATHS /usr/local/lib /usr/lib
+    PATHS /usr/local/lib /usr/lib /opt/local/lib
 )
 
 include(FindPackageHandleStandardArgs)
