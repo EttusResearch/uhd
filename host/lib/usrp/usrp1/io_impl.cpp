@@ -651,7 +651,8 @@ tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args_){
     _iface->poke32(FR_TX_FORMAT, bmFR_TX_FORMAT_16_IQ);
 
     //calculate packet size
-    const size_t bpp = _data_transport->get_send_frame_size()/args.channels.size();
+    size_t bpp = _data_transport->get_send_frame_size()/args.channels.size();
+    bpp -= alignment_padding - 1; //minus the max remainder after LUT commit
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
 
     //make the new streamer given the samples per packet
