@@ -549,8 +549,16 @@ double usrp1_impl::update_rx_dsp_freq(const size_t dspno, const double freq_){
 }
 
 double usrp1_impl::update_tx_dsp_freq(const size_t dspno, const double freq){
-    //map the freq shift key to a subdev spec to a particular codec chip
-    _dbc[_tx_subdev_spec.at(dspno).db_name].codec->set_duc_freq(freq, _master_clock_rate);
+    const subdev_spec_pair_t pair = _tx_subdev_spec.at(dspno);
+
+    //determine the connection type and hence, the sign
+    const std::string conn = _tree->access<std::string>(str(boost::format(
+        "/mboards/0/dboards/%s/tx_frontends/%s/connection"
+    ) % pair.db_name % pair.sd_name)).get();
+    double sign = (conn == "I" or conn == "IQ")? +1.0 : -1.0;
+
+    //map this DSP's subdev spec to a particular codec chip
+    _dbc[pair.db_name].codec->set_duc_freq(sign*freq, _master_clock_rate);
     return freq; //assume infinite precision
 }
 
