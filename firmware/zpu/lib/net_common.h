@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2011 Ettus Research LLC
+ * Copyright 2009-2012 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,5 +54,8 @@ void send_udp_pkt(int src_port, struct socket_address dst,
 void handle_eth_packet(uint32_t *p, size_t nlines);
 
 void send_gratuitous_arp(void);
+
+//! Send an ARP request for the given IP address
+void net_common_send_arp_request(const struct ip_addr *addr);
 
 #endif /* INCLUDED_NET_COMMON_H */

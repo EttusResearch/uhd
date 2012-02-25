@@ -129,6 +129,7 @@ private:
     double set_tx_dsp_freq(const std::string &, const double);
     uhd::meta_range_t get_tx_dsp_freq_range(const std::string &);
     void update_clock_source(const std::string &, const std::string &);
+    void program_stream_dest(uhd::transport::zero_copy_if::sptr &, const uhd::stream_args_t &);
 };
 
 #endif /* INCLUDED_USRP2_IMPL_HPP */

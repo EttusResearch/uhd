@@ -92,8 +92,35 @@ static void handle_udp_data_packet(
     default: return;
     }
 
-    eth_mac_addr_t eth_mac_host; arp_cache_lookup_mac(&src.addr, &eth_mac_host);
-    setup_framer(eth_mac_host, *ethernet_mac_addr(), src, dst, which);
+    //assume the packet destination is the packet source
+    //the arp cache lookup should never fail for this case
+    const struct socket_address src_addr = dst;
+    struct socket_address dst_addr = src;
+    eth_mac_addr_t eth_mac_dst;
+    arp_cache_lookup_mac(&dst_addr.addr, &eth_mac_dst);
+
+    //however, if this control packet has an alternative destination...
+    if (payload_len >= sizeof(usrp2_stream_ctrl_t)){
+
+        //parse the destination ip addr and udp port from the payload
+        const usrp2_stream_ctrl_t *stream_ctrl = (const usrp2_stream_ctrl_t *)payload;
+        dst_addr.addr.addr = stream_ctrl->ip_addr;
+        dst_addr.port = (uint16_t)stream_ctrl->udp_port;
+        struct ip_addr ip_dest = dst_addr.addr;
+
+        //are we in the subnet? if not use the gateway
+        const uint32_t subnet_mask = get_subnet()->addr;
+        const bool in_subnet = ((get_ip_addr()->addr & subnet_mask) == (ip_dest.addr & subnet_mask));
+        if (!in_subnet) ip_dest = *get_gateway();
+
+        //lookup the host ip address with ARP (this may fail)
+        const bool ok = arp_cache_lookup_mac(&ip_dest, &eth_mac_dst);
+        if (!ok) net_common_send_arp_request(&ip_dest);
+        const uint32_t result = (ok)? 0 : ~0;
+        send_udp_pkt(dst.port, src, &result, sizeof(result));
+    }
+
+    setup_framer(eth_mac_dst, *ethernet_mac_addr(), dst_addr, src_addr, which);
 }
 
 #define OTW_GPIO_BANK_TO_NUM(bank) \
@@ -279,6 +306,7 @@ int
 main(void)
 {
   u2_init();
+  arp_cache_init();
 #ifdef BOOTLOADER
   putstr("\nUSRP N210 UDP bootloader\n");
 #else
@@ -294,8 +322,7 @@ main(void)
   //load the production FPGA image or firmware if appropriate
   do_the_bootload_thing();
   //if we get here we've fallen through to safe firmware
-  set_default_mac_addr();
-  set_default_ip_addr();
+  eth_addrs_set_default();
 #endif
 
   print_mac_addr(ethernet_mac_addr()); newline();

@@ -24,7 +24,6 @@ void u2p_init(void){
     bool safe_fw = find_safe_booted_flag();
     set_safe_booted_flag(0);
     if (safe_fw) {
-        set_default_ip_addr();
-        set_default_mac_addr();
+        eth_addrs_set_default();
     }
 }

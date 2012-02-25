@@ -21,6 +21,7 @@
 #include "../../transport/super_send_packet_handler.hpp"
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
+#include "fw_common.h"
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/tasks.hpp>
@@ -31,6 +32,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
+#include <boost/asio.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
@@ -361,6 +363,60 @@ bool usrp2_impl::recv_async_msg(
 }
 
 /***********************************************************************
+ * Stream destination programmer
+ **********************************************************************/
+void usrp2_impl::program_stream_dest(
+    zero_copy_if::sptr &xport, const uhd::stream_args_t &args
+){
+    //perform an initial flush of transport
+    while (xport->get_recv_buff(0.0)){}
+
+    //program the stream command
+    usrp2_stream_ctrl_t stream_ctrl = usrp2_stream_ctrl_t();
+    stream_ctrl.sequence = uhd::htonx(boost::uint32_t(0 /* don't care seq num */));
+    stream_ctrl.vrt_hdr = uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER));
+
+    //user has provided an alternative address and port for destination
+    if (args.args.has_key("addr") and args.args.has_key("port")){
+        UHD_MSG(status) << boost::format(
+            "Programming streaming destination for custom address.\n"
+            "IPv4 Address: %s, UDP Port: %s\n"
+        ) % args.args["addr"] % args.args["port"] << std::endl;
+
+        asio::io_service io_service;
+        asio::ip::udp::resolver resolver(io_service);
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), args.args["addr"], args.args["port"]);
+        asio::ip::udp::endpoint endpoint = *resolver.resolve(query);
+        stream_ctrl.ip_addr = uhd::htonx(boost::uint32_t(endpoint.address().to_v4().to_ulong()));
+        stream_ctrl.udp_port = uhd::htonx(boost::uint32_t(endpoint.port()));
+
+        for (size_t i = 0; i < 3; i++){
+            UHD_MSG(status) << "ARP attempt " << i << std::endl;
+            managed_send_buffer::sptr send_buff = xport->get_send_buff();
+            std::memcpy(send_buff->cast<void *>(), &stream_ctrl, sizeof(stream_ctrl));
+            send_buff->commit(sizeof(stream_ctrl));
+            boost::this_thread::sleep(boost::posix_time::milliseconds(300));
+            managed_recv_buffer::sptr recv_buff = xport->get_recv_buff(0.0);
+            if (recv_buff and recv_buff->size() >= sizeof(boost::uint32_t)){
+                const boost::uint32_t result = uhd::ntohx(recv_buff->cast<const boost::uint32_t *>()[0]);
+                if (result == 0){
+                    UHD_MSG(status) << "Success! " << std::endl;
+                    return;
+                }
+            }
+        }
+        throw uhd::runtime_error("Device failed to ARP when programming alternative streaming destination.");
+    }
+
+    else{
+        //send the partial stream control without destination
+        managed_send_buffer::sptr send_buff = xport->get_send_buff();
+        std::memcpy(send_buff->cast<void *>(), &stream_ctrl, sizeof(stream_ctrl));
+        send_buff->commit(sizeof(stream_ctrl)/2);
+    }
+}
+
+/***********************************************************************
  * Receive streamer
  **********************************************************************/
 rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
@@ -406,6 +462,7 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
                 const size_t dsp = chan + _mbc[mb].rx_chan_occ - num_chan_so_far;
                 _mbc[mb].rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
                 _mbc[mb].rx_dsps[dsp]->setup(args);
+                this->program_stream_dest(_mbc[mb].rx_dsp_xports[dsp], args);
                 my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
                     &zero_copy_if::get_recv_buff, _mbc[mb].rx_dsp_xports[dsp], _1
                 ), true /*flush*/);

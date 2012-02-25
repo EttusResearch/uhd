@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2011 Ettus Research LLC
+ * Copyright 2009-2012 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -374,6 +374,22 @@ send_arp_reply(struct arp_eth_ipv4 *req, eth_mac_addr_t our_mac)
   send_pkt(t, ETHERTYPE_ARP, &reply, sizeof(reply), 0, 0, 0, 0);
 }
 
+void net_common_send_arp_request(const struct ip_addr *addr){
+    struct arp_eth_ipv4 req _AL4;
+    req.ar_hrd = ARPHRD_ETHER;
+    req.ar_pro = ETHERTYPE_IPV4;
+    req.ar_hln = sizeof(eth_mac_addr_t);
+    req.ar_pln = sizeof(struct ip_addr);
+    req.ar_op = ARPOP_REQUEST;
+    memcpy(req.ar_sha, ethernet_mac_addr(), sizeof(eth_mac_addr_t));
+    memcpy(req.ar_sip, get_ip_addr(), sizeof(struct ip_addr));
+    memset(req.ar_tha, 0x00, sizeof(eth_mac_addr_t));
+    memcpy(req.ar_tip, addr, sizeof(struct ip_addr));
+
+    //send the request with a broadcast ethernet mac address
+    send_pkt(BCAST_MAC_ADDR, ETHERTYPE_ARP, &req, sizeof(req), 0, 0, 0, 0);
+}
+
 void send_gratuitous_arp(void){
   struct arp_eth_ipv4 req _AL4;
   req.ar_hrd = ARPHRD_ETHER;
@@ -415,7 +431,15 @@ handle_arp_packet(struct arp_eth_ipv4 *p, size_t size)
       || p->ar_hln != 6
       || p->ar_pln != 4)
     return;
-  
+
+  if (p->ar_op == ARPOP_REPLY){
+    struct ip_addr ip_addr;
+    memcpy(&ip_addr, p->ar_sip, sizeof(ip_addr));
+    eth_mac_addr_t mac_addr;
+    memcpy(&mac_addr, p->ar_sha, sizeof(mac_addr));
+    arp_cache_update(&ip_addr, &mac_addr);
+  }
+
   if (p->ar_op != ARPOP_REQUEST)
     return;
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -84,17 +84,20 @@ static std::string uint16_bytes_to_string(const byte_vector_t &bytes){
  **********************************************************************/
 static const boost::uint8_t N100_EEPROM_ADDR = 0x50;
 
-static const uhd::dict<std::string, boost::uint8_t> USRP_N100_OFFSETS = boost::assign::map_list_of
-    ("hardware", 0x00)
-    ("mac-addr", 0x02)
-    ("ip-addr", 0x0C)
-    //leave space here for other addresses (perhaps)
-    ("revision", 0x12)
-    ("product", 0x14)
-    ("gpsdo", 0x17)
-    ("serial", 0x18)
-    ("name", 0x18 + SERIAL_LEN)
-;
+struct n100_eeprom_map{
+    boost::uint16_t hardware;
+    boost::uint8_t mac_addr[6];
+    boost::uint32_t subnet;
+    boost::uint32_t ip_addr;
+    boost::uint16_t _pad0;
+    boost::uint16_t revision;
+    boost::uint16_t product;
+    unsigned char _pad1;
+    unsigned char gpsdo;
+    unsigned char serial[SERIAL_LEN];
+    unsigned char name[NAME_MAX_LEN];
+    boost::uint32_t gateway;
+};
 
 enum n200_gpsdo_type{
     N200_GPSDO_NONE = 0,
@@ -105,30 +108,36 @@ enum n200_gpsdo_type{
 static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //extract the hardware number
     mb_eeprom["hardware"] = uint16_bytes_to_string(
-        iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["hardware"], 2)
+        iface.read_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, hardware), 2)
     );
 
     //extract the revision number
     mb_eeprom["revision"] = uint16_bytes_to_string(
-        iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["revision"], 2)
+        iface.read_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, revision), 2)
     );
 
     //extract the product code
     mb_eeprom["product"] = uint16_bytes_to_string(
-        iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["product"], 2)
+        iface.read_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, product), 2)
     );
 
     //extract the addresses
     mb_eeprom["mac-addr"] = mac_addr_t::from_bytes(iface.read_eeprom(
-        N100_EEPROM_ADDR, USRP_N100_OFFSETS["mac-addr"], 6
+        N100_EEPROM_ADDR, offsetof(n100_eeprom_map, mac_addr), 6
     )).to_string();
 
     boost::asio::ip::address_v4::bytes_type ip_addr_bytes;
-    byte_copy(iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["ip-addr"], 4), ip_addr_bytes);
+    byte_copy(iface.read_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, ip_addr), 4), ip_addr_bytes);
     mb_eeprom["ip-addr"] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
 
+    byte_copy(iface.read_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, subnet), 4), ip_addr_bytes);
+    mb_eeprom["subnet"] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
+
+    byte_copy(iface.read_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, gateway), 4), ip_addr_bytes);
+    mb_eeprom["gateway"] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
+
     //gpsdo capabilities
-    boost::uint8_t gpsdo_byte = iface.read_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["gpsdo"], 1).at(0);
+    boost::uint8_t gpsdo_byte = iface.read_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, gpsdo), 1).at(0);
     switch(n200_gpsdo_type(gpsdo_byte)){
     case N200_GPSDO_INTERNAL: mb_eeprom["gpsdo"] = "internal"; break;
     case N200_GPSDO_ONBOARD: mb_eeprom["gpsdo"] = "onboard"; break;
@@ -137,12 +146,12 @@ static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
     //extract the serial
     mb_eeprom["serial"] = bytes_to_string(iface.read_eeprom(
-        N100_EEPROM_ADDR, USRP_N100_OFFSETS["serial"], SERIAL_LEN
+        N100_EEPROM_ADDR, offsetof(n100_eeprom_map, serial), SERIAL_LEN
     ));
 
     //extract the name
     mb_eeprom["name"] = bytes_to_string(iface.read_eeprom(
-        N100_EEPROM_ADDR, USRP_N100_OFFSETS["name"], NAME_MAX_LEN
+        N100_EEPROM_ADDR, offsetof(n100_eeprom_map, name), NAME_MAX_LEN
     ));
 
     //Empty serial correction: use the mac address to determine serial.
@@ -158,32 +167,44 @@ static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //parse the revision number
     if (mb_eeprom.has_key("hardware")) iface.write_eeprom(
-        N100_EEPROM_ADDR, USRP_N100_OFFSETS["hardware"],
+        N100_EEPROM_ADDR, offsetof(n100_eeprom_map, hardware),
         string_to_uint16_bytes(mb_eeprom["hardware"])
     );
 
     //parse the revision number
     if (mb_eeprom.has_key("revision")) iface.write_eeprom(
-        N100_EEPROM_ADDR, USRP_N100_OFFSETS["revision"],
+        N100_EEPROM_ADDR, offsetof(n100_eeprom_map, revision),
         string_to_uint16_bytes(mb_eeprom["revision"])
     );
 
     //parse the product code
     if (mb_eeprom.has_key("product")) iface.write_eeprom(
-        N100_EEPROM_ADDR, USRP_N100_OFFSETS["product"],
+        N100_EEPROM_ADDR, offsetof(n100_eeprom_map, product),
         string_to_uint16_bytes(mb_eeprom["product"])
     );
 
     //store the addresses
     if (mb_eeprom.has_key("mac-addr")) iface.write_eeprom(
-        N100_EEPROM_ADDR, USRP_N100_OFFSETS["mac-addr"],
+        N100_EEPROM_ADDR, offsetof(n100_eeprom_map, mac_addr),
         mac_addr_t::from_string(mb_eeprom["mac-addr"]).to_bytes()
     );
 
     if (mb_eeprom.has_key("ip-addr")){
         byte_vector_t ip_addr_bytes(4);
         byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"]).to_bytes(), ip_addr_bytes);
-        iface.write_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["ip-addr"], ip_addr_bytes);
+        iface.write_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, ip_addr), ip_addr_bytes);
+    }
+
+    if (mb_eeprom.has_key("subnet")){
+        byte_vector_t ip_addr_bytes(4);
+        byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["subnet"]).to_bytes(), ip_addr_bytes);
+        iface.write_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, subnet), ip_addr_bytes);
+    }
+
+    if (mb_eeprom.has_key("gateway")){
+        byte_vector_t ip_addr_bytes(4);
+        byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["gateway"]).to_bytes(), ip_addr_bytes);
+        iface.write_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, gateway), ip_addr_bytes);
     }
 
     //gpsdo capabilities
@@ -191,18 +212,18 @@ static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
         boost::uint8_t gpsdo_byte = N200_GPSDO_NONE;
         if (mb_eeprom["gpsdo"] == "internal") gpsdo_byte = N200_GPSDO_INTERNAL;
         if (mb_eeprom["gpsdo"] == "onboard") gpsdo_byte = N200_GPSDO_ONBOARD;
-        iface.write_eeprom(N100_EEPROM_ADDR, USRP_N100_OFFSETS["gpsdo"], byte_vector_t(1, gpsdo_byte));
+        iface.write_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, gpsdo), byte_vector_t(1, gpsdo_byte));
     }
 
     //store the serial
     if (mb_eeprom.has_key("serial")) iface.write_eeprom(
-        N100_EEPROM_ADDR, USRP_N100_OFFSETS["serial"],
+        N100_EEPROM_ADDR, offsetof(n100_eeprom_map, serial),
         string_to_bytes(mb_eeprom["serial"], SERIAL_LEN)
     );
 
     //store the name
     if (mb_eeprom.has_key("name")) iface.write_eeprom(
-        N100_EEPROM_ADDR, USRP_N100_OFFSETS["name"],
+        N100_EEPROM_ADDR, offsetof(n100_eeprom_map, name),
         string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
     );
 }

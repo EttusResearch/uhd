@@ -315,6 +315,55 @@ the following clock configuration must be set on the slave device:
     clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
     usrp->set_clock_config(clock_config, slave_index);
 
+
+------------------------------------------------------------------------
+Alternative stream destination
+------------------------------------------------------------------------
+It is possible to program the USRP to send RX packets to an alternative IP/UDP destination.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Set the subnet and gateway
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+To use an alternative streaming destination,
+the device needs to be able to determine if the destination address
+is within its subnet, and ARP appropriately.
+Therefore, the user should ensure that subnet and gateway addresses
+have been programmed into the device's EEPROM.
+
+Run the following commands:
+::
+
+    cd <install-path>/share/uhd/utils
+    ./usrp_burn_mb_eeprom --args=<optional device args> --key=subnet --val=255.255.255.0
+    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gateway --val=192.168.10.1
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Create a receive streamer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Set the stream args "addr" and "port" values to the alternative destination.
+Packets will be sent to this destination when the user issues a stream command.
+
+::
+
+    //create a receive streamer, host type does not matter
+    uhd::stream_args_t stream_args("fc32");
+
+    //resolvable address and port for a remote udp socket
+    stream_args.args["addr"] = "192.168.10.42";
+    stream_args.args["port"] = "12345";
+
+    //create the streamer
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+
+    //issue stream command
+    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+    stream_cmd.num_samps = total_num_samps;
+    stream_cmd.stream_now = true;
+    usrp->issue_stream_cmd(stream_cmd);
+
+**Note:**
+Calling recv() on this streamer object should yield a timeout.
+
 ------------------------------------------------------------------------
 Hardware setup notes
 ------------------------------------------------------------------------

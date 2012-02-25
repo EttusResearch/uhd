@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2011 Ettus Research LLC
+ * Copyright 2010-2012 Ettus Research LLC
  * Copyright 2007 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@
 #include "memory_map.h"
 #include "nonstdio.h"
 #include <stdbool.h>
+#include <string.h>
 #include "i2c.h"
 #include "usrp2/fw_common.h"
 
@@ -37,104 +38,69 @@ unprogrammed(const void *t, size_t len)
   return all_ones | all_zeros;
 }
 
-//////////////////// MAC Addr Stuff ///////////////////////
+typedef struct{
+    eth_mac_addr_t mac_addr;
+    struct ip_addr ip_addr;
+    struct ip_addr gateway;
+    struct ip_addr subnet;
+} eth_addrs_t;
 
-static bool src_mac_addr_initialized = false;
+static bool eth_addrs_initialized = false;
 
-static const eth_mac_addr_t default_mac_addr = {{
-    0x00, 0x50, 0xC2, 0x85, 0x3f, 0xff
-  }};
-
-static eth_mac_addr_t src_mac_addr = {{
-    0x00, 0x50, 0xC2, 0x85, 0x3f, 0xff
-  }};
-  
-void set_default_mac_addr(void)
-{
-    src_mac_addr_initialized = true;
-    src_mac_addr = default_mac_addr;
-}
-
-const eth_mac_addr_t *
-ethernet_mac_addr(void)
-{
-  if (!src_mac_addr_initialized){    // fetch from eeprom
-    src_mac_addr_initialized = true;
-
-    // if we're simulating, don't read the EEPROM model, it's REALLY slow
-    if (hwconfig_simulation_p())
-      return &src_mac_addr;
-
-    eth_mac_addr_t tmp;
-    bool ok = eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, &tmp, sizeof(tmp));
-    if (!ok || unprogrammed(&tmp, sizeof(tmp))){
-      // use the default
-    }
-    else
-      src_mac_addr = tmp;
-  }
-
-  return &src_mac_addr;
-}
-
-bool
-ethernet_set_mac_addr(const eth_mac_addr_t *t)
-{
-  bool ok = eeprom_write(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_MAC_ADDR, t, sizeof(eth_mac_addr_t));
-  if (ok){
-    src_mac_addr = *t;
-    src_mac_addr_initialized = true;
-    //eth_mac_set_addr(t); //this breaks the link
-  }
-
-  return ok;
-}
-
-//////////////////// IP Addr Stuff ///////////////////////
-
-static bool src_ip_addr_initialized = false;
-
-static const struct ip_addr default_ip_addr = {
-    (192 << 24 | 168 << 16 | 10 << 8 | 2 << 0)
+static const eth_addrs_t default_eth_addrs = {
+    .mac_addr = {{0x00, 0x50, 0xC2, 0x85, 0x3f, 0xff}},
+    .ip_addr = {(192 << 24 | 168 << 16 | 10  << 8  | 2 << 0)},
+    .gateway = {(192 << 24 | 168 << 16 | 10  << 8  | 1 << 0)},
+    .subnet  = {(255 << 24 | 255 << 16 | 255 << 8  | 0 << 0)},
 };
 
-static struct ip_addr src_ip_addr = {
-    (192 << 24 | 168 << 16 | 10 << 8 | 2 << 0)
-};
+static eth_addrs_t current_eth_addrs;
 
-void set_default_ip_addr(void)
-{
-    src_ip_addr_initialized = true;
-    src_ip_addr = default_ip_addr;
+static void eth_addrs_init(void){
+    if (eth_addrs_initialized) return;
+    eth_addrs_initialized = true;
+
+    #define eth_addrs_init_x(addr, x){ \
+        const bool ok = eeprom_read(USRP2_I2C_ADDR_MBOARD, addr, &current_eth_addrs.x, sizeof(current_eth_addrs.x)); \
+        if (!ok || unprogrammed(&current_eth_addrs.x, sizeof(current_eth_addrs.x))){ \
+            memcpy(&current_eth_addrs.x, &default_eth_addrs.x, sizeof(current_eth_addrs.x)); \
+        } \
+    }
+
+    eth_addrs_init_x(USRP2_EE_MBOARD_MAC_ADDR, mac_addr);
+    eth_addrs_init_x(USRP2_EE_MBOARD_IP_ADDR,  ip_addr);
+    eth_addrs_init_x(USRP2_EE_MBOARD_GATEWAY,  gateway);
+    eth_addrs_init_x(USRP2_EE_MBOARD_SUBNET,   subnet);
+
 }
 
-const struct ip_addr *get_ip_addr(void)
-{
-  if (!src_ip_addr_initialized){    // fetch from eeprom
-    src_ip_addr_initialized = true;
+const eth_mac_addr_t *ethernet_mac_addr(void){
+    eth_addrs_init();
+    return &current_eth_addrs.mac_addr;
+}
 
-    // if we're simulating, don't read the EEPROM model, it's REALLY slow
-    if (hwconfig_simulation_p())
-      return &src_ip_addr;
+const struct ip_addr *get_ip_addr(void){
+    eth_addrs_init();
+    return &current_eth_addrs.ip_addr;
+}
 
-    struct ip_addr tmp;
-    bool ok = eeprom_read(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, &tmp, sizeof(tmp));
-    if (!ok || unprogrammed(&tmp, sizeof(tmp))){
-      // use the default
-    }
-    else
-      src_ip_addr = tmp;
-  }
+const struct ip_addr *get_subnet(void){
+    eth_addrs_init();
+    return &current_eth_addrs.subnet;
+}
 
-  return &src_ip_addr;
+const struct ip_addr *get_gateway(void){
+    eth_addrs_init();
+    return &current_eth_addrs.gateway;
 }
 
 bool set_ip_addr(const struct ip_addr *t){
-  bool ok = eeprom_write(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, t, sizeof(struct ip_addr));
-  if (ok){
-    src_ip_addr = *t;
-    src_ip_addr_initialized = true;
-  }
+    const bool ok = eeprom_write(USRP2_I2C_ADDR_MBOARD, USRP2_EE_MBOARD_IP_ADDR, t, sizeof(struct ip_addr));
+    if (ok) current_eth_addrs.ip_addr = *t;
+    return ok;
+}
 
-  return ok;
+void eth_addrs_set_default(void){
+    eth_addrs_initialized = true;
+    memcpy(&current_eth_addrs, &default_eth_addrs, sizeof(default_eth_addrs));
 }
