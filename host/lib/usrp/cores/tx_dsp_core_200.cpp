@@ -192,6 +192,8 @@ public:
         }
         else throw uhd::value_error("USRP TX cannot handle requested wire format: " + stream_args.otw_format);
 
+        _host_extra_scaling /= stream_args.args.cast<double>("fullscale", 1.0);
+
         this->update_scalar();
 
         _iface->poke32(REG_TX_CTRL_FORMAT, format_word);

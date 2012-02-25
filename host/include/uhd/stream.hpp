@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -78,6 +78,11 @@ struct UHD_API stream_args_t{
     /*!
      * The args parameter is used to pass arbitrary key/value pairs.
      * Possible keys used by args (depends on implementation):
+     *
+     * - fullscale: specifies the full-scale amplitude when using floats.
+     * By default, the fullscale amplitude under floating point is 1.0.
+     * Set the "fullscale" to scale the samples in the host to the
+     * expected input range and/or output range of your application.
      *
      * - peak: specifies a fractional sample level to calculate scaling with the sc8 wire format.
      * When using sc8 samples over the wire, the device must scale samples
