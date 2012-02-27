@@ -132,6 +132,7 @@ public:
     ){
         //translate the metadata to vrt if packet info
         vrt::if_packet_info_t if_packet_info;
+        if_packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_DATA;
         if_packet_info.has_sid = false;
         if_packet_info.has_cid = false;
         if_packet_info.has_tlr = true;
