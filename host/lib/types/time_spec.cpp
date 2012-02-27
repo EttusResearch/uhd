@@ -49,7 +49,7 @@ time_spec_t time_spec_t::get_system_time(void){
     LARGE_INTEGER counts, freq;
     QueryPerformanceCounter(&counts);
     QueryPerformanceFrequency(&freq);
-    return time_spec_t::from_ticks(counts.QuadPart, freq.QuadPart);
+    return time_spec_t::from_ticks(counts.QuadPart, double(freq.QuadPart));
 }
 #endif /* HAVE_QUERY_PERFORMANCE_COUNTER */
 

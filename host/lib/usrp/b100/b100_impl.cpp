@@ -214,7 +214,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         _fpga_ctrl->peek32(0);
     }
     //try reset once in the case of failure
-    catch(const uhd::exception &e){
+    catch(const uhd::exception &){
         if (initialization_count > 1) throw;
         UHD_MSG(warning) <<
             "The control endpoint was left in a bad state.\n"

@@ -36,10 +36,10 @@ boost::mutex spawn_mutex;
 
 #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
     //limit buffer resize on macos or it will error
-    const size_t rx_dsp_buff_size = 1e6;
+    const size_t rx_dsp_buff_size = size_t(1e6);
 #elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
     //set to half-a-second of buffering at max rate
-    const size_t rx_dsp_buff_size = 50e6;
+    const size_t rx_dsp_buff_size = size_t(50e6);
 #endif
 
 const size_t tx_dsp_buff_size = (1 << 20);
