@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2012 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,16 +45,21 @@ IF(UHD_BUILD_INFO_DISCOVERY)
     #grab the git ref id for the current head
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-        OUTPUT_VARIABLE _git_rev OUTPUT_STRIP_TRAILING_WHITESPACE
-        RESULT_VARIABLE _git_rev_result
+        COMMAND ${GIT_EXECUTABLE} describe --always --abbrev=8 --long
+        OUTPUT_VARIABLE _git_describe OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _git_describe_result
     )
 
     #only set the build info on success
-    IF(_git_rev_result EQUAL 0)
-        SET(UHD_BUILD_INFO ${_git_rev})
+    IF(_git_describe_result EQUAL 0)
+        EXECUTE_PROCESS(
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            COMMAND ${PYTHON_EXECUTABLE} -c "print '${_git_describe}'.split('-',1)[1]"
+            OUTPUT_VARIABLE UHD_BUILD_INFO OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
     ENDIF()
+
 ENDIF(UHD_BUILD_INFO_DISCOVERY)
 
 ########################################################################
-SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}")
+SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}-${UHD_BUILD_INFO}")

@@ -273,5 +273,5 @@ ENDIF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
 # Print Summary
 ########################################################################
 UHD_PRINT_COMPONENT_SUMMARY()
-MESSAGE(STATUS "Building version: ${CPACK_PACKAGE_VERSION}-${UHD_BUILD_INFO}")
+MESSAGE(STATUS "Building version: ${UHD_VERSION}")
 MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")

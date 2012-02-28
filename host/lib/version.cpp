@@ -33,5 +33,5 @@ UHD_STATIC_BLOCK(print_system_info){
 #endif
 
 std::string uhd::get_version_string(void){
-    return "@UHD_VERSION@-@UHD_BUILD_INFO@";
+    return "@UHD_VERSION@";
 }
