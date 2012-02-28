@@ -27,7 +27,7 @@ EXECUTE_PROCESS(COMMAND "date" OUTPUT_VARIABLE DATETIME_NOW OUTPUT_STRIP_TRAILIN
 ########################################################################
 # Setup CPack
 ########################################################################
-SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - Universal Hardware Driver Images")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - USRP Hardware Driver Images")
 SET(CPACK_PACKAGE_VENDOR              "Ettus Research LLC")
 SET(CPACK_PACKAGE_CONTACT             "support@ettus.com")
 SET(CPACK_PACKAGE_VERSION ${UHD_VERSION})
