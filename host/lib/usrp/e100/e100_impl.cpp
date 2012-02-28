@@ -411,6 +411,14 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tree->access<double>(mb_path / "tick_rate") //now subscribe the clock rate setter
         .subscribe(boost::bind(&e100_clock_ctrl::set_fpga_clock_rate, _clock_ctrl, _1));
 
+    //reset cordic rates and their properties to zero
+    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
+        _tree->access<double>(mb_path / "rx_dsps" / name / "freq" / "value").set(0.0);
+    }
+    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
+        _tree->access<double>(mb_path / "tx_dsps" / name / "freq" / "value").set(0.0);
+    }
+
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(mb_path / "dboards/A/rx_frontends").at(0)));
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(mb_path / "dboards/A/tx_frontends").at(0)));
     _tree->access<std::string>(mb_path / "clock_source/value").set("internal");

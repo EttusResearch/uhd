@@ -629,6 +629,14 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
     BOOST_FOREACH(const std::string &mb, _mbc.keys()){
         fs_path root = "/mboards/" + mb;
 
+        //reset cordic rates and their properties to zero
+        BOOST_FOREACH(const std::string &name, _tree->list(root / "rx_dsps")){
+            _tree->access<double>(root / "rx_dsps" / name / "freq" / "value").set(0.0);
+        }
+        BOOST_FOREACH(const std::string &name, _tree->list(root / "tx_dsps")){
+            _tree->access<double>(root / "tx_dsps" / name / "freq" / "value").set(0.0);
+        }
+
         _tree->access<subdev_spec_t>(root / "rx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(root / "dboards/A/rx_frontends").at(0)));
         _tree->access<subdev_spec_t>(root / "tx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(root / "dboards/A/tx_frontends").at(0)));
         _tree->access<std::string>(root / "clock_source/value").set("internal");
