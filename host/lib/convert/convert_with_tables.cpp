@@ -59,16 +59,16 @@ public:
     item32_t lookup(const sc16_t &in0, const sc16_t &in1){
         if (swap){ //hope this compiles out, its a template constant
             return
-            (item32_t(_table[size_t(in0.real())]) << 16) |
-            (item32_t(_table[size_t(in0.imag())]) << 24) |
-            (item32_t(_table[size_t(in1.real())]) << 0) |
-            (item32_t(_table[size_t(in1.imag())]) << 8) ;
+            (item32_t(_table[boost::uint16_t(in0.real())]) << 16) |
+            (item32_t(_table[boost::uint16_t(in0.imag())]) << 24) |
+            (item32_t(_table[boost::uint16_t(in1.real())]) << 0) |
+            (item32_t(_table[boost::uint16_t(in1.imag())]) << 8) ;
         }
         return
-            (item32_t(_table[size_t(in0.real())]) << 8) |
-            (item32_t(_table[size_t(in0.imag())]) << 0) |
-            (item32_t(_table[size_t(in1.real())]) << 24) |
-            (item32_t(_table[size_t(in1.imag())]) << 16) ;
+            (item32_t(_table[boost::uint16_t(in0.real())]) << 8) |
+            (item32_t(_table[boost::uint16_t(in0.imag())]) << 0) |
+            (item32_t(_table[boost::uint16_t(in1.real())]) << 24) |
+            (item32_t(_table[boost::uint16_t(in1.imag())]) << 16) ;
     }
 
 private:
@@ -272,11 +272,11 @@ UHD_STATIC_BLOCK(register_convert_sc16_item32_1_to_fcxx_1){
     id.input_format = "sc8_item32_le";
     uhd::convert::register_converter(id, &make_convert_sc8_item32_le_1_to_sc16_1, PRIORITY_TABLE);
 
-    id.output_format = "sc16";
-    id.input_format = "sc8_item32_be";
+    id.input_format = "sc16";
+    id.output_format = "sc8_item32_be";
     uhd::convert::register_converter(id, &make_convert_sc16_1_to_sc8_item32_be_1, PRIORITY_TABLE);
 
-    id.output_format = "sc16";
-    id.input_format = "sc8_item32_le";
+    id.input_format = "sc16";
+    id.output_format = "sc8_item32_le";
     uhd::convert::register_converter(id, &make_convert_sc16_1_to_sc8_item32_le_1, PRIORITY_TABLE);
 }
