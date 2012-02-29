@@ -400,9 +400,6 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
         _tree->access<double>(mb_path / "rx_dsps" / name / "freq" / "value").set(0.0);
     }
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
-        _tree->access<double>(mb_path / "tx_dsps" / name / "freq" / "value").set(0.0);
-    }
 
     if (_tree->list(mb_path / "rx_dsps").size() > 0)
         _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(_rx_subdev_spec);
