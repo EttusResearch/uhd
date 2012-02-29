@@ -106,13 +106,6 @@ public:
         _protocol_compat = ntohl(ctrl_data.proto_ver);
 
         mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
-
-        //----------------------- special temporary warning ------------
-        if (mb_eeprom["gpsdo"] == "internal" and _protocol_compat < USRP2_FW_COMPAT_NUM){
-            UHD_MSG(warning) << "You must upgrade your USRP's firmware to use the GPSDO" << std::endl;
-        }
-        //--------------------------------------------------------------
-
     }
 
     ~usrp2_iface_impl(void){UHD_SAFE_CALL(
@@ -130,11 +123,14 @@ public:
         }
         else{
             _lock_task.reset(); //shutdown the task
-            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, 0xfffffff0); //unlock
+            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, 0); //unlock
         }
     }
 
     bool is_device_locked(void){
+        //never assume lock with fpga image mismatch
+        if ((this->peek32(U2_REG_COMPAT_NUM_RB) >> 16) != USRP2_FPGA_COMPAT_NUM) return false;
+
         boost::uint32_t lock_time = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_TIME);
         boost::uint32_t lock_gpid = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_GPID);
 
@@ -142,6 +138,7 @@ public:
         const boost::uint32_t lock_timeout_time = boost::uint32_t(3*100e6);
 
         //if the difference is larger, assume not locked anymore
+        if ((lock_time & 1) == 0) return false; //bit0 says unlocked
         const boost::uint32_t time_diff = this->get_curr_time() - lock_time;
         if (time_diff >= lock_timeout_time) return false;
 
@@ -157,7 +154,7 @@ public:
     }
 
     boost::uint32_t get_curr_time(void){
-        return this->peek32(U2_REG_TIME64_LO_RB_IMM);
+        return this->peek32(U2_REG_TIME64_LO_RB_IMM) | 1; //bit 1 says locked
     }
 
 /***********************************************************************
