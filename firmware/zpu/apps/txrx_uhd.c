@@ -89,6 +89,10 @@ static void handle_udp_data_packet(
         which = 1;
         break;
 
+    case USRP2_UDP_FIFO_CRTL_PORT:
+        which = 3;
+        break;
+
     default: return;
     }
 
@@ -338,6 +342,7 @@ main(void)
   register_udp_listener(USRP2_UDP_RX_DSP0_PORT, handle_udp_data_packet);
   register_udp_listener(USRP2_UDP_RX_DSP1_PORT, handle_udp_data_packet);
   register_udp_listener(USRP2_UDP_TX_DSP0_PORT, handle_udp_data_packet);
+  register_udp_listener(USRP2_UDP_FIFO_CRTL_PORT, handle_udp_data_packet);
   
 #ifdef USRP2P
   register_udp_listener(USRP2_UDP_UPDATE_PORT, handle_udp_fw_update_packet);

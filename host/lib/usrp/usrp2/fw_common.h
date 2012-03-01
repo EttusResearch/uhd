@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,6 +51,7 @@ typedef struct{
 #define USRP2_UDP_RX_DSP0_PORT 49156
 #define USRP2_UDP_TX_DSP0_PORT 49157
 #define USRP2_UDP_RX_DSP1_PORT 49158
+#define USRP2_UDP_FIFO_CRTL_PORT 49159
 #define USRP2_UDP_UART_BASE_PORT 49170
 #define USRP2_UDP_UART_GPS_PORT 49172
 

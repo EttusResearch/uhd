@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Ettus Research LLC
+# Copyright 2011-2012 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,5 +32,6 @@ IF(ENABLE_USRP2)
         ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_fifo_ctrl.cpp
     )
 ENDIF(ENABLE_USRP2)

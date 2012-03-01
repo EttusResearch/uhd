@@ -19,6 +19,7 @@
 #define INCLUDED_USRP2_IMPL_HPP
 
 #include "usrp2_iface.hpp"
+#include "usrp2_fifo_ctrl.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
 #include "rx_frontend_core_200.hpp"
@@ -82,6 +83,7 @@ private:
     uhd::property_tree::sptr _tree;
     struct mb_container_type{
         usrp2_iface::sptr iface;
+        usrp2_fifo_ctrl::sptr fifo_ctrl;
         usrp2_clock_ctrl::sptr clock;
         usrp2_codec_ctrl::sptr codec;
         uhd::gps_ctrl::sptr gps;
@@ -95,6 +97,7 @@ private:
         user_settings_core_200::sptr user;
         std::vector<uhd::transport::zero_copy_if::sptr> rx_dsp_xports;
         uhd::transport::zero_copy_if::sptr tx_dsp_xport;
+        uhd::transport::zero_copy_if::sptr fifo_ctrl_xport;
         uhd::usrp::dboard_manager::sptr dboard_manager;
         uhd::usrp::dboard_iface::sptr dboard_iface;
         size_t rx_chan_occ, tx_chan_occ;
