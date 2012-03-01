@@ -16,6 +16,8 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
+#include <uhd/transport/vrt_if_packet.hpp>
 #include "usrp2_fifo_ctrl.hpp"
 #include <boost/thread/mutex.hpp>
 #include <boost/asio.hpp> //htonl
@@ -36,25 +38,47 @@ public:
         //NOP
     }
 
+    UHD_INLINE void send_pkt(wb_addr_type addr, boost::uint32_t data, int cmd){
+        managed_send_buffer::sptr buff = _xport->get_send_buff(0.0);
+        if (not buff){
+            throw uhd::runtime_error("peek32/poke32 in fifo ctrl timed out getting a send buffer");
+        }
+        boost::uint32_t *trans = buff->cast<boost::uint32_t *>();
+        trans[0] = htonl(_seq++);
+        boost::uint32_t *pkt = trans + 1;
+
+        //load packet info
+        vrt::if_packet_info_t packet_info;
+        packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_CONTEXT;
+        packet_info.num_payload_words32 = 2;
+        packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(boost::uint32_t);
+        packet_info.packet_count = _seq;
+        packet_info.sob = false;
+        packet_info.eob = false;
+        packet_info.has_sid = false;
+        packet_info.has_cid = false;
+        packet_info.has_tsi = false;
+        packet_info.has_tsf = false;
+        packet_info.has_tlr = false;
+
+        //load header with offset 1
+        vrt::if_hdr_pack_be(pkt, packet_info);
+
+        //load payload with offset 1
+        const boost::uint32_t ctrl_word = (addr & 0xff) | cmd | (_seq << 16);
+        pkt[packet_info.num_header_words32+0] = htonl(ctrl_word);
+        pkt[packet_info.num_header_words32+1] = htonl(data);
+
+        //send the buffer over the interface
+        buff->commit(sizeof(boost::uint32_t)*(packet_info.num_packet_words32+1));
+    }
+
     void poke32(wb_addr_type addr, boost::uint32_t data){
         boost::mutex::scoped_lock lock(_mutex);
 
         while (_xport->get_recv_buff(0.0)){} //flush
 
-        {
-            managed_send_buffer::sptr buff = _xport->get_send_buff(0.0);
-            if (not buff){
-                throw uhd::runtime_error("poke32 in fifo ctrl timed out getting a send buffer");
-            }
-            boost::uint32_t *pkt = buff->cast<boost::uint32_t *>();
-            const boost::uint32_t ctrl_word = (addr >> 2) | POKE32_CMD | (++_seq << 16);
-            //TODO vita packer goes here, below is the payload
-            pkt[0] = htonl(ctrl_word);
-            //FIXME cant be zero, need real VRT header here, see pkt dispatcher in fpga code
-            if ((data & 0xffff) == 0) data = 1;
-            pkt[1] = htonl(data);
-            buff->commit(sizeof(boost::uint32_t)*2);
-        }
+        this->send_pkt(addr, data, POKE32_CMD);
 
         {
             managed_recv_buffer::sptr buff = _xport->get_recv_buff(ACK_TIMEOUT);
@@ -62,9 +86,9 @@ public:
                 throw uhd::runtime_error("poke32 in fifo ctrl timed out getting a recv buffer");
             }
             const boost::uint32_t *pkt = buff->cast<const boost::uint32_t *>();
-            if (buff->size() < (sizeof(boost::uint32_t)*6) or (ntohl(pkt[4]) >> 16) != (_seq & 0xffff)){
-                throw uhd::runtime_error("poke32 in fifo ctrl got invalid ack packet");
-            }
+            vrt::if_packet_info_t packet_info;
+            packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
+            vrt::if_hdr_unpack_be(pkt, packet_info);
         }
     }
 
@@ -73,18 +97,7 @@ public:
 
         while (_xport->get_recv_buff(0.0)){} //flush
 
-        {
-            managed_send_buffer::sptr buff = _xport->get_send_buff(0.0);
-            if (not buff){
-                throw uhd::runtime_error("peek32 in fifo ctrl timed out getting a send buffer");
-            }
-            boost::uint32_t *pkt = buff->cast<boost::uint32_t *>();
-            const boost::uint32_t ctrl_word = (addr >> 2) | PEEK32_CMD | (++_seq << 16);
-            //TODO vita packer goes here, below is the payload
-            pkt[0] = htonl(ctrl_word);
-            pkt[1] = htonl(0xffffffff); //FIXME cant be zero, need real VRT header here, see pkt dispatcher in fpga code
-            buff->commit(sizeof(boost::uint32_t)*2);
-        }
+        this->send_pkt(addr >> 2, 0, PEEK32_CMD);
 
         {
             managed_recv_buffer::sptr buff = _xport->get_recv_buff(ACK_TIMEOUT);
@@ -92,10 +105,10 @@ public:
                 throw uhd::runtime_error("peek32 in fifo ctrl timed out getting a recv buffer");
             }
             const boost::uint32_t *pkt = buff->cast<const boost::uint32_t *>();
-            if (buff->size() < (sizeof(boost::uint32_t)*6) or (ntohl(pkt[4]) >> 16) != (_seq & 0xffff)){
-                throw uhd::runtime_error("peek32 in fifo ctrl got invalid ack packet");
-            }
-            return ntohl(pkt[5]);
+            vrt::if_packet_info_t packet_info;
+            packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
+            vrt::if_hdr_unpack_be(pkt, packet_info);
+            return ntohl(pkt[packet_info.num_header_words32+1]);
         }
     }
 
