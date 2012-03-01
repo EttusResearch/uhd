@@ -373,6 +373,10 @@ module u2plus_core
    wire 	 wr3_ready_i, wr3_ready_o;
    wire [35:0] 	 wr0_dat, wr1_dat, wr2_dat, wr3_dat;
 
+   wire [35:0] srb_wr_data, srb_rd_data;
+   wire srb_wr_ready, srb_rd_ready;
+   wire srb_wr_valid, srb_rd_valid;
+
    wire [35:0] 	 tx_err_data;
    wire 	 tx_err_src_rdy, tx_err_dst_rdy;
 
@@ -393,10 +397,12 @@ module u2plus_core
       .dsp0_inp_data(wr1_dat), .dsp0_inp_valid(wr1_ready_i), .dsp0_inp_ready(wr1_ready_o),
       .dsp1_inp_data(wr3_dat), .dsp1_inp_valid(wr3_ready_i), .dsp1_inp_ready(wr3_ready_o),
       .eth_inp_data(wr2_dat), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
-      .err_inp_data(tx_err_data), .err_inp_ready(tx_err_dst_rdy), .err_inp_valid(tx_err_src_rdy),
+      .err_inp_data(tx_err_data), .err_inp_valid(tx_err_src_rdy), .err_inp_ready(tx_err_dst_rdy),
+      .ctl_inp_data(srb_wr_data), .ctl_inp_valid(srb_wr_valid),   .ctl_inp_ready(srb_wr_ready),
 
       .ser_out_data(rd0_dat), .ser_out_valid(rd0_ready_o), .ser_out_ready(rd0_ready_i),
       .dsp_out_data(rd1_dat), .dsp_out_valid(rd1_ready_o), .dsp_out_ready(rd1_ready_i),
+      .ctl_out_data(srb_rd_data), .ctl_out_valid(srb_rd_valid), .ctl_out_ready(srb_rd_ready),
       .eth_out_data(rd2_dat), .eth_out_valid(rd2_ready_o), .eth_out_ready(rd2_ready_i)
       );
 
@@ -437,13 +443,13 @@ module u2plus_core
    
    //compatibility number -> increment when the fpga has been sufficiently altered
    localparam compat_num = {16'd9, 16'd0}; //major, minor
-   wire [31:0] churn = status; //tweak churn until timing meets!
+   wire [31:0] churn = 0; //tweak churn until timing meets!
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
 
-      .word00(churn),.word01(32'b0),.word02(32'b0),.word03(32'b0),
+      .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
       .word11(vita_time[31:0]),.word12(compat_num),.word13({18'b0, button, 1'b0, clk_status, serdes_link_up, 10'b0}),
@@ -477,15 +483,43 @@ module u2plus_core
    
    assign 	 s7_dat_i = 32'd0;
 
+   wire set_stb_dsp0, set_stb_dsp1;
+   wire [31:0] set_data_dsp0, set_data_dsp1;
+   wire [7:0] set_addr_dsp0, set_addr_dsp1;
+
+   //mux settings_bus_crossclock and settings_readback_bus_fifo_ctrl with prio
+   assign set_stb_dsp = set_stb_dsp0 | set_stb_dsp1;
+   assign set_addr_dsp = set_stb_dsp0? set_addr_dsp0 : set_addr_dsp1;
+   assign set_data_dsp = set_stb_dsp0? set_data_dsp0 : set_data_dsp1;
+
    settings_bus_crossclock settings_bus_crossclock
      (.clk_i(wb_clk), .rst_i(wb_rst), .set_stb_i(set_stb), .set_addr_i(set_addr), .set_data_i(set_data),
-      .clk_o(dsp_clk), .rst_o(dsp_rst), .set_stb_o(set_stb_dsp), .set_addr_o(set_addr_dsp), .set_data_o(set_data_dsp));
+      .clk_o(dsp_clk), .rst_o(dsp_rst), .set_stb_o(set_stb_dsp0), .set_addr_o(set_addr_dsp0), .set_data_o(set_data_dsp0));
 
    user_settings #(.BASE(SR_USER_REGS)) user_settings
      (.clk(dsp_clk),.rst(dsp_rst),.set_stb(set_stb_dsp),
       .set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .set_addr_user(set_addr_user),.set_data_user(set_data_user),
       .set_stb_user(set_stb_user) );
+
+   // /////////////////////////////////////////////////////////////////////////
+   // Settings + Readback Bus -- FIFO controlled
+
+    wire [31:0] srb_debug;
+    settings_readback_bus_fifo_ctrl #(.PROT_DEST(3)) srb
+    (
+        .clock(dsp_clk), .reset(dsp_rst),
+        .vita_time(vita_time),
+        .in_data(srb_rd_data), .in_valid(srb_rd_valid), .in_ready(srb_rd_ready),
+        .out_data(srb_wr_data), .out_valid(srb_wr_valid), .out_ready(srb_wr_ready),
+        .strobe(set_stb_dsp1), .addr(set_addr_dsp1), .data(set_data_dsp1),
+        .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
+        .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
+        .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
+        .word11(vita_time[31:0]),.word12(compat_num),.word13({18'b0, button, 1'b0, clk_status, serdes_link_up, 10'b0}),
+        .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0]),
+        .debug(srb_debug)
+    );
 
    // Output control lines
    wire [7:0] 	 clock_outs, serdes_outs, adc_outs;
