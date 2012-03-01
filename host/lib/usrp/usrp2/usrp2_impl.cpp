@@ -462,10 +462,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create frontend control objects
         ////////////////////////////////////////////////////////////////
         _mbc[mb].rx_fe = rx_frontend_core_200::make(
-            _mbc[mb].iface, U2_REG_SR_ADDR(SR_RX_FRONT)
+            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_RX_FRONT)
         );
         _mbc[mb].tx_fe = tx_frontend_core_200::make(
-            _mbc[mb].iface, U2_REG_SR_ADDR(SR_TX_FRONT)
+            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_TX_FRONT)
         );
 
         _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
@@ -496,10 +496,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create rx dsp control objects
         ////////////////////////////////////////////////////////////////
         _mbc[mb].rx_dsps.push_back(rx_dsp_core_200::make(
-            _mbc[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP0), U2_REG_SR_ADDR(SR_RX_CTRL0), USRP2_RX_SID_BASE + 0, true
+            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_RX_DSP0), U2_REG_SR_ADDR(SR_RX_CTRL0), USRP2_RX_SID_BASE + 0, true
         ));
         _mbc[mb].rx_dsps.push_back(rx_dsp_core_200::make(
-            _mbc[mb].iface, U2_REG_SR_ADDR(SR_RX_DSP1), U2_REG_SR_ADDR(SR_RX_CTRL1), USRP2_RX_SID_BASE + 1, true
+            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_RX_DSP1), U2_REG_SR_ADDR(SR_RX_CTRL1), USRP2_RX_SID_BASE + 1, true
         ));
         for (size_t dspno = 0; dspno < _mbc[mb].rx_dsps.size(); dspno++){
             _mbc[mb].rx_dsps[dspno]->set_link_rate(USRP2_LINK_RATE_BPS);
@@ -524,7 +524,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create tx dsp control objects
         ////////////////////////////////////////////////////////////////
         _mbc[mb].tx_dsp = tx_dsp_core_200::make(
-            _mbc[mb].iface, U2_REG_SR_ADDR(SR_TX_DSP), U2_REG_SR_ADDR(SR_TX_CTRL), USRP2_TX_ASYNC_SID
+            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_TX_DSP), U2_REG_SR_ADDR(SR_TX_CTRL), USRP2_TX_ASYNC_SID
         );
         _mbc[mb].tx_dsp->set_link_rate(USRP2_LINK_RATE_BPS);
         _tree->access<double>(mb_path / "tick_rate")
@@ -558,8 +558,9 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         time64_rb_bases.rb_hi_pps = U2_REG_TIME64_HI_RB_PPS;
         time64_rb_bases.rb_lo_pps = U2_REG_TIME64_LO_RB_PPS;
         _mbc[mb].time64 = time64_core_200::make(
-            _mbc[mb].iface, U2_REG_SR_ADDR(SR_TIME64), time64_rb_bases, mimo_clock_sync_delay_cycles
+            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_TIME64), time64_rb_bases, mimo_clock_sync_delay_cycles
         );
+        //_mbc[mb].fifo_ctrl->poke32(0x7, 0x1234);
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&time64_core_200::set_tick_rate, _mbc[mb].time64, _1));
         _tree->create<time_spec_t>(mb_path / "time/now")
@@ -582,7 +583,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////////
         // create user-defined control objects
         ////////////////////////////////////////////////////////////////////
-        _mbc[mb].user = user_settings_core_200::make(_mbc[mb].iface, U2_REG_SR_ADDR(SR_USER_REGS));
+        _mbc[mb].user = user_settings_core_200::make(_mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_USER_REGS));
         _tree->create<user_settings_core_200::user_reg_t>(mb_path / "user/regs")
             .subscribe(boost::bind(&user_settings_core_200::set_reg, _mbc[mb].user, _1));
 
@@ -608,7 +609,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             .subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "gdb", _1));
 
         //create a new dboard interface and manager
-        _mbc[mb].dboard_iface = make_usrp2_dboard_iface(_mbc[mb].iface, _mbc[mb].clock);
+        _mbc[mb].dboard_iface = make_usrp2_dboard_iface(_mbc[mb].fifo_ctrl, _mbc[mb].iface, _mbc[mb].iface, _mbc[mb].clock);
         _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_mbc[mb].dboard_iface);
         _mbc[mb].dboard_manager = dboard_manager::make(
             rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
@@ -678,12 +679,12 @@ void usrp2_impl::set_db_eeprom(const std::string &mb, const std::string &type, c
 }
 
 sensor_value_t usrp2_impl::get_mimo_locked(const std::string &mb){
-    const bool lock = (_mbc[mb].iface->peek32(U2_REG_IRQ_RB) & (1<<10)) != 0;
+    const bool lock = (_mbc[mb].fifo_ctrl->peek32(U2_REG_IRQ_RB) & (1<<10)) != 0;
     return sensor_value_t("MIMO", lock, "locked", "unlocked");
 }
 
 sensor_value_t usrp2_impl::get_ref_locked(const std::string &mb){
-    const bool lock = (_mbc[mb].iface->peek32(U2_REG_IRQ_RB) & (1<<11)) != 0;
+    const bool lock = (_mbc[mb].fifo_ctrl->peek32(U2_REG_IRQ_RB) & (1<<11)) != 0;
     return sensor_value_t("Ref", lock, "locked", "unlocked");
 }
 
@@ -728,18 +729,18 @@ void usrp2_impl::update_clock_source(const std::string &mb, const std::string &s
     case usrp2_iface::USRP_N210:
     case usrp2_iface::USRP_N200_R4:
     case usrp2_iface::USRP_N210_R4:
-        if (source == "internal")       _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x12);
-        else if (source == "external")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
-        else if (source == "mimo")      _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
+        if (source == "internal")       _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x12);
+        else if (source == "external")  _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
+        else if (source == "mimo")      _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
         else throw uhd::value_error("unhandled clock configuration reference source: " + source);
         _mbc[mb].clock->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
         break;
 
     case usrp2_iface::USRP2_REV3:
     case usrp2_iface::USRP2_REV4:
-        if (source == "internal")       _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x10);
-        else if (source == "external")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
-        else if (source == "mimo")      _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
+        if (source == "internal")       _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x10);
+        else if (source == "external")  _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
+        else if (source == "mimo")      _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
         else throw uhd::value_error("unhandled clock configuration reference source: " + source);
         _mbc[mb].clock->enable_external_ref(source != "internal");
         break;

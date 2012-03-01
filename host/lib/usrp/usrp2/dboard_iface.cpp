@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 //
 
 #include "gpio_core_200.hpp"
-#include "usrp2_iface.hpp"
+#include <uhd/types/serial.hpp>
 #include "clock_ctrl.hpp"
 #include "usrp2_regs.hpp" //wishbone address constants
 #include <uhd/usrp/dboard_iface.hpp>
@@ -35,7 +35,12 @@ using namespace boost::assign;
 
 class usrp2_dboard_iface : public dboard_iface{
 public:
-    usrp2_dboard_iface(usrp2_iface::sptr iface, usrp2_clock_ctrl::sptr clock_ctrl);
+    usrp2_dboard_iface(
+        wb_iface::sptr wb_iface,
+        uhd::i2c_iface::sptr i2c_iface,
+        uhd::spi_iface::sptr spi_iface,
+        usrp2_clock_ctrl::sptr clock_ctrl
+    );
     ~usrp2_dboard_iface(void);
 
     special_props_t get_special_props(void){
@@ -79,7 +84,8 @@ public:
     );
 
 private:
-    usrp2_iface::sptr _iface;
+    uhd::i2c_iface::sptr _i2c_iface;
+    uhd::spi_iface::sptr _spi_iface;
     usrp2_clock_ctrl::sptr _clock_ctrl;
     gpio_core_200::sptr _gpio;
 
@@ -92,22 +98,28 @@ private:
  * Make Function
  **********************************************************************/
 dboard_iface::sptr make_usrp2_dboard_iface(
-    usrp2_iface::sptr iface,
+    wb_iface::sptr wb_iface,
+    uhd::i2c_iface::sptr i2c_iface,
+    uhd::spi_iface::sptr spi_iface,
     usrp2_clock_ctrl::sptr clock_ctrl
 ){
-    return dboard_iface::sptr(new usrp2_dboard_iface(iface, clock_ctrl));
+    return dboard_iface::sptr(new usrp2_dboard_iface(wb_iface, i2c_iface, spi_iface, clock_ctrl));
 }
 
 /***********************************************************************
  * Structors
  **********************************************************************/
 usrp2_dboard_iface::usrp2_dboard_iface(
-    usrp2_iface::sptr iface,
+    wb_iface::sptr wb_iface,
+    uhd::i2c_iface::sptr i2c_iface,
+    uhd::spi_iface::sptr spi_iface,
     usrp2_clock_ctrl::sptr clock_ctrl
-){
-    _iface = iface;
-    _clock_ctrl = clock_ctrl;
-    _gpio = gpio_core_200::make(_iface, U2_REG_SR_ADDR(SR_GPIO), U2_REG_GPIO_RB);
+):
+    _i2c_iface(i2c_iface),
+    _spi_iface(spi_iface),
+    _clock_ctrl(clock_ctrl)
+{
+    _gpio = gpio_core_200::make(wb_iface, U2_REG_SR_ADDR(SR_GPIO), U2_REG_GPIO_RB);
 
     //reset the aux dacs
     _dac_regs[UNIT_RX] = ad5623_regs_t();
@@ -202,7 +214,7 @@ void usrp2_dboard_iface::write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    _iface->write_spi(unit_to_spi_dev[unit], config, data, num_bits);
+    _spi_iface->write_spi(unit_to_spi_dev[unit], config, data, num_bits);
 }
 
 boost::uint32_t usrp2_dboard_iface::read_write_spi(
@@ -211,18 +223,18 @@ boost::uint32_t usrp2_dboard_iface::read_write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
-    return _iface->read_spi(unit_to_spi_dev[unit], config, data, num_bits);
+    return _spi_iface->read_spi(unit_to_spi_dev[unit], config, data, num_bits);
 }
 
 /***********************************************************************
  * I2C
  **********************************************************************/
 void usrp2_dboard_iface::write_i2c(boost::uint8_t addr, const byte_vector_t &bytes){
-    return _iface->write_i2c(addr, bytes);
+    return _i2c_iface->write_i2c(addr, bytes);
 }
 
 byte_vector_t usrp2_dboard_iface::read_i2c(boost::uint8_t addr, size_t num_bytes){
-    return _iface->read_i2c(addr, num_bytes);
+    return _i2c_iface->read_i2c(addr, num_bytes);
 }
 
 /***********************************************************************
@@ -233,7 +245,7 @@ void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
         (UNIT_RX, SPI_SS_RX_DAC)
         (UNIT_TX, SPI_SS_TX_DAC)
     ;
-    _iface->write_spi(
+    _spi_iface->write_spi(
         unit_to_spi_dac[unit], spi_config_t::EDGE_FALL, 
         _dac_regs[unit].get_reg(), 24
     );
@@ -281,11 +293,11 @@ double usrp2_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which){
     } ad7922_regs.chn = ad7922_regs.mod; //normal mode: mod == chn
 
     //write and read spi
-    _iface->write_spi(
+    _spi_iface->write_spi(
         unit_to_spi_adc[unit], config,
         ad7922_regs.get_reg(), 16
     );
-    ad7922_regs.set_reg(boost::uint16_t(_iface->read_spi(
+    ad7922_regs.set_reg(boost::uint16_t(_spi_iface->read_spi(
         unit_to_spi_adc[unit], config,
         ad7922_regs.get_reg(), 16
     )));

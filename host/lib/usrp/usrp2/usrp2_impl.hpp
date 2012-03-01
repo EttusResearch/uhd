@@ -18,6 +18,7 @@
 #ifndef INCLUDED_USRP2_IMPL_HPP
 #define INCLUDED_USRP2_IMPL_HPP
 
+#include "gpio_core_200.hpp"
 #include "usrp2_iface.hpp"
 #include "usrp2_fifo_ctrl.hpp"
 #include "clock_ctrl.hpp"
@@ -53,14 +54,11 @@ static const size_t USRP2_SRAM_BYTES = size_t(1 << 20);
 static const boost::uint32_t USRP2_TX_ASYNC_SID = 2;
 static const boost::uint32_t USRP2_RX_SID_BASE = 3;
 
-/*!
- * Make a usrp2 dboard interface.
- * \param iface the usrp2 interface object
- * \param clk_ctrl the clock control object
- * \return a sptr to a new dboard interface
- */
+//! Make a usrp2 dboard interface.
 uhd::usrp::dboard_iface::sptr make_usrp2_dboard_iface(
-    usrp2_iface::sptr iface,
+    wb_iface::sptr wb_iface,
+    uhd::i2c_iface::sptr i2c_iface,
+    uhd::spi_iface::sptr spi_iface,
     usrp2_clock_ctrl::sptr clk_ctrl
 );
 
