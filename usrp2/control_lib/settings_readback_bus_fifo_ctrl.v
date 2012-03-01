@@ -76,54 +76,119 @@ module settings_readback_bus_fifo_ctrl
     wire writing = out_valid && out_ready;
 
     //state machine constants
-    localparam READ_HDR = 0;
-    localparam READ_DATA = 1;
-    localparam WAIT_EOF = 2;
-    localparam ACTION_EVENT = 3;
-    localparam WRITE_PROT_HDR = 4;
-    localparam WRITE_VRT_HDR = 5;
-    localparam WRITE_VRT_SID = 6;
-    localparam WRITE_VRT_TSF0 = 7;
-    localparam WRITE_VRT_TSF1 = 8;
-    localparam WRITE_RB_HDR = 9;
-    localparam WRITE_RB_DATA = 10;
+    localparam READ_LINE0     = 0;
+    localparam VITA_HDR       = 1;
+    localparam VITA_SID       = 2;
+    localparam VITA_CID0      = 3;
+    localparam VITA_CID1      = 4;
+    localparam VITA_TSI       = 5;
+    localparam VITA_TSF0      = 6;
+    localparam VITA_TSF1      = 7;
+    localparam READ_HDR       = 8;
+    localparam READ_DATA      = 9;
+    localparam WAIT_EOF       = 10;
+    localparam ACTION_EVENT   = 11;
+    localparam WRITE_PROT_HDR = 12;
+    localparam WRITE_VRT_HDR  = 13;
+    localparam WRITE_VRT_SID  = 14;
+    localparam WRITE_VRT_TSF0 = 15;
+    localparam WRITE_VRT_TSF1 = 16;
+    localparam WRITE_RB_HDR   = 17;
+    localparam WRITE_RB_DATA  = 18;
 
-    reg [3:0] state;
+    reg [4:0] state;
 
     //holdover from current read inputs
     reg [31:0] in_data_reg, in_hdr_reg;
     wire [7:0] in_addr = in_hdr_reg[7:0];
-    wire [7:0] do_poke = in_hdr_reg[8];
+    wire do_poke = in_hdr_reg[8];
+    reg [63:0] in_ticks_reg;
+    reg [3:0] in_seq_reg;
+    reg strobe_reg;
+    wire has_sid = in_data0[28];
+    wire has_cid = in_data0[27];
+    wire has_tsi = in_data0[23:22] != 0;
+    wire has_tsf = in_data0[21:20] != 0;
+    reg has_sid_reg, has_cid_reg, has_tsi_reg, has_tsf_reg;
 
     always @(posedge clock) begin
         if (reset) begin
-            state <= READ_HDR;
-            in_hdr_reg <= 0;
-            in_data_reg <= 0;
+            state <= READ_LINE0;
         end
         else begin
             case (state)
 
-            READ_HDR: begin
+            READ_LINE0: begin
                 if (reading/* && in_data0[32]*/) begin
-                    in_hdr_reg <= in_data0[31:0];
-                    state <= READ_DATA;
+                    state <= VITA_HDR;
                 end
+            end
+
+            VITA_HDR: begin
+                if (reading) begin
+                    if      (has_sid) state <= VITA_SID;
+                    else if (has_cid) state <= VITA_CID0;
+                    else if (has_tsi) state <= VITA_TSI;
+                    else if (has_tsf) state <= VITA_TSF0;
+                    else              state <= READ_HDR;
+                end
+                in_seq_reg <= in_data0[19:16];
+                has_sid_reg <= has_sid;
+                has_cid_reg <= has_cid;
+                has_tsi_reg <= has_tsi;
+                has_tsf_reg <= has_tsf;
+            end
+
+            VITA_SID: begin
+                if (reading) begin
+                    if      (has_cid_reg) state <= VITA_CID0;
+                    else if (has_tsi_reg) state <= VITA_TSI;
+                    else if (has_tsf_reg) state <= VITA_TSF0;
+                    else                  state <= READ_HDR;
+                end
+            end
+
+            VITA_CID0: begin
+                if (reading) state <= VITA_CID1;
+            end
+
+            VITA_CID1: begin
+                if (reading) begin
+                    if      (has_tsi_reg) state <= VITA_TSI;
+                    else if (has_tsf_reg) state <= VITA_TSF0;
+                    else                  state <= READ_HDR;
+                end
+            end
+
+            VITA_TSI: begin
+                if (reading) begin
+                    if (has_tsf_reg) state <= VITA_TSF0;
+                    else             state <= READ_HDR;
+                end
+            end
+
+            VITA_TSF0: begin
+                if (reading) state <= VITA_TSF1;
+                in_ticks_reg[63:32] <= in_data0;
+            end
+
+            VITA_TSF1: begin
+                if (reading) state <= READ_HDR;
+                in_ticks_reg[31:0] <= in_data0;
+            end
+
+            READ_HDR: begin
+                if (reading) state <= READ_DATA;
+                in_hdr_reg <= in_data0[31:0];
             end
 
             READ_DATA: begin
-                if (reading) begin
-                    in_data_reg <= in_data0[31:0];
-                    state <= (in_data0[33])? ACTION_EVENT : WAIT_EOF;
-                end
+                if (reading) state <= (in_data0[33])? ACTION_EVENT : WAIT_EOF;
+                in_data_reg <= in_data0[31:0];
             end
 
             WAIT_EOF: begin
-                if (reading) begin
-                    if (in_data0[33]) begin
-                        state <= ACTION_EVENT;
-                    end
-                end
+                if (reading && in_data0[33]) state <= ACTION_EVENT;
             end
 
             ACTION_EVENT: begin // poking and peeking happens here!
@@ -131,15 +196,11 @@ module settings_readback_bus_fifo_ctrl
             end
 
             WRITE_RB_DATA: begin
-                if (writing) begin
-                    state <= READ_HDR;
-                end
+                if (writing) state <= READ_LINE0;
             end
 
             default: begin
-                if (writing) begin
-                    state <= state + 1;
-                end
+                if (writing) state <= state + 1;
             end
 
             endcase //state
@@ -185,7 +246,7 @@ module settings_readback_bus_fifo_ctrl
     always @* begin
         case (state)
             WRITE_PROT_HDR: out_data_int <= prot_hdr;
-            WRITE_VRT_HDR:  out_data_int <= {12'b010100000001, 4'b0/*seqno*/, 16'd6};
+            WRITE_VRT_HDR:  out_data_int <= {12'b010100000001, in_seq_reg, 16'd6};
             WRITE_VRT_SID:  out_data_int <= SID;
             WRITE_VRT_TSF0: out_data_int <= rb_time[63:32];
             WRITE_VRT_TSF1: out_data_int <= rb_time[31:0];
@@ -206,16 +267,22 @@ module settings_readback_bus_fifo_ctrl
     assign out_data[31:0] = out_data_int;
 
     //assign to settings bus interface
-    assign strobe = (state == ACTION_EVENT) && do_poke;
+    assign strobe = strobe_reg;
     assign data = in_data_reg;
     assign addr = in_addr;
 
+    always @(posedge clock) begin
+        if (reset || state != ACTION_EVENT) strobe_reg <= 0;
+        else                                strobe_reg <= do_poke;
+    end
+
     assign debug = {
-        state,
-        in_valid, in_ready, in_data[33:32],
-        in_valid0, in_ready0, in_data0[33:32],
-        out_valid, out_ready, out_data[33:32],
-        16'b0
+        state, strobe, do_poke, strobe_reg, //8
+        addr, //8
+        data[15:0]
+        //in_valid, in_ready, in_data[33:32],
+        //in_valid0, in_ready0, in_data0[33:32],
+        //out_valid, out_ready, out_data[33:32],
     };
 
 endmodule //settings_readback_bus_fifo_ctrl
