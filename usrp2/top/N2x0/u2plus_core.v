@@ -443,7 +443,6 @@ module u2plus_core
    
    //compatibility number -> increment when the fpga has been sufficiently altered
    localparam compat_num = {16'd9, 16'd0}; //major, minor
-   wire [31:0] churn = 0; //tweak churn until timing meets!
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
@@ -508,7 +507,7 @@ module u2plus_core
     wire [31:0] srb_debug;
     settings_readback_bus_fifo_ctrl #(.PROT_DEST(3)) srb
     (
-        .clock(dsp_clk), .reset(dsp_rst),
+        .clock(dsp_clk), .reset(dsp_rst), .clear(0),
         .vita_time(vita_time),
         .in_data(srb_rd_data), .in_valid(srb_rd_valid), .in_ready(srb_rd_ready),
         .out_data(srb_wr_data), .out_valid(srb_wr_valid), .out_ready(srb_wr_ready),

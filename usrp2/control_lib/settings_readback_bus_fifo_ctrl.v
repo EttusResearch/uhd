@@ -17,9 +17,6 @@
 
 // A settings and readback bus controlled via fifo36 interface
 
-//TODO: take vita packets as input and use tsf to wait for time
-//currently we skip vita packet on input, strait to payload
-
 module settings_readback_bus_fifo_ctrl
     #(
         parameter SID = 0, //stream id for vita return packet
@@ -27,7 +24,7 @@ module settings_readback_bus_fifo_ctrl
     )
     (
         //clock and synchronous reset for all interfaces
-        input clock, input reset,
+        input clock, input reset, input clear,
 
         //current system time
         input [63:0] vita_time,
@@ -63,19 +60,32 @@ module settings_readback_bus_fifo_ctrl
         output [31:0] debug
     );
 
-    wire [35:0] in_data0;
-    wire in_valid0, in_ready0;
-
-    fifo_cascade #(.WIDTH(36), .SIZE(9/*512 lines plenty for short pkts*/)) input_fifo (
-        .clk(clock), .reset(reset), .clear(0),
-        .datain(in_data),   .src_rdy_i(in_valid),  .dst_rdy_o(in_ready),
-        .dataout(in_data0), .src_rdy_o(in_valid0), .dst_rdy_i(in_ready0)
-    );
-
-    wire reading = in_valid0 && in_ready0;
+    wire reading = in_valid && in_ready;
     wire writing = out_valid && out_ready;
 
-    //state machine constants
+    //------------------------------------------------------------------
+    //-- The command fifo:
+    //-- Stores an individual register access command per line.
+    //------------------------------------------------------------------
+    wire [63:0] in_command_ticks, out_command_ticks;
+    wire [31:0] in_command_hdr, out_command_hdr;
+    wire [31:0] in_command_data, out_command_data;
+    wire in_command_has_time, out_command_has_time;
+    wire in_command_valid, in_command_ready;
+    wire out_command_valid, out_command_ready;
+
+    fifo_cascade #(.WIDTH(129), .SIZE(4)) command_fifo (
+        .clk(clock), .reset(reset), .clear(clear),
+        .datain({in_command_ticks, in_command_hdr, in_command_data, in_command_has_time}),
+        .src_rdy_i(in_command_valid), .dst_rdy_o(in_command_ready),
+        .dataout({out_command_ticks, out_command_hdr, out_command_data, out_command_has_time}),
+        .src_rdy_o(out_command_valid), .dst_rdy_i(out_command_ready)
+    );
+
+    //------------------------------------------------------------------
+    //-- Input state machine:
+    //-- Read input packet and fill a command fifo entry.
+    //------------------------------------------------------------------
     localparam READ_LINE0     = 0;
     localparam VITA_HDR       = 1;
     localparam VITA_SID       = 2;
@@ -87,52 +97,47 @@ module settings_readback_bus_fifo_ctrl
     localparam READ_HDR       = 8;
     localparam READ_DATA      = 9;
     localparam WAIT_EOF       = 10;
-    localparam ACTION_EVENT   = 11;
-    localparam WRITE_PROT_HDR = 12;
-    localparam WRITE_VRT_HDR  = 13;
-    localparam WRITE_VRT_SID  = 14;
-    localparam WRITE_VRT_TSF0 = 15;
-    localparam WRITE_VRT_TSF1 = 16;
-    localparam WRITE_RB_HDR   = 17;
-    localparam WRITE_RB_DATA  = 18;
+    localparam STORE_CMD      = 11;
 
-    reg [4:0] state;
+    reg [4:0] in_state;
 
     //holdover from current read inputs
     reg [31:0] in_data_reg, in_hdr_reg;
-    wire [7:0] in_addr = in_hdr_reg[7:0];
-    wire do_poke = in_hdr_reg[8];
     reg [63:0] in_ticks_reg;
-    reg [3:0] in_seq_reg;
-    reg strobe_reg;
-    wire has_sid = in_data0[28];
-    wire has_cid = in_data0[27];
-    wire has_tsi = in_data0[23:22] != 0;
-    wire has_tsf = in_data0[21:20] != 0;
+    wire has_sid = in_data[28];
+    wire has_cid = in_data[27];
+    wire has_tsi = in_data[23:22] != 0;
+    wire has_tsf = in_data[21:20] != 0;
     reg has_sid_reg, has_cid_reg, has_tsi_reg, has_tsf_reg;
+
+    assign in_ready = (in_state < STORE_CMD);
+
+    //wire-up command inputs
+    assign in_command_valid    = (in_state == STORE_CMD);
+    assign in_command_ticks    = in_ticks_reg;
+    assign in_command_data     = in_data_reg;
+    assign in_command_hdr      = in_hdr_reg;
+    assign in_command_has_time = has_tsf;
 
     always @(posedge clock) begin
         if (reset) begin
-            state <= READ_LINE0;
+            in_state <= READ_LINE0;
         end
         else begin
-            case (state)
+            case (in_state)
 
             READ_LINE0: begin
-                if (reading/* && in_data0[32]*/) begin
-                    state <= VITA_HDR;
-                end
+                if (reading/* && in_data[32]*/) in_state <= VITA_HDR;
             end
 
             VITA_HDR: begin
                 if (reading) begin
-                    if      (has_sid) state <= VITA_SID;
-                    else if (has_cid) state <= VITA_CID0;
-                    else if (has_tsi) state <= VITA_TSI;
-                    else if (has_tsf) state <= VITA_TSF0;
-                    else              state <= READ_HDR;
+                    if      (has_sid) in_state <= VITA_SID;
+                    else if (has_cid) in_state <= VITA_CID0;
+                    else if (has_tsi) in_state <= VITA_TSI;
+                    else if (has_tsf) in_state <= VITA_TSF0;
+                    else              in_state <= READ_HDR;
                 end
-                in_seq_reg <= in_data0[19:16];
                 has_sid_reg <= has_sid;
                 has_cid_reg <= has_cid;
                 has_tsi_reg <= has_tsi;
@@ -141,79 +146,149 @@ module settings_readback_bus_fifo_ctrl
 
             VITA_SID: begin
                 if (reading) begin
-                    if      (has_cid_reg) state <= VITA_CID0;
-                    else if (has_tsi_reg) state <= VITA_TSI;
-                    else if (has_tsf_reg) state <= VITA_TSF0;
-                    else                  state <= READ_HDR;
+                    if      (has_cid_reg) in_state <= VITA_CID0;
+                    else if (has_tsi_reg) in_state <= VITA_TSI;
+                    else if (has_tsf_reg) in_state <= VITA_TSF0;
+                    else                  in_state <= READ_HDR;
                 end
             end
 
             VITA_CID0: begin
-                if (reading) state <= VITA_CID1;
+                if (reading) in_state <= VITA_CID1;
             end
 
             VITA_CID1: begin
                 if (reading) begin
-                    if      (has_tsi_reg) state <= VITA_TSI;
-                    else if (has_tsf_reg) state <= VITA_TSF0;
-                    else                  state <= READ_HDR;
+                    if      (has_tsi_reg) in_state <= VITA_TSI;
+                    else if (has_tsf_reg) in_state <= VITA_TSF0;
+                    else                  in_state <= READ_HDR;
                 end
             end
 
             VITA_TSI: begin
                 if (reading) begin
-                    if (has_tsf_reg) state <= VITA_TSF0;
-                    else             state <= READ_HDR;
+                    if (has_tsf_reg) in_state <= VITA_TSF0;
+                    else             in_state <= READ_HDR;
                 end
             end
 
             VITA_TSF0: begin
-                if (reading) state <= VITA_TSF1;
-                in_ticks_reg[63:32] <= in_data0;
+                if (reading) in_state <= VITA_TSF1;
+                in_ticks_reg[63:32] <= in_data;
             end
 
             VITA_TSF1: begin
-                if (reading) state <= READ_HDR;
-                in_ticks_reg[31:0] <= in_data0;
+                if (reading) in_state <= READ_HDR;
+                in_ticks_reg[31:0] <= in_data;
             end
 
             READ_HDR: begin
-                if (reading) state <= READ_DATA;
-                in_hdr_reg <= in_data0[31:0];
+                if (reading) in_state <= READ_DATA;
+                in_hdr_reg <= in_data[31:0];
             end
 
             READ_DATA: begin
-                if (reading) state <= (in_data0[33])? ACTION_EVENT : WAIT_EOF;
-                in_data_reg <= in_data0[31:0];
+                if (reading) in_state <= (in_data[33])? STORE_CMD : WAIT_EOF;
+                in_data_reg <= in_data[31:0];
             end
 
             WAIT_EOF: begin
-                if (reading && in_data0[33]) state <= ACTION_EVENT;
+                if (reading && in_data[33]) in_state <= STORE_CMD;
             end
 
-            ACTION_EVENT: begin // poking and peeking happens here!
-                state <= WRITE_PROT_HDR;
+            STORE_CMD: begin
+                if (in_command_valid && in_command_ready) in_state <= READ_LINE0;
             end
 
-            WRITE_RB_DATA: begin
-                if (writing) state <= READ_LINE0;
-            end
-
-            default: begin
-                if (writing) state <= state + 1;
-            end
-
-            endcase //state
+            endcase //in_state
         end
     end
 
-    //readback mux
+    //------------------------------------------------------------------
+    //-- Output state machine:
+    //-- Read a command fifo entry, act on it, produce ack packet.
+    //------------------------------------------------------------------
+    localparam LOAD_CMD       = 0;
+    localparam WAIT_CMD       = 1;
+    localparam ACTION_EVENT   = 2;
+    localparam WRITE_PROT_HDR = 3;
+    localparam WRITE_VRT_HDR  = 4;
+    localparam WRITE_VRT_SID  = 5;
+    localparam WRITE_VRT_TSF0 = 6;
+    localparam WRITE_VRT_TSF1 = 7;
+    localparam WRITE_RB_HDR   = 8;
+    localparam WRITE_RB_DATA  = 9;
+
+    reg [4:0] out_state;
+
+    //holdover from current read inputs
+    reg [31:0] out_data_reg, out_hdr_reg;
+    reg [63:0] out_ticks_reg;
+
+    assign out_valid = (out_state > ACTION_EVENT);
+
+    assign out_command_ready = (out_state == LOAD_CMD);
+
+    always @(posedge clock) begin
+        if (reset) begin
+            out_state <= LOAD_CMD;
+        end
+        else begin
+            case (out_state)
+
+            LOAD_CMD: begin
+                if (out_command_valid && out_command_ready) begin
+                    out_state <= (out_command_has_time)? WAIT_CMD : ACTION_EVENT;
+                    out_data_reg <= out_command_data;
+                    out_hdr_reg <= out_command_hdr;
+                    out_ticks_reg <= out_command_ticks;
+                end
+            end
+
+            WAIT_CMD: begin
+                //TODO wait condition here
+                out_state <= ACTION_EVENT;
+            end
+
+            ACTION_EVENT: begin // poking and peeking happens here!
+                out_state <= WRITE_PROT_HDR;
+            end
+
+            WRITE_RB_DATA: begin
+                if (writing) out_state <= LOAD_CMD;
+            end
+
+            default: begin
+                if (writing) out_state <= out_state + 1;
+            end
+
+            endcase //out_state
+        end
+    end
+
+    //------------------------------------------------------------------
+    //-- assign to settings bus interface
+    //------------------------------------------------------------------
+    reg strobe_reg;
+    assign strobe = strobe_reg;
+    assign data = out_data_reg;
+    assign addr = out_hdr_reg[7:0];
+    wire poke = out_hdr_reg[8];
+
+    always @(posedge clock) begin
+        if (reset || out_state != ACTION_EVENT) strobe_reg <= 0;
+        else                                    strobe_reg <= poke;
+    end
+
+    //------------------------------------------------------------------
+    //-- readback mux
+    //------------------------------------------------------------------
     reg [31:0] rb_data;
     reg [63:0] rb_time;
     always @(posedge clock) begin
-        if (state == ACTION_EVENT) begin
+        if (out_state == ACTION_EVENT) begin
             rb_time <= vita_time;
-            case (in_addr[3:0])
+            case (addr[3:0])
                 0 : rb_data <= word00;
                 1 : rb_data <= word01;
                 2 : rb_data <= word02;
@@ -234,55 +309,45 @@ module settings_readback_bus_fifo_ctrl
         end
     end
 
-    //assign protocol framer header
+    //------------------------------------------------------------------
+    //-- assign to output fifo interface
+    //------------------------------------------------------------------
     wire [31:0] prot_hdr;
     assign prot_hdr[15:0] = 24; //bytes in proceeding vita packet
     assign prot_hdr[16] = 1; //yes frame
     assign prot_hdr[18:17] = PROT_DEST;
     assign prot_hdr[31:19] = 0; //nothing
 
-    //register for output data
     reg [31:0] out_data_int;
     always @* begin
-        case (state)
+        case (out_state)
             WRITE_PROT_HDR: out_data_int <= prot_hdr;
-            WRITE_VRT_HDR:  out_data_int <= {12'b010100000001, in_seq_reg, 16'd6};
+            WRITE_VRT_HDR:  out_data_int <= {12'b010100000001, out_hdr_reg[19:16], 16'd6};
             WRITE_VRT_SID:  out_data_int <= SID;
             WRITE_VRT_TSF0: out_data_int <= rb_time[63:32];
             WRITE_VRT_TSF1: out_data_int <= rb_time[31:0];
-            WRITE_RB_HDR:   out_data_int <= in_hdr_reg;
+            WRITE_RB_HDR:   out_data_int <= out_hdr_reg;
             WRITE_RB_DATA:  out_data_int <= rb_data;
             default:        out_data_int <= 0;
         endcase //state
     end
 
-    //assign to input fifo interface
-    assign in_ready0 = (state < ACTION_EVENT);
-
-    //assign to output fifo interface
-    assign out_valid = (state > ACTION_EVENT);
     assign out_data[35:34] = 2'b0;
-    assign out_data[33] = (state == WRITE_RB_DATA);
-    assign out_data[32] = (state == WRITE_PROT_HDR);
+    assign out_data[33] = (out_state == WRITE_RB_DATA);
+    assign out_data[32] = (out_state == WRITE_PROT_HDR);
     assign out_data[31:0] = out_data_int;
 
-    //assign to settings bus interface
-    assign strobe = strobe_reg;
-    assign data = in_data_reg;
-    assign addr = in_addr;
-
-    always @(posedge clock) begin
-        if (reset || state != ACTION_EVENT) strobe_reg <= 0;
-        else                                strobe_reg <= do_poke;
-    end
-
+    //------------------------------------------------------------------
+    //-- debug outputs
+    //------------------------------------------------------------------
     assign debug = {
-        state, strobe, do_poke, strobe_reg, //8
+        in_state, out_state, //8
+        in_valid, in_ready, in_data[33:32], //4
+        out_valid, out_ready, out_data[33:32], //4
+        in_command_valid, in_command_ready, //2
+        out_command_valid, out_command_ready, //2
         addr, //8
-        data[15:0]
-        //in_valid, in_ready, in_data[33:32],
-        //in_valid0, in_ready0, in_data0[33:32],
-        //out_valid, out_ready, out_data[33:32],
+        strobe_reg, strobe, poke, out_command_has_time //4
     };
 
 endmodule //settings_readback_bus_fifo_ctrl

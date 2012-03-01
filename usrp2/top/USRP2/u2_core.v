@@ -443,13 +443,12 @@ module u2_core
    
    //compatibility number -> increment when the fpga has been sufficiently altered
    localparam compat_num = {16'd9, 16'd0}; //major, minor
-   wire [31:0] churn = 0; //tweak churn until timing meets!
 
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
 
-      .word00(churn),.word01(32'b0),.word02(32'b0),.word03(32'b0),
+      .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
       .word11(vita_time[31:0]),.word12(compat_num),.word13({20'b0, clk_status, serdes_link_up, 10'b0}),
