@@ -117,7 +117,7 @@ module settings_readback_bus_fifo_ctrl
     assign in_command_ticks    = in_ticks_reg;
     assign in_command_data     = in_data_reg;
     assign in_command_hdr      = in_hdr_reg;
-    assign in_command_has_time = has_tsf;
+    assign in_command_has_time = has_tsf_reg;
 
     always @(posedge clock) begin
         if (reset) begin
@@ -229,6 +229,11 @@ module settings_readback_bus_fifo_ctrl
 
     assign out_command_ready = (out_state == LOAD_CMD);
 
+    wire now, early, late, too_early;
+    time_compare time_compare(
+        .time_now(vita_time), .trigger_time(out_ticks_reg),
+        .now(now), .early(early), .late(late), .too_early(too_early));
+
     always @(posedge clock) begin
         if (reset) begin
             out_state <= LOAD_CMD;
@@ -246,8 +251,7 @@ module settings_readback_bus_fifo_ctrl
             end
 
             WAIT_CMD: begin
-                //TODO wait condition here
-                out_state <= ACTION_EVENT;
+                if (now || late) out_state <= ACTION_EVENT;
             end
 
             ACTION_EVENT: begin // poking and peeking happens here!
