@@ -28,7 +28,8 @@ using namespace uhd::transport;
 static const size_t POKE32_CMD = (1 << 8);
 static const size_t PEEK32_CMD = 0;
 static const double ACK_TIMEOUT = 0.5;
-static const boost::uint32_t MAX_SEQS_OUT = 16;
+static const double MASSIVE_TIMEOUT = 10.0; //for when we wait on a timed command
+static const boost::uint32_t MAX_SEQS_OUT = 64;
 
 class usrp2_fifo_ctrl_impl : public usrp2_fifo_ctrl{
 public:
@@ -38,6 +39,8 @@ public:
         _seq(0), _last_seq_ack(0)
     {
         while (_xport->get_recv_buff(0.0)){} //flush
+        this->set_time(uhd::time_spec_t(0.0));
+        this->set_tick_rate(1.0); //something possible but bogus
     }
 
     UHD_INLINE void send_pkt(wb_addr_type addr, boost::uint32_t data, int cmd){
@@ -55,12 +58,13 @@ public:
         packet_info.num_payload_words32 = 2;
         packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(boost::uint32_t);
         packet_info.packet_count = _seq;
+        packet_info.tsf = _time.to_ticks(_tick_rate);
         packet_info.sob = false;
         packet_info.eob = false;
         packet_info.has_sid = false;
         packet_info.has_cid = false;
         packet_info.has_tsi = false;
-        packet_info.has_tsf = false;
+        packet_info.has_tsf = _use_time;
         packet_info.has_tlr = false;
 
         //load header
@@ -94,7 +98,7 @@ public:
     boost::uint32_t wait_for_ack(const boost::int16_t seq_to_ack){
 
         while (_last_seq_ack < seq_to_ack){
-            managed_recv_buffer::sptr buff = _xport->get_recv_buff(ACK_TIMEOUT);
+            managed_recv_buffer::sptr buff = _xport->get_recv_buff(_use_time? MASSIVE_TIMEOUT : ACK_TIMEOUT);
             if (not buff){
                 throw uhd::runtime_error("fifo ctrl timed out looking for acks");
             }
@@ -119,11 +123,25 @@ public:
         throw uhd::not_implemented_error("peek16 not implemented in fifo ctrl module");
     }
 
+    void set_time(const uhd::time_spec_t &time){
+        boost::mutex::scoped_lock lock(_mutex);
+        _time = time;
+        _use_time = _time != uhd::time_spec_t(0.0);
+    }
+
+    void set_tick_rate(const double rate){
+        boost::mutex::scoped_lock lock(_mutex);
+        _tick_rate = rate;
+    }
+
 private:
     zero_copy_if::sptr _xport;
     boost::mutex _mutex;
     boost::uint32_t _seq;
     boost::uint16_t _last_seq_ack;
+    uhd::time_spec_t _time;
+    bool _use_time;
+    double _tick_rate;
 };
 
 

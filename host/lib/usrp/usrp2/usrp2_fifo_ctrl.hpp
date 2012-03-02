@@ -18,6 +18,7 @@
 #ifndef INCLUDED_USRP2_FIFO_CTRL_HPP
 #define INCLUDED_USRP2_FIFO_CTRL_HPP
 
+#include <uhd/types/time_spec.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -34,6 +35,12 @@ public:
 
     //! Make a new FIFO control object
     static sptr make(uhd::transport::zero_copy_if::sptr xport);
+
+    //! Set the command time that will activate
+    virtual void set_time(const uhd::time_spec_t &time) = 0;
+
+    //! Set the tick rate (converting time into ticks)
+    virtual void set_tick_rate(const double rate) = 0;
 };
 
 #endif /* INCLUDED_USRP2_FIFO_CTRL_HPP */

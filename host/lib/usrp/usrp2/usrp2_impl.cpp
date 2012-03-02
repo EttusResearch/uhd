@@ -579,6 +579,11 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             .subscribe(boost::bind(&usrp2_impl::update_clock_source, this, mb, _1));
         static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("mimo");
         _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
+        //plug timed commands into tree here
+        _tree->create<time_spec_t>(mb_path / "time/cmd")
+            .subscribe(boost::bind(&usrp2_fifo_ctrl::set_time, _mbc[mb].fifo_ctrl, _1));
+        _tree->access<double>(mb_path / "tick_rate")
+            .subscribe(boost::bind(&usrp2_fifo_ctrl::set_tick_rate, _mbc[mb].fifo_ctrl, _1));
 
         ////////////////////////////////////////////////////////////////////
         // create user-defined control objects
