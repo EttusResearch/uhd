@@ -251,7 +251,8 @@ module settings_readback_bus_fifo_ctrl
             end
 
             WAIT_CMD: begin
-                if (now || late) out_state <= ACTION_EVENT;
+                if (clear) out_state <= LOAD_CMD;
+                else if (now || late) out_state <= ACTION_EVENT;
             end
 
             ACTION_EVENT: begin // poking and peeking happens here!

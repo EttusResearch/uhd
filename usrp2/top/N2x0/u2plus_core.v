@@ -488,12 +488,13 @@ module u2plus_core
 
    //mux settings_bus_crossclock and settings_readback_bus_fifo_ctrl with prio
    assign set_stb_dsp = set_stb_dsp0 | set_stb_dsp1;
-   assign set_addr_dsp = set_stb_dsp0? set_addr_dsp0 : set_addr_dsp1;
-   assign set_data_dsp = set_stb_dsp0? set_data_dsp0 : set_data_dsp1;
+   assign set_addr_dsp = set_stb_dsp1? set_addr_dsp1 : set_addr_dsp0;
+   assign set_data_dsp = set_stb_dsp1? set_data_dsp1 : set_data_dsp0;
 
-   settings_bus_crossclock settings_bus_crossclock
+   settings_bus_crossclock #(.FLOW_CTRL(1/*on*/)) settings_bus_crossclock
      (.clk_i(wb_clk), .rst_i(wb_rst), .set_stb_i(set_stb), .set_addr_i(set_addr), .set_data_i(set_data),
-      .clk_o(dsp_clk), .rst_o(dsp_rst), .set_stb_o(set_stb_dsp0), .set_addr_o(set_addr_dsp0), .set_data_o(set_data_dsp0));
+      .clk_o(dsp_clk), .rst_o(dsp_rst), .set_stb_o(set_stb_dsp0), .set_addr_o(set_addr_dsp0), .set_data_o(set_data_dsp0),
+      .blocked(set_stb_dsp1));
 
    user_settings #(.BASE(SR_USER_REGS)) user_settings
      (.clk(dsp_clk),.rst(dsp_rst),.set_stb(set_stb_dsp),
@@ -505,9 +506,10 @@ module u2plus_core
    // Settings + Readback Bus -- FIFO controlled
 
     wire [31:0] srb_debug;
+    wire srb_clear;
     settings_readback_bus_fifo_ctrl #(.PROT_DEST(3)) srb
     (
-        .clock(dsp_clk), .reset(dsp_rst), .clear(0),
+        .clock(dsp_clk), .reset(dsp_rst), .clear(srb_clear),
         .vita_time(vita_time),
         .in_data(srb_rd_data), .in_valid(srb_rd_valid), .in_ready(srb_rd_ready),
         .out_data(srb_wr_data), .out_valid(srb_wr_valid), .out_ready(srb_wr_ready),
@@ -519,6 +521,9 @@ module u2plus_core
         .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0]),
         .debug(srb_debug)
     );
+
+    setting_reg #(.my_addr(SR_BUF_POOL+1/*same as packet dispatcher*/),.width(1)) sr_clear_srb
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.changed(srb_clear));
 
    // Output control lines
    wire [7:0] 	 clock_outs, serdes_outs, adc_outs;
