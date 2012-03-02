@@ -22,6 +22,7 @@
 #include "usrp2_fifo_ctrl.hpp"
 #include <boost/thread/mutex.hpp>
 #include <boost/asio.hpp> //htonl
+#include <boost/format.hpp>
 
 using namespace uhd::transport;
 
@@ -36,7 +37,8 @@ public:
 
     usrp2_fifo_ctrl_impl(zero_copy_if::sptr xport):
         _xport(xport),
-        _seq(0), _last_seq_ack(0)
+        _seq(0), _last_seq_ack(0),
+        _timeout(ACK_TIMEOUT)
     {
         while (_xport->get_recv_buff(0.0)){} //flush
         this->set_time(uhd::time_spec_t(0.0));
@@ -98,7 +100,7 @@ public:
     boost::uint32_t wait_for_ack(const boost::int16_t seq_to_ack){
 
         while (_last_seq_ack < seq_to_ack){
-            managed_recv_buffer::sptr buff = _xport->get_recv_buff(_use_time? MASSIVE_TIMEOUT : ACK_TIMEOUT);
+            managed_recv_buffer::sptr buff = _xport->get_recv_buff(_timeout);
             if (not buff){
                 throw uhd::runtime_error("fifo ctrl timed out looking for acks");
             }
@@ -127,6 +129,7 @@ public:
         boost::mutex::scoped_lock lock(_mutex);
         _time = time;
         _use_time = _time != uhd::time_spec_t(0.0);
+        if (_use_time) _timeout = MASSIVE_TIMEOUT; //permanently sets larger timeout
     }
 
     void set_tick_rate(const double rate){
@@ -142,6 +145,7 @@ private:
     uhd::time_spec_t _time;
     bool _use_time;
     double _tick_rate;
+    double _timeout;
 };
 
 
