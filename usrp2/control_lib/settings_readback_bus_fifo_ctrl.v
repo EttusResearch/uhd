@@ -19,6 +19,7 @@
 
 module settings_readback_bus_fifo_ctrl
     #(
+        parameter FIFO_DEPTH = 6, //64 entries depth
         parameter SID = 0, //stream id for vita return packet
         parameter PROT_DEST = 0 //protocol framer destination
     )
@@ -71,15 +72,33 @@ module settings_readback_bus_fifo_ctrl
     wire [31:0] in_command_hdr, out_command_hdr;
     wire [31:0] in_command_data, out_command_data;
     wire in_command_has_time, out_command_has_time;
-    wire in_command_valid, in_command_ready;
-    wire out_command_valid, out_command_ready;
+    wire command_fifo_full, command_fifo_empty;
+    wire command_fifo_read, command_fifo_write;
 
-    fifo_cascade #(.WIDTH(129), .SIZE(4)) command_fifo (
-        .clk(clock), .reset(reset), .clear(clear),
+    medfifo #(.WIDTH(129), .DEPTH(FIFO_DEPTH-4)) command_fifo (
+        .clk(clock), .rst(reset), .clear(clear),
         .datain({in_command_ticks, in_command_hdr, in_command_data, in_command_has_time}),
-        .src_rdy_i(in_command_valid), .dst_rdy_o(in_command_ready),
         .dataout({out_command_ticks, out_command_hdr, out_command_data, out_command_has_time}),
-        .src_rdy_o(out_command_valid), .dst_rdy_i(out_command_ready)
+        .write(command_fifo_write), .full(command_fifo_full), //input interface
+        .empty(command_fifo_empty), .read(command_fifo_read)  //output interface
+    );
+
+    //------------------------------------------------------------------
+    //-- The result fifo:
+    //-- Stores an individual result of a command per line.
+    //------------------------------------------------------------------
+    wire [63:0] in_result_ticks, out_result_ticks;
+    wire [31:0] in_result_hdr, out_result_hdr;
+    wire [31:0] in_result_data, out_result_data;
+    wire result_fifo_full, result_fifo_empty;
+    wire result_fifo_read, result_fifo_write;
+
+    medfifo #(.WIDTH(128), .DEPTH(FIFO_DEPTH-4)) result_fifo (
+        .clk(clock), .rst(reset), .clear(clear),
+        .datain({in_result_ticks, in_result_hdr, in_result_data}),
+        .dataout({out_result_ticks, out_result_hdr, out_result_data}),
+        .write(result_fifo_write), .full(result_fifo_full), //input interface
+        .empty(result_fifo_empty), .read(result_fifo_read)  //output interface
     );
 
     //------------------------------------------------------------------
@@ -111,9 +130,7 @@ module settings_readback_bus_fifo_ctrl
     reg has_sid_reg, has_cid_reg, has_tsi_reg, has_tsf_reg;
 
     assign in_ready = (in_state < STORE_CMD);
-
-    //wire-up command inputs
-    assign in_command_valid    = (in_state == STORE_CMD);
+    assign command_fifo_write  = (in_state == STORE_CMD);
     assign in_command_ticks    = in_ticks_reg;
     assign in_command_data     = in_data_reg;
     assign in_command_hdr      = in_hdr_reg;
@@ -197,7 +214,7 @@ module settings_readback_bus_fifo_ctrl
             end
 
             STORE_CMD: begin
-                if (in_command_valid && in_command_ready) in_state <= READ_LINE0;
+                if (~command_fifo_full) in_state <= READ_LINE0;
             end
 
             endcase //in_state
@@ -205,69 +222,58 @@ module settings_readback_bus_fifo_ctrl
     end
 
     //------------------------------------------------------------------
-    //-- Output state machine:
-    //-- Read a command fifo entry, act on it, produce ack packet.
+    //-- Command state machine:
+    //-- Read a command fifo entry, act on it, produce result.
     //------------------------------------------------------------------
-    localparam LOAD_CMD       = 0;
-    localparam WAIT_CMD       = 1;
-    localparam ACTION_EVENT   = 2;
-    localparam WRITE_PROT_HDR = 3;
-    localparam WRITE_VRT_HDR  = 4;
-    localparam WRITE_VRT_SID  = 5;
-    localparam WRITE_VRT_TSF0 = 6;
-    localparam WRITE_VRT_TSF1 = 7;
-    localparam WRITE_RB_HDR   = 8;
-    localparam WRITE_RB_DATA  = 9;
+    localparam LOAD_CMD    = 0;
+    localparam EVENT_CMD   = 1;
 
-    reg [4:0] out_state;
+    reg cmd_state;
+    reg [31:0] rb_data;
 
-    //holdover from current read inputs
-    reg [31:0] out_data_reg, out_hdr_reg;
-    reg [63:0] out_ticks_reg;
-
-    assign out_valid = (out_state > ACTION_EVENT);
-
-    assign out_command_ready = (out_state == LOAD_CMD);
+    reg [63:0] command_ticks_reg;
+    reg [31:0] command_hdr_reg;
+    reg [31:0] command_data_reg;
 
     wire now, early, late, too_early;
+    `ifdef FIFO_CTRL_USE_TIME
     time_compare time_compare(
-        .time_now(vita_time), .trigger_time(out_ticks_reg),
+        .time_now(vita_time), .trigger_time(command_ticks_reg),
         .now(now), .early(early), .late(late), .too_early(too_early));
+    `else
+    assign now = 0;
+    assign late = 1;
+    `endif
+
+    //action occurs in the event state and when there is fifo space (should always be true)
+    //the third condition is that is an event time has been set, action is delayed until that time
+    wire action = (cmd_state == EVENT_CMD) && ~result_fifo_full && ((out_command_has_time)? (now || late || clear) : 1);
+
+    assign command_fifo_read = action;
+    assign result_fifo_write = action;
+    assign in_result_ticks = vita_time;
+    assign in_result_hdr = command_hdr_reg;
+    assign in_result_data = rb_data;
 
     always @(posedge clock) begin
         if (reset) begin
-            out_state <= LOAD_CMD;
+            cmd_state <= LOAD_CMD;
         end
         else begin
-            case (out_state)
+            case (cmd_state)
 
             LOAD_CMD: begin
-                if (out_command_valid && out_command_ready) begin
-                    out_state <= (out_command_has_time)? WAIT_CMD : ACTION_EVENT;
-                    out_data_reg <= out_command_data;
-                    out_hdr_reg <= out_command_hdr;
-                    out_ticks_reg <= out_command_ticks;
-                end
+                if (~command_fifo_empty) cmd_state <= EVENT_CMD;
+                command_ticks_reg <= out_command_ticks;
+                command_hdr_reg <= out_command_hdr;
+                command_data_reg <= out_command_data;
             end
 
-            WAIT_CMD: begin
-                if (clear) out_state <= LOAD_CMD;
-                else if (now || late) out_state <= ACTION_EVENT;
+            EVENT_CMD: begin // poking and peeking happens here!
+                if (action) cmd_state <= LOAD_CMD;
             end
 
-            ACTION_EVENT: begin // poking and peeking happens here!
-                out_state <= WRITE_PROT_HDR;
-            end
-
-            WRITE_RB_DATA: begin
-                if (writing) out_state <= LOAD_CMD;
-            end
-
-            default: begin
-                if (writing) out_state <= out_state + 1;
-            end
-
-            endcase //out_state
+            endcase //cmd_state
         end
     end
 
@@ -276,41 +282,65 @@ module settings_readback_bus_fifo_ctrl
     //------------------------------------------------------------------
     reg strobe_reg;
     assign strobe = strobe_reg;
-    assign data = out_data_reg;
-    assign addr = out_hdr_reg[7:0];
-    wire poke = out_hdr_reg[8];
+    assign data = command_data_reg;
+    assign addr = command_hdr_reg[7:0];
+    wire poke = command_hdr_reg[8];
 
     always @(posedge clock) begin
-        if (reset || out_state != ACTION_EVENT) strobe_reg <= 0;
-        else                                    strobe_reg <= poke;
+        if (reset || clear) strobe_reg <= 0;
+        else                strobe_reg <= action && poke;
     end
 
     //------------------------------------------------------------------
     //-- readback mux
     //------------------------------------------------------------------
-    reg [31:0] rb_data;
-    reg [63:0] rb_time;
     always @(posedge clock) begin
-        if (out_state == ACTION_EVENT) begin
-            rb_time <= vita_time;
-            case (addr[3:0])
-                0 : rb_data <= word00;
-                1 : rb_data <= word01;
-                2 : rb_data <= word02;
-                3 : rb_data <= word03;
-                4 : rb_data <= word04;
-                5 : rb_data <= word05;
-                6 : rb_data <= word06;
-                7 : rb_data <= word07;
-                8 : rb_data <= word08;
-                9 : rb_data <= word09;
-                10: rb_data <= word10;
-                11: rb_data <= word11;
-                12: rb_data <= word12;
-                13: rb_data <= word13;
-                14: rb_data <= word14;
-                15: rb_data <= word15;
-            endcase // case(addr_reg[3:0])
+        case (out_command_hdr[3:0])
+            0 : rb_data <= word00;
+            1 : rb_data <= word01;
+            2 : rb_data <= word02;
+            3 : rb_data <= word03;
+            4 : rb_data <= word04;
+            5 : rb_data <= word05;
+            6 : rb_data <= word06;
+            7 : rb_data <= word07;
+            8 : rb_data <= word08;
+            9 : rb_data <= word09;
+            10: rb_data <= word10;
+            11: rb_data <= word11;
+            12: rb_data <= word12;
+            13: rb_data <= word13;
+            14: rb_data <= word14;
+            15: rb_data <= word15;
+        endcase // case(addr_reg[3:0])
+    end
+
+    //------------------------------------------------------------------
+    //-- Output state machine:
+    //-- Read a command fifo entry, act on it, produce ack packet.
+    //------------------------------------------------------------------
+    localparam WRITE_PROT_HDR = 0;
+    localparam WRITE_VRT_HDR  = 1;
+    localparam WRITE_VRT_SID  = 2;
+    localparam WRITE_VRT_TSF0 = 3;
+    localparam WRITE_VRT_TSF1 = 4;
+    localparam WRITE_RB_HDR   = 5;
+    localparam WRITE_RB_DATA  = 6;
+
+    reg [2:0] out_state;
+
+    assign out_valid = ~result_fifo_empty;
+    assign result_fifo_read = out_data[33] && writing;
+
+    always @(posedge clock) begin
+        if (reset) begin
+            out_state <= WRITE_PROT_HDR;
+        end
+        else if (writing && out_state == WRITE_RB_DATA) begin
+            out_state <= WRITE_PROT_HDR;
+        end
+        else if (writing) begin
+            out_state <= out_state + 1;
         end
     end
 
@@ -327,12 +357,12 @@ module settings_readback_bus_fifo_ctrl
     always @* begin
         case (out_state)
             WRITE_PROT_HDR: out_data_int <= prot_hdr;
-            WRITE_VRT_HDR:  out_data_int <= {12'b010100000001, out_hdr_reg[19:16], 16'd6};
+            WRITE_VRT_HDR:  out_data_int <= {12'b010100000001, out_result_hdr[19:16], 16'd6};
             WRITE_VRT_SID:  out_data_int <= SID;
-            WRITE_VRT_TSF0: out_data_int <= rb_time[63:32];
-            WRITE_VRT_TSF1: out_data_int <= rb_time[31:0];
-            WRITE_RB_HDR:   out_data_int <= out_hdr_reg;
-            WRITE_RB_DATA:  out_data_int <= rb_data;
+            WRITE_VRT_TSF0: out_data_int <= out_result_ticks[63:32];
+            WRITE_VRT_TSF1: out_data_int <= out_result_ticks[31:0];
+            WRITE_RB_HDR:   out_data_int <= out_result_hdr;
+            WRITE_RB_DATA:  out_data_int <= out_result_data;
             default:        out_data_int <= 0;
         endcase //state
     end
@@ -346,11 +376,11 @@ module settings_readback_bus_fifo_ctrl
     //-- debug outputs
     //------------------------------------------------------------------
     assign debug = {
-        in_state, out_state, //8
+        in_state, cmd_state, out_state, //8
         in_valid, in_ready, in_data[33:32], //4
         out_valid, out_ready, out_data[33:32], //4
-        in_command_valid, in_command_ready, //2
-        out_command_valid, out_command_ready, //2
+        command_fifo_empty, command_fifo_full, //2
+        command_fifo_read, command_fifo_write, //2
         addr, //8
         strobe_reg, strobe, poke, out_command_has_time //4
     };
