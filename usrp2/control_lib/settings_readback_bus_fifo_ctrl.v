@@ -20,7 +20,6 @@
 module settings_readback_bus_fifo_ctrl
     #(
         parameter FIFO_DEPTH = 6, //64 entries depth
-        parameter SID = 0, //stream id for vita return packet
         parameter PROT_DEST = 0 //protocol framer destination
     )
     (
@@ -87,16 +86,15 @@ module settings_readback_bus_fifo_ctrl
     //-- The result fifo:
     //-- Stores an individual result of a command per line.
     //------------------------------------------------------------------
-    wire [63:0] in_result_ticks, out_result_ticks;
     wire [31:0] in_result_hdr, out_result_hdr;
     wire [31:0] in_result_data, out_result_data;
     wire result_fifo_full, result_fifo_empty;
     wire result_fifo_read, result_fifo_write;
 
-    medfifo #(.WIDTH(128), .DEPTH(FIFO_DEPTH-4)) result_fifo (
+    medfifo #(.WIDTH(64), .DEPTH(FIFO_DEPTH-4)) result_fifo (
         .clk(clock), .rst(reset), .clear(clear),
-        .datain({in_result_ticks, in_result_hdr, in_result_data}),
-        .dataout({out_result_ticks, out_result_hdr, out_result_data}),
+        .datain({in_result_hdr, in_result_data}),
+        .dataout({out_result_hdr, out_result_data}),
         .write(result_fifo_write), .full(result_fifo_full), //input interface
         .empty(result_fifo_empty), .read(result_fifo_read)  //output interface
     );
@@ -251,7 +249,6 @@ module settings_readback_bus_fifo_ctrl
 
     assign command_fifo_read = action;
     assign result_fifo_write = action;
-    assign in_result_ticks = vita_time;
     assign in_result_hdr = command_hdr_reg;
     assign in_result_data = rb_data;
 
@@ -321,11 +318,8 @@ module settings_readback_bus_fifo_ctrl
     //------------------------------------------------------------------
     localparam WRITE_PROT_HDR = 0;
     localparam WRITE_VRT_HDR  = 1;
-    localparam WRITE_VRT_SID  = 2;
-    localparam WRITE_VRT_TSF0 = 3;
-    localparam WRITE_VRT_TSF1 = 4;
-    localparam WRITE_RB_HDR   = 5;
-    localparam WRITE_RB_DATA  = 6;
+    localparam WRITE_RB_HDR   = 2;
+    localparam WRITE_RB_DATA  = 3;
 
     reg [2:0] out_state;
 
@@ -348,7 +342,7 @@ module settings_readback_bus_fifo_ctrl
     //-- assign to output fifo interface
     //------------------------------------------------------------------
     wire [31:0] prot_hdr;
-    assign prot_hdr[15:0] = 24; //bytes in proceeding vita packet
+    assign prot_hdr[15:0] = 12; //bytes in proceeding vita packet
     assign prot_hdr[16] = 1; //yes frame
     assign prot_hdr[18:17] = PROT_DEST;
     assign prot_hdr[31:19] = 0; //nothing
@@ -357,10 +351,7 @@ module settings_readback_bus_fifo_ctrl
     always @* begin
         case (out_state)
             WRITE_PROT_HDR: out_data_int <= prot_hdr;
-            WRITE_VRT_HDR:  out_data_int <= {12'b010100000001, out_result_hdr[19:16], 16'd6};
-            WRITE_VRT_SID:  out_data_int <= SID;
-            WRITE_VRT_TSF0: out_data_int <= out_result_ticks[63:32];
-            WRITE_VRT_TSF1: out_data_int <= out_result_ticks[31:0];
+            WRITE_VRT_HDR:  out_data_int <= {12'b010000000000, out_result_hdr[19:16], 16'd3};
             WRITE_RB_HDR:   out_data_int <= out_result_hdr;
             WRITE_RB_DATA:  out_data_int <= out_result_data;
             default:        out_data_int <= 0;
