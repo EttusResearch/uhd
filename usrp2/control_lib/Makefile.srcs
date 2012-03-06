@@ -56,4 +56,5 @@ fifo_to_wb.v \
 gpio_atr.v \
 user_settings.v \
 settings_readback_bus_fifo_ctrl.v \
+simple_spi_core.v \
 ))
