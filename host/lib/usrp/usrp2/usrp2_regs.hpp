@@ -36,10 +36,10 @@
 // Setting register offsets
 ////////////////////////////////////////////////////////////////////////
 #define SR_MISC       0   // 7 regs
-#define SR_SIMTIMER   8   // 2
+#define SR_USER_REGS  8   // 2
 #define SR_TIME64    10   // 6
 #define SR_BUF_POOL  16   // 4
-#define SR_USER_REGS 20   // 2
+#define SR_SPI_CORE  20   // 3
 #define SR_RX_FRONT  24   // 5
 #define SR_RX_CTRL0  32   // 9
 #define SR_RX_DSP0   48   // 7

@@ -1,5 +1,5 @@
-/* -*- c++ -*- */
 /*
+ * Copyright 2012 Ettus Research LLC
  * Copyright 2008 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@ ad9510_write_reg(int regno, uint8_t value)
 {
   uint32_t inst = WR | (regno & 0xff);
   uint32_t v = (inst << 8) | (value & 0xff);
-  spi_transact(SPI_TXONLY, SPI_SS_AD9510, v, 24, SPIF_PUSH_FALL);
+  spi_transact(SPI_TXONLY, SPI_SS_AD9510, v, 24, SPI_PUSH_FALL);
 }
 
 int
@@ -37,6 +37,6 @@ ad9510_read_reg(int regno)
   uint32_t inst = RD | (regno & 0xff);
   uint32_t v = (inst << 8) | 0;
   uint32_t r = spi_transact(SPI_TXRX, SPI_SS_AD9510, v, 24,
-			    SPIF_PUSH_FALL | SPIF_LATCH_FALL);
+			    SPI_PUSH_FALL | SPI_LATCH_FALL);
   return r & 0xff;
 }

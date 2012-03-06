@@ -1,5 +1,5 @@
-/* -*- c -*- */
 /*
+ * Copyright 2012 Ettus Research LLC
  * Copyright 2006,2007 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,8 +19,8 @@
 #ifndef INCLUDED_SPI_H
 #define INCLUDED_SPI_H
 
-#include <memory_map.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 /*!
  * \brief One time call to initialize SPI
@@ -39,39 +39,11 @@ void spi_wait(void);
 /*
  * Flags for spi_transact
  */
-#define SPIF_PUSH_RISE   0		// push tx data on rising edge of SCLK
-#define SPIF_PUSH_FALL   SPI_CTRL_TXNEG	// push tx data on falling edge of SCLK
-#define SPIF_LATCH_RISE  0		// latch rx data on rising edge of SCLK
-#define SPIF_LATCH_FALL  SPI_CTRL_RXNEG	// latch rx data on falling edge of SCLK
+#define SPI_PUSH_RISE   (1 << 0)		// push tx data on rising edge of SCLK
+#define SPI_PUSH_FALL   (1 << 1)	// push tx data on falling edge of SCLK
+#define SPI_LATCH_RISE  (1 << 2)		// latch rx data on rising edge of SCLK
+#define SPI_LATCH_FALL  (1 << 3)	// latch rx data on falling edge of SCLK
 
-
-uint32_t
-spi_transact(bool readback, int slave, uint32_t data, int length, uint32_t flags);
-
-//uint32_t spi_get_data(void);
-//static void spi_irq_handler(unsigned irq);
-//void spi_register_callback(void (*volatile callback)(void));
-
-//bool 
-//spi_async_transact(int slave, uint32_t data, int length, uint32_t flags, void (*volatile callback)(void));
-
-// ----------------------------------------------------------------
-// Routines that manipulate the FLASH SPI BUS
-// ----------------------------------------------------------------
-
-/*!
- * \brief One time call to initialize SPI
- */
-void spif_init(void);
-
-/*! 
- * \brief Wait for last SPI transaction to complete.
- * Unless you need to know it completed, it's not necessary to call this.
- */
-void spif_wait(void);
-
-uint32_t
-spif_transact(bool readback_, int slave, uint32_t data, int length, uint32_t flags);
-
+uint32_t spi_transact(bool readback, int slave, uint32_t data, int length, uint32_t flags);
 
 #endif /* INCLUDED_SPI_H */

@@ -1,4 +1,4 @@
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 /*
  * Copyright 2007,2008,2009 Free Software Foundation, Inc.
  *
@@ -48,18 +48,6 @@
 /////////////////////////////////////////////////////
 // SPI Core, Slave 2.  See core docs for more info
 /////////////////////////////////////////////////////
-
-typedef struct {
-  volatile uint32_t	txrx0;
-  volatile uint32_t	txrx1;
-  volatile uint32_t	txrx2;
-  volatile uint32_t	txrx3;
-  volatile uint32_t	ctrl;
-  volatile uint32_t	div;
-  volatile uint32_t	ss;
-} spi_regs_t;
-
-#define spi_regs ((spi_regs_t *) SPI_BASE)
 
 // Masks for controlling different peripherals
 #define SPI_SS_AD9510    1
@@ -124,7 +112,8 @@ typedef struct {
 ///////////////////////////////////////////////////
 
 typedef struct {
-  volatile uint32_t _padding[8];
+  volatile uint32_t spi;
+  volatile uint32_t _padding[7];
   volatile uint32_t status;
   volatile uint32_t _unused;
   volatile uint32_t time64_secs_rb;
@@ -134,6 +123,7 @@ typedef struct {
 } router_status_t;
 
 #define router_status ((router_status_t *) READBACK_BASE)
+#define readback_mux ((router_status_t *) READBACK_BASE) //alias with a better name
 
 /*!
  * \brief return non-zero if we're running under the simulator
@@ -207,7 +197,7 @@ typedef struct {
 #define SR_SIMTIMER   8   // 2
 #define SR_TIME64    10   // 6
 #define SR_BUF_POOL  16   // 4
-
+#define SR_SPI_CORE  20   // 3
 #define SR_RX_FRONT  24   // 5
 #define SR_RX_CTRL0  32   // 9
 #define SR_RX_DSP0   48   // 7
@@ -223,6 +213,21 @@ typedef struct {
 #define	_SR_ADDR(sr) (SETTING_REGS_BASE + (sr) * sizeof(uint32_t))
 
 #define SR_ADDR_BLDRDONE _SR_ADDR(5)
+
+// --- spi core control regs ---
+
+typedef struct {
+  volatile uint32_t divider;
+  volatile uint32_t control;
+  volatile uint32_t data;
+} spi_core_t;
+
+#define SPI_CORE_SLAVE_SELECT_SHIFT 0
+#define SPI_CORE_NUM_BITS_SHIFT 24
+#define SPI_CORE_DATA_IN_EDGE_SHIFT 30
+#define SPI_CORE_DATA_OUT_EDGE_SHIFT 31
+
+#define spi_core ((spi_core_t *) _SR_ADDR(SR_SPI_CORE))
 
 // --- packet router control regs ---
 

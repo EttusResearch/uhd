@@ -181,8 +181,8 @@ static void handle_udp_ctrl_packet(
                 ctrl_data_in->data.spi_args.dev,      //which device
                 ctrl_data_in->data.spi_args.data,     //32 bit data
                 ctrl_data_in->data.spi_args.num_bits, //length in bits
-                (ctrl_data_in->data.spi_args.mosi_edge == USRP2_CLK_EDGE_RISE)? SPIF_PUSH_FALL : SPIF_PUSH_RISE |
-                (ctrl_data_in->data.spi_args.miso_edge == USRP2_CLK_EDGE_RISE)? SPIF_LATCH_RISE : SPIF_LATCH_FALL
+                (ctrl_data_in->data.spi_args.mosi_edge == USRP2_CLK_EDGE_RISE)? SPI_PUSH_FALL : SPI_PUSH_RISE |
+                (ctrl_data_in->data.spi_args.miso_edge == USRP2_CLK_EDGE_RISE)? SPI_LATCH_RISE : SPI_LATCH_FALL
             );
 
             //load output

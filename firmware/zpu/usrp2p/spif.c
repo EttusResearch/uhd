@@ -21,6 +21,7 @@
  */
 
 #include "spi.h"
+#include "spi_flash.h"
 #include "memory_map.h"
 
 void

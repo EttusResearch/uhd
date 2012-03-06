@@ -1,7 +1,6 @@
-/* -*- c++ -*- */
 /*
  * Copyright 2009 Free Software Foundation, Inc.
- * Copyright 2009-2011 Ettus Research LLC
+ * Copyright 2009-2012 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "spi_flash.h"
 #include "spi_flash_private.h"
 //#include <stdlib.h>
 #include <nonstdio.h>

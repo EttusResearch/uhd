@@ -23,10 +23,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 #define SPI_FLASH_PAGE_SIZE	256
 #define SPI_SS_FLASH 1
 
+#define SPIF_PUSH_RISE   0             // push tx data on rising edge of SCLK
+#define SPIF_PUSH_FALL   SPI_CTRL_TXNEG        // push tx data on falling edge of SCLK
+#define SPIF_LATCH_RISE  0             // latch rx data on rising edge of SCLK
+#define SPIF_LATCH_FALL  SPI_CTRL_RXNEG        // latch rx data on falling edge of SCLK
+
+void spif_init(void);
+void spif_wait(void);
+
+uint32_t spif_transact(bool readback, int slave, uint32_t data, int length, uint32_t flags);
 
 uint32_t spi_flash_rdid(void);	/* Read ID */
 uint32_t spi_flash_rdsr(void);	/* Read Status Register */
