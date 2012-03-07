@@ -18,6 +18,7 @@
 #include "usrp2_regs.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include "usrp2_fifo_ctrl.hpp"
 #include <boost/thread/mutex.hpp>
@@ -53,6 +54,13 @@ public:
         this->set_time(uhd::time_spec_t(0.0));
         this->set_tick_rate(1.0); //something possible but bogus
         this->init_spi();
+    }
+
+    ~usrp2_fifo_ctrl_impl(void){
+        _timeout = ACK_TIMEOUT; //reset timeout to something small
+        UHD_SAFE_CALL(
+            this->peek32(0); //dummy peek with the purpose of ack'ing all packets
+        )
     }
 
     UHD_INLINE void send_pkt(wb_addr_type addr, boost::uint32_t data, int cmd){

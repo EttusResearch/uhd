@@ -51,6 +51,7 @@ u2_init(void)
   hal_enable_ints();
 
   // flash all leds to let us know board is alive
+#ifndef BOOTLOADER
   hal_set_led_src(0x0, 0x1f); /* software ctrl */
   hal_set_leds(0x0, 0x1f);    mdelay(300);
   hal_set_leds(LED_E, LED_E); mdelay(300);
@@ -61,6 +62,7 @@ u2_init(void)
     hal_set_leds(0x0,    0x1f); mdelay(100);
     hal_set_leds(blinks, 0x1f); mdelay(100);
   }
+#endif
   hal_set_led_src(0x1f & ~LED_D, 0x1f); /* hardware ctrl */
   hal_set_leds(LED_D, 0x1f);  // Leave one on
 

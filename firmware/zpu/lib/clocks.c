@@ -43,7 +43,10 @@ clocks_init(void)
   //enable the 100MHz clock output to the FPGA for 50MHz CPU clock
   clocks_enable_fpga_clk(true, 1);
 
-  spi_wait();
+  //! Cannot SPI wait since SPI is on DSP clock
+  //! because DSP clock goes away until DCM reset.
+  //! However, spi is quick, the cpu is slow, its already ready...
+  //spi_wait();
 
   //wait for the clock to stabilize
   while(!clocks_lock_detect());
