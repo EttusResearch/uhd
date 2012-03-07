@@ -154,10 +154,10 @@ module u2_core
    );
 
    localparam SR_MISC     =   0;   // 7 regs
-   localparam SR_SIMTIMER =   8;   // 2
+   localparam SR_USER_REGS =  8;   // 2
    localparam SR_TIME64   =  10;   // 6
    localparam SR_BUF_POOL =  16;   // 4
-   localparam SR_USER_REGS = 20;   // 2
+   localparam SR_SPI_CORE  = 20;   // 3
    localparam SR_RX_FRONT =  24;   // 5
    localparam SR_RX_CTRL0 =  32;   // 9
    localparam SR_RX_DSP0  =  48;   // 7
@@ -284,10 +284,14 @@ module u2_core
       .sf_dat_o(sf_dat_o),.sf_adr_o(sf_adr),.sf_sel_o(sf_sel),.sf_we_o(sf_we),.sf_cyc_o(sf_cyc),.sf_stb_o(sf_stb),
       .sf_dat_i(sf_dat_i),.sf_ack_i(sf_ack),.sf_err_i(0),.sf_rty_i(0));
 
-   // Unused Slaves 4, 9 and b-f
+   assign s2_ack = 0;
    assign s4_ack = 0;
-   assign s9_ack = 0;   assign sb_ack = 0;   assign sc_ack = 0;
-   assign sd_ack = 0;   assign se_ack = 0;   assign fc_ack = 0;
+   assign s9_ack = 0;
+   assign sb_ack = 0;
+   assign sc_ack = 0;
+   assign sd_ack = 0;
+   assign se_ack = 0;
+   assign sf_ack = 0;
    
    // ////////////////////////////////////////////////////////////////////////////////////////
    // Reset Controller
@@ -379,6 +383,10 @@ module u2_core
    wire 	 wr3_ready_i, wr3_ready_o;
    wire [35:0] 	 wr0_dat, wr1_dat, wr2_dat, wr3_dat;
 
+   wire [35:0] srb_wr_data, srb_rd_data;
+   wire srb_wr_ready, srb_rd_ready;
+   wire srb_wr_valid, srb_rd_valid;
+
    wire [35:0] 	 tx_err_data;
    wire 	 tx_err_src_rdy, tx_err_dst_rdy;
 
@@ -399,21 +407,27 @@ module u2_core
       .dsp0_inp_data(wr1_dat), .dsp0_inp_valid(wr1_ready_i), .dsp0_inp_ready(wr1_ready_o),
       .dsp1_inp_data(wr3_dat), .dsp1_inp_valid(wr3_ready_i), .dsp1_inp_ready(wr3_ready_o),
       .eth_inp_data(wr2_dat), .eth_inp_valid(wr2_ready_i), .eth_inp_ready(wr2_ready_o),
-      .err_inp_data(tx_err_data), .err_inp_ready(tx_err_dst_rdy), .err_inp_valid(tx_err_src_rdy),
+      .err_inp_data(tx_err_data), .err_inp_valid(tx_err_src_rdy), .err_inp_ready(tx_err_dst_rdy),
+      .ctl_inp_data(srb_wr_data), .ctl_inp_valid(srb_wr_valid),   .ctl_inp_ready(srb_wr_ready),
 
       .ser_out_data(rd0_dat), .ser_out_valid(rd0_ready_o), .ser_out_ready(rd0_ready_i),
       .dsp_out_data(rd1_dat), .dsp_out_valid(rd1_ready_o), .dsp_out_ready(rd1_ready_i),
+      .ctl_out_data(srb_rd_data), .ctl_out_valid(srb_rd_valid), .ctl_out_ready(srb_rd_ready),
       .eth_out_data(rd2_dat), .eth_out_valid(rd2_ready_o), .eth_out_ready(rd2_ready_i)
       );
 
    // /////////////////////////////////////////////////////////////////////////
    // SPI -- Slave #2
-   spi_top shared_spi
-     (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.wb_adr_i(s2_adr[4:0]),.wb_dat_i(s2_dat_o),
-      .wb_dat_o(s2_dat_i),.wb_sel_i(s2_sel),.wb_we_i(s2_we),.wb_stb_i(s2_stb),
-      .wb_cyc_i(s2_cyc),.wb_ack_o(s2_ack),.wb_err_o(),.wb_int_o(spi_int),
-      .ss_pad_o({sen_tx_db,sen_tx_adc,sen_tx_dac,sen_rx_db,sen_rx_adc,sen_rx_dac,sen_dac,sen_clk}),
-      .sclk_pad_o(sclk),.mosi_pad_o(mosi),.miso_pad_i(miso) );
+    wire [31:0] spi_debug;
+    wire [31:0] spi_readback;
+    wire spi_ready;
+    simple_spi_core #(.BASE(SR_SPI_CORE), .WIDTH(9)) shared_spi(
+        .clock(dsp_clk), .reset(dsp_rst),
+        .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
+        .readback(spi_readback), .ready(spi_ready),
+        .sen({sen_adc, sen_tx_db,sen_tx_adc,sen_tx_dac,sen_rx_db,sen_rx_adc,sen_rx_dac,sen_dac,sen_clk}),
+        .sclk(sclk), .mosi(mosi), .miso(miso), .debug(spi_debug)
+    );
 
    // /////////////////////////////////////////////////////////////////////////
    // I2C -- Slave #3
@@ -444,14 +458,16 @@ module u2_core
    //compatibility number -> increment when the fpga has been sufficiently altered
    localparam compat_num = {16'd9, 16'd0}; //major, minor
 
+   wire [31:0] irq_readback = {19'b0, spi_ready, clk_status, serdes_link_up, 10'b0};
+
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
 
-      .word00(32'b0),.word01(32'b0),.word02(32'b0),.word03(32'b0),
+      .word00(spi_readback),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(compat_num),.word13({20'b0, clk_status, serdes_link_up, 10'b0}),
+      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq_readback),
       .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
       );
 
@@ -482,15 +498,48 @@ module u2_core
    
    assign 	 s7_dat_i = 32'd0;
 
-   settings_bus_crossclock settings_bus_crossclock
+   wire set_stb_dsp0, set_stb_dsp1;
+   wire [31:0] set_data_dsp0, set_data_dsp1;
+   wire [7:0] set_addr_dsp0, set_addr_dsp1;
+
+   //mux settings_bus_crossclock and settings_readback_bus_fifo_ctrl with prio
+   assign set_stb_dsp = set_stb_dsp0 | set_stb_dsp1;
+   assign set_addr_dsp = set_stb_dsp1? set_addr_dsp1 : set_addr_dsp0;
+   assign set_data_dsp = set_stb_dsp1? set_data_dsp1 : set_data_dsp0;
+
+   settings_bus_crossclock #(.FLOW_CTRL(1/*on*/)) settings_bus_crossclock
      (.clk_i(wb_clk), .rst_i(wb_rst), .set_stb_i(set_stb), .set_addr_i(set_addr), .set_data_i(set_data),
-      .clk_o(dsp_clk), .rst_o(dsp_rst), .set_stb_o(set_stb_dsp), .set_addr_o(set_addr_dsp), .set_data_o(set_data_dsp));
+      .clk_o(dsp_clk), .rst_o(dsp_rst), .set_stb_o(set_stb_dsp0), .set_addr_o(set_addr_dsp0), .set_data_o(set_data_dsp0),
+      .blocked(set_stb_dsp1));
 
    user_settings #(.BASE(SR_USER_REGS)) user_settings
      (.clk(dsp_clk),.rst(dsp_rst),.set_stb(set_stb_dsp),
       .set_addr(set_addr_dsp),.set_data(set_data_dsp),
       .set_addr_user(set_addr_user),.set_data_user(set_data_user),
       .set_stb_user(set_stb_user) );
+
+   // /////////////////////////////////////////////////////////////////////////
+   // Settings + Readback Bus -- FIFO controlled
+
+    wire [31:0] srb_debug;
+    wire srb_clear;
+    settings_readback_bus_fifo_ctrl #(.PROT_DEST(3), .NUM_PERFS(1)) srb
+    (
+        .clock(dsp_clk), .reset(dsp_rst), .clear(srb_clear),
+        .vita_time(vita_time), .perfs_ready(spi_ready),
+        .in_data(srb_rd_data), .in_valid(srb_rd_valid), .in_ready(srb_rd_ready),
+        .out_data(srb_wr_data), .out_valid(srb_wr_valid), .out_ready(srb_wr_ready),
+        .strobe(set_stb_dsp1), .addr(set_addr_dsp1), .data(set_data_dsp1),
+        .word00(spi_readback),.word01(32'b0),.word02(32'b0),.word03(32'b0),
+        .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
+        .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
+        .word11(vita_time[31:0]),.word12(compat_num),.word13(irq_readback),
+        .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0]),
+        .debug(srb_debug)
+    );
+
+    setting_reg #(.my_addr(SR_BUF_POOL+1/*same as packet dispatcher*/),.width(1)) sr_clear_srb
+     (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.changed(srb_clear));
 
    // Output control lines
    wire [7:0] 	 clock_outs, serdes_outs, adc_outs;

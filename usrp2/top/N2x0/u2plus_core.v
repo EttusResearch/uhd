@@ -412,22 +412,14 @@ module u2plus_core
    // SPI -- Slave #2
     wire [31:0] spi_debug;
     wire [31:0] spi_readback;
-    wire spi_done;
+    wire spi_ready;
     simple_spi_core #(.BASE(SR_SPI_CORE), .WIDTH(9)) shared_spi(
         .clock(dsp_clk), .reset(dsp_rst),
         .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
-        .readback(spi_readback), .done(spi_done),
+        .readback(spi_readback), .ready(spi_ready),
         .sen({sen_adc, sen_tx_db,sen_tx_adc,sen_tx_dac,sen_rx_db,sen_rx_adc,sen_rx_dac,sen_dac,sen_clk}),
         .sclk(sclk), .mosi(mosi), .miso(miso), .debug(spi_debug)
     );
-/*
-   spi_top shared_spi
-     (.wb_clk_i(wb_clk),.wb_rst_i(wb_rst),.wb_adr_i(s2_adr[4:0]),.wb_dat_i(s2_dat_o),
-      .wb_dat_o(s2_dat_i),.wb_sel_i(s2_sel),.wb_we_i(s2_we),.wb_stb_i(s2_stb),
-      .wb_cyc_i(s2_cyc),.wb_ack_o(s2_ack),.wb_err_o(),.wb_int_o(spi_int),
-      .ss_pad_o({sen_adc, sen_tx_db,sen_tx_adc,sen_tx_dac,sen_rx_db,sen_rx_adc,sen_rx_dac,sen_dac,sen_clk}),
-      .sclk_pad_o(sclk),.mosi_pad_o(mosi),.miso_pad_i(miso) );
-*/
 
    // /////////////////////////////////////////////////////////////////////////
    // I2C -- Slave #3
@@ -458,14 +450,16 @@ module u2plus_core
    //compatibility number -> increment when the fpga has been sufficiently altered
    localparam compat_num = {16'd9, 16'd0}; //major, minor
 
+   wire [31:0] irq_readback = {18'b0, button, spi_ready, clk_status, serdes_link_up, 10'b0};
+
    wb_readback_mux buff_pool_status
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
 
-      .word00(spi_readback),.word01(32'b0),.word02(32'b0),.word03(32'b0),
+      .word00(spi_readback),.word01(31'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
-      .word11(vita_time[31:0]),.word12(compat_num),.word13({18'b0, button, 1'b0, clk_status, serdes_link_up, 10'b0}),
+      .word11(vita_time[31:0]),.word12(compat_num),.word13(irq_readback),
       .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
       );
 
@@ -521,17 +515,17 @@ module u2plus_core
 
     wire [31:0] srb_debug;
     wire srb_clear;
-    settings_readback_bus_fifo_ctrl #(.PROT_DEST(3)) srb
+    settings_readback_bus_fifo_ctrl #(.PROT_DEST(3), .NUM_PERFS(1)) srb
     (
         .clock(dsp_clk), .reset(dsp_rst), .clear(srb_clear),
-        .vita_time(vita_time),
+        .vita_time(vita_time), .perfs_ready(spi_ready),
         .in_data(srb_rd_data), .in_valid(srb_rd_valid), .in_ready(srb_rd_ready),
         .out_data(srb_wr_data), .out_valid(srb_wr_valid), .out_ready(srb_wr_ready),
         .strobe(set_stb_dsp1), .addr(set_addr_dsp1), .data(set_data_dsp1),
         .word00(spi_readback),.word01(32'b0),.word02(32'b0),.word03(32'b0),
         .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
         .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
-        .word11(vita_time[31:0]),.word12(compat_num),.word13({18'b0, button, 1'b0, clk_status, serdes_link_up, 10'b0}),
+        .word11(vita_time[31:0]),.word12(compat_num),.word13(irq_readback),
         .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0]),
         .debug(srb_debug)
     );

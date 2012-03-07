@@ -50,7 +50,7 @@ module simple_spi_core
         parameter WIDTH = 8,
 
         //idle state of the spi clock
-        parameter CLK_IDLE = 1,
+        parameter CLK_IDLE = 0,
 
         //idle state of the serial enables
         parameter SEN_IDLE = 24'hffffff
@@ -64,9 +64,9 @@ module simple_spi_core
 
         //32-bit data readback
         output [31:0] readback,
-        
-        //done is high for one cycle after a spi transaction
-        output done,
+
+        //read is high when spi core can begin another transaction
+        output ready,
 
         //spi interface, slave selects, clock, data in, data out
         output [WIDTH-1:0] sen,
@@ -101,23 +101,25 @@ module simple_spi_core
     localparam CLK_REG = 2;
     localparam CLK_INV = 3;
     localparam POST_IDLE = 4;
-    localparam TRANS_DONE = 5;
 
     reg [2:0] state;
 
-    assign done = (state == TRANS_DONE);
+    assign ready = (state == WAIT_TRIG);
 
     //serial clock either idles or is in one of two clock states
-    assign sclk = (state == CLK_INV)? ~CLK_IDLE : (state == CLK_REG)? CLK_IDLE : CLK_IDLE;
+    reg sclk_reg;
+    assign sclk = sclk_reg;
 
     //serial enables either idle or enabled based on state
-    wire [23:0] sen24 = (state == WAIT_TRIG || state == TRANS_DONE)? SEN_IDLE : (SEN_IDLE ^ slave_select);
-    assign sen = sen24[WIDTH-1:0];
+    wire [23:0] sen24 = (ready)? SEN_IDLE : (SEN_IDLE ^ slave_select);
+    reg [WIDTH-1:0] sen_reg;
+    always @(posedge clock) sen_reg <= sen24[WIDTH-1:0];
+    assign sen = sen_reg;
 
     //data output shift register
     reg [31:0] dataout_reg;
-    wire [31:0] dataout_next = {0, dataout_reg[31:1]};
-    assign mosi = (state == CLK_INV || state == CLK_REG)? dataout_reg[0] : 0;
+    wire [31:0] dataout_next = {dataout_reg[30:0], 1'b0};
+    assign mosi = dataout_reg[31];
 
     //data input shift register
     reg [31:0] datain_reg;
@@ -137,6 +139,7 @@ module simple_spi_core
     always @(posedge clock) begin
         if (reset) begin
             state <= WAIT_TRIG;
+            sclk_reg <= CLK_IDLE;
         end
         else begin
             case (state)
@@ -144,6 +147,7 @@ module simple_spi_core
             WAIT_TRIG: begin
                 if (trigger_spi) state <= PRE_IDLE;
                 sclk_counter <= 0;
+                sclk_reg <= CLK_IDLE;
             end
 
             PRE_IDLE: begin
@@ -151,13 +155,15 @@ module simple_spi_core
                 sclk_counter <= sclk_counter_next;
                 dataout_reg <= mosi_data;
                 bit_counter <= 0;
+                sclk_reg <= CLK_IDLE;
             end
 
             CLK_REG: begin
                 if (sclk_counter_done) begin
                     state <= CLK_INV;
-                    if (~datain_edge)  datain_reg  <= datain_next;
-                    if (~dataout_edge) dataout_reg <= dataout_next;
+                    if (datain_edge  != CLK_IDLE) datain_reg  <= datain_next;
+                    if (dataout_edge != CLK_IDLE) dataout_reg <= dataout_next;
+                    sclk_reg <= ~CLK_IDLE;
                 end
                 sclk_counter <= sclk_counter_next;
             end
@@ -166,15 +172,17 @@ module simple_spi_core
                 if (sclk_counter_done) begin
                     state <= (bit_counter_done)? POST_IDLE : CLK_REG;
                     bit_counter <= bit_counter_next;
-                    if (datain_edge)  datain_reg  <= datain_next;
-                    if (dataout_edge) dataout_reg <= dataout_next;
+                    if (datain_edge  == CLK_IDLE) datain_reg  <= datain_next;
+                    if (dataout_edge == CLK_IDLE) dataout_reg <= dataout_next;
+                    sclk_reg <= CLK_IDLE;
                 end
                 sclk_counter <= sclk_counter_next;
             end
 
             POST_IDLE: begin
-                if (sclk_counter_done) state <= TRANS_DONE;
+                if (sclk_counter_done) state <= WAIT_TRIG;
                 sclk_counter <= sclk_counter_next;
+                sclk_reg <= CLK_IDLE;
             end
 
             default: state <= WAIT_TRIG;
@@ -185,7 +193,7 @@ module simple_spi_core
 
     assign debug = {
         trigger_spi, state, //4
-        sclk, mosi, miso, done, //4
+        sclk, mosi, miso, ready, //4
         sen[7:0], //8
         1'b0, bit_counter[6:0], //8
         sclk_counter_done, bit_counter_done, //2
