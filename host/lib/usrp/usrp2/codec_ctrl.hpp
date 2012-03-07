@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,10 +28,11 @@ public:
 
     /*!
      * Make a codec control for the DAC and ADC.
-     * \param _iface a pointer to the usrp2 interface object
+     * \param iface a pointer to the usrp2 interface object
+     * \param spiface the interface to spi
      * \return a new codec control object
      */
-    static sptr make(usrp2_iface::sptr iface);
+    static sptr make(usrp2_iface::sptr iface, uhd::spi_iface::sptr spiface);
 
     /*!
      * Set the modulation mode for the DAC.

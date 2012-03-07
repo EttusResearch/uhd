@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,8 +35,9 @@ static const bool enb_test_clk = false;
  */
 class usrp2_clock_ctrl_impl : public usrp2_clock_ctrl{
 public:
-    usrp2_clock_ctrl_impl(usrp2_iface::sptr iface){
+    usrp2_clock_ctrl_impl(usrp2_iface::sptr iface, uhd::spi_iface::sptr spiface){
         _iface = iface;
+        _spiface = spiface;
         clk_regs = usrp2_clk_regs_t(_iface->get_rev());
 
         _ad9510_regs.cp_current_setting = ad9510_regs_t::CP_CURRENT_SETTING_3_0MA;
@@ -331,7 +332,7 @@ private:
      */
     void write_reg(boost::uint8_t addr){
         boost::uint32_t data = _ad9510_regs.get_write_reg(addr);
-        _iface->write_spi(SPI_SS_AD9510, spi_config_t::EDGE_RISE, data, 24);
+        _spiface->write_spi(SPI_SS_AD9510, spi_config_t::EDGE_RISE, data, 24);
     }
 
     /*!
@@ -377,7 +378,7 @@ private:
     }
     
     usrp2_iface::sptr _iface;
-
+    uhd::spi_iface::sptr _spiface;
     usrp2_clk_regs_t clk_regs;
     ad9510_regs_t _ad9510_regs;
 };
@@ -385,6 +386,6 @@ private:
 /***********************************************************************
  * Public make function for the ad9510 clock control
  **********************************************************************/
-usrp2_clock_ctrl::sptr usrp2_clock_ctrl::make(usrp2_iface::sptr iface){
-    return sptr(new usrp2_clock_ctrl_impl(iface));
+usrp2_clock_ctrl::sptr usrp2_clock_ctrl::make(usrp2_iface::sptr iface, uhd::spi_iface::sptr spiface){
+    return sptr(new usrp2_clock_ctrl_impl(iface, spiface));
 }

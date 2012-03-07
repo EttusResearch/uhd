@@ -122,6 +122,8 @@ typedef struct {
   volatile uint32_t irqs;
 } router_status_t;
 
+#define SPI_READY_IRQ (1 << 12)
+
 #define router_status ((router_status_t *) READBACK_BASE)
 #define readback_mux ((router_status_t *) READBACK_BASE) //alias with a better name
 

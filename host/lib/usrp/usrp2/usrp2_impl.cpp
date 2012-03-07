@@ -397,7 +397,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////
         // create clock control objects
         ////////////////////////////////////////////////////////////////
-        _mbc[mb].clock = usrp2_clock_ctrl::make(_mbc[mb].iface);
+        _mbc[mb].clock = usrp2_clock_ctrl::make(_mbc[mb].iface, _mbc[mb].fifo_ctrl/*spi*/);
         _tree->create<double>(mb_path / "tick_rate")
             .publish(boost::bind(&usrp2_clock_ctrl::get_master_clock_rate, _mbc[mb].clock))
             .subscribe(boost::bind(&usrp2_impl::update_tick_rate, this, _1));
@@ -409,7 +409,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         const fs_path tx_codec_path = mb_path / "tx_codecs/A";
         _tree->create<int>(rx_codec_path / "gains"); //phony property so this dir exists
         _tree->create<int>(tx_codec_path / "gains"); //phony property so this dir exists
-        _mbc[mb].codec = usrp2_codec_ctrl::make(_mbc[mb].iface);
+        _mbc[mb].codec = usrp2_codec_ctrl::make(_mbc[mb].iface, _mbc[mb].fifo_ctrl/*spi*/);
         switch(_mbc[mb].iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
@@ -614,7 +614,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             .subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "gdb", _1));
 
         //create a new dboard interface and manager
-        _mbc[mb].dboard_iface = make_usrp2_dboard_iface(_mbc[mb].fifo_ctrl, _mbc[mb].iface, _mbc[mb].iface, _mbc[mb].clock);
+        _mbc[mb].dboard_iface = make_usrp2_dboard_iface(_mbc[mb].fifo_ctrl/*wb*/, _mbc[mb].iface/*i2c*/, _mbc[mb].fifo_ctrl/*spi*/, _mbc[mb].clock);
         _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_mbc[mb].dboard_iface);
         _mbc[mb].dboard_manager = dboard_manager::make(
             rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,

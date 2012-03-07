@@ -24,6 +24,7 @@
 #include <boost/asio.hpp> //htonl
 #include <boost/format.hpp>
 
+using namespace uhd;
 using namespace uhd::transport;
 
 static const size_t POKE32_CMD = (1 << 8);
@@ -31,6 +32,14 @@ static const size_t PEEK32_CMD = 0;
 static const double ACK_TIMEOUT = 0.5;
 static const double MASSIVE_TIMEOUT = 10.0; //for when we wait on a timed command
 static const boost::uint32_t MAX_SEQS_OUT = 64;
+
+#define SPI_DIV SR_SPI_CORE + 0
+#define SPI_CTRL SR_SPI_CORE + 1
+#define SPI_DATA SR_SPI_CORE + 2
+#define SPI_READBACK 0
+#define SPI_PERIF_MASK (1 << 10)
+// spi clock rate = master_clock/(div+1)/2 (10MHz in this case)
+#define SPI_DIVIDER 4
 
 class usrp2_fifo_ctrl_impl : public usrp2_fifo_ctrl{
 public:
@@ -43,6 +52,7 @@ public:
         while (_xport->get_recv_buff(0.0)){} //flush
         this->set_time(uhd::time_spec_t(0.0));
         this->set_tick_rate(1.0); //something possible but bogus
+        this->init_spi();
     }
 
     UHD_INLINE void send_pkt(wb_addr_type addr, boost::uint32_t data, int cmd){
@@ -97,7 +107,7 @@ public:
         return this->wait_for_ack(boost::int16_t(_seq));
     }
 
-    boost::uint32_t wait_for_ack(const boost::int16_t seq_to_ack){
+    UHD_INLINE boost::uint32_t wait_for_ack(const boost::int16_t seq_to_ack){
 
         while (_last_seq_ack < seq_to_ack){
             managed_recv_buffer::sptr buff = _xport->get_recv_buff(_timeout);
@@ -125,6 +135,54 @@ public:
         throw uhd::not_implemented_error("peek16 not implemented in fifo ctrl module");
     }
 
+    void init_spi(void){
+        boost::mutex::scoped_lock lock(_mutex);
+
+        this->send_pkt(SPI_DIV, SPI_DIVIDER, POKE32_CMD | SPI_PERIF_MASK);
+        this->wait_for_ack(boost::int16_t(_seq-MAX_SEQS_OUT));
+
+        _ctrl_word_cache = 0; // force update first time around
+    }
+
+    boost::uint32_t transact_spi(
+        int which_slave,
+        const spi_config_t &config,
+        boost::uint32_t data,
+        size_t num_bits,
+        bool readback
+    ){
+        boost::mutex::scoped_lock lock(_mutex);
+
+        //load control word
+        boost::uint32_t ctrl_word = 0;
+        ctrl_word |= ((which_slave & 0xffffff) << 0);
+        ctrl_word |= ((num_bits & 0x3ff) << 24);
+        if (config.mosi_edge == spi_config_t::EDGE_RISE) ctrl_word |= (1 << 31);
+        if (config.miso_edge == spi_config_t::EDGE_FALL) ctrl_word |= (1 << 30);
+
+        //load data word (must be in upper bits)
+        const boost::uint32_t data_out = data << (32 - num_bits);
+
+        //conditionally send control word
+        if (_ctrl_word_cache != ctrl_word){
+            this->send_pkt(SPI_CTRL, ctrl_word, POKE32_CMD | SPI_PERIF_MASK);
+            this->wait_for_ack(boost::int16_t(_seq-MAX_SEQS_OUT));
+            _ctrl_word_cache = ctrl_word;
+        }
+
+        //send data word
+        this->send_pkt(SPI_DATA, data_out, POKE32_CMD | SPI_PERIF_MASK);
+        this->wait_for_ack(boost::int16_t(_seq-MAX_SEQS_OUT));
+
+        //conditional readback
+        if (readback){
+            this->send_pkt(SPI_READBACK, 0, PEEK32_CMD | SPI_PERIF_MASK);
+            return this->wait_for_ack(boost::int16_t(_seq));
+        }
+
+        return 0;
+    }
+
     void set_time(const uhd::time_spec_t &time){
         boost::mutex::scoped_lock lock(_mutex);
         _time = time;
@@ -146,6 +204,7 @@ private:
     bool _use_time;
     double _tick_rate;
     double _timeout;
+    boost::uint32_t _ctrl_word_cache;
 };
 
 

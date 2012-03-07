@@ -19,6 +19,7 @@
 #define INCLUDED_USRP2_FIFO_CTRL_HPP
 
 #include <uhd/types/time_spec.hpp>
+#include <uhd/types/serial.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -29,7 +30,7 @@
  * The usrp2 FIFO control class:
  * Provide high-speed peek/poke interface.
  */
-class usrp2_fifo_ctrl : public wb_iface{
+class usrp2_fifo_ctrl : public wb_iface, public uhd::spi_iface{
 public:
     typedef boost::shared_ptr<usrp2_fifo_ctrl> sptr;
 
