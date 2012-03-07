@@ -421,11 +421,11 @@ module u2_core
     wire [31:0] spi_debug;
     wire [31:0] spi_readback;
     wire spi_ready;
-    simple_spi_core #(.BASE(SR_SPI_CORE), .WIDTH(9)) shared_spi(
+    simple_spi_core #(.BASE(SR_SPI_CORE), .WIDTH(8)) shared_spi(
         .clock(dsp_clk), .reset(dsp_rst),
         .set_stb(set_stb_dsp), .set_addr(set_addr_dsp), .set_data(set_data_dsp),
         .readback(spi_readback), .ready(spi_ready),
-        .sen({sen_adc, sen_tx_db,sen_tx_adc,sen_tx_dac,sen_rx_db,sen_rx_adc,sen_rx_dac,sen_dac,sen_clk}),
+        .sen({sen_tx_db,sen_tx_adc,sen_tx_dac,sen_rx_db,sen_rx_adc,sen_rx_dac,sen_dac,sen_clk}),
         .sclk(sclk), .mosi(mosi), .miso(miso), .debug(spi_debug)
     );
 

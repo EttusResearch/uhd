@@ -456,7 +456,7 @@ module u2plus_core
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
 
-      .word00(spi_readback),.word01(31'b0),.word02(32'b0),.word03(32'b0),
+      .word00(spi_readback),.word01(32'b0),.word02(32'b0),.word03(32'b0),
       .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
       .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
       .word11(vita_time[31:0]),.word12(compat_num),.word13(irq_readback),
