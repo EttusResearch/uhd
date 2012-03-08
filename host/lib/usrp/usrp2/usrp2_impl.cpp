@@ -727,24 +727,25 @@ meta_range_t usrp2_impl::get_tx_dsp_freq_range(const std::string &mb){
 }
 
 void usrp2_impl::update_clock_source(const std::string &mb, const std::string &source){
+    //NOTICE: U2_REG_MISC_CTRL_CLOCK is on the wb clock, and cannot be set from fifo_ctrl
     //clock source ref 10mhz
     switch(_mbc[mb].iface->get_rev()){
     case usrp2_iface::USRP_N200:
     case usrp2_iface::USRP_N210:
     case usrp2_iface::USRP_N200_R4:
     case usrp2_iface::USRP_N210_R4:
-        if (source == "internal")       _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x12);
-        else if (source == "external")  _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
-        else if (source == "mimo")      _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
+        if      (source == "internal")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x12);
+        else if (source == "external")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
+        else if (source == "mimo")      _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
         else throw uhd::value_error("unhandled clock configuration reference source: " + source);
         _mbc[mb].clock->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO
         break;
 
     case usrp2_iface::USRP2_REV3:
     case usrp2_iface::USRP2_REV4:
-        if (source == "internal")       _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x10);
-        else if (source == "external")  _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
-        else if (source == "mimo")      _mbc[mb].fifo_ctrl->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
+        if      (source == "internal")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x10);
+        else if (source == "external")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
+        else if (source == "mimo")      _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
         else throw uhd::value_error("unhandled clock configuration reference source: " + source);
         _mbc[mb].clock->enable_external_ref(source != "internal");
         break;
