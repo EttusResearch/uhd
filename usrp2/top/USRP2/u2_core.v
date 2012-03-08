@@ -456,7 +456,7 @@ module u2_core
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = {16'd9, 16'd0}; //major, minor
+   localparam compat_num = {16'd10, 16'd0}; //major, minor
 
    wire [31:0] irq_readback = {19'b0, spi_ready, clk_status, serdes_link_up, 10'b0};
 
@@ -523,7 +523,7 @@ module u2_core
 
     wire [31:0] srb_debug;
     wire srb_clear;
-    settings_readback_bus_fifo_ctrl #(.PROT_DEST(3), .NUM_PERFS(1)) srb
+    settings_readback_bus_fifo_ctrl #(.PROT_DEST(3)) srb
     (
         .clock(dsp_clk), .reset(dsp_rst), .clear(srb_clear),
         .vita_time(vita_time), .perfs_ready(spi_ready),

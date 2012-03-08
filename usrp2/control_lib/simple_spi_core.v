@@ -101,17 +101,20 @@ module simple_spi_core
     localparam CLK_REG = 2;
     localparam CLK_INV = 3;
     localparam POST_IDLE = 4;
+    localparam IDLE_SEN = 5;
 
     reg [2:0] state;
 
-    assign ready = (state == WAIT_TRIG);
+    reg ready_reg;
+    assign ready = ready_reg;
 
     //serial clock either idles or is in one of two clock states
     reg sclk_reg;
     assign sclk = sclk_reg;
 
     //serial enables either idle or enabled based on state
-    wire [23:0] sen24 = (ready)? SEN_IDLE : (SEN_IDLE ^ slave_select);
+    wire sen_is_idle = (state == WAIT_TRIG) || (state == IDLE_SEN);
+    wire [23:0] sen24 = (sen_is_idle)? SEN_IDLE : (SEN_IDLE ^ slave_select);
     reg [WIDTH-1:0] sen_reg;
     always @(posedge clock) sen_reg <= sen24[WIDTH-1:0];
     assign sen = sen_reg;
@@ -140,21 +143,23 @@ module simple_spi_core
         if (reset) begin
             state <= WAIT_TRIG;
             sclk_reg <= CLK_IDLE;
+            ready_reg <= 0;
         end
         else begin
             case (state)
 
             WAIT_TRIG: begin
                 if (trigger_spi) state <= PRE_IDLE;
+                ready_reg <= ~trigger_spi;
+                dataout_reg <= mosi_data;
                 sclk_counter <= 0;
+                bit_counter <= 0;
                 sclk_reg <= CLK_IDLE;
             end
 
             PRE_IDLE: begin
                 if (sclk_counter_done) state <= CLK_REG;
                 sclk_counter <= sclk_counter_next;
-                dataout_reg <= mosi_data;
-                bit_counter <= 0;
                 sclk_reg <= CLK_IDLE;
             end
 
@@ -180,6 +185,12 @@ module simple_spi_core
             end
 
             POST_IDLE: begin
+                if (sclk_counter_done) state <= IDLE_SEN;
+                sclk_counter <= sclk_counter_next;
+                sclk_reg <= CLK_IDLE;
+            end
+
+            IDLE_SEN: begin
                 if (sclk_counter_done) state <= WAIT_TRIG;
                 sclk_counter <= sclk_counter_next;
                 sclk_reg <= CLK_IDLE;

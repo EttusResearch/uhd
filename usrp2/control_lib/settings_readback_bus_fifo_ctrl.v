@@ -19,7 +19,6 @@
 
 module settings_readback_bus_fifo_ctrl
     #(
-        parameter NUM_PERFS = 4,
         parameter FIFO_DEPTH = 6, //64 entries depth
         parameter PROT_DEST = 0 //protocol framer destination
     )
@@ -30,8 +29,8 @@ module settings_readback_bus_fifo_ctrl
         //current system time
         input [63:0] vita_time,
 
-        //ready signals for multiple peripherals
-        input [NUM_PERFS-1:0] perfs_ready,
+        //ready signal for multiple peripherals
+        input perfs_ready,
 
         //input fifo36 interface control
         input [35:0] in_data, input in_valid, output in_ready,
@@ -248,12 +247,10 @@ module settings_readback_bus_fifo_ctrl
     `endif
 
     //action occurs in the event state and when there is fifo space (should always be true)
-    //the third condition is that all peripherals in the mask are ready/active high
+    //the third condition is that all peripherals in the perfs signal are ready/active high
     //the fourth condition is that is an event time has been set, action is delayed until that time
-    wire [NUM_PERFS-1:0] perfs_mask = command_hdr_reg[10+NUM_PERFS-1:10];
-    wire perfs_in_mask_ready = (perfs_ready & perfs_mask) == perfs_mask;
-    wire time_ready = (out_command_has_time)? (now || late || clear) : 1;
-    wire action = (cmd_state == EVENT_CMD) && ~result_fifo_full && perfs_in_mask_ready && time_ready;
+    wire time_ready = (out_command_has_time)? (now || late) : 1;
+    wire action = (cmd_state == EVENT_CMD) && ~result_fifo_full && perfs_ready && time_ready;
 
     assign command_fifo_read = action;
     assign result_fifo_write = action;
@@ -275,7 +272,7 @@ module settings_readback_bus_fifo_ctrl
             end
 
             EVENT_CMD: begin // poking and peeking happens here!
-                if (action) cmd_state <= LOAD_CMD;
+                if (action || clear) cmd_state <= LOAD_CMD;
             end
 
             endcase //cmd_state
