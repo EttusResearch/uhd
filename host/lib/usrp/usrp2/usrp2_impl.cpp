@@ -560,7 +560,6 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _mbc[mb].time64 = time64_core_200::make(
             _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_TIME64), time64_rb_bases, mimo_clock_sync_delay_cycles
         );
-        //_mbc[mb].fifo_ctrl->poke32(0x7, 0x1234);
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&time64_core_200::set_tick_rate, _mbc[mb].time64, _1));
         _tree->create<time_spec_t>(mb_path / "time/now")

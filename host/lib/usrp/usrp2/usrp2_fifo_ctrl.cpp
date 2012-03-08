@@ -22,6 +22,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include "usrp2_fifo_ctrl.hpp"
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
 #include <boost/asio.hpp> //htonl
 #include <boost/format.hpp>
 
@@ -38,7 +39,6 @@ static const boost::uint32_t MAX_SEQS_OUT = 64;
 #define SPI_CTRL SR_SPI_CORE + 1
 #define SPI_DATA SR_SPI_CORE + 2
 #define SPI_READBACK 0
-#define SPI_PERIF_MASK (1 << 10)
 // spi clock rate = master_clock/(div+1)/2 (10MHz in this case)
 #define SPI_DIVIDER 4
 
@@ -146,7 +146,7 @@ public:
     void init_spi(void){
         boost::mutex::scoped_lock lock(_mutex);
 
-        this->send_pkt(SPI_DIV, SPI_DIVIDER, POKE32_CMD | SPI_PERIF_MASK);
+        this->send_pkt(SPI_DIV, SPI_DIVIDER, POKE32_CMD);
         this->wait_for_ack(boost::int16_t(_seq-MAX_SEQS_OUT));
 
         _ctrl_word_cache = 0; // force update first time around
@@ -165,26 +165,26 @@ public:
         boost::uint32_t ctrl_word = 0;
         ctrl_word |= ((which_slave & 0xffffff) << 0);
         ctrl_word |= ((num_bits & 0x3ff) << 24);
-        if (config.mosi_edge == spi_config_t::EDGE_RISE) ctrl_word |= (1 << 31);
-        if (config.miso_edge == spi_config_t::EDGE_FALL) ctrl_word |= (1 << 30);
+        if (config.mosi_edge == spi_config_t::EDGE_FALL) ctrl_word |= (1 << 31);
+        if (config.miso_edge == spi_config_t::EDGE_RISE) ctrl_word |= (1 << 30);
 
         //load data word (must be in upper bits)
         const boost::uint32_t data_out = data << (32 - num_bits);
 
         //conditionally send control word
         if (_ctrl_word_cache != ctrl_word){
-            this->send_pkt(SPI_CTRL, ctrl_word, POKE32_CMD | SPI_PERIF_MASK);
+            this->send_pkt(SPI_CTRL, ctrl_word, POKE32_CMD);
             this->wait_for_ack(boost::int16_t(_seq-MAX_SEQS_OUT));
             _ctrl_word_cache = ctrl_word;
         }
 
         //send data word
-        this->send_pkt(SPI_DATA, data_out, POKE32_CMD | SPI_PERIF_MASK);
+        this->send_pkt(SPI_DATA, data_out, POKE32_CMD);
         this->wait_for_ack(boost::int16_t(_seq-MAX_SEQS_OUT));
 
         //conditional readback
         if (readback){
-            this->send_pkt(SPI_READBACK, 0, PEEK32_CMD | SPI_PERIF_MASK);
+            this->send_pkt(SPI_READBACK, 0, PEEK32_CMD);
             return this->wait_for_ack(boost::int16_t(_seq));
         }
 

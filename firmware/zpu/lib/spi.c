@@ -42,11 +42,14 @@ uint32_t spi_transact(bool readback, int slave, uint32_t data, int length, uint3
     if ((flags & SPI_LATCH_RISE) != 0) control_word |= (1 << SPI_CORE_DATA_IN_EDGE_SHIFT);
     if ((flags & SPI_LATCH_FALL) != 0) control_word |= (0 << SPI_CORE_DATA_IN_EDGE_SHIFT);
 
+    const uint32_t data_out = data << (32 - length);
+
     spi_wait();
     spi_core->control = control_word;
-    spi_core->data = (data << (32 - length));
+    spi_core->data = data_out;
 
-    if (readback) spi_wait();
+    if (!readback) return 0;
 
+    spi_wait();
     return readback_mux->spi;
 }
