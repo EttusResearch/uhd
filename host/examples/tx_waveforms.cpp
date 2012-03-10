@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
 #include <complex>
 #include <csignal>
@@ -173,6 +174,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         //set the antenna
         if (vm.count("ant")) usrp->set_tx_antenna(ant, chan);
     }
+
+    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
 
     //for the const wave, set the wave freq for small samples per period
     if (wave_freq == 0 and wave_type == "CONST"){
