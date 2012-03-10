@@ -166,9 +166,9 @@ module simple_spi_core
             CLK_REG: begin
                 if (sclk_counter_done) begin
                     state <= CLK_INV;
-                    if (datain_edge  != CLK_IDLE) datain_reg  <= datain_next;
-                    if (dataout_edge != CLK_IDLE) dataout_reg <= dataout_next;
-                    sclk_reg <= ~CLK_IDLE;
+                    if (datain_edge  != CLK_IDLE)                     datain_reg  <= datain_next;
+                    if (dataout_edge != CLK_IDLE && bit_counter != 0) dataout_reg <= dataout_next;
+                    sclk_reg <= ~CLK_IDLE; //transition to rising when CLK_IDLE == 0
                 end
                 sclk_counter <= sclk_counter_next;
             end
@@ -177,9 +177,9 @@ module simple_spi_core
                 if (sclk_counter_done) begin
                     state <= (bit_counter_done)? POST_IDLE : CLK_REG;
                     bit_counter <= bit_counter_next;
-                    if (datain_edge  == CLK_IDLE) datain_reg  <= datain_next;
-                    if (dataout_edge == CLK_IDLE) dataout_reg <= dataout_next;
-                    sclk_reg <= CLK_IDLE;
+                    if (datain_edge  == CLK_IDLE)                      datain_reg  <= datain_next;
+                    if (dataout_edge == CLK_IDLE && ~bit_counter_done) dataout_reg <= dataout_next;
+                    sclk_reg <= CLK_IDLE; //transition to falling when CLK_IDLE == 0
                 end
                 sclk_counter <= sclk_counter_next;
             end

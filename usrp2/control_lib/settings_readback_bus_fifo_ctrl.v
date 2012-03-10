@@ -237,7 +237,7 @@ module settings_readback_bus_fifo_ctrl
     reg [31:0] command_data_reg;
 
     wire now, early, late, too_early;
-    `ifdef FIFO_CTRL_USE_TIME
+    `ifndef FIFO_CTRL_NO_TIME
     time_compare time_compare(
         .time_now(vita_time), .trigger_time(command_ticks_reg),
         .now(now), .early(early), .late(late), .too_early(too_early));

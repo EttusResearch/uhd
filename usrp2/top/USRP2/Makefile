@@ -70,7 +70,7 @@ SYNTHESIZE_PROPERTIES = \
 "Use Clock Enable" Auto \
 "Use Synchronous Reset" Auto \
 "Use Synchronous Set" Auto \
-"Verilog Macros" "$(CUSTOM_DEFS)"
+"Verilog Macros" "FIFO_CTRL_NO_TIME=1 $(CUSTOM_DEFS)"
 
 TRANSLATE_PROPERTIES = \
 "Macro Search Path" "$(shell pwd)/../../coregen/"
