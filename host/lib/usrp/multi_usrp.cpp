@@ -358,6 +358,9 @@ public:
 
     void set_command_time(const time_spec_t &time_spec, size_t mboard){
         if (mboard != ALL_MBOARDS){
+            if (not _tree->exists(mb_root(mboard) / "time/cmd")){
+                throw uhd::not_implemented_error("timed command feature not implemented on this hardware");
+            }
             _tree->access<time_spec_t>(mb_root(mboard) / "time/cmd").set(time_spec);
             return;
         }

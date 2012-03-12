@@ -579,8 +579,15 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("mimo");
         _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
         //plug timed commands into tree here
-        _tree->create<time_spec_t>(mb_path / "time/cmd")
-            .subscribe(boost::bind(&usrp2_fifo_ctrl::set_time, _mbc[mb].fifo_ctrl, _1));
+        switch(_mbc[mb].iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
+            _tree->create<time_spec_t>(mb_path / "time/cmd")
+                .subscribe(boost::bind(&usrp2_fifo_ctrl::set_time, _mbc[mb].fifo_ctrl, _1));
+        default: break; //otherwise, do not register
+        }
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&usrp2_fifo_ctrl::set_tick_rate, _mbc[mb].fifo_ctrl, _1));
 
