@@ -403,7 +403,7 @@ public:
             return;
         }
         for (size_t m = 0; m < get_num_mboards(); m++){
-            return this->set_time_source(source, m);
+            this->set_time_source(source, m);
         }
     }
 
@@ -421,7 +421,7 @@ public:
             return;
         }
         for (size_t m = 0; m < get_num_mboards(); m++){
-            return this->set_clock_source(source, m);
+            this->set_clock_source(source, m);
         }
     }
 
