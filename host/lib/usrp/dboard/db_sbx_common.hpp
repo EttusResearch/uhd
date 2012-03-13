@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -138,6 +138,7 @@ protected:
     uhd::dict<std::string, double> _tx_gains, _rx_gains;
     double       _rx_lo_freq, _tx_lo_freq;
     std::string  _tx_ant, _rx_ant;
+    bool _rx_lo_lock_cache, _tx_lo_lock_cache;
 
     void set_rx_ant(const std::string &ant);
     void set_tx_ant(const std::string &ant);

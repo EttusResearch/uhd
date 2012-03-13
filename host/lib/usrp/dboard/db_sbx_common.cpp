@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -213,8 +213,8 @@ void sbx_xcvr::update_atr(void){
     int tx_pga0_iobits = tx_pga0_gain_to_iobits(_tx_gains["PGA0"]);
     int rx_lo_lpf_en = (_rx_lo_freq == sbx_enable_rx_lo_filter.clip(_rx_lo_freq)) ? LO_LPF_EN : 0;
     int tx_lo_lpf_en = (_tx_lo_freq == sbx_enable_tx_lo_filter.clip(_tx_lo_freq)) ? LO_LPF_EN : 0;
-    int rx_ld_led = get_locked(dboard_iface::UNIT_RX).to_bool() ? 0 : RX_LED_LD;
-    int tx_ld_led = get_locked(dboard_iface::UNIT_TX).to_bool() ? 0 : TX_LED_LD;
+    int rx_ld_led = _rx_lo_lock_cache ? 0 : RX_LED_LD;
+    int tx_ld_led = _tx_lo_lock_cache ? 0 : TX_LED_LD;
     int rx_ant_led = _rx_ant == "TX/RX" ? RX_LED_RX1RX2 : 0;
     int tx_ant_led = _tx_ant == "TX/RX" ? 0 : TX_LED_TXRX;
 
@@ -283,8 +283,14 @@ void sbx_xcvr::set_tx_ant(const std::string &ant){
  **********************************************************************/
 double sbx_xcvr::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
     const double actual = db_actual->set_lo_freq(unit, target_freq);
-    if (unit == dboard_iface::UNIT_RX) _rx_lo_freq = actual;
-    if (unit == dboard_iface::UNIT_TX) _tx_lo_freq = actual;
+    if (unit == dboard_iface::UNIT_RX){
+        _rx_lo_lock_cache = false;
+        _rx_lo_freq = actual;
+    }
+    if (unit == dboard_iface::UNIT_TX){
+        _tx_lo_lock_cache = false;
+        _tx_lo_freq = actual;
+    }
     update_atr();
     return actual;
 }
@@ -292,6 +298,13 @@ double sbx_xcvr::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
 
 sensor_value_t sbx_xcvr::get_locked(dboard_iface::unit_t unit) {
     const bool locked = (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
+
+    if (unit == dboard_iface::UNIT_RX) _rx_lo_lock_cache = locked;
+    if (unit == dboard_iface::UNIT_TX) _tx_lo_lock_cache = locked;
+
+    //write the new lock cache setting to atr regs
+    update_atr();
+
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }
 

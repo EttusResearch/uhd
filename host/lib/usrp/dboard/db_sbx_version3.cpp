@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -139,8 +139,8 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
 
     UHD_LOGV(often)
         << boost::format("SBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
-        << boost::format("SBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, LD=%s"
-            ) % R % BS % N % FRAC % MOD % T % D % RFdiv % self_base->get_locked(unit).to_pp_string() << std::endl
+        << boost::format("SBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d"
+            ) % R % BS % N % FRAC % MOD % T % D % RFdiv << std::endl
         << boost::format("SBX Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
             ) % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
 
