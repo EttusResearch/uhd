@@ -17,10 +17,11 @@
 
 // A settings and readback bus controlled via fifo36 interface
 
-module settings_readback_bus_fifo_ctrl
+module settings_fifo_ctrl
     #(
         parameter FIFO_DEPTH = 6, //64 entries depth
-        parameter PROT_DEST = 0 //protocol framer destination
+        parameter PROT_DEST = 0, //protocol framer destination
+        parameter ACK_SID = 0 //stream ID for packet ACK
     )
     (
         //clock and synchronous reset for all interfaces
@@ -323,8 +324,9 @@ module settings_readback_bus_fifo_ctrl
     //------------------------------------------------------------------
     localparam WRITE_PROT_HDR = 0;
     localparam WRITE_VRT_HDR  = 1;
-    localparam WRITE_RB_HDR   = 2;
-    localparam WRITE_RB_DATA  = 3;
+    localparam WRITE_VRT_SID  = 2;
+    localparam WRITE_RB_HDR   = 3;
+    localparam WRITE_RB_DATA  = 4;
 
     reg [2:0] out_state;
 
@@ -347,7 +349,7 @@ module settings_readback_bus_fifo_ctrl
     //-- assign to output fifo interface
     //------------------------------------------------------------------
     wire [31:0] prot_hdr;
-    assign prot_hdr[15:0] = 12; //bytes in proceeding vita packet
+    assign prot_hdr[15:0] = 16; //bytes in proceeding vita packet
     assign prot_hdr[16] = 1; //yes frame
     assign prot_hdr[18:17] = PROT_DEST;
     assign prot_hdr[31:19] = 0; //nothing
@@ -356,7 +358,8 @@ module settings_readback_bus_fifo_ctrl
     always @* begin
         case (out_state)
             WRITE_PROT_HDR: out_data_int <= prot_hdr;
-            WRITE_VRT_HDR:  out_data_int <= {12'b010000000000, out_result_hdr[19:16], 16'd3};
+            WRITE_VRT_HDR:  out_data_int <= {12'b010100000000, out_result_hdr[19:16], 16'd4};
+            WRITE_VRT_SID:  out_data_int <= ACK_SID;
             WRITE_RB_HDR:   out_data_int <= out_result_hdr;
             WRITE_RB_DATA:  out_data_int <= out_result_data;
             default:        out_data_int <= 0;
@@ -372,7 +375,7 @@ module settings_readback_bus_fifo_ctrl
     //-- debug outputs
     //------------------------------------------------------------------
     assign debug = {
-        in_state, cmd_state, out_state, //8
+        in_state, out_state, //8
         in_valid, in_ready, in_data[33:32], //4
         out_valid, out_ready, out_data[33:32], //4
         command_fifo_empty, command_fifo_full, //2
@@ -381,4 +384,4 @@ module settings_readback_bus_fifo_ctrl
         strobe_reg, strobe, poke, out_command_has_time //4
     };
 
-endmodule //settings_readback_bus_fifo_ctrl
+endmodule //settings_fifo_ctrl
