@@ -523,7 +523,7 @@ module u2_core
 
     wire [31:0] sfc_debug;
     wire sfc_clear;
-    settings_fifo_ctrl #(.PROT_DEST(3)) sfc
+    settings_fifo_ctrl #(.PROT_DEST(3), .PROT_HDR(1)) sfc
     (
         .clock(dsp_clk), .reset(dsp_rst), .clear(sfc_clear),
         .vita_time(vita_time), .perfs_ready(spi_ready),

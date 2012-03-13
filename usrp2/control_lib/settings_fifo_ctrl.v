@@ -21,6 +21,7 @@ module settings_fifo_ctrl
     #(
         parameter FIFO_DEPTH = 6, //64 entries depth
         parameter PROT_DEST = 0, //protocol framer destination
+        parameter PROT_HDR = 1, //needs a protocol header?
         parameter ACK_SID = 0 //stream ID for packet ACK
     )
     (
@@ -328,6 +329,9 @@ module settings_fifo_ctrl
     localparam WRITE_RB_HDR   = 3;
     localparam WRITE_RB_DATA  = 4;
 
+    //the state for the start of packet condition
+    localparam WRITE_PKT_HDR = (PROT_HDR)? WRITE_PROT_HDR : WRITE_VRT_HDR;
+
     reg [2:0] out_state;
 
     assign out_valid = ~result_fifo_empty;
@@ -335,10 +339,10 @@ module settings_fifo_ctrl
 
     always @(posedge clock) begin
         if (reset) begin
-            out_state <= WRITE_PROT_HDR;
+            out_state <= WRITE_PKT_HDR;
         end
-        else if (writing && out_state == WRITE_RB_DATA) begin
-            out_state <= WRITE_PROT_HDR;
+        else if (writing && out_data[33]) begin
+            out_state <= WRITE_PKT_HDR;
         end
         else if (writing) begin
             out_state <= out_state + 1;
@@ -358,7 +362,7 @@ module settings_fifo_ctrl
     always @* begin
         case (out_state)
             WRITE_PROT_HDR: out_data_int <= prot_hdr;
-            WRITE_VRT_HDR:  out_data_int <= {12'b010100000000, out_result_hdr[19:16], 16'd4};
+            WRITE_VRT_HDR:  out_data_int <= {12'b010100000000, out_result_hdr[19:16], 2'b0, prot_hdr[15:2]};
             WRITE_VRT_SID:  out_data_int <= ACK_SID;
             WRITE_RB_HDR:   out_data_int <= out_result_hdr;
             WRITE_RB_DATA:  out_data_int <= out_result_data;
@@ -368,7 +372,7 @@ module settings_fifo_ctrl
 
     assign out_data[35:34] = 2'b0;
     assign out_data[33] = (out_state == WRITE_RB_DATA);
-    assign out_data[32] = (out_state == WRITE_PROT_HDR);
+    assign out_data[32] = (out_state == WRITE_PKT_HDR);
     assign out_data[31:0] = out_data_int;
 
     //------------------------------------------------------------------
