@@ -59,6 +59,14 @@ if [file isfile $env(ISE_FILE)] {
 	}
 	
 	##################################################
+	# Add the custom sources
+	##################################################
+	foreach source $env(CUSTOM_SRCS) {
+		puts ">>> Adding custom source to project: $source"
+		xfile add $source -include_global
+	}
+	
+	##################################################
 	# Set the top level module
 	##################################################
 	project set top $env(TOP_MODULE)
