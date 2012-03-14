@@ -90,6 +90,17 @@ IF(WIN32)
     LIBUHD_APPEND_LIBS(ws2_32)
 ENDIF()
 
+#atlbase.h is not included with visual studio express
+#conditionally check for atlbase.h and define if found
+INCLUDE(CheckIncludeFileCXX)
+CHECK_INCLUDE_FILE_CXX(atlbase.h HAVE_ATLBASE_H)
+IF(HAVE_ATLBASE_H)
+    SET_SOURCE_FILES_PROPERTIES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy.cpp
+        PROPERTIES COMPILE_DEFINITIONS "HAVE_ATLBASE_H"
+    )
+ENDIF(HAVE_ATLBASE_H)
+
 ########################################################################
 # Append to the list of sources for lib uhd
 ########################################################################

@@ -35,7 +35,8 @@ static const size_t DEFAULT_NUM_FRAMES = 32;
 /***********************************************************************
  * Check registry for correct fast-path setting (windows only)
  **********************************************************************/
-#ifdef UHD_PLATFORM_WIN32
+#ifdef HAVE_ATLBASE_H
+#define CHECK_REG_SEND_THRESH
 #include <atlbase.h> //CRegKey
 static void check_registry_for_fast_send_threshold(const size_t mtu){
     static bool warned = false;
@@ -56,7 +57,7 @@ static void check_registry_for_fast_send_threshold(const size_t mtu){
     }
     reg_key.Close();
 }
-#endif /*UHD_PLATFORM_WIN32*/
+#endif /*HAVE_ATLBASE_H*/
 
 /***********************************************************************
  * Reusable managed receiver buffer:
@@ -149,9 +150,9 @@ public:
     {
         UHD_LOG << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
 
-        #ifdef UHD_PLATFORM_WIN32
+        #ifdef CHECK_REG_SEND_THRESH
         check_registry_for_fast_send_threshold(this->get_send_frame_size());
-        #endif /*UHD_PLATFORM_WIN32*/
+        #endif /*CHECK_REG_SEND_THRESH*/
 
         //resolve the address
         asio::ip::udp::resolver resolver(_io_service);
