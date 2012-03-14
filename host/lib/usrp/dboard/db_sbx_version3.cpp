@@ -110,7 +110,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
         if (pfd_freq > 25e6) continue;
 
         //ignore fractional part of tuning
-        N = int(std::floor(vco_freq/pfd_freq));
+        N = int(std::floor(target_freq/pfd_freq));
 
         //keep N > minimum int divider requirement
         if (N < prescaler_to_min_int_div[prescaler]) continue;
@@ -125,7 +125,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
 
     //Fractional-N calculation
     MOD = 4095; //max fractional accuracy
-    FRAC = int((vco_freq/pfd_freq - N)*MOD);
+    FRAC = int((target_freq/pfd_freq - N)*MOD);
 
     //Reference divide-by-2 for 50% duty cycle
     // if R even, move one divide by 2 to to regs.reference_divide_by_2
@@ -135,7 +135,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     }
 
     //actual frequency calculation
-    actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv);
+    actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T))));
 
     UHD_LOGV(often)
         << boost::format("SBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
@@ -155,6 +155,9 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     regs.frac_12_bit = FRAC;
     regs.int_16_bit = N;
     regs.mod_12_bit = MOD;
+    regs.clock_divider_12_bit = boost::math::iround(1/pfd_freq * MOD / 2e-3 * 4);
+    regs.feedback_select = adf4350_regs_t::FEEDBACK_SELECT_DIVIDED;
+    regs.clock_div_mode = adf4350_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE;
     regs.prescaler = prescaler;
     regs.r_counter_10_bit = R;
     regs.reference_divide_by_2 = T;
