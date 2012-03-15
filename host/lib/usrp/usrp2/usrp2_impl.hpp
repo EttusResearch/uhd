@@ -46,7 +46,7 @@
 
 static const double USRP2_LINK_RATE_BPS = 1000e6/8;
 static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
-static const double mimo_clock_delay_usrp_n2xx = 3.55e-9;
+static const double mimo_clock_delay_usrp_n2xx = 4.10e-9;
 static const size_t mimo_clock_sync_delay_cycles = 138;
 static const size_t USRP2_SRAM_BYTES = size_t(1 << 20);
 static const boost::uint32_t USRP2_TX_ASYNC_SID = 2;
