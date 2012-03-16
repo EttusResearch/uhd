@@ -128,7 +128,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             size_t samps_to_send = std::min(total_num_samps - num_acc_samps, spb);
 
             //ensure the the last packet has EOB set
-            md.end_of_burst = samps_to_send < spb;
+            md.end_of_burst = samps_to_send <= spb;
 
             //send a single packet
             size_t num_tx_samps = tx_stream->send(
