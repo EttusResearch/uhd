@@ -266,13 +266,13 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         .set(true);
     _tree->create<std::complex<double> >(rx_fe_path / "iq_balance" / "value")
         .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, _rx_fe, _1))
-        .set(std::polar<double>(1.0, 0.0));
+        .set(std::complex<double>(0.0, 0.0));
     _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
         .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, _tx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
     _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
         .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, _tx_fe, _1))
-        .set(std::polar<double>(1.0, 0.0));
+        .set(std::complex<double>(0.0, 0.0));
 
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
