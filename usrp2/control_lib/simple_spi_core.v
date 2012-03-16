@@ -106,7 +106,7 @@ module simple_spi_core
     reg [2:0] state;
 
     reg ready_reg;
-    assign ready = ready_reg;
+    assign ready = ready_reg && ~trigger_spi;
 
     //serial clock either idles or is in one of two clock states
     reg sclk_reg;
