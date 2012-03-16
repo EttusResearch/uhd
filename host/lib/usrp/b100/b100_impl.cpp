@@ -182,12 +182,11 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     //-- setup clock after making fx2 and before loading fpga --//
     _clock_ctrl = b100_clock_ctrl::make(_fx2_ctrl, device_addr.cast<double>("master_clock_rate", B100_DEFAULT_TICK_RATE));
 
-    //load FPGA image, gpif is disabled while loading
+    //load FPGA image, slave xfers are disabled while loading
     this->enable_gpif(false);
     _fx2_ctrl->usrp_load_fpga(b100_fpga_image);
     _fx2_ctrl->usrp_fpga_reset(false); //active low reset
     _fx2_ctrl->usrp_fpga_reset(true);
-    this->enable_gpif(true);
 
     //create the control transport
     device_addr_t ctrl_xport_args;
@@ -203,6 +202,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         ctrl_xport_args
     );
     while (_ctrl_transport->get_recv_buff(0.0)){} //flush ctrl xport
+    this->enable_gpif(true);
 
     ////////////////////////////////////////////////////////////////////
     // Initialize FPGA wishbone communication

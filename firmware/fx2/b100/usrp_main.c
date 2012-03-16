@@ -87,9 +87,9 @@ static void clear_fifo(int ep) {
 
 void enable_xfers(int enable) {
     if(enable) {
-        IFCONFIG |= bmIFSLAVE;
+        IFCONFIG = bmIFCLKSRC | bm3048MHZ | bmIFCLKOE | bmIFSLAVE;
     } else {
-        IFCONFIG &= ~bmIFSLAVE;
+        IFCONFIG = bmIFCLKSRC | bm3048MHZ | bmIFSLAVE;
     }
     set_led_0(enable);
 }
