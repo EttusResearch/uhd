@@ -51,7 +51,7 @@
 #define TX_MIXER_DIS    0
 
 #define RX_MIXER_ENB    (SYNTH_PDBRF)
-#define RX_MIXER_DIS    RX_DISABLE
+#define RX_MIXER_DIS    0
 
 // Pin functions
 #define TX_LED_IO       (TX_LED_TXRX|TX_LED_LD)     // LED gpio lines, pull down for LED
