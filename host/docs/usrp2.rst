@@ -106,6 +106,19 @@ The default IP address of the USRP2 is **192.168.10.2**
 You will need to configure the host's ethernet interface with a static IP address to enable communication.
 An address of **192.168.10.1** and a subnet mask of **255.255.255.0** is recommended.
 
+On a Linux system, you can set a static IP address very easily by using the
+'ifconfig' command:
+::
+
+    sudo ifconfig <interface> 192.168.10.1
+
+Note that <interface> is usually something like 'eth0'.  You can discover the
+names of the network interfaces in your computer by running 'ifconfig' without
+any parameters:
+::
+
+    ifconfig -a
+
 **Note:**
 When using the UHD, if an IP address for the USRP2 is not specified,
 the software will use UDP broadcast packets to locate the USRP2.
@@ -167,6 +180,20 @@ Communication problems
 When setting up a development machine for the first time,
 you may have various difficulties communicating with the USRP device.
 The following tips are designed to help narrow-down and diagnose the problem.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: no control response
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This is a common error that occurs when you have set the subnet of your network
+interface to a different subnet than the network interface of the USRP.  For
+example, if your network interface is set to 192.168.20.1, and the USRP is
+192.168.10.2 (note the difference in the third numbers of the IP addresses), you
+will likely see a 'no control response' error message.
+
+Fixing this is simple - just set the your host PC's IP address to the same
+subnet as your USRP. Instructions for setting your IP address are in the
+previous section of this documentation.
+
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Firewall issues
