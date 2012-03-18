@@ -101,6 +101,10 @@ Docutils
 * **Usage:** build time (optional)
 * **Download URL:** http://docutils.sourceforge.net/
 
+**Alternate method:**
+Install setuptools, and use the easy_install command to install Docutils.
+http://pypi.python.org/pypi/setuptools
+
 ------------------------------------------------------------------------
 Build Instructions (Unix)
 ------------------------------------------------------------------------
