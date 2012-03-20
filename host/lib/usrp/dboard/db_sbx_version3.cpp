@@ -75,7 +75,6 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     if(ref_freq <= 12.5e6) D = adf4350_regs_t::REFERENCE_DOUBLER_ENABLED;
 
     //increase RF divider until acceptable VCO frequency
-    //start with target_freq*2 because mixer has divide by 2
     double vco_freq = target_freq;
     while (vco_freq < 2.2e9) {
         vco_freq *= 2;
@@ -83,7 +82,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     }
 
     //use 8/9 prescaler for vco_freq > 3 GHz (pg.18 prescaler)
-    adf4350_regs_t::prescaler_t prescaler = vco_freq > 3e9 ? adf4350_regs_t::PRESCALER_8_9 : adf4350_regs_t::PRESCALER_4_5;
+    adf4350_regs_t::prescaler_t prescaler = target_freq > 3e9 ? adf4350_regs_t::PRESCALER_8_9 : adf4350_regs_t::PRESCALER_4_5;
 
     /*
      * The goal here is to loop though possible R dividers,
@@ -91,7 +90,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
      * (frac) dividers.
      *
      * Calculate the N and F dividers for each set of values.
-     * The loop exists when it meets all of the constraints.
+     * The loop exits when it meets all of the constraints.
      * The resulting loop values are loaded into the registers.
      *
      * from pg.21
@@ -155,7 +154,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     regs.frac_12_bit = FRAC;
     regs.int_16_bit = N;
     regs.mod_12_bit = MOD;
-    regs.clock_divider_12_bit = boost::math::iround(1/pfd_freq * MOD / 2e-3 * 4);
+    regs.clock_divider_12_bit = std::max(1, int(std::ceil(400e-6*pfd_freq/MOD)));
     regs.feedback_select = adf4350_regs_t::FEEDBACK_SELECT_DIVIDED;
     regs.clock_div_mode = adf4350_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE;
     regs.prescaler = prescaler;
