@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,4 +34,8 @@ UHD_STATIC_BLOCK(print_system_info){
 
 std::string uhd::get_version_string(void){
     return "@UHD_VERSION@";
+}
+
+std::string uhd::get_abi_string(void){
+    return UHD_VERSION_ABI_STRING;
 }

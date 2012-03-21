@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,8 +21,22 @@
 #include <uhd/config.hpp>
 #include <string>
 
+/*!
+ * The ABI version string that the client application builds against.
+ * Call get_abi_string() to check this against the library build.
+ * The format is oldest ABI compatible release - ABI compat number.
+ * The compatibility number allows pre-release ABI to be versioned.
+ */
+#define UHD_VERSION_ABI_STRING "3.4.0-0"
+
 namespace uhd{
+
+    //! Get the version string (dotted version number + build info)
     UHD_API std::string get_version_string(void);
+
+    //! Get the ABI compatibility string for this build of the library
+    UHD_API std::string get_abi_string(void);
+
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_VERSION_HPP */
