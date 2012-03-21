@@ -103,8 +103,9 @@ Setup the host interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The USRP2 communicates at the IP/UDP layer over the gigabit ethernet.
 The default IP address of the USRP2 is **192.168.10.2**
-You will need to configure the host's ethernet interface with a static IP address to enable communication.
-An address of **192.168.10.1** and a subnet mask of **255.255.255.0** is recommended.
+You will need to configure the host's ethernet interface with a static IP
+address to enable communication.  An address of **192.168.10.1** and a subnet
+mask of **255.255.255.0** is recommended.
 
 On a Linux system, you can set a static IP address very easily by using the
 'ifconfig' command:
