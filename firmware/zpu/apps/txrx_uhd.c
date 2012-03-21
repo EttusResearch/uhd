@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2011 Ettus Research LLC
+ * Copyright 2010-2012 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,16 +56,19 @@ static void handle_udp_data_packet(
     case USRP2_UDP_RX_DSP0_PORT:
         //reset dsp to stop streaming
         sr_rx_ctrl0->clear = 1;
+        fw_regs[U2_FW_REG_LOCK_TIME] = 0; //force an unlock
         return;
 
     case USRP2_UDP_RX_DSP1_PORT:
         //reset dsp to stop streaming
         sr_rx_ctrl1->clear = 1;
+        fw_regs[U2_FW_REG_LOCK_TIME] = 0; //force an unlock
         return;
 
     case USRP2_UDP_TX_DSP0_PORT:
         //end async update packets per second
         sr_tx_ctrl->cyc_per_up = 0;
+        fw_regs[U2_FW_REG_LOCK_TIME] = 0; //force an unlock
         return;
 
     default: return;
