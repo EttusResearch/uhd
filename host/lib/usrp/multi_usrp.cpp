@@ -448,7 +448,7 @@ public:
     void set_user_register(const boost::uint8_t addr, const boost::uint32_t data, size_t mboard){
         if (mboard != ALL_MBOARDS){
             typedef std::pair<boost::uint8_t, boost::uint32_t> user_reg_t;
-            _tree->access<user_reg_t>(mb_root(mboard) / "user/reg").set(user_reg_t(addr, data));
+            _tree->access<user_reg_t>(mb_root(mboard) / "user/regs").set(user_reg_t(addr, data));
             return;
         }
         for (size_t m = 0; m < get_num_mboards(); m++){
