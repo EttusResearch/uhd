@@ -152,8 +152,41 @@ For transmit, a burst is started when the user calls send(). The metadata should
     //send a single packet
     size_t num_tx_samps = tx_streamer->send(buffs, samps_to_send, md);
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Align LOs in the front-end (SBX/WBX + N-Series)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using timed commands, multiple frontends can be tuned at a specific time.
+This timed-tuning ensures that the phase offsets between VCO/PLL chains
+will remain constant after each re-tune. See notes below:
+
+* There is a random phase offset between any two frontends
+* This phase offset is different for different LO frequencies
+* This phase offset remains constant after retuning
+
+  * Due to divider, WBX phase offset will be randomly +/- 180 deg after re-tune
+
+* This phase offset will drift over time due to thermal and other characteristics
+* Periodic calibration will be necessary for phase-coherent applications
+
+Code snippet example, tuning with timed commands:
+::
+
+    //we will tune the frontends in 100ms from now
+    uhd::time_spec_t cmd_time = usrp->get_time_now() + uhd::time_spec_t(0.1);
+
+    //sets command time on all devices
+    //the next commands are all timed
+    usrp->set_command_time(cmd_time);
+
+    //tune channel 0 and channel 1
+    usrp->set_rx_freq(1.03e9, 0/*ch0*/);
+    usrp->set_rx_freq(1.03e9, 1/*ch1*/);
+
+    //end timed commands
+    usrp->set_clear_time();
+
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Align LOs in the front-end
+Align LOs in the front-end (others)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 After tuning the RF front-ends,
 each local oscillator may have a random phase offset due to the dividers
