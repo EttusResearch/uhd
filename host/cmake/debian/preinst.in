@@ -17,5 +17,5 @@
 #
 
 if [ "$1" = "install" ]; then
-    ls
+    echo
 fi
