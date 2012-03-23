@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -54,10 +54,12 @@ module packet_router
         input [35:0] dsp1_inp_data, input dsp1_inp_valid, output dsp1_inp_ready,
         input [35:0] eth_inp_data, input eth_inp_valid, output eth_inp_ready,
         input [35:0] err_inp_data, input err_inp_valid, output err_inp_ready,
+        input [35:0] ctl_inp_data, input ctl_inp_valid, output ctl_inp_ready,
 
         // Output Interfaces (out of router)
         output [35:0] ser_out_data, output ser_out_valid, input ser_out_ready,
         output [35:0] dsp_out_data, output dsp_out_valid, input dsp_out_ready,
+        output [35:0] ctl_out_data, output ctl_out_valid, input ctl_out_ready,
         output [35:0] eth_out_data, output eth_out_valid, input eth_out_ready
     );
 
@@ -188,9 +190,9 @@ module packet_router
     ////////////////////////////////////////////////////////////////////
 
     //dummy signals to join the the muxes below
-    wire [35:0] _combiner0_data, _combiner1_data;
-    wire        _combiner0_valid, _combiner1_valid;
-    wire        _combiner0_ready, _combiner1_ready;
+    wire [35:0] _combiner0_data, _combiner1_data, _combiner2_data;
+    wire        _combiner0_valid, _combiner1_valid, _combiner2_valid;
+    wire        _combiner0_ready, _combiner1_ready, _combiner2_ready;
 
     fifo36_mux #(.prio(0)) // No priority, fair sharing
      _com_output_combiner0(
@@ -198,6 +200,14 @@ module packet_router
         .data0_i(err_inp_data), .src0_rdy_i(err_inp_valid), .dst0_rdy_o(err_inp_ready),
         .data1_i(cpu_inp_data), .src1_rdy_i(cpu_inp_valid), .dst1_rdy_o(cpu_inp_ready),
         .data_o(_combiner0_data), .src_rdy_o(_combiner0_valid), .dst_rdy_i(_combiner0_ready)
+    );
+
+    fifo36_mux #(.prio(0)) // No priority, fair sharing
+     _com_output_combiner2(
+        .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
+        .data0_i(_combiner0_data), .src0_rdy_i(_combiner0_valid), .dst0_rdy_o(_combiner0_ready),
+        .data1_i(ctl_inp_data), .src1_rdy_i(ctl_inp_valid), .dst1_rdy_o(ctl_inp_ready),
+        .data_o(_combiner2_data), .src_rdy_o(_combiner2_valid), .dst_rdy_i(_combiner2_ready)
     );
 
     fifo36_mux #(.prio(0)) // No priority, fair sharing
@@ -211,7 +221,7 @@ module packet_router
     fifo36_mux #(.prio(1)) // Give priority to err/cpu over dsp
      com_output_source(
         .clk(stream_clk), .reset(stream_rst), .clear(stream_clr),
-        .data0_i(_combiner0_data), .src0_rdy_i(_combiner0_valid), .dst0_rdy_o(_combiner0_ready),
+        .data0_i(_combiner2_data), .src0_rdy_i(_combiner2_valid), .dst0_rdy_o(_combiner2_ready),
         .data1_i(_combiner1_data), .src1_rdy_i(_combiner1_valid), .dst1_rdy_o(_combiner1_ready),
         .data_o(udp_out_data), .src_rdy_o(udp_out_valid), .dst_rdy_i(udp_out_ready)
     );
@@ -248,12 +258,13 @@ module packet_router
     wire        _cpu_out_valid;
     wire        _cpu_out_ready;
 
-    packet_dispatcher36_x3 #(.BASE(CTRL_BASE+1)) packet_dispatcher(
+    packet_dispatcher36_x4 #(.BASE(CTRL_BASE+1)) packet_dispatcher(
         .clk(stream_clk), .rst(stream_rst), .clr(stream_clr),
         .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
         .com_inp_data(com_inp_data), .com_inp_valid(com_inp_valid), .com_inp_ready(com_inp_ready),
         .ext_out_data(ext_out_data), .ext_out_valid(ext_out_valid), .ext_out_ready(ext_out_ready),
         .dsp_out_data(dsp_out_data), .dsp_out_valid(dsp_out_valid), .dsp_out_ready(dsp_out_ready),
+        .ctl_out_data(ctl_out_data), .ctl_out_valid(ctl_out_valid), .ctl_out_ready(ctl_out_ready),
         .cpu_out_data(_cpu_out_data), .cpu_out_valid(_cpu_out_valid), .cpu_out_ready(_cpu_out_ready)
     );
 
