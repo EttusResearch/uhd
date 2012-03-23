@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 
 #define OFFSET_FIXED (1ul << 31)
 #define OFFSET_SET   (1ul << 30)
+#define FLAG_MASK (OFFSET_FIXED | OFFSET_SET)
 
 static boost::uint32_t fs_to_bits(const double num, const size_t bits){
     return boost::int32_t(boost::math::round(num * (1 << (bits-1))));
@@ -59,8 +60,8 @@ public:
     }
 
     void set_dc_offset(const boost::uint32_t flags){
-        _iface->poke32(REG_RX_FE_OFFSET_I, flags | _i_dc_off);
-        _iface->poke32(REG_RX_FE_OFFSET_Q, flags | _q_dc_off);
+        _iface->poke32(REG_RX_FE_OFFSET_I, flags | (_i_dc_off & ~FLAG_MASK));
+        _iface->poke32(REG_RX_FE_OFFSET_Q, flags | (_q_dc_off & ~FLAG_MASK));
     }
 
     void set_iq_balance(const std::complex<double> &cor){
