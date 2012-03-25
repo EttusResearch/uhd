@@ -227,8 +227,8 @@ module slave_fifo
    assign sloe = ~{(state == STATE_DATA_TX) | (state == STATE_CTRL_TX) | (state == STATE_DATA_TX_SLOE) | (state == STATE_CTRL_TX_SLOE)};
    //"read" and "write" here are from the master's point of view;
    //so "read" means "transmit" and "write" means "receive"
-   assign slwr = ~{(state == STATE_DATA_RX && data_rx_src_rdy && data_rx_dst_rdy) || (state == STATE_CTRL_RX && ctrl_rx_src_rdy && ctrl_rx_dst_rdy)};
-   assign slrd = ~{(state == STATE_DATA_TX && data_tx_src_rdy && data_tx_dst_rdy) || (state == STATE_CTRL_TX && ctrl_tx_src_rdy && ctrl_tx_dst_rdy)};
+   assign slwr = ~{(data_rx_src_rdy && data_rx_dst_rdy) || (ctrl_rx_src_rdy && ctrl_rx_dst_rdy)};
+   assign slrd = ~{(data_tx_src_rdy && data_tx_dst_rdy) || (ctrl_tx_src_rdy && ctrl_tx_dst_rdy)};
 
    wire pktend_ctrl, pktend_data;
    assign pktend_ctrl = ((~ctrl_rx_src_rdy | gpif_d_out_ctrl[17]) & (state == STATE_CTRL_RX));
