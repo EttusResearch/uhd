@@ -99,6 +99,7 @@ module slave_fifo
    localparam STATE_CTRL_TX_SLOE = 8;
    localparam STATE_DATA_RX_ADR = 1;
    localparam STATE_CTRL_RX_ADR = 4;
+   localparam STATE_PKTEND_ADR = 10;
    localparam STATE_PKTEND = 7;
 
    //logs the last bus user for xfer fairness
@@ -133,7 +134,7 @@ module slave_fifo
            else if(data_rx_src_rdy & ~FX2_DF)
              state <= STATE_DATA_RX_ADR;
            else if(~data_rx_src_rdy & ~dsp_rx_run & pktend_latch & ~FX2_DF)
-             state <= STATE_PKTEND;
+             state <= STATE_PKTEND_ADR;
              
            if(data_rx_src_rdy)
              pktend_latch <= 1;
@@ -158,6 +159,11 @@ module slave_fifo
                 last_data_bus_hog <= BUS_HOG_RX;
             end
             
+         STATE_PKTEND_ADR:
+            begin
+           state <= STATE_PKTEND;
+            end
+
          STATE_PKTEND:
             begin
            state <= STATE_IDLE;
@@ -214,7 +220,7 @@ module slave_fifo
    // {0,1}: EP4, ctrl TX from host
    // {1,0}: EP6, data RX to host
    // {1,1}: EP8, ctrl RX to host
-   assign fifoadr = {(state == STATE_DATA_RX) | (state == STATE_CTRL_RX) | (state == STATE_DATA_RX_ADR) | (state == STATE_CTRL_RX_ADR) | (state == STATE_PKTEND),
+   assign fifoadr = {(state == STATE_DATA_RX) | (state == STATE_CTRL_RX) | (state == STATE_DATA_RX_ADR) | (state == STATE_CTRL_RX_ADR) | (state == STATE_PKTEND) | (state == STATE_PKTEND_ADR),
                      (state == STATE_CTRL_RX) | (state == STATE_CTRL_RX_ADR) | (state == STATE_CTRL_TX) | (state == STATE_CTRL_TX_SLOE)};
    //set sloe, slwr, slrd (all active low)
    //SLOE gets asserted when we want data from the FX2; i.e., TX mode
