@@ -46,11 +46,15 @@ module slave_fifo
     output [31:0] debug0, output [31:0] debug1
     );
 
+    reg FX2_DE, FX2_CE, FX2_DF, FX2_CF;
+
    // inputs to FPGA (all active low)
-   wire       FX2_DE = ~gpif_ctl[0]; //EP2 FX2 FIFO empty (FLAGA)
-   wire       FX2_CE = ~gpif_ctl[1]; //EP4 FX2 FIFO empty (FLAGB)
-   wire       FX2_DF = ~gpif_ctl[2]; //EP6 FX2 FIFO full  (FLAGC)
-   wire       FX2_CF = ~gpif_ctl[3]; //EP8 FX2 FIFO full  (FLAGD)
+    always @(posedge gpif_clk) begin
+        FX2_DE <= ~gpif_ctl[0]; //EP2 FX2 FIFO empty (FLAGA)
+        FX2_CE <= ~gpif_ctl[1]; //EP4 FX2 FIFO empty (FLAGB)
+        FX2_DF <= ~gpif_ctl[2]; //EP6 FX2 FIFO full  (FLAGC)
+        FX2_CF <= ~gpif_ctl[3]; //EP8 FX2 FIFO full  (FLAGD)
+    end
 
    wire [17:0] 	  gpif_d_out_ctrl, gpif_d_out_data, gpif_d_out;
 
@@ -68,7 +72,7 @@ module slave_fifo
    //tx
    wire ctrl_tx_dst_rdy; //sm input, ctrl tx path has space
    wire ctrl_tx_src_rdy; //sm output, ctrl tx path enable
-   reg data_tx_dst_rdy; //sm input, data tx path has space
+   wire data_tx_dst_rdy; //sm input, data tx path has space
    wire data_tx_src_rdy; //sm output, data tx path enable
 
    //rx
@@ -76,6 +80,8 @@ module slave_fifo
    wire ctrl_rx_src_rdy; //sm input, ctrl rx path has space
    wire data_rx_dst_rdy; //sm output, data rx path enable
    wire data_rx_src_rdy; //sm input, data rx path has space
+
+   reg tx_data_enough_space;
 
    reg [9:0] transfer_count; //number of lines (a line is 16 bits) in active transfer
 
@@ -118,11 +124,11 @@ module slave_fifo
              state <= STATE_CTRL_TX_SLOE;
            else if(ctrl_rx_src_rdy & ~FX2_CF) //if the ctrl fifo has data and the FX2 isn't full
              state <= STATE_CTRL_RX_ADR;
-           else if(data_tx_dst_rdy & ~FX2_DE & last_data_bus_hog == BUS_HOG_RX) //if there's room in the data fifo and the FX2 has data
+           else if(data_tx_dst_rdy & ~FX2_DE & last_data_bus_hog == BUS_HOG_RX & tx_data_enough_space) //if there's room in the data fifo and the FX2 has data
              state <= STATE_DATA_TX_SLOE;
            else if(data_rx_src_rdy & ~FX2_DF & last_data_bus_hog == BUS_HOG_TX) //if the data fifo has data and the FX2 isn't full
              state <= STATE_DATA_RX_ADR;
-           else if(data_tx_dst_rdy & ~FX2_DE)
+           else if(data_tx_dst_rdy & ~FX2_DE & tx_data_enough_space)
              state <= STATE_DATA_TX_SLOE;
            else if(data_rx_src_rdy & ~FX2_DF)
              state <= STATE_DATA_RX_ADR;
@@ -145,11 +151,11 @@ module slave_fifo
 
          STATE_DATA_RX:
             begin
-           if((transfer_count == data_transfer_size) | FX2_DF | (~data_rx_src_rdy))
-             state <= STATE_IDLE;
-
-           transfer_count <= transfer_count + 1;
-           last_data_bus_hog <= BUS_HOG_RX;
+                if(data_rx_src_rdy && data_rx_dst_rdy && (transfer_count != data_transfer_size))
+                    transfer_count <= transfer_count + 1;
+                else
+                    state <= STATE_IDLE;
+                last_data_bus_hog <= BUS_HOG_RX;
             end
             
          STATE_PKTEND:
@@ -160,22 +166,25 @@ module slave_fifo
             
          STATE_DATA_TX:
             begin
-           if((transfer_count == data_transfer_size) | FX2_DE )/*| (~data_tx_dst_rdy))*/
-             state <= STATE_IDLE;
-           transfer_count <= transfer_count + 1;
-           last_data_bus_hog <= BUS_HOG_TX;
+                if(data_tx_dst_rdy && data_tx_src_rdy && (transfer_count != data_transfer_size))
+                    transfer_count <= transfer_count + 1;
+                else
+                    state <= STATE_IDLE;
+                last_data_bus_hog <= BUS_HOG_TX;
             end
          STATE_CTRL_RX:
             begin
-           if(FX2_CF | (~ctrl_rx_src_rdy))
-             state <= STATE_IDLE;
-           transfer_count <= transfer_count + 1;
+                if(ctrl_rx_src_rdy && ctrl_rx_dst_rdy)
+                    transfer_count <= transfer_count + 1;
+                else
+                    state <= STATE_IDLE;
             end
          STATE_CTRL_TX:
             begin
-           if(FX2_CE | (~ctrl_tx_dst_rdy))
-             state <= STATE_IDLE;
-           transfer_count <= transfer_count + 1;
+                if(ctrl_tx_dst_rdy && ctrl_tx_src_rdy)
+                    transfer_count <= transfer_count + 1;
+                else
+                    state <= STATE_IDLE;
             end
        endcase
         end
@@ -184,10 +193,10 @@ module slave_fifo
    // fifo signal assignments and enables
 
    //enable fifos
-   assign data_rx_dst_rdy = (state == STATE_DATA_RX);
-   assign data_tx_src_rdy = (state == STATE_DATA_TX);
-   assign ctrl_rx_dst_rdy = (state == STATE_CTRL_RX);
-   assign ctrl_tx_src_rdy = (state == STATE_CTRL_TX);
+   assign data_rx_dst_rdy = (state == STATE_DATA_RX) && ~FX2_DF;
+   assign data_tx_src_rdy = (state == STATE_DATA_TX) && ~FX2_DE;
+   assign ctrl_rx_dst_rdy = (state == STATE_CTRL_RX) && ~FX2_CF;
+   assign ctrl_tx_src_rdy = (state == STATE_CTRL_TX) && ~FX2_CE;
 
    //tx framing (this is super suspect)
    //eop should be used only to set the EOP bit going into FIFOs
@@ -212,8 +221,8 @@ module slave_fifo
    assign sloe = ~{(state == STATE_DATA_TX) | (state == STATE_CTRL_TX) | (state == STATE_DATA_TX_SLOE) | (state == STATE_CTRL_TX_SLOE)};
    //"read" and "write" here are from the master's point of view;
    //so "read" means "transmit" and "write" means "receive"
-   assign slwr = ~{(state == STATE_DATA_RX) | (state == STATE_CTRL_RX)};
-   assign slrd = ~{(state == STATE_DATA_TX) | (state == STATE_CTRL_TX)};
+   assign slwr = ~{(state == STATE_DATA_RX && data_rx_src_rdy && data_rx_dst_rdy) || (state == STATE_CTRL_RX && ctrl_rx_src_rdy && ctrl_rx_dst_rdy)};
+   assign slrd = ~{(state == STATE_DATA_TX && data_tx_src_rdy && data_tx_dst_rdy) || (state == STATE_CTRL_TX && ctrl_tx_src_rdy && ctrl_tx_dst_rdy)};
 
    wire pktend_ctrl, pktend_data;
    assign pktend_ctrl = ((~ctrl_rx_src_rdy | gpif_d_out_ctrl[17]) & (state == STATE_CTRL_RX));
@@ -236,16 +245,13 @@ module slave_fifo
    wire           tx_src_rdy_int, tx_dst_rdy_int;
    
    wire [15:0] wr_fifo_space;
-   
+
    always @(posedge gpif_clk)
-     if(gpif_rst)
-       data_tx_dst_rdy <= 0;
-     else
-       data_tx_dst_rdy <= wr_fifo_space >= 256;
+     tx_data_enough_space <= wr_fifo_space >= 256;
 
    fifo_cascade #(.WIDTH(18), .SIZE(12)) wr_fifo
      (.clk(gpif_clk), .reset(gpif_rst), .clear(clear_tx),
-      .datain({eop,sop,gpif_d}), .src_rdy_i(data_tx_src_rdy), .dst_rdy_o(/*data_tx_dst_rdy*/), .space(wr_fifo_space),
+      .datain({eop,sop,gpif_d}), .src_rdy_i(data_tx_src_rdy), .dst_rdy_o(data_tx_dst_rdy), .space(wr_fifo_space),
       .dataout(data_tx_int), .src_rdy_o(tx_src_rdy_int), .dst_rdy_i(tx_dst_rdy_int), .occupied());
    
    fifo_2clock_cascade #(.WIDTH(18), .SIZE(4)) wr_fifo_2clk
