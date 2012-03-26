@@ -32,34 +32,40 @@ SET(UHD_VERSION_PATCH 000)
 ########################################################################
 # Version information discovery through git log
 ########################################################################
-IF(UHD_RELEASE_MODE)
-    SET(UHD_BUILD_INFO_DISCOVERY FALSE)
-    SET(UHD_BUILD_INFO "release")
-ELSE()
-    SET(UHD_BUILD_INFO_DISCOVERY GIT_FOUND)
-    SET(UHD_BUILD_INFO "unknown")
-ENDIF()
 
-IF(UHD_BUILD_INFO_DISCOVERY)
+#grab the git ref id for the current head
+EXECUTE_PROCESS(
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMAND ${GIT_EXECUTABLE} describe --always --abbrev=8 --long
+    OUTPUT_VARIABLE _git_describe OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE _git_describe_result
+)
 
-    #grab the git ref id for the current head
+#only set the build info on success
+IF(_git_describe_result EQUAL 0)
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${GIT_EXECUTABLE} describe --always --abbrev=8 --long
-        OUTPUT_VARIABLE _git_describe OUTPUT_STRIP_TRAILING_WHITESPACE
-        RESULT_VARIABLE _git_describe_result
+        COMMAND ${PYTHON_EXECUTABLE} -c "print '${_git_describe}'.split('-')[1]"
+        OUTPUT_VARIABLE UHD_GIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    EXECUTE_PROCESS(
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${PYTHON_EXECUTABLE} -c "print '${_git_describe}'.split('-')[2]"
+        OUTPUT_VARIABLE UHD_GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+ENDIF()
 
-    #only set the build info on success
-    IF(_git_describe_result EQUAL 0)
-        EXECUTE_PROCESS(
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            COMMAND ${PYTHON_EXECUTABLE} -c "print '${_git_describe}'.split('-',1)[1]"
-            OUTPUT_VARIABLE UHD_BUILD_INFO OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-    ENDIF()
+IF(NOT UHD_GIT_COUNT)
+    SET(UHD_GIT_COUNT "0")
+ENDIF()
 
-ENDIF(UHD_BUILD_INFO_DISCOVERY)
+IF(NOT UHD_GIT_HASH)
+    SET(UHD_GIT_HASH "unknown")
+ENDIF()
+
+IF(UHD_RELEASE_MODE)
+    SET(UHD_GIT_HASH ${UHD_RELEASE_MODE})
+ENDIF()
 
 ########################################################################
-SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}-${UHD_BUILD_INFO}")
+SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}-${UHD_GIT_COUNT}-${UHD_GIT_HASH}")
