@@ -20,7 +20,7 @@
 
 module packet_reframer
   (input clk, input reset, input clear,
-   input [18:0] data_i,
+   input [15:0] data_i,
    input src_rdy_i,
    output dst_rdy_o,
    output [18:0] data_o,
@@ -60,8 +60,7 @@ module packet_reframer
    wire occ_out = 0;
    assign eof_out = (state == RF_PKT) & (length == 2);
    wire sof_out = (state == RF_IDLE);
-   wire [15:0] data_out = data_i[15:0];
-   assign data_o = {occ_out, eof_out, sof_out, data_out};
+   assign data_o = {occ_out, eof_out, sof_out, data_i[15:0]};
    
       
 endmodule // packet_reframer

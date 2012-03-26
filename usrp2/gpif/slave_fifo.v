@@ -84,8 +84,6 @@ module slave_fifo
    reg tx_data_enough_space;
 
    reg [9:0] transfer_count; //number of lines (a line is 16 bits) in active transfer
-
-   wire       sop, eop; //SOP/EOP markers for TX data packets
    
    reg pktend_latch;
 
@@ -204,13 +202,10 @@ module slave_fifo
    assign ctrl_rx_dst_rdy = (state == STATE_CTRL_RX) && ~FX2_CF;
    assign ctrl_tx_src_rdy = (state == STATE_CTRL_TX) && ~FX2_CE;
 
-   //tx framing (this is super suspect)
-   //eop should be used only to set the EOP bit going into FIFOs
-   wire eop_data, eop_ctrl;
-   assign sop = (transfer_count == 0);
-   assign eop_data = (transfer_count == (data_transfer_size-1));
+   //framing for TX ctrl packets
+   wire sop_ctrl, eop_ctrl;
+   assign sop_ctrl = (transfer_count == 0);
    assign eop_ctrl = (transfer_count == (ctrl_transfer_size-1));
-   assign eop = (state == STATE_DATA_TX) ? eop_data : eop_ctrl;
 
    // ////////////////////////////////////////////////////////////////////
    // set GPIF pins
@@ -243,40 +238,39 @@ module slave_fifo
    // ////////////////////////////////////////////////////////////////////
    // TX Data Path
 
-   wire [18:0] 	  tx19_data;
-   wire 	  tx19_src_rdy, tx19_dst_rdy;
+   wire [15:0] 	  txfifo_data;
+   wire 	  txfifo_src_rdy, txfifo_dst_rdy;
    wire [35:0] 	  tx36_data;
    wire 	  tx36_src_rdy, tx36_dst_rdy;
-   wire [17:0]    data_tx_int;
-   wire           tx_src_rdy_int, tx_dst_rdy_int;
+   wire [15:0]    data_tx_2clk;
+   wire           tx_src_rdy_2clk, tx_dst_rdy_2clk;
    
    wire [15:0] wr_fifo_space;
 
    always @(posedge gpif_clk)
-     tx_data_enough_space <= wr_fifo_space >= 256;
+     tx_data_enough_space <= (wr_fifo_space >= data_transfer_size);
 
-   fifo_cascade #(.WIDTH(18), .SIZE(12)) wr_fifo
+   fifo_cascade #(.WIDTH(16), .SIZE(12)) wr_fifo
      (.clk(gpif_clk), .reset(gpif_rst), .clear(clear_tx),
-      .datain({eop,sop,gpif_d}), .src_rdy_i(data_tx_src_rdy), .dst_rdy_o(data_tx_dst_rdy), .space(wr_fifo_space),
-      .dataout(data_tx_int), .src_rdy_o(tx_src_rdy_int), .dst_rdy_i(tx_dst_rdy_int), .occupied());
+      .datain(gpif_d), .src_rdy_i(data_tx_src_rdy), .dst_rdy_o(data_tx_dst_rdy), .space(wr_fifo_space),
+      .dataout(txfifo_data), .src_rdy_o(txfifo_src_rdy), .dst_rdy_i(txfifo_dst_rdy), .occupied());
    
-   fifo_2clock_cascade #(.WIDTH(18), .SIZE(4)) wr_fifo_2clk
-     (.wclk(gpif_clk), .datain(data_tx_int), .src_rdy_i(tx_src_rdy_int), .dst_rdy_o(tx_dst_rdy_int), .space(),
-      .rclk(fifo_clk), .dataout(tx19_data[17:0]), .src_rdy_o(tx19_src_rdy), .dst_rdy_i(tx19_dst_rdy), .occupied(),
+   fifo_2clock_cascade #(.WIDTH(16), .SIZE(4)) wr_fifo_2clk
+     (.wclk(gpif_clk), .datain(txfifo_data), .src_rdy_i(txfifo_src_rdy), .dst_rdy_o(txfifo_dst_rdy), .space(),
+      .rclk(fifo_clk), .dataout(data_tx_2clk), .src_rdy_o(tx_src_rdy_2clk), .dst_rdy_i(tx_dst_rdy_2clk), .occupied(),
       .arst(fifo_rst));
-      
-   assign tx19_data[18] = 1'b0;
 
-   // join vita packets which are longer than one frame, drop frame padding
+   // join vita packets which are longer than one frame, add SOP/EOP/OCC
    wire [18:0] 	  refr_data;
    wire 	  refr_src_rdy, refr_dst_rdy;
+   //below 3 signals for debug only
    wire refr_state;
    wire refr_eof;
    wire [15:0] refr_len;
    
    packet_reframer tx_packet_reframer 
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx),
-      .data_i(tx19_data), .src_rdy_i(tx19_src_rdy), .dst_rdy_o(tx19_dst_rdy),
+      .data_i(data_tx_2clk), .src_rdy_i(tx_src_rdy_2clk), .dst_rdy_o(tx_dst_rdy_2clk),
       .data_o(refr_data), .src_rdy_o(refr_src_rdy), .dst_rdy_i(refr_dst_rdy),
       .state(refr_state), .eof_out(refr_eof), .length(refr_len));
 
@@ -320,7 +314,7 @@ module slave_fifo
       .arst(fifo_rst));
 
    //rd_fifo buffers writes to the 2clock fifo above
-   fifo_cascade #(.WIDTH(19), .SIZE(RXFIFOSIZE)) rd_fifo
+   fifo_cascade #(.WIDTH(16), .SIZE(RXFIFOSIZE)) rd_fifo
      (.clk(~gpif_clk), .reset(gpif_rst), .clear(clear_rx),
       .datain(data_rx_int), .src_rdy_i(rx_src_rdy_int), .dst_rdy_o(rx_dst_rdy_int), .space(rxfifospace),
       .dataout(gpif_d_out_data), .src_rdy_o(data_rx_src_rdy), .dst_rdy_i(data_rx_dst_rdy), .occupied());
@@ -353,7 +347,7 @@ module slave_fifo
    //how does this use fifo_clk instead of wb_clk
    //answer: on b100 fifo clk IS wb clk
    fifo_2clock_cascade #(.WIDTH(19), .SIZE(4)) ctrl_fifo_2clk
-     (.wclk(gpif_clk), .datain({1'b0,eop,sop,gpif_d}), 
+     (.wclk(gpif_clk), .datain({1'b0,eop_ctrl,sop_ctrl,gpif_d}), 
       .src_rdy_i(ctrl_tx_src_rdy), .dst_rdy_o(ctrl_tx_dst_rdy), .space(),
       .rclk(fifo_clk), .dataout(ctrl_data), 
       .src_rdy_o(ctrl_src_rdy), .dst_rdy_i(ctrl_dst_rdy), .occupied(),
