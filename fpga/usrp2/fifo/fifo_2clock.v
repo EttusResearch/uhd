@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,42 +31,44 @@ module fifo_2clock
    assign src_rdy_o  = ~empty;
    assign write      = src_rdy_i & dst_rdy_o;
    assign read 	     = src_rdy_o & dst_rdy_i;
-   wire 	 dummy;
-   
+
    generate
-      if(WIDTH==36)
+      if((WIDTH <= 36) && (WIDTH > 19)) begin
+	wire [35:0] data_in_wide, data_out_wide;
+	assign data_in_wide[WIDTH-1:0] = datain;
+	assign dataout = data_out_wide[WIDTH-1:0];
 	if(SIZE==9)
 	  fifo_xlnx_512x36_2clk fifo_xlnx_512x36_2clk
 	       (.rst(arst),
-		.wr_clk(wclk),.din(datain),.full(full),.wr_en(write),.wr_data_count(level_wclk),
-		.rd_clk(rclk),.dout(dataout),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
+		.wr_clk(wclk),.din(data_in_wide),.full(full),.wr_en(write),.wr_data_count(level_wclk),
+		.rd_clk(rclk),.dout(data_out_wide),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
 	else if(SIZE==11)
 	  fifo_xlnx_2Kx36_2clk fifo_xlnx_2Kx36_2clk 
 		     (.rst(arst),
-		      .wr_clk(wclk),.din(datain),.full(full),.wr_en(write),.wr_data_count(level_wclk),
-		      .rd_clk(rclk),.dout(dataout),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
+		      .wr_clk(wclk),.din(data_in_wide),.full(full),.wr_en(write),.wr_data_count(level_wclk),
+		      .rd_clk(rclk),.dout(data_out_wide),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
 	else if(SIZE==6)
 	  fifo_xlnx_64x36_2clk fifo_xlnx_64x36_2clk 
 		     (.rst(arst),
-		      .wr_clk(wclk),.din(datain),.full(full),.wr_en(write),.wr_data_count(level_wclk),
-		      .rd_clk(rclk),.dout(dataout),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
+		      .wr_clk(wclk),.din(data_in_wide),.full(full),.wr_en(write),.wr_data_count(level_wclk),
+		      .rd_clk(rclk),.dout(data_out_wide),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
 	else
 	  fifo_xlnx_512x36_2clk fifo_xlnx_512x36_2clk
 	       (.rst(arst),
-		.wr_clk(wclk),.din(datain),.full(full),.wr_en(write),.wr_data_count(level_wclk),
-		.rd_clk(rclk),.dout(dataout),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
-      else if((WIDTH==19) & (SIZE==4))
+		.wr_clk(wclk),.din(data_in_wide),.full(full),.wr_en(write),.wr_data_count(level_wclk),
+		.rd_clk(rclk),.dout(data_out_wide),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
+      end
+      else if((WIDTH <= 19) && (SIZE <= 4)) begin
+	wire [18:0] data_in_wide, data_out_wide;
+	assign data_in_wide[WIDTH-1:0] = datain;
+	assign dataout = data_out_wide[WIDTH-1:0];
 	fifo_xlnx_16x19_2clk fifo_xlnx_16x19_2clk
 	  (.rst(arst),
-	   .wr_clk(wclk),.din(datain),.full(full),.wr_en(write),.wr_data_count(level_wclk),
-	   .rd_clk(rclk),.dout(dataout),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
-      else if((WIDTH==18) & (SIZE==4))
-	fifo_xlnx_16x19_2clk fifo_xlnx_16x19_2clk
-	  (.rst(arst),
-	   .wr_clk(wclk),.din({1'b0,datain}),.full(full),.wr_en(write),.wr_data_count(level_wclk),
-	   .rd_clk(rclk),.dout({dummy,dataout}),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
+	   .wr_clk(wclk),.din(data_in_wide),.full(full),.wr_en(write),.wr_data_count(level_wclk),
+	   .rd_clk(rclk),.dout(data_out_wide),.empty(empty),.rd_en(read),.rd_data_count(level_rclk) );
+      end
    endgenerate
-   
+
    assign occupied  = {{(16-SIZE-1){1'b0}},level_rclk};
    assign space     = ((1<<SIZE)+1)-level_wclk;
    
