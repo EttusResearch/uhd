@@ -27,6 +27,7 @@ SET(example_sources
     rx_timed_samples.cpp
     test_messages.cpp
     test_pps_input.cpp
+    transport_hammer.cpp
     tx_bursts.cpp
     tx_samples_from_file.cpp
     tx_timed_samples.cpp
