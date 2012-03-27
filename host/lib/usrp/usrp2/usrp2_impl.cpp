@@ -121,12 +121,26 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
             //new_addr["addr"] = ip_addr.to_string();
             new_addr["addr"] = udp_transport->get_recv_addr();
 
+            //Attempt a simple 2-way communication with a connected socket.
+            //Reason: Although the USRP will respond the broadcast above,
+            //we may not be able to communicate directly (non-broadcast).
+            udp_simple::sptr ctrl_xport = udp_simple::make_connected(
+                new_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
+            );
+            ctrl_xport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
+            size_t len = ctrl_xport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
+            if (len > offsetof(usrp2_ctrl_data_t, data) and ntohl(ctrl_data_in->id) == USRP2_CTRL_ID_WAZZUP_DUDE){
+                //found the device, open up for communication!
+            }
+            else{
+                //otherwise we don't find it...
+                continue;
+            }
+
             //Attempt to read the name from the EEPROM and perform filtering.
             //This operation can throw due to compatibility mismatch.
             try{
-                usrp2_iface::sptr iface = usrp2_iface::make(udp_simple::make_connected(
-                    new_addr["addr"], BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT)
-                ));
+                usrp2_iface::sptr iface = usrp2_iface::make(ctrl_xport);
                 if (iface->is_device_locked()) continue; //ignore locked devices
                 mboard_eeprom_t mb_eeprom = iface->mb_eeprom;
                 new_addr["name"] = mb_eeprom["name"];

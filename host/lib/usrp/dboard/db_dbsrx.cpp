@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,6 +57,8 @@ static const uhd::dict<std::string, gain_range_t> dbsrx_gain_ranges = map_list_o
     ("GC1", gain_range_t(0, 56, 0.5))
     ("GC2", gain_range_t(0, 24, 1))
 ;
+
+static const double usrp1_gpio_clock_rate_limit = 4e6;
 
 /***********************************************************************
  * The DBSRX dboard class
@@ -265,6 +267,11 @@ double dbsrx::set_lo_freq(double target_freq){
     std::vector<double> clock_rates = this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX);
     const double max_clock_rate = uhd::sorted(clock_rates).back();
     BOOST_FOREACH(ref_clock, uhd::reversed(uhd::sorted(clock_rates))){
+        //USRP1 feeds the DBSRX clock from a FPGA GPIO line.
+        //make sure that this clock does not exceed rate limit.
+        if (this->get_iface()->get_special_props().soft_clock_divider){
+            if (ref_clock > usrp1_gpio_clock_rate_limit) continue;
+        }
         if (ref_clock > 27.0e6) continue;
         if (size_t(max_clock_rate/ref_clock)%2 == 1) continue; //reject asymmetric clocks (odd divisors)
 
