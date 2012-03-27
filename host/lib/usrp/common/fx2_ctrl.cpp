@@ -411,6 +411,26 @@ public:
         return usrp_control_write(request, value, index, 0, 0);
     }
 
+    void write_eeprom(
+        boost::uint8_t addr,
+        boost::uint8_t offset,
+        const byte_vector_t &bytes
+    ){
+        byte_vector_t bytes_with_cmd(bytes.size() + 1);
+        bytes_with_cmd[0] = offset;
+        std::copy(bytes.begin(), bytes.end(), &bytes_with_cmd[1]);
+        this->write_i2c(addr, bytes_with_cmd);
+    }
+
+    byte_vector_t read_eeprom(
+        boost::uint8_t addr,
+        boost::uint8_t offset,
+        size_t num_bytes
+    ){
+        this->write_i2c(addr, byte_vector_t(1, offset));
+        return this->read_i2c(addr, num_bytes);
+    }
+
     int usrp_i2c_write(boost::uint16_t i2c_addr, unsigned char *buf, boost::uint16_t len)
     {
         return usrp_control_write(VRQ_I2C_WRITE, i2c_addr, 0, buf, len);
@@ -428,12 +448,7 @@ public:
     {
         UHD_ASSERT_THROW(bytes.size() < max_i2c_data_bytes);
 
-        unsigned char buff[max_i2c_data_bytes] = {};
-        std::copy(bytes.begin(), bytes.end(), buff);
-
-        int ret = this->usrp_i2c_write(addr & 0xff,
-                                             buff,
-                                             bytes.size());
+        int ret = this->usrp_i2c_write(addr, (unsigned char *)&bytes.front(), bytes.size());
 
         if (iface_debug && (ret < 0))
             uhd::runtime_error("USRP: failed i2c write");
@@ -443,19 +458,13 @@ public:
     {
       UHD_ASSERT_THROW(num_bytes < max_i2c_data_bytes);
 
-      unsigned char buff[max_i2c_data_bytes] = {};
-      int ret = this->usrp_i2c_read(addr & 0xff,
-                                            buff,
-                                            num_bytes);
+      byte_vector_t bytes(num_bytes);
+      int ret = this->usrp_i2c_read(addr, (unsigned char *)&bytes.front(), num_bytes);
 
       if (iface_debug && ((ret < 0) || (unsigned)ret < (num_bytes)))
           uhd::runtime_error("USRP: failed i2c read");
 
-      byte_vector_t out_bytes;
-      for (size_t i = 0; i < num_bytes; i++)
-          out_bytes.push_back(buff[i]);
-
-      return out_bytes;
+      return bytes;
     }
 
 
