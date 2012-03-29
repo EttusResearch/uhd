@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -67,6 +67,9 @@ public:
 
     //! Get access to a buffer of inline metadata
     virtual transport::bounded_buffer<rx_metadata_t> &get_inline_queue(void) = 0;
+
+    //! Stops threads before deconstruction to avoid race conditions
+    virtual void stop(void) = 0;
 };
 
 }} //namespace
