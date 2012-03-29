@@ -190,7 +190,7 @@ Add the following line to */etc/security/limits.conf*:
     @<my_group>    -    rtprio    99
 
 Replace <my_group> with a group to which your user belongs.
-Settings will not take effect until the user has logged in and out.
+Settings will not take effect until the user is in a different login session.
 
 ------------------------------------------------------------------------
 Misc notes
@@ -203,7 +203,7 @@ For a module to be loaded at runtime, it must be:
 
 * found in the UHD_MODULE_PATH environment variable,
 * installed into the <install-path>/share/uhd/modules directory,
-* or installed into /usr/share/uhd/modules directory (unix only).
+* or installed into /usr/share/uhd/modules directory (UNIX only).
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Disabling or redirecting prints to stdout

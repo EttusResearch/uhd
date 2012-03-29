@@ -8,7 +8,7 @@ UHD - Firmware and FPGA Image Application Notes
 Images Overview
 ------------------------------------------------------------------------
 Every USRP device must be loaded with special firmware and FPGA images.
-The methods of loading images into the device varies among devices:
+The methods of loading images into the device vary among devices:
 
 * **USRP1:** The host code will automatically load the firmware and FPGA at runtime.
 * **USRP2:** The user must manually write the images onto the USRP2 SD card.
@@ -32,7 +32,7 @@ The pre-built images come in two forms:
 Platform installers
 ^^^^^^^^^^^^^^^^^^^^^^
 The UNIX-based installers will install the images into /usr/share/uhd/images.
-On windows, the images will be installed to <install-path>/share/uhd/images.
+On Windows, the images will be installed to <install-path>/share/uhd/images.
 
 ^^^^^^^^^^^^^^^^^^^^^^
 Archive install
@@ -62,7 +62,7 @@ The build commands for a particular image can be found in <uhd-repo-path>/images
 Xilinx FPGA builds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Xilinx ISE 12.x and up is required to build the Xilinx FPGA images.
-The build requires that you have a unix-like environment with make.
+The build requires that you have a UNIX-like environment with make.
 Make sure that xtclsh from the Xilinx ISE bin directory is in your $PATH.
 
 See <uhd-repo-path>/fpga/usrp2/top/*

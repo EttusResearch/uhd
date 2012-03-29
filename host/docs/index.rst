@@ -10,10 +10,12 @@ Users will be able to use the UHD driver standalone or with 3rd party applicatio
 Contents
 ------------------------------------------------------------------------
 
-^^^^^^^^^^^^^^^^^^^^^
-Building the UHD
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Building and Installing the UHD
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * `Build Guide <./build.html>`_
+* `Installation Guide (Linux) <http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_Linux>`_
+* `Installation Guide (Windows) <http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_Windows>`_
 
 ^^^^^^^^^^^^^^^^^^^^^
 Application Notes
@@ -37,5 +39,5 @@ API Documentation
 ^^^^^^^^^^^^^^^^^^^^^
 * `Doxygen <./../../doxygen/html/index.html>`_
 * `Using the API <./coding.html>`_
-* `Device streaming <./stream.html>`_
+* `Device Streaming <./stream.html>`_
 

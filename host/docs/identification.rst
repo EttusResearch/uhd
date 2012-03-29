@@ -9,8 +9,8 @@ Identifying USRPs
 ------------------------------------------------------------------------
 Devices are addressed through key/value string pairs.
 These string pairs can be used to narrow down the search for a specific device or group of devices.
-Most UHD utility applications and examples have a --args parameter that takes a device address;
-where the device address is expressed as a delimited string.
+Most UHD utility applications and examples have a --args parameter that takes a device address, which is expressed as a delimited string.
+
 See the documentation in types/device_addr.hpp for reference.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

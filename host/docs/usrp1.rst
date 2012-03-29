@@ -53,7 +53,7 @@ List of emulated features
 * Notification on broken chain error
 
 **Note:**
-These emulated features rely on the host system's clock for timed operations,
+These emulated features rely on the host system's clock for timed operations
 and therefore may not have sufficient precision for the application.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
