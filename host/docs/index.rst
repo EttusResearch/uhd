@@ -4,7 +4,7 @@ UHD - USRP Hardware Driver
 
 The UHD is the "Universal Software Radio Peripheral" hardware driver.
 The goal of the UHD is to provide a host driver and API for current and future Ettus Research products.
-Users will be able to use the UHD driver standalone or with 3rd party applications.
+Users will be able to use the UHD driver standalone or with third-party applications.
 
 ------------------------------------------------------------------------
 Contents
@@ -40,4 +40,3 @@ API Documentation
 * `Doxygen <./../../doxygen/html/index.html>`_
 * `Using the API <./coding.html>`_
 * `Device Streaming <./stream.html>`_
-

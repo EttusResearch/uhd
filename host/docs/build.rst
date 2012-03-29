@@ -14,12 +14,12 @@ the dependencies should be available in the package repositories for your
 package manager.
 
 **Mac OS X Notes:**
-Install the "Xcode Developer Tools" to get the build tools (gcc and make).
+Install the "Xcode Developer Tools" to get the build tools (GCC and Make).
 Use MacPorts to get the Boost and Cheetah dependencies.
-Other dependencies can be downloaded as dmg installers from the web.
+Other dependencies can be downloaded as DMG installers from the web.
 
 **Windows Notes:**
-The dependencies can be acquired through installable exe files.
+The dependencies can be acquired through installable EXE files.
 Usually, the Windows installer can be found on the project's website.
 Some projects do not host Windows installers, and if this is the case,
 follow the auxiliary download URL for the Windows installer (below).
@@ -32,7 +32,7 @@ On Windows, install Cygwin with Git support to checkout the repository,
 or install msysGit from http://code.google.com/p/msysgit/downloads/list
 
 ^^^^^^^^^^^^^^^^
-C++ compiler
+C++ Compiler
 ^^^^^^^^^^^^^^^^
 The following compilers are known to work:
 
@@ -44,7 +44,7 @@ The following compilers are known to work:
 CMake
 ^^^^^^^^^^^^^^^^
 * **Purpose:** generates project build files
-* **Version:** at least 2.6
+* **Minimum Version:** 2.6
 * **Usage:** build time (required)
 * **Download URL:** http://www.cmake.org/cmake/resources/software.html
 
@@ -52,8 +52,8 @@ CMake
 Boost
 ^^^^^^^^^^^^^^^^
 * **Purpose:** C++ library
-* **Version:** at least 1.36 (UNIX), at least 1.40 (Windows)
-* **Usage:** build time + run time (required)
+* **Minimum Version:** 1.36 (Linux), 1.40 (Windows)
+* **Usage:** build time + runtime (required)
 * **Download URL:** http://www.boost.org/users/download/
 * **Download URL (Windows installer):** http://www.boostpro.com/download
 
@@ -61,8 +61,8 @@ Boost
 LibUSB
 ^^^^^^^^^^^^^^^^
 * **Purpose:** USB-based hardware support
-* **Version:** at least 1.0
-* **Usage:** build time + run time (optional)
+* **Minimum Version:** 1.0
+* **Usage:** build time + runtime (optional)
 * **Download URL:** http://sourceforge.net/projects/libusb/files/libusb-1.0/
 * **Download URL (Windows binaries):** http://www.libusb.org/wiki/windows_backend#LatestBinarySnapshots
 
@@ -70,15 +70,15 @@ LibUSB
 Python
 ^^^^^^^^^^^^^^^^
 * **Purpose:** used by Cheetah and utility scripts
-* **Version:** at least 2.6
-* **Usage:** build time + run time utility scripts (required)
+* **Minimum Version:** 2.6
+* **Usage:** build time + runtime utility scripts (required)
 * **Download URL:** http://www.python.org/download/
 
 ^^^^^^^^^^^^^^^^
 Cheetah
 ^^^^^^^^^^^^^^^^
 * **Purpose:** source code generation
-* **Version:** at least 2.0
+* **Minimum Version:** 2.0
 * **Usage:** build time (required)
 * **Download URL:** http://www.cheetahtemplate.org/download.html
 * **Download URL (Windows installer):** http://feisley.com/python/cheetah/
@@ -90,7 +90,7 @@ http://pypi.python.org/pypi/setuptools
 ^^^^^^^^^^^^^^^^
 Doxygen
 ^^^^^^^^^^^^^^^^
-* **Purpose:** generates HTML api documentation
+* **Purpose:** generates HTML API documentation
 * **Usage:** build time (optional)
 * **Download URL:** http://www.stack.nl/~dimitri/doxygen/download.html#latestsrc
 
@@ -142,7 +142,7 @@ Build and install
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the library path (Linux)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Make sure that libuhd.so is in your LD_LIBRARY_PATH
+Make sure that libuhd.so is in your LD_LIBRARY_PATH,
 or add it to /etc/ld.so.conf and make sure to run:
 ::
 
@@ -160,7 +160,7 @@ Build Instructions (Windows)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Generate the project with CMake
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Open the cmake-gui program.
+* Open the CMake GUI.
 * Set the path to the source code: <uhd-repo-path>/host
 * Set the path to the build directory: <uhd-repo-path>/host/build
 * Make sure that the paths do not contain spaces.
@@ -187,10 +187,10 @@ Build the project in MSVC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Open the generated project file in MSVC.
 * Change the build type from "Debug" to "Release".
-* Select the build all target, right click, and choose build.
-* Select the install target, right click, and choose build.
+* Select the "Build All" target, right-click, and choose "Build".
+* Select the install target, right-click, and choose "Build".
 
-**Note:** you may not have permission to build the install target.
+**Note:** You may not have permission to build the install target.
 You need to be an administrator or to run MSVC as administrator.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

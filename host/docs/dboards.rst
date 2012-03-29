@@ -13,7 +13,7 @@ Eventually, this page will be expanded to list out the full
 properties of each board as well.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Basic RX and and LFRX
+Basic RX and LFRX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The Basic RX and LFRX boards have 4 frontends:
 
@@ -23,7 +23,7 @@ The Basic RX and LFRX boards have 4 frontends:
 * **Frontend BA:** quadrature frontend using both antennas (QI)
 
 The boards have no tunable elements or programmable gains.
-Though the magic of aliasing, you can down-convert signals
+Through the magic of aliasing, you can down-convert signals
 greater than the Nyquist rate of the ADC.
 
 BasicRX Bandwidth (Hz): 
@@ -37,7 +37,7 @@ LFRX Bandwidth (Hz):
 * For Complex (AB or BA frontend): 66M
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Basic TX and and LFTX
+Basic TX and LFTX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The Basic TX and LFTX boards have 4 frontends:
 
@@ -47,7 +47,7 @@ The Basic TX and LFTX boards have 4 frontends:
 * **Frontend BA:** quadrature frontend using both antennas (QI)
 
 The boards have no tunable elements or programmable gains.
-Though the magic of aliasing, you can up-convert signals
+Through the magic of aliasing, you can up-convert signals
 greater than the Nyquist rate of the DAC.
 
 BasicTX Bandwidth (Hz): 250M
@@ -64,13 +64,13 @@ LFTX Bandwidth (Hz): 33M
 DBSRX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The DBSRX board has 1 quadrature frontend.  
-It defaults to direct conversion, but can use a low IF through lo_offset in uhd::tune_request_t
+It defaults to direct conversion but can use a low IF through lo_offset in **uhd::tune_request_t**.
 
 Receive Antennas: **J3**
 
 * **Frontend 0:** Complex baseband signal from antenna J3
 
-The board has no user selectable antenna setting
+The board has no user selectable antenna setting.
 
 Receive Gains:
 
@@ -87,13 +87,13 @@ Sensors:
 DBSRX2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The DBSRX2 board has 1 quadrature frontend.
-It defaults to direct conversion, but can use a low IF through lo_offset in uhd::tune_request_t
+It defaults to direct conversion, but can use a low IF through lo_offset in **uhd::tune_request_t**.
 
 Receive Antennas: **J3**
 
 * **Frontend 0:** Complex baseband signal from antenna J3
 
-The board has no user selectable antenna setting
+The board has no user-selectable antenna setting.
 
 Receive Gains:
 
@@ -109,9 +109,9 @@ Sensors:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RFX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The RFX Series boards have 2 quadrature frontends, one transmit, one receive.
-Transmit defaults to low IF and Receive defaults to direct conversion.
-The IF can be adjusted through lo_offset in uhd::tune_request_t
+The RFX Series boards have 2 quadrature frontends: Transmit and Receive.
+Transmit defaults to low IF, and Receive defaults to direct conversion.
+The IF can be adjusted through lo_offset in **uhd::tune_request_t**.
 
 The RFX Series boards have independent receive and transmit LO's and synthesizers 
 allowing full-duplex operation on different transmit and receive frequencies.
@@ -282,7 +282,7 @@ Receive Frontends:
 * **Frontend RX1:** real-mode baseband from antenna J100
 * **Frontend RX2:** real-mode baseband from antenna J140
 
-Note: The TVRX2 has always-on AGC, the software controllable gain is the
+Note: The TVRX2 has always-on AGC; the software controllable gain is the
 final gain stage which controls the AGC set-point for output to ADC.
 
 Receive Gains:
@@ -303,8 +303,8 @@ Daughterboard Modifications
 
 Sometimes, daughterboards will require modification
 to work on certain frequencies or to work with certain hardware.
-Modification usually involves moving/removing a SMT component
-and burning a new daughterboard id into the eeprom.
+Modification usually involves moving/removing an SMT component
+and burning a new daughterboard ID into the EEPROM.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 DBSRX - Mod
@@ -319,7 +319,7 @@ over the standard daughterboard clock lines.
 
 **Step 1: Move the clock configuration resistor**
 
-Remove R193 (which is 10 ohms, 0603 size) and put it on R194, which is empty.
+Remove R193 (which is 10 ohms, 0603 size), and put it on R194, which is empty.
 This is made somewhat more complicated by the fact that the silkscreen is not clear in that area.
 R193 is on the back, immediately below the large beige connector, J2.
 R194 is just below, and to the left of R193.
@@ -354,7 +354,7 @@ Move R64 to R84, Move R142 to R153
 Move R35 to R36, Move R117 to R115
 These are all 0-ohm, so if you lose one, just short across the appropriate pads
 
-**Step 3: Burn the appropriate daughterboard id into the EEPROM**
+**Step 3: Burn the appropriate daughterboard ID into the EEPROM**
 
 With the daughterboard plugged-in, run the following commands:
 ::
