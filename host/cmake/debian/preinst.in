@@ -17,5 +17,5 @@
 #
 
 if [ "$1" = "install" ]; then
-    echo
+    echo 'Installing UHD.'
 fi
