@@ -11,11 +11,11 @@ to the Jackson Labs Firefly-1A device unless noted otherwise.
 ------------------------------------------------------------------------
 Specifications
 ------------------------------------------------------------------------
-* Receiver type: 50 channel with WAAS, EGNOS, MSAS
-* 10MHz ADEV: 1e-11 over >24h
-* 1PPS RMS jitter: <50ns 1-sigma
-* Holdover: <11us over 3h
-* Phase noise:
+* **Receiver type**: 50 channel with WAAS, EGNOS, MSAS
+* **10MHz ADEV**: 1e-11 over >24h
+* **1PPS RMS jitter**: <50ns 1-sigma
+* **Holdover**: <11us over 3h
+* **Phase noise**:
 
   * **1Hz:** -80dBc/Hz
   * **10Hz:** -110dBc/Hz

@@ -92,7 +92,7 @@ Also, consult:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Linux specific notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-On linux, the maximum buffer sizes are capped by the sysctl values
+On Linux, the maximum buffer sizes are capped by the sysctl values
 **net.core.rmem_max** and **net.core.wmem_max**.
 To change the maximum values, run the following commands:
 ::
@@ -100,7 +100,7 @@ To change the maximum values, run the following commands:
     sudo sysctl -w net.core.rmem_max=<new value>
     sudo sysctl -w net.core.wmem_max=<new value>
 
-Set the values permanently by editing */etc/sysctl.conf*
+Set the values permanently by editing **/etc/sysctl.conf**.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Windows specific notes
@@ -114,8 +114,8 @@ FastSendDatagramThreshold registry key to change documented here:
 ------------------------------------------------------------------------
 USB Transport (LibUSB)
 ------------------------------------------------------------------------
-The USB transport is implemented with libusb.
-Libusb provides an asynchronous API for USB bulk transfers.
+The USB transport is implemented with LibUSB.
+LibUSB provides an asynchronous API for USB bulk transfers.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Transport parameters
@@ -145,9 +145,9 @@ Install USB driver (Windows)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 A driver package must be installed to use a USB-based product with UHD:
 
-* Download the driver from the UHD wiki page.
-* Unzip the file into a known location. We will refer to this as the <directory>.
+* Download the driver from the UHD wiki page `here <http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip>`_.
+* Unzip the file into a known location. We will refer to this as the **<directory>**.
 * Open the device manager and plug in the USRP. You will see an unrecognized USB device in the device manager.
 * Right click on the unrecognized USB device and select update/install driver software (may vary for your OS).
-* In the driver installation wizard, select "browse for driver", browse to the <directory>, and select the .inf file.
+* In the driver installation wizard, select "browse for driver", browse to the **<directory>**, and select the **.inf** file.
 * Continue through the installation wizard until the driver is installed.

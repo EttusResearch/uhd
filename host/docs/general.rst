@@ -50,7 +50,7 @@ After tuning, the RF front-end will need time to settle into a usable state.
 Typically, this means that the local oscillators must be given time to lock
 before streaming begins.  Lock time is not consistent; it varies depending upon
 the device and requested settings.  After tuning and before streaming, the user
-should wait for the "lo_locked" sensor to become true, or sleep for
+should wait for the **lo_locked** sensor to become true or sleep for
 a conservative amount of time (perhaps a second).
 
 Pseudo-code for dealing with settling time after tuning on receive:
@@ -184,12 +184,12 @@ This error is harmless; it simply means that the thread will have a normal sched
 **Linux Notes:**
 
 Non-privileged users need special permission to change the scheduling priority.
-Add the following line to */etc/security/limits.conf*:
+Add the following line to **/etc/security/limits.conf**:
 ::
 
     @<my_group>    -    rtprio    99
 
-Replace <my_group> with a group to which your user belongs.
+Replace **<my_group>** with a group to which your user belongs.
 Settings will not take effect until the user is in a different login session.
 
 ------------------------------------------------------------------------
@@ -201,9 +201,9 @@ Support for dynamically loadable modules
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For a module to be loaded at runtime, it must be:
 
-* found in the UHD_MODULE_PATH environment variable,
-* installed into the <install-path>/share/uhd/modules directory,
-* or installed into /usr/share/uhd/modules directory (UNIX only).
+* found in the **UHD_MODULE_PATH** environment variable,
+* installed into the **<install-path>/share/uhd/modules** directory,
+* or installed into **/usr/share/uhd/modules** directory (UNIX only).
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Disabling or redirecting prints to stdout
@@ -211,7 +211,7 @@ Disabling or redirecting prints to stdout
 The user can disable the UHD library from printing directly to stdout by registering a custom message handler.
 The handler will intercept all messages, which can be dropped or redirected.
 Only one handler can be registered at a time.
-Make "register_handler" your first call into UHD:
+Make **register_handler** your first call into UHD:
 
 ::
 

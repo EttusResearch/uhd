@@ -52,7 +52,7 @@ MIMO cable reference signals
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use the MIMO expansion cable to share reference sources (USRP2 and N-Series).
 The MIMO cable can be used synchronize one device to another device.
-Users of the MIMO cable may use method 1 to synchronize multiple pairs of devices.
+Users of the MIMO cable may use Method 1 (explained below) to synchronize multiple pairs of devices.
 
 ::
 

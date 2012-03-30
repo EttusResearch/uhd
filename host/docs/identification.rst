@@ -55,14 +55,14 @@ Device address arguments can be supplied to narrow the scope of the search.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Device discovery through the API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The device::find() API call searches for devices and returns a list of discovered devices.
+The **device::find()** API call searches for devices and returns a list of discovered devices.
 
 ::
 
     uhd::device_addr_t hint; //an empty hint discovers all devices
     uhd::device_addrs_t dev_addrs = uhd::device::find(hint);
 
-The hint argument can be populated to narrow the scope of the search.
+The **hint** argument can be populated to narrow the scope of the search.
 
 ::
 
@@ -114,7 +114,7 @@ Run the following commands:
 Discovery via name
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The keyword "name" can be used to narrow the scope of the search.
+The keyword **name** can be used to narrow the scope of the search.
 Example with the find devices utility:
 ::
 

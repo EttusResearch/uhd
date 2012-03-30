@@ -28,8 +28,8 @@ follow the auxiliary download URL for the Windows installer (below).
 Git
 ^^^^^^^^^^^^^^^^
 Required to check out the repository.
-On Windows, install Cygwin with Git support to checkout the repository,
-or install msysGit from http://code.google.com/p/msysgit/downloads/list
+On Windows, install Cygwin with Git support to checkout the repository
+or install msysGit from http://code.google.com/p/msysgit/downloads/list.
 
 ^^^^^^^^^^^^^^^^
 C++ Compiler
@@ -84,7 +84,7 @@ Cheetah
 * **Download URL (Windows installer):** http://feisley.com/python/cheetah/
 
 **Alternative method:**
-Install setuptools, and use the easy_install command to install Cheetah.
+Install **setuptools**, and use the **easy_install** command to install Cheetah.
 http://pypi.python.org/pypi/setuptools
 
 ^^^^^^^^^^^^^^^^
@@ -102,7 +102,7 @@ Docutils
 * **Download URL:** http://docutils.sourceforge.net/
 
 **Alternate method:**
-Install setuptools, and use the easy_install command to install Docutils.
+Install **setuptools**, and use the **easy_install** command to install Docutils.
 http://pypi.python.org/pypi/setuptools
 
 ------------------------------------------------------------------------
@@ -122,8 +122,8 @@ Generate Makefiles with CMake
 Additionally, configuration variables can be passed into CMake via the command line.
 The following common-use configuration variables are listed below:
 
-* For a custom install prefix: -DCMAKE_INSTALL_PREFIX=<install-path>
-* To install libs into lib64: cmake -DLIB_SUFFIX=64
+* For a custom install prefix: **-DCMAKE_INSTALL_PREFIX=<install-path>**
+* To install libs into lib64: **cmake -DLIB_SUFFIX=64**
 
 Example usage:
 ::
@@ -142,8 +142,8 @@ Build and install
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the library path (Linux)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Make sure that libuhd.so is in your LD_LIBRARY_PATH,
-or add it to /etc/ld.so.conf and make sure to run:
+Make sure that **libuhd.so** is in your **LD_LIBRARY_PATH**,
+or add it to **/etc/ld.so.conf** and make sure to run:
 ::
 
     sudo ldconfig
@@ -151,7 +151,7 @@ or add it to /etc/ld.so.conf and make sure to run:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the library path (Mac OS X)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Make sure that libuhd.dylib is in your DYLD_LIBRARY_PATH.
+Make sure that **libuhd.dylib** is in your **DYLD_LIBRARY_PATH**.
 
 ------------------------------------------------------------------------
 Build Instructions (Windows)
@@ -161,8 +161,8 @@ Build Instructions (Windows)
 Generate the project with CMake
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Open the CMake GUI.
-* Set the path to the source code: <uhd-repo-path>/host
-* Set the path to the build directory: <uhd-repo-path>/host/build
+* Set the path to the source code: **<uhd-repo-path>/host**.
+* Set the path to the build directory: **<uhd-repo-path>/host/build**.
 * Make sure that the paths do not contain spaces.
 * Click "Configure" and select "Microsoft Visual Studio 10".
 * Set the build variables and click "Configure" again.
@@ -171,14 +171,14 @@ Generate the project with CMake
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 LibUSB CMake notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-On Windows, CMake does not have the advantage of pkg-config,
+On Windows, CMake does not have the advantage of **pkg-config**,
 so we must manually tell CMake how to locate the LibUSB header and lib.
 
 * From the CMake GUI, select "Advanced View".
-* Set LIBUSB_INCLUDE_DIRS to the directory with "libusb.h".
-* Set LIBUSB_LIBRARIES to the full path for "libusb-1.0.lib".
+* Set **LIBUSB_INCLUDE_DIRS** to the directory with **libusb.h**.
+* Set **LIBUSB_LIBRARIES** to the full path for **libusb-1.0.lib**.
 
-  * Recommend the static libusb-1.0.lib to simplify runtime dependencies.
+  * Recommend the static **libusb-1.0.lib** to simplify runtime dependencies.
 
 * Check the box to enable USB support, click "Configure" and "Generate".
 
@@ -206,10 +206,10 @@ Open the Visual Studio Command Prompt Shorcut:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the PATH environment variable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Add the UHD bin path to %PATH% (usually c:\\program files\\uhd\\bin)
+* Add the UHD bin path to **%PATH%** (usually **C:\\Program Files\\UHD\\bin**)
 
 **Note:**
-The interface for editing environment variable paths in Windows is very poor.
+The default interface for editing environment variable paths in Windows is very poor.
 We recommend using "Rapid Environment Editor" (http://www.rapidee.com) over the default editor.
 
 ------------------------------------------------------------------------

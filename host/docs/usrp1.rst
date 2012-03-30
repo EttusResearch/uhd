@@ -5,7 +5,7 @@ UHD - USRP1 Application Notes
 .. contents:: Table of Contents
 
 ------------------------------------------------------------------------
-Specify a non-standard image
+Specify a Non-standard Image
 ------------------------------------------------------------------------
 The standard USRP1 images installer comes with two FPGA images:
  * **usrp1_fpga.rbf:** 2 DDCs + 2 DUCs
@@ -31,7 +31,7 @@ Example device address string representations to specify non-standard firmware a
     fpga=usrp1_fpga_4rx.rbf, fw=usrp1_fw_custom.ihx
 
 ------------------------------------------------------------------------
-Missing and emulated features
+Missing and Emulated Features
 ------------------------------------------------------------------------
 The USRP1 FPGA does not have the necessary space to support the advanced
 streaming capabilities that are possible with the newer USRP devices.
@@ -62,17 +62,17 @@ List of missing features
 * Start of burst flags for transmit/receive
 
 ------------------------------------------------------------------------
-Hardware setup notes
+Hardware Setup Notes
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 External clock modification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The USRP can be modified to accept an external clock reference instead of the 64MHz onboard reference.
- * Solder SMA (LTI-SASF54GT) connector to J2001
- * Move 0 ohm 0603 resistor R2029 to R2030
- * Move 0.01uF 0603 capacitor C925 to C926
- * Remove 0.01uF 0603 capacitor C924
+ * Solder SMA (**LTI-SASF54GT**) connector to **J2001**.
+ * Move 0 ohm 0603 resistor **R2029** to **R2030**.
+ * Move 0.01uF 0603 capacitor **C925** to **C926**.
+ * Remove 0.01uF 0603 capacitor **C924**.
 
 The new external clock needs to be a square wave between +7dBm and +15dBm
 
