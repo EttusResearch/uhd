@@ -5,11 +5,11 @@ UHD - USRP-E1XX Series Application Notes
 .. contents:: Table of Contents
 
 ------------------------------------------------------------------------
-Specify a non-standard image
+Specify a Non-standard Image
 ------------------------------------------------------------------------
 UHD will automatically select the USRP-Embedded FPGA image from the
 installed images package.  The FPGA image selection can be overridden with the
-"fpga" device address parameter.
+**--fpga=** device address parameter.
 
 Example device address string representations to specify non-standard FPGA
 image:
@@ -19,15 +19,15 @@ image:
     fpga=usrp_e100_custom.bin
 
 ------------------------------------------------------------------------
-Changing the master clock rate
+Changing the Master Clock Rate
 ------------------------------------------------------------------------
 The master clock rate of the USRP-Embedded feeds both the FPGA DSP and the codec
 chip.  Hundreds of rates between 32MHz and 64MHz are available.  A few notable
 rates are:
 
-* 64MHz - maximum rate of the codec chip
-* 61.44MHz - good for UMTS/WCDMA applications
-* 52Mhz - good for GSM applications
+* **64MHz:** maximum rate of the codec chip
+* **61.44MHz:** good for UMTS/WCDMA applications
+* **52Mhz:** good for GSM applications
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set 61.44MHz - uses external VCXO
@@ -35,23 +35,22 @@ Set 61.44MHz - uses external VCXO
 To use the 61.44MHz clock rate with the USRP-Embedded, two jumpers must be moved
 on the device.
 
-* J16 is a two pin header, remove the jumper (or leave it on pin1 only)
-* J15 is a three pin header, move the jumper to (pin1, pin2)
+* **J16** is a two pin header; remove the jumper (or leave it on pin1 only).
+* **J15** is a three pin header; move the jumper to (pin1, pin2).
 
-**Note:** See instructions below to communicate the desired clock rate into the
-UHD.
+**Note:** See instructions below to communicate the desired clock rate UHD.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set other rates - uses internal VCO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 To use other clock rates, the jumpers will need to be in the default position.
 
-* J16 is a two pin header, move the jumper to (pin1, pin2)
-* J15 is a three pin header, move the jumper to (pin2, pin3)
+* **J16** is a two pin header; move the jumper to (pin1, pin2).
+* **J15** is a three pin header; move the jumper to (pin2, pin3).
 
-To communicate the desired clock rate into the UHD,
+To communicate the desired clock rate into UHD,
 specify the a special device address argument,
-where the key is "master_clock_rate" and the value is a rate in Hz.
+where the key is **master_clock_rate** and the value is a rate in Hz.
 Example:
 ::
 
@@ -66,15 +65,15 @@ Clock Synchronization
 Ref Clock - 10MHz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The E1xx has a 10MHz TCXO which can be used to discipline the flexible clocking
-by selecting REF_INT for the clock_config_t.
+by selecting **REF_INT** for the **clock_config_t**.
 
 Alternately, an external 10MHz reference clock can be supplied by soldering
 a connector.
 
-* Connector J10 (REF_IN) needs MCX connector WM5541-ND or similar
-* Square wave will offer the best phase noise performance, but sinusoid is acceptable
-* Power level: 0 to 15dBm
-* Select REF_SMA in clock_config_t
+* Connector **J10** (REF_IN) needs MCX connector **WM5541-ND** or similar.
+* Square wave will offer the best phase noise performance, but sinusoid is acceptable.
+* **Power level:** 0 to 15dBm
+* Select **REF_SMA** in **clock_config_t**.
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -83,13 +82,13 @@ PPS - Pulse Per Second
 An exteral PPS signal for timestamp synchronization can be supplied by soldering
 a connector.
 
-* Connector J13 (PPS) needs MCX connector WM5541-ND or similar
-* Requires a square wave signal
-* Amplitude: 3.3 to 5Vpp
+* Connector **J13** (PPS) needs MCX connector **WM5541-ND** or similar.
+* Requires a square wave signal.
+* **Amplitude:** 3.3 to 5Vpp
 
 Test the PPS input with the following app:
 
-* <args> are device address arguments (optional if only one USRP is on your machine)
+* **<args** are device address arguments (optional if only one USRP is on your machine).
 
 ::
 
@@ -106,7 +105,7 @@ UHD will always try to detect an installed GPSDO at runtime.
 There is not a special EEPROM value to burn for GPSDO detection.
 
 ------------------------------------------------------------------------
-Hardware setup notes
+Hardware Setup Notes
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -132,5 +131,5 @@ Available Sensors
 The following sensors are available;
 they can be queried through the API.
 
-* ref_locked - clock reference locked (internal/external)
+* **ref_locked:** clock reference locked (internal/external)
 * other sensors are added when the GPSDO is enabled

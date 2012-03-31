@@ -23,7 +23,7 @@ considered to be a "device".  The device API provides ways to:
 See the documentation in *device.hpp* for reference.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-High-Level: The multi usrp
+High-Level: The Multi-USRP
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The Multi-USRP class provides a fat interface to a single USRP with
 one or more channels, or multiple USRPs in a homogeneous setup.

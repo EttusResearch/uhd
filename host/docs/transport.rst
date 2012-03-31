@@ -17,7 +17,7 @@ that are known to perform well on a variety of systems.
 The transport parameters are defined below for the various transports in the UHD:
 
 ------------------------------------------------------------------------
-UDP transport (sockets)
+UDP Transport (Sockets)
 ------------------------------------------------------------------------
 The UDP transport is implemented with user-space sockets.
 This means standard Berkeley sockets API using send()/recv().
@@ -33,15 +33,15 @@ The following parameters can be used to alter the transport's default behavior:
 * **num_send_frames:** The number of send buffers to allocate
 
 **Note1:**
-num_recv_frames does not affect performance.
+**num_recv_frames** does not affect performance.
 
 **Note2:**
-num_send_frames does not affect performance.
+**num_send_frames** does not affect performance.
 
 **Note3:**
-recv_frame_size and send_frame_size can be used to
+**recv_frame_size** and **send_frame_size** can be used to
 increase or decrease the maximum number of samples per packet.
-The frame sizes default to an MTU of 1472 bytes per IP/UDP packet,
+The frame sizes default to an MTU of 1472 bytes per IP/UDP packet
 and may be increased if permitted by your network hardware.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -58,8 +58,8 @@ The following mechanisms affect the transmission of periodic update packets:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Resize socket buffers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-It may be useful increase the size of the socket buffers to
-move the burden of buffering samples into the kernel, or to
+It may be useful to increase the size of the socket buffers to
+move the burden of buffering samples into the kernel or to
 buffer incoming samples faster than they can be processed.
 However, if your application cannot process samples fast enough,
 no amount of buffering can save you.
@@ -74,7 +74,7 @@ The following parameters can be used to alter socket's buffer sizes:
 Latency Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Latency is a measurement of the time it takes a sample to travel between the host and device.
-Most computer hardware and software is bandwidth optimized which may negatively affect latency.
+Most computer hardware and software is bandwidth optimized, which may negatively affect latency.
 If your application has strict latency requirements, please consider the following notes:
 
 **Note1:**
@@ -92,7 +92,7 @@ Also, consult:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Linux specific notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-On linux, the maximum buffer sizes are capped by the sysctl values
+On Linux, the maximum buffer sizes are capped by the sysctl values
 **net.core.rmem_max** and **net.core.wmem_max**.
 To change the maximum values, run the following commands:
 ::
@@ -100,7 +100,7 @@ To change the maximum values, run the following commands:
     sudo sysctl -w net.core.rmem_max=<new value>
     sudo sysctl -w net.core.wmem_max=<new value>
 
-Set the values permanently by editing */etc/sysctl.conf*
+Set the values permanently by editing **/etc/sysctl.conf**.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Windows specific notes
@@ -112,10 +112,10 @@ FastSendDatagramThreshold registry key to change documented here:
 * http://www.microsoft.com/windows/windowsmedia/howto/articles/optimize_web.aspx#appendix_e
 
 ------------------------------------------------------------------------
-USB transport (libusb)
+USB Transport (LibUSB)
 ------------------------------------------------------------------------
-The USB transport is implemented with libusb.
-Libusb provides an asynchronous API for USB bulk transfers.
+The USB transport is implemented with LibUSB.
+LibUSB provides an asynchronous API for USB bulk transfers.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Transport parameters
@@ -145,9 +145,9 @@ Install USB driver (Windows)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 A driver package must be installed to use a USB-based product with UHD:
 
-* Download the driver from the UHD wiki page.
-* Unzip the file into a known location. We will refer to this as the <directory>.
-* Open the device manager and plug-in the USRP. You will see an unrecognized USB device in the device manager.
+* Download the driver from the UHD wiki page `here <http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip>`_.
+* Unzip the file into a known location. We will refer to this as the **<directory>**.
+* Open the device manager and plug in the USRP. You will see an unrecognized USB device in the device manager.
 * Right click on the unrecognized USB device and select update/install driver software (may vary for your OS).
-* In the driver installation wizard, select "browse for driver", browse to the <directory>, and select the .inf file.
+* In the driver installation wizard, select "browse for driver", browse to the **<directory>**, and select the **.inf** file.
 * Continue through the installation wizard until the driver is installed.
