@@ -150,7 +150,7 @@ module slave_fifo
 
          STATE_DATA_RX:
             begin
-                if(data_rx_src_rdy && data_rx_dst_rdy && (transfer_count != data_transfer_size))
+                if(data_rx_src_rdy && data_rx_dst_rdy)
                     transfer_count <= transfer_count + 1;
                 else
                     state <= STATE_IDLE;
@@ -170,7 +170,7 @@ module slave_fifo
             
          STATE_DATA_TX:
             begin
-                if(data_tx_dst_rdy && data_tx_src_rdy && (transfer_count != data_transfer_size))
+                if(data_tx_dst_rdy && data_tx_src_rdy)
                     transfer_count <= transfer_count + 1;
                 else
                     state <= STATE_IDLE;
@@ -197,8 +197,8 @@ module slave_fifo
    // fifo signal assignments and enables
 
    //enable fifos
-   assign data_rx_dst_rdy = (state == STATE_DATA_RX) && ~FX2_DF;
-   assign data_tx_src_rdy = (state == STATE_DATA_TX) && ~FX2_DE;
+   assign data_rx_dst_rdy = (state == STATE_DATA_RX) && ~FX2_DF && (transfer_count != data_transfer_size);
+   assign data_tx_src_rdy = (state == STATE_DATA_TX) && ~FX2_DE && (transfer_count != data_transfer_size);
    assign ctrl_rx_dst_rdy = (state == STATE_CTRL_RX) && ~FX2_CF;
    assign ctrl_tx_src_rdy = (state == STATE_CTRL_TX) && ~FX2_CE;
 

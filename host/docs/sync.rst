@@ -12,13 +12,13 @@ or other applications requiring multiple USRPs operating synchronously.
 which does not support the advanced features available in newer products.
 
 ------------------------------------------------------------------------
-Common reference signals
+Common Reference Signals
 ------------------------------------------------------------------------
 USRPs take two reference signals in order to synchronize clocks and time:
 
 * A 10MHz reference to provide a single frequency reference for both devices.
-* A pulse-per-second (1PPS) to synchronize the sample time across devices.
-* Or, the MIMO cable transmits an encoded time message from one device to another.
+* A pulse-per-second (PPS) to synchronize the sample time across devices.
+* A MIMO cable transmits an encoded time message from one device to another.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 PPS and 10 MHz reference signals
@@ -36,7 +36,7 @@ However, some USRP models can provide these signals from an optional internal GP
 Sometimes the delay on the PPS signal will cause it to arrive inside the timing
 margin the FPGA sampling clock, causing PPS edges to be separated by less or
 more than 100 million cycles of the FPGA clock. If this is the case,
-you can change the edge reference of the PPS signal with this special parameter:
+you can change the edge reference of the PPS signal with this parameter:
 
 ::
 
@@ -44,7 +44,7 @@ you can change the edge reference of the PPS signal with this special parameter:
 
 **Note2:**
 For users generating their own signals for the external SMA connectors,
-the pulse-per-second should be clocked from the 10MHz reference.
+the PPS should be clocked from the 10MHz reference.
 See the application notes for your device for specific signal requirements.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -52,7 +52,7 @@ MIMO cable reference signals
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use the MIMO expansion cable to share reference sources (USRP2 and N-Series).
 The MIMO cable can be used synchronize one device to another device.
-Users of the MIMO cable may use method 1 to synchronize multiple pairs of devices.
+Users of the MIMO cable may use Method 1 (explained below) to synchronize multiple pairs of devices.
 
 ::
 
@@ -60,13 +60,13 @@ Users of the MIMO cable may use method 1 to synchronize multiple pairs of device
     usrp->set_time_source("mimo");
 
 ------------------------------------------------------------------------
-Synchronizing the device time
+Synchronizing the Device Time
 ------------------------------------------------------------------------
 The purpose of the PPS signal is to synchronously latch a time into the device.
-You can use the set_time_next_pps(...) function to either initialize the sample time to 0,
-or to an absolute time such as GPS time or UTC time.
+You can use the **set_time_next_pps(...)** function to either initialize the sample time to 0
+or an absolute time, such as GPS time or UTC time.
 For the purposes of synchronizing devices,
-it doesn't matter what time you initialize to when using set_time_next_pps(...).
+it doesn't matter what time you initialize to when using **set_time_next_pps(...)**.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Method 1 - poll the USRP time registers
@@ -85,7 +85,7 @@ When the last PPS time increments, the user can determine that a PPS has occurre
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Method 2 - query the GPSDO for seconds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Most GPSDO can be configured to output a NMEA string over the serial port once every PPS.
+Most GPSDOs can be configured to output a NMEA string over the serial port once every PPS.
 The user can wait for this string to determine the PPS edge,
 and the user can also parse this string to determine GPS time:
 
@@ -117,7 +117,7 @@ The slave device will automatically synchronize to the time on the master device
 See the `MIMO Cable Application Notes <./usrp2.html#using-the-mimo-cable>`_ for more detail.
 
 ------------------------------------------------------------------------
-Synchronizing channel phase
+Synchronizing Channel Phase
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

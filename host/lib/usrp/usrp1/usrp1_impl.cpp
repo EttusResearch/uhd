@@ -413,8 +413,7 @@ usrp1_impl::~usrp1_impl(void){
         this->enable_rx(false);
         this->enable_tx(false);
     )
-    _tree.reset(); //resets counts on sptrs held in tree
-    _soft_time_ctrl.reset(); //stops cmd task before proceeding
+    _soft_time_ctrl->stop(); //stops cmd task before proceeding
     _io_impl.reset(); //stops vandal before other stuff gets deconstructed
 }
 

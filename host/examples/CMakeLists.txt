@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2012 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ SET(example_sources
     test_messages.cpp
     test_pps_input.cpp
     test_timed_commands.cpp
+    transport_hammer.cpp
     tx_bursts.cpp
     tx_samples_from_file.cpp
     tx_timed_samples.cpp

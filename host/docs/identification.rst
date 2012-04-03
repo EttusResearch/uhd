@@ -9,9 +9,9 @@ Identifying USRPs
 ------------------------------------------------------------------------
 Devices are addressed through key/value string pairs.
 These string pairs can be used to narrow down the search for a specific device or group of devices.
-Most UHD utility applications and examples have a --args parameter that takes a device address;
-where the device address is expressed as a delimited string.
-See the documentation in types/device_addr.hpp for reference.
+Most UHD utility applications and examples have an **--args** parameter that takes a device address, which is expressed as a delimited string.
+
+See the documentation in **types/device_addr.hpp** for reference.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Common device identifiers
@@ -33,8 +33,8 @@ Every device has several ways of identifying it on the host system:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Device discovery via command line
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Devices attached to your system can be discovered using the "uhd_find_devices" program.
-The find devices program scans your system for supported devices and prints
+Devices attached to your system can be discovered using the **uhd_find_devices** program.
+This program scans your system for supported devices and prints
 out an enumerated list of discovered devices and their addresses.
 The list of discovered devices can be narrowed down by specifying device address args.
 
@@ -55,14 +55,14 @@ Device address arguments can be supplied to narrow the scope of the search.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Device discovery through the API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The device::find() API call searches for devices and returns a list of discovered devices.
+The **device::find()** API call searches for devices and returns a list of discovered devices.
 
 ::
 
     uhd::device_addr_t hint; //an empty hint discovers all devices
     uhd::device_addrs_t dev_addrs = uhd::device::find(hint);
 
-The hint argument can be populated to narrow the scope of the search.
+The **hint** argument can be populated to narrow the scope of the search.
 
 ::
 
@@ -79,9 +79,9 @@ The hint argument can be populated to narrow the scope of the search.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Device properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Properties of devices attached to your system can be probed with the "uhd_usrp_probe" program.
-The usrp probe program constructs an instance of the device and prints out its properties;
-properties such as detected daughter-boards, frequency range, gain ranges, etc...
+Properties of devices attached to your system can be probed with the **uhd_usrp_probe** program.
+This program constructs an instance of the device and prints out its properties,
+such as detected daughterboards, frequency range, gain ranges, etc...
 
 **Usage:**
 ::
@@ -97,7 +97,7 @@ The USRP can then be identified via name, rather than a difficult to remember se
 A name has the following properties:
 
 * is composed of ASCII characters
-* is between 0 and 20 characters
+* is 0-20 characters
 * is not required to be unique
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -114,7 +114,7 @@ Run the following commands:
 Discovery via name
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The keyword "name" can be used to narrow the scope of the search.
+The keyword **name** can be used to narrow the scope of the search.
 Example with the find devices utility:
 ::
 

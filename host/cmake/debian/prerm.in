@@ -17,6 +17,7 @@
 #
 
 if [ "$1" = "remove" ]; then
+    echo 'Uninstalling UHD.'
     rm /etc/udev/rules.d/uhd-usrp.rules
     udevadm control --reload-rules
 fi

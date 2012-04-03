@@ -14,25 +14,25 @@ the dependencies should be available in the package repositories for your
 package manager.
 
 **Mac OS X Notes:**
-Install the "Xcode Developer Tools" to get the build tools (gcc and make).
+Install the "Xcode Developer Tools" to get the build tools (GCC and Make).
 Use MacPorts to get the Boost and Cheetah dependencies.
-Other dependencies can be downloaded as dmg installers from the web.
+Other dependencies can be downloaded as DMG installers from the web.
 
 **Windows Notes:**
-The dependencies can be acquired through installable exe files.
-Usually, the windows installer can be found on the project's website.
-Some projects do not host windows installers, and if this is the case,
-follow the auxiliary download url for the windows installer (below).
+The dependencies can be acquired through installable EXE files.
+Usually, the Windows installer can be found on the project's website.
+Some projects do not host Windows installers, and if this is the case,
+follow the auxiliary download URL for the Windows installer (below).
 
 ^^^^^^^^^^^^^^^^
 Git
 ^^^^^^^^^^^^^^^^
 Required to check out the repository.
-On windows, install cygwin with git support to checkout the repository,
-or install msysgit from http://code.google.com/p/msysgit/downloads/list
+On Windows, install Cygwin with Git support to checkout the repository
+or install msysGit from http://code.google.com/p/msysgit/downloads/list.
 
 ^^^^^^^^^^^^^^^^
-C++ compiler
+C++ Compiler
 ^^^^^^^^^^^^^^^^
 The following compilers are known to work:
 
@@ -44,7 +44,7 @@ The following compilers are known to work:
 CMake
 ^^^^^^^^^^^^^^^^
 * **Purpose:** generates project build files
-* **Version:** at least 2.6
+* **Minimum Version:** 2.6
 * **Usage:** build time (required)
 * **Download URL:** http://www.cmake.org/cmake/resources/software.html
 
@@ -52,57 +52,57 @@ CMake
 Boost
 ^^^^^^^^^^^^^^^^
 * **Purpose:** C++ library
-* **Version:** at least 1.36 unix, at least 1.40 windows
-* **Usage:** build time + run time (required)
+* **Minimum Version:** 1.36 (Linux), 1.40 (Windows)
+* **Usage:** build time + runtime (required)
 * **Download URL:** http://www.boost.org/users/download/
-* **Download URL (windows installer):** http://www.boostpro.com/download
+* **Download URL (Windows installer):** http://www.boostpro.com/download
 
 ^^^^^^^^^^^^^^^^
 LibUSB
 ^^^^^^^^^^^^^^^^
 * **Purpose:** USB-based hardware support
-* **Version:** at least 1.0
-* **Usage:** build time + run time (optional)
+* **Minimum Version:** 1.0
+* **Usage:** build time + runtime (optional)
 * **Download URL:** http://sourceforge.net/projects/libusb/files/libusb-1.0/
-* **Download URL (windows binaries):** http://www.libusb.org/wiki/windows_backend#LatestBinarySnapshots
+* **Download URL (Windows binaries):** http://www.libusb.org/wiki/windows_backend#LatestBinarySnapshots
 
 ^^^^^^^^^^^^^^^^
 Python
 ^^^^^^^^^^^^^^^^
 * **Purpose:** used by Cheetah and utility scripts
-* **Version:** at least 2.6
-* **Usage:** build time + run time utility scripts (required)
+* **Minimum Version:** 2.6
+* **Usage:** build time + runtime utility scripts (required)
 * **Download URL:** http://www.python.org/download/
 
 ^^^^^^^^^^^^^^^^
 Cheetah
 ^^^^^^^^^^^^^^^^
 * **Purpose:** source code generation
-* **Version:** at least 2.0
+* **Minimum Version:** 2.0
 * **Usage:** build time (required)
 * **Download URL:** http://www.cheetahtemplate.org/download.html
-* **Download URL (windows installer):** http://feisley.com/python/cheetah/
+* **Download URL (Windows installer):** http://feisley.com/python/cheetah/
 
 **Alternative method:**
-Install setuptools, and use the easy_install command to install Cheetah.
+Install **setuptools**, and use the **easy_install** command to install Cheetah.
 http://pypi.python.org/pypi/setuptools
 
 ^^^^^^^^^^^^^^^^
 Doxygen
 ^^^^^^^^^^^^^^^^
-* **Purpose:** generates html api documentation
+* **Purpose:** generates HTML API documentation
 * **Usage:** build time (optional)
 * **Download URL:** http://www.stack.nl/~dimitri/doxygen/download.html#latestsrc
 
 ^^^^^^^^^^^^^^^^
 Docutils
 ^^^^^^^^^^^^^^^^
-* **Purpose:** generates html user manual
+* **Purpose:** generates HTML user manual
 * **Usage:** build time (optional)
 * **Download URL:** http://docutils.sourceforge.net/
 
 **Alternate method:**
-Install setuptools, and use the easy_install command to install Docutils.
+Install **setuptools**, and use the **easy_install** command to install Docutils.
 http://pypi.python.org/pypi/setuptools
 
 ------------------------------------------------------------------------
@@ -110,7 +110,7 @@ Build Instructions (Unix)
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Generate Makefiles with cmake
+Generate Makefiles with CMake
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
@@ -119,11 +119,11 @@ Generate Makefiles with cmake
     cd build
     cmake ../
 
-Additionally, configuration variables can be passed into cmake via the command line.
+Additionally, configuration variables can be passed into CMake via the command line.
 The following common-use configuration variables are listed below:
 
-* For a custom install prefix: -DCMAKE_INSTALL_PREFIX=<install-path>
-* To install libs into lib64: cmake -DLIB_SUFFIX=64
+* For a custom install prefix: **-DCMAKE_INSTALL_PREFIX=<install-path>**
+* To install libs into lib64: **cmake -DLIB_SUFFIX=64**
 
 Example usage:
 ::
@@ -142,8 +142,8 @@ Build and install
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the library path (Linux)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Make sure that libuhd.so is in your LD_LIBRARY_PATH
-or add it to /etc/ld.so.conf and make sure to run:
+Make sure that **libuhd.so** is in your **LD_LIBRARY_PATH**,
+or add it to **/etc/ld.so.conf** and make sure to run:
 ::
 
     sudo ldconfig
@@ -151,46 +151,46 @@ or add it to /etc/ld.so.conf and make sure to run:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the library path (Mac OS X)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Make sure that libuhd.dylib is in your DYLD_LIBRARY_PATH
+Make sure that **libuhd.dylib** is in your **DYLD_LIBRARY_PATH**.
 
 ------------------------------------------------------------------------
 Build Instructions (Windows)
 ------------------------------------------------------------------------
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Generate the project with cmake
+Generate the project with CMake
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Open the cmake gui program.
-* Set the path to the source code: <uhd-repo-path>/host
-* Set the path to the build directory: <uhd-repo-path>/host/build
+* Open the CMake GUI.
+* Set the path to the source code: **<uhd-repo-path>/host**.
+* Set the path to the build directory: **<uhd-repo-path>/host/build**.
 * Make sure that the paths do not contain spaces.
-* Click configure and select the MSVC compiler.
-* Set the build variables and click configure again.
-* Click generate and a project file will be created in the build directory.
+* Click "Configure" and select "Microsoft Visual Studio 10".
+* Set the build variables and click "Configure" again.
+* Click "Generate", and a project file will be created in the build directory.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-LibUSB cmake notes
+LibUSB CMake notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-On Windows, cmake does not have the advantage of pkg-config,
-so we must manually tell cmake how to locate the LibUSB header and lib.
+On Windows, CMake does not have the advantage of **pkg-config**,
+so we must manually tell CMake how to locate the LibUSB header and lib.
 
-* From the cmake gui, select "Advanded View"
-* Set LIBUSB_INCLUDE_DIRS to the directory with "libusb.h".
-* Set LIBUSB_LIBRARIES to the full path for "libusb-1.0.lib".
+* From the CMake GUI, select "Advanced View".
+* Set **LIBUSB_INCLUDE_DIRS** to the directory with **libusb.h**.
+* Set **LIBUSB_LIBRARIES** to the full path for **libusb-1.0.lib**.
 
-  * Recommend the static libusb-1.0.lib to simplify runtime dependencies.
+  * Recommend the static **libusb-1.0.lib** to simplify runtime dependencies.
 
-* Check the box to enable USB support, click configure and generate.
+* Check the box to enable USB support, click "Configure" and "Generate".
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build the project in MSVC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * Open the generated project file in MSVC.
 * Change the build type from "Debug" to "Release".
-* Select the build all target, right click, and choose build.
-* Select the install target, right click, and choose build.
+* Select the "Build All" target, right-click, and choose "Build".
+* Select the install target, right-click, and choose "Build".
 
-**Note:** you may not have permission to build the install target.
+**Note:** You may not have permission to build the install target.
 You need to be an administrator or to run MSVC as administrator.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -206,11 +206,11 @@ Open the Visual Studio Command Prompt Shorcut:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Setup the PATH environment variable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* Add the uhd bin path to %PATH% (usually c:\\program files\\uhd\\bin)
+* Add the UHD bin path to **%PATH%** (usually **C:\\Program Files\\UHD\\bin**)
 
 **Note:**
-The interface for editing environment variable paths in Windows is very poor.
-I recommend using "Rapid Environment Editor" (http://www.rapidee.com) over the default editor.
+The default interface for editing environment variable paths in Windows is very poor.
+We recommend using "Rapid Environment Editor" (http://www.rapidee.com) over the default editor.
 
 ------------------------------------------------------------------------
 Post-Install Tasks
