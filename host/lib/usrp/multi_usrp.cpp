@@ -255,7 +255,7 @@ public:
         usrp_info["tx_subdev_name"] = _tree->access<std::string>(tx_rf_fe_root(mcp.chan) / "name").get();
         usrp_info["tx_subdev_spec"] = _tree->access<subdev_spec_t>(mb_root(mcp.mboard) / "tx_subdev_spec").get().to_string();
         usrp_info["tx_serial"] = db_eeprom.serial;
-        usrp_infi["tx_antenna"] = _tree->access<std::string>(tx_rf_fe_root(mcp.chan) / "antenna" / "value").get();
+        usrp_info["tx_antenna"] = _tree->access<std::string>(tx_rf_fe_root(mcp.chan) / "antenna" / "value").get();
 
         return usrp_info;
     }
