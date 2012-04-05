@@ -27,7 +27,7 @@
  * The format is oldest ABI compatible release - ABI compat number.
  * The compatibility number allows pre-release ABI to be versioned.
  */
-#define UHD_VERSION_ABI_STRING "3.4.0-0"
+#define UHD_VERSION_ABI_STRING "3.4.0-1"
 
 namespace uhd{
 
