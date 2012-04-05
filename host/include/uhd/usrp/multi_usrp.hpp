@@ -132,7 +132,6 @@ public:
      * Returns identifying information about this USRP's configuration.
      * Returns motherboard ID, name, and serial.
      * Returns daughterboard RX ID, subdev name, and serial.
-     * \param mboard the motherboard index 0 to M-1
      * \param chan channel index 0 to N-1
      * \return RX info
      */
@@ -142,7 +141,6 @@ public:
      * Returns identifying information about this USRP's configuration.
      * Returns motherboard ID, name, and serial.
      * Returns daughterboard TX ID, subdev name, and serial.
-     * \param mboard the motherboard index 0 to M-1
      * \param chan channel index 0 to N-1
      * \return TX info
      */
