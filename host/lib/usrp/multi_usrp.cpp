@@ -379,8 +379,8 @@ public:
         std::string clock_source;
         switch(clock_config.ref_source){
         case clock_config_t::REF_INT: clock_source = "internal"; break;
-        case clock_config_t::PPS_SMA: clock_source = "external"; break;
-        case clock_config_t::PPS_MIMO: clock_source = "mimo"; break;
+        case clock_config_t::REF_SMA: clock_source = "external"; break;
+        case clock_config_t::REF_MIMO: clock_source = "mimo"; break;
         default: clock_source = "unknown";
         }
         this->set_clock_source(clock_source, mboard);
