@@ -38,13 +38,12 @@
 #define REG_RX_CTRL_STREAM_CMD     _ctrl_base + 0
 #define REG_RX_CTRL_TIME_HI        _ctrl_base + 4
 #define REG_RX_CTRL_TIME_LO        _ctrl_base + 8
-#define REG_RX_CTRL_CLEAR          _ctrl_base + 12
+#define REG_RX_CTRL_FORMAT         _ctrl_base + 12
 #define REG_RX_CTRL_VRT_HDR        _ctrl_base + 16
 #define REG_RX_CTRL_VRT_SID        _ctrl_base + 20
 #define REG_RX_CTRL_VRT_TLR        _ctrl_base + 24
 #define REG_RX_CTRL_NSAMPS_PP      _ctrl_base + 28
 #define REG_RX_CTRL_NCHANNELS      _ctrl_base + 32
-#define REG_RX_CTRL_FORMAT         REG_RX_CTRL_CLEAR //re-use clear address
 
 template <class T> T ceil_log2(T num){
     return std::ceil(std::log(num)/std::log(T(2)));
@@ -78,8 +77,7 @@ public:
     }
 
     void clear(void){
-        _iface->poke32(REG_RX_CTRL_CLEAR, 1); //reset
-        _iface->poke32(REG_RX_CTRL_NCHANNELS, 1);
+        _iface->poke32(REG_RX_CTRL_NCHANNELS, 1); //also reset
         _iface->poke32(REG_RX_CTRL_VRT_HDR, 0
             | (0x1 << 28) //if data with stream id
             | (0x1 << 26) //has trailer
