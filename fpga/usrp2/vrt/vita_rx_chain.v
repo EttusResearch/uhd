@@ -41,7 +41,7 @@ module vita_rx_chain
    wire clear;
    assign clear_o = clear;
    wire clear_int;
-   setting_reg #(.my_addr(BASE+3)) sr
+   setting_reg #(.my_addr(BASE+8)) sr
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(),.changed(clear_int));
 
