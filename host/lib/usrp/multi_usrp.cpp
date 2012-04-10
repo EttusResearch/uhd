@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,10 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/gain_group.hpp>
+#include <uhd/usrp/dboard_id.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -214,6 +218,48 @@ public:
         return _dev;
     }
 
+    dict<std::string, std::string> get_usrp_rx_info(size_t chan){
+        mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        dict<std::string, std::string> usrp_info;
+
+        mboard_eeprom_t mb_eeprom = _tree->access<mboard_eeprom_t>(mb_root(mcp.mboard) / "eeprom").get();
+        dboard_eeprom_t db_eeprom = _tree->access<dboard_eeprom_t>(rx_rf_fe_root(mcp.chan).branch_path().branch_path() / "rx_eeprom").get();
+
+        usrp_info["mboard_id"] = _tree->access<std::string>(mb_root(mcp.mboard) / "name").get();
+        usrp_info["mboard_name"] = mb_eeprom["name"];
+        usrp_info["mboard_serial"] = mb_eeprom["serial"];
+        usrp_info["rx_id"] = db_eeprom.id.to_pp_string();
+        usrp_info["rx_subdev_name"] = _tree->access<std::string>(rx_rf_fe_root(mcp.chan) / "name").get();
+        usrp_info["rx_subdev_spec"] = _tree->access<subdev_spec_t>(mb_root(mcp.mboard) / "rx_subdev_spec").get().to_string();
+        usrp_info["rx_serial"] = db_eeprom.serial;
+        usrp_info["rx_antenna"] =  _tree->access<std::string>(rx_rf_fe_root(mcp.chan) / "antenna" / "value").get();
+
+        return usrp_info;
+    }
+
+    dict<std::string, std::string> get_usrp_tx_info(size_t chan){
+        mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        dict<std::string, std::string> usrp_info;
+
+        mboard_eeprom_t mb_eeprom = _tree->access<mboard_eeprom_t>(mb_root(mcp.mboard) / "eeprom").get();
+        dboard_eeprom_t gdb_eeprom = _tree->access<dboard_eeprom_t>(tx_rf_fe_root(mcp.chan).branch_path().branch_path() / "gdb_eeprom").get();
+        dboard_eeprom_t db_eeprom;
+
+        if(gdb_eeprom.id != dboard_id_t::none()) db_eeprom = gdb_eeprom;
+        else db_eeprom = _tree->access<dboard_eeprom_t>(tx_rf_fe_root(mcp.chan).branch_path().branch_path() / "tx_eeprom").get();
+
+        usrp_info["mboard_id"] = _tree->access<std::string>(mb_root(mcp.mboard) / "name").get();
+        usrp_info["mboard_name"] = mb_eeprom["name"];
+        usrp_info["mboard_serial"] = mb_eeprom["serial"];
+        usrp_info["tx_id"] = db_eeprom.id.to_pp_string();
+        usrp_info["tx_subdev_name"] = _tree->access<std::string>(tx_rf_fe_root(mcp.chan) / "name").get();
+        usrp_info["tx_subdev_spec"] = _tree->access<subdev_spec_t>(mb_root(mcp.mboard) / "tx_subdev_spec").get().to_string();
+        usrp_info["tx_serial"] = db_eeprom.serial;
+        usrp_info["tx_antenna"] = _tree->access<std::string>(tx_rf_fe_root(mcp.chan) / "antenna" / "value").get();
+
+        return usrp_info;
+    }
+
     /*******************************************************************
      * Mboard methods
      ******************************************************************/
@@ -394,8 +440,8 @@ public:
         std::string clock_source;
         switch(clock_config.ref_source){
         case clock_config_t::REF_INT: clock_source = "internal"; break;
-        case clock_config_t::PPS_SMA: clock_source = "external"; break;
-        case clock_config_t::PPS_MIMO: clock_source = "mimo"; break;
+        case clock_config_t::REF_SMA: clock_source = "external"; break;
+        case clock_config_t::REF_MIMO: clock_source = "mimo"; break;
         default: clock_source = "unknown";
         }
         this->set_clock_source(clock_source, mboard);
@@ -636,16 +682,16 @@ public:
         return _tree->access<subdev_spec_t>(mb_root(mboard) / "tx_subdev_spec").get();
     }
 
-    std::string get_tx_subdev_name(size_t chan){
-        return _tree->access<std::string>(tx_rf_fe_root(chan) / "name").get();
-    }
-
     size_t get_tx_num_channels(void){
         size_t sum = 0;
         for (size_t m = 0; m < get_num_mboards(); m++){
             sum += get_tx_subdev_spec(m).size();
         }
         return sum;
+    }
+
+    std::string get_tx_subdev_name(size_t chan){
+        return _tree->access<std::string>(tx_rf_fe_root(chan) / "name").get();
     }
 
     void set_tx_rate(double rate, size_t chan){
