@@ -19,330 +19,322 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <iostream>
 #include <complex>
-#include <time.h>
 
 namespace po = boost::program_options;
+
+/************************************************************************
+ * RX Samples
+ ************************************************************************/
+
+void rx_hammer(uhd::usrp::multi_usrp::sptr usrp, double rx_rate, bool rx_rand, int rx_low, int rx_high, int rx_step, bool verbose){
+    uhd::set_thread_priority_safe();
+
+    //Set RX sample rate
+    std::cout << boost::format("Setting RX rate: %f Msps") % (rx_rate/1e6) << std::endl;
+    usrp->set_rx_rate(rx_rate);
+    std::cout << boost::format("Actual RX rate: %f Msps") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
+
+    if(rx_rand){
+        std::srand((unsigned int) time(NULL));
+
+        while(true){
+            size_t total_num_samps = (rand() % (rx_high - rx_low)) + rx_low;
+
+            usrp->set_time_now(uhd::time_spec_t(0.0));
+
+            //Create a receive streamer
+            uhd::stream_args_t stream_args("fc32");
+            uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+            
+            std::cout << boost::format("About to receive %u samples.") % total_num_samps << std::endl;
+
+            uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+            stream_cmd.num_samps = total_num_samps;
+            stream_cmd.stream_now = true;
+            usrp->issue_stream_cmd(stream_cmd);
+
+            //Metadata will be filled in by recv()
+            uhd::rx_metadata_t md;
+
+            //Allocate buffer to receive with samples
+            std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
+            double timeout = 1;
+
+            size_t num_acc_samps = 0; //Number of accumulated samples
+            while(num_acc_samps < total_num_samps){
+                //Receive a single packet
+                size_t num_rx_samps = rx_stream->recv(
+                    &buff.front(), buff.size(), md, timeout, true
+                );
+
+                //Handle the error code
+                if(md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT){std::cout << "timeout" << std::endl; break;}
+                if(md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE && md.error_code != uhd::rx_metadata_t::ERROR_CODE_OVERFLOW){
+                    std::cout << "Error" << std::endl;
+                    throw std::runtime_error(str(boost::format(
+                        "Unexpected error code 0x%x"
+                    ) % md.error_code));
+                }
+                num_acc_samps += num_rx_samps;
+            }
+
+            if(num_acc_samps < total_num_samps) std::cerr << "Received timeout before all samples were received..." << std::endl;
+            else std::cout << boost::format("Successfully received %u samples.") % total_num_samps << std::endl;
+        }
+    }
+    else{
+        for(int i = int(rx_low); i <= int(rx_high); i += rx_step){
+            usrp->set_time_now(uhd::time_spec_t(0.0));
+            
+            //Create a receive streamer
+            uhd::stream_args_t stream_args("fc32");
+            uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+            
+            //Set up streaming
+            std::cout << boost::format ("About to receive %u samples.") % i << std::endl;
+            uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+            stream_cmd.num_samps = i;
+            stream_cmd.stream_now = true;
+            usrp->issue_stream_cmd(stream_cmd);
+
+            //Metadata will be filled in by recv()
+            uhd::rx_metadata_t md;
+
+            //Allocate buffer to receive with samples
+            std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
+
+            double timeout = 1;
+            
+            size_t num_acc_samps = 0; //Number of accumulated samples
+            while(int(num_acc_samps) < i){
+                //Receive a single packet
+                size_t num_rx_samps = rx_stream->recv(
+                    &buff.front(), buff.size(), md, timeout, true
+                );
+                
+                //Handle the error code
+                if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) break;
+                if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE && md.error_code != uhd::rx_metadata_t::ERROR_CODE_OVERFLOW){
+                    throw std::runtime_error(str(boost::format(
+                        "Unexpected error code 0x%x"
+                    ) % md.error_code));
+                }   
+
+                if(verbose) std::cout << boost::format("Received %u samples.") % num_rx_samps << std::endl;
+
+                num_acc_samps += num_rx_samps;
+
+            }
+            std::cout << boost::format("Successfully received %u samples.") % i << std::endl;
+
+            if (int(num_acc_samps) < i) std::cerr << "Timeout received before all samples were received..." << std::endl;
+
+        }
+    }
+}
+
+/************************************************************************
+ * TX Samples
+ ************************************************************************/
+
+void tx_hammer(uhd::usrp::multi_usrp::sptr usrp, double tx_rate, bool tx_rand, int tx_low, int tx_high, int tx_step, double tx_ampl, bool verbose){
+    uhd::set_thread_priority_safe();
+
+    //Set the TX sample rate
+    std::cout << boost::format("Setting TX Rate: %f Msps...") % (tx_rate / 1e6) << std::endl;
+    usrp->set_tx_rate(tx_rate);
+    std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
+    usrp->set_time_now(uhd::time_spec_t(0.0));
+
+    //Create a transmit streamer
+    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+
+    //Allocate buffer with data to send
+    std::vector<std::complex<float> > buff(tx_stream->get_max_num_samps(), std::complex<float>(tx_ampl, tx_ampl));
+
+    //Setup metadata for the first packet
+    uhd::tx_metadata_t md;
+    md.start_of_burst = false;
+    md.end_of_burst = false;
+    md.has_time_spec = false;
+
+    if(tx_rand){
+       std::srand((unsigned int) time(NULL));
+
+       while(true){
+            size_t total_num_samps = (rand() % (tx_high - tx_low)) + tx_low;
+            size_t num_acc_samps = 0;
+            float timeout = 1;
+
+            std::cout << boost::format("About to send %u samples.") % total_num_samps << std::endl;
+
+            usrp->set_time_now(uhd::time_spec_t(0.0));
+
+            while(num_acc_samps < total_num_samps){
+                size_t samps_to_send = std::min(total_num_samps - num_acc_samps, buff.size());
+
+                //Send a single packet
+                size_t num_tx_samps = tx_stream->send(&buff.front(), samps_to_send, md, timeout);
+
+                if(num_tx_samps < samps_to_send) std::cerr << "Send timeout..." << std::endl;
+
+                num_acc_samps += num_tx_samps;
+            }
+
+            md.end_of_burst   = true;
+            tx_stream->send("", 0, md);
+
+            if(verbose) std::cout << std::endl;
+            std::cout << "Waiting for async burst ACK... " << std::flush;
+            uhd::async_metadata_t async_md;
+            bool got_async_burst_ack = false;
+
+            //Loop through all messages for the ACK packet (may have underflow messages in queue)
+            while (not got_async_burst_ack and usrp->get_device()->recv_async_msg(async_md, timeout)){
+                got_async_burst_ack = (async_md.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
+            }
+            std::cout << (got_async_burst_ack? "Success!" : "Failure...") << std::endl;
+
+            std::cout << boost::format("Successfully sent %u samples.") % total_num_samps << std::endl;
+
+        }
+    }
+    else{
+        float timeout = 1;
+
+        for(int i = int(tx_low); i <= int(tx_high); i += tx_step){
+
+            usrp->set_time_now(uhd::time_spec_t(0.0));
+
+            std::cout << boost::format("About to send %u samples.") % i << std::endl;
+            if(verbose) std::cout << std::endl;
+
+            size_t num_acc_samps = 0; //Number of accumulated samples
+            size_t total_num_samps = i;
+
+            while(num_acc_samps < total_num_samps){
+                size_t samps_to_send = std::min(total_num_samps - num_acc_samps, buff.size());
+
+                //Send a single packet
+                    size_t num_tx_samps = tx_stream->send(
+                    &buff.front(), samps_to_send, md, timeout
+                );
+
+                if (num_tx_samps < samps_to_send) std::cerr << "Send timeout..." << std::endl;
+
+                num_acc_samps += num_tx_samps;
+            }
+
+            //Send a mini EOB packet
+            md.end_of_burst   = true;
+            tx_stream->send("", 0, md);
+
+            std::cout << std::endl << "Waiting for async burst ACK... " << std::flush;
+            uhd::async_metadata_t async_md;
+            bool got_async_burst_ack = false;
+            //Loop through all messages for the ACK packet (may have underflow messages in queue)
+            while (not got_async_burst_ack and usrp->get_device()->recv_async_msg(async_md, timeout)){
+                got_async_burst_ack = (async_md.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
+            }
+            std::cout << (got_async_burst_ack? "Success!" : "Failure...") << std::endl;
+
+        }
+        //Finished
+        std::cout << "Done!" << std::endl;
+    }
+}
+
+/************************************************************************
+ * Main code + dispatcher
+ ************************************************************************/
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
-    //variables to be set by po
+    //Variables to be set by program options
     std::string args;
-    double delay;
-    size_t total_num_samps;
-    double rate;
-    int step;
-    int rand_begin;
-    int rand_end;
-    size_t samp_begin;
-    size_t samp_end;
-    float ampl;
+    double rx_rate;
+    int rx_low;
+    int rx_high;
+    int rx_step;
+    double tx_rate;
+    int tx_low;
+    int tx_high;
+    int tx_step;
+    double tx_ampl;
 
-    //setup the program options
+    //Set up the program options
     po::options_description desc("Allowed options");
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("delay", po::value<double>(&delay)->default_value(0.0), "delay between sample jumps")
-        ("step", po::value<int>(&step)->default_value(1), "delta between number of samples collected/sent")
-        ("samp_begin", po::value<size_t>(&samp_begin)->default_value(1), "Beginning number of samples")
-        ("samp_end", po::value<size_t>(&samp_end)->default_value(32768), "End number of samples")
-        ("rate", po::value<double>(&rate)->default_value(3.125e6), "rate of incoming samples")
-        ("tx", "specify to use TX samples instead of RX samples")
-        ("rx", "specify to use RX samples (already default")
-        ("rand_vals", "specify to continuously use random numbers of samples")
-        ("rand_begin", po::value<int>(&rand_begin)->default_value(0), "specify minimum value outputted by random number generator")
-        ("rand_end", po::value<int>(&rand_end)->default_value(2000), "specify maximum value outputting by random number generator")
-        ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
+        ("help", "Print this help message.")
+        ("args", po::value<std::string>(&args)->default_value(""), "Single UHD device address args.")
+        ("rx_rate", po::value<double>(&rx_rate), "RX sample rate.")
+        ("rx_rand", "Specify to use random amounts of RX samples (between rx_low and rx_high values).")
+        ("rx_low", po::value<int>(&rx_low)->default_value(1), "Lowest value of RX samples.")
+        ("rx_high", po::value<int>(&rx_high)->default_value(10000), "Highest value of RX samples.")
+        ("rx_step", po::value<int>(&rx_step)->default_value(10), "Delta between number of collected RX samples.")
+        ("tx_rate", po::value<double>(&tx_rate), "TX sample rate.")
+        ("tx_rand", "Specify to use random amounts of TX samples (between tx_low and tx_high values).")
+        ("tx_low", po::value<int>(&tx_low)->default_value(1), "Lowest value of TX samples.")
+        ("tx_high", po::value<int>(&tx_high)->default_value(10000), "Highest value of TX samples.")
+        ("tx_step", po::value<int>(&tx_step)->default_value(10), "Delta between number of sent TX samples.")
+        ("tx_ampl", po::value<double>(&tx_ampl)->default_value(0.5), "TX amplitude.")
         ("verbose", "Enables verbosity")
-    ;
-    po::variables_map vm;
+    ;   
+    po::variables_map vm; 
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    //print the help message
-    if (vm.count("help")){
-        std::cout << boost::format("UHD Transport Hammer - %s") % desc << std::endl;
-        return ~0;
-    }
-
-    bool use_tx = vm.count("tx") > 0;
-    bool rand_vals = vm.count("rand_vals") > 0;
+    //Set verbose or RX/TX random if requested by user
+    bool rx_rand = vm.count("rx_rand") > 0;
+    bool tx_rand = vm.count("tx_rand") > 0;
     bool verbose = vm.count("verbose") > 0;
 
-    if (use_tx)
-    {
-        //create a usrp device
-        std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-        uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
-        std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
+    //Print the help message
 
-        //set the tx sample rate
-        std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate/1e6) << std::endl;
-        usrp->set_tx_rate(rate);
-        std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
-        usrp->set_time_now(uhd::time_spec_t(0.0));
+    if (vm.count("help") or (vm.count("rx_rate") + vm.count("tx_rate")) == 0){ 
+        std::cout << boost::format("UHD Transport Hammer %s") % desc << std::endl;
+        std::cout <<
+        "    Specify --rx_rate for a receive-only test.\n"
+        "    Specify --tx_rate for a transmit-only test.\n"
+        "    Specify both options for a full-duplex test.\n"
+        << std::endl;
+        return ~0; 
+    }   
 
-        //create a transmit streamer
-        uhd::stream_args_t stream_args("fc32"); //complex floats
-        uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+    //Create a USRP device
+    std::cout << std::endl;
+    uhd::device_addrs_t device_addrs = uhd::device::find(args);
+    std::cout << boost::format("Creating the USRP device with: %s...") % args << std::endl;
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
-        //allocate buffer with data to send
-        std::vector<std::complex<float> > buff(tx_stream->get_max_num_samps(), std::complex<float>(ampl, ampl));
+    boost::thread_group thread_group;
 
-        //setup metadata for the first packet
-        uhd::tx_metadata_t md;
-        md.start_of_burst = false;
-        md.end_of_burst = false;
-        md.has_time_spec = false;
-        //md.time_spec = uhd::time_spec_t(seconds_in_future);
+    //Spawn the receive test thread
+    if (vm.count("rx_rate")){
+        usrp->set_rx_rate(rx_rate);
+        thread_group.create_thread(boost::bind(&rx_hammer, usrp, rx_rate, rx_rand, rx_low, rx_high, rx_step, verbose));
+    }   
 
-
-        if(rand_vals){
-
-            std::srand((unsigned int) time(NULL));
-
-            while(true){
-                size_t total_num_samps = (rand() % (rand_end - rand_begin)) + rand_begin;
-                size_t num_acc_samps = 0;
-                float timeout = 0;
-
-                std::cout << "----------------------------------------" << std::endl;
-                std::cout << boost::format("About to send %u samples.") % total_num_samps << std::endl << std::endl;
-
-                usrp->set_time_now(uhd::time_spec_t(0.0));
-
-                while(num_acc_samps < total_num_samps){
-                    size_t samps_to_send = std::min(total_num_samps - num_acc_samps, buff.size());
-                    if(verbose) std::cout << boost::format("Sent %u samples.") % samps_to_send << std::endl;
-
-
-                    //send a single packet
-                    size_t num_tx_samps = tx_stream->send(&buff.front(), samps_to_send, md, timeout);
-
-                    if(num_tx_samps < samps_to_send) std::cerr << "Send timeout..." << std::endl;
-                    //if(verbose) std::cout << boost::format("Sent packet: %u samples") % num_tx_samps << std::endl;
-
-                    num_acc_samps += num_tx_samps;
-                }
-
-                md.end_of_burst   = true;
-                tx_stream->send("", 0, md);
-
-                if(verbose) std::cout << std::endl;
-                std::cout << "Waiting for async burst ACK... " << std::endl << std::flush;
-                uhd::async_metadata_t async_md;
-                bool got_async_burst_ack = false;
-                //loop through all messages for the ACK packet (may have underflow messages in queue)
-                while (not got_async_burst_ack and usrp->get_device()->recv_async_msg(async_md, timeout)){
-                    got_async_burst_ack = (async_md.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
-                }
-                std::cout << (got_async_burst_ack? "Success!" : "Failure...") << std::endl << std::endl;
-
-                std::cout << boost::format("Successfully sent %u samples.") % total_num_samps << std::endl << "----------------------------------------" << std::endl << std::endl;
-
-                boost::this_thread::sleep(boost::posix_time::microseconds(long(delay*1e6)));
-
-            }
-        }
-        else{
-
-            float timeout = 0;
-
-            if(verbose){
-                std::cout << "About to start sending samples." << std::endl;
-                std::cout << boost::format("Samples will start at %u and end with %u with steps of %u.") % samp_begin % samp_end % step << std::endl;
-
-                boost::this_thread::sleep(boost::posix_time::seconds(2));
-            }
-
-            for(int i = int(samp_begin); i <= int(samp_end); i += step){
-
-                std::cout << "----------------------------------------" << std::endl;
-
-                usrp->set_time_now(uhd::time_spec_t(0.0));
-
-                std::cout << boost::format("About to send %u samples.") % i << std::endl;
-                if(verbose) std::cout << std::endl;
-
-                size_t num_acc_samps = 0; //number of accumulated samples
-                total_num_samps = i;
-
-                while(num_acc_samps < total_num_samps){
-                    size_t samps_to_send = std::min(total_num_samps - num_acc_samps, buff.size());
-
-                    if(verbose) std::cout << boost::format("Sent %u samples.") % samps_to_send << std::endl;
-
-                    //send a single packet
-                    size_t num_tx_samps = tx_stream->send(
-                        &buff.front(), samps_to_send, md, timeout
-                    );
-
-                    if (num_tx_samps < samps_to_send) std::cerr << "Send timeout..." << std::endl;
-
-                    num_acc_samps += num_tx_samps;
-                }
-
-                //send a mini EOB packet
-                md.end_of_burst   = true;
-                tx_stream->send("", 0, md);
-
-                std::cout << std::endl << "Waiting for async burst ACK... " << std::endl << std::flush;
-                uhd::async_metadata_t async_md;
-                bool got_async_burst_ack = false;
-                //loop through all messages for the ACK packet (may have underflow messages in queue)
-                while (not got_async_burst_ack and usrp->get_device()->recv_async_msg(async_md, timeout)){
-                    got_async_burst_ack = (async_md.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
-                }
-                std::cout << (got_async_burst_ack? "Success!" : "Failure...") << std::endl << std::endl;
-
-                std::cout << boost::format("Successfully sent %u samples.") % i << std::endl << "----------------------------------------" << std::endl << std::endl;
-
-                boost::this_thread::sleep(boost::posix_time::microseconds(long(delay*1e6)));
-            }
-
-            //finished
-            std::cout << "Done!" << std::endl << std::endl;
-        }
-
-        return 0;
+    //Spawn the transmit test thread
+    if (vm.count("tx_rate")){
+        usrp->set_tx_rate(tx_rate);
+        thread_group.create_thread(boost::bind(&tx_hammer, usrp, tx_rate, tx_rand, tx_low, tx_high, tx_step, tx_ampl, verbose));
     }
-    else
-    {
-        //create a usrp device
-        std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-        uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
-        std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
-        //set the rx sample rate
-        std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
-        usrp->set_rx_rate(rate);
-        std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
+    //Interrupt and join the threads
+    boost::this_thread::sleep(boost::posix_time::microseconds(long(1e6)));
+    thread_group.interrupt_all();
+    thread_group.join_all();
+    //Finished
+    std::cout << std::endl << "Done!" << std::endl << std::endl;
 
-
-
-        if(rand_vals){
-            //random here
-
-            std::srand((unsigned int) time(NULL));
-
-            while(true){
-                total_num_samps = (rand() % (rand_end - rand_begin)) + rand_begin;
-
-                usrp->set_time_now(uhd::time_spec_t(0.0));
-
-                //create a receive streamer
-                uhd::stream_args_t stream_args("fc32"); //complex floats
-                uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-
-                std::cout << std::endl << "----------------------------------------" << std::endl;
-                std::cout << boost::format("About to receive %u samples.") % total_num_samps << std::endl << std::endl;
-
-                uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-                stream_cmd.num_samps = total_num_samps;
-                stream_cmd.stream_now = true;
-                usrp->issue_stream_cmd(stream_cmd);
-
-                //meta-data will be filled in by recv()
-                uhd::rx_metadata_t md;
-
-                //allocate buffer to receive with samples
-                std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
-                double timeout = 0;
-
-                size_t num_acc_samps = 0; //number of accumulated samples
-                while(num_acc_samps < total_num_samps){
-                    //receive a single packet
-                    size_t num_rx_samps = rx_stream->recv(
-                        &buff.front(), buff.size(), md, timeout, true
-                    );
-
-                    //handle the error code
-                    if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) break;
-                    if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
-                        throw std::runtime_error(str(boost::format(
-                            "Unexpected error code 0x%x"
-                        ) % md.error_code));
-                    }
-                    if(verbose) std::cout << boost::format("Received %u samples.") % num_rx_samps << std::endl;
-                    num_acc_samps += num_rx_samps;
-                }
-                boost::this_thread::sleep(boost::posix_time::microseconds(long(delay*1e6)));
-
-                if (num_acc_samps < total_num_samps) std::cerr << "Receive timeout before all samples received..." << std::endl;
-
-                if(verbose) std::cout << std::endl;
-                std::cout << boost::format("Successfully received %u samples.") % total_num_samps << std::endl << "----------------------------------------" << std::endl;
-            }
-        }
-        else{
-
-            if(verbose) {
-                std::cout << std::endl << "About to start receiving samples." << std::endl;
-                std::cout << boost::format("Samples will start at %u and end with %u with steps of %u.") % samp_begin % samp_end % step << std::endl << std::endl;
-
-                boost::this_thread::sleep(boost::posix_time::seconds(2));
-            }
-
-            for(int i = int(samp_begin); i <= int(samp_end); i += step){
-
-                usrp->set_time_now(uhd::time_spec_t(0.0));
-
-                //create a receive streamer
-                uhd::stream_args_t stream_args("fc32"); //complex floats
-                uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-
-                //setup streaming
-                std::cout << std::endl;
-                std::cout << "----------------------------------------" << std::endl;
-                std::cout << boost::format("About to receive %u samples.") % i << std::endl << std::endl;
-                uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-                stream_cmd.num_samps = i;
-                stream_cmd.stream_now = true;
-                usrp->issue_stream_cmd(stream_cmd);
-
-                //meta-data will be filled in by recv()
-                uhd::rx_metadata_t md;
-
-                //allocate buffer to receive with samples
-                std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
-
-                double timeout = 0;
-
-                size_t num_acc_samps = 0; //number of accumulated samples
-                while(int(num_acc_samps) < i){
-                    //receive a single packet
-                    size_t num_rx_samps = rx_stream->recv(
-                        &buff.front(), buff.size(), md, timeout, true
-                    );
-
-                    //handle the error code
-                    if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) break;
-                    if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
-                        throw std::runtime_error(str(boost::format(
-                            "Unexpected error code 0x%x"
-                        ) % md.error_code));
-                    }
-
-                    if(verbose) std::cout << boost::format("Received %u samples.") % num_rx_samps << std::endl;
-
-                    num_acc_samps += num_rx_samps;
-
-                }
-                if(verbose) std::cout << std::endl;
-                std::cout << boost::format("Successfully received %u samples.") % i << std::endl << "----------------------------------------" << std::endl;
-
-                boost::this_thread::sleep(boost::posix_time::microseconds(long(delay*1e6)));
-
-                //std::cout << boost::format("num_acc_samps=%u, i=%u") % num_acc_samps % i << std::endl;
-
-                if (int(num_acc_samps) < i) std::cerr << "Receive timeout before all samples received..." << std::endl;
-            }
-        }
     return 0;
-    }
 }
