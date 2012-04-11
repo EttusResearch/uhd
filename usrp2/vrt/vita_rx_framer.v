@@ -85,9 +85,11 @@ module vita_rx_framer
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(samples_per_packet),.changed());
 
-   setting_reg #(.my_addr(BASE+8),.width(4), .at_reset(1)) sr_numchan
+   assign numchan = 0;/*
+   setting_reg #(.my_addr(BASE+8),.width(4), .at_reset(0)) sr_numchan
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(numchan),.changed());
+   */
 
    // Output FIFO for packetized data
    localparam VITA_IDLE 	 = 0;
@@ -164,7 +166,7 @@ module vita_rx_framer
 	   VITA_PAYLOAD :
 	     if(sample_fifo_src_rdy_i)
 	       begin
-		  if(sample_phase == (numchan-4'd1))
+		  if(sample_phase == numchan)
 		    begin
 		       sample_phase <= 0;
 		       sample_ctr   <= sample_ctr + 1;
@@ -213,7 +215,7 @@ module vita_rx_framer
    assign data_o[35:34] = 2'b00;  // Always write full lines
    assign sample_fifo_dst_rdy_o  = pkt_fifo_rdy & 
 				   ( ((vita_state==VITA_PAYLOAD) & 
-				      (sample_phase == (numchan-4'd1)) & 
+				      (sample_phase == numchan) & 
 				      ~|flags_fifo_o[4:1]) |
 				     (vita_state==VITA_ERR_PAYLOAD));
    

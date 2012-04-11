@@ -238,20 +238,22 @@ module settings_fifo_ctrl
     reg [31:0] command_hdr_reg;
     reg [31:0] command_data_reg;
 
-    wire now, early, late, too_early;
+    reg [63:0] vita_time_reg;
+    always @(posedge clock)
+        vita_time_reg <= vita_time;
+
+    wire late;
     `ifndef FIFO_CTRL_NO_TIME
     time_compare time_compare(
-        .time_now(vita_time), .trigger_time(command_ticks_reg),
-        .now(now), .early(early), .late(late), .too_early(too_early));
+        .time_now(vita_time_reg), .trigger_time(command_ticks_reg), .late(late));
     `else
-    assign now = 0;
     assign late = 1;
     `endif
 
     //action occurs in the event state and when there is fifo space (should always be true)
     //the third condition is that all peripherals in the perfs signal are ready/active high
     //the fourth condition is that is an event time has been set, action is delayed until that time
-    wire time_ready = (out_command_has_time)? (now || late) : 1;
+    wire time_ready = (out_command_has_time)? late : 1;
     wire action = (cmd_state == EVENT_CMD) && ~result_fifo_full && perfs_ready && time_ready;
 
     assign command_fifo_read = action;
