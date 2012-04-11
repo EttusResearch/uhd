@@ -77,7 +77,7 @@ public:
     }
 
     void clear(void){
-        _iface->poke32(REG_RX_CTRL_NCHANNELS, 1); //also reset
+        _iface->poke32(REG_RX_CTRL_NCHANNELS, 0); //also reset
         _iface->poke32(REG_RX_CTRL_VRT_HDR, 0
             | (0x1 << 28) //if data with stream id
             | (0x1 << 26) //has trailer
