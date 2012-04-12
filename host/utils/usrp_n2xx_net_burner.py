@@ -134,7 +134,7 @@ def command(*args):
         stderr=subprocess.STDOUT,
     )
     ret = p.wait()
-    verbose = p.stdout.read().decode()
+    verbose = p.stdout.read().decode('utf-8', errors='ignore')
     if ret != 0: raise Exception(verbose)
     return verbose
 
