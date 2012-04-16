@@ -57,8 +57,8 @@ static const int PRIORITY_SIMD = 1; //neon conversions could be implemented bett
 static const int PRIORITY_TABLE = 2; //tables require large cache, so they are slower on arm
 #else
 static const int PRIORITY_LIBORC = 1;
-static const int PRIORITY_SIMD = 2;
-static const int PRIORITY_TABLE = 3;
+static const int PRIORITY_SIMD = 3;
+static const int PRIORITY_TABLE = 2;
 #endif
 
 /***********************************************************************
