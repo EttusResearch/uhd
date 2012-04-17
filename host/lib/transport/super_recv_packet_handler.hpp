@@ -306,7 +306,7 @@ private:
         #endif
 
         //3) check for out of order timestamps
-        if (info.ifpi.has_tsi and info.ifpi.has_tsf and prev_buffer_info[index].time > info.time){
+        if (info.ifpi.has_tsf and prev_buffer_info[index].time > info.time){
             return PACKET_TIMESTAMP_ERROR;
         }
 

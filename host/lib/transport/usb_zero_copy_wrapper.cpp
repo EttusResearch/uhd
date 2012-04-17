@@ -35,10 +35,9 @@ public:
         _queue(queue){/*NOP*/}
 
     void release(void){
-        if (_mrb.get() == NULL) return;
-        _mrb->release();
+        if (not _mrb) return;
+        _mrb.reset(); //decrement ref count, other MRB's may hold a ref
         _queue.push_with_haste(this);
-        _mrb.reset();
     }
 
     UHD_INLINE sptr get_new(managed_recv_buffer::sptr mrb, const void *mem, size_t len){
