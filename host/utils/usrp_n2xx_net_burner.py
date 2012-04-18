@@ -196,8 +196,10 @@ def win_get_interfaces():
             adNode = a.ipAddressList
             while True:
                 #convert ipAddr and ipMask into hex addrs that can be turned into a bcast addr
-                ipAddr = adNode.ipAddress.decode()
-                ipMask = adNode.ipMask.decode()
+                try:
+                    ipAddr = adNode.ipAddress.decode()
+                    ipMask = adNode.ipMask.decode()
+                except AttributeError: pass
                 if ipAddr and ipMask:
                     hexAddr = struct.unpack("<L", socket.inet_aton(ipAddr))[0]
                     hexMask = struct.unpack("<L", socket.inet_aton(ipMask))[0]
@@ -282,7 +284,7 @@ class burner_socket(object):
         (flash_size, sector_size) = self.get_flash_info()
         hw_rev = self.get_hw_rev()
 
-        if n2xx_revs.has_key(hw_rev): print("Hardware type: %s" % n2xx_revs[hw_rev][0])
+        if hw_rev in n2xx_revs: print("Hardware type: %s" % n2xx_revs[hw_rev][0])
         print("Flash size: %i\nSector size: %i\n" % (flash_size, sector_size))
 
         if fpga:
