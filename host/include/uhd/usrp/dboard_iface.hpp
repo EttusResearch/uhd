@@ -213,7 +213,7 @@ public:
      *
      * \param unit which unit, rx or tx
      * \param config configuration settings
-     * \param data the bits to write LSB first
+     * \param data the bits to write MSB first
      * \param num_bits the number of bits in data
      */
     virtual void write_spi(
@@ -228,7 +228,7 @@ public:
      *
      * \param unit which unit, rx or tx
      * \param config configuration settings
-     * \param data the bits to write LSB first
+     * \param data the bits to write MSB first
      * \param num_bits the number of bits in data
      * \return the data that was read
      */
