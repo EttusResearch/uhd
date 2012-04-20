@@ -466,9 +466,9 @@ module u2_core
 
       .word00(spi_readback),.word01(32'hffff_ffff),.word02(32'hffff_ffff),.word03(32'hffff_ffff),
       .word04(32'hffff_ffff),.word05(32'hffff_ffff),.word06(32'hffff_ffff),.word07(32'hffff_ffff),
-      .word08(status),.word09(32'hffff_ffff),.word10(32'hffff_ffff),
+      .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
       .word11(vita_time[31:0]),.word12(compat_num),.word13(irq_readback),
-      .word14(32'hffff_ffff),.word15(32'hffff_ffff)
+      .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
       );
 
    // /////////////////////////////////////////////////////////////////////////
@@ -523,6 +523,7 @@ module u2_core
 
     wire [31:0] sfc_debug;
     wire sfc_clear;
+    /*
     settings_fifo_ctrl #(.PROT_DEST(3), .PROT_HDR(1)) sfc
     (
         .clock(dsp_clk), .reset(dsp_rst), .clear(sfc_clear),
@@ -537,6 +538,14 @@ module u2_core
         .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0]),
         .debug(sfc_debug)
     );
+    */
+    assign sfc_debug = 0;
+    assign set_stb_dsp1 = 0;
+    assign set_addr_dsp1 = 0;
+    assign set_data_dsp1 = 0;
+    assign sfc_rd_ready = 1;
+    assign sfc_wr_valid = 0;
+    assign sfc_wr_data = 0;
 
     setting_reg #(.my_addr(SR_BUF_POOL+1/*same as packet dispatcher*/),.width(1)) sr_clear_sfc
      (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.changed(sfc_clear));
