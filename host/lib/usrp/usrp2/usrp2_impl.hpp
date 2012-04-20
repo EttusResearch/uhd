@@ -82,6 +82,8 @@ private:
     struct mb_container_type{
         usrp2_iface::sptr iface;
         usrp2_fifo_ctrl::sptr fifo_ctrl;
+        uhd::spi_iface::sptr spiface;
+        wb_iface::sptr wbiface;
         usrp2_clock_ctrl::sptr clock;
         usrp2_codec_ctrl::sptr codec;
         uhd::gps_ctrl::sptr gps;

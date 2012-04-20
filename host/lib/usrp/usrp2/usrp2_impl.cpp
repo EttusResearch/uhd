@@ -400,6 +400,19 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
 
         //create the fifo control interface for high speed register access
         _mbc[mb].fifo_ctrl = usrp2_fifo_ctrl::make(_mbc[mb].fifo_ctrl_xport);
+        switch(_mbc[mb].iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
+            _mbc[mb].wbiface = _mbc[mb].fifo_ctrl;
+            _mbc[mb].spiface = _mbc[mb].fifo_ctrl;
+            break;
+        default:
+            _mbc[mb].wbiface = _mbc[mb].iface;
+            _mbc[mb].spiface = _mbc[mb].iface;
+            break;
+        }
 
         ////////////////////////////////////////////////////////////////
         // setup the mboard eeprom
@@ -411,7 +424,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////
         // create clock control objects
         ////////////////////////////////////////////////////////////////
-        _mbc[mb].clock = usrp2_clock_ctrl::make(_mbc[mb].iface, _mbc[mb].fifo_ctrl/*spi*/);
+        _mbc[mb].clock = usrp2_clock_ctrl::make(_mbc[mb].iface, _mbc[mb].spiface);
         _tree->create<double>(mb_path / "tick_rate")
             .publish(boost::bind(&usrp2_clock_ctrl::get_master_clock_rate, _mbc[mb].clock))
             .subscribe(boost::bind(&usrp2_impl::update_tick_rate, this, _1));
@@ -423,7 +436,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         const fs_path tx_codec_path = mb_path / "tx_codecs/A";
         _tree->create<int>(rx_codec_path / "gains"); //phony property so this dir exists
         _tree->create<int>(tx_codec_path / "gains"); //phony property so this dir exists
-        _mbc[mb].codec = usrp2_codec_ctrl::make(_mbc[mb].iface, _mbc[mb].fifo_ctrl/*spi*/);
+        _mbc[mb].codec = usrp2_codec_ctrl::make(_mbc[mb].iface, _mbc[mb].spiface);
         switch(_mbc[mb].iface->get_rev()){
         case usrp2_iface::USRP_N200:
         case usrp2_iface::USRP_N210:
@@ -476,10 +489,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create frontend control objects
         ////////////////////////////////////////////////////////////////
         _mbc[mb].rx_fe = rx_frontend_core_200::make(
-            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_RX_FRONT)
+            _mbc[mb].wbiface, U2_REG_SR_ADDR(SR_RX_FRONT)
         );
         _mbc[mb].tx_fe = tx_frontend_core_200::make(
-            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_TX_FRONT)
+            _mbc[mb].wbiface, U2_REG_SR_ADDR(SR_TX_FRONT)
         );
 
         _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
@@ -510,10 +523,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create rx dsp control objects
         ////////////////////////////////////////////////////////////////
         _mbc[mb].rx_dsps.push_back(rx_dsp_core_200::make(
-            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_RX_DSP0), U2_REG_SR_ADDR(SR_RX_CTRL0), USRP2_RX_SID_BASE + 0, true
+            _mbc[mb].wbiface, U2_REG_SR_ADDR(SR_RX_DSP0), U2_REG_SR_ADDR(SR_RX_CTRL0), USRP2_RX_SID_BASE + 0, true
         ));
         _mbc[mb].rx_dsps.push_back(rx_dsp_core_200::make(
-            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_RX_DSP1), U2_REG_SR_ADDR(SR_RX_CTRL1), USRP2_RX_SID_BASE + 1, true
+            _mbc[mb].wbiface, U2_REG_SR_ADDR(SR_RX_DSP1), U2_REG_SR_ADDR(SR_RX_CTRL1), USRP2_RX_SID_BASE + 1, true
         ));
         for (size_t dspno = 0; dspno < _mbc[mb].rx_dsps.size(); dspno++){
             _mbc[mb].rx_dsps[dspno]->set_link_rate(USRP2_LINK_RATE_BPS);
@@ -538,7 +551,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         // create tx dsp control objects
         ////////////////////////////////////////////////////////////////
         _mbc[mb].tx_dsp = tx_dsp_core_200::make(
-            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_TX_DSP), U2_REG_SR_ADDR(SR_TX_CTRL), USRP2_TX_ASYNC_SID
+            _mbc[mb].wbiface, U2_REG_SR_ADDR(SR_TX_DSP), U2_REG_SR_ADDR(SR_TX_CTRL), USRP2_TX_ASYNC_SID
         );
         _mbc[mb].tx_dsp->set_link_rate(USRP2_LINK_RATE_BPS);
         _tree->access<double>(mb_path / "tick_rate")
@@ -572,7 +585,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         time64_rb_bases.rb_hi_pps = U2_REG_TIME64_HI_RB_PPS;
         time64_rb_bases.rb_lo_pps = U2_REG_TIME64_LO_RB_PPS;
         _mbc[mb].time64 = time64_core_200::make(
-            _mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_TIME64), time64_rb_bases, mimo_clock_sync_delay_cycles
+            _mbc[mb].wbiface, U2_REG_SR_ADDR(SR_TIME64), time64_rb_bases, mimo_clock_sync_delay_cycles
         );
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&time64_core_200::set_tick_rate, _mbc[mb].time64, _1));
@@ -608,7 +621,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////////
         // create user-defined control objects
         ////////////////////////////////////////////////////////////////////
-        _mbc[mb].user = user_settings_core_200::make(_mbc[mb].fifo_ctrl, U2_REG_SR_ADDR(SR_USER_REGS));
+        _mbc[mb].user = user_settings_core_200::make(_mbc[mb].wbiface, U2_REG_SR_ADDR(SR_USER_REGS));
         _tree->create<user_settings_core_200::user_reg_t>(mb_path / "user/regs")
             .subscribe(boost::bind(&user_settings_core_200::set_reg, _mbc[mb].user, _1));
 
@@ -634,7 +647,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             .subscribe(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "gdb", _1));
 
         //create a new dboard interface and manager
-        _mbc[mb].dboard_iface = make_usrp2_dboard_iface(_mbc[mb].fifo_ctrl/*wb*/, _mbc[mb].iface/*i2c*/, _mbc[mb].fifo_ctrl/*spi*/, _mbc[mb].clock);
+        _mbc[mb].dboard_iface = make_usrp2_dboard_iface(_mbc[mb].wbiface, _mbc[mb].iface/*i2c*/, _mbc[mb].spiface, _mbc[mb].clock);
         _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_mbc[mb].dboard_iface);
         _mbc[mb].dboard_manager = dboard_manager::make(
             rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
@@ -704,12 +717,12 @@ void usrp2_impl::set_db_eeprom(const std::string &mb, const std::string &type, c
 }
 
 sensor_value_t usrp2_impl::get_mimo_locked(const std::string &mb){
-    const bool lock = (_mbc[mb].fifo_ctrl->peek32(U2_REG_IRQ_RB) & (1<<10)) != 0;
+    const bool lock = (_mbc[mb].wbiface->peek32(U2_REG_IRQ_RB) & (1<<10)) != 0;
     return sensor_value_t("MIMO", lock, "locked", "unlocked");
 }
 
 sensor_value_t usrp2_impl::get_ref_locked(const std::string &mb){
-    const bool lock = (_mbc[mb].fifo_ctrl->peek32(U2_REG_IRQ_RB) & (1<<11)) != 0;
+    const bool lock = (_mbc[mb].wbiface->peek32(U2_REG_IRQ_RB) & (1<<11)) != 0;
     return sensor_value_t("Ref", lock, "locked", "unlocked");
 }
 
