@@ -242,6 +242,7 @@ private:
             //commit the samples to the zero-copy interface
             size_t num_bytes_total = (_header_offset_words32+if_packet_info.num_packet_words32)*sizeof(boost::uint32_t);
             buff->commit(num_bytes_total);
+            buff.reset(); //effectively a release
 
         }
         _next_packet_seq++; //increment sequence after commits
