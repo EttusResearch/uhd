@@ -202,7 +202,7 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
     // Register properties
     ////////////////////////////////////////////////////////////////////
     this->get_rx_subtree()->create<std::string>("name")
-        .set(get_rx_id().to_pp_string());
+        .set("DBSRX");
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .publish(boost::bind(&dbsrx::get_locked, this));
     BOOST_FOREACH(const std::string &name, dbsrx_gain_ranges.keys()){

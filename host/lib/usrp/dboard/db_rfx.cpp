@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -174,7 +174,14 @@ rfx_xcvr::rfx_xcvr(
     ////////////////////////////////////////////////////////////////////
     // Register RX properties
     ////////////////////////////////////////////////////////////////////
-    this->get_rx_subtree()->create<std::string>("name").set("RFX RX");
+    if(get_rx_id() == 0x0024) this->get_rx_subtree()->create<std::string>("name").set("RFX400 RX");
+    else if(get_rx_id() == 0x0025) this->get_rx_subtree()->create<std::string>("name").set("RFX900 RX");
+    else if(get_rx_id() == 0x0034) this->get_rx_subtree()->create<std::string>("name").set("RFX1800 RX");
+    else if(get_rx_id() == 0x0026) this->get_rx_subtree()->create<std::string>("name").set("RFX1200 RX");
+    else if(get_rx_id() == 0x002c) this->get_rx_subtree()->create<std::string>("name").set("RFX2200 RX");
+    else if(get_rx_id() == 0x0027) this->get_rx_subtree()->create<std::string>("name").set("RFX2400 RX");
+    else this->get_rx_subtree()->create<std::string>("name").set("RFX RX");
+
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .publish(boost::bind(&rfx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
     BOOST_FOREACH(const std::string &name, _rx_gain_ranges.keys()){
@@ -203,7 +210,14 @@ rfx_xcvr::rfx_xcvr(
     ////////////////////////////////////////////////////////////////////
     // Register TX properties
     ////////////////////////////////////////////////////////////////////
-    this->get_tx_subtree()->create<std::string>("name").set("RFX TX");
+    if(get_tx_id() == 0x0028) this->get_tx_subtree()->create<std::string>("name").set("RFX400 TX");
+    else if(get_tx_id() == 0x0029) this->get_tx_subtree()->create<std::string>("name").set("RFX900 TX");
+    else if(get_tx_id() == 0x0035) this->get_tx_subtree()->create<std::string>("name").set("RFX1800 TX");
+    else if(get_tx_id() == 0x002a) this->get_tx_subtree()->create<std::string>("name").set("RFX1200 TX");
+    else if(get_tx_id() == 0x002d) this->get_tx_subtree()->create<std::string>("name").set("RFX2200 TX");
+    else if(get_tx_id() == 0x002b) this->get_tx_subtree()->create<std::string>("name").set("RFX2400 TX");
+    else this->get_tx_subtree()->create<std::string>("name").set("RFX TX");
+
     this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .publish(boost::bind(&rfx_xcvr::get_locked, this, dboard_iface::UNIT_TX));
     this->get_tx_subtree()->create<int>("gains"); //phony property so this dir exists

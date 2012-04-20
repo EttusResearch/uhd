@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -108,11 +108,17 @@ basic_rx::basic_rx(ctor_args_t args, double max_freq) : rx_dboard_base(args){
     ////////////////////////////////////////////////////////////////////
     // Register properties
     ////////////////////////////////////////////////////////////////////
-    this->get_rx_subtree()->create<std::string>("name").set(
-        std::string(str(boost::format("%s - %s")
-            % get_rx_id().to_pp_string()
-            % get_subdev_name()
+    if(get_rx_id() == 0x0001){
+        this->get_rx_subtree()->create<std::string>("name").set(
+            std::string(str(boost::format("BasicRX (%s)") % get_subdev_name()
         )));
+    }
+    else{
+        this->get_rx_subtree()->create<std::string>("name").set(
+            std::string(str(boost::format("LFRX (%s)") % get_subdev_name()
+        )));
+    }
+
     this->get_rx_subtree()->create<int>("gains"); //phony property so this dir exists
     this->get_rx_subtree()->create<double>("freq/value")
         .publish(&always_zero_freq);
@@ -157,11 +163,17 @@ basic_tx::basic_tx(ctor_args_t args, double max_freq) : tx_dboard_base(args){
     ////////////////////////////////////////////////////////////////////
     // Register properties
     ////////////////////////////////////////////////////////////////////
-    this->get_tx_subtree()->create<std::string>("name").set(
-        std::string(str(boost::format("%s - %s")
-            % get_tx_id().to_pp_string()
-            % get_subdev_name()
+    if(get_tx_id() == 0x0000){
+        this->get_tx_subtree()->create<std::string>("name").set(
+            std::string(str(boost::format("BasicTX (%s)") % get_subdev_name()
         )));
+    }
+    else{
+        this->get_tx_subtree()->create<std::string>("name").set(
+            std::string(str(boost::format("LFTX (%s)") % get_subdev_name()
+        )));
+    }
+
     this->get_tx_subtree()->create<int>("gains"); //phony property so this dir exists
     this->get_tx_subtree()->create<double>("freq/value")
         .publish(&always_zero_freq);

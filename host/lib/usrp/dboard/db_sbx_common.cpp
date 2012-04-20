@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -127,7 +127,10 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     ////////////////////////////////////////////////////////////////////
     // Register RX properties
     ////////////////////////////////////////////////////////////////////
-    this->get_rx_subtree()->create<std::string>("name").set("SBX RX");
+    if(get_rx_id() == 0x054) this->get_rx_subtree()->create<std::string>("name").set("SBXv3 RX");
+    else if(get_rx_id() == 0x065) this->get_rx_subtree()->create<std::string>("name").set("SBXv4 RX");
+    else this->get_rx_subtree()->create<std::string>("name").set("SBX RX");
+
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .publish(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
     BOOST_FOREACH(const std::string &name, sbx_rx_gain_ranges.keys()){
@@ -156,7 +159,10 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     ////////////////////////////////////////////////////////////////////
     // Register TX properties
     ////////////////////////////////////////////////////////////////////
-    this->get_tx_subtree()->create<std::string>("name").set("SBX TX");
+    if(get_tx_id() == 0x055) this->get_tx_subtree()->create<std::string>("name").set("SBXv3 TX");
+    else if(get_tx_id() == 0x067) this->get_tx_subtree()->create<std::string>("name").set("SBXv4 TX");
+    else this->get_tx_subtree()->create<std::string>("name").set("SBX TX");
+
     this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .publish(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_TX));
     BOOST_FOREACH(const std::string &name, sbx_tx_gain_ranges.keys()){
