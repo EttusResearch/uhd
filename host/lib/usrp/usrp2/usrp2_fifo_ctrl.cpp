@@ -202,11 +202,9 @@ private:
     }
 
     UHD_INLINE bool wraparound_lt16(const boost::int16_t i0, const boost::int16_t i1){
-        if (i0 == i1) return false;
-        const int s0 = boost::uint16_t(i0) >> 15;
-        const int s1 = boost::uint16_t(i1) >> 15;
-        if (s0 != s1) return boost::int16_t(i1 - i0) > 0;
-        return boost::uint16_t(i0) < boost::uint16_t(i1);
+        if (((i0 ^ i1) & 0x8000) == 0) //same sign bits
+            return boost::uint16_t(i0) < boost::uint16_t(i1);
+        return boost::int16_t(i1 - i0) > 0;
     }
 
     UHD_INLINE boost::uint32_t wait_for_ack(const boost::uint16_t seq_to_ack){
