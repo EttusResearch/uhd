@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -358,7 +358,7 @@ double rfx_xcvr::set_lo_freq(
      * The goal here to to loop though possible R dividers,
      * band select clock dividers, and prescaler values.
      * Calculate the A and B counters for each set of values.
-     * The loop exists when it meets all of the constraints.
+     * The loop exits when it meets all of the constraints.
      * The resulting loop values are loaded into the registers.
      *
      * fvco = [P*B + A] * fref/R
