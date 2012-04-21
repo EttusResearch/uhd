@@ -464,8 +464,8 @@ module u2_core
      (.wb_clk_i(wb_clk), .wb_rst_i(wb_rst), .wb_stb_i(s5_stb),
       .wb_adr_i(s5_adr), .wb_dat_o(s5_dat_i), .wb_ack_o(s5_ack),
 
-      .word00(spi_readback),.word01(32'b0),.word02(32'b0),.word03(32'b0),
-      .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
+      .word00(spi_readback),.word01(32'hffff_ffff),.word02(32'hffff_ffff),.word03(32'hffff_ffff),
+      .word04(32'hffff_ffff),.word05(32'hffff_ffff),.word06(32'hffff_ffff),.word07(32'hffff_ffff),
       .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
       .word11(vita_time[31:0]),.word12(compat_num),.word13(irq_readback),
       .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0])
@@ -523,6 +523,7 @@ module u2_core
 
     wire [31:0] sfc_debug;
     wire sfc_clear;
+    /*
     settings_fifo_ctrl #(.PROT_DEST(3), .PROT_HDR(1)) sfc
     (
         .clock(dsp_clk), .reset(dsp_rst), .clear(sfc_clear),
@@ -530,13 +531,21 @@ module u2_core
         .in_data(sfc_rd_data), .in_valid(sfc_rd_valid), .in_ready(sfc_rd_ready),
         .out_data(sfc_wr_data), .out_valid(sfc_wr_valid), .out_ready(sfc_wr_ready),
         .strobe(set_stb_dsp1), .addr(set_addr_dsp1), .data(set_data_dsp1),
-        .word00(spi_readback),.word01(32'b0),.word02(32'b0),.word03(32'b0),
-        .word04(32'b0),.word05(32'b0),.word06(32'b0),.word07(32'b0),
-        .word08(status),.word09(gpio_readback),.word10(vita_time[63:32]),
-        .word11(vita_time[31:0]),.word12(compat_num),.word13(irq_readback),
+        .word00(spi_readback),.word01(32'hffff_ffff),.word02(32'hffff_ffff),.word03(32'hffff_ffff),
+        .word04(32'hffff_ffff),.word05(32'hffff_ffff),.word06(32'hffff_ffff),.word07(32'hffff_ffff),
+        .word08(32'hffff_ffff),.word09(gpio_readback),.word10(vita_time[63:32]),
+        .word11(vita_time[31:0]),.word12(32'hffff_ffff),.word13(irq_readback),
         .word14(vita_time_pps[63:32]),.word15(vita_time_pps[31:0]),
         .debug(sfc_debug)
     );
+    */
+    assign sfc_debug = 0;
+    assign set_stb_dsp1 = 0;
+    assign set_addr_dsp1 = 0;
+    assign set_data_dsp1 = 0;
+    assign sfc_rd_ready = 1;
+    assign sfc_wr_valid = 0;
+    assign sfc_wr_data = 0;
 
     setting_reg #(.my_addr(SR_BUF_POOL+1/*same as packet dispatcher*/),.width(1)) sr_clear_sfc
      (.clk(dsp_clk),.rst(dsp_rst),.strobe(set_stb_dsp),.addr(set_addr_dsp),.in(set_data_dsp),.changed(sfc_clear));

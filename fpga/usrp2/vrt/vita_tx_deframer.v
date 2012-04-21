@@ -43,10 +43,11 @@ module vita_tx_deframer
 
    localparam FIFOWIDTH = 5+64+16+(32*MAXCHAN);
    
-   wire [1:0] numchan;
+   wire [1:0] numchan = 0;/*
    setting_reg #(.my_addr(BASE), .at_reset(0), .width(2)) sr_numchan
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(numchan),.changed());
+   */
 
    reg [3:0] vita_state;
    wire      has_streamid, has_classid, has_secs, has_tics, has_trailer;

@@ -19,7 +19,6 @@
 
 module settings_fifo_ctrl
     #(
-        parameter FIFO_DEPTH = 6, //64 entries depth
         parameter PROT_DEST = 0, //protocol framer destination
         parameter PROT_HDR = 1, //needs a protocol header?
         parameter ACK_SID = 0 //stream ID for packet ACK
@@ -79,7 +78,7 @@ module settings_fifo_ctrl
     wire command_fifo_full, command_fifo_empty;
     wire command_fifo_read, command_fifo_write;
 
-    medfifo #(.WIDTH(129), .DEPTH(FIFO_DEPTH-4)) command_fifo (
+    shortfifo #(.WIDTH(129)) command_fifo (
         .clk(clock), .rst(reset), .clear(clear),
         .datain({in_command_ticks, in_command_hdr, in_command_data, in_command_has_time}),
         .dataout({out_command_ticks, out_command_hdr, out_command_data, out_command_has_time}),
@@ -96,7 +95,7 @@ module settings_fifo_ctrl
     wire result_fifo_full, result_fifo_empty;
     wire result_fifo_read, result_fifo_write;
 
-    medfifo #(.WIDTH(64), .DEPTH(FIFO_DEPTH-4)) result_fifo (
+    shortfifo #(.WIDTH(64)) result_fifo (
         .clk(clock), .rst(reset), .clear(clear),
         .datain({in_result_hdr, in_result_data}),
         .dataout({out_result_hdr, out_result_data}),
@@ -238,20 +237,22 @@ module settings_fifo_ctrl
     reg [31:0] command_hdr_reg;
     reg [31:0] command_data_reg;
 
-    wire now, early, late, too_early;
+    reg [63:0] vita_time_reg;
+    always @(posedge clock)
+        vita_time_reg <= vita_time;
+
+    wire late;
     `ifndef FIFO_CTRL_NO_TIME
     time_compare time_compare(
-        .time_now(vita_time), .trigger_time(command_ticks_reg),
-        .now(now), .early(early), .late(late), .too_early(too_early));
+        .time_now(vita_time_reg), .trigger_time(command_ticks_reg), .late(late));
     `else
-    assign now = 0;
     assign late = 1;
     `endif
 
     //action occurs in the event state and when there is fifo space (should always be true)
     //the third condition is that all peripherals in the perfs signal are ready/active high
     //the fourth condition is that is an event time has been set, action is delayed until that time
-    wire time_ready = (out_command_has_time)? (now || late) : 1;
+    wire time_ready = (out_command_has_time)? late : 1;
     wire action = (cmd_state == EVENT_CMD) && ~result_fifo_full && perfs_ready && time_ready;
 
     assign command_fifo_read = action;
