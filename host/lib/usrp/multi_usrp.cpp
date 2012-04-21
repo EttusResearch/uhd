@@ -242,11 +242,7 @@ public:
         dict<std::string, std::string> usrp_info;
 
         mboard_eeprom_t mb_eeprom = _tree->access<mboard_eeprom_t>(mb_root(mcp.mboard) / "eeprom").get();
-        dboard_eeprom_t gdb_eeprom = _tree->access<dboard_eeprom_t>(tx_rf_fe_root(mcp.chan).branch_path().branch_path() / "gdb_eeprom").get();
-        dboard_eeprom_t db_eeprom;
-
-        if(gdb_eeprom.id != dboard_id_t::none()) db_eeprom = gdb_eeprom;
-        else db_eeprom = _tree->access<dboard_eeprom_t>(tx_rf_fe_root(mcp.chan).branch_path().branch_path() / "tx_eeprom").get();
+        dboard_eeprom_t db_eeprom = _tree->access<dboard_eeprom_t>(tx_rf_fe_root(mcp.chan).branch_path().branch_path() / "tx_eeprom").get();
 
         usrp_info["mboard_id"] = _tree->access<std::string>(mb_root(mcp.mboard) / "name").get();
         usrp_info["mboard_name"] = mb_eeprom["name"];

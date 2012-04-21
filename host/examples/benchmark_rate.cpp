@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 //
 
 #include <uhd/utils/thread_priority.hpp>
+#include <uhd/convert.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
@@ -40,11 +41,13 @@ unsigned long long num_seq_errors = 0;
 /***********************************************************************
  * Benchmark RX Rate
  **********************************************************************/
-void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_otw){
+void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_cpu, const std::string &rx_otw){
     uhd::set_thread_priority_safe();
 
     //create a receive streamer
-    uhd::stream_args_t stream_args("fc32", rx_otw); //complex floats
+    uhd::stream_args_t stream_args(rx_cpu, rx_otw);
+    for (size_t ch = 0; ch < usrp->get_num_mboards(); ch++) //linear channel mapping
+        stream_args.channels.push_back(ch);
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     //print pre-test summary
@@ -55,16 +58,20 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_o
     //setup variables and allocate buffer
     uhd::rx_metadata_t md;
     const size_t max_samps_per_packet = rx_stream->get_max_num_samps();
-    std::vector<std::complex<float> > buff(max_samps_per_packet);
+    std::vector<char> buff(max_samps_per_packet*uhd::convert::get_bytes_per_item(rx_cpu));
+    std::vector<void *> buffs;
+    for (size_t ch = 0; ch < stream_args.channels.size(); ch++)
+        buffs.push_back(&buff.front()); //same buffer for each channel
     bool had_an_overflow = false;
     uhd::time_spec_t last_time;
     const double rate = usrp->get_rx_rate();
 
-    usrp->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.05);
+    cmd.stream_now = (buffs.size() == 1);
+    usrp->issue_stream_cmd(cmd);
     while (not boost::this_thread::interruption_requested()){
-        num_rx_samps += rx_stream->recv(
-            &buff.front(), buff.size(), md
-        );
+        num_rx_samps += rx_stream->recv(buffs, max_samps_per_packet, md);
 
         //handle the error codes
         switch(md.error_code){
@@ -94,11 +101,13 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_o
 /***********************************************************************
  * Benchmark TX Rate
  **********************************************************************/
-void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &tx_otw){
+void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &tx_cpu, const std::string &tx_otw){
     uhd::set_thread_priority_safe();
 
     //create a transmit streamer
-    uhd::stream_args_t stream_args("fc32", tx_otw); //complex floats
+    uhd::stream_args_t stream_args(tx_cpu, tx_otw);
+    for (size_t ch = 0; ch < usrp->get_num_mboards(); ch++) //linear channel mapping
+        stream_args.channels.push_back(ch);
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //print pre-test summary
@@ -108,17 +117,22 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &tx_o
 
     //setup variables and allocate buffer
     uhd::tx_metadata_t md;
-    md.has_time_spec = false;
+    md.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.05);
     const size_t max_samps_per_packet = tx_stream->get_max_num_samps();
-    std::vector<std::complex<float> > buff(max_samps_per_packet);
+    std::vector<char> buff(max_samps_per_packet*uhd::convert::get_bytes_per_item(tx_cpu));
+    std::vector<const void *> buffs;
+    for (size_t ch = 0; ch < stream_args.channels.size(); ch++)
+        buffs.push_back(&buff.front()); //same buffer for each channel
+    md.has_time_spec = (buffs.size() != 1);
 
     while (not boost::this_thread::interruption_requested()){
-        num_tx_samps += tx_stream->send(&buff.front(), buff.size(), md);
+        num_tx_samps += tx_stream->send(buffs, max_samps_per_packet, md);
+        md.has_time_spec = false;
     }
 
     //send a mini EOB packet
     md.end_of_burst = true;
-    tx_stream->send("", 0, md);
+    tx_stream->send(buffs, 0, md);
 }
 
 void benchmark_tx_rate_async_helper(uhd::usrp::multi_usrp::sptr usrp){
@@ -163,6 +177,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     double duration;
     double rx_rate, tx_rate;
     std::string rx_otw, tx_otw;
+    std::string rx_cpu, tx_cpu;
+    std::string mode;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -174,6 +190,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("tx_rate", po::value<double>(&tx_rate), "specify to perform a TX rate test (sps)")
         ("rx_otw", po::value<std::string>(&rx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for RX")
         ("tx_otw", po::value<std::string>(&tx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for TX")
+        ("rx_cpu", po::value<std::string>(&rx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for RX")
+        ("tx_cpu", po::value<std::string>(&tx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for TX")
+        ("mode", po::value<std::string>(&mode)->default_value("none"), "multi-channel sync mode option: none, mimo")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -201,18 +220,24 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
+    if (mode == "mimo"){
+        usrp->set_clock_source("mimo", 0);
+        usrp->set_time_source("mimo", 0);
+        boost::this_thread::sleep(boost::posix_time::seconds(1));
+    }
+
     boost::thread_group thread_group;
 
     //spawn the receive test thread
     if (vm.count("rx_rate")){
         usrp->set_rx_rate(rx_rate);
-        thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_otw));
+        thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_otw));
     }
 
     //spawn the transmit test thread
     if (vm.count("tx_rate")){
         usrp->set_tx_rate(tx_rate);
-        thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_otw));
+        thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_otw));
         thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, usrp));
     }
 

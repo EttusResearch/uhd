@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -340,13 +340,13 @@ public:
 
     const std::string get_cname(void){
         switch(this->get_rev()){
-        case USRP2_REV3: return "USRP2-REV3";
-        case USRP2_REV4: return "USRP2-REV4";
-        case USRP_N200: return "USRP-N200";
-        case USRP_N210: return "USRP-N210";
-        case USRP_N200_R4: return "USRP-N200-REV4";
-        case USRP_N210_R4: return "USRP-N210-REV4";
-        case USRP_NXXX: return "USRP-N???";
+        case USRP2_REV3: return "USRP2 r3";
+        case USRP2_REV4: return "USRP2 r4";
+        case USRP_N200: return "N200";
+        case USRP_N210: return "N210";
+        case USRP_N200_R4: return "N200r4";
+        case USRP_N210_R4: return "N210r4";
+        case USRP_NXXX: return "N???";
         }
         UHD_THROW_INVALID_CODE_PATH();
     }

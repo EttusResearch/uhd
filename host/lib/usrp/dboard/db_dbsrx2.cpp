@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -189,7 +189,7 @@ dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args){
     // Register properties
     ////////////////////////////////////////////////////////////////////
     this->get_rx_subtree()->create<std::string>("name")
-        .set(get_rx_id().to_pp_string());
+        .set("DBSRX2");
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .publish(boost::bind(&dbsrx2::get_locked, this));
     BOOST_FOREACH(const std::string &name, dbsrx2_gain_ranges.keys()){

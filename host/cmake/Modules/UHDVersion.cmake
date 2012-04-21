@@ -27,7 +27,7 @@ FIND_PACKAGE(Git QUIET)
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
 SET(UHD_VERSION_MINOR 004)
-SET(UHD_VERSION_PATCH 000)
+SET(UHD_VERSION_PATCH 001)
 
 ########################################################################
 # Version information discovery through git log
@@ -68,4 +68,8 @@ IF(UHD_RELEASE_MODE)
 ENDIF()
 
 ########################################################################
-SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}-${UHD_GIT_COUNT}-${UHD_GIT_HASH}")
+IF(UHD_RELEASE_MODE STREQUAL "release")
+    SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}-${UHD_GIT_HASH}")
+ELSE()
+    SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}-${UHD_GIT_COUNT}-${UHD_GIT_HASH}")
+ENDIF()

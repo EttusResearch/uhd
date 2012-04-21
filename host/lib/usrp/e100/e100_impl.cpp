@@ -189,7 +189,8 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>("/name").set("E-Series Device");
     const fs_path mb_path = "/mboards/0";
-    _tree->create<std::string>(mb_path / "name").set(str(boost::format("%s (euewanee)") % model));
+    _tree->create<std::string>(mb_path / "name").set(model);
+    _tree->create<std::string>(mb_path / "codename").set("Euwanee");
 
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom

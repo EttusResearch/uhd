@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -81,8 +81,10 @@ wbx_simple::wbx_simple(ctor_args_t args) : wbx_base(args){
     ////////////////////////////////////////////////////////////////////
     // Register RX properties
     ////////////////////////////////////////////////////////////////////
+
     this->get_rx_subtree()->access<std::string>("name").set(
-        this->get_rx_subtree()->access<std::string>("name").get() + " + Simple GDB");
+        std::string(str(boost::format("%s+GDB") % this->get_rx_subtree()->access<std::string>("name").get()
+    )));
     this->get_rx_subtree()->create<std::string>("antenna/value")
         .subscribe(boost::bind(&wbx_simple::set_rx_ant, this, _1))
         .set("RX2");
@@ -93,7 +95,8 @@ wbx_simple::wbx_simple(ctor_args_t args) : wbx_base(args){
     // Register TX properties
     ////////////////////////////////////////////////////////////////////
     this->get_tx_subtree()->access<std::string>("name").set(
-        this->get_tx_subtree()->access<std::string>("name").get() + " + Simple GDB");
+        std::string(str(boost::format("%s+GDB") % this->get_tx_subtree()->access<std::string>("name").get()
+    )));
     this->get_tx_subtree()->create<std::string>("antenna/value")
         .subscribe(boost::bind(&wbx_simple::set_tx_ant, this, _1))
         .set(wbx_tx_antennas.at(0));
