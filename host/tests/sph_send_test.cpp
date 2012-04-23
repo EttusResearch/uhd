@@ -31,23 +31,17 @@
  **********************************************************************/
 class dummy_msb : public uhd::transport::managed_send_buffer{
 public:
-    void commit(size_t len){
-        if (len == 0) return;
-        *_len = len;
+    void release(void){
+        //NOP
     }
 
     sptr get_new(boost::shared_array<char> mem, size_t *len){
         _mem = mem;
-        _len = len;
-        return make_managed_buffer(this);
+        return make(this, mem.get(), *len);
     }
 
 private:
-    void *get_buff(void) const{return _mem.get();}
-    size_t get_size(void) const{return *_len;}
-
     boost::shared_array<char> _mem;
-    size_t *_len;
 };
 
 /***********************************************************************
@@ -74,17 +68,17 @@ public:
     }
 
     uhd::transport::managed_send_buffer::sptr get_send_buff(double){
-        _msbs.push_back(dummy_msb());
+        _msbs.push_back(boost::shared_ptr<dummy_msb>(new dummy_msb()));
         _mems.push_back(boost::shared_array<char>(new char[1000]));
         _lens.push_back(1000);
-        uhd::transport::managed_send_buffer::sptr mrb = _msbs.back().get_new(_mems.back(), &_lens.back());
+        uhd::transport::managed_send_buffer::sptr mrb = _msbs.back()->get_new(_mems.back(), &_lens.back());
         return mrb;
     }
 
 private:
     std::list<boost::shared_array<char> > _mems;
     std::list<size_t> _lens;
-    std::list<dummy_msb> _msbs; //list means no-realloc
+    std::vector<boost::shared_ptr<dummy_msb> > _msbs;
     std::string _end;
 };
 

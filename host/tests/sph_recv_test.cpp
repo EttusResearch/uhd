@@ -50,16 +50,11 @@ public:
 
     sptr get_new(boost::shared_array<char> mem, size_t len){
         _mem = mem;
-        _len = len;
-        return make_managed_buffer(this);
+        return make(this, _mem.get(), len);
     }
 
 private:
-    const void *get_buff(void) const{return _mem.get();}
-    size_t get_size(void) const{return _len;}
-
     boost::shared_array<char> _mem;
-    size_t _len;
 };
 
 /***********************************************************************
@@ -89,8 +84,8 @@ public:
 
     uhd::transport::managed_recv_buffer::sptr get_recv_buff(double){
         if (_mems.empty()) return uhd::transport::managed_recv_buffer::sptr(); //timeout
-        _mrbs.push_back(dummy_mrb());
-        uhd::transport::managed_recv_buffer::sptr mrb = _mrbs.back().get_new(_mems.front(), _lens.front());
+        _mrbs.push_back(boost::shared_ptr<dummy_mrb>(new dummy_mrb()));
+        uhd::transport::managed_recv_buffer::sptr mrb = _mrbs.back()->get_new(_mems.front(), _lens.front());
         _mems.pop_front();
         _lens.pop_front();
         return mrb;
@@ -99,7 +94,7 @@ public:
 private:
     std::list<boost::shared_array<char> > _mems;
     std::list<size_t> _lens;
-    std::list<dummy_mrb> _mrbs; //list means no-realloc
+    std::vector<boost::shared_ptr<dummy_mrb> > _mrbs;
     std::string _end;
 };
 

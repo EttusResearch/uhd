@@ -73,8 +73,8 @@ public:
         /* NOP */
     }
 
-    void commit(size_t size){
-        if (size != 0) this->_commit_cb(_curr_buff, _next_buff, size);
+    void release(void){
+        this->_commit_cb(_curr_buff, _next_buff, size());
     }
 
     sptr get_new(
@@ -83,13 +83,13 @@ public:
     ){
         _curr_buff = curr_buff;
         _next_buff = next_buff;
-        return make_managed_buffer(this);
+        return make(this,
+            _curr_buff.buff->cast<char *>() + _curr_buff.offset,
+            _curr_buff.buff->size()         - _curr_buff.offset
+        );
     }
 
 private:
-    void  *get_buff(void) const{return _curr_buff.buff->cast<char *>() + _curr_buff.offset;}
-    size_t get_size(void) const{return _curr_buff.buff->size()         - _curr_buff.offset;}
-
     offset_send_buffer _curr_buff, _next_buff;
     commit_cb_type _commit_cb;
 };

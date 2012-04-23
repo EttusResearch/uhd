@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
+#include <boost/make_shared.hpp>
 #include <linux/usrp_e.h>
 #include <sys/mman.h> //mmap
 #include <unistd.h> //getpagesize
@@ -41,23 +42,19 @@ public:
         _mem(mem), _info(info) { /* NOP */ }
 
     void release(void){
-        if (_info->flags != RB_USER_PROCESS) return;
         if (fp_verbose) UHD_LOGV(always) << "recv buff: release" << std::endl;
         _info->flags = RB_KERNEL; //release the frame
     }
 
-    bool ready(void){return _info->flags & RB_USER;}
+    UHD_INLINE bool ready(void){return _info->flags & RB_USER;}
 
-    sptr get_new(void){
-        if (fp_verbose) UHD_LOGV(always) << "  make_recv_buff: " << get_size() << std::endl;
+    UHD_INLINE sptr get_new(void){
+        if (fp_verbose) UHD_LOGV(always) << "  make_recv_buff: " << _info->len << std::endl;
         _info->flags = RB_USER_PROCESS; //claim the frame
-        return make_managed_buffer(this);
+        return make(this, _mem, _info->len);
     }
 
 private:
-    const void *get_buff(void) const{return _mem;}
-    size_t get_size(void) const{return _info->len;}
-
     void *_mem;
     ring_buffer_info *_info;
 };
@@ -71,28 +68,24 @@ public:
     e100_mmap_zero_copy_msb(void *mem, ring_buffer_info *info, size_t len, int fd):
         _mem(mem), _info(info), _len(len), _fd(fd) { /* NOP */ }
 
-    void commit(size_t len){
-        if (_info->flags != RB_USER_PROCESS) return;
-        if (fp_verbose) UHD_LOGV(always) << "send buff: commit " << len << std::endl;
-        _info->len = len;
+    void release(void){
+        if (fp_verbose) UHD_LOGV(always) << "send buff: commit " << size() << std::endl;
+        _info->len = size();
         _info->flags = RB_USER; //release the frame
         if (::write(_fd, NULL, 0) < 0){ //notifies the kernel
             UHD_LOGV(rarely) << UHD_THROW_SITE_INFO("write error") << std::endl;
         }
     }
 
-    bool ready(void){return _info->flags & RB_KERNEL;}
+    UHD_INLINE bool ready(void){return _info->flags & RB_KERNEL;}
 
-    sptr get_new(void){
-        if (fp_verbose) UHD_LOGV(always) << "  make_send_buff: " << get_size() << std::endl;
+    UHD_INLINE sptr get_new(void){
+        if (fp_verbose) UHD_LOGV(always) << "  make_send_buff: " << _len << std::endl;
         _info->flags = RB_USER_PROCESS; //claim the frame
-        return make_managed_buffer(this);
+        return make(this, _mem, _len);
     }
 
 private:
-    void *get_buff(void) const{return _mem;}
-    size_t get_size(void) const{return _len;}
-
     void *_mem;
     ring_buffer_info *_info;
     size_t _len;
@@ -162,14 +155,14 @@ public:
 
         //initialize the managed receive buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++){
-            _mrb_pool.push_back(e100_mmap_zero_copy_mrb(
+            _mrb_pool.push_back(boost::make_shared<e100_mmap_zero_copy_mrb>(
                 recv_buff + get_recv_frame_size()*i, (*recv_info) + i
             ));
         }
 
         //initialize the managed send buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++){
-            _msb_pool.push_back(e100_mmap_zero_copy_msb(
+            _msb_pool.push_back(boost::make_shared<e100_mmap_zero_copy_msb>(
                 send_buff + get_send_frame_size()*i, (*send_info) + i,
                 get_send_frame_size(), _fd
             ));
@@ -183,7 +176,7 @@ public:
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
         if (fp_verbose) UHD_LOGV(always) << "get_recv_buff: " << _recv_index << std::endl;
-        e100_mmap_zero_copy_mrb &mrb = _mrb_pool[_recv_index];
+        e100_mmap_zero_copy_mrb &mrb = *_mrb_pool[_recv_index];
 
         //poll/wait for a ready frame
         if (not mrb.ready()){
@@ -215,7 +208,7 @@ public:
 
     managed_send_buffer::sptr get_send_buff(double timeout){
         if (fp_verbose) UHD_LOGV(always) << "get_send_buff: " << _send_index << std::endl;
-        e100_mmap_zero_copy_msb &msb = _msb_pool[_send_index];
+        e100_mmap_zero_copy_msb &msb = *_msb_pool[_send_index];
 
         //poll/wait for a ready frame
         if (not msb.ready()){
@@ -254,8 +247,8 @@ private:
     size_t _frame_size, _map_size;
 
     //re-usable managed buffers
-    std::vector<e100_mmap_zero_copy_mrb> _mrb_pool;
-    std::vector<e100_mmap_zero_copy_msb> _msb_pool;
+    std::vector<boost::shared_ptr<e100_mmap_zero_copy_mrb> > _mrb_pool;
+    std::vector<boost::shared_ptr<e100_mmap_zero_copy_msb> > _msb_pool;
 
     //indexes into sub-sections of mapped memory
     size_t _recv_index, _send_index;

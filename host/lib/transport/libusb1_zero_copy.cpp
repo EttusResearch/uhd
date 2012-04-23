@@ -21,6 +21,7 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/thread/thread.hpp>
 #include <list>
 
@@ -61,8 +62,18 @@ static void LIBUSB_CALL libusb_async_cb(libusb_transfer *lut){
  * \return true for completion, false for timeout
  */
 UHD_INLINE bool wait_for_completion(libusb_context *ctx, const double timeout, bool &completed){
-    const boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::microseconds(long(timeout*1000000));
+    //already completed by a previous call?
+    if (completed) return true;
 
+    //perform a non-blocking event handle
+    timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    libusb_handle_events_timeout(ctx, &tv);
+    if (completed) return true;
+
+    //finish the rest with a timeout loop
+    const boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::microseconds(long(timeout*1000000));
     while (not completed and (boost::get_system_time() < timeout_time)){
         timeval tv;
         tv.tv_sec = 0;
@@ -82,21 +93,18 @@ class libusb_zero_copy_mrb : public managed_recv_buffer{
 public:
     libusb_zero_copy_mrb(libusb_transfer *lut, const size_t frame_size):
         _ctx(libusb::session::get_global_session()->get_context()),
-        _lut(lut), _expired(false), _frame_size(frame_size) { /* NOP */ }
+        _lut(lut), _frame_size(frame_size) { /* NOP */ }
 
     void release(void){
-        if (_expired) return;
         completed = false;
         _lut->length = _frame_size; //always reset length
         UHD_ASSERT_THROW(libusb_submit_transfer(_lut) == 0);
-        _expired = true;
     }
 
     sptr get_new(const double timeout, size_t &index){
         if (wait_for_completion(_ctx, timeout, completed)){
             index++;
-            _expired = false;
-            return make_managed_buffer(this);
+            return make(this, _lut->buffer, _lut->actual_length);
         }
         return managed_recv_buffer::sptr();
     }
@@ -104,12 +112,8 @@ public:
     bool completed;
 
 private:
-    const void *get_buff(void) const{return _lut->buffer;}
-    size_t get_size(void) const{return _lut->actual_length;}
-
     libusb_context *_ctx;
     libusb_transfer *_lut;
-    bool _expired;
     const size_t _frame_size;
 };
 
@@ -122,22 +126,18 @@ class libusb_zero_copy_msb : public managed_send_buffer{
 public:
     libusb_zero_copy_msb(libusb_transfer *lut, const size_t frame_size):
         _ctx(libusb::session::get_global_session()->get_context()),
-        _lut(lut), _expired(false), _frame_size(frame_size) { /* NOP */ }
+        _lut(lut), _frame_size(frame_size) { completed = true; }
 
-    void commit(size_t len){
-        if (_expired) return;
+    void release(void){
         completed = false;
-        _lut->length = len;
-        if (len == 0) libusb_async_cb(_lut);
-        else UHD_ASSERT_THROW(libusb_submit_transfer(_lut) == 0);
-        _expired = true;
+        _lut->length = size();
+        UHD_ASSERT_THROW(libusb_submit_transfer(_lut) == 0);
     }
 
     sptr get_new(const double timeout, size_t &index){
         if (wait_for_completion(_ctx, timeout, completed)){
             index++;
-            _expired = false;
-            return make_managed_buffer(this);
+            return make(this, _lut->buffer, _frame_size);
         }
         return managed_send_buffer::sptr();
     }
@@ -145,12 +145,8 @@ public:
     bool completed;
 
 private:
-    void *get_buff(void) const{return _lut->buffer;}
-    size_t get_size(void) const{return _frame_size;}
-
     libusb_context *_ctx;
     libusb_transfer *_lut;
-    bool _expired;
     const size_t _frame_size;
 };
 
@@ -187,7 +183,7 @@ public:
             libusb_transfer *lut = libusb_alloc_transfer(0);
             UHD_ASSERT_THROW(lut != NULL);
 
-            _mrb_pool.push_back(boost::shared_ptr<libusb_zero_copy_mrb>(new libusb_zero_copy_mrb(lut, this->get_recv_frame_size())));
+            _mrb_pool.push_back(boost::make_shared<libusb_zero_copy_mrb>(lut, this->get_recv_frame_size()));
 
             libusb_fill_bulk_transfer(
                 lut,                                                    // transfer
@@ -210,7 +206,7 @@ public:
             libusb_transfer *lut = libusb_alloc_transfer(0);
             UHD_ASSERT_THROW(lut != NULL);
 
-            _msb_pool.push_back(boost::shared_ptr<libusb_zero_copy_msb>(new libusb_zero_copy_msb(lut, this->get_send_frame_size())));
+            _msb_pool.push_back(boost::make_shared<libusb_zero_copy_msb>(lut, this->get_send_frame_size()));
 
             libusb_fill_bulk_transfer(
                 lut,                                                    // transfer
@@ -224,7 +220,6 @@ public:
             );
 
             _all_luts.push_back(lut);
-            _msb_pool.back()->commit(0);
         }
     }
 

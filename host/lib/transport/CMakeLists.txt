@@ -82,7 +82,11 @@ SET_SOURCE_FILES_PROPERTIES(
 ########################################################################
 # Setup UDP
 ########################################################################
-LIBUHD_APPEND_SOURCES(${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy.cpp)
+IF(WIN32)
+    LIBUHD_APPEND_SOURCES(${CMAKE_CURRENT_SOURCE_DIR}/udp_wsa_zero_copy.cpp)
+ELSE()
+    LIBUHD_APPEND_SOURCES(${CMAKE_CURRENT_SOURCE_DIR}/udp_zero_copy.cpp)
+ENDIF()
 
 #On windows, the boost asio implementation uses the winsock2 library.
 #Note: we exclude the .lib extension for cygwin and mingw platforms.

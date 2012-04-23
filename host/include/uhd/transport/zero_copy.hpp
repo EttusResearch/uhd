@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,23 +22,14 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
+#include <boost/detail/atomic_count.hpp>
 
 namespace uhd{ namespace transport{
 
-    //! Create smart pointer to a reusable managed buffer
-    template <typename T> UHD_INLINE boost::intrusive_ptr<T> make_managed_buffer(T *p){
-        p->_ref_count = 1; //reset the count to 1 reference
-        return boost::intrusive_ptr<T>(p, false);
-    }
-
-    /*!
-     * A managed receive buffer:
-     * Contains a reference to transport-managed memory,
-     * and a method to release the memory after reading.
-     */
-    class UHD_API managed_recv_buffer{
+    //! Simple managed buffer with release interface
+    class UHD_API managed_buffer{
     public:
-        typedef boost::intrusive_ptr<managed_recv_buffer> sptr;
+        managed_buffer(void):_ref_count(0){}
 
         /*!
          * Signal to the transport that we are done with the buffer.
@@ -48,83 +39,72 @@ namespace uhd{ namespace transport{
         virtual void release(void) = 0;
 
         /*!
+         * Use commit() to re-write the length (for use with send buffers).
+         * \param num_bytes the number of bytes written into the buffer
+         */
+        UHD_INLINE void commit(size_t num_bytes){
+            _length = num_bytes;
+        }
+
+        /*!
          * Get a pointer to the underlying buffer.
          * \return a pointer into memory
          */
-        template <class T> inline T cast(void) const{
-            return static_cast<T>(this->get_buff());
+        template <class T> UHD_INLINE T cast(void) const{
+            return static_cast<T>(_buffer);
         }
 
         /*!
          * Get the size of the underlying buffer.
          * \return the number of bytes
          */
-        inline size_t size(void) const{
-            return this->get_size();
+        UHD_INLINE size_t size(void) const{
+            return _length;
         }
 
-    private:
-        virtual const void *get_buff(void) const = 0;
-        virtual size_t get_size(void) const = 0;
+        //! Create smart pointer to a reusable managed buffer
+        template <typename T> UHD_INLINE boost::intrusive_ptr<T> make(
+            T *p, void *buffer, size_t length
+        ){
+            _buffer = buffer;
+            _length = length;
+            return boost::intrusive_ptr<T>(p);
+        }
 
-    public: int _ref_count;
+        boost::detail::atomic_count _ref_count;
+
+    protected:
+        void *_buffer;
+        size_t _length;
     };
 
-    UHD_INLINE void intrusive_ptr_add_ref(managed_recv_buffer *p){
+    UHD_INLINE void intrusive_ptr_add_ref(managed_buffer *p){
         ++(p->_ref_count);
     }
 
-    UHD_INLINE void intrusive_ptr_release(managed_recv_buffer *p){
+    UHD_INLINE void intrusive_ptr_release(managed_buffer *p){
         if (--(p->_ref_count) == 0) p->release();
     }
+
+    /*!
+     * A managed receive buffer:
+     * Contains a reference to transport-managed memory,
+     * and a method to release the memory after reading.
+     */
+    class UHD_API managed_recv_buffer : public managed_buffer{
+    public:
+        typedef boost::intrusive_ptr<managed_recv_buffer> sptr;
+    };
 
     /*!
      * A managed send buffer:
      * Contains a reference to transport-managed memory,
      * and a method to commit the memory after writing.
      */
-    class UHD_API managed_send_buffer{
+    class UHD_API managed_send_buffer : public managed_buffer{
     public:
         typedef boost::intrusive_ptr<managed_send_buffer> sptr;
-
-        /*!
-         * Signal to the transport that we are done with the buffer.
-         * This should be called to commit the write to the transport object.
-         * After calling, the referenced memory should be considered invalid.
-         * \param num_bytes the number of bytes written into the buffer
-         */
-        virtual void commit(size_t num_bytes) = 0;
-
-        /*!
-         * Get a pointer to the underlying buffer.
-         * \return a pointer into memory
-         */
-        template <class T> inline T cast(void) const{
-            return static_cast<T>(this->get_buff());
-        }
-
-        /*!
-         * Get the size of the underlying buffer.
-         * \return the number of bytes
-         */
-        inline size_t size(void) const{
-            return this->get_size();
-        }
-
-    private:
-        virtual void *get_buff(void) const = 0;
-        virtual size_t get_size(void) const = 0;
-
-    public: int _ref_count;
     };
-
-    UHD_INLINE void intrusive_ptr_add_ref(managed_send_buffer *p){
-        ++(p->_ref_count);
-    }
-
-    UHD_INLINE void intrusive_ptr_release(managed_send_buffer *p){
-        if (--(p->_ref_count) == 0) p->commit(0);
-    }
 
     /*!
      * A zero-copy interface for transport objects.
