@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 namespace uhd{
 
-    class task : boost::noncopyable{
+    class UHD_API task : boost::noncopyable{
     public:
         typedef boost::shared_ptr<task> sptr;
         typedef boost::function<void(void)> task_fcn_type;
