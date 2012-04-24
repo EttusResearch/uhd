@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2012 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,12 +73,12 @@ output_level_lvds_out$i        $hex(0x40+$o)[1:2]  1   1_75ma, 3_5ma, 5_25ma, 7m
 lvds_cmos_select_out$i         $hex(0x40+$o)[3]    1   lvds, cmos
 inverted_cmos_driver_out$i     $hex(0x40+$o)[4]    0   dis, enb
 #end for
-clock_select                   45[0]               1   clk2_drives, clk1_drives
-clk1_power_down                45[1]               0
-clk2_power_down                45[2]               0
-prescaler_clock_pd             45[3]               0
-refin_power_down               45[4]               0
-all_clock_inputs_pd            45[5]               0
+clock_select                 0x45[0]               1   clk2_drives, clk1_drives
+clk1_power_down              0x45[1]               0
+clk2_power_down              0x45[2]               0
+prescaler_clock_pd           0x45[3]               0
+refin_power_down             0x45[4]               0
+all_clock_inputs_pd          0x45[5]               0
 ########################################################################
 ## dividers
 ########################################################################
@@ -94,12 +94,12 @@ bypass_divider_out$i           $hex(0x49+$o)[7]    0
 ########################################################################
 ## function
 ########################################################################
-sync_detect_enable             58[0]               0    dis, enb
-sync_select                    58[1]               0    1_to_0_5, 0_5_to_1
-soft_sync                      58[2]               0
-dist_power_down                58[3]               0
-sync_power_down                58[4]               0
-function_pin_select            58[5:6]             0    resetb, syncb, test, pdb
+sync_detect_enable             0x58[0]             0    dis, enb
+sync_select                    0x58[1]             0    1_to_0_5, 0_5_to_1
+soft_sync                      0x58[2]             0
+dist_power_down                0x58[3]             0
+sync_power_down                0x58[4]             0
+function_pin_select            0x58[5:6]           0    resetb, syncb, test, pdb
 update_registers               0x5A[0]             0
 """
 
