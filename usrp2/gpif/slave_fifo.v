@@ -310,7 +310,7 @@ module slave_fifo
    wire [15:0] rxfifospace;
 
    //deep 36 bit wide input fifo buffers from DSP
-   fifo_cascade #(.WIDTH(36), .SIZE(8)) rx_fifo36
+   fifo_cascade #(.WIDTH(36), .SIZE(9)) rx_fifo36
      (.clk(fifo_clk), .reset(fifo_rst), .clear(clear_rx),
       .datain(rx_data_i), .src_rdy_i(rx_src_rdy_i), .dst_rdy_o(rx_dst_rdy_o),
       .dataout(rx36_data), .src_rdy_o(rx36_src_rdy), .dst_rdy_i(rx36_dst_rdy));
