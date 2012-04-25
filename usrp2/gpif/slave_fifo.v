@@ -84,7 +84,7 @@ module slave_fifo
    reg tx_data_enough_space;
 
    reg [9:0] transfer_count; //number of lines (a line is 16 bits) in active transfer
-   
+
    reg pktend_latch;
 
    reg [3:0] state; //state machine current state
@@ -106,12 +106,29 @@ module slave_fifo
    localparam BUS_HOG_RX = 0;
    localparam BUS_HOG_TX = 1;
 
+    //count the number of cycles since RX data so we can force a flush
+    reg [17:0] non_rx_cycles;
+    localparam rx_idle_flush_cycles = 65536; //about 1ms at 64MHz clock
+    always @(posedge gpif_clk) begin
+        if(gpif_rst || state == STATE_DATA_RX || state == STATE_PKTEND)
+            non_rx_cycles <= 0;
+        else if (non_rx_cycles != rx_idle_flush_cycles)
+            non_rx_cycles <= non_rx_cycles + 1;
+    end
+
+    //when should we flush aka pktend?
+    //pktend_latch tells us that its ok to flush -> we just had an RX xfer with EOF
+    //the RX DSP not running or a cycle counter gives us the flushing response dynamic
+    wire rx_data_flush = (~dsp_rx_run || non_rx_cycles == rx_idle_flush_cycles) && pktend_latch;
+
    // //////////////////////////////////////////////////////////////
    // FX2 slave FIFO bus master state machine
    //
    always @(posedge gpif_clk)
-     if(gpif_rst) 
+     if(gpif_rst) begin
        state <= STATE_IDLE;
+       pktend_latch <= 0;
+     end
      else
         begin
        case (state)
@@ -131,11 +148,8 @@ module slave_fifo
              state <= STATE_DATA_TX_SLOE;
            else if(data_rx_src_rdy & ~FX2_DF)
              state <= STATE_DATA_RX_ADR;
-           else if(~data_rx_src_rdy & ~dsp_rx_run & pktend_latch & ~FX2_DF)
+           else if(rx_data_flush & ~FX2_DF)
              state <= STATE_PKTEND_ADR;
-             
-           if(data_rx_src_rdy)
-             pktend_latch <= 1;
             end
 
          STATE_DATA_TX_SLOE: //just to assert SLOE one cycle before SLRD
@@ -150,8 +164,10 @@ module slave_fifo
 
          STATE_DATA_RX:
             begin
-                if(data_rx_src_rdy && data_rx_dst_rdy)
+                if(data_rx_src_rdy && data_rx_dst_rdy) begin
                     transfer_count <= transfer_count + 1;
+                    pktend_latch <= gpif_d_out_data[17]; //ok to do pkt end when we complete with EOF
+                end
                 else
                     state <= STATE_IDLE;
                 last_data_bus_hog <= BUS_HOG_RX;
@@ -314,9 +330,9 @@ module slave_fifo
       .arst(fifo_rst));
 
    //rd_fifo buffers writes to the 2clock fifo above
-   fifo_cascade #(.WIDTH(16), .SIZE(RXFIFOSIZE)) rd_fifo
+   fifo_cascade #(.WIDTH(18), .SIZE(RXFIFOSIZE)) rd_fifo
      (.clk(~gpif_clk), .reset(gpif_rst), .clear(clear_rx),
-      .datain(data_rx_int), .src_rdy_i(rx_src_rdy_int), .dst_rdy_o(rx_dst_rdy_int), .space(rxfifospace),
+      .datain(data_rx_int[17:0]), .src_rdy_i(rx_src_rdy_int), .dst_rdy_o(rx_dst_rdy_int), .space(rxfifospace),
       .dataout(gpif_d_out_data), .src_rdy_o(data_rx_src_rdy), .dst_rdy_i(data_rx_dst_rdy), .occupied());
 
    // ////////////////////////////////////////////////////////////////////
