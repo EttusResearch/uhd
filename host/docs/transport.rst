@@ -111,6 +111,9 @@ FastSendDatagramThreshold registry key to change documented here:
 
 * http://www.microsoft.com/windows/windowsmedia/howto/articles/optimize_web.aspx#appendix_e
 
+The quick and easy way:
+Double click and run <install-path>/share/uhd/FastSendDatagramThreshold.reg
+
 ------------------------------------------------------------------------
 USB Transport (LibUSB)
 ------------------------------------------------------------------------
