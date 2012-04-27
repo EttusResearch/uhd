@@ -22,6 +22,7 @@
 #include <uhd/exception.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/format.hpp>
+#include <boost/foreach.hpp>
 #include <complex>
 
 using namespace uhd;
@@ -51,17 +52,9 @@ std::string convert::id_type::to_pp_string(void) const{
 }
 
 /***********************************************************************
- * Define types for the function tables
- **********************************************************************/
-struct fcn_table_entry_type{
-    convert::priority_type prio;
-    convert::function_type fcn;
-};
-
-/***********************************************************************
  * Setup the table registry
  **********************************************************************/
-typedef uhd::dict<convert::id_type, fcn_table_entry_type> fcn_table_type;
+typedef uhd::dict<convert::id_type, uhd::dict<convert::priority_type, convert::function_type> > fcn_table_type;
 UHD_SINGLETON_FCN(fcn_table_type, get_table);
 
 /***********************************************************************
@@ -72,14 +65,7 @@ void uhd::convert::register_converter(
     const function_type &fcn,
     const priority_type prio
 ){
-    //get a reference to the function table
-    fcn_table_type &table = get_table();
-
-    //register the function if higher priority
-    if (not table.has_key(id) or table[id].prio < prio){
-        table[id].fcn = fcn;
-        table[id].prio = prio;
-    }
+    get_table()[id][prio] = fcn;
 
     //----------------------------------------------------------------//
     UHD_LOGV(always) << "register_converter: " << id.to_pp_string() << std::endl
@@ -92,9 +78,26 @@ void uhd::convert::register_converter(
 /***********************************************************************
  * The converter functions
  **********************************************************************/
-convert::function_type convert::get_converter(const id_type &id){
-    if (get_table().has_key(id)) return get_table()[id].fcn;
-    throw uhd::key_error("Cannot find a conversion routine for " + id.to_pp_string());
+convert::function_type convert::get_converter(
+    const id_type &id,
+    const priority_type prio
+){
+    if (not get_table().has_key(id)) throw uhd::key_error(
+        "Cannot find a conversion routine for " + id.to_pp_string());
+
+    //find a matching priority
+    priority_type best_prio = -1;
+    BOOST_FOREACH(priority_type prio_i, get_table()[id].keys()){
+        if (prio_i == prio) return get_table()[id][prio];
+        best_prio = std::max(best_prio, prio_i);
+    }
+
+    //wanted a specific prio, didnt find
+    if (prio != -1) throw uhd::key_error(
+        "Cannot find a conversion routine [with prio] for " + id.to_pp_string());
+
+    //otherwise, return best prio
+    return get_table()[id][best_prio];
 }
 
 /***********************************************************************

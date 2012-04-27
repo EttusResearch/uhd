@@ -19,6 +19,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/foreach.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/assign/list_of.hpp>
 #include <complex>
 #include <vector>
 #include <cstdlib>
@@ -45,7 +46,9 @@ template <typename Range> static void loopback(
     convert::id_type &in_id,
     convert::id_type &out_id,
     const Range &input,
-    Range &output
+    Range &output,
+    const int prio_in = -1,
+    const int prio_out = -1
 ){
     //item32 is largest device type
     std::vector<boost::uint32_t> interm(nsamps);
@@ -54,12 +57,12 @@ template <typename Range> static void loopback(
     std::vector<void *> output0(1, &interm[0]), output1(1, &output[0]);
 
     //convert to intermediate type
-    convert::converter::sptr c0 = convert::get_converter(in_id)();
+    convert::converter::sptr c0 = convert::get_converter(in_id, prio_in)();
     c0->set_scalar(32767.);
     c0->conv(input0, output0, nsamps);
 
     //convert back to host type
-    convert::converter::sptr c1 = convert::get_converter(out_id)();
+    convert::converter::sptr c1 = convert::get_converter(out_id, prio_out)();
     c1->set_scalar(1/32767.);
     c1->conv(input1, output1, nsamps);
 }
@@ -133,10 +136,21 @@ static void test_convert_types_for_floats(
     convert::id_type out_id = id;
     std::swap(out_id.input_format, out_id.output_format);
     std::swap(out_id.num_inputs, out_id.num_outputs);
-    loopback(nsamps, in_id, out_id, input, output);
-    for (size_t i = 0; i < nsamps; i++){
-        MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(1./32767));
-        MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(1./32767));
+
+    //make a list of all prio: best/generic combos
+    typedef std::pair<int, int> int_pair_t;
+    std::vector<int_pair_t> prios = boost::assign::list_of
+        (int_pair_t(0, 0)) (int_pair_t(-1, 0))
+        (int_pair_t(0, -1)) (int_pair_t(-1, -1))
+    ;
+
+    //loopback foreach prio combo (generic vs best)
+    BOOST_FOREACH(const int_pair_t &prio, prios){
+        loopback(nsamps, in_id, out_id, input, output, prio.first, prio.second);
+        for (size_t i = 0; i < nsamps; i++){
+            MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(1./32767));
+            MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(1./32767));
+        }
     }
 }
 

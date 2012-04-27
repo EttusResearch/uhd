@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -80,9 +80,13 @@ namespace uhd{ namespace convert{
     /*!
      * Get a converter factory function.
      * \param id identify the conversion
+     * \param prio the desired prio or -1 for best
      * \return the converter factory function
      */
-    UHD_API function_type get_converter(const id_type &id);
+    UHD_API function_type get_converter(
+        const id_type &id,
+        const priority_type prio = -1
+    );
 
     /*!
      * Register the size of a particular item.
