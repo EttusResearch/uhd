@@ -71,10 +71,14 @@ UNSET(CMAKE_REQUIRED_FLAGS)
 
 IF(HAVE_EMMINTRIN_H)
     SET(convert_with_sse2_sources
-        ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc32_with_sse2.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc64_with_sse2.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc32_to_sc8_with_sse2.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc64_to_sc8_with_sse2.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_fc64.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_fc32.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc8_to_fc64.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc8_to_fc32.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sse2_fc64_to_sc16.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sse2_fc32_to_sc16.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sse2_fc64_to_sc8.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sse2_fc32_to_sc8.cpp
     )
     SET_SOURCE_FILES_PROPERTIES(
         ${convert_with_sse2_sources}
@@ -117,4 +121,5 @@ LIBUHD_PYTHON_GEN_SOURCE(
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_tables.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/convert_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/convert_item32.cpp
 )

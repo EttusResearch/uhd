@@ -21,41 +21,21 @@
 
 using namespace uhd::convert;
 
-UHD_INLINE __m128i pack_sc32_4x_be(
+UHD_INLINE __m128i pack_sc32_4x(
     const __m128 &in0, const __m128 &in1,
     const __m128 &in2, const __m128 &in3,
-    const __m128 &scalar
+    const __m128 &scalar, const int shuf
 ){
     __m128i tmpi0 = _mm_cvtps_epi32(_mm_mul_ps(in0, scalar));
-    tmpi0 = _mm_shuffle_epi32(tmpi0, _MM_SHUFFLE(1, 0, 3, 2));
+    tmpi0 = _mm_shuffle_epi32(tmpi0, shuf);
     __m128i tmpi1 = _mm_cvtps_epi32(_mm_mul_ps(in1, scalar));
-    tmpi1 = _mm_shuffle_epi32(tmpi1, _MM_SHUFFLE(1, 0, 3, 2));
+    tmpi1 = _mm_shuffle_epi32(tmpi1, shuf);
     const __m128i lo = _mm_packs_epi32(tmpi0, tmpi1);
 
     __m128i tmpi2 = _mm_cvtps_epi32(_mm_mul_ps(in2, scalar));
-    tmpi2 = _mm_shuffle_epi32(tmpi2, _MM_SHUFFLE(1, 0, 3, 2));
+    tmpi2 = _mm_shuffle_epi32(tmpi2, shuf);
     __m128i tmpi3 = _mm_cvtps_epi32(_mm_mul_ps(in3, scalar));
-    tmpi3 = _mm_shuffle_epi32(tmpi3, _MM_SHUFFLE(1, 0, 3, 2));
-    const __m128i hi = _mm_packs_epi32(tmpi2, tmpi3);
-
-    return _mm_packs_epi16(lo, hi);
-}
-
-UHD_INLINE __m128i pack_sc32_4x_le(
-    const __m128 &in0, const __m128 &in1,
-    const __m128 &in2, const __m128 &in3,
-    const __m128 &scalar
-){
-    __m128i tmpi0 = _mm_cvtps_epi32(_mm_mul_ps(in0, scalar));
-    tmpi0 = _mm_shuffle_epi32(tmpi0, _MM_SHUFFLE(2, 3, 0, 1));
-    __m128i tmpi1 = _mm_cvtps_epi32(_mm_mul_ps(in1, scalar));
-    tmpi1 = _mm_shuffle_epi32(tmpi1, _MM_SHUFFLE(2, 3, 0, 1));
-    const __m128i lo = _mm_packs_epi32(tmpi0, tmpi1);
-
-    __m128i tmpi2 = _mm_cvtps_epi32(_mm_mul_ps(in2, scalar));
-    tmpi2 = _mm_shuffle_epi32(tmpi2, _MM_SHUFFLE(2, 3, 0, 1));
-    __m128i tmpi3 = _mm_cvtps_epi32(_mm_mul_ps(in3, scalar));
-    tmpi3 = _mm_shuffle_epi32(tmpi3, _MM_SHUFFLE(2, 3, 0, 1));
+    tmpi3 = _mm_shuffle_epi32(tmpi3, shuf);
     const __m128i hi = _mm_packs_epi32(tmpi2, tmpi3);
 
     return _mm_packs_epi16(lo, hi);
@@ -76,7 +56,7 @@ DECLARE_CONVERTER(fc32, 1, sc8_item32_be, 1, PRIORITY_SIMD){
         __m128 tmp3 = _mm_load ## _al_ ## ps(reinterpret_cast<const float *>(input+i+6)); \
                                                                         \
         /* convert */                                                   \
-        const __m128i tmpi = pack_sc32_4x_be(tmp0, tmp1, tmp2, tmp3, scalar); \
+        const __m128i tmpi = pack_sc32_4x(tmp0, tmp1, tmp2, tmp3, scalar, _MM_SHUFFLE(1, 0, 3, 2)); \
                                                                         \
         /* store to output */                                           \
         _mm_storeu_si128(reinterpret_cast<__m128i *>(output+j), tmpi);  \
@@ -93,16 +73,7 @@ DECLARE_CONVERTER(fc32, 1, sc8_item32_be, 1, PRIORITY_SIMD){
     }
 
     //convert remainder
-    const size_t num_pairs = nsamps/2;
-    for (size_t j = i/2; j < num_pairs; j++, i+=2){
-        const item32_t item = fc32_to_item32_sc8(input[i], input[i+1], scale_factor);
-        output[j] = uhd::byteswap(item);
-    }
-
-    if (nsamps != num_pairs*2){
-        const item32_t item = fc32_to_item32_sc8(input[nsamps-1], 0, scale_factor);
-        output[num_pairs] = uhd::byteswap(item);
-    }
+    xx_to_item32_sc8<uhd::htonx>(input+i, output+(i/2), nsamps-i, scale_factor);
 }
 
 DECLARE_CONVERTER(fc32, 1, sc8_item32_le, 1, PRIORITY_SIMD){
@@ -120,7 +91,7 @@ DECLARE_CONVERTER(fc32, 1, sc8_item32_le, 1, PRIORITY_SIMD){
         __m128 tmp3 = _mm_load ## _al_ ## ps(reinterpret_cast<const float *>(input+i+6)); \
                                                                         \
         /* convert */                                                   \
-        const __m128i tmpi = pack_sc32_4x_le(tmp0, tmp1, tmp2, tmp3, scalar); \
+        const __m128i tmpi = pack_sc32_4x(tmp0, tmp1, tmp2, tmp3, scalar, _MM_SHUFFLE(2, 3, 0, 1)); \
                                                                         \
         /* store to output */                                           \
         _mm_storeu_si128(reinterpret_cast<__m128i *>(output+j), tmpi);  \
@@ -137,14 +108,5 @@ DECLARE_CONVERTER(fc32, 1, sc8_item32_le, 1, PRIORITY_SIMD){
     }
 
     //convert remainder
-    const size_t num_pairs = nsamps/2;
-    for (size_t j = i/2; j < num_pairs; j++, i+=2){
-        const item32_t item = fc32_to_item32_sc8(input[i], input[i+1], scale_factor);
-        output[j] = (item);
-    }
-
-    if (nsamps != num_pairs*2){
-        const item32_t item = fc32_to_item32_sc8(input[nsamps-1], 0, scale_factor);
-        output[num_pairs] = (item);
-    }
+    xx_to_item32_sc8<uhd::htowx>(input+i, output+(i/2), nsamps-i, scale_factor);
 }

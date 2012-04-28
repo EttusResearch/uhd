@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,8 +36,7 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_le, 1, PRIORITY_SIMD){
         vst1_s16((reinterpret_cast<int16_t *>(&output[i])), D9);
     }
 
-    for (; i < nsamps; i++)
-        output[i] = fc32_to_item32_sc16(input[i], scale_factor);
+    xx_to_item32_sc16<uhd::htowx>(input+i, output+i, nsamps-i, scale_factor);
 }
 
 DECLARE_CONVERTER(sc16_item32_le, 1, fc32, 1, PRIORITY_SIMD){
@@ -56,6 +55,5 @@ DECLARE_CONVERTER(sc16_item32_le, 1, fc32, 1, PRIORITY_SIMD){
         vst1q_f32((reinterpret_cast<float *>(&output[i])), Q4);
     }
 
-    for (; i < nsamps; i++)
-        output[i] = item32_sc16_to_fc32(input[i], scale_factor);
+    item32_sc16_to_xx<uhd::htowx>(input+i, output+i, nsamps-i, scale_factor);
 }

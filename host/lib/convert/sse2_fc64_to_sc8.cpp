@@ -30,23 +30,13 @@ UHD_INLINE __m128i pack_sc8_item32_4x(
     return _mm_packs_epi16(lo, hi);
 }
 
-UHD_INLINE __m128i pack_sc32_4x_be(
+UHD_INLINE __m128i pack_sc32_4x(
     const __m128d &lo, const __m128d &hi,
     const __m128d &scalar
 ){
     const __m128i tmpi_lo = _mm_cvttpd_epi32(_mm_mul_pd(hi, scalar));
     const __m128i tmpi_hi = _mm_cvttpd_epi32(_mm_mul_pd(lo, scalar));
     return _mm_unpacklo_epi64(tmpi_lo, tmpi_hi);
-}
-
-UHD_INLINE __m128i pack_sc32_4x_le(
-    const __m128d &lo, const __m128d &hi,
-    const __m128d &scalar
-){
-    const __m128i tmpi_lo = _mm_cvttpd_epi32(_mm_mul_pd(lo, scalar));
-    const __m128i tmpi_hi = _mm_cvttpd_epi32(_mm_mul_pd(hi, scalar));
-    const __m128i tmpi = _mm_unpacklo_epi64(tmpi_lo, tmpi_hi);
-    return _mm_shuffle_epi32(tmpi, _MM_SHUFFLE(2, 3, 0, 1));
 }
 
 DECLARE_CONVERTER(fc64, 1, sc8_item32_be, 1, PRIORITY_SIMD){
@@ -69,10 +59,10 @@ DECLARE_CONVERTER(fc64, 1, sc8_item32_be, 1, PRIORITY_SIMD){
                                                                         \
         /* interleave */                                                \
         const __m128i tmpi = pack_sc8_item32_4x(                        \
-            pack_sc32_4x_be(tmp0, tmp1, scalar),                        \
-            pack_sc32_4x_be(tmp2, tmp3, scalar),                        \
-            pack_sc32_4x_be(tmp4, tmp5, scalar),                        \
-            pack_sc32_4x_be(tmp6, tmp7, scalar)                         \
+            pack_sc32_4x(tmp0, tmp1, scalar),                           \
+            pack_sc32_4x(tmp2, tmp3, scalar),                           \
+            pack_sc32_4x(tmp4, tmp5, scalar),                           \
+            pack_sc32_4x(tmp6, tmp7, scalar)                            \
         );                                                              \
                                                                         \
         /* store to output */                                           \
@@ -90,16 +80,7 @@ DECLARE_CONVERTER(fc64, 1, sc8_item32_be, 1, PRIORITY_SIMD){
     }
 
     //convert remainder
-    const size_t num_pairs = nsamps/2;
-    for (size_t j = i/2; j < num_pairs; j++, i+=2){
-        const item32_t item = fc64_to_item32_sc8(input[i], input[i+1], scale_factor);
-        output[j] = uhd::byteswap(item);
-    }
-
-    if (nsamps != num_pairs*2){
-        const item32_t item = fc64_to_item32_sc8(input[nsamps-1], 0, scale_factor);
-        output[num_pairs] = uhd::byteswap(item);
-    }
+    xx_to_item32_sc8<uhd::htonx>(input+i, output+(i/2), nsamps-i, scale_factor);
 }
 
 DECLARE_CONVERTER(fc64, 1, sc8_item32_le, 1, PRIORITY_SIMD){
@@ -121,12 +102,13 @@ DECLARE_CONVERTER(fc64, 1, sc8_item32_le, 1, PRIORITY_SIMD){
         __m128d tmp7 = _mm_load ## _al_ ## pd(reinterpret_cast<const double *>(input+i+7)); \
                                                                         \
         /* interleave */                                                \
-        const __m128i tmpi = pack_sc8_item32_4x(                        \
-            pack_sc32_4x_le(tmp0, tmp1, scalar),                        \
-            pack_sc32_4x_le(tmp2, tmp3, scalar),                        \
-            pack_sc32_4x_le(tmp4, tmp5, scalar),                        \
-            pack_sc32_4x_le(tmp6, tmp7, scalar)                         \
+        __m128i tmpi = pack_sc8_item32_4x(                              \
+            pack_sc32_4x(tmp1, tmp0, scalar),                           \
+            pack_sc32_4x(tmp3, tmp2, scalar),                           \
+            pack_sc32_4x(tmp5, tmp4, scalar),                           \
+            pack_sc32_4x(tmp7, tmp6, scalar)                            \
         );                                                              \
+        tmpi = _mm_or_si128(_mm_srli_epi16(tmpi, 8), _mm_slli_epi16(tmpi, 8)); /*byteswap*/\
                                                                         \
         /* store to output */                                           \
         _mm_storeu_si128(reinterpret_cast<__m128i *>(output+j), tmpi);  \
@@ -143,14 +125,5 @@ DECLARE_CONVERTER(fc64, 1, sc8_item32_le, 1, PRIORITY_SIMD){
     }
 
     //convert remainder
-    const size_t num_pairs = nsamps/2;
-    for (size_t j = i/2; j < num_pairs; j++, i+=2){
-        const item32_t item = fc64_to_item32_sc8(input[i], input[i+1], scale_factor);
-        output[j] = (item);
-    }
-
-    if (nsamps != num_pairs*2){
-        const item32_t item = fc64_to_item32_sc8(input[nsamps-1], 0, scale_factor);
-        output[num_pairs] = (item);
-    }
+    xx_to_item32_sc8<uhd::htowx>(input+i, output+(i/2), nsamps-i, scale_factor);
 }
