@@ -23,11 +23,12 @@ using namespace uhd::convert;
 
 static const __m128i zeroi = _mm_setzero_si128();
 
+template <const int shuf>
 UHD_INLINE void unpack_sc32_4x(
     const __m128i &in,
     __m128 &out0, __m128 &out1,
     __m128 &out2, __m128 &out3,
-    const __m128 &scalar, const int shuf
+    const __m128 &scalar
 ){
     const __m128i tmplo = _mm_unpacklo_epi8(zeroi, in); /* value in upper 8 bits */
     __m128i tmp0 = _mm_shuffle_epi32(_mm_unpacklo_epi16(zeroi, tmplo), shuf); /* value in upper 16 bits */
@@ -47,6 +48,7 @@ DECLARE_CONVERTER(sc8_item32_be, 1, fc32, 1, PRIORITY_SIMD){
     fc32_t *output = reinterpret_cast<fc32_t *>(outputs[0]);
 
     const __m128 scalar = _mm_set_ps1(float(scale_factor)/(1 << 24));
+    const int shuf = _MM_SHUFFLE(1, 0, 3, 2);
 
     size_t i = 0, j = 0;
     fc32_t dummy;
@@ -64,7 +66,7 @@ DECLARE_CONVERTER(sc8_item32_be, 1, fc32, 1, PRIORITY_SIMD){
                                                                         \
         /* unpack + swap 8-bit pairs */                                 \
         __m128 tmp0, tmp1, tmp2, tmp3;                                  \
-        unpack_sc32_4x(tmpi, tmp0, tmp1, tmp2, tmp3, scalar, _MM_SHUFFLE(1, 0, 3, 2)); \
+        unpack_sc32_4x<shuf>(tmpi, tmp0, tmp1, tmp2, tmp3, scalar); \
                                                                         \
         /* store to output */                                           \
         _mm_store ## _al_ ## ps(reinterpret_cast<float *>(output+j+0), tmp0); \
@@ -90,6 +92,7 @@ DECLARE_CONVERTER(sc8_item32_le, 1, fc32, 1, PRIORITY_SIMD){
     fc32_t *output = reinterpret_cast<fc32_t *>(outputs[0]);
 
     const __m128 scalar = _mm_set_ps1(float(scale_factor)/(1 << 24));
+    const int shuf = _MM_SHUFFLE(2, 3, 0, 1);
 
     size_t i = 0, j = 0;
     fc32_t dummy;
@@ -107,7 +110,7 @@ DECLARE_CONVERTER(sc8_item32_le, 1, fc32, 1, PRIORITY_SIMD){
                                                                         \
         /* unpack + swap 8-bit pairs */                                 \
         __m128 tmp0, tmp1, tmp2, tmp3;                                  \
-        unpack_sc32_4x(tmpi, tmp0, tmp1, tmp2, tmp3, scalar, _MM_SHUFFLE(2, 3, 0, 1)); \
+        unpack_sc32_4x<shuf>(tmpi, tmp0, tmp1, tmp2, tmp3, scalar); \
                                                                         \
         /* store to output */                                           \
         _mm_store ## _al_ ## ps(reinterpret_cast<float *>(output+j+0), tmp0); \

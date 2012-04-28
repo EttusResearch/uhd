@@ -16,6 +16,7 @@
 //
 
 #include "convert_common.hpp"
+#include <uhd/utils/byteswap.hpp>
 #include <arm_neon.h>
 
 using namespace uhd::convert;

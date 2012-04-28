@@ -29,9 +29,9 @@ UHD_INLINE void unpack_sc32_8x(
     __m128d &out2, __m128d &out3,
     __m128d &out4, __m128d &out5,
     __m128d &out6, __m128d &out7,
-    const __m128d &scalar,
-    const int shuf = _MM_SHUFFLE(1, 0, 3, 2)
+    const __m128d &scalar
 ){
+    const int shuf = _MM_SHUFFLE(1, 0, 3, 2);
     __m128i tmp;
 
     const __m128i tmplo = _mm_unpacklo_epi8(zeroi, in); /* value in upper 8 bits */
