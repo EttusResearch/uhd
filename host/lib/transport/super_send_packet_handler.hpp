@@ -77,6 +77,12 @@ public:
         _header_offset_words32 = header_offset_words32;
     }
 
+    //! Set the stream ID for a specific channel (or no SID)
+    void set_xport_chan_sid(const size_t xport_chan, const bool has_sid, const boost::uint32_t sid = 0){
+        _props.at(xport_chan).has_sid = has_sid;
+        _props.at(xport_chan).sid = sid;
+    }
+
     //! Set the rate of ticks per second
     void set_tick_rate(const double rate){
         _tick_rate = rate;
@@ -133,7 +139,7 @@ public:
         //translate the metadata to vrt if packet info
         vrt::if_packet_info_t if_packet_info;
         if_packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_DATA;
-        if_packet_info.has_sid = false;
+        //if_packet_info.has_sid = false; //set per channel
         if_packet_info.has_cid = false;
         if_packet_info.has_tlr = true;
         if_packet_info.has_tsi = false;
@@ -195,7 +201,10 @@ private:
     size_t _header_offset_words32;
     double _tick_rate, _samp_rate;
     struct xport_chan_props_type{
+        xport_chan_props_type(void):has_sid(false){}
         get_buff_type get_buff;
+        bool has_sid;
+        boost::uint32_t sid;
     };
     std::vector<xport_chan_props_type> _props;
     std::vector<const void *> _io_buffs; //used in conversion
@@ -233,6 +242,8 @@ private:
             boost::uint32_t *otw_mem = buff->cast<boost::uint32_t *>() + _header_offset_words32;
 
             //pack metadata into a vrt header
+            if_packet_info.has_sid = props.has_sid;
+            if_packet_info.sid = props.sid;
             _vrt_packer(otw_mem, if_packet_info);
             otw_mem += if_packet_info.num_header_words32;
 
