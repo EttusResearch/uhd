@@ -205,9 +205,9 @@ def win_get_interfaces():
                     hexMask = struct.unpack("<L", socket.inet_aton(ipMask))[0]
                     if(hexAddr and hexMask): #don't broadcast on 255.255.255.255, that's just lame
                         yield socket.inet_ntoa(struct.pack("<L", (hexAddr & hexMask) | (~hexMask) & 0xFFFFFFFF))
-                adNode = adNode.next
-                if not adNode:
-                    break
+                try: adNode = adNode.next
+                except: break
+                if not adNode: break
 
 def enumerate_devices():
     for bcast_addr in get_interfaces():
