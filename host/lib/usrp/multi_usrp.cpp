@@ -579,6 +579,10 @@ public:
         );
     }
 
+    freq_range_t get_fe_rx_freq_range(size_t chan){
+        return _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "freq" / "range").get();
+    }
+
     void set_rx_gain(double gain, const std::string &name, size_t chan){
         return rx_gain_group(chan)->set_value(gain, name);
     }
@@ -725,6 +729,10 @@ public:
             _tree->access<meta_range_t>(tx_dsp_root(chan) / "freq" / "range").get(),
             this->get_tx_bandwidth(chan)
         );
+    }
+
+    freq_range_t get_fe_tx_freq_range(size_t chan){
+        return _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "freq" / "range").get();
     }
 
     void set_tx_gain(double gain, const std::string &name, size_t chan){

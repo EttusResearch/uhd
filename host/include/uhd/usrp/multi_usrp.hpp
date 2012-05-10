@@ -447,6 +447,13 @@ public:
     virtual freq_range_t get_rx_freq_range(size_t chan = 0) = 0;
 
     /*!
+     * Get the center frequency range of the RF frontend.
+     * \param chan the channel index 0 to N-1
+     * \return a frequency range object
+     */
+    virtual freq_range_t get_fe_rx_freq_range(size_t chan = 0) = 0;
+
+    /*!
      * Set the RX gain value for the specified gain element.
      * For an empty name, distribute across all gain elements.
      * \param gain the gain in dB
@@ -691,6 +698,13 @@ public:
      * \return a frequency range object
      */
     virtual freq_range_t get_tx_freq_range(size_t chan = 0) = 0;
+
+    /*!
+     * Get the center frequency range of the TX frontend.
+     * \param chan the channel index 0 to N-1
+     * \return a frequency range object
+     */
+    virtual freq_range_t get_fe_tx_freq_range(size_t chan = 0) = 0;
 
     /*!
      * Set the TX gain value for the specified gain element.
