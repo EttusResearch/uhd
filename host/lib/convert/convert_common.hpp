@@ -194,11 +194,13 @@ static UHD_INLINE void item32_sc8_to_fc64(item32_t item, fc64_t &out0, fc64_t &o
  * Convert complex char to items32 sc8 buffer
  **********************************************************************/
 static UHD_INLINE item32_t sc8_to_item32_sc8(sc8_t in0, sc8_t in1, double){
+    boost::uint8_t real0 = boost::int8_t(in0.real());
+    boost::uint8_t imag0 = boost::int8_t(in0.imag());
+    boost::uint8_t real1 = boost::int8_t(in1.real());
+    boost::uint8_t imag1 = boost::int8_t(in1.imag());
     return
-        (item32_t(boost::uint8_t(in0.real())) << 8) |
-        (item32_t(boost::uint8_t(in0.imag())) << 0) |
-        (item32_t(boost::uint8_t(in1.real())) << 24) |
-        (item32_t(boost::uint8_t(in1.imag())) << 16)
+        (item32_t(real0) << 8) | (item32_t(imag0) << 0) |
+        (item32_t(real1) << 24) | (item32_t(imag1) << 16)
     ;
 }
 
@@ -206,11 +208,13 @@ static UHD_INLINE item32_t sc8_to_item32_sc8(sc8_t in0, sc8_t in1, double){
  * Convert complex short to items32 sc8 buffer
  **********************************************************************/
 static UHD_INLINE item32_t sc16_to_item32_sc8(sc16_t in0, sc16_t in1, double){
+    boost::uint8_t real0 = boost::int8_t(in0.real());
+    boost::uint8_t imag0 = boost::int8_t(in0.imag());
+    boost::uint8_t real1 = boost::int8_t(in1.real());
+    boost::uint8_t imag1 = boost::int8_t(in1.imag());
     return
-        (item32_t(boost::uint8_t(in0.real())) << 8) |
-        (item32_t(boost::uint8_t(in0.imag())) << 0) |
-        (item32_t(boost::uint8_t(in1.real())) << 24) |
-        (item32_t(boost::uint8_t(in1.imag())) << 16)
+        (item32_t(real0) << 8) | (item32_t(imag0) << 0) |
+        (item32_t(real1) << 24) | (item32_t(imag1) << 16)
     ;
 }
 
@@ -218,11 +222,13 @@ static UHD_INLINE item32_t sc16_to_item32_sc8(sc16_t in0, sc16_t in1, double){
  * Convert complex float to items32 sc8 buffer
  **********************************************************************/
 static UHD_INLINE item32_t fc32_to_item32_sc8(fc32_t in0, fc32_t in1, double scale_factor){
+    boost::uint8_t real0 = boost::int8_t(in0.real()*float(scale_factor));
+    boost::uint8_t imag0 = boost::int8_t(in0.imag()*float(scale_factor));
+    boost::uint8_t real1 = boost::int8_t(in1.real()*float(scale_factor));
+    boost::uint8_t imag1 = boost::int8_t(in1.imag()*float(scale_factor));
     return
-        (item32_t(boost::uint8_t(in0.real()*float(scale_factor))) << 8) |
-        (item32_t(boost::uint8_t(in0.imag()*float(scale_factor))) << 0) |
-        (item32_t(boost::uint8_t(in1.real()*float(scale_factor))) << 24) |
-        (item32_t(boost::uint8_t(in1.imag()*float(scale_factor))) << 16)
+        (item32_t(real0) << 8) | (item32_t(imag0) << 0) |
+        (item32_t(real1) << 24) | (item32_t(imag1) << 16)
     ;
 }
 
@@ -230,11 +236,13 @@ static UHD_INLINE item32_t fc32_to_item32_sc8(fc32_t in0, fc32_t in1, double sca
  * Convert complex double to items32 sc8 buffer
  **********************************************************************/
 static UHD_INLINE item32_t fc64_to_item32_sc8(fc64_t in0, fc64_t in1, double scale_factor){
+    boost::uint8_t real0 = boost::int8_t(in0.real()*(scale_factor));
+    boost::uint8_t imag0 = boost::int8_t(in0.imag()*(scale_factor));
+    boost::uint8_t real1 = boost::int8_t(in1.real()*(scale_factor));
+    boost::uint8_t imag1 = boost::int8_t(in1.imag()*(scale_factor));
     return
-        (item32_t(boost::uint8_t(in0.real()*(scale_factor))) << 8) |
-        (item32_t(boost::uint8_t(in0.imag()*(scale_factor))) << 0) |
-        (item32_t(boost::uint8_t(in1.real()*(scale_factor))) << 24) |
-        (item32_t(boost::uint8_t(in1.imag()*(scale_factor))) << 16)
+        (item32_t(real0) << 8) | (item32_t(imag0) << 0) |
+        (item32_t(real1) << 24) | (item32_t(imag1) << 16)
     ;
 }
 
