@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,30 +34,22 @@ namespace uhd{ namespace usrp{
      */
     struct UHD_API mboard_eeprom_t : uhd::dict<std::string, std::string>{
 
-        //! Possible EEPROM maps types
-        enum map_type{
-            MAP_N100,
-            MAP_B000,
-            MAP_B100,
-            MAP_E100
-        };
-
         //! Make a new empty mboard eeprom
         mboard_eeprom_t(void);
 
         /*!
          * Make a new mboard EEPROM handler.
          * \param iface the interface to i2c
-         * \param map the map type enum
+         * \param which which EEPROM map to use
          */
-        mboard_eeprom_t(i2c_iface &iface, map_type map);
+        mboard_eeprom_t(i2c_iface &iface, const std::string &which);
 
         /*!
          * Write the contents of this object to the EEPROM.
          * \param iface the interface to i2c
-         * \param map the map type enum
+         * \param which which EEPROM map to use
          */
-        void commit(i2c_iface &iface, map_type map) const;
+        void commit(i2c_iface &iface, const std::string &which) const;
 
     };
 

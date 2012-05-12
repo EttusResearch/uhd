@@ -708,7 +708,7 @@ usrp2_impl::~usrp2_impl(void){UHD_SAFE_CALL(
 )}
 
 void usrp2_impl::set_mb_eeprom(const std::string &mb, const uhd::usrp::mboard_eeprom_t &mb_eeprom){
-    mb_eeprom.commit(*(_mbc[mb].iface), mboard_eeprom_t::MAP_N100);
+    mb_eeprom.commit(*(_mbc[mb].iface), USRP2_EEPROM_MAP_KEY);
 }
 
 void usrp2_impl::set_db_eeprom(const std::string &mb, const std::string &type, const uhd::usrp::dboard_eeprom_t &db_eeprom){

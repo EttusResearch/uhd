@@ -447,20 +447,16 @@ mboard_eeprom_t::mboard_eeprom_t(void){
     /* NOP */
 }
 
-mboard_eeprom_t::mboard_eeprom_t(i2c_iface &iface, map_type map){
-    switch(map){
-    case MAP_N100: load_n100(*this, iface); break;
-    case MAP_B000: load_b000(*this, iface); break;
-    case MAP_B100: load_b100(*this, iface); break;
-    case MAP_E100: load_e100(*this, iface); break;
-    }
+mboard_eeprom_t::mboard_eeprom_t(i2c_iface &iface, const std::string &which){
+    if (which == "N100") load_n100(*this, iface);
+    if (which == "B000") load_b000(*this, iface);
+    if (which == "B100") load_b100(*this, iface);
+    if (which == "E100") load_e100(*this, iface);
 }
 
-void mboard_eeprom_t::commit(i2c_iface &iface, map_type map) const{
-    switch(map){
-    case MAP_N100: store_n100(*this, iface); break;
-    case MAP_B000: store_b000(*this, iface); break;
-    case MAP_B100: store_b100(*this, iface); break;
-    case MAP_E100: store_e100(*this, iface); break;
-    }
+void mboard_eeprom_t::commit(i2c_iface &iface, const std::string &which) const{
+    if (which == "N100") store_n100(*this, iface);
+    if (which == "B000") store_b000(*this, iface);
+    if (which == "B100") store_b100(*this, iface);
+    if (which == "E100") store_e100(*this, iface);
 }

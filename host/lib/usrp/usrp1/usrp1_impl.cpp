@@ -121,7 +121,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
             catch(const uhd::exception &){continue;} //ignore claimed
 
             fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(control);
-            const mboard_eeprom_t mb_eeprom(*fx2_ctrl, mboard_eeprom_t::MAP_B000);
+            const mboard_eeprom_t mb_eeprom(*fx2_ctrl, USRP1_EEPROM_MAP_KEY);
             device_addr_t new_addr;
             new_addr["type"] = "usrp1";
             new_addr["name"] = mb_eeprom["name"];
@@ -221,7 +221,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
-    const mboard_eeprom_t mb_eeprom(*_fx2_ctrl, mboard_eeprom_t::MAP_B000);
+    const mboard_eeprom_t mb_eeprom(*_fx2_ctrl, USRP1_EEPROM_MAP_KEY);
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(mb_eeprom)
         .subscribe(boost::bind(&usrp1_impl::set_mb_eeprom, this, _1));
@@ -452,7 +452,7 @@ bool usrp1_impl::has_tx_halfband(void){
  * Properties callback methods below
  **********************************************************************/
 void usrp1_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom){
-    mb_eeprom.commit(*_fx2_ctrl, mboard_eeprom_t::MAP_B000);
+    mb_eeprom.commit(*_fx2_ctrl, USRP1_EEPROM_MAP_KEY);
 }
 
 void usrp1_impl::set_db_eeprom(const std::string &db, const std::string &type, const uhd::usrp::dboard_eeprom_t &db_eeprom){

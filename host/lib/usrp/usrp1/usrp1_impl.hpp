@@ -37,6 +37,8 @@
 #ifndef INCLUDED_USRP1_IMPL_HPP
 #define INCLUDED_USRP1_IMPL_HPP
 
+static const std::string USRP1_EEPROM_MAP_KEY = "B000";
+
 /*!
  * USRP1 implementation guts:
  * The implementation details are encapsulated here.

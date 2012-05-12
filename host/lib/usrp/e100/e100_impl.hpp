@@ -53,6 +53,7 @@ static const boost::uint16_t E100_FPGA_COMPAT_NUM = 10;
 static const boost::uint32_t E100_RX_SID_BASE = 2;
 static const boost::uint32_t E100_TX_ASYNC_SID = 1;
 static const double          E100_DEFAULT_CLOCK_RATE = 64e6;
+static const std::string     E100_EEPROM_MAP_KEY = "E100";
 
 //! load an fpga image from a bin file into the usrp-e fpga
 extern void e100_load_fpga(const std::string &bin_file);

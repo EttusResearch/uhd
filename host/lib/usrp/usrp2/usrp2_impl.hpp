@@ -53,6 +53,7 @@ static const size_t mimo_clock_sync_delay_cycles = 138;
 static const size_t USRP2_SRAM_BYTES = size_t(1 << 20);
 static const boost::uint32_t USRP2_TX_ASYNC_SID = 2;
 static const boost::uint32_t USRP2_RX_SID_BASE = 3;
+static const std::string USRP2_EEPROM_MAP_KEY = "N100";
 
 //! Make a usrp2 dboard interface.
 uhd::usrp::dboard_iface::sptr make_usrp2_dboard_iface(

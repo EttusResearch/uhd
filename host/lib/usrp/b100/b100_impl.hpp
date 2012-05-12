@@ -53,6 +53,7 @@ static const boost::uint32_t B100_RX_SID_BASE = 2;
 static const boost::uint32_t B100_TX_ASYNC_SID = 1;
 static const double          B100_DEFAULT_TICK_RATE = 64e6;
 static const size_t          B100_MAX_PKT_BYTE_LIMIT = 2048;
+static const std::string     B100_EEPROM_MAP_KEY = "B100";
 
 //! Make a b100 dboard interface
 uhd::usrp::dboard_iface::sptr make_b100_dboard_iface(

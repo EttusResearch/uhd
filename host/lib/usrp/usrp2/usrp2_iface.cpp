@@ -16,6 +16,7 @@
 //
 
 #include "usrp2_regs.hpp"
+#include "usrp2_impl.hpp"
 #include "fw_common.h"
 #include "usrp2_iface.hpp"
 #include <uhd/exception.hpp>
@@ -108,7 +109,7 @@ public:
             throw uhd::runtime_error("firmware not responding");
         _protocol_compat = ntohl(ctrl_data.proto_ver);
 
-        mb_eeprom = mboard_eeprom_t(*this, mboard_eeprom_t::MAP_N100);
+        mb_eeprom = mboard_eeprom_t(*this, USRP2_EEPROM_MAP_KEY);
     }
 
     ~usrp2_iface_impl(void){UHD_SAFE_CALL(
