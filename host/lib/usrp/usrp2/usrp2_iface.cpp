@@ -21,6 +21,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhd/utils/images.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>
@@ -31,12 +32,14 @@
 #include <boost/bind.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/filesystem.hpp>
 #include <algorithm>
 #include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
+namespace fs = boost::filesystem;
 
 static const double CTRL_RECV_TIMEOUT = 1.0;
 static const size_t CTRL_RECV_RETRIES = 3;
@@ -311,8 +314,10 @@ public:
                     "\nPlease update the firmware and FPGA images for your device.\n"
                     "See the application notes for USRP2/N-Series for instructions.\n"
                     "Expected protocol compatibility number %s, but got %d:\n"
-                    "The firmware build is not compatible with the host code build."
-                ) % ((lo == hi)? (boost::format("%d") % hi) : (boost::format("[%d to %d]") % lo % hi)) % compat));
+                    "The firmware build is not compatible with the host code build.\n"
+                    "%s\n"
+                ) % ((lo == hi)? (boost::format("%d") % hi) : (boost::format("[%d to %d]") % lo % hi))
+                  % compat % this->images_warn_help_message()));
             }
             if (len >= sizeof(usrp2_ctrl_data_t) and ntohl(ctrl_data_in->seq) == _ctrl_seq_num){
                 return *ctrl_data_in;
@@ -354,6 +359,48 @@ public:
     const std::string get_fw_version_string(void){
         boost::uint32_t minor = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_VER_MINOR);
         return str(boost::format("%u.%u") % _protocol_compat % minor);
+    }
+
+    std::string images_warn_help_message(void){
+        //determine the images names
+        std::string fw_image, fpga_image;
+        switch(this->get_rev()){
+        case USRP2_REV3:   fpga_image = "usrp2_fpga.bin";        fw_image = "usrp2_fw.bin";     break;
+        case USRP2_REV4:   fpga_image = "usrp2_fpga.bin";        fw_image = "usrp2_fw.bin";     break;
+        case USRP_N200:    fpga_image = "usrp_n200_r2_fpga.bin"; fw_image = "usrp_n200_fw.bin"; break;
+        case USRP_N210:    fpga_image = "usrp_n210_r2_fpga.bin"; fw_image = "usrp_n210_fw.bin"; break;
+        case USRP_N200_R4: fpga_image = "usrp_n200_r4_fpga.bin"; fw_image = "usrp_n200_fw.bin"; break;
+        case USRP_N210_R4: fpga_image = "usrp_n210_r4_fpga.bin"; fw_image = "usrp_n210_fw.bin"; break;
+        default: break;
+        }
+        if (fw_image.empty() or fpga_image.empty()) return "";
+
+        //look up the real FS path to the images
+        std::string fw_image_path, fpga_image_path;
+        try{
+            fw_image_path = uhd::find_image_path(fw_image);
+            fpga_image_path = uhd::find_image_path(fpga_image);
+        }
+        catch(const std::exception &){
+            return str(boost::format("Could not find %s and %s in your images path!") % fw_image % fpga_image);
+        }
+
+        //does your platform use sudo?
+        std::string sudo;
+        #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_MACOS)
+            sudo = "sudo";
+        #endif
+
+        //create the burner command
+        if (this->get_rev() == USRP2_REV3 or this->get_rev() == USRP2_REV4){
+            const std::string card_burner = (fs::path(fw_image_path).branch_path().branch_path() / "utils" / "usrp2_card_burner_gui.py").string();
+            return str(boost::format("Please run: %s %s \\\n\t--fpga=%s \\\n\t--fw=%s") % sudo % card_burner % fpga_image_path % fw_image_path);
+        }
+        else{
+            const std::string addr = _ctrl_transport->get_recv_addr();
+            const std::string net_burner = (fs::path(fw_image_path).branch_path().branch_path() / "utils" / "usrp_n2xx_net_burner_gui.py").string();
+            return str(boost::format("Please run: %s \\\n\t--fpga=%s \\\n\t--fw=%s \\\n\t--addr=%s") % net_burner % fpga_image_path % fw_image_path % addr);
+        }
     }
 
 private:

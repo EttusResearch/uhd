@@ -69,6 +69,9 @@ public:
     //! A version string for firmware
     virtual const std::string get_fw_version_string(void) = 0;
 
+    //! Construct a helpful warning message for images
+    virtual std::string images_warn_help_message(void) = 0;
+
     //motherboard eeprom map structure
     uhd::usrp::mboard_eeprom_t mb_eeprom;
 };
