@@ -204,7 +204,7 @@ public:
           break;
 
         default:
-          throw uhd::not_implemented_error("enable_tx_dboard_clock: unknown hardware version");
+          //throw uhd::not_implemented_error("enable_tx_dboard_clock: unknown hardware version");
           break;
         }
 

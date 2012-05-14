@@ -279,8 +279,10 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     // create frontend control objects
     ////////////////////////////////////////////////////////////////////
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
+        .set(subdev_spec_t())
         .subscribe(boost::bind(&usrp1_impl::update_rx_subdev_spec, this, _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
+        .set(subdev_spec_t())
         .subscribe(boost::bind(&usrp1_impl::update_tx_subdev_spec, this, _1));
 
     BOOST_FOREACH(const std::string &db, _dbc.keys()){
