@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/paths.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
@@ -35,12 +36,6 @@ namespace boost{ namespace interprocess{
 #else
 #include <boost/interprocess/sync/file_lock.hpp>
 #endif
-#ifdef BOOST_MSVC
-#define USE_GET_TEMP_PATH
-#include <Windows.h> //GetTempPath
-#endif
-#include <stdio.h> //P_tmpdir
-#include <cstdlib> //getenv
 #include <fstream>
 #include <sstream>
 #include <cctype>
@@ -48,42 +43,6 @@ namespace boost{ namespace interprocess{
 namespace fs = boost::filesystem;
 namespace pt = boost::posix_time;
 namespace ip = boost::interprocess;
-
-/***********************************************************************
- * Helper function to get the system's temporary path
- **********************************************************************/
-static fs::path get_temp_path(void){
-    const char *tmp_path = NULL;
-
-    //try the official uhd temp path environment variable
-    tmp_path = std::getenv("UHD_TEMP_PATH");
-    if (tmp_path != NULL) return tmp_path;
-
-    //try the windows function if available
-    #ifdef USE_GET_TEMP_PATH
-    char lpBuffer[2048];
-    if (GetTempPath(sizeof(lpBuffer), lpBuffer)) return lpBuffer;
-    #endif
-
-    //try windows environment variables
-    tmp_path = std::getenv("TMP");
-    if (tmp_path != NULL) return tmp_path;
-
-    tmp_path = std::getenv("TEMP");
-    if (tmp_path != NULL) return tmp_path;
-
-    //try the stdio define if available
-    #ifdef P_tmpdir
-        return P_tmpdir;
-    #endif
-
-    //try unix environment variables
-    tmp_path = std::getenv("TMPDIR");
-    if (tmp_path != NULL) return tmp_path;
-
-    //give up and use the unix default
-    return "/tmp";
-}
 
 /***********************************************************************
  * Global resources for the logger
@@ -119,7 +78,7 @@ public:
     void log_to_file(const std::string &log_msg){
         boost::mutex::scoped_lock lock(_mutex);
         if (_file_lock == NULL){
-            const std::string log_path = (get_temp_path() / "uhd.log").string();
+            const std::string log_path = (fs::path(uhd::get_tmp_path()) / "uhd.log").string();
             _file_stream.open(log_path.c_str(), std::fstream::out | std::fstream::app);
             _file_lock = new ip::file_lock(log_path.c_str());
         }

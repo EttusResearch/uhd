@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,10 @@
 #include <vector>
 #include <cstdlib> //getenv
 #include <cstdio>  //P_tmpdir
+#ifdef BOOST_MSVC
+#define USE_GET_TEMP_PATH
+#include <windows.h> //GetTempPath
+#endif
 
 namespace fs = boost::filesystem;
 
@@ -87,13 +91,35 @@ std::vector<fs::path> get_module_paths(void){
  * Implement the functions in paths.hpp
  **********************************************************************/
 std::string uhd::get_tmp_path(void){
-    const char *tmp_path = std::getenv("TMP");
+    const char *tmp_path = NULL;
+
+    //try the official uhd temp path environment variable
+    tmp_path = std::getenv("UHD_TEMP_PATH");
     if (tmp_path != NULL) return tmp_path;
 
+    //try the windows function if available
+    #ifdef USE_GET_TEMP_PATH
+    char lpBuffer[2048];
+    if (GetTempPath(sizeof(lpBuffer), lpBuffer)) return lpBuffer;
+    #endif
+
+    //try windows environment variables
+    tmp_path = std::getenv("TMP");
+    if (tmp_path != NULL) return tmp_path;
+
+    tmp_path = std::getenv("TEMP");
+    if (tmp_path != NULL) return tmp_path;
+
+    //try the stdio define if available
     #ifdef P_tmpdir
     if (P_tmpdir != NULL) return P_tmpdir;
     #endif
 
+    //try unix environment variables
+    tmp_path = std::getenv("TMPDIR");
+    if (tmp_path != NULL) return tmp_path;
+
+    //give up and use the unix default
     return "/tmp";
 }
 
