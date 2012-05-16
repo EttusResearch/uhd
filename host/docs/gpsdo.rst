@@ -75,6 +75,6 @@ format using the time.h library in C, boost::posix_time in C++, etc.
 
 Other information can be fetched as well. You can query the lock status
 with the "gps_locked" sensor, as well as obtain raw NMEA sentences using
-the "gps_gpgsa", "gps_gprmc", and "gps_gpgga" sensors. Location
+the "gps_gprmc", and "gps_gpgga" sensors. Location
 information can be parsed out of the "gps_gpgga" sensor by using gpsd or
 another NMEA parser.
