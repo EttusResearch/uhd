@@ -98,7 +98,6 @@ public:
     std::vector<std::string> ret = boost::assign::list_of
         ("gps_gpgga")
         ("gps_gprmc")
-        ("gps_gpgsa")
         ("gps_time")
         ("gps_locked");
     return ret;
@@ -106,8 +105,7 @@ public:
 
   uhd::sensor_value_t get_sensor(std::string key) {
     if(key == "gps_gpgga"
-    or key == "gps_gprmc"
-    or key == "gps_gpgsa") {
+    or key == "gps_gprmc") {
         return sensor_value_t(
                  boost::to_upper_copy(key),
                  get_nmea(boost::to_upper_copy(key.substr(4,8))),
@@ -139,8 +137,6 @@ private:
     _send("GPS:GGAST 0\n");
      sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
     _send("GPS:GPRMC 1\n");
-     sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
-    _send("GPS:GPGSA 1\n");
      sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
   }
  
