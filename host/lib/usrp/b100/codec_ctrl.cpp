@@ -105,7 +105,7 @@ b100_codec_ctrl_impl::b100_codec_ctrl_impl(spi_iface::sptr iface){
     _ad9862_regs.dll_mode = ad9862_regs_t::DLL_MODE_FAST;
 
     //write the register settings to the codec
-    for (uint8_t addr = 0; addr <= 25; addr++){
+    for (boost::uint8_t addr = 0; addr <= 25; addr++){
         this->send_reg(addr);
     }
 
