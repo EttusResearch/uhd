@@ -105,14 +105,22 @@ Set the values permanently by editing **/etc/sysctl.conf**.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Windows specific notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-On Windows, it is important to change the default UDP behavior such that
+**UDP send fast-path:**
+It is important to change the default UDP behavior such that
 1500 byte packets still travel through the fast path of the sockets stack.
-FastSendDatagramThreshold registry key to change documented here:
+This can be adjusted with the FastSendDatagramThreshold registry key:
 
-* http://www.microsoft.com/windows/windowsmedia/howto/articles/optimize_web.aspx#appendix_e
+* FastSendDatagramThreshold registry key documented here:
 
-The quick and easy way:
-Double click and run <install-path>/share/uhd/FastSendDatagramThreshold.reg
+  * http://www.microsoft.com/windows/windowsmedia/howto/articles/optimize_web.aspx#appendix_e
+
+* Double click and run <install-path>/share/uhd/FastSendDatagramThreshold.reg
+* A system reboot is recommended after the registry key change.
+
+**Power profile:**
+The Windows power profile can seriously impact instantaneous bandwidth.
+Application can take time to ramp-up to full performance capability.
+It is recommended that users set the power profile to "high performance".
 
 ------------------------------------------------------------------------
 USB Transport (LibUSB)
