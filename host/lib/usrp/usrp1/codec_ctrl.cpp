@@ -392,7 +392,7 @@ double calc_dxc_freq(double target_freq, double rate)
         while(delta < -rate) {
             delta += rate;
         }
-        std::cout << std::fixed << "delta: " << delta << std::endl;
+        //std::cout << std::fixed << "delta: " << delta << std::endl;
         if (delta >= -rate/2) {
             // non-inverted region
             dxc_freq = -delta;
