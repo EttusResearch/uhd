@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -372,9 +372,43 @@ double usrp1_codec_ctrl_impl::fine_tune(double codec_rate, double target_freq)
     return actual_freq;
 }
 
-void usrp1_codec_ctrl_impl::set_duc_freq(double freq, double rate)
+double calc_dxc_freq(double target_freq, double rate)
 {
+    double delta = target_freq; //- bandwidth;
+    double dxc_freq = 0.0;
+
+    if (delta >= 0) {
+        while(delta > rate) {
+            delta -= rate;
+        }
+        if (delta <= rate/2) {
+            // non-inverted region
+            dxc_freq = -delta;
+        } else {
+            // inverted region
+            dxc_freq = -(delta - rate) ;
+        }
+    } else {
+        while(delta < -rate) {
+            delta += rate;
+        }
+        //std::cout << std::fixed << "delta: " << delta << std::endl;
+        if (delta >= -rate/2) {
+            // non-inverted region
+            dxc_freq = -delta;
+        } else {
+            // inverted region
+            dxc_freq = -(delta + rate);
+        }
+    }
+
+    return dxc_freq;
+}
+
+void usrp1_codec_ctrl_impl::set_duc_freq(double frequency, double rate){
+
     double codec_rate = rate * 2;
+    double freq = calc_dxc_freq(frequency, codec_rate);
     double coarse_freq = coarse_tune(codec_rate, freq);
     double fine_freq = fine_tune(codec_rate / 4, freq - coarse_freq);
 
