@@ -56,6 +56,10 @@ public:
         if (_mimo_delay_cycles != 0) _sources.push_back("mimo");
     }
 
+    void enable_gpsdo(void){
+        _sources.push_back("gpsdo");
+    }
+
     void set_tick_rate(const double rate){
         _tick_rate = rate;
     }
@@ -100,7 +104,7 @@ public:
         assert_has(_sources, source, "time source");
 
         //setup pps flags
-        if (source == "external"){
+        if (source == "external" or source == "gpsdo"){
             _iface->poke32(REG_TIME64_FLAGS, FLAG_TIME64_PPS_SMA | FLAG_TIME64_PPS_POSEDGE);
         }
         else if (source == "_external_"){

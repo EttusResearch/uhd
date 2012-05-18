@@ -604,7 +604,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         //setup reference source props
         _tree->create<std::string>(mb_path / "clock_source/value")
             .subscribe(boost::bind(&usrp2_impl::update_clock_source, this, mb, _1));
-        static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("mimo");
+        std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("mimo");
+        if (_mbc[mb].gps and _mbc[mb].gps->gps_detected()) clock_sources.push_back("gpsdo");
         _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
         //plug timed commands into tree here
         switch(_mbc[mb].iface->get_rev()){
@@ -690,10 +691,11 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         _tree->access<std::string>(root / "time_source/value").set("none");
 
         //GPS installed: use external ref, time, and init time spec
-        if (_mbc[mb].gps.get() and _mbc[mb].gps->gps_detected()){
+        if (_mbc[mb].gps and _mbc[mb].gps->gps_detected()){
+            _mbc[mb].time64->enable_gpsdo();
             UHD_MSG(status) << "Setting references to the internal GPSDO" << std::endl;
-            _tree->access<std::string>(root / "time_source/value").set("external");
-            _tree->access<std::string>(root / "clock_source/value").set("external");
+            _tree->access<std::string>(root / "time_source/value").set("gpsdo");
+            _tree->access<std::string>(root / "clock_source/value").set("gpsdo");
             UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
             _mbc[mb].time64->set_time_next_pps(time_spec_t(time_t(_mbc[mb].gps->get_sensor("gps_time").to_int()+1)));
         }
@@ -771,6 +773,7 @@ void usrp2_impl::update_clock_source(const std::string &mb, const std::string &s
     case usrp2_iface::USRP_N210_R4:
         if      (source == "internal")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x12);
         else if (source == "external")  _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
+        else if (source == "gpsdo")     _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x1C);
         else if (source == "mimo")      _mbc[mb].iface->poke32(U2_REG_MISC_CTRL_CLOCK, 0x15);
         else throw uhd::value_error("unhandled clock configuration reference source: " + source);
         _mbc[mb].clock->enable_external_ref(true); //USRP2P has an internal 10MHz TCXO

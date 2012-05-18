@@ -350,7 +350,8 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     //setup reference source props
     _tree->create<std::string>(mb_path / "clock_source/value")
         .subscribe(boost::bind(&e100_impl::update_clock_source, this, _1));
-    static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("auto");
+    std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("auto");
+    if (_gps and _gps->gps_detected()) clock_sources.push_back("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
 
     ////////////////////////////////////////////////////////////////////
@@ -426,10 +427,11 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tree->access<std::string>(mb_path / "time_source/value").set("none");
 
     //GPS installed: use external ref, time, and init time spec
-    if (_gps.get() != NULL and _gps->gps_detected()){
+    if (_gps and _gps->gps_detected()){
+        _time64->enable_gpsdo();
         UHD_MSG(status) << "Setting references to the internal GPSDO" << std::endl;
-        _tree->access<std::string>(mb_path / "time_source/value").set("external");
-        _tree->access<std::string>(mb_path / "clock_source/value").set("external");
+        _tree->access<std::string>(mb_path / "time_source/value").set("gpsdo");
+        _tree->access<std::string>(mb_path / "clock_source/value").set("gpsdo");
         UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
         _time64->set_time_next_pps(time_spec_t(time_t(_gps->get_sensor("gps_time").to_int()+1)));
     }
@@ -462,6 +464,7 @@ void e100_impl::update_clock_source(const std::string &source){
     if      (source == "auto")     _clock_ctrl->use_auto_ref();
     else if (source == "internal") _clock_ctrl->use_internal_ref();
     else if (source == "external") _clock_ctrl->use_external_ref();
+    else if (source == "gpsdo")    _clock_ctrl->use_external_ref();
     else throw uhd::runtime_error("unhandled clock configuration reference source: " + source);
 }
 
