@@ -34,20 +34,20 @@ A few notable rates are:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set 61.44MHz - uses external VCXO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To use the 61.44MHz clock rate, the USRP embedded will require two jumpers to be moved.
+To use the 61.44MHz clock rate, the USRP embedded will require one jumper to be moved,
+and X4 must be populated with a 61.44 MHz oscillator.
 
-* J16 is a two pin header, remove the jumper (or leave it on pin1 only)
-* J15 is a three pin header, move the jumper to (pin1, pin2)
+* **J15** is a three pin header, move the jumper to (pin1, pin2)
+* **357LB3I061M4400** is the recommended oscillator for X4
 
 **Note:** See instructions below to communicate the desired clock rate into the UHD.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set other rates - uses internal VCO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To use other clock rates, the jumpers will need to be in the default position.
+To use other clock rates, the jumper will need to be in the default position.
 
-* J16 is a two pin header, move the jumper to (pin1, pin2)
-* J15 is a three pin header, move the jumper to (pin2, pin3)
+* **J15** is a three pin header, move the jumper to (pin2, pin3)
 
 To communicate the desired clock rate into the UHD,
 specify the a special device address argument,
