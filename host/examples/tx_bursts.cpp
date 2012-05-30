@@ -100,12 +100,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //allocate buffer with data to send
     const size_t spb = tx_stream->get_max_num_samps();
 
-    std::vector<std::complex<float> *> buffs;
-    for(size_t i=0; i < usrp->get_num_mboards(); i++) {
-        buffs.push_back(new std::complex<float>[spb]);
-        for(size_t n=0; n < spb; n++)
-            buffs.back()[n] = std::complex<float>(ampl, ampl);
-    };
+    std::vector<std::complex<float> > buff(spb, std::complex<float>(ampl, ampl));
+    std::vector<std::complex<float> *> buffs(usrp->get_tx_num_channels(), &buff.front());
 
     std::signal(SIGINT, &sig_int_handler);
     if(repeat) std::cout << "Press Ctrl + C to quit..." << std::endl;
@@ -127,9 +123,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         while(num_acc_samps < total_num_samps){
             size_t samps_to_send = std::min(total_num_samps - num_acc_samps, spb);
 
-            //ensure the the last packet has EOB set
-            md.end_of_burst = samps_to_send <= spb;
-
             //send a single packet
             size_t num_tx_samps = tx_stream->send(
                 buffs, samps_to_send, md, timeout
@@ -144,6 +137,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
             num_acc_samps += num_tx_samps;
         }
+
+        md.end_of_burst = true;
+        tx_stream->send(buffs, 0, md, timeout);
 
         time_to_send += rep_rate;
 
