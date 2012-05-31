@@ -19,6 +19,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread/thread.hpp> //thread sleep
@@ -74,6 +75,15 @@ public:
         }
 
         this->clear();
+    }
+
+    ~rx_dsp_core_200_impl(void)
+    {
+        UHD_SAFE_CALL
+        (
+            //shutdown any possible streaming
+            this->clear();
+        )
     }
 
     void clear(void){
