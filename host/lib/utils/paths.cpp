@@ -71,19 +71,20 @@ static std::vector<fs::path> get_env_paths(const std::string &var_name){
 /***********************************************************************
  * Get a list of special purpose paths
  **********************************************************************/
-static fs::path get_uhd_pkg_data_path(void){
-    return fs::path(get_env_var("UHD_PKG_DATA_PATH", UHD_PKG_DATA_PATH));
+std::string uhd::get_pkg_data_path(void)
+{
+    return get_env_var("UHD_PKG_DATA_PATH", UHD_PKG_DATA_PATH);
 }
 
 std::vector<fs::path> get_image_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_IMAGE_PATH");
-    paths.push_back(get_uhd_pkg_data_path() / "images");
+    paths.push_back(fs::path(uhd::get_pkg_data_path()) / "images");
     return paths;
 }
 
 std::vector<fs::path> get_module_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_MODULE_PATH");
-    paths.push_back(get_uhd_pkg_data_path() / "modules");
+    paths.push_back(fs::path(uhd::get_pkg_data_path()) / "modules");
     return paths;
 }
 
