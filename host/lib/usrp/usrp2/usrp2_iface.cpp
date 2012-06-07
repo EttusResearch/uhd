@@ -376,6 +376,13 @@ public:
         }
         if (fw_image.empty() or fpga_image.empty()) return "";
 
+        //does your platform use sudo?
+        std::string sudo;
+        #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_MACOS)
+            sudo = "sudo ";
+        #endif
+
+
         //look up the real FS path to the images
         std::string fw_image_path, fpga_image_path;
         try{
@@ -383,14 +390,8 @@ public:
             fpga_image_path = uhd::find_image_path(fpga_image);
         }
         catch(const std::exception &){
-            return str(boost::format("Could not find %s and %s in your images path!") % fw_image % fpga_image);
+            return str(boost::format("Could not find %s and %s in your images path!\n%s") % fw_image % fpga_image % print_images_error());
         }
-
-        //does your platform use sudo?
-        std::string sudo;
-        #if defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_MACOS)
-            sudo = "sudo";
-        #endif
 
         //escape char for multi-line cmd + newline + indent?
         #ifdef UHD_PLATFORM_WIN32
@@ -399,15 +400,18 @@ public:
             const std::string ml = "\\\n    ";
         #endif
 
-        //create the burner command
+        //create the images downloader and burner commands
+        const std::string images_downloader_cmd = str(boost::format("%s\"%s\"") % sudo % find_images_downloader());
         if (this->get_rev() == USRP2_REV3 or this->get_rev() == USRP2_REV4){
             const std::string card_burner = (fs::path(fw_image_path).branch_path().branch_path() / "utils" / "usrp2_card_burner_gui.py").string();
-            return str(boost::format("Please run:\n%s \"%s\" %s--fpga=\"%s\" %s--fw=\"%s\"") % sudo % card_burner % ml % fpga_image_path % ml % fw_image_path);
+            const std::string card_burner_cmd = str(boost::format("\"%s%s\" %s--fpga=\"%s\" %s--fw=\"%s\"") % sudo % card_burner % ml % fpga_image_path % ml % fw_image_path);
+            return str(boost::format("%s\n%s") % print_images_error() % card_burner_cmd);
         }
         else{
             const std::string addr = _ctrl_transport->get_recv_addr();
             const std::string net_burner = (fs::path(fw_image_path).branch_path().branch_path() / "utils" / "usrp_n2xx_net_burner_gui.py").string();
-            return str(boost::format("Please run:\n\"%s\" %s--fpga=\"%s\" %s--fw=\"%s\" %s--addr=\"%s\"") % net_burner % ml % fpga_image_path % ml % fw_image_path % ml % addr);
+            const std::string net_burner_cmd = str(boost::format("\"%s\" %s--fpga=\"%s\" %s--fw=\"%s\" %s--addr=\"%s\"") % net_burner % ml % fpga_image_path % ml % fw_image_path % ml % addr);
+            return str(boost::format("%s\n%s") % print_images_error() % net_burner_cmd);
         }
     }
 

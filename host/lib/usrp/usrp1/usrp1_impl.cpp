@@ -89,11 +89,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
             usrp1_fw_image = find_image_path(hint.get("fw", "usrp1_fw.ihx"));
         }
         catch(...){
-            UHD_MSG(warning) << boost::format(
-                "Could not locate USRP1 firmware.\n"
-                "Please install the images package.\n"
-            );
-            return usrp1_addrs;
+            UHD_MSG(warning) << boost::format("Could not locate USRP1 firmware. %s") % print_images_error();
         }
         UHD_LOG << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
 

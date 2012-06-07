@@ -35,6 +35,7 @@
 #include <boost/lexical_cast.hpp>
 #include "b100_regs.hpp"
 #include <cstdio>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -85,13 +86,10 @@ static device_addrs_t b100_find(const device_addr_t &hint)
             b100_fw_image = find_image_path(hint.get("fw", B100_FW_FILE_NAME));
         }
         catch(...){
-            UHD_MSG(warning) << boost::format(
-                "Could not locate B100 firmware.\n"
-                "Please install the images package.\n"
-            );
+            UHD_MSG(warning) << boost::format("Could not locate B100 firmware. %s\n") % print_images_error();
             return b100_addrs;
         }
-        UHD_LOG << "the  firmware image: " << b100_fw_image << std::endl;
+        UHD_LOG << "the firmware image: " << b100_fw_image << std::endl;
 
         usb_control::sptr control;
         try{control = usb_control::make(handle, 0);}
@@ -497,8 +495,9 @@ void b100_impl::check_fw_compat(void){
     if (fw_compat_num != B100_FW_COMPAT_NUM){
         throw uhd::runtime_error(str(boost::format(
             "Expected firmware compatibility number 0x%x, but got 0x%x:\n"
-            "The firmware build is not compatible with the host code build."
-        ) % B100_FW_COMPAT_NUM % fw_compat_num));
+            "The firmware build is not compatible with the host code build.\n"
+            "%s"
+        ) % B100_FW_COMPAT_NUM % fw_compat_num % print_images_error()));
     }
 }
 
@@ -513,7 +512,8 @@ void b100_impl::check_fpga_compat(void){
         throw uhd::runtime_error(str(boost::format(
             "Expected FPGA compatibility number %d, but got %d:\n"
             "The FPGA build is not compatible with the host code build."
-        ) % int(B100_FPGA_COMPAT_NUM) % fpga_major));
+            "%s"
+        ) % int(B100_FPGA_COMPAT_NUM) % fpga_major % print_images_error()));
     }
     _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
 }

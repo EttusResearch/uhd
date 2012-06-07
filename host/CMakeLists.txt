@@ -192,6 +192,12 @@ INSTALL(FILES
 )
 
 ########################################################################
+# Images download directory for utils/uhd_images_downloader.py
+########################################################################
+
+SET(UHD_IMAGES_DOWNLOAD_SRC "http://files.ettus.com/binaries/master_images/archive/uhd-images_003.004.001-109-g6ca39ad9.zip")
+
+########################################################################
 # Register top level components
 ########################################################################
 LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_CHEETAH" OFF)
@@ -275,3 +281,4 @@ ENDIF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
 UHD_PRINT_COMPONENT_SUMMARY()
 MESSAGE(STATUS "Building version: ${UHD_VERSION}")
 MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
+MESSAGE(STATUS "Compatible images can be downloaded from: ${UHD_IMAGES_DOWNLOAD_SRC}")

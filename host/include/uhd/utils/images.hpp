@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010,2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,6 +32,21 @@ namespace uhd{
      * \throw exception if the image was not found
      */
     UHD_API std::string find_image_path(const std::string &image_name);
+
+    /*!
+     * Search for the location of the UHD Images Downloader script.
+     * \return the full system path to uhd_images_downloader.py
+     */
+
+    UHD_API std::string find_images_downloader(void);
+
+    /*!
+     * Return the error string for recommending using the UHD Images Downloader.
+     * String depends on OS.
+     * \return the message suggesting the use of uhd_images_downloader.py
+     */
+
+    UHD_API std::string print_images_error(void);
 
 } //namespace uhd
 

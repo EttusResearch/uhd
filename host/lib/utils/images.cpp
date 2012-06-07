@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,16 +17,18 @@
 
 #include <uhd/utils/images.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/paths.hpp>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <vector>
+#include <iostream>
 
 namespace fs = boost::filesystem;
 
 std::vector<fs::path> get_image_paths(void); //defined in paths.cpp
 
 /***********************************************************************
- * Find a image in the image paths
+ * Find an image in the image paths
  **********************************************************************/
 std::string uhd::find_image_path(const std::string &image_name){
     if (fs::exists(image_name)){
@@ -37,4 +39,16 @@ std::string uhd::find_image_path(const std::string &image_name){
         if (fs::exists(image_path)) return image_path.string();
     }
     throw uhd::io_error("Could not find path for image: " + image_name);
+}
+
+std::string uhd::find_images_downloader(void){
+    return fs::path((fs::path(get_pkg_data_path()) / "utils" / "uhd_images_downloader.py")).string();
+}
+
+std::string uhd::print_images_error(void){
+    #ifdef UHD_PLATFORM_WIN32
+    return "As an Administrator, please run:\n\n\"" + find_images_downloader() + "\"";
+    #else
+    return "Please run:\n\nsudo \"" + find_images_downloader() + "\"";
+    #endif
 }

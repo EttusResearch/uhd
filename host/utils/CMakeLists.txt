@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2012 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -63,6 +63,17 @@ FOREACH(util_source ${util_share_sources})
     TARGET_LINK_LIBRARIES(${util_name} uhd)
     INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
 ENDFOREACH(util_source)
+
+#UHD images downloader configuration
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/uhd_images_downloader.py
+    ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
+@ONLY)
+INSTALL(PROGRAMS
+    ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
+    DESTINATION ${PKG_LIB_DIR}/utils
+    COMPONENT utilities
+)
 
 IF(ENABLE_USRP2)
     IF(WIN32 AND UHD_RELEASE_MODE) #include dd.exe
