@@ -196,14 +196,16 @@ double wbx_base::wbx_version2::set_lo_freq(dboard_iface::unit_t unit, double tar
     if(ref_freq <= 12.5e6) D = adf4350_regs_t::REFERENCE_DOUBLER_ENABLED;
 
     //increase RF divider until acceptable VCO frequency
+    const bool do_sync = (target_freq/2 > ref_freq);
     double vco_freq = target_freq;
     while (vco_freq < 2.2e9) {
         vco_freq *= 2;
         RFdiv *= 2;
     }
+    if (do_sync) vco_freq = target_freq;
 
     //use 8/9 prescaler for vco_freq > 3 GHz (pg.18 prescaler)
-    adf4350_regs_t::prescaler_t prescaler = target_freq > 3e9 ? adf4350_regs_t::PRESCALER_8_9 : adf4350_regs_t::PRESCALER_4_5;
+    adf4350_regs_t::prescaler_t prescaler = vco_freq > 3e9 ? adf4350_regs_t::PRESCALER_8_9 : adf4350_regs_t::PRESCALER_4_5;
 
     /*
      * The goal here is to loop though possible R dividers,
@@ -230,7 +232,7 @@ double wbx_base::wbx_version2::set_lo_freq(dboard_iface::unit_t unit, double tar
         if (pfd_freq > 25e6) continue;
 
         //ignore fractional part of tuning
-        N = int(std::floor(target_freq/pfd_freq));
+        N = int(std::floor(vco_freq/pfd_freq));
 
         //keep N > minimum int divider requirement
         if (N < prescaler_to_min_int_div[prescaler]) continue;
@@ -245,7 +247,7 @@ double wbx_base::wbx_version2::set_lo_freq(dboard_iface::unit_t unit, double tar
 
     //Fractional-N calculation
     MOD = 4095; //max fractional accuracy
-    FRAC = int((target_freq/pfd_freq - N)*MOD);
+    FRAC = int((vco_freq/pfd_freq - N)*MOD);
 
     //Reference divide-by-2 for 50% duty cycle
     // if R even, move one divide by 2 to to regs.reference_divide_by_2
@@ -255,7 +257,7 @@ double wbx_base::wbx_version2::set_lo_freq(dboard_iface::unit_t unit, double tar
     }
 
     //actual frequency calculation
-    actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/2);
+    actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/2/(vco_freq/target_freq));
 
     UHD_LOGV(often)
         << boost::format("WBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
@@ -271,9 +273,12 @@ double wbx_base::wbx_version2::set_lo_freq(dboard_iface::unit_t unit, double tar
     regs.frac_12_bit = FRAC;
     regs.int_16_bit = N;
     regs.mod_12_bit = MOD;
-    regs.clock_divider_12_bit = std::max(1, int(std::ceil(400e-6*pfd_freq/MOD)));
-    regs.feedback_select = adf4350_regs_t::FEEDBACK_SELECT_DIVIDED;
-    regs.clock_div_mode = adf4350_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE;
+    if (do_sync)
+    {
+        regs.clock_divider_12_bit = std::max(1, int(std::ceil(400e-6*pfd_freq/MOD)));
+        regs.feedback_select = adf4350_regs_t::FEEDBACK_SELECT_DIVIDED;
+        regs.clock_div_mode = adf4350_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE;
+    }
     regs.prescaler = prescaler;
     regs.r_counter_10_bit = R;
     regs.reference_divide_by_2 = T;
