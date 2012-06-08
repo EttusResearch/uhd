@@ -69,9 +69,9 @@ static std::string prop_names_to_pp_string(const std::vector<std::string> &prop_
     return ss.str();
 }
 
-static std::string get_subdev_pp_string(const std::string &type, property_tree::sptr tree, const fs_path &path){
+static std::string get_frontend_pp_string(const std::string &type, property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
-    ss << boost::format("%s Subdev: %s") % type % path.leaf() << std::endl;
+    ss << boost::format("%s Frontend: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
 
     ss << boost::format("Name: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
@@ -123,7 +123,7 @@ static std::string get_dboard_pp_string(const std::string &type, property_tree::
         if (not gdb_eeprom.serial.empty()) ss << boost::format("Serial: %s") % gdb_eeprom.serial << std::endl;
     }
     BOOST_FOREACH(const std::string &name, tree->list(path / (prefix + "_frontends"))){
-        ss << make_border(get_subdev_pp_string(type, tree, path / (prefix + "_frontends") / name));
+        ss << make_border(get_frontend_pp_string(type, tree, path / (prefix + "_frontends") / name));
     }
     ss << make_border(get_codec_pp_string(type, tree, path.branch_path().branch_path() / (prefix + "_codecs") / path.leaf()));
     return ss.str();
@@ -136,6 +136,12 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path 
     usrp::mboard_eeprom_t mb_eeprom = tree->access<usrp::mboard_eeprom_t>(path / "eeprom").get();
     BOOST_FOREACH(const std::string &key, mb_eeprom.keys()){
         if (not mb_eeprom[key].empty()) ss << boost::format("%s: %s") % key % mb_eeprom[key] << std::endl;
+    }
+    if (tree->exists(path / "fw_version")){
+        ss << "FW Version: " << tree->access<std::string>(path / "fw_version").get() << std::endl;
+    }
+    if (tree->exists(path / "fpga_version")){
+        ss << "FPGA Version: " << tree->access<std::string>(path / "fpga_version").get() << std::endl;
     }
     ss << std::endl;
     ss << "Time sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "time_source" / "options").get()) << std::endl;
