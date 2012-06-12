@@ -76,7 +76,7 @@ std::string return_USRP_config_string(uhd::usrp::multi_usrp::sptr usrp, bool tes
  * TX Frequency/Gain Coercion
 ************************************************************************/
 
-std::string tx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, std::string ref, bool verbose){
+std::string tx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, bool verbose){
 
     //Establish frequency range
 
@@ -132,11 +132,7 @@ std::string tx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, std::strin
     std::vector< std::vector< double > > bad_gain_vals;
     std::vector<std::string> dboard_sensor_names = usrp->get_tx_sensor_names();
     std::vector<std::string> mboard_sensor_names = usrp->get_mboard_sensor_names();
-    bool has_sensor;
-
-    if(ref == "internal") has_sensor = (std::find(dboard_sensor_names.begin(), dboard_sensor_names.end(), "lo_locked")) != dboard_sensor_names.end();
-    else if(ref == "external") has_sensor = (std::find(mboard_sensor_names.begin(), mboard_sensor_names.end(), "ref_locked")) != mboard_sensor_names.end();
-    else has_sensor = (std::find(mboard_sensor_names.begin(), mboard_sensor_names.end(), "mimo_locked")) != mboard_sensor_names.end();
+    bool has_sensor = (std::find(dboard_sensor_names.begin(), dboard_sensor_names.end(), "lo_locked")) != dboard_sensor_names.end();
 
     for(std::vector<double>::iterator f = freqs.begin(); f != freqs.end(); ++f){
 
@@ -168,34 +164,22 @@ std::string tx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, std::strin
         //Testing for successful lock
 
         if(has_sensor){
-            if(ref == "internal"){
+            bool is_locked = false;
+            for(int i = 0; i < 1000; i++){
+                boost::this_thread::sleep(boost::posix_time::microseconds(1000));
                 if(usrp->get_tx_sensor("lo_locked",0).to_bool()){
-                    if(verbose) std::cout << boost::format("LO successfully locked at TX frequency %s.") % return_MHz_string(*f) << std::endl;
-                }
-                else{
-                    if(verbose) std::cout << boost::format("LO did not successfully lock at TX frequency %s.") % return_MHz_string(*f) << std::endl;
-                    no_lock_freqs.push_back(*f);
+                    is_locked = true;
+                    break;
                 }
             }
-            else if(ref == "external"){
-                if(usrp->get_mboard_sensor("ref_locked",0).to_bool()){
-                    if(verbose) std::cout << boost::format("REF successfully locked at TX frequency %s.") % return_MHz_string(*f) << std::endl;
-                }
-                else{
-                    if(verbose) std::cout << boost::format("REF did not successfully lock at TX frequency %s.") % return_MHz_string(*f) << std::endl;
-                    no_lock_freqs.push_back(*f);
-                }
+            if(is_locked){
+                if(verbose) std::cout << boost::format("LO successfully locked at TX frequency %s.") % return_MHz_string(*f) << std::endl;
             }
-            else if(ref == "mimo"){
-                if(usrp->get_mboard_sensor("mimo_locked",0).to_bool()){
-                    if(verbose) std::cout << boost::format("MIMO successfully locked at TX frequency %s.") % return_MHz_string(*f) << std::endl;
-                }
-                else{
-                    if(verbose) std::cout << boost::format("MIMO did not successfully lock at TX frequency %s.") % return_MHz_string(*f) << std::endl;
-                    no_lock_freqs.push_back(*f);
-                }
+            else{
+                if(verbose) std::cout << boost::format("LO did not successfully lock at TX frequency %s.") % return_MHz_string(*f) << std::endl;
+                no_lock_freqs.push_back(*f);
             }
-        }        
+        }
 
         if(test_gain){
             
@@ -253,17 +237,12 @@ std::string tx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, std::strin
     }
     if(has_sensor){
 
-        std::string sensor_str;
-        if(ref == "internal") sensor_str = "LO";
-        else if(ref == "external") sensor_str = "REF";
-        else if(ref == "mimo") sensor_str = "MIMO";
-
         tx_results += "\n";
-        if(no_lock_freqs.empty()) tx_results += std::string(str(boost::format("%s successfully locked at all frequencies.") % sensor_str));
+        if(no_lock_freqs.empty()) tx_results += "LO successfully locked at all frequencies.";
         else{
-            tx_results += std::string(str(boost::format("%s did not successfully lock at the following frequencies: ") % sensor_str));;
+            tx_results += "LO did not lock at the following frequencies: ";
             for(std::vector<double>::iterator i = no_lock_freqs.begin(); i != no_lock_freqs.end(); ++i){
-                if( i != no_lock_freqs.begin()) tx_results += ", ";
+                if(i != no_lock_freqs.begin()) tx_results += ", ";
                 tx_results += return_MHz_string(*i);
             }
         }
@@ -289,7 +268,7 @@ std::string tx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, std::strin
  * RX Frequency/Gain Coercion
 ************************************************************************/
 
-std::string rx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, std::string ref, bool verbose){
+std::string rx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, bool verbose){
 
     //Establish frequency range
 
@@ -345,11 +324,7 @@ std::string rx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, std::strin
     std::vector< std::vector< double > > bad_gain_vals;
     std::vector<std::string> dboard_sensor_names = usrp->get_rx_sensor_names();
     std::vector<std::string> mboard_sensor_names = usrp->get_mboard_sensor_names();
-    bool has_sensor;
-
-    if(ref == "internal") has_sensor = (std::find(dboard_sensor_names.begin(), dboard_sensor_names.end(), "lo_locked")) != dboard_sensor_names.end();
-    else if(ref == "external") has_sensor = (std::find(mboard_sensor_names.begin(), mboard_sensor_names.end(), "ref_locked")) != mboard_sensor_names.end();
-    else has_sensor = (std::find(mboard_sensor_names.begin(), mboard_sensor_names.end(), "mimo_locked")) != mboard_sensor_names.end();
+    bool has_sensor = (std::find(dboard_sensor_names.begin(), dboard_sensor_names.end(), "lo_locked")) != dboard_sensor_names.end();
 
     for(std::vector<double>::iterator f = freqs.begin(); f != freqs.end(); ++f){
 
@@ -381,32 +356,20 @@ std::string rx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, std::strin
         //Testing for successful lock
 
         if(has_sensor){
-            if(ref == "internal"){
+            bool is_locked = false;
+            for(int i = 0; i < 1000; i++){
+                boost::this_thread::sleep(boost::posix_time::microseconds(1000));
                 if(usrp->get_rx_sensor("lo_locked",0).to_bool()){
-                    if(verbose) std::cout << boost::format("LO successfully locked at RX frequency %s.") % return_MHz_string(*f) << std::endl;
-                }
-                else{
-                    if(verbose) std::cout << boost::format("LO did not successfully lock at RX frequency %s.") % return_MHz_string(*f) << std::endl;
-                    no_lock_freqs.push_back(*f);
+                    is_locked = true;
+                    break;
                 }
             }
-            else if(ref == "external"){
-                if(usrp->get_mboard_sensor("ref_locked",0).to_bool()){
-                    if(verbose) std::cout << boost::format("REF successfully locked at RX frequency %s.") % return_MHz_string(*f) << std::endl;
-                }
-                else{
-                    if(verbose) std::cout << boost::format("REF did not successfully lock at RX frequency %s.") % return_MHz_string(*f) << std::endl;
-                    no_lock_freqs.push_back(*f);
-                }
+            if(is_locked){
+                if(verbose) std::cout << boost::format("LO successfully locked at RX frequency %s.") % return_MHz_string(*f) << std::endl;
             }
-            else if(ref == "mimo"){
-                if(usrp->get_mboard_sensor("mimo_locked",0).to_bool()){
-                    if(verbose) std::cout << boost::format("MIMO successfully locked at RX frequency %s.") % return_MHz_string(*f) << std::endl;
-                }
-                else{
-                    if(verbose) std::cout << boost::format("MIMO did not successfully lock at RX frequency %s.") % return_MHz_string(*f) << std::endl;
-                    no_lock_freqs.push_back(*f);
-                }
+            else{
+                if(verbose) std::cout << boost::format("LO did not successfully lock at RX frequency %s.") % return_MHz_string(*f) << std::endl;
+                no_lock_freqs.push_back(*f);
             }
         }
 
@@ -466,15 +429,10 @@ std::string rx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, std::strin
     }
     if(has_sensor){
 
-        std::string sensor_str;
-        if(ref == "internal") sensor_str = "LO";
-        else if(ref == "external") sensor_str = "REF";
-        else if(ref == "mimo") sensor_str = "MIMO";
-
         rx_results += "\n";
-        if(no_lock_freqs.empty()) rx_results += std::string(str(boost::format("%s successfully locked at all frequencies.") % sensor_str));
+        if(no_lock_freqs.empty()) rx_results += "LO successfully locked at all frequencies.";
         else{
-            rx_results += std::string(str(boost::format("%s did not successfully lock at the following frequencies: ") % sensor_str));
+            rx_results += "LO did not successfully lock at the following frequencies: ";
             for(std::vector<double>::iterator i = no_lock_freqs.begin(); i != no_lock_freqs.end(); ++i){
                 if( i != no_lock_freqs.begin()) rx_results += ", ";
                 rx_results += return_MHz_string(*i);
@@ -520,7 +478,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("gain_step", po::value<double>(&gain_step)->default_value(1.0), "Specify the delta between gain scans")
         ("tx", "Specify to test TX frequency and gain coercion")
         ("rx", "Specify to test RX frequency and gain coercion")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "Test for lock with internal, external, or mimo")
+        ("ref", po::value<std::string>(&ref)->default_value("internal"), "Waveform type: internal, external, or mimo")
         ("no_tx_gain", "Do not test TX gain")
         ("no_rx_gain", "Do not test RX gain")
         ("verbose", "Output every frequency and gain check instead of just final summary")
@@ -590,9 +548,24 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
 
+    //Setting clock source
+    usrp->set_clock_source(ref);
+    boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+    std::vector<std::string> sensor_names = usrp->get_mboard_sensor_names(0);
+    if ((ref == "mimo") and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked") != sensor_names.end())) {
+        uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked",0);
+        std::cout << boost::format("Checking MIMO lock: %s ...") % mimo_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(mimo_locked.to_bool());
+    }   
+    if ((ref == "external") and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end())) {
+        uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked",0);
+        std::cout << boost::format("Checking REF lock: %s ...") % ref_locked.to_pp_string() << std::endl;
+        UHD_ASSERT_THROW(ref_locked.to_bool());
+    }   
     usrp_config = return_USRP_config_string(usrp, test_tx, test_rx);
-    if(test_tx) tx_results = tx_test(usrp, test_tx_gain, ref, verbose);
-    if(test_rx) rx_results = rx_test(usrp, test_rx_gain, ref, verbose);
+    if(test_tx) tx_results = tx_test(usrp, test_tx_gain, verbose);
+    if(test_rx) rx_results = rx_test(usrp, test_rx_gain, verbose);
 
     if(verbose) std::cout << std::endl;
     std::cout << usrp_config << std::endl << std::endl;
