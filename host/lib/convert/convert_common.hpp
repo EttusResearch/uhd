@@ -173,6 +173,19 @@ template <> UHD_INLINE item32_t xx_to_item32_sc8_x1(
     ;
 }
 
+template <> UHD_INLINE item32_t xx_to_item32_sc8_x1(
+    const sc8_t &in0, const sc8_t &in1, const double
+){
+    boost::uint8_t real0 = boost::int8_t(in0.real());
+    boost::uint8_t imag0 = boost::int8_t(in0.imag());
+    boost::uint8_t real1 = boost::int8_t(in1.real());
+    boost::uint8_t imag1 = boost::int8_t(in1.imag());
+    return
+        (item32_t(real0) << 8) | (item32_t(imag0) << 0) |
+        (item32_t(real1) << 24) | (item32_t(imag1) << 16)
+    ;
+}
+
 template <xtox_t to_wire, typename T>
 UHD_INLINE void xx_to_item32_sc8(
     const std::complex<T> *input,
@@ -218,6 +231,19 @@ template <> UHD_INLINE void item32_sc8_x1_to_xx(
     out1 = sc16_t(
         boost::int16_t(boost::int8_t(item >> 24)),
         boost::int16_t(boost::int8_t(item >> 16))
+    );
+}
+
+template <> UHD_INLINE void item32_sc8_x1_to_xx(
+    const item32_t item, sc8_t &out0, sc8_t &out1, const double
+){
+    out0 = sc8_t(
+        boost::int8_t(boost::int8_t(item >> 8)),
+        boost::int8_t(boost::int8_t(item >> 0))
+    );
+    out1 = sc8_t(
+        boost::int8_t(boost::int8_t(item >> 24)),
+        boost::int8_t(boost::int8_t(item >> 16))
     );
 }
 
