@@ -29,7 +29,7 @@ The following RF frontends are supported by the self-calibration utilities:
 
  * WBX transceiver board
  * SBX transceiver board
- * more to come...
+ * RFX transceiver board
 
 ********************************************
 Calibration Utilities

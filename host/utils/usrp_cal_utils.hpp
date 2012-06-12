@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -68,7 +68,13 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
 
     const uhd::fs_path tx_fe_path = "/mboards/0/dboards/A/tx_frontends/0";
     const std::string tx_name = tree->access<std::string>(tx_fe_path / "name").get();
-    if (tx_name.find("WBX") != std::string::npos or tx_name.find("SBX") != std::string::npos){
+    if (tx_name.find("WBX") != std::string::npos){
+        usrp->set_tx_gain(0);
+    }
+    if (tx_name.find("SBX") != std::string::npos){
+        usrp->set_tx_gain(0);
+    }
+    if (tx_name.find("RFX") != std::string::npos){
         usrp->set_tx_gain(0);
     }
     else{
@@ -77,8 +83,14 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
 
     const uhd::fs_path rx_fe_path = "/mboards/0/dboards/A/tx_frontends/0";
     const std::string rx_name = tree->access<std::string>(rx_fe_path / "name").get();
-    if (rx_name.find("WBX") != std::string::npos or rx_name.find("SBX") != std::string::npos){
+    if (rx_name.find("WBX") != std::string::npos){
         usrp->set_rx_gain(25);
+    }
+    if (rx_name.find("SBX") != std::string::npos){
+        usrp->set_rx_gain(25);
+    }
+    if (rx_name.find("RFX") != std::string::npos){
+        usrp->set_rx_gain(0);
     }
     else{
         throw std::runtime_error("self-calibration is not supported for this hardware");

@@ -272,7 +272,7 @@ void rfx_xcvr::set_rx_ant(const std::string &ant){
 
     //set the rx atr regs that change with antenna setting
     if (ant == "CAL") {
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_TXRX  | MIXER_DIS);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_TXRX  | MIXER_ENB);
         this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_TXRX  | MIXER_ENB);
         this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     _power_up | MIXER_ENB | ANT_TXRX );
     } 
