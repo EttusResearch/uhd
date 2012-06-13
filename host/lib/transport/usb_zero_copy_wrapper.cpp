@@ -87,6 +87,12 @@ public:
         _task = uhd::task::make(boost::bind(&usb_zero_copy_wrapper_msb::auto_flush, this));
     }
 
+    ~usb_zero_copy_wrapper_msb(void)
+    {
+        //ensure the task has exited before anything auto deconstructs
+        _task.reset();
+    }
+
     void release(void){
         boost::mutex::scoped_lock lock(_mutex);
         _ok_to_auto_flush = true;
