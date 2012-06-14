@@ -87,8 +87,14 @@ IF(ENABLE_USRP2)
             COMPONENT utilities
         )
     ENDIF(WIN32 AND UHD_RELEASE_MODE)
+    IF(LINUX)
+        INSTALL(PROGRAMS
+            usrp2_recovery.py
+            DESTINATION ${PKG_LIB_DIR}/utils
+            COMPONENT utilities
+        )
+    ENDIF(LINUX)
     INSTALL(PROGRAMS
-        usrp2_recovery.py
         usrp2_card_burner.py
         usrp2_card_burner_gui.py
         usrp_n2xx_net_burner.py
