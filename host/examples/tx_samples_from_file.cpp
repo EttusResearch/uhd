@@ -30,11 +30,12 @@ namespace po = boost::program_options;
 template<typename samp_type> void send_from_file(
     uhd::usrp::multi_usrp::sptr usrp,
     const std::string &cpu_format,
+    const std::string &wire_format,
     const std::string &file,
     size_t samps_per_buff
 ){
     //create a transmit streamer
-    uhd::stream_args_t stream_args(cpu_format);
+    uhd::stream_args_t stream_args(cpu_format, wire_format);
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     uhd::tx_metadata_t md;
@@ -61,7 +62,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, file, type, ant, subdev, ref;
+    std::string args, file, type, ant, subdev, ref, wirefmt;
     size_t spb;
     double rate, freq, gain, bw;
 
@@ -80,6 +81,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
         ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "waveform type (internal, external, mimo)")
+        ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -162,9 +164,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //send from file
-    if (type == "double") send_from_file<std::complex<double> >(usrp, "fc64", file, spb);
-    else if (type == "float") send_from_file<std::complex<float> >(usrp, "fc32", file, spb);
-    else if (type == "short") send_from_file<std::complex<short> >(usrp, "sc16", file, spb);
+    if (type == "double") send_from_file<std::complex<double> >(usrp, "fc64", wirefmt, file, spb);
+    else if (type == "float") send_from_file<std::complex<float> >(usrp, "fc32", wirefmt, file, spb);
+    else if (type == "short") send_from_file<std::complex<short> >(usrp, "sc16", wirefmt, file, spb);
     else throw std::runtime_error("Unknown type " + type);
 
     //finished
