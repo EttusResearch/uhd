@@ -291,7 +291,7 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     this->get_tx_subtree()->create<bool>("enabled")
         .set(true); //always enabled
     this->get_tx_subtree()->create<bool>("use_lo_offset")
-        .set(true);
+        .set(false);
     this->get_tx_subtree()->create<double>("bandwidth/value")
         .coerce(boost::bind(&xcvr2450::set_tx_bandwidth, this, _1)) //complex bandpass bandwidth
         .set(2.0*_tx_bandwidth); //_tx_bandwidth in lowpass, convert to complex bandpass
