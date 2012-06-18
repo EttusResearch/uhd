@@ -122,12 +122,12 @@ public:
 
     void lock_device(bool lock){
         if (lock){
-            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_GPID, boost::uint32_t(get_gpid()));
+            this->pokefw(U2_FW_REG_LOCK_GPID, boost::uint32_t(get_gpid()));
             _lock_task = task::make(boost::bind(&usrp2_iface_impl::lock_task, this));
         }
         else{
             _lock_task.reset(); //shutdown the task
-            this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, 0); //unlock
+            this->pokefw(U2_FW_REG_LOCK_TIME, 0); //unlock
         }
     }
 
@@ -135,8 +135,8 @@ public:
         //never assume lock with fpga image mismatch
         if ((this->peek32(U2_REG_COMPAT_NUM_RB) >> 16) != USRP2_FPGA_COMPAT_NUM) return false;
 
-        boost::uint32_t lock_time = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_TIME);
-        boost::uint32_t lock_gpid = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_LOCK_GPID);
+        boost::uint32_t lock_time = this->peekfw(U2_FW_REG_LOCK_TIME);
+        boost::uint32_t lock_gpid = this->peekfw(U2_FW_REG_LOCK_GPID);
 
         //may not be the right tick rate, but this is ok for locking purposes
         const boost::uint32_t lock_timeout_time = boost::uint32_t(3*100e6);
@@ -152,7 +152,7 @@ public:
 
     void lock_task(void){
         //re-lock in task
-        this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(U2_FW_REG_LOCK_TIME, this->get_curr_time());
+        this->pokefw(U2_FW_REG_LOCK_TIME, this->get_curr_time());
         //sleep for a bit
         boost::this_thread::sleep(boost::posix_time::milliseconds(1500));
     }
@@ -178,6 +178,16 @@ public:
 
     boost::uint16_t peek16(wb_addr_type addr){
         return this->get_reg<boost::uint16_t, USRP2_REG_ACTION_FPGA_PEEK16>(addr);
+    }
+
+    void pokefw(wb_addr_type addr, boost::uint32_t data)
+    {
+        this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(addr, data);
+    }
+
+    boost::uint32_t peekfw(wb_addr_type addr)
+    {
+        return this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(addr);
     }
 
     template <class T, usrp2_reg_action_t action>
