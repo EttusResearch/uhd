@@ -36,6 +36,9 @@ Installation instructions can be found here:
 ********************************************
 Post-installation Task (N-Series only)
 ********************************************
+
+**Note:** The following instructions are only necessary for UHD 3.4.* and below.
+
 This is necessary if you require absolute GPS time in your application
 or need to communicate with the GPSDO to obtain location, satellite info, etc.
 If you only require 10MHz and PPS signals for reference or MIMO use

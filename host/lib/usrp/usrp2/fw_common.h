@@ -58,6 +58,7 @@ typedef struct{
 // Map for virtual firmware regs (not very big so we can keep it here for now)
 #define U2_FW_REG_LOCK_TIME 0
 #define U2_FW_REG_LOCK_GPID 1
+#define U2_FW_REG_HAS_GPSDO 3
 #define U2_FW_REG_VER_MINOR 7
 
 ////////////////////////////////////////////////////////////////////////

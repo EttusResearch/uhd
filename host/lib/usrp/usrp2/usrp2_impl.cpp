@@ -463,18 +463,47 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         }
         _tree->create<std::string>(tx_codec_path / "name").set("ad9777");
 
-        ////////////////////////////////////////////////////////////////
-        // create gpsdo control objects
-        ////////////////////////////////////////////////////////////////
-        if (_mbc[mb].iface->mb_eeprom["gpsdo"] == "internal"){
-            _mbc[mb].gps = gps_ctrl::make(udp_simple::make_uart(udp_simple::make_connected(
-                addr, BOOST_STRINGIZE(USRP2_UDP_UART_GPS_PORT)
-            )));
-            if(_mbc[mb].gps->gps_detected()) {
-                BOOST_FOREACH(const std::string &name, _mbc[mb].gps->get_sensors()){
+        ////////////////////////////////////////////////////////////////////
+        // Create the GPSDO control
+        ////////////////////////////////////////////////////////////////////
+        static const boost::uint32_t dont_look_for_gpsdo = 0x1234abcdul;
+
+        //disable check for internal GPSDO when not the following:
+        switch(_mbc[mb].iface->get_rev()){
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N210:
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210_R4:
+            break;
+        default:
+            _mbc[mb].iface->pokefw(U2_FW_REG_HAS_GPSDO, dont_look_for_gpsdo);
+        }
+
+        //otherwise if not disabled, look for the internal GPSDO
+        if (_mbc[mb].iface->peekfw(U2_FW_REG_HAS_GPSDO) != dont_look_for_gpsdo)
+        {
+            UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
+            try{
+                _mbc[mb].gps = gps_ctrl::make(udp_simple::make_uart(udp_simple::make_connected(
+                    addr, BOOST_STRINGIZE(USRP2_UDP_UART_GPS_PORT)
+                )));
+            }
+            catch(std::exception &e){
+                UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
+            }
+            if (_mbc[mb].gps and _mbc[mb].gps->gps_detected())
+            {
+                UHD_MSG(status) << "found" << std::endl;
+                BOOST_FOREACH(const std::string &name, _mbc[mb].gps->get_sensors())
+                {
                     _tree->create<sensor_value_t>(mb_path / "sensors" / name)
                         .publish(boost::bind(&gps_ctrl::get_sensor, _mbc[mb].gps, name));
                 }
+            }
+            else
+            {
+                UHD_MSG(status) << "not found" << std::endl;
+                _mbc[mb].iface->pokefw(U2_FW_REG_HAS_GPSDO, dont_look_for_gpsdo);
             }
         }
 
