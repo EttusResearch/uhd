@@ -90,7 +90,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
         usrp->set_rx_gain(25);
     }
     if (rx_name.find("RFX") != std::string::npos){
-        usrp->set_rx_gain(0);
+        usrp->set_rx_gain(25);
     }
     else{
         throw std::runtime_error("self-calibration is not supported for this hardware");
