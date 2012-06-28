@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include <boost/format.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/math/special_functions/sign.hpp>
 #include <boost/assign/list_of.hpp>
 #include <iomanip>
 
@@ -375,6 +376,12 @@ double usrp1_codec_ctrl_impl::fine_tune(double codec_rate, double target_freq)
 void usrp1_codec_ctrl_impl::set_duc_freq(double freq, double rate)
 {
     double codec_rate = rate * 2;
+
+    //correct for outside of rate (wrap around)
+    freq = std::fmod(freq, rate);
+    if (std::abs(freq) > rate/2.0)
+        freq -= boost::math::sign(freq)*rate;
+
     double coarse_freq = coarse_tune(codec_rate, freq);
     double fine_freq = fine_tune(codec_rate / 4, freq - coarse_freq);
 
