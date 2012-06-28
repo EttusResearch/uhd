@@ -53,9 +53,9 @@ struct UHD_API stream_args_t{
      *  - fc64 - complex<double>
      *  - fc32 - complex<float>
      *  - sc16 - complex<int16_t>
+     *  - sc8 - complex<int8_t>
      *
      * The following are not implemented, but are listed to demonstrate naming convention:
-     *  - sc8 - complex<int8_t>
      *  - f32 - float
      *  - f64 - double
      *  - s16 - int16_t
