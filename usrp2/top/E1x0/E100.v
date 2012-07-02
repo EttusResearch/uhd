@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 
-module u1e
+module E100
   (input CLK_FPGA_P, input CLK_FPGA_N,  // Diff
    output [3:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
    input debug_pb, output FPGA_TXD, input FPGA_RXD,
@@ -52,12 +52,22 @@ module u1e
    input PPS_IN
    );
 
+    assign FPGA_TXD = 0; //dont care
+
    // /////////////////////////////////////////////////////////////////////////
    // Clocking
-   wire  clk_fpga;
+   wire clk_fpga;
+   wire reset;
+
+   reg async_reset;
+   always @(negedge EM_CLK) begin
+        async_reset <= ~EM_NCS6 && ~EM_NWE && (EM_A[9:2] == 8'hff) && EM_D[0];
+   end
 
    IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("TRUE")) 
    clk_fpga_pin (.O(clk_fpga),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));
+
+   reset_sync reset_sync(.clk(clk_fpga), .reset_in(async_reset), .reset_out(reset));
 
    // /////////////////////////////////////////////////////////////////////////
    // UART level conversion
@@ -73,12 +83,12 @@ module u1e
    assign miso = (~db_sen_tx & db_miso_tx) | (~db_sen_rx & db_miso_rx) |
                  (~sen_codec & miso_codec) | (~cgen_sen_b & cgen_miso);
 
-   //assign the aux spi to the cgen (bypasses wishbone)
+   //assign the aux spi to the cgen (bypasses control fifo)
    assign cgen_sclk = overo_gpio65;
    assign cgen_sen_b = overo_gpio128;
    assign cgen_mosi = overo_gpio145;
-   wire proc_int; //re-purpose gpio for interrupt when we are not using aux spi
-   assign overo_gpio147 = (cgen_sen_b == 1'b0)? cgen_miso : proc_int;
+   wire has_resp; //re-purpose gpio for interrupt when we are not using aux spi
+   assign overo_gpio147 = (cgen_sen_b == 1'b0)? cgen_miso : has_resp;
 
    wire _cgen_sen_b;
    //assign cgen_sen_b = _cgen_sen_b; //replaced by aux spi
@@ -121,29 +131,66 @@ module u1e
 		.D1(1'b1),   // 1-bit data input (associated with C1)
 		.R(1'b0),       // 1-bit reset input
 		.S(1'b0));      // 1-bit set input
-   
-   // /////////////////////////////////////////////////////////////////////////
-   // Main U1E Core
-   u1e_core u1e_core(.clk_fpga(clk_fpga), .rst_fpga(~debug_pb),
-		     .debug_led(debug_led), .debug(debug), .debug_clk(debug_clk),
-		     .debug_txd(FPGA_TXD), .debug_rxd(FPGA_RXD),
-		     .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
-		     .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS5(EM_NCS5), 
-		     .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE), .EM_NOE(EM_NOE),
-		     .db_sda(db_sda), .db_scl(db_scl),
-		     .sclk(sclk), .sen({_cgen_sen_b,sen_codec,db_sen_tx,db_sen_rx}), .mosi(mosi), .miso(miso),
-		     .cgen_st_status(cgen_st_status), .cgen_st_ld(cgen_st_ld),.cgen_st_refmon(cgen_st_refmon), 
-		     .cgen_sync_b(cgen_sync_b), .cgen_ref_sel(cgen_ref_sel),
-		     .tx_have_space(overo_gpio144),
-		     .rx_have_data(overo_gpio146),
-		     .io_tx(io_tx), .io_rx(io_rx),
-		     .tx_i(tx_i), .tx_q(tx_q), 
-		     .rx_i(DA), .rx_q(DB),
-		     .pps_in(PPS_IN), .proc_int(proc_int) );
 
    // /////////////////////////////////////////////////////////////////////////
-   // Local Debug
-   // assign debug_clk = {clk_fpga, clk_2x };
-   // assign debug = { TXSYNC, TXBLANK, TX };
-   
-endmodule // u1e
+   // Main Core
+   wire [35:0] rx_data, tx_data, ctrl_data, resp_data;
+   wire rx_src_rdy, rx_dst_rdy, tx_src_rdy, tx_dst_rdy, resp_src_rdy, resp_dst_rdy, ctrl_src_rdy, ctrl_dst_rdy;
+   wire dsp_rx_run, dsp_tx_run;
+   wire [7:0] sen8;
+   assign {_cgen_sen_b,sen_codec,db_sen_tx,db_sen_rx} = sen8[3:0];
+   wire [31:0] core_debug;
+
+   assign debug_led = ~{PPS_IN, dsp_tx_run, dsp_rx_run, cgen_st_ld};
+   wire cgen_sync;
+   assign { cgen_sync_b, cgen_ref_sel } = {~cgen_sync, 1'b1};
+
+   u1plus_core #(
+        .NUM_RX_DSPS(2),
+        .DSP_RX_XTRA_FIFOSIZE(10),
+        .DSP_TX_XTRA_FIFOSIZE(10),
+        .USE_PACKET_PADDER(0)
+    ) core(
+         .clk(clk_fpga), .reset(reset),
+         .debug(core_debug), .debug_clk(debug_clk),
+
+         .rx_data(rx_data), .rx_src_rdy(rx_src_rdy), .rx_dst_rdy(rx_dst_rdy),
+         .tx_data(tx_data), .tx_src_rdy(tx_src_rdy), .tx_dst_rdy(tx_dst_rdy),
+         .ctrl_data(ctrl_data), .ctrl_src_rdy(ctrl_src_rdy), .ctrl_dst_rdy(ctrl_dst_rdy),
+         .resp_data(resp_data), .resp_src_rdy(resp_src_rdy), .resp_dst_rdy(resp_dst_rdy),
+
+         .dsp_rx_run(dsp_rx_run), .dsp_tx_run(dsp_tx_run),
+         .clock_sync(cgen_sync),
+
+         .db_sda(db_sda), .db_scl(db_scl),
+         .sclk(sclk), .sen(sen8), .mosi(mosi), .miso(miso),
+         .io_tx(io_tx), .io_rx(io_rx),
+         .tx_i(tx_i), .tx_q(tx_q),
+         .rx_i(DA), .rx_q(DB),
+         .pps_in(PPS_IN) );
+
+   // /////////////////////////////////////////////////////////////////////////
+   // Interface between GPMC/host
+    wire [31:0] gpmc_debug;
+
+   gpmc #(.TXFIFOSIZE(13), .RXFIFOSIZE(13))
+   gpmc (.arst(async_reset),
+         .EM_CLK(EM_CLK), .EM_D(EM_D), .EM_A(EM_A), .EM_NBE(EM_NBE),
+         .EM_WAIT0(EM_WAIT0), .EM_NCS4(EM_NCS4), .EM_NCS6(EM_NCS6), .EM_NWE(EM_NWE),
+         .EM_NOE(EM_NOE),
+
+         .rx_have_data(overo_gpio146), .tx_have_space(overo_gpio144),
+         .resp_have_data(has_resp),
+
+         .fifo_clk(clk_fpga), .fifo_rst(reset),
+         .rx_data(rx_data), .rx_src_rdy(rx_src_rdy), .rx_dst_rdy(rx_dst_rdy),
+         .tx_data(tx_data), .tx_src_rdy(tx_src_rdy), .tx_dst_rdy(tx_dst_rdy),
+         .ctrl_data(ctrl_data), .ctrl_src_rdy(ctrl_src_rdy), .ctrl_dst_rdy(ctrl_dst_rdy),
+         .resp_data(resp_data), .resp_src_rdy(resp_src_rdy), .resp_dst_rdy(resp_dst_rdy),
+
+         .debug(gpmc_debug));
+
+    //assign debug = gpmc_debug;
+    assign debug = core_debug;
+
+endmodule // E100
