@@ -19,6 +19,7 @@
 
 module settings_fifo_ctrl
     #(
+        parameter XPORT_HDR = 1, //extra transport hdr line
         parameter PROT_DEST = 0, //protocol framer destination
         parameter PROT_HDR = 1, //needs a protocol header?
         parameter ACK_SID = 0 //stream ID for packet ACK
@@ -120,6 +121,8 @@ module settings_fifo_ctrl
     localparam WAIT_EOF       = 10;
     localparam STORE_CMD      = 11;
 
+    localparam START_STATE = (XPORT_HDR)? READ_LINE0 : VITA_HDR;
+
     reg [4:0] in_state;
 
     //holdover from current read inputs
@@ -140,13 +143,13 @@ module settings_fifo_ctrl
 
     always @(posedge clock) begin
         if (reset) begin
-            in_state <= READ_LINE0;
+            in_state <= START_STATE;
         end
         else begin
             case (in_state)
 
             READ_LINE0: begin
-                if (reading/* && in_data[32]*/) in_state <= VITA_HDR;
+                if (reading) in_state <= VITA_HDR;
             end
 
             VITA_HDR: begin
@@ -216,7 +219,7 @@ module settings_fifo_ctrl
             end
 
             STORE_CMD: begin
-                if (~command_fifo_full) in_state <= READ_LINE0;
+                if (~command_fifo_full) in_state <= START_STATE;
             end
 
             endcase //in_state
