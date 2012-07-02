@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010-2012 Ettus Research LLC
 #
 
 ##################################################
@@ -38,4 +38,5 @@ packet_generator.v \
 packet_verifier32.v \
 packet_verifier.v \
 fifo19_pad.v \
+packet_padder36.v \
 ))
