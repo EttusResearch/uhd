@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,12 +18,11 @@
 #ifndef INCLUDED_B100_CTRL_HPP
 #define INCLUDED_B100_CTRL_HPP
 
-#include "wb_iface.hpp"
+#include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
 
-class e100_ctrl : boost::noncopyable, public wb_iface{
+class e100_ctrl : public uhd::transport::zero_copy_if{
 public:
     typedef boost::shared_ptr<e100_ctrl> sptr;
 
@@ -33,7 +32,7 @@ public:
     //! Make an i2c iface for the i2c device node
     static uhd::i2c_iface::sptr make_dev_i2c_iface(const std::string &node);
 
-    //! Make an i2c iface for the i2c device node
+    //! Make a spi iface for the spi gpio
     static uhd::spi_iface::sptr make_aux_spi_iface(void);
 
     //! Make a uart iface for the uart device node

@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,13 +23,16 @@
 #include <sys/ioctl.h> //ioctl
 #include <fcntl.h> //open, close
 #include <linux/usrp_e.h> //ioctl structures and constants
+#include <poll.h> //poll
 #include <boost/thread/thread.hpp> //sleep
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <fstream>
 
 using namespace uhd;
+using namespace uhd::transport;
 
 /***********************************************************************
  * Sysfs GPIO wrapper class
@@ -71,6 +74,53 @@ private:
 };
 
 /***********************************************************************
+ * Protection for dual GPIO access - sometimes MISO, sometimes have resp
+ **********************************************************************/
+static boost::mutex gpio_has_resp_mutex;
+static boost::condition_variable gpio_has_resp_cond;
+static bool gpio_has_resp_claimed = false;
+static gpio gpio_has_resp(147, "in");
+
+struct gpio_has_resp_claimer
+{
+    gpio_has_resp_claimer(void)
+    {
+        boost::mutex::scoped_lock lock(gpio_has_resp_mutex);
+        gpio_has_resp_claimed = true;
+    }
+
+    ~gpio_has_resp_claimer(void)
+    {
+        boost::mutex::scoped_lock lock(gpio_has_resp_mutex);
+        gpio_has_resp_claimed = false;
+        lock.unlock();
+        gpio_has_resp_cond.notify_one();
+    }
+};
+
+static inline bool gpio_has_resp_value(void)
+{
+    boost::mutex::scoped_lock lock(gpio_has_resp_mutex);
+    while (gpio_has_resp_claimed)
+    {
+        gpio_has_resp_cond.wait(lock);
+    }
+    return bool(gpio_has_resp());
+}
+
+static bool inline gpio_has_resp_wait(const double timeout)
+{
+    if (gpio_has_resp_value()) return true;
+    const boost::system_time exit_time = boost::get_system_time() + boost::posix_time::milliseconds(long(timeout*1e6));
+    while (boost::get_system_time() < exit_time)
+    {
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        if (gpio_has_resp_value()) return true;
+    }
+    return false;
+}
+
+/***********************************************************************
  * Aux spi implementation
  **********************************************************************/
 class aux_spi_iface_impl : public spi_iface{
@@ -79,7 +129,8 @@ public:
         spi_sclk_gpio(65, "out"),
         spi_sen_gpio(186, "out"),
         spi_mosi_gpio(145, "out"),
-        spi_miso_gpio(147, "in"){}
+        //spi_miso_gpio(147, "in"){}
+        spi_miso_gpio(gpio_has_resp){}
 
     boost::uint32_t transact_spi(
         int, const spi_config_t &, //not used params
@@ -87,6 +138,8 @@ public:
         size_t num_bits,
         bool readback
     ){
+        gpio_has_resp_claimer claimer();
+
         boost::uint32_t rb_bits = 0;
         this->spi_sen_gpio(0);
 
@@ -105,7 +158,7 @@ public:
     }
 
 private:
-    gpio spi_sclk_gpio, spi_sen_gpio, spi_mosi_gpio, spi_miso_gpio;
+    gpio spi_sclk_gpio, spi_sen_gpio, spi_mosi_gpio, &spi_miso_gpio;
 };
 
 uhd::spi_iface::sptr e100_ctrl::make_aux_spi_iface(void){
@@ -244,6 +297,57 @@ uhd::uart_iface::sptr e100_ctrl::make_gps_uart_iface(const std::string &node){
 }
 
 /***********************************************************************
+ * Simple managed buffers
+ **********************************************************************/
+struct e100_simpl_mrb : managed_recv_buffer
+{
+    usrp_e_ctl32 data;
+    e100_ctrl *ctrl;
+
+    void release(void)
+    {
+        //NOP
+    }
+
+    sptr get_new(void)
+    {
+        const size_t max_words32 = 8; //.LAST_ADDR(10'h00f)) resp_fifo_to_gpmc
+
+        //load the data struct
+        data.offset = 0;
+        data.count = max_words32;
+
+        //call the ioctl
+        ctrl->ioctl(USRP_E_READ_CTL32, &data);
+
+        if (data.buf[0] == 0 or ~data.buf[0] == 0) return sptr(); //bad VRT hdr, treat like timeout
+
+        return make(this, data.buf, sizeof(data.buf));
+    }
+};
+
+struct e100_simpl_msb : managed_send_buffer
+{
+    usrp_e_ctl32 data;
+    e100_ctrl *ctrl;
+
+    void release(void)
+    {
+        //load the data struct
+        data.offset = 0;
+        data.count = size()/4+1/*1 for flush pad*/;
+
+        //call the ioctl
+        ctrl->ioctl(USRP_E_WRITE_CTL32, &data);
+    }
+
+    sptr get_new(void)
+    {
+        return make(this, data.buf, sizeof(data.buf));
+    }
+};
+
+/***********************************************************************
  * USRP-E100 control implementation
  **********************************************************************/
 class e100_ctrl_impl : public e100_ctrl{
@@ -273,8 +377,14 @@ public:
             ) % USRP_E_COMPAT_NUMBER % module_compat_num));
         }
 
-        //perform a global reset after opening
-        this->poke32(E100_REG_GLOBAL_RESET, 0);
+        //hit the magic arst condition
+        //async_reset <= ~EM_NCS6 && ~EM_NWE && (EM_A[9:2] == 8'hff) && EM_D[0];
+        usrp_e_ctl16 datax;
+        datax.offset = 0x3fc;
+        datax.count = 2;
+        datax.buf[0] = 1;
+        datax.buf[1] = 0;
+        this->ioctl(USRP_E_WRITE_CTL16, &datax);
     }
 
     ~e100_ctrl_impl(void){
@@ -293,58 +403,45 @@ public:
             ));
         }
     }
+
     /*******************************************************************
-     * Peek and Poke
+     * The managed buffer interface
      ******************************************************************/
-    void poke32(wb_addr_type addr, boost::uint32_t value){
-        //load the data struct
-        usrp_e_ctl32 data;
-        data.offset = addr;
-        data.count = 1;
-        data.buf[0] = value;
-
-        //call the ioctl
-        this->ioctl(USRP_E_WRITE_CTL32, &data);
+    managed_recv_buffer::sptr get_recv_buff(double timeout){
+        if (not gpio_has_resp_wait(timeout))
+        {
+            return managed_recv_buffer::sptr();
+        }
+        _mrb.ctrl = this;
+        return _mrb.get_new();
     }
 
-    void poke16(wb_addr_type addr, boost::uint16_t value){
-        //load the data struct
-        usrp_e_ctl16 data;
-        data.offset = addr;
-        data.count = 1;
-        data.buf[0] = value;
-
-        //call the ioctl
-        this->ioctl(USRP_E_WRITE_CTL16, &data);
+    managed_send_buffer::sptr get_send_buff(double){
+        _msb.ctrl = this;
+        return _msb.get_new();
     }
 
-    boost::uint32_t peek32(wb_addr_type addr){
-        //load the data struct
-        usrp_e_ctl32 data;
-        data.offset = addr;
-        data.count = 1;
-
-        //call the ioctl
-        this->ioctl(USRP_E_READ_CTL32, &data);
-
-        return data.buf[0];
+    size_t get_num_recv_frames(void) const{
+        return 1;
     }
 
-    boost::uint16_t peek16(wb_addr_type addr){
-        //load the data struct
-        usrp_e_ctl16 data;
-        data.offset = addr;
-        data.count = 1;
+    size_t get_recv_frame_size(void) const{
+        return sizeof(_mrb.data.buf);
+    }
 
-        //call the ioctl
-        this->ioctl(USRP_E_READ_CTL16, &data);
+    size_t get_num_send_frames(void) const{
+        return 1;
+    }
 
-        return data.buf[0];
+    size_t get_send_frame_size(void) const{
+        return sizeof(_msb.data.buf);
     }
 
 private:
     int _node_fd;
     boost::mutex _ioctl_mutex;
+    e100_simpl_mrb _mrb;
+    e100_simpl_msb _msb;
 };
 
 /***********************************************************************
