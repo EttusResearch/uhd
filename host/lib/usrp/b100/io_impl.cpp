@@ -15,16 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "recv_packet_demuxer.hpp"
 #include "validate_subdev_spec.hpp"
-#include "async_packet_handler.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "usrp_commands.h"
 #include "b100_impl.hpp"
-#include "b100_regs.hpp"
-#include <uhd/utils/thread_priority.hpp>
-#include <uhd/transport/bounded_buffer.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
@@ -36,66 +30,6 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
-
-/***********************************************************************
- * IO Implementation Details
- **********************************************************************/
-struct b100_impl::io_impl{
-    io_impl(void):
-        async_msg_fifo(1000/*messages deep*/)
-    { /* NOP */ }
-
-    zero_copy_if::sptr data_transport;
-    bounded_buffer<async_metadata_t> async_msg_fifo;
-    recv_packet_demuxer::sptr demuxer;
-    double tick_rate;
-};
-
-/***********************************************************************
- * Initialize internals within this file
- **********************************************************************/
-void b100_impl::io_init(void){
-
-    //clear fifo state machines
-    _fpga_ctrl->poke32(B100_REG_CLEAR_FIFO, 0);
-
-    //allocate streamer weak ptrs containers
-    _rx_streamers.resize(_rx_dsps.size());
-    _tx_streamers.resize(1/*known to be 1 dsp*/);
-
-    //create new io impl
-    _io_impl = UHD_PIMPL_MAKE(io_impl, ());
-    _io_impl->demuxer = recv_packet_demuxer::make(_data_transport, _rx_dsps.size(), B100_RX_SID_BASE);
-
-    //now its safe to register the async callback
-    _fpga_ctrl->set_async_cb(boost::bind(&b100_impl::handle_async_message, this, _1));
-}
-
-void b100_impl::handle_async_message(managed_recv_buffer::sptr rbuf){
-    vrt::if_packet_info_t if_packet_info;
-    if_packet_info.num_packet_words32 = rbuf->size()/sizeof(boost::uint32_t);
-    const boost::uint32_t *vrt_hdr = rbuf->cast<const boost::uint32_t *>();
-    try{
-        vrt::if_hdr_unpack_le(vrt_hdr, if_packet_info);
-    }
-    catch(const std::exception &e){
-        UHD_MSG(error) << "Error (handle_async_message): " << e.what() << std::endl;
-    }
-
-    if (if_packet_info.sid == B100_TX_ASYNC_SID and if_packet_info.packet_type != vrt::if_packet_info_t::PACKET_TYPE_DATA){
-
-        //fill in the async metadata
-        async_metadata_t metadata;
-        load_metadata_from_buff(uhd::wtohx<boost::uint32_t>, metadata, if_packet_info, vrt_hdr, _io_impl->tick_rate);
-
-        //push the message onto the queue
-        _io_impl->async_msg_fifo.push_with_pop_on_full(metadata);
-
-        //print some fastpath messages
-        standard_async_msg_prints(metadata);
-    }
-    else UHD_MSG(error) << "Unknown async packet" << std::endl;
-}
 
 void b100_impl::update_rates(void){
     const fs_path mb_path = "/mboards/0";
@@ -111,7 +45,6 @@ void b100_impl::update_rates(void){
 }
 
 void b100_impl::update_tick_rate(const double rate){
-    _io_impl->tick_rate = rate;
 
     //update the tick rate on all existing streamers -> thread safe
     for (size_t i = 0; i < _rx_streamers.size(); i++){
@@ -181,8 +114,7 @@ void b100_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 bool b100_impl::recv_async_msg(
     async_metadata_t &async_metadata, double timeout
 ){
-    boost::this_thread::disable_interruption di; //disable because the wait can throw
-    return _io_impl->async_msg_fifo.pop_with_timed_wait(async_metadata, timeout);
+    return _fifo_ctrl->pop_async_msg(async_metadata, timeout);
 }
 
 /***********************************************************************
@@ -227,7 +159,7 @@ rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t &args_){
         _rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
         _rx_dsps[dsp]->setup(args);
         my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
-            &recv_packet_demuxer::get_recv_buff, _io_impl->demuxer, dsp, _1
+            &recv_packet_demuxer::get_recv_buff, _recv_demuxer, dsp, _1
         ), true /*flush*/);
         my_streamer->set_overflow_handler(chan_i, boost::bind(
             &rx_dsp_core_200::handle_overflow, _rx_dsps[dsp]
