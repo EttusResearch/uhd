@@ -15,12 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "simple_claimer.hpp"
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhd/utils/atomic.hpp>
 #include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
@@ -29,6 +29,7 @@
 #include <vector>
 #include <iostream>
 
+using namespace uhd;
 using namespace uhd::transport;
 
 static const boost::posix_time::time_duration AUTOFLUSH_TIMEOUT(boost::posix_time::milliseconds(1));
