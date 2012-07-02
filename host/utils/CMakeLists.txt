@@ -66,7 +66,7 @@ ENDFOREACH(util_source)
 
 #UHD images downloader configuration
 CONFIGURE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/uhd_images_downloader.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/uhd_images_downloader.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
 @ONLY)
 INSTALL(PROGRAMS
