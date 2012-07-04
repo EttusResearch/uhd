@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,17 +27,8 @@ using namespace uhd;
 /***********************************************************************
  * range_t implementation code
  **********************************************************************/
-struct range_t::impl{
-    impl(double start, double stop, double step):
-        start(start), stop(stop), step(step)
-    {
-        /* NOP */
-    }
-    double start, stop, step;
-};
-
 range_t::range_t(double value):
-    _impl(UHD_PIMPL_MAKE(impl, (value, value, 0)))
+    _start(value), _stop(value), _step(0.0)
 {
     /* NOP */
 }
@@ -45,7 +36,7 @@ range_t::range_t(double value):
 range_t::range_t(
     double start, double stop, double step
 ):
-    _impl(UHD_PIMPL_MAKE(impl, (start, stop, step)))
+    _start(start), _stop(stop), _step(step)
 {
     if (stop < start){
         throw uhd::value_error("cannot make range where stop < start");
@@ -53,15 +44,15 @@ range_t::range_t(
 }
 
 double range_t::start(void) const{
-    return _impl->start;
+    return _start;
 }
 
 double range_t::stop(void) const{
-    return _impl->stop;
+    return _stop;
 }
 
 double range_t::step(void) const{
-    return _impl->step;
+    return _step;
 }
 
 const std::string range_t::to_pp_string(void) const{
