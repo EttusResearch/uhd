@@ -76,49 +76,7 @@ private:
 /***********************************************************************
  * Protection for dual GPIO access - sometimes MISO, sometimes have resp
  **********************************************************************/
-static boost::mutex gpio_has_resp_mutex;
-static boost::condition_variable gpio_has_resp_cond;
-static bool gpio_has_resp_claimed = false;
-static gpio gpio_has_resp(147, "in");
-
-struct gpio_has_resp_claimer
-{
-    gpio_has_resp_claimer(void)
-    {
-        boost::mutex::scoped_lock lock(gpio_has_resp_mutex);
-        gpio_has_resp_claimed = true;
-    }
-
-    ~gpio_has_resp_claimer(void)
-    {
-        boost::mutex::scoped_lock lock(gpio_has_resp_mutex);
-        gpio_has_resp_claimed = false;
-        lock.unlock();
-        gpio_has_resp_cond.notify_one();
-    }
-};
-
-static inline bool gpio_has_resp_value(void)
-{
-    boost::mutex::scoped_lock lock(gpio_has_resp_mutex);
-    while (gpio_has_resp_claimed)
-    {
-        gpio_has_resp_cond.wait(lock);
-    }
-    return bool(gpio_has_resp());
-}
-
-static bool inline gpio_has_resp_wait(const double timeout)
-{
-    if (gpio_has_resp_value()) return true;
-    const boost::system_time exit_time = boost::get_system_time() + boost::posix_time::milliseconds(long(timeout*1e6));
-    while (boost::get_system_time() < exit_time)
-    {
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-        if (gpio_has_resp_value()) return true;
-    }
-    return false;
-}
+static boost::mutex gpio_irq_resp_mutex;
 
 /***********************************************************************
  * Aux spi implementation
@@ -129,8 +87,7 @@ public:
         spi_sclk_gpio(65, "out"),
         spi_sen_gpio(186, "out"),
         spi_mosi_gpio(145, "out"),
-        //spi_miso_gpio(147, "in"){}
-        spi_miso_gpio(gpio_has_resp){}
+        spi_miso_gpio(147, "in"){}
 
     boost::uint32_t transact_spi(
         int, const spi_config_t &, //not used params
@@ -138,7 +95,7 @@ public:
         size_t num_bits,
         bool readback
     ){
-        gpio_has_resp_claimer claimer();
+        boost::mutex::scoped_lock lock(gpio_irq_resp_mutex);
 
         boost::uint32_t rb_bits = 0;
         this->spi_sen_gpio(0);
@@ -158,7 +115,7 @@ public:
     }
 
 private:
-    gpio spi_sclk_gpio, spi_sen_gpio, spi_mosi_gpio, &spi_miso_gpio;
+    gpio spi_sclk_gpio, spi_sen_gpio, spi_mosi_gpio, spi_miso_gpio;
 };
 
 uhd::spi_iface::sptr e100_ctrl::make_aux_spi_iface(void){
@@ -385,9 +342,16 @@ public:
         datax.buf[0] = 1;
         datax.buf[1] = 0;
         this->ioctl(USRP_E_WRITE_CTL16, &datax);
+
+        std::ofstream edge_file("/sys/class/gpio/gpio147/edge");
+        edge_file << "rising" << std::endl << std::flush;
+        edge_file.close();
+        _irq_fd = ::open("/sys/class/gpio/gpio147/value", O_RDONLY);
+        if (_irq_fd < 0) UHD_MSG(error) << "Unable to open GPIO for IRQ\n";
     }
 
     ~e100_ctrl_impl(void){
+        ::close(_irq_fd);
         ::close(_node_fd);
     }
 
@@ -407,16 +371,46 @@ public:
     /*******************************************************************
      * The managed buffer interface
      ******************************************************************/
-    managed_recv_buffer::sptr get_recv_buff(double timeout){
-        if (not gpio_has_resp_wait(timeout))
+    UHD_INLINE bool resp_read(void)
+    {
+        //thread stuff ensures that this GPIO isnt shared
+        boost::mutex::scoped_lock lock(gpio_irq_resp_mutex);
+
+        //perform a read of the GPIO IRQ state
+        char ch;
+        ::read(_irq_fd, &ch, sizeof(ch));
+        ::lseek(_irq_fd, SEEK_SET, 0);
+        return ch == '1';
+    }
+
+    UHD_INLINE bool resp_wait(const double timeout)
+    {
+        //perform a check, if it fails, poll
+        if (this->resp_read()) return true;
+
+        //poll IRQ GPIO for some action
+        pollfd pfd;
+        pfd.fd = _irq_fd;
+        pfd.events = POLLPRI | POLLERR;
+        ::poll(&pfd, 1, long(timeout*1000)/*ms*/);
+
+        //perform a GPIO read again for result
+        return this->resp_read();
+    }
+
+    managed_recv_buffer::sptr get_recv_buff(double timeout)
+    {
+        if (not this->resp_wait(timeout))
         {
             return managed_recv_buffer::sptr();
         }
+
         _mrb.ctrl = this;
         return _mrb.get_new();
     }
 
-    managed_send_buffer::sptr get_send_buff(double){
+    managed_send_buffer::sptr get_send_buff(double)
+    {
         _msb.ctrl = this;
         return _msb.get_new();
     }
@@ -439,6 +433,7 @@ public:
 
 private:
     int _node_fd;
+    int _irq_fd;
     boost::mutex _ioctl_mutex;
     e100_simpl_mrb _mrb;
     e100_simpl_msb _msb;
