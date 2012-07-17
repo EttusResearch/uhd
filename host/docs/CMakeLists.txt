@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2012 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,8 +33,8 @@ SET(manual_sources
     transport.rst
     usrp1.rst
     usrp2.rst
-    usrp_b1xx.rst
-    usrp_e1xx.rst
+    usrp_b100.rst
+    usrp_e1x0.rst
 )
 
 ########################################################################

@@ -25,9 +25,9 @@ Application Notes
 * `Firmware and FPGA Image Notes <./images.html>`_
 * `USRP1 Application Notes <./usrp1.html>`_
 * `USRP2 Application Notes <./usrp2.html>`_
-* `USRP-N2XX Series Application Notes <./usrp2.html>`_
-* `USRP-B1XX Series Application Notes <./usrp_b1xx.html>`_
-* `USRP-E1XX Series Application Notes <./usrp_e1xx.html>`_
+* `USRP-N2X0 Series Application Notes <./usrp2.html>`_
+* `USRP-B100 Series Application Notes <./usrp_b100.html>`_
+* `USRP-E1X0 Series Application Notes <./usrp_e1x0.html>`_
 * `Daughterboard Application Notes <./dboards.html>`_
 * `Transport Application Notes <./transport.html>`_
 * `Synchronization Application Notes <./sync.html>`_
