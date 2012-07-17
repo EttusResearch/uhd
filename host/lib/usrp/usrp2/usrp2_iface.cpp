@@ -413,13 +413,13 @@ public:
         //create the images downloader and burner commands
         const std::string images_downloader_cmd = str(boost::format("%s\"%s\"") % sudo % find_images_downloader());
         if (this->get_rev() == USRP2_REV3 or this->get_rev() == USRP2_REV4){
-            const std::string card_burner = (fs::path(fw_image_path).branch_path().branch_path() / "utils" / "usrp2_card_burner_gui.py").string();
+            const std::string card_burner = (fs::path(fw_image_path).branch_path().branch_path() / "utils" / "usrp2_card_burner.py").string();
             const std::string card_burner_cmd = str(boost::format("\"%s%s\" %s--fpga=\"%s\" %s--fw=\"%s\"") % sudo % card_burner % ml % fpga_image_path % ml % fw_image_path);
             return str(boost::format("%s\n%s") % print_images_error() % card_burner_cmd);
         }
         else{
             const std::string addr = _ctrl_transport->get_recv_addr();
-            const std::string net_burner = (fs::path(fw_image_path).branch_path().branch_path() / "utils" / "usrp_n2xx_net_burner_gui.py").string();
+            const std::string net_burner = (fs::path(fw_image_path).branch_path().branch_path() / "utils" / "usrp_n2xx_net_burner.py").string();
             const std::string net_burner_cmd = str(boost::format("\"%s\" %s--fpga=\"%s\" %s--fw=\"%s\" %s--addr=\"%s\"") % net_burner % ml % fpga_image_path % ml % fw_image_path % ml % addr);
             return str(boost::format("%s\n%s") % print_images_error() % net_burner_cmd);
         }

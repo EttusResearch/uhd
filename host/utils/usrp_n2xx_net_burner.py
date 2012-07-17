@@ -199,7 +199,7 @@ def win_get_interfaces():
                 try:
                     ipAddr = adNode.ipAddress.decode()
                     ipMask = adNode.ipMask.decode()
-                except: continue
+                except: ipAddr = None
                 if ipAddr and ipMask:
                     hexAddr = struct.unpack("<L", socket.inet_aton(ipAddr))[0]
                     hexMask = struct.unpack("<L", socket.inet_aton(ipMask))[0]

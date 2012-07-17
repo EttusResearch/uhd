@@ -49,18 +49,6 @@ module gpmc
    wire [15:0] 	  EM_D_fifo;
    wire [15:0] 	  EM_D_wb;
 
-   // these registers are used for the GPMC-to-FIFO interface
-   reg  [15:0]           em_d_reg;
-   reg  [ADDR_WIDTH:1]   em_a_reg;
-   reg  [1:0]            em_nbe_reg;
-   reg                   em_wait0_reg;
-   reg                   em_ncs4_reg;
-   reg                   em_ncs6_reg;
-   reg                   em_nwe_reg;
-   reg                   em_noe_reg;
-
-
-
    assign EM_D = ~EM_output_enable ? 16'bz : ~EM_NCS4 ? EM_D_fifo : EM_D_wb;
 
    // CS4 is RAM_2PORT for DATA PATH (high-speed data)
@@ -75,34 +63,9 @@ module gpmc
    wire [35:0] 	  tx_data, txb_data;
    wire 	  tx_src_rdy, tx_dst_rdy;
    wire 	  txb_src_rdy, txb_dst_rdy;
-   
-   // Register signals to prevent Sequence errors (S-errors) from occuring
-   always @(negedge EM_CLK or posedge arst) begin
-       if (arst) begin
-
-           em_d_reg     <= 0;
-           em_a_reg     <= 0;
-           em_nbe_reg   <= 0;
-           em_wait0_reg <= 0;
-           em_ncs4_reg  <= 0;
-           em_ncs6_reg  <= 0;
-           em_nwe_reg   <= 0;
-           em_noe_reg   <= 0;
-       end
-       else begin
-           em_d_reg     <= EM_D;
-           em_a_reg     <= EM_A;
-           em_nbe_reg   <= EM_NBE;
-           em_wait0_reg <= EM_WAIT0;
-           em_ncs4_reg  <= EM_NCS4;
-           em_ncs6_reg  <= EM_NCS6;
-           em_nwe_reg   <= EM_NWE;
-           em_noe_reg   <= EM_NOE;
-      end
-   end
 
    gpmc_to_fifo #(.ADDR_WIDTH(ADDR_WIDTH)) gpmc_to_fifo
-     (.EM_D(em_d_reg), .EM_A(em_a_reg), .EM_CLK(EM_CLK), .EM_WE(~em_ncs4_reg & ~em_nwe_reg),
+     (.EM_D(EM_D), .EM_A(EM_A), .EM_CLK(EM_CLK), .EM_WE(~EM_NCS4 & ~EM_NWE),
       .clk(fifo_clk), .reset(fifo_rst), .clear(clear_tx), .arst(fifo_rst | clear_tx | arst),
       .data_o(tx18_data), .src_rdy_o(tx18_src_rdy), .dst_rdy_i(tx18_dst_rdy),
       .have_space(tx_have_space));

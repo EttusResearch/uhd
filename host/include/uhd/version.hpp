@@ -24,7 +24,7 @@
 /*!
  * The ABI version string that the client application builds against.
  * Call get_abi_string() to check this against the library build.
- * The format is oldest ABI compatible release - ABI compat number.
+ * The format is oldest API compatible release - ABI compat number.
  * The compatibility number allows pre-release ABI to be versioned.
  */
 #define UHD_VERSION_ABI_STRING "3.4.0-3"

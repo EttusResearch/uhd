@@ -63,6 +63,7 @@ private:
     wb_iface::sptr _iface;
     const size_t _base;
     const size_t _rb_addr;
+    uhd::dict<size_t, boost::uint32_t> _update_cache;
 
     uhd::dict<unit_t, boost::uint16_t> _pin_ctrl, _gpio_out, _gpio_ddr;
     uhd::dict<unit_t, uhd::dict<atr_reg_t, boost::uint16_t> > _atr_regs;
@@ -90,7 +91,12 @@ private:
         const boost::uint32_t ctrl =
             (boost::uint32_t(_pin_ctrl[dboard_iface::UNIT_RX]) << unit2shit(dboard_iface::UNIT_RX)) |
             (boost::uint32_t(_pin_ctrl[dboard_iface::UNIT_TX]) << unit2shit(dboard_iface::UNIT_TX));
-        _iface->poke32(addr, (ctrl & atr_val) | ((~ctrl) & gpio_val));
+        const boost::uint32_t val = (ctrl & atr_val) | ((~ctrl) & gpio_val);
+        if (not _update_cache.has_key(addr) or _update_cache[addr] != val)
+        {
+            _iface->poke32(addr, val);
+        }
+        _update_cache[addr] = val;
     }
 
 };
