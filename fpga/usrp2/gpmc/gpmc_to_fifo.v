@@ -70,9 +70,9 @@ module gpmc_to_fifo
             case(gpmc_state)
 
             GPMC_STATE_START: begin
-                if (EM_A == 0) begin
+                if (EM_A == 2) begin
                     gpmc_state <= GPMC_STATE_FILL;
-                    last_addr <= {EM_D[ADDR_WIDTH-2:0], 1'b0} - 1'b1;
+                    last_addr <= {EM_D[ADDR_WIDTH-2:0], 1'b0} - 1'b1 + 2;
                     next_gpmc_ptr <= gpmc_ptr + 1;
                 end
             end
@@ -116,14 +116,14 @@ module gpmc_to_fifo
         if (reset | clear) begin
             fifo_state <= FIFO_STATE_CLAIM;
             fifo_ptr <= 0;
-            counter <= 0;
+            counter <= 2;
         end
         else begin
             case(fifo_state)
 
             FIFO_STATE_CLAIM: begin
                 if (bram_available_to_empty) fifo_state <= FIFO_STATE_EMPTY;
-                counter <= 0;
+                counter <= 2;
             end
 
             FIFO_STATE_EMPTY: begin
