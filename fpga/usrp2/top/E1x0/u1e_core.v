@@ -454,7 +454,7 @@ module u1e_core
    // Readback mux 32 -- Slave #7
 
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = {16'd9, 16'd2}; //major, minor
+   localparam compat_num = {16'd9, 16'd3}; //major, minor
 
    wire [31:0] reg_test32;
 
