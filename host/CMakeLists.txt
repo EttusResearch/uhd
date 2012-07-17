@@ -231,8 +231,6 @@ IF(ENABLE_UTILS)
     ADD_SUBDIRECTORY(utils)
 ENDIF(ENABLE_UTILS)
 
-ADD_SUBDIRECTORY(usrp_e_utils)
-
 ########################################################################
 # Create Pkg Config File
 ########################################################################
