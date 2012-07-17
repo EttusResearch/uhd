@@ -292,7 +292,7 @@ struct e100_simpl_msb : managed_send_buffer
     {
         //load the data struct
         data.offset = 0;
-        data.count = size()/4+1/*1 for flush pad*/;
+        data.count = size()/4+1/*1 for header offset*/;
 
         //call the ioctl
         ctrl->ioctl(USRP_E_WRITE_CTL32, &data);
@@ -300,7 +300,7 @@ struct e100_simpl_msb : managed_send_buffer
 
     sptr get_new(void)
     {
-        return make(this, data.buf, sizeof(data.buf));
+        return make(this, data.buf+1, sizeof(data.buf)-4);
     }
 };
 
