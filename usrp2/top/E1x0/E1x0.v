@@ -18,7 +18,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 
-module E100
+module E1x0
   (input CLK_FPGA_P, input CLK_FPGA_N,  // Diff
    output [3:0] debug_led, output [31:0] debug, output [1:0] debug_clk,
    input debug_pb, output FPGA_TXD, input FPGA_RXD,
@@ -193,4 +193,4 @@ module E100
     //assign debug = gpmc_debug;
     assign debug = core_debug;
 
-endmodule // E100
+endmodule // E1x0
