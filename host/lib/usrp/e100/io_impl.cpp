@@ -42,6 +42,8 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
+static const size_t vrt_send_header_offset_words32 = 1;
+
 /***********************************************************************
  * io impl details (internal to this file)
  * - pirate crew of 1
@@ -324,6 +326,7 @@ tx_streamer::sptr e100_impl::get_tx_stream(const uhd::stream_args_t &args_){
 
     //calculate packet size
     static const size_t hdr_size = 0
+        + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
         + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().sid) //no stream id ever used
@@ -338,7 +341,7 @@ tx_streamer::sptr e100_impl::get_tx_stream(const uhd::stream_args_t &args_){
 
     //init some streamer stuff
     my_streamer->resize(args.channels.size());
-    my_streamer->set_vrt_packer(&vrt::if_hdr_pack_le);
+    my_streamer->set_vrt_packer(&vrt::if_hdr_pack_le, vrt_send_header_offset_words32);
 
     //set the converter
     uhd::convert::id_type id;
