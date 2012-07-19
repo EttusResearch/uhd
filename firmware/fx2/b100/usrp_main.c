@@ -124,7 +124,7 @@ app_vendor_cmd (void)
 
     case VRQ_FW_COMPAT:
         EP0BCH = 0;
-        EP0BCL = 3;
+        EP0BCL = 4;
         break;
 
     default:
