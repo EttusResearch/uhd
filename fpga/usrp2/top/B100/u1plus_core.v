@@ -105,9 +105,15 @@ module u1plus_core
     wire [31:0] config_word0;
     setting_reg #(.my_addr(SR_MISC+0), .width(32)) sr_misc_config0
      (.clk(clk), .rst(1'b0/*reset*/), .strobe(set_stb), .addr(set_addr), .in(set_data), .out(config_word0));
+
     wire [31:0] config_word1;
     setting_reg #(.my_addr(SR_MISC+1), .width(32)) sr_misc_config1
      (.clk(clk), .rst(1'b0/*reset*/), .strobe(set_stb), .addr(set_addr), .in(set_data), .out(config_word1));
+
+    wire clock_sync_inv, clock_sync_enb;
+    setting_reg #(.my_addr(SR_MISC+2), .width(2)) sr_misc_clock_sync
+     (.clk(clk), .rst(reset), .strobe(set_stb), .addr(set_addr), .in(set_data),
+     .out({clock_sync_inv, clock_sync_enb}));
 
     ///////////////////////////////////////////////////////////////////////////
     // Settings Bus and Readback
@@ -151,7 +157,8 @@ module u1plus_core
      (.clk(clk), .rst(reset), .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .pps(pps_in), .vita_time(vita_time), .vita_time_pps(vita_time_pps),
       .exp_time_in(0));
-    assign clock_sync = 1'b0;
+
+    assign clock_sync = (clock_sync_enb)? (pps_in ^ clock_sync_inv) : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     // SPI Core
