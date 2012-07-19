@@ -130,7 +130,7 @@ The LEDs on the front panel can be useful in debugging hardware and software
 issues.  The LEDs reveal the following about the state of the device:
 
 * **LED A:** transmitting
-* **LED B:** fpga loaded
+* **LED B:** PPS signal
 * **LED C:** receiving
 * **LED D:** fpga loaded
 * **LED E:** reference lock

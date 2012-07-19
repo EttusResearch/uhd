@@ -486,6 +486,19 @@ void e100_impl::set_db_eeprom(const std::string &type, const uhd::usrp::dboard_e
 }
 
 void e100_impl::update_clock_source(const std::string &source){
+
+    if (source == "pps_sync"){
+        _clock_ctrl->use_external_ref();
+        _fifo_ctrl->poke32(TOREG(SR_MISC+2), 1);
+        return;
+    }
+    if (source == "_pps_sync_"){
+        _clock_ctrl->use_external_ref();
+        _fifo_ctrl->poke32(TOREG(SR_MISC+2), 3);
+        return;
+    }
+    _fifo_ctrl->poke32(TOREG(SR_MISC+2), 0);
+
     if      (source == "auto")     _clock_ctrl->use_auto_ref();
     else if (source == "internal") _clock_ctrl->use_internal_ref();
     else if (source == "external") _clock_ctrl->use_external_ref();
