@@ -121,7 +121,14 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
 
     //extract the fpga path and compute hash
     const std::string default_fpga_file_name = model_to_fpga_file_name[model];
-    const std::string e100_fpga_image = find_image_path(device_addr.get("fpga", default_fpga_file_name));
+    std::string e100_fpga_image;
+    try{
+        e100_fpga_image = find_image_path(device_addr.get("fpga", default_fpga_file_name));
+    }
+    catch(...){
+        UHD_MSG(error) << boost::format("Could not find FPGA image. %s\n") % print_images_error();
+        throw;
+    }
     e100_load_fpga(e100_fpga_image);
 
     ////////////////////////////////////////////////////////////////////
