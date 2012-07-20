@@ -75,7 +75,7 @@ module gpmc_to_fifo
             case(gpmc_state)
 
             GPMC_STATE_START: begin
-                if (EM_A == XFER_OFFSET) begin
+                if (data_i[16]) begin
                     gpmc_state <= GPMC_STATE_FILL;
                     vita_len <= EM_D;
                     next_gpmc_ptr <= gpmc_ptr + 1;
