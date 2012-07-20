@@ -14,7 +14,7 @@ INST "EM_NCS6" TNM = gpmc_net;
 INST "EM_NWE" TNM = gpmc_net;
 INST "EM_NOE" TNM = gpmc_net;
 
-TIMEGRP "gpmc_net" OFFSET = IN 7 ns VALID 14 ns BEFORE "EM_CLK" FALLING;
+TIMEGRP "gpmc_net" OFFSET = IN 6 ns VALID 12 ns BEFORE "EM_CLK" FALLING;
 TIMEGRP "gpmc_net_out" OFFSET = OUT 14 ns AFTER "EM_CLK" RISING; //2 clock cyc per read
 
 #constrain interrupt lines

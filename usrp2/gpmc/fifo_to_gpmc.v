@@ -82,7 +82,7 @@ module fifo_to_gpmc
             end
 
             GPMC_STATE_EMPTY: begin
-                if (EM_A == LAST_ADDR) begin
+                if (addr == LAST_ADDR) begin
                     gpmc_state <= GPMC_STATE_START;
                     gpmc_ptr <= next_gpmc_ptr;
                     addr <= 0;
