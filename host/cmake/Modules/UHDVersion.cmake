@@ -27,7 +27,7 @@ FIND_PACKAGE(Git QUIET)
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
 SET(UHD_VERSION_MINOR 004)
-SET(UHD_VERSION_PATCH 002)
+SET(UHD_VERSION_PATCH 003)
 
 ########################################################################
 # Version information discovery through git log

@@ -44,7 +44,7 @@ Typically, the data type is complex baseband such as normalized **complex-float3
 The link-layer data type
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The link-layer or "over-the-wire" data type refers to the format of the samples sent through the link.
-Typically, this data type is **complex-int16*.
+Typically, this data type is **complex-int16**.
 However, to increase throughput over the link-layer,
 at the expense of precision, **complex-int8** may be used.
 
