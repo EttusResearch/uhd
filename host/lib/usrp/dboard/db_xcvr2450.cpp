@@ -29,7 +29,7 @@
 #define HB_PA_TXIO               LB_PA_OFF_TXIO
 #define LB_PA_TXIO               HB_PA_OFF_TXIO
 #define TX_ENB_TXIO              TX_EN_TXIO
-#define TX_DIS_TXIO              0
+#define TX_DIS_TXIO              (HB_PA_OFF_TXIO | LB_PA_OFF_TXIO)
 #define AD9515DIV_3_TXIO         AD9515DIV_TXIO
 #define AD9515DIV_2_TXIO         0
 
