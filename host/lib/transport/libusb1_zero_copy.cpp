@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -176,6 +176,23 @@ public:
     {
         _handle->claim_interface(recv_interface);
         _handle->claim_interface(send_interface);
+
+        //flush the buffers out of the recv endpoint
+        //limit the flushing to at most one second
+        for (size_t i = 0; i < 100; i++)
+        {
+            unsigned char buff[512];
+            int transfered = 0;
+            const int status = libusb_bulk_transfer(
+                _handle->get(), // dev_handle
+                (recv_endpoint & 0x7f) | 0x80, // endpoint
+                static_cast<unsigned char *>(buff),
+                sizeof(buff),
+                &transfered, //bytes xfered
+                10 //timeout ms
+            );
+            if (status == LIBUSB_ERROR_TIMEOUT) break;
+        }
 
         //allocate libusb transfer structs and managed receive buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++){
