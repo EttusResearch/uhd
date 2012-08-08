@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
 //
 
 #include "db_wbx_common.hpp"
-#include "adf4350_regs.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>

@@ -168,6 +168,11 @@ double sbx_xcvr::sbx_version4::set_lo_freq(dboard_iface::unit_t unit, double tar
     UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(RFdiv));
     regs.rf_divider_select = rfdivsel_to_enum[RFdiv];
 
+    //reset the N and R counter
+    regs.counter_reset = adf4351_regs_t::COUNTER_RESET_ENABLED;
+    self_base->get_iface()->write_spi(unit, spi_config_t::EDGE_RISE, regs.get_reg(2), 32);
+    regs.counter_reset = adf4351_regs_t::COUNTER_RESET_DISABLED;
+
     //write the registers
     //correct power-up sequence to write registers (5, 4, 3, 2, 1, 0)
     int addr;
