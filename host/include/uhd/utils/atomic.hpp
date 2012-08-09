@@ -23,6 +23,12 @@
 #include <boost/thread/thread.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
 
+#if BOOST_VERSION >= 104800
+#  define BOOST_IPC_DETAIL boost::interprocess::ipcdetail
+#else
+#  define BOOST_IPC_DETAIL boost::interprocess::detail
+#endif
+
 namespace uhd{
 
     //! A 32-bit integer that can be atomically accessed
@@ -36,27 +42,27 @@ namespace uhd{
 
         //! Compare with cmp, swap with newval if same, return old value
         UHD_INLINE boost::uint32_t cas(boost::uint32_t newval, boost::uint32_t cmp){
-            return boost::interprocess::detail::atomic_cas32(&_num, newval, cmp);
+            return BOOST_IPC_DETAIL::atomic_cas32(&_num, newval, cmp);
         }
 
         //! Sets the atomic integer to a new value
         UHD_INLINE void write(const boost::uint32_t newval){
-            boost::interprocess::detail::atomic_write32(&_num, newval);
+            BOOST_IPC_DETAIL::atomic_write32(&_num, newval);
         }
 
         //! Gets the current value of the atomic integer
         UHD_INLINE boost::uint32_t read(void){
-            return boost::interprocess::detail::atomic_read32(&_num);
+            return BOOST_IPC_DETAIL::atomic_read32(&_num);
         }
 
         //! Increment by 1 and return the old value
         UHD_INLINE boost::uint32_t inc(void){
-            return boost::interprocess::detail::atomic_inc32(&_num);
+            return BOOST_IPC_DETAIL::atomic_inc32(&_num);
         }
 
         //! Decrement by 1 and return the old value
         UHD_INLINE boost::uint32_t dec(void){
-            return boost::interprocess::detail::atomic_dec32(&_num);
+            return BOOST_IPC_DETAIL::atomic_dec32(&_num);
         }
 
     private: volatile boost::uint32_t _num;
