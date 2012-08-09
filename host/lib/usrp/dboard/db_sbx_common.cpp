@@ -16,7 +16,6 @@
 //
 
 #include "db_sbx_common.hpp"
-#include "adf4350_regs.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;

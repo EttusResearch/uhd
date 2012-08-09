@@ -316,6 +316,11 @@ double wbx_base::wbx_version2::set_lo_freq(dboard_iface::unit_t unit, double tar
 
     }
 
+    //reset the N and R counter
+    regs.counter_reset = adf4350_regs_t::COUNTER_RESET_ENABLED;
+    self_base->get_iface()->write_spi(unit, spi_config_t::EDGE_RISE, regs.get_reg(2), 32);
+    regs.counter_reset = adf4350_regs_t::COUNTER_RESET_DISABLED;
+
     //write the registers
     //correct power-up sequence to write registers (5, 4, 3, 2, 1, 0)
     int addr;
