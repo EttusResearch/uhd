@@ -54,6 +54,12 @@ static bool fe_cal_comp(fe_cal_t a, fe_cal_t b){
 
 static uhd::dict<std::string, std::vector<fe_cal_t> > fe_cal_cache;
 
+static bool is_same_freq(const double f1, const double f2)
+{
+    const double epsilon = 0.1;
+    return ((f1 - epsilon) < f2 and (f1 + epsilon) > f2);
+}
+
 static std::complex<double> get_fe_correction(
     const std::string &key, const double lo_freq
 ){
@@ -64,6 +70,12 @@ static std::complex<double> get_fe_correction(
     size_t lo_index = 0;
     size_t hi_index = datas.size()-1;
     for (size_t i = 0; i < datas.size(); i++){
+        if (is_same_freq(datas[i].lo_freq, lo_freq))
+        {
+            hi_index = i;
+            lo_index = i;
+            break;
+        }
         if (datas[i].lo_freq > lo_freq){
             hi_index = i;
             break;
