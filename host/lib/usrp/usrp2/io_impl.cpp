@@ -395,6 +395,7 @@ void usrp2_impl::program_stream_dest(
             managed_send_buffer::sptr send_buff = xport->get_send_buff();
             std::memcpy(send_buff->cast<void *>(), &stream_ctrl, sizeof(stream_ctrl));
             send_buff->commit(sizeof(stream_ctrl));
+            send_buff.reset();
             boost::this_thread::sleep(boost::posix_time::milliseconds(300));
             managed_recv_buffer::sptr recv_buff = xport->get_recv_buff(0.0);
             if (recv_buff and recv_buff->size() >= sizeof(boost::uint32_t)){

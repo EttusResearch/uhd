@@ -46,8 +46,7 @@ if __name__ == "__main__":
     u = urllib2.urlopen(images_src)
     f = open(filename, "wb")
     meta = u.info()
-    #filesize = int(meta.getheaders("Content-Length")[0])
-    filesize = float(int(meta.getheaders("Content-Length")[0]))
+    filesize = float(meta.getheaders("Content-Length")[0])
     
     print "Downloading images from: %s" % images_src
     
