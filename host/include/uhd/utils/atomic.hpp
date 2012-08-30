@@ -23,6 +23,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
 
+#include <boost/version.hpp>
 #if BOOST_VERSION >= 104800
 #  define BOOST_IPC_DETAIL boost::interprocess::ipcdetail
 #else
