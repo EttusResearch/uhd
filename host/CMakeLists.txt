@@ -198,7 +198,7 @@ INSTALL(FILES
 # Images download directory for utils/uhd_images_downloader.py
 ########################################################################
 
-SET(UHD_IMAGES_DOWNLOAD_SRC "http://files.ettus.com/binaries/master_images/archive/uhd-images_003.004.002-180-gb6bb13bc.zip")
+SET(UHD_IMAGES_DOWNLOAD_SRC "http://files.ettus.com/binaries/next_images/archive/uhd-images_003.004.003-205-g4896bf78.zip")
 
 ########################################################################
 # Register top level components
@@ -230,8 +230,6 @@ ENDIF(ENABLE_TESTS)
 IF(ENABLE_UTILS)
     ADD_SUBDIRECTORY(utils)
 ENDIF(ENABLE_UTILS)
-
-ADD_SUBDIRECTORY(usrp_e_utils)
 
 ########################################################################
 # Create Pkg Config File

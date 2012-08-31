@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
 ////////////////////////////////////////////////////////////////////////
 
 module fifo_to_gpmc
-  #(parameter PTR_WIDTH = 2, parameter ADDR_WIDTH = 10)
+  #(parameter PTR_WIDTH = 2, parameter ADDR_WIDTH = 10, parameter LAST_ADDR = 10'h3ff)
   (input clk, input reset, input clear, input arst,
    input [17:0] data_i, input src_rdy_i, output dst_rdy_o,
    output [15:0] EM_D, input [ADDR_WIDTH:1] EM_A, input EM_CLK, input EM_OE,
@@ -82,14 +82,15 @@ module fifo_to_gpmc
             end
 
             GPMC_STATE_EMPTY: begin
-                if (EM_A == 10'h3ff) begin
+                if (addr == LAST_ADDR) begin
                     gpmc_state <= GPMC_STATE_START;
                     gpmc_ptr <= next_gpmc_ptr;
+                    addr <= 0;
                 end
             end
 
             endcase //gpmc_state
-        end //EM_WE
+        end //EM_OE
     end //always
 
     //------------------------------------------------------------------

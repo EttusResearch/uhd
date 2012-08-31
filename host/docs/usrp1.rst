@@ -5,6 +5,17 @@ UHD - USRP1 Application Notes
 .. contents:: Table of Contents
 
 ------------------------------------------------------------------------
+Comparative features list
+------------------------------------------------------------------------
+
+* 2 transceiver card slots
+* 2 RX DDC chains in FPGA
+* 2 TX DUC chains in FPGA (no TX CORDIC -> uses DAC)
+* 64 MHz fixed clock rate
+* sc16 sample modes
+* sc8 sample mode - RX only
+
+------------------------------------------------------------------------
 Specify a Non-standard Image
 ------------------------------------------------------------------------
 The standard USRP1 images installer comes with two FPGA images:

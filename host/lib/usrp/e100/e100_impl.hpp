@@ -18,17 +18,17 @@
 #include "e100_ctrl.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
-#include "spi_core_100.hpp"
-#include "i2c_core_100.hpp"
+#include "i2c_core_200.hpp"
 #include "rx_frontend_core_200.hpp"
 #include "tx_frontend_core_200.hpp"
 #include "rx_dsp_core_200.hpp"
 #include "tx_dsp_core_200.hpp"
 #include "time64_core_200.hpp"
+#include "fifo_ctrl_excelsior.hpp"
 #include "user_settings_core_200.hpp"
+#include "recv_packet_demuxer.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
-#include <uhd/utils/pimpl.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -49,9 +49,10 @@ static const double          E100_RX_LINK_RATE_BPS = 166e6/3/2*2;
 static const double          E100_TX_LINK_RATE_BPS = 166e6/3/1*2;
 static const std::string     E100_I2C_DEV_NODE = "/dev/i2c-3";
 static const std::string     E100_UART_DEV_NODE = "/dev/ttyO0";
-static const boost::uint16_t E100_FPGA_COMPAT_NUM = 10;
-static const boost::uint32_t E100_RX_SID_BASE = 2;
-static const boost::uint32_t E100_TX_ASYNC_SID = 1;
+static const boost::uint16_t E100_FPGA_COMPAT_NUM = 11;
+static const boost::uint32_t E100_RX_SID_BASE = 30;
+static const boost::uint32_t E100_TX_ASYNC_SID = 10;
+static const boost::uint32_t E100_CTRL_MSG_SID = 20;
 static const double          E100_DEFAULT_CLOCK_RATE = 64e6;
 static const std::string     E100_EEPROM_MAP_KEY = "E100";
 
@@ -87,8 +88,8 @@ private:
     uhd::property_tree::sptr _tree;
 
     //controllers
-    spi_core_100::sptr _fpga_spi_ctrl;
-    i2c_core_100::sptr _fpga_i2c_ctrl;
+    fifo_ctrl_excelsior::sptr _fifo_ctrl;
+    i2c_core_200::sptr _fpga_i2c_ctrl;
     rx_frontend_core_200::sptr _rx_fe;
     tx_frontend_core_200::sptr _tx_fe;
     std::vector<rx_dsp_core_200::sptr> _rx_dsps;
@@ -104,14 +105,11 @@ private:
 
     //transports
     uhd::transport::zero_copy_if::sptr _data_transport;
+    uhd::usrp::recv_packet_demuxer::sptr _recv_demuxer;
 
     //dboard stuff
     uhd::usrp::dboard_manager::sptr _dboard_manager;
     uhd::usrp::dboard_iface::sptr _dboard_iface;
-
-    //handle io stuff
-    UHD_PIMPL_DECL(io_impl) _io_impl;
-    void io_init(void);
 
     //device properties interface
     uhd::property_tree::sptr get_tree(void) const{

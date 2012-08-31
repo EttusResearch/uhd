@@ -5,7 +5,7 @@
 ##################################################
 # Project Setup
 ##################################################
-TOP_MODULE = u1e
+TOP_MODULE = E1x0
 BUILD_DIR = $(abspath build$(ISE)-E110)
 
 # set me in a custom makefile
@@ -48,9 +48,9 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 # Sources
 ##################################################
 TOP_SRCS = \
-u1e_core.v \
-u1e.v \
-u1e.ucf \
+../B100/u1plus_core.v \
+E1x0.v \
+E1x0.ucf \
 timing.ucf
 
 SOURCES = $(abspath $(TOP_SRCS)) $(FIFO_SRCS) \

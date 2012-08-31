@@ -250,7 +250,7 @@ IMAGES_LIST += $(_usrp_e100_fpga_bin)
 $(_usrp_e100_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_e100_fpga_dir) && make -f Makefile.E100 clean
 	cd $(_usrp_e100_fpga_dir) && make -f Makefile.E100 bin
-	cp $(_usrp_e100_fpga_dir)/build-E100/u1e.bin $@
+	cp $(_usrp_e100_fpga_dir)/build-E100/E1x0.bin $@
 
 endif
 
@@ -266,7 +266,7 @@ IMAGES_LIST += $(_usrp_e110_fpga_bin)
 $(_usrp_e110_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_e110_fpga_dir) && make -f Makefile.E110 clean
 	cd $(_usrp_e110_fpga_dir) && make -f Makefile.E110 bin
-	cp $(_usrp_e110_fpga_dir)/build-E110/u1e.bin $@
+	cp $(_usrp_e110_fpga_dir)/build-E110/E1x0.bin $@
 
 endif
 

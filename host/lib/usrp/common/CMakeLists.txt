@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Ettus Research LLC
+# Copyright 2011-2012 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,4 +32,5 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/apply_corrections.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/validate_subdev_spec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/recv_packet_demuxer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/fifo_ctrl_excelsior.cpp
 )

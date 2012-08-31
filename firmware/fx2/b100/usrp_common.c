@@ -85,8 +85,8 @@ init_usrp (void)
   // set autoin length for EP6/EP8
   EP6AUTOINLENH = (512) >> 8;	SYNCDELAY;  // this is the length for high speed
   EP6AUTOINLENL = (512) & 0xff; SYNCDELAY;
-  EP8AUTOINLENH = (32) >> 8; SYNCDELAY;
-  EP8AUTOINLENL = (32) & 0xff; SYNCDELAY;
+  EP8AUTOINLENH = (512) >> 8; SYNCDELAY;
+  EP8AUTOINLENL = (512) & 0xff; SYNCDELAY;
 
   //set FLAGA, FLAGB, FLAGC, FLAGD to be EP2EF, EP4EF, EP6PF, EP8PF
   PINFLAGSAB = (bmEP2EF) | (bmEP4EF << 4);
@@ -99,13 +99,19 @@ init_usrp (void)
   EP6FIFOPFL = 0xFD;
   SYNCDELAY;
 
+  EP8FIFOPFH = 0x09;
+  SYNCDELAY;
+  EP8FIFOPFL = 0xFD;
+  SYNCDELAY;
+
 //  EP2FIFOPFH = 0x08;
 //  SYNCDELAY;
 // EP2FIFOPFL = 0x00;
 //  SYNCDELAY;
 
   //assert FIFOEMPTY one cycle sooner so we get it in time at the FPGA
-  EP2FIFOCFG |= bmBIT5; 
+  EP2FIFOCFG |= bmBIT5;
+  EP4FIFOCFG |= bmBIT5;
   
   //set FIFOPINPOLAR to normal (active low) mode
   FIFOPINPOLAR = 0x00;

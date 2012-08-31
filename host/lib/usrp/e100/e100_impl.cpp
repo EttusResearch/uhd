@@ -28,6 +28,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/assign/list_of.hpp>
 #include <fstream>
+#include <ctime>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -86,15 +87,6 @@ static device_addrs_t e100_find(const device_addr_t &hint){
 /***********************************************************************
  * Make
  **********************************************************************/
-static size_t hash_fpga_file(const std::string &file_path){
-    size_t hash = 0;
-    std::ifstream file(file_path.c_str());
-    if (not file.good()) throw uhd::io_error("cannot open fpga file for read: " + file_path);
-    while (file.good()) boost::hash_combine(hash, file.get());
-    file.close();
-    return hash;
-}
-
 static device::sptr e100_make(const device_addr_t &device_addr){
     return device::sptr(new e100_impl(device_addr));
 }
@@ -114,10 +106,6 @@ static const uhd::dict<std::string, std::string> model_to_fpga_file_name = boost
 e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tree = property_tree::make();
 
-    //setup the main interface into fpga
-    const std::string node = device_addr["node"];
-    _fpga_ctrl = e100_ctrl::make(node);
-
     //read the eeprom so we can determine the hardware
     _dev_i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);
     const mboard_eeprom_t mb_eeprom(*_dev_i2c_iface, E100_EEPROM_MAP_KEY);
@@ -133,20 +121,19 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
 
     //extract the fpga path and compute hash
     const std::string default_fpga_file_name = model_to_fpga_file_name[model];
-    const std::string e100_fpga_image = find_image_path(device_addr.get("fpga", default_fpga_file_name));
-    const boost::uint32_t file_hash = boost::uint32_t(hash_fpga_file(e100_fpga_image));
-
-    //When the hash does not match:
-    // - close the device node
-    // - load the fpga bin file
-    // - re-open the device node
-    if (_fpga_ctrl->peek32(E100_REG_RB_MISC_TEST32) != file_hash){
-        _fpga_ctrl.reset();
-        e100_load_fpga(e100_fpga_image);
-        _fpga_ctrl = e100_ctrl::make(node);
+    std::string e100_fpga_image;
+    try{
+        e100_fpga_image = find_image_path(device_addr.get("fpga", default_fpga_file_name));
     }
+    catch(...){
+        UHD_MSG(error) << boost::format("Could not find FPGA image. %s\n") % print_images_error();
+        throw;
+    }
+    e100_load_fpga(e100_fpga_image);
 
-    //setup clock control here to ensure that the FPGA has a good clock before we continue
+    ////////////////////////////////////////////////////////////////////
+    // Setup the FPGA clock over AUX SPI
+    ////////////////////////////////////////////////////////////////////
     bool dboard_clocks_diff = true;
     if      (mb_eeprom.get("revision", "0") == "3") dboard_clocks_diff = false;
     else if (mb_eeprom.get("revision", "0") == "4") dboard_clocks_diff = true;
@@ -158,12 +145,32 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _aux_spi_iface = e100_ctrl::make_aux_spi_iface();
     _clock_ctrl = e100_clock_ctrl::make(_aux_spi_iface, master_clock_rate, dboard_clocks_diff);
 
+    ////////////////////////////////////////////////////////////////////
+    // setup the main interface into fpga
+    //  - do this after aux spi, because we share gpio147
+    ////////////////////////////////////////////////////////////////////
+    const std::string node = device_addr["node"];
+    _fpga_ctrl = e100_ctrl::make(node);
+
+    ////////////////////////////////////////////////////////////////////
+    // Initialize FPGA control communication
+    ////////////////////////////////////////////////////////////////////
+    fifo_ctrl_excelsior_config fifo_ctrl_config;
+    fifo_ctrl_config.async_sid_base = E100_TX_ASYNC_SID;
+    fifo_ctrl_config.num_async_chan = 1;
+    fifo_ctrl_config.ctrl_sid_base = E100_CTRL_MSG_SID;
+    fifo_ctrl_config.spi_base = TOREG(SR_SPI);
+    fifo_ctrl_config.spi_rb = REG_RB_SPI;
+    _fifo_ctrl = fifo_ctrl_excelsior::make(_fpga_ctrl, fifo_ctrl_config);
+
     //Perform wishbone readback tests, these tests also write the hash
     bool test_fail = false;
-    UHD_MSG(status) << "Performing wishbone readback test... " << std::flush;
+    UHD_MSG(status) << "Performing control readback test... " << std::flush;
+    size_t hash = time(NULL);
     for (size_t i = 0; i < 100; i++){
-        _fpga_ctrl->poke32(E100_REG_SR_MISC_TEST32, file_hash);
-        test_fail = _fpga_ctrl->peek32(E100_REG_RB_MISC_TEST32) != file_hash;
+        boost::hash_combine(hash, i);
+        _fifo_ctrl->poke32(TOREG(SR_MISC+0), boost::uint32_t(hash));
+        test_fail = _fifo_ctrl->peek32(REG_RB_CONFIG0) != boost::uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
@@ -180,8 +187,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // Create controller objects
     ////////////////////////////////////////////////////////////////////
-    _fpga_i2c_ctrl = i2c_core_100::make(_fpga_ctrl, E100_REG_SLAVE(3));
-    _fpga_spi_ctrl = spi_core_100::make(_fpga_ctrl, E100_REG_SLAVE(2));
+    _fpga_i2c_ctrl = i2c_core_200::make(_fifo_ctrl, TOREG(SR_I2C), REG_RB_I2C);
     _data_transport = e100_make_mmap_zero_copy(_fpga_ctrl);
 
     ////////////////////////////////////////////////////////////////////
@@ -205,12 +211,17 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     //^^^ clock created up top, just reg props here... ^^^
     _tree->create<double>(mb_path / "tick_rate")
         .publish(boost::bind(&e100_clock_ctrl::get_fpga_clock_rate, _clock_ctrl))
+        .subscribe(boost::bind(&fifo_ctrl_excelsior::set_tick_rate, _fifo_ctrl, _1))
         .subscribe(boost::bind(&e100_impl::update_tick_rate, this, _1));
+
+    //subscribe the command time while we are at it
+    _tree->create<time_spec_t>(mb_path / "time/cmd")
+        .subscribe(boost::bind(&fifo_ctrl_excelsior::set_time, _fifo_ctrl, _1));
 
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
     ////////////////////////////////////////////////////////////////////
-    _codec_ctrl = e100_codec_ctrl::make(_fpga_spi_ctrl);
+    _codec_ctrl = e100_codec_ctrl::make(_fifo_ctrl/*spi*/);
     const fs_path rx_codec_path = mb_path / "rx_codecs/A";
     const fs_path tx_codec_path = mb_path / "tx_codecs/A";
     _tree->create<std::string>(rx_codec_path / "name").set("ad9522");
@@ -232,24 +243,37 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // Create the GPSDO control
     ////////////////////////////////////////////////////////////////////
-    try{
-        _gps = gps_ctrl::make(e100_ctrl::make_gps_uart_iface(E100_UART_DEV_NODE));
-    }
-    catch(std::exception &e){
-        UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
-    }
-    if (_gps.get() != NULL and _gps->gps_detected()){
-        BOOST_FOREACH(const std::string &name, _gps->get_sensors()){
-            _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                .publish(boost::bind(&gps_ctrl::get_sensor, _gps, name));
+    static const fs::path GPSDO_VOLATILE_PATH("/media/ram/e100_internal_gpsdo.cache");
+    if (not fs::exists(GPSDO_VOLATILE_PATH))
+    {
+        UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
+        try{
+            _gps = gps_ctrl::make(e100_ctrl::make_gps_uart_iface(E100_UART_DEV_NODE));
+        }
+        catch(std::exception &e){
+            UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
+        }
+        if (_gps and _gps->gps_detected())
+        {
+            UHD_MSG(status) << "found" << std::endl;
+            BOOST_FOREACH(const std::string &name, _gps->get_sensors())
+            {
+                _tree->create<sensor_value_t>(mb_path / "sensors" / name)
+                    .publish(boost::bind(&gps_ctrl::get_sensor, _gps, name));
+            }
+        }
+        else
+        {
+            UHD_MSG(status) << "not found" << std::endl;
+            std::ofstream(GPSDO_VOLATILE_PATH.string().c_str(), std::ofstream::binary) << "42" << std::endl;
         }
     }
 
     ////////////////////////////////////////////////////////////////////
     // create frontend control objects
     ////////////////////////////////////////////////////////////////////
-    _rx_fe = rx_frontend_core_200::make(_fpga_ctrl, E100_REG_SR_ADDR(UE_SR_RX_FRONT));
-    _tx_fe = tx_frontend_core_200::make(_fpga_ctrl, E100_REG_SR_ADDR(UE_SR_TX_FRONT));
+    _rx_fe = rx_frontend_core_200::make(_fifo_ctrl, TOREG(SR_RX_FE));
+    _tx_fe = tx_frontend_core_200::make(_fifo_ctrl, TOREG(SR_TX_FE));
 
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
         .subscribe(boost::bind(&e100_impl::update_rx_subdev_spec, this, _1));
@@ -278,13 +302,17 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    _rx_dsps.push_back(rx_dsp_core_200::make(
-        _fpga_ctrl, E100_REG_SR_ADDR(UE_SR_RX_DSP0), E100_REG_SR_ADDR(UE_SR_RX_CTRL0), E100_RX_SID_BASE + 0
-    ));
-    _rx_dsps.push_back(rx_dsp_core_200::make(
-        _fpga_ctrl, E100_REG_SR_ADDR(UE_SR_RX_DSP1), E100_REG_SR_ADDR(UE_SR_RX_CTRL1), E100_RX_SID_BASE + 1
-    ));
-    for (size_t dspno = 0; dspno < _rx_dsps.size(); dspno++){
+    const size_t num_rx_dsps = _fifo_ctrl->peek32(REG_RB_NUM_RX_DSP);
+    for (size_t dspno = 0; dspno < num_rx_dsps; dspno++)
+    {
+        const size_t sr_off = dspno*32;
+        _rx_dsps.push_back(rx_dsp_core_200::make(
+            _fifo_ctrl,
+            TOREG(SR_RX_DSP0+sr_off),
+            TOREG(SR_RX_CTRL0+sr_off),
+            E100_RX_SID_BASE + dspno
+        ));
+
         _rx_dsps[dspno]->set_link_rate(E100_RX_LINK_RATE_BPS);
         _tree->access<double>(mb_path / "tick_rate")
             .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _rx_dsps[dspno], _1));
@@ -307,7 +335,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
     _tx_dsp = tx_dsp_core_200::make(
-        _fpga_ctrl, E100_REG_SR_ADDR(UE_SR_TX_DSP), E100_REG_SR_ADDR(UE_SR_TX_CTRL), E100_TX_ASYNC_SID
+        _fifo_ctrl, TOREG(SR_TX_DSP), TOREG(SR_TX_CTRL), E100_TX_ASYNC_SID
     );
     _tx_dsp->set_link_rate(E100_TX_LINK_RATE_BPS);
     _tree->access<double>(mb_path / "tick_rate")
@@ -327,12 +355,12 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     // create time control objects
     ////////////////////////////////////////////////////////////////////
     time64_core_200::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_hi_now = E100_REG_RB_TIME_NOW_HI;
-    time64_rb_bases.rb_lo_now = E100_REG_RB_TIME_NOW_LO;
-    time64_rb_bases.rb_hi_pps = E100_REG_RB_TIME_PPS_HI;
-    time64_rb_bases.rb_lo_pps = E100_REG_RB_TIME_PPS_LO;
+    time64_rb_bases.rb_hi_now = REG_RB_TIME_NOW_HI;
+    time64_rb_bases.rb_lo_now = REG_RB_TIME_NOW_LO;
+    time64_rb_bases.rb_hi_pps = REG_RB_TIME_PPS_HI;
+    time64_rb_bases.rb_lo_pps = REG_RB_TIME_PPS_LO;
     _time64 = time64_core_200::make(
-        _fpga_ctrl, E100_REG_SR_ADDR(UE_SR_TIME64), time64_rb_bases
+        _fifo_ctrl, TOREG(SR_TIME64), time64_rb_bases
     );
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&time64_core_200::set_tick_rate, _time64, _1));
@@ -357,7 +385,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // create user-defined control objects
     ////////////////////////////////////////////////////////////////////
-    _user = user_settings_core_200::make(_fpga_ctrl, E100_REG_SR_ADDR(UE_SR_USER_REGS));
+    _user = user_settings_core_200::make(_fifo_ctrl, TOREG(SR_USER_REGS));
     _tree->create<user_settings_core_200::user_reg_t>(mb_path / "user/regs")
         .subscribe(boost::bind(&user_settings_core_200::set_reg, _user, _1));
 
@@ -383,7 +411,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         .subscribe(boost::bind(&e100_impl::set_db_eeprom, this, "gdb", _1));
 
     //create a new dboard interface and manager
-    _dboard_iface = make_e100_dboard_iface(_fpga_ctrl, _fpga_i2c_ctrl, _fpga_spi_ctrl, _clock_ctrl, _codec_ctrl);
+    _dboard_iface = make_e100_dboard_iface(_fifo_ctrl, _fpga_i2c_ctrl, _fifo_ctrl/*spi*/, _clock_ctrl, _codec_ctrl);
     _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_dboard_iface);
     _dboard_manager = dboard_manager::make(
         rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
@@ -403,7 +431,11 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     }
 
     //initialize io handling
-    this->io_init();
+    _recv_demuxer = recv_packet_demuxer::make(_data_transport, _rx_dsps.size(), E100_RX_SID_BASE);
+
+    //allocate streamer weak ptrs containers
+    _rx_streamers.resize(_rx_dsps.size());
+    _tx_streamers.resize(1/*known to be 1 dsp*/);
 
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
@@ -461,6 +493,19 @@ void e100_impl::set_db_eeprom(const std::string &type, const uhd::usrp::dboard_e
 }
 
 void e100_impl::update_clock_source(const std::string &source){
+
+    if (source == "pps_sync"){
+        _clock_ctrl->use_external_ref();
+        _fifo_ctrl->poke32(TOREG(SR_MISC+2), 1);
+        return;
+    }
+    if (source == "_pps_sync_"){
+        _clock_ctrl->use_external_ref();
+        _fifo_ctrl->poke32(TOREG(SR_MISC+2), 3);
+        return;
+    }
+    _fifo_ctrl->poke32(TOREG(SR_MISC+2), 0);
+
     if      (source == "auto")     _clock_ctrl->use_auto_ref();
     else if (source == "internal") _clock_ctrl->use_internal_ref();
     else if (source == "external") _clock_ctrl->use_external_ref();
@@ -474,7 +519,7 @@ sensor_value_t e100_impl::get_ref_locked(void){
 }
 
 void e100_impl::check_fpga_compat(void){
-    const boost::uint32_t fpga_compat_num = _fpga_ctrl->peek32(E100_REG_RB_COMPAT);
+    const boost::uint32_t fpga_compat_num = _fifo_ctrl->peek32(REG_RB_COMPAT);
     boost::uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
     if (fpga_major == 0){ //old version scheme
         fpga_major = fpga_minor;

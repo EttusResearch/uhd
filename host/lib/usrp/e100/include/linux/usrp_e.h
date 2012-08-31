@@ -1,6 +1,6 @@
 
 /*
- *  Copyright (C) 2010 Ettus Research, LLC
+ *  Copyright (C) 2010-2012 Ettus Research, LLC
  *
  *  Written by Philip Balister <philip@opensdr.com>
  *
@@ -36,7 +36,7 @@ struct usrp_e_ctl32 {
 #define USRP_E_GET_RB_INFO      _IOR(USRP_E_IOC_MAGIC, 0x27, struct usrp_e_ring_buffer_size_t)
 #define USRP_E_GET_COMPAT_NUMBER _IO(USRP_E_IOC_MAGIC, 0x28)
 
-#define USRP_E_COMPAT_NUMBER 3
+#define USRP_E_COMPAT_NUMBER 4
 
 /* Flag defines */
 #define RB_USER (1<<0)

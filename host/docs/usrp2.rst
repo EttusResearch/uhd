@@ -1,8 +1,24 @@
 ========================================================================
-UHD - USRP2 and N Series Application Notes
+UHD - USRP2 and N2X0 Series Application Notes
 ========================================================================
 
 .. contents:: Table of Contents
+
+------------------------------------------------------------------------
+Comparative features list
+------------------------------------------------------------------------
+
+* 1 transceiver card slot
+* 2 RX DDC chains in FPGA
+* 1 TX DUC chain in FPGA
+* Timed commands in FPGA (N2x0 only)
+* Timed sampling in FPGA
+* External PPS reference
+* External 10MHz reference
+* MIMO cable shared reference
+* Fixed 100 MHz clock rate
+* Internal GPSDO option (N2x0 only)
+* sc8 and sc16 sample modes
 
 ------------------------------------------------------------------------
 Load the Images onto the SD card (USRP2 only)

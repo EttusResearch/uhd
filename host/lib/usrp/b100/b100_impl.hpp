@@ -19,20 +19,19 @@
 #define INCLUDED_B100_IMPL_HPP
 
 #include "fx2_ctrl.hpp"
-#include "b100_ctrl.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
-#include "spi_core_100.hpp"
-#include "i2c_core_100.hpp"
+#include "i2c_core_200.hpp"
 #include "rx_frontend_core_200.hpp"
 #include "tx_frontend_core_200.hpp"
 #include "rx_dsp_core_200.hpp"
 #include "tx_dsp_core_200.hpp"
 #include "time64_core_200.hpp"
+#include "fifo_ctrl_excelsior.hpp"
 #include "user_settings_core_200.hpp"
+#include "recv_packet_demuxer.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
-#include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/clock_config.hpp>
@@ -47,10 +46,11 @@
 static const double          B100_LINK_RATE_BPS = 256e6/5; //pratical link rate (< 480 Mbps)
 static const std::string     B100_FW_FILE_NAME = "usrp_b100_fw.ihx";
 static const std::string     B100_FPGA_FILE_NAME = "usrp_b100_fpga.bin";
-static const boost::uint16_t B100_FW_COMPAT_NUM = 0x03;
-static const boost::uint16_t B100_FPGA_COMPAT_NUM = 10;
-static const boost::uint32_t B100_RX_SID_BASE = 2;
-static const boost::uint32_t B100_TX_ASYNC_SID = 1;
+static const boost::uint16_t B100_FW_COMPAT_NUM = 0x04;
+static const boost::uint16_t B100_FPGA_COMPAT_NUM = 11;
+static const boost::uint32_t B100_RX_SID_BASE = 30;
+static const boost::uint32_t B100_TX_ASYNC_SID = 10;
+static const boost::uint32_t B100_CTRL_MSG_SID = 20;
 static const double          B100_DEFAULT_TICK_RATE = 64e6;
 static const size_t          B100_MAX_PKT_BYTE_LIMIT = 2048;
 static const std::string     B100_EEPROM_MAP_KEY = "B100";
@@ -80,8 +80,8 @@ private:
     uhd::property_tree::sptr _tree;
 
     //controllers
-    spi_core_100::sptr _fpga_spi_ctrl;
-    i2c_core_100::sptr _fpga_i2c_ctrl;
+    fifo_ctrl_excelsior::sptr _fifo_ctrl;
+    i2c_core_200::sptr _fpga_i2c_ctrl;
     rx_frontend_core_200::sptr _rx_fe;
     tx_frontend_core_200::sptr _tx_fe;
     std::vector<rx_dsp_core_200::sptr> _rx_dsps;
@@ -90,19 +90,16 @@ private:
     user_settings_core_200::sptr _user;
     b100_clock_ctrl::sptr _clock_ctrl;
     b100_codec_ctrl::sptr _codec_ctrl;
-    b100_ctrl::sptr _fpga_ctrl;
     uhd::usrp::fx2_ctrl::sptr _fx2_ctrl;
 
     //transports
-    uhd::transport::zero_copy_if::sptr _data_transport, _ctrl_transport;
+    uhd::transport::zero_copy_if::sptr _ctrl_transport;
+    uhd::transport::zero_copy_if::sptr _data_transport;
+    uhd::usrp::recv_packet_demuxer::sptr _recv_demuxer;
 
     //dboard stuff
     uhd::usrp::dboard_manager::sptr _dboard_manager;
     uhd::usrp::dboard_iface::sptr _dboard_iface;
-
-    //handle io stuff
-    UHD_PIMPL_DECL(io_impl) _io_impl;
-    void io_init(void);
 
     //device properties interface
     uhd::property_tree::sptr get_tree(void) const{
@@ -126,7 +123,6 @@ private:
     void update_clock_source(const std::string &);
     void enable_gpif(const bool);
     void clear_fpga_fifo(void);
-    void handle_async_message(uhd::transport::managed_recv_buffer::sptr);
     uhd::sensor_value_t get_ref_locked(void);
     void set_rx_fe_corrections(const double);
     void set_tx_fe_corrections(const double);

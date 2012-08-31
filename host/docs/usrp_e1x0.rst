@@ -1,8 +1,23 @@
 ========================================================================
-UHD - USRP-E1XX Series Application Notes
+UHD - USRP-E1X0 Series Application Notes
 ========================================================================
 
 .. contents:: Table of Contents
+
+------------------------------------------------------------------------
+Comparative features list
+------------------------------------------------------------------------
+
+* 1 transceiver card slot
+* 2 RX DDC chains in FPGA
+* 1 TX DUC chain in FPGA
+* Timed commands in FPGA
+* Timed sampling in FPGA
+* Internal PPS reference
+* Internal 10MHz reference
+* Configurable clock rate (defaults 64 MHz)
+* Internal GPSDO option
+* sc8 and sc16 sample modes
 
 ------------------------------------------------------------------------
 Specify a Non-standard Image
@@ -115,7 +130,7 @@ The LEDs on the front panel can be useful in debugging hardware and software
 issues.  The LEDs reveal the following about the state of the device:
 
 * **LED A:** transmitting
-* **LED B:** fpga loaded
+* **LED B:** PPS signal
 * **LED C:** receiving
 * **LED D:** fpga loaded
 * **LED E:** reference lock

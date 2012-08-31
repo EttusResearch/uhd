@@ -45,7 +45,7 @@ public:
         _spi_iface = spi_iface;
         _clock = clock;
         _codec = codec;
-        _gpio = gpio_core_200::make(_wb_iface, E100_REG_SR_ADDR(UE_SR_GPIO), E100_REG_RB_GPIO);
+        _gpio = gpio_core_200::make(_wb_iface, TOREG(SR_GPIO), REG_RB_GPIO);
 
         //init the clock rate shadows
         this->set_clock_rate(UNIT_RX, _clock->get_fpga_clock_rate());

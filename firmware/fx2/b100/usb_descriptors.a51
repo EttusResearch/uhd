@@ -211,8 +211,8 @@ _high_speed_config_descr::
 	.db	DSCR_ENDPNT
 	.db	0x04		; bEndpointAddress (ep 4 OUT)
 	.db	ET_BULK		; bmAttributes
-	.db	<32		; wMaxPacketSize (LSB)
-	.db	>32		; wMaxPacketSize (MSB)
+	.db	<512		; wMaxPacketSize (LSB)
+	.db	>512		; wMaxPacketSize (MSB)
 	.db	0		; bInterval (iso only)
 
 	;; interface descriptor 4 (FPGA command IN path, ep8 IN BULK)
@@ -233,8 +233,8 @@ _high_speed_config_descr::
 	.db	DSCR_ENDPNT
 	.db	0x88		; bEndpointAddress (ep 8 IN)
 	.db	ET_BULK		; bmAttributes
-	.db	<32		; wMaxPacketSize (LSB)
-	.db	>32		; wMaxPacketSize (MSB)
+	.db	<512		; wMaxPacketSize (LSB)
+	.db	>512		; wMaxPacketSize (MSB)
 	.db	0		; bInterval (iso only)
 
 
@@ -341,25 +341,24 @@ str0_end:
 	.even
 str1:	.db	str1_end - str1
 	.db	DSCR_STRING
-	.db	'F, 0		; 16-bit unicode
-	.db	'r, 0
-	.db	'e, 0
-	.db	'e, 0
-	.db	' , 0
-	.db	'S, 0
-	.db	'o, 0
-	.db	'f, 0
+	.db	'E, 0		; 16-bit unicode
 	.db	't, 0
-	.db	'w, 0
+	.db	't, 0
+	.db	'u, 0
+	.db	's, 0
+	.db	' , 0
+	.db	'R, 0
+	.db	'e, 0
+	.db	's, 0
+	.db	'e, 0
 	.db	'a, 0
 	.db	'r, 0
-	.db	'e, 0
+	.db	'c, 0
+	.db	'h, 0
 	.db	' , 0
-	.db	'F, 0
-	.db	'o, 0
-	.db	'l, 0
-	.db	'k, 0
-	.db	's, 0
+	.db	'L, 0
+	.db	'L, 0
+	.db	'C, 0
 str1_end:
 
 	SI_PRODUCT = 2
@@ -370,13 +369,12 @@ str2:	.db	str2_end - str2
 	.db	'S, 0
 	.db	'R, 0
 	.db	'P, 0
-	.db '1, 0
-	.db 'P, 0
-	.db	' , 0
-	.db	'R, 0
-	.db	'e, 0
-	.db	'v, 0
-	.db	' , 0
+	.db ' , 0
+	.db 'B, 0
+	.db	'1, 0
+	.db	'0, 0
+	.db	'0, 0
+	
 _usb_desc_hw_rev_ascii_patch_location_0::
 	.db	'?, 0
 str2_end:
