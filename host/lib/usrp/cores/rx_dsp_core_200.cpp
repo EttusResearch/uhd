@@ -184,7 +184,7 @@ public:
     }
 
     void update_scalar(void){
-        const double target_scalar = (1 << 16)*_scaling_adjustment/_dsp_extra_scaling;
+        const double target_scalar = (1 << 17)*_scaling_adjustment/_dsp_extra_scaling;
         const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
         _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
         _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);
