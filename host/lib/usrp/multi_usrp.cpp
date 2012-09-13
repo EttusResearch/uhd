@@ -908,7 +908,7 @@ private:
         const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
         gain_group::sptr gg = gain_group::make();
         BOOST_FOREACH(const std::string &name, _tree->list(mb_root(mcp.mboard) / "tx_codecs" / spec.db_name / "gains")){
-            gg->register_fcns("ADC-"+name, make_gain_fcns_from_subtree(_tree->subtree(mb_root(mcp.mboard) / "tx_codecs" / spec.db_name / "gains" / name)), 1 /* high prio */);
+            gg->register_fcns("DAC-"+name, make_gain_fcns_from_subtree(_tree->subtree(mb_root(mcp.mboard) / "tx_codecs" / spec.db_name / "gains" / name)), 1 /* high prio */);
         }
         BOOST_FOREACH(const std::string &name, _tree->list(tx_rf_fe_root(chan) / "gains")){
             gg->register_fcns(name, make_gain_fcns_from_subtree(_tree->subtree(tx_rf_fe_root(chan) / "gains" / name)), 0 /* low prio */);
