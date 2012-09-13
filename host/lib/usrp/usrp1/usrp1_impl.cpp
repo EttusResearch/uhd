@@ -215,6 +215,12 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         .subscribe(boost::bind(&fx2_ctrl::usrp_load_eeprom, _fx2_ctrl, _1));
 
     ////////////////////////////////////////////////////////////////////
+    // create user-defined control objects
+    ////////////////////////////////////////////////////////////////////
+    _tree->create<std::pair<boost::uint8_t, boost::uint32_t> >(mb_path / "user" / "regs")
+        .subscribe(boost::bind(&usrp1_impl::set_reg, this, _1));
+
+    ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
     const mboard_eeprom_t mb_eeprom(*_fx2_ctrl, USRP1_EEPROM_MAP_KEY);
@@ -496,4 +502,9 @@ std::complex<double> usrp1_impl::set_rx_dc_offset(const std::string &db, const s
     }
 
     return std::complex<double>(double(i_off) * (1ul << 31), double(q_off) * (1ul << 31));
+}
+
+void usrp1_impl::set_reg(const std::pair<boost::uint8_t, boost::uint32_t> &reg)
+{
+    _iface->poke32(reg.first, reg.second);
 }
