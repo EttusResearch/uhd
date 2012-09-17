@@ -222,7 +222,9 @@ def enumerate_devices():
                 pkt = sock.recv(UDP_MAX_XFER_BYTES)
                 (proto_ver, pktid, rxseq, ip_addr) = unpack_flash_ip_fmt(pkt)
                 if(pktid == update_id_t.USRP2_FW_UPDATE_ID_OHAI_OMG):
-                    yield socket.inet_ntoa(struct.pack("<L", socket.ntohl(ip_addr)))
+                    use_addr = socket.inet_ntoa(struct.pack("<L", socket.ntohl(ip_addr)))
+                    burner = burner_socket(use_addr, True)
+                    yield "%s (%s)" % (socket.inet_ntoa(struct.pack("<L", socket.ntohl(ip_addr))), n2xx_revs[burner.get_hw_rev()][0])
             except socket.timeout:
                 still_goin = False
 
@@ -230,12 +232,13 @@ def enumerate_devices():
 # Burner class, holds a socket and send/recv routines
 ########################################################################
 class burner_socket(object):
-    def __init__(self, addr):
+    def __init__(self, addr, quiet):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._quiet = quiet
         self._sock.settimeout(UDP_TIMEOUT)
         self._sock.connect((addr, UDP_FW_UPDATE_PORT))
         self.set_callbacks(lambda *a: None, lambda *a: None)
-        self.init_update() #check that the device is there
+        self.init_update(quiet) #check that the device is there
         self.get_hw_rev()
 
     def set_callbacks(self, progress_cb, status_cb):
@@ -247,13 +250,13 @@ class burner_socket(object):
         return self._sock.recv(UDP_MAX_XFER_BYTES)
 
     #just here to validate comms
-    def init_update(self):
+    def init_update(self,quiet):
         out_pkt = pack_flash_args_fmt(USRP2_FW_PROTO_VERSION, update_id_t.USRP2_FW_UPDATE_ID_OHAI_LOL, seq(), 0, 0)
         try: in_pkt = self.send_and_recv(out_pkt)
         except socket.timeout: raise Exception("No response from device")
         (proto_ver, pktid, rxseq, ip_addr) = unpack_flash_ip_fmt(in_pkt)
         if pktid == update_id_t.USRP2_FW_UPDATE_ID_OHAI_OMG:
-            print("USRP-N2XX found.")
+            if not quiet: print("USRP-N2XX found.")
         else:
             raise Exception("Invalid reply received from device.")
 
@@ -488,6 +491,7 @@ if __name__=='__main__':
     if options.list:
         print('Possible network devices:')
         print('  ' + '\n  '.join(enumerate_devices()))
+        #enumerate_devices()
         exit()
 
     if not options.addr: raise Exception('no address specified')

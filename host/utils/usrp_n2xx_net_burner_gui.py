@@ -96,7 +96,11 @@ class DeviceEntryWidget(tkinter.Frame):
         tkinter.Button(self, text="Rescan for Devices", command=self._reload_cb).pack()
 
         self._hints = tkinter.Listbox(self)
+        self._hints_addrs_only = tkinter.Listbox(self)
+
         self._hints.bind("<<ListboxSelect>>", self._listbox_cb)
+        self._hints_addrs_only.bind("<<ListboxSelect>>", self._listbox_cb)
+
         self._reload_cb()
         self._hints.pack(expand=tkinter.YES, fill=tkinter.X)
 
@@ -112,10 +116,11 @@ class DeviceEntryWidget(tkinter.Frame):
         self._hints.delete(0, tkinter.END)
         for hint in usrp_n2xx_net_burner.enumerate_devices():
             self._hints.insert(tkinter.END, hint)
+            self._hints_addrs_only.insert(tkinter.END, hint.split(" (")[0])
 
     def _listbox_cb(self, event):
         try:
-            sel = self._hints.get(self._hints.curselection()[0])
+            sel = self._hints_addrs_only.get(self._hints.curselection()[0])
             self._entry.delete(0, tkinter.END)
             self._entry.insert(0, sel)
         except Exception as e: print(e)
@@ -196,7 +201,7 @@ class USRPN2XXNetBurnerApp(tkinter.Frame):
         self._disable_input()
         try:
             #make a new burner object and attempt the burner operation
-            burner = usrp_n2xx_net_burner.burner_socket(addr=addr)
+            burner = usrp_n2xx_net_burner.burner_socket(addr=addr,quiet=False)
 
             for (image_type, fw_img, fpga_img) in (('FPGA', '', fpga), ('Firmware', fw, '')):
                 #setup callbacks that update the gui
