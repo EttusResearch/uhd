@@ -504,7 +504,7 @@ if __name__=='__main__':
         response = raw_input("""Type "yes" to continue, or anything else to quit: """)
         if response != "yes": sys.exit(0)
 
-    burner = burner_socket(addr=options.addr)
+    burner = burner_socket(addr=options.addr,quiet=False)
 
     if options.read:
         if options.fw:
