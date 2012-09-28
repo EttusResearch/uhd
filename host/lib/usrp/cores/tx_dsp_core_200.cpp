@@ -126,6 +126,15 @@ public:
 
         _iface->poke32(REG_DSP_TX_INTERP, (hb1 << 9) | (hb0 << 8) | (interp & 0xff));
 
+        if (interp > 1 and hb0 == 0 and hb1 == 0)
+        {
+            UHD_MSG(warning) << boost::format(
+                "The requested interpolation is odd; the user should expect CIC rolloff.\n"
+                "Select an even interpolation to ensure that a halfband filter is enabled.\n"
+                "interpolation = dsp_rate/samp_rate -> %d = (%f MHz)/(%f MHz)\n"
+            ) % interp_rate % (_tick_rate/1e6) % (rate/1e6);
+        }
+
         // Calculate CIC interpolation (i.e., without halfband interpolators)
         // Calculate closest multiplier constant to reverse gain absent scale multipliers
         const double rate_pow = std::pow(double(interp & 0xff), 3);

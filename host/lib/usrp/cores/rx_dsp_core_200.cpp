@@ -184,6 +184,15 @@ public:
 
         _iface->poke32(REG_DSP_RX_DECIM, (hb1 << 9) | (hb0 << 8) | (decim & 0xff));
 
+        if (decim > 1 and hb0 == 0 and hb1 == 0)
+        {
+            UHD_MSG(warning) << boost::format(
+                "The requested decimation is odd; the user should expect CIC rolloff.\n"
+                "Select an even decimation to ensure that a halfband filter is enabled.\n"
+                "decimation = dsp_rate/samp_rate -> %d = (%f MHz)/(%f MHz)\n"
+            ) % decim_rate % (_tick_rate/1e6) % (rate/1e6);
+        }
+
         // Calculate CIC decimation (i.e., without halfband decimators)
         // Calculate closest multiplier constant to reverse gain absent scale multipliers
         const double rate_pow = std::pow(double(decim & 0xff), 4);
