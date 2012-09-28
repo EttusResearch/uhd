@@ -440,6 +440,9 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     tx_db_eeprom.load(*_fpga_i2c_ctrl, I2C_ADDR_TX_A);
     gdb_eeprom.load(*_fpga_i2c_ctrl, I2C_ADDR_TX_A ^ 5);
 
+    //disable rx dc offset if LFRX
+    if (rx_db_eeprom.id == 0x000f) _tree->access<bool>(rx_fe_path / "dc_offset" / "enable").set(false);
+
     //create the properties and register subscribers
     _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/rx_eeprom")
         .set(rx_db_eeprom)

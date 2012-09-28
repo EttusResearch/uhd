@@ -360,6 +360,9 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         tx_db_eeprom.load(*_fx2_ctrl, (db == "A")? (I2C_ADDR_TX_A) : (I2C_ADDR_TX_B));
         gdb_eeprom.load(*_fx2_ctrl, (db == "A")? (I2C_ADDR_TX_A ^ 5) : (I2C_ADDR_TX_B ^ 5));
 
+        //disable rx dc offset if LFRX
+        if (rx_db_eeprom.id == 0x000f) _tree->access<bool>(mb_path / "rx_frontends" / db / "dc_offset" / "enable").set(false);
+
         //create the properties and register subscribers
         _tree->create<dboard_eeprom_t>(mb_path / "dboards" / db/ "rx_eeprom")
             .set(rx_db_eeprom)

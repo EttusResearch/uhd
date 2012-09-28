@@ -666,6 +666,9 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
         tx_db_eeprom.load(*_mbc[mb].iface, USRP2_I2C_ADDR_TX_DB);
         gdb_eeprom.load(*_mbc[mb].iface, USRP2_I2C_ADDR_TX_DB ^ 5);
 
+        //disable rx dc offset if LFRX
+        if (rx_db_eeprom.id == 0x000f) _tree->access<bool>(rx_fe_path / "dc_offset" / "enable").set(false);
+
         //create the properties and register subscribers
         _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/rx_eeprom")
             .set(rx_db_eeprom)
