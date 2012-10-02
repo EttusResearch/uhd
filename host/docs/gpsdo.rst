@@ -31,7 +31,7 @@ The GPSDO is capable of supplying a 3V for active GPS antennas or supporting pas
 Installation Instructions
 ------------------------------------------------------------------------
 Installation instructions can be found here:
-`http://www.ettus.com/content/files/gpsdo-kit_datasheet.pdf <http://www.ettus.com/content/files/gpsdo-kit_datasheet.pdf>`_
+`http://www.ettus.com/content/files/gpsdo-kit_2.pdf <http://www.ettus.com/content/files/gpsdo-kit_2.pdf>`_
 
 ********************************************
 Post-installation Task (N-Series only)

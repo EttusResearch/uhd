@@ -38,6 +38,7 @@ ENDFOREACH(util_source)
 # Utilities that get installed into the share path
 ########################################################################
 SET(util_share_sources
+    query_gpsdo_sensors.cpp
     usrp_burn_db_eeprom.cpp
     usrp_burn_mb_eeprom.cpp
 )
