@@ -121,7 +121,18 @@ module u1e
 		.D1(1'b1),   // 1-bit data input (associated with C1)
 		.R(1'b0),       // 1-bit reset input
 		.S(1'b0));      // 1-bit set input
-   
+
+   // /////////////////////////////////////////////////////////////////////////
+   // RX ADC -- handles inversion
+
+    reg [11:0] rx_i, rx_q;
+    always @(posedge clk_fpga) begin
+        rx_i <= ~DA;
+        rx_q <= ~DB;
+    end
+
+   // /////////////////////////////////////////////////////////////////////////
+
    // /////////////////////////////////////////////////////////////////////////
    // Main U1E Core
    u1e_core u1e_core(.clk_fpga(clk_fpga), .rst_fpga(~debug_pb),
@@ -138,7 +149,7 @@ module u1e
 		     .rx_have_data(overo_gpio146),
 		     .io_tx(io_tx), .io_rx(io_rx),
 		     .tx_i(tx_i), .tx_q(tx_q), 
-		     .rx_i(DA), .rx_q(DB),
+		     .rx_i(rx_i), .rx_q(rx_q),
 		     .pps_in(PPS_IN), .proc_int(proc_int) );
 
    // /////////////////////////////////////////////////////////////////////////
