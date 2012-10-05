@@ -170,7 +170,11 @@ module B100
    assign { cgen_sync_b, cgen_ref_sel } = {~cgen_sync, 1'b1};
 
    u1plus_core #(
+`ifdef NUM_RX_DSP
+        .NUM_RX_DSPS(`NUM_RX_DSP),
+`else
         .NUM_RX_DSPS(1),
+`endif
         .DSP_RX_XTRA_FIFOSIZE(11),
         .DSP_TX_XTRA_FIFOSIZE(12),
         .USE_PACKET_PADDER(1)

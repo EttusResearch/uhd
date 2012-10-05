@@ -316,6 +316,12 @@ module u1plus_core
    wire [31:0]   sample_tx;
    wire strobe_tx, clear_tx;
 
+`ifdef DISABLE_TX_DSP
+    assign tx_dst_rdy = 1; //null sink
+    assign run_tx = 0;
+    assign tx_i = 0;
+    assign tx_q = 0;
+`else
    vita_tx_chain #(.BASE(SR_TX_CTRL),
 		   .FIFOSIZE(DSP_TX_FIFOSIZE),
 		   .POST_ENGINE_FIFOSIZE(DSP_TX_XTRA_FIFOSIZE),
@@ -346,7 +352,7 @@ module u1plus_core
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .tx_i(tx_fe_i), .tx_q(tx_fe_q), .run(1'b1),
       .dac_a(tx_i), .dac_b(tx_q));
-
+`endif
    // /////////////////////////////////////////////////////////////////////////////////////
    // Debug circuitry
 

@@ -95,12 +95,18 @@ ifdef HAS_XTCLSH
 
 _usrp_b100_fpga_dir = $(TOP_FPGA_DIR)/usrp2/top/B100
 _usrp_b100_fpga_bin = $(BUILT_IMAGES_DIR)/usrp_b100_fpga.bin
-IMAGES_LIST += $(_usrp_b100_fpga_bin)
+_usrp_b100_fpga_2rx_bin = $(BUILT_IMAGES_DIR)/usrp_b100_fpga_2rx.bin
+IMAGES_LIST += $(_usrp_b100_fpga_bin) $(_usrp_b100_fpga_2rx_bin)
 
 $(_usrp_b100_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_b100_fpga_dir) && make -f Makefile.B100 clean
 	cd $(_usrp_b100_fpga_dir) && make -f Makefile.B100 bin
 	cp $(_usrp_b100_fpga_dir)/build-B100/B100.bin $@
+
+$(_usrp_b100_fpga_2rx_bin): $(GLOBAL_DEPS)
+	cd $(_usrp_b100_fpga_dir) && make -f Makefile.B100_2RX clean
+	cd $(_usrp_b100_fpga_dir) && make -f Makefile.B100_2RX bin
+	cp $(_usrp_b100_fpga_dir)/build-B100_2RX/B100.bin $@
 
 endif
 
