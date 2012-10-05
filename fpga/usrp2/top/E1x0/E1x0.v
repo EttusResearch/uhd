@@ -133,6 +133,15 @@ module E1x0
 		.S(1'b0));      // 1-bit set input
 
    // /////////////////////////////////////////////////////////////////////////
+   // RX ADC -- handles inversion
+
+    reg [11:0] rx_i, rx_q;
+    always @(posedge clk_fpga) begin
+        rx_i <= ~DA;
+        rx_q <= ~DB;
+    end
+
+   // /////////////////////////////////////////////////////////////////////////
    // Main Core
    wire [35:0] rx_data, tx_data, ctrl_data, resp_data;
    wire rx_src_rdy, rx_dst_rdy, tx_src_rdy, tx_dst_rdy, resp_src_rdy, resp_dst_rdy, ctrl_src_rdy, ctrl_dst_rdy;
@@ -166,7 +175,7 @@ module E1x0
          .sclk(sclk), .sen(sen8), .mosi(mosi), .miso(miso),
          .io_tx(io_tx), .io_rx(io_rx),
          .tx_i(tx_i), .tx_q(tx_q),
-         .rx_i(DA), .rx_q(DB),
+         .rx_i(rx_i), .rx_q(rx_q),
          .pps_in(PPS_IN) );
 
    // /////////////////////////////////////////////////////////////////////////
