@@ -41,6 +41,7 @@ SET(util_share_sources
     query_gpsdo_sensors.cpp
     usrp_burn_db_eeprom.cpp
     usrp_burn_mb_eeprom.cpp
+    usrp_n2xx_simple_net_burner.cpp
 )
 
 IF(ENABLE_USB)

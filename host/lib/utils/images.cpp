@@ -38,7 +38,7 @@ std::string uhd::find_image_path(const std::string &image_name){
         fs::path image_path = path / image_name;
         if (fs::exists(image_path)) return image_path.string();
     }
-    throw uhd::io_error("Could not find path for image: " + image_name);
+    throw uhd::io_error("Could not find path for image: " + image_name + "\n\n" + uhd::print_images_error());
 }
 
 std::string uhd::find_images_downloader(void){
