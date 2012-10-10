@@ -70,6 +70,7 @@ module slave_fifo
     reg tx_valid, ctrl_valid;
     wire tx_ready, ctrl_ready;
     reg rx_enable, resp_enable;
+    wire rx_data_enough_occ;
 
    reg [9:0] transfer_count; //number of lines (a line is 16 bits) in active transfer
 
@@ -145,7 +146,7 @@ module slave_fifo
             fifoadr <= 2'b00;
             sloe <= 0;
         end
-        else if(rx_valid & ~FX2_DF & last_data_bus_hog == BUS_HOG_TX) begin //if the data fifo has data and the FX2 isn't full
+        else if(rx_data_enough_occ & ~FX2_DF & last_data_bus_hog == BUS_HOG_TX) begin //if the data fifo has data and the FX2 isn't full
             state <= STATE_DATA_RX_ADR;
             last_data_bus_hog <= BUS_HOG_RX;
             fifoadr <= 2'b10;
@@ -156,7 +157,7 @@ module slave_fifo
             fifoadr <= 2'b00;
             sloe <= 0;
         end
-        else if(rx_valid & ~FX2_DF) begin
+        else if(rx_data_enough_occ & ~FX2_DF) begin
             state <= STATE_DATA_RX_ADR;
             last_data_bus_hog <= BUS_HOG_RX;
             fifoadr <= 2'b10;
@@ -241,10 +242,11 @@ module slave_fifo
    // ////////////////////////////////////////////
    // RX Data Path
 
-    fifo36_to_gpmc16 #(.FIFO_SIZE(DATA_RX_FIFO_SIZE)) fifo36_to_gpmc16_rx(
+    fifo36_to_gpmc16 #(.FIFO_SIZE(DATA_RX_FIFO_SIZE), .MIN_OCC16(DATA_XFER_COUNT)) fifo36_to_gpmc16_rx(
         .fifo_clk(fifo_clk), .fifo_rst(fifo_rst),
         .in_data(rx_data), .in_src_rdy(rx_src_rdy), .in_dst_rdy(rx_dst_rdy),
         .gpif_clk(gpif_clk), .gpif_rst(gpif_rst),
+        .has_data(rx_data_enough_occ),
         .out_data(gpif_d_out_data), .valid(rx_valid), .enable(rx_enable)
     );
 
