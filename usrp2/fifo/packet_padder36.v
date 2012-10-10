@@ -114,7 +114,7 @@ module packet_padder36
             if (src_rdy_i && dst_rdy_o && data_i[32]) begin
                 vita_hdr <= data_i[31:0];
                 has_vita_hdr <= 1;
-                state <= (data_i[15:0] > line_count)? state <= STATE_WRITE_PAD : STATE_WRITE_HDR;
+                state <= (data_i[15:0] > line_count)? STATE_WRITE_PAD : STATE_WRITE_HDR;
             end
             else if (force_flush) begin
                 has_vita_hdr <= 0;
