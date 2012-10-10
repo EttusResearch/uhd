@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,8 +24,12 @@
 #include <iostream>
 #include <fstream>
 #include <complex>
+#include <csignal>
 
 namespace po = boost::program_options;
+
+static bool stop_signal_called = false;
+void sig_int_handler(int){stop_signal_called = true;}
 
 template<typename samp_type> void send_from_file(
     uhd::usrp::multi_usrp::sptr usrp,
@@ -34,6 +38,7 @@ template<typename samp_type> void send_from_file(
     const std::string &file,
     size_t samps_per_buff
 ){
+
     //create a transmit streamer
     uhd::stream_args_t stream_args(cpu_format, wire_format);
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
@@ -45,7 +50,8 @@ template<typename samp_type> void send_from_file(
     std::ifstream infile(file.c_str(), std::ifstream::binary);
 
     //loop until the entire file has been read
-    while(not md.end_of_burst){
+
+    while(not md.end_of_burst and not stop_signal_called){
 
         infile.read((char*)&buff.front(), buff.size()*sizeof(samp_type));
         size_t num_tx_samps = infile.gcount()/sizeof(samp_type);
@@ -64,7 +70,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args, file, type, ant, subdev, ref, wirefmt;
     size_t spb;
-    double rate, freq, gain, bw;
+    double rate, freq, gain, bw, delay;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -82,6 +88,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "waveform type (internal, external, mimo)")
         ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
+        ("delay", po::value<double>(&delay)->default_value(0.0), "specify a delay between repeated transmission of file")
+        ("repeat", "repeatedly transmit file")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -92,6 +100,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("UHD TX samples from file %s") % desc << std::endl;
         return ~0;
     }
+
+    bool repeat = vm.count("repeat");
 
     //create a usrp device
     std::cout << std::endl;
@@ -163,11 +173,21 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         UHD_ASSERT_THROW(ref_locked.to_bool());
     }
 
+    //set sigint if user wants to receive
+    if(repeat){
+        std::signal(SIGINT, &sig_int_handler);
+        std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
+    }
+
     //send from file
-    if (type == "double") send_from_file<std::complex<double> >(usrp, "fc64", wirefmt, file, spb);
-    else if (type == "float") send_from_file<std::complex<float> >(usrp, "fc32", wirefmt, file, spb);
-    else if (type == "short") send_from_file<std::complex<short> >(usrp, "sc16", wirefmt, file, spb);
-    else throw std::runtime_error("Unknown type " + type);
+    do{
+        if (type == "double") send_from_file<std::complex<double> >(usrp, "fc64", wirefmt, file, spb);
+        else if (type == "float") send_from_file<std::complex<float> >(usrp, "fc32", wirefmt, file, spb);
+        else if (type == "short") send_from_file<std::complex<short> >(usrp, "sc16", wirefmt, file, spb);
+        else throw std::runtime_error("Unknown type " + type);
+
+        if(repeat and delay != 0.0) boost::this_thread::sleep(boost::posix_time::milliseconds(delay));
+    } while(repeat and not stop_signal_called);
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
