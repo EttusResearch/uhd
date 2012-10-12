@@ -33,6 +33,7 @@
 
 #include "usrp_simple_burner_utils.hpp"
 #include <uhd/exception.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/utils/byteswap.hpp>
@@ -70,12 +71,12 @@ void check_image_file_validity(std::string rev_str, std::string default_fpga_fil
             if(!does_image_exist(fpga_path)) throw std::runtime_error(str(boost::format("No file at specified FPGA path: %s") % fw_path));
 
             //Check to find rev_str in filename
-            boost::filesystem::path custom_fpga_path(fpga_path);
-            if(custom_fpga_path.filename().string().find("fw") != std::string::npos){
+            uhd::fs_path custom_fpga_path(fpga_path);
+            if(custom_fpga_path.leaf().find("fw") != std::string::npos){
                 throw std::runtime_error(str(boost::format("Invalid FPGA image filename at path: %s\nFilename indicates that this is a firmware image.")
                     % fpga_path));
             }
-            if(custom_fpga_path.filename().string().find(rev_str) == std::string::npos){
+            if(custom_fpga_path.leaf().find(rev_str) == std::string::npos){
                 throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename must contain '%s' to be considered valid for this model.")
                     % fw_path % rev_str));
             }
@@ -89,12 +90,12 @@ void check_image_file_validity(std::string rev_str, std::string default_fpga_fil
             if(!does_image_exist(fw_path)) throw std::runtime_error(str(boost::format("No file at specified firmware path: %s") % fw_path));
 
             //Check to find truncated rev_str in filename
-            boost::filesystem::path custom_fw_path(fw_path);
-            if(custom_fw_path.filename().string().find("fpga") != std::string::npos){
+            uhd::fs_path custom_fw_path(fw_path);
+            if(custom_fw_path.leaf().find("fpga") != std::string::npos){
                 throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename indicates that this is an FPGA image.")
                     % fw_path));
             }
-            if(custom_fw_path.filename().string().find(erase_tail_copy(rev_str,3)) == std::string::npos){
+            if(custom_fw_path.leaf().find(erase_tail_copy(rev_str,3)) == std::string::npos){
                 throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename must contain '%s' to be considered valid for this model.")
                     % fw_path % erase_tail_copy(rev_str,3)));
             }
