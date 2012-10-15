@@ -106,8 +106,6 @@ void rx_hammer(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_cpu, cons
 void tx_hammer(uhd::usrp::multi_usrp::sptr usrp, const std::string &tx_cpu, const std::string &tx_otw){
     uhd::set_thread_priority_safe();
 
-    int total_num_samps;
-
     //create a transmit streamer
     uhd::stream_args_t stream_args(tx_cpu, tx_otw);
     for (size_t ch = 0; ch < usrp->get_num_mboards(); ch++) //linear channel mapping
