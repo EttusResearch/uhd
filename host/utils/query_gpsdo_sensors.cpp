@@ -102,7 +102,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   //Check PPS and compare UHD device time to GPS time
   uhd::sensor_value_t gps_time = usrp->get_mboard_sensor("gps_time");
   const uhd::time_spec_t last_pps_time = usrp->get_time_last_pps();
-  if(int(round(last_pps_time.get_real_secs())) == gps_time.to_int()) {
+  if (last_pps_time.get_full_secs() == gps_time.to_int()) {
     std::cout << boost::format("GPS and UHD Device time are aligned.\n");
   } else
     std::cout << boost::format("\nGPS and UHD Device time are NOT aligned. Try re-running the program. Double check 1 PPS connection from GPSDO.\n\n");
