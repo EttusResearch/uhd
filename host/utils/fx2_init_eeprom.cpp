@@ -41,12 +41,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm); 
+    po::notify(vm);
 
     //print the help message
     if (vm.count("help")){
         std::cout << boost::format("USRP EEPROM initialization %s") % desc << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     //cant find a uninitialized usrp with this mystery module in the way...
@@ -76,7 +76,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     if (found_addrs.size() == 0){
         std::cerr << "No USRP devices found" << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     for (size_t i = 0; i < found_addrs.size(); i++){
@@ -89,5 +89,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
 
     std::cout << "Power-cycle the usrp for the changes to take effect." << std::endl;
-    return 0;
+    return EXIT_SUCCESS;
 }

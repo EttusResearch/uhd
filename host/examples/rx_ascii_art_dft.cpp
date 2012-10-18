@@ -25,6 +25,7 @@
 #include <curses.h>
 #include <iostream>
 #include <complex>
+#include <cstdlib>
 
 namespace po = boost::program_options;
 
@@ -63,7 +64,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //print the help message
     if (vm.count("help") or not vm.count("rate")){
         std::cout << boost::format("UHD RX ASCII Art DFT %s") % desc << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     //create a usrp device
@@ -82,7 +83,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //set the sample rate
     if (not vm.count("rate")){
         std::cerr << "Please specify the sample rate with --rate" << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
     usrp->set_rx_rate(rate);
@@ -91,7 +92,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //set the center frequency
     if (not vm.count("freq")){
         std::cerr << "Please specify the center frequency with --freq" << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
     std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
     usrp->set_rx_freq(freq);
@@ -194,5 +195,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
 
-    return 0;
+    return EXIT_SUCCESS;
 }

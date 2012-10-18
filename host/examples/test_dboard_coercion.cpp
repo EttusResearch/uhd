@@ -573,5 +573,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if(test_tx and test_rx) std::cout << std::endl;
     if(test_rx) std::cout << rx_results << std::endl;
 
-    return 0;
+    return EXIT_SUCCESS;
 }

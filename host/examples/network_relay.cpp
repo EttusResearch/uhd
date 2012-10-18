@@ -24,6 +24,7 @@
 #include <iostream>
 #include <csignal>
 #include <vector>
+#include <cstdlib>
 
 namespace po = boost::program_options;
 namespace asio = boost::asio;
@@ -202,7 +203,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             << "Runs a network relay between UHD on one computer and a USRP on the network.\n"
             << "This example is basically for test purposes. Use at your own convenience.\n"
             << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     {
@@ -223,5 +224,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
 
-    return 0;
+    return EXIT_SUCCESS;
 }

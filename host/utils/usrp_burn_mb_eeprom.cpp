@@ -47,7 +47,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             "Omit the value argument to perform a readback,\n"
             "Or specify a new value to burn into the EEPROM.\n"
         ) << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     std::cout << "Creating USRP device from address: " + args << std::endl;
@@ -60,7 +60,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::usrp::mboard_eeprom_t mb_eeprom = tree->access<uhd::usrp::mboard_eeprom_t>("/mboards/0/eeprom").get();
         if (not mb_eeprom.has_key(key)){
             std::cerr << boost::format("Cannot find value for EEPROM[%s]") % key << std::endl;
-            return ~0;
+            return EXIT_FAILURE;
         }
         std::cout << boost::format("    EEPROM [\"%s\"] is \"%s\"") % key % mb_eeprom[key] << std::endl;
         std::cout << std::endl;
@@ -74,5 +74,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     std::cout << "Done" << std::endl;
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -365,7 +365,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("Automatically detects and burns standard firmware and FPGA images onto USRP N2XX devices.\n");
         std::cout << boost::format("Can optionally take user input for custom images.\n\n");
         std::cout << desc << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     bool burn_fpga = (vm.count("no_fpga") == 0);
@@ -376,7 +376,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     if(!burn_fpga && !burn_fw){
         std::cout << "No images will be burned." << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     if(!burn_fw && use_custom_fw)     std::cout << boost::format("Conflicting firmware options presented. Will not burn a firmware image.\n\n");
@@ -418,7 +418,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             }
         
         }
-        return ~0;
+        return EXIT_FAILURE;
     }
     std::cout << boost::format("Searching for USRP N2XX with IP address %s.\n") % ip_addr;
 
@@ -512,7 +512,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
     std::cout << std::endl; //Formatting
     if(reset) reset_usrp(udp_transport);
-    else return 0;
+    else return EXIT_SUCCESS;
 
-    return 0;
+    return EXIT_SUCCESS;
 }

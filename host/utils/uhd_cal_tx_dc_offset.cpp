@@ -123,7 +123,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout <<
             "This application measures leakage between RX and TX on an XCVR daughterboard to self-calibrate.\n"
             << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     //create a usrp device
@@ -234,5 +234,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     store_results(usrp, results, "TX", "tx", "dc");
 
-    return 0;
+    return EXIT_SUCCESS;
 }

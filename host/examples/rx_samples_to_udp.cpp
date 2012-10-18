@@ -168,5 +168,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
 
-    return 0;
+    return EXIT_SUCCESS;
 }

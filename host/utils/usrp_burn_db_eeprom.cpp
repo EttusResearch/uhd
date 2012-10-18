@@ -58,7 +58,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             "Omit the ID argument to perform readback,\n"
             "Or specify a new ID to burn into the EEPROM.\n"
         ) << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     //make the device and extract the dboard w/ property
@@ -96,5 +96,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("  Current revision: \"%s\"") % db_eeprom.revision << std::endl;
 
     std::cout << "  Done" << std::endl << std::endl;
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -30,6 +30,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <cstdlib>
 
 namespace po = boost::program_options;
 using namespace uhd;
@@ -197,12 +198,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //print the help message
     if (vm.count("help")){
         std::cout << boost::format("UHD USRP Probe %s") % desc << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     if (vm.count("version")){
         std::cout << uhd::get_version_string() << std::endl;
-        return 0;
+        return EXIT_SUCCESS;
     }
 
     device::sptr dev = device::make(vm["args"].as<std::string>());
@@ -210,11 +211,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     if (vm.count("string")){
         std::cout << tree->access<std::string>(vm["string"].as<std::string>()).get() << std::endl;
-        return 0;
+        return EXIT_SUCCESS;
     }
 
     if (vm.count("tree") != 0) print_tree("/", tree);
     else std::cout << make_border(get_device_pp_string(tree)) << std::endl;
 
-    return 0;
+    return EXIT_SUCCESS;
 }

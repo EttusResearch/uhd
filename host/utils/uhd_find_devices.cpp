@@ -20,6 +20,7 @@
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>
+#include <cstdlib>
 
 namespace po = boost::program_options;
 
@@ -37,7 +38,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //print the help message
     if (vm.count("help")){
         std::cout << boost::format("UHD Find Devices %s") % desc << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     //discover the usrps and print the results
@@ -45,7 +46,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     if (device_addrs.size() == 0){
         std::cerr << "No UHD Devices Found" << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
 
     for (size_t i = 0; i < device_addrs.size(); i++){
@@ -56,5 +57,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         //uhd::device::make(device_addrs[i]); //test make
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

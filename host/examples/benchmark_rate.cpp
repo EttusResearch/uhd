@@ -25,6 +25,7 @@
 #include <boost/math/special_functions/round.hpp>
 #include <iostream>
 #include <complex>
+#include <cstdlib>
 
 namespace po = boost::program_options;
 
@@ -264,5 +265,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
 
-    return 0;
+    return EXIT_SUCCESS;
 }

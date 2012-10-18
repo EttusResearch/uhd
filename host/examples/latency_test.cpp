@@ -164,5 +164,5 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
      **************************************************************/
     std::cout << boost::format("\nACK %d, UNDERFLOW %d, TIME_ERR %d, other %d")
         % ack % underflow % time_error % other << std::endl;
-    return 0;
+    return EXIT_SUCCESS;
 }
