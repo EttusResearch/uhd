@@ -183,7 +183,7 @@ Code snippet example, tuning with timed commands:
     usrp->set_rx_freq(1.03e9, 1/*ch1*/);
 
     //end timed commands
-    usrp->set_clear_time();
+    usrp->clear_command_time();
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Align LOs in the front-end (others)
