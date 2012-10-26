@@ -54,6 +54,12 @@ std::map<boost::uint32_t, std::string> filename_map = boost::assign::map_list_of
     (0x110a, "n210_r4")
 ;
 
+//Images and image sizes, to be populated as necessary
+boost::uint8_t fpga_image[FPGA_IMAGE_SIZE_BYTES];
+boost::uint8_t fw_image[FW_IMAGE_SIZE_BYTES];
+int fpga_image_size = 0;
+int fw_image_size = 0;
+
 //For non-standard images not covered by uhd::find_image_path()
 bool does_image_exist(std::string image_filepath){
 
@@ -61,99 +67,104 @@ bool does_image_exist(std::string image_filepath){
     return ifile;
 }
 
-//Checks for existence of file and validity of filename
-void check_image_file_validity(std::string rev_str, std::string default_fpga_filename, std::string default_fw_filename,
-                               std::string fpga_path, std::string fw_path, bool burn_fpga, bool burn_fw, bool use_custom_fpga, bool use_custom_fw){
+/***********************************************************************
+ * Custom filename validation functions
+ **********************************************************************/
 
-    if(burn_fpga){
-        if(use_custom_fpga){
-            //Check for existence of file
-            if(!does_image_exist(fpga_path)) throw std::runtime_error(str(boost::format("No file at specified FPGA path: %s") % fw_path));
+void validate_custom_fpga_file(std::string rev_str, std::string fpga_path){
 
-            //Check to find rev_str in filename
-            uhd::fs_path custom_fpga_path(fpga_path);
-            if(custom_fpga_path.leaf().find("fw") != std::string::npos){
-                throw std::runtime_error(str(boost::format("Invalid FPGA image filename at path: %s\nFilename indicates that this is a firmware image.")
-                    % fpga_path));
-            }
-            if(custom_fpga_path.leaf().find(rev_str) == std::string::npos){
-                throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename must contain '%s' to be considered valid for this model.")
-                    % fw_path % rev_str));
-            }
-        }
-        //Check for image in UHD_IMAGES_DIR
-        else find_image_path(default_fpga_filename);
+    //Check for existence of file
+    if(!does_image_exist(fpga_path)) throw std::runtime_error(str(boost::format("No file at specified FPGA path: %s") % fpga_path));
+
+    //Check to find rev_str in filename
+    uhd::fs_path custom_fpga_path(fpga_path);
+    if(custom_fpga_path.leaf().find("fw") != std::string::npos){
+        throw std::runtime_error(str(boost::format("Invalid FPGA image filename at path: %s\nFilename indicates that this is a firmware image.")
+            % fpga_path));
     }
-    if(burn_fw){
-        if(use_custom_fw){
-            //Check for existence of file
-            if(!does_image_exist(fw_path)) throw std::runtime_error(str(boost::format("No file at specified firmware path: %s") % fw_path));
-
-            //Check to find truncated rev_str in filename
-            uhd::fs_path custom_fw_path(fw_path);
-            if(custom_fw_path.leaf().find("fpga") != std::string::npos){
-                throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename indicates that this is an FPGA image.")
-                    % fw_path));
-            }
-            if(custom_fw_path.leaf().find(erase_tail_copy(rev_str,3)) == std::string::npos){
-                throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename must contain '%s' to be considered valid for this model.")
-                    % fw_path % erase_tail_copy(rev_str,3)));
-            }
-        }
-        //Check for image in UHD_IMAGES_DIR
-        else find_image_path(default_fw_filename);
+    if(custom_fpga_path.leaf().find(rev_str) == std::string::npos){
+        throw std::runtime_error(str(boost::format("Invalid FPGA image filename at path: %s\nFilename must contain '%s' to be considered valid for this model.")
+            % fpga_path % rev_str));
     }
 }
 
-//Basic checks of images to make sure they're actually images
-void check_image_binary_validity(std::string fpga_path, std::string fw_path, bool burn_fpga, bool burn_fw){
+void validate_custom_fw_file(std::string rev_str, std::string fw_path){
 
-    if(burn_fpga){
-        std::ifstream fpga_image((char*)fpga_path.c_str(), std::ios::binary);
+    //Check for existence of file
+    if(!does_image_exist(fw_path)) throw std::runtime_error(str(boost::format("No file at specified firmware path: %s") % fw_path));
 
-        //Check size of image
-        fpga_image.seekg(0, std::ios::end);
-        int fpga_size = fpga_image.tellg();
-        if(fpga_size > FPGA_IMAGE_SIZE_BYTES){
-            throw std::runtime_error(str(boost::format("FPGA image is too large. %d > %d") % fpga_size % FPGA_IMAGE_SIZE_BYTES));
-        }
-
-        //Check sequence of bytes in image
-        char fpga_image_buffer[2];
-        bool fpga_image_is_good = false;
-        for(int i = 0; i < 63; i++){
-            fpga_image.seekg(i, std::ios::beg);
-            fpga_image.read(fpga_image_buffer,2);
-
-            if((unsigned char)fpga_image_buffer[0] == 255) continue;
-            else if((unsigned char)fpga_image_buffer[0] == 170 and
-                    (unsigned char)fpga_image_buffer[1] == 153){
-                fpga_image_is_good = true;
-                break;
-            }
-        }
-        if(!fpga_image_is_good) throw std::runtime_error("Not a valid FPGA image.");
-
-        fpga_image.close();
+    //Check to find truncated rev_str in filename
+    uhd::fs_path custom_fw_path(fw_path);
+    if(custom_fw_path.leaf().find("fpga") != std::string::npos){
+        throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename indicates that this is an FPGA image.")
+            % fw_path));
     }
-    if(burn_fw){
-        std::ifstream fw_image((char*)fw_path.c_str(), std::ios::binary);
-
-        //Check size of image
-        fw_image.seekg(0, std::ios::end);
-        int fw_size = fw_image.tellg();
-        if(fw_size > FW_IMAGE_SIZE_BYTES){
-            throw std::runtime_error(str(boost::format("Firmware image is too large. %d > %d") % fw_size % FW_IMAGE_SIZE_BYTES));
-        }
-
-        //Check first four bytes of image
-        char fw_image_buffer[4];
-        fw_image.seekg(0, std::ios::beg);
-        fw_image.read(fw_image_buffer, 4);
-        for(int i = 0; i < 4; i++) if(int(fw_image_buffer[i]) != 11) throw std::runtime_error("Not a valid firmware image.");
-
-        fw_image.close();
+    if(custom_fw_path.leaf().find(erase_tail_copy(rev_str,3)) == std::string::npos){
+        throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename must contain '%s' to be considered valid for this model.")
+            % fw_path % erase_tail_copy(rev_str,3)));
     }
+}
+
+/***********************************************************************
+ * Grabbing and validating image binaries
+ **********************************************************************/
+
+int grab_fpga_image(std::string fpga_path){
+
+    //Reading FPGA image from file
+    std::ifstream to_read_fpga((char*)fpga_path.c_str(), std::ios::binary);
+    to_read_fpga.seekg(0, std::ios::end);
+    fpga_image_size = to_read_fpga.tellg();
+    to_read_fpga.seekg(0, std::ios::beg);
+    char fpga_read[FPGA_IMAGE_SIZE_BYTES];
+    to_read_fpga.read(fpga_read,fpga_image_size);
+    to_read_fpga.close();
+    for(int i = 0; i < fpga_image_size; i++) fpga_image[i] = (boost::uint8_t)fpga_read[i];
+
+    //Checking validity of image
+    if(fpga_image_size > FPGA_IMAGE_SIZE_BYTES){
+        throw std::runtime_error(str(boost::format("FPGA image is too large. %d > %d") % fpga_image_size % FPGA_IMAGE_SIZE_BYTES));
+    }
+
+    //Check sequence of bytes in image
+    bool is_good = false;
+    for(int i = 0; i < 63; i++){
+        if((boost::uint8_t)fpga_image[i] == 255) continue;
+        else if((boost::uint8_t)fpga_image[i] == 170 and
+                (boost::uint8_t)fpga_image[i+1] == 153){
+            is_good = true;
+            break;
+        }
+    }
+
+    if(!is_good) throw std::runtime_error("Not a valid FPGA image.");
+
+    //Return image size
+    return fpga_image_size;
+}
+
+int grab_fw_image(std::string fw_path){
+
+    //Reading firmware image from file
+    std::ifstream to_read_fw((char*)fw_path.c_str(), std::ios::binary);
+    to_read_fw.seekg(0, std::ios::end);
+    fw_image_size = to_read_fw.tellg();
+    to_read_fw.seekg(0, std::ios::beg);
+    char fw_read[FW_IMAGE_SIZE_BYTES];
+    to_read_fw.read(fw_read,fw_image_size);
+    to_read_fw.close();
+    for(int i = 0; i < fw_image_size; i++) fw_image[i] = (boost::uint8_t)fw_read[i];
+
+    //Checking validity of image
+    if(fw_image_size > FW_IMAGE_SIZE_BYTES){
+        throw std::runtime_error(str(boost::format("Firmware image is too large. %d > %d") % fw_image_size % FW_IMAGE_SIZE_BYTES));
+    }
+
+    //Check first four bytes of image
+    for(int i = 0; i < 4; i++) if((boost::uint8_t)fw_image[i] != 11) throw std::runtime_error("Not a valid firmware image.");
+
+    //Return image size
+    return fw_image_size;
 }
 
 boost::uint32_t* get_flash_info(std::string ip_addr){
@@ -169,17 +180,21 @@ boost::uint32_t* get_flash_info(std::string ip_addr){
     udp_transport->send(boost::asio::buffer(&get_flash_info_pkt, sizeof(get_flash_info_pkt)));
 
     //Loop and receive until the timeout
-    while(true){
-        size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem));
-        if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG){
-            flash_info[0] = ntohl(update_data_in->data.flash_info_args.sector_size_bytes);
-            flash_info[1] = ntohl(update_data_in->data.flash_info_args.memory_size_bytes);
-        }
-        if(len == 0) break;
+    size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
+    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG){
+        flash_info[0] = ntohl(update_data_in->data.flash_info_args.sector_size_bytes);
+        flash_info[1] = ntohl(update_data_in->data.flash_info_args.memory_size_bytes);
+    }
+    else if(ntohl(update_data_in->id) != USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG){
+        throw std::runtime_error(str(boost::format("Received invalid reply %d from device.\n") % ntohl(update_data_in->id)));
     }
     
     return flash_info;
 }
+
+/***********************************************************************
+ * Image burning functions
+ **********************************************************************/
 
 void erase_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint32_t memory_size){
 
@@ -449,11 +464,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Check validity of file locations and binaries before attempting burn
     std::cout << "Searching for specified images." << std::endl << std::endl;
-    check_image_file_validity(filename_map[hw_rev], default_fpga_filename, default_fw_filename, fpga_path, fw_path,
-                                 burn_fpga, burn_fw, use_custom_fpga, use_custom_fw);
-    if(burn_fw && !use_custom_fw) fw_path = find_image_path(default_fw_filename);
-    if(burn_fpga && !use_custom_fpga) fpga_path = find_image_path(default_fpga_filename);
-    check_image_binary_validity(fpga_path, fw_path, burn_fpga, burn_fw);
+    if(burn_fpga){
+        if(!use_custom_fpga) fpga_path = find_image_path(default_fpga_filename);
+        else validate_custom_fpga_file(filename_map[hw_rev], fpga_path);
+
+        grab_fpga_image(fpga_path);
+    }
+    if(burn_fw){
+        if(!use_custom_fw) fw_path = find_image_path(default_fw_filename);
+        else validate_custom_fw_file(filename_map[hw_rev], fw_path);
+
+        grab_fw_image(fw_path);
+    }
 
     std::cout << "Will burn the following images:" << std::endl;
     if(burn_fw) std::cout << boost::format(" * Firmware: %s\n") % fw_path;
@@ -468,34 +490,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //Burning images
 
     if(burn_fpga){
-        std::ifstream to_read_fpga((char*)fpga_path.c_str(), std::ios::binary);
-        to_read_fpga.seekg(0, std::ios::end);
-        int fpga_image_size = to_read_fpga.tellg();
-        to_read_fpga.seekg(0, std::ios::beg);
-        char fpga_read[FPGA_IMAGE_SIZE_BYTES];
-        to_read_fpga.read(fpga_read,fpga_image_size);
-        to_read_fpga.close();
-        boost::uint8_t fpga_image[FPGA_IMAGE_SIZE_BYTES];
-        for(int i = 0; i < fpga_image_size; i++) fpga_image[i] = (boost::uint8_t)fpga_read[i];
-
         erase_image(udp_transport, false, flash_info[1]);
         write_image(udp_transport, false, fpga_image, flash_info[1], fpga_image_size);
         verify_image(udp_transport, false, fpga_image, flash_info[1], fpga_image_size);
     }
-
     if(burn_fpga and burn_fw) std::cout << std::endl; //Formatting
-
     if(burn_fw){
-        std::ifstream to_read_fw((char*)fw_path.c_str(), std::ios::binary);
-        to_read_fw.seekg(0, std::ios::end);
-        int fw_image_size = to_read_fw.tellg();
-        to_read_fw.seekg(0, std::ios::beg);
-        char fw_read[FW_IMAGE_SIZE_BYTES];
-        to_read_fw.read(fw_read,fw_image_size);
-        to_read_fw.close();
-        boost::uint8_t fw_image[FW_IMAGE_SIZE_BYTES];
-        for(int i = 0; i < fw_image_size; i++) fw_image[i] = (boost::uint8_t)fw_read[i];
-
         erase_image(udp_transport, true, flash_info[1]);
         write_image(udp_transport, true, fw_image, flash_info[1], fw_image_size);
         verify_image(udp_transport, true, fw_image, flash_info[1], fw_image_size);
