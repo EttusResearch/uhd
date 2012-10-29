@@ -39,13 +39,12 @@ SET(test_sources
 #turn each test cpp file into an executable with an int main() function
 ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 
-#for each source: build an executable, register it as a test, and install
+#for each source: build an executable, register it as a test
 FOREACH(test_source ${test_sources})
     GET_FILENAME_COMPONENT(test_name ${test_source} NAME_WE)
     ADD_EXECUTABLE(${test_name} ${test_source})
     TARGET_LINK_LIBRARIES(${test_name} uhd)
     ADD_TEST(${test_name} ${test_name})
-    INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 ENDFOREACH(test_source)
 
 ########################################################################
