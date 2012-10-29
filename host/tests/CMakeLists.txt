@@ -16,6 +16,11 @@
 #
 
 ########################################################################
+# unit test support
+########################################################################
+include(UHDUnitTest)
+
+########################################################################
 # unit test suite
 ########################################################################
 SET(test_sources
@@ -39,12 +44,15 @@ SET(test_sources
 #turn each test cpp file into an executable with an int main() function
 ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 
+SET(UHD_TEST_TARGET_DEPS uhd)
+SET(UHD_TEST_LIBRARY_DIRS ${Boost_LIBRARY_DIRS})
+
 #for each source: build an executable, register it as a test
 FOREACH(test_source ${test_sources})
     GET_FILENAME_COMPONENT(test_name ${test_source} NAME_WE)
     ADD_EXECUTABLE(${test_name} ${test_source})
     TARGET_LINK_LIBRARIES(${test_name} uhd)
-    ADD_TEST(${test_name} ${test_name})
+    UHD_ADD_TEST(${test_name} ${test_name})
 ENDFOREACH(test_source)
 
 ########################################################################
