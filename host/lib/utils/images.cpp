@@ -42,7 +42,7 @@ std::string uhd::find_image_path(const std::string &image_name){
 }
 
 std::string uhd::find_images_downloader(void){
-    return fs::path((fs::path(get_pkg_data_path()) / "utils" / "uhd_images_downloader.py")).string();
+    return fs::path(fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / "uhd_images_downloader.py").string();
 }
 
 std::string uhd::print_images_error(void){

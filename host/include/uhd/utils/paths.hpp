@@ -29,8 +29,8 @@ namespace uhd{
     //! Get a string representing the system's appdata directory
     UHD_API std::string get_app_path(void);
 
-    //! Get a string representing the system's pkg data directory
-    UHD_API std::string get_pkg_data_path(void);
+    //! Get a string representing the system's pkg directory
+    UHD_API std::string get_pkg_path(void);
 
 } //namespace uhd
 

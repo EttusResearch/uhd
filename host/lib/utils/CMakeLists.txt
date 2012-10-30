@@ -115,14 +115,14 @@ SET_SOURCE_FILES_PROPERTIES(
 ########################################################################
 # Define UHD_PKG_DATA_PATH for paths.cpp
 ########################################################################
-FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR} UHD_PKG_DATA_PATH)
-STRING(REPLACE "\\" "\\\\" UHD_PKG_DATA_PATH ${UHD_PKG_DATA_PATH})
-MESSAGE(STATUS "Full package data directory: ${UHD_PKG_DATA_PATH}")
+FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX} UHD_PKG_PATH)
+STRING(REPLACE "\\" "\\\\" UHD_PKG_PATH ${UHD_PKG_PATH})
 
 SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/images.cpp
     PROPERTIES COMPILE_DEFINITIONS
-    "UHD_PKG_DATA_PATH=\"${UHD_PKG_DATA_PATH}\""
+    "UHD_PKG_PATH=\"${UHD_PKG_PATH}\";UHD_LIB_DIR=\"lib${LIB_SUFFIX}\""
 )
 
 ########################################################################
