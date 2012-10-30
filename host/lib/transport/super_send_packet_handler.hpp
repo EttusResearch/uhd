@@ -61,6 +61,8 @@ public:
     }
 
     ~send_packet_handler(void){
+        _task_barrier_entry.interrupt();
+        _task_barrier_exit.interrupt();
         _task_handlers.clear();
     }
 
