@@ -82,12 +82,23 @@ namespace uhd{
             _count.write(size);
         }
 
+        /*!
+         * Force the barrier wait to throw a boost::thread_interrupted
+         * The threads were not getting the interruption_point on windows.
+         */
+        void interrupt(void)
+        {
+            _count.write(boost::uint32_t(~0));
+        }
+
         //! Wait on the barrier condition
         UHD_INLINE void wait(void){
             _count.dec();
             _count.cas(_size, 0);
             while (_count.read() != _size){
                 boost::this_thread::interruption_point();
+                if (_count.read() == boost::uint32_t(~0))
+                    throw boost::thread_interrupted();
                 boost::this_thread::yield();
             }
         }
