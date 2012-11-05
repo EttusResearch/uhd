@@ -57,7 +57,7 @@ low_noise_and_spur      2[29:30]    3       low_noise, reserved0, reserved1, low
 ## address 3
 ########################################################################
 clock_divider_12_bit    3[3:14]     0
-clock_div_mode          3[15:16]    0       clock_divider_off, fast_lock, resync_enable, reserved
+clock_div_mode          3[15:16]    1       clock_divider_off, fast_lock, resync_enable, reserved
 ##reserved              3[17]       0
 cycle_slip_reduction    3[18]       0       disabled, enabled
 ##reserved              3[19:20]    0
@@ -76,7 +76,7 @@ aux_output_select       4[9]        1       divided, fundamental
 mute_till_lock_detect   4[10]       0       mute_disabled, mute_enabled
 vco_power_down          4[11]       0       vco_powered_up, vco_powered_down
 band_select_clock_div   4[12:19]    0
-rf_divider_select       4[20:22]    5       div1, div2, div4, div8, div16, div32, div64
+rf_divider_select       4[20:22]    0       div1, div2, div4, div8, div16, div32, div64
 feedback_select         4[23]       1       divided, fundamental
 ##reserved              4[24:31]    0
 ########################################################################
@@ -103,9 +103,9 @@ enum addr_t{
 };
 
 boost::uint32_t get_reg(boost::uint8_t addr){
-    boost::uint32_t reg = 0;
+    boost::uint32_t reg = addr & 0x7;
     switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
+    #for $addr in range(5+1)
     case $addr:
         #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
         reg |= (boost::uint32_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
@@ -114,18 +114,6 @@ boost::uint32_t get_reg(boost::uint8_t addr){
     #end for
     }
     return reg;
-}
-
-void set_reg(boost::uint8_t addr, boost::uint32_t reg){
-    switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        $reg.get_name() = $(reg.get_type())((reg >> $reg.get_shift()) & $reg.get_mask());
-        #end for
-        break;
-    #end for
-    }
 }
 """
 
