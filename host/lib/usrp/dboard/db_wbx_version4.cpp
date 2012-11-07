@@ -41,7 +41,7 @@ static const uhd::dict<std::string, gain_range_t> wbx_v4_tx_gain_ranges = map_li
     ("PGA0", gain_range_t(0, 31, 1.0))
 ;
 
-static const freq_range_t wbx_v4_freq_range(50.0e6, 2.2e9);
+static const freq_range_t wbx_v4_freq_range(35.0e6, 2.2e9);
 
 
 /***********************************************************************
@@ -115,22 +115,43 @@ wbx_base::wbx_version4::wbx_version4(wbx_base *_self_wbx_base) {
     int v4_tx_mod = ADF4351_PDBRF;
 
     //set the gpio directions and atr controls
-    self_base->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, v4_tx_mod|v4_iobits);
-    self_base->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, RXBB_PDB|ADF4351_PDBRF);
-    self_base->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, TX_PUP_5V|TX_PUP_3V|v4_tx_mod|v4_iobits);
-    self_base->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, RX_PUP_5V|RX_PUP_3V|ADF4351_CE|RXBB_PDB|ADF4351_PDBRF|RX_ATTN_MASK);
+    self_base->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, \
+            v4_tx_mod|v4_iobits);
+    self_base->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, \
+            RXBB_PDB|ADF4351_PDBRF);
+    self_base->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, \
+            TX_PUP_5V|TX_PUP_3V|v4_tx_mod|v4_iobits);
+    self_base->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, \
+            RX_PUP_5V|RX_PUP_3V|ADF4351_CE|RXBB_PDB|ADF4351_PDBRF|RX_ATTN_MASK);
 
-    //setup ATR for the mixer enables (always enabled to prevent phase slip between bursts)
-    //set TX gain iobits to min gain (max attenuation) when RX_ONLY or IDLE to suppress LO leakage
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        v4_tx_mod, TX_ATTN_MASK | TX_MIXER_DIS | v4_tx_mod);
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     v4_tx_mod, TX_ATTN_MASK | TX_MIXER_DIS | v4_tx_mod);
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     v4_tx_mod, TX_ATTN_MASK | TX_MIXER_DIS | v4_tx_mod);
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, v4_tx_mod, TX_ATTN_MASK | TX_MIXER_DIS | v4_tx_mod);
+    //setup ATR for the mixer enables (always enabled to prevent phase slip
+    //between bursts) set TX gain iobits to min gain (max attenuation) when
+    //RX_ONLY or IDLE to suppress LO leakage
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
+            dboard_iface::ATR_REG_IDLE, v4_tx_mod, \
+            TX_ATTN_MASK | TX_MIXER_DIS | v4_tx_mod);
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
+            dboard_iface::ATR_REG_RX_ONLY, v4_tx_mod, \
+            TX_ATTN_MASK | TX_MIXER_DIS | v4_tx_mod);
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
+            dboard_iface::ATR_REG_TX_ONLY, v4_tx_mod, \
+            TX_ATTN_MASK | TX_MIXER_DIS | v4_tx_mod);
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
+            dboard_iface::ATR_REG_FULL_DUPLEX, v4_tx_mod, \
+            TX_ATTN_MASK | TX_MIXER_DIS | v4_tx_mod);
 
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
-    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
+            dboard_iface::ATR_REG_IDLE, \
+            RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
+            dboard_iface::ATR_REG_TX_ONLY, \
+            RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
+            dboard_iface::ATR_REG_RX_ONLY, \
+            RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
+    self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
+            dboard_iface::ATR_REG_FULL_DUPLEX, \
+            RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
 }
 
 wbx_base::wbx_version4::~wbx_version4(void){
