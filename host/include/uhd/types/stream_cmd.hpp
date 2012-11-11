@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,10 +46,10 @@ namespace uhd{
     struct UHD_API stream_cmd_t{
 
         enum stream_mode_t {
-            STREAM_MODE_START_CONTINUOUS   = 'a',
-            STREAM_MODE_STOP_CONTINUOUS    = 'o',
-            STREAM_MODE_NUM_SAMPS_AND_DONE = 'd',
-            STREAM_MODE_NUM_SAMPS_AND_MORE = 'm'
+            STREAM_MODE_START_CONTINUOUS   = int('a'),
+            STREAM_MODE_STOP_CONTINUOUS    = int('o'),
+            STREAM_MODE_NUM_SAMPS_AND_DONE = int('d'),
+            STREAM_MODE_NUM_SAMPS_AND_MORE = int('m')
         } stream_mode;
         size_t num_samps;
 
