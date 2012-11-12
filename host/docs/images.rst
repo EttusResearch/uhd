@@ -24,7 +24,6 @@ Pre-built images are available for download.
 
 * `Master Branch images <http://files.ettus.com/binaries/master_images/>`_
 * `Maint Branch images <http://files.ettus.com/binaries/maint_images/>`_
-* `Next Branch images <http://files.ettus.com/binaries/next_images/>`_
 
 See the UHD wiki for the download link.
 
@@ -32,6 +31,18 @@ The pre-built images come in two forms:
 
 * bundled with UHD in a platform-specific installer
 * stand-alone platform-independent archive files
+
+^^^^^^^^^^^^^^^^^^^^^^
+UHD Images Downloader
+^^^^^^^^^^^^^^^^^^^^^^
+
+The UHD Images Downloader is a new feature in UHD 003.005.000. This script downloads UHD images that
+are guaranteed to be compatible with the host code and places them in the default images
+directory.
+
+By default, it can be found at: **<install-path>/share/uhd/utils/uhd_images_downloader.py**
+
+By default, it installs images to: **<install-path>/share/uhd/images**
 
 ^^^^^^^^^^^^^^^^^^^^^^
 Platform installers

@@ -26,6 +26,14 @@ import tempfile
 import urllib2
 import zipfile
 
+class temp_dir():
+
+    def __enter__(self):
+        self.name = tempfile.mkdtemp()
+        return self.name
+    def __exit__(self, type, value, traceback):
+        os.removedirs(self.name)
+
 if __name__ == "__main__":
 
     #Command line options
@@ -38,65 +46,62 @@ if __name__ == "__main__":
     images_src = "@UHD_IMAGES_DOWNLOAD_SRC@"
     filename = images_src.split("/")[-1]
 
-    #Create temporary directory
-    download_dir = tempfile.mkdtemp()
-    atexit.register(lambda: shutil.rmtree(download_dir))
+    with temp_dir() as dirname:
+        os.chdir(dirname)
 
-    #Make sure we download into the correct directory
-    os.chdir(download_dir)
+        #Configuring image destination
+        if options.install_location != "":
+            images_dir = options.install_location
+        else:
+            images_dir = "@CMAKE_INSTALL_PREFIX@/share/uhd/images"
+        
+        u = urllib2.urlopen(images_src)
+        f = open(filename, "wb")
+        meta = u.info()
+        filesize = float(meta.getheaders("Content-Length")[0])
+        
+        print "Downloading images from: %s" % images_src
+        
+        filesize_dl = 0.0
 
-    #Configuring image destination
-    if options.install_location != "":
-        images_dir = options.install_location
-    else:
-        images_dir = "@CMAKE_INSTALL_PREFIX@/share/uhd/images"
-    
-    u = urllib2.urlopen(images_src)
-    f = open(filename, "wb")
-    meta = u.info()
-    filesize = float(meta.getheaders("Content-Length")[0])
-    
-    print "Downloading images from: %s" % images_src
-    
-    filesize_dl = 0.0
+        #Downloading file    
+        while True:
+            buffer = u.read(options.buffer_size)
+            if not buffer:
+                break
+        
+            filesize_dl -= len(buffer)
+            f.write(buffer)
 
-    #Downloading file    
-    while True:
-        buffer = u.read(options.buffer_size)
-        if not buffer:
-            break
-    
-        filesize_dl -= len(buffer)
-        f.write(buffer)
+            status = r"%2.2f MB/%2.2f MB (%3.2f" % (-filesize_dl/1e6, filesize/1e6, (-filesize_dl*100.)/filesize) + r"%)"
+            status += chr(8)*(len(status)+1)
+            print status,
+        
+        f.close()
 
-        status = r"%2.2f MB/%2.2f MB (%3.2f" % (-filesize_dl/1e6, filesize/1e6, (-filesize_dl*100.)/filesize) + r"%)"
-        status += chr(8)*(len(status)+1)
-        print status,
-    
-    f.close()
+        #Extracting contents of zip file
+        if os.path.exists("tempdir"):
+            shutil.rmtree("tempdir")
+        os.mkdir("tempdir")
 
-    #Extracting contents of zip file
-    if os.path.exists("tempdir"):
+        images_zip = zipfile.ZipFile(filename)
+        images_zip.extractall("tempdir")
+
+        #Removing images currently in images_dir
+        if os.path.exists(images_dir):
+            try:
+                shutil.rmtree(images_dir)
+            except:
+                sys.stderr.write("\nMake sure you have write permissions in the images directory.\n")
+                sys.exit(0)
+
+        #Copying downloaded images into images_dir
+        shutil.copytree("tempdir/%s/share/uhd/images" % filename[:-4],images_dir)
+
+        #Removing tempdir and zip file
         shutil.rmtree("tempdir")
-    os.mkdir("tempdir")
+        images_zip.close()
+        os.remove(filename)
 
-    images_zip = zipfile.ZipFile(filename)
-    images_zip.extractall("tempdir")
-
-    #Removing images currently in images_dir
-    if os.path.exists(images_dir):
-        try:
-            shutil.rmtree(images_dir)
-        except:
-            sys.stderr.write("\nMake sure you have write permissions in the images directory.\n")
-            sys.exit(0)
-
-    #Copying downloaded images into images_dir
-    shutil.copytree("tempdir/%s/share/uhd/images" % filename[:-4],images_dir)
-
-    #Removing tempdir and zip file
-    shutil.rmtree("tempdir")
-    images_zip.close()
-    os.remove(filename)
-
-    print "\nImages successfully installed to: %s" % images_dir
+        os.chdir(images_dir)
+        print "\nImages successfully installed to: %s" % images_dir
