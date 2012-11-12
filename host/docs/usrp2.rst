@@ -94,6 +94,17 @@ Use the net burner tool (Windows)
     <path_to_python.exe> <install-path>/share/uhd/utils/usrp_n2xx_net_burner_gui.py
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Burning images without Python
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For users who do not wish to install Python, a new script is available in UHD 003.005.000:
+the USRP N2XX Simple Net Burner. It provides the same functionality as its Python
+counterpart, but by default, it automatically installs the default images without the user needing
+to specify their location on the command line.
+
+The utility can be found at: **<install-path>/share/uhd/utils/usrp_n2xx_simple_net_burner**
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Device recovery and bricking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Its possible to put the device into an unusable state by loading bad images.
