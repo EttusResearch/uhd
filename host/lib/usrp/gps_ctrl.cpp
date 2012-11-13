@@ -242,7 +242,7 @@ private:
   ptime get_time(void) {
     int error_cnt = 0;
     ptime gps_time;
-    while(error_cnt < 10) {
+    while(error_cnt < 2) {
         try {
             std::string reply = get_nmea("GPRMC");
 
