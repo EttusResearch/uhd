@@ -54,6 +54,16 @@ static const boost::uint32_t B100_TX_ASYNC_SID = 1;
 static const double          B100_DEFAULT_TICK_RATE = 64e6;
 static const size_t          B100_MAX_PKT_BYTE_LIMIT = 2048;
 
+#define I2C_ADDR_TX_A       (I2C_DEV_EEPROM | 0x4)
+#define I2C_ADDR_RX_A       (I2C_DEV_EEPROM | 0x5)
+#define I2C_ADDR_TX_B       (I2C_DEV_EEPROM | 0x6)
+#define I2C_ADDR_RX_B       (I2C_DEV_EEPROM | 0x7)
+#define I2C_DEV_EEPROM      0x50
+
+#define VRQ_FW_COMPAT       0x83
+#define VRQ_ENABLE_GPIF     0x0d
+#define VRQ_CLEAR_FPGA_FIFO 0x0e
+
 //! Make a b100 dboard interface
 uhd::usrp::dboard_iface::sptr make_b100_dboard_iface(
     wb_iface::sptr wb_iface,

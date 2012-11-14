@@ -20,7 +20,6 @@
 #include "async_packet_handler.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "usrp_commands.h"
 #include "b100_impl.hpp"
 #include "b100_regs.hpp"
 #include <uhd/utils/thread_priority.hpp>

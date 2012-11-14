@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,11 +16,6 @@
 //
 
 #include "usrp1_impl.hpp"
-#include "usrp_spi_defs.h"
-#include "usrp_commands.h"
-#include "fpga_regs_standard.h"
-#include "fpga_regs_common.h"
-#include "usrp_i2c_addr.h"
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/usb_control.hpp>

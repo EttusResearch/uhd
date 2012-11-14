@@ -18,9 +18,6 @@
 #include "apply_corrections.hpp"
 #include "b100_impl.hpp"
 #include "b100_ctrl.hpp"
-#include "fpga_regs_standard.h"
-#include "usrp_i2c_addr.h"
-#include "usrp_commands.h"
 #include <uhd/transport/usb_control.hpp>
 #include "ctrl_packet.hpp"
 #include <uhd/utils/msg.hpp>
