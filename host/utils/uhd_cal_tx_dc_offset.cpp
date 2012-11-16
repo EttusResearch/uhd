@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010,2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -137,6 +137,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
     usrp->set_rx_antenna("CAL");
     usrp->set_tx_antenna("CAL");
+
+    //fail if daughterboard has no serial
+    check_for_empty_serial(usrp, "TX", "tx", args);
 
     //set optimum defaults
     set_optimum_defaults(usrp);

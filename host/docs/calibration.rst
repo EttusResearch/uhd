@@ -47,6 +47,14 @@ Each utility will take several minutes to complete.
 See the output given by --help for more advanced options, such as:
 manually choosing the frequency range and step size for the sweeps.
 
+**Note:**
+Your daughterboard needs a serial number to run a calibration utility. Some older daughterboards
+may not have a serial number. If this is the case, run the following command to burn a serial number
+into the daughterboard's EEPROM:
+::
+
+    <install dir>/share/uhd/utils/usrp_burn_db_eeprom --ser=<desired serial> --args=<optional device args>
+
 ********************************************
 Calibration Data
 ********************************************
