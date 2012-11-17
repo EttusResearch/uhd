@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,15 +17,49 @@
 
 #include "usrp1_iface.hpp"
 #include "usrp1_impl.hpp"
-#include "fpga_regs_common.h"
-#include "usrp_spi_defs.h"
-#include "fpga_regs_standard.h"
 #include "codec_ctrl.hpp"
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <boost/assign/list_of.hpp>
 #include <iostream>
+
+#define FR_OE_0        5
+#define FR_OE_1        6
+#define FR_OE_2        7
+#define FR_OE_3        8
+
+#define FR_ATR_MASK_0  20
+#define FR_ATR_TXVAL_0 21
+#define FR_ATR_RXVAL_0 22
+
+#define FR_ATR_MASK_1  23
+#define FR_ATR_TXVAL_1 24
+#define FR_ATR_RXVAL_1 25
+
+#define FR_ATR_MASK_2  26
+#define FR_ATR_TXVAL_2 27
+#define FR_ATR_RXVAL_2 28
+
+#define FR_ATR_MASK_3  29
+#define FR_ATR_TXVAL_3 30
+#define FR_ATR_RXVAL_3 31
+
+#define FR_RX_A_REFCLK 41
+#define FR_RX_B_REFCLK 43
+
+// i/o registers for pins that go to daughterboards.
+// top 16 is a mask, low 16 is value
+
+#define FR_IO_0          9  // slot 0
+#define FR_IO_1         10
+#define FR_IO_2         11
+#define FR_IO_3         12
+#define SPI_ENABLE_TX_A     0x10    // select d'board TX A
+#define SPI_ENABLE_RX_A     0x20    // select d'board RX A
+#define SPI_ENABLE_TX_B     0x40    // select d'board TX B
+#define SPI_ENABLE_RX_B     0x80    // select d'board RX B
+
 
 using namespace uhd;
 using namespace uhd::usrp;

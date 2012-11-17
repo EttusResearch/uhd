@@ -24,6 +24,19 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
+#define SPI_ENABLE_FPGA  0x01
+#define SPI_FMT_HDR_MASK (3 << 5)
+#define SPI_FMT_HDR_0    (0 << 5)
+#define SPI_FMT_HDR_1    (1 << 5)
+#define SPI_FMT_HDR_2    (2 << 5)
+#define SPI_FMT_LSB      (1 << 7)
+#define SPI_FMT_MSB      (0 << 7)
+#define SPI_FMT_xSB_MASK (1 << 7)
+#define VRQ_SPI_READ     0x82
+#define VRQ_SPI_WRITE    0x09
+#define VRQ_FW_COMPAT    0x83
+
+
 /*!
  * The usrp1 interface class:
  * Provides a set of functions to implementation layer.

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -160,7 +160,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         }
 
         //send complex single precision floating point samples over udp
-        udp_xport->send(boost::asio::buffer(buff, num_rx_samps));
+        udp_xport->send(boost::asio::buffer(buff, num_rx_samps*sizeof(buff.front())));
 
         num_acc_samps += num_rx_samps;
     } done_loop:
