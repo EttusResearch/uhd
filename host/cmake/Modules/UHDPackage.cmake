@@ -96,6 +96,13 @@ SET(CPACK_RESOURCE_FILE_README ${CMAKE_SOURCE_DIR}/AUTHORS.txt)
 SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE.txt)
 
 ########################################################################
+# Setup CPack Source
+########################################################################
+
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME "uhd-source_${UHD_VERSION}")
+SET(CPACK_SOURCE_IGNORE_FILES "\\\\.git*")
+
+########################################################################
 # Setup CPack Components
 ########################################################################
 SET(CPACK_COMPONENT_LIBRARIES_GROUP      "Development")

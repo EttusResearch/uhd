@@ -21,9 +21,6 @@
 #define SSPH_DONT_PAD_TO_ONE
 #include "../../transport/super_send_packet_handler.hpp"
 #include "usrp1_calc_mux.hpp"
-#include "fpga_regs_standard.h"
-#include "fpga_regs_common.h"
-#include "usrp_commands.h"
 #include "usrp1_impl.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/tasks.hpp>
@@ -35,6 +32,26 @@
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
+
+#define bmFR_RX_FORMAT_SHIFT_SHIFT 0
+#define bmFR_RX_FORMAT_WIDTH_SHIFT 4
+#define bmFR_TX_FORMAT_16_IQ       0
+#define bmFR_RX_FORMAT_WANT_Q      (0x1  <<  9)
+#define FR_RX_FREQ_0               34
+#define FR_RX_FREQ_1               35
+#define FR_RX_FREQ_2               36
+#define FR_RX_FREQ_3               37
+#define FR_INTERP_RATE             32
+#define FR_DECIM_RATE              33
+#define FR_RX_MUX                  38
+#define FR_TX_MUX                  39
+#define FR_TX_FORMAT               48
+#define FR_RX_FORMAT               49
+#define FR_TX_SAMPLE_RATE_DIV      0
+#define FR_RX_SAMPLE_RATE_DIV      1
+#define GS_TX_UNDERRUN             0
+#define GS_RX_OVERRUN              1
+#define VRQ_GET_STATUS             0x80
 
 using namespace uhd;
 using namespace uhd::usrp;

@@ -19,11 +19,14 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/utils/paths.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 #include <iostream>
 #include <vector>
 #include <complex>
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 
 namespace fs = boost::filesystem;
@@ -99,6 +102,30 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
 }
 
 /***********************************************************************
+ * Check for empty serial
+ **********************************************************************/
+
+void check_for_empty_serial(
+    uhd::usrp::multi_usrp::sptr usrp,
+    std::string XX,
+    std::string xx,
+    std::string uhd_args
+){
+
+    //extract eeprom
+    uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    const uhd::fs_path db_path = "/mboards/0/dboards/A/" + xx + "_eeprom";
+    const uhd::usrp::dboard_eeprom_t db_eeprom = tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
+
+    std::string args_str = "";
+    if(uhd_args != "") args_str = str(boost::format(" --args=%s") % uhd_args);
+
+    std::string error_string = str(boost::format("This %s dboard has no serial!\n\nPlease see the Calibration documentation for details on how to fix this.") % XX);
+
+    if (db_eeprom.serial.empty()) throw std::runtime_error(error_string);
+}
+
+/***********************************************************************
  * Sinusoid wave table
  **********************************************************************/
 class wave_table{
@@ -160,7 +187,6 @@ static void store_results(
     uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
     const uhd::fs_path db_path = "/mboards/0/dboards/A/" + xx + "_eeprom";
     const uhd::usrp::dboard_eeprom_t db_eeprom = tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
-    if (db_eeprom.serial.empty()) throw std::runtime_error(XX + " dboard has empty serial!");
 
     //make the calibration file path
     fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd";

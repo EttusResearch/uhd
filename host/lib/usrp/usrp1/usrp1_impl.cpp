@@ -16,11 +16,6 @@
 //
 
 #include "usrp1_impl.hpp"
-#include "usrp_spi_defs.h"
-#include "usrp_commands.h"
-#include "fpga_regs_standard.h"
-#include "fpga_regs_common.h"
-#include "usrp_i2c_addr.h"
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/usb_control.hpp>
