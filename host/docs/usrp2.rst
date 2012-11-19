@@ -316,7 +316,7 @@ This device will be referred to as the slave, and the other device, the master.
 Shared ethernet mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In shared Ethernet mode,
-only one device in the configuration can be attached to the Tthernet.
+only one device in the configuration can be attached to the Ethernet.
 
 * Clock reference, time reference, and data are communicated over the MIMO cable.
 * Master and slave must have different IPv4 addresses in the same subnet.
