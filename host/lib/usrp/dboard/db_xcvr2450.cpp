@@ -411,14 +411,14 @@ double xcvr2450::set_lo_freq_core(double target_freq){
     //new band select settings and ad9515 divider
     this->update_atr();
 
-    const bool div_ext(this->get_tx_id == 0x0059);
+    const bool div_ext(this->get_tx_id() == 0x0059);
     if (div_ext)
     {
-        this->set_clock_rate(dboard_iface::UNIT_TX, ref_freq/_ad9515div);
+        this->get_iface()->set_clock_rate(dboard_iface::UNIT_TX, ref_freq/_ad9515div);
     }
     else
     {
-        this->set_clock_rate(dboard_iface::UNIT_TX, ref_freq);
+        this->get_iface()->set_clock_rate(dboard_iface::UNIT_TX, ref_freq);
     }
 
     //load new counters into registers
