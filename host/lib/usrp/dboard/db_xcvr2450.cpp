@@ -190,6 +190,7 @@ static dboard_base::sptr make_xcvr2450(dboard_base::ctor_args_t args){
 UHD_STATIC_BLOCK(reg_xcvr2450_dboard){
     //register the factory function for the rx and tx dbids
     dboard_manager::register_dboard(0x0061, 0x0060, &make_xcvr2450, "XCVR2450");
+    dboard_manager::register_dboard(0x0061, 0x0059, &make_xcvr2450, "XCVR2450 - r2.1");
 }
 
 /***********************************************************************
@@ -370,7 +371,7 @@ double xcvr2450::set_lo_freq_core(double target_freq){
 
     //variables used in the calculation below
     double scaler = xcvr2450::is_highband(target_freq)? (4.0/5.0) : (4.0/3.0);
-    double ref_freq = this->get_iface()->get_clock_rate(dboard_iface::UNIT_TX);
+    double ref_freq = this->get_iface()->get_codec_rate(dboard_iface::UNIT_TX);
     int R, intdiv, fracdiv;
 
     //loop through values until we get a match
@@ -409,6 +410,16 @@ double xcvr2450::set_lo_freq_core(double target_freq){
 
     //new band select settings and ad9515 divider
     this->update_atr();
+
+    const bool div_ext(this->get_tx_id() == 0x0059);
+    if (div_ext)
+    {
+        this->get_iface()->set_clock_rate(dboard_iface::UNIT_TX, ref_freq/_ad9515div);
+    }
+    else
+    {
+        this->get_iface()->set_clock_rate(dboard_iface::UNIT_TX, ref_freq);
+    }
 
     //load new counters into registers
     _max2829_regs.int_div_ratio_word = intdiv;
