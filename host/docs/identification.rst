@@ -5,7 +5,7 @@ UHD - Device Identification Notes
 .. contents:: Table of Contents
 
 ------------------------------------------------------------------------
-Identifying USRPs
+Identifying USRP Devices
 ------------------------------------------------------------------------
 Devices are addressed through key/value string pairs.
 These string pairs can be used to narrow down the search for a specific device or group of devices.
@@ -89,10 +89,10 @@ such as detected daughterboards, frequency range, gain ranges, etc...
     uhd_usrp_probe --args <device-specific-address-args>
 
 ------------------------------------------------------------------------
-Naming a USRP
+Naming a USRP Device
 ------------------------------------------------------------------------
-For convenience purposes, users may assign a custom name to their USRPs.
-The USRP can then be identified via name, rather than a difficult to remember serial or address.
+For convenience purposes, users may assign a custom name to their USRP device.
+The USRP device can then be identified via name, rather than a difficult to remember serial or address.
 
 A name has the following properties:
 

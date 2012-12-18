@@ -1,5 +1,5 @@
 ========================================================================
-UHD - Daughterboard Application Notes
+UHD Daughterboard Application Notes
 ========================================================================
 
 .. contents:: Table of Contents
@@ -335,14 +335,14 @@ With the daughterboard plugged-in, run the following commands:
     cd <install-path>/share/uhd/utils
     ./usrp_burn_db_eeprom --id=0x000d --unit=RX --args=<args> --slot=<slot>
 
-* **<args>** are device address arguments (optional if only one USRP is on your machine)
-* **<slot>** is the name of the daughterboard slot (optional if the USRP has only one slot)
+* **<args>** are device address arguments (optional if only one USRP device is on your machine)
+* **<slot>** is the name of the daughterboard slot (optional if the USRP device has only one slot)
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RFX - Mod
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Older RFX boards require modifications to use the motherboard oscillator.
-If this is the case, UHD will print a warning about the modification.
+If this is the case, UHD software will print a warning about the modification.
 Please follow the modification procedures below:
 
 **Step 1: Disable the daughterboard clocks**
@@ -377,5 +377,5 @@ With the daughterboard plugged-in, run the following commands:
   * **RFX1800:** 0x0035
   * **RFX1200:** 0x002a
   * **RFX2400:** 0x002b
-* **<args>** are device address arguments (optional if only one USRP is on your machine)
-* **<slot>** is the name of the daughterboard slot (optional if the USRP has only one slot)
+* **<args>** are device address arguments (optional if only one USRP device is on your machine)
+* **<slot>** is the name of the daughterboard slot (optional if the USRP device has only one slot)

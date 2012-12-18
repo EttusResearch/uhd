@@ -29,7 +29,7 @@ See the UHD wiki for the download link.
 
 The pre-built images come in two forms:
 
-* bundled with UHD in a platform-specific installer
+* bundled with UHD software in a platform-specific installer
 * stand-alone platform-independent archive files
 
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -59,7 +59,7 @@ When installing images from an archive, there are two options:
 **Option 1:**
 
 Unpack the archive into the UHD installation prefix.
-UHD will always search **<install-path>/share/uhd/images** for image files.
+UHD software will always search **<install-path>/share/uhd/images** for image files.
 Where **<install-path>** was set by the **CMAKE_INSTALL_PREFIX** at configure-time.
 
 **Option 2:**

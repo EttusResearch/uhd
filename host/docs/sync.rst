@@ -4,9 +4,9 @@ UHD - Synchronization Application Notes
 
 .. contents:: Table of Contents
 
-The following application notes explain how to synchronize multiple USRPs
-with the goal of transmitting or receiving time-aligned samples for MIMO
-or other applications requiring multiple USRPs operating synchronously.
+The following application notes explain how to synchronize multiple USRP
+devices with the goal of transmitting or receiving time-aligned samples for MIMO
+or other applications requiring multiple USRP devices operating synchronously.
 
 **Note:** The following synchronization notes do not apply to USRP1,
 which does not support the advanced features available in newer products.
@@ -14,7 +14,7 @@ which does not support the advanced features available in newer products.
 ------------------------------------------------------------------------
 Common Reference Signals
 ------------------------------------------------------------------------
-USRPs take two reference signals in order to synchronize clocks and time:
+USRP devices take two reference signals in order to synchronize clocks and time:
 
 * A 10MHz reference to provide a single frequency reference for both devices.
 * A pulse-per-second (PPS) to synchronize the sample time across devices.
@@ -103,16 +103,16 @@ and the user can also parse this string to determine GPS time:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Method 3 - internal GPSDO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-USRPs with internal GPSDOs properly configured will automatically
+USRP devices with internal GPSDOs properly configured will automatically
 configure themselves to set the VITA time to current UTC time.
 See the `GPSDO Application Notes <./gpsdo.html>`_ for more details.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Method 4 - MIMO cable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-A USRP can synchronize its time to another USRP via the MIMO cable.
+A USRP device can synchronize its time to another USRP device via the MIMO cable.
 Unlike the other methods, this does not use a real "pulse per second".
-Rather, the USRP sends an encoded time message over the MIMO cable.
+Rather, the USRP device sends an encoded time message over the MIMO cable.
 The slave device will automatically synchronize to the time on the master device.
 See the `MIMO Cable Application Notes <./usrp2.html#using-the-mimo-cable>`_ for more detail.
 
@@ -123,7 +123,7 @@ Synchronizing Channel Phase
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Align CORDICs in the DSP
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In order to achieve phase alignment between USRPs, the CORDICS in both
+In order to achieve phase alignment between USRP devices, the CORDICS in both
 devices must be aligned with respect to each other. This is easily achieved
 by issuing stream commands with a time spec property, which instructs the
 streaming to begin at a specified time. Since the devices are already

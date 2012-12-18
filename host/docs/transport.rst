@@ -14,7 +14,7 @@ These optional parameters control how the transport object allocates memory,
 resizes kernel buffers, spawns threads, etc.
 When not spcified, the transport layer will use values for these parameters
 that are known to perform well on a variety of systems.
-The transport parameters are defined below for the various transports in the UHD:
+The transport parameters are defined below for the various transports in the UHD software:
 
 ------------------------------------------------------------------------
 UDP Transport (Sockets)
@@ -154,11 +154,11 @@ so that non-root users may access the device:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Install USB driver (Windows)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-A driver package must be installed to use a USB-based product with UHD:
+A driver package must be installed to use a USB-based product with UHD software:
 
 * Download the driver from the UHD wiki page `here <http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip>`_.
 * Unzip the file into a known location. We will refer to this as the **<directory>**.
-* Open the device manager and plug in the USRP. You will see an unrecognized USB device in the device manager.
+* Open the device manager and plug in the USRP device. You will see an unrecognized USB device in the device manager.
 * Right click on the unrecognized USB device and select update/install driver software (may vary for your OS).
 * In the driver installation wizard, select "browse for driver", browse to the **<directory>**, and select the **.inf** file.
 * Continue through the installation wizard until the driver is installed.

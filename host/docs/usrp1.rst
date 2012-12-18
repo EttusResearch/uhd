@@ -79,7 +79,7 @@ Hardware Setup Notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 External clock modification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The USRP can be modified to accept an external clock reference instead of the 64MHz onboard reference.
+The USRP device can be modified to accept an external clock reference instead of the 64MHz onboard reference.
  * Solder SMA (**LTI-SASF54GT**) connector to **J2001**.
  * Move 0 ohm 0603 resistor **R2029** to **R2030**.
  * Move 0.01uF 0603 capacitor **C925** to **C926**.
@@ -89,7 +89,7 @@ The new external clock needs to be a square wave between +7dBm and +15dBm
 
 After the hardware modification,
 the user should burn the setting into the EEPROM,
-so UHD can initialize with the correct clock rate.
+so UHD software can initialize with the correct clock rate.
 Run the following commands to record the setting into the EEPROM:
 ::
 

@@ -2,17 +2,17 @@
 UHD - USRP Hardware Driver
 ========================================================================
 
-UHD is the "Universal Software Radio Peripheral" hardware driver.
-The goal of UHD is to provide a host driver and API for current and future Ettus Research products.
+UHD software is the "Universal Software Radio Peripheral" Hardware Driver software.
+The goal of UHD software is to provide a host driver and API for current and future Ettus Research products.
 Users will be able to use the UHD driver standalone or with third-party applications.
 
 ------------------------------------------------------------------------
 Contents
 ------------------------------------------------------------------------
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Building and Installing UHD
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Building and Installing UHD Software
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * `Build Guide <./build.html>`_
 * `Installation Guide (Linux) <http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_Linux>`_
 * `Installation Guide (Windows) <http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_Windows>`_

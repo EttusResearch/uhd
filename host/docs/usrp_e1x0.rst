@@ -22,7 +22,7 @@ Comparative features list
 ------------------------------------------------------------------------
 Specify a Non-standard Image
 ------------------------------------------------------------------------
-UHD will automatically select the USRP-Embedded FPGA image from the
+UHD software will automatically select the USRP-Embedded FPGA image from the
 installed images package.  The FPGA image selection can be overridden with the
 **--fpga=** device address parameter.
 
@@ -53,7 +53,7 @@ on the device.
 * **J16** is a two pin header; remove the jumper (or leave it on pin1 only).
 * **J15** is a three pin header; move the jumper to (pin1, pin2).
 
-**Note:** See instructions below to communicate the desired clock rate UHD.
+**Note:** See instructions below to communicate the desired clock rate to UHD software.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set other rates - uses internal VCO
@@ -63,7 +63,7 @@ To use other clock rates, the jumpers will need to be in the default position.
 * **J16** is a two pin header; move the jumper to (pin1, pin2).
 * **J15** is a three pin header; move the jumper to (pin2, pin3).
 
-To communicate the desired clock rate into UHD,
+To communicate the desired clock rate into UHD software,
 specify the a special device address argument,
 where the key is **master_clock_rate** and the value is a rate in Hz.
 Example:
@@ -103,7 +103,7 @@ a connector.
 
 Test the PPS input with the following app:
 
-* **<args** are device address arguments (optional if only one USRP is on your machine).
+* **<args** are device address arguments (optional if only one USRP device is on your machine).
 
 ::
 
@@ -116,7 +116,7 @@ Internal GPSDO
 Please see the `Internal GPSDO Application Notes <./gpsdo.html>`_
 for information on configuring and using the internal GPSDO.
 
-UHD will always try to detect an installed GPSDO at runtime.
+UHD software will always try to detect an installed GPSDO at runtime.
 There is not a special EEPROM value to burn for GPSDO detection.
 
 ------------------------------------------------------------------------

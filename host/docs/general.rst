@@ -23,10 +23,10 @@ frequency and actual frequency.  The user may also explicitly control both
 stages of tuning through through the **tune_request_t** object, which allows for
 more advanced tuning.
 
-In general, Using UHD's advanced tuning is highly recommended as it makes it
+In general, Using UHD software's advanced tuning is highly recommended as it makes it
 easy to move the DC component out of your band-of-interest.  This can be done by
-passing your desired LO offset to the **tune_request_t** object, and letting UHD
-handle the rest.
+passing your desired LO offset to the **tune_request_t** object, and letting the UHD
+software handle the rest.
 
 Tuning the receive chain:
 ::
@@ -125,13 +125,13 @@ Overflow notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 When receiving, the device produces samples at a constant rate.
 Overflows occurs when the host does not consume data fast enough.
-When UHD detects the overflow, it prints an "O" to stdout,
+When UHD software detects the overflow, it prints an "O" to stdout,
 and pushes an inline message packet into the receive stream.
 
 **Network-based devices**:
 The host does not back-pressure the receive stream.
 When the kernel's socket buffer becomes full, it will drop subsequent packets.
-UHD detects the overflow as a discontinuity in the packet's sequence numbers,
+UHD software detects the overflow as a discontinuity in the packet's sequence numbers,
 and pushes an inline message packet into the receive stream.
 
 **Other devices**:
@@ -140,14 +140,14 @@ Therefore, overflows always occur in the device itself.
 When the device's internal buffers become full, streaming is shut off,
 and an inline message packet is sent to the host.
 If the device was in continuous streaming mode,
-UHD will automatically restart streaming.
+the UHD software will automatically restart streaming.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Underflow notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 When transmitting, the device consumes samples at a constant rate.
 Underflow occurs when the host does not produce data fast enough.
-When UHD detects underflow, it prints a "U" to stdout,
+When UHD software detects the underflow, it prints a "U" to stdout,
 and pushes a message packet into the async message stream.
 
 ------------------------------------------------------------------------
@@ -157,7 +157,7 @@ Threading Notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Thread safety notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-For the most part, UHD is thread-safe.
+For the most part, UHD software is thread-safe.
 Please observe the following limitations:
 
 **Fast-path thread requirements:**
@@ -177,8 +177,8 @@ It is recommended to use at most one thread context for manipulating device sett
 Thread priority scheduling
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When UHD spawns a new thread it may try to boost the thread's scheduling priority.
-When setting the priority fails, UHD prints out an error.
+When UHD software spawns a new thread it may try to boost the thread's scheduling priority.
+When setting the priority fails, the UHD software prints out an error.
 This error is harmless; it simply means that the thread will have a normal scheduling priority.
 
 **Linux Notes:**
@@ -211,7 +211,7 @@ Disabling or redirecting prints to stdout
 The user can disable the UHD library from printing directly to stdout by registering a custom message handler.
 The handler will intercept all messages, which can be dropped or redirected.
 Only one handler can be registered at a time.
-Make **register_handler** your first call into UHD:
+Make **register_handler** your first call into the UHD library:
 
 ::
 

@@ -21,7 +21,7 @@ Comparative features list
 ------------------------------------------------------------------------
 Specify a Non-standard Image
 ------------------------------------------------------------------------
-UHD will automatically select the USRP B-Series images from the installed images package.
+UHD software will automatically select the USRP B-Series images from the installed images package.
 The image selection can be overridden with the **--fpga=** and **--fw=** device address parameters.
 
 Example device address string representations to specify non-standard images:
@@ -54,7 +54,7 @@ and X4 must be populated with a 61.44 MHz oscillator.
 * **J15** is a three pin header, move the jumper to (pin1, pin2)
 * **357LB3I061M4400** is the recommended oscillator for X4
 
-**Note:** See instructions below to communicate the desired clock rate into UHD.
+**Note:** See instructions below to communicate the desired clock rate into UHD software.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set other rates - uses internal VCO
@@ -63,7 +63,7 @@ To use other clock rates, the jumper will need to be in the default position.
 
 * **J15** is a three pin header, move the jumper to (pin2, pin3)
 
-To communicate the desired clock rate into UHD,
+To communicate the desired clock rate into UHD software,
 specify the a special device address argument,
 where the key is **master_clock_rate** and the value is a rate in Hz.
 Example:

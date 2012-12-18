@@ -148,7 +148,7 @@ any parameters:
     ifconfig -a
 
 **Note:**
-When using UHD, if an IP address for the USRP2 is not specified,
+When using UHD software, if an IP address for the USRP2 is not specified,
 the software will use UDP broadcast packets to locate the USRP2.
 On some systems, the firewall will block UDP broadcast packets.
 It is recommended that you change or disable your firewall settings.
@@ -213,13 +213,13 @@ The following tips are designed to help narrow down and diagnose the problem.
 RuntimeError: no control response
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This is a common error that occurs when you have set the subnet of your network
-interface to a different subnet than the network interface of the USRP.  For
-example, if your network interface is set to **192.168.20.1**, and the USRP is
+interface to a different subnet than the network interface of the USRP device.  For
+example, if your network interface is set to **192.168.20.1**, and the USRP device is
 **192.168.10.2** (note the difference in the third numbers of the IP addresses), you
 will likely see a 'no control response' error message.
 
 Fixing this is simple - just set the your host PC's IP address to the same
-subnet as that of your USRP. Instructions for setting your IP address are in the
+subnet as that of your USRP device. Instructions for setting your IP address are in the
 previous section of this documentation.
 
 
@@ -238,7 +238,7 @@ or create a rule to allow all incoming packets with UDP source port **49152**.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Ping the device
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The USRP will reply to ICMP echo requests.
+The USRP device will reply to ICMP echo requests.
 A successful ping response means that the device has booted properly
 and that it is using the expected IP address.
 
@@ -346,7 +346,7 @@ the following clock configuration must be set on the slave device:
 ------------------------------------------------------------------------
 Alternative stream destination
 ------------------------------------------------------------------------
-It is possible to program the USRP to send RX packets to an alternative IP/UDP destination.
+It is possible to program the USRP device to send RX packets to an alternative IP/UDP destination.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set the subnet and gateway
@@ -429,7 +429,7 @@ Using a PPS signal for timestamp synchronization requires a square wave signal w
 
 Test the PPS input with the following app:
 
-* **<args>** are device address arguments (optional if only one USRP is on your machine)
+* **<args>** are device address arguments (optional if only one USRP device is on your machine)
 
 ::
 
