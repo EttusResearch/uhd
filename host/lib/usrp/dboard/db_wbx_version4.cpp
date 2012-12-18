@@ -41,7 +41,7 @@ static const uhd::dict<std::string, gain_range_t> wbx_v4_tx_gain_ranges = map_li
     ("PGA0", gain_range_t(0, 31, 1.0))
 ;
 
-static const freq_range_t wbx_v4_freq_range(35.0e6, 2.2e9);
+static const freq_range_t wbx_v4_freq_range(25.0e6, 2.2e9);
 
 
 /***********************************************************************
