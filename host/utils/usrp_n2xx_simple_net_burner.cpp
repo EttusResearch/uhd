@@ -502,13 +502,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //Prompt user to reset USRP
-    std::string user_response = "";
+    std::string user_response = "foo";
     bool reset = false;
-    while(user_response != "yes" and user_response != "no" and user_response != "y" and user_response != "n"){
-        std::cout << std::endl << "Image burning successful. Reset USRP (yes/no)? ";
+    while(user_response != "y" and user_response != "" and user_response != "n"){
+        std::cout << std::endl << "Image burning successful. Reset USRP (Y/n)? ";
         std::getline(std::cin, user_response);
         std::transform(user_response.begin(), user_response.end(), user_response.begin(), ::tolower);
-        reset = (user_response == "yes" or user_response == "y");
+        reset = (user_response == "" or user_response == "y");
     }
     std::cout << std::endl; //Formatting
     if(reset) reset_usrp(udp_transport);
