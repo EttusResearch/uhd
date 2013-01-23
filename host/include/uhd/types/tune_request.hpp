@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2012 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TYPES_TUNE_REQUEST_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/device_addr.hpp>
 
 namespace uhd{
 
@@ -87,6 +88,18 @@ namespace uhd{
          * Set when the policy is set to manual.
          */
         double dsp_freq;
+
+        /*!
+         * The args parameter is used to pass arbitrary key/value pairs.
+         * Possible keys used by args (depends on implementation):
+         *
+         * - mode_n: Allows the user to tell the daughterboard tune code
+         * to choose between an integer N diviver or fractional N divider.
+         * Default is fractional N on boards that support fractional N tuning.
+         * Fractional N provides greater tuning acuracy at the expense of spurs.
+         * Possible options for this key: "integer" or "fractional".
+         */
+        device_addr_t args;
 
     };
 

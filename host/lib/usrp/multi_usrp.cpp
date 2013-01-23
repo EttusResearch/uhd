@@ -140,6 +140,14 @@ static tune_result_t tune_xx_subdev_and_dsp(
     }
 
     //------------------------------------------------------------------
+    //-- poke the tune request args into the dboard
+    //------------------------------------------------------------------
+    if (rf_fe_subtree->exists("tune_args"))
+    {
+        rf_fe_subtree->access<device_addr_t>("tune_args").set(tune_request.args);
+    }
+
+    //------------------------------------------------------------------
     //-- set the RF frequency depending upon the policy
     //------------------------------------------------------------------
     double target_rf_freq = 0.0;
