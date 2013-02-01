@@ -123,9 +123,9 @@ SET(BOOST_REQUIRED_COMPONENTS
     unit_test_framework
 )
 
-IF(UNIX AND EXISTS "/usr/lib64")
+IF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
     LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
-ENDIF(UNIX AND EXISTS "/usr/lib64")
+ENDIF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
 
 IF(MSVC)
     SET(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
