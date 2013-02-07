@@ -97,3 +97,14 @@ BOOST_AUTO_TEST_CASE(test_time_spec_neg_values){
     BOOST_CHECK(tsa > tsb);
     BOOST_CHECK(tsc > tsd);
 }
+
+BOOST_AUTO_TEST_CASE(test_time_large_ticks_to_time_spec)
+{
+    std::cout << "sizeof(time_t) " << sizeof(time_t) << std::endl;
+    const boost::uint64_t ticks0 = boost::uint64_t(100e6*1360217663.739296);
+    const uhd::time_spec_t t0 = uhd::time_spec_t::from_ticks(ticks0, 100e6);
+    std::cout << "t0.get_real_secs() " << t0.get_real_secs() << std::endl;
+    std::cout << "t0.get_full_secs() " << t0.get_full_secs() << std::endl;
+    std::cout << "t0.get_frac_secs() " << t0.get_frac_secs() << std::endl;
+    BOOST_CHECK_EQUAL(t0.get_full_secs(), time_t(1360217663));
+}
