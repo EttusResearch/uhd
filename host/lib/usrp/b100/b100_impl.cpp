@@ -516,6 +516,7 @@ void b100_impl::check_fw_compat(void){
             "%s"
         ) % B100_FW_COMPAT_NUM % fw_compat_num % print_images_error()));
     }
+    _tree->create<std::string>("/mboards/0/fw_version").set(str(boost::format("%u.0") % fw_compat_num));
 }
 
 void b100_impl::check_fpga_compat(void){
