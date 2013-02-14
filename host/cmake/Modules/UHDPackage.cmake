@@ -145,7 +145,7 @@ SET(CPACK_COMPONENTS_ALL libraries headers utilities examples tests manual doxyg
 ########################################################################
 # Setup CPack Debian
 ########################################################################
-SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libusb-1.0-0, libboost-dev")
+SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libusb-1.0-0, libboost-all-dev")
 SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
 FOREACH(filename preinst postinst prerm postrm)
     LIST(APPEND CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_BINARY_DIR}/debian/${filename})
