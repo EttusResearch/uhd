@@ -176,6 +176,14 @@ public:
     }
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
+        //lazy flush mechanism - negative timeout
+        if (timeout < 0.0)
+        {
+            _last_recv_buff.reset();
+            while (_internal_zc->get_recv_buff()){}
+            return managed_recv_buffer::sptr();
+        }
+
         //attempt to get a managed recv buffer
         if (not _last_recv_buff){
             _last_recv_buff = _internal_zc->get_recv_buff(timeout);
