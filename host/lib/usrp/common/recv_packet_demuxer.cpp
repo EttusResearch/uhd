@@ -19,6 +19,8 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/thread/mutex.hpp>
+#include <uhd/transport/vrt_if_packet.hpp>
+#include <uhd/types/metadata.hpp>
 #include <queue>
 #include <deque>
 #include <vector>
@@ -26,6 +28,19 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
+
+struct recv_pkt_demux_mrb : public managed_recv_buffer
+{
+public:
+    recv_pkt_demux_mrb(void){/*NOP*/}
+
+    void release(void)
+    {
+        delete this;
+    }
+
+    boost::uint32_t buff[10];
+};
 
 static UHD_INLINE boost::uint32_t extract_sid(managed_recv_buffer::sptr &buff){
     //ASSUME that the data is in little endian format
@@ -66,7 +81,20 @@ public:
 
             //otherwise queue and try again
             if (rx_index < _queues.size()) _queues[rx_index].wrapper.push(buff);
-            else UHD_MSG(error) << "Got a data packet with unknown SID " << extract_sid(buff) << std::endl;
+            else
+            {
+                UHD_MSG(error) << "Got a data packet with unknown SID " << extract_sid(buff) << std::endl;
+                recv_pkt_demux_mrb *mrb = new recv_pkt_demux_mrb();
+                vrt::if_packet_info_t info;
+                info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_DATA;
+                info.num_payload_words32 = 1;
+                info.num_payload_bytes = info.num_payload_words32*sizeof(boost::uint32_t);
+                info.has_sid = true;
+                info.sid = _sid_base + index;
+                vrt::if_hdr_pack_le(mrb->buff, info);
+                mrb->buff[info.num_header_words32] = rx_metadata_t::ERROR_CODE_OVERFLOW;
+                return mrb->make(mrb, mrb->buff, info.num_packet_words32*sizeof(boost::uint32_t));
+            }
         }
     }
 
