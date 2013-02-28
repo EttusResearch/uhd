@@ -218,7 +218,7 @@ private:
      * Primary control and interaction private methods
      ******************************************************************/
     UHD_INLINE void send_pkt(wb_addr_type addr, boost::uint32_t data, int cmd){
-        managed_send_buffer::sptr buff = _xport->get_send_buff(0.0);
+        managed_send_buffer::sptr buff = _xport->get_send_buff();
         if (not buff){
             throw uhd::runtime_error("fifo ctrl timed out getting a send buffer");
         }
