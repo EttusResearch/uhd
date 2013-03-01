@@ -94,6 +94,18 @@ LIBUHD_APPEND_SOURCES(
 )
 
 ########################################################################
+# Add DLL resource file to Windows build
+########################################################################
+IF(MSVC)
+    CONFIGURE_FILE(
+        ${CMAKE_CURRENT_SOURCE_DIR}/uhd.rc.in
+        ${CMAKE_CURRENT_BINARY_DIR}/uhd.rc
+    @ONLY)
+
+    LIST(APPEND libuhd_sources ${CMAKE_CURRENT_BINARY_DIR}/uhd.rc)
+ENDIF(MSVC)
+
+########################################################################
 # Setup libuhd library
 ########################################################################
 ADD_LIBRARY(uhd SHARED ${libuhd_sources})

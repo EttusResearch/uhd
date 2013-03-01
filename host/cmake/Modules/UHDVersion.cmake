@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2012 Ettus Research LLC
+# Copyright 2010-2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,23 @@ FIND_PACKAGE(Git QUIET)
 SET(UHD_VERSION_MAJOR 003)
 SET(UHD_VERSION_MINOR 005)
 SET(UHD_VERSION_PATCH 001)
+
+########################################################################
+# Set up DLL resource version numbers
+########################################################################
+
+FUNCTION(DEPAD_NUM input_num output_num)
+    EXECUTE_PROCESS(
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND ${PYTHON_EXECUTABLE} -c "print int('${input_num}')"
+        OUTPUT_VARIABLE depadded_num OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    SET(${output_num} ${depadded_num} PARENT_SCOPE)
+ENDFUNCTION(DEPAD_NUM)
+
+DEPAD_NUM(${UHD_VERSION_MAJOR} RC_VERSION_MAJOR)
+DEPAD_NUM(${UHD_VERSION_MINOR} RC_VERSION_MINOR)
+DEPAD_NUM(${UHD_VERSION_PATCH} RC_VERSION_PATCH)
 
 ########################################################################
 # Version information discovery through git log
