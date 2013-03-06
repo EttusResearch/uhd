@@ -15,5 +15,10 @@ INST "GPIF_SLOE" TNM = gpif_net_out;
 INST "GPIF_SLRD" TNM = gpif_net_out;
 INST "GPIF_PKTEND" TNM = gpif_net_out;
 
-TIMEGRP "gpif_net_in" OFFSET = IN 7 ns VALID 14 ns BEFORE "IFCLK" RISING;
+TIMEGRP "gpif_net_in" OFFSET = IN 5 ns VALID 10 ns BEFORE "IFCLK" RISING;
 TIMEGRP "gpif_net_out" OFFSET = OUT 7 ns AFTER "IFCLK" RISING;
+
+TIMESPEC TS_Pad2Pad = FROM PADS TO PADS 7 ns;
+
+NET PPS_IN TIG;
+NET debug_led* TIG;
