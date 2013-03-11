@@ -37,6 +37,10 @@ IF(ENABLE_USB)
         ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_base.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_base.hpp
     )
+    SET_SOURCE_FILES_PROPERTIES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/libusb1_zero_copy.cpp
+        PROPERTIES COMPILE_DEFINITIONS "${LIBUSB_DEFINITIONS}"
+    )
 ELSE(ENABLE_USB)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_dummy_impl.cpp

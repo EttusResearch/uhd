@@ -36,6 +36,12 @@ static const size_t DEFAULT_XFER_SIZE = 32*512; //bytes
     #define LIBUSB_CALL
 #endif /*LIBUSB_CALL*/
 
+//! libusb_handle_events_timeout_completed is only in newer API
+#ifndef HAVE_LIBUSB_HANDLE_EVENTS_TIMEOUT_COMPLETED
+    #define libusb_handle_events_timeout_completed(ctx, tx, completed)\
+        libusb_handle_events_timeout(ctx, tx)
+#endif
+
 /*!
  * All libusb callback functions should be marked with the LIBUSB_CALL macro
  * to ensure that they are compiled with the same calling convention as libusb.
@@ -70,7 +76,7 @@ UHD_INLINE bool wait_for_completion(libusb_context *ctx, const double timeout, i
     timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 0;
-    libusb_handle_events_timeout(ctx, &tv);
+    libusb_handle_events_timeout_completed(ctx, &tv, &completed);
     if (completed) return true;
 
     //finish the rest with a timeout loop
@@ -79,7 +85,7 @@ UHD_INLINE bool wait_for_completion(libusb_context *ctx, const double timeout, i
         timeval tv;
         tv.tv_sec = 0;
         tv.tv_usec = 10000; /*10ms*/
-        libusb_handle_events_timeout(ctx, &tv);
+        libusb_handle_events_timeout_completed(ctx, &tv, &completed);
     }
 
     return completed;
