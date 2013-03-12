@@ -32,6 +32,7 @@ FIND_LIBRARY(LIBUSB_LIBRARIES
     PATHS /usr/local/lib /usr/lib /opt/local/lib
 )
 
+enable_language(C) #needs C support for check below
 include(CheckFunctionExists)
 if(LIBUSB_INCLUDE_DIRS)
     set(CMAKE_REQUIRED_INCLUDES ${LIBUSB_INCLUDE_DIRS})
