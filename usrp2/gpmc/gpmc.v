@@ -58,8 +58,8 @@ module gpmc
    wire [35:0] 	  txb_data;
    wire 	  txb_src_rdy, txb_dst_rdy;
 
-   gpmc_to_fifo #(.ADDR_WIDTH(ADDR_WIDTH)) gpmc_to_fifo
-     (.EM_D(EM_D), .EM_A(EM_A), .EM_CLK(EM_CLK), .EM_WE(~EM_NCS4 & ~EM_NWE),
+   gpmc_to_fifo #(.ADDR_WIDTH(10), .LAST_ADDR(10'h3ff), .PTR_WIDTH(2)) gpmc_to_fifo
+     (.EM_D(EM_D), .EM_A(EM_A[10:1]), .EM_CLK(EM_CLK), .EM_WE(~EM_NCS4 & ~EM_NWE),
       .clk(fifo_clk), .reset(fifo_rst), .clear(1'b0), .arst(fifo_rst | arst),
       .data_o(tx18_data), .src_rdy_o(tx18_src_rdy), .dst_rdy_i(tx18_dst_rdy),
       .have_space(tx_have_space));
@@ -112,8 +112,8 @@ module gpmc
    wire [35:0] 	  ctrlb_data;
    wire 	  ctrlb_src_rdy, ctrlb_dst_rdy;
 
-   gpmc_to_fifo #(.PTR_WIDTH(5), .ADDR_WIDTH(5)) ctrl_gpmc_to_fifo
-     (.EM_D(EM_D), .EM_A(EM_A[5:1]), .EM_CLK(EM_CLK), .EM_WE(~EM_NCS6 & ~EM_NWE & (EM_A[ADDR_WIDTH:6] == 0)),
+   gpmc_to_fifo #(.PTR_WIDTH(5), .ADDR_WIDTH(5), .LAST_ADDR(5'h0f)) ctrl_gpmc_to_fifo
+     (.EM_D(EM_D), .EM_A(EM_A[5:1]), .EM_CLK(EM_CLK), .EM_WE(~EM_NCS6 & ~EM_NWE),
       .clk(fifo_clk), .reset(fifo_rst), .clear(1'b0), .arst(fifo_rst | arst),
       .data_o(ctrl18_data), .src_rdy_o(ctrl18_src_rdy), .dst_rdy_i(ctrl18_dst_rdy),
       .have_space(/*always*/));
@@ -149,12 +149,12 @@ module gpmc
       .f36_datain(respb_data), .f36_src_rdy_i(respb_src_rdy), .f36_dst_rdy_o(respb_dst_rdy),
       .f19_dataout({resp_dummy,resp18_data}), .f19_src_rdy_o(resp18_src_rdy), .f19_dst_rdy_i(resp18_dst_rdy) );
 
-   fifo_to_gpmc #(.ADDR_WIDTH(ADDR_WIDTH), .LAST_ADDR(10'h00f)) resp_fifo_to_gpmc
+   fifo_to_gpmc #(.PTR_WIDTH(5), .ADDR_WIDTH(5), .LAST_ADDR(5'h0f)) resp_fifo_to_gpmc
      (.clk(fifo_clk), .reset(fifo_rst), .clear(1'b0), .arst(fifo_rst | arst),
       .data_i(resp18_data), .src_rdy_i(resp18_src_rdy), .dst_rdy_o(resp18_dst_rdy),
-      .EM_D(EM_D_ctrl), .EM_A(EM_A), .EM_CLK(EM_CLK), .EM_OE(~EM_NCS6 & ~EM_NOE),
+      .EM_D(EM_D_ctrl), .EM_A(EM_A[5:1]), .EM_CLK(EM_CLK), .EM_OE(~EM_NCS6 & ~EM_NOE),
       .data_available(resp_have_data));
-
+//*
     assign debug = {
         EM_D,
         //resp18_data[15:0], //16
@@ -163,5 +163,5 @@ module gpmc
         EM_NCS4, EM_NCS6, EM_NWE, EM_NOE, //4
         EM_CLK, resp_have_data //2
     };
-
+//*/
 endmodule // gpmc
