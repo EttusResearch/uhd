@@ -87,7 +87,12 @@ public:
         spi_sclk_gpio(65, "out"),
         spi_sen_gpio(186, "out"),
         spi_mosi_gpio(145, "out"),
-        spi_miso_gpio(147, "in"){}
+        spi_miso_gpio(147, "in")
+    {
+        this->spi_sen_gpio(1); //not selected
+        this->spi_sclk_gpio(0); //into reset
+        this->spi_sclk_gpio(1); //out of reset
+    }
 
     boost::uint32_t transact_spi(
         int, const spi_config_t &, //not used params
@@ -290,9 +295,11 @@ struct e100_simpl_msb : managed_send_buffer
 
     void release(void)
     {
+        const size_t max_words32 = 8; //.LAST_ADDR(10'h00f)) resp_fifo_to_gpmc
+
         //load the data struct
         data.offset = 0;
-        data.count = size()/4+1/*1 for header offset*/;
+        data.count = max_words32;
 
         //call the ioctl
         ctrl->ioctl(USRP_E_WRITE_CTL32, &data);
@@ -300,7 +307,7 @@ struct e100_simpl_msb : managed_send_buffer
 
     sptr get_new(void)
     {
-        return make(this, data.buf+1, sizeof(data.buf)-4);
+        return make(this, data.buf, sizeof(data.buf));
     }
 };
 
@@ -333,15 +340,6 @@ public:
                 "The module build is not compatible with the host code build."
             ) % USRP_E_COMPAT_NUMBER % module_compat_num));
         }
-
-        //hit the magic arst condition
-        //async_reset <= ~EM_NCS6 && ~EM_NWE && (EM_A[9:2] == 8'hff) && EM_D[0];
-        usrp_e_ctl16 datax;
-        datax.offset = 0x3fc;
-        datax.count = 2;
-        datax.buf[0] = 1;
-        datax.buf[1] = 0;
-        this->ioctl(USRP_E_WRITE_CTL16, &datax);
 
         std::ofstream edge_file("/sys/class/gpio/gpio147/edge");
         edge_file << "rising" << std::endl << std::flush;
