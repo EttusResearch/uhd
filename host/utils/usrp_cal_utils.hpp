@@ -84,7 +84,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
         throw std::runtime_error("self-calibration is not supported for this hardware");
     }
 
-    const uhd::fs_path rx_fe_path = "/mboards/0/dboards/A/tx_frontends/0";
+    const uhd::fs_path rx_fe_path = "/mboards/0/dboards/A/rx_frontends/0";
     const std::string rx_name = tree->access<std::string>(rx_fe_path / "name").get();
     if (rx_name.find("WBX") != std::string::npos){
         usrp->set_rx_gain(25);
