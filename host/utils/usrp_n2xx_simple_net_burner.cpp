@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -368,6 +368,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("fpga", po::value<std::string>(&fpga_path), "Specify a filepath for a custom FPGA image.")
         ("no_fw", "Do not burn a firmware image.")
         ("no_fpga", "Do not burn an FPGA image.")
+        ("auto_reboot", "Automatically reboot N2XX without prompting.")
         ("list", "List available N2XX USRP devices.")
     ;
     po::variables_map vm;
@@ -388,6 +389,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     bool use_custom_fpga = (vm.count("fpga") > 0);
     bool use_custom_fw = (vm.count("fw") > 0);
     bool list_usrps = (vm.count("list") > 0);
+    bool auto_reboot = (vm.count("auto_reboot") > 0);
 
     if(!burn_fpga && !burn_fw){
         std::cout << "No images will be burned." << std::endl;
@@ -501,16 +503,19 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         verify_image(udp_transport, true, fw_image, flash_info[1], fw_image_size);
     }
 
-    //Prompt user to reset USRP
-    std::string user_response = "foo";
-    bool reset = false;
-    while(user_response != "y" and user_response != "" and user_response != "n"){
-        std::cout << std::endl << "Image burning successful. Reset USRP (Y/n)? ";
-        std::getline(std::cin, user_response);
-        std::transform(user_response.begin(), user_response.end(), user_response.begin(), ::tolower);
-        reset = (user_response == "" or user_response == "y");
+    //Reset USRP N2XX
+    bool reset;
+    if(auto_reboot) reset = true;
+    else{
+        std::string user_response = "foo";
+        while(user_response != "y" and user_response != "" and user_response != "n"){
+            std::cout << std::endl << "Image burning successful. Reset USRP (Y/n)? ";
+            std::getline(std::cin, user_response);
+            std::transform(user_response.begin(), user_response.end(), user_response.begin(), ::tolower);
+            reset = (user_response == "" or user_response == "y");
+        }
+        std::cout << std::endl; //Formatting
     }
-    std::cout << std::endl; //Formatting
     if(reset) reset_usrp(udp_transport);
     else return EXIT_SUCCESS;
 
