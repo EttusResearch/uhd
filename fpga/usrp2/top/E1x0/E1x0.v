@@ -59,10 +59,20 @@ module E1x0
    wire clk_fpga;
    wire reset;
 
-   reg async_reset;
-   always @(negedge EM_CLK) begin
-        async_reset <= ~EM_NCS6 && ~EM_NWE && (EM_A[9:2] == 8'hff) && EM_D[0];
-   end
+   reg                 por_rst;
+   reg [7:0]   por_counter = 8'h0;
+
+   always @(posedge clk_fpga)
+     if (por_counter != 8'h55)
+       begin
+          por_counter <= por_counter + 8'h1;
+          por_rst <= 1'b1;
+       end
+     else por_rst <= 1'b0;
+
+   wire async_reset;
+   cross_clock_reader #(.WIDTH(1)) read_gpio_reset
+       (.clk(clk_fpga), .rst(por_rst), .in(cgen_sen_b & ~cgen_sclk), .out(async_reset));
 
    IBUFGDS #(.IOSTANDARD("LVDS_33"), .DIFF_TERM("TRUE")) 
    clk_fpga_pin (.O(clk_fpga),.I(CLK_FPGA_P),.IB(CLK_FPGA_N));

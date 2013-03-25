@@ -410,17 +410,6 @@ public:
         return usrp_control_write(request, value, index, 0, 0);
     }
 
-    void write_eeprom(
-        boost::uint8_t addr,
-        boost::uint8_t offset,
-        const byte_vector_t &bytes
-    ){
-        byte_vector_t bytes_with_cmd(bytes.size() + 1);
-        bytes_with_cmd[0] = offset;
-        std::copy(bytes.begin(), bytes.end(), &bytes_with_cmd[1]);
-        this->write_i2c(addr, bytes_with_cmd);
-    }
-
     byte_vector_t read_eeprom(
         boost::uint8_t addr,
         boost::uint8_t offset,

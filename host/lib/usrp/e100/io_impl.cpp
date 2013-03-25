@@ -31,7 +31,7 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-static const size_t vrt_send_header_offset_words32 = 1;
+static const size_t vrt_send_header_offset_words32 = 0;
 
 void e100_impl::update_tick_rate(const double rate){
 

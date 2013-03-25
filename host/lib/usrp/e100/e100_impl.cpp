@@ -534,6 +534,12 @@ void e100_impl::check_fpga_compat(void){
             "The FPGA build is not compatible with the host code build."
         ) % int(E100_FPGA_COMPAT_NUM) % fpga_major));
     }
+    if (fpga_minor < 2){
+        throw uhd::runtime_error(str(boost::format(
+            "Expected FPGA compatibility minor number at least %d, but got %d:\n"
+            "The FPGA build is not compatible with the host code build."
+        ) % int(2) % fpga_minor));
+    }
     _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
 }
 

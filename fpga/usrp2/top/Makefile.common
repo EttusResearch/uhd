@@ -55,7 +55,7 @@ $(ISE_FILE): $$(SOURCES) $$(MAKEFILE_LIST)
 
 $(BIN_FILE): $(ISE_FILE) $$(SOURCES) $$(MAKEFILE_LIST)
 	@echo $@
-	$(ISE_HELPER) "Generate Programming File"
+	$(ISE_HELPER) "Generate Programming File" 2>&1 | tee $(BUILD_DIR)/build.log
 	touch $@
 
 $(MCS_FILE): $(BIN_FILE)

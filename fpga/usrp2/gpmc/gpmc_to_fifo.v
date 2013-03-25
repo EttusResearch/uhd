@@ -36,18 +36,15 @@
 ////////////////////////////////////////////////////////////////////////
 
 module gpmc_to_fifo
-  #(parameter PTR_WIDTH = 2, parameter ADDR_WIDTH = 10, parameter XFER_OFFSET = 2)
+  #(parameter PTR_WIDTH = 2, parameter ADDR_WIDTH = 10, parameter LAST_ADDR = 10'h3ff)
   (input [15:0] EM_D, input [ADDR_WIDTH:1] EM_A, input EM_CLK, input EM_WE,
    input clk, input reset, input clear, input arst,
    output [17:0] data_o, output src_rdy_o, input dst_rdy_i,
    output reg have_space);
 
     //states for the GPMC side of things
-    wire [17:0] data_i;
     reg gpmc_state;
-    reg [15:0] vita_len;
     reg [ADDR_WIDTH:1] addr;
-    wire [ADDR_WIDTH:1] last_addr = {vita_len[ADDR_WIDTH-2:0], 1'b0} - 1'b1 + XFER_OFFSET;
     reg [PTR_WIDTH:0] gpmc_ptr, next_gpmc_ptr;
     localparam GPMC_STATE_START = 0;
     localparam GPMC_STATE_FILL = 1;
@@ -55,6 +52,8 @@ module gpmc_to_fifo
     //states for the FIFO side of things
     reg [1:0] fifo_state;
     reg [ADDR_WIDTH-1:0] counter;
+    reg [ADDR_WIDTH-1:0] last_counter;
+    reg [ADDR_WIDTH-1:0] last_xfer;
     reg [PTR_WIDTH:0] fifo_ptr;
     localparam FIFO_STATE_CLAIM = 0;
     localparam FIFO_STATE_EMPTY = 1;
@@ -75,15 +74,14 @@ module gpmc_to_fifo
             case(gpmc_state)
 
             GPMC_STATE_START: begin
-                if (data_i[16]) begin
+                if (EM_A == 0) begin
                     gpmc_state <= GPMC_STATE_FILL;
-                    vita_len <= EM_D;
                     next_gpmc_ptr <= gpmc_ptr + 1;
                 end
             end
 
             GPMC_STATE_FILL: begin
-                if (data_i[17]) begin
+                if (addr == LAST_ADDR) begin
                     gpmc_state <= GPMC_STATE_START;
                     gpmc_ptr <= next_gpmc_ptr;
                     addr <= 0;
@@ -123,14 +121,14 @@ module gpmc_to_fifo
         if (reset | clear) begin
             fifo_state <= FIFO_STATE_CLAIM;
             fifo_ptr <= 0;
-            counter <= XFER_OFFSET;
+            counter <= 0;
         end
         else begin
             case(fifo_state)
 
             FIFO_STATE_CLAIM: begin
                 if (bram_available_to_empty && data_o[16]) fifo_state <= FIFO_STATE_PRE;
-                counter <= XFER_OFFSET;
+                counter <= 0;
             end
 
             FIFO_STATE_PRE: begin
@@ -142,7 +140,7 @@ module gpmc_to_fifo
                 if (src_rdy_o && dst_rdy_i && data_o[17]) begin
                     fifo_state <= FIFO_STATE_CLAIM;
                     fifo_ptr <= fifo_ptr + 1;
-                    counter <= XFER_OFFSET;
+                    counter <= 0;
                 end
                 else if (src_rdy_o && dst_rdy_i) begin
                     counter <= counter + 1;
@@ -157,16 +155,23 @@ module gpmc_to_fifo
 
     assign src_rdy_o = fifo_state == FIFO_STATE_EMPTY;
 
-    //assign data and frame bits to bram input
-    assign data_i[15:0] = EM_D;
-    assign data_i[16] = (addr == XFER_OFFSET);
-    assign data_i[17] = (addr == last_addr);
-
     //instantiate dual ported bram for async read + write
-    ram_2port #(.DWIDTH(18),.AWIDTH(PTR_WIDTH + ADDR_WIDTH)) async_fifo_bram
+    ram_2port #(.DWIDTH(16),.AWIDTH(PTR_WIDTH + ADDR_WIDTH)) async_fifo_bram
      (.clka(~EM_CLK),.ena(1'b1),.wea(EM_WE),
-      .addra({gpmc_ptr[PTR_WIDTH-1:0], addr}),.dia(data_i),.doa(),
+      .addra({gpmc_ptr[PTR_WIDTH-1:0], addr}),.dia(EM_D),.doa(),
       .clkb(clk),.enb(enable),.web(1'b0),
-      .addrb({fifo_ptr[PTR_WIDTH-1:0], counter}),.dib(18'h3ffff),.dob(data_o));
+      .addrb({fifo_ptr[PTR_WIDTH-1:0], counter}),.dib(18'h3ffff),.dob(data_o[15:0]));
+
+    //store the vita length -> last xfer count
+    always @(posedge clk) begin
+        if (src_rdy_o && dst_rdy_i && data_o[16]) begin
+            last_xfer <= {data_o[ADDR_WIDTH-2:0], 1'b0};
+        end
+    end
+
+    //logic for start and end of frame
+    always @(posedge clk) if (enable) last_counter <= counter;
+    assign data_o[17] = !data_o[16] && ((last_counter + 1'b1) == last_xfer);
+    assign data_o[16] = last_counter == 0;
 
 endmodule // gpmc_to_fifo

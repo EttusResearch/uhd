@@ -70,7 +70,7 @@ public:
 
     void release(void){
         if (fp_verbose) UHD_LOGV(always) << "send buff: commit " << size() << std::endl;
-        _info->len = size();
+        _info->len = _len;//size();
         _info->flags = RB_USER; //release the frame
         if (::write(_fd, NULL, 0) < 0){ //notifies the kernel
             UHD_LOGV(rarely) << UHD_THROW_SITE_INFO("write error") << std::endl;
