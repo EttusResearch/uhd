@@ -36,7 +36,7 @@ The following RF frontends are supported by the self-calibration utilities:
 Calibration utilities
 ********************************************
 UHD installs the calibration utilities into <install-path>/bin.
-**Disconnect** any extrernal hardware from the RF antenna ports,
+**Disconnect** any external hardware from the RF antenna ports,
 and run the following from the command line.
 Each utility will take several minutes to complete.
 ::
