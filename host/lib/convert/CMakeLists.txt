@@ -24,12 +24,11 @@ MESSAGE(STATUS "")
 ########################################################################
 # Look for Orc support
 ########################################################################
-FIND_PACKAGE(PkgConfig)
-IF(PKG_CONFIG_FOUND)
-PKG_CHECK_MODULES(ORC "orc-0.4 > 0.4.11")
-ENDIF(PKG_CONFIG_FOUND)
+FIND_PACKAGE(ORC)
 
-FIND_PROGRAM(ORCC_EXECUTABLE orcc)
+IF(NOT ORCC_EXECUTABLE)
+    FIND_PROGRAM(ORCC_EXECUTABLE orcc)
+ENDIF()
 
 LIBUHD_REGISTER_COMPONENT("ORC" ENABLE_ORC ON "ENABLE_LIBUHD;ORC_FOUND;ORCC_EXECUTABLE" OFF)
 
