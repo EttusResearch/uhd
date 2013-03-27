@@ -504,7 +504,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //Reset USRP N2XX
-    bool reset;
+    bool reset = false;
     if(auto_reboot) reset = true;
     else{
         std::string user_response = "foo";
