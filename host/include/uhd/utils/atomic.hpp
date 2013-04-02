@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,8 @@
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
 
 #include <boost/version.hpp>
@@ -79,7 +81,6 @@ namespace uhd{
         //! Resize the barrier for N threads
         void resize(const size_t size){
             _size = size;
-            _count.write(size);
         }
 
         /*!
@@ -88,24 +89,52 @@ namespace uhd{
          */
         void interrupt(void)
         {
-            _count.write(boost::uint32_t(~0));
+            _done.inc();
         }
 
         //! Wait on the barrier condition
-        UHD_INLINE void wait(void){
-            _count.dec();
-            _count.cas(_size, 0);
-            while (_count.read() != _size){
-                boost::this_thread::interruption_point();
-                if (_count.read() == boost::uint32_t(~0))
-                    throw boost::thread_interrupted();
-                boost::this_thread::yield();
+        UHD_INLINE void wait(void)
+        {
+            if (_size == 1) return;
+
+            //entry barrier with condition variable
+            _entry_counter.inc();
+            _entry_counter.cas(0, _size);
+            boost::mutex::scoped_lock lock(_mutex);
+            while (_entry_counter.read() != 0)
+            {
+                this->check_interrupt();
+                _cond.timed_wait(lock, boost::posix_time::milliseconds(1));
             }
+            lock.unlock(); //unlock before notify
+            _cond.notify_one();
+
+            //exit barrier to ensure known condition of entry count
+            _exit_counter.inc();
+            _exit_counter.cas(0, _size);
+            while (_exit_counter.read() != 0) this->check_interrupt();
+        }
+
+        //! Wait on the barrier condition
+        UHD_INLINE void wait_others(void)
+        {
+            while (_entry_counter.read() != (_size-1)) this->check_interrupt();
         }
 
     private:
         size_t _size;
-        atomic_uint32_t _count;
+        atomic_uint32_t _entry_counter;
+        atomic_uint32_t _exit_counter;
+        atomic_uint32_t _done;
+        boost::mutex _mutex;
+        boost::condition_variable _cond;
+
+        UHD_INLINE void check_interrupt(void)
+        {
+            if (_done.read() != 0) throw boost::thread_interrupted();
+            boost::this_thread::interruption_point();
+            boost::this_thread::yield();
+        }
     };
 
     /*!
