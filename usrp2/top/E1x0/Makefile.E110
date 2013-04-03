@@ -50,6 +50,7 @@ simulator "ISE Simulator (VHDL/Verilog)" \
 TOP_SRCS = \
 ../B100/u1plus_core.v \
 E1x0.v \
+E1x0.ucf \
 timing.ucf
 
 SOURCES = $(abspath $(TOP_SRCS)) $(FIFO_SRCS) \
