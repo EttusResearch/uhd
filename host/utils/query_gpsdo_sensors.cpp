@@ -27,6 +27,7 @@
 #include <boost/thread.hpp>
 #include <string>
 #include <cmath>
+#include <ctime>
 #include <cstdlib>
 
 namespace po = boost::program_options;
@@ -114,6 +115,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   uhd::sensor_value_t rmc_string = usrp->get_mboard_sensor("gps_gprmc");
   std::cout << boost::format("%s\n%s\n%s\n") % gga_string.to_pp_string() % rmc_string.to_pp_string() % gps_time.to_pp_string();
   std::cout << boost::format("UHD Device time: %.0f seconds\n") % (last_pps_time.get_real_secs());
+  std::cout << boost::format("PC Clock time: %.0f seconds\n") % time(NULL);
 
   //finished
   std::cout << boost::format("\nDone!\n\n");
