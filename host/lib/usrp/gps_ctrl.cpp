@@ -303,13 +303,22 @@ private:
   }
 
   std::string get_servo(void) {
+
+    //enable servo reporting
+    _send("SERV:TRAC 1\n");
+    sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
+
     std::string reply;
 
     const boost::system_time comm_timeout = boost::get_system_time() + milliseconds(GPS_COMM_TIMEOUT_MS);
     while(boost::get_system_time() < comm_timeout) {
-        reply = get_cached_sensor("SERVO", GPS_SERVO_FRESHNESS, false);
+        reply = get_cached_sensor("SERVO", GPS_NMEA_LOW_FRESHNESS, false);
         if(reply.size())
-          return reply;
+        {
+            //disable it before leaving function
+            _send("SERV:TRAC 0\n");
+            return reply;
+        }
         boost::this_thread::sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
     }
     throw uhd::value_error("get_stat(): no servo message found");
