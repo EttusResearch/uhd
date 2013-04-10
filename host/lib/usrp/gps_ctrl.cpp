@@ -201,7 +201,7 @@ private:
      sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
     _send("GPS:GPRMC 1\n");
      sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
-    _send("SERV:TRAC 1\n");                        // enable servo trace message
+    _send("SERV:TRAC 0\n");
      sleep(milliseconds(FIREFLY_STUPID_DELAY_MS));
   }
 
@@ -240,6 +240,7 @@ private:
   }
 
   ptime get_time(void) {
+    _flush();
     int error_cnt = 0;
     ptime gps_time;
     while(error_cnt < 2) {

@@ -103,6 +103,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   //Check PPS and compare UHD device time to GPS time
   boost::this_thread::sleep(boost::posix_time::seconds(1));
   uhd::sensor_value_t gps_time = usrp->get_mboard_sensor("gps_time");
+  const time_t pc_clock_time = time(NULL);
   const uhd::time_spec_t last_pps_time = usrp->get_time_last_pps();
   if (last_pps_time.to_ticks(1.0) == gps_time.to_int()) {
     std::cout << boost::format("GPS and UHD Device time are aligned.\n");
@@ -115,7 +116,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   uhd::sensor_value_t rmc_string = usrp->get_mboard_sensor("gps_gprmc");
   std::cout << boost::format("%s\n%s\n%s\n") % gga_string.to_pp_string() % rmc_string.to_pp_string() % gps_time.to_pp_string();
   std::cout << boost::format("UHD Device time: %.0f seconds\n") % (last_pps_time.get_real_secs());
-  std::cout << boost::format("PC Clock time: %.0f seconds\n") % time(NULL);
+  std::cout << boost::format("PC Clock time: %.0f seconds\n") % pc_clock_time;
 
   //finished
   std::cout << boost::format("\nDone!\n\n");
