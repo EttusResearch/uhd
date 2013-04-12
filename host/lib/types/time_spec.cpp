@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
 //
 
 #include <uhd/types/time_spec.hpp>
-#include <inttypes.h> //imaxdiv, intmax_t
 
 using namespace uhd;
 
@@ -101,8 +100,9 @@ time_spec_t::time_spec_t(time_t full_secs, long tick_count, double tick_rate){
 }
 
 time_spec_t time_spec_t::from_ticks(long long ticks, double tick_rate){
-    const imaxdiv_t divres = imaxdiv(ticks, fast_llround(tick_rate));
-    return time_spec_t(time_t(divres.quot), double(divres.rem)/tick_rate);
+    const time_t secs_full = time_t(ticks/tick_rate);
+    const double ticks_error = ticks - (secs_full*tick_rate);
+    return time_spec_t(secs_full, ticks_error/tick_rate);
 }
 
 /***********************************************************************
@@ -113,8 +113,10 @@ long time_spec_t::get_tick_count(double tick_rate) const{
 }
 
 long long time_spec_t::to_ticks(double tick_rate) const{
-    return fast_llround(this->get_frac_secs()*tick_rate) + \
-    (this->get_full_secs() * fast_llround(tick_rate));
+    const long long ticks_full = this->get_full_secs()*fast_llround(tick_rate);
+    const double secs_error = this->get_full_secs() - (ticks_full/tick_rate);
+    const double secs_frac = this->get_frac_secs() + secs_error;
+    return ticks_full + fast_llround(secs_frac*tick_rate);
 }
 
 double time_spec_t::get_real_secs(void) const{
