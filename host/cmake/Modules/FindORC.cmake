@@ -3,7 +3,13 @@
 ########################################################################
 
 INCLUDE(FindPkgConfig)
-PKG_CHECK_MODULES(PC_ORC "orc-0.4 > 0.4.11")
+PKG_CHECK_MODULES(PC_ORC "orc-0.4")
+PKG_CHECK_MODULES(PC_ORC_V4_11 "orc-0.4 > 0.4.11")
+
+#we are using the pkg config as a version check
+#if we have pkg config, the right version must be found
+#the alternative is that no pkg config orc is found
+if (PC_ORC_V4_11_FOUND OR (NOT PC_ORC_FOUND AND NOT PC_ORC_V4_11_FOUND))
 
 FIND_PATH(
     ORC_INCLUDE_DIRS
@@ -22,6 +28,8 @@ FIND_LIBRARY(
     PATHS /usr/local/lib
           /usr/lib
 )
+
+endif() #both PC ORC FOUND
 
 INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(ORC DEFAULT_MSG ORC_LIBRARIES ORC_INCLUDE_DIRS)
