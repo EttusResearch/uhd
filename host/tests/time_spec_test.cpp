@@ -20,6 +20,7 @@
 #include <boost/foreach.hpp>
 #include <boost/thread.hpp> //sleep
 #include <iostream>
+#include <iomanip>
 
 BOOST_AUTO_TEST_CASE(test_time_spec_compare){
     std::cout << "Testing time specification compare..." << std::endl;
