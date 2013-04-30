@@ -1,0 +1,3 @@
+version=3
+opts=uversionmangle=s/([^0-9]|)0*(\d)/$1$2/g;s/_/./g \
+https://github.com/EttusResearch/uhd/tags .*/release_([\d_]+)\.tar\..*
