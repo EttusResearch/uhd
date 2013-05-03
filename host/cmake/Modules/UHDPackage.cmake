@@ -155,6 +155,10 @@ FOREACH(filename preinst postinst prerm postrm)
         ${CMAKE_BINARY_DIR}/debian/${filename}
     @ONLY)
 ENDFOREACH(filename)
+CONFIGURE_FILE(
+    ${CMAKE_SOURCE_DIR}/cmake/debian/watch
+    ${CMAKE_BINARY_DIR}/debian/watch
+@ONLY)
 
 ########################################################################
 # Setup CPack RPM

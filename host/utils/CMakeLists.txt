@@ -24,6 +24,7 @@ SET(util_runtime_sources
     uhd_cal_rx_iq_balance.cpp
     uhd_cal_tx_dc_offset.cpp
     uhd_cal_tx_iq_balance.cpp
+    usrp_n2xx_simple_net_burner.cpp
 )
 
 #for each source: build an executable and install
@@ -41,7 +42,6 @@ SET(util_share_sources
     query_gpsdo_sensors.cpp
     usrp_burn_db_eeprom.cpp
     usrp_burn_mb_eeprom.cpp
-    usrp_n2xx_simple_net_burner.cpp
 )
 
 IF(ENABLE_USB)
@@ -66,6 +66,8 @@ FOREACH(util_source ${util_share_sources})
     INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
 ENDFOREACH(util_source)
 
+INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+
 #UHD images downloader configuration
 CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/uhd_images_downloader.py.in
@@ -86,6 +88,13 @@ IF(LINUX)
 ENDIF(LINUX)
 
 IF(ENABLE_USRP2)
+    SET(burners
+        usrp2_card_burner.py
+        usrp2_card_burner_gui.py
+        usrp_n2xx_net_burner.py
+        usrp_n2xx_net_burner_gui.py
+    )
+
     IF(WIN32 AND UHD_RELEASE_MODE) #include dd.exe
         FILE(DOWNLOAD
             "http://files.ettus.com/dd.exe"
@@ -103,13 +112,19 @@ IF(ENABLE_USRP2)
             DESTINATION ${PKG_LIB_DIR}/utils
             COMPONENT utilities
         )
+        INSTALL(PROGRAMS
+            usrp2_card_burner.py
+            RENAME usrp2_card_burner
+            DESTINATION ${RUNTIME_DIR}
+            COMPONENT utilities
+        )
     ENDIF(LINUX)
-    INSTALL(PROGRAMS
-        usrp2_card_burner.py
-        usrp2_card_burner_gui.py
-        usrp_n2xx_net_burner.py
-        usrp_n2xx_net_burner_gui.py
-        DESTINATION ${PKG_LIB_DIR}/utils
-        COMPONENT utilities
-    )
+    FOREACH(burner ${burners})
+        INSTALL(PROGRAMS
+            ${burner}
+            DESTINATION ${PKG_LIB_DIR}/utils
+            COMPONENT utilities
+        )
+    ENDFOREACH(burner ${burners})
+
 ENDIF(ENABLE_USRP2)

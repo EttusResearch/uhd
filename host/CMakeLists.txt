@@ -46,6 +46,7 @@ IF(NOT DEFINED PKG_LIB_DIR)
     SET(PKG_LIB_DIR ${PKG_DATA_DIR})
 ENDIF()
 SET(PKG_DOC_DIR share/doc/uhd)
+SET(PKG_MAN_DIR share/man/man1)
 
 ########################################################################
 # Local Include Dir

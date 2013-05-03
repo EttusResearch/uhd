@@ -1,0 +1,68 @@
+.TH "uhd_cal_tx_dc_offset" "1" "3.5.1" "UHD" "User Commands"
+.SH NAME
+uhd_cal_tx_dc_offset \- Generate TX DC Offset Calibration Table for a UHD Device
+.SH DESCRIPTION
+The Universal Software Radio Peripheral Hardware Drivers handle calibration
+information. This application reduces TX DC offset within the specified frequency
+range using transmit leakage into the receive path. Remove all external hardware
+from the RF antenna ports before using this application. This can take up to
+several minutes with default settings.
+.LP
+NOTE: This application can only be used with the WBX, SBX, XCVR2450, and RFX daughterboards.
+.SH OPTIONS
+.TP
+\fB\-\-help\fR
+help message
+.TP
+\fB\-\-verbose\fR
+enable some verbose
+.TP
+\fB\-\-args\fR arg
+device address args [default = ""]
+.TP
+\fB\-\-tx_wave_freq\fR arg (=507123)
+Transmit wave frequency in Hz
+.TP
+\fB\-\-tx_wave_ampl\fR arg (=0.69999999999999996)
+Transmit wave amplitude in counts
+.TP
+\fB\-\-rx_offset\fR arg (=934400)
+RX LO offset from the TX LO in Hz
+.TP
+\fB\-\-freq_start\fR arg
+Frequency start in Hz (will use beginning of frequency range if unspecified)
+.TP
+\fB\-\-freq_stop\fR arg
+Frequency stop in Hz (will use end of frequency range if unspecified)
+.TP
+\fB\-\-freq_step\fR arg (=7300000)
+Step size for LO sweep in Hz
+.TP
+\fB\-\-nsamps\fR arg (=10000)
+Samples per data capture
+.PP
+.SH SEE ALSO
+UHD documentation:
+.B http://files.ettus.com/uhd_docs/manual/html/index.html
+.LP
+GR-UHD documentation:
+.B http://gnuradio.org/doc/doxygen/page_uhd.html
+.LP
+Other UHD programs:
+.sp
+uhd_cal_rx_iq_balance(1) uhd_cal_tx_iq_balance(1)
+.SH AUTHOR
+This manual page was written by Maitland Bottoms and Nicholas Corgan
+for the Debian project (but may be used by others).
+.SH COPYRIGHT
+Copyright (c) 2012 Ettus Research LLC
+.LP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.LP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
