@@ -106,3 +106,49 @@ IF(ENABLE_DOXYGEN)
     ADD_CUSTOM_TARGET(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
     INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR} COMPONENT doxygen)
 ENDIF(ENABLE_DOXYGEN)
+
+########################################################################
+# List of man page sources
+########################################################################
+
+SET(man_page_sources
+    uhd_cal_rx_iq_balance.1
+    uhd_cal_tx_dc_offset.1
+    uhd_cal_tx_iq_balance.1
+    uhd_find_devices.1
+    uhd_images_downloader.1
+    uhd_usrp_probe.1
+    usrp_n2xx_simple_net_burner.1
+    usrp2_card_burner.1
+)
+
+########################################################################
+# Setup man pages
+########################################################################
+MESSAGE(STATUS "")
+FIND_PACKAGE(GZip)
+
+LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "GZIP_FOUND;LINUX" OFF)
+
+IF(ENABLE_MAN_PAGES)
+    #Generate man pages
+    FOREACH(manfile ${man_page_sources})
+        #make the gzip file depend on the text file
+        STRING(REPLACE ".1" "" PROGRAM_NAME "${manfile}")
+        SET(gzfile "${CMAKE_CURRENT_BINARY_DIR}/${manfile}.gz")
+        SET(manfile "${CMAKE_CURRENT_SOURCE_DIR}/${manfile}")
+        ADD_CUSTOM_COMMAND(
+            OUTPUT ${gzfile}
+            DEPENDS ${manfile}
+            COMMAND ${GZIP_EXECUTABLE} -cf ${manfile} > ${gzfile}
+            COMMENT "Generating ${PROGRAM_NAME} man page"
+        )
+
+        #make the man page target depend on the gz file
+        LIST(APPEND man_page_gz_files ${gzfile})
+        INSTALL(FILES ${gzfile} DESTINATION ${PKG_MAN_DIR} COMPONENT manpages)
+    ENDFOREACH(manfile ${man_page_sources})
+
+    #make the man pages a build-time dependency
+    ADD_CUSTOM_TARGET(man_page_gzips ALL DEPENDS ${man_page_gz_files})
+ENDIF(ENABLE_MAN_PAGES)

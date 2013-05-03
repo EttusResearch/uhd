@@ -1,0 +1,52 @@
+.TH "usrp2_card_burner" 1 "3.5.1" UHD "User Commands"
+.SH NAME
+usrp2_card_burner - USRP N-Series FPGA/Firmware Burner
+.SH DESCRIPTION
+Burn USRP2 firmware and FPGA images onto an SD card plugged into
+the host machine.
+.SH SYNOPSIS
+.B  usrp2_card_burner [OPTIONS]
+.SH OPTIONS
+.IP "Raw device path:"
+--addr=\fI"Address"\fR (default: 192.168.10.2)
+.IP "This help information:"
+--help
+.IP "Firmware Filepath:"
+--fw=\fI"filepath"\fR
+.IP "FPGA Filepath:"
+--fpga=\fI"filepath"\fR
+.IP "List all USRP devices without burning"
+--list
+.IP "Override safety check"
+--force
+.SH EXAMPLES
+.SS Standard burning procedure
+.sp
+usrp2_card_burner --dev=/dev/sdd1 --fw=usrp2_fw.bin --fpga=usrp2_fpga.bin
+.ft
+.fi
+.SH SEE ALSO
+UHD documentation:
+.B http://files.ettus.com/uhd_docs/manual/html/index.html
+.LP
+GR-UHD documentation:
+.B http://gnuradio.org/doc/doxygen/page_uhd.html
+.LP
+Other UHD programs:
+.sp
+uhd_images_downloader(1) usrp_n2xx_simple_net_burner(1)
+.SH AUTHOR
+This manual page was written by Nicholas Corgan
+for the Debian project (but may be used by others).
+.SH COPYRIGHT
+Copyright (c) 2012 Ettus Research LLC
+.LP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.LP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
