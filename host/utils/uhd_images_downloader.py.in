@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2012 Ettus Research LLC
+# Copyright 2012-2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,14 +17,26 @@
 #
 
 import atexit
+import hashlib
 from optparse import OptionParser
 import os
 import os.path
 import shutil
+import string
 import sys
 import tempfile
 import urllib2
 import zipfile
+
+def md5Checksum(filePath):
+    with open(filePath, 'rb') as fh:
+        m = hashlib.md5()
+        while True:
+            data = fh.read(8192)
+            if not data:
+                break
+            m.update(data)
+        return m.hexdigest()
 
 class temp_dir():
 
@@ -44,6 +56,7 @@ if __name__ == "__main__":
     
     #Configuring image download info
     images_src = "@UHD_IMAGES_DOWNLOAD_SRC@"
+    images_zip_md5sum = "@UHD_IMAGES_MD5SUM@"
     filename = images_src.split("/")[-1]
 
     with temp_dir() as dirname:
@@ -57,7 +70,9 @@ if __name__ == "__main__":
         else:
             images_dir = "@CMAKE_INSTALL_PREFIX@/share/uhd/images"
         
-        u = urllib2.urlopen(images_src)
+        opener = urllib2.build_opener()
+        opener.add_headers = [('User-Agent', 'UHD Images Downloader')]
+        u = opener.open(images_src)
         f = open(filename, "wb")
         meta = u.info()
         filesize = float(meta.getheaders("Content-Length")[0])
@@ -81,29 +96,37 @@ if __name__ == "__main__":
         
         f.close()
 
-        #Extracting contents of zip file
-        if os.path.exists("tempdir"):
+        #Checking md5sum of zip file
+        downloaded_zip_md5sum = md5Checksum(filename)
+        if images_zip_md5sum != downloaded_zip_md5sum:
+            print "\nMD5 checksum does not match!"
+            print "Expected %s, got %s" % (images_zip_md5sum, downloaded_zip_md5sum)
+            os.remove(filename)
+            os.chdir("/".join(images_dir.split("/")[:-1]))
+        else:
+            #Extracting contents of zip file
+            if os.path.exists("tempdir"):
+                shutil.rmtree("tempdir")
+            os.mkdir("tempdir")
+
+            images_zip = zipfile.ZipFile(filename)
+            images_zip.extractall("tempdir")
+
+            #Removing images currently in images_dir
+            if os.path.exists(images_dir):
+                try:
+                    shutil.rmtree(images_dir)
+                except:
+                    sys.stderr.write("\nMake sure you have write permissions in the images directory.\n")
+                    sys.exit(0)
+
+            #Copying downloaded images into images_dir
+            shutil.copytree("tempdir/%s/share/uhd/images" % filename[:-4],images_dir)
+
+            #Removing tempdir and zip file
             shutil.rmtree("tempdir")
-        os.mkdir("tempdir")
+            images_zip.close()
+            os.remove(filename)
 
-        images_zip = zipfile.ZipFile(filename)
-        images_zip.extractall("tempdir")
-
-        #Removing images currently in images_dir
-        if os.path.exists(images_dir):
-            try:
-                shutil.rmtree(images_dir)
-            except:
-                sys.stderr.write("\nMake sure you have write permissions in the images directory.\n")
-                sys.exit(0)
-
-        #Copying downloaded images into images_dir
-        shutil.copytree("tempdir/%s/share/uhd/images" % filename[:-4],images_dir)
-
-        #Removing tempdir and zip file
-        shutil.rmtree("tempdir")
-        images_zip.close()
-        os.remove(filename)
-
-        os.chdir(images_dir)
-        print "\nImages successfully installed to: %s" % images_dir
+            os.chdir(images_dir)
+            print "\nImages successfully installed to: %s" % images_dir
