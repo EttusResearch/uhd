@@ -76,6 +76,14 @@ INSTALL(PROGRAMS
     DESTINATION ${PKG_LIB_DIR}/utils
     COMPONENT utilities
 )
+IF(LINUX)
+    INSTALL(PROGRAMS
+        ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
+        RENAME uhd_images_downloader
+        DESTINATION ${RUNTIME_DIR}
+        COMPONENT utilities
+    )
+ENDIF(LINUX)
 
 IF(ENABLE_USRP2)
     IF(WIN32 AND UHD_RELEASE_MODE) #include dd.exe
