@@ -46,6 +46,7 @@ module fifo_to_gpmc
    output reg data_available);
 
     //states for the GPMC side of things
+    wire [17:0] data_o;
     reg gpmc_state;
     reg [ADDR_WIDTH:1] addr;
     reg [PTR_WIDTH:0] gpmc_ptr, next_gpmc_ptr;
@@ -146,11 +147,14 @@ module fifo_to_gpmc
 
     assign dst_rdy_o = fifo_state == FIFO_STATE_FILL;
 
+    //assign data from bram output
+    assign EM_D = data_o[15:0];
+
     //instantiate dual ported bram for async read + write
-    ram_2port #(.DWIDTH(16),.AWIDTH(PTR_WIDTH + ADDR_WIDTH)) async_fifo_bram
+    ram_2port #(.DWIDTH(18),.AWIDTH(PTR_WIDTH + ADDR_WIDTH)) async_fifo_bram
      (.clka(clk),.ena(1'b1),.wea(src_rdy_i && dst_rdy_o),
-      .addra({fifo_ptr[PTR_WIDTH-1:0], counter}),.dia(data_i[15:0]),.doa(),
+      .addra({fifo_ptr[PTR_WIDTH-1:0], counter}),.dia(data_i),.doa(),
       .clkb(EM_CLK),.enb(1'b1),.web(1'b0),
-      .addrb({gpmc_ptr[PTR_WIDTH-1:0], addr}),.dib(18'h3ffff),.dob(EM_D));
+      .addrb({gpmc_ptr[PTR_WIDTH-1:0], addr}),.dib(18'h3ffff),.dob(data_o));
 
 endmodule // fifo_to_gpmc
