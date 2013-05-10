@@ -199,8 +199,8 @@ INSTALL(FILES
 # Images download directory for utils/uhd_images_downloader.py
 ########################################################################
 
-SET(UHD_IMAGES_MD5SUM "776eae14a5cc570dcf8692b847783515")
-SET(UHD_IMAGES_DOWNLOAD_SRC "http://files.ettus.com/binaries/maint_images/archive/uhd-images_003.005.002-release.zip")
+SET(UHD_IMAGES_MD5SUM "f5acbc2f795fa1acfa9ad9986d59ed3b")
+SET(UHD_IMAGES_DOWNLOAD_SRC "http://files.ettus.com/binaries/maint_images/archive/uhd-images_003.005.003-release.zip")
 
 ########################################################################
 # Register top level components
