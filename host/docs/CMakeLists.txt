@@ -140,7 +140,7 @@ IF(ENABLE_MAN_PAGES)
         ADD_CUSTOM_COMMAND(
             OUTPUT ${gzfile}
             DEPENDS ${manfile}
-            COMMAND ${GZIP_EXECUTABLE} -cf ${manfile} > ${gzfile}
+            COMMAND ${GZIP_EXECUTABLE} -9 -cf ${manfile} > ${gzfile}
             COMMENT "Generating ${PROGRAM_NAME} man page"
         )
 
