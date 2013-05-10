@@ -32,7 +32,7 @@ FOREACH(util_source ${util_runtime_sources})
     GET_FILENAME_COMPONENT(util_name ${util_source} NAME_WE)
     ADD_EXECUTABLE(${util_name} ${util_source})
     TARGET_LINK_LIBRARIES(${util_name} uhd)
-    INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
+    UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
 ENDFOREACH(util_source)
 
 ########################################################################
@@ -51,7 +51,7 @@ IF(ENABLE_USB)
 ENDIF(ENABLE_USB)
 
 IF(LINUX AND ENABLE_USB)
-    INSTALL(FILES
+    UHD_INSTALL(FILES
         uhd-usrp.rules
         DESTINATION ${PKG_LIB_DIR}/utils
         COMPONENT utilities
@@ -63,23 +63,23 @@ FOREACH(util_source ${util_share_sources})
     GET_FILENAME_COMPONENT(util_name ${util_source} NAME_WE)
     ADD_EXECUTABLE(${util_name} ${util_source})
     TARGET_LINK_LIBRARIES(${util_name} uhd)
-    INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+    UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
 ENDFOREACH(util_source)
 
-INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+UHD_INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
 
 #UHD images downloader configuration
 CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/uhd_images_downloader.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
 @ONLY)
-INSTALL(PROGRAMS
+UHD_INSTALL(PROGRAMS
     ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
     DESTINATION ${PKG_LIB_DIR}/utils
     COMPONENT utilities
 )
 IF(LINUX)
-    INSTALL(PROGRAMS
+    UHD_INSTALL(PROGRAMS
         ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
         RENAME uhd_images_downloader
         DESTINATION ${RUNTIME_DIR}
@@ -100,19 +100,19 @@ IF(ENABLE_USRP2)
             "http://files.ettus.com/dd.exe"
             ${CMAKE_CURRENT_BINARY_DIR}/dd.exe
         )
-        INSTALL(FILES
+        UHD_INSTALL(FILES
             ${CMAKE_CURRENT_BINARY_DIR}/dd.exe
             DESTINATION ${PKG_LIB_DIR}/utils
             COMPONENT utilities
         )
     ENDIF(WIN32 AND UHD_RELEASE_MODE)
     IF(LINUX)
-        INSTALL(PROGRAMS
+        UHD_INSTALL(PROGRAMS
             usrp2_recovery.py
             DESTINATION ${PKG_LIB_DIR}/utils
             COMPONENT utilities
         )
-        INSTALL(PROGRAMS
+        UHD_INSTALL(PROGRAMS
             usrp2_card_burner.py
             RENAME usrp2_card_burner
             DESTINATION ${RUNTIME_DIR}
@@ -120,7 +120,7 @@ IF(ENABLE_USRP2)
         )
     ENDIF(LINUX)
     FOREACH(burner ${burners})
-        INSTALL(PROGRAMS
+        UHD_INSTALL(PROGRAMS
             ${burner}
             DESTINATION ${PKG_LIB_DIR}/utils
             COMPONENT utilities

@@ -16,7 +16,7 @@
 #
 
 
-INSTALL(FILES
+UHD_INSTALL(FILES
 
     #### dboard headers ###
     dboard_base.hpp

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-INSTALL(FILES
+UHD_INSTALL(FILES
     algorithm.hpp
     assert_has.hpp
     assert_has.ipp

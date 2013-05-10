@@ -1,5 +1,5 @@
-#
-# Copyright 2010-2011 Ettus Research LLC
+
+# Copyright 2010-2011,2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ ADD_SUBDIRECTORY(types)
 ADD_SUBDIRECTORY(usrp)
 ADD_SUBDIRECTORY(utils)
 
-INSTALL(FILES
+UHD_INSTALL(FILES
     config.hpp
     convert.hpp
     deprecated.hpp
