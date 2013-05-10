@@ -30,7 +30,7 @@ SET(UHD_VERSION_MINOR 005)
 SET(UHD_VERSION_PATCH 003)
 
 ########################################################################
-# Set up DLL resource version numbers
+# Set up trimmed version numbers for DLL resource files and packages
 ########################################################################
 
 FUNCTION(DEPAD_NUM input_num output_num)
@@ -42,9 +42,10 @@ FUNCTION(DEPAD_NUM input_num output_num)
     SET(${output_num} ${depadded_num} PARENT_SCOPE)
 ENDFUNCTION(DEPAD_NUM)
 
-DEPAD_NUM(${UHD_VERSION_MAJOR} RC_VERSION_MAJOR)
-DEPAD_NUM(${UHD_VERSION_MINOR} RC_VERSION_MINOR)
-DEPAD_NUM(${UHD_VERSION_PATCH} RC_VERSION_PATCH)
+DEPAD_NUM(${UHD_VERSION_MAJOR} TRIMMED_VERSION_MAJOR)
+DEPAD_NUM(${UHD_VERSION_MINOR} TRIMMED_VERSION_MINOR)
+DEPAD_NUM(${UHD_VERSION_PATCH} TRIMMED_VERSION_PATCH)
+SET(TRIMMED_UHD_VERSION "${TRIMMED_VERSION_MAJOR}.${TRIMMED_VERSION_MINOR}.${TRIMMED_VERSION_PATCH}")
 
 ########################################################################
 # Version information discovery through git log

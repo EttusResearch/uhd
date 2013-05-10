@@ -16,7 +16,7 @@
 #
 
 
-INSTALL(FILES
+UHD_INSTALL(FILES
     bounded_buffer.hpp
     bounded_buffer.ipp
     buffer_pool.hpp

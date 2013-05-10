@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2012 Ettus Research LLC
+# Copyright 2010-2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ FOREACH(example_source ${example_sources})
     GET_FILENAME_COMPONENT(example_name ${example_source} NAME_WE)
     ADD_EXECUTABLE(${example_name} ${example_source})
     TARGET_LINK_LIBRARIES(${example_name} uhd)
-    INSTALL(TARGETS ${example_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
+    UHD_INSTALL(TARGETS ${example_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 ENDFOREACH(example_source)
 
 ########################################################################
@@ -55,5 +55,5 @@ IF(CURSES_FOUND)
     INCLUDE_DIRECTORIES(${CURSES_INCLUDE_DIR})
     ADD_EXECUTABLE(rx_ascii_art_dft rx_ascii_art_dft.cpp)
     TARGET_LINK_LIBRARIES(rx_ascii_art_dft uhd ${CURSES_LIBRARIES})
-    INSTALL(TARGETS rx_ascii_art_dft RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
+    UHD_INSTALL(TARGETS rx_ascii_art_dft RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 ENDIF(CURSES_FOUND)

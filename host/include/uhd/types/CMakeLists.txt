@@ -16,7 +16,7 @@
 #
 
 
-INSTALL(FILES
+UHD_INSTALL(FILES
     clock_config.hpp
     device_addr.hpp
     dict.ipp

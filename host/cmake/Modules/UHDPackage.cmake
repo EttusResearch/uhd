@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2012 Ettus Research LLC
+# Copyright 2010-2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,23 +55,31 @@ ENDIF()
 ########################################################################
 # Setup package file name
 ########################################################################
-FIND_PROGRAM(LSB_RELEASE_EXECUTABLE lsb_release)
-IF((DEBIAN OR REDHAT) AND LSB_RELEASE_EXECUTABLE)
 
-    #extract system information by executing the commands
-    EXECUTE_PROCESS(
-        COMMAND ${LSB_RELEASE_EXECUTABLE} --short --id
-        OUTPUT_VARIABLE LSB_ID OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    EXECUTE_PROCESS(
-        COMMAND ${LSB_RELEASE_EXECUTABLE} --short --release
-        OUTPUT_VARIABLE LSB_RELEASE OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+IF(DEBIAN AND LIBUHD_PKG)
+    SET(CPACK_PACKAGE_FILE_NAME "libuhd${UHD_VERSION_MAJOR}_${TRIMMED_UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+ELSEIF(DEBIAN AND LIBUHDDEV_PKG)
+    SET(CPACK_PACKAGE_FILE_NAME "libuhd-dev_${TRIMMED_UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+ELSEIF(DEBIAN AND UHDHOST_PKG)
+    SET(CPACK_PACKAGE_FILE_NAME "uhd-host_${TRIMMED_UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+ELSE()
+    FIND_PROGRAM(LSB_RELEASE_EXECUTABLE lsb_release)
+    IF((DEBIAN OR REDHAT) AND LSB_RELEASE_EXECUTABLE)
 
-    #set a more sensible package name for this system
-    SET(CPACK_PACKAGE_FILE_NAME "uhd_${UHD_VERSION}_${LSB_ID}-${LSB_RELEASE}-${CMAKE_SYSTEM_PROCESSOR}")
+        #extract system information by executing the commands
+        EXECUTE_PROCESS(
+            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --id
+            OUTPUT_VARIABLE LSB_ID OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        EXECUTE_PROCESS(
+            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --release
+            OUTPUT_VARIABLE LSB_RELEASE OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
 
+        #set a more sensible package name for this system
+        SET(CPACK_PACKAGE_FILE_NAME "uhd_${UHD_VERSION}_${LSB_ID}-${LSB_RELEASE}-${CMAKE_SYSTEM_PROCESSOR}")
 ENDIF()
+ENDIF(DEBIAN AND LIBUHD_PKG)
 
 IF(${CPACK_GENERATOR} STREQUAL NSIS)
 
