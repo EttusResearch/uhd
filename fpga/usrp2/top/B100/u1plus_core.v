@@ -71,7 +71,7 @@ module u1plus_core
     localparam SR_GPIO         = 224;     // 5
 
     //compatibility number -> increment when the fpga has been sufficiently altered
-    localparam compat_num = {16'd11, 16'd2}; //major, minor
+    localparam compat_num = {16'd11, 16'd3}; //major, minor
 
     //assign run signals used for ATR logic
     wire [NUM_RX_DSPS-1:0] run_rx_n;
