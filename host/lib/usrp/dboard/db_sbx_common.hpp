@@ -100,6 +100,7 @@ using namespace boost::assign;
  * The SBX dboard constants
  **********************************************************************/
 static const freq_range_t sbx_freq_range(400e6, 4.4e9);
+static const freq_range_t cbx_freq_range(1200e6, 6.0e9);
 
 static const freq_range_t sbx_tx_lo_2dbm = list_of
     (range_t(0.35e9, 0.37e9))
@@ -211,6 +212,30 @@ protected:
         /*! This is the registered instance of the wrapper class, sbx_base. */
         sbx_xcvr *self_base;
     };
+
+    /*!
+     * CBX daughterboard
+     *
+     * The only driver difference between SBX and CBX is the MAX2870 vs. ADF435x.
+     * There is also no LO filter switching required, but the GPIO is left blank
+     * so we don't worry about it.
+     */
+    class cbx : public sbx_versionx {
+    public:
+        cbx(sbx_xcvr *_self_sbx_xcvr);
+        ~cbx(void);
+
+        double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
+
+        /*! This is the registered instance of the wrapper class, sbx_base. */
+        sbx_xcvr *self_base;
+    };
+
+    /*!
+     * Frequency range of the daughterboard; this is set in the constructor
+     * to correspond either to SBX or CBX.
+     */
+    freq_range_t freq_range;
 
     /*!
      * Handle to the version-specific implementation of the SBX.

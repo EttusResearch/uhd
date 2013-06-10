@@ -26,6 +26,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/db_sbx_common.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_sbx_version3.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_sbx_version4.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_cbx.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_wbx_common.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_wbx_version2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_wbx_version3.cpp

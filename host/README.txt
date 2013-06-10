@@ -29,6 +29,7 @@ DBSRX2
 TVRX
 TVRX2
 SBX
+CBX
 
 ###############################################
 # Documentation

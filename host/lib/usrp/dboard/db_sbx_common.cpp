@@ -32,6 +32,7 @@ static dboard_base::sptr make_sbx(dboard_base::ctor_args_t args){
 UHD_STATIC_BLOCK(reg_sbx_dboards){
     dboard_manager::register_dboard(0x0054, 0x0055, &make_sbx, "SBX");
     dboard_manager::register_dboard(0x0065, 0x0064, &make_sbx, "SBX v4");
+    dboard_manager::register_dboard(0x0067, 0x0066, &make_sbx, "CBX");
 }
 
 
@@ -114,9 +115,15 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     switch(get_rx_id().to_uint16()) {
         case 0x054:
             db_actual = sbx_versionx_sptr(new sbx_version3(this));
+            freq_range = sbx_freq_range;
             break;
         case 0x065:
             db_actual = sbx_versionx_sptr(new sbx_version4(this));
+            freq_range = sbx_freq_range;
+            break;
+        case 0x067:
+            db_actual = sbx_versionx_sptr(new cbx(this));
+            freq_range = cbx_freq_range;
             break;
         default:
             /* We didn't recognize the version of the board... */
@@ -128,7 +135,8 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     ////////////////////////////////////////////////////////////////////
     if(get_rx_id() == 0x054) this->get_rx_subtree()->create<std::string>("name").set("SBXv3 RX");
     else if(get_rx_id() == 0x065) this->get_rx_subtree()->create<std::string>("name").set("SBXv4 RX");
-    else this->get_rx_subtree()->create<std::string>("name").set("SBX RX");
+    else if(get_rx_id() == 0x067) this->get_rx_subtree()->create<std::string>("name").set("CBX RX");
+    else this->get_rx_subtree()->create<std::string>("name").set("SBX/CBX RX");
 
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .publish(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
@@ -141,8 +149,8 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     }
     this->get_rx_subtree()->create<double>("freq/value")
         .coerce(boost::bind(&sbx_xcvr::set_lo_freq, this, dboard_iface::UNIT_RX, _1))
-        .set((sbx_freq_range.start() + sbx_freq_range.stop())/2.0);
-    this->get_rx_subtree()->create<meta_range_t>("freq/range").set(sbx_freq_range);
+        .set((freq_range.start() + freq_range.stop())/2.0);
+    this->get_rx_subtree()->create<meta_range_t>("freq/range").set(freq_range);
     this->get_rx_subtree()->create<std::string>("antenna/value")
         .subscribe(boost::bind(&sbx_xcvr::set_rx_ant, this, _1))
         .set("RX2");
@@ -159,8 +167,9 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     // Register TX properties
     ////////////////////////////////////////////////////////////////////
     if(get_tx_id() == 0x055) this->get_tx_subtree()->create<std::string>("name").set("SBXv3 TX");
-    else if(get_tx_id() == 0x067) this->get_tx_subtree()->create<std::string>("name").set("SBXv4 TX");
-    else this->get_tx_subtree()->create<std::string>("name").set("SBX TX");
+    else if(get_tx_id() == 0x064) this->get_tx_subtree()->create<std::string>("name").set("SBXv4 TX");
+    else if(get_tx_id() == 0x066) this->get_tx_subtree()->create<std::string>("name").set("CBX TX");
+    else this->get_tx_subtree()->create<std::string>("name").set("SBX/CBX TX");
 
     this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .publish(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_TX));
@@ -173,8 +182,8 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     }
     this->get_tx_subtree()->create<double>("freq/value")
         .coerce(boost::bind(&sbx_xcvr::set_lo_freq, this, dboard_iface::UNIT_TX, _1))
-        .set((sbx_freq_range.start() + sbx_freq_range.stop())/2.0);
-    this->get_tx_subtree()->create<meta_range_t>("freq/range").set(sbx_freq_range);
+        .set((freq_range.start() + freq_range.stop())/2.0);
+    this->get_tx_subtree()->create<meta_range_t>("freq/range").set(freq_range);
     this->get_tx_subtree()->create<std::string>("antenna/value")
         .subscribe(boost::bind(&sbx_xcvr::set_tx_ant, this, _1))
         .set(sbx_tx_antennas.at(0));
