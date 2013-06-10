@@ -28,9 +28,10 @@ UHD comes with the following calibration utilities:
 
 The following RF frontends are supported by the self-calibration utilities:
 
+ * RFX transceiver board
  * WBX transceiver board
  * SBX transceiver board
- * more to come...
+ * CBX transceiver board
 
 ********************************************
 Calibration utilities

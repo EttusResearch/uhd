@@ -255,6 +255,11 @@ LEDs:
 * **RX1/RX2**: Receiver on RX2 antenna port
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+CBX
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+See SBX Series for more details.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TVRX
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The TVRX board has 1 real-mode frontend.
