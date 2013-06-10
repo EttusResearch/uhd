@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,6 +50,12 @@ endif
 
 ifeq ($(shell xtclsh -h > /dev/null 2>&1 && echo $$?),0)
 	HAS_XTCLSH=1
+endif
+
+ifeq ($(shell avr-gcc --version > /dev/null 2>&1 && echo $$?),0)
+    ifeq ($(shell avr-objcopy --version > /dev/null 2>&1 && echo $$?),0)
+        HAS_AVR_UTILS=1
+    endif
 endif
 
 ########################################################################
@@ -274,6 +280,22 @@ $(_usrp_e110_fpga_bin): $(GLOBAL_DEPS)
 	cd $(_usrp_e110_fpga_dir) && make -f Makefile.E110 bin
 	cp $(_usrp_e110_fpga_dir)/build-E110/E1x0.bin $@
 
+endif
+
+########################################################################
+# OctoClock firmware
+########################################################################
+
+ifdef HAS_AVR_UTILS
+
+_octoclock_fw_dir = $(TOP_FW_DIR)/octoclock
+_octoclock_fw_bin = $(BUILT_IMAGES_DIR)/octoclock_fw.hex
+IMAGES_LIST += $(_octoclock_fw_bin)
+
+$(_octoclock_fw_bin): $(GLOBAL_DEPS)
+	cd $(_octoclock_fw_dir) && make -f Makefile clean
+	cd $(_octoclock_fw_dir) && make -f Makefile all
+	cp $(TOP_FW_DIR)/octoclock/octoclock_fw.hex $@
 endif
 
 ########################################################################
