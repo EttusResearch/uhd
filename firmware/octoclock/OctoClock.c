@@ -535,7 +535,7 @@ DDRC =  ~( 1<<DDC1 ); 	// All bits are outputs, except PC1. including the 5 Not 
  *
  */
 PORTD = 0;		// Initial Value is all zeros
-DDRD =  1<<DDD1 | 1<<DDD3;
+DDRD =  1<<DDD3;
 
 					
 
