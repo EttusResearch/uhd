@@ -195,5 +195,10 @@ SET(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
     DeleteRegValue HKLM ${HLKM_ENV} \\\"UHD_PKG_PATH\\\"
 ")
 
+IF(MSVC)
+    #Install necessary MSVC runtime DLL's
+    INCLUDE(InstallRequiredSystemLibraries)
+ENDIF(MSVC)
+
 ########################################################################
 INCLUDE(CPack) #include after setting vars
