@@ -21,8 +21,6 @@
 
 using namespace uhd::transport;
 
-const int libusb_timeout = 0;
-
 /***********************************************************************
  * libusb-1.0 implementation of USB control transport
  **********************************************************************/
@@ -39,7 +37,8 @@ public:
                   boost::uint16_t value,
                   boost::uint16_t index,
                   unsigned char *buff,
-                  boost::uint16_t length
+                  boost::uint16_t length,
+                  boost::int32_t libusb_timeout = 0
     ){
         boost::mutex::scoped_lock lock(_mutex);
         return libusb_control_transfer(_handle->get(),

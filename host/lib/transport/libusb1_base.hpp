@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -102,7 +102,7 @@ namespace libusb {
         //! get the underlying device descriptor
         virtual const libusb_device_descriptor &get(void) const = 0;
 
-        virtual std::string get_ascii_serial(void) const = 0;
+        virtual std::string get_ascii_property(const std::string &what) const = 0;
     };
 
     /*!

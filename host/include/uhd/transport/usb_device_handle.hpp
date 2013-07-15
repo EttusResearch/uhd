@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -43,10 +43,22 @@ public:
     typedef boost::shared_ptr<usb_device_handle> sptr;
 
     /*!
-     * Return the device's serial number 
+     * Return the device's serial number
      * \return a string describing the device's serial number
      */
     virtual std::string get_serial() const = 0;
+
+    /*!
+     * Return the device's manufacturer identification string
+     * \return a string describing the device's manufacturer string
+     */
+    virtual std::string get_manufacturer() const = 0;
+
+    /*!
+     * Return the device's product identification string
+     * \return a string describing the device's product string
+     */
+    virtual std::string get_product() const = 0;
 
     /*!
      * Return the device's Vendor ID (usually assigned by the USB-IF)
@@ -61,7 +73,7 @@ public:
     virtual boost::uint16_t get_product_id() const = 0;
 
     /*!
-     * Return a vector of USB devices on this host 
+     * Return a vector of USB devices on this host
      * \return a vector of USB device handles that match vid and pid
      */
     static std::vector<usb_device_handle::sptr> get_device_list(boost::uint16_t vid, boost::uint16_t pid);

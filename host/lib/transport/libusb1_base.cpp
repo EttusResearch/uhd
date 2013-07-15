@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -137,8 +137,13 @@ public:
         return _desc;
     }
 
-    std::string get_ascii_serial(void) const{
-        if (this->get().iSerialNumber == 0) return "";
+    std::string get_ascii_property(const std::string &what) const
+    {
+        boost::uint8_t off = 0;
+        if (what == "serial") off = this->get().iSerialNumber;
+        if (what == "product") off = this->get().iProduct;
+        if (what == "manufacturer") off = this->get().iManufacturer;
+        if (off == 0) return "";
 
         libusb::device_handle::sptr handle(
             libusb::device_handle::get_cached_handle(_dev)
@@ -146,7 +151,7 @@ public:
 
         unsigned char buff[512];
         ssize_t ret = libusb_get_string_descriptor_ascii(
-            handle->get(), this->get().iSerialNumber, buff, sizeof(buff)
+            handle->get(), off, buff, sizeof(buff)
         );
         if (ret < 0) return ""; //on error, just return empty string
 
@@ -240,7 +245,15 @@ public:
     }
 
     std::string get_serial(void) const{
-        return libusb::device_descriptor::make(this->get_device())->get_ascii_serial();
+        return libusb::device_descriptor::make(this->get_device())->get_ascii_property("serial");
+    }
+
+    std::string get_manufacturer() const{
+        return libusb::device_descriptor::make(this->get_device())->get_ascii_property("manufacturer");
+    }
+
+    std::string get_product() const{
+        return libusb::device_descriptor::make(this->get_device())->get_ascii_property("product");
     }
 
     boost::uint16_t get_vendor_id(void) const{
