@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/ref_vector.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -172,6 +173,19 @@ public:
         const double timeout = 0.1,
         const bool one_packet = false
     ) = 0;
+
+    /*!
+     * Issue a stream command to the usrp device.
+     * This tells the usrp to send samples into the host.
+     * See the documentation for stream_cmd_t for more info.
+     *
+     * With multiple devices, the first stream command in a chain of commands
+     * should have a time spec in the near future and stream_now = false;
+     * to ensure that the packets can be aligned by their time specs.
+     *
+     * \param stream_cmd the stream command to issue
+     */
+    virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
 };
 
 /*!
@@ -220,6 +234,16 @@ public:
         const size_t nsamps_per_buff,
         const tx_metadata_t &metadata,
         const double timeout = 0.1
+    ) = 0;
+
+    /*!
+     * Receive and asynchronous message from this TX stream.
+     * \param async_metadata the metadata to be filled in
+     * \param timeout the timeout in seconds to wait for a message
+     * \return true when the async_metadata is valid, false for timeout
+     */
+    virtual bool recv_async_msg(
+        async_metadata_t &async_metadata, double timeout = 0.1
     ) = 0;
 };
 

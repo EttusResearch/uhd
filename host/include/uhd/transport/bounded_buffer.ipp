@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include <boost/thread/condition.hpp>
 #include <boost/thread/locks.hpp>
 
-namespace uhd{ namespace transport{ namespace{ /*anon*/
+namespace uhd{ namespace transport{
 
     template <typename elem_type> class bounded_buffer_detail : boost::noncopyable{
     public:
@@ -142,6 +142,6 @@ namespace uhd{ namespace transport{ namespace{ /*anon*/
         }
 
     };
-}}} //namespace
+}} //namespace
 
 #endif /* INCLUDED_UHD_TRANSPORT_BOUNDED_BUFFER_IPP */

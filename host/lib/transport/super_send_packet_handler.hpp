@@ -47,6 +47,7 @@ namespace uhd{ namespace transport{ namespace sph{
 class send_packet_handler{
 public:
     typedef boost::function<managed_send_buffer::sptr(double)> get_buff_type;
+    typedef boost::function<bool(uhd::async_metadata_t &, const double)> async_receiver_type;
     typedef void(*vrt_packer_type)(boost::uint32_t *, vrt::if_packet_info_t &);
     //typedef boost::function<void(boost::uint32_t *, vrt::if_packet_info_t &)> vrt_packer_type;
 
@@ -57,6 +58,7 @@ public:
     send_packet_handler(const size_t size = 1):
         _next_packet_seq(0)
     {
+        this->set_enable_trailer(true);
         this->resize(size);
     }
 
@@ -94,6 +96,11 @@ public:
     void set_xport_chan_sid(const size_t xport_chan, const bool has_sid, const boost::uint32_t sid = 0){
         _props.at(xport_chan).has_sid = has_sid;
         _props.at(xport_chan).sid = sid;
+    }
+
+    void set_enable_trailer(const bool enable)
+    {
+        _has_tlr = enable;
     }
 
     //! Set the rate of ticks per second
@@ -138,6 +145,21 @@ public:
         _converter->set_scalar(scale_factor);
     }
 
+    //! Set the callback to get async messages
+    void set_async_receiver(const async_receiver_type &async_receiver)
+    {
+        _async_receiver = async_receiver;
+    }
+
+    //! Overload call to get async metadata
+    bool recv_async_msg(
+        uhd::async_metadata_t &async_metadata, double timeout = 0.1
+    ){
+        if (_async_receiver) return _async_receiver(async_metadata, timeout);
+        boost::this_thread::sleep(boost::posix_time::microseconds(long(timeout*1e6)));
+        return false;
+    }
+
     /*******************************************************************
      * Send:
      * The entry point for the fast-path send calls.
@@ -154,7 +176,7 @@ public:
         if_packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_DATA;
         //if_packet_info.has_sid = false; //set per channel
         if_packet_info.has_cid = false;
-        if_packet_info.has_tlr = true;
+        if_packet_info.has_tlr = _has_tlr;
         if_packet_info.has_tsi = false;
         if_packet_info.has_tsf = metadata.has_time_spec;
         if_packet_info.tsf     = metadata.time_spec.to_ticks(_tick_rate);
@@ -165,9 +187,12 @@ public:
 
             //TODO remove this code when sample counts of zero are supported by hardware
             #ifndef SSPH_DONT_PAD_TO_ONE
-            if (nsamps_per_buff == 0) return send_one_packet(
-                _zero_buffs, 1, if_packet_info, timeout
-            ) & 0x0;
+                static const boost::uint64_t zero = 0;
+                _zero_buffs.resize(buffs.size(), &zero);
+
+                if (nsamps_per_buff == 0) return send_one_packet(
+                    _zero_buffs, 1, if_packet_info, timeout
+                ) & 0x0;
             #endif
 
             return send_one_packet(buffs, nsamps_per_buff, if_packet_info, timeout);
@@ -228,6 +253,8 @@ private:
     size_t _max_samples_per_packet;
     std::vector<const void *> _zero_buffs;
     size_t _next_packet_seq;
+    bool _has_tlr;
+    async_receiver_type _async_receiver;
 
     /*******************************************************************
      * Send a single packet:
@@ -335,6 +362,12 @@ public:
         const double timeout
     ){
         return send_packet_handler::send(buffs, nsamps_per_buff, metadata, timeout);
+    }
+
+    bool recv_async_msg(
+        uhd::async_metadata_t &async_metadata, double timeout = 0.1
+    ){
+        return send_packet_handler::recv_async_msg(async_metadata, timeout);
     }
 
 private:

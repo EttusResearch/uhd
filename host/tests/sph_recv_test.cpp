@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
 
         //simulate overflow
         if (i == NUM_PKTS_TO_TEST/2){
-            ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_EXTENSION;
+            ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_CONTEXT;
             ifpi.num_payload_words32 = 1;
             dummy_recv_xport.push_back_packet(ifpi, uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
         }

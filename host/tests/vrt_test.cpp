@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,26 +17,39 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
+#include <uhd/utils/byteswap.hpp>
+#include <boost/format.hpp>
 #include <cstdlib>
+#include <iostream>
 
 using namespace uhd::transport;
 
 static void pack_and_unpack(
     vrt::if_packet_info_t &if_packet_info_in
 ){
-    boost::uint32_t header_buff[vrt::max_if_hdr_words32];
+    if (if_packet_info_in.num_payload_bytes == 0)
+    {
+        if_packet_info_in.num_payload_bytes = if_packet_info_in.num_payload_words32 * sizeof(boost::uint32_t);
+    }
+    boost::uint32_t packet_buff[2048];
 
     //pack metadata into a vrt header
     vrt::if_hdr_pack_be(
-        header_buff, if_packet_info_in
+        packet_buff, if_packet_info_in
     );
+    std::cout << std::endl;
+    for (size_t i = 0; i < 5; i++)
+    {
+        std::cout << boost::format("packet_buff[%u] = 0x%.8x") % i % uhd::byteswap(packet_buff[i]) << std::endl;
+    }
 
     vrt::if_packet_info_t if_packet_info_out;
+    if_packet_info_out.link_type = if_packet_info_in.link_type;
     if_packet_info_out.num_packet_words32 = if_packet_info_in.num_packet_words32;
 
     //unpack the vrt header back into metadata
     vrt::if_hdr_unpack_be(
-        header_buff, if_packet_info_out
+        packet_buff, if_packet_info_out
     );
 
     //check the the unpacked metadata is the same
@@ -91,7 +104,7 @@ BOOST_AUTO_TEST_CASE(test_with_sid){
     if_packet_info.has_tsf = false;
     if_packet_info.has_tlr = false;
     if_packet_info.sid = std::rand();
-    if_packet_info.num_payload_words32 = 1111;
+    if_packet_info.num_payload_words32 = 11;
     pack_and_unpack(if_packet_info);
 }
 
@@ -106,7 +119,7 @@ BOOST_AUTO_TEST_CASE(test_with_cid){
     if_packet_info.has_tsf = false;
     if_packet_info.has_tlr = false;
     if_packet_info.cid = std::rand();
-    if_packet_info.num_payload_words32 = 2222;
+    if_packet_info.num_payload_words32 = 22;
     pack_and_unpack(if_packet_info);
 }
 
@@ -120,7 +133,7 @@ BOOST_AUTO_TEST_CASE(test_with_time){
     if_packet_info.has_tlr = false;
     if_packet_info.tsi = std::rand();
     if_packet_info.tsf = std::rand();
-    if_packet_info.num_payload_words32 = 33333;
+    if_packet_info.num_payload_words32 = 33;
     pack_and_unpack(if_packet_info);
 }
 
@@ -136,6 +149,36 @@ BOOST_AUTO_TEST_CASE(test_with_all){
     if_packet_info.cid = std::rand();
     if_packet_info.tsi = std::rand();
     if_packet_info.tsf = std::rand();
-    if_packet_info.num_payload_words32 = 44444;
+    if_packet_info.num_payload_words32 = 44;
+    pack_and_unpack(if_packet_info);
+}
+
+BOOST_AUTO_TEST_CASE(test_with_vrlp){
+    vrt::if_packet_info_t if_packet_info;
+    if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_VRLP;
+    if_packet_info.packet_count = 3;
+    if_packet_info.has_sid = true;
+    if_packet_info.has_cid = false;
+    if_packet_info.has_tsi = false;
+    if_packet_info.has_tsf = true;
+    if_packet_info.has_tlr = true;
+    if_packet_info.tsi = std::rand();
+    if_packet_info.tsf = std::rand();
+    if_packet_info.num_payload_words32 = 42;
+    pack_and_unpack(if_packet_info);
+}
+
+BOOST_AUTO_TEST_CASE(test_with_chdr){
+    vrt::if_packet_info_t if_packet_info;
+    if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
+    if_packet_info.packet_count = 7;
+    if_packet_info.has_sid = true;
+    if_packet_info.has_cid = false;
+    if_packet_info.has_tsi = false;
+    if_packet_info.has_tsf = true;
+    if_packet_info.has_tlr = true;
+    if_packet_info.tsi = std::rand();
+    if_packet_info.tsf = std::rand();
+    if_packet_info.num_payload_words32 = 24;
     pack_and_unpack(if_packet_info);
 }

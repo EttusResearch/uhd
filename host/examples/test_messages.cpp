@@ -46,7 +46,7 @@ bool test_late_command_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streame
     stream_cmd.num_samps = rx_stream->get_max_num_samps();
     stream_cmd.stream_now = false;
     stream_cmd.time_spec = uhd::time_spec_t(100.0); //time in the past
-    usrp->issue_stream_cmd(stream_cmd);
+    rx_stream->issue_stream_cmd(stream_cmd);
 
     std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
     uhd::rx_metadata_t md;
@@ -90,7 +90,7 @@ bool test_broken_chain_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streame
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE);
     stream_cmd.stream_now = true;
     stream_cmd.num_samps = rx_stream->get_max_num_samps();
-    usrp->issue_stream_cmd(stream_cmd);
+    rx_stream->issue_stream_cmd(stream_cmd);
 
     std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
     uhd::rx_metadata_t md;
@@ -132,7 +132,7 @@ bool test_broken_chain_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streame
  *    Send a burst of many samples that will fragment internally.
  *    We expect to get an burst ack async message.
  */
-bool test_burst_ack_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr tx_stream){
+bool test_burst_ack_message(uhd::usrp::multi_usrp::sptr, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr tx_stream){
     std::cout << "Test burst ack message... " << std::flush;
 
     uhd::tx_metadata_t md;
@@ -148,7 +148,7 @@ bool test_burst_ack_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::
     );
 
     uhd::async_metadata_t async_md;
-    if (not usrp->get_device()->recv_async_msg(async_md)){
+    if (not tx_stream->recv_async_msg(async_md)){
         std::cout << boost::format(
             "failed:\n"
             "    Async message recv timed out.\n"
@@ -178,7 +178,7 @@ bool test_burst_ack_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::
  *    Send a start of burst packet with no following end of burst.
  *    We expect to get an underflow(within a burst) async message.
  */
-bool test_underflow_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr tx_stream){
+bool test_underflow_message(uhd::usrp::multi_usrp::sptr, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr tx_stream){
     std::cout << "Test underflow message... " << std::flush;
 
     uhd::tx_metadata_t md;
@@ -189,7 +189,7 @@ bool test_underflow_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::
     tx_stream->send("", 0, md);
 
     uhd::async_metadata_t async_md;
-    if (not usrp->get_device()->recv_async_msg(async_md, 1)){
+    if (not tx_stream->recv_async_msg(async_md, 1)){
         std::cout << boost::format(
             "failed:\n"
             "    Async message recv timed out.\n"
@@ -233,7 +233,7 @@ bool test_time_error_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer:
     tx_stream->send("", 0, md);
 
     uhd::async_metadata_t async_md;
-    if (not usrp->get_device()->recv_async_msg(async_md)){
+    if (not tx_stream->recv_async_msg(async_md)){
         std::cout << boost::format(
             "failed:\n"
             "    Async message recv timed out.\n"
@@ -258,9 +258,9 @@ bool test_time_error_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer:
     }
 }
 
-void flush_async(uhd::usrp::multi_usrp::sptr usrp){
+void flush_async(uhd::tx_streamer::sptr tx_stream){
     uhd::async_metadata_t async_md;
-    while (usrp->get_device()->recv_async_msg(async_md)){}
+    while (tx_stream->recv_async_msg(async_md)){}
 }
 
 void flush_recv(uhd::rx_streamer::sptr rx_stream){
@@ -331,7 +331,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     for (size_t n = 0; n < ntests; n++){
         std::string key = tests.keys()[std::rand() % tests.size()];
         bool pass = tests[key](usrp, rx_stream, tx_stream);
-        flush_async(usrp);
+        flush_async(tx_stream);
         flush_recv(rx_stream);
 
         //store result

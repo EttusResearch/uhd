@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -48,12 +48,14 @@ TMPL_TEXT = """
 
 using namespace uhd;
 using namespace uhd::transport;
+using namespace uhd::transport::vrt;
 
 typedef size_t pred_type;
 typedef std::vector<pred_type> pred_table_type;
 #define pred_table_index(hdr) ((hdr >> 20) & 0x1ff)
 
-static pred_table_type get_pred_unpack_table(void){
+static pred_table_type get_pred_unpack_table(void)
+{
     pred_table_type table(1 << 9, 0); //only 9 bits useful here (20-28)
     for (size_t i = 0; i < table.size(); i++){
         boost::uint32_t vrt_hdr_word = i << 20;
@@ -74,13 +76,43 @@ static const pred_table_type pred_unpack_table(get_pred_unpack_table());
 //maps num empty bytes to trailer bits
 static const size_t occ_table[] = {0, 2, 1, 3};
 
+const boost::uint32_t VRLP = ('V' << 24) | ('R' << 16) | ('L' << 8) | ('P' << 0);
+const boost::uint32_t VEND = ('V' << 24) | ('E' << 16) | ('N' << 8) | ('D' << 0);
+
+UHD_INLINE static boost::uint32_t chdr_to_vrt(const boost::uint32_t chdr, size_t &packet_count)
+{
+    boost::uint32_t vrt = chdr & 0xffff; //words32
+    packet_count = (chdr >> 16) & 0xfff;
+    vrt |= ((chdr >> 31) & 0x1) << 30; //context packet
+    vrt |= ((chdr >> 30) & 0x1) << 26; //has tlr
+    vrt |= ((chdr >> 29) & 0x1) << 20; //has tsf
+    vrt |= ((chdr >> 28) & 0x1) << 24; //has eob
+    vrt |= (0x1) << 28; //has sid (always)
+    return vrt;
+}
+
+UHD_INLINE static boost::uint32_t vrt_to_chdr(const boost::uint32_t vrt, const size_t packet_count)
+{
+    boost::uint32_t chdr = vrt & 0xffff; //words32
+    chdr |= (packet_count & 0xfff) << 16;
+    chdr |= ((vrt >> 30) & 0x1) << 31; //context packet
+    chdr |= ((vrt >> 26) & 0x1) << 30; //has tlr
+    chdr |= ((vrt >> 20) & 0x1) << 29; //has tsf
+    chdr |= ((vrt >> 24) & 0x1) << 28; //has eob
+    return chdr;
+}
+
 ########################################################################
 #def gen_code($XE_MACRO, $suffix)
 ########################################################################
 
-void vrt::if_hdr_pack_$(suffix)(
+/***********************************************************************
+ * interal impl of packing VRT IF header only
+ **********************************************************************/
+UHD_INLINE void __if_hdr_pack_$(suffix)(
     boost::uint32_t *packet_buff,
-    if_packet_info_t &if_packet_info
+    if_packet_info_t &if_packet_info,
+    boost::uint32_t &vrt_hdr_word32
 ){
     boost::uint32_t vrt_hdr_flags = 0;
 
@@ -154,31 +186,33 @@ void vrt::if_hdr_pack_$(suffix)(
     }
 
     //fill in complete header word
-    packet_buff[0] = $(XE_MACRO)(boost::uint32_t(0
+    vrt_hdr_word32 = boost::uint32_t(0
         | (if_packet_info.packet_type << 29)
         | vrt_hdr_flags
         | ((if_packet_info.packet_count & 0xf) << 16)
         | (if_packet_info.num_packet_words32 & 0xffff)
-    ));
+    );
 }
 
-void vrt::if_hdr_unpack_$(suffix)(
+/***********************************************************************
+ * interal impl of unpacking VRT IF header only
+ **********************************************************************/
+UHD_INLINE void __if_hdr_unpack_$(suffix)(
     const boost::uint32_t *packet_buff,
-    if_packet_info_t &if_packet_info
+    if_packet_info_t &if_packet_info,
+    const boost::uint32_t vrt_hdr_word32
 ){
-    //extract vrt header
-    boost::uint32_t vrt_hdr_word = $(XE_MACRO)(packet_buff[0]);
-    size_t packet_words32 = vrt_hdr_word & 0xffff;
+    const size_t packet_words32 = vrt_hdr_word32 & 0xffff;
 
     //failure case
     if (if_packet_info.num_packet_words32 < packet_words32)
         throw uhd::value_error("bad vrt header or packet fragment");
 
     //extract fields from the header
-    if_packet_info.packet_type = if_packet_info_t::packet_type_t(vrt_hdr_word >> 29);
-    if_packet_info.packet_count = (vrt_hdr_word >> 16) & 0xf;
+    if_packet_info.packet_type = if_packet_info_t::packet_type_t(vrt_hdr_word32 >> 29);
+    if_packet_info.packet_count = (vrt_hdr_word32 >> 16) & 0xf;
 
-    const pred_type pred = pred_unpack_table[pred_table_index(vrt_hdr_word)];
+    const pred_type pred = pred_unpack_table[pred_table_index(vrt_hdr_word32)];
 
     size_t empty_bytes = 0;
 
@@ -256,6 +290,84 @@ void vrt::if_hdr_unpack_$(suffix)(
             if_packet_info.num_payload_bytes = if_packet_info.num_payload_words32*sizeof(boost::uint32_t) - empty_bytes;
         break;
     #end for
+    }
+}
+
+/***********************************************************************
+ * link layer + VRT IF packing
+ **********************************************************************/
+void vrt::if_hdr_pack_$(suffix)(
+    boost::uint32_t *packet_buff,
+    if_packet_info_t &if_packet_info
+){
+    boost::uint32_t vrt_hdr_word32 = 0;
+    switch (if_packet_info.link_type)
+    {
+    case if_packet_info_t::LINK_TYPE_NONE:
+        __if_hdr_pack_$(suffix)(packet_buff, if_packet_info, vrt_hdr_word32);
+        packet_buff[0] = $(XE_MACRO)(vrt_hdr_word32);
+        break;
+
+    case if_packet_info_t::LINK_TYPE_CHDR:
+    {
+        __if_hdr_pack_$(suffix)(packet_buff, if_packet_info, vrt_hdr_word32);
+        const boost::uint32_t chdr = vrt_to_chdr(vrt_hdr_word32, if_packet_info.packet_count);
+        packet_buff[0] = $(XE_MACRO)(chdr);
+        break;
+    }
+
+    case if_packet_info_t::LINK_TYPE_VRLP:
+        __if_hdr_pack_$(suffix)(packet_buff+2, if_packet_info, vrt_hdr_word32);
+        if_packet_info.num_header_words32 += 2;
+        if_packet_info.num_packet_words32 += 3;
+        packet_buff[0] = $(XE_MACRO)(VRLP);
+        packet_buff[1] = $(XE_MACRO)(boost::uint32_t(
+            (if_packet_info.num_packet_words32 & 0xfffff) |
+            ((if_packet_info.packet_count & 0xfff) << 20)
+        ));
+        packet_buff[2] = $(XE_MACRO)(vrt_hdr_word32);
+        packet_buff[if_packet_info.num_packet_words32-1] = $(XE_MACRO)(VEND);
+        break;
+    }
+}
+
+/***********************************************************************
+ * link layer + VRT IF unpacking
+ **********************************************************************/
+void vrt::if_hdr_unpack_$(suffix)(
+    const boost::uint32_t *packet_buff,
+    if_packet_info_t &if_packet_info
+){
+    boost::uint32_t vrt_hdr_word32 = 0;
+    switch (if_packet_info.link_type)
+    {
+    case if_packet_info_t::LINK_TYPE_NONE:
+        vrt_hdr_word32 = $(XE_MACRO)(packet_buff[0]);
+        __if_hdr_unpack_$(suffix)(packet_buff, if_packet_info, vrt_hdr_word32);
+        break;
+
+    case if_packet_info_t::LINK_TYPE_CHDR:
+    {
+        const boost::uint32_t chdr = $(XE_MACRO)(packet_buff[0]);
+        size_t packet_count = 0;
+        vrt_hdr_word32 = chdr_to_vrt(chdr, packet_count);
+        __if_hdr_unpack_$(suffix)(packet_buff, if_packet_info, vrt_hdr_word32);
+        if_packet_info.packet_count = packet_count;
+        break;
+    }
+
+    case if_packet_info_t::LINK_TYPE_VRLP:
+    {
+        if ($(XE_MACRO)(packet_buff[0]) != VRLP) throw uhd::value_error("bad vrl header VRLP");
+        const boost::uint32_t vrl_hdr = $(XE_MACRO)(packet_buff[1]);
+        vrt_hdr_word32 = $(XE_MACRO)(packet_buff[2]);
+        if (if_packet_info.num_packet_words32 < (vrl_hdr & 0xfffff)) throw uhd::value_error("bad vrl header or packet fragment");
+        if ($(XE_MACRO)(packet_buff[(vrl_hdr & 0xfffff)-1]) != VEND) throw uhd::value_error("bad vrl trailer VEND");
+        __if_hdr_unpack_$(suffix)(packet_buff+2, if_packet_info, vrt_hdr_word32);
+        if_packet_info.num_header_words32 += 2; //add vrl header
+        if_packet_info.packet_count = (vrl_hdr >> 20) & 0xfff;
+        break;
+    }
     }
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,9 @@ namespace uhd{ namespace transport{
 
 namespace vrt{
 
+    //! The maximum number of 32-bit words in the vrlp link layer
+    static const size_t num_vrl_words32 = 3;
+
     //! The maximum number of 32-bit words in a vrt if packet header
     static const size_t max_if_hdr_words32 = 7; //hdr+sid+cid+tsi+tsf
 
@@ -34,12 +37,24 @@ namespace vrt{
      * The size fields are used for input and output depending upon
      * the operation used (ie the pack or unpack function call).
      */
-    struct UHD_API if_packet_info_t{
-        //packet type (pack only supports data)
-        enum packet_type_t {
+    struct UHD_API if_packet_info_t
+    {
+        if_packet_info_t(void);
+
+        //link layer type - always set for pack and unpack
+        enum link_type_t
+        {
+            LINK_TYPE_NONE = 0x0,
+            LINK_TYPE_CHDR = 0x1,
+            LINK_TYPE_VRLP = 0x2,
+        } link_type;
+
+        //packet type
+        enum packet_type_t
+        {
             PACKET_TYPE_DATA      = 0x0,
-            PACKET_TYPE_EXTENSION = 0x1,
-            PACKET_TYPE_CONTEXT   = 0x2
+            PACKET_TYPE_IF_EXT    = 0x1,
+            PACKET_TYPE_CONTEXT   = 0x2, //extension context: has_sid = true
         } packet_type;
 
         //size fields
@@ -99,6 +114,22 @@ namespace vrt{
         const boost::uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
     );
+
+    UHD_INLINE if_packet_info_t::if_packet_info_t(void):
+        link_type(LINK_TYPE_NONE),
+        packet_type(PACKET_TYPE_DATA),
+        num_payload_words32(0),
+        num_payload_bytes(0),
+        num_header_words32(0),
+        num_packet_words32(0),
+        packet_count(0),
+        sob(false), eob(false),
+        has_sid(false), sid(0),
+        has_cid(false), cid(0),
+        has_tsi(false), tsi(0),
+        has_tsf(false), tsf(0),
+        has_tlr(false), tlr(0)
+    {}
 
 } //namespace vrt
 

@@ -157,9 +157,9 @@ namespace uhd{
      * If the code evaluates to false, throw an assertion error.
      * \param code the code that resolved to a boolean
      */
-    #define UHD_ASSERT_THROW(code) if (not (code)) \
+    #define UHD_ASSERT_THROW(code) {if (not (code)) \
         throw uhd::assertion_error(UHD_THROW_SITE_INFO(#code)); \
-    else void(0)
+    }
 
 } //namespace uhd
 

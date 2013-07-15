@@ -184,6 +184,16 @@ size_t get_max_recv_samps_per_packet(void){
     return _rx_streamer->get_max_num_samps();
 }
 
+/*!
+ * Receive and asynchronous message from the device.
+ * \param async_metadata the metadata to be filled in
+ * \param timeout the timeout in seconds to wait for a message
+ * \return true when the async_metadata is valid, false for timeout
+ */
+virtual bool recv_async_msg(
+    async_metadata_t &async_metadata, double timeout = 0.1
+) = 0;
+
 private:
     rx_streamer::sptr _rx_streamer;
     io_type_t::tid_t _recv_tid;

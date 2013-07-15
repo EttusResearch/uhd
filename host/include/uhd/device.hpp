@@ -82,16 +82,6 @@ public:
     //! Make a new transmit streamer from the streamer arguments
     virtual tx_streamer::sptr get_tx_stream(const stream_args_t &args) = 0;
 
-    /*!
-     * Receive and asynchronous message from the device.
-     * \param async_metadata the metadata to be filled in
-     * \param timeout the timeout in seconds to wait for a message
-     * \return true when the async_metadata is valid, false for timeout
-     */
-    virtual bool recv_async_msg(
-        async_metadata_t &async_metadata, double timeout = 0.1
-    ) = 0;
-
     //! Get access to the underlying property structure
     virtual boost::shared_ptr<property_tree> get_tree(void) const = 0;
 

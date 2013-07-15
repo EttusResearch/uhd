@@ -127,7 +127,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     stream_cmd.num_samps = total_num_samps;
     stream_cmd.stream_now = true;
-    usrp->issue_stream_cmd(stream_cmd);
+    rx_stream->issue_stream_cmd(stream_cmd);
 
     //loop until total number of samples reached
     size_t num_acc_samps = 0; //number of accumulated samples

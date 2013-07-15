@@ -148,7 +148,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //-- Initialize
     //------------------------------------------------------------------
     initscr(); //curses init
-    usrp->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     boost::system_time next_refresh = boost::get_system_time();
 
     //------------------------------------------------------------------
@@ -189,7 +189,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //------------------------------------------------------------------
     //-- Cleanup
     //------------------------------------------------------------------
-    usrp->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+    rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
     endwin(); //curses done
 
     //finished

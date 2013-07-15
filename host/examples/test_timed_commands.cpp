@@ -97,7 +97,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     stream_cmd.stream_now = true;
     const uhd::time_spec_t stream_time = usrp->get_time_now() + uhd::time_spec_t(0.1);
     usrp->set_command_time(stream_time);
-    usrp->issue_stream_cmd(stream_cmd);
+    rx_stream->issue_stream_cmd(stream_cmd);
     usrp->clear_command_time();
 
     //meta-data will be filled in by recv()

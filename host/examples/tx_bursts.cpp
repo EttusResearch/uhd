@@ -147,7 +147,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::async_metadata_t async_md;
         bool got_async_burst_ack = false;
         //loop through all messages for the ACK packet (may have underflow messages in queue)
-        while (not got_async_burst_ack and usrp->get_device()->recv_async_msg(async_md, seconds_in_future)){
+        while (not got_async_burst_ack and tx_stream->recv_async_msg(async_md, seconds_in_future)){
             got_async_burst_ack = (async_md.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
         }
         std::cout << (got_async_burst_ack? "success" : "fail") << std::endl;

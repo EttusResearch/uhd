@@ -126,7 +126,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     stream_cmd.num_samps = total_num_samps;
     stream_cmd.stream_now = false;
     stream_cmd.time_spec = uhd::time_spec_t(seconds_in_future);
-    usrp->issue_stream_cmd(stream_cmd); //tells all channels to stream
+    rx_stream->issue_stream_cmd(stream_cmd); //tells all channels to stream
 
     //meta-data will be filled in by recv()
     uhd::rx_metadata_t md;
