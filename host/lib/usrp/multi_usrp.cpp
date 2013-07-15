@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -545,8 +545,25 @@ public:
         }
     }
 
-    subdev_spec_t get_rx_subdev_spec(size_t mboard){
-        return _tree->access<subdev_spec_t>(mb_root(mboard) / "rx_subdev_spec").get();
+    subdev_spec_t get_rx_subdev_spec(size_t mboard)
+    {
+        subdev_spec_t spec = _tree->access<subdev_spec_t>(mb_root(mboard) / "rx_subdev_spec").get();
+        if (spec.empty())
+        {
+            try
+            {
+                const std::string db_name = _tree->list(mb_root(mboard) / "dboards").at(0);
+                const std::string fe_name = _tree->list(mb_root(mboard) / "dboards" / db_name / "rx_frontends").at(0);
+                spec.push_back(subdev_spec_pair_t(db_name, fe_name));
+                _tree->access<subdev_spec_t>(mb_root(mboard) / "rx_subdev_spec").set(spec);
+            }
+            catch(const std::exception &e)
+            {
+                throw uhd::index_error(str(boost::format("multi_usrp::get_rx_subdev_spec(%u) failed to make default spec - %s") % mboard % e.what()));
+            }
+            UHD_MSG(status) << "Selecting default RX front end spec: " << spec.to_pp_string() << std::endl;
+        }
+        return spec;
     }
 
     size_t get_rx_num_channels(void){
@@ -697,8 +714,25 @@ public:
         }
     }
 
-    subdev_spec_t get_tx_subdev_spec(size_t mboard){
-        return _tree->access<subdev_spec_t>(mb_root(mboard) / "tx_subdev_spec").get();
+    subdev_spec_t get_tx_subdev_spec(size_t mboard)
+    {
+        subdev_spec_t spec = _tree->access<subdev_spec_t>(mb_root(mboard) / "tx_subdev_spec").get();
+        if (spec.empty())
+        {
+            try
+            {
+                const std::string db_name = _tree->list(mb_root(mboard) / "dboards").at(0);
+                const std::string fe_name = _tree->list(mb_root(mboard) / "dboards" / db_name / "tx_frontends").at(0);
+                spec.push_back(subdev_spec_pair_t(db_name, fe_name));
+                _tree->access<subdev_spec_t>(mb_root(mboard) / "tx_subdev_spec").set(spec);
+            }
+            catch(const std::exception &e)
+            {
+                throw uhd::index_error(str(boost::format("multi_usrp::get_tx_subdev_spec(%u) failed to make default spec - %s") % mboard % e.what()));
+            }
+            UHD_MSG(status) << "Selecting default TX front end spec: " << spec.to_pp_string() << std::endl;
+        }
+        return spec;
     }
 
     size_t get_tx_num_channels(void){
@@ -843,6 +877,10 @@ private:
             if (mcp.chan < sss) break;
             mcp.chan -= sss;
         }
+        if (mcp.mboard >= get_num_mboards())
+        {
+            throw uhd::index_error(str(boost::format("multi_usrp: RX channel %u out of range for configured RX frontends") % chan));
+        }
         return mcp;
     }
 
@@ -854,48 +892,108 @@ private:
             if (mcp.chan < sss) break;
             mcp.chan -= sss;
         }
+        if (mcp.mboard >= get_num_mboards())
+        {
+            throw uhd::index_error(str(boost::format("multi_usrp: TX channel %u out of range for configured TX frontends") % chan));
+        }
         return mcp;
     }
 
-    fs_path mb_root(const size_t mboard){
-        const std::string name = _tree->list("/mboards").at(mboard);
-        return "/mboards/" + name;
+    fs_path mb_root(const size_t mboard)
+    {
+        try
+        {
+            const std::string name = _tree->list("/mboards").at(mboard);
+            return "/mboards/" + name;
+        }
+        catch(const std::exception &e)
+        {
+            throw uhd::index_error(str(boost::format("multi_usrp::mb_root(%u) - %s") % mboard % e.what()));
+        }
     }
 
-    fs_path rx_dsp_root(const size_t chan){
+    fs_path rx_dsp_root(const size_t chan)
+    {
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
-        const std::string name = _tree->list(mb_root(mcp.mboard) / "rx_dsps").at(mcp.chan);
-        return mb_root(mcp.mboard) / "rx_dsps" / name;
+        try
+        {
+            const std::string name = _tree->list(mb_root(mcp.mboard) / "rx_dsps").at(mcp.chan);
+            return mb_root(mcp.mboard) / "rx_dsps" / name;
+        }
+        catch(const std::exception &e)
+        {
+            throw uhd::index_error(str(boost::format("multi_usrp::rx_dsp_root(%u) - mcp(%u) - %s") % chan % mcp.chan % e.what()));
+        }
     }
 
-    fs_path tx_dsp_root(const size_t chan){
+    fs_path tx_dsp_root(const size_t chan)
+    {
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
-        const std::string name = _tree->list(mb_root(mcp.mboard) / "tx_dsps").at(mcp.chan);
-        return mb_root(mcp.mboard) / "tx_dsps" / name;
+        try
+        {
+            const std::string name = _tree->list(mb_root(mcp.mboard) / "tx_dsps").at(mcp.chan);
+            return mb_root(mcp.mboard) / "tx_dsps" / name;
+        }
+        catch(const std::exception &e)
+        {
+            throw uhd::index_error(str(boost::format("multi_usrp::tx_dsp_root(%u) - mcp(%u) - %s") % chan % mcp.chan % e.what()));
+        }
     }
 
-    fs_path rx_fe_root(const size_t chan){
+    fs_path rx_fe_root(const size_t chan)
+    {
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
-        const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
-        return mb_root(mcp.mboard) / "rx_frontends" / spec.db_name;
+        try
+        {
+            const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
+            return mb_root(mcp.mboard) / "rx_frontends" / spec.db_name;
+        }
+        catch(const std::exception &e)
+        {
+            throw uhd::index_error(str(boost::format("multi_usrp::rx_fe_root(%u) - mcp(%u) - %s") % chan % mcp.chan % e.what()));
+        }
     }
 
-    fs_path tx_fe_root(const size_t chan){
+    fs_path tx_fe_root(const size_t chan)
+    {
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
-        const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
-        return mb_root(mcp.mboard) / "tx_frontends" / spec.db_name;
+        try
+        {
+            const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
+            return mb_root(mcp.mboard) / "tx_frontends" / spec.db_name;
+        }
+        catch(const std::exception &e)
+        {
+            throw uhd::index_error(str(boost::format("multi_usrp::tx_fe_root(%u) - mcp(%u) - %s") % chan % mcp.chan % e.what()));
+        }
     }
 
-    fs_path rx_rf_fe_root(const size_t chan){
+    fs_path rx_rf_fe_root(const size_t chan)
+    {
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
-        const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
-        return mb_root(mcp.mboard) / "dboards" / spec.db_name / "rx_frontends" / spec.sd_name;
+        try
+        {
+            const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
+            return mb_root(mcp.mboard) / "dboards" / spec.db_name / "rx_frontends" / spec.sd_name;
+        }
+        catch(const std::exception &e)
+        {
+            throw uhd::index_error(str(boost::format("multi_usrp::rx_rf_fe_root(%u) - mcp(%u) - %s") % chan % mcp.chan % e.what()));
+        }
     }
 
-    fs_path tx_rf_fe_root(const size_t chan){
+    fs_path tx_rf_fe_root(const size_t chan)
+    {
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
-        const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
-        return mb_root(mcp.mboard) / "dboards" / spec.db_name / "tx_frontends" / spec.sd_name;
+        try
+        {
+            const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
+            return mb_root(mcp.mboard) / "dboards" / spec.db_name / "tx_frontends" / spec.sd_name;
+        }
+        catch(const std::exception &e)
+        {
+            throw uhd::index_error(str(boost::format("multi_usrp::tx_rf_fe_root(%u) - mcp(%u) - %s") % chan % mcp.chan % e.what()));
+        }
     }
 
     gain_group::sptr rx_gain_group(size_t chan){
@@ -929,5 +1027,6 @@ private:
  * The Make Function
  **********************************************************************/
 multi_usrp::sptr multi_usrp::make(const device_addr_t &dev_addr){
+    UHD_LOG << "multi_usrp::make with args " << dev_addr.to_pp_string() << std::endl;
     return sptr(new multi_usrp_impl(dev_addr));
 }
