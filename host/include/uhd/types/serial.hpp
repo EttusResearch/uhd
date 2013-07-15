@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,6 +45,8 @@ namespace uhd{
     class UHD_API i2c_iface{
     public:
         typedef boost::shared_ptr<i2c_iface> sptr;
+
+        virtual ~i2c_iface(void);
 
         /*!
          * Write bytes over the i2c.
@@ -128,6 +130,8 @@ namespace uhd{
     public:
         typedef boost::shared_ptr<spi_iface> sptr;
 
+        virtual ~spi_iface(void);
+
         /*!
         * Perform a spi transaction.
         * \param which_slave the slave device number
@@ -181,6 +185,8 @@ namespace uhd{
     class UHD_API uart_iface{
     public:
         typedef boost::shared_ptr<uart_iface> sptr;
+
+        virtual ~uart_iface(void);
 
         /*!
          * Write to a serial port.

@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011,2013 Ettus Research LLC
+# Copyright 2010-2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -88,6 +88,7 @@ CONFIGURE_FILE(
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/deprecated.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/stream.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exception.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/property_tree.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.cpp

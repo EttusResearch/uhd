@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,21 @@
 #include <boost/assign/list_of.hpp>
 
 using namespace uhd;
+
+i2c_iface::~i2c_iface(void)
+{
+    //empty
+}
+
+spi_iface::~spi_iface(void)
+{
+    //empty
+}
+
+uart_iface::~uart_iface(void)
+{
+    //empty
+}
 
 spi_config_t::spi_config_t(edge_t edge):
     mosi_edge(edge),

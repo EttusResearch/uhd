@@ -124,6 +124,8 @@ class UHD_API rx_streamer : boost::noncopyable{
 public:
     typedef boost::shared_ptr<rx_streamer> sptr;
 
+    virtual ~rx_streamer(void);
+
     //! Get the number of channels associated with this streamer
     virtual size_t get_num_channels(void) const = 0;
 
@@ -180,6 +182,8 @@ public:
 class UHD_API tx_streamer : boost::noncopyable{
 public:
     typedef boost::shared_ptr<tx_streamer> sptr;
+
+    virtual ~tx_streamer(void);
 
     //! Get the number of channels associated with this streamer
     virtual size_t get_num_channels(void) const = 0;
