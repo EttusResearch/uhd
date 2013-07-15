@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -153,17 +153,13 @@ rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t &args_){
     id.num_outputs = 1;
     my_streamer->set_converter(id);
 
-    //flush stuff
-    _data_transport->get_recv_buff(-1.0); //negative flushes!!
-    _recv_demuxer = recv_packet_demuxer::make(_data_transport, _rx_dsps.size(), B100_RX_SID_BASE);
-
     //bind callbacks for the handler
     for (size_t chan_i = 0; chan_i < args.channels.size(); chan_i++){
         const size_t dsp = args.channels[chan_i];
         _rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
         _rx_dsps[dsp]->setup(args);
         my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
-            &recv_packet_demuxer::get_recv_buff, _recv_demuxer, dsp, _1
+            &recv_packet_demuxer_3000::get_recv_buff, _recv_demuxer, B100_RX_SID_BASE + dsp, _1
         ), true /*flush*/);
         my_streamer->set_overflow_handler(chan_i, boost::bind(
             &rx_dsp_core_200::handle_overflow, _rx_dsps[dsp]

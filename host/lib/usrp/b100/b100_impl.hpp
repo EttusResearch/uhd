@@ -29,7 +29,7 @@
 #include "time64_core_200.hpp"
 #include "fifo_ctrl_excelsior.hpp"
 #include "user_settings_core_200.hpp"
-#include "recv_packet_demuxer.hpp"
+#include "recv_packet_demuxer_3000.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/dict.hpp>
@@ -105,7 +105,7 @@ private:
     //transports
     uhd::transport::zero_copy_if::sptr _ctrl_transport;
     uhd::transport::zero_copy_if::sptr _data_transport;
-    uhd::usrp::recv_packet_demuxer::sptr _recv_demuxer;
+    boost::shared_ptr<uhd::usrp::recv_packet_demuxer_3000> _recv_demuxer;
 
     //dboard stuff
     uhd::usrp::dboard_manager::sptr _dboard_manager;

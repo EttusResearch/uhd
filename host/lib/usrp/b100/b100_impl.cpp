@@ -472,7 +472,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     }
 
     //initialize io handling
-    _recv_demuxer = recv_packet_demuxer::make(_data_transport, _rx_dsps.size(), B100_RX_SID_BASE);
+    _recv_demuxer.reset(new recv_packet_demuxer_3000(_data_transport));
 
     //allocate streamer weak ptrs containers
     _rx_streamers.resize(_rx_dsps.size());
