@@ -77,6 +77,9 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
     else if (tx_name.find("SBX") != std::string::npos){
         usrp->set_tx_gain(0);
     }
+    else if (tx_name.find("CBX") != std::string::npos){
+        usrp->set_tx_gain(0);
+    }
     else if (tx_name.find("RFX") != std::string::npos){
         usrp->set_tx_gain(0);
     }
@@ -90,6 +93,9 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
         usrp->set_rx_gain(25);
     }
     else if (rx_name.find("SBX") != std::string::npos){
+        usrp->set_rx_gain(25);
+    }
+    else if (rx_name.find("CBX") != std::string::npos){
         usrp->set_rx_gain(25);
     }
     else if (rx_name.find("RFX") != std::string::npos){
