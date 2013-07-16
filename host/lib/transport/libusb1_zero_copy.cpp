@@ -21,6 +21,7 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
+#include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/thread.hpp>
 #include <list>
@@ -40,6 +41,12 @@ static const size_t DEFAULT_XFER_SIZE = 32*512; //bytes
 #ifndef HAVE_LIBUSB_HANDLE_EVENTS_TIMEOUT_COMPLETED
     #define libusb_handle_events_timeout_completed(ctx, tx, completed)\
         libusb_handle_events_timeout(ctx, tx)
+#endif
+
+//! libusb_error_name is only in newer API
+#ifndef HAVE_LIBUSB_ERROR_NAME
+    #define libusb_error_name(code) \
+        str(boost::format("LIBUSB_ERROR_CODE %d") % code)
 #endif
 
 /*!
@@ -105,7 +112,9 @@ public:
     void release(void){
         completed = 0;
         _lut->length = _frame_size; //always reset length
-        UHD_ASSERT_THROW(libusb_submit_transfer(_lut) == 0);
+        const int ret = libusb_submit_transfer(_lut);
+        if (ret != 0) throw uhd::runtime_error(
+            "usb rx submit failed: " + std::string(libusb_error_name(ret)));
     }
 
     sptr get_new(const double timeout, size_t &index){
@@ -138,7 +147,9 @@ public:
     void release(void){
         completed = 0;
         _lut->length = size();
-        UHD_ASSERT_THROW(libusb_submit_transfer(_lut) == 0);
+        const int ret = libusb_submit_transfer(_lut);
+        if (ret != 0) throw uhd::runtime_error(
+            "usb tx submit failed: " + std::string(libusb_error_name(ret)));
     }
 
     sptr get_new(const double timeout, size_t &index){
