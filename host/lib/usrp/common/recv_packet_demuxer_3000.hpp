@@ -65,6 +65,7 @@ namespace uhd{ namespace usrp{
                 if (not queue.empty())
                 {
                     buff = queue.front();
+                    queue.front().reset();
                     queue.pop();
                     return buff;
                 }
