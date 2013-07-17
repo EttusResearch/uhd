@@ -23,6 +23,7 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/foreach.hpp>
+#include <cstdlib>
 #include <iostream>
 
 using namespace uhd;
@@ -59,6 +60,15 @@ libusb::session::sptr libusb::session::get_global_session(void){
     //create a new global session
     sptr new_global_session(new libusb_session_impl());
     global_session = new_global_session;
+
+    //set logging if envvar is set
+    const char *level_string = getenv("LIBUSB_DEBUG_LEVEL");
+    if (level_string != NULL)
+    {
+        const int level = int(level_string[0] - '0'); //easy conversion to integer
+        if (level >= 0 and level <= 3) libusb_set_debug(new_global_session->get_context(), level);
+    }
+
     return new_global_session;
 }
 
