@@ -359,6 +359,69 @@ static void store_b100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 }
 
 /***********************************************************************
+ * Implementation of B200 load/store
+ **********************************************************************/
+/* On the B200, this field indicates the slave address. From the FX3, this
+ * address is always 0. */
+static const boost::uint8_t B200_EEPROM_SLAVE_ADDR = 0x04;
+
+//use char array so we dont need to attribute packed
+struct b200_eeprom_map{
+    unsigned char _r[220];
+    unsigned char revision[2];
+    unsigned char product[2];
+    unsigned char name[NAME_MAX_LEN];
+    unsigned char serial[SERIAL_LEN];
+};
+
+static void load_b200(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+    //extract the revision number
+    mb_eeprom["revision"] = uint16_bytes_to_string(
+        iface.read_eeprom(B200_EEPROM_SLAVE_ADDR, offsetof(b200_eeprom_map, revision), 2)
+    );
+
+    //extract the product code
+    mb_eeprom["product"] = uint16_bytes_to_string(
+        iface.read_eeprom(B200_EEPROM_SLAVE_ADDR, offsetof(b200_eeprom_map, product), 2)
+    );
+
+    //extract the serial
+    mb_eeprom["serial"] = bytes_to_string(iface.read_eeprom(
+        B200_EEPROM_SLAVE_ADDR, offsetof(b200_eeprom_map, serial), SERIAL_LEN
+    ));
+
+    //extract the name
+    mb_eeprom["name"] = bytes_to_string(iface.read_eeprom(
+        B200_EEPROM_SLAVE_ADDR, offsetof(b200_eeprom_map, name), NAME_MAX_LEN
+    ));
+}
+
+static void store_b200(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
+    //parse the revision number
+    if (mb_eeprom.has_key("revision")) iface.write_eeprom(
+        B200_EEPROM_SLAVE_ADDR, offsetof(b200_eeprom_map, revision),
+        string_to_uint16_bytes(mb_eeprom["revision"])
+    );
+
+    //parse the product code
+    if (mb_eeprom.has_key("product")) iface.write_eeprom(
+        B200_EEPROM_SLAVE_ADDR, offsetof(b200_eeprom_map, product),
+        string_to_uint16_bytes(mb_eeprom["product"])
+    );
+
+    //store the serial
+    if (mb_eeprom.has_key("serial")) iface.write_eeprom(
+        B200_EEPROM_SLAVE_ADDR, offsetof(b200_eeprom_map, serial),
+        string_to_bytes(mb_eeprom["serial"], SERIAL_LEN)
+    );
+
+    //store the name
+    if (mb_eeprom.has_key("name")) iface.write_eeprom(
+        B200_EEPROM_SLAVE_ADDR, offsetof(b200_eeprom_map, name),
+        string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
+    );
+}
+/***********************************************************************
  * Implementation of E100 load/store
  **********************************************************************/
 static const boost::uint8_t E100_EEPROM_ADDR = 0x51;
@@ -451,6 +514,7 @@ mboard_eeprom_t::mboard_eeprom_t(i2c_iface &iface, const std::string &which){
     if (which == "N100") load_n100(*this, iface);
     if (which == "B000") load_b000(*this, iface);
     if (which == "B100") load_b100(*this, iface);
+    if (which == "B200") load_b200(*this, iface);
     if (which == "E100") load_e100(*this, iface);
 }
 
@@ -458,5 +522,6 @@ void mboard_eeprom_t::commit(i2c_iface &iface, const std::string &which) const{
     if (which == "N100") store_n100(*this, iface);
     if (which == "B000") store_b000(*this, iface);
     if (which == "B100") store_b100(*this, iface);
+    if (which == "B200") store_b200(*this, iface);
     if (which == "E100") store_e100(*this, iface);
 }
