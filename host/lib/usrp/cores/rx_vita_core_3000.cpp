@@ -77,7 +77,7 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
     {
         if (not _is_setup)
         {
-            UHD_MSG(warning) << "rx vita core 3000 issue stream command - not setup yet!";
+            //UHD_MSG(warning) << "rx vita core 3000 issue stream command - not setup yet!";
             return;
         }
         UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
