@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -245,7 +245,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     const size_t rx_lut_size = size_t(data_xport_args.cast<double>("recv_frame_size", 0.0));
     _fifo_ctrl->poke32(TOREG(SR_PADDER+0), rx_lut_size/sizeof(boost::uint32_t));
 
-    _data_transport = usb_zero_copy::make_wrapper(
+    _data_transport = usb_zero_copy_make_wrapper(
         usb_zero_copy::make(
             handle,        // identifier
             2, 6,          // IN interface, endpoint

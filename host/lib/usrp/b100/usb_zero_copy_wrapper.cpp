@@ -81,7 +81,7 @@ private:
  **********************************************************************/
 class usb_zero_copy_wrapper_msb : public managed_send_buffer{
 public:
-    usb_zero_copy_wrapper_msb(const usb_zero_copy::sptr internal, const size_t fragmentation_size):
+    usb_zero_copy_wrapper_msb(const zero_copy_if::sptr internal, const size_t fragmentation_size):
         _internal(internal), _fragmentation_size(fragmentation_size)
     {
         _ok_to_auto_flush = false;
@@ -131,7 +131,7 @@ public:
     }
 
 private:
-    usb_zero_copy::sptr _internal;
+    zero_copy_if::sptr _internal;
     const size_t _fragmentation_size;
     managed_send_buffer::sptr _last_send_buff;
     size_t _bytes_in_buffer;
@@ -164,7 +164,7 @@ private:
  **********************************************************************/
 class usb_zero_copy_wrapper : public usb_zero_copy{
 public:
-    usb_zero_copy_wrapper(sptr usb_zc, const size_t frame_boundary):
+    usb_zero_copy_wrapper(zero_copy_if::sptr usb_zc, const size_t frame_boundary):
         _internal_zc(usb_zc),
         _frame_boundary(frame_boundary),
         _next_recv_buff_index(0)
@@ -218,7 +218,7 @@ public:
     }
 
 private:
-    sptr _internal_zc;
+    zero_copy_if::sptr _internal_zc;
     size_t _frame_boundary;
     std::vector<boost::shared_ptr<usb_zero_copy_wrapper_mrb> > _mrb_pool;
     boost::shared_ptr<usb_zero_copy_wrapper_msb> _the_only_msb;
@@ -232,8 +232,8 @@ private:
 /***********************************************************************
  * USB zero copy wrapper factory function
  **********************************************************************/
-usb_zero_copy::sptr usb_zero_copy::make_wrapper(
-    sptr usb_zc, size_t usb_frame_boundary
+zero_copy_if::sptr usb_zero_copy_make_wrapper(
+    zero_copy_if::sptr usb_zc, size_t usb_frame_boundary
 ){
-    return sptr(new usb_zero_copy_wrapper(usb_zc, usb_frame_boundary));
+    return zero_copy_if::sptr(new usb_zero_copy_wrapper(usb_zc, usb_frame_boundary));
 }

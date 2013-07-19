@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,24 +60,6 @@ public:
         const size_t send_interface,
         const size_t send_endpoint,
         const device_addr_t &hints = device_addr_t()
-    );
-
-    /*!
-     * Make a wrapper around a zero copy implementation.
-     * The wrapper performs the following functions:
-     * - Pad commits to the frame boundary
-     * - Extract multiple packets on recv
-     *
-     * When enable multiple receive packets is set to true,
-     * the implementation inspects the vita length on transfers,
-     * and may split a single transfer into multiple managed buffers.
-     *
-     * \param usb_zc a usb zero copy interface object
-     * \param usb_frame_boundary bytes per frame
-     * \return a new zero copy wrapper object
-     */
-    static sptr make_wrapper(
-        sptr usb_zc, size_t usb_frame_boundary = 512
     );
 };
 
