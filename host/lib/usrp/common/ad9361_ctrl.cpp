@@ -64,7 +64,7 @@ struct ad9361_ctrl_impl : public ad9361_ctrl
         ) % (rate/1e6) % 56.0 << std::endl;
 
         //clip to known bounds
-        const meta_range_t clock_rate_range(250e3, 61.44e6);
+        const meta_range_t clock_rate_range = ad9361_ctrl::get_clock_rate_range();
         const double clipped_rate = clock_rate_range.clip(rate);
 
         ad9361_transaction_t request;
@@ -93,7 +93,7 @@ struct ad9361_ctrl_impl : public ad9361_ctrl
     double tune(const std::string &which, const double freq)
     {
         //clip to known bounds
-        const meta_range_t freq_range(50e6, 6e9);
+        const meta_range_t freq_range = ad9361_ctrl::get_rf_freq_range();
         const double clipped_freq = freq_range.clip(freq);
 
         ad9361_transaction_t request;

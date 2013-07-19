@@ -640,11 +640,8 @@ void b200_impl::codec_loopback_self_test(wb_iface::sptr iface)
 /***********************************************************************
  * Sample and tick rate comprehension below
  **********************************************************************/
-double b200_impl::set_tick_rate(const double raw_rate)
+double b200_impl::set_tick_rate(const double rate)
 {
-    //clip rate (which can be doubled by factor) to possible bounds
-    const double rate = ad9361_ctrl::get_samp_rate_range().clip(raw_rate);
-
     UHD_MSG(status) << "Asking for clock rate " << rate/1e6 << " MHz\n";
     _tick_rate = _codec_ctrl->set_clock_rate(rate);
     UHD_MSG(status) << "Actually got clock rate " << _tick_rate/1e6 << " MHz\n";

@@ -87,7 +87,7 @@ public:
     //! get the freq range for the frontend which
     static uhd::meta_range_t get_rf_freq_range(void)
     {
-        return uhd::meta_range_t(30e6, 6e9);
+        return uhd::meta_range_t(50e6, 6e9);
     }
 
     //! get the filter range for the frontend which
@@ -96,8 +96,8 @@ public:
         return uhd::meta_range_t(200e3, 56e6);
     }
 
-    //! get the filter range for the frontend which
-    static uhd::meta_range_t get_samp_rate_range(void)
+    //! get the clock rate range for the frontend
+    static uhd::meta_range_t get_clock_rate_range(void)
     {
         return uhd::meta_range_t(220e3, 61.44e6);
     }
