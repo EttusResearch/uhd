@@ -21,23 +21,23 @@ Comparative features list
 ------------------------------------------------------------------------
 Specify a Non-standard Image
 ------------------------------------------------------------------------
-UHD software will automatically select the USRP B-Series images from the installed images package.
+UHD software will automatically select the USRP B100 images from the installed images package.
 The image selection can be overridden with the **--fpga=** and **--fw=** device address parameters.
 
 Example device address string representations to specify non-standard images:
 
 ::
 
-    fpga=usrp_b100_fpga_firmware.bin
+    fpga=usrp_b100_fpga_2rx.bin
 
     -- OR --
 
-    fw=usrp_b100_fw_firmware.ihx
+    fw=usrp_b100_fw.ihx
 
 ------------------------------------------------------------------------
 Changing the Master Clock Rate
 ------------------------------------------------------------------------
-The master clock rate of the USRP embedded feeds both the FPGA DSP and the codec chip.
+The master clock rate of the B100 feeds both the FPGA DSP and the codec chip.
 Hundreds of rates between 32MHz and 64MHz are available.
 A few notable rates are:
 

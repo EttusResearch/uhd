@@ -27,6 +27,7 @@ Application Notes
 * `USRP2 Application Notes <./usrp2.html>`_
 * `USRP-N2X0 Series Application Notes <./usrp2.html>`_
 * `USRP-B100 Series Application Notes <./usrp_b100.html>`_
+* `USRP-B2X0 Series Application Notes <./usrp_b200.html>`_
 * `USRP-E1X0 Series Application Notes <./usrp_e1x0.html>`_
 * `Daughterboard Application Notes <./dboards.html>`_
 * `Transport Application Notes <./transport.html>`_

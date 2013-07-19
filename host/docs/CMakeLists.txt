@@ -34,6 +34,7 @@ SET(manual_sources
     usrp1.rst
     usrp2.rst
     usrp_b100.rst
+    usrp_b200.rst
     usrp_e1x0.rst
 )
 
