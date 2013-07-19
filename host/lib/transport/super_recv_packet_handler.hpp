@@ -502,7 +502,7 @@ private:
                 curr_info.metadata.start_of_burst = false;
                 curr_info.metadata.end_of_burst = false;
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_OVERFLOW;
-                UHD_MSG(fastpath) << "O";
+                UHD_MSG(fastpath) << "D";
                 return;
 
             }
@@ -522,6 +522,7 @@ private:
                 curr_info.metadata.start_of_burst = false;
                 curr_info.metadata.end_of_burst = false;
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_ALIGNMENT;
+                _props[index].handle_overflow();
                 return;
             }
 
