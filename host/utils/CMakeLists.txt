@@ -47,7 +47,9 @@ SET(util_share_sources
 IF(ENABLE_USB)
     LIST(APPEND util_share_sources
         fx2_init_eeprom.cpp
+        b2xx_fx3_utils.cpp
     )
+    INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIRS})
 ENDIF(ENABLE_USB)
 
 IF(LINUX AND ENABLE_USB)
