@@ -22,10 +22,11 @@
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <iostream>
 #include <complex>
 #include <cstdlib>
+
+#define myllround(x) ((long long)((x) + 0.5))
 
 namespace po = boost::program_options;
 
@@ -61,7 +62,6 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_c
     uhd::time_spec_t last_time;
     const double rate = usrp->get_rx_rate();
 
-    issue_new_stream_cmd:
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.05);
     cmd.stream_now = (buffs.size() == 1);
@@ -74,7 +74,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_c
         case uhd::rx_metadata_t::ERROR_CODE_NONE:
             if (had_an_overflow){
                 had_an_overflow = false;
-                num_dropped_samps += boost::math::iround((md.time_spec - last_time).get_real_secs()*rate);
+                num_dropped_samps += myllround((md.time_spec - last_time).get_real_secs()*rate);
             }
             break;
 
@@ -82,11 +82,6 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_c
             had_an_overflow = true;
             last_time = md.time_spec;
             num_overflows++;
-            if (rx_stream->get_num_channels() > 1)
-            {
-                rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-                goto issue_new_stream_cmd;
-            }
             break;
 
         default:
