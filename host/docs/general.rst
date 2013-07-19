@@ -125,7 +125,7 @@ Overflow notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 When receiving, the device produces samples at a constant rate.
 Overflows occurs when the host does not consume data fast enough.
-When UHD software detects the overflow, it prints an "O" to stdout,
+When UHD software detects the overflow, it prints an "O" or "D" to stdout,
 and pushes an inline message packet into the receive stream.
 
 **Network-based devices**:
@@ -133,12 +133,14 @@ The host does not back-pressure the receive stream.
 When the kernel's socket buffer becomes full, it will drop subsequent packets.
 UHD software detects the overflow as a discontinuity in the packet's sequence numbers,
 and pushes an inline message packet into the receive stream.
+In this case the character "D" is printed to stdout as an indication.
 
 **Other devices**:
 The host back-pressures the receive stream.
 Therefore, overflows always occur in the device itself.
 When the device's internal buffers become full, streaming is shut off,
 and an inline message packet is sent to the host.
+In this case the character "O" is printed to stdout as an indication.
 If the device was in continuous streaming mode,
 the UHD software will automatically restart streaming.
 
