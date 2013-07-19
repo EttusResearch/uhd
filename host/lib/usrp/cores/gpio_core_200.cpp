@@ -104,3 +104,35 @@ private:
 gpio_core_200::sptr gpio_core_200::make(wb_iface::sptr iface, const size_t base, const size_t rb_addr){
     return sptr(new gpio_core_200_impl(iface, base, rb_addr));
 }
+
+class gpio_core_200_32wo_impl : public gpio_core_200_32wo{
+public:
+    gpio_core_200_32wo_impl(wb_iface::sptr iface, const size_t base):
+        _iface(iface), _base(base)
+    {
+        _iface->poke32(REG_GPIO_DDR, 0xffffffff);
+    }
+
+    void set_atr_reg(const atr_reg_t atr, const boost::uint32_t value){
+        if (atr == dboard_iface::ATR_REG_IDLE)        _iface->poke32(REG_GPIO_IDLE, value);
+        if (atr == dboard_iface::ATR_REG_TX_ONLY)     _iface->poke32(REG_GPIO_TX_ONLY, value);
+        if (atr == dboard_iface::ATR_REG_RX_ONLY)     _iface->poke32(REG_GPIO_RX_ONLY, value);
+        if (atr == dboard_iface::ATR_REG_FULL_DUPLEX) _iface->poke32(REG_GPIO_BOTH, value);
+    }
+
+    void set_all_regs(const boost::uint32_t value){
+        this->set_atr_reg(dboard_iface::ATR_REG_IDLE,        value);
+        this->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY,     value);
+        this->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY,     value);
+        this->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, value);
+    }
+
+private:
+    wb_iface::sptr _iface;
+    const size_t _base;
+
+};
+
+gpio_core_200_32wo::sptr gpio_core_200_32wo::make(wb_iface::sptr iface, const size_t base){
+    return sptr(new gpio_core_200_32wo_impl(iface, base));
+}

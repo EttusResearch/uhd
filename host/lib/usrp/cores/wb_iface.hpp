@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,38 +22,53 @@
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
 
-class wb_iface{
+class /*UHD_API*/ wb_iface
+{
 public:
     typedef boost::shared_ptr<wb_iface> sptr;
     typedef boost::uint32_t wb_addr_type;
+
+    /*!
+     * Write a register (64 bits)
+     * \param addr the address
+     * \param data the 64bit data
+     */
+    virtual void poke64(const wb_addr_type addr, const boost::uint64_t data);
+
+    /*!
+     * Read a register (64 bits)
+     * \param addr the address
+     * \return the 64bit data
+     */
+    virtual boost::uint64_t peek64(const wb_addr_type addr);
 
     /*!
      * Write a register (32 bits)
      * \param addr the address
      * \param data the 32bit data
      */
-    virtual void poke32(wb_addr_type addr, boost::uint32_t data) = 0;
+    virtual void poke32(const wb_addr_type addr, const boost::uint32_t data);
 
     /*!
      * Read a register (32 bits)
      * \param addr the address
      * \return the 32bit data
      */
-    virtual boost::uint32_t peek32(wb_addr_type addr) = 0;
+    virtual boost::uint32_t peek32(const wb_addr_type addr);
 
     /*!
      * Write a register (16 bits)
      * \param addr the address
      * \param data the 16bit data
      */
-    virtual void poke16(wb_addr_type addr, boost::uint16_t data) = 0;
+    virtual void poke16(const wb_addr_type addr, const boost::uint16_t data);
 
     /*!
      * Read a register (16 bits)
      * \param addr the address
      * \return the 16bit data
      */
-    virtual boost::uint16_t peek16(wb_addr_type addr) = 0;
+    virtual boost::uint16_t peek16(const wb_addr_type addr);
 
 };
 

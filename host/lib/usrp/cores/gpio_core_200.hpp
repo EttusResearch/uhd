@@ -49,4 +49,18 @@ public:
 
 };
 
+//! Simple wrapper for 32 bit write only
+class gpio_core_200_32wo : boost::noncopyable{
+public:
+    typedef boost::shared_ptr<gpio_core_200_32wo> sptr;
+
+    typedef uhd::usrp::dboard_iface::atr_reg_t atr_reg_t;
+
+    static sptr make(wb_iface::sptr iface, const size_t);
+
+    virtual void set_atr_reg(const atr_reg_t atr, const boost::uint32_t value) = 0;
+
+    virtual void set_all_regs(const boost::uint32_t value) = 0;
+};
+
 #endif /* INCLUDED_LIBUHD_USRP_GPIO_CORE_200_HPP */

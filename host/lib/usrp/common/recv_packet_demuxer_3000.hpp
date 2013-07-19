@@ -92,7 +92,10 @@ namespace uhd{ namespace usrp{
                     if (new_sid != sid)
                     {
                         boost::mutex::scoped_lock l(mutex);
-                        _queues[new_sid].push(buff);
+                        if (_queues.count(new_sid) == 0) UHD_MSG(error)
+                            << "recv packet demuxer unexpected sid 0x" << std::hex << new_sid << std::dec
+                            << std::endl;
+                        else _queues[new_sid].push(buff);
                         buff.reset();
                     }
                 }
@@ -100,6 +103,15 @@ namespace uhd{ namespace usrp{
                 cond.notify_all();
             }
             return buff;
+        }
+
+        void realloc_sid(const boost::uint32_t sid)
+        {
+            boost::mutex::scoped_lock l(mutex);
+            while(not _queues[sid].empty()) //allocated and clears if already allocated
+            {
+                _queues[sid].pop();
+            }
         }
 
         typedef std::queue<transport::managed_recv_buffer::sptr> queue_type_t;
