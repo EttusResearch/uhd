@@ -158,6 +158,7 @@ rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t &args_){
         const size_t dsp = args.channels[chan_i];
         _rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
         _rx_dsps[dsp]->setup(args);
+        _recv_demuxer->realloc_sid(B100_RX_SID_BASE + dsp);
         my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
             &recv_packet_demuxer_3000::get_recv_buff, _recv_demuxer, B100_RX_SID_BASE + dsp, _1
         ), true /*flush*/);
