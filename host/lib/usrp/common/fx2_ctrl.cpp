@@ -411,8 +411,8 @@ public:
     }
 
     byte_vector_t read_eeprom(
-        boost::uint8_t addr,
-        boost::uint8_t offset,
+        boost::uint16_t addr,
+        boost::uint16_t offset,
         size_t num_bytes
     ){
         this->write_i2c(addr, byte_vector_t(1, offset));
@@ -432,7 +432,7 @@ public:
     static const bool iface_debug = false;
     static const size_t max_i2c_data_bytes = 64;
 
-    void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes)
+    void write_i2c(boost::uint16_t addr, const byte_vector_t &bytes)
     {
         UHD_ASSERT_THROW(bytes.size() < max_i2c_data_bytes);
 
@@ -442,7 +442,7 @@ public:
             uhd::runtime_error("USRP: failed i2c write");
     }
 
-    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes)
+    byte_vector_t read_i2c(boost::uint16_t addr, size_t num_bytes)
     {
       UHD_ASSERT_THROW(num_bytes < max_i2c_data_bytes);
 

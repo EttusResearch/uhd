@@ -240,7 +240,7 @@ public:
 /***********************************************************************
  * I2C
  **********************************************************************/
-    void write_i2c(boost::uint8_t addr, const byte_vector_t &buf){
+    void write_i2c(boost::uint16_t addr, const byte_vector_t &buf){
         //setup the out data
         usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
@@ -258,7 +258,7 @@ public:
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
     }
 
-    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
+    byte_vector_t read_i2c(boost::uint16_t addr, size_t num_bytes){
         //setup the out data
         usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);

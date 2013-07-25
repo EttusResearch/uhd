@@ -144,7 +144,7 @@ public:
         ::close(_node_fd);
     }
 
-    void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes){
+    void write_i2c(boost::uint16_t addr, const byte_vector_t &bytes){
         byte_vector_t rw_bytes(bytes);
 
         //setup the message
@@ -163,7 +163,7 @@ public:
         UHD_ASSERT_THROW(::ioctl(_node_fd, I2C_RDWR, &data) >= 0);
     }
 
-    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
+    byte_vector_t read_i2c(boost::uint16_t addr, size_t num_bytes){
         byte_vector_t bytes(num_bytes);
 
         //setup the message

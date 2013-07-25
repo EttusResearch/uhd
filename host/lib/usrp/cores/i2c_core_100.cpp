@@ -70,7 +70,7 @@ public:
     }
 
     void write_i2c(
-        boost::uint8_t addr,
+        boost::uint16_t addr,
         const byte_vector_t &bytes
     ){
         _iface->poke16(REG_I2C_DATA, (addr << 1) | 0); //addr and read bit (0)
@@ -93,7 +93,7 @@ public:
     }
 
     byte_vector_t read_i2c(
-        boost::uint8_t addr,
+        boost::uint16_t addr,
         size_t num_bytes
     ){
         byte_vector_t bytes;

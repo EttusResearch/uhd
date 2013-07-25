@@ -104,11 +104,11 @@ public:
     /*******************************************************************
      * I2C
      ******************************************************************/
-    void write_i2c(boost::uint8_t addr, const byte_vector_t &bytes){
+    void write_i2c(boost::uint16_t addr, const byte_vector_t &bytes){
         return _ctrl_transport->write_i2c(addr, bytes);
     }
 
-    byte_vector_t read_i2c(boost::uint8_t addr, size_t num_bytes){
+    byte_vector_t read_i2c(boost::uint16_t addr, size_t num_bytes){
         return _ctrl_transport->read_i2c(addr, num_bytes);
     }
 

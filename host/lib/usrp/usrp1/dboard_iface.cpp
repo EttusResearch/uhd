@@ -113,8 +113,8 @@ public:
     void set_gpio_debug(unit_t, int);
     boost::uint16_t read_gpio(unit_t);
 
-    void write_i2c(boost::uint8_t, const byte_vector_t &);
-    byte_vector_t read_i2c(boost::uint8_t, size_t);
+    void write_i2c(boost::uint16_t, const byte_vector_t &);
+    byte_vector_t read_i2c(boost::uint16_t, size_t);
 
     void write_spi(unit_t unit,
                    const spi_config_t &config,
@@ -386,13 +386,13 @@ boost::uint32_t usrp1_dboard_iface::read_write_spi(unit_t unit,
 /***********************************************************************
  * I2C
  **********************************************************************/
-void usrp1_dboard_iface::write_i2c(boost::uint8_t addr,
+void usrp1_dboard_iface::write_i2c(boost::uint16_t addr,
                                    const byte_vector_t &bytes)
 {
     return _iface->write_i2c(addr, bytes);
 }
 
-byte_vector_t usrp1_dboard_iface::read_i2c(boost::uint8_t addr,
+byte_vector_t usrp1_dboard_iface::read_i2c(boost::uint16_t addr,
                                            size_t num_bytes)
 {
     return _iface->read_i2c(addr, num_bytes);

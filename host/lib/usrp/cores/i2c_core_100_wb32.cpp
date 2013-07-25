@@ -72,7 +72,7 @@ public:
     }
 
     void write_i2c(
-        boost::uint8_t addr,
+        boost::uint16_t addr,
         const byte_vector_t &bytes
     ){
         _iface->poke32(REG_I2C_DATA, (addr << 1) | 0); //addr and read bit (0)
@@ -95,7 +95,7 @@ public:
     }
 
     byte_vector_t read_i2c(
-        boost::uint8_t addr,
+        boost::uint16_t addr,
         size_t num_bytes
     ){
         byte_vector_t bytes;
@@ -117,6 +117,14 @@ public:
             bytes.push_back(boost::uint8_t(_iface->peek32(REG_I2C_DATA)));
         }
         return bytes;
+    }
+
+    //override read_eeprom so we can write once, read all N bytes
+    //the default implementation calls read i2c once per byte
+    byte_vector_t read_eeprom(boost::uint16_t addr, boost::uint16_t offset, size_t num_bytes)
+    {
+        this->write_i2c(addr, byte_vector_t(1, offset));
+        return this->read_i2c(addr, num_bytes);
     }
 
 private:
