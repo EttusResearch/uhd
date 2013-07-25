@@ -24,6 +24,14 @@
 #include <boost/format.hpp>
 #include <cstring>
 
+//! compat strnlen for platforms that dont have it
+static size_t my_strnlen(const char *str, size_t max)
+{
+    const char *end = (const char *)std::memchr((const void *)str, 0, max);
+    if (end == NULL) return max;
+    return (size_t)(end - str);
+}
+
 using namespace uhd;
 
 struct ad9361_ctrl_impl : public ad9361_ctrl
@@ -141,7 +149,7 @@ struct ad9361_ctrl_impl : public ad9361_ctrl
         UHD_ASSERT_THROW(out->sequence == in->sequence);
 
         //handle errors
-        const size_t len = strnlen(out->error_msg, AD9361_TRANSACTION_MAX_ERROR_MSG);
+        const size_t len = my_strnlen(out->error_msg, AD9361_TRANSACTION_MAX_ERROR_MSG);
         const std::string error_msg(out->error_msg, len);
         if (not error_msg.empty()) throw uhd::runtime_error("ad9361 do transaction: " + error_msg);
 
