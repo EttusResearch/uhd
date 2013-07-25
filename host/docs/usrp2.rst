@@ -337,10 +337,8 @@ In order for the slave to synchronize to the master over MIMO cable,
 the following clock configuration must be set on the slave device:
 ::
 
-    uhd::clock_config_t clock_config;
-    clock_config.ref_source = uhd::clock_config_t::REF_MIMO;
-    clock_config.pps_source = uhd::clock_config_t::PPS_MIMO;
-    usrp->set_clock_config(clock_config, slave_index);
+    usrp->set_time_source("mimo", slave_index);
+    usrp->set_clock_source("mimo", slave_index);
 
 
 ------------------------------------------------------------------------
