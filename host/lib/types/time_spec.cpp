@@ -100,9 +100,12 @@ time_spec_t::time_spec_t(time_t full_secs, long tick_count, double tick_rate){
 }
 
 time_spec_t time_spec_t::from_ticks(long long ticks, double tick_rate){
-    const time_t secs_full = time_t(ticks/tick_rate);
-    const double ticks_error = ticks - (secs_full*tick_rate);
-    return time_spec_t(secs_full, ticks_error/tick_rate);
+    const long long rate_i = (long long)(tick_rate);
+    const double rate_f = tick_rate - rate_i;
+    const time_t secs_full = time_t(ticks/rate_i);
+    const long long ticks_error = ticks - (secs_full*rate_i);
+    const double ticks_frac = ticks_error - secs_full*rate_f;
+    return time_spec_t(secs_full, ticks_frac/tick_rate);
 }
 
 /***********************************************************************
@@ -113,10 +116,12 @@ long time_spec_t::get_tick_count(double tick_rate) const{
 }
 
 long long time_spec_t::to_ticks(double tick_rate) const{
-    const long long ticks_full = this->get_full_secs()*fast_llround(tick_rate);
-    const double secs_error = this->get_full_secs() - (ticks_full/tick_rate);
-    const double secs_frac = this->get_frac_secs() + secs_error;
-    return ticks_full + fast_llround(secs_frac*tick_rate);
+    const long long rate_i = (long long)(tick_rate);
+    const double rate_f = tick_rate - rate_i;
+    const long long ticks_full = this->get_full_secs()*rate_i;
+    const double ticks_error = this->get_full_secs()*rate_f;
+    const double ticks_frac = this->get_frac_secs()*tick_rate;
+    return ticks_full + ticks_error + ticks_frac;
 }
 
 double time_spec_t::get_real_secs(void) const{
