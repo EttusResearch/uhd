@@ -121,7 +121,7 @@ long long time_spec_t::to_ticks(double tick_rate) const{
     const long long ticks_full = this->get_full_secs()*rate_i;
     const double ticks_error = this->get_full_secs()*rate_f;
     const double ticks_frac = this->get_frac_secs()*tick_rate;
-    return ticks_full + ticks_error + ticks_frac;
+    return ticks_full + fast_llround(ticks_error + ticks_frac);
 }
 
 double time_spec_t::get_real_secs(void) const{
