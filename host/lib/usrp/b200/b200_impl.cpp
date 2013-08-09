@@ -293,7 +293,11 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     // Initialize the properties tree
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>("/name").set("B-Series Device");
-    _tree->create<std::string>(mb_path / "name").set("B200");
+    switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
+    {
+    case 0x0001: _tree->create<std::string>(mb_path / "name").set("B200"); break;
+    case 0x0002: _tree->create<std::string>(mb_path / "name").set("B210"); break;
+    }
     _tree->create<std::string>(mb_path / "codename").set("Sasquatch");
 
     ////////////////////////////////////////////////////////////////////
@@ -329,12 +333,20 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     {
         const fs_path codec_path = mb_path / ("rx_codecs") / "A";
-        _tree->create<std::string>(codec_path / "name").set("B200 RX dual ADC");
+        switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
+        {
+        case 0x0001: _tree->create<std::string>(codec_path / "name").set("B200 RX dual ADC"); break;
+        case 0x0002: _tree->create<std::string>(codec_path / "name").set("B210 RX dual ADC"); break;
+        }
         _tree->create<int>(codec_path / "gains"); //empty cuz gains are in frontend
     }
     {
         const fs_path codec_path = mb_path / ("tx_codecs") / "A";
-        _tree->create<std::string>(codec_path / "name").set("B200 TX dual DAC");
+        switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
+        {
+        case 0x0001: _tree->create<std::string>(codec_path / "name").set("B200 TX dual DAC"); break;
+        case 0x0002: _tree->create<std::string>(codec_path / "name").set("B210 TX dual DAC"); break;
+        }
         _tree->create<int>(codec_path / "gains"); //empty cuz gains are in frontend
     }
 
