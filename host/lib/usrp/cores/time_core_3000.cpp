@@ -24,9 +24,8 @@
 #define REG_TIME_LO       _base + 4
 #define REG_TIME_CTRL     _base + 8
 
-#define CTRL_LATCH_TIME_PPS (1 << 2)
-#define CTRL_LATCH_TIME_NOW (1 << 1)
-#define CTRL_SELECT_EXT_PPS (1 << 0)
+#define CTRL_LATCH_TIME_PPS (1 << 1)
+#define CTRL_LATCH_TIME_NOW (1 << 0)
 
 using namespace uhd;
 
@@ -41,7 +40,6 @@ struct time_core_3000_impl : time_core_3000
         _readback_bases(readback_bases)
     {
         this->set_tick_rate(1); //init to non zero
-        this->set_time_source("internal");
     }
 
     ~time_core_3000_impl(void)
@@ -102,29 +100,13 @@ struct time_core_3000_impl : time_core_3000
         const boost::uint64_t ticks = time.to_ticks(_tick_rate);
         _iface->poke32(REG_TIME_HI, boost::uint32_t(ticks >> 32));
         _iface->poke32(REG_TIME_LO, boost::uint32_t(ticks >> 0));
-        _iface->poke32(REG_TIME_CTRL, (_use_ext_pps?CTRL_SELECT_EXT_PPS:0) | CTRL_LATCH_TIME_PPS);
-    }
-
-    void set_time_source(const std::string &source)
-    {
-        if (source == "internal") _use_ext_pps = false;
-        else if (source == "external") _use_ext_pps = true;
-        else throw uhd::runtime_error("time_core_3000: set_time_source unknown source: " + source);
-    }
-
-    std::vector<std::string> get_time_sources(void)
-    {
-        std::vector<std::string> sources;
-        sources.push_back("internal");
-        sources.push_back("external");
-        return sources;
+        _iface->poke32(REG_TIME_CTRL, CTRL_LATCH_TIME_PPS);
     }
 
     wb_iface::sptr _iface;
     const size_t _base;
     const readback_bases_type _readback_bases;
     double _tick_rate;
-    bool _use_ext_pps;
 };
 
 time_core_3000::sptr time_core_3000::make(

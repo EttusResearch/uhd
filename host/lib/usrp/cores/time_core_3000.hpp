@@ -23,8 +23,6 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include "wb_iface.hpp"
-#include <string>
-#include <vector>
 
 class time_core_3000 : boost::noncopyable
 {
@@ -54,10 +52,6 @@ public:
     virtual void set_time_now(const uhd::time_spec_t &time) = 0;
 
     virtual void set_time_next_pps(const uhd::time_spec_t &time) = 0;
-
-    virtual void set_time_source(const std::string &source) = 0;
-
-    virtual std::vector<std::string> get_time_sources(void) = 0;
 
 };
 
