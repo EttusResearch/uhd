@@ -188,12 +188,27 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ctrl_xport_args["send_frame_size"] = "512";
     ctrl_xport_args["num_send_frames"] = "16";
 
-    _ctrl_transport = usb_zero_copy::make(
-        handle,
-        4, 8, //interface, endpoint
-        3, 4, //interface, endpoint
-        ctrl_xport_args
-    );
+    //try to open ctrl transport
+    //this could fail with libusb_submit_transfer under some conditions
+    try{
+        _ctrl_transport = usb_zero_copy::make(
+            handle,
+            4, 8, //interface, endpoint
+            3, 4, //interface, endpoint
+            ctrl_xport_args
+        );
+    }
+    //try reset once in the case of failure
+    catch(const uhd::exception &ex){
+        if (initialization_count > 1) throw;
+        UHD_MSG(warning) <<
+            "The control endpoint was left in a bad state.\n"
+            "Attempting endpoint re-enumeration...\n" << ex.what() << std::endl;
+        _fifo_ctrl.reset();
+        _ctrl_transport.reset();
+        _fx2_ctrl->usrp_fx2_reset();
+        goto b100_impl_constructor_begin;
+    }
     this->enable_gpif(true);
 
     ////////////////////////////////////////////////////////////////////
