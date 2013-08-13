@@ -190,12 +190,19 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     // Load the FPGA image, then reset GPIF
     ////////////////////////////////////////////////////////////////////
     std::string default_file_name;
+    std::string product_name = "B200?";
     if (not mb_eeprom["product"].empty())
     {
         switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
         {
-        case 0x0001: default_file_name = B200_FPGA_FILE_NAME; break;
-        case 0x0002: default_file_name = B210_FPGA_FILE_NAME; break;
+        case 0x0001:
+            product_name = "B200";
+            default_file_name = B200_FPGA_FILE_NAME;
+            break;
+        case 0x0002:
+            product_name = "B210";
+            default_file_name = B210_FPGA_FILE_NAME;
+            break;
         default: throw uhd::runtime_error("b200 unknown product code: " + mb_eeprom["product"]);
         }
     }
@@ -293,7 +300,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     // Initialize the properties tree
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>("/name").set("B-Series Device");
-    _tree->create<std::string>(mb_path / "name").set("B200");
+    _tree->create<std::string>(mb_path / "name").set(product_name);
     _tree->create<std::string>(mb_path / "codename").set("Sasquatch");
 
     ////////////////////////////////////////////////////////////////////
@@ -329,12 +336,12 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     {
         const fs_path codec_path = mb_path / ("rx_codecs") / "A";
-        _tree->create<std::string>(codec_path / "name").set("B200 RX dual ADC");
+        _tree->create<std::string>(codec_path / "name").set(product_name+" RX dual ADC");
         _tree->create<int>(codec_path / "gains"); //empty cuz gains are in frontend
     }
     {
         const fs_path codec_path = mb_path / ("tx_codecs") / "A";
-        _tree->create<std::string>(codec_path / "name").set("B200 TX dual DAC");
+        _tree->create<std::string>(codec_path / "name").set(product_name+" TX dual DAC");
         _tree->create<int>(codec_path / "gains"); //empty cuz gains are in frontend
     }
 
