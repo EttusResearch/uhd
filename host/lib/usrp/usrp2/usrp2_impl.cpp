@@ -103,7 +103,18 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
     usrp2_ctrl_data_t ctrl_data_out = usrp2_ctrl_data_t();
     ctrl_data_out.proto_ver = uhd::htonx<boost::uint32_t>(USRP2_FW_COMPAT_NUM);
     ctrl_data_out.id = uhd::htonx<boost::uint32_t>(USRP2_CTRL_ID_WAZZUP_BRO);
-    udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
+    try
+    {
+        udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
+    }
+    catch(const std::exception &ex)
+    {
+        UHD_MSG(error) << "USRP2 Network discovery error " << ex.what() << std::endl;
+    }
+    catch(...)
+    {
+        UHD_MSG(error) << "USRP2 Network discovery unknown error " << std::endl;
+    }
 
     //loop and recieve until the timeout
     boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
