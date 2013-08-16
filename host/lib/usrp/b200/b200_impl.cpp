@@ -196,9 +196,11 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
         switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
         {
         case 0x0001:
+        case 0x7737:
             product_name = "B200";
             default_file_name = B200_FPGA_FILE_NAME;
             break;
+        case 0x7738:
         case 0x0002:
             product_name = "B210";
             default_file_name = B210_FPGA_FILE_NAME;
