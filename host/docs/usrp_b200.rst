@@ -53,7 +53,7 @@ Changing the Master Clock Rate
 ------------------------------------------------------------------------
 The master clock rate feeds the RF frontends and the DSP chains.
 Users may select non-default clock rates to acheive integer decimations or interpolations in the DSP chains.
-The default master clock rate defaults to 32 MHz, but can be set to any rate between 220 kHz and 61.44 MHz.
+The default master clock rate defaults to 32 MHz, but can be set to any rate between 5 MHz and 61.44 MHz.
 
 The user can set the master clock rate through the usrp API call set_master_clock_rate(),
 or the clock rate can be set through the device arguments, which many applications take:

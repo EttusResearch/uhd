@@ -99,7 +99,8 @@ public:
     //! get the clock rate range for the frontend
     static uhd::meta_range_t get_clock_rate_range(void)
     {
-        return uhd::meta_range_t(220e3, 61.44e6);
+        //return uhd::meta_range_t(220e3, 61.44e6);
+        return uhd::meta_range_t(5e6, 61.44e6); //5 MHz DCM low end
     }
 
     //! set the filter bandwidth for the frontend
