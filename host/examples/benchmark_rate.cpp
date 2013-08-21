@@ -26,8 +26,6 @@
 #include <complex>
 #include <cstdlib>
 
-#define myllround(x) ((long long)((x) + 0.5))
-
 namespace po = boost::program_options;
 
 /***********************************************************************
@@ -74,7 +72,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_c
         case uhd::rx_metadata_t::ERROR_CODE_NONE:
             if (had_an_overflow){
                 had_an_overflow = false;
-                num_dropped_samps += myllround((md.time_spec - last_time).get_real_secs()*rate);
+                num_dropped_samps += (md.time_spec - last_time).to_ticks(rate);
             }
             break;
 
