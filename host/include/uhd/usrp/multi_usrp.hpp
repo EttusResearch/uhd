@@ -441,6 +441,10 @@ public:
 
     /*!
      * Get the RX center frequency range.
+     * This range includes the overall tunable range of the RX chain,
+     * including frontend chain and digital down conversion chain.
+     * This tunable limit does not include the baseband bandwidth;
+     * users should assume that the actual range is +/- samp_rate/2.
      * \param chan the channel index 0 to N-1
      * \return a frequency range object
      */
@@ -694,6 +698,10 @@ public:
 
     /*!
      * Get the TX center frequency range.
+     * This range includes the overall tunable range of the TX chain,
+     * including frontend chain and digital up conversion chain.
+     * This tunable limit does not include the baseband bandwidth;
+     * users should assume that the actual range is +/- samp_rate/2.
      * \param chan the channel index 0 to N-1
      * \return a frequency range object
      */
