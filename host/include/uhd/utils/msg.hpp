@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <ostream>
+#include <iomanip>
 #include <string>
 
 /*!
@@ -37,6 +38,10 @@
 //! Helpful debug tool to print a variable
 #define UHD_VAR(var) \
     UHD_MSG(status) << #var << " = " << var << std::endl;
+
+//! Helpful debug tool to print a variable in hex
+#define UHD_HEX(var) \
+    UHD_MSG(status) << #var << " = 0x" << std::hex << std::setfill('0') << std::setw(8) << var << std::dec << std::endl;
 
 namespace uhd{ namespace msg{
 
