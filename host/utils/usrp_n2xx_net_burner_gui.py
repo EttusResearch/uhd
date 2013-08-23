@@ -213,7 +213,7 @@ class USRPN2XXNetBurnerApp(tkinter.Frame):
                     self._pbar.set(progress)
                     self.update()
                 burner.set_callbacks(progress_cb=progress_cb, status_cb=status_cb)
-                burner.burn_fw(fw=fw_img, fpga=fpga_img, reset=False, safe=False)
+                burner.burn_fw(fw=fw_img, fpga=fpga_img, reset=False, safe=False, check_rev=not options.dont_check_rev)
 
             if tkinter.messagebox.askyesno("Burn was successful!", "Reset the device?"):
                 burner.reset_usrp()
