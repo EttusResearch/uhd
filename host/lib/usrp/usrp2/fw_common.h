@@ -32,7 +32,7 @@ extern "C" {
 //fpga and firmware compatibility numbers
 #define USRP2_FPGA_COMPAT_NUM 10
 #define USRP2_FW_COMPAT_NUM 12
-#define USRP2_FW_VER_MINOR 3
+#define USRP2_FW_VER_MINOR 4
 
 //used to differentiate control packets over data port
 #define USRP2_INVALID_VRT_HEADER 0

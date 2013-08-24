@@ -300,7 +300,7 @@ typedef struct {
 
 // --- VITA RX CTRL regs ---
 typedef struct {
-  volatile uint32_t	_pad[3];
+  volatile uint32_t	_pad[8];
   volatile uint32_t	clear;
 } sr_rx_ctrl_t;
 
