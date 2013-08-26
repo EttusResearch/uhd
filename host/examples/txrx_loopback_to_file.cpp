@@ -25,6 +25,8 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <fstream>
 #include <complex>
@@ -130,11 +132,13 @@ template<typename samp_type> void recv_to_file(
     const std::string &file,
     size_t samps_per_buff,
     int num_requested_samples,
-    float settling_time
+    float settling_time,
+    std::vector<size_t> rx_channel_nums
 ){
     int num_total_samps = 0;
     //create a receive streamer
     uhd::stream_args_t stream_args(cpu_format,wire_format);
+    stream_args.channels = rx_channel_nums;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     uhd::rx_metadata_t md;
@@ -196,12 +200,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //transmit variables to be set by po
-    std::string tx_args, wave_type, tx_ant, tx_subdev, ref, otw;
+    std::string tx_args, wave_type, tx_ant, tx_subdev, ref, otw, tx_channels;
     double tx_rate, tx_freq, tx_gain, wave_freq, tx_bw;
     float ampl;
 
     //receive variables to be set by po
-    std::string rx_args, file, type, rx_ant, rx_subdev;
+    std::string rx_args, file, type, rx_ant, rx_subdev, rx_channels;
     size_t total_num_samps, spb;
     double rx_rate, rx_freq, rx_gain, rx_bw;
     float settling;
@@ -234,6 +238,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "clock reference (internal, external, mimo)")
         ("otw", po::value<std::string>(&otw)->default_value("sc16"), "specify the over-the-wire sample mode")
+        ("tx-channels", po::value<std::string>(&tx_channels)->default_value("0"), "which TX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("rx-channels", po::value<std::string>(&rx_channels)->default_value("0"), "which RX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -252,6 +258,28 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl;
     std::cout << boost::format("Creating the receive usrp device with: %s...") % rx_args << std::endl;
     uhd::usrp::multi_usrp::sptr rx_usrp = uhd::usrp::multi_usrp::make(rx_args);
+
+    //detect which channels to use
+    std::vector<std::string> tx_channel_strings;
+    std::vector<size_t> tx_channel_nums;
+    boost::split(tx_channel_strings, tx_channels, boost::is_any_of("\"',"));
+    for(size_t ch = 0; ch < tx_channel_strings.size(); ch++){
+        size_t chan = boost::lexical_cast<int>(tx_channel_strings[ch]);
+        if(chan >= tx_usrp->get_tx_num_channels()){
+            throw std::runtime_error("Invalid TX channel(s) specified.");
+        }
+        else tx_channel_nums.push_back(boost::lexical_cast<int>(tx_channel_strings[ch]));
+    }
+    std::vector<std::string> rx_channel_strings;
+    std::vector<size_t> rx_channel_nums;
+    boost::split(rx_channel_strings, rx_channels, boost::is_any_of("\"',"));
+    for(size_t ch = 0; ch < rx_channel_strings.size(); ch++){
+        size_t chan = boost::lexical_cast<int>(rx_channel_strings[ch]);
+        if(chan >= rx_usrp->get_rx_num_channels()){
+            throw std::runtime_error("Invalid RX channel(s) specified.");
+        }
+        else rx_channel_nums.push_back(boost::lexical_cast<int>(rx_channel_strings[ch]));
+    }
 
     //Lock mboard clocks
     tx_usrp->set_clock_source(ref);
@@ -288,27 +316,27 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
 
-    for(size_t chan = 0; chan < tx_usrp->get_tx_num_channels(); chan++) {
+    for(size_t ch = 0; ch < tx_channel_nums.size(); ch++) {
         std::cout << boost::format("Setting TX Freq: %f MHz...") % (tx_freq/1e6) << std::endl;
-        tx_usrp->set_tx_freq(tx_freq, chan);
-        std::cout << boost::format("Actual TX Freq: %f MHz...") % (tx_usrp->get_tx_freq(chan)/1e6) << std::endl << std::endl;
+        tx_usrp->set_tx_freq(tx_freq, tx_channel_nums[ch]);
+        std::cout << boost::format("Actual TX Freq: %f MHz...") % (tx_usrp->get_tx_freq(tx_channel_nums[ch])/1e6) << std::endl << std::endl;
 
         //set the rf gain
         if (vm.count("tx-gain")){
             std::cout << boost::format("Setting TX Gain: %f dB...") % tx_gain << std::endl;
-            tx_usrp->set_tx_gain(tx_gain, chan);
-            std::cout << boost::format("Actual TX Gain: %f dB...") % tx_usrp->get_tx_gain(chan) << std::endl << std::endl;
+            tx_usrp->set_tx_gain(tx_gain, tx_channel_nums[ch]);
+            std::cout << boost::format("Actual TX Gain: %f dB...") % tx_usrp->get_tx_gain(tx_channel_nums[ch]) << std::endl << std::endl;
         }
 
         //set the IF filter bandwidth
         if (vm.count("tx-bw")){
             std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % tx_bw << std::endl;
-            tx_usrp->set_tx_bandwidth(tx_bw, chan);
-            std::cout << boost::format("Actual TX Bandwidth: %f MHz...") % tx_usrp->get_tx_bandwidth(chan) << std::endl << std::endl;
+            tx_usrp->set_tx_bandwidth(tx_bw, tx_channel_nums[ch]);
+            std::cout << boost::format("Actual TX Bandwidth: %f MHz...") % tx_usrp->get_tx_bandwidth(tx_channel_nums[ch]) << std::endl << std::endl;
         }
 
         //set the antenna
-        if (vm.count("tx-ant")) tx_usrp->set_tx_antenna(tx_ant, chan);
+        if (vm.count("tx-ant")) tx_usrp->set_tx_antenna(tx_ant, tx_channel_nums[ch]);
     }
 
     //set the receive center frequency
@@ -358,14 +386,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //create a transmit streamer
     //linearly map channels (index0 = channel0, index1 = channel1, ...)
     uhd::stream_args_t stream_args("fc32", otw);
-    for (size_t chan = 0; chan < tx_usrp->get_tx_num_channels(); chan++)
-        stream_args.channels.push_back(chan); //linear mapping
+    stream_args.channels = tx_channel_nums;
     uhd::tx_streamer::sptr tx_stream = tx_usrp->get_tx_stream(stream_args);
 
     //allocate a buffer which we re-use for each channel
     if (spb == 0) spb = tx_stream->get_max_num_samps()*10;
     std::vector<std::complex<float> > buff(spb);
-    int num_channels = tx_usrp->get_tx_num_channels();
+    int num_channels = tx_channel_nums.size();
 
     //setup the metadata flags
     uhd::tx_metadata_t md;
@@ -427,9 +454,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     transmit_thread.create_thread(boost::bind(&transmit_worker, buff, wave_table, tx_stream, md, step, index, num_channels));
 
     //recv to file
-    if (type == "double") recv_to_file<std::complex<double> >(rx_usrp, "fc64", otw, file, spb, total_num_samps, settling);
-    else if (type == "float") recv_to_file<std::complex<float> >(rx_usrp, "fc32", otw, file, spb, total_num_samps, settling);
-    else if (type == "short") recv_to_file<std::complex<short> >(rx_usrp, "sc16", otw, file, spb, total_num_samps, settling);
+    if (type == "double") recv_to_file<std::complex<double> >(rx_usrp, "fc64", otw, file, spb, total_num_samps, settling, rx_channel_nums);
+    else if (type == "float") recv_to_file<std::complex<float> >(rx_usrp, "fc32", otw, file, spb, total_num_samps, settling, rx_channel_nums);
+    else if (type == "short") recv_to_file<std::complex<short> >(rx_usrp, "sc16", otw, file, spb, total_num_samps, settling, rx_channel_nums);
     else {
         //clean up transmit worker
         stop_signal_called = true;

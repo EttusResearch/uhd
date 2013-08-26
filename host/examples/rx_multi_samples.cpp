@@ -21,6 +21,8 @@
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <complex>
 
@@ -30,7 +32,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, sync, subdev;
+    std::string args, sync, subdev, channel_list;
     double seconds_in_future;
     size_t total_num_samps;
     double rate;
@@ -46,6 +48,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("sync", po::value<std::string>(&sync)->default_value("now"), "synchronization method: now, pps, mimo")
         ("subdev", po::value<std::string>(&subdev), "subdev spec (homogeneous across motherboards)")
         ("dilv", "specify to disable inner-loop verbose")
+        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -110,11 +113,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         boost::this_thread::sleep(boost::posix_time::milliseconds(100));
     }
 
+    //detect which channels to use
+    std::vector<std::string> channel_strings;
+    std::vector<size_t> channel_nums;
+    boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
+    for(size_t ch = 0; ch < channel_strings.size(); ch++){
+        size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+        if(chan >= usrp->get_rx_num_channels()){
+            throw std::runtime_error("Invalid channel(s) specified.");
+        }
+        else channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+    }
+
     //create a receive streamer
     //linearly map channels (index0 = channel0, index1 = channel1, ...)
     uhd::stream_args_t stream_args("fc32"); //complex floats
-    for (size_t chan = 0; chan < usrp->get_rx_num_channels(); chan++)
-        stream_args.channels.push_back(chan); //linear mapping
+    stream_args.channels = channel_nums;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     //setup streaming

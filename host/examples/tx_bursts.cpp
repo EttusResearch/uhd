@@ -21,6 +21,8 @@
 #include <boost/program_options.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <csignal>
 #include <iostream>
 #include <complex>
@@ -34,7 +36,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args;
+    std::string args, channel_list;
     double seconds_in_future;
     size_t total_num_samps;
     double rate;
@@ -57,6 +59,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("freq", po::value<double>(&freq)->default_value(0), "center frequency")
         ("gain", po::value<double>(&gain)->default_value(0), "gain")
         ("dilv", "specify to disable inner-loop verbose")
+        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -77,17 +80,29 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
+    //detect which channels to use
+    std::vector<std::string> channel_strings;
+    std::vector<size_t> channel_nums;
+    boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
+    for(size_t ch = 0; ch < channel_strings.size(); ch++){
+        size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+        if(chan >= usrp->get_tx_num_channels()){
+            throw std::runtime_error("Invalid channel(s) specified.");
+        }
+        else channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+    }
+
     //set the tx sample rate
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate/1e6) << std::endl;
     usrp->set_tx_rate(rate);
     std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
 
     std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq/1e6) << std::endl;
-    for(size_t i=0; i < usrp->get_tx_num_channels(); i++) usrp->set_tx_freq(freq, i);
+    for(size_t i=0; i < channel_nums.size(); i++) usrp->set_tx_freq(freq, channel_nums[i]);
     std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
 
     std::cout << boost::format("Setting TX Gain: %f...") % (gain) << std::endl;
-    for(size_t i=0; i < usrp->get_tx_num_channels(); i++) usrp->set_tx_gain(gain, i);
+    for(size_t i=0; i < channel_nums.size(); i++) usrp->set_tx_gain(gain, channel_nums[i]);
     std::cout << boost::format("Actual TX Gain: %f...") % (usrp->get_tx_gain()) << std::endl << std::endl;
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
@@ -95,13 +110,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //create a transmit streamer
     uhd::stream_args_t stream_args("fc32"); //complex floats
+    stream_args.channels = channel_nums;
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //allocate buffer with data to send
     const size_t spb = tx_stream->get_max_num_samps();
 
     std::vector<std::complex<float> > buff(spb, std::complex<float>(ampl, ampl));
-    std::vector<std::complex<float> *> buffs(usrp->get_tx_num_channels(), &buff.front());
+    std::vector<std::complex<float> *> buffs(channel_nums.size(), &buff.front());
 
     std::signal(SIGINT, &sig_int_handler);
     if(repeat) std::cout << "Press Ctrl + C to quit..." << std::endl;

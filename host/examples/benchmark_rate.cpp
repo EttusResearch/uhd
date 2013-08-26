@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <complex>
 #include <cstdlib>
@@ -167,6 +169,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string rx_otw, tx_otw;
     std::string rx_cpu, tx_cpu;
     std::string mode;
+    std::string channel_list;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -181,6 +184,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rx_cpu", po::value<std::string>(&rx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for RX")
         ("tx_cpu", po::value<std::string>(&tx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for TX")
         ("mode", po::value<std::string>(&mode)->default_value("none"), "multi-channel sync mode option: none, mimo")
+        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -216,13 +220,24 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     boost::thread_group thread_group;
 
+    //detect which channels to use
+    std::vector<std::string> channel_strings;
+    std::vector<size_t> channel_nums;
+    boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
+    for(size_t ch = 0; ch < channel_strings.size(); ch++){
+        size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+        if(chan >= usrp->get_tx_num_channels() or chan >= usrp->get_tx_num_channels()){
+            throw std::runtime_error("Invalid channel(s) specified.");
+        }
+        else channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+    }
+
     //spawn the receive test thread
     if (vm.count("rx_rate")){
         usrp->set_rx_rate(rx_rate);
         //create a receive streamer
         uhd::stream_args_t stream_args(rx_cpu, rx_otw);
-        for (size_t ch = 0; ch < usrp->get_rx_num_channels(); ch++) //linear channel mapping
-            stream_args.channels.push_back(ch);
+        stream_args.channels = channel_nums;
         uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
         thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_stream));
     }
@@ -232,8 +247,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         usrp->set_tx_rate(tx_rate);
         //create a transmit streamer
         uhd::stream_args_t stream_args(tx_cpu, tx_otw);
-        for (size_t ch = 0; ch < usrp->get_tx_num_channels(); ch++) //linear channel mapping
-            stream_args.channels.push_back(ch);
+        stream_args.channels = channel_nums;
         uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
         thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_stream));
         thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, tx_stream));
