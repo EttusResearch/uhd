@@ -1,5 +1,5 @@
 
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,13 +75,13 @@ module dspengine_8to16
    wire [15:0] 	      data_in_lenx2 = {data_in_len[14:0], 1'b0} - is_odd;
 
    reg [7:0] 	      i8_0, q8_0;
-   wire [7:0] 	      i8_1 = access_dat_i[31:24];
-   wire [7:0] 	      q8_1 = access_dat_i[23:16];
+   wire [7:0] 	      i8_1 = access_dat_i[15:8];
+   wire [7:0] 	      q8_1 = access_dat_i[7:0];
    reg 		      skip;
    
 
    always @(posedge clk)
-     { i8_0, q8_0 } <= access_dat_i[15:0];
+     { i8_0, q8_0 } <= access_dat_i[31:16];
    
    always @(posedge clk)
      if(reset | clear)
