@@ -106,7 +106,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //allocate buffer to receive with samples
     std::vector<std::complex<float> > buff(stream_cmd.num_samps);
 
-    const size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md);
+    const size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, 1.0);
     if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
         throw std::runtime_error(str(boost::format(
             "Unexpected error code 0x%x"
