@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,9 +57,9 @@ DECLARE_CONVERTER(sc16_item32_le, 1, sc16, 1, PRIORITY_LIBORC){
 
 DECLARE_CONVERTER(fc32, 1, sc8_item32_be, 1, PRIORITY_LIBORC){
     _convert_fc32_1_to_sc8_1_nswap_orc(outputs[0], inputs[0], scale_factor, nsamps);
-    _convert_swap_byte_pairs_orc(outputs[0], outputs[0], (nsamps + 1)/2);
 }
 
 DECLARE_CONVERTER(fc32, 1, sc8_item32_le, 1, PRIORITY_LIBORC){
     _convert_fc32_1_to_sc8_1_nswap_orc(outputs[0], inputs[0], scale_factor, nsamps);
+    _convert_swap_byte_pairs_orc(outputs[0], outputs[0], (nsamps + 1)/2);
 }

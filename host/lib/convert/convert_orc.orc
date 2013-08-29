@@ -75,6 +75,5 @@ swapl dst, src
 .floatparam 4 scalar
 x2 mulf tmp, src, scalar
 x2 convfl tmp, tmp
-swaplq tmp, tmp
 x2 convlw tmp2, tmp
 x2 convwb dst, tmp2

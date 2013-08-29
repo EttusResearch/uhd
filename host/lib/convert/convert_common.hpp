@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -150,10 +150,10 @@ UHD_INLINE void item32_sc16_to_xx(
 template <typename T> UHD_INLINE item32_t xx_to_item32_sc8_x1(
     const std::complex<T> &in0, const std::complex<T> &in1, const double scale_factor
 ){
-    boost::uint8_t real0 = boost::int8_t(in0.real()*float(scale_factor));
-    boost::uint8_t imag0 = boost::int8_t(in0.imag()*float(scale_factor));
-    boost::uint8_t real1 = boost::int8_t(in1.real()*float(scale_factor));
-    boost::uint8_t imag1 = boost::int8_t(in1.imag()*float(scale_factor));
+    boost::uint8_t real1 = boost::int8_t(in0.real()*float(scale_factor));
+    boost::uint8_t imag1 = boost::int8_t(in0.imag()*float(scale_factor));
+    boost::uint8_t real0 = boost::int8_t(in1.real()*float(scale_factor));
+    boost::uint8_t imag0 = boost::int8_t(in1.imag()*float(scale_factor));
     return
         (item32_t(real0) << 8) | (item32_t(imag0) << 0) |
         (item32_t(real1) << 24) | (item32_t(imag1) << 16)
@@ -163,10 +163,10 @@ template <typename T> UHD_INLINE item32_t xx_to_item32_sc8_x1(
 template <> UHD_INLINE item32_t xx_to_item32_sc8_x1(
     const sc16_t &in0, const sc16_t &in1, const double
 ){
-    boost::uint8_t real0 = boost::int8_t(in0.real());
-    boost::uint8_t imag0 = boost::int8_t(in0.imag());
-    boost::uint8_t real1 = boost::int8_t(in1.real());
-    boost::uint8_t imag1 = boost::int8_t(in1.imag());
+    boost::uint8_t real1 = boost::int8_t(in0.real());
+    boost::uint8_t imag1 = boost::int8_t(in0.imag());
+    boost::uint8_t real0 = boost::int8_t(in1.real());
+    boost::uint8_t imag0 = boost::int8_t(in1.imag());
     return
         (item32_t(real0) << 8) | (item32_t(imag0) << 0) |
         (item32_t(real1) << 24) | (item32_t(imag1) << 16)
@@ -176,10 +176,10 @@ template <> UHD_INLINE item32_t xx_to_item32_sc8_x1(
 template <> UHD_INLINE item32_t xx_to_item32_sc8_x1(
     const sc8_t &in0, const sc8_t &in1, const double
 ){
-    boost::uint8_t real0 = boost::int8_t(in0.real());
-    boost::uint8_t imag0 = boost::int8_t(in0.imag());
-    boost::uint8_t real1 = boost::int8_t(in1.real());
-    boost::uint8_t imag1 = boost::int8_t(in1.imag());
+    boost::uint8_t real1 = boost::int8_t(in0.real());
+    boost::uint8_t imag1 = boost::int8_t(in0.imag());
+    boost::uint8_t real0 = boost::int8_t(in1.real());
+    boost::uint8_t imag0 = boost::int8_t(in1.imag());
     return
         (item32_t(real0) << 8) | (item32_t(imag0) << 0) |
         (item32_t(real1) << 24) | (item32_t(imag1) << 16)
@@ -211,11 +211,11 @@ UHD_INLINE void xx_to_item32_sc8(
 template <typename T> UHD_INLINE void item32_sc8_x1_to_xx(
     const item32_t item, std::complex<T> &out0, std::complex<T> &out1, const double scale_factor
 ){
-    out0 = std::complex<T>(
+    out1 = std::complex<T>(
         T(boost::int8_t(item >> 8)*float(scale_factor)),
         T(boost::int8_t(item >> 0)*float(scale_factor))
     );
-    out1 = std::complex<T>(
+    out0 = std::complex<T>(
         T(boost::int8_t(item >> 24)*float(scale_factor)),
         T(boost::int8_t(item >> 16)*float(scale_factor))
     );
@@ -224,11 +224,11 @@ template <typename T> UHD_INLINE void item32_sc8_x1_to_xx(
 template <> UHD_INLINE void item32_sc8_x1_to_xx(
     const item32_t item, sc16_t &out0, sc16_t &out1, const double
 ){
-    out0 = sc16_t(
+    out1 = sc16_t(
         boost::int16_t(boost::int8_t(item >> 8)),
         boost::int16_t(boost::int8_t(item >> 0))
     );
-    out1 = sc16_t(
+    out0 = sc16_t(
         boost::int16_t(boost::int8_t(item >> 24)),
         boost::int16_t(boost::int8_t(item >> 16))
     );
@@ -237,11 +237,11 @@ template <> UHD_INLINE void item32_sc8_x1_to_xx(
 template <> UHD_INLINE void item32_sc8_x1_to_xx(
     const item32_t item, sc8_t &out0, sc8_t &out1, const double
 ){
-    out0 = sc8_t(
+    out1 = sc8_t(
         boost::int8_t(boost::int8_t(item >> 8)),
         boost::int8_t(boost::int8_t(item >> 0))
     );
-    out1 = sc8_t(
+    out0 = sc8_t(
         boost::int8_t(boost::int8_t(item >> 24)),
         boost::int8_t(boost::int8_t(item >> 16))
     );

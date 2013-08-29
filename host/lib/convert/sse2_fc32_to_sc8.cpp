@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ DECLARE_CONVERTER(fc32, 1, sc8_item32_be, 1, PRIORITY_SIMD){
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
     const __m128 scalar = _mm_set_ps1(float(scale_factor));
-    const int shuf = _MM_SHUFFLE(1, 0, 3, 2);
+    const int shuf = _MM_SHUFFLE(3, 2, 1, 0);
 
     #define convert_fc32_1_to_sc8_item32_1_bswap_guts(_al_)             \
     for (size_t j = 0; i+7 < nsamps; i+=8, j+=4){                       \
@@ -83,7 +83,7 @@ DECLARE_CONVERTER(fc32, 1, sc8_item32_le, 1, PRIORITY_SIMD){
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
     const __m128 scalar = _mm_set_ps1(float(scale_factor));
-    const int shuf = _MM_SHUFFLE(2, 3, 0, 1);
+    const int shuf = _MM_SHUFFLE(0, 1, 2, 3);
 
     #define convert_fc32_1_to_sc8_item32_1_nswap_guts(_al_)             \
     for (size_t j = 0; i+7 < nsamps; i+=8, j+=4){                       \
