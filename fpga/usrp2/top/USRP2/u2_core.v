@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -456,7 +456,7 @@ module u2_core
    // Buffer Pool Status -- Slave #5   
    
    //compatibility number -> increment when the fpga has been sufficiently altered
-   localparam compat_num = {16'd10, 16'd0}; //major, minor
+   localparam compat_num = {16'd10, 16'd1}; //major, minor
 
    wire [31:0] irq_readback = {19'b0, spi_ready, clk_status, serdes_link_up, 10'b0};
 

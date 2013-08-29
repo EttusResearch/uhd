@@ -1,5 +1,5 @@
 
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -181,8 +181,8 @@ module dspengine_16to8
 
    assign access_dat_o = (dsp_state == DSP_WRITE_HEADER) ? { 4'h1, new_header } :
 			 (dsp_state == DSP_WRITE_TRAILER) ? { 4'h2, new_trailer } :
-			 (last_o&~even_o) ? {4'h0, 16'd0, i8, q8 } : 
-			 {4'h0, i8, q8, i8_reg, q8_reg };
+			 (last_o&~even_o) ? {4'h0, i8, q8, 16'd0 } :
+			 {4'h0, i8_reg, q8_reg, i8, q8 };
    
    assign access_adr = (stb_write|(dsp_state == DSP_WRITE_HEADER)|(dsp_state == DSP_WRITE_TRAILER)) ? write_adr : read_adr;
       
