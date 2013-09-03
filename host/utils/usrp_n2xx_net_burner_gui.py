@@ -203,20 +203,30 @@ class USRPN2XXNetBurnerApp(tkinter.Frame):
             #make a new burner object and attempt the burner operation
             burner = usrp_n2xx_net_burner.burner_socket(addr=addr,quiet=False)
 
-            for (image_type, fw_img, fpga_img) in (('FPGA', '', fpga), ('Firmware', fw, '')):
-                #setup callbacks that update the gui
-                def status_cb(status):
-                    self._pbar.set(0.0) #status change, reset the progress
-                    self._status.set("%s %s "%(status.title(), image_type))
-                    self.update()
-                def progress_cb(progress):
-                    self._pbar.set(progress)
-                    self.update()
-                burner.set_callbacks(progress_cb=progress_cb, status_cb=status_cb)
-                burner.burn_fw(fw=fw_img, fpga=fpga_img, reset=False, safe=False, check_rev=not options.dont_check_rev)
+            #setup callbacks that update the gui
+            def status_cb(status):
+                self._pbar.set(0.0) #status change, reset the progress
+                self._status.set("%s %s "%(status.title(), image_type))
+                self.update()
+            def progress_cb(progress):
+                self._pbar.set(progress)
+                self.update()
 
-            if tkinter.messagebox.askyesno("Burn was successful!", "Reset the device?"):
-                burner.reset_usrp()
+            if options.overwrite_safe:
+                if tkinter.messagebox.askyesno("Overwrite safe images?", "Overwrite safe images! This is ALMOST ALWAYS a terrible idea."):
+                    for (image_type, fw_img, fpga_img) in (('FPGA', '', fpga), ('Firmware', fw, '')):
+                        burner.set_callbacks(progress_cb=progress_cb, status_cb=status_cb)
+                        burner.burn_fw(fw=fw_img, fpga=fpga_img, reset=False, safe=True, check_rev=not options.dont_check_rev)
+
+                    if tkinter.messagebox.askyesno("Burn was successful!", "Reset the device?"):
+                        burner.reset_usrp()
+            else:
+                for (image_type, fw_img, fpga_img) in (('FPGA', '', fpga), ('Firmware', fw, '')):
+                    burner.set_callbacks(progress_cb=progress_cb, status_cb=status_cb)
+                    burner.burn_fw(fw=fw_img, fpga=fpga_img, reset=False, safe=False, check_rev=not options.dont_check_rev)
+
+                if tkinter.messagebox.askyesno("Burn was successful!", "Reset the device?"):
+                    burner.reset_usrp()
 
         except Exception as e:
             tkinter.messagebox.showerror('Verbose:', 'Error: %s'%str(e))
