@@ -214,11 +214,7 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
     stream_args_t args = args_;
 
     //setup defaults for unspecified values
-    if (not args.otw_format.empty() and args.otw_format != "sc16")
-    {
-        throw uhd::value_error("b200_impl::get_rx_stream only supports otw_format sc16");
-    }
-    args.otw_format = "sc16";
+    if (args.otw_format.empty()) args.otw_format = "sc16";
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer;
@@ -226,6 +222,10 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
     {
         const size_t chan = args.channels[stream_i];
         radio_perifs_t &perif = _radio_perifs[chan];
+        if (args.otw_format == "sc16") perif.ctrl->poke32(TOREG(SR_RX_FMT), 0);
+        if (args.otw_format == "sc12") perif.ctrl->poke32(TOREG(SR_RX_FMT), 1);
+        if (args.otw_format == "fc32") perif.ctrl->poke32(TOREG(SR_RX_FMT), 2);
+        if (args.otw_format == "sc8") perif.ctrl->poke32(TOREG(SR_RX_FMT), 3);
         const boost::uint32_t sid = chan?B200_RX_DATA1_SID:B200_RX_DATA0_SID;
 
         //calculate packet size
@@ -238,7 +238,7 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
         const size_t bpp = _data_transport->get_recv_frame_size() - hdr_size;
         const size_t bpi = convert::get_bytes_per_item(args.otw_format);
         size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi));
-        spp = std::min<size_t>(2041, spp); //magic maximum for framing at full rate
+        spp = std::min<size_t>(2000, spp); //magic maximum for framing at full rate
 
         //make the new streamer given the samples per packet
         if (not my_streamer) my_streamer = boost::make_shared<sph::recv_packet_streamer>(spp);
@@ -316,11 +316,7 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t &args_)
     stream_args_t args = args_;
 
     //setup defaults for unspecified values
-    if (not args.otw_format.empty() and args.otw_format != "sc16")
-    {
-        throw uhd::value_error("b200_impl::get_rx_stream only supports otw_format sc16");
-    }
-    args.otw_format = "sc16";
+    if (args.otw_format.empty()) args.otw_format = "sc16";
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
     boost::shared_ptr<sph::send_packet_streamer> my_streamer;
@@ -328,6 +324,10 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t &args_)
     {
         const size_t chan = args.channels[stream_i];
         radio_perifs_t &perif = _radio_perifs[chan];
+        if (args.otw_format == "sc16") perif.ctrl->poke32(TOREG(SR_TX_FMT), 0);
+        if (args.otw_format == "sc12") perif.ctrl->poke32(TOREG(SR_TX_FMT), 1);
+        if (args.otw_format == "fc32") perif.ctrl->poke32(TOREG(SR_TX_FMT), 2);
+        if (args.otw_format == "sc8") perif.ctrl->poke32(TOREG(SR_TX_FMT), 3);
 
         //calculate packet size
         static const size_t hdr_size = 0

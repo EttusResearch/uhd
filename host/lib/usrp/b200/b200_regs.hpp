@@ -43,6 +43,8 @@ localparam SR_RX_CTRL   = 96;
 localparam SR_RX_DSP    = 144;
 localparam SR_TX_DSP    = 184;
 localparam SR_TIME      = 128;
+localparam SR_RX_FMT    = 136;
+localparam SR_TX_FMT    = 138;
 
 localparam RB32_TEST            = 0;
 localparam RB64_TIME_NOW        = 8;
