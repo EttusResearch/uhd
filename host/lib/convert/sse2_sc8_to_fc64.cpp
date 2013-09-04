@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ DECLARE_CONVERTER(sc8_item32_be, 1, fc64, 1, PRIORITY_SIMD){
                                                                         \
         /* unpack */                                                    \
         __m128d tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;         \
-        unpack_sc32_8x(tmpi, tmp1, tmp0, tmp3, tmp2, tmp5, tmp4, tmp7, tmp6, scalar); \
+        unpack_sc32_8x(tmpi, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, scalar); \
                                                                         \
         /* store to output */                                           \
         _mm_store ## _al_ ## pd(reinterpret_cast<double *>(output+j+0), tmp0); \
@@ -125,7 +125,7 @@ DECLARE_CONVERTER(sc8_item32_le, 1, fc64, 1, PRIORITY_SIMD){
         /* unpack */                                                    \
         __m128d tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;         \
         tmpi = _mm_or_si128(_mm_srli_epi16(tmpi, 8), _mm_slli_epi16(tmpi, 8)); /*byteswap*/\
-        unpack_sc32_8x(tmpi, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, scalar); \
+        unpack_sc32_8x(tmpi, tmp1, tmp0, tmp3, tmp2, tmp5, tmp4, tmp7, tmp6, scalar); \
                                                                         \
         /* store to output */                                           \
         _mm_store ## _al_ ## pd(reinterpret_cast<double *>(output+j+0), tmp0); \

@@ -22,6 +22,7 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/transport/vrt_if_packet.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
@@ -32,7 +33,7 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-static const double ACK_TIMEOUT = 0.5;
+static const double ACK_TIMEOUT = 2.0; //supposed to be worst case practical timeout
 static const double MASSIVE_TIMEOUT = 10.0; //for when we wait on a timed command
 static const size_t SR_READBACK  = 32;
 
@@ -41,15 +42,15 @@ class radio_ctrl_core_3000_impl : public radio_ctrl_core_3000
 public:
 
     radio_ctrl_core_3000_impl(
-        vrt::if_packet_info_t::link_type_t link_type,
+        const bool big_endian,
         uhd::transport::zero_copy_if::sptr ctrl_xport,
         uhd::transport::zero_copy_if::sptr resp_xport,
         const boost::uint32_t sid,
         const std::string &name
     ):
-        _link_type(link_type),
+        _link_type(vrt::if_packet_info_t::LINK_TYPE_CHDR),
         _packet_type(vrt::if_packet_info_t::PACKET_TYPE_CONTEXT),
-        _bige(link_type == vrt::if_packet_info_t::LINK_TYPE_VRLP),
+        _bige(big_endian),
         _ctrl_xport(ctrl_xport),
         _resp_xport(resp_xport),
         _sid(sid),
@@ -301,12 +302,12 @@ private:
 
 
 radio_ctrl_core_3000::sptr radio_ctrl_core_3000::make(
-    vrt::if_packet_info_t::link_type_t link_type,
+    const bool big_endian,
     zero_copy_if::sptr ctrl_xport,
     zero_copy_if::sptr resp_xport,
     const boost::uint32_t sid,
     const std::string &name
 )
 {
-    return sptr(new radio_ctrl_core_3000_impl(link_type, ctrl_xport, resp_xport, sid, name));
+    return sptr(new radio_ctrl_core_3000_impl(big_endian, ctrl_xport, resp_xport, sid, name));
 }

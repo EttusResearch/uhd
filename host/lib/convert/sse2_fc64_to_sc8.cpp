@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,10 +59,10 @@ DECLARE_CONVERTER(fc64, 1, sc8_item32_be, 1, PRIORITY_SIMD){
                                                                         \
         /* interleave */                                                \
         const __m128i tmpi = pack_sc8_item32_4x(                        \
-            pack_sc32_4x(tmp0, tmp1, scalar),                           \
-            pack_sc32_4x(tmp2, tmp3, scalar),                           \
-            pack_sc32_4x(tmp4, tmp5, scalar),                           \
-            pack_sc32_4x(tmp6, tmp7, scalar)                            \
+            pack_sc32_4x(tmp1, tmp0, scalar),                           \
+            pack_sc32_4x(tmp3, tmp2, scalar),                           \
+            pack_sc32_4x(tmp5, tmp4, scalar),                           \
+            pack_sc32_4x(tmp7, tmp6, scalar)                            \
         );                                                              \
                                                                         \
         /* store to output */                                           \
@@ -103,10 +103,10 @@ DECLARE_CONVERTER(fc64, 1, sc8_item32_le, 1, PRIORITY_SIMD){
                                                                         \
         /* interleave */                                                \
         __m128i tmpi = pack_sc8_item32_4x(                              \
-            pack_sc32_4x(tmp1, tmp0, scalar),                           \
-            pack_sc32_4x(tmp3, tmp2, scalar),                           \
-            pack_sc32_4x(tmp5, tmp4, scalar),                           \
-            pack_sc32_4x(tmp7, tmp6, scalar)                            \
+            pack_sc32_4x(tmp0, tmp1, scalar),                           \
+            pack_sc32_4x(tmp2, tmp3, scalar),                           \
+            pack_sc32_4x(tmp4, tmp5, scalar),                           \
+            pack_sc32_4x(tmp6, tmp7, scalar)                            \
         );                                                              \
         tmpi = _mm_or_si128(_mm_srli_epi16(tmpi, 8), _mm_slli_epi16(tmpi, 8)); /*byteswap*/\
                                                                         \

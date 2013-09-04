@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2012 Ettus Research LLC
+# Copyright 2011-2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -121,4 +121,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_tables.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/convert_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/convert_item32.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/convert_pack_sc12.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/convert_unpack_sc12.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/convert_fc32_item32.cpp
 )

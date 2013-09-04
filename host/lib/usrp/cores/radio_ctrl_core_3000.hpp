@@ -20,7 +20,6 @@
 
 #include <uhd/types/time_spec.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <uhd/transport/vrt_if_packet.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include "wb_iface.hpp"
@@ -36,7 +35,7 @@ public:
 
     //! Make a new control object
     static sptr make(
-        uhd::transport::vrt::if_packet_info_t::link_type_t link_type,
+        const bool big_endian,
         uhd::transport::zero_copy_if::sptr ctrl_xport,
         uhd::transport::zero_copy_if::sptr resp_xport,
         const boost::uint32_t sid,
