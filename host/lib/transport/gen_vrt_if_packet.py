@@ -79,24 +79,26 @@ static const size_t occ_table[] = {0, 2, 1, 3};
 const boost::uint32_t VRLP = ('V' << 24) | ('R' << 16) | ('L' << 8) | ('P' << 0);
 const boost::uint32_t VEND = ('V' << 24) | ('E' << 16) | ('N' << 8) | ('D' << 0);
 
-UHD_INLINE static boost::uint32_t chdr_to_vrt(const boost::uint32_t chdr, size_t &packet_count)
+UHD_INLINE static boost::uint32_t chdr_to_vrt(const boost::uint32_t chdr, if_packet_info_t &info)
 {
-    boost::uint32_t vrt = chdr & 0xffff; //words32
-    packet_count = (chdr >> 16) & 0xfff;
+    const boost::uint32_t bytes = chdr & 0xffff;
+    boost::uint32_t vrt = (bytes + 3)/4;
+    info.packet_count = (chdr >> 16) & 0xfff;
     vrt |= ((chdr >> 31) & 0x1) << 30; //context packet
-    vrt |= ((chdr >> 30) & 0x1) << 26; //has tlr
     vrt |= ((chdr >> 29) & 0x1) << 20; //has tsf
     vrt |= ((chdr >> 28) & 0x1) << 24; //has eob
     vrt |= (0x1) << 28; //has sid (always)
     return vrt;
 }
 
-UHD_INLINE static boost::uint32_t vrt_to_chdr(const boost::uint32_t vrt, const size_t packet_count)
+UHD_INLINE static boost::uint32_t vrt_to_chdr(const boost::uint32_t vrt, const if_packet_info_t &info)
 {
-    boost::uint32_t chdr = vrt & 0xffff; //words32
-    chdr |= (packet_count & 0xfff) << 16;
+    const boost::uint32_t words32 = vrt & 0xffff;
+    int bytes_rem = info.num_payload_bytes % 4;
+    if (bytes_rem != 0) bytes_rem -= 4; //adjust for round up
+    boost::uint32_t chdr = (words32 * 4) + bytes_rem;
+    chdr |= (info.packet_count & 0xfff) << 16;
     chdr |= ((vrt >> 30) & 0x1) << 31; //context packet
-    chdr |= ((vrt >> 26) & 0x1) << 30; //has tlr
     chdr |= ((vrt >> 20) & 0x1) << 29; //has tsf
     chdr |= ((vrt >> 24) & 0x1) << 28; //has eob
     return chdr;
@@ -311,7 +313,7 @@ void vrt::if_hdr_pack_$(suffix)(
     case if_packet_info_t::LINK_TYPE_CHDR:
     {
         __if_hdr_pack_$(suffix)(packet_buff, if_packet_info, vrt_hdr_word32);
-        const boost::uint32_t chdr = vrt_to_chdr(vrt_hdr_word32, if_packet_info.packet_count);
+        const boost::uint32_t chdr = vrt_to_chdr(vrt_hdr_word32, if_packet_info);
         packet_buff[0] = $(XE_MACRO)(chdr);
         break;
     }
@@ -349,9 +351,10 @@ void vrt::if_hdr_unpack_$(suffix)(
     case if_packet_info_t::LINK_TYPE_CHDR:
     {
         const boost::uint32_t chdr = $(XE_MACRO)(packet_buff[0]);
-        size_t packet_count = 0;
-        vrt_hdr_word32 = chdr_to_vrt(chdr, packet_count);
+        vrt_hdr_word32 = chdr_to_vrt(chdr, if_packet_info);
+        size_t packet_count = if_packet_info.packet_count;
         __if_hdr_unpack_$(suffix)(packet_buff, if_packet_info, vrt_hdr_word32);
+        if_packet_info.num_payload_bytes -= (~chdr + 1) & 0x3;
         if_packet_info.packet_count = packet_count;
         break;
     }
