@@ -252,7 +252,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     // Local control endpoint
     ////////////////////////////////////////////////////////////////////
-    _local_ctrl = radio_ctrl_core_3000::make(vrt::if_packet_info_t::LINK_TYPE_CHDR, _ctrl_transport, zero_copy_if::sptr()/*null*/, B200_LOCAL_CTRL_SID);
+    _local_ctrl = radio_ctrl_core_3000::make(false/*lilE*/, _ctrl_transport, zero_copy_if::sptr()/*null*/, B200_LOCAL_CTRL_SID);
     _local_ctrl->hold_task(_async_task);
     _async_task_data->local_ctrl = _local_ctrl; //weak
     this->check_fpga_compat();
@@ -488,7 +488,7 @@ void b200_impl::setup_radio(const size_t dspno)
     // radio control
     ////////////////////////////////////////////////////////////////////
     const boost::uint32_t sid = (dspno == 0)? B200_CTRL0_MSG_SID : B200_CTRL1_MSG_SID;
-    perif.ctrl = radio_ctrl_core_3000::make(vrt::if_packet_info_t::LINK_TYPE_CHDR, _ctrl_transport, zero_copy_if::sptr()/*null*/, sid);
+    perif.ctrl = radio_ctrl_core_3000::make(false/*lilE*/, _ctrl_transport, zero_copy_if::sptr()/*null*/, sid);
     perif.ctrl->hold_task(_async_task);
     _async_task_data->radio_ctrl[dspno] = perif.ctrl; //weak
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
