@@ -40,7 +40,7 @@ clean:
 	$(RM) *.o *.elf *.hex
 
 install: all
-	$(AVRDUDE) -U flash:w:$(TARGET).hex:i
+	$(AVRDUDE) -U efuse:w:0xFF:m -U hfuse:w:0x89:m -U lfuse:w:0xFF:m -U flash:w:$(TARGET).hex:i
 
 ##################################################
 # Dependency Targets
