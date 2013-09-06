@@ -41,20 +41,26 @@ extern "C" {
 #define AD9361_ACTION_SET_CLOCK_RATE 9
 #define AD9361_ACTION_SET_ACTIVE_CHAINS 10
 
+typedef union
+{
+    double d;
+    uint32_t x[2];
+} ad9361_double_union_t;
+
 static inline void ad9361_double_pack(const double input, uint32_t output[2])
 {
-    const uint32_t *p = (const uint32_t *)&input;
-    output[0] = p[0];
-    output[1] = p[1];
+    ad9361_double_union_t p = {};
+    p.d = input;
+    output[0] = p.x[0];
+    output[1] = p.x[1];
 }
 
 static inline double ad9361_double_unpack(const uint32_t input[2])
 {
-    double output = 0.0;
-    uint32_t *p = (uint32_t *)&output;
-    p[0] = input[0];
-    p[1] = input[1];
-    return output;
+    ad9361_double_union_t p = {};
+    p.x[0] = input[0];
+    p.x[1] = input[1];
+    return p.d;
 }
 
 typedef struct
