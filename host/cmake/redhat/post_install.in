@@ -18,4 +18,5 @@
 
 cp @CMAKE_INSTALL_PREFIX@/lib/uhd/utils/uhd-usrp.rules /etc/udev/rules.d/uhd-usrp.rules
 udevadm control --reload-rules
+udevadm trigger
 ldconfig
