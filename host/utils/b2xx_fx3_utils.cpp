@@ -35,6 +35,7 @@
 #include <boost/functional/hash.hpp>
 
 #include <uhd/config.hpp>
+#include <uhd/utils/msg.hpp>
 
 const static boost::uint16_t FX3_VID = 0x04b4;
 const static boost::uint16_t FX3_DEFAULT_PID = 0x00f3;
@@ -542,7 +543,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
                 for(std::set<fs::path>::iterator it = globbed.begin();
                         it != globbed.end(); ++it) {
 
-                    std::string file = (*it).string();
+                    std::string file = (*it).filename().string();
 
                     if(file.compare(0, 5, "0000:") == 0) {
                         /* Un-bind the device. */

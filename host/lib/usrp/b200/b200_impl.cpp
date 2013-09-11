@@ -205,7 +205,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
             product_name = "B210";
             default_file_name = B210_FPGA_FILE_NAME;
             break;
-        default: throw uhd::runtime_error("b200 unknown product code: " + mb_eeprom["product"]);
+        default: UHD_MSG(error) << "B200 unknown product code: " << mb_eeprom["product"] << std::endl;
         }
     }
     if (default_file_name.empty())
@@ -218,7 +218,12 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
         device_addr.has_key("fpga")? device_addr["fpga"] : default_file_name
     );
 
-    _iface->load_fpga(b200_fpga_image);
+    boost::uint32_t status = _iface->load_fpga(b200_fpga_image);
+
+    if(status != 0) {
+        throw uhd::runtime_error(str(boost::format("fx3 is in state %1%") % status));
+    }
+
     _iface->reset_gpif();
 
     ////////////////////////////////////////////////////////////////////

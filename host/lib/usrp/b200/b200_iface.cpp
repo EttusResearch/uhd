@@ -51,6 +51,7 @@ const static boost::uint8_t B200_VREQ_GET_FW_HASH = 0x1F;
 const static boost::uint8_t B200_VREQ_LOOP = 0x22;
 const static boost::uint8_t B200_VREQ_SPI_WRITE = 0x32;
 const static boost::uint8_t B200_VREQ_SPI_READ = 0x42;
+const static boost::uint8_t B200_VREQ_FPGA_CONFIG = 0x55;
 const static boost::uint8_t B200_VREQ_FPGA_RESET = 0x62;
 const static boost::uint8_t B200_VREQ_GPIF_RESET = 0x72;
 const static boost::uint8_t B200_VREQ_GET_USB = 0x80;
@@ -61,10 +62,12 @@ const static boost::uint8_t B200_VREQ_FX3_RESET = 0x99;
 const static boost::uint8_t B200_VREQ_EEPROM_WRITE = 0xBA;
 const static boost::uint8_t B200_VREQ_EEPROM_READ = 0xBB;
 
-const static boost::uint8_t FX3_STATE_FPGA_READY = 0x00;
-const static boost::uint8_t FX3_STATE_CONFIGURING_FPGA = 0x01;
-const static boost::uint8_t FX3_STATE_BUSY = 0x02;
-const static boost::uint8_t FX3_STATE_RUNNING = 0x03;
+const static boost::uint8_t FX3_STATE_FPGA_READY = 0x01;
+const static boost::uint8_t FX3_STATE_CONFIGURING_FPGA = 0x02;
+const static boost::uint8_t FX3_STATE_BUSY = 0x03;
+const static boost::uint8_t FX3_STATE_RUNNING = 0x04;
+const static boost::uint8_t FX3_STATE_UNCONFIGURED = 0x05;
+const static boost::uint8_t FX3_STATE_ERROR = 0x06;
 
 typedef boost::uint32_t hash_type;
 
@@ -433,7 +436,7 @@ public:
 
         unsigned char rx_data[1];
 
-        fx3_control_read(B200_VREQ_GET_STATUS, 0x00, 0x00, rx_data, 1);
+        fx3_control_read(B200_VREQ_GET_STATUS, 0x00, 0x00, &rx_data[0], 1);
 
         return boost::lexical_cast<boost::uint8_t>(rx_data[0]);
     }
@@ -471,15 +474,20 @@ public:
                 (unsigned char*) &hash, 4);
     }
 
-    void load_fpga(const std::string filestring) {
+    boost::uint32_t load_fpga(const std::string filestring) {
 
         boost::uint8_t fx3_state = 0;
+        boost::uint32_t wait_count;
 
         const char *filename = filestring.c_str();
 
         hash_type hash = generate_hash(filename);
         hash_type loaded_hash; usrp_get_fpga_hash(loaded_hash);
-        if (hash == loaded_hash) return;
+        if (hash == loaded_hash) return 0;
+
+        unsigned char out_buff[64];
+        memset(out_buff, 0x00, sizeof(out_buff));
+        fx3_control_write(B200_VREQ_FPGA_CONFIG, 0, 0, out_buff, 1, 1000);
 
         size_t file_size = 0;
         {
@@ -494,23 +502,36 @@ public:
             throw uhd::io_error("load_fpga: cannot open FPGA input file.");
         }
 
+        wait_count = 0;
         do {
             fx3_state = get_fx3_status();
+
+            if((wait_count >= 500) || (fx3_state == FX3_STATE_ERROR)) {
+                return fx3_state;
+            }
+
             boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+
+            wait_count++;
         } while(fx3_state != FX3_STATE_FPGA_READY);
 
         if (load_img_msg) UHD_MSG(status) << "Loading FPGA image: " \
             << filestring << "..." << std::flush;
 
-        unsigned char out_buff[64];
-        memset(out_buff, 0x00, sizeof(out_buff));
         fx3_control_write(B200_VREQ_FPGA_START, 0, 0, out_buff, 1, 1000);
 
+        wait_count = 0;
         do {
             fx3_state = get_fx3_status();
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-        } while(fx3_state != FX3_STATE_CONFIGURING_FPGA);
 
+            if((wait_count >= 1000) || (fx3_state == FX3_STATE_ERROR)) {
+                return fx3_state;
+            }
+
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+
+            wait_count++;
+        } while(fx3_state != FX3_STATE_CONFIGURING_FPGA);
 
         size_t bytes_sent = 0;
         while(!file.eof()) {
@@ -538,14 +559,24 @@ public:
 
         file.close();
 
+        wait_count = 0;
         do {
             fx3_state = get_fx3_status();
+
+            if((wait_count >= 500) || (fx3_state == FX3_STATE_ERROR)) {
+                return fx3_state;
+            }
+
             boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+
+            wait_count++;
         } while(fx3_state != FX3_STATE_RUNNING);
 
         usrp_set_fpga_hash(hash);
 
         if (load_img_msg) UHD_MSG(status) << "\b\b\b\b done" << std::endl;
+
+        return 0;
     }
 
 private:

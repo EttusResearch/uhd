@@ -59,7 +59,7 @@ public:
     virtual void set_fpga_reset_pin(const bool reset) = 0;
 
     //! load an FPGA image
-    virtual void load_fpga(const std::string filestring) = 0;
+    virtual boost::uint32_t load_fpga(const std::string filestring) = 0;
 
     //! send SPI through the FX3
     virtual void transact_spi( unsigned char *tx_data, size_t num_tx_bits, \
