@@ -150,6 +150,7 @@ so that non-root users may access the device:
     cd <install-path>/share/uhd/utils
     sudo cp uhd-usrp.rules /etc/udev/rules.d/
     sudo udevadm control --reload-rules
+    sudo udevadm trigger
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Install USB driver (Windows)
