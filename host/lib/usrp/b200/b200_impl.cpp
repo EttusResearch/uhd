@@ -88,8 +88,8 @@ static device_addrs_t b200_find(const device_addr_t &hint)
         catch(...){
             UHD_MSG(warning) << boost::format(
                 "Could not locate B200 firmware.\n"
-                "Please install the images package.\n"
-            );
+                "Please install the images package. %s\n"
+            ) % print_images_error();
             return b200_addrs;
         }
         UHD_LOG << "the firmware image: " << b200_fw_image << std::endl;
