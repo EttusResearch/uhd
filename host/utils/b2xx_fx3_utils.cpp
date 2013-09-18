@@ -543,7 +543,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
                 for(std::set<fs::path>::iterator it = globbed.begin();
                         it != globbed.end(); ++it) {
 
-                    std::string file = (*it).filename().string();
+                    std::string file = fs::path((*it).filename()).string();
 
                     if(file.compare(0, 5, "0000:") == 0) {
                         /* Un-bind the device. */
