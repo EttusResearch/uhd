@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(test_with_chdr){
     if_packet_info.has_cid = false;
     if_packet_info.has_tsi = false;
     if_packet_info.has_tsf = true;
-    if_packet_info.has_tlr = true;
+    if_packet_info.has_tlr = false; //tlr not suported in CHDR
     if_packet_info.tsi = std::rand();
     if_packet_info.tsf = std::rand();
     if_packet_info.num_payload_words32 = 24;
