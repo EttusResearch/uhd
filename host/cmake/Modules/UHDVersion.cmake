@@ -27,7 +27,7 @@ FIND_PACKAGE(Git QUIET)
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
 SET(UHD_VERSION_MINOR 005)
-SET(UHD_VERSION_PATCH 003)
+SET(UHD_VERSION_PATCH 004)
 
 ########################################################################
 # Set up trimmed version numbers for DLL resource files and packages
