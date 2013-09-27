@@ -695,6 +695,8 @@ Section "-Core installation"
   CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\USRP2 Card Burner.lnk" "$INSTDIR\lib\uhd\utils\usrp2_card_burner_gui.py" "" "" "" SW_SHOWMINIMIZED
   CreateShortcut "$SMPROGRAMS\$STARTMENU_FOLDER\USRP-N2XX Net Burner.lnk" "$INSTDIR\lib\uhd\utils\usrp_n2xx_net_burner_gui.py" "" "" "" SW_SHOWMINIMIZED
   CreateShortcut "$SMPROGRAMS\$STARTMENU_FOLDER\UHD Images Downloader.lnk" "$INSTDIR\lib\uhd\utils\uhd_images_downloader.py"
+  CreateShortcut "$SMPROGRAMS\$STARTMENU_FOLDER\Application Manual.lnk" "$INSTDIR\share\doc\uhd\manual\html\index.html"
+  CreateShortcut "$SMPROGRAMS\$STARTMENU_FOLDER\API Documentation.lnk" "$INSTDIR\share\doc\uhd\doxygen\html\classes.html"
 
   ;Read a value from an InstallOptions INI file
   !insertmacro MUI_INSTALLOPTIONS_READ $DO_NOT_ADD_TO_PATH "NSIS.InstallOptions.ini" "Field 2" "State"
@@ -871,6 +873,8 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\$MUI_TEMP\USRP2 Card Burner.lnk"
   Delete "$SMPROGRAMS\$MUI_TEMP\USRP-N2XX Net Burner.lnk"
   Delete "$SMPROGRAMS\$MUI_TEMP\UHD Images Downloader.lnk"
+  Delete "$SMPROGRAMS\$MUI_TEMP\Application Manual.lnk"
+  Delete "$SMPROGRAMS\$MUI_TEMP\API Documentation.lnk"
 @CPACK_NSIS_DELETE_ICONS_EXTRA@
   
   ;Delete empty start menu parent diretories
