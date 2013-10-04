@@ -67,7 +67,7 @@ static const std::string     B100_EEPROM_MAP_KEY = "B100";
 
 //! Make a b100 dboard interface
 uhd::usrp::dboard_iface::sptr make_b100_dboard_iface(
-    wb_iface::sptr wb_iface,
+    uhd::wb_iface::sptr wb_iface,
     uhd::i2c_iface::sptr i2c_iface,
     uhd::spi_iface::sptr spi_iface,
     b100_clock_ctrl::sptr clock,

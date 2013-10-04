@@ -22,7 +22,7 @@
 #include <uhd/types/time_spec.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 #include <string>
 #include <vector>
 
@@ -37,7 +37,7 @@ public:
 
     //! makes a new time64 core from iface and slave base
     static sptr make(
-        wb_iface::sptr iface, const size_t base,
+        uhd::wb_iface::sptr iface, const size_t base,
         const readback_bases_type &readback_bases,
         const size_t mimo_delay_cycles = 0 // 0 means no-mimo
     );

@@ -22,14 +22,14 @@
 #include <uhd/types/serial.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 
 class i2c_core_200 : boost::noncopyable, public uhd::i2c_iface{
 public:
     typedef boost::shared_ptr<i2c_core_200> sptr;
 
     //! makes a new i2c core from iface and slave base
-    static sptr make(wb_iface::sptr iface, const size_t base, const size_t readback);
+    static sptr make(uhd::wb_iface::sptr iface, const size_t base, const size_t readback);
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_I2C_CORE_200_HPP */

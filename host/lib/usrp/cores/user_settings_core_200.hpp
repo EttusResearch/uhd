@@ -21,14 +21,14 @@
 #include <uhd/config.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 
 class user_settings_core_200 : boost::noncopyable{
 public:
     typedef boost::shared_ptr<user_settings_core_200> sptr;
     typedef std::pair<boost::uint8_t, boost::uint32_t> user_reg_t;
 
-    static sptr make(wb_iface::sptr iface, const size_t base);
+    static sptr make(uhd::wb_iface::sptr iface, const size_t base);
 
     virtual void set_reg(const user_reg_t &reg) = 0;
 };

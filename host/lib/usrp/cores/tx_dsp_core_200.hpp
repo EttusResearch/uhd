@@ -23,14 +23,14 @@
 #include <uhd/types/ranges.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 
 class tx_dsp_core_200 : boost::noncopyable{
 public:
     typedef boost::shared_ptr<tx_dsp_core_200> sptr;
 
     static sptr make(
-        wb_iface::sptr iface,
+        uhd::wb_iface::sptr iface,
         const size_t dsp_base, const size_t ctrl_base,
         const boost::uint32_t sid
     );

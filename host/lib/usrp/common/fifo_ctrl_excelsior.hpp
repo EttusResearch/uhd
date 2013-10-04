@@ -24,7 +24,7 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 #include <string>
 
 
@@ -40,7 +40,8 @@ struct fifo_ctrl_excelsior_config
 /*!
  * Provide access to peek, poke, spi, and async messages.
  */
-class fifo_ctrl_excelsior : public wb_iface, public uhd::spi_iface{
+class fifo_ctrl_excelsior : public uhd::wb_iface, public uhd::spi_iface
+{
 public:
     typedef boost::shared_ptr<fifo_ctrl_excelsior> sptr;
 

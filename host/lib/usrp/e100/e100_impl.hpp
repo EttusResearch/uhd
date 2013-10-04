@@ -61,7 +61,7 @@ extern void e100_load_fpga(const std::string &bin_file);
 
 //! Make an e100 dboard interface
 uhd::usrp::dboard_iface::sptr make_e100_dboard_iface(
-    wb_iface::sptr wb_iface,
+    uhd::wb_iface::sptr wb_iface,
     uhd::i2c_iface::sptr i2c_iface,
     uhd::spi_iface::sptr spi_iface,
     e100_clock_ctrl::sptr clock,

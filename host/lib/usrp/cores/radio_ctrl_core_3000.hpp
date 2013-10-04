@@ -22,13 +22,13 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 #include <string>
 
 /*!
  * Provide access to peek, poke for the radio ctrl module
  */
-class radio_ctrl_core_3000 : public wb_iface
+class radio_ctrl_core_3000 : public uhd::wb_iface
 {
 public:
     typedef boost::shared_ptr<radio_ctrl_core_3000> sptr;

@@ -23,7 +23,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 
 class gpio_core_200 : boost::noncopyable{
 public:
@@ -33,7 +33,7 @@ public:
     typedef uhd::usrp::dboard_iface::atr_reg_t atr_reg_t;
 
     //! makes a new GPIO core from iface and slave base
-    static sptr make(wb_iface::sptr iface, const size_t base, const size_t rb_addr);
+    static sptr make(uhd::wb_iface::sptr iface, const size_t base, const size_t rb_addr);
 
     //! 1 = ATR
     virtual void set_pin_ctrl(const unit_t unit, const boost::uint16_t value) = 0;
@@ -56,7 +56,7 @@ public:
 
     typedef uhd::usrp::dboard_iface::atr_reg_t atr_reg_t;
 
-    static sptr make(wb_iface::sptr iface, const size_t);
+    static sptr make(uhd::wb_iface::sptr iface, const size_t);
 
     virtual void set_atr_reg(const atr_reg_t atr, const boost::uint32_t value) = 0;
 

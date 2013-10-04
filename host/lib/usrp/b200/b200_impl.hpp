@@ -132,8 +132,8 @@ struct b200_impl : public uhd::device
     boost::shared_ptr<AsyncTaskData> _async_task_data;
     void handle_async_task(uhd::transport::zero_copy_if::sptr, boost::shared_ptr<AsyncTaskData>);
 
-    void register_loopback_self_test(wb_iface::sptr iface);
-    void codec_loopback_self_test(wb_iface::sptr iface);
+    void register_loopback_self_test(uhd::wb_iface::sptr iface);
+    void codec_loopback_self_test(uhd::wb_iface::sptr iface);
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
     void check_fw_compat(void);
     void check_fpga_compat(void);

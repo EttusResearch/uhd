@@ -21,6 +21,8 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
 
+using namespace uhd;
+
 #define REG_TX_FE_DC_OFFSET_I         _base + 0 //24 bits
 #define REG_TX_FE_DC_OFFSET_Q         _base + 4 //24 bits
 #define REG_TX_FE_MAG_CORRECTION      _base + 8 //18 bits

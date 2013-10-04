@@ -57,7 +57,7 @@ static const std::string USRP2_EEPROM_MAP_KEY = "N100";
 
 //! Make a usrp2 dboard interface.
 uhd::usrp::dboard_iface::sptr make_usrp2_dboard_iface(
-    wb_iface::sptr wb_iface,
+    uhd::wb_iface::sptr wb_iface,
     uhd::i2c_iface::sptr i2c_iface,
     uhd::spi_iface::sptr spi_iface,
     usrp2_clock_ctrl::sptr clk_ctrl
@@ -84,7 +84,7 @@ private:
         usrp2_iface::sptr iface;
         usrp2_fifo_ctrl::sptr fifo_ctrl;
         uhd::spi_iface::sptr spiface;
-        wb_iface::sptr wbiface;
+        uhd::wb_iface::sptr wbiface;
         usrp2_clock_ctrl::sptr clock;
         usrp2_codec_ctrl::sptr codec;
         uhd::gps_ctrl::sptr gps;

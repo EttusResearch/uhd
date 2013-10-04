@@ -23,14 +23,15 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 #include <string>
 
 /*!
  * The usrp2 FIFO control class:
  * Provide high-speed peek/poke interface.
  */
-class usrp2_fifo_ctrl : public wb_iface, public uhd::spi_iface{
+class usrp2_fifo_ctrl : public uhd::wb_iface, public uhd::spi_iface
+{
 public:
     typedef boost::shared_ptr<usrp2_fifo_ctrl> sptr;
 

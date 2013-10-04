@@ -21,7 +21,7 @@
 #include <uhd/config.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 #include <complex>
 #include <string>
 
@@ -29,7 +29,7 @@ class tx_frontend_core_200 : boost::noncopyable{
 public:
     typedef boost::shared_ptr<tx_frontend_core_200> sptr;
 
-    static sptr make(wb_iface::sptr iface, const size_t base);
+    static sptr make(uhd::wb_iface::sptr iface, const size_t base);
 
     virtual void set_mux(const std::string &mode) = 0;
 

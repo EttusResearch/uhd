@@ -22,7 +22,7 @@
 #include <uhd/types/serial.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 
 class spi_core_3000 : boost::noncopyable, public uhd::spi_iface
 {
@@ -30,7 +30,7 @@ public:
     typedef boost::shared_ptr<spi_core_3000> sptr;
 
     //! makes a new spi core from iface and slave base
-    static sptr make(wb_iface::sptr iface, const size_t base, const size_t readback);
+    static sptr make(uhd::wb_iface::sptr iface, const size_t base, const size_t readback);
 
     //! Set the spi clock divider to something usable
     virtual void set_divider(const double div) = 0;

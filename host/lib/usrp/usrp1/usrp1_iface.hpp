@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 #define INCLUDED_USRP1_IFACE_HPP
 
 #include "fx2_ctrl.hpp"
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 #include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -42,7 +42,8 @@
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class usrp1_iface : public wb_iface, public uhd::i2c_iface, public uhd::spi_iface, boost::noncopyable{
+class usrp1_iface : public uhd::wb_iface, public uhd::i2c_iface, public uhd::spi_iface, boost::noncopyable
+{
 public:
     typedef boost::shared_ptr<usrp1_iface> sptr;
 

@@ -17,6 +17,8 @@
 
 #include "user_settings_core_200.hpp"
 
+using namespace uhd;
+
 #define REG_USER_ADDR             _base + 0
 #define REG_USER_DATA             _base + 4
 

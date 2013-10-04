@@ -15,10 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "wb_iface.hpp"
+#include <uhd/types/wb_iface.hpp>
 #include <uhd/exception.hpp>
 
 using namespace uhd;
+
+wb_iface::~wb_iface(void)
+{
+    //NOP
+}
 
 void wb_iface::poke64(const wb_iface::wb_addr_type, const boost::uint64_t)
 {

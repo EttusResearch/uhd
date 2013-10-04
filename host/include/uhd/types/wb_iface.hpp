@@ -15,18 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_WB_IFACE_HPP
-#define INCLUDED_LIBUHD_USRP_WB_IFACE_HPP
+#ifndef INCLUDED_UHD_TYPES_WB_IFACE_HPP
+#define INCLUDED_UHD_TYPES_WB_IFACE_HPP
 
 #include <uhd/config.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
 
-class /*UHD_API*/ wb_iface
+namespace uhd
+{
+
+class UHD_API wb_iface
 {
 public:
     typedef boost::shared_ptr<wb_iface> sptr;
     typedef boost::uint32_t wb_addr_type;
+
+    virtual ~wb_iface(void);
 
     /*!
      * Write a register (64 bits)
@@ -72,4 +77,6 @@ public:
 
 };
 
-#endif /* INCLUDED_LIBUHD_USRP_WB_IFACE_HPP */
+} //namespace uhd
+
+#endif /* INCLUDED_UHD_TYPES_WB_IFACE_HPP */

@@ -33,6 +33,7 @@ UHD_INSTALL(FILES
     time_spec.hpp
     tune_request.hpp
     tune_result.hpp
+    wb_iface.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/types
     COMPONENT headers
 )
