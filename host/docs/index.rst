@@ -32,7 +32,8 @@ Application Notes
 * `Daughterboard Application Notes <./dboards.html>`_
 * `Transport Application Notes <./transport.html>`_
 * `Synchronization Application Notes <./sync.html>`_
-* `Internal GPSDO Application Notes <./gpsdo.html>`_
+* `Internal GPSDO Application Notes (USRP-N2X0/E1X0 Models) <./gpsdo.html>`_
+* `Internal GPSDO Application Notes (USRP-B2X0 Models) <./gpsdo_b2x0.html>`_
 * `Calibration Application Notes <./calibration.html>`_
 
 ^^^^^^^^^^^^^^^^^^^^^

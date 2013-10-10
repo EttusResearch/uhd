@@ -26,6 +26,7 @@ SET(manual_sources
     coding.rst
     dboards.rst
     gpsdo.rst
+    gpsdo_b2x0.rst
     general.rst
     images.rst
     stream.rst

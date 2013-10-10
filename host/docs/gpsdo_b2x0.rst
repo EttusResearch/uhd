@@ -1,27 +1,38 @@
 ========================================================================
-UHD - Internal GPSDO Application Notes (USRP-N2x0/E1X0 Models)
+UHD - Internal GPSDO Application Notes (USRP-B2X0 Models)
 ========================================================================
 
 .. contents:: Table of Contents
 
 This application note describes the use of integrated GPS-disciplined
 oscillators with Ettus Research USRP devices. It pertains specifically
-to the Jackson Labs Firefly-1A device unless noted otherwise.
+to the Jackson Labs LC_XO device unless noted otherwise.
 
 ------------------------------------------------------------------------
 Specifications
 ------------------------------------------------------------------------
 * **Receiver type**: 50 channel with WAAS, EGNOS, MSAS
-* **10MHz ADEV**: 1e-11 over >24h
+* **10MHz ADEV**: 5e-11 over >24h
 * **1PPS RMS jitter**: <50ns 1-sigma
-* **Holdover**: <11us over 3h
-* **Phase noise**:
+* **Holdover**: <20us over 3h
 
-  * **1Hz:** -80dBc/Hz
-  * **10Hz:** -110dBc/Hz
-  * **100Hz:** -135dBc/Hz
-  * **1kHz:** -145dBc/Hz
-  * **10kHz:** <-145dBc/Hz
+**Phase noise**:
+
++------------+-------------+------------+
+|            |     TCXO    |    OXCO    |
++============+=============+============+
+| **1Hz**    | -65dBc/Hz   | -75dBc/Hz  |
++------------+-------------+------------+
+| **10Hz**   |  -102dBc/Hz | -110dBc/Hz |
++------------+-------------+------------+
+| **100Hz**  | -132dBc/Hz  | -132dBc/Hz |
++------------+-------------+------------+
+| **1kHz**   | -148dBc/Hz  | -142dBc/Hz |
++------------+-------------+------------+
+| **10kHz**  | -152dBc/Hz  | -145dBc/Hz |
++------------+-------------+------------+
+| **100kHz** | <-155dBc/Hz | -150dBc/Hz |
++------------+-------------+------------+
 
 **Antenna Types:**
 
@@ -30,31 +41,17 @@ The GPSDO is capable of supplying a 3V for active GPS antennas or supporting pas
 ------------------------------------------------------------------------
 Installation Instructions
 ------------------------------------------------------------------------
-Installation instructions can be found here:
-`http://www.ettus.com/content/files/gpsdo-kit_2.pdf <http://www.ettus.com/content/files/gpsdo-kit_2.pdf>`_
+To install the GPSDO, you must insert it into the slot on the board
+near the 10 MHz Reference SMA. Keep in mind that the two sides of the
+GPSDO have a different number of pins. When inserting the GPSDO, make
+sure to press down firmly and evenly. When turning on the USRP B2X0 device,
+a green LED should illuminate on the GPSDO. This signifies that the unit
+has successfully been placed.
 
-********************************************
-Post-installation Task (N-Series only)
-********************************************
-
-**Note:** The following instructions are only necessary for UHD 3.4.* and below.
-
-This is necessary if you require absolute GPS time in your application
-or need to communicate with the GPSDO to obtain location, satellite info, etc.
-If you only require 10MHz and PPS signals for reference or MIMO use
-(see the `Synchronization Application Notes <./sync.html>`_),
-it is not necessary to perform this step.
-
-To configure the USRP to communicate with the GPSDO, use the
-**usrp_burn_mb_eeprom** utility:
-
-::
-
-    cd <install-path>/share/uhd/utils
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=internal
-
-    -- restore original setting --
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=none
+**NOTE: The pins on the GPSDO are very fragile. Be sure to press down
+evenly, or the pins may bend or break. Once the GPSDO is in place,
+we very highly discourage further removal, as this also risks damaging
+the pins.**
 
 ------------------------------------------------------------------------
 Using the GPSDO in Your Application
