@@ -1,0 +1,21 @@
+#
+# Copyright 2013 Ettus Research LLC
+#
+
+##################################################
+# Packet Processing Sources
+##################################################
+PACKET_PROC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/packet_proc/, \
+eth_dispatch.v \
+ip_hdr_checksum.v \
+vrlp_eth_framer.v \
+chdr_eth_framer.v \
+eth_interface.v \
+vrlp_to_compressed_vita.v \
+compressed_vita_to_vrlp.v \
+source_flow_control.v \
+cvita_insert_tlast.v \
+cvita_dest_lookup.v \
+cvita_chunker.v \
+cvita_dechunker.v \
+))

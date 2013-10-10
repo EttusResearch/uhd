@@ -1,0 +1,13 @@
+# Output products list for <fifo_s6_2Kx36_2clk>
+_xmsgs/pn_parser.xmsgs
+fifo_generator_ug175.pdf
+fifo_s6_2Kx36_2clk.asy
+fifo_s6_2Kx36_2clk.gise
+fifo_s6_2Kx36_2clk.ngc
+fifo_s6_2Kx36_2clk.v
+fifo_s6_2Kx36_2clk.veo
+fifo_s6_2Kx36_2clk.xco
+fifo_s6_2Kx36_2clk.xise
+fifo_s6_2Kx36_2clk_flist.txt
+fifo_s6_2Kx36_2clk_readme.txt
+fifo_s6_2Kx36_2clk_xmdf.tcl

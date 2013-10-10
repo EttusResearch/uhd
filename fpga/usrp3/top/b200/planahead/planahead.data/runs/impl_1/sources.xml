@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DARoots Version="1" Minor="26">
+  <FileSet Name="sources" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1">
+    <Filter Type="Srcs"/>
+    <File Path="$PSRCDIR/sources_1/imports/build/b200.ngc">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="$PPRDIR/../build/b200.ngc"/>
+        <Attr Name="ImportTime" Val="1359508205"/>
+        <Attr Name="UsedInSynthesis" Val="1"/>
+        <Attr Name="UsedInImplementation" Val="1"/>
+      </FileInfo>
+    </File>
+    <Config>
+      <Option Name="DesignMode" Val="RTL"/>
+      <Option Name="TopModule" Val="b200"/>
+    </Config>
+  </FileSet>
+</DARoots>

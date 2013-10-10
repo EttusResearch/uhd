@@ -1,0 +1,40 @@
+
+# codec_main_clk is 40 MHz main tcxo clock
+NET "codec_main_clk*" TNM_NET = "codec_main_clk";
+TIMESPEC "TS_codec_main_clk" = PERIOD "codec_main_clk" 25000 ps HIGH 50 %;
+
+
+# IFCLK is 100 MHz GPIF clock
+NET "IFCLK" TNM_NET = "IFCLK";
+TIMESPEC "TS_IFCLK" = PERIOD "IFCLK" 10000 ps HIGH 50 %;
+
+
+# codec_data_clk is the data clock from catalina, sample rate dependent
+# this clock equals sample rate in CMOS DDR 1R1T mode
+# this clock is double the sample rate in CMOS DDR 2R2T mode
+# Max clock rate is 61.44 MHz
+NET "codec_data_clk_p" TNM_NET = "codec_data_clk_p";
+TIMESPEC "TS_codec_data_clk_p" = PERIOD "codec_data_clk_p" 16276 ps HIGH 50 %;
+
+#always use IOB for GPIF pins for awesome timing
+INST "GPIF_*" IOB = TRUE;
+
+#low speed misc output group
+INST "SFDX*" TNM = ls_misc_out;
+INST "SRX*" TNM = ls_misc_out;
+INST "LED_*" TNM = ls_misc_out;
+INST "tx_enable*" TNM = ls_misc_out;
+INST "tx_bandsel_*" TNM = ls_misc_out;
+INST "rx_bandsel_*" TNM = ls_misc_out;
+INST "ref_sel" TNM = ls_misc_out;
+INST "*_ce" TNM = ls_misc_out;
+INST "*_miso" TNM = ls_misc_out;
+INST "*_mosi" TNM = ls_misc_out;
+INST "*_sclk" TNM = ls_misc_out;
+INST "gps_*" TNM = ls_misc_out;
+INST "FPGA_*D0" TNM = ls_misc_out;
+
+#constrain the misc IOs to the bus clock
+NET "bus_clk" TNM_NET = "bus_clk";
+TIMESPEC "TS_bus_clk" = PERIOD "bus_clk" 10 ns HIGH 50 %;
+TIMEGRP "ls_misc_out" OFFSET = OUT 15 ns AFTER "bus_clk" RISING;

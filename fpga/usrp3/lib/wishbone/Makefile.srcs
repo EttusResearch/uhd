@@ -1,0 +1,19 @@
+#
+# Copyright 2010-2012 Ettus Research LLC
+#
+
+##################################################
+# Wishbone Perifs
+##################################################
+WISHBONE_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/wishbone/, \
+simple_uart_rx.v \
+simple_uart_tx.v \
+simple_uart.v \
+wb_1master.v \
+settings_bus.v \
+settings_readback.v \
+i2c_master_top.v \
+i2c_master_bit_ctrl.v \
+i2c_master_byte_ctrl.v \
+axi_stream_to_wb.v \
+))

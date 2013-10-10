@@ -1,0 +1,13 @@
+#
+# Copyright 2010-2013 Ettus Research LLC
+#
+
+##################################################
+# SERDES Sources
+##################################################
+GPIF2_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/gpif2/, \
+gpif2_slave_fifo32.v \
+gpif2_to_fifo64.v \
+fifo64_to_gpif2.v \
+gpif2_error_checker.v \
+))

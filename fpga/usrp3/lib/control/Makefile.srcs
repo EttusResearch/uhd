@@ -1,0 +1,26 @@
+#
+# Copyright 2013 Ettus Research LLC
+#
+
+##################################################
+# Control Lib Sources
+##################################################
+CONTROL_LIB_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/control/, \
+reset_sync.v \
+por_gen.v \
+gpio_atr.v \
+simple_spi_core.v \
+simple_i2c_core.v \
+setting_reg.v \
+settings_bus_crossclock.v \
+radio_ctrl_proc.v \
+ram_2port.v \
+axi_crossbar.v \
+axi_slave_mux.v \
+axi_fifo_header.v \
+arb_qualify_master.v \
+axi_forwarding_cam.v \
+axi_test_vfifo.v \
+dram_2port.v \
+cvita_uart.v \
+))

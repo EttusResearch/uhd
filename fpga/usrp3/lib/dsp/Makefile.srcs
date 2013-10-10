@@ -1,0 +1,38 @@
+#
+# Copyright 2013 Ettus Research LLC
+#
+
+##################################################
+# DSP Sources
+##################################################
+DSP_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/dsp/, \
+ddc_chain.v \
+duc_chain.v \
+sign_extend.v \
+cordic_z24.v \
+clip_reg.v \
+cordic_stage.v \
+clip.v \
+cic_strober.v \
+cic_decim.v \
+cic_interp.v \
+cic_dec_shifter.v \
+cic_int_shifter.v \
+small_hb_dec.v \
+small_hb_int.v \
+hb_dec.v \
+hb_interp.v \
+round_sd.v \
+add2_and_clip_reg.v \
+add2_and_clip.v \
+add2.v \
+add2_reg.v \
+add2_and_round_reg.v \
+add2_and_round.v \
+round_reg.v \
+round.v \
+srl.v \
+acc.v \
+rx_frontend.v \
+rx_dcoffset.v \
+))
