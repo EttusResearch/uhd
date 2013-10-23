@@ -28,7 +28,7 @@ typedef boost::uint32_t (*to32_type)(boost::uint32_t);
 template <typename type, to32_type tohost>
 struct convert_fc32_item32_1_to_star_1 : public converter
 {
-    convert_fc32_item32_1_to_star_1(void)
+    convert_fc32_item32_1_to_star_1(void):_scalar(0.0)
     {
         //NOP
     }
@@ -48,9 +48,9 @@ struct convert_fc32_item32_1_to_star_1 : public converter
         {
             const item32_t i32 = tohost(input[i++]);
             const item32_t q32 = tohost(input[i++]);
-            const float i_f32 = reinterpret_cast<const float &>(i32);
-            const float q_f32 = reinterpret_cast<const float &>(q32);
-            output[o] = std::complex<type>(type(i_f32*_scalar), type(q_f32*_scalar));
+            const float *i_f32p = reinterpret_cast<const float *>(&i32);
+            const float *q_f32p = reinterpret_cast<const float *>(&q32);
+            output[o] = std::complex<type>(type((*i_f32p)*_scalar), type((*q_f32p)*_scalar));
         }
     }
 
@@ -60,7 +60,7 @@ struct convert_fc32_item32_1_to_star_1 : public converter
 template <typename type, to32_type towire>
 struct convert_star_1_to_fc32_item32_1 : public converter
 {
-    convert_star_1_to_fc32_item32_1(void)
+    convert_star_1_to_fc32_item32_1(void):_scalar(0.0)
     {
         //NOP
     }
@@ -80,9 +80,10 @@ struct convert_star_1_to_fc32_item32_1 : public converter
         {
             const float i_f32 = type(input[i].real()*_scalar);
             const float q_f32 = type(input[i].imag()*_scalar);
-            const item32_t i32 = towire(reinterpret_cast<const item32_t &>(i_f32));
-            const item32_t q32 = towire(reinterpret_cast<const item32_t &>(q_f32));
-            output[o++] = i32; output[o++] = q32;
+            const item32_t *i32p = reinterpret_cast<const item32_t *>(&i_f32);
+            const item32_t *q32p = reinterpret_cast<const item32_t *>(&q_f32);
+            output[o++] = towire(*i32p);
+            output[o++] = towire(*q32p);
         }
     }
 
