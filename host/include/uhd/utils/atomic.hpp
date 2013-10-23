@@ -78,6 +78,12 @@ namespace uhd{
     class UHD_API reusable_barrier{
     public:
 
+        reusable_barrier():_size (1) {}
+
+        reusable_barrier(const size_t size) {
+            _size = size;
+        }
+
         //! Resize the barrier for N threads
         void resize(const size_t size){
             _size = size;
