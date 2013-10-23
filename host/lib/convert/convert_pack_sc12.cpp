@@ -67,7 +67,7 @@ void convert_star_4_to_sc12_item32_3
 template <typename type, towire32_type towire>
 struct convert_star_1_to_sc12_item32_1 : public converter
 {
-    convert_star_1_to_sc12_item32_1(void)
+    convert_star_1_to_sc12_item32_1(void):_scalar(0.0)
     {
         //NOP
     }
