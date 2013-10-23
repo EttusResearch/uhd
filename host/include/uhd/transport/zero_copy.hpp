@@ -29,7 +29,9 @@ namespace uhd{ namespace transport{
     //! Simple managed buffer with release interface
     class UHD_API managed_buffer{
     public:
-        managed_buffer(void):_ref_count(0){}
+        managed_buffer(void):_ref_count(0),_buffer(NULL),_length(0){}
+
+        virtual ~managed_buffer(void) {}
 
         /*!
          * Signal to the transport that we are done with the buffer.
