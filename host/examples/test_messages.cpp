@@ -84,7 +84,7 @@ bool test_late_command_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streame
  *    Issue a stream command with num samps and more.
  *    We expect to get an inline broken chain message.
  */
-bool test_broken_chain_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr rx_stream, uhd::tx_streamer::sptr){
+bool test_broken_chain_message(uhd::usrp::multi_usrp::sptr usrp __attribute__ ((unused)), uhd::rx_streamer::sptr rx_stream, uhd::tx_streamer::sptr){
     std::cout << "Test broken chain message... " << std::flush;
 
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE);
