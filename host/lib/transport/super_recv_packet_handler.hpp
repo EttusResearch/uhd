@@ -246,7 +246,8 @@ private:
     struct xport_chan_props_type{
         xport_chan_props_type(void):
             packet_count(0),
-            handle_overflow(&handle_overflow_nop)
+            handle_overflow(&handle_overflow_nop),
+            fc_update_window(0)
         {}
         get_buff_type get_buff;
         issue_stream_cmd_type issue_stream_cmd;
