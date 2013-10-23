@@ -34,6 +34,7 @@ typedef boost::shared_ptr<asio::ip::udp::socket> socket_type;
 static const size_t insane_mtu = 9000;
 
 boost::mutex spawn_mutex;
+boost::condition_variable thread_spawned;
 
 #if defined(UHD_PLATFORM_MACOS)
     //limit buffer resize on macos or it will error
@@ -100,14 +101,11 @@ public:
         }
 
         std::cout << "spawning relay threads... " << _port << std::endl;
+        boost::unique_lock<boost::mutex> lock(spawn_mutex);
         _thread_group.create_thread(boost::bind(&udp_relay_type::server_thread, this));
-        spawn_mutex.lock();
-        spawn_mutex.lock();
-        spawn_mutex.unlock();
+        thread_spawned.wait(lock);
         _thread_group.create_thread(boost::bind(&udp_relay_type::client_thread, this));
-        spawn_mutex.lock();
-        spawn_mutex.lock();
-        spawn_mutex.unlock();
+        thread_spawned.wait(lock);
         std::cout << "    done!" << std::endl << std::endl;
     }
 
@@ -128,7 +126,7 @@ private:
     void server_thread(void){
         uhd::set_thread_priority_safe();
         std::cout << "    entering server_thread..." << std::endl;
-        spawn_mutex.unlock();
+        thread_spawned.notify_one();
         std::vector<char> buff(insane_mtu);
         while (not boost::this_thread::interruption_requested()){
             if (wait_for_recv_ready(_server_socket->native())){
@@ -154,7 +152,7 @@ private:
     void client_thread(void){
         uhd::set_thread_priority_safe();
         std::cout << "    entering client_thread..." << std::endl;
-        spawn_mutex.unlock();
+        thread_spawned.notify_one();
         std::vector<char> buff(insane_mtu);
         while (not boost::this_thread::interruption_requested()){
             if (wait_for_recv_ready(_client_socket->native())){
