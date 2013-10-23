@@ -285,7 +285,7 @@ ENDIF(NOT LIBUHD_PKG AND NOT UHDHOST_PKG)
 # Handle pre-built images
 ########################################################################
 IF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
-    FILE(GLOB _image_files "${UHD_IMAGES_DIR}/*.*")
+    FILE(GLOB_RECURSE _image_files "${UHD_IMAGES_DIR}/*")
     MESSAGE(STATUS "Using images:")
     FOREACH(_img ${_image_files})
         MESSAGE(STATUS "  ${_img}")
