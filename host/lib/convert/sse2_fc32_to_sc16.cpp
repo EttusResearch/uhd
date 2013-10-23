@@ -51,7 +51,9 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_le, 1, PRIORITY_SIMD){
     //dispatch according to alignment
     switch (size_t(input) & 0xf){
     case 0x8:
-        xx_to_item32_sc16<uhd::htowx>(input, output, 1, scale_factor); i++;
+        xx_to_item32_sc16<uhd::htowx>(input, output, 1, scale_factor);
+        i++;
+        break;
     case 0x0:
         convert_fc32_1_to_item32_1_nswap_guts(_)
         break;
@@ -91,7 +93,9 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_be, 1, PRIORITY_SIMD){
     //dispatch according to alignment
     switch (size_t(input) & 0xf){
     case 0x8:
-        xx_to_item32_sc16<uhd::htonx>(input, output, 1, scale_factor); i++;
+        xx_to_item32_sc16<uhd::htonx>(input, output, 1, scale_factor);
+        i++;
+        break;
     case 0x0:
         convert_fc32_1_to_item32_1_bswap_guts(_)
         break;
