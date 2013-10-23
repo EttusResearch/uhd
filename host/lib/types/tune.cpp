@@ -24,7 +24,9 @@ using namespace uhd;
 tune_request_t::tune_request_t(double target_freq):
     target_freq(target_freq),
     rf_freq_policy(POLICY_AUTO),
-    dsp_freq_policy(POLICY_AUTO)
+    rf_freq(0.0),
+    dsp_freq_policy(POLICY_AUTO),
+    dsp_freq(0.0)
 {
     /* NOP */
 }
@@ -33,7 +35,8 @@ tune_request_t::tune_request_t(double target_freq, double lo_off):
     target_freq(target_freq),
     rf_freq_policy(POLICY_MANUAL),
     rf_freq(target_freq + lo_off),
-    dsp_freq_policy(POLICY_AUTO)
+    dsp_freq_policy(POLICY_AUTO),
+    dsp_freq(0.0)
 {
     /* NOP */
 }
