@@ -271,7 +271,7 @@ public:
         //send and recv
         usrp2_ctrl_data_t in_data = this->ctrl_send_and_recv(out_data, MIN_PROTO_COMPAT_I2C);
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_HERES_THE_I2C_DATA_DUDE);
-        UHD_ASSERT_THROW(in_data.data.i2c_args.addr = num_bytes);
+        UHD_ASSERT_THROW(in_data.data.i2c_args.bytes == num_bytes);
 
         //copy out the data
         byte_vector_t result(num_bytes);
