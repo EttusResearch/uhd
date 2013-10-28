@@ -48,6 +48,7 @@ public:
     ):
         _iface(iface), _base(base),
         _readback_bases(readback_bases),
+        _tick_rate(0.0),
         _mimo_delay_cycles(mimo_delay_cycles)
     {
         _sources.push_back("none");
