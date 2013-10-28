@@ -118,7 +118,7 @@ protected:
      */
     class wbx_versionx {
     public:
-        wbx_versionx() {}
+        wbx_versionx():self_base(NULL) {}
         ~wbx_versionx(void) {}
 
         virtual double set_tx_gain(double gain, const std::string &name) = 0;
