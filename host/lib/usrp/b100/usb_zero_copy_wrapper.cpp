@@ -167,6 +167,7 @@ public:
     usb_zero_copy_wrapper(zero_copy_if::sptr usb_zc, const size_t frame_boundary):
         _internal_zc(usb_zc),
         _frame_boundary(frame_boundary),
+        _last_recv_offset(0),
         _next_recv_buff_index(0)
     {
         for (size_t i = 0; i < this->get_num_recv_frames(); i++){
