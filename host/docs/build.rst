@@ -64,7 +64,7 @@ LibUSB
 * **Minimum Version:** 1.0
 * **Usage:** build time + runtime (optional)
 * **Download URL:** http://sourceforge.net/projects/libusb/files/libusb-1.0/
-* **Download URL (Windows binaries):** http://www.libusb.org/wiki/windows_backend#LatestBinarySnapshots
+* **Download URL (Windows):** https://github.com/libusbx/libusbx
 
 ^^^^^^^^^^^^^^^^
 Python
@@ -169,7 +169,7 @@ Generate the project with CMake
 * Click "Generate", and a project file will be created in the build directory.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-LibUSB CMake notes
+LibUSB notes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 On Windows, CMake does not have the advantage of **pkg-config**,
 so we must manually tell CMake how to locate the LibUSB header and lib.
@@ -181,6 +181,8 @@ so we must manually tell CMake how to locate the LibUSB header and lib.
   * Recommend the static **libusb-1.0.lib** to simplify runtime dependencies.
 
 * Check the box to enable USB support, click "Configure" and "Generate".
+
+**Note:** On Windows, LibUSBx is required to use most USB3 controllers.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Build the project in MSVC
