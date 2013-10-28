@@ -168,6 +168,9 @@ bool parse_record(std::string *record, boost::uint16_t &len, boost::uint16_t &ad
     std::istringstream(record->substr(3, 4)) >> std::hex >> addr;
     std::istringstream(record->substr(7, 2)) >> std::hex >> type;
 
+    if (len >2 * (record->length() - 9))  // sanity check to prevent buffer overrun
+        return false;
+
     for (i = 0; i < len; i++) {
         std::istringstream(record->substr(9 + 2 * i, 2)) >> std::hex >> val;
         data[i] = (unsigned char) val;
@@ -409,6 +412,9 @@ boost::int32_t fx3_load_firmware(libusb_device_handle *dev_handle, \
         std::string record;
         file >> record;
 
+        if (!record.length() > 0)
+            continue;
+
         /* Check for valid Intel HEX record. */
         if (!checksum(&record) || !parse_record(&record, len, \
                     lower_address_bits, type, data)) {
@@ -567,8 +573,20 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         return 0;
     }
 
-    vid = atoh(vid_str);
-    pid = atoh(pid_str);
+    try {
+        vid = atoh(vid_str);
+    } catch (std::exception const& e) {
+        std::cerr << std::flush << "Exception while parsing vid: "
+                << e.what() << std::endl;
+        return ~0;
+    }
+    try {
+        pid = atoh(pid_str);
+    } catch (std::exception const& e) {
+        std::cerr << std::flush << "Exception while parsing pid: "
+                << e.what() << std::endl;
+        return ~0;
+    }
 
     /* Pointer to pointer of device, used to retrieve a list of devices. */
     libusb_device **devs;
@@ -714,7 +732,14 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
             << std::endl;
 
     } else if (vm.count("load-fpga")) {
-        error_code = (libusb_error) load_fpga(dev_handle, fpga_file);
+        try {
+            error_code = (libusb_error) load_fpga(dev_handle, fpga_file);
+        } catch (std::exception const& e) {
+            std::cerr << std::flush << "Exception while loading FPGA: "
+                << e.what() << std::endl;
+            if (error_code == 0)
+                error_code = LIBUSB_ERROR_OTHER;
+        }
 
         if(error_code != 0) {
             std::cerr << std::flush << "Error loading FPGA. Error code: "
@@ -729,7 +754,9 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
             << std::endl;
 
     } else {
-        std::cout << boost::format("B2xx Utilitiy Program %s") % desc << std::endl;
+        try {
+            std::cout << boost::format("B2xx Utilitiy Program %s") % desc << std::endl;
+        } catch (std::exception const& e) {}
         libusb_release_interface(dev_handle, 0);
         libusb_close(dev_handle);
         libusb_exit(ctx);
