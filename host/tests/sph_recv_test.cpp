@@ -395,7 +395,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
 
     //check the received packets
     size_t num_accum_samps = 0;
-    std::vector<std::complex<float> > mem(NUM_SAMPS_PER_BUFF*NCHANNELS);
+    std::complex<float> mem[NUM_SAMPS_PER_BUFF*NCHANNELS];
     std::vector<std::complex<float> *> buffs(NCHANNELS);
     for (size_t ch = 0; ch < NCHANNELS; ch++){
         buffs[ch] = &mem[ch*NUM_SAMPS_PER_BUFF];
@@ -481,7 +481,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
 
     //check the received packets
     size_t num_accum_samps = 0;
-    std::vector<std::complex<float> > mem(NUM_SAMPS_PER_BUFF*NCHANNELS);
+    std::complex<float> mem[NUM_SAMPS_PER_BUFF*NCHANNELS];
     std::vector<std::complex<float> *> buffs(NCHANNELS);
     for (size_t ch = 0; ch < NCHANNELS; ch++){
         buffs[ch] = &mem[ch*NUM_SAMPS_PER_BUFF];
@@ -574,7 +574,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
 
     //check the received packets
     size_t num_accum_samps = 0;
-    std::vector<std::complex<float> > mem(NUM_SAMPS_PER_BUFF*NCHANNELS);
+    std::complex<float> mem[NUM_SAMPS_PER_BUFF*NCHANNELS];
     std::vector<std::complex<float> *> buffs(NCHANNELS);
     for (size_t ch = 0; ch < NCHANNELS; ch++){
         buffs[ch] = &mem[ch*NUM_SAMPS_PER_BUFF];
@@ -659,7 +659,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
 
     //check the received packets
     size_t num_accum_samps = 0;
-    std::vector<std::complex<float> > mem(NUM_SAMPS_PER_BUFF*NCHANNELS);
+    std::complex<float> mem[NUM_SAMPS_PER_BUFF*NCHANNELS];
     std::vector<std::complex<float> *> buffs(NCHANNELS);
     for (size_t ch = 0; ch < NCHANNELS; ch++){
         buffs[ch] = &mem[ch*NUM_SAMPS_PER_BUFF];
