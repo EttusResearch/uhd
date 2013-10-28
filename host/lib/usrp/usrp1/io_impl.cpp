@@ -63,7 +63,7 @@ static const size_t alignment_padding = 512;
  * Helper struct to associate an offset with a buffer
  **********************************************************************/
 struct offset_send_buffer{
-    offset_send_buffer(void){
+    offset_send_buffer(void):offset(0){
         /* NOP */
     }
 
