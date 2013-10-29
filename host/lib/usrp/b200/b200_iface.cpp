@@ -17,6 +17,7 @@
 
 #include "b200_iface.hpp"
 
+#include <uhd/config.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <boost/functional/hash.hpp>
@@ -217,13 +218,13 @@ public:
     }
 
 
-    void write_i2c(boost::uint16_t addr __attribute__ ((unused)), const byte_vector_t &bytes __attribute__ ((unused)))
+    void write_i2c(UHD_UNUSED(boost::uint16_t addr), UHD_UNUSED(const byte_vector_t &bytes))
     {
         throw uhd::not_implemented_error("b200 write i2c");
     }
 
 
-    byte_vector_t read_i2c(boost::uint16_t addr __attribute__ ((unused)), size_t num_bytes __attribute__ ((unused)))
+    byte_vector_t read_i2c(UHD_UNUSED(boost::uint16_t addr), UHD_UNUSED(size_t num_bytes))
     {
         throw uhd::not_implemented_error("b200 read i2c");
     }
@@ -296,7 +297,7 @@ public:
     }
 
 
-    void load_firmware(const std::string filestring, bool force  __attribute__ ((unused)) = false)
+    void load_firmware(const std::string filestring, UHD_UNUSED(bool force) = false)
     {
         const char *filename = filestring.c_str();
 

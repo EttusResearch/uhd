@@ -55,18 +55,21 @@ typedef ptrdiff_t ssize_t;
     #define UHD_INLINE         __forceinline
     #define UHD_DEPRECATED     __declspec(deprecated)
     #define UHD_ALIGNED(x)     __declspec(align(x))
+    #define UHD_UNUSED(x)      x
 #elif defined(__GNUG__) && __GNUG__ >= 4
     #define UHD_EXPORT         __attribute__((visibility("default")))
     #define UHD_IMPORT         __attribute__((visibility("default")))
     #define UHD_INLINE         inline __attribute__((always_inline))
     #define UHD_DEPRECATED     __attribute__((deprecated))
     #define UHD_ALIGNED(x)     __attribute__((aligned(x)))
+    #define UHD_UNUSED(x)      x __attribute__((unused))
 #else
     #define UHD_EXPORT
     #define UHD_IMPORT
     #define UHD_INLINE         inline
     #define UHD_DEPRECATED
     #define UHD_ALIGNED(x)
+    #define UHD_UNUSED(x)      x
 #endif
 
 // Define API declaration macro
