@@ -86,6 +86,7 @@ std::vector<fs::path> get_image_paths(void){
 std::vector<fs::path> get_module_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_MODULE_PATH");
     paths.push_back(fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "modules");
+    paths.push_back(fs::path(uhd::get_pkg_path()) / "share" / "uhd" / "modules");
     return paths;
 }
 
