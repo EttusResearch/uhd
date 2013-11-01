@@ -57,28 +57,29 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::property_tree::sptr tree = dev->get_tree();
     std::cout << std::endl;
 
-    //split arguments and values 
+    //remove whitespace, split arguments and values 
+    boost::algorithm::erase_all(key, " ");
+    boost::algorithm::erase_all(val, " ");
+
     std::vector<std::string> keys_vec, vals_vec;
     boost::split(keys_vec, key, boost::is_any_of("\"',"));
     boost::split(vals_vec, val, boost::is_any_of("\"',"));
 
-    if(keys_vec.size() != vals_vec.size() and val != "") {
+    if((keys_vec.size() != vals_vec.size()) and val != "") {
         //If zero values are given, then user just wants values read to them
         throw std::runtime_error("Number of keys must match number of values!");
     }
 
-    if (true /*always readback*/){
-        std::cout << "Fetching current settings from EEPROM..." << std::endl;
-        uhd::usrp::mboard_eeprom_t mb_eeprom = tree->access<uhd::usrp::mboard_eeprom_t>("/mboards/0/eeprom").get();
-        for(size_t i = 0; i < keys_vec.size(); i++){
-            if (not mb_eeprom.has_key(keys_vec[i])){
-                std::cerr << boost::format("Cannot find value for EEPROM[%s]") % keys_vec[i] << std::endl;
-                return EXIT_FAILURE;
-            }
-            std::cout << boost::format("    EEPROM [\"%s\"] is \"%s\"") % keys_vec[i] % mb_eeprom[keys_vec[i]] << std::endl;
+    std::cout << "Fetching current settings from EEPROM..." << std::endl;
+    uhd::usrp::mboard_eeprom_t mb_eeprom = tree->access<uhd::usrp::mboard_eeprom_t>("/mboards/0/eeprom").get();
+    for(size_t i = 0; i < keys_vec.size(); i++){
+        if (not mb_eeprom.has_key(keys_vec[i])){
+            std::cerr << boost::format("Cannot find value for EEPROM[%s]") % keys_vec[i] << std::endl;
+            return EXIT_FAILURE;
         }
-        std::cout << std::endl;
+        std::cout << boost::format("    EEPROM [\"%s\"] is \"%s\"") % keys_vec[i] % mb_eeprom[keys_vec[i]] << std::endl;
     }
+    std::cout << std::endl;
     if (vm.count("val")){
         for(size_t i = 0; i < vals_vec.size(); i++){
             uhd::usrp::mboard_eeprom_t mb_eeprom; mb_eeprom[keys_vec[i]] = vals_vec[i];
