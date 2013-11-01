@@ -168,7 +168,7 @@ bool parse_record(std::string *record, boost::uint16_t &len, boost::uint16_t &ad
     std::istringstream(record->substr(3, 4)) >> std::hex >> addr;
     std::istringstream(record->substr(7, 2)) >> std::hex >> type;
 
-    if (len >2 * (record->length() - 9))  // sanity check to prevent buffer overrun
+    if (len > (2 * (record->length() - 9)))  // sanity check to prevent buffer overrun
         return false;
 
     for (i = 0; i < len; i++) {
@@ -412,7 +412,7 @@ boost::int32_t fx3_load_firmware(libusb_device_handle *dev_handle, \
         std::string record;
         file >> record;
 
-        if (!record.length() > 0)
+        if (!(record.length() > 0))
             continue;
 
         /* Check for valid Intel HEX record. */
