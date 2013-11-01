@@ -159,7 +159,7 @@ bool parse_record(std::string *record, boost::uint16_t &len, \
     std::istringstream(record->substr(3, 4)) >> std::hex >> addr;
     std::istringstream(record->substr(7, 2)) >> std::hex >> type;
 
-    if (len >2 * (record->length() - 9))  // sanity check to prevent buffer overrun
+    if (len > (2 * (record->length() - 9)))  // sanity check to prevent buffer overrun
         return false;
 
     for (i = 0; i < len; i++) {
@@ -327,7 +327,7 @@ public:
             std::string record;
             file >> record;
 
-        if (!record.length() > 0)
+        if (!(record.length() > 0))
             continue;
 
             /* Check for valid Intel HEX record. */
@@ -427,7 +427,7 @@ public:
         UHD_THROW_INVALID_CODE_PATH();
 
         // Below is dead code as long as UHD_THROW_INVALID_CODE_PATH(); is declared above.
-        // It is preservered here in a comment in case it is needed later:
+        // It is preserved here in a comment in case it is needed later:
         // fx3_control_write(B200_VREQ_FPGA_RESET, 0x00, 0x00, data, 4);
     }
 
