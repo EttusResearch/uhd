@@ -141,8 +141,10 @@ public:
 
         if (readback) {
             unsigned char buff[4] = {
-                (unsigned char)((bits >> 0) & 0xff), (unsigned char)((bits >> 8) & 0xff),
-                (unsigned char)((bits >> 16) & 0xff), (unsigned char)((bits >> 24) & 0xff)
+                (unsigned char)(bits & 0xff),
+                (unsigned char)((bits >> 8) & 0xff),
+                (unsigned char)((bits >> 16) & 0xff),
+                (unsigned char)((bits >> 24) & 0xff)
             };
             //conditions where there are two header bytes
             if (num_bytes >= 3 and buff[num_bytes-1] != 0 and buff[num_bytes-2] != 0 and buff[num_bytes-3] == 0){
