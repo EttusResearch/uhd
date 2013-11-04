@@ -44,7 +44,11 @@ class temp_dir():
         self.name = tempfile.mkdtemp()
         return self.name
     def __exit__(self, type, value, traceback):
-        os.removedirs(self.name)
+        try:
+            os.removedirs(self.name)
+        except:
+            #Utility should have already detected this, but this is for safety
+            raise Exception("Could not install images! Make sure you have write permissions.")
 
 if __name__ == "__main__":
 
@@ -59,17 +63,26 @@ if __name__ == "__main__":
     images_zip_md5sum = "@UHD_IMAGES_MD5SUM@"
     filename = images_src.split("/")[-1]
 
+    #Use this directory with relative paths
+    current_directory = os.getcwd()
+
     with temp_dir() as dirname:
         os.chdir(dirname)
 
         #Configuring image destination
         if options.install_location != "":
-            images_dir = options.install_location
+            images_dir = os.path.abspath(os.path.join(current_directory, options.install_location))
         elif os.environ.get("UHD_IMAGES_DIR") != "" and os.environ.get("UHD_IMAGES_DIR") != None:
             images_dir = os.environ.get("UHD_IMAGES_DIR")
         else:
             images_dir = "@CMAKE_INSTALL_PREFIX@/share/uhd/images"
         
+        #Before doing anything, check for write permissions in parent directory
+        parent_directory = os.path.dirname(images_dir)
+        if not os.access(parent_directory, os.W_OK):
+            sys.stderr.write("You do not have write permissions at the install location!\n")
+            sys.exit(1)
+
         opener = urllib2.build_opener()
         opener.add_headers = [('User-Agent', 'UHD Images Downloader')]
         u = opener.open(images_src)
@@ -118,10 +131,10 @@ if __name__ == "__main__":
                     shutil.rmtree(images_dir)
                 except:
                     sys.stderr.write("\nMake sure you have write permissions in the images directory.\n")
-                    sys.exit(0)
+                    sys.exit(1)
 
             #Copying downloaded images into images_dir
-            shutil.copytree("tempdir/%s/share/uhd/images" % filename[:-4],images_dir)
+            shutil.copytree(os.path.join('tempdir', os.path.splitext(filename)[0], 'share', 'uhd', 'images'), images_dir)
 
             #Removing tempdir and zip file
             shutil.rmtree("tempdir")
