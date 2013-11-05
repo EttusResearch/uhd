@@ -35,35 +35,27 @@ using namespace uhd::transport;
 
 static const double ACK_TIMEOUT = 2.0; //supposed to be worst case practical timeout
 static const double MASSIVE_TIMEOUT = 10.0; //for when we wait on a timed command
-static const size_t SR_READBACK  = 32;
+static const size_t SR_READBACK = 32;
 
-class radio_ctrl_core_3000_impl : public radio_ctrl_core_3000
+class radio_ctrl_core_3000_impl: public radio_ctrl_core_3000
 {
 public:
 
-    radio_ctrl_core_3000_impl(
-        const bool big_endian,
-        uhd::transport::zero_copy_if::sptr ctrl_xport,
-        uhd::transport::zero_copy_if::sptr resp_xport,
-        const boost::uint32_t sid,
-        const std::string &name
-    ):
-        _link_type(vrt::if_packet_info_t::LINK_TYPE_CHDR),
-        _packet_type(vrt::if_packet_info_t::PACKET_TYPE_CONTEXT),
-        _bige(big_endian),
-        _ctrl_xport(ctrl_xport),
-        _resp_xport(resp_xport),
-        _sid(sid),
-        _name(name),
-        _seq_out(0),
-        _timeout(ACK_TIMEOUT),
-        _resp_queue(128/*max response msgs*/),
-        _resp_queue_size(_resp_xport? _resp_xport->get_num_recv_frames() : 3)
+    radio_ctrl_core_3000_impl(const bool big_endian,
+            uhd::transport::zero_copy_if::sptr ctrl_xport,
+            uhd::transport::zero_copy_if::sptr resp_xport,
+            const boost::uint32_t sid, const std::string &name) :
+            _link_type(vrt::if_packet_info_t::LINK_TYPE_CHDR), _packet_type(
+                    vrt::if_packet_info_t::PACKET_TYPE_CONTEXT), _bige(
+                    big_endian), _ctrl_xport(ctrl_xport), _resp_xport(
+                    resp_xport), _sid(sid), _name(name), _seq_out(0), _timeout(
+                    ACK_TIMEOUT), _resp_queue(128/*max response msgs*/), _resp_queue_size(
+                    _resp_xport ? _resp_xport->get_num_recv_frames() : 3)
     {
-        UHD_LOG << "radio_ctrl_core_3000_impl() " << _name << std::endl;
+        UHD_LOG<< "radio_ctrl_core_3000_impl() " << _name << std::endl;
         if (resp_xport)
         {
-            while (resp_xport->get_recv_buff(0.0)){} //flush
+            while (resp_xport->get_recv_buff(0.0)) {} //flush
         }
         this->set_time(uhd::time_spec_t(0.0));
         this->set_tick_rate(1.0); //something possible but bogus
@@ -74,8 +66,8 @@ public:
         UHD_LOG << "~radio_ctrl_core_3000_impl() " << _name << std::endl;
         _timeout = ACK_TIMEOUT; //reset timeout to something small
         UHD_SAFE_CALL(
-            this->peek32(0); //dummy peek with the purpose of ack'ing all packets
-            _async_task.reset(); //now its ok to release the task
+                this->peek32(0);//dummy peek with the purpose of ack'ing all packets
+                _async_task.reset();//now its ok to release the task
         )
     }
 
@@ -95,7 +87,6 @@ public:
     {
         boost::mutex::scoped_lock lock(_mutex);
         UHD_LOGV(always) << _name << std::hex << " addr 0x" << addr << std::dec << std::endl;
-
         this->send_pkt(SR_READBACK, addr/8);
         this->wait_for_ack(false);
 
@@ -136,6 +127,11 @@ public:
     }
 
 private:
+    // This is the buffer type for messages in radio control core.
+    struct resp_buff_type
+    {
+        boost::uint32_t data[8];
+    };
 
     /*******************************************************************
      * Primary control and interaction private methods
@@ -143,7 +139,7 @@ private:
     UHD_INLINE void send_pkt(const boost::uint32_t addr, const boost::uint32_t data = 0)
     {
         managed_send_buffer::sptr buff = _ctrl_xport->get_send_buff(0.0);
-        if (not buff){
+        if (not buff) {
             throw uhd::runtime_error("fifo ctrl timed out getting a send buffer");
         }
         boost::uint32_t *pkt = buff->cast<boost::uint32_t *>();
@@ -173,12 +169,11 @@ private:
         pkt[packet_info.num_header_words32+0] = (_bige)? uhd::htonx(addr) : uhd::htowx(addr);
         pkt[packet_info.num_header_words32+1] = (_bige)? uhd::htonx(data) : uhd::htowx(data);
         //UHD_MSG(status) << boost::format("0x%08x, 0x%08x\n") % addr % data;
-
         //send the buffer over the interface
         _outstanding_seqs.push(_seq_out);
         buff->commit(sizeof(boost::uint32_t)*(packet_info.num_packet_words32));
 
-        _seq_out++; //inc seq for next call
+        _seq_out++;//inc seq for next call
     }
 
     UHD_INLINE boost::uint64_t wait_for_ack(const bool readback)
@@ -186,7 +181,6 @@ private:
         while (readback or (_outstanding_seqs.size() >= _resp_queue_size))
         {
             UHD_LOGV(always) << _name << " wait_for_ack: " << "readback = " << readback << " outstanding_seqs.size() " << _outstanding_seqs.size() << std::endl;
-
             //get seq to ack from outstanding packets list
             UHD_ASSERT_THROW(not _outstanding_seqs.empty());
             const size_t seq_to_ack = _outstanding_seqs.front();
@@ -218,7 +212,27 @@ private:
             //get buffer from response endpoint - or die in timeout
             else
             {
-                UHD_ASSERT_THROW(_resp_queue.pop_with_timed_wait(resp_buff, _timeout));
+                /*
+                 * Couldn't get message with haste.
+                 * Now check both possible queues for messages.
+                 * Messages should come in on _resp_queue,
+                 * but could end up in dump_queue.
+                 * If we don't get a message --> Die in timeout.
+                 */
+                double accum_timeout = 0.0;
+                const double short_timeout = 0.005; // == 5ms
+                while(not (_resp_queue.pop_with_haste(resp_buff)
+                        || check_dump_queue(resp_buff)
+                        || _resp_queue.pop_with_timed_wait(resp_buff, short_timeout)
+                        )){
+                    /*
+                     * If a message couldn't be received within a given timeout
+                     * --> throw AssertionError!
+                     */
+                    accum_timeout += short_timeout;
+                    UHD_ASSERT_THROW(accum_timeout < _timeout);
+                }
+
                 pkt = resp_buff.data;
                 packet_info.num_packet_words32 = sizeof(resp_buff)/sizeof(boost::uint32_t);
             }
@@ -262,7 +276,31 @@ private:
                 return ((hi << 32) | lo);
             }
         }
+
         return 0;
+    }
+
+    /*
+     * If ctrl_core waits for a message that didn't arrive it can search for it in the dump queue.
+     * This actually happens during shutdown.
+     * handle_async_task can't access radio_ctrl_cores queue anymore thus it returns the corresponding message.
+     * msg_task class implements a dump_queue to store such messages.
+     * With check_dump_queue we can check if a message we are waiting for got stranded there.
+     * If a message got stuck we get it here and push it onto our own message_queue.
+     */
+    bool check_dump_queue(resp_buff_type b) {
+        boost::uint32_t recv_sid = (((_sid)<<16)|((_sid)>>16));
+        uhd::msg_task::msg_payload_t msg;
+        do{
+            msg = _async_task->get_msg_from_dump_queue(recv_sid);
+        }
+        while(msg.size() < 8 && msg.size() != 0);
+
+        if(msg.size() >= 8) {
+            memcpy(b.data, &msg.front(), 8);
+            return true;
+        }
+        return false;
     }
 
     void push_response(const boost::uint32_t *buff)
@@ -272,7 +310,7 @@ private:
         _resp_queue.push_with_haste(resp_buff);
     }
 
-    void hold_task(boost::shared_ptr<void> task)
+    void hold_task(uhd::msg_task::sptr task)
     {
         _async_task = task;
     }
@@ -282,7 +320,7 @@ private:
     const bool _bige;
     const uhd::transport::zero_copy_if::sptr _ctrl_xport;
     const uhd::transport::zero_copy_if::sptr _resp_xport;
-    boost::shared_ptr<void> _async_task;
+    uhd::msg_task::sptr _async_task;
     const boost::uint32_t _sid;
     const std::string _name;
     boost::mutex _mutex;
@@ -292,22 +330,15 @@ private:
     double _tick_rate;
     double _timeout;
     std::queue<size_t> _outstanding_seqs;
-    struct resp_buff_type
-    {
-        boost::uint32_t data[8];
-    };
     bounded_buffer<resp_buff_type> _resp_queue;
     const size_t _resp_queue_size;
 };
 
-
-radio_ctrl_core_3000::sptr radio_ctrl_core_3000::make(
-    const bool big_endian,
-    zero_copy_if::sptr ctrl_xport,
-    zero_copy_if::sptr resp_xport,
-    const boost::uint32_t sid,
-    const std::string &name
-)
+radio_ctrl_core_3000::sptr radio_ctrl_core_3000::make(const bool big_endian,
+        zero_copy_if::sptr ctrl_xport, zero_copy_if::sptr resp_xport,
+        const boost::uint32_t sid, const std::string &name)
 {
-    return sptr(new radio_ctrl_core_3000_impl(big_endian, ctrl_xport, resp_xport, sid, name));
+    return sptr(
+            new radio_ctrl_core_3000_impl(big_endian, ctrl_xport, resp_xport,
+                    sid, name));
 }

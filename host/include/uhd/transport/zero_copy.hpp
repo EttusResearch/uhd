@@ -72,6 +72,7 @@ namespace uhd{ namespace transport{
         }
 
         boost::detail::atomic_count _ref_count;
+        typedef boost::intrusive_ptr<managed_buffer> sptr;
 
     protected:
         void *_buffer;

@@ -27,6 +27,7 @@ UHD_INSTALL(FILES
     images.hpp
     log.hpp
     msg.hpp
+    msg_task.hpp
     paths.hpp
     pimpl.hpp
     safe_call.hpp

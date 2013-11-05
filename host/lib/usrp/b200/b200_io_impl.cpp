@@ -139,13 +139,24 @@ bool b200_impl::recv_async_msg(
     return _async_task_data->async_md->pop_with_timed_wait(async_metadata, timeout);
 }
 
-void b200_impl::handle_async_task(
+/*
+ * This method is constantly called in a msg_task loop.
+ * Incoming messages are dispatched in to the hosts radio_ctrl_cores.
+ * The radio_ctrl_core queues are accessed via a weak_ptr to them, stored in AsyncTaskData.
+ * During shutdown the radio_ctrl_core dtor's are called.
+ * An empty peek32(0) is sent out to flush pending async messages.
+ * The response to those messages can't be delivered to the ctrl_core queues anymore
+ * because the shared pointer corresponding to the weak_ptrs is no longer valid.
+ * Those stranded messages are put into a dump_queue implemented in msg_task.
+ * A radio_ctrl_core can search for missing messages there.
+ */
+boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
     uhd::transport::zero_copy_if::sptr xport,
     boost::shared_ptr<AsyncTaskData> data
 )
 {
-    managed_recv_buffer::sptr buff = xport->get_recv_buff();
-    if (not buff or buff->size() < 8) return;
+	managed_recv_buffer::sptr buff = xport->get_recv_buff();
+    if (not buff or buff->size() < 8) return NULL;
     const boost::uint32_t sid = uhd::wtohx(buff->cast<const boost::uint32_t *>()[1]);
     switch (sid)
     {
@@ -155,11 +166,16 @@ void b200_impl::handle_async_task(
     case B200_RESP1_MSG_SID:
     case B200_LOCAL_RESP_SID:
     {
-        radio_ctrl_core_3000::sptr ctrl;
+    	radio_ctrl_core_3000::sptr ctrl;
         if (sid == B200_RESP0_MSG_SID) ctrl = data->radio_ctrl[0].lock();
         if (sid == B200_RESP1_MSG_SID) ctrl = data->radio_ctrl[1].lock();
         if (sid == B200_LOCAL_RESP_SID) ctrl = data->local_ctrl.lock();
-        if (ctrl) ctrl->push_response(buff->cast<const boost::uint32_t *>());
+        if (ctrl){
+        	ctrl->push_response(buff->cast<const boost::uint32_t *>());
+        }
+        else{
+            return std::make_pair(sid, uhd::msg_task::buff_to_vector(buff->cast<boost::uint8_t *>(), buff->size() ) );
+        }
         break;
     }
 
@@ -204,6 +220,7 @@ void b200_impl::handle_async_task(
     default:
         UHD_MSG(error) << "Got a ctrl packet with unknown SID " << sid << std::endl;
     }
+    return NULL;
 }
 
 /***********************************************************************
