@@ -310,12 +310,14 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _tree->create<std::string>(rx_codec_path / "name").set("ad9522");
     _tree->create<meta_range_t>(rx_codec_path / "gains/pga/range").set(b100_codec_ctrl::rx_pga_gain_range);
     _tree->create<double>(rx_codec_path / "gains/pga/value")
-        .coerce(boost::bind(&b100_impl::update_rx_codec_gain, this, _1));
+        .coerce(boost::bind(&b100_impl::update_rx_codec_gain, this, _1))
+        .set(0.0);
     _tree->create<std::string>(tx_codec_path / "name").set("ad9522");
     _tree->create<meta_range_t>(tx_codec_path / "gains/pga/range").set(b100_codec_ctrl::tx_pga_gain_range);
     _tree->create<double>(tx_codec_path / "gains/pga/value")
         .subscribe(boost::bind(&b100_codec_ctrl::set_tx_pga_gain, _codec_ctrl, _1))
-        .publish(boost::bind(&b100_codec_ctrl::get_tx_pga_gain, _codec_ctrl));
+        .publish(boost::bind(&b100_codec_ctrl::get_tx_pga_gain, _codec_ctrl))
+        .set(0.0);
 
     ////////////////////////////////////////////////////////////////////
     // and do the misc mboard sensors
