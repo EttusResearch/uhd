@@ -272,7 +272,7 @@ public:
         boost::mutex::scoped_lock lock(_mutex);
         if (_enqueued.empty())
         {
-            _cond.timed_wait(l, boost::posix_time::microseconds(long(timeout*1e6)));
+            _cond.timed_wait(lock, boost::posix_time::microseconds(long(timeout*1e6)));
         }
         if (_enqueued.empty()) return buff;
         front = _enqueued.front();
