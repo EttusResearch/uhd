@@ -46,8 +46,9 @@ class temp_dir():
     def __exit__(self, type, value, traceback):
         try:
             shutil.rmtree(self.name)
-        except OSError:
+        except OSError,e:
             #Utility should have already detected this, but this is for safety
+            print str(e)
             raise Exception("Could not install images! Make sure you have write permissions.")
 
 if __name__ == "__main__":
@@ -76,9 +77,7 @@ if __name__ == "__main__":
     with temp_dir() as dirname:
         os.chdir(dirname)
 
-        if options.install_location == default_images_dir:
-            images_dir = default_images_dir
-        elif os.path.isabs(options.install_location):
+        if os.path.isabs(options.install_location):
             #Custom absolute path given
             images_dir = options.install_location
         else:
@@ -127,29 +126,32 @@ if __name__ == "__main__":
             os.remove(filename)
             os.chdir("/".join(images_dir.split("/")[:-1]))
         else:
+            temp_path = "tempdir"
+
             #Extracting contents of zip file
-            if os.path.exists("tempdir"):
-                shutil.rmtree("tempdir")
-            os.mkdir("tempdir")
+            if os.path.exists(temp_path):
+                shutil.rmtree(temp_path)
+            os.mkdir(temp_path)
 
             images_zip = zipfile.ZipFile(filename)
-            images_zip.extractall("tempdir")
+            images_zip.extractall(temp_path)
 
             #Removing images currently in images_dir
             if os.path.exists(images_dir):
                 try:
                     shutil.rmtree(images_dir)
-                except OSError:
+                except OSError,e:
+                    print str(e)
                     print "Make sure you have write permissions in the images directory."
                     sys.exit(1)
 
             #Copying downloaded images into images_dir
-            shutil.copytree(os.path.join('tempdir', os.path.splitext(filename)[0], 'share', 'uhd', 'images'), images_dir)
+            shutil.copytree(os.path.join(temp_path, os.path.splitext(filename)[0], 'share', 'uhd', 'images'), images_dir)
 
             #Removing tempdir and zip file
-            shutil.rmtree("tempdir")
+            shutil.rmtree(temp_path)
             images_zip.close()
             os.remove(filename)
 
             os.chdir(images_dir)
-            print "\nImages successfully installed to: %s" % images_dir
+            print "\n\nImages successfully installed!"
