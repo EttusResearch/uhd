@@ -181,6 +181,34 @@ protected:
         ~sbx_versionx(void) {}
 
         virtual double set_lo_freq(dboard_iface::unit_t unit, double target_freq) = 0;
+    protected:
+        struct adf435x_tuning_constraints {
+            bool            force_frac0;
+            double          ref_doubler_threshold;
+            double          pfd_freq_max;
+            double          band_sel_freq_max;
+            uhd::range_t    rf_divider_range;
+            uhd::range_t    int_range;
+        };
+
+        struct adf435x_tuning_settings {
+            boost::uint16_t frac_12_bit;
+            boost::uint16_t int_16_bit;
+            boost::uint16_t mod_12_bit;
+            boost::uint16_t r_counter_10_bit;
+            bool            r_doubler_en;
+            bool            r_divide_by_2_en;
+            boost::uint16_t clock_divider_12_bit;
+            boost::uint8_t  band_select_clock_div;
+            boost::uint16_t rf_divider;
+            bool            feedback_after_divider;
+        };
+
+        adf435x_tuning_settings _tune_adf435x_synth(
+            double target_freq,
+            double ref_freq,
+            const adf435x_tuning_constraints& constraints,
+            double& actual_freq);
     };
 
     /*!
