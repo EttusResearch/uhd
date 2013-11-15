@@ -258,12 +258,14 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         _tree->create<std::string>(rx_codec_path / "name").set("ad9522");
         _tree->create<meta_range_t>(rx_codec_path / "gains/pga/range").set(usrp1_codec_ctrl::rx_pga_gain_range);
         _tree->create<double>(rx_codec_path / "gains/pga/value")
-            .coerce(boost::bind(&usrp1_impl::update_rx_codec_gain, this, db, _1));
+            .coerce(boost::bind(&usrp1_impl::update_rx_codec_gain, this, db, _1))
+            .set(0.0);
         _tree->create<std::string>(tx_codec_path / "name").set("ad9522");
         _tree->create<meta_range_t>(tx_codec_path / "gains/pga/range").set(usrp1_codec_ctrl::tx_pga_gain_range);
         _tree->create<double>(tx_codec_path / "gains/pga/value")
             .subscribe(boost::bind(&usrp1_codec_ctrl::set_tx_pga_gain, _dbc[db].codec, _1))
-            .publish(boost::bind(&usrp1_codec_ctrl::get_tx_pga_gain, _dbc[db].codec));
+            .publish(boost::bind(&usrp1_codec_ctrl::get_tx_pga_gain, _dbc[db].codec))
+            .set(0.0);
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -407,7 +409,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(_rx_subdev_spec);
     if (_tree->list(mb_path / "tx_dsps").size() > 0)
         _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(_tx_subdev_spec);
- 
+
 }
 
 usrp1_impl::~usrp1_impl(void){
