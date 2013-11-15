@@ -240,10 +240,12 @@ public:
         size_t num_bytes
     ){
         byte_vector_t recv_bytes(num_bytes);
-        fx3_control_read(B200_VREQ_EEPROM_READ,
+        int bytes_read = fx3_control_read(B200_VREQ_EEPROM_READ,
                          0, offset | (boost::uint16_t(addr) << 8),
                          (unsigned char*) &recv_bytes[0],
                          num_bytes);
+        if (bytes_read != num_bytes)
+            throw uhd::io_error("Failed to read data from EEPROM.");
         return recv_bytes;
     }
 

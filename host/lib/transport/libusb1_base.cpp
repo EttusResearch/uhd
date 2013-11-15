@@ -274,6 +274,10 @@ public:
         return libusb::device_descriptor::make(this->get_device())->get().idProduct;
     }
 
+    bool firmware_loaded() {
+        return (get_manufacturer() == "Ettus Research LLC");
+    }
+
 private:
     libusb::device::sptr _dev; //always keep a reference to device
 };
