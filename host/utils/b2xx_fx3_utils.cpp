@@ -35,6 +35,7 @@
 #include <boost/functional/hash.hpp>
 
 #include <b200_iface.hpp>
+#include <uhd/config.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
 #include <uhd/exception.hpp>
@@ -178,8 +179,17 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
                 << boost::format("0x%X") % pid << std::endl;
             return -1;
         }
-        usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-        b200 = b200_iface::make(usb_ctrl);
+        try {
+            usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
+            b200 = b200_iface::make(usb_ctrl);
+        }
+        catch(const std::exception &e) {
+            std::cerr << "Failed to communicate with device!" << std::endl;
+            #ifdef UHD_PLATFORM_WIN32
+            std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+            #endif /* UHD_PLATFORM_WIN32 */
+            return -1;
+        }
 
         if (!(handles[0]->firmware_loaded()))
         {
@@ -226,8 +236,17 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
             std::cerr << "Cannot find device" << std::endl;
             return -1;
         }
-        usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-        b200 = b200_iface::make(usb_ctrl);
+        try {
+            usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
+            b200 = b200_iface::make(usb_ctrl);
+        }
+        catch(const std::exception &e) {
+            std::cerr << "Failed to communicate with device!" << std::endl;
+            #ifdef UHD_PLATFORM_WIN32
+            std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+            #endif /* UHD_PLATFORM_WIN32 */
+            return -1;
+        }
 
         if (!(handles[0]->firmware_loaded()))
         {
@@ -307,8 +326,17 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
         std::cout << "Initialized B2xx detected..." << std::flush;
 
-        usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-        b200 = b200_iface::make(usb_ctrl);
+        try {
+            usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
+            b200 = b200_iface::make(usb_ctrl);
+        }
+        catch(const std::exception &e) {
+            std::cerr << "Failed to communicate with device!" << std::endl;
+            #ifdef UHD_PLATFORM_WIN32
+            std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+            #endif /* UHD_PLATFORM_WIN32 */
+            return -1;
+        }
 
         std::cout << " Control of B2xx granted..." << std::endl << std::endl;
 
@@ -383,9 +411,18 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
         std::cout << "Uninitialized B2xx detected..." << std::flush;
 
-        usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-        b200 = b200_iface::make(usb_ctrl);
-
+        try {
+            usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
+            b200 = b200_iface::make(usb_ctrl);
+        }
+        catch(const std::exception &e) {
+            std::cerr << "Failed to communicate with device!" << std::endl;
+            #ifdef UHD_PLATFORM_WIN32
+            std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+            #endif /* UHD_PLATFORM_WIN32 */
+            return -1;
+        }
+            
         std::cout << " Control of B2xx granted..." << std::endl << std::endl;
 
         if (!(handles[0]->firmware_loaded()))
