@@ -44,10 +44,6 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/weak_ptr.hpp>
 #include "recv_packet_demuxer_3000.hpp"
-
-static const std::string     B200_FW_FILE_NAME = "usrp_b200_fw.hex";
-static const std::string     B200_FPGA_FILE_NAME = "usrp_b200_fpga.bin";
-static const std::string     B210_FPGA_FILE_NAME = "usrp_b210_fpga.bin";
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 0x03;
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0x00;
 static const boost::uint16_t B200_FPGA_COMPAT_NUM = 0x02;

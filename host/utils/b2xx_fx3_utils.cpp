@@ -38,6 +38,7 @@
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/images.hpp>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -182,6 +183,8 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
         if (!(handles[0]->firmware_loaded()))
         {
+            if (fw_file.empty())
+                fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
             b200->load_firmware(fw_file);
 
             // Now that the firmware is loaded, we need to re-open the device
@@ -229,6 +232,8 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         if (!(handles[0]->firmware_loaded()))
         {
             // load FW
+            if (fw_file.empty())
+                fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
             b200->load_firmware(fw_file);
 
             // re-open device
@@ -309,6 +314,8 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
         if (!(handles[0]->firmware_loaded()))
         {
+            if (fw_file.empty())
+                fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
             b200->load_firmware(fw_file);
 
             // Now that the firmware is loaded, we need to re-open the device
@@ -384,6 +391,8 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         if (!(handles[0]->firmware_loaded()))
         {
             // load FW
+            if (fw_file.empty())
+                fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
             b200->load_firmware(fw_file);
 
             // re-open device

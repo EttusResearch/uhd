@@ -31,7 +31,11 @@ const static boost::uint16_t FX3_VID = 0x04b4;
 const static boost::uint16_t FX3_DEFAULT_PID = 0x00f3;
 const static boost::uint16_t FX3_REENUM_PID = 0x00f0;
 
-class b200_iface: boost::noncopyable, public virtual uhd::i2c_iface,
+static const std::string     B200_FW_FILE_NAME = "usrp_b200_fw.hex";
+static const std::string     B200_FPGA_FILE_NAME = "usrp_b200_fpga.bin";
+static const std::string     B210_FPGA_FILE_NAME = "usrp_b210_fpga.bin";
+
+class UHD_API b200_iface: boost::noncopyable, public virtual uhd::i2c_iface,
                   public ad9361_ctrl_iface_type {
 public:
     typedef boost::shared_ptr<b200_iface> sptr;
@@ -41,7 +45,7 @@ public:
      * \param usb_ctrl a USB control transport
      * \return a new b200 interface object
      */
-    static sptr make(uhd::transport::usb_control::sptr usb_ctrl);
+    static UHD_API sptr make(uhd::transport::usb_control::sptr usb_ctrl);
 
     //! query the device USB speed (2, 3)
     virtual boost::uint8_t get_usb_speed(void) = 0;

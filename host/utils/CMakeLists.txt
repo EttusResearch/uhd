@@ -47,8 +47,11 @@ SET(util_share_sources
 IF(ENABLE_USB)
     LIST(APPEND util_share_sources
         fx2_init_eeprom.cpp
+        b2xx_fx3_utils
     )
     INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIRS})
+    # Additional include directories for b2xx_fx3_utils
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/b200 ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/common)
 ENDIF(ENABLE_USB)
 
 IF(LINUX AND ENABLE_USB)
@@ -66,15 +69,6 @@ FOREACH(util_source ${util_share_sources})
     TARGET_LINK_LIBRARIES(${util_name} uhd ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
 ENDFOREACH(util_source)
-
-IF(ENABLE_USB)
-    # build b2xx_fx3_utils
-    INCLUDE_DIRECTORIES(../lib/usrp/b200)
-    INCLUDE_DIRECTORIES(../lib/usrp/common)
-    ADD_EXECUTABLE(b2xx_fx3_utils ../lib/transport/libusb1_base.cpp ../lib/usrp/b200/b200_iface.cpp b2xx_fx3_utils.cpp)
-    TARGET_LINK_LIBRARIES(b2xx_fx3_utils uhd ${Boost_LIBRARIES})
-    UHD_INSTALL(TARGETS b2xx_fx3_utils RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
-ENDIF(ENABLE_USB)
 
 UHD_INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
 
