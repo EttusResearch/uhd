@@ -100,7 +100,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     po::notify(vm);
 
     if (vm.count("help")){
-        std::cout << boost::format("B2xx Utilitiy Program %s") % desc << std::endl;
+        std::cout << boost::format("B2xx Utilitiy Program %s") % visible << std::endl;
         return ~0;
     } else if (vm.count("reset-usb")) {
         /* Okay, first, we need to discover what the path is to the ehci and
@@ -519,7 +519,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
             << std::endl;
 
     } else {
-        std::cout << boost::format("B2xx Utilitiy Program %s") % desc << std::endl;
+        std::cout << boost::format("B2xx Utilitiy Program %s") % visible << std::endl;
         return ~0;
     }
 

@@ -45,7 +45,7 @@ public:
      * \param usb_ctrl a USB control transport
      * \return a new b200 interface object
      */
-    static UHD_API sptr make(uhd::transport::usb_control::sptr usb_ctrl);
+    static sptr make(uhd::transport::usb_control::sptr usb_ctrl);
 
     //! query the device USB speed (2, 3)
     virtual boost::uint8_t get_usb_speed(void) = 0;
