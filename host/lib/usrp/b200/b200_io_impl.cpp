@@ -238,7 +238,7 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
         const size_t bpp = _data_transport->get_recv_frame_size() - hdr_size;
         const size_t bpi = convert::get_bytes_per_item(args.otw_format);
         size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi));
-        spp = std::min<size_t>(4092, spp); //magic maximum for framing at full rate
+        spp = std::min<size_t>(2044, spp); //magic maximum for framing at full rate
 
         //make the new streamer given the samples per packet
         if (not my_streamer) my_streamer = boost::make_shared<sph::recv_packet_streamer>(spp);

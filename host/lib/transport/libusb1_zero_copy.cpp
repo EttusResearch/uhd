@@ -74,12 +74,13 @@ struct lut_result_t
     libusb_transfer_status status;
     int actual_length;
     boost::mutex mut;
-    boost::condition_variable wait_for_complete;
+    boost::condition_variable usb_transfer_complete;
 };
 
+// Created to be used as an argument to boost::condition_variable::timed_wait() function
 struct lut_result_completed {
-    lut_result_t& _result;
-    lut_result_completed(lut_result_t& result):_result(result) {}
+    const lut_result_t& _result;
+    lut_result_completed(const lut_result_t& result):_result(result) {}
     bool operator()() const {return (_result.completed ? true : false);}
 };
 
@@ -96,7 +97,7 @@ static void LIBUSB_CALL libusb_async_cb(libusb_transfer *lut)
     r->status = lut->status;
     r->actual_length = lut->actual_length;
     r->completed = 1;
-    r->wait_for_complete.notify_one();
+    r->usb_transfer_complete.notify_one();  // wake up thread waiting in wait_for_completion() member function below
 }
 
 /***********************************************************************
@@ -135,30 +136,30 @@ public:
         return typename buffer_type::sptr();
     }
 
-    UHD_INLINE bool flush(double timeout)
-    {
-        return wait_for_completion(timeout);
-    }
-
+    // This is public because it is accessed from the libusb_zero_copy_single constructor
     lut_result_t result;
 
-private:
     /*!
      * Wait for a managed buffer to become complete.
      *
-     * \param timeout the wait timeout in seconds
+     * \param timeout the wait timeout in seconds.  A negative value will wait forever.
      * \return true for completion, false for timeout
      */
     UHD_INLINE bool wait_for_completion(const double timeout)
     {
         boost::unique_lock<boost::mutex> lock(result.mut);
         if (!result.completed) {
-            const boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::microseconds(long(timeout*1000000));
-            result.wait_for_complete.timed_wait(lock, timeout_time, lut_result_completed(result));
+            if (timeout < 0.0) {
+                result.usb_transfer_complete.wait(lock);
+            } else {
+                const boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::microseconds(long(timeout*1000000));
+                result.usb_transfer_complete.timed_wait(lock, timeout_time, lut_result_completed(result));
+            }
         }
         return result.completed;
     }
 
+private:
 
     boost::function<void(libusb_zero_copy_mb *)> _release_cb;
     const bool _is_recv;
@@ -254,7 +255,7 @@ public:
         //process all transfers until timeout occurs
         BOOST_FOREACH(libusb_zero_copy_mb *mb, _enqueued)
         {
-            mb->flush(0.01);
+            mb->wait_for_completion(0.01);
         }
 
         //free all transfers
