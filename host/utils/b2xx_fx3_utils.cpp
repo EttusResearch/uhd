@@ -123,27 +123,38 @@ uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, c
     std::vector<uhd::transport::usb_device_handle::sptr> handles;
     uhd::transport::usb_device_handle::sptr handle;
 
-    handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);                             // try caller's VID/PID first
-    if (handles.size() == 0)
-        handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_DEFAULT_PID);         // try default Cypress FX3 VID/PID next
-    if (handles.size() == 0)
-        handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_REENUM_PID);          // try reenumerated Cypress FX3 VID/PID next
-    if (handles.size() == 0)
-        handles = uhd::transport::usb_device_handle::get_device_list(B200_VENDOR_ID, B200_PRODUCT_ID);  // try default B200 VID/PID last
+    try {
+        handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);                             // try caller's VID/PID first
+        if (handles.size() == 0)
+            handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_DEFAULT_PID);         // try default Cypress FX3 VID/PID next
+        if (handles.size() == 0)
+            handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_REENUM_PID);          // try reenumerated Cypress FX3 VID/PID next
+        if (handles.size() == 0)
+            handles = uhd::transport::usb_device_handle::get_device_list(B200_VENDOR_ID, B200_PRODUCT_ID);  // try default B200 VID/PID last
 
-    if (handles.size() > 0)
-        handle = handles[0];
+        if (handles.size() > 0)
+            handle = handles[0];
 
-    if (!handle)
-        std::cerr << "Cannot open device" << std::endl;
+        if (!handle)
+            std::cerr << "Cannot open device" << std::endl;
+    }
+    catch(const std::exception &e) {
+        std::cerr << "Failed to communicate with the device!" << std::endl;
+        #ifdef UHD_PLATFORM_WIN32
+        std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+        #endif /* UHD_PLATFORM_WIN32 */
+        handle.reset();
+    }
 
     return handle;
 }
 
 b200_iface::sptr make_b200_iface(const uhd::transport::usb_device_handle::sptr &handle)
 {
+    b200_iface::sptr b200;
+
     uhd::transport::usb_control::sptr usb_ctrl = uhd::transport::usb_control::make(handle, 0);
-    b200_iface::sptr b200 = b200_iface::make(usb_ctrl);
+    b200 = b200_iface::make(usb_ctrl);
 
     if (!b200)
         std::cerr << "Cannot create device interface" << std::endl;
@@ -228,7 +239,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         // re-open device
         b200.reset();
         handle.reset();
-        usleep(2000000);    // wait 2 seconds for FX3 to reset
+        boost::this_thread::sleep(boost::posix_time::seconds(2));    // wait 2 seconds for FX3 to reset
         handle = open_device(vid, pid);
         if (!handle)
             return -1;
@@ -251,20 +262,12 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         // re-open device
         b200.reset();
         handle.reset();
-        try {
-            handle = open_device(vid, pid);
-            if (!handle)
-                return -1;
-            b200 = make_b200_iface(handle);
-            if (!b200)
-                return -1;
-        } catch(const std::exception &e) {
-            std::cerr << "Failed to communicate with the device!" << std::endl;
-            #ifdef UHD_PLATFORM_WIN32
-            std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
-            #endif /* UHD_PLATFORM_WIN32 */
+        handle = open_device(vid, pid);
+        if (!handle)
             return -1;
-        }
+        b200 = make_b200_iface(handle);
+        if (!b200)
+            return -1;
     }
 
     // Added for testing purposes - not exposed
