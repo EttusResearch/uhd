@@ -44,13 +44,25 @@ class temp_dir():
         self.name = tempfile.mkdtemp()
         return self.name
     def __exit__(self, type, value, traceback):
-        os.removedirs(self.name)
+        try:
+            shutil.rmtree(self.name)
+        except OSError,e:
+            #Utility should have already detected this, but this is for safety
+            print str(e)
+            raise Exception("Could not install images! Make sure you have write permissions.")
 
 if __name__ == "__main__":
 
+    print
+    if os.environ.get("UHD_IMAGES_DIR") != None and os.environ.get("UHD_IMAGES_DIR") != "":
+        default_images_dir = os.environ.get("UHD_IMAGES_DIR")
+        print "UHD_IMAGES_DIR environment variable is set. Default install location: %s" % default_images_dir
+    else:
+        default_images_dir = "@CMAKE_INSTALL_PREFIX@/share/uhd/images"
+
     #Command line options
     parser = OptionParser()
-    parser.add_option("--install-location", type="string", default="", help="Set custom install location for images")
+    parser.add_option("--install-location", type="string", default=default_images_dir, help="Set custom install location for images")
     parser.add_option("--buffer-size", type="int", default=8192, help="Set download buffer size, [default=%default]",)
     (options, args) = parser.parse_args()
     
@@ -59,17 +71,27 @@ if __name__ == "__main__":
     images_zip_md5sum = "@UHD_IMAGES_MD5SUM@"
     filename = images_src.split("/")[-1]
 
+    #Use this directory with relative paths
+    current_directory = os.getcwd()
+
     with temp_dir() as dirname:
         os.chdir(dirname)
 
-        #Configuring image destination
-        if options.install_location != "":
+        if os.path.isabs(options.install_location):
+            #Custom absolute path given
             images_dir = options.install_location
-        elif os.environ.get("UHD_IMAGES_DIR") != "" and os.environ.get("UHD_IMAGES_DIR") != None:
-            images_dir = os.environ.get("UHD_IMAGES_DIR")
         else:
-            images_dir = "@CMAKE_INSTALL_PREFIX@/share/uhd/images"
-        
+            #Custom relative path given, so construct absolute path
+            images_dir = os.path.abspath(os.path.join(current_directory, options.install_location))
+
+        #Before doing anything, check for write permissions in parent directory
+        parent_directory = os.path.dirname(images_dir)
+        if os.access(parent_directory, os.W_OK):
+            print "Downloading images to: %s" % images_dir
+        else:
+            print "You do not have write permissions at the install location!"
+            sys.exit(1)
+
         opener = urllib2.build_opener()
         opener.add_headers = [('User-Agent', 'UHD Images Downloader')]
         u = opener.open(images_src)
@@ -101,32 +123,37 @@ if __name__ == "__main__":
         if images_zip_md5sum != downloaded_zip_md5sum:
             print "\nMD5 checksum does not match!"
             print "Expected %s, got %s" % (images_zip_md5sum, downloaded_zip_md5sum)
+            print "Images did not install. If problem persists, please contact support@ettus.com."
             os.remove(filename)
             os.chdir("/".join(images_dir.split("/")[:-1]))
+            sys.exit(1)
         else:
+            temp_path = "tempdir"
+
             #Extracting contents of zip file
-            if os.path.exists("tempdir"):
-                shutil.rmtree("tempdir")
-            os.mkdir("tempdir")
+            if os.path.exists(temp_path):
+                shutil.rmtree(temp_path)
+            os.mkdir(temp_path)
 
             images_zip = zipfile.ZipFile(filename)
-            images_zip.extractall("tempdir")
+            images_zip.extractall(temp_path)
 
             #Removing images currently in images_dir
             if os.path.exists(images_dir):
                 try:
                     shutil.rmtree(images_dir)
-                except:
-                    sys.stderr.write("\nMake sure you have write permissions in the images directory.\n")
-                    sys.exit(0)
+                except OSError,e:
+                    print str(e)
+                    print "Make sure you have write permissions in the images directory."
+                    sys.exit(1)
 
             #Copying downloaded images into images_dir
-            shutil.copytree("tempdir/%s/share/uhd/images" % filename[:-4],images_dir)
+            shutil.copytree(os.path.join(temp_path, os.path.splitext(filename)[0], 'share', 'uhd', 'images'), images_dir)
 
             #Removing tempdir and zip file
-            shutil.rmtree("tempdir")
+            shutil.rmtree(temp_path)
             images_zip.close()
             os.remove(filename)
 
             os.chdir(images_dir)
-            print "\nImages successfully installed to: %s" % images_dir
+            print "\n\nImages successfully installed!"
