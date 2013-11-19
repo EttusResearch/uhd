@@ -73,6 +73,15 @@ struct lut_result_t
     int completed;
     libusb_transfer_status status;
     int actual_length;
+    boost::mutex mut;
+    boost::condition_variable usb_transfer_complete;
+};
+
+// Created to be used as an argument to boost::condition_variable::timed_wait() function
+struct lut_result_completed {
+    const lut_result_t& _result;
+    lut_result_completed(const lut_result_t& result):_result(result) {}
+    bool operator()() const {return (_result.completed ? true : false);}
 };
 
 /*!
@@ -84,48 +93,11 @@ struct lut_result_t
 static void LIBUSB_CALL libusb_async_cb(libusb_transfer *lut)
 {
     lut_result_t *r = (lut_result_t *)lut->user_data;
-    r->completed = 1;
+    boost::lock_guard<boost::mutex> lock(r->mut);
     r->status = lut->status;
     r->actual_length = lut->actual_length;
-}
-
-/*!
- * Wait for a managed buffer to become complete.
- *
- * This routine processes async events until the transaction completes.
- * We must call the libusb handle events in a loop because the handler
- * may complete managed buffers other than the one we are waiting on.
- *
- * We cannot determine if handle events timed out or processed an event.
- * Therefore, the timeout condition is handled by using boost system time.
- *
- * \param ctx the libusb context structure
- * \param timeout the wait timeout in seconds
- * \param completed a reference to the completed flag
- * \return true for completion, false for timeout
- */
-UHD_INLINE bool wait_for_completion(libusb_context *ctx, const double timeout, int &completed)
-{
-    //already completed by a previous call?
-    if (completed) return true;
-
-    //perform a non-blocking event handle
-    timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-    libusb_handle_events_timeout_completed(ctx, &tv, &completed);
-    if (completed) return true;
-
-    //finish the rest with a timeout loop
-    const boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::microseconds(long(timeout*1000000));
-    while (not completed and (boost::get_system_time() < timeout_time)){
-        timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = 10000; /*10ms*/
-        libusb_handle_events_timeout_completed(ctx, &tv, &completed);
-    }
-
-    return completed;
+    r->completed = 1;
+    r->usb_transfer_complete.notify_one();  // wake up thread waiting in wait_for_completion() member function below
 }
 
 /***********************************************************************
@@ -154,7 +126,7 @@ public:
     template <typename buffer_type>
     UHD_INLINE typename buffer_type::sptr get_new(const double timeout)
     {
-        if (wait_for_completion(_ctx, timeout, result.completed))
+        if (wait_for_completion(timeout))
         {
             if (result.status != LIBUSB_TRANSFER_COMPLETED) throw uhd::runtime_error(str(boost::format(
                 "usb %s transfer status: %d") % _name % int(result.status)));
@@ -164,9 +136,31 @@ public:
         return typename buffer_type::sptr();
     }
 
+    // This is public because it is accessed from the libusb_zero_copy_single constructor
     lut_result_t result;
 
+    /*!
+     * Wait for a managed buffer to become complete.
+     *
+     * \param timeout the wait timeout in seconds.  A negative value will wait forever.
+     * \return true for completion, false for timeout
+     */
+    UHD_INLINE bool wait_for_completion(const double timeout)
+    {
+        boost::unique_lock<boost::mutex> lock(result.mut);
+        if (!result.completed) {
+            if (timeout < 0.0) {
+                result.usb_transfer_complete.wait(lock);
+            } else {
+                const boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::microseconds(long(timeout*1000000));
+                result.usb_transfer_complete.timed_wait(lock, timeout_time, lut_result_completed(result));
+            }
+        }
+        return result.completed;
+    }
+
 private:
+
     boost::function<void(libusb_zero_copy_mb *)> _release_cb;
     const bool _is_recv;
     const std::string _name;
@@ -252,8 +246,6 @@ public:
 
     ~libusb_zero_copy_single(void)
     {
-        libusb_context *ctx = libusb::session::get_global_session()->get_context();
-
         //cancel all transfers
         BOOST_FOREACH(libusb_transfer *lut, _all_luts)
         {
@@ -261,8 +253,10 @@ public:
         }
 
         //process all transfers until timeout occurs
-        int completed = 0;
-        wait_for_completion(ctx, 0.01, completed);
+        BOOST_FOREACH(libusb_zero_copy_mb *mb, _enqueued)
+        {
+            mb->wait_for_completion(0.01);
+        }
 
         //free all transfers
         BOOST_FOREACH(libusb_transfer *lut, _all_luts)
@@ -276,19 +270,18 @@ public:
     {
         typename buffer_type::sptr buff;
         libusb_zero_copy_mb *front = NULL;
+        boost::mutex::scoped_lock lock(_mutex);
+        if (_enqueued.empty())
         {
-            boost::mutex::scoped_lock l(_mutex);
-            if (_enqueued.empty())
-            {
-                _cond.timed_wait(l, boost::posix_time::microseconds(long(timeout*1e6)));
-            }
-            if (_enqueued.empty()) return buff;
-            front = _enqueued.front();
+            _cond.timed_wait(lock, boost::posix_time::microseconds(long(timeout*1e6)));
         }
+        if (_enqueued.empty()) return buff;
+        front = _enqueued.front();
 
+        lock.unlock();
         buff = front->get_new<buffer_type>(timeout);
+        lock.lock();
 
-        boost::mutex::scoped_lock l(_mutex);
         if (buff) _enqueued.pop_front();
         this->submit_what_we_can();
         return buff;
