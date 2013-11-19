@@ -153,11 +153,20 @@ b200_iface::sptr make_b200_iface(const uhd::transport::usb_device_handle::sptr &
 {
     b200_iface::sptr b200;
 
-    uhd::transport::usb_control::sptr usb_ctrl = uhd::transport::usb_control::make(handle, 0);
-    b200 = b200_iface::make(usb_ctrl);
+    try {
+        uhd::transport::usb_control::sptr usb_ctrl = uhd::transport::usb_control::make(handle, 0);
+        b200 = b200_iface::make(usb_ctrl);
 
-    if (!b200)
-        std::cerr << "Cannot create device interface" << std::endl;
+        if (!b200)
+            std::cerr << "Cannot create device interface" << std::endl;
+    }
+    catch(const std::exception &e) {
+        std::cerr << "Failed to communicate with the device!" << std::endl;
+        #ifdef UHD_PLATFORM_WIN32
+        std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+        #endif /* UHD_PLATFORM_WIN32 */
+        b200.reset();
+    }
 
     return b200;
 }
