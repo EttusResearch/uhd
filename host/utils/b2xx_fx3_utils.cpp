@@ -264,6 +264,16 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
         if (fw_file.empty())
             fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
+            
+        if(fw_file.empty()) {
+            std::cerr << "Firmware image not found!" << std::endl;
+            return -1;
+        }
+        
+        if(!(fs::exists(fw_file))) {
+            std::cerr << "Invalid filepath: " << fw_file << std::endl;
+            return -1;
+        }
 
         // load firmware
         b200->load_firmware(fw_file);
