@@ -69,6 +69,11 @@ const static boost::uint8_t FX3_STATE_RUNNING = 0x04;
 const static boost::uint8_t FX3_STATE_UNCONFIGURED = 0x05;
 const static boost::uint8_t FX3_STATE_ERROR = 0x06;
 
+const static int VREQ_MAX_SIZE_USB2 = 64;
+const static int VREQ_MAX_SIZE_USB3 = 512;
+const static int VREQ_DEFAULT_SIZE  = VREQ_MAX_SIZE_USB2;
+const static int VREQ_MAX_SIZE      = VREQ_MAX_SIZE_USB3;
+
 typedef boost::uint32_t hash_type;
 
 
@@ -484,8 +489,17 @@ public:
         hash_type hash = generate_hash(filename);
         hash_type loaded_hash; usrp_get_fpga_hash(loaded_hash);
         if (hash == loaded_hash) return 0;
+        
+        int transfer_size = VREQ_DEFAULT_SIZE;
+        int current_usb_speed = get_usb_speed();
+        if (current_usb_speed == 3)
+            transfer_size = VREQ_MAX_SIZE_USB3;
+        else if (current_usb_speed != 2)
+            throw uhd::io_error("load_fpga: get_usb_speed returned invalid USB speed (not 2 or 3)");
+        
+        UHD_ASSERT_THROW(transfer_size <= VREQ_MAX_SIZE);
 
-        unsigned char out_buff[64];
+        unsigned char out_buff[VREQ_MAX_SIZE];
         memset(out_buff, 0x00, sizeof(out_buff));
         fx3_control_write(B200_VREQ_FPGA_CONFIG, 0, 0, out_buff, 1, 1000);
 
@@ -535,7 +549,7 @@ public:
 
         size_t bytes_sent = 0;
         while(!file.eof()) {
-            file.read((char *) out_buff, sizeof(out_buff));
+            file.read((char *) out_buff, transfer_size);
             const std::streamsize n = file.gcount();
             if(n == 0) continue;
 
