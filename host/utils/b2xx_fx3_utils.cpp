@@ -62,6 +62,94 @@ boost::uint16_t atoh(const std::string &string){
     return boost::lexical_cast<boost::uint16_t>(string);
 }
 
+int reset_usb()
+{
+    /* Okay, first, we need to discover what the path is to the ehci and
+     * xhci device files. */
+    std::set<fs::path> path_list;
+    path_list.insert("/sys/bus/pci/drivers/xhci-pci/");
+    path_list.insert("/sys/bus/pci/drivers/ehci-pci/");
+    path_list.insert("/sys/bus/pci/drivers/xhci_hcd/");
+    path_list.insert("/sys/bus/pci/drivers/ehci_hcd/");
+
+    /* Check each of the possible paths above to find which ones this system
+     * uses. */
+    for(std::set<fs::path>::iterator found = path_list.begin();
+            found != path_list.end(); ++found) {
+
+        if(fs::exists(*found)) {
+
+            fs::path devpath = *found;
+
+            std::set<fs::path> globbed;
+
+            /* Now, glob all of the files in the directory. */
+            fs::directory_iterator end_itr;
+            for(fs::directory_iterator itr(devpath); itr != end_itr; ++itr) {
+                globbed.insert((*itr).path());
+            }
+
+            /* Check each file path string to see if it is a device file. */
+            for(std::set<fs::path>::iterator it = globbed.begin();
+                    it != globbed.end(); ++it) {
+
+                std::string file = fs::path((*it).filename()).string();
+
+                if(file.compare(0, 5, "0000:") == 0) {
+                    /* Un-bind the device. */
+                    std::fstream unbind((devpath.string() + "unbind").c_str(),
+                            std::fstream::out);
+                    unbind << file;
+                    unbind.close();
+
+                    /* Re-bind the device. */
+                    std::cout << "Re-binding: " << file << " in "
+                        << devpath.string() << std::endl;
+                    std::fstream bind((devpath.string() + "bind").c_str(),
+                            std::fstream::out);
+                    bind << file;
+                    bind.close();
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, const boost::uint16_t pid)
+{
+    std::vector<uhd::transport::usb_device_handle::sptr> handles;
+    uhd::transport::usb_device_handle::sptr handle;
+
+    handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);                             // try caller's VID/PID first
+    if (handles.size() == 0)
+        handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_DEFAULT_PID);         // try default Cypress FX3 VID/PID next
+    if (handles.size() == 0)
+        handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_REENUM_PID);          // try reenumerated Cypress FX3 VID/PID next
+    if (handles.size() == 0)
+        handles = uhd::transport::usb_device_handle::get_device_list(B200_VENDOR_ID, B200_PRODUCT_ID);  // try default B200 VID/PID last
+
+    if (handles.size() > 0)
+        handle = handles[0];
+
+    if (!handle)
+        std::cerr << "Cannot open device" << std::endl;
+
+    return handle;
+}
+
+b200_iface::sptr make_b200_iface(const uhd::transport::usb_device_handle::sptr &handle)
+{
+    uhd::transport::usb_control::sptr usb_ctrl = uhd::transport::usb_control::make(handle, 0);
+    b200_iface::sptr b200 = b200_iface::make(usb_ctrl);
+
+    if (!b200)
+        std::cerr << "Cannot create device interface" << std::endl;
+
+    return b200;
+}
+
 boost::int32_t main(boost::int32_t argc, char *argv[]) {
     boost::uint16_t vid, pid;
     std::string pid_str, vid_str, fw_file, fpga_file;
@@ -100,63 +188,12 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     po::notify(vm);
 
     if (vm.count("help")){
-        std::cout << boost::format("B2xx Utilitiy Program %s") % visible << std::endl;
+        std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
         return ~0;
     } else if (vm.count("reset-usb")) {
-        /* Okay, first, we need to discover what the path is to the ehci and
-         * xhci device files. */
-        std::set<fs::path> path_list;
-        path_list.insert("/sys/bus/pci/drivers/xhci-pci/");
-        path_list.insert("/sys/bus/pci/drivers/ehci-pci/");
-        path_list.insert("/sys/bus/pci/drivers/xhci_hcd/");
-        path_list.insert("/sys/bus/pci/drivers/ehci_hcd/");
-
-        /* Check each of the possible paths above to find which ones this system
-         * uses. */
-        for(std::set<fs::path>::iterator found = path_list.begin();
-                found != path_list.end(); ++found) {
-
-            if(fs::exists(*found)) {
-
-                fs::path devpath = *found;
-
-                std::set<fs::path> globbed;
-
-                /* Now, glob all of the files in the directory. */
-                fs::directory_iterator end_itr;
-                for(fs::directory_iterator itr(devpath); itr != end_itr; ++itr) {
-                    globbed.insert((*itr).path());
-                }
-
-                /* Check each file path string to see if it is a device file. */
-                for(std::set<fs::path>::iterator it = globbed.begin();
-                        it != globbed.end(); ++it) {
-
-                    std::string file = fs::path((*it).filename()).string();
-
-                    if(file.compare(0, 5, "0000:") == 0) {
-                        /* Un-bind the device. */
-                        std::fstream unbind((devpath.string() + "unbind").c_str(),
-                                std::fstream::out);
-                        unbind << file;
-                        unbind.close();
-
-                        /* Re-bind the device. */
-                        std::cout << "Re-binding: " << file << " in "
-                            << devpath.string() << std::endl;
-                        std::fstream bind((devpath.string() + "bind").c_str(),
-                                std::fstream::out);
-                        bind << file;
-                        bind.close();
-                    }
-                }
-            }
-        }
-
-        return 0;
+        return reset_usb();
     }
 
-    std::vector<uhd::transport::usb_device_handle::sptr> handles;
     uhd::transport::usb_device_handle::sptr handle;
     uhd::transport::usb_control::sptr usb_ctrl;
     b200_iface::sptr b200;
@@ -168,36 +205,66 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     if (vm.count("pid"))
         pid = atoh(pid_str);
 
-    // Added for testing purposes - not exposed
-    if (vm.count("read-eeprom")) {
-        uhd::byte_vector_t data;
+    // open the device
+    handle = open_device(vid, pid);
+    if (!handle)
+        return -1;
+    std::cout << "B2xx detected..." << std::flush;
 
-        handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);
-        if (handles.size() == 0) {
-            std::cerr << "Cannot find device with vid: " << boost::format("0x%X") % vid << " and pid: "
-                << boost::format("0x%X") % pid << std::endl;
+    // make the interface
+    b200 = make_b200_iface(handle);
+    if (!b200)
+        return -1;
+    std::cout << " Control of B2xx granted..." << std::endl << std::endl;
+
+    // if we are supposed to load a new firmware image and one already exists, reset and load the new one
+    if (vm.count("load-fw") && handle->firmware_loaded())
+    {
+        std::cout << "Overwriting existing firmware" << std::endl;
+
+        // reset the device
+        b200->reset_fx3();
+
+        // re-open device
+        b200.reset();
+        usb_ctrl.reset();
+        handle.reset();
+        usleep(2000000);    // wait 2 seconds for FX3 to reset
+        handle = open_device(vid, pid);
+        if (!handle)
             return -1;
-        }
-        usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-        b200 = b200_iface::make(usb_ctrl);
+        b200 = make_b200_iface(handle);
+        if (!b200)
+            return -1;
+    }
 
-        if (!(handles[0]->firmware_loaded()))
-        {
-            if (fw_file.empty())
-                fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
-            b200->load_firmware(fw_file);
+    // Check to make sure firmware is loaded
+    if (!(handle->firmware_loaded()))
+    {
+        std::cout << "Loading firmware" << std::endl;
 
-            // Now that the firmware is loaded, we need to re-open the device
-            handles.clear();
-            handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);
-            if (handles.size() == 0) {
-                std::cerr << "Unable to reopen device with vid: " << boost::format("0x%X") % vid << " and pid: "
-                    << boost::format("0x%X") % pid << std::endl;
-                return -1;
-            }
-            usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-            b200 = b200_iface::make(usb_ctrl);
-        }
+        if (fw_file.empty())
+            fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
+
+        // load firmware
+        b200->load_firmware(fw_file);
+
+        // re-open device
+        b200.reset();
+        usb_ctrl.reset();
+        handle.reset();
+        handle = open_device(vid, pid);
+        if (!handle)
+            return -1;
+        b200 = make_b200_iface(handle);
+        if (!b200)
+            return -1;
+    }
+
+    // Added for testing purposes - not exposed
+    if (vm.count("read-eeprom"))
+    {
+        uhd::byte_vector_t data;
 
         try {
             data = b200->read_eeprom(0x0, 0x0, 8);
@@ -212,57 +279,10 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     }
 
     // Added for testing purposes - not exposed
-    if (vm.count("erase-eeprom")) {
-
-        if (vm.count("vid") && vm.count("pid"))
-            handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);                    // try user defined VID/PID first
-        if (handles.size() == 0)
-            handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_DEFAULT_PID);    // try default FX3 VID/PID next
-        if (handles.size() == 0)
-            handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_REENUM_PID);     // try reenumerated FX3 VID/PID next
-        if (handles.size() == 0)
-            handles = uhd::transport::usb_device_handle::get_device_list(B200_VENDOR_ID, B200_PRODUCT_ID);     // try default B200 VID/PID next
-        if (handles.size() == 0) {
-            std::cerr << "Cannot find device" << std::endl;
-            return -1;
-        }
-        usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-        b200 = b200_iface::make(usb_ctrl);
-
-        if (!(handles[0]->firmware_loaded()))
-        {
-            // load FW
-            if (fw_file.empty())
-                fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
-            b200->load_firmware(fw_file);
-
-            // re-open device
-            handles.clear();
-            if (vm.count("vid") && vm.count("pid"))
-                handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);                    // try user defined VID/PID first
-            if (handles.size() == 0)
-                handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_DEFAULT_PID);    // try default FX3 VID/PID next
-            if (handles.size() == 0)
-                handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_REENUM_PID);     // try reenumerated FX3 VID/PID next
-            if (handles.size() == 0)
-                handles = uhd::transport::usb_device_handle::get_device_list(B200_VENDOR_ID, B200_PRODUCT_ID);     // try default B200 VID/PID next
-            if (handles.size() == 0) {
-                std::cerr << "Cannot find device" << std::endl;
-                return -1;
-            }
-            usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-            b200 = b200_iface::make(usb_ctrl);
-        }
-
+    if (vm.count("erase-eeprom"))
+    {
         uhd::byte_vector_t bytes(8);
-        bytes[0] = 0xFF;
-        bytes[1] = 0xFF;
-        bytes[2] = 0xFF;
-        bytes[3] = 0xFF;
-        bytes[4] = 0xFF;
-        bytes[5] = 0xFF;
-        bytes[6] = 0xFF;
-        bytes[7] = 0xFF;
+        memset(&bytes[0], 0xFF, 8);
         try {
             b200->write_eeprom(0x0, 0x0, bytes);
         } catch (uhd::exception &e) {
@@ -296,50 +316,11 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     }
 
     // Added for testing purposes - not exposed
-    if (vm.count("uninit-device")) {
-
-        handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);
-        if (handles.size() == 0) {
-            std::cerr << "Cannot find device with vid: " << boost::format("0x%X") % vid << " and pid: "
-                << boost::format("0x%X") % pid << std::endl;
-            return -1;
-        }
-
-        std::cout << "Initialized B2xx detected..." << std::flush;
-
-        usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-        b200 = b200_iface::make(usb_ctrl);
-
-        std::cout << " Control of B2xx granted..." << std::endl << std::endl;
-
-        if (!(handles[0]->firmware_loaded()))
-        {
-            if (fw_file.empty())
-                fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
-            b200->load_firmware(fw_file);
-
-            // Now that the firmware is loaded, we need to re-open the device
-            handles.clear();
-            handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);
-            if (handles.size() == 0) {
-                std::cerr << "Unable to reopen device with vid: " << boost::format("0x%X") % vid << " and pid: "
-                    << boost::format("0x%X") % pid << std::endl;
-                return -1;
-            }
-            usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-            b200 = b200_iface::make(usb_ctrl);
-        }
-
-        /* Now, uninitialize the device. */
+    if (vm.count("uninit-device"))
+    {
+        // uninitialize the device
         uhd::byte_vector_t bytes(8);
-        bytes[0] = 0xFF;
-        bytes[1] = 0xFF;
-        bytes[2] = 0xFF;
-        bytes[3] = 0xFF;
-        bytes[4] = 0xFF;
-        bytes[5] = 0xFF;
-        bytes[6] = 0xFF;
-        bytes[7] = 0xFF;
+        memset(&bytes[0], 0xFF, 8);
 
         try {
             b200->write_eeprom(0x0, 0x0, bytes);
@@ -351,7 +332,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         std::cout << "EEPROM uninitialized, resetting device..."
             << std::endl << std::endl;
 
-        /* Reset the device! */
+        // reset the device
         try {
             b200->reset_fx3();
         } catch (uhd::exception &e) {
@@ -367,52 +348,8 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
     /* If we are initializing the device, the VID/PID should default to the
      * Cypress VID/PID for the initial FW load, but we can initialize from any state. */
-    if (vm.count("init-device")) {
-        if (vm.count("vid") && vm.count("pid"))
-            handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);                    // try user defined VID/PID first
-        if (handles.size() == 0)
-            handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_DEFAULT_PID);    // try default FX3 VID/PID next
-        if (handles.size() == 0)
-            handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_REENUM_PID);     // try reenumerated FX3 VID/PID next
-        if (handles.size() == 0)
-            handles = uhd::transport::usb_device_handle::get_device_list(B200_VENDOR_ID, B200_PRODUCT_ID);     // try default B200 VID/PID next
-        if (handles.size() == 0) {
-            std::cerr << "Cannot find device" << std::endl;
-            return -1;
-        }
-
-        std::cout << "Uninitialized B2xx detected..." << std::flush;
-
-        usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-        b200 = b200_iface::make(usb_ctrl);
-
-        std::cout << " Control of B2xx granted..." << std::endl << std::endl;
-
-        if (!(handles[0]->firmware_loaded()))
-        {
-            // load FW
-            if (fw_file.empty())
-                fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
-            b200->load_firmware(fw_file);
-
-            // re-open device
-            handles.clear();
-            if (vm.count("vid") && vm.count("pid"))
-                handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);                    // try user defined VID/PID first
-            if (handles.size() == 0)
-                handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_DEFAULT_PID);    // try default FX3 VID/PID next
-            if (handles.size() == 0)
-                handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_REENUM_PID);     // try reenumerated FX3 VID/PID next
-            if (handles.size() == 0)
-                handles = uhd::transport::usb_device_handle::get_device_list(B200_VENDOR_ID, B200_PRODUCT_ID);     // try default B200 VID/PID next
-            if (handles.size() == 0) {
-                std::cerr << "Cannot find device" << std::endl;
-                return -1;
-            }
-            usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-            b200 = b200_iface::make(usb_ctrl);
-        }
-
+    if (vm.count("init-device"))
+    {
         /* Now, initialize the device. */
         uhd::byte_vector_t bytes(8);
         bytes[0] = 0x43;
@@ -447,21 +384,6 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         return 0;
     }
 
-    // open device for all other operations
-    handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);
-    if (handles.size() == 0) {
-        std::cerr << "Cannot find device with vid: " << boost::format("0x%X") % vid << " and pid: "
-            << boost::format("0x%X") % pid << std::endl;
-        return -1;
-    }
-
-    std::cout << "Reactor Core Online..." << std::flush;
-
-    usb_ctrl = uhd::transport::usb_control::make(handles[0], 0);
-    b200 = b200_iface::make(usb_ctrl);
-
-    std::cout << " All Systems Nominal..." << std::endl << std::endl;
-
     boost::uint8_t data_buffer[16];
     memset(data_buffer, 0x0, sizeof(data_buffer));
 
@@ -489,13 +411,6 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         }
 
     } else if (vm.count("load-fw")) {
-        std::cout << "Loading firmware" << std::endl;
-        try {b200->load_firmware(fw_file);}
-        catch (uhd::exception &e) {
-            std::cerr << "Exception while loading firmware: " << e.what() << std::endl;
-            return ~0;
-        }
-
         std::cout << "Firmware load complete, releasing USB interface..."
             << std::endl;
 
@@ -504,10 +419,9 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         uint32_t fx3_state;
         try {fx3_state = b200->load_fpga(fpga_file);} // returns 0 on success, or FX3 state on error
         catch (uhd::exception &e) {
-            std::cerr << "Exception while resetting FPGA: " << e.what() << std::endl;
+            std::cerr << "Exception while loading FPGA: " << e.what() << std::endl;
             return ~0;
         }
-
 
         if (fx3_state != 0) {
             std::cerr << std::flush << "Error loading FPGA. FX3 state: "
@@ -519,11 +433,11 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
             << std::endl;
 
     } else {
-        std::cout << boost::format("B2xx Utilitiy Program %s") % visible << std::endl;
+        std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
         return ~0;
     }
 
-    std::cout << std::endl << "Reactor Shutting Down..." << std::endl;
+    std::cout << "Operation complete!  I did it!  I did it!" << std::endl;
 
     return 0;
 }
