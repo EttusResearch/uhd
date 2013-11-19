@@ -123,8 +123,10 @@ if __name__ == "__main__":
         if images_zip_md5sum != downloaded_zip_md5sum:
             print "\nMD5 checksum does not match!"
             print "Expected %s, got %s" % (images_zip_md5sum, downloaded_zip_md5sum)
+            print "Images did not install. If problem persists, please contact support@ettus.com."
             os.remove(filename)
             os.chdir("/".join(images_dir.split("/")[:-1]))
+            sys.exit(1)
         else:
             temp_path = "tempdir"
 
