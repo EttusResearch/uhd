@@ -25,7 +25,17 @@
 #include <boost/utility.hpp>
 #include "ad9361_ctrl.hpp"
 
-class b200_iface: boost::noncopyable, public virtual uhd::i2c_iface,
+const static boost::uint16_t B200_VENDOR_ID  = 0x2500;
+const static boost::uint16_t B200_PRODUCT_ID = 0x0020;
+const static boost::uint16_t FX3_VID = 0x04b4;
+const static boost::uint16_t FX3_DEFAULT_PID = 0x00f3;
+const static boost::uint16_t FX3_REENUM_PID = 0x00f0;
+
+static const std::string     B200_FW_FILE_NAME = "usrp_b200_fw.hex";
+static const std::string     B200_FPGA_FILE_NAME = "usrp_b200_fpga.bin";
+static const std::string     B210_FPGA_FILE_NAME = "usrp_b210_fpga.bin";
+
+class UHD_API b200_iface: boost::noncopyable, public virtual uhd::i2c_iface,
                   public ad9361_ctrl_iface_type {
 public:
     typedef boost::shared_ptr<b200_iface> sptr;
@@ -64,6 +74,10 @@ public:
     //! send SPI through the FX3
     virtual void transact_spi( unsigned char *tx_data, size_t num_tx_bits, \
             unsigned char *rx_data, size_t num_rx_bits) = 0;
+
+    virtual void write_eeprom(boost::uint16_t addr, boost::uint16_t offset, const uhd::byte_vector_t &bytes) = 0;
+
+    virtual uhd::byte_vector_t read_eeprom(boost::uint16_t addr, boost::uint16_t offset, size_t num_bytes) = 0;
 };
 
 

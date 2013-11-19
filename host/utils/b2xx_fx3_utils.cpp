@@ -34,39 +34,12 @@
 #include <boost/thread/thread.hpp>
 #include <boost/functional/hash.hpp>
 
+#include <b200_iface.hpp>
 #include <uhd/config.hpp>
-#include <uhd/utils/msg.hpp>
-
-const static boost::uint16_t FX3_VID = 0x04b4;
-const static boost::uint16_t FX3_DEFAULT_PID = 0x00f3;
-const static boost::uint16_t FX3_REENUM_PID = 0x00f0;
-const static boost::uint16_t B2XX_VID = 0x2500;
-const static boost::uint16_t B2XX_PID = 0x0020;
-
-const static boost::uint8_t VRT_VENDOR_OUT = (LIBUSB_REQUEST_TYPE_VENDOR
-                                              | LIBUSB_ENDPOINT_OUT);
-const static boost::uint8_t VRT_VENDOR_IN = (LIBUSB_REQUEST_TYPE_VENDOR
-                                             | LIBUSB_ENDPOINT_IN);
-const static boost::uint8_t FX3_FIRMWARE_LOAD = 0xA0;
-
-const static boost::uint8_t B2XX_VREQ_FPGA_START = 0x02;
-const static boost::uint8_t B2XX_VREQ_FPGA_DATA = 0x12;
-const static boost::uint8_t B2XX_VREQ_SET_FPGA_HASH = 0x1C;
-const static boost::uint8_t B2XX_VREQ_GET_FPGA_HASH = 0x1D;
-const static boost::uint8_t B2XX_VREQ_FPGA_RESET = 0x62;
-const static boost::uint8_t B2XX_VREQ_GET_USB = 0x80;
-const static boost::uint8_t B2XX_VREQ_GET_STATUS = 0x83;
-const static boost::uint8_t B2XX_VREQ_FX3_RESET = 0x99;
-const static boost::uint8_t B2XX_VREQ_EEPROM_WRITE = 0xBA;
-
-const static boost::uint8_t FX3_STATE_FPGA_READY = 0x00;
-const static boost::uint8_t FX3_STATE_CONFIGURING_FPGA = 0x01;
-const static boost::uint8_t FX3_STATE_BUSY = 0x02;
-const static boost::uint8_t FX3_STATE_RUNNING = 0x03;
-
-typedef boost::uint32_t hash_type;
-typedef std::vector<boost::uint8_t> byte_vector_t;
-
+#include <uhd/transport/usb_control.hpp>
+#include <uhd/transport/usb_device_handle.hpp>
+#include <uhd/exception.hpp>
+#include <uhd/utils/images.hpp>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -90,638 +63,397 @@ boost::uint16_t atoh(const std::string &string){
     return boost::lexical_cast<boost::uint16_t>(string);
 }
 
-
-/*!
- * Create a file hash
- * The hash will be used to identify the loaded firmware and fpga image
- * \param filename file used to generate hash value
- * \return hash value in a size_t type
- */
-static hash_type generate_hash(const char *filename)
+int reset_usb()
 {
-    std::ifstream file(filename);
-    if (not file){
-        std::cerr << std::string("cannot open input file ") + filename
-            << std::endl;
-    }
+    /* Okay, first, we need to discover what the path is to the ehci and
+     * xhci device files. */
+    std::set<fs::path> path_list;
+    path_list.insert("/sys/bus/pci/drivers/xhci-pci/");
+    path_list.insert("/sys/bus/pci/drivers/ehci-pci/");
+    path_list.insert("/sys/bus/pci/drivers/xhci_hcd/");
+    path_list.insert("/sys/bus/pci/drivers/ehci_hcd/");
 
-    size_t hash = 0;
+    /* Check each of the possible paths above to find which ones this system
+     * uses. */
+    for(std::set<fs::path>::iterator found = path_list.begin();
+            found != path_list.end(); ++found) {
 
-    char ch;
-    while (file.get(ch)) {
-        boost::hash_combine(hash, ch);
-    }
+        if(fs::exists(*found)) {
 
-    if (not file.eof()){
-        std::cerr << std::string("file error ") + filename << std::endl;
-    }
+            fs::path devpath = *found;
 
-    file.close();
-    return hash_type(hash);
-}
+            std::set<fs::path> globbed;
 
-/*!
- * Verify checksum of a Intel HEX record
- * \param record a line from an Intel HEX file
- * \return true if record is valid, false otherwise
- */
-bool checksum(std::string *record) {
+            /* Now, glob all of the files in the directory. */
+            fs::directory_iterator end_itr;
+            for(fs::directory_iterator itr(devpath); itr != end_itr; ++itr) {
+                globbed.insert((*itr).path());
+            }
 
-    size_t len = record->length();
-    unsigned int i;
-    unsigned char sum = 0;
-    unsigned int val;
+            /* Check each file path string to see if it is a device file. */
+            for(std::set<fs::path>::iterator it = globbed.begin();
+                    it != globbed.end(); ++it) {
 
-    for (i = 1; i < len; i += 2) {
-        std::istringstream(record->substr(i, 2)) >> std::hex >> val;
-        sum += val;
-    }
+                std::string file = fs::path((*it).filename()).string();
 
-    if (sum == 0)
-       return true;
-    else
-       return false;
-}
+                if(file.compare(0, 5, "0000:") == 0) {
+                    /* Un-bind the device. */
+                    std::fstream unbind((devpath.string() + "unbind").c_str(),
+                            std::fstream::out);
+                    unbind << file;
+                    unbind.close();
 
-
-/*!
- * Parse Intel HEX record
- *
- * \param record a line from an Intel HEX file
- * \param len output length of record
- * \param addr output address
- * \param type output type
- * \param data output data
- * \return true if record is sucessfully read, false on error
- */
-bool parse_record(std::string *record, boost::uint16_t &len, boost::uint16_t &addr,
-        uint16_t &type, unsigned char* data) {
-
-    unsigned int i;
-    std::string _data;
-    unsigned int val;
-
-    if (record->substr(0, 1) != ":")
-        return false;
-
-    std::istringstream(record->substr(1, 2)) >> std::hex >> len;
-    std::istringstream(record->substr(3, 4)) >> std::hex >> addr;
-    std::istringstream(record->substr(7, 2)) >> std::hex >> type;
-
-    for (i = 0; i < len; i++) {
-        std::istringstream(record->substr(9 + 2 * i, 2)) >> std::hex >> val;
-        data[i] = (unsigned char) val;
-    }
-
-    return true;
-}
-
-
-/*!
- * Write data to the FX3.
- *
- * \param dev_handle the libusb-1.0 device handle
- * \param request the usb transfer request type
- * \param value the USB bValue
- * \param index the USB bIndex
- * \param buff the data to write
- * \param length the number of bytes to write
- * \return the number of bytes written
- */
-libusb_error fx3_control_write(libusb_device_handle *dev_handle, boost::uint8_t request,
-            boost::uint16_t value, boost::uint16_t index, unsigned char *buff,
-            boost::uint16_t length, boost::uint32_t timeout = 0) {
-
-#if 0
-    if(DEBUG) {
-        std::cout << "Writing: <" << std::hex << std::setw(6) << std::showbase \
-            << std::internal << std::setfill('0') << (int) request \
-            << ", " << std::setw(6) << (int) VRT_VENDOR_OUT \
-            << ", " << std::setw(6) << value \
-            << ", " << std::setw(6) << index \
-            << ", " << std::dec << std::setw(2) << length \
-            << ">" << std::endl;
-
-        std::cout << "\t\tData: 0x " << std::noshowbase;
-
-        for(int count = 0; count < length; count++) {
-            std::cout << std::hex << std::setw(2) << (int) buff[count] << " ";
-        }
-
-        std::cout << std::showbase << std::endl;
-    }
-#endif
-
-    return (libusb_error) libusb_control_transfer(dev_handle, VRT_VENDOR_OUT, request, \
-               value, index, buff, length, timeout);
-}
-
-
-/*!
- * Read data from the FX3.
- *
- * \param dev_handle the libusb-1.0 device handle
- * \param request the usb transfer request type
- * \param value the USB bValue
- * \param index the USB bIndex
- * \param buff a buffer to store the read bytes to
- * \param length the number of bytes to read
- * \return the number of bytes read
- */
-libusb_error fx3_control_read(libusb_device_handle *dev_handle, boost::uint8_t request,
-            boost::uint16_t value, boost::uint16_t index, unsigned char *buff,
-            boost::uint16_t length, boost::uint32_t timeout = 0) {
-
-#if 0
-    if(DEBUG) {
-        std::cout << "Reading: <" << std::hex << std::setw(6) << std::showbase \
-            << std::internal << std::setfill('0') << (int) request \
-            << ", " << std::setw(6) << (int) VRT_VENDOR_IN \
-            << ", " << std::setw(6) << value \
-            << ", " << std::setw(6) << index \
-            << ", " << std::dec << std::setw(2) << length \
-            << ">" << std::endl << std::endl;
-    }
-#endif
-
-    return (libusb_error) libusb_control_transfer(dev_handle, VRT_VENDOR_IN, request, \
-               value, index, buff, length, timeout);
-}
-
-
-void write_eeprom(libusb_device_handle *dev_handle, boost::uint8_t addr,
-        boost::uint8_t offset, const byte_vector_t &bytes) {
-    fx3_control_write(dev_handle, B2XX_VREQ_EEPROM_WRITE,
-                        0, offset | (boost::uint16_t(addr) << 8),
-                        (unsigned char *) &bytes[0],
-                        bytes.size());
-}
-
-
-boost::uint8_t get_fx3_status(libusb_device_handle *dev_handle) {
-
-    unsigned char rx_data[1];
-
-    fx3_control_read(dev_handle, B2XX_VREQ_GET_STATUS, 0x00, 0x00, rx_data, 1);
-
-    return boost::lexical_cast<boost::uint8_t>(rx_data[0]);
-}
-
-void usrp_get_fpga_hash(libusb_device_handle *dev_handle, hash_type &hash) {
-    fx3_control_read(dev_handle, B2XX_VREQ_GET_FPGA_HASH, 0x00, 0x00,
-            (unsigned char*) &hash, 4, 500);
-}
-
-void usrp_set_fpga_hash(libusb_device_handle *dev_handle, hash_type hash) {
-    fx3_control_write(dev_handle, B2XX_VREQ_SET_FPGA_HASH, 0x00, 0x00,
-            (unsigned char*) &hash, 4);
-}
-
-boost::int32_t load_fpga(libusb_device_handle *dev_handle,
-        const std::string filestring) {
-
-    if (filestring.empty())
-    {
-        std::cerr << "load_fpga: input file is empty." << std::endl;
-        exit(-1);
-    }
-
-    boost::uint8_t fx3_state = 0;
-
-    const char *filename = filestring.c_str();
-
-    hash_type hash = generate_hash(filename);
-    hash_type loaded_hash; usrp_get_fpga_hash(dev_handle, loaded_hash);
-    if (hash == loaded_hash) return 0;
-
-    size_t file_size = 0;
-    {
-        std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
-        file_size = file.tellg();
-    }
-
-    std::ifstream file;
-    file.open(filename, std::ios::in | std::ios::binary);
-
-    if(!file.good()) {
-        std::cerr << "load_fpga: cannot open FPGA input file." << std::endl;
-        exit(-1);
-    }
-
-    do {
-        fx3_state = get_fx3_status(dev_handle);
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-    } while(fx3_state != FX3_STATE_FPGA_READY);
-
-    std::cout << "Loading FPGA image: " \
-        << filestring << "..." << std::flush;
-
-    unsigned char out_buff[64];
-    memset(out_buff, 0x00, sizeof(out_buff));
-    fx3_control_write(dev_handle, B2XX_VREQ_FPGA_START, 0, 0, out_buff, 1, 1000);
-
-    do {
-        fx3_state = get_fx3_status(dev_handle);
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-    } while(fx3_state != FX3_STATE_CONFIGURING_FPGA);
-
-
-    size_t bytes_sent = 0;
-    while(!file.eof()) {
-        file.read((char *) out_buff, sizeof(out_buff));
-        const std::streamsize n = file.gcount();
-        if(n == 0) continue;
-
-        boost::uint16_t transfer_count = boost::uint16_t(n);
-
-        /* Send the data to the device. */
-        fx3_control_write(dev_handle, B2XX_VREQ_FPGA_DATA, 0, 0, out_buff,
-                transfer_count, 5000);
-
-        if (bytes_sent == 0) std::cout << "  0%" << std::flush;
-        const size_t percent_before = size_t((bytes_sent*100)/file_size);
-        bytes_sent += transfer_count;
-        const size_t percent_after = size_t((bytes_sent*100)/file_size);
-        if (percent_before/10 != percent_after/10) {
-            std::cout << "\b\b\b\b" << std::setw(3) << percent_after
-                << "%" << std::flush;
+                    /* Re-bind the device. */
+                    std::cout << "Re-binding: " << file << " in "
+                        << devpath.string() << std::endl;
+                    std::fstream bind((devpath.string() + "bind").c_str(),
+                            std::fstream::out);
+                    bind << file;
+                    bind.close();
+                }
+            }
         }
     }
-
-    file.close();
-
-    do {
-        fx3_state = get_fx3_status(dev_handle);
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-    } while(fx3_state != FX3_STATE_RUNNING);
-
-    usrp_set_fpga_hash(dev_handle, hash);
-
-    std::cout << "\b\b\b\b done" << std::endl;
 
     return 0;
 }
 
+uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, const boost::uint16_t pid)
+{
+    std::vector<uhd::transport::usb_device_handle::sptr> handles;
+    uhd::transport::usb_device_handle::sptr handle;
 
-/*!
- * Program the FX3 with a firmware file (Intel HEX format)
- *
- * \param dev_handle the libusb-1.0 device handle
- * \param filestring the filename of the firmware file
- * \return 0 for success, otherwise error code
- */
-boost::int32_t fx3_load_firmware(libusb_device_handle *dev_handle, \
-        std::string filestring) {
+    try {
+        handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);                             // try caller's VID/PID first
+        if (handles.size() == 0)
+            handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_DEFAULT_PID);         // try default Cypress FX3 VID/PID next
+        if (handles.size() == 0)
+            handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_REENUM_PID);          // try reenumerated Cypress FX3 VID/PID next
+        if (handles.size() == 0)
+            handles = uhd::transport::usb_device_handle::get_device_list(B200_VENDOR_ID, B200_PRODUCT_ID);  // try default B200 VID/PID last
 
-    if (filestring.empty())
-    {
-        std::cerr << "fx3_load_firmware: input file is empty." << std::endl;
-        exit(-1);
+        if (handles.size() > 0)
+            handle = handles[0];
+
+        if (!handle)
+            std::cerr << "Cannot open device" << std::endl;
+    }
+    catch(const std::exception &e) {
+        std::cerr << "Failed to communicate with the device!" << std::endl;
+        #ifdef UHD_PLATFORM_WIN32
+        std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+        #endif /* UHD_PLATFORM_WIN32 */
+        handle.reset();
     }
 
-    const char *filename = filestring.c_str();
-
-    /* Fields used in each USB control transfer. */
-    boost::uint16_t len = 0;
-    boost::uint16_t type = 0;
-    boost::uint16_t lower_address_bits = 0x0000;
-    unsigned char data[512];
-
-    /* Can be set by the Intel HEX record 0x04, used for all 0x00 records
-        * thereafter. Note this field takes the place of the 'index' parameter in
-        * libusb calls, and is necessary for FX3's 32-bit addressing. */
-    boost::uint16_t upper_address_bits = 0x0000;
-
-    std::ifstream file;
-    file.open(filename, std::ifstream::in);
-
-    if(!file.good()) {
-        std::cerr << "fx3_load_firmware: cannot open firmware input file"
-            << std::endl;
-        exit(-1);
-    }
-
-    std::cout << "Loading firmware image: " \
-        << filestring << "..." << std::flush;
-
-    while (!file.eof()) {
-        boost::int32_t ret = 0;
-        std::string record;
-        file >> record;
-
-        /* Check for valid Intel HEX record. */
-        if (!checksum(&record) || !parse_record(&record, len, \
-                    lower_address_bits, type, data)) {
-            std::cerr << "fx3_load_firmware: bad intel hex record checksum"
-                    << std::endl;
-        }
-
-        /* Type 0x00: Data. */
-        if (type == 0x00) {
-            ret = fx3_control_write(dev_handle, FX3_FIRMWARE_LOAD, \
-                    lower_address_bits, upper_address_bits, data, len);
-
-            if (ret < 0) {
-                std::cerr << "usrp_load_firmware: usrp_control_write failed"
-                    << std::endl;
-            }
-        }
-
-        /* Type 0x01: EOF. */
-        else if (type == 0x01) {
-            if (lower_address_bits != 0x0000 || len != 0 ) {
-                std::cerr << "fx3_load_firmware: For EOF record, address must be 0, length must be 0." << std::endl;
-            }
-
-            /* Successful termination! */
-            file.close();
-
-            /* Let the system settle. */
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-            return 0;
-        }
-
-        /* Type 0x04: Extended Linear Address Record. */
-        else if (type == 0x04) {
-            if (lower_address_bits != 0x0000 || len != 2 ) {
-                std::cerr << "fx3_load_firmware: For ELA record, address must be 0, length must be 2." << std::endl;
-            }
-
-            upper_address_bits = ((boost::uint16_t)((data[0] & 0x00FF) << 8))\
-                                    + ((boost::uint16_t)(data[1] & 0x00FF));
-        }
-
-        /* Type 0x05: Start Linear Address Record. */
-        else if (type == 0x05) {
-            if (lower_address_bits != 0x0000 || len != 4 ) {
-                std::cerr << "fx3_load_firmware: For SLA record, address must be 0, length must be 4." << std::endl;
-            }
-
-            /* The firmware load is complete.  We now need to tell the CPU
-                * to jump to an execution address start point, now contained within
-                * the data field.  Parse these address bits out, and then push the
-                * instruction. */
-            upper_address_bits = ((boost::uint16_t)((data[0] & 0x00FF) << 8))\
-                                    + ((boost::uint16_t)(data[1] & 0x00FF));
-            lower_address_bits = ((boost::uint16_t)((data[2] & 0x00FF) << 8))\
-                                    + ((boost::uint16_t)(data[3] & 0x00FF));
-
-            fx3_control_write(dev_handle, FX3_FIRMWARE_LOAD, lower_address_bits, \
-                    upper_address_bits, 0, 0);
-
-            std::cout << " done" << std::endl;
-        }
-
-        /* If we receive an unknown record type, error out. */
-        else {
-            std::cerr << "fx3_load_firmware: unsupported record type." << std::endl;
-        }
-    }
-
-    /* There was no valid EOF. */
-    std::cerr << "fx3_load_firmware: No EOF record found." << std::cout;
-    return ~0;
+    return handle;
 }
 
+b200_iface::sptr make_b200_iface(const uhd::transport::usb_device_handle::sptr &handle)
+{
+    b200_iface::sptr b200;
+
+    try {
+        uhd::transport::usb_control::sptr usb_ctrl = uhd::transport::usb_control::make(handle, 0);
+        b200 = b200_iface::make(usb_ctrl);
+
+        if (!b200)
+            std::cerr << "Cannot create device interface" << std::endl;
+    }
+    catch(const std::exception &e) {
+        std::cerr << "Failed to communicate with the device!" << std::endl;
+        #ifdef UHD_PLATFORM_WIN32
+        std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+        #endif /* UHD_PLATFORM_WIN32 */
+        b200.reset();
+    }
+
+    return b200;
+}
 
 boost::int32_t main(boost::int32_t argc, char *argv[]) {
     boost::uint16_t vid, pid;
     std::string pid_str, vid_str, fw_file, fpga_file;
 
-    po::options_description desc("Allowed options");
-    desc.add_options()
+    po::options_description visible("Allowed options");
+    visible.add_options()
         ("help,h", "help message")
-        ("vid,v", po::value<std::string>(&vid_str)->default_value("0x2500"),
+        ("vid,v", po::value<std::string>(&vid_str),
             "Specify VID of device to use.")
-        ("pid,p", po::value<std::string>(&pid_str)->default_value("0x0020"),
+        ("pid,p", po::value<std::string>(&pid_str),
             "Specify PID of device to use.")
         ("speed,S", "Read back the USB mode currently in use.")
         ("reset-device,D", "Reset the B2xx Device.")
         ("reset-fpga,F", "Reset the FPGA (does not require re-programming.")
         ("reset-usb,U", "Reset the USB subsystem on your host computer.")
         ("init-device,I", "Initialize a B2xx device.")
-        ("load-fw,W", po::value<std::string>(&fw_file)->default_value(""),
+        ("load-fw,W", po::value<std::string>(&fw_file),
             "Load a firmware (hex) file into the FX3.")
-        ("load-fpga,L", po::value<std::string>(&fpga_file)->default_value(""),
+        ("load-fpga,L", po::value<std::string>(&fpga_file),
             "Load a FPGA (bin) file into the FPGA.")
     ;
+
+    // Hidden options provided for testing - use at your own risk!
+    po::options_description hidden("Hidden options");
+    hidden.add_options()
+    ("uninit-device,U", "Uninitialize a B2xx device.")
+    ("read-eeprom,R", "Read first 8 bytes of EEPROM")
+    ("erase-eeprom,E", "Erase first 8 bytes of EEPROM");
+
+    po::options_description desc;
+    desc.add(visible);
+    desc.add(hidden);
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
     if (vm.count("help")){
-        std::cout << boost::format("B2xx Utilitiy Program %s") % desc << std::endl;
+        std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
         return ~0;
     } else if (vm.count("reset-usb")) {
-        /* Okay, first, we need to discover what the path is to the ehci and
-         * xhci device files. */
-        std::set<fs::path> path_list;
-        path_list.insert("/sys/bus/pci/drivers/xhci-pci/");
-        path_list.insert("/sys/bus/pci/drivers/ehci-pci/");
-        path_list.insert("/sys/bus/pci/drivers/xhci_hcd/");
-        path_list.insert("/sys/bus/pci/drivers/ehci_hcd/");
+        return reset_usb();
+    }
 
-        /* Check each of the possible paths above to find which ones this system
-         * uses. */
-        for(std::set<fs::path>::iterator found = path_list.begin();
-                found != path_list.end(); ++found) {
+    uhd::transport::usb_device_handle::sptr handle;
+    b200_iface::sptr b200;
 
-            if(fs::exists(*found)) {
+    vid = B200_VENDOR_ID;   // Default
+    pid = B200_PRODUCT_ID;  // Default
+    if (vm.count("vid"))
+        vid = atoh(vid_str);
+    if (vm.count("pid"))
+        pid = atoh(pid_str);
 
-                fs::path devpath = *found;
+    // open the device
+    handle = open_device(vid, pid);
+    if (!handle)
+        return -1;
+    std::cout << "B2xx detected..." << std::flush;
 
-                std::set<fs::path> globbed;
+    // make the interface
+    b200 = make_b200_iface(handle);
+    if (!b200)
+        return -1;
+    std::cout << " Control of B2xx granted..." << std::endl << std::endl;
 
-                /* Now, glob all of the files in the directory. */
-                fs::directory_iterator end_itr;
-                for(fs::directory_iterator itr(devpath); itr != end_itr; ++itr) {
-                    globbed.insert((*itr).path());
-                }
+    // if we are supposed to load a new firmware image and one already exists, reset the FX3 so we can load the new one
+    if (vm.count("load-fw") && handle->firmware_loaded())
+    {
+        std::cout << "Overwriting existing firmware" << std::endl;
 
-                /* Check each file path string to see if it is a device file. */
-                for(std::set<fs::path>::iterator it = globbed.begin();
-                        it != globbed.end(); ++it) {
+        // reset the device
+        b200->reset_fx3();
 
-                    std::string file = fs::path((*it).filename()).string();
+        // re-open device
+        b200.reset();
+        handle.reset();
+        boost::this_thread::sleep(boost::posix_time::seconds(2));    // wait 2 seconds for FX3 to reset
+        handle = open_device(vid, pid);
+        if (!handle)
+            return -1;
+        b200 = make_b200_iface(handle);
+        if (!b200)
+            return -1;
+    }
 
-                    if(file.compare(0, 5, "0000:") == 0) {
-                        /* Un-bind the device. */
-                        std::fstream unbind((devpath.string() + "unbind").c_str(),
-                                std::fstream::out);
-                        unbind << file;
-                        unbind.close();
+    // Check to make sure firmware is loaded
+    if (!(handle->firmware_loaded()))
+    {
+        std::cout << "Loading firmware" << std::endl;
 
-                        /* Re-bind the device. */
-                        std::cout << "Re-binding: " << file << " in "
-                            << devpath.string() << std::endl;
-                        std::fstream bind((devpath.string() + "bind").c_str(),
-                                std::fstream::out);
-                        bind << file;
-                        bind.close();
-                    }
-                }
-            }
+        if (fw_file.empty())
+            fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
+            
+        if(fw_file.empty()) {
+            std::cerr << "Firmware image not found!" << std::endl;
+            return -1;
         }
+        
+        if(!(fs::exists(fw_file))) {
+            std::cerr << "Invalid filepath: " << fw_file << std::endl;
+            return -1;
+        }
+
+        // load firmware
+        b200->load_firmware(fw_file);
+
+        // re-open device
+        b200.reset();
+        handle.reset();
+        handle = open_device(vid, pid);
+        if (!handle)
+            return -1;
+        b200 = make_b200_iface(handle);
+        if (!b200)
+            return -1;
+    }
+
+    // Added for testing purposes - not exposed
+    if (vm.count("read-eeprom"))
+    {
+        uhd::byte_vector_t data;
+
+        try {
+            data = b200->read_eeprom(0x0, 0x0, 8);
+        } catch (std::exception &e) {
+            std::cerr << "Exception while reading EEPROM: " << e.what() << std::endl;
+            return -1;
+        }
+        for (int i = 0; i < 8; i++)
+            std::cout << i << ": " << boost::format("0x%X") % (int)data[i] << std::endl;
 
         return 0;
     }
 
-    vid = atoh(vid_str);
-    pid = atoh(pid_str);
-
-    /* Pointer to pointer of device, used to retrieve a list of devices. */
-    libusb_device **devs;
-    libusb_device_handle *dev_handle;
-    libusb_context *ctx = NULL;
-    libusb_error error_code;
-
-    libusb_init(&ctx);
-    libusb_set_debug(ctx, 3);
-    libusb_get_device_list(ctx, &devs);
-
-    /* If we are initializing the device, the VID/PID will default to the
-     * Cypress VID/PID for the initial FW load. */
-    if (vm.count("init-device")) {
-        dev_handle = libusb_open_device_with_vid_pid(ctx, FX3_VID,
-                FX3_DEFAULT_PID);
-        if(dev_handle == NULL) {
-            std::cerr << "Cannot open device with vid: " << vid << " and pid: "
-                << pid << std::endl;
+    // Added for testing purposes - not exposed
+    if (vm.count("erase-eeprom"))
+    {
+        uhd::byte_vector_t bytes(8);
+        memset(&bytes[0], 0xFF, 8);
+        try {
+            b200->write_eeprom(0x0, 0x0, bytes);
+        } catch (uhd::exception &e) {
+            std::cerr << "Exception while writing to EEPROM: " << e.what() << std::endl;
             return -1;
-        } else { std::cout << "Uninitialized B2xx detected..." << std::flush; }
-        libusb_free_device_list(devs, 1);
+        }
 
-        /* Find out if kernel driver is attached, and if so, detach it. */
-        if(libusb_kernel_driver_active(dev_handle, 0) == 1) {
-            std::cout << " Competing Driver Identified... " << std::flush;
-
-            if(libusb_detach_kernel_driver(dev_handle, 0) == 0) {
-                std::cout << " Competing Driver Destroyed!" << std::flush;
+        // verify
+        uhd::byte_vector_t read_bytes(8);
+        try {
+            read_bytes = b200->read_eeprom(0x0, 0x0, 8);
+        } catch (uhd::exception &e) {
+            std::cerr << "Exception while reading from EEPROM: " << e.what() << std::endl;
+            return -1;
+        }
+        bool verified = true;
+        for (int i = 0; i < 8; i++) {
+            if (bytes[i] != read_bytes[i]) {
+                verified = false;
+                std::cerr << "Expected: " << bytes[i] << ", Got: " << read_bytes[i] << std::endl;
             }
         }
-        libusb_claim_interface(dev_handle, 0);
-        std::cout << " Control of B2xx granted..." << std::endl << std::endl;
-
-        /* Load the FW. */
-        error_code = (libusb_error) fx3_load_firmware(dev_handle, fw_file);
-        if(error_code != 0) {
-            std::cerr << std::flush << "Error loading firmware. Error code: "
-                << error_code << std::endl;
-            libusb_release_interface(dev_handle, 0);
-            libusb_close(dev_handle);
-            libusb_exit(ctx);
-            return ~0;
-        }
-
-        /* Let the device re-enumerate. */
-        libusb_release_interface(dev_handle, 0);
-        libusb_close(dev_handle);
-        dev_handle = libusb_open_device_with_vid_pid(ctx, FX3_VID,
-                FX3_REENUM_PID);
-        if(dev_handle == NULL) {
-            std::cerr << "Cannot open device with vid: " << vid << " and pid: "
-                << pid << std::endl;
+        if (!verified) {
+            std::cerr << "Verification failed" << std::endl;
             return -1;
-        } else {
-            std::cout << "Detected in-progress init of B2xx..." << std::flush;
         }
-        //libusb_free_device_list(devs, 1);
-        libusb_claim_interface(dev_handle, 0);
-        std::cout << " Reenumeration complete, Device claimed..."
-            << std::endl;
 
+        std::cout << "Erase Successful!" << std::endl;
+
+        return 0;
+    }
+
+    // Added for testing purposes - not exposed
+    if (vm.count("uninit-device"))
+    {
+        // uninitialize the device
+        uhd::byte_vector_t bytes(8);
+        memset(&bytes[0], 0xFF, 8);
+
+        try {
+            b200->write_eeprom(0x0, 0x0, bytes);
+        } catch (uhd::exception &e) {
+            std::cerr << "Exception while writing to EEPROM: " << e.what() << std::endl;
+            return -1;
+        }
+
+        std::cout << "EEPROM uninitialized, resetting device..."
+            << std::endl << std::endl;
+
+        // reset the device
+        try {
+            b200->reset_fx3();
+        } catch (uhd::exception &e) {
+            std::cerr << "Exception while resetting FX3: " << e.what() << std::endl;
+            return -1;
+        }
+
+        std::cout << "Uninitialization Process Complete."
+            << std::endl << std::endl;
+
+        return 0;
+    }
+
+    /* If we are initializing the device, the VID/PID should default to the
+     * Cypress VID/PID for the initial FW load, but we can initialize from any state. */
+    if (vm.count("init-device"))
+    {
         /* Now, initialize the device. */
-        byte_vector_t bytes(8);
+        uhd::byte_vector_t bytes(8);
         bytes[0] = 0x43;
         bytes[1] = 0x59;
         bytes[2] = 0x14;
         bytes[3] = 0xB2;
-        bytes[4] = (B2XX_PID & 0xff);
-        bytes[5] = (B2XX_PID >> 8);
-        bytes[6] = (B2XX_VID & 0xff);
-        bytes[7] = (B2XX_VID >> 8);
-        write_eeprom(dev_handle, 0x0, 0x0, bytes);
+        bytes[4] = (B200_PRODUCT_ID & 0xff);
+        bytes[5] = (B200_PRODUCT_ID >> 8);
+        bytes[6] = (B200_VENDOR_ID & 0xff);
+        bytes[7] = (B200_VENDOR_ID >> 8);
+
+        try {
+            b200->write_eeprom(0x0, 0x0, bytes);
+        } catch (uhd::exception &e) {
+            std::cerr << "Exception while writing to EEPROM: " << e.what() << std::endl;
+            return -1;
+        }
+
         std::cout << "EEPROM initialized, resetting device..."
             << std::endl << std::endl;
 
         /* Reset the device! */
-        boost::uint8_t data_buffer[1];
-        fx3_control_write(dev_handle, B2XX_VREQ_FX3_RESET,
-                0x00, 0x00, data_buffer, 1, 5000);
+        try {
+            b200->reset_fx3();
+        } catch (const std::exception &e) {
+            std::cerr << "Exceptions while resetting device: " << e.what() << std::endl;
+            return -1;
+        }
 
         std::cout << "Initialization Process Complete."
             << std::endl << std::endl;
-        libusb_release_interface(dev_handle, 0);
-        libusb_close(dev_handle);
-        libusb_exit(ctx);
         return 0;
     }
-
-    dev_handle = libusb_open_device_with_vid_pid(ctx, vid, pid);
-    if(dev_handle == NULL) {
-        std::cerr << "Cannot open device with vid: " << vid << " and pid: "
-            << pid << std::endl;
-            return -1;
-    } else { std::cout << "Reactor Core Online..." << std::flush; }
-    libusb_free_device_list(devs, 1);
-
-    /* Find out if kernel driver is attached, and if so, detach it. */
-    if(libusb_kernel_driver_active(dev_handle, 0) == 1) {
-        std::cout << " Competing Driver Identified... " << std::flush;
-
-        if(libusb_detach_kernel_driver(dev_handle, 0) == 0) {
-            std::cout << " Competing Driver Destroyed!" << std::flush;
-        }
-    }
-
-    /* Claim interface 0 of device. */
-    error_code = (libusb_error) libusb_claim_interface(dev_handle, 0);
-    std::cout << " All Systems Nominal..." << std::endl << std::endl;
 
     boost::uint8_t data_buffer[16];
     memset(data_buffer, 0x0, sizeof(data_buffer));
 
     if (vm.count("speed")){
-        error_code = fx3_control_read(dev_handle, B2XX_VREQ_GET_USB,
-                0x00, 0x00, data_buffer, 1, 5000);
-
-        boost::uint8_t speed = boost::lexical_cast<boost::uint8_t>(data_buffer[0]);
-
+        boost::uint8_t speed;
+        try {speed = b200->get_usb_speed();}
+        catch (uhd::exception &e) {
+            std::cerr << "Exception while getting USB speed: " << e.what() << std::endl;
+            return -1;
+        }
         std::cout << "Currently operating at USB " << (int) speed << std::endl;
 
     } else if (vm.count("reset-device")) {
-        error_code = fx3_control_write(dev_handle, B2XX_VREQ_FX3_RESET,
-                0x00, 0x00, data_buffer, 1, 5000);
-
-    } else if (vm.count("reset-fpga")) {
-        error_code = fx3_control_write(dev_handle, B2XX_VREQ_FPGA_RESET,
-                0x00, 0x00, data_buffer, 1, 5000);
-
-    } else if (vm.count("load-fw")) {
-        error_code = (libusb_error) fx3_load_firmware(dev_handle, fw_file);
-
-        if(error_code != 0) {
-            std::cerr << std::flush << "Error loading firmware. Error code: "
-                << error_code << std::endl;
-            libusb_release_interface(dev_handle, 0);
-            libusb_close(dev_handle);
-            libusb_exit(ctx);
-            return ~0;
+        try {b200->reset_fx3();}
+        catch (uhd::exception &e) {
+            std::cerr << "Exception while resetting FX3: " << e.what() << std::endl;
+            return -1;
         }
 
+    } else if (vm.count("reset-fpga")) {
+        try {b200->set_fpga_reset_pin(true);}
+        catch (uhd::exception &e) {
+            std::cerr << "Exception while resetting FPGA: " << e.what() << std::endl;
+            return -1;
+        }
+
+    } else if (vm.count("load-fw")) {
         std::cout << "Firmware load complete, releasing USB interface..."
             << std::endl;
 
     } else if (vm.count("load-fpga")) {
-        error_code = (libusb_error) load_fpga(dev_handle, fpga_file);
+        std::cout << "Loading FPGA image (" << fpga_file << ")" << std::endl;
+        uint32_t fx3_state;
+        try {fx3_state = b200->load_fpga(fpga_file);} // returns 0 on success, or FX3 state on error
+        catch (uhd::exception &e) {
+            std::cerr << "Exception while loading FPGA: " << e.what() << std::endl;
+            return ~0;
+        }
 
-        if(error_code != 0) {
-            std::cerr << std::flush << "Error loading FPGA. Error code: "
-                << error_code << std::endl;
-            libusb_release_interface(dev_handle, 0);
-            libusb_close(dev_handle);
-            libusb_exit(ctx);
+        if (fx3_state != 0) {
+            std::cerr << std::flush << "Error loading FPGA. FX3 state: "
+            << fx3_state << std::endl;
             return ~0;
         }
 
@@ -729,18 +461,11 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
             << std::endl;
 
     } else {
-        std::cout << boost::format("B2xx Utilitiy Program %s") % desc << std::endl;
-        libusb_release_interface(dev_handle, 0);
-        libusb_close(dev_handle);
-        libusb_exit(ctx);
+        std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
         return ~0;
     }
 
-    std::cout << std::endl << "Reactor Shutting Down..." << std::endl;
-
-    error_code = (libusb_error) libusb_release_interface(dev_handle, 0);
-    libusb_close(dev_handle);
-    libusb_exit(ctx);
+    std::cout << "Operation complete!  I did it!  I did it!" << std::endl;
 
     return 0;
 }
