@@ -66,8 +66,8 @@ public:
         UHD_LOG << "~radio_ctrl_core_3000_impl() " << _name << std::endl;
         _timeout = ACK_TIMEOUT; //reset timeout to something small
         UHD_SAFE_CALL(
-                this->peek32(0);//dummy peek with the purpose of ack'ing all packets
-                _async_task.reset();//now its ok to release the task
+            this->peek32(0);//dummy peek with the purpose of ack'ing all packets
+            _async_task.reset();//now its ok to release the task
         )
     }
 

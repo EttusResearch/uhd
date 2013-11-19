@@ -155,11 +155,12 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
     boost::shared_ptr<AsyncTaskData> data
 )
 {
-	managed_recv_buffer::sptr buff = xport->get_recv_buff();
-    if (not buff or buff->size() < 8) return NULL;
+    managed_recv_buffer::sptr buff = xport->get_recv_buff();
+    if (not buff or buff->size() < 8)
+        return NULL;
+
     const boost::uint32_t sid = uhd::wtohx(buff->cast<const boost::uint32_t *>()[1]);
-    switch (sid)
-    {
+    switch (sid) {
 
     //if the packet is a control response
     case B200_RESP0_MSG_SID:
