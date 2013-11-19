@@ -35,6 +35,7 @@
 #include <boost/functional/hash.hpp>
 
 #include <b200_iface.hpp>
+#include <uhd/config.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
 #include <uhd/exception.hpp>
@@ -195,7 +196,6 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     }
 
     uhd::transport::usb_device_handle::sptr handle;
-    uhd::transport::usb_control::sptr usb_ctrl;
     b200_iface::sptr b200;
 
     vid = B200_VENDOR_ID;   // Default
@@ -217,7 +217,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         return -1;
     std::cout << " Control of B2xx granted..." << std::endl << std::endl;
 
-    // if we are supposed to load a new firmware image and one already exists, reset and load the new one
+    // if we are supposed to load a new firmware image and one already exists, reset the FX3 so we can load the new one
     if (vm.count("load-fw") && handle->firmware_loaded())
     {
         std::cout << "Overwriting existing firmware" << std::endl;
@@ -227,7 +227,6 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
         // re-open device
         b200.reset();
-        usb_ctrl.reset();
         handle.reset();
         usleep(2000000);    // wait 2 seconds for FX3 to reset
         handle = open_device(vid, pid);
@@ -251,14 +250,21 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
         // re-open device
         b200.reset();
-        usb_ctrl.reset();
         handle.reset();
-        handle = open_device(vid, pid);
-        if (!handle)
+        try {
+            handle = open_device(vid, pid);
+            if (!handle)
+                return -1;
+            b200 = make_b200_iface(handle);
+            if (!b200)
+                return -1;
+        } catch(const std::exception &e) {
+            std::cerr << "Failed to communicate with the device!" << std::endl;
+            #ifdef UHD_PLATFORM_WIN32
+            std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+            #endif /* UHD_PLATFORM_WIN32 */
             return -1;
-        b200 = make_b200_iface(handle);
-        if (!b200)
-            return -1;
+        }
     }
 
     // Added for testing purposes - not exposed
