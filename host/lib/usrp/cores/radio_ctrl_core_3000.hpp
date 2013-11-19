@@ -18,11 +18,12 @@
 #ifndef INCLUDED_LIBUHD_USRP_RADIO_CTRL_3000_HPP
 #define INCLUDED_LIBUHD_USRP_RADIO_CTRL_3000_HPP
 
+#include <uhd/utils/msg_task.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
-#include <uhd/types/wb_iface.hpp>
 #include <string>
 
 /*!
@@ -43,7 +44,7 @@ public:
     );
 
     //! Hold a ref to a task thats feeding push response
-    virtual void hold_task(boost::shared_ptr<void> task) = 0;
+    virtual void hold_task(uhd::msg_task::sptr task) = 0;
 
     //! Push a response externall (resp_xport is NULL)
     virtual void push_response(const boost::uint32_t *buff) = 0;
