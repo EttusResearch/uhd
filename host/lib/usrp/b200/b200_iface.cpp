@@ -492,18 +492,21 @@ public:
         hash_type loaded_hash; usrp_get_fpga_hash(loaded_hash);
         if (hash == loaded_hash) return 0;
         
+        // Establish default largest possible control request transfer size based on operating USB speed
         int transfer_size = VREQ_DEFAULT_SIZE;
         int current_usb_speed = get_usb_speed();
         if (current_usb_speed == 3)
             transfer_size = VREQ_MAX_SIZE_USB3;
         else if (current_usb_speed != 2)
-            throw uhd::io_error("load_fpga: get_usb_speed returned invalid USB speed (not 2 or 3)");
+            throw uhd::io_error("load_fpga: get_usb_speed returned invalid USB speed (not 2 or 3).");
         
         UHD_ASSERT_THROW(transfer_size <= VREQ_MAX_SIZE);
-
+        
         unsigned char out_buff[VREQ_MAX_SIZE];
-        memset(out_buff, 0x00, sizeof(out_buff));
-        fx3_control_write(B200_VREQ_FPGA_CONFIG, 0, 0, out_buff, 1, 1000);
+        
+        // Request loopback read, which will indicate the firmware's current control request buffer size
+        int nread = fx3_control_read(B200_VREQ_LOOP, 0, 0, out_buff, sizeof(out_buff), 1000);
+        transfer_size = std::min(transfer_size, nread); // Select the smaller value
 
         size_t file_size = 0;
         {
@@ -517,6 +520,9 @@ public:
         if(!file.good()) {
             throw uhd::io_error("load_fpga: cannot open FPGA input file.");
         }
+
+        memset(out_buff, 0x00, sizeof(out_buff));
+        fx3_control_write(B200_VREQ_FPGA_CONFIG, 0, 0, out_buff, 1, 1000);
 
         wait_count = 0;
         do {
@@ -558,7 +564,9 @@ public:
             boost::uint16_t transfer_count = boost::uint16_t(n);
 
             /* Send the data to the device. */
-            fx3_control_write(B200_VREQ_FPGA_DATA, 0, 0, out_buff, transfer_count, 5000);
+            int nwritten = fx3_control_write(B200_VREQ_FPGA_DATA, 0, 0, out_buff, transfer_count, 5000);
+            if (nwritten <= 0)
+                throw uhd::io_error("load_fpga: cannot write bitstream to FX3.");
 
             if (load_img_msg)
             {
