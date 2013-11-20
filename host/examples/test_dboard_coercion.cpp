@@ -121,7 +121,7 @@ std::string tx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, bool verbo
             gains.push_back(current_gain);
             current_gain++;
         }
-        if(gain_end != gains.back()) gains.push_back(gain_end);
+        gains.push_back(gain_end);
 
     }
 
@@ -313,7 +313,7 @@ std::string rx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, bool verbo
             gains.push_back(current_gain);
             current_gain++;
         }
-        if(gain_end != gains.back()) gains.push_back(gain_end);
+        gains.push_back(gain_end);
 
     }
 

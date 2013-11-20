@@ -17,6 +17,7 @@
 
 #include "b200_iface.hpp"
 
+#include <uhd/config.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <boost/functional/hash.hpp>
@@ -163,7 +164,7 @@ bool parse_record(std::string *record, boost::uint16_t &len, \
     std::istringstream(record->substr(3, 4)) >> std::hex >> addr;
     std::istringstream(record->substr(7, 2)) >> std::hex >> type;
 
-    if (len >2 * (record->length() - 9))  // sanity check to prevent buffer overrun
+    if (len > (2 * (record->length() - 9)))  // sanity check to prevent buffer overrun
         return false;
 
     for (i = 0; i < len; i++) {
@@ -222,13 +223,13 @@ public:
     }
 
 
-    void write_i2c(boost::uint16_t addr __attribute__ ((unused)), const byte_vector_t &bytes __attribute__ ((unused)))
+    void write_i2c(UHD_UNUSED(boost::uint16_t addr), UHD_UNUSED(const byte_vector_t &bytes))
     {
         throw uhd::not_implemented_error("b200 write i2c");
     }
 
 
-    byte_vector_t read_i2c(boost::uint16_t addr __attribute__ ((unused)), size_t num_bytes __attribute__ ((unused)))
+    byte_vector_t read_i2c(UHD_UNUSED(boost::uint16_t addr), UHD_UNUSED(size_t num_bytes))
     {
         throw uhd::not_implemented_error("b200 read i2c");
     }
@@ -303,7 +304,7 @@ public:
     }
 
 
-    void load_firmware(const std::string filestring, bool force  __attribute__ ((unused)) = false)
+    void load_firmware(const std::string filestring, UHD_UNUSED(bool force) = false)
     {
         const char *filename = filestring.c_str();
 
@@ -333,7 +334,7 @@ public:
             std::string record;
             file >> record;
 
-        if (!record.length() > 0)
+        if (!(record.length() > 0))
             continue;
 
             /* Check for valid Intel HEX record. */
@@ -433,7 +434,7 @@ public:
         UHD_THROW_INVALID_CODE_PATH();
 
         // Below is dead code as long as UHD_THROW_INVALID_CODE_PATH(); is declared above.
-        // It is preservered here in a comment in case it is needed later:
+        // It is preserved here in a comment in case it is needed later:
         // fx3_control_write(B200_VREQ_FPGA_RESET, 0x00, 0x00, data, 4);
     }
 

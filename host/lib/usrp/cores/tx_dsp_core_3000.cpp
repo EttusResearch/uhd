@@ -51,7 +51,7 @@ public:
         //init to something so update method has reasonable defaults
         _scaling_adjustment = 1.0;
         _dsp_extra_scaling = 1.0;
-        _tick_rate = 1.0;
+        this->set_tick_rate(1.0);
     }
 
     void set_tick_rate(const double rate){

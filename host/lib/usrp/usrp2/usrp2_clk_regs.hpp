@@ -22,7 +22,16 @@
 
 class usrp2_clk_regs_t {
 public:
-  usrp2_clk_regs_t(void):test(0),fpga(0),adc(0),dac(0),serdes(0),exp(0),tx_db(0),rx_db(0) { ; }
+  usrp2_clk_regs_t(void):
+    test(0),
+    fpga(0),
+    adc(0),
+    dac(0),
+    serdes(0),
+    exp(0),
+    tx_db(0),
+    rx_db(0) {}
+
   usrp2_clk_regs_t(usrp2_iface::rev_type rev) {
     fpga = adc = serdes = exp = tx_db = 0;
     test = 0;
