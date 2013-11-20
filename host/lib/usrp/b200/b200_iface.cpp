@@ -69,6 +69,11 @@ const static boost::uint8_t FX3_STATE_RUNNING = 0x04;
 const static boost::uint8_t FX3_STATE_UNCONFIGURED = 0x05;
 const static boost::uint8_t FX3_STATE_ERROR = 0x06;
 
+const static int VREQ_MAX_SIZE_USB2 = 64;
+const static int VREQ_MAX_SIZE_USB3 = 512;
+const static int VREQ_DEFAULT_SIZE  = VREQ_MAX_SIZE_USB2;
+const static int VREQ_MAX_SIZE      = VREQ_MAX_SIZE_USB3;
+
 typedef boost::uint32_t hash_type;
 
 
@@ -243,10 +248,12 @@ public:
         size_t num_bytes
     ){
         byte_vector_t recv_bytes(num_bytes);
-        fx3_control_read(B200_VREQ_EEPROM_READ,
+        int bytes_read = fx3_control_read(B200_VREQ_EEPROM_READ,
                          0, offset | (boost::uint16_t(addr) << 8),
                          (unsigned char*) &recv_bytes[0],
                          num_bytes);
+        if (bytes_read != num_bytes)
+            throw uhd::io_error("Failed to read data from EEPROM.");
         return recv_bytes;
     }
 
@@ -492,10 +499,24 @@ public:
         hash_type hash = generate_hash(filename);
         hash_type loaded_hash; usrp_get_fpga_hash(loaded_hash);
         if (hash == loaded_hash) return 0;
-
-        unsigned char out_buff[64];
-        memset(out_buff, 0x00, sizeof(out_buff));
-        fx3_control_write(B200_VREQ_FPGA_CONFIG, 0, 0, out_buff, 1, 1000);
+        
+        // Establish default largest possible control request transfer size based on operating USB speed
+        int transfer_size = VREQ_DEFAULT_SIZE;
+        int current_usb_speed = get_usb_speed();
+        if (current_usb_speed == 3)
+            transfer_size = VREQ_MAX_SIZE_USB3;
+        else if (current_usb_speed != 2)
+            throw uhd::io_error("load_fpga: get_usb_speed returned invalid USB speed (not 2 or 3).");
+        
+        UHD_ASSERT_THROW(transfer_size <= VREQ_MAX_SIZE);
+        
+        unsigned char out_buff[VREQ_MAX_SIZE];
+        
+        // Request loopback read, which will indicate the firmware's current control request buffer size
+        int nread = fx3_control_read(B200_VREQ_LOOP, 0, 0, out_buff, sizeof(out_buff), 1000);
+        if (nread <= 0)
+            throw uhd::io_error("load_fpga: unable to complete firmware loopback request.");
+        transfer_size = std::min(transfer_size, nread); // Select the smaller value
 
         size_t file_size = 0;
         {
@@ -509,6 +530,9 @@ public:
         if(!file.good()) {
             throw uhd::io_error("load_fpga: cannot open FPGA input file.");
         }
+
+        memset(out_buff, 0x00, sizeof(out_buff));
+        fx3_control_write(B200_VREQ_FPGA_CONFIG, 0, 0, out_buff, 1, 1000);
 
         wait_count = 0;
         do {
@@ -543,14 +567,18 @@ public:
 
         size_t bytes_sent = 0;
         while(!file.eof()) {
-            file.read((char *) out_buff, sizeof(out_buff));
+            file.read((char *) out_buff, transfer_size);
             const std::streamsize n = file.gcount();
             if(n == 0) continue;
 
             boost::uint16_t transfer_count = boost::uint16_t(n);
 
             /* Send the data to the device. */
-            fx3_control_write(B200_VREQ_FPGA_DATA, 0, 0, out_buff, transfer_count, 5000);
+            int nwritten = fx3_control_write(B200_VREQ_FPGA_DATA, 0, 0, out_buff, transfer_count, 5000);
+            if (nwritten <= 0)
+                throw uhd::io_error("load_fpga: cannot write bitstream to FX3.");
+            else if (nwritten != transfer_count)
+                throw uhd::io_error("load_fpga: short write while transferring bitstream to FX3.");
 
             if (load_img_msg)
             {

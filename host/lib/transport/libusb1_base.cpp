@@ -19,10 +19,12 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/tasks.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/foreach.hpp>
+#include <boost/bind.hpp>
 #include <cstdlib>
 #include <iostream>
 
@@ -37,9 +39,11 @@ public:
     libusb_session_impl(void){
         UHD_ASSERT_THROW(libusb_init(&_context) == 0);
         libusb_set_debug(_context, debug_level);
+        task_handler = task::make(boost::bind(&libusb_session_impl::libusb_event_handler_task, this, _context));
     }
 
     ~libusb_session_impl(void){
+        task_handler.reset();
         libusb_exit(_context);
     }
 
@@ -49,6 +53,21 @@ public:
 
 private:
     libusb_context *_context;
+    task::sptr task_handler;
+
+    /*
+     * Task to handle libusb events.  There should only be one thread per libusb_context handling events.
+     * Using more than one thread can result in excessive CPU usage in kernel space (presumably from locking/waiting).
+     * The libusb documentation says it is safe, which it is, but it neglects to state the cost in CPU usage.
+     * Just don't do it!
+     */
+    UHD_INLINE void libusb_event_handler_task(libusb_context *context)
+    {
+        timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = 100000;
+        libusb_handle_events_timeout(context, &tv);
+    }
 };
 
 libusb::session::sptr libusb::session::get_global_session(void){
@@ -272,6 +291,10 @@ public:
 
     boost::uint16_t get_product_id(void) const{
         return libusb::device_descriptor::make(this->get_device())->get().idProduct;
+    }
+
+    bool firmware_loaded() {
+        return (get_manufacturer() == "Ettus Research LLC");
     }
 
 private:

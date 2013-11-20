@@ -73,6 +73,12 @@ public:
     virtual boost::uint16_t get_product_id() const = 0;
 
     /*!
+     * Test whether the firmware is loaded on the device.
+     * \return true if firmware is loaded
+     */
+    virtual bool firmware_loaded() = 0;
+
+    /*!
      * Return a vector of USB devices on this host
      * \return a vector of USB device handles that match vid and pid
      */

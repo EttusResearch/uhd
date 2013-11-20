@@ -44,10 +44,6 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/weak_ptr.hpp>
 #include "recv_packet_demuxer_3000.hpp"
-
-static const std::string     B200_FW_FILE_NAME = "usrp_b200_fw.hex";
-static const std::string     B200_FPGA_FILE_NAME = "usrp_b200_fpga.bin";
-static const std::string     B210_FPGA_FILE_NAME = "usrp_b210_fpga.bin";
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 0x03;
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0x00;
 static const boost::uint16_t B200_FPGA_COMPAT_NUM = 0x02;
@@ -120,7 +116,7 @@ struct b200_impl : public uhd::device
     boost::weak_ptr<uhd::tx_streamer> _tx_streamer;
 
     //async ctrl + msgs
-    uhd::task::sptr _async_task;
+    uhd::msg_task::sptr _async_task;
     typedef uhd::transport::bounded_buffer<uhd::async_metadata_t> async_md_type;
     struct AsyncTaskData
     {
@@ -130,7 +126,7 @@ struct b200_impl : public uhd::device
         b200_uart::sptr gpsdo_uart;
     };
     boost::shared_ptr<AsyncTaskData> _async_task_data;
-    void handle_async_task(uhd::transport::zero_copy_if::sptr, boost::shared_ptr<AsyncTaskData>);
+    boost::optional<uhd::msg_task::msg_type_t> handle_async_task(uhd::transport::zero_copy_if::sptr, boost::shared_ptr<AsyncTaskData>);
 
     void register_loopback_self_test(uhd::wb_iface::sptr iface);
     void codec_loopback_self_test(uhd::wb_iface::sptr iface);

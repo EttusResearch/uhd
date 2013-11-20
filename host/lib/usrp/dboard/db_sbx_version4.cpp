@@ -66,85 +66,21 @@ double sbx_xcvr::sbx_version4::set_lo_freq(dboard_iface::unit_t unit, double tar
         (64, adf4351_regs_t::RF_DIVIDER_SELECT_DIV64)
     ;
 
-    double actual_freq, pfd_freq;
-    double ref_freq = self_base->get_iface()->get_clock_rate(unit);
-    int R=0, BS=0, N=0, FRAC=0, MOD=0;
-    int RFdiv = 1;
-    adf4351_regs_t::reference_divide_by_2_t T     = adf4351_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED;
-    adf4351_regs_t::reference_doubler_t     D     = adf4351_regs_t::REFERENCE_DOUBLER_DISABLED;    
-
-    //Reference doubler for 50% duty cycle
-    // if ref_freq < 12.5MHz enable regs.reference_divide_by_2
-    if(ref_freq <= 12.5e6) D = adf4351_regs_t::REFERENCE_DOUBLER_ENABLED;
-
-    //increase RF divider until acceptable VCO frequency
-    double vco_freq = target_freq;
-    while (vco_freq < 2.2e9) {
-        vco_freq *= 2;
-        RFdiv *= 2;
-    }
-
     //use 8/9 prescaler for vco_freq > 3 GHz (pg.18 prescaler)
-    adf4351_regs_t::prescaler_t prescaler = target_freq > 3e9 ? adf4351_regs_t::PRESCALER_8_9 : adf4351_regs_t::PRESCALER_4_5;
+    adf4351_regs_t::prescaler_t prescaler = target_freq > 3.6e9 ? adf4351_regs_t::PRESCALER_8_9 : adf4351_regs_t::PRESCALER_4_5;
 
-    /*
-     * The goal here is to loop though possible R dividers,
-     * band select clock dividers, N (int) dividers, and FRAC 
-     * (frac) dividers.
-     *
-     * Calculate the N and F dividers for each set of values.
-     * The loop exits when it meets all of the constraints.
-     * The resulting loop values are loaded into the registers.
-     *
-     * from pg.21
-     *
-     * f_pfd = f_ref*(1+D)/(R*(1+T))
-     * f_vco = (N + (FRAC/MOD))*f_pfd
-     *    N = f_vco/f_pfd - FRAC/MOD = f_vco*((R*(T+1))/(f_ref*(1+D))) - FRAC/MOD
-     * f_rf = f_vco/RFdiv)
-     * f_actual = f_rf/2
-     */
-    for(R = 1; R <= 1023; R+=1){
-        //PFD input frequency = f_ref/R ... ignoring Reference doubler/divide-by-2 (D & T)
-        pfd_freq = ref_freq*(1+D)/(R*(1+T));
+    adf435x_tuning_constraints tuning_constraints;
+    tuning_constraints.force_frac0 = false;
+    tuning_constraints.band_sel_freq_max = 100e3;
+    tuning_constraints.ref_doubler_threshold = 12.5e6;
+    tuning_constraints.int_range = uhd::range_t(prescaler_to_min_int_div[prescaler], 4095);  //INT is a 12-bit field
+    tuning_constraints.pfd_freq_max = 25e6;
+    tuning_constraints.rf_divider_range = uhd::range_t(1, 64);
 
-        //keep the PFD frequency at or below 25MHz (Loop Filter Bandwidth)
-        if (pfd_freq > 25e6) continue;
-
-        //ignore fractional part of tuning
-        N = int(std::floor(vco_freq/pfd_freq));
-
-        //keep N > minimum int divider requirement
-        if (N < prescaler_to_min_int_div[prescaler]) continue;
-
-        for(BS=1; BS <= 255; BS+=1){
-            //keep the band select frequency at or below 100KHz
-            //constraint on band select clock
-            if (pfd_freq/BS > 100e3) continue;
-            goto done_loop;
-        }
-    } done_loop:
-
-    //Fractional-N calculation
-    MOD = 4095; //max fractional accuracy
-    FRAC = int((target_freq/pfd_freq - N)*MOD);
-
-    //Reference divide-by-2 for 50% duty cycle
-    // if R even, move one divide by 2 to to regs.reference_divide_by_2
-    if(R % 2 == 0){
-        T = adf4351_regs_t::REFERENCE_DIVIDE_BY_2_ENABLED;
-        R /= 2;
-    }
-
-    //actual frequency calculation
-    actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T))));
-
-    UHD_LOGV(often)
-        << boost::format("SBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
-        << boost::format("SBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d"
-            ) % R % BS % N % FRAC % MOD % T % D % RFdiv << std::endl
-        << boost::format("SBX Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
-            ) % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
+    double actual_freq;
+    adf435x_tuning_settings tuning_settings = _tune_adf435x_synth(
+        target_freq, self_base->get_iface()->get_clock_rate(unit),
+        tuning_constraints, actual_freq);
 
     //load the register values
     adf4351_regs_t regs;
@@ -154,19 +90,25 @@ double sbx_xcvr::sbx_version4::set_lo_freq(dboard_iface::unit_t unit, double tar
     else
         regs.output_power = adf4351_regs_t::OUTPUT_POWER_5DBM;
 
-    regs.frac_12_bit = FRAC;
-    regs.int_16_bit = N;
-    regs.mod_12_bit = MOD;
-    regs.clock_divider_12_bit = std::max(1, int(std::ceil(400e-6*pfd_freq/MOD)));
-    regs.feedback_select = adf4351_regs_t::FEEDBACK_SELECT_DIVIDED;
-    regs.clock_div_mode = adf4351_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE;
-    regs.prescaler = prescaler;
-    regs.r_counter_10_bit = R;
-    regs.reference_divide_by_2 = T;
-    regs.reference_doubler = D;
-    regs.band_select_clock_div = BS;
-    UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(RFdiv));
-    regs.rf_divider_select = rfdivsel_to_enum[RFdiv];
+    regs.frac_12_bit            = tuning_settings.frac_12_bit;
+    regs.int_16_bit             = tuning_settings.int_16_bit;
+    regs.mod_12_bit             = tuning_settings.mod_12_bit;
+    regs.clock_divider_12_bit   = tuning_settings.clock_divider_12_bit;
+    regs.feedback_select        = tuning_settings.feedback_after_divider ?
+                                    adf4351_regs_t::FEEDBACK_SELECT_DIVIDED :
+                                    adf4351_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
+    regs.clock_div_mode         = adf4351_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE;
+    regs.prescaler              = prescaler;
+    regs.r_counter_10_bit       = tuning_settings.r_counter_10_bit;
+    regs.reference_divide_by_2  = tuning_settings.r_divide_by_2_en ?
+                                    adf4351_regs_t::REFERENCE_DIVIDE_BY_2_ENABLED :
+                                    adf4351_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED;
+    regs.reference_doubler      = tuning_settings.r_doubler_en ?
+                                    adf4351_regs_t::REFERENCE_DOUBLER_ENABLED :
+                                    adf4351_regs_t::REFERENCE_DOUBLER_DISABLED;
+    regs.band_select_clock_div  = tuning_settings.band_select_clock_div;
+    UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(tuning_settings.rf_divider));
+    regs.rf_divider_select      = rfdivsel_to_enum[tuning_settings.rf_divider];
 
     //reset the N and R counter
     regs.counter_reset = adf4351_regs_t::COUNTER_RESET_ENABLED;

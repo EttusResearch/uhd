@@ -34,8 +34,19 @@
 namespace fs = boost::filesystem;
 
 /***********************************************************************
+ * Get a list of paths for an environment variable
+ **********************************************************************/
+static std::string get_env_var(const std::string &var_name, const std::string &def_val = ""){
+    const char *var_value_ptr = std::getenv(var_name.c_str());
+    return (var_value_ptr == NULL)? def_val : var_value_ptr;
+}
+
+static std::vector<fs::path> get_env_paths(const std::string &var_name){
+
+/***********************************************************************
  * Determine the paths separator
  **********************************************************************/
+
 #ifdef UHD_PLATFORM_WIN32
     static const std::string env_path_sep = ";";
 #else
@@ -45,16 +56,6 @@ namespace fs = boost::filesystem;
 #define path_tokenizer(inp) \
     boost::tokenizer<boost::char_separator<char> > \
     (inp, boost::char_separator<char>(env_path_sep.c_str()))
-
-/***********************************************************************
- * Get a list of paths for an environment variable
- **********************************************************************/
-static std::string get_env_var(const std::string &var_name, const std::string &def_val = ""){
-    const char *var_value_ptr = std::getenv(var_name.c_str());
-    return (var_value_ptr == NULL)? def_val : var_value_ptr;
-}
-
-static std::vector<fs::path> get_env_paths(const std::string &var_name){
 
     std::string var_value = get_env_var(var_name);
 
@@ -85,6 +86,7 @@ std::vector<fs::path> get_image_paths(void){
 std::vector<fs::path> get_module_paths(void){
     std::vector<fs::path> paths = get_env_paths("UHD_MODULE_PATH");
     paths.push_back(fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "modules");
+    paths.push_back(fs::path(uhd::get_pkg_path()) / "share" / "uhd" / "modules");
     return paths;
 }
 

@@ -46,7 +46,6 @@ namespace uhd{
         static sptr make(const task_fcn_type &task_fcn);
 
     };
-
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_UTILS_TASKS_HPP */

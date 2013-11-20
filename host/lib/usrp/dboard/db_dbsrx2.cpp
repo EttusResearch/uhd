@@ -358,11 +358,11 @@ double dbsrx2::set_gain(double gain, const std::string &name){
  * Bandwidth Handling
  **********************************************************************/
 double dbsrx2::set_bandwidth(double bandwidth){
-    //convert complex bandpass to lowpass bandwidth
-    bandwidth = bandwidth/2.0;
-
     //clip the input
     bandwidth = dbsrx2_bandwidth_range.clip(bandwidth);
+
+    //convert complex bandpass to lowpass bandwidth
+    bandwidth = bandwidth/2.0;
 
     _max2112_write_regs.lp = int((bandwidth/1e6 - 4)/0.29 + 12);
     _bandwidth = double(4 + (_max2112_write_regs.lp - 12) * 0.29)*1e6;

@@ -32,6 +32,17 @@ struct item32_sc12_3x
     item32_t line2;
 };
 
+/*
+ * convert_sc12_item32_3_to_star_4 takes in 3 lines with 32 bit each
+ * and converts them 4 samples of type 'std::complex<type>'.
+ * The structure of the 3 lines is as follows:
+ *  _ _ _ _ _ _ _ _
+ * |_ _ _1_ _ _|_ _|
+ * |_2_ _ _|_ _ _3_|
+ * |_ _|_ _ _4_ _ _|
+ *
+ * The numbers mark the position of one complex sample.
+ */
 template <typename type, tohost32_type tohost>
 void convert_sc12_item32_3_to_star_4
 (
@@ -84,17 +95,48 @@ struct convert_sc12_item32_1_to_star_1 : public converter
         _scalar = scalar/unpack_growth;
     }
 
+    /*
+     * This converter takes in 24 bits complex samples, 12 bits I and 12 bits Q, and converts them to type 'std::complex<type>'.
+     * 'type' is usually 'float'.
+     * For the converter to work correctly the used managed_buffer which holds all samples of one packet has to be 32 bits aligned.
+     * We assume 32 bits to be one line. This said the converter must be aware where it is supposed to start within 3 lines.
+     *
+     */
     void operator()(const input_type &inputs, const output_type &outputs, const size_t nsamps)
     {
-        const item32_sc12_3x *input = reinterpret_cast<const item32_sc12_3x *>(size_t(inputs[0]) & ~0x3);
+        /*
+         * Looking at the line structure above we can identify 4 cases.
+         * Each corresponds to the start of a different sample within a 3 line block.
+         * head_samps derives the number of samples left within one block.
+         * Then the number of bytes the converter has to rewind are calculated.
+         */
+        const size_t head_samps = size_t(inputs[0]) & 0x3;
+        size_t rewind = 0;
+        switch(head_samps)
+        {
+            case 0: break;
+            case 1: rewind = 9; break;
+            case 2: rewind = 6; break;
+            case 3: rewind = 3; break;
+        }
+
+        /*
+         * The pointer *input now points to the head of a 3 line block.
+         */
+        const item32_sc12_3x *input = reinterpret_cast<const item32_sc12_3x *>(size_t(inputs[0]) - rewind);
         std::complex<type> *output = reinterpret_cast<std::complex<type> *>(outputs[0]);
 
         //helper variables
         std::complex<type> dummy0, dummy1, dummy2;
         size_t i = 0, o = 0;
 
-        //handle the head case
-        const size_t head_samps = size_t(inputs[0]) & 0x3;
+        /*
+         * handle the head case
+         * head_samps holds the number of samples left in a block.
+         * The 3 line converter is called for the whole block and already processed samples are dumped.
+         * We don't run into the risk of a SIGSEGV because input will always point to valid memory within a managed_buffer.
+         * Furthermore the bytes in a buffer remain unchanged after they have been copied into it.
+         */
         switch (head_samps)
         {
         case 0: break; //no head
@@ -111,7 +153,18 @@ struct convert_sc12_item32_1_to_star_1 : public converter
             i++; o += 4;
         }
 
-        //handle the tail case
+        /*
+         * handle the tail case
+         * The converter can be called with any number of samples to be converted.
+         * This can end up in only a part of a block to be converted in one call.
+         * We never have to worry about SIGSEGVs here as long as we end in the middle of a managed_buffer.
+         * If we are at the end of managed_buffer there are 2 precautions to prevent SIGSEGVs.
+         * Firstly only a read operation is performed.
+         * Secondly managed_buffers allocate a fixed size memory which is always larger than the actually used size.
+         * e.g. The current sample maximum is 2000 samples in a packet over USB.
+         * With sc12 samples a packet consists of 6000kb but managed_buffers allocate 16kb each.
+         * Thus we don't run into problems here either.
+         */
         const size_t tail_samps = nsamps - o;
         switch (tail_samps)
         {

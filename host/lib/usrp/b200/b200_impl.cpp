@@ -37,10 +37,6 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-const boost::uint16_t B200_VENDOR_ID  = 0x2500;
-const boost::uint16_t B200_PRODUCT_ID = 0x0020;
-const boost::uint16_t INIT_PRODUCT_ID = 0x00f0;
-
 static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
 
 //! mapping of frontend to radio perif index
@@ -99,7 +95,7 @@ static device_addrs_t b200_find(const device_addr_t &hint)
         catch(const uhd::exception &){continue;} //ignore claimed
 
         //check if fw was already loaded
-        if (handle->get_manufacturer() != "Ettus Research LLC")
+        if (!(handle->firmware_loaded()))
         {
             b200_iface::make(control)->load_firmware(b200_fw_image);
         }
@@ -160,8 +156,15 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     const fs_path mb_path = "/mboards/0";
 
     //try to match the given device address with something on the USB bus
+    uint16_t vid = B200_VENDOR_ID;
+    uint16_t pid = B200_PRODUCT_ID;
+    if (device_addr.has_key("vid"))
+            sscanf(device_addr.get("vid").c_str(), "%x", &vid);
+    if (device_addr.has_key("pid"))
+            sscanf(device_addr.get("pid").c_str(), "%x", &pid);
+
     std::vector<usb_device_handle::sptr> device_list =
-        usb_device_handle::get_device_list(B200_VENDOR_ID, B200_PRODUCT_ID);
+        usb_device_handle::get_device_list(vid, pid);
 
     //locate the matching handle in the device list
     usb_device_handle::sptr handle;
@@ -252,7 +255,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     _async_task_data.reset(new AsyncTaskData());
     _async_task_data->async_md.reset(new async_md_type(1000/*messages deep*/));
-    _async_task = uhd::task::make(boost::bind(&b200_impl::handle_async_task, this, _ctrl_transport, _async_task_data));
+    _async_task = uhd::msg_task::make(boost::bind(&b200_impl::handle_async_task, this, _ctrl_transport, _async_task_data));
 
     ////////////////////////////////////////////////////////////////////
     // Local control endpoint
@@ -474,7 +477,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
 
 b200_impl::~b200_impl(void)
 {
-    UHD_SAFE_CALL
+	UHD_SAFE_CALL
     (
         _async_task.reset();
     )
@@ -612,7 +615,7 @@ void b200_impl::setup_radio(const size_t dspno)
 /***********************************************************************
  * loopback tests
  **********************************************************************/
- 
+
 void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
 {
     bool test_fail = false;
