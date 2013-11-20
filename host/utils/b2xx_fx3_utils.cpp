@@ -228,7 +228,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         if (vm.count("pid"))
             pid = atoh(pid_str);
     } catch (std::exception &e) {
-        std::cerr << "Exception while parsing VID and PID" << e.what() << std:: endl;
+        std::cerr << "Exception while parsing VID and PID: " << e.what() << std:: endl;
         return ~0;
     }
 
@@ -250,7 +250,11 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         std::cout << "Overwriting existing firmware" << std::endl;
 
         // reset the device
-        b200->reset_fx3();
+        try {
+            b200->reset_fx3();
+        } catch (std::exception &e) {
+            std::cerr << "Exception while reseting FX3: " << e.what() << std::endl;
+        }
 
         // re-open device
         b200.reset();
@@ -286,7 +290,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         try {
             b200->load_firmware(fw_file);
         } catch (std::exception &e) {
-            std::cerr << "Exception while loading firmware" << e.what() << std::endl;
+            std::cerr << "Exception while loading firmware: " << e.what() << std::endl;
             return ~0;
         }
 
@@ -415,7 +419,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         try {
             b200->reset_fx3();
         } catch (const std::exception &e) {
-            std::cerr << "Exceptions while resetting device: " << e.what() << std::endl;
+            std::cerr << "Exception while resetting device: " << e.what() << std::endl;
             return -1;
         }
 
