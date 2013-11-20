@@ -569,6 +569,8 @@ public:
             int nwritten = fx3_control_write(B200_VREQ_FPGA_DATA, 0, 0, out_buff, transfer_count, 5000);
             if (nwritten <= 0)
                 throw uhd::io_error("load_fpga: cannot write bitstream to FX3.");
+            else if (nwritten != transfer_count)
+                throw uhd::io_error("load_fpga: short write while transferring bitstream to FX3.");
 
             if (load_img_msg)
             {
