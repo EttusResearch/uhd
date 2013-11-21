@@ -304,8 +304,7 @@ private:
         while(msg.size() < min_buff_size && msg.size() != 0);
 
         if(msg.size() >= min_buff_size) {
-            UHD_ASSERT_THROW(min_buff_size <= sizeof(b.data));
-            memcpy(b.data, &msg.front(), min_buff_size);
+            memcpy(b.data, &msg.front(), std::min(msg.size(), sizeof(b.data)));
             return true;
         }
         return false;
