@@ -505,7 +505,8 @@ public:
         unsigned char out_buff[VREQ_MAX_SIZE];
         
         // Request loopback read, which will indicate the firmware's current control request buffer size
-        int nread = fx3_control_read(B200_VREQ_LOOP, 0, 0, out_buff, sizeof(out_buff), 1000);
+        // Make sure that if operating as USB2, requested length is within spec
+        int nread = fx3_control_read(B200_VREQ_LOOP, 0, 0, out_buff, std::min(transfer_size, (int)sizeof(out_buff)), 1000);
         if (nread <= 0)
             throw uhd::io_error("load_fpga: unable to complete firmware loopback request.");
         transfer_size = std::min(transfer_size, nread); // Select the smaller value
