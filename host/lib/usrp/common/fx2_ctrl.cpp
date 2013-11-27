@@ -119,6 +119,9 @@ bool parse_record(std::string *record, unsigned int &len,
     std::istringstream(record->substr(3, 4)) >> std::hex >> addr;
     std::istringstream(record->substr(7, 2)) >> std::hex >> type;
 
+    if (len > (2 * (record->length() - 9)))  // sanity check to prevent buffer overrun
+        return false;
+
     for (i = 0; i < len; i++) {
         std::istringstream(record->substr(9 + 2 * i, 2)) >> std::hex >> val;
         data[i] = (unsigned char) val;
@@ -180,6 +183,9 @@ public:
         while (!file.eof()) {
            std::string record;
            file >> record;
+
+        if (!(record.length() > 0))
+            continue;
 
             //check for valid record
             if (not checksum(&record) or not parse_record(&record, len, addr, type, data)) {

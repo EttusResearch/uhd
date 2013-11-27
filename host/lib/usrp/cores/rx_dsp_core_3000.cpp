@@ -50,10 +50,13 @@ public:
     ):
         _iface(iface), _dsp_base(dsp_base)
     {
+        // previously uninitialized - assuming zero for all
+        _link_rate = _host_extra_scaling = _fxpt_scalar_correction = 0.0;
+
         //init to something so update method has reasonable defaults
         _scaling_adjustment = 1.0;
         _dsp_extra_scaling = 1.0;
-        this->set_tick_rate(1.0);
+        _tick_rate = 1.0;
     }
 
     ~rx_dsp_core_3000_impl(void)

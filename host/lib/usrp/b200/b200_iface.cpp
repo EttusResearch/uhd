@@ -17,6 +17,7 @@
 
 #include "b200_iface.hpp"
 
+#include <uhd/config.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <boost/functional/hash.hpp>
@@ -163,6 +164,9 @@ bool parse_record(std::string *record, boost::uint16_t &len, \
     std::istringstream(record->substr(3, 4)) >> std::hex >> addr;
     std::istringstream(record->substr(7, 2)) >> std::hex >> type;
 
+    if (len > (2 * (record->length() - 9)))  // sanity check to prevent buffer overrun
+        return false;
+
     for (i = 0; i < len; i++) {
         std::istringstream(record->substr(9 + 2 * i, 2)) >> std::hex >> val;
         data[i] = (unsigned char) val;
@@ -219,13 +223,13 @@ public:
     }
 
 
-    void write_i2c(boost::uint16_t addr, const byte_vector_t &bytes)
+    void write_i2c(UHD_UNUSED(boost::uint16_t addr), UHD_UNUSED(const byte_vector_t &bytes))
     {
         throw uhd::not_implemented_error("b200 write i2c");
     }
 
 
-    byte_vector_t read_i2c(boost::uint16_t addr, size_t num_bytes)
+    byte_vector_t read_i2c(UHD_UNUSED(boost::uint16_t addr), UHD_UNUSED(size_t num_bytes))
     {
         throw uhd::not_implemented_error("b200 read i2c");
     }
@@ -300,7 +304,7 @@ public:
     }
 
 
-    void load_firmware(const std::string filestring, bool force = false)
+    void load_firmware(const std::string filestring, UHD_UNUSED(bool force) = false)
     {
         const char *filename = filestring.c_str();
 
@@ -329,6 +333,9 @@ public:
             boost::int32_t ret = 0;
             std::string record;
             file >> record;
+
+        if (!(record.length() > 0))
+            continue;
 
             /* Check for valid Intel HEX record. */
             if (!checksum(&record) || !parse_record(&record, len, \
@@ -426,7 +433,9 @@ public:
 
         UHD_THROW_INVALID_CODE_PATH();
 
-        fx3_control_write(B200_VREQ_FPGA_RESET, 0x00, 0x00, data, 4);
+        // Below is dead code as long as UHD_THROW_INVALID_CODE_PATH(); is declared above.
+        // It is preserved here in a comment in case it is needed later:
+        // fx3_control_write(B200_VREQ_FPGA_RESET, 0x00, 0x00, data, 4);
     }
 
     boost::uint8_t get_usb_speed(void) {

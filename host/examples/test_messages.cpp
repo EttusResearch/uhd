@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/config.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
@@ -84,7 +85,7 @@ bool test_late_command_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streame
  *    Issue a stream command with num samps and more.
  *    We expect to get an inline broken chain message.
  */
-bool test_broken_chain_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer::sptr rx_stream, uhd::tx_streamer::sptr){
+bool test_broken_chain_message(UHD_UNUSED(uhd::usrp::multi_usrp::sptr usrp), uhd::rx_streamer::sptr rx_stream, uhd::tx_streamer::sptr){
     std::cout << "Test broken chain message... " << std::flush;
 
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE);

@@ -117,6 +117,7 @@ BOOST_AUTO_TEST_CASE(test_time_error_irrational_rate)
     const uhd::time_spec_t ts = uhd::time_spec_t::from_ticks(tick_in, rate);
     const long long tick_out = ts.to_ticks(rate);
     const long long err = tick_in - tick_out;
+    std::streamsize precision = std::cout.precision();
 
     std::cout << std::setprecision(18);
     std::cout << "time ............ " << ts.get_real_secs() << std::endl;
@@ -124,6 +125,7 @@ BOOST_AUTO_TEST_CASE(test_time_error_irrational_rate)
     std::cout << "tick out ........ " << tick_out << std::endl;
     std::cout << "tick error ...... " << err << std::endl;
     std::cout << std::endl;
+    std::cout.precision(precision);
 
     BOOST_CHECK_EQUAL(err, (long long)(0));
 }

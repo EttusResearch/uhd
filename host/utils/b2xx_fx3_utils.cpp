@@ -209,7 +209,9 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     po::notify(vm);
 
     if (vm.count("help")){
-        std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
+        try {
+            std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
+        } catch(...) {}
         return ~0;
     } else if (vm.count("reset-usb")) {
         return reset_usb();
@@ -220,10 +222,15 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
     vid = B200_VENDOR_ID;   // Default
     pid = B200_PRODUCT_ID;  // Default
-    if (vm.count("vid"))
-        vid = atoh(vid_str);
-    if (vm.count("pid"))
-        pid = atoh(pid_str);
+    try {
+        if (vm.count("vid"))
+            vid = atoh(vid_str);
+        if (vm.count("pid"))
+            pid = atoh(pid_str);
+    } catch (std::exception &e) {
+        std::cerr << "Exception while parsing VID and PID: " << e.what() << std:: endl;
+        return ~0;
+    }
 
     // open the device
     handle = open_device(vid, pid);
@@ -243,7 +250,11 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         std::cout << "Overwriting existing firmware" << std::endl;
 
         // reset the device
-        b200->reset_fx3();
+        try {
+            b200->reset_fx3();
+        } catch (std::exception &e) {
+            std::cerr << "Exception while reseting FX3: " << e.what() << std::endl;
+        }
 
         // re-open device
         b200.reset();
@@ -264,19 +275,24 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
         if (fw_file.empty())
             fw_file = uhd::find_image_path(B200_FW_FILE_NAME);
-            
+
         if(fw_file.empty()) {
             std::cerr << "Firmware image not found!" << std::endl;
             return -1;
         }
-        
+
         if(!(fs::exists(fw_file))) {
             std::cerr << "Invalid filepath: " << fw_file << std::endl;
             return -1;
         }
 
         // load firmware
-        b200->load_firmware(fw_file);
+        try {
+            b200->load_firmware(fw_file);
+        } catch (std::exception &e) {
+            std::cerr << "Exception while loading firmware: " << e.what() << std::endl;
+            return ~0;
+        }
 
         // re-open device
         b200.reset();
@@ -403,7 +419,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         try {
             b200->reset_fx3();
         } catch (const std::exception &e) {
-            std::cerr << "Exceptions while resetting device: " << e.what() << std::endl;
+            std::cerr << "Exception while resetting device: " << e.what() << std::endl;
             return -1;
         }
 
@@ -461,7 +477,9 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
             << std::endl;
 
     } else {
-        std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
+        try {
+            std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
+        } catch(...) {}
         return ~0;
     }
 

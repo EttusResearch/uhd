@@ -33,8 +33,6 @@ typedef boost::shared_ptr<asio::ip::udp::socket> socket_type;
 
 static const size_t insane_mtu = 9000;
 
-boost::mutex spawn_mutex;
-
 #if defined(UHD_PLATFORM_MACOS)
     //limit buffer resize on macos or it will error
     const size_t rx_dsp_buff_size = size_t(1e6);
@@ -100,14 +98,11 @@ public:
         }
 
         std::cout << "spawning relay threads... " << _port << std::endl;
+        boost::unique_lock<boost::mutex> lock(spawn_mutex);     // lock in preparation to wait for threads to spawn
         _thread_group.create_thread(boost::bind(&udp_relay_type::server_thread, this));
-        spawn_mutex.lock();
-        spawn_mutex.lock();
-        spawn_mutex.unlock();
+        wait_for_thread.wait(lock);      // wait for thread to spin up
         _thread_group.create_thread(boost::bind(&udp_relay_type::client_thread, this));
-        spawn_mutex.lock();
-        spawn_mutex.lock();
-        spawn_mutex.unlock();
+        wait_for_thread.wait(lock);      // wait for thread to spin up
         std::cout << "    done!" << std::endl << std::endl;
     }
 
@@ -128,7 +123,7 @@ private:
     void server_thread(void){
         uhd::set_thread_priority_safe();
         std::cout << "    entering server_thread..." << std::endl;
-        spawn_mutex.unlock();
+        wait_for_thread.notify_one();    // notify constructor that this thread has started
         std::vector<char> buff(insane_mtu);
         while (not boost::this_thread::interruption_requested()){
             if (wait_for_recv_ready(_server_socket->native())){
@@ -154,7 +149,7 @@ private:
     void client_thread(void){
         uhd::set_thread_priority_safe();
         std::cout << "    entering client_thread..." << std::endl;
-        spawn_mutex.unlock();
+        wait_for_thread.notify_one();    // notify constructor that this thread has started
         std::vector<char> buff(insane_mtu);
         while (not boost::this_thread::interruption_requested()){
             if (wait_for_recv_ready(_client_socket->native())){
@@ -172,6 +167,8 @@ private:
     asio::ip::udp::endpoint _endpoint;
     boost::mutex _endpoint_mutex;
     socket_type _server_socket, _client_socket;
+    boost::mutex spawn_mutex;
+    boost::condition_variable wait_for_thread;
 };
 
 

@@ -267,7 +267,7 @@ static std::string get_band(double freq) {
  * \return a voltage to feed the TVRX analog gain
  */
 
-static double gain_interp(double gain, boost::array<double, 17> db_vector, boost::array<double, 17> volts_vector) {
+static double gain_interp(double gain, const boost::array<double, 17>& db_vector, const boost::array<double, 17>& volts_vector) {
     double volts;
     gain = uhd::clip<double>(gain, db_vector.front(), db_vector.back()); //let's not get carried away here
 

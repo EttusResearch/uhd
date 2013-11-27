@@ -68,7 +68,7 @@ static void check_registry_for_fast_send_threshold(const size_t mtu){
 class udp_zero_copy_asio_mrb : public managed_recv_buffer{
 public:
     udp_zero_copy_asio_mrb(void *mem, int sock_fd, const size_t frame_size):
-        _mem(mem), _sock_fd(sock_fd), _frame_size(frame_size) { /*NOP*/ }
+        _mem(mem), _sock_fd(sock_fd), _frame_size(frame_size), _len(0) { /*NOP*/ }
 
     void release(void){
         _claimer.release();
@@ -87,6 +87,7 @@ public:
 
         if (wait_for_recv_ready(_sock_fd, timeout)){
             _len = ::recv(_sock_fd, (char *)_mem, _frame_size, 0);
+            UHD_ASSERT_THROW(_len > 0); // TODO: Handle case of recv error
             index++; //advances the caller's buffer
             return make(this, _mem, size_t(_len));
         }

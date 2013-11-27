@@ -38,7 +38,7 @@ static boost::uint32_t fs_to_bits(const double num, const size_t bits){
 class rx_frontend_core_200_impl : public rx_frontend_core_200{
 public:
     rx_frontend_core_200_impl(wb_iface::sptr iface, const size_t base):
-        _iface(iface), _base(base)
+        _i_dc_off(0), _q_dc_off(0), _iface(iface), _base(base)
     {
         //NOP
     }

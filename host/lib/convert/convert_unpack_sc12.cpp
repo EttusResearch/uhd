@@ -84,7 +84,7 @@ void convert_sc12_item32_3_to_star_4
 template <typename type, tohost32_type tohost>
 struct convert_sc12_item32_1_to_star_1 : public converter
 {
-    convert_sc12_item32_1_to_star_1(void)
+    convert_sc12_item32_1_to_star_1(void):_scalar(0.0)
     {
         //NOP
     }

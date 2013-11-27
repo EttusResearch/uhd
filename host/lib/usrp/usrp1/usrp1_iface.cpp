@@ -91,11 +91,11 @@ public:
 
         return uhd::ntohx(value_out);
     }
-    
+
     void poke16(boost::uint32_t, boost::uint16_t) {
         throw uhd::not_implemented_error("Unhandled command poke16()");
     }
-    
+
     boost::uint16_t peek16(boost::uint32_t) {
         throw uhd::not_implemented_error("Unhandled command peek16()");
         return 0;
@@ -141,8 +141,10 @@ public:
 
         if (readback) {
             unsigned char buff[4] = {
-                (bits >> 0) & 0xff, (bits >> 8) & 0xff,
-                (bits >> 16) & 0xff, (bits >> 24) & 0xff
+                (unsigned char)(bits & 0xff),
+                (unsigned char)((bits >> 8) & 0xff),
+                (unsigned char)((bits >> 16) & 0xff),
+                (unsigned char)((bits >> 24) & 0xff)
             };
             //conditions where there are two header bytes
             if (num_bytes >= 3 and buff[num_bytes-1] != 0 and buff[num_bytes-2] != 0 and buff[num_bytes-3] == 0){
@@ -168,7 +170,7 @@ public:
                                   (((boost::uint32_t)buff[1]) <<  8) |
                                   (((boost::uint32_t)buff[2]) << 16) |
                                   (((boost::uint32_t)buff[3]) << 24);
-            return val; 
+            return val;
         }
         else {
             // Byteswap on num_bytes

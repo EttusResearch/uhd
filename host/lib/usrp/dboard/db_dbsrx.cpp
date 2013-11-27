@@ -179,7 +179,7 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
                 "DBSRX: incorrect dbid\n"
                 "Expected dbid 0x0002 and R193\n"
                 "found dbid == %d\n"
-                "Please see the daughterboard app notes" 
+                "Please see the daughterboard app notes"
                 ) % this->get_rx_id().to_pp_string();
 
     //warn user about incorrect DBID on non-USRP1, requires R194 populated
@@ -188,7 +188,7 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
                 "DBSRX: incorrect dbid\n"
                 "Expected dbid 0x000D and R194\n"
                 "found dbid == %d\n"
-                "Please see the daughterboard app notes" 
+                "Please see the daughterboard app notes"
                 ) % this->get_rx_id().to_pp_string();
 
     //send initial register settings
@@ -305,13 +305,13 @@ double dbsrx::set_lo_freq(double target_freq){
 
             goto done_loop;
         }
-    } 
+    }
 
     done_loop:
 
-    //Assert because we failed to find a suitable combination of ref_clock, R and N 
+    //Assert because we failed to find a suitable combination of ref_clock, R and N
     UHD_ASSERT_THROW(ref_clock <= 27.0e6 and ref_clock >= 0.0);
-    UHD_ASSERT_THROW(ref_clock/m >= 1e6 and ref_clock/m <= 2.5e6);
+    UHD_ASSERT_THROW(m and ref_clock/m >= 1e6 and ref_clock/m <= 2.5e6);
     UHD_ASSERT_THROW((pfd_freq >= dbsrx_pfd_freq_range.start()) and (pfd_freq <= dbsrx_pfd_freq_range.stop()));
     UHD_ASSERT_THROW((N >= 256) and (N <= 32768));
 
@@ -332,7 +332,7 @@ double dbsrx::set_lo_freq(double target_freq){
     _max2118_write_regs.r_divider = (max2118_write_regs_t::r_divider_t) r;
     _max2118_write_regs.set_n_divider(N);
     _max2118_write_regs.ade_vco_ade_read = max2118_write_regs_t::ADE_VCO_ADE_READ_ENABLED;
-    
+
     //compute prescaler variables
     int scaler = actual_freq > 1125e6 ? 2 : 4;
     _max2118_write_regs.div2 = scaler == 4 ? max2118_write_regs_t::DIV2_DIV4 : max2118_write_regs_t::DIV2_DIV2;
@@ -377,7 +377,7 @@ double dbsrx::set_lo_freq(double target_freq){
         if (_max2118_read_regs.adc == 0){
             if (_max2118_write_regs.osc_band == 0){
                 UHD_MSG(warning) << boost::format(
-                        "DBSRX: Tuning exceeded vco range, _max2118_write_regs.osc_band == %d\n" 
+                        "DBSRX: Tuning exceeded vco range, _max2118_write_regs.osc_band == %d\n"
                         ) % int(_max2118_write_regs.osc_band);
                 UHD_ASSERT_THROW(_max2118_read_regs.adc != 0); //just to cause a throw
             }
@@ -389,7 +389,7 @@ double dbsrx::set_lo_freq(double target_freq){
         if (_max2118_read_regs.adc == 7){
             if (_max2118_write_regs.osc_band == 7){
                 UHD_MSG(warning) << boost::format(
-                        "DBSRX: Tuning exceeded vco range, _max2118_write_regs.osc_band == %d\n" 
+                        "DBSRX: Tuning exceeded vco range, _max2118_write_regs.osc_band == %d\n"
                         ) % int(_max2118_write_regs.osc_band);
                 UHD_ASSERT_THROW(_max2118_read_regs.adc != 7); //just to cause a throw
             }
@@ -408,7 +408,7 @@ double dbsrx::set_lo_freq(double target_freq){
         //allow for setup time before checking condition again
         boost::this_thread::sleep(boost::posix_time::milliseconds(10));
     }
-      
+
     UHD_LOGV(often) << boost::format(
         "DBSRX: final vco %d, vtune adc %d"
     ) % int(_max2118_write_regs.osc_band) % int(_max2118_read_regs.adc) << std::endl;
@@ -417,7 +417,7 @@ double dbsrx::set_lo_freq(double target_freq){
     if (_max2118_read_regs.adc <= 2) _max2118_write_regs.cp_current = max2118_write_regs_t::CP_CURRENT_I_CP_100UA;
     else if (_max2118_read_regs.adc >= 5) _max2118_write_regs.cp_current = max2118_write_regs_t::CP_CURRENT_I_CP_400UA;
     else _max2118_write_regs.cp_current = max2118_write_regs_t::CP_CURRENT_I_CP_200UA;
-    
+
     //update charge pump bias current setting
     send_reg(0x2, 0x2);
 
@@ -524,7 +524,7 @@ double dbsrx::set_bandwidth(double bandwidth){
     bandwidth = dbsrx_bandwidth_range.clip(bandwidth);
 
     double ref_clock = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
-    
+
     //NOTE: _max2118_write_regs.m_divider set in set_lo_freq
 
     //compute f_dac setting

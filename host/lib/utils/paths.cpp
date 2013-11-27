@@ -115,8 +115,8 @@ std::string uhd::get_tmp_path(void){
 
     //try the stdio define if available
     #ifdef P_tmpdir
-    if (P_tmpdir != NULL) return P_tmpdir;
-    #endif
+    return P_tmpdir;
+    #else
 
     //try unix environment variables
     tmp_path = std::getenv("TMPDIR");
@@ -124,6 +124,7 @@ std::string uhd::get_tmp_path(void){
 
     //give up and use the unix default
     return "/tmp";
+    #endif
 }
 
 std::string uhd::get_app_path(void){

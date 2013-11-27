@@ -239,7 +239,7 @@ private:
     size_t _header_offset_words32;
     double _tick_rate, _samp_rate;
     struct xport_chan_props_type{
-        xport_chan_props_type(void):has_sid(false){}
+        xport_chan_props_type(void):has_sid(false),sid(0){}
         get_buff_type get_buff;
         bool has_sid;
         boost::uint32_t sid;

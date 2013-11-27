@@ -53,7 +53,7 @@ std::string return_USRP_config_string(uhd::usrp::multi_usrp::sptr usrp, bool tes
 
     if(test_tx){
         if(tx_info.get("tx_serial") != "") tx_serial = tx_info.get("tx_serial");
-        else tx_serial = "no serial"; 
+        else tx_serial = "no serial";
         tx_subdev_name = tx_info.get("tx_subdev_name");
         tx_subdev_spec = tx_info.get("tx_subdev_spec");
 
@@ -121,7 +121,7 @@ std::string tx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, bool verbo
             gains.push_back(current_gain);
             current_gain++;
         }
-        if(gain_end != *gains.end()) gains.push_back(gain_end);
+        gains.push_back(gain_end);
 
     }
 
@@ -182,19 +182,19 @@ std::string tx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, bool verbo
         }
 
         if(test_gain){
-            
+
             //Testing for successful gain tune
 
             for(std::vector<double>::iterator g = gains.begin(); g != gains.end(); ++g){
                 usrp->set_tx_gain(*g);
                 boost::this_thread::sleep(boost::posix_time::microseconds(1000));
-                
+
                 double actual_gain = usrp->get_tx_gain();
 
                 if(*g == 0.0){
                     if(actual_gain == 0.0){
                         if(verbose) std::cout << boost::format("TX gain successfully set to %5.2f at TX frequency %s.") % *g % return_MHz_string(*f) << std::endl;
-                    }    
+                    }
                     else{
                         if(verbose) std::cout << boost::format("TX gain set to %5.2f instead of %5.2f at TX frequency %s.") % actual_gain % *g % return_MHz_string(*f) << std::endl;
                         std::vector<double> bad_gain_freq;
@@ -313,7 +313,7 @@ std::string rx_test(uhd::usrp::multi_usrp::sptr usrp, bool test_gain, bool verbo
             gains.push_back(current_gain);
             current_gain++;
         }
-        if(gain_end != *gains.end()) gains.push_back(gain_end);
+        gains.push_back(gain_end);
 
     }
 
@@ -518,7 +518,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << "REF must equal internal, external, or mimo." << std::endl;
         return ~0;
     }
- 
+
     if(vm.count("tx") + vm.count("rx") == 0){
         std::cout << desc << std::endl;
         std::cout << "Specify --tx to test for TX frequency coercion\n"
@@ -557,12 +557,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked",0);
         std::cout << boost::format("Checking MIMO lock: %s ...") % mimo_locked.to_pp_string() << std::endl;
         UHD_ASSERT_THROW(mimo_locked.to_bool());
-    }   
+    }
     if ((ref == "external") and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end())) {
         uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked",0);
         std::cout << boost::format("Checking REF lock: %s ...") % ref_locked.to_pp_string() << std::endl;
         UHD_ASSERT_THROW(ref_locked.to_bool());
-    }   
+    }
     usrp_config = return_USRP_config_string(usrp, test_tx, test_rx);
     if(test_tx) tx_results = tx_test(usrp, test_tx_gain, verbose);
     if(test_rx) rx_results = rx_test(usrp, test_rx_gain, verbose);

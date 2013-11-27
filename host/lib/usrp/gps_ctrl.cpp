@@ -223,7 +223,6 @@ private:
         boost::this_thread::sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
     }
     throw uhd::value_error(str(boost::format("get_nmea(): no %s message found") % msgtype));
-    return std::string();
   }
 
   //helper function to retrieve a field from an NMEA sentence
@@ -322,7 +321,6 @@ private:
         boost::this_thread::sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
     }
     throw uhd::value_error("get_stat(): no servo message found");
-    return std::string();
   }
 
   uart_iface::sptr _uart;
