@@ -8,7 +8,8 @@ PKG_CHECK_MODULES(PC_LIBUSB QUIET libusb-1.0)
 
 FIND_PATH(LIBUSB_INCLUDE_DIRS
     NAMES libusb.h
-    HINTS $ENV{LIBUSB_DIR}/include ${PC_LIBUSB_INCLUDEDIR}
+    HINTS $ENV{LIBUSB_DIR}/include $ENV{LIBUSB_DIR}/include/libusb-1.0 
+    ${PC_LIBUSB_INCLUDEDIR} ${PC_LIBUSB_INCLUDEDIR}/libusb-1.0
     PATHS /usr/local/include/libusb-1.0 /usr/local/include
     /usr/include/libusb-1.0 /usr/include
     /opt/local/include/libusb-1.0
