@@ -249,14 +249,14 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
         //calculate packet size
         static const size_t hdr_size = 0
             + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
-            //+ sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
+            //+ sizeof(vrt::if_packet_info_t().tlr) //no longer using trailer
             - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
             - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
         ;
         const size_t bpp = _data_transport->get_recv_frame_size() - hdr_size;
         const size_t bpi = convert::get_bytes_per_item(args.otw_format);
         size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi));
-        spp = std::min<size_t>(2000, spp); //magic maximum for framing at full rate
+        spp = std::min<size_t>(4092, spp); //FPGA FIFO maximum for framing at full rate
 
         //make the new streamer given the samples per packet
         if (not my_streamer) my_streamer = boost::make_shared<sph::recv_packet_streamer>(spp);
