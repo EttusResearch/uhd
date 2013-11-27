@@ -468,13 +468,21 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << "Searching for specified images." << std::endl << std::endl;
     if(burn_fpga){
         if(!use_custom_fpga) fpga_path = find_image_path(default_fpga_filename);
-        else validate_custom_fpga_file(filename_map[hw_rev], fpga_path);
+        else{
+            //Replace ~ with home directory
+            if(fpga_path.find("~/") == 0) fpga_path.replace(0,1,getenv("HOME"));
+            validate_custom_fpga_file(filename_map[hw_rev], fpga_path);
+        }
 
         grab_fpga_image(fpga_path);
     }
     if(burn_fw){
         if(!use_custom_fw) fw_path = find_image_path(default_fw_filename);
-        else validate_custom_fw_file(filename_map[hw_rev], fw_path);
+        else{
+            //Replace ~ with home directory
+            if(fw_path.find("~/") == 0) fw_path.replace(0,1,getenv("HOME"));
+            validate_custom_fw_file(filename_map[hw_rev], fw_path);
+        }
 
         grab_fw_image(fw_path);
     }
