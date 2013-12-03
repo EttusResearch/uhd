@@ -8,7 +8,7 @@
 // \   \   \/     Version    : 14.4
 //  \   \         Application: Xilinx CORE Generator
 //  /   /         Filename   : chipscope_icon.v
-// /___/   /\     Timestamp  : Fri Mar 08 11:51:37 PST 2013
+// /___/   /\     Timestamp  : Tue Oct 22 17:04:59 PDT 2013
 // \   \  /  \
 //  \___\/\___\
 //
@@ -19,11 +19,9 @@
 `timescale 1ns/1ps
 
 module chipscope_icon(
-    CONTROL0,
-    CONTROL1) /* synthesis syn_black_box syn_noprune=1 */;
+    CONTROL0) /* synthesis syn_black_box syn_noprune=1 */;
 
 
 inout [35 : 0] CONTROL0;
-inout [35 : 0] CONTROL1;
 
 endmodule

@@ -1,7 +1,19 @@
 //
 // Copyright 2013 Ettus Research LLC
 //
-
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 /***********************************************************
  * B200 Core Guts
@@ -15,7 +27,10 @@ module b200_core
     parameter R0_DATA_SID = 8'h50,
     parameter R1_DATA_SID = 8'h60,
     parameter DEMUX_SID_MASK = 8'hf0,
-    parameter EXTRA_BUFF_SIZE = 0
+    parameter EXTRA_BUFF_SIZE = 0,
+    parameter RADIO_FIFO_SIZE = 12,
+    parameter SAMPLE_FIFO_SIZE = 11
+ 
 )
 (
     ////////////////////////////////////////////////////////////////////
@@ -53,8 +68,15 @@ module b200_core
     output [7:0] sen, output sclk, output mosi, input miso,
     input [31:0] rb_misc,
     output [31:0] misc_outs,
-
-    output [31:0] debug
+    ////////////////////////////////////////////////////////////////////
+    // debug UART
+    ////////////////////////////////////////////////////////////////////
+    output debug_txd, input debug_rxd,
+    input debug_scl, input debug_sda,
+    ////////////////////////////////////////////////////////////////////
+    // debug signals
+    ////////////////////////////////////////////////////////////////////
+    output [63:0] debug
 );
     localparam SR_CORE_SPI       = 8'd8;
     localparam SR_CORE_MISC      = 8'd16;
@@ -62,7 +84,7 @@ module b200_core
     localparam SR_CORE_READBACK  = 8'd32;
     localparam SR_CORE_GPSDO_ST  = 8'd40;
     localparam SR_CORE_PPS_SEL   = 8'd48;
-    localparam COMPAT_MAJOR      = 16'h0002;
+    localparam COMPAT_MAJOR      = 16'h0003;
     localparam COMPAT_MINOR      = 16'h0000;
 
     /*******************************************************************
@@ -119,14 +141,14 @@ module b200_core
      ******************************************************************/
     wire [63:0] u0i_ctrl_tdata; wire u0i_ctrl_tlast, u0i_ctrl_tvalid, u0i_ctrl_tready;
 
-    axi_fifo #(.WIDTH(65), .SIZE(0)) ushart_timing_fifo
+    axi_fifo #(.WIDTH(65), .SIZE(0)) uart_timing_fifo
     (
         .clk(bus_clk), .reset(bus_rst), .clear(1'b0),
         .i_tdata({u0_ctrl_tlast, u0_ctrl_tdata}), .i_tvalid(u0_ctrl_tvalid), .i_tready(u0_ctrl_tready), .space(),
         .o_tdata({u0i_ctrl_tlast, u0i_ctrl_tdata}), .o_tvalid(u0i_ctrl_tvalid), .o_tready(u0i_ctrl_tready), .occupied()
     );
 
-    cvita_uart #(.SIZE(7)) ushart
+    cvita_uart #(.SIZE(7)) uart
     (
         .clk(bus_clk), .rst(bus_rst), .rxd(rxd), .txd(txd),
         .i_tdata(u0i_ctrl_tdata), .i_tlast(u0i_ctrl_tlast), .i_tvalid(u0i_ctrl_tvalid), .i_tready(u0i_ctrl_tready),
@@ -247,7 +269,9 @@ module b200_core
     /*******************************************************************
      * Radio 0
      ******************************************************************/
-    radio_b200 #(.FIFO_SIZE(13)) the_radio
+   wire [63:0] radio0_debug;
+   
+   radio_b200 #(.RADIO_FIFO_SIZE(RADIO_FIFO_SIZE),.SAMPLE_FIFO_SIZE(SAMPLE_FIFO_SIZE)) radio_0
     (
         .radio_clk(radio_clk), .radio_rst(radio_rst),
         .rx(rx0), .tx(tx0), .fe_atr(fe_atr0), .pps(pps),
@@ -258,7 +282,7 @@ module b200_core
         .ctrl_tdata(r0_ctrl_tdata), .ctrl_tlast(r0_ctrl_tlast),  .ctrl_tvalid(r0_ctrl_tvalid), .ctrl_tready(r0_ctrl_tready),
         .resp_tdata(r0_resp_tdata), .resp_tlast(r0_resp_tlast),  .resp_tvalid(r0_resp_tvalid), .resp_tready(r0_resp_tready),
 
-        .debug()
+        .debug(radio0_debug)
     );
 
     /*******************************************************************
@@ -267,7 +291,7 @@ module b200_core
     `ifdef B200_CAN_HAZ_R1
     assign radio_st = 8'h2;
 
-    radio_b200 #(.FIFO_SIZE(13)) the_radio_1
+    radio_b200 #(.RADIO_FIFO_SIZE(RADIO_FIFO_SIZE),.SAMPLE_FIFO_SIZE(SAMPLE_FIFO_SIZE)) radio_1
     (
         .radio_clk(radio_clk), .radio_rst(radio_rst),
         .rx(rx1), .tx(tx1), .fe_atr(fe_atr1), .pps(pps),
@@ -300,6 +324,46 @@ module b200_core
     assign r1_rx_tvalid = r1_tx_tvalid;
     assign r1_tx_tready = r1_tx_tready;
 
-    `endif
+    `endif // !`ifdef B200_CAN_HAZ_R1
+
+   /*******************************************************************
+    * Debug UART for FX3
+    ******************************************************************/
+   wire    debug_stb;
+   wire [31:0] debug_data;
+   wire [7:0]  debug_addr;
+   
+   serial_to_settings serial_to_settings_i1
+     (
+      .clk(bus_clk),
+      .reset(bus_rst),
+      .scl(debug_scl),
+      .sda(debug_sda),
+      .set_stb(debug_stb),
+      .set_addr(debug_addr),
+      .set_data(debug_data)
+      );
+
+   
+   simple_uart debug_uart
+     (
+      .clk_i(bus_clk), 
+      .rst_i(bus_rst),
+      .we_i(debug_stb), 
+      .stb_i(debug_stb), 
+      .cyc_i(debug_stb), 
+      .ack_o(),
+      .adr_i(debug_addr[2:0]), 
+      .dat_i(debug_data[31:0]), 
+      .dat_o(),
+      .rx_int_o(), 
+      .tx_int_o(), 
+      .tx_o(debug_txd), 
+      .rx_i(debug_rxd), 
+      .baud_o()
+      );
+   
+
+   
 
 endmodule // b200_core

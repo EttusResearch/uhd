@@ -20,21 +20,26 @@ TIMESPEC "TS_codec_data_clk_p" = PERIOD "codec_data_clk_p" 16276 ps HIGH 50 %;
 INST "GPIF_*" IOB = TRUE;
 
 #low speed misc output group
-INST "SFDX*" TNM = ls_misc_out;
-INST "SRX*" TNM = ls_misc_out;
-INST "LED_*" TNM = ls_misc_out;
-INST "tx_enable*" TNM = ls_misc_out;
-INST "tx_bandsel_*" TNM = ls_misc_out;
-INST "rx_bandsel_*" TNM = ls_misc_out;
-INST "ref_sel" TNM = ls_misc_out;
-INST "*_ce" TNM = ls_misc_out;
-INST "*_miso" TNM = ls_misc_out;
-INST "*_mosi" TNM = ls_misc_out;
-INST "*_sclk" TNM = ls_misc_out;
-INST "gps_*" TNM = ls_misc_out;
-INST "FPGA_*D0" TNM = ls_misc_out;
+INST "SFDX*" TNM = radio_misc_out; # Radio Clk domain
+INST "SRX*" TNM = radio_misc_out;  # Radio Clk domain
+INST "LED_*" TNM = radio_misc_out;  # Radio Clk domain
+INST "tx_enable*" TNM = radio_misc_out;  # Radio Clk domain
+INST "tx_bandsel_*" TNM = ls_misc_out; # Bus clk domain
+INST "rx_bandsel_*" TNM = ls_misc_out; # Bus clk domain
+INST "ref_sel" TNM = ls_misc_out;  # Bus clk domain
+INST "pll_ce" TNM = ls_misc_out;   # Bus clk domain
+INST "cat_ce" TNM = ls_misc_out;   # Bus clk domain + combinatorial
+#INST "fx3_miso" TNM = ls_misc_out;  # Combinatorial
+INST "cat_miso" TNM = ls_misc_out;  # Bus clk domain (I)
+INST "cat_mosi" TNM = ls_misc_out;  # Bus clk domain + combinatorial
+INST "pll_mosi" TNM = ls_misc_out;  # Bus clk domain + combinatorial
+INST "*_sclk" TNM = ls_misc_out;    # Bus clk domain + combinatorial
+INST "gps_*" TNM = ls_misc_out;  # Bus clk domain
+#INST "FPGA_*D0" TNM = ls_misc_out; # UNUSED
 
-#constrain the misc IOs to the bus clock
-NET "bus_clk" TNM_NET = "bus_clk";
-TIMESPEC "TS_bus_clk" = PERIOD "bus_clk" 10 ns HIGH 50 %;
-TIMEGRP "ls_misc_out" OFFSET = OUT 15 ns AFTER "bus_clk" RISING;
+#constrain the misc IOs to the clocks
+NET "gpif_clk" TNM_NET = "gpif_clk";
+TIMESPEC "TS_gpif_clk" = PERIOD "gpif_clk" 10 ns HIGH 50 %;
+TIMEGRP "ls_misc_out" OFFSET = OUT 15 ns AFTER "gpif_clk" RISING;
+TIMEGRP "radio_misc_out" OFFSET = OUT 15 ns AFTER "radio_clk" RISING;
+

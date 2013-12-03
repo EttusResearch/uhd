@@ -72,6 +72,7 @@ module eth_dispatch
     output xo_tvalid, 
     input xo_tready,
     // Debug
+    output [2:0] debug_flags,
     output [31:0] debug
     );
 
@@ -93,6 +94,7 @@ module eth_dispatch
    //
    // Small RAM stores packet header during parsing.
    //
+   // IJB consider changing HEADER_RAM_SIZE to 7
    localparam HEADER_RAM_SIZE = 9;
    (*ram_style="distributed"*)
    reg [68:0] 	  header_ram [HEADER_RAM_SIZE-1:0];
@@ -100,7 +102,7 @@ module eth_dispatch
    reg 		  drop_this_packet;
 
    wire 	  header_done = (header_ram_addr == HEADER_RAM_SIZE-1);
-   reg fwd_input;
+   reg 		  fwd_input;
 
    //
    reg [63:0] 	  in_tdata_reg;
@@ -112,10 +114,8 @@ module eth_dispatch
    wire [3:0] 	  out_tuser;
    wire [63:0] 	  out_tdata;
    
-   
-   
    //
-   // Output AXI-STream interface to VITA Radio Core
+   // Output AXI-Stream interface to VITA Radio Core
    wire [63:0] 	  vita_pre_tdata;
    wire [3:0] 	  vita_pre_tuser; 
    wire 	  vita_pre_tlast; 
@@ -147,10 +147,6 @@ module eth_dispatch
    reg		  is_icmp_no_fwd;
    reg 		  is_chdr;
    
-
-   
-   
-
    //
    // Settings regs
    //
@@ -417,12 +413,14 @@ module eth_dispatch
 	     end
 	     7: begin
 		// Look for a possible CHDR header string
+		// IJB. NOTE this is not a good test for a CHDR packet, we perhaps don;t need this state anyhow.
 		if (in_tdata_reg[63:32] != 32'h0)
 		  is_chdr <= 1'b1;
 	     end
 	     8: begin
 		// Check VRT Stream ID
 		// ADD THIS HERE.
+		// IJB. Perhaps delete this state.
 	     end
 	   endcase // case (header_ram_addr)
 	end // if (in_tvalid && in_tready)
@@ -452,9 +450,12 @@ module eth_dispatch
 		      (out_tready && fwd_input);
    
 
+   //
    // Because we can forward to both the ZPU and XO FIFO's concurrently
    // we have to make sure both can accept data in the same cycle.
    // This makes it possible for either destination to block the other.
+   // Make sure (both) destination(s) can accept data before passing it.
+   //
    assign xo_pre_tvalid = out_tvalid && 
 			  ((state == FORWARD_XO) || 
 			  ((state == FORWARD_ZPU_AND_XO) && zpu_pre_tready));
@@ -524,6 +525,9 @@ module eth_dispatch
      .space(),
      .occupied()
      );
+
+   assign debug_flags = {vita_pre_tready,xo_pre_tready,zpu_pre_tready};
+   
  
      
 /* -----\/----- EXCLUDED -----\/-----

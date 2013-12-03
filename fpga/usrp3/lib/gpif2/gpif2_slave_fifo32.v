@@ -1,7 +1,19 @@
 //
 // Copyright 2011-2013 Ettus Research LLC
 //
-
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -23,8 +35,11 @@ module gpif2_slave_fifo32
 
     parameter END_WITH_COMMA = 0
 )
-   (// GPIF signals
-    input gpif_clk, input gpif_rst, input gpif_enb,
+   (
+    // GPIF signals
+    input gpif_clk, 
+    input gpif_rst, 
+    input gpif_enb,
     inout [31:0] gpif_d,
     input [3:0] gpif_ctl,
     output reg sloe,
@@ -33,15 +48,18 @@ module gpif2_slave_fifo32
     output slcs,
     output reg pktend,
     output reg [1:0] fifoadr,
-
     // FIFO interfaces
-    input fifo_clk, input fifo_rst,
-
+    input fifo_clk, 
+    input fifo_rst,
+    // TX Data interface to DSP
     output [63:0] tx_tdata, output tx_tlast, output tx_tvalid, input tx_tready,
+    // RX Data interface to DSP
     input [63:0] rx_tdata, input rx_tlast, input rx_tvalid, output rx_tready,
+    // Incomming control interface
     output [63:0] ctrl_tdata, output ctrl_tlast, output ctrl_tvalid, input ctrl_tready,
+    // Outgoing control interface
     input [63:0] resp_tdata, input resp_tlast, input resp_tvalid, output resp_tready,
-
+    // Debug Signals
     output [31:0] debug
     );
 
@@ -49,8 +67,6 @@ module gpif2_slave_fifo32
    wire 	  ctrl_tx_fifo_nearly_full, data_tx_fifo_nearly_full;
    wire 	  ctrl_tx_fifo_has_space, data_tx_fifo_has_space;
    
-
-   wire [159:0]   debug_tx_data, debug_tx_ctrl;
    
     assign slcs = 1'b0;
 
@@ -137,14 +153,19 @@ module gpif2_slave_fifo32
         end
 
 	  //
-	  // now wait here for 8 clock cycles before transitioning to STATE_THINK.
-	  // We stay in this state if no local FIFO's can proceed at this point.
+	  // If the current thread we are pointing at (fifoadr) can not immediately proceed
+	  // then quickly move to the next thread. Once we are pointing at a thread that can proceed locally
+	  // wait for 8 clock cycles to allow fifoadr to propogate to FX3, and corresponding flag state to
+	  // propogate back to FPGA and through resampling flops. At this point transition to STATE_THINK
+	  // to evaluate remote flag.
 	  //
         STATE_WAIT: begin
+	   // Current thread can proceed locally
             if (local_fifo_ready) begin
                 idle_cycles <= idle_cycles + 1'b1;
                 if (idle_cycles == 3'b111) state <= STATE_THINK;
             end
+	   // ....move onto next thread.
             else begin
                 idle_cycles <= 3'b0;
                 fifoadr <= fifoadr + 2'b1;
@@ -154,10 +175,10 @@ module gpif2_slave_fifo32
 	  //
 	  // If there is a read to start, assert SLRD and SLOE and transition to STATE_READ.
 	  // If there is a write to perform, set flags that says there is the possibility to do at least
-	  // one write (wr_one) and transition to STATE_WRITE
+	  // one write (wr_one) and transition to STATE_WRITE.
+	  // If the FX3 has nothing ready for this thread return immediately to STATE_IDLE.
 	  //
         STATE_THINK: begin
-
             if (EP_READY1 && read_ready_go) begin
                 state <= STATE_READ;
                 slrd <= 0;
@@ -215,13 +236,17 @@ module gpif2_slave_fifo32
     //Priority encoding for the the next address to service:
     //The next address to service is based on the readiness
     //of the internal fifos and last serviced fairness metric.
+/* -----\/----- EXCLUDED -----\/-----
     always @(posedge gpif_clk) next_addr <=
-        ((ctrl_rx_tvalid && last_addr != ADDR_CTRL_RX)? ADDR_CTRL_RX :
-        ((ctrl_tx_fifo_has_space && last_addr != ADDR_CTRL_TX)? ADDR_CTRL_TX :
-        ((data_rx_tvalid && last_addr != ADDR_DATA_RX)? ADDR_DATA_RX :
-        ((data_tx_fifo_has_space && last_addr != ADDR_DATA_TX)? ADDR_DATA_TX :
+        ((ctrl_rx_tvalid && (last_addr != ADDR_CTRL_RX))? ADDR_CTRL_RX :
+        ((ctrl_tx_fifo_has_space && (last_addr != ADDR_CTRL_TX))? ADDR_CTRL_TX :
+        ((data_rx_tvalid && (last_addr != ADDR_DATA_RX))? ADDR_DATA_RX :
+        ((data_tx_fifo_has_space && (last_addr != ADDR_DATA_TX))? ADDR_DATA_TX :
         (fifoadr + 2'b1)
     ))));
+ -----/\----- EXCLUDED -----/\----- */
+   always @(posedge gpif_clk) next_addr <= (fifoadr + 2'b1);
+   
 
     //Help the FPGA search to only look for addrs that the FPGA is ready for
     assign local_fifo_ready =
@@ -268,7 +293,7 @@ module gpif2_slave_fifo32
         .fifo_clk(fifo_clk), .fifo_rst(fifo_rst), 
         .fifo_nearly_full(data_tx_fifo_nearly_full), .fifo_has_space(data_tx_fifo_has_space),
         .o_tdata(tx_tdata), .o_tlast(tx_tlast), .o_tvalid(tx_tvalid), .o_tready(tx_tready),
-        .bus_error(tx_bus_error), .debug(debug_tx_data)
+        .bus_error(tx_bus_error), .debug()
     );
 
    // ////////////////////////////////////////////
@@ -290,7 +315,7 @@ module gpif2_slave_fifo32
         .fifo_clk(fifo_clk), .fifo_rst(fifo_rst), 
         .fifo_nearly_full(ctrl_tx_fifo_nearly_full), .fifo_has_space(ctrl_tx_fifo_has_space),
         .o_tdata(ctrl_tdata), .o_tlast(ctrl_tlast), .o_tvalid(ctrl_tvalid), .o_tready(ctrl_tready),
-        .bus_error(ctrl_bus_error), .debug(debug_tx_ctrl)
+        .bus_error(ctrl_bus_error), .debug()
     );
 
    // ////////////////////////////////////////////////////////////////////
@@ -306,70 +331,6 @@ module gpif2_slave_fifo32
    // ////////////////////////////////////////////
    //    DEBUG
 
-    wire [31:0] debug0 = {
-        sloe, slrd, slwr, pktend, fifoadr, EP_READY, EP_WMARK, //8
-        state, //4
-        data_tx_tvalid, data_tx_tready, data_rx_tvalid, data_rx_tready, //4
-        gpif_d[15:0] //16
-    };
-
-    reg [31:0] debug_reg0;
-    reg [31:0] debug_reg1;
-    reg [31:0] debug_reg2;
-    always @(posedge gpif_clk) debug_reg0 <= debug0;
-    always @(posedge gpif_clk) debug_reg1 <= debug_reg0;
-    always @(posedge gpif_clk) debug_reg2 <= debug_reg1;
-    assign debug = debug_reg2;
-
-   wire [37:0] debug_resp = {
-			     resp_tlast,        // 37
-			     resp_tready,       // 36
-			     resp_tvalid,       // 35
-			     ctrl_rx_tlast,     // 34
-			     ctrl_rx_tready,    // 33
-			     ctrl_rx_tvalid,    // 32
-			     ctrl_rx_tdata      // 31:0
-			     };
-   
-   
-    reg [255:0] debug1,debug2;
-   
-    always @(posedge gpif_clk) debug1 <= {debug_resp,debug_tx_ctrl,debug0};
-   always @(posedge gpif_clk) debug2 <= debug1;
-   
-   
- 
-   wire [35:0] CONTROL0,CONTROL1;
- /*
-   chipscope_ila_32 chipscope_ila_32(
-				   .CONTROL(CONTROL0), // INOUT BUS [35:0]
-				   .CLK(gpif_clk), // IN
-				   .TRIG0(debug2) // IN BUS [31:0]
-				   );
-   
-   chipscope_ila_128  chipscope_ila_128(
-				   .CONTROL(CONTROL1), // INOUT BUS [35:0]
-				   .CLK(fifo_clk), // IN
-				   .TRIG0({debug4,debug6}) // IN BUS [31:0]
-				   );
-   
-   
-   chipscope_ila_256 chipscope_ila_256(
-				     .CONTROL(CONTROL0), // INOUT BUS [35:0]
-				     .CLK(gpif_clk), // IN
-				     .TRIG0(debug2) // IN BUS [31:0]
-				     );
   
-  chipscope_ila_32  chipscope_ila_32_2(
-				   .CONTROL(CONTROL1), // INOUT BUS [35:0]
-				   .CLK(gpif_clk), // IN
-				   .TRIG0(32'd0) // IN BUS [31:0]
-				   );
-   
-   chipscope_icon  chipscope_icon(
-				 .CONTROL0(CONTROL0), // INOUT BUS [35:0]
-				   .CONTROL1(CONTROL1) // INOUT BUS [35:0]
-				    );
 
-   */
 endmodule // gpif2_slave_fifo32

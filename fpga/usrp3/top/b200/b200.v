@@ -1,7 +1,19 @@
 //
 // Copyright 2013 Ettus Research LLC
 //
-
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 /***********************************************************
  * B200 Module Declaration
@@ -23,8 +35,8 @@ module b200 (
    output pll_sclk,
 
    // UART
-   input FPGA_RXD0,
-   input FPGA_TXD0,
+   input FPGA_RXD0,     // These pins goto 3 pin 0.1" header on B2x0 and
+   output FPGA_TXD0,     // carry FX3 UART.
 
    // Catalina Controls
    output codec_enable,
@@ -63,8 +75,8 @@ module b200 (
    output GPIF_CTL7,    // n_pktend
    input GPIF_CTL4,     // slfifo_flags[0]
    input GPIF_CTL5,     // slfifo_flags[1]
-   input GPIF_CTL6,     // slfifo_flags[2]
-   input GPIF_CTL8,     // slfifo_flags[3]
+   input GPIF_CTL6,     // Serial settings bus from FX3. SDA
+   input GPIF_CTL8,     // Serial settings bus from FX3. SCL
    output GPIF_CTL11,   // slfifo_addr[1]
    output GPIF_CTL12,   // slfifo_addr[0]
    inout [31:0] GPIF_D,
@@ -122,9 +134,13 @@ module b200 (
     b200_clk_gen gen_clks
     (
         .CLK_IN1_40_P(codec_main_clk_p), .CLK_IN1_40_N(codec_main_clk_n),
-        .CLK_OUT1_40_int(), .CLK_OUT2_100_gpif(gpif_clk), .CLK_OUT3_100_bus(bus_clk),
+        .CLK_OUT1_40_int(), .CLK_OUT2_100_gpif(gpif_clk), .CLK_OUT3_100_bus(),
         .RESET(reset_global), .LOCKED(locked)
     );
+
+   // Bus Clock and GPIF Clock both same 100MHz clock.
+   assign bus_clk = gpif_clk;
+   
 
     //hold-off logic for clocks ready
     reg [15:0] clocks_ready_count;
@@ -193,32 +209,10 @@ module b200 (
     wire ctrl_tvalid, resp_tvalid, rx_tvalid, tx_tvalid;
     wire ctrl_tready, resp_tready, rx_tready, tx_tready;
 
-    ///////////////////////////////////////////////////////////////////////
-    // loopback testers
-    ///////////////////////////////////////////////////////////////////////
-    /*
-    axi_fifo #(.WIDTH(65), .SIZE(13)) f0
-    (
-        .clk(bus_clk), .reset(bus_rst), .clear(1'b0),
-        .i_tdata({ctrl_tlast, ctrl_tdata}), .i_tvalid(ctrl_tvalid), .i_tready(ctrl_tready), .space(),
-        .o_tdata({resp_tlast, resp_tdata}), .o_tvalid(resp_tvalid), .o_tready(resp_tready), .occupied()
-    );
-    //*/
-
-    /*
-    axi_fifo #(.WIDTH(65), .SIZE(13)) f1
-    (
-        .clk(bus_clk), .reset(bus_rst), .clear(1'b0),
-        .i_tdata({tx_tlast, tx_tdata}), .i_tvalid(tx_tvalid), .i_tready(tx_tready), .space(),
-        .o_tdata({rx_tlast, rx_tdata}), .o_tvalid(rx_tvalid), .o_tready(rx_tready), .occupied()
-    );
-    //*/
 
     ///////////////////////////////////////////////////////////////////////
     // frontend assignments
     ///////////////////////////////////////////////////////////////////////
-    wire [31:0] debug_radio;
-
     wire [31:0] fe_atr1, fe_atr2;
     assign {tx_enable1, SFDX1_RX, SFDX1_TX, SRX1_RX, SRX1_TX, LED_RX1, LED_TXRX1_RX, LED_TXRX1_TX} = fe_atr1[7:0];
     assign {tx_enable2, SFDX2_RX, SFDX2_TX, SRX2_RX, SRX2_TX, LED_RX2, LED_TXRX2_RX, LED_TXRX2_TX} = fe_atr2[7:0];
@@ -237,7 +231,8 @@ module b200 (
     ///////////////////////////////////////////////////////////////////////
     // b200 core
     ///////////////////////////////////////////////////////////////////////
-    b200_core #(.EXTRA_BUFF_SIZE(12)) b200_xfusion_core
+   
+   b200_core #(.EXTRA_BUFF_SIZE(12)) b200_core
     (
         .bus_clk(bus_clk), .bus_rst(bus_rst),
         .tx_tdata(tx_tdata), .tx_tlast(tx_tlast), .tx_tvalid(tx_tvalid), .tx_tready(tx_tready),
@@ -253,15 +248,19 @@ module b200 (
 
         .rxd(gps_txd), .txd(gps_rxd),
         .sclk(sclk), .sen(sen), .mosi(mosi), .miso(miso),
-        .rb_misc({31'b0, pll_lock}), .misc_outs(misc_outs)
+        .rb_misc({31'b0, pll_lock}), .misc_outs(misc_outs),
+
+        .debug_scl(GPIF_CTL8), .debug_sda(GPIF_CTL6),
+        .debug_txd(FPGA_TXD0), .debug_rxd(FPGA_RXD0),
+
+        .debug()
     );
 
     ///////////////////////////////////////////////////////////////////////
     // GPIF2
     ///////////////////////////////////////////////////////////////////////
-    wire [31:0] debug_gpif;
-
-    gpif2_slave_fifo32 #(.DATA_RX_FIFO_SIZE(14), .DATA_TX_FIFO_SIZE(14)) slave_fifo32
+  
+   gpif2_slave_fifo32 #(.DATA_RX_FIFO_SIZE(14), .DATA_TX_FIFO_SIZE(14)) slave_fifo32
     (
         .gpif_clk(gpif_clk), .gpif_rst(gpif_rst), .gpif_enb(1'b1),
         .gpif_ctl({GPIF_CTL8, GPIF_CTL6, GPIF_CTL5, GPIF_CTL4}), .fifoadr({GPIF_CTL11,GPIF_CTL12}),
@@ -274,13 +273,12 @@ module b200 (
         .ctrl_tdata(ctrl_tdata), .ctrl_tlast(ctrl_tlast),  .ctrl_tvalid(ctrl_tvalid), .ctrl_tready(ctrl_tready),
         .resp_tdata(resp_tdata), .resp_tlast(resp_tlast),  .resp_tvalid(resp_tvalid), .resp_tready(resp_tready),
 
-        .debug(debug_gpif)
+        .debug()
     );
 
    ///////////////////////////////////////////////////////////////////////
    // Debug port
    ///////////////////////////////////////////////////////////////////////
-   assign debug_clk_int = { 1'b0, 1'b0 };
-   assign debug = 32'b0;
-
+   assign debug = 0;
+  
 endmodule // B200

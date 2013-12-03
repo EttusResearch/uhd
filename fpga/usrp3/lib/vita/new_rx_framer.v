@@ -1,6 +1,10 @@
 
 module new_rx_framer
-  #(parameter BASE=0)
+  #(
+    parameter BASE=0,
+    parameter CHIPSCOPE=0,
+    parameter SAMPLE_FIFO_SIZE=10
+    )
    (input clk, input reset, input clear,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     
@@ -108,7 +112,7 @@ module new_rx_framer
        endcase // case (instate)
 
    always @(posedge clk)
-     if(strobe)
+     if(strobe && run)
        begin
 	  holding <= sample;
 	  if(instate == 0)
@@ -119,7 +123,7 @@ module new_rx_framer
      if(reset | clear)
        len <= 5;
      else
-       if(strobe)
+       if(strobe && run)
 	 if(sample_tlast)
 	   len <= 5;
 	 else
@@ -146,7 +150,7 @@ module new_rx_framer
    wire 	  hdr_tready;
 
    
-   axi_fifo #(.WIDTH(65), .SIZE(10)) datafifo
+   axi_fifo #(.WIDTH(65), .SIZE(SAMPLE_FIFO_SIZE)) datafifo
      (.clk(clk), .reset(reset), .clear(clear),
       .i_tdata({sample_tlast,sample_tdata}), .i_tvalid(sample_tvalid), .i_tready(sample_tready),
       .o_tdata({dfifo_tlast,dfifo_tdata}), .o_tvalid(dfifo_tvalid), .o_tready(dfifo_tready),
@@ -209,11 +213,15 @@ module new_rx_framer
       .i_tdata({o_tlast_int, o_tdata_int}), .i_tvalid(o_tvalid_int), .i_tready(o_tready_int),
       .o_tdata({o_tlast, o_tdata}), .o_tvalid(o_tvalid), .o_tready(o_tready),
       .space(), .occupied());
+/* -----\/----- EXCLUDED -----\/-----
 
     assign debug[3:0] =  {instate, outstate};
     assign debug[7:4] =  {1'b0, sample_tlast, sample_tvalid, sample_tready};
     assign debug[11:8] =  {1'b0, 1'b0, hfifo_tvalid, hfifo_tready};
     assign debug[15:12] =  {1'b0, dfifo_tlast, dfifo_tvalid, dfifo_tready};
     assign debug[19:16] =  {1'b0, o_tlast_int, o_tvalid_int, o_tready_int};
+ -----/\----- EXCLUDED -----/\----- */
+  
+   
 
 endmodule // new_rx_framer

@@ -1,14 +1,27 @@
 //
 // Copyright 2013 Ettus Research LLC
 //
-
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 // radio top level module for b200
 //  Contains all clock-rate DSP components, all radio and hardware controls and settings
 
 module radio_b200
   #(
-    parameter FIFO_SIZE = 13
+    parameter RADIO_FIFO_SIZE = 13,
+    parameter SAMPLE_FIFO_SIZE = 11
   )
   (input radio_clk, input radio_rst,
    input [31:0] rx, output [31:0] tx,
@@ -20,7 +33,7 @@ module radio_b200
    input [63:0] ctrl_tdata, input ctrl_tlast, input ctrl_tvalid, output ctrl_tready,
    output [63:0] resp_tdata, output resp_tlast, output resp_tvalid, input resp_tready,
 
-   output [31:0] debug
+   output [63:0] debug
    );
 
    // ///////////////////////////////////////////////////////////////////////////////
@@ -66,7 +79,7 @@ module radio_b200
       .i_aclk(bus_clk), .i_tvalid(ctrl_tvalid), .i_tready(ctrl_tready), .i_tdata({ctrl_tlast, ctrl_tdata}), 
       .o_aclk(radio_clk), .o_tvalid(ctrl_tvalid_r), .o_tready(ctrl_tready_r), .o_tdata({ctrl_tlast_r, ctrl_tdata_r}));
    
-   axi_fifo_2clk #(.WIDTH(65), .SIZE(FIFO_SIZE)) tx_fifo
+   axi_fifo_2clk #(.WIDTH(65), .SIZE(RADIO_FIFO_SIZE)) tx_fifo
      (.reset(bus_rst),
       .i_aclk(bus_clk), .i_tvalid(tx_tvalid), .i_tready(tx_tready), .i_tdata({tx_tlast, tx_tdata}), 
       .o_aclk(radio_clk), .o_tvalid(tx_tvalid_r), .o_tready(tx_tready_r), .o_tdata({tx_tlast_r, tx_tdata_r}));
@@ -76,7 +89,7 @@ module radio_b200
       .i_aclk(radio_clk), .i_tvalid(rmux_tvalid_r), .i_tready(rmux_tready_r), .i_tdata({rmux_tlast_r, rmux_tdata_r}), 
       .o_aclk(bus_clk), .o_tvalid(resp_tvalid), .o_tready(resp_tready), .o_tdata({resp_tlast, resp_tdata}));
    
-   axi_fifo_2clk #(.WIDTH(65), .SIZE(FIFO_SIZE)) rx_fifo
+   axi_fifo_2clk #(.WIDTH(65), .SIZE(RADIO_FIFO_SIZE)) rx_fifo
      (.reset(radio_rst),
       .i_aclk(radio_clk), .i_tvalid(rx_mux_tvalid_r), .i_tready(rx_mux_tready_r), .i_tdata({rx_mux_tlast_r, rx_mux_tdata_r}),
       .o_aclk(bus_clk), .o_tvalid(rx_tvalid), .o_tready(rx_tready), .o_tdata({rx_tlast, rx_tdata}));
@@ -162,6 +175,8 @@ module radio_b200
    wire [31:0] 	sid;
    wire [23:0] tx_fe_i, tx_fe_q;
 
+   wire [31:0] debug_tx_control;
+   
    assign tx[31:16] = (run_tx)? tx_fe_i[23:8] : tx_idle[31:16];
    assign tx[15:0]  = (run_tx)? tx_fe_q[23:8] : tx_idle[15:0];
 
@@ -180,7 +195,7 @@ module radio_b200
       .seqnum(seqnum), .error_code(error_code), .sid(sid),
       .sample_tdata(txsample_tdata), .sample_tvalid(txsample_tvalid), .sample_tready(txsample_tready),
       .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
-      .debug());
+      .debug(debug_tx_control));
 
    tx_responder #(.BASE(SR_TX_CTRL+2)) tx_responder
      (.clk(radio_clk), .reset(radio_rst), .clear(1'b0),
@@ -213,7 +228,7 @@ module radio_b200
    wire [11:0] 	  rx_seqnum;
    wire [63:0] rx_tdata_i; wire rx_tlast_i, rx_tvalid_i, rx_tready_i;
 
-   new_rx_framer #(.BASE(SR_RX_CTRL+4)) new_rx_framer
+   new_rx_framer #(.BASE(SR_RX_CTRL+4),.SAMPLE_FIFO_SIZE(SAMPLE_FIFO_SIZE)) new_rx_framer
      (.clk(radio_clk), .reset(radio_rst), .clear(1'b0),
       .set_stb(set_stb), .set_addr(set_addr), .set_data(set_data),
       .vita_time(vita_time),
@@ -266,53 +281,6 @@ module radio_b200
       .i3_tdata(), .i3_tlast(), .i3_tvalid(1'b0), .i3_tready(),
       .o_tdata(rmux_tdata_r), .o_tlast(rmux_tlast_r), .o_tvalid(rmux_tvalid_r), .o_tready(rmux_tready_r));
 
-   wire [255:0] debug1;
-   
-   reg [255:0] debug2;
-
-   
-/* -----\/----- EXCLUDED -----\/-----
- 	
-   always @(posedge radio_clk)
-     debug2 <= debug1;
-   
-   wire [35:0] CONTROL0,CONTROL1;
- 
-   chipscope_ila_256 chipscope_ila_256(
-				     .CONTROL(CONTROL0), // INOUT BUS [35:0]
-				     .CLK(radio_clk), // IN
-				     .TRIG0(debug2) // IN BUS [31:0]
-				     );
-   
-   chipscope_ila_32  chipscope_ila_32(
-				   .CONTROL(CONTROL1), // INOUT BUS [35:0]
-				   .CLK(radio_clk), // IN
-				   .TRIG0(32'd0) // IN BUS [31:0]
-				   );
-   
-   chipscope_icon  chipscope_icon(
-				 .CONTROL0(CONTROL0), // INOUT BUS [35:0]
-				   .CONTROL1(CONTROL1) // INOUT BUS [35:0]
-				    );
-
-   assign debug1 = {
-		    debug_tx_framer, // [214:206]
-		    debug_tx_control, // [205:177]
-		    set_data,     // [176:145]
-		    set_addr,     // [144:137]
-		     set_stb,     // [136]
-		     run_tx,      // [135]
-		     run_rx,      // [134]
-		     tx_tlast,    // [133]
-		     tx_tready,   // [132]
-		     tx_tvalid,   // [131]
-		     ctrl_tlast,  // [130]
-		     ctrl_tready, // [129]
-		     ctrl_tvalid, // [128]
-		     tx_tdata,    // [127:64]
-		     ctrl_tdata   // [63:0]
-		     };
- -----/\----- EXCLUDED -----/\----- */
 
    
 endmodule // radio_b200
