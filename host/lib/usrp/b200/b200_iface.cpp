@@ -171,9 +171,6 @@ bool parse_record(const std::string& record, boost::uint16_t &len, \
     if (len > (2 * (record.length() - 9)))  // sanity check to prevent buffer overrun
         return false;
 
-    if (len > (2 * (record->length() - 9)))  // sanity check to prevent buffer overrun
-        return false;
-
     for (i = 0; i < len; i++) {
         std::istringstream(record.substr(9 + 2 * i, 2)) >> std::hex >> val;
         data[i] = (unsigned char) val;
@@ -459,13 +456,14 @@ public:
     void set_fpga_reset_pin(const bool reset) {
         unsigned char data[4];
         memset(data, (reset)? 0xFF : 0x00, sizeof(data));
-        const int bytes_to_send = sizeof(data);
 
         UHD_THROW_INVALID_CODE_PATH();
 
         // Below is dead code as long as UHD_THROW_INVALID_CODE_PATH(); is declared above.
         // It is preserved here in a comment in case it is needed later:
         /*
+        const int bytes_to_send = sizeof(data);
+
         int ret = fx3_control_write(B200_VREQ_FPGA_RESET, 0x00, 0x00, data, bytes_to_send);
         if (ret < 0)
             throw uhd::io_error((boost::format("Failed to reset FPGA (%d: %s)") % ret % libusb_error_name(ret)).str());

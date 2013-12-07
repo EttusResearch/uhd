@@ -184,8 +184,8 @@ public:
            std::string record;
            file >> record;
 
-        if (!(record.length() > 0))
-            continue;
+            if (!(record.length() > 0))
+                continue;
 
             //check for valid record
             if (not checksum(&record) or not parse_record(&record, len, addr, type, data)) {
