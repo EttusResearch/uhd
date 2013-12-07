@@ -27,7 +27,7 @@ FIND_PACKAGE(Git QUIET)
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
 SET(UHD_VERSION_MINOR 006)
-SET(UHD_VERSION_PATCH 000)
+SET(UHD_VERSION_PATCH 002)
 
 ########################################################################
 # Set up trimmed version numbers for DLL resource files and packages
@@ -87,7 +87,7 @@ IF(UHD_RELEASE_MODE)
     #Ignore UHD_GIT_COUNT in UHD_VERSION if the string 'release' is in UHD_RELEASE_MODE
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "print 'release' in '${UHD_RELEASE_MODE}'"
+        COMMAND ${PYTHON_EXECUTABLE} -c "print ('release' in '${UHD_RELEASE_MODE}') or ('rc' in '${UHD_RELEASE_MODE}')"
         OUTPUT_VARIABLE TRIM_UHD_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 ENDIF()

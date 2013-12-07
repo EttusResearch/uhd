@@ -1,0 +1,343 @@
+Change Log for Releases
+==============================
+
+## 003.005.003
+
+* E110:
+** Fix FPGA Makefile build typo
+* UHD:
+** Fixed timespec irrational rate rounding
+** Multichan streamer CPU utilization
+
+## 003.005.002
+
+* B100:
+** Fix get send buffer timeout
+* E1x0:
+** Changes to bus timings for S issue
+* USRP1:
+** Restore broken EEPROM writing
+
+
+## 003.005.001
+
+* Misc:
+** Fixes to images downloader
+** Fixes to C++ net burner
+** Added sleep(1) to query_gpsdo_sensors
+* OSX:
+** Fix for socket send code newer OS versions
+* Changes from 3.4.5
+
+## 003.005.000
+
+* B100:
+** Added timed commands feature
+** Incremented FPGA compat number to 11.1
+** Incremented firmware compat number to 3
+* E1x0:
+** Added timed commands feature
+** Incremented FPGA compat number to 11.1
+* USRP2/N2x0:
+** Alternative stream destination on TX
+** Incremented FPGA compat number to 10
+* N2x0:
+** Implemented timed-commands feature
+** Implemented fast-commands feature
+* SBX/WBX
+** Tune with phase sync using timed-commands
+* RFX series
+** Added calibration utilities support
+* General:
+** SSE2 conversions for sc8 RX samples
+** Added multi-threading to packet converters
+** Added automatic images fetcher application
+
+## 003.004.005
+
+* XCVR2450:
+** Added XCVR2450 rev2 support
+* WBX:
+** Added WBX rev4 support
+* Misc:
+** Fix to rx_samples_to_udp byte count
+** stream command enums easy on SWIG
+
+## 003.004.004
+
+* Gen2
+** Fix RX and TX DSP scalar adjustments
+* B100/E1x0
+** Fixed RX ADC IQ inversion swap
+** Incremented FPGA compat number to 9.4
+
+## 003.004.003
+
+* USRP2/N2x0:
+** Net burner parser fix (windows)
+* XCVR2450:
+** Fix to disable automatic LO offset on TX
+* N2x0:
+** Deal with misc exceptions in net burner
+* E1x0:
+** Changes to add reliability to bus state machine
+* USRP1:
+** Shutoff the DAC on transmit EOB flags
+** Revert 1st nyquist zone DAC calculation
+
+## 003.004.002
+
+* USRP2/N2x0:
+** Card and net burner language fixes
+** Net burner python v3 code fix
+** Net burner IPv6 interface fix
+* E1x0:
+** Fix for FPGA timing issue with GPMC input
+** Incremented FPGA compat number to 9.2
+* B100:
+** Fix USB wrapper/buffer release race condition
+* USRP1:
+** Fix DAC calculation for tune out of 1st nyquist zone
+* General:
+** Fix for recv packet handler time error check
+** SIMD conversion routines priority over table look-up
+** Fix undefined GCC float conversion behaviour for sc8
+
+## 003.004.001
+
+* USRP2/N2x0:
+** Filter out invalid broadcast replies
+** Incremented FPGA compat number to 9.1
+* E1x0:
+** Incremented FPGA compat number to 9.1
+* B100:
+** FPGA fixes for USB slave FIFO interface
+** Incremented FPGA compat number to 9.3
+* USRP1:
+** Stop thread in deconstructor for race condition
+** Fixed DBSRX + USRP1 i2c lockup condition
+* Gen2:
+** Fix for unintentional clear in deprecated recv() call
+** Fix RX DC offset call to handle negative values
+* FreeBSD:
+** Fixed network relay example compilation
+
+## 003.004.000
+
+* USRP2/N2x0:
+** 50 Msps RX/TX with sc8 mode over the wire
+* B100:
+** 16 Msps RX/TX with sc8 mode over the wire
+* SBX/WBX:
+** Added self-calibration utilities
+* Gen2:
+** Control RX/TX DC offset correction via API
+** Control RX/TX IQ balance correction via API
+** Incremented FPGA compat number to 9
+* USRP1:
+** Support 16Msps RX with sc8 mode over the wire
+** Control RX DC offset correction via API
+* Misc:
+** Multiple streamers/heterogeneous rates
+** Alternative host and wire data types
+** Added API calls for DC offset correction
+** Added API calls for IQ balance correction
+
+## Release 003.003.002
+
+* N2x0:
+** Fixed TX daughterboard clocking mode
+* B100:
+** Tweaks for ordering of FPGA resets
+* Misc:
+** Device adder can parse empty values
+** Updated syntax in udev rules file
+** Corrections to images documentation
+** Performance tweak for tx_waveforms example
+** Handle EINTR on select() w/ udp transport
+** Minor fixes for compiling on FreeBSD
+
+## Release 003.003.001
+
+* B100/E1x0:
+** Fixed VCO bounds checking on flexible clocking
+* B100:
+** Fixed discovery throwing when device claimed
+
+## Release 003.003.000
+
+* USRP2/N2x0:
+** Incremented firmware image compat number to 11.0
+** Re-implement internal GPSDO UART control
+* E1x0:
+** New GPMC/FPGA bus implementation
+** Incremented FPGA compat number to 6
+** Incremented module compat number to 3
+** Added support for E110
+** Added support for E100r4
+* B100:
+** Added support for B100
+* USRP1:
+** Re-implement LibUSB data transport
+* Misc:
+** Normalise time_spec for negative fractional seconds
+* Gen2:
+** Fix DSP rate selection clipping for very low rates
+
+## Release 003.002.004
+
+* USRP2/N2x0:
+** Resize all socket buffers (multi-channel)
+* N2x0:
+** Gracefully handle missing GPSDO
+* USRP1:
+** Fix bug with order of deconstructors
+** Fix zero length send padding on commit
+* XCVR2450:
+** Fix LO locking at marginal frequencies
+* WBX:
+** Fix TX gain readback value on v3 board
+* Gen2:
+** Fix bounds checking on stream num samps
+** Fix error using PPS_NEG in clock config
+
+## Release 003.002.003
+
+* USRP2/N2x0:
+** Fix uninitialized variable for multi-board case
+** Fix deconstructor throwing on device disconnect
+** Incremented FPGA image compat number to 7.3
+* TVRX:
+** Populated sensors property (fixed error in init)
+* FPGA (gen2):
+** Adjust RX DC offset correction time constant
+** Restore calibration path in RX/TX frontend
+* Misc:
+** MB EEPROM burner workaround for compiler bugs
+** Clip the reported tune range to the dboard bandwidth
+** Preserve bands when calculating overall tune range
+
+## Release 003.002.002
+
+* USRP2/N2x0:
+** Always resize socket send buffer to SRAM size
+** Incremented FPGA image compat number to 7.2
+** Incremented firmware image compat number to 10.4
+* N2x0:
+** GPSDO control tweak for some Firefly devices
+** Fix for erasure logic in rare bricking cases
+* E100:
+** Fix RX run state for GPIOs controlled by ATR
+* USRP1:
+** Fix for multi-channel streaming
+** Fix to support 0 RX or 0 TX DSPs
+* SBX:
+** Corrected lower limit on frequency range
+* FPGA (gen2):
+** Reset CIC decimator on start of burst
+* Misc:
+** Fix send to return zero on empty packets
+** Perform version check on liborc
+
+## Release 003.002.001
+
+* USRP2/N-Series:
+** Firmware fix to shutoff streaming when socket unreachable
+** Incremented firmware image compat number to 10.3
+
+## Release 003.002.000
+
+* USRP2/N-Series:
+** Incremented FPGA image compat number to 7.1
+** Incremented firmware image compat number to 10.2
+** Removed mimo_mode device addr argument
+** Support for rev4 N2XX motherboards
+* USRP-E100:
+** Removed the need for clock recovery
+** Incremented FPGA image compat number to 5
+** Incremented kernel module compat number to 2
+** Added support for dual receive DSPs
+** Async messages independent from RX path
+* WBX:
+** Support for rev3 daughterboards
+* DBSRX2:
+** Rounding fix for LO tuning error
+* Packet handler:
+** Overall performance improvements
+** Timestamps for packet fragments
+** Overflow message on dropped packets
+* Conversion:
+** Optional liborc conversion support
+** SSE2 conversion alignment performance
+** SSE2 conversion for complex doubles
+* Windows:
+** Performance improvements for UDP send
+* Misc:
+** Code reorganization with property tree
+** Calibration support in gen2 FPGAs
+
+## Release 003.001.002
+
+* N-Series:
+** Fix UART communication for GPSDO
+* XCVR2450:
+** Fix for descontructor throwing on hardware disconnect
+
+## Release 003.001.001
+
+* USRP1:
+** Fixed lock up in logging facility under MSVC
+* USRP2/N-Series:
+** Handle exceptions thrown in device locker loop
+** Connected internal GPSDO PPS signal in FPGA
+* WBX
+** Keep mixers on between bursts to maintain phase offsets
+
+## Release 003.001.000
+
+* USRP2/N-Series:
+** Incremented FPGA compat number to 6
+** Incremented firmware compat number to 10
+** Created all-in-one bootloader for N-series
+** Lock open devices per process
+** USRP N-Series internal GPSDO Support
+** Discovery works with out-of-date images
+** Net and card burner: python 3.0 support
+** Net burner: tkinter + windows thread fix
+** Card burner: device selection validation
+* USRP-E100:
+** Incremented FPGA compat number to 4
+** FPGA VRT packet framer correct length
+** Fix auxiliary ADC read back for AD9862
+** Sync TX and RX daughterbord clocks
+** Fix daughterboard clock rates after re-clock event
+* USRP1:
+** Fix TX under remainder conditions
+** Fixed RX multi-channel mapping
+* Daughterboards:
+** Added support for TVRX2 daughterboard
+** Added support for SBX daughterboard
+** Added support for WBX granddaughterboards
+** Application notes for sensors and IF
+* Windows:
+** MinGW and Cygwin support (thanks Don)
+** Fix calling convention on libusb callbacks
+* Misc:
+** Added logging and messaging facilities
+** Deprecated API in utils/warning.hpp
+** Fixed race condition in device discovery/factory
+
+## Release 003.000.001
+
+* RFX400: fix for transmit capability
+* USRP1: fix for axillary ADC read
+* Windows: statically link libusb
+* Windows: install dll into runtime path
+* Linux: automatically set LIB_SUFFIX on rh-64 systems
+* USRP-E100: fix - set FPGA tick rate on re-clock event
+* build: various work on build system
+* build: include FPGA and firmware images in installers
+
+## Release 003.000.000
+
+Initial (formal) release, no changes to mention.

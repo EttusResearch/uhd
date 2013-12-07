@@ -23,4 +23,5 @@ axi_forwarding_cam.v \
 axi_test_vfifo.v \
 dram_2port.v \
 cvita_uart.v \
+serial_to_settings.v \
 ))

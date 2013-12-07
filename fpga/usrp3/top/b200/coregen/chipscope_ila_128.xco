@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.4
-# Date: Fri Mar  8 19:52:17 2013
+# Date: Tue Oct 22 22:44:09 2013
 #
 ##############################################################
 #
@@ -30,7 +30,7 @@ SET foundationsym = false
 SET implementationfiletype = Ngc
 SET package = fgg484
 SET removerpms = false
-SET simulationfiles = Behavioral
+SET simulationfiles = Structural
 SET speedgrade = -3
 SET verilogsim = true
 SET vhdlsim = false
@@ -112,7 +112,7 @@ CSET match_units_6=1
 CSET match_units_7=1
 CSET match_units_8=1
 CSET match_units_9=1
-CSET max_sequence_levels=1
+CSET max_sequence_levels=2
 CSET number_of_trigger_ports=1
 CSET sample_data_depth=1024
 CSET sample_on=Rising
@@ -138,4 +138,4 @@ CSET use_rpms=false
 MISC pkg_timestamp=2012-12-18T02:47:40Z
 # END Extra information
 GENERATE
-# CRC: 194c140a
+# CRC: e17f8549

@@ -153,7 +153,8 @@ module new_tx_control
    assign packet_consumed = eop & sample_tvalid & sample_tready;
    
    assign debug = {
-		   error_code[15:0], // [28:13]
+		   error_code[37:32], // [30:25]
+		   error_code[11:0], // [24:13]
 		   sample_tvalid, //[12]
 		   now, // [11]
 		   early, // [10]
@@ -164,7 +165,7 @@ module new_tx_control
 		   eob, // [5]
 		   send_at, // [4]
 		   odd,  // [3]
-		   state //  [2:0]
+		   state[2:0] //  [2:0]
 		   };
 
    

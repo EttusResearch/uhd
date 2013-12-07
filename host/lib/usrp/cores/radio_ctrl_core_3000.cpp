@@ -189,6 +189,7 @@ private:
             //parse the packet
             vrt::if_packet_info_t packet_info;
             resp_buff_type resp_buff;
+            memset(&resp_buff, 0x00, sizeof(resp_buff));
             boost::uint32_t const *pkt = NULL;
             managed_recv_buffer::sptr buff;
 
@@ -221,9 +222,9 @@ private:
                  */
                 double accum_timeout = 0.0;
                 const double short_timeout = 0.005; // == 5ms
-                while(not (_resp_queue.pop_with_haste(resp_buff)
-                        || check_dump_queue(resp_buff)
-                        || _resp_queue.pop_with_timed_wait(resp_buff, short_timeout)
+                while(not ((_resp_queue.pop_with_haste(resp_buff))
+                        || (check_dump_queue(resp_buff))
+                        || (_resp_queue.pop_with_timed_wait(resp_buff, short_timeout))
                         )){
                     /*
                      * If a message couldn't be received within a given timeout
@@ -247,7 +248,12 @@ private:
             catch(const std::exception &ex)
             {
                 UHD_MSG(error) << "Radio ctrl bad VITA packet: " << ex.what() << std::endl;
-                UHD_VAR(buff->size());
+                if (buff){
+                    UHD_VAR(buff->size());
+                }
+                else{
+                    UHD_MSG(status) << "buff is NULL" << std::endl;
+                }
                 UHD_MSG(status) << std::hex << pkt[0] << std::dec << std::endl;
                 UHD_MSG(status) << std::hex << pkt[1] << std::dec << std::endl;
                 UHD_MSG(status) << std::hex << pkt[2] << std::dec << std::endl;
@@ -288,16 +294,17 @@ private:
      * With check_dump_queue we can check if a message we are waiting for got stranded there.
      * If a message got stuck we get it here and push it onto our own message_queue.
      */
-    bool check_dump_queue(resp_buff_type b) {
+    bool check_dump_queue(resp_buff_type& b) {
+        const size_t min_buff_size = 8; // Same value as in b200_io_impl->handle_async_task
         boost::uint32_t recv_sid = (((_sid)<<16)|((_sid)>>16));
         uhd::msg_task::msg_payload_t msg;
         do{
             msg = _async_task->get_msg_from_dump_queue(recv_sid);
         }
-        while(msg.size() < 8 && msg.size() != 0);
+        while(msg.size() < min_buff_size && msg.size() != 0);
 
-        if(msg.size() >= 8) {
-            memcpy(b.data, &msg.front(), 8);
+        if(msg.size() >= min_buff_size) {
+            memcpy(b.data, &msg.front(), std::min(msg.size(), sizeof(b.data)));
             return true;
         }
         return false;

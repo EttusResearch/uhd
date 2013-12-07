@@ -201,9 +201,8 @@ ADD_CUSTOM_TARGET(uninstall
 # Install Package Docs
 ########################################################################
 UHD_INSTALL(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/README.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/AUTHORS.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/../README.md
+    ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
     DESTINATION ${PKG_DOC_DIR}
     COMPONENT readme
 )
@@ -212,8 +211,8 @@ UHD_INSTALL(FILES
 # Images download directory for utils/uhd_images_downloader.py
 ########################################################################
 
-SET(UHD_IMAGES_MD5SUM "50e68637ae6e08b6e2b3557516bc115b")
-SET(UHD_IMAGES_DOWNLOAD_SRC "http://files.ettus.com/binaries/maint_images/archive/uhd-images_003.006.000-release.zip")
+SET(UHD_IMAGES_MD5SUM "61db1170aaaadd787f5150b3eceab6f2")
+SET(UHD_IMAGES_DOWNLOAD_SRC "http://files.ettus.com/binaries/maint_images/archive/uhd-images_003.006.002-rc1.zip")
 
 ########################################################################
 # Register top level components

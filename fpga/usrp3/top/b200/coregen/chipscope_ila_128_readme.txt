@@ -1,5 +1,5 @@
 The following files were generated for 'chipscope_ila_128' in directory
-/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b200/coregen/
+/home/ianb/fpgadev/usrp3/top/b200/coregen/
 
 XCO file generator:
    Generate an XCO file for compatibility with legacy flows.
