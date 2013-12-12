@@ -78,6 +78,8 @@ public:
     virtual void write_eeprom(boost::uint16_t addr, boost::uint16_t offset, const uhd::byte_vector_t &bytes) = 0;
 
     virtual uhd::byte_vector_t read_eeprom(boost::uint16_t addr, boost::uint16_t offset, size_t num_bytes) = 0;
+
+    static std::string fx3_state_string(boost::uint8_t state);
 };
 
 

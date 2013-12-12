@@ -716,6 +716,29 @@ private:
     usb_control::sptr _usb_ctrl;
 };
 
+
+std::string b200_iface::fx3_state_string(boost::uint8_t state)
+{
+    switch (state)
+    {
+    case FX3_STATE_FPGA_READY:
+        return std::string("Ready");
+    case FX3_STATE_CONFIGURING_FPGA:
+        return std::string("Configuring FPGA");
+    case FX3_STATE_BUSY:
+        return std::string("Busy");
+    case FX3_STATE_RUNNING:
+        return std::string("Running");
+    case FX3_STATE_UNCONFIGURED:
+        return std::string("Unconfigured");
+    case FX3_STATE_ERROR:
+        return std::string("Error");
+    default:
+        break;
+    }
+    return std::string("Unknown");
+}
+
 /***********************************************************************
  * Make an instance of the implementation
  **********************************************************************/

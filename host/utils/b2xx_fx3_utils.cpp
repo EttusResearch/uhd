@@ -44,6 +44,27 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+struct vid_pid_t {
+    boost::uint16_t vid;
+    boost::uint16_t pid;
+};
+const static vid_pid_t known_vid_pids[] = {
+    {FX3_VID, FX3_DEFAULT_PID},
+    {FX3_VID, FX3_REENUM_PID},
+    {B200_VENDOR_ID, B200_PRODUCT_ID}
+    };
+const static std::vector<vid_pid_t> known_vid_pid_vector(known_vid_pids, known_vid_pids + (sizeof(known_vid_pids) / sizeof(known_vid_pids[0])));
+const static boost::uint8_t eeprom_init_values[] = {
+    0x43,
+    0x59,
+    0x14,
+    0xB2,
+    (B200_PRODUCT_ID & 0xff),
+    (B200_PRODUCT_ID >> 8),
+    (B200_VENDOR_ID & 0xff),
+    (B200_VENDOR_ID >> 8)
+    };
+const static uhd::byte_vector_t eeprom_init_value_vector(eeprom_init_values, eeprom_init_values + (sizeof(eeprom_init_values) / sizeof(eeprom_init_values[0])));
 
 //!used with lexical cast to parse a hex string
 template <class T> struct to_hex{
@@ -96,6 +117,9 @@ int reset_usb()
 
                 std::string file = fs::path((*it).filename()).string();
 
+                if (file.length() < 5)
+                    continue;
+
                 if(file.compare(0, 5, "0000:") == 0) {
                     /* Un-bind the device. */
                     std::fstream unbind((devpath.string() + "unbind").c_str(),
@@ -118,22 +142,30 @@ int reset_usb()
     return 0;
 }
 
-uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, const boost::uint16_t pid)
+uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, const boost::uint16_t pid, const bool user_supplied = false)
 {
     std::vector<uhd::transport::usb_device_handle::sptr> handles;
     uhd::transport::usb_device_handle::sptr handle;
+    vid_pid_t vp = {vid, pid};
 
     try {
-        handles = uhd::transport::usb_device_handle::get_device_list(vid, pid);                             // try caller's VID/PID first
-        if (handles.size() == 0)
-            handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_DEFAULT_PID);         // try default Cypress FX3 VID/PID next
-        if (handles.size() == 0)
-            handles = uhd::transport::usb_device_handle::get_device_list(FX3_VID, FX3_REENUM_PID);          // try reenumerated Cypress FX3 VID/PID next
-        if (handles.size() == 0)
-            handles = uhd::transport::usb_device_handle::get_device_list(B200_VENDOR_ID, B200_PRODUCT_ID);  // try default B200 VID/PID last
+        // try caller's VID/PID first
+        handles = uhd::transport::usb_device_handle::get_device_list(vp.vid,vp.pid);
+        if (user_supplied && handles.size() == 0)
+            std::cerr << (boost::format("Failed to open device with VID 0x%04x and PID 0x%04x - trying other known VID/PIDs") % vid % pid).str() << std::endl;
+
+        // try known VID/PIDs next
+        for (size_t i = 0; handles.size() == 0 && i < known_vid_pid_vector.size(); i++)
+        {
+            vp = known_vid_pid_vector[i];
+            handles = uhd::transport::usb_device_handle::get_device_list(vp.vid,vp.pid);
+        }
 
         if (handles.size() > 0)
+        {
             handle = handles[0];
+            std::cout << (boost::format("Device opened (VID=0x%04x,PID=0x%04x)") % vp.vid % vp.pid).str() << std::endl;
+        }
 
         if (!handle)
             std::cerr << "Cannot open device" << std::endl;
@@ -141,7 +173,7 @@ uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, c
     catch(const std::exception &e) {
         std::cerr << "Failed to communicate with the device!" << std::endl;
         #ifdef UHD_PLATFORM_WIN32
-        std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+        std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details:\nhttp://files.ettus.com/uhd_docs/manual/html/transport.html" << std::endl;
         #endif /* UHD_PLATFORM_WIN32 */
         handle.reset();
     }
@@ -163,7 +195,7 @@ b200_iface::sptr make_b200_iface(const uhd::transport::usb_device_handle::sptr &
     catch(const std::exception &e) {
         std::cerr << "Failed to communicate with the device!" << std::endl;
         #ifdef UHD_PLATFORM_WIN32
-        std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details." << std::endl;
+        std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details:\nhttp://files.ettus.com/uhd_docs/manual/html/transport.html" << std::endl;
         #endif /* UHD_PLATFORM_WIN32 */
         b200.reset();
     }
@@ -171,9 +203,83 @@ b200_iface::sptr make_b200_iface(const uhd::transport::usb_device_handle::sptr &
     return b200;
 }
 
+int read_eeprom(b200_iface::sptr& b200, uhd::byte_vector_t& data)
+{
+    try {
+        data = b200->read_eeprom(0x0, 0x0, 8);
+    } catch (std::exception &e) {
+        std::cerr << "Exception while reading EEPROM: " << e.what() << std::endl;
+        return -1;
+    }
+
+    return 0;
+}
+
+int write_eeprom(b200_iface::sptr& b200, const uhd::byte_vector_t& data)
+{
+    try {
+        b200->write_eeprom(0x0, 0x0, data);
+    } catch (std::exception &e) {
+        std::cerr << "Exception while writing EEPROM: " << e.what() << std::endl;
+        return -1;
+    }
+
+    return 0;
+}
+
+int verify_eeprom(b200_iface::sptr& b200, const uhd::byte_vector_t& data)
+{
+    bool verified = true;
+    uhd::byte_vector_t read_bytes;
+    if (read_eeprom(b200, read_bytes))
+        return -1;
+
+    if (data.size() != read_bytes.size())
+    {
+        std::cerr << "ERROR:  Only able to verify first " << std::min(data.size(), read_bytes.size()) << " bytes." << std::endl;
+        verified = false;
+    }
+
+    for (size_t i = 0; i < std::min(data.size(), read_bytes.size()); i++) {
+        if (data[i] != read_bytes[i]) {
+            verified = false;
+            std::cerr << "Byte " << i << " Expected: " << data[i] << ", Got: " << read_bytes[i] << std::endl;
+        }
+    }
+
+    if (!verified) {
+        std::cerr << "Verification failed" << std::endl;
+        return -1;
+    }
+
+    return 0;
+}
+
+int write_and_verify_eeprom(b200_iface::sptr& b200, const uhd::byte_vector_t& data)
+{
+    if (write_eeprom(b200, data))
+        return -1;
+    if (verify_eeprom(b200, data))
+        return -1;
+
+    return 0;
+}
+
+int erase_eeprom(b200_iface::sptr& b200)
+{
+    uhd::byte_vector_t bytes(8);
+
+    memset(&bytes[0], 0xFF, 8);
+    if (write_and_verify_eeprom(b200, bytes))
+        return -1;
+
+    return 0;
+}
+
 boost::int32_t main(boost::int32_t argc, char *argv[]) {
     boost::uint16_t vid, pid;
     std::string pid_str, vid_str, fw_file, fpga_file;
+    bool user_supplied_vid_pid = false;
 
     po::options_description visible("Allowed options");
     visible.add_options()
@@ -205,15 +311,24 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     desc.add(hidden);
 
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
+
+    try {
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);
+    } catch (std::exception &e) {
+        std::cerr << "Exception while parsing arguments: " << e.what() << std::endl;
+        std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
+        return ~0;
+    }
 
     if (vm.count("help")){
         try {
             std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
         } catch(...) {}
         return ~0;
-    } else if (vm.count("reset-usb")) {
+    }
+
+    if (vm.count("reset-usb")) {
         return reset_usb();
     }
 
@@ -222,18 +337,20 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
     vid = B200_VENDOR_ID;   // Default
     pid = B200_PRODUCT_ID;  // Default
-    try {
-        if (vm.count("vid"))
+    if (vm.count("vid") && vm.count("pid"))
+    {
+        try {
             vid = atoh(vid_str);
-        if (vm.count("pid"))
             pid = atoh(pid_str);
-    } catch (std::exception &e) {
-        std::cerr << "Exception while parsing VID and PID: " << e.what() << std:: endl;
-        return ~0;
+        } catch (std::exception &e) {
+            std::cerr << "Exception while parsing VID and PID: " << e.what() << std:: endl;
+            return ~0;
+        }
+        user_supplied_vid_pid = true;
     }
 
     // open the device
-    handle = open_device(vid, pid);
+    handle = open_device(vid, pid, user_supplied_vid_pid);
     if (!handle)
         return -1;
     std::cout << "B2xx detected..." << std::flush;
@@ -248,6 +365,13 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     if (vm.count("load-fw") && handle->firmware_loaded())
     {
         std::cout << "Overwriting existing firmware" << std::endl;
+
+        // before we reset, make sure we have a good firmware file
+        if(!(fs::exists(fw_file)))
+        {
+            std::cerr << "Invalid firmware filepath: " << fw_file << std::endl;
+            return -1;
+        }
 
         // reset the device
         try {
@@ -303,6 +427,8 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         b200 = make_b200_iface(handle);
         if (!b200)
             return -1;
+
+        std::cout << "Firmware loaded" << std::endl;
     }
 
     // Added for testing purposes - not exposed
@@ -310,12 +436,9 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     {
         uhd::byte_vector_t data;
 
-        try {
-            data = b200->read_eeprom(0x0, 0x0, 8);
-        } catch (std::exception &e) {
-            std::cerr << "Exception while reading EEPROM: " << e.what() << std::endl;
+        if (read_eeprom(b200, data))
             return -1;
-        }
+
         for (int i = 0; i < 8; i++)
             std::cout << i << ": " << boost::format("0x%X") % (int)data[i] << std::endl;
 
@@ -325,34 +448,8 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     // Added for testing purposes - not exposed
     if (vm.count("erase-eeprom"))
     {
-        uhd::byte_vector_t bytes(8);
-        memset(&bytes[0], 0xFF, 8);
-        try {
-            b200->write_eeprom(0x0, 0x0, bytes);
-        } catch (uhd::exception &e) {
-            std::cerr << "Exception while writing to EEPROM: " << e.what() << std::endl;
+        if (erase_eeprom(b200))
             return -1;
-        }
-
-        // verify
-        uhd::byte_vector_t read_bytes(8);
-        try {
-            read_bytes = b200->read_eeprom(0x0, 0x0, 8);
-        } catch (uhd::exception &e) {
-            std::cerr << "Exception while reading from EEPROM: " << e.what() << std::endl;
-            return -1;
-        }
-        bool verified = true;
-        for (int i = 0; i < 8; i++) {
-            if (bytes[i] != read_bytes[i]) {
-                verified = false;
-                std::cerr << "Expected: " << bytes[i] << ", Got: " << read_bytes[i] << std::endl;
-            }
-        }
-        if (!verified) {
-            std::cerr << "Verification failed" << std::endl;
-            return -1;
-        }
 
         std::cout << "Erase Successful!" << std::endl;
 
@@ -362,16 +459,8 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     // Added for testing purposes - not exposed
     if (vm.count("uninit-device"))
     {
-        // uninitialize the device
-        uhd::byte_vector_t bytes(8);
-        memset(&bytes[0], 0xFF, 8);
-
-        try {
-            b200->write_eeprom(0x0, 0x0, bytes);
-        } catch (uhd::exception &e) {
-            std::cerr << "Exception while writing to EEPROM: " << e.what() << std::endl;
-            return -1;
-        }
+        // erase EEPROM
+        erase_eeprom(b200);
 
         std::cout << "EEPROM uninitialized, resetting device..."
             << std::endl << std::endl;
@@ -395,22 +484,8 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     if (vm.count("init-device"))
     {
         /* Now, initialize the device. */
-        uhd::byte_vector_t bytes(8);
-        bytes[0] = 0x43;
-        bytes[1] = 0x59;
-        bytes[2] = 0x14;
-        bytes[3] = 0xB2;
-        bytes[4] = (B200_PRODUCT_ID & 0xff);
-        bytes[5] = (B200_PRODUCT_ID >> 8);
-        bytes[6] = (B200_VENDOR_ID & 0xff);
-        bytes[7] = (B200_VENDOR_ID >> 8);
-
-        try {
-            b200->write_eeprom(0x0, 0x0, bytes);
-        } catch (uhd::exception &e) {
-            std::cerr << "Exception while writing to EEPROM: " << e.what() << std::endl;
+        if (write_and_verify_eeprom(b200, eeprom_init_value_vector))
             return -1;
-        }
 
         std::cout << "EEPROM initialized, resetting device..."
             << std::endl << std::endl;
@@ -439,8 +514,9 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
             return -1;
         }
         std::cout << "Currently operating at USB " << (int) speed << std::endl;
+    }
 
-    } else if (vm.count("reset-device")) {
+    if (vm.count("reset-device")) {
         try {b200->reset_fx3();}
         catch (uhd::exception &e) {
             std::cerr << "Exception while resetting FX3: " << e.what() << std::endl;
@@ -454,10 +530,6 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
             return -1;
         }
 
-    } else if (vm.count("load-fw")) {
-        std::cout << "Firmware load complete, releasing USB interface..."
-            << std::endl;
-
     } else if (vm.count("load-fpga")) {
         std::cout << "Loading FPGA image (" << fpga_file << ")" << std::endl;
         uint32_t fx3_state;
@@ -468,19 +540,13 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         }
 
         if (fx3_state != 0) {
-            std::cerr << std::flush << "Error loading FPGA. FX3 state: "
-            << fx3_state << std::endl;
+            std::cerr << std::flush << "Error loading FPGA. FX3 state ("
+                << fx3_state << "): " << b200_iface::fx3_state_string(fx3_state) << std::endl;
             return ~0;
         }
 
         std::cout << "FPGA load complete, releasing USB interface..."
             << std::endl;
-
-    } else {
-        try {
-            std::cout << boost::format("B2xx Utility Program %s") % visible << std::endl;
-        } catch(...) {}
-        return ~0;
     }
 
     std::cout << "Operation complete!  I did it!  I did it!" << std::endl;
