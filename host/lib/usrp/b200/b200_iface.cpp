@@ -92,7 +92,7 @@ static hash_type generate_hash(const char *filename)
 {
     if (filename == NULL)
         return hash_type(0);
-    
+
     std::ifstream file(filename);
     if (not file){
         throw uhd::io_error(std::string("cannot open input file ") + filename);
@@ -238,7 +238,7 @@ public:
                           0, offset | (boost::uint16_t(addr) << 8),
                           (unsigned char *) &bytes[0],
                           bytes.size());
-        
+
         if (ret < 0)
             throw uhd::io_error((boost::format("Failed to write EEPROM (%d: %s)") % ret % libusb_error_name(ret)).str());
         else if ((size_t)ret != bytes.size())
@@ -254,12 +254,12 @@ public:
                          0, offset | (boost::uint16_t(addr) << 8),
                          (unsigned char*) &recv_bytes[0],
                          num_bytes);
-        
+
         if (bytes_read < 0)
             throw uhd::io_error((boost::format("Failed to read EEPROM (%d: %s)") % bytes_read % libusb_error_name(bytes_read)).str());
         else if ((size_t)bytes_read != num_bytes)
             throw uhd::io_error((boost::format("Short read on read EEPROM (expecting: %d, returned: %d)") % num_bytes % bytes_read).str());
-        
+
         return recv_bytes;
     }
 
@@ -302,23 +302,23 @@ public:
         const int bytes_to_write = 64;
         const int bytes_to_read = 64;
         const size_t read_retries = 30;
-        
+
         int ret = fx3_control_write(B200_VREQ_AD9361_CTRL_WRITE, 0x00, 0x00, (unsigned char *)in_buff, bytes_to_write);
         if (ret < 0)
             throw uhd::io_error((boost::format("Failed to write AD9361 (%d: %s)") % ret % libusb_error_name(ret)).str());
         else if (ret != bytes_to_write)
             throw uhd::io_error((boost::format("Short write on write AD9361 (expecting: %d, returned: %d)") % bytes_to_write % ret).str());
-        
+
         for (size_t i = 0; i < read_retries; i++)
         {
             ret = fx3_control_read(B200_VREQ_AD9361_CTRL_READ, 0x00, 0x00, out_buff, bytes_to_read, 1000);
             if (ret < 0)
                 throw uhd::io_error((boost::format("Failed to read AD9361 (%d: %s)") % ret % libusb_error_name(ret)).str());
-            
+
             if (ret == bytes_to_read)
                 return;
         }
-        
+
         throw uhd::io_error(str(boost::format("Failed to read complete AD9361 (expecting: %d, last read: %d)") % bytes_to_read % ret));
     }
 
@@ -456,13 +456,14 @@ public:
     void set_fpga_reset_pin(const bool reset) {
         unsigned char data[4];
         memset(data, (reset)? 0xFF : 0x00, sizeof(data));
-        const int bytes_to_send = sizeof(data);
 
         UHD_THROW_INVALID_CODE_PATH();
 
         // Below is dead code as long as UHD_THROW_INVALID_CODE_PATH(); is declared above.
         // It is preserved here in a comment in case it is needed later:
         /*
+        const int bytes_to_send = sizeof(data);
+
         int ret = fx3_control_write(B200_VREQ_FPGA_RESET, 0x00, 0x00, data, bytes_to_send);
         if (ret < 0)
             throw uhd::io_error((boost::format("Failed to reset FPGA (%d: %s)") % ret % libusb_error_name(ret)).str());
@@ -520,7 +521,7 @@ public:
         const int bytes_to_recv = 4;
         if (sizeof(hash_type) != bytes_to_recv)
             throw uhd::type_error((boost::format("hash_type is %d bytes but transfer length is %d bytes") % sizeof(hash_type) % bytes_to_recv).str());
-            
+
         int ret = fx3_control_read(B200_VREQ_GET_FW_HASH, 0x00, 0x00, (unsigned char*) &hash, bytes_to_recv, 500);
         if (ret < 0)
             throw uhd::io_error((boost::format("Failed to get firmware hash (%d: %s)") % ret % libusb_error_name(ret)).str());
@@ -532,7 +533,7 @@ public:
         const int bytes_to_send = 4;
         if (sizeof(hash_type) != bytes_to_send)
             throw uhd::type_error((boost::format("hash_type is %d bytes but transfer length is %d bytes") % sizeof(hash_type) % bytes_to_send).str());
-        
+
         int ret = fx3_control_write(B200_VREQ_SET_FW_HASH, 0x00, 0x00, (unsigned char*) &hash, bytes_to_send);
         if (ret < 0)
             throw uhd::io_error((boost::format("Failed to set firmware hash (%d: %s)") % ret % libusb_error_name(ret)).str());
@@ -544,7 +545,7 @@ public:
         const int bytes_to_recv = 4;
         if (sizeof(hash_type) != bytes_to_recv)
             throw uhd::type_error((boost::format("hash_type is %d bytes but transfer length is %d bytes") % sizeof(hash_type) % bytes_to_recv).str());
-        
+
         int ret = fx3_control_read(B200_VREQ_GET_FPGA_HASH, 0x00, 0x00, (unsigned char*) &hash, bytes_to_recv, 500);
         if (ret < 0)
             throw uhd::io_error((boost::format("Failed to get FPGA hash (%d: %s)") % ret % libusb_error_name(ret)).str());
@@ -556,7 +557,7 @@ public:
         const int bytes_to_send = 4;
         if (sizeof(hash_type) != bytes_to_send)
             throw uhd::type_error((boost::format("hash_type is %d bytes but transfer length is %d bytes") % sizeof(hash_type) % bytes_to_send).str());
-        
+
         int ret = fx3_control_write(B200_VREQ_SET_FPGA_HASH, 0x00, 0x00, (unsigned char*) &hash, bytes_to_send);
         if (ret < 0)
             throw uhd::io_error((boost::format("Failed to set FPGA hash (%d: %s)") % ret % libusb_error_name(ret)).str());
@@ -576,7 +577,7 @@ public:
         hash_type hash = generate_hash(filename);
         hash_type loaded_hash; usrp_get_fpga_hash(loaded_hash);
         if (hash == loaded_hash) return 0;
-        
+
         // Establish default largest possible control request transfer size based on operating USB speed
         int transfer_size = VREQ_DEFAULT_SIZE;
         int current_usb_speed = get_usb_speed();
@@ -584,11 +585,11 @@ public:
             transfer_size = VREQ_MAX_SIZE_USB3;
         else if (current_usb_speed != 2)
             throw uhd::io_error("load_fpga: get_usb_speed returned invalid USB speed (not 2 or 3).");
-        
+
         UHD_ASSERT_THROW(transfer_size <= VREQ_MAX_SIZE);
-        
+
         unsigned char out_buff[VREQ_MAX_SIZE];
-        
+
         // Request loopback read, which will indicate the firmware's current control request buffer size
         // Make sure that if operating as USB2, requested length is within spec
         int ntoread = std::min(transfer_size, (int)sizeof(out_buff));
@@ -611,7 +612,7 @@ public:
         if (!file.good()) {
             throw uhd::io_error("load_fpga: cannot open FPGA input file.");
         }
-        
+
         // Zero the hash, in case we abort programming another image and revert to the previously programmed image
         usrp_set_fpga_hash(0);
 

@@ -103,13 +103,13 @@ DECLARE_CONVERTER(fc32, 1, sc16_item32_be, 1, PRIORITY_SIMD){
     case 0x0:
         // the data is 16-byte aligned, so do the fast processing of the bulk of the samples
         convert_fc32_1_to_item32_1_bswap_guts(_)
+        break;
     case 0x8:
         // the first value is 8-byte aligned - process it and prepare the bulk of the data for fast conversion
         xx_to_item32_sc16<uhd::htonx>(input, output, 1, scale_factor);
         i++;
         // do faster processing of the remaining samples now that we are 16-byte aligned
         convert_fc32_1_to_item32_1_bswap_guts(_)
-        break;
         break;
     default:
         // we are not 8 or 16-byte aligned, so do fast processing with the unaligned load
