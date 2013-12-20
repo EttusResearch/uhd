@@ -32,7 +32,7 @@ public:
   typedef boost::shared_ptr<gps_ctrl> sptr;
 
   /*!
-   * Make a GPS config for Jackson Labs or generic NMEA GPS devices
+   * Make a GPS config for NMEA GPS devices
    */
   static sptr make(uart_iface::sptr uart);
 
