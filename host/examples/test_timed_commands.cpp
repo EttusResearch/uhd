@@ -87,16 +87,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //setup streaming
     std::cout << std::endl;
     std::cout << "About to start streaming using timed command:" << std::endl;
-    
+
     //create a receive streamer
     uhd::stream_args_t stream_args("fc32"); //complex floats
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-    
+
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     stream_cmd.num_samps = 100;
-    stream_cmd.stream_now = true;
+    stream_cmd.stream_now = false;
     const uhd::time_spec_t stream_time = usrp->get_time_now() + uhd::time_spec_t(0.1);
     usrp->set_command_time(stream_time);
+    stream_cmd.time_spec = stream_time;
     rx_stream->issue_stream_cmd(stream_cmd);
     usrp->clear_command_time();
 
@@ -120,7 +121,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     ) % stream_time.get_full_secs() % stream_time.get_frac_secs() << std::endl;
     std::cout << boost::format(
         "Difference between stream time and first packet: %f us"
-    ) % ((md.time_spec-stream_time).get_real_secs()/100*1e6) << std::endl;
+    ) % ((md.time_spec-stream_time).get_real_secs()*1e6) << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
