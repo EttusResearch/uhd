@@ -8,7 +8,7 @@ UHD - USRP-B2X0 Series Application Notes
 Comparative features list - B200
 ------------------------------------------------------------------------
 
-* integrated RF frontend
+* integrated RF frontend (RF coverage from 70 MHz - 6 GHz)
 * 1 RX DDC chain in FPGA
 * 1 TX DUC chain in FPGA
 * Timed commands in FPGA
@@ -22,7 +22,7 @@ Comparative features list - B200
 Comparative features list - B210
 ------------------------------------------------------------------------
 
-* integrated MIMO frontend
+* integrated MIMO frontend (RF coverage from 70 MHz - 6 GHz)
 * 2 RX DDC chains in FPGA
 * 2 TX DUC chains in FPGA
 * Timed commands in FPGA
