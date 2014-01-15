@@ -501,6 +501,8 @@ void b200_impl::setup_radio(const size_t dspno)
     _async_task_data->radio_ctrl[dspno] = perif.ctrl; //weak
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
         .subscribe(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
+    _tree->access<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
     this->register_loopback_self_test(perif.ctrl);
     perif.atr = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_ATR));
 
