@@ -1,6 +1,29 @@
 Change Log for Releases
 ==============================
 
+## 003.006.002
+* Fixed bug in timed commands example.
+* Improved compatibility for older versions of Boost.
+* Fixed segmentation fault issue in converter code.
+* Fixed binary-stripping for ARM builds.
+* B2xx: Further improvements to code and images.
+* Documentation links now installed to Start Menu in Windows.
+* B2xx: More robust error checking in host code.
+* B2xx: Improved error reporting.
+* B2xx: Increase FPGA loading speed on USB 3
+* B2xx: Re-programming FPGA without cycle now supported.
+* B2xx: Larger RX SPP ceiling to support 16K transfers with larger RX FIFO in new FPGA image
+* Updated internal READMEs and documentation.
+* N-Series: netburner now accepts relative paths with '~'
+* Completely re-written UHD Images Downloader, with numerous bug fixes and new features.
+
+## 003.006.001
+* B2xx: Fixed critical bug in 003.006.000 regarding USRP B2xx operation
+
+## 003.006.000
+* Many small fixes for bugs revealed by static analysis.
+* Introduced support for the USRP B200 / B210
+
 ## 003.005.003
 
 * E110:
