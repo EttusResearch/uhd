@@ -78,8 +78,39 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         total_time += (t1-t0);
     }
     std::cout << boost::format(
-        "Difference between paired reads: %f us"
+        " Difference between paired reads: %f us"
     ) % (total_time.get_real_secs()/100*1e6) << std::endl;
+
+    //test timed control command
+    //issues get_time_now() command twice a fixed time apart
+    //outputs difference for each response time vs. the expected time
+    //and difference between actual and expected time deltas
+    std::cout << std::endl;
+    std::cout << "Testing control timed command:" << std::endl;
+    const uhd::time_spec_t span = uhd::time_spec_t(0.1);
+    const uhd::time_spec_t now = usrp->get_time_now();
+    const uhd::time_spec_t cmd_time1 = now + uhd::time_spec_t(0.1);
+    const uhd::time_spec_t cmd_time2 = cmd_time1 + span;
+    usrp->set_command_time(cmd_time1);
+    uhd::time_spec_t response_time1 = usrp->get_time_now();
+    usrp->set_command_time(cmd_time2);
+    uhd::time_spec_t response_time2 = usrp->get_time_now();
+    usrp->clear_command_time();
+    std::cout << boost::format(
+        " Span      : %f us\n"
+        " Now       : %f us\n"
+        " Response 1: %f us\n"
+        " Response 2: %f us"
+    ) % (span.get_real_secs()*1e6) % (now.get_real_secs()*1e6) % (response_time1.get_real_secs()*1e6) % (response_time2.get_real_secs()*1e6) << std::endl;
+    std::cout << boost::format(
+        " Difference of response time 1: %f us"
+    ) % ((response_time1 - cmd_time1).get_real_secs()*1e6) << std::endl;
+    std::cout << boost::format(
+        " Difference of response time 2: %f us"
+    ) % ((response_time2 - cmd_time2).get_real_secs()*1e6) << std::endl;
+    std::cout << boost::format(
+        " Difference between actual and expected time delta: %f us"
+    ) % ((response_time2 - response_time1 - span).get_real_secs()*1e6) << std::endl;
 
     //use a timed command to start a stream at a specific time
     //this is not the right way start streaming at time x,
@@ -96,10 +127,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     stream_cmd.num_samps = 100;
     stream_cmd.stream_now = false;
     const uhd::time_spec_t stream_time = usrp->get_time_now() + uhd::time_spec_t(0.1);
-    usrp->set_command_time(stream_time);
     stream_cmd.time_spec = stream_time;
     rx_stream->issue_stream_cmd(stream_cmd);
-    usrp->clear_command_time();
 
     //meta-data will be filled in by recv()
     uhd::rx_metadata_t md;
@@ -114,13 +143,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ) % md.error_code));
     }
     std::cout << boost::format(
-        "Received packet: %u samples, %u full secs, %f frac secs"
+        " Received packet: %u samples, %u full secs, %f frac secs"
     ) % num_rx_samps % md.time_spec.get_full_secs() % md.time_spec.get_frac_secs() << std::endl;
     std::cout << boost::format(
-        "Stream time was: %u full secs, %f frac secs"
+        " Stream time was: %u full secs, %f frac secs"
     ) % stream_time.get_full_secs() % stream_time.get_frac_secs() << std::endl;
     std::cout << boost::format(
-        "Difference between stream time and first packet: %f us"
+        " Difference between stream time and first packet: %f us"
     ) % ((md.time_spec-stream_time).get_real_secs()*1e6) << std::endl;
 
     //finished
