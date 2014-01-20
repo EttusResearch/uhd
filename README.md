@@ -35,8 +35,8 @@ UHD is primarily developed on Linux, but we also test and support the following
 operating systems.
 
 * Linux (any distribution)
-* Mac OSX (PPC and Intel)
-* Windows 7/Vista/XP/2000
+* Mac OS X (PPC and Intel)
+* Windows 7/Vista/XP
 
 ## Applications
 
@@ -44,7 +44,7 @@ UHD can be used to build stand-alone applications with USRP™ hardware, or with
 third-party applications. Some common toolkits / frameworks are:
 
 * [GNURadio](http://code.ettus.com/redmine/ettus/projects/uhd/wiki/GNU_Radio_UHD)
-* [LabVIEW](http://joule.ni.com/nidu/cds/view/p/id/2679/lang/en)
+* [LabVIEW](http://www.ni.com/download/ni-usrp-1.2/3696/en/)
 * [Simulink](http://www.mathworks.com/discovery/sdr/usrp.html)
 * [OpenBTS](http://wush.net/trac/rangepublic/wiki/BuildInstallRun)
 * [Iris](http://www.softwareradiosystems.com/redmine/projects/iris/wiki)
