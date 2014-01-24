@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -116,6 +116,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "clock reference (internal, external, mimo)")
         ("otw", po::value<std::string>(&otw)->default_value("sc16"), "specify the over-the-wire sample mode")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channels to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("int-n", "tune USRP with integer-N tuning")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -170,7 +171,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     for(size_t ch = 0; ch < channel_nums.size(); ch++) {
         std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq/1e6) << std::endl;
-        usrp->set_tx_freq(freq, channel_nums[ch]);
+        uhd::tune_request_t tune_request(freq);
+        if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=int-n");
+        usrp->set_tx_freq(tune_request, channel_nums[ch]);
         std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq(channel_nums[ch])/1e6) << std::endl << std::endl;
 
         //set the rf gain

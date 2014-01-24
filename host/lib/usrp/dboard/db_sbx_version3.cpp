@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,7 +18,8 @@
 
 #include "adf4350_regs.hpp"
 #include "db_sbx_common.hpp"
-
+#include "../common/adf435x_common.hpp"
+#include <uhd/types/tune_request.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -45,6 +46,16 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
         "SBX tune: target frequency %f Mhz"
     ) % (target_freq/1e6) << std::endl;
 
+    /*
+     * If the user sets 'mode_n=int-n' in the tuning args, the user wishes to
+     * tune in Integer-N mode, which can result in better spur
+     * performance on some mixers. The default is fractional tuning.
+     */
+    property_tree::sptr subtree = (unit == dboard_iface::UNIT_RX) ? self_base->get_rx_subtree()
+                                                                  : self_base->get_tx_subtree();
+    device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
+    bool is_int_n = (tune_args.get("mode_n","") == "int-n");
+
     //clip the input
     target_freq = sbx_freq_range.clip(target_freq);
 
@@ -67,7 +78,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     adf4350_regs_t::prescaler_t prescaler = target_freq > 3e9 ? adf4350_regs_t::PRESCALER_8_9 : adf4350_regs_t::PRESCALER_4_5;
 
     adf435x_tuning_constraints tuning_constraints;
-    tuning_constraints.force_frac0 = false;
+    tuning_constraints.force_frac0 = is_int_n;
     tuning_constraints.band_sel_freq_max = 100e3;
     tuning_constraints.ref_doubler_threshold = 12.5e6;
     tuning_constraints.int_range = uhd::range_t(prescaler_to_min_int_div[prescaler], 4095);  //INT is a 12-bit field
@@ -75,7 +86,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     tuning_constraints.rf_divider_range = uhd::range_t(1, 16);
 
     double actual_freq;
-    adf435x_tuning_settings tuning_settings = _tune_adf435x_synth(
+    adf435x_tuning_settings tuning_settings = tune_adf435x_synth(
         target_freq, self_base->get_iface()->get_clock_rate(unit),
         tuning_constraints, actual_freq);
 
@@ -106,6 +117,9 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     regs.band_select_clock_div  = tuning_settings.band_select_clock_div;
     UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(tuning_settings.rf_divider));
     regs.rf_divider_select      = rfdivsel_to_enum[tuning_settings.rf_divider];
+    regs.ldf                    = is_int_n ?
+                                    adf4350_regs_t::LDF_INT_N :
+                                    adf4350_regs_t::LDF_FRAC_N;
 
     //reset the N and R counter
     regs.counter_reset = adf4350_regs_t::COUNTER_RESET_ENABLED;

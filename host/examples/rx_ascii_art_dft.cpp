@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -56,6 +56,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("ref-lvl", po::value<float>(&ref_lvl)->default_value(0), "reference level for the display (dB)")
         ("dyn-rng", po::value<float>(&dyn_rng)->default_value(60), "dynamic range for the display (dB)")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "waveform type (internal, external, mimo)")
+        ("int-n", "tune USRP with integer-N tuning")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -95,7 +96,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return EXIT_FAILURE;
     }
     std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
-    usrp->set_rx_freq(freq);
+    uhd::tune_request_t tune_request(freq);
+    if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=int-n");
+    usrp->set_rx_freq(tune_request);
     std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
 
     //set the rf gain
