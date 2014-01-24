@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,14 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/types/device_addr.hpp>
 
+#include "../common/adf435x_common.hpp"
 
 // Common IO Pins
 #define LO_LPF_EN       (1 << 15)
-#define SYNTH_CE        (1 << 3)
-#define SYNTH_PDBRF     (1 << 2)
-#define SYNTH_MUXOUT    (1 << 1)                // INPUT!!!
-#define LOCKDET_MASK    (1 << 0)                // INPUT!!!
 
 // TX IO Pins
 #define TRSW            (1 << 14)               // 0 = TX, 1 = RX
@@ -38,33 +36,29 @@
 #define DIS_POWER_RX    (1 << 5)                // on UNIT_RX, 0 powers up RX
 #define RX_DISABLE      (1 << 4)                // on UNIT_RX, 1 disables RX Mixer and Baseband
 
-// RX Attenuator Pins
-#define RX_ATTN_SHIFT   8                       // lsb of RX Attenuator Control
-#define RX_ATTN_MASK    (63 << RX_ATTN_SHIFT)   // valid bits of RX Attenuator Control
-
 // TX Attenuator Pins
 #define TX_ATTN_SHIFT   8                       // lsb of TX Attenuator Control
 #define TX_ATTN_MASK    (63 << TX_ATTN_SHIFT)   // valid bits of TX Attenuator Control
 
 // Mixer functions
-#define TX_MIXER_ENB    (SYNTH_PDBRF|TX_ENABLE)
+#define TX_MIXER_ENB    (ADF435X_PDBRF|TX_ENABLE)
 #define TX_MIXER_DIS    0
 
-#define RX_MIXER_ENB    (SYNTH_PDBRF)
+#define RX_MIXER_ENB    (ADF435X_PDBRF)
 #define RX_MIXER_DIS    0
 
 // Pin functions
 #define TX_LED_IO       (TX_LED_TXRX|TX_LED_LD)     // LED gpio lines, pull down for LED
-#define TXIO_MASK       (LO_LPF_EN|TRSW|SYNTH_CE|SYNTH_PDBRF|TX_ATTN_MASK|DIS_POWER_TX|TX_ENABLE)
+#define TXIO_MASK       (LO_LPF_EN|TRSW|ADF435X_CE|ADF435X_PDBRF|TX_ATTN_MASK|DIS_POWER_TX|TX_ENABLE)
 
 #define RX_LED_IO       (RX_LED_RX1RX2|RX_LED_LD)   // LED gpio lines, pull down for LED
-#define RXIO_MASK       (LO_LPF_EN|LNASW|SYNTH_CE|SYNTH_PDBRF|RX_ATTN_MASK|DIS_POWER_RX|RX_DISABLE)
+#define RXIO_MASK       (LO_LPF_EN|LNASW|ADF435X_CE|ADF435X_PDBRF|RX_ATTN_MASK|DIS_POWER_RX|RX_DISABLE)
 
 // Power functions
-#define TX_POWER_UP     (SYNTH_CE)
+#define TX_POWER_UP     (ADF435X_CE)
 #define TX_POWER_DOWN   (DIS_POWER_TX)
 
-#define RX_POWER_UP     (SYNTH_CE)
+#define RX_POWER_UP     (ADF435X_CE)
 #define RX_POWER_DOWN   (DIS_POWER_RX)
 
 // Antenna constants
@@ -181,34 +175,6 @@ protected:
         ~sbx_versionx(void) {}
 
         virtual double set_lo_freq(dboard_iface::unit_t unit, double target_freq) = 0;
-    protected:
-        struct adf435x_tuning_constraints {
-            bool            force_frac0;
-            double          ref_doubler_threshold;
-            double          pfd_freq_max;
-            double          band_sel_freq_max;
-            uhd::range_t    rf_divider_range;
-            uhd::range_t    int_range;
-        };
-
-        struct adf435x_tuning_settings {
-            boost::uint16_t frac_12_bit;
-            boost::uint16_t int_16_bit;
-            boost::uint16_t mod_12_bit;
-            boost::uint16_t r_counter_10_bit;
-            bool            r_doubler_en;
-            bool            r_divide_by_2_en;
-            boost::uint16_t clock_divider_12_bit;
-            boost::uint8_t  band_select_clock_div;
-            boost::uint16_t rf_divider;
-            bool            feedback_after_divider;
-        };
-
-        adf435x_tuning_settings _tune_adf435x_synth(
-            double target_freq,
-            double ref_freq,
-            const adf435x_tuning_constraints& constraints,
-            double& actual_freq);
     };
 
     /*!

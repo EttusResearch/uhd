@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,15 +18,9 @@
 #ifndef INCLUDED_LIBUHD_USRP_DBOARD_DB_WBX_COMMON_HPP
 #define INCLUDED_LIBUHD_USRP_DBOARD_DB_WBX_COMMON_HPP
 
-// Common IO Pins
-#define ADF4350_CE      (1 << 3)
-#define ADF4350_PDBRF   (1 << 2)
-#define ADF4350_MUXOUT  (1 << 1)                // INPUT!!!
-#define ADF4351_CE      (1 << 3)
-#define ADF4351_PDBRF   (1 << 2)
-#define ADF4351_MUXOUT  (1 << 1)                // INPUT!!!
+#include <uhd/types/device_addr.hpp>
 
-#define LOCKDET_MASK    (1 << 0)                // INPUT!!!
+#include "../common/adf435x_common.hpp"
 
 // TX IO Pins
 #define TX_PUP_5V       (1 << 7)                // enables 5.0V power supply
@@ -38,10 +32,6 @@
 #define RX_PUP_3V       (1 << 6)                // enables 3.3V supply
 #define RXBB_PDB        (1 << 4)                // on UNIT_RX, 1 powers up RX baseband
 
-// RX Attenuator Pins
-#define RX_ATTN_SHIFT   8                       // lsb of RX Attenuator Control
-#define RX_ATTN_MASK    (63 << RX_ATTN_SHIFT)      // valid bits of RX Attenuator Control
-
 // TX Attenuator Pins (v3 only)
 #define TX_ATTN_16      (1 << 14)
 #define TX_ATTN_8       (1 << 5)
@@ -51,17 +41,17 @@
 #define TX_ATTN_MASK    (TX_ATTN_16|TX_ATTN_8|TX_ATTN_4|TX_ATTN_2|TX_ATTN_1)      // valid bits of TX Attenuator Control
 
 // Mixer functions
-#define TX_MIXER_ENB    (TXMOD_EN|ADF4350_PDBRF)    // for v3, TXMOD_EN tied to ADF4350_PDBRF rather than separate
+#define TX_MIXER_ENB    (TXMOD_EN|ADF435X_PDBRF)    // for v3, TXMOD_EN tied to ADF435X_PDBRF rather than separate
 #define TX_MIXER_DIS    0
 
-#define RX_MIXER_ENB    (RXBB_PDB|ADF4350_PDBRF)
+#define RX_MIXER_ENB    (RXBB_PDB|ADF435X_PDBRF)
 #define RX_MIXER_DIS    0
 
 // Power functions
 #define TX_POWER_UP     (TX_PUP_5V|TX_PUP_3V) // high enables power supply
 #define TX_POWER_DOWN   0
 
-#define RX_POWER_UP     (RX_PUP_5V|RX_PUP_3V|ADF4350_CE) // high enables power supply
+#define RX_POWER_UP     (RX_PUP_5V|RX_PUP_3V|ADF435X_CE) // high enables power supply
 #define RX_POWER_DOWN   0
 
 
@@ -85,6 +75,23 @@ namespace uhd{ namespace usrp{
  **********************************************************************/
 static const uhd::dict<std::string, gain_range_t> wbx_rx_gain_ranges = boost::assign::map_list_of
     ("PGA0", gain_range_t(0, 31.5, 0.5));
+
+static const freq_range_t wbx_tx_lo_5dbm = boost::assign::list_of
+    (range_t(0.05e9, 1.7e9))
+    (range_t(1.9e9, 2.2e9))
+;
+
+static const freq_range_t wbx_tx_lo_m1dbm = boost::assign::list_of
+    (range_t(1.7e9, 1.9e9))
+;
+
+static const freq_range_t wbx_rx_lo_5dbm = boost::assign::list_of
+    (range_t(0.05e9, 1.4e9))
+;
+
+static const freq_range_t wbx_rx_lo_2dbm = boost::assign::list_of
+    (range_t(1.4e9, 2.2e9))
+;
 
 
 /***********************************************************************

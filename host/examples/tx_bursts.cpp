@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,6 +60,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("gain", po::value<double>(&gain)->default_value(0), "gain")
         ("dilv", "specify to disable inner-loop verbose")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc")
+        ("int-n", "tune USRP with integer-n tuning")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -98,7 +99,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl << std::endl;
 
     std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq/1e6) << std::endl;
-    for(size_t i=0; i < channel_nums.size(); i++) usrp->set_tx_freq(freq, channel_nums[i]);
+    for(size_t i=0; i < channel_nums.size(); i++){
+        uhd::tune_request_t tune_request(freq);
+        if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=int-n");
+        usrp->set_tx_freq(tune_request, channel_nums[i]);
+    }
     std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
 
     std::cout << boost::format("Setting TX Gain: %f...") % (gain) << std::endl;

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/types/tune_request.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
@@ -242,6 +243,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("null", "run without writing to file")
         ("continue", "don't abort on a bad packet")
         ("skip-lo", "skip checking LO lock status")
+        ("int-n", "tune USRP with integer-N tuning")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -287,7 +289,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //set the center frequency
     if (vm.count("freq")){	//with default of 0.0 this will always be true
 		std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
-		usrp->set_rx_freq(freq);
+        uhd::tune_request_t tune_request(freq);
+        if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=int-n");
+		usrp->set_rx_freq(tune_request);
 		std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
 	}
 

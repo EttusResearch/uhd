@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/types/tune_request.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
@@ -52,6 +53,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("port", po::value<std::string>(&port)->default_value("7124"), "server udp port")
         ("addr", po::value<std::string>(&addr)->default_value("192.168.1.10"), "resolvable server address")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "waveform type (internal, external, mimo)")
+        ("int-n", "tune USRP with integer-N tuning")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -79,7 +81,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //set the rx center frequency
     std::cout << boost::format("Setting RX Freq: %f Mhz...") % (freq/1e6) << std::endl;
-    usrp->set_rx_freq(freq);
+    uhd::tune_request_t tune_request(freq);
+    if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=int-n");
+    usrp->set_rx_freq(tune_request);
     std::cout << boost::format("Actual RX Freq: %f Mhz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
 
     //set the rx rf gain

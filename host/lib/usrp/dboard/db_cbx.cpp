@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,6 +46,16 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
         "CBX tune: target frequency %f Mhz"
     ) % (target_freq/1e6) << std::endl;
 
+    /*
+     * If the user sets 'mode_n=int-n' in the tuning args, the user wishes to
+     * tune in Integer-N mode, which can result in better spur
+     * performance on some mixers. The default is fractional tuning.
+     */
+    property_tree::sptr subtree = (unit == dboard_iface::UNIT_RX) ? self_base->get_rx_subtree()
+                                                                  : self_base->get_tx_subtree();
+    device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
+    bool is_int_n = (tune_args.get("mode_n","") == "int-n");
+
     //clip the input
     target_freq = cbx_freq_range.clip(target_freq);
 
@@ -64,14 +74,13 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
         (64,  max2870_regs_t::RF_DIVIDER_SELECT_DIV64)
         (128, max2870_regs_t::RF_DIVIDER_SELECT_DIV128)
     ;
-    
+
     double actual_freq, pfd_freq;
     double ref_freq = self_base->get_iface()->get_clock_rate(unit);
-    max2870_regs_t::int_n_mode_t int_n_mode;
     int R=0, BS=0, N=0, FRAC=0, MOD=4095;
     int RFdiv = 1;
     max2870_regs_t::reference_divide_by_2_t T     = max2870_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED;
-    max2870_regs_t::reference_doubler_t     D     = max2870_regs_t::REFERENCE_DOUBLER_DISABLED;    
+    max2870_regs_t::reference_doubler_t     D     = max2870_regs_t::REFERENCE_DOUBLER_DISABLED;
 
     //Reference doubler for 50% duty cycle
     // if ref_freq < 12.5MHz enable regs.reference_divide_by_2
@@ -115,11 +124,15 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
         //Fractional-N calculation
         FRAC = int((vco_freq/pfd_freq - N)*MOD);
 
-        //are we in int-N or frac-N mode?
-        int_n_mode = (FRAC == 0) ? max2870_regs_t::INT_N_MODE_INT_N : max2870_regs_t::INT_N_MODE_FRAC_N;
+        if(is_int_n) {
+            if (FRAC > (MOD / 2)) { //Round integer such that actual freq is closest to target
+                N++;
+            }
+            FRAC = 0;
+        }
 
         //keep N within int divider requirements
-        if(int_n_mode == max2870_regs_t::INT_N_MODE_INT_N) {
+        if(is_int_n) {
             if(N < int_n_mode_div_range.start()) continue;
             if(N > int_n_mode_div_range.stop()) continue;
         } else {
@@ -144,17 +157,20 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
     //actual frequency calculation
     actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv);
 
+    boost::uint16_t rx_id = self_base->get_rx_id().to_uint16();
+    std::string board_name = (rx_id == 0x0085) ? "CBX-120" : "CBX";
     UHD_LOGV(often)
-        << boost::format("CBX Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f") % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
-        << boost::format("CBX tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d"
-            ) % R % BS % N % FRAC % MOD % T % D % RFdiv << std::endl
-        << boost::format("CBX Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
-            ) % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
+        << boost::format("%s Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f"
+            ) % board_name.c_str() % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
+        << boost::format("%s tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, type=%s"
+            ) % board_name.c_str() % R % BS % N % FRAC % MOD % T % D % RFdiv % ((is_int_n) ? "Integer-N" : "Fractional") << std::endl
+        << boost::format("%s Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
+            ) % board_name.c_str() % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
 
     //load the register values
     max2870_regs_t regs;
 
-    if ((unit == dboard_iface::UNIT_TX) and (actual_freq == sbx_tx_lo_2dbm.clip(actual_freq))) 
+    if ((unit == dboard_iface::UNIT_TX) and (actual_freq == sbx_tx_lo_2dbm.clip(actual_freq)))
         regs.output_power = max2870_regs_t::OUTPUT_POWER_2DBM;
     else
         regs.output_power = max2870_regs_t::OUTPUT_POWER_5DBM;
@@ -163,7 +179,7 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
     max2870_regs_t::cpl_t cpl;
     max2870_regs_t::ldf_t ldf;
     max2870_regs_t::cpoc_t cpoc;
-    if(int_n_mode == max2870_regs_t::INT_N_MODE_INT_N) {
+    if(is_int_n) {
         cpl = max2870_regs_t::CPL_DISABLED;
         cpoc = max2870_regs_t::CPOC_ENABLED;
         ldf = max2870_regs_t::LDF_INT_N;
@@ -184,10 +200,10 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
     regs.band_select_clock_div = BS;
     UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(RFdiv));
     regs.rf_divider_select = rfdivsel_to_enum[RFdiv];
-    regs.int_n_mode = int_n_mode;
+    regs.int_n_mode = (is_int_n) ? max2870_regs_t::INT_N_MODE_INT_N : max2870_regs_t::INT_N_MODE_FRAC_N;
     regs.cpl = cpl;
     regs.ldf = ldf;
-    regs.cpoc = cpoc;    
+    regs.cpoc = cpoc;
 
     //write the registers
     //correct power-up sequence to write registers (5, 4, 3, 2, 1, 0)
@@ -195,8 +211,8 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
 
     for(addr=5; addr>=0; addr--){
         UHD_LOGV(often) << boost::format(
-            "CBX SPI Reg (0x%02x): 0x%08x"
-        ) % addr % regs.get_reg(addr) << std::endl;
+            "%s SPI Reg (0x%02x): 0x%08x"
+        ) % board_name.c_str() % addr % regs.get_reg(addr) << std::endl;
         self_base->get_iface()->write_spi(
             unit, spi_config_t::EDGE_RISE,
             regs.get_reg(addr), 32
@@ -205,8 +221,8 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
 
     //return the actual frequency
     UHD_LOGV(often) << boost::format(
-        "CBX tune: actual frequency %f Mhz"
-    ) % (actual_freq/1e6) << std::endl;
+        "%s tune: actual frequency %f Mhz"
+    ) % board_name.c_str() % (actual_freq/1e6) << std::endl;
     return actual_freq;
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/types/tune_request.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
@@ -240,6 +241,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("otw", po::value<std::string>(&otw)->default_value("sc16"), "specify the over-the-wire sample mode")
         ("tx-channels", po::value<std::string>(&tx_channels)->default_value("0"), "which TX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
         ("rx-channels", po::value<std::string>(&rx_channels)->default_value("0"), "which RX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("tx-int-n", "tune USRP TX with integer-N tuning")
+        ("rx-int-n", "tune USRP RX with integer-N tuning")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -318,7 +321,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     for(size_t ch = 0; ch < tx_channel_nums.size(); ch++) {
         std::cout << boost::format("Setting TX Freq: %f MHz...") % (tx_freq/1e6) << std::endl;
-        tx_usrp->set_tx_freq(tx_freq, tx_channel_nums[ch]);
+        uhd::tune_request_t tx_tune_request(tx_freq);
+        if(vm.count("tx-int-n")) tx_tune_request.args = uhd::device_addr_t("mode_n=int-n");
+        tx_usrp->set_tx_freq(tx_tune_request, tx_channel_nums[ch]);
         std::cout << boost::format("Actual TX Freq: %f MHz...") % (tx_usrp->get_tx_freq(tx_channel_nums[ch])/1e6) << std::endl << std::endl;
 
         //set the rf gain
@@ -345,7 +350,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
     std::cout << boost::format("Setting RX Freq: %f MHz...") % (rx_freq/1e6) << std::endl;
-    rx_usrp->set_rx_freq(rx_freq);
+    uhd::tune_request_t rx_tune_request(rx_freq);
+    if(vm.count("rx-int-n")) rx_tune_request.args = uhd::device_addr_t("mode_n=int-n");
+    rx_usrp->set_rx_freq(rx_tune_request);
     std::cout << boost::format("Actual RX Freq: %f MHz...") % (rx_usrp->get_rx_freq()/1e6) << std::endl << std::endl;
 
     //set the receive rf gain
