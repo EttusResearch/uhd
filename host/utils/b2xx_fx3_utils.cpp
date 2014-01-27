@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -79,7 +79,10 @@ template <class T> struct to_hex{
 //!parse hex-formatted ASCII text into an int
 boost::uint16_t atoh(const std::string &string){
     if (string.substr(0, 2) == "0x"){
-        return boost::lexical_cast<to_hex<boost::uint16_t> >(string);
+        std::stringstream interpreter(string);
+        to_hex<boost::uint16_t> hh;
+        interpreter >> hh;
+        return hh.value;
     }
     return boost::lexical_cast<boost::uint16_t>(string);
 }
