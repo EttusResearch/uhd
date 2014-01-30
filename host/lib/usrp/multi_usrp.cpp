@@ -35,6 +35,14 @@ using namespace uhd::usrp;
 
 const std::string multi_usrp::ALL_GAINS = "";
 
+UHD_INLINE std::string string_vector_to_string(std::vector<std::string> values, std::string delimeter = std::string(" "))
+{
+    std::string out = "";
+    for (std::vector<std::string>::iterator iter = values.begin(); iter != values.end(); iter++)
+        out += delimeter + *iter;
+    return out;
+}
+
 /***********************************************************************
  * Helper methods
  **********************************************************************/
@@ -620,15 +628,36 @@ public:
     }
 
     void set_rx_gain(double gain, const std::string &name, size_t chan){
-        return rx_gain_group(chan)->set_value(gain, name);
+        try {
+            return rx_gain_group(chan)->set_value(gain, name);
+        } catch (uhd::key_error &e) {
+            std::stringstream err;
+            err << __FUNCTION__ << "(\"" << name << "\"): gain not found.\n" <<
+                "Available gains: " << string_vector_to_string(get_rx_gain_names(chan)) << std::endl;
+            throw uhd::exception::runtime_error(err.str());
+        }
     }
 
     double get_rx_gain(const std::string &name, size_t chan){
-        return rx_gain_group(chan)->get_value(name);
+        try {
+            return rx_gain_group(chan)->get_value(name);
+        } catch (uhd::key_error &e) {
+            std::stringstream err;
+            err << __FUNCTION__ << "(\"" << name << "\"): gain not found.\n" <<
+                "Available gains: " << string_vector_to_string(get_rx_gain_names(chan)) << std::endl;
+            throw uhd::exception::runtime_error(err.str());
+        }
     }
 
     gain_range_t get_rx_gain_range(const std::string &name, size_t chan){
-        return rx_gain_group(chan)->get_range(name);
+        try {
+            return rx_gain_group(chan)->get_range(name);
+        } catch (uhd::key_error &e) {
+            std::stringstream err;
+            err << __FUNCTION__ << "(\"" << name << "\"): gain not found.\n" <<
+                "Available gains: " << string_vector_to_string(get_rx_gain_names(chan)) << std::endl;
+            throw uhd::exception::runtime_error(err.str());
+        }
     }
 
     std::vector<std::string> get_rx_gain_names(size_t chan){
@@ -789,15 +818,36 @@ public:
     }
 
     void set_tx_gain(double gain, const std::string &name, size_t chan){
-        return tx_gain_group(chan)->set_value(gain, name);
+        try {
+            return tx_gain_group(chan)->set_value(gain, name);
+        } catch (uhd::key_error &e) {
+            std::stringstream err;
+            err << __FUNCTION__ << "(\"" << name << "\"): gain not found.\n" <<
+                "Available gains: " << string_vector_to_string(get_rx_gain_names(chan)) << std::endl;
+            throw uhd::exception::runtime_error(err.str());
+        }
     }
 
     double get_tx_gain(const std::string &name, size_t chan){
-        return tx_gain_group(chan)->get_value(name);
+        try {
+            return tx_gain_group(chan)->get_value(name);
+        } catch (uhd::key_error &e) {
+            std::stringstream err;
+            err << __FUNCTION__ << "(\"" << name << "\"): gain not found.\n" <<
+                "Available gains: " << string_vector_to_string(get_rx_gain_names(chan)) << std::endl;
+            throw uhd::exception::runtime_error(err.str());
+        }
     }
 
     gain_range_t get_tx_gain_range(const std::string &name, size_t chan){
-        return tx_gain_group(chan)->get_range(name);
+        try {
+            return tx_gain_group(chan)->get_range(name);
+        } catch (uhd::key_error &e) {
+            std::stringstream err;
+            err << __FUNCTION__ << "(\"" << name << "\"): gain not found.\n" <<
+                "Available gains: " << string_vector_to_string(get_rx_gain_names(chan)) << std::endl;
+            throw uhd::exception::runtime_error(err.str());
+        }
     }
 
     std::vector<std::string> get_tx_gain_names(size_t chan){
