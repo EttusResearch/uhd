@@ -123,8 +123,10 @@ namespace uhd{ namespace usrp{
         typedef std::queue<transport::managed_recv_buffer::sptr> queue_type_t;
         std::map<boost::uint32_t, queue_type_t> _queues;
         transport::zero_copy_if::sptr _xport;
+#ifdef RECV_PACKET_DEMUXER_3000_THREAD_SAFE
         uhd::atomic_uint32_t _claimed;
         boost::condition_variable cond;
+#endif // RECV_PACKET_DEMUXER_3000_THREAD_SAFE
         boost::mutex mutex;
     };
 
