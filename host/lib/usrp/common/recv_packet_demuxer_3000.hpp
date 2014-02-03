@@ -103,8 +103,10 @@ namespace uhd{ namespace usrp{
                         buff.reset();
                     }
                 }
+#ifdef RECV_PACKET_DEMUXER_3000_THREAD_SAFE
                 _claimed.write(0);
                 cond.notify_all();
+#endif // RECV_PACKET_DEMUXER_3000_THREAD_SAFE
             }
             return buff;
         }
