@@ -64,7 +64,7 @@ public:
     }
 
     gain_range_t get_range(const std::string &name){
-        if (not name.empty()) return _name_to_fcns[name].get_range();
+        if (not name.empty()) return _name_to_fcns.get(name).get_range();
 
         double overall_min = 0, overall_max = 0, overall_step = 0;
         BOOST_FOREACH(const gain_fcns_t &fcns, get_all_fcns()){
@@ -79,7 +79,7 @@ public:
     }
 
     double get_value(const std::string &name){
-        if (not name.empty()) return _name_to_fcns[name].get_value();
+        if (not name.empty()) return _name_to_fcns.get(name).get_value();
 
         double overall_gain = 0;
         BOOST_FOREACH(const gain_fcns_t &fcns, get_all_fcns()){
@@ -89,7 +89,7 @@ public:
     }
 
     void set_value(double gain, const std::string &name){
-        if (not name.empty()) return _name_to_fcns[name].set_value(gain);
+        if (not name.empty()) return _name_to_fcns.get(name).set_value(gain);
 
         std::vector<gain_fcns_t> all_fcns = get_all_fcns();
         if (all_fcns.size() == 0) return; //nothing to set!
