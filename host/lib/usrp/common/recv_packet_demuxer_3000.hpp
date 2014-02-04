@@ -28,11 +28,18 @@
 #include <uhd/utils/byteswap.hpp>
 #include <queue>
 #include <map>
+#include <boost/enable_shared_from_this.hpp>
 
 namespace uhd{ namespace usrp{
 
-    struct recv_packet_demuxer_3000
+    struct recv_packet_demuxer_3000 : boost::enable_shared_from_this<recv_packet_demuxer_3000>
     {
+        typedef boost::shared_ptr<recv_packet_demuxer_3000> sptr;
+        static sptr make(transport::zero_copy_if::sptr xport)
+        {
+            return sptr(new recv_packet_demuxer_3000(xport));
+        }
+
         recv_packet_demuxer_3000(transport::zero_copy_if::sptr xport):
             _xport(xport)
         {/*NOP*/}
@@ -120,6 +127,8 @@ namespace uhd{ namespace usrp{
             }
         }
 
+        transport::zero_copy_if::sptr make_proxy(const boost::uint32_t sid);
+
         typedef std::queue<transport::managed_recv_buffer::sptr> queue_type_t;
         std::map<boost::uint32_t, queue_type_t> _queues;
         transport::zero_copy_if::sptr _xport;
@@ -129,6 +138,42 @@ namespace uhd{ namespace usrp{
 #endif // RECV_PACKET_DEMUXER_3000_THREAD_SAFE
         boost::mutex mutex;
     };
+
+    struct recv_packet_demuxer_proxy_3000 : transport::zero_copy_if
+    {
+        recv_packet_demuxer_proxy_3000(recv_packet_demuxer_3000::sptr demux, transport::zero_copy_if::sptr xport, const boost::uint32_t sid):
+            _demux(demux), _xport(xport), _sid(sid)
+        {
+            _demux->realloc_sid(_sid); //causes clear
+        }
+
+        ~recv_packet_demuxer_proxy_3000(void)
+        {
+            _demux->realloc_sid(_sid); //causes clear
+        }
+
+        size_t get_num_recv_frames(void) const {return _xport->get_num_recv_frames();}
+        size_t get_recv_frame_size(void) const {return _xport->get_recv_frame_size();}
+        transport::managed_recv_buffer::sptr get_recv_buff(double timeout)
+        {
+            return _demux->get_recv_buff(_sid, timeout);
+        }
+        size_t get_num_send_frames(void) const {return _xport->get_num_send_frames();}
+        size_t get_send_frame_size(void) const {return _xport->get_send_frame_size();}
+        transport::managed_send_buffer::sptr get_send_buff(double timeout)
+        {
+            return _xport->get_send_buff(timeout);
+        }
+
+        recv_packet_demuxer_3000::sptr _demux;
+        transport::zero_copy_if::sptr _xport;
+        const boost::uint32_t _sid;
+    };
+
+    inline transport::zero_copy_if::sptr recv_packet_demuxer_3000::make_proxy(const boost::uint32_t sid)
+    {
+        return transport::zero_copy_if::sptr(new recv_packet_demuxer_proxy_3000(this->shared_from_this(), _xport, sid));
+    }
 
 }} //namespace uhd::usrp
 

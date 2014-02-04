@@ -21,6 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/deprecated.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
@@ -83,10 +84,12 @@ public:
     virtual tx_streamer::sptr get_tx_stream(const stream_args_t &args) = 0;
 
     //! Get access to the underlying property structure
-    virtual boost::shared_ptr<property_tree> get_tree(void) const = 0;
+    uhd::property_tree::sptr get_tree(void) const;
 
     #include <uhd/device_deprecated.ipp>
 
+protected:
+    uhd::property_tree::sptr _tree;
 };
 
 } //namespace uhd

@@ -1,5 +1,5 @@
 ========================================================================
-UHD - USRP-B2X0 Series Application Notes
+UHD - USRP-B2x0 Series Device Manual
 ========================================================================
 
 .. contents:: Table of Contents
@@ -8,35 +8,26 @@ UHD - USRP-B2X0 Series Application Notes
 Comparative features list - B200
 ------------------------------------------------------------------------
 
-* integrated RF frontend (RF coverage from 70 MHz - 6 GHz)
-* 1 RX DDC chain in FPGA
-* 1 TX DUC chain in FPGA
-* Timed commands in FPGA
-* Timed sampling in FPGA
-* External PPS reference
-* External 10MHz reference
-* Configurable clock rate
-* Internal GPSDO option
+**Hardware Capabilities:**
+ * Integrated RF frontend (70 MHz - 6 GHz)
+ * External PPS reference input
+ * External 10 MHz reference input
+ * Configurable clock rate
+ * Internal GPSDO option
+ * B210 Only:
 
-------------------------------------------------------------------------
-Comparative features list - B210
-------------------------------------------------------------------------
+   * MICTOR Debug Connector
+   * JTAG Connector
 
-* integrated MIMO frontend (RF coverage from 70 MHz - 6 GHz)
-* 2 RX DDC chains in FPGA
-* 2 TX DUC chains in FPGA
-* Timed commands in FPGA
-* Timed sampling in FPGA
-* External PPS reference
-* External 10MHz reference
-* Configurable clock rate
-* Internal GPSDO option
+**FPGA Capabilities:**
+ * Timed commands in FPGA
+ * Timed sampling in FPGA
 
 ------------------------------------------------------------------------
 Specify a Non-standard Image
 ------------------------------------------------------------------------
 UHD software will automatically select the USRP B2X0 images from the installed images package.
-The image selection can be overridden with the **--fpga=** and **--fw=** device address parameters.
+The image selection can be overridden with the **fpga** and **fw** device address parameters.
 
 Example device address string representations to specify non-standard images:
 
@@ -81,7 +72,7 @@ Frontend gain
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 All frontends have individual analog gain controls.
 The receive frontends have 73 dB of available gain;
-and the transmit frontends have 89 dB of available gain.
+and the transmit frontends have 89.5 dB of available gain.
 Gain settings are application specific,
-but its recommended that users consider using at least
+but it is recommended that users consider using at least
 half of the available gain to get reasonable dynamic range.

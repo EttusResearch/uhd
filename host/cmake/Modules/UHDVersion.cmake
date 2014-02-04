@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2013 Ettus Research LLC
+# Copyright 2010-2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@ FIND_PACKAGE(Git QUIET)
 #  - increment patch on for bug fixes and docs
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
-SET(UHD_VERSION_MINOR 006)
-SET(UHD_VERSION_PATCH 002)
+SET(UHD_VERSION_MINOR 007)
+SET(UHD_VERSION_PATCH 000)
 
 ########################################################################
 # Set up trimmed version numbers for DLL resource files and packages

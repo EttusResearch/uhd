@@ -35,7 +35,18 @@
 #include <iostream>
 #include <vector>
 
-namespace uhd{ namespace transport{ namespace sph{
+#ifdef UHD_TXRX_DEBUG_PRINTS
+// Included for debugging
+#include <boost/format.hpp>
+#include <boost/thread/thread.hpp>
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include <map>
+#include <fstream>
+#endif
+
+namespace uhd {
+namespace transport {
+namespace sph {
 
 /***********************************************************************
  * Super send packet handler
@@ -56,7 +67,7 @@ public:
      * \param size the number of transport channels
      */
     send_packet_handler(const size_t size = 1):
-        _next_packet_seq(0)
+        _next_packet_seq(0), _cached_metadata(false)
     {
         this->set_enable_trailer(true);
         this->resize(size);
@@ -183,6 +194,23 @@ public:
         if_packet_info.sob     = metadata.start_of_burst;
         if_packet_info.eob     = metadata.end_of_burst;
 
+        /*
+         * Metadata is cached when we get a send requesting a start of burst with no samples.
+         * It is applied here on the next call to send() that actually has samples to send.
+         */
+        if (_cached_metadata && nsamps_per_buff != 0)
+        {
+            // If the new metada has a time_spec, do not use the cached time_spec.
+            if (!metadata.has_time_spec)
+            {
+                if_packet_info.has_tsf = _metadata_cache.has_time_spec;
+                if_packet_info.tsf     = _metadata_cache.time_spec.to_ticks(_tick_rate);
+            }
+            if_packet_info.sob     = _metadata_cache.start_of_burst;
+            if_packet_info.eob     = _metadata_cache.end_of_burst;
+            _cached_metadata = false;
+        }
+
         if (nsamps_per_buff <= _max_samples_per_packet){
 
             //TODO remove this code when sample counts of zero are supported by hardware
@@ -190,13 +218,27 @@ public:
                 static const boost::uint64_t zero = 0;
                 _zero_buffs.resize(buffs.size(), &zero);
 
-                if (nsamps_per_buff == 0) return send_one_packet(
-                    _zero_buffs, 1, if_packet_info, timeout
-                ) & 0x0;
+                if (nsamps_per_buff == 0)
+                {
+                    // if this is a start of a burst and there are no samples
+                    if (metadata.start_of_burst)
+                    {
+                        // cache metadata and apply on the next send()
+                        _metadata_cache = metadata;
+                        _cached_metadata = true;
+                        return 0;
+                    } else {
+                        // send requests with no samples are handled here (such as end of burst)
+                        return send_one_packet(_zero_buffs, 1, if_packet_info, timeout) & 0x0;
+                    }
+                }
             #endif
 
-            return send_one_packet(buffs, nsamps_per_buff, if_packet_info, timeout);
-        }
+			size_t nsamps_sent = send_one_packet(buffs, nsamps_per_buff, if_packet_info, timeout);
+#ifdef UHD_TXRX_DEBUG_PRINTS
+			dbg_print_send(nsamps_per_buff, nsamps_sent, metadata, timeout);
+#endif
+			return nsamps_sent;        }
         size_t total_num_samps_sent = 0;
 
         //false until final fragment
@@ -226,11 +268,14 @@ public:
 
         //send the final fragment with the helper function
         if_packet_info.eob = metadata.end_of_burst;
-        return total_num_samps_sent + send_one_packet(
-            buffs, final_length,
-            if_packet_info, timeout,
-            total_num_samps_sent*_bytes_per_cpu_item
-        );
+		size_t nsamps_sent = total_num_samps_sent
+				+ send_one_packet(buffs, final_length, if_packet_info, timeout,
+					total_num_samps_sent * _bytes_per_cpu_item);
+#ifdef UHD_TXRX_DEBUG_PRINTS
+		dbg_print_send(nsamps_per_buff, nsamps_sent, metadata, timeout);
+
+#endif
+		return nsamps_sent;
     }
 
 private:
@@ -255,6 +300,53 @@ private:
     size_t _next_packet_seq;
     bool _has_tlr;
     async_receiver_type _async_receiver;
+    bool _cached_metadata;
+    uhd::tx_metadata_t _metadata_cache;
+
+#ifdef UHD_TXRX_DEBUG_PRINTS
+    struct dbg_send_stat_t {
+        dbg_send_stat_t(long wc, size_t nspb, size_t nss, uhd::tx_metadata_t md, double to, double rate):
+            wallclock(wc), nsamps_per_buff(nspb), nsamps_sent(nss), metadata(md), timeout(to), samp_rate(rate)
+        {}
+        long wallclock;
+        size_t nsamps_per_buff;
+        size_t nsamps_sent;
+        uhd::tx_metadata_t metadata;
+        double timeout;
+        double samp_rate;
+        // Create a formatted print line for all the info gathered in this struct.
+        std::string print_line() {
+            boost::format fmt("send,%ld,%f,%i,%i,%s,%s,%s,%ld");
+            fmt % wallclock;
+            fmt % timeout % (int)nsamps_per_buff % (int) nsamps_sent;
+            fmt % (metadata.start_of_burst ? "true":"false") % (metadata.end_of_burst ? "true":"false");
+            fmt % (metadata.has_time_spec ? "true":"false") % metadata.time_spec.to_ticks(samp_rate);
+            return fmt.str();
+        }
+    };
+
+    void dbg_print_send(size_t nsamps_per_buff, size_t nsamps_sent,
+            const uhd::tx_metadata_t &metadata, const double timeout,
+            bool dbg_print_directly = true)
+    {
+        dbg_send_stat_t data(boost::get_system_time().time_of_day().total_microseconds(),
+            nsamps_per_buff,
+            nsamps_sent,
+            metadata,
+            timeout,
+            _samp_rate
+        );
+        if(dbg_print_directly){
+            dbg_print_err(data.print_line());
+        }
+    }
+    void dbg_print_err(std::string msg) {
+        msg = "super_send_packet_handler," + msg;
+        fprintf(stderr, "%s\n", msg.c_str());
+    }
+
+
+#endif
 
     /*******************************************************************
      * Send a single packet:
@@ -266,6 +358,7 @@ private:
         const double timeout,
         const size_t buffer_offset_bytes = 0
     ){
+
         //load the rest of the if_packet_info in here
         if_packet_info.num_payload_bytes = nsamps_per_buff*_num_inputs*_bytes_per_otw_item;
         if_packet_info.num_payload_words32 = (if_packet_info.num_payload_bytes + 3/*round up*/)/sizeof(boost::uint32_t);
@@ -374,6 +467,8 @@ private:
     size_t _max_num_samps;
 };
 
-}}} //namespace
+} // namespace sph
+} // namespace transport
+} // namespace uhd
 
 #endif /* INCLUDED_LIBUHD_TRANSPORT_SUPER_SEND_PACKET_HANDLER_HPP */

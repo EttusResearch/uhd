@@ -66,8 +66,18 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_c
     cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.05);
     cmd.stream_now = (buffs.size() == 1);
     rx_stream->issue_stream_cmd(cmd);
+
     while (not boost::this_thread::interruption_requested()){
-        num_rx_samps += rx_stream->recv(buffs, max_samps_per_packet, md)*rx_stream->get_num_channels();
+        try {
+          num_rx_samps += rx_stream->recv(buffs, max_samps_per_packet, md)*rx_stream->get_num_channels();
+        }
+        catch (...) {
+          /* apparently, the boost thread interruption can sometimes result in
+             throwing exceptions not of type boost::exception, this catch allows
+             this thread to still attempt to issue the STREAM_MODE_STOP_CONTINUOUS
+          */
+          break;
+        }
 
         //handle the error codes
         switch(md.error_code){
@@ -78,10 +88,13 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_c
             }
             break;
 
+        // ERROR_CODE_OVERFLOW can indicate overflow or sequence error
         case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:
-            had_an_overflow = true;
             last_time = md.time_spec;
-            num_overflows++;
+            had_an_overflow = true;
+            // check out_of_sequence flag to see if it was a sequence error or overflow
+            if (!md.out_of_sequence)
+                num_overflows++;
             break;
 
         default:
@@ -89,7 +102,6 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_c
             std::cerr << "Unexpected error on recv, continuing..." << std::endl;
             break;
         }
-
     }
     rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 }
@@ -226,7 +238,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
     for(size_t ch = 0; ch < channel_strings.size(); ch++){
         size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
-        if(chan >= usrp->get_tx_num_channels() or chan >= usrp->get_tx_num_channels()){
+        if(chan >= usrp->get_tx_num_channels() or chan >= usrp->get_rx_num_channels()){
             throw std::runtime_error("Invalid channel(s) specified.");
         }
         else channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
@@ -275,6 +287,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
-
+   
     return EXIT_SUCCESS;
 }

@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2012 Ettus Research LLC
+# Copyright 2010-2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+SET(CMAKE_C_COMPILE_OBJECT ${CMAKE_CXX_COMPILE_OBJECT})
+
 ########################################################################
 # Utilities that get installed into the runtime path
 ########################################################################
@@ -25,6 +27,12 @@ SET(util_runtime_sources
     uhd_cal_tx_dc_offset.cpp
     uhd_cal_tx_iq_balance.cpp
     usrp_n2xx_simple_net_burner.cpp
+    nirio_programmer.cpp
+)
+
+SET(x3xx_burner_sources
+    usrp_x3xx_fpga_burner.cpp
+    cdecode.c
 )
 
 #for each source: build an executable and install
@@ -35,6 +43,10 @@ FOREACH(util_source ${util_runtime_sources})
     UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
 ENDFOREACH(util_source)
 
+ADD_EXECUTABLE(usrp_x3xx_fpga_burner ${x3xx_burner_sources})
+TARGET_LINK_LIBRARIES(usrp_x3xx_fpga_burner uhd ${Boost_LIBRARIES})
+UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
+
 ########################################################################
 # Utilities that get installed into the share path
 ########################################################################
@@ -43,7 +55,6 @@ SET(util_share_sources
     usrp_burn_db_eeprom.cpp
     usrp_burn_mb_eeprom.cpp
 )
-
 IF(ENABLE_USB)
     LIST(APPEND util_share_sources
         fx2_init_eeprom.cpp
@@ -71,6 +82,7 @@ FOREACH(util_source ${util_share_sources})
 ENDFOREACH(util_source)
 
 UHD_INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
 
 #UHD images downloader configuration
 CONFIGURE_FILE(

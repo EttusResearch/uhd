@@ -26,15 +26,15 @@ The boards have no tunable elements or programmable gains.
 Through the magic of aliasing, you can down-convert signals
 greater than the Nyquist rate of the ADC.
 
-BasicRX Bandwidth (Hz): 
+BasicRX Bandwidth:
 
-* **For Real-Mode (A or B frontend)**: 250M
-* **For Complex (AB or BA frontend)**: 500M
+* **For Real-Mode (A or B frontend)**: 250 MHz
+* **For Complex (AB or BA frontend)**: 500 MHz
 
-LFRX Bandwidth (Hz):
+LFRX Bandwidth:
 
-* **For Real-Mode (A or B frontend)**: 33M
-* **For Complex (AB or BA frontend)**: 66M
+* **For Real-Mode (A or B frontend)**: 33 MHz
+* **For Complex (AB or BA frontend)**: 66 MHz
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Basic TX and LFTX
@@ -50,15 +50,15 @@ The boards have no tunable elements or programmable gains.
 Through the magic of aliasing, you can up-convert signals
 greater than the Nyquist rate of the DAC.
 
-BasicTX Bandwidth (Hz): 250M
+BasicTX Bandwidth (Hz):
 
-* **For Real-Mode (A or B frontend**): 250M
-* **For Complex (AB or BA frontend)**: 500M
+* **For Real-Mode (A or B frontend**): 250 MHz
+* **For Complex (AB or BA frontend)**: 500 MHz
 
-LFTX Bandwidth (Hz): 33M
+LFTX Bandwidth (Hz):
 
-* **For Real-Mode (A or B frontend)**: 33M
-* **For Complex (AB or BA frontend)**: 66M
+* **For Real-Mode (A or B frontend)**: 33 MHz
+* **For Complex (AB or BA frontend)**: 66 MHz
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 DBSRX
@@ -77,7 +77,7 @@ Receive Gains:
 * **GC1**, Range: 0-56dB
 * **GC2**, Range: 0-24dB
 
-Bandwidth (Hz): 8M-66M
+Bandwidth: 8 MHz - 66 MHz
 
 Sensors:
 
@@ -100,7 +100,7 @@ Receive Gains:
 * **GC1**, Range: 0-73dB
 * **BBG**, Range: 0-15dB
 
-Bandwidth (Hz): 8M-80M
+Bandwidth (Hz): 8 MHz -80 MHz
 
 Sensors:
 
@@ -128,10 +128,10 @@ the receive antenna will always be set to RX2, regardless of the settings.
 
 Receive Gains: **PGA0**, Range: 0-70dB (except RFX400 range is 0-45dB)
 
-Bandwidths (Hz):
+Bandwidth:
 
-* **RX**: 40M
-* **TX**: 40M
+* **RX**: 40 MHz
+* **TX**: 40 MHz
 
 Sensors:
 
@@ -142,10 +142,10 @@ XCVR 2450
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The XCVR2450 has 2 quadrature frontends, one transmit, one receive.
 Transmit and Receive default to direct conversion but
-can be used in low IF mode through lo_offset in uhd::tune_request_t
+can be used in low IF mode through lo_offset in uhd::tune_request_t.
 
 The XCVR2450 has a non-contiguous tuning range consisting of a 
-high band (4.9-6.0GHz) and a low band (2.4-2.5GHz).
+high band (4.9-6.0 GHz) and a low band (2.4-2.5 GHz).
 
 Transmit Antennas: **J1** or **J2**
 
@@ -170,10 +170,10 @@ Receive Gains:
 * **LNA**, Range: 0-30.5dB
 * **VGA**, Range: 0-62dB
 
-Bandwidths (Hz):
+Bandwidths:
 
-* **RX**: 15M, 19M, 28M, 36M; (each +-0, 5, or 10%)
-* **TX**: 24M, 36M, 48M
+* **RX**: 15 MHz, 19 MHz, 28 MHz, 36 MHz; (each +-0, 5, or 10%)
+* **TX**: 24 MHz, 36 MHz, 48 MHz
 
 Sensors:
 
@@ -183,12 +183,18 @@ Sensors:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 WBX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The WBX Series boards have 2 quadrature frontends, one transmit, one receive.
-Transmit and Receive default to direct conversion but
-can be used in low IF mode through lo_offset in **uhd::tune_request_t**.
 
-The WBX Series boards have independent receive and transmit LO's and synthesizers 
-allowing full-duplex operation on different transmit and receive frequencies.
+Features:
+
+* 2 quadrature frontends (1 transmit, 1 receive)
+
+  * Defaults to direct conversion
+  * Can be used in low IF mode through lo_offset with **uhd::tune_request_t**
+
+* Independent recieve and transmit LO's and synthesizers
+
+  * Allows for full-duplex operation on different transmit and receive frequencies
+  * Can be set to use Integer-N tuning for better spur performance with **uhd::tune_request_t**
 
 Transmit Antennas: **TX/RX**
 
@@ -196,18 +202,16 @@ Receive Antennas: **TX/RX** or **RX2**
 
 * **Frontend 0:** Complex baseband signal for selected antenna
 
-The user may set the receive antenna to be TX/RX or RX2.
-However, when using an WBX board in full-duplex mode,
-the receive antenna will always be set to RX2, regardless of the settings.
+* **Note:** The user may set the receive antenna to be TX/RX or RX2. However, when using a WBX board in full-duplex mode, the receive antenna will always be set to RX2, regardless of the settings.
 
 Transmit Gains: **PGA0**, Range: 0-25dB
 
 Receive Gains: **PGA0**, Range: 0-31.5dB
 
-Bandwidths (Hz):
+Bandwidths:
 
-* **RX**: 40M
-* **TX**: 40M
+* **WBX**: 40 MHz, RX & TX
+* **WBX-120**: 120 MHz, RX & TX
 
 Sensors:
 
@@ -216,12 +220,18 @@ Sensors:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 SBX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The SBX Series boards have 2 quadrature frontends, one transmit, one receive.
-Transmit and Receive default to direct conversion but
-can be used in low IF mode through lo_offset in **uhd::tune_request_t**.
 
-The SBX Series boards have independent receive and transmit LO's and synthesizers 
-allowing full-duplex operation on different transmit and receive frequencies.
+Features:
+
+* 2 quadrature frontends (1 transmit, 1 receive)
+
+  * Defaults to direct conversion
+  * Can be used in low IF mode through lo_offset with **uhd::tune_request_t**
+
+* Independent recieve and transmit LO's and synthesizers
+
+  * Allows for full-duplex operation on different transmit and receive frequencies
+  * Can be set to use Integer-N tuning for better spur performance with **uhd::tune_request_t**
 
 Transmit Antennas: **TX/RX**
 
@@ -229,18 +239,16 @@ Receive Antennas: **TX/RX** or **RX2**
 
 * **Frontend 0:** Complex baseband signal for selected antenna
 
-The user may set the receive antenna to be TX/RX or RX2.
-However, when using an SBX board in full-duplex mode,
-the receive antenna will always be set to RX2, regardless of the settings.
+* **Note:** The user may set the receive antenna to be TX/RX or RX2. However, when using an SBX board in full-duplex mode, the receive antenna will always be set to RX2, regardless of the settings.
 
 Transmit Gains: **PGA0**, Range: 0-31.5dB
 
 Receive Gains: **PGA0**, Range: 0-31.5dB
 
-Bandwidths (Hz):
+Bandwidths:
 
-* **RX**: 40M
-* **TX**: 40M
+* **SBX**: 40 MHz, RX & TX
+* **SBX-120**: 120 MHz, RX & TX
 
 Sensors:
 
@@ -248,16 +256,56 @@ Sensors:
 
 LEDs:
 
-* All LEDs flash when dboard control is initialized
+* All LEDs flash when daughterboard control is initialized
 * **TX LD**: Transmit Synthesizer Lock Detect
 * **TX/RX**: Receiver on TX/RX antenna port (No TX)
 * **RX LD**: Receive Synthesizer Lock Detect
 * **RX1/RX2**: Receiver on RX2 antenna port
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-CBX
+CBX Series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-See SBX Series for more details.
+
+Features:
+
+* 2 quadrature frontends (1 transmit, 1 receive)
+
+  * Defaults to direct conversion
+  * Can be used in low IF mode through lo_offset with **uhd::tune_request_t**
+
+* Independent recieve and transmit LO's and synthesizers
+
+  * Allows for full-duplex operation on different transmit and receive frequencies
+  * Can be set to use Integer-N tuning for better spur performance with **uhd::tune_request_t**
+
+Transmit Antennas: **TX/RX**
+
+Receive Antennas: **TX/RX** or **RX2**
+
+* **Frontend 0:** Complex baseband signal for selected antenna
+
+* **Note:** The user may set the receive antenna to be TX/RX or RX2. However, when using a CBX board in full-duplex mode, the receive antenna will always be set to RX2, regardless of the settings.
+
+Transmit Gains: **PGA0**, Range: 0-31.5dB
+
+Receive Gains: **PGA0**, Range: 0-31.5dB
+
+Bandwidths:
+
+* **CBX**: 40 MHz, RX & TX
+* **CBX-120**: 120 MHz, RX & TX
+
+Sensors:
+
+* **lo_locked**: boolean for LO lock state
+
+LEDs:
+
+* All LEDs flash when daughterboard control is initialized
+* **TX LD**: Transmit Synthesizer Lock Detect
+* **TX/RX**: Receiver on TX/RX antenna port (No TX)
+* **RX LD**: Receive Synthesizer Lock Detect
+* **RX1/RX2**: Receiver on RX2 antenna port
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TVRX
@@ -274,7 +322,7 @@ Receive Gains:
 * **RF**, Range: -13.3-50.3dB (frequency-dependent)
 * **IF**, Range: -1.5-32.5dB
 
-Bandwidth: 6MHz
+Bandwidth: 6 MHz
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TVRX2
@@ -294,22 +342,13 @@ Receive Gains:
 
 * **IF**, Range: 0.0-30.0dB
 
-Bandwidth: 1.7MHz, 6MHz, 7MHz, 8MHz, 10MHz
+Bandwidth: 1.7 MHz, 6 MHz, 7 MHz, 8 MHz, 10 MHz
 
 Sensors:
 
 * **lo_locked**: boolean for LO lock state
 * **rssi**: float for measured RSSI in dBm
 * **temperature**: float for measured temperature in degC
-
-------------------------------------------------------------------------
-Daughterboard Modifications
-------------------------------------------------------------------------
-
-Sometimes, daughterboards will require modification
-to work on certain frequencies or to work with certain hardware.
-Modification usually involves moving/removing an SMT component
-and burning a new daughterboard ID into the EEPROM.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 DBSRX - Mod
@@ -324,20 +363,20 @@ over the standard daughterboard clock lines.
 
 **Step 1: Move the clock configuration resistor**
 
-Remove **R193** (which is 10 ohms, 0603 size), and put it on **R194**, which is empty.
+Remove **R193** (which is 10 Ohms, 0603 size), and put it on **R194**, which is empty.
 This is made somewhat more complicated by the fact that the silkscreen is not clear in that area.
 **R193** is on the back, immediately below the large beige connector, **J2**.
 **R194** is just below, and to the left of **R193**.
 The silkscreen for **R193** is ok, but for **R194**,
 it is upside down, and partially cut off.
-If you lose **R193**, you can use anything from 0 to 10 ohms there.
+If you lose **R193**, you can use anything from 0 to 10 Ohms there.
 
 **Step 2: Burn a new daughterboard id into the EEPROM**
 
 With the daughterboard plugged-in, run the following commands:
 ::
 
-    cd <install-path>/share/uhd/utils
+    cd <install-path>/lib/uhd/utils
     ./usrp_burn_db_eeprom --id=0x000d --unit=RX --args=<args> --slot=<slot>
 
 * **<args>** are device address arguments (optional if only one USRP device is on your machine)
@@ -357,14 +396,14 @@ Move **R64** to **R84**. Move **R142** to **R153**.
 **Step 2: Connect the motherboard blocks**
 
 Move **R35** to **R36**. Move **R117** to **R115**.
-These are all 0-ohm, so if you lose one, just short across the appropriate pads.
+These are all 0-Ohm, so if you lose one, just short across the appropriate pads.
 
 **Step 3: Burn the appropriate daughterboard ID into the EEPROM**
 
 With the daughterboard plugged-in, run the following commands:
 ::
 
-    cd <install-path>/share/uhd/utils
+    cd <install-path>/lib/uhd/utils
     ./usrp_burn_db_eeprom --id=<rx_id> --unit=RX --args=<args> --slot=<slot>
     ./usrp_burn_db_eeprom --id=<tx_id> --unit=TX --args=<args> --slot=<slot>
 

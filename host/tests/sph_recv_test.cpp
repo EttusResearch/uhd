@@ -227,6 +227,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
         if (i == NUM_PKTS_TO_TEST/2){
             //must get the soft overflow here
             BOOST_REQUIRE(metadata.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
+            BOOST_REQUIRE(metadata.out_of_sequence == true);
             BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
             num_accum_samps += 10 + i%10;
         }
@@ -495,6 +496,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
         if (i == NUM_PKTS_TO_TEST/2){
             //must get the soft overflow here
             BOOST_REQUIRE(metadata.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
+            BOOST_REQUIRE(metadata.out_of_sequence == true);
             BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
             num_accum_samps += 10 + i%10;
         }

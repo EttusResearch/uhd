@@ -182,14 +182,15 @@ public:
     udp_zero_copy_wsa_impl(
         const std::string &addr,
         const std::string &port,
+        zero_copy_xport_params& xport_params,
         const device_addr_t &hints
     ):
-        _recv_frame_size(size_t(hints.cast<double>("recv_frame_size", udp_simple::mtu))),
-        _num_recv_frames(size_t(hints.cast<double>("num_recv_frames", DEFAULT_NUM_FRAMES))),
-        _send_frame_size(size_t(hints.cast<double>("send_frame_size", udp_simple::mtu))),
-        _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_FRAMES))),
-        _recv_buffer_pool(buffer_pool::make(_num_recv_frames, _recv_frame_size)),
-        _send_buffer_pool(buffer_pool::make(_num_send_frames, _send_frame_size)),
+        _recv_frame_size(xport_params.recv_frame_size),
+        _num_recv_frames(xport_params.num_recv_frames),
+        _send_frame_size(xport_params.send_frame_size),
+        _num_send_frames(xport_params.num_send_frames),
+        _recv_buffer_pool(buffer_pool::make(xport_params.num_recv_frames, xport_params.recv_frame_size)),
+        _send_buffer_pool(buffer_pool::make(xport_params.num_send_frames, xport_params.send_frame_size)),
         _next_recv_buff_index(0), _next_send_buff_index(0)
     {
         #ifdef CHECK_REG_SEND_THRESH
@@ -294,7 +295,17 @@ private:
 udp_zero_copy::sptr udp_zero_copy::make(
     const std::string &addr,
     const std::string &port,
+    const zero_copy_xport_params &default_buff_args,
+    udp_zero_copy::buff_params& buff_params_out,
     const device_addr_t &hints
 ){
-    return sptr(new udp_zero_copy_wsa_impl(addr, port, hints));
+    //Initialize xport_params
+    zero_copy_xport_params xport_params = default_buff_args;
+
+    xport_params.recv_frame_size = size_t(hints.cast<double>("recv_frame_size", default_buff_args.recv_frame_size));
+    xport_params.num_recv_frames = size_t(hints.cast<double>("num_recv_frames", default_buff_args.num_recv_frames));
+    xport_params.send_frame_size = size_t(hints.cast<double>("send_frame_size", default_buff_args.send_frame_size));
+    xport_params.num_send_frames = size_t(hints.cast<double>("num_send_frames", default_buff_args.num_send_frames));
+    
+    return sptr(new udp_zero_copy_wsa_impl(addr, port, xport_params, hints));
 }

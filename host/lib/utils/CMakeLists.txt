@@ -87,6 +87,7 @@ CHECK_CXX_SOURCE_COMPILES("
 UNSET(CMAKE_REQUIRED_LIBRARIES)
 
 CHECK_CXX_SOURCE_COMPILES("
+    #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
     int main(){
         LoadLibrary(0);
@@ -136,6 +137,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/msg.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/platform.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/static.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tasks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp

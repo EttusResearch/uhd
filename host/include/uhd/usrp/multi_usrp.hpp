@@ -339,6 +339,26 @@ public:
     virtual std::vector<std::string> get_clock_sources(const size_t mboard) = 0;
 
     /*!
+     * Send the clock source to an output connector.
+     * This call is only applicable on devices with reference outputs.
+     * By default, the reference output will be enabled for ease of use.
+     * This call may be used to enable or disable the output.
+     * \param enb true to output the clock source.
+     * \param mboard which motherboard to set
+     */
+    virtual void set_clock_source_out(const bool enb, const size_t mboard = ALL_MBOARDS) = 0;
+
+    /*!
+     * Send the time source to an output connector.
+     * This call is only applicable on devices with PPS outputs.
+     * By default, the PPS output will be enabled for ease of use.
+     * This call may be used to enable or disable the output.
+     * \param enb true to output the time source.
+     * \param mboard which motherboard to set
+     */
+    virtual void set_time_source_out(const bool enb, const size_t mboard = ALL_MBOARDS) = 0;
+
+    /*!
      * Get the number of USRP motherboards in this configuration.
      */
     virtual size_t get_num_mboards(void) = 0;
@@ -855,6 +875,53 @@ public:
      * \param chan the channel index 0 to N-1
      */
     virtual void set_tx_iq_balance(const std::complex<double> &correction, size_t chan = ALL_CHANS) = 0;
+
+    /*******************************************************************
+     * GPIO methods
+     ******************************************************************/
+
+    /*!
+     * Enumerate gpio banks on the specified device.
+     * \param mboard the motherboard index 0 to M-1
+     * \return a list of string for each bank name
+     */
+    virtual std::vector<std::string> get_gpio_banks(const size_t mboard) = 0;
+
+    /*!
+     * Set a GPIO attribute on a particular GPIO bank.
+     * Possible attribute names:
+     *  - CTRL - 1 for ATR mode 0 for GPIO mode
+     *  - DDR - 1 for output 0 for input
+     *  - OUT - GPIO output level (not ATR mode)
+     *  - ATR_0X - ATR idle state
+     *  - ATR_RX - ATR receive only state
+     *  - ATR_TX - ATR transmit only state
+     *  - ATR_XX - ATR full duplex state
+     * \param bank the name of a GPIO bank
+     * \param attr the name of a GPIO attribute
+     * \param value the new value for this GPIO bank
+     * \param mask the bit mask to effect which pins are changed
+     * \param mboard the motherboard index 0 to M-1
+     */
+    virtual void set_gpio_attr(const std::string &bank, const std::string &attr, const boost::uint32_t value, const boost::uint32_t mask = 0xffffffff, const size_t mboard = 0) = 0;
+
+    /*!
+     * Get a GPIO attribute on a particular GPIO bank.
+     * Possible attribute names:
+     *  - CTRL - 1 for ATR mode 0 for GPIO mode
+     *  - DDR - 1 for output 0 for input
+     *  - OUT - GPIO output level (not ATR mode)
+     *  - ATR_0X - ATR idle state
+     *  - ATR_RX - ATR receive only state
+     *  - ATR_TX - ATR transmit only state
+     *  - ATR_XX - ATR full duplex state
+     *  - READBACK - readback input GPIOs
+     * \param bank the name of a GPIO bank
+     * \param attr the name of a GPIO attribute
+     * \param mboard the motherboard index 0 to M-1
+     * \return the value set for this attribute
+     */
+    virtual boost::uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard = 0) = 0;
 
 };
 

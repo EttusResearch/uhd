@@ -53,7 +53,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
 
     const uhd::fs_path mb_path = "/mboards/0";
     const std::string mb_name = tree->access<std::string>(mb_path / "name").get();
-    if (mb_name.find("USRP2") != std::string::npos or mb_name.find("N200") != std::string::npos or mb_name.find("N210") != std::string::npos){
+    if (mb_name.find("USRP2") != std::string::npos or mb_name.find("N200") != std::string::npos or mb_name.find("N210") != std::string::npos  or mb_name.find("X300") != std::string::npos  or mb_name.find("X310") != std::string::npos){
         usrp->set_tx_rate(12.5e6);
         usrp->set_rx_rate(12.5e6);
     }

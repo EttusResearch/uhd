@@ -153,7 +153,7 @@ For transmit, a burst is started when the user calls send(). The metadata should
     size_t num_tx_samps = tx_streamer->send(buffs, samps_to_send, md);
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Align LOs in the front-end (SBX/WBX + N-Series)
+Align LOs in the front-end (SBX, WBX, CBX)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Using timed commands, multiple frontends can be tuned at a specific time.
 This timed-tuning ensures that the phase offsets between VCO/PLL chains
@@ -163,7 +163,7 @@ will remain constant after each re-tune. See notes below:
 * This phase offset is different for different LO frequencies
 * This phase offset remains constant after retuning
 
-  * Due to divider, WBX phase offset will be randomly +/- 180 deg after re-tune
+  * Due to a divider, WBX phase offset will be randomly +/- 180 deg after re-tune
 
 * This phase offset will drift over time due to thermal and other characteristics
 * Periodic calibration will be necessary for phase-coherent applications

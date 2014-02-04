@@ -33,6 +33,7 @@ UHD_STATIC_BLOCK(reg_sbx_dboards){
     dboard_manager::register_dboard(0x0054, 0x0055, &make_sbx, "SBX");
     dboard_manager::register_dboard(0x0065, 0x0064, &make_sbx, "SBX v4");
     dboard_manager::register_dboard(0x0067, 0x0066, &make_sbx, "CBX");
+    dboard_manager::register_dboard(0x0069, 0x0068, &make_sbx, "SBX v5");
     dboard_manager::register_dboard(0x0083, 0x0082, &make_sbx, "SBX-120");
     dboard_manager::register_dboard(0x0085, 0x0084, &make_sbx, "CBX-120");
 }
@@ -126,6 +127,10 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
         case 0x0067:
             db_actual = sbx_versionx_sptr(new cbx(this));
             freq_range = cbx_freq_range;
+            break;
+        case 0x0069:
+            db_actual = sbx_versionx_sptr(new sbx_version4(this));
+            freq_range = sbx_freq_range;
             break;
         case 0x0083:
             db_actual = sbx_versionx_sptr(new sbx_version4(this));

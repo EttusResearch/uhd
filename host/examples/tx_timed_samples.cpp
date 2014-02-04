@@ -31,6 +31,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
+    std::string wire;
     double seconds_in_future;
     size_t total_num_samps;
     double rate;
@@ -41,6 +42,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
+        ("wire", po::value<std::string>(&wire)->default_value(""), "the over the wire type, sc16, sc8, etc")
         ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to transmit")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to transmit")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
@@ -74,7 +76,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     usrp->set_time_now(uhd::time_spec_t(0.0));
 
     //create a transmit streamer
-    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::stream_args_t stream_args("fc32", wire); //complex floats
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //allocate buffer with data to send

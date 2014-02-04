@@ -80,13 +80,26 @@ struct convert_star_1_to_sc12_item32_1 : public converter
     void operator()(const input_type &inputs, const output_type &outputs, const size_t nsamps)
     {
         const std::complex<type> *input = reinterpret_cast<const std::complex<type> *>(inputs[0]);
-        item32_sc12_3x *output = reinterpret_cast<item32_sc12_3x *>(size_t(outputs[0]) & ~0x3);
+
+        /*
+         * Effectively outputs will point to a managed_buffer instance. These buffers are 32 bit aligned.
+         * For a detailed description see comments in 'convert_unpack_sc12.cpp'.
+         */
+        const size_t head_samps = size_t(inputs[0]) & 0x3;
+        size_t rewind = 0;
+        switch(head_samps)
+        {
+            case 0: break;
+            case 1: rewind = 9; break;
+            case 2: rewind = 6; break;
+            case 3: rewind = 3; break;
+        }
+        item32_sc12_3x *output = reinterpret_cast<item32_sc12_3x *>(size_t(outputs[0]) - rewind);
 
         //helper variables
         size_t i = 0, o = 0;
 
         //handle the head case
-        const size_t head_samps = size_t(outputs[0]) & 0x3;
         switch (head_samps)
         {
         case 0: break; //no head

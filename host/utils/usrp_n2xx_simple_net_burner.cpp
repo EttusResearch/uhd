@@ -511,6 +511,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         verify_image(udp_transport, true, fw_image, flash_info[1], fw_image_size);
     }
 
+    delete(flash_info);
+
     //Reset USRP N2XX
     bool reset = false;
     if(auto_reboot) reset = true;

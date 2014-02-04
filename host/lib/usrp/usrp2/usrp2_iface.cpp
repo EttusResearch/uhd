@@ -36,6 +36,7 @@
 #include <boost/filesystem.hpp>
 #include <algorithm>
 #include <iostream>
+#include <uhd/utils/platform.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -61,33 +62,6 @@ static const boost::uint32_t MIN_PROTO_COMPAT_I2C = 7;
 // and the compatibility of the register mapping (more likely to change).
 static const boost::uint32_t MIN_PROTO_COMPAT_REG = 10;
 static const boost::uint32_t MIN_PROTO_COMPAT_UART = 7;
-
-//Define get_gpid() to get a globally unique identifier for this process.
-//The gpid is implemented as a hash of the pid and a unique machine identifier.
-#ifdef UHD_PLATFORM_WIN32
-#include <Windows.h>
-static inline size_t get_gpid(void){
-    //extract volume serial number
-    char szVolName[MAX_PATH+1], szFileSysName[MAX_PATH+1];
-    DWORD dwSerialNumber, dwMaxComponentLen, dwFileSysFlags;
-    GetVolumeInformation("C:\\", szVolName, MAX_PATH,
-        &dwSerialNumber, &dwMaxComponentLen,
-        &dwFileSysFlags, szFileSysName, sizeof(szFileSysName));
-
-    size_t hash = 0;
-    boost::hash_combine(hash, GetCurrentProcessId());
-    boost::hash_combine(hash, dwSerialNumber);
-    return hash;
-}
-#else
-#include <unistd.h>
-static inline size_t get_gpid(void){
-    size_t hash = 0;
-    boost::hash_combine(hash, getpid());
-    boost::hash_combine(hash, gethostid());
-    return hash;
-}
-#endif
 
 class usrp2_iface_impl : public usrp2_iface{
 public:
@@ -122,7 +96,7 @@ public:
 
     void lock_device(bool lock){
         if (lock){
-            this->pokefw(U2_FW_REG_LOCK_GPID, boost::uint32_t(get_gpid()));
+            this->pokefw(U2_FW_REG_LOCK_GPID, get_process_hash());
             _lock_task = task::make(boost::bind(&usrp2_iface_impl::lock_task, this));
         }
         else{
@@ -147,7 +121,7 @@ public:
         if (time_diff >= lock_timeout_time) return false;
 
         //otherwise only lock if the device hash is different that ours
-        return lock_gpid != boost::uint32_t(get_gpid());
+        return lock_gpid != get_process_hash();
     }
 
     void lock_task(void){

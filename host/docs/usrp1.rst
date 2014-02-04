@@ -1,5 +1,5 @@
 ========================================================================
-UHD - USRP1 Application Notes
+UHD - USRP1 Device Manual
 ========================================================================
 
 .. contents:: Table of Contents
@@ -8,12 +8,20 @@ UHD - USRP1 Application Notes
 Comparative features list
 ------------------------------------------------------------------------
 
-* 2 transceiver card slots
-* 2 RX DDC chains in FPGA
-* 2 TX DUC chains in FPGA (no TX CORDIC -> uses DAC)
-* 64 MHz fixed clock rate
-* sc16 sample modes
-* sc8 sample mode - RX only
+**Hardware Capabilities:**
+ * 2 transceiver card slots
+ * 64 MHz fixed clock rate
+
+**FPGA Capabilities:**
+ * 2 RX DDC chains in FPGA
+ * 2 TX DUC chains in FPGA (no TX CORDIC -> uses DAC)
+ * sc16 sample modes - RX & TX
+
+   - Up to 8 MHz of RF BW with 16-bit samples
+
+ * sc8 sample mode - RX only
+
+   - Up to 16 MHz of RF BW with 8-bit samples
 
 ------------------------------------------------------------------------
 Specify a Non-standard Image
@@ -93,7 +101,7 @@ so UHD software can initialize with the correct clock rate.
 Run the following commands to record the setting into the EEPROM:
 ::
 
-    cd <install-path>/share/uhd/utils
+    cd <install-path>/lib/uhd/utils
     ./usrp_burn_mb_eeprom --args=<optional device args> --key=mcr --val=<rate>
 
 The user may override the clock rate specified in the EEPROM by using a device address:

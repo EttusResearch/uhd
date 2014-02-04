@@ -158,14 +158,14 @@ public:
     udp_zero_copy_asio_impl(
         const std::string &addr,
         const std::string &port,
-        const device_addr_t &hints
+        const zero_copy_xport_params& xport_params
     ):
-        _recv_frame_size(size_t(hints.cast<double>("recv_frame_size", udp_simple::mtu))),
-        _num_recv_frames(size_t(hints.cast<double>("num_recv_frames", DEFAULT_NUM_FRAMES))),
-        _send_frame_size(size_t(hints.cast<double>("send_frame_size", udp_simple::mtu))),
-        _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_FRAMES))),
-        _recv_buffer_pool(buffer_pool::make(_num_recv_frames, _recv_frame_size)),
-        _send_buffer_pool(buffer_pool::make(_num_send_frames, _send_frame_size)),
+        _recv_frame_size(xport_params.recv_frame_size),
+        _num_recv_frames(xport_params.num_recv_frames),
+        _send_frame_size(xport_params.send_frame_size),
+        _num_send_frames(xport_params.num_send_frames),
+        _recv_buffer_pool(buffer_pool::make(xport_params.num_recv_frames, xport_params.recv_frame_size)),
+        _send_buffer_pool(buffer_pool::make(xport_params.num_send_frames, xport_params.send_frame_size)),
         _next_recv_buff_index(0), _next_send_buff_index(0)
     {
         UHD_LOG << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
@@ -256,11 +256,12 @@ private:
 /***********************************************************************
  * UDP zero copy make function
  **********************************************************************/
-template<typename Opt> static void resize_buff_helper(
+template<typename Opt> static size_t resize_buff_helper(
     udp_zero_copy_asio_impl::sptr udp_trans,
     const size_t target_size,
     const std::string &name
 ){
+    size_t actual_size = 0;
     std::string help_message;
     #if defined(UHD_PLATFORM_LINUX)
         help_message = str(boost::format(
@@ -270,7 +271,7 @@ template<typename Opt> static void resize_buff_helper(
 
     //resize the buffer if size was provided
     if (target_size > 0){
-        size_t actual_size = udp_trans->resize_buff<Opt>(target_size);
+        actual_size = udp_trans->resize_buff<Opt>(target_size);
         UHD_LOG << boost::format(
             "Target %s sock buff size: %d bytes\n"
             "Actual %s sock buff size: %d bytes"
@@ -282,24 +283,54 @@ template<typename Opt> static void resize_buff_helper(
             "See the transport application notes on buffer resizing.\n%s"
         ) % name % target_size % actual_size % help_message;
     }
+
+    return actual_size;
 }
 
 udp_zero_copy::sptr udp_zero_copy::make(
     const std::string &addr,
     const std::string &port,
+    const zero_copy_xport_params &default_buff_args,
+    udp_zero_copy::buff_params& buff_params_out,
     const device_addr_t &hints
 ){
-    udp_zero_copy_asio_impl::sptr udp_trans(
-        new udp_zero_copy_asio_impl(addr, port, hints)
-    );
+    //Initialize xport_params
+    zero_copy_xport_params xport_params = default_buff_args;
+
+    xport_params.recv_frame_size = size_t(hints.cast<double>("recv_frame_size", default_buff_args.recv_frame_size));
+    xport_params.num_recv_frames = size_t(hints.cast<double>("num_recv_frames", default_buff_args.num_recv_frames));
+    xport_params.send_frame_size = size_t(hints.cast<double>("send_frame_size", default_buff_args.send_frame_size));
+    xport_params.num_send_frames = size_t(hints.cast<double>("num_send_frames", default_buff_args.num_send_frames));
 
     //extract buffer size hints from the device addr
-    size_t recv_buff_size = size_t(hints.cast<double>("recv_buff_size", 0.0));
-    size_t send_buff_size = size_t(hints.cast<double>("send_buff_size", 0.0));
+    size_t usr_recv_buff_size = size_t(hints.cast<double>("recv_buff_size", 0.0));
+    size_t usr_send_buff_size = size_t(hints.cast<double>("send_buff_size", 0.0));
+
+    if (hints.has_key("recv_buff_size")) {
+        if (usr_recv_buff_size < xport_params.recv_frame_size * xport_params.num_recv_frames) {
+            throw uhd::value_error((boost::format(
+                "recv_buff_size must be equal to or greater than (num_recv_frames * recv_frame_size) where num_recv_frames=%d, recv_frame_size=%d")
+                % xport_params.num_recv_frames % xport_params.recv_frame_size).str());
+        }
+    }
+
+    if (hints.has_key("send_buff_size")) {
+        if (usr_send_buff_size < xport_params.send_frame_size * xport_params.num_send_frames) {
+            throw uhd::value_error((boost::format(
+                "send_buff_size must be equal to or greater than (num_send_frames * send_frame_size) where num_send_frames=%d, send_frame_size=%d")
+                % xport_params.num_send_frames % xport_params.send_frame_size).str());
+        }
+    }
+
+    udp_zero_copy_asio_impl::sptr udp_trans(
+        new udp_zero_copy_asio_impl(addr, port, xport_params)
+    );
 
     //call the helper to resize send and recv buffers
-    resize_buff_helper<asio::socket_base::receive_buffer_size>(udp_trans, recv_buff_size, "recv");
-    resize_buff_helper<asio::socket_base::send_buffer_size>   (udp_trans, send_buff_size, "send");
+    buff_params_out.recv_buff_size =
+        resize_buff_helper<asio::socket_base::receive_buffer_size>(udp_trans, usr_recv_buff_size, "recv");
+    buff_params_out.send_buff_size =
+        resize_buff_helper<asio::socket_base::send_buffer_size>   (udp_trans, usr_send_buff_size, "send");
 
     return udp_trans;
 }

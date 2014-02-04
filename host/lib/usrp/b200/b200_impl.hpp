@@ -80,8 +80,9 @@ static const boost::uint32_t B200_LOCAL_RESP_SID = FLIP_SID(B200_LOCAL_CTRL_SID)
  **********************************************************************/
 
 //! Implementation guts
-struct b200_impl : public uhd::device
+class b200_impl : public uhd::device
 {
+public:
     //structors
     b200_impl(const uhd::device_addr_t &);
     ~b200_impl(void);
@@ -91,8 +92,7 @@ struct b200_impl : public uhd::device
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
-    uhd::property_tree::sptr _tree;
-
+private:
     //controllers
     b200_iface::sptr _iface;
     radio_ctrl_core_3000::sptr _local_ctrl;
@@ -104,13 +104,7 @@ struct b200_impl : public uhd::device
     //transports
     uhd::transport::zero_copy_if::sptr _data_transport;
     uhd::transport::zero_copy_if::sptr _ctrl_transport;
-    boost::shared_ptr<uhd::usrp::recv_packet_demuxer_3000> _demux;
-
-    //device properties interface
-    uhd::property_tree::sptr get_tree(void) const
-    {
-        return _tree;
-    }
+    uhd::usrp::recv_packet_demuxer_3000::sptr _demux;
 
     boost::weak_ptr<uhd::rx_streamer> _rx_streamer;
     boost::weak_ptr<uhd::tx_streamer> _tx_streamer;

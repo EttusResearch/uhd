@@ -30,6 +30,26 @@ namespace uhd{
      * The receive routines will convert IF data headers into metadata.
      */
     struct UHD_API rx_metadata_t{
+
+        //! Default constructor.
+        rx_metadata_t()
+        {
+            reset();
+        }
+
+        //! Reset values.
+        void reset()
+        {
+            has_time_spec = false;
+            time_spec = time_spec_t(0.0);
+            more_fragments = false;
+            fragment_offset = 0;
+            start_of_burst = false;
+            end_of_burst = false;
+            error_code = ERROR_CODE_NONE;
+            out_of_sequence = false;
+        }
+
         //! Has time specification?
         bool has_time_spec;
 
@@ -80,13 +100,23 @@ namespace uhd{
             ERROR_CODE_LATE_COMMAND = 0x2,
             //! Expected another stream command.
             ERROR_CODE_BROKEN_CHAIN = 0x4,
-            //! An internal receive buffer has filled.
+            /*!
+             * An internal receive buffer has filled or a sequence error has been detected.
+             * So, why is this overloaded?  Simple: legacy support. It would have been much cleaner
+             * to create a separate error code for a sequence error, but that would have broken
+             * legacy applications.  So, the out_of_sequence flag was added to differentiate between
+             * the two error cases.  In either case, data is missing between this time_spec and the
+             * and the time_spec of the next successful receive.
+             */
             ERROR_CODE_OVERFLOW     = 0x8,
             //! Multi-channel alignment failed.
             ERROR_CODE_ALIGNMENT    = 0xc,
             //! The packet could not be parsed.
             ERROR_CODE_BAD_PACKET   = 0xf
         } error_code;
+
+        //! Out of sequence.  The transport has either dropped a packet or received data out of order.
+        bool out_of_sequence;
     };
 
     /*!

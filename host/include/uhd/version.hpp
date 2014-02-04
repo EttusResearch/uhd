@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  * The format is oldest API compatible release - ABI compat number.
  * The compatibility number allows pre-release ABI to be versioned.
  */
-#define UHD_VERSION_ABI_STRING "3.6.0-1"
+#define UHD_VERSION_ABI_STRING "3.7.0-0"
 
 namespace uhd{
 

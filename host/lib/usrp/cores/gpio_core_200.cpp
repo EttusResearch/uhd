@@ -45,8 +45,8 @@ public:
     void set_gpio_ddr(const unit_t unit, const boost::uint16_t value){
         _gpio_ddr[unit] = value; //shadow
         _iface->poke32(REG_GPIO_DDR, //update the 32 bit register
-            (boost::uint32_t(_gpio_ddr[dboard_iface::UNIT_RX]) << unit2shit(dboard_iface::UNIT_RX)) |
-            (boost::uint32_t(_gpio_ddr[dboard_iface::UNIT_TX]) << unit2shit(dboard_iface::UNIT_TX))
+            (boost::uint32_t(_gpio_ddr[dboard_iface::UNIT_RX]) << shift_by_unit(dboard_iface::UNIT_RX)) |
+            (boost::uint32_t(_gpio_ddr[dboard_iface::UNIT_TX]) << shift_by_unit(dboard_iface::UNIT_TX))
         );
     }
 
@@ -56,7 +56,7 @@ public:
     }
 
     boost::uint16_t read_gpio(const unit_t unit){
-        return boost::uint16_t(_iface->peek32(_rb_addr) >> unit2shit(unit));
+        return boost::uint16_t(_iface->peek32(_rb_addr) >> shift_by_unit(unit));
     }
 
 private:
@@ -68,7 +68,7 @@ private:
     uhd::dict<unit_t, boost::uint16_t> _pin_ctrl, _gpio_out, _gpio_ddr;
     uhd::dict<unit_t, uhd::dict<atr_reg_t, boost::uint16_t> > _atr_regs;
 
-    unsigned unit2shit(const unit_t unit){
+    unsigned shift_by_unit(const unit_t unit){
         return (unit == dboard_iface::UNIT_RX)? 0 : 16;
     }
 
@@ -81,16 +81,16 @@ private:
 
     void update(const atr_reg_t atr, const size_t addr){
         const boost::uint32_t atr_val =
-            (boost::uint32_t(_atr_regs[dboard_iface::UNIT_RX][atr]) << unit2shit(dboard_iface::UNIT_RX)) |
-            (boost::uint32_t(_atr_regs[dboard_iface::UNIT_TX][atr]) << unit2shit(dboard_iface::UNIT_TX));
+            (boost::uint32_t(_atr_regs[dboard_iface::UNIT_RX][atr]) << shift_by_unit(dboard_iface::UNIT_RX)) |
+            (boost::uint32_t(_atr_regs[dboard_iface::UNIT_TX][atr]) << shift_by_unit(dboard_iface::UNIT_TX));
 
         const boost::uint32_t gpio_val =
-            (boost::uint32_t(_gpio_out[dboard_iface::UNIT_RX]) << unit2shit(dboard_iface::UNIT_RX)) |
-            (boost::uint32_t(_gpio_out[dboard_iface::UNIT_TX]) << unit2shit(dboard_iface::UNIT_TX));
+            (boost::uint32_t(_gpio_out[dboard_iface::UNIT_RX]) << shift_by_unit(dboard_iface::UNIT_RX)) |
+            (boost::uint32_t(_gpio_out[dboard_iface::UNIT_TX]) << shift_by_unit(dboard_iface::UNIT_TX));
 
         const boost::uint32_t ctrl =
-            (boost::uint32_t(_pin_ctrl[dboard_iface::UNIT_RX]) << unit2shit(dboard_iface::UNIT_RX)) |
-            (boost::uint32_t(_pin_ctrl[dboard_iface::UNIT_TX]) << unit2shit(dboard_iface::UNIT_TX));
+            (boost::uint32_t(_pin_ctrl[dboard_iface::UNIT_RX]) << shift_by_unit(dboard_iface::UNIT_RX)) |
+            (boost::uint32_t(_pin_ctrl[dboard_iface::UNIT_TX]) << shift_by_unit(dboard_iface::UNIT_TX));
         const boost::uint32_t val = (ctrl & atr_val) | ((~ctrl) & gpio_val);
         if (not _update_cache.has_key(addr) or _update_cache[addr] != val)
         {

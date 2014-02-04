@@ -38,7 +38,7 @@ using namespace boost::algorithm;
 using namespace boost::this_thread;
 
 /*!
- * A GPS control for NMEA compatible GPSes
+ * A control for GPSDO devices
  */
 
 class gps_ctrl_impl : public gps_ctrl{
@@ -63,7 +63,7 @@ private:
   }
 
   std::string update_cached_sensors(const std::string sensor) {
-    if(not gps_detected() || (gps_type != GPS_TYPE_ER_GPSDO)) {
+    if(not gps_detected() || (gps_type != GPS_TYPE_INTERNAL_GPSDO)) {
         UHD_MSG(error) << "get_stat(): unsupported GPS or no GPS detected";
         return std::string();
     }
@@ -105,18 +105,19 @@ public:
     bool i_heard_some_nmea = false, i_heard_something_weird = false;
     gps_type = GPS_TYPE_NONE;
 
+    //first we look for an internal GPSDO
     _flush(); //get whatever junk is in the rx buffer right now, and throw it away
     _send("HAAAY GUYYYYS\n"); //to elicit a response from the GPSDO
 
     //wait for _send(...) to return
-    sleep(milliseconds(200));
+    sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
 
     //then we loop until we either timeout, or until we get a response that indicates we're a JL device
     const boost::system_time comm_timeout = boost::get_system_time() + milliseconds(GPS_COMM_TIMEOUT_MS);
     while(boost::get_system_time() < comm_timeout) {
       reply = _recv();
       if(reply.find("Command Error") != std::string::npos) {
-        gps_type = GPS_TYPE_ER_GPSDO;
+        gps_type = GPS_TYPE_INTERNAL_GPSDO;
         break;
       }
       else if(reply.substr(0, 3) == "$GP") i_heard_some_nmea = true; //but keep looking for that "Command Error" response
@@ -124,24 +125,25 @@ public:
       sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
     }
 
-    if((i_heard_some_nmea) && (gps_type != GPS_TYPE_ER_GPSDO)) gps_type = GPS_TYPE_GENERIC_NMEA;
+    if((i_heard_some_nmea) && (gps_type != GPS_TYPE_INTERNAL_GPSDO)) gps_type = GPS_TYPE_GENERIC_NMEA;
 
     if((gps_type == GPS_TYPE_NONE) && i_heard_something_weird) {
       UHD_MSG(error) << "GPS invalid reply \"" << reply << "\", assuming none available" << std::endl;
     }
 
     switch(gps_type) {
-    case GPS_TYPE_ER_GPSDO:
-      UHD_MSG(status) << "Found an Ettus Research NMEA-capable GPSDO" << std::endl;
+    case GPS_TYPE_INTERNAL_GPSDO:
+      UHD_MSG(status) << "Found an internal GPSDO" << std::endl;
       init_gpsdo();
       break;
 
     case GPS_TYPE_GENERIC_NMEA:
-      if(gps_type == GPS_TYPE_GENERIC_NMEA) UHD_MSG(status) << "Found a generic NMEA GPS device" << std::endl;
+      UHD_MSG(status) << "Found a generic NMEA GPS device" << std::endl;
       break;
 
     case GPS_TYPE_NONE:
     default:
+      UHD_MSG(status) << "No GPSDO found" << std::endl;
       break;
 
     }
@@ -189,19 +191,19 @@ private:
     //issue some setup stuff so it spits out the appropriate data
     //none of these should issue replies so we don't bother looking for them
     //we have to sleep between commands because the JL device, despite not acking, takes considerable time to process each command.
-     sleep(milliseconds(200));
+     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
     _send("SYST:COMM:SER:ECHO OFF\n");
-     sleep(milliseconds(200));
+     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
     _send("SYST:COMM:SER:PRO OFF\n");
-     sleep(milliseconds(200));
+     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
     _send("GPS:GPGGA 1\n");
-     sleep(milliseconds(200));
+     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
     _send("GPS:GGAST 0\n");
-     sleep(milliseconds(200));
+     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
     _send("GPS:GPRMC 1\n");
-     sleep(milliseconds(200));
+     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
     _send("SERV:TRAC 0\n");
-     sleep(milliseconds(200));
+     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
   }
 
   //retrieve a raw NMEA sentence
@@ -304,7 +306,7 @@ private:
 
     //enable servo reporting
     _send("SERV:TRAC 1\n");
-    sleep(milliseconds(200));
+    sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
 
     std::string reply;
 
@@ -339,7 +341,7 @@ private:
   }
 
   enum {
-    GPS_TYPE_ER_GPSDO,
+    GPS_TYPE_INTERNAL_GPSDO,
     GPS_TYPE_GENERIC_NMEA,
     GPS_TYPE_NONE
   } gps_type;
@@ -351,6 +353,7 @@ private:
   static const int GPS_SERVO_FRESHNESS = 2500;
   static const int GPS_LOCK_FRESHNESS = 2500;
   static const int GPS_TIMEOUT_DELAY_MS = 200;
+  static const int GPSDO_STUPID_DELAY_MS = 200;
 };
 
 /***********************************************************************

@@ -36,6 +36,7 @@ SET(example_sources
     tx_waveforms.cpp
     txrx_loopback_to_file.cpp
     latency_test.cpp
+    fpgpio.cpp
 )
 
 #for each source: build an executable and install

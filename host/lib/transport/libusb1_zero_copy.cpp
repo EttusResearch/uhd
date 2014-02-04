@@ -31,6 +31,12 @@
 #include <boost/thread/condition_variable.hpp>
 #include <list>
 
+#ifdef UHD_TXRX_DEBUG_PRINTS
+#include <vector>
+#include <fstream>
+#include <boost/format.hpp>
+#endif
+
 using namespace uhd;
 using namespace uhd::transport;
 
@@ -69,12 +75,23 @@ struct lut_result_t
         completed = 0;
         status = LIBUSB_TRANSFER_COMPLETED;
         actual_length = 0;
+#ifdef UHD_TXRX_DEBUG_PRINTS
+        start_time = 0;
+        buff_num = -1;
+#endif
     }
     int completed;
     libusb_transfer_status status;
     int actual_length;
     boost::mutex mut;
     boost::condition_variable usb_transfer_complete;
+
+#ifdef UHD_TXRX_DEBUG_PRINTS
+    // These are fore debugging
+    long start_time;
+    int buff_num;
+    bool is_recv;
+#endif
 };
 
 // Created to be used as an argument to boost::condition_variable::timed_wait() function
@@ -83,6 +100,14 @@ struct lut_result_completed {
     lut_result_completed(const lut_result_t& result):_result(result) {}
     bool operator()() const {return (_result.completed ? true : false);}
 };
+
+#ifdef UHD_TXRX_DEBUG_PRINTS
+static std::string dbg_prefix("libusb1_zero_copy,");
+static void libusb1_zerocopy_dbg_print_err(std::string msg){
+	msg = dbg_prefix + msg;
+	fprintf(stderr, "%s\n", msg.c_str());
+}
+#endif
 
 /*!
  * All libusb callback functions should be marked with the LIBUSB_CALL macro
@@ -98,6 +123,10 @@ static void LIBUSB_CALL libusb_async_cb(libusb_transfer *lut)
     r->actual_length = lut->actual_length;
     r->completed = 1;
     r->usb_transfer_complete.notify_one();  // wake up thread waiting in wait_for_completion() member function below
+#ifdef UHD_TXRX_DEBUG_PRINTS
+    long end_time = boost::get_system_time().time_of_day().total_microseconds();
+    libusb1_zerocopy_dbg_print_err( (boost::format("libusb_async_cb,%s,%i,%i,%i,%ld,%ld") % (r->is_recv ? "rx":"tx") % r->buff_num % r->actual_length % r->status % end_time % r->start_time).str() );
+#endif
 }
 
 /***********************************************************************
@@ -113,11 +142,18 @@ public:
         _ctx(libusb::session::get_global_session()->get_context()),
         _lut(lut), _frame_size(frame_size) { /* NOP */ }
 
-    void release(void){_release_cb(this);}
+    void release(void){
+    	_release_cb(this);
+    }
 
     UHD_INLINE void submit(void)
     {
-        _lut->length = (_is_recv)? _frame_size : size(); //always set length
+    	_lut->length = (_is_recv)? _frame_size : size(); //always set length
+#ifdef UHD_TXRX_DEBUG_PRINTS
+        result.start_time = boost::get_system_time().time_of_day().total_microseconds();
+        result.buff_num = num();
+        result.is_recv = _is_recv;
+#endif
         const int ret = libusb_submit_transfer(_lut);
         if (ret != 0) throw uhd::runtime_error(str(boost::format(
             "usb %s submit failed: %s") % _name % libusb_error_name(ret)));
@@ -160,7 +196,6 @@ public:
     }
 
 private:
-
     boost::function<void(libusb_zero_copy_mb *)> _release_cb;
     const bool _is_recv;
     const std::string _name;
@@ -214,7 +249,7 @@ public:
             UHD_ASSERT_THROW(lut != NULL);
 
             _mb_pool.push_back(boost::make_shared<libusb_zero_copy_mb>(
-                lut, this->get_frame_size(), boost::bind(&libusb_zero_copy_single::enqueue_damn_buffer, this, _1), is_recv, name
+                lut, this->get_frame_size(), boost::bind(&libusb_zero_copy_single::enqueue_buffer, this, _1), is_recv, name
             ));
 
             libusb_fill_bulk_transfer(
@@ -304,7 +339,7 @@ private:
     //! why 2 queues? there is room in the future to have > N buffers but only N in flight
     boost::circular_buffer<libusb_zero_copy_mb *> _enqueued, _released;
 
-    void enqueue_damn_buffer(libusb_zero_copy_mb *mb)
+    void enqueue_buffer(libusb_zero_copy_mb *mb)
     {
         boost::mutex::scoped_lock l(_mutex);
         _released.push_back(mb);

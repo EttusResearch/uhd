@@ -53,9 +53,9 @@ static device_addrs_t b200_find(const device_addr_t &hint)
     //return an empty list of addresses when type is set to non-b200
     if (hint.has_key("type") and hint["type"] != "b200") return b200_addrs;
 
-    //Return an empty list of addresses when an address is specified,
-    //since an address is intended for a different, non-USB, device.
-    if (hint.has_key("addr")) return b200_addrs;
+    //Return an empty list of addresses when an address or resource is specified,
+    //since an address and resource is intended for a different, non-USB, device.
+    if (hint.has_key("addr") || hint.has_key("resource")) return b200_addrs;
 
     unsigned int vid, pid;
 
@@ -332,7 +332,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
         data_xport_args    // param hints
     );
     while (_data_transport->get_recv_buff(0.0)){} //flush ctrl xport
-    _demux.reset(new recv_packet_demuxer_3000(_data_transport));
+    _demux = recv_packet_demuxer_3000::make(_data_transport);
 
     ////////////////////////////////////////////////////////////////////
     // Init codec - turns on clocks

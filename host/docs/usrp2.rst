@@ -1,5 +1,5 @@
 ========================================================================
-UHD - USRP2 and N2X0 Series Application Notes
+UHD - USRP2 and N2x0 Series Device Manual
 ========================================================================
 
 .. contents:: Table of Contents
@@ -8,23 +8,29 @@ UHD - USRP2 and N2X0 Series Application Notes
 Comparative features list
 ------------------------------------------------------------------------
 
-* 1 transceiver card slot
-* 2 RX DDC chains in FPGA
-* 1 TX DUC chain in FPGA
-* Timed commands in FPGA (N2x0 only)
-* Timed sampling in FPGA
-* External PPS reference
-* External 10MHz reference
-* MIMO cable shared reference
-* Fixed 100 MHz clock rate
-* Internal GPSDO option (N2x0 only)
-* sc8 and sc16 sample modes
+**Hardware Capabilities:**
+ * 1 transceiver card slot
+ * External PPS reference input
+ * External 10 MHz reference input
+ * MIMO cable shared reference
+ * Fixed 100 MHz clock rate
+ * Internal GPSDO option (N2x0 only)
+
+**FPGA Capabilities:**
+ * 2 RX DDC chains in FPGA
+ * 1 TX DUC chain in FPGA
+ * Timed commands in FPGA (N2x0 only)
+ * Timed sampling in FPGA
+ * 16-bit and 8-bit sample modes (sc8 and sc16)
+
+   * Up to 25 MHz of RF BW with 16-bit samples
+   * Up to 50 MHz of RF BW with 8-bit samples
 
 ------------------------------------------------------------------------
 Load the Images onto the SD card (USRP2 only)
 ------------------------------------------------------------------------
 **Warning!**
-Use **usrp2_card_burner.py** with caution. If you specify the wrong device node,
+Use **usrp2_card_burner** with caution. If you specify the wrong device node,
 you could overwrite your hard drive. Make sure that **--dev=** specifies the SD card.
 
 **Warning!**
@@ -41,11 +47,11 @@ Use the card burner tool (UNIX)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    sudo <install-path>/share/uhd/utils/usrp2_card_burner_gui.py
+    sudo <install-path>/lib/uhd/utils/usrp2_card_burner_gui.py
 
     -- OR --
 
-    cd <install-path>/share/uhd/utils
+    cd <install-path>/lib/uhd/utils
     sudo ./usrp2_card_burner.py --dev=/dev/sd<XXX> --fpga=<path_to_fpga_image>
     sudo ./usrp2_card_burner.py --dev=/dev/sd<XXX> --fw=<path_to_firmware_image>
 
@@ -58,51 +64,46 @@ Use the card burner tool (Windows)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    <path_to_python.exe> <install-path>/share/uhd/utils/usrp2_card_burner_gui.py
+    <path_to_python.exe> <install-path>/lib/uhd/utils/usrp2_card_burner_gui.py
 
 ------------------------------------------------------------------------
 Load the Images onto the On-board Flash (USRP-N Series only)
 ------------------------------------------------------------------------
-The USRP-N Series can be reprogrammed over the network
-to update or change the firmware and FPGA images.
+The USRP-N Series can be reprogrammed over the network to update or change the firmware and FPGA images.
 When updating images, always burn both the FPGA and firmware images before power cycling.
 This ensures that when the device reboots, it has a compatible set of images to boot into.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use the net burner tool
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+::
+
+    Use default images:
+    usrp_n2xx_simple_net_burner --addr=<IP address>
+
+    Use custom-built images:
+    usrp_n2xx_simple_net_burner --addr=<IP address> --fw=<firmware path> --fpga=<FPGA path>
 
 **Note:**
 Different hardware revisions require different FPGA images.
 Determine the revision number from the sticker on the rear of the chassis.
 Use this number to select the correct FPGA image for your device.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Use the net burner tool (UNIX)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+For users who would prefer a graphical utility, a Python-based alternative exists.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use the graphical net burner tool (Linux)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    <install-path>/share/uhd/utils/usrp_n2xx_net_burner_gui.py
+    <install-path>/lib/uhd/utils/usrp_n2xx_net_burner_gui.py
 
-    -- OR --
-
-    cd <install-path>/share/uhd/utils
-    ./usrp_n2xx_net_burner.py --addr=<ip address> --fw=<path for firmware image>
-    ./usrp_n2xx_net_burner.py --addr=<ip address> --fpga=<path to FPGA image>
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Use the net burner tool (Windows)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use the graphical net burner tool (Windows)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
 
-    <path_to_python.exe> <install-path>/share/uhd/utils/usrp_n2xx_net_burner_gui.py
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Burning images without Python
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-For users who do not wish to install Python, a new script is available in UHD 003.005.000:
-the USRP N2XX Simple Net Burner. It provides the same functionality as its Python
-counterpart, but by default, it automatically installs the default images without the user needing
-to specify their location on the command line.
-
-The utility can be found at: **<install-path>/share/uhd/utils/usrp_n2xx_simple_net_burner**
+    <path_to_python.exe> <install-path>/lib/uhd/utils/usrp_n2xx_net_burner_gui.py
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Device recovery and bricking
@@ -190,7 +191,7 @@ and the network must be setup properly as described above.
 Run the following commands:
 ::
 
-    cd <install-path>/share/uhd/utils
+    cd <install-path>/lib/uhd/utils
     ./usrp_burn_mb_eeprom --args=<optional device args> --key=ip-addr --val=192.168.10.3
 
 **Method 2 (Linux Only):**
@@ -199,7 +200,7 @@ It uses raw Ethernet packets to bypass the IP/UDP layer to communicate with the 
 Run the following commands:
 ::
 
-    cd <install-path>/share/uhd/utils
+    cd <install-path>/lib/uhd/utils
     sudo ./usrp2_recovery.py --ifc=eth0 --new-ip=192.168.10.3
 
 ------------------------------------------------------------------------
@@ -271,11 +272,11 @@ Addressing the Device
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Single device configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In a single-device configuration,
-the USRP device must have a unique IPv4 address on the host computer.
-The USRP can be identified through its IPv4 address, resolvable hostname, or by other means.
-See the application notes on `device identification <./identification.html>`_.
-Use this addressing scheme with the **single_usrp** interface.
+In a single-device configuration, the USRP device must have a unique IPv4
+address on the host computer.  The USRP can be identified through its IPv4
+address, resolvable hostname, or by other means.  See the application notes on
+`device identification <./identification.html>`_.  Please note that this
+addressing scheme should also be used with the **multi_usrp** interface.
 
 Example device address string representation for a USRP2 with IPv4 address **192.168.10.2**:
 
@@ -313,7 +314,7 @@ This device will be referred to as the slave, and the other device, the master.
 * External clocking is optional and should only be supplied to the master device.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Shared ethernet mode
+Shared Ethernet mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In shared Ethernet mode,
 only one device in the configuration can be attached to the Ethernet.
@@ -322,7 +323,7 @@ only one device in the configuration can be attached to the Ethernet.
 * Master and slave must have different IPv4 addresses in the same subnet.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Dual ethernet mode
+Dual Ethernet mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In dual Ethernet mode,
 both devices in the configuration must be attached to the Ethernet.
@@ -358,7 +359,7 @@ have been programmed into the device's EEPROM.
 Run the following commands:
 ::
 
-    cd <install-path>/share/uhd/utils
+    cd <install-path>/lib/uhd/utils
     ./usrp_burn_mb_eeprom --args=<optional device args> --key=subnet --val=255.255.255.0
     ./usrp_burn_mb_eeprom --args=<optional device args> --key=gateway --val=192.168.10.1
 
@@ -400,7 +401,7 @@ The LEDs on the front panel can be useful in debugging hardware and software iss
 The LEDs reveal the following about the state of the device:
 
 * **LED A:** transmitting
-* **LED B:** mimo cable link
+* **LED B:** MIMO cable link
 * **LED C:** receiving
 * **LED D:** firmware loaded
 * **LED E:** reference lock
@@ -408,13 +409,13 @@ The LEDs reveal the following about the state of the device:
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Ref Clock - 10MHz
+Ref Clock - 10 MHz
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Using an external 10MHz reference clock, a square wave will offer the best phase
+Using an external 10 MHz reference clock, a square wave will offer the best phase
 noise performance, but a sinusoid is acceptable.  The reference clock requires the following power level:
 
-* **USRP2** 5 to 15dBm
-* **N2XX** 0 to 15dBm
+* **USRP2** 5 to 15 dBm
+* **N2XX** 0 to 15 dBm
 
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -431,7 +432,7 @@ Test the PPS input with the following app:
 
 ::
 
-    cd <install-path>/share/uhd/examples
+    cd <install-path>/lib/uhd/examples
     ./test_pps_input --args=<args>
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -466,7 +467,9 @@ which has been aptly named slot **A**.
 
 In the following example, a TVRX2 is installed.
 Channel 0 is sourced from subdevice **RX1**,
-and channel 1 is sourced from subdevice **RX2**:
+and channel 1 is sourced from subdevice **RX2** (**RX1** and **RX2**
+are the antenna ports on the TVRX2 daughterboard):
+
 ::
 
     usrp->set_rx_subdev_spec("A:RX1 A:RX2");

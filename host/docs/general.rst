@@ -28,6 +28,17 @@ easy to move the DC component out of your band-of-interest.  This can be done by
 passing your desired LO offset to the **tune_request_t** object, and letting the UHD
 software handle the rest.
 
+The **tune_request_t** object can also be used with certain daughterboards to use
+Integer-N tuning instead of the default fractional tuning, allowing for better spur
+performance. The daughterboards that support this functionality are:
+
+* WBX (all revisions)
+* WBX-120
+* SBX (all revisions)
+* SBX-120
+* CBX
+* CBX-120
+
 Tuning the receive chain:
 ::
 
@@ -38,10 +49,11 @@ Tuning the receive chain:
 
     //advanced tuning with tune_request_t
     uhd::tune_request_t tune_req(target_frequency_in_hz, desired_lo_offset);
+    tune_req.args = uhd::device_addr_t("mode_n=int-n"); //to use Int-N tuning
     //fill in any additional/optional tune request fields...
     usrp->set_rx_freq(tune_req);
 
-More information can be fonud in *tune_request.hpp*.
+More information can be found in `tune_request.hpp <./../../doxygen/html/structuhd_1_1tune__request__t.html>`_.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RF front-end settling time
@@ -142,7 +154,8 @@ When the device's internal buffers become full, streaming is shut off,
 and an inline message packet is sent to the host.
 In this case the character "O" is printed to stdout as an indication.
 If the device was in continuous streaming mode,
-the UHD software will automatically restart streaming.
+the UHD software will automatically restart streaming when the buffer has
+space again.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Underflow notes

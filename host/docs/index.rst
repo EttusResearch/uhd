@@ -18,23 +18,46 @@ Building and Installing UHD Software
 * `Installation Guide (Windows) <http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_Windows>`_
 
 ^^^^^^^^^^^^^^^^^^^^^
-Application Notes
+General UHD Manuals
 ^^^^^^^^^^^^^^^^^^^^^
 * `General Application Notes <./general.html>`_
 * `Device Identification Notes <./identification.html>`_
 * `Firmware and FPGA Image Notes <./images.html>`_
-* `USRP1 Application Notes <./usrp1.html>`_
-* `USRP2 Application Notes <./usrp2.html>`_
-* `USRP-N2X0 Series Application Notes <./usrp2.html>`_
-* `USRP-B100 Series Application Notes <./usrp_b100.html>`_
-* `USRP-B2X0 Series Application Notes <./usrp_b200.html>`_
-* `USRP-E1X0 Series Application Notes <./usrp_e1x0.html>`_
 * `Daughterboard Application Notes <./dboards.html>`_
 * `Transport Application Notes <./transport.html>`_
 * `Synchronization Application Notes <./sync.html>`_
-* `Internal GPSDO Application Notes (USRP-N2X0/E1X0 Models) <./gpsdo.html>`_
-* `Internal GPSDO Application Notes (USRP-B2X0 Models) <./gpsdo_b2x0.html>`_
 * `Calibration Application Notes <./calibration.html>`_
+
+^^^^^^^^^^^^^^^^^^^^^
+USRP N-Series Devices
+^^^^^^^^^^^^^^^^^^^^^
+* `USRP-N2x0 Series Device Manual <./usrp2.html>`_
+* `USRP-N2x0 Internal GPSDO Device Manual <./gpsdo_x3x0.html>`_
+
+^^^^^^^^^^^^^^^^^^^^^
+USRP B-Series Devices
+^^^^^^^^^^^^^^^^^^^^^
+* `USRP-B100 Series Device Manual <./usrp_b100.html>`_
+* `USRP-B2x0 Series Device Manual <./usrp_b200.html>`_
+* `USRP1 Device Manual <./usrp1.html>`_
+
+^^^^^^^^^^^^^^^^^^^^^
+USRP E-Series Devices
+^^^^^^^^^^^^^^^^^^^^^
+* `USRP-E1x0 Series Device Manual <./usrp_e1x0.html>`_
+* `USRP-E1x0 Internal GPSDO Device Manual <./gpsdo.html>`_
+
+^^^^^^^^^^^^^^^^^^^^^
+USRP X-Series Devices
+^^^^^^^^^^^^^^^^^^^^^
+* `USRP-X3x0 Series Device Manual <./usrp_x3x0.html>`_
+* `USRP-X3x0 Internal GPSDO Device Manual <./gpsdo_x3x0.html>`_
+* `USRP-X3x0 Front Panel GPIO API <./gpio_api.html>`_
+
+^^^^^^^^^^^^^^^^^^^^^
+USRP Legacy Series
+^^^^^^^^^^^^^^^^^^^^^
+* `USRP2 Device Manual <./usrp2.html>`_
 
 ^^^^^^^^^^^^^^^^^^^^^
 API Documentation
