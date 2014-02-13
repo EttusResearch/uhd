@@ -28,6 +28,11 @@
 #include <string>
 
 
+static const double AD9361_CLOCK_RATE_MAX = 61.44e6;
+static const double AD9361_1_CHAN_CLOCK_RATE_MAX = AD9361_CLOCK_RATE_MAX;
+static const double AD9361_2_CHAN_CLOCK_RATE_MAX = (AD9361_1_CHAN_CLOCK_RATE_MAX / 2);
+
+
 struct ad9361_ctrl_iface_type
 {
     virtual void ad9361_transact(const unsigned char in_buff[64], unsigned char out_buff[64]) = 0;
@@ -100,7 +105,7 @@ public:
     static uhd::meta_range_t get_clock_rate_range(void)
     {
         //return uhd::meta_range_t(220e3, 61.44e6);
-        return uhd::meta_range_t(5e6, 61.44e6); //5 MHz DCM low end
+        return uhd::meta_range_t(5e6, AD9361_CLOCK_RATE_MAX); //5 MHz DCM low end
     }
 
     //! set the filter bandwidth for the frontend
