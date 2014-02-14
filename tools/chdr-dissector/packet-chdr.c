@@ -1,6 +1,6 @@
-/* packet-chdr.c
+/* 
+ * packet-chdr.c
  * Dissector for UHD CHDR packets
- *
  *
  * Copyright 2010-2013 Ettus Research LLC
  *
@@ -19,8 +19,6 @@
  *
  */
 
-#define CHDR_PORT 49153
-
 #include "config.h"
 
 #include <glib.h>
@@ -28,11 +26,15 @@
 #include <ctype.h>
 #include <stdio.h>
 
-void proto_register_chdr(void);
-void proto_reg_handoff_chdr(void);
+#define LOG_HEADER  "[UHD CHDR] "
+
+#ifndef min
+#define min(a,b)    ((a<b)?a:b)
+#endif // min
+
+const unsigned int CHDR_PORT = 49153;
 
 static int proto_chdr = -1;
-static int hf_chdr = -1;
 static int hf_chdr_hdr = -1;
 static int hf_chdr_is_extension = -1;
 static int hf_chdr_reserved = -1;
@@ -47,263 +49,303 @@ static int hf_chdr_dst_dev = -1;
 static int hf_chdr_dst_ep = -1;
 static int hf_chdr_timestamp = -1;
 static int hf_chdr_payload = -1;
+static int hf_chdr_ext_response = -1;
+static int hf_chdr_ext_status_code = -1;
+static int hf_chdr_ext_seq_num = -1;
 
 /* the heuristic dissector is called on every packet with payload.
  * The warning printed for this should only be printed once.
  */
 static int heur_warning_printed = 0;
 
-/* Forward-declare the dissector functions */
-static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
-
 /* Subtree handles: set by register_subtree_array */
 static gint ett_chdr = -1;
+static gint ett_chdr_header = -1;
 static gint ett_chdr_id = -1;
+static gint ett_chdr_response = -1;
 
+/* Forward-declare the dissector functions */
+void proto_register_chdr(void);
+void proto_reg_handoff_chdr(void);
+static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
 
 /* heuristic dissector call. Will always return. */
 static gboolean heur_dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	if(heur_warning_printed < 1){
-		printf("heuristic dissector for UHD CHDR always returns true!\n");
-		heur_warning_printed++;
-	}
-	dissect_chdr(tvb, pinfo, tree); 
+    if(heur_warning_printed < 1){
+        printf(LOG_HEADER"heuristic dissector always returns true!\n");
+        heur_warning_printed++;
+    }
+    dissect_chdr(tvb, pinfo, tree); 
     return (TRUE);
 }
 
 static void byte_swap(guint8 *bytes, gint len)
 {
-	guint8 tmp[4];
-	
-	if(len != 4){
-		printf("FATAL! number of bytes don't match 32 bit!\n");
-		return;
-	}
-	
-	memcpy(tmp, bytes, 4);
-	bytes[0] = tmp[3];
-	bytes[1] = tmp[2];
-	bytes[2] = tmp[1];
-	bytes[3] = tmp[0];
+    guint8 tmp[4];
+    
+    if(len != sizeof(tmp)){
+        printf(LOG_HEADER"FATAL! number of bytes don't match 32 bit!\n");
+        return;
+    }
+    
+    memcpy(tmp, bytes, sizeof(tmp));
+    bytes[0] = tmp[3];
+    bytes[1] = tmp[2];
+    bytes[2] = tmp[1];
+    bytes[3] = tmp[0];
 }
 
-static guint64 get_timestamp(guint8 *bytes, gint len)
+static unsigned long long get_timestamp(guint8 *bytes, gint len)
 {
-	guint64 ts;
-	guint64 trans;
-	int it;
-	
-	if(len != 8){
-		printf("FATAL! timestamps always consist of 64 bits!\n");
-	}
-	
-	byte_swap(bytes, 4);
-	byte_swap(bytes+4, 4);
+    unsigned long long ts;
+    unsigned long long trans;
+    int it;
+    
+    if(len != sizeof(unsigned long long)){
+        printf(LOG_HEADER"FATAL! timestamps always consist of 64 bits!\n");
+    }
+    
+    byte_swap(bytes + 0, 4);
+    byte_swap(bytes + 4, 4);
+    
+    ts = 0;
+    for(it = 0; it < 8; it++){
+        ts = ts << 8;
+        trans = (guint64) bytes[it];
+        ts = ts | trans;
+    }
 
-	ts = 0;
-	for(it = 0 ; it < 8 ; it++){
-		ts = ts << 8;
-		trans = (guint64) bytes[it];
-		ts = ts | trans;
-	}
-
-	return (ts);
+    return (ts);
 }
 
 /* The dissector itself */
 static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	// Here are all the variables	
-	proto_item *item;
-	proto_item *stream_item;
+    // Here are all the variables   
+    proto_item *item;
+    proto_item *stream_item;
     proto_tree *chdr_tree;
+    proto_item *header_item;
+    proto_tree *header_tree;
     proto_tree *stream_tree;
+    proto_item *response_item;
+    proto_tree *response_tree;
     gint len;
     
     gint flag_offset;
-	guint8 *bytes;
-	gboolean flag_has_time;
-	guint64 timestamp;
-	gboolean is_network;
-	gint endianness;
-	gint id_pos_usb[4] = {7, 6, 5, 4};
-	gint id_pos_net[4] = {4, 5, 6, 7};
-	gint id_pos[4] = {7, 6, 5, 4};
-	
-	if(pinfo->match_uint == CHDR_PORT){
-		is_network = TRUE;
-		flag_offset = 0;
-		endianness = ENC_BIG_ENDIAN;
-		memcpy(id_pos, id_pos_net, 4 * sizeof(gint));
-	}
-	else{
-		is_network = FALSE;
-		flag_offset = 3;
-		endianness = ENC_LITTLE_ENDIAN;
-		memcpy(id_pos, id_pos_usb, 4 * sizeof(gint));
-	}
+    guint8 *bytes;
+    gboolean flag_has_time;
+    unsigned long long timestamp;
+    gboolean is_network;
+    gint endianness;
+    gint id_pos_usb[4] = {7, 6, 5, 4};
+    gint id_pos_net[4] = {4, 5, 6, 7};
+    gint id_pos[4] = {7, 6, 5, 4};
+    
+    if(pinfo->match_uint == CHDR_PORT){
+        is_network = TRUE;
+        flag_offset = 0;
+        endianness = ENC_BIG_ENDIAN;
+        memcpy(id_pos, id_pos_net, 4 * sizeof(gint));
+    }
+    else{   // Parsing a USB capture
+        is_network = FALSE;
+        flag_offset = 3;
+        endianness = ENC_LITTLE_ENDIAN;
+        memcpy(id_pos, id_pos_usb, 4 * sizeof(gint));
+    }
 
-	len = tvb_reported_length(tvb);
+    len = tvb_reported_length(tvb);
 
     col_append_str(pinfo->cinfo, COL_PROTOCOL, "/CHDR");
     col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "CHDR",
         tvb_format_text_wsp(tvb, 0, len));
 
-    if (tree) {
+    if (tree){
+        int chdr_size = -1;
+        
+        if (len >= 4){
+            chdr_size = 8;
+            bytes = tvb_get_string(tvb, 0, 4);
+            flag_has_time = bytes[flag_offset] & 0x20;
+            if (flag_has_time)
+                chdr_size += 8; // 64-bit timestamp
+        }
+        
         /* Start with a top-level item to add everything else to */
-        item = proto_tree_add_item(tree, proto_chdr, tvb, 0, 16, ENC_NA);
-        chdr_tree = proto_item_add_subtree(item, ett_chdr);
+        item = proto_tree_add_item(tree, proto_chdr, tvb, 0, min(len, chdr_size), ENC_NA);
+        
+        if (len >= 4){
+            chdr_tree = proto_item_add_subtree(item, ett_chdr);
+            
+            header_item = proto_tree_add_item(chdr_tree, hf_chdr_hdr, tvb, flag_offset, 1, endianness);
+            header_tree = proto_item_add_subtree(header_item, ett_chdr_header);
 
-		bytes = tvb_get_string(tvb, 0, 4);
-		flag_has_time = bytes[flag_offset] & 0x20;
+            /* These lines add flag info to tree */
+            proto_tree_add_item(header_tree, hf_chdr_is_extension, tvb, flag_offset, 1, ENC_NA);
+            proto_tree_add_item(header_tree, hf_chdr_reserved, tvb, flag_offset, 1, ENC_NA);
+            proto_tree_add_item(header_tree, hf_chdr_has_time, tvb, flag_offset, 1, ENC_NA);
+            proto_tree_add_item(header_tree, hf_chdr_eob, tvb, flag_offset, 1, ENC_NA);
 
-		/* These lines add flag info to tree */
-		proto_tree_add_item(chdr_tree, hf_chdr_is_extension, tvb, flag_offset, 1, ENC_NA);
-		proto_tree_add_item(chdr_tree, hf_chdr_reserved, tvb, flag_offset, 1, ENC_NA);
-		proto_tree_add_item(chdr_tree, hf_chdr_has_time, tvb, flag_offset, 1, ENC_NA);
-		proto_tree_add_item(chdr_tree, hf_chdr_eob, tvb, flag_offset, 1, ENC_NA);
-
-		/* These lines add sequence, packet_size and stream ID */
-		proto_tree_add_item(chdr_tree, hf_chdr_sequence, tvb, is_network ? 0:2, 2, endianness);
-		proto_tree_add_item(chdr_tree, hf_chdr_packet_size, tvb, is_network ? 2:0, 2, endianness);
-		
-		/* stream id can be broken down to 4 sections. these are collapsed in a subtree */
-		stream_item = proto_tree_add_item(chdr_tree, hf_chdr_stream_id, tvb, 4, 4, endianness);
-		stream_tree = proto_item_add_subtree(stream_item, ett_chdr_id);
-		proto_tree_add_item(stream_tree, hf_chdr_src_dev, tvb, id_pos[0], 1, ENC_NA);
-		proto_tree_add_item(stream_tree, hf_chdr_src_ep, tvb, id_pos[1], 1, ENC_NA);
-		proto_tree_add_item(stream_tree, hf_chdr_dst_dev, tvb, id_pos[2], 1, ENC_NA);
-		proto_tree_add_item(stream_tree, hf_chdr_dst_ep, tvb, id_pos[3], 1, ENC_NA);
-		
-		/* if has_time flag is present interpret timestamp */
-		if(flag_has_time){
-			item = proto_tree_add_item(chdr_tree, hf_chdr_timestamp, tvb, 8, 8, endianness);
-			
-			if(!is_network){
-				bytes = (guint8*) tvb_get_string(tvb, 8, 8);
-				timestamp = get_timestamp(bytes, 8);
-			}
-		}
+            /* These lines add sequence, packet_size and stream ID */
+            proto_tree_add_item(chdr_tree, hf_chdr_sequence, tvb, (is_network ? 0:2), 2, endianness);
+            proto_tree_add_item(chdr_tree, hf_chdr_packet_size, tvb, (is_network ? 2:0), 2, endianness);
+            
+            if (len >= 8){
+                /* stream id can be broken down to 4 sections. these are collapsed in a subtree */
+                stream_item = proto_tree_add_item(chdr_tree, hf_chdr_stream_id, tvb, 4, 4, endianness);
+                stream_tree = proto_item_add_subtree(stream_item, ett_chdr_id);
+                proto_tree_add_item(stream_tree, hf_chdr_src_dev, tvb, id_pos[0], 1, ENC_NA);
+                proto_tree_add_item(stream_tree, hf_chdr_src_ep, tvb, id_pos[1], 1, ENC_NA);
+                proto_tree_add_item(stream_tree, hf_chdr_dst_dev, tvb, id_pos[2], 1, ENC_NA);
+                proto_tree_add_item(stream_tree, hf_chdr_dst_ep, tvb, id_pos[3], 1, ENC_NA);
+                
+                /* if has_time flag is present interpret timestamp */
+                if ((flag_has_time) && (len >= 16)){
+                    if (is_network)
+                        item = proto_tree_add_item(chdr_tree, hf_chdr_timestamp, tvb, 8, 8, endianness);
+                    else{
+                        bytes = (guint8*) tvb_get_string(tvb, 8, sizeof(unsigned long long));
+                        timestamp = get_timestamp(bytes, sizeof(unsigned long long));
+                        proto_tree_add_uint64(chdr_tree, hf_chdr_timestamp, tvb, 8, 8, timestamp);
+                    }
+                }
+                
+                int remaining_bytes = (len - chdr_size);
+                int show_raw_payload = (remaining_bytes > 0);
+                
+                if (hf_chdr_is_extension){
+                    if (remaining_bytes == 8){  // Interpret this as a response packet
+                        response_item = proto_tree_add_item(chdr_tree, hf_chdr_ext_response, tvb, chdr_size, 8, endianness);
+                        response_tree = proto_item_add_subtree(response_item, ett_chdr_response);
+                        
+                        proto_tree_add_item(response_tree, hf_chdr_ext_status_code, tvb, chdr_size, 4, endianness);
+                        /* This will show the 12-bits of sequence ID in the last 2 bytes */
+                        proto_tree_add_item(response_tree, hf_chdr_ext_seq_num, tvb, (chdr_size + 4 + (is_network ? 2 : 0)), 2, endianness);
+                    }
+                }
+                
+                if (show_raw_payload)
+                    proto_tree_add_item(chdr_tree, hf_chdr_payload, tvb, chdr_size, -1, ENC_NA);
+            }
+        }
     }
 }
 
-void
-proto_register_chdr(void)
+void proto_register_chdr(void)
 {
     static hf_register_info hf[] = {
-        { &hf_chdr,
-            { "CHDR", "chdr.hdr", FT_STRING, BASE_NONE,
-              NULL, 0x0, NULL, HFILL }
-		},
-		{ &hf_chdr_is_extension,
-            { "CHDR is extension", "chdr.is_extension",
-            FT_BOOLEAN, BASE_NONE,
-            NULL, 0x80,
-            NULL, HFILL }
+        { &hf_chdr_hdr,
+            { "Header bits", "chdr.hdr",
+                FT_UINT8, BASE_HEX,
+                NULL, 0xF0,
+                NULL, HFILL }
         },
-		{ &hf_chdr_reserved,
-            { "CHDR reserved", "chdr.reserved",
-            FT_BOOLEAN, BASE_NONE,
-            NULL, 0x40,
-            NULL, HFILL }
+        { &hf_chdr_is_extension,
+            { "Extension context packet", "chdr.hdr.ext",
+                FT_BOOLEAN, BASE_NONE,
+                NULL, 0x80,
+                NULL, HFILL }
         },
-		{ &hf_chdr_has_time,
-            { "CHDR has time", "chdr.has_time",
-            FT_BOOLEAN, BASE_NONE,
-            NULL, 0x20,
-            NULL, HFILL }
+        { &hf_chdr_reserved,
+            { "Reserved bit", "chdr.hdr.reserved",
+                FT_BOOLEAN, BASE_NONE,
+                NULL, 0x40,
+                NULL, HFILL }
         },
-		{ &hf_chdr_eob,
-            { "CHDR end of burst", "chdr.eob",
-            FT_BOOLEAN, BASE_NONE,
-            NULL, 0x10,
-            NULL, HFILL }
+        { &hf_chdr_has_time,
+            { "Time present", "chdr.hdr.has_time",
+                FT_BOOLEAN, BASE_NONE,
+                NULL, 0x20,
+                NULL, HFILL }
         },
-		{ &hf_chdr_sequence,
-            { "CHDR sequence", "chdr.sequence",
-            FT_UINT16, BASE_DEC,
-            NULL, 0x0FFF,
-            NULL, HFILL }
+        { &hf_chdr_eob,
+            { "End Of Burst", "chdr.hdr.eob",
+                FT_BOOLEAN, BASE_NONE,
+                NULL, 0x10,
+                NULL, HFILL }
         },
-		{ &hf_chdr_packet_size,
-            { "CHDR packet size", "chdr.packet_size",
-            FT_UINT16, BASE_DEC,
-            NULL, 0x0,
-            NULL, HFILL }
+        { &hf_chdr_sequence,
+            { "Sequence ID", "chdr.seq",
+                FT_UINT16, BASE_DEC,
+                NULL, 0x0FFF,
+                NULL, HFILL }
         },
-		{ &hf_chdr_stream_id,
-            { "CHDR stream id", //name
-				"chdr.stream_id", //abbr
-            	FT_IPv4, //type
-				BASE_NONE, //display
-            	NULL, //strings
-				0x0, //bitmask
-            	NULL, //brief description
-				HFILL // id
-			}
+        { &hf_chdr_packet_size,
+            { "Packet size", "chdr.size",
+                FT_UINT16, BASE_DEC,
+                NULL, 0x0,
+                NULL, HFILL }
+        },
+        { &hf_chdr_stream_id,
+            { "Stream ID", "chdr.sid",
+                FT_IPv4, BASE_NONE,
+                NULL, 0x0,
+                NULL,  HFILL }
         },
         { &hf_chdr_src_dev,
-            { "CHDR source device", //name
-				"chdr.src_dev", //abbr
-            	FT_UINT8, //type
-				BASE_DEC, //display
-            	NULL, //strings
-				0x0, //bitmask
-            	NULL, //brief description
-				HFILL // id
-			}
+            { "Source device", "chdr.src_dev",
+                FT_UINT8, BASE_DEC,
+                NULL, 0x0,
+                NULL, HFILL }
         },
         { &hf_chdr_src_ep,
-            { "CHDR source endpoint", //name
-				"chdr.src_ep", //abbr
-            	FT_UINT8, //type
-				BASE_DEC, //display
-            	NULL, //strings
-				0x0, //bitmask
-            	NULL, //brief description
-				HFILL // id
-			}
+            { "Source endpoint", "chdr.src_ep",
+                FT_UINT8, BASE_DEC,
+                NULL, 0x0,
+                NULL, HFILL }
         },
         { &hf_chdr_dst_dev,
-            { "CHDR destination device", //name
-				"chdr.dst_dev", //abbr
-            	FT_UINT8, //type
-				BASE_DEC, //display
-            	NULL, //strings
-				0x0, //bitmask
-            	NULL, //brief description
-				HFILL // id
-			}
+            { "Destination device", "chdr.dst_dev",
+                FT_UINT8, BASE_DEC,
+                NULL,  0x0,
+                NULL, HFILL }
         },
         { &hf_chdr_dst_ep,
-            { "CHDR destination endpoint", //name
-				"chdr.dst_ep", //abbr
-            	FT_UINT8, //type
-				BASE_DEC, //display
-            	NULL, //strings
-				0x0, //bitmask
-            	NULL, //brief description
-				HFILL // id
-			}
+            { "Destination endpoint", "chdr.dst_ep",
+                FT_UINT8, BASE_DEC,
+                NULL, 0x0,
+                NULL, HFILL }
         },
-
-		{ &hf_chdr_timestamp,
-            { "CHDR timestamp", //name
-				"chdr.timestamp", //abbr
-            	FT_UINT64, //type
-				BASE_DEC, //display
-            	NULL, //strings
-				0x0, //bitmask
-            	NULL, //brief description
-				HFILL
-			}
+        { &hf_chdr_timestamp,
+            { "Time", "chdr.time",
+                FT_UINT64, BASE_DEC,
+                NULL, 0x0,
+                NULL, HFILL }
+        },
+        { &hf_chdr_payload,
+            { "Payload", "chdr.payload",
+                FT_BYTES, BASE_NONE,
+                NULL, 0x0,
+                NULL, HFILL
+            }
+        },
+        { &hf_chdr_ext_response,
+            { "Response", "chdr.res",
+                FT_BYTES, BASE_NONE,
+                NULL, 0x0,
+                NULL, HFILL }
+        },
+        { &hf_chdr_ext_status_code,
+            { "Status code", "chdr.res.status",
+                FT_UINT32, BASE_DEC,
+                NULL, 0x0,
+                NULL, HFILL }
+        },
+        { &hf_chdr_ext_seq_num,
+            { "Response to sequence ID", "chdr.res.seq",
+                FT_UINT16, BASE_DEC,
+                NULL, 0x0FFF,
+                NULL, HFILL }
         },
     };
 
     static gint *ett[] = {
         &ett_chdr,
-        &ett_chdr_id
+        &ett_chdr_header,
+        &ett_chdr_id,
+        &ett_chdr_response
     };
 
     proto_chdr = proto_register_protocol("UHD CHDR", "CHDR", "chdr");
@@ -313,15 +355,13 @@ proto_register_chdr(void)
 }
 
 /* Handler registration */
-void
-proto_reg_handoff_chdr(void)
+void proto_reg_handoff_chdr(void)
 {
     /* register heuristic dissector for use with USB */
     heur_dissector_add("usb.bulk", heur_dissect_chdr, proto_chdr);
 
-	/* register dissector for UDP packets */
+    /* register dissector for UDP packets */
     static dissector_handle_t chdr_handle;
     chdr_handle = create_dissector_handle(dissect_chdr, proto_chdr);
     dissector_add_uint("udp.port", CHDR_PORT, chdr_handle);
 }
-
