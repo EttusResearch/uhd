@@ -66,8 +66,14 @@ void handle_udp_prog_framer(
     const void *buff, const size_t num_bytes
 )
 {
+  if (buff == NULL) {
+    /* We got here from ICMP_DUR undeliverable packet */
+    /* Future space for hooks to tear down streaming radios etc */
+  }
+  else {
     const uint32_t sid = ((const uint32_t *)buff)[1];
     program_udp_framer(ethno, sid, src, src_port, dst_port);
+  }
 }
 
 /***********************************************************************
@@ -80,41 +86,41 @@ void handle_udp_fw_comms(
     const void *buff, const size_t num_bytes
 )
 {
-    const x300_fw_comms_t *request = (const x300_fw_comms_t *)buff;
-    x300_fw_comms_t reply; memcpy(&reply, buff, sizeof(reply));
+    if (buff == NULL) {
+     /* We got here from ICMP_DUR undeliverable packet */
+    /* Future space for hooks to tear down streaming radios etc */
+    } else {
+        const x300_fw_comms_t *request = (const x300_fw_comms_t *)buff;
+        x300_fw_comms_t reply; memcpy(&reply, buff, sizeof(reply));
 
-    //check for error and set error flag
-    if (num_bytes < sizeof(x300_fw_comms_t))
-    {
-        reply.flags |= X300_FW_COMMS_FLAGS_ERROR;
-    }
-
-    //otherwise, run the actions set by the flags
-    else
-    {
-        if (request->flags & X300_FW_COMMS_FLAGS_PEEK32)
-        {
-            if (request->addr & 0x00100000) {
-                chinch_peek32(request->addr & 0x000FFFFF, &reply.data);
-            } else {
-                reply.data = wb_peek32(request->addr);
+        //check for error and set error flag
+        if (num_bytes < sizeof(x300_fw_comms_t)) {
+           reply.flags |= X300_FW_COMMS_FLAGS_ERROR;
+        }
+        //otherwise, run the actions set by the flags
+        else {
+            if (request->flags & X300_FW_COMMS_FLAGS_PEEK32)
+            {
+                if (request->addr & 0x00100000) {
+                    chinch_peek32(request->addr & 0x000FFFFF, &reply.data);
+                } else {
+                    reply.data = wb_peek32(request->addr);
+                }
+            }
+            if (request->flags & X300_FW_COMMS_FLAGS_POKE32)
+            {
+                if (request->addr & 0x00100000) {
+                    chinch_poke32(request->addr & 0x000FFFFF, request->data);
+                } else {
+                    wb_poke32(request->addr, request->data);
+                }
             }
         }
 
-        if (request->flags & X300_FW_COMMS_FLAGS_POKE32)
-        {
-            if (request->addr & 0x00100000) {
-                chinch_poke32(request->addr & 0x000FFFFF, request->data);
-            } else {
-                wb_poke32(request->addr, request->data);
-            }
+        //send a reply if ack requested
+        if (request->flags & X300_FW_COMMS_FLAGS_ACK) {
+            u3_net_stack_send_udp_pkt(ethno, src, dst_port, src_port, &reply, sizeof(reply));
         }
-    }
-
-    //send a reply if ack requested
-    if (request->flags & X300_FW_COMMS_FLAGS_ACK)
-    {
-        u3_net_stack_send_udp_pkt(ethno, src, dst_port, src_port, &reply, sizeof(reply));
     }
 }
 
@@ -132,7 +138,9 @@ void handle_udp_fpga_prog(
     x300_fpga_prog_flags_t reply = {0};
     bool status = true;
 
-    if (num_bytes < offsetof(x300_fpga_prog_t, data)) {
+    if (buff == NULL) {
+        return;
+    } else if (num_bytes < offsetof(x300_fpga_prog_t, data)) {
         reply.flags |= X300_FPGA_PROG_FLAGS_ERROR;
     } else {
         if (request->flags & X300_FPGA_PROG_FLAGS_INIT) {
@@ -183,7 +191,7 @@ void handle_udp_fpga_prog(
 /***********************************************************************
  * Handler for MTU detection
  **********************************************************************/
-void handle_mtu_detect(
+void handle_udp_mtu_detect(
     const uint8_t ethno,
     const struct ip_addr *src, const struct ip_addr *dst,
     const uint16_t src_port, const uint16_t dst_port,
@@ -193,7 +201,9 @@ void handle_mtu_detect(
     const x300_mtu_t *request = (const x300_mtu_t *) buff;
     x300_mtu_t reply;
 
-    if (!(request->flags & X300_MTU_DETECT_ECHO_REQUEST)) {
+    if (buff == NULL) {
+        return;
+    } else if (!(request->flags & X300_MTU_DETECT_ECHO_REQUEST)) {
         printf("DEBUG: MTU detect got unknown request\n");
         reply.flags |= X300_MTU_DETECT_ERROR;
     }
@@ -415,7 +425,7 @@ int main(void)
     u3_net_stack_register_udp_handler(X300_FW_COMMS_UDP_PORT, &handle_udp_fw_comms);
     u3_net_stack_register_udp_handler(X300_VITA_UDP_PORT, &handle_udp_prog_framer);
     u3_net_stack_register_udp_handler(X300_FPGA_PROG_UDP_PORT, &handle_udp_fpga_prog);
-    u3_net_stack_register_udp_handler(X300_MTU_DETECT_UDP_PORT, &handle_mtu_detect);
+    u3_net_stack_register_udp_handler(X300_MTU_DETECT_UDP_PORT, &handle_udp_mtu_detect);
 
     uint32_t last_cronjob = 0;
 
