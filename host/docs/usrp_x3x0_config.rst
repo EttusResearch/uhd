@@ -69,19 +69,20 @@ Configuring the MTU
 -------------------------------------
 In order to achieve maximum performance, we recommend setting the MTU size to
 9000 for 10 GigE and 1500 for 1 GigE. It is possible to use smaller MTUs, but this
-can affect performance. With some NICs, setting the MTU too high can also cause issues,
-though. To set the MTU to 9000, you can use the following command:
+can affect performance. With some NICs, setting the MTU too high can also cause issues.
+To set the MTU to 9000, you can use the following command:
 
 ::
 
     sudo ifconfig <interface> mtu 9000 # For 10 GigE
+    sudo ifconfig <interface> mtu 1500 # For 1 GigE
 
 Using these MTUs will set the frame sizes for UHD communication to 8000 and 1472,
 respectively.
 
 In some cases, specifying the frame size manually by adding the argument
 "<send/recv>_frame_size=1472" can solve issues. Note that a frame size of 1472 will limit
-the available sampling rate, although this is likely not a problem issue on 1 GigE.
+the available sampling rate, although this is not a problem on 1 GigE.
 
 
 Configuring the Firewall
