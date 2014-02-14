@@ -13,21 +13,21 @@ module rx_frontend_tb();
    initial $dumpvars(0,rx_frontend_tb);
 
    reg [15:0] adc_in;
-   wire [17:0] adc_out;
+   wire [23:0] adc_out;
 
    always @(posedge clk)
      begin
-	if(adc_in[13])
+	if(adc_in[15])
 	  $write("-%d,",-adc_in);
 	else
 	  $write("%d,",adc_in);
-	if(adc_out[13])
+	if(adc_out[23])
 	  $write("-%d\n",-adc_out);
 	else
 	  $write("%d\n",adc_out);
      end	
    
-   rx_frontend #(.BASE(0)) rx_frontend
+   rx_frontend #(.BASE(0), .IQCOMP_EN(1)) rx_frontend
      (.clk(clk),.rst(rst),
       .set_stb(0),.set_addr(0),.set_data(0),
       .adc_a(adc_in), .adc_ovf_a(0),

@@ -1,0 +1,11 @@
+vlogcomp -work work ${XILINX}/verilog/src/glbl.v
+vlogcomp -work work ../../fifo/axi_fifo_tb.v
+vlogcomp -work work ../../fifo/axi_fifo.v
+vlogcomp -work work ../../control/ram_2port.v
+
+
+
+fuse work.axi_fifo_tb work.glbl -L unisims_ver -L xilinxcorelib_ver -o axi_fifo_tb.exe
+
+# run the simulation scrip
+./axi_fifo_tb.exe -gui #-tclbatch simcmds.tcl

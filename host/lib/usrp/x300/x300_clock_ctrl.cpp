@@ -24,6 +24,8 @@
 #include <cmath>
 #include <cstdlib>
 
+static const double X300_REF_CLK_OUT_RATE  = 10e6;
+
 using namespace uhd;
 
 class x300_clock_ctrl_impl : public x300_clock_ctrl    {
@@ -66,7 +68,7 @@ double get_sysref_clock_rate(void) {
 
 double get_refout_clock_rate(void) {
     //We support only one reference output rate
-    return 10e6;
+    return X300_REF_CLK_OUT_RATE;
 }
 
 void set_dboard_rate(const x300_clock_which_t, double rate) {
@@ -292,7 +294,7 @@ void set_master_clock_rate(double clock_rate) {
     _lmk04816_regs.CLKout8_9_DIV = vco_div;
     // Register 5
     _lmk04816_regs.CLKout10_11_PD = lmk04816_regs_t::CLKOUT10_11_PD_NORMAL;
-    _lmk04816_regs.CLKout10_11_DIV = vco_div;
+    _lmk04816_regs.CLKout10_11_DIV = vco_div * static_cast<int>(clock_rate/X300_REF_CLK_OUT_RATE);
 
     // Register 6
     _lmk04816_regs.CLKout0_TYPE = lmk04816_regs_t::CLKOUT0_TYPE_LVDS; //FPGA

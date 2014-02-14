@@ -1,0 +1,612 @@
+## (c) Copyright 2009 - 2012 Xilinx, Inc. All rights reserved.
+##
+## This file contains confidential and proprietary information
+## of Xilinx, Inc. and is protected under U.S. and 
+## international copyright and other intellectual property
+## laws.
+##
+## DISCLAIMER
+## This disclaimer is not a license and does not grant any
+## rights to the materials distributed herewith. Except as
+## otherwise provided in a valid license issued to you by
+## Xilinx, and to the maximum extent permitted by applicable
+## law: (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND
+## WITH ALL FAULTS, AND XILINX HEREBY DISCLAIMS ALL WARRANTIES
+## AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY, INCLUDING
+## BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-
+## INFRINGEMENT, OR FITNESS FOR ANY PARTICULAR PURPOSE; and
+## (2) Xilinx shall not be liable (whether in contract or tort,
+## including negligence, or under any other theory of
+## liability) for any loss or damage of any kind or nature
+## related to, arising under or in connection with these
+## materials, including for any direct, or any indirect,
+## special, incidental, or consequential loss or damage
+## (including loss of data, profits, goodwill, or any type of
+## loss or damage suffered as a result of any action brought
+## by a third party) even if such damage or loss was
+## reasonably foreseeable or Xilinx had been advised of the
+## possibility of the same.
+##
+## CRITICAL APPLICATIONS
+## Xilinx products are not designed or intended to be fail-
+## safe, or for use in any application requiring fail-safe
+## performance, such as life-support or safety devices or
+## systems, Class III medical devices, nuclear facilities,
+## applications related to the deployment of airbags, or any
+## other applications that could lead to death, personal
+## injury, or severe property or environmental damage
+## (individually and collectively, "Critical
+## Applications"). Customer assumes the sole risk and
+## liability of any use of Xilinx products in Critical
+## Applications, subject only to applicable laws and
+## regulations governing limitations on product liability.
+##
+## THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS
+## PART OF THIS FILE AT ALL TIMES.
+##############################################################
+#
+# Xilinx Core Generator version 14.3
+# Date: Wed Sep 12 12:02:10 2012
+#
+##############################################################
+#
+#  This file contains the customisation parameters for a
+#  Xilinx CORE Generator IP GUI. It is strongly recommended
+#  that you do not manually alter this file as it may cause
+#  unexpected and unsupported behavior.
+#
+##############################################################
+#
+#  Generated from component: xilinx.com:ip:gtwizard:2.3
+#
+##############################################################
+#
+# BEGIN Project Options
+SET addpads = false
+SET asysymbol = true
+SET busformat = BusFormatAngleBracketNotRipped
+SET createndf = false
+SET designentry = Verilog
+SET device = xc7v585t
+SET devicefamily = virtex7
+SET flowvendor = Other
+SET formalverification = false
+SET foundationsym = false
+SET implementationfiletype = Ngc
+SET package = ffg1157
+SET removerpms = false
+SET simulationfiles = Behavioral
+SET speedgrade = -2
+SET verilogsim = true
+SET vhdlsim = false
+# END Project Options
+# BEGIN Select
+SELECT 7_Series_FPGAs_Transceivers_Wizard xilinx.com:ip:gtwizard:2.3
+# END Select
+# BEGIN Parameters
+CSET advanced_clocking=false
+CSET component_name=ten_gig_eth_pcs_pma_gtwizard_10gbaser
+CSET gt0_pll0_fbdiv=1
+CSET gt0_pll0_fbdiv_45=4
+CSET gt0_pll0_refclk_div=1
+CSET gt0_pll0_rxout_div=0
+CSET gt0_pll0_txout_div=0
+CSET gt0_pll1_fbdiv=1
+CSET gt0_pll1_fbdiv_45=4
+CSET gt0_pll1_refclk_div=1
+CSET gt0_pll1_rxout_div=0
+CSET gt0_pll1_txout_div=0
+CSET gt0_val=false
+CSET gt0_val_agc_mode=Auto
+CSET gt0_val_align_comma_double=false
+CSET gt0_val_align_comma_enable=1111111111
+CSET gt0_val_align_comma_word=Any_Byte_Boundary
+CSET gt0_val_align_mcomma_det=false
+CSET gt0_val_align_mcomma_value=1010000011
+CSET gt0_val_align_pcomma_det=false
+CSET gt0_val_align_pcomma_value=0101111100
+CSET gt0_val_cb=false
+CSET gt0_val_cc=false
+CSET gt0_val_cc_seq_periodicity=5000
+CSET gt0_val_chan_bond_max_skew=1
+CSET gt0_val_chan_bond_seq_1_1=00000000
+CSET gt0_val_chan_bond_seq_1_1_disp=false
+CSET gt0_val_chan_bond_seq_1_1_k=false
+CSET gt0_val_chan_bond_seq_1_1_mask=false
+CSET gt0_val_chan_bond_seq_1_2=00000000
+CSET gt0_val_chan_bond_seq_1_2_disp=false
+CSET gt0_val_chan_bond_seq_1_2_k=false
+CSET gt0_val_chan_bond_seq_1_2_mask=false
+CSET gt0_val_chan_bond_seq_1_3=00000000
+CSET gt0_val_chan_bond_seq_1_3_disp=false
+CSET gt0_val_chan_bond_seq_1_3_k=false
+CSET gt0_val_chan_bond_seq_1_3_mask=false
+CSET gt0_val_chan_bond_seq_1_4=00000000
+CSET gt0_val_chan_bond_seq_1_4_disp=false
+CSET gt0_val_chan_bond_seq_1_4_k=false
+CSET gt0_val_chan_bond_seq_1_4_mask=false
+CSET gt0_val_chan_bond_seq_2_1=00000000
+CSET gt0_val_chan_bond_seq_2_1_disp=false
+CSET gt0_val_chan_bond_seq_2_1_k=false
+CSET gt0_val_chan_bond_seq_2_1_mask=false
+CSET gt0_val_chan_bond_seq_2_2=00000000
+CSET gt0_val_chan_bond_seq_2_2_disp=false
+CSET gt0_val_chan_bond_seq_2_2_k=false
+CSET gt0_val_chan_bond_seq_2_2_mask=false
+CSET gt0_val_chan_bond_seq_2_3=00000000
+CSET gt0_val_chan_bond_seq_2_3_disp=false
+CSET gt0_val_chan_bond_seq_2_3_k=false
+CSET gt0_val_chan_bond_seq_2_3_mask=false
+CSET gt0_val_chan_bond_seq_2_4=00000000
+CSET gt0_val_chan_bond_seq_2_4_disp=false
+CSET gt0_val_chan_bond_seq_2_4_k=false
+CSET gt0_val_chan_bond_seq_2_4_mask=false
+CSET gt0_val_chan_bond_seq_2_use=false
+CSET gt0_val_chan_bond_seq_len=1
+CSET gt0_val_clk_cor_seq_1_1=00000000
+CSET gt0_val_clk_cor_seq_1_1_disp=false
+CSET gt0_val_clk_cor_seq_1_1_k=false
+CSET gt0_val_clk_cor_seq_1_1_mask=false
+CSET gt0_val_clk_cor_seq_1_2=00000000
+CSET gt0_val_clk_cor_seq_1_2_disp=false
+CSET gt0_val_clk_cor_seq_1_2_k=false
+CSET gt0_val_clk_cor_seq_1_2_mask=false
+CSET gt0_val_clk_cor_seq_1_3=00000000
+CSET gt0_val_clk_cor_seq_1_3_disp=false
+CSET gt0_val_clk_cor_seq_1_3_k=false
+CSET gt0_val_clk_cor_seq_1_3_mask=false
+CSET gt0_val_clk_cor_seq_1_4=00000000
+CSET gt0_val_clk_cor_seq_1_4_disp=false
+CSET gt0_val_clk_cor_seq_1_4_k=false
+CSET gt0_val_clk_cor_seq_1_4_mask=false
+CSET gt0_val_clk_cor_seq_2_1=00000000
+CSET gt0_val_clk_cor_seq_2_1_disp=false
+CSET gt0_val_clk_cor_seq_2_1_k=false
+CSET gt0_val_clk_cor_seq_2_1_mask=false
+CSET gt0_val_clk_cor_seq_2_2=00000000
+CSET gt0_val_clk_cor_seq_2_2_disp=false
+CSET gt0_val_clk_cor_seq_2_2_k=false
+CSET gt0_val_clk_cor_seq_2_2_mask=false
+CSET gt0_val_clk_cor_seq_2_3=00000000
+CSET gt0_val_clk_cor_seq_2_3_disp=false
+CSET gt0_val_clk_cor_seq_2_3_k=false
+CSET gt0_val_clk_cor_seq_2_3_mask=false
+CSET gt0_val_clk_cor_seq_2_4=00000000
+CSET gt0_val_clk_cor_seq_2_4_disp=false
+CSET gt0_val_clk_cor_seq_2_4_k=false
+CSET gt0_val_clk_cor_seq_2_4_mask=false
+CSET gt0_val_clk_cor_seq_2_use=false
+CSET gt0_val_clk_cor_seq_len=1
+CSET gt0_val_comma_preset=User_defined
+CSET gt0_val_cpll_fbdiv=4
+CSET gt0_val_cpll_fbdiv_45=5
+CSET gt0_val_cpll_refclk_div=1
+CSET gt0_val_cpll_rxout_div=1
+CSET gt0_val_cpll_txout_div=1
+CSET gt0_val_dec_mcomma_detect=false
+CSET gt0_val_dec_pcomma_detect=false
+CSET gt0_val_dec_valid_comma_only=false
+CSET gt0_val_decoding=64B/66B
+CSET gt0_val_dfe_mode=DFE-Auto
+CSET gt0_val_drp=true
+CSET gt0_val_drp_clock=78.125
+CSET gt0_val_encoding=64B/66B_with_Ext_Seq_Ctr
+CSET gt0_val_max_cb_level=7
+CSET gt0_val_no_rx=false
+CSET gt0_val_no_tx=false
+CSET gt0_val_oob=false
+CSET gt0_val_pcs_pcie_en=false
+CSET gt0_val_pd_trans_time_from_p2=60
+CSET gt0_val_pd_trans_time_non_p2=25
+CSET gt0_val_pd_trans_time_to_p2=100
+CSET gt0_val_port_cominitdet=false
+CSET gt0_val_port_comsasdet=false
+CSET gt0_val_port_comwakedet=false
+CSET gt0_val_port_cpllpd=false
+CSET gt0_val_port_loopback=true
+CSET gt0_val_port_phystatus=false
+CSET gt0_val_port_pll0pd=false
+CSET gt0_val_port_pll1pd=false
+CSET gt0_val_port_qpllpd=false
+CSET gt0_val_port_rxbufreset=true
+CSET gt0_val_port_rxbufstatus=true
+CSET gt0_val_port_rxbyteisaligned=false
+CSET gt0_val_port_rxbyterealign=false
+CSET gt0_val_port_rxcdrhold=false
+CSET gt0_val_port_rxchariscomma=false
+CSET gt0_val_port_rxcharisk=false
+CSET gt0_val_port_rxcommadet=false
+CSET gt0_val_port_rxdfeagcovrden=false
+CSET gt0_val_port_rxdfereset=false
+CSET gt0_val_port_rxelecidle=true
+CSET gt0_val_port_rxlpmen=true
+CSET gt0_val_port_rxlpmhfovrden=false
+CSET gt0_val_port_rxlpmlfklovrden=false
+CSET gt0_val_port_rxmcommaalignen=false
+CSET gt0_val_port_rxoutclk=true
+CSET gt0_val_port_rxpcommaalignen=false
+CSET gt0_val_port_rxpcsreset=true
+CSET gt0_val_port_rxpmareset=false
+CSET gt0_val_port_rxpolarity=false
+CSET gt0_val_port_rxpowerdown=false
+CSET gt0_val_port_rxqpien=false
+CSET gt0_val_port_rxqpisenn=false
+CSET gt0_val_port_rxqpisenp=false
+CSET gt0_val_port_rxrate=false
+CSET gt0_val_port_rxslide=false
+CSET gt0_val_port_rxstartofseq=false
+CSET gt0_val_port_rxstatus=false
+CSET gt0_val_port_rxsysclksel=false
+CSET gt0_val_port_rxvalid=false
+CSET gt0_val_port_tx8b10bbypass=false
+CSET gt0_val_port_txbufstatus=false
+CSET gt0_val_port_txchardispmode=false
+CSET gt0_val_port_txchardispval=false
+CSET gt0_val_port_txcomfinish=false
+CSET gt0_val_port_txcominit=false
+CSET gt0_val_port_txcomsas=false
+CSET gt0_val_port_txcomwake=false
+CSET gt0_val_port_txdetectrx=false
+CSET gt0_val_port_txelecidle=false
+CSET gt0_val_port_txinhibit=true
+CSET gt0_val_port_txoutclk=true
+CSET gt0_val_port_txpcsreset=true
+CSET gt0_val_port_txpmareset=false
+CSET gt0_val_port_txpolarity=false
+CSET gt0_val_port_txpowerdown=false
+CSET gt0_val_port_txprbsforceerr=false
+CSET gt0_val_port_txprbssel=true
+CSET gt0_val_port_txqpibiasen=false
+CSET gt0_val_port_txqpisenn=false
+CSET gt0_val_port_txqpisenp=false
+CSET gt0_val_port_txqpistrongpdown=false
+CSET gt0_val_port_txqpiweakpup=false
+CSET gt0_val_port_txrate=false
+CSET gt0_val_port_txsysclksel=false
+CSET gt0_val_ppm_offset=100
+CSET gt0_val_prbs_detector=true
+CSET gt0_val_protocol_file=10GBASE-R
+CSET gt0_val_qpll_fbdiv=66
+CSET gt0_val_qpll_refclk_div=1
+CSET gt0_val_rx_buffer_bypass_mode=Auto
+CSET gt0_val_rx_cm_trim=100
+CSET gt0_val_rx_data_width=32
+CSET gt0_val_rx_int_datawidth=32
+CSET gt0_val_rx_line_rate=10.3125
+CSET gt0_val_rx_refclk=REFCLK1_Q0
+CSET gt0_val_rx_reference_clock=156.250
+CSET gt0_val_rx_termination_voltage=GND
+CSET gt0_val_rxbuf_en=true
+CSET gt0_val_rxcomma_deten=false
+CSET gt0_val_rxoutclk_source=false
+CSET gt0_val_rxprbs_err_loopback=false
+CSET gt0_val_rxslide_mode=OFF
+CSET gt0_val_rxusrclk=RXOUTCLK
+CSET gt0_val_sata_e_idle_val=4
+CSET gt0_val_sata_rx_burst_val=4
+CSET gt0_val_tx_buffer_bypass_mode=Auto
+CSET gt0_val_tx_data_width=32
+CSET gt0_val_tx_int_datawidth=32
+CSET gt0_val_tx_line_rate=10.3125
+CSET gt0_val_tx_refclk=REFCLK1_Q0
+CSET gt0_val_tx_reference_clock=156.250
+CSET gt0_val_txbuf_en=true
+CSET gt0_val_txdiff_emph_mode=Custom
+CSET gt0_val_txdiffctrl=false
+CSET gt0_val_txoutclk_source=false
+CSET gt0_val_txpostcursor=true
+CSET gt0_val_txprecursor=true
+CSET gt0_val_txusrclk=TXOUTCLK
+CSET gt10_val=false
+CSET gt10_val_rx_refclk=REFCLK1_Q2
+CSET gt10_val_tx_refclk=REFCLK1_Q2
+CSET gt11_val=false
+CSET gt11_val_rx_refclk=REFCLK1_Q2
+CSET gt11_val_tx_refclk=REFCLK1_Q2
+CSET gt12_val=true
+CSET gt12_val_rx_refclk=REFCLK1_Q3
+CSET gt12_val_tx_refclk=REFCLK1_Q3
+CSET gt13_val=false
+CSET gt13_val_rx_refclk=REFCLK1_Q3
+CSET gt13_val_tx_refclk=REFCLK1_Q3
+CSET gt14_val=false
+CSET gt14_val_rx_refclk=REFCLK1_Q3
+CSET gt14_val_tx_refclk=REFCLK1_Q3
+CSET gt15_val=false
+CSET gt15_val_rx_refclk=REFCLK1_Q3
+CSET gt15_val_tx_refclk=REFCLK1_Q3
+CSET gt16_val=false
+CSET gt16_val_rx_refclk=REFCLK1_Q4
+CSET gt16_val_tx_refclk=REFCLK1_Q4
+CSET gt17_val=false
+CSET gt17_val_rx_refclk=REFCLK1_Q4
+CSET gt17_val_tx_refclk=REFCLK1_Q4
+CSET gt18_val=false
+CSET gt18_val_rx_refclk=REFCLK1_Q4
+CSET gt18_val_tx_refclk=REFCLK1_Q4
+CSET gt19_val=false
+CSET gt19_val_rx_refclk=REFCLK1_Q4
+CSET gt19_val_tx_refclk=REFCLK1_Q4
+CSET gt1_val=false
+CSET gt1_val_rx_refclk=REFCLK1_Q0
+CSET gt1_val_tx_refclk=REFCLK1_Q0
+CSET gt20_val=false
+CSET gt20_val_rx_refclk=REFCLK1_Q5
+CSET gt20_val_tx_refclk=REFCLK1_Q5
+CSET gt21_val=false
+CSET gt21_val_rx_refclk=REFCLK1_Q5
+CSET gt21_val_tx_refclk=REFCLK1_Q5
+CSET gt22_val=false
+CSET gt22_val_rx_refclk=REFCLK1_Q5
+CSET gt22_val_tx_refclk=REFCLK1_Q5
+CSET gt23_val=false
+CSET gt23_val_rx_refclk=REFCLK1_Q5
+CSET gt23_val_tx_refclk=REFCLK1_Q5
+CSET gt24_val=false
+CSET gt24_val_rx_refclk=REFCLK1_Q6
+CSET gt24_val_tx_refclk=REFCLK1_Q6
+CSET gt25_val=false
+CSET gt25_val_rx_refclk=REFCLK1_Q6
+CSET gt25_val_tx_refclk=REFCLK1_Q6
+CSET gt26_val=false
+CSET gt26_val_rx_refclk=REFCLK1_Q6
+CSET gt26_val_tx_refclk=REFCLK1_Q6
+CSET gt27_val=false
+CSET gt27_val_rx_refclk=REFCLK1_Q6
+CSET gt27_val_tx_refclk=REFCLK1_Q6
+CSET gt28_val=false
+CSET gt28_val_rx_refclk=REFCLK1_Q7
+CSET gt28_val_tx_refclk=REFCLK1_Q7
+CSET gt29_val=false
+CSET gt29_val_rx_refclk=REFCLK1_Q7
+CSET gt29_val_tx_refclk=REFCLK1_Q7
+CSET gt2_val=false
+CSET gt2_val_rx_refclk=REFCLK1_Q0
+CSET gt2_val_tx_refclk=REFCLK1_Q0
+CSET gt30_val=false
+CSET gt30_val_rx_refclk=REFCLK1_Q7
+CSET gt30_val_tx_refclk=REFCLK1_Q7
+CSET gt31_val=false
+CSET gt31_val_rx_refclk=REFCLK1_Q7
+CSET gt31_val_tx_refclk=REFCLK1_Q7
+CSET gt32_val=false
+CSET gt32_val_rx_refclk=REFCLK1_Q8
+CSET gt32_val_tx_refclk=REFCLK1_Q8
+CSET gt33_val=false
+CSET gt33_val_rx_refclk=REFCLK1_Q8
+CSET gt33_val_tx_refclk=REFCLK1_Q8
+CSET gt34_val=false
+CSET gt34_val_rx_refclk=REFCLK1_Q8
+CSET gt34_val_tx_refclk=REFCLK1_Q8
+CSET gt35_val=false
+CSET gt35_val_rx_refclk=REFCLK1_Q8
+CSET gt35_val_tx_refclk=REFCLK1_Q8
+CSET gt36_val=false
+CSET gt36_val_rx_refclk=REFCLK1_Q9
+CSET gt36_val_tx_refclk=REFCLK1_Q9
+CSET gt37_val=false
+CSET gt37_val_rx_refclk=REFCLK1_Q9
+CSET gt37_val_tx_refclk=REFCLK1_Q9
+CSET gt38_val=false
+CSET gt38_val_rx_refclk=REFCLK1_Q9
+CSET gt38_val_tx_refclk=REFCLK1_Q9
+CSET gt39_val=false
+CSET gt39_val_rx_refclk=REFCLK1_Q9
+CSET gt39_val_tx_refclk=REFCLK1_Q9
+CSET gt3_val=false
+CSET gt3_val_rx_refclk=REFCLK1_Q0
+CSET gt3_val_tx_refclk=REFCLK1_Q0
+CSET gt4_val=false
+CSET gt4_val_rx_refclk=REFCLK1_Q1
+CSET gt4_val_tx_refclk=REFCLK1_Q1
+CSET gt5_val=false
+CSET gt5_val_rx_refclk=REFCLK1_Q1
+CSET gt5_val_tx_refclk=REFCLK1_Q1
+CSET gt6_val=false
+CSET gt6_val_rx_refclk=REFCLK1_Q1
+CSET gt6_val_tx_refclk=REFCLK1_Q1
+CSET gt7_val=false
+CSET gt7_val_rx_refclk=REFCLK1_Q1
+CSET gt7_val_tx_refclk=REFCLK1_Q1
+CSET gt8_val=false
+CSET gt8_val_rx_refclk=REFCLK1_Q2
+CSET gt8_val_tx_refclk=REFCLK1_Q2
+CSET gt9_val=false
+CSET gt9_val_rx_refclk=REFCLK1_Q2
+CSET gt9_val_tx_refclk=REFCLK1_Q2
+CSET gt_column=left_column
+CSET gt_row=top_row
+CSET gt_type=GTX
+CSET gt_val_drp=false
+CSET gt_val_drp_clock=60
+CSET gt_val_rx_pll=QPLL
+CSET gt_val_tx_pll=QPLL
+CSET gtz0_val_data_width=160
+CSET gtz0_val_encoding=100GBASER_MODE
+CSET gtz0_val_no_rx=false
+CSET gtz0_val_no_tx=false
+CSET gtz0_val_port_corecntl=false
+CSET gtz0_val_port_loopback=false
+CSET gtz0_val_port_pllrecalen=false
+CSET gtz0_val_port_refsel=false
+CSET gtz0_val_port_rxbitslip=false
+CSET gtz0_val_port_rxen=false
+CSET gtz0_val_port_rxfibreset=false
+CSET gtz0_val_port_rxfifostatus=false
+CSET gtz0_val_port_rxpolarity=false
+CSET gtz0_val_port_rxprbs=false
+CSET gtz0_val_port_rxratesel=false
+CSET gtz0_val_port_rxsignalok=false
+CSET gtz0_val_port_txattnctrl=false
+CSET gtz0_val_port_txen=false
+CSET gtz0_val_port_txeqpostctrl=false
+CSET gtz0_val_port_txeqprectrl=false
+CSET gtz0_val_port_txfibreset=false
+CSET gtz0_val_port_txfifostatus=false
+CSET gtz0_val_port_txoutputen=false
+CSET gtz0_val_port_txpolarity=false
+CSET gtz0_val_port_txprbs=false
+CSET gtz0_val_port_txratesel=false
+CSET gtz0_val_port_txslewctrl=false
+CSET gtz0_val_protocol_file=Start_from_scratch
+CSET gtz0_val_refclk_source=REFCLK0
+CSET gtz0_val_reference_clock=322.266
+CSET gtz0_val_rx_line_rate=25.78125
+CSET gtz0_val_rxoutclk_source=RX_FIFO_CLK
+CSET gtz0_val_rxusrclk_source=RXUSRCLK0
+CSET gtz0_val_tx_line_rate=25.78125
+CSET gtz0_val_txoutclk_source=TX_FIFO_CLK
+CSET gtz0_val_txusrclk_source=TXUSRCLK0
+CSET gtz1_val_data_width=160
+CSET gtz1_val_encoding=100GBASER_MODE
+CSET gtz1_val_no_rx=false
+CSET gtz1_val_no_tx=false
+CSET gtz1_val_protocol_file=Start_from_scratch
+CSET gtz1_val_refclk_source=REFCLK0
+CSET gtz1_val_reference_clock=322.266
+CSET gtz1_val_rx_line_rate=25.78125
+CSET gtz1_val_rxoutclk_source=RX_FIFO_CLK
+CSET gtz1_val_rxusrclk_source=RXUSRCLK0
+CSET gtz1_val_tx_line_rate=25.78125
+CSET gtz1_val_txoutclk_source=TX_FIFO_CLK
+CSET gtz1_val_txusrclk_source=TXUSRCLK0
+CSET gtz2_val_data_width=160
+CSET gtz2_val_encoding=100GBASER_MODE
+CSET gtz2_val_no_rx=false
+CSET gtz2_val_no_tx=false
+CSET gtz2_val_protocol_file=Start_from_scratch
+CSET gtz2_val_refclk_source=REFCLK0
+CSET gtz2_val_reference_clock=322.266
+CSET gtz2_val_rx_line_rate=25.78125
+CSET gtz2_val_rxoutclk_source=RX_FIFO_CLK
+CSET gtz2_val_rxusrclk_source=RXUSRCLK0
+CSET gtz2_val_tx_line_rate=25.78125
+CSET gtz2_val_txoutclk_source=TX_FIFO_CLK
+CSET gtz2_val_txusrclk_source=TXUSRCLK0
+CSET gtz3_val_data_width=160
+CSET gtz3_val_encoding=100GBASER_MODE
+CSET gtz3_val_no_rx=false
+CSET gtz3_val_no_tx=false
+CSET gtz3_val_protocol_file=Start_from_scratch
+CSET gtz3_val_refclk_source=REFCLK0
+CSET gtz3_val_reference_clock=322.266
+CSET gtz3_val_rx_line_rate=25.78125
+CSET gtz3_val_rxoutclk_source=RX_FIFO_CLK
+CSET gtz3_val_rxusrclk_source=RXUSRCLK0
+CSET gtz3_val_tx_line_rate=25.78125
+CSET gtz3_val_txoutclk_source=TX_FIFO_CLK
+CSET gtz3_val_txusrclk_source=TXUSRCLK0
+CSET gtz4_val_data_width=160
+CSET gtz4_val_encoding=100GBASER_MODE
+CSET gtz4_val_no_rx=false
+CSET gtz4_val_no_tx=false
+CSET gtz4_val_protocol_file=Start_from_scratch
+CSET gtz4_val_refclk_source=REFCLK0
+CSET gtz4_val_reference_clock=322.266
+CSET gtz4_val_rx_line_rate=25.78125
+CSET gtz4_val_rxoutclk_source=RX_FIFO_CLK
+CSET gtz4_val_rxusrclk_source=RXUSRCLK0
+CSET gtz4_val_tx_line_rate=25.78125
+CSET gtz4_val_txoutclk_source=TX_FIFO_CLK
+CSET gtz4_val_txusrclk_source=TXUSRCLK0
+CSET gtz5_val_data_width=160
+CSET gtz5_val_encoding=100GBASER_MODE
+CSET gtz5_val_no_rx=false
+CSET gtz5_val_no_tx=false
+CSET gtz5_val_protocol_file=Start_from_scratch
+CSET gtz5_val_refclk_source=REFCLK0
+CSET gtz5_val_reference_clock=322.266
+CSET gtz5_val_rx_line_rate=25.78125
+CSET gtz5_val_rxoutclk_source=RX_FIFO_CLK
+CSET gtz5_val_rxusrclk_source=RXUSRCLK0
+CSET gtz5_val_tx_line_rate=25.78125
+CSET gtz5_val_txoutclk_source=TX_FIFO_CLK
+CSET gtz5_val_txusrclk_source=TXUSRCLK0
+CSET gtz6_val_data_width=160
+CSET gtz6_val_encoding=100GBASER_MODE
+CSET gtz6_val_no_rx=false
+CSET gtz6_val_no_tx=false
+CSET gtz6_val_protocol_file=Start_from_scratch
+CSET gtz6_val_refclk_source=REFCLK0
+CSET gtz6_val_reference_clock=322.266
+CSET gtz6_val_rx_line_rate=25.78125
+CSET gtz6_val_rxoutclk_source=RX_FIFO_CLK
+CSET gtz6_val_rxusrclk_source=RXUSRCLK0
+CSET gtz6_val_tx_line_rate=25.78125
+CSET gtz6_val_txoutclk_source=TX_FIFO_CLK
+CSET gtz6_val_txusrclk_source=TXUSRCLK0
+CSET gtz7_val_data_width=160
+CSET gtz7_val_encoding=100GBASER_MODE
+CSET gtz7_val_no_rx=false
+CSET gtz7_val_no_tx=false
+CSET gtz7_val_protocol_file=Start_from_scratch
+CSET gtz7_val_refclk_source=REFCLK0
+CSET gtz7_val_reference_clock=322.266
+CSET gtz7_val_rx_line_rate=25.78125
+CSET gtz7_val_rxoutclk_source=RX_FIFO_CLK
+CSET gtz7_val_rxusrclk_source=RXUSRCLK0
+CSET gtz7_val_tx_line_rate=25.78125
+CSET gtz7_val_txoutclk_source=TX_FIFO_CLK
+CSET gtz7_val_txusrclk_source=TXUSRCLK0
+CSET gtz_selection=GTZ0
+CSET identical_config=true
+CSET identical_protocol_file=10GBASE-R
+CSET identical_val_no_rx=false
+CSET identical_val_no_tx=false
+CSET identical_val_rx_line_rate=10.3125
+CSET identical_val_rx_reference_clock=156.250
+CSET identical_val_tx_line_rate=10.3125
+CSET identical_val_tx_reference_clock=156.250
+CSET octal0_val=true
+CSET octal0_val_drpclk_source=DRPCLK0
+CSET octal0_val_identical_config=true
+CSET octal0_val_identical_no_rx=false
+CSET octal0_val_identical_no_tx=false
+CSET octal0_val_identical_protocol_file=Start_from_scratch
+CSET octal0_val_identical_reference_clock=322.266
+CSET octal0_val_identical_rx_line_rate=25.78125
+CSET octal0_val_identical_tx_line_rate=25.78125
+CSET octal0_val_master_slave=false
+CSET octal0_val_multi_channel_mode=OFF
+CSET octal0_val_rxoutclk0_source=RXOUTCLK_LANE0
+CSET octal0_val_rxoutclk1_source=RXOUTCLK_LANE0
+CSET octal0_val_rxoutclk2_source=RXOUTCLK_LANE0
+CSET octal0_val_rxoutclk3_source=RXOUTCLK_LANE0
+CSET octal0_val_rxusrclk0_source=OCTAL0_RXOUTCLK0
+CSET octal0_val_rxusrclk1_source=OCTAL0_RXOUTCLK0
+CSET octal0_val_rxusrclk2_source=OCTAL0_RXOUTCLK0
+CSET octal0_val_rxusrclk3_source=OCTAL0_RXOUTCLK0
+CSET octal0_val_rxusrclk4_source=OCTAL0_RXOUTCLK0
+CSET octal0_val_rxusrclk5_source=OCTAL0_RXOUTCLK0
+CSET octal0_val_rxusrclk6_source=OCTAL0_RXOUTCLK0
+CSET octal0_val_rxusrclk7_source=OCTAL0_RXOUTCLK0
+CSET octal0_val_txoutclk0_source=TXOUTCLK_LANE0
+CSET octal0_val_txoutclk1_source=TXOUTCLK_LANE0
+CSET octal0_val_txusrclk0_source=OCTAL0_TXOUTCLK0
+CSET octal0_val_txusrclk1_source=OCTAL0_TXOUTCLK0
+CSET octal0_val_txusrclk2_source=OCTAL0_TXOUTCLK0
+CSET octal0_val_txusrclk3_source=OCTAL0_TXOUTCLK0
+CSET octal0_val_txusrclk4_source=OCTAL0_TXOUTCLK0
+CSET octal0_val_txusrclk5_source=OCTAL0_TXOUTCLK0
+CSET octal0_val_txusrclk6_source=OCTAL0_TXOUTCLK0
+CSET octal0_val_txusrclk7_source=OCTAL0_TXOUTCLK0
+CSET octal1_val=false
+CSET pcie_cb_en=false
+CSET pcie_cb_mode=One_Hop
+CSET pcie_lpm_dfe=DFE
+CSET pcie_sync_mode=false
+CSET silicon_version=no_silicon_version_loaded
+CSET use_gtz0=true
+CSET use_gtz1=true
+CSET use_gtz2=true
+CSET use_gtz3=true
+CSET use_gtz4=true
+CSET use_gtz5=true
+CSET use_gtz6=true
+CSET use_gtz7=true
+# END Parameters
+# BEGIN Extra information
+MISC pkg_timestamp=2012-07-20T14:43:13Z
+# END Extra information
+GENERATE
+# CRC: 892fd7a1

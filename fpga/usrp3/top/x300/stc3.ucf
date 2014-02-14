@@ -1,0 +1,96 @@
+#*******************************************************************************
+# STC3 Pin Mapping
+#*******************************************************************************
+NET "aIoResetIn_n"          IOSTANDARD = LVTTL | LOC = AC27;
+
+NET "aIoReadyIn"            IOSTANDARD = LVTTL | LOC = AH29;
+NET "aIoReadyOut"           IOSTANDARD = LVTTL | LOC = AE28;
+
+NET "IoRxClock*"            IOSTANDARD = LVDS | DIFF_TERM = TRUE;
+NET "IoRxClock"             LOC = AD18;
+NET "IoRxClock_n"           LOC = AE18;
+
+NET "irIoRxData*"           IOSTANDARD = LVDS | DIFF_TERM = TRUE;
+NET "irIoRxData_n[0]"       LOC = AK18;
+NET "irIoRxData_n[1]"       LOC = AJ17;
+NET "irIoRxData_n[2]"       LOC = AK19;
+NET "irIoRxData_n[3]"       LOC = AG14;
+NET "irIoRxData_n[4]"       LOC = AH15;
+NET "irIoRxData_n[5]"       LOC = Y18;
+NET "irIoRxData_n[6]"       LOC = AG17;
+NET "irIoRxData_n[7]"       LOC = AE19;
+NET "irIoRxData_n[8]"       LOC = AC17;
+NET "irIoRxData_n[9]"       LOC = AD16;
+NET "irIoRxData_n[10]"      LOC = AJ16;
+NET "irIoRxData_n[11]"      LOC = AC19;
+NET "irIoRxData_n[12]"      LOC = AB18;
+NET "irIoRxData_n[13]"      LOC = AF16;
+NET "irIoRxData_n[14]"      LOC = AH19;
+NET "irIoRxData_n[15]"      LOC = AK15;
+NET "irIoRxData[0]"         LOC = AJ18;
+NET "irIoRxData[1]"         LOC = AH17;
+NET "irIoRxData[2]"         LOC = AJ19;
+NET "irIoRxData[3]"         LOC = AF15;
+NET "irIoRxData[4]"         LOC = AG15;
+NET "irIoRxData[5]"         LOC = Y19;
+NET "irIoRxData[6]"         LOC = AF17;
+NET "irIoRxData[7]"         LOC = AD19;
+NET "irIoRxData[8]"         LOC = AB17;
+NET "irIoRxData[9]"         LOC = AD17;
+NET "irIoRxData[10]"        LOC = AH16;
+NET "irIoRxData[11]"        LOC = AB19;
+NET "irIoRxData[12]"        LOC = AA18;
+NET "irIoRxData[13]"        LOC = AE16;
+NET "irIoRxData[14]"        LOC = AG19;
+NET "irIoRxData[15]"        LOC = AK16;
+
+NET "irIoRxHeader*"         IOSTANDARD = LVDS | DIFF_TERM = TRUE;
+NET "irIoRxHeader"          LOC = AF18;
+NET "irIoRxHeader_n"        LOC = AG18;
+
+NET "IoTxClock*"            IOSTANDARD = LVDS_25;
+NET "IoTxClock_n"           LOC = AE24;
+NET "IoTxClock"             LOC = AD23;
+
+NET "itIoTxData*"           IOSTANDARD = LVDS_25;
+NET "itIoTxData_n[0]"       LOC = AF25;
+NET "itIoTxData_n[1]"       LOC = AC25;
+NET "itIoTxData_n[2]"       LOC = AH22;
+NET "itIoTxData_n[3]"       LOC = AF21;
+NET "itIoTxData_n[4]"       LOC = AD24;
+NET "itIoTxData_n[5]"       LOC = AB20;
+NET "itIoTxData_n[6]"       LOC = AA21;
+NET "itIoTxData_n[7]"       LOC = AH25;
+NET "itIoTxData_n[8]"       LOC = AB23;
+NET "itIoTxData_n[9]"       LOC = AK25;
+NET "itIoTxData_n[10]"      LOC = AK24;
+NET "itIoTxData_n[11]"      LOC = AD22;
+NET "itIoTxData_n[12]"      LOC = AF23;
+NET "itIoTxData_n[13]"      LOC = AE21;
+NET "itIoTxData_n[14]"      LOC = AC21;
+NET "itIoTxData_n[15]"      LOC = AA23;
+NET "itIoTxData[0]"         LOC = AE25;
+NET "itIoTxData[1]"         LOC = AB24;
+NET "itIoTxData[2]"         LOC = AG22;
+NET "itIoTxData[3]"         LOC = AF20;
+NET "itIoTxData[4]"         LOC = AC24;
+NET "itIoTxData[5]"         LOC = AA20;
+NET "itIoTxData[6]"         LOC = Y21;
+NET "itIoTxData[7]"         LOC = AG25;
+NET "itIoTxData[8]"         LOC = AB22;
+NET "itIoTxData[9]"         LOC = AJ24;
+NET "itIoTxData[10]"        LOC = AK23;
+NET "itIoTxData[11]"        LOC = AC22;
+NET "itIoTxData[12]"        LOC = AE23;
+NET "itIoTxData[13]"        LOC = AD21;
+NET "itIoTxData[14]"        LOC = AC20;
+NET "itIoTxData[15]"        LOC = AA22;
+
+NET "itIoTxHeader*"         IOSTANDARD = LVDS_25;
+NET "itIoTxHeader_n"        LOC = Y24;
+NET "itIoTxHeader"          LOC = Y23;
+
+NET "aIrq"                  IOSTANDARD = LVTTL | LOC = AF28;
+
+NET "aIoPort2Restart"   	LOC = AE30 | IOSTANDARD = LVCMOS33 | PULLUP; 
+NET "aStc3Gpio7"        	LOC = AF30 | IOSTANDARD = LVCMOS33; 

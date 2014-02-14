@@ -21,6 +21,7 @@ UHD_INSTALL(FILES
     bounded_buffer.ipp
     buffer_pool.hpp
     if_addrs.hpp
+    udp_constants.hpp
     udp_simple.hpp
     udp_zero_copy.hpp
     tcp_zero_copy.hpp

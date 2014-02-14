@@ -1,0 +1,15 @@
+# Output products list for <ddr_ila_basic>
+ddr_ila_basic.asy
+ddr_ila_basic.cdc
+ddr_ila_basic.constraints/ddr_ila_basic.ucf
+ddr_ila_basic.constraints/ddr_ila_basic.xdc
+ddr_ila_basic.gise
+ddr_ila_basic.ncf
+ddr_ila_basic.ngc
+ddr_ila_basic.ucf
+ddr_ila_basic.xco
+ddr_ila_basic.xdc
+ddr_ila_basic.xise
+ddr_ila_basic_flist.txt
+ddr_ila_basic_readme.txt
+ddr_ila_basic_xmdf.tcl

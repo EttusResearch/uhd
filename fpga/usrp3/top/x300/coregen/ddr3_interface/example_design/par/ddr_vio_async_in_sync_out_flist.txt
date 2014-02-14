@@ -1,0 +1,14 @@
+# Output products list for <ddr_vio_async_in_sync_out>
+ddr_vio_async_in_sync_out.asy
+ddr_vio_async_in_sync_out.cdc
+ddr_vio_async_in_sync_out.constraints/ddr_vio_async_in_sync_out.ucf
+ddr_vio_async_in_sync_out.constraints/ddr_vio_async_in_sync_out.xdc
+ddr_vio_async_in_sync_out.gise
+ddr_vio_async_in_sync_out.ngc
+ddr_vio_async_in_sync_out.ucf
+ddr_vio_async_in_sync_out.xco
+ddr_vio_async_in_sync_out.xdc
+ddr_vio_async_in_sync_out.xise
+ddr_vio_async_in_sync_out_flist.txt
+ddr_vio_async_in_sync_out_readme.txt
+ddr_vio_async_in_sync_out_xmdf.tcl

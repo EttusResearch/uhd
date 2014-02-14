@@ -1,0 +1,9 @@
+run
+-ifmt MIXED
+-top radio_clk_gen_exdes
+-p xc7k410t-ffg900-2
+-ifn xst.prj
+-ofn radio_clk_gen_exdes
+-keep_hierarchy soft 
+-equivalent_register_removal no 
+-max_fanout 65535

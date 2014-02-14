@@ -1,0 +1,17 @@
+# Output products list for <chipscope_ila_64>
+chipscope_ila_64.asy
+chipscope_ila_64.cdc
+chipscope_ila_64.constraints/chipscope_ila_64.ucf
+chipscope_ila_64.constraints/chipscope_ila_64.xdc
+chipscope_ila_64.gise
+chipscope_ila_64.ncf
+chipscope_ila_64.ngc
+chipscope_ila_64.ucf
+chipscope_ila_64.v
+chipscope_ila_64.veo
+chipscope_ila_64.xco
+chipscope_ila_64.xdc
+chipscope_ila_64.xise
+chipscope_ila_64_flist.txt
+chipscope_ila_64_readme.txt
+chipscope_ila_64_xmdf.tcl

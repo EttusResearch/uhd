@@ -210,15 +210,18 @@ bool chinch_flash_write_buf(uint32_t offset, uint16_t* buf, uint32_t size)
         STATUS_CHAIN(chinch_poke16(base_addr + (i * 2), buf[i]), status);
     }
 
-    //Commit write and poll until data is written
+    //Commit write
     STATUS_CHAIN(chinch_poke16(CHINCH_FLASH_WINDOW_BASE, 0x0029), status);
-    if (status) {
-        uint16_t read_data;
-        while (true) {
-            STATUS_MERGE(chinch_flash_read(base_addr, &read_data), status);    //Wait for write to finish
-            if ((read_data == buf[0]) || !status) break;
-        }
-    }
+
+    //Poll for completion
+    //Bit 7 of the data at the final address is the status bit.
+    //It is set to the inverse of bit 7 of the final data to be
+    //written until the final write is completed.
+    uint32_t read_data;
+    do {
+        STATUS_MERGE(chinch_peek16(base_addr + ((size - 1) * 2), &read_data), status);
+    } while (status && (((uint16_t)read_data ^ buf[size - 1]) & (1 << 7)));
+
     return status;
 }
 

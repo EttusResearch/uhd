@@ -1,0 +1,8 @@
+INTSTYLE=ise
+INFILE=/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/example_design/par/example_top.ncd
+OUTFILE=/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/example_design/par/example_top.bit
+FAMILY=Kintex7
+PART=xc7k410t-2ffg900
+WORKINGDIR=/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/example_design/par
+LICENSE=ISE
+USER_INFO=174231325_175453155_210544338_549

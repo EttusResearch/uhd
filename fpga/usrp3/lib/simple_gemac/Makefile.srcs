@@ -1,0 +1,24 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+##################################################
+# Simple GEMAC Sources
+##################################################
+SIMPLE_GEMAC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/simple_gemac/, \
+simple_gemac_wrapper.v \
+simple_gemac.v \
+simple_gemac_tx.v \
+simple_gemac_rx.v \
+crc.v \
+delay_line.v \
+flow_ctrl_tx.v \
+flow_ctrl_rx.v \
+address_filter.v \
+address_filter_promisc.v \
+ll8_to_txmac.v \
+rxmac_to_ll8.v \
+ll8_to_axi64.v \
+axi64_to_ll8.v \
+mdio.v \
+))

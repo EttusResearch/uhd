@@ -58,21 +58,23 @@ static const double X300_BUS_CLOCK_RATE         = 175e6;        //Hz
 static const size_t X300_TX_HW_BUFF_SIZE        = 0x90000;      //576KiB
 static const size_t X300_TX_FC_RESPONSE_FREQ    = 8;            //per flow-control window
 
-static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000; //32MiB    For an ~8k MTU any size >32MiB is just wasted buffer space
-static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000;  //1Mib
-static const double X300_RX_SW_BUFF_FULL_FACTOR     = 0.90;      //Buffer should ideally be 90% full.
-static const size_t X300_RX_FC_REQUEST_FREQ         = 32;        //per flow-control window
+static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
+static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
+static const double X300_RX_SW_BUFF_FULL_FACTOR     = 0.90;     //Buffer should ideally be 90% full.
+static const size_t X300_RX_FC_REQUEST_FREQ         = 32;       //per flow-control window
 
-static const size_t X300_PCIE_DATA_FRAME_SIZE   = 8192;          //bytes
-static const size_t X300_PCIE_DATA_NUM_FRAMES   = 2048;
-static const size_t X300_PCIE_MSG_FRAME_SIZE    = 256;           //bytes
-static const size_t X300_PCIE_MSG_NUM_FRAMES    = 32;
+static const size_t X300_PCIE_DATA_FRAME_SIZE       = 8192;     //bytes
+static const size_t X300_PCIE_DATA_NUM_FRAMES       = 2048;
+static const size_t X300_PCIE_MSG_FRAME_SIZE        = 256;      //bytes
+static const size_t X300_PCIE_MSG_NUM_FRAMES        = 32;
 
-static const size_t X300_ETH_DATA_FRAME_SIZE    = 8000;                             //bytes
-static const size_t X300_ETH_DATA_NUM_FRAMES    = 32;
-static const size_t X300_ETH_MSG_FRAME_SIZE     = uhd::transport::udp_simple::mtu;  //bytes
-static const size_t X300_ETH_MSG_NUM_FRAMES     = 32;
-static const double X300_DEFAULT_SYSREF_RATE    = 10e6;
+static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     //bytes
+static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     //bytes
+static const size_t X300_ETH_MSG_FRAME_SIZE         = uhd::transport::udp_simple::mtu;  //bytes
+
+static const size_t X300_ETH_MSG_NUM_FRAMES         = 32;
+static const size_t X300_ETH_DATA_NUM_FRAMES        = 32;
+static const double X300_DEFAULT_SYSREF_RATE        = 10e6;
 
 #define X300_RADIO_DEST_PREFIX_TX 0
 #define X300_RADIO_DEST_PREFIX_CTRL 1
@@ -207,6 +209,9 @@ private:
         int clock_control_regs__pps_out_enb;
         int clock_control_regs__tcxo_enb;
         int clock_control_regs__gpsdo_pwr;
+
+        //which FPGA image is loaded
+        std::string loaded_fpga_image;
     };
     std::vector<mboard_members_t> _mb;
 
@@ -243,13 +248,19 @@ private:
         const uhd::device_addr_t& args,
         boost::uint32_t& sid);
 
-    struct mtu_result_t
+    struct frame_size_t
     {
-        size_t recv_mtu;
-        size_t send_mtu;
+        size_t recv_frame_size;
+        size_t send_frame_size;
     };
+    frame_size_t max_frame_sizes;
 
-    mtu_result_t determine_mtu(const std::string &addr, const mtu_result_t &user_mtu);
+    /*!
+     * Automatically determine the maximum frame size available by sending a UDP packet
+     * to the device and see which packet sizes actually work. This way, we can take
+     * switches etc. into account which might live between the device and the host.
+     */
+    frame_size_t determine_max_frame_size(const std::string &addr, const frame_size_t &user_mtu);
 
     ////////////////////////////////////////////////////////////////////
     //

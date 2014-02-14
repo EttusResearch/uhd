@@ -18,7 +18,7 @@
 
 #include "max2870_regs.hpp"
 #include "db_sbx_common.hpp"
-
+#include <boost/algorithm/string.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -47,14 +47,14 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
     ) % (target_freq/1e6) << std::endl;
 
     /*
-     * If the user sets 'mode_n=int-n' in the tuning args, the user wishes to
+     * If the user sets 'mode_n=integer' in the tuning args, the user wishes to
      * tune in Integer-N mode, which can result in better spur
      * performance on some mixers. The default is fractional tuning.
      */
     property_tree::sptr subtree = (unit == dboard_iface::UNIT_RX) ? self_base->get_rx_subtree()
                                                                   : self_base->get_tx_subtree();
     device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
-    bool is_int_n = (tune_args.get("mode_n","") == "int-n");
+    bool is_int_n = boost::iequals(tune_args.get("mode_n",""), "integer");
 
     //clip the input
     target_freq = cbx_freq_range.clip(target_freq);

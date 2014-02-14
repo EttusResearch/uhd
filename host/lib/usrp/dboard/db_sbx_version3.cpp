@@ -20,6 +20,7 @@
 #include "db_sbx_common.hpp"
 #include "../common/adf435x_common.hpp"
 #include <uhd/types/tune_request.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -47,14 +48,14 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     ) % (target_freq/1e6) << std::endl;
 
     /*
-     * If the user sets 'mode_n=int-n' in the tuning args, the user wishes to
+     * If the user sets 'mode_n=integer' in the tuning args, the user wishes to
      * tune in Integer-N mode, which can result in better spur
      * performance on some mixers. The default is fractional tuning.
      */
     property_tree::sptr subtree = (unit == dboard_iface::UNIT_RX) ? self_base->get_rx_subtree()
                                                                   : self_base->get_tx_subtree();
     device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
-    bool is_int_n = (tune_args.get("mode_n","") == "int-n");
+    bool is_int_n = boost::iequals(tune_args.get("mode_n",""), "integer");
 
     //clip the input
     target_freq = sbx_freq_range.clip(target_freq);
@@ -84,6 +85,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     tuning_constraints.int_range = uhd::range_t(prescaler_to_min_int_div[prescaler], 4095);  //INT is a 12-bit field
     tuning_constraints.pfd_freq_max = 25e6;
     tuning_constraints.rf_divider_range = uhd::range_t(1, 16);
+    tuning_constraints.feedback_after_divider = true;
 
     double actual_freq;
     adf435x_tuning_settings tuning_settings = tune_adf435x_synth(
@@ -102,7 +104,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     regs.int_16_bit             = tuning_settings.int_16_bit;
     regs.mod_12_bit             = tuning_settings.mod_12_bit;
     regs.clock_divider_12_bit   = tuning_settings.clock_divider_12_bit;
-    regs.feedback_select        = tuning_settings.feedback_after_divider ?
+    regs.feedback_select        = tuning_constraints.feedback_after_divider ?
                                     adf4350_regs_t::FEEDBACK_SELECT_DIVIDED :
                                     adf4350_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
     regs.clock_div_mode         = adf4350_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE;

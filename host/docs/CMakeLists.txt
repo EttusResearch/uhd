@@ -40,6 +40,7 @@ SET(manual_sources
     usrp_b200.rst
     usrp_e1x0.rst
     usrp_x3x0.rst
+    usrp_x3x0_config.rst
 )
 
 ########################################################################

@@ -1,0 +1,40 @@
+vlogcomp -work work ${XILINX}/verilog/src/glbl.v
+vlogcomp --define SIM_SCRIPT=true --define ISIM=true -work work ../../../vita/new_tx_tb.v
+vlogcomp -work work ../../../dsp/duc_chain.v
+vlogcomp -work work ../../../dsp/hb_interp.v
+vlogcomp -work work ../../../dsp/small_hb_int.v
+vlogcomp -work work ../../../dsp/cic_interp.v
+vlogcomp -work work ../../../dsp/cic_int_shifter.v
+vlogcomp -work work ../../../dsp/cic_strober.v
+vlogcomp -work work ../../../dsp/cordic_stage.v
+vlogcomp -work work ../../../dsp/cordic_z24.v
+vlogcomp -work work ../../../dsp/clip.v
+vlogcomp -work work ../../../dsp/round.v
+vlogcomp -work work ../../../dsp/round_reg.v
+vlogcomp -work work ../../../dsp/sign_extend.v
+vlogcomp -work work ../../../dsp/add2_reg.v
+vlogcomp -work work ../../../dsp/add2_and_round_reg.v
+vlogcomp -work work ../../../dsp/srl.v
+vlogcomp -work work ../../../dsp/acc.v
+vlogcomp -work work ../../../dsp/clip_reg.v
+vlogcomp -work work ../../../dsp/add2_and_round.v
+vlogcomp -work work ../../../dsp/add2.v
+vlogcomp -work work ../../../vita/new_tx_control.v
+vlogcomp -work work ../../../vita/new_tx_deframer.v
+vlogcomp -work work ../../../vita/tx_responder.v
+vlogcomp -work work ../../../vita/context_packet_gen.v
+vlogcomp -work work ../../../vita/trigger_context_pkt.v
+vlogcomp -work work ../../../control/setting_reg.v
+vlogcomp -work work ../../../control/ram_2port.v
+vlogcomp -work work ../../../fifo/axi_fifo.v
+vlogcomp -work work ../../../fifo/axi_mux4.v
+vlogcomp -work work ../../../fifo/axi_fifo_short.v
+vlogcomp -work work ../../../timing/time_compare.v
+
+
+
+fuse work.new_tx_tb work.glbl -L unisims_ver -L xilinxcorelib_ver -o new_tx_tb.exe
+
+# run the simulation scrip
+#./new_tx_tb.exe -gui #-tclbatch simcmds.tcl
+./new_tx_tb.exe

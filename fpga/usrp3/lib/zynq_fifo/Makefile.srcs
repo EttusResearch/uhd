@@ -1,0 +1,15 @@
+#
+# Copyright 2012 Ettus Research LLC
+#
+
+##################################################
+# ZYNQ FIFO interface sources
+##################################################
+ZYNQ_FIFO_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/zynq_fifo/, \
+zf_arbiter.v \
+zf_stream_to_host.v \
+zf_host_to_stream.v \
+zf_slave_readback.v \
+zf_slave_settings.v \
+zynq_fifo_top.v \
+))

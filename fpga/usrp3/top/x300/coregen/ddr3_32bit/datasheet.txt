@@ -1,0 +1,79 @@
+
+
+CORE Generator Options:
+   Target Device                   : xc7k410t-ffg900
+   Speed Grade                     : -2
+   HDL                             : verilog
+   Synthesis Tool                  : Foundation_ISE
+
+MIG Output Options:
+   Module Name                     : ddr3_32bit
+   No of Controllers               : 1
+   Selected Compatible Device(s)   : xc7k325t-ffg900
+
+FPGA Options:
+   System Clock Type               : Single-Ended
+   Reference Clock Type            : No Buffer
+   Debug Port                      : OFF
+   Internal Vref                   : disabled
+   IO Power Reduction              : ON
+   XADC instantiation in MIG       : Enabled
+
+Extended FPGA Options:
+   DCI for DQ,DQS/DQS#,DM          : enabled
+   Internal Termination (HR Banks) : 50 Ohms
+    
+/*******************************************************/
+/*                  Controller 0                       */
+/*******************************************************/
+Controller Options :
+   Memory                        : DDR3_SDRAM
+   Interface                     : AXI
+   Design Clock Frequency        : 2000 ps (500.00 MHz)
+   Phy to Controller Clock Ratio : 2:1
+   Input Clock Period            : 10000 ps
+   CLKFBOUT_MULT (PLL)           : 10
+   DIVCLK_DIVIDE (PLL)           : 1
+   VCC_AUX IO                    : 1.8V
+   Memory Type                   : Components
+   Memory Part                   : MT41J256m16XX-125
+   Equivalent Part(s)            : MT41J256M16HA-125
+   Data Width                    : 32
+   ECC                           : Disabled
+   Data Mask                     : enabled
+   ORDERING                      : Normal
+
+AXI Parameters :
+   Data Width                    : 128
+   Arbitration Scheme            : ROUND_ROBIN
+   Narrow Burst Support          : 1
+   ID Width                      : 4
+
+Memory Options:
+   Burst Length (MR0[1:0])          : 8 - Fixed
+   Read Burst Type (MR0[3])         : Sequential
+   CAS Latency (MR0[6:4])           : 7
+   Output Drive Strength (MR1[5,1]) : RZQ/7
+   Controller CS option             : Enable
+   Rtt_NOM - ODT (MR1[9,6,2])       : RZQ/4
+   Rtt_WR - Dynamic ODT (MR2[10:9]) : Dynamic ODT off
+   Memory Address Mapping           : BANK_ROW_COLUMN
+
+
+Bank Selections:
+
+System_Clock: 
+	SignalName: sys_clk_i
+		PadLocation: AD17(SRCC_P)  Bank: 32
+
+System_Control: 
+	SignalName: sys_rst
+		PadLocation: No connect  Bank: Select Bank
+	SignalName: init_calib_complete
+		PadLocation: No connect  Bank: Select Bank
+	SignalName: tg_compare_error
+		PadLocation: No connect  Bank: Select Bank
+
+
+
+    

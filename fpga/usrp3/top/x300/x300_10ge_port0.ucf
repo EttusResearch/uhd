@@ -1,0 +1,2 @@
+INST "*port0/*gtxe2_i"  LOC=GTXE2_CHANNEL_X0Y0;
+INST "*port0/*gtxe2_common_0_i" LOC = "GTXE2_COMMON_X0Y0";

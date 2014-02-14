@@ -137,7 +137,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::tune_request_t tune_request;
     if(vm.count("lo_off")) tune_request = uhd::tune_request_t(freq, lo_off);
     else tune_request = uhd::tune_request_t(freq);
-    if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=int-n");
+    if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=integer");
     usrp->set_tx_freq(tune_request);
     std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
 

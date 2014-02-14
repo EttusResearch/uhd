@@ -1,0 +1,9 @@
+set -tmpdir ../synth/__projnav
+set -xsthdpdir ..\synth\xst
+run
+-ifn ../synth/example_top.prj
+-ofn example_top
+-p xc7k410t-2-ffg900
+-top example_top
+-lso ../synth/example_top.lso
+quit

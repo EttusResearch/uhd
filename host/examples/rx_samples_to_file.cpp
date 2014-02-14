@@ -290,7 +290,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if (vm.count("freq")){	//with default of 0.0 this will always be true
 		std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
         uhd::tune_request_t tune_request(freq);
-        if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=int-n");
+        if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=integer");
 		usrp->set_rx_freq(tune_request);
 		std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
 	}

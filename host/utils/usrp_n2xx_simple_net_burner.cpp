@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2013 Ettus Research LLC
+// Copyright 2012-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <csignal>
 #include <iostream>
 #include <map>
 #include <fstream>
@@ -45,6 +46,25 @@ namespace po = boost::program_options;
 using namespace boost::algorithm;
 using namespace uhd;
 using namespace uhd::transport;
+
+/***********************************************************************
+ * Signal handlers
+ **********************************************************************/
+static int num_ctrl_c = 0;
+void sig_int_handler(int){
+    num_ctrl_c++;
+    if(num_ctrl_c == 1){
+        std::cout << std::endl << "Are you sure you want to abort the image burning? If you do, your "
+                                  "USRP-N Series unit will be bricked!" << std::endl
+                               << "Press Ctrl+C again to abort the image burning procedure." << std::endl << std::endl;
+    }
+    else{
+        std::cout << std::endl << "Aborting. Your USRP-N Series unit will be bricked." << std::endl
+                  << "Refer to http://files.ettus.com/uhd_docs/manual/html/usrp2.html#device-recovery-and-bricking" << std::endl
+                  << "for details on restoring your device." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
 
 //Mapping revision numbers to filenames
 std::map<boost::uint32_t, std::string> filename_map = boost::assign::map_list_of
@@ -498,7 +518,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format(" * Sector size: %3.2f\n\n") % flash_info[0];
 
     //Burning images
-
+    std::signal(SIGINT, &sig_int_handler);
     if(burn_fpga){
         erase_image(udp_transport, false, flash_info[1]);
         write_image(udp_transport, false, fpga_image, flash_info[1], fpga_image_size);

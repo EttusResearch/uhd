@@ -1,0 +1,2595 @@
+Release 14.4 Map P.49d (lin64)
+Xilinx Mapping Report File for Design 'example_top'
+
+Design Information
+------------------
+Command Line   : map -intstyle ise -p xc7k410t-ffg900-2 -w -ol high -xe n
+-register_duplication off -ir off -pr off -lc off -power off -o
+example_top_map.ncd example_top.ngd example_top.pcf 
+Target Device  : xc7k410t
+Target Package : ffg900
+Target Speed   : -2
+Mapper Version : kintex7 -- $Revision: 1.55 $
+Mapped Date    : Tue Jan 22 18:25:00 2013
+
+Design Summary
+--------------
+Number of errors:      0
+Number of warnings:  172
+Slice Logic Utilization:
+  Number of Slice Registers:                12,744 out of 508,400    2%
+    Number used as Flip Flops:              12,721
+    Number used as Latches:                      1
+    Number used as Latch-thrus:                  0
+    Number used as AND/OR logics:               22
+  Number of Slice LUTs:                     10,803 out of 254,200    4%
+    Number used as logic:                    8,544 out of 254,200    3%
+      Number using O6 output only:           7,472
+      Number using O5 output only:              59
+      Number using O5 and O6:                1,013
+      Number used as ROM:                        0
+    Number used as Memory:                   1,452 out of  90,600    1%
+      Number used as Dual Port RAM:            560
+        Number using O6 output only:             0
+        Number using O5 output only:            11
+        Number using O5 and O6:                549
+      Number used as Single Port RAM:            0
+      Number used as Shift Register:           892
+        Number using O6 output only:           806
+        Number using O5 output only:             0
+        Number using O5 and O6:                 86
+    Number used exclusively as route-thrus:    807
+      Number with same-slice register load:    684
+      Number with same-slice carry load:       123
+      Number with other load:                    0
+
+Slice Logic Distribution:
+  Number of occupied Slices:                 4,317 out of  63,550    6%
+  Number of LUT Flip Flop pairs used:       14,415
+    Number with an unused Flip Flop:         3,027 out of  14,415   20%
+    Number with an unused LUT:               3,612 out of  14,415   25%
+    Number of fully used LUT-FF pairs:       7,776 out of  14,415   53%
+    Number of unique control sets:             528
+    Number of slice register sites lost
+      to control set restrictions:           2,031 out of 508,400    1%
+
+  A LUT Flip Flop pair for this architecture represents one LUT paired with
+  one Flip Flop within a slice.  A control set is a unique combination of
+  clock, reset, set, and enable signals for a registered element.
+  The Slice Logic Distribution report is not meaningful if the design is
+  over-mapped for a non-slice resource or if Placement fails.
+  OVERMAPPING of BRAM resources should be ignored if the design is
+  over-mapped for a non-BRAM resource or if placement fails.
+
+IO Utilization:
+  Number of bonded IOBs:                        75 out of     500   15%
+    Number of LOCed IOBs:                       75 out of      75  100%
+    IOB Flip Flops:                              9
+    IOB Master Pads:                             5
+    IOB Slave Pads:                              5
+
+Specific Feature Utilization:
+  Number of RAMB36E1/FIFO36E1s:                  5 out of     795    1%
+    Number using RAMB36E1 only:                  5
+    Number using FIFO36E1 only:                  0
+  Number of RAMB18E1/FIFO18E1s:                  1 out of   1,590    1%
+    Number using RAMB18E1 only:                  1
+    Number using FIFO18E1 only:                  0
+  Number of BUFG/BUFGCTRLs:                      3 out of      32    9%
+    Number used as BUFGs:                        3
+    Number used as BUFGCTRLs:                    0
+  Number of IDELAYE2/IDELAYE2_FINEDELAYs:       32 out of     500    6%
+    Number used as IDELAYE2s:                   32
+    Number used as IDELAYE2_FINEDELAYs:          0
+  Number of ILOGICE2/ILOGICE3/ISERDESE2s:       32 out of     500    6%
+    Number used as ILOGICE2s:                    0
+  Number used as  ILOGICE3s:                     0
+    Number used as ISERDESE2s:                  32
+  Number of ODELAYE2/ODELAYE2_FINEDELAYs:        0 out of     150    0%
+  Number of OLOGICE2/OLOGICE3/OSERDESE2s:       69 out of     500   13%
+    Number used as OLOGICE2s:                    5
+    Number used as OLOGICE3s:                    0
+    Number used as OSERDESE2s:                  64
+  Number of PHASER_IN/PHASER_IN_PHYs:            4 out of      40   10%
+    Number used as PHASER_INs:                   0
+    Number used as PHASER_IN_PHYs:               4
+      Number of LOCed PHASER_IN_PHYs:            4 out of       4  100%
+  Number of PHASER_OUT/PHASER_OUT_PHYs:          7 out of      40   17%
+    Number used as PHASER_OUTs:                  0
+    Number used as PHASER_OUT_PHYs:              7
+      Number of LOCed PHASER_OUT_PHYs:           7 out of       7  100%
+  Number of BSCANs:                              1 out of       4   25%
+  Number of BUFHCEs:                             0 out of     168    0%
+  Number of BUFRs:                               0 out of      40    0%
+  Number of CAPTUREs:                            0 out of       1    0%
+  Number of DNA_PORTs:                           0 out of       1    0%
+  Number of DSP48E1s:                            0 out of   1,540    0%
+  Number of EFUSE_USRs:                          0 out of       1    0%
+  Number of FRAME_ECCs:                          0 out of       1    0%
+  Number of GTXE2_CHANNELs:                      0 out of      16    0%
+  Number of GTXE2_COMMONs:                       0 out of       4    0%
+  Number of IBUFDS_GTE2s:                        0 out of       8    0%
+  Number of ICAPs:                               0 out of       2    0%
+  Number of IDELAYCTRLs:                         1 out of      10   10%
+  Number of IN_FIFOs:                            4 out of      40   10%
+    Number of LOCed IN_FIFOs:                    4 out of       4  100%
+  Number of MMCME2_ADVs:                         1 out of      10   10%
+    Number of LOCed MMCME2_ADVs:                 1 out of       1  100%
+  Number of OUT_FIFOs:                           7 out of      40   17%
+    Number of LOCed OUT_FIFOs:                   7 out of       7  100%
+  Number of PCIE_2_1s:                           0 out of       1    0%
+  Number of PHASER_REFs:                         2 out of      10   20%
+    Number of LOCed PHASER_REFs:                 2 out of       2  100%
+  Number of PHY_CONTROLs:                        2 out of      10   20%
+    Number of LOCed PHY_CONTROLs:                2 out of       2  100%
+  Number of PLLE2_ADVs:                          1 out of      10   10%
+    Number of LOCed PLLE2_ADVs:                  1 out of       1  100%
+  Number of STARTUPs:                            0 out of       1    0%
+  Number of XADCs:                               1 out of       1  100%
+
+Average Fanout of Non-Clock Nets:                3.35
+
+Peak Memory Usage:  2125 MB
+Total REAL time to MAP completion:  5 mins 43 secs 
+Total CPU time to MAP completion:   5 mins 42 secs 
+
+Table of Contents
+-----------------
+Section 1 - Errors
+Section 2 - Warnings
+Section 3 - Informational
+Section 4 - Removed Logic Summary
+Section 5 - Removed Logic
+Section 6 - IOB Properties
+Section 7 - RPMs
+Section 8 - Guide Report
+Section 9 - Area Group and Partition Summary
+Section 10 - Timing Report
+Section 11 - Configuration String Information
+Section 12 - Control Set Information
+Section 13 - Utilization by Hierarchy
+
+Section 1 - Errors
+------------------
+
+Section 2 - Warnings
+--------------------
+WARNING:PhysDesignRules:372 - Gated clock. Clock net CONTROL0<13> is sourced by
+   a combinatorial pin. This is not good design practice. Use the CE pin to
+   control the loading of data into the flip-flop.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_READ.read_addr_inst/USE_FPGA_ADJUSTED_LEN.last_word_for_mask_dummy_ca
+   rry3<4>> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_WRITE.write_addr_inst/USE_FPGA_ADJUSTED_LEN.last_word_for_mask_dummy_
+   carry3<4>> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_23_ML_NEW_IBUFDISABLE> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_21_ML_NEW_IBUFDISABLE> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_25_ML_NEW_IBUFDISABLE> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_19_ML_NEW_IBUFDISABLE> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<21>> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<20>> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<18>> is incomplete.
+   The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<20>> is incomplete.
+   The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<21>> is incomplete.
+   The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<19>> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<18>> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<19>> is incomplete.
+   The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer
+   _ram.rams[0].RAM32M0_RAMA_D1_DPO> is incomplete. The signal does not drive
+   any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer
+   _ram.rams[0].RAM32M0_RAMD_D1_O> is incomplete. The signal does not drive any
+   load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer
+   _ram.rams[1].RAM32M0_RAMA_D1_DPO> is incomplete. The signal does not drive
+   any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer
+   _ram.rams[1].RAM32M0_RAMD_D1_O> is incomplete. The signal does not drive any
+   load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[30].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[25].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[26].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[21].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[42].RAM32M0_RAMA_D1_DPO> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[42].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[36].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[31].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[19].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[22].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[27].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/rea
+   d_fifo.fifo_ram[1].RAM32M0_RAMA_D1_DPO> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/rea
+   d_fifo.fifo_ram[1].RAM32M0_RAMB_D1_DPO> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/rea
+   d_fifo.fifo_ram[1].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.status_ram.RAM32M0_RAMB_D1_DPO> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.status_ram.RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_R
+   AMC_D1_DPO> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[41].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[20].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[40].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[24].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[29].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[32].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/rea
+   d_fifo.fifo_ram[0].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[4].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[35].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[37].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[38].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[23].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[33].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem1_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[3].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[9].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[39].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[18].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[6].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[16].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[17].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[28].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<0>> is incomplete.
+   The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[8].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[5].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[34].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[2].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[0].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[5].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[6].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[15].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[14].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[10].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[1].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[9].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem12_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem12_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[13].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[7].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MA_D1_DPO> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem12_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[4].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[36].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[1].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[11].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[16].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[38].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[27].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MA_D1_DPO> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[11].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[12].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[15].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[8].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[40].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[0].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[22].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MA_D1_DPO> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[20].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[10].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[46].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[35].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[24].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[7].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[17].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[28].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/rd_data_r<7>> is incomplete. The signal does not drive any
+   load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/rd_data_r<7>> is incomplete. The signal does not drive any
+   load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[47].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[14].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[31].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[19].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[42].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[3].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[26].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[13].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[2].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[18].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/rd_data_r<7>> is incomplete. The signal does not drive any
+   load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[21].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[37].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[12].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[39].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[23].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[33].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[32].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/rd_data_r<65>> is incomplete. The signal does not drive
+   any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[45].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[25].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[30].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[44].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[34].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[29].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[43].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[41].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:2487 - For MMCM_ADV block
+   u_ddr3_32bit/u_ddr3_infrastructure/mmcm_i, the CLKOUT0_DIVIDE_F programming
+   of <6.4> is not supported. CLKOUT0_DIVIDE_F will be adjusted to the hardware
+   granularity of a multiple of 0.125.
+WARNING:PhysDesignRules:2245 - The PLLE2_ADV block
+   <u_ddr3_32bit/u_ddr3_infrastructure/plle2_i> has CLKOUT pins that do not
+   drive the same kind of BUFFER load. Routing from the different buffer types
+   will not be phase aligned. 
+
+Section 3 - Informational
+-------------------------
+INFO:LIT:243 - Logical network CONTROL0<35> has no load.
+INFO:LIT:395 - The above info message is repeated 101 more times for the
+   following (max. 5 shown):
+   CONTROL0<34>,
+   CONTROL0<33>,
+   CONTROL0<32>,
+   CONTROL0<31>,
+   CONTROL0<30>
+   To see the details of these info messages, please use the -detail switch.
+INFO:Pack:1716 - Initializing temperature to 85.000 Celsius. (default - Range:
+   0.000 to 85.000 Celsius)
+INFO:Pack:1720 - Initializing voltage to 0.970 Volts. (default - Range: 0.970 to
+   1.030 Volts)
+INFO:Timing:3386 - Intersecting Constraints found and resolved.  For more information, see the TSI report.  Please consult the Xilinx
+   Command Line Tools User Guide for information on generating a TSI report.
+INFO:Map:215 - The Interim Design Summary has been generated in the MAP Report
+   (.mrp).
+INFO:Pack:1650 - Map created a placed design.
+
+Section 4 - Removed Logic Summary
+---------------------------------
+ 252 block(s) removed
+ 206 block(s) optimized away
+ 218 signal(s) removed
+
+Section 5 - Removed Logic
+-------------------------
+
+The trimmed logic report below shows the logic removed from your design due to
+sourceless or loadless signals, and VCC or ground connections.  If the removal
+of a signal or symbol results in the subsequent removal of an additional signal
+or symbol, the message explaining that second removal will be indented.  This
+indentation will be repeated as a chain of related logic is removed.
+
+To quickly locate the original cause for the removal of a chain of logic, look
+above the place where that logic is listed in the trimming report, then locate
+the lines that are least indented (begin at the leftmost edge).
+
+The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<12>" is
+loadless and has been removed.
+ Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_12"
+(FF) removed.
+  The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<11>" is
+loadless and has been removed.
+   Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_11"
+(FF) removed.
+    The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<10>" is
+loadless and has been removed.
+     Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_10"
+(FF) removed.
+      The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<9>" is
+loadless and has been removed.
+       Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_9" (FF)
+removed.
+        The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<8>" is
+loadless and has been removed.
+         Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_8" (FF)
+removed.
+          The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<7>" is
+loadless and has been removed.
+           Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_7" (FF)
+removed.
+            The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<6>" is
+loadless and has been removed.
+             Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_6" (FF)
+removed.
+              The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<5>" is
+loadless and has been removed.
+               Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_5" (FF)
+removed.
+                The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<4>" is
+loadless and has been removed.
+                 Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_4" (FF)
+removed.
+                  The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<3>" is
+loadless and has been removed.
+                   Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_3" (FF)
+removed.
+                    The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<2>" is
+loadless and has been removed.
+                     Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_2" (FF)
+removed.
+                      The signal "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<1>" is
+loadless and has been removed.
+                       Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r_1" (FF)
+removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/wr_data_addr<4>"
+is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/wr_data_addr_4"
+(FF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/calib_sel<2>" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/calib_sel_2" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r3<4>"
+is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r3_4"
+(FF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r2<4>"
+is loadless and has been removed.
+   Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r2_4"
+(FF) removed.
+    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r1<4>"
+is loadless and has been removed.
+     Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r1_4"
+(FF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r3<5>"
+is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r3_5"
+(FF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r2<5>"
+is loadless and has been removed.
+   Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r2_5"
+(FF) removed.
+    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r1<5>"
+is loadless and has been removed.
+     Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r1_5"
+(FF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r3<6>"
+is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r3_6"
+(FF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r2<6>"
+is loadless and has been removed.
+   Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r2_6"
+(FF) removed.
+    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r1<6>"
+is loadless and has been removed.
+     Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r1_6"
+(FF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r3<7>"
+is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r3_7"
+(FF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r2<7>"
+is loadless and has been removed.
+   Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r2_7"
+(FF) removed.
+    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r1<7>"
+is loadless and has been removed.
+     Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_c
+alib_top/dqsfind_calib_right.u_ddr_phy_dqs_found_cal/pi_dqs_found_lanes_r1_7"
+(FF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_1.u_ddr_phy_4lanes/A_po_fine_inc" is
+loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_1.u_ddr_phy_4lanes/Mmux_A_po_fine_inc1
+1" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_full<2>" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_full_2" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty[2]_wr_en_in_AND_649_o1" is loadless and
+has been removed.
+   Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty[2]_wr_en_in_AND_649_o11" (ROM) removed.
+    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty<2>" is loadless and has been removed.
+     Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_2" (SFF) removed.
+      The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_2_glue_rst" is loadless and has been
+removed.
+       Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_2_glue_rst" (ROM) removed.
+        The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/_n0128" is loadless and has been removed.
+         Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/_n01281" (ROM) removed.
+          The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_full<1>" is loadless and has been removed.
+           Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_full_1" (SFF) removed.
+            The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/nxt_wr_ptr[2]_rd_ptr[2]_equal_26_o" is loadless
+and has been removed.
+             Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/nxt_wr_ptr[2]_rd_ptr[2]_equal_26_o31" (ROM)
+removed.
+              The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/wr_ptr<1>" is loadless and has been removed.
+               Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/wr_ptr_1" (SFF) removed.
+                The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/wr_en_in_my_empty[2]_AND_643_o" is loadless and
+has been removed.
+                 Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/wr_en_in_my_empty[2]_AND_643_o1" (ROM) removed.
+                  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty<2>_1" is loadless and has been removed.
+                   Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_2_1" (SFF) removed.
+                The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/nxt_wr_ptr<1>" is loadless and has been removed.
+                 Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/Madd_nxt_wr_ptr_xor<1>11" (ROM) removed.
+                  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/wr_ptr<0>" is loadless and has been removed.
+                   Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/wr_ptr_0" (SFF) removed.
+                    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/nxt_wr_ptr<0>" is loadless and has been removed.
+                     Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/Madd_nxt_wr_ptr_xor<0>11_INV_0" (BUF) removed.
+              The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/rd_ptr<1>" is loadless and has been removed.
+               Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/rd_ptr_1" (SFF) removed.
+                The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty[2]_full_in_AND_631_o" is loadless and
+has been removed.
+                 Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty[2]_full_in_AND_631_o1" (ROM) removed.
+                  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty<2>_2" is loadless and has been removed.
+                   Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_2_2" (SFF) removed.
+                The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/nxt_rd_ptr<1>" is loadless and has been removed.
+                 Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/Madd_nxt_rd_ptr_xor<1>11" (ROM) removed.
+                  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/rd_ptr<0>" is loadless and has been removed.
+                   Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/rd_ptr_0" (SFF) removed.
+                    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/nxt_rd_ptr<0>" is loadless and has been removed.
+                     Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/Madd_nxt_rd_ptr_xor<0>11_INV_0" (BUF) removed.
+              The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/wr_ptr<2>" is loadless and has been removed.
+               Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/wr_ptr_2" (SFF) removed.
+                The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/nxt_wr_ptr<2>" is loadless and has been removed.
+                 Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/Madd_nxt_wr_ptr_xor<2>11" (ROM) removed.
+              The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/rd_ptr<2>" is loadless and has been removed.
+               Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/rd_ptr_2" (SFF) removed.
+                The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/nxt_rd_ptr<2>" is loadless and has been removed.
+                 Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/Madd_nxt_rd_ptr_xor<2>11" (ROM) removed.
+            The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/Reset_OR_DriverANDClockEnable" is loadless and
+has been removed.
+             Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/Reset_OR_DriverANDClockEnable1" (ROM) removed.
+              The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_full<0>" is loadless and has been removed.
+               Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_full_0" (SFF) removed.
+        The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty[2]_wr_en_in_AND_640_o" is loadless and
+has been removed.
+         Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty[2]_wr_en_in_AND_640_o1" (ROM) removed.
+        The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/nxt_rd_ptr[2]_wr_ptr[2]_equal_13_o" is loadless
+and has been removed.
+         Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/nxt_rd_ptr[2]_wr_ptr[2]_equal_13_o31" (ROM)
+removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_register_slice_d3/
+reset" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_register_slice_d3/
+reset" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_register_slice_d1/
+reset" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_register_slice_d1/
+reset" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_1" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_2" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_2" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_3" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_3" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_4" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_4" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_5" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_5" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_6" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_6" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_7" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_7" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_8" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_8" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_9" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_9" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_10" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_10" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_11" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_11" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_12" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_12" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_13" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_13" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_14" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_14" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_15" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_15" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_16" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_16" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_17" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_17" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_18" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_18" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_19" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_19" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_20" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_20" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_21" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_21" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_22" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_22" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_23" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_23" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_24" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_24" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_25" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_25" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_26" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_26" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_27" (SFF) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read<2>_27" is loadless and has been removed.
+ Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_w_channel_0/wr_
+data_fifo_0/cnt_read_2_28" (SFF) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[10].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[11].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[12].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[13].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[14].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[1].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[2].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[3].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[4].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[5].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[6].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[7].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[8].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_CORE_ID_SEL/I4.FI[9].U_LUT"
+(ROM) removed.
+Loadless block "chipscope_ila_i0/U0/I_NO_D.U_ILA/U_STAT/U_DSR" (ROM) removed.
+Loadless block
+"chipscope_ila_i0/U0/I_NO_D.U_ILA/U_TRIG/U_TC/I_STORAGE_QUAL.U_CAP_B" (ROM)
+removed.
+Loadless block "u_ddr3_32bit/u_ddr3_infrastructure/u_bufh_auxout_clk" (BUFHCE)
+removed.
+ The signal "u_ddr3_32bit/u_ddr3_infrastructure/auxout_clk_i" is loadless and has
+been removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/rclk_buf" (CKBUF)
+removed.
+ The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/B_rclk" is loadless
+and has been removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_1.u_ddr_phy_4lanes/rclk_buf" (CKBUF)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_ADJUST[7].and_inst" (MUX)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST[0].xorcy_inst" (XOR)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST[1].xorcy_inst" (XOR)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST[2].xorcy_inst" (XOR)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST[3].xorcy_inst" (XOR)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST[4].xorcy_inst" (XOR)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST_MASK[4].and_inst4" (MUX)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_data_inst/USE_FPGA_LENGTH.BIT_LANE[7].and_inst" (MUX) removed.
+ The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_data_inst/USE_FPGA_LENGTH.length_di<7>" is loadless and has been
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_data_inst/USE_FPGA_NEXT_WORD.LUT_LEVEL[4].next_carry_inst" (MUX)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_ADJUST[7].and_inst" (MUX)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST[0].xorcy_inst" (XOR)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST[1].xorcy_inst" (XOR)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST[2].xorcy_inst" (XOR)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST[3].xorcy_inst" (XOR)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST[4].xorcy_inst" (XOR)
+removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_FPGA_ADJUSTED_LEN.LUT_LAST_MASK[4].and_inst4"
+(MUX) removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/USE_FPGA_LENGTH.BIT_LANE[7].carry_inst" (MUX)
+removed.
+ The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/USE_FPGA_LENGTH.length_di<7>" is loadless and has
+been removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/USE_FPGA_NEXT_WORD.LUT_LEVEL[4].next_carry_inst"
+(MUX) removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/USE_FPGA_WORD_COMPLETED.word_complete_next_wrap_stall
+_inst/USE_FPGA.and2b1l_inst" (AND2B1L) removed.
+Loadless block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/USE_FPGA_WORD_COMPLETED.word_complete_rest_stall_inst
+/USE_FPGA.and2b1l_inst" (AND2B1L) removed.
+The signal "CONTROL0<35>" is sourceless and has been removed.
+The signal "CONTROL0<34>" is sourceless and has been removed.
+The signal "CONTROL0<33>" is sourceless and has been removed.
+The signal "CONTROL0<32>" is sourceless and has been removed.
+The signal "CONTROL0<31>" is sourceless and has been removed.
+The signal "CONTROL0<30>" is sourceless and has been removed.
+The signal "CONTROL0<29>" is sourceless and has been removed.
+The signal "CONTROL0<28>" is sourceless and has been removed.
+The signal "CONTROL0<27>" is sourceless and has been removed.
+The signal "CONTROL0<26>" is sourceless and has been removed.
+The signal "CONTROL0<25>" is sourceless and has been removed.
+The signal "CONTROL0<24>" is sourceless and has been removed.
+The signal "CONTROL0<23>" is sourceless and has been removed.
+The signal "CONTROL0<22>" is sourceless and has been removed.
+The signal "CONTROL0<21>" is sourceless and has been removed.
+The signal "CONTROL0<19>" is sourceless and has been removed.
+The signal "CONTROL0<18>" is sourceless and has been removed.
+The signal "CONTROL0<17>" is sourceless and has been removed.
+The signal "CONTROL0<16>" is sourceless and has been removed.
+The signal "CONTROL0<15>" is sourceless and has been removed.
+The signal "CONTROL0<11>" is sourceless and has been removed.
+The signal "CONTROL0<10>" is sourceless and has been removed.
+The signal "CONTROL0<7>" is sourceless and has been removed.
+The signal
+"chipscope_ila_i0/U0/I_NO_D.U_ILA/U_TRIG/U_TM/G_NMU[0].U_M/U_MU/I_MUT_GANDX.U_ma
+tch/I_CS_GANDX.U_CS_GANDX_SRL/I_K7.U_CS_GANDX_SRL_K7/U_CS_GAND_SRL_K7/I_USE_RPM_
+EQ0.U_GAND_SRL_UNSET/SRL_Q_O" is sourceless and has been removed.
+The signal "chipscope_icon_i0/U0/U_ICON/iCOMMAND_SEL<15>" is sourceless and has
+been removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[15].U_HCE" (ROM) removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[15].U_LCE" (ROM) removed.
+The signal "chipscope_icon_i0/U0/U_ICON/iCOMMAND_SEL<14>" is sourceless and has
+been removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[14].U_HCE" (ROM) removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[14].U_LCE" (ROM) removed.
+The signal "chipscope_icon_i0/U0/U_ICON/iCOMMAND_SEL<13>" is sourceless and has
+been removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[13].U_HCE" (ROM) removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[13].U_LCE" (ROM) removed.
+The signal "chipscope_icon_i0/U0/U_ICON/iCOMMAND_SEL<12>" is sourceless and has
+been removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[12].U_HCE" (ROM) removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[12].U_LCE" (ROM) removed.
+The signal "chipscope_icon_i0/U0/U_ICON/iCOMMAND_SEL<11>" is sourceless and has
+been removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[11].U_HCE" (ROM) removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[11].U_LCE" (ROM) removed.
+The signal "chipscope_icon_i0/U0/U_ICON/iCOMMAND_SEL<7>" is sourceless and has
+been removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[7].U_HCE" (ROM) removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[7].U_LCE" (ROM) removed.
+The signal "chipscope_icon_i0/U0/U_ICON/iCOMMAND_SEL<6>" is sourceless and has
+been removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[6].U_HCE" (ROM) removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[6].U_LCE" (ROM) removed.
+The signal "chipscope_icon_i0/U0/U_ICON/iCOMMAND_SEL<3>" is sourceless and has
+been removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[3].U_HCE" (ROM) removed.
+ Sourceless block
+"chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[3].U_LCE" (ROM) removed.
+
+The trimmed logic reported below is either:
+   1. part of a cycle
+   2. part of disabled logic
+   3. a side-effect of other trimmed logic
+
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty<0>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_0" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_0_glue_rst" is unused and has been
+removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_0_glue_rst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty<1>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_1" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_1_glue_rst" is unused and has been
+removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_m
+c_phy_wrapper/phy_ctl_pre_fifo/my_empty_1_glue_rst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.wr_cmd_offset<3>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPEL
+INE.DATA_GEN[21].FDRE_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPEL
+INE.M_MESG_CMB<21>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/Mmux_USE_FF_OUT.USE_FPGA_OUTPUT_
+PIPELINE.M_MESG_CMB141" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.wr_cmd_offset<2>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPEL
+INE.DATA_GEN[20].FDRE_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPEL
+INE.M_MESG_CMB<20>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/Mmux_USE_FF_OUT.USE_FPGA_OUTPUT_
+PIPELINE.M_MESG_CMB131" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.wr_cmd_offset<1>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPEL
+INE.DATA_GEN[19].FDRE_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPEL
+INE.M_MESG_CMB<19>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/Mmux_USE_FF_OUT.USE_FPGA_OUTPUT_
+PIPELINE.M_MESG_CMB111" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.wr_cmd_offset<0>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPEL
+INE.DATA_GEN[18].FDRE_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPEL
+INE.M_MESG_CMB<18>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/Mmux_USE_FF_OUT.USE_FPGA_OUTPUT_
+PIPELINE.M_MESG_CMB101" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.rd_cmd_offset<3>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPELIN
+E.DATA_GEN[21].FDRE_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPELIN
+E.M_MESG_CMB<21>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/Mmux_USE_FF_OUT.USE_FPGA_OUTPUT_PI
+PELINE.M_MESG_CMB141" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.rd_cmd_offset<2>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPELIN
+E.DATA_GEN[20].FDRE_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPELIN
+E.M_MESG_CMB<20>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/Mmux_USE_FF_OUT.USE_FPGA_OUTPUT_PI
+PELINE.M_MESG_CMB131" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.rd_cmd_offset<1>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPELIN
+E.DATA_GEN[19].FDRE_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPELIN
+E.M_MESG_CMB<19>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/Mmux_USE_FF_OUT.USE_FPGA_OUTPUT_PI
+PELINE.M_MESG_CMB111" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.rd_cmd_offset<0>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPELIN
+E.DATA_GEN[18].FDRE_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPELIN
+E.M_MESG_CMB<18>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/Mmux_USE_FF_OUT.USE_FPGA_OUTPUT_PI
+PELINE.M_MESG_CMB101" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.rd_cmd_modified" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPELIN
+E.DATA_GEN[40].FDRE_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FF_OUT.USE_FPGA_OUTPUT_PIPELIN
+E.M_MESG_CMB<40>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/Mmux_USE_FF_OUT.USE_FPGA_OUTPUT_PI
+PELINE.M_MESG_CMB351" (ROM) removed.
+    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<40>" is unused and has
+been removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/cmd_full_ir" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_cmd_arbiter_0/M
+mux_rd_cmd_full11" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<0>" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[0].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<0>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[0].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<1>" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[1].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<1>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[1].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<2>" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[2].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<2>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[2].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<3>" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[3].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<3>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[3].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<4>" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[4].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<4>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[4].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<5>" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[5].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<5>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[5].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<6>" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[6].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<6>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[6].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<7>" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[7].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<7>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[7].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<8>" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[8].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<8>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[8].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<9>" is unused
+and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[9].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<9>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[9].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<10>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[10].USE_FPGA
+_DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<10>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[10].USE_FPGA
+_DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<11>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[11].USE_FPGA
+_DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<11>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[11].USE_FPGA
+_DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<12>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[12].USE_FPGA
+_DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<12>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[12].USE_FPGA
+_DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<13>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[13].USE_FPGA
+_DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<13>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[13].USE_FPGA
+_DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<14>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[14].USE_FPGA
+_DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<14>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[0].USE_ALWAYS_PACKER.BYTE_LANE[14].USE_FPGA
+_DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<16>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[0].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<16>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[0].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<17>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[1].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<17>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[1].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<18>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[2].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<18>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[2].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<19>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[3].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<19>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[3].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<20>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[4].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<20>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[4].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<21>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[5].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<21>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[5].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<22>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[6].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<22>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[6].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<23>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[7].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<23>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[7].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<24>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[8].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<24>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[8].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<25>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[9].USE_FPGA_
+DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<25>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[9].USE_FPGA_
+DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<26>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[10].USE_FPGA
+_DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<26>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[10].USE_FPGA
+_DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<27>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[11].USE_FPGA
+_DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<27>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[11].USE_FPGA
+_DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<28>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[12].USE_FPGA
+_DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<28>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[12].USE_FPGA
+_DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<29>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[13].USE_FPGA
+_DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<29>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[13].USE_FPGA
+_DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/wstrb_d2<30>" is
+unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[14].USE_FPGA
+_DATA.USE_REGISTER.FDRE_wstrb_inst" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/M_AXI_WSTRB_cmb<30>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_WRITE.write_data_inst/WORD_LANE[1].USE_ALWAYS_PACKER.BYTE_LANE[14].USE_FPGA
+_DATA.USE_REGISTER.LUT6_strb_inst" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/next_state<0>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/Mmux_next_state24" (MUX) removed.
+  The signal "N1212" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/Mmux_next_state24_F" (ROM) removed.
+    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/state<0>" is unused and has been removed.
+     Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/fsmfake9_0" (SFF) removed.
+    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/Mmux_next_state2" is unused and has been removed.
+     Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/Mmux_next_state21" (ROM) removed.
+  The signal "N1213" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/Mmux_next_state24_G" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/next_state<1>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/Mmux_next_state42" (MUX) removed.
+  The signal "N1226" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/Mmux_next_state42_F" (ROM) removed.
+    The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/state<1>" is unused and has been removed.
+     Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/fsmfake9_1" (SFF) removed.
+  The signal "N1227" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_aw_channel_0/aw
+_cmd_fsm_0/Mmux_next_state42_G" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/next_state<0>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/Mmux_next_state22" (ROM) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/state<0>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/fsmfake10_0" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/Mmux_next_state2" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/Mmux_next_state21" (ROM) removed.
+The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/next_state<1>" is unused and has been removed.
+ Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/Mmux_next_state43" (ROM) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/state<1>" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/fsmfake10_1" (SFF) removed.
+  The signal
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/Mmux_next_state4" is unused and has been removed.
+   Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/axi_mc_ar_channel_0/ar
+_cmd_fsm_0/Mmux_next_state42" (ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_COMMAND_SEL/I4.FI[11].U_LUT"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_COMMAND_SEL/I4.FI[12].U_LUT"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_COMMAND_SEL/I4.FI[13].U_LUT"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_COMMAND_SEL/I4.FI[14].U_LUT"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_COMMAND_SEL/I4.FI[15].U_LUT"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_COMMAND_SEL/I4.FI[3].U_LUT"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_COMMAND_SEL/I4.FI[6].U_LUT"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CMD/U_COMMAND_SEL/I4.FI[7].U_LUT"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[10].U_HCE"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[1].U_HCE"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[2].U_HCE"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[4].U_HCE"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[5].U_HCE"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[8].U_HCE"
+(ROM) removed.
+Unused block "chipscope_icon_i0/U0/U_ICON/U_CTRL_OUT/F_NCP[0].F_CMD[9].U_HCE"
+(ROM) removed.
+Unused block
+"u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2
+/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/USE_FPGA_FIFO.DATA_GEN[40].USE_32.
+SRLC32E_inst" (SRLC32E) removed.
+
+Optimized Block(s):
+TYPE 		BLOCK
+VCC 		XST_VCC
+GND 		chipscope_icon_i0/XST_GND
+VCC 		chipscope_icon_i0/XST_VCC
+GND
+		chipscope_ila_i0/U0/I_NO_D.U_ILA/U_G2_SQ.U_CAPCTRL/U_CAP_ADDRGEN/U_SCNT_CMP/I_
+CS_GAND.U_CS_GAND_SRL/I_K7.U_CS_GAND_SRL_K7/I_USE_RPM_EQ0.U_GAND_SRL_UNSET/XST_G
+ND
+VCC
+		chipscope_ila_i0/U0/I_NO_D.U_ILA/U_G2_SQ.U_CAPCTRL/U_CAP_ADDRGEN/U_SCNT_CMP/I_
+CS_GAND.U_CS_GAND_SRL/I_K7.U_CS_GAND_SRL_K7/I_USE_RPM_EQ0.U_GAND_SRL_UNSET/XST_V
+CC
+GND
+		chipscope_ila_i0/U0/I_NO_D.U_ILA/U_G2_SQ.U_CAPCTRL/U_CAP_ADDRGEN/U_WCNT_HCMP/I
+_CS_GAND.U_CS_GAND_SRL/I_K7.U_CS_GAND_SRL_K7/I_USE_RPM_EQ0.U_GAND_SRL_UNSET/XST_
+GND
+VCC
+		chipscope_ila_i0/U0/I_NO_D.U_ILA/U_G2_SQ.U_CAPCTRL/U_CAP_ADDRGEN/U_WCNT_HCMP/I
+_CS_GAND.U_CS_GAND_SRL/I_K7.U_CS_GAND_SRL_K7/I_USE_RPM_EQ0.U_GAND_SRL_UNSET/XST_
+VCC
+GND
+		chipscope_ila_i0/U0/I_NO_D.U_ILA/U_G2_SQ.U_CAPCTRL/U_CAP_ADDRGEN/U_WCNT_LCMP/I
+_CS_GAND.U_CS_GAND_SRL/I_K7.U_CS_GAND_SRL_K7/I_USE_RPM_EQ0.U_GAND_SRL_UNSET/XST_
+GND
+VCC
+		chipscope_ila_i0/U0/I_NO_D.U_ILA/U_G2_SQ.U_CAPCTRL/U_CAP_ADDRGEN/U_WCNT_LCMP/I
+_CS_GAND.U_CS_GAND_SRL/I_K7.U_CS_GAND_SRL_K7/I_USE_RPM_EQ0.U_GAND_SRL_UNSET/XST_
+VCC
+LUT4 		chipscope_ila_i0/U0/I_NO_D.U_ILA/U_STAT/F_SSTAT[6].I_STAT.U_STAT
+   optimized to 0
+GND
+		chipscope_ila_i0/U0/I_NO_D.U_ILA/U_TRIG/U_TM/G_NMU[0].U_M/U_MU/I_MUT_GANDX.U_m
+atch/I_CS_GANDX.U_CS_GANDX_SRL/I_K7.U_CS_GANDX_SRL_K7/U_CS_GAND_SRL_K7/I_USE_RPM
+_EQ0.U_GAND_SRL_UNSET/XST_GND
+VCC
+		chipscope_ila_i0/U0/I_NO_D.U_ILA/U_TRIG/U_TM/G_NMU[0].U_M/U_MU/I_MUT_GANDX.U_m
+atch/I_CS_GANDX.U_CS_GANDX_SRL/I_K7.U_CS_GANDX_SRL_K7/U_CS_GAND_SRL_K7/I_USE_RPM
+_EQ0.U_GAND_SRL_UNSET/XST_VCC
+GND 		chipscope_ila_i0/XST_GND
+VCC 		chipscope_ila_i0/XST_VCC
+
+To enable printing of redundant blocks removed and signals merged, set the
+detailed map report option and rerun map.
+
+Section 6 - IOB Properties
+--------------------------
+
++---------------------------------------------------------------------------------------------------------------------------------------------------------+
+| IOB Name                           | Type             | Direction | IO Standard          | Diff  | Drive    | Slew | Reg (s)      | Resistor | IOB      |
+|                                    |                  |           |                      | Term  | Strength | Rate |              |          | Delay    |
++---------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ddr3_addr<0>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<1>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<2>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<3>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<4>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<5>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<6>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<7>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<8>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<9>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<10>                      | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<11>                      | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<12>                      | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<13>                      | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_addr<14>                      | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_ba<0>                         | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_ba<1>                         | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_ba<2>                         | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_cas_n                         | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_ck_n<0>                       | IOB18S           | OUTPUT    | DIFF_SSTL15          |       |          | FAST |              |          |          |
+| ddr3_ck_p<0>                       | IOB18M           | OUTPUT    | DIFF_SSTL15          |       |          | FAST | ODDR         |          |          |
+| ddr3_cke<0>                        | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_cs_n<0>                       | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_dm<0>                         | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_dm<1>                         | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_dm<2>                         | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_dm<3>                         | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_dq<0>                         | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<1>                         | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<2>                         | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<3>                         | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<4>                         | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<5>                         | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<6>                         | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<7>                         | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<8>                         | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<9>                         | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<10>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<11>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<12>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<13>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<14>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<15>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<16>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<17>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<18>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<19>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<20>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<21>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<22>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<23>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<24>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<25>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<26>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<27>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<28>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<29>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<30>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dq<31>                        | IOB18            | BIDIR     | SSTL15_T_DCI         |       |          | FAST | ISERDESE2OSE |          |          |
+| ddr3_dqs_n<0>                      | IOB18S           | BIDIR     | DIFF_SSTL15_T_DCI    |       |          | FAST |              |          |          |
+| ddr3_dqs_n<1>                      | IOB18S           | BIDIR     | DIFF_SSTL15_T_DCI    |       |          | FAST |              |          |          |
+| ddr3_dqs_n<2>                      | IOB18S           | BIDIR     | DIFF_SSTL15_T_DCI    |       |          | FAST |              |          |          |
+| ddr3_dqs_n<3>                      | IOB18S           | BIDIR     | DIFF_SSTL15_T_DCI    |       |          | FAST |              |          |          |
+| ddr3_dqs_p<0>                      | IOB18M           | BIDIR     | DIFF_SSTL15_T_DCI    |       |          | FAST | ODDR         |          |          |
+|                                    |                  |           |                      |       |          |      | TDDR         |          |          |
+| ddr3_dqs_p<1>                      | IOB18M           | BIDIR     | DIFF_SSTL15_T_DCI    |       |          | FAST | ODDR         |          |          |
+|                                    |                  |           |                      |       |          |      | TDDR         |          |          |
+| ddr3_dqs_p<2>                      | IOB18M           | BIDIR     | DIFF_SSTL15_T_DCI    |       |          | FAST | ODDR         |          |          |
+|                                    |                  |           |                      |       |          |      | TDDR         |          |          |
+| ddr3_dqs_p<3>                      | IOB18M           | BIDIR     | DIFF_SSTL15_T_DCI    |       |          | FAST | ODDR         |          |          |
+|                                    |                  |           |                      |       |          |      | TDDR         |          |          |
+| ddr3_odt<0>                        | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_ras_n                         | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| ddr3_reset_n                       | IOB18            | OUTPUT    | LVCMOS15             |       | 12       | FAST |              |          |          |
+| ddr3_we_n                          | IOB18            | OUTPUT    | SSTL15               |       |          | FAST | OSERDESE2    |          |          |
+| init_calib_complete                | IOB33            | OUTPUT    | LVCMOS33             |       | 12       | SLOW |              |          |          |
+| sys_clk_i                          | IOB18            | INPUT     | LVCMOS15             |       |          |      |              |          |          |
+| sys_rst                            | IOB33            | INPUT     | LVCMOS33             |       |          |      |              | PULLUP   |          |
+| tg_compare_error                   | IOB33            | OUTPUT    | LVCMOS33             |       | 12       | SLOW |              |          |          |
++---------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Section 7 - RPMs
+----------------
+
+Section 8 - Guide Report
+------------------------
+Guide not run on this design.
+
+Section 9 - Area Group and Partition Summary
+--------------------------------------------
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+Area Group Information
+----------------------
+
+  No area groups were found in this design.
+
+----------------------
+
+Section 10 - Timing Report
+--------------------------
+A logic-level (pre-route) timing report can be generated by using Xilinx static
+timing analysis tools, Timing Analyzer (GUI) or TRCE (command line), with the
+mapped NCD and PCF files. Please note that this timing report will be generated
+using estimated delay information. For accurate numbers, please generate a
+timing report with the post Place and Route NCD file.
+
+For more information about the Timing Analyzer, consult the Xilinx Timing
+Analyzer Reference Manual; for more information about TRCE, consult the Xilinx
+Command Line Tools User Guide "TRACE" chapter.
+
+Section 11 - Configuration String Details
+-----------------------------------------
+Use the "-detail" map option to print out Configuration Strings
+
+Section 12 - Control Set Information
+------------------------------------
+Use the "-detail" map option to print out Control Set Information.
+
+Section 13 - Utilization by Hierarchy
+-------------------------------------
+Use the "-detail" map option to print out the Utilization by Hierarchy section.

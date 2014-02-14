@@ -330,11 +330,10 @@ static void handle_uarts(void)
     shmem[X300_FW_SHMEM_UART_WORDS32] = NUM_POOL_WORDS32;
 
     ////////////////////////////////////////////////////////////////////
-    // RX UART - try to get a character and post it to the shmem buffer
+    // RX UART - get available characters and post to the shmem buffer
     ////////////////////////////////////////////////////////////////////
     static uint32_t rxoffset = 0;
-    const int rxch = wb_uart_getc(UART0_BASE);
-    if (rxch != -1)
+    for (int rxch = wb_uart_getc(UART0_BASE); rxch != -1; rxch = wb_uart_getc(UART0_BASE))
     {
         rxoffset = (rxoffset+1) % (NUM_POOL_WORDS32*4);
         const int shift = ((rxoffset%4) * 8);
@@ -346,10 +345,10 @@ static void handle_uarts(void)
     }
 
     ////////////////////////////////////////////////////////////////////
-    // TX UART - check for a character in the shmem buffer and send it
+    // TX UART - check for characters in the shmem buffer and send them
     ////////////////////////////////////////////////////////////////////
     static uint32_t txoffset = 0;
-    if (txoffset != shmem[X300_FW_SHMEM_UART_TX_INDEX])
+    while (txoffset != shmem[X300_FW_SHMEM_UART_TX_INDEX])
     {
         const int shift = ((txoffset%4) * 8);
         const int txch = txpool[txoffset/4] >> shift;

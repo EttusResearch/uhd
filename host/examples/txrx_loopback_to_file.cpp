@@ -322,7 +322,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     for(size_t ch = 0; ch < tx_channel_nums.size(); ch++) {
         std::cout << boost::format("Setting TX Freq: %f MHz...") % (tx_freq/1e6) << std::endl;
         uhd::tune_request_t tx_tune_request(tx_freq);
-        if(vm.count("tx-int-n")) tx_tune_request.args = uhd::device_addr_t("mode_n=int-n");
+        if(vm.count("tx-int-n")) tx_tune_request.args = uhd::device_addr_t("mode_n=integer");
         tx_usrp->set_tx_freq(tx_tune_request, tx_channel_nums[ch]);
         std::cout << boost::format("Actual TX Freq: %f MHz...") % (tx_usrp->get_tx_freq(tx_channel_nums[ch])/1e6) << std::endl << std::endl;
 
@@ -351,7 +351,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
     std::cout << boost::format("Setting RX Freq: %f MHz...") % (rx_freq/1e6) << std::endl;
     uhd::tune_request_t rx_tune_request(rx_freq);
-    if(vm.count("rx-int-n")) rx_tune_request.args = uhd::device_addr_t("mode_n=int-n");
+    if(vm.count("rx-int-n")) rx_tune_request.args = uhd::device_addr_t("mode_n=integer");
     rx_usrp->set_rx_freq(rx_tune_request);
     std::cout << boost::format("Actual RX Freq: %f MHz...") % (rx_usrp->get_rx_freq()/1e6) << std::endl << std::endl;
 

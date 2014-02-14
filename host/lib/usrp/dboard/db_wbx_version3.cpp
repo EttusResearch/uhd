@@ -29,6 +29,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -200,14 +201,14 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     ) % (target_freq/1e6) << std::endl;
 
     /*
-     * If the user sets 'mode_n=int-n' in the tuning args, the user wishes to
+     * If the user sets 'mode_n=integer' in the tuning args, the user wishes to
      * tune in Integer-N mode, which can result in better spur
      * performance on some mixers. The default is fractional tuning.
      */
     property_tree::sptr subtree = (unit == dboard_iface::UNIT_RX) ? self_base->get_rx_subtree()
                                                                   : self_base->get_tx_subtree();
     device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
-    bool is_int_n = (tune_args.get("mode_n","") == "int-n");
+    bool is_int_n = boost::iequals(tune_args.get("mode_n",""), "integer");
 
     //map prescaler setting to mininmum integer divider (N) values (pg.18 prescaler)
     static const uhd::dict<int, int> prescaler_to_min_int_div = map_list_of
@@ -224,7 +225,15 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
         (16, adf4350_regs_t::RF_DIVIDER_SELECT_DIV16)
     ;
 
-    adf4350_regs_t::prescaler_t prescaler = target_freq > 3e9 ? adf4350_regs_t::PRESCALER_8_9 : adf4350_regs_t::PRESCALER_4_5;
+    double reference_freq = self_base->get_iface()->get_clock_rate(unit);
+    //The mixer has a divide-by-2 stage on the LO port so the synthesizer
+    //frequency must 2x the target frequency
+    double synth_target_freq = target_freq * 2;
+    //TODO: Document why the following has to be true
+    bool div_resync_enabled = (target_freq > reference_freq);
+
+    adf4350_regs_t::prescaler_t prescaler =
+        synth_target_freq > 3e9 ? adf4350_regs_t::PRESCALER_8_9 : adf4350_regs_t::PRESCALER_4_5;
     
     adf435x_tuning_constraints tuning_constraints;
     tuning_constraints.force_frac0 = is_int_n;
@@ -233,11 +242,17 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     tuning_constraints.int_range = uhd::range_t(prescaler_to_min_int_div[prescaler], 4095);
     tuning_constraints.pfd_freq_max = 25e6;
     tuning_constraints.rf_divider_range = uhd::range_t(1, 16);
+    //When divider resync is enabled, a 180 deg phase error is introduced when syncing
+    //multiple WBX boards. Switching to fundamental mode works arounds this issue.
+    tuning_constraints.feedback_after_divider = div_resync_enabled;
 
-    double actual_freq;
+    double synth_actual_freq = 0;
     adf435x_tuning_settings tuning_settings = tune_adf435x_synth(
-        target_freq, self_base->get_iface()->get_clock_rate(unit),
-        tuning_constraints, actual_freq);
+        synth_target_freq, reference_freq, tuning_constraints, synth_actual_freq);
+
+    //The mixer has a divide-by-2 stage on the LO port so the synthesizer
+    //actual_freq must /2 the synth_actual_freq
+    double actual_freq = synth_actual_freq / 2;
 
     //load the register values
     adf4350_regs_t regs;
@@ -253,10 +268,12 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     regs.int_16_bit             = tuning_settings.int_16_bit;
     regs.mod_12_bit             = tuning_settings.mod_12_bit;
     regs.clock_divider_12_bit   = tuning_settings.clock_divider_12_bit;
-    regs.feedback_select        = tuning_settings.feedback_after_divider ?
+    regs.feedback_select        = tuning_constraints.feedback_after_divider ?
                                     adf4350_regs_t::FEEDBACK_SELECT_DIVIDED :
                                     adf4350_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
-    regs.clock_div_mode         = adf4350_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE;
+    regs.clock_div_mode         = div_resync_enabled ?
+                                    adf4350_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE :
+                                    adf4350_regs_t::CLOCK_DIV_MODE_FAST_LOCK;
     regs.prescaler              = prescaler;
     regs.r_counter_10_bit       = tuning_settings.r_counter_10_bit;
     regs.reference_divide_by_2  = tuning_settings.r_divide_by_2_en ?

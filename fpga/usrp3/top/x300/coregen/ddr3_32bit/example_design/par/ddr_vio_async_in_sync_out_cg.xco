@@ -1,0 +1,51 @@
+##############################################################
+#
+# Xilinx Core Generator version 11.3
+# Date: Tue Aug 11 01:09:15 2009
+#
+##############################################################
+#
+#  This file contains the customisation parameters for a
+#  Xilinx CORE Generator IP GUI. It is strongly recommended
+#  that you do not manually alter this file as it may cause
+#  unexpected and unsupported behavior.
+#
+##############################################################
+#
+# BEGIN Project Options
+SET addpads = False
+SET asysymbol = True
+SET busformat = BusFormatAngleBracketNotRipped
+SET createndf = False
+SET designentry = verilog
+SET device = xc7k410t
+SET devicefamily = kintex7
+SET flowvendor = Foundation_ISE
+SET formalverification = False
+SET foundationsym = False
+SET implementationfiletype = Ngc
+SET package = ffg900
+SET removerpms = False
+SET simulationfiles = Structural
+SET speedgrade = -2
+SET verilogsim = False
+SET vhdlsim = False
+# END Project Options
+# BEGIN Select
+SELECT VIO_(ChipScope_Pro_-_Virtual_Input/Output) family Xilinx,_Inc. 1.05.a
+# END Select
+# BEGIN Parameters
+# CSET constraint_type=ucf
+CSET asynchronous_input_port_width=128
+CSET asynchronous_output_port_width=8
+CSET component_name=ddr_vio_async_in_sync_out
+CSET enable_asynchronous_input_port=true
+CSET enable_asynchronous_output_port=false
+CSET enable_synchronous_input_port=false
+CSET enable_synchronous_output_port=true
+CSET invert_clock_input=false
+CSET synchronous_input_port_width=8
+CSET synchronous_output_port_width=128
+# END Parameters
+GENERATE
+# CRC: 59654a2d

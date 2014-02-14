@@ -33,6 +33,7 @@
 
 struct adf435x_tuning_constraints {
     bool            force_frac0;
+    bool            feedback_after_divider;
     double          ref_doubler_threshold;
     double          pfd_freq_max;
     double          band_sel_freq_max;
@@ -50,12 +51,11 @@ struct adf435x_tuning_settings {
     boost::uint16_t clock_divider_12_bit;
     boost::uint8_t  band_select_clock_div;
     boost::uint16_t rf_divider;
-    bool            feedback_after_divider;
 };
 
 adf435x_tuning_settings tune_adf435x_synth(
-    double target_freq,
-    double ref_freq,
+    const double target_freq,
+    const double ref_freq,
     const adf435x_tuning_constraints& constraints,
     double& actual_freq
 );

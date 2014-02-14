@@ -1,0 +1,3 @@
+NET "*_resync*" TNM = FFS "axi_intercon_2x64_128_reset_resync";
+NET "*INTERCONNECT_ARESETN" TNM = FFS "axi_intercon_2x64_128_reset_resync";
+TIMESPEC "TS_axi_intercon_2x64_128_reset_resync" = TO "axi_intercon_2x64_128_reset_resync" TIG;

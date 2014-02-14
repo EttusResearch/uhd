@@ -1,0 +1,13 @@
+verilog work ../example_design/gige_sfp_sync_block.v
+verilog work ../example_design/gige_sfp_reset_sync.v
+verilog work ../example_design/transceiver/gige_sfp_gtwizard_gt.v
+verilog work ../example_design/transceiver/gige_sfp_gtwizard.v
+verilog work ../example_design/transceiver/gige_sfp_tx_startup_fsm.v
+verilog work ../example_design/transceiver/gige_sfp_rx_startup_fsm.v
+verilog work ../example_design/transceiver/gige_sfp_gtwizard_init.v
+verilog work ../example_design/transceiver/gige_sfp_transceiver.v
+verilog work ../example_design/gige_sfp_tx_elastic_buffer.v
+verilog work ../example_design/gige_sfp_mod.v
+verilog work ../example_design/gige_sfp_block.v
+verilog work ../example_design/gige_sfp_example_design.v
+

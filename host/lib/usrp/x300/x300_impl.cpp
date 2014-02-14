@@ -34,6 +34,7 @@
 #include <boost/assign/list_of.hpp>
 #include <fstream>
 #include <uhd/transport/udp_zero_copy.hpp>
+#include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/nirio_zero_copy.hpp>
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/utils/platform.hpp>
@@ -399,34 +400,25 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         if (key.find("send") != std::string::npos) mb.send_args[key] = dev_addr[key];
     }
 
-    const std::vector<std::string> DB_NAMES = boost::assign::list_of("A")("B");
-
-    //create basic communication
-    UHD_MSG(status) << "Setup basic communication..." << std::endl;
-    if (mb.xport_path == "nirio") {
-        mb.zpu_ctrl = x300_make_ctrl_iface_pcie(mb.rio_fpga_interface->get_kernel_proxy());
-    } else {
-        mb.zpu_ctrl = x300_make_ctrl_iface_enet(udp_simple::make_connected(mb.addr,
-                    BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT)));
-    }
-
-    if (mb.xport_path == "eth")
-    {
-        mtu_result_t user_set;
-        user_set.recv_mtu = dev_addr.has_key("recv_frame_size") \
-            ? boost::lexical_cast<size_t>(dev_addr["recv_frame_size"]) \
-            : X300_ETH_DATA_FRAME_SIZE;
-        user_set.send_mtu = dev_addr.has_key("send_frame_size") \
-            ? boost::lexical_cast<size_t>(dev_addr["send_frame_size"]) \
-            : X300_ETH_DATA_FRAME_SIZE;
-
-        // Detect the MTU on the path to the USRP
-        mtu_result_t result;
-        try {
-            result = determine_mtu(mb.addr, user_set);
-        } catch(std::exception &e) {
-            UHD_MSG(error) << e.what() << std::endl;
-        }
+    if (mb.xport_path == "eth" ) {
+        /* This is an ETH connection. Figure out what the maximum supported frame
+         * size is for the transport in the up and down directions. The frame size
+         * depends on the host PIC's NIC's MTU settings. To determine the frame size,
+         * we test for support up to an expected "ceiling". If the user
+         * specified a frame size, we use that frame size as the ceiling. If no
+         * frame size was specified, we use the maximum UHD frame size.
+         *
+         * To optimize performance, the frame size should be greater than or equal
+         * to the frame size that UHD uses so that frames don't get split across
+         * multiple transmission units - this is why the limits passed into the
+         * 'determine_max_frame_size' function are actually frame sizes. */
+        frame_size_t req_max_frame_size;
+        req_max_frame_size.recv_frame_size = (mb.recv_args.has_key("recv_frame_size")) \
+            ? boost::lexical_cast<size_t>(mb.recv_args["recv_frame_size"]) \
+            : X300_10GE_DATA_FRAME_MAX_SIZE;
+        req_max_frame_size.send_frame_size = (mb.send_args.has_key("send_frame_size")) \
+            ? boost::lexical_cast<size_t>(mb.send_args["send_frame_size"]) \
+            : X300_10GE_DATA_FRAME_MAX_SIZE;
 
         #if defined UHD_PLATFORM_LINUX
             const std::string mtu_tool("ip link");
@@ -436,21 +428,45 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             const std::string mtu_tool("ifconfig");
         #endif
 
-        if(result.recv_mtu < user_set.recv_mtu) {
-            UHD_MSG(warning)
-                << boost::format("The receive path contains entities that do not support MTUs >= one recv frame's size (%lu).")
-                % user_set.recv_mtu << std::endl
-                << boost::format("Please verify your NIC's MTU setting using '%s' or set the recv_frame_size argument.")
-                % mtu_tool << std::endl;
+        // Detect the frame size on the path to the USRP
+        try {
+            max_frame_sizes = determine_max_frame_size(mb.addr, req_max_frame_size);
+        } catch(std::exception &e) {
+            UHD_MSG(error) << e.what() << std::endl;
         }
 
-        if(result.send_mtu < user_set.send_mtu) {
+        if ((mb.recv_args.has_key("recv_frame_size"))
+                && (req_max_frame_size.recv_frame_size < max_frame_sizes.recv_frame_size)) {
             UHD_MSG(warning)
-                << boost::format("The send path contains entities that do not support MTUs >= one send frame's size (%lu).")
-                % user_set.send_mtu << std::endl
-                << boost::format("Please verify your NIC's MTU setting using '%s' or set the send_frame_size argument.")
-                % mtu_tool << std::endl;
+                << boost::format("You requested a receive frame size of (%lu) but your NIC's max frame size is (%lu).")
+                % req_max_frame_size.recv_frame_size << max_frame_sizes.recv_frame_size << std::endl
+                << boost::format("Please verify your NIC's MTU setting using '%s' or set the recv_frame_size argument appropriately.")
+                % mtu_tool << std::endl
+                << "UHD will use the auto-detected max frame size for this connection."
+                << std::endl;
         }
+
+        if ((mb.recv_args.has_key("send_frame_size"))
+                && (req_max_frame_size.send_frame_size < max_frame_sizes.send_frame_size)) {
+            UHD_MSG(warning)
+                << boost::format("You requested a send frame size of (%lu) but your NIC's max frame size is (%lu).")
+                % req_max_frame_size.send_frame_size << max_frame_sizes.send_frame_size << std::endl
+                << boost::format("Please verify your NIC's MTU setting using '%s' or set the send_frame_size argument appropriately.")
+                % mtu_tool << std::endl
+                << "UHD will use the auto-detected max frame size for this connection."
+                << std::endl;
+        }
+    }
+
+    const std::vector<std::string> DB_NAMES = boost::assign::list_of("A")("B");
+
+    //create basic communication
+    UHD_MSG(status) << "Setup basic communication..." << std::endl;
+    if (mb.xport_path == "nirio") {
+        mb.zpu_ctrl = x300_make_ctrl_iface_pcie(mb.rio_fpga_interface->get_kernel_proxy());
+    } else {
+        mb.zpu_ctrl = x300_make_ctrl_iface_enet(udp_simple::make_connected(mb.addr,
+                    BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT)));
     }
 
     mb.claimer_task = uhd::task::make(boost::bind(&x300_impl::claimer_loop, this, mb.zpu_ctrl));
@@ -468,6 +484,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //check compat -- good place to do after conditional loading
     this->check_fw_compat(mb_path, mb.zpu_ctrl);
     this->check_fpga_compat(mb_path, mb.zpu_ctrl);
+
+    //store which FPGA image is loaded
+    mb.loaded_fpga_image = get_fpga_option(mb.zpu_ctrl);
 
     //low speed perif access
     mb.zpu_spi = spi_core_3000::make(mb.zpu_ctrl, SR_ADDR(SET0_BASE, ZPU_SR_SPI),
@@ -1030,8 +1049,6 @@ x300_impl::both_xports_t x300_impl::make_transport(
 )
 {
     mboard_members_t &mb = _mb[mb_index];
-    const std::string& addr = mb.addr;
-    const std::string& xport_path = mb.xport_path;
     both_xports_t xports;
 
     sid_config_t config;
@@ -1047,47 +1064,122 @@ x300_impl::both_xports_t x300_impl::make_transport(
         (prefix != X300_RADIO_DEST_PREFIX_CTRL) ? args : DEFAULT_XPORT_ARGS;
 
     zero_copy_xport_params default_buff_args;
-    if (xport_path == "nirio") {
+
+    if (mb.xport_path == "nirio") {
         default_buff_args.send_frame_size =
-            (prefix == X300_RADIO_DEST_PREFIX_TX) ? X300_PCIE_DATA_FRAME_SIZE : X300_PCIE_MSG_FRAME_SIZE;
+            (prefix == X300_RADIO_DEST_PREFIX_TX)
+            ? X300_PCIE_DATA_FRAME_SIZE
+            : X300_PCIE_MSG_FRAME_SIZE;
+
         default_buff_args.recv_frame_size =
-            (prefix == X300_RADIO_DEST_PREFIX_RX) ? X300_PCIE_DATA_FRAME_SIZE : X300_PCIE_MSG_FRAME_SIZE;
+            (prefix == X300_RADIO_DEST_PREFIX_RX)
+            ? X300_PCIE_DATA_FRAME_SIZE
+            : X300_PCIE_MSG_FRAME_SIZE;
+
         default_buff_args.num_send_frames =
-            (prefix == X300_RADIO_DEST_PREFIX_TX) ? X300_PCIE_DATA_NUM_FRAMES : X300_PCIE_MSG_NUM_FRAMES;
+            (prefix == X300_RADIO_DEST_PREFIX_TX)
+            ? X300_PCIE_DATA_NUM_FRAMES
+            : X300_PCIE_MSG_NUM_FRAMES;
+
         default_buff_args.num_recv_frames =
-            (prefix == X300_RADIO_DEST_PREFIX_RX) ? X300_PCIE_DATA_NUM_FRAMES : X300_PCIE_MSG_NUM_FRAMES;
+            (prefix == X300_RADIO_DEST_PREFIX_RX)
+            ? X300_PCIE_DATA_NUM_FRAMES
+            : X300_PCIE_MSG_NUM_FRAMES;
 
         xports.recv = nirio_zero_copy::make(
-            mb.rio_fpga_interface, get_pcie_dma_channel(destination, prefix), default_buff_args, xport_args);
+            mb.rio_fpga_interface,
+            get_pcie_dma_channel(destination, prefix),
+            default_buff_args,
+            xport_args);
+
         xports.send = xports.recv;
 
         //For the nirio transport, buffer size is depends on the frame size and num frames
         xports.recv_buff_size = xports.recv->get_num_recv_frames() * xports.recv->get_recv_frame_size();
         xports.send_buff_size = xports.send->get_num_send_frames() * xports.send->get_send_frame_size();
-    } else {
 
+    } else if (mb.xport_path == "eth") {
+
+        /* Determine what the recommended frame size is for this
+         * connection type.*/
+        size_t eth_data_rec_frame_size = 0;
+
+        if (mb.loaded_fpga_image == "HGS") {
+            if (mb.router_dst_here == X300_XB_DST_E0) {
+                eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
+            } else if (mb.router_dst_here == X300_XB_DST_E1) {
+                eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
+            }
+        } else if (mb.loaded_fpga_image == "XGS") {
+                eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
+        }
+
+        if (eth_data_rec_frame_size == 0) {
+            throw uhd::runtime_error("Unable to determine ETH link type.");
+        }
+
+        /* Print a warning if the system's max available frame size is less than the most optimal
+         * frame size for this type of connection. */
+        if (max_frame_sizes.send_frame_size < eth_data_rec_frame_size) {
+            UHD_MSG(warning)
+                << boost::format("For this connection, UHD recommends a send frame size of at least %lu for best\nperformance, but your system's MTU will only allow %lu.")
+                % eth_data_rec_frame_size
+                % max_frame_sizes.send_frame_size
+                << std::endl
+                << "This will negatively impact your maximum achievable sample rate."
+                << std::endl;
+        }
+
+        if (max_frame_sizes.recv_frame_size < eth_data_rec_frame_size) {
+            UHD_MSG(warning)
+                << boost::format("For this connection, UHD recommends a receive frame size of at least %lu for best\nperformance, but your system's MTU will only allow %lu.")
+                % eth_data_rec_frame_size
+                % max_frame_sizes.recv_frame_size
+                << std::endl
+                << "This will negatively impact your maximum achievable sample rate."
+                << std::endl;
+        }
+
+	// Account for headers
+        size_t system_max_send_frame_size = (size_t) max_frame_sizes.send_frame_size - 64;
+        size_t system_max_recv_frame_size = (size_t) max_frame_sizes.recv_frame_size - 64;
+
+	// Make sure frame sizes do not exceed the max available value supported by UHD
         default_buff_args.send_frame_size =
-            (prefix == X300_RADIO_DEST_PREFIX_TX) ? X300_ETH_DATA_FRAME_SIZE : X300_ETH_MSG_FRAME_SIZE;
+            (prefix == X300_RADIO_DEST_PREFIX_TX)
+            ? std::min(system_max_send_frame_size, X300_10GE_DATA_FRAME_MAX_SIZE)
+            : std::min(system_max_send_frame_size, X300_ETH_MSG_FRAME_SIZE);
+
         default_buff_args.recv_frame_size =
-            (prefix == X300_RADIO_DEST_PREFIX_RX) ? X300_ETH_DATA_FRAME_SIZE : X300_ETH_MSG_FRAME_SIZE;
+            (prefix == X300_RADIO_DEST_PREFIX_RX)
+            ? std::min(system_max_recv_frame_size, X300_10GE_DATA_FRAME_MAX_SIZE)
+            : std::min(system_max_recv_frame_size, X300_ETH_MSG_FRAME_SIZE);
+
         default_buff_args.num_send_frames =
-            (prefix == X300_RADIO_DEST_PREFIX_TX) ? X300_ETH_DATA_NUM_FRAMES : X300_ETH_MSG_NUM_FRAMES;
+            (prefix == X300_RADIO_DEST_PREFIX_TX)
+            ? X300_ETH_DATA_NUM_FRAMES
+            : X300_ETH_MSG_NUM_FRAMES;
+
         default_buff_args.num_recv_frames =
-            (prefix == X300_RADIO_DEST_PREFIX_RX) ? X300_ETH_DATA_NUM_FRAMES : X300_ETH_MSG_NUM_FRAMES;
+            (prefix == X300_RADIO_DEST_PREFIX_RX)
+            ? X300_ETH_DATA_NUM_FRAMES
+            : X300_ETH_MSG_NUM_FRAMES;
 
         //make a new transport - fpga has no idea how to talk to use on this yet
         udp_zero_copy::buff_params buff_params;
-        xports.recv = udp_zero_copy::make(addr, BOOST_STRINGIZE(X300_VITA_UDP_PORT), default_buff_args, buff_params, xport_args);
+        xports.recv = udp_zero_copy::make(mb.addr,
+                BOOST_STRINGIZE(X300_VITA_UDP_PORT),
+                default_buff_args,
+                buff_params,
+                xport_args);
+
         xports.send = xports.recv;
 
-        //For the UDP transport the buffer size if the size of the socket buffer in the kernel
+        //For the UDP transport the buffer size if the size of the socket buffer
+        //in the kernel
         xports.recv_buff_size = buff_params.recv_buff_size;
         xports.send_buff_size = buff_params.send_buff_size;
-    }
 
-    //always program the framer if this is a socket, even its caching was used
-    if (xport_path != "nirio")
-    {
         //clear the ethernet dispatcher's udp port
         //NOT clearing this, the dispatcher is now intelligent
         //_zpu_ctrl->poke32(SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT0+8+3)), 0);
@@ -1095,7 +1187,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
         //send a mini packet with SID into the ZPU
         //ZPU will reprogram the ethernet framer
         UHD_LOG << "programming packet for new xport on "
-            << addr << std::hex << "sid 0x" << sid << std::dec << std::endl;
+            << mb.addr << std::hex << "sid 0x" << sid << std::dec << std::endl;
         //YES, get a __send__ buffer from the __recv__ socket
         //-- this is the only way to program the framer for recv:
         managed_send_buffer::sptr buff = xports.recv->get_send_buff();
@@ -1113,6 +1205,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
         //ethernet framer has been programmed before we return.
         mb.zpu_ctrl->peek32(0);
     }
+
     return xports;
 }
 
@@ -1299,13 +1392,15 @@ bool x300_impl::is_claimed(wb_iface::sptr iface)
 }
 
 /***********************************************************************
- * MTU detection
+ * Frame size detection
  **********************************************************************/
-x300_impl::mtu_result_t x300_impl::determine_mtu(const std::string &addr, const mtu_result_t &user_mtu)
+x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &addr,
+        const frame_size_t &user_frame_size)
 {
-    udp_simple::sptr udp = udp_simple::make_connected(addr, BOOST_STRINGIZE(X300_MTU_DETECT_UDP_PORT));
+    udp_simple::sptr udp = udp_simple::make_connected(addr,
+            BOOST_STRINGIZE(X300_MTU_DETECT_UDP_PORT));
 
-    std::vector<boost::uint8_t> buffer(std::max(user_mtu.recv_mtu, user_mtu.send_mtu));
+    std::vector<boost::uint8_t> buffer(std::max(user_frame_size.recv_frame_size, user_frame_size.send_frame_size));
     x300_mtu_t *request = reinterpret_cast<x300_mtu_t *>(&buffer.front());
     static const double echo_timeout = 0.020; //20 ms
 
@@ -1317,54 +1412,62 @@ x300_impl::mtu_result_t x300_impl::determine_mtu(const std::string &addr, const 
     if (!(uhd::ntohx<boost::uint32_t>(request->flags) & X300_MTU_DETECT_ECHO_REPLY))
         throw uhd::not_implemented_error("Holler protocol not implemented");
 
-    size_t min_recv_mtu = sizeof(x300_mtu_t);
-    size_t max_recv_mtu = user_mtu.recv_mtu;
-    size_t min_send_mtu = sizeof(x300_mtu_t);
-    size_t max_send_mtu = user_mtu.send_mtu;
+    size_t min_recv_frame_size = sizeof(x300_mtu_t);
+    size_t max_recv_frame_size = user_frame_size.recv_frame_size;
+    size_t min_send_frame_size = sizeof(x300_mtu_t);
+    size_t max_send_frame_size = user_frame_size.send_frame_size;
 
-    UHD_MSG(status) << "Determining receive MTU ... ";
-    while (min_recv_mtu < max_recv_mtu)
+    UHD_MSG(status) << "Determining maximum frame size... ";
+    while (min_recv_frame_size < max_recv_frame_size)
     {
-       size_t test_mtu = (max_recv_mtu/2 + min_recv_mtu/2 + 3) & ~3;
+       size_t test_frame_size = (max_recv_frame_size/2 + min_recv_frame_size/2 + 3) & ~3;
 
        request->flags = uhd::htonx<boost::uint32_t>(X300_MTU_DETECT_ECHO_REQUEST);
-       request->size = uhd::htonx<boost::uint32_t>(test_mtu);
+       request->size = uhd::htonx<boost::uint32_t>(test_frame_size);
        udp->send(boost::asio::buffer(buffer, sizeof(x300_mtu_t)));
 
        size_t len = udp->recv(boost::asio::buffer(buffer), echo_timeout);
 
-       if (len >= test_mtu)
-           min_recv_mtu = test_mtu;
+       if (len >= test_frame_size)
+           min_recv_frame_size = test_frame_size;
        else
-           max_recv_mtu = test_mtu - 4;
-
+           max_recv_frame_size = test_frame_size - 4;
     }
-    UHD_MSG(status) << min_recv_mtu << std::endl;
 
-    UHD_MSG(status) << "Determining send MTU ... ";
-    while (min_send_mtu < max_send_mtu)
+    if(min_recv_frame_size < IP_PROTOCOL_MIN_MTU_SIZE-IP_PROTOCOL_UDP_PLUS_IP_HEADER) {
+        throw uhd::runtime_error("System receive MTU size is less than the minimum required by the IP protocol.");
+    }
+
+    while (min_send_frame_size < max_send_frame_size)
     {
-        size_t test_mtu = (max_send_mtu/2 + min_send_mtu/2 + 3) & ~3;
+        size_t test_frame_size = (max_send_frame_size/2 + min_send_frame_size/2 + 3) & ~3;
 
         request->flags = uhd::htonx<boost::uint32_t>(X300_MTU_DETECT_ECHO_REQUEST);
         request->size = uhd::htonx<boost::uint32_t>(sizeof(x300_mtu_t));
-        udp->send(boost::asio::buffer(buffer, test_mtu));
+        udp->send(boost::asio::buffer(buffer, test_frame_size));
 
         size_t len = udp->recv(boost::asio::buffer(buffer), echo_timeout);
         if (len >= sizeof(x300_mtu_t))
             len = uhd::ntohx<boost::uint32_t>(request->size);
 
-        if (len >= test_mtu)
-            min_send_mtu = test_mtu;
+        if (len >= test_frame_size)
+            min_send_frame_size = test_frame_size;
         else
-            max_send_mtu = test_mtu - 4;
+            max_send_frame_size = test_frame_size - 4;
     }
-    UHD_MSG(status) << min_send_mtu << std::endl;
 
-    mtu_result_t mtu;
-    mtu.recv_mtu = min_recv_mtu;
-    mtu.send_mtu = min_send_mtu;
-    return mtu;
+    if(min_send_frame_size < IP_PROTOCOL_MIN_MTU_SIZE-IP_PROTOCOL_UDP_PLUS_IP_HEADER) {
+        throw uhd::runtime_error("System send MTU size is less than the minimum required by the IP protocol.");
+    }
+
+    frame_size_t frame_size;
+    // There are cases when NICs accept oversized packets, in which case we'd falsely
+    // detect a larger-than-possible frame size. A safe and sensible value is the minimum
+    // of the recv and send frame sizes.
+    frame_size.recv_frame_size = std::min(min_recv_frame_size, min_send_frame_size);
+    frame_size.send_frame_size = std::min(min_recv_frame_size, min_send_frame_size);
+    UHD_MSG(status) << frame_size.send_frame_size << " bytes." << std::endl;
+    return frame_size;
 }
 
 /***********************************************************************

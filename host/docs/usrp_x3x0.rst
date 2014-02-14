@@ -9,7 +9,7 @@ Comparative features list
 -------------------------
 
 **Hardware Capabilities:**
- * 2 transceiver card slots
+ * 2 transceiver card slots (can do 2x2 MIMO out of the box)
  * Dual SFP+ Transceivers (can be used with 1 GigE, 10 GigE)
  * PCI Express over cable (MXI) gen1 x4
  * External PPS input & output
@@ -29,6 +29,89 @@ Comparative features list
  * 16-bit and 8-bit sample modes (sc8 and sc16)
  * Up to 120 MHz of RF bandwidth with 16-bit samples
 
+---------------
+Getting started
+---------------
+
+This will run you through the first steps relevant to get your USRP X300/X310
+up and running. Here, we assume you will connect your USRP using Gigabit Ethernet (1GigE),
+as this interface is readily available in most computers. For 10 Gigabit Ethernet (10GigE) or
+PCI Express (PCIe), see the corresponding sections in this manual page.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Assembling the X300/X310 kit
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Before you can start using your USRP, you might have to assemble the hardware,
+if this has not yet happened. Make sure you are grounded (e.g. by touching a radiator)
+in order not to damage sensitive electronics through static discharge!
+
+1. Unscrew the top of your X300/X310 (there are 2 screws which can be easily loosened
+   using a small Phillips screwdriver).
+2. Insert the daughterboards by inserting them into the slots and optionally screwing
+   them onto the motherboard.
+3. Connect the RF connectors on the daughterboards to the front panel. In order to avoid
+   confusion, make sure the internal connections match the labels on the front panel (i.e.
+   TX/RX is connected to TX/RX).
+4. If you have purchased an internal GPSDO, follow the instructions on
+   `the internal GPSDO manual page <./gpsdo_x3x0.html>`_ to insert the GPSDO. Note that you
+   will need an external GPS antenna connected to the rear GPS ANT connector in order to
+   make use of GPS, although your USRP will still be usable without.
+5. Connect the 1 GigE SFP+ transceiver into the Ethernet port 0 and connect the X300/X310 with
+   your computer.
+6. Connect the power supply and switch on the USRP.
+
+^^^^^^^^^^^^^^^^^^^^
+Network Connectivity
+^^^^^^^^^^^^^^^^^^^^
+
+The next step is to make sure your computer can talk to the USRP. An otherwise unconfigured
+USRP device will have the IP address 192.168.10.2 when using 1GigE.
+It is recommended to directly connect your USRP to the computer at first,
+and to set the IP address on your machine to 192.168.10.1.
+See Section `Setup the host interface`_ on details how to change your machine's IP address.
+
+**Note**: If you are running an automatic IP configuration service such as Network Manager, make
+sure it is either deactivated or configured to not change the network device! This can, in extreme cases,
+lead to you bricking the USRP!
+
+If your network configuration is correct, running ``uhd_find_devices`` will find your USRP
+and print some information about it. You will also be able to ping the USRP by running::
+
+  ping 192.168.10.2
+
+on the command line. At this point, you should also run::
+
+  uhd_usrp_probe --args addr=192.168.10.2
+
+to make sure all of your components (daughterboards, GPSDO) are correctly detected and usable.
+
+^^^^^^^^^^^^^^^^^^^^^
+Updating the firmware
+^^^^^^^^^^^^^^^^^^^^^
+
+If the output from ``uhd_find_devices`` and ``uhd_usrp_probe`` didn't show any warnings, you
+can skip this step. However, if there were warnings regarding version incompatibility, you will
+have to upate the FPGA image before you can start using your USRP.
+
+1. Download the current UHD images. You can use the ``uhd_images_downloader`` script provided
+   with UHD (see also `FPGA Image Flavors`_).
+2. Use the ``usrp_x3xx_fpga_burner`` utility to update the FPGA image. On the command line, run::
+
+          usrp_x3xx_fpga_burner --addr=192.168.10.2 --type=HGS # Since we are using 1GigE, type is HGS
+
+  If you have installed the images to a non-standard location, you might need to run (change the filename according to your device)::
+
+          usrp_x3xx_fpga_burner --addr=192.168.10.2 --fpga-path <path_to_images>/usrp_x310_fpga_HGS.bit
+
+  The process of updating the firmware will take several minutes. Make sure the process of flashing the image does not get interrupted.
+
+See `Load the Images onto the On-board Flash`_ for more details.
+
+When your firmware is up to date, power-cycle the device and re-run ``uhd_usrp_probe``. There should
+be no more warnings at this point, and all components should be correctly detected. Your USRP is now
+ready for development!
+
 --------------
 Hardware Setup
 --------------
@@ -40,7 +123,7 @@ Gigabit Ethernet (1 GigE)
 Installing the USRP X300/X310
 :::::::::::::::::::::::::::::
 * Prior to installing the module, the host PC can remain powered on.
-* Plug a 1 Gigabit SFP+ Transceiver into Ethernet Port 0 on the USRP X300/x310 device.
+* Plug a 1 Gigabit SFP Transceiver into Ethernet Port 0 on the USRP X300/X310 device.
 * Use the Ethernet cable to connect the SFP+ transciever on the device to the host computer. For maximum throughput, Ettus Research recommends that you connect each device to its own dedicated Gigabit Ethernet interface on the host computer.
 * Connect the AC/DC power supply to the device and plug the supply into a wall outlet.
 * The OS will automatically recognize the device (e.g. when running uhd_find_devices).
@@ -195,7 +278,7 @@ To get the latest images, simply use the uhd_images_downloader script:
 
 ::
 
-    uhd_images_downloader
+    sudo uhd_images_downloader
 
 **Windows:**
 
@@ -223,7 +306,13 @@ Use JTAG to load FPGA images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The USRP-X Series device features an on-board USB-JTAG programmer that can be accessed on the front-panel
 of the device. The iMPACT tool in the `Xilinx Programming Tools <http://www.xilinx.com/support/download/index.htm>`_ package can be used to load an image over
-the JTAG interface.
+the JTAG interface. This can be useful for unbricking devices.
+
+If you have iMPACT installed, you can use the impact_jtag_programmer.sh tool to install images. Make sure your X3x0 is powered on and connected to your computer using the front panel USB JTAG connector (USB 2.0 is fine for this). Then run the tool:
+
+::
+
+    <path_to_uhd_tools>/impact_jtag_programmer.sh --fpga-path=<fpga_image_path>
 
 ---------------------------------------
 Load the Images onto the On-board Flash
@@ -276,8 +365,8 @@ Use the burner tool over PCI Express
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Device recovery and bricking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-It is possible to put the device into an unusable state by loading bad images.
-Fortunately, the USRP-X Series device can be loaded with a good image temporarily using the USB-JTAG interface. 
+It is possible to put the device into an unusable state by loading bad images ("bricking").
+Fortunately, the USRP-X Series device can be loaded with a good image temporarily using the USB-JTAG interface.
 Once booted into the safe image, the user can once again load images onto the device over Ethernet or PCI Express.
 
 ----------------
@@ -540,6 +629,13 @@ has successfully detected it. You can do so by checking if your device shows up 
 Monitor the host network traffic
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Use Wireshark to monitor packets sent to and received from the device.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Observe Ethernet port LEDs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When there is network traffic arriving at the Ethernet port, LEDs will light up.
+You can use this to make sure the network connection is correctly set up, e.g.
+by pinging the USRP and making sure the LEDs start to blink.
 
 --------------
 Hardware Notes

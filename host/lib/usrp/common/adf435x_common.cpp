@@ -25,8 +25,8 @@ using namespace uhd;
  * ADF 4350/4351 Tuning Utility
  **********************************************************************/
 adf435x_tuning_settings tune_adf435x_synth(
-    double target_freq,
-    double ref_freq,
+    const double target_freq,
+    const double ref_freq,
     const adf435x_tuning_constraints& constraints,
     double& actual_freq)
 {
@@ -66,9 +66,10 @@ adf435x_tuning_settings tune_adf435x_synth(
      * f_pfd = f_ref*(1+D)/(R*(1+T))
      * f_vco = (N + (FRAC/MOD))*f_pfd
      *    N = f_vco/f_pfd - FRAC/MOD = f_vco*((R*(T+1))/(f_ref*(1+D))) - FRAC/MOD
-     * f_rf = f_vco/RFdiv)
-     * f_actual = f_rf/2
+     * f_actual = f_vco/RFdiv)
      */
+    double feedback_freq = constraints.feedback_after_divider ? target_freq : vco_freq;
+
     for(R = 1; R <= 1023; R+=1){
         //PFD input frequency = f_ref/R ... ignoring Reference doubler/divide-by-2 (D & T)
         pfd_freq = ref_freq*(D?2:1)/(R*(T?2:1));
@@ -76,10 +77,8 @@ adf435x_tuning_settings tune_adf435x_synth(
         //keep the PFD frequency at or below 25MHz (Loop Filter Bandwidth)
         if (pfd_freq > constraints.pfd_freq_max) continue;
 
-        //ignore fractional part of tuning
-        //N is computed from target_freq and not vco_freq because the feedback
-        //mode is set to FEEDBACK_SELECT_DIVIDED
-        N = boost::uint16_t(std::floor(target_freq/pfd_freq));
+        //First, ignore fractional part of tuning
+        N = boost::uint16_t(std::floor(feedback_freq/pfd_freq));
 
         //keep N > minimum int divider requirement
         if (N < static_cast<boost::uint16_t>(constraints.int_range.start())) continue;
@@ -94,9 +93,7 @@ adf435x_tuning_settings tune_adf435x_synth(
 
     //Fractional-N calculation
     MOD = 4095; //max fractional accuracy
-    //N is computed from target_freq and not vco_freq because the feedback
-    //mode is set to FEEDBACK_SELECT_DIVIDED
-    FRAC = static_cast<boost::uint16_t>((target_freq/pfd_freq - N)*MOD);
+    FRAC = static_cast<boost::uint16_t>((feedback_freq/pfd_freq - N)*MOD);
     if (constraints.force_frac0) {
         if (FRAC > (MOD / 2)) { //Round integer such that actual freq is closest to target
             N++;
@@ -114,8 +111,14 @@ adf435x_tuning_settings tune_adf435x_synth(
     //Typical phase resync time documented in data sheet pg.24
     static const double PHASE_RESYNC_TIME = 400e-6;
 
-    //actual frequency calculation
-    actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(D?2:1)/(R*(T?2:1)));
+    //If feedback after divider, then compensation for the divider is pulled into the INT value
+    int rf_div_compensation = constraints.feedback_after_divider ? 1 : RFdiv;
+
+    //Compute the actual frequency in terms of ref_freq, N, FRAC, MOD, D, R and T.
+    actual_freq = (
+        double((N + (double(FRAC)/double(MOD))) *
+        (ref_freq*(D?2:1)/(R*(T?2:1))))
+    ) / rf_div_compensation;
 
     //load the settings
     adf435x_tuning_settings settings;
@@ -128,15 +131,13 @@ adf435x_tuning_settings tune_adf435x_synth(
     settings.r_doubler_en = D;
     settings.band_select_clock_div = BS;
     settings.rf_divider = RFdiv;
-    settings.feedback_after_divider = true;
 
     std::string tuning_str = (constraints.force_frac0) ? "Integer-N" : "Fractional";
-
     UHD_LOGV(often)
         << boost::format("ADF 435X Frequencies (MHz): REQUESTED=%0.9f, ACTUAL=%0.9f"
         ) % (target_freq/1e6) % (actual_freq/1e6) << std::endl
-        << boost::format("ADF 435X Intermediates (MHz): VCO=%0.2f, PFD=%0.2f, BAND=%0.2f, REF=%0.2f"
-        ) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) % (ref_freq/1e6) << std::endl
+        << boost::format("ADF 435X Intermediates (MHz): Feedback=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f, REF=%0.2f"
+        ) % (feedback_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) % (ref_freq/1e6) << std::endl
         << boost::format("ADF 435X Tuning: %s") % tuning_str.c_str() << std::endl
         << boost::format("ADF 435X Settings: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d"
         ) % R % BS % N % FRAC % MOD % T % D % RFdiv << std::endl;

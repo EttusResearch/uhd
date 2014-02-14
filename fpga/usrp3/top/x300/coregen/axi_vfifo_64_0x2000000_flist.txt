@@ -1,0 +1,25 @@
+# Output products list for <axi_vfifo_64_0x2000000>
+axi_vfifo_64_0x2000000/doc/axi_vfifo_ctrl_v1_1_readme.txt
+axi_vfifo_64_0x2000000/doc/axi_vfifo_ctrl_v1_1_vinfo.html
+axi_vfifo_64_0x2000000/doc/pg038_axi_vfifo_ctrl.pdf
+axi_vfifo_64_0x2000000/example_design/axi_vfifo_64_0x2000000_exdes.ucf
+axi_vfifo_64_0x2000000/example_design/axi_vfifo_64_0x2000000_exdes.vhd
+axi_vfifo_64_0x2000000/example_design/axi_vfifo_64_0x2000000_exdes.xdc
+axi_vfifo_64_0x2000000/implement/implement.bat
+axi_vfifo_64_0x2000000/implement/implement.sh
+axi_vfifo_64_0x2000000/implement/implement_synplify.bat
+axi_vfifo_64_0x2000000/implement/implement_synplify.sh
+axi_vfifo_64_0x2000000/implement/planAhead_ise.bat
+axi_vfifo_64_0x2000000/implement/planAhead_ise.sh
+axi_vfifo_64_0x2000000/implement/planAhead_ise.tcl
+axi_vfifo_64_0x2000000/implement/xst.prj
+axi_vfifo_64_0x2000000/implement/xst.scr
+axi_vfifo_64_0x2000000.gise
+axi_vfifo_64_0x2000000.ngc
+axi_vfifo_64_0x2000000.v
+axi_vfifo_64_0x2000000.veo
+axi_vfifo_64_0x2000000.xco
+axi_vfifo_64_0x2000000.xise
+axi_vfifo_64_0x2000000_flist.txt
+axi_vfifo_64_0x2000000_xmdf.tcl
+axi_vfifo_ctrl_v1_1_readme.txt

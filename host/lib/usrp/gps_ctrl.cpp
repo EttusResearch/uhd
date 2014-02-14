@@ -30,6 +30,7 @@
 
 #include "boost/tuple/tuple.hpp"
 #include "boost/foreach.hpp"
+#include <boost/container/vector.hpp>
 
 using namespace uhd;
 using namespace boost::gregorian;
@@ -68,34 +69,36 @@ private:
         return std::string();
     }
 
-    std::string msg = _recv();
+    const std::list<std::string> list = boost::assign::list_of("GPGGA")("GPRMC")("SERVO");
     static const boost::regex status_regex("\\d\\d-\\d\\d-\\d\\d");
+    std::map<std::string,std::string> msgs;
+
+    // Get all GPSDO messages available
+    // Creating a map here because we only want the latest of each message type
+    for (std::string msg = _recv(); msg.length() > 6; msg = _recv())
+    {
+        // Look for SERVO message
+        if (boost::regex_search(msg, status_regex, boost::regex_constants::match_continuous))
+            msgs["SERVO"] = msg;
+        else
+            msgs[msg.substr(1,5)] = msg;
+    }
+
     boost::system_time time = boost::get_system_time();
-    if(msg.size() < 6)
-      return std::string();
 
-    std::string nmea = msg.substr(1,5);
-    const std::list<std::string> list = boost::assign::list_of("GPGGA")("GPRMC");
+    // Update sensors with newly read data
     BOOST_FOREACH(std::string key, list) {
-      // beginning matches one of the NMEA keys
-      if(!nmea.compare(key)) {
-        sensors[key] = boost::make_tuple(msg, time, !sensor.compare(key));
-        // if this was what we're looking for return it
-        return (!sensor.compare(key))? msg : std::string();
-      }
+        if (msgs[key].length())
+            sensors[key] = boost::make_tuple(msgs[key], time, !sensor.compare(key));
     }
 
-     //We're still here so it's not one of the NMEA strings from above
-    if(boost::regex_search(msg, status_regex, boost::regex_constants::match_continuous)) {
-      trim(msg);
-      sensors["SERVO"] = boost::make_tuple(msg, time, false);
-      if(!sensor.compare("SERVO"))
-        return msg;
-      else
-        return std::string();
-    }
+    // Return requested sensor if it was updated
+    if (msgs[sensor].length())
+        return msgs[sensor];
+
     return std::string();
   }
+
 public:
   gps_ctrl_impl(uart_iface::sptr uart){
     _uart = uart;
@@ -332,8 +335,8 @@ private:
     }
   }
 
-  std::string _recv(void){
-      return _uart->read_uart(GPS_TIMEOUT_DELAY_MS/1000.);
+  std::string _recv(double timeout = GPS_TIMEOUT_DELAY_MS/1000.){
+      return _uart->read_uart(timeout);
   }
 
   void _send(const std::string &buf){

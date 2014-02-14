@@ -1,0 +1,16 @@
+vlogcomp -work work ${XILINX}/verilog/src/glbl.v
+vlogcomp -work work ../../packet_proc/eth_dispatch_tb.v
+vlogcomp -work work ../../packet_proc/eth_dispatch.v
+vlogcomp -work work ../../fifo/axi_fifo_short.v
+vlogcomp -work work ../../fifo/axi_fifo.v
+vlogcomp -work work ../../control/ram_2port.v
+vlogcomp -work work ../../control/setting_reg.v
+vlogcomp -work work ../../sim/axi_probe_tb.v
+
+
+
+
+fuse work.eth_dispatch_tb work.glbl -L unisims_ver -L xilinxcorelib_ver -o eth_dispatch_tb.exe
+
+# run the simulation scrip
+./eth_dispatch_tb.exe -gui #-tclbatch simcmds.tcl

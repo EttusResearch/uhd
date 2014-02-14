@@ -1,0 +1,1647 @@
+Release 14.4 par P.49d (lin64)
+Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
+
+server2::  Tue Jan 22 18:30:45 2013
+
+par -w -intstyle ise -ol high -xe n example_top_map.ncd example_top.ncd
+example_top.pcf 
+
+
+Constraints file: example_top.pcf.
+Loading device for application Rf_Device from file '7k410t.nph' in environment /opt/Xilinx/14.4/ISE_DS/ISE/.
+   "example_top" is an NCD, version 3.2, device xc7k410t, package ffg900, speed -2
+
+Initializing temperature to 85.000 Celsius. (default - Range: 0.000 to 85.000 Celsius)
+Initializing voltage to 0.970 Volts. (default - Range: 0.970 to 1.030 Volts)
+
+
+Device speed data version:  "PRODUCTION 1.08 2012-12-17".
+
+
+
+Device Utilization Summary:
+
+Slice Logic Utilization:
+  Number of Slice Registers:                12,744 out of 508,400    2%
+    Number used as Flip Flops:              12,721
+    Number used as Latches:                      1
+    Number used as Latch-thrus:                  0
+    Number used as AND/OR logics:               22
+  Number of Slice LUTs:                     10,803 out of 254,200    4%
+    Number used as logic:                    8,544 out of 254,200    3%
+      Number using O6 output only:           7,472
+      Number using O5 output only:              59
+      Number using O5 and O6:                1,013
+      Number used as ROM:                        0
+    Number used as Memory:                   1,452 out of  90,600    1%
+      Number used as Dual Port RAM:            560
+        Number using O6 output only:             0
+        Number using O5 output only:            11
+        Number using O5 and O6:                549
+      Number used as Single Port RAM:            0
+      Number used as Shift Register:           892
+        Number using O6 output only:           806
+        Number using O5 output only:             0
+        Number using O5 and O6:                 86
+    Number used exclusively as route-thrus:    807
+      Number with same-slice register load:    684
+      Number with same-slice carry load:       123
+      Number with other load:                    0
+
+Slice Logic Distribution:
+  Number of occupied Slices:                 4,317 out of  63,550    6%
+  Number of LUT Flip Flop pairs used:       14,415
+    Number with an unused Flip Flop:         3,027 out of  14,415   20%
+    Number with an unused LUT:               3,612 out of  14,415   25%
+    Number of fully used LUT-FF pairs:       7,776 out of  14,415   53%
+    Number of slice register sites lost
+      to control set restrictions:               0 out of 508,400    0%
+
+  A LUT Flip Flop pair for this architecture represents one LUT paired with
+  one Flip Flop within a slice.  A control set is a unique combination of
+  clock, reset, set, and enable signals for a registered element.
+  The Slice Logic Distribution report is not meaningful if the design is
+  over-mapped for a non-slice resource or if Placement fails.
+  OVERMAPPING of BRAM resources should be ignored if the design is
+  over-mapped for a non-BRAM resource or if placement fails.
+
+IO Utilization:
+  Number of bonded IOBs:                        75 out of     500   15%
+    Number of LOCed IOBs:                       75 out of      75  100%
+    IOB Flip Flops:                              9
+    IOB Master Pads:                             5
+    IOB Slave Pads:                              5
+
+Specific Feature Utilization:
+  Number of RAMB36E1/FIFO36E1s:                  5 out of     795    1%
+    Number using RAMB36E1 only:                  5
+    Number using FIFO36E1 only:                  0
+  Number of RAMB18E1/FIFO18E1s:                  1 out of   1,590    1%
+    Number using RAMB18E1 only:                  1
+    Number using FIFO18E1 only:                  0
+  Number of BUFG/BUFGCTRLs:                      3 out of      32    9%
+    Number used as BUFGs:                        3
+    Number used as BUFGCTRLs:                    0
+  Number of IDELAYE2/IDELAYE2_FINEDELAYs:       32 out of     500    6%
+    Number used as IDELAYE2s:                   32
+    Number used as IDELAYE2_FINEDELAYs:          0
+  Number of ILOGICE2/ILOGICE3/ISERDESE2s:       32 out of     500    6%
+    Number used as ILOGICE2s:                    0
+  Number used as  ILOGICE3s:                     0
+    Number used as ISERDESE2s:                  32
+  Number of ODELAYE2/ODELAYE2_FINEDELAYs:        0 out of     150    0%
+  Number of OLOGICE2/OLOGICE3/OSERDESE2s:       69 out of     500   13%
+    Number used as OLOGICE2s:                    5
+    Number used as OLOGICE3s:                    0
+    Number used as OSERDESE2s:                  64
+  Number of PHASER_IN/PHASER_IN_PHYs:            4 out of      40   10%
+    Number used as PHASER_INs:                   0
+    Number used as PHASER_IN_PHYs:               4
+      Number of LOCed PHASER_IN_PHYs:            4 out of       4  100%
+  Number of PHASER_OUT/PHASER_OUT_PHYs:          7 out of      40   17%
+    Number used as PHASER_OUTs:                  0
+    Number used as PHASER_OUT_PHYs:              7
+      Number of LOCed PHASER_OUT_PHYs:           7 out of       7  100%
+  Number of BSCANs:                              1 out of       4   25%
+  Number of BUFHCEs:                             0 out of     168    0%
+  Number of BUFRs:                               0 out of      40    0%
+  Number of CAPTUREs:                            0 out of       1    0%
+  Number of DNA_PORTs:                           0 out of       1    0%
+  Number of DSP48E1s:                            0 out of   1,540    0%
+  Number of EFUSE_USRs:                          0 out of       1    0%
+  Number of FRAME_ECCs:                          0 out of       1    0%
+  Number of GTXE2_CHANNELs:                      0 out of      16    0%
+  Number of GTXE2_COMMONs:                       0 out of       4    0%
+  Number of IBUFDS_GTE2s:                        0 out of       8    0%
+  Number of ICAPs:                               0 out of       2    0%
+  Number of IDELAYCTRLs:                         1 out of      10   10%
+  Number of IN_FIFOs:                            4 out of      40   10%
+    Number of LOCed IN_FIFOs:                    4 out of       4  100%
+  Number of MMCME2_ADVs:                         1 out of      10   10%
+    Number of LOCed MMCME2_ADVs:                 1 out of       1  100%
+  Number of OUT_FIFOs:                           7 out of      40   17%
+    Number of LOCed OUT_FIFOs:                   7 out of       7  100%
+  Number of PCIE_2_1s:                           0 out of       1    0%
+  Number of PHASER_REFs:                         2 out of      10   20%
+    Number of LOCed PHASER_REFs:                 2 out of       2  100%
+  Number of PHY_CONTROLs:                        2 out of      10   20%
+    Number of LOCed PHY_CONTROLs:                2 out of       2  100%
+  Number of PLLE2_ADVs:                          1 out of      10   10%
+    Number of LOCed PLLE2_ADVs:                  1 out of       1  100%
+  Number of STARTUPs:                            0 out of       1    0%
+  Number of XADCs:                               1 out of       1  100%
+
+
+Overall effort level (-ol):   High 
+Router effort level (-rl):    High 
+
+INFO:Timing:3386 - Intersecting Constraints found and resolved.  For more information, see the TSI report.  Please consult the Xilinx
+   Command Line Tools User Guide for information on generating a TSI report.
+Starting initial Timing Analysis.  REAL time: 37 secs 
+Finished initial Timing Analysis.  REAL time: 37 secs 
+
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2/USE_READ.read_addr_inst/USE_FPGA_ADJUSTED_LEN.last_word_f
+   or_mask_dummy_carry3<4> has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2/USE_WRITE.write_addr_inst/USE_FPGA_ADJUSTED_LEN.last_word
+   _for_mask_dummy_carry3<4> has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_23_ML_NEW_IBUFDISABLE has no load.  PAR will not attempt to
+   route this signal.
+WARNING:Par:288 - The signal V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_21_ML_NEW_IBUFDISABLE has no load.  PAR will not attempt to
+   route this signal.
+WARNING:Par:288 - The signal V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_25_ML_NEW_IBUFDISABLE has no load.  PAR will not attempt to
+   route this signal.
+WARNING:Par:288 - The signal V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_19_ML_NEW_IBUFDISABLE has no load.  PAR will not attempt to
+   route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<2
+   1> has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<2
+   0> has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<18>
+   has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<20>
+   has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<21>
+   has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<1
+   9> has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<1
+   8> has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer_d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<19>
+   has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer_ram.rams[0].RAM32M0_RAMA_D1_DPO
+   has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer_ram.rams[0].RAM32M0_RAMD_D1_O has
+   no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer_ram.rams[1].RAM32M0_RAMA_D1_DPO
+   has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer_ram.rams[1].RAM32M0_RAMD_D1_O has
+   no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[30].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[25].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[26].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[21].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[42].RAM32M0_RAMA_D1_DPO has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[42].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[36].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[31].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[19].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[22].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[27].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/read_fifo.fifo_ram[1].RAM32M0_RAMA_D1_DPO has no load.  PAR will
+   not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/read_fifo.fifo_ram[1].RAM32M0_RAMB_D1_DPO has no load.  PAR will
+   not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/read_fifo.fifo_ram[1].RAM32M0_RAMD_D1_O has no load.  PAR will
+   not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.status_ram.RAM32M0_RAMB_D1_DPO has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.status_ram.RAM32M0_RAMD_D1_O has no load.  PAR will
+   not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_RAMC_D1_DPO has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[41].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[20].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[40].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[24].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[29].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[32].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/read_fifo.fifo_ram[0].RAM32M0_RAMD_D1_O has no load.  PAR will
+   not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[4].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[35].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[37].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[38].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[23].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[33].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem1_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[3].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[9].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[39].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[18].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[6].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[16].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[17].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[28].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<0> has no load.  PAR will not attempt to route this
+   signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[8].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[5].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[34].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[2].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[0].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[5].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[6].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[15].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[14].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[10].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[1].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[9].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem12_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem12_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[13].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[7].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RAMA_D1_DPO has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem12_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[4].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[36].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[1].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[11].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[16].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[38].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[27].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RAMA_D1_DPO has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[11].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_strict_mode.rd_buf.rd_buffer_ram[12].RAM32M0_RAMD_D1_O has no
+   load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[15].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[8].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[40].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[0].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[22].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RAMA_D1_DPO has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[20].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[10].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[46].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[35].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[24].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[7].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[17].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[28].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/rd_data_r<7> has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_D.ddr_byte_lane_D/rd_data_r<7> has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RAMD_D1_O has no load.  PAR will not attempt
+   to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[47].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[14].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[31].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[19].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[42].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[3].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[26].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[13].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[2].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[18].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_B.ddr_byte_lane_B/rd_data_r<7> has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[21].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[37].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[12].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[39].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[23].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[33].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[32].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lan
+   es/ddr_byte_lane_A.ddr_byte_lane_A/rd_data_r<65> has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[45].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[25].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[30].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[44].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[34].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[29].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[43].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+WARNING:Par:288 - The signal
+   u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_buffer.wr_buffer_ram[41].RAM32M0_RAMD_D1_O has no load.  PAR
+   will not attempt to route this signal.
+Starting Router
+
+
+Phase  1  : 72741 unrouted;      REAL time: 45 secs 
+
+Phase  2  : 63360 unrouted;      REAL time: 48 secs 
+
+Phase  3  : 22570 unrouted;      REAL time: 1 mins 7 secs 
+
+Phase  4  : 22572 unrouted; (Setup:532, Hold:156390, Component Switching Limit:0)     REAL time: 1 mins 20 secs 
+
+Updating file: example_top.ncd with current fully routed design.
+
+Phase  5  : 0 unrouted; (Setup:532, Hold:127175, Component Switching Limit:0)     REAL time: 1 mins 43 secs 
+
+Phase  6  : 0 unrouted; (Setup:532, Hold:127175, Component Switching Limit:0)     REAL time: 1 mins 44 secs 
+
+Phase  7  : 0 unrouted; (Setup:532, Hold:127175, Component Switching Limit:0)     REAL time: 1 mins 44 secs 
+
+Phase  8  : 0 unrouted; (Setup:532, Hold:127175, Component Switching Limit:0)     REAL time: 1 mins 44 secs 
+
+Phase  9  : 0 unrouted; (Setup:532, Hold:0, Component Switching Limit:0)     REAL time: 1 mins 51 secs 
+Total REAL time to Router completion: 1 mins 51 secs 
+Total CPU time to Router completion: 1 mins 55 secs 
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+Generating "PAR" statistics.
+
+**************************
+Generating Clock Report
+**************************
+
++---------------------+--------------+------+------+------------+-------------+
+|        Clock Net    |   Resource   |Locked|Fanout|Net Skew(ns)|Max Delay(ns)|
++---------------------+--------------+------+------+------------+-------------+
+|                 clk | BUFGCTRL_X0Y1| No   | 3957 |  0.553     |  1.767      |
++---------------------+--------------+------+------+------------+-------------+
+|         CONTROL0<0> |BUFGCTRL_X0Y31| No   |   78 |  0.244     |  1.461      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/clk_ref |              |      |      |            |             |
+|                     | BUFGCTRL_X0Y0| No   |   19 |  0.416     |  1.695      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_ca |              |      |      |            |             |
+|lib_top/mb_wrlvl_ins |              |      |      |            |             |
+|t.u_ddr_phy_wrlvl/sm |              |      |      |            |             |
+|allest[0][5]_largest |              |      |      |            |             |
+|[0][5]_LessThan_207_ |              |      |      |            |             |
+|                   o |         Local|      | 2599 |  2.856     |  7.230      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_1.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_C.ddr_ |              |      |      |            |             |
+|byte_lane_C/oserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |   12 |  0.005     |  0.329      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_1.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_C.ddr_ |              |      |      |            |             |
+|byte_lane_C/oserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |   13 |  0.338     |  0.338      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_D.ddr_ |              |      |      |            |             |
+|byte_lane_D/iserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |   16 |  0.005     |  0.360      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_D.ddr_ |              |      |      |            |             |
+|byte_lane_D/iserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |    9 |  0.355     |  0.355      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_D.ddr_ |              |      |      |            |             |
+|byte_lane_D/oserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |   18 |  0.005     |  0.343      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_B.ddr_ |              |      |      |            |             |
+|byte_lane_B/iserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |   16 |  0.005     |  0.346      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_B.ddr_ |              |      |      |            |             |
+|byte_lane_B/iserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |    9 |  0.347     |  0.347      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_B.ddr_ |              |      |      |            |             |
+|byte_lane_B/oserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |   18 |  0.005     |  0.331      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_D.ddr_ |              |      |      |            |             |
+|byte_lane_D/oserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |   11 |  0.352     |  0.352      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_C.ddr_ |              |      |      |            |             |
+|byte_lane_C/oserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |   18 |  0.005     |  0.329      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_C.ddr_ |              |      |      |            |             |
+|byte_lane_C/oserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |   11 |  0.338     |  0.338      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_A.ddr_ |              |      |      |            |             |
+|byte_lane_A/iserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |   16 |  0.005     |  0.360      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_A.ddr_ |              |      |      |            |             |
+|byte_lane_A/iserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |    9 |  0.361     |  0.361      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_A.ddr_ |              |      |      |            |             |
+|byte_lane_A/oserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |   18 |  0.005     |  0.341      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/freq_re |              |      |      |            |             |
+|                fclk |         Local|      |   13 |  0.273     |  1.225      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_C.ddr_ |              |      |      |            |             |
+|byte_lane_C/iserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |   16 |  0.005     |  0.345      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_C.ddr_ |              |      |      |            |             |
+|byte_lane_C/iserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |    9 |  0.342     |  0.342      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/mem_ref |              |      |      |            |             |
+|                 clk |         Local|      |   13 |  0.236     |  1.204      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_1.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_B.ddr_ |              |      |      |            |             |
+|byte_lane_B/oserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |    2 |  0.002     |  0.328      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_1.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_B.ddr_ |              |      |      |            |             |
+|byte_lane_B/oserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |    3 |  0.330     |  0.330      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_1.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_D.ddr_ |              |      |      |            |             |
+|byte_lane_D/oserdes_ |              |      |      |            |             |
+|                 clk |         Local|      |   11 |  0.004     |  0.343      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_1.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_D.ddr_ |              |      |      |            |             |
+|byte_lane_D/oserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |   11 |  0.352     |  0.352      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_A.ddr_ |              |      |      |            |             |
+|byte_lane_A/oserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |   11 |  0.343     |  0.343      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_B.ddr_ |              |      |      |            |             |
+|byte_lane_B/oserdes_ |              |      |      |            |             |
+|              clkdiv |         Local|      |   11 |  0.332     |  0.332      |
++---------------------+--------------+------+------+------------+-------------+
+|chipscope_icon_i0/U0 |              |      |      |            |             |
+|        /iUPDATE_OUT |         Local|      |    1 |  0.000     |  0.976      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_A.ddr_ |              |      |      |            |             |
+|byte_lane_A/oserdes_ |              |      |      |            |             |
+|         clk_delayed |         Local|      |    1 |  0.000     |  0.343      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_ddr3_ |              |      |      |            |             |
+|infrastructure/pll_c |              |      |      |            |             |
+|                 lk3 |         Local|      |    1 |  0.000     |  2.155      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_D.ddr_ |              |      |      |            |             |
+|byte_lane_D/oserdes_ |              |      |      |            |             |
+|         clk_delayed |         Local|      |    1 |  0.000     |  0.351      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_ddr3_ |              |      |      |            |             |
+|infrastructure/pll_c |              |      |      |            |             |
+|             lkfbout |         Local|      |    1 |  0.000     |  0.012      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_ddr3_ |              |      |      |            |             |
+|clk_ibuf/sys_clk_ibu |              |      |      |            |             |
+|                  fg |         Local|      |    1 |  0.000     |  0.923      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_C.ddr_ |              |      |      |            |             |
+|byte_lane_C/oserdes_ |              |      |      |            |             |
+|         clk_delayed |         Local|      |    1 |  0.000     |  0.337      |
++---------------------+--------------+------+------+------------+-------------+
+|u_ddr3_32bit/u_mig_7 |              |      |      |            |             |
+|series_v1_8_memc_ui_ |              |      |      |            |             |
+|top_axi/mem_intfc0/d |              |      |      |            |             |
+|dr_phy_top0/u_ddr_mc |              |      |      |            |             |
+|_phy_wrapper/u_ddr_m |              |      |      |            |             |
+|c_phy/ddr_phy_4lanes |              |      |      |            |             |
+|_0.u_ddr_phy_4lanes/ |              |      |      |            |             |
+|ddr_byte_lane_B.ddr_ |              |      |      |            |             |
+|byte_lane_B/oserdes_ |              |      |      |            |             |
+|         clk_delayed |         Local|      |    1 |  0.000     |  0.328      |
++---------------------+--------------+------+------+------------+-------------+
+|        CONTROL0<13> |         Local|      |    4 |  0.000     |  0.363      |
++---------------------+--------------+------+------+------------+-------------+
+
+* Net Skew is the difference between the minimum and maximum routing
+only delays for the net. Note this is different from Clock Skew which
+is reported in TRCE timing report. Clock Skew is the difference between
+the minimum and maximum path delays which includes logic delays.
+
+* The fanout is the number of component pins not the individual BEL loads,
+for example SLICE loads not FF loads.
+
+Timing Score: 532 (Setup: 532, Hold: 0, Component Switching Limit: 0)
+
+WARNING:Par:468 - Your design did not meet timing.  The following are some suggestions to assist you to meet timing in your design.
+
+   Review the timing report using Timing Analyzer (In ISE select "Post-Place &
+   Route Static Timing Report"). Go to the failing constraint(s) and evaluate the failing paths for each constraint.
+
+   Try the Design Goal and Strategies for Timing Performance(In ISE select Project -> Design Goals & Strategies) to ensure the best options
+   are set in the tools for timing closure.
+
+   Use the Xilinx "SmartXplorer" script to try special combinations of
+   options known to produce very good results.
+
+   Visit the Xilinx technical support web at http://support.xilinx.com and go to
+   either "Troubleshoot->Tech Tips->Timing & Constraints" or "
+   TechXclusives->Timing Closure" for tips and suggestions for meeting timing
+   in your design.
+
+Number of Timing Constraints that were not applied: 18
+
+Asterisk (*) preceding a constraint indicates it was not met.
+   This may be due to a setup or hold violation.
+
+----------------------------------------------------------------------------------------------------------
+  Constraint                                |    Check    | Worst Case |  Best Case | Timing |   Timing   
+                                            |             |    Slack   | Achievable | Errors |    Score   
+----------------------------------------------------------------------------------------------------------
+* TS_u_ddr3_32bit_clk_ref_i = PERIOD TIMEGR | SETUP       |    -0.532ns|     7.660ns|       1|         532
+  P "u_ddr3_32bit_clk_ref_i" TS_sys_clk     | HOLD        |     0.120ns|            |       0|           0
+       / 2 HIGH 50%                         |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_freq_refclk = PERIOD TIME | MINPERIOD   |     0.928ns|     1.072ns|       0|           0
+  GRP "u_ddr3_32bit_freq_refclk"         TS |             |            |            |        |            
+  _sys_clk / 5 PHASE 1.875 ns HIGH 50%      |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_sys_clk = PERIOD TIMEGRP "TNM_sys_clk" | MINLOWPULSE |     6.000ns|     4.000ns|       0|           0
+   10 ns HIGH 50%                           |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_A_ddr_b |             |            |            |        |            
+  yte_lane_A_iserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_A_ddr_byte_lane_A_iserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_freq_refclk HIGH 50%  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_B_ddr_b |             |            |            |        |            
+  yte_lane_B_iserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_B_ddr_byte_lane_B_iserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_freq_refclk HIGH 50%  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_B_ddr_b |             |            |            |        |            
+  yte_lane_B_oserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_B_ddr_byte_lane_B_oserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_mem_refclk HIGH 50%   |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_mem_refclk = PERIOD TIMEG | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  RP "u_ddr3_32bit_mem_refclk"         TS_s |             |            |            |        |            
+  ys_clk / 5 HIGH 50%                       |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_C_ddr_b |             |            |            |        |            
+  yte_lane_C_iserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_C_ddr_byte_lane_C_iserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_freq_refclk HIGH 50%  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_C_ddr_b |             |            |            |        |            
+  yte_lane_C_oserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_C_ddr_byte_lane_C_oserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_mem_refclk HIGH 50%   |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_ISERDES_CLOCK = PERIOD TIMEGRP "TNM_IS | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  ERDES_CLK" 2 ns HIGH 50%                  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_D_ddr_b |             |            |            |        |            
+  yte_lane_D_oserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_D_ddr_byte_lane_D_oserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_mem_refclk HIGH 50%   |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_D_ddr_b |             |            |            |        |            
+  yte_lane_D_iserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_D_ddr_byte_lane_D_iserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_freq_refclk HIGH 50%  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _1_u_ddr_phy_4lanes_ddr_byte_lane_D_ddr_b |             |            |            |        |            
+  yte_lane_D_oserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_1_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_D_ddr_byte_lane_D_oserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_mem_refclk HIGH 50%   |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _1_u_ddr_phy_4lanes_ddr_byte_lane_C_ddr_b |             |            |            |        |            
+  yte_lane_C_oserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_1_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_C_ddr_byte_lane_C_oserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_mem_refclk HIGH 50%   |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_A_ddr_b |             |            |            |        |            
+  yte_lane_A_oserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_A_ddr_byte_lane_A_oserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_mem_refclk HIGH 50%   |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | MINPERIOD   |     0.930ns|     1.070ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m |             |            |            |        |            
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes |             |            |            |        |            
+  _1_u_ddr_phy_4lanes_ddr_byte_lane_B_ddr_b |             |            |            |        |            
+  yte_lane_B_oserdes_clk         = PERIOD T |             |            |            |        |            
+  IMEGRP         "u_ddr3_32bit_u_mig_7serie |             |            |            |        |            
+  s_v1_8_memc_ui_top_axi_mem_intfc0_ddr_phy |             |            |            |        |            
+  _top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_d |             |            |            |        |            
+  dr_phy_4lanes_1_u_ddr_phy_4lanes_ddr_byte |             |            |            |        |            
+  _lane_B_ddr_byte_lane_B_oserdes_clk"      |             |            |            |        |            
+      TS_u_ddr3_32bit_mem_refclk HIGH 50%   |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     2.490ns|     1.510ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.515ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     1.874ns|     2.126ns|       0|           0
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_C_ddr_b |             |            |            |        |            
+  yte_lane_C_iserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_C_ddr_byte_lane_C_iserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_freq_refclk * 2 |             |            |            |        |            
+   HIGH 50%                                 |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     2.485ns|     1.515ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.518ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     1.874ns|     2.126ns|       0|           0
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_B_ddr_b |             |            |            |        |            
+  yte_lane_B_iserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_B_ddr_byte_lane_B_iserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_freq_refclk * 2 |             |            |            |        |            
+   HIGH 50%                                 |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     2.477ns|     1.523ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.521ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     1.874ns|     2.126ns|       0|           0
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_D_ddr_b |             |            |            |        |            
+  yte_lane_D_iserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_D_ddr_byte_lane_D_iserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_freq_refclk * 2 |             |            |            |        |            
+   HIGH 50%                                 |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     3.008ns|     0.992ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.064ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     1.874ns|     2.126ns|       0|           0
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_A_ddr_b |             |            |            |        |            
+  yte_lane_A_oserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_A_ddr_byte_lane_A_oserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_mem_refclk * 2  |             |            |            |        |            
+  HIGH 50%                                  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     2.471ns|     1.529ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.523ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     1.874ns|     2.126ns|       0|           0
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_A_ddr_b |             |            |            |        |            
+  yte_lane_A_iserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_A_ddr_byte_lane_A_iserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_freq_refclk * 2 |             |            |            |        |            
+   HIGH 50%                                 |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     2.998ns|     1.002ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.068ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     1.874ns|     2.126ns|       0|           0
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_B_ddr_b |             |            |            |        |            
+  yte_lane_B_oserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_B_ddr_byte_lane_B_oserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_mem_refclk * 2  |             |            |            |        |            
+  HIGH 50%                                  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     3.003ns|     0.997ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.066ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     1.874ns|     2.126ns|       0|           0
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_C_ddr_b |             |            |            |        |            
+  yte_lane_C_oserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_C_ddr_byte_lane_C_oserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_mem_refclk * 2  |             |            |            |        |            
+  HIGH 50%                                  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     3.016ns|     0.984ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.058ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     1.874ns|     2.126ns|       0|           0
+  _0_u_ddr_phy_4lanes_ddr_byte_lane_D_ddr_b |             |            |            |        |            
+  yte_lane_D_oserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_0_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_D_ddr_byte_lane_D_oserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_mem_refclk * 2  |             |            |            |        |            
+  HIGH 50%                                  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_ddr3_infrastructure_clk | SETUP       |     2.331ns|     5.669ns|       0|           0
+  _pll_i = PERIOD TIMEGRP         "u_ddr3_3 | HOLD        |     0.000ns|            |       0|           0
+  2bit_u_ddr3_infrastructure_clk_pll_i"     |             |            |            |        |            
+       TS_u_ddr3_32bit_u_ddr3_infrastructur |             |            |            |        |            
+  e_pll_clk3 HIGH 50%                       |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_ddr3_infrastructure_pll | MINLOWPULSE |     4.000ns|     4.000ns|       0|           0
+  _clk3 = PERIOD TIMEGRP         "u_ddr3_32 |             |            |            |        |            
+  bit_u_ddr3_infrastructure_pll_clk3" TS_sy |             |            |            |        |            
+  s_clk / 1.25 HIGH         50%             |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     7.016ns|     0.984ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.058ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     5.874ns|     2.126ns|       0|           0
+  _1_u_ddr_phy_4lanes_ddr_byte_lane_D_ddr_b |             |            |            |        |            
+  yte_lane_D_oserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_1_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_D_ddr_byte_lane_D_oserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_mem_refclk * 4  |             |            |            |        |            
+  HIGH 50%                                  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     6.999ns|     1.001ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.066ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     5.874ns|     2.126ns|       0|           0
+  _1_u_ddr_phy_4lanes_ddr_byte_lane_C_ddr_b |             |            |            |        |            
+  yte_lane_C_oserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_1_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_C_ddr_byte_lane_C_oserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_mem_refclk * 4  |             |            |            |        |            
+  HIGH 50%                                  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_u_mig_7series_v1_8_memc_u | SETUP       |     6.998ns|     1.002ns|       0|           0
+  i_top_axi_mem_intfc0_ddr_phy_top0_u_ddr_m | HOLD        |     0.075ns|            |       0|           0
+  c_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes | MINPERIOD   |     5.874ns|     2.126ns|       0|           0
+  _1_u_ddr_phy_4lanes_ddr_byte_lane_B_ddr_b |             |            |            |        |            
+  yte_lane_B_oserdes_clkdiv         = PERIO |             |            |            |        |            
+  D TIMEGRP         "u_ddr3_32bit_u_mig_7se |             |            |            |        |            
+  ries_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ |             |            |            |        |            
+  phy_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_ph |             |            |            |        |            
+  y_ddr_phy_4lanes_1_u_ddr_phy_4lanes_ddr_b |             |            |            |        |            
+  yte_lane_B_ddr_byte_lane_B_oserdes_clkdiv |             |            |            |        |            
+  "         TS_u_ddr3_32bit_mem_refclk * 4  |             |            |            |        |            
+  HIGH 50%                                  |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_MULTICYCLEPATH = MAXDELAY FROM TIMEGRP | SETUP       |     7.595ns|     4.405ns|       0|           0
+   "TNM_SOURCE_IDLE" TO TIMEGRP         "TN | HOLD        |     0.045ns|            |       0|           0
+  M_DEST_ISERDES" TS_ISERDES_CLOCK * 6      |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_U_TO_J = MAXDELAY FROM TIMEGRP "U_CLK" | SETUP       |    13.108ns|     1.892ns|       0|           0
+   TO TIMEGRP "J_CLK" 15 ns                 | HOLD        |     0.778ns|            |       0|           0
+----------------------------------------------------------------------------------------------------------
+  TS_U_TO_U = MAXDELAY FROM TIMEGRP "U_CLK" | SETUP       |    14.375ns|     0.625ns|       0|           0
+   TO TIMEGRP "U_CLK" 15 ns                 | HOLD        |     0.255ns|            |       0|           0
+----------------------------------------------------------------------------------------------------------
+  TS_MULTICYCLEPATH_DEVICE_TEMP_SYNC = MAXD | MAXDELAY    |    16.583ns|     3.417ns|       0|           0
+  ELAY TO TIMEGRP         "TNM_MULTICYCLEPA | HOLD        |     0.346ns|            |       0|           0
+  TH_DEVICE_TEMP_SYNC" 20 ns DATAPATHONLY   |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+  TS_u_ddr3_32bit_sync_pulse = PERIOD TIMEG | SETUP       |    30.906ns|     1.094ns|       0|           0
+  RP "u_ddr3_32bit_sync_pulse"         TS_s | HOLD        |     0.320ns|            |       0|           0
+  ys_clk / 0.3125 PHASE 0.875 ns HIGH 6.25% | MINHIGHPULSE|    23.440ns|     8.560ns|       0|           0
+----------------------------------------------------------------------------------------------------------
+  TS_J_CLK = PERIOD TIMEGRP "J_CLK" 30 ns H | SETUP       |    24.162ns|     5.838ns|       0|           0
+  IGH 50%                                   | HOLD        |     0.104ns|            |       0|           0
+----------------------------------------------------------------------------------------------------------
+  PATH "TS_J4_TO_D2_path" TIG               | SETUP       |         N/A|     3.339ns|     N/A|           0
+----------------------------------------------------------------------------------------------------------
+  PATH "TS_J3_TO_D2_path" TIG               | N/A         |         N/A|         N/A|     N/A|         N/A
+----------------------------------------------------------------------------------------------------------
+  PATH "TS_J2_TO_D2_path" TIG               | N/A         |         N/A|         N/A|     N/A|         N/A
+----------------------------------------------------------------------------------------------------------
+  PATH "TS_D2_TO_T2_path" TIG               | SETUP       |         N/A|     1.860ns|     N/A|           0
+----------------------------------------------------------------------------------------------------------
+  PATH "TS_D_TO_J_path" TIG                 | SETUP       |         N/A|     2.049ns|     N/A|           0
+----------------------------------------------------------------------------------------------------------
+  PATH "TS_J_TO_D_path" TIG                 | SETUP       |         N/A|     4.342ns|     N/A|           0
+----------------------------------------------------------------------------------------------------------
+
+
+Derived Constraint Report
+Review Timing Report for more details on the following derived constraints.
+To create a Timing Report, run "trce -v 12 -fastpaths -o design_timing_report design.ncd design.pcf"
+or "Run Timing Analysis" from Timing Analyzer (timingan).
+Derived Constraints for TS_sys_clk
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+|                               |   Period    |       Actual Period       |      Timing Errors        |      Paths Analyzed       |
+|           Constraint          | Requirement |-------------+-------------|-------------+-------------|-------------+-------------|
+|                               |             |   Direct    | Derivative  |   Direct    | Derivative  |   Direct    | Derivative  |
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+|TS_sys_clk                     |     10.000ns|      4.000ns|     15.320ns|            0|            1|            0|       320575|
+| TS_u_ddr3_32bit_u_ddr3_infrast|      8.000ns|      4.000ns|      5.669ns|            0|            0|            0|       319981|
+| ructure_pll_clk3              |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_ddr3_infras|      8.000ns|      5.669ns|          N/A|            0|            0|       319981|            0|
+|  tructure_clk_pll_i           |             |             |             |             |             |             |             |
+| TS_u_ddr3_32bit_freq_refclk   |      2.000ns|      1.072ns|      1.070ns|            0|            0|            0|          128|
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_A_ddr_byte_lane_A|             |             |             |             |             |             |             |
+|  _iserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      4.000ns|      2.126ns|          N/A|            0|            0|           32|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_A_ddr_byte_lane_A|             |             |             |             |             |             |             |
+|  _iserdes_clkdiv              |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_B_ddr_byte_lane_B|             |             |             |             |             |             |             |
+|  _iserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      4.000ns|      2.126ns|          N/A|            0|            0|           32|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_B_ddr_byte_lane_B|             |             |             |             |             |             |             |
+|  _iserdes_clkdiv              |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_C_ddr_byte_lane_C|             |             |             |             |             |             |             |
+|  _iserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      4.000ns|      2.126ns|          N/A|            0|            0|           32|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_C_ddr_byte_lane_C|             |             |             |             |             |             |             |
+|  _iserdes_clkdiv              |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_D_ddr_byte_lane_D|             |             |             |             |             |             |             |
+|  _iserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      4.000ns|      2.126ns|          N/A|            0|            0|           32|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_D_ddr_byte_lane_D|             |             |             |             |             |             |             |
+|  _iserdes_clkdiv              |             |             |             |             |             |             |             |
+| TS_u_ddr3_32bit_mem_refclk    |      2.000ns|      1.070ns|      1.070ns|            0|            0|            0|          240|
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_A_ddr_byte_lane_A|             |             |             |             |             |             |             |
+|  _oserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      4.000ns|      2.126ns|          N/A|            0|            0|           36|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_A_ddr_byte_lane_A|             |             |             |             |             |             |             |
+|  _oserdes_clkdiv              |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_B_ddr_byte_lane_B|             |             |             |             |             |             |             |
+|  _oserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      4.000ns|      2.126ns|          N/A|            0|            0|           36|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_B_ddr_byte_lane_B|             |             |             |             |             |             |             |
+|  _oserdes_clkdiv              |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_C_ddr_byte_lane_C|             |             |             |             |             |             |             |
+|  _oserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      4.000ns|      2.126ns|          N/A|            0|            0|           36|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_C_ddr_byte_lane_C|             |             |             |             |             |             |             |
+|  _oserdes_clkdiv              |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_D_ddr_byte_lane_D|             |             |             |             |             |             |             |
+|  _oserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      4.000ns|      2.126ns|          N/A|            0|            0|           36|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_0_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_D_ddr_byte_lane_D|             |             |             |             |             |             |             |
+|  _oserdes_clkdiv              |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_1_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_D_ddr_byte_lane_D|             |             |             |             |             |             |             |
+|  _oserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      8.000ns|      2.126ns|          N/A|            0|            0|           40|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_1_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_D_ddr_byte_lane_D|             |             |             |             |             |             |             |
+|  _oserdes_clkdiv              |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_1_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_C_ddr_byte_lane_C|             |             |             |             |             |             |             |
+|  _oserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      8.000ns|      2.126ns|          N/A|            0|            0|           48|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_1_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_C_ddr_byte_lane_C|             |             |             |             |             |             |             |
+|  _oserdes_clkdiv              |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      2.000ns|      1.070ns|          N/A|            0|            0|            0|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_1_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_B_ddr_byte_lane_B|             |             |             |             |             |             |             |
+|  _oserdes_clk                 |             |             |             |             |             |             |             |
+|  TS_u_ddr3_32bit_u_mig_7series|      8.000ns|      2.126ns|          N/A|            0|            0|            8|            0|
+|  _v1_8_memc_ui_top_axi_mem_int|             |             |             |             |             |             |             |
+|  fc0_ddr_phy_top0_u_ddr_mc_phy|             |             |             |             |             |             |             |
+|  _wrapper_u_ddr_mc_phy_ddr_phy|             |             |             |             |             |             |             |
+|  _4lanes_1_u_ddr_phy_4lanes_dd|             |             |             |             |             |             |             |
+|  r_byte_lane_B_ddr_byte_lane_B|             |             |             |             |             |             |             |
+|  _oserdes_clkdiv              |             |             |             |             |             |             |             |
+| TS_u_ddr3_32bit_clk_ref_i     |      5.000ns|      7.660ns|          N/A|            1|            0|          224|            0|
+| TS_u_ddr3_32bit_sync_pulse    |     32.000ns|      8.560ns|          N/A|            0|            0|            2|            0|
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+
+Derived Constraints for TS_ISERDES_CLOCK
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+|                               |   Period    |       Actual Period       |      Timing Errors        |      Paths Analyzed       |
+|           Constraint          | Requirement |-------------+-------------|-------------+-------------|-------------+-------------|
+|                               |             |   Direct    | Derivative  |   Direct    | Derivative  |   Direct    | Derivative  |
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+|TS_ISERDES_CLOCK               |      2.000ns|      1.070ns|      0.734ns|            0|            0|            0|           64|
+| TS_MULTICYCLEPATH             |     12.000ns|      4.405ns|          N/A|            0|            0|           64|            0|
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+
+1 constraint not met.
+INFO:Timing:2761 - N/A entries in the Constraints List may indicate that the 
+   constraint is not analyzed due to the following: No paths covered by this 
+   constraint; Other constraints intersect with this constraint; or This 
+   constraint was disabled by a Path Tracing Control. Please run the Timespec 
+   Interaction Report (TSI) via command line (trce tsi) or Timing Analyzer GUI.
+
+
+Generating Pad Report.
+
+All signals are completely routed.
+
+WARNING:Par:283 - There are 169 loadless signals in this design. This design will cause Bitgen to issue DRC warnings.
+
+Total REAL time to PAR completion: 1 mins 56 secs 
+Total CPU time to PAR completion: 2 mins 
+
+Peak Memory Usage:  1754 MB
+
+Placer: Placement generated during map.
+Routing: Completed - No errors found.
+Timing: Completed - 1 errors found.
+
+Number of error messages: 0
+Number of warning messages: 172
+Number of info messages: 1
+
+Writing design to file example_top.ncd
+
+
+
+PAR done!

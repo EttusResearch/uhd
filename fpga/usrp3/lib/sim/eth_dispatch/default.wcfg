@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="./isim.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="eth_dispatch_tb" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="47" />
+   <wvobject fp_name="/eth_dispatch_tb/clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/set_stb" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">set_stb</obj_property>
+      <obj_property name="ObjectShortName">set_stb</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/set_addr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">set_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">set_addr[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/set_data" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">set_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">set_data[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/in_tdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">in_tdata[63:0]</obj_property>
+      <obj_property name="ObjectShortName">in_tdata[63:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/in_tuser" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">in_tuser[3:0]</obj_property>
+      <obj_property name="ObjectShortName">in_tuser[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/in_tvalid" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">in_tvalid</obj_property>
+      <obj_property name="ObjectShortName">in_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/in_tready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">in_tready</obj_property>
+      <obj_property name="ObjectShortName">in_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/in_tlast" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">in_tlast</obj_property>
+      <obj_property name="ObjectShortName">in_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/vita_tdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">vita_tdata[63:0]</obj_property>
+      <obj_property name="ObjectShortName">vita_tdata[63:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/vita_tvalid" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">vita_tvalid</obj_property>
+      <obj_property name="ObjectShortName">vita_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/vita_tready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">vita_tready</obj_property>
+      <obj_property name="ObjectShortName">vita_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/vita_tlast" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">vita_tlast</obj_property>
+      <obj_property name="ObjectShortName">vita_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/zpu_tdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">zpu_tdata[63:0]</obj_property>
+      <obj_property name="ObjectShortName">zpu_tdata[63:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/zpu_tuser" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">zpu_tuser[3:0]</obj_property>
+      <obj_property name="ObjectShortName">zpu_tuser[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/zpu_tvalid" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">zpu_tvalid</obj_property>
+      <obj_property name="ObjectShortName">zpu_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/zpu_tready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">zpu_tready</obj_property>
+      <obj_property name="ObjectShortName">zpu_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/zpu_tlast" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">zpu_tlast</obj_property>
+      <obj_property name="ObjectShortName">zpu_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/xo_tdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">xo_tdata[63:0]</obj_property>
+      <obj_property name="ObjectShortName">xo_tdata[63:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/xo_tuser" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">xo_tuser[3:0]</obj_property>
+      <obj_property name="ObjectShortName">xo_tuser[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/xo_tvalid" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">xo_tvalid</obj_property>
+      <obj_property name="ObjectShortName">xo_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/xo_tready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">xo_tready</obj_property>
+      <obj_property name="ObjectShortName">xo_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/xo_tlast" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">xo_tlast</obj_property>
+      <obj_property name="ObjectShortName">xo_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/xo_pre_tdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">xo_pre_tdata[63:0]</obj_property>
+      <obj_property name="ObjectShortName">xo_pre_tdata[63:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/xo_pre_tuser" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">xo_pre_tuser[3:0]</obj_property>
+      <obj_property name="ObjectShortName">xo_pre_tuser[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/xo_pre_tlast" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">xo_pre_tlast</obj_property>
+      <obj_property name="ObjectShortName">xo_pre_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/xo_pre_tvalid" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">xo_pre_tvalid</obj_property>
+      <obj_property name="ObjectShortName">xo_pre_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/xo_pre_tready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">xo_pre_tready</obj_property>
+      <obj_property name="ObjectShortName">xo_pre_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/state" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">state[2:0]</obj_property>
+      <obj_property name="ObjectShortName">state[2:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/header_ram_addr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">header_ram_addr[3:0]</obj_property>
+      <obj_property name="ObjectShortName">header_ram_addr[3:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/header_done" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">header_done</obj_property>
+      <obj_property name="ObjectShortName">header_done</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/out_tlast" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">out_tlast</obj_property>
+      <obj_property name="ObjectShortName">out_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/is_eth_dst_addr" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">is_eth_dst_addr</obj_property>
+      <obj_property name="ObjectShortName">is_eth_dst_addr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/is_eth_broadcast" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">is_eth_broadcast</obj_property>
+      <obj_property name="ObjectShortName">is_eth_broadcast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/is_eth_type_ipv4" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">is_eth_type_ipv4</obj_property>
+      <obj_property name="ObjectShortName">is_eth_type_ipv4</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/is_ipv4_dst_addr" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">is_ipv4_dst_addr</obj_property>
+      <obj_property name="ObjectShortName">is_ipv4_dst_addr</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/is_ipv4_proto_udp" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">is_ipv4_proto_udp</obj_property>
+      <obj_property name="ObjectShortName">is_ipv4_proto_udp</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/is_udp_dst_ports" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">is_udp_dst_ports[1:0]</obj_property>
+      <obj_property name="ObjectShortName">is_udp_dst_ports[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/my_mac" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">my_mac[47:0]</obj_property>
+      <obj_property name="ObjectShortName">my_mac[47:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/my_ip" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">my_ip[31:0]</obj_property>
+      <obj_property name="ObjectShortName">my_ip[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/my_port0" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">my_port0[15:0]</obj_property>
+      <obj_property name="ObjectShortName">my_port0[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/my_port1" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">my_port1[15:0]</obj_property>
+      <obj_property name="ObjectShortName">my_port1[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/axi_fifo_vita/rd_addr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">rd_addr[9:0]</obj_property>
+      <obj_property name="ObjectShortName">rd_addr[9:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/axi_fifo_vita/empty_reg" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">empty_reg</obj_property>
+      <obj_property name="ObjectShortName">empty_reg</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/axi_fifo_vita/read" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">read</obj_property>
+      <obj_property name="ObjectShortName">read</obj_property>
+   </wvobject>
+   <wvobject fp_name="/eth_dispatch_tb/eth_dispatch_i/axi_fifo_vita/ram/dob" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">dob[68:0]</obj_property>
+      <obj_property name="ObjectShortName">dob[68:0]</obj_property>
+   </wvobject>
+</wave_config>

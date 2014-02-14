@@ -1,19 +1,7 @@
 //
 // Copyright 2013 Ettus Research LLC
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+
 
 /***********************************************************
  * B200 Core Guts
@@ -227,7 +215,7 @@ module b200_core
     wire [63:0] r1_rx_tdata; wire r1_rx_tlast, r1_rx_tvalid, r1_rx_tready;
     wire [63:0] rx_tdata_int; wire rx_tlast_int, rx_tvalid_int, rx_tready_int;
 
-    axi_mux4 #(.WIDTH(64), .BUFFER(1)) mux_for_rx
+   axi_mux4 #(.WIDTH(64), .BUFFER(1)) mux_for_rx
      (.clk(bus_clk), .reset(bus_rst), .clear(1'b0),
       .i0_tdata(r0_rx_tdata), .i0_tlast(r0_rx_tlast), .i0_tvalid(r0_rx_tvalid), .i0_tready(r0_rx_tready),
       .i1_tdata(r1_rx_tdata), .i1_tlast(r1_rx_tlast), .i1_tvalid(r1_rx_tvalid), .i1_tready(r1_rx_tready),
@@ -290,7 +278,8 @@ module b200_core
      ******************************************************************/
     `ifdef B200_CAN_HAZ_R1
     assign radio_st = 8'h2;
-
+   wire [63:0] radio1_debug;
+   
     radio_b200 #(.RADIO_FIFO_SIZE(RADIO_FIFO_SIZE),.SAMPLE_FIFO_SIZE(SAMPLE_FIFO_SIZE)) radio_1
     (
         .radio_clk(radio_clk), .radio_rst(radio_rst),
@@ -302,7 +291,7 @@ module b200_core
         .ctrl_tdata(r1_ctrl_tdata), .ctrl_tlast(r1_ctrl_tlast),  .ctrl_tvalid(r1_ctrl_tvalid), .ctrl_tready(r1_ctrl_tready),
         .resp_tdata(r1_resp_tdata), .resp_tlast(r1_resp_tlast),  .resp_tvalid(r1_resp_tvalid), .resp_tready(r1_resp_tready),
 
-        .debug()
+        .debug(radio1_debug)
     );
 
     `else
@@ -332,6 +321,8 @@ module b200_core
    wire    debug_stb;
    wire [31:0] debug_data;
    wire [7:0]  debug_addr;
+   wire [31:0] debug_serial;
+ 
    
    serial_to_settings serial_to_settings_i1
      (
@@ -341,18 +332,28 @@ module b200_core
       .sda(debug_sda),
       .set_stb(debug_stb),
       .set_addr(debug_addr),
-      .set_data(debug_data)
+      .set_data(debug_data),
+      .debug(debug_serial)
       );
 
+   // Nasty HAck to convert settings to wishbone crudely.
+   reg 	       wb_stb;
+   wire        wb_ack_o;
+   
+   
+   always @(posedge bus_clk)
+     wb_stb <= debug_stb ? 1 : ((wb_ack_o) ? 0 : wb_stb);
+   
+   
    
    simple_uart debug_uart
      (
       .clk_i(bus_clk), 
       .rst_i(bus_rst),
-      .we_i(debug_stb), 
-      .stb_i(debug_stb), 
-      .cyc_i(debug_stb), 
-      .ack_o(),
+      .we_i(wb_stb), 
+      .stb_i(wb_stb), 
+      .cyc_i(wb_stb), 
+      .ack_o(wb_ack_o),
       .adr_i(debug_addr[2:0]), 
       .dat_i(debug_data[31:0]), 
       .dat_o(),
@@ -362,8 +363,43 @@ module b200_core
       .rx_i(debug_rxd), 
       .baud_o()
       );
-   
 
+   //
+   // Debug
+   //
+/* -----\/----- EXCLUDED -----\/-----
+
+   wire [35:0] CONTROL0;
+   
+   chipscope_ila_128 chipscope_ila_i0
+     (
+      .CONTROL(CONTROL0), // INOUT BUS [35:0]
+      .CLK(bus_clk), // IN
+      .TRIG0(
+         {
+	  triggerA0,
+	  triggerB0,
+	  r0_rx_tlast,
+	  r0_rx_tvalid,
+	  r0_rx_tready,
+	  r1_rx_tlast,
+	  r1_rx_tvalid,
+	  r1_rx_tready,
+	  rx_tlast,
+	  rx_tvalid,
+	  rx_tready,
+	  r0_rx_tdata[15:0],
+	  r1_rx_tdata[15:0],
+	  rx_tdata[15:0]
+          }
+         ) // IN BUS [191:0]
+      );
+
+   chipscope_icon chipscope_icon_i0
+     (
+      .CONTROL0(CONTROL0) // INOUT BUS [35:0]
+      );
+ -----/\----- EXCLUDED -----/\----- */
    
 
 endmodule // b200_core

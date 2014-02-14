@@ -1,0 +1,24 @@
+vlogcomp -work work ${XILINX}/verilog/src/glbl.v
+
+vlogcomp -work work --sourcelibext .v \
+	 --sourcelibdir ../../../lib/axi \
+	 --sourcelibdir ../../../lib/fifo \
+         --sourcelibdir ../../../lib/control \
+	 --sourcelibdir ../../../top/b200/coregen \
+	 --sourcelibdir ../../../top/b200 \
+        --sourcelibdir ../../../lib/timing \
+        --sourcelibdir ../../../lib/vita \
+        --sourcelibdir ../../../lib/packet_proc \
+        --sourcelibdir ../../../lib/dsp \
+        --sourcelibdir ../../../lib/wishbone \
+        --sourcelibdir ../../../lib/gpif2 \
+	 ../../../lib/control/serial_to_settings_tb.v
+
+
+
+fuse  work.serial_to_settings_tb work.glbl  -L unisims_ver -L xilinxcorelib_ver -o serial_to_settings_tb.exe
+
+# run the simulation scrip
+./serial_to_settings_tb.exe   -gui #-tclbatch simcmds.tcl
+
+

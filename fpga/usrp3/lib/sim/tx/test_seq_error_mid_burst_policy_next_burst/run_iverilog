@@ -1,0 +1,16 @@
+iverilog -y . \
+-D SIM_SCRIPT=true \
+../../../vita/new_tx_tb.v \
+-y ../../../vita/ \
+-y ../../../fifo/ \
+-y /opt/Xilinx/14.4/ISE_DS/ISE/verilog/src/unisims/ \
+-y ../../../control/ \
+-y ../../../timing/ \
+-y ../../../dsp/  \
+/opt/Xilinx/14.4/ISE_DS/ISE/verilog/src/ \
+-y ../../../../../usrp2/models/ \
+-Wall \
+-o new_tx_tb.exe
+
+./new_tx_tb.exe
+

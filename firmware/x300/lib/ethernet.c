@@ -336,9 +336,8 @@ xge_phy_init(const uint8_t eth, const uint32_t mdio_port)
   x = read_mdio(eth, 0x0, XGE_MDIO_DEVICE_PMA,mdio_port);
   x = x | (1 << 15); 
   write_mdio(eth, 0x0,XGE_MDIO_DEVICE_PMA,mdio_port,x);  
-  //FIXME uncomment lines below when 1gigE MDIO works
-  //while(x&(1<<15)) 
-  //  x = read_mdio(eth, 0x0,XGE_MDIO_DEVICE_PMA,mdio_port);
+  while(x&(1<<15))
+    x = read_mdio(eth, 0x0,XGE_MDIO_DEVICE_PMA,mdio_port);
 }
 
 void

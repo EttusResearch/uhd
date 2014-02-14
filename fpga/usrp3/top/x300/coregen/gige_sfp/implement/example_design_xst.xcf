@@ -1,0 +1,14 @@
+# RLOCs for reset_sync / sync_block logic
+#------------------------------------------------------
+# To keep the FF pairs in the same slice to minimise routing delay between them
+
+BEGIN MODEL sync_block
+  INST "data_sync" rloc = X0Y0;
+  INST "data_sync_reg"  rloc = X0Y0;
+END;
+
+BEGIN MODEL reset_sync
+  INST "reset_sync1"  rloc = X0Y0;
+  INST "reset_sync2"  rloc = X0Y0;
+END;
+

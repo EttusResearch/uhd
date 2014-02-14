@@ -1,0 +1,75 @@
+##############################################################
+#
+# Xilinx Core Generator version 14.3
+# Date: Thu Nov 22 06:37:07 2012
+#
+##############################################################
+#
+#  This file contains the customisation parameters for a
+#  Xilinx CORE Generator IP GUI. It is strongly recommended
+#  that you do not manually alter this file as it may cause
+#  unexpected and unsupported behavior.
+#
+##############################################################
+#
+#  Generated from component: xilinx.com:ip:axi_vfifo_ctrl:1.1
+#
+##############################################################
+#
+# BEGIN Project Options
+SET addpads = false
+SET asysymbol = true
+SET busformat = BusFormatAngleBracketNotRipped
+SET createndf = false
+SET designentry = Verilog
+SET device = xc7k410t
+SET devicefamily = kintex7
+SET flowvendor = Foundation_ISE
+SET formalverification = false
+SET foundationsym = false
+SET implementationfiletype = Ngc
+SET package = ffg900
+SET removerpms = false
+SET simulationfiles = Behavioral
+SET speedgrade = -2
+SET verilogsim = true
+SET vhdlsim = false
+# END Project Options
+# BEGIN Select
+SELECT AXI_Virtual_FIFO_Controller xilinx.com:ip:axi_vfifo_ctrl:1.1
+# END Select
+# BEGIN Parameters
+CSET ar_weight_ch0=8
+CSET ar_weight_ch1=8
+CSET ar_weight_ch2=8
+CSET ar_weight_ch3=8
+CSET ar_weight_ch4=8
+CSET ar_weight_ch5=8
+CSET ar_weight_ch6=8
+CSET ar_weight_ch7=8
+CSET axi_burst_size=512
+CSET axis_tdata_width=64
+CSET axis_tuser_width=1
+CSET component_name=axi_vfifo_64
+CSET deassert_tready=false
+CSET dram_base_addr=80000000
+CSET enable_axis_tid=true
+CSET enable_axis_tuser=false
+CSET enable_interrupt=true
+CSET implementation_type=Burst_Mode
+CSET number_of_channel=2
+CSET number_of_page_ch0=4096
+CSET number_of_page_ch1=4096
+CSET number_of_page_ch2=8
+CSET number_of_page_ch3=8
+CSET number_of_page_ch4=8
+CSET number_of_page_ch5=8
+CSET number_of_page_ch6=8
+CSET number_of_page_ch7=8
+CSET s2mm_txn_timeout_value=8
+# END Parameters
+# BEGIN Extra information
+MISC pkg_timestamp=2012-06-21T19:48:53Z
+# END Extra information
+GENERATE
+# CRC: 70c312ac

@@ -1,0 +1,2 @@
+NET   CPRI_CLK_p            IOSTANDARD = LVDS_25 | LOC  =  U8;
+NET   CPRI_CLK_n            IOSTANDARD = LVDS_25 | LOC  =  U7;
