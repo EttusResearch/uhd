@@ -214,7 +214,7 @@ UHD_INSTALL(FILES
 # Images download directory for utils/uhd_images_downloader.py
 ########################################################################
 
-SET(UHD_IMAGES_MD5SUM "cf0d5744a4cfe289554309159d1d5259")
+SET(UHD_IMAGES_MD5SUM "596a2476126bb5fd792ec685d88f8365")
 SET(UHD_IMAGES_DOWNLOAD_SRC "http://files.ettus.com/binaries/maint_images/archive/uhd-images_003.007.000-release.zip")
 
 ########################################################################
