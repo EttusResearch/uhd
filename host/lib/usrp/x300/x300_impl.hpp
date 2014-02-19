@@ -302,6 +302,7 @@ private:
     void update_time_source(mboard_members_t&, const std::string &);
 
     uhd::sensor_value_t get_ref_locked(uhd::wb_iface::sptr);
+    bool is_pps_present(uhd::wb_iface::sptr);
 
     void set_db_eeprom(uhd::i2c_iface::sptr i2c, const size_t, const uhd::usrp::dboard_eeprom_t &);
     void set_mb_eeprom(uhd::i2c_iface::sptr i2c, const uhd::usrp::mboard_eeprom_t &);
