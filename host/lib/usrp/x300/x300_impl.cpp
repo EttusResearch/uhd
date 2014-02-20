@@ -579,15 +579,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     UHD_MSG(status) << "Setup RF frontend clocking..." << std::endl;
 
-    // Init shadow and clock source; the device comes up with it's internal
-    // clock source before locking to something else (if requested).
-    mb.clock_control_regs__clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
-    mb.clock_control_regs__pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
-    mb.clock_control_regs__pps_out_enb = 0;
-    mb.clock_control_regs__tcxo_enb = 1;
-    mb.clock_control_regs__gpsdo_pwr = 1;
-    this->update_clock_control(mb);
-
     size_t hw_rev = 0;
     if(mb_eeprom.has_key("revision") and not mb_eeprom["revision"].empty()) {
         try {
@@ -604,6 +595,15 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         hw_rev = X300_REV("D");
     }
 
+    //Initialize clock control with internal references and GPSDO power on.
+    mb.clock_control_regs__clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
+    mb.clock_control_regs__pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
+    mb.clock_control_regs__pps_out_enb = 0;
+    mb.clock_control_regs__tcxo_enb = 1;
+    mb.clock_control_regs__gpsdo_pwr = 1;
+    this->update_clock_control(mb);
+
+    //Create clock control
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
         hw_rev,
@@ -782,13 +782,13 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             UHD_MSG(status) << "Initializing time to the GPSDO time" << std::endl;
             const time_t tp = time_t(mb.gps->get_sensor("gps_time").to_int()+1);
             _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
+            boost::this_thread::sleep(boost::posix_time::seconds(1));   //wait for time to be set
         } else {
             _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
             _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
             UHD_MSG(status) << "References initialized to internal sources" << std::endl;
         }
     }
-
 }
 
 x300_impl::~x300_impl(void)
@@ -1317,7 +1317,11 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
 
     this->update_clock_control(mb);
 
-    //check for lock - poll every 10 ms for up to 1 second
+    //reset the clock control
+    //without this, the lock time is multiple seconds and the poll below will fail
+    mb.clock->reset();
+
+    //check for lock - poll every 100 ms for up to 1 second
     for (int i = 0; i < 10; i++)
     {
         boost::this_thread::sleep(boost::posix_time::milliseconds(100));
