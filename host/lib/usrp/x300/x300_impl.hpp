@@ -194,10 +194,6 @@ private:
         radio_perifs_t radio_perifs[2];
         uhd::usrp::dboard_eeprom_t db_eeproms[8];
 
-        //per mboard frontend mapping
-        uhd::usrp::subdev_spec_t rx_fe_map;
-        uhd::usrp::subdev_spec_t tx_fe_map;
-
         //other perifs on mboard
         x300_clock_ctrl::sptr clock;
         uhd::gps_ctrl::sptr gps;

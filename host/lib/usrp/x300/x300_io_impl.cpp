@@ -109,8 +109,6 @@ void x300_impl::update_rx_subdev_spec(const size_t mb_i, const subdev_spec_t &sp
         //see usrp/io_impl.cpp if multiple DSPs share the frontend:
         _mb[mb_i].radio_perifs[i].rx_fe->set_mux(fe_swapped);
     }
-
-    _mb[mb_i].rx_fe_map = spec;
 }
 
 void x300_impl::update_tx_subdev_spec(const size_t mb_i, const subdev_spec_t &spec)
@@ -143,8 +141,6 @@ void x300_impl::update_tx_subdev_spec(const size_t mb_i, const subdev_spec_t &sp
         _mb[mb_i].radio_perifs[i].tx_fe->set_mux(conn);
 
     }
-
-    _mb[mb_i].tx_fe_map = spec;
 }
 
 /***********************************************************************
@@ -376,13 +372,17 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
     {
         const size_t chan = args.channels[stream_i];
-        size_t mb_chan = chan, mb_index = 0;
-        BOOST_FOREACH(mboard_members_t &mb, _mb)
-        {
-            if (mb_chan < mb.rx_fe_map.size()) break;
-            else mb_chan -= mb.rx_fe_map.size();
-            mb_index++;
+        size_t mb_chan = chan, mb_index;
+        for (mb_index = 0; mb_index < _mb.size(); mb_index++) {
+            const subdev_spec_t &curr_subdev_spec =
+                _tree->access<subdev_spec_t>("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "rx_subdev_spec").get();
+            if (mb_chan < curr_subdev_spec.size()) {
+                break;
+            } else {
+                mb_chan -= curr_subdev_spec.size();
+            }
         }
+
         mboard_members_t &mb = _mb[mb_index];
         radio_perifs_t &perif = mb.radio_perifs[mb_chan];
 
@@ -553,12 +553,15 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
     {
         const size_t chan = args.channels[stream_i];
-        size_t mb_chan = chan, mb_index = 0;
-        BOOST_FOREACH(mboard_members_t &mb, _mb)
-        {
-            if (mb_chan < mb.tx_fe_map.size()) break;
-            else mb_chan -= mb.tx_fe_map.size();
-            mb_index++;
+        size_t mb_chan = chan, mb_index;
+        for (mb_index = 0; mb_index < _mb.size(); mb_index++) {
+            const subdev_spec_t &curr_subdev_spec =
+                _tree->access<subdev_spec_t>("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "tx_subdev_spec").get();
+            if (mb_chan < curr_subdev_spec.size()) {
+                break;
+            } else {
+                mb_chan -= curr_subdev_spec.size();
+            }
         }
         mboard_members_t &mb = _mb[mb_index];
         radio_perifs_t &perif = mb.radio_perifs[mb_chan];
