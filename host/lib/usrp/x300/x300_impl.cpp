@@ -610,6 +610,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         dev_addr.cast<double>("master_clock_rate", X300_DEFAULT_TICK_RATE),
         dev_addr.cast<double>("system_ref_rate", X300_DEFAULT_SYSREF_RATE));
 
+    //wait for reference clock to lock
+    while (not get_ref_locked(mb.zpu_ctrl).to_bool())
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+
     ////////////////////////////////////////////////////////////////////
     // create clock properties
     ////////////////////////////////////////////////////////////////////
@@ -782,7 +786,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             UHD_MSG(status) << "Initializing time to the GPSDO time" << std::endl;
             const time_t tp = time_t(mb.gps->get_sensor("gps_time").to_int()+1);
             _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
-            boost::this_thread::sleep(boost::posix_time::seconds(1));   //wait for time to be set
+            //wait for time to be set (timeout after 1 second)
+            for (int i = 0; i < 10 && tp != (_tree->access<time_spec_t>(mb_path / "time" / "pps").get()).get_full_secs(); i++)
+                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         } else {
             _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
             _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
