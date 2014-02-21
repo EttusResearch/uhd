@@ -82,8 +82,8 @@ static const double X300_DEFAULT_SYSREF_RATE        = 10e6;
 
 #define X300_XB_DST_E0 0
 #define X300_XB_DST_E1 1
-#define X300_XB_DST_R0 2
-#define X300_XB_DST_R1 3
+#define X300_XB_DST_R0 2 // Radio 0 -> Slot A
+#define X300_XB_DST_R1 3 // Radio 1 -> Slot B
 #define X300_XB_DST_CE0 4
 #define X300_XB_DST_CE1 5
 #define X300_XB_DST_CE2 5
@@ -191,8 +191,13 @@ private:
         i2c_core_100_wb32::sptr zpu_i2c;
 
         //perifs in each radio
-        radio_perifs_t radio_perifs[2];
+        radio_perifs_t radio_perifs[2]; //!< This is hardcoded s.t. radio_perifs[0] points to slot A and [1] to B
         uhd::usrp::dboard_eeprom_t db_eeproms[8];
+	//! Return the index of a radio component, given a slot name. This means DSPs, radio_perifs
+        size_t get_radio_index(const std::string &slot_name) {
+             UHD_ASSERT_THROW(slot_name == "A" or slot_name == "B");
+             return slot_name == "A" ? 0 : 1;
+        }
 
         //other perifs on mboard
         x300_clock_ctrl::sptr clock;
@@ -218,7 +223,20 @@ private:
 
     void register_loopback_self_test(uhd::wb_iface::sptr iface);
 
-    void setup_radio(const size_t, const size_t which_radio, const std::string &db_name);
+     /*! \brief Initialize the radio component on a given slot.
+      *
+      * Call this function once per slot (A and B) and motherboard to initialize all the radio components.
+      * This will:
+      * - Reset and init DACs and ADCs
+      * - Setup controls for DAC, ADC, SPI and LEDs
+      * - Self test ADC
+      * - Sync DACs (for MIMO)
+      * - Initialize the property tree for control objects etc. (gain, rate...)
+      *
+      * \param mb_i Motherboard index
+      * \param slot_name Slot name (A or B).
+      */
+    void setup_radio(const size_t, const std::string &slot_name);
 
     size_t _sid_framer;
     struct sid_config_t
@@ -284,7 +302,9 @@ private:
 
     void set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
 
-    /*! Update the IQ MUX settings for the radio peripheral according to given subdev spec
+    /*! Update the IQ MUX settings for the radio peripheral according to given subdev spec.
+     *
+     * Also checks if the given subdev is valid for this device and updates the channel to DSP mapping.
      *
      * \param tx_rx "tx" or "rx", depending where you're setting the subdev spec
      * \param mb_i Mainboard index number.
