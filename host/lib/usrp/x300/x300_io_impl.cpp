@@ -77,13 +77,14 @@ void x300_impl::update_tx_samp_rate(mboard_members_t &mb, const size_t dspno, co
 /***********************************************************************
  * Setup dboard muxing for IQ
  **********************************************************************/
-void x300_impl::update_rx_subdev_spec(const size_t mb_i, const subdev_spec_t &spec)
+void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, const subdev_spec_t &spec)
 {
+    UHD_ASSERT_THROW(tx_rx == "tx" or tx_rx == "rx");
     const std::string mb_name = boost::lexical_cast<std::string>(mb_i);
-    fs_path root = "/mboards/"+mb_name+"/dboards";
+    fs_path root = "/mboards/" + mb_name + "/dboards";
 
     //sanity checking
-    validate_subdev_spec(_tree, spec, "rx", mb_name);
+    validate_subdev_spec(_tree, spec, tx_rx, mb_name);
     UHD_ASSERT_THROW(spec.size() <= 2);
     if (spec.size() > 0) UHD_ASSERT_THROW(spec[0].db_name == "A");
     if (spec.size() > 1) UHD_ASSERT_THROW(spec[1].db_name == "B");
@@ -98,50 +99,24 @@ void x300_impl::update_rx_subdev_spec(const size_t mb_i, const subdev_spec_t &sp
         //extract fe name
         std::string fe_name;
         if (i < spec.size()) fe_name = spec[i].sd_name;
-        else fe_name = _tree->list(root / db_name / "rx_frontends").front();
+        else fe_name = _tree->list(root / db_name / (tx_rx + "_frontends")).front();
 
         //extract connection
-        const std::string conn = _tree->access<std::string>(root / db_name / "rx_frontends" / fe_name / "connection").get();
+        const std::string conn = _tree->access<std::string>(root / db_name / (tx_rx + "_frontends") / fe_name / "connection").get();
 
-        //swap condition
-        const bool fe_swapped = (conn == "QI" or conn == "Q");
-        _mb[mb_i].radio_perifs[i].ddc->set_mux(conn, fe_swapped);
-        //see usrp/io_impl.cpp if multiple DSPs share the frontend:
-        _mb[mb_i].radio_perifs[i].rx_fe->set_mux(fe_swapped);
+	if (tx_rx == "tx") {
+            //swap condition
+            _mb[mb_i].radio_perifs[i].tx_fe->set_mux(conn);
+	} else {
+            //swap condition
+            const bool fe_swapped = (conn == "QI" or conn == "Q");
+            _mb[mb_i].radio_perifs[i].ddc->set_mux(conn, fe_swapped);
+            //see usrp/io_impl.cpp if multiple DSPs share the frontend:
+            _mb[mb_i].radio_perifs[i].rx_fe->set_mux(fe_swapped);
+	}
     }
 }
 
-void x300_impl::update_tx_subdev_spec(const size_t mb_i, const subdev_spec_t &spec)
-{
-    const std::string mb_name = boost::lexical_cast<std::string>(mb_i);
-    fs_path root = "/mboards/"+mb_name+"/dboards";
-
-    //sanity checking
-    validate_subdev_spec(_tree, spec, "tx", mb_name);
-    UHD_ASSERT_THROW(spec.size() <= 2);
-    if (spec.size() > 0) UHD_ASSERT_THROW(spec[0].db_name == "A");
-    if (spec.size() > 1) UHD_ASSERT_THROW(spec[1].db_name == "B");
-
-    //set the mux for this spec
-    for (size_t i = 0; i < 2; i++)
-    {
-        //extract db name
-        const std::string db_name = (i == 0)? "A" : "B";
-        if (i < spec.size()) UHD_ASSERT_THROW(spec[i].db_name == db_name);
-
-        //extract fe name
-        std::string fe_name;
-        if (i < spec.size()) fe_name = spec[i].sd_name;
-        else fe_name = _tree->list(root / db_name / "tx_frontends").front();
-
-        //extract connection
-        const std::string conn = _tree->access<std::string>(root / db_name / "tx_frontends" / fe_name / "connection").get();
-
-	//swap condition
-        _mb[mb_i].radio_perifs[i].tx_fe->set_mux(conn);
-
-    }
-}
 
 /***********************************************************************
  * VITA stuff

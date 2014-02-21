@@ -284,8 +284,13 @@ private:
 
     void set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
 
-    void update_rx_subdev_spec(const size_t, const uhd::usrp::subdev_spec_t &spec);
-    void update_tx_subdev_spec(const size_t, const uhd::usrp::subdev_spec_t &spec);
+    /*! Update the IQ MUX settings for the radio peripheral according to given subdev spec
+     *
+     * \param tx_rx "tx" or "rx", depending where you're setting the subdev spec
+     * \param mb_i Mainboard index number.
+     * \param spec Subdev spec
+     */
+    void update_subdev_spec(const std::string &tx_rx, const size_t mb_i, const uhd::usrp::subdev_spec_t &spec);
 
     void set_tick_rate(mboard_members_t &, const double);
     void update_tick_rate(mboard_members_t &, const double);

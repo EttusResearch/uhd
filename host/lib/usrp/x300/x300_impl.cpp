@@ -733,9 +733,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // create frontend mapping
     ////////////////////////////////////////////////////////////////////
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
-        .subscribe(boost::bind(&x300_impl::update_rx_subdev_spec, this, mb_i, _1));
+        .subscribe(boost::bind(&x300_impl::update_subdev_spec, this, "rx", mb_i, _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
-        .subscribe(boost::bind(&x300_impl::update_tx_subdev_spec, this, mb_i, _1));
+        .subscribe(boost::bind(&x300_impl::update_subdev_spec, this, "tx", mb_i, _1));
 
     ////////////////////////////////////////////////////////////////////
     // and do the misc mboard sensors
