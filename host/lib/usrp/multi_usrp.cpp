@@ -628,6 +628,7 @@ public:
 
     void set_rx_rate(double rate, size_t chan){
         if (chan != ALL_CHANS){
+            UHD_MSG(status) << "multi_usrp::set_rx_rate()   rate=" << rate << "  dsproot=" << rx_dsp_root(chan) << std::endl;
             _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").set(rate);
             do_samp_rate_warning_message(rate, get_rx_rate(chan), "RX");
             return;
@@ -1073,6 +1074,12 @@ private:
     fs_path rx_dsp_root(const size_t chan)
     {
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        if (_tree->exists(mb_root(mcp.mboard) / "rx_chan_dsp_mapping")) {
+            std::vector<size_t> map = _tree->access<std::vector<size_t> >(mb_root(mcp.mboard) / "rx_chan_dsp_mapping").get();
+            UHD_ASSERT_THROW(map.size() >= mcp.chan);
+            mcp.chan = map[mcp.chan];
+        }
+
         try
         {
             const std::string name = _tree->list(mb_root(mcp.mboard) / "rx_dsps").at(mcp.chan);
@@ -1087,6 +1094,11 @@ private:
     fs_path tx_dsp_root(const size_t chan)
     {
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        if (_tree->exists(mb_root(mcp.mboard) / "tx_chan_dsp_mapping")) {
+            std::vector<size_t> map = _tree->access<std::vector<size_t> >(mb_root(mcp.mboard) / "tx_chan_dsp_mapping").get();
+            UHD_ASSERT_THROW(map.size() >= mcp.chan);
+            mcp.chan = map[mcp.chan];
+        }
         try
         {
             const std::string name = _tree->list(mb_root(mcp.mboard) / "tx_dsps").at(mcp.chan);
