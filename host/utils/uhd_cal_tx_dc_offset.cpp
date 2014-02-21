@@ -20,6 +20,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
@@ -94,7 +95,7 @@ static double tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_l
  * Main
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char *argv[]){
-    std::string args;
+    std::string args, subdev, serial;
     double tx_wave_freq, tx_wave_ampl, rx_offset;
     double freq_start, freq_stop, freq_step;
     size_t nsamps;
@@ -104,6 +105,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("verbose", "enable some verbose")
         ("args", po::value<std::string>(&args)->default_value(""), "device address args [default = \"\"]")
+        ("subdev", po::value<std::string>(&subdev), "Subdevice specification (default: first subdevice, often 'A')")
         ("tx_wave_freq", po::value<double>(&tx_wave_freq)->default_value(507.123e3), "Transmit wave frequency in Hz")
         ("tx_wave_ampl", po::value<double>(&tx_wave_ampl)->default_value(0.7), "Transmit wave amplitude in counts")
         ("rx_offset", po::value<double>(&rx_offset)->default_value(.9344e6), "RX LO offset from the TX LO in Hz")
@@ -130,6 +132,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+
+    // Configure subdev
+    if (vm.count("subdev")) {
+        usrp->set_tx_subdev_spec(subdev);
+        usrp->set_rx_subdev_spec(subdev);
+    }
+    UHD_MSG(status) << "Running calibration for " << usrp->get_tx_subdev_name(0) << std::endl;
+    serial = get_serial(usrp, "tx");
+    UHD_MSG(status) << "Daughterboard serial: " << serial << std::endl;
 
     //set the antennas to cal
     if (not uhd::has(usrp->get_rx_antennas(), "CAL") or not uhd::has(usrp->get_tx_antennas(), "CAL")){
@@ -160,6 +171,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     if (not vm.count("freq_start")) freq_start = usrp->get_tx_freq_range().start() + 50e6;
     if (not vm.count("freq_stop")) freq_stop = usrp->get_tx_freq_range().stop() - 50e6;
+    UHD_MSG(status) << boost::format("Calibration frequency range: %d MHz -> %d MHz") % (freq_start/1e6) % (freq_stop/1e6) << std::endl;
 
     for (double tx_lo_i = freq_start; tx_lo_i <= freq_stop; tx_lo_i += freq_step){
         const double tx_lo = tune_rx_and_tx(usrp, tx_lo_i, rx_offset);
@@ -235,7 +247,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     threads.interrupt_all();
     threads.join_all();
 
-    store_results(usrp, results, "TX", "tx", "dc");
+    store_results(results, "TX", "tx", "dc", serial);
 
     return EXIT_SUCCESS;
 }
