@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_TYPES_SERIAL_HPP
 #define INCLUDED_UHD_TYPES_SERIAL_HPP
 
+#include <inttypes.h>
 #include <uhd/config.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
