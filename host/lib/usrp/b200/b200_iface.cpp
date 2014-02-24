@@ -688,7 +688,7 @@ public:
                 const size_t percent_before = size_t((bytes_sent*100)/file_size);
                 bytes_sent += transfer_count;
                 const size_t percent_after = size_t((bytes_sent*100)/file_size);
-                if (percent_before/10 != percent_after/10)
+                if (percent_before != percent_after)
                 {
                     UHD_MSG(status) << "\b\b\b\b" << std::setw(3) << percent_after << "%" << std::flush;
                 }
