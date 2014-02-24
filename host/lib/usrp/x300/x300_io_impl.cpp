@@ -80,7 +80,6 @@ void x300_impl::update_tx_samp_rate(mboard_members_t &mb, const size_t dspno, co
 void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, const subdev_spec_t &spec)
 {
     UHD_ASSERT_THROW(tx_rx == "tx" or tx_rx == "rx");
-    UHD_MSG(status) << "update_subdev_spec() " << tx_rx << std::endl;
     const std::string mb_name = boost::lexical_cast<std::string>(mb_i);
     fs_path mb_root = "/mboards/" + mb_name;
 
@@ -88,12 +87,9 @@ void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, 
     validate_subdev_spec(_tree, spec, tx_rx, mb_name);
     UHD_ASSERT_THROW(spec.size() <= 2);
     if (spec.size() == 1) {
-         UHD_VAR(spec[0].db_name);
          UHD_ASSERT_THROW(spec[0].db_name == "A" || spec[0].db_name == "B");
      }
      if (spec.size() == 2) {
-         UHD_VAR(spec[0].db_name);
-         UHD_VAR(spec[1].db_name);
          UHD_ASSERT_THROW(
              (spec[0].db_name == "A" && spec[1].db_name == "B") ||
              (spec[0].db_name == "B" && spec[1].db_name == "A")
@@ -123,7 +119,6 @@ void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, 
     }
 
     _tree->access<std::vector<size_t> >(mb_root / (tx_rx + "_chan_dsp_mapping")).set(chan_to_dsp_map);
-    UHD_MSG(status) << "-> return " << std::endl;
 }
 
 
@@ -341,7 +336,6 @@ bool x300_impl::recv_async_msg(
  **********************************************************************/
 rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
 {
-    UHD_MSG(status) << "get_rx_stream()" << std::endl;
     boost::mutex::scoped_lock lock(_transport_setup_mutex);
     stream_args_t args = args_;
 
@@ -371,7 +365,6 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         mboard_members_t &mb = _mb[mb_index];
 	const size_t radio_index = _tree->access<std::vector<size_t> >("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "rx_chan_dsp_mapping")
                                             .get().at(mb_chan);
-        UHD_VAR(radio_index);
         radio_perifs_t &perif = mb.radio_perifs[radio_index];
 
         //setup the dsp transport hints (default to a large recv buff)
@@ -484,7 +477,6 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         _tree->access<double>(mb_path / "rx_dsps" / boost::lexical_cast<std::string>(radio_index) / "rate" / "value").update();
     }
 
-    UHD_MSG(status) << "-> return (get_rx_stream)" << std::endl;
     return my_streamer;
 }
 
@@ -524,7 +516,6 @@ void x300_impl::handle_overflow(x300_impl::radio_perifs_t &perif, boost::weak_pt
  **********************************************************************/
 tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
 {
-    UHD_MSG(status) << "get_tx_stream()" << std::endl;
     boost::mutex::scoped_lock lock(_transport_setup_mutex);
     stream_args_t args = args_;
 

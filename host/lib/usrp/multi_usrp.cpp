@@ -628,7 +628,6 @@ public:
 
     void set_rx_rate(double rate, size_t chan){
         if (chan != ALL_CHANS){
-            UHD_MSG(status) << "multi_usrp::set_rx_rate()   rate=" << rate << "  dsproot=" << rx_dsp_root(chan) << std::endl;
             _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").set(rate);
             do_samp_rate_warning_message(rate, get_rx_rate(chan), "RX");
             return;
