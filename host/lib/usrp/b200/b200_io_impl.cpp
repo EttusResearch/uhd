@@ -72,44 +72,31 @@ void b200_impl::update_tx_samp_rate(const size_t dspno, const double rate)
 /***********************************************************************
  * frontend selection
  **********************************************************************/
-void b200_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec)
+void b200_impl::update_subdev_spec(const std::string &tx_rx, const uhd::usrp::subdev_spec_t &spec)
 {
     //sanity checking
-    if (spec.size()) validate_subdev_spec(_tree, spec, "rx");
+    if (spec.size()) validate_subdev_spec(_tree, spec, tx_rx);
     UHD_ASSERT_THROW(spec.size() <= _radio_perifs.size());
 
-    if (spec.size() > 0)
+    if (spec.size() >= 1)
     {
         UHD_ASSERT_THROW(spec[0].db_name == "A");
-        UHD_ASSERT_THROW(spec[0].sd_name == "A");
+        UHD_ASSERT_THROW(spec[0].sd_name == "A" or spec[0].sd_name == "B");
     }
-    if (spec.size() > 1)
+    if (spec.size() == 2)
     {
-        //TODO we can support swapping at a later date, only this combo is supported
         UHD_ASSERT_THROW(spec[1].db_name == "A");
-        UHD_ASSERT_THROW(spec[1].sd_name == "B");
+        UHD_ASSERT_THROW(
+            (spec[0].sd_name == "A" and spec[1].sd_name == "B") or
+            (spec[0].sd_name == "B" and spec[1].sd_name == "A")
+        );
     }
 
-    this->update_enables();
-}
-
-void b200_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec)
-{
-    //sanity checking
-    if (spec.size()) validate_subdev_spec(_tree, spec, "tx");
-    UHD_ASSERT_THROW(spec.size() <= _radio_perifs.size());
-
-    if (spec.size() > 0)
-    {
-        UHD_ASSERT_THROW(spec[0].db_name == "A");
-        UHD_ASSERT_THROW(spec[0].sd_name == "A");
+    std::vector<size_t> chan_to_dsp_map(spec.size(), 0);
+    for (size_t i = 0; i < spec.size(); i++) {
+	chan_to_dsp_map[i] = (spec[i].sd_name == "A") ? 0 : 1;
     }
-    if (spec.size() > 1)
-    {
-        //TODO we can support swapping at a later date, only this combo is supported
-        UHD_ASSERT_THROW(spec[1].db_name == "A");
-        UHD_ASSERT_THROW(spec[1].sd_name == "B");
-    }
+    _tree->access<std::vector<size_t> >("/mboards/0" / (tx_rx + "_chan_dsp_mapping")).set(chan_to_dsp_map);
 
     this->update_enables();
 }
@@ -238,13 +225,14 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer;
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
     {
-        const size_t chan = args.channels[stream_i];
-        radio_perifs_t &perif = _radio_perifs[chan];
+        const size_t radio_index = _tree->access<std::vector<size_t> >("/mboards/0/rx_chan_dsp_mapping")
+                                        .get().at(args.channels[stream_i]);
+        radio_perifs_t &perif = _radio_perifs[radio_index];
         if (args.otw_format == "sc16") perif.ctrl->poke32(TOREG(SR_RX_FMT), 0);
         if (args.otw_format == "sc12") perif.ctrl->poke32(TOREG(SR_RX_FMT), 1);
         if (args.otw_format == "fc32") perif.ctrl->poke32(TOREG(SR_RX_FMT), 2);
         if (args.otw_format == "sc8") perif.ctrl->poke32(TOREG(SR_RX_FMT), 3);
-        const boost::uint32_t sid = chan?B200_RX_DATA1_SID:B200_RX_DATA0_SID;
+        const boost::uint32_t sid = radio_index ? B200_RX_DATA1_SID : B200_RX_DATA0_SID;
 
         //calculate packet size
         static const size_t hdr_size = 0
@@ -283,7 +271,7 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
             &recv_packet_demuxer_3000::get_recv_buff, _demux, sid, _1
         ), true /*flush*/);
         my_streamer->set_overflow_handler(stream_i, boost::bind(
-            &b200_impl::handle_overflow, this, chan
+            &b200_impl::handle_overflow, this, radio_index
         ));
         my_streamer->set_issue_stream_cmd(stream_i, boost::bind(
             &rx_vita_core_3000::issue_stream_command, perif.framer, _1
@@ -292,21 +280,21 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
 
         //sets all tick and samp rates on this streamer
         this->update_tick_rate(this->get_tick_rate());
-        _tree->access<double>(str(boost::format("/mboards/0/rx_dsps/%u/rate/value") % chan)).update();
+        _tree->access<double>(str(boost::format("/mboards/0/rx_dsps/%u/rate/value") % radio_index)).update();
     }
     this->update_enables();
 
     return my_streamer;
 }
 
-void b200_impl::handle_overflow(const size_t i)
+void b200_impl::handle_overflow(const size_t radio_index)
 {
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
-            boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_radio_perifs[i].rx_streamer.lock());
+            boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_radio_perifs[radio_index].rx_streamer.lock());
     if (my_streamer->get_num_channels() == 2) //MIMO time
     {
         //find out if we were in continuous mode before stopping
-        const bool in_continuous_streaming_mode = _radio_perifs[i].framer->in_continuous_streaming_mode();
+        const bool in_continuous_streaming_mode = _radio_perifs[radio_index].framer->in_continuous_streaming_mode();
         //stop streaming
         my_streamer->issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
         //flush demux
@@ -319,11 +307,11 @@ void b200_impl::handle_overflow(const size_t i)
         {
             stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
             stream_cmd.stream_now = false;
-            stream_cmd.time_spec = _radio_perifs[i].time64->get_time_now() + time_spec_t(0.01);
+            stream_cmd.time_spec = _radio_perifs[radio_index].time64->get_time_now() + time_spec_t(0.01);
             my_streamer->issue_stream_cmd(stream_cmd);
         }
     }
-    else _radio_perifs[i].framer->handle_overflow();
+    else _radio_perifs[radio_index].framer->handle_overflow();
 }
 
 /***********************************************************************
@@ -340,8 +328,9 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t &args_)
     boost::shared_ptr<sph::send_packet_streamer> my_streamer;
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
     {
-        const size_t chan = args.channels[stream_i];
-        radio_perifs_t &perif = _radio_perifs[chan];
+        const size_t radio_index = _tree->access<std::vector<size_t> >("/mboards/0/tx_chan_dsp_mapping")
+                                        .get().at(args.channels[stream_i]);
+        radio_perifs_t &perif = _radio_perifs[radio_index];
         if (args.otw_format == "sc16") perif.ctrl->poke32(TOREG(SR_TX_FMT), 0);
         if (args.otw_format == "sc12") perif.ctrl->poke32(TOREG(SR_TX_FMT), 1);
         if (args.otw_format == "fc32") perif.ctrl->poke32(TOREG(SR_TX_FMT), 2);
@@ -382,13 +371,13 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t &args_)
         my_streamer->set_async_receiver(boost::bind(
             &async_md_type::pop_with_timed_wait, _async_task_data->async_md, _1, _2
         ));
-        my_streamer->set_xport_chan_sid(stream_i, true, chan?B200_TX_DATA1_SID:B200_TX_DATA0_SID);
+        my_streamer->set_xport_chan_sid(stream_i, true, radio_index ? B200_TX_DATA1_SID : B200_TX_DATA0_SID);
         my_streamer->set_enable_trailer(false); //TODO not implemented trailer support yet
         perif.tx_streamer = my_streamer; //store weak pointer
 
         //sets all tick and samp rates on this streamer
         this->update_tick_rate(this->get_tick_rate());
-        _tree->access<double>(str(boost::format("/mboards/0/tx_dsps/%u/rate/value") % chan)).update();
+        _tree->access<double>(str(boost::format("/mboards/0/tx_dsps/%u/rate/value") % radio_index)).update();
     }
     this->update_enables();
 

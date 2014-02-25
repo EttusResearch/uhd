@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2013 Ettus Research LLC
+// Copyright 2012-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -373,12 +373,15 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     // create frontend mapping
     ////////////////////////////////////////////////////////////////////
+    std::vector<size_t> default_map(2, 0); default_map[1] = 1; // Set this to A->0 B->1 even if there's only A
+    _tree->create<std::vector<size_t> >(mb_path / "rx_chan_dsp_mapping").set(default_map);
+    _tree->create<std::vector<size_t> >(mb_path / "tx_chan_dsp_mapping").set(default_map);
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
         .set(subdev_spec_t())
-        .subscribe(boost::bind(&b200_impl::update_rx_subdev_spec, this, _1));
+        .subscribe(boost::bind(&b200_impl::update_subdev_spec, this, "rx", _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
         .set(subdev_spec_t())
-        .subscribe(boost::bind(&b200_impl::update_tx_subdev_spec, this, _1));
+        .subscribe(boost::bind(&b200_impl::update_subdev_spec, this, "tx", _1));
 
     ////////////////////////////////////////////////////////////////////
     // setup radio control
