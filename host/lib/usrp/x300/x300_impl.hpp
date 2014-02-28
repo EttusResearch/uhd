@@ -85,6 +85,10 @@ static const size_t X300_RX_MAX_HDR_LEN             =           // bytes
     + sizeof(uhd::transport::vrt::if_packet_info_t().sid)  // SID
     + sizeof(uhd::transport::vrt::if_packet_info_t().tsf); // Timestamp
 
+static const size_t X300_MAX_RATE_PCIE              = 800000000; // bytes/s
+static const size_t X300_MAX_RATE_10GIGE            = 800000000; // bytes/s
+static const size_t X300_MAX_RATE_1GIGE             = 100000000; // bytes/s
+
 #define X300_RADIO_DEST_PREFIX_TX 0
 #define X300_RADIO_DEST_PREFIX_CTRL 1
 #define X300_RADIO_DEST_PREFIX_RX 2
