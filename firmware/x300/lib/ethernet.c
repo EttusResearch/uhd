@@ -82,7 +82,7 @@ ethernet_ninterfaces(void)
 // Clause 45 MDIO used for 10Gig Ethernet has two bus transactions to complete a transfer.
 // An initial transaction sets up the address, and a subsequent one transfers the read or write data.
 //
-static uint32_t 
+static uint32_t
 xge_read_mdio(const uint32_t base, const uint32_t address, const uint32_t device, const uint32_t port)
 {
   // Set register address each iteration
@@ -103,9 +103,9 @@ xge_read_mdio(const uint32_t base, const uint32_t address, const uint32_t device
   return(xge_regs->mdio_data);
 }
 
-static void 
+static void
 xge_write_mdio(const uint32_t base, const uint32_t address, const uint32_t device, const uint32_t port, const uint32_t data)
-{  
+{
   // Set register address each iteration
   xge_regs->mdio_addr = address;
   // Its a clause 45 device. We want to ADDRESS
@@ -114,13 +114,13 @@ xge_write_mdio(const uint32_t base, const uint32_t address, const uint32_t devic
   xge_regs->mdio_control = 1;
   // Wait until bus transaction complete
   while (xge_regs->mdio_control == 1);
-  // Write new value to mdio_write_data reg. 
-  xge_regs->mdio_data = data; 
-  // Its a clause 45 device. We want to WRITE 
+  // Write new value to mdio_write_data reg.
+  xge_regs->mdio_data = data;
+  // Its a clause 45 device. We want to WRITE
   xge_regs->mdio_op = XGE_MDIO_CLAUSE(CLAUSE45) | XGE_MDIO_OP(MDIO_WRITE) | XGE_MDIO_ADDR(port) | XGE_MDIO_MMD(device);
-  // Start MDIO bus transaction 
-  xge_regs->mdio_control = 1; 
-  // Wait until bus transaction complete  
+  // Start MDIO bus transaction
+  xge_regs->mdio_control = 1;
+  // Wait until bus transaction complete
   while (xge_regs->mdio_control == 1);
 }
 
@@ -128,7 +128,7 @@ xge_write_mdio(const uint32_t base, const uint32_t address, const uint32_t devic
 //
 // Clause 22 MDIO used for 1Gig Ethernet has one bus transaction to complete a transfer.
 //
-static uint32_t 
+static uint32_t
 ge_read_mdio(const uint32_t base, const uint32_t address, const uint32_t port)
 {
   // Its a clause 22 device. We want to READ
@@ -141,16 +141,16 @@ ge_read_mdio(const uint32_t base, const uint32_t address, const uint32_t port)
   return(xge_regs->mdio_data);
 }
 
-static void 
+static void
 ge_write_mdio(const uint32_t base, const uint32_t address, const uint32_t port, const uint32_t data)
 {
-  // Write new value to mdio_write_data reg. 
-  xge_regs->mdio_data = data; 
-  // Its a clause 22 device. We want to WRITE 
+  // Write new value to mdio_write_data reg.
+  xge_regs->mdio_data = data;
+  // Its a clause 22 device. We want to WRITE
   xge_regs->mdio_op = XGE_MDIO_CLAUSE(CLAUSE22) | XGE_MDIO_OP(MDIO_C22_WRITE) | XGE_MDIO_ADDR(port) | address;
-  // Start MDIO bus transaction 
-  xge_regs->mdio_control = 1; 
-  // Wait until bus transaction complete  
+  // Start MDIO bus transaction
+  xge_regs->mdio_control = 1;
+  // Wait until bus transaction complete
   while (xge_regs->mdio_control == 1);
 }
 
@@ -205,7 +205,7 @@ xge_i2c_rd(const uint32_t base, const uint8_t i2c_dev_addr, const uint8_t i2c_wo
   // Now read back a byte of data
   if (wb_i2c_read(base, i2c_dev_addr, &buf, 1) == false)
     return(-1);
-  
+
   return((int) buf);
 }
 
@@ -334,15 +334,15 @@ xge_phy_init(const uint8_t eth, const uint32_t mdio_port)
   printf("INFO: Begining XGE PHY init sequence.\n");
   // Software reset
   x = read_mdio(eth, 0x0, XGE_MDIO_DEVICE_PMA,mdio_port);
-  x = x | (1 << 15); 
-  write_mdio(eth, 0x0,XGE_MDIO_DEVICE_PMA,mdio_port,x);  
+  x = x | (1 << 15);
+  write_mdio(eth, 0x0,XGE_MDIO_DEVICE_PMA,mdio_port,x);
   while(x&(1<<15))
     x = read_mdio(eth, 0x0,XGE_MDIO_DEVICE_PMA,mdio_port);
 }
 
 void
 xge_poll_sfpp_status(const uint32_t eth)
-{   
+{
   uint32_t x;
   // Has MODDET/MODAbS changed since we last looked?
   x = wb_peek32(SR_ADDR(RB0_BASE, (eth==0) ? RB_SFPP_STATUS0 : RB_SFPP_STATUS1 ));
@@ -355,14 +355,20 @@ xge_poll_sfpp_status(const uint32_t eth)
     printf("DEBUG: eth%1d MODABS changed state: %d\n", eth, (x & SFPP_STATUS_MODABS) >> 2);
 
   if (x & (SFPP_STATUS_RXLOS_CHG|SFPP_STATUS_TXFAULT_CHG|SFPP_STATUS_MODABS_CHG))
-    if (( x & (SFPP_STATUS_RXLOS|SFPP_STATUS_TXFAULT|SFPP_STATUS_MODABS)) == 0) {
-	xge_ethernet_init(eth);
-	dump_mdio_regs((eth==0) ? XGE0_BASE : XGE1_BASE,MDIO_PORT);
-	mdelay(100);
-	dump_mdio_regs((eth==0) ? XGE0_BASE : XGE1_BASE,MDIO_PORT);
-	mdelay(100);
-	dump_mdio_regs((eth==0) ? XGE0_BASE : XGE1_BASE,MDIO_PORT);
+  {
+    if (( x & (SFPP_STATUS_RXLOS|SFPP_STATUS_TXFAULT|SFPP_STATUS_MODABS)) == 0)
+    {
+      if (wb_peek32(SR_ADDR(RB0_BASE, eth == 0 ? RB_ETH_TYPE0 : RB_ETH_TYPE1)) == 1)
+      {
+        xge_ethernet_init(eth);
+        dump_mdio_regs((eth==0) ? XGE0_BASE : XGE1_BASE,MDIO_PORT);
+        mdelay(100);
+        dump_mdio_regs((eth==0) ? XGE0_BASE : XGE1_BASE,MDIO_PORT);
+        mdelay(100);
+        dump_mdio_regs((eth==0) ? XGE0_BASE : XGE1_BASE,MDIO_PORT);
       }
+    }
+  }
 
   if (x & SFPP_STATUS_MODABS_CHG) {
     // MODDET has changed state since last checked
@@ -383,14 +389,14 @@ xge_poll_sfpp_status(const uint32_t eth)
     //The link became up, send a GARP so everyone knows our mac/ip association
     if (!old_link_up && links_up[eth]) u3_net_stack_send_arp_request(eth, u3_net_stack_get_ip_addr(eth));
 }
-  
+
 
 void
 xge_ethernet_init(const uint32_t eth)
-{ 
-  xge_mac_init((eth==0) ? XGE0_BASE : XGE1_BASE); 
- //xge_hard_phy_reset();  
-  xge_phy_init(eth ,MDIO_PORT);    
+{
+  xge_mac_init((eth==0) ? XGE0_BASE : XGE1_BASE);
+ //xge_hard_phy_reset();
+  xge_phy_init(eth ,MDIO_PORT);
   uint32_t x = wb_peek32(SR_ADDR(RB0_BASE, (eth==0) ? RB_SFPP_STATUS0 : RB_SFPP_STATUS1 ));
   printf(" eth%1d SFP initial state: RXLOS: %d  TXFAULT: %d  MODABS: %d\n",
 	 eth,
@@ -411,7 +417,7 @@ void decode_reg(uint32_t address, uint32_t device, uint32_t data)
   printf("%x",device);
   printf("  ");
   switch(address) {
-  case XGE_MDIO_CONTROL1: 
+  case XGE_MDIO_CONTROL1:
     printf("CONTROL1: ");
     printf("%x",data); printf("  ");
     for (x=15; x >= 0 ; x--)
@@ -423,7 +429,7 @@ void decode_reg(uint32_t address, uint32_t device, uint32_t data)
 	case 11: printf("Low Power Mode,"); break;
 	case 5:case 4:case 3:case 2: printf("RESERVED speed value,"); break;
 	case 0: printf("PMA loopback,"); break;
-	} //else 
+	} //else
 	// Bits clear.
 	//switch (x) {
 	//case 13: case 6: printf(" None 10Gb/s speed set!"); break;
@@ -440,7 +446,7 @@ void decode_reg(uint32_t address, uint32_t device, uint32_t data)
 	case 7: printf("Fault Detected,"); break;
 	case 2: printf("Link is Up,"); break;
 	case 1: printf("Supports Low Power,"); break;
-	} else 
+	} else
 	// Bits Clear
 	switch(x) {
 	case 2: printf("Link is Down,"); break;
@@ -457,7 +463,7 @@ void decode_reg(uint32_t address, uint32_t device, uint32_t data)
 	case 15:case 14:case 13:case 12:case 11:case 10:case 9:
 	case 8:case 7:case 6:case 5:case 4:case 3:case 2:case 1: printf("RESERVED bits set!,"); break;
 	case 0: printf("Capable of 10Gb/s,");
-	} else 
+	} else
 	// Bits clear.
 	switch(x) {
 	case 0: printf("Incapable of 10Gb/s,"); break;
@@ -572,7 +578,7 @@ void decode_reg(uint32_t address, uint32_t device, uint32_t data)
 	case 2:  printf("Lane 2 not synced,"); break;
 	case 1:  printf("Lane 1 not synced,"); break;
 	case 0:  printf("Lane 0 not synced,"); break;
-	} 
+	}
     printf(" \n");
     break;
   case XILINX_CORE_VERSION:
@@ -591,23 +597,23 @@ void decode_reg(uint32_t address, uint32_t device, uint32_t data)
   }
 }
 
-void 
+void
 dump_mdio_regs(const uint8_t eth, uint32_t mdio_port)
 {
     volatile unsigned int x;
     int y;
     unsigned int regs_a[9] = {0,1,4,5,6,7,8,32,33};
     unsigned int regs_b[10] = {0,1,4,5,6,7,8,10,11,65535};
-   
+
     printf("\n");
 
-    for (y = 0; y < 10; y++)       
+    for (y = 0; y < 10; y++)
 	{
 	  // Read MDIO data
 	  x = read_mdio(eth,regs_b[y],XGE_MDIO_DEVICE_PMA,mdio_port);
 	  decode_reg(regs_b[y],XGE_MDIO_DEVICE_PMA,x);
 	}
-    
+
       for (y = 0; y < 9; y++)
 	{
 	  // Read MDIO data

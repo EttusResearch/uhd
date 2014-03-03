@@ -372,6 +372,12 @@ static void handle_uarts(void)
  **********************************************************************/
 static void update_forwarding(const uint8_t e)
 {
+    /* FIXME:  This code is broken.
+     * It blindly enables forwarding without regard to whether or not
+     * packets can be forwarded.  If one of the Ethernet interfaces is not
+     * connected, data backs up until the first interface becomes unresponsive.
+     * Uncomment and fix when topologies requiring forwarding are supported.
+     *
     //update forwarding rules
     uint32_t forward = 0;
     if (!link_state_route_proto_causes_cycle_cached(e, (e+1)%2))
@@ -381,6 +387,7 @@ static void update_forwarding(const uint8_t e)
     }
     const uint32_t eth_base = (e == 0)? SR_ETHINT0 : SR_ETHINT1;
     wb_poke32(SR_ADDR(SET0_BASE, eth_base + 8 + 4), forward);
+    */
 }
 
 static void handle_link_state(void)
@@ -390,13 +397,9 @@ static void handle_link_state(void)
     shmem[X300_FW_SHMEM_ROUTE_MAP_ADDR] = (uint32_t)link_state_route_get_node_mapping(&map_len);
     shmem[X300_FW_SHMEM_ROUTE_MAP_LEN] = map_len;
 
-    //update forwarding for all eths
-    //low overhead: this does not run the algorithm
-    for (uint8_t e = 0; e < ethernet_ninterfaces(); e++) update_forwarding(e);
-
     static size_t count = 0;
-    if (count++ < 2000) return; //2 seconds
-    count = 0;
+    if (count--) return;
+    count = 2000;  //repeat every ~2 seconds
 
     link_state_route_proto_tick();
     for (size_t e = 0; e < ethernet_ninterfaces(); e++)
@@ -406,7 +409,12 @@ static void handle_link_state(void)
             link_state_route_proto_update(e);
             link_state_route_proto_flood(e);
         }
+
+        //update forwarding if something changed
+        bool before = link_state_route_proto_causes_cycle_cached(e, (e+1)%2);
         link_state_route_proto_update_cycle_cache(e);
+        if (before != link_state_route_proto_causes_cycle_cached(e, (e+1)%2))
+            update_forwarding(e);
         /*
         printf("is there a cycle %s -> %s? %s\n",
             ip_addr_to_str(u3_net_stack_get_ip_addr(e)),
@@ -437,7 +445,8 @@ int main(void)
         static const uint32_t tick_delta = CPU_CLOCK/1000;
         if (ticks_passed > tick_delta)
         {
-            handle_link_state(); //deal with router table update
+            //FIXME: Uncomment when feature is required
+            //handle_link_state(); //deal with router table update
             handle_claim(); //deal with the host claim register
             update_leds(); //run the link and activity leds
             garp(); //send periodic garps
