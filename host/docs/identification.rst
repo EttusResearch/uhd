@@ -112,7 +112,7 @@ Run the following commands:
 ::
 
     cd <install-path>/lib/uhd/utils
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=name --val=lab1_xcvr
+    ./usrp_burn_mb_eeprom --args=<optional device args> --values="name=lab1_xcvr"
 
 ^^^^^^^^^^^^^^^^^^
 Discovery via name

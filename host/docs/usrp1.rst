@@ -102,7 +102,7 @@ Run the following commands to record the setting into the EEPROM:
 ::
 
     cd <install-path>/lib/uhd/utils
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=mcr --val=<rate>
+    ./usrp_burn_mb_eeprom --args=<optional device args> --values="mcr=<rate>"
 
 The user may override the clock rate specified in the EEPROM by using a device address:
 Example:

@@ -192,7 +192,7 @@ Run the following commands:
 ::
 
     cd <install-path>/lib/uhd/utils
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=ip-addr --val=192.168.10.3
+    ./usrp_burn_mb_eeprom --args=<optional device args> --values="ip-addr=192.168.10.3"
 
 **Method 2 (Linux Only):**
 This method assumes that you do not know the IP address of your USRP2.
@@ -360,8 +360,7 @@ Run the following commands:
 ::
 
     cd <install-path>/lib/uhd/utils
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=subnet --val=255.255.255.0
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gateway --val=192.168.10.1
+    ./usrp_burn_mb_eeprom --args=<optional device args> --values="subnet=255.255.255.0,gateway=192.168.10.1"
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Create a receive streamer

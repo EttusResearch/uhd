@@ -55,10 +55,10 @@ To configure the USRP to communicate with the GPSDO, use the
 ::
 
     cd <install-path>/lib/uhd/utils
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=internal
+    ./usrp_burn_mb_eeprom --args=<optional device args> --values="gpsdo=internal"
 
     -- restore original setting --
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=none
+    ./usrp_burn_mb_eeprom --args=<optional device args> --values="gpsdo=none"
 
 ------------------------------------------------------------------------
 Using the GPSDO in Your Application

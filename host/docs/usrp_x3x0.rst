@@ -447,14 +447,14 @@ Run the following commands:
 ::
 
     cd <install-path>/lib/uhd/utils
-    ./usrp_burn_mb_eeprom --args=<optional device args> --key=ip-addr0 --val=192.168.10.3
+    ./usrp_burn_mb_eeprom --args=<optional device args> --values="ip-addr0=192.168.10.3"
 
 **Windows:**
 
 ::
 
     cd <install-path>\lib\uhd\utils
-    usrp_burn_mb_eeprom.exe --args=<optional device args> --key=ip-addr0 --val=192.168.10.3
+    usrp_burn_mb_eeprom.exe --args=<optional device args> --values="ip-addr0=192.168.10.3"
 
 ---------------------
 Addressing the Device
