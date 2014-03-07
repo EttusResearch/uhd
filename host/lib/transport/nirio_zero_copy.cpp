@@ -18,7 +18,6 @@
 #include <uhd/transport/nirio_zero_copy.hpp>
 #include <stdio.h>
 #include <uhd/transport/nirio/nirio_fifo.h>
-#include <uhd/transport/nirio/nirio_fifo.h>
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
@@ -261,19 +260,27 @@ private:
 
     UHD_INLINE void _flush_rx_buff()
     {
-        nirio_status flush_status = 0;
-        while (nirio_status_not_fatal(flush_status)) {
-            static const size_t NUM_ELEMS_TO_FLUSH = 1;
-            static const uint32_t FLUSH_TIMEOUT_IN_MS = 0;
-
-            fifo_data_t* flush_data_ptr = NULL;
-            size_t flush_elems_acquired = 0, flush_elems_remaining = 0;
-            flush_status = _recv_fifo->acquire(
-                flush_data_ptr, NUM_ELEMS_TO_FLUSH, FLUSH_TIMEOUT_IN_MS,
-                flush_elems_acquired, flush_elems_remaining);
-            if (nirio_status_not_fatal(flush_status)) {
-                _recv_fifo->release(flush_elems_acquired);
-            }
+        // acquire is called with 0 elements requested first to
+        // get the number of elements in the buffer and then
+        // repeatedly with the number of remaining elements
+        // until the buffer is empty
+        fifo_data_t* elems_buffer;
+        for (size_t num_elems_requested = 0,
+            num_elems_acquired = 0,
+            num_elems_remaining = 1;
+            num_elems_remaining;
+            num_elems_requested = num_elems_remaining)
+        {
+            nirio_status status = _recv_fifo->acquire(
+                elems_buffer,
+                num_elems_requested,
+                0,                      // timeout
+                num_elems_acquired,
+                num_elems_remaining);
+            // throw excetption if status is fatal
+            nirio_status_to_exception(status,
+                "NI-RIO PCIe data transfer failed during flush.");
+            _recv_fifo->release(num_elems_acquired);
         }
     }
 
