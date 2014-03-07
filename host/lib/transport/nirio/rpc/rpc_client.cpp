@@ -133,9 +133,12 @@ const boost::system::error_code& rpc_client::call(
             CHAIN_BLOCKING_XFER(
                 boost::asio::write(_socket, boost::asio::buffer(&_request.header, sizeof(_request.header))),
                 sizeof(_request.header), status);
-            CHAIN_BLOCKING_XFER(
-                boost::asio::write(_socket, boost::asio::buffer(&(*_request.data.begin()), _request.data.size())),
-                _request.data.size(), status);
+            if (not _request.data.empty())
+            {
+                CHAIN_BLOCKING_XFER(
+                    boost::asio::write(_socket, boost::asio::buffer(&(*_request.data.begin()), _request.data.size())),
+                    _request.data.size(), status);
+            }
         } catch (boost::exception&) {
             status = false;
         }
