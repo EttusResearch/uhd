@@ -350,6 +350,7 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer;
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
     {
+        // Find the mainboard and subdev that corresponds to channel args.channels[stream_i]
         const size_t chan = args.channels[stream_i];
         size_t mb_chan = chan, mb_index;
         for (mb_index = 0; mb_index < _mb.size(); mb_index++) {
@@ -362,6 +363,7 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
             }
         }
 
+        // Find the DSP that corresponds to this mainboard and subdev
         mboard_members_t &mb = _mb[mb_index];
 	const size_t radio_index = _tree->access<std::vector<size_t> >("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "rx_chan_dsp_mapping")
                                             .get().at(mb_chan);
@@ -533,6 +535,7 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
     boost::shared_ptr<sph::send_packet_streamer> my_streamer;
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
     {
+        // Find the mainboard and subdev that corresponds to channel args.channels[stream_i]
         const size_t chan = args.channels[stream_i];
         size_t mb_chan = chan, mb_index;
         for (mb_index = 0; mb_index < _mb.size(); mb_index++) {
@@ -544,6 +547,7 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
                 mb_chan -= curr_subdev_spec.size();
             }
         }
+        // Find the DSP that corresponds to this mainboard and subdev
         mboard_members_t &mb = _mb[mb_index];
 	const size_t radio_index = _tree->access<std::vector<size_t> >("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "tx_chan_dsp_mapping")
                                             .get().at(mb_chan);
