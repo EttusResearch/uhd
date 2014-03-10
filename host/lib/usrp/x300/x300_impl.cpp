@@ -976,14 +976,15 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
     ////////////////////////////////////////////////////////////////////
+    const fs_path db_path = (mb_path / "dboards" / slot_name);
     const size_t j = (slot_name == "B")? 0x2 : 0x0;
-    _tree->create<dboard_eeprom_t>(mb_path / "dboards" / slot_name / "rx_eeprom")
+    _tree->create<dboard_eeprom_t>(db_path / "rx_eeprom")
         .set(mb.db_eeproms[X300_DB0_RX_EEPROM | j])
         .subscribe(boost::bind(&x300_impl::set_db_eeprom, this, mb.zpu_i2c, (0x50 | X300_DB0_RX_EEPROM | j), _1));
-    _tree->create<dboard_eeprom_t>(mb_path / "dboards" / slot_name / "tx_eeprom")
+    _tree->create<dboard_eeprom_t>(db_path / "tx_eeprom")
         .set(mb.db_eeproms[X300_DB0_TX_EEPROM | j])
         .subscribe(boost::bind(&x300_impl::set_db_eeprom, this, mb.zpu_i2c, (0x50 | X300_DB0_TX_EEPROM | j), _1));
-    _tree->create<dboard_eeprom_t>(mb_path / "dboards" / slot_name / "gdb_eeprom")
+    _tree->create<dboard_eeprom_t>(db_path / "gdb_eeprom")
         .set(mb.db_eeproms[X300_DB0_GDB_EEPROM | j])
         .subscribe(boost::bind(&x300_impl::set_db_eeprom, this, mb.zpu_i2c, (0x50 | X300_DB0_GDB_EEPROM | j), _1));
 
@@ -998,26 +999,26 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     db_config.which_rx_clk = (slot_name == "A")? X300_CLOCK_WHICH_DB0_RX : X300_CLOCK_WHICH_DB1_RX;
     db_config.which_tx_clk = (slot_name == "A")? X300_CLOCK_WHICH_DB0_TX : X300_CLOCK_WHICH_DB1_TX;
     db_config.dboard_slot = (slot_name == "A")? 0 : 1;
-    _dboard_ifaces[slot_name] = x300_make_dboard_iface(db_config);
+    _dboard_ifaces[db_path] = x300_make_dboard_iface(db_config);
 
     //create a new dboard manager
-    _tree->create<dboard_iface::sptr>(mb_path / "dboards" / slot_name / "iface").set(_dboard_ifaces[slot_name]);
-    _dboard_managers[slot_name] = dboard_manager::make(
+    _tree->create<dboard_iface::sptr>(db_path / "iface").set(_dboard_ifaces[db_path]);
+    _dboard_managers[db_path] = dboard_manager::make(
         mb.db_eeproms[X300_DB0_RX_EEPROM | j].id,
         mb.db_eeproms[X300_DB0_TX_EEPROM | j].id,
         mb.db_eeproms[X300_DB0_GDB_EEPROM | j].id,
-        _dboard_ifaces[slot_name],
-        _tree->subtree(mb_path / "dboards" / slot_name)
+        _dboard_ifaces[db_path],
+        _tree->subtree(db_path)
     );
 
     //now that dboard is created -- register into rx antenna event
-    const std::string fe_name = _tree->list(mb_path / "dboards" / slot_name / "rx_frontends").front();
-    _tree->access<std::string>(mb_path / "dboards" / slot_name / "rx_frontends" / fe_name / "antenna" / "value")
+    const std::string fe_name = _tree->list(db_path / "rx_frontends").front();
+    _tree->access<std::string>(db_path / "rx_frontends" / fe_name / "antenna" / "value")
         .subscribe(boost::bind(&x300_impl::update_atr_leds, this, mb.radio_perifs[radio_index].leds, _1));
     this->update_atr_leds(mb.radio_perifs[radio_index].leds, ""); //init anyway, even if never called
 
     //bind frontend corrections to the dboard freq props
-    const fs_path db_rx_fe_path = mb_path / "dboards" / slot_name / "rx_frontends";
+    const fs_path db_rx_fe_path = db_path / "rx_frontends";
     BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path))
     {
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
