@@ -56,6 +56,8 @@ public:
      *
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
+     * \param default_buff_args Default values for frame sizes and num frames
+     * \param[out] buff_params_out Returns the actual buffer sizes
      * \param hints optional parameters to pass to the underlying transport
      */
     static sptr make(
