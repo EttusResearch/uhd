@@ -16,6 +16,7 @@
 //
 
 #include <uhd/transport/nirio/rpc/rpc_client.hpp>
+#include <uhd/exception.hpp>
 #include <boost/bind.hpp>
 #include <boost/version.hpp>
 #include <boost/format.hpp>
@@ -174,6 +175,7 @@ void rpc_client::_handle_response_hdr(const boost::system::error_code& err, size
     if (!_exec_err && (transferred == expected)) {
         //Response header received. Verify that it is expected
         if (func_args_header_t::match_function(_request.header, _response.header)) {
+            UHD_ASSERT_THROW(_response.header.func_args_size);
             _response.data.resize(_response.header.func_args_size);
 
             //Wait for response data
