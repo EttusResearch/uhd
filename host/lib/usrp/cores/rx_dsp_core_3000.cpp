@@ -161,7 +161,7 @@ public:
 
         // Calculate CIC decimation (i.e., without halfband decimators)
         // Calculate closest multiplier constant to reverse gain absent scale multipliers
-        const double rate_pow = std::pow(double(decim & 0xff), 4);
+        const double rate_pow = std::pow(double(decim & 0x1ff), 4);
         _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.65*rate_pow);
         this->update_scalar();
 
