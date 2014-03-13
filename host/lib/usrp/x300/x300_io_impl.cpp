@@ -80,6 +80,7 @@ void x300_impl::update_tx_samp_rate(mboard_members_t &mb, const size_t dspno, co
 void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, const subdev_spec_t &spec)
 {
     UHD_ASSERT_THROW(tx_rx == "tx" or tx_rx == "rx");
+    UHD_ASSERT_THROW(mb_i < _mb.size());
     const std::string mb_name = boost::lexical_cast<std::string>(mb_i);
     fs_path mb_root = "/mboards/" + mb_name;
 
@@ -87,14 +88,14 @@ void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, 
     validate_subdev_spec(_tree, spec, tx_rx, mb_name);
     UHD_ASSERT_THROW(spec.size() <= 2);
     if (spec.size() == 1) {
-         UHD_ASSERT_THROW(spec[0].db_name == "A" || spec[0].db_name == "B");
-     }
-     if (spec.size() == 2) {
-         UHD_ASSERT_THROW(
-             (spec[0].db_name == "A" && spec[1].db_name == "B") ||
-             (spec[0].db_name == "B" && spec[1].db_name == "A")
-         );
-     }
+        UHD_ASSERT_THROW(spec[0].db_name == "A" || spec[0].db_name == "B");
+    }
+    else if (spec.size() == 2) {
+        UHD_ASSERT_THROW(
+            (spec[0].db_name == "A" && spec[1].db_name == "B") ||
+            (spec[0].db_name == "B" && spec[1].db_name == "A")
+        );
+    }
 
     std::vector<size_t> chan_to_dsp_map(spec.size(), 0);
     // setup mux for this spec
@@ -104,18 +105,18 @@ void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, 
         chan_to_dsp_map[i] = radio_idx;
 
         //extract connection
-	const std::string conn = _tree->access<std::string>(mb_root / "dboards" / spec[i].db_name / (tx_rx + "_frontends") / spec[i].sd_name / "connection").get();
+        const std::string conn = _tree->access<std::string>(mb_root / "dboards" / spec[i].db_name / (tx_rx + "_frontends") / spec[i].sd_name / "connection").get();
 
-	if (tx_rx == "tx") {
+        if (tx_rx == "tx") {
             //swap condition
             _mb[mb_i].radio_perifs[radio_idx].tx_fe->set_mux(conn);
-	} else {
+        } else {
             //swap condition
             const bool fe_swapped = (conn == "QI" or conn == "Q");
             _mb[mb_i].radio_perifs[radio_idx].ddc->set_mux(conn, fe_swapped);
             //see usrp/io_impl.cpp if multiple DSPs share the frontend:
             _mb[mb_i].radio_perifs[radio_idx].rx_fe->set_mux(fe_swapped);
-	}
+        }
     }
 
     _tree->access<std::vector<size_t> >(mb_root / (tx_rx + "_chan_dsp_mapping")).set(chan_to_dsp_map);
@@ -364,9 +365,13 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         }
 
         // Find the DSP that corresponds to this mainboard and subdev
+        UHD_ASSERT_THROW(mb_index < _mb.size());
         mboard_members_t &mb = _mb[mb_index];
-	const size_t radio_index = _tree->access<std::vector<size_t> >("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "rx_chan_dsp_mapping")
-                                            .get().at(mb_chan);
+        const std::vector<size_t> dsp_map = _tree->access<std::vector<size_t> >("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "rx_chan_dsp_mapping")
+                                            .get(); //.at(mb_chan);
+        UHD_ASSERT_THROW(mb_chan < dsp_map.size());
+        const size_t radio_index = dsp_map[mb_chan];
+        UHD_ASSERT_THROW(radio_index < 2);
         radio_perifs_t &perif = mb.radio_perifs[radio_index];
 
         //setup the dsp transport hints (default to a large recv buff)

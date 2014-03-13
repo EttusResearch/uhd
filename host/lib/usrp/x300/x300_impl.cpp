@@ -829,8 +829,9 @@ static void check_adc(wb_iface::sptr iface, const boost::uint32_t val)
 void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
 {
     const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
-    const size_t radio_index = _mb[mb_i].get_radio_index(slot_name);
+    UHD_ASSERT_THROW(mb_i < _mb.size());
     mboard_members_t &mb = _mb[mb_i];
+    const size_t radio_index = mb.get_radio_index(slot_name);
     radio_perifs_t &perif = mb.radio_perifs[radio_index];
 
     ////////////////////////////////////////////////////////////////////

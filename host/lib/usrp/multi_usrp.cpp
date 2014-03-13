@@ -1063,7 +1063,7 @@ private:
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
         if (_tree->exists(mb_root(mcp.mboard) / "rx_chan_dsp_mapping")) {
             std::vector<size_t> map = _tree->access<std::vector<size_t> >(mb_root(mcp.mboard) / "rx_chan_dsp_mapping").get();
-            UHD_ASSERT_THROW(map.size() >= mcp.chan);
+            UHD_ASSERT_THROW(map.size() > mcp.chan);
             mcp.chan = map[mcp.chan];
         }
 
@@ -1083,7 +1083,7 @@ private:
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
         if (_tree->exists(mb_root(mcp.mboard) / "tx_chan_dsp_mapping")) {
             std::vector<size_t> map = _tree->access<std::vector<size_t> >(mb_root(mcp.mboard) / "tx_chan_dsp_mapping").get();
-            UHD_ASSERT_THROW(map.size() >= mcp.chan);
+            UHD_ASSERT_THROW(map.size() > mcp.chan);
             mcp.chan = map[mcp.chan];
         }
         try
