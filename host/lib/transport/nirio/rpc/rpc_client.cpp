@@ -16,7 +16,6 @@
 //
 
 #include <uhd/transport/nirio/rpc/rpc_client.hpp>
-#include <uhd/exception.hpp>
 #include <boost/bind.hpp>
 #include <boost/version.hpp>
 #include <boost/format.hpp>
@@ -175,16 +174,20 @@ void rpc_client::_handle_response_hdr(const boost::system::error_code& err, size
     if (!_exec_err && (transferred == expected)) {
         //Response header received. Verify that it is expected
         if (func_args_header_t::match_function(_request.header, _response.header)) {
-            UHD_ASSERT_THROW(_response.header.func_args_size);
-            _response.data.resize(_response.header.func_args_size);
+            if (_response.header.func_args_size)
+            {
+                _response.data.resize(_response.header.func_args_size);
 
-            //Wait for response data
-            boost::asio::async_read(_socket,
-                boost::asio::buffer(&(*_response.data.begin()), _response.data.size()),
-                boost::bind(&rpc_client::_handle_response_data, this,
-                    boost::asio::placeholders::error,
-                    boost::asio::placeholders::bytes_transferred,
-                    _response.data.size()));
+                //Wait for response data
+                boost::asio::async_read(_socket,
+                    boost::asio::buffer(&(*_response.data.begin()), _response.data.size()),
+                    boost::bind(&rpc_client::_handle_response_data, this,
+                        boost::asio::placeholders::error,
+                        boost::asio::placeholders::bytes_transferred,
+                        _response.data.size()));
+            } else {
+                _handle_response_data(err, 0, 0);
+            }
         } else {
             //Unexpected response. Ignore it.
             UHD_LOG << "rpc_client received garbage responses." << std::endl;
