@@ -77,75 +77,50 @@ void x300_impl::update_tx_samp_rate(mboard_members_t &mb, const size_t dspno, co
 /***********************************************************************
  * Setup dboard muxing for IQ
  **********************************************************************/
-void x300_impl::update_rx_subdev_spec(const size_t mb_i, const subdev_spec_t &spec)
+void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, const subdev_spec_t &spec)
 {
+    UHD_ASSERT_THROW(tx_rx == "tx" or tx_rx == "rx");
     const std::string mb_name = boost::lexical_cast<std::string>(mb_i);
-    fs_path root = "/mboards/"+mb_name+"/dboards";
+    fs_path mb_root = "/mboards/" + mb_name;
 
     //sanity checking
-    validate_subdev_spec(_tree, spec, "rx", mb_name);
+    validate_subdev_spec(_tree, spec, tx_rx, mb_name);
     UHD_ASSERT_THROW(spec.size() <= 2);
-    if (spec.size() > 0) UHD_ASSERT_THROW(spec[0].db_name == "A");
-    if (spec.size() > 1) UHD_ASSERT_THROW(spec[1].db_name == "B");
+    if (spec.size() == 1) {
+         UHD_ASSERT_THROW(spec[0].db_name == "A" || spec[0].db_name == "B");
+     }
+     if (spec.size() == 2) {
+         UHD_ASSERT_THROW(
+             (spec[0].db_name == "A" && spec[1].db_name == "B") ||
+             (spec[0].db_name == "B" && spec[1].db_name == "A")
+         );
+     }
 
-    //setup mux for this spec
-    for (size_t i = 0; i < 2; i++)
+    std::vector<size_t> chan_to_dsp_map(spec.size(), 0);
+    // setup mux for this spec
+    for (size_t i = 0; i < spec.size(); i++)
     {
-        //extract db name
-        const std::string db_name = (i == 0)? "A" : "B";
-        if (i < spec.size()) UHD_ASSERT_THROW(spec[i].db_name == db_name);
-
-        //extract fe name
-        std::string fe_name;
-        if (i < spec.size()) fe_name = spec[i].sd_name;
-        else fe_name = _tree->list(root / db_name / "rx_frontends").front();
+        const int radio_idx = _mb[mb_i].get_radio_index(spec[i].db_name);
+        chan_to_dsp_map[i] = radio_idx;
 
         //extract connection
-        const std::string conn = _tree->access<std::string>(root / db_name / "rx_frontends" / fe_name / "connection").get();
+	const std::string conn = _tree->access<std::string>(mb_root / "dboards" / spec[i].db_name / (tx_rx + "_frontends") / spec[i].sd_name / "connection").get();
 
-        //swap condition
-        const bool fe_swapped = (conn == "QI" or conn == "Q");
-        _mb[mb_i].radio_perifs[i].ddc->set_mux(conn, fe_swapped);
-        //see usrp/io_impl.cpp if multiple DSPs share the frontend:
-        _mb[mb_i].radio_perifs[i].rx_fe->set_mux(fe_swapped);
+	if (tx_rx == "tx") {
+            //swap condition
+            _mb[mb_i].radio_perifs[radio_idx].tx_fe->set_mux(conn);
+	} else {
+            //swap condition
+            const bool fe_swapped = (conn == "QI" or conn == "Q");
+            _mb[mb_i].radio_perifs[radio_idx].ddc->set_mux(conn, fe_swapped);
+            //see usrp/io_impl.cpp if multiple DSPs share the frontend:
+            _mb[mb_i].radio_perifs[radio_idx].rx_fe->set_mux(fe_swapped);
+	}
     }
 
-    _mb[mb_i].rx_fe_map = spec;
+    _tree->access<std::vector<size_t> >(mb_root / (tx_rx + "_chan_dsp_mapping")).set(chan_to_dsp_map);
 }
 
-void x300_impl::update_tx_subdev_spec(const size_t mb_i, const subdev_spec_t &spec)
-{
-    const std::string mb_name = boost::lexical_cast<std::string>(mb_i);
-    fs_path root = "/mboards/"+mb_name+"/dboards";
-
-    //sanity checking
-    validate_subdev_spec(_tree, spec, "tx", mb_name);
-    UHD_ASSERT_THROW(spec.size() <= 2);
-    if (spec.size() > 0) UHD_ASSERT_THROW(spec[0].db_name == "A");
-    if (spec.size() > 1) UHD_ASSERT_THROW(spec[1].db_name == "B");
-
-    //set the mux for this spec
-    for (size_t i = 0; i < 2; i++)
-    {
-        //extract db name
-        const std::string db_name = (i == 0)? "A" : "B";
-        if (i < spec.size()) UHD_ASSERT_THROW(spec[i].db_name == db_name);
-
-        //extract fe name
-        std::string fe_name;
-        if (i < spec.size()) fe_name = spec[i].sd_name;
-        else fe_name = _tree->list(root / db_name / "tx_frontends").front();
-
-        //extract connection
-        const std::string conn = _tree->access<std::string>(root / db_name / "tx_frontends" / fe_name / "connection").get();
-
-	//swap condition
-        _mb[mb_i].radio_perifs[i].tx_fe->set_mux(conn);
-
-    }
-
-    _mb[mb_i].tx_fe_map = spec;
-}
 
 /***********************************************************************
  * VITA stuff
@@ -375,16 +350,24 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer;
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
     {
+        // Find the mainboard and subdev that corresponds to channel args.channels[stream_i]
         const size_t chan = args.channels[stream_i];
-        size_t mb_chan = chan, mb_index = 0;
-        BOOST_FOREACH(mboard_members_t &mb, _mb)
-        {
-            if (mb_chan < mb.rx_fe_map.size()) break;
-            else mb_chan -= mb.rx_fe_map.size();
-            mb_index++;
+        size_t mb_chan = chan, mb_index;
+        for (mb_index = 0; mb_index < _mb.size(); mb_index++) {
+            const subdev_spec_t &curr_subdev_spec =
+                _tree->access<subdev_spec_t>("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "rx_subdev_spec").get();
+            if (mb_chan < curr_subdev_spec.size()) {
+                break;
+            } else {
+                mb_chan -= curr_subdev_spec.size();
+            }
         }
+
+        // Find the DSP that corresponds to this mainboard and subdev
         mboard_members_t &mb = _mb[mb_index];
-        radio_perifs_t &perif = mb.radio_perifs[mb_chan];
+	const size_t radio_index = _tree->access<std::vector<size_t> >("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "rx_chan_dsp_mapping")
+                                            .get().at(mb_chan);
+        radio_perifs_t &perif = mb.radio_perifs[radio_index];
 
         //setup the dsp transport hints (default to a large recv buff)
         device_addr_t device_addr = mb.recv_args;
@@ -405,7 +388,7 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         }
 
         //allocate sid and create transport
-        uint8_t dest = (mb_chan == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
+        uint8_t dest = (radio_index == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
         boost::uint32_t data_sid;
         UHD_LOG << "creating rx stream " << device_addr.to_string() << std::endl;
         both_xports_t xport = this->make_transport(mb_index, dest, X300_RADIO_DEST_PREFIX_RX, device_addr, data_sid);
@@ -419,9 +402,9 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
             - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
             - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
         ;
-        const size_t bpp = xport.recv->get_recv_frame_size() - hdr_size;
-        const size_t bpi = convert::get_bytes_per_item(args.otw_format);
-        const size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi));
+        const size_t bpp = xport.recv->get_recv_frame_size() - hdr_size; // bytes per packet
+        const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
+        const size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi)); // samples per packet
 
         //make the new streamer given the samples per packet
         if (not my_streamer) my_streamer = boost::make_shared<sph::recv_packet_streamer>(spp);
@@ -488,12 +471,12 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         );
 
         //Store a weak pointer to prevent a streamer->x300_impl->streamer circular dependency
-        mb.rx_streamers[mb_chan] = boost::weak_ptr<sph::recv_packet_streamer>(my_streamer);
+        mb.rx_streamers[radio_index] = boost::weak_ptr<sph::recv_packet_streamer>(my_streamer);
 
         //sets all tick and samp rates on this streamer
         const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_index);
         _tree->access<double>(mb_path / "tick_rate").update();
-        _tree->access<double>(mb_path / "rx_dsps" / boost::lexical_cast<std::string>(mb_chan) / "rate" / "value").update();
+        _tree->access<double>(mb_path / "rx_dsps" / boost::lexical_cast<std::string>(radio_index) / "rate" / "value").update();
     }
 
     return my_streamer;
@@ -552,22 +535,29 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
     boost::shared_ptr<sph::send_packet_streamer> my_streamer;
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
     {
+        // Find the mainboard and subdev that corresponds to channel args.channels[stream_i]
         const size_t chan = args.channels[stream_i];
-        size_t mb_chan = chan, mb_index = 0;
-        BOOST_FOREACH(mboard_members_t &mb, _mb)
-        {
-            if (mb_chan < mb.tx_fe_map.size()) break;
-            else mb_chan -= mb.tx_fe_map.size();
-            mb_index++;
+        size_t mb_chan = chan, mb_index;
+        for (mb_index = 0; mb_index < _mb.size(); mb_index++) {
+            const subdev_spec_t &curr_subdev_spec =
+                _tree->access<subdev_spec_t>("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "tx_subdev_spec").get();
+            if (mb_chan < curr_subdev_spec.size()) {
+                break;
+            } else {
+                mb_chan -= curr_subdev_spec.size();
+            }
         }
+        // Find the DSP that corresponds to this mainboard and subdev
         mboard_members_t &mb = _mb[mb_index];
-        radio_perifs_t &perif = mb.radio_perifs[mb_chan];
+	const size_t radio_index = _tree->access<std::vector<size_t> >("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "tx_chan_dsp_mapping")
+                                            .get().at(mb_chan);
+        radio_perifs_t &perif = mb.radio_perifs[radio_index];
 
         //setup the dsp transport hints (TODO)
         device_addr_t device_addr = mb.send_args;
 
         //allocate sid and create transport
-        uint8_t dest = (mb_chan == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
+        uint8_t dest = (radio_index == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
         boost::uint32_t data_sid;
         UHD_LOG << "creating tx stream " << device_addr.to_string() << std::endl;
         both_xports_t xport = this->make_transport(mb_index, dest, X300_RADIO_DEST_PREFIX_TX, device_addr, data_sid);
@@ -640,12 +630,12 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         my_streamer->set_enable_trailer(false); //TODO not implemented trailer support yet
 
         //Store a weak pointer to prevent a streamer->x300_impl->streamer circular dependency
-        mb.tx_streamers[mb_chan] = boost::weak_ptr<sph::send_packet_streamer>(my_streamer);
+        mb.tx_streamers[radio_index] = boost::weak_ptr<sph::send_packet_streamer>(my_streamer);
 
         //sets all tick and samp rates on this streamer
         const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_index);
         _tree->access<double>(mb_path / "tick_rate").update();
-        _tree->access<double>(mb_path / "tx_dsps" / boost::lexical_cast<std::string>(mb_chan) / "rate" / "value").update();
+        _tree->access<double>(mb_path / "tx_dsps" / boost::lexical_cast<std::string>(radio_index) / "rate" / "value").update();
     }
 
     return my_streamer;
