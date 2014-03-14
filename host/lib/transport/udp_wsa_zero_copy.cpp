@@ -279,12 +279,13 @@ public:
     //! Read back the socket's buffer space reserved for receives
     size_t get_recv_buff_size(void) {
         int recv_buff_size = 0;
+        int opt_len = sizeof(recv_buff_size);
         getsockopt(
                 _sock_fd,
                 SOL_SOCKET,
                 SO_RCVBUF,
-                (const char *)&recv_buff_size,
-                sizeof(recv_buff_size)
+                (char *)&recv_buff_size,
+                (int *)&opt_len
         );
 
         return (size_t) recv_buff_size;
@@ -293,12 +294,13 @@ public:
     //! Read back the socket's buffer space reserved for sends
     size_t get_send_buff_size(void) {
         int send_buff_size = 0;
+        int opt_len = sizeof(send_buff_size);
         getsockopt(
                 _sock_fd,
                 SOL_SOCKET,
                 SO_SNDBUF,
-                (const char *)&send_buff_size,
-                sizeof(send_buff_size)
+                (char *)&send_buff_size,
+                (int *)&opt_len
         );
 
         return (size_t) send_buff_size;
@@ -333,7 +335,7 @@ void check_usr_buff_size(
         "The %s buffer could not be resized sufficiently.\n"
         "Target sock buff size: %d bytes.\n"
         "Actual sock buff size: %d bytes.\n"
-        "See the transport application notes on buffer resizing.\n%s"
+        "See the transport application notes on buffer resizing.\n"
     ) % tx_rx % user_buff_size % actual_buff_size;
 }
 
