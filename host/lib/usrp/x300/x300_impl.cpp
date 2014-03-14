@@ -430,16 +430,16 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
         // Detect the frame size on the path to the USRP
         try {
-            max_frame_sizes = determine_max_frame_size(mb.addr, req_max_frame_size);
+            _max_frame_sizes = determine_max_frame_size(mb.addr, req_max_frame_size);
         } catch(std::exception &e) {
             UHD_MSG(error) << e.what() << std::endl;
         }
 
         if ((mb.recv_args.has_key("recv_frame_size"))
-                && (req_max_frame_size.recv_frame_size < max_frame_sizes.recv_frame_size)) {
+                && (req_max_frame_size.recv_frame_size < _max_frame_sizes.recv_frame_size)) {
             UHD_MSG(warning)
                 << boost::format("You requested a receive frame size of (%lu) but your NIC's max frame size is (%lu).")
-                % req_max_frame_size.recv_frame_size << max_frame_sizes.recv_frame_size << std::endl
+                % req_max_frame_size.recv_frame_size << _max_frame_sizes.recv_frame_size << std::endl
                 << boost::format("Please verify your NIC's MTU setting using '%s' or set the recv_frame_size argument appropriately.")
                 % mtu_tool << std::endl
                 << "UHD will use the auto-detected max frame size for this connection."
@@ -447,10 +447,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         }
 
         if ((mb.recv_args.has_key("send_frame_size"))
-                && (req_max_frame_size.send_frame_size < max_frame_sizes.send_frame_size)) {
+                && (req_max_frame_size.send_frame_size < _max_frame_sizes.send_frame_size)) {
             UHD_MSG(warning)
                 << boost::format("You requested a send frame size of (%lu) but your NIC's max frame size is (%lu).")
-                % req_max_frame_size.send_frame_size << max_frame_sizes.send_frame_size << std::endl
+                % req_max_frame_size.send_frame_size << _max_frame_sizes.send_frame_size << std::endl
                 << boost::format("Please verify your NIC's MTU setting using '%s' or set the send_frame_size argument appropriately.")
                 % mtu_tool << std::endl
                 << "UHD will use the auto-detected max frame size for this connection."
@@ -1122,29 +1122,28 @@ x300_impl::both_xports_t x300_impl::make_transport(
 
         /* Print a warning if the system's max available frame size is less than the most optimal
          * frame size for this type of connection. */
-        if (max_frame_sizes.send_frame_size < eth_data_rec_frame_size) {
+        if (_max_frame_sizes.send_frame_size < eth_data_rec_frame_size) {
             UHD_MSG(warning)
                 << boost::format("For this connection, UHD recommends a send frame size of at least %lu for best\nperformance, but your system's MTU will only allow %lu.")
                 % eth_data_rec_frame_size
-                % max_frame_sizes.send_frame_size
+                % _max_frame_sizes.send_frame_size
                 << std::endl
                 << "This will negatively impact your maximum achievable sample rate."
                 << std::endl;
         }
 
-        if (max_frame_sizes.recv_frame_size < eth_data_rec_frame_size) {
+        if (_max_frame_sizes.recv_frame_size < eth_data_rec_frame_size) {
             UHD_MSG(warning)
                 << boost::format("For this connection, UHD recommends a receive frame size of at least %lu for best\nperformance, but your system's MTU will only allow %lu.")
                 % eth_data_rec_frame_size
-                % max_frame_sizes.recv_frame_size
+                % _max_frame_sizes.recv_frame_size
                 << std::endl
                 << "This will negatively impact your maximum achievable sample rate."
                 << std::endl;
         }
 
-	// Account for headers
-        size_t system_max_send_frame_size = (size_t) max_frame_sizes.send_frame_size - 64;
-        size_t system_max_recv_frame_size = (size_t) max_frame_sizes.recv_frame_size - 64;
+	size_t system_max_send_frame_size = (size_t) _max_frame_sizes.send_frame_size;
+	size_t system_max_recv_frame_size = (size_t) _max_frame_sizes.recv_frame_size;
 
 	// Make sure frame sizes do not exceed the max available value supported by UHD
         default_buff_args.send_frame_size =
@@ -1167,7 +1166,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
             ? X300_ETH_DATA_NUM_FRAMES
             : X300_ETH_MSG_NUM_FRAMES;
 
-        //make a new transport - fpga has no idea how to talk to use on this yet
+        //make a new transport - fpga has no idea how to talk to us on this yet
         udp_zero_copy::buff_params buff_params;
         xports.recv = udp_zero_copy::make(mb.addr,
                 BOOST_STRINGIZE(X300_VITA_UDP_PORT),

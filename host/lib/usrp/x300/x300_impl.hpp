@@ -267,7 +267,7 @@ private:
         size_t recv_frame_size;
         size_t send_frame_size;
     };
-    frame_size_t max_frame_sizes;
+    frame_size_t _max_frame_sizes;
 
     /*!
      * Automatically determine the maximum frame size available by sending a UDP packet
