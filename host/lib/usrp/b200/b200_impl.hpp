@@ -127,8 +127,7 @@ private:
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
     void check_fw_compat(void);
     void check_fpga_compat(void);
-    void update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &);
-    void update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &);
+    void update_subdev_spec(const std::string &tx_rx, const uhd::usrp::subdev_spec_t &);
     void update_time_source(const std::string &);
     void update_clock_source(const std::string &);
     void update_bandsel(const std::string& which, double freq);
@@ -150,8 +149,12 @@ private:
         bool ant_rx2;
     };
     std::vector<radio_perifs_t> _radio_perifs;
-    void setup_radio(const size_t which_radio);
-    void handle_overflow(const size_t index);
+
+    /*! \brief Setup the DSP chain for one radio front-end.
+     *
+     */
+    void setup_radio(const size_t radio_index);
+    void handle_overflow(const size_t radio_index);
 
     struct gpio_state {
         boost::uint32_t  tx_bandsel_a, tx_bandsel_b, rx_bandsel_a, rx_bandsel_b, rx_bandsel_c, codec_arst, mimo, ref_sel;
