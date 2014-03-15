@@ -79,11 +79,11 @@ public:
      */
     virtual void set_ref_out(const bool) = 0;
 
-    /*! Reset the clock control.
+    /*! Reset the clocks.
      *  Should be called if the reference clock changes
      *  to reduce the time required to achieve a lock.
      */
-    virtual void reset(void) = 0;
+    virtual void reset_clocks(void) = 0;
 };
 
 #endif /* INCLUDED_X300_CLOCK_CTRL_HPP */

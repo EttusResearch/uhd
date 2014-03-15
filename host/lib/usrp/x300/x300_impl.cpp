@@ -596,11 +596,11 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     }
 
     //Initialize clock control with internal references and GPSDO power on.
-    mb.clock_control_regs__clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
-    mb.clock_control_regs__pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
-    mb.clock_control_regs__pps_out_enb = 0;
-    mb.clock_control_regs__tcxo_enb = 1;
-    mb.clock_control_regs__gpsdo_pwr = 1;
+    mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
+    mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
+    mb.clock_control_regs_pps_out_enb = 0;
+    mb.clock_control_regs_tcxo_enb = 1;
+    mb.clock_control_regs_gpsdo_pwr = 1;
     this->update_clock_control(mb);
 
     //Create clock control
@@ -611,8 +611,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         dev_addr.cast<double>("system_ref_rate", X300_DEFAULT_SYSREF_RATE));
 
     //wait for reference clock to lock
-    while (not get_ref_locked(mb.zpu_ctrl).to_bool())
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+    wait_for_ref_locked(mb.zpu_ctrl, 1.0);
 
     ////////////////////////////////////////////////////////////////////
     // create clock properties
@@ -1291,32 +1290,32 @@ void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
 
 void x300_impl::set_time_source_out(mboard_members_t &mb, const bool enb)
 {
-    mb.clock_control_regs__pps_out_enb = enb? 1 : 0;
+    mb.clock_control_regs_pps_out_enb = enb? 1 : 0;
     this->update_clock_control(mb);
 }
 
 void x300_impl::update_clock_control(mboard_members_t &mb)
 {
-    const size_t reg = mb.clock_control_regs__clock_source
-        | (mb.clock_control_regs__pps_select << 2)
-        | (mb.clock_control_regs__pps_out_enb << 4)
-        | (mb.clock_control_regs__tcxo_enb << 5)
-        | (mb.clock_control_regs__gpsdo_pwr << 6)
+    const size_t reg = mb.clock_control_regs_clock_source
+        | (mb.clock_control_regs_pps_select << 2)
+        | (mb.clock_control_regs_pps_out_enb << 4)
+        | (mb.clock_control_regs_tcxo_enb << 5)
+        | (mb.clock_control_regs_gpsdo_pwr << 6)
     ;
     mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_CLOCK_CTRL), reg);
 }
 
 void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &source)
 {
-    mb.clock_control_regs__clock_source = 0;
-    mb.clock_control_regs__tcxo_enb = 0;
+    mb.clock_control_regs_clock_source = 0;
+    mb.clock_control_regs_tcxo_enb = 0;
     if (source == "internal") {
-        mb.clock_control_regs__clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
-        mb.clock_control_regs__tcxo_enb = 1;
+        mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
+        mb.clock_control_regs_tcxo_enb = 1;
     } else if (source == "external") {
-        mb.clock_control_regs__clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_EXTERNAL;
+        mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_EXTERNAL;
     } else if (source == "gpsdo") {
-        mb.clock_control_regs__clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_GPSDO;
+        mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_GPSDO;
     } else {
         throw uhd::key_error("update_clock_source: unknown source: " + source);
     }
@@ -1325,28 +1324,27 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
 
     //reset the clock control
     //without this, the lock time is multiple seconds and the poll below will fail
-    mb.clock->reset();
+    mb.clock->reset_clocks();
 
-    //check for lock - poll every 100 ms for up to 1 second
-    for (int i = 0; i < 10; i++)
-    {
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-        if (get_ref_locked(mb.zpu_ctrl).to_bool())
-            return;
+    //wait for lock
+    try {
+        wait_for_ref_locked(mb.zpu_ctrl, 1.0);
+    } catch (uhd::runtime_error &e) {
+        //failed to lock on reference
+        throw uhd::runtime_error(
+            (boost::format("Error setting the clock source to %s: %s  Please check the clock and try again.")
+            % source % e.what()).str());
     }
-
-    //failed to lock on reference
-    throw uhd::runtime_error((boost::format("The %d reference clock failed to lock.  Please check the clock and try again.") % source).str());
 }
 
 void x300_impl::update_time_source(mboard_members_t &mb, const std::string &source)
 {
     if (source == "internal") {
-        mb.clock_control_regs__pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
+        mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
     } else if (source == "external") {
-        mb.clock_control_regs__pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_EXTERNAL;
+        mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_EXTERNAL;
     } else if (source == "gpsdo") {
-        mb.clock_control_regs__pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_GPSDO;
+        mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_GPSDO;
     } else {
         throw uhd::key_error("update_time_source: unknown source: " + source);
     }
@@ -1358,6 +1356,20 @@ void x300_impl::update_time_source(mboard_members_t &mb, const std::string &sour
     {
         throw uhd::runtime_error((boost::format("The %d PPS was not detected.  Please check the PPS source and try again.") % source).str());
     }
+}
+
+void x300_impl::wait_for_ref_locked(wb_iface::sptr ctrl, double timeout)
+{
+    boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(timeout * 1000.0);
+    do
+    {
+        if (get_ref_locked(ctrl).to_bool())
+            return;
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    } while (boost::get_system_time() < timeout_time);
+
+    //failed to lock on reference
+    throw uhd::runtime_error("The reference clock failed to lock.");
 }
 
 sensor_value_t x300_impl::get_ref_locked(wb_iface::sptr ctrl)

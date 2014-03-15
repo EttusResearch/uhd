@@ -204,11 +204,11 @@ private:
         gpio_core_200::sptr fp_gpio;
 
         //clock control register bits
-        int clock_control_regs__clock_source;
-        int clock_control_regs__pps_select;
-        int clock_control_regs__pps_out_enb;
-        int clock_control_regs__tcxo_enb;
-        int clock_control_regs__gpsdo_pwr;
+        int clock_control_regs_clock_source;
+        int clock_control_regs_pps_select;
+        int clock_control_regs_pps_out_enb;
+        int clock_control_regs_tcxo_enb;
+        int clock_control_regs_gpsdo_pwr;
 
         //which FPGA image is loaded
         std::string loaded_fpga_image;
@@ -302,6 +302,7 @@ private:
     void update_time_source(mboard_members_t&, const std::string &);
 
     uhd::sensor_value_t get_ref_locked(uhd::wb_iface::sptr);
+    void wait_for_ref_locked(uhd::wb_iface::sptr, double timeout = 0.0);
     bool is_pps_present(uhd::wb_iface::sptr);
 
     void set_db_eeprom(uhd::i2c_iface::sptr i2c, const size_t, const uhd::usrp::dboard_eeprom_t &);
