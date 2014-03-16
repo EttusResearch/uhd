@@ -68,11 +68,25 @@ localparam ZPU_SR_SPI        = 32;
 localparam ZPU_SR_ETHINT0    = 40;
 localparam ZPU_SR_ETHINT1    = 56;
 
+//clock controls
+#define ZPU_SR_CLOCK_CTRL_CLK_SRC_EXTERNAL  0x00
+#define ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL  0x02
+#define ZPU_SR_CLOCK_CTRL_CLK_SRC_GPSDO     0x03
+#define ZPU_SR_CLOCK_CTRL_PPS_SRC_EXTERNAL  0x00
+#define ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL  0x02
+#define ZPU_SR_CLOCK_CTRL_PPS_SRC_GPSDO     0x03
+
 localparam ZPU_RB_SPI = 2;
 localparam ZPU_RB_CLK_STATUS = 3;
 localparam ZPU_RB_COMPAT_NUM = 6;
 localparam ZPU_RB_ETH_TYPE0  = 4;
 localparam ZPU_RB_ETH_TYPE1  = 5;
+
+//clock status
+#define ZPU_RB_CLK_STATUS_LMK_STATUS    (0x3 << 0)
+#define ZPU_RB_CLK_STATUS_LMK_LOCK      (0x1 << 2)
+#define ZPU_RB_CLK_STATUS_LMK_HOLDOVER  (0x1 << 3)
+#define ZPU_RB_CLK_STATUS_PPS_DETECT    (0x1 << 4)
 
 //spi slaves on radio
 #define DB_DAC_SEN (1 << 7)

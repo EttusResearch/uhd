@@ -78,6 +78,12 @@ public:
      * \param true = on, false = off
      */
     virtual void set_ref_out(const bool) = 0;
+
+    /*! Reset the clocks.
+     *  Should be called if the reference clock changes
+     *  to reduce the time required to achieve a lock.
+     */
+    virtual void reset_clocks(void) = 0;
 };
 
 #endif /* INCLUDED_X300_CLOCK_CTRL_HPP */

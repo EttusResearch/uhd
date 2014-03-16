@@ -48,6 +48,10 @@ x300_clock_ctrl_impl(uhd::spi_iface::sptr spiface,
     set_master_clock_rate(master_clock_rate);
 }
 
+void reset_clocks() {
+    set_master_clock_rate(_master_clock_rate);
+}
+
 void sync_clocks(void) {
     //soft sync:
     //put the sync IO into output mode - FPGA must be input
