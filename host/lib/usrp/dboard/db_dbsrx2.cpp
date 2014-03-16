@@ -258,6 +258,10 @@ double dbsrx2::set_lo_freq(double target_freq){
     N = (target_freq*R*ext_div)/(ref_freq); //actual spec range is (19, 251)
     intdiv = int(std::floor(N)); //  if (intdiv < 19  or intdiv > 251) continue;
     fracdiv = boost::math::iround((N - intdiv)*double(1 << 20));
+    if(fracdiv == (1 << 20)){ //Make sure fracdiv is within range
+	    intdiv++;
+	    fracdiv = 0;
+    }
 
     //calculate the actual freq from the values above
     N = double(intdiv) + double(fracdiv)/double(1 << 20);
