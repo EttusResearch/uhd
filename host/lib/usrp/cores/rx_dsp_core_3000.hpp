@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2013 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,7 +33,8 @@ public:
 
     static sptr make(
         uhd::wb_iface::sptr iface,
-        const size_t dsp_base
+        const size_t dsp_base,
+        const bool is_b200 = false  //TODO: Obsolete this when we switch to the new DDC on the B200
     );
 
     virtual void set_mux(const std::string &mode, const bool fe_swapped = false) = 0;
