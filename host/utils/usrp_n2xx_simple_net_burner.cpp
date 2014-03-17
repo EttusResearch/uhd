@@ -17,13 +17,13 @@
 
 #include <csignal>
 #include <iostream>
-#include <map>
 #include <fstream>
 #include <time.h>
 #include <vector>
 
 #include <boost/foreach.hpp>
 #include <boost/asio.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/assign.hpp>
 #include <boost/assign/list_of.hpp>
@@ -32,20 +32,96 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 
-#include "usrp_simple_burner_utils.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
+#include <uhd/types/dict.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/images.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/safe_call.hpp>
 
+namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 using namespace boost::algorithm;
 using namespace uhd;
 using namespace uhd::transport;
+
+#define UDP_FW_UPDATE_PORT 49154
+#define UDP_MAX_XFER_BYTES 1024
+#define UDP_TIMEOUT 3
+#define UDP_POLL_INTERVAL 0.10 //in seconds
+#define USRP2_FW_PROTO_VERSION 7 //should be unused after r6
+#define USRP2_UDP_UPDATE_PORT 49154
+#define FLASH_DATA_PACKET_SIZE 256
+#define FPGA_IMAGE_SIZE_BYTES 1572864
+#define FW_IMAGE_SIZE_BYTES 31744
+#define PROD_FPGA_IMAGE_LOCATION_ADDR 0x00180000
+#define PROD_FW_IMAGE_LOCATION_ADDR 0x00300000
+#define SAFE_FPGA_IMAGE_LOCATION_ADDR 0x00000000
+#define SAFE_FW_IMAGE_LOCATION_ADDR 0x003F0000
+
+typedef enum {
+    UNKNOWN = ' ',
+
+    USRP2_QUERY = 'a',
+    USRP2_ACK = 'A',
+
+    GET_FLASH_INFO_CMD = 'f',
+    GET_FLASH_INFO_ACK = 'F',
+
+    ERASE_FLASH_CMD = 'e',
+    ERASE_FLASH_ACK = 'E',
+
+    CHECK_ERASING_DONE_CMD = 'd',
+    DONE_ERASING_ACK = 'D',
+    NOT_DONE_ERASING_ACK = 'B',
+
+    WRITE_FLASH_CMD = 'w',
+    WRITE_FLASH_ACK = 'W',
+
+    READ_FLASH_CMD = 'r',
+    READ_FLASH_ACK = 'R',
+
+    RESET_USRP_CMD = 's',
+    RESET_USRP_ACK = 'S',
+
+    GET_HW_REV_CMD = 'v',
+    GET_HW_REV_ACK = 'V',
+
+} usrp2_fw_update_id_t;
+
+typedef struct {
+    uint32_t proto_ver;
+    uint32_t id;
+    uint32_t seq;
+    union {
+        uint32_t ip_addr;
+        uint32_t hw_rev;
+        struct {
+            uint32_t flash_addr;
+            uint32_t length;
+            uint8_t  data[256];
+        } flash_args;
+        struct {
+            uint32_t sector_size_bytes;
+            uint32_t memory_size_bytes;
+        } flash_info_args;
+    } data;
+} usrp2_fw_update_data_t;
+
+//Mapping revision numbers to filenames
+uhd::dict<boost::uint32_t, std::string> filename_map = boost::assign::map_list_of
+    (0xa,    "n200_r3")
+    (0x100a, "n200_r4")
+    (0x10a,  "n210_r3")
+    (0x110a, "n210_r4")
+;
+
+boost::uint8_t usrp2_update_data_in_mem[udp_simple::mtu];
+boost::uint8_t fpga_image[FPGA_IMAGE_SIZE_BYTES];
+boost::uint8_t fw_image[FW_IMAGE_SIZE_BYTES];
 
 /***********************************************************************
  * Signal handlers
@@ -66,59 +142,94 @@ void sig_int_handler(int){
     }
 }
 
-//Mapping revision numbers to filenames
-std::map<boost::uint32_t, std::string> filename_map = boost::assign::map_list_of
-    (0xa,    "n200_r3")
-    (0x100a, "n200_r4")
-    (0x10a,  "n210_r3")
-    (0x110a, "n210_r4")
-;
+/***********************************************************************
+ * List all connected USRP N2XX devices
+ **********************************************************************/
+void list_usrps(){
+    udp_simple::sptr udp_bc_transport;
+    const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
+    boost::uint32_t hw_rev;
 
-//Images and image sizes, to be populated as necessary
-boost::uint8_t fpga_image[FPGA_IMAGE_SIZE_BYTES];
-boost::uint8_t fw_image[FW_IMAGE_SIZE_BYTES];
-int fpga_image_size = 0;
-int fw_image_size = 0;
+    usrp2_fw_update_data_t usrp2_ack_pkt = usrp2_fw_update_data_t();
+    usrp2_ack_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
+    usrp2_ack_pkt.id = htonx<boost::uint32_t>(USRP2_QUERY);
 
-//For non-standard images not covered by uhd::find_image_path()
-bool does_image_exist(std::string image_filepath){
+    std::cout << "Available USRP N2XX devices:" << std::endl;
 
-    std::ifstream ifile((char*)image_filepath.c_str());
-    return ifile;
+    //Send UDP packets to all broadcast addresses
+    BOOST_FOREACH(const if_addrs_t &if_addrs, get_if_addrs()){
+        //Avoid the loopback device
+        if(if_addrs.inet == boost::asio::ip::address_v4::loopback().to_string()) continue;
+        udp_bc_transport = udp_simple::make_broadcast(if_addrs.bcast, BOOST_STRINGIZE(USRP2_UDP_UPDATE_PORT));
+        udp_bc_transport->send(boost::asio::buffer(&usrp2_ack_pkt, sizeof(usrp2_ack_pkt)));
+
+        size_t len = udp_bc_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
+        if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_ACK){
+            usrp2_ack_pkt.id = htonx<boost::uint32_t>(GET_HW_REV_CMD);
+            udp_bc_transport->send(boost::asio::buffer(&usrp2_ack_pkt, sizeof(usrp2_ack_pkt)));
+
+            size_t len = udp_bc_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
+            if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == GET_HW_REV_ACK){
+                hw_rev = ntohl(update_data_in->data.hw_rev);
+            }
+
+            std::cout << boost::format(" * %s (%s)\n") % udp_bc_transport->get_recv_addr() % filename_map[hw_rev];
+        }
+    }
+}
+
+/***********************************************************************
+ * Find USRP N2XX with specified IP address and return type
+ **********************************************************************/
+boost::uint32_t find_usrp(udp_simple::sptr udp_transport){
+    boost::uint32_t hw_rev;
+    bool found_it = false;
+
+    const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
+    usrp2_fw_update_data_t hw_info_pkt = usrp2_fw_update_data_t();
+    hw_info_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
+    hw_info_pkt.id = htonx<boost::uint32_t>(GET_HW_REV_CMD);
+    udp_transport->send(boost::asio::buffer(&hw_info_pkt, sizeof(hw_info_pkt)));
+
+    //Loop and receive until the timeout
+    size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
+    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == GET_HW_REV_ACK){
+        hw_rev = ntohl(update_data_in->data.hw_rev);
+        if(filename_map.has_key(hw_rev)){
+            std::cout << boost::format("Found %s.\n\n") % filename_map[hw_rev];
+            found_it = true;
+        }
+        else throw std::runtime_error("Invalid revision found.");
+    }
+    if(not found_it) throw std::runtime_error("No USRP N2XX found.");
+
+    return hw_rev;
 }
 
 /***********************************************************************
  * Custom filename validation functions
  **********************************************************************/
 
-void validate_custom_fpga_file(std::string rev_str, std::string fpga_path){
+void validate_custom_fpga_file(std::string rev_str, std::string& fpga_path){
 
     //Check for existence of file
-    if(!does_image_exist(fpga_path)) throw std::runtime_error(str(boost::format("No file at specified FPGA path: %s") % fpga_path));
+    if(not fs::exists(fpga_path)) throw std::runtime_error(str(boost::format("No file at specified FPGA path: %s") % fpga_path));
 
     //Check to find rev_str in filename
     uhd::fs_path custom_fpga_path(fpga_path);
-    if(custom_fpga_path.leaf().find("fw") != std::string::npos){
-        throw std::runtime_error(str(boost::format("Invalid FPGA image filename at path: %s\nFilename indicates that this is a firmware image.")
-            % fpga_path));
-    }
     if(custom_fpga_path.leaf().find(rev_str) == std::string::npos){
         throw std::runtime_error(str(boost::format("Invalid FPGA image filename at path: %s\nFilename must contain '%s' to be considered valid for this model.")
             % fpga_path % rev_str));
     }
 }
 
-void validate_custom_fw_file(std::string rev_str, std::string fw_path){
+void validate_custom_fw_file(std::string rev_str, std::string& fw_path){
 
     //Check for existence of file
-    if(!does_image_exist(fw_path)) throw std::runtime_error(str(boost::format("No file at specified firmware path: %s") % fw_path));
+    if(not fs::exists(fw_path)) throw std::runtime_error(str(boost::format("No file at specified firmware path: %s") % fw_path));
 
     //Check to find truncated rev_str in filename
     uhd::fs_path custom_fw_path(fw_path);
-    if(custom_fw_path.leaf().find("fpga") != std::string::npos){
-        throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename indicates that this is an FPGA image.")
-            % fw_path));
-    }
     if(custom_fw_path.leaf().find(erase_tail_copy(rev_str,3)) == std::string::npos){
         throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename must contain '%s' to be considered valid for this model.")
             % fw_path % erase_tail_copy(rev_str,3)));
@@ -126,89 +237,91 @@ void validate_custom_fw_file(std::string rev_str, std::string fw_path){
 }
 
 /***********************************************************************
- * Grabbing and validating image binaries
+ * Reading and validating image binaries
  **********************************************************************/
 
-int grab_fpga_image(std::string fpga_path){
+int read_fpga_image(std::string& fpga_path){
 
-    //Reading FPGA image from file
-    std::ifstream to_read_fpga((char*)fpga_path.c_str(), std::ios::binary);
-    to_read_fpga.seekg(0, std::ios::end);
-    fpga_image_size = to_read_fpga.tellg();
-    to_read_fpga.seekg(0, std::ios::beg);
-    char fpga_read[FPGA_IMAGE_SIZE_BYTES];
-    to_read_fpga.read(fpga_read,fpga_image_size);
-    to_read_fpga.close();
-    for(int i = 0; i < fpga_image_size; i++) fpga_image[i] = (boost::uint8_t)fpga_read[i];
-
-    //Checking validity of image
+    //Check size of given image
+    std::ifstream fpga_file(fpga_path.c_str(), std::ios::binary);
+    fpga_file.seekg(0, std::ios::end);
+    int fpga_image_size = fpga_file.tellg();
     if(fpga_image_size > FPGA_IMAGE_SIZE_BYTES){
-        throw std::runtime_error(str(boost::format("FPGA image is too large. %d > %d") % fpga_image_size % FPGA_IMAGE_SIZE_BYTES));
+        throw std::runtime_error(str(boost::format("FPGA image is too large. %d > %d")
+                                     % fpga_image_size % FPGA_IMAGE_SIZE_BYTES));
     }
 
-    //Check sequence of bytes in image
+    //Check sequence of bytes in image before reading
+    boost::uint8_t fpga_test_bytes[63];
+    fpga_file.seekg(0, std::ios::beg);
+    fpga_file.read((char*)fpga_test_bytes,63);
     bool is_good = false;
     for(int i = 0; i < 63; i++){
-        if((boost::uint8_t)fpga_image[i] == 255) continue;
-        else if((boost::uint8_t)fpga_image[i] == 170 and
-                (boost::uint8_t)fpga_image[i+1] == 153){
+        if(fpga_test_bytes[i] == 255) continue;
+        else if(fpga_test_bytes[i] == 170 and
+                fpga_test_bytes[i+1] == 153){
             is_good = true;
             break;
         }
     }
+    if(not is_good) throw std::runtime_error("Not a valid FPGA image.");
 
-    if(!is_good) throw std::runtime_error("Not a valid FPGA image.");
+    //With image validated, read into utility
+    fpga_file.seekg(0, std::ios::beg);
+    fpga_file.read((char*)fpga_image,fpga_image_size);
+    fpga_file.close();
 
     //Return image size
     return fpga_image_size;
 }
 
-int grab_fw_image(std::string fw_path){
+int read_fw_image(std::string& fw_path){
 
-    //Reading firmware image from file
-    std::ifstream to_read_fw((char*)fw_path.c_str(), std::ios::binary);
-    to_read_fw.seekg(0, std::ios::end);
-    fw_image_size = to_read_fw.tellg();
-    to_read_fw.seekg(0, std::ios::beg);
-    char fw_read[FW_IMAGE_SIZE_BYTES];
-    to_read_fw.read(fw_read,fw_image_size);
-    to_read_fw.close();
-    for(int i = 0; i < fw_image_size; i++) fw_image[i] = (boost::uint8_t)fw_read[i];
-
-    //Checking validity of image
+    //Check size of given image
+    std::ifstream fw_file(fw_path.c_str(), std::ios::binary);
+    fw_file.seekg(0, std::ios::end);
+    int fw_image_size = fw_file.tellg();
     if(fw_image_size > FW_IMAGE_SIZE_BYTES){
-        throw std::runtime_error(str(boost::format("Firmware image is too large. %d > %d") % fw_image_size % FW_IMAGE_SIZE_BYTES));
+        throw std::runtime_error(str(boost::format("Firmware image is too large. %d > %d")
+                                     % fw_image_size % FW_IMAGE_SIZE_BYTES));
     }
 
-    //Check first four bytes of image
-    for(int i = 0; i < 4; i++) if((boost::uint8_t)fw_image[i] != 11) throw std::runtime_error("Not a valid firmware image.");
+    //Check sequence of bytes in image before reading
+    boost::uint8_t fw_test_bytes[4];
+    fw_file.seekg(0, std::ios::beg);
+    fw_file.read((char*)fw_test_bytes,4);
+    for(int i = 0; i < 4; i++) if(fw_test_bytes[i] != 11) throw std::runtime_error("Not a valid firmware image.");
 
-    //Return image size
+    //With image validated, read into utility
+    fw_file.seekg(0, std::ios::beg);
+    fw_file.read((char*)fw_image,fw_image_size);
+    fw_file.close();
+
     return fw_image_size;
 }
 
-boost::uint32_t* get_flash_info(std::string ip_addr){
+boost::uint32_t* get_flash_info(std::string& ip_addr){
 
     boost::uint32_t *flash_info = new boost::uint32_t[2];
-    boost::uint8_t usrp2_update_data_in_mem[udp_simple::mtu];
     const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
 
     udp_simple::sptr udp_transport = udp_simple::make_connected(ip_addr, BOOST_STRINGIZE(USRP2_UDP_UPDATE_PORT));
     usrp2_fw_update_data_t get_flash_info_pkt = usrp2_fw_update_data_t();
     get_flash_info_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-    get_flash_info_pkt.id = htonx<boost::uint32_t>(USRP2_FW_UPDATE_ID_WATS_TEH_FLASH_INFO_LOL);
+    get_flash_info_pkt.id = htonx<boost::uint32_t>(GET_FLASH_INFO_CMD);
     udp_transport->send(boost::asio::buffer(&get_flash_info_pkt, sizeof(get_flash_info_pkt)));
 
     //Loop and receive until the timeout
     size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
-    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG){
+    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == GET_FLASH_INFO_ACK){
         flash_info[0] = ntohl(update_data_in->data.flash_info_args.sector_size_bytes);
         flash_info[1] = ntohl(update_data_in->data.flash_info_args.memory_size_bytes);
     }
-    else if(ntohl(update_data_in->id) != USRP2_FW_UPDATE_ID_HERES_TEH_FLASH_INFO_OMG){
-        throw std::runtime_error(str(boost::format("Received invalid reply %d from device.\n") % ntohl(update_data_in->id)));
+    else if(ntohl(update_data_in->id) != GET_FLASH_INFO_ACK){
+        throw std::runtime_error(str(boost::format("Received invalid reply %d from device.\n")
+                                     % ntohl(update_data_in->id)));
     }
-    
+
     return flash_info;
 }
 
@@ -218,102 +331,100 @@ boost::uint32_t* get_flash_info(std::string ip_addr){
 
 void erase_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint32_t memory_size){
 
-    //Making sure this won't attempt to erase past end of device
-    if(is_fw){
-        if(PROD_FW_IMAGE_LOCATION_ADDR+FW_IMAGE_SIZE_BYTES > memory_size) throw std::runtime_error("Cannot erase past end of device.");
-    }
-    else{
-        if(PROD_FPGA_IMAGE_LOCATION_ADDR+FPGA_IMAGE_SIZE_BYTES > memory_size) throw std::runtime_error("Cannot erase past end of device.");
-    }
+    boost::uint32_t image_location_addr = is_fw ? PROD_FW_IMAGE_LOCATION_ADDR
+                                                : PROD_FPGA_IMAGE_LOCATION_ADDR;
+    boost::uint32_t image_size = is_fw ? FW_IMAGE_SIZE_BYTES
+                                       : FPGA_IMAGE_SIZE_BYTES;
 
-    //Setting up UDP transport
-    boost::uint8_t usrp2_update_data_in_mem[udp_simple::mtu];
+    //Making sure this won't attempt to erase past end of device
+    if((image_location_addr+image_size) > memory_size) throw std::runtime_error("Cannot erase past end of device.");
+
+    //UDP receive buffer
     const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
 
     //Setting up UDP packet
     usrp2_fw_update_data_t erase_pkt = usrp2_fw_update_data_t();
-    erase_pkt.id = htonx<boost::uint32_t>(USRP2_FW_UPDATE_ID_ERASE_TEH_FLASHES_LOL);
+    erase_pkt.id = htonx<boost::uint32_t>(ERASE_FLASH_CMD);
     erase_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-    if(is_fw){
-        erase_pkt.data.flash_args.flash_addr = htonx<boost::uint32_t>(PROD_FW_IMAGE_LOCATION_ADDR);
-        erase_pkt.data.flash_args.length = htonx<boost::uint32_t>(FW_IMAGE_SIZE_BYTES);
-    }
-    else{
-        erase_pkt.data.flash_args.flash_addr = htonx<boost::uint32_t>(PROD_FPGA_IMAGE_LOCATION_ADDR);
-        erase_pkt.data.flash_args.length = htonx<boost::uint32_t>(FPGA_IMAGE_SIZE_BYTES);
-    }
+    erase_pkt.data.flash_args.flash_addr = htonx<boost::uint32_t>(image_location_addr);
+    erase_pkt.data.flash_args.length = htonx<boost::uint32_t>(image_size);
 
     //Begin erasing
     udp_transport->send(boost::asio::buffer(&erase_pkt, sizeof(erase_pkt)));
     size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
-    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_FW_UPDATE_ID_ERASING_TEH_FLASHES_OMG){
+    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == ERASE_FLASH_ACK){
         if(is_fw) std::cout << "Erasing firmware image." << std::endl;
         else      std::cout << "Erasing FPGA image." << std::endl;
     }
-    else if(ntohl(update_data_in->id) != USRP2_FW_UPDATE_ID_ERASING_TEH_FLASHES_OMG){
-        throw std::runtime_error(str(boost::format("Received invalid reply %d from device.\n") % ntohl(update_data_in->id)));
+    else if(ntohl(update_data_in->id) != ERASE_FLASH_ACK){
+        throw std::runtime_error(str(boost::format("Received invalid reply %d from device.\n")
+                                     % ntohl(update_data_in->id)));
     }
 
     //Check for erase completion
-    erase_pkt.id = htonx<boost::uint32_t>(USRP2_FW_UPDATE_ID_R_U_DONE_ERASING_LOL);
+    erase_pkt.id = htonx<boost::uint32_t>(CHECK_ERASING_DONE_CMD);
     while(true){
         udp_transport->send(boost::asio::buffer(&erase_pkt, sizeof(erase_pkt)));
         size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
-        if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_FW_UPDATE_ID_IM_DONE_ERASING_OMG){
-            if(is_fw) std::cout << boost::format(" * Successfully erased %d bytes at %d.\n") % FW_IMAGE_SIZE_BYTES % PROD_FW_IMAGE_LOCATION_ADDR;
-            else std::cout << boost::format(" * Successfully erased %d bytes at %d.\n") % FPGA_IMAGE_SIZE_BYTES % PROD_FPGA_IMAGE_LOCATION_ADDR;
+        if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == DONE_ERASING_ACK){
+            std::cout << boost::format(" * Successfully erased %d bytes at %d.\n")
+                         % image_size % image_location_addr;
             break;
         }
-        else if(ntohl(update_data_in->id) != USRP2_FW_UPDATE_ID_NOPE_NOT_DONE_ERASING_OMG){
-            throw std::runtime_error(str(boost::format("Received invalid reply %d from device.\n") % ntohl(update_data_in->id)));
+        else if(ntohl(update_data_in->id) != NOT_DONE_ERASING_ACK){
+            throw std::runtime_error(str(boost::format("Received invalid reply %d from device.\n")
+                                         % ntohl(update_data_in->id)));
         }
     }
 }
 
 void write_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* image, boost::uint32_t memory_size, int image_size){
 
-    boost::uint32_t current_addr;
-    if(is_fw) current_addr = PROD_FW_IMAGE_LOCATION_ADDR;
-    else current_addr = PROD_FPGA_IMAGE_LOCATION_ADDR;
+    boost::uint32_t begin_addr = is_fw ? PROD_FW_IMAGE_LOCATION_ADDR
+                                       : PROD_FPGA_IMAGE_LOCATION_ADDR;
+    boost::uint32_t current_addr = begin_addr;
+    std::string type = is_fw ? "firmware" : "FPGA";
 
     //Making sure this won't attempt to write past end of device
     if(current_addr+image_size > memory_size) throw std::runtime_error("Cannot write past end of device.");
 
-    //Setting up UDP transport
-    boost::uint8_t usrp2_update_data_in_mem[udp_simple::mtu];
+    //UDP receive buffer
     const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
 
     //Setting up UDP packet
     usrp2_fw_update_data_t write_pkt = usrp2_fw_update_data_t();
-    write_pkt.id = htonx<boost::uint32_t>(USRP2_FW_UPDATE_ID_WRITE_TEH_FLASHES_LOL);
+    write_pkt.id = htonx<boost::uint32_t>(WRITE_FLASH_CMD);
     write_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
     write_pkt.data.flash_args.length = htonx<boost::uint32_t>(FLASH_DATA_PACKET_SIZE);
 
-    //Write image
-    if(is_fw) std::cout << "Writing firmware image." << std::endl;
-    else std::cout << "Writing FPGA image." << std::endl;
-
     for(int i = 0; i < ((image_size/FLASH_DATA_PACKET_SIZE)+1); i++){
+        //Print progress
+        std::cout << "\rWriting " << type << " image ("
+                  << int((double(current_addr-begin_addr)/double(image_size))*100) << "%)." << std::flush;
+
         write_pkt.data.flash_args.flash_addr = htonx<boost::uint32_t>(current_addr);
         std::copy(image+(i*FLASH_DATA_PACKET_SIZE), image+((i+1)*FLASH_DATA_PACKET_SIZE), write_pkt.data.flash_args.data);
 
         udp_transport->send(boost::asio::buffer(&write_pkt, sizeof(write_pkt)));
         size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
-        if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) != USRP2_FW_UPDATE_ID_WROTE_TEH_FLASHES_OMG){
-            throw std::runtime_error(str(boost::format("Invalid reply %d from device.") % ntohl(update_data_in->id)));
+        if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) != WRITE_FLASH_ACK){
+            throw std::runtime_error(str(boost::format("Invalid reply %d from device.")
+                                         % ntohl(update_data_in->id)));
         }
 
         current_addr += FLASH_DATA_PACKET_SIZE;
     }
+    std::cout << std::flush << "\rWriting " << type << " image (100%)." << std::endl;
     std::cout << boost::format(" * Successfully wrote %d bytes.\n") % image_size;
 }
 
 void verify_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* image, boost::uint32_t memory_size, int image_size){
 
     int current_index = 0;
-    boost::uint32_t current_addr;
-    if(is_fw) current_addr = PROD_FW_IMAGE_LOCATION_ADDR;
-    else current_addr = PROD_FPGA_IMAGE_LOCATION_ADDR;
+    boost::uint32_t begin_addr = is_fw ? PROD_FW_IMAGE_LOCATION_ADDR
+                                       : PROD_FPGA_IMAGE_LOCATION_ADDR;
+    boost::uint32_t current_addr = begin_addr;
+    std::string type = is_fw ? "firmware" : "FPGA";
 
     //Array size needs to be known at runtime, this constant is guaranteed to be larger than any firmware or FPGA image
     boost::uint8_t from_usrp[FPGA_IMAGE_SIZE_BYTES];
@@ -321,27 +432,27 @@ void verify_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* im
     //Making sure this won't attempt to read past end of device
     if(current_addr+image_size > memory_size) throw std::runtime_error("Cannot read past end of device.");
 
-    //Setting up UDP transport
-    boost::uint8_t usrp2_update_data_in_mem[udp_simple::mtu];
+    //UDP receive buffer
     const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
 
     //Setting up UDP packet
     usrp2_fw_update_data_t verify_pkt = usrp2_fw_update_data_t();
-    verify_pkt.id = htonx<boost::uint32_t>(USRP2_FW_UPDATE_ID_READ_TEH_FLASHES_LOL);
+    verify_pkt.id = htonx<boost::uint32_t>(READ_FLASH_CMD);
     verify_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
     verify_pkt.data.flash_args.length = htonx<boost::uint32_t>(FLASH_DATA_PACKET_SIZE);
 
-    //Verify image
-    if(is_fw) std::cout << "Verifying firmware image." << std::endl;
-    else std::cout << "Verifying FPGA image." << std::endl;
-
     for(int i = 0; i < ((image_size/FLASH_DATA_PACKET_SIZE)+1); i++){
+        //Print progress
+        std::cout << "\rVerifying " << type << " image ("
+                  << int((double(current_addr-begin_addr)/double(image_size))*100) << "%)." << std::flush;
+
         verify_pkt.data.flash_args.flash_addr = htonx<boost::uint32_t>(current_addr);
 
         udp_transport->send(boost::asio::buffer(&verify_pkt, sizeof(verify_pkt)));
         size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
-        if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) != USRP2_FW_UPDATE_ID_KK_READ_TEH_FLASHES_OMG){
-            throw std::runtime_error(str(boost::format("Invalid reply %d from device.") % ntohl(update_data_in->id)));
+        if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) != READ_FLASH_ACK){
+            throw std::runtime_error(str(boost::format("Invalid reply %d from device.")
+                                         % ntohl(update_data_in->id)));
         }
         for(int j = 0; j < FLASH_DATA_PACKET_SIZE; j++) from_usrp[current_index+j] = update_data_in->data.flash_args.data[j];
 
@@ -350,27 +461,27 @@ void verify_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* im
     }
     for(int i = 0; i < image_size; i++) if(from_usrp[i] != image[i]) throw std::runtime_error("Image write failed.");
 
+    std::cout << std::flush << "\rVerifying " << type << " image (100%)." << std::endl;
     std::cout << " * Successful." << std::endl;
 }
 
 void reset_usrp(udp_simple::sptr udp_transport){
 
     //Set up UDP transport
-    boost::uint8_t usrp2_update_data_in_mem[udp_simple::mtu];
     const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
 
     //Set up UDP packet
     usrp2_fw_update_data_t reset_pkt = usrp2_fw_update_data_t();
-    reset_pkt.id = htonx<boost::uint32_t>(USRP2_FW_UPDATE_ID_RESET_MAH_COMPUTORZ_LOL);
+    reset_pkt.id = htonx<boost::uint32_t>(RESET_USRP_CMD);
     reset_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
 
     //Reset USRP
     udp_transport->send(boost::asio::buffer(&reset_pkt, sizeof(reset_pkt)));
     size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
-    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_FW_UPDATE_ID_RESETTIN_TEH_COMPUTORZ_OMG){
+    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == RESET_USRP_ACK){
         throw std::runtime_error("USRP reset failed."); //There should be no response to this UDP packet
     }
-    else std::cout << "Resetting USRP." << std::endl;
+    else std::cout << std::endl << "Resetting USRP." << std::endl;
 }
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -386,125 +497,88 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("addr", po::value<std::string>(&ip_addr)->default_value("192.168.10.2"), "Specify an IP address.")
         ("fw", po::value<std::string>(&fw_path), "Specify a filepath for a custom firmware image.")
         ("fpga", po::value<std::string>(&fpga_path), "Specify a filepath for a custom FPGA image.")
-        ("no_fw", "Do not burn a firmware image.")
-        ("no_fpga", "Do not burn an FPGA image.")
-        ("auto_reboot", "Automatically reboot N2XX without prompting.")
+        ("no-fw", "Do not burn a firmware image.")
+        ("no_fw", "Do not burn a firmware image (DEPRECATED).")
+        ("no-fpga", "Do not burn an FPGA image.")
+        ("no_fpga", "Do not burn an FPGA image (DEPRECATED).")
+        ("auto-reboot", "Automatically reboot N2XX without prompting.")
+        ("auto_reboot", "Automatically reboot N2XX without prompting (DEPRECATED).")
         ("list", "List available N2XX USRP devices.")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    //Apply options
+    //Print help message
     if(vm.count("help") > 0){
         std::cout << boost::format("N2XX Simple Net Burner\n");
         std::cout << boost::format("Automatically detects and burns standard firmware and FPGA images onto USRP N2XX devices.\n");
         std::cout << boost::format("Can optionally take user input for custom images.\n\n");
         std::cout << desc << std::endl;
-        return EXIT_FAILURE;
+        return EXIT_SUCCESS;
     }
 
-    bool burn_fpga = (vm.count("no_fpga") == 0);
-    bool burn_fw = (vm.count("no_fw") == 0);
+    //List option
+    if(vm.count("list")){
+        list_usrps();
+        return EXIT_SUCCESS;
+    }
+
+    //Process user options
+    bool burn_fpga = (vm.count("no-fpga") == 0) and (vm.count("no_fpga") == 0);
+    bool burn_fw = (vm.count("no-fw") == 0) and (vm.count("no_fw") == 0);
     bool use_custom_fpga = (vm.count("fpga") > 0);
     bool use_custom_fw = (vm.count("fw") > 0);
-    bool list_usrps = (vm.count("list") > 0);
-    bool auto_reboot = (vm.count("auto_reboot") > 0);
+    bool auto_reboot = (vm.count("auto-reboot") > 0) or (vm.count("auto_reboot") > 0);
+    int fpga_image_size = 0;
+    int fw_image_size = 0;
 
-    if(!burn_fpga && !burn_fw){
+    if(not burn_fpga && not burn_fw){
         std::cout << "No images will be burned." << std::endl;
         return EXIT_FAILURE;
     }
 
-    if(!burn_fw && use_custom_fw)     std::cout << boost::format("Conflicting firmware options presented. Will not burn a firmware image.\n\n");
-    if(!burn_fpga && use_custom_fpga) std::cout << boost::format("Conflicting FPGA options presented. Will not burn an FPGA image.\n\n");
+    //Print deprecation messages if necessary
+    if(vm.count("no_fpga") > 0) std::cout << "WARNING: --no_fpga option is deprecated! Use --no-fpga instead." << std::endl << std::endl;
+    if(vm.count("no_fw") > 0) std::cout << "WARNING: --no_fw option is deprecated! Use --no-fw instead." << std::endl << std::endl;
+    if(vm.count("auto_reboot") > 0) std::cout << "WARNING: --auto_reboot option is deprecated! Use --auto-reboot instead." << std::endl << std::endl;
 
-    //Variables not from options
-    boost::uint32_t hw_rev;
-    bool found_it = false;
-    boost::uint8_t usrp2_update_data_in_mem[udp_simple::mtu];
-    const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
-
-    //List option
-    if(list_usrps){
-        udp_simple::sptr udp_bc_transport;
-        usrp2_fw_update_data_t usrp2_ack_pkt = usrp2_fw_update_data_t();
-        usrp2_ack_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-        usrp2_ack_pkt.id = htonx<boost::uint32_t>(USRP2_FW_UPDATE_ID_OHAI_LOL);
-
-        std::cout << "Available USRP N2XX devices:" << std::endl;
-
-        //Send UDP packets to all broadcast addresses
-        BOOST_FOREACH(const if_addrs_t &if_addrs, get_if_addrs()){
-            //Avoid the loopback device
-            if(if_addrs.inet == boost::asio::ip::address_v4::loopback().to_string()) continue;
-            udp_bc_transport = udp_simple::make_broadcast(if_addrs.bcast, BOOST_STRINGIZE(USRP2_UDP_UPDATE_PORT));
-            udp_bc_transport->send(boost::asio::buffer(&usrp2_ack_pkt, sizeof(usrp2_ack_pkt)));
-
-            size_t len = udp_bc_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
-            if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_FW_UPDATE_ID_OHAI_OMG){
-                usrp2_ack_pkt.id = htonx<boost::uint32_t>(USRP2_FW_UPDATE_ID_I_CAN_HAS_HW_REV_LOL);
-                udp_bc_transport->send(boost::asio::buffer(&usrp2_ack_pkt, sizeof(usrp2_ack_pkt)));
-
-                size_t len = udp_bc_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
-                if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_FW_UPDATE_ID_HERES_TEH_HW_REV_OMG){
-                    hw_rev = ntohl(update_data_in->data.hw_rev);
-                }
-
-                std::cout << boost::format(" * %s (%s)\n") % udp_bc_transport->get_recv_addr() % filename_map[hw_rev];
-            }
-        
-        }
-        return EXIT_FAILURE;
-    }
+    //Find USRP and establish connection
     std::cout << boost::format("Searching for USRP N2XX with IP address %s.\n") % ip_addr;
-
-    //Address specified
     udp_simple::sptr udp_transport = udp_simple::make_connected(ip_addr, BOOST_STRINGIZE(USRP2_UDP_UPDATE_PORT));
-    usrp2_fw_update_data_t hw_info_pkt = usrp2_fw_update_data_t();
-    hw_info_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-    hw_info_pkt.id = htonx<boost::uint32_t>(USRP2_FW_UPDATE_ID_I_CAN_HAS_HW_REV_LOL);
-    udp_transport->send(boost::asio::buffer(&hw_info_pkt, sizeof(hw_info_pkt)));
-
-    //Loop and receive until the timeout
-    size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
-    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_FW_UPDATE_ID_HERES_TEH_HW_REV_OMG){
-        hw_rev = ntohl(update_data_in->data.hw_rev);
-        if(filename_map.find(hw_rev) != filename_map.end()){
-            std::cout << boost::format("Found %s.\n\n") % filename_map[hw_rev];
-            found_it = true;
-        }
-        else throw std::runtime_error("Invalid revision found.");
-    }
-    if(!found_it) throw std::runtime_error("No USRP N2XX found.");
-
-    //Determining default image filenames for validation
-    std::string default_fw_filename = str(boost::format("usrp_%s_fw.bin") % erase_tail_copy(filename_map[hw_rev],3));
-    std::string default_fpga_filename = str(boost::format("usrp_%s_fpga.bin") % filename_map[hw_rev]);
-    std::string default_fw_filepath = "";
-    std::string default_fpga_filepath = "";
+    boost::uint32_t hw_rev = find_usrp(udp_transport);
 
     //Check validity of file locations and binaries before attempting burn
     std::cout << "Searching for specified images." << std::endl << std::endl;
     if(burn_fpga){
-        if(!use_custom_fpga) fpga_path = find_image_path(default_fpga_filename);
-        else{
-            //Replace ~ with home directory
-            if(fpga_path.find("~/") == 0) fpga_path.replace(0,1,getenv("HOME"));
+        if(use_custom_fpga){
+            //Expand tilde usage if applicable
+            #ifndef UHD_PLATFORM_WIN32
+                if(fpga_path.find("~/") == 0) fpga_path.replace(0,1,getenv("HOME"));
+            #endif
             validate_custom_fpga_file(filename_map[hw_rev], fpga_path);
         }
-
-        grab_fpga_image(fpga_path);
-    }
-    if(burn_fw){
-        if(!use_custom_fw) fw_path = find_image_path(default_fw_filename);
         else{
-            //Replace ~ with home directory
-            if(fw_path.find("~/") == 0) fw_path.replace(0,1,getenv("HOME"));
-            validate_custom_fw_file(filename_map[hw_rev], fw_path);
+            std::string default_fpga_filename = str(boost::format("usrp_%s_fpga.bin") % filename_map[hw_rev]);
+            fpga_path = find_image_path(default_fpga_filename);
         }
 
-        grab_fw_image(fw_path);
+        fpga_image_size = read_fpga_image(fpga_path);
+    }
+    if(burn_fw){
+        if(use_custom_fw){
+            //Expand tilde usage if applicable
+            #ifndef UHD_PLATFORM_WIN32
+                if(fw_path.find("~/") == 0) fw_path.replace(0,1,getenv("HOME"));
+            #endif
+            validate_custom_fw_file(filename_map[hw_rev], fw_path);
+        }
+        else{
+            std::string default_fw_filename = str(boost::format("usrp_%s_fw.bin") % erase_tail_copy(filename_map[hw_rev],3));
+            fw_path = find_image_path(default_fw_filename);
+        }
+
+        fw_image_size = read_fw_image(fw_path);
     }
 
     std::cout << "Will burn the following images:" << std::endl;
@@ -547,7 +621,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << std::endl; //Formatting
     }
     if(reset) reset_usrp(udp_transport);
-    else return EXIT_SUCCESS;
 
     return EXIT_SUCCESS;
 }
