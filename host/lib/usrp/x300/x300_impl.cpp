@@ -612,9 +612,11 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     if(mb.hw_rev > 4)
     {
         try {
+            //FIXME:  Need to verify timeout value to make sure lock can be achieved in < 1.0 seconds
             wait_for_ref_locked(mb.zpu_ctrl, 1.0);
         } catch (uhd::runtime_error &e) {
-            UHD_MSG(warning) << "Clock failed to lock to internal source during initialization." << std::endl;
+            //Silently fail for now, but fix after we have the correct timeout value
+            //UHD_MSG(warning) << "Clock failed to lock to internal source during initialization." << std::endl;
         }
     }
 
@@ -781,6 +783,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     try {
         //First, try external source
         _tree->access<std::string>(mb_path / "clock_source" / "value").set("external");
+        wait_for_ref_locked(mb.zpu_ctrl, 1.0);
         _tree->access<std::string>(mb_path / "time_source" / "value").set("external");
         UHD_MSG(status) << "References initialized to external sources" << std::endl;
     } catch (uhd::exception::runtime_error &e) {
@@ -788,6 +791,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         if (mb.gps and mb.gps->gps_detected())
         {
             _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
+            try {
+                wait_for_ref_locked(mb.zpu_ctrl, 1.0);
+            } catch (uhd::exception::runtime_error &e) {
+                UHD_MSG(warning) << "Clock reference failed to lock to GPSDO during device initialization.  " <<
+                    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
+            }
             _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
             UHD_MSG(status) << "References initialized to GPSDO sources" << std::endl;
             UHD_MSG(status) << "Initializing time to the GPSDO time" << std::endl;
@@ -798,6 +807,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         } else {
             _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
+            try {
+                wait_for_ref_locked(mb.zpu_ctrl, 1.0);
+            } catch (uhd::exception::runtime_error &e) {
+                UHD_MSG(warning) << "Clock reference failed to lock to internal source during device initialization.  " <<
+                    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
+            }
             _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
             UHD_MSG(status) << "References initialized to internal sources" << std::endl;
         }
@@ -1332,17 +1347,20 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
     this->update_clock_control(mb);
 
     //reset the clock control
-    //without this, the lock time is multiple seconds and the poll below will fail
+    //without this, the lock time is long and can be as much as 30 seconds
     mb.clock->reset_clocks();
 
-    //wait for lock
-    try {
-        if (mb.hw_rev > 4)
-            wait_for_ref_locked(mb.zpu_ctrl, 1.0);
-    } catch (uhd::runtime_error &e) {
-        //failed to lock on reference
-        throw uhd::runtime_error((boost::format("Clock failed to lock to %s source.") % source).str());
-    }
+    /* FIXME:  implement when we know the correct timeouts
+     * //wait for lock
+     * double timeout = 1.0;
+     * try {
+     *     if (mb.hw_rev > 4)
+     *         wait_for_ref_locked(mb.zpu_ctrl, timeout);
+     * } catch (uhd::runtime_error &e) {
+     *     //failed to lock on reference
+     *     throw uhd::runtime_error((boost::format("Clock failed to lock to %s source.") % source).str());
+     * }
+     */
 }
 
 void x300_impl::update_time_source(mboard_members_t &mb, const std::string &source)
