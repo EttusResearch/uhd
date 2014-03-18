@@ -577,10 +577,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     UHD_MSG(status) << "Setup RF frontend clocking..." << std::endl;
 
-    size_t hw_rev = 0;
+    mb.hw_rev = 0;
     if(mb_eeprom.has_key("revision") and not mb_eeprom["revision"].empty()) {
         try {
-            hw_rev = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
+            mb.hw_rev = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
         } catch(...) {
             UHD_MSG(warning) << "Revision in EEPROM is invalid! Please reprogram your EEPROM." << std::endl;
         }
@@ -588,9 +588,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         UHD_MSG(warning) << "No revision detected MB EEPROM must be reprogrammed!" << std::endl;
     }
 
-    if(hw_rev == 0) {
+    if(mb.hw_rev == 0) {
         UHD_MSG(warning) << "Defaulting to X300 RevD Clock Settings. This will result in non-optimal lock times." << std::endl;
-        hw_rev = X300_REV("D");
+        mb.hw_rev = X300_REV("D");
     }
 
     //Initialize clock control with internal references and GPSDO power on.
@@ -604,12 +604,19 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //Create clock control
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
-        hw_rev,
+        mb.hw_rev,
         dev_addr.cast<double>("master_clock_rate", X300_DEFAULT_TICK_RATE),
         dev_addr.cast<double>("system_ref_rate", X300_DEFAULT_SYSREF_RATE));
 
     //wait for reference clock to lock
-    wait_for_ref_locked(mb.zpu_ctrl, 1.0);
+    if(mb.hw_rev > 4)
+    {
+        try {
+            wait_for_ref_locked(mb.zpu_ctrl, 1.0);
+        } catch (uhd::runtime_error &e) {
+            UHD_MSG(warning) << "Clock failed to lock to internal source during initialization." << std::endl;
+        }
+    }
 
     ////////////////////////////////////////////////////////////////////
     // create clock properties
@@ -1330,12 +1337,11 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
 
     //wait for lock
     try {
-        wait_for_ref_locked(mb.zpu_ctrl, 1.0);
+        if (mb.hw_rev > 4)
+            wait_for_ref_locked(mb.zpu_ctrl, 1.0);
     } catch (uhd::runtime_error &e) {
         //failed to lock on reference
-        throw uhd::runtime_error(
-            (boost::format("Error setting the clock source to %s: %s  Please check the clock and try again.")
-            % source % e.what()).str());
+        throw uhd::runtime_error((boost::format("Clock failed to lock to %s source.") % source).str());
     }
 }
 

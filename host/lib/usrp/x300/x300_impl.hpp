@@ -213,6 +213,8 @@ private:
 
         //which FPGA image is loaded
         std::string loaded_fpga_image;
+
+        size_t hw_rev;
     };
     std::vector<mboard_members_t> _mb;
 
