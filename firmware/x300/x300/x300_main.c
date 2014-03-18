@@ -372,22 +372,26 @@ static void handle_uarts(void)
  **********************************************************************/
 static void update_forwarding(const uint8_t e)
 {
-    /* FIXME:  This code is broken.
+    /* FIXME: This code is broken.
      * It blindly enables forwarding without regard to whether or not
      * packets can be forwarded.  If one of the Ethernet interfaces is not
      * connected, data backs up until the first interface becomes unresponsive.
-     * Uncomment and fix when topologies requiring forwarding are supported.
      *
+     * And for more fun, we had to re-enable forwarding of packets that were not
+     * addressed to this device's MAC address to work around an issue that was
+     * causing sequence errors.
+     */
     //update forwarding rules
     uint32_t forward = 0;
     if (!link_state_route_proto_causes_cycle_cached(e, (e+1)%2))
     {
-        forward |= (1 << 0); //forward bcast
+        //FIXME: Uncomment when forwarding of broadcasts is properly handled
+        //forward |= (1 << 0); //forward bcast
         forward |= (1 << 1); //forward not mac dest
     }
     const uint32_t eth_base = (e == 0)? SR_ETHINT0 : SR_ETHINT1;
     wb_poke32(SR_ADDR(SET0_BASE, eth_base + 8 + 4), forward);
-    */
+
 }
 
 static void handle_link_state(void)
@@ -445,8 +449,7 @@ int main(void)
         static const uint32_t tick_delta = CPU_CLOCK/1000;
         if (ticks_passed > tick_delta)
         {
-            //FIXME: Uncomment when feature is required
-            //handle_link_state(); //deal with router table update
+            handle_link_state(); //deal with router table update
             handle_claim(); //deal with the host claim register
             update_leds(); //run the link and activity leds
             garp(); //send periodic garps

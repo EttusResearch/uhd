@@ -76,8 +76,7 @@ static void init_network(void)
     printf("PKT RAM0 BASE 0x%x\n", (&pkt_config)->base);
     u3_net_stack_init(&pkt_config);
 
-    //FIXME: Uncomment when feature is required
-    //link_state_route_proto_init();
+    link_state_route_proto_init();
 
     //read everything from eeprom
     static const uint8_t eeprom_cmd[2] = {0, 0}; //the command is 16 bits of address offset
