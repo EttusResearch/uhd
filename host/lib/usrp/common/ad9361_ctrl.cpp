@@ -151,7 +151,7 @@ struct ad9361_ctrl_impl : public ad9361_ctrl
         //handle errors
         const size_t len = my_strnlen(out->error_msg, AD9361_TRANSACTION_MAX_ERROR_MSG);
         const std::string error_msg(out->error_msg, len);
-        if (not error_msg.empty()) throw uhd::runtime_error("ad9361 do transaction: " + error_msg);
+        if (not error_msg.empty()) throw uhd::runtime_error("[ad9361_ctrl::do_transaction] firmware reported: \"" + error_msg + "\"");
 
         //return result done!
         return *out;

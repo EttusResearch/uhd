@@ -301,7 +301,7 @@ public:
     void ad9361_transact(const unsigned char in_buff[64], unsigned char out_buff[64]) {
         const int bytes_to_write = 64;
         const int bytes_to_read = 64;
-        const size_t read_retries = 10;
+        const size_t read_retries = 3;
 
         int ret = fx3_control_write(B200_VREQ_AD9361_CTRL_WRITE, 0x00, 0x00, (unsigned char *)in_buff, bytes_to_write);
         if (ret < 0)
@@ -311,9 +311,16 @@ public:
 
         for (size_t i = 0; i < read_retries; i++)
         {
-            ret = fx3_control_read(B200_VREQ_AD9361_CTRL_READ, 0x00, 0x00, out_buff, bytes_to_read, 3000);
+            ret = fx3_control_read(B200_VREQ_AD9361_CTRL_READ, 0x00, 0x00, out_buff, bytes_to_read, 5000);
             if (ret < 0)
-                throw uhd::io_error((boost::format("Failed to read AD9361 (%d: %s)") % ret % libusb_error_name(ret)).str());
+            {
+                UHD_MSG(warning) << (boost::format("Failed to read AD9361 (%d: %s). Retrying (%d of %d)...")
+                    % ret
+                    % libusb_error_name(ret)
+                    % (i+1)
+                    % read_retries)
+                << std::endl;
+            }
 
             if (ret == bytes_to_read)
                 return;
