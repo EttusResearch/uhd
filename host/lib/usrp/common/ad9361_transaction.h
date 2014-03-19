@@ -25,8 +25,8 @@ extern "C" {
 #endif
 
 //various constants
-#define AD9361_TRANSACTION_VERSION 0x4
-#define AD9361_TRANSACTION_MAX_ERROR_MSG 40
+#define AD9361_TRANSACTION_VERSION  0x4
+#define AD9361_DISPATCH_PACKET_SIZE 64
 
 //action types
 #define AD9361_ACTION_ECHO 0
@@ -100,6 +100,7 @@ typedef struct
 
 } ad9361_transaction_t;
 
+#define AD9361_TRANSACTION_MAX_ERROR_MSG (AD9361_DISPATCH_PACKET_SIZE - (sizeof(ad9361_transaction_t)-4)-1)	// -4 for 'error_msg' alignment padding, -1 for terminating \0
 
 #ifdef __cplusplus
 }

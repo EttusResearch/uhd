@@ -299,9 +299,9 @@ public:
         }
     }
 
-    void ad9361_transact(const unsigned char in_buff[64], unsigned char out_buff[64]) {
-        const int bytes_to_write = 64;
-        const int bytes_to_read = 64;
+    void ad9361_transact(const unsigned char in_buff[AD9361_DISPATCH_PACKET_SIZE], unsigned char out_buff[AD9361_DISPATCH_PACKET_SIZE]) {
+        const int bytes_to_write = AD9361_DISPATCH_PACKET_SIZE;
+        const int bytes_to_read = AD9361_DISPATCH_PACKET_SIZE;
         const size_t read_retries = 5;
 
         int ret = fx3_control_write(B200_VREQ_AD9361_CTRL_WRITE, 0x00, 0x00, (unsigned char *)in_buff, bytes_to_write);
