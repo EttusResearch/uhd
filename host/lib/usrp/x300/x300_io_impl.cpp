@@ -399,15 +399,9 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         both_xports_t xport = this->make_transport(mb_index, dest, X300_RADIO_DEST_PREFIX_RX, device_addr, data_sid);
         UHD_LOG << boost::format("data_sid = 0x%08x, actual recv_buff_size = %d\n") % data_sid % xport.recv_buff_size << std::endl;
 
-        //calculate packet size
-        static const size_t hdr_size = 0
-            + vrt::num_vrl_words32*sizeof(boost::uint32_t)
-            + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
-            + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
-            - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
-            - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
-        ;
-        const size_t bpp = xport.recv->get_recv_frame_size() - hdr_size; // bytes per packet
+	// To calculate the max number of samples per packet, we assume the maximum header length
+	// to avoid fragmentation should the entire header be used.
+        const size_t bpp = xport.recv->get_recv_frame_size() - X300_RX_MAX_HDR_LEN; // bytes per packet
         const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
         const size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi)); // samples per packet
 
@@ -568,15 +562,9 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         both_xports_t xport = this->make_transport(mb_index, dest, X300_RADIO_DEST_PREFIX_TX, device_addr, data_sid);
         UHD_LOG << boost::format("data_sid = 0x%08x\n") % data_sid << std::endl;
 
-        //calculate packet size
-        static const size_t hdr_size = 0
-            + vrt::num_vrl_words32*sizeof(boost::uint32_t)
-            + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
-            //+ sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
-            - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
-            - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
-        ;
-        const size_t bpp = xport.send->get_send_frame_size() - hdr_size;
+	// To calculate the max number of samples per packet, we assume the maximum header length
+	// to avoid fragmentation should the entire header be used.
+        const size_t bpp = xport.send->get_send_frame_size() - X300_TX_MAX_HDR_LEN;
         const size_t bpi = convert::get_bytes_per_item(args.otw_format);
         const size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi));
 
