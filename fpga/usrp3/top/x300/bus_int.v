@@ -43,8 +43,8 @@ module bus_int
     inout SFPP1_RS0,
     inout SFPP1_RS1,
     //
-    input [3:0] clock_status,
-    output [5:0] clock_control,
+    input [4:0] clock_status,
+    output [6:0] clock_control,
     // ETH0
     output [63:0] eth0_tx_tdata, output [3:0] eth0_tx_tuser, output eth0_tx_tlast, output eth0_tx_tvalid, input eth0_tx_tready,
     input [63:0] eth0_rx_tdata, input [3:0] eth0_rx_tuser, input eth0_rx_tlast, input eth0_rx_tvalid, output eth0_rx_tready,
@@ -141,7 +141,7 @@ module bus_int
    localparam RB_BIST         = 8'd128;
 
 
-   localparam COMPAT_MAJOR    = 16'h0003;
+   localparam COMPAT_MAJOR    = 16'h0004;
    localparam COMPAT_MINOR    = 16'h0000;
 
    wire [31:0] 	  set_data;
@@ -295,8 +295,8 @@ module bus_int
       .strobe(set_stb), .addr(set_addr), .in(set_data),
       .out(sw_rst));
 
-   setting_reg #(.my_addr(SR_CLOCK_CTRL), .awidth(SR_AWIDTH), .width(6),
-        .at_reset(6'b100000) //bit 5 high means GPSDO on by default
+   setting_reg #(.my_addr(SR_CLOCK_CTRL), .awidth(SR_AWIDTH), .width(7),
+        .at_reset(7'b1000000) //bit 6 high means GPSDO on by default
     ) set_clk_ctrl
      (.clk(clk), .rst(reset),
       .strobe(set_stb), .addr(set_addr), .in(set_data),
@@ -341,7 +341,7 @@ module bus_int
        RB_COUNTER: rb_data = counter;
        RB_SPI_RDY: rb_data = {31'b0, spi_ready};
        RB_SPI_DATA: rb_data = rb_spi_data;
-       RB_CLK_STATUS: rb_data = {28'b0, clock_status};
+       RB_CLK_STATUS: rb_data = {27'b0, clock_status};
        // SFPP Interface pins.
        RB_SFPP_STATUS0: rb_data = {26'b0,SFPP0_ModAbs_chgd,SFPP0_TxFault_chgd,SFPP0_RxLOS_chgd,
 				  SFPP0_ModAbs_reg2,SFPP0_TxFault_reg2,SFPP0_RxLOS_reg2};

@@ -4,13 +4,13 @@
 //-----------------------------------------------------------------------------
 // File       : ten_gig_eth_pcs_pma_example_design.v
 //-----------------------------------------------------------------------------
-// Description: This file is a wrapper for the 10GBASE-R core; it contains all 
+// Description: This file is a wrapper for the 10GBASE-R core; it contains all
 // of the clock buffers required for implementing the block level
 //-----------------------------------------------------------------------------
 // (c) Copyright 2009 - 2012 Xilinx, Inc. All rights reserved.
 //
 // This file contains confidential and proprietary information
-// of Xilinx, Inc. and is protected under U.S. and 
+// of Xilinx, Inc. and is protected under U.S. and
 // international copyright and other intellectual property
 // laws.
 //
@@ -62,7 +62,7 @@ module ten_gig_eth_pcs_pma_x300_top
 //  input           refclk_p,
 //  input           refclk_n,
   input refclk156,
-  input refclk156_buf,   
+  input refclk156_buf,
   output          clk156,
   input           reset,
   input  [63 : 0] xgmii_txd,
@@ -87,37 +87,37 @@ module ten_gig_eth_pcs_pma_x300_top
 
   // Signal declarations
   wire clk156;
-  
+
   // Sync the global reset to the relevant clocks
   reg core_reset_tx;
   reg core_reset_rx;
   reg txreset322;
   reg rxreset322;
   reg dclk_reset;
-  
+
   reg core_reset_tx_tmp;
   reg core_reset_rx_tmp;
   reg txreset322_tmp;
   reg rxreset322_tmp;
   reg dclk_reset_tmp;
-  
+
   (* KEEP = "true" *)
   wire txclk322;
   wire rxclk322;
   wire dclk;
-  
+
   wire tx_resetdone_int;
   wire rx_resetdone_int;
   reg [63:0] xgmii_txd_reg;
   reg [7:0] xgmii_txc_reg;
   wire [63:0] xgmii_rxd_int;
   wire [7:0] xgmii_rxc_int;
-  
+
   wire mdio_out_int;
   wire mdio_tri_int;
 
   assign resetdone = tx_resetdone_int && rx_resetdone_int;
-  
+
   //synthesis attribute async_reg of core_reset_tx_tmp is "true";
   //synthesis attribute async_reg of core_reset_tx is "true";
   //synthesis attribute async_reg of core_reset_rx_tmp is "true";
@@ -135,19 +135,19 @@ module ten_gig_eth_pcs_pma_x300_top
     begin
       // Hold core in reset until everything else is ready...
 // IJB. Per AR# 53443 changed these lines:
-//      core_reset_tx_tmp <= (!(tx_resetdone_int) || reset || 
+//      core_reset_tx_tmp <= (!(tx_resetdone_int) || reset ||
 //                        tx_fault || !(signal_detect) );
        core_reset_tx_tmp <= (!(tx_resetdone_int) || reset);
-       
+
       core_reset_tx <= core_reset_tx_tmp;
-//      core_reset_rx_tmp <= (!(rx_resetdone_int) || reset || 
+//      core_reset_rx_tmp <= (!(rx_resetdone_int) || reset ||
 //                        tx_fault || !(signal_detect) );
        core_reset_rx_tmp <= (!(rx_resetdone_int) || reset  || !(signal_detect));
-       
+
       core_reset_rx <= core_reset_rx_tmp;
     end
-  end     
-    
+  end
+
   //synthesis attribute async_reg of txreset322_tmp is "true";
   //synthesis attribute async_reg of txreset322 is "true";
   always @(posedge reset or posedge txclk322)
@@ -163,7 +163,7 @@ module ten_gig_eth_pcs_pma_x300_top
       txreset322 <= txreset322_tmp;
     end
   end
-  
+
   //synthesis attribute async_reg of rxreset322_tmp is "true";
   //synthesis attribute async_reg of rxreset322 is "true";
   always @(posedge reset or posedge rxclk322)
@@ -179,7 +179,7 @@ module ten_gig_eth_pcs_pma_x300_top
       rxreset322 <= rxreset322_tmp;
     end
   end
-  
+
   //synthesis attribute async_reg of dclk_reset_tmp is "true";
   //synthesis attribute async_reg of dclk_reset is "true";
   always @(posedge reset or posedge dclk)
@@ -194,28 +194,28 @@ module ten_gig_eth_pcs_pma_x300_top
       dclk_reset_tmp <= core_reset_rx;
       dclk_reset <= dclk_reset_tmp;
     end
-  end   
-   
+  end
+
   // Add a pipeline to the xmgii_tx inputs, to aid timing closure
   always @(posedge clk156)
   begin
-    xgmii_txd_reg <= xgmii_txd; 
-    xgmii_txc_reg <= xgmii_txc; 
+    xgmii_txd_reg <= xgmii_txd;
+    xgmii_txc_reg <= xgmii_txc;
   end
 
   // Add a pipeline to the xmgii_rx outputs, to aid timing closure
   always @(posedge clk156)
   begin
-    xgmii_rxd <= xgmii_rxd_int; 
-    xgmii_rxc <= xgmii_rxc_int; 
+    xgmii_rxd <= xgmii_rxd_int;
+    xgmii_rxc <= xgmii_rxc_int;
   end
 
   // Add a pipeline to the mdio outputs, to aid timing closure
   // This is safe because the mdio clock is running so slowly
   always @(posedge clk156)
   begin
-    mdio_out <= mdio_out_int; 
-    mdio_tri <= mdio_tri_int; 
+    mdio_out <= mdio_out_int;
+    mdio_tri <= mdio_tri_int;
   end
 
   // Instantiate the 10GBASE-R Block Level
@@ -256,10 +256,10 @@ module ten_gig_eth_pcs_pma_x300_top
       .signal_detect(signal_detect),
       .tx_fault(tx_fault),
       .tx_disable(tx_disable));
- 
+
  // assign core_clk156_out = clk156;
-   
-   // Not needed in B250
+
+   // Not needed in X300
 /* -----\/----- EXCLUDED -----\/-----
 
   ODDR #(.DDR_CLK_EDGE("SAME_EDGE")) rx_clk_ddr(

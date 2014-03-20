@@ -7,7 +7,7 @@
 
 module capture_ddrlvds
   #(parameter WIDTH=7,
-    parameter B250=0)
+    parameter X300=0)
    (input clk,
     input reset,
     input ssclk_p,
@@ -20,15 +20,15 @@ module capture_ddrlvds
    wire 		   ssclk;
    wire [(2*WIDTH)-1:0]    out_pre1;
    wire 		   ssclk_bufio1, ssclk_bufio2, ssclk_bufr, ssclk_bufmr;
-   
-   IBUFGDS #(.DIFF_TERM("TRUE")) 
+
+   IBUFGDS #(.DIFF_TERM("TRUE"))
    clkbuf (.O(ssclk), .I(ssclk_p), .IB(ssclk_n));
 
    BUFMR clkbufmr (
 		   .I(ssclk),
 		   .O(ssclk_bufmr)
 		   );
-  
+
    BUFIO clkbufio1 (
 		    .I(ssclk_bufmr),
 		    .O(ssclk_bufio1)
@@ -37,22 +37,22 @@ module capture_ddrlvds
 		    .I(ssclk_bufmr),
 		    .O(ssclk_bufio2)
 		    );
-  
-   BUFR     
+
+   BUFR
      #(.SIM_DEVICE("7SERIES"),
        .BUFR_DIVIDE("BYPASS"))
    clkbufr (
 	    .I(ssclk_bufmr),
 	    .O(ssclk_bufr)
 	    );
-   
+
 
    genvar 		   i;
-   
+
    generate
       for(i = 0; i < WIDTH; i = i + 1)
 	begin : gen_lvds_pins
-	   if ((i == 10) && (B250 == 1)) begin
+	   if ((i == 10) && (X300 == 1)) begin
 	      IBUFDS #(.DIFF_TERM("FALSE")) ibufds
 		(.O(ddr_dat[i]), .I(in_p[i]), .IB(in_n[i]) );
 	      IDDR #(.DDR_CLK_EDGE("SAME_EDGE_PIPELINED")) iddr
@@ -68,12 +68,12 @@ module capture_ddrlvds
 	end
    endgenerate
 
-   
-   
+
+
    reg rd_en;
    wire full, empty, almost_empty;
-   
-   
+
+
    input_sample_fifo  input_sample_fifo_i
      (
       .rst(reset), // input rst
@@ -88,7 +88,7 @@ module capture_ddrlvds
       .almost_empty(almost_empty) // output almost_empty
       );
 
-   
+
    always @(posedge clk) begin
       if (reset)
 	rd_en <= 0;
