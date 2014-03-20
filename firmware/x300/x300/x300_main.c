@@ -377,20 +377,16 @@ static void update_forwarding(const uint8_t e)
      * packets can be forwarded.  If one of the Ethernet interfaces is not
      * connected, data backs up until the first interface becomes unresponsive.
      *
-     * And for more fun, we had to re-enable forwarding of packets that were not
-     * addressed to this device's MAC address to work around an issue that was
-     * causing sequence errors.
+     * //update forwarding rules
+     * uint32_t forward = 0;
+     * if (!link_state_route_proto_causes_cycle_cached(e, (e+1)%2))
+     * {
+     *     forward |= (1 << 0); //forward bcast
+     *     forward |= (1 << 1); //forward not mac dest
+     * }
+     * const uint32_t eth_base = (e == 0)? SR_ETHINT0 : SR_ETHINT1;
+     * wb_poke32(SR_ADDR(SET0_BASE, eth_base + 8 + 4), forward);
      */
-    //update forwarding rules
-    uint32_t forward = 0;
-    if (!link_state_route_proto_causes_cycle_cached(e, (e+1)%2))
-    {
-        //FIXME: Uncomment when forwarding of broadcasts is properly handled
-        //forward |= (1 << 0); //forward bcast
-        forward |= (1 << 1); //forward not mac dest
-    }
-    const uint32_t eth_base = (e == 0)? SR_ETHINT0 : SR_ETHINT1;
-    wb_poke32(SR_ADDR(SET0_BASE, eth_base + 8 + 4), forward);
 
 }
 
