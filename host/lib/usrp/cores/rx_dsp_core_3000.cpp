@@ -91,8 +91,10 @@ public:
 
     uhd::meta_range_t get_host_rates(void){
         meta_range_t range;
-	for (int rate = 1024; rate > 512; rate -= 8){
-            range.push_back(range_t(_tick_rate/rate));
+        if (!_is_b200) {
+            for (int rate = 1024; rate > 512; rate -= 8){
+                range.push_back(range_t(_tick_rate/rate));
+            }
         }
         for (int rate = 512; rate > 256; rate -= 4){
             range.push_back(range_t(_tick_rate/rate));
@@ -161,7 +163,7 @@ public:
 
         // Calculate CIC decimation (i.e., without halfband decimators)
         // Calculate closest multiplier constant to reverse gain absent scale multipliers
-        const double rate_pow = std::pow(double(decim & 0x1ff), 4);
+        const double rate_pow = std::pow(double(decim & 0xff), 4);
         _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.65*rate_pow);
         this->update_scalar();
 
