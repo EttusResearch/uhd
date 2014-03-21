@@ -200,5 +200,7 @@ IF(MSVC)
 ENDIF(MSVC)
 
 ########################################################################
-SET(CPACK_SET_DESTDIR "ON")
+IF(NOT ${CPACK_GENERATOR} STREQUAL NSIS)
+    SET(CPACK_SET_DESTDIR "ON")
+ENDIF(NOT ${CPACK_GENERATOR} STREQUAL NSIS)
 INCLUDE(CPack) #include after setting vars
