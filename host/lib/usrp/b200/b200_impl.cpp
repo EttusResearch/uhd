@@ -32,6 +32,7 @@
 #include <boost/functional/hash.hpp>
 #include <cstdio>
 #include <ctime>
+#include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
