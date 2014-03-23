@@ -1,0 +1,30 @@
+/*! \page page_coding Coding to the API
+
+\tableofcontents
+
+\section coding_api Various API interfaces
+
+\subsection coding_api_hilevel High-Level: The Multi-USRP
+
+The Multi-USRP class provides a fat interface to a single USRP device
+with one or more channels, or multiple USRP devicess in a homogeneous
+setup. See the documentation for uhd::usrp::multi_usrp.
+
+\subsection coding_api_lowlevel Low-Level: The device API
+
+A device is an abstraction for hardware that is connected to the host
+system. For a USRP device, this means that the motherboard and
+everything on it would be considered to be a "device". The device API
+provides ways to:
+
+-   Discover devices that are physically connected to the host system.
+-   Create a device object for a particular device identified by
+    address.
+-   Register a device driver into the discovery and factory sub-system.
+-   Streaming samples with metadata into and out of the device.
+-   Set and get properties on the device object.
+
+See the documentation for uhd::device.
+
+*/
+// vim:ft=doxygen:

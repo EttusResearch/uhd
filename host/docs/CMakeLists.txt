@@ -18,89 +18,26 @@
 ########################################################################
 # List of manual sources
 ########################################################################
-SET(manual_sources
-    index.rst
-    identification.rst
-    build.rst
-    calibration.rst
-    coding.rst
-    dboards.rst
-    gpio_api.rst
-    gpsdo.rst
-    gpsdo_b2x0.rst
-    gpsdo_x3x0.rst
-    general.rst
-    images.rst
-    stream.rst
-    sync.rst
-    transport.rst
-    usrp1.rst
-    usrp2.rst
-    usrp_b100.rst
-    usrp_b200.rst
-    usrp_e1x0.rst
-    usrp_x3x0.rst
-    usrp_x3x0_config.rst
-)
 
 ########################################################################
 # Setup Manual
 ########################################################################
 MESSAGE(STATUS "")
-FIND_PACKAGE(Docutils)
+FIND_PACKAGE(Doxygen)
+LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF)
 
-LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOCUTILS_FOUND" OFF)
-
-IF(UHDHOST_PKG)
-    SET(PKG_DOC_DIR share/doc/uhd-host)
-ENDIF(UHDHOST_PKG)
-
+# TODO conditionally add the manual to Doxygen, now it just adds dependencies
 IF(ENABLE_MANUAL)
-    #setup rst2html options
-    SET(stylesheet ${CMAKE_CURRENT_SOURCE_DIR}/style.css)
-    SET(rst2html_options
-        --stylesheet=${stylesheet}
-        --no-toc-backlinks --date --time
-    )
-
-    #create generation rule for each source
-    FOREACH(rstfile ${manual_sources})
-        #set input and output file names
-        SET(rstfile ${CMAKE_CURRENT_SOURCE_DIR}/${rstfile})
-        GET_FILENAME_COMPONENT(rstfile_we ${rstfile} NAME_WE)
-        SET(htmlfile ${CMAKE_CURRENT_BINARY_DIR}/${rstfile_we}.html)
-
-        #make the html file depend on the rst file
-        ADD_CUSTOM_COMMAND(
-            OUTPUT ${htmlfile} DEPENDS ${rstfile} ${stylesheet}
-            COMMAND ${RST2HTML_EXECUTABLE} ${rstfile} ${htmlfile} ${rst2html_options}
-            COMMENT "Generating ${htmlfile}"
-        )
-
-        #make the manual target depend on the html file
-        LIST(APPEND manual_html_files ${htmlfile})
-        UHD_INSTALL(FILES ${htmlfile} DESTINATION ${PKG_DOC_DIR}/manual/html COMPONENT manual)
-    ENDFOREACH(rstfile ${manual_sources})
-
-    #make the html manual a build-time dependency
-    ADD_CUSTOM_TARGET(manual_html ALL DEPENDS ${manual_html_files})
-    UHD_INSTALL(FILES ${manual_sources} DESTINATION ${PKG_DOC_DIR}/manual/rst COMPONENT manual)
-
-    #resources for html manual 
-    ADD_CUSTOM_COMMAND(
-        TARGET manual_html POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/res ${CMAKE_CURRENT_BINARY_DIR}/res
-    )
-    UHD_INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/res DESTINATION ${PKG_DOC_DIR}/manual/html COMPONENT manual)
-
+    FILE(GLOB manual_sources "*.dox")
+ELSE(ENABLE_MANUAL)
+    SET(manual_source "")
 ENDIF(ENABLE_MANUAL)
+
 
 ########################################################################
 # Setup Doxygen
 ########################################################################
 MESSAGE(STATUS "")
-FIND_PACKAGE(Doxygen)
-
 LIBUHD_REGISTER_COMPONENT("Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF)
 
 IF(LIBUHDDEV_PKG)
@@ -118,7 +55,7 @@ IF(ENABLE_DOXYGEN)
     #make doxygen directory depend on the header files
     FILE(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
     ADD_CUSTOM_COMMAND(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DEPENDS ${header_files}
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DEPENDS ${header_files} ${manual_source}
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
         COMMENT "Generating documentation with doxygen"
     )
