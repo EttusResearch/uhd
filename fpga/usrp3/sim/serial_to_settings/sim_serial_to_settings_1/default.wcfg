@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="./isim.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="serial_to_settings_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="17" />
+   <wvobject fp_name="/serial_to_settings_tb/clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/scl_r" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">scl_r</obj_property>
+      <obj_property name="ObjectShortName">scl_r</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/sda_r" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sda_r</obj_property>
+      <obj_property name="ObjectShortName">sda_r</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/scl" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">scl</obj_property>
+      <obj_property name="ObjectShortName">scl</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/sda" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sda</obj_property>
+      <obj_property name="ObjectShortName">sda</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/set_stb" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">set_stb</obj_property>
+      <obj_property name="ObjectShortName">set_stb</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/set_addr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">set_addr[7:0]</obj_property>
+      <obj_property name="ObjectShortName">set_addr[7:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/set_data" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">set_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">set_data[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/serial_to_settings_i/state" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">state[2:0]</obj_property>
+      <obj_property name="ObjectShortName">state[2:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/serial_to_settings_i/scl_pre_reg" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">scl_pre_reg</obj_property>
+      <obj_property name="ObjectShortName">scl_pre_reg</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/serial_to_settings_i/scl_reg" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">scl_reg</obj_property>
+      <obj_property name="ObjectShortName">scl_reg</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/serial_to_settings_i/scl_reg2" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">scl_reg2</obj_property>
+      <obj_property name="ObjectShortName">scl_reg2</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/serial_to_settings_i/sda_pre_reg" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sda_pre_reg</obj_property>
+      <obj_property name="ObjectShortName">sda_pre_reg</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/serial_to_settings_i/sda_reg" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sda_reg</obj_property>
+      <obj_property name="ObjectShortName">sda_reg</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/serial_to_settings_i/sda_reg2" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">sda_reg2</obj_property>
+      <obj_property name="ObjectShortName">sda_reg2</obj_property>
+   </wvobject>
+   <wvobject fp_name="/serial_to_settings_tb/serial_to_settings_i/counter" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">counter[4:0]</obj_property>
+      <obj_property name="ObjectShortName">counter[4:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+</wave_config>

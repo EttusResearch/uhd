@@ -14,9 +14,11 @@ the dependencies should be available in the package repositories for your
 package manager.
 
 **Mac OS X Notes:**
-Install the "Xcode Developer Tools" to get the build tools (GCC and Make).
+Install the Xcode app to get the build tools (GCC and Make).
 Use MacPorts to get the Boost and Cheetah dependencies.
-Other dependencies can be downloaded as DMG installers from the web.
+Other dependencies can be downloaded as DMG installers from the web
+or installed via MacPorts. 
+See the UHD OS X page for more information: http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_OS_X 
 
 **Windows Notes:**
 The dependencies can be acquired through installable EXE files.
@@ -148,11 +150,6 @@ or add it to **/etc/ld.so.conf** and make sure to run:
 
     sudo ldconfig
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Setup the library path (Mac OS X)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Make sure that **libuhd.dylib** is in your **DYLD_LIBRARY_PATH**.
-
 ------------------------------------------------------------------------
 Build Instructions (Windows)
 ------------------------------------------------------------------------
@@ -220,3 +217,12 @@ Post-Install Tasks
 For USB-based devices,
 see the `USB Transport Application Notes <./transport.html#usb-transport-libusb>`_
 for platform-specific post-installation tasks.
+
+------------------------------------------------------------------------
+Post-Install Tasks (Mac OS X)
+------------------------------------------------------------------------
+Make sure that the value of **CMAKE_INSTALL_PREFIX** is at or near the 
+front of the shell **PATH** environment variable.  Do **NOT** set 
+DYLD_LIBRARY_PATH or any related DYLD environment variable 
+permanently; these work differently than under Linux and should be 
+used for testing / temporary purposes only. 

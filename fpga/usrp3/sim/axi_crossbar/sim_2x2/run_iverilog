@@ -1,0 +1,21 @@
+
+iverilog \
+-s axi_crossbar_tb \
+-y /opt/Xilinx/14.4/ISE_DS/ISE/verilog/src/unisims \
+-o axi_crossbar_tb \
+-I .. \
+/opt/Xilinx/14.4/ISE_DS/ISE/verilog/src/glbl.v \
+../../lib/control/axi_crossbar_tb.v \
+../../lib/control/axi_crossbar.v \
+../../lib/control/axi_slave_mux.v \
+../../lib/control/axi_forwarding_cam.v \
+../../lib/control/setting_reg.v \
+../../lib/fifo/monitor_axi_fifo.v \
+../../lib/fifo/axi_fifo_short.v
+
+
+
+#fuse work.axi_crossbar_tb work.glbl -L unisims_ver -L xilinxcorelib_ver -o axi_crossbar_tb.exe
+
+# run the simulation scrip
+#./axi_crossbar_tb.exe -gui #-tclbatch simcmds.tcl

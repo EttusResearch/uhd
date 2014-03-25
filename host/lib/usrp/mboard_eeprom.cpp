@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -224,6 +224,137 @@ static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     //store the name
     if (mb_eeprom.has_key("name")) iface.write_eeprom(
         N100_EEPROM_ADDR, offsetof(n100_eeprom_map, name),
+        string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
+    );
+}
+
+/***********************************************************************
+ * Implementation of X300 load/store
+ **********************************************************************/
+static const boost::uint8_t X300_EEPROM_ADDR = 0x50;
+
+struct x300_eeprom_map
+{
+    //indentifying numbers
+    unsigned char revision[2];
+    unsigned char product[2];
+    boost::uint8_t _pad0[4];
+
+    //all the mac addrs
+    boost::uint8_t mac_addr0[6];
+    boost::uint8_t _pad1[2];
+    boost::uint8_t mac_addr1[6];
+    boost::uint8_t _pad2[2];
+
+    //all the IP addrs
+    boost::uint32_t gateway;
+    boost::uint32_t subnet[4];
+    boost::uint32_t ip_addr[4];
+    boost::uint8_t _pad3[16];
+
+    //names and serials
+    unsigned char name[NAME_MAX_LEN];
+    unsigned char serial[SERIAL_LEN];
+};
+
+static void load_x300(mboard_eeprom_t &mb_eeprom, i2c_iface &iface)
+{
+    //extract the revision number
+    mb_eeprom["revision"] = uint16_bytes_to_string(
+        iface.read_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, revision), 2)
+    );
+
+    //extract the product code
+    mb_eeprom["product"] = uint16_bytes_to_string(
+        iface.read_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, product), 2)
+    );
+
+    //extract the mac addresses
+    mb_eeprom["mac-addr0"] = mac_addr_t::from_bytes(iface.read_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, mac_addr0), 6
+    )).to_string();
+    mb_eeprom["mac-addr1"] = mac_addr_t::from_bytes(iface.read_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, mac_addr1), 6
+    )).to_string();
+
+    //extract the ip addresses
+    boost::asio::ip::address_v4::bytes_type ip_addr_bytes;
+    byte_copy(iface.read_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, gateway), 4), ip_addr_bytes);
+    mb_eeprom["gateway"] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
+    for (size_t i = 0; i < 4; i++)
+    {
+        const std::string n(1, i+'0');
+        byte_copy(iface.read_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, ip_addr)+(i*4), 4), ip_addr_bytes);
+        mb_eeprom["ip-addr"+n] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
+
+        byte_copy(iface.read_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, subnet)+(i*4), 4), ip_addr_bytes);
+        mb_eeprom["subnet"+n] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
+    }
+
+    //extract the serial
+    mb_eeprom["serial"] = bytes_to_string(iface.read_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, serial), SERIAL_LEN
+    ));
+
+    //extract the name
+    mb_eeprom["name"] = bytes_to_string(iface.read_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, name), NAME_MAX_LEN
+    ));
+}
+
+static void store_x300(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface)
+{
+    //parse the revision number
+    if (mb_eeprom.has_key("revision")) iface.write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, revision),
+        string_to_uint16_bytes(mb_eeprom["revision"])
+    );
+
+    //parse the product code
+    if (mb_eeprom.has_key("product")) iface.write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, product),
+        string_to_uint16_bytes(mb_eeprom["product"])
+    );
+
+    //store the mac addresses
+    if (mb_eeprom.has_key("mac-addr0")) iface.write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, mac_addr0),
+        mac_addr_t::from_string(mb_eeprom["mac-addr0"]).to_bytes()
+    );
+    if (mb_eeprom.has_key("mac-addr1")) iface.write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, mac_addr1),
+        mac_addr_t::from_string(mb_eeprom["mac-addr1"]).to_bytes()
+    );
+
+    //store the ip addresses
+    byte_vector_t ip_addr_bytes(4);
+    if (mb_eeprom.has_key("gateway")){
+        byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["gateway"]).to_bytes(), ip_addr_bytes);
+        iface.write_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, gateway), ip_addr_bytes);
+    }
+    for (size_t i = 0; i < 4; i++)
+    {
+        const std::string n(1, i+'0');
+        if (mb_eeprom.has_key("ip-addr"+n)){
+            byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"+n]).to_bytes(), ip_addr_bytes);
+            iface.write_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, ip_addr)+(i*4), ip_addr_bytes);
+        }
+
+        if (mb_eeprom.has_key("subnet"+n)){
+            byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["subnet"+n]).to_bytes(), ip_addr_bytes);
+            iface.write_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, subnet)+(i*4), ip_addr_bytes);
+        }
+    }
+
+    //store the serial
+    if (mb_eeprom.has_key("serial")) iface.write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, serial),
+        string_to_bytes(mb_eeprom["serial"], SERIAL_LEN)
+    );
+
+    //store the name
+    if (mb_eeprom.has_key("name")) iface.write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, name),
         string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
     );
 }
@@ -512,6 +643,7 @@ mboard_eeprom_t::mboard_eeprom_t(void){
 
 mboard_eeprom_t::mboard_eeprom_t(i2c_iface &iface, const std::string &which){
     if (which == "N100") load_n100(*this, iface);
+    if (which == "X300") load_x300(*this, iface);
     if (which == "B000") load_b000(*this, iface);
     if (which == "B100") load_b100(*this, iface);
     if (which == "B200") load_b200(*this, iface);
@@ -520,6 +652,7 @@ mboard_eeprom_t::mboard_eeprom_t(i2c_iface &iface, const std::string &which){
 
 void mboard_eeprom_t::commit(i2c_iface &iface, const std::string &which) const{
     if (which == "N100") store_n100(*this, iface);
+    if (which == "X300") store_x300(*this, iface);
     if (which == "B000") store_b000(*this, iface);
     if (which == "B100") store_b100(*this, iface);
     if (which == "B200") store_b200(*this, iface);

@@ -1,0 +1,981 @@
+Release 14.4 Map P.49d (lin64)
+Xilinx Map Application Log File for Design 'example_top'
+
+Design Information
+------------------
+Command Line   : map -intstyle ise -p xc7k410t-ffg900-2 -w -ol high -xe n
+-register_duplication off -ir off -pr off -lc off -power off -o
+example_top_map.ncd example_top.ngd example_top.pcf 
+Target Device  : xc7k410t
+Target Package : ffg900
+Target Speed   : -2
+Mapper Version : kintex7 -- $Revision: 1.55 $
+Mapped Date    : Tue Jan 22 18:25:00 2013
+
+Mapping design into LUTs...
+Running directed packing...
+Running delay-based LUT packing...
+Updating timing models...
+INFO:Map:215 - The Interim Design Summary has been generated in the MAP Report
+   (.mrp).
+Running timing-driven placement...
+Total REAL time at the beginning of Placer: 55 secs 
+Total CPU  time at the beginning of Placer: 54 secs 
+
+Phase 1.1  Initial Placement Analysis
+Phase 1.1  Initial Placement Analysis (Checksum:31f6fa36) REAL time: 1 mins 8 secs 
+
+Phase 2.7  Design Feasibility Check
+Phase 2.7  Design Feasibility Check (Checksum:31f6fa36) REAL time: 1 mins 9 secs 
+
+Phase 3.31  Local Placement Optimization
+Phase 3.31  Local Placement Optimization (Checksum:f4af0eaa) REAL time: 1 mins 9 secs 
+
+Phase 4.2  Initial Placement for Architecture Specific Features
+
+Phase 4.2  Initial Placement for Architecture Specific Features
+(Checksum:6b3f168) REAL time: 1 mins 28 secs 
+
+Phase 5.30  Global Clock Region Assignment
+Phase 5.30  Global Clock Region Assignment (Checksum:6b3f168) REAL time: 1 mins 28 secs 
+
+Phase 6.3  Local Placement Optimization
+Phase 6.3  Local Placement Optimization (Checksum:6b3f168) REAL time: 1 mins 29 secs 
+
+Phase 7.5  Local Placement Optimization
+Phase 7.5  Local Placement Optimization (Checksum:6b3f168) REAL time: 1 mins 29 secs 
+
+Phase 8.8  Global Placement
+........................................
+.........................
+.......................................................................................
+..........................................................................................................................................
+....................................................................................................................................
+Phase 8.8  Global Placement (Checksum:86f68ff8) REAL time: 3 mins 42 secs 
+
+Phase 9.5  Local Placement Optimization
+Phase 9.5  Local Placement Optimization (Checksum:86f68ff8) REAL time: 3 mins 43 secs 
+
+Phase 10.18  Placement Optimization
+Phase 10.18  Placement Optimization (Checksum:e61b4100) REAL time: 4 mins 28 secs 
+
+Phase 11.5  Local Placement Optimization
+Phase 11.5  Local Placement Optimization (Checksum:e61b4100) REAL time: 4 mins 28 secs 
+
+Phase 12.34  Placement Validation
+Phase 12.34  Placement Validation (Checksum:e61b4100) REAL time: 4 mins 29 secs 
+
+Total REAL time to Placer completion: 5 mins 32 secs 
+Total CPU  time to Placer completion: 5 mins 30 secs 
+Running post-placement packing...
+Writing output files...
+WARNING:PhysDesignRules:372 - Gated clock. Clock net CONTROL0<13> is sourced by
+   a combinatorial pin. This is not good design practice. Use the CE pin to
+   control the loading of data into the flip-flop.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_READ.read_addr_inst/USE_FPGA_ADJUSTED_LEN.last_word_for_mask_dummy_ca
+   rry3<4>> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_WRITE.write_addr_inst/USE_FPGA_ADJUSTED_LEN.last_word_for_mask_dummy_
+   carry3<4>> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_23_ML_NEW_IBUFDISABLE> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_21_ML_NEW_IBUFDISABLE> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_25_ML_NEW_IBUFDISABLE> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <V7_INS_DUMMY_IBUFDSIBUFDIS_ML_IBUFDS_IBUFDISABLE_19_ML_NEW_IBUFDISABLE> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<21>> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<20>> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<18>> is incomplete.
+   The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<20>> is incomplete.
+   The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<21>> is incomplete.
+   The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<19>> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_WRITE.write_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<18>> is
+   incomplete. The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_axi_mc/USE_UPSIZER.upsizer
+   _d2/USE_READ.read_addr_inst/USE_BURSTS.cmd_queue/M_MESG_I<19>> is incomplete.
+   The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer
+   _ram.rams[0].RAM32M0_RAMA_D1_DPO> is incomplete. The signal does not drive
+   any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer
+   _ram.rams[0].RAM32M0_RAMD_D1_O> is incomplete. The signal does not drive any
+   load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer
+   _ram.rams[1].RAM32M0_RAMA_D1_DPO> is incomplete. The signal does not drive
+   any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/pointer
+   _ram.rams[1].RAM32M0_RAMD_D1_O> is incomplete. The signal does not drive any
+   load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[30].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[25].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[26].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[21].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[42].RAM32M0_RAMA_D1_DPO> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[42].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[36].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[31].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[19].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[22].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[27].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/rea
+   d_fifo.fifo_ram[1].RAM32M0_RAMA_D1_DPO> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/rea
+   d_fifo.fifo_ram[1].RAM32M0_RAMB_D1_DPO> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/rea
+   d_fifo.fifo_ram[1].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.status_ram.RAM32M0_RAMB_D1_DPO> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.status_ram.RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_R
+   AMC_D1_DPO> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[41].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[20].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[40].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[24].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[29].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[32].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/mc0/col_mach0/rea
+   d_fifo.fifo_ram[0].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[4].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[35].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[37].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[38].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[23].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[33].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem1_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[3].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[9].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[39].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[18].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[6].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[16].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[17].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[28].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_ddr3_infrastructure/rst_phaser_ref_sync_r<0>> is incomplete.
+   The signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[8].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[5].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[34].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[2].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[0].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[5].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[6].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[15].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[14].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[10].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[1].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[9].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem7_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem12_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem12_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[13].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[7].RAM32M0_RAMD_D1_O> is incomplete. The signal
+   does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MA_D1_DPO> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem9_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem12_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[4].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[36].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[1].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[11].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[16].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[38].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[27].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MA_D1_DPO> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem4_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem6_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[11].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem8_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_rd_data0/not_str
+   ict_mode.rd_buf.rd_buffer_ram[12].RAM32M0_RAMD_D1_O> is incomplete. The
+   signal does not drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[15].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[8].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[40].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[0].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[22].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MA_D1_DPO> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem2_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem3_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem10_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem11_R
+   AMD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[20].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[10].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[46].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[35].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[24].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[7].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[17].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[28].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/rd_data_r<7>> is incomplete. The signal does not drive any
+   load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _D.ddr_byte_lane_D/rd_data_r<7>> is incomplete. The signal does not drive any
+   load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _C.ddr_byte_lane_C/dq_gen_40.if_post_fifo_gen.u_ddr_if_post_fifo/Mram_mem5_RA
+   MD_D1_O> is incomplete. The signal does not drive any load pins in the
+   design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[47].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[14].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[31].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[19].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[42].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[3].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[26].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[13].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[2].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[18].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _B.ddr_byte_lane_B/rd_data_r<7>> is incomplete. The signal does not drive any
+   load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[21].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[37].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[12].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[39].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[23].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[33].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[32].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_dd
+   r_mc_phy_wrapper/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane
+   _A.ddr_byte_lane_A/rd_data_r<65>> is incomplete. The signal does not drive
+   any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[45].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[25].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[30].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[44].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[34].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[29].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[43].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:367 - The signal
+   <u_ddr3_32bit/u_mig_7series_v1_8_memc_ui_top_axi/u_ui_top/ui_wr_data0/write_b
+   uffer.wr_buffer_ram[41].RAM32M0_RAMD_D1_O> is incomplete. The signal does not
+   drive any load pins in the design.
+WARNING:PhysDesignRules:2487 - For MMCM_ADV block
+   u_ddr3_32bit/u_ddr3_infrastructure/mmcm_i, the CLKOUT0_DIVIDE_F programming
+   of <6.4> is not supported. CLKOUT0_DIVIDE_F will be adjusted to the hardware
+   granularity of a multiple of 0.125.
+WARNING:PhysDesignRules:2245 - The PLLE2_ADV block
+   <u_ddr3_32bit/u_ddr3_infrastructure/plle2_i> has CLKOUT pins that do not
+   drive the same kind of BUFFER load. Routing from the different buffer types
+   will not be phase aligned. 
+
+Design Summary
+--------------
+
+Design Summary:
+Number of errors:      0
+Number of warnings:  172
+Slice Logic Utilization:
+  Number of Slice Registers:                12,744 out of 508,400    2%
+    Number used as Flip Flops:              12,721
+    Number used as Latches:                      1
+    Number used as Latch-thrus:                  0
+    Number used as AND/OR logics:               22
+  Number of Slice LUTs:                     10,803 out of 254,200    4%
+    Number used as logic:                    8,544 out of 254,200    3%
+      Number using O6 output only:           7,472
+      Number using O5 output only:              59
+      Number using O5 and O6:                1,013
+      Number used as ROM:                        0
+    Number used as Memory:                   1,452 out of  90,600    1%
+      Number used as Dual Port RAM:            560
+        Number using O6 output only:             0
+        Number using O5 output only:            11
+        Number using O5 and O6:                549
+      Number used as Single Port RAM:            0
+      Number used as Shift Register:           892
+        Number using O6 output only:           806
+        Number using O5 output only:             0
+        Number using O5 and O6:                 86
+    Number used exclusively as route-thrus:    807
+      Number with same-slice register load:    684
+      Number with same-slice carry load:       123
+      Number with other load:                    0
+
+Slice Logic Distribution:
+  Number of occupied Slices:                 4,317 out of  63,550    6%
+  Number of LUT Flip Flop pairs used:       14,415
+    Number with an unused Flip Flop:         3,027 out of  14,415   20%
+    Number with an unused LUT:               3,612 out of  14,415   25%
+    Number of fully used LUT-FF pairs:       7,776 out of  14,415   53%
+    Number of unique control sets:             528
+    Number of slice register sites lost
+      to control set restrictions:           2,031 out of 508,400    1%
+
+  A LUT Flip Flop pair for this architecture represents one LUT paired with
+  one Flip Flop within a slice.  A control set is a unique combination of
+  clock, reset, set, and enable signals for a registered element.
+  The Slice Logic Distribution report is not meaningful if the design is
+  over-mapped for a non-slice resource or if Placement fails.
+  OVERMAPPING of BRAM resources should be ignored if the design is
+  over-mapped for a non-BRAM resource or if placement fails.
+
+IO Utilization:
+  Number of bonded IOBs:                        75 out of     500   15%
+    Number of LOCed IOBs:                       75 out of      75  100%
+    IOB Flip Flops:                              9
+    IOB Master Pads:                             5
+    IOB Slave Pads:                              5
+
+Specific Feature Utilization:
+  Number of RAMB36E1/FIFO36E1s:                  5 out of     795    1%
+    Number using RAMB36E1 only:                  5
+    Number using FIFO36E1 only:                  0
+  Number of RAMB18E1/FIFO18E1s:                  1 out of   1,590    1%
+    Number using RAMB18E1 only:                  1
+    Number using FIFO18E1 only:                  0
+  Number of BUFG/BUFGCTRLs:                      3 out of      32    9%
+    Number used as BUFGs:                        3
+    Number used as BUFGCTRLs:                    0
+  Number of IDELAYE2/IDELAYE2_FINEDELAYs:       32 out of     500    6%
+    Number used as IDELAYE2s:                   32
+    Number used as IDELAYE2_FINEDELAYs:          0
+  Number of ILOGICE2/ILOGICE3/ISERDESE2s:       32 out of     500    6%
+    Number used as ILOGICE2s:                    0
+  Number used as  ILOGICE3s:                     0
+    Number used as ISERDESE2s:                  32
+  Number of ODELAYE2/ODELAYE2_FINEDELAYs:        0 out of     150    0%
+  Number of OLOGICE2/OLOGICE3/OSERDESE2s:       69 out of     500   13%
+    Number used as OLOGICE2s:                    5
+    Number used as OLOGICE3s:                    0
+    Number used as OSERDESE2s:                  64
+  Number of PHASER_IN/PHASER_IN_PHYs:            4 out of      40   10%
+    Number used as PHASER_INs:                   0
+    Number used as PHASER_IN_PHYs:               4
+      Number of LOCed PHASER_IN_PHYs:            4 out of       4  100%
+  Number of PHASER_OUT/PHASER_OUT_PHYs:          7 out of      40   17%
+    Number used as PHASER_OUTs:                  0
+    Number used as PHASER_OUT_PHYs:              7
+      Number of LOCed PHASER_OUT_PHYs:           7 out of       7  100%
+  Number of BSCANs:                              1 out of       4   25%
+  Number of BUFHCEs:                             0 out of     168    0%
+  Number of BUFRs:                               0 out of      40    0%
+  Number of CAPTUREs:                            0 out of       1    0%
+  Number of DNA_PORTs:                           0 out of       1    0%
+  Number of DSP48E1s:                            0 out of   1,540    0%
+  Number of EFUSE_USRs:                          0 out of       1    0%
+  Number of FRAME_ECCs:                          0 out of       1    0%
+  Number of GTXE2_CHANNELs:                      0 out of      16    0%
+  Number of GTXE2_COMMONs:                       0 out of       4    0%
+  Number of IBUFDS_GTE2s:                        0 out of       8    0%
+  Number of ICAPs:                               0 out of       2    0%
+  Number of IDELAYCTRLs:                         1 out of      10   10%
+  Number of IN_FIFOs:                            4 out of      40   10%
+    Number of LOCed IN_FIFOs:                    4 out of       4  100%
+  Number of MMCME2_ADVs:                         1 out of      10   10%
+    Number of LOCed MMCME2_ADVs:                 1 out of       1  100%
+  Number of OUT_FIFOs:                           7 out of      40   17%
+    Number of LOCed OUT_FIFOs:                   7 out of       7  100%
+  Number of PCIE_2_1s:                           0 out of       1    0%
+  Number of PHASER_REFs:                         2 out of      10   20%
+    Number of LOCed PHASER_REFs:                 2 out of       2  100%
+  Number of PHY_CONTROLs:                        2 out of      10   20%
+    Number of LOCed PHY_CONTROLs:                2 out of       2  100%
+  Number of PLLE2_ADVs:                          1 out of      10   10%
+    Number of LOCed PLLE2_ADVs:                  1 out of       1  100%
+  Number of STARTUPs:                            0 out of       1    0%
+  Number of XADCs:                               1 out of       1  100%
+
+Average Fanout of Non-Clock Nets:                3.35
+
+Peak Memory Usage:  2125 MB
+Total REAL time to MAP completion:  5 mins 43 secs 
+Total CPU time to MAP completion:   5 mins 42 secs 
+
+Mapping completed.
+See MAP report file "example_top_map.mrp" for details.

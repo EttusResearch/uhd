@@ -51,6 +51,10 @@ static device_addrs_t e100_find(const device_addr_t &hint){
     //return an empty list of addresses when type is set to non-usrp-e
     if (hint.has_key("type") and hint["type"] != "e100") return e100_addrs;
 
+    //Return an empty list of addresses when a resource is specified,
+    //since a resource is intended for a different, non-USB, device.
+    if (hint.has_key("resource")) return e100_addrs;
+
     //device node not provided, assume its 0
     if (not hint.has_key("node")){
         device_addr_t new_addr = hint;

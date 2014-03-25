@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="./isim.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="axi_dram_fifo_tb" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="14" />
+   <wave_markers>
+      <marker time="31415100000" label="" />
+      <marker time="30385518000" label="" />
+      <marker time="23065100000" label="" />
+      <marker time="18355382000" label="" />
+   </wave_markers>
+   <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_embed_tlast_i/clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_embed_tlast_i/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="group31" type="group">
+      <obj_property name="label">chdr_test_pattern</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_chdr_test_pattern_i/start" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">start</obj_property>
+         <obj_property name="ObjectShortName">start</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_chdr_test_pattern_i/i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_chdr_test_pattern_i/i_tlast" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tlast</obj_property>
+         <obj_property name="ObjectShortName">i_tlast</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_chdr_test_pattern_i/i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_chdr_test_pattern_i/i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_chdr_test_pattern_i/o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_chdr_test_pattern_i/o_tlast" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tlast</obj_property>
+         <obj_property name="ObjectShortName">o_tlast</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_chdr_test_pattern_i/o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_chdr_test_pattern_i/o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group11" type="group">
+      <obj_property name="label">embed_tlast</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_embed_tlast_i/i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_embed_tlast_i/i_tlast" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tlast</obj_property>
+         <obj_property name="ObjectShortName">i_tlast</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_embed_tlast_i/i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_embed_tlast_i/i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_embed_tlast_i/o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_embed_tlast_i/o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_embed_tlast_i/o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_embed_tlast_i/state" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">state[1:0]</obj_property>
+         <obj_property name="ObjectShortName">state[1:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group18" type="group">
+      <obj_property name="label">fast_fifo_i0</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i0/state" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">state[1:0]</obj_property>
+         <obj_property name="ObjectShortName">state[1:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i0/i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i0/i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="DisplayName">FullPathName</obj_property>
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i0/i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i0/o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i0/o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i0/o_tready" type="logic" db_ref_id="1">
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+         <obj_property name="label">o_tready</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group25" type="group">
+      <obj_property name="label">fifo_i1</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i1/i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i1/i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i1/i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i1/o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i1/o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i1/o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group79" type="group">
+      <obj_property name="label">AXI write bus</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_awaddr" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">axi_awaddr[31:0]</obj_property>
+         <obj_property name="ObjectShortName">axi_awaddr[31:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_awlen" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">axi_awlen[7:0]</obj_property>
+         <obj_property name="ObjectShortName">axi_awlen[7:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_awvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">axi_awvalid</obj_property>
+         <obj_property name="ObjectShortName">axi_awvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_awready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">axi_awready</obj_property>
+         <obj_property name="ObjectShortName">axi_awready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_wdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">axi_wdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">axi_wdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_wvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">axi_wvalid</obj_property>
+         <obj_property name="ObjectShortName">axi_wvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_wready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">axi_wready</obj_property>
+         <obj_property name="ObjectShortName">axi_wready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_bvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">axi_bvalid</obj_property>
+         <obj_property name="ObjectShortName">axi_bvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_bready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">axi_bready</obj_property>
+         <obj_property name="ObjectShortName">axi_bready</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/space" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">space[10:0]</obj_property>
+      <obj_property name="ObjectShortName">space[10:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/occupied" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">occupied[10:0]</obj_property>
+      <obj_property name="ObjectShortName">occupied[10:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="group71" type="group">
+      <obj_property name="label">AXI read bus</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/m_axi_araddr" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">m_axi_araddr[31:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axi_araddr[31:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/m_axi_arlen" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">m_axi_arlen[7:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axi_arlen[7:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/m_axi_arvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">m_axi_arvalid</obj_property>
+         <obj_property name="ObjectShortName">m_axi_arvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/m_axi_arready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">m_axi_arready</obj_property>
+         <obj_property name="ObjectShortName">m_axi_arready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/m_axi_rdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">m_axi_rdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">m_axi_rdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/m_axi_rvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">m_axi_rvalid</obj_property>
+         <obj_property name="ObjectShortName">m_axi_rvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/m_axi_rready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">m_axi_rready</obj_property>
+         <obj_property name="ObjectShortName">m_axi_rready</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group43" type="group">
+      <obj_property name="label">fifo_i2</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i2/i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i2/i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i2/i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i2/o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i2/o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fifo_i2/o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group50" type="group">
+      <obj_property name="label">fast_fifo_i1</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i1/i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i1/i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i1/i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i1/o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i1/o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/fast_fifo_i1/o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group58" type="group">
+      <obj_property name="label">axi_fast_extract</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_fast_extract_tlast_i0/i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_fast_extract_tlast_i0/i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_fast_extract_tlast_i0/i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_fast_extract_tlast_i0/o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_fast_extract_tlast_i0/o_tlast" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tlast</obj_property>
+         <obj_property name="ObjectShortName">o_tlast</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_fast_extract_tlast_i0/o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/axi_fast_extract_tlast_i0/o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group63" type="group">
+      <obj_property name="label">dram_fifo_output</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[63:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/o_tlast" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tlast</obj_property>
+         <obj_property name="ObjectShortName">o_tlast</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_dram_fifo_tb/axi_dram_fifo_i1/o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>

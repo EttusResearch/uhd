@@ -52,9 +52,9 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     //return an empty list of addresses when type is set to non-b100
     if (hint.has_key("type") and hint["type"] != "b100") return b100_addrs;
 
-    //Return an empty list of addresses when an address is specified,
-    //since an address is intended for a different, non-USB, device.
-    if (hint.has_key("addr")) return b100_addrs;
+    //Return an empty list of addresses when an address or resource is specified,
+    //since an address and resource is intended for a different, non-USB, device.
+    if (hint.has_key("addr") || hint.has_key("resource")) return b100_addrs;
 
     unsigned int vid, pid;
 

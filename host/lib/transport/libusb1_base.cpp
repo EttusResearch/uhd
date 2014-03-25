@@ -21,6 +21,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/types/dict.hpp>
+#include <uhd/types/serial.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/foreach.hpp>
@@ -184,7 +185,14 @@ public:
         );
         if (ret < 0) return ""; //on error, just return empty string
 
-        return std::string((char *)buff, ret);
+        std::string string_descriptor((char *)buff, ret);
+        byte_vector_t string_vec(string_descriptor.begin(), string_descriptor.end());
+        std::string out;
+        BOOST_FOREACH(boost::uint8_t byte, string_vec){
+            if (byte < 32 or byte > 127) return out;
+            out += byte;
+        }
+        return out;
     }
 
 private:

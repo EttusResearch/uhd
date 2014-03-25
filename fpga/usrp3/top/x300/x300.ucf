@@ -1,0 +1,379 @@
+
+## DDR3
+## See ddr3.ucf
+
+## STC3
+## See stc3.ucf
+
+## SFP Lanes
+# SFP clock pins now come from their own ucf files.  See _10ge.ucf, _1ge.ucf, and _cpri.ucf
+NET   SFP0_RX_n               LOC  =  AA3; #IJB. NOTE this signal prefixed SFP1 on schematics
+NET   SFP0_RX_p               LOC  =  AA4; #IJB. NOTE this signal prefixed SFP1 on schematics
+NET   SFP0_TX_n               LOC  =  Y1; #IJB. NOTE this signal prefixed SFP1 on schematics
+NET   SFP0_TX_p               LOC  =  Y2; #IJB. NOTE this signal prefixed SFP1 on schematics
+NET   SFP1_RX_n               LOC  =  T5; #IJB. NOTE this signal prefixed SFP2 on schematics
+NET   SFP1_RX_p               LOC  =  T6; #IJB. NOTE this signal prefixed SFP2 on schematics
+NET   SFP1_TX_n               LOC  =  P1; #IJB. NOTE this signal prefixed SFP2 on schematics
+NET   SFP1_TX_p               LOC  =  P2; #IJB. NOTE this signal prefixed SFP2 on schematics
+
+
+## ADC 0
+NET   DB0_ADC_DA0_N          IOSTANDARD = LVDS_25   |   LOC  =  L27;
+NET   DB0_ADC_DA0_P          IOSTANDARD = LVDS_25   |   LOC  =  L26;
+NET   DB0_ADC_DA1_N          IOSTANDARD = LVDS_25   |   LOC  =  K29;
+NET   DB0_ADC_DA1_P          IOSTANDARD = LVDS_25   |   LOC  =  K28;
+NET   DB0_ADC_DA2_N          IOSTANDARD = LVDS_25   |   LOC  =  L28;
+NET   DB0_ADC_DA2_P          IOSTANDARD = LVDS_25   |   LOC  =  M28;
+NET   DB0_ADC_DA3_N          IOSTANDARD = LVDS_25   |   LOC  =  C30;   # In 3.3V bank
+NET   DB0_ADC_DA3_P          IOSTANDARD = LVDS_25   |   LOC  =  D29;   # In 3.3V bank
+NET   DB0_ADC_DA4_N          IOSTANDARD = LVDS_25   |   LOC  =  J24;
+NET   DB0_ADC_DA4_P          IOSTANDARD = LVDS_25   |   LOC  =  J23;
+NET   DB0_ADC_DA5_N          IOSTANDARD = LVDS_25   |   LOC  =  L23;
+NET   DB0_ADC_DA5_P          IOSTANDARD = LVDS_25   |   LOC  =  L22;
+NET   DB0_ADC_DA6_N          IOSTANDARD = LVDS_25   |   LOC  =  K24;
+NET   DB0_ADC_DA6_P          IOSTANDARD = LVDS_25   |   LOC  =  K23;
+NET   DB0_ADC_DB0_N          IOSTANDARD = LVDS_25   |   LOC  =  K21;
+NET   DB0_ADC_DB0_P          IOSTANDARD = LVDS_25   |   LOC  =  L21;
+NET   DB0_ADC_DB1_N          IOSTANDARD = LVDS_25   |   LOC  =  J22;
+NET   DB0_ADC_DB1_P          IOSTANDARD = LVDS_25   |   LOC  =  J21;
+NET   DB0_ADC_DB2_N          IOSTANDARD = LVDS_25   |   LOC  =  L20;
+NET   DB0_ADC_DB2_P          IOSTANDARD = LVDS_25   |   LOC  =  M20;
+NET   DB0_ADC_DB3_N          IOSTANDARD = LVDS_25   |   LOC  =  H29;
+NET   DB0_ADC_DB3_P          IOSTANDARD = LVDS_25   |   LOC  =  J29;
+NET   DB0_ADC_DB4_N          IOSTANDARD = LVDS_25   |   LOC  =  J28;
+NET   DB0_ADC_DB4_P          IOSTANDARD = LVDS_25   |   LOC  =  J27;
+NET   DB0_ADC_DB5_N          IOSTANDARD = LVDS_25   |   LOC  =  K30;
+NET   DB0_ADC_DB5_P          IOSTANDARD = LVDS_25   |   LOC  =  L30;
+NET   DB0_ADC_DB6_N          IOSTANDARD = LVDS_25   |   LOC  =  J26;
+NET   DB0_ADC_DB6_P          IOSTANDARD = LVDS_25   |   LOC  =  K26;
+NET   DB0_ADC_DCLK_N         IOSTANDARD = LVDS_25   |   LOC  =  K25;
+NET   DB0_ADC_DCLK_P         IOSTANDARD = LVDS_25   |   LOC  =  L25;
+
+## ADC 1
+NET   DB1_ADC_DA0_N          IOSTANDARD = LVDS_25   |   LOC  =  D18;
+NET   DB1_ADC_DA0_P          IOSTANDARD = LVDS_25   |   LOC  =  D17;
+NET   DB1_ADC_DA1_N          IOSTANDARD = LVDS_25   |   LOC  =  D19;
+NET   DB1_ADC_DA1_P          IOSTANDARD = LVDS_25   |   LOC  =  E19;
+NET   DB1_ADC_DA2_N          IOSTANDARD = LVDS_25   |   LOC  =  L18;
+NET   DB1_ADC_DA2_P          IOSTANDARD = LVDS_25   |   LOC  =  L17;
+NET   DB1_ADC_DA3_N          IOSTANDARD = LVDS_25   |   LOC  =  J13;      # In 3.3V bank
+NET   DB1_ADC_DA3_P          IOSTANDARD = LVDS_25   |   LOC  =  K13;      # In 3.3V bank
+NET   DB1_ADC_DA4_N          IOSTANDARD = LVDS_25   |   LOC  =  H17;
+NET   DB1_ADC_DA4_P          IOSTANDARD = LVDS_25   |   LOC  =  J17;
+NET   DB1_ADC_DA5_N          IOSTANDARD = LVDS_25   |   LOC  =  F18;
+NET   DB1_ADC_DA5_P          IOSTANDARD = LVDS_25   |   LOC  =  G18;
+NET   DB1_ADC_DA6_N          IOSTANDARD = LVDS_25   |   LOC  =  H19;
+NET   DB1_ADC_DA6_P          IOSTANDARD = LVDS_25   |   LOC  =  J19;
+NET   DB1_ADC_DB0_N          IOSTANDARD = LVDS_25   |   LOC  =  J18;
+NET   DB1_ADC_DB0_P          IOSTANDARD = LVDS_25   |   LOC  =  K18;
+NET   DB1_ADC_DB1_N          IOSTANDARD = LVDS_25   |   LOC  =  C21;
+NET   DB1_ADC_DB1_P          IOSTANDARD = LVDS_25   |   LOC  =  D21;
+NET   DB1_ADC_DB2_N          IOSTANDARD = LVDS_25   |   LOC  =  K20;
+NET   DB1_ADC_DB2_P          IOSTANDARD = LVDS_25   |   LOC  =  K19;
+NET   DB1_ADC_DB3_N          IOSTANDARD = LVDS_25   |   LOC  =  F22;
+NET   DB1_ADC_DB3_P          IOSTANDARD = LVDS_25   |   LOC  =  G22;
+NET   DB1_ADC_DB4_N          IOSTANDARD = LVDS_25   |   LOC  =  G20;
+NET   DB1_ADC_DB4_P          IOSTANDARD = LVDS_25   |   LOC  =  H20;
+NET   DB1_ADC_DB5_N          IOSTANDARD = LVDS_25   |   LOC  =  C22;
+NET   DB1_ADC_DB5_P          IOSTANDARD = LVDS_25   |   LOC  =  D22;
+NET   DB1_ADC_DB6_N          IOSTANDARD = LVDS_25   |   LOC  =  H22;
+NET   DB1_ADC_DB6_P          IOSTANDARD = LVDS_25   |   LOC  =  H21;
+NET   DB1_ADC_DCLK_N         IOSTANDARD = LVDS_25   |   LOC  =  E20;
+NET   DB1_ADC_DCLK_P         IOSTANDARD = LVDS_25   |   LOC  =  F20;
+
+## DAC 0 
+NET   DB0_DAC_D0_N           IOSTANDARD = LVDS_25   |   LOC  =  M30;
+NET   DB0_DAC_D0_P           IOSTANDARD = LVDS_25   |   LOC  =  M29;
+NET   DB0_DAC_D1_N           IOSTANDARD = LVDS_25   |   LOC  =  M27;
+NET   DB0_DAC_D1_P           IOSTANDARD = LVDS_25   |   LOC  =  N27;
+NET   DB0_DAC_D2_N           IOSTANDARD = LVDS_25   |   LOC  =  N30;
+NET   DB0_DAC_D2_P           IOSTANDARD = LVDS_25   |   LOC  =  N29;
+NET   DB0_DAC_D3_N           IOSTANDARD = LVDS_25   |   LOC  =  N26;
+NET   DB0_DAC_D3_P           IOSTANDARD = LVDS_25   |   LOC  =  N25;
+NET   DB0_DAC_D4_N           IOSTANDARD = LVDS_25   |   LOC  =  N20;
+NET   DB0_DAC_D4_P           IOSTANDARD = LVDS_25   |   LOC  =  N19;
+NET   DB0_DAC_D5_N           IOSTANDARD = LVDS_25   |   LOC  =  N22;
+NET   DB0_DAC_D5_P           IOSTANDARD = LVDS_25   |   LOC  =  N21;
+NET   DB0_DAC_D6_N           IOSTANDARD = LVDS_25   |   LOC  =  N24;
+NET   DB0_DAC_D6_P           IOSTANDARD = LVDS_25   |   LOC  =  P23;
+NET   DB0_DAC_D7_N           IOSTANDARD = LVDS_25   |   LOC  =  P22;
+NET   DB0_DAC_D7_P           IOSTANDARD = LVDS_25   |   LOC  =  P21;
+NET   DB0_DAC_DCI_N          IOSTANDARD = LVDS_25   |   LOC  =  M23;
+NET   DB0_DAC_DCI_P          IOSTANDARD = LVDS_25   |   LOC  =  M22;
+NET   DB0_DAC_FRAME_N        IOSTANDARD = LVDS_25   |   LOC  =  M25;
+NET   DB0_DAC_FRAME_P        IOSTANDARD = LVDS_25   |   LOC  =  M24;
+
+## DAC 1
+NET   DB1_DAC_D0_N           IOSTANDARD = LVDS_25   |   LOC  =  B17;
+NET   DB1_DAC_D0_P           IOSTANDARD = LVDS_25   |   LOC  =  C17;
+NET   DB1_DAC_D1_N           IOSTANDARD = LVDS_25   |   LOC  =  F17;
+NET   DB1_DAC_D1_P           IOSTANDARD = LVDS_25   |   LOC  =  G17;
+NET   DB1_DAC_D2_N           IOSTANDARD = LVDS_25   |   LOC  =  A17;
+NET   DB1_DAC_D2_P           IOSTANDARD = LVDS_25   |   LOC  =  A16;
+NET   DB1_DAC_D3_N           IOSTANDARD = LVDS_25   |   LOC  =  A18;
+NET   DB1_DAC_D3_P           IOSTANDARD = LVDS_25   |   LOC  =  B18;
+NET   DB1_DAC_D4_N           IOSTANDARD = LVDS_25   |   LOC  =  A21;
+NET   DB1_DAC_D4_P           IOSTANDARD = LVDS_25   |   LOC  =  A20;
+NET   DB1_DAC_D5_N           IOSTANDARD = LVDS_25   |   LOC  =  B20;
+NET   DB1_DAC_D5_P           IOSTANDARD = LVDS_25   |   LOC  =  C20;
+NET   DB1_DAC_D6_N           IOSTANDARD = LVDS_25   |   LOC  =  A22;
+NET   DB1_DAC_D6_P           IOSTANDARD = LVDS_25   |   LOC  =  B22;
+NET   DB1_DAC_D7_N           IOSTANDARD = LVDS_25   |   LOC  =  B19;
+NET   DB1_DAC_D7_P           IOSTANDARD = LVDS_25   |   LOC  =  C19;
+NET   DB1_DAC_DCI_N          IOSTANDARD = LVDS_25   |   LOC  =  E21;
+NET   DB1_DAC_DCI_P          IOSTANDARD = LVDS_25   |   LOC  =  F21;
+NET   DB1_DAC_FRAME_N        IOSTANDARD = LVDS_25   |   LOC  =  C16;
+NET   DB1_DAC_FRAME_P        IOSTANDARD = LVDS_25   |   LOC  =  D16;
+
+## DB0 GPIO
+NET   DB0_RX_IO[15]        IOSTANDARD = LVCMOS33   |   LOC  =  A30;   
+NET   DB0_RX_IO[14]        IOSTANDARD = LVCMOS33   |   LOC  =  E29;   
+NET   DB0_RX_IO[13]        IOSTANDARD = LVCMOS33   |   LOC  =  E30;   
+NET   DB0_RX_IO[7]         IOSTANDARD = LVCMOS33   |   LOC  =  F27;   
+NET   DB0_RX_IO[9]         IOSTANDARD = LVCMOS33   |   LOC  =  F28;   
+NET   DB0_RX_IO[5]         IOSTANDARD = LVCMOS33   |   LOC  =  F30;   
+NET   DB0_RX_IO[0]         IOSTANDARD = LVCMOS33   |   LOC  =  G25;   
+NET   DB0_RX_IO[8]         IOSTANDARD = LVCMOS33   |   LOC  =  G27;   
+NET   DB0_RX_IO[10]        IOSTANDARD = LVCMOS33   |   LOC  =  G28;   
+NET   DB0_RX_IO[6]         IOSTANDARD = LVCMOS33   |   LOC  =  G29;   
+NET   DB0_RX_IO[1]         IOSTANDARD = LVCMOS33   |   LOC  =  G30;   
+NET   DB0_RX_IO[12]        IOSTANDARD = LVCMOS33   |   LOC  =  H24;   
+NET   DB0_RX_IO[11]        IOSTANDARD = LVCMOS33   |   LOC  =  H25;   
+NET   DB0_RX_IO[4]         IOSTANDARD = LVCMOS33   |   LOC  =  H26;   
+NET   DB0_RX_IO[3]         IOSTANDARD = LVCMOS33   |   LOC  =  H27;   
+NET   DB0_RX_IO[2]         IOSTANDARD = LVCMOS33   |   LOC  =  H30;   
+NET   DB0_TX_IO[5]         IOSTANDARD = LVCMOS33   |   LOC  =  A25;   
+NET   DB0_TX_IO[4]         IOSTANDARD = LVCMOS33   |   LOC  =  A26;   
+NET   DB0_TX_IO[10]        IOSTANDARD = LVCMOS33   |   LOC  =  A27;   
+NET   DB0_TX_IO[6]         IOSTANDARD = LVCMOS33   |   LOC  =  A28;   
+NET   DB0_TX_IO[8]         IOSTANDARD = LVCMOS33   |   LOC  =  B24;   
+NET   DB0_TX_IO[0]         IOSTANDARD = LVCMOS33   |   LOC  =  B25;   
+NET   DB0_TX_IO[11]        IOSTANDARD = LVCMOS33   |   LOC  =  B27;   
+NET   DB0_TX_IO[7]         IOSTANDARD = LVCMOS33   |   LOC  =  B28;   
+NET   DB0_TX_IO[9]         IOSTANDARD = LVCMOS33   |   LOC  =  C24;   
+NET   DB0_TX_IO[1]         IOSTANDARD = LVCMOS33   |   LOC  =  C25;   
+NET   DB0_TX_IO[2]         IOSTANDARD = LVCMOS33   |   LOC  =  C26;   
+NET   DB0_TX_IO[3]         IOSTANDARD = LVCMOS33   |   LOC  =  D26;   
+NET   DB0_TX_IO[14]        IOSTANDARD = LVCMOS33   |   LOC  =  E26;   
+NET   DB0_TX_IO[15]        IOSTANDARD = LVCMOS33   |   LOC  =  F26;   
+NET   DB0_TX_IO[13]        IOSTANDARD = LVCMOS33   |   LOC  =  G23;   
+NET   DB0_TX_IO[12]        IOSTANDARD = LVCMOS33   |   LOC  =  G24;   
+
+## DB1 GPIO
+NET   DB1_RX_IO[15]        IOSTANDARD = LVCMOS33   |   LOC  =  A12;   
+NET   DB1_RX_IO[5]         IOSTANDARD = LVCMOS33   |   LOC  =  A13;   
+NET   DB1_RX_IO[1]         IOSTANDARD = LVCMOS33   |   LOC  =  A15;   
+NET   DB1_RX_IO[6]         IOSTANDARD = LVCMOS33   |   LOC  =  B13;   
+NET   DB1_RX_IO[2]         IOSTANDARD = LVCMOS33   |   LOC  =  B14;   
+NET   DB1_RX_IO[3]         IOSTANDARD = LVCMOS33   |   LOC  =  B15;   
+NET   DB1_RX_IO[13]        IOSTANDARD = LVCMOS33   |   LOC  =  C11;   
+NET   DB1_RX_IO[7]         IOSTANDARD = LVCMOS33   |   LOC  =  C14;   
+NET   DB1_RX_IO[4]         IOSTANDARD = LVCMOS33   |   LOC  =  C15;   
+NET   DB1_RX_IO[14]        IOSTANDARD = LVCMOS33   |   LOC  =  D11;   
+NET   DB1_RX_IO[8]         IOSTANDARD = LVCMOS33   |   LOC  =  D14;   
+NET   DB1_RX_IO[10]        IOSTANDARD = LVCMOS33   |   LOC  =  E14;   
+NET   DB1_RX_IO[9]         IOSTANDARD = LVCMOS33   |   LOC  =  E15;   
+NET   DB1_RX_IO[11]        IOSTANDARD = LVCMOS33   |   LOC  =  E16;   
+NET   DB1_RX_IO[12]        IOSTANDARD = LVCMOS33   |   LOC  =  F15;   
+NET   DB1_RX_IO[0]         IOSTANDARD = LVCMOS33   |   LOC  =  F16;   
+NET   DB1_TX_IO[0]         IOSTANDARD = LVCMOS33   |   LOC  =  F13;   
+NET   DB1_TX_IO[1]         IOSTANDARD = LVCMOS33   |   LOC  =  G13;   
+NET   DB1_TX_IO[2]         IOSTANDARD = LVCMOS33   |   LOC  =  G14;   
+NET   DB1_TX_IO[10]        IOSTANDARD = LVCMOS33   |   LOC  =  G15;   
+NET   DB1_TX_IO[5]         IOSTANDARD = LVCMOS33   |   LOC  =  H11;   
+NET   DB1_TX_IO[4]         IOSTANDARD = LVCMOS33   |   LOC  =  H12;   
+NET   DB1_TX_IO[3]         IOSTANDARD = LVCMOS33   |   LOC  =  H14;   
+NET   DB1_TX_IO[11]        IOSTANDARD = LVCMOS33   |   LOC  =  H15;   
+NET   DB1_TX_IO[6]         IOSTANDARD = LVCMOS33   |   LOC  =  H16;   
+NET   DB1_TX_IO[9]         IOSTANDARD = LVCMOS33   |   LOC  =  J11;   
+NET   DB1_TX_IO[8]         IOSTANDARD = LVCMOS33   |   LOC  =  J12;   
+NET   DB1_TX_IO[14]        IOSTANDARD = LVCMOS33   |   LOC  =  J14;   
+NET   DB1_TX_IO[7]         IOSTANDARD = LVCMOS33   |   LOC  =  J16;   
+NET   DB1_TX_IO[12]        IOSTANDARD = LVCMOS33   |   LOC  =  K11;   
+NET   DB1_TX_IO[15]        IOSTANDARD = LVCMOS33   |   LOC  =  K14;   
+NET   DB1_TX_IO[13]        IOSTANDARD = LVCMOS33   |   LOC  =  L11;   
+
+# DB0 SPI
+NET   DB0_DAC_SEN            IOSTANDARD = LVCMOS18   |   LOC  =  AE14;
+NET   DB0_ADC_SEN            IOSTANDARD = LVCMOS33   |   LOC  =  B29;   
+NET   DB0_MOSI               IOSTANDARD = LVCMOS33   |   LOC  =  E24;   
+NET   DB0_RX_LSADC_MISO      IOSTANDARD = LVCMOS33   |   LOC  =  C27;   
+NET   DB0_RX_LSADC_SEN       IOSTANDARD = LVCMOS33   |   LOC  =  E28;   
+NET   DB0_RX_LSDAC_SEN       IOSTANDARD = LVCMOS33   |   LOC  =  D27;   
+NET   DB0_RX_MISO            IOSTANDARD = LVCMOS33   |   LOC  =  C29;   
+NET   DB0_RX_SEN             IOSTANDARD = LVCMOS33   |   LOC  =  D28;   
+NET   DB0_SCLK               IOSTANDARD = LVCMOS33   |   LOC  =  D24;   
+NET   DB0_TX_LSADC_MISO      IOSTANDARD = LVCMOS33   |   LOC  =  B23;   
+NET   DB0_TX_LSADC_SEN       IOSTANDARD = LVCMOS33   |   LOC  =  A23;   
+NET   DB0_TX_LSDAC_SEN       IOSTANDARD = LVCMOS33   |   LOC  =  F23;   
+NET   DB0_TX_MISO            IOSTANDARD = LVCMOS33   |   LOC  =  E23;   
+NET   DB0_TX_SEN             IOSTANDARD = LVCMOS33   |   LOC  =  D23;   
+
+# DB1 SPI
+NET   DB1_DAC_SEN            IOSTANDARD = LVCMOS18   |   LOC  =  AE15;
+NET   DB1_ADC_SEN            IOSTANDARD = LVCMOS33   |   LOC  =  B12;   
+NET   DB1_MOSI               IOSTANDARD = LVCMOS33   |   LOC  =  L12;   
+NET   DB1_RX_LSADC_MISO      IOSTANDARD = LVCMOS33   |   LOC  =  D13;   
+NET   DB1_RX_LSADC_SEN       IOSTANDARD = LVCMOS33   |   LOC  =  F12;   
+NET   DB1_RX_LSDAC_SEN       IOSTANDARD = LVCMOS33   |   LOC  =  D12;   
+NET   DB1_RX_MISO            IOSTANDARD = LVCMOS33   |   LOC  =  C12;   
+NET   DB1_RX_SEN             IOSTANDARD = LVCMOS33   |   LOC  =  E13;   
+NET   DB1_SCLK               IOSTANDARD = LVCMOS33   |   LOC  =  L13;   
+NET   DB1_TX_LSADC_MISO      IOSTANDARD = LVCMOS33   |   LOC  =  L16;   
+NET   DB1_TX_LSADC_SEN       IOSTANDARD = LVCMOS33   |   LOC  =  K16;   
+NET   DB1_TX_LSDAC_SEN       IOSTANDARD = LVCMOS33   |   LOC  =  G12;   
+NET   DB1_TX_MISO            IOSTANDARD = LVCMOS33   |   LOC  =  L15;   
+NET   DB1_TX_SEN             IOSTANDARD = LVCMOS33   |   LOC  =  K15;   
+
+## DB Misc
+NET   DB_DAC_MOSI            IOSTANDARD = LVCMOS18   |   LOC  =  AB15;
+NET   DB_DAC_SCLK            IOSTANDARD = LVCMOS18   |   LOC  =  AA15;
+NET   DB_SCL                 IOSTANDARD = LVCMOS33   |   LOC  =  F25;   
+NET   DB_SDA                 IOSTANDARD = LVCMOS33   |   LOC  =  E25;   
+NET   DB_ADC_RESET           IOSTANDARD = LVCMOS33   |   LOC  =  B30;   
+NET   DB_DAC_RESET           IOSTANDARD = LVCMOS18   |   LOC  =  AC16;
+NET   DB0_DAC_ENABLE         IOSTANDARD = LVCMOS18   |   LOC  =  AC14;
+NET   DB1_DAC_ENABLE         IOSTANDARD = LVCMOS18   |   LOC  =  AC15;
+
+## Front Panel LEDs
+NET   LED_ACT1               IOSTANDARD = LVCMOS33   |   LOC  =  AJ26;
+NET   LED_ACT2               IOSTANDARD = LVCMOS33   |   LOC  =  AE26;
+NET   LED_LINK1              IOSTANDARD = LVCMOS33   |   LOC  =  AF27;
+NET   LED_LINK2              IOSTANDARD = LVCMOS33   |   LOC  =  AK26;
+NET   LED_PPS                IOSTANDARD = LVCMOS33   |   LOC  =  AF26;
+NET   LED_REFLOCK            IOSTANDARD = LVCMOS33   |   LOC  =  AH27;
+NET   LED_GPSLOCK            IOSTANDARD = LVCMOS33   |   LOC  =  U30;
+NET   LED_LINKSTAT           IOSTANDARD = LVCMOS33   |   LOC  =  V27;
+NET   LED_LINKACT            IOSTANDARD = LVCMOS33   |   LOC  =  V29;
+
+NET   LED_RX1_RX             IOSTANDARD = LVCMOS33   |   LOC  =  AD29;
+NET   LED_RX2_RX             IOSTANDARD = LVCMOS33   |   LOC  =  AB30;
+NET   LED_TXRX1_RX           IOSTANDARD = LVCMOS33   |   LOC  =  AA30;
+NET   LED_TXRX1_TX           IOSTANDARD = LVCMOS33   |   LOC  =  Y30;
+NET   LED_TXRX2_RX           IOSTANDARD = LVCMOS33   |   LOC  =  AB29;
+NET   LED_TXRX2_TX           IOSTANDARD = LVCMOS33   |   LOC  =  AE29;
+
+## Front panel GPIO on DB15
+NET   FrontPanelGpio[0]      IOSTANDARD = LVCMOS33   |   LOC  =  Y25;
+NET   FrontPanelGpio[1]      IOSTANDARD = LVCMOS33   |   LOC  =  AD27;
+NET   FrontPanelGpio[2]      IOSTANDARD = LVCMOS33   |   LOC  =  AD28;
+NET   FrontPanelGpio[3]      IOSTANDARD = LVCMOS33   |   LOC  =  AG30;
+NET   FrontPanelGpio[4]      IOSTANDARD = LVCMOS33   |   LOC  =  AH30;
+NET   FrontPanelGpio[5]      IOSTANDARD = LVCMOS33   |   LOC  =  AC26;
+NET   FrontPanelGpio[6]      IOSTANDARD = LVCMOS33   |   LOC  =  AD26;
+NET   FrontPanelGpio[7]      IOSTANDARD = LVCMOS33   |   LOC  =  AJ27;
+NET   FrontPanelGpio[8]      IOSTANDARD = LVCMOS33   |   LOC  =  AK28;
+NET   FrontPanelGpio[9]      IOSTANDARD = LVCMOS33   |   LOC  =  AG27;
+NET   FrontPanelGpio[10]     IOSTANDARD = LVCMOS33   |   LOC  =  AG28;
+NET   FrontPanelGpio[11]     IOSTANDARD = LVCMOS33   |   LOC  =  AH26;
+
+## LMK04816 Clock Control
+NET   LMK_Status[0]      IOSTANDARD = LVCMOS33   |   LOC  =  Y26;
+NET   LMK_Status[1]      IOSTANDARD = LVCMOS33   |   LOC  =  AA26;
+NET   LMK_Holdover       IOSTANDARD = LVCMOS33   |   LOC  =  W27;
+NET   LMK_Lock           IOSTANDARD = LVCMOS33   |   LOC  =  W28;
+NET   LMK_Sync           IOSTANDARD = LVCMOS33   |   LOC  =  T27;
+NET   LMK_SEN            IOSTANDARD = LVCMOS33   |   LOC  =  U19;
+NET   LMK_MOSI           IOSTANDARD = LVCMOS33   |   LOC  =  Y28;
+NET   LMK_SCLK           IOSTANDARD = LVCMOS33   |   LOC  =  AA28;
+
+# Micrel chip control
+NET   ClockRefSelect[0]   IOSTANDARD = LVCMOS33   |   LOC  =  W29;
+NET   ClockRefSelect[1]   IOSTANDARD = LVCMOS33   |   LOC  =  Y29;
+
+# Security Chip
+#NET   AUTH_SDA            IOSTANDARD = LVCMOS33   |   LOC  =  U27;	#Depopulated
+
+# NEW
+#NET   FPGA_RESET_N        IOSTANDARD = LVCMOS33   |   LOC  =  U28;
+
+## PPS, GPS and Timing
+NET   GPS_LOCK_OK            IOSTANDARD = LVCMOS33   |   LOC  =  AB28;
+#NET   GPS_NMEA_TX            IOSTANDARD = LVCMOS33   |   LOC  =  AA25;
+NET   GPS_SER_IN             IOSTANDARD = LVCMOS33   |   LOC  =  AB25;
+NET   GPS_SER_OUT            IOSTANDARD = LVCMOS33   |   LOC  =  AC29;
+NET   GPS_PPS_OUT            IOSTANDARD = LVCMOS33   |   LOC  =  AA27;
+NET   EXT_PPS_IN             IOSTANDARD = LVCMOS33   |   LOC  =  AC30;
+NET   EXT_PPS_OUT            IOSTANDARD = LVCMOS33   |   LOC  =  T25;
+
+## UART, new on Rev B
+#NET   uart_tx                IOSTANDARD = LVCMOS33   |   LOC  =  R28;
+#NET   uart_rx                IOSTANDARD = LVCMOS33   |   LOC  =  T28;
+#NET   uart_wat               IOSTANDARD = LVCMOS33   |   LOC  =  T26;
+
+## Clocks
+NET   FPGA_125MHz_CLK        IOSTANDARD = LVCMOS33   |   LOC  =  AB27;
+NET   FPGA_CLK_n             IOSTANDARD = LVDS_25    |   LOC  =  AG23;
+NET   FPGA_CLK_p             IOSTANDARD = LVDS_25    |   LOC  =  AF22;
+NET   GPSDO_PWR_ENA          IOSTANDARD = LVCMOS33   |   LOC  =  E11;
+NET   TCXO_ENA               IOSTANDARD = LVCMOS33   |   LOC  =  A11;
+NET   FPGA_REFCLK_10MHz_p    IOSTANDARD = LVDS_25    |   LOC  =  AG24;
+NET   FPGA_REFCLK_10MHz_n    IOSTANDARD = LVDS_25    |   LOC  =  AH24;
+
+
+## CPRI output clock to clock synthesizer chip
+NET   CPRI_CLK_OUT_P         IOSTANDARD = LVDS       |   LOC  =  AA17;
+NET   CPRI_CLK_OUT_N         IOSTANDARD = LVDS       |   LOC  =  AA16;
+
+## SFP low-speed IO
+NET   SFPP0_SCL              IOSTANDARD = LVCMOS33   |   LOC  =  U24;
+NET   SFPP0_SDA              IOSTANDARD = LVCMOS33   |   LOC  =  V22;
+NET   SFPP0_RS0              IOSTANDARD = LVCMOS33   |   LOC  =  W22; 
+NET   SFPP0_RS1              IOSTANDARD = LVCMOS33   |   LOC  =  W19;
+NET   SFPP0_TxDisable        IOSTANDARD = LVCMOS33   |   LOC  =  V21; # Open drain output
+NET   SFPP0_ModAbs           IOSTANDARD = LVCMOS33   |   LOC  =  V24;   # | PULLUP; # Input IJB should pullup on pcb
+NET   SFPP0_RxLOS            IOSTANDARD = LVCMOS33   |   LOC  =  W21; # Input
+NET   SFPP0_TxFault          IOSTANDARD = LVCMOS33   |   LOC  =  U23; # Input
+
+NET   SFPP1_SCL              IOSTANDARD = LVCMOS33   |   LOC  =  V19;
+NET   SFPP1_SDA              IOSTANDARD = LVCMOS33   |   LOC  =  W26;
+NET   SFPP1_RS0              IOSTANDARD = LVCMOS33   |   LOC  =  W24; 
+NET   SFPP1_RS1              IOSTANDARD = LVCMOS33   |   LOC  =  U22;
+NET   SFPP1_TxDisable        IOSTANDARD = LVCMOS33   |   LOC  =  V25; # Open drain output
+NET   SFPP1_ModAbs           IOSTANDARD = LVCMOS33   |   LOC  =  V20;   # | PULLUP; # Input IJB should pullup on pcb
+NET   SFPP1_RxLOS            IOSTANDARD = LVCMOS33   |   LOC  =  W23; # Input
+NET   SFPP1_TxFault          IOSTANDARD = LVCMOS33   |   LOC  =  V30; # Input
+
+## Unused
+## Config Flash Interface
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  P24;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  P26;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  P27;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  P28;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  P29;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  R20;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  R21;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  R25;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  R26;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  R29;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  T20;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  T21;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  T22;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  T23;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  T30;
+#NET   FlashData(15:0)        IOSTANDARD = LVCMOS33   |   LOC  =  U20;
+
+#NET   aIO_Interrupt_0        IOSTANDARD = LVCMOS33   |   LOC  =  AF28;
+#NET   aIO_Interrupt_1        IOSTANDARD = LVCMOS33   |   LOC  =  AK29;
+#NET   aStcIO_Reset_n         IOSTANDARD = LVCMOS33   |   LOC  =  AC27;
+#NET   FPGA_PUDC              IOSTANDARD = LVCMOS33   |   LOC  =  R23;
+#NET   0V75_VTT_REF           IOSTANDARD = DDR15   |   LOC  =  AD7;
+#NET   0V75_VTT_REF           IOSTANDARD = DDR15   |   LOC  =  AG8;
+#NET   XSIG030149             IOSTANDARD = DDR15   |   LOC  =  Y13;
+#NET   XSIG030150             IOSTANDARD = DDR15   |   LOC  =  AD13;
+#NET   XSIG030154             IOSTANDARD = DDR15   |   LOC  =  AB7;
+#NET   XSIG030186             IOSTANDARD = DDR15   |   LOC  =  AC6;
+#NET   XSIG051113             IOSTANDARD = LVCMOS25   |   LOC  =  E18;
+#NET   XSIG051117             IOSTANDARD = LVCMOS25   |   LOC  =  M19;
+#NET   XSIG051118             IOSTANDARD = LVCMOS25   |   LOC  =  P19;
+#NET   XSIG051203             IOSTANDARD = LVCMOS25   |   LOC  =  G19;
+#NET   XSIG051347             IOSTANDARD = LVCMOS33   |   LOC  =  F11;
+#NET   XSIG080308             IOSTANDARD = LVCMOS33   |   LOC  =  R19;
+#NET   XSIG080310             IOSTANDARD = LVCMOS33   |   LOC  =  R24;
+#NET   XSIG130242             IOSTANDARD = LVCMOS18   |   LOC  =  Y14;
+#NET   XSIG130243             IOSTANDARD = LVCMOS18   |   LOC  =  AB14;
+#NET   XSIG130258             IOSTANDARD = LVCMOS18   |   LOC  =  AD14;
+#NET   XSIG130261             IOSTANDARD = LVCMOS18   |   LOC  =  Y16;
+#NET   XSIG130262             IOSTANDARD = LVCMOS18   |   LOC  =  Y15;
+#NET   XSIG130263             IOSTANDARD = LVCMOS25   |   LOC  =  AH20;
+#NET   XSIG130265             IOSTANDARD = LVCMOS25   |   LOC  =  AG20;

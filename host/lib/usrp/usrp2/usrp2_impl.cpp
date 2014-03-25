@@ -41,6 +41,9 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
+//A reasonable number of frames for send/recv and async/sync
+static const size_t DEFAULT_NUM_FRAMES = 32;
+
 /***********************************************************************
  * Discovery over the udp transport
  **********************************************************************/
@@ -49,13 +52,16 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
     device_addrs_t hints = separate_device_addr(hint_);
     if (hints.size() > 1){
         device_addrs_t found_devices;
+        std::string error_msg;
         BOOST_FOREACH(const device_addr_t &hint_i, hints){
             device_addrs_t found_devices_i = usrp2_find(hint_i);
-            if (found_devices_i.size() != 1) throw uhd::value_error(str(boost::format(
+            if (found_devices_i.size() != 1) error_msg += str(boost::format(
                 "Could not resolve device hint \"%s\" to a single device."
-            ) % hint_i.to_string()));
-            found_devices.push_back(found_devices_i[0]);
+            ) % hint_i.to_string());
+            else found_devices.push_back(found_devices_i[0]);
         }
+        if (found_devices.empty()) return device_addrs_t();
+        if (not error_msg.empty()) throw uhd::value_error(error_msg);
         return device_addrs_t(1, combine_device_addrs(found_devices));
     }
 
@@ -67,6 +73,10 @@ static device_addrs_t usrp2_find(const device_addr_t &hint_){
 
     //return an empty list of addresses when type is set to non-usrp2
     if (hint.has_key("type") and hint["type"] != "usrp2") return usrp2_addrs;
+
+    //Return an empty list of addresses when a resource is specified,
+    //since a resource is intended for a different, non-USB, device.
+    if (hint.has_key("resource")) return usrp2_addrs;
 
     //if no address was specified, send a broadcast on each interface
     if (not hint.has_key("addr")){
@@ -278,8 +288,15 @@ static zero_copy_if::sptr make_xport(
         filtered_hints[key] = hints[key];
     }
 
+    zero_copy_xport_params default_buff_args;
+    default_buff_args.send_frame_size = transport::udp_simple::mtu;
+    default_buff_args.recv_frame_size = transport::udp_simple::mtu;
+    default_buff_args.num_send_frames = DEFAULT_NUM_FRAMES;
+    default_buff_args.num_recv_frames = DEFAULT_NUM_FRAMES;
+
     //make the transport object with the filtered hints
-    zero_copy_if::sptr xport = udp_zero_copy::make(addr, port, filtered_hints);
+    udp_zero_copy::buff_params ignored_params;
+    zero_copy_if::sptr xport = udp_zero_copy::make(addr, port, default_buff_args, ignored_params, filtered_hints);
 
     //Send a small data packet so the usrp2 knows the udp source port.
     //This setup must happen before further initialization occurs

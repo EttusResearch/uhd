@@ -1,0 +1,16 @@
+# Output products list for <chipscope_icon_2port>
+_xmsgs/pn_parser.xmsgs
+chipscope_icon_2port.asy
+chipscope_icon_2port.constraints/chipscope_icon_2port.ucf
+chipscope_icon_2port.constraints/chipscope_icon_2port.xdc
+chipscope_icon_2port.gise
+chipscope_icon_2port.ngc
+chipscope_icon_2port.ucf
+chipscope_icon_2port.v
+chipscope_icon_2port.veo
+chipscope_icon_2port.xco
+chipscope_icon_2port.xdc
+chipscope_icon_2port.xise
+chipscope_icon_2port_flist.txt
+chipscope_icon_2port_readme.txt
+chipscope_icon_2port_xmdf.tcl

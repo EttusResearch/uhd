@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<project xmlns="http://www.xilinx.com/XMLSchema" xmlns:xil_pn="http://www.xilinx.com/XMLSchema">
+
+  <header>
+    <!-- ISE source project file created by Project Navigator.             -->
+    <!--                                                                   -->
+    <!-- This file contains project source information including a list of -->
+    <!-- project source files, project and process properties.  This file, -->
+    <!-- along with the project source files, is sufficient to open and    -->
+    <!-- implement in ISE Project Navigator.                               -->
+    <!--                                                                   -->
+    <!-- Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved. -->
+  </header>
+
+  <version xil_pn:ise_version="14.4" xil_pn:schema_version="2"/>
+
+  <files>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_a_axi3_conv.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="1"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="1"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="1"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="1"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_addr_arbiter_sasd.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="2"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="2"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="2"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="2"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_addr_arbiter.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="3"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="3"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="3"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="3"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_addr_decoder.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="4"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="4"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="4"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="4"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_a_downsizer.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="5"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="5"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="5"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="5"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_arbiter_resp.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="6"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="6"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="6"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="6"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_a_upsizer.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="7"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="7"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="7"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="7"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axi3_conv.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="8"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="8"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="8"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="8"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axic_fifo.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="9"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="9"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="9"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="9"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axi_clock_converter.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="10"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="10"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="10"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="10"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axic_register_slice.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="11"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="11"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="11"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="11"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axic_reg_srl_fifo.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="12"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="12"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="12"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="12"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axi_crossbar.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="13"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="13"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="13"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="13"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axic_srl_fifo.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="14"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="14"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="14"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="14"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axi_data_fifo.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="15"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="15"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="15"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="15"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axi_downsizer.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="16"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="16"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="16"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="16"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axilite_conv.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="17"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="17"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="17"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="17"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axi_protocol_converter.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="18"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="18"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="18"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="18"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axi_register_slice.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="19"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="19"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="19"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="19"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axi_upsizer.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="20"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="20"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="20"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="20"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_b_downsizer.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="21"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="21"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="21"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="21"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_carry_and.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="22"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="22"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="22"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="22"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_carry_latch_and.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="23"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="23"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="23"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="23"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_carry_latch_or.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="24"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="24"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="24"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="24"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_carry_or.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="25"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="25"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="25"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="25"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_carry.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="26"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="26"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="26"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="26"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_command_fifo.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="27"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="27"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="27"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="27"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_comparator_mask_static.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="28"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="28"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="28"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="28"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_comparator_mask.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="29"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="29"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="29"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="29"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_comparator_sel_mask_static.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="30"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="30"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="30"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="30"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_comparator_sel_mask.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="31"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="31"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="31"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="31"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_comparator_sel_static.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="32"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="32"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="32"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="32"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_comparator_sel.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="33"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="33"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="33"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="33"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_comparator_static.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="34"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="34"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="34"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="34"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_comparator.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="35"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="35"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="35"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="35"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_converter_bank.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="36"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="36"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="36"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="36"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_crossbar_sasd.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="37"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="37"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="37"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="37"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_crossbar.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="38"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="38"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="38"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="38"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_data_fifo_bank.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="39"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="39"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="39"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="39"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_decerr_slave.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="40"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="40"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="40"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="40"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_fifo_gen.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="41"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="41"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="41"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="41"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_mux_enc.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="42"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="42"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="42"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="42"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_mux.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="43"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="43"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="43"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="43"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_ndeep_srl.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="44"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="44"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="44"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="44"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_nto1_mux.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="45"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="45"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="45"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="45"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_protocol_conv_bank.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="46"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="46"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="46"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="46"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_r_axi3_conv.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="47"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="47"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="47"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="47"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_r_downsizer.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="48"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="48"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="48"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="48"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_register_slice_bank.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="49"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="49"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="49"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="49"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_r_upsizer.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="50"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="50"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="50"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="50"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_si_transactor.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="51"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="51"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="51"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="51"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_splitter.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="52"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="52"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="52"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="52"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_w_axi3_conv.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="53"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="53"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="53"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="53"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_wdata_mux.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="54"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="54"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="54"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="54"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_wdata_router.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="55"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="55"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="55"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="55"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_w_downsizer.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="56"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="56"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="56"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="56"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_w_upsizer.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="57"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="57"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="57"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="57"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axic_sample_cycle_ratio.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="58"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="58"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="58"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="58"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axic_sync_clock_converter.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="59"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="59"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="59"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="59"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/ict106_axi_interconnect.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="60"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="60"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="60"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="60"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/hdl/verilog/axi_interconnect_v1_06_a.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="61"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="61"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="61"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="61"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128/generate/axi_interconnect_v1_06_a_ucfgen.tcl" xil_pn:type="FILE_TCL"/>
+    <file xil_pn:name="axi_intercon_2x64_128.ucf" xil_pn:type="FILE_UCF">
+      <association xil_pn:name="Implementation" xil_pn:seqID="63"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128.ngc" xil_pn:type="FILE_NGC">
+      <association xil_pn:name="Implementation" xil_pn:seqID="64"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128.veo" xil_pn:type="FILE_VEO"/>
+    <file xil_pn:name="axi_intercon_2x64_128_synth.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="Implementation" xil_pn:seqID="66"/>
+    </file>
+    <file xil_pn:name="axi_intercon_2x64_128_sim.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="67"/>
+      <association xil_pn:name="PostMapSimulation" xil_pn:seqID="67"/>
+      <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="67"/>
+      <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="67"/>
+    </file>
+  </files>
+
+  <properties>
+    <property xil_pn:name="Auto Implementation Compile Order" xil_pn:value="false" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Auto Implementation Top" xil_pn:value="false" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Device" xil_pn:value="xc7k410t" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Device Family" xil_pn:value="Kintex7" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Implementation Stop View" xil_pn:value="PreSynthesis" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Implementation Top" xil_pn:value="Module|axi_intercon_2x64_128" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Implementation Top Instance Path" xil_pn:value="/axi_intercon_2x64_128" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Manual Implementation Compile Order" xil_pn:value="true" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Package" xil_pn:value="ffg900" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Preferred Language" xil_pn:value="Verilog" xil_pn:valueState="default"/>
+    <property xil_pn:name="Project Generator" xil_pn:value="CoreGen" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Property Specification in Project File" xil_pn:value="Store all values" xil_pn:valueState="default"/>
+    <property xil_pn:name="Simulator" xil_pn:value="ISim (VHDL/Verilog)" xil_pn:valueState="default"/>
+    <property xil_pn:name="Speed Grade" xil_pn:value="-2" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Synthesis Tool" xil_pn:value="XST (VHDL/Verilog)" xil_pn:valueState="default"/>
+    <property xil_pn:name="Top-Level Source Type" xil_pn:value="HDL" xil_pn:valueState="default"/>
+    <property xil_pn:name="Working Directory" xil_pn:value="." xil_pn:valueState="non-default"/>
+    <!--                                                                                  -->
+    <!-- The following properties are for internal use only. These should not be modified.-->
+    <!--                                                                                  -->
+    <property xil_pn:name="PROP_DesignName" xil_pn:value="axi_intercon_2x64_128" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="PROP_DevFamilyPMName" xil_pn:value="kintex7" xil_pn:valueState="default"/>
+    <property xil_pn:name="PROP_intProjectCreationTimestamp" xil_pn:value="2013-11-06T00:04:37" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="PROP_intWbtProjectID" xil_pn:value="8C427BFE11E801B42A1ED19557FA21A2" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="PROP_intWorkingDirLocWRTProjDir" xil_pn:value="Same" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="PROP_intWorkingDirUsed" xil_pn:value="No" xil_pn:valueState="non-default"/>
+  </properties>
+
+  <bindings/>
+
+  <libraries/>
+
+  <autoManagedFiles>
+    <!-- The following files are identified by `include statements in verilog -->
+    <!-- source files and are automatically managed by Project Navigator.     -->
+    <!--                                                                      -->
+    <!-- Do not hand-edit this section, as it will be overwritten when the    -->
+    <!-- project is analyzed based on files automatically identified as       -->
+    <!-- include files.                                                       -->
+  </autoManagedFiles>
+
+</project>

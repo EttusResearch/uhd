@@ -1,0 +1,4 @@
+echo Simulation Tool: ISIM
+fuse work.x300_tb work.glbl -prj files.prj -i ../../coregen -L unisims_ver -L secureip -L xilinxcorelib_ver -o x300_tb.exe
+./x300_tb.exe -gui -tclbatch isim_options.tcl -wdb isim_database.wdb
+echo done

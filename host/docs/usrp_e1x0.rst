@@ -1,5 +1,5 @@
 ========================================================================
-UHD - USRP-E1X0 Series Application Notes
+UHD - USRP-E1x0 Series Device Manual
 ========================================================================
 
 .. contents:: Table of Contents
@@ -8,23 +8,29 @@ UHD - USRP-E1X0 Series Application Notes
 Comparative features list
 ------------------------------------------------------------------------
 
-* 1 transceiver card slot
-* 2 RX DDC chains in FPGA
-* 1 TX DUC chain in FPGA
-* Timed commands in FPGA
-* Timed sampling in FPGA
-* Internal PPS reference
-* Internal 10MHz reference
-* Configurable clock rate (defaults 64 MHz)
-* Internal GPSDO option
-* sc8 and sc16 sample modes
+**Hardware Capabilities:**
+ * 1 transceiver card slot
+ * Internal PPS reference input
+ * Internal 10 MHz reference input
+ * Configurable clock rate (defaults to 64 MHz)
+ * Internal GPSDO option
+
+**FPGA Capabilities:**
+ * 2 RX DDC chains in FPGA
+ * 1 TX DUC chain in FPGA
+ * Timed commands in FPGA
+ * Timed sampling in FPGA
+ * sc8 and sc16 sample modes
+
+   * Up to 8 MHz of RF BW with 16-bit samples
+   * Up to 16 MHz of RF BW with 8-bit samples
 
 ------------------------------------------------------------------------
 Specify a Non-standard Image
 ------------------------------------------------------------------------
 UHD software will automatically select the USRP-Embedded FPGA image from the
 installed images package.  The FPGA image selection can be overridden with the
-**--fpga=** device address parameter.
+**fpga** device address parameter.
 
 Example device address string representations to specify non-standard FPGA
 image:
@@ -37,17 +43,17 @@ image:
 Changing the Master Clock Rate
 ------------------------------------------------------------------------
 The master clock rate of the USRP-Embedded feeds both the FPGA DSP and the codec
-chip.  Hundreds of rates between 32MHz and 64MHz are available.  A few notable
+chip.  Hundreds of rates between 32 MHz and 64 MHz are available.  A few notable
 rates are:
 
-* **64MHz:** maximum rate of the codec chip
-* **61.44MHz:** good for UMTS/WCDMA applications
-* **52Mhz:** good for GSM applications
+* **64 MHz:** maximum rate of the codec chip
+* **61.44 MHz:** good for UMTS/WCDMA applications
+* **52 MHz:** good for GSM applications
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set 61.44MHz - uses external VCXO
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To use the 61.44MHz clock rate with the USRP-Embedded, two jumpers must be moved
+To use the 61.44 MHz clock rate with the USRP-Embedded, two jumpers must be moved
 on the device.
 
 * **J16** is a two pin header; remove the jumper (or leave it on pin1 only).
@@ -94,21 +100,21 @@ a connector.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 PPS - Pulse Per Second
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-An exteral PPS signal for timestamp synchronization can be supplied by soldering
+An external PPS signal for timestamp synchronization can be supplied by soldering
 a connector.
 
 * Connector **J13** (PPS) needs MCX connector **WM5541-ND** or similar.
 * Requires a square wave signal.
-* **Amplitude:** 3.3 to 5Vpp
+* **Amplitude:** 3.3 to 5 Vpp
 
-Test the PPS input with the following app:
-
-* **<args** are device address arguments (optional if only one USRP device is on your machine).
+Test the PPS input with the following app (**<args>** are device address
+arguments, optional if only one USRP device is on your machine):
 
 ::
 
-    cd <install-path>/share/uhd/examples
+    cd <install-path>/lib/uhd/examples
     ./test_pps_input --args=<args>
+
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Internal GPSDO
@@ -117,7 +123,7 @@ Please see the `Internal GPSDO Application Notes <./gpsdo.html>`_
 for information on configuring and using the internal GPSDO.
 
 UHD software will always try to detect an installed GPSDO at runtime.
-There is not a special EEPROM value to burn for GPSDO detection.
+It is not necessary to burn a special EEPROM value for GPSDO detection.
 
 ------------------------------------------------------------------------
 Hardware Setup Notes
@@ -132,7 +138,7 @@ issues.  The LEDs reveal the following about the state of the device:
 * **LED A:** transmitting
 * **LED B:** PPS signal
 * **LED C:** receiving
-* **LED D:** fpga loaded
+* **LED D:** FPGA loaded
 * **LED E:** reference lock
 * **LED F:** board power
 

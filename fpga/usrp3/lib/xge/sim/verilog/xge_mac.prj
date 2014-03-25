@@ -1,0 +1,43 @@
+verilog work ../../rtl/verilog/fault_sm.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/generic_mem_small.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/generic_mem_medium.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/generic_fifo_ctrl.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/generic_fifo.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/meta_sync.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/meta_sync_single.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/rx_hold_fifo.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/rx_data_fifo.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/rx_dequeue.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/rx_enqueue.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/sync_clk_core.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/sync_clk_wb.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/sync_clk_xgmii_tx.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/tx_hold_fifo.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/tx_data_fifo.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/tx_dequeue.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/tx_enqueue.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/wishbone_if.v -i ../../rtl/include
+
+verilog work ../../rtl/verilog/xge_mac.v -i ../../rtl/include
+
+verilog work ../../tbench/verilog/tb_xge_mac.v -i ../../rtl/include
+
+

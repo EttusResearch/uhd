@@ -1,0 +1,446 @@
+Release 14.4 ngdbuild P.49d (lin64)
+Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
+
+Command Line: /opt/Xilinx/14.4/ISE_DS/ISE/bin/lin64/unwrapped/ngdbuild -intstyle
+ise -dd ../synth/_ngo -nt timestamp -uc example_top.ucf -p xc7k410t-ffg900-2
+example_top.ngc example_top.ngd
+
+Reading NGO file
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/example_top.ngc" ...
+Loading design module
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_ila_basic.ngc"...
+Loading design module
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_ila_wrpath.ngc"...
+Loading design module
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_ila_rdpath.ngc"...
+Loading design module
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_vio_sync_async_out72.ngc"...
+Loading design module
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_vio_async_in_sync_out.ngc"...
+Loading design module
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_icon.ngc"...
+Applying constraints in
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_ila_basic.ncf" to module
+"CHIPSCOPE_INST.u_ddr_ila_basic"...
+Checking Constraint Associations...
+Applying constraints in
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_ila_wrpath.ncf" to module
+"CHIPSCOPE_INST.u_ddr_ila_wrpath"...
+Checking Constraint Associations...
+Applying constraints in
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_ila_rdpath.ncf" to module
+"CHIPSCOPE_INST.u_ddr_ila_rdpath"...
+Checking Constraint Associations...
+Applying constraints in
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_vio_sync_async_out72.ncf" to module
+"CHIPSCOPE_INST.u_ddr_vio_sync_async_out72"...
+Checking Constraint Associations...
+Applying constraints in
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_vio_async_in_sync_out.ncf" to module
+"CHIPSCOPE_INST.u_ddr_vio_async_in_sync_out"...
+Checking Constraint Associations...
+Applying constraints in
+"/home/ianb/fpgapriv_usrp3/fpgapriv/usrp3/top/b250/coregen/ddr3_interface_fast/e
+xample_design/par/ddr_icon.ncf" to module "CHIPSCOPE_INST.u_icon"...
+Checking Constraint Associations...
+Gathering constraint information from source properties...
+Done.
+
+Annotating constraints to design from ucf file "example_top.ucf" ...
+Resolving constraint associations...
+Checking Constraint Associations...
+WARNING:ConstraintSystem - TNM : D_CLK was distributed to a DCM but new TNM
+   constraints were not derived. This TNM is used in the following user groups
+   or specifications:
+   <TIMESPEC TS_J_TO_D = FROM "J_CLK" TO "D_CLK" TIG;>
+   <TIMESPEC TS_D_TO_J = FROM "D_CLK" TO "J_CLK" TIG;>
+
+INFO:ConstraintSystem:178 - TNM 'TNM_sys_clk', used in period specification
+   'TS_sys_clk', was traced into PLLE2_ADV instance
+   u_ddr3_infrastructure/plle2_i. The following new TNM groups and period
+   specifications were generated at the PLLE2_ADV output(s): 
+   CLKOUT3: <TIMESPEC TS_u_ddr3_interface_fast_u_ddr3_infrastructure_pll_clk3 =
+   PERIOD "u_ddr3_interface_fast_u_ddr3_infrastructure_pll_clk3" TS_sys_clk /
+   1.5 HIGH 50%>
+
+INFO:ConstraintSystem:178 - TNM 'TNM_sys_clk', used in period specification
+   'TS_sys_clk', was traced into PLLE2_ADV instance
+   u_ddr3_infrastructure/plle2_i. The following new TNM groups and period
+   specifications were generated at the PLLE2_ADV output(s): 
+   CLKOUT0: <TIMESPEC TS_u_ddr3_interface_fast_freq_refclk = PERIOD
+   "u_ddr3_interface_fast_freq_refclk" TS_sys_clk / 6 PHASE 1.561875 ns HIGH
+   50%>
+
+INFO:ConstraintSystem:178 - TNM 'TNM_sys_clk', used in period specification
+   'TS_sys_clk', was traced into PLLE2_ADV instance
+   u_ddr3_infrastructure/plle2_i. The following new TNM groups and period
+   specifications were generated at the PLLE2_ADV output(s): 
+   CLKOUT1: <TIMESPEC TS_u_ddr3_interface_fast_mem_refclk = PERIOD
+   "u_ddr3_interface_fast_mem_refclk" TS_sys_clk / 6 HIGH 50%>
+
+INFO:ConstraintSystem:178 - TNM 'TNM_sys_clk', used in period specification
+   'TS_sys_clk', was traced into PLLE2_ADV instance
+   u_ddr3_infrastructure/plle2_i. The following new TNM groups and period
+   specifications were generated at the PLLE2_ADV output(s): 
+   CLKOUT5: <TIMESPEC TS_u_ddr3_interface_fast_clk_ref_i = PERIOD
+   "u_ddr3_interface_fast_clk_ref_i" TS_sys_clk / 2.4 HIGH 50%>
+
+INFO:ConstraintSystem:178 - TNM 'TNM_sys_clk', used in period specification
+   'TS_sys_clk', was traced into PLLE2_ADV instance
+   u_ddr3_infrastructure/plle2_i. The following new TNM groups and period
+   specifications were generated at the PLLE2_ADV output(s): 
+   CLKOUT2: <TIMESPEC TS_u_ddr3_interface_fast_sync_pulse = PERIOD
+   "u_ddr3_interface_fast_sync_pulse" TS_sys_clk / 0.375 PHASE 0.728875 ns HIGH
+   6.25%>
+
+INFO:ConstraintSystem:178 - TNM
+   'u_ddr3_interface_fast_u_ddr3_infrastructure_pll_clk3', used in period
+   specification 'TS_u_ddr3_interface_fast_u_ddr3_infrastructure_pll_clk3', was
+   traced into MMCME2_ADV instance u_ddr3_infrastructure/mmcm_i. The following
+   new TNM groups and period specifications were generated at the MMCME2_ADV
+   output(s): 
+   CLKFBOUT: <TIMESPEC TS_u_ddr3_interface_fast_u_ddr3_infrastructure_clk_pll_i
+   = PERIOD "u_ddr3_interface_fast_u_ddr3_infrastructure_clk_pll_i"
+   TS_u_ddr3_interface_fast_u_ddr3_infrastructure_pll_clk3 HIGH 50%>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_freq_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_freq_refclk', was traced into
+   PHASER_IN_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_A.ddr_byte_la
+   ne_A/phaser_in_gen.phaser_in. The following new TNM groups and period
+   specifications were generated at the PHASER_IN_PHY output(s): 
+   ICLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_A_ddr_byte_lane_A_iser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_freq_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_freq_refclk', was traced into
+   PHASER_IN_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_A.ddr_byte_la
+   ne_A/phaser_in_gen.phaser_in. The following new TNM groups and period
+   specifications were generated at the PHASER_IN_PHY output(s): 
+   ICLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_A_ddr_byte_lane_A_iser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_freq_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_freq_refclk', was traced into
+   PHASER_IN_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_B.ddr_byte_la
+   ne_B/phaser_in_gen.phaser_in. The following new TNM groups and period
+   specifications were generated at the PHASER_IN_PHY output(s): 
+   ICLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_B_ddr_byte_lane_B_iser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_freq_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_freq_refclk', was traced into
+   PHASER_IN_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_B.ddr_byte_la
+   ne_B/phaser_in_gen.phaser_in. The following new TNM groups and period
+   specifications were generated at the PHASER_IN_PHY output(s): 
+   ICLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_B_ddr_byte_lane_B_iser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_freq_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_freq_refclk', was traced into
+   PHASER_IN_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_C.ddr_byte_la
+   ne_C/phaser_in_gen.phaser_in. The following new TNM groups and period
+   specifications were generated at the PHASER_IN_PHY output(s): 
+   ICLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_C_ddr_byte_lane_C_iser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_freq_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_freq_refclk', was traced into
+   PHASER_IN_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_C.ddr_byte_la
+   ne_C/phaser_in_gen.phaser_in. The following new TNM groups and period
+   specifications were generated at the PHASER_IN_PHY output(s): 
+   ICLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_C_ddr_byte_lane_C_iser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_freq_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_freq_refclk', was traced into
+   PHASER_IN_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_D.ddr_byte_la
+   ne_D/phaser_in_gen.phaser_in. The following new TNM groups and period
+   specifications were generated at the PHASER_IN_PHY output(s): 
+   ICLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_D_ddr_byte_lane_D_iser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_freq_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_freq_refclk', was traced into
+   PHASER_IN_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_D.ddr_byte_la
+   ne_D/phaser_in_gen.phaser_in. The following new TNM groups and period
+   specifications were generated at the PHASER_IN_PHY output(s): 
+   ICLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_D_ddr_byte_lane_D_iser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_A.ddr_byte_la
+   ne_A/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_A_ddr_byte_lane_A_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_A.ddr_byte_la
+   ne_A/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_A_ddr_byte_lane_A_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_B.ddr_byte_la
+   ne_B/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_B_ddr_byte_lane_B_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_B.ddr_byte_la
+   ne_B/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_B_ddr_byte_lane_B_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_C.ddr_byte_la
+   ne_C/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_C_ddr_byte_lane_C_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_C.ddr_byte_la
+   ne_C/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_C_ddr_byte_lane_C_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_D.ddr_byte_la
+   ne_D/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_D_ddr_byte_lane_D_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_0.u_ddr_phy_4lanes/ddr_byte_lane_D.ddr_byte_la
+   ne_D/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_0_u_ddr_phy_4lanes_dd
+   r_byte_lane_D_ddr_byte_lane_D_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_1.u_ddr_phy_4lanes/ddr_byte_lane_D.ddr_byte_la
+   ne_D/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_1_u_ddr_phy_4lanes_dd
+   r_byte_lane_D_ddr_byte_lane_D_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_1.u_ddr_phy_4lanes/ddr_byte_lane_D.ddr_byte_la
+   ne_D/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_1_u_ddr_phy_4lanes_dd
+   r_byte_lane_D_ddr_byte_lane_D_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_1.u_ddr_phy_4lanes/ddr_byte_lane_C.ddr_byte_la
+   ne_C/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_1_u_ddr_phy_4lanes_dd
+   r_byte_lane_C_ddr_byte_lane_C_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_1.u_ddr_phy_4lanes/ddr_byte_lane_C.ddr_byte_la
+   ne_C/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_1_u_ddr_phy_4lanes_dd
+   r_byte_lane_C_ddr_byte_lane_C_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_1.u_ddr_phy_4lanes/ddr_byte_lane_B.ddr_byte_la
+   ne_B/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLK: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_1_u_ddr_phy_4lanes_dd
+   r_byte_lane_B_ddr_byte_lane_B_oser...>
+
+INFO:ConstraintSystem:178 - TNM 'u_ddr3_interface_fast_mem_refclk', used in
+   period specification 'TS_u_ddr3_interface_fast_mem_refclk', was traced into
+   PHASER_OUT_PHY instance
+   u_mig_7series_v1_8_memc_ui_top_axi/mem_intfc0/ddr_phy_top0/u_ddr_mc_phy_wrapp
+   er/u_ddr_mc_phy/ddr_phy_4lanes_1.u_ddr_phy_4lanes/ddr_byte_lane_B.ddr_byte_la
+   ne_B/phaser_out. The following new TNM groups and period specifications were
+   generated at the PHASER_OUT_PHY output(s): 
+   OCLKDIV: <TIMESPEC
+   TS_u_ddr3_interface_fast_u_mig_7series_v1_8_memc_ui_top_axi_mem_intfc0_ddr_ph
+   y_top0_u_ddr_mc_phy_wrapper_u_ddr_mc_phy_ddr_phy_4lanes_1_u_ddr_phy_4lanes_dd
+   r_byte_lane_B_ddr_byte_lane_B_oser...>
+
+Done...
+
+Checking expanded design ...
+WARNING:NgdBuild:443 - SFF primitive
+   'CHIPSCOPE_INST.u_ddr_vio_sync_async_out72/U0/I_VIO/reset_f_edge/I_H2L.U_DOUT
+   ' has unconnected output pin
+WARNING:NgdBuild:452 - logical net 'N115' has no driver
+WARNING:NgdBuild:452 - logical net 'N116' has no driver
+WARNING:NgdBuild:452 - logical net 'N117' has no driver
+WARNING:NgdBuild:452 - logical net 'N118' has no driver
+WARNING:NgdBuild:452 - logical net 'N119' has no driver
+WARNING:NgdBuild:452 - logical net 'N120' has no driver
+WARNING:NgdBuild:452 - logical net 'N121' has no driver
+WARNING:NgdBuild:452 - logical net 'N122' has no driver
+WARNING:NgdBuild:452 - logical net 'N123' has no driver
+WARNING:NgdBuild:452 - logical net 'N124' has no driver
+WARNING:NgdBuild:452 - logical net 'N125' has no driver
+WARNING:NgdBuild:452 - logical net 'N126' has no driver
+WARNING:NgdBuild:452 - logical net 'N127' has no driver
+WARNING:NgdBuild:452 - logical net 'N128' has no driver
+WARNING:NgdBuild:452 - logical net 'N129' has no driver
+WARNING:NgdBuild:452 - logical net 'N130' has no driver
+WARNING:NgdBuild:452 - logical net 'N131' has no driver
+WARNING:NgdBuild:452 - logical net 'N132' has no driver
+WARNING:NgdBuild:452 - logical net 'N133' has no driver
+WARNING:NgdBuild:452 - logical net 'N134' has no driver
+WARNING:NgdBuild:452 - logical net 'N135' has no driver
+WARNING:NgdBuild:452 - logical net 'N136' has no driver
+WARNING:NgdBuild:452 - logical net 'N137' has no driver
+WARNING:NgdBuild:452 - logical net 'N138' has no driver
+WARNING:NgdBuild:452 - logical net 'N139' has no driver
+WARNING:NgdBuild:452 - logical net 'N140' has no driver
+WARNING:NgdBuild:452 - logical net 'N141' has no driver
+WARNING:NgdBuild:452 - logical net 'N142' has no driver
+WARNING:NgdBuild:452 - logical net 'N143' has no driver
+WARNING:NgdBuild:452 - logical net 'N144' has no driver
+WARNING:NgdBuild:452 - logical net 'N145' has no driver
+WARNING:NgdBuild:452 - logical net 'N146' has no driver
+WARNING:NgdBuild:452 - logical net 'N147' has no driver
+WARNING:NgdBuild:452 - logical net 'N148' has no driver
+WARNING:NgdBuild:452 - logical net 'N149' has no driver
+WARNING:NgdBuild:452 - logical net 'N150' has no driver
+WARNING:NgdBuild:452 - logical net 'N151' has no driver
+WARNING:NgdBuild:452 - logical net 'N152' has no driver
+WARNING:NgdBuild:452 - logical net 'N153' has no driver
+WARNING:NgdBuild:452 - logical net 'N154' has no driver
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+NGDBUILD Design Results Summary:
+  Number of errors:     0
+  Number of warnings:  42
+
+Total memory usage is 780348 kilobytes
+
+Writing NGD file "example_top.ngd" ...
+Total REAL time to NGDBUILD completion: 1 min  8 sec
+Total CPU time to NGDBUILD completion:  1 min  7 sec
+
+Writing NGDBUILD log file "example_top.bld"...

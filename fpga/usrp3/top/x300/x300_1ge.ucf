@@ -1,0 +1,2 @@
+NET   ETH_CLK_p             IOSTANDARD = LVDS_25 | LOC  =  L8;
+NET   ETH_CLK_n             IOSTANDARD = LVDS_25 | LOC  =  L7;

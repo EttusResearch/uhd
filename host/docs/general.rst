@@ -1,16 +1,16 @@
-========================================================================
+===============================
 UHD - General Application Notes
-========================================================================
+===============================
 
 .. contents:: Table of Contents
 
-------------------------------------------------------------------------
+------------
 Tuning Notes
-------------------------------------------------------------------------
+------------
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 Two-stage tuning process
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 A USRP device has two stages of tuning:
 
 * RF front-end: translates bewteen RF and IF
@@ -28,8 +28,19 @@ easy to move the DC component out of your band-of-interest.  This can be done by
 passing your desired LO offset to the **tune_request_t** object, and letting the UHD
 software handle the rest.
 
+The **tune_request_t** object can also be used with certain daughterboards to use
+Integer-N tuning instead of the default fractional tuning, allowing for better spur
+performance. The daughterboards that support this functionality are:
+
+* WBX (all revisions)
+* WBX-120
+* SBX (all revisions)
+* SBX-120
+* CBX
+* CBX-120
+
 Tuning the receive chain:
-::
+:::::::::::::::::::::::::
 
     //tuning to a desired center frequency
     usrp->set_rx_freq(target_frequency_in_hz);
@@ -38,14 +49,15 @@ Tuning the receive chain:
 
     //advanced tuning with tune_request_t
     uhd::tune_request_t tune_req(target_frequency_in_hz, desired_lo_offset);
+    tune_req.args = uhd::device_addr_t("mode_n=integer"); //to use Int-N tuning
     //fill in any additional/optional tune request fields...
     usrp->set_rx_freq(tune_req);
 
-More information can be fonud in *tune_request.hpp*.
+More information can be found in `tune_request.hpp <./../../doxygen/html/structuhd_1_1tune__request__t.html>`_.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 RF front-end settling time
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 After tuning, the RF front-end will need time to settle into a usable state.
 Typically, this means that the local oscillators must be given time to lock
 before streaming begins.  Lock time is not consistent; it varies depending upon
@@ -54,6 +66,8 @@ should wait for the **lo_locked** sensor to become true or sleep for
 a conservative amount of time (perhaps a second).
 
 Pseudo-code for dealing with settling time after tuning on receive:
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
 ::
 
     usrp->set_rx_freq(...);
@@ -68,9 +82,10 @@ Pseudo-code for dealing with settling time after tuning on receive:
     }
     usrp->issue_stream_command(...);
 
-------------------------------------------------------------------------
+
+-------------------------------
 Specifying the Subdevice to Use
-------------------------------------------------------------------------
+-------------------------------
 A subdevice specification string for USRP family devices is composed of:
 
 ::
@@ -97,16 +112,16 @@ Ex: The subdev spec markup string to select a BasicRX on slot B.
 
     B:B
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 USRP Family Motherboard Slot Names
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All USRP family motherboards have a first slot named **A:**.  The USRP1 has
 two daughterboard subdevice slots, known as **A:** and **B:**.  
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Daughterboard Frontend Names
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Daughterboard frontend names can be used to specify which signal path is used
 from a daughterboard.  Most daughterboards have only one frontend **:0**.  A few
@@ -114,15 +129,15 @@ daughterboards (Basic, LF and TVRX2) have multiple frontend names available.
 The frontend names are documented in the 
 `Daughterboard Application Notes <./dboards.html>`_
 
-------------------------------------------------------------------------
+------------------------
 Overflow/Underflow Notes
-------------------------------------------------------------------------
+------------------------
 **Note:** The following overflow/underflow notes do not apply to USRP1,
 which does not support the advanced features available in newer products.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 Overflow notes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 When receiving, the device produces samples at a constant rate.
 Overflows occurs when the host does not consume data fast enough.
 When UHD software detects the overflow, it prints an "O" or "D" to stdout,
@@ -142,23 +157,24 @@ When the device's internal buffers become full, streaming is shut off,
 and an inline message packet is sent to the host.
 In this case the character "O" is printed to stdout as an indication.
 If the device was in continuous streaming mode,
-the UHD software will automatically restart streaming.
+the UHD software will automatically restart streaming when the buffer has
+space again.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 Underflow notes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 When transmitting, the device consumes samples at a constant rate.
 Underflow occurs when the host does not produce data fast enough.
 When UHD software detects the underflow, it prints a "U" to stdout,
 and pushes a message packet into the async message stream.
 
-------------------------------------------------------------------------
+---------------
 Threading Notes
-------------------------------------------------------------------------
+---------------
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 Thread safety notes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 For the most part, UHD software is thread-safe.
 Please observe the following limitations:
 
@@ -175,9 +191,9 @@ This is because changing one setting could have an impact on how a call affects 
 Example: setting the channel mapping affects how the antennas are set.
 It is recommended to use at most one thread context for manipulating device settings.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Thread priority scheduling
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When UHD software spawns a new thread it may try to boost the thread's scheduling priority.
 When setting the priority fails, the UHD software prints out an error.
@@ -187,29 +203,29 @@ This error is harmless; it simply means that the thread will have a normal sched
 
 Non-privileged users need special permission to change the scheduling priority.
 Add the following line to **/etc/security/limits.conf**:
-::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
     @<my_group>    -    rtprio    99
 
 Replace **<my_group>** with a group to which your user belongs.
 Settings will not take effect until the user is in a different login session.
 
-------------------------------------------------------------------------
+-------------------
 Miscellaneous Notes
-------------------------------------------------------------------------
+-------------------
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Support for dynamically loadable modules
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 For a module to be loaded at runtime, it must be:
 
 * found in the **UHD_MODULE_PATH** environment variable,
 * installed into the **<install-path>/share/uhd/modules** directory,
 * or installed into **/usr/share/uhd/modules** directory (UNIX only).
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Disabling or redirecting prints to stdout
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The user can disable the UHD library from printing directly to stdout by registering a custom message handler.
 The handler will intercept all messages, which can be dropped or redirected.
 Only one handler can be registered at a time.

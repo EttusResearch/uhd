@@ -45,6 +45,34 @@ module serial_to_settings_tb();
       .set_data(set_data)
       );
 
+   // Nasty HAck to convert settings to wishbone crudely.
+   reg 	       wb_stb;
+   wire        wb_ack_o;
+   
+   
+   always @(posedge clk)
+     if (reset)
+       wb_stb <= 0;
+     else
+       wb_stb <= set_stb ? 1 : ((wb_ack_o) ? 0 : wb_stb);
+   
+     simple_uart debug_uart
+     (
+      .clk_i(clk), 
+      .rst_i(reset),
+      .we_i(wb_stb), 
+      .stb_i(wb_stb), 
+      .cyc_i(wb_stb), 
+      .ack_o(wb_ack_o),
+      .adr_i(set_addr[2:0]), 
+      .dat_i(set_data[31:0]), 
+      .dat_o(),
+      .rx_int_o(), 
+      .tx_int_o(), 
+      .tx_o(txd), 
+      .rx_i(rxd), 
+      .baud_o()
+      );
    
    //
    // Bring in a simulation script here

@@ -39,7 +39,8 @@ module new_rx_framer
 
    wire [15:0] 	  maxlen;
    reg [31:0] 	  holding;
-
+    
+	
    // FIXME need to handle case where hdr fifo is full (i.e. too many tiny packets)
    assign full = (sample_space == 16'd0) | (sample_space == 16'd1) | ~hdr_tready;
    
@@ -52,6 +53,10 @@ module new_rx_framer
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(sid),.changed(sid_changed));
 
+   localparam START = 0;
+   localparam SECOND = 1;
+   localparam FIRST = 2;
+   
    reg [1:0] 	  instate;
    reg [15:0] 	  numsamps;
    reg 		  nearly_eop;
@@ -60,52 +65,61 @@ module new_rx_framer
    always @(posedge clk)
      if(reset | clear)
        begin
-	  instate <= 0;
+	  instate <= START;
 	  numsamps <= 0;
 	  nearly_eop <= 0;
 	  
        end
      else if (run)
        case(instate)
-	 0 :
+	 //
+	 // Start a new packet in this state
+	 //
+	 START :
 	   if(strobe)
 	     if(eop)
 	       begin
-		  instate <= 0;
+		  instate <= START;
 		  numsamps <= 0;
 		  nearly_eop <= 0;
 	       end
 	     else
 	       begin
-		  instate <= 1;
+		  instate <= SECOND;
 		  numsamps <= numsamps + 1;
 		  nearly_eop <= (numsamps >= (maxlen-2));
-	       end
-	 1 :
+	       end // else: !if(eop)
+	 //
+	 // Second 32 bit sample in a 64bit word
+	 //
+	 SECOND :
 	   if(strobe)
 	     if(eop)
 	       begin
-		  instate <= 0;
+		  instate <= START;
 		  numsamps <= 0;
 		  nearly_eop <= 0;
 	       end
 	     else
 	       begin
-		  instate <= 2;
+		  instate <= FIRST;
 		  numsamps <= numsamps + 1;
 		  nearly_eop <= (numsamps >= (maxlen-2));
-	       end
-	 2 :
+	       end // else: !if(eop)
+	 //
+	 // First 32bit sample in a 64bit word.
+	 //
+	 FIRST :
 	   if(strobe)
 	     if(eop)
 	       begin
-		  instate <= 0;
+		  instate <= START;
 		  numsamps <= 0;
 		  nearly_eop <= 0;
 	       end
 	     else
 	       begin
-		  instate <= 1;
+		  instate <= SECOND;
 		  numsamps <= numsamps + 1;
 		  nearly_eop <= (numsamps >= (maxlen-2));
 	       end
@@ -115,7 +129,7 @@ module new_rx_framer
      if(strobe && run)
        begin
 	  holding <= sample;
-	  if(instate == 0)
+	  if(instate == START)
 	    hold_time <= vita_time;
        end
 
@@ -140,12 +154,12 @@ module new_rx_framer
  
    wire 	  eop = eob | nearly_eop | full;
    
-   wire [63:0] 	  sample_tdata = instate == 1 ? {holding, sample} : {sample, 32'h0};
+   wire [63:0] 	  sample_tdata = (instate == SECOND) ? {holding, sample} : {sample, 32'h0};
    wire 	  sample_tlast = eop;
-   wire 	  sample_tvalid = run & strobe & ( (instate == 1) | eop );
+   wire 	  sample_tvalid = run & strobe & ( (instate == SECOND) | eop );
    wire 	  sample_tready;
    
-   wire [80:0] 	  hdr_tdata = {eob,len[13:0],2'b0,(instate == 0) ? vita_time : hold_time};
+   wire [80:0] 	  hdr_tdata = {eob,len[13:0],2'b0,(instate == START) ? vita_time : hold_time};
    wire 	  hdr_tvalid = sample_tlast && sample_tvalid && sample_tready;
    wire 	  hdr_tready;
 
@@ -222,6 +236,22 @@ module new_rx_framer
     assign debug[19:16] =  {1'b0, o_tlast_int, o_tvalid_int, o_tready_int};
  -----/\----- EXCLUDED -----/\----- */
   
+   assign debug = {
+		   sample_tlast, //15
+		   sample_tvalid,//14
+		   sample_tready,//13
+		   dfifo_tvalid, //12
+		   dfifo_tready, //11
+		   hdr_tvalid,   //10
+		   hdr_tready,   //9
+		   hfifo_tvalid, //8
+		   hfifo_tready, //7
+		   eob,           //6
+		   nearly_eop,    //5
+		   full,          //4
+		   outstate[1:0], //3:2
+		   instate[1:0]   //1:0
+		   };
    
 
 endmodule // new_rx_framer

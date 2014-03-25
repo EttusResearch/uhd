@@ -7,14 +7,14 @@ UHD - Transport Application Notes
 ------------------------------------------------------------------------
 Introduction
 ------------------------------------------------------------------------
-A transport is the layer between the packet interface and a device IO interface.
-The advanced user can pass optional parameters
-into the underlying transport layer through the device address.
-These optional parameters control how the transport object allocates memory,
-resizes kernel buffers, spawns threads, etc.
-When not spcified, the transport layer will use values for these parameters
-that are known to perform well on a variety of systems.
-The transport parameters are defined below for the various transports in the UHD software:
+A transport is the layer between the packet interface and a device IO
+interface.  The advanced user can pass optional parameters into the underlying
+transport layer through the device address.  These optional parameters control
+how the transport object allocates memory, resizes kernel buffers, spawns
+threads, etc.  When not spcified, the transport layer will use values for these
+parameters that are known to perform well on a variety of systems.  The
+transport parameters are defined below for the various transports in the UHD
+software:
 
 ------------------------------------------------------------------------
 UDP Transport (Sockets)
@@ -147,7 +147,7 @@ so that non-root users may access the device:
 
 ::
 
-    cd <install-path>/share/uhd/utils
+    cd <install-path>/lib/uhd/utils
     sudo cp uhd-usrp.rules /etc/udev/rules.d/
     sudo udevadm control --reload-rules
     sudo udevadm trigger

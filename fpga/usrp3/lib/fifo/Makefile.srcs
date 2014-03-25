@@ -17,4 +17,5 @@ axi_fifo64_to_fifo32.v \
 axi_fifo32_to_fifo64.v \
 axi_fifo_2clk.v \
 axi_loopback.v \
+axi_filter_mux4.v \
 ))

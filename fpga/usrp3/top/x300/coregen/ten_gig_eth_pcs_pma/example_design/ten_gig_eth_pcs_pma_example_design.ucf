@@ -1,0 +1,135 @@
+## (c) Copyright 2009 - 2012 Xilinx, Inc. All rights reserved.
+##
+## This file contains confidential and proprietary information
+## of Xilinx, Inc. and is protected under U.S. and 
+## international copyright and other intellectual property
+## laws.
+##
+## DISCLAIMER
+## This disclaimer is not a license and does not grant any
+## rights to the materials distributed herewith. Except as
+## otherwise provided in a valid license issued to you by
+## Xilinx, and to the maximum extent permitted by applicable
+## law: (1) THESE MATERIALS ARE MADE AVAILABLE "AS IS" AND
+## WITH ALL FAULTS, AND XILINX HEREBY DISCLAIMS ALL WARRANTIES
+## AND CONDITIONS, EXPRESS, IMPLIED, OR STATUTORY, INCLUDING
+## BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, NON-
+## INFRINGEMENT, OR FITNESS FOR ANY PARTICULAR PURPOSE; and
+## (2) Xilinx shall not be liable (whether in contract or tort,
+## including negligence, or under any other theory of
+## liability) for any loss or damage of any kind or nature
+## related to, arising under or in connection with these
+## materials, including for any direct, or any indirect,
+## special, incidental, or consequential loss or damage
+## (including loss of data, profits, goodwill, or any type of
+## loss or damage suffered as a result of any action brought
+## by a third party) even if such damage or loss was
+## reasonably foreseeable or Xilinx had been advised of the
+## possibility of the same.
+##
+## CRITICAL APPLICATIONS
+## Xilinx products are not designed or intended to be fail-
+## safe, or for use in any application requiring fail-safe
+## performance, such as life-support or safety devices or
+## systems, Class III medical devices, nuclear facilities,
+## applications related to the deployment of airbags, or any
+## other applications that could lead to death, personal
+## injury, or severe property or environmental damage
+## (individually and collectively, "Critical
+## Applications"). Customer assumes the sole risk and
+## liability of any use of Xilinx products in Critical
+## Applications, subject only to applicable laws and
+## regulations governing limitations on product liability.
+##
+## THIS COPYRIGHT NOTICE AND DISCLAIMER MUST BE RETAINED AS
+## PART OF THIS FILE AT ALL TIMES.
+
+# Select the part to be used in the implementation run
+CONFIG PART = xc7k410tffg900-2;
+
+#######################################################################
+# Clock frequencies/periods and clock management                      #
+#                                                                     #
+#######################################################################
+NET "*q1_clk0_refclk_i" TNM_NET="refclk";
+
+TIMESPEC "TS_refclk" = PERIOD "refclk" 6400 ps;
+
+NET "*clk156_buf*" TNM_NET="clk156";
+
+TIMESPEC "TS_clk156" = PERIOD "clk156" 6400 ps;
+
+NET "*gt0_rxoutclk_i" TNM_NET="rxoutclk";
+
+TIMESPEC "TS_rxoutclk" = PERIOD "rxoutclk" 3103 ps;
+
+NET "*gt0_txoutclk_i" TNM_NET="txoutclk";
+
+TIMESPEC "TS_txoutclk" = PERIOD "txoutclk" 3103 ps;
+
+NET "*txclk322" TNM_NET="txclk322";
+
+TIMESPEC "TS_txclk322" = PERIOD "txclk322" 3103 ps;
+
+NET "*rxclk322" TNM_NET="rxusrclk2";
+
+TIMESPEC "TS_rxusrclk2" = PERIOD "rxusrclk2" 3103 ps;
+
+NET "*rxusrclk2_en156*" TNM_NET = FFS "rxusrclk_en_grp";
+
+TIMESPEC "TS_rx_multiclk" = FROM "rxusrclk_en_grp" to "rxusrclk_en_grp" TS_rxusrclk2*2;
+
+NET "*dclk_buf" TNM_NET="dclk";
+
+TIMESPEC "TS_dclk" = PERIOD "dclk" TS_clk156*2;
+
+# Edit these constraints to select the correct transceiver for your design
+## Sample constraint for GT location
+#INST *gtxe2_i LOC=GTXE2_CHANNEL_X0Y18;
+#INST "*gtxe2_common_0_i" LOC = "GTXE2_COMMON_X0Y4";
+
+# XGMII input/output pad attributes
+
+NET "xgmii_txc<?>" IOSTANDARD = HSTL_I;
+NET "xgmii_txd<?>" IOSTANDARD = HSTL_I;
+NET "xgmii_txd<??>" IOSTANDARD = HSTL_I;
+
+NET "xgmii_rxc<?>" IOSTANDARD = HSTL_I;
+NET "xgmii_rxd<?>" IOSTANDARD = HSTL_I;
+NET "xgmii_rxd<??>" IOSTANDARD = HSTL_I;
+
+NET "xgmii_rx_clk" IOSTANDARD = HSTL_I;
+
+NET "*cable_pull_reset" MAXDELAY = 2.0 ns;
+NET "*cable_unpull_reset" MAXDELAY = 2.0 ns;
+
+##################################################################
+# Elastic Buffer-related constraints                             #
+##################################################################
+NET "*elastic_buffer_i*rd_truegray<?>" MAXDELAY = 6.0 ns;
+NET "*elastic_buffer_i?can_insert_wra" TIG;
+NET "*wr_gray*<?>" MAXDELAY = 6.0 ns;
+NET "*rd_lastgray*<?>" MAXDELAY = 6.0 ns;
+###################################################################
+
+TIMESPEC "TS_rxusrclk2_to_clk156" = FROM rxusrclk2 TO clk156 TIG;
+
+TIMESPEC "TS_rxusrclk2_to_txclk322" = FROM rxusrclk2 TO txclk322 TIG;
+
+TIMESPEC "TS_clk156_to_txclk322" = FROM clk156 TO txclk322 TIG;
+
+TIMESPEC "TS_clk156_to_refclk" = FROM clk156 TO refclk TIG;
+
+TIMESPEC "TS_txclk322_to_clk156" = FROM txclk322 TO clk156 TIG;
+
+TIMESPEC "TS_rxusrclk2_to_refclk" = FROM rxusrclk2 TO refclk TIG;
+
+##################################################################
+# MDIO-related constraints                                       #
+##################################################################
+INST "*management_inst*mdc_reg1*" IOB=TRUE;
+INST "*management_inst*mdio_in_reg1*" IOB=TRUE;
+INST "*mdio_out*" IOB=TRUE;
+INST "*mdio_tri*" IOB=TRUE;
+###################################################################
+

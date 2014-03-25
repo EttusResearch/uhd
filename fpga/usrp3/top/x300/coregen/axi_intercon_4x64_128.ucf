@@ -1,0 +1,13 @@
+NET "*_resync*" TNM = FFS "axi_intercon_4x64_128_reset_resync";
+NET "*INTERCONNECT_ARESETN" TNM = FFS "axi_intercon_4x64_128_reset_resync";
+TIMESPEC "TS_axi_intercon_4x64_128_reset_resync" = TO "axi_intercon_4x64_128_reset_resync" TIG;
+INST "*_converter_bank/*clock_conv_inst/*asyncfifo_*/*mem/*dout_i_?" TNM = "axi_intercon_4x64_128_async_clock_conv_FFDEST";
+INST "*_converter_bank/*clock_conv_inst/*asyncfifo_*/*mem/*dout_i_??" TNM = "axi_intercon_4x64_128_async_clock_conv_FFDEST";
+INST "*_converter_bank/*clock_conv_inst/*asyncfifo_*/*mem/*dout_i_???" TNM = "axi_intercon_4x64_128_async_clock_conv_FFDEST";
+INST "*_converter_bank/*clock_conv_inst/*asyncfifo_*/*mem/*dout_i_????" TNM = "axi_intercon_4x64_128_async_clock_conv_FFDEST";
+TIMESPEC "TS_axi_intercon_4x64_128_async_clock_conv" = FROM RAMS TO "axi_intercon_4x64_128_async_clock_conv_FFDEST" 4000 PS DATAPATHONLY;
+NET "*_converter_bank/*clock_conv_inst/*asyncfifo_*/wr_pntr_gc*" TIG;
+NET "*_converter_bank/*clock_conv_inst/*asyncfifo_*/rd_pntr_gc*" TIG;
+NET "*_converter_bank/*clock_conv_inst/*asyncfifo_*/*clkx/wr_q*" TIG;
+NET "*_converter_bank/*clock_conv_inst/*asyncfifo_*/*clkx/rd_q*" TIG;
+NET "*_converter_bank/*clock_conv_inst/*async_conv_reset" TIG;

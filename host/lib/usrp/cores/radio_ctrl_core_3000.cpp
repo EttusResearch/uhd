@@ -88,9 +88,6 @@ public:
         boost::mutex::scoped_lock lock(_mutex);
         UHD_LOGV(always) << _name << std::hex << " addr 0x" << addr << std::dec << std::endl;
         this->send_pkt(SR_READBACK, addr/8);
-        this->wait_for_ack(false);
-
-        this->send_pkt(0);
         const boost::uint64_t res = this->wait_for_ack(true);
         const boost::uint32_t lo = boost::uint32_t(res & 0xffffffff);
         const boost::uint32_t hi = boost::uint32_t(res >> 32);
@@ -103,9 +100,6 @@ public:
         UHD_LOGV(always) << _name << std::hex << " addr 0x" << addr << std::dec << std::endl;
 
         this->send_pkt(SR_READBACK, addr/8);
-        this->wait_for_ack(false);
-
-        this->send_pkt(0);
         return this->wait_for_ack(true);
     }
 

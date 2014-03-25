@@ -84,13 +84,6 @@ public:
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
-    uhd::property_tree::sptr _tree;
-
-    //device properties interface
-    uhd::property_tree::sptr get_tree(void) const{
-        return _tree;
-    }
-
     //controllers
     uhd::usrp::fx2_ctrl::sptr _fx2_ctrl;
     usrp1_iface::sptr _iface;

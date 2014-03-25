@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2013 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,6 +32,8 @@
 #define REG_DSP_RX_SCALE_IQ   _dsp_base + 4
 #define REG_DSP_RX_DECIM      _dsp_base + 8
 #define REG_DSP_RX_MUX        _dsp_base + 12
+#define REG_DSP_RX_COEFFS     _dsp_base + 16
+//FIXME: Add code to support REG_DSP_RX_COEFFS
 
 #define FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
 #define FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
@@ -46,9 +48,10 @@ class rx_dsp_core_3000_impl : public rx_dsp_core_3000{
 public:
     rx_dsp_core_3000_impl(
         wb_iface::sptr iface,
-        const size_t dsp_base
+        const size_t dsp_base,
+        const bool is_b200
     ):
-        _iface(iface), _dsp_base(dsp_base)
+        _iface(iface), _dsp_base(dsp_base), _is_b200(is_b200)
     {
         // previously uninitialized - assuming zero for all
         _link_rate = _host_extra_scaling = _fxpt_scalar_correction = 0.0;
@@ -88,6 +91,9 @@ public:
 
     uhd::meta_range_t get_host_rates(void){
         meta_range_t range;
+	for (int rate = 1024; rate > 512; rate -= 8){
+            range.push_back(range_t(_tick_rate/rate));
+        }
         for (int rate = 512; rate > 256; rate -= 4){
             range.push_back(range_t(_tick_rate/rate));
         }
@@ -105,7 +111,7 @@ public:
         size_t decim = decim_rate;
 
         //determine which half-band filters are activated
-        int hb0 = 0, hb1 = 0;
+        int hb0 = 0, hb1 = 0, hb2 = 0, hb_enable=0;
         if (decim % 2 == 0){
             hb0 = 1;
             decim /= 2;
@@ -114,16 +120,43 @@ public:
             hb1 = 1;
             decim /= 2;
         }
+        //the third half-band is not supported by the B200
+        if (decim % 2 == 0 && !_is_b200){
+            hb2 = 1;
+            decim /= 2;
+        }
 
-        _iface->poke32(REG_DSP_RX_DECIM, (hb1 << 9) | (hb0 << 8) | (decim & 0xff));
+        if (_is_b200) {
+            _iface->poke32(REG_DSP_RX_DECIM, (hb1 << 9) | (hb0 << 8) | (decim & 0xff));
 
-        if (decim > 1 and hb0 == 0 and hb1 == 0)
-        {
-            UHD_MSG(warning) << boost::format(
-                "The requested decimation is odd; the user should expect CIC rolloff.\n"
-                "Select an even decimation to ensure that a halfband filter is enabled.\n"
-                "decimation = dsp_rate/samp_rate -> %d = (%f MHz)/(%f MHz)\n"
-            ) % decim_rate % (_tick_rate/1e6) % (rate/1e6);
+            if (decim > 1 and hb0 == 0 and hb1 == 0) {
+                UHD_MSG(warning) << boost::format(
+                    "The requested decimation is odd; the user should expect CIC rolloff.\n"
+                    "Select an even decimation to ensure that a halfband filter is enabled.\n"
+                    "decimation = dsp_rate/samp_rate -> %d = (%f MHz)/(%f MHz)\n"
+                ) % decim_rate % (_tick_rate/1e6) % (rate/1e6);
+            }
+        } else {
+            // Encode Halfband config for setting register programming.
+            if (hb2) { // Implies HB1 and HB0 also asserted
+                hb_enable=3;
+            } else if (hb1) { // Implies HB0 is also asserted
+                hb_enable=2;
+            } else if (hb0) {
+                hb_enable=1;
+            } else {
+                hb_enable=0;
+            }
+            _iface->poke32(REG_DSP_RX_DECIM,  (hb_enable << 8) | (decim & 0xff));
+
+            if (decim > 1 and hb0 == 0 and hb1 == 0 and hb2 == 0) {
+                UHD_MSG(warning) << boost::format(
+                    "The requested decimation is odd; the user should expect passband CIC rolloff.\n"
+                    "Select an even decimation to ensure that a halfband filter is enabled.\n"
+                    "Decimations factorable by 4 will enable 2 halfbands, those factorable by 8 will enable 3 halfbands.\n"
+                    "decimation = dsp_rate/samp_rate -> %d = (%f MHz)/(%f MHz)\n"
+                ) % decim_rate % (_tick_rate/1e6) % (rate/1e6);
+            }
         }
 
         // Calculate CIC decimation (i.e., without halfband decimators)
@@ -137,7 +170,7 @@ public:
 
     void update_scalar(void){
         const double factor = 1.0 + std::max(ceil_log2(_scaling_adjustment), 0.0);
-        const double target_scalar = (1 << 17)*_scaling_adjustment/_dsp_extra_scaling/factor;
+        const double target_scalar = (1 << 15)*_scaling_adjustment/_dsp_extra_scaling/factor;
         const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
         _fxpt_scalar_correction = target_scalar/actual_scalar*factor; //should be small
         _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);
@@ -202,11 +235,12 @@ public:
 private:
     wb_iface::sptr _iface;
     const size_t _dsp_base;
+    const bool _is_b200;    //TODO: Obsolete this when we switch to the new DDC on the B200
     double _tick_rate, _link_rate;
     double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling, _fxpt_scalar_correction;
 };
 
-rx_dsp_core_3000::sptr rx_dsp_core_3000::make(wb_iface::sptr iface, const size_t dsp_base)
+rx_dsp_core_3000::sptr rx_dsp_core_3000::make(wb_iface::sptr iface, const size_t dsp_base, const bool is_b200 /* = false */)
 {
-    return sptr(new rx_dsp_core_3000_impl(iface, dsp_base));
+    return sptr(new rx_dsp_core_3000_impl(iface, dsp_base, is_b200));
 }

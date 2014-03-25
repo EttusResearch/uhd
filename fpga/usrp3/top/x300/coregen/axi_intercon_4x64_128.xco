@@ -1,0 +1,255 @@
+##############################################################
+#
+# Xilinx Core Generator version 14.4
+# Date: Mon Sep 16 21:06:26 2013
+#
+##############################################################
+#
+#  This file contains the customisation parameters for a
+#  Xilinx CORE Generator IP GUI. It is strongly recommended
+#  that you do not manually alter this file as it may cause
+#  unexpected and unsupported behavior.
+#
+##############################################################
+#
+#  Generated from component: xilinx.com:ip:axi_interconnect:1.06.a
+#
+##############################################################
+#
+# BEGIN Project Options
+SET addpads = false
+SET asysymbol = true
+SET busformat = BusFormatAngleBracketNotRipped
+SET createndf = false
+SET designentry = Verilog
+SET device = xc7k410t
+SET devicefamily = kintex7
+SET flowvendor = Foundation_ISE
+SET formalverification = false
+SET foundationsym = false
+SET implementationfiletype = Ngc
+SET package = ffg900
+SET removerpms = false
+SET simulationfiles = Behavioral
+SET speedgrade = -2
+SET verilogsim = true
+SET vhdlsim = false
+# END Project Options
+# BEGIN Select
+SELECT AXI_Interconnect xilinx.com:ip:axi_interconnect:1.06.a
+# END Select
+# BEGIN Parameters
+CSET aclk_period=4000
+CSET axi_addr_width=32
+CSET component_name=axi_intercon_4x64_128
+CSET interconnect_data_width=128
+CSET m00_axi_aclk_ratio=1:1
+CSET m00_axi_data_width=128
+CSET m00_axi_is_aclk_async=false
+CSET m00_axi_read_fifo_delay=false
+CSET m00_axi_read_fifo_depth=512_(BRAM)
+CSET m00_axi_read_issuing=1
+CSET m00_axi_register=true
+CSET m00_axi_write_fifo_delay=false
+CSET m00_axi_write_fifo_depth=512_(BRAM)
+CSET m00_axi_write_issuing=1
+CSET num_slave_ports=4
+CSET s00_axi_aclk_ratio=1:1
+CSET s00_axi_arb_priority=0_(Round-Robin)
+CSET s00_axi_data_width=64
+CSET s00_axi_is_aclk_async=false
+CSET s00_axi_read_acceptance=1
+CSET s00_axi_read_fifo_delay=false
+CSET s00_axi_read_fifo_depth=512_(BRAM)
+CSET s00_axi_read_write_support=READ/WRITE
+CSET s00_axi_register=true
+CSET s00_axi_write_acceptance=1
+CSET s00_axi_write_fifo_delay=false
+CSET s00_axi_write_fifo_depth=512_(BRAM)
+CSET s01_axi_aclk_ratio=1:1
+CSET s01_axi_arb_priority=0_(Round-Robin)
+CSET s01_axi_data_width=64
+CSET s01_axi_is_aclk_async=false
+CSET s01_axi_read_acceptance=1
+CSET s01_axi_read_fifo_delay=false
+CSET s01_axi_read_fifo_depth=512_(BRAM)
+CSET s01_axi_read_write_support=READ/WRITE
+CSET s01_axi_register=true
+CSET s01_axi_write_acceptance=1
+CSET s01_axi_write_fifo_delay=false
+CSET s01_axi_write_fifo_depth=512_(BRAM)
+CSET s02_axi_aclk_ratio=1:1
+CSET s02_axi_arb_priority=0_(Round-Robin)
+CSET s02_axi_data_width=64
+CSET s02_axi_is_aclk_async=true
+CSET s02_axi_read_acceptance=1
+CSET s02_axi_read_fifo_delay=false
+CSET s02_axi_read_fifo_depth=512_(BRAM)
+CSET s02_axi_read_write_support=READ/WRITE
+CSET s02_axi_register=true
+CSET s02_axi_write_acceptance=1
+CSET s02_axi_write_fifo_delay=false
+CSET s02_axi_write_fifo_depth=512_(BRAM)
+CSET s03_axi_aclk_ratio=1:1
+CSET s03_axi_arb_priority=0_(Round-Robin)
+CSET s03_axi_data_width=64
+CSET s03_axi_is_aclk_async=true
+CSET s03_axi_read_acceptance=1
+CSET s03_axi_read_fifo_delay=false
+CSET s03_axi_read_fifo_depth=512_(BRAM)
+CSET s03_axi_read_write_support=READ/WRITE
+CSET s03_axi_register=true
+CSET s03_axi_write_acceptance=1
+CSET s03_axi_write_fifo_delay=false
+CSET s03_axi_write_fifo_depth=512_(BRAM)
+CSET s04_axi_aclk_ratio=1:1
+CSET s04_axi_arb_priority=0_(Round-Robin)
+CSET s04_axi_data_width=32
+CSET s04_axi_is_aclk_async=false
+CSET s04_axi_read_acceptance=1
+CSET s04_axi_read_fifo_delay=false
+CSET s04_axi_read_fifo_depth=0_(none)
+CSET s04_axi_read_write_support=READ/WRITE
+CSET s04_axi_register=false
+CSET s04_axi_write_acceptance=1
+CSET s04_axi_write_fifo_delay=false
+CSET s04_axi_write_fifo_depth=0_(none)
+CSET s05_axi_aclk_ratio=1:1
+CSET s05_axi_arb_priority=0_(Round-Robin)
+CSET s05_axi_data_width=32
+CSET s05_axi_is_aclk_async=false
+CSET s05_axi_read_acceptance=1
+CSET s05_axi_read_fifo_delay=false
+CSET s05_axi_read_fifo_depth=0_(none)
+CSET s05_axi_read_write_support=READ/WRITE
+CSET s05_axi_register=false
+CSET s05_axi_write_acceptance=1
+CSET s05_axi_write_fifo_delay=false
+CSET s05_axi_write_fifo_depth=0_(none)
+CSET s06_axi_aclk_ratio=1:1
+CSET s06_axi_arb_priority=0_(Round-Robin)
+CSET s06_axi_data_width=32
+CSET s06_axi_is_aclk_async=false
+CSET s06_axi_read_acceptance=1
+CSET s06_axi_read_fifo_delay=false
+CSET s06_axi_read_fifo_depth=0_(none)
+CSET s06_axi_read_write_support=READ/WRITE
+CSET s06_axi_register=false
+CSET s06_axi_write_acceptance=1
+CSET s06_axi_write_fifo_delay=false
+CSET s06_axi_write_fifo_depth=0_(none)
+CSET s07_axi_aclk_ratio=1:1
+CSET s07_axi_arb_priority=0_(Round-Robin)
+CSET s07_axi_data_width=32
+CSET s07_axi_is_aclk_async=false
+CSET s07_axi_read_acceptance=1
+CSET s07_axi_read_fifo_delay=false
+CSET s07_axi_read_fifo_depth=0_(none)
+CSET s07_axi_read_write_support=READ/WRITE
+CSET s07_axi_register=false
+CSET s07_axi_write_acceptance=1
+CSET s07_axi_write_fifo_delay=false
+CSET s07_axi_write_fifo_depth=0_(none)
+CSET s08_axi_aclk_ratio=1:1
+CSET s08_axi_arb_priority=0_(Round-Robin)
+CSET s08_axi_data_width=32
+CSET s08_axi_is_aclk_async=false
+CSET s08_axi_read_acceptance=1
+CSET s08_axi_read_fifo_delay=false
+CSET s08_axi_read_fifo_depth=0_(none)
+CSET s08_axi_read_write_support=READ/WRITE
+CSET s08_axi_register=false
+CSET s08_axi_write_acceptance=1
+CSET s08_axi_write_fifo_delay=false
+CSET s08_axi_write_fifo_depth=0_(none)
+CSET s09_axi_aclk_ratio=1:1
+CSET s09_axi_arb_priority=0_(Round-Robin)
+CSET s09_axi_data_width=32
+CSET s09_axi_is_aclk_async=false
+CSET s09_axi_read_acceptance=1
+CSET s09_axi_read_fifo_delay=false
+CSET s09_axi_read_fifo_depth=0_(none)
+CSET s09_axi_read_write_support=READ/WRITE
+CSET s09_axi_register=false
+CSET s09_axi_write_acceptance=1
+CSET s09_axi_write_fifo_delay=false
+CSET s09_axi_write_fifo_depth=0_(none)
+CSET s10_axi_aclk_ratio=1:1
+CSET s10_axi_arb_priority=0_(Round-Robin)
+CSET s10_axi_data_width=32
+CSET s10_axi_is_aclk_async=false
+CSET s10_axi_read_acceptance=1
+CSET s10_axi_read_fifo_delay=false
+CSET s10_axi_read_fifo_depth=0_(none)
+CSET s10_axi_read_write_support=READ/WRITE
+CSET s10_axi_register=false
+CSET s10_axi_write_acceptance=1
+CSET s10_axi_write_fifo_delay=false
+CSET s10_axi_write_fifo_depth=0_(none)
+CSET s11_axi_aclk_ratio=1:1
+CSET s11_axi_arb_priority=0_(Round-Robin)
+CSET s11_axi_data_width=32
+CSET s11_axi_is_aclk_async=false
+CSET s11_axi_read_acceptance=1
+CSET s11_axi_read_fifo_delay=false
+CSET s11_axi_read_fifo_depth=0_(none)
+CSET s11_axi_read_write_support=READ/WRITE
+CSET s11_axi_register=false
+CSET s11_axi_write_acceptance=1
+CSET s11_axi_write_fifo_delay=false
+CSET s11_axi_write_fifo_depth=0_(none)
+CSET s12_axi_aclk_ratio=1:1
+CSET s12_axi_arb_priority=0_(Round-Robin)
+CSET s12_axi_data_width=32
+CSET s12_axi_is_aclk_async=false
+CSET s12_axi_read_acceptance=1
+CSET s12_axi_read_fifo_delay=false
+CSET s12_axi_read_fifo_depth=0_(none)
+CSET s12_axi_read_write_support=READ/WRITE
+CSET s12_axi_register=false
+CSET s12_axi_write_acceptance=1
+CSET s12_axi_write_fifo_delay=false
+CSET s12_axi_write_fifo_depth=0_(none)
+CSET s13_axi_aclk_ratio=1:1
+CSET s13_axi_arb_priority=0_(Round-Robin)
+CSET s13_axi_data_width=32
+CSET s13_axi_is_aclk_async=false
+CSET s13_axi_read_acceptance=1
+CSET s13_axi_read_fifo_delay=false
+CSET s13_axi_read_fifo_depth=0_(none)
+CSET s13_axi_read_write_support=READ/WRITE
+CSET s13_axi_register=false
+CSET s13_axi_write_acceptance=1
+CSET s13_axi_write_fifo_delay=false
+CSET s13_axi_write_fifo_depth=0_(none)
+CSET s14_axi_aclk_ratio=1:1
+CSET s14_axi_arb_priority=0_(Round-Robin)
+CSET s14_axi_data_width=32
+CSET s14_axi_is_aclk_async=false
+CSET s14_axi_read_acceptance=1
+CSET s14_axi_read_fifo_delay=false
+CSET s14_axi_read_fifo_depth=0_(none)
+CSET s14_axi_read_write_support=READ/WRITE
+CSET s14_axi_register=false
+CSET s14_axi_write_acceptance=1
+CSET s14_axi_write_fifo_delay=false
+CSET s14_axi_write_fifo_depth=0_(none)
+CSET s15_axi_aclk_ratio=1:1
+CSET s15_axi_arb_priority=0_(Round-Robin)
+CSET s15_axi_data_width=32
+CSET s15_axi_is_aclk_async=false
+CSET s15_axi_read_acceptance=1
+CSET s15_axi_read_fifo_delay=false
+CSET s15_axi_read_fifo_depth=0_(none)
+CSET s15_axi_read_write_support=READ/WRITE
+CSET s15_axi_register=false
+CSET s15_axi_write_acceptance=1
+CSET s15_axi_write_fifo_delay=false
+CSET s15_axi_write_fifo_depth=0_(none)
+CSET thread_id_width=0_(no_ID_signals)
+# END Parameters
+# BEGIN Extra information
+MISC pkg_timestamp=2012-07-20T19:28:02Z
+# END Extra information
+GENERATE
+# CRC: d2b7dfaf

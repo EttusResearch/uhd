@@ -1,19 +1,7 @@
 //
 // Copyright 2013 Ettus Research LLC
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+
 
 // HALT brings RX to an idle state as quickly as possible if RX is running
 // without running the risk of leaving a packet fragment in downstream FIFO's.
@@ -128,57 +116,68 @@ module new_rx_control
 	  clear_halt <= 1'b0;
        end
      else
-       case(ibs_state)
+       case (ibs_state)
 	 IBS_IDLE : begin
 	   clear_halt <= 1'b0; // Incase we got here through a HALT.
-	   if(command_valid)
-	     if(stop)
-	       ibs_state <= IBS_IDLE;//IBS_ZEROLEN;
-	     else if(late & ~send_imm)
-	       ibs_state <= IBS_LATECMD;
-	     else if(now | send_imm)
-	       begin
-		  ibs_state <= IBS_RUNNING;
-		  lines_left <= numlines;
-		  repeat_lines <= numlines;
-		  chain_sav <= chain;
-		  reload_sav <= reload;
-	       end
+	   if (command_valid)
+	     // There is a valid command to pop from FIFO.
+	     if (stop) begin
+		// Stop bit set in this command, go idle.
+		ibs_state <= IBS_IDLE;//IBS_ZEROLEN;
+	     end else if (late & ~send_imm) begin
+		// Got this command later than its execution time.
+		ibs_state <= IBS_LATECMD;
+	     end else if (now | send_imm) begin
+		// Either its time to run this command or it should run immediately without a time.
+		ibs_state <= IBS_RUNNING;
+		lines_left <= numlines;
+		repeat_lines <= numlines;
+		chain_sav <= chain;
+		reload_sav <= reload;
+	     end
 	 end // case: IBS_IDLE
 	 
-	 IBS_RUNNING : // need to check for full
-	   if(strobe)
-	     if(full)
-	       ibs_state <= IBS_OVERRUN;
-	     else
-	       if(lines_left == 1)
-		 // Provide Halt mechanism used to bring RX into known IDLE state
-		 // at re-initialization.
-		 if (halt)
-		   begin
-		      ibs_state <= IBS_IDLE;
-		      clear_halt <= 1'b1;
-		   end
-		 else if(chain_sav)
-		    if(command_valid)
-		     begin
+	 IBS_RUNNING : begin 
+	    if (strobe) begin 
+	       if (full) begin
+		  // Framing FIFO is full and we have just overrun.
+		  ibs_state <= IBS_OVERRUN;
+	       end else if (lines_left == 1) begin
+		  // Provide Halt mechanism used to bring RX into known IDLE state
+		  // at re-initialization.
+		  if (halt) begin
+		     ibs_state <= IBS_IDLE;
+		     clear_halt <= 1'b1;
+		  end else if (chain_sav) begin
+		     // If chain_sav is true then execute the next command now this one finished.
+		     if (command_valid) begin
 			lines_left <= numlines;
 			repeat_lines <= numlines;
 			chain_sav <= chain;
 			reload_sav <= reload;
-			if(stop)
-			  ibs_state <= IBS_IDLE;
+			// If the new command includes stop then go idle.
+			if (stop) begin
+			   ibs_state <= IBS_IDLE;
+			end
+		     end else if (reload_sav) begin
+			// There is no new command to pop from FIFO so re-run previous command.
+			lines_left <= repeat_lines;
+		     end else begin
+			// Chain has been broken, no commands left in FIFO and reload not set.
+			ibs_state <= IBS_BROKENCHAIN;
 		     end
-		   else if(reload_sav)
-		     lines_left <= repeat_lines;
-		   else
-		     ibs_state <= IBS_BROKENCHAIN;
-		 else
-		   ibs_state <= IBS_IDLE;
-	       else
-		 lines_left <= lines_left - 28'd1;
-
-
+		  end else begin // if (chain_sav)
+		     // Chain is not true, so don't look for new command, instead go idle.
+		     ibs_state <= IBS_IDLE;
+		  end
+	       end else begin // if (lines_left == 1)
+		  // Still counting down lines in current command.
+		  lines_left <= lines_left - 28'd1;
+	       end
+	    end // if (strobe)
+	 end // case: IBS_RUNNING
+	 
+	 
 	IBS_OVERRUN: if(err_tready_int) ibs_state <= IBS_OVR_TIME;
 	IBS_OVR_TIME: if(err_tready_int) ibs_state <= IBS_OVR_DATA;
 	IBS_OVR_DATA: if(err_tready_int) ibs_state <= IBS_IDLE;
@@ -207,7 +206,7 @@ module new_rx_control
      endcase // case (ibs_state)
 
    assign run = (ibs_state == IBS_RUNNING);
-   assign eob = strobe & (lines_left == 1) & ( ~chain_sav | (command_valid & stop) | (~command_valid & ~reload_sav) | halt);
+   assign eob = strobe && (lines_left == 1) && ( !chain_sav || (command_valid && stop) || (!command_valid && !reload_sav) || halt);
 
    always @*
      case (ibs_state)
@@ -239,7 +238,7 @@ module new_rx_control
 
 
    assign debug[3:0] =  ibs_state;
-   assign debug[7:4] =  {2'b0, command_valid, command_ready};
+   assign debug[9:4] =  {send_imm,chain,reload,stop, command_valid, command_ready};
    
    axi_fifo_short #(.WIDTH(65)) output_fifo
      (

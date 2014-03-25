@@ -1,0 +1,2 @@
+verilog work ../../pcie_clk_gen.v
+verilog work ../example_design/pcie_clk_gen_exdes.v

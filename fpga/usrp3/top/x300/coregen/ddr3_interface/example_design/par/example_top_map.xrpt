@@ -1,0 +1,1114 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<document OS="lin64" product="ISE" version="14.4">
+
+  <!--The data in this file is primarily intended for consumption by Xilinx tools.
+    The structure and the elements are likely to change over the next few releases.
+    This means code written to parse this file will need to be revisited each subsequent release.-->
+
+  <application stringID="Map" timeStamp="Wed Jan 16 17:44:21 2013">
+    <section stringID="User_Env">
+      <table stringID="User_EnvVar">
+        <column stringID="variable"/>
+        <column stringID="value"/>
+        <row stringID="row" value="0">
+          <item stringID="variable" value="XILINX_DSP"/>
+          <item stringID="value" value="/opt/Xilinx/14.4/ISE_DS/ISE"/>
+        </row>
+        <row stringID="row" value="1">
+          <item stringID="variable" value="LD_LIBRARY_PATH"/>
+          <item stringID="value" value="/opt/Xilinx/14.4/ISE_DS/ISE//lib/lin64:/opt/Xilinx/14.4/ISE_DS/ISE/lib/lin64:/opt/Xilinx/14.4/ISE_DS/ISE/smartmodel/lin64/installed_lin64/lib:/opt/Xilinx/14.4/ISE_DS/ISE/sysgen/lib:/opt/Xilinx/14.4/ISE_DS/EDK/lib/lin64:/opt/Xilinx/14.4/ISE_DS/common/lib/lin64"/>
+        </row>
+        <row stringID="row" value="2">
+          <item stringID="variable" value="XILINX_EDK"/>
+          <item stringID="value" value="/opt/Xilinx/14.4/ISE_DS/EDK"/>
+        </row>
+        <row stringID="row" value="3">
+          <item stringID="variable" value="XILINXD_LICENSE_FILE"/>
+          <item stringID="value" value="2100@10.0.52.74:/usr/local/flexlm"/>
+        </row>
+        <row stringID="row" value="4">
+          <item stringID="variable" value="PATH"/>
+          <item stringID="value" value="/opt/Xilinx/14.4/ISE_DS/ISE//bin/lin64:/opt/Xilinx/14.4/ISE_DS/../../Vivado_HLS/2012.4/bin:/opt/Xilinx/14.4/ISE_DS/ISE/bin/lin64:/opt/Xilinx/14.4/ISE_DS/ISE/sysgen/util:/opt/Xilinx/14.4/ISE_DS/ISE/sysgen/bin:/opt/Xilinx/14.4/ISE_DS/ISE/../../../DocNav:/opt/Xilinx/14.4/ISE_DS/../../Vivado/2012.4/bin:/opt/Xilinx/14.4/ISE_DS/PlanAhead/bin:/opt/Xilinx/14.4/ISE_DS/EDK/bin/lin64:/opt/Xilinx/14.4/ISE_DS/EDK/gnu/microblaze/lin64/bin:/opt/Xilinx/14.4/ISE_DS/EDK/gnu/powerpc-eabi/lin64/bin:/opt/Xilinx/14.4/ISE_DS/EDK/gnu/arm/lin/bin:/opt/Xilinx/14.4/ISE_DS/EDK/gnu/microblaze/linux_toolchain/lin64_be/bin:/opt/Xilinx/14.4/ISE_DS/EDK/gnu/microblaze/linux_toolchain/lin64_le/bin:/opt/Xilinx/14.4/ISE_DS/common/bin/lin64:/usr/libexec/sdcc:/opt/zpugcc/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/ianb/bin"/>
+        </row>
+        <row stringID="row" value="5">
+          <item stringID="variable" value="XILINX_VIVADO"/>
+          <item stringID="value" value="/opt/Xilinx/14.4/ISE_DS/../../Vivado/2012.4"/>
+        </row>
+        <row stringID="row" value="6">
+          <item stringID="variable" value="LMC_HOME"/>
+          <item stringID="value" value="/opt/Xilinx/14.4/ISE_DS/ISE/smartmodel/lin64/installed_lin64"/>
+        </row>
+        <row stringID="row" value="7">
+          <item stringID="variable" value="XILINX_PLANAHEAD"/>
+          <item stringID="value" value="/opt/Xilinx/14.4/ISE_DS/PlanAhead"/>
+        </row>
+        <row stringID="row" value="8">
+          <item stringID="variable" value="XILINX"/>
+          <item stringID="value" value="/opt/Xilinx/14.4/ISE_DS/ISE/"/>
+        </row>
+      </table>
+      <item stringID="User_EnvOs" value="OS Information">
+        <item stringID="User_EnvOsname" value="unknown"/>
+        <item stringID="User_EnvOsrelease" value="unknown"/>
+      </item>
+      <item stringID="User_EnvHost" value="jane"/>
+      <table stringID="User_EnvCpu">
+        <column stringID="arch"/>
+        <column stringID="speed"/>
+        <row stringID="row" value="0">
+          <item stringID="arch" value="Intel(R) Core(TM) i7-2700K CPU @ 3.50GHz"/>
+          <item stringID="speed" value="1600.000 MHz"/>
+        </row>
+      </table>
+    </section>
+    <section stringID="MAP_OPTION_SUMMARY">
+      <item DEFAULT="high" label="-ol" stringID="MAP_EFFORTLEVEL" value="high"/>
+      <item DEFAULT="" label="-xe" stringID="MAP_EXTRAEFFORTLEVEL" value="NORMAL"/>
+      <item DEFAULT="OFF" label="-ir" stringID="MAP_IGNORERLOCS" value="OFF"/>
+      <item DEFAULT="OFF" stringID="MAP_LUTCOMPRESSIONMODE" value="OFF"/>
+      <item DEFAULT="FALSE" stringID="MAP_REPLICATELUTS" value="TRUE"/>
+      <item DEFAULT="None" label="-intstyle" stringID="MAP_INTSTYLE" value="ise"/>
+      <item DEFAULT="off" label="-lc" stringID="MAP_LUT_COMBINING" value="off"/>
+      <item DEFAULT="None" label="-o" stringID="MAP_OUTFILE" value="example_top_map.ncd"/>
+      <item DEFAULT="false" label="-w" stringID="MAP_OVERWRITE_OUTPUT" value="true"/>
+      <item DEFAULT="off" label="-pr" stringID="MAP_PACK_INTERNAL" value="off"/>
+      <item DEFAULT="None" label="-p" stringID="MAP_PARTNAME" value="xc7k410t-ffg900-2"/>
+    </section>
+    <task stringID="MAP_PACK_REPORT">
+      <item AVAILABLE="508400" dataType="int" label="Number of Slice Registers" stringID="MAP_SLICE_REGISTERS" value="18318">
+        <item dataType="int" label="Number of Slice Flip Flops" stringID="MAP_NUM_SLICE_FF" value="18290"/>
+        <item dataType="int" stringID="MAP_NUM_SLICE_LATCH" value="3"/>
+        <item dataType="int" stringID="MAP_NUM_SLICE_LATCHTHRU" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_SLICE_LATCHLOGIC" value="25"/>
+      </item>
+      <item AVAILABLE="254200" dataType="int" label="Number of Slice LUTs" stringID="MAP_SLICE_LUTS" value="13223">
+        <item dataType="int" label="Number using O5 output only" stringID="MAP_NUM_LOGIC_O5ONLY" value="322"/>
+        <item dataType="int" label="Number using O6 output only" stringID="MAP_NUM_LOGIC_O6ONLY" value="8735"/>
+        <item dataType="int" label="Number using O5 and O6" stringID="MAP_NUM_LOGIC_O5ANDO6" value="1571"/>
+        <item dataType="int" stringID="MAP_NUM_ROM_O5ONLY" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_ROM_O6ONLY" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_ROM_O5ANDO6" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_DPRAM_O5ONLY" value="11"/>
+        <item dataType="int" stringID="MAP_NUM_DPRAM_O6ONLY" value="120"/>
+        <item dataType="int" stringID="MAP_NUM_DPRAM_O5ANDO6" value="549"/>
+        <item dataType="int" stringID="MAP_NUM_SPRAM_O5ONLY" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_SPRAM_O6ONLY" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_SPRAM_O5ANDO6" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_SRL_O5ONLY" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_SRL_O6ONLY" value="1136"/>
+        <item dataType="int" stringID="MAP_NUM_SRL_O5ANDO6" value="691"/>
+        <item dataType="int" stringID="MAP_NUM_LUT_RT_EXO6" value="88"/>
+        <item dataType="int" stringID="MAP_NUM_LUT_RT_EXO5" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_LUT_RT_O5ANDO6" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_LUT_RT_DRIVES_FLOP" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_LUT_RT_DRIVES_CARRY4" value="88"/>
+        <item dataType="int" stringID="MAP_NUM_LUT_RT_DRIVES_OTHERS" value="0"/>
+      </item>
+      <item AVAILABLE="500" dataType="int" stringID="MAP_AGG_BONDED_IO" value="75"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_AGG_UNBONDED_IO" value="0"/>
+      <item AVAILABLE="0" dataType="int" label="IOB Flip Flops" stringID="MAP_NUM_IOB_FF" value="9"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IOB_LATCH" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IOBM" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_BONDED_IOBM" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IOBS" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_BONDED_IOBS" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IPAD" value="0"/>
+      <item AVAILABLE="50" dataType="int" stringID="MAP_NUM_BONDED_IPAD" value="0"/>
+      <item AVAILABLE="32" dataType="int" stringID="MAP_NUM_BONDED_OPAD" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_OPAD" value="0"/>
+      <section stringID="MAP_DESIGN_INFORMATION">
+        <item stringID="MAP_PART" value="7k410tffg900-2"/>
+        <item stringID="MAP_DEVICE" value="xc7k410t"/>
+        <item stringID="MAP_ARCHITECTURE" value="kintex7"/>
+        <item stringID="MAP_PACKAGE" value="ffg900"/>
+        <item stringID="MAP_SPEED" value="-2"/>
+      </section>
+      <section stringID="MAP_DESIGN_SUMMARY">
+        <item dataType="int" stringID="MAP_NUM_ERRORS" value="0"/>
+        <item dataType="int" stringID="MAP_FILTERED_WARNINGS" value="0"/>
+        <item dataType="int" stringID="MAP_NUM_WARNINGS" value="514"/>
+        <item UNITS="KB" dataType="int" stringID="MAP_PEAK_MEMORY" value="2399384"/>
+        <item stringID="MAP_TOTAL_REAL_TIME" value="7 mins 40 secs "/>
+        <item stringID="MAP_TOTAL_CPU_TIME" value="7 mins 39 secs "/>
+      </section>
+      <section stringID="MAP_SLICE_REPORTING">
+        <item AVAILABLE="508400" dataType="int" label="Number of Slice Registers" stringID="MAP_SLICE_REGISTERS" value="18318">
+          <item dataType="int" label="Number of Slice Flip Flops" stringID="MAP_NUM_SLICE_FF" value="18290"/>
+          <item dataType="int" stringID="MAP_NUM_SLICE_LATCH" value="3"/>
+          <item dataType="int" stringID="MAP_NUM_SLICE_LATCHTHRU" value="0"/>
+          <item dataType="int" stringID="MAP_NUM_SLICE_LATCHLOGIC" value="25"/>
+        </item>
+        <item AVAILABLE="254200" dataType="int" label="Number of Slice LUTs" stringID="MAP_SLICE_LUTS" value="13813">
+          <item dataType="int" label="Number using O5 output only" stringID="MAP_NUM_LOGIC_O5ONLY" value="324"/>
+          <item dataType="int" label="Number using O6 output only" stringID="MAP_NUM_LOGIC_O6ONLY" value="8734"/>
+          <item dataType="int" label="Number using O5 and O6" stringID="MAP_NUM_LOGIC_O5ANDO6" value="1571"/>
+          <item dataType="int" stringID="MAP_NUM_ROM_O5ONLY" value="0"/>
+          <item dataType="int" stringID="MAP_NUM_ROM_O6ONLY" value="0"/>
+          <item dataType="int" stringID="MAP_NUM_ROM_O5ANDO6" value="0"/>
+          <item dataType="int" stringID="MAP_NUM_DPRAM_O5ONLY" value="11"/>
+          <item dataType="int" stringID="MAP_NUM_DPRAM_O6ONLY" value="120"/>
+          <item dataType="int" stringID="MAP_NUM_DPRAM_O5ANDO6" value="549"/>
+          <item dataType="int" stringID="MAP_NUM_SPRAM_O5ONLY" value="0"/>
+          <item dataType="int" stringID="MAP_NUM_SPRAM_O6ONLY" value="0"/>
+          <item dataType="int" stringID="MAP_NUM_SPRAM_O5ANDO6" value="0"/>
+          <item dataType="int" stringID="MAP_NUM_SRL_O5ONLY" value="0"/>
+          <item dataType="int" stringID="MAP_NUM_SRL_O6ONLY" value="1136"/>
+          <item dataType="int" stringID="MAP_NUM_SRL_O5ANDO6" value="691"/>
+          <item dataType="int" stringID="MAP_NUM_LUT_RT_EXO6" value="87"/>
+          <item dataType="int" stringID="MAP_NUM_LUT_RT_EXO5" value="589"/>
+          <item dataType="int" stringID="MAP_NUM_LUT_RT_O5ANDO6" value="1"/>
+          <item dataType="int" stringID="MAP_NUM_LUT_RT_DRIVES_FLOP" value="590"/>
+          <item dataType="int" stringID="MAP_NUM_LUT_RT_DRIVES_CARRY4" value="87"/>
+          <item dataType="int" stringID="MAP_NUM_LUT_RT_DRIVES_OTHERS" value="0"/>
+        </item>
+        <item AVAILABLE="63550" dataType="int" label="Number of occupied Slices" stringID="MAP_OCCUPIED_SLICES" value="7144">
+          <item AVAILABLE="40900" dataType="int" stringID="MAP_NUM_SLICEL" value="6216"/>
+          <item AVAILABLE="22650" dataType="int" stringID="MAP_NUM_SLICEM" value="928"/>
+        </item>
+        <item dataType="int" label="Number of LUT Flip Flop pairs used" stringID="MAP_OCCUPIED_LUT_AND_FF" value="20962">
+          <item dataType="int" stringID="MAP_OCCUPIED_LUT_ONLY" value="4709"/>
+          <item dataType="int" label="Number with an unused LUT" stringID="MAP_OCCUPIED_FF_ONLY" value="7149"/>
+          <item dataType="int" label="Number of fully used LUT-FF pairs" stringID="MAP_OCCUPIED_FF_AND_LUT" value="9104"/>
+        </item>
+      </section>
+      <section stringID="MAP_IOB_REPORTING">
+        <item AVAILABLE="500" dataType="int" stringID="MAP_AGG_BONDED_IO" value="75"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_AGG_UNBONDED_IO" value="0"/>
+        <item AVAILABLE="0" dataType="int" label="IOB Flip Flops" stringID="MAP_NUM_IOB_FF" value="9"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IOB_LATCH" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IOBM" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_BONDED_IOBM" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IOBS" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_BONDED_IOBS" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IPAD" value="0"/>
+        <item AVAILABLE="50" dataType="int" stringID="MAP_NUM_BONDED_IPAD" value="0"/>
+        <item AVAILABLE="32" dataType="int" stringID="MAP_NUM_BONDED_OPAD" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_OPAD" value="0"/>
+      </section>
+      <section stringID="MAP_HARD_IP_REPORTING"/>
+      <section stringID="MAP_RAM_FIFO_DATA">
+        <item dataType="int" stringID="MAP_NUM_RAMB36E1" value="42"/>
+        <item dataType="int" stringID="MAP_NUM_FIFO36E1" value="0"/>
+        <item dataType="int" stringID="MAP_AVAILABLE" value="1590"/>
+        <item dataType="int" stringID="MAP_NUM_RAMB18E1" value="3"/>
+        <item dataType="int" stringID="MAP_NUM_FIFO18E1" value="0"/>
+      </section>
+      <section stringID="MAP_IP_DATA">
+        <item dataType="int" stringID="MAP_AVAILABLE" value="500"/>
+        <item AVAILABLE="4" dataType="int" stringID="MAP_NUM_BSCAN" value="1"/>
+        <item AVAILABLE="168" dataType="int" stringID="MAP_NUM_BUFHCE" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_BUFO" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_BUFIODQS" value="0"/>
+        <item AVAILABLE="40" dataType="int" stringID="MAP_NUM_BUFR" value="0"/>
+        <item AVAILABLE="1" dataType="int" stringID="MAP_NUM_CAPTURE" value="0"/>
+        <item AVAILABLE="1" dataType="int" stringID="MAP_NUM_DNA_PORT" value="0"/>
+        <item AVAILABLE="1540" dataType="int" stringID="MAP_NUM_DSP48E1" value="2"/>
+        <item AVAILABLE="1" dataType="int" stringID="MAP_NUM_EFUSE_USR" value="0"/>
+        <item AVAILABLE="1" dataType="int" stringID="MAP_NUM_FRAME_ECC" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_GTHE1_QUAD" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IBUFDS_GTHE1" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IBUFDS_GTXE1" value="0"/>
+        <item AVAILABLE="2" dataType="int" stringID="MAP_NUM_ICAP" value="0"/>
+        <item AVAILABLE="10" dataType="int" stringID="MAP_NUM_IDELAYCTRL" value="1"/>
+        <item AVAILABLE="1" dataType="int" stringID="MAP_NUM_STARTUP" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_SYSMON" value="0"/>
+        <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_TEMAC_SINGLE" value="0"/>
+      </section>
+      <section stringID="MAP_BUFG_DATA">
+        <item dataType="int" label="Number used as BUFGs" stringID="MAP_NUM_BUFG" value="3"/>
+        <item dataType="int" stringID="MAP_NUM_BUFGCTR" value="0"/>
+        <item dataType="int" stringID="MAP_AVAILABLE" value="32"/>
+      </section>
+      <section stringID="MAP_MACRO_RPM_REPORTING">
+        <item dataType="int" stringID="MAP_HARD_MACROS" value="0"/>
+        <item dataType="int" stringID="MAP_RPMS" value="0"/>
+      </section>
+      <section stringID="MAP_IOB_PROPERTIES">
+        <table stringID="MAP_IOB_TABLE">
+          <column label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME"/>
+          <column stringID="Type"/>
+          <column stringID="Direction"/>
+          <column label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD"/>
+          <column label="Diff&#xA;Term" stringID="DIFF_TERM"/>
+          <column label="Drive&#xA;Strength" stringID="DRIVE_STRENGTH"/>
+          <column label="Slew&#xA;Rate" stringID="SLEW_RATE"/>
+          <column label="Reg&#xA;(s)" stringID="REGS"/>
+          <column stringID="Resistor"/>
+          <column label="IOB&#xA;Delay" stringID="IOB_DELAY"/>
+          <row stringID="row" value="1">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;0>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="2">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;1>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="3">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;2>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="4">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;3>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="5">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;4>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="6">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;5>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="7">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;6>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="8">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;7>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="9">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;8>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="10">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;9>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="11">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;10>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="12">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;11>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="13">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;12>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="14">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;13>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="15">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_addr&lt;14>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="16">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_ba&lt;0>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="17">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_ba&lt;1>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="18">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_ba&lt;2>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="19">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_cas_n"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="20">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_ck_n&lt;0>"/>
+            <item stringID="Type" value="IOB18S"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="DIFF_SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+          </row>
+          <row stringID="row" value="21">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_ck_p&lt;0>"/>
+            <item stringID="Type" value="IOB18M"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="DIFF_SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ODDR"/>
+          </row>
+          <row stringID="row" value="22">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_cke&lt;0>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="23">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_cs_n&lt;0>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="24">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dm&lt;0>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="25">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dm&lt;1>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="26">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dm&lt;2>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="27">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dm&lt;3>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="28">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;0>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="29">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;1>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="30">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;2>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="31">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;3>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="32">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;4>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="33">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;5>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="34">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;6>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="35">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;7>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="36">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;8>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="37">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;9>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="38">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;10>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="39">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;11>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="40">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;12>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="41">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;13>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="42">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;14>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="43">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;15>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="44">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;16>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="45">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;17>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="46">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;18>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="47">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;19>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="48">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;20>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="49">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;21>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="50">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;22>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="51">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;23>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="52">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;24>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="53">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;25>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="54">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;26>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="55">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;27>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="56">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;28>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="57">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;29>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="58">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;30>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="59">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dq&lt;31>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ISERDESE2OSERDESE2"/>
+          </row>
+          <row stringID="row" value="60">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dqs_n&lt;0>"/>
+            <item stringID="Type" value="IOB18S"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="DIFF_SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+          </row>
+          <row stringID="row" value="61">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dqs_n&lt;1>"/>
+            <item stringID="Type" value="IOB18S"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="DIFF_SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+          </row>
+          <row stringID="row" value="62">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dqs_n&lt;2>"/>
+            <item stringID="Type" value="IOB18S"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="DIFF_SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+          </row>
+          <row stringID="row" value="63">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dqs_n&lt;3>"/>
+            <item stringID="Type" value="IOB18S"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="DIFF_SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+          </row>
+          <row stringID="row" value="64">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dqs_p&lt;0>"/>
+            <item stringID="Type" value="IOB18M"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="DIFF_SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ODDR TDDR"/>
+          </row>
+          <row stringID="row" value="65">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dqs_p&lt;1>"/>
+            <item stringID="Type" value="IOB18M"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="DIFF_SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ODDR TDDR"/>
+          </row>
+          <row stringID="row" value="66">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dqs_p&lt;2>"/>
+            <item stringID="Type" value="IOB18M"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="DIFF_SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ODDR TDDR"/>
+          </row>
+          <row stringID="row" value="67">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_dqs_p&lt;3>"/>
+            <item stringID="Type" value="IOB18M"/>
+            <item stringID="Direction" value="BIDIR"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="DIFF_SSTL15_T_DCI"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="ODDR TDDR"/>
+          </row>
+          <row stringID="row" value="68">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_odt&lt;0>"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="69">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_ras_n"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="70">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_reset_n"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="LVCMOS15"/>
+            <item label="Drive&#xA;Strength" stringID="DRIVE_STRENGTH" value="12"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+          </row>
+          <row stringID="row" value="71">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="ddr3_we_n"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="SSTL15"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="FAST"/>
+            <item label="Reg&#xA;(s)" stringID="REGS" value="OSERDESE2"/>
+          </row>
+          <row stringID="row" value="72">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="init_calib_complete"/>
+            <item stringID="Type" value="IOB33"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="LVCMOS33"/>
+            <item label="Drive&#xA;Strength" stringID="DRIVE_STRENGTH" value="12"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="SLOW"/>
+          </row>
+          <row stringID="row" value="73">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="sys_clk_i"/>
+            <item stringID="Type" value="IOB18"/>
+            <item stringID="Direction" value="INPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="LVCMOS15"/>
+          </row>
+          <row stringID="row" value="74">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="sys_rst"/>
+            <item stringID="Type" value="IOB33"/>
+            <item stringID="Direction" value="INPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="LVCMOS33"/>
+            <item stringID="Resistor" value="PULLUP"/>
+          </row>
+          <row stringID="row" value="75">
+            <item label="IOB&#xA;Name" sort="smart" stringID="IOB_NAME" value="tg_compare_error"/>
+            <item stringID="Type" value="IOB33"/>
+            <item stringID="Direction" value="OUTPUT"/>
+            <item label="IO&#xA;Standard" sort="smart" stringID="IO_STANDARD" value="LVCMOS33"/>
+            <item label="Drive&#xA;Strength" stringID="DRIVE_STRENGTH" value="12"/>
+            <item label="Slew&#xA;Rate" stringID="SLEW_RATE" value="SLOW"/>
+          </row>
+        </table>
+      </section>
+      <section stringID="MAP_RPM_MACROS">
+        <section stringID="MAP_SHAPE_SECTION">
+          <item dataType="int" stringID="MAP_NUM_SHAPE" value="103"/>
+        </section>
+      </section>
+      <section stringID="MAP_GUIDE_REPORT"/>
+      <section stringID="MAP_AREA_GROUPS_PARTITIONS"/>
+      <section stringID="MAP_TIMING_REPORT"/>
+      <section stringID="MAP_CONFIGURATION_STRING_DETAILS"/>
+      <section stringID="MAP_GENERAL_CONFIG_DATA">
+        <item stringID="MAP_BANDWIDTH" value="HIGH"/>
+        <item stringID="MAP_CLKBURST_ENABLE" value="FALSE"/>
+        <item stringID="MAP_CLKBURST_REPEAT" value="FALSE"/>
+        <item stringID="MAP_CLKFBIN_EDGE" value="FALSE"/>
+        <item stringID="MAP_CLKFBIN_NOCOUNT" value="TRUE"/>
+        <item stringID="MAP_CLKFBOUT_EDGE" value="FALSE"/>
+        <item stringID="MAP_CLKFBOUT_EN" value="TRUE"/>
+        <item stringID="MAP_CLKFBOUT_FRAC_EN" value="FALSE"/>
+        <item stringID="MAP_CLKFBOUT_NOCOUNT" value="TRUE"/>
+        <item stringID="MAP_CLKFBOUT_USE_FINE_PS" value="FALSE"/>
+        <item stringID="MAP_CLKOUT0_EDGE" value="FALSE"/>
+        <item stringID="MAP_CLKOUT0_EN" value="FALSE"/>
+        <item stringID="MAP_CLKOUT0_FRAC_EN" value="FALSE"/>
+        <item stringID="MAP_CLKOUT0_NOCOUNT" value="TRUE"/>
+        <item stringID="MAP_CLKOUT0_USE_FINE_PS" value="FALSE"/>
+        <item stringID="MAP_CLKOUT1_EDGE" value="FALSE"/>
+        <item stringID="MAP_CLKOUT1_EN" value="FALSE"/>
+        <item stringID="MAP_CLKOUT1_NOCOUNT" value="TRUE"/>
+        <item stringID="MAP_CLKOUT1_USE_FINE_PS" value="FALSE"/>
+        <item stringID="MAP_CLKOUT2_EDGE" value="FALSE"/>
+        <item stringID="MAP_CLKOUT2_EN" value="FALSE"/>
+        <item stringID="MAP_CLKOUT2_NOCOUNT" value="TRUE"/>
+        <item stringID="MAP_CLKOUT2_USE_FINE_PS" value="FALSE"/>
+        <item stringID="MAP_CLKOUT3_EDGE" value="FALSE"/>
+        <item stringID="MAP_CLKOUT3_EN" value="FALSE"/>
+        <item stringID="MAP_CLKOUT3_NOCOUNT" value="TRUE"/>
+        <item stringID="MAP_CLKOUT3_USE_FINE_PS" value="FALSE"/>
+        <item stringID="MAP_CLKOUT4_CASCADE" value="FALSE"/>
+        <item stringID="MAP_CLKOUT4_EDGE" value="FALSE"/>
+        <item stringID="MAP_CLKOUT4_EN" value="FALSE"/>
+        <item stringID="MAP_CLKOUT4_NOCOUNT" value="TRUE"/>
+        <item stringID="MAP_CLKOUT4_USE_FINE_PS" value="FALSE"/>
+        <item stringID="MAP_CLKOUT5_EDGE" value="FALSE"/>
+        <item stringID="MAP_CLKOUT5_EN" value="FALSE"/>
+        <item stringID="MAP_CLKOUT5_NOCOUNT" value="TRUE"/>
+        <item stringID="MAP_CLKOUT5_USE_FINE_PS" value="FALSE"/>
+        <item stringID="MAP_CLKOUT6_EDGE" value="FALSE"/>
+        <item stringID="MAP_CLKOUT6_EN" value="FALSE"/>
+        <item stringID="MAP_CLKOUT6_NOCOUNT" value="TRUE"/>
+        <item stringID="MAP_CLKOUT6_USE_FINE_PS" value="FALSE"/>
+        <item stringID="MAP_COMPENSATION" value="BUF_IN"/>
+        <item stringID="MAP_DIRECT_PATH_CNTRL" value="FALSE"/>
+        <item stringID="MAP_DIVCLK_EDGE" value="FALSE"/>
+        <item stringID="MAP_DIVCLK_NOCOUNT" value="TRUE"/>
+        <item stringID="MAP_EN_VCO_DIV1" value="FALSE"/>
+        <item stringID="MAP_EN_VCO_DIV6" value="FALSE"/>
+        <item stringID="MAP_GTS_WAIT" value="FALSE"/>
+        <item stringID="MAP_HVLF_CNT_TEST_EN" value="FALSE"/>
+        <item stringID="MAP_IN_DLY_EN" value="TRUE"/>
+        <item stringID="MAP_MMCM_EN" value="TRUE"/>
+        <item stringID="MAP_PERF0_USE_CLK" value="FALSE"/>
+        <item stringID="MAP_PERF1_USE_CLK" value="FALSE"/>
+        <item stringID="MAP_PERF2_USE_CLK" value="FALSE"/>
+        <item stringID="MAP_PERF3_USE_CLK" value="FALSE"/>
+        <item stringID="MAP_SEL_SLIPD" value="FALSE"/>
+        <item stringID="MAP_STARTUP_WAIT" value="FALSE"/>
+        <item stringID="MAP_VLF_HIGH_DIS_B" value="TRUE"/>
+        <item stringID="MAP_VLF_HIGH_PWDN_B" value="TRUE"/>
+        <item stringID="MAP_CLKFBOUT_MULT_F" value="6.4"/>
+        <item stringID="MAP_CLKFBOUT_PHASE" value="0.0"/>
+        <item stringID="MAP_CLKIN1_PERIOD" value="8"/>
+        <item stringID="MAP_CLKIN2_PERIOD" value="0"/>
+        <item stringID="MAP_CLKOUT0_DIVIDE_F" value="6.4"/>
+        <item stringID="MAP_CLKOUT0_DUTY_CYCLE" value="0.5"/>
+        <item stringID="MAP_CLKOUT0_PHASE" value="0.0"/>
+        <item stringID="MAP_CLKOUT1_DIVIDE" value="1"/>
+        <item stringID="MAP_CLKOUT1_DUTY_CYCLE" value="0.5"/>
+        <item stringID="MAP_CLKOUT1_PHASE" value="0.0"/>
+        <item stringID="MAP_CLKOUT2_DIVIDE" value="1"/>
+        <item stringID="MAP_CLKOUT2_DUTY_CYCLE" value="0.5"/>
+        <item stringID="MAP_CLKOUT2_PHASE" value="0.0"/>
+        <item stringID="MAP_CLKOUT3_DIVIDE" value="1"/>
+        <item stringID="MAP_CLKOUT3_DUTY_CYCLE" value="0.5"/>
+        <item stringID="MAP_CLKOUT3_PHASE" value="0.0"/>
+        <item stringID="MAP_CLKOUT4_DIVIDE" value="1"/>
+        <item stringID="MAP_CLKOUT4_DUTY_CYCLE" value="0.5"/>
+        <item stringID="MAP_CLKOUT4_PHASE" value="0.0"/>
+        <item stringID="MAP_CLKOUT5_DIVIDE" value="1"/>
+        <item stringID="MAP_CLKOUT5_DUTY_CYCLE" value="0.5"/>
+        <item stringID="MAP_CLKOUT5_PHASE" value="0.0"/>
+        <item stringID="MAP_CLKOUT6_DIVIDE" value="1"/>
+        <item stringID="MAP_CLKOUT6_DUTY_CYCLE" value="0.5"/>
+        <item stringID="MAP_CLKOUT6_PHASE" value="0.0"/>
+        <item stringID="MAP_DIVCLK_DIVIDE" value="1"/>
+        <item stringID="MAP_REF_JITTER1" value="0.0"/>
+        <item stringID="MAP_REF_JITTER2" value="0.01"/>
+        <item stringID="MAP_ACASCREG" value="1"/>
+        <item stringID="MAP_ADREG" value="0"/>
+        <item stringID="MAP_ALUMODEREG" value="0"/>
+        <item stringID="MAP_AREG" value="1"/>
+        <item stringID="MAP_AUTORESET_PATDET" value="NO_RESET"/>
+        <item stringID="MAP_A_INPUT" value="DIRECT"/>
+        <item stringID="MAP_BCASCREG" value="0"/>
+        <item stringID="MAP_BREG" value="0"/>
+        <item stringID="MAP_B_INPUT" value="DIRECT"/>
+        <item stringID="MAP_CARRYINREG" value="0"/>
+        <item stringID="MAP_CARRYINSELREG" value="0"/>
+        <item stringID="MAP_CREG" value="0"/>
+        <item stringID="MAP_DREG" value="0"/>
+        <item stringID="MAP_INMODEREG" value="0"/>
+        <item stringID="MAP_MREG" value="0"/>
+        <item stringID="MAP_OPMODEREG" value="0"/>
+        <item stringID="MAP_PREG" value="0"/>
+        <item stringID="MAP_SEL_MASK" value="MASK"/>
+        <item stringID="MAP_SEL_PATTERN" value="PATTERN"/>
+        <item stringID="MAP_USE_DPORT" value="FALSE"/>
+        <item stringID="MAP_USE_MULT" value="MULTIPLY"/>
+        <item stringID="MAP_USE_PATTERN_DETECT" value="NO_PATDET"/>
+        <item stringID="MAP_USE_SIMD" value="ONE48"/>
+        <item stringID="MAP_MASK" value="3fffffffffff"/>
+        <item stringID="MAP_PATTERN" value="000000000000"/>
+      </section>
+      <section stringID="MAP_CONTROL_SET_INFORMATION">
+        <item dataType="int" label="Number of unique control sets" stringID="MAP_NUM_CONTROL_SETS" value="966"/>
+        <tree stringID="MAP_CONTROL_SET_HIERARCHY">
+          <property stringID="MAP_CLOCK_SIGNAL"/>
+          <property stringID="MAP_RESET_SIGNAL"/>
+          <property stringID="MAP_SET_SIGNAL"/>
+          <property stringID="MAP_ENABLE_SIGNAL"/>
+          <property label="Slice&#xA;Load Count" stringID="MAP_SLICE_LOAD_COUNT"/>
+          <property label="Bel&#xA;Load Count" stringID="MAP_BEL_LOAD_COUNT"/>
+        </tree>
+      </section>
+    </task>
+    <section stringID="MAP_RAM_FIFO_DATA">
+      <item dataType="int" stringID="MAP_NUM_RAMB36E1" value="42"/>
+      <item dataType="int" stringID="MAP_NUM_FIFO36E1" value="0"/>
+      <item dataType="int" stringID="MAP_AVAILABLE" value="1590"/>
+      <item dataType="int" stringID="MAP_NUM_RAMB18E1" value="3"/>
+      <item dataType="int" stringID="MAP_NUM_FIFO18E1" value="0"/>
+    </section>
+    <section stringID="MAP_IP_DATA">
+      <item dataType="int" stringID="MAP_AVAILABLE" value="500"/>
+      <item AVAILABLE="4" dataType="int" stringID="MAP_NUM_BSCAN" value="1"/>
+      <item AVAILABLE="168" dataType="int" stringID="MAP_NUM_BUFHCE" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_BUFO" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_BUFIODQS" value="0"/>
+      <item AVAILABLE="40" dataType="int" stringID="MAP_NUM_BUFR" value="0"/>
+      <item AVAILABLE="1" dataType="int" stringID="MAP_NUM_CAPTURE" value="0"/>
+      <item AVAILABLE="1" dataType="int" stringID="MAP_NUM_DNA_PORT" value="0"/>
+      <item AVAILABLE="1540" dataType="int" stringID="MAP_NUM_DSP48E1" value="2"/>
+      <item AVAILABLE="1" dataType="int" stringID="MAP_NUM_EFUSE_USR" value="0"/>
+      <item AVAILABLE="1" dataType="int" stringID="MAP_NUM_FRAME_ECC" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_GTHE1_QUAD" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IBUFDS_GTHE1" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_IBUFDS_GTXE1" value="0"/>
+      <item AVAILABLE="2" dataType="int" stringID="MAP_NUM_ICAP" value="0"/>
+      <item AVAILABLE="10" dataType="int" stringID="MAP_NUM_IDELAYCTRL" value="10"/>
+      <item AVAILABLE="1" dataType="int" stringID="MAP_NUM_STARTUP" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_SYSMON" value="0"/>
+      <item AVAILABLE="0" dataType="int" stringID="MAP_NUM_TEMAC_SINGLE" value="0"/>
+    </section>
+    <section stringID="MAP_BUFG_DATA">
+      <item dataType="int" label="Number used as BUFGs" stringID="MAP_NUM_BUFG" value="3"/>
+      <item dataType="int" stringID="MAP_NUM_BUFGCTR" value="0"/>
+      <item dataType="int" stringID="MAP_AVAILABLE" value="32"/>
+      <item dataType="int" stringID="MAP_HARD_MACROS" value="0"/>
+      <item dataType="int" stringID="MAP_RPMS" value="0"/>
+      <item stringID="MAP_BANDWIDTH" value="HIGH"/>
+      <item stringID="MAP_CLKBURST_ENABLE" value="FALSE"/>
+      <item stringID="MAP_CLKBURST_REPEAT" value="FALSE"/>
+      <item stringID="MAP_CLKFBIN_EDGE" value="FALSE"/>
+      <item stringID="MAP_CLKFBIN_NOCOUNT" value="TRUE"/>
+      <item stringID="MAP_CLKFBOUT_EDGE" value="FALSE"/>
+      <item stringID="MAP_CLKFBOUT_EN" value="TRUE"/>
+      <item stringID="MAP_CLKFBOUT_FRAC_EN" value="FALSE"/>
+      <item stringID="MAP_CLKFBOUT_NOCOUNT" value="TRUE"/>
+      <item stringID="MAP_CLKFBOUT_USE_FINE_PS" value="FALSE"/>
+      <item stringID="MAP_CLKOUT0_EDGE" value="FALSE"/>
+      <item stringID="MAP_CLKOUT0_EN" value="FALSE"/>
+      <item stringID="MAP_CLKOUT0_FRAC_EN" value="FALSE"/>
+      <item stringID="MAP_CLKOUT0_NOCOUNT" value="TRUE"/>
+      <item stringID="MAP_CLKOUT0_USE_FINE_PS" value="FALSE"/>
+      <item stringID="MAP_CLKOUT1_EDGE" value="FALSE"/>
+      <item stringID="MAP_CLKOUT1_EN" value="FALSE"/>
+      <item stringID="MAP_CLKOUT1_NOCOUNT" value="TRUE"/>
+      <item stringID="MAP_CLKOUT1_USE_FINE_PS" value="FALSE"/>
+      <item stringID="MAP_CLKOUT2_EDGE" value="FALSE"/>
+      <item stringID="MAP_CLKOUT2_EN" value="FALSE"/>
+      <item stringID="MAP_CLKOUT2_NOCOUNT" value="TRUE"/>
+      <item stringID="MAP_CLKOUT2_USE_FINE_PS" value="FALSE"/>
+      <item stringID="MAP_CLKOUT3_EDGE" value="FALSE"/>
+      <item stringID="MAP_CLKOUT3_EN" value="FALSE"/>
+      <item stringID="MAP_CLKOUT3_NOCOUNT" value="TRUE"/>
+      <item stringID="MAP_CLKOUT3_USE_FINE_PS" value="FALSE"/>
+      <item stringID="MAP_CLKOUT4_CASCADE" value="FALSE"/>
+      <item stringID="MAP_CLKOUT4_EDGE" value="FALSE"/>
+      <item stringID="MAP_CLKOUT4_EN" value="FALSE"/>
+      <item stringID="MAP_CLKOUT4_NOCOUNT" value="TRUE"/>
+      <item stringID="MAP_CLKOUT4_USE_FINE_PS" value="FALSE"/>
+      <item stringID="MAP_CLKOUT5_EDGE" value="FALSE"/>
+      <item stringID="MAP_CLKOUT5_EN" value="FALSE"/>
+      <item stringID="MAP_CLKOUT5_NOCOUNT" value="TRUE"/>
+      <item stringID="MAP_CLKOUT5_USE_FINE_PS" value="FALSE"/>
+      <item stringID="MAP_CLKOUT6_EDGE" value="FALSE"/>
+      <item stringID="MAP_CLKOUT6_EN" value="FALSE"/>
+      <item stringID="MAP_CLKOUT6_NOCOUNT" value="TRUE"/>
+      <item stringID="MAP_CLKOUT6_USE_FINE_PS" value="FALSE"/>
+      <item stringID="MAP_COMPENSATION" value="BUF_IN"/>
+      <item stringID="MAP_DIRECT_PATH_CNTRL" value="FALSE"/>
+      <item stringID="MAP_DIVCLK_EDGE" value="FALSE"/>
+      <item stringID="MAP_DIVCLK_NOCOUNT" value="TRUE"/>
+      <item stringID="MAP_EN_VCO_DIV1" value="FALSE"/>
+      <item stringID="MAP_EN_VCO_DIV6" value="FALSE"/>
+      <item stringID="MAP_GTS_WAIT" value="FALSE"/>
+      <item stringID="MAP_HVLF_CNT_TEST_EN" value="FALSE"/>
+      <item stringID="MAP_IN_DLY_EN" value="TRUE"/>
+      <item stringID="MAP_MMCM_EN" value="TRUE"/>
+      <item stringID="MAP_PERF0_USE_CLK" value="FALSE"/>
+      <item stringID="MAP_PERF1_USE_CLK" value="FALSE"/>
+      <item stringID="MAP_PERF2_USE_CLK" value="FALSE"/>
+      <item stringID="MAP_PERF3_USE_CLK" value="FALSE"/>
+      <item stringID="MAP_SEL_SLIPD" value="FALSE"/>
+      <item stringID="MAP_STARTUP_WAIT" value="FALSE"/>
+      <item stringID="MAP_VLF_HIGH_DIS_B" value="TRUE"/>
+      <item stringID="MAP_VLF_HIGH_PWDN_B" value="TRUE"/>
+      <item stringID="MAP_CLKFBOUT_MULT_F" value="6.4"/>
+      <item stringID="MAP_CLKFBOUT_PHASE" value="0.0"/>
+      <item stringID="MAP_CLKIN1_PERIOD" value="8"/>
+      <item stringID="MAP_CLKIN2_PERIOD" value="0"/>
+      <item stringID="MAP_CLKOUT0_DIVIDE_F" value="6.4"/>
+      <item stringID="MAP_CLKOUT0_DUTY_CYCLE" value="0.5"/>
+      <item stringID="MAP_CLKOUT0_PHASE" value="0.0"/>
+      <item stringID="MAP_CLKOUT1_DIVIDE" value="1"/>
+      <item stringID="MAP_CLKOUT1_DUTY_CYCLE" value="0.5"/>
+      <item stringID="MAP_CLKOUT1_PHASE" value="0.0"/>
+      <item stringID="MAP_CLKOUT2_DIVIDE" value="1"/>
+      <item stringID="MAP_CLKOUT2_DUTY_CYCLE" value="0.5"/>
+      <item stringID="MAP_CLKOUT2_PHASE" value="0.0"/>
+      <item stringID="MAP_CLKOUT3_DIVIDE" value="1"/>
+      <item stringID="MAP_CLKOUT3_DUTY_CYCLE" value="0.5"/>
+      <item stringID="MAP_CLKOUT3_PHASE" value="0.0"/>
+      <item stringID="MAP_CLKOUT4_DIVIDE" value="1"/>
+      <item stringID="MAP_CLKOUT4_DUTY_CYCLE" value="0.5"/>
+      <item stringID="MAP_CLKOUT4_PHASE" value="0.0"/>
+      <item stringID="MAP_CLKOUT5_DIVIDE" value="1"/>
+      <item stringID="MAP_CLKOUT5_DUTY_CYCLE" value="0.5"/>
+      <item stringID="MAP_CLKOUT5_PHASE" value="0.0"/>
+      <item stringID="MAP_CLKOUT6_DIVIDE" value="1"/>
+      <item stringID="MAP_CLKOUT6_DUTY_CYCLE" value="0.5"/>
+      <item stringID="MAP_CLKOUT6_PHASE" value="0.0"/>
+      <item stringID="MAP_DIVCLK_DIVIDE" value="1"/>
+      <item stringID="MAP_REF_JITTER1" value="0.0"/>
+      <item stringID="MAP_REF_JITTER2" value="0.01"/>
+      <item stringID="MAP_ACASCREG" value="1"/>
+      <item stringID="MAP_ADREG" value="0"/>
+      <item stringID="MAP_ALUMODEREG" value="0"/>
+      <item stringID="MAP_AREG" value="1"/>
+      <item stringID="MAP_AUTORESET_PATDET" value="NO_RESET"/>
+      <item stringID="MAP_A_INPUT" value="DIRECT"/>
+      <item stringID="MAP_BCASCREG" value="0"/>
+      <item stringID="MAP_BREG" value="0"/>
+      <item stringID="MAP_B_INPUT" value="DIRECT"/>
+      <item stringID="MAP_CARRYINREG" value="0"/>
+      <item stringID="MAP_CARRYINSELREG" value="0"/>
+      <item stringID="MAP_CREG" value="0"/>
+      <item stringID="MAP_DREG" value="0"/>
+      <item stringID="MAP_INMODEREG" value="0"/>
+      <item stringID="MAP_MREG" value="0"/>
+      <item stringID="MAP_OPMODEREG" value="0"/>
+      <item stringID="MAP_PREG" value="0"/>
+      <item stringID="MAP_SEL_MASK" value="MASK"/>
+      <item stringID="MAP_SEL_PATTERN" value="PATTERN"/>
+      <item stringID="MAP_USE_DPORT" value="FALSE"/>
+      <item stringID="MAP_USE_MULT" value="MULTIPLY"/>
+      <item stringID="MAP_USE_PATTERN_DETECT" value="NO_PATDET"/>
+      <item stringID="MAP_USE_SIMD" value="ONE48"/>
+      <item stringID="MAP_MASK" value="3fffffffffff"/>
+      <item stringID="MAP_PATTERN" value="000000000000"/>
+    </section>
+  </application>
+
+</document>

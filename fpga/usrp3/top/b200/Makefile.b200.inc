@@ -22,6 +22,7 @@ include ../../lib/packet_proc/Makefile.srcs
 include ../../lib/timing/Makefile.srcs
 include ../../lib/vita/Makefile.srcs
 include ../../lib/wishbone/Makefile.srcs
+include ../../lib/axi/Makefile.srcs
 
 B200_COREGEN_SRCS = \
 coregen/b200_clk_gen.v \
@@ -76,7 +77,8 @@ $(GPIF2_SRCS) $(PACKET_PROC_SRCS) \
 $(WISHBONE_SRCS) \
 $(TIMING_SRCS) \
 $(DSP_SRCS) \
-$(VITA_SRCS)
+$(VITA_SRCS) \
+$(AXI_SRCS)
 
 ##################################################
 # Process Properties

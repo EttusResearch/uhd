@@ -85,8 +85,6 @@ public:
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
-    uhd::property_tree::sptr _tree;
-
     //controllers
     fifo_ctrl_excelsior::sptr _fifo_ctrl;
     i2c_core_200::sptr _fpga_i2c_ctrl;
@@ -110,11 +108,6 @@ private:
     //dboard stuff
     uhd::usrp::dboard_manager::sptr _dboard_manager;
     uhd::usrp::dboard_iface::sptr _dboard_iface;
-
-    //device properties interface
-    uhd::property_tree::sptr get_tree(void) const{
-        return _tree;
-    }
 
     std::vector<boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;
     std::vector<boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;

@@ -1,0 +1,13 @@
+run
+-ifmt VHDL
+-ent axi4_bram_1kx64_exdes
+-p xc7k410t-ffg900-2
+-ifn xst.prj
+-write_timing_constraints No
+-iobuf YES
+-max_fanout 100
+-ofn axi4_bram_1kx64_exdes 
+-ofmt NGC
+-bus_delimiter ()
+-hierarchy_separator /
+-case Maintain

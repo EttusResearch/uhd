@@ -1,6 +1,17 @@
 Change Log for Releases
 ==============================
 
+## 003.007.000
+* Introduced USRP X300 and X310 support!
+* Releasing a CHDR Dissector for Wireshark analysis
+* Improved USRP B200 and B210 stability
+* Introducing Integer-N tuning for WBX, SBX, CBX daughterboards
+* Introducing support for 120 MHz versions of WBX, SBX, CBX
+* Lots of new documentation
+* New GPIO example for USRP X300
+* Fixed threading bug in USRP B2xx code causing GQRX issue
+* General UHD bug fixes & improvements
+
 ## 003.006.002
 * Fixed bug in timed commands example.
 * Improved compatibility for older versions of Boost.
@@ -247,7 +258,7 @@ Change Log for Releases
 ** Incremented FPGA image compat number to 7.2
 ** Incremented firmware image compat number to 10.4
 * N2x0:
-** GPSDO control tweak for some Firefly devices
+** GPSDO control tweak for some devices
 ** Fix for erasure logic in rare bricking cases
 * E100:
 ** Fix RX run state for GPIOs controlled by ATR

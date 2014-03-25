@@ -35,6 +35,20 @@ using namespace uhd::usrp;
 
 const std::string multi_usrp::ALL_GAINS = "";
 
+UHD_INLINE std::string string_vector_to_string(std::vector<std::string> values, std::string delimiter = std::string(" "))
+{
+    std::string out = "";
+    for (std::vector<std::string>::iterator iter = values.begin(); iter != values.end(); iter++)
+    {
+        out += (iter != values.begin() ? delimiter : "") + *iter;
+    }
+    return out;
+}
+
+#define THROW_GAIN_NAME_ERROR(name,chan,dir) throw uhd::exception::runtime_error( \
+            (boost::format("%s: gain \"%s\" not found for channel %d.\nAvailable gains: %s\n") % \
+            __FUNCTION__ % name % chan % string_vector_to_string(get_##dir##_gain_names(chan))).str());
+
 /***********************************************************************
  * Helper methods
  **********************************************************************/
@@ -509,6 +523,46 @@ public:
         return _tree->access<std::vector<std::string> >(mb_root(mboard) / "clock_source" / "options").get();
     }
 
+    void set_clock_source_out(const bool enb, const size_t mboard)
+    {
+        if (mboard != ALL_MBOARDS)
+        {
+            if (_tree->exists(mb_root(mboard) / "clock_source" / "output"))
+            {
+                _tree->access<bool>(mb_root(mboard) / "clock_source" / "output").set(enb);
+            }
+            else
+            {
+                throw uhd::runtime_error("multi_usrp::set_clock_source_out - not supported on this device");
+            }
+            return;
+        }
+        for (size_t m = 0; m < get_num_mboards(); m++)
+        {
+            this->set_clock_source_out(enb, m);
+        }
+    }
+
+    void set_time_source_out(const bool enb, const size_t mboard)
+    {
+        if (mboard != ALL_MBOARDS)
+        {
+            if (_tree->exists(mb_root(mboard) / "time_source" / "output"))
+            {
+                _tree->access<bool>(mb_root(mboard) / "time_source" / "output").set(enb);
+            }
+            else
+            {
+                throw uhd::runtime_error("multi_usrp::set_time_source_out - not supported on this device");
+            }
+            return;
+        }
+        for (size_t m = 0; m < get_num_mboards(); m++)
+        {
+            this->set_time_source_out(enb, m);
+        }
+    }
+
     size_t get_num_mboards(void){
         return _tree->list("/mboards").size();
     }
@@ -620,15 +674,27 @@ public:
     }
 
     void set_rx_gain(double gain, const std::string &name, size_t chan){
-        return rx_gain_group(chan)->set_value(gain, name);
+        try {
+            return rx_gain_group(chan)->set_value(gain, name);
+        } catch (uhd::key_error &e) {
+            THROW_GAIN_NAME_ERROR(name,chan,rx);
+        }
     }
 
     double get_rx_gain(const std::string &name, size_t chan){
-        return rx_gain_group(chan)->get_value(name);
+        try {
+            return rx_gain_group(chan)->get_value(name);
+        } catch (uhd::key_error &e) {
+            THROW_GAIN_NAME_ERROR(name,chan,rx);
+        }
     }
 
     gain_range_t get_rx_gain_range(const std::string &name, size_t chan){
-        return rx_gain_group(chan)->get_range(name);
+        try {
+            return rx_gain_group(chan)->get_range(name);
+        } catch (uhd::key_error &e) {
+            THROW_GAIN_NAME_ERROR(name,chan,rx);
+        }
     }
 
     std::vector<std::string> get_rx_gain_names(size_t chan){
@@ -789,15 +855,27 @@ public:
     }
 
     void set_tx_gain(double gain, const std::string &name, size_t chan){
-        return tx_gain_group(chan)->set_value(gain, name);
+        try {
+            return tx_gain_group(chan)->set_value(gain, name);
+        } catch (uhd::key_error &e) {
+            THROW_GAIN_NAME_ERROR(name,chan,tx);
+        }
     }
 
     double get_tx_gain(const std::string &name, size_t chan){
-        return tx_gain_group(chan)->get_value(name);
+        try {
+            return tx_gain_group(chan)->get_value(name);
+        } catch (uhd::key_error &e) {
+            THROW_GAIN_NAME_ERROR(name,chan,tx);
+        }
     }
 
     gain_range_t get_tx_gain_range(const std::string &name, size_t chan){
-        return tx_gain_group(chan)->get_range(name);
+        try {
+            return tx_gain_group(chan)->get_range(name);
+        } catch (uhd::key_error &e) {
+            THROW_GAIN_NAME_ERROR(name,chan,tx);
+        }
     }
 
     std::vector<std::string> get_tx_gain_names(size_t chan){
@@ -860,6 +938,74 @@ public:
         }
     }
 
+    /*******************************************************************
+     * GPIO methods
+     ******************************************************************/
+    std::vector<std::string> get_gpio_banks(const size_t mboard)
+    {
+        std::vector<std::string> banks;
+        if (_tree->exists(mb_root(mboard) / "gpio"))
+        {
+            BOOST_FOREACH(const std::string &name, _tree->list(mb_root(mboard) / "gpio"))
+            {
+                banks.push_back(name);
+            }
+        }
+        BOOST_FOREACH(const std::string &name, _tree->list(mb_root(mboard) / "dboards"))
+        {
+            banks.push_back("RX"+name);
+            banks.push_back("TX"+name);
+        }
+        return banks;
+    }
+
+    void set_gpio_attr(const std::string &bank, const std::string &attr, const boost::uint32_t value, const boost::uint32_t mask, const size_t mboard)
+    {
+        if (_tree->exists(mb_root(mboard) / "gpio" / bank))
+        {
+            const boost::uint32_t current = _tree->access<boost::uint32_t>(mb_root(mboard) / "gpio" / bank / attr).get();
+            const boost::uint32_t new_value = (current & ~mask) | (value & mask);
+            _tree->access<boost::uint32_t>(mb_root(mboard) / "gpio" / bank / attr).set(new_value);
+            return;
+        }
+        if (bank.size() > 2 and bank[1] == 'X')
+        {
+            const std::string name = bank.substr(2);
+            const dboard_iface::unit_t unit = (bank[0] == 'R')? dboard_iface::UNIT_RX : dboard_iface::UNIT_TX;
+            dboard_iface::sptr iface = _tree->access<dboard_iface::sptr>(mb_root(mboard) / "dboards" / name / "iface").get();
+            if (attr == "CTRL") iface->set_pin_ctrl(unit, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "DDR") iface->set_gpio_ddr(unit, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "OUT") iface->set_gpio_out(unit, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "ATR_0X") iface->set_atr_reg(unit, dboard_iface::ATR_REG_IDLE, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "ATR_RX") iface->set_atr_reg(unit, dboard_iface::ATR_REG_RX_ONLY, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "ATR_TX") iface->set_atr_reg(unit, dboard_iface::ATR_REG_TX_ONLY, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "ATR_XX") iface->set_atr_reg(unit, dboard_iface::ATR_REG_FULL_DUPLEX, boost::uint16_t(value), boost::uint16_t(mask));
+        }
+    }
+
+    boost::uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard)
+    {
+        if (_tree->exists(mb_root(mboard) / "gpio" / bank))
+        {
+            return _tree->access<boost::uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get();
+        }
+        if (bank.size() > 2 and bank[1] == 'X')
+        {
+            const std::string name = bank.substr(2);
+            const dboard_iface::unit_t unit = (bank[0] == 'R')? dboard_iface::UNIT_RX : dboard_iface::UNIT_TX;
+            dboard_iface::sptr iface = _tree->access<dboard_iface::sptr>(mb_root(mboard) / "dboards" / name / "iface").get();
+            if (attr == "CTRL") return iface->get_pin_ctrl(unit);
+            if (attr == "DDR") return iface->get_gpio_ddr(unit);
+            if (attr == "OUT") return iface->get_gpio_out(unit);
+            if (attr == "ATR_0X") return iface->get_atr_reg(unit, dboard_iface::ATR_REG_IDLE);
+            if (attr == "ATR_RX") return iface->get_atr_reg(unit, dboard_iface::ATR_REG_RX_ONLY);
+            if (attr == "ATR_TX") return iface->get_atr_reg(unit, dboard_iface::ATR_REG_TX_ONLY);
+            if (attr == "ATR_XX") return iface->get_atr_reg(unit, dboard_iface::ATR_REG_FULL_DUPLEX);
+            if (attr == "READBACK") return iface->read_gpio(unit);
+        }
+        return 0;
+    }
+
 private:
     device::sptr _dev;
     property_tree::sptr _tree;
@@ -915,6 +1061,12 @@ private:
     fs_path rx_dsp_root(const size_t chan)
     {
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        if (_tree->exists(mb_root(mcp.mboard) / "rx_chan_dsp_mapping")) {
+            std::vector<size_t> map = _tree->access<std::vector<size_t> >(mb_root(mcp.mboard) / "rx_chan_dsp_mapping").get();
+            UHD_ASSERT_THROW(map.size() > mcp.chan);
+            mcp.chan = map[mcp.chan];
+        }
+
         try
         {
             const std::string name = _tree->list(mb_root(mcp.mboard) / "rx_dsps").at(mcp.chan);
@@ -929,6 +1081,11 @@ private:
     fs_path tx_dsp_root(const size_t chan)
     {
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        if (_tree->exists(mb_root(mcp.mboard) / "tx_chan_dsp_mapping")) {
+            std::vector<size_t> map = _tree->access<std::vector<size_t> >(mb_root(mcp.mboard) / "tx_chan_dsp_mapping").get();
+            UHD_ASSERT_THROW(map.size() > mcp.chan);
+            mcp.chan = map[mcp.chan];
+        }
         try
         {
             const std::string name = _tree->list(mb_root(mcp.mboard) / "tx_dsps").at(mcp.chan);

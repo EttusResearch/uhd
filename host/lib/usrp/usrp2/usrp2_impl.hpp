@@ -79,7 +79,6 @@ public:
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private:
-    uhd::property_tree::sptr _tree;
     struct mb_container_type{
         usrp2_iface::sptr iface;
         usrp2_fifo_ctrl::sptr fifo_ctrl;
@@ -114,11 +113,6 @@ private:
 
     void set_rx_fe_corrections(const std::string &mb, const double);
     void set_tx_fe_corrections(const std::string &mb, const double);
-
-    //device properties interface
-    uhd::property_tree::sptr get_tree(void) const{
-        return _tree;
-    }
 
     //io impl methods and members
     UHD_PIMPL_DECL(io_impl) _io_impl;

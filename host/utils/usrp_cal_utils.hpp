@@ -53,7 +53,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
 
     const uhd::fs_path mb_path = "/mboards/0";
     const std::string mb_name = tree->access<std::string>(mb_path / "name").get();
-    if (mb_name.find("USRP2") != std::string::npos or mb_name.find("N200") != std::string::npos or mb_name.find("N210") != std::string::npos){
+    if (mb_name.find("USRP2") != std::string::npos or mb_name.find("N200") != std::string::npos or mb_name.find("N210") != std::string::npos  or mb_name.find("X300") != std::string::npos  or mb_name.find("X310") != std::string::npos){
         usrp->set_tx_rate(12.5e6);
         usrp->set_rx_rate(12.5e6);
     }
@@ -179,27 +179,37 @@ static inline void write_samples_to_file(
     outfile.close();
 }
 
+
+/***********************************************************************
+ * Retrieve d'board serial
+ **********************************************************************/
+static std::string get_serial(
+    uhd::usrp::multi_usrp::sptr usrp,
+    const std::string &tx_rx
+){
+    uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
+    const uhd::fs_path db_path = "/mboards/0/dboards/" + subdev_spec[0].db_name + "/" + tx_rx + "_eeprom";
+    const uhd::usrp::dboard_eeprom_t db_eeprom = tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
+    return db_eeprom.serial;
+}
+
 /***********************************************************************
  * Store data to file
  **********************************************************************/
 static void store_results(
-    uhd::usrp::multi_usrp::sptr usrp,
     const std::vector<result_t> &results,
-    const std::string &XX,
-    const std::string &xx,
-    const std::string &what
+    const std::string &XX, // "TX" or "RX"
+    const std::string &xx, // "tx" or "rx"
+    const std::string &what, // Type of test, e.g. "iq",
+    const std::string &serial
 ){
-    //extract eeprom serial
-    uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
-    const uhd::fs_path db_path = "/mboards/0/dboards/A/" + xx + "_eeprom";
-    const uhd::usrp::dboard_eeprom_t db_eeprom = tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
-
     //make the calibration file path
     fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd";
     fs::create_directory(cal_data_path);
     cal_data_path = cal_data_path / "cal";
     fs::create_directory(cal_data_path);
-    cal_data_path = cal_data_path / str(boost::format("%s_%s_cal_v0.2_%s.csv") % xx % what % db_eeprom.serial);
+    cal_data_path = cal_data_path / str(boost::format("%s_%s_cal_v0.2_%s.csv") % xx % what % serial);
     if (fs::exists(cal_data_path)){
         fs::rename(cal_data_path, cal_data_path.string() + str(boost::format(".%d") % time(NULL)));
     }
@@ -207,7 +217,7 @@ static void store_results(
     //fill the calibration file
     std::ofstream cal_data(cal_data_path.string().c_str());
     cal_data << boost::format("name, %s Frontend Calibration\n") % XX;
-    cal_data << boost::format("serial, %s\n") % db_eeprom.serial;
+    cal_data << boost::format("serial, %s\n") % serial;
     cal_data << boost::format("timestamp, %d\n") % time(NULL);
     cal_data << boost::format("version, 0, 1\n");
     cal_data << boost::format("DATA STARTS HERE\n");
@@ -259,3 +269,4 @@ static void capture_samples(
         throw std::runtime_error("did not get all the samples requested");
     }
 }
+

@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2013 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,10 @@ UHD_INSTALL(FILES
     bounded_buffer.ipp
     buffer_pool.hpp
     if_addrs.hpp
+    udp_constants.hpp
     udp_simple.hpp
     udp_zero_copy.hpp
+    tcp_zero_copy.hpp
     usb_control.hpp
     usb_zero_copy.hpp
     usb_device_handle.hpp

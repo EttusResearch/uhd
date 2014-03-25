@@ -29,7 +29,14 @@ namespace uhd{ namespace transport{
     //! Simple managed buffer with release interface
     class UHD_API managed_buffer{
     public:
-        managed_buffer(void):_ref_count(0),_buffer(NULL),_length(0){}
+        managed_buffer(void):_ref_count(0),_buffer(NULL),_length(0)
+		{
+#ifdef UHD_TXRX_DEBUG_PRINTS
+            _mb_num = s_buffer_count;
+            // From Boost website: atomic_count seems only to have precrement operator.
+            ++s_buffer_count;
+#endif
+        }
 
         virtual ~managed_buffer(void) {}
 
@@ -76,9 +83,27 @@ namespace uhd{ namespace transport{
         boost::detail::atomic_count _ref_count;
         typedef boost::intrusive_ptr<managed_buffer> sptr;
 
+        int ref_count(){
+        	return (int) _ref_count;
+        }
+
+#ifdef UHD_TXRX_DEBUG_PRINTS
+        int num() const{
+        	return _mb_num;
+        }
+#endif
+
     protected:
         void *_buffer;
         size_t _length;
+#ifdef UHD_TXRX_DEBUG_PRINTS
+        int _mb_num;
+#endif
+
+    private:
+#ifdef UHD_TXRX_DEBUG_PRINTS
+        static boost::detail::atomic_count s_buffer_count;
+#endif
     };
 
     UHD_INLINE void intrusive_ptr_add_ref(managed_buffer *p){
@@ -110,6 +135,16 @@ namespace uhd{ namespace transport{
     };
 
     /*!
+     * Transport parameters
+     */
+    struct zero_copy_xport_params {
+        size_t recv_frame_size;
+        size_t send_frame_size;
+        size_t num_recv_frames;
+        size_t num_send_frames;
+    };
+
+    /*!
      * A zero-copy interface for transport objects.
      * Provides a way to get send and receive buffers
      * with memory managed by the transport object.
@@ -117,6 +152,11 @@ namespace uhd{ namespace transport{
     class UHD_API zero_copy_if : boost::noncopyable{
     public:
         typedef boost::shared_ptr<zero_copy_if> sptr;
+
+        /*!
+         * Clean up tasks before releasing the transport object.
+         */
+        virtual ~zero_copy_if() {};
 
         /*!
          * Get a new receive buffer from this transport object.

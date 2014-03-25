@@ -1,0 +1,15 @@
+# Output products list for <ddr_ila_rdpath>
+ddr_ila_rdpath.asy
+ddr_ila_rdpath.cdc
+ddr_ila_rdpath.constraints/ddr_ila_rdpath.ucf
+ddr_ila_rdpath.constraints/ddr_ila_rdpath.xdc
+ddr_ila_rdpath.gise
+ddr_ila_rdpath.ncf
+ddr_ila_rdpath.ngc
+ddr_ila_rdpath.ucf
+ddr_ila_rdpath.xco
+ddr_ila_rdpath.xdc
+ddr_ila_rdpath.xise
+ddr_ila_rdpath_flist.txt
+ddr_ila_rdpath_readme.txt
+ddr_ila_rdpath_xmdf.tcl

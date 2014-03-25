@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="./isim.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="axi_crossbar_tb" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="11" />
+   <wvobject fp_name="/axi_crossbar_tb/clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axi_crossbar_tb/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axi_crossbar_tb/set_stb" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">set_stb</obj_property>
+      <obj_property name="ObjectShortName">set_stb</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axi_crossbar_tb/set_addr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">set_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">set_addr[15:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axi_crossbar_tb/set_data" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">set_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">set_data[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/axi_crossbar_tb/local_addr" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">local_addr</obj_property>
+      <obj_property name="ObjectShortName">local_addr</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider67" type="divider">
+      <obj_property name="label">New Divider</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="BkColor">128 128 255</obj_property>
+      <obj_property name="TextColor">230 230 230</obj_property>
+   </wvobject>
+   <wvobject fp_name="group6" type="group">
+      <obj_property name="label">Input Port 0</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[0].axi_fifo_short_in /i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[64:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[64:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[0].axi_fifo_short_in /i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[0].axi_fifo_short_in /i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[0].axi_fifo_short_in /o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[64:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[64:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[0].axi_fifo_short_in /o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[0].axi_fifo_short_in /o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="divider64" type="divider">
+         <obj_property name="label">New Divider</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="BkColor">128 128 255</obj_property>
+         <obj_property name="TextColor">230 230 230</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group10" type="group">
+      <obj_property name="label">Input Port 1</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[1].axi_fifo_short_in /i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[64:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[64:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[1].axi_fifo_short_in /i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[1].axi_fifo_short_in /i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[1].axi_fifo_short_in /o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[64:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[64:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[1].axi_fifo_short_in /o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\input_fifos[1].axi_fifo_short_in /o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="divider65" type="divider">
+         <obj_property name="label">New Divider</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="BkColor">128 128 255</obj_property>
+         <obj_property name="TextColor">230 230 230</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group14" type="group">
+      <obj_property name="label">Output Port 0</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[0].axi_fifo_short_out /i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[64:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[64:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[0].axi_fifo_short_out /i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[0].axi_fifo_short_out /i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[0].axi_fifo_short_out /o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[64:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[64:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[0].axi_fifo_short_out /o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[0].axi_fifo_short_out /o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="divider66" type="divider">
+         <obj_property name="label">New Divider</obj_property>
+         <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="BkColor">128 128 255</obj_property>
+         <obj_property name="TextColor">230 230 230</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group18" type="group">
+      <obj_property name="label">Output Port 1</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[1].axi_fifo_short_out /i_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tdata[64:0]</obj_property>
+         <obj_property name="ObjectShortName">i_tdata[64:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[1].axi_fifo_short_out /i_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tvalid</obj_property>
+         <obj_property name="ObjectShortName">i_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[1].axi_fifo_short_out /i_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">i_tready</obj_property>
+         <obj_property name="ObjectShortName">i_tready</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[1].axi_fifo_short_out /o_tdata" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tdata[64:0]</obj_property>
+         <obj_property name="ObjectShortName">o_tdata[64:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[1].axi_fifo_short_out /o_tvalid" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tvalid</obj_property>
+         <obj_property name="ObjectShortName">o_tvalid</obj_property>
+      </wvobject>
+      <wvobject fp_name="/axi_crossbar_tb/\output_fifos[1].axi_fifo_short_out /o_tready" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">o_tready</obj_property>
+         <obj_property name="ObjectShortName">o_tready</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>

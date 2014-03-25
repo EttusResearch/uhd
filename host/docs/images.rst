@@ -12,9 +12,12 @@ The methods of loading images into the device vary among devices:
 
 * **USRP1:** The host code will automatically load the firmware and FPGA at runtime.
 * **USRP2:** The user must manually write the images onto the USRP2 SD card.
-* **USRP-N Series:** The user must manually transfer the images over ethernet.
+* **USRP-N Series:** The user programs an image into on-board storage, which
+  then is automatically loaded at runtime.
 * **USRP-E Series:** The host code will automatically load the FPGA at runtime.
 * **USRP-B Series:** The host code will automatically load the FPGA at runtime.
+* **USRP-X Series:** The user programs an image into on-board storage, which
+  then is automatically loaded at runtime. 
 
 ------------------------------------------------------------------------
 Pre-built Images
@@ -25,8 +28,6 @@ Pre-built images are available for download.
 * `Master Branch images <http://files.ettus.com/binaries/master_images/>`_
 * `Maint Branch images <http://files.ettus.com/binaries/maint_images/>`_
 
-See the UHD wiki for the download link.
-
 The pre-built images come in two forms:
 
 * bundled with UHD software in a platform-specific installer
@@ -36,11 +37,10 @@ The pre-built images come in two forms:
 UHD Images Downloader
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The UHD Images Downloader is a new feature in UHD 003.005.000. This script downloads UHD images that
-are guaranteed to be compatible with the host code and places them in the default images
-directory.
+The UHD images downloader downloads UHD images compatible with the host code
+and places them in the default images directory.
 
-By default, it can be found at: **<install-path>/share/uhd/utils/uhd_images_downloader.py**
+By default, it can be found at: **<install-path>/lib/uhd/utils/uhd_images_downloader.py**
 
 By default, it installs images to: **<install-path>/share/uhd/images**
 
@@ -79,9 +79,24 @@ The build commands for a particular image can be found in **<uhd-repo-path>/imag
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Xilinx FPGA builds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Xilinx ISE 12.x and up is required to build the Xilinx FPGA images.
+USRP Xilinx FPGA images are built with two different versions of ISE, depending
+on the device.
+
 The build requires that you have a UNIX-like environment with **Make**.
 Make sure that **xtclsh** from the Xilinx ISE bin directory is in your **$PATH**.
+
+
+**Xilinx ISE 14.4**
+* USRP X3x0 Series
+
+See **<uhd-repo-path>/fpga/usrp3/top/**.
+
+**Xilinx ISE 12.2**
+* USRP N2x0
+* USRP B2x0
+* USRP B1x0
+* USRP E1x0
+* USRP2
 
 See **<uhd-repo-path>/fpga/usrp2/top/**.
 
@@ -97,7 +112,7 @@ See **<uhd-repo-path>/firmware/zpu**.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Altera FPGA builds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Quartus is required to build the Altera FPGA images.
+Quartus is required to build the Altera FPGA image for the USRP1.
 Pre-built images can also be found in **<uhd-repo-path>/fpga/usrp1/rbf**.
 
 See **<uhd-repo-path>/fpga/usrp1/toplevel/***.

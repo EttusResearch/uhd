@@ -20,6 +20,7 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <complex>
 
@@ -30,19 +31,24 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
+    std::string wire;
     double seconds_in_future;
     size_t total_num_samps;
     double rate;
+    std::string channel_list;
 
     //setup the program options
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
+        ("wire", po::value<std::string>(&wire)->default_value(""), "the over the wire type, sc16, sc8, etc")
         ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to receive")
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
         ("dilv", "specify to disable inner-loop verbose")
+        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+    
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -62,6 +68,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
+   //detect which channels to use
+    std::vector<std::string> channel_strings;
+    std::vector<size_t> channel_nums;
+    boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
+    for(size_t ch = 0; ch < channel_strings.size(); ch++){
+        size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+        if(chan >= usrp->get_tx_num_channels() or chan >= usrp->get_rx_num_channels()){
+            throw std::runtime_error("Invalid channel(s) specified.");
+        }
+        else channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+    }
+
     //set the rx sample rate
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
     usrp->set_rx_rate(rate);
@@ -71,7 +89,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     usrp->set_time_now(uhd::time_spec_t(0.0));
 
     //create a receive streamer
-    uhd::stream_args_t stream_args("fc32"); //complex floats
+    uhd::stream_args_t stream_args("fc32", wire); //complex floats
+    stream_args.channels = channel_nums;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     //setup streaming
@@ -90,6 +109,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //allocate buffer to receive with samples
     std::vector<std::complex<float> > buff(rx_stream->get_max_num_samps());
+    std::vector<void *> buffs;
+    for (size_t ch = 0; ch < rx_stream->get_num_channels(); ch++)
+        buffs.push_back(&buff.front()); //same buffer for each channel
 
     //the first call to recv() will block this many seconds before receiving
     double timeout = seconds_in_future + 0.1; //timeout (delay before receive + padding)
@@ -98,7 +120,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     while(num_acc_samps < total_num_samps){
         //receive a single packet
         size_t num_rx_samps = rx_stream->recv(
-            &buff.front(), buff.size(), md, timeout, true
+            buffs, buff.size(), md, timeout, true
         );
 
         //use a small timeout for subsequent packets

@@ -1,0 +1,65 @@
+.TH "usrp_x3xx_fpga_burner" 1 "3.7.0" UHD "User Commands"
+.SH NAME
+usrp_x3xx_fpga_burner - USRP X-Series FPGA Burner
+.SH DESCRIPTION
+Burn an FPGA image onto a connected USRP X-Series device. The program takes
+two main arguments. The first is either an IP address or an NI-RIO resource 
+to decide the method of loading the FPGA image. The other is either the
+type of image to burn, in which case the program will choose the default image
+of that type and model, or a custom FPGA image path.
+.SH SYNOPSIS
+.B  usrp_x3xx_fpga_burner [OPTIONS]
+.SH OPTIONS
+.IP "Device IP Address:"
+--addr=\fI"Address"\fR
+. IP "Device NI-RIO Resource:"
+--resource=\fI"Resource"\fR
+. IP "RPC Port:"
+--rpc-port=\fI"Port"\fR (default=5444)
+. IP "Image Type (1G, HGS, or XGS):"
+--type=\fI"Type"\fR
+. IP "Custom FPGA path:"
+--fpga-path=\fI"Path"\fR
+. IP "Initialize USRP with image currently burned onto device (Ethernet only):"
+--configure
+. IP "Verify image during Ethernet burn (takes longer):"
+--verify
+. IP "List connected USRP X-Series devices:"
+--list
+.IP "This help information:"
+--help
+.SH EXAMPLES
+.SS Burning a 1-Gigabit image over Ethernet
+.sp
+usrp_x3xx_fpga_burner --addr=192.168.10.2 --type=1G
+.SS Burning a Hybrid image over PCIe
+usrp_x3xx_fpga_burner --resource=RIO0 --type=HGS
+.SS Burning a custom FPGA image over Ethernet
+usrp_x3xx_fpga_burner --addr=192.168.10.2 --fpga=path="custom_image.bit"
+.ft
+.fi
+.SH SEE ALSO
+UHD documentation:
+.B http://files.ettus.com/uhd_docs/manual/html/index.html
+.LP
+GR-UHD documentation:
+.B http://gnuradio.org/doc/doxygen/page_uhd.html
+.LP
+Other UHD programs:
+.sp
+uhd_images_downloader(1) usrp2_card_burner(1) usrp_n2xx_simple_net_burner(1)
+.SH AUTHOR
+This manual page was written by Nicholas Corgan
+for the Debian project (but may be used by others).
+.SH COPYRIGHT
+Copyright (c) 2014 Ettus Research LLC
+.LP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.LP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.

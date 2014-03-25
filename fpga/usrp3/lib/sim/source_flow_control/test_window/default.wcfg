@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="./isim.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="source_flow_control_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="23" />
+   <wvobject fp_name="/source_flow_control_tb/clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/set_stb" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">set_stb</obj_property>
+      <obj_property name="ObjectShortName">set_stb</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/set_addr" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">set_addr[7:0]</obj_property>
+      <obj_property name="ObjectShortName">set_addr[7:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/set_data" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">set_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">set_data[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/in_tdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">in_tdata[63:0]</obj_property>
+      <obj_property name="ObjectShortName">in_tdata[63:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/in_tlast" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">in_tlast</obj_property>
+      <obj_property name="ObjectShortName">in_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/in_tvalid" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">in_tvalid</obj_property>
+      <obj_property name="ObjectShortName">in_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/in_tready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">in_tready</obj_property>
+      <obj_property name="ObjectShortName">in_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/out_tdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">out_tdata[63:0]</obj_property>
+      <obj_property name="ObjectShortName">out_tdata[63:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/out_tlast" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">out_tlast</obj_property>
+      <obj_property name="ObjectShortName">out_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/out_tvalid" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">out_tvalid</obj_property>
+      <obj_property name="ObjectShortName">out_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/out_tready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">out_tready</obj_property>
+      <obj_property name="ObjectShortName">out_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/fc_tdata" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">fc_tdata[63:0]</obj_property>
+      <obj_property name="ObjectShortName">fc_tdata[63:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/fc_tvalid" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">fc_tvalid</obj_property>
+      <obj_property name="ObjectShortName">fc_tvalid</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/fc_tready" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">fc_tready</obj_property>
+      <obj_property name="ObjectShortName">fc_tready</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/fc_tlast" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">fc_tlast</obj_property>
+      <obj_property name="ObjectShortName">fc_tlast</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/go_until_seqnum" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">go_until_seqnum[31:0]</obj_property>
+      <obj_property name="ObjectShortName">go_until_seqnum[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/current_seqnum" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">current_seqnum[31:0]</obj_property>
+      <obj_property name="ObjectShortName">current_seqnum[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/go" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">go</obj_property>
+      <obj_property name="ObjectShortName">go</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/window_size" type="array" db_ref_id="1">
+      <obj_property name="ElementShortName">window_size[31:0]</obj_property>
+      <obj_property name="ObjectShortName">window_size[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/window_reset" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">window_reset</obj_property>
+      <obj_property name="ObjectShortName">window_reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/source_flow_control_tb/source_flow_control/always_go" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">always_go</obj_property>
+      <obj_property name="ObjectShortName">always_go</obj_property>
+   </wvobject>
+</wave_config>

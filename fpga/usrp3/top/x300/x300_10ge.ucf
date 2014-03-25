@@ -1,0 +1,2 @@
+NET   XG_CLK_p              IOSTANDARD = LVDS_25 | LOC  =  R8;
+NET   XG_CLK_n              IOSTANDARD = LVDS_25 | LOC  =  R7;

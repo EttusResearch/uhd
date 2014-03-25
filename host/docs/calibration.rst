@@ -5,14 +5,15 @@ UHD - Calibration Application Notes
 .. contents:: Table of Contents
 
 ------------------------------------------------------------------------
-Self-calibration
+Self-Calibration
 ------------------------------------------------------------------------
-UHD software comes with several self-calibration utilities for minimizing IQ imbalance and DC offset.
-These utilities perform calibration sweeps using transmit leakage into the receive path
-(special equipment is not required).
-The results from a calibration are written to a CSV file in the user's home directory.
-UHD software will automatically apply corrections at runtime when the user re-tunes the daughterboard LO.
-Calibration results are specific to an individual RF board.
+UHD software comes with several self-calibration utilities for minimizing IQ
+imbalance and DC offset.  These utilities perform calibration sweeps using
+transmit leakage into the receive path (special equipment is not required).
+The results from a calibration are written to a CSV file in the user's home
+directory.  UHD software will automatically apply corrections at runtime when
+the user re-tunes the daughterboard LO.  Calibration results are specific to an
+individual RF board.
 
 **Note:**
 When a calibration table is present,
@@ -27,10 +28,10 @@ UHD software comes with the following calibration utilities:
 
 The following RF frontends are supported by the self-calibration utilities:
 
- * RFX transceiver board
- * WBX transceiver board
- * SBX transceiver board
- * CBX transceiver board
+ * RFX Series transceiver boards
+ * WBX Series transceiver boards
+ * SBX Series transceiver boards
+ * CBX Series transceiver boards
 
 ********************************************
 Calibration Utilities
@@ -54,7 +55,7 @@ may not have a serial number. If this is the case, run the following command to 
 into the daughterboard's EEPROM:
 ::
 
-    <install dir>/share/uhd/utils/usrp_burn_db_eeprom --ser=<desired serial> --args=<optional device args>
+    <install dir>/lib/uhd/utils/usrp_burn_db_eeprom --ser=<desired serial> --args=<optional device args>
 
 ********************************************
 Calibration Data

@@ -37,6 +37,11 @@ namespace uhd{ namespace transport{
  */
 class UHD_API udp_zero_copy : public virtual zero_copy_if{
 public:
+    struct buff_params {
+        size_t  recv_buff_size;
+        size_t  send_buff_size;
+    };
+
     typedef boost::shared_ptr<udp_zero_copy> sptr;
 
     /*!
@@ -51,11 +56,15 @@ public:
      *
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
+     * \param default_buff_args Default values for frame sizes and num frames
+     * \param[out] buff_params_out Returns the actual buffer sizes
      * \param hints optional parameters to pass to the underlying transport
      */
     static sptr make(
         const std::string &addr,
         const std::string &port,
+        const zero_copy_xport_params &default_buff_args,
+        udp_zero_copy::buff_params& buff_params_out,
         const device_addr_t &hints = device_addr_t()
     );
 };

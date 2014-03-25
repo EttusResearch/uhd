@@ -6,6 +6,7 @@
 # DSP Sources
 ##################################################
 DSP_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/dsp/, \
+ddc_chain_x300.v \
 ddc_chain.v \
 duc_chain.v \
 sign_extend.v \
@@ -34,5 +35,6 @@ round.v \
 srl.v \
 acc.v \
 rx_frontend.v \
+tx_frontend.v \
 rx_dcoffset.v \
 ))

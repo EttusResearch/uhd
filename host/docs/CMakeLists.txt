@@ -25,8 +25,10 @@ SET(manual_sources
     calibration.rst
     coding.rst
     dboards.rst
+    gpio_api.rst
     gpsdo.rst
     gpsdo_b2x0.rst
+    gpsdo_x3x0.rst
     general.rst
     images.rst
     stream.rst
@@ -37,6 +39,8 @@ SET(manual_sources
     usrp_b100.rst
     usrp_b200.rst
     usrp_e1x0.rst
+    usrp_x3x0.rst
+    usrp_x3x0_config.rst
 )
 
 ########################################################################
@@ -81,6 +85,14 @@ IF(ENABLE_MANUAL)
     #make the html manual a build-time dependency
     ADD_CUSTOM_TARGET(manual_html ALL DEPENDS ${manual_html_files})
     UHD_INSTALL(FILES ${manual_sources} DESTINATION ${PKG_DOC_DIR}/manual/rst COMPONENT manual)
+
+    #resources for html manual 
+    ADD_CUSTOM_COMMAND(
+        TARGET manual_html POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/res ${CMAKE_CURRENT_BINARY_DIR}/res
+    )
+    UHD_INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/res DESTINATION ${PKG_DOC_DIR}/manual/html COMPONENT manual)
+
 ENDIF(ENABLE_MANUAL)
 
 ########################################################################
@@ -128,6 +140,7 @@ SET(man_page_sources
     uhd_images_downloader.1
     uhd_usrp_probe.1
     usrp_n2xx_simple_net_burner.1
+    usrp_x3xx_fpga_burner.1
     usrp2_card_burner.1
 )
 
@@ -137,7 +150,12 @@ SET(man_page_sources
 MESSAGE(STATUS "")
 FIND_PACKAGE(GZip)
 
-LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "GZIP_FOUND;LINUX" OFF)
+# No elegant way in CMake to reverse a boolean
+IF(NOT WIN32)
+    SET(NOT_WIN32 TRUE)
+ENDIF(NOT WIN32)
+
+LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "GZIP_FOUND;NOT_WIN32" OFF)
 
 IF(ENABLE_MAN_PAGES)
     #Generate man pages

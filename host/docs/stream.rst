@@ -16,7 +16,7 @@ A TX stream allows the user to transmit samples to the device.
 Link Layer Encapsulation
 ------------------------------------------------------------------------
 The VITA49 standard provides encapsulation for sample data across a link layer.
-On all generation2 hardware, samples are encapsulated into VRT IF data packets.
+On all second generation hardware (and later), samples are encapsulated into VRT IF data packets.
 These packets also provide sample decoration such as stream time and burst flags.
 Sample decoration is exposed to the user in the form of RX and TX metadata structs.
 
@@ -54,6 +54,6 @@ Conversion
 The user may request arbitrary combinations of host and link data types;
 however, not all combinations are supported.
 The user may register custom data type formats and conversion routines.
-See **uhd/convert.hpp** for futher documentation.
+See **uhd/convert.hpp** for further documentation.
 
 TODO: provide example of convert API

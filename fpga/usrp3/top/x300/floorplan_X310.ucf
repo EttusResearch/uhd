@@ -1,0 +1,27 @@
+
+INST "x300_core/bus_int/sc/sys_ram/sys_ram0/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X2Y26;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram0/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X2Y27;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram0/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[2].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X2Y28;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram0/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[3].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X2Y29;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram0/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[4].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X2Y30;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram0/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[5].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X2Y31;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram0/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[6].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X2Y32;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram0/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[7].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X2Y33;
+
+INST "x300_core/bus_int/sc/sys_ram/sys_ram1/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[0].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X3Y26;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram1/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[1].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X3Y27;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram1/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[2].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X3Y28;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram1/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[3].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X3Y29;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram1/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[4].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X3Y30;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram1/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[5].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X3Y31;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram1/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[6].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X3Y32;
+INST "x300_core/bus_int/sc/sys_ram/sys_ram1/U0/xst_blk_mem_generator/gnativebmg.native_blk_mem_gen/valid.cstr/ramloop[7].ram.r/v6_init.ram/NO_BMM_INFO.SP.SIMPLE_PRIM36.ram" LOC = RAMB36_X3Y33;
+
+INST "x300_core/bus_int/sc/axi_stream_to_wb/input_stream_bram/Mram_ram1" LOC = RAMB36_X4Y28;
+INST "x300_core/bus_int/sc/axi_stream_to_wb/input_stream_bram/Mram_ram2" LOC = RAMB36_X4Y29;
+
+INST "x300_core/bus_int/sc/axi_stream_to_wb/output_stream_bram/Mram_ram1" LOC = RAMB36_X4Y30;
+INST "x300_core/bus_int/sc/axi_stream_to_wb/output_stream_bram/Mram_ram2" LOC = RAMB36_X4Y31;
+
+INST "x300_core/bus_int/sc/zpu_top0/*" AREA_GROUP = "pblock_1";
+AREA_GROUP "pblock_1" RANGE=SLICE_X36Y125:SLICE_X81Y174;

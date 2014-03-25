@@ -20,6 +20,11 @@
 ########################################################################
 
 ########################################################################
+# Include subdirectories (different than add)
+########################################################################
+INCLUDE_SUBDIRECTORY(nirio)
+
+########################################################################
 # Setup libusb
 ########################################################################
 MESSAGE(STATUS "")
@@ -119,7 +124,18 @@ LIBUHD_PYTHON_GEN_SOURCE(
 )
 
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/tcp_zero_copy.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/buffer_pool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/nirio_zero_copy.cpp
 )
+
+# Verbose Debug output for send/recv
+SET( UHD_TXRX_DEBUG_PRINTS OFF CACHE BOOL "Use verbose debug output for send/recv" )
+OPTION( UHD_TXRX_DEBUG_PRINTS "Use verbose debug output for send/recv" "" )
+IF(UHD_TXRX_DEBUG_PRINTS)
+	MESSAGE(STATUS "Using verbose debug output for send/recv")
+	ADD_DEFINITIONS(-DUHD_TXRX_DEBUG_PRINTS)
+ENDIF()
+

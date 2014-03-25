@@ -1,5 +1,5 @@
 //
-// Copyright 2010,2012 Ettus Research LLC
+// Copyright 2010,2012-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1005,6 +1005,17 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
 
         _freq_scalar = (4*16.0e6)/(this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX));
     } else if (ref_clock == 100e6) {
+        
+        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, REFCLOCK_DIV8);
+
+        UHD_LOGV(often) << boost::format(
+            "TVRX2 (%s): Dividing Refclock by 6"
+        ) % (get_subdev_name()) << std::endl;
+
+        _freq_scalar = (6*16.0e6)/this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
+    } else if (ref_clock == 200e6)  {
+        UHD_MSG(warning) << boost::format("ref_clock was 200e6, setting ref_clock divider for 100e6.") % ref_clock << std::endl;
+        this->get_iface()->set_clock_rate(dboard_iface::UNIT_RX, 100e6);
         this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, REFCLOCK_DIV6);
 
         UHD_LOGV(often) << boost::format(
@@ -1014,7 +1025,7 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
         _freq_scalar = (6*16.0e6)/this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
     } else {
         this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, REFCLOCK_DIV6);
-        UHD_MSG(warning) << boost::format("Unsupported ref_clock %0.2f, valid options 64e6 and 100e6") % ref_clock << std::endl;
+        UHD_MSG(warning) << boost::format("Unsupported ref_clock %0.2f, valid options 64e6, 100e6, 200e6") % ref_clock << std::endl;
         _freq_scalar = 1.0;
     }
 

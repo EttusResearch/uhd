@@ -1,0 +1,5 @@
+*.log
+*.exe
+*.vcd
+isim*
+fuse*

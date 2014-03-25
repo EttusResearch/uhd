@@ -4,8 +4,13 @@ UHD - Internal GPSDO Application Notes (USRP-N2x0/E1X0 Models)
 
 .. contents:: Table of Contents
 
-This application note describes the use of integrated GPS-disciplined
-oscillators with Ettus Research USRP devices.
+This application note describes the use of integrated GPS-disciplined oscillators (GPSDOs) for
+the USRP N-Series and E1xx. For information regarding the GPSDO that is compatible with
+the USRP X-Series, please see:
+
+`USRP-X3x0 Internal GPSDO Device Manual <./gpsdo_x3x0.html>`_
+
+=======
 
 ------------------------------------------------------------------------
 Specifications
@@ -16,11 +21,11 @@ Specifications
 * **Holdover**: <11us over 3h
 * **Phase noise**:
 
-  * **1Hz:** -80dBc/Hz
-  * **10Hz:** -110dBc/Hz
-  * **100Hz:** -135dBc/Hz
-  * **1kHz:** -145dBc/Hz
-  * **10kHz:** <-145dBc/Hz
+  * **1Hz:** -80 dBc/Hz
+  * **10Hz:** -110 dBc/Hz
+  * **100Hz:** -135 dBc/Hz
+  * **1kHz:** -145 dBc/Hz
+  * **10kHz:** <-145 dBc/Hz
 
 **Antenna Types:**
 
@@ -29,7 +34,7 @@ The GPSDO is capable of supplying a 3V for active GPS antennas or supporting pas
 ------------------------------------------------------------------------
 Installation Instructions
 ------------------------------------------------------------------------
-Installation instructions can be found here:
+Instructions for mounting the GPSDO kit onto your USRP device can be found here:
 `http://www.ettus.com/content/files/gpsdo-kit_2.pdf <http://www.ettus.com/content/files/gpsdo-kit_2.pdf>`_
 
 ********************************************
@@ -40,7 +45,7 @@ Post-installation Task (N-Series only)
 
 This is necessary if you require absolute GPS time in your application
 or need to communicate with the GPSDO to obtain location, satellite info, etc.
-If you only require 10MHz and PPS signals for reference or MIMO use
+If you only require 10 MHz and PPS signals for reference or MIMO use
 (see the `Synchronization Application Notes <./sync.html>`_),
 it is not necessary to perform this step.
 
@@ -49,7 +54,7 @@ To configure the USRP to communicate with the GPSDO, use the
 
 ::
 
-    cd <install-path>/share/uhd/utils
+    cd <install-path>/lib/uhd/utils
     ./usrp_burn_mb_eeprom --args=<optional device args> --key=gpsdo --val=internal
 
     -- restore original setting --
@@ -61,7 +66,7 @@ Using the GPSDO in Your Application
 By default, if a GPSDO is detected at startup, the USRP will be configured
 to use it as a frequency and time reference. The internal VITA timestamp
 will be initialized to the GPS time, and the internal oscillator will be
-phase-locked to the 10MHz GPSDO reference. If the GPSDO is not locked to
+phase-locked to the 10 MHz GPSDO reference. If the GPSDO is not locked to
 satellites, the VITA time will not be initialized.
 
 GPS data is obtained through the **mboard_sensors** interface. To retrieve

@@ -2,24 +2,14 @@
 //
 // Copyright 2011 Ettus Research LLC
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+
 
 
 module gpio_atr
   #(parameter BASE = 0,
-    parameter WIDTH = 32)
+    parameter WIDTH = 32,
+    parameter default_ddr = 0,
+    parameter default_idle = 0)
    (input clk, input reset,
     input set_stb, input [7:0] set_addr, input [31:0] set_data,
     input rx, input tx,
@@ -32,7 +22,7 @@ module gpio_atr
    reg [WIDTH-1:0]    gpio_pipe;
    
    
-   setting_reg #(.my_addr(BASE+0), .width(WIDTH)) reg_idle
+   setting_reg #(.my_addr(BASE+0), .width(WIDTH), .at_reset(default_idle)) reg_idle
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr), .in(set_data),
       .out(in_idle),.changed());
 
@@ -48,7 +38,7 @@ module gpio_atr
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr), .in(set_data),
       .out(in_fdx),.changed());
 
-   setting_reg #(.my_addr(BASE+4), .width(WIDTH)) reg_ddr
+   setting_reg #(.my_addr(BASE+4), .width(WIDTH), .at_reset(default_ddr)) reg_ddr
      (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr), .in(set_data),
       .out(ddr),.changed());
 

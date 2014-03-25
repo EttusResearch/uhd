@@ -1,0 +1,15 @@
+vlogcomp -work work ${XILINX}/verilog/src/glbl.v
+vlogcomp -work work ../../control/axi_crossbar_tb.v
+vlogcomp -work work ../../control/axi_crossbar.v
+vlogcomp -work work ../../control/axi_slave_mux.v
+vlogcomp -work work ../../control/axi_forwarding_cam.v
+vlogcomp -work work ../../control/setting_reg.v
+vlogcomp -work work ../../fifo/monitor_axi_fifo.v
+vlogcomp -work work ../../fifo/axi_fifo_short.v
+
+
+
+fuse work.axi_crossbar_tb work.glbl -L unisims_ver -L xilinxcorelib_ver -o axi_crossbar_tb.exe
+
+# run the simulation scrip
+./axi_crossbar_tb.exe -gui #-tclbatch simcmds.tcl

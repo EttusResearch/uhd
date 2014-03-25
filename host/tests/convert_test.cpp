@@ -50,8 +50,8 @@ template <typename Range> static void loopback(
     const int prio_in = -1,
     const int prio_out = -1
 ){
-    //item32 is largest device type
-    std::vector<boost::uint32_t> interm(nsamps);
+    //make this buffer large enough for all test types
+    std::vector<boost::uint64_t> interm(nsamps);
 
     std::vector<const void *> input0(1, &input[0]), input1(1, &interm[0]);
     std::vector<void *> output0(1, &interm[0]), output1(1, &output[0]);
@@ -148,8 +148,8 @@ static void test_convert_types_for_floats(
     BOOST_FOREACH(const int_pair_t &prio, prios){
         loopback(nsamps, in_id, out_id, input, output, prio.first, prio.second);
         for (size_t i = 0; i < nsamps; i++){
-            MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(1./32767));
-            MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(1./32767));
+            MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(1./(1 << 14)));
+            MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), value_type(1./(1 << 14)));
         }
     }
 }
@@ -203,6 +203,66 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64){
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
         test_convert_types_for_floats<fc64_t>(nsamps, id);
+    }
+}
+
+/***********************************************************************
+ * Test float to/from sc12 conversion loopback
+ **********************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_convert_types_le_sc12_with_fc32){
+    convert::id_type id;
+    id.input_format = "fc32";
+    id.num_inputs = 1;
+    id.output_format = "sc12_item32_le";
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_for_floats<fc32_t>(nsamps, id, 1./16);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_be_sc12_with_fc32){
+    convert::id_type id;
+    id.input_format = "fc32";
+    id.num_inputs = 1;
+    id.output_format = "sc12_item32_be";
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_for_floats<fc32_t>(nsamps, id, 1./16);
+    }
+}
+
+/***********************************************************************
+ * Test float to/from fc32 conversion loopback
+ **********************************************************************/
+
+BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32_with_fc32){
+    convert::id_type id;
+    id.input_format = "fc32";
+    id.num_inputs = 1;
+    id.output_format = "fc32_item32_le";
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_for_floats<fc32_t>(nsamps, id);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32_with_fc32){
+    convert::id_type id;
+    id.input_format = "fc32";
+    id.num_inputs = 1;
+    id.output_format = "fc32_item32_be";
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_for_floats<fc32_t>(nsamps, id);
     }
 }
 

@@ -10,7 +10,9 @@ module serial_to_settings
    // Settngs bus out
    output reg set_stb,
    output reg [7:0] set_addr,
-   output reg [31:0] set_data
+   output reg [31:0] set_data,
+   // Debug
+   output [31:0] debug
    );
 
    reg [2:0] 	 state;
@@ -105,6 +107,14 @@ module serial_to_settings
 	  
 	endcase // case(state)
      end // else: !if(reset)
+
+   assign debug =
+		 {
+		  counter[4:0],
+		  state[2:0],
+		  scl_reg,
+		  sda_reg
+		  };
    
 
 

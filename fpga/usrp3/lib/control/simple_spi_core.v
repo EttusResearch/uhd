@@ -1,19 +1,7 @@
 //
 // Copyright 2012 Ettus Research LLC
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+
 
 // Simple SPI core, the simplest, yet complete spi core I can think of
 
@@ -69,9 +57,9 @@ module simple_spi_core
         output ready,
 
         //spi interface, slave selects, clock, data in, data out
-        output [WIDTH-1:0] sen,
+        output reg [WIDTH-1:0] sen,
         output sclk,
-        output mosi,
+        output reg mosi,
         input miso,
 
         //optional debug output
@@ -113,22 +101,30 @@ module simple_spi_core
     assign sclk = sclk_reg;
 
     //serial enables either idle or enabled based on state
+    // IJB. One pipeline stage to break critical path from register in I/O pads.
     wire sen_is_idle = (state == WAIT_TRIG) || (state == IDLE_SEN);
     wire [23:0] sen24 = (sen_is_idle)? SEN_IDLE : (SEN_IDLE ^ slave_select);
     reg [WIDTH-1:0] sen_reg;
-    always @(posedge clock) sen_reg <= sen24[WIDTH-1:0];
-    assign sen = sen_reg;
+    always @(posedge clock) 
+      sen_reg <= sen24[WIDTH-1:0];
+    always @(posedge clock) 
+      sen <= sen_reg;
 
     //data output shift register
+   // IJB. One pipeline stage to break critical path from register in I/O pads.
     reg [31:0] dataout_reg;
     wire [31:0] dataout_next = {dataout_reg[30:0], 1'b0};
-    assign mosi = dataout_reg[31];
+   
+   always @(posedge clock)
+     mosi <= dataout_reg[31];
 
     //data input shift register
-   // IJB. One pipeline stage to break critical path from register in I/O pads.
-   reg 		miso_pipe;
-   always @(posedge clock)
-     miso_pipe = miso;
+   // IJB. Two pipeline stages to break critical path from register in I/O pads.
+   reg 		miso_pipe, miso_pipe2;
+   always @(posedge clock) begin
+      miso_pipe2 <= miso;
+      miso_pipe <= miso_pipe2;
+   end
    
     reg [31:0] datain_reg;
     wire [31:0] datain_next = {datain_reg[30:0], miso_pipe};

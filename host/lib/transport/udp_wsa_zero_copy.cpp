@@ -182,14 +182,15 @@ public:
     udp_zero_copy_wsa_impl(
         const std::string &addr,
         const std::string &port,
+        zero_copy_xport_params& xport_params,
         const device_addr_t &hints
     ):
-        _recv_frame_size(size_t(hints.cast<double>("recv_frame_size", udp_simple::mtu))),
-        _num_recv_frames(size_t(hints.cast<double>("num_recv_frames", DEFAULT_NUM_FRAMES))),
-        _send_frame_size(size_t(hints.cast<double>("send_frame_size", udp_simple::mtu))),
-        _num_send_frames(size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_FRAMES))),
-        _recv_buffer_pool(buffer_pool::make(_num_recv_frames, _recv_frame_size)),
-        _send_buffer_pool(buffer_pool::make(_num_send_frames, _send_frame_size)),
+        _recv_frame_size(xport_params.recv_frame_size),
+        _num_recv_frames(xport_params.num_recv_frames),
+        _send_frame_size(xport_params.send_frame_size),
+        _num_send_frames(xport_params.num_send_frames),
+        _recv_buffer_pool(buffer_pool::make(xport_params.num_recv_frames, xport_params.recv_frame_size)),
+        _send_buffer_pool(buffer_pool::make(xport_params.num_send_frames, xport_params.send_frame_size)),
         _next_recv_buff_index(0), _next_send_buff_index(0)
     {
         #ifdef CHECK_REG_SEND_THRESH
@@ -275,6 +276,36 @@ public:
     size_t get_num_send_frames(void) const {return _num_send_frames;}
     size_t get_send_frame_size(void) const {return _send_frame_size;}
 
+    //! Read back the socket's buffer space reserved for receives
+    size_t get_recv_buff_size(void) {
+        int recv_buff_size = 0;
+        int opt_len = sizeof(recv_buff_size);
+        getsockopt(
+                _sock_fd,
+                SOL_SOCKET,
+                SO_RCVBUF,
+                (char *)&recv_buff_size,
+                (int *)&opt_len
+        );
+
+        return (size_t) recv_buff_size;
+    }
+
+    //! Read back the socket's buffer space reserved for sends
+    size_t get_send_buff_size(void) {
+        int send_buff_size = 0;
+        int opt_len = sizeof(send_buff_size);
+        getsockopt(
+                _sock_fd,
+                SOL_SOCKET,
+                SO_SNDBUF,
+                (char *)&send_buff_size,
+                (int *)&opt_len
+        );
+
+        return (size_t) send_buff_size;
+    }
+
 private:
     //memory management -> buffers and fifos
     const size_t _recv_frame_size, _num_recv_frames;
@@ -291,10 +322,67 @@ private:
 /***********************************************************************
  * UDP zero copy make function
  **********************************************************************/
+void check_usr_buff_size(
+    size_t actual_buff_size,
+    size_t user_buff_size, // Set this to zero for no user-defined preference
+    const std::string tx_rx
+){
+    UHD_LOG << boost::format(
+        "Target %s sock buff size: %d bytes\n"
+        "Actual %s sock buff size: %d bytes"
+    ) % tx_rx % user_buff_size % tx_rx % actual_buff_size << std::endl;
+    if ((user_buff_size != 0.0) and (actual_buff_size < user_buff_size)) UHD_MSG(warning) << boost::format(
+        "The %s buffer could not be resized sufficiently.\n"
+        "Target sock buff size: %d bytes.\n"
+        "Actual sock buff size: %d bytes.\n"
+        "See the transport application notes on buffer resizing.\n"
+    ) % tx_rx % user_buff_size % actual_buff_size;
+}
+
+
+
 udp_zero_copy::sptr udp_zero_copy::make(
     const std::string &addr,
     const std::string &port,
+    const zero_copy_xport_params &default_buff_args,
+    udp_zero_copy::buff_params& buff_params_out,
     const device_addr_t &hints
 ){
-    return sptr(new udp_zero_copy_wsa_impl(addr, port, hints));
+    //Initialize xport_params
+    zero_copy_xport_params xport_params = default_buff_args;
+
+    xport_params.recv_frame_size = size_t(hints.cast<double>("recv_frame_size", default_buff_args.recv_frame_size));
+    xport_params.num_recv_frames = size_t(hints.cast<double>("num_recv_frames", default_buff_args.num_recv_frames));
+    xport_params.send_frame_size = size_t(hints.cast<double>("send_frame_size", default_buff_args.send_frame_size));
+    xport_params.num_send_frames = size_t(hints.cast<double>("num_send_frames", default_buff_args.num_send_frames));
+
+    //extract buffer size hints from the device addr and check if they match up
+    size_t usr_recv_buff_size = size_t(hints.cast<double>("recv_buff_size", 0.0));
+    size_t usr_send_buff_size = size_t(hints.cast<double>("send_buff_size", 0.0));
+    if (hints.has_key("recv_buff_size")) {
+        if (usr_recv_buff_size < xport_params.recv_frame_size * xport_params.num_recv_frames) {
+            throw uhd::value_error((boost::format(
+                "recv_buff_size must be equal to or greater than (num_recv_frames * recv_frame_size) where num_recv_frames=%d, recv_frame_size=%d")
+                % xport_params.num_recv_frames % xport_params.recv_frame_size).str());
+        }
+    }
+    if (hints.has_key("send_buff_size")) {
+        if (usr_send_buff_size < xport_params.send_frame_size * xport_params.num_send_frames) {
+            throw uhd::value_error((boost::format(
+                "send_buff_size must be equal to or greater than (num_send_frames * send_frame_size) where num_send_frames=%d, send_frame_size=%d")
+                % xport_params.num_send_frames % xport_params.send_frame_size).str());
+        }
+    }
+
+    udp_zero_copy_wsa_impl::sptr udp_trans(
+        new udp_zero_copy_wsa_impl(addr, port, xport_params, hints)
+    );
+
+    // Read back the actual socket buffer sizes
+    buff_params_out.recv_buff_size = udp_trans->get_recv_buff_size();
+    buff_params_out.send_buff_size = udp_trans->get_send_buff_size();
+    check_usr_buff_size(buff_params_out.recv_buff_size, usr_recv_buff_size, "recv");
+    check_usr_buff_size(buff_params_out.send_buff_size, usr_send_buff_size, "send");
+
+    return udp_trans;
 }

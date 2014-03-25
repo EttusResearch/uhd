@@ -83,7 +83,8 @@ void rx_hammer(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_cpu, uhd:
         case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:
             had_an_overflow = true;
             last_time = md.time_spec;
-            num_overflows++;
+            if (!md.out_of_sequence)
+                num_overflows++;
             break;
 
         default:

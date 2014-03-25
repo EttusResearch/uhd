@@ -153,3 +153,9 @@ device::sptr device::make(const device_addr_t &hint, size_t which){
         return dev;
     }
 }
+
+uhd::property_tree::sptr
+device::get_tree(void) const
+{
+    return _tree;
+}
