@@ -30,7 +30,6 @@
 
 #include "boost/tuple/tuple.hpp"
 #include "boost/foreach.hpp"
-#include <boost/container/vector.hpp>
 
 using namespace uhd;
 using namespace boost::gregorian;
