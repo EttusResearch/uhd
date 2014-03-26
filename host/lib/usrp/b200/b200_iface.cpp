@@ -32,6 +32,12 @@
 #include <iomanip>
 #include <libusb.h>
 
+//! libusb_error_name is only in newer API
+#ifndef HAVE_LIBUSB_ERROR_NAME
+    #define libusb_error_name(code) \
+        str(boost::format("LIBUSB_ERROR_CODE %d") % code)
+#endif
+
 using namespace uhd;
 using namespace uhd::transport;
 

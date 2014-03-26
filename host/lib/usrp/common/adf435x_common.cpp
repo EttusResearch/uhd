@@ -16,8 +16,11 @@
 //
 
 #include "adf435x_common.hpp"
+
 #include <uhd/types/tune_request.hpp>
 #include <uhd/utils/log.hpp>
+#include <cmath>
+
 
 using namespace uhd;
 
