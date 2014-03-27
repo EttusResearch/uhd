@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
     #pragma warning(disable:4201)  // nonstandard extension used : nameless struct/union
         #include <WinIoCtl.h>
     #pragma warning(default:4201)
-#elif defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
+#elif !defined(UHD_PLATFORM_LINUX)
     #include <IOKit/IOKitLib.h>
 #endif
 
@@ -445,10 +445,8 @@ static inline void init_syncop_out_params(nirio_syncop_out_params_t& param, void
     typedef int rio_dev_handle_t;
 #elif defined(UHD_PLATFORM_WIN32)
     typedef HANDLE rio_dev_handle_t;
-#elif defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
-    typedef io_connect_t rio_dev_handle_t;
 #else
-    #error OS not supported by nirio_driver_iface.
+    typedef io_connect_t rio_dev_handle_t;
 #endif
 static const rio_dev_handle_t INVALID_RIO_HANDLE = ((rio_dev_handle_t)-1);
 
@@ -492,15 +490,13 @@ static const rio_dev_handle_t INVALID_RIO_HANDLE = ((rio_dev_handle_t)-1);
 
         bool is_null() { return addr == NULL; }
     };
-#elif defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
+#else
      struct rio_mmap_t {
          rio_mmap_t() : addr(NULL) {}
          void *addr;
 
          bool is_null() { return addr == NULL; }
      };
-#else
-    #error OS not supported by nirio_driver_iface.
 #endif
 
     nirio_status rio_open(
