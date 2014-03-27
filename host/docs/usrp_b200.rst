@@ -144,48 +144,9 @@ Component ID     Description               Details
 ===============  ========================  ========================================================
  J502*           Mictor Connector          | Interface to FPGA for I/O and inspection.
  J503*           JTAG Header               | Interface to FPGA for programming and debugging.
- J400            Debug Header              | Pin 1 - serial data out (115200 8,N,1 @ 1.8V)
-                                           | Pin 2 - ground
-                                           | Pin 3 - serial data in (not connected) 
- S100            GPSDO ISP Enable Switch   | Not supported
  S700            FX3 Hard Reset Switch
 ===============  ========================  ========================================================
 
 \* B210 Only
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Test Points
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Below is a table showing the test points:
-
-===============  ==================================  ===================
-Component ID     Description                         Details
-===============  ==================================  ===================
- J603            Upstream Voltage Regulation         | 3.3 V supply
-                 Test Point                          | Pin 1 - 3.7 V
-                                                     | Pin 2 - gnd
- J604            AD9361 Supply Test Point            | Pin 1 - 1.3 V
-                                                     | Pin 2 - gnd
- J605            FPGA Supply Test Point              | Pin 1 - 1.2 V
-                                                     | Pin 2 - gnd
- J606            FX3 Supply Test Point               | Pin 1 - 1.2V
-                                                     | Pin 2 - gnd
- J609            Upstream Voltage Regulation         | 1.3 V supply
-                 Test Point                          | Pin 1 - 1.8 V
-                                                     | Pin 2 - gnd
- T600            External Voltage Supply
-                 Test Point
- T601            1.3 V AD9361 Power Good
-                 Test Point
- T602            1.3 V AD9361 Synthesizer
-                 Power Good Test Point
- TP302           AD9361 AUX DAC1 Test Point
- TP303           AD9361 AUX DAC2 Test Point
- T700            Not connected
- T701            Not connected
- T702            FX3 External Clock In               | Not used
- T703            FX3 Charger Detect Out
-===============  ==================================  ===================
 
 
