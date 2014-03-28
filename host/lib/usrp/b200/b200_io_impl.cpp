@@ -23,6 +23,7 @@
 #include "async_packet_handler.hpp"
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
+#include <set>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -31,8 +32,47 @@ using namespace uhd::transport;
 /***********************************************************************
  * update streamer rates
  **********************************************************************/
+void b200_impl::check_tick_rate_with_current_streamers(double rate)
+{
+    size_t max_tx_chan_count = 0, max_rx_chan_count = 0;
+    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    {
+        {
+            boost::shared_ptr<sph::recv_packet_streamer> rx_streamer =
+                boost::dynamic_pointer_cast<sph::recv_packet_streamer>(perif.rx_streamer.lock());
+            if (rx_streamer)
+                max_rx_chan_count = std::max(max_rx_chan_count, rx_streamer->get_num_channels());
+        }
+
+        {
+            boost::shared_ptr<sph::send_packet_streamer> tx_streamer =
+                boost::dynamic_pointer_cast<sph::send_packet_streamer>(perif.tx_streamer.lock());
+            if (tx_streamer)
+                max_tx_chan_count = std::max(max_tx_chan_count, tx_streamer->get_num_channels());
+        }
+    }
+
+    // Defined in b200_impl.cpp
+    enforce_tick_rate_limits(max_rx_chan_count, rate, "RX");
+    enforce_tick_rate_limits(max_tx_chan_count, rate, "TX");
+}
+
+void b200_impl::check_streamer_args(const uhd::stream_args_t &args, double tick_rate, const char* direction /*= NULL*/)
+{
+    std::set<size_t> chans_set;
+    for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
+    {
+        const size_t chan = args.channels[stream_i];
+        chans_set.insert(chan);
+    }
+
+    enforce_tick_rate_limits(chans_set.size(), tick_rate, direction);   // Defined in b200_impl.cpp
+}
+
 void b200_impl::update_tick_rate(const double rate)
 {
+    check_tick_rate_with_current_streamers(rate);
+
     BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
     {
         boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
@@ -222,6 +262,8 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
     if (args.otw_format.empty()) args.otw_format = "sc16";
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
 
+    check_streamer_args(args, this->get_tick_rate(), "RX");
+
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer;
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
     {
@@ -324,6 +366,8 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t &args_)
     //setup defaults for unspecified values
     if (args.otw_format.empty()) args.otw_format = "sc16";
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+
+    check_streamer_args(args, this->get_tick_rate(), "TX");
 
     boost::shared_ptr<sph::send_packet_streamer> my_streamer;
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)

@@ -91,6 +91,7 @@ public:
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args);
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
+    void check_streamer_args(const uhd::stream_args_t &args, double tick_rate, const char* direction = NULL);
 
 private:
     //controllers
@@ -177,13 +178,15 @@ private:
     void update_enables(void);
     void update_atrs(void);
 
-    void update_tick_rate(const double);
-    void update_rx_samp_rate(const size_t, const double);
-    void update_tx_samp_rate(const size_t, const double);
-
     double _tick_rate;
     double get_tick_rate(void){return _tick_rate;}
     double set_tick_rate(const double rate);
+    void update_tick_rate(const double);
+    void enforce_tick_rate_limits(size_t chan_count, double tick_rate, const char* direction = NULL);
+    void check_tick_rate_with_current_streamers(double rate);
+
+    void update_rx_samp_rate(const size_t, const double);
+    void update_tx_samp_rate(const size_t, const double);
 };
 
 #endif /* INCLUDED_B200_IMPL_HPP */

@@ -27,10 +27,17 @@
 #include <vector>
 #include <string>
 
+#include "ad9361_transaction.h"
+
+
+static const double AD9361_CLOCK_RATE_MAX = 61.44e6;
+static const double AD9361_1_CHAN_CLOCK_RATE_MAX = AD9361_CLOCK_RATE_MAX;
+static const double AD9361_2_CHAN_CLOCK_RATE_MAX = (AD9361_1_CHAN_CLOCK_RATE_MAX / 2);
+
 
 struct ad9361_ctrl_iface_type
 {
-    virtual void ad9361_transact(const unsigned char in_buff[64], unsigned char out_buff[64]) = 0;
+    virtual void ad9361_transact(const unsigned char in_buff[AD9361_DISPATCH_PACKET_SIZE], unsigned char out_buff[AD9361_DISPATCH_PACKET_SIZE]) = 0;
 };
 typedef boost::shared_ptr<ad9361_ctrl_iface_type> ad9361_ctrl_iface_sptr;
 
@@ -42,18 +49,18 @@ struct ad9361_ctrl_over_zc : ad9361_ctrl_iface_type
         _xport = xport;
     }
 
-    void ad9361_transact(const unsigned char in_buff[64], unsigned char out_buff[64])
+    void ad9361_transact(const unsigned char in_buff[AD9361_DISPATCH_PACKET_SIZE], unsigned char out_buff[AD9361_DISPATCH_PACKET_SIZE])
     {
         {
             uhd::transport::managed_send_buffer::sptr buff = _xport->get_send_buff(10.0);
-            if (not buff or buff->size() < 64) throw std::runtime_error("ad9361_ctrl_over_zc send timeout");
-            std::memcpy(buff->cast<void *>(), in_buff, 64);
-            buff->commit(64);
+            if (not buff or buff->size() < AD9361_DISPATCH_PACKET_SIZE) throw std::runtime_error("ad9361_ctrl_over_zc send timeout");
+            std::memcpy(buff->cast<void *>(), in_buff, AD9361_DISPATCH_PACKET_SIZE);
+            buff->commit(AD9361_DISPATCH_PACKET_SIZE);
         }
         {
             uhd::transport::managed_recv_buffer::sptr buff = _xport->get_recv_buff(10.0);
-            if (not buff or buff->size() < 64) throw std::runtime_error("ad9361_ctrl_over_zc recv timeout");
-            std::memcpy(out_buff, buff->cast<const void *>(), 64);
+            if (not buff or buff->size() < AD9361_DISPATCH_PACKET_SIZE) throw std::runtime_error("ad9361_ctrl_over_zc recv timeout");
+            std::memcpy(out_buff, buff->cast<const void *>(), AD9361_DISPATCH_PACKET_SIZE);
         }
     }
 
@@ -100,7 +107,7 @@ public:
     static uhd::meta_range_t get_clock_rate_range(void)
     {
         //return uhd::meta_range_t(220e3, 61.44e6);
-        return uhd::meta_range_t(5e6, 61.44e6); //5 MHz DCM low end
+        return uhd::meta_range_t(5e6, AD9361_CLOCK_RATE_MAX); //5 MHz DCM low end
     }
 
     //! set the filter bandwidth for the frontend

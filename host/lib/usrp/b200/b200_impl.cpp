@@ -157,12 +157,12 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     const fs_path mb_path = "/mboards/0";
 
     //try to match the given device address with something on the USB bus
-    uint16_t vid = B200_VENDOR_ID;
-    uint16_t pid = B200_PRODUCT_ID;
+    boost::uint16_t vid = B200_VENDOR_ID;
+    boost::uint16_t pid = B200_PRODUCT_ID;
     if (device_addr.has_key("vid"))
-            sscanf(device_addr.get("vid").c_str(), "%x", &vid);
+            sscanf(device_addr.get("vid").c_str(), "%hx", &vid);
     if (device_addr.has_key("pid"))
-            sscanf(device_addr.get("pid").c_str(), "%x", &pid);
+            sscanf(device_addr.get("pid").c_str(), "%hx", &pid);
 
     std::vector<usb_device_handle::sptr> device_list =
         usb_device_handle::get_device_list(vid, pid);
@@ -663,9 +663,40 @@ void b200_impl::codec_loopback_self_test(wb_iface::sptr iface)
 /***********************************************************************
  * Sample and tick rate comprehension below
  **********************************************************************/
+void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, const char* direction /*= NULL*/)
+{
+    const size_t max_chans = 2;
+    if (chan_count > max_chans)
+    {
+        throw uhd::value_error(boost::str(
+            boost::format("cannot not setup %d %s channels (maximum is %d)")
+                % chan_count
+                % (direction ? direction : "data")
+                % max_chans
+        ));
+    }
+    else
+    {
+        const double max_tick_rate = ((chan_count <= 1) ? AD9361_1_CHAN_CLOCK_RATE_MAX : AD9361_2_CHAN_CLOCK_RATE_MAX);
+        if (tick_rate > max_tick_rate)
+        {
+            throw uhd::value_error(boost::str(
+                boost::format("current master clock rate (%.2f MHz) exceeds maximum possible master clock rate (%.2f MHz) when using %d %s channels")
+                    % (tick_rate/1e6)
+                    % (max_tick_rate/1e6)
+                    % chan_count
+                    % (direction ? direction : "data")
+            ));
+        }
+    }
+}
+
 double b200_impl::set_tick_rate(const double rate)
 {
     UHD_MSG(status) << "Asking for clock rate " << rate/1e6 << " MHz\n";
+
+    check_tick_rate_with_current_streamers(rate);   // Defined in b200_io_impl.cpp
+
     _tick_rate = _codec_ctrl->set_clock_rate(rate);
     UHD_MSG(status) << "Actually got clock rate " << _tick_rate/1e6 << " MHz\n";
 
