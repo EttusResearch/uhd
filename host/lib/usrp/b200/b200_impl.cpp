@@ -19,6 +19,7 @@
 #include "b200_regs.hpp"
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
@@ -58,11 +59,11 @@ static device_addrs_t b200_find(const device_addr_t &hint)
     //since an address and resource is intended for a different, non-USB, device.
     if (hint.has_key("addr") || hint.has_key("resource")) return b200_addrs;
 
-    unsigned int vid, pid;
+    boost::uint16_t vid, pid;
 
     if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "b200") {
-        sscanf(hint.get("vid").c_str(), "%x", &vid);
-        sscanf(hint.get("pid").c_str(), "%x", &pid);
+        vid = uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid"));
+        pid = uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"));
     } else {
         vid = B200_VENDOR_ID;
         pid = B200_PRODUCT_ID;
@@ -160,9 +161,9 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     boost::uint16_t vid = B200_VENDOR_ID;
     boost::uint16_t pid = B200_PRODUCT_ID;
     if (device_addr.has_key("vid"))
-            sscanf(device_addr.get("vid").c_str(), "%hx", &vid);
+        vid = uhd::cast::hexstr_cast<boost::uint16_t>(device_addr.get("vid"));
     if (device_addr.has_key("pid"))
-            sscanf(device_addr.get("pid").c_str(), "%hx", &pid);
+        pid = uhd::cast::hexstr_cast<boost::uint16_t>(device_addr.get("pid"));
 
     std::vector<usb_device_handle::sptr> device_list =
         usb_device_handle::get_device_list(vid, pid);
