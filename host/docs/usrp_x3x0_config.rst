@@ -46,6 +46,23 @@ You should open your NetworkManager configuration and tell it to ignore the
 network interface you are using. **This is not the same as simply setting
 a static IP address.** You *must* tell NetworkManager to ignore the interface.
 
+Changing the host's IP address
+-------------------------------------
+
+On a Linux system, you can add a static IP address very easily by using the
+'ip' command:
+
+::
+
+    sudo ip addr add 192.168.10.1/24 dev <interface>
+
+Note that **<interface>** is usually something like **eth0**.  You can discover the
+names of the network interfaces in your computer by running:
+
+::
+
+    ip addr show
+
 Configuring the Socket Buffers
 -------------------------------------
 It is necessary to increase the maximum size of the socket buffers to avoid
@@ -91,6 +108,11 @@ Many Linux distributions come installed with a Firewall, by default. The
 Firewall will often interfere with your ability to communicate with your USRP.
 You should configure your firewall to "trust" the interface you are using.
 Setting this properly depends on your OS and firewall configuration method.
+
+When using UHD software, if an IP address for the USRP-X Series device is not specified,
+the software will use UDP broadcast packets to locate the USRP-X Series device.
+On some systems, the firewall will block UDP broadcast packets.
+It is therefore recommended that you change or disable your firewall settings.
 
 Interface Configuration File (Fedora)
 -------------------------------------
