@@ -128,32 +128,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return EXIT_FAILURE;
     }
 
-    //create a usrp device
-    std::cout << std::endl;
-    std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
-
-    // Configure subdev
-    if (vm.count("subdev")) {
-        usrp->set_tx_subdev_spec(subdev);
-        usrp->set_rx_subdev_spec(subdev);
-    }
-    UHD_MSG(status) << "Running calibration for " << usrp->get_tx_subdev_name(0) << std::endl;
-    serial = get_serial(usrp, "tx");
-    UHD_MSG(status) << "Daughterboard serial: " << serial << std::endl;
-
-    //set the antennas to cal
-    if (not uhd::has(usrp->get_rx_antennas(), "CAL") or not uhd::has(usrp->get_tx_antennas(), "CAL")){
-        throw std::runtime_error("This board does not have the CAL antenna option, cannot self-calibrate.");
-    }
-    usrp->set_rx_antenna("CAL");
-    usrp->set_tx_antenna("CAL");
-
-    //fail if daughterboard has no serial
-    check_for_empty_serial(usrp, "TX", "tx", args);
-
-    //set optimum defaults
-    set_optimum_defaults(usrp);
+    // Create a USRP device
+    uhd::usrp::multi_usrp::sptr usrp = setup_usrp_for_cal(args, subdev, serial);
 
     //create a receive streamer
     uhd::stream_args_t stream_args("fc32"); //complex floats
