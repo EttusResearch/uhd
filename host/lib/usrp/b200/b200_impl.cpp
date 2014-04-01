@@ -250,6 +250,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
         ctrl_xport_args
     );
     while (_ctrl_transport->get_recv_buff(0.0)){} //flush ctrl xport
+    _tree->create<double>(mb_path / "link_max_rate").set((usb_speed == 3) ? B200_MAX_RATE_USB3 : B200_MAX_RATE_USB2);
 
     ////////////////////////////////////////////////////////////////////
     // Async task structure
