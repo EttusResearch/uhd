@@ -172,8 +172,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) break;
         if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
             throw std::runtime_error(str(boost::format(
-                "Unexpected error code 0x%x"
-            ) % md.error_code));
+                "Receiver error %s"
+            ) % md.strerror()));
         }
 
         if(verbose) std::cout << boost::format(

@@ -181,8 +181,8 @@ template<typename samp_type> void recv_to_file(
         }
         if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
             throw std::runtime_error(str(boost::format(
-                "Unexpected error code 0x%x"
-            ) % md.error_code));
+                "Receiver error %s"
+            ) % md.strerror()));
         }
 
         num_total_samps += num_rx_samps;
