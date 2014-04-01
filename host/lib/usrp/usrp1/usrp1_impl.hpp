@@ -39,6 +39,7 @@
 #define INCLUDED_USRP1_IMPL_HPP
 
 static const std::string USRP1_EEPROM_MAP_KEY = "B000";
+static const size_t      USRP1_MAX_RATE_USB2  =  32000000; // bytes/s
 
 #define FR_RB_CAPS          3
 #define FR_MODE             13
