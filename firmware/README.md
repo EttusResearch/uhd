@@ -16,6 +16,18 @@ __Build Instructions:__
 3. cmake `<source directory>`
 4. make
 
+## fx3/
+
+__Description:__ This is the firmware for the FX3 USB PHY, and the AD9361 RFIC.
+
+__Devices:__ USRP B200 and USRP B210
+
+__Tools:__ Cypress FX3 SDK
+
+__Build Instructions:__
+
+Please see the `fx3/README.md` file for additional instructions.
+
 ## octoclock/
 
 __Description:__ Firmware for the Octoclock device.

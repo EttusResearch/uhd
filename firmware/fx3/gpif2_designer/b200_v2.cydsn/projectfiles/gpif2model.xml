@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<GPIFIIModel version="3">
+  <InterfaceDefination>
+    <InterfaceSetting>
+      <I2SEnabled>False</I2SEnabled>
+      <I2CEnabled>False</I2CEnabled>
+      <SPIEnabled>False</SPIEnabled>
+      <I2SEnabled>False</I2SEnabled>
+      <ADMuxedEnabled>False</ADMuxedEnabled>
+      <InterfaceType>Slave</InterfaceType>
+      <CommunicationType>Synchronous</CommunicationType>
+      <ClockSource>External</ClockSource>
+      <ClockEdge>Positive</ClockEdge>
+      <Endianness>LittleEndian</Endianness>
+      <DataBusWidth>Bit32</DataBusWidth>
+      <AddressBuswidth>2</AddressBuswidth>
+    </InterfaceSetting>
+  </InterfaceDefination>
+  <Signals>
+    <Signal ElementId="INPUT0" SignalType="Input" SpecialFunction="OE">
+      <DisplayName>SLOE</DisplayName>
+      <GPIOPinNumber>GPIO_19</GPIOPinNumber>
+      <Polarity>ActiveLow</Polarity>
+    </Signal>
+    <Signal ElementId="INPUT1" SignalType="Input" SpecialFunction="None">
+      <DisplayName>SLCS</DisplayName>
+      <GPIOPinNumber>GPIO_17</GPIOPinNumber>
+      <Polarity>ActiveLow</Polarity>
+    </Signal>
+    <Signal ElementId="INPUT2" SignalType="Input" SpecialFunction="None">
+      <DisplayName>SLWR</DisplayName>
+      <GPIOPinNumber>GPIO_18</GPIOPinNumber>
+      <Polarity>ActiveLow</Polarity>
+    </Signal>
+    <Signal ElementId="INPUT3" SignalType="Input" SpecialFunction="None">
+      <DisplayName>SLRD</DisplayName>
+      <GPIOPinNumber>GPIO_20</GPIOPinNumber>
+      <Polarity>ActiveLow</Polarity>
+    </Signal>
+    <Signal ElementId="INPUT4" SignalType="Input" SpecialFunction="None">
+      <DisplayName>PKEND</DisplayName>
+      <GPIOPinNumber>GPIO_24</GPIOPinNumber>
+      <Polarity>ActiveLow</Polarity>
+    </Signal>
+    <Signal ElementId="FLAG0" SignalType="Flags" SpecialFunction="None">
+      <DisplayName>FLAG0</DisplayName>
+      <GPIOPinNumber>GPIO_21</GPIOPinNumber>
+      <IntialValue>Low</IntialValue>
+      <Polarity>ActiveLow</Polarity>
+      <Flags>Current_Thread_DMA_Ready</Flags>
+    </Signal>
+    <Signal ElementId="FLAG1" SignalType="Flags" SpecialFunction="None">
+      <DisplayName>FLAG1</DisplayName>
+      <GPIOPinNumber>GPIO_22</GPIOPinNumber>
+      <IntialValue>Low</IntialValue>
+      <Polarity>ActiveLow</Polarity>
+      <Flags>Current_Thread_DMA_WaterMark</Flags>
+    </Signal>
+  </Signals>
+  <StateMachine>
+    <AddressCounter />
+    <DataCounter />
+    <ControlCounter />
+    <AddressComparator />
+    <DataComparator />
+    <ControlComparator />
+    <DRQ />
+    <AddrData />
+    <State ElementId="STARTSTATE1" StateType="StartState">
+      <DisplayName>RESET</DisplayName>
+      <RepeatUntillNextTransition>True</RepeatUntillNextTransition>
+      <RepeatCount>0</RepeatCount>
+    </State>
+    <State ElementId="STATE1" StateType="NormalState">
+      <DisplayName>IDLE</DisplayName>
+      <RepeatUntillNextTransition>True</RepeatUntillNextTransition>
+      <RepeatCount>0</RepeatCount>
+      <Action ElementId="IN_ADDR0" ActionType="IN_ADDR">
+        <SampleAddressType>ThreadSelection</SampleAddressType>
+        <A7Override>DMAAccessAndRegisterAccess</A7Override>
+      </Action>
+    </State>
+    <State ElementId="STATE2" StateType="NormalState">
+      <DisplayName>READ</DisplayName>
+      <RepeatUntillNextTransition>True</RepeatUntillNextTransition>
+      <RepeatCount>0</RepeatCount>
+      <Action ElementId="DR_DATA0" ActionType="DR_DATA">
+        <IsDataCounterConnected>False</IsDataCounterConnected>
+        <DataSourceSink>Socket</DataSourceSink>
+        <ThreadNumber>Thread0</ThreadNumber>
+        <SyncBurstMode>Enable</SyncBurstMode>
+        <DriveNewData>DriveNewData</DriveNewData>
+        <UpdateSource>True</UpdateSource>
+      </Action>
+    </State>
+    <State ElementId="STATE3" StateType="NormalState">
+      <DisplayName>WRITE</DisplayName>
+      <RepeatUntillNextTransition>True</RepeatUntillNextTransition>
+      <RepeatCount>0</RepeatCount>
+      <Action ElementId="IN_DATA0" ActionType="IN_DATA">
+        <DataSourceSink>Socket</DataSourceSink>
+        <ThreadNumber>Thread0</ThreadNumber>
+        <SampleData>True</SampleData>
+        <WriteDataIntoDataSink>True</WriteDataIntoDataSink>
+      </Action>
+    </State>
+    <State ElementId="STATE4" StateType="NormalState">
+      <DisplayName>SHORT_PKT</DisplayName>
+      <RepeatUntillNextTransition>False</RepeatUntillNextTransition>
+      <RepeatCount>0</RepeatCount>
+      <Action ElementId="COMMIT0" ActionType="COMMIT">
+        <ThreadNumber>Thread0</ThreadNumber>
+      </Action>
+      <Action ElementId="IN_DATA0" ActionType="IN_DATA">
+        <DataSourceSink>Socket</DataSourceSink>
+        <ThreadNumber>Thread0</ThreadNumber>
+        <SampleData>True</SampleData>
+        <WriteDataIntoDataSink>True</WriteDataIntoDataSink>
+      </Action>
+    </State>
+    <State ElementId="STATE5" StateType="NormalState">
+      <DisplayName>ZLP</DisplayName>
+      <RepeatUntillNextTransition>False</RepeatUntillNextTransition>
+      <RepeatCount>0</RepeatCount>
+      <Action ElementId="COMMIT0" ActionType="COMMIT">
+        <ThreadNumber>Thread0</ThreadNumber>
+      </Action>
+    </State>
+    <Transition ElementId="TRANSITION1" SourceState="STARTSTATE1" DestinationState="STATE1" Equation="LOGIC_ONE" />
+    <Transition ElementId="TRANSITION2" SourceState="STATE1" DestinationState="STATE2" Equation="SLWR&amp;!SLCS&amp;PKEND&amp;!SLRD&amp;!SLOE" />
+    <Transition ElementId="TRANSITION3" SourceState="STATE1" DestinationState="STATE3" Equation="!SLWR&amp;!SLCS&amp;PKEND&amp;SLRD" />
+    <Transition ElementId="TRANSITION4" SourceState="STATE1" DestinationState="STATE4" Equation="!SLWR&amp;!SLCS&amp;!PKEND&amp;SLRD" />
+    <Transition ElementId="TRANSITION5" SourceState="STATE1" DestinationState="STATE5" Equation="SLWR&amp;!SLCS&amp;!PKEND&amp;SLRD" />
+    <Transition ElementId="TRANSITION6" SourceState="STATE5" DestinationState="STATE1" Equation="PKEND" />
+    <Transition ElementId="TRANSITION7" SourceState="STATE2" DestinationState="STATE1" Equation="SLRD|SLCS|SLOE" />
+    <Transition ElementId="TRANSITION8" SourceState="STATE3" DestinationState="STATE1" Equation="(PKEND&amp;SLWR)|SLCS" />
+    <Transition ElementId="TRANSITION9" SourceState="STATE3" DestinationState="STATE4" Equation="!SLWR&amp;!PKEND" />
+    <Transition ElementId="TRANSITION10" SourceState="STATE4" DestinationState="STATE1" Equation="PKEND|SLCS|SLWR" />
+  </StateMachine>
+</GPIFIIModel>

@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<GPIFIITimingSimulation version="1">
+  <Clock>100</Clock>
+  <BufferSize>512</BufferSize>
+  <WaterMark>0</WaterMark>
+  <Scenario Name="Read" CurrentThread="Thread0">
+    <State StateId="STARTSTATE1" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+    <State StateId="STATE2" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+  </Scenario>
+  <Scenario Name="Write" CurrentThread="Thread0">
+    <State StateId="STARTSTATE1" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+    <State StateId="STATE3" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+  </Scenario>
+  <Scenario Name="BurstRead" CurrentThread="Thread0">
+    <State StateId="STARTSTATE1" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+    <State StateId="STATE2" WaitNumber="0" />
+    <State StateId="STATE2" WaitNumber="0" />
+    <State StateId="STATE2" WaitNumber="0" />
+    <State StateId="STATE2" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+  </Scenario>
+  <Scenario Name="BurstWrite" CurrentThread="Thread0">
+    <State StateId="STARTSTATE1" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+    <State StateId="STATE3" WaitNumber="0" />
+    <State StateId="STATE3" WaitNumber="0" />
+    <State StateId="STATE3" WaitNumber="0" />
+    <State StateId="STATE3" WaitNumber="0" />
+    <State StateId="STATE3" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+  </Scenario>
+  <Scenario Name="ShortPkt" CurrentThread="Thread0">
+    <State StateId="STARTSTATE1" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+    <State StateId="STATE4" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+  </Scenario>
+  <Scenario Name="ZLP" CurrentThread="Thread0">
+    <State StateId="STARTSTATE1" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+    <State StateId="STATE5" WaitNumber="0" />
+    <State StateId="STATE1" WaitNumber="0" />
+  </Scenario>
+</GPIFIITimingSimulation>

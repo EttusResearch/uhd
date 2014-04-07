@@ -1,0 +1,68 @@
+diff -ur 1.2.3-orig/common/cyfxtx.c 1.2.3/common/cyfxtx.c
+--- 1.2.3-orig/common/cyfxtx.c	2013-02-07 17:16:54.000000000 -0800
++++ 1.2.3/common/cyfxtx.c	2014-03-25 16:56:12.484602382 -0700
+@@ -33,7 +33,7 @@
+    such as thread stacks and memory for message queues. The Cypress FX3
+    libraries require a Mem heap size of at least 32 KB.
+  */
+-#define CY_U3P_MEM_HEAP_BASE         ((uint8_t *)0x40038000)
++#define CY_U3P_MEM_HEAP_BASE         ((uint8_t *)0x40044000)
+ #define CY_U3P_MEM_HEAP_SIZE         (0x8000)
+ 
+ /* The last 32 KB of RAM is reserved for 2-stage boot operation. This value can be changed to
+diff -ur 1.2.3-orig/common/fx3.ld 1.2.3/common/fx3.ld
+--- 1.2.3-orig/common/fx3.ld	2013-02-07 17:16:54.000000000 -0800
++++ 1.2.3/common/fx3.ld	2014-03-25 16:59:40.872240377 -0700
+@@ -26,10 +26,11 @@
+    The default memory map used for FX3 applications is as follows:
+ 
+    Descriptor area Base: 0x40000000 Size: 12KB
+-   Code area       Base: 0x40003000 Size: 180KB
+-   Data area       Base: 0x40030000 Size: 32KB
+-   Driver heap     Base: 0x40038000 Size: 32KB  (Update cyfxtx.c to change this.)
+-   Buffer area     Base: 0x40040000 Size: 256KB (Update cyfxtx.c to change this.)
++   Code area       Base: 0x40003000 Size: 212KB
++   Data area       Base: 0x40038000 Size: 32KB
++   Heap            Base: 0x40040000 Size: 16KB
++   Driver heap     Base: 0x40044000 Size: 32KB  (Update cyfxtx.c to change this.)
++   Buffer area     Base: 0x4004C000 Size: 208KB (Update cyfxtx.c to change this.)
+ 
+    Interrupt handlers to be placed in I-TCM (16KB).
+    The first 256 bytes of ITCM are reserved for Exception Vectors.
+@@ -52,8 +53,8 @@
+ MEMORY
+ {
+ 	I-TCM		: ORIGIN = 0x100,	LENGTH = 0x3F00
+-	SYS_MEM		: ORIGIN = 0x40003000	LENGTH = 0x2D000
+-	DATA		: ORIGIN = 0x40030000	LENGTH = 0x8000
++	SYS_MEM		: ORIGIN = 0x40003000	LENGTH = 0x35000
++	DATA		: ORIGIN = 0x40038000	LENGTH = 0x8000
+ }
+ 
+ SECTIONS
+@@ -75,7 +76,7 @@
+ 		 _etext = .;
+ 	} > SYS_MEM
+ 
+-	. = 0x40030000;
++	. = 0x40038000;
+ 	.data :
+ 	{
+ 		_data = .;
+@@ -104,5 +105,16 @@
+ 	} > DATA
+ 	__exidx_end = .;
+ 
++	PROVIDE(__exidx_end = __exidx_end);
++	
++	. = ALIGN(4);
++	__heap_start = 0x40040000;
++	PROVIDE(__heap_start = __heap_start);
++	
++	. = ALIGN(4);
++	__heap_end = 0x40044000;
++	PROVIDE(__heap_end = __heap_end);
++	
++	PROVIDE(__heap_size = __heap_end - __heap_start);
+ }
+ 
