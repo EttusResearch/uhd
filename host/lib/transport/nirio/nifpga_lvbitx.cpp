@@ -16,6 +16,7 @@
 //
 
 #include <uhd/transport/nirio/nifpga_lvbitx.h>
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -108,6 +109,21 @@ std::string nifpga_lvbitx::_get_fpga_images_dir(const std::string search_paths)
 {
     std::vector<std::string> search_path_vtr;
     boost::split(search_path_vtr, search_paths, boost::is_any_of(","));
+
+    //
+    // Add the value of the UHD_IMAGES_DIR environment variable to the list of
+    // directories searched for a LVBITX image.
+    //
+    char* uhd_images_dir;
+#ifdef UHD_PLATFORM_WIN32
+    size_t len;
+    errno_t err = _dupenv_s(&uhd_images_dir, &len, "UHD_IMAGES_DIR");
+    if(not err and uhd_images_dir != NULL) search_path_vtr.push_back(std::string(uhd_images_dir));
+    free(uhd_images_dir);
+#else
+    uhd_images_dir = getenv("UHD_IMAGES_DIR");
+    if(uhd_images_dir != NULL) search_path_vtr.push_back(std::string(uhd_images_dir));
+#endif
 
     std::string lvbitx_dir;
     //Traverse through the list of search paths. Priority: lexical
