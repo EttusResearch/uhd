@@ -110,6 +110,8 @@ nirio_status nirio_fifo<data_t>::start()
     in.function    = nirio_driver_iface::NIRIO_FUNC::FIFO;
     in.subfunction = nirio_driver_iface::NIRIO_FIFO::START;
 
+    in.params.fifo.channel = _fifo_channel;
+
     status = _riok_proxy_ptr->sync_operation(&in, sizeof(in), &out, sizeof(out));
     if (nirio_status_not_fatal(status)) {
         _acquired_pending = 0;
@@ -132,6 +134,8 @@ nirio_status nirio_fifo<data_t>::stop()
 
     in.function    = nirio_driver_iface::NIRIO_FUNC::FIFO;
     in.subfunction = nirio_driver_iface::NIRIO_FIFO::STOP;
+
+    in.params.fifo.channel = _fifo_channel;
 
     status = _riok_proxy_ptr->sync_operation(&in, sizeof(in), &out, sizeof(out));
 
