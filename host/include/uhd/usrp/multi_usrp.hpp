@@ -118,12 +118,12 @@ public:
      */
     virtual device::sptr get_device(void) = 0;
 
-    //! Convenience method to get a RX streamer
+    //! Convenience method to get a RX streamer. See also uhd::device::get_rx_stream().
     rx_streamer::sptr get_rx_stream(const stream_args_t &args){
         return this->get_device()->get_rx_stream(args);
     }
 
-    //! Convenience method to get a TX streamer
+    //! Convenience method to get a TX streamer. See also uhd::device::get_rx_stream().
     tx_streamer::sptr get_tx_stream(const stream_args_t &args){
         return this->get_device()->get_tx_stream(args);
     }

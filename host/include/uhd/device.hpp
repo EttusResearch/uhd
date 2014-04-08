@@ -77,10 +77,18 @@ public:
      */
     static sptr make(const device_addr_t &hint, size_t which = 0);
 
-    //! Make a new receive streamer from the streamer arguments
+    /*! \brief Make a new receive streamer from the streamer arguments
+     *
+     * Note: There can always only be one streamer. When calling get_rx_stream()
+     * a second time, the first streamer must be destroyed beforehand.
+     */
     virtual rx_streamer::sptr get_rx_stream(const stream_args_t &args) = 0;
 
-    //! Make a new transmit streamer from the streamer arguments
+    /*! \brief Make a new transmit streamer from the streamer arguments
+     *
+     * Note: There can always only be one streamer. When calling get_tx_stream()
+     * a second time, the first streamer must be destroyed beforehand.
+     */
     virtual tx_streamer::sptr get_tx_stream(const stream_args_t &args) = 0;
 
     //! Get access to the underlying property structure
