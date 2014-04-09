@@ -242,6 +242,8 @@ struct x300_tx_fc_guts_t
     boost::shared_ptr<x300_impl::async_md_type> old_async_queue;
 };
 
+#define X300_ASYNC_EVENT_CODE_FLOW_CTRL 0
+
 static size_t get_tx_flow_control_window(size_t frame_size, const device_addr_t& tx_args)
 {
     double hw_buff_size = tx_args.cast<double>("send_buff_size", X300_TX_HW_BUFF_SIZE);
@@ -283,23 +285,28 @@ static void handle_tx_async_msgs(boost::shared_ptr<x300_tx_fc_guts_t> guts, zero
         return;
     }
 
-    //catch the flow control packets and react
-    if (endian_conv(packet_buff[if_packet_info.num_header_words32+0]) == 0)
-    {
-        const size_t seq = endian_conv(packet_buff[if_packet_info.num_header_words32+1]);
-        guts->seq_queue.push_with_haste(seq);
-        return;
-    }
-
     //fill in the async metadata
     async_metadata_t metadata;
     load_metadata_from_buff(
         endian_conv, metadata, if_packet_info, packet_buff,
         clock->get_master_clock_rate(), guts->stream_channel);
-    guts->async_queue->push_with_pop_on_full(metadata);
-    metadata.channel = guts->device_channel;
-    guts->old_async_queue->push_with_pop_on_full(metadata);
-    standard_async_msg_prints(metadata);
+
+    //The FC response and the burst ack are two indicators that the radio
+    //consumed packets. Use them to update the FC metadata
+    if (metadata.event_code == X300_ASYNC_EVENT_CODE_FLOW_CTRL or
+        metadata.event_code == async_metadata_t::EVENT_CODE_BURST_ACK
+    ) {
+        const size_t seq = metadata.user_payload[0];
+        guts->seq_queue.push_with_pop_on_full(seq);
+    }
+
+    //FC responses don't propagate up to the user so filter them here
+    if (metadata.event_code != X300_ASYNC_EVENT_CODE_FLOW_CTRL) {
+        guts->async_queue->push_with_pop_on_full(metadata);
+        metadata.channel = guts->device_channel;
+        guts->old_async_queue->push_with_pop_on_full(metadata);
+        standard_async_msg_prints(metadata);
+    }
 }
 
 static managed_send_buffer::sptr get_tx_buff_with_flowctrl(
@@ -319,7 +326,9 @@ static managed_send_buffer::sptr get_tx_buff_with_flowctrl(
     }
 
     managed_send_buffer::sptr buff = xport->get_send_buff(timeout);
-    if (buff) guts->last_seq_out++; //update seq, this will actually be a send
+    if (buff) {
+        guts->last_seq_out++; //update seq, this will actually be a send
+    }
     return buff;
 }
 
