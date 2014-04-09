@@ -50,6 +50,10 @@ static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0x00;
 static const boost::uint16_t B200_FPGA_COMPAT_NUM = 0x04;
 static const double          B200_BUS_CLOCK_RATE = 100e6;
 static const double          B200_DEFAULT_TICK_RATE = 32e6;
+static const double          B200_DEFAULT_FREQ = 100e6; // Hz
+static const double          B200_DEFAULT_RATE = 250e3; // Sps
+static const double          B200_DEFAULT_RX_GAIN = 0; // dB
+static const double          B200_DEFAULT_TX_GAIN = 0; // dB
 static const boost::uint32_t B200_GPSDO_ST_NONE = 0x83;
 
 static const size_t B200_MAX_RATE_USB2              =  32000000; // bytes/s

@@ -493,6 +493,16 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
 
+    //init to internal clock and time source
+    _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
+    _tree->access<std::string>(mb_path / "time_source/value").set("none");
+
+    // Set default rates (can't be done in setup_radio() because tick rate is not yet set)
+    for (size_t i = 0; i < _radio_perifs.size(); i++) {
+        _tree->access<double>(mb_path / "rx_dsps" / str(boost::format("%u") % i)/ "rate/value").set(B200_DEFAULT_RATE);
+        _tree->access<double>(mb_path / "tx_dsps" / str(boost::format("%u") % i) / "rate/value").set(B200_DEFAULT_RATE);
+    }
+
     //GPS installed: use external ref, time, and init time spec
     if (_gps and _gps->gps_detected())
     {
@@ -557,7 +567,7 @@ void b200_impl::setup_radio(const size_t dspno)
     _tree->create<double>(rx_dsp_path / "rate" / "value")
         .coerce(boost::bind(&rx_dsp_core_3000::set_host_rate, perif.ddc, _1))
         .subscribe(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
-        .set(1e6);
+        .set(0.0); // Can only set this after tick rate is initialized.
     _tree->create<double>(rx_dsp_path / "freq" / "value")
         .coerce(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
         .set(0.0);
@@ -581,7 +591,7 @@ void b200_impl::setup_radio(const size_t dspno)
     _tree->create<double>(tx_dsp_path / "rate" / "value")
         .coerce(boost::bind(&tx_dsp_core_3000::set_host_rate, perif.duc, _1))
         .subscribe(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
-        .set(1e6);
+        .set(0.0); // Can only set this after tick rate is initialized.
     _tree->create<double>(tx_dsp_path / "freq" / "value")
         .coerce(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
         .set(0.0);
@@ -614,7 +624,7 @@ void b200_impl::setup_radio(const size_t dspno)
 
             _tree->create<double>(rf_fe_path / "gains" / name / "value")
                 .coerce(boost::bind(&ad9361_ctrl::set_gain, _codec_ctrl, key, _1))
-                .set(0.0);
+                .set(x == "rx" ? B200_DEFAULT_RX_GAIN : B200_DEFAULT_TX_GAIN);
         }
         _tree->create<std::string>(rf_fe_path / "connection").set("IQ");
         _tree->create<bool>(rf_fe_path / "enabled").set(true);
@@ -625,9 +635,9 @@ void b200_impl::setup_radio(const size_t dspno)
         _tree->create<meta_range_t>(rf_fe_path / "bandwidth" / "range")
             .publish(boost::bind(&ad9361_ctrl::get_bw_filter_range, key));
         _tree->create<double>(rf_fe_path / "freq" / "value")
-            .set(0.0)
             .coerce(boost::bind(&ad9361_ctrl::tune, _codec_ctrl, key, _1))
-            .subscribe(boost::bind(&b200_impl::update_bandsel, this, key, _1));
+            .subscribe(boost::bind(&b200_impl::update_bandsel, this, key, _1))
+            .set(B200_DEFAULT_FREQ);
         _tree->create<meta_range_t>(rf_fe_path / "freq" / "range")
             .publish(boost::bind(&ad9361_ctrl::get_rf_freq_range));
 
