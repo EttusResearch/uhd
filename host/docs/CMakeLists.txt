@@ -20,31 +20,55 @@
 ########################################################################
 
 ########################################################################
-# Setup Manual
+# Setup general Doxygen variables
+########################################################################
+FIND_PACKAGE(Doxygen)
+SET(ENABLE_MANUAL_OR_DOXYGEN false)
+
+########################################################################
+# Setup Manual (using Doxygen)
 ########################################################################
 MESSAGE(STATUS "")
-FIND_PACKAGE(Doxygen)
 LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF)
 
-# TODO conditionally add the manual to Doxygen, now it just adds dependencies
 IF(ENABLE_MANUAL)
+    SET(ENABLE_MANUAL_OR_DOXYGEN true)
     FILE(GLOB manual_sources "*.dox")
-ELSE(ENABLE_MANUAL)
-    SET(manual_source "")
+    SET(DOXYGEN_DEPENDENCIES ${manual_sources})
+    SET(DOXYGEN_INPUT_DIRS ${CMAKE_SOURCE_DIR}/docs)
+    SET(DOXYGEN_DEP_COMPONENT "manual")
 ENDIF(ENABLE_MANUAL)
 
-
 ########################################################################
-# Setup Doxygen
+# Setup API documentation (using Doxygen)
 ########################################################################
 MESSAGE(STATUS "")
-LIBUHD_REGISTER_COMPONENT("Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF)
+LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF)
+OPTION(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
 
 IF(LIBUHDDEV_PKG)
     SET(PKG_DOC_DIR share/doc/libuhd-dev)
 ENDIF(LIBUHDDEV_PKG)
 
 IF(ENABLE_DOXYGEN)
+    SET(ENABLE_MANUAL_OR_DOXYGEN true)
+    #make doxygen directory depend on the header files
+    FILE(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
+    SET(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files})
+    IF(ENABLE_DOXYGEN_FULL)
+        SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib")
+    ELSE(ENABLE_DOXYGEN_FULL)
+        SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include")
+    ENDIF(ENABLE_DOXYGEN_FULL)
+
+    SET(DOXYGEN_DEP_COMPONENT "doxygen")
+ENDIF(ENABLE_DOXYGEN)
+
+########################################################################
+# Run Doxygen (on code and/or manual, depending on CMake flags)
+########################################################################
+MESSAGE(STATUS "")
+IF(ENABLE_MANUAL_OR_DOXYGEN)
     #generate the doxygen configuration file
     SET(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
     CONFIGURE_FILE(
@@ -55,15 +79,15 @@ IF(ENABLE_DOXYGEN)
     #make doxygen directory depend on the header files
     FILE(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
     ADD_CUSTOM_COMMAND(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DEPENDS ${header_files} ${manual_source}
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DEPENDS ${DOXYGEN_DEPENDENCIES}
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
         COMMENT "Generating documentation with doxygen"
     )
 
     #make the doxygen generation a built-time dependency
     ADD_CUSTOM_TARGET(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
-    UHD_INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR} COMPONENT doxygen)
-ENDIF(ENABLE_DOXYGEN)
+    UHD_INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR} COMPONENT ${DOXYGEN_DEP_COMPONENT})
+ENDIF(ENABLE_MANUAL_OR_DOXYGEN)
 
 ########################################################################
 # List of man page sources
