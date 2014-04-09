@@ -655,12 +655,14 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             .subscribe(boost::bind(&time64_core_200::set_time_next_pps, _mbc[mb].time64, _1));
         //setup time source props
         _tree->create<std::string>(mb_path / "time_source/value")
-            .subscribe(boost::bind(&time64_core_200::set_time_source, _mbc[mb].time64, _1));
+            .subscribe(boost::bind(&time64_core_200::set_time_source, _mbc[mb].time64, _1))
+            .set("none");
         _tree->create<std::vector<std::string> >(mb_path / "time_source/options")
             .publish(boost::bind(&time64_core_200::get_time_sources, _mbc[mb].time64));
         //setup reference source props
         _tree->create<std::string>(mb_path / "clock_source/value")
-            .subscribe(boost::bind(&usrp2_impl::update_clock_source, this, mb, _1));
+            .subscribe(boost::bind(&usrp2_impl::update_clock_source, this, mb, _1))
+            .set("internal");
         std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("mimo");
         if (_mbc[mb].gps and _mbc[mb].gps->gps_detected()) clock_sources.push_back("gpsdo");
         _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
