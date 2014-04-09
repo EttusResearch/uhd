@@ -31,6 +31,7 @@ nirio_fifo<data_t>::nirio_fifo(
     _fifo_direction(direction),
     _fifo_channel(fifo_instance),
     _datatype_info(_get_datatype_info()),
+    _state(UNMAPPED),
     _acquired_pending(0),
     _mem_map(),
     _riok_proxy_ptr(&riok_proxy),
@@ -61,28 +62,36 @@ nirio_status nirio_fifo<data_t>::initialize(
     if (!_riok_proxy_ptr) return NiRio_Status_ResourceNotInitialized;
     boost::unique_lock<boost::recursive_mutex> lock(_mutex);
 
-    nirio_driver_iface::nirio_syncop_in_params_t in = {};
-    nirio_driver_iface::nirio_syncop_out_params_t out = {};
+    if (_state == UNMAPPED) {
+        nirio_driver_iface::nirio_syncop_in_params_t in = {};
+        nirio_driver_iface::nirio_syncop_out_params_t out = {};
 
-    //Forcefully stop the fifo if it is running
-    in.function    = nirio_driver_iface::NIRIO_FUNC::FIFO;
-    in.subfunction = nirio_driver_iface::NIRIO_FIFO::STOP;
-    status = _riok_proxy_ptr->sync_operation(&in, sizeof(in), &out, sizeof(out));
+        //Forcefully stop the fifo if it is running
+        in.function    = nirio_driver_iface::NIRIO_FUNC::FIFO;
+        in.subfunction = nirio_driver_iface::NIRIO_FIFO::STOP;
+        status = _riok_proxy_ptr->sync_operation(&in, sizeof(in), &out, sizeof(out));
 
-    in.function = nirio_driver_iface::NIRIO_FUNC::FIFO;
-    in.subfunction = nirio_driver_iface::NIRIO_FIFO::CONFIGURE;
+        in.function = nirio_driver_iface::NIRIO_FUNC::FIFO;
+        in.subfunction = nirio_driver_iface::NIRIO_FIFO::CONFIGURE;
 
-    in.params.fifo.channel = _fifo_channel;
-    in.params.fifo.op.config.requestedDepth = static_cast<uint32_t>(requested_depth);
-    in.params.fifo.op.config.requiresActuals = 1;
+        in.params.fifo.channel = _fifo_channel;
+        in.params.fifo.op.config.requestedDepth = static_cast<uint32_t>(requested_depth);
+        in.params.fifo.op.config.requiresActuals = 1;
 
-    status = _riok_proxy_ptr->sync_operation(&in, sizeof(in), &out, sizeof(out));
-    if (nirio_status_fatal(status)) return status;
+        status = _riok_proxy_ptr->sync_operation(&in, sizeof(in), &out, sizeof(out));
+        if (nirio_status_fatal(status)) return status;
 
-    actual_depth = out.params.fifo.op.config.actualDepth;
-    actual_size = out.params.fifo.op.config.actualSize;
+        actual_depth = out.params.fifo.op.config.actualDepth;
+        actual_size = out.params.fifo.op.config.actualSize;
 
-    status = _riok_proxy_ptr->map_fifo_memory(_fifo_channel, actual_size, _mem_map);
+        status = _riok_proxy_ptr->map_fifo_memory(_fifo_channel, actual_size, _mem_map);
+
+        if (nirio_status_not_fatal(status)) {
+            _state = MAPPED;
+        }
+    } else {
+        status = NiRio_Status_SoftwareFault;
+    }
     return status;
 }
 
@@ -90,9 +99,13 @@ template <typename data_t>
 void nirio_fifo<data_t>::finalize()
 {
     boost::unique_lock<boost::recursive_mutex> lock(_mutex);
-    if (!_mem_map.is_null()) {
-        stop();
+
+    //If the FIFO is started, the stop will change the state to MAPPED.
+    stop();
+
+    if (_state == MAPPED) {
         _riok_proxy_ptr->unmap_fifo_memory(_mem_map);
+        _state = UNMAPPED;    //Assume teardown succeeded
     }
 }
 
@@ -104,18 +117,25 @@ nirio_status nirio_fifo<data_t>::start()
 
     boost::unique_lock<boost::recursive_mutex> lock(_mutex);
 
-    nirio_driver_iface::nirio_syncop_in_params_t in = {};
-    nirio_driver_iface::nirio_syncop_out_params_t out = {};
+    if (_state == STARTED) {
+        //Do nothing. Already started.
+    } else if (_state == MAPPED) {
+        nirio_driver_iface::nirio_syncop_in_params_t in = {};
+        nirio_driver_iface::nirio_syncop_out_params_t out = {};
 
-    in.function    = nirio_driver_iface::NIRIO_FUNC::FIFO;
-    in.subfunction = nirio_driver_iface::NIRIO_FIFO::START;
+        in.function    = nirio_driver_iface::NIRIO_FUNC::FIFO;
+        in.subfunction = nirio_driver_iface::NIRIO_FIFO::START;
 
-    in.params.fifo.channel = _fifo_channel;
+        in.params.fifo.channel = _fifo_channel;
 
-    status = _riok_proxy_ptr->sync_operation(&in, sizeof(in), &out, sizeof(out));
-    if (nirio_status_not_fatal(status)) {
-        _acquired_pending = 0;
-        _expected_xfer_count = 0;
+        status = _riok_proxy_ptr->sync_operation(&in, sizeof(in), &out, sizeof(out));
+        if (nirio_status_not_fatal(status)) {
+            _state = STARTED;
+            _acquired_pending = 0;
+            _expected_xfer_count = 0;
+        }
+    } else {
+        status = NiRio_Status_ResourceNotInitialized;
     }
     return status;
 }
@@ -127,17 +147,22 @@ nirio_status nirio_fifo<data_t>::stop()
     if (!_riok_proxy_ptr) return NiRio_Status_ResourceNotInitialized;
 
     boost::unique_lock<boost::recursive_mutex> lock(_mutex);
-    if (_acquired_pending > 0) release(_acquired_pending);
 
-    nirio_driver_iface::nirio_syncop_in_params_t in = {};
-    nirio_driver_iface::nirio_syncop_out_params_t out = {};
+    if (_state == STARTED) {
+        if (_acquired_pending > 0) release(_acquired_pending);
 
-    in.function    = nirio_driver_iface::NIRIO_FUNC::FIFO;
-    in.subfunction = nirio_driver_iface::NIRIO_FIFO::STOP;
+        nirio_driver_iface::nirio_syncop_in_params_t in = {};
+        nirio_driver_iface::nirio_syncop_out_params_t out = {};
 
-    in.params.fifo.channel = _fifo_channel;
+        in.function    = nirio_driver_iface::NIRIO_FUNC::FIFO;
+        in.subfunction = nirio_driver_iface::NIRIO_FIFO::STOP;
 
-    status = _riok_proxy_ptr->sync_operation(&in, sizeof(in), &out, sizeof(out));
+        in.params.fifo.channel = _fifo_channel;
+
+        status = _riok_proxy_ptr->sync_operation(&in, sizeof(in), &out, sizeof(out));
+
+        _state = MAPPED;    //Assume teardown succeeded
+    }
 
     return status;
 }

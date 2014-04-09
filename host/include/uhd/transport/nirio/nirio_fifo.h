@@ -104,16 +104,20 @@ public:
         uint32_t& num_remaining);
 
 private:    //Methods
-    bool _is_initialized();
     datatype_info_t _get_datatype_info();
     nirio_status _get_transfer_count(uint64_t& transfer_count);
     nirio_status _ensure_transfer_completed(uint32_t timeout_ms);
 
 private:    //Members
+    enum fifo_state_t {
+        UNMAPPED, MAPPED, STARTED
+    };
+
     std::string                    _name;
     fifo_direction_t               _fifo_direction;
     uint32_t                       _fifo_channel;
     datatype_info_t                _datatype_info;
+    fifo_state_t                   _state;
     size_t                         _acquired_pending;
     nirio_driver_iface::rio_mmap_t _mem_map;
     boost::recursive_mutex         _mutex;
