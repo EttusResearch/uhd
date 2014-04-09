@@ -65,15 +65,18 @@ in order not to damage sensitive electronics through static discharge!
 Network Connectivity
 ^^^^^^^^^^^^^^^^^^^^
 
-The next step is to make sure your computer can talk to the USRP. An otherwise unconfigured
-USRP device will have the IP address 192.168.10.2 when using 1GigE.
-It is recommended to directly connect your USRP to the computer at first,
-and to set the IP address on your machine to 192.168.10.1.
-See the `system configuration manual <./usrp_x3x0_config.html>`_ on details how to change your machine's IP address.
+The next step is to make sure your computer can talk to the USRP. An otherwise
+unconfigured USRP device will have the IP address 192.168.10.2 when using
+1GigE.  It is recommended to directly connect your USRP to the computer at
+first, and to set the IP address on your machine to 192.168.10.1.
 
-**Note**: If you are running an automatic IP configuration service such as Network Manager, make
-sure it is either deactivated or configured to not change the network device! This can, in extreme cases,
-lead to you bricking the USRP!
+See the `system configuration manual <./usrp_x3x0_config.html>`_ on details how
+to change your machine's IP address.
+
+**Note**: If you are running an automatic IP configuration service such as
+Network Manager, make sure it is either deactivated or configured to not manage
+the network interface! This can, in extreme cases, lead to you bricking the
+USRP!
 
 If your network configuration is correct, running ``uhd_find_devices`` will find your USRP
 and print some information about it. You will also be able to ping the USRP by running::
@@ -86,31 +89,32 @@ on the command line. At this point, you should also run::
 
 to make sure all of your components (daughterboards, GPSDO) are correctly detected and usable.
 
-^^^^^^^^^^^^^^^^^^^^^
-Updating the firmware
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Updating the FPGA Image
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If the output from ``uhd_find_devices`` and ``uhd_usrp_probe`` didn't show any warnings, you
-can skip this step. However, if there were warnings regarding version incompatibility, you will
-have to upate the FPGA image before you can start using your USRP.
+If the output from ``uhd_find_devices`` and ``uhd_usrp_probe`` didn't show any
+warnings, you can skip this step. However, if there were errors regarding the
+FPGA version compatibility number (compat number), you will have to upate the
+FPGA image before you can start using your USRP.
 
 1. Download the current UHD images. You can use the ``uhd_images_downloader`` script provided
    with UHD (see also `FPGA Image Flavors`_).
 2. Use the ``usrp_x3xx_fpga_burner`` utility to update the FPGA image. On the command line, run::
 
-          usrp_x3xx_fpga_burner --addr=192.168.10.2 --type=HGS # Since we are using 1GigE, type is HGS
+          usrp_x3xx_fpga_burner --addr=192.168.10.2 --type=HGS
 
   If you have installed the images to a non-standard location, you might need to run (change the filename according to your device)::
 
           usrp_x3xx_fpga_burner --addr=192.168.10.2 --fpga-path <path_to_images>/usrp_x310_fpga_HGS.bit
 
-  The process of updating the firmware will take several minutes. Make sure the process of flashing the image does not get interrupted.
+  The process of updating the FPGA image will take several minutes. Make sure the process of flashing the image does not get interrupted.
 
 See `Load the Images onto the On-board Flash`_ for more details.
 
-When your firmware is up to date, power-cycle the device and re-run ``uhd_usrp_probe``. There should
-be no more warnings at this point, and all components should be correctly detected. Your USRP is now
-ready for development!
+When your FPGA image is up to date, power-cycle the device and re-run
+``uhd_usrp_probe``. There should be no errors at this point, and all components
+should be correctly detected. Your USRP is now ready for development!
 
 --------------
 Hardware Setup
