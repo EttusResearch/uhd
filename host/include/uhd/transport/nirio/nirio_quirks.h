@@ -24,8 +24,8 @@
 
 //Quirk#1: We need to verify RX zero-copy data transfers from the RIO
 //         driver if we are in full duplex mode.
-//         This option allows disabling this quirk by compiling it out.
-#define UHD_NIRIO_RX_FIFO_XFER_CHECK_EN 1
+//         This option allows enabling this quirk.
+#define UHD_NIRIO_RX_FIFO_XFER_CHECK_EN 0
 
 namespace uhd { namespace niusrprio {
 
