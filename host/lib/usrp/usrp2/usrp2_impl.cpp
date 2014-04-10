@@ -442,6 +442,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _mbc[mb].spiface = _mbc[mb].iface;
             break;
         }
+        _tree->create<double>(mb_path / "link_max_rate").set(USRP2_LINK_RATE_BPS);
 
         ////////////////////////////////////////////////////////////////
         // setup the mboard eeprom

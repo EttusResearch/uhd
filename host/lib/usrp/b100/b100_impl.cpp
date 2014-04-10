@@ -515,6 +515,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(subdev_spec_t("A:" + _tree->list(mb_path / "dboards/A/tx_frontends").at(0)));
     _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
     _tree->access<std::string>(mb_path / "time_source/value").set("none");
+    _tree->create<double>(mb_path / "link_max_rate").set(B100_MAX_RATE_USB2);
 }
 
 b100_impl::~b100_impl(void){

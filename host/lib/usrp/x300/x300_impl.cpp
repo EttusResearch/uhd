@@ -392,6 +392,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         //Tell the quirks object which FIFOs carry TX stream data
         const uint32_t tx_data_fifos[2] = {X300_RADIO_DEST_PREFIX_TX, X300_RADIO_DEST_PREFIX_TX + 3};
         mb.rio_fpga_interface->get_kernel_proxy().get_rio_quirks().register_tx_streams(tx_data_fifos);
+
+        _tree->create<double>(mb_path / "link_max_rate").set(X300_MAX_RATE_PCIE);
     }
 
     BOOST_FOREACH(const std::string &key, dev_addr.keys())
@@ -456,6 +458,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 << "UHD will use the auto-detected max frame size for this connection."
                 << std::endl;
         }
+
+        _tree->create<double>(mb_path / "link_max_rate").set(X300_MAX_RATE_10GIGE);
     }
 
     //create basic communication
@@ -1133,11 +1137,14 @@ x300_impl::both_xports_t x300_impl::make_transport(
         if (mb.loaded_fpga_image == "HGS") {
             if (mb.router_dst_here == X300_XB_DST_E0) {
                 eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
+                _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_1GIGE);
             } else if (mb.router_dst_here == X300_XB_DST_E1) {
                 eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
+                _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_10GIGE);
             }
         } else if (mb.loaded_fpga_image == "XGS") {
-                eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
+            eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
+            _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_10GIGE);
         }
 
         if (eth_data_rec_frame_size == 0) {
