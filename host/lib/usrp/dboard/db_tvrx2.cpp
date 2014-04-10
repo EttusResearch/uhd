@@ -1,5 +1,5 @@
 //
-// Copyright 2010,2012-2013 Ettus Research LLC
+// Copyright 2010,2012-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1005,8 +1005,8 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
 
         _freq_scalar = (4*16.0e6)/(this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX));
     } else if (ref_clock == 100e6) {
-        
-        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, REFCLOCK_DIV8);
+
+        this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, REFCLOCK_DIV6);
 
         UHD_LOGV(often) << boost::format(
             "TVRX2 (%s): Dividing Refclock by 6"
