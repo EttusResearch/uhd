@@ -101,18 +101,15 @@ template<typename samp_type> void recv_to_file(
             continue;
         }
         if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
-			std::string error = str(boost::format(
-                "Unexpected error code 0x%x"
-            ) % md.error_code);
-            
-			if (continue_on_bad_packet){
-				std::cerr << error << std::endl;
-				continue;
-			}
-			else
-				throw std::runtime_error(error);
+            std::string error = str(boost::format("Receiver error: %s") % md.strerror());
+            if (continue_on_bad_packet){
+                std::cerr << error << std::endl;
+                continue;
+            }
+            else
+                throw std::runtime_error(error);
         }
-        
+
         if (enable_size_map){
 			SizeMap::iterator it = mapSizes.find(num_rx_samps);
 			if (it == mapSizes.end())

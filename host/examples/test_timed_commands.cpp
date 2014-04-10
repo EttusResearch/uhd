@@ -139,8 +139,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     const size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, 1.0);
     if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
         throw std::runtime_error(str(boost::format(
-            "Unexpected error code 0x%x"
-        ) % md.error_code));
+            "Receiver error %s"
+        ) % md.strerror()));
     }
     std::cout << boost::format(
         " Received packet: %u samples, %u full secs, %f frac secs"

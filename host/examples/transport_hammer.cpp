@@ -88,7 +88,7 @@ void rx_hammer(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_cpu, uhd:
             break;
 
         default:
-            std::cerr << "Error code: " << md.error_code << std::endl;
+            std::cerr << "Receiver error: " << md.strerror() << std::endl;
             std::cerr << "Unexpected error on recv, continuing..." << std::endl;
             break;
         }

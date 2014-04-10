@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -117,6 +117,20 @@ namespace uhd{
 
         //! Out of sequence.  The transport has either dropped a packet or received data out of order.
         bool out_of_sequence;
+
+        /*!
+         * Convert a rx_metadata_t into a pretty print string.
+	 *
+	 * \param compact Set to false for a more verbose output.
+         * \return a printable string representing the metadata.
+         */
+        std::string to_pp_string(bool compact=true) const;
+
+        /*!
+         * Similar to C's strerror() function, creates a std::string describing the error code.
+         * \return a printable string representing the error.
+         */
+	std::string strerror(void) const;
     };
 
     /*!

@@ -98,7 +98,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_c
             break;
 
         default:
-            std::cerr << "Error code: " << md.error_code << std::endl;
+            std::cerr << "Receiver error: " << md.strerror() << std::endl;
             std::cerr << "Unexpected error on recv, continuing..." << std::endl;
             break;
         }

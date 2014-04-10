@@ -257,8 +257,8 @@ static void capture_samples(
     //validate the received data
     if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
         throw std::runtime_error(str(boost::format(
-            "Unexpected error code 0x%x"
-        ) % md.error_code));
+            "Receiver error: %s"
+        ) % md.strerror()));
     }
     //we can live if all the data didnt come in
     if (num_rx_samps > buff.size()/2){
