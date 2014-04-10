@@ -67,35 +67,35 @@ lead to you bricking the USRP!
 If your network configuration is correct, running `uhd_find_devices` will find your USRP
 and print some information about it. You will also be able to ping the USRP by running:
 
-  ping 192.168.10.2
+    ping 192.168.10.2
 
 on the command line. At this point, you should also run:
 
-  uhd_usrp_probe --args addr=192.168.10.2
+    uhd_usrp_probe --args addr=192.168.10.2
 
 to make sure all of your components (daughterboards, GPSDO) are correctly detected and usable.
 
-\subsection x3x0_getting_started_fw_update Updating the firmware
+\subsection x3x0_getting_started_fpga_update Updating the FPGA
 
 If the output from `uhd_find_devices` and `uhd_usrp_probe` didn't show any warnings, you
-can skip this step. However, if there were warnings regarding version incompatibility, you will
-have to upate the FPGA image before you can start using your USRP.
+can skip this step. However, if there were errors regarding the FPGA version compatibility
+number, you will have to update the FPGA image before you can start using your USRP.
 
 1. Download the current UHD images. You can use the `uhd_images_downloader` script provided
    with UHD (see also \ref page_images).
 2. Use the `usrp_x3xx_fpga_burner` utility to update the FPGA image. On the command line, run:
 
-          usrp_x3xx_fpga_burner --addr=192.168.10.2 --type=HGS # Since we are using 1GigE, type is HGS
+          usrp_x3xx_fpga_burner --addr=192.168.10.2 --type=HGS
 
   If you have installed the images to a non-standard location, you might need to run (change the filename according to your device):
 
           usrp_x3xx_fpga_burner --addr=192.168.10.2 --fpga-path <path_to_images>/usrp_x310_fpga_HGS.bit
 
-  The process of updating the firmware will take several minutes. Make sure the process of flashing the image does not get interrupted.
+  The process of updating the FPGA will take several minutes. Make sure the process of flashing the image does not get interrupted.
 
 See \ref x3x0_flash for more details.
 
-When your firmware is up to date, power-cycle the device and re-run `uhd_usrp_probe`. There should
+When your FPGA is up to date, power-cycle the device and re-run `uhd_usrp_probe`. There should
 be no more warnings at this point, and all components should be correctly detected. Your USRP is now
 ready for development!
 
