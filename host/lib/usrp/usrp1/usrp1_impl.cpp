@@ -20,6 +20,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/images.hpp>
@@ -59,11 +60,11 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     //since an address and resource is intended for a different, non-USB, device.
     if (hint.has_key("addr") || hint.has_key("resource")) return usrp1_addrs;
 
-    unsigned int vid, pid;
+    boost::uint16_t vid, pid;
 
     if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "usrp1") {
-        sscanf(hint.get("vid").c_str(), "%x", &vid);
-        sscanf(hint.get("pid").c_str(), "%x", &pid);
+        vid = uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid"));
+        pid = uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"));
     } else {
         vid = USRP1_VENDOR_ID;
         pid = USRP1_PRODUCT_ID;

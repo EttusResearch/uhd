@@ -22,6 +22,7 @@ UHD_INSTALL(FILES
     atomic.hpp
     byteswap.hpp
     byteswap.ipp
+    cast.hpp
     csv.hpp
     gain_group.hpp
     images.hpp
