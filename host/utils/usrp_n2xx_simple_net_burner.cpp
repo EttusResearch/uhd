@@ -57,9 +57,11 @@ using namespace uhd::transport;
 #define FLASH_DATA_PACKET_SIZE 256
 #define FPGA_IMAGE_SIZE_BYTES 1572864
 #define FW_IMAGE_SIZE_BYTES 31744
+
 #define PROD_FPGA_IMAGE_LOCATION_ADDR 0x00180000
-#define PROD_FW_IMAGE_LOCATION_ADDR 0x00300000
 #define SAFE_FPGA_IMAGE_LOCATION_ADDR 0x00000000
+
+#define PROD_FW_IMAGE_LOCATION_ADDR 0x00300000
 #define SAFE_FW_IMAGE_LOCATION_ADDR 0x003F0000
 
 typedef enum {
@@ -113,6 +115,7 @@ typedef struct {
 
 //Mapping revision numbers to filenames
 uhd::dict<boost::uint32_t, std::string> filename_map = boost::assign::map_list_of
+    (0,      "N2XX")
     (0xa,    "n200_r3")
     (0x100a, "n200_r4")
     (0x10a,  "n210_r3")
@@ -181,25 +184,39 @@ void list_usrps(){
 /***********************************************************************
  * Find USRP N2XX with specified IP address and return type
  **********************************************************************/
-boost::uint32_t find_usrp(udp_simple::sptr udp_transport){
+boost::uint32_t find_usrp(udp_simple::sptr udp_transport, bool check_rev){
     boost::uint32_t hw_rev;
     bool found_it = false;
+
+    // If the user chooses to not care about the rev, simply check
+    // for the presence of a USRP N2XX.
+    boost::uint32_t cmd_id = (check_rev) ? GET_HW_REV_CMD
+                                         : USRP2_QUERY;
+    boost::uint32_t ack_id = (check_rev) ? GET_HW_REV_ACK
+                                         : USRP2_ACK;
 
     const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
     usrp2_fw_update_data_t hw_info_pkt = usrp2_fw_update_data_t();
     hw_info_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-    hw_info_pkt.id = htonx<boost::uint32_t>(GET_HW_REV_CMD);
+    hw_info_pkt.id = htonx<boost::uint32_t>(cmd_id);
     udp_transport->send(boost::asio::buffer(&hw_info_pkt, sizeof(hw_info_pkt)));
 
     //Loop and receive until the timeout
     size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
-    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == GET_HW_REV_ACK){
+    if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == ack_id){
         hw_rev = ntohl(update_data_in->data.hw_rev);
         if(filename_map.has_key(hw_rev)){
             std::cout << boost::format("Found %s.\n\n") % filename_map[hw_rev];
             found_it = true;
         }
-        else throw std::runtime_error("Invalid revision found.");
+        else{
+            if(check_rev) throw std::runtime_error("Invalid revision found.");
+            else{
+                hw_rev = 0;
+                std::cout << "Found USRP N2XX." << std::endl;
+                found_it = true;
+            }
+        }
     }
     if(not found_it) throw std::runtime_error("No USRP N2XX found.");
 
@@ -210,27 +227,27 @@ boost::uint32_t find_usrp(udp_simple::sptr udp_transport){
  * Custom filename validation functions
  **********************************************************************/
 
-void validate_custom_fpga_file(std::string rev_str, std::string& fpga_path){
+void validate_custom_fpga_file(std::string rev_str, std::string& fpga_path, bool check_rev){
 
     //Check for existence of file
     if(not fs::exists(fpga_path)) throw std::runtime_error(str(boost::format("No file at specified FPGA path: %s") % fpga_path));
 
-    //Check to find rev_str in filename
+    //If user cares about revision, use revision string to detect invalid image filename
     uhd::fs_path custom_fpga_path(fpga_path);
-    if(custom_fpga_path.leaf().find(rev_str) == std::string::npos){
+    if(custom_fpga_path.leaf().find(rev_str) == std::string::npos and check_rev){
         throw std::runtime_error(str(boost::format("Invalid FPGA image filename at path: %s\nFilename must contain '%s' to be considered valid for this model.")
             % fpga_path % rev_str));
     }
 }
 
-void validate_custom_fw_file(std::string rev_str, std::string& fw_path){
+void validate_custom_fw_file(std::string rev_str, std::string& fw_path, bool check_rev){
 
     //Check for existence of file
     if(not fs::exists(fw_path)) throw std::runtime_error(str(boost::format("No file at specified firmware path: %s") % fw_path));
 
-    //Check to find truncated rev_str in filename
+    //If user cares about revision, use revision string to detect invalid image filename
     uhd::fs_path custom_fw_path(fw_path);
-    if(custom_fw_path.leaf().find(erase_tail_copy(rev_str,3)) == std::string::npos){
+    if(custom_fw_path.leaf().find(erase_tail_copy(rev_str,3)) == std::string::npos and check_rev){
         throw std::runtime_error(str(boost::format("Invalid firmware image filename at path: %s\nFilename must contain '%s' to be considered valid for this model.")
             % fw_path % erase_tail_copy(rev_str,3)));
     }
@@ -329,10 +346,12 @@ boost::uint32_t* get_flash_info(std::string& ip_addr){
  * Image burning functions
  **********************************************************************/
 
-void erase_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint32_t memory_size){
+void erase_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint32_t memory_size, bool overwrite_safe){
 
-    boost::uint32_t image_location_addr = is_fw ? PROD_FW_IMAGE_LOCATION_ADDR
-                                                : PROD_FPGA_IMAGE_LOCATION_ADDR;
+    boost::uint32_t image_location_addr = is_fw ? overwrite_safe ? SAFE_FW_IMAGE_LOCATION_ADDR
+                                                                 : PROD_FW_IMAGE_LOCATION_ADDR
+                                                : overwrite_safe ? SAFE_FPGA_IMAGE_LOCATION_ADDR
+                                                                 : PROD_FPGA_IMAGE_LOCATION_ADDR;
     boost::uint32_t image_size = is_fw ? FW_IMAGE_SIZE_BYTES
                                        : FPGA_IMAGE_SIZE_BYTES;
 
@@ -378,10 +397,13 @@ void erase_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint32_t mem
     }
 }
 
-void write_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* image, boost::uint32_t memory_size, int image_size){
+void write_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* image,
+                 boost::uint32_t memory_size, int image_size, bool overwrite_safe){
 
-    boost::uint32_t begin_addr = is_fw ? PROD_FW_IMAGE_LOCATION_ADDR
-                                       : PROD_FPGA_IMAGE_LOCATION_ADDR;
+    boost::uint32_t begin_addr = is_fw ? overwrite_safe ? SAFE_FW_IMAGE_LOCATION_ADDR
+                                                        : PROD_FW_IMAGE_LOCATION_ADDR
+                                       : overwrite_safe ? SAFE_FPGA_IMAGE_LOCATION_ADDR
+                                                        : PROD_FPGA_IMAGE_LOCATION_ADDR;
     boost::uint32_t current_addr = begin_addr;
     std::string type = is_fw ? "firmware" : "FPGA";
 
@@ -418,11 +440,14 @@ void write_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* ima
     std::cout << boost::format(" * Successfully wrote %d bytes.\n") % image_size;
 }
 
-void verify_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* image, boost::uint32_t memory_size, int image_size){
+void verify_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* image,
+                  boost::uint32_t memory_size, int image_size, bool overwrite_safe){
 
     int current_index = 0;
-    boost::uint32_t begin_addr = is_fw ? PROD_FW_IMAGE_LOCATION_ADDR
-                                       : PROD_FPGA_IMAGE_LOCATION_ADDR;
+    boost::uint32_t begin_addr = is_fw ? overwrite_safe ? SAFE_FW_IMAGE_LOCATION_ADDR
+                                                        : PROD_FW_IMAGE_LOCATION_ADDR
+                                       : overwrite_safe ? SAFE_FPGA_IMAGE_LOCATION_ADDR
+                                                        : PROD_FPGA_IMAGE_LOCATION_ADDR;
     boost::uint32_t current_addr = begin_addr;
     std::string type = is_fw ? "firmware" : "FPGA";
 
@@ -501,6 +526,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("no_fw", "Do not burn a firmware image (DEPRECATED).")
         ("no-fpga", "Do not burn an FPGA image.")
         ("no_fpga", "Do not burn an FPGA image (DEPRECATED).")
+        ("overwrite-safe", "Overwrite safe images (not recommended).")
+        ("dont-check-rev", "Don't verify images are for correct model before burning.")
         ("auto-reboot", "Automatically reboot N2XX without prompting.")
         ("auto_reboot", "Automatically reboot N2XX without prompting (DEPRECATED).")
         ("list", "List available N2XX USRP devices.")
@@ -518,24 +545,51 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return EXIT_SUCCESS;
     }
 
-    //List option
+    //List options
     if(vm.count("list")){
         list_usrps();
         return EXIT_SUCCESS;
     }
 
-    //Process user options
+    //Store user options
     bool burn_fpga = (vm.count("no-fpga") == 0) and (vm.count("no_fpga") == 0);
     bool burn_fw = (vm.count("no-fw") == 0) and (vm.count("no_fw") == 0);
     bool use_custom_fpga = (vm.count("fpga") > 0);
     bool use_custom_fw = (vm.count("fw") > 0);
     bool auto_reboot = (vm.count("auto-reboot") > 0) or (vm.count("auto_reboot") > 0);
+    bool check_rev = (vm.count("dont-check-rev") == 0);
+    bool overwrite_safe = (vm.count("overwrite-safe") > 0);
     int fpga_image_size = 0;
     int fw_image_size = 0;
 
+    //Process options and detect invalid option combinations
     if(not burn_fpga && not burn_fw){
         std::cout << "No images will be burned." << std::endl;
         return EXIT_FAILURE;
+    }
+    if(not check_rev){
+        //Without knowing a revision, the utility cannot automatically generate a filepath, so the user
+        //must specify one. The user must also burn both types of images for consistency.
+        if(not (burn_fpga and burn_fw))
+            throw std::runtime_error("If the --dont-check-rev option is used, both FPGA and firmware images need to be burned.");
+        if(not (use_custom_fpga and use_custom_fw))
+            throw std::runtime_error("If the --dont-check-rev option is used, the user must specify image filepaths.");
+    }
+    if(overwrite_safe){
+        //If the user specifies overwriting safe images, both image types must be burned for consistency.
+        if(not (burn_fpga and burn_fw))
+            throw std::runtime_error("If the --overwrite-safe option is used, both FPGA and firmware images need to be burned.");
+
+        std::cout << "Are you REALLY sure you want to overwrite the safe images?" << std::endl;
+        std::cout << "This is ALMOST ALWAYS a terrible idea." << std::endl;
+        std::cout << "Type \"yes\" to continue, or anything else to quit: " << std::flush;
+        std::string safe_response;
+        std::getline(std::cin, safe_response);
+        if(safe_response != "yes"){
+            std::cout << "Exiting." << std::endl;
+            return EXIT_SUCCESS;
+        }
+        else std::cout << std::endl; //Formatting
     }
 
     //Print deprecation messages if necessary
@@ -546,7 +600,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //Find USRP and establish connection
     std::cout << boost::format("Searching for USRP N2XX with IP address %s.\n") % ip_addr;
     udp_simple::sptr udp_transport = udp_simple::make_connected(ip_addr, BOOST_STRINGIZE(USRP2_UDP_UPDATE_PORT));
-    boost::uint32_t hw_rev = find_usrp(udp_transport);
+    boost::uint32_t hw_rev = find_usrp(udp_transport, check_rev);
 
     //Check validity of file locations and binaries before attempting burn
     std::cout << "Searching for specified images." << std::endl << std::endl;
@@ -556,7 +610,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             #ifndef UHD_PLATFORM_WIN32
                 if(fpga_path.find("~/") == 0) fpga_path.replace(0,1,getenv("HOME"));
             #endif
-            validate_custom_fpga_file(filename_map[hw_rev], fpga_path);
+            validate_custom_fpga_file(filename_map[hw_rev], fpga_path, check_rev);
         }
         else{
             std::string default_fpga_filename = str(boost::format("usrp_%s_fpga.bin") % filename_map[hw_rev]);
@@ -571,7 +625,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             #ifndef UHD_PLATFORM_WIN32
                 if(fw_path.find("~/") == 0) fw_path.replace(0,1,getenv("HOME"));
             #endif
-            validate_custom_fw_file(filename_map[hw_rev], fw_path);
+            validate_custom_fw_file(filename_map[hw_rev], fw_path, check_rev);
         }
         else{
             std::string default_fw_filename = str(boost::format("usrp_%s_fw.bin") % erase_tail_copy(filename_map[hw_rev],3));
@@ -594,15 +648,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //Burning images
     std::signal(SIGINT, &sig_int_handler);
     if(burn_fpga){
-        erase_image(udp_transport, false, flash_info[1]);
-        write_image(udp_transport, false, fpga_image, flash_info[1], fpga_image_size);
-        verify_image(udp_transport, false, fpga_image, flash_info[1], fpga_image_size);
+        erase_image(udp_transport, false, flash_info[1], overwrite_safe);
+        write_image(udp_transport, false, fpga_image, flash_info[1], fpga_image_size, overwrite_safe);
+        verify_image(udp_transport, false, fpga_image, flash_info[1], fpga_image_size, overwrite_safe);
     }
     if(burn_fpga and burn_fw) std::cout << std::endl; //Formatting
     if(burn_fw){
-        erase_image(udp_transport, true, flash_info[1]);
-        write_image(udp_transport, true, fw_image, flash_info[1], fw_image_size);
-        verify_image(udp_transport, true, fw_image, flash_info[1], fw_image_size);
+        erase_image(udp_transport, true, flash_info[1], overwrite_safe);
+        write_image(udp_transport, true, fw_image, flash_info[1], fw_image_size, overwrite_safe);
+        verify_image(udp_transport, true, fw_image, flash_info[1], fw_image_size, overwrite_safe);
     }
 
     delete(flash_info);
