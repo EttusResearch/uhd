@@ -20,6 +20,8 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/utils/paths.hpp>
+#include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/msg.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -50,6 +52,8 @@ static const size_t default_num_samps = 10000;
  **********************************************************************/
 static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
     uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    // Will work on 1st subdev, top-level must make sure it's the right one
+    uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
 
     const uhd::fs_path mb_path = "/mboards/0";
     const std::string mb_name = tree->access<std::string>(mb_path / "name").get();
@@ -69,7 +73,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
         throw std::runtime_error("self-calibration is not supported for this hardware");
     }
 
-    const uhd::fs_path tx_fe_path = "/mboards/0/dboards/A/tx_frontends/0";
+    const uhd::fs_path tx_fe_path = "/mboards/0/dboards/" + subdev_spec[0].db_name + "/tx_frontends/0";
     const std::string tx_name = tree->access<std::string>(tx_fe_path / "name").get();
     if (tx_name.find("WBX") != std::string::npos){
         usrp->set_tx_gain(0);
@@ -87,7 +91,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
         throw std::runtime_error("self-calibration is not supported for this hardware");
     }
 
-    const uhd::fs_path rx_fe_path = "/mboards/0/dboards/A/rx_frontends/0";
+    const uhd::fs_path rx_fe_path = "/mboards/0/dboards/" + subdev_spec[0].db_name + "/rx_frontends/0";
     const std::string rx_name = tree->access<std::string>(rx_fe_path / "name").get();
     if (rx_name.find("WBX") != std::string::npos){
         usrp->set_rx_gain(25);
@@ -110,24 +114,19 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
 /***********************************************************************
  * Check for empty serial
  **********************************************************************/
-
 void check_for_empty_serial(
-    uhd::usrp::multi_usrp::sptr usrp,
-    std::string XX,
-    std::string xx,
-    std::string uhd_args
+    uhd::usrp::multi_usrp::sptr usrp
 ){
+    // Will work on 1st subdev, top-level must make sure it's the right one
+    uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
 
     //extract eeprom
     uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
-    const uhd::fs_path db_path = "/mboards/0/dboards/A/" + xx + "_eeprom";
+    // This only works with transceiver boards, so we can always check rx side
+    const uhd::fs_path db_path = "/mboards/0/dboards/" + subdev_spec[0].db_name + "/rx_eeprom";
     const uhd::usrp::dboard_eeprom_t db_eeprom = tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
 
-    std::string args_str = "";
-    if(uhd_args != "") args_str = str(boost::format(" --args=%s") % uhd_args);
-
-    std::string error_string = str(boost::format("This %s dboard has no serial!\n\nPlease see the Calibration documentation for details on how to fix this.") % XX);
-
+    std::string error_string = "This dboard has no serial!\n\nPlease see the Calibration documentation for details on how to fix this.";
     if (db_eeprom.serial.empty()) throw std::runtime_error(error_string);
 }
 
@@ -188,6 +187,7 @@ static std::string get_serial(
     const std::string &tx_rx
 ){
     uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    // Will work on 1st subdev, top-level must make sure it's the right one
     uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
     const uhd::fs_path db_path = "/mboards/0/dboards/" + subdev_spec[0].db_name + "/" + tx_rx + "_eeprom";
     const uhd::usrp::dboard_eeprom_t db_eeprom = tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
@@ -268,5 +268,39 @@ static void capture_samples(
     if (num_rx_samps != buff.size()){
         throw std::runtime_error("did not get all the samples requested");
     }
+}
+
+/***********************************************************************
+ * Setup function
+ **********************************************************************/
+static uhd::usrp::multi_usrp::sptr setup_usrp_for_cal(std::string &args, std::string &subdev, std::string &serial)
+{
+    std::cout << std::endl;
+    std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
+    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+
+    // Configure subdev
+    if (!subdev.empty()) {
+        usrp->set_tx_subdev_spec(subdev);
+        usrp->set_rx_subdev_spec(subdev);
+    }
+    UHD_MSG(status) << "Running calibration for " << usrp->get_tx_subdev_name(0) << std::endl;
+    serial = get_serial(usrp, "tx");
+    UHD_MSG(status) << "Daughterboard serial: " << serial << std::endl;
+
+    //set the antennas to cal
+    if (not uhd::has(usrp->get_rx_antennas(), "CAL") or not uhd::has(usrp->get_tx_antennas(), "CAL")){
+        throw std::runtime_error("This board does not have the CAL antenna option, cannot self-calibrate.");
+    }
+    usrp->set_rx_antenna("CAL");
+    usrp->set_tx_antenna("CAL");
+
+    //fail if daughterboard has no serial
+    check_for_empty_serial(usrp);
+
+    //set optimum defaults
+    set_optimum_defaults(usrp);
+
+    return usrp;
 }
 
