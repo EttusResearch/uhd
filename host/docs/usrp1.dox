@@ -1,0 +1,95 @@
+/*! \page page_usrp1 USRP1 Device Manual
+
+\tableofcontents
+
+\section usrp1_features Comparative features list
+
+- Hardware Capabilities:
+    -   2 transceiver card slots
+    -   64 MHz fixed clock rate
+- FPGA Capabilities:
+    -   2 RX DDC chains in FPGA
+    -   2 TX DUC chains in FPGA (no TX CORDIC -\> uses DAC)
+    -   sc16 sample modes - RX & TX
+        -   Up to 8 MHz of RF BW with 16-bit samples
+    -   sc8 sample mode - RX only
+        -   Up to 16 MHz of RF BW with 8-bit samples
+
+\section usrp1_imgs Specify a Non-standard Image
+
+The standard USRP1 images installer comes with two FPGA images:
+-   **usrp1_fpga.rbf:** 2 DDCs + 2 DUCs
+-   **usrp1_fpga_4rx.rbf:** 4 DDCs + 0 DUCs
+
+By default, the USRP1 uses the FPGA image with 2 DDCs and 2 DUCs.
+However, a device address parameter can be used to override the FPGA
+image selection to use an alternate or a custom FPGA image. See the
+images application notes for installing custom images.
+
+Example device address string representations to specify non-standard
+firmware and/or FPGA images:
+
+    fpga=usrp1_fpga_4rx.rbf
+
+    -- OR --
+
+    fw=usrp1_fw_custom.ihx
+
+    -- OR --
+
+    fpga=usrp1_fpga_4rx.rbf, fw=usrp1_fw_custom.ihx
+
+\section usrp1_emul Missing and Emulated Features
+
+The USRP1 FPGA does not have the necessary space to support the advanced
+streaming capabilities that are possible with the newer USRP devices.
+Some of these features are emulated in software to support the API.
+
+\subsection usrp1_emul_list List of emulated features
+
+-   Setting the current device time
+-   Getting the current device time
+-   Transmitting at a specific time
+-   Transmitting a specific number of samples
+-   Receiving at a specific time
+-   Receiving a specific number of samples
+-   End of burst flags for transmit/receive
+-   Notification on late stream command
+-   Notification on late transmit packet
+-   Notification on underflow or overflow
+-   Notification on broken chain error
+
+<b>Note:</b> These emulated features rely on the host system's clock for
+timed operations and therefore may not have sufficient precision for the
+application.
+
+\subsection usrp1_emul_listmissing List of missing features
+
+-   Start of burst flags for transmit/receive
+
+\section usrp1_hw Hardware Setup Notes
+
+\subsection usrp1_hw_extclk External clock modification
+
+The USRP device can be modified to accept an external clock reference instead of the 64MHz onboard reference.
+    -   Solder SMA (**LTI-SASF54GT**) connector to **J2001**.
+    -   Move 0 ohm 0603 resistor **R2029** to **R2030**.
+    -   Move 0.01uF 0603 capacitor **C925** to **C926**.
+    -   Remove 0.01uF 0603 capacitor **C924**.
+
+The new external clock needs to be a square wave between +7dBm and +15dBm.
+
+After the hardware modification, the user should burn the setting into
+the EEPROM, so UHD software can initialize with the correct clock rate.
+Run the following commands to record the setting into the EEPROM:
+
+    cd <install-path>/lib/uhd/utils
+    ./usrp_burn_mb_eeprom --args=<optional device args> --values="mcr=<rate>"
+
+The user may override the clock rate specified in the EEPROM by using a
+device address: Example:
+
+    uhd_usrp_probe --args="mcr=52e6"
+
+*/
+// vim:ft=doxygen:
