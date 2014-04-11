@@ -123,7 +123,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if (vm.count("help")){
         std::cout << boost::format("USRP Generate TX DC Offset Calibration Table %s") % desc << std::endl;
         std::cout <<
-            "This application measures leakage between RX and TX on an XCVR daughterboard to self-calibrate.\n"
+            "This application measures leakage between RX and TX on a transceiver daughterboard to self-calibrate.\n"
+            "Note: Not all daughterboards support this feature. Refer to the UHD manual for details.\n"
             << std::endl;
         return EXIT_FAILURE;
     }
