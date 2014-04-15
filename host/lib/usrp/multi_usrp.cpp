@@ -1196,7 +1196,7 @@ private:
     // Assumption is that all mboards use the same link
     bool _check_link_rate(const stream_args_t &args, bool is_tx) {
         bool link_rate_is_ok = true;
-        size_t bytes_per_sample = convert::get_bytes_per_item(args.otw_format);
+        size_t bytes_per_sample = convert::get_bytes_per_item(args.otw_format.empty() ? "sc16" : args.otw_format);
         double max_link_rate = 0;
         double sum_rate = 0;
         BOOST_FOREACH(const size_t chan, args.channels) {
