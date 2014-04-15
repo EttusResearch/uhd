@@ -1387,7 +1387,8 @@ void x300_impl::update_time_source(mboard_members_t &mb, const std::string &sour
     //check for valid pps
     if (!is_pps_present(mb.zpu_ctrl))
     {
-        throw uhd::runtime_error((boost::format("The %d PPS was not detected.  Please check the PPS source and try again.") % source).str());
+        // TODO - Implement intelligent PPS detection
+        /* throw uhd::runtime_error((boost::format("The %d PPS was not detected.  Please check the PPS source and try again.") % source).str()); */
     }
 }
 
