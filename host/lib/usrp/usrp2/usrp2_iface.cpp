@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "usrp2_iface.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/images.hpp>
 #include <uhd/utils/safe_call.hpp>
@@ -386,13 +387,13 @@ public:
 
         //create the burner commands
         if (this->get_rev() == USRP2_REV3 or this->get_rev() == USRP2_REV4){
-            const std::string card_burner = (fs::path(fw_image_path).branch_path().branch_path() / "utils" / "usrp2_card_burner.py").string();
+            const std::string card_burner = (fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / "usrp2_card_burner.py").string();
             const std::string card_burner_cmd = str(boost::format("\"%s%s\" %s--fpga=\"%s\" %s--fw=\"%s\"") % sudo % card_burner % ml % fpga_image_path % ml % fw_image_path);
             return str(boost::format("%s\n%s") % print_images_error() % card_burner_cmd);
         }
         else{
             const std::string addr = _ctrl_transport->get_recv_addr();
-            const std::string net_burner_path = (fs::path(fw_image_path).branch_path().branch_path() / "utils" / "usrp_n2xx_simple_net_burner").string();
+            const std::string net_burner_path = (fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / "usrp_n2xx_simple_net_burner").string();
             const std::string net_burner_cmd = str(boost::format("\"%s\" %s--addr=\"%s\"") % net_burner_path % ml % addr);
             return str(boost::format("%s\n%s") % print_images_error() % net_burner_cmd);
         }
