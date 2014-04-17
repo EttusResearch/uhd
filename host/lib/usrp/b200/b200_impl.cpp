@@ -416,6 +416,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
         .publish(boost::bind(&b200_impl::get_tick_rate, this))
         .subscribe(boost::bind(&b200_impl::update_tick_rate, this, _1));
     _tree->create<time_spec_t>(mb_path / "time" / "cmd");
+    _tree->create<bool>(mb_path / "auto_tick_rate").set(false);
 
     ////////////////////////////////////////////////////////////////////
     // and do the misc mboard sensors
@@ -516,6 +517,11 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
         _tree->access<double>(mb_path / "rx_dsps" / str(boost::format("%u") % i)/ "rate/value").set(B200_DEFAULT_RATE);
         _tree->access<double>(mb_path / "tx_dsps" / str(boost::format("%u") % i) / "rate/value").set(B200_DEFAULT_RATE);
     }
+    // We can automatically choose a master clock rate, but not if the user specifies one
+    _tree->access<bool>(mb_path / "auto_tick_rate").set(not device_addr.has_key("master_clock_rate"));
+    if (not device_addr.has_key("master_clock_rate")) {
+        UHD_MSG(status) << "Setting master clock rate selection to 'automatic'." << std::endl;
+    }
 
     //GPS installed: use external ref, time, and init time spec
     if (_gps and _gps->gps_detected())
@@ -579,7 +585,7 @@ void b200_impl::setup_radio(const size_t dspno)
     _tree->create<meta_range_t>(rx_dsp_path / "rate" / "range")
         .publish(boost::bind(&rx_dsp_core_3000::get_host_rates, perif.ddc));
     _tree->create<double>(rx_dsp_path / "rate" / "value")
-        .coerce(boost::bind(&rx_dsp_core_3000::set_host_rate, perif.ddc, _1))
+        .coerce(boost::bind(&b200_impl::coerce_rx_samp_rate, this, perif.ddc, dspno, _1))
         .subscribe(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
         .set(0.0); // Can only set this after tick rate is initialized.
     _tree->create<double>(rx_dsp_path / "freq" / "value")
@@ -603,7 +609,7 @@ void b200_impl::setup_radio(const size_t dspno)
     _tree->create<meta_range_t>(tx_dsp_path / "rate" / "range")
         .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, perif.duc));
     _tree->create<double>(tx_dsp_path / "rate" / "value")
-        .coerce(boost::bind(&tx_dsp_core_3000::set_host_rate, perif.duc, _1))
+        .coerce(boost::bind(&b200_impl::coerce_tx_samp_rate, this, perif.duc, dspno, _1))
         .subscribe(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
         .set(0.0); // Can only set this after tick rate is initialized.
     _tree->create<double>(tx_dsp_path / "freq" / "value")
@@ -719,7 +725,7 @@ void b200_impl::codec_loopback_self_test(wb_iface::sptr iface)
 /***********************************************************************
  * Sample and tick rate comprehension below
  **********************************************************************/
-void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, const char* direction /*= NULL*/)
+void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, const std::string &direction /*= ""*/)
 {
     const size_t max_chans = 2;
     if (chan_count > max_chans)
@@ -727,7 +733,7 @@ void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, co
         throw uhd::value_error(boost::str(
             boost::format("cannot not setup %d %s channels (maximum is %d)")
                 % chan_count
-                % (direction ? direction : "data")
+                % (direction.empty() ? "data" : direction)
                 % max_chans
         ));
     }
@@ -741,20 +747,26 @@ void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, co
                     % (tick_rate/1e6)
                     % (max_tick_rate/1e6)
                     % chan_count
-                    % (direction ? direction : "data")
+                    % (direction.empty() ? "data" : direction)
             ));
         }
     }
 }
 
-double b200_impl::set_tick_rate(const double rate)
+double b200_impl::set_tick_rate(const double new_tick_rate)
 {
-    UHD_MSG(status) << (boost::format("Asking for clock rate %.6f MHz\n") % (rate/1e6));
+    UHD_MSG(status) << (boost::format("Asking for clock rate %.6f MHz... ") % (new_tick_rate/1e6)) << std::flush;
+    check_tick_rate_with_current_streamers(new_tick_rate);   // Defined in b200_io_impl.cpp
 
-    check_tick_rate_with_current_streamers(rate);   // Defined in b200_io_impl.cpp
+    // Make sure the clock rate is actually changed before doing
+    // the full Monty of setting regs and loopback tests etc.
+    if (std::abs(new_tick_rate - _tick_rate) < 1.0) {
+        UHD_MSG(status) << "OK" << std::endl;
+        return _tick_rate;
+    }
 
-    _tick_rate = _codec_ctrl->set_clock_rate(rate);
-    UHD_MSG(status) << (boost::format("Actually got clock rate %.6f MHz\n") % (_tick_rate/1e6));
+    _tick_rate = _codec_ctrl->set_clock_rate(new_tick_rate);
+    UHD_MSG(status) << std::endl << (boost::format("Actually got clock rate %.6f MHz.") % (_tick_rate/1e6)) << std::endl;
 
     //reset after clock rate change
     this->reset_codec_dcm();

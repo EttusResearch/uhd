@@ -98,7 +98,13 @@ public:
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args);
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
-    void check_streamer_args(const uhd::stream_args_t &args, double tick_rate, const char* direction = NULL);
+
+    //! Check that the combination of stream args and tick rate are valid.
+    //
+    // Basically figures out the arguments for enforce_tick_rate_limits()
+    // and calls said method. If arguments are invalid, throws a
+    // uhd::value_error.
+    void check_streamer_args(const uhd::stream_args_t &args, double tick_rate, const std::string &direction = "");
 
 private:
     //controllers
@@ -113,9 +119,6 @@ private:
     uhd::transport::zero_copy_if::sptr _data_transport;
     uhd::transport::zero_copy_if::sptr _ctrl_transport;
     uhd::usrp::recv_packet_demuxer_3000::sptr _demux;
-
-    boost::weak_ptr<uhd::rx_streamer> _rx_streamer;
-    boost::weak_ptr<uhd::tx_streamer> _tx_streamer;
 
     //async ctrl + msgs
     uhd::msg_task::sptr _async_task;
@@ -188,11 +191,56 @@ private:
     double _tick_rate;
     double get_tick_rate(void){return _tick_rate;}
     double set_tick_rate(const double rate);
+
+    /*! \brief Choose a tick rate (master clock rate) that works well for the given sampling rate.
+     *
+     * This function will try and choose a master clock rate automatically.
+     * See the function definition for details on the algorithm.
+     *
+     * The chosen tick rate is the largest multiple of two that is smaler
+     * than the max tick rate.
+     * The base rate is either given explicitly, or is the lcm() of the tx
+     * and rx sampling rates. In that case, it reads the rates directly
+     * from the property tree. It also tries to guess the number of channels
+     * (for the max possible tick rate) by checking the available streamers.
+     * This value, too, can explicitly be given.
+     *
+     * \param rate If this is given, it will be used as a minimum rate, or
+     *             argument to lcm().
+     * \param tree_dsp_path The sampling rate from this property tree path
+     *                      will be ignored.
+     * \param num_chans If given, specifies the number of channels.
+     */
+    void set_auto_tick_rate(
+            const double rate=0,
+            const uhd::fs_path &tree_dsp_path="",
+            size_t num_chans=0
+    );
+
     void update_tick_rate(const double);
-    void enforce_tick_rate_limits(size_t chan_count, double tick_rate, const char* direction = NULL);
+
+    /*! Check if \p tick_rate works with \p chan_count channels.
+     *
+     * Throws a uhd::value_error if not.
+     */
+    void enforce_tick_rate_limits(size_t chan_count, double tick_rate, const std::string  &direction = "");
     void check_tick_rate_with_current_streamers(double rate);
 
+    /*! Return the max number of channels on active rx_streamer or tx_streamer objects associated with this device.
+     *
+     * \param direction Set to "TX" to only check tx_streamers, "RX" to only check
+     *                  rx_streamers. Any other value will check if \e any active
+     *                  streamers are available.
+     * \return Return the number of tx streamers (direction=="TX"), the number of rx
+     *         streamers (direction=="RX") or the total number of streamers.
+     */
+    size_t max_chan_count(const std::string &direction="");
+
+    //! Coercer, attached to the "rate/value" property on the rx dsps.
+    double coerce_rx_samp_rate(rx_dsp_core_3000::sptr, size_t, const double);
     void update_rx_samp_rate(const size_t, const double);
+    //! Coercer, attached to the "rate/value" property on the tx dsps.
+    double coerce_tx_samp_rate(tx_dsp_core_3000::sptr, size_t, const double);
     void update_tx_samp_rate(const size_t, const double);
 };
 
