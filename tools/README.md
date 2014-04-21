@@ -10,6 +10,17 @@ For UHD™ software tools, look in `uhd/host/utils`.
 
 ## List of Tools
 
+__chdr-dissector/__
+
+This is a packet dissector for [Wireshark](http://www.wireshark.org/). It allows
+you to view the details of a Compressed HeaDeR (CHDR) formatted-packet in
+Wireshark. The USRP™ B2xx and X3xx use the CHDR format.
+
+__uhd_dump/__
+
+This tool can be used with `tcpdump` to make sense of packet dumps from your
+network-connected USRP™ device.
+
 __usrp_x3xx_fpga_jtag_programmer.sh__
 
 This tool is to be used with the USRP™ X300 and X310 devices. It allows you to
