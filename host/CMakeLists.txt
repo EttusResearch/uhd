@@ -200,7 +200,7 @@ ADD_CUSTOM_TARGET(uninstall
 # Install Package Docs
 ########################################################################
 UHD_INSTALL(FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/../README.md
+    ${CMAKE_CURRENT_SOURCE_DIR}/README.md
     ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE
     DESTINATION ${PKG_DOC_DIR}
     COMPONENT readme

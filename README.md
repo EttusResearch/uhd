@@ -3,7 +3,7 @@ USRP Hardware Driver (UHD™) Software
 
 Welcome to the UHD™ software distribution! UHD is the free & open-source
 software driver and API for the Universal Software Radio Peripheral (USRP™) SDR
-platform, created and sold by Ettus Research, LLC.
+platform, created and sold by Ettus Research.
 
 UHD supports all Ettus Research USRP™ hardware, including all motherboards and
 daughterboards, and the combinations thereof.
