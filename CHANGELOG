@@ -1,6 +1,27 @@
 Change Log for Releases
 ==============================
 
+## 003.007.001
+
+* Fixed issue with TVRX2 divider calculation.
+* Fixed issue using calibration utilities on B-Side daughterboard in an X3xx.
+* Replaced unsafe `sscanf` call in utilities.
+* Properly initializing N-Series clock, fixing short transient on device boot-up.
+* Improved `--help` output for a number of utilities & examples.
+* Improved READMEs for directories.
+* Fixed X3xx documentation with some clarifications.
+* UHD will now tell you if you have requested a sample rate higher than the transport can deliver.
+* Removed work-around necessary in RIO kernel module for zero-copy in PCIe for X3xx devices.
+* Fixed issue where X3xx devices would lock-up when on networks with lots of traffic.
+* The B2xx FX3 and AD9361 source code is now in UHD.
+* Numerous B2xx stability improvements.
+* Fixed includes for older OSes (e.g., Fedora 14).
+* Fixed includes for older versions of Boost.
+* Fixed PPS detection in X3xx with multiple time sources.
+* Fixed overflow reporting for X3xx utilities.
+* Fixed MTU / frame size detection for X3xx devices.
+* Fixed B2xx filter chain causing wrong sample rate in some circumstances.
+
 ## 003.007.000
 * Introduced USRP X300 and X310 support!
 * Releasing a CHDR Dissector for Wireshark analysis
