@@ -233,22 +233,22 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
 
         //Disable all FIFOs in the kernel driver
         _riok_proxy.stop_all_fifos();
-    }
 
-    boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
-    boost::posix_time::time_duration elapsed;
-    do {
-        boost::this_thread::sleep(boost::posix_time::microsec(1000)); //Avoid flooding the bus
-        elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+        boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
+        boost::posix_time::time_duration elapsed;
+        do {
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //Avoid flooding the bus
+            elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+            nirio_status_chain(_riok_proxy.peek(FPGA_STATUS_REG, reg_data), status);
+        } while (
+            nirio_status_not_fatal(status) &&
+            (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK) &&
+            elapsed.total_milliseconds() < FPGA_READY_TIMEOUT_IN_MS);
+
         nirio_status_chain(_riok_proxy.peek(FPGA_STATUS_REG, reg_data), status);
-    } while (
-        nirio_status_not_fatal(status) &&
-        (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK) &&
-        elapsed.total_milliseconds() < FPGA_READY_TIMEOUT_IN_MS);
-
-    nirio_status_chain(_riok_proxy.peek(FPGA_STATUS_REG, reg_data), status);
-    if (nirio_status_not_fatal(status) && (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK)) {
-        return NiRio_Status_FpgaBusy;
+        if (nirio_status_not_fatal(status) && (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK)) {
+            return NiRio_Status_FifoReserved;
+        }
     }
 
     return status;

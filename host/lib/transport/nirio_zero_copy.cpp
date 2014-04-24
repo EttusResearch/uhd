@@ -292,34 +292,40 @@ private:
         static const uint32_t TIMEOUT_IN_MS = 100;
 
         uint32_t reg_data = 0xffffffff;
+        bool tx_busy = true, rx_busy = true;
         boost::posix_time::ptime start_time;
         boost::posix_time::time_duration elapsed;
         nirio_status status = NiRio_Status_Success;
 
-        start_time = boost::posix_time::microsec_clock::local_time();
-        do {
-            boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
-            elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-            nirio_status_chain(_proxy().peek(
-                PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
-        } while (
-            nirio_status_not_fatal(status) &&
-            (reg_data & DMA_STATUS_BUSY) &&
-            elapsed.total_milliseconds() < TIMEOUT_IN_MS);
+        nirio_status_chain(_proxy().peek(
+            PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
+        tx_busy = (reg_data & DMA_STATUS_BUSY);
+        nirio_status_chain(_proxy().peek(
+            PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
+        rx_busy = (reg_data & DMA_STATUS_BUSY);
 
-        start_time = boost::posix_time::microsec_clock::local_time();
-        do {
-            boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
-            elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-            nirio_status_chain(_proxy().peek(
-                PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
-        } while (
-            nirio_status_not_fatal(status) &&
-            (reg_data & DMA_STATUS_BUSY) &&
-            elapsed.total_milliseconds() < TIMEOUT_IN_MS);
+        if (nirio_status_not_fatal(status) && !tx_busy && !rx_busy) {
+            start_time = boost::posix_time::microsec_clock::local_time();
+            do {
+                boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
+                elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+                nirio_status_chain(_proxy().peek(
+                    PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
+                tx_busy = (reg_data & DMA_STATUS_BUSY);
+                nirio_status_chain(_proxy().peek(
+                    PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
+                rx_busy = (reg_data & DMA_STATUS_BUSY);
+            } while (
+                nirio_status_not_fatal(status) &&
+                (tx_busy || rx_busy) &&
+                elapsed.total_milliseconds() < TIMEOUT_IN_MS);
 
-        nirio_status_to_exception(status,
-            "Could not create nirio_zero_copy transport because the FPGA is busy. Try re-downloading the LVBITX.");
+            if (tx_busy || rx_busy) {
+                nirio_status_chain(NiRio_Status_FpgaBusy, status);
+            }
+
+            nirio_status_to_exception(status, "Could not create nirio_zero_copy transport.");
+        }
     }
 
     //memory management -> buffers and fifos
