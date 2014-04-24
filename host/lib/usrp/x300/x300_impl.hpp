@@ -152,6 +152,7 @@ public:
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
     // used by x300_find_with_addr to find X300 devices.
+    static boost::mutex claimer_mutex;  //All claims and checks in this process are serialized
     static bool is_claimed(uhd::wb_iface::sptr);
 
     enum x300_mboard_t {
