@@ -95,7 +95,6 @@ nirio_status niusrprio_session::open(
         }
     }
 
-    nirio_status_chain(_riok_proxy.set_attribute(ADDRESS_SPACE, BUS_INTERFACE), status);
     return status;
 }
 

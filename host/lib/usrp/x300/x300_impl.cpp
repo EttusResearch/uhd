@@ -859,13 +859,14 @@ x300_impl::~x300_impl(void)
 
             //kill the claimer task and unclaim the device
             mb.claimer_task.reset();
-            mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), 0);
-            mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), 0);
-
-            boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
-            //If the process is killed, the entire registry will disappear so we
-            //don't need to worry about unclean shutdowns here.
-            get_pcie_zpu_iface_registry().pop(mb.addr);
+            {   //Critical section
+                boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
+                mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), 0);
+                mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), 0);
+                //If the process is killed, the entire registry will disappear so we
+                //don't need to worry about unclean shutdowns here.
+                get_pcie_zpu_iface_registry().pop(mb.addr);
+            }
         }
     }
     catch(...)
@@ -1491,10 +1492,11 @@ void x300_impl::set_fp_gpio(gpio_core_200::sptr gpio, const std::string &attr, c
 
 void x300_impl::claimer_loop(wb_iface::sptr iface)
 {
-    boost::mutex::scoped_lock(claimer_mutex);
-
-    iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), time(NULL));
-    iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), get_process_hash());
+    {   //Critical section
+        boost::mutex::scoped_lock(claimer_mutex);
+        iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), time(NULL));
+        iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), get_process_hash());
+    }
     boost::this_thread::sleep(boost::posix_time::milliseconds(1000)); //1 second
 }
 
