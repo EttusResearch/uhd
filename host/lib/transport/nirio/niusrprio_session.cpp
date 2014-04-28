@@ -214,7 +214,7 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
 
     boost::uint32_t reg_data = 0xffffffff;
     nirio_status_chain(_riok_proxy.peek(FPGA_STATUS_REG, reg_data), status);
-    if (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK)
+    if (nirio_status_not_fatal(status) && (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK))
     {
         //In case this session was re-initialized *immediately* after the previous
         //there is a small chance that the server is still finishing up cleaning up

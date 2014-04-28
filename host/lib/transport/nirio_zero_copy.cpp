@@ -304,7 +304,7 @@ private:
             PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
         rx_busy = (reg_data & DMA_STATUS_BUSY);
 
-        if (nirio_status_not_fatal(status) && !tx_busy && !rx_busy) {
+        if (nirio_status_not_fatal(status) && (tx_busy || rx_busy)) {
             start_time = boost::posix_time::microsec_clock::local_time();
             do {
                 boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
