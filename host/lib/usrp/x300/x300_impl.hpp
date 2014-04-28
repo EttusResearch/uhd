@@ -53,7 +53,7 @@
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 
 static const double X300_DEFAULT_TICK_RATE      = 200e6;        //Hz
-static const double X300_BUS_CLOCK_RATE         = 175e6;        //Hz
+static const double X300_BUS_CLOCK_RATE         = 166.666667e6; //Hz
 
 static const size_t X300_TX_HW_BUFF_SIZE        = 0x90000;      //576KiB
 static const size_t X300_TX_FC_RESPONSE_FREQ    = 8;            //per flow-control window
