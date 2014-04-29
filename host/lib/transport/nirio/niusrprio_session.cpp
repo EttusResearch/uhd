@@ -77,6 +77,8 @@ nirio_status niusrprio_session::open(
         std::string lvbitx_checksum(_lvbitx->get_bitstream_checksum());
         boost::uint16_t download_fpga = (force_download || (_read_bitstream_checksum() != lvbitx_checksum)) ? 1 : 0;
 
+        nirio_status_chain(_ensure_fpga_ready(), status);
+
         nirio_status_chain(_rpc_client.niusrprio_open_session(
             _resource_name, bitfile_path, signature, download_fpga), status);
         _session_open = nirio_status_not_fatal(status);
@@ -193,6 +195,61 @@ nirio_status niusrprio_session::_write_bitstream_checksum(const std::string& che
         }
         nirio_status_chain(_riok_proxy.poke(FPGA_USR_SIG_REG_BASE + i, quarter_sig), status);
     }
+    return status;
+}
+
+nirio_status niusrprio_session::_ensure_fpga_ready()
+{
+    nirio_status status = NiRio_Status_Success;
+    niriok_scoped_addr_space(_riok_proxy, BUS_INTERFACE, status);
+
+    //Verify that the Ettus FPGA loaded in the device. This may not be true if the
+    //user is switching to UHD after using LabVIEW FPGA. In that case skip this check.
+    boost::uint32_t pcie_fpga_signature = 0;
+    nirio_status_chain(_riok_proxy.peek(FPGA_PCIE_SIG_REG, pcie_fpga_signature), status);
+    //@TODO: Remove X300 specific constants for future products
+    if (pcie_fpga_signature != FPGA_X3xx_SIG_VALUE) {
+        return status;
+    }
+
+    boost::uint32_t reg_data = 0xffffffff;
+    nirio_status_chain(_riok_proxy.peek(FPGA_STATUS_REG, reg_data), status);
+    if (nirio_status_not_fatal(status) && (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK))
+    {
+        //In case this session was re-initialized *immediately* after the previous
+        //there is a small chance that the server is still finishing up cleaning up
+        //the DMA FIFOs. We currently don't have any feedback from the driver regarding
+        //this state so just wait.
+        boost::this_thread::sleep(boost::posix_time::milliseconds(FPGA_READY_TIMEOUT_IN_MS));
+
+        //Disable all FIFOs in the FPGA
+        for (size_t i = 0; i < _lvbitx->get_input_fifo_count(); i++) {
+            _riok_proxy.poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, i), DMA_CTRL_DISABLED);
+        }
+        for (size_t i = 0; i < _lvbitx->get_output_fifo_count(); i++) {
+            _riok_proxy.poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, i), DMA_CTRL_DISABLED);
+        }
+
+        //Disable all FIFOs in the kernel driver
+        _riok_proxy.stop_all_fifos();
+
+        boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
+        boost::posix_time::time_duration elapsed;
+        do {
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //Avoid flooding the bus
+            elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+            nirio_status_chain(_riok_proxy.peek(FPGA_STATUS_REG, reg_data), status);
+        } while (
+            nirio_status_not_fatal(status) &&
+            (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK) &&
+            elapsed.total_milliseconds() < FPGA_READY_TIMEOUT_IN_MS);
+
+        nirio_status_chain(_riok_proxy.peek(FPGA_STATUS_REG, reg_data), status);
+        if (nirio_status_not_fatal(status) && (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK)) {
+            return NiRio_Status_FifoReserved;
+        }
+    }
+
     return status;
 }
 

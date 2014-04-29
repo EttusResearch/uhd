@@ -135,6 +135,12 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
     return addrs;
 }
 
+//We need a zpu xport registry to ensure synchronization between the static finder method
+//and the instances of the x300_impl class.
+typedef uhd::dict< std::string, boost::weak_ptr<wb_iface> > pcie_zpu_iface_registry_t;
+UHD_SINGLETON_FCN(pcie_zpu_iface_registry_t, get_pcie_zpu_iface_registry)
+static boost::mutex pcie_zpu_iface_registry_mutex;
+
 static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_query)
 {
     std::string rpc_port_name(NIUSRPRIO_DEFAULT_RPC_PORT);
@@ -167,17 +173,30 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
         }
 
         niriok_proxy kernel_proxy;
-        kernel_proxy.open(dev_info.interface_path);
 
         //Attempt to read the name from the EEPROM and perform filtering.
         //This operation can throw due to compatibility mismatch.
         try
         {
-            //This call could throw an exception if the user is switching to using UHD
+            //This block could throw an exception if the user is switching to using UHD
             //after LabVIEW FPGA. In that case, skip reading the name and serial and pick
             //a default FPGA flavor. During make, a new image will be loaded and everything
             //will be OK
-            wb_iface::sptr zpu_ctrl = x300_make_ctrl_iface_pcie(kernel_proxy);
+
+            wb_iface::sptr zpu_ctrl;
+
+            //Hold on to the registry mutex as long as zpu_ctrl is alive
+            //to prevent any use by different threads while enumerating
+            boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
+
+            if (get_pcie_zpu_iface_registry().has_key(resource_d)) {
+                zpu_ctrl = get_pcie_zpu_iface_registry()[resource_d].lock();
+            } else {
+                kernel_proxy.open(dev_info.interface_path);
+                zpu_ctrl = x300_make_ctrl_iface_pcie(kernel_proxy);
+                //We don't put this zpu_ctrl in the registry because we need
+                //a persistent niriok_proxy associated with the object
+            }
             if (x300_impl::is_claimed(zpu_ctrl)) continue; //claimed by another process
 
             //Attempt to autodetect the FPGA type
@@ -465,7 +484,13 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //create basic communication
     UHD_MSG(status) << "Setup basic communication..." << std::endl;
     if (mb.xport_path == "nirio") {
-        mb.zpu_ctrl = x300_make_ctrl_iface_pcie(mb.rio_fpga_interface->get_kernel_proxy());
+        boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
+        if (get_pcie_zpu_iface_registry().has_key(mb.addr)) {
+            throw uhd::assertion_error("Someone else has a ZPU transport to the device open. Internal error!");
+        } else {
+            mb.zpu_ctrl = x300_make_ctrl_iface_pcie(mb.rio_fpga_interface->get_kernel_proxy());
+            get_pcie_zpu_iface_registry()[mb.addr] = boost::weak_ptr<wb_iface>(mb.zpu_ctrl);
+        }
     } else {
         mb.zpu_ctrl = x300_make_ctrl_iface_enet(udp_simple::make_connected(mb.addr,
                     BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT)));
@@ -834,8 +859,14 @@ x300_impl::~x300_impl(void)
 
             //kill the claimer task and unclaim the device
             mb.claimer_task.reset();
-            mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), 0);
-            mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), 0);
+            {   //Critical section
+                boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
+                mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), 0);
+                mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), 0);
+                //If the process is killed, the entire registry will disappear so we
+                //don't need to worry about unclean shutdowns here.
+                get_pcie_zpu_iface_registry().pop(mb.addr);
+            }
         }
     }
     catch(...)
@@ -1461,13 +1492,18 @@ void x300_impl::set_fp_gpio(gpio_core_200::sptr gpio, const std::string &attr, c
 
 void x300_impl::claimer_loop(wb_iface::sptr iface)
 {
-    iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), time(NULL));
-    iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), get_process_hash());
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1500)); //1.5 seconds
+    {   //Critical section
+        boost::mutex::scoped_lock(claimer_mutex);
+        iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), time(NULL));
+        iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), get_process_hash());
+    }
+    boost::this_thread::sleep(boost::posix_time::milliseconds(1000)); //1 second
 }
 
 bool x300_impl::is_claimed(wb_iface::sptr iface)
 {
+    boost::mutex::scoped_lock(claimer_mutex);
+
     //If timed out then device is definitely unclaimed
     if (iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_STATUS)) == 0)
         return false;

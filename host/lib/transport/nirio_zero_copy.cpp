@@ -24,6 +24,7 @@
 #include <uhd/utils/atomic.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp> //sleep
 #include <vector>
 #include <algorithm>    // std::max
@@ -143,6 +144,12 @@ public:
         nirio_status status = 0;
         size_t actual_depth = 0, actual_size = 0;
 
+        //Disable DMA streams in case last shutdown was unclean (cleanup, so don't status chain)
+        _proxy().poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
+        _proxy().poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
+
+        _wait_until_stream_ready();
+
         //Configure frame width
         nirio_status_chain(
             _proxy().poke(PCIE_TX_DMA_REG(DMA_FRAME_SIZE_REG, _fifo_instance),
@@ -152,14 +159,14 @@ public:
             _proxy().poke(PCIE_RX_DMA_REG(DMA_FRAME_SIZE_REG, _fifo_instance),
                           static_cast<uint32_t>(_xport_params.recv_frame_size/sizeof(fifo_data_t))),
             status);
-        //Config 32-bit word flipping and Reset DMA streams
+        //Config 32-bit word flipping and enable DMA streams
         nirio_status_chain(
             _proxy().poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance),
-                          DMA_CTRL_SW_BUF_U32 | DMA_CTRL_RESET),
+                          DMA_CTRL_SW_BUF_U32 | DMA_CTRL_ENABLED),
             status);
         nirio_status_chain(
             _proxy().poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance),
-                          DMA_CTRL_SW_BUF_U32 | DMA_CTRL_RESET),
+                          DMA_CTRL_SW_BUF_U32 | DMA_CTRL_ENABLED),
             status);
 
         //Create FIFOs
@@ -189,10 +196,6 @@ public:
             nirio_status_chain(_send_fifo->start(), status);
 
             if (nirio_status_not_fatal(status)) {
-                //Flush RX kernel buffers in case some cruft was
-                //left behind from the last run
-                _flush_rx_buff();
-
                 //allocate re-usable managed receive buffers
                 for (size_t i = 0; i < get_num_recv_frames(); i++){
                     _mrb_pool.push_back(boost::shared_ptr<nirio_zero_copy_mrb>(new nirio_zero_copy_mrb(
@@ -216,9 +219,9 @@ public:
     {
         _proxy().get_rio_quirks().remove_tx_fifo(_fifo_instance);
 
-        //Reset DMA streams (Teardown, so don't status chain)
-        _proxy().poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_RESET);
-        _proxy().poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_RESET);
+        //Disable DMA streams (cleanup, so don't status chain)
+        _proxy().poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
+        _proxy().poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
 
         _flush_rx_buff();
 
@@ -281,6 +284,47 @@ private:
             nirio_status_to_exception(status,
                 "NI-RIO PCIe data transfer failed during flush.");
             _recv_fifo->release(num_elems_acquired);
+        }
+    }
+
+    UHD_INLINE void _wait_until_stream_ready()
+    {
+        static const uint32_t TIMEOUT_IN_MS = 100;
+
+        uint32_t reg_data = 0xffffffff;
+        bool tx_busy = true, rx_busy = true;
+        boost::posix_time::ptime start_time;
+        boost::posix_time::time_duration elapsed;
+        nirio_status status = NiRio_Status_Success;
+
+        nirio_status_chain(_proxy().peek(
+            PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
+        tx_busy = (reg_data & DMA_STATUS_BUSY);
+        nirio_status_chain(_proxy().peek(
+            PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
+        rx_busy = (reg_data & DMA_STATUS_BUSY);
+
+        if (nirio_status_not_fatal(status) && (tx_busy || rx_busy)) {
+            start_time = boost::posix_time::microsec_clock::local_time();
+            do {
+                boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
+                elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+                nirio_status_chain(_proxy().peek(
+                    PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
+                tx_busy = (reg_data & DMA_STATUS_BUSY);
+                nirio_status_chain(_proxy().peek(
+                    PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
+                rx_busy = (reg_data & DMA_STATUS_BUSY);
+            } while (
+                nirio_status_not_fatal(status) &&
+                (tx_busy || rx_busy) &&
+                elapsed.total_milliseconds() < TIMEOUT_IN_MS);
+
+            if (tx_busy || rx_busy) {
+                nirio_status_chain(NiRio_Status_FpgaBusy, status);
+            }
+
+            nirio_status_to_exception(status, "Could not create nirio_zero_copy transport.");
         }
     }
 

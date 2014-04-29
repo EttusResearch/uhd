@@ -124,8 +124,11 @@ static const uint32_t FPGA_PCIE_SIG_REG     = PCIE_FPGA_REG(0x0000);
 static const uint32_t FPGA_CNTR_LO_REG      = PCIE_FPGA_REG(0x0004);
 static const uint32_t FPGA_CNTR_HI_REG      = PCIE_FPGA_REG(0x0008);
 static const uint32_t FPGA_CNTR_FREQ_REG    = PCIE_FPGA_REG(0x000C);
+static const uint32_t FPGA_STATUS_REG       = PCIE_FPGA_REG(0x0020);
 static const uint32_t FPGA_USR_SIG_REG_BASE = PCIE_FPGA_REG(0x0030);
 static const uint32_t FPGA_USR_SIG_REG_SIZE = 16;
+
+static const uint32_t FPGA_STATUS_DMA_ACTIVE_MASK = 0x3F3F0000;
 
 static const uint32_t PCIE_TX_DMA_REG_BASE  = PCIE_FPGA_REG(0x0200);
 static const uint32_t PCIE_RX_DMA_REG_BASE  = PCIE_FPGA_REG(0x0400);
@@ -139,12 +142,15 @@ static const uint32_t DMA_PKT_COUNT_REG     = 0xC;
 #define PCIE_TX_DMA_REG(REG, CHAN)          (PCIE_TX_DMA_REG_BASE + (CHAN*DMA_REG_GRP_SIZE) + REG)
 #define PCIE_RX_DMA_REG(REG, CHAN)          (PCIE_RX_DMA_REG_BASE + (CHAN*DMA_REG_GRP_SIZE) + REG)
 
-static const uint32_t DMA_CTRL_RESET        = 1;
+static const uint32_t DMA_CTRL_DISABLED     = 0x00000000;
+static const uint32_t DMA_CTRL_ENABLED      = 0x00000002;
+static const uint32_t DMA_CTRL_CLEAR_STB    = 0x00000001;
 static const uint32_t DMA_CTRL_SW_BUF_U64   = (3 << 4);
 static const uint32_t DMA_CTRL_SW_BUF_U32   = (2 << 4);
 static const uint32_t DMA_CTRL_SW_BUF_U16   = (1 << 4);
 static const uint32_t DMA_CTRL_SW_BUF_U8    = (0 << 4);
-static const uint32_t DMA_STATUS_ERROR      = 1;
+static const uint32_t DMA_STATUS_ERROR      = 0x00000001;
+static const uint32_t DMA_STATUS_BUSY       = 0x00000002;
 
 static const uint32_t PCIE_ROUTER_REG_BASE  = PCIE_FPGA_REG(0x0500);
 #define PCIE_ROUTER_REG(X)                  (PCIE_ROUTER_REG_BASE + X)

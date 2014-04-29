@@ -126,6 +126,8 @@ namespace uhd { namespace niusrprio
         nirio_status unmap_fifo_memory(
             nirio_driver_iface::rio_mmap_t& map);
 
+        nirio_status stop_all_fifos();
+
         nirio_quirks& get_rio_quirks() {
             return _rio_quirks;
         }
