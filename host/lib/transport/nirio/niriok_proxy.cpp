@@ -293,6 +293,16 @@ namespace uhd { namespace niusrprio
     {
         return nirio_driver_iface::rio_munmap(map);
     }
+
+    nirio_status niriok_proxy::stop_all_fifos()
+    {
+        nirio_driver_iface::nirio_syncop_in_params_t in = {};
+        nirio_driver_iface::nirio_syncop_out_params_t out = {};
+
+        in.function = nirio_driver_iface::NIRIO_FUNC::FIFO_STOP_ALL;
+
+        return sync_operation(&in, sizeof(in), &out, sizeof(out));
+    }
 }}
 
 #ifdef __GNUC__

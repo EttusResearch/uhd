@@ -1,10 +1,10 @@
 
-// Copyright 2012 Ettus Research LLC
+// Copyright 2014 Ettus Research LLC
 
-#ifndef INCLUDED_B250_DEFS_H
-#define INCLUDED_B250_DEFS_H
+#ifndef INCLUDED_X300_DEFS_H
+#define INCLUDED_X300_DEFS_H
 
-#define CPU_CLOCK 175000000
+#define CPU_CLOCK 166666667
 #define MAIN_RAM_BASE 0x0000
 #define PKT_RAM0_BASE 0x8000
 #define XGE0_BASE 0xC000
@@ -72,4 +72,4 @@ static const int BL_DATA        = 1;
 #define ETH_FRAMER_DST_UDP_MAC 6
 #define ETH_FRAMER_DST_MAC_LO 7
 
-#endif /* INCLUDED_B250_DEFS_H */
+#endif /* INCLUDED_X300_DEFS_H */
