@@ -104,6 +104,11 @@ rpc_client::rpc_client (
     } catch (boost::exception&) {
         UHD_LOG << "rpc_client connection request cancelled/aborted." << std::endl;
         _exec_err.assign(boost::asio::error::connection_aborted, boost::asio::error::get_system_category());
+#if BOOST_VERSION < 104700
+    } catch (std::exception& e) {
+        UHD_LOG << "rpc_client connection error: " << e.what() << std::endl;
+        _exec_err.assign(boost::asio::error::connection_aborted, boost::asio::error::get_system_category());
+#endif
     }
 }
 
