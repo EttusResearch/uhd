@@ -74,8 +74,15 @@ private:
 
     // Get all GPSDO messages available
     // Creating a map here because we only want the latest of each message type
-    for (std::string msg = _recv(); msg.length() > 6; msg = _recv())
+    for (std::string msg = _recv(); msg.length(); msg = _recv())
     {
+        if (msg.length() < 6)
+            continue;
+
+        // Strip any end of line characters
+        erase_all(msg, "\r");
+        erase_all(msg, "\n");
+
         // Look for SERVO message
         if (boost::regex_search(msg, status_regex, boost::regex_constants::match_continuous))
             msgs["SERVO"] = msg;
