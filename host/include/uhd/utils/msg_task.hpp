@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2013 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ namespace uhd{
                     memcpy(&v.front(), p, n);
                     return v;
                 }
-                return std::vector<uint8_t>();
+                return std::vector<boost::uint8_t>();
             }
 
             /*!
