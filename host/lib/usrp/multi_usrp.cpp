@@ -747,7 +747,11 @@ public:
 
     void set_rx_dc_offset(const bool enb, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<bool>(rx_fe_root(chan) / "dc_offset" / "enable").set(enb);
+            if (_tree->exists(rx_fe_root(chan) / "dc_offset" / "enable")) {
+                _tree->access<bool>(rx_fe_root(chan) / "dc_offset" / "enable").set(enb);
+            } else {
+                UHD_MSG(warning) << "Setting DC offset compensation is not possible on this device." << std::endl;
+            }
             return;
         }
         for (size_t c = 0; c < get_rx_num_channels(); c++){
@@ -757,7 +761,11 @@ public:
 
     void set_rx_dc_offset(const std::complex<double> &offset, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<std::complex<double> >(rx_fe_root(chan) / "dc_offset" / "value").set(offset);
+            if (_tree->exists(rx_fe_root(chan) / "dc_offset" / "value")) {
+                _tree->access<std::complex<double> >(rx_fe_root(chan) / "dc_offset" / "value").set(offset);
+            } else {
+                UHD_MSG(warning) << "Setting DC offset is not possible on this device." << std::endl;
+            }
             return;
         }
         for (size_t c = 0; c < get_rx_num_channels(); c++){
@@ -767,7 +775,11 @@ public:
 
     void set_rx_iq_balance(const std::complex<double> &offset, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<std::complex<double> >(rx_fe_root(chan) / "iq_balance" / "value").set(offset);
+            if (_tree->exists(rx_fe_root(chan) / "iq_balance" / "value")) {
+                _tree->access<std::complex<double> >(rx_fe_root(chan) / "iq_balance" / "value").set(offset);
+            } else {
+                UHD_MSG(warning) << "Setting IQ balance is not possible on this device." << std::endl;
+            }
             return;
         }
         for (size_t c = 0; c < get_rx_num_channels(); c++){
@@ -933,7 +945,11 @@ public:
 
     void set_tx_dc_offset(const std::complex<double> &offset, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<std::complex<double> >(tx_fe_root(chan) / "dc_offset" / "value").set(offset);
+            if (_tree->exists(tx_fe_root(chan) / "dc_offset" / "value")) {
+                _tree->access<std::complex<double> >(tx_fe_root(chan) / "dc_offset" / "value").set(offset);
+            } else {
+                UHD_MSG(warning) << "Setting DC offset is not possible on this device." << std::endl;
+            }
             return;
         }
         for (size_t c = 0; c < get_tx_num_channels(); c++){
@@ -943,7 +959,11 @@ public:
 
     void set_tx_iq_balance(const std::complex<double> &offset, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<std::complex<double> >(tx_fe_root(chan) / "iq_balance" / "value").set(offset);
+            if (_tree->exists(tx_fe_root(chan) / "iq_balance" / "value")) {
+                _tree->access<std::complex<double> >(tx_fe_root(chan) / "iq_balance" / "value").set(offset);
+            } else {
+                UHD_MSG(warning) << "Setting IQ balance is not possible on this device." << std::endl;
+            }
             return;
         }
         for (size_t c = 0; c < get_tx_num_channels(); c++){
