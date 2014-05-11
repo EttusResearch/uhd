@@ -62,6 +62,20 @@ private:
     return std::string();
   }
 
+    static bool is_nmea_checksum_ok(std::string nmea)
+    {
+        if (nmea.length() < 5 || nmea[0] != '$' || nmea[nmea.length()-3] != '*')
+            return false;
+
+        uint8_t string_crc = uint8_t(strtol(nmea.substr(nmea.length()-2, 2).c_str(), NULL, 16));
+        uint8_t calculated_crc = 0;
+
+        for (size_t i = 1; i < nmea.length()-3; i++)
+            calculated_crc ^= nmea[i];
+
+        return (string_crc == calculated_crc);
+    }
+
   std::string update_cached_sensors(const std::string sensor) {
     if(not gps_detected() || (gps_type != GPS_TYPE_INTERNAL_GPSDO)) {
         UHD_MSG(error) << "get_stat(): unsupported GPS or no GPS detected";
@@ -70,24 +84,40 @@ private:
 
     const std::list<std::string> list = boost::assign::list_of("GPGGA")("GPRMC")("SERVO");
     static const boost::regex status_regex("\\d\\d-\\d\\d-\\d\\d");
+    static const boost::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
     std::map<std::string,std::string> msgs;
 
     // Get all GPSDO messages available
     // Creating a map here because we only want the latest of each message type
     for (std::string msg = _recv(); msg.length(); msg = _recv())
     {
-        if (msg.length() < 6)
-            continue;
-
         // Strip any end of line characters
         erase_all(msg, "\r");
         erase_all(msg, "\n");
 
+        if (msg.length() < 6)
+        {
+#ifdef  DEBUG_GPS
+            UHD_MSG(error) << __FUNCTION__ << ": Short NMEA string: " << msg << std::endl;
+#endif
+            continue;
+        }
+
         // Look for SERVO message
         if (boost::regex_search(msg, status_regex, boost::regex_constants::match_continuous))
+        {
             msgs["SERVO"] = msg;
-        else
+        }
+        else if (boost::regex_match(msg, gp_msg_regex) && is_nmea_checksum_ok(msg))
+        {
             msgs[msg.substr(1,5)] = msg;
+        }
+#ifdef  DEBUG_GPS
+        else
+        {
+            UHD_MSG(error) << __FUNCTION__ << ": Malformed NMEA string: " << msg << std::endl;
+        }
+#endif
     }
 
     boost::system_time time = boost::get_system_time();
@@ -131,7 +161,6 @@ public:
       }
       else if(reply.substr(0, 3) == "$GP") i_heard_some_nmea = true; //but keep looking for that "Command Error" response
       else if(reply.length() != 0) i_heard_something_weird = true; //probably wrong baud rate
-      sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
     }
 
     if((i_heard_some_nmea) && (gps_type != GPS_TYPE_INTERNAL_GPSDO)) gps_type = GPS_TYPE_GENERIC_NMEA;
