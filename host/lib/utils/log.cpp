@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -117,11 +117,11 @@ UHD_SINGLETON_FCN(log_resource_type, log_rs);
  **********************************************************************/
 //! get the relative file path from the host directory
 static std::string get_rel_file_path(const fs::path &file){
-    fs::path abs_path = file.branch_path();
+    fs::path abs_path = file.parent_path();
     fs::path rel_path = file.leaf();
     while (not abs_path.empty() and abs_path.leaf() != "host"){
         rel_path = abs_path.leaf() / rel_path;
-        abs_path = abs_path.branch_path();
+        abs_path = abs_path.parent_path();
     }
     return rel_path.string();
 }
