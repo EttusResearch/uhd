@@ -40,7 +40,7 @@ using namespace boost::assign;
 /***********************************************************************
  * The DBSRX2 constants
  **********************************************************************/
-static const freq_range_t dbsrx2_freq_range(0.8e9, 2.4e9);
+static const freq_range_t dbsrx2_freq_range(0.8e9, 2.3e9);
 
 //Multiplied by 2.0 for conversion to complex bandpass from lowpass
 static const freq_range_t dbsrx2_bandwidth_range(2.0*4.0e6, 2.0*40.0e6);
@@ -245,7 +245,7 @@ double dbsrx2::set_lo_freq(double target_freq){
     //target_freq = dbsrx2_freq_range.clip(target_freq);
 
     //variables used in the calculation below
-    int scaler = target_freq > 1125e6 ? 2 : 4;
+    int scaler = target_freq >= 1125e6 ? 2 : 4;
     double ref_freq = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
     int R, intdiv, fracdiv, ext_div;
     double N;
@@ -280,7 +280,8 @@ double dbsrx2::set_lo_freq(double target_freq){
         << std::endl;
 
     //send the registers
-    send_reg(0x0, 0x7);
+	send_reg(0x5, 0x7);
+	send_reg(0x0, 0x4);
 
     //FIXME: probably unnecessary to call get_locked here
     //get_locked();
