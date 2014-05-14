@@ -1,0 +1,45 @@
+#!/bin/bash
+
+iterations=1
+directory="."
+targets=""
+name=""
+outdir=${PWD}
+
+for arg in "$@"; do
+   if [[ $arg == "--help" ]]; then
+      echo "Usage: batch-build [options] targets"
+      echo "Options:"
+      echo "   --runs=N [1]            Build the specified targets N times"
+      echo "   --dir=<dir> [.]         Makefile directory"
+      echo "   --name=<name> [<empty>] Name of this batch job. Used as a prefix for build output"
+      echo "   --help                  Print the message and exit"
+      echo ""
+      exit 0
+   elif [[ $arg =~ "--runs="([0-9]+) ]]; then
+      iterations=${BASH_REMATCH[1]}
+   elif [[ $arg =~ "--dir="(.+) ]]; then
+      directory=${BASH_REMATCH[1]}
+   elif [[ $arg =~ "--name="(.+) ]]; then
+      name=${BASH_REMATCH[1]}"_"
+   else
+      targets=$targets$arg" "
+   fi
+done
+
+cd $directory >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+   echo "ERROR: Could not cd to $directory"
+   exit
+fi
+
+for i in $(seq 1 $iterations); do
+   make $targets
+   if [ $? -ne 0 ]; then
+      echo "ERROR: Build Failed!!! Stopping batch build."
+      exit
+   fi
+   cp -rf build ${outdir}/${name}batch-build_$(date +'%Y-%m-%d_%H-%M-%S')
+   make clean
+done
+

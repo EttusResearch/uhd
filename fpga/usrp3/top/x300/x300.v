@@ -285,7 +285,7 @@ module x300
 
    bus_clk_gen bus_clk_gen (
       .CLK_IN1(fpga_clk125),                //Input Clock: 125MHz Clock from STC3
-      .CLK_OUT1(bus_clk),                   //Output Clock 1: 175MHz
+      .CLK_OUT1(bus_clk),                   //Output Clock 1: 166.666667MHz
       .CLK_OUT2(ioport2_clk),               //Output Clock 2: 125MHz
       .RESET(1'b0),
       .LOCKED(bus_clk_locked));
@@ -547,187 +547,203 @@ module x300
    //
    //////////////////////////////////////////////////////////////////////
 
-    localparam IOP2_MSG_WIDTH       = 64;
-    localparam DMA_STREAM_WIDTH     = `LVFPGA_IFACE_DMA_CHAN_WIDTH;
-    localparam DMA_COUNT_WIDTH      = `LVFPGA_IFACE_DMA_SIZE_WIDTH;
-    localparam NUM_TX_STREAMS       = `LVFPGA_IFACE_NUM_TX_DMA_CNT;
-    localparam NUM_RX_STREAMS       = `LVFPGA_IFACE_NUM_RX_DMA_CNT;
-    localparam TX_STREAM_START_IDX  = `LVFPGA_IFACE_TX_DMA_INDEX;
-    localparam RX_STREAM_START_IDX  = `LVFPGA_IFACE_RX_DMA_INDEX;
+   localparam IOP2_MSG_WIDTH       = 64;
+   localparam DMA_STREAM_WIDTH     = `LVFPGA_IFACE_DMA_CHAN_WIDTH;
+   localparam DMA_COUNT_WIDTH      = `LVFPGA_IFACE_DMA_SIZE_WIDTH;
+   localparam NUM_TX_STREAMS       = `LVFPGA_IFACE_NUM_TX_DMA_CNT;
+   localparam NUM_RX_STREAMS       = `LVFPGA_IFACE_NUM_RX_DMA_CNT;
+   localparam TX_STREAM_START_IDX  = `LVFPGA_IFACE_TX_DMA_INDEX;
+   localparam RX_STREAM_START_IDX  = `LVFPGA_IFACE_RX_DMA_INDEX;
 
-    wire [DMA_STREAM_WIDTH-1:0] dmatx_tdata, dmarx_tdata;
-    wire                        dmatx_tvalid, dmarx_tvalid;
-    wire                        dmatx_tlast, dmarx_tlast;
-    wire                        dmatx_tready, dmarx_tready;
+   wire [DMA_STREAM_WIDTH-1:0] dmatx_tdata,  dmarx_tdata,  pcii_tdata,  pcio_tdata;
+   wire                        dmatx_tvalid, dmarx_tvalid, pcii_tvalid, pcio_tvalid;
+   wire                        dmatx_tlast,  dmarx_tlast,  pcii_tlast,  pcio_tlast;
+   wire                        dmatx_tready, dmarx_tready, pcii_tready, pcio_tready;
 
-    wire [IOP2_MSG_WIDTH-1:0]   o_iop2_msg_tdata, i_iop2_msg_tdata;
-    wire                        o_iop2_msg_tvalid, o_iop2_msg_tlast, o_iop2_msg_tready;
-    wire                        i_iop2_msg_tvalid, i_iop2_msg_tlast, i_iop2_msg_tready;
+   wire [IOP2_MSG_WIDTH-1:0]   o_iop2_msg_tdata, i_iop2_msg_tdata;
+   wire                        o_iop2_msg_tvalid, o_iop2_msg_tlast, o_iop2_msg_tready;
+   wire                        i_iop2_msg_tvalid, i_iop2_msg_tlast, i_iop2_msg_tready;
 
-    wire            pcie_usr_reg_wr, pcie_usr_reg_rd, pcie_usr_reg_rc, pcie_usr_reg_rdy;
-    wire [1:0]      pcie_usr_reg_len;
-    wire [19:0]     pcie_usr_reg_addr;
-    wire [31:0]     pcie_usr_reg_data_in, pcie_usr_reg_data_out;
+   wire            pcie_usr_reg_wr, pcie_usr_reg_rd, pcie_usr_reg_rc, pcie_usr_reg_rdy;
+   wire [1:0]      pcie_usr_reg_len;
+   wire [19:0]     pcie_usr_reg_addr;
+   wire [31:0]     pcie_usr_reg_data_in, pcie_usr_reg_data_out;
 
-    wire            chinch_reg_wr, chinch_reg_rd, chinch_reg_rc, chinch_reg_rdy;
-    wire [1:0]      chinch_reg_len;
-    wire [19:0]     chinch_reg_addr;
-    wire [31:0]     chinch_reg_data_out;
-    wire [63:0]     chinch_reg_data_in;
+   wire            chinch_reg_wr, chinch_reg_rd, chinch_reg_rc, chinch_reg_rdy;
+   wire [1:0]      chinch_reg_len;
+   wire [19:0]     chinch_reg_addr;
+   wire [31:0]     chinch_reg_data_out;
+   wire [63:0]     chinch_reg_data_in;
 
-    wire [(NUM_TX_STREAMS*DMA_STREAM_WIDTH)-1:0]    dmatx_tdata_iop2;
-    wire [NUM_TX_STREAMS-1:0]                       dmatx_tvalid_iop2, dmatx_tready_iop2;
+   wire [(NUM_TX_STREAMS*DMA_STREAM_WIDTH)-1:0]    dmatx_tdata_iop2;
+   wire [NUM_TX_STREAMS-1:0]                       dmatx_tvalid_iop2, dmatx_tready_iop2;
 
-    wire [(NUM_RX_STREAMS*DMA_STREAM_WIDTH)-1:0]    dmarx_tdata_iop2;
-    wire [NUM_RX_STREAMS-1:0]                       dmarx_tvalid_iop2, dmarx_tready_iop2;
+   wire [(NUM_RX_STREAMS*DMA_STREAM_WIDTH)-1:0]    dmarx_tdata_iop2;
+   wire [NUM_RX_STREAMS-1:0]                       dmarx_tvalid_iop2, dmarx_tready_iop2;
 
-    //PCIe Express "Physical" DMA and Register logic
-    LvFpga_Chinch_Interface lvfpga_chinch_inst
-    (
-        .aIoResetIn_n(aIoResetIn_n),
-        .bBusReset(),   //Output
+   //PCIe Express "Physical" DMA and Register logic
+   LvFpga_Chinch_Interface lvfpga_chinch_inst
+   (
+      .aIoResetIn_n(aIoResetIn_n),
+      .bBusReset(),   //Output
 
-        // Clocks
-        .BusClk(ioport2_clk),
-        .Rio40Clk(rio40_clk),
-        .IDelayRefClk(ioport2_idelay_ref_clk),
-        .aRioClkPllLocked(rio40_clk_locked),
-        .aRioClkPllReset(rio40_clk_reset),
+      // Clocks
+      .BusClk(ioport2_clk),
+      .Rio40Clk(rio40_clk),
+      .IDelayRefClk(ioport2_idelay_ref_clk),
+      .aRioClkPllLocked(rio40_clk_locked),
+      .aRioClkPllReset(rio40_clk_reset),
 
-        // The IO_Port2 asynchronous handshaking pins
-        .aIoReadyOut(aIoReadyOut),
-        .aIoReadyIn(aIoReadyIn),
-        .aIoPort2Restart(aIoPort2Restart),
+      // The IO_Port2 asynchronous handshaking pins
+      .aIoReadyOut(aIoReadyOut),
+      .aIoReadyIn(aIoReadyIn),
+      .aIoPort2Restart(aIoPort2Restart),
 
-        // The IO_Port2 high speed receiver pins
-        .IoRxClock(IoRxClock),
-        .IoRxClock_n(IoRxClock_n),
-        .irIoRxData(irIoRxData),
-        .irIoRxData_n(irIoRxData_n),
-        .irIoRxHeader(irIoRxHeader),
-        .irIoRxHeader_n(irIoRxHeader_n),
+      // The IO_Port2 high speed receiver pins
+      .IoRxClock(IoRxClock),
+      .IoRxClock_n(IoRxClock_n),
+      .irIoRxData(irIoRxData),
+      .irIoRxData_n(irIoRxData_n),
+      .irIoRxHeader(irIoRxHeader),
+      .irIoRxHeader_n(irIoRxHeader_n),
 
-        // The IO_Port2 high speed transmitter interface pins
-        .IoTxClock(IoTxClock),
-        .IoTxClock_n(IoTxClock_n),
-        .itIoTxData(itIoTxData),
-        .itIoTxData_n(itIoTxData_n),
-        .itIoTxHeader(itIoTxHeader),
-        .itIoTxHeader_n(itIoTxHeader_n),
+      // The IO_Port2 high speed transmitter interface pins
+      .IoTxClock(IoTxClock),
+      .IoTxClock_n(IoTxClock_n),
+      .itIoTxData(itIoTxData),
+      .itIoTxData_n(itIoTxData_n),
+      .itIoTxHeader(itIoTxHeader),
+      .itIoTxHeader_n(itIoTxHeader_n),
 
-        // DMA TX Fifos
-        .bDmaTxData(dmatx_tdata_iop2),
-        .bDmaTxValid(dmatx_tvalid_iop2),
-        .bDmaTxReady(dmatx_tready_iop2),
-        .bDmaTxEnabled(),
-        .bDmaTxFifoFullCnt(),
+      // DMA TX Fifos
+      .bDmaTxData(dmatx_tdata_iop2),
+      .bDmaTxValid(dmatx_tvalid_iop2),
+      .bDmaTxReady(dmatx_tready_iop2),
+      .bDmaTxEnabled(),
+      .bDmaTxFifoFullCnt(),
 
-        // DMA RX Fifos
-        .bDmaRxData(dmarx_tdata_iop2),
-        .bDmaRxValid(dmarx_tvalid_iop2),
-        .bDmaRxReady(dmarx_tready_iop2),
-        .bDmaRxEnabled(),
-        .bDmaRxFifoFreeCnt(),
+      // DMA RX Fifos
+      .bDmaRxData(dmarx_tdata_iop2),
+      .bDmaRxValid(dmarx_tvalid_iop2),
+      .bDmaRxReady(dmarx_tready_iop2),
+      .bDmaRxEnabled(),
+      .bDmaRxFifoFreeCnt(),
 
-        // User Register Port In
-        .bUserRegPortInWt(pcie_usr_reg_wr),
-        .bUserRegPortInRd(pcie_usr_reg_rd),
-        .bUserRegPortInAddr(pcie_usr_reg_addr),
-        .bUserRegPortInData(pcie_usr_reg_data_in),
-        .bUserRegPortInSize(pcie_usr_reg_len),
+      // User Register Port In
+      .bUserRegPortInWt(pcie_usr_reg_wr),
+      .bUserRegPortInRd(pcie_usr_reg_rd),
+      .bUserRegPortInAddr(pcie_usr_reg_addr),
+      .bUserRegPortInData(pcie_usr_reg_data_in),
+      .bUserRegPortInSize(pcie_usr_reg_len),
 
-        // User Register Port Out
-        .bUserRegPortOutData(pcie_usr_reg_data_out),
-        .bUserRegPortOutDataValid(pcie_usr_reg_rc),
-        .bUserRegPortOutReady(pcie_usr_reg_rdy),
+      // User Register Port Out
+      .bUserRegPortOutData(pcie_usr_reg_data_out),
+      .bUserRegPortOutDataValid(pcie_usr_reg_rc),
+      .bUserRegPortOutReady(pcie_usr_reg_rdy),
 
-        // Chinch Register Port Out
-        .bChinchRegPortOutWt(chinch_reg_wr),
-        .bChinchRegPortOutRd(chinch_reg_rd),
-        .bChinchRegPortOutAddr({12'h0, chinch_reg_addr}),
-        .bChinchRegPortOutData({32'h0, chinch_reg_data_out}),
-        .bChinchRegPortOutSize(chinch_reg_len),
+      // Chinch Register Port Out
+      .bChinchRegPortOutWt(chinch_reg_wr),
+      .bChinchRegPortOutRd(chinch_reg_rd),
+      .bChinchRegPortOutAddr({12'h0, chinch_reg_addr}),
+      .bChinchRegPortOutData({32'h0, chinch_reg_data_out}),
+      .bChinchRegPortOutSize(chinch_reg_len),
 
-        // User Register Port In
-        .bChinchRegPortInData(chinch_reg_data_in),
-        .bChinchRegPortInDataValid(chinch_reg_rc),
-        .bChinchRegPortInReady(chinch_reg_rdy),
+      // User Register Port In
+      .bChinchRegPortInData(chinch_reg_data_in),
+      .bChinchRegPortInDataValid(chinch_reg_rc),
+      .bChinchRegPortInReady(chinch_reg_rdy),
 
-        // Level interrupt
-        .aIrq(aIrq)
-    );
+      // Level interrupt
+      .aIrq(aIrq)
+   );
 
-    //PCIe Express adapter logic to link to the AXI crossbar and the WB bus
-    x300_pcie_int #(
-        .DMA_STREAM_WIDTH(DMA_STREAM_WIDTH),
-        .NUM_TX_STREAMS(NUM_TX_STREAMS),
-        .NUM_RX_STREAMS(NUM_RX_STREAMS),
-        .REGPORT_ADDR_WIDTH(20),
-        .REGPORT_DATA_WIDTH(32),
-        .IOP2_MSG_WIDTH(IOP2_MSG_WIDTH)
-    ) x300_pcie_int (
-        .ioport2_clk(ioport2_clk),
-        .bus_clk(bus_clk),
-        .bus_rst(bus_rst),
+   //PCIe Express adapter logic to link to the AXI crossbar and the WB bus
+   x300_pcie_int #(
+      .DMA_STREAM_WIDTH(DMA_STREAM_WIDTH),
+      .NUM_TX_STREAMS(NUM_TX_STREAMS),
+      .NUM_RX_STREAMS(NUM_RX_STREAMS),
+      .REGPORT_ADDR_WIDTH(20),
+      .REGPORT_DATA_WIDTH(32),
+      .IOP2_MSG_WIDTH(IOP2_MSG_WIDTH)
+   ) x300_pcie_int (
+      .ioport2_clk(ioport2_clk),
+      .bus_clk(bus_clk),
+      .bus_rst(bus_rst),
 
-        //DMA TX FIFOs (IoPort2 Clock Domain)
-        .dmatx_tdata_iop2(dmatx_tdata_iop2),
-        .dmatx_tvalid_iop2(dmatx_tvalid_iop2),
-        .dmatx_tready_iop2(dmatx_tready_iop2),
+      //DMA TX FIFOs (IoPort2 Clock Domain)
+      .dmatx_tdata_iop2(dmatx_tdata_iop2),
+      .dmatx_tvalid_iop2(dmatx_tvalid_iop2),
+      .dmatx_tready_iop2(dmatx_tready_iop2),
 
-        //DMA TX FIFOs (IoPort2 Clock Domain)
-        .dmarx_tdata_iop2(dmarx_tdata_iop2),
-        .dmarx_tvalid_iop2(dmarx_tvalid_iop2),
-        .dmarx_tready_iop2(dmarx_tready_iop2),
+      //DMA TX FIFOs (IoPort2 Clock Domain)
+      .dmarx_tdata_iop2(dmarx_tdata_iop2),
+      .dmarx_tvalid_iop2(dmarx_tvalid_iop2),
+      .dmarx_tready_iop2(dmarx_tready_iop2),
 
-        //PCIe User Regport
-        .pcie_usr_reg_wr(pcie_usr_reg_wr),
-        .pcie_usr_reg_rd(pcie_usr_reg_rd),
-        .pcie_usr_reg_addr(pcie_usr_reg_addr),
-        .pcie_usr_reg_data_in(pcie_usr_reg_data_in),
-        .pcie_usr_reg_len(pcie_usr_reg_len),
-        .pcie_usr_reg_data_out(pcie_usr_reg_data_out),
-        .pcie_usr_reg_rc(pcie_usr_reg_rc),
-        .pcie_usr_reg_rdy(pcie_usr_reg_rdy),
+      //PCIe User Regport
+      .pcie_usr_reg_wr(pcie_usr_reg_wr),
+      .pcie_usr_reg_rd(pcie_usr_reg_rd),
+      .pcie_usr_reg_addr(pcie_usr_reg_addr),
+      .pcie_usr_reg_data_in(pcie_usr_reg_data_in),
+      .pcie_usr_reg_len(pcie_usr_reg_len),
+      .pcie_usr_reg_data_out(pcie_usr_reg_data_out),
+      .pcie_usr_reg_rc(pcie_usr_reg_rc),
+      .pcie_usr_reg_rdy(pcie_usr_reg_rdy),
 
-        //Chinch Regport
-        .chinch_reg_wr(chinch_reg_wr),
-        .chinch_reg_rd(chinch_reg_rd),
-        .chinch_reg_addr(chinch_reg_addr),
-        .chinch_reg_data_out(chinch_reg_data_out),
-        .chinch_reg_len(chinch_reg_len),
-        .chinch_reg_data_in(chinch_reg_data_in[31:0]),
-        .chinch_reg_rc(chinch_reg_rc),
-        .chinch_reg_rdy(chinch_reg_rdy),
+      //Chinch Regport
+      .chinch_reg_wr(chinch_reg_wr),
+      .chinch_reg_rd(chinch_reg_rd),
+      .chinch_reg_addr(chinch_reg_addr),
+      .chinch_reg_data_out(chinch_reg_data_out),
+      .chinch_reg_len(chinch_reg_len),
+      .chinch_reg_data_in(chinch_reg_data_in[31:0]),
+      .chinch_reg_rc(chinch_reg_rc),
+      .chinch_reg_rdy(chinch_reg_rdy),
 
-        //DMA TX FIFO (Bus Clock Domain)
-        .dmatx_tdata(dmatx_tdata),
-        .dmatx_tlast(dmatx_tlast),
-        .dmatx_tvalid(dmatx_tvalid),
-        .dmatx_tready(dmatx_tready),
+      //DMA TX FIFO (Bus Clock Domain)
+      .dmatx_tdata(dmatx_tdata),
+      .dmatx_tlast(dmatx_tlast),
+      .dmatx_tvalid(dmatx_tvalid),
+      .dmatx_tready(dmatx_tready),
 
-        //DMA RX FIFO (Bus Clock Domain)
-        .dmarx_tdata(dmarx_tdata),
-        .dmarx_tlast(dmarx_tlast),
-        .dmarx_tvalid(dmarx_tvalid),
-        .dmarx_tready(dmarx_tready),
+      //DMA RX FIFO (Bus Clock Domain)
+      .dmarx_tdata(dmarx_tdata),
+      .dmarx_tlast(dmarx_tlast),
+      .dmarx_tvalid(dmarx_tvalid),
+      .dmarx_tready(dmarx_tready),
 
-        //Message FIFO Out (Bus Clock Domain)
-        .rego_tdata(o_iop2_msg_tdata),
-        .rego_tvalid(o_iop2_msg_tvalid),
-        .rego_tlast(o_iop2_msg_tlast),
-        .rego_tready(o_iop2_msg_tready),
+      //Message FIFO Out (Bus Clock Domain)
+      .rego_tdata(o_iop2_msg_tdata),
+      .rego_tvalid(o_iop2_msg_tvalid),
+      .rego_tlast(o_iop2_msg_tlast),
+      .rego_tready(o_iop2_msg_tready),
 
-        //Message FIFO In (Bus Clock Domain)
-        .regi_tdata(i_iop2_msg_tdata),
-        .regi_tvalid(i_iop2_msg_tvalid),
-        .regi_tlast(i_iop2_msg_tlast),
-        .regi_tready(i_iop2_msg_tready),
+      //Message FIFO In (Bus Clock Domain)
+      .regi_tdata(i_iop2_msg_tdata),
+      .regi_tvalid(i_iop2_msg_tvalid),
+      .regi_tlast(i_iop2_msg_tlast),
+      .regi_tready(i_iop2_msg_tready),
 
-        //Misc
-        .misc_status({31'h0, aStc3Gpio7}),
-        .debug()
-    );
+      //Misc
+      .misc_status({15'h0, aStc3Gpio7}),
+      .debug()
+   );
+
+   // The PCIe logic will tend to stay close to the physical IoPort2 pins
+   // so add an additional stage of pipelining to give the tool more routing
+   // slack. This is significantly help timing closure.
+   
+   axi_fifo_short #(.WIDTH(DMA_STREAM_WIDTH+1)) pcii_pipeline_srl (
+      .clk(bus_clk), .reset(bus_rst), .clear(1'b0),
+      .i_tdata({dmatx_tlast, dmatx_tdata}), .i_tvalid(dmatx_tvalid), .i_tready(dmatx_tready),
+      .o_tdata({pcii_tlast, pcii_tdata}), .o_tvalid(pcii_tvalid), .o_tready(pcii_tready),
+      .space(), .occupied());
+
+   axi_fifo_short #(.WIDTH(DMA_STREAM_WIDTH+1)) pcio_pipeline_srl (
+      .clk(bus_clk), .reset(bus_rst), .clear(1'b0),
+      .i_tdata({pcio_tlast, pcio_tdata}), .i_tvalid(pcio_tvalid), .i_tready(pcio_tready),
+      .o_tdata({dmarx_tlast, dmarx_tdata}), .o_tvalid(dmarx_tvalid), .o_tready(dmarx_tready),
+      .space(), .occupied());
 
    //////////////////////////////////////////////////////////////////////
    //
@@ -1936,14 +1952,14 @@ module x300
       .i_iop2_msg_tlast          (i_iop2_msg_tlast),
       .i_iop2_msg_tready         (i_iop2_msg_tready),
       // PCIe DMA Data
-      .pcio_tdata                (dmarx_tdata),
-      .pcio_tlast                (dmarx_tlast),
-      .pcio_tvalid               (dmarx_tvalid),
-      .pcio_tready               (dmarx_tready),
-      .pcii_tdata                (dmatx_tdata),
-      .pcii_tlast                (dmatx_tlast),
-      .pcii_tvalid               (dmatx_tvalid),
-      .pcii_tready               (dmatx_tready)
+      .pcio_tdata                (pcio_tdata),
+      .pcio_tlast                (pcio_tlast),
+      .pcio_tvalid               (pcio_tvalid),
+      .pcio_tready               (pcio_tready),
+      .pcii_tdata                (pcii_tdata),
+      .pcii_tlast                (pcii_tlast),
+      .pcii_tvalid               (pcii_tvalid),
+      .pcii_tready               (pcii_tready)
       );
 
 

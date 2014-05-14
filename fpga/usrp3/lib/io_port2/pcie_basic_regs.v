@@ -3,7 +3,10 @@
 //
 
 
-module pcie_basic_regs (
+module pcie_basic_regs #(
+    parameter SIGNATURE = 32'h0,
+    parameter CLK_FREQ  = 32'h0
+) (
     input           clk,
     input           reset,
 
@@ -16,8 +19,8 @@ module pcie_basic_regs (
     
     input [31:0]    misc_status
 );
-    localparam PCIE_FPGA_SIG_VAL                = 32'h58333030; //X300 (ASCII)
-    localparam PCIE_FPGA_COUNTER_FREQ           = 32'h0A6E49C0; //175MHz
+    localparam PCIE_FPGA_SIG_VAL                = SIGNATURE;
+    localparam PCIE_FPGA_COUNTER_FREQ           = CLK_FREQ;
 
     localparam PCIE_REG_ADDR_MASK               = 20'h001FF;
 

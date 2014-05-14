@@ -86,7 +86,7 @@ module x300_pcie_int #(
     //---------------------------------------------------------
     // Misc
     //---------------------------------------------------------
-    input [31:0]    misc_status,
+    input [15:0]    misc_status,
     output [127:0]  debug
 );
 
@@ -143,11 +143,13 @@ module x300_pcie_int #(
     //
     //*******************************************************************************
 
-    wire [NUM_TX_STREAMS-1:0]                           dmatx_clear, dmatx_samp_stb, dmatx_pkt_stb, dmatx_error;
+    wire [NUM_TX_STREAMS-1:0]                           dmatx_clear, dmatx_enabled;
+    wire [NUM_TX_STREAMS-1:0]                           dmatx_samp_stb, dmatx_pkt_stb, dmatx_busy, dmatx_error;
     wire [(NUM_TX_STREAMS*DMA_FRAME_SIZE_WIDTH)-1:0]    dmatx_frame_size;
     wire [(NUM_TX_STREAMS*3)-1:0]                       dmatx_swap;
 
-    wire [NUM_RX_STREAMS-1:0]                           dmarx_clear, dmarx_samp_stb, dmarx_pkt_stb, dmarx_error;
+    wire [NUM_RX_STREAMS-1:0]                           dmarx_clear, dmarx_enabled;
+    wire [NUM_RX_STREAMS-1:0]                           dmarx_samp_stb, dmarx_pkt_stb, dmarx_busy, dmarx_error;
     wire [(NUM_RX_STREAMS*DMA_FRAME_SIZE_WIDTH)-1:0]    dmarx_frame_size;
     wire [(NUM_TX_STREAMS*3)-1:0]                       dmarx_swap;
     wire [DMA_STREAM_WIDTH-1:0]                         dmarx_header;
@@ -188,12 +190,18 @@ module x300_pcie_int #(
         .e3_rego_tdata(rego_tdata), .e3_rego_tvalid(rego_tvalid), .e3_rego_tready(rego_tready)
     );
     assign regi_tlast = regi_tvalid;
+    
+    wire [15:0] fpga_status;
+    assign fpga_status[7:0]    = {|(dmatx_error), 1'b0, dmatx_enabled};
+    assign fpga_status[15:8]   = {|(dmarx_error), 1'b0, dmarx_enabled};
 
-    pcie_basic_regs basic_regs (
+    pcie_basic_regs #(
+        .SIGNATURE(32'h58333030 /*ASCII:"X300"*/), .CLK_FREQ(32'd166666667 /*bus_clk = 166.666667MHz*/)
+    ) basic_regs (
         .clk(bus_clk), .reset(bus_rst),
         .regi_tdata(basic_regi_tdata), .regi_tvalid(basic_regi_tvalid), .regi_tready(basic_regi_tready),
         .rego_tdata(basic_rego_tdata), .rego_tvalid(basic_rego_tvalid), .rego_tready(basic_rego_tready),
-        .misc_status(misc_status)
+        .misc_status({fpga_status, misc_status})
     );
     
     pcie_dma_ctrl #(
@@ -203,8 +211,9 @@ module x300_pcie_int #(
         .clk(bus_clk), .reset(bus_rst),
         .regi_tdata(dmatx_regi_tdata), .regi_tvalid(dmatx_regi_tvalid), .regi_tready(dmatx_regi_tready),
         .rego_tdata(dmatx_rego_tdata), .rego_tvalid(dmatx_rego_tvalid), .rego_tready(dmatx_rego_tready),
-        .set_clear(dmatx_clear), .set_frame_size(dmatx_frame_size), .sample_stb(dmatx_samp_stb), .packet_stb(dmatx_pkt_stb), 
-        .swap_lanes(dmatx_swap), .stream_err(dmatx_error), .rtr_sid(8'h00), .rtr_dst()
+        .set_enabled(dmatx_enabled), .set_clear(dmatx_clear), .set_frame_size(dmatx_frame_size),
+        .sample_stb(dmatx_samp_stb), .packet_stb(dmatx_pkt_stb), 
+        .swap_lanes(dmatx_swap), .stream_busy(dmatx_busy), .stream_err(dmatx_error), .rtr_sid(8'h00), .rtr_dst()
     );
     
     pcie_dma_ctrl #(
@@ -214,8 +223,9 @@ module x300_pcie_int #(
         .clk(bus_clk), .reset(bus_rst),
         .regi_tdata(dmarx_regi_tdata), .regi_tvalid(dmarx_regi_tvalid), .regi_tready(dmarx_regi_tready),
         .rego_tdata(dmarx_rego_tdata), .rego_tvalid(dmarx_rego_tvalid), .rego_tready(dmarx_rego_tready),
-        .set_clear(dmarx_clear), .set_frame_size(dmarx_frame_size), .sample_stb(dmarx_samp_stb), .packet_stb(dmarx_pkt_stb), 
-        .swap_lanes(dmarx_swap), .stream_err(dmarx_error), .rtr_sid(dmarx_header[7:0]), .rtr_dst(dmarx_pkt_dest)
+        .set_enabled(dmarx_enabled), .set_clear(dmarx_clear), .set_frame_size(dmarx_frame_size),
+        .sample_stb(dmarx_samp_stb), .packet_stb(dmarx_pkt_stb), 
+        .swap_lanes(dmarx_swap), .stream_busy(dmarx_busy), .stream_err(dmarx_error), .rtr_sid(dmarx_header[7:0]), .rtr_dst(dmarx_pkt_dest)
     );
     //
     //*******************************************************************************
@@ -223,10 +233,10 @@ module x300_pcie_int #(
     //*******************************************************************************
     // TX DMA Datapath
     //
-    wire [(NUM_TX_STREAMS*DMA_STREAM_WIDTH)-1:0]    dmatx_tdata_bclk,  dmatx_tdata_trun,  dmatx_tdata_gt, dmatx_tdata_swap;
-    wire [NUM_TX_STREAMS-1:0]                       dmatx_tvalid_bclk, dmatx_tvalid_trun, dmatx_tvalid_gt;
-    wire [NUM_TX_STREAMS-1:0]                       dmatx_tready_bclk, dmatx_tready_trun, dmatx_tready_gt;
-    wire [NUM_TX_STREAMS-1:0]                                          dmatx_tlast_trun,  dmatx_tlast_gt;
+    wire [(NUM_TX_STREAMS*DMA_STREAM_WIDTH)-1:0]    dmatx_tdata_bclk,  dmatx_tdata_in, dmatx_tdata_trun,  dmatx_tdata_gt, dmatx_tdata_swap;
+    wire [NUM_TX_STREAMS-1:0]                       dmatx_tvalid_bclk, dmatx_tvalid_in, dmatx_tvalid_trun, dmatx_tvalid_gt;
+    wire [NUM_TX_STREAMS-1:0]                       dmatx_tready_bclk, dmatx_tready_in, dmatx_tready_trun, dmatx_tready_gt;
+    wire [NUM_TX_STREAMS-1:0]                       dmatx_tlast_trun,  dmatx_tlast_gt;
 
     wire [DMA_STREAM_WIDTH-1:0]                     dmatx_tdata_mux;
     wire                                            dmatx_tvalid_mux, dmatx_tlast_mux, dmatx_tready_mux;
@@ -240,13 +250,19 @@ module x300_pcie_int #(
                 .o_aclk(bus_clk), .o_tdata(`GET_DMA_BUS(dmatx_tdata_bclk,i)), .o_tvalid(dmatx_tvalid_bclk[i]), .o_tready(dmatx_tready_bclk[i])
             );
 
+            pcie_lossy_samp_gate tx_samp_gate (
+                .i_tdata(`GET_DMA_BUS(dmatx_tdata_bclk,i)), .i_tvalid(dmatx_tvalid_bclk[i]), .i_tready(dmatx_tready_bclk[i]),
+                .o_tdata(`GET_DMA_BUS(dmatx_tdata_in,i)), .o_tvalid(dmatx_tvalid_in[i]), .o_tready(dmatx_tready_in[i]),
+                .drop(~dmatx_enabled[i]), .dropping(dmatx_busy[i])
+            );
+
             data_swapper_64 tx_data_swapper (
-                .swap_lanes(`GET_SWAP_BUS(dmatx_swap,i)), .i_tdata(`GET_DMA_BUS(dmatx_tdata_bclk,i)), .o_tdata(`GET_DMA_BUS(dmatx_tdata_swap,i))
+                .swap_lanes(`GET_SWAP_BUS(dmatx_swap,i)), .i_tdata(`GET_DMA_BUS(dmatx_tdata_in,i)), .o_tdata(`GET_DMA_BUS(dmatx_tdata_swap,i))
             );
 
             cvita_dechunker tx_dma_dechunker (
                 .clk(bus_clk), .reset(bus_rst), .clear(dmatx_clear[i]), .frame_size(`GET_FSIZE_BUS(dmatx_frame_size, i)),
-                .i_tdata(`GET_DMA_BUS(dmatx_tdata_swap,i)), .i_tvalid(dmatx_tvalid_bclk[i]), .i_tready(dmatx_tready_bclk[i]),
+                .i_tdata(`GET_DMA_BUS(dmatx_tdata_swap,i)), .i_tvalid(dmatx_tvalid_in[i]), .i_tready(dmatx_tready_in[i]),
                 .o_tdata(`GET_DMA_BUS(dmatx_tdata_trun,i)), .o_tlast(dmatx_tlast_trun[i]), .o_tvalid(dmatx_tvalid_trun[i]), .o_tready(dmatx_tready_trun[i]),
                 .error(dmatx_error[i])
             );
@@ -286,10 +302,10 @@ module x300_pcie_int #(
     //*******************************************************************************
     // RX DMA Datapath
     //
-    wire [(NUM_RX_STREAMS*DMA_STREAM_WIDTH)-1:0]    dmarx_tdata_bclk,  dmarx_tdata_pad, dmarx_tdata_swap;
-    wire [NUM_RX_STREAMS-1:0]                       dmarx_tvalid_bclk, dmarx_tvalid_pad;
-    wire [NUM_RX_STREAMS-1:0]                       dmarx_tready_bclk, dmarx_tready_pad;
-    wire [NUM_RX_STREAMS-1:0]                       dmarx_tlast_bclk,  dmarx_tlast_pad;
+    wire [(NUM_RX_STREAMS*DMA_STREAM_WIDTH)-1:0]    dmarx_tdata_bclk,  dmarx_tdata_pad, dmarx_tdata_swap, dmarx_tdata_out;
+    wire [NUM_RX_STREAMS-1:0]                       dmarx_tvalid_bclk, dmarx_tvalid_pad, dmarx_tvalid_out;
+    wire [NUM_RX_STREAMS-1:0]                       dmarx_tready_bclk, dmarx_tready_pad, dmarx_tready_out;
+    wire [NUM_RX_STREAMS-1:0]                       dmarx_tlast_bclk,  dmarx_tlast_pad, dmarx_tlast_out;
 
     wire [DMA_STREAM_WIDTH-1:0]                     dmarx_tdata_mux;
     wire                                            dmarx_tvalid_mux, dmarx_tlast_mux, dmarx_tready_mux;
@@ -331,16 +347,22 @@ module x300_pcie_int #(
                 .swap_lanes(`GET_SWAP_BUS(dmarx_swap,j)), .i_tdata(`GET_DMA_BUS(dmarx_tdata_pad,j)), .o_tdata(`GET_DMA_BUS(dmarx_tdata_swap,j))
             );
 
+            pcie_lossy_samp_gate rx_samp_gate (
+                .i_tdata(`GET_DMA_BUS(dmarx_tdata_swap,j)), .i_tvalid(dmarx_tvalid_pad[j]), .i_tready(dmarx_tready_pad[j]),
+                .o_tdata(`GET_DMA_BUS(dmarx_tdata_out,j)), .o_tvalid(dmarx_tvalid_out[j]), .o_tready(dmarx_tready_out[j]),
+                .drop(~dmarx_enabled[j]), .dropping(dmarx_busy[j])
+            );
+            
             axi_fifo_2clk #(.WIDTH(DMA_STREAM_WIDTH), .SIZE(DMA_CLK_XING_FIFO_SIZE)) rx_dma_clock_crossing_fifo (
                 .reset(bus_rst),
-                .i_aclk(bus_clk), .i_tdata(`GET_DMA_BUS(dmarx_tdata_swap,j)), .i_tvalid(dmarx_tvalid_pad[j]), .i_tready(dmarx_tready_pad[j]),
+                .i_aclk(bus_clk), .i_tdata(`GET_DMA_BUS(dmarx_tdata_out,j)), .i_tvalid(dmarx_tvalid_out[j]), .i_tready(dmarx_tready_out[j]),
                 .o_aclk(ioport2_clk), .o_tdata(`GET_DMA_BUS(dmarx_tdata_iop2,j)), .o_tvalid(dmarx_tvalid_iop2[j]), .o_tready(dmarx_tready_iop2[j])
             );
         end
     endgenerate
     //
     //*******************************************************************************
-
+    
 endmodule
 
 `undef GET_DMA_BUS

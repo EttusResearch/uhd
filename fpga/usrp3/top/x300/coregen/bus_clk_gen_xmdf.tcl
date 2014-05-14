@@ -40,20 +40,12 @@ utilities_xmdf::xmdfSetData $instance FileSet $fcount relative_path bus_clk_gen/
 utilities_xmdf::xmdfSetData $instance FileSet $fcount type Ignore
 incr fcount
 
-utilities_xmdf::xmdfSetData $instance FileSet $fcount relative_path bus_clk_gen/example_design/bus_clk_gen_exdes.ucf
-utilities_xmdf::xmdfSetData $instance FileSet $fcount type ucf
-incr fcount
-
 utilities_xmdf::xmdfSetData $instance FileSet $fcount relative_path bus_clk_gen/doc/clk_wiz_ds709.pdf
 utilities_xmdf::xmdfSetData $instance FileSet $fcount type Ignore
 incr fcount
 
 utilities_xmdf::xmdfSetData $instance FileSet $fcount relative_path bus_clk_gen/doc/clk_wiz_gsg521.pdf
 utilities_xmdf::xmdfSetData $instance FileSet $fcount type Ignore
-incr fcount
-
-utilities_xmdf::xmdfSetData $instance FileSet $fcount relative_path bus_clk_gen/example_design/bus_clk_gen_exdes.v
-utilities_xmdf::xmdfSetData $instance FileSet $fcount type verilog
 incr fcount
 
 utilities_xmdf::xmdfSetData $instance FileSet $fcount relative_path bus_clk_gen/implement/implement.bat
@@ -118,6 +110,10 @@ incr fcount
 
 utilities_xmdf::xmdfSetData $instance FileSet $fcount relative_path bus_clk_gen.ejp
 utilities_xmdf::xmdfSetData $instance FileSet $fcount type AnyView
+incr fcount
+
+utilities_xmdf::xmdfSetData $instance FileSet $fcount relative_path bus_clk_gen.ucf
+utilities_xmdf::xmdfSetData $instance FileSet $fcount type ucf
 incr fcount
 
 utilities_xmdf::xmdfSetData $instance FileSet $fcount relative_path bus_clk_gen.v
