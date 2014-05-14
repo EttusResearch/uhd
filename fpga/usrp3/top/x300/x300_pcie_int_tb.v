@@ -215,7 +215,7 @@ module x300_pcie_int_tb();
         TEST_CASE();
         usr_regport_request(READ, 20'hC, 32'h0);
         usr_regport_response();
-        `CHECK_TRUE((pcie_usr_data == 175000000), "Verify counter frequency register");
+        `CHECK_TRUE((pcie_usr_data == 166666667), "Verify counter frequency register");
 
         TEST_CASE();
         usr_regport_request(WRITE, 20'h10, 32'hDEAD);

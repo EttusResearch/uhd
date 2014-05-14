@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DARoots Version="1" Minor="26">
+  <FileSet Name="sources_1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1">
+    <Filter Type="Srcs"/>
+    <File Path="$PSRCDIR/sources_1/imports/build/b200.ngc">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="$PPRDIR/../build/b200.ngc"/>
+        <Attr Name="ImportTime" Val="1359508205"/>
+        <Attr Name="UsedInSynthesis" Val="1"/>
+        <Attr Name="UsedInImplementation" Val="1"/>
+      </FileInfo>
+    </File>
+    <File Path="$PSRCDIR/sources_1/imports/coregen/fifo_4k_2clk.ngc">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="$PPRDIR/../coregen/fifo_4k_2clk.ngc"/>
+        <Attr Name="ImportTime" Val="1359144134"/>
+        <Attr Name="UsedInSynthesis" Val="1"/>
+        <Attr Name="UsedInImplementation" Val="1"/>
+      </FileInfo>
+    </File>
+    <Config>
+      <Option Name="DesignMode" Val="GateLvl"/>
+      <Option Name="TopModule" Val="b200"/>
+    </Config>
+  </FileSet>
+</DARoots>

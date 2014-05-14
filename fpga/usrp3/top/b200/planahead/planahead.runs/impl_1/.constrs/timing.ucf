@@ -1,0 +1,85 @@
+
+# codec_main_clk is 40 MHz main tcxo clock
+NET "codec_main_clk*" TNM_NET = "codec_main_clk";
+TIMESPEC TS_codec_main_clk = PERIOD "codec_main_clk" 25000 ps HIGH 50 %;
+
+
+# IFCLK is 100 MHz GPIF clock
+NET "IFCLK" TNM_NET = "IFCLK";
+TIMESPEC TS_IFCLK = PERIOD "IFCLK" 10000 ps HIGH 50 %;
+
+
+# codec_data_clk is the data clock from catalina, sample rate dependent
+# this clock equals sample rate in CMOS DDR 1R1T mode
+# this clock is double the sample rate in CMOS DDR 2R2T mode
+# Max clock rate is 61.44 MHz
+NET "codec_data_clk_p" TNM_NET = "codec_data_clk_p";
+TIMESPEC TS_codec_data_clk_p = PERIOD "codec_data_clk_p" 16276 ps HIGH 50 %;
+
+
+#always use IOB for GPIF pins for awesome timing
+INST "GPIF_D_9_IOBUF" IOB =TRUE;
+INST "GPIF_D_8_IOBUF" IOB =TRUE;
+INST "GPIF_D_7_IOBUF" IOB =TRUE;
+INST "GPIF_D_6_IOBUF" IOB =TRUE;
+INST "GPIF_D_5_IOBUF" IOB =TRUE;
+INST "GPIF_D_4_IOBUF" IOB =TRUE;
+INST "GPIF_D_3_IOBUF" IOB =TRUE;
+INST "GPIF_D_31_IOBUF" IOB =TRUE;
+INST "GPIF_D_30_IOBUF" IOB =TRUE;
+INST "GPIF_D_2_IOBUF" IOB =TRUE;
+INST "GPIF_D_29_IOBUF" IOB =TRUE;
+INST "GPIF_D_28_IOBUF" IOB =TRUE;
+INST "GPIF_D_27_IOBUF" IOB =TRUE;
+INST "GPIF_D_26_IOBUF" IOB =TRUE;
+INST "GPIF_D_25_IOBUF" IOB =TRUE;
+INST "GPIF_D_24_IOBUF" IOB =TRUE;
+INST "GPIF_D_23_IOBUF" IOB =TRUE;
+INST "GPIF_D_22_IOBUF" IOB =TRUE;
+INST "GPIF_D_21_IOBUF" IOB =TRUE;
+INST "GPIF_D_20_IOBUF" IOB =TRUE;
+INST "GPIF_D_1_IOBUF" IOB =TRUE;
+INST "GPIF_CTL0_OBUF" IOB =TRUE;
+INST "GPIF_CTL11_OBUF" IOB =TRUE;
+INST "GPIF_CTL12_OBUF" IOB =TRUE;
+INST "GPIF_CTL1_OBUF" IOB =TRUE;
+INST "GPIF_CTL2_OBUF" IOB =TRUE;
+INST "GPIF_CTL3_OBUF" IOB =TRUE;
+INST "GPIF_CTL4_IBUF" IOB =TRUE;
+INST "GPIF_CTL5_IBUF" IOB =TRUE;
+INST "GPIF_CTL7_OBUF" IOB =TRUE;
+INST "GPIF_CTL9_IBUF" IOB =TRUE;
+INST "GPIF_D_0_IOBUF" IOB =TRUE;
+INST "GPIF_D_10_IOBUF" IOB =TRUE;
+INST "GPIF_D_11_IOBUF" IOB =TRUE;
+INST "GPIF_D_12_IOBUF" IOB =TRUE;
+INST "GPIF_D_13_IOBUF" IOB =TRUE;
+INST "GPIF_D_14_IOBUF" IOB =TRUE;
+INST "GPIF_D_15_IOBUF" IOB =TRUE;
+INST "GPIF_D_16_IOBUF" IOB =TRUE;
+INST "GPIF_D_17_IOBUF" IOB =TRUE;
+INST "GPIF_D_18_IOBUF" IOB =TRUE;
+INST "GPIF_D_19_IOBUF" IOB =TRUE;
+
+# TODO not working... constraints ignored
+
+#constrain FX3 IO
+INST "GPIF_D[*]" TNM = "gpif_net_out";
+INST "GPIF_D[*]" TNM = "gpif_net_in";
+INST "GPIF_CTL0" TNM = "gpif_net_out";
+INST "GPIF_CTL1" TNM = "gpif_net_out";
+INST "GPIF_CTL2" TNM = "gpif_net_out";
+INST "GPIF_CTL3" TNM = "gpif_net_out";
+INST "GPIF_CTL4" TNM = "gpif_net_in";
+INST "GPIF_CTL5" TNM = "gpif_net_in";
+INST "GPIF_CTL6" TNM = gpif_net_in;
+INST "GPIF_CTL7" TNM = "gpif_net_out";
+INST "GPIF_CTL8" TNM = gpif_net_in;
+INST "GPIF_CTL11" TNM = "gpif_net_out";
+INST "GPIF_CTL12" TNM = "gpif_net_out";
+
+#NET "gpif_clk" TNM_NET = "TNM_gpif_clk";
+#OFFSET = OUT 5 ns AFTER "gpif_clk";
+#TIMESPEC "TS_gpif_clk" = PERIOD "TNM_gpif_clk" 10000 ps HIGH 50 %;
+#TIMEGRP "gpif_net_in" OFFSET = IN 6 ns VALID 6 ns BEFORE "gpif_clk" RISING;
+#TIMEGRP "gpif_net_out" OFFSET = OUT 6 ns AFTER "gpif_clk" RISING;

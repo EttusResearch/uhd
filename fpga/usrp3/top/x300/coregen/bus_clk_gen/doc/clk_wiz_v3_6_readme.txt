@@ -1,6 +1,6 @@
 CHANGE LOG for LogiCORE Clocking Wizard V3.6 
 
-                    Release Date: July 25, 2012
+                    Release Date: June 19, 2013
 --------------------------------------------------------------------------------
 
 Table of Contents
@@ -74,6 +74,8 @@ solution. For the latest core updates, see the product page at:
 
   4.1 ISE 
   
+      Resolved issue with example design becoming core top in planAhead
+
       Resolved issue with Virtex6 MMCM instantiation for VHDL project
       Please refer to AR 50719 - http://www.xilinx.com/support/answers/50719.htm
 
@@ -113,6 +115,7 @@ designs that do not follow specified guidelines.
 
 Date        By            Version      Description
 ================================================================================
+06/19/2013  Xilinx, Inc.  3.6(Rev3)    ISE 14.6 support
 10/16/2012  Xilinx, Inc.  3.6(Rev2)    ISE 14.3 support
 07/25/2012  Xilinx, Inc.  3.6          ISE 14.2 support
 04/24/2012  Xilinx, Inc.  3.5          ISE 14.1 support
@@ -133,7 +136,7 @@ Date        By            Version      Description
 
 8. LEGAL DISCLAIMER
 
-(c) Copyright 2008 - 2012 Xilinx, Inc. All rights reserved.
+(c) Copyright 2008 - 2013 Xilinx, Inc. All rights reserved.
 
 This file contains confidential and proprietary information
 of Xilinx, Inc. and is protected under U.S. and

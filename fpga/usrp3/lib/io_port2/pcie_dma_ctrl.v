@@ -35,12 +35,14 @@ module pcie_dma_ctrl #(
     output          rego_tvalid,
     input           rego_tready,
     
+    output reg [NUM_STREAMS-1:0]            set_enabled,
     output reg [NUM_STREAMS-1:0]            set_clear,
     output [(NUM_STREAMS*FRAME_SIZE_W)-1:0] set_frame_size,
     output [(NUM_STREAMS*3)-1:0]            swap_lanes,
     
     input  [NUM_STREAMS-1:0]                packet_stb,
     input  [NUM_STREAMS-1:0]                sample_stb,
+    input  [NUM_STREAMS-1:0]                stream_busy,
     input  [NUM_STREAMS-1:0]                stream_err,
 
     input  [ROUTER_SID_W-1:0]               rtr_sid,
@@ -48,7 +50,7 @@ module pcie_dma_ctrl #(
 );
     
     localparam DMA_REG_GRP_W        = 4;
-    localparam DMA_CTRL_STATUS_REG  = 4'h0; //[RW] R: Stream Error, W: Reset stream
+    localparam DMA_CTRL_STATUS_REG  = 4'h0; //[RW] R: Stream Status, W: Stream Control
     localparam DMA_FSIZE_REG        = 4'h4; //[RW] R: Frame Size, W: Frame Size
     localparam DMA_SAMP_CNT_REG     = 4'h8; //[RW] R: Sample Count, W: Reset Count to 0
     localparam DMA_PKT_CNT_REG      = 4'hC; //[RW] R: Packet Count, W: Reset Count to 0
@@ -92,14 +94,15 @@ module pcie_dma_ctrl #(
                 if (reset) begin
                     frame_size_mem[i] <= DEFAULT_FSIZE;
                     set_clear[i] <= 0;
+                    set_enabled[i] <= 0;
                     sw_buf_width_mem[i] <= 1;
                 end else if (regi_tready & regi_tvalid & regi_wr) begin
                     if (regi_addr == `GET_REG_OFFSET(DMA_CTRL_STATUS_REG, i)) begin
-                        set_clear[i] <= regi_payload[0];                        //DMA_CTRL_STATUS_REG[0] == Clear DMA queues
+                        set_clear[i]        <= regi_payload[0];                 //DMA_CTRL_STATUS_REG[0] == Clear DMA queues
+                        set_enabled[i]      <= regi_payload[1];                 //DMA_CTRL_STATUS_REG[1] == Enable DMA channel
                         sw_buf_width_mem[i] <= regi_payload[4];                 //DMA_CTRL_STATUS_REG[5:4] == SW Buffer Size (See note above)
                     end else if (regi_addr == `GET_REG_OFFSET(DMA_FSIZE_REG, i)) begin
                         frame_size_mem[i] <= regi_payload[FRAME_SIZE_W-1:0];    //DMA_FSIZE_REG[14:0] == DMA Frame size
-                        set_clear[i] <= 1;
                     end
                 end else begin
                     set_clear[i] <= 0;                                          //set_clear should be "self-clearing"
@@ -123,7 +126,7 @@ module pcie_dma_ctrl #(
                     samp_count_mem[i] <= samp_count_mem[i] + 1;
                 end
             end
-        end            
+        end
     endgenerate
     
     //Readback
@@ -131,14 +134,14 @@ module pcie_dma_ctrl #(
         (regi_addr[DMA_REG_GRP_W-1:0] == DMA_PKT_CNT_REG)     ?      pkt_count_mem[`EXTRACT_CHAN_NUM(regi_addr)]  : (
         (regi_addr[DMA_REG_GRP_W-1:0] == DMA_SAMP_CNT_REG)    ?     samp_count_mem[`EXTRACT_CHAN_NUM(regi_addr)]  : (
         (regi_addr[DMA_REG_GRP_W-1:0] == DMA_FSIZE_REG)       ?     frame_size_mem[`EXTRACT_CHAN_NUM(regi_addr)]  : (
-        (regi_addr[DMA_REG_GRP_W-1:0] == DMA_CTRL_STATUS_REG) ? {31'h0, stream_err[`EXTRACT_CHAN_NUM(regi_addr)]} : (
+        (regi_addr[DMA_REG_GRP_W-1:0] == DMA_CTRL_STATUS_REG) ? {30'h0, stream_busy[`EXTRACT_CHAN_NUM(regi_addr)], stream_err[`EXTRACT_CHAN_NUM(regi_addr)]} : (
         32'hFFFFFFFF))));
 
     assign rego_tvalid = regi_tvalid && regi_rd;
     assign regi_tready = rego_tready || (regi_tvalid && regi_wr);
     
     //Optional router
-    if (ENABLE_ROUTER == 1) begin
+    generate if (ENABLE_ROUTER == 1) begin
         pcie_pkt_route_specifier #(
             .BASE_ADDR((1<<ROUTER_SID_W) + REG_BASE_ADDR), .ADDR_MASK(20'hFFFFF^((1<<ROUTER_SID_W)-1)),
             .SID_WIDTH(ROUTER_SID_W), .DST_WIDTH(ROUTER_DST_W)
@@ -147,7 +150,7 @@ module pcie_dma_ctrl #(
             .regi_tdata(regi_tdata), .regi_tvalid(regi_tvalid), .regi_tready(),
             .local_sid(rtr_sid), .fifo_dst(rtr_dst)
         );
-    end
+    end endgenerate
     
 endmodule
 
