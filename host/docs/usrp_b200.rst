@@ -76,3 +76,77 @@ and the transmit frontends have 89.5 dB of available gain.
 Gain settings are application specific,
 but it is recommended that users consider using at least
 half of the available gain to get reasonable dynamic range.
+
+------------------------------------------------------------------------
+Hardware Reference
+------------------------------------------------------------------------
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+LED Indicators
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Below is a table of the LED indicators and their meanings:
+
+===============  ========================  ========================================================
+Component ID     Description               Details
+===============  ========================  ========================================================
+ LED600          Power Indicator           | off = no power applied
+                                           | red = power applied (external or USB)
+ LED800          Channel 2 RX2 Activity    | off = no activity
+                                           | green = receiving
+ LED801          Channel 2 TX/RX Activity  | off = no activity
+                                           | green = receiving
+                                           | red = transmitting
+                                           | orange = switching between transmitting and receiving
+ LED802          Channel 1 TX/RX Activity  | off = no activity
+                                           | green = receiving
+                                           | red = transmitting
+                                           | orange = switching between transmitting and receiving
+ LED803          Channel 1 RX2 Activity    | off = no activity
+                                           | green = receiving
+ LED100          GPS lock indicator        | off = no lock
+                                           | green = lock
+===============  ========================  ========================================================
+
+TX LED indicators are on when transimitting data and off when no samples are available to transmit.  RX LED indicators are on when sending samples to the host and off when unable to do so.  This means that TX/RX activity LED indicators will blink off in a temporary transmit underflow or receive overflow condition, indicating that the host is not sending or receiving samples fast enough.  The host will be notified of the condition and output a "U" or "O" as well.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+External Connections
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Below is a table showing the external connections and respective power information:
+
+===============  ========================  ========================================================
+Component ID     Description               Details
+===============  ========================  ========================================================
+ J601            External Power            | 6 V
+                                           | 3 A
+ J701            USB Connector             | USB 3.0
+ J104            External PPS Input        | 1.8 V - 5 V
+ J101            GPS Antenna               | GPSDO will supply nominal voltage to antenna.
+ J100            External 10 MHz Input     | +15 dBm max
+ J800            RF B: TX/RX               | TX power +20dBm max
+                                           | RX power -15dBm max
+ J802            RF B: RX2                 | RX power -15dBm max
+ J803            RF A: RX2                 | RX power -15dBm max
+ J801            RF A: TX/RX               | TX power +20dBm max
+                                           | RX power -15dBm max
+===============  ========================  ========================================================
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+On-Board Connectors and Switches
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Below is a table showing the on-board connectors and switches:
+
+===============  ========================  ========================================================
+Component ID     Description               Details
+===============  ========================  ========================================================
+ J502*           Mictor Connector          | Interface to FPGA for I/O and inspection.
+ J503*           JTAG Header               | Interface to FPGA for programming and debugging.
+ S700            FX3 Hard Reset Switch
+===============  ========================  ========================================================
+
+\* B210 Only
+
+
