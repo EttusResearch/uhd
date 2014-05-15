@@ -252,19 +252,11 @@ letters, their meanings, and possible causes:
 
   Indicator  |Meaning               | Possible Causes
   -----------|----------------------|---------------------------------------------------------------------------------
-  O          |Overflow on RX        |- Data is not being consumed by user's application fast enough.
-             |                      |- CPU governor or other power management not configured correctly.
-  D          |Dropped packet on RX  |- Network hardware failure. (Check host NIC, cable, switch, etc...)
-             |                      |- PCIe bus on host cannot sustain throughput. (Check ethtool -S \<interface\>).
-             |                      |- CPU governor or other power management not configured correctly.
-             |                      |- Frame size might not work with the current NIC's MTU.
-  U          |Underflow on TX       |- Samples are not being produced by user's application fast enough.
-             |                      |- CPU governor or other power management not configured correctly.
-  L          |Late packet           |- Samples are not being produced by user's application fast enough.
-             |(usually on MIMO TX)  |- CPU governor or other power management not configured correctly.
-             |                      |- Incorrect/invalid time_spec provided.
-  S          |Sequence error on TX  |- Network hardware failure. (Check host NIC, cable, switch, etc...)
-             |                      |- Frame size might not work with the current NIC's MTU.
+  O          |Overflow on RX        |- Data is not being consumed by user's application fast enough.<br>- CPU governor or other power management not configured correctly.
+  D          |Dropped packet on RX  |- Network hardware failure. (Check host NIC, cable, switch, etc...)<br>- PCIe bus on host cannot sustain throughput. (Check ethtool -S \<interface\>).<br>- CPU governor or other power management not configured correctly.<br>- Frame size might not work with the current NIC's MTU.
+  U          |Underflow on TX       |- Samples are not being produced by user's application fast enough.<br>- CPU governor or other power management not configured correctly.
+  L          |Late packet (usually on MIMO TX)|- Samples are not being produced by user's application fast enough.<br>- CPU governor or other power management not configured correctly.<br>- Incorrect/invalid time_spec provided.
+  S          |Sequence error on TX  |- Network hardware failure. (Check host NIC, cable, switch, etc...)<br>- Frame size might not work with the current NIC's MTU.
 
 \subsection x3x0cfg_hosthw_troubleshooting_eth Troubleshooting Ethernet Issues
 

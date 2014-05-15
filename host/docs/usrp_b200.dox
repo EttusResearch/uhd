@@ -71,26 +71,41 @@ available gain to get reasonable dynamic range.
 
 Below is a table of the LED indicators and their meanings:
 
-===============  ========================  ========================================================
-Component ID     Description               Details
-===============  ========================  ========================================================
- LED600          Power Indicator           | off = no power applied
-                                           | red = power applied (external or USB)
- LED800          Channel 2 RX2 Activity    | off = no activity
-                                           | green = receiving
- LED801          Channel 2 TX/RX Activity  | off = no activity
-                                           | green = receiving
-                                           | red = transmitting
-                                           | orange = switching between transmitting and receiving
- LED802          Channel 1 TX/RX Activity  | off = no activity
-                                           | green = receiving
-                                           | red = transmitting
-                                           | orange = switching between transmitting and receiving
- LED803          Channel 1 RX2 Activity    | off = no activity
-                                           | green = receiving
- LED100          GPS lock indicator        | off = no lock
-                                           | green = lock
-===============  ========================  ========================================================
+<table>
+</table>
+<table>
+  <tr>
+    <th>Component ID</th><th>Description</th><th>Details</th>
+  </tr>
+  <tr>
+    <td>LED600</td> <td>Power Indicator</td> <td>off = no power applied<br>
+                                                 red = power applied (external or USB)</td>
+  </tr>
+  <tr>
+    <td>LED800</td> <td>Channel 2 RX2 Activity</td> <td>off = no power applied<br>
+                                                        green = receiving</td>
+  </tr>
+  <tr>
+    <td>LED801</td> <td>Channel 2 TX/RX Activity</td> <td>off = no activity<br>
+                                                          green = receiving<br>
+                                                          red = transmitting<br>
+                                                          orange = switching between transmitting and receiving</td>
+  </tr>
+  <tr>
+    <td>LED802</td> <td>Channel 1 TX/RX Activity</td> <td>off = no activity
+                                                          green = receiving<br>
+                                                          red = transmitting<br>
+                                                          orange = switching between transmitting and receiving</td>
+  </tr>
+  <tr>
+    <td>LED803</td> <td>Channel 1 RX2 Activity</td> <td>off = no power applied<br>
+                                                        green = receiving</td>
+  </tr>
+  <tr>
+    <td>LED100</td> <td>GPS lock indicator</td> <td>off = no lock<br>
+                                                    green = lock</td>
+  </tr>
+</table>
 
 TX LED indicators are on when transimitting data and off when no samples are
 available to transmit.  RX LED indicators are on when sending samples to the
@@ -104,34 +119,50 @@ well.
 
 Below is a table showing the external connections and respective power information:
 
-===============  ========================  ========================================================
-Component ID     Description               Details
-===============  ========================  ========================================================
- J601            External Power            | 6 V
-                                           | 3 A
- J701            USB Connector             | USB 3.0
- J104            External PPS Input        | 1.8 V - 5 V
- J101            GPS Antenna               | GPSDO will supply nominal voltage to antenna.
- J100            External 10 MHz Input     | +15 dBm max
- J800            RF B: TX/RX               | TX power +20dBm max
-                                           | RX power -15dBm max
- J802            RF B: RX2                 | RX power -15dBm max
- J803            RF A: RX2                 | RX power -15dBm max
- J801            RF A: TX/RX               | TX power +20dBm max
-                                           | RX power -15dBm max
-===============  ========================  ========================================================
+<table>
+<tr>
+  <th>Component ID</th> <th>Description</th>            <th> Details</th>
+</tr>
+<tr>
+  <td>J601</td>         <td>External Power</td>         <td>6 V<br>3 A</td>
+</tr>
+<tr>
+  <td>J701</td>         <td>USB Connector</td>          <td>USB 3.0</td>
+</tr>
+<tr>
+  <td>J104</td>         <td>External PPS Input</td>     <td>1.8 V - 5 V</td>
+</tr>
+<tr>
+  <td>J101</td>         <td>GPS Antenna</td>            <td>GPSDO will supply nominal voltage to antenna.</td>
+</tr>
+<tr>
+  <td>J100</td>         <td>External 10 MHz Input</td>  <td>+15 dBm max</td
+</tr>
+<tr>
+  <td>J800</td>         <td>RF B: TX/RX</td>            <td>TX power +20dBm max<br>
+                                                            RX power -15dBm max</td>
+</tr>
+<tr>
+  <td>J802</td>         <td>RF B: RX2</td>              <td>RX power -15dBm max</td>
+</tr>
+<tr>
+  <td>J803</td>         <td>RF A: RX2</td>              <td>RX power -15dBm max</td>
+</tr>
+<tr>
+  <td>J801</td>         <td>RF A: TX/RX</td>            <td>TX power +20dBm max<br>
+                                                            RX power -15dBm max</td>
+</tr>
+</table>
 
-\subsection On-Board Connectors and Switches
+\subsection b200_switches On-Board Connectors and Switches
 
 Below is a table showing the on-board connectors and switches:
 
-===============  ========================  ========================================================
-Component ID     Description               Details
-===============  ========================  ========================================================
- J502*           Mictor Connector          | Interface to FPGA for I/O and inspection.
- J503*           JTAG Header               | Interface to FPGA for programming and debugging.
- S700            FX3 Hard Reset Switch
-===============  ========================  ========================================================
+Component ID  |  Description               | Details
+--------------|----------------------------|----------------------------------------------------------
+ J502*        |  Mictor Connector          | Interface to FPGA for I/O and inspection.
+ J503*        |  JTAG Header               | Interface to FPGA for programming and debugging.
+ S700         |  FX3 Hard Reset Switch     | -
 
 */
 
