@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <inttypes.h>
 #include <boost/test/unit_test.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <boost/foreach.hpp>

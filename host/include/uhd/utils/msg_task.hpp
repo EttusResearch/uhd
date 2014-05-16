@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_UTILS_MSG_TASK_HPP
 #define INCLUDED_UHD_UTILS_MSG_TASK_HPP
 
+#include <stdint.h>
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/shared_ptr.hpp>
