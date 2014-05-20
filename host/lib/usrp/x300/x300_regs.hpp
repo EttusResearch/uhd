@@ -18,6 +18,7 @@
 #ifndef INCLUDED_X300_REGS_HPP
 #define INCLUDED_X300_REGS_HPP
 
+#include <stdint.h>
 #include <boost/cstdint.hpp>
 
 #define TOREG(x) ((x)*4)
