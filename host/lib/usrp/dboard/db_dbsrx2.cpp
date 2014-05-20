@@ -40,7 +40,7 @@ using namespace boost::assign;
 /***********************************************************************
  * The DBSRX2 constants
  **********************************************************************/
-static const freq_range_t dbsrx2_freq_range(0.8e9, 2.4e9);
+static const freq_range_t dbsrx2_freq_range(0.8e9, 2.3e9);
 
 //Multiplied by 2.0 for conversion to complex bandpass from lowpass
 static const freq_range_t dbsrx2_bandwidth_range(2.0*4.0e6, 2.0*40.0e6);
@@ -245,7 +245,7 @@ double dbsrx2::set_lo_freq(double target_freq){
     //target_freq = dbsrx2_freq_range.clip(target_freq);
 
     //variables used in the calculation below
-    int scaler = target_freq > 1125e6 ? 2 : 4;
+    int scaler = target_freq >= 1125e6 ? 2 : 4;
     double ref_freq = this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
     int R, intdiv, fracdiv, ext_div;
     double N;
@@ -279,8 +279,10 @@ double dbsrx2::set_lo_freq(double target_freq){
         << boost::format("    Actual Freq=%fMHz\n") % (_lo_freq/1e6)
         << std::endl;
 
-    //send the registers
-    send_reg(0x0, 0x7);
+    //send the registers 0x0 through 0x7
+    //writing register 0x4 (F divider LSB) starts the VCO auto seletion so it must be written last
+    send_reg(0x5, 0x7);
+    send_reg(0x0, 0x4);
 
     //FIXME: probably unnecessary to call get_locked here
     //get_locked();
@@ -304,7 +306,7 @@ static int gain_to_bbg_vga_reg(double &gain){
 
     UHD_LOGV(often)
         << boost::format("DBSRX2 BBG Gain:\n")
-        << boost::format("    %f dB, bbg: %d") % gain % reg 
+        << boost::format("    %f dB, bbg: %d") % gain % reg
         << std::endl;
 
     return reg;
@@ -329,7 +331,7 @@ static double gain_to_gc1_rfvga_dac(double &gain){
 
     UHD_LOGV(often)
         << boost::format("DBSRX2 GC1 Gain:\n")
-        << boost::format("    %f dB, dac_volts: %f V") % gain % dac_volts 
+        << boost::format("    %f dB, dac_volts: %f V") % gain % dac_volts
         << std::endl;
 
     //the actual gain setting
