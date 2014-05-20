@@ -1321,8 +1321,8 @@ void x300_impl::update_atr_leds(gpio_core_200_32wo::sptr leds, const std::string
 {
     const bool is_txrx = (rx_ant == "TX/RX");
     const int rx_led = (1 << 2);
-    const int txrx_led = (1 << 1);
-    const int tx_led = (1 << 0);
+    const int tx_led = (1 << 1);
+    const int txrx_led = (1 << 0);
     leds->set_atr_reg(dboard_iface::ATR_REG_IDLE, 0);
     leds->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY, is_txrx? txrx_led : rx_led);
     leds->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, tx_led);
