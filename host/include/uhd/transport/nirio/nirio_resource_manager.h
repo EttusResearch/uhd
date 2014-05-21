@@ -24,6 +24,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <stdint.h>
 
 namespace uhd { namespace niusrprio
 {

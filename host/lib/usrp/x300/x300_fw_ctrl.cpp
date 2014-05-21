@@ -285,8 +285,8 @@ protected:
 
 private:
     niriok_proxy& _drv_proxy;
-    static const uint32_t READ_TIMEOUT_IN_MS = 10;
-    static const uint32_t INIT_TIMEOUT_IN_MS = 5000;
+    static const boost::uint32_t READ_TIMEOUT_IN_MS = 10;
+    static const boost::uint32_t INIT_TIMEOUT_IN_MS = 5000;
 };
 
 wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp)

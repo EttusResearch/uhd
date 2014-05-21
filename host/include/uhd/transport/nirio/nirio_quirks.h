@@ -20,6 +20,7 @@
 #define INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_QUIRKS_H
 
 #include <set>
+#include <stdint.h>
 #include <uhd/utils/log.hpp>
 
 //Quirk#1: We need to verify RX zero-copy data transfers from the RIO

@@ -18,6 +18,7 @@
 #ifndef INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_INTERFACE_H
 #define INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_INTERFACE_H
 
+#include <stdint.h>
 #include <boost/smart_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <uhd/transport/nirio/nirio_driver_iface.h>
