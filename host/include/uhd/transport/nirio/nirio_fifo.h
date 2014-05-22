@@ -19,6 +19,7 @@
 #ifndef INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_FIFO_H
 #define INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_FIFO_H
 
+#include <stdint.h>
 #include <uhd/transport/nirio/nirio_driver_iface.h>
 #include <uhd/transport/nirio/niriok_proxy.h>
 #include <uhd/transport/nirio/status.h>

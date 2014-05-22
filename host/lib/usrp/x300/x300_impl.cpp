@@ -409,7 +409,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         nirio_status_to_exception(status, "x300_impl: Could not initialize RIO session.");
 
         //Tell the quirks object which FIFOs carry TX stream data
-        const uint32_t tx_data_fifos[2] = {X300_RADIO_DEST_PREFIX_TX, X300_RADIO_DEST_PREFIX_TX + 3};
+        const boost::uint32_t tx_data_fifos[2] = {X300_RADIO_DEST_PREFIX_TX, X300_RADIO_DEST_PREFIX_TX + 3};
         mb.rio_fpga_interface->get_kernel_proxy().get_rio_quirks().register_tx_streams(tx_data_fifos);
 
         _tree->create<double>(mb_path / "link_max_rate").set(X300_MAX_RATE_PCIE);
@@ -894,7 +894,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     ////////////////////////////////////////////////////////////////////
     // radio control
     ////////////////////////////////////////////////////////////////////
-    uint8_t dest = (radio_index == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
+    boost::uint8_t dest = (radio_index == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
     boost::uint32_t ctrl_sid;
     both_xports_t xport = this->make_transport(mb_i, dest, X300_RADIO_DEST_PREFIX_CTRL, device_addr_t(), ctrl_sid);
     perif.ctrl = radio_ctrl_core_3000::make(mb.if_pkt_is_big_endian, xport.recv, xport.send, ctrl_sid, slot_name);
@@ -1103,8 +1103,8 @@ boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, boost::uint8_t 
 
 x300_impl::both_xports_t x300_impl::make_transport(
     const size_t mb_index,
-    const uint8_t& destination,
-    const uint8_t& prefix,
+    const boost::uint8_t& destination,
+    const boost::uint8_t& prefix,
     const uhd::device_addr_t& args,
     boost::uint32_t& sid
 )
@@ -1302,7 +1302,7 @@ boost::uint32_t x300_impl::allocate_sid(mboard_members_t &mb, const sid_config_t
     mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + (X300_DEVICE_HERE)), config.router_dst_here);
 
     if (xport_path == "nirio") {
-        uint32_t router_config_word = ((_sid_framer & 0xff) << 16) |                                    //Return SID
+        boost::uint32_t router_config_word = ((_sid_framer & 0xff) << 16) |                                    //Return SID
                                       get_pcie_dma_channel(config.router_dst_there, config.dst_prefix); //Dest
         mb.rio_fpga_interface->get_kernel_proxy().poke(PCIE_ROUTER_REG(0), router_config_word);
     }
@@ -1439,7 +1439,7 @@ void x300_impl::wait_for_ref_locked(wb_iface::sptr ctrl, double timeout)
 
 sensor_value_t x300_impl::get_ref_locked(wb_iface::sptr ctrl)
 {
-    uint32_t clk_status = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS));
+    boost::uint32_t clk_status = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS));
     const bool lock = ((clk_status & ZPU_RB_CLK_STATUS_LMK_LOCK) != 0);
     return sensor_value_t("Ref", lock, "locked", "unlocked");
 }
@@ -1448,11 +1448,11 @@ bool x300_impl::is_pps_present(wb_iface::sptr ctrl)
 {
     // The ZPU_RB_CLK_STATUS_PPS_DETECT bit toggles with each rising edge of the PPS.
     // We monitor it for up to 1.5 seconds looking for it to toggle.
-    uint32_t pps_detect = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS)) & ZPU_RB_CLK_STATUS_PPS_DETECT;
+    boost::uint32_t pps_detect = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS)) & ZPU_RB_CLK_STATUS_PPS_DETECT;
     for (int i = 0; i < 15; i++)
     {
         boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-        uint32_t clk_status = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS));
+        boost::uint32_t clk_status = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS));
         if (pps_detect != (clk_status & ZPU_RB_CLK_STATUS_PPS_DETECT))
             return true;
     }

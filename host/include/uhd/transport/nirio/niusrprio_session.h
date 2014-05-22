@@ -19,6 +19,7 @@
 #ifndef INCLUDED_UHD_TRANSPORT_NIRIO_NIUSRPRIO_SESSION_H
 #define INCLUDED_UHD_TRANSPORT_NIRIO_NIUSRPRIO_SESSION_H
 
+#include <stdint.h>
 #include <uhd/transport/nirio/rpc/usrprio_rpc_client.hpp>
 #include <uhd/transport/nirio/niriok_proxy.h>
 #include <uhd/transport/nirio/nirio_resource_manager.h>

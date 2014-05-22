@@ -273,8 +273,8 @@ private:
     };
     both_xports_t make_transport(
         const size_t mb_index,
-        const uint8_t& destination,
-        const uint8_t& prefix,
+        const boost::uint8_t& destination,
+        const boost::uint8_t& prefix,
         const uhd::device_addr_t& args,
         boost::uint32_t& sid);
 

@@ -23,6 +23,7 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <stdint.h>
 
 namespace uhd{ namespace transport{
 

@@ -265,7 +265,7 @@ static void handle_tx_async_msgs(boost::shared_ptr<x300_tx_fc_guts_t> guts, zero
     const boost::uint32_t *packet_buff = buff->cast<const boost::uint32_t *>();
 
     //unpacking can fail
-    uint32_t (*endian_conv)(uint32_t) = uhd::ntohx;
+    boost::uint32_t (*endian_conv)(boost::uint32_t) = uhd::ntohx;
     try
     {
         if (big_endian)
@@ -402,7 +402,7 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         }
 
         //allocate sid and create transport
-        uint8_t dest = (radio_index == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
+        boost::uint8_t dest = (radio_index == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
         boost::uint32_t data_sid;
         UHD_LOG << "creating rx stream " << device_addr.to_string() << std::endl;
         both_xports_t xport = this->make_transport(mb_index, dest, X300_RADIO_DEST_PREFIX_RX, device_addr, data_sid);
@@ -565,7 +565,7 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         device_addr_t device_addr = mb.send_args;
 
         //allocate sid and create transport
-        uint8_t dest = (radio_index == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
+        boost::uint8_t dest = (radio_index == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
         boost::uint32_t data_sid;
         UHD_LOG << "creating tx stream " << device_addr.to_string() << std::endl;
         both_xports_t xport = this->make_transport(mb_index, dest, X300_RADIO_DEST_PREFIX_TX, device_addr, data_sid);
