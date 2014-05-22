@@ -95,20 +95,20 @@ typedef enum {
 } usrp2_fw_update_id_t;
 
 typedef struct {
-    uint32_t proto_ver;
-    uint32_t id;
-    uint32_t seq;
+    boost::uint32_t proto_ver;
+    boost::uint32_t id;
+    boost::uint32_t seq;
     union {
-        uint32_t ip_addr;
-        uint32_t hw_rev;
+        boost::uint32_t ip_addr;
+        boost::uint32_t hw_rev;
         struct {
-            uint32_t flash_addr;
-            uint32_t length;
-            uint8_t  data[256];
+            boost::uint32_t flash_addr;
+            boost::uint32_t length;
+            boost::uint8_t  data[256];
         } flash_args;
         struct {
-            uint32_t sector_size_bytes;
-            uint32_t memory_size_bytes;
+            boost::uint32_t sector_size_bytes;
+            boost::uint32_t memory_size_bytes;
         } flash_info_args;
     } data;
 } usrp2_fw_update_data_t;

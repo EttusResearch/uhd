@@ -535,7 +535,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
     } else if (vm.count("load-fpga")) {
         std::cout << "Loading FPGA image (" << fpga_file << ")" << std::endl;
-        uint32_t fx3_state;
+        boost::uint32_t fx3_state;
         try {fx3_state = b200->load_fpga(fpga_file);} // returns 0 on success, or FX3 state on error
         catch (uhd::exception &e) {
             std::cerr << "Exception while loading FPGA: " << e.what() << std::endl;

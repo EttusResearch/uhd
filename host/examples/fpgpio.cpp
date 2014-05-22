@@ -37,6 +37,7 @@
 #include <uhd/convert.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+#include <boost/cstdint.hpp>
 #include <boost/thread.hpp>
 #include <csignal>
 #include <iostream>
@@ -72,14 +73,14 @@ void output_reg_values(const std::string bank, const uhd::usrp::multi_usrp::sptr
     for (int i = FPGPIO_NUM_BITS - 1; i >= 0; i--)
         std::cout << (boost::format(" %s%d") % (i < 10 ? " " : "") % i);
     std::cout << std::endl;
-    std::cout << "CTRL:     " << to_bit_string(uint16_t(usrp->get_gpio_attr(bank, std::string("CTRL")))) << std::endl;
-    std::cout << "DDR:      " << to_bit_string(uint16_t(usrp->get_gpio_attr(bank, std::string("DDR")))) << std::endl;
-    std::cout << "ATR_0X:   " << to_bit_string(uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_0X")))) << std::endl;
-    std::cout << "ATR_RX:   " << to_bit_string(uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_RX")))) << std::endl;
-    std::cout << "ATR_TX:   " << to_bit_string(uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_TX")))) << std::endl;
-    std::cout << "ATR_XX:   " << to_bit_string(uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_XX")))) << std::endl;
-    std::cout << "OUT:      " << to_bit_string(uint16_t(usrp->get_gpio_attr(bank, std::string("OUT")))) << std::endl;
-    std::cout << "READBACK: " << to_bit_string(uint16_t(usrp->get_gpio_attr(bank, std::string("READBACK")))) << std::endl;
+    std::cout << "CTRL:     " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("CTRL")))) << std::endl;
+    std::cout << "DDR:      " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("DDR")))) << std::endl;
+    std::cout << "ATR_0X:   " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_0X")))) << std::endl;
+    std::cout << "ATR_RX:   " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_RX")))) << std::endl;
+    std::cout << "ATR_TX:   " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_TX")))) << std::endl;
+    std::cout << "ATR_XX:   " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_XX")))) << std::endl;
+    std::cout << "OUT:      " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("OUT")))) << std::endl;
+    std::cout << "READBACK: " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("READBACK")))) << std::endl;
 }
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -124,13 +125,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     output_reg_values(fpgpio, usrp);
 
     //configure GPIO registers
-    uint32_t ctrl = 0;      // default all as manual
-    uint32_t ddr = 0;       // default all as input
-    uint32_t atr_idle = 0;
-    uint32_t atr_rx = 0;
-    uint32_t atr_tx = 0;
-    uint32_t atr_duplex = 0;
-    uint32_t mask = 0x7ff;
+    boost::uint32_t ctrl = 0;      // default all as manual
+    boost::uint32_t ddr = 0;       // default all as input
+    boost::uint32_t atr_idle = 0;
+    boost::uint32_t atr_rx = 0;
+    boost::uint32_t atr_tx = 0;
+    boost::uint32_t atr_duplex = 0;
+    boost::uint32_t mask = 0x7ff;
 
     //set up FPGPIO outputs:
     //FPGPIO[0] = ATR output 1 at idle

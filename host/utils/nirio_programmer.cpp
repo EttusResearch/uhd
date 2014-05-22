@@ -4,6 +4,7 @@
 #include <uhd/transport/nirio/nifpga_lvbitx.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <fcntl.h>
 #include <iostream>
 #include <fstream>
