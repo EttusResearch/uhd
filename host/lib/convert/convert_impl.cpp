@@ -144,4 +144,7 @@ UHD_STATIC_BLOCK(convert_register_item_sizes){
     convert::register_bytes_per_item("s32", sizeof(boost::int32_t));
     convert::register_bytes_per_item("s16", sizeof(boost::int16_t));
     convert::register_bytes_per_item("s8", sizeof(boost::int8_t));
+
+    //register VITA types
+    convert::register_bytes_per_item("item32", sizeof(boost::int32_t));
 }
