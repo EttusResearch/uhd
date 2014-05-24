@@ -38,7 +38,7 @@ public:
 
     /*!
      * Register a coercer into the property.
-     * A coercer is a special subscribes that coerces the value.
+     * A coercer is a special subscriber that coerces the value.
      * Only one coercer may be registered per property.
      * Registering a coercer replaces the previous coercer.
      * \param coercer the coercer callback function
