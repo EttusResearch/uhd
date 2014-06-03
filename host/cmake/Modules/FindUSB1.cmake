@@ -20,7 +20,7 @@ FIND_PATH(LIBUSB_INCLUDE_DIRS
 )
 
 #standard library name for libusb-1.0
-set(libusb1_library_names usb-1.0)
+set(libusb1_library_names usb-1.0 libusb-1.0)
 
 #libusb-1.0 compatible library on freebsd
 if((CMAKE_SYSTEM_NAME STREQUAL "FreeBSD") OR (CMAKE_SYSTEM_NAME STREQUAL "kFreeBSD"))
