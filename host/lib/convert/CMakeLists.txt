@@ -90,17 +90,10 @@ ENDIF(HAVE_EMMINTRIN_H)
 # Check for NEON SIMD headers
 ########################################################################
 IF(CMAKE_COMPILER_IS_GNUCXX)
-    SET(NEON_FLAGS "-mfloat-abi=softfp -mfpu=neon")
-    SET(CMAKE_REQUIRED_FLAGS ${NEON_FLAGS})
     CHECK_INCLUDE_FILE_CXX(arm_neon.h HAVE_ARM_NEON_H)
-    UNSET(CMAKE_REQUIRED_FLAGS)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 IF(HAVE_ARM_NEON_H)
-    SET_SOURCE_FILES_PROPERTIES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_neon.cpp
-        PROPERTIES COMPILE_FLAGS "${NEON_FLAGS}"
-    )
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_neon.cpp
     )
