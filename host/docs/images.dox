@@ -80,11 +80,11 @@ depending on the device.
 The build requires that you have a UNIX-like environment with `Make`.
 Make sure that `xtclsh` from the Xilinx ISE bin directory is in your `$PATH`.
 
-- Xilinx ISE 14.4: USRP X3x0 Series
+- Xilinx ISE 14.4: USRP X3x0 Series, USRP B2x0
 
 See `<uhd-repo-path>/fpga/usrp3/top/`.
 
-- Xilinx ISSE 12.2: USRP N2x0, USRP B2x0, USRP B1x0, USRP E1x0, USRP2
+- Xilinx ISSE 12.2: USRP N2x0, USRP B1x0, USRP E1x0, USRP2
 
 See `<uhd-repo-path>/fpga/usrp2/top/`.
 
