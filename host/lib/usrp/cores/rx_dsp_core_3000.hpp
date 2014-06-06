@@ -37,7 +37,7 @@ public:
         const bool is_b200 = false  //TODO: Obsolete this when we switch to the new DDC on the B200
     );
 
-    virtual void set_mux(const std::string &mode, const bool fe_swapped = false) = 0;
+    virtual void set_mux(const std::string &mode, const bool fe_swapped = false, const bool invert_i = false, const bool invert_q = false) = 0;
 
     virtual void set_tick_rate(const double rate) = 0;
 
