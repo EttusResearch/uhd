@@ -69,8 +69,8 @@ private:
             return false;
 
         std::stringstream ss;
-        boost::uint8_t string_crc;
-        boost::uint8_t calculated_crc = 0;
+        boost::uint32_t string_crc;
+        boost::uint32_t calculated_crc = 0;
 
         // get crc from string
         ss << std::hex << nmea.substr(nmea.length()-2, 2);
@@ -114,7 +114,7 @@ private:
         {
             msgs["SERVO"] = msg;
         }
-        else if (boost::regex_match(msg, gp_msg_regex) && is_nmea_checksum_ok(msg))
+        else if (boost::regex_match(msg, gp_msg_regex) and is_nmea_checksum_ok(msg))
         {
             msgs[msg.substr(1,5)] = msg;
         }
