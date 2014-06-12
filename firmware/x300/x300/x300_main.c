@@ -1,4 +1,4 @@
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013-2014 Ettus Research LLC
 
 #include "x300_init.h"
 #include "x300_defs.h"
@@ -445,24 +445,17 @@ int main(void)
         static const uint32_t tick_delta = CPU_CLOCK/1000;
         if (ticks_passed > tick_delta)
         {
-//            handle_link_state(); //deal with router table update
+            handle_link_state(); //deal with router table update
             handle_claim(); //deal with the host claim register
-handle_uarts(); //udp_uart_poll();
             update_leds(); //run the link and activity leds
-handle_uarts(); //udp_uart_poll();
             garp(); //send periodic garps
-handle_uarts(); //udp_uart_poll();
             xge_poll_sfpp_status(0); // Every so often poll XGE Phy to look for SFP+ hotplug events.
-handle_uarts(); //udp_uart_poll();
             xge_poll_sfpp_status(1); // Every so often poll XGE Phy to look for SFP+ hotplug events.
-handle_uarts(); //udp_uart_poll();
             last_cronjob = wb_peek32(SR_ADDR(RB0_BASE, RB_COUNTER));
         }
-//handle_uarts(); //udp_uart_poll();
 
         //run the network stack - poll and handle
         u3_net_stack_handle_one();
-handle_uarts(); //udp_uart_poll();
 
         //run the PCIe listener - poll and fwd to wishbone
         forward_pcie_user_xact_to_wb();

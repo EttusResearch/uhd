@@ -17,6 +17,7 @@
 
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/sensors.hpp>
 #include <boost/algorithm/string.hpp>
@@ -67,12 +68,19 @@ private:
         if (nmea.length() < 5 || nmea[0] != '$' || nmea[nmea.length()-3] != '*')
             return false;
 
-        uint8_t string_crc = uint8_t(strtol(nmea.substr(nmea.length()-2, 2).c_str(), NULL, 16));
-        uint8_t calculated_crc = 0;
+        std::stringstream ss;
+        boost::uint8_t string_crc;
+        boost::uint8_t calculated_crc = 0;
 
+        // get crc from string
+        ss << std::hex << nmea.substr(nmea.length()-2, 2);
+        ss >> string_crc;
+
+        // calculate crc
         for (size_t i = 1; i < nmea.length()-3; i++)
             calculated_crc ^= nmea[i];
 
+        // return comparison
         return (string_crc == calculated_crc);
     }
 
@@ -97,9 +105,7 @@ private:
 
         if (msg.length() < 6)
         {
-#ifdef  DEBUG_GPS
-            UHD_MSG(error) << __FUNCTION__ << ": Short NMEA string: " << msg << std::endl;
-#endif
+            UHD_LOGV(regularly) << __FUNCTION__ << ": Short NMEA string: " << msg << std::endl;
             continue;
         }
 
@@ -112,12 +118,10 @@ private:
         {
             msgs[msg.substr(1,5)] = msg;
         }
-#ifdef  DEBUG_GPS
         else
         {
-            UHD_MSG(error) << __FUNCTION__ << ": Malformed NMEA string: " << msg << std::endl;
+            UHD_LOGV(regularly) << __FUNCTION__ << ": Malformed NMEA string: " << msg << std::endl;
         }
-#endif
     }
 
     boost::system_time time = boost::get_system_time();
