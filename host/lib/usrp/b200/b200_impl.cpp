@@ -427,7 +427,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     //setup time source props
     _tree->create<std::string>(mb_path / "time_source" / "value")
         .subscribe(boost::bind(&b200_impl::update_time_source, this, _1));
-    static const std::vector<std::string> time_sources = boost::assign::list_of("none")("external")("gpsdo");
+    static const std::vector<std::string> time_sources = boost::assign::list_of("none")("internal")("external")("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
     //setup reference source props
     _tree->create<std::string>(mb_path / "clock_source" / "value")
@@ -464,10 +464,6 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
 
-    //init to internal clock and time source
-    _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
-    _tree->access<std::string>(mb_path / "time_source/value").set("none");
-
     //GPS installed: use external ref, time, and init time spec
     if (_gps and _gps->gps_detected())
     {
@@ -477,6 +473,10 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
         UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
         const time_t tp = time_t(_gps->get_sensor("gps_time").to_int()+1);
         _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
+    } else {
+        //init to internal clock and time source
+        _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
+        _tree->access<std::string>(mb_path / "time_source/value").set("internal");
     }
 
 }
@@ -785,11 +785,17 @@ void b200_impl::update_clock_source(const std::string &source)
 
 void b200_impl::update_time_source(const std::string &source)
 {
-    if (source == "none"){}
-    else if (source == "external"){}
-    else if (source == "gpsdo"){}
+    boost::uint32_t value = 0;
+    if (source == "none")
+        value = 3;
+    else if (source == "internal")
+        value = 2;
+    else if (source == "external")
+        value = 1;
+    else if (source == "gpsdo")
+        value = 0;
     else throw uhd::key_error("update_time_source: unknown source: " + source);
-    _local_ctrl->poke32(TOREG(SR_CORE_PPS_SEL), (source == "external")? 1 : 0);
+    _local_ctrl->poke32(TOREG(SR_CORE_PPS_SEL), value);
 }
 
 /***********************************************************************
