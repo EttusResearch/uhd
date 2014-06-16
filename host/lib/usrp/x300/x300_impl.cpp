@@ -1077,17 +1077,28 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     this->update_atr_leds(mb.radio_perifs[radio_index].leds, ""); //init anyway, even if never called
 
     //bind frontend corrections to the dboard freq props
+    const fs_path db_tx_fe_path = db_path / "tx_frontends";
+    BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path))
+      {
+	_tree->access<double>(db_tx_fe_path / name / "freq" / "value")
+	  .subscribe(boost::bind(&x300_impl::set_tx_fe_corrections, this, mb_path, slot_name, _1));
+      }
     const fs_path db_rx_fe_path = db_path / "rx_frontends";
     BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path))
     {
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
-            .subscribe(boost::bind(&x300_impl::set_rx_fe_corrections, this, mb_path, slot_name, _1));
+	  .subscribe(boost::bind(&x300_impl::set_rx_fe_corrections, this, mb_path, slot_name, _1));
     }
 }
 
 void x300_impl::set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq)
 {
     apply_rx_fe_corrections(this->get_tree()->subtree(mb_path), fe_name, lo_freq);
+}
+
+void x300_impl::set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq)
+{
+    apply_tx_fe_corrections(this->get_tree()->subtree(mb_path), fe_name, lo_freq);
 }
 
 boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, boost::uint8_t prefix)
