@@ -518,6 +518,7 @@ void b200_impl::setup_radio(const size_t dspno)
     perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP), true /*is_b200?*/);
     perif.ddc->set_link_rate(10e9/8); //whatever
+    perif.ddc->set_mux("IQ", false, dspno == 1 ? true : false, dspno == 1 ? true : false);
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
         .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));

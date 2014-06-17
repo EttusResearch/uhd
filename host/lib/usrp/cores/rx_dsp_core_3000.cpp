@@ -37,6 +37,8 @@
 
 #define FLAG_DSP_RX_MUX_SWAP_IQ   (1 << 0)
 #define FLAG_DSP_RX_MUX_REAL_MODE (1 << 1)
+#define FLAG_DSP_RX_MUX_INVERT_Q  (1 << 2)
+#define FLAG_DSP_RX_MUX_INVERT_I  (1 << 3)
 
 template <class T> T ceil_log2(T num){
     return std::ceil(std::log(num)/std::log(T(2)));
@@ -70,14 +72,17 @@ public:
         )
     }
 
-    void set_mux(const std::string &mode, const bool fe_swapped){
+    void set_mux(const std::string &mode, const bool fe_swapped, const bool invert_i, const bool invert_q){
         static const uhd::dict<std::string, boost::uint32_t> mode_to_mux = boost::assign::map_list_of
             ("IQ", 0)
             ("QI", FLAG_DSP_RX_MUX_SWAP_IQ)
             ("I", FLAG_DSP_RX_MUX_REAL_MODE)
             ("Q", FLAG_DSP_RX_MUX_SWAP_IQ | FLAG_DSP_RX_MUX_REAL_MODE)
         ;
-        _iface->poke32(REG_DSP_RX_MUX, mode_to_mux[mode] ^ (fe_swapped? FLAG_DSP_RX_MUX_SWAP_IQ : 0));
+        _iface->poke32(REG_DSP_RX_MUX, mode_to_mux[mode]
+            | (fe_swapped ? FLAG_DSP_RX_MUX_SWAP_IQ : 0)
+            | (invert_i ? FLAG_DSP_RX_MUX_INVERT_I : 0)
+            | (invert_q ? FLAG_DSP_RX_MUX_INVERT_Q : 0));
     }
 
     void set_tick_rate(const double rate){
