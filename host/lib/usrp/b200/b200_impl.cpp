@@ -684,7 +684,7 @@ void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, co
         if (tick_rate > max_tick_rate and (tick_rate - max_tick_rate > 1.0))
         {
             throw uhd::value_error(boost::str(
-                boost::format("current master clock rate (%.2f MHz) exceeds maximum possible master clock rate (%.2f MHz) when using %d %s channels")
+                boost::format("current master clock rate (%.6f MHz) exceeds maximum possible master clock rate (%.6f MHz) when using %d %s channels")
                     % (tick_rate/1e6)
                     % (max_tick_rate/1e6)
                     % chan_count
@@ -696,12 +696,12 @@ void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, co
 
 double b200_impl::set_tick_rate(const double rate)
 {
-    UHD_MSG(status) << (boost::format("Asking for clock rate %.2f MHz\n") % (rate/1e6));
+    UHD_MSG(status) << (boost::format("Asking for clock rate %.6f MHz\n") % (rate/1e6));
 
     check_tick_rate_with_current_streamers(rate);   // Defined in b200_io_impl.cpp
 
     _tick_rate = _codec_ctrl->set_clock_rate(rate);
-    UHD_MSG(status) << (boost::format("Actually got clock rate %.2f MHz\n") % (_tick_rate/1e6));
+    UHD_MSG(status) << (boost::format("Actually got clock rate %.6f MHz\n") % (_tick_rate/1e6));
 
     //reset after clock rate change
     this->reset_codec_dcm();
