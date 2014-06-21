@@ -30,6 +30,7 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <cmath>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -88,11 +89,22 @@ static void do_tune_freq_warning_message(
     }
 }
 
+/*! The CORDIC can be used to shift the baseband below / past the tunable
+ * limits of the actual RF front-end. The baseband filter, located on the
+ * daughterboard, however, limits the useful instantaneous bandwidth. We
+ * allow the user to tune to the edge of the filter, where the roll-off
+ * begins.  This prevents the user from tuning past the point where less
+ * than half of the spectrum would be useful. */
 static meta_range_t make_overall_tune_range(
     const meta_range_t &fe_range,
     const meta_range_t &dsp_range,
     const double bw
 ){
+    std::cout << "Entering make_overall_tune_range..." << std::endl;
+    UHD_VAR(dsp_range.start());
+    UHD_VAR(dsp_range.stop());
+    UHD_VAR(bw);
+
     meta_range_t range;
     BOOST_FOREACH(const range_t &sub_range, fe_range){
         range.push_back(range_t(
@@ -142,12 +154,31 @@ static tune_result_t tune_xx_subdev_and_dsp(
     const tune_request_t &tune_request
 ){
     //------------------------------------------------------------------
-    //-- calculate the LO offset, only used with automatic policy
+    //-- calculate the tunable frequency range of the system
     //------------------------------------------------------------------
+    freq_range_t tune_range = make_overall_tune_range(
+            rf_fe_subtree->access<meta_range_t>("freq/range").get(),
+            dsp_subtree->access<meta_range_t>("freq/range").get(),
+            rf_fe_subtree->access<double>("bandwidth/value").get()
+        );
+
+    //------------------------------------------------------------------
+    //-- If the RF FE requires an LO offset, build it into the tune request
+    //------------------------------------------------------------------
+
+    /*! The automatically calculated LO offset is only used if the
+     * 'use_lo_offset' field in the daughterboard property tree is set to TRUE,
+     * and the tune policy is set to AUTO. To use an LO offset normally, the
+     * user should specify the MANUAL tune policy and lo_offset as part of the
+     * tune_request. This lo_offset is based on the requirements of the FE, and
+     * does not reflect a user-requested lo_offset, which is handled later. */
     double lo_offset = 0.0;
     if (rf_fe_subtree->access<bool>("use_lo_offset").get()){
-        //If the frontend has lo_offset value and range properties, trust it for lo_offset
-        if (rf_fe_subtree->exists("lo_offset/value")) lo_offset = rf_fe_subtree->access<double>("lo_offset/value").get();
+        // If the frontend has lo_offset value and range properties, trust it
+        // for lo_offset
+        if (rf_fe_subtree->exists("lo_offset/value")) {
+            lo_offset = rf_fe_subtree->access<double>("lo_offset/value").get();
+        }
 
         //If the local oscillator will be in the passband, use an offset.
         //But constrain the LO offset by the width of the filter bandwidth.
@@ -169,52 +200,82 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     double target_rf_freq = 0.0;
     switch (tune_request.rf_freq_policy){
-    case tune_request_t::POLICY_AUTO:
-        target_rf_freq = tune_request.target_freq + lo_offset;
-        rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
-        break;
+        case tune_request_t::POLICY_AUTO:
+            target_rf_freq = tune_request.target_freq + lo_offset;
+            break;
 
-    case tune_request_t::POLICY_MANUAL:
-        //If the rf_fe understands lo_offset settings, infer the desired lo_offset and set it
-        //  Side effect: In TVRX2 for example, after setting the lo_offset (if_freq) with a
-        //  POLICY_MANUAL, there is no way for the user to automatically get back to default
-        //  if_freq without deconstruct/reconstruct the rf_fe objects.
-        if (rf_fe_subtree->exists("lo_offset/value")) {
-            rf_fe_subtree->access<double>("lo_offset/value").set(tune_request.rf_freq - tune_request.target_freq);
-        }
+        case tune_request_t::POLICY_MANUAL:
+            // If the rf_fe understands lo_offset settings, infer the desired
+            // lo_offset and set it Side effect: In TVRX2 for example, after
+            // setting the lo_offset (if_freq) with a POLICY_MANUAL, there is no
+            // way for the user to automatically get back to default if_freq
+            // without deconstruct/reconstruct the rf_fe objects.
+            if (rf_fe_subtree->exists("lo_offset/value")) {
+                rf_fe_subtree->access<double>("lo_offset/value")
+                    .set(tune_request.rf_freq - tune_request.target_freq);
+            }
 
-        target_rf_freq = tune_request.rf_freq;
-        rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
-        break;
+            target_rf_freq = tune_request.rf_freq;
+            break;
 
-    case tune_request_t::POLICY_NONE: break; //does not set
+        case tune_request_t::POLICY_NONE:
+            break; //does not set
     }
+
+    /* Tune the RF front-end. */
+    rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
     const double actual_rf_freq = rf_fe_subtree->access<double>("freq/value").get();
 
-    //------------------------------------------------------------------
-    //-- calculate the dsp freq, only used with automatic policy
-    //------------------------------------------------------------------
-    double target_dsp_freq = actual_rf_freq - tune_request.target_freq;
-
-    //invert the sign on the dsp freq for transmit
-    target_dsp_freq *= xx_sign;
+    std::cout << "multi_usrp - done tuning FE..." << std::endl;
+    UHD_VAR(target_rf_freq);
+    UHD_VAR(actual_rf_freq);
 
     //------------------------------------------------------------------
     //-- set the dsp frequency depending upon the dsp frequency policy
     //------------------------------------------------------------------
+    double target_dsp_freq = 0.0;
+    double forced_target_rf_freq = target_rf_freq;
+
+    UHD_VAR(tune_range.start());
+    UHD_VAR(tune_range.stop());
+
+    freq_range_t dsp_range = dsp_subtree->access<meta_range_t>("freq/range").get();
+
     switch (tune_request.dsp_freq_policy){
-    case tune_request_t::POLICY_AUTO:
-        dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
-        break;
+        case tune_request_t::POLICY_AUTO:
+            /* If we are using the AUTO tuning policy, then we prevent the
+             * CORDIC from spinning us outside of the range of the baseband
+             * filter, regardless of what the user requested. This could happen
+             * if the user requested a center frequency so far outside of the
+             * tunable range of the FE that the CORDIC would spin outside the
+             * filtered baseband. */
+            forced_target_rf_freq = tune_range.clip(target_rf_freq);
 
-    case tune_request_t::POLICY_MANUAL:
-        target_dsp_freq = tune_request.dsp_freq;
-        dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
-        break;
+            target_dsp_freq = dsp_range.clip(actual_rf_freq - forced_target_rf_freq);
 
-    case tune_request_t::POLICY_NONE: break; //does not set
+            //invert the sign on the dsp freq for transmit (spinning up vs down)
+            target_dsp_freq *= xx_sign;
+
+            break;
+
+        case tune_request_t::POLICY_MANUAL:
+            /* If the user has specified a manual tune policy, we will allow
+             * tuning outside of the baseband filter. */
+            target_dsp_freq = dsp_range.clip(tune_request.dsp_freq);
+            break;
+
+        case tune_request_t::POLICY_NONE:
+            break; //does not set
     }
+
+    UHD_VAR(forced_target_rf_freq);
+    UHD_VAR(target_dsp_freq);
+
+    /* Set the DSP frequency. */
+    dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
     const double actual_dsp_freq = dsp_subtree->access<double>("freq/value").get();
+
+    UHD_VAR(actual_dsp_freq);
 
     //------------------------------------------------------------------
     //-- load and return the tune result
@@ -235,6 +296,9 @@ static double derive_freq_from_xx_subdev_and_dsp(
     //extract actual dsp and IF frequencies
     const double actual_rf_freq = rf_fe_subtree->access<double>("freq/value").get();
     const double actual_dsp_freq = dsp_subtree->access<double>("freq/value").get();
+
+    UHD_VAR(actual_rf_freq);
+    UHD_VAR(actual_dsp_freq);
 
     //invert the sign on the dsp freq for transmit
     return actual_rf_freq - actual_dsp_freq * xx_sign;
@@ -662,7 +726,10 @@ public:
     }
 
     tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
-        tune_result_t r = tune_xx_subdev_and_dsp(RX_SIGN, _tree->subtree(rx_dsp_root(chan)), _tree->subtree(rx_rf_fe_root(chan)), tune_request);
+        tune_result_t r = tune_xx_subdev_and_dsp(RX_SIGN,
+                _tree->subtree(rx_dsp_root(chan)),
+                _tree->subtree(rx_rf_fe_root(chan)),
+                tune_request);
         do_tune_freq_warning_message(tune_request, get_rx_freq(chan), "RX");
         return r;
     }
@@ -860,7 +927,10 @@ public:
     }
 
     tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
-        tune_result_t r = tune_xx_subdev_and_dsp(TX_SIGN, _tree->subtree(tx_dsp_root(chan)), _tree->subtree(tx_rf_fe_root(chan)), tune_request);
+        tune_result_t r = tune_xx_subdev_and_dsp(TX_SIGN,
+                _tree->subtree(tx_dsp_root(chan)),
+                _tree->subtree(tx_rf_fe_root(chan)),
+                tune_request);
         do_tune_freq_warning_message(tune_request, get_tx_freq(chan), "TX");
         return r;
     }
