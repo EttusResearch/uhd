@@ -623,9 +623,9 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             .coerce(boost::bind(&tx_dsp_core_200::set_host_rate, _mbc[mb].tx_dsp, _1))
             .subscribe(boost::bind(&usrp2_impl::update_tx_samp_rate, this, mb, 0, _1));
         _tree->create<double>(mb_path / "tx_dsps/0/freq/value")
-            .coerce(boost::bind(&usrp2_impl::set_tx_dsp_freq, this, mb, _1));
+            .coerce(boost::bind(&tx_dsp_core_200::set_freq, _mbc[mb].tx_dsp, _1));
         _tree->create<meta_range_t>(mb_path / "tx_dsps/0/freq/range")
-            .publish(boost::bind(&usrp2_impl::get_tx_dsp_freq_range, this, mb));
+            .publish(boost::bind(&tx_dsp_core_200::get_freq_range, _mbc[mb].tx_dsp));
 
         //setup dsp flow control
         const double ups_per_sec = device_args_i.cast<double>("ups_per_sec", 20);
@@ -808,29 +808,6 @@ void usrp2_impl::set_tx_fe_corrections(const std::string &mb, const double lo_fr
 
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
-
-double usrp2_impl::set_tx_dsp_freq(const std::string &mb, const double freq_){
-    double new_freq = freq_;
-    const double tick_rate = _tree->access<double>("/mboards/"+mb+"/tick_rate").get();
-
-    //calculate the DAC shift (multiples of rate)
-    const int sign = boost::math::sign(new_freq);
-    const int zone = std::min(boost::math::iround(new_freq/tick_rate), 2);
-    const double dac_shift = sign*zone*tick_rate;
-    new_freq -= dac_shift; //update FPGA DSP target freq
-
-    //set the DAC shift (modulation mode)
-    if (zone == 0) _mbc[mb].codec->set_tx_mod_mode(0); //no shift
-    else _mbc[mb].codec->set_tx_mod_mode(sign*4/zone); //DAC interp = 4
-
-    return _mbc[mb].tx_dsp->set_freq(new_freq) + dac_shift; //actual freq
-}
-
-meta_range_t usrp2_impl::get_tx_dsp_freq_range(const std::string &mb){
-    const double tick_rate = _tree->access<double>("/mboards/"+mb+"/tick_rate").get();
-    const meta_range_t dsp_range = _mbc[mb].tx_dsp->get_freq_range();
-    return meta_range_t(dsp_range.start() - tick_rate*2, dsp_range.stop() + tick_rate*2, dsp_range.step());
-}
 
 void usrp2_impl::update_clock_source(const std::string &mb, const std::string &source){
     //NOTICE: U2_REG_MISC_CTRL_CLOCK is on the wb clock, and cannot be set from fifo_ctrl

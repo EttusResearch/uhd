@@ -169,14 +169,36 @@ public:
         if (std::abs(freq) > _tick_rate/2.0)
             freq -= boost::math::sign(freq)*_tick_rate;
 
-        //calculate the freq register word (signed)
+        //confirm that the target frequency is within range of the CORDIC
         UHD_ASSERT_THROW(std::abs(freq) <= _tick_rate/2.0);
+
+        /* Now calculate the frequency word. It is possible for this calculation
+         * to cause an overflow. As the requested DSP frequency approaches the
+         * master clock rate, that ratio multiplied by the scaling factor (2^32)
+         * will generally overflow within the last few kHz of tunable range.
+         * Thus, we check to see if the operation will overflow before doing it,
+         * and if it will, we set it to the integer min or max of this system.
+         */
+        boost::int32_t freq_word = 0;
+
         static const double scale_factor = std::pow(2.0, 32);
-        const boost::int32_t freq_word = boost::int32_t(boost::math::round((freq / _tick_rate) * scale_factor));
+        static const boost::int32_t int_max = boost::numeric::bounds<boost::int32_t>::highest();
+        static const boost::int32_t int_min = boost::numeric::bounds<boost::int32_t>::lowest();
+        if((freq / _tick_rate) >= (int_max / scale_factor)) {
+            /* Operation would have caused a positive overflow of int32. */
+            freq_word = boost::numeric::bounds<boost::int32_t>::highest();
 
-        //update the actual frequency
+        } else if((freq / _tick_rate) <= (int_min / scale_factor)) {
+            /* Operation would have caused a negative overflow of int32. */
+            freq_word = boost::numeric::bounds<boost::int32_t>::lowest();
+
+        } else {
+            /* The operation is safe. Perform normally. */
+            freq_word = boost::int32_t(boost::math::round((freq / _tick_rate) * scale_factor));
+        }
+
+        //program the frequency word into the device DSP
         const double actual_freq = (double(freq_word) / scale_factor) * _tick_rate;
-
         _iface->poke32(REG_DSP_TX_FREQ, boost::uint32_t(freq_word));
 
         return actual_freq;
