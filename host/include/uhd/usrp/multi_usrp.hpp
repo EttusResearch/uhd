@@ -282,7 +282,7 @@ public:
     /*!
      * Set the clock configuration for the usrp device.
      * DEPRECATED in favor of set time and clock source calls.
-     * This tells the usrp how to get a 10Mhz reference and PPS clock.
+     * This tells the usrp how to get a 10MHz reference and PPS clock.
      * See the documentation for clock_config_t for more info.
      * \param clock_config the clock configuration to set
      * \param mboard which motherboard to set the config
@@ -315,7 +315,7 @@ public:
 
     /*!
      * Set the clock source for the usrp device.
-     * This sets the source for a 10 Mhz reference clock.
+     * This sets the source for a 10 MHz reference clock.
      * Typical options for source: internal, external, MIMO.
      * \param source a string representing the clock source
      * \param mboard which motherboard to set the config

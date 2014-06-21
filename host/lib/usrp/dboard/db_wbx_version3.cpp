@@ -197,7 +197,7 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     target_freq = wbx_v3_freq_range.clip(target_freq);
 
     UHD_LOGV(often) << boost::format(
-        "WBX tune: target frequency %f Mhz"
+        "WBX tune: target frequency %f MHz"
     ) % (target_freq/1e6) << std::endl;
 
     /*
@@ -310,7 +310,7 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
 
     //return the actual frequency
     UHD_LOGV(often) << boost::format(
-        "WBX tune: actual frequency %f Mhz"
+        "WBX tune: actual frequency %f MHz"
     ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
 }

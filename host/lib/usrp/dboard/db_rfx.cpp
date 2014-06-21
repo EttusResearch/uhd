@@ -340,7 +340,7 @@ double rfx_xcvr::set_lo_freq(
     double target_freq
 ){
     UHD_LOGV(often) << boost::format(
-        "RFX tune: target frequency %f Mhz"
+        "RFX tune: target frequency %f MHz"
     ) % (target_freq/1e6) << std::endl;
 
     //clip the input
@@ -443,7 +443,7 @@ double rfx_xcvr::set_lo_freq(
     //return the actual frequency
     if (_div2[unit]) actual_freq /= 2;
     UHD_LOGV(often) << boost::format(
-        "RFX tune: actual frequency %f Mhz"
+        "RFX tune: actual frequency %f MHz"
     ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
 }

@@ -44,7 +44,7 @@ sbx_xcvr::sbx_version3::~sbx_version3(void){
  **********************************************************************/
 double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
     UHD_LOGV(often) << boost::format(
-        "SBX tune: target frequency %f Mhz"
+        "SBX tune: target frequency %f MHz"
     ) % (target_freq/1e6) << std::endl;
 
     /*
@@ -144,7 +144,7 @@ double sbx_xcvr::sbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
 
     //return the actual frequency
     UHD_LOGV(often) << boost::format(
-        "SBX tune: actual frequency %f Mhz"
+        "SBX tune: actual frequency %f MHz"
     ) % (actual_freq/1e6) << std::endl;
     return actual_freq;
 }

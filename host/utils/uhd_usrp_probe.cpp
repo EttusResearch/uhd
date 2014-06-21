@@ -58,7 +58,7 @@ static std::string get_dsp_pp_string(const std::string &type, property_tree::spt
     ss << boost::format("%s DSP: %s") % type % path.leaf() << std::endl;
     //ss << std::endl;
     meta_range_t freq_range = tree->access<meta_range_t>(path / "freq/range").get();
-    ss << boost::format("Freq range: %.3f to %.3f Mhz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;;
+    ss << boost::format("Freq range: %.3f to %.3f MHz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;;
     return ss.str();
 }
 
@@ -80,7 +80,7 @@ static std::string get_frontend_pp_string(const std::string &type, property_tree
     ss << boost::format("Sensors: %s") % prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
 
     meta_range_t freq_range = tree->access<meta_range_t>(path / "freq/range").get();
-    ss << boost::format("Freq range: %.3f to %.3f Mhz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;
+    ss << boost::format("Freq range: %.3f to %.3f MHz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;
 
     std::vector<std::string> gain_names = tree->list(path / "gains");
     if (gain_names.size() == 0) ss << "Gain Elements: None" << std::endl;

@@ -80,11 +80,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
 
     //set the rx center frequency
-    std::cout << boost::format("Setting RX Freq: %f Mhz...") % (freq/1e6) << std::endl;
+    std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
     uhd::tune_request_t tune_request(freq);
     if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=integer");
     usrp->set_rx_freq(tune_request);
-    std::cout << boost::format("Actual RX Freq: %f Mhz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
+    std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
 
     //set the rx rf gain
     std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
