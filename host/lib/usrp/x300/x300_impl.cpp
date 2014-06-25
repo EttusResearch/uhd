@@ -831,8 +831,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             UHD_MSG(status) << "Initializing time to the GPSDO time" << std::endl;
             const time_t tp = time_t(mb.gps->get_sensor("gps_time").to_int()+1);
             _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
-            //wait for time to be set (timeout after 1 second)
-            for (int i = 0; i < 10 && tp != (_tree->access<time_spec_t>(mb_path / "time" / "pps").get()).get_full_secs(); i++)
+
+            //wait for next PPS edge (timeout after 1 second)
+            time_spec_t pps_time = _tree->access<time_spec_t>(mb_path / "time" / "pps").get();
+            for (size_t i = 0; i < 10 && _tree->access<time_spec_t>(mb_path / "time" / "pps").get() == pps_time; i++)
                 boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         } else {
             _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
