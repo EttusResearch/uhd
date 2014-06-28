@@ -30,7 +30,6 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <cmath>
-#include <iostream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -100,11 +99,6 @@ static meta_range_t make_overall_tune_range(
     const meta_range_t &dsp_range,
     const double bw
 ){
-    std::cout << "Entering make_overall_tune_range..." << std::endl;
-    UHD_VAR(dsp_range.start());
-    UHD_VAR(dsp_range.stop());
-    UHD_VAR(bw);
-
     meta_range_t range;
     BOOST_FOREACH(const range_t &sub_range, fe_range){
         range.push_back(range_t(
@@ -226,18 +220,11 @@ static tune_result_t tune_xx_subdev_and_dsp(
     rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
     const double actual_rf_freq = rf_fe_subtree->access<double>("freq/value").get();
 
-    std::cout << "multi_usrp - done tuning FE..." << std::endl;
-    UHD_VAR(target_rf_freq);
-    UHD_VAR(actual_rf_freq);
-
     //------------------------------------------------------------------
     //-- set the dsp frequency depending upon the dsp frequency policy
     //------------------------------------------------------------------
     double target_dsp_freq = 0.0;
     double forced_target_rf_freq = target_rf_freq;
-
-    UHD_VAR(tune_range.start());
-    UHD_VAR(tune_range.stop());
 
     freq_range_t dsp_range = dsp_subtree->access<meta_range_t>("freq/range").get();
 
@@ -268,14 +255,9 @@ static tune_result_t tune_xx_subdev_and_dsp(
             break; //does not set
     }
 
-    UHD_VAR(forced_target_rf_freq);
-    UHD_VAR(target_dsp_freq);
-
     /* Set the DSP frequency. */
     dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
     const double actual_dsp_freq = dsp_subtree->access<double>("freq/value").get();
-
-    UHD_VAR(actual_dsp_freq);
 
     //------------------------------------------------------------------
     //-- load and return the tune result
@@ -296,9 +278,6 @@ static double derive_freq_from_xx_subdev_and_dsp(
     //extract actual dsp and IF frequencies
     const double actual_rf_freq = rf_fe_subtree->access<double>("freq/value").get();
     const double actual_dsp_freq = dsp_subtree->access<double>("freq/value").get();
-
-    UHD_VAR(actual_rf_freq);
-    UHD_VAR(actual_dsp_freq);
 
     //invert the sign on the dsp freq for transmit
     return actual_rf_freq - actual_dsp_freq * xx_sign;
