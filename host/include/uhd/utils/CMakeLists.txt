@@ -27,6 +27,7 @@ UHD_INSTALL(FILES
     gain_group.hpp
     images.hpp
     log.hpp
+    math.hpp
     msg.hpp
     msg_task.hpp
     paths.hpp

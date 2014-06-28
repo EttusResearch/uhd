@@ -18,9 +18,9 @@
 #include "rx_dsp_core_3000.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <uhd/utils/algorithm.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread/thread.hpp> //thread sleep
 #include <boost/math/special_functions/round.hpp>
@@ -210,15 +210,13 @@ public:
         boost::int32_t freq_word = 0;
 
         static const double scale_factor = std::pow(2.0, 32);
-        static const boost::int32_t int_max = boost::numeric::bounds<boost::int32_t>::highest();
-        static const boost::int32_t int_min = boost::numeric::bounds<boost::int32_t>::lowest();
-        if((freq / _tick_rate) >= (int_max / scale_factor)) {
+        if((freq / _tick_rate) >= (uhd::math::BOOST_INT32_MAX / scale_factor)) {
             /* Operation would have caused a positive overflow of int32. */
-            freq_word = boost::numeric::bounds<boost::int32_t>::highest();
+            freq_word = uhd::math::BOOST_INT32_MAX;
 
-        } else if((freq / _tick_rate) <= (int_min / scale_factor)) {
+        } else if((freq / _tick_rate) <= (uhd::math::BOOST_INT32_MIN / scale_factor)) {
             /* Operation would have caused a negative overflow of int32. */
-            freq_word = boost::numeric::bounds<boost::int32_t>::lowest();
+            freq_word = uhd::math::BOOST_INT32_MIN;
 
         } else {
             /* The operation is safe. Perform normally. */

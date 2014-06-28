@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,15 +19,16 @@
 #define INCLUDED_UHD_UTILS_ALGORITHM_HPP
 
 #include <algorithm>
+#include <boost/cstdint.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 
 /*!
- * Useful templated functions and classes that I like to pretend are part of stl.
- * Many of the range wrapper functions come with recent versions of boost (1.43).
+ * Useful templated functions, classes, and constants. Some of these overlap
+ * with the STL, but these are created with Boost for portability.
+ * Many of the range wrapper functions come with versions of boost >= 1.43.
  */
 namespace uhd{
-
     /*!
      * A wrapper around std::sort that takes a range instead of an iterator.
      *
