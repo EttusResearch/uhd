@@ -23,11 +23,11 @@
 // FPGPIO[3] = ATR output 1 during full duplex
 // FPGPIO[4] = output
 // FPGPIO[5] = input
-// FPGPIO[6] = input
-// FPGPIO[7] = input
-// FPGPIO[8] = input
-// FPGPIO[9] = input
-// FPGPIO[10] = input
+// FPGPIO[6] = input (X series only)
+// FPGPIO[7] = input (X series only)
+// FPGPIO[8] = input (X series only)
+// FPGPIO[9] = input (X series only)
+// FPGPIO[10] = input (X series only)
 // The example cycles through idle, TX, RX, and full duplex, spending 2 seconds for each.
 // Outputs can be physically looped back to inputs for verification testing.
 
@@ -42,23 +42,28 @@
 #include <csignal>
 #include <iostream>
 
-#define FPGPIO_DEFAULT_CPU_FORMAT   "fc32"
-#define FPGPIO_DEFAULT_OTW_FORMAT   "sc16"
-#define FPGPIO_DEFAULT_RX_RATE      1e6
-#define FPGPIO_DEFAULT_TX_RATE      1e6
-#define FPGPIO_DEFAULT_DWELL_TIME   2.0
-#define FPGPIO_NUM_BITS             11
-#define FPGPIO_BIT(x)               (1 << x)
+static const std::string FPGPIO_DEFAULT_CPU_FORMAT = "fc32";
+static const std::string FPGPIO_DEFAULT_OTW_FORMAT = "sc16";
+static const double      FPGPIO_DEFAULT_RX_RATE    = 500e3;
+static const double      FPGPIO_DEFAULT_TX_RATE    = 500e3;
+static const double      FPGPIO_DEFAULT_DWELL_TIME = 2.0;
+static const std::string FPGPIO_DEFAULT_GPIO       = "FP0";
+static const size_t      FPGPIO_DEFAULT_NUM_BITS   = 11;
+
+static UHD_INLINE boost::uint32_t FPGPIO_BIT(const size_t x)
+{
+    return (1 << x);
+}
 
 namespace po = boost::program_options;
 
 static bool stop_signal_called = false;
 void sig_int_handler(int){stop_signal_called = true;}
 
-std::string to_bit_string(boost::uint16_t val)
+std::string to_bit_string(boost::uint32_t val, const size_t num_bits)
 {
     std::string out;
-    for (int i = FPGPIO_NUM_BITS - 1; i >= 0; i--)
+    for (int i = num_bits - 1; i >= 0; i--)
     {
         std::string bit = ((val >> i) & 1) ? "1" : "0";
         out += "  ";
@@ -67,30 +72,66 @@ std::string to_bit_string(boost::uint16_t val)
     return out;
 }
 
-void output_reg_values(const std::string bank, const uhd::usrp::multi_usrp::sptr &usrp)
+void output_reg_values(
+    const std::string bank,
+    const uhd::usrp::multi_usrp::sptr &usrp,
+    const size_t num_bits)
 {
     std::cout << (boost::format("Bit       "));
-    for (int i = FPGPIO_NUM_BITS - 1; i >= 0; i--)
+    for (int i = num_bits - 1; i >= 0; i--)
         std::cout << (boost::format(" %s%d") % (i < 10 ? " " : "") % i);
     std::cout << std::endl;
-    std::cout << "CTRL:     " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("CTRL")))) << std::endl;
-    std::cout << "DDR:      " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("DDR")))) << std::endl;
-    std::cout << "ATR_0X:   " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_0X")))) << std::endl;
-    std::cout << "ATR_RX:   " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_RX")))) << std::endl;
-    std::cout << "ATR_TX:   " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_TX")))) << std::endl;
-    std::cout << "ATR_XX:   " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("ATR_XX")))) << std::endl;
-    std::cout << "OUT:      " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("OUT")))) << std::endl;
-    std::cout << "READBACK: " << to_bit_string(boost::uint16_t(usrp->get_gpio_attr(bank, std::string("READBACK")))) << std::endl;
+    std::cout << "CTRL:     " << to_bit_string(
+                                     boost::uint32_t(usrp->get_gpio_attr(bank, std::string("CTRL"))),
+                                     num_bits)
+                              << std::endl;
+
+    std::cout << "DDR:      " << to_bit_string(
+                                     boost::uint32_t(usrp->get_gpio_attr(bank, std::string("DDR"))),
+                                     num_bits)
+                              << std::endl;
+
+    std::cout << "ATR_0X:   " << to_bit_string(
+                                     boost::uint32_t(usrp->get_gpio_attr(bank, std::string("ATR_0X"))),
+                                     num_bits)
+                              << std::endl;
+
+    std::cout << "ATR_RX:   " << to_bit_string(
+                                     boost::uint32_t(usrp->get_gpio_attr(bank, std::string("ATR_RX"))),
+                                     num_bits)
+                              << std::endl;
+
+    std::cout << "ATR_TX:   " << to_bit_string(
+                                     boost::uint32_t(usrp->get_gpio_attr(bank, std::string("ATR_TX"))),
+                                     num_bits)
+                              << std::endl;
+
+    std::cout << "ATR_XX:   " << to_bit_string(
+                                     boost::uint32_t(usrp->get_gpio_attr(bank, std::string("ATR_XX"))),
+                                     num_bits)
+                              << std::endl;
+
+    std::cout << "OUT:      " << to_bit_string(
+                                     boost::uint32_t(usrp->get_gpio_attr(bank, std::string("OUT"))),
+                                     num_bits)
+                              << std::endl;
+
+    std::cout << "READBACK: " << to_bit_string(
+                                     boost::uint32_t(usrp->get_gpio_attr(bank, std::string("READBACK"))),
+                                     num_bits)
+                              << std::endl;
 }
 
-int UHD_SAFE_MAIN(int argc, char *argv[]){
+int UHD_SAFE_MAIN(int argc, char *argv[])
+{
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
     std::string args;
     std::string cpu, otw;
     double rx_rate, tx_rate, dwell;
-    const std::string fpgpio = "FP0";
+    std::string fpgpio;
+    size_t num_bits;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -103,6 +144,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rx_rate", po::value<double>(&rx_rate)->default_value(FPGPIO_DEFAULT_RX_RATE), "rx sample rate")
         ("tx_rate", po::value<double>(&tx_rate)->default_value(FPGPIO_DEFAULT_TX_RATE), "tx sample rate")
         ("dwell", po::value<double>(&dwell)->default_value(FPGPIO_DEFAULT_DWELL_TIME), "dwell time in seconds for each test case")
+        ("gpio", po::value<std::string>(&fpgpio)->default_value(FPGPIO_DEFAULT_GPIO), "name of gpio bank")
+        ("bits", po::value<size_t>(&num_bits)->default_value(FPGPIO_DEFAULT_NUM_BITS), "number of bits in gpio bank")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -122,7 +165,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print out initial unconfigured state of FP GPIO
     std::cout << "Unconfigured GPIO values:" << std::endl;
-    output_reg_values(fpgpio, usrp);
+    output_reg_values(fpgpio, usrp, num_bits);
 
     //configure GPIO registers
     boost::uint32_t ctrl = 0;      // default all as manual
@@ -171,7 +214,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print out initial state of FP GPIO
     std::cout << "\nConfigured GPIO values:" << std::endl;
-    output_reg_values(fpgpio, usrp);
+    output_reg_values(fpgpio, usrp, num_bits);
     std::cout << std::endl;
 
     //set up streams
@@ -220,7 +263,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     else
         std::cout << "fail" << std::endl;
     std::cout << std::endl;
-    output_reg_values(fpgpio, usrp);
+    output_reg_values(fpgpio, usrp, num_bits);
     usrp->set_gpio_attr(fpgpio, std::string("DDR"), ddr, mask);
 
     while (not stop_signal_called)
@@ -252,7 +295,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             std::cout << "pass" << std::endl;
         }
         std::cout << std::endl;
-        output_reg_values(fpgpio, usrp);
+        output_reg_values(fpgpio, usrp, num_bits);
         usrp->set_gpio_attr(fpgpio, "OUT", 0, FPGPIO_BIT(4));
         if (stop_signal_called)
             break;
@@ -279,7 +322,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             std::cout << "pass" << std::endl;
         }
         std::cout << std::endl;
-        output_reg_values(fpgpio, usrp);
+        output_reg_values(fpgpio, usrp, num_bits);
         rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
         //clear out any data left in the rx stream
         try {
@@ -311,7 +354,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             std::cout << "pass" << std::endl;
         }
         std::cout << std::endl;
-        output_reg_values(fpgpio, usrp);
+        output_reg_values(fpgpio, usrp, num_bits);
         tx_md.end_of_burst = true;
         try {
             tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
@@ -345,7 +388,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             std::cout << "pass" << std::endl;
         }
         std::cout << std::endl;
-        output_reg_values(fpgpio, usrp);
+        output_reg_values(fpgpio, usrp, num_bits);
         rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
         tx_md.end_of_burst = true;
         try {
