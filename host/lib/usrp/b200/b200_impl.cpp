@@ -681,7 +681,7 @@ void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, co
     else
     {
         const double max_tick_rate = ((chan_count <= 1) ? AD9361_1_CHAN_CLOCK_RATE_MAX : AD9361_2_CHAN_CLOCK_RATE_MAX);
-        if (tick_rate > max_tick_rate and (tick_rate - max_tick_rate > 1.0))
+        if (tick_rate - max_tick_rate >= 1.0)
         {
             throw uhd::value_error(boost::str(
                 boost::format("current master clock rate (%.6f MHz) exceeds maximum possible master clock rate (%.6f MHz) when using %d %s channels")
