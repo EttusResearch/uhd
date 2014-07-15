@@ -56,6 +56,7 @@ struct x300_uart_iface : uart_iface
 
     void write_uart(const std::string &buff)
     {
+        boost::mutex::scoped_lock(_write_mutex);
         BOOST_FOREACH(const char ch, buff)
         {
             if (ch == '\n') this->putchar('\r');
@@ -157,6 +158,7 @@ struct x300_uart_iface : uart_iface
     std::vector<boost::uint32_t> _rxcache;
     std::string _rxbuff;
     boost::mutex _read_mutex;
+    boost::mutex _write_mutex;
 };
 
 uart_iface::sptr x300_make_uart_iface(wb_iface::sptr iface)
