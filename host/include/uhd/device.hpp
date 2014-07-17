@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,8 +32,8 @@ namespace uhd{
 class property_tree; //forward declaration
 
 /*!
- * The usrp device interface represents the usrp hardware.
- * The api allows for discovery, configuration, and streaming.
+ * The device interface represents the hardware.
+ * The API allows for discovery, configuration, and streaming.
  */
 class UHD_API device : boost::noncopyable{
 
@@ -41,6 +41,13 @@ public:
     typedef boost::shared_ptr<device> sptr;
     typedef boost::function<device_addrs_t(const device_addr_t &)> find_t;
     typedef boost::function<sptr(const device_addr_t &)> make_t;
+
+    //! Device type, used as a filter in make
+    enum device_filter_t {
+        ANY,
+        USRP,
+        CLOCK
+    };
 
     /*!
      * Register a device into the discovery and factory system.
@@ -50,32 +57,35 @@ public:
      */
     static void register_device(
         const find_t &find,
-        const make_t &make
+        const make_t &make,
+        const device_filter_t filter
     );
 
     /*!
-     * \brief Find usrp devices attached to the host.
+     * \brief Find devices attached to the host.
      *
      * The hint device address should be used to narrow down the search
      * to particular transport types and/or transport arguments.
      *
      * \param hint a partially (or fully) filled in device address
-     * \return a vector of device addresses for all usrps on the system
+     * \param filter an optional filter to exclude USRP or clock devices
+     * \return a vector of device addresses for all devices on the system
      */
-    static device_addrs_t find(const device_addr_t &hint);
+    static device_addrs_t find(const device_addr_t &hint, device_filter_t filter = ANY);
 
     /*!
-     * \brief Create a new usrp device from the device address hint.
+     * \brief Create a new device from the device address hint.
      *
      * The make routine will call find and pick one of the results.
      * By default, the first result will be used to create a new device.
      * Use the which parameter as an index into the list of results.
      *
      * \param hint a partially (or fully) filled in device address
+     * \param filter an optional filter to exclude USRP or clock devices
      * \param which which address to use when multiple are found
      * \return a shared pointer to a new device instance
      */
-    static sptr make(const device_addr_t &hint, size_t which = 0);
+    static sptr make(const device_addr_t &hint, device_filter_t filter = ANY, size_t which = 0);
 
     /*! \brief Make a new receive streamer from the streamer arguments
      *
@@ -94,10 +104,14 @@ public:
     //! Get access to the underlying property structure
     uhd::property_tree::sptr get_tree(void) const;
 
+    //! Get device type
+    device_filter_t get_device_type() const;
+
     #include <uhd/device_deprecated.ipp>
 
 protected:
     uhd::property_tree::sptr _tree;
+    device_filter_t _type;
 };
 
 } //namespace uhd

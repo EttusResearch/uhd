@@ -1,0 +1,126 @@
+/*! \page page_octoclock OctoClock Device Manual
+
+\tableofcontents
+
+\section octoclock_features Feature list
+
+- Hardware Capabilities:
+    -   Fully integrated timing source with 8-Way distribution (10 MHz and 1 PPS)
+    -   User selection between internal GPSDO (when present) or external 10 MHz/1 PPS source
+    -   Source detection with automatic switch over in case of failure or disconnect
+    -   Streaming GPS time and NMEA strings over Ethernet (OctoClock-G only)
+
+\section octoclock_load Loading Firmware onto the Octoclock
+
+\subsection bootloader OctoClock bootloader
+
+If you purchased your OctoClock device before Ethernet functionality was introduced, or if your unit's
+bootloader has somehow become corrupted, you must burn the bootloader onto the device before you can load
+the primary firmware.
+
+To load the bootloader onto the OctoClock, two things are needed:
+
+- AVR programmer
+- AVRdude software
+
+Connect the AVR programmer to J108, as specified on the <a href="http://files.ettus.com/schematics/octoclock/octoclock.pdf">
+schematics</a>. Once you verify that the programmer is properly connected, run the following commands to burn the firmware:
+
+    cd <install path>/share/uhd/images
+    avrdude -p atmega128 -c <programmer name> -P usb -U efuse:w:0xFF:m -U hfuse:w:0x80:m -U lfuse:w:0xFF:m -U flash:w:octoclock_bootloader.hex:i
+
+**Note:** On Linux, **sudo** must be used with the **avrdude** command.
+
+Once the bootloader has been burned, power-cycle your OctoClock device and refer to the below instructions on burning the OctoClock's
+primary firmware.
+
+\subsection application Primary Octoclock firmware
+
+To load firmware onto the OctoClock, you must use the *octoclock_firmware_burner* utility, specifying the IP
+address of the OctoClock device, as follows:
+
+    octoclock_firmware_burner --addr=192.168.10.3
+
+\section octoclock_network Setting Up Networking
+
+\subsection host_interface Setting up the host interface
+
+The OctoClock communicates with the host machine at the UDP layer over Gigabit Ethernet. The default device
+of the OctoClock is **192.168.10.3**. You will need to configure the host machine's Ethernet interface with
+a static IP address to enable communication. An address of **192.168.10.1** and a subnet mask of
+**255.255.255.0** is recommended.
+
+**Note:** When using UHD software, if an IP address for the OctoClock is not specified, the software will
+use UDP broadcast packets to locate the OctoClock. On some systems, the firewall will block UDP broadcast
+packets. It is recommended that you change your firewall settings.
+
+\subsection changing_ip Changing the OctoClock's IP address
+
+You may need to change the OctoClock's IP address for various reasons.
+
+- To satisfy your particular network configuration
+- To use multiple OctoClocks on the same host computer
+
+To change the OctoClock's IP address, run the following commands (using the default IP address as an example):
+
+    cd <install path>/lib/uhd/utils
+    ./octoclock_burn_eeprom --args="<optional device args>" --values="ip-addr=192.168.10.3"
+
+\section addressing Addressing the Device
+
+There are two ways to address the OctoClock from UHD software: the IP address, and the serial.
+
+To use the IP address, address it as follows:
+
+    "addr=<ip address>"
+
+If you want to use multiple OctoClock devices, address it as follows:
+
+    "addr0=<ip address 1>,addr1=<ip address 2>"
+
+To use the serial, address it as follows:
+
+    "serial=<serial>"
+
+\section hardware_setup Hardware Setup Notes
+
+\subsection front_panel_leds Front Panel LEDs
+
+The LEDs on the front panel show the current status of the device. Each LED is described below:
+
+- **Internal:** the device is using the internal GPSDO
+- **External:** the device is using an external reference
+- **Status:** the device is successfully distributing a 10 MHz and PPS signal
+- **PPS:** lights up when a PPS signal is detected
+- **GPS Lock:** the internal GPSDO has achieved a lock (not necessary to distribute the signals)
+- **Power:** the device is receiving power
+
+\subsection front_panel_switch Front Panel Switch
+
+The front panel switch, marked **Primary Ref** determines which reference the OctoClock will prefer to use. If it is receiving
+both an internal and external reference, the device will use whichever one the switch specifies.
+
+However, if it is only receiving an internal reference, it will use this reference no matter what position the switch is in.
+The same applies for an external signal.
+
+\section misc Miscellaneous
+
+\subsection available_sensors Available Sensors
+
+The following sensors are available on both the OctoClock and Octoclock-G; these can be queried through the
+<a href="classuhd_1_1octoclock.html">API</a>.
+
+- **ext_ref_detected:** whether or not the device detects an external reference
+- **gps_detected:** whether or not the device detects an internal GPSDO
+- **using_ref:** which reference the device is using (internal or external)
+- **switch_pos:** the position of the front switch (internal or external)
+
+On the OctoClock-G, the following sensors are added:
+
+- **gps_gpgga:** the latest GPGGA string sent by the GPSDO
+- **gps_gprmc:** the latest GPRMC string sent by the GPSDO
+- **gps_time:** the time reported by the GPSDO
+- **gps_locked:** whether or not the GPSDO is locked (true/false)
+- **gps_servo:** the latest debug trace information sent by the GPSDO
+
+*/

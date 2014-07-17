@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //find and create a control transport to do the writing.
 
-    uhd::device_addrs_t found_addrs = uhd::device::find(device_addr);
+    uhd::device_addrs_t found_addrs = uhd::device::find(device_addr, uhd::device::USRP);
 
     if (found_addrs.size() == 0){
         std::cerr << "No USRP devices found" << std::endl;
@@ -82,7 +82,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     for (size_t i = 0; i < found_addrs.size(); i++){
         std::cout << "Writing EEPROM data..." << std::endl;
         //uhd::device_addrs_t devs = uhd::device::find(found_addrs[i]);
-        uhd::device::sptr dev = uhd::device::make(found_addrs[i]);
+        uhd::device::sptr dev = uhd::device::make(found_addrs[i], uhd::device::USRP);
         uhd::property_tree::sptr tree = dev->get_tree();
         tree->access<std::string>("/mboards/0/load_eeprom").set(vm["image"].as<std::string>());
     }

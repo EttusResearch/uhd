@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2013 Ettus Research LLC
+# Copyright 2010-2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,6 +38,10 @@ SET(example_sources
     latency_test.cpp
     fpgpio.cpp
 )
+
+IF(ENABLE_OCTOCLOCK)
+    LIST(APPEND example_sources test_clock_synch.cpp)
+ENDIF(ENABLE_OCTOCLOCK)
 
 #for each source: build an executable and install
 FOREACH(example_source ${example_sources})

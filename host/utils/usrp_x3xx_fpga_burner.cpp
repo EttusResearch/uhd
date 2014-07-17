@@ -118,7 +118,7 @@ boost::uint8_t bitswap(uint8_t b){
 }
 
 void list_usrps(){
-    device_addrs_t found_devices = device::find(device_addr_t("type=x300"));
+    device_addrs_t found_devices = device::find(device_addr_t("type=x300"), device::USRP);
 
     std::cout << "Available X3x0 devices:" << std::endl;
     BOOST_FOREACH(const device_addr_t &dev, found_devices){
@@ -142,7 +142,7 @@ void list_usrps(){
 device_addr_t find_usrp_with_ethernet(std::string ip_addr, bool output){
     if(output) std::cout << "Attempting to find X3x0 with IP address: " << ip_addr << std::endl;
     const device_addr_t dev = device_addr_t(str(boost::format("addr=%s") % ip_addr));
-    device_addrs_t found_devices = device::find(dev);
+    device_addrs_t found_devices = device::find(dev, device::USRP);
 
     if(found_devices.size() < 1) {
         throw std::runtime_error("Could not find X3x0 with the specified address!");
@@ -161,7 +161,7 @@ device_addr_t find_usrp_with_ethernet(std::string ip_addr, bool output){
 device_addr_t find_usrp_with_pcie(std::string resource, bool output){
     if(output) std::cout << "Attempting to find X3x0 with resource: " << resource << std::endl;
     const device_addr_t dev = device_addr_t(str(boost::format("resource=%s") % resource));
-    device_addrs_t found_devices = device::find(dev);
+    device_addrs_t found_devices = device::find(dev, device::USRP);
 
     if(found_devices.size() < 1) {
         throw std::runtime_error("Could not find X3x0 with the specified resource!");

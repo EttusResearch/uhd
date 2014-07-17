@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2013 Ettus Research LLC
+// Copyright 2012-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -137,7 +137,7 @@ static device::sptr b100_make(const device_addr_t &device_addr){
 }
 
 UHD_STATIC_BLOCK(register_b100_device){
-    device::register_device(&b100_find, &b100_make);
+    device::register_device(&b100_find, &b100_make, device::USRP);
 }
 
 /***********************************************************************
@@ -148,6 +148,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     b100_impl_constructor_begin:
     initialization_count++;
 
+    _type = device::USRP;
     _tree = property_tree::make();
 
     //extract the FPGA path for the B100

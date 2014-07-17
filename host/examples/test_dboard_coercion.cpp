@@ -362,7 +362,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Create a USRP device
     std::cout << std::endl;
-    uhd::device_addrs_t device_addrs = uhd::device::find(args);
+    uhd::device_addrs_t device_addrs = uhd::device::find(args, uhd::device::USRP);
     std::cout << boost::format("Creating the USRP device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << std::endl << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;

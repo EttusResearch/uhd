@@ -146,7 +146,7 @@ static device::sptr b200_make(const device_addr_t &device_addr)
 
 UHD_STATIC_BLOCK(register_b200_device)
 {
-    device::register_device(&b200_find, &b200_make);
+    device::register_device(&b200_find, &b200_make, device::USRP);
 }
 
 /***********************************************************************
@@ -155,6 +155,7 @@ UHD_STATIC_BLOCK(register_b200_device)
 b200_impl::b200_impl(const device_addr_t &device_addr)
 {
     _tree = property_tree::make();
+    _type = device::USRP;
     const fs_path mb_path = "/mboards/0";
 
     //try to match the given device address with something on the USB bus

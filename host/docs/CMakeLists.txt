@@ -94,6 +94,7 @@ ENDIF(ENABLE_MANUAL_OR_DOXYGEN)
 ########################################################################
 
 SET(man_page_sources
+    octoclock_firmware_burner.1
     uhd_cal_rx_iq_balance.1
     uhd_cal_tx_dc_offset.1
     uhd_cal_tx_iq_balance.1

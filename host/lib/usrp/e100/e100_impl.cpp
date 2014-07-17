@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ static device::sptr e100_make(const device_addr_t &device_addr){
 }
 
 UHD_STATIC_BLOCK(register_e100_device){
-    device::register_device(&e100_find, &e100_make);
+    device::register_device(&e100_find, &e100_make, device::USRP);
 }
 
 static const uhd::dict<std::string, std::string> model_to_fpga_file_name = boost::assign::map_list_of
@@ -109,6 +109,7 @@ static const uhd::dict<std::string, std::string> model_to_fpga_file_name = boost
  **********************************************************************/
 e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tree = property_tree::make();
+    _type = device::USRP;
 
     //read the eeprom so we can determine the hardware
     _dev_i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);

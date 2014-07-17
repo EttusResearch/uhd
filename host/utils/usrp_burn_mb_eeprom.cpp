@@ -56,7 +56,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     std::cout << "Creating USRP device from address: " + args << std::endl;
-    uhd::device::sptr dev = uhd::device::make(args);
+    uhd::device::sptr dev = uhd::device::make(args, uhd::device::USRP);
     uhd::property_tree::sptr tree = dev->get_tree();
     uhd::usrp::mboard_eeprom_t mb_eeprom = tree->access<uhd::usrp::mboard_eeprom_t>("/mboards/0/eeprom").get();
     std::cout << std::endl;

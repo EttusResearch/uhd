@@ -1,5 +1,5 @@
-
-# Copyright 2010-2011,2013 Ettus Research LLC
+#
+# Copyright 2010-2011,2013-2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
 ADD_SUBDIRECTORY(transport)
 ADD_SUBDIRECTORY(types)
 ADD_SUBDIRECTORY(usrp)
+ADD_SUBDIRECTORY(usrp_clock)
 ADD_SUBDIRECTORY(utils)
 
 UHD_INSTALL(FILES

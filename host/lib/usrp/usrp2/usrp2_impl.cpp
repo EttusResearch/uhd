@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -199,7 +199,7 @@ static device::sptr usrp2_make(const device_addr_t &device_addr){
 }
 
 UHD_STATIC_BLOCK(register_usrp2_device){
-    device::register_device(&usrp2_find, &usrp2_make);
+    device::register_device(&usrp2_find, &usrp2_make, device::USRP);
 }
 
 /***********************************************************************
@@ -367,6 +367,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
     // create controller objects and initialize the properties tree
     ////////////////////////////////////////////////////////////////////
     _tree = property_tree::make();
+    _type = device::USRP;
     _tree->create<std::string>("/name").set("USRP2 / N-Series Device");
 
     for (size_t mbi = 0; mbi < device_args.size(); mbi++){

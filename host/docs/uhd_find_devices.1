@@ -2,7 +2,7 @@
 .SH NAME
 uhd_find_devices \- USRP Hardware Driver Discovery Utility
 .SH DESCRIPTION
-Find UHD-supporting Software Radio Peripherals attached by USB,
+Find UHD-supporting Ettus Research products attached by USB,
 network or embedded configuration.
 .LP
 The UHD package is the universal hardware driver for Ettus Research
@@ -16,7 +16,7 @@ the UHD driver standalone or with 3rd party applications.
 --args \fIarg\fR
 .IP "This help information:"
 --help
-.SH IDENTIFYING USRP DEVICES
+.SH IDENTIFYING DEVICES
 .sp
 Devices are addressed through key/value string pairs.
 These string pairs can be used to narrow down the search for a specific device or group of devices.
@@ -28,36 +28,42 @@ Every device has several ways of identifying it on the host system.
 .SS Identifying by hardware identifier
 .sp
 
-All USRP devices can be found through their hardware series identifier, which match to USRP
+All Ettus Research devices can be found through their hardware series identifier, which match to
 devices as follows:
 
-Argument    |  Device
+Argument       |  Device
 
-type=usrp1  |  USRP1
+type=usrp1     |  USRP1
 
-type=usrp2  |  USRP2, USRP N200, USRP N210
+type=usrp2     |  USRP2, USRP N200, USRP N210
 
-type=b100   |  USRP B100
+type=b100      |  USRP B100
 
-type=e100   |  USRP E100, USRP E110
+type=b200      |  USRP B200, USRP B210
+
+type=e100      |  USRP E100, USRP E110
+
+type=x300      |  USRP X300, USRP X310
+
+type=octoclock |  OctoClock
 
 .SS Identifying by serial number
 
-All USRP devices are given a unique serial number, which can be used to identify a device as follows:
+All Ettus Research devices are given a unique serial number, which can be used to identify a device as follows:
 
 serial=12345678
 
 .SS Identifying by IP address
 
-USRP2, USRP N200, and USRP N210 devices connected to the host machine can all be found through their
+USRP2, USRP N200, USRP N210, USRP X300, USRP X310, and OctoClock devices connected to the host machine can all be found through their
 IP addresses, as follows:
 
 addr=192.168.10.2
 
 .SS Identifying by name
 
-Users have the option of giving their USRP devices short names using the usrp_burn_mb_eeprom utility
-in lib/uhd/utils. Devices that have been given a name can be identified as follows:
+Users have the option of giving their devices short names using the usrp_burn_mb_eeprom and octoclock_burn_eeprom
+utilities in lib/uhd/utils. Devices that have been given a name can be identified as follows:
 
 name=foo
 

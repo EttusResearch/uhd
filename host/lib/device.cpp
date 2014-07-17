@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,35 +57,38 @@ static size_t hash_device_addr(
 /***********************************************************************
  * Registration
  **********************************************************************/
-typedef boost::tuple<device::find_t, device::make_t> dev_fcn_reg_t;
+typedef boost::tuple<device::find_t, device::make_t, device::device_filter_t> dev_fcn_reg_t;
 
 // instantiate the device function registry container
 UHD_SINGLETON_FCN(std::vector<dev_fcn_reg_t>, get_dev_fcn_regs)
 
 void device::register_device(
     const find_t &find,
-    const make_t &make
+    const make_t &make,
+    const device_filter_t filter
 ){
     UHD_LOGV(always) << "registering device" << std::endl;
-    get_dev_fcn_regs().push_back(dev_fcn_reg_t(find, make));
+    get_dev_fcn_regs().push_back(dev_fcn_reg_t(find, make, filter));
 }
 
 /***********************************************************************
  * Discover
  **********************************************************************/
-device_addrs_t device::find(const device_addr_t &hint){
+device_addrs_t device::find(const device_addr_t &hint, device_filter_t filter){
     boost::mutex::scoped_lock lock(_device_mutex);
 
     device_addrs_t device_addrs;
 
     BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
         try{
-            device_addrs_t discovered_addrs = fcn.get<0>()(hint);
-            device_addrs.insert(
-                device_addrs.begin(),
-                discovered_addrs.begin(),
-                discovered_addrs.end()
-            );
+            if(filter == ANY or fcn.get<2>() == filter){
+                device_addrs_t discovered_addrs = fcn.get<0>()(hint);
+                device_addrs.insert(
+                    device_addrs.begin(),
+                    discovered_addrs.begin(),
+                    discovered_addrs.end()
+                );
+            }
         }
         catch(const std::exception &e){
             UHD_MSG(error) << "Device discovery error: " << e.what() << std::endl;
@@ -98,16 +101,18 @@ device_addrs_t device::find(const device_addr_t &hint){
 /***********************************************************************
  * Make
  **********************************************************************/
-device::sptr device::make(const device_addr_t &hint, size_t which){
+device::sptr device::make(const device_addr_t &hint, device_filter_t filter, size_t which){
     boost::mutex::scoped_lock lock(_device_mutex);
 
     typedef boost::tuple<device_addr_t, make_t> dev_addr_make_t;
     std::vector<dev_addr_make_t> dev_addr_makers;
 
     BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
-        BOOST_FOREACH(device_addr_t dev_addr, fcn.get<0>()(hint)){
-            //append the discovered address and its factory function
-            dev_addr_makers.push_back(dev_addr_make_t(dev_addr, fcn.get<1>()));
+        if(filter == ANY or fcn.get<2>() == filter){
+            BOOST_FOREACH(device_addr_t dev_addr, fcn.get<0>()(hint)){
+                //append the discovered address and its factory function
+                dev_addr_makers.push_back(dev_addr_make_t(dev_addr, fcn.get<1>()));
+            }
         }
     }
 
@@ -158,4 +163,8 @@ uhd::property_tree::sptr
 device::get_tree(void) const
 {
     return _tree;
+}
+
+device::device_filter_t device::get_device_type() const {
+    return _type;
 }

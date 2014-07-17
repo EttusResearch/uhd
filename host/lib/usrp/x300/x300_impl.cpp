@@ -326,7 +326,7 @@ static device::sptr x300_make(const device_addr_t &device_addr)
 
 UHD_STATIC_BLOCK(register_x300_device)
 {
-    device::register_device(&x300_find, &x300_make);
+    device::register_device(&x300_find, &x300_make, device::USRP);
 }
 
 static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_name)
@@ -355,6 +355,7 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
 x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
 {
     UHD_MSG(status) << "X300 initialization sequence..." << std::endl;
+    _type = device::USRP;
     _async_md.reset(new async_md_type(1000/*messages deep*/));
     _tree = uhd::property_tree::make();
     _tree->create<std::string>("/name").set("X-Series Device");

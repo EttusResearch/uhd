@@ -213,7 +213,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //create a usrp device
     std::cout << std::endl;
-    uhd::device_addrs_t device_addrs = uhd::device::find(args);
+    uhd::device_addrs_t device_addrs = uhd::device::find(args, uhd::device::USRP);
     if (not device_addrs.empty() and device_addrs.at(0).get("type", "") == "usrp1"){
         std::cerr << "*** Warning! ***" << std::endl;
         std::cerr << "Results will be inaccurate on USRP1 due to insufficient features.\n" << std::endl;

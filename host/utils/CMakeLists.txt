@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2013 Ettus Research LLC
+# Copyright 2010-2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -64,6 +64,20 @@ IF(ENABLE_USB)
     # Additional include directories for b2xx_fx3_utils
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/b200 ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/common)
 ENDIF(ENABLE_USB)
+IF(ENABLE_OCTOCLOCK)
+    LIST(APPEND util_share_sources
+        octoclock_burn_eeprom.cpp
+    )
+
+    SET(octoclock_burner_sources
+        octoclock_firmware_burner.cpp
+        ihexcvt.cpp
+    )
+
+    ADD_EXECUTABLE(octoclock_firmware_burner ${octoclock_burner_sources})
+    TARGET_LINK_LIBRARIES(octoclock_firmware_burner uhd ${Boost_LIBRARIES})
+    UHD_INSTALL(TARGETS octoclock_firmware_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
+ENDIF(ENABLE_OCTOCLOCK)
 
 IF(LINUX AND ENABLE_USB)
     UHD_INSTALL(FILES

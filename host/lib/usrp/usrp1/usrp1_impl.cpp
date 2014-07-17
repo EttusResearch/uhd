@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -139,7 +139,7 @@ static device::sptr usrp1_make(const device_addr_t &device_addr){
 }
 
 UHD_STATIC_BLOCK(register_usrp1_device){
-    device::register_device(&usrp1_find, &usrp1_make);
+    device::register_device(&usrp1_find, &usrp1_make, device::USRP);
 }
 
 /***********************************************************************
@@ -147,6 +147,7 @@ UHD_STATIC_BLOCK(register_usrp1_device){
  **********************************************************************/
 usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     UHD_MSG(status) << "Opening a USRP1 device..." << std::endl;
+    _type = device::USRP;
 
     //extract the FPGA path for the USRP1
     std::string usrp1_fpga_image = find_image_path(

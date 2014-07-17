@@ -2,7 +2,7 @@
 
 \tableofcontents
 
-Welcome to the manual pages for the Universal Software Radio Peripherals (USRP) and their driver suite, the USRP Hardware Driver (UHD). Here, you will find information on how to use the USRPs and how to use the API to connect to them through your own software.
+Welcome to the manual pages for the USRP Hardware Driver (UHD), the host driver for Ettus Research devices. Here, you will find information on how to use the devices and how to use the API to connect to them through your own software.
 
 # Building and Installing UHD
 
@@ -49,6 +49,10 @@ Welcome to the manual pages for the Universal Software Radio Peripherals (USRP) 
 ## USRP Legacy Series
 
 \li \subpage page_usrp2
+
+## OctoClock
+
+\li \subpage page_octoclock
 
 # API Documentation
 

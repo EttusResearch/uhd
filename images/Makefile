@@ -289,13 +289,14 @@ endif
 ifdef HAS_AVR_UTILS
 
 _octoclock_fw_dir = $(TOP_FW_DIR)/octoclock
-_octoclock_fw_bin = $(BUILT_IMAGES_DIR)/octoclock_fw.hex
+_octoclock_fw_bin = $(BUILT_IMAGES_DIR)/octoclock_r4_fw.hex
 IMAGES_LIST += $(_octoclock_fw_bin)
 
 $(_octoclock_fw_bin): $(GLOBAL_DEPS)
-	cd $(_octoclock_fw_dir) && make -f Makefile clean
-	cd $(_octoclock_fw_dir) && make -f Makefile all
-	cp $(TOP_FW_DIR)/octoclock/octoclock_fw.hex $@
+	cd $(_octoclock_fw_dir) && mkdir build
+	cd $(_octoclock_fw_dir)/build && cmake ..
+	cd $(_octoclock_fw_dir)/build && make
+	cp $(TOP_FW_DIR)/octoclock/build/octoclock_r4_fw.hex $@
 endif
 
 ########################################################################

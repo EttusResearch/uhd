@@ -36,7 +36,12 @@ __Devices:__ Octoclock.
 
 __Tools:__ avrtools, cmake
 
-__Build Instructions:__ Run `make` from the Octoclock source directory.
+__Build Instructions:__
+
+1. mkdir `<build directory>`
+2. cd `<build directory>`
+3. cmake `<source directory>`
+4. make
 
 ## zpu/
 

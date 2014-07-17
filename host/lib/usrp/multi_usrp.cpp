@@ -246,7 +246,7 @@ static double derive_freq_from_xx_subdev_and_dsp(
 class multi_usrp_impl : public multi_usrp{
 public:
     multi_usrp_impl(const device_addr_t &addr){
-        _dev = device::make(addr);
+        _dev = device::make(addr, device::USRP);
         _tree = _dev->get_tree();
     }
 
