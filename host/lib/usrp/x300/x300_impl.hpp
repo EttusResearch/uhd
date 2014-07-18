@@ -63,7 +63,11 @@ static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
 static const double X300_RX_SW_BUFF_FULL_FACTOR     = 0.90;     //Buffer should ideally be 90% full.
 static const size_t X300_RX_FC_REQUEST_FREQ         = 32;       //per flow-control window
 
-static const size_t X300_PCIE_DATA_FRAME_SIZE       = 8192;     //bytes
+//The FIFO closest to the DMA controller is 1023 elements deep for RX and 1029 elements deep for TX
+//where an element is 8 bytes. For best throughput ensure that the data frame fits in these buffers.
+//Also ensure that the kernel has enough frames to hold buffered TX and RX data
+static const size_t X300_PCIE_RX_DATA_FRAME_SIZE    = 8184;     //bytes
+static const size_t X300_PCIE_TX_DATA_FRAME_SIZE    = 8192;     //bytes
 static const size_t X300_PCIE_DATA_NUM_FRAMES       = 2048;
 static const size_t X300_PCIE_MSG_FRAME_SIZE        = 256;      //bytes
 static const size_t X300_PCIE_MSG_NUM_FRAMES        = 32;
