@@ -1129,12 +1129,12 @@ x300_impl::both_xports_t x300_impl::make_transport(
     if (mb.xport_path == "nirio") {
         default_buff_args.send_frame_size =
             (prefix == X300_RADIO_DEST_PREFIX_TX)
-            ? X300_PCIE_DATA_FRAME_SIZE
+            ? X300_PCIE_TX_DATA_FRAME_SIZE
             : X300_PCIE_MSG_FRAME_SIZE;
 
         default_buff_args.recv_frame_size =
             (prefix == X300_RADIO_DEST_PREFIX_RX)
-            ? X300_PCIE_DATA_FRAME_SIZE
+            ? X300_PCIE_RX_DATA_FRAME_SIZE
             : X300_PCIE_MSG_FRAME_SIZE;
 
         default_buff_args.num_send_frames =
