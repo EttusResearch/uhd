@@ -38,6 +38,8 @@ struct x300_uart_iface : uart_iface
         rxpool = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_RX_ADDR));
         txpool = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_TX_ADDR));
         poolsize = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_WORDS32));
+        _rxcache.resize(poolsize);
+        _last_device_rxoffset = rxoffset;
         //this->write_uart("HELLO UART\n");
         //this->read_uart(0.1);
     }
@@ -54,6 +56,7 @@ struct x300_uart_iface : uart_iface
 
     void write_uart(const std::string &buff)
     {
+        boost::mutex::scoped_lock(_write_mutex);
         BOOST_FOREACH(const char ch, buff)
         {
             if (ch == '\n') this->putchar('\r');
@@ -63,39 +66,99 @@ struct x300_uart_iface : uart_iface
 
     int getchar(void)
     {
-        if (_iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_RX_INDEX)) != rxoffset)
+        if (rxoffset == _last_device_rxoffset)
+            return -1;
+
+        rxoffset++;
+        return static_cast<int>(_rxcache[(rxoffset/4) % poolsize] >> ((rxoffset%4)*8) & 0xFF);
+    }
+
+    void update_cache(void)
+    {
+        boost::uint32_t device_rxoffset = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_RX_INDEX));
+        boost::uint32_t delta = device_rxoffset - rxoffset;
+
+        while (delta)
         {
-            const int shift = ((rxoffset%4) * 8);
-            const char ch = _iface->peek32(SR_ADDR(rxpool, rxoffset/4)) >> shift;
-            rxoffset = (rxoffset + 1) % (poolsize*4);
-            return ch;
+            if (delta >= poolsize*4)
+            {
+                // all the data is new - reload the entire cache
+                for (boost::uint32_t i = 0; i < poolsize; i++)
+                    _rxcache[i] = _iface->peek32(SR_ADDR(rxpool, i));
+
+                // set rxoffset to the end of the first string
+                rxoffset = device_rxoffset - (poolsize*4) + 1;
+                while (static_cast<char>((_rxcache[(rxoffset/4) % poolsize] >> ((rxoffset%4)*8) & 0xFF)) != '\n')
+                    ++rxoffset;
+
+                // clear the partial string in the buffer;
+                _rxbuff.clear();
+            }
+            else if (rxoffset == _last_device_rxoffset)
+            {
+                // new data was added - refresh the portion of the cache that was updated
+                for (boost::uint32_t i = ((_last_device_rxoffset+1)/4) % poolsize; i != (((device_rxoffset)/4)+1) % poolsize; i = (i+1) % poolsize)
+                {
+                    _rxcache[i] = _iface->peek32(SR_ADDR(rxpool, i));
+                }
+            } else {
+                // there is new data, but we aren't done with what we have - check back later
+                break;
+            }
+
+            _last_device_rxoffset = device_rxoffset;
+
+            // check again to see if anything changed while we were updating the cache
+            device_rxoffset = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_RX_INDEX));
+            delta = device_rxoffset - rxoffset;
         }
-        return -1;
     }
 
     std::string read_uart(double timeout)
     {
+        boost::mutex::scoped_lock(_read_mutex);
         const boost::system_time exit_time = boost::get_system_time() + boost::posix_time::microseconds(long(timeout*1e6));
         std::string buff;
+
         while (true)
         {
-            const int ch = this->getchar();
-            if (ch == -1)
+            // Update cache
+            this->update_cache();
+
+            // Get available characters
+            for (int ch = this->getchar(); ch != -1; ch = this->getchar())
             {
-                if (boost::get_system_time() > exit_time) break;
-                boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-                continue;
+                // skip carriage returns
+                if (ch == '\r')
+                    continue;
+
+                // store character to buffer
+                _rxbuff += std::string(1, (char)ch);
+
+                // newline found - return string
+                if (ch == '\n')
+                {
+                    buff = _rxbuff;
+                    _rxbuff.clear();
+                    return buff;
+                }
             }
-            if (ch == '\r') continue;
-            buff += std::string(1, (char)ch);
-            if (ch == '\n') break;
+
+            // no more characters - check time
+            if (boost::get_system_time() > exit_time)
+                break;
         }
-        //UHD_VAR(buff);
+
         return buff;
     }
 
     wb_iface::sptr _iface;
     boost::uint32_t rxoffset, txoffset, txword32, rxpool, txpool, poolsize;
+    boost::uint32_t _last_device_rxoffset;
+    std::vector<boost::uint32_t> _rxcache;
+    std::string _rxbuff;
+    boost::mutex _read_mutex;
+    boost::mutex _write_mutex;
 };
 
 uart_iface::sptr x300_make_uart_iface(wb_iface::sptr iface)
