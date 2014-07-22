@@ -8,4 +8,5 @@
 TIMING_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/timing/, \
 time_compare.v \
 timekeeper.v \
+pps.v\
 ))

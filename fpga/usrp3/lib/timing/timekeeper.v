@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013-2014 Ettus Research LLC
 //
 
 
@@ -19,11 +19,11 @@ module timekeeper
    setting_reg #(.my_addr(BASE), .width()) sr_time_hi
      (.clk(clk), .rst(reset), .strobe(set_stb), .addr(set_addr), .in(set_data),
       .out(time_at_next_event[63:32]), .changed());
-   
+
    setting_reg #(.my_addr(BASE+1), .width()) sr_time_lo
      (.clk(clk), .rst(reset), .strobe(set_stb), .addr(set_addr), .in(set_data),
       .out(time_at_next_event[31:0]), .changed());
-   
+
    setting_reg #(.my_addr(BASE+2), .width(2)) sr_ctrl
      (.clk(clk), .rst(reset), .strobe(set_stb), .addr(set_addr), .in(set_data),
       .out({set_time_pps, set_time_now}), .changed(cmd_trigger));
@@ -36,12 +36,6 @@ module timekeeper
      {pps_del2,pps_del} <= {pps_del, pps};
 
    wire pps_edge = !pps_del2 & pps_del;
-
-   //////////////////////////////////////////////////////////////////////////
-   // track the time at last pps so host can detect the pps
-   //////////////////////////////////////////////////////////////////////////
-   always @(posedge clk)
-     if(pps_edge) vita_time_lastpps <= vita_time;
 
    //////////////////////////////////////////////////////////////////////////
    // arm the trigger to latch a new time when the ctrl register is written
@@ -64,5 +58,17 @@ module timekeeper
        vita_time <= time_at_next_event;
      else
        vita_time <= vita_time + 64'h1;
+
+   //////////////////////////////////////////////////////////////////////////
+   // track the time at last pps so host can detect the pps
+   //////////////////////////////////////////////////////////////////////////
+   always @(posedge clk)
+     if(reset)
+       vita_time_lastpps <= 64'h0;
+     else if(pps_edge)
+       if(time_event)
+         vita_time_lastpps <= time_at_next_event;
+       else
+         vita_time_lastpps <= vita_time + 64'h1;
 
 endmodule // timekeeper
