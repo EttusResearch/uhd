@@ -21,6 +21,8 @@ Change Log for Releases
 * The B200 / B210 now generates an internal PPS if none is provided.
 * Improved performance on PCIe for X300.
 * B200 / B210 properly reports clock rate (issue with float comparison).
+* Fixed issue with filter selection in B200 that caused loss of RX power.
+* Removed ref lock check from X300 where it wasn't necessary.
 
 ## 003.007.001
 * Fixed issue with TVRX2 divider calculation.
