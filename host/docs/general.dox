@@ -172,21 +172,26 @@ to use at most one thread context for manipulating device settings.
 
 \subsection general_threading_prio Thread priority scheduling
 
-When UHD software spawns a new thread it may try to boost the thread's
-scheduling priority. When setting the priority fails, the UHD software
-prints out an error. This error is harmless; it simply means that the
-thread will have a normal scheduling priority.
+When UHD software spawns a new thread, it may try to boost the thread's
+scheduling priority. If setting the new priority fails, the UHD software
+prints a warning to the console, as shown below. This warning is harmless;
+it simply means that the thread will retain a normal or default scheduling priority.
+
+    UHD Warning:
+        Unable to set the thread priority. Performance may be negatively affected.
+        Please see the general application notes in the manual for instructions.
+        EnvironmentError: OSError: error in pthread_setschedparam
 
 <b>Linux Notes:</b>
 
 Non-privileged users need special permission to change the scheduling
-priority. Add the following line to `/etc/security/limits.conf`:
+priority. Add the following line to the file `/etc/security/limits.conf`:
 
     @GROUP    - rtprio    99
 
-Replace `GROUP` with a group to which your user belongs.
-Settings will not take effect until the user is in a different login
-session.
+Replace `GROUP` with a group in which your user is a member. You may need
+to log out and log back into the account for the settings to take effect.
+In most Linux distributions, a list of groups and group members can be found in the file `/etc/group`.
 
 \section general_misc Miscellaneous Notes
 
