@@ -839,8 +839,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             try {
                 wait_for_ref_locked(mb.zpu_ctrl, 1.0);
             } catch (uhd::exception::runtime_error &e) {
-                UHD_MSG(warning) << "Clock reference failed to lock to internal source during device initialization.  " <<
-                    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
+                // Ignore for now - It can sometimes take longer than 1 second to lock and that is OK.
+                //UHD_MSG(warning) << "Clock reference failed to lock to internal source during device initialization.  " <<
+                //    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
             }
             _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
             UHD_MSG(status) << "References initialized to internal sources" << std::endl;
