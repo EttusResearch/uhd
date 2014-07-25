@@ -177,7 +177,7 @@ public:
 
     void update_scalar(void){
         const double factor = 1.0 + std::max(ceil_log2(_scaling_adjustment), 0.0);
-        const double target_scalar = (1 << 15)*_scaling_adjustment/_dsp_extra_scaling/factor;
+        const double target_scalar = (1 << (_is_b200 ? 17 : 15))*_scaling_adjustment/_dsp_extra_scaling/factor;
         const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
         _fxpt_scalar_correction = target_scalar/actual_scalar*factor; //should be small
         _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);

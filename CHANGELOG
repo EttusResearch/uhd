@@ -1,8 +1,30 @@
 Change Log for Releases
 ==============================
 
-## 003.007.001
+## 003.007.002
+* Properly flushing PCIe chain on device to prevent stale data.
+* Adjusted bus clock rate in FPGA to improve timing.
+* Fixed issue where FPGA would fail to load FPGA image over PCIe.
+* Fixed incompatibility issue with USRP2 FPGA burner utility.
+* Fixed issue where ZPU would report empty NMEA strings from GPSDO.
+* Updated some functions to no longer use deprecated Boost calls.
+* Fixed issue where libusb would declare 'connection refused'.
+* Fixed Windows library package naming.
+* Updated documentation.
+* Fixed reversed TX / RX colors in X300 LED indicators.
+* DBSRX2 now works properly with X300 / X310.
+* Updated include files to build on older distros of Linux.
+* Fixed issue with 'item32' type converter from GNU Radio.
+* Fixed issue where channels on B210 would occasionally not be phase-aligned.
+* Fixed problem causing channels on B210 to swap between runs.
+* Fixed issue in N-Series devices causing scaling error @ 50 MSps.
+* The B200 / B210 now generates an internal PPS if none is provided.
+* Improved performance on PCIe for X300.
+* B200 / B210 properly reports clock rate (issue with float comparison).
+* Fixed issue with filter selection in B200 that caused loss of RX power.
+* Removed ref lock check from X300 where it wasn't necessary.
 
+## 003.007.001
 * Fixed issue with TVRX2 divider calculation.
 * Fixed issue using calibration utilities on B-Side daughterboard in an X3xx.
 * Replaced unsafe `sscanf` call in utilities.

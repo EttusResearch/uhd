@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013-14 Ettus Research LLC
 //
 
 
@@ -78,11 +78,24 @@ module b200_core
     /*******************************************************************
      * PPS Timing stuff
      ******************************************************************/
-    reg [1:0] 	 int_pps_del, ext_pps_del;
+
+    // Generate an internal PPS signal
+    wire int_pps;
+    pps_generator #(.CLK_FREQ(100000000)) pps_gen
+    (.clk(bus_clk), .pps(int_pps));
+
+    // Flop PPS signals into radio clock domain
+    reg [1:0] 	 gpsdo_pps_del, ext_pps_del, int_pps_del;
     always @(posedge radio_clk) ext_pps_del[1:0] <= {ext_pps_del[0], pps_ext};
-    always @(posedge radio_clk) int_pps_del[1:0] <= {int_pps_del[0], pps_int};
-    wire pps_select;
-    wire pps = pps_select? ext_pps_del[1] : int_pps_del[1];
+    always @(posedge radio_clk) gpsdo_pps_del[1:0] <= {gpsdo_pps_del[0], pps_int};
+    always @(posedge radio_clk) int_pps_del[1:0] <= {int_pps_del[0], int_pps};
+
+    // PPS mux
+    wire [1:0] pps_select;
+    wire pps =  (pps_select == 2'b00)? gpsdo_pps_del[1] :
+                (pps_select == 2'b01)? ext_pps_del[1] :
+                (pps_select == 2'b10)? int_pps_del[1] :
+                1'b0;
 
     /*******************************************************************
      * Response mux Routing logic
@@ -189,7 +202,7 @@ module b200_core
      (.clk(bus_clk), .rst(1'b0/*keep*/), .strobe(set_stb), .addr(set_addr), .in(set_data),
       .out(gpsdo_st), .changed());
 
-    setting_reg #(.my_addr(SR_CORE_PPS_SEL), .awidth(8), .width(1)) sr_pps_sel
+    setting_reg #(.my_addr(SR_CORE_PPS_SEL), .awidth(8), .width(2)) sr_pps_sel
      (.clk(bus_clk), .rst(bus_rst), .strobe(set_stb), .addr(set_addr), .in(set_data),
       .out(pps_select), .changed());
 
