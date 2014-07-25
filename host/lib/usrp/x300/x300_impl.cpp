@@ -1079,16 +1079,14 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
 
     //bind frontend corrections to the dboard freq props
     const fs_path db_tx_fe_path = db_path / "tx_frontends";
-    BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path))
-      {
-	_tree->access<double>(db_tx_fe_path / name / "freq" / "value")
-	  .subscribe(boost::bind(&x300_impl::set_tx_fe_corrections, this, mb_path, slot_name, _1));
-      }
+    BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)) {
+        _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
+            .subscribe(boost::bind(&x300_impl::set_tx_fe_corrections, this, mb_path, slot_name, _1));
+    }
     const fs_path db_rx_fe_path = db_path / "rx_frontends";
-    BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path))
-    {
+    BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)) {
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
-	  .subscribe(boost::bind(&x300_impl::set_rx_fe_corrections, this, mb_path, slot_name, _1));
+            .subscribe(boost::bind(&x300_impl::set_rx_fe_corrections, this, mb_path, slot_name, _1));
     }
 }
 
@@ -1118,8 +1116,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
     const boost::uint8_t& destination,
     const boost::uint8_t& prefix,
     const uhd::device_addr_t& args,
-    boost::uint32_t& sid
-)
+    boost::uint32_t& sid)
 {
     mboard_members_t &mb = _mb[mb_index];
     both_xports_t xports;
@@ -1216,10 +1213,10 @@ x300_impl::both_xports_t x300_impl::make_transport(
                 << std::endl;
         }
 
-	size_t system_max_send_frame_size = (size_t) _max_frame_sizes.send_frame_size;
-	size_t system_max_recv_frame_size = (size_t) _max_frame_sizes.recv_frame_size;
+    size_t system_max_send_frame_size = (size_t) _max_frame_sizes.send_frame_size;
+    size_t system_max_recv_frame_size = (size_t) _max_frame_sizes.recv_frame_size;
 
-	// Make sure frame sizes do not exceed the max available value supported by UHD
+    // Make sure frame sizes do not exceed the max available value supported by UHD
         default_buff_args.send_frame_size =
             (prefix == X300_RADIO_DEST_PREFIX_TX)
             ? std::min(system_max_send_frame_size, X300_10GE_DATA_FRAME_MAX_SIZE)
