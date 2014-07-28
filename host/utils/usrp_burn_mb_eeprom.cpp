@@ -93,13 +93,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("    EEPROM [\"%s\"] is \"%s\"") % keys_vec[i] % mb_eeprom[keys_vec[i]] << std::endl;
     }
     std::cout << std::endl;
+    mb_eeprom = uhd::usrp::mboard_eeprom_t();
     for(size_t i = 0; i < vals_vec.size(); i++){
         if(vals_vec[i] != ""){
-            uhd::usrp::mboard_eeprom_t mb_eeprom; mb_eeprom[keys_vec[i]] = vals_vec[i];
+            mb_eeprom[keys_vec[i]] = vals_vec[i];
             std::cout << boost::format("Setting EEPROM [\"%s\"] to \"%s\"...") % keys_vec[i] % vals_vec[i] << std::endl;
-            tree->access<uhd::usrp::mboard_eeprom_t>("/mboards/0/eeprom").set(mb_eeprom);
         }
     }
+    tree->access<uhd::usrp::mboard_eeprom_t>("/mboards/0/eeprom").set(mb_eeprom);
     std::cout << "Power-cycle the USRP device for the changes to take effect." << std::endl;
     std::cout << std::endl;
 
