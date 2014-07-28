@@ -180,7 +180,7 @@ std::vector<double> x300_dboard_iface::get_clock_rates(unit_t unit)
     }
 }
 
-void x300_dboard_iface::set_clock_enabled(unit_t unit, bool enb)
+void x300_dboard_iface::set_clock_enabled(UHD_UNUSED(unit_t unit), UHD_UNUSED(bool enb))
 {
     // TODO Variable DBoard clock control needs to be implemented for X300.
 }
