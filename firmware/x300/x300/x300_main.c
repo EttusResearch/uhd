@@ -1,4 +1,4 @@
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013-2014 Ettus Research LLC
 
 #include "x300_init.h"
 #include "x300_defs.h"
@@ -345,12 +345,12 @@ static void handle_uarts(void)
     static uint32_t rxoffset = 0;
     for (int rxch = wb_uart_getc(UART0_BASE); rxch != -1; rxch = wb_uart_getc(UART0_BASE))
     {
-        rxoffset = (rxoffset+1) % (NUM_POOL_WORDS32*4);
+        rxoffset++;
         const int shift = ((rxoffset%4) * 8);
         static uint32_t rxword32 = 0;
         if (shift == 0) rxword32 = 0;
-        rxword32 |= ((uint32_t) rxch) << ((rxoffset%4) * 8);
-        rxpool[rxoffset/4] = rxword32;
+        rxword32 |= ((uint32_t) rxch & 0xFF) << shift;
+        rxpool[(rxoffset/4) % NUM_POOL_WORDS32] = rxword32;
         shmem[X300_FW_SHMEM_UART_RX_INDEX] = rxoffset;
     }
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2013 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 
 
@@ -37,7 +37,7 @@ module ddc_chain
    wire [WIDTH-1:0] i_cic, q_cic;
    wire [WIDTH-1:0] i_hb1, q_hb1;
    wire [WIDTH-1:0] i_hb2, q_hb2;
-   
+
    wire        strobe_cic, strobe_hb1, strobe_hb2;
    wire        enable_hb1, enable_hb2;
    wire [7:0]  cic_decim_rate;
@@ -45,7 +45,9 @@ module ddc_chain
    reg [WIDTH-1:0]  rx_fe_i_mux, rx_fe_q_mux;
    wire        realmode;
    wire        swap_iq;
-   
+   wire        invert_i;
+   wire        invert_q;
+
    setting_reg #(.my_addr(BASE+0)) sr_0
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out(phase_inc),.changed());
@@ -58,22 +60,22 @@ module ddc_chain
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
       .in(set_data),.out({enable_hb1, enable_hb2, cic_decim_rate}),.changed());
 
-   setting_reg #(.my_addr(BASE+3), .width(2)) sr_3
+   setting_reg #(.my_addr(BASE+3), .width(4)) sr_3
      (.clk(clk),.rst(rst),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out({realmode,swap_iq}),.changed());
+      .in(set_data),.out({invert_i,inver_q,realmode,swap_iq}),.changed());
 
    // MUX so we can do realmode signals on either input
-   
+
    always @(posedge clk)
      if(swap_iq)
        begin
-	  rx_fe_i_mux <= rx_fe_q;
-	  rx_fe_q_mux <= realmode ? 0 : rx_fe_i;
+	  rx_fe_i_mux <= invert_i ? ~rx_fe_q + 1 : rx_fe_q;
+	  rx_fe_q_mux <= realmode ? 0 : invert_q ? ~rx_fe_i + 1 : rx_fe_i;
        end
      else
        begin
-	  rx_fe_i_mux <= rx_fe_i;
-	  rx_fe_q_mux <= realmode ? 0 : rx_fe_q;
+	  rx_fe_i_mux <= invert_i ? ~rx_fe_i + 1 : rx_fe_i;
+	  rx_fe_q_mux <= realmode ? 0 : invert_i ? ~rx_fe_q + 1 : rx_fe_q;
        end
 
    // NCO
@@ -109,7 +111,7 @@ module ddc_chain
      decim_i (.clock(clk),.reset(rst),.enable(run),
 	      .rate(cic_decim_rate),.strobe_in(1'b1),.strobe_out(strobe_cic),
 	      .signal_in(i_cordic_clip),.signal_out(i_cic));
-   
+
    cic_decim #(.bw(WIDTH))
      decim_q (.clock(clk),.reset(rst),.enable(run),
 	      .rate(cic_decim_rate),.strobe_in(1'b1),.strobe_out(strobe_cic),
@@ -119,7 +121,7 @@ module ddc_chain
    small_hb_dec #(.WIDTH(WIDTH)) small_hb_i
      (.clk(clk),.rst(rst),.bypass(~enable_hb1),.run(run),
       .stb_in(strobe_cic),.data_in(i_cic),.stb_out(strobe_hb1),.data_out(i_hb1));
-   
+
    small_hb_dec #(.WIDTH(WIDTH)) small_hb_q
      (.clk(clk),.rst(rst),.bypass(~enable_hb1),.run(run),
       .stb_in(strobe_cic),.data_in(q_cic),.stb_out(),.data_out(q_hb1));

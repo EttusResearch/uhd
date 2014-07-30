@@ -176,7 +176,8 @@ public:
 
         //determine which half-band filters are activated
         int hb0 = 0, hb1 = 0;
-        if (decim % 2 == 0){
+        // hb0 can only be enabled if the rate will be decimated by at least 2 between the CIC and hb1
+        if (decim >= 4 && decim % 2 == 0){
             hb0 = 1;
             decim /= 2;
         }

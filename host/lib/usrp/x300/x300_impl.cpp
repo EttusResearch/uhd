@@ -841,8 +841,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             try {
                 wait_for_ref_locked(mb.zpu_ctrl, 1.0);
             } catch (uhd::exception::runtime_error &e) {
-                UHD_MSG(warning) << "Clock reference failed to lock to internal source during device initialization.  " <<
-                    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
+                // Ignore for now - It can sometimes take longer than 1 second to lock and that is OK.
+                //UHD_MSG(warning) << "Clock reference failed to lock to internal source during device initialization.  " <<
+                //    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
             }
             _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
             UHD_MSG(status) << "References initialized to internal sources" << std::endl;
@@ -1079,9 +1080,13 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     this->update_atr_leds(mb.radio_perifs[radio_index].leds, ""); //init anyway, even if never called
 
     //bind frontend corrections to the dboard freq props
+    const fs_path db_tx_fe_path = db_path / "tx_frontends";
+    BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)) {
+        _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
+            .subscribe(boost::bind(&x300_impl::set_tx_fe_corrections, this, mb_path, slot_name, _1));
+    }
     const fs_path db_rx_fe_path = db_path / "rx_frontends";
-    BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path))
-    {
+    BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)) {
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
             .subscribe(boost::bind(&x300_impl::set_rx_fe_corrections, this, mb_path, slot_name, _1));
     }
@@ -1090,6 +1095,11 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
 void x300_impl::set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq)
 {
     apply_rx_fe_corrections(this->get_tree()->subtree(mb_path), fe_name, lo_freq);
+}
+
+void x300_impl::set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq)
+{
+    apply_tx_fe_corrections(this->get_tree()->subtree(mb_path), fe_name, lo_freq);
 }
 
 boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, boost::uint8_t prefix)
@@ -1108,8 +1118,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
     const boost::uint8_t& destination,
     const boost::uint8_t& prefix,
     const uhd::device_addr_t& args,
-    boost::uint32_t& sid
-)
+    boost::uint32_t& sid)
 {
     mboard_members_t &mb = _mb[mb_index];
     both_xports_t xports;
@@ -1131,12 +1140,12 @@ x300_impl::both_xports_t x300_impl::make_transport(
     if (mb.xport_path == "nirio") {
         default_buff_args.send_frame_size =
             (prefix == X300_RADIO_DEST_PREFIX_TX)
-            ? X300_PCIE_DATA_FRAME_SIZE
+            ? X300_PCIE_TX_DATA_FRAME_SIZE
             : X300_PCIE_MSG_FRAME_SIZE;
 
         default_buff_args.recv_frame_size =
             (prefix == X300_RADIO_DEST_PREFIX_RX)
-            ? X300_PCIE_DATA_FRAME_SIZE
+            ? X300_PCIE_RX_DATA_FRAME_SIZE
             : X300_PCIE_MSG_FRAME_SIZE;
 
         default_buff_args.num_send_frames =
@@ -1206,10 +1215,10 @@ x300_impl::both_xports_t x300_impl::make_transport(
                 << std::endl;
         }
 
-	size_t system_max_send_frame_size = (size_t) _max_frame_sizes.send_frame_size;
-	size_t system_max_recv_frame_size = (size_t) _max_frame_sizes.recv_frame_size;
+    size_t system_max_send_frame_size = (size_t) _max_frame_sizes.send_frame_size;
+    size_t system_max_recv_frame_size = (size_t) _max_frame_sizes.recv_frame_size;
 
-	// Make sure frame sizes do not exceed the max available value supported by UHD
+    // Make sure frame sizes do not exceed the max available value supported by UHD
         default_buff_args.send_frame_size =
             (prefix == X300_RADIO_DEST_PREFIX_TX)
             ? std::min(system_max_send_frame_size, X300_10GE_DATA_FRAME_MAX_SIZE)
