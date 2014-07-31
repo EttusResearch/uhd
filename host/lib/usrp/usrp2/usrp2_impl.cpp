@@ -35,6 +35,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
+#include <boost/thread.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -761,7 +762,13 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             _tree->access<std::string>(root / "time_source/value").set("gpsdo");
             _tree->access<std::string>(root / "clock_source/value").set("gpsdo");
             UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
-            _mbc[mb].time64->set_time_next_pps(time_spec_t(time_t(_mbc[mb].gps->get_sensor("gps_time").to_int()+1)));
+            const time_t tp = time_t(_mbc[mb].gps->get_sensor("gps_time").to_int()+1);
+            _tree->access<time_spec_t>(root / "time" / "pps").set(time_spec_t(tp));
+
+            //wait for next PPS edge (timeout after 1 second)
+            time_spec_t pps_time = _tree->access<time_spec_t>(root / "time" / "pps").get();
+            for (size_t i = 0; i < 10 && _tree->access<time_spec_t>(root / "time" / "pps").get() == pps_time; i++)
+                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         }
     }
 

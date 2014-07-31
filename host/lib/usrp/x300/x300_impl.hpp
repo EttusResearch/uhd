@@ -211,7 +211,7 @@ private:
         //perifs in each radio
         radio_perifs_t radio_perifs[2]; //!< This is hardcoded s.t. radio_perifs[0] points to slot A and [1] to B
         uhd::usrp::dboard_eeprom_t db_eeproms[8];
-	//! Return the index of a radio component, given a slot name. This means DSPs, radio_perifs
+        //! Return the index of a radio component, given a slot name. This means DSPs, radio_perifs
         size_t get_radio_index(const std::string &slot_name) {
              UHD_ASSERT_THROW(slot_name == "A" or slot_name == "B");
              return slot_name == "A" ? 0 : 1;
@@ -321,6 +321,8 @@ private:
     uhd::dict<std::string, uhd::usrp::dboard_iface::sptr> _dboard_ifaces;
 
     void set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
+    void set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
+
 
     /*! Update the IQ MUX settings for the radio peripheral according to given subdev spec.
      *
