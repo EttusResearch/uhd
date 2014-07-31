@@ -64,7 +64,7 @@ void sig_int_handler(int){
     }
     else{
         std::cout << std::endl << "Aborting. Your OctoClock device will be bricked." << std::endl
-                               << "Refer to http://files.ettus.com/uhd_docs/doxymanual/html/octoclock.html" << std::endl
+                               << "Refer to http://files.ettus.com/manual/page_octoclock.html#bootloader" << std::endl
                                << "for details on restoring your device." << std::endl;
         exit(EXIT_FAILURE);
     }
