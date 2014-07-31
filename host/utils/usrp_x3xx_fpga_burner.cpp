@@ -92,7 +92,7 @@ void sig_int_handler(int){
     }
     else{
         std::cout << std::endl << "Aborting. Your USRP X-Series device will be bricked." << std::endl
-                  << "Refer to http://files.ettus.com/uhd_docs/manual/html/usrp_x3x0.html#use-jtag-to-load-fpga-images" << std::endl
+                  << "http://files.ettus.com/manual/page_usrp_x3x0.html#x3x0_load_fpga_imgs_jtag" << std::endl
                   << "for details on restoring your device." << std::endl;
         exit(EXIT_FAILURE);
     }

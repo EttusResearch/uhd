@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -76,8 +76,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
   if(std::find(sensor_names.begin(), sensor_names.end(), "gps_locked") == sensor_names.end()) {
     std::cout << boost::format("\ngps_locked sensor not found.  This could mean that you have not installed the GPSDO correctly.\n\n");
-    std::cout << boost::format("Visit this page if the problem persists:\n");
-    std::cout << boost::format("http://files.ettus.com/uhd_docs/manual/html/gpsdo.html\n\n");
+    std::cout << boost::format("Visit one of these pages if the problem persists:\n");
+    std::cout << boost::format(" * N2X0/E1X0: http://files.ettus.com/manual/page_gpsdo.html");
+    std::cout << boost::format(" * X3X0: http://files.ettus.com/manual/page_gpsdo_x3x0.html\n\n");
     exit(EXIT_FAILURE);
   }
 
@@ -94,7 +95,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::sensor_value_t gps_locked = usrp->get_mboard_sensor("ref_locked",0);
     if(not gps_locked.to_bool()) {
       std::cout << boost::format("USRP NOT Locked to GPSDO 10 MHz Reference.\n");
-      std::cout << boost::format("Double check installation instructions: https://www.ettus.com/content/files/gpsdo-kit_2.pdf\n\n");
+      std::cout << boost::format("Double check installation instructions (N2X0/E1X0 only): https://www.ettus.com/content/files/gpsdo-kit_4.pdf\n\n");
     } else
         std::cout << boost::format("USRP Locked to GPSDO 10 MHz Reference.\n");
   }else
