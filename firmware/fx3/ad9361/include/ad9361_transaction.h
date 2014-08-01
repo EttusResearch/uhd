@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 //various constants
-#define AD9361_TRANSACTION_VERSION       0x4
+#define AD9361_TRANSACTION_VERSION       0x5
 #define AD9361_DISPATCH_PACKET_SIZE      64
 
 //action types
@@ -52,6 +52,9 @@ typedef struct
 
     //sequence number - increment every call for sanity
     uint32_t sequence;
+
+    //location info for the ad9361 chip class
+    uint64_t handle;
 
     //action tells us what to do, see AD9361_ACTION_*
     uint32_t action;

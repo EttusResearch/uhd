@@ -35,8 +35,7 @@ static const std::string     B200_FW_FILE_NAME = "usrp_b200_fw.hex";
 static const std::string     B200_FPGA_FILE_NAME = "usrp_b200_fpga.bin";
 static const std::string     B210_FPGA_FILE_NAME = "usrp_b210_fpga.bin";
 
-class UHD_API b200_iface: boost::noncopyable, public virtual uhd::i2c_iface,
-                  public ad9361_ctrl_iface_type {
+class UHD_API b200_iface: boost::noncopyable, public virtual uhd::i2c_iface {
 public:
     typedef boost::shared_ptr<b200_iface> sptr;
 

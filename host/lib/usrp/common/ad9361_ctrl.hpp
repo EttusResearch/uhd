@@ -1,79 +1,62 @@
 //
-// Copyright 2012-2013 Ettus Research LLC
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright 2014 Ettus Research LLC
 //
 
 #ifndef INCLUDED_AD9361_CTRL_HPP
 #define INCLUDED_AD9361_CTRL_HPP
 
 #include <uhd/transport/zero_copy.hpp>
-#include <uhd/types/serial.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
-#include <boost/function.hpp>
-#include <vector>
+#include <ad9361_device.h>
 #include <string>
-
+#include <stdint.h>
 #include "ad9361_transaction.h"
-
 
 static const double AD9361_CLOCK_RATE_MAX = 61.44e6;
 static const double AD9361_1_CHAN_CLOCK_RATE_MAX = AD9361_CLOCK_RATE_MAX;
 static const double AD9361_2_CHAN_CLOCK_RATE_MAX = (AD9361_1_CHAN_CLOCK_RATE_MAX / 2);
 
-
-struct ad9361_ctrl_iface_type
+/***********************************************************************
+ * AD9361 Transport Interface
+ **********************************************************************/
+class ad9361_io
 {
+public:
+    virtual uint8_t peek8(uint32_t reg) = 0;
+    virtual void poke8(uint32_t reg, uint8_t val) = 0;
+};
+
+/***********************************************************************
+ * AD9361 Transport Interface
+ **********************************************************************/
+class ad9361_ctrl_transport
+{
+public:
+    typedef boost::shared_ptr<ad9361_ctrl_transport> sptr;
+
+    virtual uint64_t get_device_handle() = 0;
     virtual void ad9361_transact(const unsigned char in_buff[AD9361_DISPATCH_PACKET_SIZE], unsigned char out_buff[AD9361_DISPATCH_PACKET_SIZE]) = 0;
+
+    static ad9361_ctrl_transport::sptr make_zero_copy(
+        uhd::transport::zero_copy_if::sptr xport);
+    static ad9361_ctrl_transport::sptr make_software_spi(
+        ad9361_product_t product,
+        uhd::spi_iface::sptr spi_iface,
+        boost::uint32_t slave_num);
 };
-typedef boost::shared_ptr<ad9361_ctrl_iface_type> ad9361_ctrl_iface_sptr;
 
-
-struct ad9361_ctrl_over_zc : ad9361_ctrl_iface_type
+/***********************************************************************
+ * AD9361 Control Interface
+ **********************************************************************/
+class ad9361_ctrl : public boost::noncopyable
 {
-    ad9361_ctrl_over_zc(uhd::transport::zero_copy_if::sptr xport)
-    {
-        _xport = xport;
-    }
-
-    void ad9361_transact(const unsigned char in_buff[AD9361_DISPATCH_PACKET_SIZE], unsigned char out_buff[AD9361_DISPATCH_PACKET_SIZE])
-    {
-        {
-            uhd::transport::managed_send_buffer::sptr buff = _xport->get_send_buff(10.0);
-            if (not buff or buff->size() < AD9361_DISPATCH_PACKET_SIZE) throw std::runtime_error("ad9361_ctrl_over_zc send timeout");
-            std::memcpy(buff->cast<void *>(), in_buff, AD9361_DISPATCH_PACKET_SIZE);
-            buff->commit(AD9361_DISPATCH_PACKET_SIZE);
-        }
-        {
-            uhd::transport::managed_recv_buffer::sptr buff = _xport->get_recv_buff(10.0);
-            if (not buff or buff->size() < AD9361_DISPATCH_PACKET_SIZE) throw std::runtime_error("ad9361_ctrl_over_zc recv timeout");
-            std::memcpy(out_buff, buff->cast<const void *>(), AD9361_DISPATCH_PACKET_SIZE);
-        }
-    }
-
-    uhd::transport::zero_copy_if::sptr _xport;
-};
-
-
-class ad9361_ctrl : boost::noncopyable{
 public:
     typedef boost::shared_ptr<ad9361_ctrl> sptr;
 
     //! make a new codec control object
-    static sptr make(ad9361_ctrl_iface_sptr iface);
+    static sptr make(ad9361_ctrl_transport::sptr iface);
 
     //! Get a list of gain names for RX or TX
     static std::vector<std::string> get_gain_names(const std::string &/*which*/)
