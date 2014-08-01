@@ -1486,6 +1486,7 @@ void init_ad9361(void) {
     write_ad9361_reg(0x019, 0x00); // AuxDAC2 Word[9:2]
     write_ad9361_reg(0x01A, 0x00); // AuxDAC1 Config and Word[1:0]
     write_ad9361_reg(0x01B, 0x00); // AuxDAC2 Config and Word[1:0]
+    write_ad9361_reg(0x022, 0x4A); // Invert Bypassed LNA
     write_ad9361_reg(0x023, 0xFF); // AuxDAC Manaul/Auto Control
     write_ad9361_reg(0x026, 0x00); // AuxDAC Manual Select Bit/GPO Manual Select
     write_ad9361_reg(0x030, 0x00); // AuxDAC1 Rx Delay
@@ -1729,9 +1730,27 @@ void set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2) {
     if(rx1) { reg_rxfilt = reg_rxfilt | 0x40; }
     if(rx2) { reg_rxfilt = reg_rxfilt | 0x80; }
 
+    /* Check for FDD state */
+    bool set_back_to_fdd = false;
+    uint8_t ensm_state = read_ad9361_reg(0x017) & 0x0F;
+    if (ensm_state == 0xA)   // FDD
+    {
+        /* Put into ALERT state (via the FDD flush state). */
+        write_ad9361_reg(0x014, 0x01);
+        set_back_to_fdd = true;
+    }
+
+    /* Wait for FDD flush state to complete (if necessary) */
+    while (ensm_state == 0xA || ensm_state == 0xB)
+        ensm_state = read_ad9361_reg(0x017) & 0x0F;
+
     /* Turn on / off the chains. */
     write_ad9361_reg(0x002, reg_txfilt);
     write_ad9361_reg(0x003, reg_rxfilt);
+
+    /* Put back into FDD state if necessary */
+    if (set_back_to_fdd)
+        write_ad9361_reg(0x014, 0x21);
 }
 
 /* Tune the RX or TX frequency.
