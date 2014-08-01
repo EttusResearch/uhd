@@ -93,7 +93,7 @@ boost::uint32_t adf4001_regs_t::get_reg(boost::uint8_t addr) {
 }
 
 
-adf4001_ctrl::adf4001_ctrl(spi_core_3000::sptr _spi, int slaveno):
+adf4001_ctrl::adf4001_ctrl(uhd::spi_iface::sptr _spi, int slaveno):
     spi_iface(_spi),
     slaveno(slaveno)
     {

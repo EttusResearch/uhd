@@ -123,12 +123,11 @@ public:
 
 class adf4001_ctrl {
 public:
-
-    adf4001_ctrl(spi_core_3000::sptr _spi, int slaveno);
+    adf4001_ctrl(uhd::spi_iface::sptr _spi, int slaveno);
     void set_lock_to_ext_ref(bool external);
 
 private:
-    spi_core_3000::sptr spi_iface;
+    uhd::spi_iface::sptr spi_iface;
     int slaveno;
     spi_config_t spi_config;
     adf4001_regs_t adf4001_regs;

@@ -54,6 +54,7 @@ localparam RB64_CODEC_READBACK  = 24;
 //pll constants
 static const int AD9361_SLAVENO = (1 << 0);
 static const int ADF4001_SLAVENO = (1 << 1);
+static const double AD9361_SPI_RATE = 1e6;
 static const double ADF4001_SPI_RATE = 10e3; //slow for large time constant on spi lines
 
 /* ATR Control Bits */

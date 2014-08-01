@@ -30,5 +30,6 @@ IF(ENABLE_B200)
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_iface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_io_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_uart.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/b200_cores.cpp
     )
 ENDIF(ENABLE_B200)
