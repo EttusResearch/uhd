@@ -139,7 +139,7 @@ void sig_int_handler(int){
     }
     else{
         std::cout << std::endl << "Aborting. Your USRP-N Series unit will be bricked." << std::endl
-                  << "Refer to http://files.ettus.com/uhd_docs/manual/html/usrp2.html#device-recovery-and-bricking" << std::endl
+                  << "Refer to http://files.ettus.com/manual/page_usrp2.html#usrp2_loadflash_brick" << std::endl
                   << "for details on restoring your device." << std::endl;
         exit(EXIT_FAILURE);
     }
