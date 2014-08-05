@@ -20,6 +20,7 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -68,23 +69,107 @@ static void do_samp_rate_warning_message(
     }
 }
 
-static void do_tune_freq_warning_message(
+static void do_tune_freq_results_message(
     const tune_request_t &tune_req,
+    const tune_result_t &tune_result,
     double actual_freq,
     const std::string &xx
 ){
-    //forget the warning when manual policy
-    if (tune_req.dsp_freq_policy == tune_request_t::POLICY_MANUAL) return;
-    if (tune_req.rf_freq_policy == tune_request_t::POLICY_MANUAL) return;
-
     const double target_freq = tune_req.target_freq;
-    static const double max_allowed_error = 1.0; //Hz
-    if (std::abs(target_freq - actual_freq) > max_allowed_error){
-        UHD_MSG(warning) << boost::format(
-            "The hardware does not support the requested %s frequency:\n"
-            "Target frequency: %f MHz\n"
-            "Actual frequency: %f MHz\n"
-        ) % xx % (target_freq/1e6) % (actual_freq/1e6);
+    const double clipped_target_freq = tune_result.clipped_rf_freq;
+    const double target_rf_freq = tune_result.target_rf_freq;
+    const double actual_rf_freq = tune_result.actual_rf_freq;
+    const double target_dsp_freq = tune_result.target_dsp_freq;
+    const double actual_dsp_freq = tune_result.actual_dsp_freq;
+
+    if (tune_req.rf_freq_policy == tune_request_t::POLICY_MANUAL) return;
+    if (tune_req.dsp_freq_policy == tune_request_t::POLICY_MANUAL) return;
+
+    bool requested_freq_success = uhd::math::frequencies_are_equal(target_freq, clipped_target_freq);
+    bool target_freq_success = uhd::math::frequencies_are_equal(clipped_target_freq, actual_freq);
+    bool rf_lo_tune_success = uhd::math::frequencies_are_equal(target_rf_freq, actual_rf_freq);
+    bool dsp_tune_success = uhd::math::frequencies_are_equal(target_dsp_freq, actual_dsp_freq);
+
+    if(requested_freq_success and target_freq_success and rf_lo_tune_success
+            and dsp_tune_success) {
+        UHD_MSG(status) << boost::format(
+                "Successfully tuned to %f MHz\n\n")
+                % (actual_freq / 1e6);
+    } else {
+        boost::format base_message ("Tune Request: %f MHz\n");
+        base_message % (target_freq / 1e6);
+        std::string results_string = base_message.str();
+
+        if(requested_freq_success and (not rf_lo_tune_success)) {
+            boost::format rf_lo_message(
+                "  The RF LO does not support the requested frequency:\n"
+                "    Requested LO Frequency: %f MHz\n"
+                "    RF LO Result: %f MHz\n"
+                "  Attempted to use the DSP to reach the requested frequency:\n"
+                "    Desired DSP Frequency: %f MHz\n"
+                "    DSP Result: %f MHz\n"
+                "  Successfully tuned to %f MHz\n\n");
+            rf_lo_message % (target_rf_freq / 1e6) % (actual_rf_freq / 1e6)
+                % (target_dsp_freq / 1e6) % (actual_dsp_freq / 1e6)
+                % (actual_freq / 1e6);
+
+            results_string += rf_lo_message.str();
+
+            UHD_MSG(status) << results_string;
+
+            return;
+        }
+
+        if(not requested_freq_success) {
+            boost::format failure_message(
+                "  The requested %s frequency is outside of the system range, and has been clipped:\n"
+                "    Target Frequency: %f MHz\n"
+                "    Clipped Target Frequency: %f MHz\n");
+            failure_message % xx % (target_freq / 1e6) % (clipped_target_freq / 1e6);
+
+            results_string += failure_message.str();
+        }
+
+        if(not rf_lo_tune_success) {
+            boost::format rf_lo_message(
+                "  The RF LO does not support the requested frequency:\n"
+                "    Requested LO Frequency: %f MHz\n"
+                "    RF LO Result: %f MHz\n"
+                "  Attempted to use the DSP to reach the requested frequency:\n"
+                "    Desired DSP Frequency: %f MHz\n"
+                "    DSP Result: %f MHz\n");
+            rf_lo_message % (target_rf_freq / 1e6) % (actual_rf_freq / 1e6)
+                % (target_dsp_freq / 1e6) % (actual_dsp_freq / 1e6);
+
+            results_string += rf_lo_message.str();
+
+        } else if(not dsp_tune_success) {
+            boost::format dsp_message(
+                "  The DSP does not support the requested frequency:\n"
+                "    Requested DSP Frequency: %f MHz\n"
+                "    DSP Result: %f MHz\n");
+            dsp_message % (target_dsp_freq / 1e6) % (actual_dsp_freq / 1e6);
+
+            results_string += dsp_message.str();
+        }
+
+        if(target_freq_success) {
+            boost::format success_message(
+                "  Successfully tuned to %f MHz\n\n");
+            success_message % (actual_freq / 1e6);
+
+            results_string += success_message.str();
+        } else {
+            boost::format failure_message(
+                "  Failed to tune to target frequency\n"
+                "    Target Frequency: %f MHz\n"
+                "    Actual Frequency: %f MHz\n\n");
+            failure_message % (clipped_target_freq / 1e6) % (actual_freq / 1e6);
+
+            results_string += failure_message.str();
+        }
+
+        UHD_MSG(warning) << results_string << std::endl;
     }
 }
 
@@ -148,13 +233,17 @@ static tune_result_t tune_xx_subdev_and_dsp(
     const tune_request_t &tune_request
 ){
     //------------------------------------------------------------------
-    //-- calculate the tunable frequency range of the system
+    //-- calculate the tunable frequency ranges of the system
     //------------------------------------------------------------------
     freq_range_t tune_range = make_overall_tune_range(
             rf_fe_subtree->access<meta_range_t>("freq/range").get(),
             dsp_subtree->access<meta_range_t>("freq/range").get(),
             rf_fe_subtree->access<double>("bandwidth/value").get()
         );
+
+    freq_range_t dsp_range = dsp_subtree->access<meta_range_t>("freq/range").get();
+
+    double clipped_requested_freq = tune_range.clip(tune_request.target_freq);
 
     //------------------------------------------------------------------
     //-- If the RF FE requires an LO offset, build it into the tune request
@@ -184,8 +273,7 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     //-- poke the tune request args into the dboard
     //------------------------------------------------------------------
-    if (rf_fe_subtree->exists("tune_args"))
-    {
+    if (rf_fe_subtree->exists("tune_args")) {
         rf_fe_subtree->access<device_addr_t>("tune_args").set(tune_request.args);
     }
 
@@ -195,12 +283,12 @@ static tune_result_t tune_xx_subdev_and_dsp(
     double target_rf_freq = 0.0;
     switch (tune_request.rf_freq_policy){
         case tune_request_t::POLICY_AUTO:
-            target_rf_freq = tune_request.target_freq + lo_offset;
+            target_rf_freq = clipped_requested_freq + lo_offset;
             break;
 
         case tune_request_t::POLICY_MANUAL:
             // If the rf_fe understands lo_offset settings, infer the desired
-            // lo_offset and set it Side effect: In TVRX2 for example, after
+            // lo_offset and set it. Side effect: In TVRX2 for example, after
             // setting the lo_offset (if_freq) with a POLICY_MANUAL, there is no
             // way for the user to automatically get back to default if_freq
             // without deconstruct/reconstruct the rf_fe objects.
@@ -216,19 +304,17 @@ static tune_result_t tune_xx_subdev_and_dsp(
             break; //does not set
     }
 
-    /* Tune the RF front-end. */
+    //------------------------------------------------------------------
+    //-- Tune the RF frontend
+    //------------------------------------------------------------------
     rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
     const double actual_rf_freq = rf_fe_subtree->access<double>("freq/value").get();
 
     //------------------------------------------------------------------
-    //-- set the dsp frequency depending upon the dsp frequency policy
+    //-- Set the DSP frequency depending upon the DSP frequency policy.
     //------------------------------------------------------------------
     double target_dsp_freq = 0.0;
-    double forced_target_rf_freq = target_rf_freq;
-
-    freq_range_t dsp_range = dsp_subtree->access<meta_range_t>("freq/range").get();
-
-    switch (tune_request.dsp_freq_policy){
+    switch (tune_request.dsp_freq_policy) {
         case tune_request_t::POLICY_AUTO:
             /* If we are using the AUTO tuning policy, then we prevent the
              * CORDIC from spinning us outside of the range of the baseband
@@ -236,9 +322,7 @@ static tune_result_t tune_xx_subdev_and_dsp(
              * if the user requested a center frequency so far outside of the
              * tunable range of the FE that the CORDIC would spin outside the
              * filtered baseband. */
-            forced_target_rf_freq = tune_range.clip(target_rf_freq);
-
-            target_dsp_freq = dsp_range.clip(actual_rf_freq - forced_target_rf_freq);
+            target_dsp_freq = actual_rf_freq - clipped_requested_freq;
 
             //invert the sign on the dsp freq for transmit (spinning up vs down)
             target_dsp_freq *= xx_sign;
@@ -247,7 +331,9 @@ static tune_result_t tune_xx_subdev_and_dsp(
 
         case tune_request_t::POLICY_MANUAL:
             /* If the user has specified a manual tune policy, we will allow
-             * tuning outside of the baseband filter. */
+             * tuning outside of the baseband filter, but will still clip the
+             * target DSP frequency to within the bounds of the CORDIC to
+             * prevent undefined behavior (likely an overflow). */
             target_dsp_freq = dsp_range.clip(tune_request.dsp_freq);
             break;
 
@@ -255,14 +341,17 @@ static tune_result_t tune_xx_subdev_and_dsp(
             break; //does not set
     }
 
-    /* Set the DSP frequency. */
+    //------------------------------------------------------------------
+    //-- Tune the DSP
+    //------------------------------------------------------------------
     dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
     const double actual_dsp_freq = dsp_subtree->access<double>("freq/value").get();
 
     //------------------------------------------------------------------
-    //-- load and return the tune result
+    //-- Load and return the tune result
     //------------------------------------------------------------------
     tune_result_t tune_result;
+    tune_result.clipped_rf_freq = clipped_requested_freq;
     tune_result.target_rf_freq = target_rf_freq;
     tune_result.actual_rf_freq = actual_rf_freq;
     tune_result.target_dsp_freq = target_dsp_freq;
@@ -705,12 +794,12 @@ public:
     }
 
     tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
-        tune_result_t r = tune_xx_subdev_and_dsp(RX_SIGN,
+        tune_result_t result = tune_xx_subdev_and_dsp(RX_SIGN,
                 _tree->subtree(rx_dsp_root(chan)),
                 _tree->subtree(rx_rf_fe_root(chan)),
                 tune_request);
-        do_tune_freq_warning_message(tune_request, get_rx_freq(chan), "RX");
-        return r;
+        do_tune_freq_results_message(tune_request, result, get_rx_freq(chan), "RX");
+        return result;
     }
 
     double get_rx_freq(size_t chan){
@@ -906,12 +995,12 @@ public:
     }
 
     tune_result_t set_tx_freq(const tune_request_t &tune_request, size_t chan){
-        tune_result_t r = tune_xx_subdev_and_dsp(TX_SIGN,
+        tune_result_t result = tune_xx_subdev_and_dsp(TX_SIGN,
                 _tree->subtree(tx_dsp_root(chan)),
                 _tree->subtree(tx_rf_fe_root(chan)),
                 tune_request);
-        do_tune_freq_warning_message(tune_request, get_tx_freq(chan), "TX");
-        return r;
+        do_tune_freq_results_message(tune_request, result, get_tx_freq(chan), "TX");
+        return result;
     }
 
     double get_tx_freq(size_t chan){
