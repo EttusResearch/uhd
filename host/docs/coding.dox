@@ -6,15 +6,22 @@
 
 \subsection coding_api_hilevel High-Level: The Multi-USRP
 
-The Multi-USRP class provides a fat interface to a single USRP device
+The Multi-USRP class provides a high-level interface to a single USRP device
 with one or more channels, or multiple USRP devicess in a homogeneous
 setup. See the documentation for uhd::usrp::multi_usrp.
+
+\subsection coding_api_hilevelclock High-Level: The Multi-USRP-Clock
+
+The Multi-USRP-Clock class provides a high-level interface to a single clock
+device or set of clock devices, from which the time can be queried. See the
+documentation for uhd::usrp_clock::multi_usrp_clock.
 
 \subsection coding_api_lowlevel Low-Level: The device API
 
 A device is an abstraction for hardware that is connected to the host
 system. For a USRP device, this means that the motherboard and
-everything on it would be considered to be a "device". The device API
+everything on it would be considered to be a "device". For a clock device, the
+device itself would be considered a "device" in software. The device API
 provides ways to:
 
 -   Discover devices that are physically connected to the host system.
@@ -23,6 +30,7 @@ provides ways to:
 -   Register a device driver into the discovery and factory sub-system.
 -   Streaming samples with metadata into and out of the device.
 -   Set and get properties on the device object.
+-   Access various sensors on the device.
 
 See the documentation for uhd::device.
 

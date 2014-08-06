@@ -16,13 +16,12 @@ information, is the primary source of UHD documentation and "Getting
 Started"-type guides.
 
 For technical documentation related to USRP™ hardware or UHD system
-design, check out the [UHD Manual](http://files.ettus.com/uhd_docs/manual/html/).
+design, check out the [UHD Manual](http://files.ettus.com/manual/).
 
 If you are looking for API documentation, check out the following resources:
 
-* [Doxygen](http://files.ettus.com/uhd_docs/doxygen/html/index.html)
-* [Coding to the API](http://files.ettus.com/uhd_docs/manual/html/coding.html)
-* [Device Streaming](http://files.ettus.com/uhd_docs/manual/html/stream.html)
+* [Coding to the API](http://files.ettus.com/manual/page_coding.html)
+* [Device Streaming](http://files.ettus.com/manual/page_stream.html)
 
 Additionally, be sure to check out the Ettus Research
 [FAQ](http://www.ettus.com/kb/detail/frequently-asked-questions), and the
@@ -44,7 +43,7 @@ UHD can be used to build stand-alone applications with USRP™ hardware, or with
 third-party applications. Some common toolkits / frameworks are:
 
 * [GNURadio](http://code.ettus.com/redmine/ettus/projects/uhd/wiki/GNU_Radio_UHD)
-* [LabVIEW](http://www.ni.com/download/ni-usrp-1.2/3696/en/)
+* [LabVIEW](http://www.ni.com/download/ni-usrp-1.3/4711/en/)
 * [Simulink](http://www.mathworks.com/discovery/sdr/usrp.html)
 * [OpenBTS](http://wush.net/trac/rangepublic/wiki/BuildInstallRun)
 * [Iris](http://www.softwareradiosystems.com/redmine/projects/iris/wiki)
