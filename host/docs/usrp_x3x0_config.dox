@@ -147,7 +147,9 @@ save power. When running at high sample rates, reduction of CPU
 frequencies can cause significant performance issues. To prevent those
 issues, set the governor to "performance".
 
-**Ubuntu:** 1. Install cpufrequtils:
+\b Ubuntu:
+
+1. Install cpufrequtils:
 
     sudo apt-get install cpufrequtils
 
@@ -214,7 +216,7 @@ After installing ORC, when building UHD from source, you should see
 "ORC" as one of the configured UHD components.
 
     -- ######################################################
-    -- # UHD enabled components                              
+    -- # UHD enabled components
     -- ######################################################
     --   * LibUHD
          <cut for brevity>
