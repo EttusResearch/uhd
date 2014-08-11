@@ -11,7 +11,7 @@
 	- External PPS input & output
 	- External 10 MHz input & output
 	- Expandable via 2nd SFP+ interface
-	- Supported master clock rates: 200 MHz, 184.32 MHz
+	- Supported master clock rates: 200 MHz, 184.32 MHz, 120 MHz
 	- External GPIO Connector with UHD API control
 	- External USB Connection for built-in JTAG debugger
 	- Internal GPSDO option
@@ -130,6 +130,12 @@ The LEDs on the front panel can be useful in debugging hardware and software iss
 <b>Important Note: The USRP X-Series provides PCIe connectivity over MXI cable.
 We will use the 'MXI' nomenclature for the rest of this manual.</b>
 
+### Installing the PCIe Kernel Drivers
+
+In order to use the USRP X-Series on a PCIe-over-MXI connection, you need to
+install the NI RIO drivers on your system. Please follow the insructions here:
+\ref page_ni_rio_kernel
+
 ### Installing the PCI Express Interface Kit
 
 Follow the instructions listed in the <a href="http://www.ni.com/pdf/manuals/371976c.pdf">Set Up Your MXI-Express x4 System</a>
@@ -143,7 +149,7 @@ document to setup the NI PCIe-8371 module.
 - Power on the USRP X300/X310 device using the power switch located in the bottom-right corner of the front panel.
 - Power on the PC (The OS automatically recognizes the new device)
 
-<b>Note:</b> The USRP device is not hot-pluggable over PCI Express. Any connection changes with only be detected by your 
+<b>Note:</b> The USRP device is not hot-pluggable over PCI Express. Any connection changes with only be detected by your
 computer after a successful reboot.
 
 ### Troubleshooting
@@ -154,7 +160,7 @@ devices (for example, there is a yellow exclamation point on a PCI to PCI
 bridge in Windows Device Manager, despite drivers for all devices being
 installed). These situations often are due to programming errors in PCI Express
 device configuration of the BIOS. To use this software, you need a MXI-Express
-device that supports Mode 1 operation. 
+device that supports Mode 1 operation.
 Refer to <a href="http://download.ni.com/support/softlib//PXI/MXIe%20Compatibility%20Software/1.5.0/readme.html#SupportedHardware">NI MXI-Express BIOS Compatibility Software Readme</a>
 for more information.
 
@@ -164,6 +170,12 @@ The BIOS Compatibility Software can be downloaded for Windows from the <a href="
 
 <b>Important Note: The USRP X-Series provides PCIe connectivity over MXI cable
 We will use the 'MXI' nomenclature for the rest of this manual.</b>
+
+### Installing the PCIe Kernel Drivers
+
+In order to use the USRP X-Series on a PCIe-over-MXI connection, you need to
+install the NI RIO drivers on your system. Please follow the insructions here:
+\ref page_ni_rio_kernel
 
 ### Installing the PCI Express Card
 
@@ -259,7 +271,7 @@ The \e fpga tag can be set in the optional device args passed to indicate the FP
 If the above tag is specified, UHD will attempt to load the FPGA image with the requested flavor from the
 UHD images directory. If the tag is not specified, UHD will automatically detect the flavor of the image
 and attempt to load the corresponding configuration bitstream onto the device. Note that if UHD detects
-that the requested image is already loaded onto the FPGA then it will not reload it. 
+that the requested image is already loaded onto the FPGA then it will not reload it.
 
 \subsection x3x0_load_fpga_imgs_jtag Use JTAG to load FPGA images
 
@@ -326,8 +338,8 @@ transceiver modules.</b>
 \subsection x3x0_setup_network_host_interface Setup the host interface
 
 The USRP-X Series communicates at the IP/UDP layer over the Gigabit and Ten Gigabit Ethernet.
-The default IP address for the USRP X300/X310 device depends on the Ethernet Port and interface used. 
-You must configure the host Ethernet interface with a static IP address on the same subnet as the connected 
+The default IP address for the USRP X300/X310 device depends on the Ethernet Port and interface used.
+You must configure the host Ethernet interface with a static IP address on the same subnet as the connected
 device to enable communication, as shown in the following table:
 
   Ethernet Interface | USRP Ethernet Port      |  Default USRP IP Address |  Host Static IP Address | Host Static Subnet Mask | Address EEPROM key
@@ -485,8 +497,8 @@ A device similar to the following should be detected:
 UHD requires the RIO device manager service to be running in order to
 communicate with an X-Series USRP over PCIe.
 This service is installed as a part of the USRP RIO (or NI-USRP) installer. On Windows, it can be found in
-the **Services** section in the Control Panel and it is started at system boot time. To ensure that the 
-service is indeed started, navigate to the Services tag in the Windows Task Manager and ensure that the 
+the **Services** section in the Control Panel and it is started at system boot time. To ensure that the
+service is indeed started, navigate to the Services tag in the Windows Task Manager and ensure that the
 status of **niusrpriorpc** is "Running".
 
 If the device still does not enumerate after starting the device manager, make sure that the host computer
@@ -531,7 +543,7 @@ by pinging the USRP and making sure the LEDs start to blink.
 - **REF IN**: Reference clock input
 - **PCIe x4**: Connector for Cabled PCI Express link
 - **PPS/TRIG OUT**: Output port for the PPS signal
-- **PPS/TRIG IN**: Input port for the PPS signal 
+- **PPS/TRIG IN**: Input port for the PPS signal
 - **GPS**: Connection for the GPS antenna
 
 \subsection x3x0_hw_x3x0_hw_ref10M Ref Clock - 10 MHz
@@ -591,7 +603,7 @@ Further information on how to use Chipscope can be found in the Xilinx Chipscope
 
 \subsection x3x0_misc_multirx Multiple RX channels
 
-There are two complete DDC and DUC DSP chains in the FPGA. In the single channel case, 
+There are two complete DDC and DUC DSP chains in the FPGA. In the single channel case,
 only one chain is ever used. To receive from both channels, the user must set the **RX** or **TX**
 subdevice specification.
 
