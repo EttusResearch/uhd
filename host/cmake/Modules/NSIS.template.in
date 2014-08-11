@@ -31,7 +31,7 @@
 ;General
 
   ;Name and file
-  Name "USRP Hardware Driver"
+  Name "USRP Hardware Driver @CPACK_PACKAGE_VERSION@"
   OutFile "@CPACK_TOPLEVEL_DIRECTORY@/@CPACK_OUTPUT_FILE_NAME@"
 
   ;Set compression
@@ -153,6 +153,7 @@ Var AR_RegFlags
 
   !define MUI_HEADERIMAGE
   !define MUI_ABORTWARNING
+  !define MUI_WELCOMEPAGE_TITLE_3LINES # Extra space for the title area
     
 ;--------------------------------
 ; path functions
