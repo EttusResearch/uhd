@@ -70,10 +70,6 @@ public:
     //! load an FPGA image
     virtual boost::uint32_t load_fpga(const std::string filestring) = 0;
 
-    //! send SPI through the FX3
-    virtual void transact_spi( unsigned char *tx_data, size_t num_tx_bits, \
-            unsigned char *rx_data, size_t num_rx_bits) = 0;
-
     virtual void write_eeprom(boost::uint16_t addr, boost::uint16_t offset, const uhd::byte_vector_t &bytes) = 0;
 
     virtual uhd::byte_vector_t read_eeprom(boost::uint16_t addr, boost::uint16_t offset, size_t num_bytes) = 0;

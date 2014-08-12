@@ -10,7 +10,7 @@
 #include "cyu3types.h"
 #include "cyu3usbconst.h"
 
-#define FX3_COMPAT_MAJOR            (uint8_t)(5)
+#define FX3_COMPAT_MAJOR            (uint8_t)(6)
 #define FX3_COMPAT_MINOR            (uint8_t)(0)
 
 /* GPIO Pins */
@@ -67,16 +67,11 @@
 #define B200_VREQ_WRITE_SB              (uint8_t)(0x29)
 #define B200_VREQ_SET_SB_BAUD_DIV       (uint8_t)(0x30)
 #define B200_VREQ_FLUSH_DATA_EPS        (uint8_t)(0x31)
-#define B200_VREQ_SPI_WRITE_AD9361      (uint8_t)(0x32)
-#define B200_VREQ_SPI_READ_AD9361       (uint8_t)(0x42)
 #define B200_VREQ_FPGA_CONFIG           (uint8_t)(0x55)
 #define B200_VREQ_TOGGLE_FPGA_RESET     (uint8_t)(0x62)
 #define B200_VREQ_TOGGLE_GPIF_RESET     (uint8_t)(0x72)
 #define B200_VREQ_GET_USB_SPEED         (uint8_t)(0x80)
 #define B200_VREQ_GET_STATUS            (uint8_t)(0x83)
-#define B200_VREQ_AD9361_CTRL_WRITE     (uint8_t)(0x90)
-#define B200_VREQ_AD9361_CTRL_READ      (uint8_t)(0x91)
-#define B200_VREQ_AD9361_LOOPBACK       (uint8_t)(0x92)
 #define B200_VREQ_RESET_DEVICE          (uint8_t)(0x99)
 #define B200_VREQ_EEPROM_WRITE          (uint8_t)(0xBA)
 #define B200_VREQ_EEPROM_READ           (uint8_t)(0xBB)
@@ -86,8 +81,6 @@
 #define EVENT_GPIO_INITB_RISE           (1 << 3)
 #define EVENT_FPGA_CONFIG               (1 << 4)
 #define EVENT_RE_ENUM                   (1 << 5)
-#define EVENT_AD9361_XACT_INIT          (1 << 6)
-#define EVENT_AD9361_XACT_DONE          (1 << 7)
 
 
 /* FX3 States */

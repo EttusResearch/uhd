@@ -19,13 +19,9 @@ MODULE = b200_main
 
 SOURCE += $(MODULE).c
 SOURCE += b200_usb_descriptors.c
-SOURCE += b200_ad9361.c
 SOURCE += b200_i2c.c
 
-INCLUDES = b200_main.h b200_vrq.h b200_gpifconfig.h b200_i2c.h
-INCLUDES += ../ad9361/include/ad9361_transaction.h
-
-INCFLAGS = -I ../ad9361/include
+INCLUDES = b200_main.h b200_gpifconfig.h b200_i2c.h
 
 LDLIBS  += \
 	"$$ARMGCC_INSTALL_PATH"/arm-none-eabi/lib/libm.a

@@ -12,7 +12,6 @@
 
 #include "b200_main.h"
 #include "b200_gpifconfig.h"
-#include "b200_vrq.h"
 #include "b200_i2c.h"
 
 #include "cyu3dma.h"
@@ -28,9 +27,6 @@
 #include "cyfxversion.h"
 #include "pib_regs.h"
 
-#include <ad9361_transaction.h>
-#include <ad9361_dispatch.h>
-
 #define STATIC_SAVER static // Save stack space for variables in a non-re-entrant function (e.g. USB setup callback)
 
 /*
@@ -40,7 +36,6 @@
 
 //#define HAS_HEAP                    // This requires memory to be set aside for the heap (e.g. required for printing floating-point numbers). You can apply the accompanying patch ('fx3_mem_map.patch') to fx3.ld & cyfxtx.c to create one.
 //#define ENABLE_MSG                  // This will cause the compiled code to exceed the default text memory area (SYS_MEM). You can apply the accompanying patch ('fx3_mem_map.patch') to fx3.ld & cyfxtx.c to resize the memory map so it will fit.
-//#define   ENABLE_AD9361_LOGGING     // When enabling this, you *must* enable the heap with HAS_HEAP (and apply the accompanying memory map patch 'fx3_mem_map.patch') otherwise the FW will crash when printing a floating-point number (as there is no heap for _sbrk by default)
 //#define ENABLE_MANUAL_DMA_XFER
 //#define   ENABLE_MANUAL_DMA_XFER_FROM_HOST
 //#define   ENABLE_MANUAL_DMA_XFER_TO_HOST
@@ -69,13 +64,6 @@
 
 #ifdef ENABLE_MSG
 #pragma message "msg enabled"
-
-#ifdef ENABLE_AD9361_LOGGING
-#pragma message "   AD9361 logging enabled"
-#else
-#pragma message "   AD9361 logging disabled"
-#endif // ENABLE_AD9361_LOGGING
-
 #else
 #pragma message "msg disabled"
 #endif // ENABLE_MSG
@@ -156,20 +144,14 @@ static CyU3PThread thread_fpga_config;
 #ifdef ENABLE_RE_ENUM_THREAD
 static CyU3PThread thread_re_enum;
 #endif // ENABLE_RE_ENUM_THREAD
-static CyU3PThread thread_ad9361;
 
 static CyBool_t g_app_running = CyFalse;
 static uint8_t g_fx3_state = STATE_UNDEFINED;
 
-//#define AD9361_DISPATCH_PACKET_SIZE 64  // Must fit into smallest VREQ
 #define USB2_VREQ_BUF_SIZE          64
 #define USB3_VREQ_BUF_SIZE          512
 #define MIN_VREQ_BUF_SIZE           USB2_VREQ_BUF_SIZE
 #define MAX_VREQ_BUF_SIZE           USB3_VREQ_BUF_SIZE
-
-#if AD9361_DISPATCH_PACKET_SIZE > MIN_VREQ_BUF_SIZE
-#error "AD9361_DISPATCH_PACKET_SIZE must be less than MIN_VREQ_BUF_SIZE"
-#endif
 
 static uint16_t g_vendor_req_buff_size = MIN_VREQ_BUF_SIZE;
 static uint8_t g_vendor_req_buffer[MAX_VREQ_BUF_SIZE] __attribute__ ((aligned (32)));
@@ -179,8 +161,6 @@ static uint8_t fpga_hash[4] __attribute__ ((aligned (32)));
 static uint8_t fw_hash[4] __attribute__ ((aligned (32)));
 static uint8_t compat_num[2];
 static uint32_t g_fpga_programming_write_count = 0;
-
-static char g_ad9361_response[AD9361_DISPATCH_PACKET_SIZE];
 
 #define COUNTER_MAGIC       0x10024001
 #define LOG_BUFFER_SIZE     /*MAX_VREQ_BUF_SIZE*/1024	// [Max vreq @ USB3 (64 @ USB2)] Can be larger
@@ -682,214 +662,6 @@ void gpio_interrupt_callback(uint8_t gpio_id) {
             CyU3PEventSet(&g_event_usb_config, EVENT_GPIO_INITB_RISE, CYU3P_EVENT_OR);
         }
     }
-}
-
-
-// The following two functions are intended to replace write_spi_to_ad9361
-// and read_spi_from_ad9361 after the code porting is complete
-/*! Perform a register write to the ad9361 chip.
- * A pointer to the register address followed by data will be provided as 
- * parameter
- */
-static void write_ad9361_reg(uint16_t reg, uint8_t val) {
-
-    CyBool_t gpio_value;
-    uint8_t write_buff[3];
-    MAKE_AD9361_WRITE(write_buff, reg, val)
-
-    // Number of bytes we are writing.
-    uint8_t num_bytes = 3;  //register address = 2 bytes, data = 1 byte
-
-    CyU3PGpioSetValue(GPIO_FX3_CE, 0);
-
-    // Clock the data out to AD9361 over SPI.
-    int8_t bit_count, byte_count;
-    for(byte_count = 0; byte_count < num_bytes; byte_count++) {
-
-        uint8_t miso = 0x00;
-        uint8_t data = write_buff[byte_count];
-
-        for(bit_count = 7; bit_count >= 0; bit_count--) {
-            CyU3PGpioSetValue(GPIO_FX3_SCLK, 1);
-            CyU3PGpioSetValue(GPIO_FX3_MOSI, ((data >> bit_count) & 0x01));
-            CyU3PGpioSetValue(GPIO_FX3_SCLK, 0);
-
-            CyU3PGpioGetValue(GPIO_FX3_MISO, &gpio_value);
-            if(gpio_value) {
-                miso |= (1 << bit_count);
-            }
-        }
-        // FIXME: Determine what to do with miso value;
-    }
-
-    CyU3PGpioSetValue(GPIO_FX3_MOSI, 0);
-    CyU3PGpioSetValue(GPIO_FX3_CE, 1);
-}
-
-/*! Perform a register read from to the ad9361 chip.
- * A pointer to register address will be provided as parameter
- * The function returns the value read from the register
- */
-static uint8_t read_ad9361_reg(uint16_t reg) {
-
-    CyBool_t gpio_value;
-    uint8_t write_buff[2];
-    MAKE_AD9361_READ(write_buff, reg)
-
-    // Each 9361 register read returns 1 byte
-
-    CyU3PGpioSetValue(GPIO_FX3_CE, 0);
-
-    // Write the two register address bytes.
-    int8_t bit_count, byte_count;
-    for(byte_count = 0; byte_count < 2; byte_count++) {
-
-        uint8_t miso = 0x00;
-        uint8_t data = write_buff[byte_count];
-
-        for(bit_count = 7; bit_count >= 0; bit_count--) {
-            CyU3PGpioSetValue(GPIO_FX3_SCLK, 1);
-            CyU3PGpioSetValue(GPIO_FX3_MOSI, ((data >> bit_count) & 0x01));
-            CyU3PGpioSetValue(GPIO_FX3_SCLK, 0);
-
-            CyU3PGpioGetValue(GPIO_FX3_MISO, &gpio_value);
-            if(gpio_value) {
-                miso |= (1 << bit_count);
-            }
-        }
-        // FIXME: Determine what to do with miso value;
-    }
-
-    CyU3PGpioSetValue(GPIO_FX3_MOSI, 0);
-
-    // Read the response data from the chip.
-    uint8_t data = 0x00;
-
-    for(bit_count = 7; bit_count >= 0; bit_count--) {
-        CyU3PGpioSetValue(GPIO_FX3_SCLK, 1);
-
-        CyU3PGpioGetValue(GPIO_FX3_MISO, &gpio_value);
-        if(gpio_value) {
-            data |= (1 << bit_count);
-        }
-
-        CyU3PGpioSetValue(GPIO_FX3_SCLK, 0);
-    }
-    CyU3PGpioSetValue(GPIO_FX3_CE, 1);
-    return data;
-}
-
-/*! Perform a register write to the ad9361 chip.
- *
- * This function will take data received over EP0, as a vendor request, and
- * perform a SPI write to ad9361. This requires that the FPGA be passing these
- * SPI lines through to the ad9361 chip. */
-void write_spi_to_ad9361(void) {
-
-    CyBool_t gpio_value;
-
-    /* Pull out the number of bytes we are writing. */
-    uint8_t num_bytes = ((g_vendor_req_buffer[0] & 0x70) >> 4) + 1;
-
-    CyU3PGpioSetValue(GPIO_FX3_CE, 0);
-
-    /* Clock the data out to AD9361 over SPI. */
-    int8_t bit_count, byte_count;
-    for(byte_count = 0; byte_count < (num_bytes + 2); byte_count++) {
-
-        uint8_t miso = 0x00;
-        uint8_t data = g_vendor_req_buffer[byte_count];
-
-        for(bit_count = 7; bit_count >= 0; bit_count--) {
-            CyU3PGpioSetValue(GPIO_FX3_SCLK, 1);
-            CyU3PGpioSetValue(GPIO_FX3_MOSI, ((data >> bit_count) & 0x01));
-            CyU3PGpioSetValue(GPIO_FX3_SCLK, 0);
-
-            CyU3PGpioGetValue(GPIO_FX3_MISO, &gpio_value);
-            if(gpio_value) {
-                miso |= (1 << bit_count);
-            }
-        }
-
-        g_vendor_req_buffer[byte_count] = miso;
-    }
-
-    CyU3PGpioSetValue(GPIO_FX3_MOSI, 0);
-    CyU3PGpioSetValue(GPIO_FX3_CE, 1);
-}
-
-
-/*! Perform a register read from the ad9361 chip.
- *
- * This function will write a command to the ad9361 chip, performing a register
- * read, and store the returned data in the vendor request buffer. This data can
- * then be retrieved with another vendor request from the host.
- *
- * This requires that the FPGA be passing these SPI lines through to the
- * ad9361 chip. */
-void read_spi_from_ad9361(void) {
-
-    CyBool_t gpio_value;
-
-    /* Pull out the number of bytes we are reading. */
-    uint8_t num_bytes = ((g_vendor_req_buffer[0] & 0x70) >> 4) + 1;
-
-    CyU3PGpioSetValue(GPIO_FX3_CE, 0);
-
-    /* Write the two instruction bytes. */
-    int8_t bit_count, byte_count;
-    for(byte_count = 0; byte_count < 2; byte_count++) {
-
-        uint8_t miso = 0x00;
-        uint8_t data = g_vendor_req_buffer[byte_count];
-
-        for(bit_count = 7; bit_count >= 0; bit_count--) {
-            CyU3PGpioSetValue(GPIO_FX3_SCLK, 1);
-            CyU3PGpioSetValue(GPIO_FX3_MOSI, ((data >> bit_count) & 0x01));
-            CyU3PGpioSetValue(GPIO_FX3_SCLK, 0);
-
-            CyU3PGpioGetValue(GPIO_FX3_MISO, &gpio_value);
-            if(gpio_value) {
-                miso |= (1 << bit_count);
-            }
-        }
-
-        g_vendor_req_buffer[byte_count] = miso;
-    }
-
-    CyU3PGpioSetValue(GPIO_FX3_MOSI, 0);
-
-    /* Read the response data from the chip. */
-    for(byte_count = 0; byte_count < num_bytes; byte_count++) {
-
-        uint8_t data = 0x00;
-
-        for(bit_count = 7; bit_count >= 0; bit_count--) {
-            CyU3PGpioSetValue(GPIO_FX3_SCLK, 1);
-
-            CyU3PGpioGetValue(GPIO_FX3_MISO, &gpio_value);
-            if(gpio_value) {
-                data |= (1 << bit_count);
-            }
-
-            CyU3PGpioSetValue(GPIO_FX3_SCLK, 0);
-        }
-
-        g_vendor_req_buffer[byte_count + 2] = data;
-    }
-
-    CyU3PGpioSetValue(GPIO_FX3_CE, 1);
-}
-
-
-uint32_t ad9361_transact_spi(const uint32_t bits) {
-    // FIXME: Could make this more sane
-    if ((bits >> 23) & 0x1)
-    {
-        write_ad9361_reg(bits >> 8, bits & 0xff);
-        return 0;
-    }
-    return read_ad9361_reg(bits >> 8);
 }
 
 
@@ -1891,22 +1663,6 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                 break;
             }
 
-            case B200_VREQ_SPI_WRITE_AD9361: {
-                CyU3PUsbGetEP0Data(g_vendor_req_buff_size, g_vendor_req_buffer, \
-                        &read_count);
-
-                write_spi_to_ad9361();  // FIXME: Should have g_vendor_req_buffer & read_count passed in as args
-                break;
-            }
-
-            case B200_VREQ_SPI_READ_AD9361: {
-                CyU3PUsbGetEP0Data(g_vendor_req_buff_size, g_vendor_req_buffer, \
-                        &read_count);
-
-                read_spi_from_ad9361(); // FIXME: Should have g_vendor_req_buffer & read_count passed in as args
-                break;
-            }
-
             case B200_VREQ_LOOP_CODE: {
                 CyU3PUsbSendEP0Data(g_vendor_req_buff_size, g_vendor_req_buffer);
                 break;
@@ -2149,55 +1905,6 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
             case B200_VREQ_GET_STATUS: {
                 g_vendor_req_buffer[0] = g_fx3_state;
                 CyU3PUsbSendEP0Data(1, g_vendor_req_buffer);
-                break;
-            }
-
-            case B200_VREQ_AD9361_CTRL_READ: {
-                CyU3PUsbSendEP0Data(g_vendor_req_buff_size, g_vendor_req_buffer);
-                /*
-                 * This is where vrb gets sent back to the host
-                 */
-                break;
-            }
-
-            case B200_VREQ_AD9361_CTRL_WRITE: {
-                CyU3PUsbGetEP0Data(g_vendor_req_buff_size, g_vendor_req_buffer, &read_count);
-                CyU3PEventSet(&g_event_usb_config, EVENT_AD9361_XACT_INIT, CYU3P_EVENT_OR);
-                
-                uint32_t event_flag;
-                CyU3PEventGet(&g_event_usb_config, EVENT_AD9361_XACT_DONE, CYU3P_EVENT_AND_CLEAR, &event_flag, CYU3P_WAIT_FOREVER);
-                
-                memcpy(g_vendor_req_buffer, g_ad9361_response, AD9361_DISPATCH_PACKET_SIZE);
-                break;
-            }
-            
-            case B200_VREQ_AD9361_LOOPBACK: {
-                CyU3PUsbGetEP0Data(g_vendor_req_buff_size, g_vendor_req_buffer, &read_count);
-                
-                if (read_count > 0) {
-                    ad9361_transaction_t xact;
-                    memset(&xact, 0x00, sizeof(xact));
-                    
-                    xact.version = AD9361_TRANSACTION_VERSION;
-                    xact.action = AD9361_ACTION_SET_CODEC_LOOP;
-                    xact.sequence = 0;
-                    xact.value.codec_loop = g_vendor_req_buffer[0];
-                    
-                    memcpy(g_vendor_req_buffer, &xact, sizeof(xact));
-                    
-                    CyU3PEventSet(&g_event_usb_config, EVENT_AD9361_XACT_INIT, CYU3P_EVENT_OR);
-                    
-                    uint32_t event_flag;
-                    CyU3PEventGet(&g_event_usb_config, EVENT_AD9361_XACT_DONE, CYU3P_EVENT_AND_CLEAR, &event_flag, CYU3P_WAIT_FOREVER);
-                    
-                    memcpy(g_vendor_req_buffer, g_ad9361_response, AD9361_DISPATCH_PACKET_SIZE);
-                    
-                    if (xact.value.codec_loop)
-                        msg("Codec loopback ON");
-                    else
-                        msg("Codec loopback OFF");
-                }
-                
                 break;
             }
 
@@ -2684,23 +2391,6 @@ void thread_main_app_entry(uint32_t input) {
     }
 }
 
-
-void thread_ad9361_entry(uint32_t input) {
-    uint32_t event_flag;
-    
-    //msg("thread_ad9361_entry");
-    
-    while (1) {
-        if (CyU3PEventGet(&g_event_usb_config, \
-            EVENT_AD9361_XACT_INIT, CYU3P_EVENT_AND_CLEAR, \
-            &event_flag, CYU3P_WAIT_FOREVER) == CY_U3P_SUCCESS) {
-            ad9361_dispatch((const char*)g_vendor_req_buffer, g_ad9361_response);
-            
-            CyU3PEventSet(&g_event_usb_config, EVENT_AD9361_XACT_DONE, CYU3P_EVENT_OR);
-        }
-    }
-}
-
 static uint16_t g_poll_last_phy_error_count = 0, g_poll_last_link_error_count = 0;
 static uint32_t g_poll_last_phy_error_status = 0;
 
@@ -2966,7 +2656,7 @@ void thread_fpga_sb_poll_entry(uint32_t input) {
  * If thread creation fails, lock the system and force a power reset.
  */
 void CyFxApplicationDefine(void) {
-    void *app_thread_ptr, *fpga_thread_ptr, *ad9361_thread_ptr;
+    void *app_thread_ptr, *fpga_thread_ptr;
 #ifdef ENABLE_RE_ENUM_THREAD
     void *re_enum_thread_ptr;
 #endif // ENABLE_RE_ENUM_THREAD
@@ -2975,9 +2665,6 @@ void CyFxApplicationDefine(void) {
 #endif // ENABLE_FPGA_SB
     
     g_counters.magic = COUNTER_MAGIC;
-#ifdef ENABLE_AD9361_LOGGING
-    ad9361_set_msgfn(msg);
-#endif // ENABLE_AD9361_LOGGING
     memset(&g_config, 0xFF, sizeof(g_config));  // Initialise to -1
     
     CyU3PMutexCreate(&g_log_lock, CYU3P_NO_INHERIT);
@@ -3032,7 +2719,6 @@ void CyFxApplicationDefine(void) {
 #ifdef ENABLE_RE_ENUM_THREAD
     re_enum_thread_ptr = CyU3PMemAlloc(APP_THREAD_STACK_SIZE);
 #endif // ENABLE_RE_ENUM_THREAD
-    ad9361_thread_ptr = CyU3PMemAlloc(APP_THREAD_STACK_SIZE);
 #ifdef ENABLE_FPGA_SB
     fpga_sb_poll_thread_ptr = CyU3PMemAlloc(APP_THREAD_STACK_SIZE);
 #endif // ENABLE_FPGA_SB
@@ -3077,18 +2763,6 @@ void CyFxApplicationDefine(void) {
                               CYU3P_NO_TIME_SLICE,
                               CYU3P_AUTO_START);
 #endif // ENABLE_RE_ENUM_THREAD
-    /* Create thread to handle AD9361 transactions */
-    if (ad9361_thread_ptr != NULL)
-        CyU3PThreadCreate(&thread_ad9361,
-                              "500:B200 AD9361",
-                              thread_ad9361_entry,
-                              0,
-                              ad9361_thread_ptr,
-                              APP_THREAD_STACK_SIZE,
-                              THREAD_PRIORITY,
-                              THREAD_PRIORITY,
-                              CYU3P_NO_TIME_SLICE,
-                              CYU3P_AUTO_START);
 #ifdef ENABLE_FPGA_SB
     /* Create thread to handling Settings Bus logging/transactions */
     if (fpga_sb_poll_thread_ptr != NULL)

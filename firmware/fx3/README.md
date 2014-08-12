@@ -9,10 +9,8 @@ show you how to build our firmware source
 
 **A brief "Theory of Operations":**
 The host sends commands to the FX3, our USB3 PHY, which has an on-board ARM
-which runs the FX3 firmware code (hex file). That code translates commands into
-SPI commands to/from the AD9361. The SPI lines run through the FPGA (bin or bit
-file), where they are level-translated, and then head to the AD9361. Note that
-the FPGA takes no action on these SPI lines. They are passive pass-throughs.
+which runs the FX3 firmware code (hex file). That code is responsible for
+managing the transport from the host to the FPGA by configuring IO and DMA.
 
 ## Setting up the Cypress SDK
 
@@ -46,7 +44,6 @@ uhd.git/
                  |
                  --fx3/
                       |
-                      --ad9361/             # From UHD
                       --b200/               # From UHD
                       --common/             # From Cypress SDK
                       --gpif2_designer/     # From UHD

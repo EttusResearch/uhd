@@ -57,15 +57,11 @@ const static boost::uint8_t B200_VREQ_GET_FPGA_HASH = 0x1D;
 const static boost::uint8_t B200_VREQ_SET_FW_HASH = 0x1E;
 const static boost::uint8_t B200_VREQ_GET_FW_HASH = 0x1F;
 const static boost::uint8_t B200_VREQ_LOOP = 0x22;
-const static boost::uint8_t B200_VREQ_SPI_WRITE = 0x32;
-const static boost::uint8_t B200_VREQ_SPI_READ = 0x42;
 const static boost::uint8_t B200_VREQ_FPGA_CONFIG = 0x55;
 const static boost::uint8_t B200_VREQ_FPGA_RESET = 0x62;
 const static boost::uint8_t B200_VREQ_GPIF_RESET = 0x72;
 const static boost::uint8_t B200_VREQ_GET_USB = 0x80;
 const static boost::uint8_t B200_VREQ_GET_STATUS = 0x83;
-const static boost::uint8_t B200_VREQ_AD9361_CTRL_WRITE = 0x90;
-const static boost::uint8_t B200_VREQ_AD9361_CTRL_READ = 0x91;
 const static boost::uint8_t B200_VREQ_FX3_RESET = 0x99;
 const static boost::uint8_t B200_VREQ_EEPROM_WRITE = 0xBA;
 const static boost::uint8_t B200_VREQ_EEPROM_READ = 0xBB;
@@ -268,82 +264,6 @@ public:
             throw uhd::io_error((boost::format("Short read on read EEPROM (expecting: %d, returned: %d)") % num_bytes % bytes_read).str());
 
         return recv_bytes;
-    }
-
-    void transact_spi(
-        unsigned char *tx_data,
-        size_t num_tx_bits,
-        unsigned char *rx_data,
-        size_t num_rx_bits) {
-        int ret = 0;
-        boost::uint16_t tx_length = num_tx_bits / 8;
-
-        if(tx_data[0] & 0x80) {
-            ret = fx3_control_write(B200_VREQ_SPI_WRITE, 0x00, \
-                    0x00, tx_data, tx_length);
-        } else {
-            ret = fx3_control_write(B200_VREQ_SPI_READ, 0x00, \
-                    0x00, tx_data, tx_length);
-        }
-
-        if (ret < 0)
-            throw uhd::io_error((boost::format("Failed to write SPI (%d: %s)") % ret % libusb_error_name(ret)).str());
-        else if (ret != tx_length)
-            throw uhd::io_error((boost::format("Short write on write SPI (expecting: %d, returned: %d)") % tx_length % ret).str());
-
-
-        if(num_rx_bits) {
-            boost::uint16_t total_length = num_rx_bits / 8;
-
-            ret = fx3_control_read(B200_VREQ_LOOP, 0x00, \
-                    0x00, rx_data, total_length);
-
-            if (ret < 0)
-                throw uhd::io_error((boost::format("Failed to readback (%d: %s)") % ret % libusb_error_name(ret)).str());
-            else if (ret != total_length)
-                throw uhd::io_error((boost::format("Short read on readback (expecting: %d, returned: %d)") % total_length % ret).str());
-        }
-    }
-
-    void ad9361_transact(const unsigned char in_buff[AD9361_DISPATCH_PACKET_SIZE], unsigned char out_buff[AD9361_DISPATCH_PACKET_SIZE]) {
-        const int bytes_to_write = AD9361_DISPATCH_PACKET_SIZE;
-        const int bytes_to_read = AD9361_DISPATCH_PACKET_SIZE;
-        const size_t read_retries = 5;
-
-        int ret = fx3_control_write(B200_VREQ_AD9361_CTRL_WRITE, 0x00, 0x00, (unsigned char *)in_buff, bytes_to_write);
-        if (ret < 0)
-            throw uhd::io_error((boost::format("Failed to write AD9361 (%d: %s)") % ret % libusb_error_name(ret)).str());
-        else if (ret != bytes_to_write)
-            throw uhd::io_error((boost::format("Short write on write AD9361 (expecting: %d, returned: %d)") % bytes_to_write % ret).str());
-
-        for (size_t i = 0; i < read_retries; i++)
-        {
-            ret = fx3_control_read(B200_VREQ_AD9361_CTRL_READ, 0x00, 0x00, out_buff, bytes_to_read, 3000);
-            if (ret < 0)
-            {
-                if (ret == LIBUSB_ERROR_TIMEOUT)
-                {
-                    UHD_LOG << (boost::format("Failed to read AD9361 (%d: %s). Retrying (%d of %d)...")
-                            % ret
-                            % libusb_error_name(ret)
-                            % (i+1)
-                            % read_retries
-                        ) << std::endl;
-                }
-                else
-                {
-                    throw uhd::io_error((boost::format("Failed to read AD9361 (%d: %s)")
-                        % ret
-                        % libusb_error_name(ret)
-                    ).str());
-                }
-            }
-
-            if (ret == bytes_to_read)
-                return;
-        }
-
-        throw uhd::io_error(str(boost::format("Failed to read complete AD9361 (expecting: %d, last read: %d)") % bytes_to_read % ret));
     }
 
     void load_firmware(const std::string filestring, UHD_UNUSED(bool force) = false)

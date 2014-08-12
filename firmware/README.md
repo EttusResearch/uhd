@@ -18,7 +18,7 @@ __Build Instructions:__
 
 ## fx3/
 
-__Description:__ This is the firmware for the FX3 USB PHY, and the AD9361 RFIC.
+__Description:__ This is the firmware for the FX3 USB PHY.
 
 __Devices:__ USRP B200 and USRP B210
 
