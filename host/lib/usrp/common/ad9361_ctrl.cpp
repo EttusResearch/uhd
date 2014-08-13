@@ -150,7 +150,7 @@ private:
         if (sub == "RX") {
             return ad9361_device_t::RX;
         } else if (sub == "TX") {
-            return ad9361_device_t::RX;
+            return ad9361_device_t::TX;
         } else {
             throw uhd::runtime_error("ad9361_ctrl got an invalid channel string.");
         }
