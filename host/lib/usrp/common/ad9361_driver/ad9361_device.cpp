@@ -10,12 +10,11 @@
 #include <cstring>
 #include <cmath>
 #include <uhd/exception.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/scoped_array.hpp>
-
-//TODO: Convert these debug messages into UHD_LOG statements
-#define debug_msg(s, ...)
+#include <boost/format.hpp>
 
 ////////////////////////////////////////////////////////////
 // the following macros evaluate to a compile time constant
@@ -37,12 +36,12 @@
 +((x&0x0F000000LU)?64:0) \
 +((x&0xF0000000LU)?128:0)
 
-/* *** user macros *** */
-
-namespace uhd { namespace usrp {
-
 /* for upto 8-bit binary constants */
 #define B8(d) ((unsigned char)B8__(HEX__(d)))
+////////////////////////////////////////////////////////////
+
+
+namespace uhd { namespace usrp {
 
 /* This is a simple comparison for very large double-precision floating
  * point numbers. It is used to prevent re-tunes for frequencies that are
@@ -1015,7 +1014,7 @@ void ad9361_device_t::_setup_synth(direction_t direction, double vcorate)
  * fed to the public set_clock_rate function. */
 double ad9361_device_t::_tune_bbvco(const double rate)
 {
-    debug_msg("[_tune_bbvco] rate=%.10f", rate);
+    UHD_LOG << boost::format("[ad9361_device_t::_tune_bbvco] rate=%.10f\n") % rate;
 
     /* Let's not re-tune to the same frequency over and over... */
     if (freq_is_nearly_equal(rate, _req_coreclk)) {
@@ -1043,15 +1042,13 @@ double ad9361_device_t::_tune_bbvco(const double rate)
     if (i == 7)
         throw uhd::runtime_error("[ad9361_device_t] _tune_bbvco: wrong vcorate");
 
-    debug_msg("[_tune_bbvco] vcodiv=%d vcorate=%.10f", vcodiv, vcorate);
-
+    UHD_LOG << boost::format("[ad9361_device_t::_tune_bbvco] vcodiv=%d vcorate=%.10f\n") % vcodiv % vcorate;
     /* Fo = Fref * (Nint + Nfrac / mod) */
     int nint = vcorate / fref;
-    debug_msg("[_tune_bbvco] (nint)=%.10f", (vcorate / fref));
+    UHD_LOG << boost::format("[ad9361_device_t::_tune_bbvco] (nint)=%.10f\n") % (vcorate / fref);
     int nfrac = lround(((vcorate / fref) - (double) nint) * (double) modulus);
-    debug_msg("[_tune_bbvco] (nfrac)=%.10f",
-            (((vcorate / fref) - (double) nint) * (double) modulus));
-    debug_msg("[_tune_bbvco] nint=%d nfrac=%d", nint, nfrac);
+    UHD_LOG << boost::format("[ad9361_device_t::_tune_bbvco] (nfrac)=%.10f\n") % (((vcorate / fref) - (double) nint) * (double) modulus);
+    UHD_LOG << boost::format("[ad9361_device_t::_tune_bbvco] nint=%d nfrac=%d\n") % nint % nfrac;
     double actual_vcorate = fref
             * ((double) nint + ((double) nfrac / (double) modulus));
 
@@ -1305,7 +1302,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         throw uhd::runtime_error("[ad9361_device_t] [_setup_rates] INVALID_CODE_PATH");
     }
 
-    debug_msg("[_setup_rates] divfactor=%d", divfactor);
+    UHD_LOG << boost::format("[ad9361_device_t::_setup_rates] divfactor=%d\n") % divfactor;
 
     /* Tune the BBPLL to get the ADC and DAC clocks. */
     const double adcclk = _tune_bbvco(rate * divfactor);
@@ -1327,7 +1324,7 @@ double ad9361_device_t::_setup_rates(const double rate)
     _io_iface->poke8(0x004, _regs.inputsel);
     _io_iface->poke8(0x00A, _regs.bbpll);
 
-    debug_msg("[_setup_rates] adcclk=%f", adcclk);
+    UHD_LOG << boost::format("[ad9361_device_t::_setup_rates] adcclk=%f\n") % adcclk;
     _baseband_bw = (adcclk / divfactor);
 
     /*
@@ -1596,7 +1593,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
         throw uhd::runtime_error("[ad9361_device_t] Requested master clock rate outside range");
     }
 
-    debug_msg("[set_clock_rate] req_rate=%.10f", req_rate);
+    UHD_LOG << boost::format("[ad9361_device_t::set_clock_rate] req_rate=%.10f\n") % req_rate;
 
     /* UHD has a habit of requesting the same rate like four times when it
      * starts up. This prevents that, and any bugs in user code that request
@@ -1636,7 +1633,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
      * all the hard work gets done. */
     double rate = _setup_rates(req_rate);
 
-    debug_msg("[set_clock_rate] rate=%.10f", rate);
+    UHD_LOG << boost::format("[ad9361_device_t::set_clock_rate] rate=%.10f\n") % rate;
 
     /* Transition to the ALERT state and calibrate everything. */
     _io_iface->poke8(0x015, 0x04); //dual synth mode, synth en ctrl en
@@ -1908,6 +1905,5 @@ void ad9361_device_t::data_port_loopback(const bool loopback_enabled)
     boost::lock_guard<boost::recursive_mutex> lock(_mutex);
     _io_iface->poke8(0x3F5, (loopback_enabled ? 0x01 : 0x00));
 }
-
 
 }}
