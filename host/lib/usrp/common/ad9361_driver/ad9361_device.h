@@ -5,7 +5,6 @@
 #ifndef INCLUDED_AD9361_DEVICE_H
 #define INCLUDED_AD9361_DEVICE_H
 
-#include <stdint.h>
 #include <ad9361_client.h>
 #include <boost/noncopyable.hpp>
 
@@ -64,7 +63,7 @@ public:
     void data_port_loopback(const bool loopback_enabled);
 
 private:    //Methods
-    void _program_fir_filter(direction_t direction, int num_taps, uint16_t *coeffs);
+    void _program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs);
     void _setup_tx_fir(size_t num_taps);
     void _setup_rx_fir(size_t num_taps);
     void _calibrate_lock_bbpll();
@@ -90,13 +89,13 @@ private:    //Methods
 
 private:    //Members
     typedef struct {
-        uint8_t vcodivs;
-        uint8_t inputsel;
-        uint8_t rxfilt;
-        uint8_t txfilt;
-        uint8_t bbpll;
-        uint8_t bbftune_config;
-        uint8_t bbftune_mode;
+        boost::uint8_t vcodivs;
+        boost::uint8_t inputsel;
+        boost::uint8_t rxfilt;
+        boost::uint8_t txfilt;
+        boost::uint8_t bbpll;
+        boost::uint8_t bbftune_config;
+        boost::uint8_t bbftune_mode;
     } chip_regs_t;
 
     //Interfaces
@@ -106,10 +105,10 @@ private:    //Members
     double              _rx_freq, _tx_freq, _req_rx_freq, _req_tx_freq;
     double              _baseband_bw, _bbpll_freq, _adcclock_freq;
     double              _req_clock_rate, _req_coreclk;
-    uint16_t            _rx_bbf_tunediv;
-    uint8_t             _curr_gain_table;
-    uint32_t            _rx1_gain, _rx2_gain, _tx1_gain, _tx2_gain;
-    int32_t             _tfir_factor;
+    boost::uint16_t     _rx_bbf_tunediv;
+    boost::uint8_t      _curr_gain_table;
+    boost::uint32_t     _rx1_gain, _rx2_gain, _tx1_gain, _tx2_gain;
+    boost::int32_t      _tfir_factor;
     //Register soft-copies
     chip_regs_t         _regs;
 };

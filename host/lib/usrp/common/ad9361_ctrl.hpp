@@ -11,7 +11,6 @@
 #include <boost/shared_ptr.hpp>
 #include <ad9361_device.h>
 #include <string>
-#include <stdint.h>
 
 static const double AD9361_CLOCK_RATE_MAX = 61.44e6;
 static const double AD9361_1_CHAN_CLOCK_RATE_MAX = AD9361_CLOCK_RATE_MAX;
@@ -29,7 +28,7 @@ public:
 
     //! make a new codec control object
     static sptr make_spi(
-        ad9361_params::sptr client_settings, uhd::spi_iface::sptr spi_iface, uint32_t slave_num);
+        ad9361_params::sptr client_settings, uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num);
 
     //! Get a list of gain names for RX or TX
     static std::vector<std::string> get_gain_names(const std::string &/*which*/)

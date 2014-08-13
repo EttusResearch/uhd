@@ -2,17 +2,13 @@
 // Copyright 2014 Ettus Research LLC
 //
 
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <cstring>
-#include <cmath>
-#include <iostream>
 #include "ad9361_filter_taps.h"
 #include "ad9361_gain_tables.h"
 #include "ad9361_synth_lut.h"
-#include "ad9361_client.h"      //Client (product) specific settings
+#include "ad9361_client.h"
 #include "ad9361_device.h"
+#include <cstring>
+#include <cmath>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/scoped_array.hpp>
@@ -116,9 +112,9 @@ int get_num_taps(int max_num_taps) {
  * how many taps are in the filter, and given a vector of the taps
  * themselves.  */
 
-void ad9361_device_t::_program_fir_filter(direction_t direction, int num_taps, uint16_t *coeffs)
+void ad9361_device_t::_program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs)
 {
-    uint16_t base;
+    boost::uint16_t base;
 
     /* RX and TX filters use largely identical sets of programming registers.
      Select the appropriate bank of registers here. */
@@ -129,7 +125,7 @@ void ad9361_device_t::_program_fir_filter(direction_t direction, int num_taps, u
     }
 
     /* Encode number of filter taps for programming register */
-    uint8_t reg_numtaps = (((num_taps / 16) - 1) & 0x07) << 5;
+    boost::uint8_t reg_numtaps = (((num_taps / 16) - 1) & 0x07) << 5;
 
     /* Turn on the filter clock. */
     _io_iface->poke8(base + 5, reg_numtaps | 0x1a);
@@ -179,16 +175,16 @@ void ad9361_device_t::_setup_rx_fir(size_t num_taps)
     for (size_t i = 0; i < num_taps; i++) {
         switch (num_taps) {
         case 128:
-            coeffs[i] = (uint16_t) hb127_coeffs[i];
+            coeffs[i] = boost::uint16_t(hb127_coeffs[i]);
             break;
         case 96:
-            coeffs[i] = (uint16_t) hb95_coeffs[i];
+            coeffs[i] = boost::uint16_t(hb95_coeffs[i]);
             break;
         case 64:
-            coeffs[i] = (uint16_t) hb63_coeffs[i];
+            coeffs[i] = boost::uint16_t(hb63_coeffs[i]);
             break;
         case 48:
-            coeffs[i] = (uint16_t) hb47_coeffs[i];
+            coeffs[i] = boost::uint16_t(hb47_coeffs[i]);
             break;
         default:
             post_err_msg("Unsupported number of Rx FIR taps.");
@@ -205,16 +201,16 @@ void ad9361_device_t::_setup_tx_fir(size_t num_taps)
     for (size_t i = 0; i < num_taps; i++) {
         switch (num_taps) {
         case 128:
-            coeffs[i] = (uint16_t) hb127_coeffs[i];
+            coeffs[i] = boost::uint16_t(hb127_coeffs[i]);
             break;
         case 96:
-            coeffs[i] = (uint16_t) hb95_coeffs[i];
+            coeffs[i] = boost::uint16_t(hb95_coeffs[i]);
             break;
         case 64:
-            coeffs[i] = (uint16_t) hb63_coeffs[i];
+            coeffs[i] = boost::uint16_t(hb63_coeffs[i]);
             break;
         case 48:
-            coeffs[i] = (uint16_t) hb47_coeffs[i];
+            coeffs[i] = boost::uint16_t(hb47_coeffs[i]);
             break;
         default:
             post_err_msg("Unsupported number of Tx FIR taps.");
@@ -315,10 +311,10 @@ double ad9361_device_t::_calibrate_baseband_rx_analog_filter()
 
     double bbbw_mhz = bbbw / 1e6;
     double temp = ((bbbw_mhz - floor_to_int(bbbw_mhz)) * 1000) / 7.8125;
-    uint8_t bbbw_khz = (uint8_t) AD9361_MIN(127, (floor_to_int(temp + 0.5)));
+    boost::uint8_t bbbw_khz = (boost::uint8_t) AD9361_MIN(127, (floor_to_int(temp + 0.5)));
 
     /* Set corner frequencies and dividers. */
-    _io_iface->poke8(0x1fb, (uint8_t) (bbbw_mhz));
+    _io_iface->poke8(0x1fb, (boost::uint8_t) (bbbw_mhz));
     _io_iface->poke8(0x1fc, bbbw_khz);
     _io_iface->poke8(0x1f8, (_rx_bbf_tunediv & 0x00FF));
     _io_iface->poke8(0x1f9, _regs.bbftune_config);
@@ -367,7 +363,7 @@ double ad9361_device_t::_calibrate_baseband_tx_analog_filter()
     }
 
     double txtune_clk = ((1.6 * bbbw * 2 * DOUBLE_PI) / DOUBLE_LN_2);
-    uint16_t txbbfdiv = AD9361_MIN(511, (ceil_to_int(_bbpll_freq / txtune_clk)));
+    boost::uint16_t txbbfdiv = AD9361_MIN(511, (ceil_to_int(_bbpll_freq / txtune_clk)));
     _regs.bbftune_mode = (_regs.bbftune_mode & 0xFE)
             | ((txbbfdiv >> 8) & 0x0001);
 
@@ -437,7 +433,7 @@ void ad9361_device_t::_calibrate_secondary_tx_filter()
         cap = 63;
     }
 
-    uint8_t reg0d0, reg0d1, reg0d2;
+    boost::uint8_t reg0d0, reg0d1, reg0d2;
 
     /* Translate baseband bandwidths to register settings. */
     if ((bbbw_mhz * 2) <= 9) {
@@ -478,14 +474,14 @@ void ad9361_device_t::_calibrate_secondary_tx_filter()
  * the RX gain settings. */
 void ad9361_device_t::_calibrate_rx_TIAs()
 {
-    uint8_t reg1eb = _io_iface->peek8(0x1eb) & 0x3F;
-    uint8_t reg1ec = _io_iface->peek8(0x1ec) & 0x7F;
-    uint8_t reg1e6 = _io_iface->peek8(0x1e6) & 0x07;
-    uint8_t reg1db = 0x00;
-    uint8_t reg1dc = 0x00;
-    uint8_t reg1dd = 0x00;
-    uint8_t reg1de = 0x00;
-    uint8_t reg1df = 0x00;
+    boost::uint8_t reg1eb = _io_iface->peek8(0x1eb) & 0x3F;
+    boost::uint8_t reg1ec = _io_iface->peek8(0x1ec) & 0x7F;
+    boost::uint8_t reg1e6 = _io_iface->peek8(0x1e6) & 0x07;
+    boost::uint8_t reg1db = 0x00;
+    boost::uint8_t reg1dc = 0x00;
+    boost::uint8_t reg1dd = 0x00;
+    boost::uint8_t reg1de = 0x00;
+    boost::uint8_t reg1df = 0x00;
 
     /* For calibration, baseband BW is half the complex BW, and must be
      * between 28e6 and 0.2e6. */
@@ -516,12 +512,12 @@ void ad9361_device_t::_calibrate_rx_TIAs()
     if (CTIA_fF > 2920) {
         reg1dc = 0x40;
         reg1de = 0x40;
-        uint8_t temp = (uint8_t) AD9361_MIN(127,
+        boost::uint8_t temp = (boost::uint8_t) AD9361_MIN(127,
                 (floor_to_int(0.5 + ((CTIA_fF - 400.0) / 320.0))));
         reg1dd = temp;
         reg1df = temp;
     } else {
-        uint8_t temp = (uint8_t) floor_to_int(0.5 + ((CTIA_fF - 400.0) / 40.0))
+        boost::uint8_t temp = (boost::uint8_t) floor_to_int(0.5 + ((CTIA_fF - 400.0) / 40.0))
                 + 0x40;
         reg1dc = temp;
         reg1de = temp;
@@ -556,9 +552,9 @@ void ad9361_device_t::_setup_adc()
         bbbw_mhz = 0.20;
     }
 
-    uint8_t rxbbf_c3_msb = _io_iface->peek8(0x1eb) & 0x3F;
-    uint8_t rxbbf_c3_lsb = _io_iface->peek8(0x1ec) & 0x7F;
-    uint8_t rxbbf_r2346 = _io_iface->peek8(0x1e6) & 0x07;
+    boost::uint8_t rxbbf_c3_msb = _io_iface->peek8(0x1eb) & 0x3F;
+    boost::uint8_t rxbbf_c3_lsb = _io_iface->peek8(0x1ec) & 0x7F;
+    boost::uint8_t rxbbf_r2346 = _io_iface->peek8(0x1e6) & 0x07;
 
     double fsadc = _adcclock_freq / 1e6;
 
@@ -587,71 +583,71 @@ void ad9361_device_t::_setup_adc()
     /* Calculate the values for all 40 settings registers.
      *
      * DO NOT TOUCH THIS UNLESS YOU KNOW EXACTLY WHAT YOU ARE DOING. kthx.*/
-    uint8_t data[40];
+    boost::uint8_t data[40];
     data[0] = 0;    data[1] = 0; data[2] = 0; data[3] = 0x24;
     data[4] = 0x24; data[5] = 0; data[6] = 0;
-    data[7] = (uint8_t) AD9361_MIN(124, (floor_to_int(-0.5
+    data[7] = (boost::uint8_t) AD9361_MIN(124, (floor_to_int(-0.5
                     + (80.0 * scale_snr * scale_res
                     * AD9361_MIN(1.0, sqrt(maxsnr * fsadc / 640.0))))));
     double data007 = data[7];
-    data[8] = (uint8_t) AD9361_MIN(255, (floor_to_int(0.5
+    data[8] = (boost::uint8_t) AD9361_MIN(255, (floor_to_int(0.5
                     + ((20.0 * (640.0 / fsadc) * ((data007 / 80.0))
                     / (scale_res * scale_cap))))));
-    data[10] = (uint8_t) AD9361_MIN(127, (floor_to_int(-0.5 + (77.0 * scale_res
+    data[10] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int(-0.5 + (77.0 * scale_res
                     * AD9361_MIN(1.0, sqrt(maxsnr * fsadc / 640.0))))));
     double data010 = data[10];
-    data[9] = (uint8_t) AD9361_MIN(127, (floor_to_int(0.8 * data010)));
-    data[11] = (uint8_t) AD9361_MIN(255, (floor_to_int(0.5
+    data[9] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int(0.8 * data010)));
+    data[11] = (boost::uint8_t) AD9361_MIN(255, (floor_to_int(0.5
                     + (20.0 * (640.0 / fsadc) * ((data010 / 77.0)
                     / (scale_res * scale_cap))))));
-    data[12] = (uint8_t) AD9361_MIN(127, (floor_to_int(-0.5
+    data[12] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int(-0.5
                     + (80.0 * scale_res * AD9361_MIN(1.0,
                     sqrt(maxsnr * fsadc / 640.0))))));
     double data012 = data[12];
-    data[13] = (uint8_t) AD9361_MIN(255, (floor_to_int(-1.5
+    data[13] = (boost::uint8_t) AD9361_MIN(255, (floor_to_int(-1.5
                     + (20.0 * (640.0 / fsadc) * ((data012 / 80.0)
                     / (scale_res * scale_cap))))));
-    data[14] = 21 * (uint8_t)(floor_to_int(0.1 * 640.0 / fsadc));
-    data[15] = (uint8_t) AD9361_MIN(127, (1.025 * data007));
+    data[14] = 21 * (boost::uint8_t)(floor_to_int(0.1 * 640.0 / fsadc));
+    data[15] = (boost::uint8_t) AD9361_MIN(127, (1.025 * data007));
     double data015 = data[15];
-    data[16] = (uint8_t) AD9361_MIN(127, (floor_to_int((data015
+    data[16] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int((data015
                     * (0.98 + (0.02 * AD9361_MAX(1.0,
                     (640.0 / fsadc) / maxsnr)))))));
     data[17] = data[15];
-    data[18] = (uint8_t) AD9361_MIN(127, (0.975 * (data010)));
+    data[18] = (boost::uint8_t) AD9361_MIN(127, (0.975 * (data010)));
     double data018 = data[18];
-    data[19] = (uint8_t) AD9361_MIN(127, (floor_to_int((data018
+    data[19] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int((data018
                     * (0.98 + (0.02 * AD9361_MAX(1.0,
                     (640.0 / fsadc) / maxsnr)))))));
     data[20] = data[18];
-    data[21] = (uint8_t) AD9361_MIN(127, (0.975 * data012));
+    data[21] = (boost::uint8_t) AD9361_MIN(127, (0.975 * data012));
     double data021 = data[21];
-    data[22] = (uint8_t) AD9361_MIN(127, (floor_to_int((data021
+    data[22] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int((data021
                     * (0.98 + (0.02 * AD9361_MAX(1.0,
                     (640.0 / fsadc) / maxsnr)))))));
     data[23] = data[21];
     data[24] = 0x2e;
-    data[25] = (uint8_t)(floor_to_int(128.0 + AD9361_MIN(63.0,
+    data[25] = (boost::uint8_t)(floor_to_int(128.0 + AD9361_MIN(63.0,
                     63.0 * (fsadc / 640.0))));
-    data[26] = (uint8_t)(floor_to_int(AD9361_MIN(63.0, 63.0 * (fsadc / 640.0)
+    data[26] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0, 63.0 * (fsadc / 640.0)
                     * (0.92 + (0.08 * (640.0 / fsadc))))));
-    data[27] = (uint8_t)(floor_to_int(AD9361_MIN(63.0,
+    data[27] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0,
                     32.0 * sqrt(fsadc / 640.0))));
-    data[28] = (uint8_t)(floor_to_int(128.0 + AD9361_MIN(63.0,
+    data[28] = (boost::uint8_t)(floor_to_int(128.0 + AD9361_MIN(63.0,
                     63.0 * (fsadc / 640.0))));
-    data[29] = (uint8_t)(floor_to_int(AD9361_MIN(63.0,
+    data[29] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0,
                     63.0 * (fsadc / 640.0)
                     * (0.92 + (0.08 * (640.0 / fsadc))))));
-    data[30] = (uint8_t)(floor_to_int(AD9361_MIN(63.0,
+    data[30] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0,
                     32.0 * sqrt(fsadc / 640.0))));
-    data[31] = (uint8_t)(floor_to_int(128.0 + AD9361_MIN(63.0,
+    data[31] = (boost::uint8_t)(floor_to_int(128.0 + AD9361_MIN(63.0,
                     63.0 * (fsadc / 640.0))));
-    data[32] = (uint8_t)(floor_to_int(AD9361_MIN(63.0,
+    data[32] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0,
                     63.0 * (fsadc / 640.0) * (0.92
                     + (0.08 * (640.0 / fsadc))))));
-    data[33] = (uint8_t)(floor_to_int(AD9361_MIN(63.0,
+    data[33] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0,
                     63.0 * sqrt(fsadc / 640.0))));
-    data[34] = (uint8_t) AD9361_MIN(127, (floor_to_int(64.0
+    data[34] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int(64.0
                     * sqrt(fsadc / 640.0))));
     data[35] = 0x40;
     data[36] = 0x40;
@@ -751,8 +747,8 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
      * 3) Re-read 0A3 to get bits [5:0] because maybe they changed?
      * 4) Update only the TX NCO freq bits in 0A3.
      * 5) Profit (I hope). */
-    uint8_t reg0a3 = _io_iface->peek8(0x0a3);
-    uint8_t nco_freq = (reg0a3 & 0xC0);
+    boost::uint8_t reg0a3 = _io_iface->peek8(0x0a3);
+    boost::uint8_t nco_freq = (reg0a3 & 0xC0);
     _io_iface->poke8(0x0a0, 0x15 | (nco_freq >> 1));
     reg0a3 = _io_iface->peek8(0x0a3);
     _io_iface->poke8(0x0a3, (reg0a3 & 0x3F) | nco_freq);
@@ -827,7 +823,7 @@ void ad9361_device_t::_calibrate_tx_quadrature()
     /* This calibration must be done in a certain order, and for both TX_A
      * and TX_B, separately. Store the original setting so that we can
      * restore it later. */
-    uint8_t orig_reg_inputsel = _regs.inputsel;
+    boost::uint8_t orig_reg_inputsel = _regs.inputsel;
 
     /***********************************************************************
      * TX1/2-A Calibration
@@ -862,9 +858,9 @@ void ad9361_device_t::_calibrate_tx_quadrature()
  * Note that this table is fixed for all frequency settings. */
 void ad9361_device_t::_program_mixer_gm_subtable()
 {
-    uint8_t gain[] = { 0x78, 0x74, 0x70, 0x6C, 0x68, 0x64, 0x60, 0x5C, 0x58,
+    boost::uint8_t gain[] = { 0x78, 0x74, 0x70, 0x6C, 0x68, 0x64, 0x60, 0x5C, 0x58,
             0x54, 0x50, 0x4C, 0x48, 0x30, 0x18, 0x00 };
-    uint8_t gm[] = { 0x00, 0x0D, 0x15, 0x1B, 0x21, 0x25, 0x29, 0x2C, 0x2F, 0x31,
+    boost::uint8_t gm[] = { 0x00, 0x0D, 0x15, 0x1B, 0x21, 0x25, 0x29, 0x2C, 0x2F, 0x31,
             0x33, 0x34, 0x35, 0x3A, 0x3D, 0x3E };
 
     /* Start the clock. */
@@ -895,8 +891,8 @@ void ad9361_device_t::_program_mixer_gm_subtable()
 void ad9361_device_t::_program_gain_table() {
     /* Figure out which gain table we should be using for our current
      * frequency band. */
-    uint8_t (*gain_table)[5] = NULL;
-    uint8_t new_gain_table;
+    boost::uint8_t (*gain_table)[5] = NULL;
+    boost::uint8_t new_gain_table;
     if (_rx_freq < 1300e6) {
         gain_table = gain_table_sub_1300mhz;
         new_gain_table = 1;
@@ -923,7 +919,7 @@ void ad9361_device_t::_program_gain_table() {
     _io_iface->poke8(0x137, 0x1A);
 
     /* IT'S PROGRAMMING TIME. */
-    uint8_t index = 0;
+    boost::uint8_t index = 0;
     for (; index < 77; index++) {
         _io_iface->poke8(0x130, index);
         _io_iface->poke8(0x131, gain_table[index][1]);
@@ -999,18 +995,18 @@ void ad9361_device_t::_setup_synth(direction_t direction, double vcorate)
         post_err_msg("vcoindex > 53");
 
     /* Parse the values out of the LUT based on our calculated index... */
-    uint8_t vco_output_level = synth_cal_lut[vcoindex][0];
-    uint8_t vco_varactor = synth_cal_lut[vcoindex][1];
-    uint8_t vco_bias_ref = synth_cal_lut[vcoindex][2];
-    uint8_t vco_bias_tcf = synth_cal_lut[vcoindex][3];
-    uint8_t vco_cal_offset = synth_cal_lut[vcoindex][4];
-    uint8_t vco_varactor_ref = synth_cal_lut[vcoindex][5];
-    uint8_t charge_pump_curr = synth_cal_lut[vcoindex][6];
-    uint8_t loop_filter_c2 = synth_cal_lut[vcoindex][7];
-    uint8_t loop_filter_c1 = synth_cal_lut[vcoindex][8];
-    uint8_t loop_filter_r1 = synth_cal_lut[vcoindex][9];
-    uint8_t loop_filter_c3 = synth_cal_lut[vcoindex][10];
-    uint8_t loop_filter_r3 = synth_cal_lut[vcoindex][11];
+    boost::uint8_t vco_output_level = synth_cal_lut[vcoindex][0];
+    boost::uint8_t vco_varactor = synth_cal_lut[vcoindex][1];
+    boost::uint8_t vco_bias_ref = synth_cal_lut[vcoindex][2];
+    boost::uint8_t vco_bias_tcf = synth_cal_lut[vcoindex][3];
+    boost::uint8_t vco_cal_offset = synth_cal_lut[vcoindex][4];
+    boost::uint8_t vco_varactor_ref = synth_cal_lut[vcoindex][5];
+    boost::uint8_t charge_pump_curr = synth_cal_lut[vcoindex][6];
+    boost::uint8_t loop_filter_c2 = synth_cal_lut[vcoindex][7];
+    boost::uint8_t loop_filter_c1 = synth_cal_lut[vcoindex][8];
+    boost::uint8_t loop_filter_r1 = synth_cal_lut[vcoindex][9];
+    boost::uint8_t loop_filter_c3 = synth_cal_lut[vcoindex][10];
+    boost::uint8_t loop_filter_r3 = synth_cal_lut[vcoindex][11];
 
     /* ... annnd program! */
     if (direction == RX) {
@@ -1484,9 +1480,9 @@ void ad9361_device_t::initialize()
     /* Data delay for TX and RX data clocks */
     digital_interface_delays_t timing =
             _client_params->get_digital_interface_timing();
-    uint8_t rx_delays = ((timing.rx_clk_delay & 0xF) << 4)
+    boost::uint8_t rx_delays = ((timing.rx_clk_delay & 0xF) << 4)
             | (timing.rx_data_delay & 0xF);
-    uint8_t tx_delays = ((timing.tx_clk_delay & 0xF) << 4)
+    boost::uint8_t tx_delays = ((timing.tx_clk_delay & 0xF) << 4)
             | (timing.tx_data_delay & 0xF);
     _io_iface->poke8(0x006, rx_delays);
     _io_iface->poke8(0x007, tx_delays);
@@ -1638,7 +1634,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
 
     /* We must be in the SLEEP / WAIT state to do this. If we aren't already
      * there, transition the ENSM to State 0. */
-    uint8_t current_state = _io_iface->peek8(0x017) & 0x0F;
+    boost::uint8_t current_state = _io_iface->peek8(0x017) & 0x0F;
     switch (current_state) {
     case 0x05:
         /* We are in the ALERT state. */
@@ -1660,8 +1656,8 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     /* Store the current chain / antenna selections so that we can restore
      * them at the end of this routine; all chains will be enabled from
      * within setup_rates for calibration purposes. */
-    uint8_t orig_tx_chains = _regs.txfilt & 0xC0;
-    uint8_t orig_rx_chains = _regs.rxfilt & 0xC0;
+    boost::uint8_t orig_tx_chains = _regs.txfilt & 0xC0;
+    boost::uint8_t orig_rx_chains = _regs.rxfilt & 0xC0;
 
     /* Call into the clock configuration / settings function. This is where
      * all the hard work gets done. */
@@ -1776,8 +1772,8 @@ void ad9361_device_t::set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
     }
 
     /* Check for FDD state */
-    uint8_t set_back_to_fdd = 0;
-    uint8_t ensm_state = _io_iface->peek8(0x017) & 0x0F;
+    boost::uint8_t set_back_to_fdd = 0;
+    boost::uint8_t ensm_state = _io_iface->peek8(0x017) & 0x0F;
     if (ensm_state == 0xA)   // FDD
             {
         /* Put into ALERT state (via the FDD flush state). */
