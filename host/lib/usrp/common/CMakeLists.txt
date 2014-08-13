@@ -33,14 +33,9 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/adf4001_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/adf435x_common.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ad9361_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/ad9361_driver/ad9361_impl.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/ad9361_driver/ad9361_device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/apply_corrections.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/validate_subdev_spec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/recv_packet_demuxer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fifo_ctrl_excelsior.cpp
-)
-
-SET_SOURCE_FILES_PROPERTIES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/ad9361_driver/ad9361_impl.c
-    PROPERTIES LANGUAGE CXX
 )
