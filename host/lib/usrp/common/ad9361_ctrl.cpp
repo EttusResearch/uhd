@@ -3,20 +3,19 @@
 //
 
 #include "ad9361_ctrl.hpp"
-#include "ad9361_transaction.h"
-#include "ad9361_dispatch.h"
-#include <ad9361_platform.h>
 #include <uhd/exception.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/types/serial.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/format.hpp>
 #include <cstring>
+#include <boost/format.hpp>
 #include <boost/utility.hpp>
 #include <boost/function.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/thread.hpp>
 
 using namespace uhd;
+using namespace uhd::usrp;
 
 /***********************************************************************
  * AD9361 IO Implementation Classes
@@ -28,7 +27,9 @@ public:
     ad9361_io_spi(uhd::spi_iface::sptr spi_iface, uint32_t slave_num) :
         _spi_iface(spi_iface), _slave_num(slave_num) { }
 
-    uint8_t peek8(uint32_t reg)
+    virtual ~ad9361_io_spi() { }
+
+    virtual uint8_t peek8(uint32_t reg)
     {
         uhd::spi_config_t config;
         config.mosi_edge = uhd::spi_config_t::EDGE_FALL;
@@ -43,7 +44,7 @@ public:
         return static_cast<uint8_t>(val);
     }
 
-    void poke8(uint32_t reg, uint8_t val)
+    virtual void poke8(uint32_t reg, uint8_t val)
     {
         uhd::spi_config_t config;
         config.mosi_edge = uhd::spi_config_t::EDGE_FALL;
@@ -58,6 +59,7 @@ public:
         //networked devices, it makes writes blocking which will considerably slow down the programming
         peek8(reg);
     }
+
 private:
     uhd::spi_iface::sptr    _spi_iface;
     uint32_t                _slave_num;
@@ -72,126 +74,31 @@ private:
 };
 
 /***********************************************************************
- * AD9361 Transport Implementation Classes
- **********************************************************************/
-
-//----------------------------------------------------------------------
-//Over a zero-copy device transport
-//----------------------------------------------------------------------
-class ad9361_ctrl_transport_zc_impl : public ad9361_ctrl_transport
-{
-public:
-    ad9361_ctrl_transport_zc_impl(uhd::transport::zero_copy_if::sptr xport)
-    {
-        _xport = xport;
-    }
-
-    void ad9361_transact(const unsigned char in_buff[AD9361_DISPATCH_PACKET_SIZE], unsigned char out_buff[AD9361_DISPATCH_PACKET_SIZE])
-    {
-        {
-            uhd::transport::managed_send_buffer::sptr buff = _xport->get_send_buff(10.0);
-            if (not buff or buff->size() < AD9361_DISPATCH_PACKET_SIZE) throw std::runtime_error("ad9361_ctrl_over_zc send timeout");
-            std::memcpy(buff->cast<void *>(), in_buff, AD9361_DISPATCH_PACKET_SIZE);
-            buff->commit(AD9361_DISPATCH_PACKET_SIZE);
-        }
-        {
-            uhd::transport::managed_recv_buffer::sptr buff = _xport->get_recv_buff(10.0);
-            if (not buff or buff->size() < AD9361_DISPATCH_PACKET_SIZE) throw std::runtime_error("ad9361_ctrl_over_zc recv timeout");
-            std::memcpy(out_buff, buff->cast<const void *>(), AD9361_DISPATCH_PACKET_SIZE);
-        }
-    }
-
-    uint64_t get_device_handle()
-    {
-        return 0;   //Unused for zero-copy transport because chip class is in FW
-    }
-
-private:
-    uhd::transport::zero_copy_if::sptr _xport;
-};
-
-//----------------------------------------------------------------------
-//Over a software transport
-//----------------------------------------------------------------------
-class ad9361_ctrl_transport_sw_spi_impl : public ad9361_ctrl_transport
-{
-public:
-    ad9361_ctrl_transport_sw_spi_impl(
-        ad9361_product_t product,
-        uhd::spi_iface::sptr spi_iface,
-        boost::uint32_t slave_num) :
-        _io_iface(spi_iface, slave_num)
-    {
-        _device.product = product;
-        _device.io_iface = reinterpret_cast<void*>(&_io_iface);
-    }
-
-    void ad9361_transact(const unsigned char in_buff[AD9361_DISPATCH_PACKET_SIZE], unsigned char out_buff[AD9361_DISPATCH_PACKET_SIZE])
-    {
-        ad9361_dispatch((const char*)in_buff, (char*)out_buff);
-    }
-
-    uint64_t get_device_handle()
-    {
-        return reinterpret_cast<uint64_t>(reinterpret_cast<void*>(&_device));
-    }
-
-private:
-    ad9361_device_t _device;
-    ad9361_io_spi   _io_iface;
-};
-
-//----------------------------------------------------------------------
-// Make an instance of the AD9361 Transport
-//----------------------------------------------------------------------
-ad9361_ctrl_transport::sptr ad9361_ctrl_transport::make_zero_copy(uhd::transport::zero_copy_if::sptr xport)
-{
-    return sptr(new ad9361_ctrl_transport_zc_impl(xport));
-}
-
-ad9361_ctrl_transport::sptr ad9361_ctrl_transport::make_software_spi(
-    ad9361_product_t product,
-    uhd::spi_iface::sptr spi_iface,
-    boost::uint32_t slave_num)
-{
-    return sptr(new ad9361_ctrl_transport_sw_spi_impl(product, spi_iface, slave_num));
-}
-
-/***********************************************************************
- * AD9361 Software API Class
+ * AD9361 Control API Class
  **********************************************************************/
 class ad9361_ctrl_impl : public ad9361_ctrl
 {
 public:
-    ad9361_ctrl_impl(ad9361_ctrl_transport::sptr iface):
-        _iface(iface), _seq(0)
+    ad9361_ctrl_impl(ad9361_params::sptr client_settings, ad9361_io::sptr io_iface):
+        _device(client_settings, io_iface)
     {
-        ad9361_transaction_t request;
-
-        request.action = AD9361_ACTION_ECHO;
-        this->do_transaction(request);
-
-        request.action = AD9361_ACTION_INIT;
-        this->do_transaction(request);
+        _device.initialize();
     }
 
     double set_gain(const std::string &which, const double value)
     {
-        ad9361_transaction_t request;
+        boost::lock_guard<boost::mutex> lock(_mutex);
 
-        if (which == "RX1") request.action = AD9361_ACTION_SET_RX1_GAIN;
-        if (which == "RX2") request.action = AD9361_ACTION_SET_RX2_GAIN;
-        if (which == "TX1") request.action = AD9361_ACTION_SET_TX1_GAIN;
-        if (which == "TX2") request.action = AD9361_ACTION_SET_TX2_GAIN;
-
-        ad9361_double_pack(value, request.value.gain);
-        const ad9361_transaction_t reply = this->do_transaction(request);
-        return ad9361_double_unpack(reply.value.gain);
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        ad9361_device_t::chain_t chain =_get_chain_from_antenna(which);
+        return _device.set_gain(direction, chain, value);
     }
 
     //! set a new clock rate, return the exact value
     double set_clock_rate(const double rate)
     {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
         //warning for known trouble rates
         if (rate > 56e6) UHD_MSG(warning) << boost::format(
             "The requested clock rate %f MHz may cause slow configuration.\n"
@@ -202,110 +109,76 @@ public:
         const meta_range_t clock_rate_range = ad9361_ctrl::get_clock_rate_range();
         const double clipped_rate = clock_rate_range.clip(rate);
 
-        ad9361_transaction_t request;
-        request.action = AD9361_ACTION_SET_CLOCK_RATE;
-        ad9361_double_pack(clipped_rate, request.value.rate);
-        const ad9361_transaction_t reply = this->do_transaction(request);
-        return ad9361_double_unpack(reply.value.rate);
+        return _device.set_clock_rate(clipped_rate);
     }
 
     //! set which RX and TX chains/antennas are active
     void set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
     {
-        boost::uint32_t mask = 0;
-        if (tx1) mask |= (1 << 0);
-        if (tx2) mask |= (1 << 1);
-        if (rx1) mask |= (1 << 2);
-        if (rx2) mask |= (1 << 3);
+        boost::lock_guard<boost::mutex> lock(_mutex);
 
-        ad9361_transaction_t request;
-        request.action = AD9361_ACTION_SET_ACTIVE_CHAINS;
-        request.value.enable_mask = mask;
-        this->do_transaction(request);
+        _device.set_active_chains(tx1, tx2, rx1, rx2);
     }
 
     //! tune the given frontend, return the exact value
     double tune(const std::string &which, const double freq)
     {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
         //clip to known bounds
         const meta_range_t freq_range = ad9361_ctrl::get_rf_freq_range();
         const double clipped_freq = freq_range.clip(freq);
-
-        ad9361_transaction_t request;
-
-        if (which[0] == 'R') request.action = AD9361_ACTION_SET_RX_FREQ;
-        if (which[0] == 'T') request.action = AD9361_ACTION_SET_TX_FREQ;
-
         const double value = ad9361_ctrl::get_rf_freq_range().clip(clipped_freq);
-        ad9361_double_pack(value, request.value.freq);
-        const ad9361_transaction_t reply = this->do_transaction(request);
-        return ad9361_double_unpack(reply.value.freq);
+
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        return _device.tune(direction, value);
     }
 
     //! turn on/off Catalina's data port loopback
     void data_port_loopback(const bool on)
     {
-        ad9361_transaction_t request;
-        request.action = AD9361_ACTION_SET_CODEC_LOOP;
-        request.value.codec_loop = on? 1 : 0;
-        this->do_transaction(request);
-    }
+        boost::lock_guard<boost::mutex> lock(_mutex);
 
-    ad9361_transaction_t do_transaction(const ad9361_transaction_t &request)
-    {
-        boost::mutex::scoped_lock lock(_mutex);
-
-        //declare in/out buffers
-        unsigned char in_buff[AD9361_DISPATCH_PACKET_SIZE] = {};
-        unsigned char out_buff[AD9361_DISPATCH_PACKET_SIZE] = {};
-
-        //copy the input transaction
-        std::memcpy(in_buff, &request, sizeof(request));
-
-        //fill in other goodies
-        ad9361_transaction_t *in = (ad9361_transaction_t *)in_buff;
-        in->handle = _iface->get_device_handle();
-        in->version = AD9361_TRANSACTION_VERSION;
-        in->sequence = _seq++;
-
-        //initialize error message to "no error"
-        std::memset(in->error_msg, 0, AD9361_TRANSACTION_MAX_ERROR_MSG);
-
-        //transact
-        _iface->ad9361_transact(in_buff, out_buff);
-        ad9361_transaction_t *out = (ad9361_transaction_t *)out_buff;
-
-        //sanity checks
-        UHD_ASSERT_THROW(out->version == in->version);
-        UHD_ASSERT_THROW(out->sequence == in->sequence);
-
-        //handle errors
-        const size_t len = my_strnlen(out->error_msg, AD9361_TRANSACTION_MAX_ERROR_MSG);
-        const std::string error_msg(out->error_msg, len);
-        if (not error_msg.empty()) throw uhd::runtime_error("[ad9361_ctrl::do_transaction] firmware reported: \"" + error_msg + "\"");
-
-        //return result done!
-        return *out;
+        _device.data_port_loopback(on);
     }
 
 private:
-    //! compat strnlen for platforms that dont have it
-    static size_t my_strnlen(const char *str, size_t max)
+    static ad9361_device_t::direction_t _get_direction_from_antenna(const std::string& antenna)
     {
-        const char *end = (const char *)std::memchr((const void *)str, 0, max);
-        if (end == NULL) return max;
-        return (size_t)(end - str);
+        std::string sub = antenna.substr(0, 2);
+        if (sub == "RX") {
+            return ad9361_device_t::RX;
+        } else if (sub == "TX") {
+            return ad9361_device_t::RX;
+        } else {
+            throw uhd::runtime_error("ad9361_ctrl got an invalid channel string.");
+        }
+        return ad9361_device_t::RX;
     }
 
-    ad9361_ctrl_transport::sptr _iface;
-    size_t                      _seq;
-    boost::mutex                _mutex;
+    static ad9361_device_t::chain_t _get_chain_from_antenna(const std::string& antenna)
+    {
+        std::string sub = antenna.substr(2, 1);
+        if (sub == "1") {
+            return ad9361_device_t::CHAIN_1;
+        } else if (sub == "2") {
+            return ad9361_device_t::CHAIN_2;
+        } else {
+            throw uhd::runtime_error("ad9361_ctrl::set_gain got an invalid channel string.");
+        }
+        return ad9361_device_t::CHAIN_1;
+    }
+
+    ad9361_device_t _device;
+    boost::mutex    _mutex;
 };
 
 //----------------------------------------------------------------------
 // Make an instance of the AD9361 Control interface
 //----------------------------------------------------------------------
-ad9361_ctrl::sptr ad9361_ctrl::make(ad9361_ctrl_transport::sptr iface)
+ad9361_ctrl::sptr ad9361_ctrl::make_spi(
+    ad9361_params::sptr client_settings, uhd::spi_iface::sptr spi_iface, uint32_t slave_num)
 {
-    return sptr(new ad9361_ctrl_impl(iface));
+    boost::shared_ptr<ad9361_io_spi> spi_io_iface = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
+    return sptr(new ad9361_ctrl_impl(client_settings, spi_io_iface));
 }

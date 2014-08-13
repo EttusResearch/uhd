@@ -46,6 +46,33 @@ static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
 static const size_t FE1 = 1;
 static const size_t FE2 = 0;
 
+class b200_ad9361_client_t : public ad9361_params {
+public:
+    ~b200_ad9361_client_t() {}
+    double get_band_edge(frequency_band_t band) {
+        switch (band) {
+        case AD9361_RX_BAND0:   return 2.2e9;
+        case AD9361_RX_BAND1:   return 4.0e9;
+        case AD9361_TX_BAND0:   return 2.5e9;
+        default:                return 0;
+        }
+    }
+    clocking_mode_t get_clocking_mode() {
+        return AD9361_XTAL_N_CLK_PATH;
+    }
+    digital_interface_mode_t get_digital_interface_mode() {
+        return AD9361_DDR_FDD_LVCMOS;
+    }
+    digital_interface_delays_t get_digital_interface_timing() {
+        digital_interface_delays_t delays;
+        delays.rx_clk_delay = 0;
+        delays.rx_data_delay = 0xF;
+        delays.tx_clk_delay = 0;
+        delays.tx_data_delay = 0xF;
+        return delays;
+    }
+};
+
 /***********************************************************************
  * Discovery
  **********************************************************************/
@@ -349,8 +376,8 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     // Init codec - turns on clocks
     ////////////////////////////////////////////////////////////////////
     UHD_MSG(status) << "Initialize CODEC control..." << std::endl;
-    _codec_ctrl = ad9361_ctrl::make(
-        ad9361_ctrl_transport::make_software_spi(AD9361_B200, _spi_iface, AD9361_SLAVENO));
+    ad9361_params::sptr client_settings = boost::make_shared<b200_ad9361_client_t>();
+    _codec_ctrl = ad9361_ctrl::make_spi(client_settings, _spi_iface, AD9361_SLAVENO);
     this->reset_codec_dcm();
 
     ////////////////////////////////////////////////////////////////////

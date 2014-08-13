@@ -100,7 +100,7 @@ private:
     //controllers
     b200_iface::sptr _iface;
     radio_ctrl_core_3000::sptr _local_ctrl;
-    ad9361_ctrl::sptr _codec_ctrl;
+    uhd::usrp::ad9361_ctrl::sptr _codec_ctrl;
     b200_local_spi_core::sptr _spi_iface;
     boost::shared_ptr<uhd::usrp::adf4001_ctrl> _adf4001_iface;
     uhd::gps_ctrl::sptr _gps;
