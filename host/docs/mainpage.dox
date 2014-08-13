@@ -2,7 +2,9 @@
 
 \tableofcontents
 
-Welcome to the manual pages for the USRP Hardware Driver (UHD), the host driver for Ettus Research devices. Here, you will find information on how to use the devices and how to use the API to connect to them through your own software.
+Welcome to the manual pages for the USRP Hardware Driver (UHD), the host driver
+for Ettus Research devices. Here, you will find information on how to use the
+devices and how to use the API to connect to them through your own software.
 
 # Building and Installing UHD
 
@@ -45,6 +47,7 @@ Welcome to the manual pages for the USRP Hardware Driver (UHD), the host driver 
 \li \subpage page_gpsdo_x3x0
 \li \subpage page_gpio_api
 \li \subpage page_usrp_x3x0_config
+\li \subpage page_ni_rio_kernel
 
 ## USRP Legacy Series
 

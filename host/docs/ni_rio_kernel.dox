@@ -1,0 +1,142 @@
+/*! \page page_ni_rio_kernel NI RIO Kernel Modules for X-Series PCIe Connectivity
+
+\tableofcontents
+
+\section linux_rio Linux NI RIO Installation and Usage
+
+\subsection linux_requirements Requirements
+
+In order to use the PCIe transport connection on the USRP X300 / X310 devices,
+you must install the NI USRP RIO driver stack. These include kernel modules
+which must be loaded.
+
+Your kernel version must be supported by the kernel modules. Only 64-bit kernels
+are supported.
+
+<b>Currently, the latest supported kernel version is 3.14.x.</b>
+
+\subsection linux_installation Installing the Drivers in Linux
+
+The NI USRP RIO installer can be found <a
+href=http://files.ettus.com/binaries/niusrprio/niusrprio-installer.tar.gz>here</a>.
+
+Download the installer and extract it with the following command:
+
+    tar zxf niusrprio-installer.tar.gz
+
+The files will be extracted into a directory called <b>niusrprio-installer</b>.
+
+To install the NI USRPRIO kernel modules and RPC server, run the following
+command:
+
+    sudo niusrprio-installer/INSTALL
+
+Select 'y' for each prompt, and the script will install all necessary
+components.  This script will automatically load all necessary kernel modules
+for the duration of the session.
+
+\subsection linux_enabling Enabling and Disabling Usage
+
+Once everything is installed, run the following commands to enable use of the
+X300/X310 over PCI Express:
+
+    sudo /usr/local/bin/niusrprio_pcie start
+
+To stop these processes, run the following command:
+
+    sudo /usr/local/bin/niusrprio_pcie stop
+
+To check if the kernel modules are loaded and if the RPC server is running, run
+the following command:
+
+    /usr/local/bin/niusrprio_pcie status
+
+<b>NOTE:</b> niusrprio_pcie start does not run when the host system is booted.
+If you would like the USRP PCIe device to be available automatically after
+a system restart, please create an init.d script that runs niusrprio_pcie start.
+
+\subsection linux_swapping Hot-Plugging and Power-Cycling
+
+The NI USRPRIO kernel modules are built for a specific kernel version. If you
+upgrade/downgrade the linux kernel on the host to a version different from the
+one that the installer was run on, then you may see the following error message
+when running `niusrprio star`.
+
+    ERROR: could not insert 'NiRioSrv': Unknown symbol in module, or unknown
+    parameter (see dmesg) ERROR: could not insert 'niusrpriok': Unknown symbol
+    in module, or unknown parameter (see dmesg)
+
+To rebuild the kernel modules for the currently running kernel, simple run the
+following
+
+    sudo /usr/local/bin/niusrprio_pcie stop sudo /usr/local/bin/updateNIDrivers
+    --no-prompt sudo /usr/local/bin/niusrprio_pcie start
+
+\subsection linux_uninstalling Uninstalling in Linux
+
+To uninstall the NI USRP RIO kernel modules and RPC server, run the following
+command:
+
+    sudo niusrprio-installer/UNINSTALL
+
+Select y at the prompt, and the script will uninstall all installed components.
+
+
+\section windows_rio Windows NI RIO Installation and Usage
+
+\subsection win_requirements Requirements
+
+The kernel driver is only supported on:
+
+- Windows 8.1 32-bit
+- Windows 8.1 64-bit
+- Windows 7 32-bit
+- Windows 7 64-bit
+- Windows Vista 32-bit
+- Windows Vista 64-bit
+- Windows XP (SP3) 32-bit.
+
+\subsection win_install Installing NI-USRP in Windows
+
+The NI-USRP 1.3 installer can be found <a
+href="http://www.ni.com/download/ni-usrp-1.3/4711/en/">here</a> You will need to
+create a free NI User Account to download the installer.
+
+Perform the following steps to download and install the NI-USRP exe driver
+package:
+
+- Choose the "2. Standard Download:NIUSRP130.exe" option to download
+- NIUSRP130.exe to your computer Run NIUSRP130.exe as an Administrator and
+- extract the contents to 'C:\\National Instruments Downloads\\NI-USRP\\1.3' In the
+- extract location, run setup.exe and follow the prompts.
+
+Reboot the computer after both the NI-USRP package has been installed.
+
+\subsection win_enabling Enabling and Disabling Usage
+
+Once everything is installed and the system is rebooted, your X300/X310 PCI
+Express device should automatically be detected by the Windows Device Manager.
+The device should be enabled by default.
+
+- To disable the USRPRIO device, navigate to "Device Manager", locate your
+- USRPRIO-X3x0 device, right-click on it and choose "Disable".  To enable the
+- USRPRIO device, navigate to "Device Manager", locate your USRPRIO-X3x0 device,
+- right-click on it and choose "Enable".
+
+\subsection win_swapping Hot-plugging and Power-cycling
+
+The USRP X3x0, NI USRP-294x and NI USRP-295x devices <b>cannot</b> be hot-swapped
+when connected over PCI Express. Unplugging the PCI Express connection or
+powering the device should be done only after disabling the device.
+
+<b>WARNING:</b> If the device is unplugged without running the above command, the
+system could become unstable.
+
+\subsection win_uninstall Uninstalling NI-USRP in Windows
+
+Navigate to the Control Panel and open "Programs". Then select National
+Instruments Software and select NI-USRP and NI-RIO from the list. Click on
+uninstall to remove the drivers from your system.
+
+*/
+// vim:ft=doxygen:
