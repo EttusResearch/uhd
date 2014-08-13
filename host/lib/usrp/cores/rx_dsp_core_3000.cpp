@@ -46,6 +46,10 @@ template <class T> T ceil_log2(T num){
 
 using namespace uhd;
 
+rx_dsp_core_3000::~rx_dsp_core_3000(void){
+    /* NOP */
+}
+
 class rx_dsp_core_3000_impl : public rx_dsp_core_3000{
 public:
     rx_dsp_core_3000_impl(

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,6 +31,10 @@ using namespace uhd;
     _iface->write_spi(_slaveno, spi_config_t::EDGE_RISE, ((addr) << 8) | (data), 16)
 #define read_ad9146_reg(addr) \
     (_iface->read_spi(_slaveno, spi_config_t::EDGE_RISE, ((addr) << 8) | (1 << 15), 16) & 0xff)
+
+x300_dac_ctrl::~x300_dac_ctrl(void){
+    /* NOP */
+}
 
 /*!
  * A X300 codec control specific to the ad9146 ic.

@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ class user_settings_core_200 : boost::noncopyable{
 public:
     typedef boost::shared_ptr<user_settings_core_200> sptr;
     typedef std::pair<boost::uint8_t, boost::uint32_t> user_reg_t;
+
+    virtual ~user_settings_core_200(void) = 0;
 
     static sptr make(uhd::wb_iface::sptr iface, const size_t base);
 

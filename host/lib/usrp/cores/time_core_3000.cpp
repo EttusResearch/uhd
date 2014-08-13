@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,10 @@
 #define CTRL_LATCH_TIME_NOW (1 << 0)
 
 using namespace uhd;
+
+time_core_3000::~time_core_3000(void){
+    /* NOP */
+}
 
 struct time_core_3000_impl : time_core_3000
 {

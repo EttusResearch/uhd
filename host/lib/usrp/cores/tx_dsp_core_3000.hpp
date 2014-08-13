@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2013 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@
 class tx_dsp_core_3000 : boost::noncopyable{
 public:
     typedef boost::shared_ptr<tx_dsp_core_3000> sptr;
+
+    virtual ~tx_dsp_core_3000(void) = 0;
 
     static sptr make(
         uhd::wb_iface::sptr iface,

@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,6 +35,8 @@ public:
     typedef boost::function<void(const T &)> subscriber_type;
     typedef boost::function<T(void)> publisher_type;
     typedef boost::function<T(const T &)> coercer_type;
+
+    virtual ~property<T>(void) = 0;
 
     /*!
      * Register a coercer into the property.
@@ -97,6 +99,11 @@ public:
     virtual bool empty(void) const = 0;
 };
 
+template <typename T>
+property<T>::~property(void){
+    /* NOP */
+}
+
 /*!
  * FS Path: A glorified string with path manipulations.
  * Inspired by boost filesystem path, but without the dependency.
@@ -120,6 +127,8 @@ UHD_API fs_path operator/(const fs_path &, const fs_path &);
 class UHD_API property_tree : boost::noncopyable{
 public:
     typedef boost::shared_ptr<property_tree> sptr;
+
+    virtual ~property_tree(void) = 0;
 
     //! Create a new + empty property tree
     static sptr make(void);

@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,6 +29,8 @@ namespace uhd{ namespace transport{
 class UHD_API udp_simple : boost::noncopyable{
 public:
     typedef boost::shared_ptr<udp_simple> sptr;
+
+    virtual ~udp_simple(void) = 0;
 
     //! The maximum number of bytes per udp packet.
     static const size_t mtu = 1500 - 20 - 8; //default ipv4 mtu - ipv4 header - udp header

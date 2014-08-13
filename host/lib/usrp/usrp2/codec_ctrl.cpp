@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,10 @@
 #include <boost/foreach.hpp>
 
 using namespace uhd;
+
+usrp2_codec_ctrl::~usrp2_codec_ctrl(void){
+    /* NOP */
+}
 
 /*!
  * A usrp2 codec control specific to the ad9777 ic.

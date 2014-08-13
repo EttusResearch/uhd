@@ -42,6 +42,10 @@ using namespace boost::this_thread;
  * A control for GPSDO devices
  */
 
+gps_ctrl::~gps_ctrl(void){
+    /* NOP */
+}
+
 class gps_ctrl_impl : public gps_ctrl{
 private:
   std::map<std::string, boost::tuple<std::string, boost::system_time, bool> > sensors;

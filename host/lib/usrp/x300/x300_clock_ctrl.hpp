@@ -42,6 +42,8 @@ public:
 
     typedef boost::shared_ptr<x300_clock_ctrl> sptr;
 
+    virtual ~x300_clock_ctrl(void) = 0;
+
     static sptr make(uhd::spi_iface::sptr spiface,
             const size_t slaveno,
             const size_t hw_rev,

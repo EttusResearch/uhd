@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,6 +34,10 @@ boost::detail::atomic_count managed_buffer::s_buffer_count(0);
 //! pad the byte count to a multiple of alignment
 static size_t pad_to_boundary(const size_t bytes, const size_t alignment){
     return bytes + (alignment - bytes)%alignment;
+}
+
+buffer_pool::~buffer_pool(void){
+    /* NOP */
 }
 
 /***********************************************************************

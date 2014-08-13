@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,6 +38,10 @@
 #define FLAG_TIME64_MIMO_SYNC (1 << 8)
 
 using namespace uhd;
+
+time64_core_200::~time64_core_200(void){
+    /* NOP */
+}
 
 class time64_core_200_impl : public time64_core_200{
 public:

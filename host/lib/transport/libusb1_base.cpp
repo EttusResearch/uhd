@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@ using namespace uhd::transport;
 /***********************************************************************
  * libusb session
  **********************************************************************/
+libusb::session::~session(void) {
+    /* NOP */
+}
+
 class libusb_session_impl : public libusb::session{
 public:
     libusb_session_impl(void){
@@ -95,6 +99,10 @@ libusb::session::sptr libusb::session::get_global_session(void){
 /***********************************************************************
  * libusb device
  **********************************************************************/
+libusb::device::~device(void) {
+    /* NOP */
+}
+
 class libusb_device_impl : public libusb::device{
 public:
     libusb_device_impl(libusb_device *dev){
@@ -118,6 +126,10 @@ private:
 /***********************************************************************
  * libusb device list
  **********************************************************************/
+libusb::device_list::~device_list(void){
+    /* NOP */
+}
+
 class libusb_device_list_impl : public libusb::device_list{
 public:
     libusb_device_list_impl(void){
@@ -156,6 +168,10 @@ libusb::device_list::sptr libusb::device_list::make(void){
 /***********************************************************************
  * libusb device descriptor
  **********************************************************************/
+libusb::device_descriptor::~device_descriptor(void){
+    /* NOP */
+}
+
 class libusb_device_descriptor_impl : public libusb::device_descriptor{
 public:
     libusb_device_descriptor_impl(libusb::device::sptr dev){
@@ -207,6 +223,10 @@ libusb::device_descriptor::sptr libusb::device_descriptor::make(device::sptr dev
 /***********************************************************************
  * libusb device handle
  **********************************************************************/
+libusb::device_handle::~device_handle(void){
+    /* NOP */
+}
+
 class libusb_device_handle_impl : public libusb::device_handle{
 public:
     libusb_device_handle_impl(libusb::device::sptr dev){
@@ -271,6 +291,10 @@ libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::spt
 /***********************************************************************
  * libusb special handle
  **********************************************************************/
+libusb::special_handle::~special_handle(void){
+    /* NOP */
+}
+
 class libusb_special_handle_impl : public libusb::special_handle{
 public:
     libusb_special_handle_impl(libusb::device::sptr dev){

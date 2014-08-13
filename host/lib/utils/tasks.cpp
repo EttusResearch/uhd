@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -81,6 +81,10 @@ private:
 
 task::sptr task::make(const task_fcn_type &task_fcn){
     return task::sptr(new task_impl(task_fcn));
+}
+
+msg_task::~msg_task(void){
+    /* NOP */
 }
 
 /*

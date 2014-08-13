@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2013 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@
 class i2c_core_100_wb32 : boost::noncopyable, public uhd::i2c_iface{
 public:
     typedef boost::shared_ptr<i2c_core_100_wb32> sptr;
+
+    virtual ~i2c_core_100_wb32(void) = 0;
 
     //! makes a new i2c core from iface and slave base
     static sptr make(uhd::wb_iface::sptr iface, const size_t base);

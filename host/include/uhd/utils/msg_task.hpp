@@ -51,6 +51,8 @@ namespace uhd{
                 return std::vector<boost::uint8_t>();
             }
 
+            virtual ~msg_task(void) = 0;
+
             /*!
              * Create a new task object with function callback.
              * The task function callback will be run in a loop.

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,6 +44,8 @@ namespace libusb {
     public:
         typedef boost::shared_ptr<session> sptr;
 
+        virtual ~session(void) = 0;
+
         /*!
          *   Level 0: no messages ever printed by the library (default)
          *   Level 1: error messages are printed to stderr
@@ -67,6 +69,8 @@ namespace libusb {
     public:
         typedef boost::shared_ptr<device> sptr;
 
+        virtual ~device(void) = 0;
+
         //! get the underlying device pointer
         virtual libusb_device *get(void) const = 0;
     };
@@ -78,6 +82,8 @@ namespace libusb {
     class device_list : boost::noncopyable {
     public:
         typedef boost::shared_ptr<device_list> sptr;
+
+        virtual ~device_list(void) = 0;
 
         //! make a new device list
         static sptr make(void);
@@ -96,6 +102,8 @@ namespace libusb {
     public:
         typedef boost::shared_ptr<device_descriptor> sptr;
 
+        virtual ~device_descriptor(void) = 0;
+
         //! make a new descriptor from a device reference
         static sptr make(device::sptr);
 
@@ -111,6 +119,8 @@ namespace libusb {
     class device_handle : boost::noncopyable {
     public:
         typedef boost::shared_ptr<device_handle> sptr;
+
+        virtual ~device_handle(void) = 0;
 
         //! get a cached handle or make a new one given the device
         static sptr get_cached_handle(device::sptr);
@@ -134,6 +144,8 @@ namespace libusb {
     class special_handle : public usb_device_handle {
     public:
         typedef boost::shared_ptr<special_handle> sptr;
+
+        virtual ~special_handle(void) = 0;
 
         //! make a new special handle from device
         static sptr make(device::sptr);

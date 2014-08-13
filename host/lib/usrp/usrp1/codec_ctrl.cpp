@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@ using namespace uhd;
 
 const gain_range_t usrp1_codec_ctrl::tx_pga_gain_range(-20, 0, double(0.1));
 const gain_range_t usrp1_codec_ctrl::rx_pga_gain_range(0, 20, 1);
+
+usrp1_codec_ctrl::~usrp1_codec_ctrl(void){
+    /* NOP */
+}
 
 /***********************************************************************
  * Codec Control Implementation

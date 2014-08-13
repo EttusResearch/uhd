@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,10 @@
 #define REG_DEFRAMER_PACKET_FC_UPS      _base + 2*4 + 4
 
 using namespace uhd;
+
+tx_vita_core_3000::~tx_vita_core_3000(void){
+    /* NOP */
+}
 
 struct tx_vita_core_3000_impl : tx_vita_core_3000
 {

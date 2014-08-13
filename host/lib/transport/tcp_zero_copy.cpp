@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -115,6 +115,10 @@ private:
     size_t _frame_size;
     simple_claimer _claimer;
 };
+
+tcp_zero_copy::~tcp_zero_copy(void){
+    /* NOP */
+}
 
 /***********************************************************************
  * Zero Copy TCP implementation with ASIO:

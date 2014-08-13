@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ public:
 
     static const uhd::gain_range_t tx_pga_gain_range;
     static const uhd::gain_range_t rx_pga_gain_range;
+
+    virtual ~usrp1_codec_ctrl(void) = 0;
 
     /*!
      * Make a new clock control object.

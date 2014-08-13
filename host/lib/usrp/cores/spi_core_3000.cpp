@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,10 @@
 #define SPI_DATA _base + 8
 
 using namespace uhd;
+
+spi_core_3000::~spi_core_3000(void){
+    /* NOP */
+}
 
 class spi_core_3000_impl : public spi_core_3000
 {

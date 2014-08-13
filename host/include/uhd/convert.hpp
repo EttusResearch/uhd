@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,6 +33,8 @@ namespace uhd{ namespace convert{
         typedef boost::shared_ptr<converter> sptr;
         typedef uhd::ref_vector<void *> output_type;
         typedef uhd::ref_vector<const void *> input_type;
+
+        virtual ~converter(void) = 0;
 
         //! Set the scale factor (used in floating point conversions)
         virtual void set_scalar(const double) = 0;

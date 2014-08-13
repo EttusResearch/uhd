@@ -31,6 +31,8 @@ class rx_dsp_core_3000 : boost::noncopyable{
 public:
     typedef boost::shared_ptr<rx_dsp_core_3000> sptr;
 
+    virtual ~rx_dsp_core_3000(void) = 0;
+
     static sptr make(
         uhd::wb_iface::sptr iface,
         const size_t dsp_base,

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,6 +29,10 @@
 using namespace uhd;
 
 static const bool enb_test_clk = false;
+
+usrp2_clock_ctrl::~usrp2_clock_ctrl(void){
+    /* NOP */
+}
 
 /*!
  * A usrp2 clock control specific to the ad9510 ic.

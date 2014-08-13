@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,8 @@ class x300_dac_ctrl : boost::noncopyable
 {
 public:
     typedef boost::shared_ptr<x300_dac_ctrl> sptr;
+
+    virtual ~x300_dac_ctrl(void) = 0;
 
     /*!
      * Make a codec control for the DAC.

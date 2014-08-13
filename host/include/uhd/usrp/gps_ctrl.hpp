@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@ namespace uhd{
 class UHD_API gps_ctrl : boost::noncopyable{
 public:
   typedef boost::shared_ptr<gps_ctrl> sptr;
+
+  virtual ~gps_ctrl(void) = 0;
 
   /*!
    * Make a GPS config for internal GPSDOs or generic NMEA GPS devices

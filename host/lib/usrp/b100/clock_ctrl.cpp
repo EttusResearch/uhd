@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -165,6 +165,10 @@ static clock_settings_type get_clock_settings(double rate){
     throw uhd::value_error(str(boost::format(
         "USRP-B100 clock control: could not calculate settings for clock rate %fMHz"
     ) % (rate/1e6)));
+}
+
+b100_clock_ctrl::~b100_clock_ctrl(void) {
+    /* NOP */
 }
 
 /***********************************************************************

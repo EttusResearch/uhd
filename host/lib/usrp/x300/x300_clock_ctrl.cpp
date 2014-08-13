@@ -28,6 +28,10 @@ static const double X300_REF_CLK_OUT_RATE  = 10e6;
 
 using namespace uhd;
 
+x300_clock_ctrl::~x300_clock_ctrl(void){
+    /* NOP */
+}
+
 class x300_clock_ctrl_impl : public x300_clock_ctrl    {
 
 public:

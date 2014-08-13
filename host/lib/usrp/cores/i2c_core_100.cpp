@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,6 +52,10 @@
 #define	I2C_ST_IP	(1 << 0)	// Interrupt pending
 
 using namespace uhd;
+
+i2c_core_100::~i2c_core_100(void){
+    /* NOP */
+}
 
 class i2c_core_100_impl : public i2c_core_100{
 public:

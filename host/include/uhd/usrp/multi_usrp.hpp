@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -94,6 +94,8 @@ namespace uhd{ namespace usrp{
 class UHD_API multi_usrp : boost::noncopyable{
 public:
     typedef boost::shared_ptr<multi_usrp> sptr;
+
+    virtual ~multi_usrp(void) = 0;
 
     //! A wildcard motherboard index
     static const size_t ALL_MBOARDS = size_t(~0);

@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -172,6 +172,10 @@ private:
     boost::shared_ptr<tree_guts_type> _guts;
     const fs_path _root;
 };
+
+property_tree::~property_tree(void){
+    /* NOP */
+}
 
 /***********************************************************************
  * Property tree factory

@@ -48,6 +48,7 @@ public:
         USRP,
         CLOCK
     };
+    virtual ~device(void) = 0;
 
     /*!
      * Register a device into the discovery and factory system.

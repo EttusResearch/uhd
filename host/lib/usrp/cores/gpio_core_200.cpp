@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,10 @@
 
 using namespace uhd;
 using namespace usrp;
+
+gpio_core_200::~gpio_core_200(void){
+    /* NOP */
+}
 
 class gpio_core_200_impl : public gpio_core_200{
 public:
@@ -103,6 +107,10 @@ private:
 
 gpio_core_200::sptr gpio_core_200::make(wb_iface::sptr iface, const size_t base, const size_t rb_addr){
     return sptr(new gpio_core_200_impl(iface, base, rb_addr));
+}
+
+gpio_core_200_32wo::~gpio_core_200_32wo(void){
+    /* NOP */
 }
 
 class gpio_core_200_32wo_impl : public gpio_core_200_32wo{

@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,6 +29,10 @@ namespace uhd{ namespace /*anon*/{
 
 template <typename T> class property_impl : public property<T>{
 public:
+
+    ~property_impl<T>(void){
+        /* NOP */
+    }
 
     property<T> &coerce(const typename property<T>::coercer_type &coercer){
         _coercer = coercer;

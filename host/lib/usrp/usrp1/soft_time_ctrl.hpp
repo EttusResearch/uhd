@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,6 +39,8 @@ class soft_time_ctrl : boost::noncopyable{
 public:
     typedef boost::shared_ptr<soft_time_ctrl> sptr;
     typedef boost::function<void(bool)> cb_fcn_type;
+
+    virtual ~soft_time_ctrl(void) = 0;
 
     /*!
      * Make a new soft time control.

@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2013 Ettus Research LLC
+// Copyright 2012-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,6 +33,8 @@ class radio_ctrl_core_3000 : public uhd::wb_iface
 {
 public:
     typedef boost::shared_ptr<radio_ctrl_core_3000> sptr;
+
+    virtual ~radio_ctrl_core_3000(void) = 0;
 
     //! Make a new control object
     static sptr make(

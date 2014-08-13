@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,10 @@ using namespace uhd;
 
 #define REG_USER_ADDR             _base + 0
 #define REG_USER_DATA             _base + 4
+
+user_settings_core_200::~user_settings_core_200(void){
+    /* NOP */
+}
 
 class user_settings_core_200_impl : public user_settings_core_200{
 public:

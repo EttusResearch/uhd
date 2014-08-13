@@ -71,6 +71,10 @@ void device::register_device(
     get_dev_fcn_regs().push_back(dev_fcn_reg_t(find, make, filter));
 }
 
+device::~device(void){
+    /* NOP */
+}
+
 /***********************************************************************
  * Discover
  **********************************************************************/

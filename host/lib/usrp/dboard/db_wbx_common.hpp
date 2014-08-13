@@ -1,5 +1,5 @@
 //
-// Copyright 2011,2013 Ettus Research LLC
+// Copyright 2011,2013-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ protected:
     class wbx_versionx {
     public:
         wbx_versionx():self_base(NULL) {}
-        ~wbx_versionx(void) {}
+        virtual ~wbx_versionx(void) {}
 
         virtual double set_tx_gain(double gain, const std::string &name) = 0;
         virtual void set_tx_enabled(bool enb) = 0;

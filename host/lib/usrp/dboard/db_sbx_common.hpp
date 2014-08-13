@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2013 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ static const uhd::dict<std::string, gain_range_t> sbx_rx_gain_ranges = map_list_
 class sbx_xcvr : public xcvr_dboard_base{
 public:
     sbx_xcvr(ctor_args_t args);
-    ~sbx_xcvr(void);
+    virtual ~sbx_xcvr(void);
 
 protected:
 
@@ -172,7 +172,7 @@ protected:
     class sbx_versionx {
     public:
         sbx_versionx() {}
-        ~sbx_versionx(void) {}
+        virtual ~sbx_versionx(void) {}
 
         virtual double set_lo_freq(dboard_iface::unit_t unit, double target_freq) = 0;
     };

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,6 +24,10 @@
 #include <boost/foreach.hpp>
 
 using namespace uhd;
+
+x300_adc_ctrl::~x300_adc_ctrl(void){
+    /* NOP */
+}
 
 /*!
  * A X300 codec control specific to the ads62p48 ic.

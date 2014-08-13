@@ -27,6 +27,10 @@
 
 using namespace uhd;
 
+convert::converter::~converter(void){
+    /* NOP */
+}
+
 bool convert::operator==(const convert::id_type &lhs, const convert::id_type &rhs){
     return true
         and (lhs.input_format  == rhs.input_format)

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,6 +32,8 @@ namespace uhd{ namespace transport{
  */
 struct UHD_API tcp_zero_copy : public virtual zero_copy_if
 {
+    virtual ~tcp_zero_copy(void) = 0;
+
     /*!
      * Make a new zero copy TCP transport:
      * This transport is for sending and receiving

@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,6 +51,10 @@ template <class T> T ceil_log2(T num){
 }
 
 using namespace uhd;
+
+rx_dsp_core_200::~rx_dsp_core_200(void){
+    /* NOP */
+}
 
 class rx_dsp_core_200_impl : public rx_dsp_core_200{
 public:

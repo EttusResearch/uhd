@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #include <boost/utility.hpp>
 
 /*!
- * The usrp-e codec control:
+ * The B100 codec control:
  * - Init/power down codec.
  * - Read aux adc, write aux dac.
  */
@@ -34,6 +34,8 @@ public:
 
     static const uhd::gain_range_t tx_pga_gain_range;
     static const uhd::gain_range_t rx_pga_gain_range;
+
+    virtual ~b100_codec_ctrl(void) = 0;
 
     /*!
      * Make a new codec control object.

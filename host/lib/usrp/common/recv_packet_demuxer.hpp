@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@ namespace uhd{ namespace usrp{
     class recv_packet_demuxer{
     public:
         typedef boost::shared_ptr<recv_packet_demuxer> sptr;
+
+        virtual ~recv_packet_demuxer(void) = 0;
 
         //! Make a new demuxer from a transport and parameters
         static sptr make(transport::zero_copy_if::sptr transport, const size_t size, const boost::uint32_t sid_base);

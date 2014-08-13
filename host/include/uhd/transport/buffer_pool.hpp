@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,6 +32,8 @@ namespace uhd{ namespace transport{
     public:
         typedef boost::shared_ptr<buffer_pool> sptr;
         typedef void * ptr_type;
+
+        virtual ~buffer_pool(void) = 0;
 
         /*!
          * Make a new buffer pool.

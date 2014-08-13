@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,6 +52,10 @@ static bool compare_by_step_size(
  */
 template <typename T> static T floor_step(T num, T step, T e = T(0.001)){
     return step*int(num/step + e);
+}
+
+gain_group::~gain_group(void){
+    /* NOP */
 }
 
 /***********************************************************************

@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,10 @@ using namespace uhd::transport;
 namespace pt = boost::posix_time;
 
 static const time_spec_t TWIDDLE(0.0011);
+
+soft_time_ctrl::~soft_time_ctrl(void){
+    /* NOP */
+}
 
 /***********************************************************************
  * Soft time control implementation

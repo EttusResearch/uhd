@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,6 +32,8 @@ public:
     typedef uhd::usrp::dboard_iface::unit_t unit_t;
     typedef uhd::usrp::dboard_iface::atr_reg_t atr_reg_t;
 
+    virtual ~gpio_core_200(void) = 0;
+
     //! makes a new GPIO core from iface and slave base
     static sptr make(uhd::wb_iface::sptr iface, const size_t base, const size_t rb_addr);
 
@@ -55,6 +57,8 @@ public:
     typedef boost::shared_ptr<gpio_core_200_32wo> sptr;
 
     typedef uhd::usrp::dboard_iface::atr_reg_t atr_reg_t;
+
+    virtual ~gpio_core_200_32wo(void) = 0;
 
     static sptr make(uhd::wb_iface::sptr iface, const size_t);
 

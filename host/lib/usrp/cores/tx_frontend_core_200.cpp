@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,6 +33,9 @@ static boost::uint32_t fs_to_bits(const double num, const size_t bits){
     return boost::int32_t(boost::math::round(num * (1 << (bits-1))));
 }
 
+tx_frontend_core_200::~tx_frontend_core_200(void){
+    /* NOP */
+}
 
 class tx_frontend_core_200_impl : public tx_frontend_core_200{
 public:

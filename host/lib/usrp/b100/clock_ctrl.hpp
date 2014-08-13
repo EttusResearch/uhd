@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,13 +24,14 @@
 #include <vector>
 
 /*!
- * The usrp-e clock control:
- * - Setup system clocks.
+ * The B100 clock control:
  * - Disable/enable clock lines.
  */
 class b100_clock_ctrl : boost::noncopyable{
 public:
     typedef boost::shared_ptr<b100_clock_ctrl> sptr;
+
+    virtual ~b100_clock_ctrl(void) = 0;
 
     /*!
      * Make a new clock control object.

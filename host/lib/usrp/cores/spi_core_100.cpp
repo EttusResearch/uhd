@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,6 +38,10 @@
 #define SPI_CTRL_CHAR_LEN_MASK 0x7F
 
 using namespace uhd;
+
+spi_core_100::~spi_core_100(void){
+    /* NOP */
+}
 
 class spi_core_100_impl : public spi_core_100{
 public:
