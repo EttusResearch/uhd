@@ -44,21 +44,6 @@ namespace uhd { namespace usrp {
 /* for upto 8-bit binary constants */
 #define B8(d) ((unsigned char)B8__(HEX__(d)))
 
-void ad9361_device_t::output_test_tone()
-{
-    /* Output a 480 kHz tone at 800 MHz */
-    _io_iface->poke8(0x3F4, 0x0B);
-    _io_iface->poke8(0x3FC, 0xFF);
-    _io_iface->poke8(0x3FD, 0xFF);
-    _io_iface->poke8(0x3FE, 0x3F);
-}
-
-void ad9361_device_t::data_port_loopback(const bool loopback_enabled)
-{
-    debug_msg("[data_port_loopback] Enabled: %d", loopback_enabled);
-    _io_iface->poke8(0x3F5, (loopback_enabled ? 0x01 : 0x00));
-}
-
 /* This is a simple comparison for very large double-precision floating
  * point numbers. It is used to prevent re-tunes for frequencies that are
  * the same but not 'exactly' because of data precision issues. */
@@ -1373,6 +1358,8 @@ double ad9361_device_t::_setup_rates(const double rate)
  **********************************************************************/
 void ad9361_device_t::initialize()
 {
+    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+
     /* Initialize shadow registers. */
     _regs.vcodivs = 0x00;
     _regs.inputsel = 0x30;
@@ -1603,6 +1590,8 @@ void ad9361_device_t::initialize()
  * This is the only clock setting function that is exposed to the outside. */
 double ad9361_device_t::set_clock_rate(const double req_rate)
 {
+    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+
     if (req_rate > 61.44e6) {
         throw uhd::runtime_error("[ad9361_device_t] Requested master clock rate outside range");
     }
@@ -1737,6 +1726,8 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
  */
 void ad9361_device_t::set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
 {
+    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+
     /* Clear out the current active chain settings. */
     _regs.txfilt = _regs.txfilt & 0x3F;
     _regs.rxfilt = _regs.rxfilt & 0x3F;
@@ -1787,6 +1778,8 @@ void ad9361_device_t::set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
  * After tuning, it runs any appropriate calibrations. */
 double ad9361_device_t::tune(direction_t direction, const double value)
 {
+    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+
     if (direction == RX) {
         if (freq_is_nearly_equal(value, _req_rx_freq)) {
             return _rx_freq;
@@ -1841,6 +1834,8 @@ double ad9361_device_t::tune(direction_t direction, const double value)
  * are done in terms of attenuation. */
 double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const double value)
 {
+    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+
     if (direction == RX) {
         /* Indexing the gain tables requires an offset from the requested
          * amount of total gain in dB:
@@ -1897,5 +1892,22 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
         return AD9361_MAX_GAIN - ((double) (attenreg) / 4);
     }
 }
+
+void ad9361_device_t::output_test_tone()
+{
+    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    /* Output a 480 kHz tone at 800 MHz */
+    _io_iface->poke8(0x3F4, 0x0B);
+    _io_iface->poke8(0x3FC, 0xFF);
+    _io_iface->poke8(0x3FD, 0xFF);
+    _io_iface->poke8(0x3FE, 0x3F);
+}
+
+void ad9361_device_t::data_port_loopback(const bool loopback_enabled)
+{
+    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    _io_iface->poke8(0x3F5, (loopback_enabled ? 0x01 : 0x00));
+}
+
 
 }}

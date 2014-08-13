@@ -31,6 +31,8 @@ public:
 
     virtual boost::uint8_t peek8(boost::uint32_t reg)
     {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
         uhd::spi_config_t config;
         config.mosi_edge = uhd::spi_config_t::EDGE_FALL;
         config.miso_edge = uhd::spi_config_t::EDGE_FALL;    //TODO (Ashish): FPGA SPI workaround. This should be EDGE_RISE
@@ -46,6 +48,8 @@ public:
 
     virtual void poke8(boost::uint32_t reg, boost::uint8_t val)
     {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
         uhd::spi_config_t config;
         config.mosi_edge = uhd::spi_config_t::EDGE_FALL;
         config.miso_edge = uhd::spi_config_t::EDGE_FALL;    //TODO (Ashish): FPGA SPI workaround. This should be EDGE_RISE
@@ -54,15 +58,12 @@ public:
                            ((boost::uint32_t(reg) << AD9361_SPI_ADDR_SHIFT) & AD9361_SPI_ADDR_MASK) |
                            ((boost::uint32_t(val) << AD9361_SPI_DATA_SHIFT) & AD9361_SPI_DATA_MASK);
         _spi_iface->write_spi(_slave_num, config, wr_word, AD9361_SPI_NUM_BITS);
-
-        //TODO (Ashish): Is this necessary? The FX3 firmware does it right now but for
-        //networked devices, it makes writes blocking which will considerably slow down the programming
-        peek8(reg);
     }
 
 private:
     uhd::spi_iface::sptr    _spi_iface;
-    boost::uint32_t                _slave_num;
+    boost::uint32_t         _slave_num;
+    boost::mutex            _mutex;
 
     static const boost::uint32_t AD9361_SPI_WRITE_CMD  = 0x00800000;
     static const boost::uint32_t AD9361_SPI_READ_CMD   = 0x00000000;

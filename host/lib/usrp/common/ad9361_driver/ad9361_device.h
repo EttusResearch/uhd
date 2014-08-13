@@ -7,6 +7,7 @@
 
 #include <ad9361_client.h>
 #include <boost/noncopyable.hpp>
+#include <boost/thread/recursive_mutex.hpp>
 
 namespace uhd { namespace usrp {
 
@@ -115,6 +116,8 @@ private:    //Members
     boost::int32_t      _tfir_factor;
     //Register soft-copies
     chip_regs_t         _regs;
+    //Synchronization
+    boost::recursive_mutex  _mutex;
 };
 
 }}  //namespace
