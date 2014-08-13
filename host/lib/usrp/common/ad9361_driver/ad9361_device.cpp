@@ -9,6 +9,7 @@
 #include "ad9361_device.h"
 #include <cstring>
 #include <cmath>
+#include <uhd/exception.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/scoped_array.hpp>
@@ -16,8 +17,8 @@
 #define AD9361_MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define AD9361_MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-#define msg
-#define post_err_msg(x)
+//TODO: Convert these debug messages into UHD_LOG statements
+#define debug_msg(s, ...)
 
 inline int floor_to_int(double val) {
     return static_cast<int>(std::floor(val));
@@ -71,7 +72,7 @@ void ad9361_device_t::output_test_tone()
 
 void ad9361_device_t::data_port_loopback(const bool loopback_enabled)
 {
-    msg("[data_port_loopback] Enabled: %d", loopback_enabled);
+    debug_msg("[data_port_loopback] Enabled: %d", loopback_enabled);
     _io_iface->poke8(0x3F5, (loopback_enabled ? 0x01 : 0x00));
 }
 
@@ -187,7 +188,7 @@ void ad9361_device_t::_setup_rx_fir(size_t num_taps)
             coeffs[i] = boost::uint16_t(hb47_coeffs[i]);
             break;
         default:
-            post_err_msg("Unsupported number of Rx FIR taps.");
+            throw uhd::runtime_error("[ad9361_device_t] Unsupported number of Rx FIR taps.");
         }
     }
 
@@ -213,7 +214,7 @@ void ad9361_device_t::_setup_tx_fir(size_t num_taps)
             coeffs[i] = boost::uint16_t(hb47_coeffs[i]);
             break;
         default:
-            post_err_msg("Unsupported number of Tx FIR taps.");
+            throw uhd::runtime_error("[ad9361_device_t] Unsupported number of Tx FIR taps.");
         }
     }
 
@@ -241,7 +242,7 @@ void ad9361_device_t::_calibrate_lock_bbpll()
     size_t count = 0;
     while (!(_io_iface->peek8(0x05e) & 0x80)) {
         if (count > 1000) {
-            post_err_msg("BBPLL not locked");
+            throw uhd::runtime_error("[ad9361_device_t] BBPLL not locked");
             break;
         }
         count++;
@@ -258,7 +259,7 @@ void ad9361_device_t::_calibrate_synth_charge_pumps()
     /* If this function ever gets called, and the ENSM isn't already in the
      * ALERT state, then something has gone horribly wrong. */
     if ((_io_iface->peek8(0x017) & 0x0F) != 5) {
-        post_err_msg("AD9361 not in ALERT during cal");
+        throw uhd::runtime_error("[ad9361_device_t] AD9361 not in ALERT during cal");
     }
 
     /* Calibrate the RX synthesizer charge pump. */
@@ -266,7 +267,7 @@ void ad9361_device_t::_calibrate_synth_charge_pumps()
     _io_iface->poke8(0x23d, 0x04);
     while (!(_io_iface->peek8(0x244) & 0x80)) {
         if (count > 5) {
-            post_err_msg("RX charge pump cal failure");
+            throw uhd::runtime_error("[ad9361_device_t] RX charge pump cal failure");
             break;
         }
         count++;
@@ -279,7 +280,7 @@ void ad9361_device_t::_calibrate_synth_charge_pumps()
     _io_iface->poke8(0x27d, 0x04);
     while (!(_io_iface->peek8(0x284) & 0x80)) {
         if (count > 5) {
-            post_err_msg("TX charge pump cal failure");
+            throw uhd::runtime_error("[ad9361_device_t] TX charge pump cal failure");
             break;
         }
         count++;
@@ -332,7 +333,7 @@ double ad9361_device_t::_calibrate_baseband_rx_analog_filter()
     _io_iface->poke8(0x016, 0x80);
     while (_io_iface->peek8(0x016) & 0x80) {
         if (count > 100) {
-            post_err_msg("RX baseband filter cal FAILURE");
+            throw uhd::runtime_error("[ad9361_device_t] RX baseband filter cal FAILURE");
             break;
         }
         count++;
@@ -379,7 +380,7 @@ double ad9361_device_t::_calibrate_baseband_tx_analog_filter()
     _io_iface->poke8(0x016, 0x40);
     while (_io_iface->peek8(0x016) & 0x40) {
         if (count > 100) {
-            post_err_msg("TX baseband filter cal FAILURE");
+            throw uhd::runtime_error("[ad9361_device_t] TX baseband filter cal FAILURE");
             break;
         }
 
@@ -443,7 +444,7 @@ void ad9361_device_t::_calibrate_secondary_tx_filter()
     } else if ((bbbw_mhz * 2) > 24) {
         reg0d0 = 0x57;
     } else {
-        post_err_msg("Cal2ndTxFil: INVALID_CODE_PATH bad bbbw_mhz");
+        throw uhd::runtime_error("[ad9361_device_t] Cal2ndTxFil: INVALID_CODE_PATH bad bbbw_mhz");
         reg0d0 = 0x00;
     }
 
@@ -506,7 +507,7 @@ void ad9361_device_t::_calibrate_rx_TIAs()
     } else if (ceil_bbbw_mhz > 10) {
         reg1db = 0x20;
     } else {
-        post_err_msg("CalRxTias: INVALID_CODE_PATH bad bbbw_mhz");
+        throw uhd::runtime_error("[ad9361_device_t] CalRxTias: INVALID_CODE_PATH bad bbbw_mhz");
     }
 
     if (CTIA_fF > 2920) {
@@ -677,7 +678,7 @@ void ad9361_device_t::_calibrate_baseband_dc_offset()
     _io_iface->poke8(0x016, 0x01);
     while (_io_iface->peek8(0x016) & 0x01) {
         if (count > 100) {
-            post_err_msg("Baseband DC Offset Calibration Failure");
+            throw uhd::runtime_error("[ad9361_device_t] Baseband DC Offset Calibration Failure");
             break;
         }
         count++;
@@ -711,7 +712,7 @@ void ad9361_device_t::_calibrate_rf_dc_offset()
     _io_iface->poke8(0x016, 0x02);
     while (_io_iface->peek8(0x016) & 0x02) {
         if (count > 100) {
-            post_err_msg("RF DC Offset Calibration Failure");
+            throw uhd::runtime_error("[ad9361_device_t] RF DC Offset Calibration Failure");
             break;
         }
         count++;
@@ -766,7 +767,7 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
         bbbw = 0.20e6;
     }
     if (max_cal_freq > bbbw)
-        post_err_msg("max_cal_freq > bbbw");
+        throw uhd::runtime_error("[ad9361_device_t] max_cal_freq > bbbw");
 
     _io_iface->poke8(0x0a1, 0x7B); // Set tracking coefficient
     _io_iface->poke8(0x0a9, 0xff); // Cal count
@@ -796,7 +797,7 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
     _io_iface->poke8(0x016, 0x10);
     while (_io_iface->peek8(0x016) & 0x10) {
         if (count > 100) {
-            post_err_msg("TX Quadrature Calibration Failure");
+            throw uhd::runtime_error("[ad9361_device_t] TX Quadrature Calibration Failure");
             break;
         }
         count++;
@@ -813,7 +814,7 @@ void ad9361_device_t::_calibrate_tx_quadrature()
     /* Make sure we are, in fact, in the ALERT state. If not, something is
      * terribly wrong in the driver execution flow. */
     if ((_io_iface->peek8(0x017) & 0x0F) != 5) {
-        post_err_msg("TX Quad Cal started, but not in ALERT");
+        throw uhd::runtime_error("[ad9361_device_t] TX Quad Cal started, but not in ALERT");
     }
 
     /* Turn off free-running and continuous calibrations. Note that this
@@ -903,7 +904,7 @@ void ad9361_device_t::_program_gain_table() {
         gain_table = gain_table_4000mhz_to_6000mhz;
         new_gain_table = 3;
     } else {
-        post_err_msg("Wrong _rx_freq value");
+        throw uhd::runtime_error("[ad9361_device_t] Wrong _rx_freq value");
         new_gain_table = 1;
     }
 
@@ -992,7 +993,7 @@ void ad9361_device_t::_setup_synth(direction_t direction, double vcorate)
         }
     }
     if (vcoindex > 53)
-        post_err_msg("vcoindex > 53");
+        throw uhd::runtime_error("[ad9361_device_t] vcoindex > 53");
 
     /* Parse the values out of the LUT based on our calculated index... */
     boost::uint8_t vco_output_level = synth_cal_lut[vcoindex][0];
@@ -1034,7 +1035,7 @@ void ad9361_device_t::_setup_synth(direction_t direction, double vcorate)
         _io_iface->poke8(0x27f, loop_filter_c3 | (loop_filter_r1 << 4));
         _io_iface->poke8(0x280, loop_filter_r3);
     } else {
-        post_err_msg("[_setup_synth] INVALID_CODE_PATH");
+        throw uhd::runtime_error("[ad9361_device_t] [_setup_synth] INVALID_CODE_PATH");
     }
 }
 
@@ -1046,7 +1047,7 @@ void ad9361_device_t::_setup_synth(direction_t direction, double vcorate)
  * fed to the public set_clock_rate function. */
 double ad9361_device_t::_tune_bbvco(const double rate)
 {
-    msg("[_tune_bbvco] rate=%.10f", rate);
+    debug_msg("[_tune_bbvco] rate=%.10f", rate);
 
     /* Let's not re-tune to the same frequency over and over... */
     if (freq_is_nearly_equal(rate, _req_coreclk)) {
@@ -1072,17 +1073,17 @@ double ad9361_device_t::_tune_bbvco(const double rate)
             break;
     }
     if (i == 7)
-        post_err_msg("_tune_bbvco: wrong vcorate");
+        throw uhd::runtime_error("[ad9361_device_t] _tune_bbvco: wrong vcorate");
 
-    msg("[_tune_bbvco] vcodiv=%d vcorate=%.10f", vcodiv, vcorate);
+    debug_msg("[_tune_bbvco] vcodiv=%d vcorate=%.10f", vcodiv, vcorate);
 
     /* Fo = Fref * (Nint + Nfrac / mod) */
     int nint = vcorate / fref;
-    msg("[_tune_bbvco] (nint)=%.10f", (vcorate / fref));
+    debug_msg("[_tune_bbvco] (nint)=%.10f", (vcorate / fref));
     int nfrac = lround(((vcorate / fref) - (double) nint) * (double) modulus);
-    msg("[_tune_bbvco] (nfrac)=%.10f",
+    debug_msg("[_tune_bbvco] (nfrac)=%.10f",
             (((vcorate / fref) - (double) nint) * (double) modulus));
-    msg("[_tune_bbvco] nint=%d nfrac=%d", nint, nfrac);
+    debug_msg("[_tune_bbvco] nint=%d nfrac=%d", nint, nfrac);
     double actual_vcorate = fref
             * ((double) nint + ((double) nfrac / (double) modulus));
 
@@ -1152,7 +1153,7 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
             break;
     }
     if (i == 7)
-        post_err_msg("RFVCO can't find valid VCO rate!");
+        throw uhd::runtime_error("[ad9361_device_t] RFVCO can't find valid VCO rate!");
 
     int nint = vcorate / fref;
     int nfrac = ((vcorate / fref) - nint) * modulus;
@@ -1177,7 +1178,7 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
                 && (value <= 6e9)) {
             _regs.inputsel = (_regs.inputsel & 0xC0) | 0x03;
         } else {
-            post_err_msg("[_tune_helper] INVALID_CODE_PATH");
+            throw uhd::runtime_error("[ad9361_device_t] [_tune_helper] INVALID_CODE_PATH");
         }
 
         _io_iface->poke8(0x004, _regs.inputsel);
@@ -1199,7 +1200,7 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
         /* Lock the PLL! */
         boost::this_thread::sleep(boost::posix_time::milliseconds(2));
         if ((_io_iface->peek8(0x247) & 0x02) == 0) {
-            post_err_msg("RX PLL NOT LOCKED");
+            throw uhd::runtime_error("[ad9361_device_t] RX PLL NOT LOCKED");
         }
 
         _rx_freq = actual_lo;
@@ -1218,7 +1219,7 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
                 && (value <= 6e9)) {
             _regs.inputsel = _regs.inputsel & 0xBF;
         } else {
-            post_err_msg("[_tune_helper] INVALID_CODE_PATH");
+            throw uhd::runtime_error("[ad9361_device_t] [_tune_helper] INVALID_CODE_PATH");
         }
 
         _io_iface->poke8(0x004, _regs.inputsel);
@@ -1240,7 +1241,7 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
         /* Lock the PLL! */
         boost::this_thread::sleep(boost::posix_time::milliseconds(2));
         if ((_io_iface->peek8(0x287) & 0x02) == 0) {
-            post_err_msg("TX PLL NOT LOCKED");
+            throw uhd::runtime_error("[ad9361_device_t] TX PLL NOT LOCKED");
         }
 
         _tx_freq = actual_lo;
@@ -1333,10 +1334,10 @@ double ad9361_device_t::_setup_rates(const double rate)
         _tfir_factor = 1;
     } else {
         // should never get in here
-        post_err_msg("[_setup_rates] INVALID_CODE_PATH");
+        throw uhd::runtime_error("[ad9361_device_t] [_setup_rates] INVALID_CODE_PATH");
     }
 
-    msg("[_setup_rates] divfactor=%d", divfactor);
+    debug_msg("[_setup_rates] divfactor=%d", divfactor);
 
     /* Tune the BBPLL to get the ADC and DAC clocks. */
     const double adcclk = _tune_bbvco(rate * divfactor);
@@ -1358,7 +1359,7 @@ double ad9361_device_t::_setup_rates(const double rate)
     _io_iface->poke8(0x004, _regs.inputsel);
     _io_iface->poke8(0x00A, _regs.bbpll);
 
-    msg("[_setup_rates] adcclk=%f", adcclk);
+    debug_msg("[_setup_rates] adcclk=%f", adcclk);
     _baseband_bw = (adcclk / divfactor);
 
     /*
@@ -1445,7 +1446,7 @@ void ad9361_device_t::initialize()
     } break;
 
     default:
-        post_err_msg("NOT IMPLEMENTED");
+        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
     boost::this_thread::sleep(boost::posix_time::milliseconds(20));
 
@@ -1474,7 +1475,7 @@ void ad9361_device_t::initialize()
     } break;
 
     default:
-        post_err_msg("NOT IMPLEMENTED");
+        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
 
     /* Data delay for TX and RX data clocks */
@@ -1580,7 +1581,7 @@ void ad9361_device_t::initialize()
     } break;
 
     default:
-        post_err_msg("NOT IMPLEMENTED");
+        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
 
     _io_iface->poke8(0x013, 0x01); // Set ENSM FDD bit
@@ -1620,10 +1621,10 @@ void ad9361_device_t::initialize()
 double ad9361_device_t::set_clock_rate(const double req_rate)
 {
     if (req_rate > 61.44e6) {
-        post_err_msg("Requested master clock rate outside range");
+        throw uhd::runtime_error("[ad9361_device_t] Requested master clock rate outside range");
     }
 
-    msg("[set_clock_rate] req_rate=%.10f", req_rate);
+    debug_msg("[set_clock_rate] req_rate=%.10f", req_rate);
 
     /* UHD has a habit of requesting the same rate like four times when it
      * starts up. This prevents that, and any bugs in user code that request
@@ -1649,7 +1650,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
         break;
 
     default:
-        post_err_msg("[set_clock_rate:1] AD9361 in unknown state");
+        throw uhd::runtime_error("[ad9361_device_t] [set_clock_rate:1] AD9361 in unknown state");
         break;
     };
 
@@ -1663,7 +1664,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
      * all the hard work gets done. */
     double rate = _setup_rates(req_rate);
 
-    msg("[set_clock_rate] rate=%.10f", rate);
+    debug_msg("[set_clock_rate] rate=%.10f", rate);
 
     /* Transition to the ALERT state and calibrate everything. */
     _io_iface->poke8(0x015, 0x04); //dual synth mode, synth en ctrl en
@@ -1702,7 +1703,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
         }break;
 
         default:
-        post_err_msg("NOT IMPLEMENTED");
+        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
     _io_iface->poke8(0x013, 0x01); // Set ENSM FDD bit
     _io_iface->poke8(0x015, 0x04); // dual synth mode, synth en ctrl en
@@ -1725,7 +1726,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
         break;
 
     default:
-        post_err_msg("[set_clock_rate:2] AD9361 in unknown state");
+        throw uhd::runtime_error("[ad9361_device_t] [set_clock_rate:2] AD9361 in unknown state");
         break;
     };
 
@@ -1814,7 +1815,7 @@ double ad9361_device_t::tune(direction_t direction, const double value)
         }
 
     } else {
-        post_err_msg("[tune] INVALID_CODE_PATH");
+        throw uhd::runtime_error("[ad9361_device_t] [tune] INVALID_CODE_PATH");
     }
 
     /* If we aren't already in the ALERT state, we will need to return to
