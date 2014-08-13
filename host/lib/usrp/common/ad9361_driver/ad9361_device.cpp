@@ -14,25 +14,8 @@
 #include <boost/thread/thread.hpp>
 #include <boost/scoped_array.hpp>
 
-#define AD9361_MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define AD9361_MAX(a, b) (((a) > (b)) ? (a) : (b))
-
 //TODO: Convert these debug messages into UHD_LOG statements
 #define debug_msg(s, ...)
-
-inline int floor_to_int(double val) {
-    return static_cast<int>(std::floor(val));
-}
-
-inline int ceil_to_int(double val) {
-    return static_cast<int>(std::ceil(val));
-}
-
-////////////////////////////////////////////////////////////
-#define AD9361_MAX_GAIN 89.75
-
-#define DOUBLE_PI 3.14159265359
-#define DOUBLE_LN_2 0.693147181
 
 ////////////////////////////////////////////////////////////
 // the following macros evaluate to a compile time constant
@@ -81,7 +64,7 @@ void ad9361_device_t::data_port_loopback(const bool loopback_enabled)
  * the same but not 'exactly' because of data precision issues. */
 // TODO: see if we can avoid the need for this function
 int freq_is_nearly_equal(double a, double b) {
-    return AD9361_MAX(a,b) - AD9361_MIN(a,b) < 1;
+    return std::max(a,b) - std::min(a,b) < 1;
 }
 
 /***********************************************************************
@@ -305,14 +288,14 @@ double ad9361_device_t::_calibrate_baseband_rx_analog_filter()
         bbbw = 0.20e6;
     }
 
-    double rxtune_clk = ((1.4 * bbbw * 2 * DOUBLE_PI) / DOUBLE_LN_2);
-    _rx_bbf_tunediv = AD9361_MIN(511, ceil_to_int(_bbpll_freq / rxtune_clk));
+    double rxtune_clk = ((1.4 * bbbw * 2 * M_PI) / M_LN2);
+    _rx_bbf_tunediv = std::min<boost::uint16_t>(511, std::ceil<boost::uint16_t>(_bbpll_freq / rxtune_clk));
     _regs.bbftune_config = (_regs.bbftune_config & 0xFE)
             | ((_rx_bbf_tunediv >> 8) & 0x0001);
 
     double bbbw_mhz = bbbw / 1e6;
-    double temp = ((bbbw_mhz - floor_to_int(bbbw_mhz)) * 1000) / 7.8125;
-    boost::uint8_t bbbw_khz = (boost::uint8_t) AD9361_MIN(127, (floor_to_int(temp + 0.5)));
+    double temp = ((bbbw_mhz - std::floor(bbbw_mhz)) * 1000) / 7.8125;
+    boost::uint8_t bbbw_khz = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>(temp + 0.5)));
 
     /* Set corner frequencies and dividers. */
     _io_iface->poke8(0x1fb, (boost::uint8_t) (bbbw_mhz));
@@ -363,8 +346,8 @@ double ad9361_device_t::_calibrate_baseband_tx_analog_filter()
         bbbw = 0.625e6;
     }
 
-    double txtune_clk = ((1.6 * bbbw * 2 * DOUBLE_PI) / DOUBLE_LN_2);
-    boost::uint16_t txbbfdiv = AD9361_MIN(511, (ceil_to_int(_bbpll_freq / txtune_clk)));
+    double txtune_clk = ((1.6 * bbbw * 2 * M_PI) / M_LN2);
+    boost::uint16_t txbbfdiv = std::min<boost::uint16_t>(511, (std::ceil<boost::uint16_t>(_bbpll_freq / txtune_clk)));
     _regs.bbftune_mode = (_regs.bbftune_mode & 0xFE)
             | ((txbbfdiv >> 8) & 0x0001);
 
@@ -415,13 +398,13 @@ void ad9361_device_t::_calibrate_secondary_tx_filter()
     int res = 100;
 
     /* Calculate target corner frequency. */
-    double corner_freq = 5 * bbbw_mhz * 2 * DOUBLE_PI;
+    double corner_freq = 5 * bbbw_mhz * 2 * M_PI;
 
     /* Iterate through RC values to determine correct combination. */
     int cap = 0;
     int i;
     for (i = 0; i <= 3; i++) {
-        cap = (floor_to_int(0.5 + ((1 / ((corner_freq * res) * 1e6)) * 1e12)))
+        cap = (std::floor<int>(0.5 + ((1 / ((corner_freq * res) * 1e6)) * 1e12)))
                 - 12;
 
         if (cap <= 63) {
@@ -492,7 +475,7 @@ void ad9361_device_t::_calibrate_rx_TIAs()
     } else if (bbbw < 0.20e6) {
         bbbw = 0.20e6;
     }
-    double ceil_bbbw_mhz = ceil_to_int(bbbw / 1e6);
+    double ceil_bbbw_mhz = std::ceil(bbbw / 1e6);
 
     /* Do some crazy resistor and capacitor math. */
     int Cbbf = (reg1eb * 160) + (reg1ec * 10) + 140;
@@ -513,12 +496,12 @@ void ad9361_device_t::_calibrate_rx_TIAs()
     if (CTIA_fF > 2920) {
         reg1dc = 0x40;
         reg1de = 0x40;
-        boost::uint8_t temp = (boost::uint8_t) AD9361_MIN(127,
-                (floor_to_int(0.5 + ((CTIA_fF - 400.0) / 320.0))));
+        boost::uint8_t temp = (boost::uint8_t) std::min<boost::uint8_t>(127,
+                (std::floor<boost::uint8_t>(0.5 + ((CTIA_fF - 400.0) / 320.0))));
         reg1dd = temp;
         reg1df = temp;
     } else {
-        boost::uint8_t temp = (boost::uint8_t) floor_to_int(0.5 + ((CTIA_fF - 400.0) / 40.0))
+        boost::uint8_t temp = std::floor<boost::uint8_t>(0.5 + ((CTIA_fF - 400.0) / 40.0))
                 + 0x40;
         reg1dc = temp;
         reg1de = temp;
@@ -542,8 +525,8 @@ void ad9361_device_t::_calibrate_rx_TIAs()
  * some of the 40 registers depend on the values in others. */
 void ad9361_device_t::_setup_adc()
 {
-    double bbbw_mhz = (((_bbpll_freq / 1e6) / _rx_bbf_tunediv) * DOUBLE_LN_2) \
-                  / (1.4 * 2 * DOUBLE_PI);
+    double bbbw_mhz = (((_bbpll_freq / 1e6) / _rx_bbf_tunediv) * M_LN2) \
+                  / (1.4 * 2 * M_PI);
 
     /* For calibration, baseband BW is half the complex BW, and must be
      * between 28e6 and 0.2e6. */
@@ -562,13 +545,13 @@ void ad9361_device_t::_setup_adc()
     /* Sort out the RC time constant for our baseband bandwidth... */
     double rc_timeconst = 0.0;
     if(bbbw_mhz < 18) {
-        rc_timeconst = (1 / ((1.4 * 2 * DOUBLE_PI) \
+        rc_timeconst = (1 / ((1.4 * 2 * M_PI) \
                             * (18300 * rxbbf_r2346)
                             * ((160e-15 * rxbbf_c3_msb)
                                 + (10e-15 * rxbbf_c3_lsb) + 140e-15)
                             * (bbbw_mhz * 1e6)));
     } else {
-        rc_timeconst = (1 / ((1.4 * 2 * DOUBLE_PI) \
+        rc_timeconst = (1 / ((1.4 * 2 * M_PI) \
                             * (18300 * rxbbf_r2346)
                             * ((160e-15 * rxbbf_c3_msb)
                                 + (10e-15 * rxbbf_c3_lsb) + 140e-15)
@@ -587,68 +570,68 @@ void ad9361_device_t::_setup_adc()
     boost::uint8_t data[40];
     data[0] = 0;    data[1] = 0; data[2] = 0; data[3] = 0x24;
     data[4] = 0x24; data[5] = 0; data[6] = 0;
-    data[7] = (boost::uint8_t) AD9361_MIN(124, (floor_to_int(-0.5
+    data[7] = std::min<boost::uint8_t>(124, (std::floor<boost::uint8_t>(-0.5
                     + (80.0 * scale_snr * scale_res
-                    * AD9361_MIN(1.0, sqrt(maxsnr * fsadc / 640.0))))));
+                    * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
     double data007 = data[7];
-    data[8] = (boost::uint8_t) AD9361_MIN(255, (floor_to_int(0.5
+    data[8] = std::min<boost::uint8_t>(255, (std::floor<boost::uint8_t>(0.5
                     + ((20.0 * (640.0 / fsadc) * ((data007 / 80.0))
                     / (scale_res * scale_cap))))));
-    data[10] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int(-0.5 + (77.0 * scale_res
-                    * AD9361_MIN(1.0, sqrt(maxsnr * fsadc / 640.0))))));
+    data[10] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>(-0.5 + (77.0 * scale_res
+                    * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
     double data010 = data[10];
-    data[9] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int(0.8 * data010)));
-    data[11] = (boost::uint8_t) AD9361_MIN(255, (floor_to_int(0.5
+    data[9] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>(0.8 * data010)));
+    data[11] = std::min<boost::uint8_t>(255, (std::floor<boost::uint8_t>(0.5
                     + (20.0 * (640.0 / fsadc) * ((data010 / 77.0)
                     / (scale_res * scale_cap))))));
-    data[12] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int(-0.5
-                    + (80.0 * scale_res * AD9361_MIN(1.0,
+    data[12] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>(-0.5
+                    + (80.0 * scale_res * std::min<double>(1.0,
                     sqrt(maxsnr * fsadc / 640.0))))));
     double data012 = data[12];
-    data[13] = (boost::uint8_t) AD9361_MIN(255, (floor_to_int(-1.5
+    data[13] = std::min<boost::uint8_t>(255, (std::floor<boost::uint8_t>(-1.5
                     + (20.0 * (640.0 / fsadc) * ((data012 / 80.0)
                     / (scale_res * scale_cap))))));
-    data[14] = 21 * (boost::uint8_t)(floor_to_int(0.1 * 640.0 / fsadc));
-    data[15] = (boost::uint8_t) AD9361_MIN(127, (1.025 * data007));
+    data[14] = 21 * (std::floor<boost::uint8_t>(0.1 * 640.0 / fsadc));
+    data[15] = std::min<boost::uint8_t>(127, (1.025 * data007));
     double data015 = data[15];
-    data[16] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int((data015
-                    * (0.98 + (0.02 * AD9361_MAX(1.0,
+    data[16] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>((data015
+                    * (0.98 + (0.02 * std::max<double>(1.0,
                     (640.0 / fsadc) / maxsnr)))))));
     data[17] = data[15];
-    data[18] = (boost::uint8_t) AD9361_MIN(127, (0.975 * (data010)));
+    data[18] = std::min<boost::uint8_t>(127, (0.975 * (data010)));
     double data018 = data[18];
-    data[19] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int((data018
-                    * (0.98 + (0.02 * AD9361_MAX(1.0,
+    data[19] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>((data018
+                    * (0.98 + (0.02 * std::max<double>(1.0,
                     (640.0 / fsadc) / maxsnr)))))));
     data[20] = data[18];
-    data[21] = (boost::uint8_t) AD9361_MIN(127, (0.975 * data012));
+    data[21] = std::min<boost::uint8_t>(127, (0.975 * data012));
     double data021 = data[21];
-    data[22] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int((data021
-                    * (0.98 + (0.02 * AD9361_MAX(1.0,
+    data[22] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>((data021
+                    * (0.98 + (0.02 * std::max<double>(1.0,
                     (640.0 / fsadc) / maxsnr)))))));
     data[23] = data[21];
     data[24] = 0x2e;
-    data[25] = (boost::uint8_t)(floor_to_int(128.0 + AD9361_MIN(63.0,
-                    63.0 * (fsadc / 640.0))));
-    data[26] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0, 63.0 * (fsadc / 640.0)
-                    * (0.92 + (0.08 * (640.0 / fsadc))))));
-    data[27] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0,
-                    32.0 * sqrt(fsadc / 640.0))));
-    data[28] = (boost::uint8_t)(floor_to_int(128.0 + AD9361_MIN(63.0,
-                    63.0 * (fsadc / 640.0))));
-    data[29] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0,
+    data[25] = std::floor<boost::uint8_t>(128.0 + std::min<double>(63.0,
+                    63.0 * (fsadc / 640.0)));
+    data[26] = std::floor<boost::uint8_t>(std::min<double>(63.0, 63.0 * (fsadc / 640.0)
+                    * (0.92 + (0.08 * (640.0 / fsadc)))));
+    data[27] = std::floor<boost::uint8_t>(std::min<double>(63.0,
+                    32.0 * sqrt(fsadc / 640.0)));
+    data[28] = std::floor<boost::uint8_t>(128.0 + std::min<double>(63.0,
+                    63.0 * (fsadc / 640.0)));
+    data[29] = std::floor<boost::uint8_t>(std::min<double>(63.0,
                     63.0 * (fsadc / 640.0)
-                    * (0.92 + (0.08 * (640.0 / fsadc))))));
-    data[30] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0,
-                    32.0 * sqrt(fsadc / 640.0))));
-    data[31] = (boost::uint8_t)(floor_to_int(128.0 + AD9361_MIN(63.0,
-                    63.0 * (fsadc / 640.0))));
-    data[32] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0,
+                    * (0.92 + (0.08 * (640.0 / fsadc)))));
+    data[30] = std::floor<boost::uint8_t>(std::min<double>(63.0,
+                    32.0 * sqrt(fsadc / 640.0)));
+    data[31] = std::floor<boost::uint8_t>(128.0 + std::min<double>(63.0,
+                    63.0 * (fsadc / 640.0)));
+    data[32] = std::floor<boost::uint8_t>(std::min<double>(63.0,
                     63.0 * (fsadc / 640.0) * (0.92
-                    + (0.08 * (640.0 / fsadc))))));
-    data[33] = (boost::uint8_t)(floor_to_int(AD9361_MIN(63.0,
-                    63.0 * sqrt(fsadc / 640.0))));
-    data[34] = (boost::uint8_t) AD9361_MIN(127, (floor_to_int(64.0
+                    + (0.08 * (640.0 / fsadc)))));
+    data[33] = std::floor<boost::uint8_t>(std::min<double>(63.0,
+                    63.0 * sqrt(fsadc / 640.0)));
+    data[34] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>(64.0
                     * sqrt(fsadc / 640.0))));
     data[35] = 0x40;
     data[36] = 0x40;
@@ -1370,14 +1353,14 @@ double ad9361_device_t::_setup_rates(const double rate)
      Also, whilst the Rx FIR filter always has memory available for 128 taps, the Tx FIR Filter can only support a maximum length of 64 taps
      in 1x interpolation mode, and 128 taps in 2x & 4x modes.
      */
-    const int max_tx_taps = AD9361_MIN(
-            AD9361_MIN((16 * (int)((dacclk / rate) + 0.5)), 128),
+    const size_t max_tx_taps = std::min<size_t>(
+            std::min<size_t>((16 * (int)((dacclk / rate) + 0.5)), 128),
             (_tfir_factor == 1) ? 64 : 128);
-    const int max_rx_taps = AD9361_MIN((16 * (int )((adcclk / rate) + 0.5)),
+    const size_t max_rx_taps = std::min<size_t>((16 * (size_t)((adcclk / rate) + 0.5)),
             128);
 
-    const int num_tx_taps = get_num_taps(max_tx_taps);
-    const int num_rx_taps = get_num_taps(max_rx_taps);
+    const size_t num_tx_taps = get_num_taps(max_tx_taps);
+    const size_t num_rx_taps = get_num_taps(max_rx_taps);
 
     _setup_tx_fir(num_tx_taps);
     _setup_rx_fir(num_rx_taps);

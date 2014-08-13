@@ -714,7 +714,7 @@ void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, co
     }
     else
     {
-        const double max_tick_rate = ((chan_count <= 1) ? AD9361_1_CHAN_CLOCK_RATE_MAX : AD9361_2_CHAN_CLOCK_RATE_MAX);
+        const double max_tick_rate = ad9361_device_t::AD9361_MAX_CLOCK_RATE / ((chan_count <= 1) ? 1 : 2);
         if (tick_rate - max_tick_rate >= 1.0)
         {
             throw uhd::value_error(boost::str(

@@ -12,10 +12,6 @@
 #include <ad9361_device.h>
 #include <string>
 
-static const double AD9361_CLOCK_RATE_MAX = 61.44e6;
-static const double AD9361_1_CHAN_CLOCK_RATE_MAX = AD9361_CLOCK_RATE_MAX;
-static const double AD9361_2_CHAN_CLOCK_RATE_MAX = (AD9361_1_CHAN_CLOCK_RATE_MAX / 2);
-
 namespace uhd { namespace usrp {
 
 /***********************************************************************
@@ -62,7 +58,7 @@ public:
     static uhd::meta_range_t get_clock_rate_range(void)
     {
         //return uhd::meta_range_t(220e3, 61.44e6);
-        return uhd::meta_range_t(5e6, AD9361_CLOCK_RATE_MAX); //5 MHz DCM low end
+        return uhd::meta_range_t(5e6, ad9361_device_t::AD9361_MAX_CLOCK_RATE); //5 MHz DCM low end
     }
 
     //! set the filter bandwidth for the frontend
