@@ -149,7 +149,7 @@ IF(MSVC)
     IF(BOOST_ALL_DYN_LINK)
         ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
     ELSE(BOOST_ALL_DYN_LINK)
-        UNSET(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
+        SET(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
     ENDIF(BOOST_ALL_DYN_LINK)
 ENDIF(MSVC)
 
@@ -262,8 +262,8 @@ STRING(REPLACE ";" " " UHD_PC_LIBS "${UHD_PC_LIBS}")
 
 #unset these vars to avoid hard-coded paths to cross environment
 IF(CMAKE_CROSSCOMPILING)
-    UNSET(UHD_PC_CFLAGS)
-    UNSET(UHD_PC_LIBS)
+    SET(UHD_PC_CFLAGS)
+    SET(UHD_PC_LIBS)
 ENDIF(CMAKE_CROSSCOMPILING)
 
 IF(NOT LIBUHD_PKG AND NOT UHDHOST_PKG)
