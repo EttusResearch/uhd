@@ -7,14 +7,16 @@
 #include "ad9361_synth_lut.h"
 #include "ad9361_client.h"
 #include "ad9361_device.h"
-#include <cstring>
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <boost/cstdint.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/format.hpp>
+#include <boost/math/special_functions.hpp>
 
 ////////////////////////////////////////////////////////////
 // the following macros evaluate to a compile time constant
@@ -73,6 +75,10 @@ int get_num_taps(int max_num_taps) {
 
     return num_taps;
 }
+
+const double ad9361_device_t::AD9361_MAX_GAIN        = 89.75;
+const double ad9361_device_t::AD9361_MAX_CLOCK_RATE  = 61.44e6;
+
 
 /* Program either the RX or TX FIR filter.
  *
@@ -273,13 +279,13 @@ double ad9361_device_t::_calibrate_baseband_rx_analog_filter()
     }
 
     double rxtune_clk = ((1.4 * bbbw * 2 * M_PI) / M_LN2);
-    _rx_bbf_tunediv = std::min<boost::uint16_t>(511, std::ceil<boost::uint16_t>(_bbpll_freq / rxtune_clk));
+    _rx_bbf_tunediv = std::min<boost::uint16_t>(511, boost::uint16_t(std::ceil(_bbpll_freq / rxtune_clk)));
     _regs.bbftune_config = (_regs.bbftune_config & 0xFE)
             | ((_rx_bbf_tunediv >> 8) & 0x0001);
 
     double bbbw_mhz = bbbw / 1e6;
     double temp = ((bbbw_mhz - std::floor(bbbw_mhz)) * 1000) / 7.8125;
-    boost::uint8_t bbbw_khz = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>(temp + 0.5)));
+    boost::uint8_t bbbw_khz = std::min<boost::uint8_t>(127, boost::uint8_t(std::floor(temp + 0.5)));
 
     /* Set corner frequencies and dividers. */
     _io_iface->poke8(0x1fb, (boost::uint8_t) (bbbw_mhz));
@@ -331,7 +337,7 @@ double ad9361_device_t::_calibrate_baseband_tx_analog_filter()
     }
 
     double txtune_clk = ((1.6 * bbbw * 2 * M_PI) / M_LN2);
-    boost::uint16_t txbbfdiv = std::min<boost::uint16_t>(511, (std::ceil<boost::uint16_t>(_bbpll_freq / txtune_clk)));
+    boost::uint16_t txbbfdiv = std::min<boost::uint16_t>(511, boost::uint16_t(std::ceil(_bbpll_freq / txtune_clk)));
     _regs.bbftune_mode = (_regs.bbftune_mode & 0xFE)
             | ((txbbfdiv >> 8) & 0x0001);
 
@@ -388,7 +394,7 @@ void ad9361_device_t::_calibrate_secondary_tx_filter()
     int cap = 0;
     int i;
     for (i = 0; i <= 3; i++) {
-        cap = (std::floor<int>(0.5 + ((1 / ((corner_freq * res) * 1e6)) * 1e12)))
+        cap = static_cast<int>(std::floor(0.5 + ((1 / ((corner_freq * res) * 1e6)) * 1e12)))
                 - 12;
 
         if (cap <= 63) {
@@ -481,12 +487,11 @@ void ad9361_device_t::_calibrate_rx_TIAs()
         reg1dc = 0x40;
         reg1de = 0x40;
         boost::uint8_t temp = (boost::uint8_t) std::min<boost::uint8_t>(127,
-                (std::floor<boost::uint8_t>(0.5 + ((CTIA_fF - 400.0) / 320.0))));
+                boost::uint8_t(std::floor(0.5 + ((CTIA_fF - 400.0) / 320.0))));
         reg1dd = temp;
         reg1df = temp;
     } else {
-        boost::uint8_t temp = std::floor<boost::uint8_t>(0.5 + ((CTIA_fF - 400.0) / 40.0))
-                + 0x40;
+        boost::uint8_t temp = boost::uint8_t(std::floor(0.5 + ((CTIA_fF - 400.0) / 40.0)) + 0x40);
         reg1dc = temp;
         reg1de = temp;
         reg1dd = 0;
@@ -554,68 +559,68 @@ void ad9361_device_t::_setup_adc()
     boost::uint8_t data[40];
     data[0] = 0;    data[1] = 0; data[2] = 0; data[3] = 0x24;
     data[4] = 0x24; data[5] = 0; data[6] = 0;
-    data[7] = std::min<boost::uint8_t>(124, (std::floor<boost::uint8_t>(-0.5
+    data[7] = std::min<boost::uint8_t>(124, boost::uint8_t(std::floor(-0.5
                     + (80.0 * scale_snr * scale_res
                     * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
     double data007 = data[7];
-    data[8] = std::min<boost::uint8_t>(255, (std::floor<boost::uint8_t>(0.5
+    data[8] = std::min<boost::uint8_t>(255, boost::uint8_t(std::floor(0.5
                     + ((20.0 * (640.0 / fsadc) * ((data007 / 80.0))
                     / (scale_res * scale_cap))))));
-    data[10] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>(-0.5 + (77.0 * scale_res
+    data[10] = std::min<boost::uint8_t>(127, boost::uint8_t(std::floor(-0.5 + (77.0 * scale_res
                     * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
     double data010 = data[10];
-    data[9] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>(0.8 * data010)));
-    data[11] = std::min<boost::uint8_t>(255, (std::floor<boost::uint8_t>(0.5
+    data[9] = std::min<boost::uint8_t>(127, boost::uint8_t(std::floor(0.8 * data010)));
+    data[11] = std::min<boost::uint8_t>(255, boost::uint8_t(std::floor(0.5
                     + (20.0 * (640.0 / fsadc) * ((data010 / 77.0)
                     / (scale_res * scale_cap))))));
-    data[12] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>(-0.5
+    data[12] = std::min<boost::uint8_t>(127, boost::uint8_t(std::floor(-0.5
                     + (80.0 * scale_res * std::min<double>(1.0,
                     sqrt(maxsnr * fsadc / 640.0))))));
     double data012 = data[12];
-    data[13] = std::min<boost::uint8_t>(255, (std::floor<boost::uint8_t>(-1.5
+    data[13] = std::min<boost::uint8_t>(255, boost::uint8_t(std::floor(-1.5
                     + (20.0 * (640.0 / fsadc) * ((data012 / 80.0)
                     / (scale_res * scale_cap))))));
-    data[14] = 21 * (std::floor<boost::uint8_t>(0.1 * 640.0 / fsadc));
-    data[15] = std::min<boost::uint8_t>(127, (1.025 * data007));
+    data[14] = 21 * boost::uint8_t(std::floor(0.1 * 640.0 / fsadc));
+    data[15] = std::min<boost::uint8_t>(127, boost::uint8_t(1.025 * data007));
     double data015 = data[15];
-    data[16] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>((data015
+    data[16] = std::min<boost::uint8_t>(127, boost::uint8_t(std::floor((data015
                     * (0.98 + (0.02 * std::max<double>(1.0,
                     (640.0 / fsadc) / maxsnr)))))));
     data[17] = data[15];
-    data[18] = std::min<boost::uint8_t>(127, (0.975 * (data010)));
+    data[18] = std::min<boost::uint8_t>(127, boost::uint8_t(0.975 * (data010)));
     double data018 = data[18];
-    data[19] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>((data018
+    data[19] = std::min<boost::uint8_t>(127, boost::uint8_t(std::floor((data018
                     * (0.98 + (0.02 * std::max<double>(1.0,
                     (640.0 / fsadc) / maxsnr)))))));
     data[20] = data[18];
-    data[21] = std::min<boost::uint8_t>(127, (0.975 * data012));
+    data[21] = std::min<boost::uint8_t>(127, boost::uint8_t(0.975 * data012));
     double data021 = data[21];
-    data[22] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>((data021
+    data[22] = std::min<boost::uint8_t>(127, boost::uint8_t(std::floor((data021
                     * (0.98 + (0.02 * std::max<double>(1.0,
                     (640.0 / fsadc) / maxsnr)))))));
     data[23] = data[21];
     data[24] = 0x2e;
-    data[25] = std::floor<boost::uint8_t>(128.0 + std::min<double>(63.0,
-                    63.0 * (fsadc / 640.0)));
-    data[26] = std::floor<boost::uint8_t>(std::min<double>(63.0, 63.0 * (fsadc / 640.0)
-                    * (0.92 + (0.08 * (640.0 / fsadc)))));
-    data[27] = std::floor<boost::uint8_t>(std::min<double>(63.0,
-                    32.0 * sqrt(fsadc / 640.0)));
-    data[28] = std::floor<boost::uint8_t>(128.0 + std::min<double>(63.0,
-                    63.0 * (fsadc / 640.0)));
-    data[29] = std::floor<boost::uint8_t>(std::min<double>(63.0,
+    data[25] = boost::uint8_t(std::floor(128.0 + std::min<double>(63.0,
+                    63.0 * (fsadc / 640.0))));
+    data[26] = boost::uint8_t(std::floor(std::min<double>(63.0, 63.0 * (fsadc / 640.0)
+                    * (0.92 + (0.08 * (640.0 / fsadc))))));
+    data[27] = boost::uint8_t(std::floor(std::min<double>(63.0,
+                    32.0 * sqrt(fsadc / 640.0))));
+    data[28] = boost::uint8_t(std::floor(128.0 + std::min<double>(63.0,
+                    63.0 * (fsadc / 640.0))));
+    data[29] = boost::uint8_t(std::floor(std::min<double>(63.0,
                     63.0 * (fsadc / 640.0)
-                    * (0.92 + (0.08 * (640.0 / fsadc)))));
-    data[30] = std::floor<boost::uint8_t>(std::min<double>(63.0,
-                    32.0 * sqrt(fsadc / 640.0)));
-    data[31] = std::floor<boost::uint8_t>(128.0 + std::min<double>(63.0,
-                    63.0 * (fsadc / 640.0)));
-    data[32] = std::floor<boost::uint8_t>(std::min<double>(63.0,
+                    * (0.92 + (0.08 * (640.0 / fsadc))))));
+    data[30] = boost::uint8_t(std::floor(std::min<double>(63.0,
+                    32.0 * sqrt(fsadc / 640.0))));
+    data[31] = boost::uint8_t(std::floor(128.0 + std::min<double>(63.0,
+                    63.0 * (fsadc / 640.0))));
+    data[32] = boost::uint8_t(std::floor(std::min<double>(63.0,
                     63.0 * (fsadc / 640.0) * (0.92
-                    + (0.08 * (640.0 / fsadc)))));
-    data[33] = std::floor<boost::uint8_t>(std::min<double>(63.0,
-                    63.0 * sqrt(fsadc / 640.0)));
-    data[34] = std::min<boost::uint8_t>(127, (std::floor<boost::uint8_t>(64.0
+                    + (0.08 * (640.0 / fsadc))))));
+    data[33] = boost::uint8_t(std::floor(std::min<double>(63.0,
+                    63.0 * sqrt(fsadc / 640.0))));
+    data[34] = std::min<boost::uint8_t>(127, boost::uint8_t(std::floor(64.0
                     * sqrt(fsadc / 640.0))));
     data[35] = 0x40;
     data[36] = 0x40;
@@ -1044,9 +1049,9 @@ double ad9361_device_t::_tune_bbvco(const double rate)
 
     UHD_LOG << boost::format("[ad9361_device_t::_tune_bbvco] vcodiv=%d vcorate=%.10f\n") % vcodiv % vcorate;
     /* Fo = Fref * (Nint + Nfrac / mod) */
-    int nint = vcorate / fref;
+    int nint = static_cast<int>(vcorate / fref);
     UHD_LOG << boost::format("[ad9361_device_t::_tune_bbvco] (nint)=%.10f\n") % (vcorate / fref);
-    int nfrac = lround(((vcorate / fref) - (double) nint) * (double) modulus);
+    int nfrac = static_cast<int>(boost::math::round(((vcorate / fref) - (double) nint) * (double) modulus));
     UHD_LOG << boost::format("[ad9361_device_t::_tune_bbvco] (nfrac)=%.10f\n") % (((vcorate / fref) - (double) nint) * (double) modulus);
     UHD_LOG << boost::format("[ad9361_device_t::_tune_bbvco] nint=%d nfrac=%d\n") % nint % nfrac;
     double actual_vcorate = fref
@@ -1056,7 +1061,7 @@ double ad9361_device_t::_tune_bbvco(const double rate)
     const double icp_baseline = 150e-6;
     const double freq_baseline = 1280e6;
     double icp = icp_baseline * (actual_vcorate / freq_baseline);
-    int icp_reg = (icp / 25e-6) - 1;
+    int icp_reg = static_cast<int>(icp / 25e-6) - 1;
 
     _io_iface->poke8(0x045, 0x00);            // REFCLK / 1 to BBPLL
     _io_iface->poke8(0x046, icp_reg & 0x3F);  // CP current
@@ -1120,8 +1125,8 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
     if (i == 7)
         throw uhd::runtime_error("[ad9361_device_t] RFVCO can't find valid VCO rate!");
 
-    int nint = vcorate / fref;
-    int nfrac = ((vcorate / fref) - nint) * modulus;
+    int nint = static_cast<int>(vcorate / fref);
+    int nfrac = static_cast<int>(((vcorate / fref) - nint) * modulus);
 
     double actual_vcorate = fref * (nint + (double) (nfrac) / modulus);
     double actual_lo = actual_vcorate / vcodiv;
@@ -1849,7 +1854,7 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
             gain_offset = 14;
         }
 
-        int gain_index = value + gain_offset;
+        int gain_index = static_cast<int>(value + gain_offset);
 
         /* Clip the gain values to the proper min/max gain values. */
         if (gain_index > 76)
@@ -1858,10 +1863,10 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
             gain_index = 0;
 
         if (chain == CHAIN_1) {
-            _rx1_gain = value;
+            _rx1_gain = boost::uint32_t(value);
             _io_iface->poke8(0x109, gain_index);
         } else {
-            _rx2_gain = value;
+            _rx2_gain = boost::uint32_t(value);
             _io_iface->poke8(0x10c, gain_index);
         }
 
@@ -1876,13 +1881,13 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
          * for the requested gain, convert it into gain steps, then write
          * the attenuation word. Max gain (so zero attenuation) is 89.75. */
         double atten = AD9361_MAX_GAIN - value;
-        int attenreg = atten * 4;
+        boost::uint32_t attenreg = boost::uint32_t(atten * 4);
         if (chain == CHAIN_1) {
-            _tx1_gain = value;
+            _tx1_gain = boost::uint32_t(value);
             _io_iface->poke8(0x073, attenreg & 0xFF);
             _io_iface->poke8(0x074, (attenreg >> 8) & 0x01);
         } else {
-            _tx2_gain = value;
+            _tx2_gain = boost::uint32_t(value);
             _io_iface->poke8(0x075, attenreg & 0xFF);
             _io_iface->poke8(0x076, (attenreg >> 8) & 0x01);
         }

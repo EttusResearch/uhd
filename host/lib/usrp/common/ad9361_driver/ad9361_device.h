@@ -64,8 +64,8 @@ public:
     void data_port_loopback(const bool loopback_enabled);
 
     //Constants
-    static const double AD9361_MAX_GAIN         = 89.75;
-    static const double AD9361_MAX_CLOCK_RATE   = 61.44e6;
+    static const double AD9361_MAX_GAIN;
+    static const double AD9361_MAX_CLOCK_RATE;
 
 private:    //Methods
     void _program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs);
