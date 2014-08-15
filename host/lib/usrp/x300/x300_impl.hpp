@@ -322,6 +322,7 @@ private:
 
     void set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
     void set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
+    bool _ignore_cal_file;
 
 
     /*! Update the IQ MUX settings for the radio peripheral according to given subdev spec.

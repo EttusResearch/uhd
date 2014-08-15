@@ -356,6 +356,7 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
 {
     UHD_MSG(status) << "X300 initialization sequence..." << std::endl;
     _type = device::USRP;
+    _ignore_cal_file = dev_addr.has_key("ignore-cal-file");
     _async_md.reset(new async_md_type(1000/*messages deep*/));
     _tree = uhd::property_tree::make();
     _tree->create<std::string>("/name").set("X-Series Device");
@@ -1082,12 +1083,16 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
 
 void x300_impl::set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq)
 {
-    apply_rx_fe_corrections(this->get_tree()->subtree(mb_path), fe_name, lo_freq);
+    if(not _ignore_cal_file){
+        apply_rx_fe_corrections(this->get_tree()->subtree(mb_path), fe_name, lo_freq);
+    }
 }
 
 void x300_impl::set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq)
 {
-    apply_tx_fe_corrections(this->get_tree()->subtree(mb_path), fe_name, lo_freq);
+    if(not _ignore_cal_file){
+        apply_tx_fe_corrections(this->get_tree()->subtree(mb_path), fe_name, lo_freq);
+    }
 }
 
 boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, boost::uint8_t prefix)

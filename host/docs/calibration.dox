@@ -66,5 +66,20 @@ recovered by the user.
 -   **Linux:** `${HOME}/.uhd/cal/`
 -   **Windows:** `%APPDATA%\.uhd\cal\`
 
+\subsection ignore_cal_file Ignoring Calibration Files
+
+At runtime, the user can choose to ignore a daughterboard's calibration file by adding "ignore-cal-file" to the arguments. With the UHD API, it can be done as follows:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+    uhd::device_addr_t hint;
+    hint["type"] = "usrp1";
+    hint["ignore-cal-file"] = "";
+    uhd::device_addrs_t dev_addrs = uhd::device::find(hint);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Using tx_waveforms as an example, the user can apply this argument as follows:
+
+    tx_waveforms --args="addr=192.168.10.2,ignore-cal-file" --freq=100e6 --rate=1e6
+
 */
 // vim:ft=doxygen:

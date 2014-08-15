@@ -150,6 +150,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
 
     _type = device::USRP;
     _tree = property_tree::make();
+    _ignore_cal_file = device_addr.has_key("ignore-cal-file");
 
     //extract the FPGA path for the B100
     std::string b100_fpga_image = find_image_path(
@@ -609,9 +610,13 @@ sensor_value_t b100_impl::get_ref_locked(void){
 }
 
 void b100_impl::set_rx_fe_corrections(const double lo_freq){
-    apply_rx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
+    if(not _ignore_cal_file){
+        apply_rx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
+    }
 }
 
 void b100_impl::set_tx_fe_corrections(const double lo_freq){
-    apply_tx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
+    if(not _ignore_cal_file){
+        apply_tx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
+    }
 }

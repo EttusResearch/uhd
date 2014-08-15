@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2013 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -127,6 +127,7 @@ private:
     //dboard stuff
     uhd::usrp::dboard_manager::sptr _dboard_manager;
     uhd::usrp::dboard_iface::sptr _dboard_iface;
+    bool _ignore_cal_file;
 
     std::vector<boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;
     std::vector<boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;

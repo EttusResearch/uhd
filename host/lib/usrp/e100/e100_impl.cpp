@@ -110,6 +110,7 @@ static const uhd::dict<std::string, std::string> model_to_fpga_file_name = boost
 e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tree = property_tree::make();
     _type = device::USRP;
+    _ignore_cal_file = device_addr.has_key("ignore-cal-file");
 
     //read the eeprom so we can determine the hardware
     _dev_i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);
@@ -549,9 +550,13 @@ void e100_impl::check_fpga_compat(void){
 }
 
 void e100_impl::set_rx_fe_corrections(const double lo_freq){
-    apply_rx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
+    if(not _ignore_cal_file){
+        apply_rx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
+    }
 }
 
 void e100_impl::set_tx_fe_corrections(const double lo_freq){
-    apply_tx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
+    if(not _ignore_cal_file){
+        apply_tx_fe_corrections(this->get_tree()->subtree("/mboards/0"), "A", lo_freq);
+    }
 }
