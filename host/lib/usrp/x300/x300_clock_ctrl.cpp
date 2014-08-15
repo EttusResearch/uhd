@@ -308,9 +308,9 @@ void set_master_clock_rate(double clock_rate) {
     _lmk04816_regs.CLKout1_TYPE = lmk04816_regs_t::CLKOUT1_TYPE_P_DOWN; //CPRI feedback clock, use LVDS
     _lmk04816_regs.CLKout2_TYPE = lmk04816_regs_t::CLKOUT2_TYPE_LVPECL_700MVPP; //DB_0_RX
     _lmk04816_regs.CLKout3_TYPE = lmk04816_regs_t::CLKOUT3_TYPE_LVPECL_700MVPP; //DB_1_RX
-    // Analog delay of 1075ps (maximum) to synchronize the radio clock with the source synchronous ADC clocks.
+    // Analog delay of 900ps to synchronize the radio clock with the source synchronous ADC clocks.
     // This delay may need to vary due to temperature.  Tested and verified at room temperature only.
-    _lmk04816_regs.CLKout0_1_ADLY = 0x17;
+    _lmk04816_regs.CLKout0_1_ADLY = 0x10;
 
     // Register 7
     _lmk04816_regs.CLKout4_TYPE = lmk04816_regs_t::CLKOUT4_TYPE_LVPECL_700MVPP; //DB_1_TX
@@ -318,9 +318,9 @@ void set_master_clock_rate(double clock_rate) {
     _lmk04816_regs.CLKout6_TYPE = lmk04816_regs_t::CLKOUT6_TYPE_LVPECL_700MVPP; //DB0_DAC
     _lmk04816_regs.CLKout7_TYPE = lmk04816_regs_t::CLKOUT7_TYPE_LVPECL_700MVPP; //DB1_DAC
     _lmk04816_regs.CLKout8_TYPE = lmk04816_regs_t::CLKOUT8_TYPE_LVPECL_700MVPP; //DB0_ADC
-    // Analog delay of 1075ps (maximum) to synchronize the DAC reference clocks with the source synchronous DAC clocks.
+    // Analog delay of 900ps to synchronize the DAC reference clocks with the source synchronous DAC clocks.
     // This delay may need to vary due to temperature.  Tested and verified at room temperature only.
-    _lmk04816_regs.CLKout6_7_ADLY = 0x17;
+    _lmk04816_regs.CLKout6_7_ADLY = 0x10;
 
     // Register 8
     _lmk04816_regs.CLKout9_TYPE = lmk04816_regs_t::CLKOUT9_TYPE_LVPECL_700MVPP; //DB1_ADC
