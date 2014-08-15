@@ -22,8 +22,10 @@
 
 // Ethernet MAC address
 
+#pragma pack(push,1)
 typedef struct {
   uint8_t	addr[6];
 } eth_mac_addr_t;
+#pragma pack(pop)
 
 #endif /* INCLUDED_ETH_MAC_ADDR_H */

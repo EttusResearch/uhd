@@ -41,6 +41,15 @@
 
 #define ntohl(n) htonl(n)
 
+#define _MAC_ADDR(mac_addr,a,b,c,d,e,f) mac_addr[0] = a; \
+                                        mac_addr[1] = b; \
+                                        mac_addr[2] = c; \
+                                        mac_addr[3] = d; \
+                                        mac_addr[4] = e; \
+                                        mac_addr[5] = f;
+
+#define _MAC_SET_EQUAL(mac_addr1,mac_addr2) for(uint8_t i = 0; i < 6; i++) mac_addr1[i] = mac_addr2[i];
+
 #define _IP(a,b,c,d) (((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)c << 8) | ((uint32_t)d << 0))
 #define _IPH_V(hdr) (ntohs((hdr)->_v_hl_tos) >> 12)
 #define _IPH_HL(hdr) ((ntohs((hdr)->_v_hl_tos) >> 8) & 0x0f)
@@ -60,11 +69,7 @@
 #define _IPH_PROTO_SET(hdr, proto) (hdr)->_ttl_proto = (htons((proto) | (_IPH_TTL(hdr) << 8)))
 #define _IPH_CHKSUM_SET(hdr, chksum) (hdr)->_chksum = (chksum)
 
-// Global network values
-eth_mac_addr_t octoclock_mac_addr;
-struct ip_addr octoclock_ip_addr;
-struct ip_addr octoclock_dr_addr;
-struct ip_addr octoclock_netmask;
+bool using_network_defaults;
 
 // Ethernet I/O buffers
 uint8_t buf_in[512];
@@ -75,9 +80,6 @@ static const uint32_t blank_eeprom_ip = _IP(255,255,255,255);
 static const uint32_t default_ip      = _IP(192,168,10,3);
 static const uint32_t default_dr      = _IP(192,168,10,1);
 static const uint32_t default_netmask = _IP(255,255,255,0);
-
-static const uint8_t blank_eeprom_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-static const uint8_t default_mac[6] = {0x00, 0x80, 0x2F, 0x11, 0x22, 0x33};
 
 typedef void (*udp_receiver_t)(struct socket_address src, struct socket_address dst,
 			       unsigned char *payload, int payload_len);
@@ -92,6 +94,8 @@ void send_udp_pkt(int src_port, struct socket_address dst,
 		  const void *buf, size_t len);
 
 void handle_eth_packet(size_t recv_len);
+
+void network_check(void);
 
 void network_init(void);
 

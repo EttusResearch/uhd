@@ -31,7 +31,7 @@ add_executable(octoclock_bootloader.elf ${bootloader_sources})
 # Details: http://savannah.nongnu.org/bugs/?36410
 #
 set_target_properties(octoclock_bootloader.elf PROPERTIES
-    COMPILE_FLAGS "${CMAKE_C_FLAGS} -Os -D__AVR_LIBC_DEPRECATED_ENABLE__ -Wall"
+    COMPILE_FLAGS "${CMAKE_C_FLAGS} -Os -D__AVR_LIBC_DEPRECATED_ENABLE__ -D__BOOTLOADER__ -Wall"
     LINK_FLAGS "-Os -Wl,--relax,--section-start=.text=0x1E000,-Map=octoclock_bootloader.map,--cref"
 )
 

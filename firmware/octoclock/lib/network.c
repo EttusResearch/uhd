@@ -19,11 +19,13 @@
 #include <string.h>
 
 #include <avr/eeprom.h>
+#include <avr/interrupt.h>
 
 #include <lwip/ip.h>
 #include <lwip/udp.h>
 #include <lwip/icmp.h>
 
+#include <debug.h>
 #include <octoclock.h>
 #include <network.h>
 
@@ -61,10 +63,6 @@ static uint32_t chksum_buffer(
  **********************************************************************/
 static eth_mac_addr_t _local_mac_addr;
 static struct ip_addr _local_ip_addr;
-void register_addrs(const eth_mac_addr_t *mac_addr, const struct ip_addr *ip_addr){
-    _local_mac_addr = *mac_addr;
-    _local_ip_addr = *ip_addr;
-}
 
 struct listener_entry {
     unsigned short	port;
@@ -378,28 +376,75 @@ handle_eth_packet(size_t recv_len)
         return;	// Not ARP or IPV4, ignore
 }
 
-void network_init(void){
+/***********************************************************************
+ * Timer+GARP stuff
+ **********************************************************************/
 
+static bool send_garp = false;
+static bool sent_initial_garp = false;
+static uint32_t num_overflows = 0;
+
+// Six overflows is the closest overflow count to one minute.
+ISR(TIMER1_OVF_vect){
+    num_overflows++;
+    if(!(num_overflows % 6)) send_garp = true;
+}
+
+static void
+send_gratuitous_arp(){
+    send_garp = false;
+
+    //Need to htonl IP address
+    struct ip_addr htonl_ip_addr;
+    htonl_ip_addr.addr = htonl(_local_ip_addr.addr);
+
+    struct arp_eth_ipv4 req _AL4;
+    req.ar_hrd = htons(ARPHRD_ETHER);
+    req.ar_pro = htons(ETHERTYPE_IPV4);
+    req.ar_hln = sizeof(eth_mac_addr_t);
+    req.ar_pln = sizeof(struct ip_addr);
+    req.ar_op = htons(ARPOP_REQUEST);
+    memcpy(req.ar_sha, &_local_mac_addr, sizeof(eth_mac_addr_t));
+    memcpy(req.ar_sip, &htonl_ip_addr,   sizeof(struct ip_addr));
+    memset(req.ar_tha, 0x00,             sizeof(eth_mac_addr_t));
+    memcpy(req.ar_tip, &htonl_ip_addr,   sizeof(struct ip_addr));
+
+    //Send the request with the broadcast MAC address
+    send_pkt(BCAST_MAC_ADDR, htons(ETHERTYPE_ARP), &req, sizeof(req), 0, 0, 0, 0);
+}
+
+// Executed every loop
+void network_check(void){
+    size_t recv_len = enc28j60PacketReceive(512, buf_in);
+    if(recv_len > 0) handle_eth_packet(recv_len);
+
+    /*
+     * Send a gratuitous ARP packet two seconds after Ethernet
+     * initialization.
+     */
+    if(!sent_initial_garp && (num_overflows == 0 && TCNT1 > (TIMER1_ONE_SECOND*2))){
+        sent_initial_garp = true;
+        send_garp = true;
+    }
+
+    if(send_garp) send_gratuitous_arp();
+}
+
+void network_init(void){
     /*
      * Read MAC address from EEPROM and initialize Ethernet driver. If EEPROM is blank,
      * use default MAC address instead.
      */
-    eeprom_read_block((void*)octoclock_mac_addr.addr, (void*)OCTOCLOCK_EEPROM_MAC_ADDR, 6);
-    if(!memcmp(&octoclock_mac_addr, blank_eeprom_mac, 6)) memcpy(octoclock_mac_addr.addr, default_mac, 6);
-
-    enc28j60Init((uint8_t*)&octoclock_mac_addr);
-
-    eeprom_read_block((void*)&octoclock_ip_addr, (void*)OCTOCLOCK_EEPROM_IP_ADDR, 4);
-    eeprom_read_block((void*)&octoclock_dr_addr, (void*)OCTOCLOCK_EEPROM_DR_ADDR, 4);
-    eeprom_read_block((void*)&octoclock_netmask, (void*)OCTOCLOCK_EEPROM_NETMASK, 4);
-
-    //In case of blank EEPROM, load default values
-    if(octoclock_ip_addr.addr == blank_eeprom_ip || octoclock_dr_addr.addr == blank_eeprom_ip ||
-       octoclock_netmask.addr == blank_eeprom_ip){
-        octoclock_ip_addr.addr = default_ip;
-        octoclock_dr_addr.addr = default_dr;
-        octoclock_netmask.addr = default_netmask;
+    if(eeprom_read_byte(0) == 0xFF){
+        _MAC_ADDR(_local_mac_addr.addr, 0x00,0x80,0x2F,0x11,0x22,0x33);
+        _local_ip_addr.addr = default_ip;
+        using_network_defaults = true;
+    }
+    else{
+        eeprom_read_block((void*)&_local_mac_addr, (void*)OCTOCLOCK_EEPROM_MAC_ADDR, 6);
+        eeprom_read_block((void*)&_local_ip_addr,  (void*)OCTOCLOCK_EEPROM_IP_ADDR, 4);
+        using_network_defaults = false;
     }
 
-    register_addrs(&octoclock_mac_addr, &octoclock_ip_addr);
+    enc28j60Init((uint8_t*)&_local_mac_addr);
 }

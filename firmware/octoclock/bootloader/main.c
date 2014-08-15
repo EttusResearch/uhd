@@ -28,12 +28,17 @@
 #include <debug.h>
 #include <network.h>
 
+#include <util/delay.h>
+
 #include <net/enc28j60.h>
 
 #include "octoclock/common.h"
 
-#define wait() for(uint16_t u=4000; u; u--) asm("nop");
-#define TIME_PASSED (TCNT1 > FIVE_SECONDS || (TIFR & _BV(TOV1)))
+/*
+ * The number for 5 seconds is close enough to 65535 that the
+ * timer may have overflowed before the main loop queries it.
+ */
+#define TIME_PASSED (TCNT1 > (TIMER1_ONE_SECOND*5) || (TIFR & _BV(TOV1)))
 
 //States
 static bool received_cmd = false;
@@ -83,8 +88,7 @@ void handle_udp_query_packet(
     const octoclock_packet_t *pkt_in = (octoclock_packet_t*)payload;
 
     //Respond to query packets
-    if(pkt_in->proto_ver == OCTOCLOCK_FW_COMPAT_NUM &&
-       pkt_in->code == OCTOCLOCK_QUERY_CMD){
+    if(pkt_in->code == OCTOCLOCK_QUERY_CMD){
         octoclock_packet_t pkt_out;
         pkt_out.proto_ver = OCTOCLOCK_BOOTLOADER_PROTO_VER;
         pkt_out.sequence = pkt_in->sequence;
@@ -134,7 +138,6 @@ void handle_udp_fw_packet(
 
         case FILE_TRANSFER_CMD:
             boot_program_page(pkt_in->data, pkt_in->addr);
-            wait(); //Necessary for some reason
             pkt_out.code = FILE_TRANSFER_ACK;
             break;
 
@@ -144,7 +147,7 @@ void handle_udp_fw_packet(
             break;
 
         case FINALIZE_BURNING_CMD:
-            //With stuff verified, burn values into EEPROM
+            //With stuff verified, burn CRC info into EEPROM
             done_burning = true;
             calculate_crc(&(crc_info.fw_crc), crc_info.fw_len);
             eeprom_write_block(&crc_info, (void*)OCTOCLOCK_EEPROM_APP_LEN, 4);
@@ -196,17 +199,12 @@ int main(void){
     register_udp_listener(OCTOCLOCK_UDP_FW_PORT, handle_udp_fw_packet);
     register_udp_listener(OCTOCLOCK_UDP_EEPROM_PORT, handle_udp_eeprom_packet);
 
-    /*
-     * Initialize AVR timer. This will be used to detect how much time has gone
-     * by with no contact from the octoclock_burn_firmware utility. If 5 seconds go by
-     * with no PREPARE_FW_BURN_CMD packet, the bootloader will jump into the
-     * existing application.
-     *
-     * This timer is polled by the main loop with each iteration instead of using
-     * an interrupt.
-     */
-    TCCR1B = (1 << CS12) | (1 << CS10);
-    TCNT1 = 0;
+    //Turn LED's on to show we're in the bootloader
+    PORTC |= 0x20;
+    PORTC |= (0x20<<1);
+    PORTC |= (0x20<<2);
+
+    TIMER1_INIT();
     bool app_checked = false;
 
     while(true){
@@ -219,9 +217,13 @@ int main(void){
             if(valid_app()) break;
         }
 
-        size_t recv_len = enc28j60PacketReceive(512, buf_in);
-        if(recv_len > 0) handle_eth_packet(recv_len);
+        network_check();
     }
+
+    //Turn LED's off before moving to application
+    PORTC &= ~0x20;
+    PORTC &= ~(0x20<<1);
+    PORTC &= ~(0x20<<2);
 
     /*
      * Whether the bootloader reaches here through five seconds of inactivity

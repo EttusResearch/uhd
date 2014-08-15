@@ -18,7 +18,8 @@
 #ifndef _DEBUG_H_
 #define _DEBUG_H_
 
-#if DEBUG
+//Only expose these macros to the firmware, and only if specified
+#if defined(DEBUG) && !defined(__BOOTLOADER__)
 
 #include <avr/pgmspace.h>
 #include <stdbool.h>
@@ -41,17 +42,17 @@
 #define DEBUG_LOG_CHAR_ARR(arr,len) DEBUG_LOG_CHAR_ARR_NNL(arr,len); \
                                     DEBUG_LOG(" ")
 
-#define DEBUG_LOG_MAC(mac_addr) DEBUG_LOG_HEX_NNL(mac_addr.addr[0]); \
+#define DEBUG_LOG_MAC(mac_addr) DEBUG_LOG_HEX_NNL(mac_addr[0]); \
                                 DEBUG_LOG_NNL(":"); \
-                                DEBUG_LOG_HEX_NNL(mac_addr.addr[1]); \
+                                DEBUG_LOG_HEX_NNL(mac_addr[1]); \
                                 DEBUG_LOG_NNL(":"); \
-                                DEBUG_LOG_HEX_NNL(mac_addr.addr[2]); \
+                                DEBUG_LOG_HEX_NNL(mac_addr[2]); \
                                 DEBUG_LOG_NNL(":"); \
-                                DEBUG_LOG_HEX_NNL(mac_addr.addr[3]); \
+                                DEBUG_LOG_HEX_NNL(mac_addr[3]); \
                                 DEBUG_LOG_NNL(":"); \
-                                DEBUG_LOG_HEX_NNL(mac_addr.addr[4]); \
+                                DEBUG_LOG_HEX_NNL(mac_addr[4]); \
                                 DEBUG_LOG_NNL(":"); \
-                                DEBUG_LOG_HEX(mac_addr.addr[5]);
+                                DEBUG_LOG_HEX(mac_addr[5]);
 
 #define DEBUG_LOG_IP(ip_addr) DEBUG_LOG_BYTE_NNL(ip4_addr1(&ip_addr)); \
                               DEBUG_LOG_NNL("."); \
@@ -62,7 +63,12 @@
                               DEBUG_LOG_BYTE(ip4_addr4(&ip_addr));
 
 #define DEBUG_LOG_SHORT(num) DEBUG_LOG_HEX_NNL(((uint8_t*)&num)[1]); \
-                             DEBUG_LOG_HEX_NNL(((uint8_t*)&num)[0]);
+                             DEBUG_LOG_HEX(((uint8_t*)&num)[0]);
+
+#define DEBUG_LOG_INT(num) DEBUG_LOG_HEX_NNL(((uint8_t*)&num)[3]); \
+                           DEBUG_LOG_HEX(((uint8_t*)&num)[2]); \
+                           DEBUG_LOG_HEX(((uint8_t*)&num)[1]); \
+                           DEBUG_LOG_HEX(((uint8_t*)&num)[0]);
 
 #else
 
@@ -81,6 +87,7 @@
 #define DEBUG_LOG_MAC(mac_addr)
 #define DEBUG_LOG_IP(ip_addr)
 #define DEBUG_LOG_SHORT(num)
+#define DEBUG_LOG_INT(num)
 
 #endif
 

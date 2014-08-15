@@ -198,8 +198,23 @@ void enc28j60Init(u08* macaddr)
 
 	// perform system reset
 	enc28j60WriteOp(ENC28J60_SOFT_RESET, 0, ENC28J60_SOFT_RESET);
-	// check CLKRDY bit to see if reset is complete
-	_delay_us(51);
+
+    /*
+     * "After sending an SPI Reset command, the PHY
+     * clock is stopped but the ESTAT.CLKRDY bit is not
+     * cleared. Therefore, polling the CLKRDY bit will not
+     * work to detect if the PHY is ready.
+     *
+     * Additionally, the hardware start-up time of 300 us
+     * may expire before the device is ready to operate.
+     *
+     * Work around
+     * After issuing the Reset command, wait at least
+     * 1 ms in firmware for the device to be ready."
+     *
+     * Source: http://ww1.microchip.com/downloads/en/DeviceDoc/80349c.pdf
+     */
+	_delay_ms(1);
 
 	// do bank 0 stuff
 	// initialize receive buffer

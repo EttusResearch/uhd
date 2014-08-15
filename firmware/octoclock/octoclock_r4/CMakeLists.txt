@@ -17,6 +17,9 @@
 
 add_executable(octoclock_r4_fw.elf octoclock_r4_main.c)
 target_link_libraries(octoclock_r4_fw.elf octoclock)
+set_target_properties(octoclock_r4_fw.elf PROPERTIES
+    LINK_FLAGS "-Wl,--relax,-Map=octoclock_r4_fw.map,--cref"
+)
 
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/octoclock_r4_fw.bin

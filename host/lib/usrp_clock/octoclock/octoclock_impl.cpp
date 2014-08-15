@@ -75,7 +75,7 @@ device_addrs_t octoclock_find(const device_addr_t &hint){
     device_addr_t _hint = hints[0];
     device_addrs_t octoclock_addrs;
 
-    //return an empty list of addresses when type is set to non-usrp2
+    //return an empty list of addresses when type is set to non-OctoClock
     if (hint.has_key("type") and hint["type"].find("octoclock") == std::string::npos) return octoclock_addrs;
 
     //Return an empty list of addresses when a resource is specified,
@@ -127,11 +127,9 @@ device_addrs_t octoclock_find(const device_addr_t &hint){
     const octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t*>(octoclock_data);
 
     while(true){
-        size_t len = udp_transport->recv(asio::buffer(octoclock_data), 2);
+        size_t len = udp_transport->recv(asio::buffer(octoclock_data));
         if(UHD_OCTOCLOCK_PACKET_MATCHES(OCTOCLOCK_QUERY_ACK, pkt_out, pkt_in, len)){
             device_addr_t new_addr;
-            new_addr["type"] = (pkt_in->proto_ver == OCTOCLOCK_FW_COMPAT_NUM) ? "octoclock"
-                                                                              : "octoclock-bootloader";
             new_addr["addr"] = udp_transport->get_recv_addr();
 
             //Attempt direct communication with OctoClock
@@ -143,9 +141,12 @@ device_addrs_t octoclock_find(const device_addr_t &hint){
             if(UHD_OCTOCLOCK_PACKET_MATCHES(OCTOCLOCK_QUERY_ACK, pkt_out, pkt_in, len)){
                 //If the OctoClock is in its bootloader, don't ask for details
                 if(pkt_in->proto_ver == OCTOCLOCK_BOOTLOADER_PROTO_VER){
+                    new_addr["type"] = "octoclock-bootloader";
                     octoclock_addrs.push_back(new_addr);
                 }
                 else{
+                    new_addr["type"] = "octoclock";
+
                     octoclock_eeprom_t oc_eeprom(ctrl_xport);
                     new_addr["name"] = oc_eeprom["name"];
                     new_addr["serial"] = oc_eeprom["serial"];

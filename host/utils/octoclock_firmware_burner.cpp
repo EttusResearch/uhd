@@ -93,7 +93,7 @@ void list_octoclocks(){
  * Manually find bootloader. This sends multiple packets in order to increase chances of getting
  * bootloader before it switches to the application.
  */
-device_addrs_t bootloader_find(std::string ip_addr){
+device_addrs_t bootloader_find(const std::string &ip_addr){
     udp_simple::sptr udp_transport = udp_simple::make_connected(ip_addr, BOOST_STRINGIZE(OCTOCLOCK_UDP_CTRL_PORT));
 
     octoclock_packet_t pkt_out;
@@ -156,7 +156,9 @@ void burn_firmware(udp_simple::sptr udp_transport){
     pkt_out.code = FILE_TRANSFER_CMD;
 
     //Actual burning below
+    size_t num_tries = 0;
     for(size_t i = 0; i < num_blocks; i++){
+        num_tries = 0;
         pkt_out.sequence++;
         pkt_out.addr = i*BLOCK_SIZE;
         std::cout << "\r * Progress: " << int(double(i)/double(num_blocks)*100)
@@ -164,8 +166,20 @@ void burn_firmware(udp_simple::sptr udp_transport){
 
         memset(pkt_out.data, 0, BLOCK_SIZE);
         memcpy((void*)(pkt_out.data), &firmware_image[i*BLOCK_SIZE], std::min(int(firmware_size-current_pos), BLOCK_SIZE));
-        UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, FILE_TRANSFER_CMD, pkt_out, len, octoclock_data);
-        if(not (UHD_OCTOCLOCK_PACKET_MATCHES(FILE_TRANSFER_ACK, pkt_out, pkt_in, len))){
+
+        bool success = false;
+        while(num_tries <= 5){
+            UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, FILE_TRANSFER_CMD, pkt_out, len, octoclock_data);
+            if(UHD_OCTOCLOCK_PACKET_MATCHES(FILE_TRANSFER_ACK, pkt_out, pkt_in, len)){
+                success = true;
+                break;
+            }
+            else{
+                num_tries++;
+                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            }
+        }
+        if(not success){
             std::cout << std::endl;
             throw uhd::runtime_error("Failed to burn firmware to OctoClock!");
         }
@@ -182,7 +196,6 @@ void verify_firmware(udp_simple::sptr udp_transport){
     pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
     size_t len = 0, current_pos = 0;
 
-    std::cout << "Verifying firmware." << std::endl;
 
     for(size_t i = 0; i < num_blocks; i++){
         pkt_out.sequence++;
@@ -207,7 +220,7 @@ void verify_firmware(udp_simple::sptr udp_transport){
     std::cout << "\r * Progress: 100% (" << num_blocks << "/" << num_blocks << " blocks)" << std::endl;
 }
 
-void reset_octoclock(const std::string &ip_addr){
+bool reset_octoclock(const std::string &ip_addr){
     udp_simple::sptr udp_transport = udp_simple::make_connected(ip_addr, BOOST_STRINGIZE(OCTOCLOCK_UDP_CTRL_PORT));
 
     octoclock_packet_t pkt_out;
@@ -215,8 +228,13 @@ void reset_octoclock(const std::string &ip_addr){
     size_t len;
 
     UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, RESET_CMD, pkt_out, len, octoclock_data);
-    if(UHD_OCTOCLOCK_PACKET_MATCHES(RESET_ACK, pkt_out, pkt_in, len)) std::cout << "done." << std::endl;
-    else throw uhd::runtime_error("Failed to place device in state to receive firmware.");
+    if(not UHD_OCTOCLOCK_PACKET_MATCHES(RESET_ACK, pkt_out, pkt_in, len)){
+        std::cout << std::endl;
+        throw uhd::runtime_error("Failed to place device in state to receive firmware.");
+    }
+
+    boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
+    return (bootloader_find(ip_addr).size() == 1);
 }
 
 void finalize(udp_simple::sptr udp_transport){
@@ -225,10 +243,11 @@ void finalize(udp_simple::sptr udp_transport){
     pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
     size_t len = 0;
 
-    std::cout << std::endl << "Telling OctoClock to load application..." << std::flush;
     UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, FINALIZE_BURNING_CMD, pkt_out, len, octoclock_data);
-    if(UHD_OCTOCLOCK_PACKET_MATCHES(FINALIZE_BURNING_ACK, pkt_out, pkt_in, len)) std::cout << "done." << std::endl;
-    else std::cout << "no ACK. Device may not have loaded application." << std::endl;
+    if(not UHD_OCTOCLOCK_PACKET_MATCHES(FINALIZE_BURNING_ACK, pkt_out, pkt_in, len)){
+        std::cout << std::endl;
+        std::cout << "no ACK. Bootloader may not have loaded application." << std::endl;
+    }
 }
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -303,21 +322,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << std::endl << boost::format("Searching for OctoClock with IP address %s...") % ip_addr << std::flush;
     device_addrs_t octoclocks = device::find(str(boost::format("addr=%s") % ip_addr), device::CLOCK);
     if(octoclocks.size() == 1){
-        //If in application, quietly reset into bootloader and try to find again
         if(octoclocks[0]["type"] == "octoclock"){
-            reset_octoclock(ip_addr);
-            boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
-            octoclocks = bootloader_find(ip_addr);
-            if(octoclocks.size() == 1) std::cout << "found." << std::endl;
+            std::cout << "found. Resetting..." << std::flush;
+            if(reset_octoclock(ip_addr)) std::cout << "successful." << std::endl;
             else{
-                std::cout << std::endl;
-                throw uhd::runtime_error("Could not find OctoClock with given IP address!");
+                std::cout << "failed." << std::endl;
+                throw uhd::runtime_error("Failed to reset OctoClock device into its bootloader.");
             }
         }
         else std::cout << "found." << std::endl;
     }
     else{
-        std::cout << std::endl;
+        std::cout << "failed." << std::endl;
         throw uhd::runtime_error("Could not find OctoClock with given IP address!");
     }
 
@@ -326,11 +342,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::signal(SIGINT, &sig_int_handler);
 
     burn_firmware(udp_transport);
+    std::cout << "Verifying firmware." << std::endl;
     verify_firmware(udp_transport);
+    std::cout << std::endl << "Telling OctoClock bootloader to load application..." << std::flush;
     finalize(udp_transport);
+    std::cout << "done." << std::endl;
 
     std::cout << "Waiting for OctoClock to reinitialize..." << std::flush;
-    boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
+    boost::this_thread::sleep(boost::posix_time::milliseconds(5000));
     octoclocks = device::find(str(boost::format("addr=%s") % ip_addr), device::CLOCK);
     if(octoclocks.size() == 1){
         if(octoclocks[0]["type"] == "octoclock-bootloader"){

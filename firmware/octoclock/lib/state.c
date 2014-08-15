@@ -83,20 +83,27 @@ void prefer_external(void){
         LEDs_Off();
 }
 
-bool is_ext_ref_present(void){
-    volatile uint8_t prev = (PINE & (1<<DDE7));
-    volatile uint8_t now;
+static uint8_t prev_PE7 = 0;
+static uint32_t timer0_num_overflows = 0;
 
-    for(uint16_t i = 1; i < 512; i++){
-        now = (PINE & (1<<DDE7));
-        if(prev != now) return true;
+ISR(TIMER0_OVF_vect){
+    global_gps_present = (PIND & (1<<DDD4));
+
+    // Every ~1/10 second
+    if(!(timer0_num_overflows % 610)){
+        prev_PE7 = (PINE & (1<<DDE7));
+
+        if(get_switch_pos() == UP) prefer_internal();
+        else prefer_external();
+
+        global_ext_ref_is_present = false;
     }
 
-    return false;
-}
+    if(!global_ext_ref_is_present){
+        global_ext_ref_is_present = (prev_PE7 != (PINE & (1<<DDE7)));
+    }
 
-bool is_gps_present(void){
-    return (PIND & (1<<DDD4));
+    timer0_num_overflows++;
 }
 
 ref_t which_ref(void){
@@ -106,11 +113,6 @@ ref_t which_ref(void){
     else global_which_ref = (get_switch_pos() == UP) ? INTERNAL : EXTERNAL;
 
     return global_which_ref;
-}
-
-void check_what_is_present(void){
-    global_ext_ref_is_present = is_ext_ref_present();
-    global_gps_present = is_gps_present();
 }
 
 switch_pos_t get_switch_pos(void){

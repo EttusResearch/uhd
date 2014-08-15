@@ -72,23 +72,21 @@
 
 int main(void){
 
-    #ifdef DEBUG
     asm("cli");
-    #else
+
+    setup_atmel_io_ports();
+    network_init();
+
+    #ifndef DEBUG
     asm("sei");
     #endif
 
-    bool old_global_ext_ref_is_present = false;
-    switch_pos_t old_switch_pos, current_switch_pos;
-
-    setup_atmel_io_ports();
-
-    network_init();
     init_udp_listeners();
     register_udp_listener(OCTOCLOCK_UDP_CTRL_PORT, handle_udp_ctrl_packet);
     register_udp_listener(OCTOCLOCK_UDP_GPSDO_PORT, handle_udp_gpsdo_packet);
 
     DEBUG_INIT(); // Does nothing when not in debug mode
+    DEBUG_LOG(" "); //Force a newline between runs
     usart_init();
 
     //Set initial ClkDist and front panel settings
@@ -98,61 +96,10 @@ int main(void){
     led(Top,true);
     PORTA |= (1<<PA6);    // PPS from Internal source
 
-    /*
-     * DO THIS FOREVER:
-     *
-     * get_switch_state
-     *
-     * if SWITCH_CHANGED:
-     *
-     *   if PREFER_INTERNAL:
-     *     if INTERNAL_PRESENT do_internal
-     *     else if EXTERNAL_PRESENT do_external
-     *     else LEDs OFF
-     *
-     *   if PREFER_EXTERNAL:
-     *     if EXTERNAL_PRESENT do_external
-     *     else if INTERNAL_PRESENT do_internal
-     *     else LEDs OFF
-     *
-     * check Ethernet port for incoming packets
-     *
-     *   if packets seen:
-     *     pass to appropriate handler
-     *
-     * check if told to monitor GPSDO output
-     *
-     *   if send flag is set:
-     *     check if interrupt routine has filled buffer with full sentence
-     *     if so, send to host (last machine to use this port)
-     */
+    TIMER0_INIT();
+    TIMER1_INIT();
 
-    check_what_is_present();
-    old_global_ext_ref_is_present = !global_ext_ref_is_present;
-    old_switch_pos = (get_switch_pos() == UP) ? DOWN : UP;
-
-    // Because down below, we use this to get state swap So we arbitrarily set
-    // the PREVIOUS state to be the "other" state so that, below, we trigger
-    // what happens when the switch changes This first "change" is therefore
-    // artificial to keep the logic, below, cleaner
     while(true) {
-        // Set "global_ext_ref_is_present" and "global_gps_present"
-        check_what_is_present();
-
-        current_switch_pos = get_switch_pos();
-
-        if( (current_switch_pos != old_switch_pos)  || 
-            (global_ext_ref_is_present != old_global_ext_ref_is_present) ) {
-
-            old_switch_pos = current_switch_pos;
-            old_global_ext_ref_is_present = global_ext_ref_is_present;
-
-            if(current_switch_pos == UP) prefer_internal();
-            else prefer_external();
-        }
-
-        //With OctoClock state verified, pass raw packet to handlers for processing
-        size_t recv_len = enc28j60PacketReceive(512, buf_in);
-        if(recv_len > 0) handle_eth_packet(recv_len);
+        network_check();
     }
 }

@@ -27,14 +27,25 @@
 #define F_CPU 12500000UL
 
 /*
- * Working with the AVR timer
+ * Timer 0 (8-bit)
+ *  * Set prescaler to 8
+ *  * Enable overflow interrupt
+ *  * Set timer to 0
  */
-// Prescaler: 1024, Timer: 0
-#define TIMER_INIT() TCCR1B = (1 << CS12) | (1 << CS10); \
+#define TIMER0_INIT() TCCR0 = (1 << CS01); \
+                      TIMSK |= (1 << TOIE0); \
+                      TCNT0 = 0;
+/*
+ * Timer 1 (16-bit)
+ *  * Set prescaler to 1024
+ *  * Enable overflow interrupt
+ *  * Set timer to 0
+ */
+#define TIMER1_INIT() TCCR1B = (1 << CS12) | (1 << CS10); \
+        TIMSK |= (1<<TOIE1); \
         TCNT1 = 0;
 
-#define TENTH_SECOND 13
-#define FIVE_SECONDS 61035
+#define TIMER1_ONE_SECOND ((uint32_t)(12207))
 
 // Locations of OctoClock information in EEPROM
 #define OCTOCLOCK_EEPROM_MAC_ADDR   0

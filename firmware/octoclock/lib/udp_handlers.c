@@ -36,13 +36,14 @@ void handle_udp_ctrl_packet(
     pkt_out.proto_ver = OCTOCLOCK_FW_COMPAT_NUM;
     pkt_out.sequence = pkt_in->sequence;
 
-    if(pkt_in->proto_ver == OCTOCLOCK_FW_COMPAT_NUM){
+    //If the firmware is incompatible, only respond to queries
+    if(pkt_in->code == OCTOCLOCK_QUERY_CMD){
+        pkt_out.code = OCTOCLOCK_QUERY_ACK;
+        pkt_out.len = 0;
+        send_udp_pkt(OCTOCLOCK_UDP_CTRL_PORT, src, (void*)&pkt_out, sizeof(octoclock_packet_t));
+    }
+    else if(pkt_in->proto_ver == OCTOCLOCK_FW_COMPAT_NUM){
         switch(pkt_in->code){
-            case OCTOCLOCK_QUERY_CMD:
-                pkt_out.code = OCTOCLOCK_QUERY_ACK;
-                pkt_out.len = 0;
-                break;
-
             case SEND_EEPROM_CMD:
                 pkt_out.code = SEND_EEPROM_ACK;
                 pkt_out.len = sizeof(octoclock_fw_eeprom_t);
@@ -50,14 +51,11 @@ void handle_udp_ctrl_packet(
                 octoclock_fw_eeprom_t *eeprom_info = (octoclock_fw_eeprom_t*)pkt_out.data;
 
                 //Read values from EEPROM into packet
-                eeprom_read_block(eeprom_info, (void*)0, sizeof(octoclock_fw_eeprom_t));
+                eeprom_read_block(eeprom_info, 0, sizeof(octoclock_fw_eeprom_t));
 
                 //If EEPROM network fields are not fully populated, copy defaults
-                if(eeprom_read_byte((uint8_t*)OCTOCLOCK_EEPROM_IP_ADDR) == 0xFF ||
-                   eeprom_read_byte((uint8_t*)OCTOCLOCK_EEPROM_DR_ADDR) == 0xFF ||
-                   eeprom_read_byte((uint8_t*)OCTOCLOCK_EEPROM_MAC_ADDR) == 0xFF){
-
-                    memcpy(eeprom_info->mac_addr, default_mac, 6);
+                if(using_network_defaults){
+                    _MAC_ADDR(eeprom_info->mac_addr, 0x00,0x80,0x2F,0x11,0x22,0x33);
                     eeprom_info->ip_addr = default_ip;
                     eeprom_info->dr_addr = default_dr;
                     eeprom_info->netmask = default_netmask;
@@ -86,11 +84,11 @@ void handle_udp_ctrl_packet(
                 pkt_out.len = 0;
 
                 //Write EEPROM data from packet
-                eeprom_write_block(eeprom_pkt, (void*)0, sizeof(octoclock_fw_eeprom_t));
+                eeprom_write_block(eeprom_pkt, 0, sizeof(octoclock_fw_eeprom_t));
 
                 //Read back and compare to packet to confirm successful write
                 uint8_t eeprom_contents[sizeof(octoclock_fw_eeprom_t)];
-                eeprom_read_block(eeprom_contents, (void*)0, sizeof(octoclock_fw_eeprom_t));
+                eeprom_read_block(eeprom_contents, 0, sizeof(octoclock_fw_eeprom_t));
                 uint8_t n = memcmp(eeprom_contents, eeprom_pkt, sizeof(octoclock_fw_eeprom_t));
                 pkt_out.code = n ? BURN_EEPROM_FAILURE_ACK
                                  : BURN_EEPROM_SUCCESS_ACK;
@@ -103,7 +101,7 @@ void handle_udp_ctrl_packet(
 
                 //Populate octoclock_state_t fields
                 octoclock_state_t *state = (octoclock_state_t*)pkt_out.data;
-                state->external_detected = (is_ext_ref_present()) ? 1 : 0;
+                state->external_detected = global_ext_ref_is_present ? 1 : 0;
                 state->gps_detected = (PIND & _BV(DDD4)) ? 1 : 0;
                 state->which_ref = (uint8_t)which_ref();
                 state->switch_pos = (uint8_t)get_switch_pos();

@@ -27,8 +27,6 @@ static ref_t global_which_ref = NO_REF;
 static bool global_gps_present = false;
 static bool global_ext_ref_is_present = false;
 
-volatile uint8_t ext_ref_buf[1024];
-
 void led(LEDs which, int turn_it_on);
 
 void LEDs_off(void);
@@ -39,13 +37,7 @@ void prefer_internal(void);
 
 void prefer_external(void);
 
-bool is_ext_ref_present(void);
-
-bool is_gps_present(void);
-
 ref_t which_ref(void);
-
-void check_what_is_present(void);
 
 switch_pos_t get_switch_pos(void);
 
