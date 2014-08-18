@@ -63,22 +63,24 @@ ELSEIF(DEBIAN AND LIBUHDDEV_PKG)
 ELSEIF(DEBIAN AND UHDHOST_PKG)
     SET(CPACK_PACKAGE_FILE_NAME "uhd-host_${TRIMMED_UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
 ELSE()
-    FIND_PROGRAM(LSB_RELEASE_EXECUTABLE lsb_release)
-    IF((DEBIAN OR REDHAT) AND LSB_RELEASE_EXECUTABLE)
+    IF(DEBIAN OR REDHAT)
+        FIND_PROGRAM(LSB_RELEASE_EXECUTABLE lsb_release)
 
-        #extract system information by executing the commands
-        EXECUTE_PROCESS(
-            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --id
-            OUTPUT_VARIABLE LSB_ID OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        EXECUTE_PROCESS(
-            COMMAND ${LSB_RELEASE_EXECUTABLE} --short --release
-            OUTPUT_VARIABLE LSB_RELEASE OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
+        IF(LSB_RELEASE_EXECUTABLE)
+            #extract system information by executing the commands
+            EXECUTE_PROCESS(
+                COMMAND ${LSB_RELEASE_EXECUTABLE} --short --id
+                OUTPUT_VARIABLE LSB_ID OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            EXECUTE_PROCESS(
+                COMMAND ${LSB_RELEASE_EXECUTABLE} --short --release
+                OUTPUT_VARIABLE LSB_RELEASE OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
 
-        #set a more sensible package name for this system
-        SET(CPACK_PACKAGE_FILE_NAME "uhd_${UHD_VERSION}_${LSB_ID}-${LSB_RELEASE}-${CMAKE_SYSTEM_PROCESSOR}")
-ENDIF()
+            #set a more sensible package name for this system
+            SET(CPACK_PACKAGE_FILE_NAME "uhd_${UHD_VERSION}_${LSB_ID}-${LSB_RELEASE}-${CMAKE_SYSTEM_PROCESSOR}")
+        ENDIF(LSB_RELEASE_EXECUTABLE)
+    ENDIF(DEBIAN OR REDHAT)
 ENDIF(DEBIAN AND LIBUHD_PKG)
 
 IF(${CPACK_GENERATOR} STREQUAL NSIS)
