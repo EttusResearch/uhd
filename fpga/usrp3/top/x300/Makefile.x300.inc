@@ -49,7 +49,7 @@ synthesis_tool "XST (VHDL/Verilog)" \
 simulator "ISim (VHDL/Verilog)" \
 "Preferred Language" "Verilog" \
 "Enable Message Filtering" FALSE \
-"Display Incremental Messages" FALSE 
+"Display Incremental Messages" FALSE
 
 ##################################################
 # Sources
@@ -142,7 +142,8 @@ MAP_PROPERTIES = \
 "Map Effort Level" High \
 "Extra Effort" Normal \
 "Perform Timing-Driven Packing and Placement" TRUE \
-"Enable Multi-Threading 2"
+"Enable Multi-Threading 2" \
+"Starting Placer Cost Table (1-100)" $$(( $$RANDOM % 100 + 1 ))
 #"Map to Input Functions" 4 \
 
 PLACE_ROUTE_PROPERTIES = \
@@ -160,6 +161,6 @@ GEN_PROG_FILE_PROPERTIES = \
 "Done (Output Events)" 5 \
 "Enable Bitstream Compression" FALSE \
 "Enable Outputs (Output Events)" 6 \
-"Wait for DCI Match (Output Events)" NoWait 
+"Wait for DCI Match (Output Events)" NoWait
 
 SIM_MODEL_PROPERTIES = ""

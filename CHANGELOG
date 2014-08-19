@@ -2,6 +2,9 @@ Change Log for Releases
 ==============================
 
 ## 003.007.002
+* Fixed X300 phase alignment issues
+* Fixed CMake 2.6 incompatibility issues
+* EEPROM burner improvements
 * Properly flushing PCIe chain on device to prevent stale data.
 * Adjusted bus clock rate in FPGA to improve timing.
 * Fixed issue where FPGA would fail to load FPGA image over PCIe.
