@@ -34,3 +34,8 @@ TIMESPEC TS_IOPORT2_CLK_TO_BUS_CLK_FALEPATH = FROM ioport2_clk_grp TO bus_clk_gr
 TIMESPEC TS_IOPORT2_CLK_TO_RIO40_CLK_FALEPATH = FROM ioport2_clk_grp TO rio40_clk_grp TIG;
 TIMESPEC TS_RIO40_CLK_TO_IOPORT2_CLK_FALEPATH = FROM rio40_clk_grp TO ioport2_clk_grp TIG;
 
+# FPGA_CLK_p/n is externally phase shifted to allow for crossing from the ADC clock domain
+# to the radio_clk (aka FPGA_CLK_p/n) clock domain. To ensure this timing is consistent,
+# lock the locations of the MMCM and BUFG to generate radio_clk.
+INST "radio_clk_gen/mmcm_adv_inst" LOC = MMCME2_ADV_X0Y0;
+INST "radio_clk_gen/clkout1_buf" LOC = BUFGCTRL_X0Y8;
