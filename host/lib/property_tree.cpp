@@ -65,6 +65,12 @@ fs_path uhd::operator/(const fs_path &lhs, const fs_path &rhs){
     return fs_path(lhs + "/" + rhs);
 }
 
+fs_path uhd::operator/(const fs_path &lhs, size_t rhs)
+{
+    fs_path rhs_str = boost::lexical_cast<std::string>(rhs);
+    return lhs / rhs_str;
+}
+
 /***********************************************************************
  * Property tree implementation
  **********************************************************************/

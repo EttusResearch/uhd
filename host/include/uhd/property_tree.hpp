@@ -113,6 +113,7 @@ struct fs_path : std::string{
 };
 
 UHD_API fs_path operator/(const fs_path &, const fs_path &);
+UHD_API fs_path operator/(const fs_path &, size_t);
 
 /*!
  * The property tree provides a file system structure for accessing properties.
