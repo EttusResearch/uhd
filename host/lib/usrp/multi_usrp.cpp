@@ -394,17 +394,19 @@ public:
 
     void set_time_unknown_pps(const time_spec_t &time_spec){
         UHD_MSG(status) << "    1) catch time transition at pps edge" << std::endl;
-        time_spec_t time_start = get_time_now();
+        boost::system_time end_time = boost::get_system_time() + boost::posix_time::milliseconds(1100);
         time_spec_t time_start_last_pps = get_time_last_pps();
-        while(true){
-            if (get_time_last_pps() != time_start_last_pps) break;
-            if ((get_time_now() - time_start) > time_spec_t(1.1)){
+        while (time_start_last_pps == get_time_last_pps())
+        {
+            if (boost::get_system_time() > end_time)
+            {
                 throw uhd::runtime_error(
                     "Board 0 may not be getting a PPS signal!\n"
                     "No PPS detected within the time interval.\n"
                     "See the application notes for your device.\n"
                 );
             }
+            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }
 
         UHD_MSG(status) << "    2) set times next pps (synchronously)" << std::endl;

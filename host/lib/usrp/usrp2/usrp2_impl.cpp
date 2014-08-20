@@ -764,11 +764,6 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
             const time_t tp = time_t(_mbc[mb].gps->get_sensor("gps_time").to_int()+1);
             _tree->access<time_spec_t>(root / "time" / "pps").set(time_spec_t(tp));
-
-            //wait for next PPS edge (timeout after 1 second)
-            time_spec_t pps_time = _tree->access<time_spec_t>(root / "time" / "pps").get();
-            for (size_t i = 0; i < 10 && _tree->access<time_spec_t>(root / "time" / "pps").get() == pps_time; i++)
-                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         }
     }
 

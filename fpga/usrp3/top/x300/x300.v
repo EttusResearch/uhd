@@ -484,7 +484,7 @@ module x300
    //  so I gets a double negative, and is unchanged.  Q must be inverted.
 
    capture_ddrlvds #(.WIDTH(14),.X300(1)) cap_db0
-     (.clk(radio_clk), .reset(radio_rst), .ssclk_p(DB0_ADC_DCLK_P), .ssclk_n(DB0_ADC_DCLK_N),
+     (.clk(radio_clk), .ssclk_p(DB0_ADC_DCLK_P), .ssclk_n(DB0_ADC_DCLK_N),
       .in_p({{DB0_ADC_DA6_P, DB0_ADC_DA5_P, DB0_ADC_DA4_P, DB0_ADC_DA3_P, DB0_ADC_DA2_P, DB0_ADC_DA1_P, DB0_ADC_DA0_P},
          {DB0_ADC_DB6_P, DB0_ADC_DB5_P, DB0_ADC_DB4_P, DB0_ADC_DB3_P, DB0_ADC_DB2_P, DB0_ADC_DB1_P, DB0_ADC_DB0_P}}),
 
@@ -494,7 +494,7 @@ module x300
    assign rx0[31:0] = { rx0_i, 2'b00, ~rx0_q_inv, 2'b00 };
 
    capture_ddrlvds #(.WIDTH(14),.X300(1)) cap_db1
-     (.clk(radio_clk),  .reset(radio_rst), .ssclk_p(DB1_ADC_DCLK_P), .ssclk_n(DB1_ADC_DCLK_N),
+     (.clk(radio_clk), .ssclk_p(DB1_ADC_DCLK_P), .ssclk_n(DB1_ADC_DCLK_N),
       .in_p({{DB1_ADC_DA6_P, DB1_ADC_DA5_P, DB1_ADC_DA4_P, DB1_ADC_DA3_P, DB1_ADC_DA2_P, DB1_ADC_DA1_P, DB1_ADC_DA0_P},
          {DB1_ADC_DB6_P, DB1_ADC_DB5_P, DB1_ADC_DB4_P, DB1_ADC_DB3_P, DB1_ADC_DB2_P, DB1_ADC_DB1_P, DB1_ADC_DB0_P}}),
 

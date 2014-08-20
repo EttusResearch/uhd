@@ -810,45 +810,32 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_fe_spec);
 
     UHD_MSG(status) << "Initializing clock and PPS references..." << std::endl;
-    try {
-        //First, try external source
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("external");
-        wait_for_ref_locked(mb.zpu_ctrl, 1.0);
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("external");
-        UHD_MSG(status) << "References initialized to external sources" << std::endl;
-    } catch (uhd::exception::runtime_error &e) {
-        //No external source detected - set to the GPSDO if installed
-        if (mb.gps and mb.gps->gps_detected())
-        {
-            _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
-            try {
-                wait_for_ref_locked(mb.zpu_ctrl, 1.0);
-            } catch (uhd::exception::runtime_error &e) {
-                UHD_MSG(warning) << "Clock reference failed to lock to GPSDO during device initialization.  " <<
-                    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
-            }
-            _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
-            UHD_MSG(status) << "References initialized to GPSDO sources" << std::endl;
-            UHD_MSG(status) << "Initializing time to the GPSDO time" << std::endl;
-            const time_t tp = time_t(mb.gps->get_sensor("gps_time").to_int()+1);
-            _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
-
-            //wait for next PPS edge (timeout after 1 second)
-            time_spec_t pps_time = _tree->access<time_spec_t>(mb_path / "time" / "pps").get();
-            for (size_t i = 0; i < 10 && _tree->access<time_spec_t>(mb_path / "time" / "pps").get() == pps_time; i++)
-                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-        } else {
-            _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
-            try {
-                wait_for_ref_locked(mb.zpu_ctrl, 1.0);
-            } catch (uhd::exception::runtime_error &e) {
-                // Ignore for now - It can sometimes take longer than 1 second to lock and that is OK.
-                //UHD_MSG(warning) << "Clock reference failed to lock to internal source during device initialization.  " <<
-                //    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
-            }
-            _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
-            UHD_MSG(status) << "References initialized to internal sources" << std::endl;
+    //Set to the GPSDO if installed
+    if (mb.gps and mb.gps->gps_detected())
+    {
+        _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
+        try {
+            wait_for_ref_locked(mb.zpu_ctrl, 1.0);
+        } catch (uhd::exception::runtime_error &e) {
+            UHD_MSG(warning) << "Clock reference failed to lock to GPSDO during device initialization.  " <<
+                "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
         }
+        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
+        UHD_MSG(status) << "References initialized to GPSDO sources" << std::endl;
+        UHD_MSG(status) << "Initializing time to the GPSDO time" << std::endl;
+        const time_t tp = time_t(mb.gps->get_sensor("gps_time").to_int()+1);
+        _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
+    } else {
+        _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
+        try {
+            wait_for_ref_locked(mb.zpu_ctrl, 1.0);
+        } catch (uhd::exception::runtime_error &e) {
+            // Ignore for now - It can sometimes take longer than 1 second to lock and that is OK.
+            //UHD_MSG(warning) << "Clock reference failed to lock to internal source during device initialization.  " <<
+            //    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
+        }
+        _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
+        UHD_MSG(status) << "References initialized to internal sources" << std::endl;
     }
 }
 
@@ -1395,10 +1382,6 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
     }
 
     this->update_clock_control(mb);
-
-    //reset the clock control
-    //without this, the lock time is long and can be as much as 30 seconds
-    mb.clock->reset_clocks();
 
     /* FIXME:  implement when we know the correct timeouts
      * //wait for lock

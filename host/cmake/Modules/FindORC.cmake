@@ -9,7 +9,7 @@ PKG_CHECK_MODULES(PC_ORC_V4_11 "orc-0.4 > 0.4.11")
 #we are using the pkg config as a version check
 #if we have pkg config, the right version must be found
 #the alternative is that no pkg config orc is found
-if (PC_ORC_V4_11_FOUND OR (NOT PC_ORC_FOUND AND NOT PC_ORC_V4_11_FOUND))
+if (PC_ORC_V4_11_FOUND OR NOT PC_ORC_FOUND)
 
 FIND_PATH(
     ORC_INCLUDE_DIRS
