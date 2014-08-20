@@ -72,7 +72,7 @@ module b200_core
     localparam SR_CORE_READBACK  = 8'd32;
     localparam SR_CORE_GPSDO_ST  = 8'd40;
     localparam SR_CORE_PPS_SEL   = 8'd48;
-    localparam COMPAT_MAJOR      = 16'h0003;
+    localparam COMPAT_MAJOR      = 16'h0004;
     localparam COMPAT_MINOR      = 16'h0000;
 
     /*******************************************************************

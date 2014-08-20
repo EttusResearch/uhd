@@ -179,15 +179,26 @@ module b200 (
    ///////////////////////////////////////////////////////////////////////
    // SPI connections
    ///////////////////////////////////////////////////////////////////////
-   wire mosi, miso, sclk; wire [7:0]  sen;
-   assign cat_ce = sen[0] & fx3_ce;
-   assign cat_mosi = (~sen[0] & mosi) | (~fx3_ce & fx3_mosi);
-   assign cat_sclk = (~sen[0] & sclk) | (~fx3_ce & fx3_sclk);
-   assign miso = cat_miso;
-   assign fx3_miso = ~fx3_ce & cat_miso;
-   assign pll_ce = sen[1];
+   wire mosi,  miso, sclk; 
+   wire [7:0]  sen;
+   
+   //AD9361 Slave
+   assign cat_ce   = sen[0];
+   assign cat_mosi = ~sen[0] & mosi;
+   assign cat_sclk = ~sen[0] & sclk;
+   assign miso     = cat_miso;    //PLL does not have a miso
+
+   //ADF4001 Slave
+   assign pll_ce   = sen[1];
    assign pll_mosi = ~sen[1] & mosi;
    assign pll_sclk = ~sen[1] & sclk;
+
+   //FX3 Master
+   //The following signals are routed to the FX3 and were used by an obsolete
+   //bit-banging SPI engine.
+   // fx3_ce, fx3_sclk, fx3_mosi    <Unused>
+   assign fx3_miso = 1'bZ;    //Safe state because we cannot guarantee the
+                              //direction of this pin in the FX3
 
     ///////////////////////////////////////////////////////////////////////
     // bus signals
