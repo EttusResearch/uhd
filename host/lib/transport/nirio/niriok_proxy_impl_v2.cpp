@@ -458,7 +458,7 @@ namespace uhd { namespace niusrprio
     nirio_status niriok_proxy_impl_v2::configure_fifo(
        uint32_t channel,
        uint32_t requested_depth,
-       uint8_t requires_actuals,
+       uint8_t /*requires_actuals*/, //Unused
        uint32_t& actual_depth,
        uint32_t& actual_size)
     {
@@ -564,7 +564,7 @@ namespace uhd { namespace niusrprio
         uint32_t channel,
         uint32_t elements_to_read,
         void* buffer,
-        uint32_t buffer_datatype_width,
+        uint32_t /*buffer_datatype_width*/, //Unused
         uint32_t scalar_type,
         uint32_t bit_width,
         uint32_t timeout,
@@ -605,7 +605,7 @@ namespace uhd { namespace niusrprio
         uint32_t channel,
         uint32_t elements_to_write,
         void* buffer,
-        uint32_t buffer_datatype_width,
+        uint32_t /*buffer_datatype_width*/, //Unused
         uint32_t scalar_type,
         uint32_t bit_width,
         uint32_t timeout,

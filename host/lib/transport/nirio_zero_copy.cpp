@@ -267,13 +267,13 @@ private:
         // get the number of elements in the buffer and then
         // repeatedly with the number of remaining elements
         // until the buffer is empty
-        fifo_data_t* elems_buffer;
         for (size_t num_elems_requested = 0,
             num_elems_acquired = 0,
             num_elems_remaining = 1;
             num_elems_remaining;
             num_elems_requested = num_elems_remaining)
         {
+            fifo_data_t* elems_buffer = NULL;
             nirio_status status = _recv_fifo->acquire(
                 elems_buffer,
                 num_elems_requested,

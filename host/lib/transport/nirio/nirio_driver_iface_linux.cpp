@@ -27,14 +27,13 @@ namespace nirio_driver_iface {
 
 struct nirio_ioctl_block_t
 {
-    uint64_t inBuf;
-    uint64_t outBuf;
-    uint32_t inBufLength;
-    uint32_t outBufLength;
-    uint32_t bytesReturned;
+    uint64_t in_buf;
+    uint64_t out_buf;
+    uint32_t in_buf_len;
+    uint32_t out_buf_len;
+    uint32_t bytes_returned;
     uint32_t padding;
 };
-
 
 nirio_status rio_open(
     const std::string& device_path,
@@ -66,10 +65,10 @@ nirio_status rio_ioctl(
     nirio_ioctl_block_t ioctl_block = {0,0,0,0,0,0};
 
     // two-casts necessary to prevent pointer sign-extension
-    ioctl_block.inBuf        = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(write_buf));
-    ioctl_block.inBufLength  = write_buf_len;
-    ioctl_block.outBuf       = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(read_buf));
-    ioctl_block.outBufLength = read_buf_len;
+    ioctl_block.in_buf      = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(write_buf));
+    ioctl_block.in_buf_len  = write_buf_len;
+    ioctl_block.out_buf     = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(read_buf));
+    ioctl_block.out_buf_len = read_buf_len;
 
     int status = ::ioctl(device_handle, ioctl_code, &ioctl_block);
     if (status == -1) {
