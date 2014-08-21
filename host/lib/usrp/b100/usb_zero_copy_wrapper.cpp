@@ -55,6 +55,7 @@ public:
         index++; //advances the caller's buffer
 
         //hold a copy of the buffer shared pointer
+        UHD_ASSERT_THROW(not _mrb);
         _mrb = mrb;
 
         //extract this packet's memory address and length in bytes
@@ -199,7 +200,7 @@ public:
     }
 
     size_t get_num_recv_frames(void) const{
-        return _internal_zc->get_num_recv_frames();
+        return (_internal_zc->get_num_recv_frames()*_internal_zc->get_recv_frame_size())/this->get_recv_frame_size();
     }
 
     size_t get_recv_frame_size(void) const{
