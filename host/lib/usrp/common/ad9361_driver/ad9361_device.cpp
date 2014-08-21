@@ -1482,7 +1482,7 @@ void ad9361_device_t::initialize()
     _io_iface->poke8(0x01D, 0x01); // AuxADC Setup (Decimation/Enable)
 
     /* Setup control outputs. */
-    _io_iface->poke8(0x035, 0x07);
+    _io_iface->poke8(0x035, 0x01);
     _io_iface->poke8(0x036, 0xFF);
 
     /* Setup GPO */
