@@ -114,10 +114,10 @@ public:
         boost::lock_guard<boost::mutex> lock(_mutex);
 
         //warning for known trouble rates
-        if (rate > 56e6) UHD_MSG(warning) << boost::format(
+        if (rate > ad9361_device_t::AD9361_RECOMMENDED_MAX_CLOCK_RATE) UHD_MSG(warning) << boost::format(
             "The requested clock rate %f MHz may cause slow configuration.\n"
             "The driver recommends a master clock rate less than %f MHz.\n"
-        ) % (rate/1e6) % 56.0 << std::endl;
+        ) % (rate/1e6) % (ad9361_device_t::AD9361_RECOMMENDED_MAX_CLOCK_RATE/1e6) << std::endl;
 
         //clip to known bounds
         const meta_range_t clock_rate_range = ad9361_ctrl::get_clock_rate_range();

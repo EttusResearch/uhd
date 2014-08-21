@@ -78,7 +78,7 @@ int get_num_taps(int max_num_taps) {
 
 const double ad9361_device_t::AD9361_MAX_GAIN        = 89.75;
 const double ad9361_device_t::AD9361_MAX_CLOCK_RATE  = 61.44e6;
-
+const double ad9361_device_t::AD9361_RECOMMENDED_MAX_CLOCK_RATE = 56e6;
 
 /* Program either the RX or TX FIR filter.
  *
