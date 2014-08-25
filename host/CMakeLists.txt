@@ -280,6 +280,29 @@ IF(NOT LIBUHD_PKG AND NOT UHDHOST_PKG)
 ENDIF(NOT LIBUHD_PKG AND NOT UHDHOST_PKG)
 
 ########################################################################
+# Create and Install UHD cmake files
+########################################################################
+IF(NOT CMAKE_MODULES_DIR)
+   SET(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
+ENDIF(NOT CMAKE_MODULES_DIR)
+
+configure_file(
+  ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in
+  ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
+@ONLY)
+
+SET(cmake_configs
+  ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfig.cmake
+  ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
+)
+
+INSTALL(
+  FILES ${cmake_configs}
+  DESTINATION ${CMAKE_MODULES_DIR}/uhd
+  COMPONENT library
+)
+
+########################################################################
 # Handle pre-built images
 ########################################################################
 IF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
