@@ -387,8 +387,8 @@ void set_master_clock_rate(double clock_rate) {
     for (size_t i = 24; i <= 31; ++i) {
         this->write_regs(i);
     }
-
     this->sync_clocks();
+    _master_clock_rate = clock_rate;
 }
 
 UHD_INLINE bool doubles_are_equal(double a, double b) {
@@ -398,7 +398,7 @@ UHD_INLINE bool doubles_are_equal(double a, double b) {
 const spi_iface::sptr _spiface;
 const size_t _slaveno;
 const size_t _hw_rev;
-const double _master_clock_rate;
+double _master_clock_rate;
 const double _system_ref_rate;
 lmk04816_regs_t _lmk04816_regs;
 };
