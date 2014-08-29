@@ -523,7 +523,6 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             }
             if (_mbc[mb].gps and _mbc[mb].gps->gps_detected())
             {
-                UHD_MSG(status) << "found" << std::endl;
                 BOOST_FOREACH(const std::string &name, _mbc[mb].gps->get_sensors())
                 {
                     _tree->create<sensor_value_t>(mb_path / "sensors" / name)
@@ -532,7 +531,6 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr){
             }
             else
             {
-                UHD_MSG(status) << "not found" << std::endl;
                 _mbc[mb].iface->pokefw(U2_FW_REG_HAS_GPSDO, dont_look_for_gpsdo);
             }
         }

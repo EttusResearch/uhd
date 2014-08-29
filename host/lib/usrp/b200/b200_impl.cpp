@@ -304,7 +304,6 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
         }
         else
         {
-            UHD_MSG(status) << "not found" << std::endl;
             _local_ctrl->poke32(TOREG(SR_CORE_GPSDO_ST), B200_GPSDO_ST_NONE);
         }
     }
