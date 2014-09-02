@@ -24,9 +24,9 @@
 #include "fx2regs.h"
 #include "syncdelay.h"
 
-extern xdata unsigned char _standard_interrupt_vector[];
-extern xdata unsigned char _usb_autovector[];
-extern xdata unsigned char _fifo_gpif_autovector[];
+extern __xdata unsigned char _standard_interrupt_vector[];
+extern __xdata unsigned char _usb_autovector[];
+extern __xdata unsigned char _fifo_gpif_autovector[];
 
 #define LJMP_OPCODE	0x02
 
@@ -39,7 +39,7 @@ extern xdata unsigned char _fifo_gpif_autovector[];
 void 
 hook_sv (unsigned char vector_number, unsigned short addr)
 {
-  bit	t;
+  __bit	t;
   
   // sanity checks
 
@@ -66,7 +66,7 @@ hook_sv (unsigned char vector_number, unsigned short addr)
 void 
 hook_uv (unsigned char vector_number, unsigned short addr)
 {
-  bit	t;
+  __bit	t;
   
   // sanity checks
 
@@ -93,7 +93,7 @@ hook_uv (unsigned char vector_number, unsigned short addr)
 void 
 hook_fgv (unsigned char vector_number, unsigned short addr)
 {
-  bit	t;
+  __bit	t;
   
   // sanity checks
 

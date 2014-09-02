@@ -24,9 +24,9 @@
 #define _I2C_H_
 
 // returns non-zero if successful, else 0
-unsigned char i2c_read (unsigned char addr, xdata unsigned char *buf, unsigned char len);
+unsigned char i2c_read (unsigned char addr, __xdata unsigned char *buf, unsigned char len);
 
 // returns non-zero if successful, else 0
-unsigned char i2c_write (unsigned char addr, xdata const unsigned char *buf, unsigned char len);
+unsigned char i2c_write (unsigned char addr, __xdata const unsigned char *buf, unsigned char len);
 
 #endif /* _I2C_H_ */

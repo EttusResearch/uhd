@@ -29,13 +29,13 @@ unsigned char g_tx_reset = 0;
 unsigned char g_rx_reset = 0;
 
 void
-fpga_write_reg (unsigned char regno, const xdata unsigned char *regval)
+fpga_write_reg (unsigned char regno, const __xdata unsigned char *regval)
 {
 	//nop
 }
 
 
-static xdata unsigned char regval[4] = {0, 0, 0, 0};
+static __xdata unsigned char regval[4] = {0, 0, 0, 0};
 
 // Resets both AD9862's and the FPGA serial bus interface.
 

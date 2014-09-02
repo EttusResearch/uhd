@@ -64,7 +64,7 @@ set_sleep_bits (unsigned char bits, unsigned char mask)
   // NOP on usrp1
 }
 
-static xdata unsigned char xbuf[1];
+static __xdata unsigned char xbuf[1];
 
 void
 write_9862 (unsigned char which, unsigned char regno, unsigned char value)
