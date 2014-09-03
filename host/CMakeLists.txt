@@ -26,7 +26,9 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(UHD CXX)
 ENABLE_TESTING()
-LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
+
+#make sure our local CMake Modules path comes first
+list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
 # Packaging Variables
