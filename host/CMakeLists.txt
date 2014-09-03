@@ -65,6 +65,26 @@ SET(PKG_MAN_DIR share/man/man1)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
 ########################################################################
+# On Apple only, set install name and use rpath correctly, if not already set
+########################################################################
+IF(APPLE)
+    IF(NOT CMAKE_INSTALL_NAME_DIR)
+        SET(CMAKE_INSTALL_NAME_DIR
+            ${CMAKE_INSTALL_PREFIX}/${GR_LIBRARY_DIR} CACHE
+            PATH "Library Install Name Destination Directory" FORCE)
+    ENDIF(NOT CMAKE_INSTALL_NAME_DIR)
+    IF(NOT CMAKE_INSTALL_RPATH)
+        SET(CMAKE_INSTALL_RPATH
+            ${CMAKE_INSTALL_PREFIX}/${GR_LIBRARY_DIR} CACHE
+            PATH "Library Install RPath" FORCE)
+    ENDIF(NOT CMAKE_INSTALL_RPATH)
+    IF(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
+        SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE
+            BOOL "Do Build Using Library Install RPath" FORCE)
+    ENDIF(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
+ENDIF(APPLE)
+
+########################################################################
 # Optional Compiler Flags
 ########################################################################
 INCLUDE(CheckCXXCompilerFlag)
