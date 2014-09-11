@@ -1270,12 +1270,12 @@ void e300_impl::_update_atrs(void)
         int vctxrx_v2_txing = 1;
 
         if (tx_low_band) {
-            vctxrx_v1_rxing = rx_ant_rx2 ? 0 : 0;
+            vctxrx_v1_rxing = rx_ant_rx2 ? 1 : 0;
             vctxrx_v2_rxing = rx_ant_rx2 ? 0 : 1;
             vctxrx_v1_txing = 1;
             vctxrx_v2_txing = 0;
         } else {
-            vctxrx_v1_rxing = rx_ant_rx2 ? 0 : 0;
+            vctxrx_v1_rxing = rx_ant_rx2 ? 1 : 0;
             vctxrx_v2_rxing = rx_ant_rx2 ? 0 : 1;
             vctxrx_v1_txing = 1;
             vctxrx_v2_txing = 1;
