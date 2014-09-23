@@ -20,7 +20,7 @@ OBJECTS = uhd_dump.o
 
 CFLAGS = -g -O0 -Wall
 
-LDFLAGS = -lpcap -lm
+LIBS = -lpcap -lm
 
 CC = cc
 
@@ -28,7 +28,7 @@ CC = cc
 all: $(BINARIES)
 
 chdr_log: uhd_dump.o chdr_log.o $(INCLUDES)
-	$(CC) $(CFLAGS) -o $@ uhd_dump.o chdr_log.o  $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ uhd_dump.o chdr_log.o  $(LIBS) $(LDFLAGS)
 
 
 

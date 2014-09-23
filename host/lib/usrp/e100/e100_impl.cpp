@@ -261,7 +261,6 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         }
         if (_gps and _gps->gps_detected())
         {
-            UHD_MSG(status) << "found" << std::endl;
             BOOST_FOREACH(const std::string &name, _gps->get_sensors())
             {
                 _tree->create<sensor_value_t>(mb_path / "sensors" / name)
@@ -270,7 +269,6 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         }
         else
         {
-            UHD_MSG(status) << "not found" << std::endl;
             std::ofstream(GPSDO_VOLATILE_PATH.string().c_str(), std::ofstream::binary) << "42" << std::endl;
         }
     }

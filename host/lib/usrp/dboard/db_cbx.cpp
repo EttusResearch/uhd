@@ -19,6 +19,7 @@
 #include "max2870_regs.hpp"
 #include "db_sbx_common.hpp"
 #include <boost/algorithm/string.hpp>
+#include <boost/math/special_functions/round.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -94,10 +95,10 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
         vco_freq *= 2;
         RFdiv *= 2;
     }
-    
+
     /*
      * The goal here is to loop though possible R dividers,
-     * band select clock dividers, N (int) dividers, and FRAC 
+     * band select clock dividers, N (int) dividers, and FRAC
      * (frac) dividers.
      *
      * Calculate the N and F dividers for each set of values.
@@ -122,7 +123,7 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
         N = int(vco_freq/pfd_freq);
 
         //Fractional-N calculation
-        FRAC = int((vco_freq/pfd_freq - N)*MOD);
+        FRAC = int(boost::math::round((vco_freq/pfd_freq - N)*MOD));
 
         if(is_int_n) {
             if (FRAC > (MOD / 2)) { //Round integer such that actual freq is closest to target
@@ -197,7 +198,8 @@ double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
     regs.r_counter_10_bit = R;
     regs.reference_divide_by_2 = T;
     regs.reference_doubler = D;
-    regs.band_select_clock_div = BS;
+    regs.band_select_clock_div = (BS & 0x0FF);
+    regs.bs_msb = (BS & 0x300) >>8;
     UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(RFdiv));
     regs.rf_divider_select = rfdivsel_to_enum[RFdiv];
     regs.int_n_mode = (is_int_n) ? max2870_regs_t::INT_N_MODE_INT_N : max2870_regs_t::INT_N_MODE_FRAC_N;

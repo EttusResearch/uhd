@@ -173,3 +173,24 @@ BOOST_AUTO_TEST_CASE(test_prop_subtree){
     BOOST_CHECK_EQUAL_COLLECTIONS(tree_dirs2.begin(), tree_dirs2.end(), subtree2_dirs.begin(), subtree2_dirs.end());
 
 }
+
+
+BOOST_AUTO_TEST_CASE(test_prop_operators)
+{
+    uhd::fs_path path1 = "/root/";
+    path1 = path1 / "leaf";
+    BOOST_CHECK_EQUAL(path1, "/root/leaf");
+
+    uhd::fs_path path2 = "/root";
+    path2 = path2 / "leaf";
+    BOOST_CHECK_EQUAL(path2, "/root/leaf");
+
+    uhd::fs_path path3 = "/root/";
+    path3 = path3 / "/leaf/";
+    BOOST_CHECK_EQUAL(path3, "/root/leaf/");
+
+    uhd::fs_path path4 = "/root/";
+    size_t x = 2;
+    path4 = path4 / x;
+    BOOST_CHECK_EQUAL(path4, "/root/2");
+}
