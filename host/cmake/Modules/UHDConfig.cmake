@@ -28,6 +28,13 @@
 #
 ########################################################################
 
+# set that this file was found, for use in GNU Radio's FindUHD.cmake.
+# Have to use the ENV, since this file might not allow CACHE changes.
+
+set(ENV{UHD_CONFIG_USED} TRUE)
+
+# set default values
+
 SET(UHD_FOUND TRUE)
 SET(UHD_INCLUDE_HINTS)
 SET(UHD_LIBDIR_HINTS)

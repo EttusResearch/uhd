@@ -21,6 +21,11 @@
 # provided by this UHD install.  All version checking is done herein.
 ########################################################################
 
+# set that this file was found, for use in GNU Radio's FindUHD.cmake.
+# Have to use the ENV, since this file might not allow CACHE changes.
+
+set(ENV{UHD_CONFIG_VERSION_USED} TRUE)
+
 # version values as set in cmake/Modules/UHDVersion.cmake, placed
 # statically in here to avoid using Python all over again.
 
@@ -29,6 +34,7 @@ SET(MINOR_VERSION @TRIMMED_VERSION_MINOR@)
 SET(PATCH_VERSION @TRIMMED_VERSION_PATCH@)
 
 SET(PACKAGE_VERSION @TRIMMED_UHD_VERSION@)
+SET(ENV{UHD_PACKAGE_VERSION} ${PACKAGE_VERSION})
 
 # There is a bug in CMake whereby calling "find_package(FOO)" within
 # "find_package(FOO)" results in the version being checked in the
