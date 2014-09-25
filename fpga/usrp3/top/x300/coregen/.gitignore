@@ -1,4 +1,5 @@
 _xmsgs
 *.log
+*.ncf
 /bootram.ncf
 /bootram.xise

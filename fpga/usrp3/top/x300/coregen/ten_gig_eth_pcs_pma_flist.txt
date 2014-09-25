@@ -1,4 +1,5 @@
 # Output products list for <ten_gig_eth_pcs_pma>
+_xmsgs/pn_parser.xmsgs
 ten_gig_eth_pcs_pma/doc/pg068-ten-gig-eth-pcs-pma.pdf
 ten_gig_eth_pcs_pma/example_design/gtx/coregen.cgp
 ten_gig_eth_pcs_pma/example_design/gtx/ten_gig_eth_pcs_pma_gt_usrclk_source.v

@@ -52,11 +52,11 @@
 
 //***************************** Entity Declaration ****************************
 
-(* CORE_GENERATION_INFO = "gtwizard_10gbaser,gtwizard_v2_3,{protocol_file=10GBASE-R}" *) module ten_gig_eth_pcs_pma_gtwizard_10gbaser #
+module ten_gig_eth_pcs_pma_gtwizard_10gbaser #
 (
     // Simulation attributes
     parameter   WRAPPER_SIM_GTRESET_SPEEDUP    =   "false",     // Set to "true" to speed up sim reset
-    parameter   RX_DFE_KL_CFG2_IN              =   32'h3010D90C,
+    parameter   RX_DFE_KL_CFG2_IN              =   32'h301148AC,
     parameter   PMA_RSV_IN                     =   32'h001E7080,
     parameter   SIM_VERSION                    =   "4.0"
 )

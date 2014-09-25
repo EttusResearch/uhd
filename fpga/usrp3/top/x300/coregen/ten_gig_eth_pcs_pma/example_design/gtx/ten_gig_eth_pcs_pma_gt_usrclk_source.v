@@ -50,11 +50,9 @@
 //***********************************Entity Declaration*******************************
 module ten_gig_eth_pcs_pma_GT_USRCLK_SOURCE
 (
- // IJB. Remove IBUFDS_GTE2 from 10G PHY hierarchy so that it can be shared.
- //
-    //input  wire  Q1_CLK0_GTREFCLK_PAD_N_IN,
-    //input  wire  Q1_CLK0_GTREFCLK_PAD_P_IN,
-    //output wire  Q1_CLK0_GTREFCLK_OUT,
+    input  wire  Q1_CLK0_GTREFCLK_PAD_N_IN,
+    input  wire  Q1_CLK0_GTREFCLK_PAD_P_IN,
+    output wire  Q1_CLK0_GTREFCLK_OUT,
  
     output          GT0_TXUSRCLK_OUT,
     output          GT0_TXUSRCLK2_OUT,
@@ -78,7 +76,7 @@ module ten_gig_eth_pcs_pma_GT_USRCLK_SOURCE
     wire            gt0_txoutclk_i; 
     wire            gt0_rxoutclk_i;
     
-//    wire            q1_clk0_gtrefclk;
+    wire            q1_clk0_gtrefclk;
 
     wire            gt0_txusrclk_i;
     wire            gt0_rxusrclk_i;
@@ -91,10 +89,9 @@ module ten_gig_eth_pcs_pma_GT_USRCLK_SOURCE
     assign gt0_txoutclk_i = GT0_TXOUTCLK_IN;
     assign gt0_rxoutclk_i = GT0_RXOUTCLK_IN;
      
-//    assign Q1_CLK0_GTREFCLK_OUT = q1_clk0_gtrefclk;
+    assign Q1_CLK0_GTREFCLK_OUT = q1_clk0_gtrefclk;
 
     //IBUFDS_GTE2
-/* -----\/----- EXCLUDED -----\/-----
     IBUFDS_GTE2 ibufds_instQ1_CLK0  
     (
         .O               (q1_clk0_gtrefclk),
@@ -103,7 +100,6 @@ module ten_gig_eth_pcs_pma_GT_USRCLK_SOURCE
         .I               (Q1_CLK0_GTREFCLK_PAD_P_IN),
         .IB              (Q1_CLK0_GTREFCLK_PAD_N_IN)
     );
- -----/\----- EXCLUDED -----/\----- */
 
     BUFG txoutclk_bufg0_i
     (

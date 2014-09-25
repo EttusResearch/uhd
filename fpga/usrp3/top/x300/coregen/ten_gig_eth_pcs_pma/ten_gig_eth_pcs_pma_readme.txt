@@ -1,7 +1,7 @@
 
 CHANGE LOG for TEN GIGABIT ETHERNET PCS/PMA
 
-Release Date:  December 18, 2012 
+Release Date:  October 23, 2013 
 --------------------------------------------------------------------------------
 
 Table of Contents
@@ -175,7 +175,22 @@ Table of Contents
       - CR681628 - Removed unused (reset) logic from Block Level code
       - CR681627 - Fixed issue of possible deadlock in reset logic
       - CR681281 - Added TIG constraint to UCF to ignore otherwise unconstrained path
+    
+    v2.6 Rev 1
+      - CR694301 - Fixed a bug in the management block which had disconnected the 
+                   training interface from the DRP interface
+      - CR694653 - Incorrect version number in core info register - was still at v2.5
+      - CR694654 - Incorrect link to v2.5 PG068 in PDF redirect doc
                   
+    v2.6 Rev 2
+      - CR714979 - Incorrect DRP address being used for RX PRBS31 Error Counter in GTH
+      - CR710726 - Possibility of returning incorrect value from RX PRBS31 Error Counter 
+      - CR710727 - Possibility of corrupting MDIO operations and registers when using RX PRBS31 Error Checking 
+      
+    v2.6 Rev 3
+      - CR679904 (second issue) - PCS Block Lock FSM rewritten to remove the corner-case failure in UNH test 49.3.3
+      - Updated GT parameters to Production values
+
   4.2 Vivado 
 
     The following issues are resolved in the indicated IP versions:
@@ -234,6 +249,12 @@ Table of Contents
       - CR681628 - Removed unused (reset) logic from Block Level code
       - CR681627 - Fixed issue of possible deadlock in reset logic
 
+    v2.6 Rev 1
+      - CR694301 - Fixed a bug in the management block which had disconnected the 
+                   training interface from the DRP interface
+      - CR694653 - Incorrect version number in core info register - was still at v2.5
+      - CR694654 - Incorrect link to v2.5 PG068 in PDF redirect doc
+                  
 5. KNOWN ISSUES & LIMITATIONS
 
   5.1 ISE 
@@ -267,6 +288,12 @@ Table of Contents
 
 Date        By            Version      Description
 ================================================================================
+10/23/2013  Xilinx, Inc.  2.6 Rev 3    PCS Block Lock FSM rewritten to remove the 
+                                         corner-case failure in UNH test 49.3.3 
+04/24/2013  Xilinx, Inc.  2.6 Rev 2    Fixed bugs in usage of PRBS31 test features 
+01/14/2013  Xilinx, Inc.  2.6 Rev 1    Fixed bug in connection from training 
+                                         interface to GT DRP and fixed Documentation
+                                         link.
 12/18/2012  Xilinx, Inc.  2.6          Various improvements for new release 
 10/16/2012  Xilinx, Inc.  2.5          Various improvements for new release, 
                                          including to Training and AutoNegotiation.
@@ -288,7 +315,7 @@ Date        By            Version      Description
 
 8. LEGAL DISCLAIMER
 
-  (c) Copyright 2009 - 2012 Xilinx, Inc. All rights reserved.
+  (c) Copyright 2009 - 2013 Xilinx, Inc. All rights reserved.
 
   This file contains confidential and proprietary information
   of Xilinx, Inc. and is protected under U.S. and

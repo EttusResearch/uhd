@@ -151,7 +151,7 @@ module xge_mac_wrapper
    ///////////////////////////////////////////////////////////////////////////////////////
    wire [63:0] rx_tdata_int;
    wire [3:0]  rx_tuser_int;
-   wire        rx_talst_int;
+   wire        rx_tlast_int;
    wire        rx_tvalid_int;
    wire        rx_tready_int;
 
@@ -194,7 +194,7 @@ module xge_mac_wrapper
    // Large FIFO must be able to run input side at 64b@156MHz to sustain 10Gb Rx.
    //
 
-   axi64_8k_2clk_fifo rxfifo_2clk
+   axi64_4k_2clk_fifo rxfifo_2clk
      (
       .s_aresetn(~xgmii_reset),
       .s_aclk(xgmii_clk),
@@ -235,7 +235,7 @@ module xge_mac_wrapper
    wire        tx_sof_int3;
 
 
-   axi64_8k_2clk_fifo txfifo_2clk_1x
+   axi64_4k_2clk_fifo txfifo_2clk_1x
      (
       .s_aresetn(~xgmii_reset),
       .s_aclk(sys_clk),
