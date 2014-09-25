@@ -23,6 +23,7 @@
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/lock_guard.hpp>
 #ifdef BOOST_MSVC
 //whoops! https://svn.boost.org/trac/boost/ticket/5287
 //enjoy this useless dummy class instead
@@ -37,7 +38,6 @@ namespace boost{ namespace interprocess{
 #include <boost/interprocess/sync/file_lock.hpp>
 #endif
 #include <fstream>
-#include <sstream>
 #include <cctype>
 
 namespace fs = boost::filesystem;
@@ -70,13 +70,13 @@ public:
     }
 
     ~log_resource_type(void){
-        boost::mutex::scoped_lock lock(_mutex);
+        boost::lock_guard<boost::mutex> lock(_mutex);
         _file_stream.close();
         if (_file_lock != NULL) delete _file_lock;
     }
 
     void log_to_file(const std::string &log_msg){
-        boost::mutex::scoped_lock lock(_mutex);
+        boost::lock_guard<boost::mutex> lock(_mutex);
         if (_file_lock == NULL){
             const std::string log_path = (fs::path(uhd::get_tmp_path()) / "uhd.log").string();
             _file_stream.open(log_path.c_str(), std::fstream::out | std::fstream::app);
@@ -126,39 +126,40 @@ static std::string get_rel_file_path(const fs::path &file){
     return rel_path.string();
 }
 
-struct uhd::_log::log::impl{
-    std::ostringstream ss;
-    verbosity_t verbosity;
-};
 
 uhd::_log::log::log(
     const verbosity_t verbosity,
     const std::string &file,
     const unsigned int line,
     const std::string &function
-){
-    _impl = UHD_PIMPL_MAKE(impl, ());
-    _impl->verbosity = verbosity;
-    const std::string time = pt::to_simple_string(pt::microsec_clock::local_time());
-    const std::string header1 = str(boost::format("-- %s - level %d") % time % int(verbosity));
-    const std::string header2 = str(boost::format("-- %s") % function).substr(0, 80);
-    const std::string header3 = str(boost::format("-- %s:%u") % get_rel_file_path(file) % line);
-    const std::string border = std::string(std::max(std::max(header1.size(), header2.size()), header3.size()), '-');
-    _impl->ss
-        << std::endl
-        << border << std::endl
-        << header1 << std::endl
-        << header2 << std::endl
-        << header3 << std::endl
-        << border << std::endl
-    ;
+    )
+{
+    _log_it = (verbosity >= log_rs().level);
+    if (_log_it)
+    {
+        const std::string time = pt::to_simple_string(pt::microsec_clock::local_time());
+        const std::string header1 = str(boost::format("-- %s - level %d") % time % int(verbosity));
+        const std::string header2 = str(boost::format("-- %s") % function).substr(0, 80);
+        const std::string header3 = str(boost::format("-- %s:%u") % get_rel_file_path(file) % line);
+        const std::string border = std::string(std::max(std::max(header1.size(), header2.size()), header3.size()), '-');
+        _ss << std::endl
+            << border << std::endl
+            << header1 << std::endl
+            << header2 << std::endl
+            << header3 << std::endl
+            << border << std::endl
+        ;
+    }
 }
 
-uhd::_log::log::~log(void){
-    if (_impl->verbosity < log_rs().level) return;
-    _impl->ss << std::endl;
+uhd::_log::log::~log(void)
+{
+    if (not _log_it)
+        return;
+
+    _ss << std::endl;
     try{
-        log_rs().log_to_file(_impl->ss.str());
+        log_rs().log_to_file(_ss.str());
     }
     catch(const std::exception &e){
         /*!
@@ -173,8 +174,4 @@ uhd::_log::log::~log(void){
             << "Logging has been disabled for this process" << std::endl
         ;
     }
-}
-
-std::ostream & uhd::_log::log::operator()(void){
-    return _impl->ss;
 }

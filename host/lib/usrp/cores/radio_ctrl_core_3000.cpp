@@ -56,7 +56,6 @@ public:
                     ACK_TIMEOUT), _resp_queue(128/*max response msgs*/), _resp_queue_size(
                     _resp_xport ? _resp_xport->get_num_recv_frames() : 3)
     {
-        UHD_LOG<< "radio_ctrl_core_3000_impl() " << _name << std::endl;
         if (resp_xport)
         {
             while (resp_xport->get_recv_buff(0.0)) {} //flush
@@ -67,7 +66,6 @@ public:
 
     ~radio_ctrl_core_3000_impl(void)
     {
-        UHD_LOG << "~radio_ctrl_core_3000_impl() " << _name << std::endl;
         _timeout = ACK_TIMEOUT; //reset timeout to something small
         UHD_SAFE_CALL(
             this->peek32(0);//dummy peek with the purpose of ack'ing all packets
@@ -81,8 +79,6 @@ public:
     void poke32(const wb_addr_type addr, const boost::uint32_t data)
     {
         boost::mutex::scoped_lock lock(_mutex);
-        UHD_LOGV(always) << _name << std::hex << " addr 0x" << addr << " data 0x" << data << std::dec << std::endl;
-
         this->send_pkt(addr/4, data);
         this->wait_for_ack(false);
     }
@@ -90,7 +86,6 @@ public:
     boost::uint32_t peek32(const wb_addr_type addr)
     {
         boost::mutex::scoped_lock lock(_mutex);
-        UHD_LOGV(always) << _name << std::hex << " addr 0x" << addr << std::dec << std::endl;
         this->send_pkt(SR_READBACK, addr/8);
         const boost::uint64_t res = this->wait_for_ack(true);
         const boost::uint32_t lo = boost::uint32_t(res & 0xffffffff);
@@ -101,8 +96,6 @@ public:
     boost::uint64_t peek64(const wb_addr_type addr)
     {
         boost::mutex::scoped_lock lock(_mutex);
-        UHD_LOGV(always) << _name << std::hex << " addr 0x" << addr << std::dec << std::endl;
-
         this->send_pkt(SR_READBACK, addr/8);
         return this->wait_for_ack(true);
     }
@@ -178,7 +171,6 @@ private:
     {
         while (readback or (_outstanding_seqs.size() >= _resp_queue_size))
         {
-            UHD_LOGV(always) << _name << " wait_for_ack: " << "readback = " << readback << " outstanding_seqs.size() " << _outstanding_seqs.size() << std::endl;
             //get seq to ack from outstanding packets list
             UHD_ASSERT_THROW(not _outstanding_seqs.empty());
             const size_t seq_to_ack = _outstanding_seqs.front();

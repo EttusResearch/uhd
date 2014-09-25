@@ -21,8 +21,10 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <boost/current_function.hpp>
+#include <boost/format.hpp>
 #include <ostream>
 #include <string>
+#include <sstream>
 
 /*! \file log.hpp
  * The UHD logging facility.
@@ -55,7 +57,7 @@
  * Usage: UHD_LOGV(very_rarely) << "the log message" << std::endl;
  */
 #define UHD_LOGV(verbosity) \
-    uhd::_log::log(uhd::_log::verbosity, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION)()
+    uhd::_log::log(uhd::_log::verbosity, __FILE__, __LINE__, BOOST_CURRENT_FUNCTION)
 
 /*!
  * A UHD logger macro with default verbosity.
@@ -78,7 +80,7 @@ namespace uhd{ namespace _log{
     };
 
     //! Internal logging object (called by UHD_LOG macros)
-    class UHD_API log{
+    class UHD_API log {
     public:
         log(
             const verbosity_t verbosity,
@@ -86,10 +88,29 @@ namespace uhd{ namespace _log{
             const unsigned int line,
             const std::string &function
         );
+
         ~log(void);
-        std::ostream &operator()(void);
+
+        // Macro for overloading insertion operators to avoid costly
+        // conversion of types if not logging.
+        #define INSERTION_OVERLOAD(x)   log& operator<< (x)             \
+                                        {                               \
+                                            if(_log_it) _ss << val;     \
+                                            return *this;               \
+                                        }
+
+        // General insertion overload
+        template <typename T>
+        INSERTION_OVERLOAD(T val);
+
+        // Insertion overloads for std::ostream manipulators
+        INSERTION_OVERLOAD(std::ostream& (*val)(std::ostream&));
+        INSERTION_OVERLOAD(std::ios& (*val)(std::ios&));
+        INSERTION_OVERLOAD(std::ios_base& (*val)(std::ios_base&));
+
     private:
-        UHD_PIMPL_DECL(impl) _impl;
+        std::ostringstream _ss;
+        bool _log_it;
     };
 
 }} //namespace uhd::_log
