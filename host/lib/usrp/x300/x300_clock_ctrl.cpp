@@ -295,8 +295,6 @@ void set_master_clock_rate(double clock_rate) {
     // Register 3
     _lmk04816_regs.CLKout6_7_DIV = vco_div;
     _lmk04816_regs.CLKout6_7_OSCin_Sel = lmk04816_regs_t::CLKOUT6_7_OSCIN_SEL_VCO;
-    _lmk04816_regs.CLKout6_ADLY_SEL = lmk04816_regs_t::CLKOUT6_ADLY_SEL_D_EV_X;
-    _lmk04816_regs.CLKout7_ADLY_SEL = lmk04816_regs_t::CLKOUT7_ADLY_SEL_D_EV_X;
     // Register 4
     _lmk04816_regs.CLKout8_9_DIV = vco_div;
     // Register 5
@@ -318,9 +316,6 @@ void set_master_clock_rate(double clock_rate) {
     _lmk04816_regs.CLKout6_TYPE = lmk04816_regs_t::CLKOUT6_TYPE_LVPECL_700MVPP; //DB0_DAC
     _lmk04816_regs.CLKout7_TYPE = lmk04816_regs_t::CLKOUT7_TYPE_LVPECL_700MVPP; //DB1_DAC
     _lmk04816_regs.CLKout8_TYPE = lmk04816_regs_t::CLKOUT8_TYPE_LVPECL_700MVPP; //DB0_ADC
-    // Analog delay of 900ps to synchronize the DAC reference clocks with the source synchronous DAC clocks.
-    // This delay may need to vary due to temperature.  Tested and verified at room temperature only.
-    _lmk04816_regs.CLKout6_7_ADLY = 0x10;
 
     // Register 8
     _lmk04816_regs.CLKout9_TYPE = lmk04816_regs_t::CLKOUT9_TYPE_LVPECL_700MVPP; //DB1_ADC
