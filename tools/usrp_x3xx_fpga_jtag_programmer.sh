@@ -9,7 +9,7 @@ Usage: impact_jtag_programmer.sh [--help|-h] [--impact-path=<PATH>] --fpga-path=
 
 -h             - Shows this.
 --impact-path  - Path to the iMPACT binary (if not already in PATH).
-                 Often something like /opt/Xilinx/14.4/ISE_DS/ISE/bin/lin64/impact
+                 Often something like /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/impact
 --fpga-path    - Path to the FPGA image.
 --nipcie       - When this option is set, this script will fail if it was unable
                  to stop the NI RIO USRP PCIe driver.
