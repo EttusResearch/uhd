@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,6 +34,11 @@ public:
     x300_adc_ctrl_impl(uhd::spi_iface::sptr iface, const size_t slaveno):
         _iface(iface), _slaveno(slaveno)
     {
+        init();
+    }
+
+    void init()
+    {
         //power-up adc
        _ads62p48_regs.reset = 1;
         this->send_ads62p48_reg(0x00); //issue a reset to the ADC
@@ -46,8 +51,8 @@ public:
         _ads62p48_regs.lvds_cmos = ads62p48_regs_t::LVDS_CMOS_DDR_LVDS;
         _ads62p48_regs.channel_control = ads62p48_regs_t::CHANNEL_CONTROL_INDEPENDENT;
         _ads62p48_regs.data_format = ads62p48_regs_t::DATA_FORMAT_2S_COMPLIMENT;
-	_ads62p48_regs.clk_out_pos_edge = ads62p48_regs_t::CLK_OUT_POS_EDGE_MINUS7_26;
-	_ads62p48_regs.clk_out_neg_edge = ads62p48_regs_t::CLK_OUT_NEG_EDGE_MINUS7_26;
+        _ads62p48_regs.clk_out_pos_edge = ads62p48_regs_t::CLK_OUT_POS_EDGE_MINUS7_26;
+        _ads62p48_regs.clk_out_neg_edge = ads62p48_regs_t::CLK_OUT_NEG_EDGE_MINUS7_26;
 
 
         this->send_ads62p48_reg(0);
@@ -70,6 +75,11 @@ public:
         this->send_ads62p48_reg(0x75);
         this->send_ads62p48_reg(0x76);
 
+    }
+
+    void reset()
+    {
+        init();
     }
 
     double set_gain(const double &gain)

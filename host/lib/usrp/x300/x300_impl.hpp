@@ -343,6 +343,8 @@ private:
     void set_time_source_out(mboard_members_t&, const bool);
     void update_clock_source(mboard_members_t&, const std::string &);
     void update_time_source(mboard_members_t&, const std::string &);
+    void reset_clocks(mboard_members_t&);
+    void reset_radios(mboard_members_t&);
 
     uhd::sensor_value_t get_ref_locked(uhd::wb_iface::sptr);
     void wait_for_ref_locked(uhd::wb_iface::sptr, double timeout = 0.0);

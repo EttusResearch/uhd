@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,6 +37,18 @@ public:
 
     // ! Arm the sync feature in DAC
     virtual void arm_dac_sync(void) = 0;
+
+    // ! Check for successful backend sync
+    virtual void check_dac_sync(void) = 0;
+
+    // ! Reset the DAC
+    virtual void reset(void) = 0;
+
+    // ! Check for PLL lock
+    virtual void check_pll(void) = 0;
+
+    // ! Check for successful frontend sync
+    virtual void check_frontend_sync(void) = 0;
 };
 
 #endif /* INCLUDED_X300_DAC_CTRL_HPP */
