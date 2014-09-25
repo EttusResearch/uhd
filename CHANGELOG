@@ -1,6 +1,15 @@
 Change Log for Releases
 ==============================
 
+## 003.007.003
+* Fixed examples
+* Removed compiler warnings
+* Fixed CBX LO settings (FRAC truncation)
+* Fixed build issues for out-of-tree tools for some distros
+* Fixed some logging strings (SBX, GPSDO)
+* Improved logging (speedups, removed unnecessary cycles) 
+* Added output sync for DAC reference clocks on X300
+
 ## 003.007.002
 * Fixed X300 phase alignment issues
 * Fixed CMake 2.6 incompatibility issues
