@@ -12,8 +12,11 @@ CG_BUILD_DIR = $(BUILD_DIR)/coregen
 COREGEN_SRCS = $(abspath $(addprefix $(CG_BUILD_DIR)/, \
 input_sample_fifo.v \
 input_sample_fifo.xco \
+axi64_4k_2clk_fifo.v \
 axi64_8k_2clk_fifo.v \
 fifo_4k_2clk.v \
+fifo_short_2clk.v \
+fifo_short_2clk.xco \
 radio_clk_gen.v \
 radio_clk_gen.xco \
 bus_clk_gen.v \
@@ -39,45 +42,14 @@ chipscope_icon.v \
 chipscope_icon.xco \
 chipscope_icon_2port.v \
 chipscope_icon_2port.xco \
-fifo_xlnx_16x40_2clk.v \
-fifo_xlnx_16x40_2clk.xco \
-fifo_short_2clk.v \
-fifo_short_2clk.xco \
 ))
 
-ONE_GIG_SRCS =  $(abspath $(addprefix $(CG_SOURCE_DIR)/, \
+COREGEN_ONE_GIG_SRCS = $(abspath $(addprefix $(CG_SOURCE_DIR)/, \
 gige_sfp_mdio.v \
-gige_sfp_mdio/example_design/gige_sfp_mdio_block.v \
-gige_sfp_mdio/example_design/gige_sfp_mdio_reset_sync.v \
-gige_sfp_mdio/example_design/gige_sfp_mdio_sync_block.v \
-gige_sfp_mdio/example_design/transceiver/gige_sfp_mdio_transceiver.v \
-gige_sfp_mdio/example_design/transceiver/gige_sfp_mdio_gtwizard.v \
-gige_sfp_mdio/example_design/transceiver/gige_sfp_mdio_gtwizard_gt.v \
-gige_sfp_mdio/example_design/transceiver/gige_sfp_mdio_gtwizard_init.v \
-gige_sfp_mdio/example_design/transceiver/gige_sfp_mdio_tx_startup_fsm.v \
-gige_sfp_mdio/example_design/transceiver/gige_sfp_mdio_rx_startup_fsm.v \
-gige_sfp_mdio/example_design/transceiver/gige_sfp_mdio_recclk_monitor.v \
-gige_sfp.v \
-gige_sfp/example_design/gige_sfp_block.v \
-gige_sfp/example_design/gige_sfp_reset_sync.v \
-gige_sfp/example_design/gige_sfp_sync_block.v \
-gige_sfp/example_design/transceiver/gige_sfp_transceiver.v \
-gige_sfp/example_design/transceiver/gige_sfp_gtwizard.v \
-gige_sfp/example_design/transceiver/gige_sfp_gtwizard_gt.v \
-gige_sfp/example_design/transceiver/gige_sfp_gtwizard_init.v \
-gige_sfp/example_design/transceiver/gige_sfp_tx_startup_fsm.v \
-gige_sfp/example_design/transceiver/gige_sfp_rx_startup_fsm.v \
 ))
 
-TEN_GIG_SRCS =  $(abspath $(addprefix $(CG_SOURCE_DIR)/, \
+COREGEN_TEN_GIG_SRCS =  $(abspath $(addprefix $(CG_SOURCE_DIR)/, \
 ten_gig_eth_pcs_pma.v \
-ten_gig_eth_pcs_pma/example_design/ten_gig_eth_pcs_pma_x300_top.v \
-ten_gig_eth_pcs_pma/example_design/ten_gig_eth_pcs_pma_x300_top.ucf \
-ten_gig_eth_pcs_pma/example_design/ten_gig_eth_pcs_pma_block.v \
-ten_gig_eth_pcs_pma/example_design/ten_gig_eth_pcs_pma_mod.v \
-ten_gig_eth_pcs_pma/example_design/gtx/ten_gig_eth_pcs_pma_gt_usrclk_source.v \
-ten_gig_eth_pcs_pma/example_design/gtx/ten_gig_eth_pcs_pma_gtwizard_10gbaser_gt.v \
-ten_gig_eth_pcs_pma/example_design/gtx/ten_gig_eth_pcs_pma_gtwizard_10gbaser.v \
 ))
 
 #make rule to regenerate bootram when the coe file is changed

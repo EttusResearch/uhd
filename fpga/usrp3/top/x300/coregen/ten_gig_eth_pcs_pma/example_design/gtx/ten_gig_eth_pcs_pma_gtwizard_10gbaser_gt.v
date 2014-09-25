@@ -56,8 +56,8 @@ module ten_gig_eth_pcs_pma_gtwizard_10gbaser_GT #
 (
     // Simulation attributes
     parameter   GT_SIM_GTRESET_SPEEDUP   =   "false",       // Set to 1 to speed up sim reset;
-    parameter   RX_DFE_KL_CFG2_IN        =   32'h3008E56A,
-    parameter   PMA_RSV_IN               =   32'h00000000,
+    parameter   RX_DFE_KL_CFG2_IN        =   32'h301148AC,
+    parameter   PMA_RSV_IN               =   32'h001E7080,
     parameter   PCS_RSVD_ATTR_IN         =   48'h000000000000,
     parameter   SIM_VERSION              =  ("4.0")
 )
@@ -195,7 +195,7 @@ module ten_gig_eth_pcs_pma_gtwizard_10gbaser_GT #
 
            //----------------RX Byte and Word Alignment Attributes---------------
             .ALIGN_COMMA_DOUBLE                     ("FALSE"),
-            .ALIGN_COMMA_ENABLE                     (10'b1111111111),
+            .ALIGN_COMMA_ENABLE                     (10'b0001111111),
             .ALIGN_COMMA_WORD                       (1),
             .ALIGN_MCOMMA_DET                       ("FALSE"),
             .ALIGN_MCOMMA_VALUE                     (10'b1010000011),
@@ -317,6 +317,7 @@ module ten_gig_eth_pcs_pma_gtwizard_10gbaser_GT #
             .RX_DEFER_RESET_BUF_EN                  ("TRUE"),
 
            //---------------------CDR Attributes-------------------------
+
             .RXCDR_CFG                              (72'h0b000023ff10400020),
             .RXCDR_FR_RESET_ON_EIDLE                (1'b0),
             .RXCDR_HOLD_DURING_EIDLE                (1'b0),

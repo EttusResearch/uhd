@@ -76,138 +76,130 @@ module eth_dispatch
     output [31:0] debug
     );
 
-    //
+    //---------------------------------------------------------
     // State machine declarations
-    //
-    reg [2:0] 	  state;
+    //---------------------------------------------------------
+    reg [2:0]      state;
 
-    localparam WAIT_PACKET = 0;
-    localparam READ_HEADER = 1;
-    localparam FORWARD_ZPU = 2;
-    localparam FORWARD_ZPU_AND_XO = 3;
-    localparam FORWARD_XO = 4;
-    localparam FORWARD_RADIO_CORE = 5;
-    localparam DROP_PACKET = 6;
-    localparam CLASSIFY_PACKET = 7;
+    localparam WAIT_PACKET          = 0;
+    localparam READ_HEADER          = 1;
+    localparam FORWARD_ZPU          = 2;
+    localparam FORWARD_ZPU_AND_XO   = 3;
+    localparam FORWARD_XO           = 4;
+    localparam FORWARD_RADIO_CORE   = 5;
+    localparam DROP_PACKET          = 6;
+    localparam CLASSIFY_PACKET      = 7;
 
-
-    //
     // Small RAM stores packet header during parsing.
-    //
     // IJB consider changing HEADER_RAM_SIZE to 7
     localparam HEADER_RAM_SIZE = 9;
-    (*ram_style="distributed"*)
-    reg [68:0] 	  header_ram [HEADER_RAM_SIZE-1:0];
-    reg [3:0] 	  header_ram_addr;
-    reg 		  drop_this_packet;
+    (*ram_style="distributed"*) reg [68:0]   header_ram [HEADER_RAM_SIZE-1:0];
 
-    wire 	  header_done = (header_ram_addr == HEADER_RAM_SIZE-1);
-    reg 		  fwd_input;
+    reg [3:0]     header_ram_addr;
+    wire          header_done = (header_ram_addr == HEADER_RAM_SIZE-1);
+    reg           fwd_input;
 
-    //
-    reg [63:0] 	  in_tdata_reg;
+    reg [63:0]    in_tdata_reg;
 
-    //
-    wire 	  out_tvalid;
-    wire 	  out_tready;
-    wire 	  out_tlast;
-    wire [3:0] 	  out_tuser;
-    wire [63:0] 	  out_tdata;
+    wire          out_tvalid;
+    wire          out_tready;
+    wire          out_tlast;
+    wire [3:0]    out_tuser;
+    wire [63:0]   out_tdata;
 
-    //
     // Output AXI-Stream interface to VITA Radio Core
-    wire [63:0] 	  vita_pre_tdata;
-    wire [3:0] 	  vita_pre_tuser;
-    wire 	  vita_pre_tlast;
-    wire 	  vita_pre_tvalid;
-    wire 	  vita_pre_tready;
+    wire [63:0]   vita_pre_tdata;
+    wire [3:0]    vita_pre_tuser;
+    wire          vita_pre_tlast;
+    wire          vita_pre_tvalid;
+    wire          vita_pre_tready;
     // Output AXI-Stream interface to ZPU
-    wire [63:0] 	  zpu_pre_tdata;
-    wire [3:0] 	  zpu_pre_tuser;
-    wire 	  zpu_pre_tlast;
-    wire 	  zpu_pre_tvalid;
-    wire 	  zpu_pre_tready;
+    wire [63:0]   zpu_pre_tdata;
+    wire [3:0]    zpu_pre_tuser;
+    wire          zpu_pre_tlast;
+    wire          zpu_pre_tvalid;
+    wire          zpu_pre_tready;
     // Output AXI-Stream interface to cross-over MAC
-    wire [63:0] 	  xo_pre_tdata;
-    wire [3:0] 	  xo_pre_tuser;
-    wire 	  xo_pre_tlast;
-    wire 	  xo_pre_tvalid;
-    wire 	  xo_pre_tready;
+    wire [63:0]   xo_pre_tdata;
+    wire [3:0]    xo_pre_tuser;
+    wire          xo_pre_tlast;
+    wire          xo_pre_tvalid;
+    wire          xo_pre_tready;
 
-    //
     // Packet Parse Flags
-    //
-    reg 		  is_eth_dst_addr;
-    reg 		  is_eth_broadcast;
-    reg 		  is_eth_type_ipv4;
-    reg 		  is_ipv4_dst_addr;
-    reg 		  is_ipv4_proto_udp;
-    reg 		  is_ipv4_proto_icmp;
-    reg [1:0] 	  is_udp_dst_ports;
-    reg		  is_icmp_no_fwd;
-    reg 		  is_chdr;
+    reg           is_eth_dst_addr;
+    reg           is_eth_broadcast;
+    reg           is_eth_type_ipv4;
+    reg           is_ipv4_dst_addr;
+    reg           is_ipv4_proto_udp;
+    reg           is_ipv4_proto_icmp;
+    reg [1:0]     is_udp_dst_ports;
+    reg           is_icmp_no_fwd;
+    reg           is_chdr;
 
-    //
+    //---------------------------------------------------------
     // Settings regs
-    //
+    //---------------------------------------------------------
 
-    wire [47:0] 	  my_mac;
-
+    // MAC address for the dispatcher module.
+    // This value is used to determine if the packet is meant 
+    // for this device should be consumed
+    wire [47:0]      my_mac;
     setting_reg #(.my_addr(BASE), .awidth(16), .width(32)) sr_my_mac_lsb
         (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
         .in(set_data),.out(my_mac[31:0]),.changed());
-
     setting_reg #(.my_addr(BASE+1), .awidth(16), .width(16)) sr_my_mac_msb
         (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
         .in(set_data),.out(my_mac[47:32]),.changed());
 
-    wire [31:0] 	  my_ip;
-
+    // IP address for the dispatcher module.
+    // This value is used to determine if the packet is addressed
+    // to this device 
+    wire [31:0]      my_ip;
     setting_reg #(.my_addr(BASE+2), .awidth(16), .width(32)) sr_my_ip
         (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
         .in(set_data),.out(my_ip[31:0]),.changed());
 
-    wire [15:0] 	  my_port0, my_port1;
-
+    // This module supports two destination ports
+    wire [15:0]      my_port0, my_port1;
     setting_reg #(.my_addr(BASE+3), .awidth(16), .width(32)) sr_udp_port
         (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
         .in(set_data),.out({my_port1[15:0],my_port0[15:0]}),.changed());
 
+    // forward_ndest: Forward to crossover path if MAC Addr in packet
+    //                does not match "my_mac"
+    // forward_bcast: Forward broadcasts to crossover path
     wire forward_ndest, forward_bcast;
     setting_reg #(.my_addr(BASE+4), .awidth(16), .width(2)) sr_forward_ctrl
         (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
         .in(set_data),.out({forward_ndest, forward_bcast}),.changed());
 
+    //ICMP Type and Code to forward packet to ZPU
     wire [7:0] my_icmp_type, my_icmp_code;
     setting_reg #(.my_addr(BASE+5), .awidth(16), .width(16)) sr_icmp_ctrl
         (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
         .in(set_data),.out({my_icmp_type, my_icmp_code}),.changed());
 
-    assign debug =
-    {
-    	1'b0, state, //4
-        1'b0, in_tvalid, in_tready, in_tlast, //4
-        1'b0, is_eth_dst_addr, is_eth_broadcast, is_eth_type_ipv4,
-        is_ipv4_dst_addr, is_ipv4_proto_udp, is_udp_dst_ports, //8
-        header_ram_addr[3:0], //4
-        4'b0, 8'b0
-    };
-
-
-    //
+    //---------------------------------------------------------
     // Packet Forwarding State machine.
-    //
+    //---------------------------------------------------------
+    // Read input packet and store the header into a RAM for
+    // classification. A header is defined as HEADER_RAM_SIZE
+    // number of 64-bit words.
+    // Based on clasification results, output the packet to the
+    // VITA port, crossover(XO) port or the ZPU. Note that the
+    // XO and ZPU ports require fully framed Eth packets so data
+    // from the RAM has to be replayed on the output. The state
+    // machine will hold off input packets until the header is 
+    // replayed. The state machine also supports dropping pkts.
 
     always @(posedge clk)
         if (reset || clear) begin
             state <= WAIT_PACKET;
             header_ram_addr <= 0;
-            drop_this_packet <= 0;
             fwd_input <= 0;
         end else begin
             // Defaults.
-            drop_this_packet <= 0;
-
             case(state)
                 //
                 // Wait for start of a packet
@@ -250,15 +242,15 @@ module eth_dispatch
                     end else if (is_eth_broadcast) begin
                         header_ram_addr <= 0;
                         state <= forward_bcast? FORWARD_ZPU_AND_XO : FORWARD_ZPU;
-                    end else if (!is_eth_dst_addr) begin
+                    end else if (!is_eth_dst_addr && forward_ndest) begin
                         header_ram_addr <= 0;
-                        state <= forward_ndest? FORWARD_XO : DROP_PACKET;
+                        state <= FORWARD_XO;
+                    end else if (!is_eth_dst_addr && !forward_ndest) begin
+                        header_ram_addr <= HEADER_RAM_SIZE - 1;
+                        state <= DROP_PACKET;
                     end else if ((is_udp_dst_ports != 0) && is_chdr) begin
                         header_ram_addr <= 6;  // Jump to CHDR
                         state <= FORWARD_RADIO_CORE;
-                    end else if (drop_this_packet) begin
-                        header_ram_addr <= HEADER_RAM_SIZE-1;
-                        state  <= DROP_PACKET;
                     end else begin
                         header_ram_addr <= 0;
                         state <= FORWARD_ZPU;
@@ -328,10 +320,14 @@ module eth_dispatch
             endcase // case (state)
         end // else: !if(reset || clear)
 
-    //
+    //---------------------------------------------------------
     // Classifier State machine.
     // Deep packet inspection during header ingress.
-    //
+    //---------------------------------------------------------
+    // As the packet header is pushed into the RAM, set classification
+    // bits so that by the time the input state machine reaches the
+    // CLASSIFY_PACKET state, the packet has been fully identified.
+    
     always @(posedge clk)
         if (reset || clear) begin
             is_eth_dst_addr <= 1'b0;
@@ -343,10 +339,6 @@ module eth_dispatch
             is_udp_dst_ports <= 0;
             is_icmp_no_fwd <= 0;
             is_chdr <= 1'b0;
-
-            //space_in_fifo <= 0;
-            //is_there_fifo_space <= 1;
-            //packet_length <= 0;
         end else if (in_tvalid && in_tready) begin // if (reset || clear)
             in_tdata_reg <= in_tdata;
 
@@ -426,9 +418,9 @@ module eth_dispatch
         end // if (in_tvalid && in_tready)
 
 
-    //
+    //---------------------------------------------------------
     // Output (Egress) Interface muxing
-    //
+    //---------------------------------------------------------
     assign out_tready =
         (state == DROP_PACKET) ||
         ((state == FORWARD_RADIO_CORE) && vita_pre_tready) ||
@@ -448,7 +440,6 @@ module eth_dispatch
         (state == READ_HEADER) ||
         (out_tready && fwd_input);
 
-
     //
     // Because we can forward to both the ZPU and XO FIFO's concurrently
     // we have to make sure both can accept data in the same cycle.
@@ -461,25 +452,22 @@ module eth_dispatch
     assign zpu_pre_tvalid = out_tvalid &&
         ((state == FORWARD_ZPU) ||
         ((state == FORWARD_ZPU_AND_XO) && xo_pre_tready));
-    assign vita_pre_tvalid = out_tvalid && (state == FORWARD_RADIO_CORE);
+    assign vita_pre_tvalid = out_tvalid &&
+        (state == FORWARD_RADIO_CORE);
 
-    assign {zpu_pre_tuser,zpu_pre_tdata} = ((state == FORWARD_ZPU_AND_XO) || (state == FORWARD_ZPU)) ?
-        {out_tuser,out_tdata} : 0;
+    assign {zpu_pre_tlast, zpu_pre_tuser, zpu_pre_tdata}    = {out_tlast, out_tuser, out_tdata};
+    assign {xo_pre_tlast, xo_pre_tuser, xo_pre_tdata}       = {out_tlast, out_tuser, out_tdata};
+    assign {vita_pre_tlast, vita_pre_tuser, vita_pre_tdata} = {out_tlast, out_tuser, out_tdata};
 
-    assign {xo_pre_tuser,xo_pre_tdata} = ((state == FORWARD_ZPU_AND_XO) || (state == FORWARD_XO)) ?
-        {out_tuser,out_tdata} : 0;
-
-    assign {vita_pre_tuser,vita_pre_tdata} = (state == FORWARD_RADIO_CORE) ? {out_tuser,out_tdata} : 0;
-
-    assign zpu_pre_tlast = out_tlast && ((state == FORWARD_ZPU) || (state == FORWARD_ZPU_AND_XO));
-
-    assign xo_pre_tlast =  out_tlast && ((state == FORWARD_XO) || (state == FORWARD_ZPU_AND_XO));
-
-    assign vita_pre_tlast = out_tlast && (state == FORWARD_RADIO_CORE);
-
-    //
-    // Egress FIFO's (Large)
-    //
+    //---------------------------------------------------------
+    // Egress FIFO's
+    //---------------------------------------------------------
+    // These FIFO's have to be fairly large to prevent any egress
+    // port from backpressuring the input state machine.
+    // The ZPU and XO ports are inherently slow consumers so they
+    // get a large buffer. The VITA port is fast but high throughput
+    // so even that needs a large FIFO.
+    
     axi_fifo #(.WIDTH(69),.SIZE(10))
     axi_fifo_zpu (
         .clk(clk),
@@ -524,53 +512,5 @@ module eth_dispatch
         .space(),
         .occupied()
     );
-
-    assign debug_flags = {vita_pre_tready,xo_pre_tready,zpu_pre_tready};
-
-
-
-/* -----\/----- EXCLUDED -----\/-----
-
-   wire 	  vready, zready, oready;
-   wire 	  vvalid, zvalid, ovalid;
-
-   reg [2:0] 	  ed_state;
-   localparam ED_IDLE     = 3'd0;
-   localparam ED_IN_HDR   = 3'd1;
-   localparam ED_VITA     = 3'd2;
-   localparam ED_ZPU      = 3'd3;
-   localparam ED_OUT      = 3'd4;
-   localparam ED_DROP     = 3'd5;
- -----/\----- EXCLUDED -----/\----- */
-
-   // for now, send everything to zpu
-   /*
-   always @(posedge clk)
-     if(reset | clear)
-       ed_state <= ED_IDLE;
-     else
-       case(ed_state)
-	 ED_IDLE:
-	   if(vready & zready & oready & in_tvalid)
-	     ;
-       endcase // case (ed_state)
-   */
-
-/* -----\/----- EXCLUDED -----\/-----
-   axi_packet_gate #(.WIDTH(64), .SIZE(10)) vita_gate
-     (.clk(clk), .reset(reset), .clear(clear),
-      .i_tdata(in_tdata), .i_tlast(), .i_terror(), .i_tvalid(1'b0), .i_tready(vready),
-      .o_tdata(vita_tdata), .o_tlast(vita_tlast), .o_tvalid(vita_tvalid), .o_tready(vita_tready));
-
-   axi_packet_gate #(.WIDTH(68), .SIZE(10)) zpu_gate
-     (.clk(clk), .reset(reset), .clear(clear),
-      .i_tdata({in_tuser,in_tdata}), .i_tlast(in_tlast), .i_terror(in_tuser[3]), .i_tvalid(in_tvalid), .i_tready(in_tready),
-      .o_tdata({zpu_tuser,zpu_tdata}), .o_tlast(zpu_tlast), .o_tvalid(zpu_tvalid), .o_tready(zpu_tready));
-
-   axi_packet_gate #(.WIDTH(68), .SIZE(10)) out_gate
-     (.clk(clk), .reset(reset), .clear(clear),
-      .i_tdata({in_tuser,in_tdata}), .i_tlast(), .i_terror(), .i_tvalid(1'b0), .i_tready(oready),
-      .o_tdata({out_tuser,out_tdata}), .o_tlast(out_tlast), .o_tvalid(out_tvalid), .o_tready(out_tready));
- -----/\----- EXCLUDED -----/\----- */
 
 endmodule // eth_dispatch

@@ -26,24 +26,27 @@ module eth_interface
     output [31:0] debug
     );
 
-   wire [63:0] 	  v2ef_tdata;
-   wire [3:0] 	  v2ef_tuser;
-   wire 	  v2ef_tlast, v2ef_tvalid, v2ef_tready;
+   wire [63:0]    v2ef_tdata;
+   wire [3:0]     v2ef_tuser;
+   wire           v2ef_tlast, v2ef_tvalid, v2ef_tready;
 
    // //////////////////////////////////////////////////////////////
    // Incoming Ethernet path
    //  Includes FIFO on the output going to ZPU
 
-   wire [63:0] 	  epg_tdata_int;
-   wire [3:0] 	  epg_tuser_int;
-   wire 	  epg_tlast_int, epg_tvalid_int, epg_tready_int;
-   
+   wire [63:0]    epg_tdata_int;
+   wire [3:0]     epg_tuser_int;
+   wire           epg_tlast_int, epg_tvalid_int, epg_tready_int;
+
    //
    // Packet gate ensures on entire ingressing packet is buffered before feeding it downstream so that it bursts
    // efficiently internally without holding resources allocted for longer than optimal. This also means that an upstream
    // error discovered in the packet can allow the packet to be destroyed here, before it gets deeper into the USRP.
    //
-   axi_packet_gate #(.WIDTH(68), .SIZE(10)) packet_gater //holds 8K pkts
+   // This gate must be able to hold at least 9900 bytes which is the maximum length between the SOF and EOF
+   // as asserted by the 1G and 10G MACs. This is required in case one of the max size packets has an error
+   // and needs to be dropped. With SIZE=11, this gate will hold 2 8k packets. 
+   axi_packet_gate #(.WIDTH(68), .SIZE(11)) packet_gater
      (.clk(clk), .reset(reset), .clear(clear),
 
       .i_tdata({eth_rx_tuser, eth_rx_tdata}), .i_tlast(eth_rx_tlast),
@@ -56,19 +59,29 @@ module eth_interface
    //
    // Based on programmed rules, parse network headers and decide which internal destination(s) this packet will be forwarded to.
    //
-   wire [63:0] 	  e2z_tdata_int;
-   wire [3:0] 	  e2z_tuser_int;
-   wire 	  e2z_tlast_int, e2z_tvalid_int, e2z_tready_int;
-   wire [2:0]	  dispatch_debug_flags;
-   
+   wire [63:0]    e2v_tdata_int;
+   wire           e2v_tlast_int, e2v_tvalid_int, e2v_tready_int;
+
+   wire [63:0]    e2z_tdata_int;
+   wire [3:0]     e2z_tuser_int;
+   wire           e2z_tlast_int, e2z_tvalid_int, e2z_tready_int;
+   wire [2:0]     dispatch_debug_flags;
+
    eth_dispatch #(.BASE(BASE+8)) eth_dispatch
      (.clk(clk), .reset(reset), .clear(clear),
       .set_stb(set_stb), .set_addr(set_addr) , .set_data(set_data),
       .in_tdata(epg_tdata_int), .in_tuser(epg_tuser_int), .in_tlast(epg_tlast_int), .in_tvalid(epg_tvalid_int), .in_tready(epg_tready_int),
-      .vita_tdata(e2v_tdata), .vita_tlast(e2v_tlast), .vita_tvalid(e2v_tvalid), .vita_tready(e2v_tready),
+      .vita_tdata(e2v_tdata_int), .vita_tlast(e2v_tlast_int), .vita_tvalid(e2v_tvalid_int), .vita_tready(e2v_tready_int),
       .zpu_tdata(e2z_tdata_int), .zpu_tuser(e2z_tuser_int), .zpu_tlast(e2z_tlast_int), .zpu_tvalid(e2z_tvalid_int), .zpu_tready(e2z_tready_int),
       .xo_tdata(xo_tdata), .xo_tuser(xo_tuser), .xo_tlast(xo_tlast), .xo_tvalid(xo_tvalid), .xo_tready(xo_tready), // to other eth port
       .debug_flags(dispatch_debug_flags),.debug(debug));
+
+   axi_fifo_short #(.WIDTH(65)) e2v_pipeline_srl
+     (.clk(clk), .reset(reset), .clear(clear),
+      .i_tdata({e2v_tlast_int,e2v_tdata_int}), .i_tvalid(e2v_tvalid_int), .i_tready(e2v_tready_int),
+      .o_tdata({e2v_tlast,e2v_tdata}), .o_tvalid(e2v_tvalid), .o_tready(e2v_tready),
+      .space(), .occupied()
+      );
 
    //
    // ZPU can be slow to respond (relative to packet wirespeed) so extra buffer for packets destined there so it doesn't back up.
@@ -82,16 +95,16 @@ module eth_interface
    // Outgoing Ethernet path
    //  Includes FIFOs on path from VITA router, from ethernet crossover, and on the overall output
 
-   wire [63:0] 	  eth_tx_tdata_int;
-   wire [3:0] 	  eth_tx_tuser_int;
-   wire 	  eth_tx_tlast_int, eth_tx_tvalid_int, eth_tx_tready_int;
+   wire [63:0]    eth_tx_tdata_int;
+   wire [3:0]     eth_tx_tuser_int;
+   wire           eth_tx_tlast_int, eth_tx_tvalid_int, eth_tx_tready_int;
 
-   wire [63:0] 	  xi_tdata_int;
-   wire [3:0] 	  xi_tuser_int;
-   wire 	  xi_tlast_int, xi_tvalid_int, xi_tready_int;
+   wire [63:0]    xi_tdata_int;
+   wire [3:0]     xi_tuser_int;
+   wire           xi_tlast_int, xi_tvalid_int, xi_tready_int;
 
-   wire [63:0] 	  v2e_tdata_int;
-   wire 	  v2e_tlast_int, v2e_tvalid_int, v2e_tready_int;
+   wire [63:0]    v2e_tdata_int;
+   wire           v2e_tlast_int, v2e_tvalid_int, v2e_tready_int;
    
    axi_fifo #(.WIDTH(65),.SIZE(VITA_FIFOSIZE)) vitaout_fifo
      (.clk(clk), .reset(reset), .clear(clear),
@@ -123,38 +136,5 @@ module eth_interface
       .i_tdata({eth_tx_tlast_int,eth_tx_tuser_int,eth_tx_tdata_int}), .i_tvalid(eth_tx_tvalid_int), .i_tready(eth_tx_tready_int),
       .o_tdata({eth_tx_tlast,eth_tx_tuser,eth_tx_tdata}), .o_tvalid(eth_tx_tvalid), .o_tready(eth_tx_tready));
 
-
-   //
-   // Provide instrumentation so that abnormal FIFO conditions can be identifed.
-   //
-/* -----\/----- EXCLUDED -----\/-----
-
-   setting_reg #(.my_addr(BASE+15), .awidth(16), .width(1)) sr_reset_fifo_debug
-     (.clk(clk),.rst(reset),.strobe(set_stb),.addr(set_addr),
-      .in(set_data),.out(),.changed(clear_debug_flags));
-
-   always @(posedge clk)
-     if (reset)
-       debug_flags <= 0;
-     else if (clear_debug_flags)
-       debug_flags <= 0;
-     else
-       debug_flags <= debug_flags | {eth_rx_tuser[3],
-				     ~eth_tx_tready_int,
-				     ~xi_tready,
-				     ~v2e_tready,
-				     ~e2z_tready_int,
-				     ~eth_rx_tready,
-				     ~dispatch_debug_flags[2:0]};
- -----/\----- EXCLUDED -----/\----- */
-   
-   assign debug_flags = {eth_rx_tuser[3],
-				     ~eth_tx_tready_int,
-				     ~xi_tready,
-				     ~v2e_tready,
-				     ~e2z_tready_int,
-				     ~eth_rx_tready,
-				     ~dispatch_debug_flags[2:0]};	  
-     
 
 endmodule // eth_interface

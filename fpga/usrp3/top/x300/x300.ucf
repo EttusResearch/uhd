@@ -7,15 +7,15 @@
 
 ## SFP Lanes
 # SFP clock pins now come from their own ucf files.  See _10ge.ucf, _1ge.ucf, and _cpri.ucf
-NET   SFP0_RX_n               LOC  =  AA3; #IJB. NOTE this signal prefixed SFP1 on schematics
-NET   SFP0_RX_p               LOC  =  AA4; #IJB. NOTE this signal prefixed SFP1 on schematics
-NET   SFP0_TX_n               LOC  =  Y1; #IJB. NOTE this signal prefixed SFP1 on schematics
-NET   SFP0_TX_p               LOC  =  Y2; #IJB. NOTE this signal prefixed SFP1 on schematics
-NET   SFP1_RX_n               LOC  =  T5; #IJB. NOTE this signal prefixed SFP2 on schematics
-NET   SFP1_RX_p               LOC  =  T6; #IJB. NOTE this signal prefixed SFP2 on schematics
-NET   SFP1_TX_n               LOC  =  P1; #IJB. NOTE this signal prefixed SFP2 on schematics
-NET   SFP1_TX_p               LOC  =  P2; #IJB. NOTE this signal prefixed SFP2 on schematics
-
+# NOTE: In the schematic SFP0 signals are prefixed SFP1 and SFP1 signals are prefixed SFP2
+NET   SFP0_RX_n              IOSTANDARD = LVDS   |   LOC  =  AA3;
+NET   SFP0_RX_p              IOSTANDARD = LVDS   |   LOC  =  AA4;
+NET   SFP0_TX_n              IOSTANDARD = LVDS   |   LOC  =  Y1;
+NET   SFP0_TX_p              IOSTANDARD = LVDS   |   LOC  =  Y2;
+NET   SFP1_RX_n              IOSTANDARD = LVDS   |   LOC  =  T5;
+NET   SFP1_RX_p              IOSTANDARD = LVDS   |   LOC  =  T6;
+NET   SFP1_TX_n              IOSTANDARD = LVDS   |   LOC  =  P1;
+NET   SFP1_TX_p              IOSTANDARD = LVDS   |   LOC  =  P2;
 
 ## ADC 0
 NET   DB0_ADC_DA0_N          IOSTANDARD = LVDS_25   |   LOC  =  L27;

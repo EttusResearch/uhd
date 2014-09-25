@@ -1,7 +1,6 @@
 build*
 isim*
 fuse*
-gen_ddrlvds_tb
 tmp*
 *.log
 *impact*

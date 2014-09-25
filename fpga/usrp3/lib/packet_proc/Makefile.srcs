@@ -18,4 +18,6 @@ cvita_insert_tlast.v \
 cvita_dest_lookup.v \
 cvita_chunker.v \
 cvita_dechunker.v \
+axis_packet_debug.v \
+cvita_packet_debug.v \
 ))
