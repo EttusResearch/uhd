@@ -41,6 +41,7 @@ public:
 
     virtual void set_test_word(const std::string &patterna, const std::string &patternb, const boost::uint32_t = 0) = 0;
 
+    virtual void reset(void) = 0;
 };
 
 #endif /* INCLUDED_X300_ADC_CTRL_HPP */

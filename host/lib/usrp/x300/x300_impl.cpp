@@ -737,6 +737,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // setup time sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "time_source" / "value")
+        .set("internal")
         .subscribe(boost::bind(&x300_impl::update_time_source, this, boost::ref(mb), _1));
     static const std::vector<std::string> time_sources = boost::assign::list_of("internal")("external")("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
@@ -750,7 +751,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // setup clock sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
-        .subscribe(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1));
+        .set("internal")
+        .subscribe(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1))
+        .subscribe(boost::bind(&x300_impl::reset_clocks, this, boost::ref(mb)))
+        .subscribe(boost::bind(&x300_impl::reset_radios, this, boost::ref(mb)));
 
     static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external")("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_source_options);
@@ -827,15 +831,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         const time_t tp = time_t(mb.gps->get_sensor("gps_time").to_int()+1);
         _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
     } else {
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
-        try {
-            wait_for_ref_locked(mb.zpu_ctrl, 1.0);
-        } catch (uhd::exception::runtime_error &e) {
-            // Ignore for now - It can sometimes take longer than 1 second to lock and that is OK.
-            //UHD_MSG(warning) << "Clock reference failed to lock to internal source during device initialization.  " <<
-            //    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
-        }
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
         UHD_MSG(status) << "References initialized to internal sources" << std::endl;
     }
 }
@@ -1399,6 +1394,51 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
      *     throw uhd::runtime_error((boost::format("Clock failed to lock to %s source.") % source).str());
      * }
      */
+}
+
+void x300_impl::reset_clocks(mboard_members_t &mb)
+{
+    mb.clock->reset_clocks();
+
+    if (mb.hw_rev > 4)
+    {
+        try {
+            wait_for_ref_locked(mb.zpu_ctrl, 30.0);
+        } catch (uhd::runtime_error &e) {
+            //failed to lock on reference
+            throw uhd::runtime_error((boost::format("PLL failed to lock to reference clock.")).str());
+        }
+    }
+}
+
+void x300_impl::reset_radios(mboard_members_t &mb)
+{
+    // reset ADCs and DACs
+    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
+    {
+        perif.adc->reset();
+        perif.dac->reset();
+    }
+
+    // check PLL locks
+    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
+    {
+        perif.dac->check_pll();
+    }
+
+    // Sync DACs
+    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
+    {
+        perif.dac->arm_dac_sync();
+    }
+    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
+    {
+        perif.dac->check_dac_sync();
+        // Arm FRAMEP/N sync pulse
+        // TODO:  Investigate timing of the sync frame pulse.
+        perif.ctrl->poke32(TOREG(SR_DACSYNC), 0x1);
+        perif.dac->check_frontend_sync();
+    }
 }
 
 void x300_impl::update_time_source(mboard_members_t &mb, const std::string &source)

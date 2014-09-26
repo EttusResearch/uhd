@@ -151,6 +151,21 @@ static device_addrs_t b200_find(const device_addr_t &hint)
             new_addr["type"] = "b200";
             new_addr["name"] = mb_eeprom["name"];
             new_addr["serial"] = handle->get_serial();
+            if (not mb_eeprom["product"].empty())
+            {
+                switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
+                {
+                case 0x0001:
+                case 0x7737:
+                    new_addr["product"] = "B200";
+                    break;
+                case 0x7738:
+                case 0x0002:
+                    new_addr["product"] = "B210";
+                    break;
+                default: UHD_MSG(error) << "B200 unknown product code: " << mb_eeprom["product"] << std::endl;
+                }
+            }
             //this is a found b200 when the hint serial and name match or blank
             if (
                 (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
