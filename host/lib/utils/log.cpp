@@ -23,7 +23,7 @@
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/lock_guard.hpp>
+#include <boost/thread/locks.hpp>
 #ifdef BOOST_MSVC
 //whoops! https://svn.boost.org/trac/boost/ticket/5287
 //enjoy this useless dummy class instead
