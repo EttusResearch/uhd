@@ -45,7 +45,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/weak_ptr.hpp>
 #include "recv_packet_demuxer_3000.hpp"
-static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 0x06;
+static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 0x07;
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0x00;
 static const boost::uint16_t B200_FPGA_COMPAT_NUM = 0x04;
 static const double          B200_BUS_CLOCK_RATE = 100e6;

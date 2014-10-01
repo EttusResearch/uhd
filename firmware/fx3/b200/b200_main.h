@@ -10,7 +10,7 @@
 #include "cyu3types.h"
 #include "cyu3usbconst.h"
 
-#define FX3_COMPAT_MAJOR            (uint8_t)(6)
+#define FX3_COMPAT_MAJOR            (uint8_t)(7)
 #define FX3_COMPAT_MINOR            (uint8_t)(0)
 
 /* GPIO Pins */
