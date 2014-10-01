@@ -17,6 +17,7 @@ managing the transport from the host to the FPGA by configuring IO and DMA.
 In order to compile the USRP B200 and B210 firmware, you will need the FX3 SDK
 distributed by the FX3 manufacturer, Cypress Semiconductor. You can download the
 [FX3 SDK from here](http://www.cypress.com/?rID=57990).
+*Note*: You *must* use SDK version 1.2.3!
 
 Once you have downloaded it, extract the ARM cross-compiler sub-directory from
 the zip file and put it somewhere useful. The highest level directory you need
