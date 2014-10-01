@@ -26,7 +26,9 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(UHD CXX)
 ENABLE_TESTING()
-LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
+
+#make sure our local CMake Modules path comes first
+list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
 # Packaging Variables
@@ -61,6 +63,26 @@ SET(PKG_MAN_DIR share/man/man1)
 # Local Include Dir
 ########################################################################
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+
+########################################################################
+# On Apple only, set install name and use rpath correctly, if not already set
+########################################################################
+IF(APPLE)
+    IF(NOT CMAKE_INSTALL_NAME_DIR)
+        SET(CMAKE_INSTALL_NAME_DIR
+            ${CMAKE_INSTALL_PREFIX}/${GR_LIBRARY_DIR} CACHE
+            PATH "Library Install Name Destination Directory" FORCE)
+    ENDIF(NOT CMAKE_INSTALL_NAME_DIR)
+    IF(NOT CMAKE_INSTALL_RPATH)
+        SET(CMAKE_INSTALL_RPATH
+            ${CMAKE_INSTALL_PREFIX}/${GR_LIBRARY_DIR} CACHE
+            PATH "Library Install RPath" FORCE)
+    ENDIF(NOT CMAKE_INSTALL_RPATH)
+    IF(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
+        SET(CMAKE_BUILD_WITH_INSTALL_RPATH ON CACHE
+            BOOL "Do Build Using Library Install RPath" FORCE)
+    ENDIF(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
+ENDIF(APPLE)
 
 ########################################################################
 # Optional Compiler Flags
