@@ -168,3 +168,5 @@ IF(ENABLE_USRP2)
     ENDFOREACH(burner ${burners})
 
 ENDIF(ENABLE_USRP2)
+
+ADD_SUBDIRECTORY(latency)
