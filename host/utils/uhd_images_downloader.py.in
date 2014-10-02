@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2012-2013 Ettus Research LLC
+# Copyright 2012-2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,9 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import sys, os, string, tempfile, math
+import sys
+import os
+import tempfile
+import math
 import traceback
-import shutil, hashlib, urllib2, zipfile
+import shutil
+import hashlib
+import urllib2
+import zipfile
 
 from optparse import OptionParser
 
@@ -26,7 +32,8 @@ _DEFAULT_BUFFER_SIZE      = 8192
 _BASE_DIR_STRUCTURE_PARTS = ["share", "uhd", "images"]
 _BASE_DIR_STRUCTURE       = os.path.join(_BASE_DIR_STRUCTURE_PARTS)
 _DEFAULT_INSTALL_PATH     = os.path.join("@CMAKE_INSTALL_PREFIX@", *_BASE_DIR_STRUCTURE)
-_AUTOGEN_IMAGES_SOURCE    = "@UHD_IMAGES_DOWNLOAD_SRC@"
+_DEFAULT_BASE_URL         = "http://files.ettus.com/binaries/images/"
+_AUTOGEN_IMAGES_FILENAME  = "@UHD_IMAGES_DOWNLOAD_SRC@"
 _AUTOGEN_IMAGES_CHECKSUM  = "@UHD_IMAGES_MD5SUM@"
 _IMAGES_CHECKSUM_TYPE     = "md5"
 _CONTACT                  = "support@ettus.com"
@@ -57,7 +64,7 @@ class temporary_directory():
         except Exception, e:
             print "Failed to create a temporary directory (%s)" % (e)
             raise e
-    
+
     # Can return 'True' to suppress incoming exception
     def __exit__(self, type, value, traceback):
         try:
@@ -68,41 +75,35 @@ class temporary_directory():
 class uhd_images_downloader():
     def __init__(self):
         pass
-    
+
     def download(self, images_url, filename, buffer_size=_DEFAULT_BUFFER_SIZE, print_progress=False):
+        """ Run the download, show progress """
         opener = urllib2.build_opener()
         opener.add_headers = [('User-Agent', 'UHD Images Downloader')]
         u = opener.open(images_url)
         meta = u.info()
         filesize = float(meta.getheaders("Content-Length")[0])
-        
         filesize_dl = 0
-        
         with open(filename, "wb") as f:
             while True:
-                buffer = u.read(buffer_size)
-                if not buffer:
+                buff = u.read(buffer_size)
+                if not buff:
                     break
-                
-                f.write(buffer)
-
-                filesize_dl += len(buffer)
-                
+                f.write(buff)
+                filesize_dl += len(buff)
                 if print_progress:
                     status = r"%05d kB / %05d kB (%03d%%)" % (int(math.ceil(filesize_dl/1000.)), int(math.ceil(filesize/1000.)), int(math.ceil(filesize_dl*100.)/filesize))
                     status += chr(8)*(len(status)+1)
                     print status,
-        
         if print_progress:
             print
-        
         return (filesize, filesize_dl)
-    
+
     def check_directories(self, dirs, print_progress=False):
         if dirs is None or dirs == "":
             dirs = "."
         dirs = os.path.abspath(dirs)
-        
+
         def _check_part(head, tail=None):
             if print_progress:
                 print "Checking: %s" % (head)
@@ -123,66 +124,61 @@ class uhd_images_downloader():
             if print_progress:
                 print "Write permission granted on: %s" % (head)
             return (True, head)
-        
+
         return _check_part(dirs)
-    
+
     def validate_checksum(self, checksum_fn, file_path, expecting, print_progress=False):
         if checksum_fn is None:
             return (True, "")
-        
         calculated_checksum = checksum_fn(file_path)
-        
         if (expecting is not None) and (expecting != "") and calculated_checksum != expecting:
             return (False, calculated_checksum)
-        
         return (True, calculated_checksum)
-    
+
     def extract_images_archive(self, archive_path, destination=None, print_progress=False):
         if not os.path.exists(archive_path):
             if print_progress:
                 print "Path does not exist: %s" % (archive_path)
             raise Exception("path does not exist: %s" % (archive_path))
-        
         if print_progress:
             print "Archive path: %s" % (archive_path)
-        
         (head, tail) = os.path.split(archive_path)
-        
+
         if not os.access(head, os.W_OK):
             if print_progress:
                 print "Write access denied on: %s" % (head)
             raise Exception("write access denied on: %s" % (head))
-        
+
         (root, ext) = os.path.splitext(tail)
         temp_dir = os.path.join(head, root)
-        
+
         if print_progress:
             print "Temporary extraction location: %s" % (temp_dir)
-        
+
         if os.path.exists(temp_dir):
             if print_progress:
                 print "Deleting existing location: %s" % (temp_dir)
             shutil.rmtree(temp_dir)
-        
+
         if print_progress:
             print "Creating directory: %s" % (temp_dir)
         os.mkdir(temp_dir)
-        
+
         if print_progress:
             print "Extracting archive %s to %s" % (archive_path, temp_dir)
-        
+
         images_zip = zipfile.ZipFile(archive_path)
         images_zip.extractall(temp_dir)
         images_zip.close()
-        
+
         return temp_dir
-    
+
     def install_images(self, source, dest, keep=False, print_progress=False):
         if not os.path.exists(source):
             if print_progress:
                 print "Source path does not exist: %s" % (source)
             return
-        
+
         if keep:
             if print_progress:
                 print "Not wiping directory tree (existing files will be overwritten): %s" % (dest)
@@ -190,18 +186,18 @@ class uhd_images_downloader():
             if print_progress:
                 print "Deleting directory tree: %s" % (dest)
             shutil.rmtree(dest)
-        
+
         (head, tail) = os.path.split(source)
-        
+
         if print_progress:
             print "Source install path: %s" % (source)
-        
+
         uhd_source = os.path.join(source, tail, *_BASE_DIR_STRUCTURE_PARTS)
-        
+
         if print_progress:
             print "Copying files from: %s" % (uhd_source)
             print "Copying files to:   %s" % (dest)
-        
+
         if keep:
             # mgrant @ http://stackoverflow.com/questions/12683834/how-to-copy-directory-recursively-in-python-and-overwrite-all
             def _recursive_overwrite(src, dest, ignore=None):
@@ -218,25 +214,34 @@ class uhd_images_downloader():
                             _recursive_overwrite(os.path.join(src, f), os.path.join(dest, f), ignore)
                 else:
                     shutil.copyfile(src, dest)
-            
+
             _recursive_overwrite(uhd_source, dest)
         else:
             shutil.copytree(uhd_source, dest)
 
 def main():
+    ### Set defaults from env variables
     if os.environ.get("UHD_IMAGES_DIR") != None and os.environ.get("UHD_IMAGES_DIR") != "":
         default_images_dir = os.environ.get("UHD_IMAGES_DIR")
-        print "UHD_IMAGES_DIR environment variable is set. Default install location: %s" % default_images_dir
+        print "UHD_IMAGES_DIR environment variable is set.\nDefault install location: {}".format(default_images_dir)
     else:
         default_images_dir = _DEFAULT_INSTALL_PATH
-    
+    if os.environ.get("UHD_IMAGES_BASE_URL") != None and os.environ.get("UHD_IMAGES_BASE_URL") != "":
+        default_base_url = os.environ.get("UHD_IMAGES_BASE_URL")
+        print "UHD_IMAGES_BASE_URL environment variable is set.\nDefault base URL: {}".format(default_base_url)
+    else:
+        default_base_url = _DEFAULT_BASE_URL
+
+    ### Setup argument parser and parse
     parser = OptionParser()
     parser.add_option("-i", "--install-location",   type="string",          default=default_images_dir,
                         help="Set custom install location for images [default=%default]")
     parser.add_option("--buffer-size",              type="int",             default=_DEFAULT_BUFFER_SIZE,
                         help="Set download buffer size [default=%default]")
-    parser.add_option("-u", "--url",                type="string",          default=_AUTOGEN_IMAGES_SOURCE,
-                        help="Set images download location [default=%default]")
+    parser.add_option("-b", "--base-url",           type="string",          default=default_base_url,
+                        help="Set base URL for images download location [default=%default]")
+    parser.add_option("-f", "--filename",           type="string",          default=_AUTOGEN_IMAGES_FILENAME,
+                        help="Set images archive filename [default=%default]")
     parser.add_option("-c", "--checksum",           type="string",          default=_AUTOGEN_IMAGES_CHECKSUM,
                         help="Validate images archive against this checksum (blank to skip) [default=%default]")
     parser.add_option("-t", "--checksum-type",      type="string",          default=_IMAGES_CHECKSUM_TYPE,
@@ -245,13 +250,12 @@ def main():
                         help="Do not clear images directory before extracting new files [default=%default]")
     parser.add_option("-v", "--verbose",            action="store_true",    default=False,
                         help="Enable verbose output [default=%default]")
-    
     (options, args) = parser.parse_args()
-    
     if options.buffer_size <= 0:
         print "Invalid buffer size: %s" % (options.buffer_size)
         return 1
-    
+
+    ### Select checksum algorithm (MD5)
     checksum_fn = None
     if options.checksum != "":
         options.checksum_type = options.checksum_type.lower()
@@ -259,85 +263,93 @@ def main():
             print "Not a supported checksum function: %s" % (options.checksum_type)
             return 1
         checksum_fn = _checksum_fns[options.checksum_type]
-    
-    url_parts = options.url.split("/")
-    if len(url_parts) <= 1 or url_parts[-1] == "":
-        print "Not a valid URL: %s" % (options.url)
-        return 1
-    images_filename = url_parts[-1]
-    
+
+    ### Check if base URL is a local dir or off the webs
     images_dir = os.path.abspath(options.install_location)  # This will use the current working directory if it's not absolute
-    
+    images_url = None
+    if options.base_url.find('http') == 0:
+        base_url_is_local = False
+        if options.base_url[-1] != '/':
+            options.base_url += '/'
+        images_url = options.base_url + options.filename
+    else:
+        base_url_is_local = True
+
     if options.verbose:
         print "Requested install location: %s" % (options.install_location)
-        print "Images source:              %s" % (options.url)
-        print "Images filename:            %s" % (images_filename)
+        print "Images base URL:            %s" % (options.base_url)
+        print "Images filename:            %s" % (options.filename)
         print "Images checksum:            %s (%s)" % (options.checksum, _IMAGES_CHECKSUM_TYPE)
         print "Final install location:     %s" % (images_dir)
+        print "Copying locally:            {}".format("Yes" if base_url_is_local else "No")
     else:
         print "Images destination:      %s" % (images_dir)
-    
+
+    ### Download or copy
     downloader = uhd_images_downloader()
-    
     try:
         (access, last_path) = downloader.check_directories(images_dir, print_progress=options.verbose)
-        if access:
-            with temporary_directory() as temp_dir:
-                if options.verbose:
-                    print "Using temporary directory: %s" % (temp_dir)
-                
-                print "Downloading images from: %s" % options.url
-                
-                temp_images_dest = os.path.join(temp_dir, images_filename)
-                
-                print "Downloading images to:   %s" % (temp_images_dest)
-                
-                (reported_size, downloaded_size) = downloader.download(images_url=options.url, filename=temp_images_dest, buffer_size=options.buffer_size, print_progress=True)
-                
-                if options.verbose:
-                    print "Downloaded %d of %d bytes" % (downloaded_size, reported_size)
-                
-                (checksum_match, calculated_checksum) = downloader.validate_checksum(checksum_fn, temp_images_dest, options.checksum, print_progress=options.verbose)
-                
-                if options.verbose:
-                    print "Calculated checksum: %s" % (calculated_checksum)
-                
-                if checksum_match:
-                    if options.verbose:
-                        if options.checksum == "":
-                            print "Ignoring checksum"
-                        else:
-                            print "Checksum OK"
-                    
-                    try:
-                        extract_path = downloader.extract_images_archive(temp_images_dest, print_progress=options.verbose)
-                        
-                        if options.verbose:
-                            print "Image archive extracted to: %s" % (extract_path)
-                        
-                        downloader.install_images(extract_path, images_dir, options.keep, print_progress=options.verbose)
-                        
-                        print
-                        print "Images successfully installed to: %s" % (images_dir)
-                    except Exception, e:
-                        print "Failed to install image archive: %s" % (e)
-                        print "This is usually a permissions problem."
-                        print "Please check your file system access rights and try again."
-                        
-                        if options.verbose:
-                            traceback.print_exc()
-                        else:
-                            print "You can run this again with the '--verbose' flag to see more information"
-                        print "If the problem persists, please email the output to: %s" % (_CONTACT)
-                else:
-                    print "Checksum of downloaded file is not correct (not installing - see options to override)"
-                    print "Expected:   %s" % (options.checksum)
-                    print "Calculated: %s" % (calculated_checksum)
-                    print "Please try downloading again."
-                    print "If the problem persists, please email the output to: %s" % (_CONTACT)
-        else:
+        if not access:
             print "You do not have sufficient permissions to write to: %s" % (last_path)
             print "Are you root?"
+            return 1
+        with temporary_directory() as temp_dir:
+            if options.verbose:
+                print "Using temporary directory: %s" % (temp_dir)
+            temp_images_dest = os.path.join(temp_dir, options.filename)
+            if not base_url_is_local:
+                print "Downloading images from: {}".format(images_url)
+                print "Downloading images to:   {}".format(temp_images_dest)
+                (reported_size, downloaded_size) = downloader.download(
+                        images_url=images_url,
+                        filename=temp_images_dest,
+                        buffer_size=options.buffer_size,
+                        print_progress=True
+                )
+                if options.verbose:
+                    print "Downloaded %d of %d bytes" % (downloaded_size, reported_size)
+            else:
+                temp_images_dest = os.path.join(options.base_url, options.filename)
+                print "Copying images from: {}".format(temp_images_dest)
+                if not os.path.isfile(temp_images_dest):
+                    print "[ERROR] No such file."
+                    return 1
+            (checksum_match, calculated_checksum) = downloader.validate_checksum(
+                    checksum_fn,
+                    temp_images_dest,
+                    options.checksum,
+                    print_progress=options.verbose
+            )
+            if options.verbose:
+                print "Calculated checksum: %s" % (calculated_checksum)
+            if checksum_match:
+                if options.verbose:
+                    if options.checksum == "":
+                        print "Ignoring checksum"
+                    else:
+                        print "Checksum OK"
+                try:
+                    extract_path = downloader.extract_images_archive(temp_images_dest, print_progress=options.verbose)
+                    if options.verbose:
+                        print "Image archive extracted to: %s" % (extract_path)
+                    downloader.install_images(extract_path, images_dir, options.keep, print_progress=options.verbose)
+                    print
+                    print "Images successfully installed to: %s" % (images_dir)
+                except Exception, e:
+                    print "Failed to install image archive: %s" % (e)
+                    print "This is usually a permissions problem."
+                    print "Please check your file system access rights and try again."
+                    if options.verbose:
+                        traceback.print_exc()
+                    else:
+                        print "You can run this again with the '--verbose' flag to see more information"
+                    print "If the problem persists, please email the output to: %s" % (_CONTACT)
+            else:
+                print "Checksum of downloaded file is not correct (not installing - see options to override)"
+                print "Expected:   %s" % (options.checksum)
+                print "Calculated: %s" % (calculated_checksum)
+                print "Please try downloading again."
+                print "If the problem persists, please email the output to: %s" % (_CONTACT)
     except KeyboardInterrupt:
         print
         print "Cancelled at user request"
@@ -349,7 +361,6 @@ def main():
             print "You can run this again with the '--verbose' flag to see more information"
         print "If the problem persists, please email the output to: %s" % (_CONTACT)
         return 1
-    
     return 0
 
 if __name__ == "__main__":
