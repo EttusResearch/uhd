@@ -7,8 +7,10 @@ Change Log for Releases
 * Fixed CBX LO settings (FRAC truncation)
 * Fixed build issues for out-of-tree tools for some distros
 * Fixed some logging strings (SBX, GPSDO)
-* Improved logging (speedups, removed unnecessary cycles) 
+* Improved logging (speedups, removed unnecessary cycles)
 * Added output sync for DAC reference clocks on X300
+* Multiple FPGA improvements, as well as upgrade of build env
+* Added support for B200 vs B210 discovery
 
 ## 003.007.002
 * Fixed X300 phase alignment issues
