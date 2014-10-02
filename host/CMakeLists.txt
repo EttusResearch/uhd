@@ -209,8 +209,12 @@ UHD_INSTALL(FILES
 ########################################################################
 # Images download directory for utils/uhd_images_downloader.py
 ########################################################################
-SET(UHD_IMAGES_MD5SUM "b1e06e7d6fe3eacf49d16e2acca98275")
-SET(UHD_IMAGES_DOWNLOAD_SRC "http://files.ettus.com/binaries/maint_images/archive/uhd-images_003.007.003-release.zip")
+#{{{IMG_SECTION
+# This section is written automatically by /images/create_imgs_package.py
+# Any manual changes in here will be overwritten.
+SET(UHD_IMAGES_MD5SUM "3f4e836c6dfbc714c512662de4855082")
+SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.007.002-108-gcf5739da.zip")
+#}}}
 
 ########################################################################
 # Register top level components
@@ -329,4 +333,3 @@ ENDIF(LIBUHD_PKG)
 UHD_PRINT_COMPONENT_SUMMARY()
 MESSAGE(STATUS "Building version: ${UHD_VERSION}${PRINT_APPEND}")
 MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
-MESSAGE(STATUS "Compatible images can be downloaded from: ${UHD_IMAGES_DOWNLOAD_SRC}")
