@@ -497,5 +497,18 @@ by pinging the USRP and making sure the LEDs start to blink.
      In the file `/etc/ssh/sshd_config`, unmcomment the line `#X11Forwarding no`
      and change "no" to "yes".
 
+\section e3x0_apps Applications
+
+\subsection e3x0_apps_gsm GSM Base Station
+
+OpenBTS allows the USRP E300/E310 to serve as a GSM base station capable of providing voice and messaging services to standard GSM handsets. General information on the OpenBTS project can be found at the official webpage.
+
+http://www.openbts.org
+
+Special instructions to install OpenBTS on the E300/E310 can be found on the OpenBTS wiki.
+
+http://openbts.org/w/index.php/E3x0
+
+
 */
 // vim:ft=doxygen:
