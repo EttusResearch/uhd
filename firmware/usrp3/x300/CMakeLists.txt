@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2013 Ettus Research LLC
+# Copyright 2010-2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,17 +16,21 @@
 #
 
 ########################################################################
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/../../host/lib/usrp/x300)
 
-add_library(usrpfw STATIC
-    udp_uart.c
-    wb_uart.c
-    wb_i2c.c
-    printf.c
-    wb_pkt_iface64.c
-    u3_net_stack.c
-    ethernet.c
-    mdelay.c
-    chinch.c
-    print_addrs.c
-    link_state_route_proto.c
+list(APPEND x300_sources x300_init.c x300_main.c)
+
+########################################################################
+set(GEN_OUTPUTS_BIN_SIZE 0x7fff)
+SET(CMAKE_C_FLAGS_DEBUG -DX300_DEBUG_UART)
+
+add_executable(x300_main.elf ${x300_sources})
+target_link_libraries(x300_main.elf usrp3fw)
+GEN_OUTPUTS(x300_main.elf x300)
+
+INSTALL(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/x300_main.bin
+    DESTINATION share/uhd/images
+    RENAME usrp_x300_fw.bin
 )
