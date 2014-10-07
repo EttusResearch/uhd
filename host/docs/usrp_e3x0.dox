@@ -1,0 +1,302 @@
+/*! \page page_usrp_e3x0 USRP-E3x0 Series Device Manual
+
+\tableofcontents
+
+\section e3x0_feature_list Comparative features list
+
+- Hardware Capabilities:
+	  Integrated RF frontend (70 MHz - 6 GHz)
+	- External PPS reference input
+	- External 10 MHz reference input
+	- Configurable clock rate
+	- Internal GPIO connector with UHD API control
+	- 2 USB 2.0 Host ports
+	- Internal GPSDO
+	- Soundcard mono input / stereo output
+	- USB UART
+	- Zynq-7020 FPGA
+- FPGA Capabilities:
+	- 2 RX DDC chains in FPGA
+	- 2 TX DUC chain in FPGA
+	- Timed commands in FPGA
+	- Timed sampling in FPGA
+	- 16-bit and sample modes (sc16)
+	- Up to 10 MHz of RF bandwidth with 16-bit samples
+
+\section e3x0_getting_started Getting started
+
+This will run you through the first steps relevant to get your USRP E300/310
+up and running.
+
+\subsection e3x0_first_boot First boot
+
+After unpacking and assembling your USRP E300/E310 insert the micro sd card into the micro sd card slot.
+
+There are two different methods to connect to the device
+
+- using the onboard serial to usb connector
+- using the gigabit ethernet connector and a ssh client on your host computer
+
+For the first boot, booting with the serial cable connected to the device
+is recommended, as it allows to review and modify the network configuration,
+and allows to enter the bootloader in case of issues during the boot.
+
+
+\subsubsection e3x0_first_boot_serial Serial connection
+
+To use the serial connection together with a Linux or OSX machine (most other UNIX variants come with a version of screen, too)
+a terminal emulator such as screen can be used:
+
+    $ sudo screen /dev/ttyUSB0 115200
+
+The exact device node /dev/ttyUSB0 depends on your operating system's driver and other USB devices that might be already connected.
+It can be usually found by perusing the output of dmesg or journalctl, after connecting the USRP E300/E310 device to your host computer.
+
+An example of a dmesg output for the serial to usb converter:
+
+    924.102764] usb 1-1: FTDI USB Serial Device converter now attached to ttyUSB0
+
+
+On Microsoft Windows the serial connection can be established using a tool such as Putty by selecting a baudrate of 115200 and the corresponding serial port for the serial to usb converter.
+
+In both cases you should see boot messages fly by and finally end up with a login prompt similar to the following:
+
+TODO!!
+
+Note: The username is 'root' and the default password is empty.
+
+You should be presented with a shell similar to the following
+
+    root@ettus-e300:~#
+
+
+\subsubsection e3x0_first_boot_ssh SSH connection
+
+The USRP E300/E310 device relies on the DHCP protocol to automatically obtain an IP address.
+In case your network setup does not include a DHCP server, refer to the section \ref e3x0_first_boot_serial or configure a DHCP server to hand out IP addresses on your network.
+
+After the device obtained an IP address you can log in from a Linux or OSX machine by typing:
+
+    $ ssh root@192.168.10.42
+
+where the IP address depends on your local network setup.
+
+On Microsoft Windows again the connection can be established using a tool such as Putty, by selecting a username of root without password.
+
+You should be presented with a shell similar to the following
+
+    root@ettus-e300:~#
+
+\section e3x0_hw Hardware Setup
+
+\section e3x0_load_fpga_imgs Load FPGA Images onto the Device
+
+The USRP-X Series device ships with a bitstream pre-programmed in the flash,
+which is automatically loaded onto the FPGA during device power-up. However,
+a new FPGA image can be configured over the PCI Express interface or the
+on-board USB-JTAG programmer. This process can be seen as a "one-time load", in
+that if you power-cycle the device, it will not retain the FPGA image.
+
+Please note that this process is *different* than replacing the FPGA image
+stored in the flash, which will then be automatically loaded the next time the
+device is reset.
+
+\subsection e3x0_load_fpga_imgs_jtag Use JTAG to load FPGA images
+
+The USRP-E Series device features an on-board JTAG connector that can be accessed on the PCB
+of the device. The iMPACT tool in the <a href="http://www.xilinx.com/support/download/index.htm">Xilinx Programming Tools (ISE, iMPACT)</a> package can be used to load an image over the JTAG interface. This can be useful for unbricking devices.
+
+If you have iMPACT installed, you can use the `impact_jtag_programmer.sh` tool to install images. Make sure your e3x0 is powered on and connected to your computer using the internal JTAG connector. Then run the tool:
+
+    <path_to_uhd_tools>/impact_jtag_programmer.sh --fpga-path=<fpga_image_path>
+
+\subsection e3x0_setup_change_ip Change the USRP's IP address
+
+You may need to change the USRP's IP address for several reasons:
+- to satisfy your particular network configuration
+- to use multiple USRP-E Series devices with the same host computer
+- to set a known IP address into USRP (in case you forgot)
+
+\section e3x0_addressing Addressing the Device
+
+\subsection e3x0_addressing_singledev Single device configuration
+
+In a single-device configuration,
+the USRP device must have a unique IPv4 address on the host computer.
+The USRP can be identified through its IPv4 address or resolvable hostname.
+See the application notes on \ref page_identification.
+Use this addressing scheme with the uhd::usrp::multi_usrp interface (not a typo!).
+
+Example device address string representation for a USRP-E Series device with IPv4 address 192.168.10.2:
+
+    addr=192.168.10.2
+
+\subsection e3x0_addressing_multidevcfg Multiple device configuration
+
+In a multi-device configuration,
+each USRP device must have a unique IPv4 address on the host computer.
+The device address parameter keys must be suffixed with the device index.
+Each parameter key should be of the format \<key\>\<index\>.
+Use this addressing scheme with the uhd::usrp::multi_usrp interface.
+
+- The order in which devices are indexed corresponds to the indexing of the transmit and receive channels.
+- The key indexing provides the same granularity of device identification as in the single device case.
+
+Example device address string representation for 2 USRPs with IPv4 addresses **192.168.10.2** and **192.168.20.2**:
+
+    addr0=192.168.10.2, addr1=192.168.20.2
+
+
+\section e3x0_comm_problems Communication Problems
+
+When setting up a development machine for the first time,
+you may have various difficulties communicating with the USRP device.
+The following tips are designed to help narrow down and diagnose the problem.
+
+\subsection e3x0_comm_problems_runtimeerr RuntimeError: no control response
+
+This is a common error that occurs when you have set the subnet of your network
+interface to a different subnet than the network interface of the USRP device.  For
+example, if your network interface is set to **192.168.20.1**, and the USRP device is **192.168.10.2**
+(note the difference in the third numbers of the IP addresses), you
+will likely see a 'no control response' error message.
+
+Fixing this is simple - just set the your host PC's IP address to the same
+subnet as that of your USRP device. Instructions for setting your IP address are in the
+previous section of this documentation.
+
+\subsection e3x0_comm_problems_firewall Firewall issues
+
+When the IP address is not specified,
+the device discovery broadcasts UDP packets from each Ethernet interface.
+Many firewalls will block the replies to these broadcast packets.
+If disabling your system's firewall
+or specifying the IP address yields a discovered device,
+then your firewall may be blocking replies to UDP broadcast packets.
+If this is the case, we recommend that you disable the firewall
+or create a rule to allow all incoming packets with UDP source port **49152**.
+
+\subsection e3x0_comm_problems_ping Ping the device
+The USRP device will reply to ICMP echo requests ("ping").
+A successful ping response means that the device has booted properly
+and that it is using the expected IP address.
+
+    ping 192.168.10.2
+
+\subsection e3x0_comm_problems_monitor Monitor the host network traffic
+Use Wireshark to monitor packets sent to and received from the device.
+
+\subsection e3x0_comm_problems_leds Observe Ethernet port LEDs
+When there is network traffic arriving at the Ethernet port, LEDs will light up.
+You can use this to make sure the network connection is correctly set up, e.g.
+by pinging the USRP and making sure the LEDs start to blink.
+
+\section e3x0_hw Hardware Notes
+
+\subsection e3x0_hw_fpanel Front Panel
+
+\image html e3x0_fp_overlay.png "e3x0"
+
+- **RF A Group**
+  + **TX/RX LED**: Indicates that data is streaming on the TX/RX channel on daughterboard A
+  + **RX2 LED**: Indicates that data is streaming on the RX2 channel on daughterboard A
+- **REF**: Indicates that the external Reference Clock is locked
+- **PPS**: Indicates a valid PPS signal by pulsing once per second
+- **AUX I/O**: Front panel GPIO connector.
+- **GPS**: Indicates that GPS reference is locked
+- **LINK**: Indicates that the host computer is communicating with the device (Activity)
+
+- **RF B Group**
+  + **TX/RX LED**: Indicates that data is streaming on the TX/RX channel on daughterboard B
+  + **RX2 LED**: Indicates that data is streaming on the RX2 channel on daughterboard B
+- **PWR**: Power switch
+
+\subsection e3x0_hw_rear_panel Rear Panel
+
+\image html e3x0_rp_overlay.png "e3x0 Rear Panel"
+
+- **PWR**: Connector for the USRP-X Series power supply
+- **1G/10G ETH**: SFP+ ports for Ethernet interfaces
+- **REF OUT**: Output port for the exported reference clock
+- **REF IN**: Reference clock input
+- **PCIe x4**: Connector for Cabled PCI Express link
+- **PPS/TRIG OUT**: Output port for the PPS signal
+- **PPS/TRIG IN**: Input port for the PPS signal 
+- **GPS**: Connection for the GPS antenna
+
+\subsection e3x0_hw_e3x0_hw_ref10M Ref Clock - 10 MHz
+
+Using an external 10 MHz reference clock, a square wave will offer the best phase
+noise performance, but a sinusoid is acceptable.  The power level of the reference clock cannot exceed +15 dBm.
+
+\subsection e3x0_hw_pps PPS - Pulse Per Second
+Using a PPS signal for timestamp synchronization requires a square wave signal with the following a 5Vpp amplitude.
+
+To test the PPS input, you can use the following tool from the UHD examples:
+
+- `<args>` are device address arguments (optional if only one USRP device is on your machine)
+
+    cd <install-path>/lib/uhd/examples
+    ./test_pps_input --args=\<args\>
+
+\subsection e3x0_hw_gpsdo Internal GPSDO
+
+Please see \ref page_gpsdo_e3x0 for information on configuring and using the internal GPSDO.
+
+\subsection e3x0_hw_gpio Internal GPIO
+
+### Connector
+
+\image html e3x0_gpio_conn.png "e3x0 GPIO Connector"
+
+### Pin Mapping
+
+- Pin 1:  +3.3V
+- Pin 2:  Data[0]
+- Pin 3:  Data[1]
+- Pin 4:  Data[2]
+- Pin 5:  Data[3]
+- Pin 6:  Data[4]
+- Pin 7:  Data[5]
+- Pin 8:  Data[6]
+- Pin 9:  Data[7]
+- Pin 10: Data[8]
+TODO:
+
+
+Please see the \ref page_gpio_api for information on configuring and using the GPIO bus.
+
+\subsection e3x0_hw_chipscope Debugging custom FPGA designs with Xilinx Chipscope
+
+Xilinx chipscope allows for debugging custom FPGA designs similar to a logic analyzer.
+USRP-E series devices can be used with Xilinx chipscope using the internal JTAG connector.
+
+Further information on how to use Chipscope can be found in the Xilinx Chipscope Pro Software and Cores User Guide (UG029).
+
+\section e3x0_misc Miscellaneous
+
+\subsection e3x0_misc_multirx Multiple RX channels
+
+There are two complete DDC and DUC DSP chains in the FPGA. In the single channel case,
+only one chain is ever used. To receive from both channels, the user must set the **RX** or **TX**
+subdevice specification.
+
+In the following example, a TVRX2 is installed.
+Channel 0 is sourced from subdevice **RX1**,
+and channel 1 is sourced from subdevice **RX2** (**RX1** and **RX2** are antenna connectors on the TVRX2 daughterboard).
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+usrp->set_rx_subdev_spec("A:RX1 A:RX2");
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\subsection e3x0_misc_sensors Available Sensors
+
+The following sensors are available for the USRP-E Series motherboards;
+they can be queried through the API.
+
+- **fe_locked** - rx / tx frontend pll locked
+- **temp** - processor temperature value
+- Other sensors are added when the GPSDO is enabled
+
+*/
+// vim:ft=doxygen:

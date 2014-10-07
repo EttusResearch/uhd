@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "PMC", "PMC.cproj", "{A379D421-4236-44AF-A711-52B7BDA29919}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AVR = Debug|AVR
+		Release (DDR3L)|AVR = Release (DDR3L)|AVR
+		Release (DDR3L, Ti)|AVR = Release (DDR3L, Ti)|AVR
+		Release (Dev)|AVR = Release (Dev)|AVR
+		Release|AVR = Release|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A379D421-4236-44AF-A711-52B7BDA29919}.Debug|AVR.ActiveCfg = Debug|AVR
+		{A379D421-4236-44AF-A711-52B7BDA29919}.Debug|AVR.Build.0 = Debug|AVR
+		{A379D421-4236-44AF-A711-52B7BDA29919}.Release (DDR3L)|AVR.ActiveCfg = Release (DDR3L)|AVR
+		{A379D421-4236-44AF-A711-52B7BDA29919}.Release (DDR3L)|AVR.Build.0 = Release (DDR3L)|AVR
+		{A379D421-4236-44AF-A711-52B7BDA29919}.Release (DDR3L, Ti)|AVR.ActiveCfg = Release (DDR3L, Ti)|AVR
+		{A379D421-4236-44AF-A711-52B7BDA29919}.Release (DDR3L, Ti)|AVR.Build.0 = Release (DDR3L, Ti)|AVR
+		{A379D421-4236-44AF-A711-52B7BDA29919}.Release (Dev)|AVR.ActiveCfg = Release (Dev)|AVR
+		{A379D421-4236-44AF-A711-52B7BDA29919}.Release (Dev)|AVR.Build.0 = Release (Dev)|AVR
+		{A379D421-4236-44AF-A711-52B7BDA29919}.Release|AVR.ActiveCfg = Release|AVR
+		{A379D421-4236-44AF-A711-52B7BDA29919}.Release|AVR.Build.0 = Release|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

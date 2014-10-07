@@ -39,6 +39,7 @@ devices and how to use the API to connect to them through your own software.
 ## USRP E-Series Devices
 
 \li \subpage page_usrp_e1x0
+\li \subpage page_usrp_e3x0
 \li \subpage page_gpsdo
 
 ## USRP X-Series Devices

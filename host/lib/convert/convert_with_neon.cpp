@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,12 @@
 #include "convert_common.hpp"
 #include <uhd/utils/byteswap.hpp>
 #include <arm_neon.h>
+
+extern "C" {
+void neon_item32_sc16_swap_16n(void *, void *, int iter);
+}
+
+static const int SIMD_WIDTH = 16;
 
 using namespace uhd::convert;
 
@@ -57,4 +63,32 @@ DECLARE_CONVERTER(sc16_item32_le, 1, fc32, 1, PRIORITY_SIMD){
     }
 
     item32_sc16_to_xx<uhd::htowx>(input+i, output+i, nsamps-i, scale_factor);
+}
+
+DECLARE_CONVERTER(sc16, 1, sc16_item32_le, 1, PRIORITY_SIMD){
+    const sc16_t *input = reinterpret_cast<const sc16_t *>(inputs[0]);
+    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+
+    size_t i = nsamps / SIMD_WIDTH;
+
+    if (i)
+        neon_item32_sc16_swap_16n((void *) input, (void *) output, i);
+
+    i *= SIMD_WIDTH;
+
+    xx_to_item32_sc16<uhd::htowx>(input+i, output+i, nsamps-i, scale_factor);
+}
+
+DECLARE_CONVERTER(sc16_item32_le, 1, sc16, 1, PRIORITY_SIMD){
+    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
+    sc16_t *output = reinterpret_cast<sc16_t *>(outputs[0]);
+
+    size_t i = nsamps / SIMD_WIDTH;
+
+    if (i)
+        neon_item32_sc16_swap_16n((void *) input, (void *) output, i);
+
+    i *= SIMD_WIDTH;
+
+    item32_sc16_to_xx<uhd::wtohx>(input+i, output+i, nsamps-i, scale_factor);
 }

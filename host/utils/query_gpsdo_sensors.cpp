@@ -107,15 +107,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   const time_t pc_clock_time = time(NULL);
   const uhd::time_spec_t last_pps_time = usrp->get_time_last_pps();
   if (last_pps_time.to_ticks(1.0) == gps_time.to_int()) {
-    std::cout << boost::format("GPS and UHD Device time are aligned.\n");
-  } else
-    std::cout << boost::format("\nGPS and UHD Device time are NOT aligned. Try re-running the program. Double check 1 PPS connection from GPSDO.\n\n");
-    
+      std::cout << boost::format("GPS and UHD Device time are aligned.\n");
+  } else {
+      std::cout << boost::format("\nGPS and UHD Device time are NOT aligned last_pps: %ld vs gps: %ld. Try re-running the program. Double check 1 PPS connection from GPSDO.\n\n") % last_pps_time.to_ticks(1.0) % gps_time.to_int() << std::endl;
+  }
+
   //print NMEA strings
-  std::cout << boost::format("Printing available NMEA strings:\n");
-  uhd::sensor_value_t gga_string = usrp->get_mboard_sensor("gps_gpgga");
-  uhd::sensor_value_t rmc_string = usrp->get_mboard_sensor("gps_gprmc");
-  std::cout << boost::format("%s\n%s\n%s\n") % gga_string.to_pp_string() % rmc_string.to_pp_string() % gps_time.to_pp_string();
+  try {
+      uhd::sensor_value_t gga_string = usrp->get_mboard_sensor("gps_gpgga");
+      uhd::sensor_value_t rmc_string = usrp->get_mboard_sensor("gps_gprmc");
+      std::cout << boost::format("Printing available NMEA strings:\n");
+      std::cout << boost::format("%s\n%s\n%s\n") % gga_string.to_pp_string() % rmc_string.to_pp_string() % gps_time.to_pp_string();
+  } catch (std::exception &e) {
+      std::cout << "NMEA strings not implemented for this device." << std::endl;
+  }
   std::cout << boost::format("UHD Device time: %.0f seconds\n") % (last_pps_time.get_real_secs());
   std::cout << boost::format("PC Clock time: %.0f seconds\n") % pc_clock_time;
 
