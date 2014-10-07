@@ -1,7 +1,0 @@
-
-
-INST "x300_core/radio0/*" AREA_GROUP = "pblock_1";
-AREA_GROUP "pblock_1" RANGE=SLICE_X0Y101:SLICE_X79Y248;
-
-INST "x300_core/radio1/*" AREA_GROUP = "pblock_2";
-AREA_GROUP "pblock_2" RANGE=SLICE_X0Y240:SLICE_X79Y349;
