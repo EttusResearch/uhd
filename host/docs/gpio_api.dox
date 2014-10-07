@@ -1,17 +1,17 @@
-/*! \page page_gpio_api X3x0 GPIO API
+/*! \page page_gpio_api E3x0/X3x0 GPIO API
 
 \tableofcontents
 
-\section xgpio_fpanel The X3x0 Front Panel GPIO
+\section xgpio_fpanel The E3x0/X3x0 Front Panel GPIO
 
-The X3x0 is the first USRP device to offer an auxiliary GPIO connection
+The E3x0/X3x0 are the first USRP devices to offer an auxiliary GPIO connection
 on the motherboard itself (independent of the daughterboards). These
 GPIO pins are controlled directly by the FPGA, where they are controlled
 by an ATR (Automatic Transmit / Receive). This allows them to be toggled
 simultaneously with other radio-level changes (e.g., enabling or
 disabling a TX or RX mixer).
 
-\subsection xgpio_fpanel_gpio Front Panel GPIO
+\subsection xgpio_fpanel_gpio X3x0 Front Panel GPIO
 
 \subsubsection xgpio_fpanel_conn Connector
 
@@ -34,6 +34,26 @@ disabling a TX or RX mixer).
 -   Pin 13: Data[11]
 -   Pin 14: 0V
 -   Pin 15: 0V
+
+\subsection egpio_internal_gpio E3x0 Internal GPIO
+
+\subsubsection egpio_internal_conn Connector
+
+\image html e3x0_gpio_conn.png "E3x0 GPIO Connector"
+
+### Pin Mapping
+
+- Pin 1:   +3.3V
+- Pin 2:   Reserved
+- Pin 3:   Data[5]
+- Pin 4:   Reserved
+- Pin 5:   Data[4]
+- Pin 6:   Data[0]
+- Pin 7:   Data[3]
+- Pin 8:   Data[1]
+- Pin 9:   0V
+- Pin 10:  Data[2]
+
 
 \subsection xgpio_fpanel_atr Explaining ATR
 
@@ -69,12 +89,12 @@ one more:
 \subsection xgpio_fpanel_xample An Example
 
 The front panel X3x0 GPIO bank is enumerated in the motherboard property
-tree ('*<mb_path>/gpio/FP0/\*'), and so is easily accessible through
+tree ('*<mb_path>/gpio/FP0/\*'), the E3x0 internal GPIO bank as ('*<mb_path>/gpio/INT0/\*') and so are easily accessible through
 the standard uhd::usrp::multi_usrp UHD interface.
 
 You can discover this using the uhd::usrp::multi_usrp::get_gpio_banks() function.
 This will tell you that there is a GPIO bank on your
-X3x0 called "FP0". This is the bank we want to set-up.
+X3x0 called "FP0" (for E3x0 this will be called "INT0"). This is the bank we want to set-up.
 
 Let's say we want to use GPIO6 for an external amp. We want it to be
 automatically controlled by ATR as an output, and we want it to be high
@@ -114,6 +134,43 @@ up with the following code:
 After the above code is run, the ATR in the FPGA will automatically
 control GPIO6, as we have described, based on the radio state, and we
 have direct manual control over GPIO4.
+
+The following example has been modified to work with he E3x0's internal
+GPIO bank, where the controlled GPIO is now GPIO3 instead of GPIO6.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+    // set up our masks, defining the pin numbers
+    #define AMP_GPIO_MASK   (1 << 3)
+    #define MAN_GPIO_MASK   (1 << 4)
+
+    #define ATR_MASKS       (AMP_GPIO_MASK | MAN_GPIO_MASK)
+
+    // set up our values for ATR control: 1 for ATR, 0 for manual
+    #define ATR_CONTROL     (AMP_GPIO_MASK & ~MAN_GPIO_MASK)
+
+    // set up the GPIO directions: 1 for output, 0 for input
+    #define GPIO_DDR        (AMP_GPIO_MASK & ~MAN_GPIO_MASK)
+
+    // assume an existing USRP device handle, called "usrp_e300"
+
+    // now, let's do the basic ATR setup
+    usrp_e300->set_gpio_attr("INT0", "CTRL", ATR_CONTROL, ATR_MASKS);
+    usrp_e300->set_gpio_attr("INT0", "DDR", GPIO_DDR, ATR_MASKS);
+
+    // let's manually set GPIO4 high
+    usrp_e300->set_gpio_attr("INT0", "OUT", 1, MAN_GPIO_MASK);
+
+    // finally, let's set up GPIO6 as we described above
+    usrp_e300->set_gpio_attr("INT0", "ATR_0X", 0, AMP_GPIO_MASK);
+    usrp_e300->set_gpio_attr("INT0", "ATR_RX", 0, AMP_GPIO_MASK);
+    usrp_e300->set_gpio_attr("INT0", "ATR_TX", 0, AMP_GPIO_MASK);
+    usrp_e300->set_gpio_attr("INT0", "ATR_XX", 0, AMP_GPIO_MASK);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After the above code is run, the ATR in the FPGA will automatically
+control GPIO3, as we have described, based on the radio state, and we
+have direct manual control over GPIO4.
+
 
 */
 // vim:ft=doxygen:
