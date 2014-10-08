@@ -108,6 +108,7 @@ private:
     b200_local_spi_core::sptr _spi_iface;
     boost::shared_ptr<uhd::usrp::adf4001_ctrl> _adf4001_iface;
     uhd::gps_ctrl::sptr _gps;
+    bool _gpsdo_enable;
 
     //transports
     uhd::transport::zero_copy_if::sptr _data_transport;

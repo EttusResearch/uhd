@@ -208,7 +208,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
         vid = uhd::cast::hexstr_cast<boost::uint16_t>(device_addr.get("vid"));
     if (device_addr.has_key("pid"))
         pid = uhd::cast::hexstr_cast<boost::uint16_t>(device_addr.get("pid"));
-
+    _gpsdo_enable = ! device_addr.has_key("no_gpsdo");
     std::vector<usb_device_handle::sptr> device_list =
         usb_device_handle::get_device_list(vid, pid);
 
@@ -326,7 +326,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     _async_task_data->gpsdo_uart->write_uart("\n"); //cause the baud and response to be setup
     boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for a little propagation
 
-    if ((_local_ctrl->peek32(RB32_CORE_STATUS) & 0xff) != B200_GPSDO_ST_NONE)
+    if ((_local_ctrl->peek32(RB32_CORE_STATUS) & 0xff) != B200_GPSDO_ST_NONE && _gpsdo_enable)
     {
         UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
         try
