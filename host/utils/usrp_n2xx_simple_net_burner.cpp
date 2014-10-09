@@ -523,13 +523,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("fw", po::value<std::string>(&fw_path), "Specify a filepath for a custom firmware image.")
         ("fpga", po::value<std::string>(&fpga_path), "Specify a filepath for a custom FPGA image.")
         ("no-fw", "Do not burn a firmware image.")
-        ("no_fw", "Do not burn a firmware image (DEPRECATED).")
         ("no-fpga", "Do not burn an FPGA image.")
-        ("no_fpga", "Do not burn an FPGA image (DEPRECATED).")
         ("overwrite-safe", "Overwrite safe images (not recommended).")
         ("dont-check-rev", "Don't verify images are for correct model before burning.")
         ("auto-reboot", "Automatically reboot N2XX without prompting.")
-        ("auto_reboot", "Automatically reboot N2XX without prompting (DEPRECATED).")
         ("list", "List available N2XX USRP devices.")
     ;
     po::variables_map vm;
@@ -552,11 +549,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //Store user options
-    bool burn_fpga = (vm.count("no-fpga") == 0) and (vm.count("no_fpga") == 0);
-    bool burn_fw = (vm.count("no-fw") == 0) and (vm.count("no_fw") == 0);
+    bool burn_fpga = (vm.count("no-fpga") == 0);
+    bool burn_fw = (vm.count("no-fw") == 0);
     bool use_custom_fpga = (vm.count("fpga") > 0);
     bool use_custom_fw = (vm.count("fw") > 0);
-    bool auto_reboot = (vm.count("auto-reboot") > 0) or (vm.count("auto_reboot") > 0);
+    bool auto_reboot = (vm.count("auto-reboot") > 0);
     bool check_rev = (vm.count("dont-check-rev") == 0);
     bool overwrite_safe = (vm.count("overwrite-safe") > 0);
     int fpga_image_size = 0;
@@ -591,11 +588,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         }
         else std::cout << std::endl; //Formatting
     }
-
-    //Print deprecation messages if necessary
-    if(vm.count("no_fpga") > 0) std::cout << "WARNING: --no_fpga option is deprecated! Use --no-fpga instead." << std::endl << std::endl;
-    if(vm.count("no_fw") > 0) std::cout << "WARNING: --no_fw option is deprecated! Use --no-fw instead." << std::endl << std::endl;
-    if(vm.count("auto_reboot") > 0) std::cout << "WARNING: --auto_reboot option is deprecated! Use --auto-reboot instead." << std::endl << std::endl;
 
     //Find USRP and establish connection
     std::cout << boost::format("Searching for USRP N2XX with IP address %s.\n") % ip_addr;

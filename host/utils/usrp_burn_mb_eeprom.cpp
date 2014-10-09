@@ -29,15 +29,13 @@
 namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
-    std::string args, input_str, key, val;
+    std::string args, input_str;
 
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "device address args [default = \"\"]")
         ("values", po::value<std::string>(&input_str), "keys+values to read/write, separate multiple by \",\"")
-        ("key", po::value<std::string>(&key), "identifiers for new values in EEPROM, separate multiple by \",\" (DEPRECATED)")
-        ("val", po::value<std::string>(&val), "the new values to set, omit for readback, separate multiple by \",\" (DEPRECATED)")
         ("read-all", "Read all motherboard EEPROM values without writing")
     ;
 
@@ -46,11 +44,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::notify(vm);
 
     //print the help message
-    if (vm.count("help") or (not vm.count("key") and not vm.count("values") and not vm.count("read-all"))){
+    if (vm.count("help") or (not vm.count("values") and not vm.count("read-all"))){
         std::cout << boost::format("USRP Burn Motherboard EEPROM %s") % desc << std::endl;
         std::cout << boost::format(
             "Omit the value argument to perform a readback,\n"
             "Or specify a new value to burn into the EEPROM.\n"
+            "Example (write to ip-addr0 and read out ip-addr1):\n"
+            "    usrp_burn_mb_eeprom --args=<device args> --values\"ip-addr0=192.168.10.3,ip-addr1\""
         ) << std::endl;
         return EXIT_FAILURE;
     }
@@ -69,21 +69,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         keys_vec = vals.keys();
         vals_vec = vals.vals();
     }
-    else{
-        std::cout << "WARNING: Use of --key and --val is deprecated!" << std::endl;
-        //remove whitespace, split arguments and values 
-        boost::algorithm::erase_all(key, " ");
-        boost::algorithm::erase_all(val, " ");
 
-        boost::split(keys_vec, key, boost::is_any_of("\"',"));
-        boost::split(vals_vec, val, boost::is_any_of("\"',"));
-
-        if((keys_vec.size() != vals_vec.size()) and val != "") {
-            //If zero values are given, then user just wants values read to them
-            throw std::runtime_error("Number of keys must match number of values!");
-        }
-    }
-
+    // 1. Read out values
     std::cout << "Fetching current settings from EEPROM..." << std::endl;
     for(size_t i = 0; i < keys_vec.size(); i++){
         if (not mb_eeprom.has_key(keys_vec[i])){
@@ -93,6 +80,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("    EEPROM [\"%s\"] is \"%s\"") % keys_vec[i] % mb_eeprom[keys_vec[i]] << std::endl;
     }
     std::cout << std::endl;
+
+    // 2. Write new values if given
     mb_eeprom = uhd::usrp::mboard_eeprom_t();
     for(size_t i = 0; i < vals_vec.size(); i++){
         if(vals_vec[i] != ""){
