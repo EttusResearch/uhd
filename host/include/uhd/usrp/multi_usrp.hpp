@@ -547,15 +547,6 @@ public:
     virtual std::vector<std::string> get_rx_antennas(size_t chan = 0) = 0;
 
     /*!
-     * Get the locked status of the LO on the frontend.
-     * \param chan the channel index 0 to N-1
-     * \return true for locked
-     */
-    UHD_DEPRECATED bool get_rx_lo_locked(size_t chan = 0){
-        return this->get_rx_sensor("lo_locked", chan).to_bool();
-    }
-
-    /*!
      * Set the RX bandwidth on the frontend.
      * \param bandwidth the bandwidth in Hz
      * \param chan the channel index 0 to N-1
@@ -575,16 +566,6 @@ public:
      * \return a range of bandwidths in Hz
      */
     virtual meta_range_t get_rx_bandwidth_range(size_t chan = 0) = 0;
-
-    /*!
-     * Read the RSSI value on the RX frontend.
-     * \param chan the channel index 0 to N-1
-     * \return the rssi in dB
-     * \throw exception if RSSI readback not supported
-     */
-    UHD_DEPRECATED double read_rssi(size_t chan = 0){
-        return this->get_rx_sensor("rssi", chan).to_real();
-    }
 
     /*!
      * Get the dboard interface object for the RX frontend.
@@ -802,15 +783,6 @@ public:
      * \return a vector of antenna names
      */
     virtual std::vector<std::string> get_tx_antennas(size_t chan = 0) = 0;
-
-    /*!
-     * Get the locked status of the LO on the frontend.
-     * \param chan the channel index 0 to N-1
-     * \return true for locked
-     */
-    UHD_DEPRECATED bool get_tx_lo_locked(size_t chan = 0){
-        return this->get_tx_sensor("lo_locked", chan).to_bool();
-    }
 
     /*!
      * Set the TX bandwidth on the frontend.
