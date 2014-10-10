@@ -1,8 +1,7 @@
-/* 
- * packet-chdr.c
+/*
  * Dissector for UHD CHDR packets
  *
- * Copyright 2010-2013 Ettus Research LLC
+ * Copyright 2010-2014 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,13 +25,15 @@
 #include <ctype.h>
 #include <stdio.h>
 
+#include "../../host/lib/usrp/x300/x300_fw_common.h"
+
 #define LOG_HEADER  "[UHD CHDR] "
 
 #ifndef min
 #define min(a,b)    ((a<b)?a:b)
 #endif // min
 
-const unsigned int CHDR_PORT = 49153;
+const unsigned int CHDR_PORT = X300_VITA_UDP_PORT;
 
 static int proto_chdr = -1;
 static int hf_chdr_hdr = -1;
@@ -76,19 +77,19 @@ static gboolean heur_dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
         printf(LOG_HEADER"heuristic dissector always returns true!\n");
         heur_warning_printed++;
     }
-    dissect_chdr(tvb, pinfo, tree); 
+    dissect_chdr(tvb, pinfo, tree);
     return (TRUE);
 }
 
 static void byte_swap(guint8 *bytes, gint len)
 {
     guint8 tmp[4];
-    
+
     if(len != sizeof(tmp)){
         printf(LOG_HEADER"FATAL! number of bytes don't match 32 bit!\n");
         return;
     }
-    
+
     memcpy(tmp, bytes, sizeof(tmp));
     bytes[0] = tmp[3];
     bytes[1] = tmp[2];
@@ -101,14 +102,14 @@ static unsigned long long get_timestamp(guint8 *bytes, gint len)
     unsigned long long ts;
     unsigned long long trans;
     int it;
-    
+
     if(len != sizeof(unsigned long long)){
         printf(LOG_HEADER"FATAL! timestamps always consist of 64 bits!\n");
     }
-    
+
     byte_swap(bytes + 0, 4);
     byte_swap(bytes + 4, 4);
-    
+
     ts = 0;
     for(it = 0; it < 8; it++){
         ts = ts << 8;
@@ -122,7 +123,7 @@ static unsigned long long get_timestamp(guint8 *bytes, gint len)
 /* The dissector itself */
 static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-    // Here are all the variables   
+    // Here are all the variables
     proto_item *item;
     proto_item *stream_item;
     proto_tree *chdr_tree;
@@ -132,7 +133,7 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     proto_item *response_item;
     proto_tree *response_tree;
     gint len;
-    
+
     gint flag_offset;
     guint8 *bytes;
     gboolean flag_has_time;
@@ -142,7 +143,7 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     gint id_pos_usb[4] = {7, 6, 5, 4};
     gint id_pos_net[4] = {4, 5, 6, 7};
     gint id_pos[4] = {7, 6, 5, 4};
-    
+
     if(pinfo->match_uint == CHDR_PORT){
         is_network = TRUE;
         flag_offset = 0;
@@ -159,12 +160,13 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     len = tvb_reported_length(tvb);
 
     col_append_str(pinfo->cinfo, COL_PROTOCOL, "/CHDR");
-    col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "CHDR",
-        tvb_format_text_wsp(tvb, 0, len));
+    /* This throws a warning: */
+    /*col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "CHDR", tvb_format_text_wsp(tvb, 0, len));*/
+    col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "CHDR");
 
     if (tree){
         int chdr_size = -1;
-        
+
         if (len >= 4){
             chdr_size = 8;
             bytes = tvb_get_string(tvb, 0, 4);
@@ -172,13 +174,13 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             if (flag_has_time)
                 chdr_size += 8; // 64-bit timestamp
         }
-        
+
         /* Start with a top-level item to add everything else to */
         item = proto_tree_add_item(tree, proto_chdr, tvb, 0, min(len, chdr_size), ENC_NA);
-        
+
         if (len >= 4){
             chdr_tree = proto_item_add_subtree(item, ett_chdr);
-            
+
             header_item = proto_tree_add_item(chdr_tree, hf_chdr_hdr, tvb, flag_offset, 1, endianness);
             header_tree = proto_item_add_subtree(header_item, ett_chdr_header);
 
@@ -191,7 +193,7 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             /* These lines add sequence, packet_size and stream ID */
             proto_tree_add_item(chdr_tree, hf_chdr_sequence, tvb, (is_network ? 0:2), 2, endianness);
             proto_tree_add_item(chdr_tree, hf_chdr_packet_size, tvb, (is_network ? 2:0), 2, endianness);
-            
+
             if (len >= 8){
                 /* stream id can be broken down to 4 sections. these are collapsed in a subtree */
                 stream_item = proto_tree_add_item(chdr_tree, hf_chdr_stream_id, tvb, 4, 4, endianness);
@@ -200,7 +202,7 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                 proto_tree_add_item(stream_tree, hf_chdr_src_ep, tvb, id_pos[1], 1, ENC_NA);
                 proto_tree_add_item(stream_tree, hf_chdr_dst_dev, tvb, id_pos[2], 1, ENC_NA);
                 proto_tree_add_item(stream_tree, hf_chdr_dst_ep, tvb, id_pos[3], 1, ENC_NA);
-                
+
                 /* if has_time flag is present interpret timestamp */
                 if ((flag_has_time) && (len >= 16)){
                     if (is_network)
@@ -211,21 +213,21 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                         proto_tree_add_uint64(chdr_tree, hf_chdr_timestamp, tvb, 8, 8, timestamp);
                     }
                 }
-                
+
                 int remaining_bytes = (len - chdr_size);
                 int show_raw_payload = (remaining_bytes > 0);
-                
+
                 if (hf_chdr_is_extension){
                     if (remaining_bytes == 8){  // Interpret this as a response packet
                         response_item = proto_tree_add_item(chdr_tree, hf_chdr_ext_response, tvb, chdr_size, 8, endianness);
                         response_tree = proto_item_add_subtree(response_item, ett_chdr_response);
-                        
+
                         proto_tree_add_item(response_tree, hf_chdr_ext_status_code, tvb, chdr_size, 4, endianness);
                         /* This will show the 12-bits of sequence ID in the last 2 bytes */
                         proto_tree_add_item(response_tree, hf_chdr_ext_seq_num, tvb, (chdr_size + 4 + (is_network ? 2 : 0)), 2, endianness);
                     }
                 }
-                
+
                 if (show_raw_payload)
                     proto_tree_add_item(chdr_tree, hf_chdr_payload, tvb, chdr_size, -1, ENC_NA);
             }
