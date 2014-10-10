@@ -1,8 +1,7 @@
-/* 
- * packet-chdr.c
- * Dissector for UHD CHDR packets
+/*
+ * Dissector for ZPU packets (communication with X300 firmware)
  *
- * Copyright 2010-2013 Ettus Research LLC
+ * Copyright 2013-2014 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +18,27 @@
  *
  */
 
+/* Format of ZPU packets is defined in x300_fw_commons.h,
+ * x300_fw_comms_t.
+ *
+ * Reminder:
+ *
+ *  uint32_t flags; (ack, error, peek, poke)
+ *  uint32_t sequence;
+ *  uint32_t addr;
+ *  uint32_t data;
+ */
+
 #include "config.h"
 
 #include <glib.h>
 #include <epan/packet.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <endian.h>
+
+#include "../../host/lib/usrp/x300/x300_fw_common.h"
+#include "zpu_addr_names.h"
 
 #define LOG_HEADER  "[ZPU] "
 
@@ -32,7 +46,7 @@
 #define min(a,b)    ((a<b)?a:b)
 #endif // min
 
-const unsigned int FW_PORT = 49152;
+const unsigned int FW_PORT = X300_FW_COMMS_UDP_PORT;
 
 static int proto_zpu = -1;
 static int hf_zpu_flags = -1;
@@ -44,6 +58,7 @@ static int hf_zpu_seq = -1;
 static int hf_zpu_addr = -1;
 static int hf_zpu_data = -1;
 static int hf_zpu_shmem_addr = -1;
+static int hf_zpu_shmem_addr_name = -1;
 
 /* Subtree handles: set by register_subtree_array */
 static gint ett_zpu = -1;
@@ -63,15 +78,15 @@ static void dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     proto_item *flags_item;
     proto_tree *flags_tree;
     gint len;
-    
+
     gboolean is_network;
     gint endianness;
-    
-    if(pinfo->match_uint == FW_PORT){
+
+    if (pinfo->match_uint == FW_PORT) {
         is_network = TRUE;
         endianness = ENC_BIG_ENDIAN;
     }
-    else{
+    else {
         is_network = FALSE;
         endianness = ENC_LITTLE_ENDIAN;
     }
@@ -79,16 +94,18 @@ static void dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     len = tvb_reported_length(tvb);
 
     col_append_str(pinfo->cinfo, COL_PROTOCOL, "/ZPU");
-    col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "ZPU", tvb_format_text_wsp(tvb, 0, len));
+    /*col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "ZPU", tvb_format_text_wsp(tvb, 0, len));*/
+    col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "ZPU");
 
     if (tree)
     {
         item = proto_tree_add_item(tree, proto_zpu, tvb, 0, min(16, len), ENC_NA);
-        
+
+	// Dissect 'flags'
         if (len >= 4)
         {
             zpu_tree = proto_item_add_subtree(item, ett_zpu);
-            
+
             flags_item = proto_tree_add_item(zpu_tree, hf_zpu_flags, tvb, 0, 4, endianness);
             flags_tree = proto_item_add_subtree(flags_item, ett_zpu_flags);
 
@@ -96,28 +113,39 @@ static void dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             proto_tree_add_item(flags_tree, hf_zpu_flags_error, tvb, 0, 4, ENC_NA);
             proto_tree_add_item(flags_tree, hf_zpu_flags_poke, tvb, 0, 4, ENC_NA);
             proto_tree_add_item(flags_tree, hf_zpu_flags_peek, tvb, 0, 4, ENC_NA);
-            
+
+            // Dissect 'sequence number'
             if (len >= 8)
             {
                 proto_tree_add_item(zpu_tree, hf_zpu_seq, tvb, 4, 4, ENC_NA);
-                
+
+                // Dissect 'address'
                 if (len >= 12)
                 {
                     proto_tree_add_item(zpu_tree, hf_zpu_addr, tvb, 8, 4, ENC_NA);
-                    
+
                     guint8 *bytes = tvb_get_string(tvb, 8, 4);
                     unsigned int addr = 0;
                     memcpy(&addr, bytes, 4);
-                    const unsigned int shmmem_base = 0x6000;
+                    /* TODO proper endianness handling */
                     addr = (addr >> 24) | ((addr & 0x00FF0000) >> 8) | ((addr & 0x0000FF00) << 8) | ((addr & 0x000000FF) << 24);
-                    if (addr >= shmmem_base)
+                    /* TODO check the actual size of shmem instead of this constant */
+                    if (addr >= X300_FW_SHMEM_BASE && addr <= X300_FW_SHMEM_BASE + 0x2000)
                     {
-                        addr -= 0x6000;
+                        proto_item *shmem_addr_item = NULL;
+
+                        // Convert the address to a register number (32-bit registers == 4-byte registers)
+                        addr -= X300_FW_SHMEM_BASE;
                         addr /= 4;
-                        
-                        proto_tree_add_uint(zpu_tree, hf_zpu_shmem_addr, tvb, 8, 4, addr);
+
+                        shmem_addr_item = proto_tree_add_uint(zpu_tree, hf_zpu_shmem_addr, tvb, 8, 4, addr);
+                        proto_item_append_text(shmem_addr_item, ", Register name: %s",
+                                val_to_str(addr, X300_SHMEM_NAMES, "Unknown (0x%04x)")
+                        );
+
                     }
-                    
+
+                    // Dissect 'data'
                     if (len >= 16)
                     {
                         proto_tree_add_item(zpu_tree, hf_zpu_data, tvb, 12, 4, ENC_NA);
