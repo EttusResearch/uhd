@@ -1103,6 +1103,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string rx_file;
     std::string time_source, clock_source;
     std::string tx_ant, rx_ant;
+    std::string tx_subdev, rx_subdev;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -1113,6 +1114,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rate", po::value<double>(&rate)->default_value(rate), "specify to perform a TX & RX rate test (sps)")
         ("rx-rate", po::value<double>(&rx_rate), "specify to perform a RX rate test (sps)")
         ("tx-rate", po::value<double>(&tx_rate), "specify to perform a TX rate test (sps)")
+        ("rx-subdev", po::value<std::string>(&rx_subdev)->default_value(""), "set RX sub-device specification")
+        ("tx-subdev", po::value<std::string>(&tx_subdev)->default_value(""), "set TX sub-device specification")
         ("rx-otw", po::value<std::string>(&rx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for RX")
         ("tx-otw", po::value<std::string>(&tx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for TX")
         ("rx-cpu", po::value<std::string>(&rx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for RX")
@@ -1298,7 +1301,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             usrp->set_time_source("mimo", 0);
 
             std::cout << HEADER "Sleeping after setting clock & time sources" << std::endl;
-            boost::this_thread::sleep(boost::posix_time::seconds(1));
+            boost::this_thread::sleep(boost::posix_time::seconds(1));   // MAGIC
         }
         else
         {
@@ -1317,6 +1320,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         if ((rx_channel_nums.size() > 0) || (still_set_rates))
         {
+            if (rx_subdev.empty() == false)
+            {
+                usrp->set_rx_subdev_spec(rx_subdev);
+                std::cout << boost::format(HEADER_RX"RX sub-device spec: %s") % usrp->get_rx_subdev_spec().to_string() << std::endl;
+            }
+            
             usrp->set_rx_rate(rx_rate);
             double actual_rx_rate = usrp->get_rx_rate();
             std::cout << boost::format(HEADER_RX"Actual RX rate: %f") % actual_rx_rate << std::endl;
@@ -1346,6 +1355,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         if ((tx_channel_nums.size() > 0) || (still_set_rates))
         {
+            if (tx_subdev.empty() == false)
+            {
+                usrp->set_tx_subdev_spec(tx_subdev);
+                std::cout << boost::format(HEADER_TX"TX sub-device spec: %s") % usrp->get_tx_subdev_spec().to_string() << std::endl;
+            }
+            
             usrp->set_tx_rate(tx_rate);
             double actual_tx_rate = usrp->get_tx_rate();
             std::cout << boost::format(HEADER_TX"Actual TX rate: %f") % actual_tx_rate << std::endl;
