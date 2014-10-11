@@ -91,7 +91,7 @@ public:
         return create_rx_fifo(_lvbitx->get_input_fifo_names()[fifo_instance], fifo);
     }
 
-    niriok_proxy& get_kernel_proxy() {
+    UHD_INLINE niriok_proxy::sptr get_kernel_proxy() {
         return _riok_proxy;
     }
 
@@ -112,7 +112,7 @@ private:
     nifpga_lvbitx::sptr             _lvbitx;
     std::string                     _interface_path;
     bool                            _session_open;
-    niriok_proxy                    _riok_proxy;
+    niriok_proxy::sptr              _riok_proxy;
     nirio_resource_manager          _resource_manager;
     usrprio_rpc::usrprio_rpc_client _rpc_client;
     boost::recursive_mutex          _session_mutex;

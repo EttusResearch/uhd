@@ -25,6 +25,17 @@
 
 namespace nirio_driver_iface {
 
+struct nirio_ioctl_block_t
+{
+    uint64_t inBuf;
+    uint64_t outBuf;
+    uint32_t inBufLength;
+    uint32_t outBufLength;
+    uint32_t bytesReturned;
+    uint32_t padding;
+};
+
+
 nirio_status rio_open(
     const std::string& device_path,
     rio_dev_handle_t& device_handle)

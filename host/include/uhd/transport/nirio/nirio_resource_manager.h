@@ -50,35 +50,7 @@ struct nirio_register_info_t {
 
 typedef std::vector<nirio_register_info_t> nirio_register_info_vtr;
 
-struct nirio_fifo_info_t {
-    nirio_fifo_info_t(
-        uint32_t             arg_channel,
-        const char*         arg_name,
-        fifo_direction_t    arg_direction,
-        uint32_t             arg_base_addr,
-        uint32_t             arg_depth,
-        nirio_scalar_t         arg_scalar_type,
-        uint32_t            arg_width,
-        uint32_t             arg_version) :
-            channel(arg_channel),
-            name(arg_name),
-            direction(arg_direction),
-            base_addr(arg_base_addr),
-            depth(arg_depth),
-            scalar_type(arg_scalar_type),
-            width(arg_width),
-            version(arg_version)
-    {}
 
-    uint32_t             channel;
-    std::string            name;
-    fifo_direction_t    direction;
-    uint32_t             base_addr;
-    uint32_t             depth;
-    nirio_scalar_t         scalar_type;
-    uint32_t            width;
-    uint32_t             version;
-};
 
 typedef std::vector<nirio_fifo_info_t> nirio_fifo_info_vtr;
 
@@ -86,7 +58,8 @@ typedef std::vector<nirio_fifo_info_t> nirio_fifo_info_vtr;
 class nirio_resource_manager
 {
 public:
-    nirio_resource_manager(niriok_proxy& proxy);
+    nirio_resource_manager();
+    void set_proxy(niriok_proxy::sptr proxy);
     virtual ~nirio_resource_manager();
 
     nirio_status initialize(const nirio_register_info_vtr& reg_info_vtr, const nirio_fifo_info_vtr& fifo_info_vtr);
@@ -137,7 +110,7 @@ private:
     nirio_status _set_driver_config();
     nirio_fifo_info_t* _lookup_fifo_info(const char* fifo_name);
 
-    niriok_proxy&           _kernel_proxy;
+    niriok_proxy::sptr         _kernel_proxy;
     fifo_info_map_t            _fifo_info_map;
     register_info_map_t        _reg_info_map;
 };

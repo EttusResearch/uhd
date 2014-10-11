@@ -21,37 +21,37 @@
 #include <stdint.h>
 #include <boost/smart_ptr.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp> 
+#include <boost/thread/shared_lock_guard.hpp>
 #include <uhd/transport/nirio/nirio_driver_iface.h>
 #include <uhd/transport/nirio/nirio_quirks.h>
+
+#define NI_VENDOR_NUM   0x1093
+
+#define VERSION_BUILD_SHIFT     0
+#define VERSION_PHASE_SHIFT     14
+#define VERSION_MAINT_SHIFT     16
+#define VERSION_UPGRD_SHIFT     20
+#define VERSION_MAJOR_SHIFT     24
+#define VERSION_BUILD_MASK      0x00003FFF
+#define VERSION_PHASE_MASK      0x0000C000
+#define VERSION_MAINT_MASK      0x000F0000
+#define VERSION_UPGRD_MASK      0x00F00000
+#define VERSION_MAJOR_MASK      0xFF000000
+
+#define GET_FIFO_MEMORY_TYPE(fifo_inst) (static_cast<uint16_t>(0x0100 | static_cast<uint16_t>(fifo_inst)))
+
+#define READER_LOCK \
+    boost::shared_lock_guard<boost::shared_mutex> reader_lock(_synchronization);
+
+#define WRITER_LOCK \
+    boost::lock_guard<boost::shared_mutex> writer_lock(_synchronization);
+
 
 namespace uhd { namespace niusrprio
 {
     enum nirio_version_t { CURRENT, OLDEST_COMPATIBLE };
-
-    enum nirio_device_attr_32_t {
-       INTERFACE_NUMBER              =  1UL,
-       PRODUCT_NUMBER                =  2UL,
-       VENDOR_NUMBER                 =  3UL,
-       SERIAL_NUMBER                 =  4UL,
-       BUS_NUMBER                    = 10UL,
-       DEVICE_NUMBER                 = 11UL,
-       FUNCTION_NUMBER               = 12UL,
-       CURRENT_VERSION               = 14UL,
-       OLDEST_COMPATIBLE_VERSION     = 15UL,
-       ADDRESS_SPACE                 = 25UL,
-       IS_FPGA_PROGRAMMED            = 48UL,
-       DEFAULT_FPGA_SIGNATURE_OFFSET = 53UL,
-       DEFAULT_FPGA_RESET_OFFSET     = 54UL,
-       DEFAULT_FPGA_RESET_SIZE       = 55UL,
-       DEFAULT_FPGA_CONTROL_OFFSET   = 56UL,
-       DEFAULT_FPGA_INTERRUPT_OFFSET = 57UL,
-    };
-
-    enum nirio_device_attr_str_t {
-       PRODUCT_NAME                  = 0UL,
-       FPGA_TARGET_CLASS             = 6UL,
-       SAVED_BITFILE                 = 7UL,
-    };
 
     enum nirio_addr_space_t {
        INVALID       = 0,
@@ -60,101 +60,247 @@ namespace uhd { namespace niusrprio
        BAR_WINDOW    = 3,
     };
 
+    typedef uint64_t nirio_u64_t;
+    typedef uint32_t nirio_u32_t;
+    typedef uint16_t nirio_u16_t;
+    typedef uint8_t nirio_u8_t;
+    typedef int32_t nirio_i32_t;
+
+    typedef enum {
+        RIO_PRODUCT_NUMBER                  =  2UL, // 200
+        RIO_CURRENT_VERSION                 = 14UL, // 220
+        RIO_OLDEST_COMPATIBLE_VERSION       = 15UL, // 220
+        RIO_ADDRESS_SPACE                   = 25UL, // 230
+        RIO_IS_FPGA_PROGRAMMED              = 48UL, // 300
+        RIO_FPGA_DEFAULT_SIGNATURE_OFFSET   = 53UL, // 300 Default Offsets for FPGA
+                                               //     registers. Supplied by
+                                               //     the board driver on device
+                                               //     start.
+    } nirio_device_attribute32_t;
+
+   typedef enum {
+      RIO_SCALAR_TYPE_IB = 1UL,
+      RIO_SCALAR_TYPE_IW = 2UL,
+      RIO_SCALAR_TYPE_IL = 3UL,
+      RIO_SCALAR_TYPE_IQ = 4UL,
+      RIO_SCALAR_TYPE_UB = 5UL,
+      RIO_SCALAR_TYPE_UW = 6UL,
+      RIO_SCALAR_TYPE_UL = 7UL,
+      RIO_SCALAR_TYPE_UQ = 8UL,
+   } nirio_scalar_type_t;
+   
+   static inline nirio_scalar_type_t map_int_to_scalar_type(uint32_t scalar_type_as_int)
+   {
+      switch (scalar_type_as_int)
+      {
+      case 1: return RIO_SCALAR_TYPE_IB;
+      case 2: return RIO_SCALAR_TYPE_IW;
+      case 3: return RIO_SCALAR_TYPE_IL;
+      case 4: return RIO_SCALAR_TYPE_IQ;
+      case 5: return RIO_SCALAR_TYPE_UB;
+      case 6: return RIO_SCALAR_TYPE_UW;
+      case 7: return RIO_SCALAR_TYPE_UL;
+      case 8: return RIO_SCALAR_TYPE_UQ;
+      default: UHD_ASSERT_THROW(false); return RIO_SCALAR_TYPE_UL;
+      }
+   }
+   
+   enum fifo_direction_t {
+       INPUT_FIFO,
+       OUTPUT_FIFO
+   };
+
+   struct nirio_fifo_info_t {
+       nirio_fifo_info_t(
+           uint32_t             arg_channel,
+           const char*         arg_name,
+           fifo_direction_t    arg_direction,
+           uint32_t             arg_base_addr,
+           uint32_t             arg_depth,
+           nirio_scalar_type_t         arg_scalar_type,
+           uint32_t            arg_bitWidth,
+           int32_t               arg_integerWordLength,
+           uint32_t             arg_version) :
+               channel(arg_channel),
+               name(arg_name),
+               direction(arg_direction),
+               base_addr(arg_base_addr),
+               depth(arg_depth),
+               scalar_type(arg_scalar_type),
+               bitWidth(arg_bitWidth),
+               integerWordLength(arg_integerWordLength),
+               version(arg_version)
+       {}
+
+       uint32_t             channel;
+       std::string            name;
+       fifo_direction_t    direction;
+       uint32_t             base_addr;
+       uint32_t             depth;
+       nirio_scalar_type_t         scalar_type;
+       uint32_t            bitWidth;
+       int32_t             integerWordLength;
+       uint32_t             version;
+   };
 
     class UHD_API niriok_proxy : public boost::noncopyable {
     public:
-        typedef boost::shared_ptr<niriok_proxy> sptr;
+        struct nirio_ioctl_packet_t {
+             nirio_ioctl_packet_t(
+                 void* const _outBuf,
+                 const uint32_t _outSize,
+                 const int32_t _statusCode)
+             {
+                 outBuf._64BitField = 0;
+                 outBuf.pointer = _outBuf;
+                 outSize    = _outSize;
+                 statusCode = _statusCode;
+             };
+
+             union {
+                 void* pointer;
+                 uint64_t _64BitField;
+             } outBuf;
+
+             uint32_t outSize;
+             int32_t statusCode;
+         };
+      typedef boost::shared_ptr<niriok_proxy> sptr;
+
+      static sptr make_and_open(const std::string& interface_path);
 
         niriok_proxy();
         virtual ~niriok_proxy();
 
         //File operations
-        nirio_status open(const std::string& interface_path);
-        void close(void);
+        virtual nirio_status open(const std::string& interface_path) = 0;
+        virtual void close(void) = 0;
 
-        nirio_status reset();
+        virtual nirio_status reset() = 0;
 
-        inline uint32_t get_interface_num() { return _interface_num; }
+        uint32_t get_interface_num() { return _interface_num; }
 
-        nirio_status get_cached_session(
-            uint32_t& session);
+        virtual nirio_status get_cached_session(
+            uint32_t& session) = 0;
 
-        nirio_status get_version(
+        virtual nirio_status get_version(
             nirio_version_t type,
             uint32_t& major,
             uint32_t& upgrade,
             uint32_t& maintenance,
             char& phase,
-            uint32_t& build);
+            uint32_t& build) = 0;
 
-        nirio_status sync_operation(
-            const void *writeBuffer,
-            size_t writeBufferLength,
-            void *readBuffer,
-            size_t readBufferLength);
+        virtual nirio_status get_attribute(
+            const nirio_device_attribute32_t attribute,
+            uint32_t& attrValue) = 0;
 
-        nirio_status get_attribute(
-            const nirio_device_attr_32_t attribute,
-            uint32_t& attrValue);
+        virtual nirio_status set_attribute(
+            const nirio_device_attribute32_t attribute,
+            const uint32_t value) = 0;
 
-        nirio_status get_attribute(
-            const nirio_device_attr_str_t  attribute,
-            char* buf,
-            const uint32_t bufLen,
-            uint32_t& stringLen);
+        virtual nirio_status peek(uint32_t offset, uint32_t& value) = 0;
 
-        nirio_status set_attribute(
-            const nirio_device_attr_32_t attribute,
-            const uint32_t value);
+        virtual nirio_status peek(uint32_t offset, uint64_t& value) = 0;
 
-        nirio_status set_attribute(
-            const nirio_device_attr_str_t attribute,
-            const char* const buffer);
+        virtual nirio_status poke(uint32_t offset, const uint32_t& value) = 0;
 
-        nirio_status peek(uint32_t offset, uint32_t& value);
+        virtual nirio_status poke(uint32_t offset, const uint64_t& value) = 0;
 
-        nirio_status peek(uint32_t offset, uint64_t& value);
-
-        nirio_status poke(uint32_t offset, const uint32_t& value);
-
-        nirio_status poke(uint32_t offset, const uint64_t& value);
-
-        nirio_status map_fifo_memory(
+        virtual nirio_status map_fifo_memory(
             uint32_t fifo_instance,
             size_t size,
-            nirio_driver_iface::rio_mmap_t& map);
+            nirio_driver_iface::rio_mmap_t& map) = 0;
 
-        nirio_status unmap_fifo_memory(
-            nirio_driver_iface::rio_mmap_t& map);
+        virtual nirio_status unmap_fifo_memory(
+            nirio_driver_iface::rio_mmap_t& map) = 0;
 
-        nirio_status stop_all_fifos();
+        virtual nirio_status stop_all_fifos() = 0;
 
         nirio_quirks& get_rio_quirks() {
             return _rio_quirks;
         }
 
-    private:    //Members
+        virtual nirio_status add_fifo_resource(const nirio_fifo_info_t& fifo_info) = 0;
+
+        virtual nirio_status set_device_config() = 0;
+
+        virtual nirio_status start_fifo(
+           uint32_t channel) = 0;
+
+        virtual nirio_status stop_fifo(
+           uint32_t channel) = 0;
+
+        virtual nirio_status configure_fifo(
+           uint32_t channel,
+           uint32_t requested_depth,
+           uint8_t requires_actuals,
+           uint32_t& actual_depth,
+           uint32_t& actual_size) = 0;
+
+        virtual nirio_status wait_on_fifo(
+           uint32_t channel,
+           uint32_t elements_requested,
+           uint32_t scalar_type,
+           uint32_t bit_width,
+           uint32_t timeout,
+           uint8_t output,
+           void*& data_pointer,
+           uint32_t& elements_acquired,
+           uint32_t& elements_remaining) = 0;
+
+        virtual nirio_status grant_fifo(
+           uint32_t channel,
+           uint32_t elements_to_grant) = 0;
+
+        virtual nirio_status read_fifo(
+           uint32_t channel,
+           uint32_t elements_to_read,
+           void* buffer,
+           uint32_t buffer_datatype_width,
+           uint32_t scalar_type,
+           uint32_t bit_width,
+           uint32_t timeout,
+           uint32_t& number_read,
+           uint32_t& number_remaining) = 0;
+
+        virtual nirio_status write_fifo(
+           uint32_t channel,
+           uint32_t elements_to_write,
+           void* buffer,
+           uint32_t buffer_datatype_width,
+           uint32_t scalar_type,
+           uint32_t bit_width,
+           uint32_t timeout,
+           uint32_t& number_remaining) = 0;
+
+    protected:    //Members
         nirio_driver_iface::rio_dev_handle_t    _device_handle;
         uint32_t                                _interface_num;
         nirio_quirks                            _rio_quirks;
+
+        static boost::shared_mutex              _synchronization;
+
+        // protected close function that doesn't acquire synchronization lock
+        virtual void _close() = 0;
     };
 
     class niriok_scoped_addr_space : public boost::noncopyable {
     public:
-        explicit niriok_scoped_addr_space(niriok_proxy& proxy, nirio_addr_space_t addr_space, nirio_status& status) :
+        explicit niriok_scoped_addr_space(niriok_proxy::sptr proxy, nirio_addr_space_t addr_space, nirio_status& status) :
             driver_proxy(proxy)
         {
-            cache_status = driver_proxy.get_attribute(ADDRESS_SPACE, cached_addr_space);
-            nirio_status_chain(driver_proxy.set_attribute(ADDRESS_SPACE, addr_space), status);
+            cache_status = driver_proxy->get_attribute(RIO_ADDRESS_SPACE, cached_addr_space);
+            nirio_status_chain(driver_proxy->set_attribute(RIO_ADDRESS_SPACE, addr_space), status);
         }
 
         ~niriok_scoped_addr_space() {
             if (nirio_status_not_fatal(cache_status))
-                driver_proxy.set_attribute(ADDRESS_SPACE, cached_addr_space);
+                driver_proxy->set_attribute(RIO_ADDRESS_SPACE, cached_addr_space);
         }
 
     private:
-        niriok_proxy& driver_proxy;
+        niriok_proxy::sptr driver_proxy;
         uint32_t cached_addr_space;
         nirio_status cache_status;
     };

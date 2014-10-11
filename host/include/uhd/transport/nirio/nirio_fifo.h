@@ -31,25 +31,9 @@
 
 namespace uhd { namespace niusrprio {
 
-enum fifo_direction_t {
-    INPUT_FIFO,
-    OUTPUT_FIFO
-};
-
-enum nirio_scalar_t {
-   SCALAR_I8  = 1UL,
-   SCALAR_I16 = 2UL,
-   SCALAR_I32 = 3UL,
-   SCALAR_I64 = 4UL,
-   SCALAR_U8  = 5UL,
-   SCALAR_U16 = 6UL,
-   SCALAR_U32 = 7UL,
-   SCALAR_U64 = 8UL
-};
-
 struct datatype_info_t {
-    datatype_info_t(nirio_scalar_t t, uint32_t w):scalar_type(t),width(w) {}
-    nirio_scalar_t     scalar_type;
+    datatype_info_t(nirio_scalar_type_t t, uint32_t w):scalar_type(t),width(w) {}
+    nirio_scalar_type_t     scalar_type;
     uint32_t        width;
 };
 
@@ -60,7 +44,7 @@ public:
     typedef boost::shared_ptr< nirio_fifo<data_t> > sptr;
 
     nirio_fifo(
-        niriok_proxy& riok_proxy,
+        niriok_proxy::sptr riok_proxy,
         fifo_direction_t direction,
         const std::string& name,
         uint32_t fifo_instance);
@@ -122,7 +106,7 @@ private:    //Members
     size_t                         _acquired_pending;
     nirio_driver_iface::rio_mmap_t _mem_map;
     boost::recursive_mutex         _mutex;
-    niriok_proxy*                  _riok_proxy_ptr;
+    niriok_proxy::sptr             _riok_proxy_ptr;
 
     uint64_t                       _expected_xfer_count;
     uint32_t                       _dma_base_addr;

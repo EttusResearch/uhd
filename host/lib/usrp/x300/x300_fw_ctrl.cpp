@@ -187,16 +187,16 @@ private:
 class x300_ctrl_iface_pcie : public x300_ctrl_iface
 {
 public:
-    x300_ctrl_iface_pcie(niriok_proxy& drv_proxy):
+    x300_ctrl_iface_pcie(niriok_proxy::sptr drv_proxy):
         _drv_proxy(drv_proxy)
     {
         nirio_status status = 0;
-        nirio_status_chain(_drv_proxy.set_attribute(ADDRESS_SPACE, BUS_INTERFACE), status);
+        nirio_status_chain(_drv_proxy->set_attribute(RIO_ADDRESS_SPACE, BUS_INTERFACE), status);
 
         //Verify that the Ettus FPGA loaded in the device. This may not be true if the
         //user is switching to UHD after using LabVIEW FPGA.
         boost::uint32_t pcie_fpga_signature = 0;
-        _drv_proxy.peek(FPGA_PCIE_SIG_REG, pcie_fpga_signature);
+        _drv_proxy->peek(FPGA_PCIE_SIG_REG, pcie_fpga_signature);
         if (pcie_fpga_signature != FPGA_X3xx_SIG_VALUE)
             throw uhd::io_error("cannot create x300_ctrl_iface_pcie. incorrect/no fpga image");
 
@@ -209,7 +209,7 @@ public:
         do {
             boost::this_thread::sleep(boost::posix_time::microsec(500)); //Avoid flooding the bus
             elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-            nirio_status_chain(_drv_proxy.peek(PCIE_ZPU_STATUS_REG(0), reg_data), status);
+            nirio_status_chain(_drv_proxy->peek(PCIE_ZPU_STATUS_REG(0), reg_data), status);
         } while (
             nirio_status_not_fatal(status) &&
             (reg_data & PCIE_ZPU_STATUS_SUSPENDED) &&
@@ -232,12 +232,12 @@ protected:
         boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration elapsed;
 
-        nirio_status_chain(_drv_proxy.poke(PCIE_ZPU_DATA_REG(addr), data), status);
+        nirio_status_chain(_drv_proxy->poke(PCIE_ZPU_DATA_REG(addr), data), status);
         if (nirio_status_not_fatal(status)) {
             do {
                 boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
                 elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-                nirio_status_chain(_drv_proxy.peek(PCIE_ZPU_STATUS_REG(addr), reg_data), status);
+                nirio_status_chain(_drv_proxy->peek(PCIE_ZPU_STATUS_REG(addr), reg_data), status);
             } while (
                 nirio_status_not_fatal(status) &&
                 ((reg_data & (PCIE_ZPU_STATUS_BUSY | PCIE_ZPU_STATUS_SUSPENDED)) != 0) &&
@@ -257,18 +257,18 @@ protected:
         boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration elapsed;
 
-        nirio_status_chain(_drv_proxy.poke(PCIE_ZPU_READ_REG(addr), PCIE_ZPU_READ_START), status);
+        nirio_status_chain(_drv_proxy->poke(PCIE_ZPU_READ_REG(addr), PCIE_ZPU_READ_START), status);
         if (nirio_status_not_fatal(status)) {
             do {
                 boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
                 elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-                nirio_status_chain(_drv_proxy.peek(PCIE_ZPU_STATUS_REG(addr), reg_data), status);
+                nirio_status_chain(_drv_proxy->peek(PCIE_ZPU_STATUS_REG(addr), reg_data), status);
             } while (
                 nirio_status_not_fatal(status) &&
                 ((reg_data & (PCIE_ZPU_STATUS_BUSY | PCIE_ZPU_STATUS_SUSPENDED)) != 0) &&
                 elapsed.total_milliseconds() < READ_TIMEOUT_IN_MS);
         }
-        nirio_status_chain(_drv_proxy.peek(PCIE_ZPU_DATA_REG(addr), reg_data), status);
+        nirio_status_chain(_drv_proxy->peek(PCIE_ZPU_DATA_REG(addr), reg_data), status);
 
         if (nirio_status_fatal(status))
             throw uhd::io_error("x300 fw peek32 - hardware IO error");
@@ -284,7 +284,7 @@ protected:
     }
 
 private:
-    niriok_proxy& _drv_proxy;
+    niriok_proxy::sptr _drv_proxy;
     static const boost::uint32_t READ_TIMEOUT_IN_MS = 10;
     static const boost::uint32_t INIT_TIMEOUT_IN_MS = 5000;
 };
@@ -294,7 +294,7 @@ wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp)
     return wb_iface::sptr(new x300_ctrl_iface_enet(udp));
 }
 
-wb_iface::sptr x300_make_ctrl_iface_pcie(niriok_proxy& drv_proxy)
+wb_iface::sptr x300_make_ctrl_iface_pcie(niriok_proxy::sptr drv_proxy)
 {
     return wb_iface::sptr(new x300_ctrl_iface_pcie(drv_proxy));
 }

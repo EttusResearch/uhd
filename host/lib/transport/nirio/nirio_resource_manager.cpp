@@ -27,10 +27,15 @@
 namespace uhd { namespace niusrprio
 {
 
-nirio_resource_manager::nirio_resource_manager(
-    niriok_proxy& proxy) : _kernel_proxy(proxy), _fifo_info_map(), _reg_info_map()
+nirio_resource_manager::nirio_resource_manager():_fifo_info_map(), _reg_info_map()
 {
 }
+
+void nirio_resource_manager::set_proxy(niriok_proxy::sptr proxy)
+{
+   _kernel_proxy = proxy;
+}
+
 
 nirio_resource_manager::~nirio_resource_manager()
 {
@@ -78,32 +83,12 @@ nirio_status nirio_resource_manager::get_register_offset(
 nirio_status nirio_resource_manager::_add_fifo_resource(
     const nirio_fifo_info_t& fifo_info)
 {
-    nirio_driver_iface::nirio_syncop_in_params_t in = {};
-    nirio_driver_iface::nirio_syncop_out_params_t out = {};
-
-    in.function    = nirio_driver_iface::NIRIO_FUNC::ADD_RESOURCE;
-    in.subfunction = (fifo_info.direction == OUTPUT_FIFO) ?
-            nirio_driver_iface::NIRIO_RESOURCE::OUTPUT_FIFO :
-            nirio_driver_iface::NIRIO_RESOURCE::INPUT_FIFO;
-
-    in.params.add.fifoWithDataType.channel        = fifo_info.channel;
-    in.params.add.fifoWithDataType.baseAddress    = fifo_info.base_addr;
-    in.params.add.fifoWithDataType.depthInSamples = fifo_info.depth;
-    in.params.add.fifoWithDataType.scalarType     = fifo_info.scalar_type;
-    in.params.add.fifoWithDataType.bitWidth       = fifo_info.width;
-    in.params.add.fifoWithDataType.version        = fifo_info.version;
-
-    return _kernel_proxy.sync_operation(&in, sizeof(in), &out, sizeof(out));
+    return _kernel_proxy->add_fifo_resource(fifo_info);
 }
 
 nirio_status nirio_resource_manager::_set_driver_config()
 {
-    nirio_driver_iface::nirio_syncop_in_params_t in = {};
-    nirio_driver_iface::nirio_syncop_out_params_t out = {};
-    in.function    = nirio_driver_iface::NIRIO_FUNC::SET_DRIVER_CONFIG;
-    in.subfunction = 0;
-
-    return _kernel_proxy.sync_operation(&in, sizeof(in), &out, sizeof(out));
+    return _kernel_proxy->set_device_config();
 }
 
 nirio_fifo_info_t* nirio_resource_manager::_lookup_fifo_info(const char* fifo_name) {

@@ -145,27 +145,27 @@ public:
         size_t actual_depth = 0, actual_size = 0;
 
         //Disable DMA streams in case last shutdown was unclean (cleanup, so don't status chain)
-        _proxy().poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
-        _proxy().poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
+        _proxy()->poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
+        _proxy()->poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
 
         _wait_until_stream_ready();
 
         //Configure frame width
         nirio_status_chain(
-            _proxy().poke(PCIE_TX_DMA_REG(DMA_FRAME_SIZE_REG, _fifo_instance),
+            _proxy()->poke(PCIE_TX_DMA_REG(DMA_FRAME_SIZE_REG, _fifo_instance),
                           static_cast<uint32_t>(_xport_params.send_frame_size/sizeof(fifo_data_t))),
             status);
         nirio_status_chain(
-            _proxy().poke(PCIE_RX_DMA_REG(DMA_FRAME_SIZE_REG, _fifo_instance),
+            _proxy()->poke(PCIE_RX_DMA_REG(DMA_FRAME_SIZE_REG, _fifo_instance),
                           static_cast<uint32_t>(_xport_params.recv_frame_size/sizeof(fifo_data_t))),
             status);
         //Config 32-bit word flipping and enable DMA streams
         nirio_status_chain(
-            _proxy().poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance),
+            _proxy()->poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance),
                           DMA_CTRL_SW_BUF_U32 | DMA_CTRL_ENABLED),
             status);
         nirio_status_chain(
-            _proxy().poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance),
+            _proxy()->poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance),
                           DMA_CTRL_SW_BUF_U32 | DMA_CTRL_ENABLED),
             status);
 
@@ -190,7 +190,7 @@ public:
                     actual_depth, actual_size),
                 status);
 
-            _proxy().get_rio_quirks().add_tx_fifo(_fifo_instance);
+            _proxy()->get_rio_quirks().add_tx_fifo(_fifo_instance);
 
             nirio_status_chain(_recv_fifo->start(), status);
             nirio_status_chain(_send_fifo->start(), status);
@@ -217,11 +217,11 @@ public:
 
     virtual ~nirio_zero_copy_impl()
     {
-        _proxy().get_rio_quirks().remove_tx_fifo(_fifo_instance);
+        _proxy()->get_rio_quirks().remove_tx_fifo(_fifo_instance);
 
         //Disable DMA streams (cleanup, so don't status chain)
-        _proxy().poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
-        _proxy().poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
+        _proxy()->poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
+        _proxy()->poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
 
         _flush_rx_buff();
 
@@ -259,7 +259,7 @@ public:
 
 private:
 
-    UHD_INLINE niriok_proxy& _proxy() { return _fpga_session->get_kernel_proxy(); }
+    UHD_INLINE niriok_proxy::sptr _proxy() { return _fpga_session->get_kernel_proxy(); }
 
     UHD_INLINE void _flush_rx_buff()
     {
@@ -297,10 +297,10 @@ private:
         boost::posix_time::time_duration elapsed;
         nirio_status status = NiRio_Status_Success;
 
-        nirio_status_chain(_proxy().peek(
+        nirio_status_chain(_proxy()->peek(
             PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
         tx_busy = (reg_data & DMA_STATUS_BUSY);
-        nirio_status_chain(_proxy().peek(
+        nirio_status_chain(_proxy()->peek(
             PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
         rx_busy = (reg_data & DMA_STATUS_BUSY);
 
@@ -309,10 +309,10 @@ private:
             do {
                 boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
                 elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-                nirio_status_chain(_proxy().peek(
+                nirio_status_chain(_proxy()->peek(
                     PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
                 tx_busy = (reg_data & DMA_STATUS_BUSY);
-                nirio_status_chain(_proxy().peek(
+                nirio_status_chain(_proxy()->peek(
                     PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
                 rx_busy = (reg_data & DMA_STATUS_BUSY);
             } while (

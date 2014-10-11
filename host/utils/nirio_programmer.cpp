@@ -142,8 +142,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    niriok_proxy dev_proxy;
-    dev_proxy.open(interface_path);
+    niriok_proxy::sptr dev_proxy = niriok_proxy::make_and_open(interface_path);
 
     if (poke_tokens_str != ""){
         std::stringstream ss;
@@ -158,9 +157,9 @@ int main(int argc, char *argv[])
 
         niriok_scoped_addr_space(dev_proxy, poke_tokens[0]=="c"?BUS_INTERFACE:FPGA, status);
         if (poke_tokens[0]=="z") {
-            nirio_status_chain(dev_proxy.poke(poke_addr, (uint32_t)0x70000 + poke_addr), status);
+            nirio_status_chain(dev_proxy->poke(poke_addr, (uint32_t)0x70000 + poke_addr), status);
         } else {
-            nirio_status_chain(dev_proxy.poke(poke_addr, poke_data), status);
+            nirio_status_chain(dev_proxy->poke(poke_addr, poke_data), status);
         }
         printf("[POKE] %s:0x%x <= 0x%x (%u)\n", poke_tokens[0]=="c"?"Chinch":(poke_tokens[0]=="z"?"ZPU":"FPGA"), poke_addr, poke_data, poke_data);
     }
@@ -176,13 +175,13 @@ int main(int argc, char *argv[])
         niriok_scoped_addr_space(dev_proxy, peek_tokens[0]=="c"?BUS_INTERFACE:FPGA, status);
         uint32_t reg_val;
         if (peek_tokens[0]=="z") {
-            nirio_status_chain(dev_proxy.poke((uint32_t)0x60000 + peek_addr, (uint32_t)0), status);
+            nirio_status_chain(dev_proxy->poke((uint32_t)0x60000 + peek_addr, (uint32_t)0), status);
             do {
-                nirio_status_chain(dev_proxy.peek((uint32_t)0x60000 + peek_addr, reg_val), status);
+                nirio_status_chain(dev_proxy->peek((uint32_t)0x60000 + peek_addr, reg_val), status);
             } while (reg_val != 0);
-            nirio_status_chain(dev_proxy.peek((uint32_t)0x70000 + peek_addr, reg_val), status);
+            nirio_status_chain(dev_proxy->peek((uint32_t)0x70000 + peek_addr, reg_val), status);
         } else {
-            nirio_status_chain(dev_proxy.peek(peek_addr, reg_val), status);
+            nirio_status_chain(dev_proxy->peek(peek_addr, reg_val), status);
         }
 
         printf("[PEEK] %s:0x%x = 0x%x (%u)\n", peek_tokens[0]=="c"?"Chinch":(peek_tokens[0]=="z"?"ZPU":"FPGA"), peek_addr, reg_val, reg_val);
@@ -192,34 +191,34 @@ int main(int argc, char *argv[])
     if (vm.count("stats")){
         printf("[Interface %u]\n", interface_num);
         uint32_t attr_val;
-        nirio_status_chain(dev_proxy.get_attribute(IS_FPGA_PROGRAMMED, attr_val), status);
+        nirio_status_chain(dev_proxy->get_attribute(RIO_IS_FPGA_PROGRAMMED, attr_val), status);
         printf("* Is FPGA Programmed? = %s\n", (attr_val==1)?"YES":"NO");
 
         std::string signature;
         for (int i = 0; i < 4; i++) {
-            nirio_status_chain(dev_proxy.peek(0x3FFF4, attr_val), status);
+            nirio_status_chain(dev_proxy->peek(0x3FFF4, attr_val), status);
             signature += boost::str(boost::format("%08x") % attr_val);
         }
         printf("* FPGA Signature = %s\n", signature.c_str());
 
         std::string checksum;
         for (int i = 0; i < 4; i++) {
-            nirio_status_chain(dev_proxy.peek(0x40030 + (i * 4), attr_val), status);
+            nirio_status_chain(dev_proxy->peek(0x40030 + (i * 4), attr_val), status);
             checksum += boost::str(boost::format("%08x") % attr_val);
         }
         printf("* FPGA Bitstream Checksum = %s\n", checksum.c_str());
 
         uint32_t reg_val;
-        nirio_status_chain(dev_proxy.set_attribute(ADDRESS_SPACE, BUS_INTERFACE), status);
-        nirio_status_chain(dev_proxy.peek(0, reg_val), status);
+        nirio_status_chain(dev_proxy->set_attribute(RIO_ADDRESS_SPACE, BUS_INTERFACE), status);
+        nirio_status_chain(dev_proxy->peek(0, reg_val), status);
         printf("* Chinch Signature = %x\n", reg_val);
-        nirio_status_chain(dev_proxy.set_attribute(ADDRESS_SPACE, FPGA), status);
-        nirio_status_chain(dev_proxy.peek(0, reg_val), status);
+        nirio_status_chain(dev_proxy->set_attribute(RIO_ADDRESS_SPACE, FPGA), status);
+        nirio_status_chain(dev_proxy->peek(0, reg_val), status);
         printf("* PCIe FPGA Signature = %x\n", reg_val);
 
         printf("\n[DMA Stream Stats]\n");
 
-        nirio_status_chain(dev_proxy.set_attribute(ADDRESS_SPACE, FPGA), status);
+        nirio_status_chain(dev_proxy->set_attribute(RIO_ADDRESS_SPACE, FPGA), status);
 
         printf("------------------------------------------------------------------------------------------------");
         printf("\nChannel =>       |");
@@ -229,42 +228,42 @@ int main(int argc, char *argv[])
         printf("\n------------------------------------------------------------------------------------------------");
         printf("\nTX Status        |");
         for (uint32_t i = 0; i < 6; i++) {
-            nirio_status_chain(dev_proxy.peek(0x40200 + (i * 16), reg_val), status);
+            nirio_status_chain(dev_proxy->peek(0x40200 + (i * 16), reg_val), status);
             printf("%s |", reg_val==0 ? "       Good" : "      Error");
         }
         printf("\nRX Status        |");
         for (uint32_t i = 0; i < 6; i++) {
-            nirio_status_chain(dev_proxy.peek(0x40400 + (i * 16), reg_val), status);
+            nirio_status_chain(dev_proxy->peek(0x40400 + (i * 16), reg_val), status);
             printf("%s |", reg_val==0 ? "       Good" : "      Error");
         }
         printf("\nTX Frm Size      |");
         for (uint32_t i = 0; i < 6; i++) {
-            nirio_status_chain(dev_proxy.peek(0x40204 + (i * 16), reg_val), status);
+            nirio_status_chain(dev_proxy->peek(0x40204 + (i * 16), reg_val), status);
             printf("%11u |", reg_val);
         }
         printf("\nRX Frm Size      |");
         for (uint32_t i = 0; i < 6; i++) {
-            nirio_status_chain(dev_proxy.peek(0x40404 + (i * 16), reg_val), status);
+            nirio_status_chain(dev_proxy->peek(0x40404 + (i * 16), reg_val), status);
             printf("%11u |", reg_val);
         }
         printf("\nTX Pkt Count     |");
         for (uint32_t i = 0; i < 6; i++) {
-            nirio_status_chain(dev_proxy.peek(0x4020C + (i * 16), reg_val), status);
+            nirio_status_chain(dev_proxy->peek(0x4020C + (i * 16), reg_val), status);
             printf("%11u |", reg_val);
         }
         printf("\nTX Samp Count    |");
         for (uint32_t i = 0; i < 6; i++) {
-            nirio_status_chain(dev_proxy.peek(0x40208 + (i * 16), reg_val), status);
+            nirio_status_chain(dev_proxy->peek(0x40208 + (i * 16), reg_val), status);
             printf("%11u |", reg_val);
         }
         printf("\nRX Pkt Count     |");
         for (uint32_t i = 0; i < 6; i++) {
-            nirio_status_chain(dev_proxy.peek(0x4040C + (i * 16), reg_val), status);
+            nirio_status_chain(dev_proxy->peek(0x4040C + (i * 16), reg_val), status);
             printf("%11u |", reg_val);
         }
         printf("\nRX Samp Count    |");
         for (uint32_t i = 0; i < 6; i++) {
-            nirio_status_chain(dev_proxy.peek(0x40408 + (i * 16), reg_val), status);
+            nirio_status_chain(dev_proxy->peek(0x40408 + (i * 16), reg_val), status);
             printf("%11u |", reg_val);
         }
         printf("\n------------------------------------------------------------------------------------------------\n");

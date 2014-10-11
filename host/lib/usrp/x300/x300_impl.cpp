@@ -171,8 +171,8 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
             default:
                 continue;
         }
-
-        niriok_proxy kernel_proxy;
+        
+        niriok_proxy::sptr kernel_proxy = niriok_proxy::make_and_open(dev_info.interface_path);
 
         //Attempt to read the name from the EEPROM and perform filtering.
         //This operation can throw due to compatibility mismatch.
@@ -192,7 +192,6 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
             if (get_pcie_zpu_iface_registry().has_key(resource_d)) {
                 zpu_ctrl = get_pcie_zpu_iface_registry()[resource_d].lock();
             } else {
-                kernel_proxy.open(dev_info.interface_path);
                 zpu_ctrl = x300_make_ctrl_iface_pcie(kernel_proxy);
                 //We don't put this zpu_ctrl in the registry because we need
                 //a persistent niriok_proxy associated with the object
@@ -220,7 +219,6 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
             new_addr["name"] = "";
             new_addr["serial"] = "";
         }
-        kernel_proxy.close();
 
         //filter the discovered device below by matching optional keys
         std::string resource_i = hint.has_key("resource") ? hint["resource"] : "";
@@ -403,7 +401,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                     have a valid USRP X3x0, NI USRP-294xR or NI USRP-295xR device and that all the device \
                     driver have been loaded.");
         }
-
         //Load the lvbitx onto the device
         UHD_MSG(status) << boost::format("Using LVBITX bitfile %s...\n") % lvbitx->get_bitfile_path();
         mb.rio_fpga_interface.reset(new niusrprio_session(dev_addr["resource"], rpc_port_name));
@@ -412,7 +409,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
         //Tell the quirks object which FIFOs carry TX stream data
         const boost::uint32_t tx_data_fifos[2] = {X300_RADIO_DEST_PREFIX_TX, X300_RADIO_DEST_PREFIX_TX + 3};
-        mb.rio_fpga_interface->get_kernel_proxy().get_rio_quirks().register_tx_streams(tx_data_fifos);
+        mb.rio_fpga_interface->get_kernel_proxy()->get_rio_quirks().register_tx_streams(tx_data_fifos);
 
         _tree->create<double>(mb_path / "link_max_rate").set(X300_MAX_RATE_PCIE);
     }
@@ -1303,7 +1300,7 @@ boost::uint32_t x300_impl::allocate_sid(mboard_members_t &mb, const sid_config_t
     if (xport_path == "nirio") {
         boost::uint32_t router_config_word = ((_sid_framer & 0xff) << 16) |                                    //Return SID
                                       get_pcie_dma_channel(config.router_dst_there, config.dst_prefix); //Dest
-        mb.rio_fpga_interface->get_kernel_proxy().poke(PCIE_ROUTER_REG(0), router_config_word);
+        mb.rio_fpga_interface->get_kernel_proxy()->poke(PCIE_ROUTER_REG(0), router_config_word);
     }
 
     UHD_LOG << std::hex
@@ -1683,7 +1680,7 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& res
     niriok_proxy::sptr discovery_proxy =
         niusrprio_session::create_kernel_proxy(resource, rpc_port);
     if (discovery_proxy) {
-        nirio_status_chain(discovery_proxy->get_attribute(PRODUCT_NUMBER, pid), status);
+        nirio_status_chain(discovery_proxy->get_attribute(RIO_PRODUCT_NUMBER, pid), status);
         discovery_proxy->close();
         if (nirio_status_not_fatal(status)) {
             //The PCIe ID -> MB mapping may be different from the EEPROM -> MB mapping

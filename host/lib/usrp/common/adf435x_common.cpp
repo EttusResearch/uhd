@@ -17,6 +17,7 @@
 
 #include "adf435x_common.hpp"
 
+#include <boost/math/special_functions/round.hpp>
 #include <uhd/types/tune_request.hpp>
 #include <uhd/utils/log.hpp>
 #include <cmath>
@@ -96,7 +97,7 @@ adf435x_tuning_settings tune_adf435x_synth(
 
     //Fractional-N calculation
     MOD = 4095; //max fractional accuracy
-    FRAC = static_cast<boost::uint16_t>((feedback_freq/pfd_freq - N)*MOD);
+    FRAC = static_cast<boost::uint16_t>(boost::math::round((feedback_freq/pfd_freq - N)*MOD));
     if (constraints.force_frac0) {
         if (FRAC > (MOD / 2)) { //Round integer such that actual freq is closest to target
             N++;

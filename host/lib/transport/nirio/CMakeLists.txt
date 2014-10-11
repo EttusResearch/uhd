@@ -33,6 +33,8 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/nifpga_lvbitx.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/niusrprio_session.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/niriok_proxy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/niriok_proxy_impl_v1.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/niriok_proxy_impl_v2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/nirio_resource_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/status.cpp
 )

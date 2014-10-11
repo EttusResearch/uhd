@@ -32,9 +32,11 @@ namespace uhd { namespace niusrprio {
 niusrprio_session::niusrprio_session(const std::string& resource_name, const std::string& rpc_port_name) :
     _resource_name(resource_name),
     _session_open(false),
-    _resource_manager(_riok_proxy),
+    _resource_manager(),
     _rpc_client("localhost", rpc_port_name)
 {
+   _riok_proxy = create_kernel_proxy(resource_name,rpc_port_name);
+   _resource_manager.set_proxy(_riok_proxy);
 }
 
 niusrprio_session::~niusrprio_session()
@@ -66,7 +68,7 @@ nirio_status niusrprio_session::open(
     nirio_status_chain(_rpc_client.get_ctor_status(), status);
     //Get a handle to the kernel driver
     nirio_status_chain(_rpc_client.niusrprio_get_interface_path(_resource_name, _interface_path), status);
-    nirio_status_chain(_riok_proxy.open(_interface_path), status);
+    nirio_status_chain(_riok_proxy->open(_interface_path), status);
 
     if (nirio_status_not_fatal(status)) {
         //Bitfile build for a particular LVFPGA interface will have the same signature
@@ -132,12 +134,8 @@ niriok_proxy::sptr niusrprio_session::create_kernel_proxy(
     std::string interface_path;
     nirio_status_chain(temp_rpc_client.niusrprio_get_interface_path(resource_name, interface_path), status);
 
-    niriok_proxy::sptr proxy;
-    if (nirio_status_not_fatal(status)) {
-        proxy.reset(new niriok_proxy());
-        if (proxy) nirio_status_chain(proxy->open(interface_path), status);
-    }
-
+    niriok_proxy::sptr proxy = niriok_proxy::make_and_open(interface_path);
+	
     return proxy;
 }
 
@@ -146,12 +144,12 @@ nirio_status niusrprio_session::_verify_signature()
     //Validate the signature using the kernel proxy
     nirio_status status = NiRio_Status_Success;
     boost::uint32_t sig_offset = 0;
-    nirio_status_chain(_riok_proxy.get_attribute(DEFAULT_FPGA_SIGNATURE_OFFSET, sig_offset), status);
+    nirio_status_chain(_riok_proxy->get_attribute(RIO_FPGA_DEFAULT_SIGNATURE_OFFSET, sig_offset), status);
     niriok_scoped_addr_space(_riok_proxy, FPGA, status);
     std::string signature;
     for (boost::uint32_t i = 0; i < 8; i++) {
         boost::uint32_t quarter_sig;
-        nirio_status_chain(_riok_proxy.peek(sig_offset, quarter_sig), status);
+        nirio_status_chain(_riok_proxy->peek(sig_offset, quarter_sig), status);
         signature += boost::str(boost::format("%08x") % quarter_sig);
     }
 
@@ -172,7 +170,7 @@ std::string niusrprio_session::_read_bitstream_checksum()
     std::string usr_signature;
     for (boost::uint32_t i = 0; i < FPGA_USR_SIG_REG_SIZE; i+=4) {
         boost::uint32_t quarter_sig;
-        nirio_status_chain(_riok_proxy.peek(FPGA_USR_SIG_REG_BASE + i, quarter_sig), status);
+        nirio_status_chain(_riok_proxy->peek(FPGA_USR_SIG_REG_BASE + i, quarter_sig), status);
         usr_signature += boost::str(boost::format("%08x") % quarter_sig);
     }
     boost::to_upper(usr_signature);
@@ -193,7 +191,7 @@ nirio_status niusrprio_session::_write_bitstream_checksum(const std::string& che
         } catch (std::exception&) {
             quarter_sig = 0;
         }
-        nirio_status_chain(_riok_proxy.poke(FPGA_USR_SIG_REG_BASE + i, quarter_sig), status);
+        nirio_status_chain(_riok_proxy->poke(FPGA_USR_SIG_REG_BASE + i, quarter_sig), status);
     }
     return status;
 }
@@ -206,14 +204,14 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
     //Verify that the Ettus FPGA loaded in the device. This may not be true if the
     //user is switching to UHD after using LabVIEW FPGA. In that case skip this check.
     boost::uint32_t pcie_fpga_signature = 0;
-    nirio_status_chain(_riok_proxy.peek(FPGA_PCIE_SIG_REG, pcie_fpga_signature), status);
+    nirio_status_chain(_riok_proxy->peek(FPGA_PCIE_SIG_REG, pcie_fpga_signature), status);
     //@TODO: Remove X300 specific constants for future products
     if (pcie_fpga_signature != FPGA_X3xx_SIG_VALUE) {
         return status;
     }
 
     boost::uint32_t reg_data = 0xffffffff;
-    nirio_status_chain(_riok_proxy.peek(FPGA_STATUS_REG, reg_data), status);
+    nirio_status_chain(_riok_proxy->peek(FPGA_STATUS_REG, reg_data), status);
     if (nirio_status_not_fatal(status) && (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK))
     {
         //In case this session was re-initialized *immediately* after the previous
@@ -224,27 +222,27 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
 
         //Disable all FIFOs in the FPGA
         for (size_t i = 0; i < _lvbitx->get_input_fifo_count(); i++) {
-            _riok_proxy.poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, i), DMA_CTRL_DISABLED);
+            _riok_proxy->poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, i), DMA_CTRL_DISABLED);
         }
         for (size_t i = 0; i < _lvbitx->get_output_fifo_count(); i++) {
-            _riok_proxy.poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, i), DMA_CTRL_DISABLED);
+            _riok_proxy->poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, i), DMA_CTRL_DISABLED);
         }
 
         //Disable all FIFOs in the kernel driver
-        _riok_proxy.stop_all_fifos();
+        _riok_proxy->stop_all_fifos();
 
         boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration elapsed;
         do {
             boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //Avoid flooding the bus
             elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-            nirio_status_chain(_riok_proxy.peek(FPGA_STATUS_REG, reg_data), status);
+            nirio_status_chain(_riok_proxy->peek(FPGA_STATUS_REG, reg_data), status);
         } while (
             nirio_status_not_fatal(status) &&
             (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK) &&
             elapsed.total_milliseconds() < FPGA_READY_TIMEOUT_IN_MS);
 
-        nirio_status_chain(_riok_proxy.peek(FPGA_STATUS_REG, reg_data), status);
+        nirio_status_chain(_riok_proxy->peek(FPGA_STATUS_REG, reg_data), status);
         if (nirio_status_not_fatal(status) && (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK)) {
             return NiRio_Status_FifoReserved;
         }

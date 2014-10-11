@@ -101,6 +101,31 @@ codegen_transform['control_list'] = control_list
 codegen_transform['indicator_list'] = indicator_list
 
 # Enumerate FIFOs
+
+# This function takes a SubType string as specified in an lvbitx file and finds the
+# corresponding nirio_scalar_type_t value.
+def map_SubType_to_ScalarType(SubType):
+    if SubType == 'I8':
+        ScalarType = 'RIO_SCALAR_TYPE_IB'
+    elif SubType == 'I16':
+        ScalarType = 'RIO_SCALAR_TYPE_IW'
+    elif SubType == 'I32':
+        ScalarType = 'RIO_SCALAR_TYPE_IL'
+    elif SubType == 'I64':
+        ScalarType = 'RIO_SCALAR_TYPE_IQ'
+    elif SubType == 'U8':
+        ScalarType = 'RIO_SCALAR_TYPE_UB'
+    elif SubType == 'U16':
+        ScalarType = 'RIO_SCALAR_TYPE_UW'
+    elif SubType == 'U32':
+        ScalarType = 'RIO_SCALAR_TYPE_UL'
+    elif SubType == 'U64':
+        ScalarType = 'RIO_SCALAR_TYPE_UQ'
+    else:
+        print 'ERROR: No corresponding nirio_scalar_type_t value for SubType ' + SubType + ' .'
+        sys.exit(1)
+    return ScalarType;
+
 nifpga_metadata = root.find('Project').find('CompilationResultsTree').find('CompilationResults').find('NiFpga')
 dma_channel_list = nifpga_metadata.find('DmaChannelAllocationList')
 reg_block_list = nifpga_metadata.find('RegisterBlockList')
@@ -133,8 +158,9 @@ for dma_channel in dma_channel_list:
     fifo_init_seq += direction + ', '
     fifo_init_seq += str.lower(base_addr) + ', '
     fifo_init_seq += dma_channel.find('NumberOfElements').text + ', '
-    fifo_init_seq += 'SCALAR_' + dma_channel.find('DataType').find('SubType').text + ', '
+    fifo_init_seq += map_SubType_to_ScalarType(dma_channel.find('DataType').find('SubType').text) + ', '
     fifo_init_seq += dma_channel.find('DataType').find('WordLength').text + ', '
+    fifo_init_seq += dma_channel.find('DataType').find('IntegerWordLength').text + ', '
     fifo_init_seq += bitstream_version
     fifo_init_seq += ')); //' + fifo_name
 
