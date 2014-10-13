@@ -26,8 +26,8 @@ FIND_PACKAGE(Git QUIET)
 #  - increment patch on for bug fixes and docs
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
-SET(UHD_VERSION_MINOR 007)
-SET(UHD_VERSION_PATCH 003)
+SET(UHD_VERSION_MINOR 008)
+SET(UHD_VERSION_PATCH 000)
 
 ########################################################################
 # Set up trimmed version numbers for DLL resource files and packages
