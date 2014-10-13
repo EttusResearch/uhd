@@ -30,8 +30,7 @@ from optparse import OptionParser
 
 _DEFAULT_BUFFER_SIZE      = 8192
 _BASE_DIR_STRUCTURE_PARTS = ["share", "uhd", "images"]
-_BASE_DIR_STRUCTURE       = os.path.join(_BASE_DIR_STRUCTURE_PARTS)
-_DEFAULT_INSTALL_PATH     = os.path.join("@CMAKE_INSTALL_PREFIX@", *_BASE_DIR_STRUCTURE)
+_DEFAULT_INSTALL_PATH     = os.path.join("@CMAKE_INSTALL_PREFIX@", *_BASE_DIR_STRUCTURE_PARTS)
 _DEFAULT_BASE_URL         = "http://files.ettus.com/binaries/images/"
 _AUTOGEN_IMAGES_FILENAME  = "@UHD_IMAGES_DOWNLOAD_SRC@"
 _AUTOGEN_IMAGES_CHECKSUM  = "@UHD_IMAGES_MD5SUM@"
