@@ -1,6 +1,31 @@
 Change Log for Releases
 ==============================
 
+## 003.008.000
+* Added E300/E310 support
+* B200/B210: Moved AD9361 controls from firmware to host
+* Added several tools: ZPU dissector, improved CHDR dissector,
+  kitchen sink, B200/B210 USB debugging utility, latency
+  measurement tool.
+* Reorganized firmware/ directory structure. Refactored some
+  firmware.
+* Removed FPGA sources, is now in own repository (submoduled).
+* Cleaned up command line arguments for some tools
+* Added math namespace, plus a unified float comparison infrastructure
+* Fixed tuning-related bugs
+* Moved manual over to Doxygen, also several manual bug fixes and
+  amendments
+* Added many missing virtual destructors (less build warnings)
+* Added support for NI-RIO 14.0
+* X300 fixes: Not found over PCIe with no eth interfaces,
+* CMake improvements: Now comes with own UHDConfig.cmake and example
+  to build standalone UHD apps, build fixes on Apple, interoperability
+  with GNU Radio
+* OctoClock fixes and improvements: Ethernet initialization, external
+  ref detection, stability fixes, host driver (UHD can now talk to
+  OctoClock)
+* Examples: Improved GPIO example, rx_samples_to_file
+
 ## 003.007.003
 * Fixed examples
 * Removed compiler warnings
