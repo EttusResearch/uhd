@@ -15,15 +15,15 @@ In a typical use-case, the user specifies an overall center frequency
 for the signal chain. The RF front-end will be tuned as close as
 possible to the center frequency, and the DSP will account for the error
 in tuning between target frequency and actual frequency. The user may
-also explicitly control both stages of tuning through through the **tune_request_t** object, which allows for more advanced tuning.
+also explicitly control both stages of tuning through through the uhd::tune_request_t object, which allows for more advanced tuning.
 
 In general, Using UHD software's advanced tuning is highly recommended
 as it makes it easy to move the DC component out of your
 band-of-interest. This can be done by passing your desired LO offset to
-the **tune_request_t** object, and letting the UHD software handle the
+the uhd::tune_request_t object, and letting the UHD software handle the
 rest.
 
-The **tune_request_t** object can also be used with certain
+The uhd::tune_request_t object can also be used with certain
 daughterboards to use Integer-N tuning instead of the default fractional
 tuning, allowing for better spur performance. The daughterboards that
 support this functionality are:
@@ -102,8 +102,8 @@ Ex: The subdev spec markup string to select a BasicRX on slot B.
 
 \subsection general_subdev_slotnames USRP Family Motherboard Slot Names
 
-All USRP family motherboards have a first slot named **A:**. The USRP1 and the X3x0
-have two daughterboard subdevice slots, known as **A:** and **B:**.
+All USRP family motherboards have a first slot named **A:**. The USRP1, the X3x0
+and the B210 have two daughterboard subdevice slots, known as **A:** and **B:**.
 
 \subsection general_subdev_dbnames Daughterboard Frontend Names
 
@@ -157,8 +157,8 @@ For the most part, UHD software is thread-safe. Please observe the
 following limitations:
 
 <b>Fast-path thread requirements:</b> There are three fast-path methods for
-a device: `send()`, `recv()`, and `recv_async_msg()`. All three
-methods are thread-safe and can be called from different thread
+a device: uhd::tx_streamer::send(), uhd::rx_streamer::recv(), and uhd::tx_streamer::recv_async_msg().
+All three methods are thread-safe and can be called from different thread
 contexts. For performance, the user should call each method from a
 separate thread context. These methods can also be used in a
 non-blocking fashion by using a timeout of zero.

@@ -1,4 +1,4 @@
-/*! \page page_sync Synchronization Application Notes
+/*! \page page_sync Device Synchronization
 
 \tableofcontents
 
@@ -16,7 +16,7 @@ products.
 USRP devices take two reference signals in order to synchronize clocks
 and time:
 
--   A 10MHz reference to provide a single frequency reference for both
+-   A 10 MHz reference to provide a single frequency reference for both
     devices.
 -   A pulse-per-second (PPS) to synchronize the sample time across
     devices.
@@ -46,7 +46,7 @@ usrp->set_time_source("_external_");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 <b>Note2:</b> For users generating their own signals for the external SMA
-connectors, the PPS should be clocked from the 10MHz reference. See the
+connectors, the PPS should be clocked from the 10 MHz reference. See the
 application notes for your device for specific signal requirements.
 
 \subsection sync_commonref_mimo MIMO cable reference signals

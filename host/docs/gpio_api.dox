@@ -89,7 +89,7 @@ one more:
 \subsection xgpio_fpanel_xample An Example
 
 The front panel X3x0 GPIO bank is enumerated in the motherboard property
-tree ('*<mb_path>/gpio/FP0/\*'), the E3x0 internal GPIO bank as ('*<mb_path>/gpio/INT0/\*') and so are easily accessible through
+tree (`<mb_path>/gpio/FP0/\*`), the E3x0 internal GPIO bank as (`<mb_path>/gpio/INT0/\`) and so are easily accessible through
 the standard uhd::usrp::multi_usrp UHD interface.
 
 You can discover this using the uhd::usrp::multi_usrp::get_gpio_banks() function.

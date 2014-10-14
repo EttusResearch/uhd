@@ -1,67 +1,28 @@
 /*! \mainpage Table Of Contents
 
-\tableofcontents
+Welcome to the USRP Hardware Driver (UHD) manual. Here, you will find information on how to use the devices and how to use the API to connect to them through your own software.
 
-Welcome to the manual pages for the USRP Hardware Driver (UHD), the host driver
-for Ettus Research devices. Here, you will find information on how to use the
-devices and how to use the API to connect to them through your own software.
+This manual is split into two parts: The device manual, and the UHD/API manual. The first part describes details of our devices, mainboards and daughterboards, as well as aspects of _using_ UHD.
 
-# Building and Installing UHD
+The second is meant for developers writing UHD-based applications, and includes descriptions of the API, sorted by namespaces, classes and files.
+
+Follow these links to get to the section of the manual you wish to consult, or use the browser in the left sidebar. A search bar is also available at the top right, but note that this only works on API components. For information on how to build and install UHD, go to the UHD web site (see below).
+
+## Manual Parts
+
+\li \subpage page_devices "Part I: Devices & Usage Manual"
+\li \subpage page_uhd "Part II: UHD Development Manual"
+
+### Further Information
+
+\li <a href="http://www.ettus.com/">Ettus Research LLC Website</a>
+\li <a href="http://code.ettus.com/redmine/ettus/projects/uhd/wiki/">UHD Wiki Page</a>
+
+### Building and Installing UHD
 
 \li \subpage page_build_guide
 \li <a href="http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_Linux">Installation Guide (Linux)</a>
 \li <a href="http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_Windows">Installation Guide (Windows)</a>
-
-# General UHD Manuals
-
-\li \subpage page_general
-\li \subpage page_identification
-\li \subpage page_images
-\li \subpage page_dboards
-\li \subpage page_transport
-\li \subpage page_sync
-\li \subpage page_calibration
-
-# Device Specific Manuals
-
-## USRP N-Series Devices
-
-\li \subpage page_usrp2
-\li \subpage page_gpsdo
-
-## USRP B-Series Devices
-
-\li \subpage page_usrp_b100
-\li \subpage page_usrp_b200
-\li \subpage page_gpsdo_b2x0
-\li \subpage page_usrp1
-
-## USRP E-Series Devices
-
-\li \subpage page_usrp_e1x0
-\li \subpage page_usrp_e3x0
-\li \subpage page_gpsdo
-
-## USRP X-Series Devices
-
-\li \subpage page_usrp_x3x0
-\li \subpage page_gpsdo_x3x0
-\li \subpage page_gpio_api
-\li \subpage page_usrp_x3x0_config
-\li \subpage page_ni_rio_kernel
-
-## USRP Legacy Series
-
-\li \subpage page_usrp2
-
-## OctoClock
-
-\li \subpage page_octoclock
-
-# API Documentation
-
-\li \subpage page_coding
-\li \subpage page_stream
 
 */
 // vim:ft=doxygen:

@@ -1,6 +1,12 @@
-/*! \page page_usrp_x3x0 X3x0 Series Device Manual
+/*! \page page_usrp_x3x0 X3x0 Series
 
 \tableofcontents
+
+More information:
+\li \subpage page_gpsdo_x3x0
+\li \subpage page_gpio_api
+\li \subpage page_usrp_x3x0_config
+\li \subpage page_ni_rio_kernel
 
 \section x3x0_feature_list Comparative features list
 

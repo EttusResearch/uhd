@@ -1,4 +1,4 @@
-/*! \page page_images Firmware and FPGA Image Application Notes
+/*! \page page_images Firmware and FPGA Images
 
 \tableofcontents
 
@@ -37,7 +37,12 @@ The pre-built images come in two forms:
 The UHD images downloader downloads UHD images compatible with the host
 code and places them in the default images directory.
 
-By default, it can be found at: `<install-path>/lib/uhd/utils/uhd_images_downloader.py`
+The download script is typically installed into your $PATH and can be invoked
+by calling
+
+    uhd_images_downloader
+
+It can also be found at: `<install-path>/lib/uhd/utils/uhd_images_downloader.py`
 
 By default, it installs images to: `<install-path>/share/uhd/images`
 

@@ -1,0 +1,44 @@
+/*! \page page_devices Devices & Usage Manual
+
+## General Usage Manuals
+
+\li \subpage page_general "Notes on tuning, subdev specs, overflow/underflow, other miscellaneous topics"
+\li \subpage page_identification
+\li \subpage page_images
+\li \subpage page_transport
+\li \subpage page_sync
+\li \subpage page_calibration
+
+## USRP N-Series Devices
+
+\li \subpage page_usrp2
+
+## USRP B-Series Devices
+
+\li \subpage page_usrp_b100
+\li \subpage page_usrp_b200
+\li \subpage page_usrp1
+
+## USRP E-Series Devices
+
+\li \subpage page_usrp_e1x0
+\li \subpage page_usrp_e3x0
+
+## USRP X-Series Devices
+
+\li \subpage page_usrp_x3x0
+
+## USRP Legacy Series
+
+\li \subpage page_usrp2
+
+## Daughterboards
+
+\li \subpage page_dboards
+
+## OctoClock
+
+\li \subpage page_octoclock
+
+*/
+// vim:ft=doxygen:

@@ -1,15 +1,15 @@
-/*! \page page_usrp_b200 USRP-B2x0 Series Device Manual
+/*! \page page_usrp_b200 USRP B2x0 Series
 
 \tableofcontents
 
-\section b200_features Comparative features list - B200
+\section b200_features Comparative features list - B200/B210
 
 - Hardware Capabilities:
     -   Integrated RF frontend (70 MHz - 6 GHz)
     -   External PPS reference input
     -   External 10 MHz reference input
     -   Configurable clock rate
-    -   Internal GPSDO option
+    -   Internal GPSDO option (see \subpage page_gpsdo_b2x0 for details)
     -   B210 Only:
         -   MICTOR Debug Connector
         -   JTAG Connector

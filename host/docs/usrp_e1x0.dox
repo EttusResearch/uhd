@@ -1,4 +1,4 @@
-/*! \page page_usrp_e1x0 USRP-E1x0 Series Device Manual
+/*! \page page_usrp_e1x0 USRP-E1x0 Series
 
 \tableofcontents
 
@@ -101,7 +101,7 @@ address arguments, optional if only one USRP device is on your machine):
 
 \subsection e1x0_clksync_gpsdo Internal GPSDO
 
-Please see the \ref page_gpsdo for
+Please see the \subpage page_gpsdo for
 information on configuring and using the internal GPSDO.
 
 UHD software will always try to detect an installed GPSDO at runtime. It

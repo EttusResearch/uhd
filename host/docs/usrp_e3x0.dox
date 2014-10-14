@@ -1,4 +1,4 @@
-/*! \page page_usrp_e3x0 USRP-E3x0 Series Device Manual
+/*! \page page_usrp_e3x0 USRP-E3x0 Series
 
 \tableofcontents
 
@@ -101,7 +101,7 @@ The following section will guide you through the installation of the provided SD
 \subsubsection e3x0_sdk_installation_download Obtaining the correct SDK
 It is necessary for the SDK version and the image version to match, to ensure the versions of the software installed on the device and the version of the software the SDK will build against match.
 
-If you are not sure which image is installed on your device, upgrading to the latest stable version is recommended. See \ref e3x0_rootfs_upgrade_restore for details on upgrading.
+If you are not sure which image is installed on your device, upgrading to the latest stable version is recommended. See the appropriate section for details on upgrading.
 
 \subsubsection e3x0_sdk_installation_install Obtaining the right toolchain
 

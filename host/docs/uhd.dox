@@ -1,0 +1,16 @@
+/*! \page page_uhd UHD Development Manual
+
+# API Documentation
+
+The majority of the actual API documentation is in the auto-generated part of the manual.
+Use the tree browser at the left to click your way through the class list, the namespaces or files.
+Also, the search bar at the top can be used to search for function calls, classes or any other
+publically available symbol in the UHD namespace.
+
+Some additional pages on developing UHD are also available here:
+
+\li \subpage page_coding
+\li \subpage page_stream
+
+*/
+// vim:ft=doxygen:

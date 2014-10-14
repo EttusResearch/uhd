@@ -1,4 +1,4 @@
-/*! \page page_usrp2 USRP2 and N2x0 Series Device Manual
+/*! \page page_usrp2 USRP2 and N2x0 Series
 
 \tableofcontents
 
@@ -392,7 +392,7 @@ Test the PPS input with the following app:
 
 \subsection usrp2_hw_gpsdo Internal GPSDO
 
-Please see \ref page_gpsdo for information on configuring and using the internal GPSDO.
+Please see \subpage page_gpsdo for information on configuring and using the internal GPSDO.
 
 \section usrp2_misc Miscellaneous
 

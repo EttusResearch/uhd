@@ -1,4 +1,4 @@
-/*! \page page_calibration Calibration Application Notes
+/*! \page page_calibration Device Calibration
 
 \tableofcontents
 
@@ -55,7 +55,7 @@ daughterboard's EEPROM: :
 
     <install dir>/lib/uhd/utils/usrp_burn_db_eeprom --ser=<desired serial> --args=<optional device args>
 
-\subsection calibration_ Calibration Data
+\subsection calibration_data Calibration Data
 
 Calibration files are stored in the user's home/application directory.
 They can easily be moved from machine to another by copying the "cal"
