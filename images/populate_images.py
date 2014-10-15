@@ -40,7 +40,7 @@ def main():
     img_root_dir = os.path.join(uhdimgs.get_images_dir(), 'images')
     os.chdir(uhdimgs.get_images_dir())
     # Read out the CMakeLists.txt file, get filename
-    print "== Reading MD5 and ZIP filename for current commit from {}...".format(uhdimgs.get_cmake_main_file())
+    print "== Reading MD5 and ZIP filename for current commit from {0}...".format(uhdimgs.get_cmake_main_file())
     (md5, filename) = get_md5_and_zipfilename()
     print "== Starting download..."
     try:

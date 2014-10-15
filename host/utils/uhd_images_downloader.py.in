@@ -222,12 +222,12 @@ def main():
     ### Set defaults from env variables
     if os.environ.get("UHD_IMAGES_DIR") != None and os.environ.get("UHD_IMAGES_DIR") != "":
         default_images_dir = os.environ.get("UHD_IMAGES_DIR")
-        print "UHD_IMAGES_DIR environment variable is set.\nDefault install location: {}".format(default_images_dir)
+        print "UHD_IMAGES_DIR environment variable is set.\nDefault install location: {0}".format(default_images_dir)
     else:
         default_images_dir = _DEFAULT_INSTALL_PATH
     if os.environ.get("UHD_IMAGES_BASE_URL") != None and os.environ.get("UHD_IMAGES_BASE_URL") != "":
         default_base_url = os.environ.get("UHD_IMAGES_BASE_URL")
-        print "UHD_IMAGES_BASE_URL environment variable is set.\nDefault base URL: {}".format(default_base_url)
+        print "UHD_IMAGES_BASE_URL environment variable is set.\nDefault base URL: {0}".format(default_base_url)
     else:
         default_base_url = _DEFAULT_BASE_URL
 
@@ -280,7 +280,7 @@ def main():
         print "Images filename:            %s" % (options.filename)
         print "Images checksum:            %s (%s)" % (options.checksum, _IMAGES_CHECKSUM_TYPE)
         print "Final install location:     %s" % (images_dir)
-        print "Copying locally:            {}".format("Yes" if base_url_is_local else "No")
+        print "Copying locally:            {0}".format("Yes" if base_url_is_local else "No")
     else:
         print "Images destination:      %s" % (images_dir)
 
@@ -297,8 +297,8 @@ def main():
                 print "Using temporary directory: %s" % (temp_dir)
             temp_images_dest = os.path.join(temp_dir, options.filename)
             if not base_url_is_local:
-                print "Downloading images from: {}".format(images_url)
-                print "Downloading images to:   {}".format(temp_images_dest)
+                print "Downloading images from: {0}".format(images_url)
+                print "Downloading images to:   {0}".format(temp_images_dest)
                 (reported_size, downloaded_size) = downloader.download(
                         images_url=images_url,
                         filename=temp_images_dest,
@@ -309,7 +309,7 @@ def main():
                     print "Downloaded %d of %d bytes" % (downloaded_size, reported_size)
             else:
                 temp_images_dest = os.path.join(options.base_url, options.filename)
-                print "Copying images from: {}".format(temp_images_dest)
+                print "Copying images from: {0}".format(temp_images_dest)
                 if not os.path.isfile(temp_images_dest):
                     print "[ERROR] No such file."
                     return 1
