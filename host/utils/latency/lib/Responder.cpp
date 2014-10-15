@@ -501,7 +501,7 @@ Responder::print_formatted_delay_line(const uint64_t simulate_duration, const ui
     if(_y_delay_pos < 0 || _x_delay_pos < 0){ // make sure it gets printed to the same position everytime
         getyx(_window, _y_delay_pos, _x_delay_pos);
     }
-    double score = 0.0d;
+    double score = 0.0;
     if (statsPrev.detected > 0)
         score = 100.0 * (double)(statsPrev.detected - statsPrev.missed) / (double)statsPrev.detected;
     std::string form;
