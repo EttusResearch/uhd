@@ -10,13 +10,8 @@ application-level programs. The UHD library runs entirely in user-space.
 
 For documentation, please refer to the following resources:
 
-For technical documentation related to UHD check out the 
-[UHD Manual](http://files.ettus.com/manual/).
-
-If you are looking for API documentation, check out the following resources:
-
-* [Coding to the API](http://files.ettus.com/manual/page_coding.html)
-* [Device Streaming](http://files.ettus.com/manual/page_stream.html)
+For technical documentation related to our devices and UHD check out the
+[UHD and USRP Manual](http://files.ettus.com/manual/).
 
 Additionally, be sure to check out the Ettus Research
 [FAQ](http://www.ettus.com/kb/detail/frequently-asked-questions), and the

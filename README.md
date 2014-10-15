@@ -16,12 +16,7 @@ information, is the primary source of UHD documentation and "Getting
 Started"-type guides.
 
 For technical documentation related to USRP™ hardware or UHD system
-design, check out the [UHD Manual](http://files.ettus.com/manual/).
-
-If you are looking for API documentation, check out the following resources:
-
-* [Coding to the API](http://files.ettus.com/manual/page_coding.html)
-* [Device Streaming](http://files.ettus.com/manual/page_stream.html)
+design, check out the [UHD and USRP Manual](http://files.ettus.com/manual/).
 
 Additionally, be sure to check out the Ettus Research
 [FAQ](http://www.ettus.com/kb/detail/frequently-asked-questions), and the
