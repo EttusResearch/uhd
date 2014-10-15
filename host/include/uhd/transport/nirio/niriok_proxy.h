@@ -22,8 +22,7 @@
 #include <boost/smart_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/locks.hpp> 
-#include <boost/thread/shared_lock_guard.hpp>
+#include <boost/thread/locks.hpp>
 #include <uhd/transport/nirio/nirio_driver_iface.h>
 #include <uhd/transport/nirio/nirio_quirks.h>
 
@@ -43,10 +42,11 @@
 #define GET_FIFO_MEMORY_TYPE(fifo_inst) (static_cast<uint16_t>(0x0100 | static_cast<uint16_t>(fifo_inst)))
 
 #define READER_LOCK \
-    boost::shared_lock_guard<boost::shared_mutex> reader_lock(_synchronization);
+    boost::shared_lock<boost::shared_mutex> reader_lock(_synchronization);
 
 #define WRITER_LOCK \
-    boost::lock_guard<boost::shared_mutex> writer_lock(_synchronization);
+    boost::upgrade_lock<boost::shared_mutex> write_upgrade_lock(_synchronization);\
+    boost::upgrade_to_unique_lock<boost::shared_mutex> write_unique_lock(write_upgrade_lock);
 
 
 namespace uhd { namespace niusrprio
