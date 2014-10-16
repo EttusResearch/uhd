@@ -51,6 +51,13 @@ oscillator will be phase-locked to the 10MHz GPSDO reference. If the
 GPSDO is not locked to satellites, the VITA time will not be
 initialized.
 
+If you want to disable your GPSDO pass the **no_gpsdo** option as part of the
+device arguments, for example:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.sh}
+uhd_usrp_probe --args "no_gpsdo"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 GPS data is obtained through the **mboard_sensors** interface. To
 retrieve the current GPS time, use the **gps_time** sensor:
 
