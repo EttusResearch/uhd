@@ -62,6 +62,7 @@ SET(PKG_MAN_DIR share/man/man1)
 ########################################################################
 # Local Include Dir
 ########################################################################
+INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/include)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
 ########################################################################
