@@ -68,19 +68,19 @@ template<typename samp_type> void recv_to_file(
     stream_cmd.stream_now = true;
     stream_cmd.time_spec = uhd::time_spec_t();
     rx_stream->issue_stream_cmd(stream_cmd);
-    
+
     boost::system_time start = boost::get_system_time();
     unsigned long long ticks_requested = (long)(time_requested * (double)boost::posix_time::time_duration::ticks_per_second());
     boost::posix_time::time_duration ticks_diff;
     boost::system_time last_update = start;
     unsigned long long last_update_samps = 0;
-    
+
     typedef std::map<size_t,size_t> SizeMap;
     SizeMap mapSizes;
 
     while(not stop_signal_called and (num_requested_samples != num_total_samps or num_requested_samples == 0)){
 		boost::system_time now = boost::get_system_time();
-		
+
         size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0, enable_size_map);
 
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
@@ -133,7 +133,7 @@ template<typename samp_type> void recv_to_file(
 				last_update = now;
 			}
 		}
-        
+
         ticks_diff = now - start;
 		if (ticks_requested > 0){
 			if ((unsigned long long)ticks_diff.ticks() > ticks_requested)
@@ -143,10 +143,10 @@ template<typename samp_type> void recv_to_file(
 
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);
-    
+
     if (outfile.is_open())
 		outfile.close();
-    
+
     if (stats){
 		std::cout << std::endl;
 
@@ -154,7 +154,7 @@ template<typename samp_type> void recv_to_file(
 		std::cout << boost::format("Received %d samples in %f seconds") % num_total_samps % t << std::endl;
 		double r = (double)num_total_samps / t;
 		std::cout << boost::format("%f Msps") % (r/1e6) << std::endl;
-		
+
 		if (enable_size_map) {
 			std::cout << std::endl;
 			std::cout << "Packet size map (bytes: count)" << std::endl;
@@ -169,13 +169,13 @@ typedef boost::function<uhd::sensor_value_t (const std::string&)> get_sensor_fn_
 bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sensor_name, get_sensor_fn_t get_sensor_fn, double setup_time){
 	if (std::find(sensor_names.begin(), sensor_names.end(), sensor_name) == sensor_names.end())
 		return false;
-	
+
 	boost::system_time start = boost::get_system_time();
 	boost::system_time first_lock_time;
-	
+
 	std::cout << boost::format("Waiting for \"%s\": ") % sensor_name;
 	std::cout.flush();
-	
+
 	while (true){
 		if ((not first_lock_time.is_not_a_date_time()) and
 			(boost::get_system_time() > (first_lock_time + boost::posix_time::seconds(setup_time))))
@@ -183,7 +183,6 @@ bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sens
 			std::cout << " locked." << std::endl;
 			break;
 		}
-		
 		if (get_sensor_fn(sensor_name).to_bool()){
 			if (first_lock_time.is_not_a_date_time())
 				first_lock_time = boost::get_system_time();
@@ -192,21 +191,17 @@ bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sens
 		}
 		else{
 			first_lock_time = boost::system_time();	//reset to 'not a date time'
-			
+
 			if (boost::get_system_time() > (start + boost::posix_time::seconds(setup_time))){
 				std::cout << std::endl;
 				throw std::runtime_error(str(boost::format("timed out waiting for consecutive locks on sensor \"%s\"") % sensor_name));
 			}
-			
 			std::cout << "_";
 			std::cout.flush();
 		}
-		
 		boost::this_thread::sleep(boost::posix_time::milliseconds(100));
 	}
-	
 	std::cout << std::endl;
-	
 	return true;
 }
 
@@ -226,7 +221,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to write binary samples to")
         ("type", po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
-        ("time", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
+        ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
+        ("time", po::value<double>(&total_time), "(DEPRECATED) will go away soon! Use --duration instead")
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
         ("rate", po::value<double>(&rate)->default_value(1e6), "rate of incoming samples")
         ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
@@ -254,13 +250,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("UHD RX samples to file %s") % desc << std::endl;
         return ~0;
     }
-    
+
     bool bw_summary = vm.count("progress") > 0;
     bool stats = vm.count("stats") > 0;
     bool null = vm.count("null") > 0;
     bool enable_size_map = vm.count("sizemap") > 0;
     bool continue_on_bad_packet = vm.count("continue") > 0;
-    
+
     if (enable_size_map)
 		std::cout << "Packet size tracking enabled - will only recv one packet at a time!" << std::endl;
 
