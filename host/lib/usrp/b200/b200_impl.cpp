@@ -974,6 +974,11 @@ void b200_impl::update_enables(void)
     const size_t num_tx = (enb_tx1?1:0) + (enb_tx2?1:0);
     const bool mimo = num_rx == 2 or num_tx == 2;
 
+    if ((num_rx + num_tx) == 3)
+    {
+        throw uhd::runtime_error("b200: 2 RX 1 TX and 1 RX 2 TX configurations not possible");
+    }
+
     //setup the active chains in the codec
     _codec_ctrl->set_active_chains(enb_tx1, enb_tx2, enb_rx1, enb_rx2);
     if ((num_rx + num_tx) == 0) _codec_ctrl->set_active_chains(true, false, true, false); //enable something
