@@ -45,7 +45,7 @@ The following compilers are known to work:
 ### Boost
 
 - **Purpose:** C++ library
-- **Minimum Version:** 1.36 (Linux), 1.40 (Windows)
+- **Minimum Version:** 1.46
 - **Usage:** build time + runtime (required)
 - **Download URL:** http://www.boost.org/users/download/
 - **Download URL (Windows installer):** http://www.boostpro.com/download
@@ -80,6 +80,7 @@ http://pypi.python.org/pypi/setuptools
 ### Doxygen
 
 - **Purpose:** generates HTML API documentation
+- **Minimum Recommended Version:** 1.8
 - **Usage:** build time (optional)
 - **Download URL:** http://www.stack.nl/~dimitri/doxygen/download.html#latestsrc
 
