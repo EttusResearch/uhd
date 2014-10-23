@@ -34,6 +34,7 @@ SET(test_sources
     fp_compare_delta_test.cpp
     fp_compare_epsilon_test.cpp
     gain_group_test.cpp
+    math_test.cpp
     msg_test.cpp
     property_test.cpp
     ranges_test.cpp
