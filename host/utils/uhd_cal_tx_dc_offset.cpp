@@ -1,5 +1,5 @@
 //
-// Copyright 2010,2012 Ettus Research LLC
+// Copyright 2010,2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,8 +35,12 @@ namespace po = boost::program_options;
 /***********************************************************************
  * Transmit thread
  **********************************************************************/
-static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const double tx_wave_freq, const double tx_wave_ampl){
+static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const double tx_wave_freq, const double tx_wave_ampl)
+{
     uhd::set_thread_priority_safe();
+
+    // set max TX gain
+    usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
 
     //create a transmit streamer
     uhd::stream_args_t stream_args("fc32"); //complex floats
@@ -50,14 +54,14 @@ static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const double tx_wave_fre
     //values for the wave table lookup
     size_t index = 0;
     const double tx_rate = usrp->get_tx_rate();
-    const size_t step = boost::math::iround(wave_table_len * tx_wave_freq/tx_rate);
+    const size_t step = boost::math::iround(wave_table_len * tx_wave_freq / tx_rate);
     wave_table table(tx_wave_ampl);
 
     //fill buff and send until interrupted
-    while (not boost::this_thread::interruption_requested()){
-        for (size_t i = 0; i < buff.size(); i++){
+    while (not boost::this_thread::interruption_requested())
+    {
+        for (size_t i = 0; i < buff.size(); i++)
             buff[i] = table(index += step);
-        }
         tx_stream->send(&buff.front(), buff.size(), md);
     }
 
@@ -69,7 +73,8 @@ static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const double tx_wave_fre
 /***********************************************************************
  * Tune RX and TX routine
  **********************************************************************/
-static double tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_lo_freq, const double rx_offset){
+static double tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_lo_freq, const double rx_offset)
+{
     //tune the transmitter with no cordic
     uhd::tune_request_t tx_tune_req(tx_lo_freq);
     tx_tune_req.dsp_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
@@ -77,15 +82,25 @@ static double tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_l
     usrp->set_tx_freq(tx_tune_req);
 
     //tune the receiver
-    usrp->set_rx_freq(usrp->get_tx_freq() - rx_offset);
+    double rx_freq = usrp->get_tx_freq() - rx_offset;
+    double min_fe_rx_freq = usrp->get_fe_rx_freq_range().start();
+    double max_fe_rx_freq = usrp->get_fe_rx_freq_range().stop();
+    uhd::tune_request_t rx_tune_req(rx_freq);
+    rx_tune_req.dsp_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
+    rx_tune_req.dsp_freq = 0;
+    if (rx_freq < min_fe_rx_freq)
+        rx_tune_req.dsp_freq = rx_freq - min_fe_rx_freq;
+    else if (rx_freq > max_fe_rx_freq)
+        rx_tune_req.dsp_freq = rx_freq - max_fe_rx_freq;
+    usrp->set_rx_freq(rx_tune_req);
 
     //wait for the LOs to become locked
     boost::this_thread::sleep(boost::posix_time::milliseconds(50));
     boost::system_time start = boost::get_system_time();
-    while (not usrp->get_tx_sensor("lo_locked").to_bool() or not usrp->get_rx_sensor("lo_locked").to_bool()){
-        if (boost::get_system_time() > start + boost::posix_time::milliseconds(100)){
+    while (not usrp->get_tx_sensor("lo_locked").to_bool() or not usrp->get_rx_sensor("lo_locked").to_bool())
+    {
+        if (boost::get_system_time() > start + boost::posix_time::milliseconds(100))
             throw std::runtime_error("timed out waiting for TX and/or RX LO to lock");
-        }
     }
 
     return usrp->get_tx_freq();
@@ -94,11 +109,13 @@ static double tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_l
 /***********************************************************************
  * Main
  **********************************************************************/
-int UHD_SAFE_MAIN(int argc, char *argv[]){
+int UHD_SAFE_MAIN(int argc, char *argv[])
+{
     std::string args, subdev, serial;
     double tx_wave_freq, tx_wave_ampl, rx_offset;
     double freq_start, freq_stop, freq_step;
     size_t nsamps;
+    double precision;
 
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -112,7 +129,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("freq_start", po::value<double>(&freq_start), "Frequency start in Hz (do not specify for default)")
         ("freq_stop", po::value<double>(&freq_stop), "Frequency stop in Hz (do not specify for default)")
         ("freq_step", po::value<double>(&freq_step)->default_value(default_freq_step), "Step size for LO sweep in Hz")
-        ("nsamps", po::value<size_t>(&nsamps)->default_value(default_num_samps), "Samples per data capture")
+        ("nsamps", po::value<size_t>(&nsamps), "Samples per data capture")
+        ("precision", po::value<double>(&precision)->default_value(default_precision), "Correction precision (default=0.0001)")
     ;
 
     po::variables_map vm;
@@ -132,6 +150,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     // Create a USRP device
     uhd::usrp::multi_usrp::sptr usrp = setup_usrp_for_cal(args, subdev, serial);
 
+    if (not vm.count("nsamps"))
+        nsamps = size_t(usrp->get_rx_rate() / default_fft_bin_size);
+
     //create a receive streamer
     uhd::stream_args_t stream_args("fc32"); //complex floats
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
@@ -146,11 +167,38 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //store the results here
     std::vector<result_t> results;
 
-    if (not vm.count("freq_start")) freq_start = usrp->get_tx_freq_range().start() + 50e6;
-    if (not vm.count("freq_stop")) freq_stop = usrp->get_tx_freq_range().stop() - 50e6;
+    if (not vm.count("freq_start")) freq_start = usrp->get_fe_tx_freq_range().start();
+    if (not vm.count("freq_stop")) freq_stop = usrp->get_fe_tx_freq_range().stop();
+
+    //check start and stop frequencies
+    if (freq_start < usrp->get_fe_tx_freq_range().start())
+    {
+        std::cerr << "freq_start must be " << usrp->get_fe_tx_freq_range().start() << " or greater for this daughter board" << std::endl;
+        return EXIT_FAILURE;
+    }
+    if (freq_stop > usrp->get_fe_tx_freq_range().stop())
+    {
+        std::cerr << "freq_stop must be " << usrp->get_fe_tx_freq_range().stop() << " or less for this daughter board" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    //check rx_offset
+    double min_rx_offset = usrp->get_rx_freq_range().start() - usrp->get_fe_tx_freq_range().start();
+    double max_rx_offset = usrp->get_rx_freq_range().stop() - usrp->get_fe_tx_freq_range().stop();
+    if (rx_offset < min_rx_offset or rx_offset > max_rx_offset)
+    {
+        std::cerr << "rx_offset must be between " << min_rx_offset << " and "
+            << max_rx_offset << " for this daughter board" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     UHD_MSG(status) << boost::format("Calibration frequency range: %d MHz -> %d MHz") % (freq_start/1e6) % (freq_stop/1e6) << std::endl;
 
-    for (double tx_lo_i = freq_start; tx_lo_i <= freq_stop; tx_lo_i += freq_step){
+    //set RX gain
+    usrp->set_rx_gain(0);
+
+    for (double tx_lo_i = freq_start; tx_lo_i <= freq_stop; tx_lo_i += freq_step)
+    {
         const double tx_lo = tune_rx_and_tx(usrp, tx_lo_i, rx_offset);
 
         //frequency constants for this tune event
@@ -159,69 +207,75 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         const double actual_rx_freq = usrp->get_rx_freq();
         const double bb_dc_freq = actual_tx_freq - actual_rx_freq;
 
-        //capture initial uncorrected value
+        //reset TX DC offset
         usrp->set_tx_dc_offset(std::complex<double>(0, 0));
+
+        //capture initial uncorrected value
         capture_samples(usrp, rx_stream, buff, nsamps);
         const double initial_dc_dbrms = compute_tone_dbrms(buff, bb_dc_freq/actual_rx_rate);
 
         //bounds and results from searching
-        double dc_i_start = -.01, dc_i_stop = .01, dc_i_step;
-        double dc_q_start = -.01, dc_q_stop = .01, dc_q_step;
-        double lowest_offset = 0, best_dc_i = 0, best_dc_q = 0;
+        double i_corr_start = -1.0;
+        double i_corr_stop = 1.0;
+        double i_corr_step = (i_corr_stop - i_corr_start)/(num_search_steps+1);
+        double q_corr_start = -1.0;
+        double q_corr_stop = 1.0;
+        double q_corr_step= (q_corr_stop - q_corr_start)/(num_search_steps+1);
+        double best_dc_dbrms = initial_dc_dbrms;
+        double best_i_corr = 0;
+        double best_q_corr = 0;
+        while (i_corr_step >= precision or q_corr_step >= precision)
+        {
+            for (double i_corr = i_corr_start + i_corr_step; i_corr <= i_corr_stop - i_corr_step; i_corr += i_corr_step)
+            {
+                for (double q_corr = q_corr_start + q_corr_step; q_corr <= q_corr_stop - q_corr_step; q_corr += q_corr_step)
+                {
+                    const std::complex<double> correction(i_corr, q_corr);
+                    usrp->set_tx_dc_offset(correction);
 
-        for (size_t i = 0; i < num_search_iters; i++){
+                    //receive some samples
+                    capture_samples(usrp, rx_stream, buff, nsamps);
+                    const double dc_dbrms = compute_tone_dbrms(buff, bb_dc_freq/actual_rx_rate);
 
-            dc_i_step = (dc_i_stop - dc_i_start)/(num_search_steps-1);
-            dc_q_step = (dc_q_stop - dc_q_start)/(num_search_steps-1);
-
-            for (double dc_i = dc_i_start; dc_i <= dc_i_stop + dc_i_step/2; dc_i += dc_i_step){
-            for (double dc_q = dc_q_start; dc_q <= dc_q_stop + dc_q_step/2; dc_q += dc_q_step){
-
-                const std::complex<double> correction(dc_i, dc_q);
-                usrp->set_tx_dc_offset(correction);
-
-                //receive some samples
-                capture_samples(usrp, rx_stream, buff, nsamps);
-
-                const double dc_dbrms = compute_tone_dbrms(buff, bb_dc_freq/actual_rx_rate);
-
-                if (dc_dbrms < lowest_offset){
-                    lowest_offset = dc_dbrms;
-                    best_dc_i = dc_i;
-                    best_dc_q = dc_q;
+                    if (dc_dbrms < best_dc_dbrms)
+                    {
+                        best_dc_dbrms = dc_dbrms;
+                        best_i_corr = i_corr;
+                        best_q_corr = q_corr;
+                    }
                 }
+            }
 
-            }}
-
-            //std::cout << "best_dc_i " << best_dc_i << std::endl;
-            //std::cout << "best_dc_q " << best_dc_q << std::endl;
-            //std::cout << "lowest_offset " << lowest_offset << std::endl;
-
-            dc_i_start = best_dc_i - dc_i_step;
-            dc_i_stop = best_dc_i + dc_i_step;
-            dc_q_start = best_dc_q - dc_q_step;
-            dc_q_stop = best_dc_q + dc_q_step;
+            i_corr_start = best_i_corr - i_corr_step;
+            i_corr_stop = best_i_corr + i_corr_step;
+            i_corr_step = (i_corr_stop - i_corr_start)/(num_search_steps+1);
+            q_corr_start = best_q_corr - q_corr_step;
+            q_corr_stop = best_q_corr + q_corr_step;
+            q_corr_step = (q_corr_stop - q_corr_start)/(num_search_steps+1);
         }
 
-        if (lowest_offset < initial_dc_dbrms){ //most likely valid, keep result
+        if (best_dc_dbrms < initial_dc_dbrms)   //keep result
+        {
             result_t result;
             result.freq = tx_lo;
-            result.real_corr = best_dc_i;
-            result.imag_corr = best_dc_q;
-            result.best = lowest_offset;
-            result.delta = initial_dc_dbrms - lowest_offset;
+            result.real_corr = best_i_corr;
+            result.imag_corr = best_q_corr;
+            result.best = best_dc_dbrms;
+            result.delta = initial_dc_dbrms - best_dc_dbrms;
             results.push_back(result);
-            if (vm.count("verbose")){
+            if (vm.count("verbose"))
                 std::cout << boost::format("TX DC: %f MHz: lowest offset %f dB, corrected %f dB") % (tx_lo/1e6) % result.best % result.delta << std::endl;
-            }
-            else std::cout << "." << std::flush;
+            else
+                std::cout << "." << std::flush;
         }
 
     }
+
     std::cout << std::endl;
 
     //stop the transmitter
     threads.interrupt_all();
+    boost::this_thread::sleep(boost::posix_time::milliseconds(500));    //wait for threads to finish
     threads.join_all();
 
     store_results(results, "TX", "tx", "dc", serial);
