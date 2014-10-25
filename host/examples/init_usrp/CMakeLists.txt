@@ -24,7 +24,7 @@ set(BOOST_REQUIRED_COMPONENTS
     system
     thread
 )
-find_package(Boost "1.35" REQUIRED ${BOOST_REQUIRED_COMPONENTS})
+find_package(Boost "1.46" REQUIRED ${BOOST_REQUIRED_COMPONENTS})
 
 # To add UHD as a dependency to this project, add a line such as this:
 find_package(UHD "3.7.1" REQUIRED)
