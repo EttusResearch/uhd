@@ -332,6 +332,9 @@ def main():
                     if options.verbose:
                         print "Image archive extracted to: %s" % (extract_path)
                     downloader.install_images(extract_path, images_dir, options.keep, print_progress=options.verbose)
+                    if options.verbose:
+                        print "Cleaning up temp location: %s" % (extract_path)
+                    shutil.rmtree(extract_path)
                     print
                     print "Images successfully installed to: %s" % (images_dir)
                 except Exception, e:

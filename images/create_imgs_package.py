@@ -38,7 +38,7 @@ def clear_img_dir(img_root_dir):
 def get_zipfilename_from_cpack_output(cpoutput):
     """ Parses the output of the ZIP-file creating script
     and scrapes the actual file name. """
-    regex = re.compile("\/build\/(?P<filename>.*\.zip)")
+    regex = re.compile("\/build\/(?P<filename>[^\/]+\.zip)")
     results = regex.search(cpoutput)
     return results.group('filename')
 

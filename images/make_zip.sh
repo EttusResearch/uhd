@@ -18,7 +18,7 @@ fi
 if [ -e "images/LICENSE" ]; then
 	rm images/LICENSE
 fi
-TAGFILES=`ls images/*.tag`
+TAGFILES=`ls images/*.tag 2>/dev/null`
 if [ -n "$TAGFILES" ]; then
 	rm $TAGFILES
 fi
