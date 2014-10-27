@@ -122,8 +122,8 @@ SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
 # Setup CPack Source
 ########################################################################
 
-SET(CPACK_SOURCE_PACKAGE_FILE_NAME "uhd-source_${UHD_VERSION}")
-SET(CPACK_SOURCE_IGNORE_FILES "\\\\.git*")
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME "uhd-${TRIMMED_UHD_VERSION}")
+SET(CPACK_SOURCE_IGNORE_FILES "\\\\.git*;\\\\.swp$;build*")
 
 ########################################################################
 # Setup CPack Components
