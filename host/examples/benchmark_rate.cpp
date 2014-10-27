@@ -43,7 +43,12 @@ unsigned long long num_seq_errors = 0;
 /***********************************************************************
  * Benchmark RX Rate
  **********************************************************************/
-void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_cpu, uhd::rx_streamer::sptr rx_stream){
+void benchmark_rx_rate(
+        uhd::usrp::multi_usrp::sptr usrp,
+        const std::string &rx_cpu,
+        uhd::rx_streamer::sptr rx_stream,
+        bool random_nsamps
+) {
     uhd::set_thread_priority_safe();
 
     //print pre-test summary
@@ -68,15 +73,19 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_c
     rx_stream->issue_stream_cmd(cmd);
 
     while (not boost::this_thread::interruption_requested()){
+        if (random_nsamps) {
+            cmd.num_samps = rand() % max_samps_per_packet;
+            rx_stream->issue_stream_cmd(cmd);
+        }
         try {
-          num_rx_samps += rx_stream->recv(buffs, max_samps_per_packet, md)*rx_stream->get_num_channels();
+            num_rx_samps += rx_stream->recv(buffs, max_samps_per_packet, md)*rx_stream->get_num_channels();
         }
         catch (...) {
-          /* apparently, the boost thread interruption can sometimes result in
-             throwing exceptions not of type boost::exception, this catch allows
-             this thread to still attempt to issue the STREAM_MODE_STOP_CONTINUOUS
-          */
-          break;
+            /* apparently, the boost thread interruption can sometimes result in
+               throwing exceptions not of type boost::exception, this catch allows
+               this thread to still attempt to issue the STREAM_MODE_STOP_CONTINUOUS
+            */
+            break;
         }
 
         //handle the error codes
@@ -109,7 +118,12 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &rx_c
 /***********************************************************************
  * Benchmark TX Rate
  **********************************************************************/
-void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &tx_cpu, uhd::tx_streamer::sptr tx_stream){
+void benchmark_tx_rate(
+        uhd::usrp::multi_usrp::sptr usrp,
+        const std::string &tx_cpu,
+        uhd::tx_streamer::sptr tx_stream,
+        bool random_nsamps=false
+) {
     uhd::set_thread_priority_safe();
 
     //print pre-test summary
@@ -127,9 +141,25 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp, const std::string &tx_c
         buffs.push_back(&buff.front()); //same buffer for each channel
     md.has_time_spec = (buffs.size() != 1);
 
-    while (not boost::this_thread::interruption_requested()){
-        num_tx_samps += tx_stream->send(buffs, max_samps_per_packet, md)*tx_stream->get_num_channels();;
-        md.has_time_spec = false;
+    if (random_nsamps) {
+        std::srand( time(NULL) );
+        while(not boost::this_thread::interruption_requested()){
+            size_t total_num_samps = rand() % max_samps_per_packet;
+            size_t num_acc_samps = 0;
+            const float timeout = 1;
+
+            usrp->set_time_now(uhd::time_spec_t(0.0));
+            while(num_acc_samps < total_num_samps){
+                //send a single packet
+                num_tx_samps += tx_stream->send(buffs, max_samps_per_packet, md, timeout)*tx_stream->get_num_channels();
+                num_acc_samps += std::min(total_num_samps-num_acc_samps, tx_stream->get_max_num_samps());
+            }
+        }
+    } else {
+        while (not boost::this_thread::interruption_requested()){
+            num_tx_samps += tx_stream->send(buffs, max_samps_per_packet, md)*tx_stream->get_num_channels();
+            md.has_time_spec = false;
+        }
     }
 
     //send a mini EOB packet
@@ -182,6 +212,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string rx_cpu, tx_cpu;
     std::string mode;
     std::string channel_list;
+    bool random_nsamps = false;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -196,6 +227,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rx_cpu", po::value<std::string>(&rx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for RX")
         ("tx_cpu", po::value<std::string>(&tx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for TX")
         ("mode", po::value<std::string>(&mode)->default_value("none"), "multi-channel sync mode option: none, mimo")
+        ("random", "Run with random values of samples in send() and recv() to stress-test the I/O.")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
     ;
     po::variables_map vm;
@@ -211,6 +243,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         "    Specify both options for a full-duplex test.\n"
         << std::endl;
         return ~0;
+    }
+
+    // Random number of samples?
+    if (vm.count("random")) {
+        std::cout << "Using random number of samples in send() and recv() calls." << std::endl;
+        random_nsamps = true;
     }
 
     //create a usrp device
@@ -251,7 +289,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::stream_args_t stream_args(rx_cpu, rx_otw);
         stream_args.channels = channel_nums;
         uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-        thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_stream));
+        thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_stream, random_nsamps));
     }
 
     //spawn the transmit test thread
@@ -261,7 +299,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::stream_args_t stream_args(tx_cpu, tx_otw);
         stream_args.channels = channel_nums;
         uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
-        thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_stream));
+        thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_stream, random_nsamps));
         thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, tx_stream));
     }
 
