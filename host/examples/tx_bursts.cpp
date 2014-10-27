@@ -148,7 +148,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             size_t num_tx_samps = tx_stream->send(
                 buffs, samps_to_send, md, timeout
             );
-                
             //do not use time spec for subsequent packets
             md.has_time_spec = false;
             md.start_of_burst = false;

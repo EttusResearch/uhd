@@ -47,6 +47,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //print the help message
     if (vm.count("help")){
         std::cout << boost::format("UHD Test PPS Input %s") % desc << std::endl;
+        std::cout
+                << std::endl
+                << "Tests if the PPS input signal is working. Will throw an error if not."
+                << std::endl
+                << std::endl;
         return ~0;
     }
 
