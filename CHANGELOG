@@ -17,7 +17,7 @@ Change Log for Releases
   amendments
 * Added many missing virtual destructors (less build warnings)
 * Added support for NI-RIO 14.0
-* X300 fixes: Not found over PCIe with no eth interfaces,
+* X300 fixes: Not found over PCIe with no eth interfaces
 * CMake improvements: Now comes with own UHDConfig.cmake and example
   to build standalone UHD apps, build fixes on Apple, interoperability
   with GNU Radio
@@ -25,6 +25,7 @@ Change Log for Releases
   ref detection, stability fixes, host driver (UHD can now talk to
   OctoClock)
 * Examples: Improved GPIO example, rx_samples_to_file
+* Bumped minimum Boost version to 1.46
 
 ## 003.007.003
 * Fixed examples
