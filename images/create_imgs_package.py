@@ -54,7 +54,7 @@ def parse_args():
 def move_zip_to_repo(base_url, zipfilename):
     final_destination = os.path.join(base_url, zipfilename)
     if os.path.exists(final_destination):
-        print "WARNING: A file with name {} is already in the images repository.".format(zipfilename)
+        print "WARNING: A file with name {0} is already in the images repository.".format(zipfilename)
         print "Overwrite? [y/N]",
         ans = raw_input()
         if ans.strip().upper() != 'Y':
@@ -85,7 +85,7 @@ def main():
     print 'MD5: ', md5
     base_url = uhdimgs.get_base_url()
     if uhdimgs.base_url_is_local(base_url) and os.access(base_url, os.W_OK):
-        print "== Moving ZIP file to {}...".format(base_url)
+        print "== Moving ZIP file to {0}...".format(base_url)
         move_zip_to_repo(base_url, zipfilename)
     print "== Updating CMakeLists.txt..."
     uhdimgs.update_main_cmake_file(md5, zipfilename)

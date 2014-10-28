@@ -29,11 +29,8 @@ cd build
 cmake .. -DCPACK_GENERATOR=ZIP -DUHD_RELEASE_MODE="$1" ..
 make package
 mv uhd-images*.zip ..
-cmake .. -DCPACK_GENERATOR=TGZ -DUHD_RELEASE_MODE="$1" ..
-make package
 
 # Move images to here and clean up after us:
-mv uhd-images*.tar.gz ..
 cd ..
 rm -r build
 rm images/*.tag
