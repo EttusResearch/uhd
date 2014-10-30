@@ -39,12 +39,18 @@
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/utils/platform.hpp>
 
+////// RFNOC ////////////
+#include <uhd/usrp/rfnoc/null_block_ctrl.hpp>
+#include "../rfnoc/radio_ctrl.hpp"
+////// RFNOC ////////////
+
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
 
 #define X300_REV(x) (x - "A" + 1)
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::rfnoc;
 using namespace uhd::transport;
 using namespace uhd::niusrprio;
 namespace asio = boost::asio;
@@ -830,6 +836,53 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     } else {
         UHD_MSG(status) << "References initialized to internal sources" << std::endl;
     }
+
+    //////////////// RFNOC /////////////////
+    // Here's the plan:
+    // - We cycle through all ports on this mb's xbar
+    //     - For now: Just check ports 5, 6, 7 and add radios manually
+    // - Calculate destination address and create a transport
+    // - Create a block_ctrl and connect it
+    // - Poll readback register 1
+    // - Figure out if there's a better derivative of block_ctrl_base than the standard
+    // - If yes, add that sptr to the list of block controls
+    // - Else, just add the original block_ctrl sptr
+    //
+    //const size_t NUM_CE = 0;
+    const size_t NUM_CE = mb.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_NUM_CE));
+    UHD_VAR(NUM_CE);
+    for (size_t i = 0; i < NUM_CE; i++) {
+        boost::uint8_t xbar_port = (i & 0xFF) + X300_XB_DST_CE0;
+        uhd::sid_t ctrl_sid(X300_DEVICE_HERE, 0, X300_DEVICE_THERE, xbar_port << 4);
+
+        both_xports_t xport = this->make_transport(
+            ctrl_sid,
+            dev_addr
+        );
+        UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control #%d (SID: %s)...") % i % ctrl_sid.to_pp_string_hex());
+        radio_ctrl_core_3000::sptr ctrl = radio_ctrl_core_3000::make(
+                mb.if_pkt_is_big_endian,
+                xport.recv,
+                xport.send,
+                xport.send_sid,
+                str(boost::format("CE_%02d_Port_%02d") % i % xbar_port)
+        );
+        UHD_MSG(status) << "OK" << std::endl;
+        boost::uint64_t noc_id = ctrl->peek64(0);
+        UHD_MSG(status) << str(boost::format("Port %d: Found NoC-Block with ID %016X.") % int(xbar_port) % noc_id) << std::endl;
+        uhd::rfnoc::make_args_t make_args;
+        make_args.ctrl_iface = ctrl;
+        make_args.ctrl_sid = xport.send_sid;
+        make_args.device_index = mb_i;
+        make_args.tree = _tree->subtree(mb_path);
+        make_args.is_big_endian = mb.if_pkt_is_big_endian;
+        _rfnoc_block_ctrl.push_back(block_ctrl_base::make(make_args, noc_id));
+    }
+    UHD_MSG(status) << "========== Full list of RFNoC blocks: ============" << std::endl;
+    BOOST_FOREACH(uhd::rfnoc::block_ctrl_base::sptr this_block, _rfnoc_block_ctrl) {
+        UHD_MSG(status) << "* " << this_block->get_block_id() << std::endl;
+    }
+    //////////////// RFNOC /////////////////
 }
 
 x300_impl::~x300_impl(void)
@@ -880,7 +933,11 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     ////////////////////////////////////////////////////////////////////
     boost::uint8_t dest = (radio_index == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
     boost::uint32_t ctrl_sid;
-    both_xports_t xport = this->make_transport(mb_i, dest, X300_RADIO_DEST_PREFIX_CTRL, device_addr_t(), ctrl_sid);
+    uhd::sid_t radio_address(0, 0, mb_i + X300_DEVICE_THERE, dest << 4);
+    //both_xports_t xport = this->make_transport(mb_i, dest, X300_RADIO_DEST_PREFIX_CTRL, device_addr_t(), ctrl_sid);
+    both_xports_t xport = this->make_transport(radio_address, device_addr_t());
+    ctrl_sid = xport.send_sid.get();
+    UHD_MSG(status) << "Radio " << radio_index << " Ctrl SID: " << uhd::sid_t(ctrl_sid).to_pp_string_hex() << std::endl;
     perif.ctrl = radio_ctrl_core_3000::make(mb.if_pkt_is_big_endian, xport.recv, xport.send, ctrl_sid, slot_name);
     perif.ctrl->poke32(TOREG(SR_MISC_OUTS), (1 << 2)); //reset adc + dac
     perif.ctrl->poke32(TOREG(SR_MISC_OUTS),  (1 << 1) | (1 << 0)); //out of reset + dac enable
@@ -1071,6 +1128,36 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
             .subscribe(boost::bind(&x300_impl::set_rx_fe_corrections, this, mb_path, slot_name, _1));
     }
+
+    /////// Create the RFNoC block
+    uhd::rfnoc::make_args_t make_args("Radio");
+    make_args.ctrl_iface = perif.ctrl;
+    make_args.ctrl_sid = ctrl_sid;
+    make_args.device_index = mb_i;
+    make_args.tree = _tree->subtree(mb_path);
+    make_args.is_big_endian = mb.if_pkt_is_big_endian;
+    radio_ctrl::sptr r_ctrl = boost::dynamic_pointer_cast<radio_ctrl>(block_ctrl_base::make(make_args));
+    r_ctrl->set_perifs(
+            perif.time64,
+            perif.framer,
+            perif.ddc,
+            perif.deframer,
+            perif.duc
+    );
+    _rfnoc_block_ctrl.push_back(r_ctrl);
+
+    ////// Add default channels
+    size_t channel_idx = 0;
+    while (_tree->exists(str(boost::format("/channels/%d") % channel_idx))) {
+        channel_idx++;
+    }
+    _tree->create<uhd::rfnoc::block_id_t>(str(boost::format("/channels/%d") % channel_idx))
+            .set(r_ctrl->get_block_id());
+    UHD_MSG(status)
+        << _tree->access<uhd::rfnoc::block_id_t>(str(boost::format("/channels/%d") % channel_idx)).get()
+        << std::endl;
+    _tree->create<uhd::device_addr_t>(str(boost::format("/channels/%d/args") % channel_idx))
+            .set(uhd::device_addr_t());
 }
 
 void x300_impl::set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq)
@@ -1098,25 +1185,46 @@ boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, boost::uint8_t 
 }
 
 
+// TODO remove
+//x300_impl::both_xports_t x300_impl::make_transport(
+    //uhd::sid_t &sid,
+    //const uhd::device_addr_t& args
+//) {
+    //UHD_MSG(status) << "x300_impl::make_transport()" << std::endl;
+    //const size_t mb_index = sid.get_dst_addr() - X300_DEVICE_THERE;
+    //const boost::uint8_t destination = sid.get_dst_xbarport();
+    //const boost::uint8_t prefix = 0;
+    //boost::uint32_t new_sid;
+    //UHD_VAR(size_t(destination));
+    //UHD_VAR(mb_index);
+
+    //x300_impl::both_xports_t xports = make_transport(
+            //mb_index,
+            //destination,
+            //prefix,
+            //args,
+            //new_sid);
+    //sid = new_sid;
+    //return xports;
+//}
+
 x300_impl::both_xports_t x300_impl::make_transport(
-    const size_t mb_index,
-    const boost::uint8_t& destination,
-    const boost::uint8_t& prefix,
-    const uhd::device_addr_t& args,
-    boost::uint32_t& sid)
-{
+    const uhd::sid_t &address,
+    const uhd::device_addr_t& args
+) {
+    const size_t mb_index = address.get_dst_addr() - X300_DEVICE_THERE;
     mboard_members_t &mb = _mb[mb_index];
     both_xports_t xports;
 
-    sid_config_t config;
-    config.router_addr_there    = X300_DEVICE_THERE;
-    config.dst_prefix           = prefix;
-    config.router_dst_there     = destination;
-    config.router_dst_here      = mb.router_dst_here;
-    sid = this->allocate_sid(mb, config);
+    // TODO Replace prefix by something else.
+    const boost::uint8_t prefix = 0;
+
+    xports.send_sid = this->allocate_sid(mb, address);
+    xports.recv_sid = xports.send_sid.reversed();
 
     static const uhd::device_addr_t DEFAULT_XPORT_ARGS;
 
+    // TODO X300_RADIO_DEST_PREFIX_CTRL will go away
     const uhd::device_addr_t& xport_args =
         (prefix != X300_RADIO_DEST_PREFIX_CTRL) ? args : DEFAULT_XPORT_ARGS;
 
@@ -1145,7 +1253,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
 
         xports.recv = nirio_zero_copy::make(
             mb.rio_fpga_interface,
-            get_pcie_dma_channel(destination, prefix),
+            get_pcie_dma_channel(address.get_dst_xbarport(), prefix),
             default_buff_args,
             xport_args);
 
@@ -1246,12 +1354,12 @@ x300_impl::both_xports_t x300_impl::make_transport(
         //send a mini packet with SID into the ZPU
         //ZPU will reprogram the ethernet framer
         UHD_LOG << "programming packet for new xport on "
-            << mb.addr << std::hex << "sid 0x" << sid << std::dec << std::endl;
+            << mb.addr <<  " sid " << xports.send_sid << std::endl;
         //YES, get a __send__ buffer from the __recv__ socket
         //-- this is the only way to program the framer for recv:
         managed_send_buffer::sptr buff = xports.recv->get_send_buff();
         buff->cast<boost::uint32_t *>()[0] = 0; //eth dispatch looks for != 0
-        buff->cast<boost::uint32_t *>()[1] = uhd::htonx(sid);
+        buff->cast<boost::uint32_t *>()[1] = uhd::htonx(xports.send_sid.get());
         buff->commit(8);
         buff.reset();
 
@@ -1269,43 +1377,34 @@ x300_impl::both_xports_t x300_impl::make_transport(
 }
 
 
-boost::uint32_t x300_impl::allocate_sid(mboard_members_t &mb, const sid_config_t &config)
-{
+uhd::sid_t x300_impl::allocate_sid(
+        mboard_members_t &mb,
+        const uhd::sid_t &address
+) {
     const std::string &xport_path = mb.xport_path;
-    const boost::uint32_t stream = (config.dst_prefix | (config.router_dst_there << 2)) & 0xff;
+    uhd::sid_t sid = address;
+    sid.set_src_addr(X300_DEVICE_HERE);
+    sid.set_src_endpoint(_sid_framer);
 
-    const boost::uint32_t sid = 0
-        | (X300_DEVICE_HERE << 24)
-        | (_sid_framer << 16)
-        | (config.router_addr_there << 8)
-        | (stream << 0)
-    ;
-    UHD_LOG << std::hex
-        << " sid 0x" << sid
-        << " framer 0x" << _sid_framer
-        << " stream 0x" << stream
-        << " router_dst_there 0x" << int(config.router_dst_there)
-        << " router_addr_there 0x" << int(config.router_addr_there)
-        << std::dec << std::endl;
-
+    // TODO Move all of this setup_mb()
     // Program the X300 to recognise it's own local address.
-    mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_XB_LOCAL), config.router_addr_there);
+    mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_XB_LOCAL), address.get_dst_addr());
     // Program CAM entry for outgoing packets matching a X300 resource (for example a Radio)
-    // This type of packet does matches the XB_LOCAL address and is looked up in the upper half of the CAM
-    mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 256 + (stream)), config.router_dst_there);
+    // This type of packet matches the XB_LOCAL address and is looked up in the upper half of the CAM
+    mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 256 + address.get_dst_endpoint()), address.get_dst_xbarport());
     // Program CAM entry for returning packets to us (for example GR host via Eth0)
     // This type of packet does not match the XB_LOCAL address and is looked up in the lower half of the CAM
-    mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + (X300_DEVICE_HERE)), config.router_dst_here);
+    mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + (X300_DEVICE_HERE)), mb.router_dst_here);
 
     if (xport_path == "nirio") {
-        boost::uint32_t router_config_word = ((_sid_framer & 0xff) << 16) |                                    //Return SID
-                                      get_pcie_dma_channel(config.router_dst_there, config.dst_prefix); //Dest
-        mb.rio_fpga_interface->get_kernel_proxy()->poke(PCIE_ROUTER_REG(0), router_config_word);
+        UHD_THROW_SITE_INFO("pcie not implemented for rfnoc");
+        // TODO fix pcie
+        //boost::uint32_t router_config_word = ((_sid_framer & 0xff) << 16) |                                    //Return SID
+                                      //get_pcie_dma_channel(config.router_dst_there, config.dst_prefix); //Dest
+        //mb.rio_fpga_interface->get_kernel_proxy().poke(PCIE_ROUTER_REG(0), router_config_word);
     }
 
-    UHD_LOG << std::hex
-        << "done router config for sid 0x" << sid
-        << std::dec << std::endl;
+    UHD_LOG << "done router config for sid " << sid << std::endl;
 
     //increment for next setup
     _sid_framer++;
@@ -1659,12 +1758,20 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, wb_iface::sptr iface)
 
     if (compat_major != X300_FPGA_COMPAT_MAJOR)
     {
-        throw uhd::runtime_error(str(boost::format(
+        std::cout << "=========================================================" << std::endl;
+        std::cout << "Warning: " << str(boost::format(
             "Expected FPGA compatibility number 0x%x, but got 0x%x.%x:\n"
-            "The FPGA build is not compatible with the host code build.\n"
+            "The FPGA build might not compatible with the host code build.\n"
             "%s"
         ) % int(X300_FPGA_COMPAT_MAJOR) % compat_major % compat_minor
-          % print_images_error()));
+          % print_images_error()) << std::endl;
+        std::cout << "=========================================================" << std::endl;
+        //throw uhd::runtime_error(str(boost::format(
+            //"Expected FPGA compatibility number 0x%x, but got 0x%x.%x:\n"
+            //"The FPGA build is not compatible with the host code build.\n"
+            //"%s"
+        //) % int(X300_FPGA_COMPAT_MAJOR) % compat_major % compat_minor
+          //% print_images_error()));
     }
     _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));
@@ -1739,4 +1846,4 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
     }
     return mb_type;
 }
-
+// vim: sw=4 expandtab:

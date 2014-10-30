@@ -19,7 +19,7 @@
 #define INCLUDED_X300_IMPL_HPP
 
 #include <uhd/property_tree.hpp>
-#include <uhd/device.hpp>
+#include <uhd/device3.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
@@ -49,6 +49,10 @@
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include "recv_packet_demuxer_3000.hpp"
+///////////// RFNOC /////////////////////
+#include <uhd/usrp/rfnoc/block_ctrl.hpp>
+///////////// RFNOC /////////////////////
+
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 
@@ -97,14 +101,14 @@ static const size_t X300_MAX_RATE_1GIGE             = 100000000; // bytes/s
 #define X300_RADIO_DEST_PREFIX_CTRL 1
 #define X300_RADIO_DEST_PREFIX_RX 2
 
-#define X300_XB_DST_E0 0
-#define X300_XB_DST_E1 1
-#define X300_XB_DST_R0 2 // Radio 0 -> Slot A
-#define X300_XB_DST_R1 3 // Radio 1 -> Slot B
-#define X300_XB_DST_CE0 4
-#define X300_XB_DST_CE1 5
-#define X300_XB_DST_CE2 5
-#define X300_XB_DST_PCI 7
+#define X300_XB_DST_E0  0
+#define X300_XB_DST_E1  1
+#define X300_XB_DST_PCI 2
+#define X300_XB_DST_R0  3 // Radio 0 -> Slot A
+#define X300_XB_DST_R1  4 // Radio 1 -> Slot B
+#define X300_XB_DST_CE0 5
+#define X300_XB_DST_CE1 6
+#define X300_XB_DST_CE2 7
 
 #define X300_DEVICE_THERE 2
 #define X300_DEVICE_HERE 0
@@ -139,7 +143,7 @@ uhd::uart_iface::sptr x300_make_uart_iface(uhd::wb_iface::sptr iface);
 uhd::wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp);
 uhd::wb_iface::sptr x300_make_ctrl_iface_pcie(uhd::niusrprio::niriok_proxy::sptr drv_proxy);
 
-class x300_impl : public uhd::device
+class x300_impl : public uhd::device3
 {
 public:
     typedef uhd::transport::bounded_buffer<uhd::async_metadata_t> async_md_type;
@@ -185,14 +189,11 @@ private:
         tx_frontend_core_200::sptr tx_fe;
     };
 
-    //overflow recovery impl
-    void handle_overflow(radio_perifs_t &perif, boost::weak_ptr<uhd::rx_streamer> streamer);
-
     //vector of member objects per motherboard
     struct mboard_members_t
     {
-        uhd::dict<size_t, boost::weak_ptr<uhd::rx_streamer> > rx_streamers;
-        uhd::dict<size_t, boost::weak_ptr<uhd::tx_streamer> > tx_streamers;
+        uhd::dict<std::string, boost::weak_ptr<uhd::rx_streamer> > rx_streamers;
+        uhd::dict<std::string, boost::weak_ptr<uhd::tx_streamer> > tx_streamers;
 
         uhd::task::sptr claimer_task;
         std::string addr;
@@ -252,35 +253,36 @@ private:
       * - Self test ADC
       * - Sync DACs (for MIMO)
       * - Initialize the property tree for control objects etc. (gain, rate...)
+      * - Populate the radio ctrl object for RFNoC operation
       *
       * \param mb_i Motherboard index
       * \param slot_name Slot name (A or B).
       */
     void setup_radio(const size_t, const std::string &slot_name);
 
+    //! A counter, designed to create unique SIDs
     size_t _sid_framer;
-    struct sid_config_t
-    {
-        boost::uint8_t router_addr_there;
-        boost::uint8_t dst_prefix; //2bits
-        boost::uint8_t router_dst_there;
-        boost::uint8_t router_dst_here;
-    };
-    boost::uint32_t allocate_sid(mboard_members_t &mb, const sid_config_t &config);
 
+    uhd::sid_t allocate_sid(mboard_members_t &mb, const uhd::sid_t &address);
+
+    // TODO move to device3_common
     struct both_xports_t
     {
         uhd::transport::zero_copy_if::sptr recv;
         uhd::transport::zero_copy_if::sptr send;
         size_t recv_buff_size;
         size_t send_buff_size;
+        uhd::sid_t send_sid;
+        uhd::sid_t recv_sid;
     };
+
+    // TODO declare this in device3
+    /*! \brief Create a transport to a given endpoint.
+     */
     both_xports_t make_transport(
-        const size_t mb_index,
-        const boost::uint8_t& destination,
-        const boost::uint8_t& prefix,
-        const uhd::device_addr_t& args,
-        boost::uint32_t& sid);
+        const uhd::sid_t &address,
+        const uhd::device_addr_t& args
+    );
 
     struct frame_size_t
     {
@@ -360,6 +362,17 @@ private:
     void update_atr_leds(gpio_core_200_32wo::sptr, const std::string &ant);
     boost::uint32_t get_fp_gpio(gpio_core_200::sptr, const std::string &);
     void set_fp_gpio(gpio_core_200::sptr, const std::string &, const boost::uint32_t);
+
+
+    void generate_channel_list(
+            const uhd::stream_args_t &args,
+            std::vector<uhd::rfnoc::block_id_t> &chan_list,
+            std::vector<uhd::device_addr_t> &chan_args
+    );
+
+    // Loopback stuff
+    void test_rfnoc_loopback(size_t mb_index, int ce_index);
 };
 
 #endif /* INCLUDED_X300_IMPL_HPP */
+// vim: sw=4 expandtab:

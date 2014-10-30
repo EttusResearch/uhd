@@ -82,6 +82,7 @@ localparam ZPU_RB_CLK_STATUS = 3;
 localparam ZPU_RB_COMPAT_NUM = 6;
 localparam ZPU_RB_ETH_TYPE0  = 4;
 localparam ZPU_RB_ETH_TYPE1  = 5;
+localparam ZPU_RB_NUM_CE  = 7;
 
 //clock status
 #define ZPU_RB_CLK_STATUS_LMK_STATUS    (0x3 << 0)
