@@ -242,6 +242,7 @@ static tune_result_t tune_xx_subdev_and_dsp(
         );
 
     freq_range_t dsp_range = dsp_subtree->access<meta_range_t>("freq/range").get();
+    freq_range_t rf_range = rf_fe_subtree->access<meta_range_t>("freq/range").get();
 
     double clipped_requested_freq = tune_range.clip(tune_request.target_freq);
 
@@ -281,6 +282,7 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //-- set the RF frequency depending upon the policy
     //------------------------------------------------------------------
     double target_rf_freq = 0.0;
+
     switch (tune_request.rf_freq_policy){
         case tune_request_t::POLICY_AUTO:
             target_rf_freq = clipped_requested_freq + lo_offset;
@@ -297,7 +299,7 @@ static tune_result_t tune_xx_subdev_and_dsp(
                     .set(tune_request.rf_freq - tune_request.target_freq);
             }
 
-            target_rf_freq = tune_request.rf_freq;
+            target_rf_freq = rf_range.clip(tune_request.rf_freq);
             break;
 
         case tune_request_t::POLICY_NONE:
