@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <cmath>
+#include <memory>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -386,6 +387,17 @@ public:
 
     device::sptr get_device(void){
         return _dev;
+    }
+
+    bool is_device3(void) {
+        return boost::dynamic_pointer_cast<uhd::device3>(_dev) != NULL;
+    }
+
+    device3::sptr get_device3(void) {
+        if (not is_device3()) {
+            throw uhd::type_error("Cannot call get_device3() on a non-generation 3 device.");
+        }
+        return boost::dynamic_pointer_cast<uhd::device3>(_dev);
     }
 
     dict<std::string, std::string> get_usrp_rx_info(size_t chan){
@@ -1180,6 +1192,99 @@ public:
         }
         return 0;
     }
+
+    void connect(
+            const uhd::rfnoc::block_id_t &src_block,
+            size_t src_block_port,
+            const uhd::rfnoc::block_id_t &dst_block,
+            size_t dst_block_port
+    ) {
+        rfnoc::block_ctrl_base::sptr src = get_device3()->get_block_ctrl(src_block);
+        rfnoc::block_ctrl_base::sptr dst = get_device3()->get_block_ctrl(dst_block);
+
+        src_block_port &= 0xF;
+        dst_block_port &= 0xF;
+
+        // Check IO signatures match
+        if (not dst->set_input_signature(src->get_output_signature(src_block_port), dst_block_port)) {
+            throw uhd::runtime_error(str(
+                boost::format("Can't connect block %s to %s: IO signature mismatch\n(%s is incompatible with %s).")
+                % src->get_block_id().get() % dst->get_block_id().get()
+                % src->get_output_signature(src_block_port)
+                % dst->get_input_signature(dst_block_port)
+            ));
+        }
+
+        // Calculate SID
+        sid_t sid = dst->get_address(dst_block_port);
+        sid.set_src(src->get_address(src_block_port));
+
+        // Set SID on source block
+        src->set_destination(sid.get(), src_block_port);
+
+        // Set flow control
+        rfnoc::stream_sig_t output_sig = src->get_output_signature(src_block_port);
+        size_t pkt_size = output_sig.packet_size;
+        if (pkt_size == 0) { // Unspecified packet rate. Assume max packet size.
+            UHD_MSG(status) << "Assuming max packet size for " << src->get_block_id() << std::endl;
+            pkt_size = uhd::rfnoc::MAX_PACKET_SIZE;
+        }
+        // FC window (in packets) depends on FIFO size...          ...and packet size.
+        size_t buf_size_pkts = dst->get_fifo_size(dst_block_port) / pkt_size;
+        if (buf_size_pkts == 0) {
+            throw uhd::runtime_error(str(
+                boost::format("Input FIFO for block %s is too small (%d kiB) for packets of size %d kiB\n"
+                              "coming from block %s.")
+                % dst->get_block_id().get() % (dst->get_fifo_size(dst_block_port) / 1024)
+                % (pkt_size / 1024) % src->get_block_id().get()
+            ));
+        }
+        src->configure_flow_control_out(buf_size_pkts, src_block_port);
+
+        size_t pkts_per_ack = uhd::rfnoc::DEFAULT_FC_XBAR_PKTS_PER_ACK;
+        if (sid.get_src_addr() != sid.get_dst_addr()) {
+            pkts_per_ack = std::max<size_t>(buf_size_pkts / uhd::rfnoc::DEFAULT_FC_TX_RESPONSE_FREQ, 1);
+        }
+        dst->configure_flow_control_in(
+                0, // Default to not use cycles
+                pkts_per_ack,
+                dst_block_port
+        );
+
+        // Register blocks
+        dst->register_upstream_block(src);
+        src->register_downstream_block(dst);
+    }
+
+    void connect(const uhd::rfnoc::block_id_t &src_block, const uhd::rfnoc::block_id_t &dst_block) {
+        connect(src_block, 0, dst_block, 0);
+    }
+
+    void clear_channels(void)
+    {
+        _tree->remove("/channels");
+    }
+
+    size_t set_channel(
+            const uhd::rfnoc::block_id_t &block_id,
+            const uhd::device_addr_t &args,
+            int chan_idx
+    ) {
+        if (chan_idx == -1) {
+            chan_idx = 0;
+            while (_tree->exists(str(boost::format("/channels/%d") % chan_idx))) {
+                chan_idx++;
+            }
+        }
+        fs_path chan_root = str(boost::format("/channels/%d") % chan_idx);
+        if (_tree->exists(chan_root)) {
+            _tree->remove(chan_root);
+        }
+        _tree->create<uhd::rfnoc::block_id_t>(chan_root).set(block_id);
+        _tree->create<uhd::device_addr_t>(chan_root / "args").set(args);
+        return chan_idx;
+    }
+
 
 private:
     device::sptr _dev;

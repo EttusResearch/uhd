@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011,2014 Ettus Research LLC
+# Copyright 2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,25 +15,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/constants.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
+@ONLY)
+
 UHD_INSTALL(FILES
-
-    #### dboard headers ###
-    dboard_base.hpp
-    dboard_eeprom.hpp
-    dboard_id.hpp
-    dboard_iface.hpp
-    dboard_manager.hpp
-
-    ### utilities ###
-    gps_ctrl.hpp
-    mboard_eeprom.hpp
-    subdev_spec.hpp
-
-    ### interfaces ###
-    multi_usrp.hpp
-
-    DESTINATION ${INCLUDE_DIR}/uhd/usrp
+    block_ctrl_base.hpp
+    block_ctrl.hpp
+    block_id.hpp
+    blockdef.hpp
+    fir_block_ctrl.hpp
+    fft_block_ctrl.hpp
+    null_block_ctrl.hpp
+    window_block_ctrl.hpp
+    addsub_block_ctrl.hpp
+    split_stream_block_ctrl.hpp
+    packet_resizer_block_ctrl.hpp
+    rx_block_ctrl_base.hpp
+    stream_sig.hpp
+    tx_block_ctrl_base.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
+    DESTINATION ${INCLUDE_DIR}/uhd/usrp/rfnoc
     COMPONENT headers
 )
 
-ADD_SUBDIRECTORY(rfnoc)
+ADD_SUBDIRECTORY(blocks)
+#ADD_SUBDIRECTORY(components)
+

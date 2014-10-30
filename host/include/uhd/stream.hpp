@@ -186,6 +186,10 @@ public:
      * \param stream_cmd the stream command to issue
      */
     virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
+
+    ///////// RFNOC /////////////
+    virtual boost::uint32_t get_sid(const size_t chan) = 0;
+    ///////// RFNOC /////////////
 };
 
 /*!
@@ -245,6 +249,10 @@ public:
     virtual bool recv_async_msg(
         async_metadata_t &async_metadata, double timeout = 0.1
     ) = 0;
+
+    ///////// RFNOC /////////////
+    virtual boost::uint32_t get_sid(const size_t chan) = 0;
+    ///////// RFNOC /////////////
 };
 
 } //namespace uhd

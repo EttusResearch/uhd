@@ -121,6 +121,23 @@ public:
         _header_offset_words32 = header_offset_words32;
     }
 
+    ////////////////// RFNOC ///////////////////////////
+    //! Set the stream ID for a specific channel (or no SID)
+    void set_xport_chan_sid(const size_t xport_chan, const bool has_sid, const boost::uint32_t sid = 0){
+        _props.at(xport_chan).has_sid = has_sid;
+        _props.at(xport_chan).sid = sid;
+    }
+
+    //! Get the stream ID for a specific channel (or zero if no SID)
+    boost::uint32_t get_xport_chan_sid(const size_t xport_chan) const {
+        if (_props.at(xport_chan).has_sid) {
+            return _props.at(xport_chan).sid;
+        } else {
+            return 0;
+        }
+    }
+    ////////////////// RFNOC ///////////////////////////
+
     /*!
      * Set the threshold for alignment failure.
      * How many packets throw out before giving up?
@@ -283,6 +300,10 @@ private:
         handle_overflow_type handle_overflow;
         handle_flowctrl_type handle_flowctrl;
         size_t fc_update_window;
+	/////// RFNOC ///////////
+        bool has_sid;
+        boost::uint32_t sid;
+	/////// RFNOC ///////////
     };
     std::vector<xport_chan_props_type> _props;
     size_t _num_outputs;
@@ -791,6 +812,10 @@ public:
     void issue_stream_cmd(const stream_cmd_t &stream_cmd)
     {
         return recv_packet_handler::issue_stream_cmd(stream_cmd);
+    }
+
+    boost::uint32_t get_sid(const size_t chan) {
+        return get_xport_chan_sid(chan);
     }
 
 private:

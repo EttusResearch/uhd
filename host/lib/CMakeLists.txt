@@ -89,6 +89,7 @@ CONFIGURE_FILE(
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/deprecated.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/device3.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/stream.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exception.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/property_tree.cpp

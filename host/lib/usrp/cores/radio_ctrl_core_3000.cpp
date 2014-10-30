@@ -35,7 +35,7 @@ using namespace uhd::transport;
 
 static const double ACK_TIMEOUT = 2.0; //supposed to be worst case practical timeout
 static const double MASSIVE_TIMEOUT = 10.0; //for when we wait on a timed command
-static const size_t SR_READBACK = 32;
+static const size_t SR_READBACK = 127;
 
 radio_ctrl_core_3000::~radio_ctrl_core_3000(void){
     /* NOP */

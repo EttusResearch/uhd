@@ -69,7 +69,9 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
 
     void clear(void)
     {
-        this->configure_flow_control(0); //disable fc
+        // FC should never be disabled, this will actually become
+        // impossible in the future
+        //this->configure_flow_control(0); //disable fc
     }
 
     void set_nsamps_per_packet(const size_t nsamps)

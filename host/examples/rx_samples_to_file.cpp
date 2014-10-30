@@ -20,6 +20,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -37,6 +38,7 @@ template<typename samp_type> void recv_to_file(
     uhd::usrp::multi_usrp::sptr usrp,
     const std::string &cpu_format,
     const std::string &wire_format,
+    const std::string &stream_args_args,
     const std::string &file,
     size_t samps_per_buff,
     unsigned long long num_requested_samples,
@@ -50,6 +52,7 @@ template<typename samp_type> void recv_to_file(
     unsigned long long num_total_samps = 0;
     //create a receive streamer
     uhd::stream_args_t stream_args(cpu_format,wire_format);
+    stream_args.args = stream_args_args;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     uhd::rx_metadata_t md;
@@ -67,7 +70,9 @@ template<typename samp_type> void recv_to_file(
     stream_cmd.num_samps = num_requested_samples;
     stream_cmd.stream_now = true;
     stream_cmd.time_spec = uhd::time_spec_t();
+    std::cout << "Issueing stream cmd" << std::endl;
     rx_stream->issue_stream_cmd(stream_cmd);
+    std::cout << "Done" << std::endl;
 
     boost::system_time start = boost::get_system_time();
     unsigned long long ticks_requested = (long)(time_requested * (double)boost::posix_time::time_duration::ticks_per_second());
@@ -142,7 +147,15 @@ template<typename samp_type> void recv_to_file(
     }
 
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
+    std::cout << "Issueing stop stream cmd" << std::endl;
     rx_stream->issue_stream_cmd(stream_cmd);
+    std::cout << "Done" << std::endl;
+
+    // Run recv until nothing is left
+    int num_post_samps = 0;
+    do {
+        num_post_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0);
+    } while(num_post_samps and md.error_code == uhd::rx_metadata_t::ERROR_CODE_NONE);
 
     if (outfile.is_open())
         outfile.close();
@@ -209,7 +222,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, file, type, ant, subdev, ref, wirefmt;
+    std::string args, file, type, ant, subdev, ref, wirefmt, streamargs, blockid;
     size_t total_num_samps, spb;
     double rate, freq, gain, bw, total_time, setup_time;
 
@@ -218,6 +231,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
+        ("streamargs", po::value<std::string>(&streamargs)->default_value(""), "stream args")
         ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to write binary samples to")
         ("type", po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
@@ -240,6 +254,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("continue", "don't abort on a bad packet")
         ("skip-lo", "skip checking LO lock status")
         ("int-n", "tune USRP with integer-N tuning")
+        ("blockid", po::value<std::string>(&blockid)->default_value(""), "rfnoc block id")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -328,8 +343,21 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
 
+    if (not blockid.empty() and usrp->is_device3()) {
+        usrp->get_device3()->clear();
+        uhd::rfnoc::rx_block_ctrl_base::sptr blk_ctrl =
+            usrp->get_device3()->find_block_ctrl< uhd::rfnoc::rx_block_ctrl_base >(blockid);
+        if (not blk_ctrl) {
+            std::cout << "Invalid block control selected." << std::endl;
+            return ~0;
+        }
+        usrp->connect(uhd::rfnoc::block_id_t("0/Radio_0"), blk_ctrl->get_block_id());
+        usrp->clear_channels();
+        usrp->set_channel(blk_ctrl->get_block_id());
+    }
+
 #define recv_to_file_args(format) \
-    (usrp, format, wirefmt, file, spb, total_num_samps, total_time, bw_summary, stats, null, enable_size_map, continue_on_bad_packet)
+    (usrp, format, wirefmt, streamargs, file, spb, total_num_samps, total_time, bw_summary, stats, null, enable_size_map, continue_on_bad_packet)
     //recv to file
     if (type == "double") recv_to_file<std::complex<double> >recv_to_file_args("fc64");
     else if (type == "float") recv_to_file<std::complex<float> >recv_to_file_args("fc32");

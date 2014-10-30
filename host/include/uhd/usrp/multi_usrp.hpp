@@ -29,6 +29,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
+#include <uhd/device3.hpp>
 #include <uhd/deprecated.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -116,9 +117,24 @@ public:
     /*!
      * Get the underlying device object.
      * This is needed to get access to the streaming API and properties.
-     * \return the device object within this single usrp
+     * \return the device object within this USRP
      */
     virtual device::sptr get_device(void) = 0;
+
+    /*! Returns true if this is a generation-3 device.
+     */
+    virtual bool is_device3(void) = 0;
+
+    /*!
+     * Get the underlying device3 object. Only works for generation-3 (or later) devices.
+     *
+     * If this device is not actually a generation-3 device, it will throw
+     * a uhd::type_error.
+     *
+     * This is needed to get access to the streaming API and properties.
+     * \return The uhd::device3 object for this USRP.
+     */
+    virtual device3::sptr get_device3(void) = 0;
 
     //! Convenience method to get a RX streamer. See also uhd::device::get_rx_stream().
     virtual rx_streamer::sptr get_rx_stream(const stream_args_t &args) = 0;
@@ -892,6 +908,59 @@ public:
      * \return the value set for this attribute
      */
     virtual boost::uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard = 0) = 0;
+
+    /*******************************************************************
+     * RFNoC Methods
+     ******************************************************************/
+
+    /*! Connect a RFNOC block with block ID \p src_block to another with block ID \p dst_block.
+     *
+     * This will:
+     * - Check if this connection is valid (IO signatures, see if types match)
+     * - Configure the flow control for the blocks
+     * - Configure SID for the upstream block
+     * - Register the upstream block in the downstream block
+     *
+     */
+    virtual void connect(
+                const uhd::rfnoc::block_id_t &src_block,
+                size_t src_block_port,
+                const uhd::rfnoc::block_id_t &dst_block,
+                size_t dst_block_port
+    ) = 0;
+
+    /*! Shorthand for connect().
+     *
+     * Defaults to using ports 0 for both source and destination.
+     */
+    virtual void connect(
+            const uhd::rfnoc::block_id_t &src_block,
+            const uhd::rfnoc::block_id_t &dst_block
+    ) = 0;
+
+    /*! Reset the channel definitions.
+     *
+     * This clears all previously defined channels.
+     */
+    virtual void clear_channels(void) = 0;
+
+    /*! Defines a channel.
+     *
+     * \param block_id The block ID this channel will map to.
+     *                 If no such block exists in the device,
+     *                 a uhd::value_error is thrown.
+     * \param args Arguments for this channel.
+     * \param chan_idx. The channel index. If this is left out,
+     *                  the next available channel is used.
+     * \returns the channel index of this channel. If \p chan_idx
+     *          is provided and no exception is thrown, this returns
+     *          chan_idx.
+     */
+    virtual size_t set_channel(
+            const uhd::rfnoc::block_id_t &block_id,
+            const uhd::device_addr_t &args = uhd::device_addr_t(),
+            int chan_idx = -1
+    ) = 0;
 
 };
 

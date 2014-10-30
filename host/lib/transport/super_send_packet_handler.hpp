@@ -109,6 +109,17 @@ public:
         _props.at(xport_chan).sid = sid;
     }
 
+    ///////// RFNOC ///////////////////
+    //! Get the stream ID for a specific channel (or zero if no SID)
+    boost::uint32_t get_xport_chan_sid(const size_t xport_chan) const {
+        if (_props.at(xport_chan).has_sid) {
+            return _props.at(xport_chan).sid;
+        } else {
+            return 0;
+        }
+    }
+    ///////// RFNOC ///////////////////
+
     void set_enable_trailer(const bool enable)
     {
         _has_tlr = enable;
@@ -462,6 +473,11 @@ public:
     ){
         return send_packet_handler::recv_async_msg(async_metadata, timeout);
     }
+
+    boost::uint32_t get_sid(const size_t chan) {
+        return get_xport_chan_sid(chan);
+    }
+
 
 private:
     size_t _max_num_samps;

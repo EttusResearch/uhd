@@ -25,10 +25,13 @@ include(UHDUnitTest)
 ########################################################################
 SET(test_sources
     addr_test.cpp
+    block_id_test.cpp
+    blockdef_test.cpp
     buffer_test.cpp
     byteswap_test.cpp
     convert_test.cpp
     cast_test.cpp
+    device3_test.cpp
     dict_test.cpp
     error_test.cpp
     fp_compare_delta_test.cpp
@@ -40,6 +43,7 @@ SET(test_sources
     sid_t_test.cpp
     sph_recv_test.cpp
     sph_send_test.cpp
+    stream_sig_test.cpp
     subdev_spec_test.cpp
     time_spec_test.cpp
     vrt_test.cpp

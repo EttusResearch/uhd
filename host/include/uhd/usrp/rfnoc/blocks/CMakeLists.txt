@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011,2014 Ettus Research LLC
+# Copyright 2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,25 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-UHD_INSTALL(FILES
+FILE(GLOB xml_files "*.xml")
 
-    #### dboard headers ###
-    dboard_base.hpp
-    dboard_eeprom.hpp
-    dboard_id.hpp
-    dboard_iface.hpp
-    dboard_manager.hpp
-
-    ### utilities ###
-    gps_ctrl.hpp
-    mboard_eeprom.hpp
-    subdev_spec.hpp
-
-    ### interfaces ###
-    multi_usrp.hpp
-
-    DESTINATION ${INCLUDE_DIR}/uhd/usrp
-    COMPONENT headers
+UHD_INSTALL(
+    FILES ${xml_files}
+    DESTINATION ${PKG_DATA_DIR}/rfnoc/blocks
+    COMPONENT headers # TODO: Different component
 )
-
-ADD_SUBDIRECTORY(rfnoc)

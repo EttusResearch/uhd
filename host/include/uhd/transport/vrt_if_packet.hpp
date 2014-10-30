@@ -52,10 +52,23 @@ namespace vrt{
         //packet type
         enum packet_type_t
         {
+	    //  Old packet types:
             PACKET_TYPE_DATA      = 0x0,
             PACKET_TYPE_IF_EXT    = 0x1,
             PACKET_TYPE_CONTEXT   = 0x2, //extension context: has_sid = true
+	    // New packet types:
+	    //PACKET_TYPE_DATA      = 0x0, // Data
+	    PACKET_TYPE_FC        = 0x1, // Flow control
+	    PACKET_TYPE_CMD       = 0x2, // Command
+	    PACKET_TYPE_RESP      = 0x3, // Cmd response / errors
         } packet_type;
+        //enum packet_type_t
+        //{
+            //PACKET_TYPE_DATA      = 0x0, // Data
+            //PACKET_TYPE_FC        = 0x1, // Flow control
+            //PACKET_TYPE_CMD       = 0x2, // Command
+            //PACKET_TYPE_RESP      = 0x3, // Cmd response / errors
+        //} packet_type;
 
         //size fields
         size_t num_payload_words32; //required in pack, derived in unpack

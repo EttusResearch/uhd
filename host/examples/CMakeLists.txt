@@ -21,6 +21,8 @@
 SET(example_sources
     benchmark_rate.cpp
     network_relay.cpp
+    # Currently broken
+    #rfnoc_nullsource_ce_rx.cpp
     rx_multi_samples.cpp
     rx_samples_to_file.cpp
     rx_samples_to_udp.cpp
