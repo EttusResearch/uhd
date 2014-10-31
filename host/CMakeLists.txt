@@ -291,18 +291,16 @@ IF(CMAKE_CROSSCOMPILING)
     SET(UHD_PC_LIBS)
 ENDIF(CMAKE_CROSSCOMPILING)
 
-IF(NOT LIBUHD_PKG AND NOT UHDHOST_PKG)
-    CONFIGURE_FILE(
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd.pc.in
-        ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
-    @ONLY)
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/uhd.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
+@ONLY)
 
-    INSTALL(
-        FILES ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
-        DESTINATION ${LIBRARY_DIR}/pkgconfig
-        COMPONENT libraries
-    )
-ENDIF(NOT LIBUHD_PKG AND NOT UHDHOST_PKG)
+UHD_INSTALL(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
+    DESTINATION ${LIBRARY_DIR}/pkgconfig
+    COMPONENT "devel"
+)
 
 ########################################################################
 # Create and Install UHD cmake files
@@ -311,20 +309,21 @@ IF(NOT CMAKE_MODULES_DIR)
    SET(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
 ENDIF(NOT CMAKE_MODULES_DIR)
 
-configure_file(
-  ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in
-  ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
-@ONLY)
-
-SET(cmake_configs
-  ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfig.cmake
-  ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
+CONFIGURE_FILE(
+    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in
+    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
+    @ONLY
 )
 
-INSTALL(
-  FILES ${cmake_configs}
-  DESTINATION ${CMAKE_MODULES_DIR}/uhd
-  COMPONENT library
+SET(cmake_configs
+    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfig.cmake
+    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
+)
+
+UHD_INSTALL(
+    FILES ${cmake_configs}
+    DESTINATION ${CMAKE_MODULES_DIR}/uhd
+    COMPONENT "devel"
 )
 
 ########################################################################
