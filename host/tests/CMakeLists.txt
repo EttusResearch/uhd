@@ -27,8 +27,9 @@ SET(test_sources
     addr_test.cpp
     buffer_test.cpp
     byteswap_test.cpp
-    convert_test.cpp
     cast_test.cpp
+    chdr_test.cpp
+    convert_test.cpp
     dict_test.cpp
     error_test.cpp
     fp_compare_delta_test.cpp
