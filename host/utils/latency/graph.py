@@ -23,14 +23,16 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager
 import numpy as np
 
-from gnuradio.eng_option import eng_option
+try:
+    from gnuradio.eng_option import eng_option
+except:
+    eng_option = None
 
 _units = [
     (3, "k"),
     (6, "M"),
     (9, "G")
 ]
-
 
 def _format_rate(rate):
     for (u1, s1), (u2, s2) in zip(_units, _units[1:]):
@@ -79,7 +81,9 @@ def _order(series, sort_list):
 
 def get_option_parser():
     usage = "%prog: [options]"
-    parser = OptionParser(option_class=eng_option, usage=usage)
+    opt_kwds = {}
+    if eng_option: opt_kwds['option_class'] = eng_option
+    parser = OptionParser(usage=usage, **opt_kwds)
 
     parser.add_option("", "--id", type="string", help="device ID [default: %default]", default=None)
     parser.add_option("", "--sort", type="string", help="sort order [default: %default]", default="rate -spb -spp")
@@ -189,6 +193,7 @@ def main():
 
 
 def read_series_data(series):
+    if series is None: return []
     result = []
     for s in series:
         data = {}
@@ -301,6 +306,7 @@ def get_plt_props(options):
 
     plt_props['output'] = plt_out
 
+    if not options.id: options.id = "no data"
     plt_title = "Latency (" + options.id + ")"
     if options.title is not None and len(options.title) > 0:
         plt_title += " - " + options.title
@@ -366,7 +372,7 @@ def mpl_plot(data, props):
 
 def get_legend_str(meta):
     lt = ""
-    if meta['diff']:
+    if meta.has_key('diff') and meta['diff']:
         lt += meta['diff'] + " "
     lt += "%ssps, SPB %d, SPP %d" % (_format_rate(meta['rate']), meta['spb'], meta['spp'])
     return lt
