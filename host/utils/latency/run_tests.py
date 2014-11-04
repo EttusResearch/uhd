@@ -22,8 +22,10 @@ from string import split
 import sys
 import os
 
-from gnuradio.eng_option import eng_option
-
+try:
+    from gnuradio.eng_option import eng_option
+except:
+    eng_option = None
 
 def launch_test(args="", rate=None, spb=None, spp=0, prefix="", suffix="", extra=[], verbose=False, title=None):
     real = os.path.realpath(__file__)
@@ -78,7 +80,9 @@ class ReturnCode:
 def get_initialized_OptionParser():
     def_rates = ".25 1 4 8 25"
     usage = "%prog: [options] -- [extra arguments]"
-    parser = OptionParser(option_class=eng_option, usage=usage)
+    opt_kwds = {}
+    if eng_option: opt_kwds['option_class'] = eng_option
+    parser = OptionParser(usage=usage, **opt_kwds)
 
     parser.add_option("", "--rates", type="string", help="sample rates (Msps) [default: %default]", default=def_rates)
     parser.add_option("", "--spbs", type="string", help="samples per block [default: %default]",
