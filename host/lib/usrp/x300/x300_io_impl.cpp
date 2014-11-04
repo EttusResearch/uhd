@@ -532,7 +532,7 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
     //setup defaults for unspecified values
     if (not args.otw_format.empty() and args.otw_format != "sc16")
     {
-        throw uhd::value_error("x300_impl::get_rx_stream only supports otw_format sc16");
+        throw uhd::value_error("x300_impl::get_tx_stream only supports otw_format sc16");
     }
     args.otw_format = "sc16";
     args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
