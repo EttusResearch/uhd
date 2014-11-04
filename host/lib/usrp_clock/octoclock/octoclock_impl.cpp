@@ -33,7 +33,7 @@
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp_clock/octoclock_eeprom.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
@@ -420,7 +420,7 @@ std::string octoclock_impl::_get_images_help_message(const std::string &addr){
     catch(const std::exception &e){
         return str(boost::format("Could not find %s in your images path.\n%s")
                    % image_name
-                   % uhd::print_images_error());
+                   % uhd::print_utility_error("uhd_images_downloader.py"));
     }
 
     //Get escape character
@@ -433,5 +433,5 @@ std::string octoclock_impl::_get_images_help_message(const std::string &addr){
     //Get burner command
     const std::string burner_path = (fs::path(uhd::get_pkg_path()) / "bin" / "octoclock_firmware_burner").string();
     const std::string burner_cmd = str(boost::format("%s %s--addr=\"%s\"") % burner_path % ml % addr);
-    return str(boost::format("%s\n%s") % uhd::print_images_error() % burner_cmd);
+    return str(boost::format("%s\n%s") % uhd::print_utility_error("uhd_images_downloader.py") % burner_cmd);
 }

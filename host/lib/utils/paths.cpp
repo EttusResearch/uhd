@@ -17,15 +17,19 @@
 
 #include <uhd/config.hpp>
 #include <uhd/utils/paths.hpp>
-#include <boost/tokenizer.hpp>
+
+#include <boost/bind.hpp>
+#include <uhd/exception.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
-#include <boost/bind.hpp>
+#include <boost/tokenizer.hpp>
+
+#include <cstdio>  //P_tmpdir
 #include <cstdlib>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <cstdlib> //getenv
-#include <cstdio>  //P_tmpdir
+
 #ifdef BOOST_MSVC
 #define USE_GET_TEMP_PATH
 #include <windows.h> //GetTempPath
@@ -135,4 +139,29 @@ std::string uhd::get_app_path(void){
     if (home_path != NULL) return home_path;
 
     return uhd::get_tmp_path();
+}
+
+std::string uhd::find_image_path(const std::string &image_name){
+    if (fs::exists(image_name)){
+        return fs::system_complete(image_name).string();
+    }
+    BOOST_FOREACH(const fs::path &path, get_image_paths()){
+        fs::path image_path = path / image_name;
+        if (fs::exists(image_path)) return image_path.string();
+    }
+    throw uhd::io_error("Could not find path for image: " + image_name
+            + "\n\n" + uhd::print_utility_error("uhd_images_downloader.py"));
+}
+
+std::string uhd::find_utility(std::string name) {
+    return fs::path(fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / name)
+        .string();
+}
+
+std::string uhd::print_utility_error(std::string name){
+    #ifdef UHD_PLATFORM_WIN32
+    return "As an Administrator, please run:\n\n\"" + find_utility(name) + "\"";
+    #else
+    return "Please run:\n\n \"" + find_utility(name) + "\"";
+    #endif
 }

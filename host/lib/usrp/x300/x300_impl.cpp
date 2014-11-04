@@ -24,7 +24,7 @@
 #include "apply_corrections.hpp"
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/msg.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/transport/if_addrs.hpp>
@@ -171,7 +171,7 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
             default:
                 continue;
         }
-        
+
         niriok_proxy::sptr kernel_proxy = niriok_proxy::make_and_open(dev_info.interface_path);
 
         //Attempt to read the name from the EEPROM and perform filtering.
@@ -1670,11 +1670,11 @@ void x300_impl::check_fw_compat(const fs_path &mb_path, wb_iface::sptr iface)
     if (compat_major != X300_FW_COMPAT_MAJOR)
     {
         throw uhd::runtime_error(str(boost::format(
-            "Expected firmware compatibility number 0x%x, but got 0x%x.%x:\n"
+            "Expected firmware compatibility number %d.%d, but got %d.%d:\n"
             "The firmware build is not compatible with the host code build.\n"
             "%s"
-        ) % int(X300_FW_COMPAT_MAJOR) % compat_major % compat_minor
-          % print_images_error()));
+        )   % int(X300_FW_COMPAT_MAJOR) % int(X300_FW_COMPAT_MINOR)
+            % compat_major % compat_minor % print_utility_error("uhd_images_downloader.py")));
     }
     _tree->create<std::string>(mb_path / "fw_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));
@@ -1694,11 +1694,11 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, wb_iface::sptr iface)
             "Download the appropriate FPGA images for this version of UHD.\n"
             "%s\n\n"
             "Then burn a new image to the on-board flash storage of your\n"
-            "USRP X3xx device using the burner utility. \n\n"
+            "USRP X3xx device using the burner utility. %s\n\n"
             "For more information, refer to the UHD manual:\n\n"
             " http://files.ettus.com/manual/page_usrp_x3x0.html#x3x0_flash"
         )   % int(X300_FPGA_COMPAT_MAJOR) % compat_major
-            % print_images_error()));
+            % print_utility_error("uhd_images_downloader.py") % print_utility_error("usrp_x3xx_fpga_burner")));
     }
     _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));
