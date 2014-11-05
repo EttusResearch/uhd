@@ -18,7 +18,7 @@
 #ifndef INCLUDED_E300_IMPL_HPP
 #define INCLUDED_E300_IMPL_HPP
 
-#include <uhd/device.hpp>
+#include <uhd/device3.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -26,6 +26,9 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/sensors.hpp>
+
+#include <uhd/usrp/rfnoc/block_ctrl.hpp>
+
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include "e300_fifo_config.hpp"
@@ -69,7 +72,9 @@ static std::string E300_SERVER_GREGS_PORT  = "21760";
 static std::string E300_SERVER_I2C_PORT    = "21761";
 static std::string E300_SERVER_SENSOR_PORT = "21762";
 
-static const double E300_RX_SW_BUFF_FULLNESS = 0.9;        //Buffer should be half full
+static const double E300_RX_SW_BUFF_FULLNESS = 0.9;
+static const size_t E300_RX_FC_REQUEST_FREQ = 8;
+static const size_t E300_TX_FC_RESPONSE_FREQ = 8;
 
 // crossbar settings
 static const boost::uint8_t E300_RADIO_DEST_PREFIX_TX   = 0;
@@ -81,6 +86,9 @@ static const boost::uint8_t E300_XB_DST_R0  = 1;
 static const boost::uint8_t E300_XB_DST_R1  = 2;
 static const boost::uint8_t E300_XB_DST_CE0 = 3;
 static const boost::uint8_t E300_XB_DST_CE1 = 4;
+static const boost::uint8_t E300_XB_DST_CE2 = 5;
+static const boost::uint8_t E300_XB_DST_CE3 = 6;
+static const boost::uint8_t E300_XB_DST_CE4 = 7;
 
 static const boost::uint8_t E300_DEVICE_THERE = 2;
 static const boost::uint8_t E300_DEVICE_HERE  = 0;
@@ -94,12 +102,13 @@ static const size_t E300_R1_TX_DATA_STREAM = (1 << 2) | E300_RADIO_DEST_PREFIX_T
 static const size_t E300_R1_RX_DATA_STREAM = (1 << 2) | E300_RADIO_DEST_PREFIX_RX;
 
 
+
 /*!
  * USRP-E300 implementation guts:
  * The implementation details are encapsulated here.
  * Handles properties on the mboard, dboard, dsps...
  */
-class e300_impl : public uhd::device
+class e300_impl : public uhd::device3
 {
 public:
     //structors
@@ -117,13 +126,10 @@ public:
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
 private: // types
-    // sid convenience struct
-    struct sid_config_t
-    {
-        boost::uint8_t router_addr_there;
-        boost::uint8_t dst_prefix; //2bits
-        boost::uint8_t router_dst_there;
-        boost::uint8_t router_dst_here;
+    enum xport_type_t {
+        CTRL = 0,
+        TX_DATA,
+        RX_DATA
     };
 
     // perifs in the radio core
@@ -131,6 +137,7 @@ private: // types
     {
         radio_ctrl_core_3000::sptr ctrl;
         gpio_core_200_32wo::sptr atr;
+        gpio_core_200_32wo::sptr leds;
         time_core_3000::sptr time64;
         rx_vita_core_3000::sptr framer;
         rx_dsp_core_3000::sptr ddc;
@@ -138,9 +145,6 @@ private: // types
         tx_dsp_core_3000::sptr duc;
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
-
-        boost::weak_ptr<uhd::rx_streamer> rx_streamer;
-        boost::weak_ptr<uhd::tx_streamer> tx_streamer;
 
         bool ant_rx2;
     };
@@ -162,6 +166,10 @@ private: // types
     {
         uhd::transport::zero_copy_if::sptr recv;
         uhd::transport::zero_copy_if::sptr send;
+        size_t recv_buff_size;
+        size_t send_buff_size;
+        uhd::sid_t send_sid;
+        uhd::sid_t recv_sid;
     };
 
     enum xport_t {AXI, ETH};
@@ -203,10 +211,11 @@ private: // methods
 
     void _setup_radio(const size_t which_radio);
 
-    boost::uint32_t _allocate_sid(const sid_config_t &config);
+    uhd::sid_t _allocate_sid(
+        const uhd::sid_t &address);
 
     void _setup_dest_mapping(
-        const boost::uint32_t sid,
+        const uhd::sid_t &sid,
         const size_t which_stream);
 
     size_t _get_axi_dma_channel(
@@ -218,10 +227,15 @@ private: // methods
         boost::uint8_t prefix);
 
     both_xports_t _make_transport(
-        const boost::uint8_t &destination,
-        const boost::uint8_t &prefix,
-        const uhd::transport::zero_copy_xport_params &params,
-        boost::uint32_t &sid);
+        const uhd::sid_t &address,
+        const xport_type_t type,
+        const uhd::device_addr_t &args);
+
+    void _generate_channel_list(
+        const uhd::stream_args_t &args,
+        std::vector<uhd::rfnoc::block_id_t> &chan_list,
+        std::vector<device_addr_t> &chan_args,
+        const std::string &xx);
 
     double _get_tick_rate(void){return _tick_rate;}
     double _set_tick_rate(const double rate);
@@ -252,13 +266,9 @@ private: // methods
 
     void _update_atrs(void);
     void _update_antenna_sel(const size_t &fe, const std::string &ant);
+
+    void _update_atr_leds(gpio_core_200_32wo::sptr leds, const std::string &rx_ant);
     void _update_fe_lo_freq(const std::string &fe, const double freq);
-
-    // overflow handling is special for MIMO case
-    void _handle_overflow(
-        radio_perifs_t &perif,
-        boost::weak_ptr<uhd::rx_streamer> streamer);
-
 
     // get frontend lock sensor
     uhd::sensor_value_t _get_fe_pll_lock(const bool is_tx);
@@ -288,7 +298,10 @@ private: // members
     uhd::transport::zero_copy_xport_params _data_xport_params;
     uhd::transport::zero_copy_xport_params _ctrl_xport_params;
     gpio_t                                 _misc;
-    gps::ublox::ubx::control::sptr _gps;
+    gps::ublox::ubx::control::sptr         _gps;
+
+    uhd::dict<std::string, boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;
+    uhd::dict<std::string, boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;
 };
 
 }}} // namespace

@@ -52,6 +52,9 @@ public:
         stream_sig_t out_sig("sc16", 0, false);
         out_sig.packet_size = _rx_spp * _rx_bpi;
         _tree->access<stream_sig_t>(_root_path / "output_sig/0").set(out_sig);
+
+        _tree->create<bool>(_root_path / "tx_active").set(false);
+        _tree->create<bool>(_root_path / "rx_active").set(false);
     }
 
     void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd)
@@ -189,6 +192,8 @@ protected:
 
         _perifs.framer->setup(args);
         _perifs.ddc->setup(args);
+
+        _tree->access<bool>(_root_path / "rx_active").set(true);
     }
 
     void _init_tx(uhd::stream_args_t &args)
@@ -197,6 +202,8 @@ protected:
 
         _perifs.deframer->setup(args);
         _perifs.duc->setup(args);
+
+        _tree->access<bool>(_root_path / "tx_active").set(true);
         return;
     }
 

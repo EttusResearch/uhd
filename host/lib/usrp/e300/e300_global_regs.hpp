@@ -55,6 +55,7 @@ public:
     static const size_t RB32_CORE_COMPAT  = 2;
     static const size_t RB32_CORE_GITHASH = 3;
     static const size_t RB32_CORE_PLL     = 4;
+    static const size_t RB32_CORE_NUM_CE  = 8;
     static const size_t RB32_CORE_TEST    = 24;
 
     // PPS selection

@@ -19,8 +19,15 @@
 #define INCLUDED_E300_REGS_HPP
 
 #include <boost/cstdint.hpp>
+#define TOREG(x) ((x * 4))
+namespace uhd { namespace usrp { namespace e300 { namespace fpga {
 
-#define TOREG(x) ((x)*4)
+static inline uint32_t sr_addr(uint32_t offset)
+{
+    return (offset*4);
+}
+
+}}}} // namespace
 
 #define localparam static const int
 
@@ -34,7 +41,7 @@ localparam SR_RX_CTRL    = 96;
 localparam SR_TIME       = 128;
 localparam SR_RX_DSP     = 144;
 localparam SR_TX_DSP     = 184;
-localparam SR_LEDS       = 196;
+localparam SR_LEDS       = 195;
 localparam SR_FP_GPIO    = 200;
 localparam SR_RX_FRONT   = 208;
 localparam SR_TX_FRONT   = 216;
@@ -52,9 +59,6 @@ localparam RB32_RADIO_NUM       = 48;
 localparam ST_RX_ENABLE = 20;
 localparam ST_TX_ENABLE = 19;
 
-localparam LED_TXRX_TX = 18;
-localparam LED_TXRX_RX = 17;
-localparam LED_RX_RX = 16;
 localparam VCRX_V2 = 15;
 localparam VCRX_V1 = 14;
 localparam VCTXRX_V2 = 13;
@@ -65,5 +69,6 @@ localparam RXC_BANDSEL = 8;
 localparam RXB_BANDSEL = 6;
 localparam RX_BANDSEL = 3;
 localparam TX_BANDSEL = 0;
+
 
 #endif /* INCLUDED_E300_REGS_HPP */
