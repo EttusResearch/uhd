@@ -304,9 +304,11 @@ struct e300_tx_fc_cache_t
 typedef boost::function<double(void)> tick_rate_retriever_t;
 
 
-static void handle_tx_async_msgs(boost::shared_ptr<e300_tx_fc_cache_t> fc_cache,
-                                 zero_copy_if::sptr xport,
-                                 boost::function<double(void)> get_tick_rate)
+static void handle_tx_async_msgs(
+            boost::shared_ptr<e300_tx_fc_cache_t> fc_cache,
+             zero_copy_if::sptr xport,
+             boost::function<double(void)> get_tick_rate
+)
 {
     managed_recv_buffer::sptr buff = xport->get_recv_buff();
     if (not buff)

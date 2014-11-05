@@ -19,7 +19,7 @@
 #define INCLUDED_X300_IMPL_HPP
 
 #include <uhd/property_tree.hpp>
-#include <uhd/device3.hpp>
+#include "../device3/device3_impl.hpp"
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
@@ -28,7 +28,6 @@
 #include "x300_clock_ctrl.hpp"
 #include "x300_fw_common.h"
 #include <uhd/transport/udp_simple.hpp> //mtu
-#include <uhd/utils/tasks.hpp>
 #include "spi_core_3000.hpp"
 #include "x300_adc_ctrl.hpp"
 #include "x300_dac_ctrl.hpp"
@@ -45,7 +44,6 @@
 #include <boost/weak_ptr.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
-#include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include "recv_packet_demuxer_3000.hpp"
@@ -64,7 +62,6 @@ static const size_t X300_TX_FC_RESPONSE_FREQ    = 8;            //per flow-contr
 
 static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
 static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
-static const double X300_RX_SW_BUFF_FULL_FACTOR     = 0.90;     //Buffer should ideally be 90% full.
 static const size_t X300_RX_FC_REQUEST_FREQ         = 32;       //per flow-control window
 
 //The FIFO closest to the DMA controller is 1023 elements deep for RX and 1029 elements deep for TX
@@ -139,16 +136,9 @@ uhd::uart_iface::sptr x300_make_uart_iface(uhd::wb_iface::sptr iface);
 uhd::wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp);
 uhd::wb_iface::sptr x300_make_ctrl_iface_pcie(uhd::niusrprio::niriok_proxy::sptr drv_proxy);
 
-class x300_impl : public uhd::device3
+class x300_impl : public uhd::usrp::device3_impl
 {
 public:
-    typedef uhd::transport::bounded_buffer<uhd::async_metadata_t> async_md_type;
-
-    enum xport_type_t {
-        CTRL = 0,
-        TX_DATA,
-        RX_DATA
-    };
 
     x300_impl(const uhd::device_addr_t &);
     void setup_mb(const size_t which, const uhd::device_addr_t &);
@@ -157,9 +147,6 @@ public:
     //the io interface
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &);
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &);
-
-    //support old async call
-    bool recv_async_msg(uhd::async_metadata_t &, double);
 
     // used by x300_find_with_addr to find X300 devices.
     static boost::mutex claimer_mutex;  //All claims and checks in this process are serialized
@@ -172,7 +159,6 @@ public:
     static x300_mboard_t get_mb_type_from_eeprom(const uhd::usrp::mboard_eeprom_t& mb_eeprom);
 
 private:
-    boost::shared_ptr<async_md_type> _async_md;
 
     //perifs in the radio core
     struct radio_perifs_t
@@ -262,28 +248,10 @@ private:
       */
     void setup_radio(const size_t, const std::string &slot_name);
 
-    //! A counter, designed to create unique SIDs
-    size_t _sid_framer;
-
     uhd::sid_t allocate_sid(mboard_members_t &mb, const uhd::sid_t &address);
-
-    // TODO move to device3_common
-    struct both_xports_t
-    {
-        uhd::transport::zero_copy_if::sptr recv;
-        uhd::transport::zero_copy_if::sptr send;
-        size_t recv_buff_size;
-        size_t send_buff_size;
-        uhd::sid_t send_sid;
-        uhd::sid_t recv_sid;
-    };
-
-    // TODO declare this in device3
-    /*! \brief Create a transport to a given endpoint.
-     */
     both_xports_t make_transport(
         const uhd::sid_t &address,
-        const xport_type_t type,
+        const xport_type_t xport_type,
         const uhd::device_addr_t& args
     );
 
@@ -365,14 +333,6 @@ private:
     void update_atr_leds(gpio_core_200_32wo::sptr, const std::string &ant);
     boost::uint32_t get_fp_gpio(gpio_core_200::sptr, const std::string &);
     void set_fp_gpio(gpio_core_200::sptr, const std::string &, const boost::uint32_t);
-
-
-    void generate_channel_list(
-            const uhd::stream_args_t &args,
-            std::vector<uhd::rfnoc::block_id_t> &chan_list,
-            std::vector<uhd::device_addr_t> &chan_args,
-            const std::string &xx
-    );
 
     // Loopback stuff
     void test_rfnoc_loopback(size_t mb_index, int ce_index);

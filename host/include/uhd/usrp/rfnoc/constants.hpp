@@ -41,6 +41,8 @@ static const size_t DEFAULT_FC_XBAR_PKTS_PER_ACK = 2;
 static const size_t DEFAULT_FC_RX_RESPONSE_FREQ = 32; // ACKs per flow control window
 //! For flow control when data is flowing from host to device (tx)
 static const size_t DEFAULT_FC_TX_RESPONSE_FREQ = 8; // ACKs per flow control window
+//! On the receive side, how full do we want the buffers?
+static const double DEFAULT_FC_RX_SW_BUFF_FULL_FACTOR     = 0.90; // Buffer should ideally be 90% full.
 
 // Common settings registers.
 static const boost::uint32_t SR_FLOW_CTRL_CYCS_PER_ACK_BASE     = 0;

@@ -17,6 +17,7 @@
 
 #include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/usrp/rfnoc/constants.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;

@@ -138,157 +138,17 @@ void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, 
 
 
 /***********************************************************************
- * VITA stuff
- **********************************************************************/
-static void x300_if_hdr_unpack_be(
-    const boost::uint32_t *packet_buff,
-    vrt::if_packet_info_t &if_packet_info
-){
-    if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
-    return vrt::if_hdr_unpack_be(packet_buff, if_packet_info);
-}
-
-static void x300_if_hdr_pack_be(
-    boost::uint32_t *packet_buff,
-    vrt::if_packet_info_t &if_packet_info
-){
-    if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
-    return vrt::if_hdr_pack_be(packet_buff, if_packet_info);
-}
-
-static void x300_if_hdr_unpack_le(
-    const boost::uint32_t *packet_buff,
-    vrt::if_packet_info_t &if_packet_info
-){
-    if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
-    return vrt::if_hdr_unpack_le(packet_buff, if_packet_info);
-}
-
-static void x300_if_hdr_pack_le(
-    boost::uint32_t *packet_buff,
-    vrt::if_packet_info_t &if_packet_info
-){
-    if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
-    return vrt::if_hdr_pack_le(packet_buff, if_packet_info);
-}
-
-/***********************************************************************
- * RX flow control handler
- **********************************************************************/
-// TODO move to rx_block_ctrl_base
-static size_t get_rx_flow_control_window(size_t frame_size, size_t sw_buff_size, const device_addr_t& rx_args)
-{
-    double fullness_factor = rx_args.cast<double>("recv_buff_fullness", X300_RX_SW_BUFF_FULL_FACTOR);
-
-    if (fullness_factor < 0.01 || fullness_factor > 1) {
-        throw uhd::value_error("recv_buff_fullness must be between 0.01 and 1 inclusive (1% to 100%)");
-    }
-
-    size_t window_in_pkts = (static_cast<size_t>(sw_buff_size * fullness_factor) / frame_size);
-    if (window_in_pkts == 0) {
-        throw uhd::value_error("recv_buff_size must be larger than the recv_frame_size.");
-    }
-    return window_in_pkts;
-}
-
-// TODO: Definitely move to rx_block_ctrl_base
-static void handle_rx_flowctrl(const boost::uint32_t sid, zero_copy_if::sptr xport, bool big_endian, boost::shared_ptr<boost::uint32_t> seq32_state, const size_t last_seq)
-{
-    // TODO remove this counter once the debug msg is gone
-    static size_t fc_pkt_count = 0;
-    managed_send_buffer::sptr buff = xport->get_send_buff(0.0);
-    if (not buff)
-    {
-        throw uhd::runtime_error("handle_rx_flowctrl timed out getting a send buffer");
-    }
-    boost::uint32_t *pkt = buff->cast<boost::uint32_t *>();
-
-
-    //recover seq32
-    boost::uint32_t &seq32 = *seq32_state;
-    const size_t seq12 = seq32 & 0xfff;
-    if (last_seq < seq12) seq32 += (1 << 12);
-    seq32 &= ~0xfff;
-    seq32 |= last_seq;
-
-    //UHD_MSG(status) << "sending flow ctrl packet " << fc_pkt_count++ << ", acking " << str(boost::format("%04d\tseq32==0x%08x") % last_seq % seq32) << std::endl;
-
-    //load packet info
-    vrt::if_packet_info_t packet_info;
-    packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_FC; // FC!
-    packet_info.num_payload_words32 = 2;
-    packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(boost::uint32_t);
-    packet_info.packet_count = seq32;
-    packet_info.sob = false;
-    packet_info.eob = false;
-    packet_info.sid = sid;
-    packet_info.has_sid = true;
-    packet_info.has_cid = false;
-    packet_info.has_tsi = false;
-    packet_info.has_tsf = false;
-    packet_info.has_tlr = false;
-
-    //load header
-    if (big_endian)
-        x300_if_hdr_pack_be(pkt, packet_info);
-    else
-        x300_if_hdr_pack_le(pkt, packet_info);
-
-    //load payload
-    pkt[packet_info.num_header_words32+0] = uhd::htonx<boost::uint32_t>(0);
-    pkt[packet_info.num_header_words32+1] = uhd::htonx<boost::uint32_t>(seq32);
-
-    // hardcode bits
-    pkt[0] = (pkt[0] & 0xFFFFFF00) | 0x00000040;
-
-    //std::cout << "  SID=" << std::hex << sid << " hdr bits=" << packet_info.packet_type << " seq32=" << seq32 << std::endl;
-    //std::cout << "num_packet_words32: " << packet_info.num_packet_words32 << std::endl;
-    //for (size_t i = 0; i < packet_info.num_packet_words32; i++) {
-        //std::cout << str(boost::format("0x%08x") % pkt[i]) << " ";
-        //if (i % 2) {
-            //std::cout << std::endl;
-        //}
-    //}
-
-    //send the buffer over the interface
-    buff->commit(sizeof(boost::uint32_t)*(packet_info.num_packet_words32));
-}
-
-
-/***********************************************************************
  * TX flow control handler
  **********************************************************************/
-struct x300_tx_fc_guts_t
-{
-    x300_tx_fc_guts_t(void):
-        stream_channel(0),
-        device_channel(0),
-        last_seq_out(0),
-        last_seq_ack(0),
-        seq_queue(1){}
-    size_t stream_channel;
-    size_t device_channel;
-    size_t last_seq_out;
-    size_t last_seq_ack;
-    bounded_buffer<size_t> seq_queue;
-    boost::shared_ptr<x300_impl::async_md_type> async_queue;
-    boost::shared_ptr<x300_impl::async_md_type> old_async_queue;
-};
 
 #define X300_ASYNC_EVENT_CODE_FLOW_CTRL 0
 
-static size_t get_tx_flow_control_window(size_t frame_size, const device_addr_t& tx_args)
-{
-    double hw_buff_size = tx_args.cast<double>("send_buff_size", X300_TX_HW_BUFF_SIZE);
-    size_t window_in_pkts = (static_cast<size_t>(hw_buff_size) / frame_size);
-    if (window_in_pkts == 0) {
-        throw uhd::value_error("send_buff_size must be larger than the send_frame_size.");
-    }
-    return window_in_pkts;
-}
-
-static void handle_tx_async_msgs(boost::shared_ptr<x300_tx_fc_guts_t> guts, zero_copy_if::sptr xport, bool big_endian, x300_clock_ctrl::sptr clock)
-{
+static void handle_tx_async_msgs(
+        boost::shared_ptr<device3_impl::tx_fc_cache_t> guts,
+        zero_copy_if::sptr xport,
+        bool big_endian,
+        x300_clock_ctrl::sptr clock
+) {
     managed_recv_buffer::sptr buff = xport->get_recv_buff();
     if (not buff) return;
 
@@ -303,12 +163,12 @@ static void handle_tx_async_msgs(boost::shared_ptr<x300_tx_fc_guts_t> guts, zero
     {
         if (big_endian)
         {
-            x300_if_hdr_unpack_be(packet_buff, if_packet_info);
+            device3_impl::if_hdr_unpack_be(packet_buff, if_packet_info);
             endian_conv = uhd::ntohx;
         }
         else
         {
-            x300_if_hdr_unpack_le(packet_buff, if_packet_info);
+            device3_impl::if_hdr_unpack_le(packet_buff, if_packet_info);
             endian_conv = uhd::wtohx;
         }
     }
@@ -342,98 +202,13 @@ static void handle_tx_async_msgs(boost::shared_ptr<x300_tx_fc_guts_t> guts, zero
     }
 }
 
-static managed_send_buffer::sptr get_tx_buff_with_flowctrl(
-    task::sptr /*holds ref*/,
-    boost::shared_ptr<x300_tx_fc_guts_t> guts,
-    zero_copy_if::sptr xport,
-    size_t fc_pkt_window,
-    const double timeout
-){
-    while (true)
-    {
-        const size_t delta = (guts->last_seq_out & 0xfff) - (guts->last_seq_ack & 0xfff);
-        if ((delta & 0xfff) <= fc_pkt_window) break;
-
-        const bool ok = guts->seq_queue.pop_with_timed_wait(guts->last_seq_ack, timeout);
-        if (not ok) return managed_send_buffer::sptr(); //timeout waiting for flow control
-    }
-
-    managed_send_buffer::sptr buff = xport->get_send_buff(timeout);
-    if (buff) {
-        guts->last_seq_out++; //update seq, this will actually be a send
-    }
-    return buff;
-}
-
-/***********************************************************************
- * Async Data
- **********************************************************************/
-bool x300_impl::recv_async_msg(
-    async_metadata_t &async_metadata, double timeout
-){
-    return _async_md->pop_with_timed_wait(async_metadata, timeout);
-}
-
-
-/***********************************************************************
- * Helper functions for get_?x_stream()
- * TODO: Move these up, they are generic
- **********************************************************************/
-uhd::stream_args_t sanitize_stream_args(const uhd::stream_args_t &args_)
-{
-    uhd::stream_args_t args = args_;
-    if (args.otw_format.empty()) {
-        args.otw_format = "sc16";
-    }
-    if (args.channels.empty()) {
-        args.channels = std::vector<size_t>(1, 0);
-    }
-
-    return args;
-}
-
-void x300_impl::generate_channel_list(
-        const uhd::stream_args_t &args_,
-        std::vector<uhd::rfnoc::block_id_t> &chan_list,
-        std::vector<device_addr_t> &chan_args,
-        const std::string &xx
-) {
-    uhd::stream_args_t args = args_;
-    if (args.args.has_key("block_id")) { // Override channel settings
-        // TODO: Figure out how to put in more than one block ID in the stream args args
-        // For now, the assumption is that all chans go to the same block,
-        // and that the channel index is actually the block port index
-        // Block ID is removed from the actual args args
-        uhd::rfnoc::block_id_t blockid = args.args.pop("block_id");
-        BOOST_FOREACH(const size_t chan_idx, args.channels) {
-            chan_list.push_back(uhd::rfnoc::block_id_t(blockid));
-            // Add block port to chan args
-            args.args["block_port"] = str(boost::format("%d") % chan_idx);
-            chan_args.push_back(args.args);
-        }
-    } else {
-        BOOST_FOREACH(const size_t chan_idx, args.channels) {
-            fs_path chan_root = str(boost::format("/channels/%s/%d") % xx % chan_idx);
-            if (not _tree->exists(chan_root)) {
-                throw uhd::runtime_error("No channel definition for " + chan_root);
-            }
-            device_addr_t this_chan_args;
-            if (_tree->exists(chan_root / "args")) {
-                this_chan_args = _tree->access<device_addr_t>(chan_root / "args").get();
-            }
-            chan_list.push_back(_tree->access<uhd::rfnoc::block_id_t>(chan_root).get());
-            chan_args.push_back(this_chan_args);
-        }
-    }
-}
-
 /***********************************************************************
  * Receive streamer
  **********************************************************************/
 rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
 {
     boost::mutex::scoped_lock lock(_transport_setup_mutex);
-    stream_args_t args = sanitize_stream_args(args_);
+    stream_args_t args = device3_impl::sanitize_stream_args(args_);
 
     // I. Generate the channel list
     std::vector<uhd::rfnoc::block_id_t> chan_list;
@@ -492,10 +267,10 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         //init some streamer stuff
         std::string conv_endianness;
         if (mb.if_pkt_is_big_endian) {
-            my_streamer->set_vrt_unpacker(&x300_if_hdr_unpack_be);
+            my_streamer->set_vrt_unpacker(&device3_impl::if_hdr_unpack_be);
             conv_endianness = "be";
         } else {
-            my_streamer->set_vrt_unpacker(&x300_if_hdr_unpack_le);
+            my_streamer->set_vrt_unpacker(&device3_impl::if_hdr_unpack_le);
             conv_endianness = "le";
         }
 
@@ -541,7 +316,7 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         //handle_rx_flowctrl is static and has no lifetime issues
         boost::shared_ptr<boost::uint32_t> seq32(new boost::uint32_t(0));
         my_streamer->set_xport_handle_flowctrl(
-            stream_i, boost::bind(&handle_rx_flowctrl, xport.send_sid, xport.send, mb.if_pkt_is_big_endian, seq32, _1),
+            stream_i, boost::bind(&device3_impl::handle_rx_flowctrl, xport.send_sid, xport.send, mb.if_pkt_is_big_endian, seq32, _1),
             fc_handle_window,
             true/*init*/
         );
@@ -577,7 +352,7 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
 tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
 {
     boost::mutex::scoped_lock lock(_transport_setup_mutex);
-    stream_args_t args = sanitize_stream_args(args_);
+    stream_args_t args = device3_impl::sanitize_stream_args(args_);
 
     // I. Generate the channel list
     std::vector<uhd::rfnoc::block_id_t> chan_list;
@@ -624,10 +399,10 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         //init some streamer stuff
         std::string conv_endianness;
         if (mb.if_pkt_is_big_endian) {
-            my_streamer->set_vrt_packer(&x300_if_hdr_pack_be);
+            my_streamer->set_vrt_packer(&device3_impl::if_hdr_pack_be);
             conv_endianness = "be";
         } else {
-            my_streamer->set_vrt_packer(&x300_if_hdr_pack_le);
+            my_streamer->set_vrt_packer(&device3_impl::if_hdr_pack_le);
             conv_endianness = "le";
         }
 
@@ -644,14 +419,17 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         //flow control setup
         const size_t pkt_size = spp * bpi + X300_TX_MAX_HDR_LEN;
-        // For flow control, this value is used to determine the window size
-        device_tx_args["send_buff_size"] = boost::lexical_cast<std::string>(ce_ctrl->get_fifo_size(block_port));
-        size_t fc_window = get_tx_flow_control_window(pkt_size, device_tx_args);  //In packets
+        // For flow control, this value is used to determine the window size in *packets*
+        size_t fc_window = get_tx_flow_control_window(
+                pkt_size, // This is the maximum packet size
+                ce_ctrl->get_fifo_size(block_port),
+                device_tx_args // This can override the value reported by the block!
+        );
         const size_t fc_handle_window = std::max<size_t>(1, fc_window/X300_TX_FC_RESPONSE_FREQ);
         UHD_MSG(status) << "TX Flow Control Window = " << fc_window << ", TX Flow Control Handler Window = " << fc_handle_window << std::endl;
         ce_ctrl->configure_flow_control_in(0/*cycs off*/, fc_handle_window, block_port);
 
-        boost::shared_ptr<x300_tx_fc_guts_t> guts(new x300_tx_fc_guts_t());
+        boost::shared_ptr<device3_impl::tx_fc_cache_t> guts(new device3_impl::tx_fc_cache_t());
         guts->stream_channel = stream_i;
         // TODO: Do we really need to distinguish devices here?
         guts->device_channel = stream_i;
@@ -665,7 +443,7 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         //task (sptr) is required to add  a streamer->async-handler lifetime dependency
         my_streamer->set_xport_chan_get_buff(
             stream_i,
-            boost::bind(&get_tx_buff_with_flowctrl, task, guts, xport.send, fc_window, _1)
+            boost::bind(&device3_impl::get_tx_buff_with_flowctrl, task, guts, xport.send, fc_window, _1)
         );
         //Give the streamer a functor handled received async messages
         my_streamer->set_async_receiver(

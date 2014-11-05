@@ -356,15 +356,12 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
     UHD_MSG(status) << " done!" << std::endl;
 }
 
-x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
+x300_impl::x300_impl(const uhd::device_addr_t &dev_addr) 
+    : device3_impl()
 {
     UHD_MSG(status) << "X300 initialization sequence..." << std::endl;
-    _type = device::USRP;
     _ignore_cal_file = dev_addr.has_key("ignore-cal-file");
-    _async_md.reset(new async_md_type(1000/*messages deep*/));
-    _tree = uhd::property_tree::make();
     _tree->create<std::string>("/name").set("X-Series Device");
-    _sid_framer = 0;
 
     const device_addrs_t device_args = separate_device_addr(dev_addr);
     _mb.resize(device_args.size());
