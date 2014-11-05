@@ -1,5 +1,5 @@
 /*
- * Dissector for UHD CHDR packets
+ * Dissector for UHD CVITA (CHDR) packets
  *
  * Copyright 2010-2014 Ettus Research LLC
  *
@@ -37,22 +37,45 @@ const unsigned int CHDR_PORT = X300_VITA_UDP_PORT;
 
 static int proto_chdr = -1;
 static int hf_chdr_hdr = -1;
-static int hf_chdr_is_extension = -1;
-static int hf_chdr_reserved = -1;
+static int hf_chdr_type = -1;
 static int hf_chdr_has_time = -1;
 static int hf_chdr_eob = -1;
+static int hf_chdr_error = -1;
 static int hf_chdr_sequence = -1;
 static int hf_chdr_packet_size = -1;
 static int hf_chdr_stream_id = -1;
 static int hf_chdr_src_dev = -1;
 static int hf_chdr_src_ep = -1;
+static int hf_chdr_src_blockport = -1;
 static int hf_chdr_dst_dev = -1;
 static int hf_chdr_dst_ep = -1;
+static int hf_chdr_dst_blockport = -1;
 static int hf_chdr_timestamp = -1;
 static int hf_chdr_payload = -1;
 static int hf_chdr_ext_response = -1;
 static int hf_chdr_ext_status_code = -1;
 static int hf_chdr_ext_seq_num = -1;
+static int hf_chdr_cmd = -1;
+static int hf_chdr_cmd_address = -1;
+static int hf_chdr_cmd_value = -1;
+
+static const value_string CHDR_PACKET_TYPES[] = {
+    { 0, "Data" },
+    { 1, "Data (End-of-Burst)" },
+    { 4, "Flow Control" },
+    { 8, "Command" },
+    { 12, "Response" },
+    { 13, "Error Response" },
+};
+
+static const value_string CHDR_PACKET_TYPES_SHORT[] = {
+    { 0, "data" },
+    { 1, "data" },
+    { 4, "fc" },
+    { 8, "cmd" },
+    { 12, "resp" },
+    { 13, "resp" },
+};
 
 /* the heuristic dissector is called on every packet with payload.
  * The warning printed for this should only be printed once.
@@ -64,6 +87,7 @@ static gint ett_chdr = -1;
 static gint ett_chdr_header = -1;
 static gint ett_chdr_id = -1;
 static gint ett_chdr_response = -1;
+static gint ett_chdr_cmd = -1;
 
 /* Forward-declare the dissector functions */
 void proto_register_chdr(void);
@@ -132,11 +156,21 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     proto_tree *stream_tree;
     proto_item *response_item;
     proto_tree *response_tree;
+    proto_item *cmd_item;
+    proto_tree *cmd_tree;
     gint len;
 
     gint flag_offset;
     guint8 *bytes;
-    gboolean flag_has_time;
+    guint8 hdr_bits = 0;
+    guint8 pkt_type = 0;
+    gboolean flag_has_time = 0;
+    gboolean flag_is_data = 0;
+    gboolean flag_is_fc = 0;
+    gboolean flag_is_cmd = 0;
+    gboolean flag_is_resp = 0;
+    gboolean flag_is_eob = 0;
+    gboolean flag_is_error = 0;
     unsigned long long timestamp;
     gboolean is_network;
     gint endianness;
@@ -170,7 +204,15 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
         if (len >= 4){
             chdr_size = 8;
             bytes = tvb_get_string(tvb, 0, 4);
-            flag_has_time = bytes[flag_offset] & 0x20;
+	    hdr_bits = (bytes[flag_offset] & 0xF0) >> 4;
+	    pkt_type = hdr_bits >> 2;
+	    flag_is_data = (pkt_type == 0);
+	    flag_is_fc = (pkt_type == 1);
+	    flag_is_cmd = (pkt_type == 2);
+	    flag_is_resp = (pkt_type == 3);
+	    flag_is_eob = flag_is_data && (hdr_bits & 0x1);
+	    flag_is_error = flag_is_resp && (hdr_bits & 0x1);
+            flag_has_time = hdr_bits & 0x2;
             if (flag_has_time)
                 chdr_size += 8; // 64-bit timestamp
         }
@@ -178,17 +220,28 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
         /* Start with a top-level item to add everything else to */
         item = proto_tree_add_item(tree, proto_chdr, tvb, 0, min(len, chdr_size), ENC_NA);
 
-        if (len >= 4){
+        if (len >= 4) {
             chdr_tree = proto_item_add_subtree(item, ett_chdr);
 
+            /* Header info. First, a top-level header tree item: */
             header_item = proto_tree_add_item(chdr_tree, hf_chdr_hdr, tvb, flag_offset, 1, endianness);
             header_tree = proto_item_add_subtree(header_item, ett_chdr_header);
-
-            /* These lines add flag info to tree */
-            proto_tree_add_item(header_tree, hf_chdr_is_extension, tvb, flag_offset, 1, ENC_NA);
-            proto_tree_add_item(header_tree, hf_chdr_reserved, tvb, flag_offset, 1, ENC_NA);
-            proto_tree_add_item(header_tree, hf_chdr_has_time, tvb, flag_offset, 1, ENC_NA);
-            proto_tree_add_item(header_tree, hf_chdr_eob, tvb, flag_offset, 1, ENC_NA);
+            proto_item_append_text(header_item, ", Packet type: %s",
+                val_to_str(hdr_bits & 0xD, CHDR_PACKET_TYPES, "Unknown (0x%x)")
+            );
+            /* Let us query hdr.type */
+            proto_tree_add_string(
+                header_tree, hf_chdr_type, tvb, flag_offset, 1,
+                val_to_str(hdr_bits & 0xD, CHDR_PACKET_TYPES_SHORT, "invalid")
+            );
+            /* And other flags */
+            proto_tree_add_boolean(header_tree, hf_chdr_has_time, tvb, flag_offset, 1, flag_has_time);
+            if (flag_is_data) {
+                proto_tree_add_boolean(header_tree, hf_chdr_eob, tvb, flag_offset, 1, flag_is_eob);
+            }
+            if (flag_is_resp) {
+                proto_tree_add_boolean(header_tree, hf_chdr_error, tvb, flag_offset, 1, flag_is_error);
+            }
 
             /* These lines add sequence, packet_size and stream ID */
             proto_tree_add_item(chdr_tree, hf_chdr_sequence, tvb, (is_network ? 0:2), 2, endianness);
@@ -199,9 +252,18 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                 stream_item = proto_tree_add_item(chdr_tree, hf_chdr_stream_id, tvb, 4, 4, endianness);
                 stream_tree = proto_item_add_subtree(stream_item, ett_chdr_id);
                 proto_tree_add_item(stream_tree, hf_chdr_src_dev, tvb, id_pos[0], 1, ENC_NA);
-                proto_tree_add_item(stream_tree, hf_chdr_src_ep, tvb, id_pos[1], 1, ENC_NA);
+                proto_tree_add_item(stream_tree, hf_chdr_src_ep,  tvb, id_pos[1], 1, ENC_NA);
                 proto_tree_add_item(stream_tree, hf_chdr_dst_dev, tvb, id_pos[2], 1, ENC_NA);
-                proto_tree_add_item(stream_tree, hf_chdr_dst_ep, tvb, id_pos[3], 1, ENC_NA);
+                proto_tree_add_item(stream_tree, hf_chdr_dst_ep,  tvb, id_pos[3], 1, ENC_NA);
+
+                /* Block ports (only add them if address points to a device) */
+                bytes = tvb_get_string(tvb, 0, 8);
+		if (bytes[id_pos[0]] != 0) {
+                    proto_tree_add_item(stream_tree, hf_chdr_src_blockport, tvb, id_pos[1], 1, ENC_NA);
+		}
+		if (bytes[id_pos[2]] != 0) {
+                    proto_tree_add_item(stream_tree, hf_chdr_dst_blockport, tvb, id_pos[3], 1, ENC_NA);
+		}
 
                 /* if has_time flag is present interpret timestamp */
                 if ((flag_has_time) && (len >= 16)){
@@ -217,19 +279,21 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                 int remaining_bytes = (len - chdr_size);
                 int show_raw_payload = (remaining_bytes > 0);
 
-                if (hf_chdr_is_extension){
-                    if (remaining_bytes == 8){  // Interpret this as a response packet
-                        response_item = proto_tree_add_item(chdr_tree, hf_chdr_ext_response, tvb, chdr_size, 8, endianness);
-                        response_tree = proto_item_add_subtree(response_item, ett_chdr_response);
+                if (flag_is_cmd && remaining_bytes == 8) {
+                    cmd_item = proto_tree_add_item(chdr_tree, hf_chdr_cmd, tvb, chdr_size, 8, endianness);
+                    cmd_tree = proto_item_add_subtree(cmd_item, ett_chdr_cmd);
+                    proto_tree_add_item(cmd_tree, hf_chdr_cmd_address, tvb, chdr_size,     4, endianness);
+                    proto_tree_add_item(cmd_tree, hf_chdr_cmd_value,   tvb, chdr_size + 4, 4, endianness);
+                } else if (flag_is_resp) {
+                    response_item = proto_tree_add_item(chdr_tree, hf_chdr_ext_response, tvb, chdr_size, 8, endianness);
+                    response_tree = proto_item_add_subtree(response_item, ett_chdr_response);
 
-                        proto_tree_add_item(response_tree, hf_chdr_ext_status_code, tvb, chdr_size, 4, endianness);
-                        /* This will show the 12-bits of sequence ID in the last 2 bytes */
-                        proto_tree_add_item(response_tree, hf_chdr_ext_seq_num, tvb, (chdr_size + 4 + (is_network ? 2 : 0)), 2, endianness);
-                    }
-                }
-
-                if (show_raw_payload)
+                    proto_tree_add_item(response_tree, hf_chdr_ext_status_code, tvb, chdr_size, 4, endianness);
+                    /* This will show the 12-bits of sequence ID in the last 2 bytes */
+                    proto_tree_add_item(response_tree, hf_chdr_ext_seq_num, tvb, (chdr_size + 4 + (is_network ? 2 : 0)), 2, endianness);
+                } else if (show_raw_payload) {
                     proto_tree_add_item(chdr_tree, hf_chdr_payload, tvb, chdr_size, -1, ENC_NA);
+                }
             }
         }
     }
@@ -244,17 +308,11 @@ void proto_register_chdr(void)
                 NULL, 0xF0,
                 NULL, HFILL }
         },
-        { &hf_chdr_is_extension,
-            { "Extension context packet", "chdr.hdr.ext",
-                FT_BOOLEAN, BASE_NONE,
-                NULL, 0x80,
-                NULL, HFILL }
-        },
-        { &hf_chdr_reserved,
-            { "Reserved bit", "chdr.hdr.reserved",
-                FT_BOOLEAN, BASE_NONE,
-                NULL, 0x40,
-                NULL, HFILL }
+        { &hf_chdr_type,
+            { "Packet Type", "chdr.hdr.type",
+                FT_STRINGZ, BASE_NONE,
+                NULL, 0x00,
+                "Packet Type", HFILL }
         },
         { &hf_chdr_has_time,
             { "Time present", "chdr.hdr.has_time",
@@ -264,6 +322,12 @@ void proto_register_chdr(void)
         },
         { &hf_chdr_eob,
             { "End Of Burst", "chdr.hdr.eob",
+                FT_BOOLEAN, BASE_NONE,
+                NULL, 0x10,
+                NULL, HFILL }
+        },
+        { &hf_chdr_error,
+            { "Error Flag", "chdr.hdr.error",
                 FT_BOOLEAN, BASE_NONE,
                 NULL, 0x10,
                 NULL, HFILL }
@@ -298,6 +362,12 @@ void proto_register_chdr(void)
                 NULL, 0x0,
                 NULL, HFILL }
         },
+        { &hf_chdr_src_blockport,
+            { "Source block port", "chdr.src_bp",
+                FT_UINT8, BASE_DEC,
+                NULL, 0xF,
+                NULL, HFILL }
+        },
         { &hf_chdr_dst_dev,
             { "Destination device", "chdr.dst_dev",
                 FT_UINT8, BASE_DEC,
@@ -308,6 +378,12 @@ void proto_register_chdr(void)
             { "Destination endpoint", "chdr.dst_ep",
                 FT_UINT8, BASE_DEC,
                 NULL, 0x0,
+                NULL, HFILL }
+        },
+        { &hf_chdr_dst_blockport,
+            { "Destination block port", "chdr.dst_bp",
+                FT_UINT8, BASE_DEC,
+                NULL, 0xF,
                 NULL, HFILL }
         },
         { &hf_chdr_timestamp,
@@ -341,13 +417,32 @@ void proto_register_chdr(void)
                 NULL, 0x0FFF,
                 NULL, HFILL }
         },
+        { &hf_chdr_cmd,
+            { "Command", "chdr.cmd",
+                FT_BYTES, BASE_NONE,
+                NULL, 0x0,
+                NULL, HFILL }
+        },
+        { &hf_chdr_cmd_address,
+            { "Register Address", "chdr.cmd.addr",
+                FT_UINT32, BASE_DEC,
+                NULL, 0x0,
+                NULL, HFILL }
+        },
+        { &hf_chdr_cmd_value,
+            { "Command Value", "chdr.cmd.val",
+                FT_UINT32, BASE_HEX,
+                NULL, 0x0,
+                NULL, HFILL }
+        },
     };
 
     static gint *ett[] = {
         &ett_chdr,
         &ett_chdr_header,
         &ett_chdr_id,
-        &ett_chdr_response
+        &ett_chdr_response,
+        &ett_chdr_cmd
     };
 
     proto_chdr = proto_register_protocol("UHD CHDR", "CHDR", "chdr");
