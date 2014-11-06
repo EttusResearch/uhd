@@ -49,7 +49,6 @@ x300_clock_ctrl_impl(uhd::spi_iface::sptr spiface,
     _master_clock_rate(master_clock_rate),
     _system_ref_rate(system_ref_rate)
 {
-    set_master_clock_rate(master_clock_rate);
 }
 
 void reset_clocks() {

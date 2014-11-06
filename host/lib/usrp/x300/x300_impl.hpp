@@ -194,6 +194,7 @@ private:
         uhd::dict<size_t, boost::weak_ptr<uhd::rx_streamer> > rx_streamers;
         uhd::dict<size_t, boost::weak_ptr<uhd::tx_streamer> > tx_streamers;
 
+        bool initialization_done;
         uhd::task::sptr claimer_task;
         std::string addr;
         std::string xport_path;
@@ -233,6 +234,7 @@ private:
         std::string loaded_fpga_image;
 
         size_t hw_rev;
+        std::string current_refclk_src;
     };
     std::vector<mboard_members_t> _mb;
 
@@ -341,14 +343,14 @@ private:
     void update_tx_samp_rate(mboard_members_t&, const size_t, const double);
 
     void update_clock_control(mboard_members_t&);
+    void initialize_clock_control(mboard_members_t &mb);
     void set_time_source_out(mboard_members_t&, const bool);
     void update_clock_source(mboard_members_t&, const std::string &);
     void update_time_source(mboard_members_t&, const std::string &);
-    void reset_clocks(mboard_members_t&);
     void reset_radios(mboard_members_t&);
 
     uhd::sensor_value_t get_ref_locked(uhd::wb_iface::sptr);
-    void wait_for_ref_locked(uhd::wb_iface::sptr, double timeout = 0.0);
+    bool wait_for_ref_locked(uhd::wb_iface::sptr, double timeout = 0.0);
     bool is_pps_present(uhd::wb_iface::sptr);
 
     void set_db_eeprom(uhd::i2c_iface::sptr i2c, const size_t, const uhd::usrp::dboard_eeprom_t &);
@@ -360,6 +362,12 @@ private:
     void update_atr_leds(gpio_core_200_32wo::sptr, const std::string &ant);
     boost::uint32_t get_fp_gpio(gpio_core_200::sptr, const std::string &);
     void set_fp_gpio(gpio_core_200::sptr, const std::string &, const boost::uint32_t);
+
+    //**PRECONDITION**
+    //This function assumes that all the VITA times in "radios" are synchronized
+    //to a common reference. Currently, this function is called in get_tx_stream
+    //which also has the same precondition.
+    static void synchronize_dacs(const std::vector<radio_perifs_t*>& mboards);
 };
 
 #endif /* INCLUDED_X300_IMPL_HPP */
