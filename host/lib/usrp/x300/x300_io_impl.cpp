@@ -540,6 +540,7 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
     //shared async queue for all channels in streamer
     boost::shared_ptr<async_md_type> async_md(new async_md_type(1000/*messages deep*/));
 
+    std::vector<radio_perifs_t*> radios_list;
     boost::shared_ptr<sph::send_packet_streamer> my_streamer;
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)
     {
@@ -557,9 +558,10 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         }
         // Find the DSP that corresponds to this mainboard and subdev
         mboard_members_t &mb = _mb[mb_index];
-	const size_t radio_index = _tree->access<std::vector<size_t> >("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "tx_chan_dsp_mapping")
+        const size_t radio_index = _tree->access<std::vector<size_t> >("/mboards/" + boost::lexical_cast<std::string>(mb_index) / "tx_chan_dsp_mapping")
                                             .get().at(mb_chan);
         radio_perifs_t &perif = mb.radio_perifs[radio_index];
+        radios_list.push_back(&perif);
 
         //setup the dsp transport hints (TODO)
         device_addr_t device_addr = mb.send_args;
@@ -571,8 +573,8 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         both_xports_t xport = this->make_transport(mb_index, dest, X300_RADIO_DEST_PREFIX_TX, device_addr, data_sid);
         UHD_LOG << boost::format("data_sid = 0x%08x\n") % data_sid << std::endl;
 
-	// To calculate the max number of samples per packet, we assume the maximum header length
-	// to avoid fragmentation should the entire header be used.
+        // To calculate the max number of samples per packet, we assume the maximum header length
+        // to avoid fragmentation should the entire header be used.
         const size_t bpp = xport.send->get_send_frame_size() - X300_TX_MAX_HDR_LEN;
         const size_t bpi = convert::get_bytes_per_item(args.otw_format);
         const size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi));
@@ -640,5 +642,6 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         _tree->access<double>(mb_path / "tx_dsps" / boost::lexical_cast<std::string>(radio_index) / "rate" / "value").update();
     }
 
+    synchronize_dacs(radios_list);
     return my_streamer;
 }
