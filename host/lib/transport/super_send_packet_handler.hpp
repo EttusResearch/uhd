@@ -474,11 +474,6 @@ public:
         return send_packet_handler::recv_async_msg(async_metadata, timeout);
     }
 
-    boost::uint32_t get_sid(const size_t chan) {
-        return get_xport_chan_sid(chan);
-    }
-
-
 private:
     size_t _max_num_samps;
 };

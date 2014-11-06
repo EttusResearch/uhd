@@ -814,10 +814,6 @@ public:
         return recv_packet_handler::issue_stream_cmd(stream_cmd);
     }
 
-    boost::uint32_t get_sid(const size_t chan) {
-        return get_xport_chan_sid(chan);
-    }
-
 private:
     size_t _max_num_samps;
 };
