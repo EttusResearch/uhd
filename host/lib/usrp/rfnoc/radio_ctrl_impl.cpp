@@ -46,7 +46,7 @@ public:
 
         // TODO: Once the radio looks like a NoC-Block, remove this!
         _tree->remove(_root_path / "input_buffer_size");
-        _tree->create<size_t>(_root_path / "input_buffer_size/0").set(0x90000/2);
+        _tree->create<size_t>(_root_path / "input_buffer_size/0").set(520*1024/2);
 
         // TODO this is a hack
         stream_sig_t out_sig("sc16", 0, false);
