@@ -34,7 +34,7 @@ public:
         _item_type("sc16") // We only support sc16 in this block
     {
         _n_taps = boost::uint32_t(user_reg_read64(RB_NUM_TAPS));
-        UHD_MSG(status) << "fft_block::fft_block() n_taps ==" << _n_taps << std::endl;
+        UHD_MSG(status) << "fir_block::fir_block() n_taps ==" << _n_taps << std::endl;
         UHD_ASSERT_THROW(_n_taps);
 
         // Default to Dirac impulse
@@ -75,7 +75,7 @@ public:
 protected:
     void _init_rx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "fft_block::init_rx()" << std::endl;
+        UHD_MSG(status) << "fir_block::init_rx()" << std::endl;
         if (args.otw_format != "sc16") {
             throw uhd::value_error("FIR only supports otw_format sc16");
         }
@@ -83,7 +83,7 @@ protected:
 
     void _init_tx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "fft_block::init_tx()" << std::endl;
+        UHD_MSG(status) << "fir_block::init_tx()" << std::endl;
         if (args.otw_format != "sc16") {
             throw uhd::value_error("FIR only supports otw_format sc16");
         }
