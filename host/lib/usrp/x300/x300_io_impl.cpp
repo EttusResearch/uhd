@@ -603,19 +603,13 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         // Setup the dsp transport hints
         device_addr_t device_tx_args = mb.send_args;
-        if (not device_tx_args.has_key("send_buff_size")) {
-            device_tx_args["send_buff_size"] = boost::lexical_cast<std::string>(ce_ctrl->get_fifo_size(block_port));
-            // FIXME FIXME FIXME: This should probably be handled in make_transport, and this is a hack
-            if (ce_ctrl->get_fifo_size(block_port) < 500000) {
-                device_tx_args["num_send_frames"] = "8";
-            }
-        }
 
         //allocate sid and create transport
         uhd::sid_t stream_address = ce_ctrl->get_address(block_port);
         UHD_MSG(status) << "creating tx stream " << device_tx_args.to_string() << std::endl;
         both_xports_t xport = this->make_transport(stream_address, device_tx_args);
         UHD_MSG(status) << std::hex << "data_sid = " << xport.send_sid << std::dec << std::endl;
+        UHD_VAR(xport.send_buff_size);
 
         // To calculate the max number of samples per packet, we assume the maximum header length
         // to avoid fragmentation should the entire header be used.
@@ -651,6 +645,8 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         //flow control setup
         const size_t pkt_size = spp * bpi + X300_TX_MAX_HDR_LEN;
         UHD_VAR(pkt_size);
+        // For flow control, this value is used to determine the window size
+        device_tx_args["send_buff_size"] = boost::lexical_cast<std::string>(ce_ctrl->get_fifo_size(block_port));
         size_t fc_window = get_tx_flow_control_window(pkt_size, device_tx_args);  //In packets
         const size_t fc_handle_window = std::max<size_t>(1, fc_window/X300_TX_FC_RESPONSE_FREQ);
         UHD_MSG(status) << "TX Flow Control Window = " << fc_window << ", TX Flow Control Handler Window = " << fc_handle_window << std::endl;
