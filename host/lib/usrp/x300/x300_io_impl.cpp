@@ -395,7 +395,8 @@ uhd::stream_args_t sanitize_stream_args(const uhd::stream_args_t &args_)
 void x300_impl::generate_channel_list(
         const uhd::stream_args_t &args_,
         std::vector<uhd::rfnoc::block_id_t> &chan_list,
-        std::vector<device_addr_t> &chan_args
+        std::vector<device_addr_t> &chan_args,
+        const std::string &xx
 ) {
     uhd::stream_args_t args = args_;
     if (args.args.has_key("block_id")) { // Override channel settings
@@ -412,7 +413,7 @@ void x300_impl::generate_channel_list(
         }
     } else {
         BOOST_FOREACH(const size_t chan_idx, args.channels) {
-            fs_path chan_root = str(boost::format("/channels/%d") % chan_idx);
+            fs_path chan_root = str(boost::format("/channels/%s/%d") % xx % chan_idx);
             if (not _tree->exists(chan_root)) {
                 throw uhd::runtime_error("No channel definition for " + chan_root);
             }
@@ -437,7 +438,7 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
     // I. Generate the channel list
     std::vector<uhd::rfnoc::block_id_t> chan_list;
     std::vector<device_addr_t> chan_args;
-    generate_channel_list(args, chan_list, chan_args);
+    generate_channel_list(args, chan_list, chan_args, "rx");
 
     // II. Iterate over all channels
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer;
@@ -581,7 +582,7 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
     // I. Generate the channel list
     std::vector<uhd::rfnoc::block_id_t> chan_list;
     std::vector<device_addr_t> chan_args;
-    generate_channel_list(args, chan_list, chan_args);
+    generate_channel_list(args, chan_list, chan_args, "tx");
 
     //shared async queue for all channels in streamer
     boost::shared_ptr<async_md_type> async_md(new async_md_type(1000/*messages deep*/));

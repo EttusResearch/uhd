@@ -25,6 +25,8 @@
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/tx_block_ctrl_base.hpp>
 #include <uhd/convert.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread.hpp>
@@ -1265,23 +1267,70 @@ public:
         _tree->remove("/channels");
     }
 
-    size_t set_channel(
+    template <typename T>
+    uhd::rfnoc::block_id_t _check_block_id(
+            const uhd::rfnoc::block_id_t &block_id
+    ) {
+        if (not is_device3()) {
+            throw uhd::type_error("Cannot set channels on a non-generation 3 device.");
+        }
+        uhd::rfnoc::block_id_t new_block_ctrl;
+        boost::shared_ptr<T> block_ctrl = get_device3()->find_block_ctrl<T>(block_id);
+        if (block_ctrl) {
+            new_block_ctrl = block_ctrl->get_block_id();
+        }
+        return new_block_ctrl;
+    }
+
+    size_t set_tx_channel(
             const uhd::rfnoc::block_id_t &block_id,
             const uhd::device_addr_t &args,
-            int chan_idx
+            int chan_idx_
     ) {
-        if (chan_idx == -1) {
+        const uhd::rfnoc::block_id_t checked_block_id = _check_block_id<uhd::rfnoc::tx_block_ctrl_base>(block_id);
+        if (checked_block_id.get_block_name().empty()) {
+            throw uhd::value_error(str(boost::format("No such TX block on this device: %s") % block_id.to_string()));
+        }
+        fs_path chans_root = "/channels/tx";
+        size_t chan_idx = size_t(chan_idx_);
+        // Find first empty chan index if none given
+        if (chan_idx_ == -1) {
             chan_idx = 0;
-            while (_tree->exists(str(boost::format("/channels/%d") % chan_idx))) {
+            while (_tree->exists(chans_root / chan_idx)) {
                 chan_idx++;
             }
         }
-        fs_path chan_root = str(boost::format("/channels/%d") % chan_idx);
-        if (_tree->exists(chan_root)) {
-            _tree->remove(chan_root);
+        if (_tree->exists(chans_root / chan_idx)) {
+            _tree->remove(chans_root / chan_idx);
         }
-        _tree->create<uhd::rfnoc::block_id_t>(chan_root).set(block_id);
-        _tree->create<uhd::device_addr_t>(chan_root / "args").set(args);
+        _tree->create<uhd::rfnoc::block_id_t>(chans_root / chan_idx).set(block_id);
+        _tree->create<uhd::device_addr_t>(chans_root / chan_idx / "args").set(args);
+        return chan_idx;
+    }
+
+    size_t set_rx_channel(
+            const uhd::rfnoc::block_id_t &block_id,
+            const uhd::device_addr_t &args,
+            int chan_idx_
+    ) {
+        const uhd::rfnoc::block_id_t checked_block_id = _check_block_id<uhd::rfnoc::rx_block_ctrl_base>(block_id);
+        if (checked_block_id.get_block_name().empty()) {
+            throw uhd::value_error(str(boost::format("No such RX block on this device: %s") % block_id.to_string()));
+        }
+        fs_path chans_root = "/channels/rx";
+        size_t chan_idx = size_t(chan_idx_);
+        // Find first empty chan index if none given
+        if (chan_idx_ == -1) {
+            chan_idx = 0;
+            while (_tree->exists(chans_root / chan_idx)) {
+                chan_idx++;
+            }
+        }
+        if (_tree->exists(chans_root / chan_idx)) {
+            _tree->remove(chans_root / chan_idx);
+        }
+        _tree->create<uhd::rfnoc::block_id_t>(chans_root / chan_idx).set(block_id);
+        _tree->create<uhd::device_addr_t>(chans_root / chan_idx / "args").set(args);
         return chan_idx;
     }
 

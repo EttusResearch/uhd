@@ -944,7 +944,7 @@ public:
      */
     virtual void clear_channels(void) = 0;
 
-    /*! Defines a channel.
+    /*! Defines a TX channel.
      *
      * \param block_id The block ID this channel will map to.
      *                 If no such block exists in the device,
@@ -956,7 +956,25 @@ public:
      *          is provided and no exception is thrown, this returns
      *          chan_idx.
      */
-    virtual size_t set_channel(
+    virtual size_t set_tx_channel(
+            const uhd::rfnoc::block_id_t &block_id,
+            const uhd::device_addr_t &args = uhd::device_addr_t(),
+            int chan_idx = -1
+    ) = 0;
+
+    /*! Defines an RX channel.
+     *
+     * \param block_id The block ID this channel will map to.
+     *                 If no such block exists in the device,
+     *                 a uhd::value_error is thrown.
+     * \param args Arguments for this channel.
+     * \param chan_idx. The channel index. If this is left out,
+     *                  the next available channel is used.
+     * \returns the channel index of this channel. If \p chan_idx
+     *          is provided and no exception is thrown, this returns
+     *          chan_idx.
+     */
+    virtual size_t set_rx_channel(
             const uhd::rfnoc::block_id_t &block_id,
             const uhd::device_addr_t &args = uhd::device_addr_t(),
             int chan_idx = -1

@@ -353,7 +353,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         }
         usrp->connect(uhd::rfnoc::block_id_t("0/Radio_0"), blk_ctrl->get_block_id());
         usrp->clear_channels();
-        usrp->set_channel(blk_ctrl->get_block_id());
+        usrp->set_rx_channel(blk_ctrl->get_block_id());
     }
 
 #define recv_to_file_args(format) \

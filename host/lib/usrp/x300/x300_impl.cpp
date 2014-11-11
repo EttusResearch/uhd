@@ -1148,15 +1148,16 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
 
     ////// Add default channels
     size_t channel_idx = 0;
-    while (_tree->exists(str(boost::format("/channels/%d") % channel_idx))) {
+    while (_tree->exists(str(boost::format("/channels/tx/%d") % channel_idx))) {
         channel_idx++;
     }
-    _tree->create<uhd::rfnoc::block_id_t>(str(boost::format("/channels/%d") % channel_idx))
+    _tree->create<uhd::rfnoc::block_id_t>(str(boost::format("/channels/tx/%d") % channel_idx))
             .set(r_ctrl->get_block_id());
-    UHD_MSG(status)
-        << _tree->access<uhd::rfnoc::block_id_t>(str(boost::format("/channels/%d") % channel_idx)).get()
-        << std::endl;
-    _tree->create<uhd::device_addr_t>(str(boost::format("/channels/%d/args") % channel_idx))
+    _tree->create<uhd::rfnoc::block_id_t>(str(boost::format("/channels/rx/%d") % channel_idx))
+            .set(r_ctrl->get_block_id());
+    _tree->create<uhd::device_addr_t>(str(boost::format("/channels/tx/%d/args") % channel_idx))
+            .set(uhd::device_addr_t());
+    _tree->create<uhd::device_addr_t>(str(boost::format("/channels/rx/%d/args") % channel_idx))
             .set(uhd::device_addr_t());
 }
 

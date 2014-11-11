@@ -331,9 +331,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     // to the final processing block.
     usrp->clear_channels(); // The default is to use the radios. Let's not do that.
     if (num_proc_blocks == 2) {
-        usrp->set_channel(proc_block_ctrl2->get_block_id()); // Defaults to being channel 0.
+        usrp->set_rx_channel(proc_block_ctrl2->get_block_id()); // Defaults to being channel 0.
     } else {
-        usrp->set_channel(proc_block_ctrl->get_block_id()); // Defaults to being channel 0.
+        usrp->set_rx_channel(proc_block_ctrl->get_block_id()); // Defaults to being channel 0.
     }
 
     /////////////////////////////////////////////////////////////////////////

@@ -367,7 +367,8 @@ private:
     void generate_channel_list(
             const uhd::stream_args_t &args,
             std::vector<uhd::rfnoc::block_id_t> &chan_list,
-            std::vector<uhd::device_addr_t> &chan_args
+            std::vector<uhd::device_addr_t> &chan_args,
+            const std::string &xx
     );
 
     // Loopback stuff
