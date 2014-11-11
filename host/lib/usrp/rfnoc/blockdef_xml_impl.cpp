@@ -15,7 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <cstdlib>
+#include <uhd/exception.hpp>
+#include <uhd/usrp/rfnoc/constants.hpp>
+#include <uhd/usrp/rfnoc/blockdef.hpp>
+#include <uhd/utils/msg.hpp>
+#include <uhd/utils/paths.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -23,10 +27,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-#include <uhd/exception.hpp>
-#include <uhd/usrp/rfnoc/constants.hpp>
-#include <uhd/usrp/rfnoc/blockdef.hpp>
-#include <uhd/utils/msg.hpp>
+#include <cstdlib>
 
 using namespace uhd::rfnoc;
 namespace fs = boost::filesystem;
@@ -51,11 +52,14 @@ public:
     {
         std::vector<boost::filesystem::path> paths;
 
+        // Path from environment variable
         if (std::getenv(XML_PATH_ENV.c_str()) != NULL) {
             paths.push_back(boost::filesystem::path(std::getenv(XML_PATH_ENV.c_str())));
         }
 
-        paths.push_back(XML_DEFAULT_PATH);
+        // Finally, the default path
+        const boost::filesystem::path pkg_path = uhd::get_pkg_path();
+        paths.push_back(pkg_path / XML_DEFAULT_PATH);
 
         return paths;
     }
@@ -150,6 +154,7 @@ blockdef::sptr blockdef::make_from_noc_id(boost::uint64_t noc_id)
     std::vector<fs::path> paths = blockdef_xml_impl::get_xml_paths();
     // Iterate over all paths
     BOOST_FOREACH(const fs::path &base_path, paths) {
+        UHD_VAR(base_path);
         fs::path this_path = base_path / XML_BLOCKS_SUBDIR;
         if (not fs::exists(this_path) or not fs::is_directory(this_path)) {
             continue;

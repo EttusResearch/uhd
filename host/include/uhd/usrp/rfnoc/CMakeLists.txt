@@ -15,11 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-CONFIGURE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants.hpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
-@ONLY)
-
 UHD_INSTALL(FILES
     block_ctrl_base.hpp
     block_ctrl.hpp
@@ -35,7 +30,7 @@ UHD_INSTALL(FILES
     rx_block_ctrl_base.hpp
     stream_sig.hpp
     tx_block_ctrl_base.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/constants.hpp
+    constants.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/usrp/rfnoc
     COMPONENT headers
 )

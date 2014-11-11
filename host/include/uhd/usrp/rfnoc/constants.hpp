@@ -25,7 +25,8 @@ namespace uhd {
     namespace rfnoc {
 
 // All these configure the XML reader
-static const std::string XML_DEFAULT_PATH = "@CMAKE_INSTALL_PREFIX@/@PKG_DATA_DIR@/rfnoc";
+//! Where the RFNoC block/component definition files lie, relative to UHD_PKG_DIR
+static const std::string XML_DEFAULT_PATH = "share/uhd/rfnoc";
 static const std::string XML_PATH_ENV = "UHD_RFNOC_XML_PATH";
 
 //! If the block name can't be automatically detected, this name is used
