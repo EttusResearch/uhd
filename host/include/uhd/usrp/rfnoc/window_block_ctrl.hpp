@@ -42,7 +42,7 @@ public:
 
     static const size_t          DEFAULT_WINDOW_LEN     = 256;
     static const size_t          MAX_COEFF_VAL          = 32767;
-    static const boost::uint32_t SR_WINDOW_LEN          = 32;
+    static const boost::uint32_t SR_WINDOW_LEN          = 131;               // Note: AXI config bus uses 129 & 130
     static const boost::uint32_t RB_MAX_WINDOW_LEN      = 0;
     static const boost::uint32_t AXIS_WINDOW_LOAD       = AXIS_CONFIG_BUS+0; // 2*0+0
     static const boost::uint32_t AXIS_WINDOW_LOAD_TLAST = AXIS_CONFIG_BUS+1; // 2*0+1
