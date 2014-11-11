@@ -935,7 +935,6 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     boost::uint8_t dest = (radio_index == 0)? X300_XB_DST_R0 : X300_XB_DST_R1;
     boost::uint32_t ctrl_sid;
     uhd::sid_t radio_address(0, 0, mb_i + X300_DEVICE_THERE, dest << 4);
-    //both_xports_t xport = this->make_transport(mb_i, dest, X300_RADIO_DEST_PREFIX_CTRL, device_addr_t(), ctrl_sid);
     both_xports_t xport = this->make_transport(radio_address, CTRL, device_addr_t());
     ctrl_sid = xport.send_sid.get();
     UHD_MSG(status) << "Radio " << radio_index << " Ctrl SID: " << uhd::sid_t(ctrl_sid).to_pp_string_hex() << std::endl;
@@ -1201,30 +1200,6 @@ boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, x300_impl::xpor
     boost::uint32_t radio_grp = (destination == X300_XB_DST_R0) ? RADIO0_GRP : RADIO1_GRP;
     return ((radio_grp * RADIO_GRP_SIZE) + chan_offset);
 }
-
-
-// TODO remove
-//x300_impl::both_xports_t x300_impl::make_transport(
-    //uhd::sid_t &sid,
-    //const uhd::device_addr_t& args
-//) {
-    //UHD_MSG(status) << "x300_impl::make_transport()" << std::endl;
-    //const size_t mb_index = sid.get_dst_addr() - X300_DEVICE_THERE;
-    //const boost::uint8_t destination = sid.get_dst_xbarport();
-    //const boost::uint8_t prefix = 0;
-    //boost::uint32_t new_sid;
-    //UHD_VAR(size_t(destination));
-    //UHD_VAR(mb_index);
-
-    //x300_impl::both_xports_t xports = make_transport(
-            //mb_index,
-            //destination,
-            //prefix,
-            //args,
-            //new_sid);
-    //sid = new_sid;
-    //return xports;
-//}
 
 x300_impl::both_xports_t x300_impl::make_transport(
     const uhd::sid_t &address,
