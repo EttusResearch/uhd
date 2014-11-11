@@ -89,7 +89,6 @@ namespace uhd{ namespace usrp{
  * dev->set_tx_subdev_spec("A:AB", multi_usrp::ALL_MBOARDS);
  *
  * //now that all the channels are mapped, continue with configuration...
- *
  * </pre>
  */
 class UHD_API multi_usrp : boost::noncopyable{
@@ -409,6 +408,9 @@ public:
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
      * The subdev spec must be the same size across all motherboards.
+     *
+     * *Note*: When using a device3, this will clear and re-set the channel definitions.
+     *
      * \param spec the new frontend specification
      * \param mboard the motherboard index 0 to M-1
      */
@@ -647,6 +649,9 @@ public:
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
      * The subdev spec must be the same size across all motherboards.
+     *
+     * *Note*: When using a device3, this will clear and re-set the channel definitions.
+     *
      * \param spec the new frontend specification
      * \param mboard the motherboard index 0 to M-1
      */
@@ -979,6 +984,9 @@ public:
             const uhd::device_addr_t &args = uhd::device_addr_t(),
             int chan_idx = -1
     ) = 0;
+
+    virtual uhd::rfnoc::block_id_t get_tx_channel_id(size_t chan_idx) = 0;
+    virtual uhd::rfnoc::block_id_t get_rx_channel_id(size_t chan_idx) = 0;
 
 };
 

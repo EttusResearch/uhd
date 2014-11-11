@@ -351,7 +351,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             std::cout << "Invalid block control selected." << std::endl;
             return ~0;
         }
-        usrp->connect(uhd::rfnoc::block_id_t("0/Radio_0"), blk_ctrl->get_block_id());
+        uhd::rfnoc::block_id_t radio_ctrl_id = usrp->get_rx_channel_id(0);
+        std::cout << "Connecting " << radio_ctrl_id << " ==> " << blk_ctrl->get_block_id() << std::endl;
+        usrp->connect(radio_ctrl_id, blk_ctrl->get_block_id());
         usrp->clear_channels();
         usrp->set_rx_channel(blk_ctrl->get_block_id());
     }
