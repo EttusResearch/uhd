@@ -148,6 +148,12 @@ class x300_impl : public uhd::device3
 public:
     typedef uhd::transport::bounded_buffer<uhd::async_metadata_t> async_md_type;
 
+    enum xport_type_t {
+        CTRL = 0,
+        TX_DATA,
+        RX_DATA
+    };
+
     x300_impl(const uhd::device_addr_t &);
     void setup_mb(const size_t which, const uhd::device_addr_t &);
     ~x300_impl(void);
@@ -281,6 +287,7 @@ private:
      */
     both_xports_t make_transport(
         const uhd::sid_t &address,
+        const xport_type_t type,
         const uhd::device_addr_t& args
     );
 

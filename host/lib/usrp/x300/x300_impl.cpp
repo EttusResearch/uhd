@@ -857,6 +857,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
         both_xports_t xport = this->make_transport(
             ctrl_sid,
+            CTRL,
             dev_addr
         );
         UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control #%d (SID: %s)...") % i % ctrl_sid.to_pp_string_hex());
@@ -935,7 +936,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     boost::uint32_t ctrl_sid;
     uhd::sid_t radio_address(0, 0, mb_i + X300_DEVICE_THERE, dest << 4);
     //both_xports_t xport = this->make_transport(mb_i, dest, X300_RADIO_DEST_PREFIX_CTRL, device_addr_t(), ctrl_sid);
-    both_xports_t xport = this->make_transport(radio_address, device_addr_t());
+    both_xports_t xport = this->make_transport(radio_address, CTRL, device_addr_t());
     ctrl_sid = xport.send_sid.get();
     UHD_MSG(status) << "Radio " << radio_index << " Ctrl SID: " << uhd::sid_t(ctrl_sid).to_pp_string_hex() << std::endl;
     perif.ctrl = radio_ctrl_core_3000::make(mb.if_pkt_is_big_endian, xport.recv, xport.send, ctrl_sid, slot_name);
@@ -1175,14 +1176,30 @@ void x300_impl::set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::st
     }
 }
 
-boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, boost::uint8_t prefix)
+boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, x300_impl::xport_type_t xport_type)
 {
+    UHD_ASSERT_THROW(destination == X300_XB_DST_R0 or destination == X300_XB_DST_R0);
     static const boost::uint32_t RADIO_GRP_SIZE = 3;
     static const boost::uint32_t RADIO0_GRP     = 0;
     static const boost::uint32_t RADIO1_GRP     = 1;
 
+    boost::uint32_t chan_offset = 0;
+    switch (xport_type) {
+        case x300_impl::TX_DATA:
+            chan_offset = 0;
+            break;
+        case x300_impl::CTRL:
+            chan_offset = 1;
+            break;
+        case x300_impl::RX_DATA:
+            chan_offset = 2;
+            break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+
     boost::uint32_t radio_grp = (destination == X300_XB_DST_R0) ? RADIO0_GRP : RADIO1_GRP;
-    return ((radio_grp * RADIO_GRP_SIZE) + prefix);
+    return ((radio_grp * RADIO_GRP_SIZE) + chan_offset);
 }
 
 
@@ -1211,50 +1228,42 @@ boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, boost::uint8_t 
 
 x300_impl::both_xports_t x300_impl::make_transport(
     const uhd::sid_t &address,
+    const xport_type_t xport_type,
     const uhd::device_addr_t& args
 ) {
     const size_t mb_index = address.get_dst_addr() - X300_DEVICE_THERE;
     mboard_members_t &mb = _mb[mb_index];
+    const uhd::device_addr_t& xport_args = (xport_type == CTRL) ? uhd::device_addr_t() : args;
+    zero_copy_xport_params default_buff_args;
+
     both_xports_t xports;
-
-    // TODO Replace prefix by something else.
-    const boost::uint8_t prefix = 0;
-
     xports.send_sid = this->allocate_sid(mb, address);
     xports.recv_sid = xports.send_sid.reversed();
 
-    static const uhd::device_addr_t DEFAULT_XPORT_ARGS;
-
-    // TODO X300_RADIO_DEST_PREFIX_CTRL will go away
-    const uhd::device_addr_t& xport_args =
-        (prefix != X300_RADIO_DEST_PREFIX_CTRL) ? args : DEFAULT_XPORT_ARGS;
-
-    zero_copy_xport_params default_buff_args;
-
     if (mb.xport_path == "nirio") {
         default_buff_args.send_frame_size =
-            (prefix == X300_RADIO_DEST_PREFIX_TX)
+            (xport_type == TX_DATA)
             ? X300_PCIE_TX_DATA_FRAME_SIZE
             : X300_PCIE_MSG_FRAME_SIZE;
 
         default_buff_args.recv_frame_size =
-            (prefix == X300_RADIO_DEST_PREFIX_RX)
+            (xport_type == RX_DATA)
             ? X300_PCIE_RX_DATA_FRAME_SIZE
             : X300_PCIE_MSG_FRAME_SIZE;
 
         default_buff_args.num_send_frames =
-            (prefix == X300_RADIO_DEST_PREFIX_TX)
+            (xport_type == TX_DATA)
             ? X300_PCIE_DATA_NUM_FRAMES
             : X300_PCIE_MSG_NUM_FRAMES;
 
         default_buff_args.num_recv_frames =
-            (prefix == X300_RADIO_DEST_PREFIX_RX)
+            (xport_type == RX_DATA)
             ? X300_PCIE_DATA_NUM_FRAMES
             : X300_PCIE_MSG_NUM_FRAMES;
 
         xports.recv = nirio_zero_copy::make(
             mb.rio_fpga_interface,
-            get_pcie_dma_channel(address.get_dst_xbarport(), prefix),
+            get_pcie_dma_channel(address.get_dst_xbarport(), xport_type),
             default_buff_args,
             xport_args);
 
@@ -1309,27 +1318,27 @@ x300_impl::both_xports_t x300_impl::make_transport(
                 << std::endl;
         }
 
-    size_t system_max_send_frame_size = (size_t) _max_frame_sizes.send_frame_size;
-    size_t system_max_recv_frame_size = (size_t) _max_frame_sizes.recv_frame_size;
+        size_t system_max_send_frame_size = (size_t) _max_frame_sizes.send_frame_size;
+        size_t system_max_recv_frame_size = (size_t) _max_frame_sizes.recv_frame_size;
 
-    // Make sure frame sizes do not exceed the max available value supported by UHD
+        // Make sure frame sizes do not exceed the max available value supported by UHD
         default_buff_args.send_frame_size =
-            (prefix == X300_RADIO_DEST_PREFIX_TX)
+            (xport_type == TX_DATA)
             ? std::min(system_max_send_frame_size, X300_10GE_DATA_FRAME_MAX_SIZE)
             : std::min(system_max_send_frame_size, X300_ETH_MSG_FRAME_SIZE);
 
         default_buff_args.recv_frame_size =
-            (prefix == X300_RADIO_DEST_PREFIX_RX)
+            (xport_type == RX_DATA)
             ? std::min(system_max_recv_frame_size, X300_10GE_DATA_FRAME_MAX_SIZE)
             : std::min(system_max_recv_frame_size, X300_ETH_MSG_FRAME_SIZE);
 
         default_buff_args.num_send_frames =
-            (prefix == X300_RADIO_DEST_PREFIX_TX)
+            (xport_type == TX_DATA)
             ? X300_ETH_DATA_NUM_FRAMES
             : X300_ETH_MSG_NUM_FRAMES;
 
         default_buff_args.num_recv_frames =
-            (prefix == X300_RADIO_DEST_PREFIX_RX)
+            (xport_type == RX_DATA)
             ? X300_ETH_DATA_NUM_FRAMES
             : X300_ETH_MSG_NUM_FRAMES;
 

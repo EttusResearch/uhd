@@ -476,7 +476,7 @@ rx_streamer::sptr x300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         //allocate sid and create transport
         uhd::sid_t stream_address = ce_ctrl->get_address(block_port);
         UHD_MSG(status) << "creating rx stream " << device_addr.to_string() << std::endl;
-        both_xports_t xport = this->make_transport(stream_address, device_addr);
+        both_xports_t xport = this->make_transport(stream_address, RX_DATA, device_addr);
         UHD_MSG(status) << std::hex << "data_sid = " << xport.send_sid << std::dec << " actual recv_buff_size = " << xport.recv_buff_size << std::endl;
 
         // To calculate the max number of samples per packet, we assume the maximum header length
@@ -608,9 +608,8 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         //allocate sid and create transport
         uhd::sid_t stream_address = ce_ctrl->get_address(block_port);
         UHD_MSG(status) << "creating tx stream " << device_tx_args.to_string() << std::endl;
-        both_xports_t xport = this->make_transport(stream_address, device_tx_args);
+        both_xports_t xport = this->make_transport(stream_address, TX_DATA, device_tx_args);
         UHD_MSG(status) << std::hex << "data_sid = " << xport.send_sid << std::dec << std::endl;
-        UHD_VAR(xport.send_buff_size);
 
         // To calculate the max number of samples per packet, we assume the maximum header length
         // to avoid fragmentation should the entire header be used.
@@ -645,7 +644,6 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         //flow control setup
         const size_t pkt_size = spp * bpi + X300_TX_MAX_HDR_LEN;
-        UHD_VAR(pkt_size);
         // For flow control, this value is used to determine the window size
         device_tx_args["send_buff_size"] = boost::lexical_cast<std::string>(ce_ctrl->get_fifo_size(block_port));
         size_t fc_window = get_tx_flow_control_window(pkt_size, device_tx_args);  //In packets
