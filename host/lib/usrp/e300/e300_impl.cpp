@@ -848,43 +848,33 @@ void e300_impl::_update_time_source(const std::string &source)
 }
 
 size_t e300_impl::_get_axi_dma_channel(
-    boost::uint8_t destination,
-    boost::uint8_t prefix)
+    const boost::uint8_t destination,
+    const e300_impl::xport_type_t xport_type)
 {
-    static const boost::uint32_t RADIO_GRP_SIZE = 3;
-    static const boost::uint32_t RADIO0_GRP     = 0;
-    static const boost::uint32_t RADIO1_GRP     = 1;
-    static const boost::uint32_t CE0_GRP        = 2;
-    static const boost::uint32_t CE1_GRP        = 3;
-    static const boost::uint32_t CE2_GRP        = 4;
-    static const boost::uint32_t CE3_GRP        = 5;
-    static const boost::uint32_t CE4_GRP        = 6;
+    static const boost::uint32_t group_offset = 3;
 
-    switch (destination) {
-    case E300_XB_DST_R0:
-        return (RADIO0_GRP * RADIO_GRP_SIZE) + prefix;
+    size_t chan_offset = 0;
 
-    case E300_XB_DST_R1:
-        return (RADIO1_GRP * RADIO_GRP_SIZE) + prefix;
-
-    case E300_XB_DST_CE0:
-        return (CE0_GRP * RADIO_GRP_SIZE) + prefix;
-
-    case E300_XB_DST_CE1:
-        return (CE1_GRP * RADIO_GRP_SIZE) + prefix;
-
-    case E300_XB_DST_CE2:
-        return (CE2_GRP * RADIO_GRP_SIZE) + prefix;
-
-    case E300_XB_DST_CE3:
-        return (CE3_GRP * RADIO_GRP_SIZE) + prefix;
-
-    case E300_XB_DST_CE4:
-        return (CE4_GRP * RADIO_GRP_SIZE) + prefix;
-
+    switch (xport_type) {
+    case TX_DATA:
+        chan_offset = 0;
+        break;
+    case CTRL:
+        chan_offset = 1;
+        break;
+    case RX_DATA:
+        chan_offset = 2;
+        break;
     default:
-        throw uhd::value_error("Invalid destination specified.");
+        UHD_THROW_INVALID_CODE_PATH();
     };
+
+    // Note: This assumes that R0 is on crossbar port 1 (first)
+    //       and all the other Radios and CEs on the following ones
+    //       The crossbar port 0 is used for the host connection
+    const boost::uint8_t xbar_port = destination - E300_XB_DST_CE0;
+
+    return (xbar_port * group_offset) + chan_offset;
 }
 
 boost::uint16_t e300_impl::_get_udp_port(
@@ -946,11 +936,6 @@ e300_impl::both_xports_t e300_impl::_make_transport(
 {
     both_xports_t xports;
 
-    boost::uint8_t prefix =
-        (type == CTRL) ? E300_RADIO_DEST_PREFIX_CTRL :
-        (type == RX_DATA) ? E300_RADIO_DEST_PREFIX_RX
-                          : E300_RADIO_DEST_PREFIX_TX;
-
     const uhd::transport::zero_copy_xport_params params =
         (type == CTRL) ? _ctrl_xport_params : _data_xport_params;
 
@@ -964,7 +949,7 @@ e300_impl::both_xports_t e300_impl::_make_transport(
         // to use to create our transport
         const size_t stream = _get_axi_dma_channel(
             address.get_dst_xbarport(),
-            prefix);
+            type);
 
         xports.send =
             _fifo_iface->make_send_xport(stream, params);
@@ -976,7 +961,7 @@ e300_impl::both_xports_t e300_impl::_make_transport(
     // configure the return path
     _setup_dest_mapping(
         xports.send_sid,
-        _get_axi_dma_channel(xports.send_sid.get_dst_xbarport(), prefix));
+        _get_axi_dma_channel(xports.send_sid.get_dst_xbarport(), type));
 
     return xports;
 }

@@ -219,8 +219,8 @@ private: // methods
         const size_t which_stream);
 
     size_t _get_axi_dma_channel(
-        boost::uint8_t destination,
-        boost::uint8_t prefix);
+        const boost::uint8_t destination,
+        const xport_type_t);
 
     boost::uint16_t _get_udp_port(
         boost::uint8_t destination,
