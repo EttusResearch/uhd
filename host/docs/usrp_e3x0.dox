@@ -136,7 +136,7 @@ which should return 'arm-oe-linux-gnueabi'.
 -# Setup your environment as described in \ref e3x0_sdk_usage
 -# Type the following in the build directory (assuming a build in host/build):
 
-        $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DENABLE_E300 ..
+        $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DENABLE_E300=On ..
         $ make
 
 \subsubsection e3x0_sdk_usage_gnuradio Building GNU Radio
@@ -195,7 +195,7 @@ builds)
  $ bitbake gnuradio-dev-image
 \endcode
 
-When this completes, the files needed to create the sd card are in
+When this completes, the files needed to create the SD card are in
 `tmp-glibc/deploy/images/ettus-e300`
 
 -# Build the toolchain.
@@ -399,7 +399,7 @@ usrp->set_rx_subdev_spec("A:A A:B");
 The following sensors are available for the USRP-E Series motherboards;
 they can be queried through the API.
 
-- **fe_locked** - rx / tx frontend pll locked
+- **fe_locked** - rx / tx frontend PLL locked
 - **temp** - processor temperature value
 - **gps_time** and **gps_locked** sensors are added when the GPSDO is found
 
@@ -494,7 +494,7 @@ by pinging the USRP and making sure the LEDs start to blink.
 
  - Communication
   -# How do I enable X forwarding so I can run X apps on the e3x0?\n
-     In the file `/etc/ssh/sshd_config`, unmcomment the line `#X11Forwarding no`
+     In the file `/etc/ssh/sshd_config`, uncomment the line `#X11Forwarding no`
      and change "no" to "yes".
 
 \section e3x0_apps Applications
