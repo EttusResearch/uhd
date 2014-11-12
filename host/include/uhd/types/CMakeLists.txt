@@ -21,6 +21,7 @@ UHD_INSTALL(FILES
     device_addr.hpp
     dict.ipp
     dict.hpp
+    endianness.hpp
     io_type.hpp
     mac_addr.hpp
     metadata.hpp
