@@ -375,6 +375,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 {
     const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
     mboard_members_t &mb = _mb[mb_i];
+    mb.initialization_done = false;
 
     mb.addr = dev_addr.has_key("resource") ? dev_addr["resource"] : dev_addr["addr"];
     mb.xport_path = dev_addr.has_key("resource") ? "nirio" : "eth";
@@ -624,32 +625,18 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         mb.hw_rev = X300_REV("D");
     }
 
-    //Initialize clock control with internal references and GPSDO power on.
-    mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
-    mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
-    mb.clock_control_regs_pps_out_enb = 0;
-    mb.clock_control_regs_tcxo_enb = 1;
-    mb.clock_control_regs_gpsdo_pwr = 1;
-    this->update_clock_control(mb);
-
-    //Create clock control
+    //Create clock control. NOTE: This does not configure the LMK yet.
+    initialize_clock_control(mb);
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
         mb.hw_rev,
         dev_addr.cast<double>("master_clock_rate", X300_DEFAULT_TICK_RATE),
         dev_addr.cast<double>("system_ref_rate", X300_DEFAULT_SYSREF_RATE));
 
-    //wait for reference clock to lock
-    if(mb.hw_rev > 4)
-    {
-        try {
-            //FIXME:  Need to verify timeout value to make sure lock can be achieved in < 1.0 seconds
-            wait_for_ref_locked(mb.zpu_ctrl, 1.0);
-        } catch (uhd::runtime_error &e) {
-            //Silently fail for now, but fix after we have the correct timeout value
-            //UHD_MSG(warning) << "Clock failed to lock to internal source during initialization." << std::endl;
-        }
-    }
+    //Initialize clock source to use internal reference and generate
+    //a valid radio clock. This may change after configuration is done.
+    //This will configure the LMK and wait for lock
+    update_clock_source(mb, "internal");
 
     ////////////////////////////////////////////////////////////////////
     // create clock properties
@@ -753,7 +740,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     _tree->create<std::string>(mb_path / "clock_source" / "value")
         .set("internal")
         .subscribe(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1))
-        .subscribe(boost::bind(&x300_impl::reset_clocks, this, boost::ref(mb)))
         .subscribe(boost::bind(&x300_impl::reset_radios, this, boost::ref(mb)));
 
     static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external")("gpsdo");
@@ -772,6 +758,22 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     _tree->create<bool>(mb_path / "clock_source" / "output")
         .subscribe(boost::bind(&x300_clock_ctrl::set_ref_out, mb.clock, _1));
 
+    ////////////////////////////////////////////////////////////////////
+    // initialize clock and time sources
+    ////////////////////////////////////////////////////////////////////
+    if (mb.gps and mb.gps->gps_detected())
+    {
+        UHD_MSG(status) << "Initializing clock and time using GPSDO... " << std::flush;
+        _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
+        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
+        const time_t tp = time_t(mb.gps->get_sensor("gps_time").to_int() + 1);
+        _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
+    } else {
+        UHD_MSG(status) << "Initializing clock and time using internal sources... " << std::flush;
+        _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
+        _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
+    }
+    UHD_MSG(status) << "done"  << std::endl;
 
     ////////////////////////////////////////////////////////////////////
     // create frontend mapping
@@ -881,6 +883,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         UHD_MSG(status) << "* " << this_block->get_block_id() << std::endl;
     }
     //////////////// RFNOC /////////////////
+    mb.initialization_done = true;
 }
 
 x300_impl::~x300_impl(void)
@@ -971,14 +974,6 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     perif.adc->set_test_word("normal", "normal");
 
     ////////////////////////////////////////////////////////////////
-    // Sync DAC's for MIMO
-    ////////////////////////////////////////////////////////////////
-    UHD_MSG(status) << "Sync DAC's." << std::endl;
-    perif.dac->arm_dac_sync();               // Put DAC into data Sync mode
-    perif.ctrl->poke32(TOREG(SR_DACSYNC), 0x1);  // Arm FRAMEP/N sync pulse
-
-
-    ////////////////////////////////////////////////////////////////
     // create codec control objects
     ////////////////////////////////////////////////////////////////
     _tree->create<int>(mb_path / "rx_codecs" / slot_name / "gains"); //phony property so this dir exists
@@ -1013,8 +1008,6 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
         .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, perif.tx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
-
-
 
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
@@ -1427,11 +1420,9 @@ void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
 }
 
-void x300_impl::set_time_source_out(mboard_members_t &mb, const bool enb)
-{
-    mb.clock_control_regs_pps_out_enb = enb? 1 : 0;
-    this->update_clock_control(mb);
-}
+/***********************************************************************
+ * clock and time control logic
+ **********************************************************************/
 
 void x300_impl::update_clock_control(mboard_members_t &mb)
 {
@@ -1444,79 +1435,71 @@ void x300_impl::update_clock_control(mboard_members_t &mb)
     mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_CLOCK_CTRL), reg);
 }
 
+void x300_impl::initialize_clock_control(mboard_members_t &mb)
+{
+    //Initialize clock control register soft copies
+    mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
+    mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
+    mb.clock_control_regs_pps_out_enb = 0;
+    mb.clock_control_regs_tcxo_enb = 1;
+    mb.clock_control_regs_gpsdo_pwr = 1;    //GPSDO power always ON
+    this->update_clock_control(mb);
+}
+
+void x300_impl::set_time_source_out(mboard_members_t &mb, const bool enb)
+{
+    mb.clock_control_regs_pps_out_enb = enb? 1 : 0;
+    this->update_clock_control(mb);
+}
+
 void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &source)
 {
-    mb.clock_control_regs_clock_source = 0;
-    mb.clock_control_regs_tcxo_enb = 0;
-    if (source == "internal") {
-        mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
-        mb.clock_control_regs_tcxo_enb = 1;
-    } else if (source == "external") {
-        mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_EXTERNAL;
-    } else if (source == "gpsdo") {
-        mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_GPSDO;
-    } else {
-        throw uhd::key_error("update_clock_source: unknown source: " + source);
+    //Optimize for the case when the current source is internal and we are trying
+    //to set it to internal. This is the only case where we are guaranteed that 
+    //the clock has not gone away so we can skip setting the MUX and reseting the LMK.
+    if (not (mb.current_refclk_src == "internal" and source == "internal")) {
+        //Update the clock MUX on the motherboard to select the requested source
+        mb.clock_control_regs_clock_source = 0;
+        mb.clock_control_regs_tcxo_enb = 0;
+        if (source == "internal") {
+            mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
+            mb.clock_control_regs_tcxo_enb = 1;
+        } else if (source == "external") {
+            mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_EXTERNAL;
+        } else if (source == "gpsdo") {
+            mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_GPSDO;
+        } else {
+            throw uhd::key_error("update_clock_source: unknown source: " + source);
+        }
+        this->update_clock_control(mb);
+
+        //Reset the LMK to make sure it re-locks to the new reference
+        mb.clock->reset_clocks();
     }
 
-    this->update_clock_control(mb);
+    //Wait for the LMK to lock (always, as a sanity check that the clock is useable)
+    //* Currently the LMK can take as long as 30 seconds to lock to a reference but we don't
+    //* want to wait that long during initialization.
+    //TODO: Need to verify timeout and settings to make sure lock can be achieved in < 1.0 seconds
+    double timeout = mb.initialization_done ? 30.0 : 1.0;
 
-    /* FIXME:  implement when we know the correct timeouts
-     * //wait for lock
-     * double timeout = 1.0;
-     * try {
-     *     if (mb.hw_rev > 4)
-     *         wait_for_ref_locked(mb.zpu_ctrl, timeout);
-     * } catch (uhd::runtime_error &e) {
-     *     //failed to lock on reference
-     *     throw uhd::runtime_error((boost::format("Clock failed to lock to %s source.") % source).str());
-     * }
-     */
-}
-
-void x300_impl::reset_clocks(mboard_members_t &mb)
-{
-    mb.clock->reset_clocks();
-
-    if (mb.hw_rev > 4)
-    {
-        try {
-            wait_for_ref_locked(mb.zpu_ctrl, 30.0);
-        } catch (uhd::runtime_error &e) {
+    //The programming code in x300_clock_ctrl is not compatible with revs <= 4 and may
+    //lead to locking issues. So, disable the ref-locked check for older (unsupported) boards.
+    if (mb.hw_rev > 4) {
+        if (not wait_for_ref_locked(mb.zpu_ctrl, timeout)) {
             //failed to lock on reference
-            throw uhd::runtime_error((boost::format("PLL failed to lock to reference clock.")).str());
+            if (mb.initialization_done) {
+                throw uhd::runtime_error((boost::format("Reference Clock failed to lock to %s source.") % source).str());
+            } else {
+                //TODO: Re-enable this warning when we figure out a reliable lock time
+                //UHD_MSG(warning) << "Reference clock failed to lock to " + source + " during device initialization.  " <<
+                //    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
+            }
         }
     }
-}
 
-void x300_impl::reset_radios(mboard_members_t &mb)
-{
-    // reset ADCs and DACs
-    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
-    {
-        perif.adc->reset();
-        perif.dac->reset();
-    }
-
-    // check PLL locks
-    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
-    {
-        perif.dac->check_pll();
-    }
-
-    // Sync DACs
-    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
-    {
-        perif.dac->arm_dac_sync();
-    }
-    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
-    {
-        perif.dac->check_dac_sync();
-        // Arm FRAMEP/N sync pulse
-        // TODO:  Investigate timing of the sync frame pulse.
-        perif.ctrl->poke32(TOREG(SR_DACSYNC), 0x1);
-        perif.dac->check_frontend_sync();
-    }
+    //Update cache value
+    mb.current_refclk_src = source;
 }
 
 void x300_impl::update_time_source(mboard_members_t &mb, const std::string &source)
@@ -1541,18 +1524,18 @@ void x300_impl::update_time_source(mboard_members_t &mb, const std::string &sour
     }
 }
 
-void x300_impl::wait_for_ref_locked(wb_iface::sptr ctrl, double timeout)
+bool x300_impl::wait_for_ref_locked(wb_iface::sptr ctrl, double timeout)
 {
     boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(timeout * 1000.0);
     do
     {
         if (get_ref_locked(ctrl).to_bool())
-            return;
+            return true;
         boost::this_thread::sleep(boost::posix_time::milliseconds(1));
     } while (boost::get_system_time() < timeout_time);
 
     //failed to lock on reference
-    throw uhd::runtime_error("The reference clock failed to lock.");
+    return false;
 }
 
 sensor_value_t x300_impl::get_ref_locked(wb_iface::sptr ctrl)
@@ -1577,6 +1560,67 @@ bool x300_impl::is_pps_present(wb_iface::sptr ctrl)
     return false;
 }
 
+/***********************************************************************
+ * reset and synchronization logic
+ **********************************************************************/
+
+void x300_impl::reset_radios(mboard_members_t &mb)
+{
+    // Reset ADCs and DACs
+    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
+    {
+        perif.adc->reset();
+        perif.dac->reset();
+    }
+}
+
+void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
+{
+    if (radios.size() < 2) return;  //Nothing to synchronize
+
+    //**PRECONDITION**
+    //This function assumes that all the VITA times in "radios" are synchronized
+    //to a common reference. Currently, this function is called in get_tx_stream
+    //which also has the same precondition.
+
+    //Reinitialize and resync all DACs
+    for (size_t i = 0; i < radios.size(); i++) {
+        radios[i]->dac->reset_and_resync();
+    }
+
+    //Get a rough estimate of the cumulative command latency
+    boost::posix_time::ptime t_start = boost::posix_time::microsec_clock::local_time();
+    for (size_t i = 0; i < radios.size(); i++) {
+        radios[i]->ctrl->peek64(RB64_TIME_NOW); //Discard value. We are just timing the call
+    }
+    boost::posix_time::time_duration t_elapsed =
+        boost::posix_time::microsec_clock::local_time() - t_start;
+
+    //Add 100% of headroom + uncertaintly to the command time
+    boost::uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 13000 /*Scheduler latency*/;
+
+    //Pick radios[0] as the time reference.
+    uhd::time_spec_t sync_time =
+        radios[0]->time64->get_time_now() + uhd::time_spec_t(((double)t_sync_us)/1e6);
+
+    //Send the sync command
+    for (size_t i = 0; i < radios.size(); i++) {
+        radios[i]->ctrl->set_time(sync_time);
+        radios[i]->ctrl->poke32(TOREG(SR_DACSYNC), 0x1);    //Arm FRAMEP/N sync pulse
+        radios[i]->ctrl->set_time(uhd::time_spec_t(0.0));   //Clear command time
+    }
+
+    //Wait and check status
+    boost::this_thread::sleep(boost::posix_time::microseconds(t_sync_us));
+    for (size_t i = 0; i < radios.size(); i++) {
+        radios[i]->dac->verify_sync();
+    }
+}
+
+/***********************************************************************
+ * eeprom
+ **********************************************************************/
+
 void x300_impl::set_db_eeprom(i2c_iface::sptr i2c, const size_t addr, const uhd::usrp::dboard_eeprom_t &db_eeprom)
 {
     db_eeprom.store(*i2c, addr);
@@ -1587,6 +1631,10 @@ void x300_impl::set_mb_eeprom(i2c_iface::sptr i2c, const mboard_eeprom_t &mb_eep
     i2c_iface::sptr eeprom16 = i2c->eeprom16();
     mb_eeprom.commit(*eeprom16, "X300");
 }
+
+/***********************************************************************
+ * front-panel GPIO
+ **********************************************************************/
 
 boost::uint32_t x300_impl::get_fp_gpio(gpio_core_200::sptr gpio, const std::string &)
 {

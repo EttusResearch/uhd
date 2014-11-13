@@ -25,10 +25,10 @@
 #include <boost/thread/thread.hpp>
 #include <boost/program_options.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <iostream>
 #include <fstream>
 #include <csignal>
@@ -40,6 +40,27 @@ namespace po = boost::program_options;
  **********************************************************************/
 static bool stop_signal_called = false;
 void sig_int_handler(int){stop_signal_called = true;}
+
+/***********************************************************************
+ * Utilities
+ **********************************************************************/
+//! Change to filename, e.g. from usrp_samples.dat to usrp_samples.00.dat,
+//  but only if multiple names are to be generated.
+std::string generate_out_filename(const std::string &base_fn, size_t n_names, size_t this_name)
+{
+    if (n_names == 1) {
+        return base_fn;
+    }
+
+    boost::filesystem::path base_fn_fp(base_fn);
+    base_fn_fp.replace_extension(
+        boost::filesystem::path(
+            str(boost::format("%02d%s") % this_name % base_fn_fp.extension().string())
+        )
+    );
+    return base_fn_fp.string();
+}
+
 
 /***********************************************************************
  * transmit_worker function
@@ -95,9 +116,26 @@ template<typename samp_type> void recv_to_file(
     stream_args.channels = rx_channel_nums;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
+    // Prepare buffers for received samples and metadata
     uhd::rx_metadata_t md;
-    std::vector<samp_type> buff(samps_per_buff);
-    std::ofstream outfile(file.c_str(), std::ofstream::binary);
+    std::vector <std::vector< samp_type > > buffs(
+        rx_channel_nums.size(), std::vector< samp_type >(samps_per_buff)
+    );
+    //create a vector of pointers to point to each of the channel buffers
+    std::vector<samp_type *> buff_ptrs;
+    for (size_t i = 0; i < buffs.size(); i++) {
+        buff_ptrs.push_back(&buffs[i].front());
+    }
+
+    // Create one ofstream object per channel
+    // (use shared_ptr because ofstream is non-copyable)
+    std::vector<boost::shared_ptr<std::ofstream> > outfiles;
+    for (size_t i = 0; i < buffs.size(); i++) {
+        const std::string this_filename = generate_out_filename(file, buffs.size(), i);
+        outfiles.push_back(boost::shared_ptr<std::ofstream>(new std::ofstream(this_filename.c_str(), std::ofstream::binary)));
+    }
+    UHD_ASSERT_THROW(outfiles.size() == buffs.size());
+    UHD_ASSERT_THROW(buffs.size() == rx_channel_nums.size());
     bool overflow_message = true;
     float timeout = settling_time + 0.1; //expected settling time + padding for first recv
 
@@ -112,7 +150,7 @@ template<typename samp_type> void recv_to_file(
     rx_stream->issue_stream_cmd(stream_cmd);
 
     while(not stop_signal_called and (num_requested_samples != num_total_samps or num_requested_samples == 0)){
-        size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, timeout);
+        size_t num_rx_samps = rx_stream->recv(buff_ptrs, samps_per_buff, md, timeout);
         timeout = 0.1; //small timeout for subsequent recv
 
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
@@ -140,10 +178,19 @@ template<typename samp_type> void recv_to_file(
 
         num_total_samps += num_rx_samps;
 
-        outfile.write((const char*)&buff.front(), num_rx_samps*sizeof(samp_type));
+        for (size_t i = 0; i < outfiles.size(); i++) {
+            outfiles[i]->write((const char*) buff_ptrs[i], num_rx_samps*sizeof(samp_type));
+        }
     }
 
-    outfile.close();
+    // Shut down receiver
+    stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
+    rx_stream->issue_stream_cmd(stream_cmd);
+
+    // Close files
+    for (size_t i = 0; i < outfiles.size(); i++) {
+        outfiles[i]->close();
+    }
 }
 
 

@@ -331,6 +331,10 @@ Sensors:
 -   **rssi**: float for measured RSSI in dBm
 -   **temperature**: float for measured temperature in degC
 
+\subsection dboards_e300 E310 MIMO XCVR board
+
+Please refer to \ref e3x0_dboard_e310.
+
 \subsection dboards_dbsrxmod DBSRX - Modifying for other boards that USRP1
 
 Due to different clocking capabilities, the DBSRX will require
