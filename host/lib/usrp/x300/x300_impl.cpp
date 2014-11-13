@@ -1574,14 +1574,19 @@ void x300_impl::reset_radios(mboard_members_t &mb)
     }
 }
 
-void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
+void x300_impl::synchronize_dacs()
 {
-    if (radios.size() < 2) return;  //Nothing to synchronize
-
     //**PRECONDITION**
     //This function assumes that all the VITA times in "radios" are synchronized
     //to a common reference. Currently, this function is called in get_tx_stream
     //which also has the same precondition.
+
+    std::vector<const radio_perifs_t*> radios;
+    // Just sync them all:
+    BOOST_FOREACH(const mboard_members_t &mb, _mb) {
+        radios.push_back(&mb.radio_perifs[0]);
+        radios.push_back(&mb.radio_perifs[1]);
+    }
 
     //Reinitialize and resync all DACs
     for (size_t i = 0; i < radios.size(); i++) {

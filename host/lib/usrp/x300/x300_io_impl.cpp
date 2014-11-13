@@ -466,6 +466,7 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
     }
 
     if (chan_list.size() >= 2) {
+        // This is a bad check, really. TODO replace with a check of the actual radios used.
         synchronize_dacs();
     }
     return my_streamer;

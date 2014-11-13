@@ -343,7 +343,7 @@ private:
     //This function assumes that all the VITA times in "radios" are synchronized
     //to a common reference. Currently, this function is called in get_tx_stream
     //which also has the same precondition.
-    static void synchronize_dacs(const std::vector<radio_perifs_t*>& mboards);
+    void synchronize_dacs(); // FIXME make this static again
 };
 
 #endif /* INCLUDED_X300_IMPL_HPP */
