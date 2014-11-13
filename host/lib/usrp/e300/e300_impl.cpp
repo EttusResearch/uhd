@@ -872,7 +872,7 @@ size_t e300_impl::_get_axi_dma_channel(
     // Note: This assumes that R0 is on crossbar port 1 (first)
     //       and all the other Radios and CEs on the following ones
     //       The crossbar port 0 is used for the host connection
-    const boost::uint8_t xbar_port = destination - E300_XB_DST_CE0;
+    const boost::uint8_t xbar_port = destination - E300_XB_DST_R0;
 
     return (xbar_port * group_offset) + chan_offset;
 }
