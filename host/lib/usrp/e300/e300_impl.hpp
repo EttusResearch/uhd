@@ -18,12 +18,11 @@
 #ifndef INCLUDED_E300_IMPL_HPP
 #define INCLUDED_E300_IMPL_HPP
 
-#include <uhd/device3.hpp>
+#include "../device3/device3_impl.hpp"
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
-#include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/sensors.hpp>
 
@@ -72,9 +71,7 @@ static std::string E300_SERVER_GREGS_PORT  = "21760";
 static std::string E300_SERVER_I2C_PORT    = "21761";
 static std::string E300_SERVER_SENSOR_PORT = "21762";
 
-static const double E300_RX_SW_BUFF_FULLNESS = 0.9;
 static const size_t E300_RX_FC_REQUEST_FREQ = 8;
-static const size_t E300_TX_FC_RESPONSE_FREQ = 8;
 
 // crossbar settings
 static const boost::uint8_t E300_RADIO_DEST_PREFIX_TX   = 0;
@@ -108,29 +105,14 @@ static const size_t E300_R1_RX_DATA_STREAM = (1 << 2) | E300_RADIO_DEST_PREFIX_R
  * The implementation details are encapsulated here.
  * Handles properties on the mboard, dboard, dsps...
  */
-class e300_impl : public uhd::device3
+class e300_impl : public uhd::usrp::device3_impl
 {
 public:
     //structors
     e300_impl(const uhd::device_addr_t &);
     virtual ~e300_impl(void);
 
-    //the io interface
-    boost::mutex _stream_spawn_mutex;
-    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &);
-    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &);
-
-    typedef uhd::transport::bounded_buffer<uhd::async_metadata_t> async_md_type;
-    boost::shared_ptr<async_md_type> _async_md;
-
-    bool recv_async_msg(uhd::async_metadata_t &, double);
-
 private: // types
-    enum xport_type_t {
-        CTRL = 0,
-        TX_DATA,
-        RX_DATA
-    };
 
     // perifs in the radio core
     struct radio_perifs_t
@@ -160,19 +142,6 @@ private: // types
         double rx_freq;
         double tx_freq;
     };
-
-    // convenience struct
-    struct both_xports_t
-    {
-        uhd::transport::zero_copy_if::sptr recv;
-        uhd::transport::zero_copy_if::sptr send;
-        size_t recv_buff_size;
-        size_t send_buff_size;
-        uhd::sid_t send_sid;
-        uhd::sid_t recv_sid;
-    };
-
-    enum xport_t {AXI, ETH};
 
     enum compat_t {FPGA_MAJOR, FPGA_MINOR};
 
@@ -226,18 +195,13 @@ private: // methods
         boost::uint8_t destination,
         boost::uint8_t prefix);
 
-    both_xports_t _make_transport(
+    both_xports_t make_transport(
         const uhd::sid_t &address,
         const xport_type_t type,
-        const uhd::device_addr_t &args);
+        const uhd::device_addr_t &args
+    );
 
-    void _generate_channel_list(
-        const uhd::stream_args_t &args,
-        std::vector<uhd::rfnoc::block_id_t> &chan_list,
-        std::vector<device_addr_t> &chan_args,
-        const std::string &xx);
-
-    double _get_tick_rate(void){return _tick_rate;}
+    double _get_tick_rate(size_t = 0){return _tick_rate;}
     double _set_tick_rate(const double rate);
 
     void _update_gpio_state(void);
@@ -283,11 +247,17 @@ private: // methods
         const std::string &attr,
         const boost::uint32_t value);
 
+    // Transport funcs
+    uhd::endianness_t get_transport_endianness(size_t) {
+        return uhd::ENDIANNESS_LITTLE;
+    };
+
+    void post_streamer_hooks() { _update_enables(); };
+
 private: // members
     uhd::device_addr_t                     _device_addr;
     xport_t                                _xport_path;
     e300_fifo_interface::sptr              _fifo_iface;
-    size_t                                 _sid_framer;
     radio_perifs_t                         _radio_perifs[2];
     double                                 _tick_rate;
     ad9361_ctrl::sptr                      _codec_ctrl;
@@ -299,9 +269,6 @@ private: // members
     uhd::transport::zero_copy_xport_params _ctrl_xport_params;
     gpio_t                                 _misc;
     gps::ublox::ubx::control::sptr         _gps;
-
-    uhd::dict<std::string, boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;
-    uhd::dict<std::string, boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;
 };
 
 }}} // namespace

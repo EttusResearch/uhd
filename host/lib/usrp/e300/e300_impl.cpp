@@ -277,11 +277,9 @@ static device::sptr e300_make(const device_addr_t &device_addr)
 e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     : _device_addr(device_addr)
     , _xport_path(device_addr.has_key("addr") ? ETH : AXI)
-    , _sid_framer(0)
 {
-    _type = uhd::device::USRP;
-
-    _async_md.reset(new async_md_type(1000/*messages deep*/));
+    stream_options.rx_fc_request_freq = E300_RX_FC_REQUEST_FREQ;
+    _tick_rate_retriever = boost::bind(&e300_impl::_get_tick_rate, this, 0);
 
     ////////////////////////////////////////////////////////////////////
     // load the fpga image
@@ -406,7 +404,6 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     // Initialize the properties tree
     ////////////////////////////////////////////////////////////////////
-    _tree = property_tree::make();
     _tree->create<std::string>("/name").set("E-Series Device");
     const fs_path mb_path = "/mboards/0";
     _tree->create<std::string>(mb_path / "name")
@@ -446,7 +443,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<double>(mb_path / "tick_rate")
         .coerce(boost::bind(&e300_impl::_set_tick_rate, this, _1))
-        .publish(boost::bind(&e300_impl::_get_tick_rate, this))
+        .publish(boost::bind(&e300_impl::_get_tick_rate, this, 0))
         .subscribe(boost::bind(&e300_impl::_update_tick_rate, this, _1));
 
     //default some chains on -- needed for setup purposes
@@ -617,7 +614,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     for (size_t i = 0; i < NUM_CE; i++) {
         boost::uint8_t xbar_port = (i & 0xff) + E300_XB_DST_CE0;
         uhd::sid_t ctrl_sid(E300_DEVICE_HERE, 0, E300_DEVICE_THERE, xbar_port << 4);
-        both_xports_t xport = this->_make_transport(
+        both_xports_t xport = make_transport(
             ctrl_sid,
             CTRL,
             device_addr_t());
@@ -929,7 +926,7 @@ uhd::sid_t e300_impl::_allocate_sid(
     return sid;
 }
 
-e300_impl::both_xports_t e300_impl::_make_transport(
+e300_impl::both_xports_t e300_impl::make_transport(
     const uhd::sid_t &address,
     const xport_type_t type,
     const uhd::device_addr_t &args)
@@ -1011,7 +1008,7 @@ void e300_impl::_setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
 
     uhd::sid_t radio_address(E300_DEVICE_HERE, 0, E300_DEVICE_THERE, (dspno ? E300_XB_DST_R1 : E300_XB_DST_R0) << 4);
-    both_xports_t ctrl_xports = _make_transport(radio_address, CTRL, device_addr_t());
+    both_xports_t ctrl_xports = make_transport(radio_address, CTRL, device_addr_t());
 
     ////////////////////////////////////////////////////////////////////
     // radio control

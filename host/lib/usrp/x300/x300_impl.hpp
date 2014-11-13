@@ -58,11 +58,9 @@ static const double X300_DEFAULT_TICK_RATE      = 200e6;        //Hz
 static const double X300_BUS_CLOCK_RATE         = 166.666667e6; //Hz
 
 static const size_t X300_TX_HW_BUFF_SIZE        = 520*1024;      //512K SRAM buffer + 8K 2Clk FIFO
-static const size_t X300_TX_FC_RESPONSE_FREQ    = 8;            //per flow-control window
 
 static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
 static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
-static const size_t X300_RX_FC_REQUEST_FREQ         = 32;       //per flow-control window
 
 //The FIFO closest to the DMA controller is 1023 elements deep for RX and 1029 elements deep for TX
 //where an element is 8 bytes. For best throughput ensure that the data frame fits in these buffers.
@@ -80,15 +78,6 @@ static const size_t X300_ETH_MSG_FRAME_SIZE         = uhd::transport::udp_simple
 static const size_t X300_ETH_MSG_NUM_FRAMES         = 32;
 static const size_t X300_ETH_DATA_NUM_FRAMES        = 32;
 static const double X300_DEFAULT_SYSREF_RATE        = 10e6;
-
-static const size_t X300_TX_MAX_HDR_LEN             =           // bytes
-      sizeof(boost::uint32_t)                              // Header
-    + sizeof(uhd::transport::vrt::if_packet_info_t().sid)  // SID
-    + sizeof(uhd::transport::vrt::if_packet_info_t().tsf); // Timestamp
-static const size_t X300_RX_MAX_HDR_LEN             =           // bytes
-      sizeof(boost::uint32_t)                              // Header
-    + sizeof(uhd::transport::vrt::if_packet_info_t().sid)  // SID
-    + sizeof(uhd::transport::vrt::if_packet_info_t().tsf); // Timestamp
 
 static const size_t X300_MAX_RATE_PCIE              = 800000000; // bytes/s
 static const size_t X300_MAX_RATE_10GIGE            = 800000000; // bytes/s
@@ -144,10 +133,6 @@ public:
     void setup_mb(const size_t which, const uhd::device_addr_t &);
     ~x300_impl(void);
 
-    //the io interface
-    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &);
-    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &);
-
     // used by x300_find_with_addr to find X300 devices.
     static boost::mutex claimer_mutex;  //All claims and checks in this process are serialized
     static bool is_claimed(uhd::wb_iface::sptr);
@@ -180,9 +165,6 @@ private:
     //vector of member objects per motherboard
     struct mboard_members_t
     {
-        uhd::dict<std::string, boost::weak_ptr<uhd::rx_streamer> > rx_streamers;
-        uhd::dict<std::string, boost::weak_ptr<uhd::tx_streamer> > tx_streamers;
-
         bool initialization_done;
         uhd::task::sptr claimer_task;
         std::string addr;
@@ -229,8 +211,6 @@ private:
 
     //task for periodically reclaiming the device from others
     void claimer_loop(uhd::wb_iface::sptr);
-
-    boost::mutex _transport_setup_mutex;
 
     void register_loopback_self_test(uhd::wb_iface::sptr iface);
 
@@ -311,7 +291,9 @@ private:
     void update_subdev_spec(const std::string &tx_rx, const size_t mb_i, const uhd::usrp::subdev_spec_t &spec);
 
     void set_tick_rate(mboard_members_t &, const double);
-    void update_tick_rate(mboard_members_t &, const double);
+    //! Returns the tick rate for device with index \p mb_i
+    double _get_tick_rate(const size_t mb_i);
+    void update_tick_rate(const size_t, const double);
     void update_rx_samp_rate(mboard_members_t&, const size_t, const double);
     void update_tx_samp_rate(mboard_members_t&, const size_t, const double);
 
@@ -344,6 +326,16 @@ private:
     //to a common reference. Currently, this function is called in get_tx_stream
     //which also has the same precondition.
     void synchronize_dacs(); // FIXME make this static again
+
+    /// More IO stuff
+    uhd::device_addr_t get_tx_hints(size_t mb_index);
+    uhd::device_addr_t get_rx_hints(size_t mb_index);
+    uhd::endianness_t get_transport_endianness(size_t mb_index) {
+        return _mb[mb_index].if_pkt_is_big_endian ? uhd::ENDIANNESS_BIG : uhd::ENDIANNESS_LITTLE;
+    };
+
+    // TODO do the sync dacs in here
+    void post_streamer_hooks() { std::cout << "x300_impl::post_streamer_hooks()" << std::endl; };
 };
 
 #endif /* INCLUDED_X300_IMPL_HPP */

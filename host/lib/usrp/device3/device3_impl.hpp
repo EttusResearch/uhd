@@ -26,48 +26,40 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/sid.hpp>
 #include <uhd/types/metadata.hpp>
+#include <uhd/types/endianness.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/device3.hpp>
 
 namespace uhd { namespace usrp {
 
+/***********************************************************************
+ * Default settings (any device3 may override these)
+ **********************************************************************/
+static const size_t DEVICE3_RX_FC_REQUEST_FREQ         = 32;    //per flow-control window
+static const size_t DEVICE3_TX_FC_RESPONSE_FREQ        = 8;
+static const size_t DEVICE3_TX_FC_RESPONSE_CYCLES      = 0;     // Cycles: Off.
+
+// TODO Remove the hardcoded 16 once chdr code is merged
+static const size_t DEVICE3_TX_MAX_HDR_LEN             = 16;    // Bytes
+static const size_t DEVICE3_RX_MAX_HDR_LEN             = 16;    // Bytes
+
 class device3_impl : public uhd::device3
 {
 public:
+    /***********************************************************************
+     * device3-specific Types
+     **********************************************************************/
     typedef uhd::transport::bounded_buffer<uhd::async_metadata_t> async_md_type;
 
-    // TODO: Move out of public when get_tx_stream is merged
-    struct tx_fc_cache_t
-    {
-        tx_fc_cache_t(void):
-            stream_channel(0),
-            device_channel(0),
-            last_seq_out(0),
-            last_seq_ack(0),
-            seq_queue(1){}
-        size_t stream_channel;
-        size_t device_channel;
-        size_t last_seq_out;
-        size_t last_seq_ack;
-        uhd::transport::bounded_buffer<size_t> seq_queue;
-        boost::shared_ptr<async_md_type> async_queue;
-        boost::shared_ptr<async_md_type> old_async_queue;
-    };
-
-    // TODO: Move out of public when get_tx_stream is merged
-    //! Defines the transport type.
+    //! The purpose of a transport
     enum xport_type_t {
         CTRL = 0,
         TX_DATA,
         RX_DATA
     };
 
-protected:
-    device3_impl();
+    enum xport_t {AXI, ETH, PCIE};
 
-    /***********************************************************************
-     * Transports
-     **********************************************************************/
     /*! Holds all necessary items for a bidirectional link
      */
     struct both_xports_t
@@ -79,6 +71,48 @@ protected:
         uhd::sid_t send_sid;
         uhd::sid_t recv_sid;
     };
+
+    //! Stores all streaming-related options
+    struct stream_options_t
+    {
+        //! Max size of the header in bytes for TX
+        size_t tx_max_len_hdr;
+        //! Max size of the header in bytes for RX
+        size_t rx_max_len_hdr;
+        //! How often we send ACKs to the upstream block per one full FC window
+        size_t rx_fc_request_freq;
+        //! How often the downstream block should send ACKs per one full FC window
+        size_t tx_fc_response_freq;
+        //! How often the downstream block should send ACKs in cycles
+        size_t tx_fc_response_cycles;
+        stream_options_t(void)
+            : tx_max_len_hdr(DEVICE3_TX_MAX_HDR_LEN)
+            , rx_max_len_hdr(DEVICE3_RX_MAX_HDR_LEN)
+            , rx_fc_request_freq(DEVICE3_RX_FC_REQUEST_FREQ)
+            , tx_fc_response_freq(DEVICE3_TX_FC_RESPONSE_FREQ)
+            , tx_fc_response_cycles(DEVICE3_TX_FC_RESPONSE_CYCLES)
+        {};
+    };
+
+    /***********************************************************************
+     * I/O Interface
+     **********************************************************************/
+    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &);
+    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &);
+    bool recv_async_msg(uhd::async_metadata_t &async_metadata, double timeout);
+
+
+protected:
+    /***********************************************************************
+     * Structors
+     **********************************************************************/
+    device3_impl();
+    virtual ~device3_impl() {};
+
+    /***********************************************************************
+     * Transport-related
+     **********************************************************************/
+    stream_options_t stream_options;
 
     /*! \brief Create a transport to a given endpoint.
      *
@@ -95,6 +129,13 @@ protected:
         const uhd::device_addr_t& args
     ) = 0;
 
+    virtual uhd::device_addr_t get_tx_hints(size_t) { return uhd::device_addr_t(); };
+    virtual uhd::device_addr_t get_rx_hints(size_t) { return uhd::device_addr_t(); };
+    virtual uhd::endianness_t get_transport_endianness(size_t mb_index) = 0;
+    boost::function<double(size_t)> _tick_rate_retriever;
+
+    //! Is called after a streamer is generated
+    virtual void post_streamer_hooks() {};
 
     /***********************************************************************
      * Members
@@ -102,24 +143,14 @@ protected:
     //! A counter, designed to create unique SIDs
     size_t _sid_framer;
 
-    //! Buffer for async metadata
-    boost::shared_ptr<async_md_type> _async_md;
+    // TODO: Maybe move these to private
+    uhd::dict<std::string, boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;
+    uhd::dict<std::string, boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;
 
 private:
-
-public:
-    /**********************************************************************
-     *        ATTENTION!
-     * Most of these static functions should be static in (local to)
-     * device3_io_impl.cpp. When the get_?x_stream functions get merged
-     * into device3_impl, we can move them there, out of the way.
-     ***********************************************************************/
-
     /***********************************************************************
-     * Helper functions for get_?x_stream()
+     * Transport related
      **********************************************************************/
-    static uhd::stream_args_t sanitize_stream_args(const uhd::stream_args_t &args_);
-
     /*! \brief Returns a list of rx or tx channels for a streamer.
      *
      * If the given stream args contain instructions to set up channels,
@@ -139,108 +170,13 @@ public:
     );
 
     /***********************************************************************
-     * RX Flow Control Functions
+     * Private Members
      **********************************************************************/
-    /*! Determine the size of the flow control window in number of packets.
-     *
-     * This value depends on three things:
-     * - The packet size (in bytes), P
-     * - The size of the software buffer (in bytes), B
-     * - The desired buffer fullness, F
-     *
-     * The FC window size is thus X = floor(B*F/P).
-     *
-     * \param pkt_size Packet size in bytes
-     * \param sw_buff_size Software buffer size in bytes
-     * \param rx_args If this has a key 'recv_buff_fullness', this value will
-     *                be used for said fullness. Must be between 0.01 and 1.
-     * \param fullness If specified, this value will override the value in
-     *                 \p rx_args.
-     */
-    static size_t get_rx_flow_control_window(
-            size_t pkt_size,
-            size_t sw_buff_size,
-            const uhd::device_addr_t& rx_args,
-            double fullness=-1
-    );
+    //! Buffer for async metadata
+    boost::shared_ptr<async_md_type> _async_md;
 
-    /*! Send out RX flow control packets.
-     *
-     * For an rx stream, this function takes care of sending back
-     * a flow control packet to the source telling it which
-     * packets have been consumed.
-     *
-     * This function should only be called by the function handling
-     * the rx stream, usually recv() in super_recv_packet_handler.
-     *
-     * \param sid The SID that goes into this packet. This is the reversed()
-     *            version of the data stream's SID.
-     * \param xport A transport object over which to send the data
-     * \param big_endian Endianness of the transport
-     * \param seq32_state Pointer to a variable that saves the 32-Bit state
-     *                    of the sequence numbers, since we only have 12 Bit
-     *                    sequence numbers in CHDR.
-     * \param last_seq The value to send: The last consumed packet's sequence number.
-     */
-    static void handle_rx_flowctrl(
-            const uhd::sid_t &sid,
-            uhd::transport::zero_copy_if::sptr xport,
-            bool big_endian,
-            boost::shared_ptr<boost::uint32_t> seq32_state,
-            const size_t last_seq
-    );
-
-    /***********************************************************************
-     * TX Flow Control Functions
-     **********************************************************************/
-    /*! 
-     *
-     * send_buff_size beats hw_buff_size_!
-     */
-    static size_t get_tx_flow_control_window(
-            size_t pkt_size,
-            const double hw_buff_size_,
-            const uhd::device_addr_t& tx_args
-    );
-
-    static uhd::transport::managed_send_buffer::sptr get_tx_buff_with_flowctrl(
-        uhd::task::sptr /*holds ref*/,
-        boost::shared_ptr<device3_impl::tx_fc_cache_t> guts,
-        uhd::transport::zero_copy_if::sptr xport,
-        size_t fc_pkt_window,
-        const double timeout
-    );
-
-    /***********************************************************************
-     * Async Data
-     **********************************************************************/
-    bool recv_async_msg(
-        uhd::async_metadata_t &async_metadata, double timeout
-    );
-
-    /***********************************************************************
-     * CHDR packer/unpacker (TODO: Remove once new chdr class is in)
-     **********************************************************************/
-    static void if_hdr_unpack_be(
-        const boost::uint32_t *packet_buff,
-        uhd::transport::vrt::if_packet_info_t &if_packet_info
-    );
-
-    static void if_hdr_unpack_le(
-        const boost::uint32_t *packet_buff,
-        uhd::transport::vrt::if_packet_info_t &if_packet_info
-    );
-
-    static void if_hdr_pack_be(
-        boost::uint32_t *packet_buff,
-        uhd::transport::vrt::if_packet_info_t &if_packet_info
-    );
-
-    static void if_hdr_pack_le(
-        boost::uint32_t *packet_buff,
-        uhd::transport::vrt::if_packet_info_t &if_packet_info
-    );
-
+    //! This mutex locks the get_xx_stream() functions.
+    boost::mutex _transport_setup_mutex;
 };
 
 }} /* namespace uhd::usrp */
