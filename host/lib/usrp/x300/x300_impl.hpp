@@ -325,7 +325,7 @@ private:
     //This function assumes that all the VITA times in "radios" are synchronized
     //to a common reference. Currently, this function is called in get_tx_stream
     //which also has the same precondition.
-    void synchronize_dacs(); // FIXME make this static again
+    static void synchronize_dacs(const std::vector<radio_perifs_t*>& mboards);
 
     /// More IO stuff
     uhd::device_addr_t get_tx_hints(size_t mb_index);
@@ -335,7 +335,7 @@ private:
     };
 
     // TODO do the sync dacs in here
-    void post_streamer_hooks() { std::cout << "x300_impl::post_streamer_hooks()" << std::endl; };
+    void post_streamer_hooks();
 };
 
 #endif /* INCLUDED_X300_IMPL_HPP */

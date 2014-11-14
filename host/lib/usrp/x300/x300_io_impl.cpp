@@ -144,6 +144,9 @@ void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, 
 }
 
 
+/***********************************************************************
+ * Hooks for get_tx_stream() and get_rx_stream()
+ **********************************************************************/
 device_addr_t x300_impl::get_rx_hints(size_t mb_index)
 {
     device_addr_t rx_hints = _mb[mb_index].recv_args;
@@ -170,6 +173,27 @@ device_addr_t x300_impl::get_rx_hints(size_t mb_index)
 device_addr_t x300_impl::get_tx_hints(size_t mb_index)
 {
     return _mb[mb_index].send_args;
+}
+
+void x300_impl::post_streamer_hooks()
+{
+    std::cout << "x300_impl::post_streamer_hooks()" << std::endl;
+    // TODO: We should really only be adding the radios used in the
+    // current topology. So, implement a network search routine
+    // that goes through the connections.
+    std::vector<radio_perifs_t*> radios;
+    // Just sync them all:
+    for (size_t mb_index = 0; mb_index < _mb.size(); mb_index++) {
+        mboard_members_t &mb = _mb[mb_index];
+        for (size_t radio_index = 0; radio_index < 2; radio_index++) {
+            radio_perifs_t &perif = mb.radio_perifs[radio_index];
+            radios.push_back(&perif);
+        }
+    }
+    synchronize_dacs(radios);
+
+        //radio_perifs_t &perif = mb.radio_perifs[radio_index];
+        //radios_list.push_back(&perif);
 }
 
 // vim: sw=4 expandtab:
