@@ -29,6 +29,9 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#ifdef DEVICE3_STREAMER
+#  include <uhd/usrp/rfnoc/sink_node_ctrl.hpp>
+#endif
 #include <boost/dynamic_bitset.hpp>
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
@@ -136,6 +139,13 @@ public:
             return 0;
         }
     }
+
+    #ifdef DEVICE3_STREAMER
+    void store_terminator(uhd::rfnoc::sink_node_ctrl::sptr sink_node)
+    {
+        _sink_nodes.push_back(sink_node);
+    }
+    #endif
     ////////////////// RFNOC ///////////////////////////
 
     /*!
@@ -374,6 +384,10 @@ private:
 
     #ifdef  ERROR_INJECT_DROPPED_PACKETS
     int recvd_packets;
+    #endif
+
+    #ifdef DEVICE3_STREAMER
+    std::vector< uhd::rfnoc::sink_node_ctrl::sptr > _sink_nodes;
     #endif
 
     /*******************************************************************

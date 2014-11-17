@@ -17,6 +17,8 @@
 
 // Provides streaming-related functions which are used by device3 objects.
 
+#define DEVICE3_STREAMER // For the super_*_packet_handlers
+
 #include "device3_impl.hpp"
 #include <uhd/usrp/rfnoc/constants.hpp>
 #include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
@@ -27,6 +29,8 @@
 #include "../common/async_packet_handler.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
+#include "../rfnoc/terminator_recv.hpp"
+#include "../rfnoc/terminator_send.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -490,6 +494,11 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         blk_ctrl->setup_rx_streamer(args);
         blk_ctrl->set_destination(xport.send_sid.get_src(), block_port);
 
+        // Add terminator. Its lifetime is coupled to the streamer.
+        rfnoc::sink_node_ctrl::sptr recv_terminator = rfnoc::terminator_recv::make();
+        blk_ctrl->register_downstream_node(recv_terminator, block_port);
+        my_streamer->store_terminator(recv_terminator);
+
         //flow control setup
         const size_t pkt_size = spp * bpi + stream_options.rx_max_len_hdr;
         const size_t fc_window = get_rx_flow_control_window(pkt_size, xport.recv_buff_size, rx_hints);
@@ -634,6 +643,11 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         // Configure the block
         blk_ctrl->setup_tx_streamer(args);
+
+        // Add terminator. Its lifetime is coupled to the streamer.
+        rfnoc::source_node_ctrl::sptr send_terminator = rfnoc::terminator_send::make();
+        blk_ctrl->register_upstream_node(send_terminator, block_port);
+        my_streamer->store_terminator(send_terminator);
 
         //flow control setup
         const size_t pkt_size = spp * bpi + stream_options.tx_max_len_hdr;

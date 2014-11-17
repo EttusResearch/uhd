@@ -29,6 +29,9 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#ifdef DEVICE3_STREAMER
+#  include <uhd/usrp/rfnoc/source_node_ctrl.hpp>
+#endif
 #include <boost/thread/thread_time.hpp>
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
@@ -118,6 +121,13 @@ public:
             return 0;
         }
     }
+
+    #ifdef DEVICE3_STREAMER
+    void store_terminator(uhd::rfnoc::source_node_ctrl::sptr source_node)
+    {
+        _source_nodes.push_back(source_node);
+    }
+    #endif
     ///////// RFNOC ///////////////////
 
     void set_enable_trailer(const bool enable)
@@ -313,6 +323,10 @@ private:
     async_receiver_type _async_receiver;
     bool _cached_metadata;
     uhd::tx_metadata_t _metadata_cache;
+
+    #ifdef DEVICE3_STREAMER
+    std::vector< uhd::rfnoc::source_node_ctrl::sptr > _source_nodes;
+    #endif
 
 #ifdef UHD_TXRX_DEBUG_PRINTS
     struct dbg_send_stat_t {
