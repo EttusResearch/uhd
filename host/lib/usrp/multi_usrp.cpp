@@ -1261,9 +1261,15 @@ public:
                 dst_block_port
         );
 
-        // Register blocks
-        dst->register_upstream_block(src);
-        src->register_downstream_block(dst);
+        // Register nodes
+        dst->register_upstream_node(
+                boost::dynamic_pointer_cast<uhd::rfnoc::node_ctrl_base>(src),
+                dst_block_port
+        );
+        src->register_downstream_node(
+                boost::dynamic_pointer_cast<uhd::rfnoc::node_ctrl_base>(dst),
+                src_block_port
+        );
     }
 
     void connect(const uhd::rfnoc::block_id_t &src_block, const uhd::rfnoc::block_id_t &dst_block) {

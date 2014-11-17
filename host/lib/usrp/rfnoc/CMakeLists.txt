@@ -22,11 +22,17 @@
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 LIBUHD_APPEND_SOURCES(
+    # Infrastructure:
     ${CMAKE_CURRENT_SOURCE_DIR}/block_id.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/block_ctrl_base.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/block_ctrl_base_factory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/blockdef_xml_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/stream_sig.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/node_ctrl_base.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/rx_block_ctrl_base.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tx_block_ctrl_base.cpp
+    # Default block control classes:
     ${CMAKE_CURRENT_SOURCE_DIR}/fir_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fft_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/null_block_ctrl_impl.cpp
@@ -35,7 +41,4 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/split_stream_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/packet_resizer_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/radio_ctrl_impl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/stream_sig.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/rx_block_ctrl_base.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/tx_block_ctrl_base.cpp
 )

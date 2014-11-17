@@ -35,10 +35,10 @@ static const size_t BYTES_PER_LINE = 8;
 
 block_ctrl_base::block_ctrl_base(
         const make_args_t &make_args
-) : _ctrl_sid(make_args.ctrl_sid),
-    _ctrl_iface(make_args.ctrl_iface),
+) : _ctrl_iface(make_args.ctrl_iface),
     _tree(make_args.tree),
-    _transport_is_big_endian(make_args.is_big_endian)
+    _transport_is_big_endian(make_args.is_big_endian),
+    _ctrl_sid(make_args.ctrl_sid)
 {
     UHD_MSG(status) << "block_ctrl_base()" << std::endl;
     // Read NoC-ID
@@ -89,19 +89,6 @@ block_ctrl_base::~block_ctrl_base()
     // nop
 }
 
-
-void block_ctrl_base::set_args(const uhd::device_addr_t &args)
-{
-    UHD_MSG(status) << "block_ctrl_base::set_args() " << args.to_string() << std::endl;
-    _args = args;
-    _set_args();
-}
-
-void block_ctrl_base::_set_args()
-{
-    UHD_MSG(status) << "block_ctrl_base::_set_args() " << _args.to_string() << std::endl;
-    return;
-}
 
 void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t data) {
     UHD_MSG(status) << str(boost::format("sr_write(%d, %08X) on %s") % reg % data % get_block_id()) << std::endl;
@@ -178,11 +165,11 @@ void block_ctrl_base::configure_flow_control_out(
 void block_ctrl_base::clear()
 {
     UHD_MSG(status) << "block_ctrl_base::clear() " << std::endl;
-    // Reset connections
-    _upstream_blocks.clear();
-    _downstream_blocks.clear();
+    // Call parent...
+    node_ctrl_base::clear();
     // TODO: Reset stream signatures to defaults from block definition
     // Call block-specific reset
+    // ...then child
     _clear();
 }
 
@@ -277,13 +264,4 @@ void block_ctrl_base::set_destination(
     sr_write(SR_NEXT_DST_BASE+output_block_port, (1<<16) | next_address);
 }
 
-void block_ctrl_base::register_upstream_block(block_ctrl_base::sptr upstream_block)
-{
-    _upstream_blocks.push_back(boost::weak_ptr<block_ctrl_base>(upstream_block));
-}
-
-void block_ctrl_base::register_downstream_block(block_ctrl_base::sptr downstream_block)
-{
-    _downstream_blocks.push_back(boost::weak_ptr<block_ctrl_base>(downstream_block));
-}
 // vim: sw=4 et:

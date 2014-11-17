@@ -20,6 +20,7 @@ UHD_INSTALL(FILES
     block_ctrl.hpp
     block_id.hpp
     blockdef.hpp
+    node_ctrl_base.hpp
     fir_block_ctrl.hpp
     fft_block_ctrl.hpp
     null_block_ctrl.hpp

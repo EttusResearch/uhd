@@ -18,24 +18,23 @@
 #ifndef INCLUDED_LIBUHD_BLOCK_CTRL_BASE_HPP
 #define INCLUDED_LIBUHD_BLOCK_CTRL_BASE_HPP
 
-#include <vector>
-#include <boost/cstdint.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/sid.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/usrp/rfnoc/constants.hpp>
+#include <uhd/usrp/rfnoc/node_ctrl_base.hpp>
 #include <uhd/usrp/rfnoc/block_id.hpp>
 #include <uhd/usrp/rfnoc/stream_sig.hpp>
+#include <boost/cstdint.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace uhd {
     namespace rfnoc {
 
+
+// TODO: Move this out of public section
 struct make_args_t
 {
     make_args_t(const std::string &name = "") :
@@ -44,9 +43,15 @@ struct make_args_t
         block_name(name)
     {}
 
+    //! A valid interface that allows us to do peeks and pokes
     uhd::wb_iface::sptr ctrl_iface;
+    //! The SID corresponding to ctrl_iface. ctrl_sid.get_dst_address() must yield this block's address.
     uhd::sid_t ctrl_sid;
+    //! The device index (or motherboard index).
     size_t device_index;
+    //! A property tree for this motherboard. Example: If the root a device's
+    //  property tree is /mboards/0, pass a subtree starting at /mboards/0
+    //  to the constructor.
     uhd::property_tree::sptr tree;
     bool is_big_endian;
     std::string block_name;
@@ -76,68 +81,28 @@ struct make_args_t
         uhd::rfnoc::block_ctrl_base::register_block(&CLASS_NAME##_make, BLOCK_NAME); \
     }
 
-/*! \brief Base class for all block controller objects.
+/*! \brief Base class for all RFNoC block controller objects.
  *
- * Inside UHD, block controller objects must be derived from
+ * For RFNoC, block controller objects must be derived from
  * uhd::rfnoc::block_ctrl_base. This class provides all functions
  * that a block *must* provide. Typically, you would not derive
  * a block controller class directly from block_ctrl_base, but
- * from a class such as rx_block_ctrl_base or tx_block_ctrl_base
- * which extends its functionality.
+ * from a class such as uhd::usrp::rfnoc::rx_block_ctrl_base or
+ * uhd::usrp::rfnoc::tx_block_ctrl_base which extends its functionality.
  */
 class UHD_API block_ctrl_base;
-class block_ctrl_base : boost::noncopyable, public boost::enable_shared_from_this<block_ctrl_base>
+class block_ctrl_base : public node_ctrl_base
 {
-private:
-    //! The SID of the control transport.
-    // _ctrl_sid.get_dst_address() yields this block's address.
-    uhd::sid_t _ctrl_sid;
-
-    //! The (unique) block ID.
-    block_id_t _block_id;
-
-protected:
-    block_ctrl_base(void) {}; // To allow pure virtual (interface) sub-classes
-
-    /*!
-     * \param ctrl_iface A valid interface that allows us to do peeks and pokes
-     * \param ctrl_sid The SID corresponding to ctrl_iface. ctrl_sid.get_dst_address() must
-     *                 yield this block's address.
-     * \param device_index The device index (or motherboard index).
-     * \param tree A property tree for this motherboard. Example: If the root a device's
-     *             property tree is /mboards/0, pass a subtree starting at /mboards/0
-     *             to the constructor.
-     *
-     * TODO fix this doxy block
-     */
-    block_ctrl_base(
-            const make_args_t &make_args
-    );
-
-    //! An object to actually send and receive the commands
-    wb_iface::sptr _ctrl_iface;
-
-    //! Property sub-tree
-    uhd::property_tree::sptr _tree;
-
-    //! Root node of this block's properties
-    uhd::fs_path _root_path;
-
-    //! Endianness of underlying transport (for data transport)
-    bool _transport_is_big_endian;
-
-    //! Stores default block arguments
-    uhd::device_addr_t _args;
-
-    //! List of upstream blocks
-    std::vector< boost::weak_ptr<block_ctrl_base> > _upstream_blocks;
-
-    //! List of downstream blocks
-    std::vector< boost::weak_ptr<block_ctrl_base> > _downstream_blocks;
-
 public:
+    /***********************************************************************
+     * Types
+     **********************************************************************/
     typedef boost::shared_ptr<block_ctrl_base> sptr;
     typedef boost::function<sptr(const make_args_t &)> make_t;
+
+    /***********************************************************************
+     * Factory functions
+     **********************************************************************/
 
     /*! Register a block controller class into the discovery and factory system.
      *
@@ -167,7 +132,71 @@ public:
      */
     static sptr make(const make_args_t &make_args, boost::uint64_t noc_id = ~0);
 
-    //////// FPGA control methods ///////////////////////////////////////////
+    /***********************************************************************
+     * Block Communication and Control
+     *
+     * These functions do not require communication with the FPGA.
+     **********************************************************************/
+
+    /*! Returns the 16-Bit address for this block.
+     */
+    boost::uint32_t get_address(size_t block_port=0);
+
+    /*! Returns the unique block ID for this block (e.g. "0/FFT_1").
+     */
+    block_id_t get_block_id() const { return _block_id; };
+
+    /*! Returns the SID for the control transport.
+     */
+    uhd::sid_t get_ctrl_sid() const { return _ctrl_sid; };
+
+    /***********************************************************************
+     * Stream signatures
+     **********************************************************************/
+
+    /*! Return the input stream signature for a given block port.
+     *
+     * If \p block_port is not a valid input port, throws
+     * a uhd::runtime_error.
+     *
+     * Calling set_input_signature() can change the return value
+     * of this function.
+     */
+    stream_sig_t get_input_signature(size_t block_port=0) const;
+
+    /*! Return the output stream signature for a given block port.
+     *
+     * If \p block_port is not a valid output port, throws
+     * a uhd::runtime_error.
+     *
+     * Calling set_output_signature() *or* set_input_signature() can
+     * change the return value of this function.
+     */
+    stream_sig_t get_output_signature(size_t block_port=0) const;
+
+    /*! Tell this block about the stream signature incoming on a given block port.
+     *
+     * If \p block_port is not a valid output port, throws
+     * a uhd::runtime_error.
+     *
+     * If the input signature is incompatible with this block's signature,
+     * it does not throw, but returns false.
+     *
+     * This function may also affect the output stream signature.
+     */
+    virtual bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0);
+
+    /*! Change the output stream signature for a given output block port.
+     *
+     * If the requested stream signature is not possible with this block,
+     * it returns false (does not throw).
+     * Recommended behaviour is not to modify the input signature.
+     */
+    virtual bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0);
+
+    /***********************************************************************
+     * FPGA control & communication
+     **********************************************************************/
 
     /*! Allows setting one register on the settings bus.
      *
@@ -229,22 +258,6 @@ public:
      */
     size_t get_fifo_size(size_t block_port=0) const;
 
-    /*! Returns the 16-Bit address for this block.
-     */
-    boost::uint32_t get_address(size_t block_port=0);
-
-    /*! Initialize the block arguments.
-     */
-    void set_args(const uhd::device_addr_t &args);
-
-    /*! Returns the unique block ID for this block (e.g. "0/FFT_1").
-     */
-    block_id_t get_block_id() const { return _block_id; };
-
-    /*! Returns the SID for the control transport.
-     */
-    uhd::sid_t get_ctrl_sid() const { return _ctrl_sid; };
-
     /*! Configure flow control for incoming streams.
      *
      * If flow control is enabled for incoming streams, this block will periodically
@@ -298,50 +311,10 @@ public:
      * or blocks might be left hanging in a streaming state, and can get
      * confused when a new application starts.
      *
-     * Overwrite _clear() if you want to change the specifics register
-     * settings for this call.
+     * For custom behaviour, overwrite _clear(). If you do so, you must take
+     * take care of resetting flow control yourself.
      */
     void clear();
-
-    /*! Return the input stream signature for a given block port.
-     *
-     * If \p block_port is not a valid input port, throws
-     * a uhd::runtime_error.
-     *
-     * Calling set_input_signature() can change the return value
-     * of this function.
-     */
-    stream_sig_t get_input_signature(size_t block_port=0) const;
-
-    /*! Return the output stream signature for a given block port.
-     *
-     * If \p block_port is not a valid output port, throws
-     * a uhd::runtime_error.
-     *
-     * Calling set_output_signature() *or* set_input_signature() can
-     * change the return value of this function.
-     */
-    stream_sig_t get_output_signature(size_t block_port=0) const;
-
-    /*! Tell this block about the stream signature incoming on a given block port.
-     *
-     * If \p block_port is not a valid output port, throws
-     * a uhd::runtime_error.
-     *
-     * If the input signature is incompatible with this block's signature,
-     * it does not throw, but returns false.
-     *
-     * This function may also affect the output stream signature.
-     */
-    virtual bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0);
-
-    /*! Change the output stream signature for a given output block port.
-     *
-     * If the requested stream signature is not possible with this block,
-     * it returns false (does not throw).
-     * Recommended behaviour is not to modify the input signature.
-     */
-    virtual bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0);
 
     /*! Configures data flowing from port \p output_block_port to go to \p next_address
      *
@@ -349,40 +322,63 @@ public:
      * to register SR_NEXT_DST of this blocks settings bus. The value will also
      * have bit 16 set to 1, since some blocks require this to respect this value.
      */
-    virtual void set_destination(boost::uint32_t next_address, size_t output_block_port = 0);
-
-    /*! Register a block upstream of this one (i.e., a block that can send data to this block).
-     *
-     * Note: This does *not* affect any settings (flow control etc.). This literally only tells
-     * this block about upstream blocks.
-     *
-     * \param upstream_block A pointer to the block instantiation
-     */
-    void register_upstream_block(sptr upstream_block);
-
-    /*! Register a block downstream of this one (i.e., a block that receives data from this block).
-     *
-     * Note: This does *not* affect any settings (flow control etc.). This literally only tells
-     * this block about downstream blocks.
-     *
-     * \param downstream_block A pointer to the block instantiation
-     */
-    void register_downstream_block(sptr downstream_block);
-
-    virtual ~block_ctrl_base();
+    virtual void set_destination(
+            boost::uint32_t next_address,
+            size_t output_block_port = 0
+    );
 
 protected:
+    /***********************************************************************
+     * Structors
+     **********************************************************************/
+    block_ctrl_base(void) {}; // To allow pure virtual (interface) sub-classes
+    virtual ~block_ctrl_base();
+
+    /*! Constructor. This is only called from the internal block factory!
+     *
+     * \param make_args All arguments to this constructor are passed in this object.
+     *                  Its details are subject to change. Use the UHD_RFNOC_BLOCK_CONSTRUCTOR()
+     *                  macro to set up your block's constructor in a portable fashion.
+     */
+    block_ctrl_base(
+            const make_args_t &make_args
+    );
+
+    /***********************************************************************
+     * Hooks & Derivables
+     **********************************************************************/
+
     //! Override this function if your block does something else
     // than reset register SR_FLOW_CTRL_CLR_SEQ.
     virtual void _clear();
 
-    //! This function is called whenever _args is changed.
-    // Override it to update block-specific settings, or to sanity-check
-    // the new _args string.
-    //
-    // May throw.
-    virtual void _set_args();
+    /***********************************************************************
+     * Protected members
+     **********************************************************************/
 
+    //! An object to actually send and receive the commands
+    wb_iface::sptr _ctrl_iface;
+
+    //! Property sub-tree
+    uhd::property_tree::sptr _tree;
+
+    //! Root node of this block's properties
+    uhd::fs_path _root_path;
+
+    //! Endianness of underlying transport (for data transport)
+    bool _transport_is_big_endian;
+
+private:
+    /***********************************************************************
+     * Private members
+     **********************************************************************/
+
+    //! The SID of the control transport.
+    // _ctrl_sid.get_dst_address() yields this block's address.
+    uhd::sid_t _ctrl_sid;
+
+    //! The (unique) block ID.
+    block_id_t _block_id;
 }; /* class block_ctrl_base */
 
 }} /* namespace uhd::rfnoc */

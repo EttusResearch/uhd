@@ -25,14 +25,14 @@ using namespace uhd::rfnoc;
 void rx_block_ctrl_base::issue_stream_cmd(
         const uhd::stream_cmd_t &stream_cmd
 ) {
-    if (_upstream_blocks.empty()) {
+    if (_upstream_nodes.empty()) {
         UHD_MSG(warning) << "issue_stream_cmd() not implemented for " << get_block_id() << std::endl;
         return;
     }
 
-    BOOST_FOREACH(const boost::weak_ptr<block_ctrl_base> upstream_block_ctrl, _upstream_blocks) {
+    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
         sptr this_upstream_block_ctrl =
-            boost::dynamic_pointer_cast<rx_block_ctrl_base>(upstream_block_ctrl.lock());
+            boost::dynamic_pointer_cast<rx_block_ctrl_base>(upstream_node.second.lock());
         this_upstream_block_ctrl->issue_stream_cmd(stream_cmd);
     }
 }
@@ -68,11 +68,11 @@ void rx_block_ctrl_base::setup_rx_streamer(uhd::stream_args_t &args)
     }
 
     // 3. Call all upstream blocks
-    BOOST_FOREACH(const boost::weak_ptr<block_ctrl_base> upstream_block_ctrl, _upstream_blocks) {
+    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
         // Make a copy so that modifications upstream aren't propagated downstream
         uhd::stream_args_t new_args = args;
         sptr this_upstream_block_ctrl =
-            boost::dynamic_pointer_cast<rx_block_ctrl_base>(upstream_block_ctrl.lock());
+            boost::dynamic_pointer_cast<rx_block_ctrl_base>(upstream_node.second.lock());
         if (this_upstream_block_ctrl) {
             this_upstream_block_ctrl->setup_rx_streamer(new_args);
         }

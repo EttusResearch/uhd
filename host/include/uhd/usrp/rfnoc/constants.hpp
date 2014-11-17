@@ -67,6 +67,9 @@ static const boost::uint32_t AXI_WRAPPER_BASE      = SR_NEXT_DST_BASE;
 static const boost::uint32_t AXIS_CONFIG_BUS       = AXI_WRAPPER_BASE+1; // tdata with tvalid asserted
 static const boost::uint32_t AXIS_CONFIG_BUS_TLAST = AXI_WRAPPER_BASE+2; // tdata with tvalid & tlast asserted
 
+// Block ports
+static const size_t ANY_PORT = size_t(~0);
+
 // Regular expressions
 static const std::string VALID_BLOCKNAME_REGEX = "[A-Za-z][A-Za-z0-9]*";
 static const std::string VALID_BLOCKID_REGEX = "(?:(\\d+)(?:/))?([A-Za-z][A-Za-z0-9]*)(?:(?:_)(\\d\\d?))?";

@@ -50,11 +50,11 @@ void tx_block_ctrl_base::setup_tx_streamer(uhd::stream_args_t &args)
     }
 
     // 3. Call all downstream blocks
-    BOOST_FOREACH(const boost::weak_ptr<block_ctrl_base> downstream_block_ctrl, _downstream_blocks) {
+    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t downstream_node, _downstream_nodes) {
         // Make a copy so that modifications downstream aren't propagated upstream
         uhd::stream_args_t new_args = args;
         sptr this_downstream_block_ctrl =
-            boost::dynamic_pointer_cast<tx_block_ctrl_base>(downstream_block_ctrl.lock());
+            boost::dynamic_pointer_cast<tx_block_ctrl_base>(downstream_node.second.lock());
         if (this_downstream_block_ctrl) {
             this_downstream_block_ctrl->setup_tx_streamer(new_args);
         }
