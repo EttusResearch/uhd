@@ -58,33 +58,15 @@ public:
      */
     virtual void clear();
 
-    /*! Register a node upstream of this one (i.e., a node that can send data to this node).
-     *
-     * Note: This does *not* affect any settings (flow control etc.). This literally only tells
-     * this node about upstream nodes.
-     *
-     * This saves a *weak pointer* to the upstream node.
-     *
-     * \param upstream_node A pointer to the node instantiation
-     * \param port If applicable, specify a port number the upstream block is connected to.
-     */
-    void register_upstream_node(
-            sptr upstream_node,
+    //! See uhd::rfnoc::source_node_ctrl::register_downstream_node().
+    virtual void register_downstream_node(
+            node_ctrl_base::sptr downstream_node,
             size_t port=ANY_PORT
     );
 
-    /*! Register a node downstream of this one (i.e., a node that receives data from this node).
-     *
-     * Note: This does *not* affect any settings (flow control etc.). This literally only tells
-     * this node about downstream nodes.
-     *
-     * This saves a *weak pointer* to the downstream node.
-     *
-     * \param downstream_node A pointer to the node instantiation
-     * \param port If applicable, specify a port number the downstream block is connected to.
-     */
-    void register_downstream_node(
-            sptr downstream_node,
+    //! See uhd::rfnoc::sink_node_ctrl::register_upstream_node().
+    virtual void register_upstream_node(
+            node_ctrl_base::sptr upstream_node,
             size_t port=ANY_PORT
     );
 

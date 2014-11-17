@@ -19,6 +19,7 @@
 #define INCLUDED_LIBUHD_TX_BLOCK_CTRL_BASE_HPP
 
 #include <uhd/usrp/rfnoc/block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/sink_node_ctrl.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -31,7 +32,7 @@ namespace uhd {
  * data *to* this block.
  */
 class UHD_API tx_block_ctrl_base;
-class tx_block_ctrl_base : virtual public block_ctrl_base
+class tx_block_ctrl_base : virtual public block_ctrl_base, public sink_node_ctrl
 {
 public:
     typedef boost::shared_ptr<tx_block_ctrl_base> sptr;
@@ -53,15 +54,6 @@ protected:
      * the modified value of \p args will be propagated upstream.
      */
     virtual void _init_tx(uhd::stream_args_t &) { /* nop */ };
-
-    /*! If this function returns true, tx-specific settings (such as tx streamer
-     * setup) are not propagated downstream.
-     * An example for a block where this is necessary is a radio: If it's
-     * operating in full duplex mode, it will have a downstream block on the rx
-     * side, but we don't want to configure those while setting up an tx stream
-     * chain.
-     */
-    bool _is_final_tx_block() { return false; };
 
 }; /* class tx_block_ctrl_base */
 

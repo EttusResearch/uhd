@@ -25,14 +25,15 @@ using namespace uhd::rfnoc;
 void rx_block_ctrl_base::issue_stream_cmd(
         const uhd::stream_cmd_t &stream_cmd
 ) {
+    UHD_MSG(status) <<  "[" << get_block_id() << "]: rx_block_ctrl_base::issue_stream_cmd()" << std::endl;
     if (_upstream_nodes.empty()) {
         UHD_MSG(warning) << "issue_stream_cmd() not implemented for " << get_block_id() << std::endl;
         return;
     }
 
     BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
-        sptr this_upstream_block_ctrl =
-            boost::dynamic_pointer_cast<rx_block_ctrl_base>(upstream_node.second.lock());
+        source_node_ctrl::sptr this_upstream_block_ctrl =
+            boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
         this_upstream_block_ctrl->issue_stream_cmd(stream_cmd);
     }
 }

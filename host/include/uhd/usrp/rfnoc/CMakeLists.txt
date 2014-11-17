@@ -16,11 +16,19 @@
 #
 
 UHD_INSTALL(FILES
+    # Infrastructure
     block_ctrl_base.hpp
     block_ctrl.hpp
     block_id.hpp
     blockdef.hpp
+    constants.hpp
     node_ctrl_base.hpp
+    rx_block_ctrl_base.hpp
+    stream_sig.hpp
+    sink_node_ctrl.hpp
+    source_node_ctrl.hpp
+    tx_block_ctrl_base.hpp
+    # Block controllers
     fir_block_ctrl.hpp
     fft_block_ctrl.hpp
     null_block_ctrl.hpp
@@ -28,10 +36,6 @@ UHD_INSTALL(FILES
     addsub_block_ctrl.hpp
     split_stream_block_ctrl.hpp
     packet_resizer_block_ctrl.hpp
-    rx_block_ctrl_base.hpp
-    stream_sig.hpp
-    tx_block_ctrl_base.hpp
-    constants.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/usrp/rfnoc
     COMPONENT headers
 )

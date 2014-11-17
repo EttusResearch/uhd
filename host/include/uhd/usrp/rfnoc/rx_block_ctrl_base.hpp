@@ -19,6 +19,7 @@
 #define INCLUDED_LIBUHD_RX_BLOCK_CTRL_BASE_HPP
 
 #include <uhd/usrp/rfnoc/block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/source_node_ctrl.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -31,7 +32,7 @@ namespace uhd {
  * data *from* this block.
  */
 class UHD_API rx_block_ctrl_base;
-class rx_block_ctrl_base : virtual public block_ctrl_base
+class rx_block_ctrl_base : virtual public block_ctrl_base, public source_node_ctrl
 {
 public:
     typedef boost::shared_ptr<rx_block_ctrl_base> sptr;
@@ -80,15 +81,6 @@ protected:
      * the modified value of \p args will be propagated upstream.
      */
     virtual void _init_rx(uhd::stream_args_t &) { /* nop */ };
-
-    /*! If this function returns true, rx-specific settings (such as rx streamer
-     * setup) are not propagated upstream.
-     * An example for a block where this is necessary is a radio: If it's
-     * operating in full duplex mode, it will have an upstream block on the tx
-     * side, but we don't want to configure those while setting up an rx stream
-     * chain.
-     */
-    bool _is_final_rx_block() { return false; };
 
 }; /* class rx_block_ctrl_base */
 

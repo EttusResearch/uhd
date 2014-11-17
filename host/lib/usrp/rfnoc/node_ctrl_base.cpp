@@ -35,31 +35,16 @@ void node_ctrl_base::clear()
     _downstream_nodes.clear();
 }
 
-void node_ctrl_base::register_upstream_node(
-        node_ctrl_base::sptr upstream_node,
-        size_t port
-) {
-    // If no port was specified, use the first free one:
-    if (port == ANY_PORT) {
-        port = 0;
-        while (_downstream_nodes.count(port))
-            port++;
-    }
-
-    _upstream_nodes[port] = boost::weak_ptr<node_ctrl_base>(upstream_node);
-}
-
 void node_ctrl_base::register_downstream_node(
-        node_ctrl_base::sptr downstream_node,
-        size_t port
+    node_ctrl_base::sptr,
+    size_t
 ) {
-    // If no port was specified, use the first free one:
-    if (port == ANY_PORT) {
-        port = 0;
-        while (_downstream_nodes.count(port))
-            port++;
-    }
-
-    _downstream_nodes[port] = boost::weak_ptr<node_ctrl_base>(downstream_node);
+    throw uhd::runtime_error("Attempting to register a downstream block on a non-source node.");
 }
 
+void node_ctrl_base::register_upstream_node(
+    node_ctrl_base::sptr,
+    size_t
+) {
+    throw uhd::runtime_error("Attempting to register an upstream block on a non-sink node.");
+}
