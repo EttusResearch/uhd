@@ -90,34 +90,60 @@ block_ctrl_base::~block_ctrl_base()
 }
 
 
-void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t data) {
-    UHD_MSG(status) << str(boost::format("sr_write(%d, %08X) on %s") % reg % data % get_block_id()) << std::endl;
-    _ctrl_iface->poke32(_sr_to_addr(reg), data);
+void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t data)
+{
+    UHD_MSG(status) << "[" << get_block_id() << "]: " << str(boost::format("sr_write(%d, %08X)") % reg % data) << std::endl;
+    try {
+        _ctrl_iface->poke32(_sr_to_addr(reg), data);
+    }
+    catch(const std::exception &ex) {
+        throw uhd::io_error(str(boost::format("%s sr_write() failed: %s") % get_block_id().get() % ex.what()));
+    }
 }
 
 boost::uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg)
 {
-    return _ctrl_iface->peek64(_sr_to_addr64(reg));
+    try {
+        return _ctrl_iface->peek64(_sr_to_addr64(reg));
+    }
+    catch(const std::exception &ex) {
+        throw uhd::io_error(str(boost::format("%s sr_write() failed: %s") % get_block_id().get() % ex.what()));
+    }
 }
 
 boost::uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg) {
-    return _ctrl_iface->peek32(_sr_to_addr(reg));
+    try {
+        return _ctrl_iface->peek32(_sr_to_addr(reg));
+    }
+    catch(const std::exception &ex) {
+        throw uhd::io_error(str(boost::format("%s sr_write() failed: %s") % get_block_id().get() % ex.what()));
+    }
 }
 
 boost::uint64_t block_ctrl_base::user_reg_read64(const boost::uint32_t addr)
 {
-      // Set readback register address
-      sr_write(SR_READBACK_ADDR, addr);
-      // Read readback register via RFNoC
-      return sr_read64(SR_READBACK_REG_USER);
+    try {
+        // Set readback register address
+        sr_write(SR_READBACK_ADDR, addr);
+        // Read readback register via RFNoC
+        return sr_read64(SR_READBACK_REG_USER);
+    }
+    catch(const std::exception &ex) {
+        throw uhd::io_error(str(boost::format("%s user_reg_read64() failed: %s") % get_block_id().get() % ex.what()));
+    }
 }
 
 boost::uint32_t block_ctrl_base::user_reg_read32(const boost::uint32_t addr)
 {
-      // Set readback register address
-      sr_write(SR_READBACK_ADDR, addr);
-      // Read readback register via RFNoC
-      return sr_read32(SR_READBACK_REG_USER);
+    try {
+        // Set readback register address
+        sr_write(SR_READBACK_ADDR, addr);
+        // Read readback register via RFNoC
+        return sr_read32(SR_READBACK_REG_USER);
+    }
+    catch(const std::exception &ex) {
+        throw uhd::io_error(str(boost::format("%s user_reg_read64() failed: %s") % get_block_id().get() % ex.what()));
+    }
 }
 
 size_t block_ctrl_base::get_fifo_size(size_t block_port) const {
