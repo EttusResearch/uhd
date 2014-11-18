@@ -1,6 +1,27 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright 2013-2014 Ettus Research LLC
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+"""
+Plots the output of the streamers that is produced when DEBUG_TXRX
+is enabled.
+"""
 
-__author__ = 'johannes'
-
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -52,6 +73,8 @@ def convert_to_bool(data):
 def convert_data_set(data, reqtype):
     zdata = zip(*data)
     res = []
+    if len(zdata) == 0:
+        return res
     for i in range(len(reqtype)):
         if reqtype[i] == np.bool:
             res.append(np.asarray(convert_to_bool(zdata[i]), dtype=np.bool))
@@ -256,6 +279,9 @@ def plot_rtt_lines(data, fignum):
     rx = extract_libusb("rx", data)
     #tx = extract_libusb("tx", data)
 
+    if len(data) == 0 or len(rx) == 0:
+        return
+
     plt.figure(fignum)
     for i in range(len(rx[0])):
         if rx[0][i] > -1:
@@ -307,11 +333,19 @@ def get_unknown_lines(data):
 rx_metadata_error_codes = {0x0: "NONE", 0x1: "TIMEOUT", 0x2: "LATE_COMMAND", 0x4: "BROKEN_CHAIN", 0x8: "OVERFLOW",
                            0xc: "ALIGNMENT", 0xf: "BAD_PACKET"}
 
+
+def parse_args():
+    """ Parse args, yo """
+    parser = argparse.ArgumentParser(description='Plot tool for debug prints.')
+    parser.add_argument('-f', '--filename', default=None, help='Debug output file')
+    return parser.parse_args()
+
 # Be really careful with the input files. They get pretty huge in a small time.
 # Doing some of the plotting can eat up a lot of time then.
 # Although this file contains a lot of functions by now, it is still left to the user to use everythin correctly.
 def main():
-    filename = "/home/johannes/tests/bseries_stall/bseries_stall_3.log"
+    args = parse_args()
+    filename = args.filename
     print "get data from: ", filename
     #pref1 = "super_recv_packet_handler"
     #pref2 = "recv"
@@ -376,5 +410,6 @@ def main():
     plt.show()
 
 if __name__ == '__main__':
+    print "[WARNING] This tool is in alpha status. Only use if you know what you're doing!"
     main()
 
