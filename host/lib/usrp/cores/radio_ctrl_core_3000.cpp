@@ -22,6 +22,7 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/types/sid.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
@@ -254,7 +255,16 @@ private:
             try
             {
                 UHD_ASSERT_THROW(packet_info.has_sid);
-                UHD_ASSERT_THROW(packet_info.sid == boost::uint32_t((_sid >> 16) | (_sid << 16)));
+                if (packet_info.sid != boost::uint32_t((_sid >> 16) | (_sid << 16))) {
+                    throw uhd::io_error(
+                        str(
+                            boost::format("Expected SID: %s  Received SID: %s")
+                            % uhd::sid_t(_sid).reversed().to_pp_string_hex()
+                            % uhd::sid_t(packet_info.sid).to_pp_string_hex()
+                        )
+                    );
+                }
+
                 UHD_ASSERT_THROW(packet_info.packet_count == (seq_to_ack & 0xfff));
                 UHD_ASSERT_THROW(packet_info.num_payload_words32 == 2);
                 UHD_ASSERT_THROW(packet_info.packet_type == _packet_type);
