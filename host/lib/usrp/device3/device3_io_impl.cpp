@@ -566,7 +566,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         }
     }
 
-    post_streamer_hooks();
+    post_streamer_hooks(false);
     return my_streamer;
 
 }
@@ -709,6 +709,6 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         }
     }
 
-    post_streamer_hooks();
+    post_streamer_hooks(true);
     return my_streamer;
 }

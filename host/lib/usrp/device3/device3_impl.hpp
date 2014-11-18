@@ -135,7 +135,7 @@ protected:
     boost::function<double(size_t)> _tick_rate_retriever;
 
     //! Is called after a streamer is generated
-    virtual void post_streamer_hooks() {};
+    virtual void post_streamer_hooks(bool /* is_tx */) {};
 
     /***********************************************************************
      * Members

@@ -175,8 +175,12 @@ device_addr_t x300_impl::get_tx_hints(size_t mb_index)
     return _mb[mb_index].send_args;
 }
 
-void x300_impl::post_streamer_hooks()
+void x300_impl::post_streamer_hooks(bool is_tx)
 {
+    if (not is_tx) {
+        return;
+    }
+
     std::cout << "x300_impl::post_streamer_hooks()" << std::endl;
     // TODO: We should really only be adding the radios used in the
     // current topology. So, implement a network search routine
@@ -190,7 +194,12 @@ void x300_impl::post_streamer_hooks()
             radios.push_back(&perif);
         }
     }
-    synchronize_dacs(radios);
+    try {
+        synchronize_dacs(radios);
+    }
+    catch(const uhd::io_error &ex) {
+        throw uhd::io_error(str(boost::format("Failed to sync DACs! %s ") % ex.what()));
+    }
 
         //radio_perifs_t &perif = mb.radio_perifs[radio_index];
         //radios_list.push_back(&perif);

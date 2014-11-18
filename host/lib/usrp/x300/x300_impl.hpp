@@ -334,8 +334,7 @@ private:
         return _mb[mb_index].if_pkt_is_big_endian ? uhd::ENDIANNESS_BIG : uhd::ENDIANNESS_LITTLE;
     };
 
-    // TODO do the sync dacs in here
-    void post_streamer_hooks();
+    void post_streamer_hooks(bool is_tx);
 };
 
 #endif /* INCLUDED_X300_IMPL_HPP */
