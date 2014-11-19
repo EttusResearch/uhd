@@ -1752,11 +1752,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                 else
                     std::cout << HEADER "Waiting for Q..." << std::endl;
 
-                while (stop_signal_called == false)
+                do
                 {
                     // FIXME: Stop time
 
-                    if (kbhit(interactive_sleep))
+                    if (kbhit(0))
                     {
                         char c = fgetc(stdin);
                         if (c == EOF)
@@ -1786,7 +1786,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                     }
 
                     print_msgs();
-                }
+                    
+                    abort_event.timed_wait(l_stop, boost::posix_time::milliseconds(interactive_sleep));
+                } while (stop_signal_called == false);
             }
             else if (duration > 0)
             {
