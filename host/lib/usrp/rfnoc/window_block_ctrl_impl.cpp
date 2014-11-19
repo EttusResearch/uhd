@@ -83,7 +83,7 @@ public:
 
     bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0)
     {
-        UHD_MSG(status) << "window_block::set_input_signature()" << std::endl;
+        UHD_MSG(status) << "[" << get_block_id() << "] window_block::set_input_signature()" << std::endl;
         UHD_ASSERT_THROW(port == 0);
         if (stream_sig.get_item_type() != _item_type
             //or (stream_sig.packet_size != 0 and stream_sig.packet_size != _window_len * _bpi) FIXME put this back in
@@ -110,6 +110,7 @@ public:
 protected:
     void _post_args_hook()
     {
+        UHD_MSG(status) << "[" << get_block_id() << "] window_block::_post_args_hook()" << std::endl;
         if (_args.has_key("spp")) {
             size_t spp = _args.cast<size_t>("spp", _window_len);
             if (spp != _window_len) {
@@ -120,9 +121,9 @@ protected:
 
     void _init_rx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "window_block::init_rx()" << std::endl;
+        UHD_MSG(status) << "[" << get_block_id() << "] window_block::_init_rx()" << std::endl;
         if (args.otw_format != "sc16") {
-            throw uhd::value_error("FFT only supports otw_format sc16");
+            throw uhd::value_error("Window only supports otw_format sc16");
         }
         // Check if the downstream block wants a specific spp.
         // If it's not the window length, throw. Otherwise, tell the upstream
@@ -139,9 +140,9 @@ protected:
 
     void _init_tx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "window_block::init_tx()" << std::endl;
+        UHD_MSG(status) << "[" << get_block_id() << "] window_block::_init_tx()" << std::endl;
         if (args.otw_format != "sc16") {
-            throw uhd::value_error("FFT only supports otw_format sc16");
+            throw uhd::value_error("Window only supports otw_format sc16");
         }
         // Check if the upstream block wants a specific spp.
         // If it's not the window length, throw. Otherwise, tell the downstream
@@ -151,7 +152,7 @@ protected:
         } else {
             size_t req_spp = args.args.cast<size_t>("spp", _window_len);
             if (req_spp != _window_len) {
-                throw uhd::value_error("In the FFT block, spp cannot differ from the window length (downstream block requested other spp value)");
+                throw uhd::value_error("In the window block, spp cannot differ from the window length (downstream block requested other spp value)");
             }
         }
     }
