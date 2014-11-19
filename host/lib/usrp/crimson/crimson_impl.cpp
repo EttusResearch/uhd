@@ -150,7 +150,7 @@ void crimson_impl::set_sensor_value(const std::string pre, sensor_value_t data) 
 // wrapper for type <meta_range_t> through the ASCII Crimson interface
 meta_range_t crimson_impl::get_meta_range(std::string req) {
 	meta_range_t temp;
-	if (req[req.length()-1] >= '0' && req[req.length()-1] <= '4') {
+	if (req[req.length()-1] >= 'A' && req[req.length()-1] <= 'D') {
 		temp = meta_range_t(	
 			get_double( req.substr(0, req.length()-1) + "start_" + req.substr(req.length()-1, 1)),
 			get_double( req.substr(0, req.length()-1) + "stop_"  + req.substr(req.length()-1, 1)),
@@ -166,7 +166,7 @@ meta_range_t crimson_impl::get_meta_range(std::string req) {
 	return temp;
 }
 void crimson_impl::set_meta_range(const std::string pre, meta_range_t data) {
-	if (pre[pre.length()-1] >= '0' && pre[pre.length()-1] <= '4') {
+	if (pre[pre.length()-1] >= 'A' && pre[pre.length()-1] <= 'D') {
 		set_double( pre.substr(0, pre.length()-1) + "start_" + pre.substr(pre.length()-1, 1), data.start());
 		set_double( pre.substr(0, pre.length()-1) + "stop_"  + pre.substr(pre.length()-1, 1), data.stop());
 		set_double( pre.substr(0, pre.length()-1) + "step_"  + pre.substr(pre.length()-1, 1), data.step());
@@ -456,8 +456,8 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 
     // loop for all RF chains
     for (int chain = 0; chain < 4; chain ++) {
-	std::string num  = boost::lexical_cast<std::string>(chain + 1);
-	std::string chan = "chan" + num;
+	std::string num  = boost::lexical_cast<std::string>((char)(chain + 65));
+	std::string chan = "Channel_" + num;
 
 	// Actual frequency values
 	TREE_CREATE_READ("rx" / chan / "freq" / "value", "rx,set,freq_value_" + num, "rx,get,freq_value_" + num, double, _double);

@@ -648,5 +648,5 @@ fs_path multi_crimson_impl::tx_dsp_root(const size_t chan) {
 }
 
 std::string multi_crimson_impl::chan_to_string(size_t chan) {
-    return "chan" + boost::lexical_cast<std::string>(chan + 1);
+    return "Channel_" + boost::lexical_cast<std::string>((char)(chan + 65));
 };
