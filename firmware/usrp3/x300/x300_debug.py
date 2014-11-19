@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,26 +21,35 @@ import math
 import socket
 import struct
 
-
 ########################################################################
 # constants
 ########################################################################
-B250_FW_COMMS_UDP_PORT = 49152
+X300_FW_COMMS_UDP_PORT = 49152
 
-B250_FW_COMMS_FLAGS_ACK = 1
-B250_FW_COMMS_FLAGS_ERROR = 2
-B250_FW_COMMS_FLAGS_POKE32 = 4
-B250_FW_COMMS_FLAGS_PEEK32 = 8
+X300_FW_COMMS_FLAGS_ACK = 1
+X300_FW_COMMS_FLAGS_ERROR = 2
+X300_FW_COMMS_FLAGS_POKE32 = 4
+X300_FW_COMMS_FLAGS_PEEK32 = 8
+
+X300_FIXED_PORTS = 5
+
+X300_ZPU_MISC_SR_BUS_OFFSET = 0xA000
+X300_ZPU_XBAR_SR_BUS_OFFSET = 0xB000
+
+# Settings register bus addresses (hangs off ZPU wishbone bus)
+# Multiple by 4 as ZPU wishbone bus is word aligned
+X300_SR_NUM_CE       = X300_ZPU_MISC_SR_BUS_OFFSET + 4*7
+X300_SR_RB_ADDR_XBAR = X300_ZPU_MISC_SR_BUS_OFFSET + 4*64
+# Readback addresses
+X300_RB_CROSSBAR     = X300_ZPU_MISC_SR_BUS_OFFSET + 4*64
 
 #UDP_CTRL_PORT = 49183
 UDP_MAX_XFER_BYTES = 1024
 UDP_TIMEOUT = 3
-#USRP2_FW_PROTO_VERSION = 11 #should be unused after r6
 
 #REG_ARGS_FMT = '!LLLLLB15x'
 #REG_IP_FMT = '!LLLL20x'
 REG_PEEK_POKE_FMT = '!LLLL'
-
 
 _seq = -1
 def seq():
@@ -66,7 +75,7 @@ class ctrl_socket(object):
     def __init__(self, addr):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._sock.settimeout(UDP_TIMEOUT)
-        self._sock.connect((addr, B250_FW_COMMS_UDP_PORT))
+        self._sock.connect((addr, X300_FW_COMMS_UDP_PORT))
         self.set_callbacks(lambda *a: None, lambda *a: None)
         #self.init_update() #check that the device is there
 
@@ -79,46 +88,55 @@ class ctrl_socket(object):
         return self._sock.recv(UDP_MAX_XFER_BYTES)
 
     def read_router_stats(self):
+        # Readback number of CEs
+        num_ports = self.peek(X300_SR_NUM_CE) + X300_FIXED_PORTS
         print
+        print("Note: CE port names are hard coded and may not be accurate\n")
         print("            "),
-        ports = ['        eth0','        eth1','      radio0','      radio1','    compute0','    compute1','    compute2','        pcie']
-        for in_prt in ports:
-            print("%s" % in_prt),
+        # Write out xbar ports
+        ports = ['        eth0','        eth1','        pcie','      radio0','      radio1','     addsub0','        fir0','        fft0','     window0','nullsinksrc0','pkt-resizer0','splitstream0','       fifo0','       fifo1','       fifo2','       fifo3']
+        for in_prt in range (0, num_ports):
+            print("%s" % ports[in_prt]),
         print("   Egress Port")
         print("             "),
-        for in_prt in range (0, 8):
-            print("____________"),
+        for in_prt in range (0, num_ports):
+            print("___________ "),
         print
-        for in_prt in range (0, 8):
+        for in_prt in range (0, num_ports):
             print("%s |" % ports[in_prt]),
-            for out_prt in range (0, 8):
-                out_pkt = pack_reg_peek_poke_fmt(B250_FW_COMMS_FLAGS_PEEK32|B250_FW_COMMS_FLAGS_ACK, seq(), 0xA000+256+((in_prt*8+out_prt)*4), 0)
-                in_pkt = self.send_and_recv(out_pkt)
-                (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
-                if flags & B250_FW_COMMS_FLAGS_ERROR == B250_FW_COMMS_FLAGS_ERROR:
-                    raise Exception("B250 peek returns error code")
+            for out_prt in range (0, num_ports):
+                self.poke(X300_SR_RB_ADDR_XBAR,(in_prt*num_ports+out_prt))
+                data = self.peek(X300_RB_CROSSBAR)
                 print("%10d  " % (data)),
             print
         print
         print("Ingress Port")
         print
 
+    def peek_print(self,peek_addr):
+        peek_data = self.peek(peek_addr)
+        print("PEEK of address %d(0x%x) reads %d(0x%x)" % (peek_addr,peek_addr,peek_data,peek_data))
+        return peek_data
 
     def peek(self,peek_addr):
-        out_pkt = pack_reg_peek_poke_fmt(B250_FW_COMMS_FLAGS_PEEK32|B250_FW_COMMS_FLAGS_ACK, seq(), peek_addr, 0)
+        out_pkt = pack_reg_peek_poke_fmt(X300_FW_COMMS_FLAGS_PEEK32|X300_FW_COMMS_FLAGS_ACK, seq(), peek_addr, 0)
         in_pkt = self.send_and_recv(out_pkt)
         (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
-        if flags & B250_FW_COMMS_FLAGS_ERROR == B250_FW_COMMS_FLAGS_ERROR:
-            raise Exception("B250 peek of address %d returns error code" % (addr))
-        print("PEEK of address %d(0x%x) reads %d(0x%x)" % (addr,addr,data,data))
+        if flags & X300_FW_COMMS_FLAGS_ERROR == X300_FW_COMMS_FLAGS_ERROR:
+            raise Exception("X300 peek of address %d returns error code" % (addr))
+        return data
+
+    def poke_print(self,poke_addr,poke_data):
+        print("POKE of address %d(0x%x) with %d(0x%x)" % (poke_addr,poke_addr,poke_data,poke_data))
+        return(self.poke(poke_addr,poke_data))
 
     def poke(self,poke_addr,poke_data):
-        out_pkt = pack_reg_peek_poke_fmt(B250_FW_COMMS_FLAGS_POKE32|B250_FW_COMMS_FLAGS_ACK, seq(), poke_addr, poke_data)
+        out_pkt = pack_reg_peek_poke_fmt(X300_FW_COMMS_FLAGS_POKE32|X300_FW_COMMS_FLAGS_ACK, seq(), poke_addr, poke_data)
         in_pkt = self.send_and_recv(out_pkt)
         (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
-        if flags & B250_FW_COMMS_FLAGS_ERROR == B250_FW_COMMS_FLAGS_ERROR:
-            raise Exception("B250 peek of address %d returns error code" % (addr))
-        print("POKE of address %d(0x%x) with %d(0x%x)" % (poke_addr,poke_addr,poke_data,poke_data)  )
+        if flags & X300_FW_COMMS_FLAGS_ERROR == X300_FW_COMMS_FLAGS_ERROR:
+            raise Exception("X300 peek of address %d returns error code" % (addr))
+        return data
 
 
 ########################################################################
@@ -126,12 +144,11 @@ class ctrl_socket(object):
 ########################################################################
 def get_options():
     parser = optparse.OptionParser()
-    parser.add_option("--addr", type="string",                 help="USRP-N2XX device address",       default='')
-    parser.add_option("--list", action="store_true",           help="list possible network devices", default=False)
-    parser.add_option("--peek", type="int",                 help="Read from memory map",     default=None)
-    parser.add_option("--poke", type="int",                 help="Write to memory map",     default=None)
-    parser.add_option("--data", type="int",                 help="Data for poke",     default=None)
-    parser.add_option("--stats", action="store_true",           help="Display SuperMIMO Network Stats", default=False)
+    parser.add_option("--addr", type="string", help="USRP-X300 device address", default='')
+    parser.add_option("--stats", action="store_true", help="Display RFNoC Crossbar Stats", default=False)
+    parser.add_option("--peek", type="int", help="Read from memory map", default=None)
+    parser.add_option("--poke", type="int", help="Write to memory map", default=None)
+    parser.add_option("--data", type="int", help="Data for poke", default=None)
     (options, args) = parser.parse_args()
 
     return options
@@ -143,12 +160,6 @@ def get_options():
 if __name__=='__main__':
     options = get_options()
 
-
-    if options.list:
-        print('Possible network devices:')
-        print('  ' + '\n  '.join(enumerate_devices()))
-        exit()
-
     if not options.addr: raise Exception('no address specified')
 
     status = ctrl_socket(addr=options.addr)
@@ -156,12 +167,11 @@ if __name__=='__main__':
     if options.stats:
         status.read_router_stats()
 
-
     if options.peek is not None:
         addr = options.peek
-        status.peek(addr)
+        status.peek_print(addr)
 
     if options.poke is not None and options.data is not None:
         addr = options.poke
         data = options.data
-        status.poke(addr,data)
+        status.poke_print(addr,data)
