@@ -33,6 +33,12 @@ public:
         // TODO: Read the default initial FFT size from the block definition
         // TODO: Register the FFT size into the property tree
 
+        // TODO: Remove this reset. Currently used as a workaround due to deal
+        //       with the fact the FFT can receive packets that are not
+        //       fft_size and can put the FFT core in a bad state that is only
+        //       recoverable with a reset.
+        sr_write(SR_FFT_RESET, 1);
+
         // This also sets the stream signatures:
         set_fft_size(_fft_size);
     }

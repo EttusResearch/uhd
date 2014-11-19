@@ -40,7 +40,8 @@ class UHD_API fft_block_ctrl : public rx_block_ctrl_base, public tx_block_ctrl_b
 public:
     UHD_RFNOC_BLOCK_OBJECT(fft_block_ctrl)
 
-    static const size_t DEFAULT_FFT_SIZE = 256;
+    static const size_t DEFAULT_FFT_SIZE        = 256;
+    static const boost::uint32_t SR_FFT_RESET   = 131;  // Note: AXI config bus uses 129 & 130
 
     //! Configure the FFT size.
     //
