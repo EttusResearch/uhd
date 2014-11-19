@@ -505,7 +505,6 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	TREE_CREATE(rx_fe_path / "use_lo_offset",  "rx,set,lo_off_" + num, "rx,get,lo_off_" + num, bool, _bool);
 	TREE_CREATE(tx_fe_path / "use_lo_offset",  "tx,set,lo_off_" + num, "tx,get,lo_off_" + num, bool, _bool);
 
-	// Front End
 	TREE_CREATE(rx_fe_path / "freq" / "value", "rx,set,fe_freq_val_"  + num, "rx,get,fe_freq_val_"  + num, double, _double);
 	TREE_CREATE(rx_fe_path / "freq" / "range", "rx,set,fe_freq_range_"+ num, "rx,get,fe_freq_range_"+ num, meta_range_t, _meta_range);
 	TREE_CREATE(rx_fe_path / "gain" / "value", "rx,set,fe_gain_val_"  + num, "rx,get,fe_gain_val_"  + num, double, _double);
@@ -515,6 +514,15 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	TREE_CREATE(tx_fe_path / "freq" / "range", "tx,set,fe_freq_range_"+ num, "tx,get,fe_freq_range_"+ num, meta_range_t, _meta_range);
 	TREE_CREATE(tx_fe_path / "gain" / "value", "tx,set,fe_gain_val_"  + num, "tx,get,fe_gain_val_"  + num, double, _double);
 	TREE_CREATE(tx_fe_path / "gain" / "range", "tx,set,fe_gain_range_"+ num, "tx,get,fe_gain_range_"+ num, meta_range_t, _meta_range);
+
+	// these are phony properties for Crimson
+	const fs_path db_path = "dboards" / num;
+	TREE_CREATE(db_path / "rx_eeprom",  "product,set,rx_eeprom_" + num, "product,get,rx_eeprom_"  + num, dboard_eeprom_t, _dboard_eeprom);
+	TREE_CREATE(db_path / "tx_eeprom",  "product,set,tx_eeprom_" + num, "product,get,tx_eeprom_"  + num, dboard_eeprom_t, _dboard_eeprom);
+	TREE_CREATE(db_path / "gdb_eeprom", "product,set,gdb_eeprom_"+ num, "product,get,gdb_eeprom_" + num, dboard_eeprom_t, _dboard_eeprom);
+
+	_tree->create<subdev_spec_t> (mb_path / "dboards" / num / "rx_frontends");
+	_tree->create<subdev_spec_t> (mb_path / "dboards" / num / "tx_frontends");
 
 	// DSPs
 	const fs_path rx_dsp_path = "rx_dsps" / chan;
@@ -533,15 +541,6 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	TREE_CREATE(tx_dsp_path / "freq" / "range", "tx,set,dsp_freq_range_"+ num, "tx,get,dsp_freq_range_"+ num, meta_range_t, _meta_range);
 	TREE_CREATE(tx_dsp_path / "bw" / "value",   "tx,set,dsp_bw_val_"    + num, "tx,get,dsp_bw_val_"    + num, double, _double);
 	TREE_CREATE(tx_dsp_path / "bw" / "range",   "tx,set,dsp_bw_range_"  + num, "tx,get,dsp_bw_range_"  + num, meta_range_t, _meta_range);
-
-	// RF Front end iface, these are phony properties for Crimson
-	const fs_path db_path = "dboards" / num;
-	TREE_CREATE(db_path / "rx_eeprom",  "product,set,rx_eeprom_" + num, "product,get,rx_eeprom_"  + num, dboard_eeprom_t, _dboard_eeprom);
-	TREE_CREATE(db_path / "tx_eeprom",  "product,set,tx_eeprom_" + num, "product,get,tx_eeprom_"  + num, dboard_eeprom_t, _dboard_eeprom);
-	TREE_CREATE(db_path / "gdb_eeprom", "product,set,gdb_eeprom_"+ num, "product,get,gdb_eeprom_" + num, dboard_eeprom_t, _dboard_eeprom);
-
-	_tree->create<subdev_spec_t> (mb_path / "dboards" / num / "rx_frontends");
-	_tree->create<subdev_spec_t> (mb_path / "dboards" / num / "tx_frontends");
     }
 }
 
