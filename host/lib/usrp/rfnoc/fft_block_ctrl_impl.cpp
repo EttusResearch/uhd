@@ -106,9 +106,9 @@ public:
     }
 
 protected:
-    void _set_args()
+    void _post_args_hook()
     {
-        UHD_MSG(status) << "fft_block::_set_args()" << std::endl;
+        UHD_MSG(status) << "[" << get_block_id() << "] _post_args_hook()" << std::endl;
         if (_args.has_key("fftsize")) {
             size_t req_fft_size = _args.cast<size_t>("fftsize", _fft_size);
             if (req_fft_size != _fft_size) {
@@ -126,7 +126,7 @@ protected:
 
     void _init_rx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "fft_block::init_rx()" << std::endl;
+        UHD_MSG(status) << "[" << get_block_id() << "] fft_block::_init_rx()" << std::endl;
         if (args.otw_format != "sc16") {
             throw uhd::value_error("FFT only supports otw_format sc16");
         }
@@ -145,7 +145,7 @@ protected:
 
     void _init_tx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "fft_block::init_tx()" << std::endl;
+        UHD_MSG(status) << "[" << get_block_id() << "] fft_block::_init_tx()" << std::endl;
         if (args.otw_format != "sc16") {
             throw uhd::value_error("FFT only supports otw_format sc16");
         }

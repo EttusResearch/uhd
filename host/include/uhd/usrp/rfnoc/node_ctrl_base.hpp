@@ -101,7 +101,7 @@ protected:
      *
      * May throw.
      */
-    virtual void _post_args_hook() {};
+    virtual void _post_args_hook();
 
 }; /* class node_ctrl_base */
 

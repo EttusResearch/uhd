@@ -108,7 +108,7 @@ public:
     }
 
 protected:
-    void _set_args()
+    void _post_args_hook()
     {
         if (_args.has_key("spp")) {
             size_t spp = _args.cast<size_t>("spp", _window_len);

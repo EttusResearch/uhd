@@ -27,6 +27,11 @@ void node_ctrl_base::set_args(const uhd::device_addr_t &args)
     _post_args_hook();
 }
 
+void node_ctrl_base::_post_args_hook()
+{
+    UHD_MSG(status) << "node_ctrl_base::_post_args_hook() " << _args.to_string() << std::endl;
+}
+
 void node_ctrl_base::clear()
 {
     UHD_MSG(status) << "node_ctrl_base::clear() " << std::endl;

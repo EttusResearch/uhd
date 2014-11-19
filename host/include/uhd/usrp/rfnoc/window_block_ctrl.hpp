@@ -73,7 +73,7 @@ protected:
     //! Checks the args \p window_len and \p spp are OK.
     //
     //  If spp is given, it must match the window length, or we throw.
-    virtual void _set_args() = 0;
+    virtual void _post_args_hook() = 0;
 
     //! Check stream args match window length
     virtual void _init_rx(uhd::stream_args_t &args) = 0;
