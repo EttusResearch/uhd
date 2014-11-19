@@ -1617,7 +1617,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             if (tx_channel_nums.size() > 0) {
                 //create a transmit streamer
                 size_t bytes_per_tx_sample = uhd::convert::get_bytes_per_item(tx_cpu);
-                std::cout << boost::format(HEADER_TX"CPU bytes per TX sample: %d for '%s'") % bytes_per_tx_sample % rx_cpu << std::endl;
+                std::cout << boost::format(HEADER_TX"CPU bytes per TX sample: %d for '%s'") % bytes_per_tx_sample % tx_cpu << std::endl;
                 size_t wire_bytes_per_tx_sample = uhd::convert::get_bytes_per_item(tx_otw);
                 std::cout << boost::format(HEADER_TX"OTW bytes per TX sample: %d for '%s'") % wire_bytes_per_tx_sample % tx_otw << std::endl;
 
