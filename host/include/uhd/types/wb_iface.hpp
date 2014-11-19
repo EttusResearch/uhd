@@ -1,5 +1,6 @@
 //
 // Copyright 2011-2013 Ettus Research LLC
+// Copyright 2014 Per Vices Corporation
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,6 +76,18 @@ public:
      */
     virtual boost::uint16_t peek16(const wb_addr_type addr);
 
+    /*!
+     * Send/write a data packet (string), null terminated
+     * \param data the data packet
+     * \return the 16bit data
+     */
+    virtual void poke_str(const std::string data);
+
+    /*!
+     * Recieve/read a data packet (string), null terminated
+     * \return the string
+     */
+    virtual std::string peek_str(void);
 };
 
 } //namespace uhd

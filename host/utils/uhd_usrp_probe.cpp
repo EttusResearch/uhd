@@ -1,5 +1,6 @@
 //
 // Copyright 2010-2011 Ettus Research LLC
+// Copyright 2014 Per Vices Corporation
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -210,7 +211,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return EXIT_SUCCESS;
     }
 
-    device::sptr dev = device::make(vm["args"].as<std::string>(), device::USRP);
+    // This try catch statements ensures that the program is backwards compatible with USRP devices.
+    // If there are USRP devices on the same network, it will detect them first.
+    device::sptr dev;
+    try {
+        dev = device::make(vm["args"].as<std::string>(), device::USRP);
+    } catch (...) {
+        dev = device::make(vm["args"].as<std::string>(), device::CRIMSON);
+    }
+
     property_tree::sptr tree = dev->get_tree();
 
     if (vm.count("string")){

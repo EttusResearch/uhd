@@ -1,5 +1,6 @@
 //
 // Copyright 2010-2011,2014 Ettus Research LLC
+// Copyright 2014 Per Vices Corporation
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,7 +47,8 @@ public:
     enum device_filter_t {
         ANY,
         USRP,
-        CLOCK
+        CLOCK,
+	CRIMSON
     };
     virtual ~device(void) = 0;
 

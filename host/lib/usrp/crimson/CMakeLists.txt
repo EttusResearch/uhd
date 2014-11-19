@@ -1,5 +1,4 @@
 #
-# Copyright 2010-2013 Ettus Research LLC
 # Copyright 2014 Per Vices Corporation
 #
 # This program is free software: you can redistribute it and/or modify
@@ -19,27 +18,15 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-LIBUHD_APPEND_SOURCES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_base.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_eeprom.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_id.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_manager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/gps_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/mboard_eeprom.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/multi_usrp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/multi_crimson.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/subdev_spec.cpp
-)
 
-INCLUDE_SUBDIRECTORY(cores)
-INCLUDE_SUBDIRECTORY(dboard)
-INCLUDE_SUBDIRECTORY(common)
-INCLUDE_SUBDIRECTORY(usrp1)
-INCLUDE_SUBDIRECTORY(usrp2)
-INCLUDE_SUBDIRECTORY(b100)
-INCLUDE_SUBDIRECTORY(e100)
-INCLUDE_SUBDIRECTORY(e300)
-INCLUDE_SUBDIRECTORY(x300)
-INCLUDE_SUBDIRECTORY(b200)
-INCLUDE_SUBDIRECTORY(crimson)
+########################################################################
+# Conditionally configure the CRIMSON support
+########################################################################
+LIBUHD_REGISTER_COMPONENT("CRIMSON" ENABLE_CRIMSON ON "ENABLE_LIBUHD" OFF)
+
+IF(ENABLE_CRIMSON)
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/crimson_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/crimson_iface.cpp
+    )
+ENDIF(ENABLE_CRIMSON)

@@ -1,5 +1,6 @@
 //
 // Copyright 2013 Ettus Research LLC
+// Copyright 2014 Per Vices Corporation
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,4 +54,14 @@ void wb_iface::poke16(const wb_iface::wb_addr_type, const boost::uint16_t)
 boost::uint16_t wb_iface::peek16(const wb_iface::wb_addr_type)
 {
     throw uhd::not_implemented_error("peek16 not implemented");
+}
+
+void wb_iface::poke_str(std::string data)
+{
+    throw uhd::not_implemented_error("poke_str not implemented");
+}
+
+std::string wb_iface::peek_str(void)
+{
+    throw uhd::not_implemented_error("peek_str not implemented");
 }

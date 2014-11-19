@@ -1,0 +1,50 @@
+//
+// Copyright 2014 Per Vices Corporation
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+#include <uhd/types/wb_iface.hpp>
+#include "crimson_fw_common.h"
+#include <uhd/transport/udp_simple.hpp>
+#include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/msg.hpp>
+#include <uhd/exception.hpp>
+#include <boost/format.hpp>
+#include <boost/thread/mutex.hpp>
+#include <uhd/transport/nirio/status.h>
+#include <uhd/transport/nirio/niriok_proxy.h>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/thread.hpp>
+
+//-----------------------------------------------------
+// Ethernet impl
+//-----------------------------------------------------
+class crimson_ctrl_iface_enet : public uhd::wb_iface
+{
+public:
+    typedef boost::shared_ptr<crimson_ctrl_iface_enet> sptr;
+    crimson_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp);
+
+    void flush(void);
+    void send(uint8_t* data, uint8_t data_len, uint8_t max_data_len);
+
+private:
+    uhd::transport::udp_simple::sptr udp;
+    boost::mutex reg_access;
+
+    void __flush(void);
+};
+
+uhd::wb_iface::sptr crimson_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp);

@@ -1,0 +1,65 @@
+//
+// Copyright 2014 Per Vices Corporation
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
+#include <uhd/types/wb_iface.hpp>
+#include "crimson_fw_common.h"
+#include <uhd/transport/udp_simple.hpp>
+#include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/msg.hpp>
+#include <uhd/exception.hpp>
+#include <boost/format.hpp>
+#include <boost/thread/mutex.hpp>
+#include <uhd/transport/nirio/status.h>
+#include <uhd/transport/nirio/niriok_proxy.h>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/thread.hpp>
+#include "crimson_fw_ctrl.hpp"
+
+using namespace uhd;
+using namespace uhd::niusrprio;
+
+crimson_ctrl_iface_enet::crimson_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp):
+    udp(udp){}
+
+void crimson_ctrl_iface_enet::flush(void) {
+    boost::mutex::scoped_lock lock(reg_access);
+    __flush();
+}
+
+void crimson_ctrl_iface_enet::send(uint8_t* data, uint8_t data_len, uint8_t max_data_len) {
+    //send request
+    __flush();
+    udp->send(boost::asio::buffer(data, data_len));
+
+    //recv reply
+    const size_t nbytes = udp->recv(boost::asio::buffer(data, max_data_len), 1.0);
+    if (nbytes == 0) throw uhd::io_error("crimson send - reply timed out");
+
+    //sanity checks
+    // check if the first parameter is "ERROR" or "SUCCESS"
+    return;	
+}
+
+void crimson_ctrl_iface_enet::__flush(void) {
+    char buff[CRIMSON_FW_COMMS_MTU] = {};
+    while (udp->recv(boost::asio::buffer(buff), 0.0)){} //flush
+}
+
+wb_iface::sptr crimson_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp)
+{
+    return wb_iface::sptr(new crimson_ctrl_iface_enet(udp));
+}
