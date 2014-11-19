@@ -2,7 +2,7 @@
 
 \tableofcontents
 
-\section e3x0_feature_list Comparative features list - E300/E310
+\section e3x0_feature_list Comparative features list - E310
 
 - Hardware Capabilities:
 	  Integrated RF frontend (70 MHz - 6 GHz)
@@ -16,12 +16,8 @@
 	- USB UART
 	- Zynq-7020 FPGA
 - FPGA Capabilities:
-        - E310 Only:
-	    - 2 RX DDC chains in FPGA
-	    - 2 TX DUC chain in FPGA
-        - E300 Only:
-	    - 1 RX DDC chains in FPGA
-	    - 1 TX DUC chain in FPGA
+        - 2 RX DDC chains in FPGA
+        - 2 TX DUC chain in FPGA
 	- Timed commands in FPGA
 	- Timed sampling in FPGA
 	- 16-bit fixed point sample mode (sc16)
@@ -29,7 +25,7 @@
 
 \section e3x0_getting_started Getting started
 
-This will run you through the first steps relevant to get your USRP E300/310
+This will run you through the first steps relevant to get your USRP E310
 up and running.
 
 \subsection e3x0_first_boot First boot
@@ -52,7 +48,7 @@ a terminal emulator such as screen can be used:
     $ sudo screen /dev/ttyUSB0 115200
 
 The exact device node /dev/ttyUSB0 depends on your operating system's driver and other USB devices that might be already connected.
-It can be usually found by perusing the output of dmesg or journalctl, after connecting the USRP E300/E310 device to your host computer.
+It can be usually found by perusing the output of dmesg or journalctl, after connecting the USRP E310 device to your host computer.
 
 An example of a dmesg output for the serial to usb converter:
 
@@ -74,7 +70,7 @@ You should be presented with a shell similar to the following
 
 \subsubsection e3x0_first_boot_ssh SSH connection
 
-The USRP E300/E310 device relies on the DHCP protocol to automatically obtain an IP address.
+The USRP E310 device relies on the DHCP protocol to automatically obtain an IP address.
 In case your network setup does not include a DHCP server, refer to the section \ref e3x0_first_boot_serial or configure a DHCP server to hand out IP addresses on your network.
 
 After the device obtained an IP address you can log in from a Linux or OSX machine by typing:
@@ -92,7 +88,7 @@ You should be presented with a shell similar to the following
 \section e3x0_sdk Using the SDK
 
 In order to facilitate software development for the integrated ARM Cortex-A9 processor, a <a href="http://www.yoctoproject.org">Yocto Project</a> based SDK is provided in the download section of our website.
-This SDK contains a cross-compiler, a cross-linker as well as a cross-debugger and can be used to develop your user space applications for the Ettus USRP-E300/E310 devices.
+This SDK contains a cross-compiler, a cross-linker as well as a cross-debugger and can be used to develop your user space applications for the Ettus USRP-E310 devices.
 
 
 \subsection e3x0_sdk_installation Installation
@@ -123,7 +119,7 @@ in order to build software for your device open a new shell and type:
 
     $ . <yoursdkinstallpath>/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
 
-This will modifiy the PATH, CC, CXX etc, environment variables and allow you to compile software for your USRP E300/E310 device.
+This will modifiy the PATH, CC, CXX etc, environment variables and allow you to compile software for your USRP E310 device.
 To verify all went well you can try:
 
     $ $CC -dumpmachine
@@ -220,7 +216,7 @@ again by:
 
 \subsection e3x0_load_fpga_imgs_uhd Using UHD to load FPGA images
 
-UHD software will automatically select the USRP E300/E310 images from the
+UHD software will automatically select the USRP E310 images from the
 installed images package. The image selection can be overridden with the
 `fpga` device address parameter.
 
@@ -252,7 +248,7 @@ You may need to change the USRP's IP address for several reasons:
 
 \subsection e3x0_hw_fpanel Front Panel
 
-\image html e3x0_fp_overlay.png "USRP E300/E310 Front panel"
+\image html e3x0_fp_overlay.png "USRP E310 Front panel"
 
 - **RF A Group**
   + **TX/RX LED**: Indicates that data is streaming on the TX/RX channel on frontend side A
@@ -271,7 +267,7 @@ You may need to change the USRP's IP address for several reasons:
 
 \subsection e3x0_hw_rear_panel Rear Panel
 
-\image html e3x0_rp_overlay.png "USRP E300/E310 Rear Panel"
+\image html e3x0_rp_overlay.png "USRP E310 Rear Panel"
 
 - **PWR**: Locking connector for the USRP-E Series power supply
 - **1G ETH**: RJ45 port for Ethernet interfaces
@@ -501,11 +497,11 @@ by pinging the USRP and making sure the LEDs start to blink.
 
 \subsection e3x0_apps_gsm GSM Base Station
 
-OpenBTS allows the USRP E300/E310 to serve as a GSM base station capable of providing voice and messaging services to standard GSM handsets. General information on the OpenBTS project can be found at the official webpage.
+OpenBTS allows the USRP E310 to serve as a GSM base station capable of providing voice and messaging services to standard GSM handsets. General information on the OpenBTS project can be found at the official webpage.
 
 http://www.openbts.org
 
-Special instructions to install OpenBTS on the E300/E310 can be found on the OpenBTS wiki.
+Special instructions to install OpenBTS on the E310 can be found on the OpenBTS wiki.
 
 http://openbts.org/w/index.php/E3x0
 
