@@ -460,6 +460,10 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         both_xports_t xport = make_transport(stream_address, RX_DATA, rx_hints);
         UHD_MSG(status) << std::hex << "data_sid = " << xport.send_sid << std::dec << " actual recv_buff_size = " << xport.recv_buff_size << std::endl;
 
+        // Configure the block (this may change args)
+        blk_ctrl->setup_rx_streamer(args);
+        blk_ctrl->set_destination(xport.send_sid.get_src(), block_port);
+
         // To calculate the max number of samples per packet, we assume the maximum header length
         // to avoid fragmentation should the entire header be used.
         const size_t bpp = xport.recv->get_recv_frame_size() - stream_options.rx_max_len_hdr; // bytes per packet
@@ -489,10 +493,6 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         id.output_format = args.cpu_format;
         id.num_outputs = 1;
         my_streamer->set_converter(id);
-
-        // Configure the block
-        blk_ctrl->setup_rx_streamer(args);
-        blk_ctrl->set_destination(xport.send_sid.get_src(), block_port);
 
         // Add terminator. Its lifetime is coupled to the streamer.
         rfnoc::sink_node_ctrl::sptr recv_terminator = rfnoc::terminator_recv::make();
@@ -612,6 +612,9 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         both_xports_t xport = make_transport(stream_address, TX_DATA, tx_hints);
         UHD_MSG(status) << std::hex << "data_sid = " << xport.send_sid << std::dec << std::endl;
 
+        // Configure the block (this may change args)
+        blk_ctrl->setup_tx_streamer(args);
+
         // To calculate the max number of samples per packet, we assume the maximum header length
         // to avoid fragmentation should the entire header be used.
         const size_t bpp = xport.send->get_send_frame_size() - stream_options.tx_max_len_hdr;
@@ -640,9 +643,6 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         id.output_format = args.otw_format + "_item32_" + conv_endianness;
         id.num_outputs = 1;
         my_streamer->set_converter(id);
-
-        // Configure the block
-        blk_ctrl->setup_tx_streamer(args);
 
         // Add terminator. Its lifetime is coupled to the streamer.
         rfnoc::source_node_ctrl::sptr send_terminator = rfnoc::terminator_send::make();
