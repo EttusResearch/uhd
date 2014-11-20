@@ -1689,11 +1689,16 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, wb_iface::sptr iface)
     if (compat_major != X300_FPGA_COMPAT_MAJOR)
     {
         throw uhd::runtime_error(str(boost::format(
-            "Expected FPGA compatibility number 0x%x, but got 0x%x.%x:\n"
-            "The FPGA build is not compatible with the host code build.\n"
-            "%s"
-        ) % int(X300_FPGA_COMPAT_MAJOR) % compat_major % compat_minor
-          % print_images_error()));
+            "Expected FPGA compatibility number %d, but got %d:\n"
+            "The FPGA image on your device is not compatible with this host code build.\n"
+            "Download the appropriate FPGA images for this version of UHD.\n"
+            "%s\n\n"
+            "Then burn a new image to the on-board flash storage of your\n"
+            "USRP X3xx device using the burner utility. \n\n"
+            "For more information, refer to the UHD manual:\n\n"
+            " http://files.ettus.com/manual/page_usrp_x3x0.html#x3x0_flash"
+        )   % int(X300_FPGA_COMPAT_MAJOR) % compat_major
+            % print_images_error()));
     }
     _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));

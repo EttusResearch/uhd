@@ -364,6 +364,8 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
  **********************************************************************/
 rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
 {
+    boost::mutex::scoped_lock lock(_transport_setup_mutex);
+
     stream_args_t args = args_;
 
     //setup defaults for unspecified values
@@ -472,6 +474,8 @@ void b200_impl::handle_overflow(const size_t radio_index)
  **********************************************************************/
 tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t &args_)
 {
+    boost::mutex::scoped_lock lock(_transport_setup_mutex);
+
     stream_args_t args = args_;
 
     //setup defaults for unspecified values

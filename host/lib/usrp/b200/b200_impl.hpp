@@ -120,6 +120,11 @@ private:
     uhd::transport::zero_copy_if::sptr _ctrl_transport;
     uhd::usrp::recv_packet_demuxer_3000::sptr _demux;
 
+    boost::weak_ptr<uhd::rx_streamer> _rx_streamer;
+    boost::weak_ptr<uhd::tx_streamer> _tx_streamer;
+
+    boost::mutex _transport_setup_mutex;
+
     //async ctrl + msgs
     uhd::msg_task::sptr _async_task;
     typedef uhd::transport::bounded_buffer<uhd::async_metadata_t> async_md_type;
