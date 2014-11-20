@@ -33,7 +33,7 @@
 
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>

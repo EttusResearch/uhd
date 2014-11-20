@@ -21,7 +21,7 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
@@ -132,7 +132,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         e100_fpga_image = find_image_path(device_addr.get("fpga", default_fpga_file_name));
     }
     catch(...){
-        UHD_MSG(error) << boost::format("Could not find FPGA image. %s\n") % print_images_error();
+        UHD_MSG(error) << boost::format("Could not find FPGA image. %s\n") % print_utility_error("uhd_images_downloader.py");
         throw;
     }
     e100_load_fpga(e100_fpga_image);

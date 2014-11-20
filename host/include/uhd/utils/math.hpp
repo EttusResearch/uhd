@@ -18,10 +18,10 @@
 #ifndef INCLUDED_UHD_UTILS_MATH_HPP
 #define INCLUDED_UHD_UTILS_MATH_HPP
 
+#include <cmath>
 #include <uhd/config.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/numeric/conversion/bounds.hpp>
-
 
 namespace uhd {
 
@@ -236,6 +236,16 @@ namespace fp_compare {
         return(fp_compare::fp_compare_delta<double>(lhs, FREQ_COMPARISON_DELTA_HZ)
                 == fp_compare::fp_compare_delta<double>(rhs, FREQ_COMPARISON_DELTA_HZ));
     }
+
+    //! Portable log2()
+    template <typename float_t> UHD_INLINE
+    float_t log2(float_t x)
+    {
+        // C++11 defines std::log2(), when that's universally supported
+        // we can switch over.
+        return std::log(x) / std::log(2);
+    }
+
 
 } // namespace math
 } // namespace uhd

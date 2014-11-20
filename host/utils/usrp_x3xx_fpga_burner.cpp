@@ -45,7 +45,7 @@
 #include <uhd/device.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/safe_call.hpp>
 

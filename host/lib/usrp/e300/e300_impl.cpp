@@ -28,7 +28,7 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
@@ -398,7 +398,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
             "%s"
         ) % fpga::COMPAT_MAJOR
           % _get_version(FPGA_MAJOR) % _get_version(FPGA_MINOR)
-          % print_images_error()));
+          % print_utility_error("uhd_images_downloader.py")));
     }
 
     ////////////////////////////////////////////////////////////////////

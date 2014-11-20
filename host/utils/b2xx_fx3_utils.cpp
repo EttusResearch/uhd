@@ -39,7 +39,7 @@
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;

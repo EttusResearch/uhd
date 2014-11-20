@@ -38,7 +38,7 @@
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/safe_call.hpp>
 
