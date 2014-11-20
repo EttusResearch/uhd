@@ -349,18 +349,18 @@ UHD_STATIC_BLOCK(register_crimson_device)
  * Structors
  **********************************************************************/
 // Macro to create the tree, all properties created with this are R/W properties
-#define TREE_CREATE(PATH, SET, GET, TYPE, HANDLER)					\
-	do { _tree->create<TYPE> (PATH)							\
-    		.set( get ## HANDLER (GET))						\
-		.subscribe(boost::bind(&crimson_impl::set ## HANDLER, this, (SET), _1))	\
-		.publish  (boost::bind(&crimson_impl::get ## HANDLER, this, (GET)    ));\
+#define TREE_CREATE(PATH, CATEGORY, PROP, TYPE, HANDLER)							\
+	do { _tree->create<TYPE> (PATH)										\
+    		.set( get ## HANDLER (CATEGORY ",get," PROP))							\
+		.subscribe(boost::bind(&crimson_impl::set ## HANDLER, this, (CATEGORY ",set," PROP), _1))	\
+		.publish  (boost::bind(&crimson_impl::get ## HANDLER, this, (CATEGORY ",get," PROP)    ));	\
 	} while(0)
 
 // Macro to create the tree, all properties created with this are RO properties
-#define TREE_CREATE_READ(PATH, SET, GET, TYPE, HANDLER)					\
-	do { _tree->create<TYPE> (PATH)							\
-    		.set( get ## HANDLER (GET))						\
-		.publish  (boost::bind(&crimson_impl::get ## HANDLER, this, (GET)    ));\
+#define TREE_CREATE_READ(PATH, CATEGORY, PROP, TYPE, HANDLER)							\
+	do { _tree->create<TYPE> (PATH)										\
+    		.set( get ## HANDLER (CATEGORY ",get," PROP))							\
+		.publish  (boost::bind(&crimson_impl::get ## HANDLER, this, (CATEGORY ",get," PROP)    ));	\
 	} while(0)
 
 crimson_impl::crimson_impl(const device_addr_t &dev_addr)
@@ -390,56 +390,56 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
     const fs_path tx_path   = mb_path / "tx";
     const fs_path rx_path   = mb_path / "rx";
 
-    TREE_CREATE(mb_path / "id",         "product,set,id",         "product,get,id",         std::string, _string);
-    TREE_CREATE(mb_path / "name",       "product,set,name",       "product,get,name",       std::string, _string);
-    TREE_CREATE(mb_path / "serial",     "product,set,serial",     "product,get,serial",     std::string, _string);
-    TREE_CREATE(mb_path / "fw_version", "product,set,fw_version", "product,get,fw_version", std::string, _string);
-    TREE_CREATE(mb_path / "hw_version", "product,set,hw_version", "product,get,hw_version", std::string, _string);
-    TREE_CREATE(mb_path / "sw_version", "product,set,sw_version", "product,get,sw_version", std::string, _string);
-    TREE_CREATE(mb_path / "vendor",     "product,set,vendor",     "product,get,vendor",     std::string, _string);
+    TREE_CREATE(mb_path / "id",         "product", "id",         std::string, _string);
+    TREE_CREATE(mb_path / "name",       "product", "name",       std::string, _string);
+    TREE_CREATE(mb_path / "serial",     "product", "serial",     std::string, _string);
+    TREE_CREATE(mb_path / "fw_version", "product", "fw_version", std::string, _string);
+    TREE_CREATE(mb_path / "hw_version", "product", "hw_version", std::string, _string);
+    TREE_CREATE(mb_path / "sw_version", "product", "sw_version", std::string, _string);
+    TREE_CREATE(mb_path / "vendor",     "product", "vendor",     std::string, _string);
 
-    TREE_CREATE(time_path / "id",         "time,set,id",         "time,get,id",         std::string, _string);
-    TREE_CREATE(time_path / "name",       "time,set,name",       "time,get,name",       std::string, _string);
-    TREE_CREATE(time_path / "serial",     "time,set,serial",     "time,get,serial",     std::string, _string);
-    TREE_CREATE(time_path / "fw_version", "time,set,fw_version", "time,get,fw_version", std::string, _string);
-    TREE_CREATE(time_path / "hw_version", "time,set,hw_version", "time,get,hw_version", std::string, _string);
-    TREE_CREATE(time_path / "sw_version", "time,set,sw_version", "time,get,sw_version", std::string, _string);
+    TREE_CREATE(time_path / "id",         "time", "id",         std::string, _string);
+    TREE_CREATE(time_path / "name",       "time", "name",       std::string, _string);
+    TREE_CREATE(time_path / "serial",     "time", "serial",     std::string, _string);
+    TREE_CREATE(time_path / "fw_version", "time", "fw_version", std::string, _string);
+    TREE_CREATE(time_path / "hw_version", "time", "hw_version", std::string, _string);
+    TREE_CREATE(time_path / "sw_version", "time", "sw_version", std::string, _string);
 
-    TREE_CREATE(rx_path / "id",         "rx,set,id",         "rx,get,id",         std::string, _string);
-    TREE_CREATE(rx_path / "name",       "rx,set,name",       "rx,get,name",       std::string, _string);
-    TREE_CREATE(rx_path / "serial",     "rx,set,serial",     "rx,get,serial",     std::string, _string);
-    TREE_CREATE(rx_path / "fw_version", "rx,set,fw_version", "rx,get,fw_version", std::string, _string);
-    TREE_CREATE(rx_path / "hw_version", "rx,set,hw_version", "rx,get,hw_version", std::string, _string);
-    TREE_CREATE(rx_path / "sw_version", "rx,set,sw_version", "rx,get,sw_version", std::string, _string);
-    TREE_CREATE(rx_path / "spec",       "rx,set,spec",       "rx,get,spec",       std::string, _string);
+    TREE_CREATE(rx_path / "id",         "rx", "id",         std::string, _string);
+    TREE_CREATE(rx_path / "name",       "rx", "name",       std::string, _string);
+    TREE_CREATE(rx_path / "serial",     "rx", "serial",     std::string, _string);
+    TREE_CREATE(rx_path / "fw_version", "rx", "fw_version", std::string, _string);
+    TREE_CREATE(rx_path / "hw_version", "rx", "hw_version", std::string, _string);
+    TREE_CREATE(rx_path / "sw_version", "rx", "sw_version", std::string, _string);
+    TREE_CREATE(rx_path / "spec",       "rx", "spec",       std::string, _string);
 
-    TREE_CREATE(tx_path / "id",         "tx,set,id",         "tx,get,id",         std::string, _string);
-    TREE_CREATE(tx_path / "name",       "tx,set,name",       "tx,get,name",       std::string, _string);
-    TREE_CREATE(tx_path / "serial",     "tx,set,serial",     "tx,get,serial",     std::string, _string);
-    TREE_CREATE(tx_path / "fw_version", "tx,set,fw_version", "tx,get,fw_version", std::string, _string);
-    TREE_CREATE(tx_path / "hw_version", "tx,set,hw_version", "tx,get,hw_version", std::string, _string);
-    TREE_CREATE(tx_path / "sw_version", "tx,set,sw_version", "tx,get,sw_version", std::string, _string);
-    TREE_CREATE(tx_path / "spec",       "tx,set,spec",       "tx,get,spec",       std::string, _string);
+    TREE_CREATE(tx_path / "id",         "tx", "id",         std::string, _string);
+    TREE_CREATE(tx_path / "name",       "tx", "name",       std::string, _string);
+    TREE_CREATE(tx_path / "serial",     "tx", "serial",     std::string, _string);
+    TREE_CREATE(tx_path / "fw_version", "tx", "fw_version", std::string, _string);
+    TREE_CREATE(tx_path / "hw_version", "tx", "hw_version", std::string, _string);
+    TREE_CREATE(tx_path / "sw_version", "tx", "sw_version", std::string, _string);
+    TREE_CREATE(tx_path / "spec",       "tx", "spec",       std::string, _string);
 
     // Link max rate refers to ethernet link rate
-    TREE_CREATE(mb_path / "link_max_rate","product,set,link_max_rate", "product,get,link_max_rate", double, _double);
+    TREE_CREATE(mb_path / "link_max_rate","product", "link_max_rate", double, _double);
 
     // This is the master clock rate
-    TREE_CREATE(mb_path / "tick_rate", 	"product,set,tick_rate",     "product,get,tick_rate",     double, _double);
+    TREE_CREATE(mb_path / "tick_rate", "product", "tick_rate",     double, _double);
 
-    TREE_CREATE(time_path / "cmd", "time,set,cmd", "time,get,cmd", time_spec_t, _time_spec);
-    TREE_CREATE(time_path / "now", "time,set,now", "time,get,now", time_spec_t, _time_spec);
-    TREE_CREATE(time_path / "pps", "time,set,pps", "time,get,pps", time_spec_t, _time_spec);
+    TREE_CREATE(time_path / "cmd", "time", "cmd", time_spec_t, _time_spec);
+    TREE_CREATE(time_path / "now", "time", "now", time_spec_t, _time_spec);
+    TREE_CREATE(time_path / "pps", "time", "pps", time_spec_t, _time_spec);
 
-    TREE_CREATE(mb_path / "eeprom", "product,set,eeprom", "product,get,eeprom", mboard_eeprom_t, _mboard_eeprom);
+    TREE_CREATE(mb_path / "eeprom", "product", "eeprom", mboard_eeprom_t, _mboard_eeprom);
 
     static const std::vector<std::string> time_sources = boost::assign::list_of("internal")("external");
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
 
 
     // This property chooses internal or external time source
-    TREE_CREATE(mb_path / "time_source" / "value",  "time,set,time_src_val", "time,get,time_src_val", std::string, _string);
-    TREE_CREATE(mb_path / "time_source" / "output", "time,set,time_src_out", "time,get,time_src_out", bool, _bool);
+    TREE_CREATE(mb_path / "time_source" / "value",  "time", "time_src_val", std::string, _string);
+    TREE_CREATE(mb_path / "time_source" / "output", "time", "time_src_out", bool, _bool);
 
     static const std::vector<double> external_freq_options = boost::assign::list_of(10e6);
     _tree->create<std::vector<double> >(mb_path / "clock_source" / "external" / "freq" / "options");
@@ -447,12 +447,12 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_source_options);
 
     // This property chooses internal or external clock source
-    TREE_CREATE(mb_path / "clock_source" / "value",              "time,set,clk_src_val",    "time,get,clk_src_val",    std::string, _string);
-    TREE_CREATE(mb_path / "clock_source" / "external",           "time,set,clk_src_ext",    "time,get,clk_src_ext",    std::string, _string);
-    TREE_CREATE(mb_path / "clock_source" / "external" / "value", "time,set,clk_src_ext_val","time,get,clk_src_ext_val",double, _double);
-    TREE_CREATE(mb_path / "clock_source" / "output",             "time,set,clk_src_out",    "time,get,clk_src_out",    bool, _bool);
+    TREE_CREATE(mb_path / "clock_source" / "value",              "time", "clk_src_val",    std::string, _string);
+    TREE_CREATE(mb_path / "clock_source" / "external",           "time", "clk_src_ext",    std::string, _string);
+    TREE_CREATE(mb_path / "clock_source" / "external" / "value", "time", "clk_src_ext_val",double, _double);
+    TREE_CREATE(mb_path / "clock_source" / "output",             "time", "clk_src_out",    bool, _bool);
 
-    TREE_CREATE(mb_path / "sensors" / "ref_locked", "product,set,sensors", "product,get,sensors", sensor_value_t, _sensor_value);
+    TREE_CREATE(mb_path / "sensors" / "ref_locked", "product", "sensors", sensor_value_t, _sensor_value);
 
     // loop for all RF chains
     for (int chain = 0; chain < 4; chain ++) {
@@ -460,36 +460,36 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	std::string chan = "Channel_" + num;
 
 	// Actual frequency values
-	TREE_CREATE_READ(rx_path / chan / "freq" / "value", "rx,set,freq_value_" + num, "rx,get,freq_value_" + num, double, _double);
-	TREE_CREATE_READ(tx_path / chan / "freq" / "value", "tx,set,freq_value_" + num, "tx,get,freq_value_" + num, double, _double);
+	TREE_CREATE_READ(rx_path / chan / "freq" / "value", "rx", "freq_value_" + num, double, _double);
+	TREE_CREATE_READ(tx_path / chan / "freq" / "value", "tx", "freq_value_" + num, double, _double);
 
 	// Codecs, phony properties for Crimson
 	const fs_path rx_codec_path = mb_path / "rx_codecs" / num;
 	const fs_path tx_codec_path = mb_path / "tx_codecs" / num;
-	TREE_CREATE(rx_codec_path / "gains", "rx,set,codec_gains_" + num, "rx,get,codec_gains_" + num, int, _int);
-	TREE_CREATE(rx_codec_path / "name",  "rx,set,codec_name_"  + num, "rx,get,codec_name_"  + num, std::string, _string);
+	TREE_CREATE(rx_codec_path / "gains", "rx", "codec_gains_" + num, int, _int);
+	TREE_CREATE(rx_codec_path / "name",  "rx", "codec_name_"  + num, std::string, _string);
 
-	TREE_CREATE(tx_codec_path / "gains", "tx,set,codec_gains_" + num, "tx,get,codec_gains_" + num, int, _int);
-	TREE_CREATE(tx_codec_path / "name",  "tx,set,codec_name_"  + num, "tx,get,codec_name_"  + num,  std::string, _string);
+	TREE_CREATE(tx_codec_path / "gains", "tx", "codec_gains_" + num, int, _int);
+	TREE_CREATE(tx_codec_path / "name",  "tx", "codec_name_"  + num,  std::string, _string);
 
 	// Duaghter Boards' Frontend Settings
 	const fs_path rx_fe_path = mb_path / "dboards" / num / "rx_frontends" / chan;
 	const fs_path tx_fe_path = mb_path / "dboards" / num / "tx_frontends" / chan;
-	TREE_CREATE(rx_fe_path / "name",  "rx,set,name_"    + num, "rx,get,name_"    + num, std::string, _string);
-	TREE_CREATE(tx_fe_path / "name",  "tx,set,name_"    + num, "tx,get,name_"    + num, std::string, _string);
+	TREE_CREATE(rx_fe_path / "name",  "rx", "name_" + num, std::string, _string);
+	TREE_CREATE(tx_fe_path / "name",  "tx", "name_" + num, std::string, _string);
 
-	TREE_CREATE(rx_fe_path / "gains" / "ADRF" / "range",  "rx,set,fe_gain_range_"    + num, "rx,get,fe_gain_range_"    + num, meta_range_t, _meta_range);
-	TREE_CREATE(tx_fe_path / "gains" / "RFSA" / "range",  "tx,set,fe_gain_range_"    + num, "tx,get,fe_gain_range_"    + num, meta_range_t, _meta_range);
+	TREE_CREATE(rx_fe_path / "gains" / "ADRF" / "range",  "rx", "fe_gain_range_" + num, meta_range_t, _meta_range);
+	TREE_CREATE(tx_fe_path / "gains" / "RFSA" / "range",  "tx", "fe_gain_range_" + num, meta_range_t, _meta_range);
 
-	TREE_CREATE(rx_fe_path / "freq",  "rx,set,fe_freq_range_"    + num, "rx,get,fe_freq_range_"    + num, meta_range_t, _meta_range);
-	TREE_CREATE(tx_fe_path / "freq",  "tx,set,fe_freq_range_"    + num, "tx,get,fe_freq_range_"    + num, meta_range_t, _meta_range);
+	TREE_CREATE(rx_fe_path / "freq",  "rx", "fe_freq_range_" + num, meta_range_t, _meta_range);
+	TREE_CREATE(tx_fe_path / "freq",  "tx", "fe_freq_range_" + num, meta_range_t, _meta_range);
 
-	TREE_CREATE(rx_fe_path / "dc_offset" / "value",  "rx,set,fe_dc_off_val_"    + num, "rx,get,fe_dc_off_val_"    + num, std::complex<double>, _complex_double);
-	TREE_CREATE(rx_fe_path / "dc_offset" / "enable", "rx,set,fe_dc_off_enable_" + num, "rx,get,fe_dc_off_enable_" + num, bool, _bool);
-	TREE_CREATE(rx_fe_path / "iq_balance" / "value", "rx,set,fe_dc_off_bal_"    + num, "rx,get,fe_dc_off_bal_"    + num, std::complex<double>, _complex_double);
+	TREE_CREATE(rx_fe_path / "dc_offset" / "value",  "rx", "fe_dc_off_val_"    + num, std::complex<double>, _complex_double);
+	TREE_CREATE(rx_fe_path / "dc_offset" / "enable", "rx", "fe_dc_off_enable_" + num, bool, _bool);
+	TREE_CREATE(rx_fe_path / "iq_balance" / "value", "rx", "fe_dc_off_bal_"    + num, std::complex<double>, _complex_double);
 
-	TREE_CREATE(tx_fe_path / "dc_offset" / "value",  "tx,set,fe_dc_off_val_" + num, "tx,get,fe_dc_off_val_" + num, std::complex<double>, _complex_double);
-	TREE_CREATE(tx_fe_path / "iq_balance" / "value", "tx,set,fe_dc_off_bal_" + num, "tx,get,fe_dc_off_bal_" + num, std::complex<double>, _complex_double);
+	TREE_CREATE(tx_fe_path / "dc_offset" / "value",  "tx", "fe_dc_off_val_" + num, std::complex<double>, _complex_double);
+	TREE_CREATE(tx_fe_path / "iq_balance" / "value", "tx", "fe_dc_off_bal_" + num, std::complex<double>, _complex_double);
 
         static const std::vector<std::string> antenna_options = boost::assign::list_of("SMA")("None");
         _tree->create<std::vector<std::string> >(rx_fe_path / "antenna" / "options").set(antenna_options);
@@ -499,45 +499,45 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
         _tree->create<std::vector<std::string> >(rx_fe_path / "sensors").set(sensor_options);
         _tree->create<std::vector<std::string> >(tx_fe_path / "sensors").set(sensor_options);
 
-	TREE_CREATE(rx_fe_path / "connection",  "rx,set,connection", "rx,get,connection", std::string, _string);
-	TREE_CREATE(tx_fe_path / "connection",  "tx,set,connection", "tx,get,connection", std::string, _string);
+	TREE_CREATE(rx_fe_path / "connection",  "rx", "connection", std::string, _string);
+	TREE_CREATE(tx_fe_path / "connection",  "tx", "connection", std::string, _string);
 
-	TREE_CREATE(rx_fe_path / "use_lo_offset",  "rx,set,lo_off_" + num, "rx,get,lo_off_" + num, bool, _bool);
-	TREE_CREATE(tx_fe_path / "use_lo_offset",  "tx,set,lo_off_" + num, "tx,get,lo_off_" + num, bool, _bool);
+	TREE_CREATE(rx_fe_path / "use_lo_offset",  "rx", "lo_off_" + num, bool, _bool);
+	TREE_CREATE(tx_fe_path / "use_lo_offset",  "tx", "lo_off_" + num, bool, _bool);
 
-	TREE_CREATE(rx_fe_path / "freq" / "value", "rx,set,fe_freq_val_"  + num, "rx,get,fe_freq_val_"  + num, double, _double);
-	TREE_CREATE(rx_fe_path / "freq" / "range", "rx,set,fe_freq_range_"+ num, "rx,get,fe_freq_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(rx_fe_path / "gain" / "value", "rx,set,fe_gain_val_"  + num, "rx,get,fe_gain_val_"  + num, double, _double);
-	TREE_CREATE(rx_fe_path / "gain" / "range", "rx,set,fe_gain_range_"+ num, "rx,get,fe_gain_range_"+ num, meta_range_t, _meta_range);
+	TREE_CREATE(rx_fe_path / "freq" / "value", "rx", "fe_freq_val_"  + num, double, _double);
+	TREE_CREATE(rx_fe_path / "freq" / "range", "rx", "fe_freq_range_"+ num, meta_range_t, _meta_range);
+	TREE_CREATE(rx_fe_path / "gain" / "value", "rx", "fe_gain_val_"  + num, double, _double);
+	TREE_CREATE(rx_fe_path / "gain" / "range", "rx", "fe_gain_range_"+ num, meta_range_t, _meta_range);
 
-	TREE_CREATE(tx_fe_path / "freq" / "value", "tx,set,fe_freq_val_"  + num, "tx,get,fe_freq_val_"  + num, double, _double);
-	TREE_CREATE(tx_fe_path / "freq" / "range", "tx,set,fe_freq_range_"+ num, "tx,get,fe_freq_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(tx_fe_path / "gain" / "value", "tx,set,fe_gain_val_"  + num, "tx,get,fe_gain_val_"  + num, double, _double);
-	TREE_CREATE(tx_fe_path / "gain" / "range", "tx,set,fe_gain_range_"+ num, "tx,get,fe_gain_range_"+ num, meta_range_t, _meta_range);
+	TREE_CREATE(tx_fe_path / "freq" / "value", "tx", "fe_freq_val_"  + num, double, _double);
+	TREE_CREATE(tx_fe_path / "freq" / "range", "tx", "fe_freq_range_"+ num, meta_range_t, _meta_range);
+	TREE_CREATE(tx_fe_path / "gain" / "value", "tx", "fe_gain_val_"  + num, double, _double);
+	TREE_CREATE(tx_fe_path / "gain" / "range", "tx", "fe_gain_range_"+ num, meta_range_t, _meta_range);
 
 	// these are phony properties for Crimson
 	const fs_path db_path = mb_path / "dboards" / num;
-	TREE_CREATE(db_path / "rx_eeprom",  "product,set,rx_eeprom_" + num, "product,get,rx_eeprom_"  + num, dboard_eeprom_t, _dboard_eeprom);
-	TREE_CREATE(db_path / "tx_eeprom",  "product,set,tx_eeprom_" + num, "product,get,tx_eeprom_"  + num, dboard_eeprom_t, _dboard_eeprom);
-	TREE_CREATE(db_path / "gdb_eeprom", "product,set,gdb_eeprom_"+ num, "product,get,gdb_eeprom_" + num, dboard_eeprom_t, _dboard_eeprom);
+	TREE_CREATE(db_path / "rx_eeprom",  "product", "rx_eeprom_"  + num, dboard_eeprom_t, _dboard_eeprom);
+	TREE_CREATE(db_path / "tx_eeprom",  "product", "tx_eeprom_"  + num, dboard_eeprom_t, _dboard_eeprom);
+	TREE_CREATE(db_path / "gdb_eeprom", "product", "gdb_eeprom_" + num, dboard_eeprom_t, _dboard_eeprom);
 
 	// DSPs
 	const fs_path rx_dsp_path = mb_path / "rx_dsps" / chan;
 	const fs_path tx_dsp_path = mb_path / "tx_dsps" / chan;
-	TREE_CREATE(rx_dsp_path / "rate" / "range", "rx,set,dsp_rate_range_"+ num, "rx,get,dsp_rate_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(rx_dsp_path / "rate" / "value", "rx,set,dsp_rate_val_"  + num, "rx,get,dsp_rate_val_"  + num, double, _double);
-	TREE_CREATE(rx_dsp_path / "freq" / "value", "rx,set,dsp_freq_val_"  + num, "rx,get,dsp_freq_val_"  + num, double, _double);
-	TREE_CREATE(rx_dsp_path / "freq" / "range", "rx,set,dsp_freq_range_"+ num, "rx,get,dsp_freq_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(rx_dsp_path / "bw" / "value",   "rx,set,dsp_bw_val_"    + num, "rx,get,dsp_bw_val_"    + num, double, _double);
-	TREE_CREATE(rx_dsp_path / "bw" / "range",   "rx,set,dsp_bw_range_"  + num, "rx,get,dsp_bw_range_"  + num, meta_range_t, _meta_range);
-	TREE_CREATE(rx_dsp_path / "stream_cmd",     "rx,set,dsp_cmd_"       + num, "rx,get,dsp_cmd_"       + num, stream_cmd_t, _stream_cmd);
+	TREE_CREATE(rx_dsp_path / "rate" / "range", "rx", "dsp_rate_range_"+ num, meta_range_t, _meta_range);
+	TREE_CREATE(rx_dsp_path / "rate" / "value", "rx", "dsp_rate_val_"  + num, double, _double);
+	TREE_CREATE(rx_dsp_path / "freq" / "value", "rx", "dsp_freq_val_"  + num, double, _double);
+	TREE_CREATE(rx_dsp_path / "freq" / "range", "rx", "dsp_freq_range_"+ num, meta_range_t, _meta_range);
+	TREE_CREATE(rx_dsp_path / "bw" / "value",   "rx", "dsp_bw_val_"    + num, double, _double);
+	TREE_CREATE(rx_dsp_path / "bw" / "range",   "rx", "dsp_bw_range_"  + num, meta_range_t, _meta_range);
+	TREE_CREATE(rx_dsp_path / "stream_cmd",     "rx", "dsp_cmd_"       + num, stream_cmd_t, _stream_cmd);
 
-	TREE_CREATE(tx_dsp_path / "rate" / "range", "tx,set,dsp_rate_range_"+ num, "tx,get,dsp_rate_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(tx_dsp_path / "rate" / "value", "tx,set,dsp_rate_val_"  + num, "tx,get,dsp_rate_val_"  + num, double, _double);
-	TREE_CREATE(tx_dsp_path / "freq" / "value", "tx,set,dsp_freq_val_"  + num, "tx,get,dsp_freq_val_"  + num, double, _double);
-	TREE_CREATE(tx_dsp_path / "freq" / "range", "tx,set,dsp_freq_range_"+ num, "tx,get,dsp_freq_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(tx_dsp_path / "bw" / "value",   "tx,set,dsp_bw_val_"    + num, "tx,get,dsp_bw_val_"    + num, double, _double);
-	TREE_CREATE(tx_dsp_path / "bw" / "range",   "tx,set,dsp_bw_range_"  + num, "tx,get,dsp_bw_range_"  + num, meta_range_t, _meta_range);
+	TREE_CREATE(tx_dsp_path / "rate" / "range", "tx", "dsp_rate_range_"+ num, meta_range_t, _meta_range);
+	TREE_CREATE(tx_dsp_path / "rate" / "value", "tx", "dsp_rate_val_"  + num, double, _double);
+	TREE_CREATE(tx_dsp_path / "freq" / "value", "tx", "dsp_freq_val_"  + num, double, _double);
+	TREE_CREATE(tx_dsp_path / "freq" / "range", "tx", "dsp_freq_range_"+ num, meta_range_t, _meta_range);
+	TREE_CREATE(tx_dsp_path / "bw" / "value",   "tx", "dsp_bw_val_"    + num, double, _double);
+	TREE_CREATE(tx_dsp_path / "bw" / "range",   "tx", "dsp_bw_range_"  + num, meta_range_t, _meta_range);
     }
 }
 
