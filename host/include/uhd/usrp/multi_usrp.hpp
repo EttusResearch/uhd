@@ -155,6 +155,11 @@ public:
      * If the specified rate is not available, this method will throw.
      * On other devices, this method notifies the software of the rate,
      * but requires the the user has made the necessary hardware change.
+     *
+     * If the device has an 'auto clock rate' setting (e.g. B200, see also
+     * \ref b200_auto_mcr), this will get disabled and the clock rate will be
+     * fixed to \p rate.
+     *
      * \param rate the new master clock rate in Hz
      * \param mboard the motherboard index 0 to M-1
      */

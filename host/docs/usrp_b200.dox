@@ -36,14 +36,39 @@ images:
 
 The master clock rate feeds the RF frontends and the DSP chains. Users
 may select non-default clock rates to acheive integer decimations or
-interpolations in the DSP chains. The default master clock rate defaults
-to 32 MHz, but can be set to any rate between 5 MHz and 61.44 MHz.
+interpolations in the DSP chains. The clock rate can be set to any value
+between 5 MHz and 61.44 MHz (or 30.72 MHz for dual-channel mode).
+Note that rates above 56 MHz are possible, but not recommended.
 
 The user can set the master clock rate through the usrp API call
 uhd::usrp::multi_usrp::set_master_clock_rate(), or the clock rate can be set through the
-device arguments, which many applications take: :
+device arguments, which many applications take:
 
     uhd_usrp_probe --args="master_clock_rate=52e6"
+
+The property to control the master clock rate is a double value, called `tick_rate`.
+
+\subsection b200_auto_mcr Automatic Clock Rate Setting
+
+The default clock rate setting is to automatically set a clock rate
+depending on the requested sampling rate. The automatic clock rate selection
+is disabled when either `master_clock_rate` is given in the device initialization
+arguments, or when uhd::usrp::multi_usrp::set_master_clock_rate() is called.
+
+Note that the master clock rate must be an integer multiple of the sampling
+rate. If a master clock rate is chosen for which this condition does not
+hold, a warning will be displayed and a different sampling rate is used internally.
+
+Nevertheless, there are multiple valid values for the master clock rate
+for most sampling rates. The auto clock rate selection attempts to use
+the largest possible clock rate as to enable as many half-band filters
+as possible. Expert users might have cases where a more fine-grained
+control over the resampling stages is required, in which case manually
+selecting a master clock rate might be more suitable than the automatic
+rate.
+
+The property to dis- or enable the auto tick rate is a boolean value,
+`auto_tick_rate`.
 
 \section b200_fe RF Frontend Notes
 
