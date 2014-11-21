@@ -431,6 +431,9 @@ public:
      ******************************************************************/
     void set_master_clock_rate(double rate, size_t mboard){
         if (mboard != ALL_MBOARDS){
+            if (_tree->exists(mb_root(mboard) / "auto_tick_rate")) {
+                _tree->access<bool>(mb_root(mboard) / "auto_tick_rate").set(false);
+            }
             _tree->access<double>(mb_root(mboard) / "tick_rate").set(rate);
             return;
         }
