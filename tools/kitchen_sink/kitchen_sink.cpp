@@ -1157,6 +1157,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string time_source, clock_source;
     std::string tx_ant, rx_ant;
     std::string tx_subdev, rx_subdev;
+    std::string set_time_mode;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -1214,6 +1215,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rx-sleep-delay", po::value<size_t>(&rx_sleep_delay)->default_value(1000), "RX sleep delay (us)")
         ("rx-sample-limit", po::value<size_t>(&rx_sample_limit)->default_value(0), "total number of samples to receive (0 implies continuous streaming)")
         ("rx-file", po::value<std::string>(&rx_file)->default_value(""), "RX capture file path")
+        ("set-time", po::value<std::string>(&set_time_mode)->default_value(""), "set mode (now, next_pps, unknown_pps)")
         //("allow-late", "allow late bursts")
         ("drop-late", "drop late bursts")
         ("still-set-rates", "still set rate on unused direction")
@@ -1264,7 +1266,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help") or ((rx_rate + tx_rate) == 0)){
-        std::cout << boost::format("UHD Benchmark Rate %s") % desc << std::endl;
+        std::cout << boost::format("UHD Kitchen Sink %s") % desc << std::endl;
         std::cout <<
         "    By default, performs single-channel full-duplex test at 1 Msps with continuous streaming.\n"
         "    Specify --channels to set RX & TX,\n"
@@ -1396,16 +1398,40 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         }
         else
         {
+            if (clock_source.empty() == false)	// Set clock first (stable clock for PPS registration)
+            {
+                usrp->set_clock_source(clock_source);
+                std::cout << boost::format(HEADER "Clock source set to: %s") % clock_source << std::endl;
+            }
+
             if (time_source.empty() == false)
             {
                 usrp->set_time_source(time_source);
                 std::cout << boost::format(HEADER "Time source set to: %s") % time_source << std::endl;
             }
 
-            if (clock_source.empty() == false)
+            if (set_time_mode.empty() == false)
             {
-                usrp->set_clock_source(clock_source);
-                std::cout << boost::format(HEADER "Clock source set to: %s") % clock_source << std::endl;
+                if (set_time_mode == "now")
+                {
+                    usrp->set_time_now(uhd::time_spec_t(0.0));
+                    std::cout << boost::format(HEADER "Time set now") << std::endl;
+                }
+                else if (set_time_mode == "next_pps")
+                {
+                    usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+                    sleep(1);
+                    std::cout << boost::format(HEADER "Time set next PPS") << std::endl;
+                }
+                else if (set_time_mode == "unknown_pps")
+                {
+                    usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
+                    std::cout << boost::format(HEADER "Time set unknown PPS") << std::endl;
+                }
+                else
+                {
+                    std::cout << HEADER_WARN"Cannot set time with unknown mode: " << set_time_mode << std::endl;
+                }
             }
         }
 
@@ -1668,6 +1694,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                     else if (tx_time_offset <= 0)
                     {
                         std::cout << HEADER_WARN"Cannot sync to RX with no TX time offset" << std::endl;
+                    }
+                }
+
+                if (recover_late)
+                {
+                    if (tx_time_offset <= 0)
+                    {
+                        std::cout << HEADER_WARN"TX late recovery will not work with no TX time offset" << std::endl;
                     }
                 }
 
