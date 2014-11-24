@@ -219,7 +219,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     std::string args, file, type, nullid, blockid, blockid2;
     size_t total_num_samps, spb, spp;
     size_t num_proc_blocks = 1;
-    double rate, total_time, setup_time, block_rate;
+    double rate, total_time, setup_time, block_rate, bus_clock;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -234,13 +234,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         ("spp", po::value<size_t>(&spp)->default_value(64), "samples per packet (on FPGA and wire)")
         ("block_rate", po::value<double>(&block_rate)->default_value(160e6), "The clock rate of the processing block.")
         ("rate", po::value<double>(&rate)->default_value(1e6), "rate at which samples are produced in the null source")
+        ("busclock", po::value<double>(&bus_clock)->default_value(166.67e6), "clock rate of the null source")
         ("setup", po::value<double>(&setup_time)->default_value(1.0), "seconds of setup time")
         ("type", po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
         ("progress", "periodically display short-term bandwidth")
         ("stats", "show average bandwidth on exit")
         ("continue", "don't abort on a bad packet")
         ("nullid", po::value<std::string>(&nullid)->default_value("0/NullSrcSink_0"), "The block ID for the null source.")
-        ("blockid", po::value<std::string>(&blockid)->default_value(""), "The block ID for the processing block.")
+        ("blockid", po::value<std::string>(&blockid)->default_value("FIFO"), "The block ID for the processing block.")
         ("blockid2", po::value<std::string>(&blockid2)->default_value(""), "Optional: The block ID for the 2nd processing block.")
     ;
     po::variables_map vm;
@@ -314,6 +315,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     // For the null source control, we want to use the subclassed access,
     // so we create a null_block_ctrl:
     uhd::rfnoc::null_block_ctrl::sptr null_src_ctrl = usrp->get_device3()->find_block_ctrl<uhd::rfnoc::null_block_ctrl>(nullid);
+    if (not null_src_ctrl) {
+        std::cout << "Error: Device has no null block." << std::endl;
+        return ~0;
+    }
 
     std::vector<std::string> blocks;
     blocks.push_back(null_src_ctrl->get_block_id());
@@ -354,14 +359,21 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     // call setters and getters:
     std::cout << str(boost::format("Requesting rate:   %.2f Msps (%.2f MByte/s).") % (rate / 1e6) % (rate * 4 / 1e6)) << std::endl;
     const size_t SAMPLES_PER_LINE = 2;
-    // This assumes the clock rate is 166.6 MHz
-    null_src_ctrl->set_line_rate(rate / SAMPLES_PER_LINE, 166.6e6);
+    null_src_ctrl->set_line_rate(rate / SAMPLES_PER_LINE, bus_clock);
     // Now, it's possible that this requested rate is not available.
-    // We could go ahead and read the cycle delay from the property tree.
     //
-    // But let's use the getter here:
-    double actual_rate_mega = null_src_ctrl->set_line_rate(rate / SAMPLES_PER_LINE, 166.6e6) / 1e6 * 2;
-    std::cout << str(boost::format("Actually got rate: %.2f Msps (%.2f MByte/s).") % actual_rate_mega % (actual_rate_mega * 4)) << std::endl;
+    // Let's read back the true rate with the getter:
+    double actual_rate_mega = null_src_ctrl->get_line_rate(bus_clock) / 1e6 * SAMPLES_PER_LINE;
+    std::cout
+        << str(
+                boost::format("Actually got rate: %.2f Msps (%.2f MByte/s).")
+                % actual_rate_mega % (actual_rate_mega * BYTES_PER_SAMPLE)
+           )
+        << std::endl;
+
+    // The other way is to access the property tree and read the line
+    // delay from <null block root>/line_delay_cycles/value and doing
+    // the math for the rate conversions ourselves.
 
     /////////////////////////////////////////////////////////////////////////
     //////// 5. Connect blocks //////////////////////////////////////////////

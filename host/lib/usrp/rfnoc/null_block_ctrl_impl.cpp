@@ -53,9 +53,9 @@ public:
                 << str(boost::format("null_block_ctrl: Requested rate %f is larger than possible with the current clock rate (%.2f MHz).") % rate % (clock_rate / 1e6))
                 << std::endl;
         }
-        boost::uint32_t register_value = std::max(0, cycs_between_lines);
-        sr_write(SR_LINE_RATE, register_value);
-        return _line_rate_from_reg_val(register_value, clock_rate);
+        _line_delay_cycles = std::max(0, cycs_between_lines);
+        sr_write(SR_LINE_RATE, boost::uint32_t(_line_delay_cycles));
+        return _line_rate_from_reg_val(_line_delay_cycles, clock_rate);
     }
 
     double get_line_rate(double clock_rate) const
