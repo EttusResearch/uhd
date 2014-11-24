@@ -154,7 +154,7 @@ struct rx_fc_cache_t
  * \param fullness If specified, this value will override the value in
  *                 \p rx_args.
  */
-size_t get_rx_flow_control_window(
+static size_t get_rx_flow_control_window(
         size_t pkt_size,
         size_t sw_buff_size,
         const device_addr_t& rx_args,
@@ -321,9 +321,6 @@ static managed_send_buffer::sptr get_tx_buff_with_flowctrl(
     {
         const size_t delta = (fc_cache->last_seq_out & HW_SEQ_NUM_MASK) - (fc_cache->last_seq_ack & HW_SEQ_NUM_MASK);
         if ((delta & HW_SEQ_NUM_MASK) <= fc_window)
-            break;
-
-        if ((delta & 0xfff) <= fc_window)
             break;
 
         const bool ok = fc_cache->seq_queue.pop_with_timed_wait(fc_cache->last_seq_ack, timeout);
