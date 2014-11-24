@@ -546,7 +546,7 @@ Responder::handle_rx_errors(uhd::rx_metadata_t::error_code_t err, size_t num_rx_
     {
         std::string msg = (boost::format("Timeout while streaming (received %ld samples)") % _num_total_samps).str();
         print_error_msg(msg);
-        _return_code = RETCODE_OVERFLOW;
+        _return_code = RETCODE_RECEIVE_TIMEOUT;
         return true;
     }
     else if (err == uhd::rx_metadata_t::ERROR_CODE_BAD_PACKET)
