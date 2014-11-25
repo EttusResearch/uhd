@@ -28,6 +28,33 @@ public:
         _item_type("sc16"), // We only support sc16 in this block
         _bpi(uhd::convert::get_bytes_per_item("sc16"))
     {
+        // Add I/O signature
+        // TODO actually use values from the block definition
+        _tree->create<stream_sig_t>(_root_path / "input_sig/1").set(stream_sig_t("sc16", 0));
+        // FIXME default packet size?
+        _tree->create<stream_sig_t>(_root_path / "output_sig/1").set(stream_sig_t("sc16", 0, DEFAULT_PACKET_SIZE));
+    }
+
+    bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0)
+    {
+        UHD_MSG(status) << "addsub_block::set_input_signature()" << std::endl;
+        UHD_ASSERT_THROW(port == 0 or port == 1);
+        if (stream_sig.get_item_type() != _item_type) {
+            UHD_MSG(status) << "not valid." << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0)
+    {
+        UHD_ASSERT_THROW(port == 0 or port == 1);
+        if (stream_sig.get_item_type() != _item_type) {
+            return false;
+        }
+
+        return true;
     }
 
 private:
