@@ -292,7 +292,12 @@ struct tx_fc_cache_t
     boost::shared_ptr<device3_impl::async_md_type> old_async_queue;
 };
 
-/*! Return the size of the flow control window in packets.
+/*! Return the size of the flow control window in packets index offsets.
+ *
+ * This is actually the size of the window minus one.
+ * The rationale beind this value is: If the last packet you sent out
+ * has index N and the last ack'd packet has index M, you
+ * may send packets up to and including index fc_window + (M-N)
  *
  * Note: If `send_buff_size` is set in \p tx_hints, this will
  * override hw_buff_size_.
@@ -307,7 +312,7 @@ static size_t get_tx_flow_control_window(
     if (window_in_pkts == 0) {
         throw uhd::value_error("send_buff_size must be larger than the send_frame_size.");
     }
-    return window_in_pkts;
+    return window_in_pkts - 1;
 }
 
 static managed_send_buffer::sptr get_tx_buff_with_flowctrl(
