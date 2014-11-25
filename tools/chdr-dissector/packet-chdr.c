@@ -265,6 +265,14 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                     proto_tree_add_item(stream_tree, hf_chdr_dst_blockport, tvb, id_pos[3], 1, ENC_NA);
 		}
 
+		/* Append SID in sid_t hex format */
+                proto_item_append_text(stream_item, " (%02X:%02X>%02X:%02X)",
+                    bytes[id_pos[0]],
+                    bytes[id_pos[1]],
+                    bytes[id_pos[2]],
+                    bytes[id_pos[3]]
+                );
+
                 /* if has_time flag is present interpret timestamp */
                 if ((flag_has_time) && (len >= 16)){
                     if (is_network)
