@@ -244,6 +244,12 @@ struct x300_tx_fc_guts_t
 
 #define X300_ASYNC_EVENT_CODE_FLOW_CTRL 0
 
+/*!
+ * If the return value of this function is F, the last tx'd packet
+ * has index N and the last ack'd packet has index M, the amount of
+ * FC credit we have is C = F + M - N (i.e. we can send C more packets
+ * before getting another ack).
+ */
 static size_t get_tx_flow_control_window(size_t frame_size, const device_addr_t& tx_args)
 {
     double hw_buff_size = tx_args.cast<double>("send_buff_size", X300_TX_HW_BUFF_SIZE);
@@ -318,9 +324,12 @@ static managed_send_buffer::sptr get_tx_buff_with_flowctrl(
 ){
     while (true)
     {
+        // delta is the amount of FC credit we've used up
         const size_t delta = (guts->last_seq_out & 0xfff) - (guts->last_seq_ack & 0xfff);
-        if ((delta & 0xfff) <= fc_pkt_window) break;
+        // If we want to send another packet, we must have FC credit left
+        if ((delta & 0xfff) < fc_pkt_window) break;
 
+        // If credit is all used up, we check seq_queue for more.
         const bool ok = guts->seq_queue.pop_with_timed_wait(guts->last_seq_ack, timeout);
         if (not ok) return managed_send_buffer::sptr(); //timeout waiting for flow control
     }
