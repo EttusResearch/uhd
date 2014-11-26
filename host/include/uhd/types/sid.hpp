@@ -40,7 +40,7 @@ namespace uhd {
      * is required, we use the combination of the 8-bit address and the 8-bit
      * endpoint.
      *
-     * \section sid_str_repr
+     * \section sid_str_repr String Representation
      *
      * The string representation of a SID is of the form
      *
@@ -60,7 +60,7 @@ namespace uhd {
      *     SRC_ADDRESS.SRC_ENDPOINT>DST_ADDRESS.DST_ENDPOINT
      *
      *
-     * \section sid_block_ports
+     * \section sid_block_ports Block Ports
      *
      * In the special case where a block on a crossbar is addressed, the
      * endpoint is further split up into two parts of four bits each: The
