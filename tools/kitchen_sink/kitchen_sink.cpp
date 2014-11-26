@@ -278,12 +278,16 @@ typedef struct RxParams {
     bool single_packets;
     bool size_map;
     size_t rx_sample_limit;
-    std::ofstream* capture_file;
+    std::vector<std::ofstream*> capture_files;
     bool set_rx_freq;
     double rx_freq;
     double rx_freq_delay;
     double rx_lo_offset;
     bool interleave_rx_file_samples;
+    bool ignore_late_start;
+    bool ignore_bad_packets;
+    bool ignore_timeout;
+    bool ignore_unexpected_error;
 } RX_PARAMS;
 
 static uint64_t recv_samp_count_progress = 0;
@@ -465,25 +469,37 @@ void benchmark_rx_rate(
                         recv_done.notify_one();
                     }
 
-                    if (params.capture_file != NULL)
+                    if (params.capture_files.empty() == false)
                     {
-                        if (params.interleave_rx_file_samples)
+                        size_t channel_count = rx_stream->get_num_channels();
+
+                        if ((channel_count == 1) || ((channel_count > 1) && (params.capture_files.size() == 1)))
                         {
-                            for (size_t i = 0; i < recv_samps; ++i)
+                            if (params.interleave_rx_file_samples)
                             {
-                                size_t channel_count = rx_stream->get_num_channels();
-                                for (size_t j = 0; j < channel_count; ++j)
+                                for (size_t i = 0; i < recv_samps; ++i)
                                 {
-                                    params.capture_file->write((const char*)buffs[j] + (bytes_per_samp * i), bytes_per_samp);
+                                    for (size_t j = 0; j < channel_count; ++j)
+                                    {
+                                        params.capture_files[0]->write((const char*)buffs[j] + (bytes_per_samp * i), bytes_per_samp);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                for (size_t i = 0; i < channel_count; ++i)
+                                {
+                                    size_t num_bytes = recv_samps * bytes_per_samp;
+                                    params.capture_files[0]->write((const char*)buffs[i], num_bytes);
                                 }
                             }
                         }
                         else
                         {
-                            for (size_t i = 0; i < rx_stream->get_num_channels(); ++i)
+                            for (size_t n = 0; n < channel_count; ++n)
                             {
                                 size_t num_bytes = recv_samps * bytes_per_samp;
-                                params.capture_file->write((const char*)buffs[i], num_bytes);
+                                params.capture_files[n]->write((const char*)buffs[n], num_bytes);
                             }
                         }
                     }
@@ -498,13 +514,17 @@ void benchmark_rx_rate(
             //}
 
             //handle the error codes
-            switch(md.error_code) {
+            switch(md.error_code)
+            {
                 case uhd::rx_metadata_t::ERROR_CODE_NONE:
-                    if (had_an_overflow) {
+                {
+                    if (had_an_overflow)
+                    {
                         had_an_overflow = false;
                         num_dropped_samps += (md.time_spec - last_time).to_ticks(rate); // FIXME: Check this as 'num_dropped_samps' has come out -ve
                     }
                     break;
+                }
 
                 // ERROR_CODE_OVERFLOW can indicate overflow or sequence error
                 case uhd::rx_metadata_t::ERROR_CODE_OVERFLOW:   // 'recv_samps' should be 0
@@ -523,13 +543,43 @@ void benchmark_rx_rate(
                     ss << HEADER_RX"(" << get_stringified_time() << ") ";
                     ss << boost::format("Timeout") << std::endl;
                     std::cout << ss.str();
+                    if (params.ignore_timeout == false)
+                        sig_int_handler(-1);
+                    break;
+                }
+
+                case uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND:
+                {
+                    std::stringstream ss;
+                    ss << HEADER_RX"(" << get_stringified_time() << ") ";
+                    ss << boost::format("Late command") << std::endl;
+                    std::cout << ss.str();
+                    if (params.ignore_late_start == false)
+                        sig_int_handler(-1);
+                    break;
+                }
+
+                case uhd::rx_metadata_t::ERROR_CODE_BAD_PACKET:
+                {
+                    std::stringstream ss;
+                    ss << HEADER_RX"(" << get_stringified_time() << ") ";
+                    ss << boost::format("Bad packet") << std::endl;
+                    std::cout << ss.str();
+                    if (params.ignore_bad_packets == false)
+                        sig_int_handler(-1);
                     break;
                 }
 
                 default:
-                    std::cerr << HEADER_RX"Error code: " << md.error_code << std::endl;
-                    std::cerr << HEADER_RX"Unexpected error on recv, continuing..." << std::endl;
+                {
+                    std::stringstream ss;
+                    ss << HEADER_RX"(" << get_stringified_time() << ") ";
+                    ss << (boost::format("Unexpected error (code: %d)") % md.error_code) << std::endl;
+                    std::cout << ss.str();
+                    if (params.ignore_unexpected_error == false)
+                        sig_int_handler(-1);
                     break;
+                }
             }
 
             print_msgs();
@@ -550,11 +600,14 @@ void benchmark_rx_rate(
         rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
     }
 
-    if (params.capture_file != NULL)
+    if (params.capture_files.empty() == false)
     {
-        std::cout << HEADER_RX"Closing capture file..." << std::endl;
-        delete params.capture_file;
-        params.capture_file = NULL;
+        std::cout << HEADER_RX"Closing capture files..." << std::endl;
+
+        for (size_t n = 0; n < params.capture_files.size(); ++n)
+            delete params.capture_files[n];
+
+        params.capture_files.clear();
     }
 
     l.lock();
@@ -628,7 +681,7 @@ void benchmark_tx_rate(
     size_t total_packet_count = (total_length / max_samps_per_packet) + ((total_length % max_samps_per_packet) ? 1 : 0);
     if ((params.use_tx_eob) && (params.tx_time_between_bursts > 0))
         packet_time += uhd::time_spec_t(params.tx_time_between_bursts);
-    size_t max_late_count = (size_t)(rate / (double)packet_time.to_ticks(rate)) * total_packet_count;
+    size_t max_late_count = (size_t)(rate / (double)packet_time.to_ticks(rate)) * total_packet_count * tx_stream->get_num_channels();   // Also need to take into account number of radios
 
     // Will be much higher L values (e.g. 31K) on e.g. B200 when entire TX pipeline is full of late packets (large size due to total TX buffering throughout transport & DSP)
 
@@ -1104,6 +1157,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string time_source, clock_source;
     std::string tx_ant, rx_ant;
     std::string tx_subdev, rx_subdev;
+    std::string set_time_mode;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -1139,7 +1193,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("progress-interval", po::value<double>(&progress_interval)->default_value(progress_interval), "seconds between bandwidth updates (0 disables)")
         ("rx-progress-interval", po::value<double>(&rx_progress_interval), "seconds between RX bandwidth updates (0 disables)")
         ("tx-progress-interval", po::value<double>(&tx_progress_interval), "seconds between TX bandwidth updates (0 disables)")
-        ("tx-offset", po::value<double>(&tx_time_offset), "seconds that TX should be in front of RX when following")
+        ("tx-offset", po::value<double>(&tx_time_offset)->default_value(0.0), "seconds that TX should be in front of RX when following")
         ("tx-length", po::value<size_t>(&tx_burst_length)->default_value(0), "TX burst length in samples (0: maximum packet size)")
         ("tx-flush", po::value<size_t>(&tx_flush_length)->default_value(0), "samples to flush TX with after burst")
         ("tx-burst-separation", po::value<double>(&tx_time_between_bursts), "seconds between TX bursts")
@@ -1161,6 +1215,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rx-sleep-delay", po::value<size_t>(&rx_sleep_delay)->default_value(1000), "RX sleep delay (us)")
         ("rx-sample-limit", po::value<size_t>(&rx_sample_limit)->default_value(0), "total number of samples to receive (0 implies continuous streaming)")
         ("rx-file", po::value<std::string>(&rx_file)->default_value(""), "RX capture file path")
+        ("set-time", po::value<std::string>(&set_time_mode)->default_value(""), "set mode (now, next_pps, unknown_pps)")
         //("allow-late", "allow late bursts")
         ("drop-late", "drop late bursts")
         ("still-set-rates", "still set rate on unused direction")
@@ -1177,6 +1232,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("recover-late", "recover from excessive late TX packets")
         ("disable-async", "disable the async message thread")
         ("interleave-rx-file-samples", "interleave individual samples (default is interleaving buffers)")
+        ("ignore-late-start", "continue receiving even if stream command was late")
+        ("ignore-bad-packets", "continue receiving after a bad packet")
+        ("ignore-timeout", "continue receiving after timeout")
+        ("ignore-unexpected", "continue receiving after unexpected error")
         // record TX/RX times
         // Optional interruption
         // simulate u / o at random / pulses
@@ -1207,7 +1266,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help") or ((rx_rate + tx_rate) == 0)){
-        std::cout << boost::format("UHD Benchmark Rate %s") % desc << std::endl;
+        std::cout << boost::format("UHD Kitchen Sink %s") % desc << std::endl;
         std::cout <<
         "    By default, performs single-channel full-duplex test at 1 Msps with continuous streaming.\n"
         "    Specify --channels to set RX & TX,\n"
@@ -1234,6 +1293,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     bool recover_late = (vm.count("recover-late") > 0);
     bool enable_async = (vm.count("disable-async") == 0);
     bool interleave_rx_file_samples = (vm.count("interleave-rx-file-samples") > 0);
+    bool ignore_late_start = (vm.count("ignore-late-start") > 0);
+    bool ignore_bad_packets = (vm.count("ignore-bad-packets") > 0);
+    bool ignore_timeout = (vm.count("ignore-timeout") > 0);
+    bool ignore_unexpected_error = (vm.count("ignore-unexpected") > 0);
 
     boost::posix_time::time_duration interrupt_timeout_duration(boost::posix_time::seconds(long(interrupt_timeout)) + boost::posix_time::microseconds(long((interrupt_timeout - floor(interrupt_timeout))*1e6)));
 
@@ -1273,6 +1336,36 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             return ~0;
         }
 
+        bool rx_filename_has_format = false;
+        if (rx_channel_nums.size() > 0)
+        {
+            std::string str0;
+            try
+            {
+                str0 = boost::str(boost::format(rx_file) % 0);
+                rx_filename_has_format = true;
+            }
+            catch (...)
+            {
+            }
+
+            bool format_different = false;
+            try
+            {
+                std::string str1(boost::str(boost::format(rx_file) % 1));
+                format_different = (str0 != str1);
+            }
+            catch (...)
+            {
+            }
+
+            if ((rx_filename_has_format) && (format_different == false))
+            {
+                std::cout << HEADER_ERROR "Multi-channel RX capture filename format did not produce unique names" << std::endl;
+                return ~0;
+            }
+        }
+
         if ((tx_rx_sync) || (tx_follows_rx))
         {
             if (tx_channel_nums.size() == 0)
@@ -1305,16 +1398,40 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         }
         else
         {
+            if (clock_source.empty() == false)	// Set clock first (stable clock for PPS registration)
+            {
+                usrp->set_clock_source(clock_source);
+                std::cout << boost::format(HEADER "Clock source set to: %s") % clock_source << std::endl;
+            }
+
             if (time_source.empty() == false)
             {
                 usrp->set_time_source(time_source);
                 std::cout << boost::format(HEADER "Time source set to: %s") % time_source << std::endl;
             }
 
-            if (clock_source.empty() == false)
+            if (set_time_mode.empty() == false)
             {
-                usrp->set_clock_source(clock_source);
-                std::cout << boost::format(HEADER "Clock source set to: %s") % clock_source << std::endl;
+                if (set_time_mode == "now")
+                {
+                    usrp->set_time_now(uhd::time_spec_t(0.0));
+                    std::cout << boost::format(HEADER "Time set now") << std::endl;
+                }
+                else if (set_time_mode == "next_pps")
+                {
+                    usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+                    sleep(1);
+                    std::cout << boost::format(HEADER "Time set next PPS") << std::endl;
+                }
+                else if (set_time_mode == "unknown_pps")
+                {
+                    usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
+                    std::cout << boost::format(HEADER "Time set unknown PPS") << std::endl;
+                }
+                else
+                {
+                    std::cout << HEADER_WARN"Cannot set time with unknown mode: " << set_time_mode << std::endl;
+                }
             }
         }
 
@@ -1462,11 +1579,33 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                     }
                 }
 
-                rx_params.capture_file = NULL;
                 if (rx_file.empty() == false)
                 {
-                    std::cout << boost::format(HEADER_RX"Capturing to \"%s\"") % rx_file << std::endl;
-                    rx_params.capture_file = new std::ofstream(rx_file.c_str(), std::ios::out);
+                    if (rx_filename_has_format == false)
+                    {
+                        if (rx_stream->get_num_channels() == 1)
+                        {
+                            std::cout << boost::format(HEADER_RX"Capturing single channel to \"%s\"") % rx_file << std::endl;
+                        }
+                        else
+                        {
+                            if (interleave_rx_file_samples)
+                                std::cout << boost::format(HEADER_RX"Capturing all %d channels as interleaved samples to \"%s\"") % rx_stream->get_num_channels() % rx_file << std::endl;
+                            else
+                                std::cout << boost::format(HEADER_RX"Capturing all %d channels as interleaved buffers to \"%s\"") % rx_stream->get_num_channels() % rx_file << std::endl;
+                        }
+
+                        rx_params.capture_files.push_back(new std::ofstream(rx_file.c_str(), std::ios::out));
+                    }
+                    else
+                    {
+                        for (size_t n = 0; n < rx_stream->get_num_channels(); ++n)
+                        {
+                            std::cout << boost::format(HEADER_RX"Capturing channel %d to \"%s\"") % n % (boost::str(boost::format(rx_file) % n)) << std::endl;
+                            std::string rx_file_name(boost::str(boost::format(rx_file) % n));
+                            rx_params.capture_files.push_back(new std::ofstream(rx_file_name.c_str(), std::ios::out));
+                        }
+                    }
                 }
 
                 std::cout << boost::format(
@@ -1488,6 +1627,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                 rx_params.rx_freq_delay = rx_freq_delay;
                 rx_params.rx_lo_offset = rx_lo_offset;
                 rx_params.interleave_rx_file_samples = interleave_rx_file_samples;
+                rx_params.ignore_late_start = ignore_late_start;
+                rx_params.ignore_bad_packets = ignore_bad_packets;
+                rx_params.ignore_timeout = ignore_timeout;
+                rx_params.ignore_unexpected_error = ignore_unexpected_error;
 
                 thread_group.create_thread(boost::bind(
                     &benchmark_rx_rate,
@@ -1500,7 +1643,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             if (tx_channel_nums.size() > 0) {
                 //create a transmit streamer
                 size_t bytes_per_tx_sample = uhd::convert::get_bytes_per_item(tx_cpu);
-                std::cout << boost::format(HEADER_TX"CPU bytes per TX sample: %d for '%s'") % bytes_per_tx_sample % rx_cpu << std::endl;
+                std::cout << boost::format(HEADER_TX"CPU bytes per TX sample: %d for '%s'") % bytes_per_tx_sample % tx_cpu << std::endl;
                 size_t wire_bytes_per_tx_sample = uhd::convert::get_bytes_per_item(tx_otw);
                 std::cout << boost::format(HEADER_TX"OTW bytes per TX sample: %d for '%s'") % wire_bytes_per_tx_sample % tx_otw << std::endl;
 
@@ -1551,6 +1694,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                     else if (tx_time_offset <= 0)
                     {
                         std::cout << HEADER_WARN"Cannot sync to RX with no TX time offset" << std::endl;
+                    }
+                }
+
+                if (recover_late)
+                {
+                    if (tx_time_offset <= 0)
+                    {
+                        std::cout << HEADER_WARN"TX late recovery will not work with no TX time offset" << std::endl;
                     }
                 }
 
@@ -1635,11 +1786,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                 else
                     std::cout << HEADER "Waiting for Q..." << std::endl;
 
-                while (stop_signal_called == false)
+                do
                 {
                     // FIXME: Stop time
 
-                    if (kbhit(interactive_sleep))
+                    if (kbhit(0))
                     {
                         char c = fgetc(stdin);
                         if (c == EOF)
@@ -1669,7 +1820,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                     }
 
                     print_msgs();
-                }
+                    
+                    abort_event.timed_wait(l_stop, boost::posix_time::milliseconds(interactive_sleep));
+                } while (stop_signal_called == false);
             }
             else if (duration > 0)
             {
