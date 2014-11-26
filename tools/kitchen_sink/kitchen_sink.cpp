@@ -171,13 +171,19 @@ static void _select_msg_colour(char c, std::stringstream& ss)
     switch (c)
     {
         case 'U':
+            ss << COLOUR_MAGENTA;
+            break;
         case 'L':
             ss << COLOUR_RED;
             break;
         case 'S':
+            ss << COLOUR_CYAN;
+            break;
         case 'O':
-        case 'D':
             ss << COLOUR_GREEN;
+            break;
+        case 'D':
+            ss << COLOUR_YELLOW;
             break;
         default:
             ss << COLOUR_BLACK;
@@ -1844,7 +1850,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         running = false;
 
-        std::cout << HEADER "Stopping..." << std::endl;
+        std::cout << HEADER << "(" << get_stringified_time() << ") Stopping..." << std::endl;
 
         // FIXME: Timed wait & re-enable interruptions
 
