@@ -32,6 +32,7 @@
 #include "../../transport/super_send_packet_handler.hpp"
 #include "../rfnoc/terminator_recv.hpp"
 #include "../rfnoc/terminator_send.hpp"
+#include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -464,6 +465,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         // Add terminator. Its lifetime is coupled to the streamer.
         rfnoc::sink_node_ctrl::sptr recv_terminator = rfnoc::terminator_recv::make();
         blk_ctrl->register_downstream_node(recv_terminator, block_port);
+        recv_terminator->register_upstream_node(blk_ctrl);
         my_streamer->store_terminator(recv_terminator);
 
         //flow control setup
@@ -614,6 +616,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         // Add terminator. Its lifetime is coupled to the streamer.
         rfnoc::source_node_ctrl::sptr send_terminator = rfnoc::terminator_send::make();
         blk_ctrl->register_upstream_node(send_terminator, block_port);
+        send_terminator->register_downstream_node(blk_ctrl);
         my_streamer->store_terminator(send_terminator);
 
         //flow control setup

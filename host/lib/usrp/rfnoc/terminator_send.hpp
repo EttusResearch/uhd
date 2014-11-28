@@ -19,6 +19,8 @@
 #define INCLUDED_LIBUHD_RFNOC_TERMINATOR_SEND_HPP
 
 #include <uhd/usrp/rfnoc/source_node_ctrl.hpp>
+#include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
+#include <uhd/usrp/rfnoc/tick_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/block_ctrl_base.hpp> // For the block macros
 
 namespace uhd {
@@ -26,8 +28,9 @@ namespace uhd {
 
 /*! \brief Transmit-end block control terminator.
  *
+ * This node terminates an RFNoC flow graph in the tx streamer.
  */
-class terminator_send : public source_node_ctrl
+class terminator_send : public source_node_ctrl, public rate_node_ctrl, public tick_node_ctrl
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(terminator_send)
@@ -41,6 +44,10 @@ public:
     {
         UHD_MSG(status) << "[TX Streamer] terminator_send::issue_stream_cmd()" << std::endl;
     }
+
+    // A tx streamer doesn't set its output sampling rate,
+    // rather, it sets a downstream block's sampling rate.
+    double get_output_samp_rate(size_t) { return rate_node_ctrl::RATE_NONE; };
 
 protected:
 

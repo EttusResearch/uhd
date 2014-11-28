@@ -19,6 +19,8 @@
 #define INCLUDED_LIBUHD_RFNOC_TERMINATOR_RECV_HPP
 
 #include <uhd/usrp/rfnoc/sink_node_ctrl.hpp>
+#include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
+#include <uhd/usrp/rfnoc/tick_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/block_ctrl_base.hpp> // For the block macros
 
 namespace uhd {
@@ -26,8 +28,9 @@ namespace uhd {
 
 /*! \brief Receive-end block control terminator.
  *
+ * This node terminates an RFNoC flow graph in the rx streamer.
  */
-class terminator_recv : public sink_node_ctrl
+class terminator_recv : public sink_node_ctrl, public rate_node_ctrl, public tick_node_ctrl
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(terminator_recv)
@@ -36,6 +39,10 @@ public:
     {
         return sptr(new terminator_recv);
     }
+
+    // An rx streamer doesn't set its input sampling rate,
+    // rather, it sets an upstream block's sampling rate.
+    double get_input_samp_rate(size_t) { return rate_node_ctrl::RATE_NONE; };
 
 protected:
 

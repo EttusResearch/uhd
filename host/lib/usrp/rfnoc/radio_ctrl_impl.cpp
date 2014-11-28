@@ -57,40 +57,40 @@ public:
         _tree->create<bool>(_root_path / "rx_active").set(false);
     }
 
-    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd)
-    {
-        UHD_MSG(status) << "radio_ctrl::issue_stream_cmd()" << std::endl;
-        _perifs.framer->issue_stream_command(stream_cmd);
-    }
-
+    /***********************************************************************
+     * Noc-Shell methods (from block_ctrl_base)
+     **********************************************************************/
+    //! Configure flow control in the VITA core
     void configure_flow_control_in(
             size_t cycles,
             size_t packets,
             size_t block_port
     ) {
-        UHD_MSG(status) << "radio_ctrl::configure_flow_control_in()" << cycles << " " << packets << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::configure_flow_control_in()" << cycles << " " << packets << std::endl;
         UHD_ASSERT_THROW(block_port == 0);
         _perifs.deframer->configure_flow_control(cycles, packets);
     }
 
+    //! Configure flow control in the VITA core
     void configure_flow_control_out(
             size_t buf_size_pkts,
             size_t,
             const uhd::sid_t &
     ) {
-        UHD_MSG(status) << "radio_ctrl::configure_flow_control_out() " << buf_size_pkts << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::configure_flow_control_out()" << buf_size_pkts << std::endl;
         _perifs.framer->configure_flow_control(buf_size_pkts);
     }
 
+    //! Clear the Rx & Tx VITA cores
     void _clear()
     {
         _perifs.deframer->clear();
         _perifs.framer->clear();
     }
 
+    //! Set packet size in the VITA framer
     bool set_output_signature(const stream_sig_t &out_sig_, size_t block_port)
     {
-        UHD_MSG(status) << "radio_ctrl::set_output_signature()" << std::endl;
         UHD_ASSERT_THROW(block_port == 0);
         stream_sig_t out_sig = out_sig_;
 
@@ -103,7 +103,7 @@ public:
 
         if (block_ctrl_base::set_output_signature(out_sig, block_port)) {
             _rx_spp = out_sig_.packet_size / _rx_bpi;
-            UHD_MSG(status) << "radio_ctrl::set_output_signature(): Setting spp to " << _rx_spp << std::endl;
+            UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::set_output_signature(): Setting spp to " << _rx_spp << std::endl;
             _perifs.framer->set_nsamps_per_packet(_rx_spp);
             return true;
         }
@@ -111,19 +111,31 @@ public:
         return false;
     }
 
+    //! Writes the full source address to the VITA core
     void set_destination(
             boost::uint32_t next_address,
             size_t out_block_port
     ) {
-        UHD_MSG(status) << "radio_ctrl::set_destination()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::set_destination()" << std::endl;
         UHD_ASSERT_THROW(out_block_port == 0);
         uhd::sid_t sid(next_address);
         if (sid.get_src() == 0) {
             sid.set_src(get_address());
         }
-        UHD_MSG(status) << "radio: setting sid to " << sid << std::endl;
+        UHD_MSG(status) << "  Setting sid to " << sid << std::endl;
 
         _perifs.framer->set_sid(sid.get());
+    }
+
+
+    /***********************************************************************
+     * RX Streamer-related methods (from rx_block_ctrl_base)
+     **********************************************************************/
+    //! Pass stream commands to the radio
+    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd)
+    {
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::issue_stream_cmd()" << std::endl;
+        _perifs.framer->issue_stream_command(stream_cmd);
     }
 
     void handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer)
@@ -157,6 +169,40 @@ public:
         }
     }
 
+
+    /***********************************************************************
+     * Rate controls (from rate_node_ctrl)
+     **********************************************************************/
+    /*! Returns the sampling rate the radio core is currently configured to.
+     */
+    double get_input_samp_rate(size_t /* port */)
+    {
+        uhd::fs_path dsp_path = "tx_dsps";
+        return _tree->access<double>(dsp_path / get_block_id().get_block_count() / "rate/value").get();
+    }
+
+
+    /*! Returns the sampling rate the radio core is currently configured to.
+     */
+    double get_output_samp_rate(size_t /* port */)
+    {
+        uhd::fs_path dsp_path = "rx_dsps";
+        return _tree->access<double>(dsp_path / get_block_id().get_block_count() / "rate/value").get();
+    }
+
+
+    /***********************************************************************
+     * Tick controls (from tick_node_ctrl)
+     **********************************************************************/
+    double _get_tick_rate()
+    {
+        return _tree->access<double>("tick_rate").get();
+    };
+
+
+    /***********************************************************************
+     * Radio controls (radio_ctrl specific)
+     **********************************************************************/
     void set_perifs(
         time_core_3000::sptr    time64,
         rx_vita_core_3000::sptr framer,
@@ -172,6 +218,10 @@ public:
     }
 
 protected:
+    /***********************************************************************
+     * Hooks
+     **********************************************************************/
+    //! Configures framer and ddc
     void _init_rx(uhd::stream_args_t &args)
     {
         UHD_MSG(status) << "radio_ctrl::init_rx()" << std::endl;
@@ -196,6 +246,7 @@ protected:
         _tree->access<bool>(_root_path / "rx_active").set(true);
     }
 
+    //! Configures deframer and duc
     void _init_tx(uhd::stream_args_t &args)
     {
         UHD_MSG(status) << "radio_ctrl::init_tx()" << std::endl;
