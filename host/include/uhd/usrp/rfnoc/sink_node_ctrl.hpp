@@ -67,7 +67,7 @@ protected:
      * side, but we don't want to configure those while setting up an tx stream
      * chain.
      */
-    bool _is_final_tx_block() { return false; };
+    virtual bool _is_final_tx_block() { return false; };
 
 }; /* class sink_node_ctrl */
 

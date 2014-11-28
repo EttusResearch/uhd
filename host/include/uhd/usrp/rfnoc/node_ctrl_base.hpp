@@ -25,6 +25,7 @@
 #include <boost/utility.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <map>
+#include <set>
 
 namespace uhd {
     namespace rfnoc {
@@ -40,8 +41,9 @@ public:
      * Types
      **********************************************************************/
     typedef boost::shared_ptr<node_ctrl_base> sptr;
-    typedef std::map< size_t, boost::weak_ptr<node_ctrl_base> > node_map_t;
-    typedef std::pair< size_t, boost::weak_ptr<node_ctrl_base> > node_map_pair_t;
+    typedef boost::weak_ptr<node_ctrl_base> wptr;
+    typedef std::map< size_t, wptr > node_map_t;
+    typedef std::pair< size_t, wptr > node_map_pair_t;
 
     /***********************************************************************
      * Node control
@@ -69,6 +71,30 @@ public:
             node_ctrl_base::sptr upstream_node,
             size_t port=ANY_PORT
     );
+
+    node_map_t list_downstream_nodes() { return _downstream_nodes; };
+    node_map_t list_upstream_nodes() { return _upstream_nodes; };
+
+    /*! Find the first N nodes downstream that match a predicate.
+     *
+     * Uses a non-recursive breadth-first search algorithm.
+     * Returns blocks that are of type T.
+     *
+     * Search only goes downstream.
+     */
+    template <typename T>
+    UHD_INLINE std::vector< boost::shared_ptr<T> > find_downstream_node()
+    {
+        return _find_child_node<T>(true);
+    }
+
+    /*! Same as find_downstream_node(), but only search upstream.
+     */
+    template <typename T>
+    UHD_INLINE std::vector< boost::shared_ptr<T> > find_upstream_node()
+    {
+        return _find_child_node<T>(false);
+    }
 
 protected:
     /***********************************************************************
@@ -103,9 +129,23 @@ protected:
      */
     virtual void _post_args_hook();
 
+private:
+    /*! Implements the search algorithm for find_downstream_node() and
+     * find_upstream_node().
+     *
+     * Depending on \p downstream, "child nodes" are either defined as
+     * nodes connected downstream or upstream.
+     *
+     * \param downstream Set to true if search goes downstream, false for upstream.
+     */
+    template <typename T>
+    std::vector< boost::shared_ptr<T> > _find_child_node(bool downstream);
+
 }; /* class node_ctrl_base */
 
 }} /* namespace uhd::rfnoc */
+
+#include <uhd/usrp/rfnoc/node_ctrl_base.ipp>
 
 #endif /* INCLUDED_LIBUHD_NODE_CTRL_BASE_HPP */
 // vim: sw=4 et:

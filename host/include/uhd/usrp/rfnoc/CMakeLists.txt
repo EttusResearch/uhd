@@ -23,6 +23,7 @@ UHD_INSTALL(FILES
     blockdef.hpp
     constants.hpp
     node_ctrl_base.hpp
+    node_ctrl_base.ipp
     rx_block_ctrl_base.hpp
     stream_sig.hpp
     sink_node_ctrl.hpp
