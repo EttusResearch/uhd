@@ -39,7 +39,7 @@ public:
 
     void issue_stream_cmd(const uhd::stream_cmd_t &)
     {
-        UHD_MSG(status) << "terminator_send::issue_stream_cmd()" << std::endl;
+        UHD_MSG(status) << "[TX Streamer] terminator_send::issue_stream_cmd()" << std::endl;
     }
 
 protected:

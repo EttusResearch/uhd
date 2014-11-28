@@ -40,6 +40,7 @@ public:
 
     void set_window(const std::vector<int> &coeffs)
     {
+        UHD_RFNOC_BLOCK_TRACE() << "window_block::set_window()" << std::endl;
         if (coeffs.size() > _max_len) {
             throw uhd::value_error(str(
                 boost::format("Window block: Too many window coefficients! Provided %d, window allows up to %d.\n")
@@ -83,7 +84,7 @@ public:
 
     bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0)
     {
-        UHD_MSG(status) << "[" << get_block_id() << "] window_block::set_input_signature()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "window_block::set_input_signature()" << std::endl;
         UHD_ASSERT_THROW(port == 0);
         if (stream_sig.get_item_type() != _item_type
             //or (stream_sig.packet_size != 0 and stream_sig.packet_size != _window_len * _bpi) FIXME put this back in
@@ -97,6 +98,7 @@ public:
 
     bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0)
     {
+        UHD_RFNOC_BLOCK_TRACE() << "window_block::set_output_signature()" << std::endl;
         UHD_ASSERT_THROW(port == 0);
         if (stream_sig.get_item_type() != _item_type
             //or (stream_sig.packet_size != 0 and stream_sig.packet_size != _window_len * _bpi) FIXME put this back in
@@ -110,7 +112,7 @@ public:
 protected:
     void _post_args_hook()
     {
-        UHD_MSG(status) << "[" << get_block_id() << "] window_block::_post_args_hook()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "window_block::_post_args_hook()" << std::endl;
         if (_args.has_key("spp")) {
             size_t spp = _args.cast<size_t>("spp", _window_len);
             if (spp != _window_len) {
@@ -121,7 +123,7 @@ protected:
 
     void _init_rx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "[" << get_block_id() << "] window_block::_init_rx()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "window_block::_init_rx()" << std::endl;
         if (args.otw_format != "sc16") {
             throw uhd::value_error("Window only supports otw_format sc16");
         }
@@ -140,7 +142,7 @@ protected:
 
     void _init_tx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "[" << get_block_id() << "] window_block::_init_tx()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "window_block::_init_tx()" << std::endl;
         if (args.otw_format != "sc16") {
             throw uhd::value_error("Window only supports otw_format sc16");
         }

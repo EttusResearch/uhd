@@ -855,11 +855,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //
     //const size_t NUM_CE = 0;
     const size_t NUM_CE = mb.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_NUM_CE));
-    UHD_VAR(NUM_CE);
     for (size_t i = 0; i < NUM_CE; i++) {
+        UHD_MSG(status) << "[RFNOC] ------- Block Setup -----------" << std::endl;
         boost::uint8_t xbar_port = (i & 0xFF) + X300_XB_DST_CE0;
         uhd::sid_t ctrl_sid(X300_DEVICE_HERE, 0, X300_DEVICE_THERE, xbar_port << 4);
-
         both_xports_t xport = this->make_transport(
             ctrl_sid,
             CTRL,
@@ -1126,6 +1125,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     }
 
     /////// Create the RFNoC block
+    UHD_MSG(status) << "[RFNOC] ------- Radio Setup -----------" << std::endl;
     uhd::rfnoc::make_args_t make_args("Radio");
     make_args.ctrl_iface = perif.ctrl;
     make_args.ctrl_sid = ctrl_sid;

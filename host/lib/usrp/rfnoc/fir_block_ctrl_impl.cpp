@@ -44,6 +44,7 @@ public:
 
     void set_taps(const std::vector<int> &taps_)
     {
+        UHD_RFNOC_BLOCK_TRACE() << "fir_block::set_taps()" << std::endl;
         if (taps_.size() > _n_taps) {
             throw uhd::value_error(str(
                 boost::format("FIR block: Too many filter coefficients! Provided %d, FIR allows %d.\n")
@@ -75,7 +76,7 @@ public:
 protected:
     void _init_rx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "fir_block::init_rx()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "fir_block::_init_rx()" << std::endl;
         if (args.otw_format != "sc16") {
             throw uhd::value_error("FIR only supports otw_format sc16");
         }
@@ -83,7 +84,7 @@ protected:
 
     void _init_tx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "fir_block::init_tx()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "fir_block::_init_tx()" << std::endl;
         if (args.otw_format != "sc16") {
             throw uhd::value_error("FIR only supports otw_format sc16");
         }

@@ -458,9 +458,9 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
 
         //allocate sid and create transport
         uhd::sid_t stream_address = blk_ctrl->get_address(block_port);
-        UHD_MSG(status) << "creating rx stream " << rx_hints.to_string() << std::endl;
+        UHD_MSG(status) << "[RX Streamer] creating rx stream " << rx_hints.to_string() << std::endl;
         both_xports_t xport = make_transport(stream_address, RX_DATA, rx_hints);
-        UHD_MSG(status) << std::hex << "data_sid = " << xport.send_sid << std::dec << " actual recv_buff_size = " << xport.recv_buff_size << std::endl;
+        UHD_MSG(status) << std::hex << "[RX Streamer] data_sid = " << xport.send_sid << std::dec << " actual recv_buff_size = " << xport.recv_buff_size << std::endl;
 
         // Configure the block (this may change args)
         blk_ctrl->setup_rx_streamer(args);
@@ -505,7 +505,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         const size_t pkt_size = spp * bpi + stream_options.rx_max_len_hdr;
         const size_t fc_window = get_rx_flow_control_window(pkt_size, xport.recv_buff_size, rx_hints);
         const size_t fc_handle_window = std::max<size_t>(1, fc_window / stream_options.rx_fc_request_freq);
-        UHD_MSG(status)<< "RX Flow Control Window = " << fc_window << ", RX Flow Control Handler Window = " << fc_handle_window << std::endl;
+        UHD_MSG(status)<< "[RX Streamer] Flow Control Window = " << fc_window << ", Flow Control Handler Window = " << fc_handle_window << std::endl;
         blk_ctrl->configure_flow_control_out(
                 fc_window,
                 block_port
@@ -563,7 +563,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         _tree->access<double>(mb_path / mb_index / "tick_rate").update();
         // TODO this is specific to radios and thus should be done by radio_ctrl
         if (blk_ctrl->get_block_id().get_block_name() == "Radio") {
-            UHD_MSG(status) << "This is a radio, thus updating sample rate" << std::endl;
+            UHD_MSG(status) << "[RX Streamer] This is a radio, thus updating sample rate" << std::endl;
             _tree->access<double>(mb_path / mb_index / "rx_dsps" / blk_ctrl->get_block_id().get_block_count() / "rate" / "value").update();
         }
     }
@@ -610,9 +610,9 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         //allocate sid and create transport
         uhd::sid_t stream_address = blk_ctrl->get_address(block_port);
-        UHD_MSG(status) << "creating tx stream " << tx_hints.to_string() << std::endl;
+        UHD_MSG(status) << "[TX Streamer] creating tx stream " << tx_hints.to_string() << std::endl;
         both_xports_t xport = make_transport(stream_address, TX_DATA, tx_hints);
-        UHD_MSG(status) << std::hex << "data_sid = " << xport.send_sid << std::dec << std::endl;
+        UHD_MSG(status) << std::hex << "[TX Streamer] data_sid = " << xport.send_sid << std::dec << std::endl;
 
         // Configure the block (this may change args)
         blk_ctrl->setup_tx_streamer(args);
@@ -660,7 +660,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
                 tx_hints // This can override the value reported by the block!
         );
         const size_t fc_handle_window = std::max<size_t>(1, fc_window / stream_options.tx_fc_response_freq);
-        UHD_MSG(status) << "TX Flow Control Window = " << fc_window << ", TX Flow Control Handler Window = " << fc_handle_window << std::endl;
+        UHD_MSG(status) << "[TX Streamer] Flow Control Window = " << fc_window << ", Flow Control Handler Window = " << fc_handle_window << std::endl;
         blk_ctrl->configure_flow_control_in(
                 stream_options.tx_fc_response_cycles,
                 fc_handle_window, /*pkts*/
@@ -706,7 +706,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         _tree->access<double>(mb_path / mb_index / "tick_rate").update();
         // TODO this is specific to radios and thus should be done by radio_ctrl
         if (blk_ctrl->get_block_id().get_block_name() == "Radio") {
-            UHD_MSG(status) << "This is a radio, thus updating sample rate" << std::endl;
+            UHD_MSG(status) << "[TX Streamer] This is a radio, thus updating sample rate" << std::endl;
             _tree->access<double>(mb_path / mb_index / "tx_dsps" / blk_ctrl->get_block_id().get_block_count() / "rate" / "value").update();
         }
     }

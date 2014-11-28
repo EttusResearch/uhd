@@ -92,12 +92,13 @@ block_ctrl_base::~block_ctrl_base()
 
 void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t data)
 {
-    UHD_MSG(status) << "[" << get_block_id() << "]: " << str(boost::format("sr_write(%d, %08X)") % reg % data) << std::endl;
+    UHD_MSG(status) << "  ";
+    UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%d, %08X)") % reg % data << std::endl;
     try {
         _ctrl_iface->poke32(_sr_to_addr(reg), data);
     }
     catch(const std::exception &ex) {
-        throw uhd::io_error(str(boost::format("%s sr_write() failed: %s") % get_block_id().get() % ex.what()));
+        throw uhd::io_error(str(boost::format("[%s] sr_write() failed: %s") % get_block_id().get() % ex.what()));
     }
 }
 
@@ -107,7 +108,7 @@ boost::uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg)
         return _ctrl_iface->peek64(_sr_to_addr64(reg));
     }
     catch(const std::exception &ex) {
-        throw uhd::io_error(str(boost::format("%s sr_write() failed: %s") % get_block_id().get() % ex.what()));
+        throw uhd::io_error(str(boost::format("[%s] sr_read64() failed: %s") % get_block_id().get() % ex.what()));
     }
 }
 
@@ -116,7 +117,7 @@ boost::uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg) {
         return _ctrl_iface->peek32(_sr_to_addr(reg));
     }
     catch(const std::exception &ex) {
-        throw uhd::io_error(str(boost::format("%s sr_write() failed: %s") % get_block_id().get() % ex.what()));
+        throw uhd::io_error(str(boost::format("[%s] sr_read32() failed: %s") % get_block_id().get() % ex.what()));
     }
 }
 
@@ -142,7 +143,7 @@ boost::uint32_t block_ctrl_base::user_reg_read32(const boost::uint32_t addr)
         return sr_read32(SR_READBACK_REG_USER);
     }
     catch(const std::exception &ex) {
-        throw uhd::io_error(str(boost::format("%s user_reg_read64() failed: %s") % get_block_id().get() % ex.what()));
+        throw uhd::io_error(str(boost::format("[%s] user_reg_read32() failed: %s") % get_block_id().get() % ex.what()));
     }
 }
 
@@ -162,7 +163,7 @@ void block_ctrl_base::configure_flow_control_in(
         size_t packets,
         size_t block_port)
   {
-    UHD_MSG(status) << "block_ctrl_base::configure_flow_control_in() " << cycles << " " << packets << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << boost::format("block_ctrl_base::configure_flow_control_in(cycles=%d, packets=%d)") % cycles % packets << std::endl;
     boost::uint32_t cycles_word = 0;
     if (cycles) {
         cycles_word = (1<<31) | cycles;
@@ -181,7 +182,7 @@ void block_ctrl_base::configure_flow_control_out(
             size_t block_port,
             UHD_UNUSED(const uhd::sid_t &sid)
 ) {
-    UHD_MSG(status) << "block_ctrl_base::configure_flow_control_out() " << buf_size_pkts << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::configure_flow_control_out() buf_size_pkts==" << buf_size_pkts << std::endl;
     // This actually takes counts between acks. So if the buffer size is 1 packet, we
     // set this to zero.
     sr_write(SR_FLOW_CTRL_WINDOW_SIZE_BASE + block_port, (buf_size_pkts == 0) ? 0 : buf_size_pkts-1);
@@ -190,7 +191,7 @@ void block_ctrl_base::configure_flow_control_out(
 
 void block_ctrl_base::clear()
 {
-    UHD_MSG(status) << "block_ctrl_base::clear() " << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::clear() " << std::endl;
     // Call parent...
     node_ctrl_base::clear();
     // TODO: Reset stream signatures to defaults from block definition
@@ -201,14 +202,14 @@ void block_ctrl_base::clear()
 
 void block_ctrl_base::_clear()
 {
-    UHD_MSG(status) << "block_ctrl_base::_clear() " << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::_clear() " << std::endl;
     sr_write(SR_FLOW_CTRL_CLR_SEQ, 0x00C1EA12); // 'CLEAR', but we can write anything, really
 }
 
 
 stream_sig_t block_ctrl_base::get_input_signature(size_t block_port) const
 {
-    UHD_MSG(status) << "block_ctrl_base::get_input_signature() " << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::get_input_signature() " << std::endl;
     if (not _tree->exists(_root_path / "input_sig" / str(boost::format("%d") % block_port))) {
         throw uhd::runtime_error(str(
             boost::format("Can't query input signature on block %s: Port %d is not defined.")
@@ -220,7 +221,7 @@ stream_sig_t block_ctrl_base::get_input_signature(size_t block_port) const
 
 stream_sig_t block_ctrl_base::get_output_signature(size_t block_port) const
 {
-    UHD_MSG(status) << "block_ctrl_base::get_output_signature() " << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::get_output_signature() " << std::endl;
     if (not _tree->exists(_root_path / "output_sig" / str(boost::format("%d") % block_port))) {
         throw uhd::runtime_error(str(
             boost::format("Can't query output signature on block %s: Port %d is not defined.")
@@ -232,7 +233,7 @@ stream_sig_t block_ctrl_base::get_output_signature(size_t block_port) const
 
 bool block_ctrl_base::set_input_signature(const stream_sig_t &in_sig, size_t block_port)
 {
-    UHD_MSG(status) << "block_ctrl_base::set_input_signature() " << in_sig << " " << block_port << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::set_input_signature() " << in_sig << " " << block_port << std::endl;
     if (not _tree->exists(_root_path / "input_sig" / str(boost::format("%d") % block_port))) {
         throw uhd::runtime_error(str(
             boost::format("Can't modify input signature on block %s: Port %d is not defined.")
@@ -260,7 +261,7 @@ bool block_ctrl_base::set_input_signature(const stream_sig_t &in_sig, size_t blo
 
 bool block_ctrl_base::set_output_signature(const stream_sig_t &out_sig, size_t block_port)
 {
-    UHD_MSG(status) << "block_ctrl_base::set_output_signature() " << out_sig << " " << block_port << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::set_output_signature() " << out_sig << " " << block_port << std::endl;
 
     if (not _tree->exists(_root_path / "output_sig" / str(boost::format("%d") % block_port))) {
         throw uhd::runtime_error(str(
@@ -282,11 +283,11 @@ void block_ctrl_base::set_destination(
         boost::uint32_t next_address,
         size_t output_block_port
 ) {
-    UHD_MSG(status) << "block_ctrl_base::set_destination() " << uhd::sid_t(next_address) << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::set_destination() " << uhd::sid_t(next_address) << std::endl;
     sid_t new_sid(next_address);
     new_sid.set_src_addr(_ctrl_sid.get_dst_addr());
     new_sid.set_src_endpoint(_ctrl_sid.get_dst_endpoint() + output_block_port);
-    UHD_LOG << "In block: " << _block_id << "Setting SID: " << new_sid << std::endl;
+    UHD_MSG(status) << "  Setting SID: " << new_sid << std::endl << "  ";
     sr_write(SR_NEXT_DST_BASE+output_block_port, (1<<16) | next_address);
 }
 

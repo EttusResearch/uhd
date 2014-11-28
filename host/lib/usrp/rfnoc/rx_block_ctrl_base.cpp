@@ -25,7 +25,7 @@ using namespace uhd::rfnoc;
 void rx_block_ctrl_base::issue_stream_cmd(
         const uhd::stream_cmd_t &stream_cmd
 ) {
-    UHD_MSG(status) <<  "[" << get_block_id() << "]: rx_block_ctrl_base::issue_stream_cmd()" << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "rx_block_ctrl_base::issue_stream_cmd()" << std::endl;
     if (_upstream_nodes.empty()) {
         UHD_MSG(warning) << "issue_stream_cmd() not implemented for " << get_block_id() << std::endl;
         return;
@@ -41,7 +41,7 @@ void rx_block_ctrl_base::issue_stream_cmd(
 // non-virtual
 void rx_block_ctrl_base::setup_rx_streamer(uhd::stream_args_t &args)
 {
-    UHD_MSG(status) << "rx_block_ctrl_base::setup_rx_streamer() on " << get_block_id() << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "rx_block_ctrl_base::setup_rx_streamer()" << std::endl;
 
     // 0. Check if args collides with our own _args
     // and merge them

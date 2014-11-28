@@ -81,6 +81,8 @@ struct make_args_t
         uhd::rfnoc::block_ctrl_base::register_block(&CLASS_NAME##_make, BLOCK_NAME); \
     }
 
+#define UHD_RFNOC_BLOCK_TRACE() UHD_MSG(status) << "[" << get_block_id() << "] "
+
 /*! \brief Base class for all RFNoC block controller objects.
  *
  * For RFNoC, block controller objects must be derived from

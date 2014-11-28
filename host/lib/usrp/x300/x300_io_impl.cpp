@@ -26,6 +26,7 @@
 #include <boost/bind.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/msg.hpp>
 #include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>
 
@@ -43,7 +44,7 @@ void x300_impl::update_tick_rate(size_t mb_index, const double rate)
         if (rfnoc::block_id_t(block_id).get_device_no() != mb_index) {
             continue;
         }
-        UHD_MSG(status) << "setting rx streamer " << block_id << " rate to " << rate << std::endl;
+        UHD_MSG(status) << "[X300] setting rx streamer to " << block_id << " rate to " << rate << std::endl;
         boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[block_id].lock());
         if (my_streamer) {
@@ -55,7 +56,7 @@ void x300_impl::update_tick_rate(size_t mb_index, const double rate)
         if (rfnoc::block_id_t(block_id).get_device_no() != mb_index) {
             continue;
         }
-        UHD_MSG(status) << "setting tx streamer " << block_id << " rate to " << rate << std::endl;
+        UHD_MSG(status) << "[X300] setting tx streamer to " << block_id << " rate to " << rate << std::endl;
         boost::shared_ptr<sph::send_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[block_id].lock());
         if (my_streamer) {
@@ -181,7 +182,6 @@ void x300_impl::post_streamer_hooks(bool is_tx)
         return;
     }
 
-    std::cout << "x300_impl::post_streamer_hooks()" << std::endl;
     // TODO: We should really only be adding the radios used in the
     // current topology. So, implement a network search routine
     // that goes through the connections.

@@ -23,7 +23,7 @@ using namespace uhd::rfnoc;
 
 void tx_block_ctrl_base::setup_tx_streamer(uhd::stream_args_t &args)
 {
-    UHD_MSG(status) << "tx_block_ctrl_base::setup_tx_streamer() on " << get_block_id() << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "tx_block_ctrl_base::setup_tx_streamer()" << std::endl;
 
     // 0. Check if args collides with our own options
     BOOST_FOREACH(const std::string key, _args.keys()) {
@@ -45,7 +45,7 @@ void tx_block_ctrl_base::setup_tx_streamer(uhd::stream_args_t &args)
 
     // 2. Check if we're the last block
     if (_is_final_tx_block()) {
-        UHD_MSG(status) << "tx_block_ctrl_base::setup_tx_streamer(): Final block, returning. " << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "tx_block_ctrl_base::setup_tx_streamer(): Final block, returning. " << std::endl;
         return;
     }
 
