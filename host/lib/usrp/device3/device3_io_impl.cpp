@@ -292,12 +292,12 @@ struct tx_fc_cache_t
     boost::shared_ptr<device3_impl::async_md_type> old_async_queue;
 };
 
-/*! Return the size of the flow control window in packets index offsets.
+/*! Return the size of the flow control window in packets.
  *
- * This is actually the size of the window minus one.
- * The rationale beind this value is: If the last packet you sent out
- * has index N and the last ack'd packet has index M, you
- * may send packets up to and including index fc_window + (M-N)
+ * If the return value of this function is F, the last tx'd packet
+ * has index N and the last ack'd packet has index M, the amount of
+ * FC credit we have is C = F + M - N (i.e. we can send C more packets
+ * before getting another ack).
  *
  * Note: If `send_buff_size` is set in \p tx_hints, this will
  * override hw_buff_size_.
@@ -312,7 +312,7 @@ static size_t get_tx_flow_control_window(
     if (window_in_pkts == 0) {
         throw uhd::value_error("send_buff_size must be larger than the send_frame_size.");
     }
-    return window_in_pkts - 1;
+    return window_in_pkts;
 }
 
 static managed_send_buffer::sptr get_tx_buff_with_flowctrl(
@@ -324,10 +324,13 @@ static managed_send_buffer::sptr get_tx_buff_with_flowctrl(
 ){
     while (true)
     {
+        // delta is the amount of FC credit we've used up
         const size_t delta = (fc_cache->last_seq_out & HW_SEQ_NUM_MASK) - (fc_cache->last_seq_ack & HW_SEQ_NUM_MASK);
-        if ((delta & HW_SEQ_NUM_MASK) <= fc_window)
+        // If we want to send another packet, we must have FC credit left
+        if ((delta & HW_SEQ_NUM_MASK) < fc_window)
             break;
 
+        // If credit is all used up, we check seq_queue for more.
         const bool ok = fc_cache->seq_queue.pop_with_timed_wait(fc_cache->last_seq_ack, timeout);
         if (not ok) {
             return managed_send_buffer::sptr(); //timeout waiting for flow control
