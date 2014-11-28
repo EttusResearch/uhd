@@ -223,7 +223,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args, file, type, ant, subdev, ref, wirefmt, streamargs, blockid;
-    size_t total_num_samps, spb;
+    size_t total_num_samps, spb, radio_id;
     double rate, freq, gain, bw, total_time, setup_time;
 
     //setup the program options
@@ -243,6 +243,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
         ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
+        ("radio-id", po::value<size_t>(&radio_id)->default_value(0), "Radio ID to use (0 or 1). Excludes the use of --subdev.")
         ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
         ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
@@ -279,6 +280,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if (enable_size_map)
         std::cout << "Packet size tracking enabled - will only recv one packet at a time!" << std::endl;
 
+    if (vm.count("subdev") > 1 and vm.count("radio-id") > 1) {
+        std::cout << "Error: Cannot use both --subdev and --radio-id!" << std::endl;
+        return ~0;
+    }
+
     //create a usrp device
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
@@ -289,7 +295,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //always select the subdevice first, the channel mapping affects the other settings
     if (vm.count("subdev")) usrp->set_rx_subdev_spec(subdev);
-
+    uhd::usrp::subdev_spec_t rx_subdev = usrp->get_rx_subdev_spec();
+    if (rx_subdev.size() == 0 or (rx_subdev.size()-1 < radio_id)) {
+        std::cout << "Error: radio-id exceeds number of radios (" << rx_subdev.size() << ")" << std::endl;
+        return ~0;
+    }
+    // Radio-ID is only really useful on Generation-3 devices, so we add
+    // some compat code for older devices
+    if (not usrp->is_device3() and radio_id > 0) {
+        // In this case, we need to manually modify the subdev spec
+        rx_subdev[0] = rx_subdev[radio_id];
+        rx_subdev.resize(1);
+        radio_id = 0;
+        usrp->set_rx_subdev_spec(rx_subdev);
+    }
+    std::cout << boost::format("Using Radio channel: %d (%s:%s)")
+                 % radio_id % rx_subdev[radio_id].db_name % rx_subdev[radio_id].sd_name << std::endl;
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     //set the sample rate
@@ -298,44 +319,44 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
-    usrp->set_rx_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
+    usrp->set_rx_rate(rate, radio_id);
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate(radio_id)/1e6) << std::endl << std::endl;
 
     //set the center frequency
     if (vm.count("freq")) { //with default of 0.0 this will always be true
         std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
         uhd::tune_request_t tune_request(freq);
         if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=integer");
-        usrp->set_rx_freq(tune_request);
-        std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
+        usrp->set_rx_freq(tune_request, radio_id);
+        std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq(radio_id)/1e6) << std::endl << std::endl;
     }
 
     //set the rf gain
     if (vm.count("gain")) {
         std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
-        usrp->set_rx_gain(gain);
-        std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
+        usrp->set_rx_gain(gain, radio_id);
+        std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain(radio_id) << std::endl << std::endl;
     }
 
     //set the IF filter bandwidth
     if (vm.count("bw")) {
         std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % bw << std::endl;
-        usrp->set_rx_bandwidth(bw);
-        std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % usrp->get_rx_bandwidth() << std::endl << std::endl;
+        usrp->set_rx_bandwidth(bw, radio_id);
+        std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % usrp->get_rx_bandwidth(radio_id) << std::endl << std::endl;
     }
 
     //set the antenna
-    if (vm.count("ant")) usrp->set_rx_antenna(ant);
+    if (vm.count("ant")) usrp->set_rx_antenna(ant, radio_id);
 
     boost::this_thread::sleep(boost::posix_time::seconds(setup_time)); //allow for some setup time
 
     //check Ref and LO Lock detect
     if (not vm.count("skip-lo")){
-        check_locked_sensor(usrp->get_rx_sensor_names(0), "lo_locked", boost::bind(&uhd::usrp::multi_usrp::get_rx_sensor, usrp, _1, 0), setup_time);
+        check_locked_sensor(usrp->get_rx_sensor_names(0), "lo_locked", boost::bind(&uhd::usrp::multi_usrp::get_rx_sensor, usrp, _1, radio_id), setup_time);
         if (ref == "mimo")
-            check_locked_sensor(usrp->get_mboard_sensor_names(0), "mimo_locked", boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, 0), setup_time);
+            check_locked_sensor(usrp->get_mboard_sensor_names(0), "mimo_locked", boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, radio_id), setup_time);
         if (ref == "external")
-            check_locked_sensor(usrp->get_mboard_sensor_names(0), "ref_locked", boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, 0), setup_time);
+            check_locked_sensor(usrp->get_mboard_sensor_names(0), "ref_locked", boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, radio_id), setup_time);
     }
 
     if (total_num_samps == 0){
@@ -343,19 +364,25 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
 
-    if (not blockid.empty() and usrp->is_device3()) {
-        usrp->get_device3()->clear();
-        uhd::rfnoc::rx_block_ctrl_base::sptr blk_ctrl =
-            usrp->get_device3()->find_block_ctrl< uhd::rfnoc::rx_block_ctrl_base >(blockid);
-        if (not blk_ctrl) {
-            std::cout << "Invalid block control selected." << std::endl;
-            return ~0;
-        }
-        uhd::rfnoc::block_id_t radio_ctrl_id = usrp->get_rx_channel_id(0);
-        std::cout << "Connecting " << radio_ctrl_id << " ==> " << blk_ctrl->get_block_id() << std::endl;
-        usrp->connect(radio_ctrl_id, blk_ctrl->get_block_id());
+    if (usrp->is_device3()) {
         usrp->clear_channels();
-        usrp->set_rx_channel(blk_ctrl->get_block_id());
+        usrp->get_device3()->clear();
+        uhd::rfnoc::block_id_t radio_ctrl_id(0, "Radio", radio_id);
+        if (blockid.empty()) {
+            // If no extra block is required, connect to the radio:
+            usrp->set_rx_channel(radio_ctrl_id);
+        } else {
+            // Otherwise, see if the requested block exists and connect it to the radio:
+            uhd::rfnoc::rx_block_ctrl_base::sptr blk_ctrl =
+                usrp->get_device3()->find_block_ctrl< uhd::rfnoc::rx_block_ctrl_base >(blockid);
+            if (not blk_ctrl) {
+                std::cout << "Block does not exist on current device: " << blockid << std::endl;
+                return ~0;
+            }
+            std::cout << "Connecting " << radio_ctrl_id << " ==> " << blk_ctrl->get_block_id() << std::endl;
+            usrp->connect(radio_ctrl_id, blk_ctrl->get_block_id());
+            usrp->set_rx_channel(blk_ctrl->get_block_id());
+        }
     }
 
 #define recv_to_file_args(format) \
