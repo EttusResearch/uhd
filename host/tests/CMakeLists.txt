@@ -43,12 +43,14 @@ SET(test_sources
     msg_test.cpp
     property_test.cpp
     ranges_test.cpp
+    rate_node_test.cpp
     sid_t_test.cpp
     sph_recv_test.cpp
     sph_send_test.cpp
     stream_sig_test.cpp
     subdev_spec_test.cpp
     time_spec_test.cpp
+    tick_node_test.cpp
     vrt_test.cpp
 )
 

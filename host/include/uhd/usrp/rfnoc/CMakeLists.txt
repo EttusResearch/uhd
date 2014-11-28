@@ -25,9 +25,11 @@ UHD_INSTALL(FILES
     node_ctrl_base.hpp
     node_ctrl_base.ipp
     rx_block_ctrl_base.hpp
+    rate_node_ctrl.hpp
     stream_sig.hpp
     sink_node_ctrl.hpp
     source_node_ctrl.hpp
+    tick_node_ctrl.hpp
     tx_block_ctrl_base.hpp
     # Block controllers
     fir_block_ctrl.hpp
