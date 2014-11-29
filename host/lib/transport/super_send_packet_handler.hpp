@@ -30,7 +30,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #ifdef DEVICE3_STREAMER
-#  include <uhd/usrp/rfnoc/source_node_ctrl.hpp>
+#  include "../usrp/rfnoc/terminator_send.hpp"
 #endif
 #include <boost/thread/thread_time.hpp>
 #include <boost/foreach.hpp>
@@ -123,9 +123,14 @@ public:
     }
 
     #ifdef DEVICE3_STREAMER
-    void store_terminator(uhd::rfnoc::source_node_ctrl::sptr source_node)
+    void set_terminator(uhd::rfnoc::terminator_send::sptr terminator)
     {
-        _source_nodes.push_back(source_node);
+        _terminator = terminator;
+    }
+
+    uhd::rfnoc::terminator_send::sptr get_terminator()
+    {
+        return _terminator;
     }
     #endif
     ///////// RFNOC ///////////////////
@@ -325,7 +330,7 @@ private:
     uhd::tx_metadata_t _metadata_cache;
 
     #ifdef DEVICE3_STREAMER
-    std::vector< uhd::rfnoc::source_node_ctrl::sptr > _source_nodes;
+    uhd::rfnoc::terminator_send::sptr _terminator;
     #endif
 
 #ifdef UHD_TXRX_DEBUG_PRINTS

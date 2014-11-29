@@ -30,7 +30,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #ifdef DEVICE3_STREAMER
-#  include <uhd/usrp/rfnoc/sink_node_ctrl.hpp>
+#  include "../usrp/rfnoc/terminator_recv.hpp"
 #endif
 #include <boost/dynamic_bitset.hpp>
 #include <boost/foreach.hpp>
@@ -141,9 +141,14 @@ public:
     }
 
     #ifdef DEVICE3_STREAMER
-    void store_terminator(uhd::rfnoc::sink_node_ctrl::sptr sink_node)
+    void set_terminator(uhd::rfnoc::terminator_recv::sptr terminator)
     {
-        _sink_nodes.push_back(sink_node);
+        _terminator = terminator;
+    }
+
+    uhd::rfnoc::terminator_recv::sptr get_terminator()
+    {
+        return _terminator;
     }
     #endif
     ////////////////// RFNOC ///////////////////////////
@@ -387,7 +392,7 @@ private:
     #endif
 
     #ifdef DEVICE3_STREAMER
-    std::vector< uhd::rfnoc::sink_node_ctrl::sptr > _sink_nodes;
+    uhd::rfnoc::terminator_recv::sptr _terminator;
     #endif
 
     /*******************************************************************

@@ -463,10 +463,15 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         my_streamer->set_converter(id);
 
         // Add terminator. Its lifetime is coupled to the streamer.
-        rfnoc::sink_node_ctrl::sptr recv_terminator = rfnoc::terminator_recv::make();
+        rfnoc::terminator_recv::sptr recv_terminator;
+        if (my_streamer->get_terminator()) {
+            recv_terminator = my_streamer->get_terminator();
+        } else {
+            recv_terminator = rfnoc::terminator_recv::make();
+        }
         blk_ctrl->register_downstream_node(recv_terminator, block_port);
         recv_terminator->register_upstream_node(blk_ctrl);
-        my_streamer->store_terminator(recv_terminator);
+        my_streamer->set_terminator(recv_terminator);
 
         //flow control setup
         const size_t pkt_size = spp * bpi + stream_options.rx_max_len_hdr;
@@ -614,10 +619,15 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         my_streamer->set_converter(id);
 
         // Add terminator. Its lifetime is coupled to the streamer.
-        rfnoc::source_node_ctrl::sptr send_terminator = rfnoc::terminator_send::make();
+        rfnoc::terminator_send::sptr send_terminator;
+        if (my_streamer->get_terminator()) {
+            send_terminator = my_streamer->get_terminator();
+        } else {
+            send_terminator = rfnoc::terminator_send::make();
+        }
         blk_ctrl->register_upstream_node(send_terminator, block_port);
         send_terminator->register_downstream_node(blk_ctrl);
-        my_streamer->store_terminator(send_terminator);
+        my_streamer->set_terminator(send_terminator);
 
         //flow control setup
         const size_t pkt_size = spp * bpi + stream_options.tx_max_len_hdr;
