@@ -15,6 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#define DEVICE3_STREAMER
+
 #include "x300_regs.hpp"
 #include "x300_impl.hpp"
 #include "validate_subdev_spec.hpp"
@@ -45,19 +47,21 @@ void x300_impl::update_tick_rate(size_t mb_index, const double rate)
         if (rfnoc::block_id_t(block_id).get_device_no() != mb_index) {
             continue;
         }
-        UHD_MSG(status) << "[X300] setting rx streamer to " << block_id << " rate to " << rate << std::endl;
+        UHD_MSG(status) << "[X300] setting rx streamer to " << block_id << std::endl;
         boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[block_id].lock());
         if (my_streamer) {
-            my_streamer->set_tick_rate(rate);
-            my_streamer->set_samp_rate(rate);
+            double tick_rate = my_streamer->get_terminator()->get_tick_rate();
+            double samp_rate = my_streamer->get_terminator()->get_output_samp_rate();
+            my_streamer->set_tick_rate(tick_rate);
+            my_streamer->set_samp_rate(samp_rate);
         }
     }
     BOOST_FOREACH(const std::string &block_id, _tx_streamers.keys()) {
         if (rfnoc::block_id_t(block_id).get_device_no() != mb_index) {
             continue;
         }
-        UHD_MSG(status) << "[X300] setting tx streamer to " << block_id << " rate to " << rate << std::endl;
+        UHD_MSG(status) << "[X300] setting tx streamer to " << block_id << std::endl;
         boost::shared_ptr<sph::send_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[block_id].lock());
         if (my_streamer) {

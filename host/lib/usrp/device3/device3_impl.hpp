@@ -110,6 +110,15 @@ protected:
     virtual ~device3_impl() {};
 
     /***********************************************************************
+     * Streaming-related
+     **********************************************************************/
+    // The 'rate' argument is so we can use these as subscribers to rate changes
+public: // TODO make these protected again
+    void update_rx_streamers(double rate=-1.0);
+    void update_tx_streamers(double rate=-1.0);
+protected:
+
+    /***********************************************************************
      * Transport-related
      **********************************************************************/
     stream_options_t stream_options;

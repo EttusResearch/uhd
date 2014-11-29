@@ -395,6 +395,35 @@ bool device3_impl::recv_async_msg(
 /***********************************************************************
  * Receive streamer
  **********************************************************************/
+void device3_impl::update_rx_streamers(double /* rate */)
+{
+    BOOST_FOREACH(const std::string &block_id, _rx_streamers.keys()) {
+        UHD_MSG(status) << "[Device3] updating RX streamer to " << block_id << std::endl;
+        boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
+            boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[block_id].lock());
+        if (my_streamer) {
+            double tick_rate = my_streamer->get_terminator()->get_tick_rate();
+            if (tick_rate == rfnoc::tick_node_ctrl::RATE_NONE) {
+                tick_rate = 1.0;
+            }
+            my_streamer->set_tick_rate(tick_rate);
+            double samp_rate = my_streamer->get_terminator()->get_output_samp_rate();
+            if (tick_rate == rfnoc::rate_node_ctrl::RATE_NONE) {
+                tick_rate = 1.0;
+            }
+            double scaling = my_streamer->get_terminator()->get_output_scale_factor();
+            if (scaling == rfnoc::scalar_node_ctrl::SCALE_NONE) {
+                scaling = 1/32767.;
+            }
+            UHD_MSG(status) << "  New tick_rate == " << tick_rate << "  New samp_rate == " << samp_rate << " New scaling == " << scaling << std::endl;
+
+            my_streamer->set_tick_rate(tick_rate);
+            my_streamer->set_samp_rate(samp_rate);
+            my_streamer->set_scale_factor(scaling);
+        }
+    }
+}
+
 rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
 {
     boost::mutex::scoped_lock lock(_transport_setup_mutex);
@@ -530,24 +559,44 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         // Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency
         _rx_streamers[blk_ctrl->get_block_id().get()] = boost::weak_ptr<sph::recv_packet_streamer>(my_streamer);
 
-        //sets all tick and samp rates on this streamer
-        const fs_path mb_path = "/mboards";
-        _tree->access<double>(mb_path / mb_index / "tick_rate").update();
-        // TODO this is specific to radios and thus should be done by radio_ctrl
-        if (blk_ctrl->get_block_id().get_block_name() == "Radio") {
-            UHD_MSG(status) << "[RX Streamer] This is a radio, thus updating sample rate" << std::endl;
-            _tree->access<double>(mb_path / mb_index / "rx_dsps" / blk_ctrl->get_block_id().get_block_count() / "rate" / "value").update();
-        }
+        // Sets tick rate, samp rate and scaling on this streamer
+        update_rx_streamers();
     }
 
     post_streamer_hooks(false);
     return my_streamer;
-
 }
 
 /***********************************************************************
  * Transmit streamer
  **********************************************************************/
+void device3_impl::update_tx_streamers(double /* rate */)
+{
+    BOOST_FOREACH(const std::string &block_id, _tx_streamers.keys()) {
+        UHD_MSG(status) << "[Device3] updating TX streamers to " << block_id << std::endl;
+        boost::shared_ptr<sph::send_packet_streamer> my_streamer =
+            boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[block_id].lock());
+        if (my_streamer) {
+            double tick_rate = my_streamer->get_terminator()->get_tick_rate();
+            if (tick_rate == rfnoc::tick_node_ctrl::RATE_NONE) {
+                tick_rate = 1.0;
+            }
+            double samp_rate = my_streamer->get_terminator()->get_input_samp_rate();
+            if (samp_rate == rfnoc::rate_node_ctrl::RATE_NONE) {
+                samp_rate = 1.0;
+            }
+            double scaling = my_streamer->get_terminator()->get_input_scale_factor();
+            if (scaling == rfnoc::scalar_node_ctrl::SCALE_NONE) {
+                scaling = 32767.;
+            }
+            UHD_MSG(status) << "  New tick_rate == " << tick_rate << "  New samp_rate == " << samp_rate << " New scaling == " << scaling << std::endl;
+            my_streamer->set_tick_rate(tick_rate);
+            my_streamer->set_samp_rate(samp_rate);
+            my_streamer->set_scale_factor(scaling);
+        }
+    }
+}
+
 tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 {
     boost::mutex::scoped_lock lock(_transport_setup_mutex);
@@ -679,14 +728,8 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         //Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency
         _tx_streamers[blk_ctrl->get_block_id().get()] = boost::weak_ptr<sph::send_packet_streamer>(my_streamer);
 
-        //sets all tick and samp rates on this streamer
-        const fs_path mb_path = "/mboards";
-        _tree->access<double>(mb_path / mb_index / "tick_rate").update();
-        // TODO this is specific to radios and thus should be done by radio_ctrl
-        if (blk_ctrl->get_block_id().get_block_name() == "Radio") {
-            UHD_MSG(status) << "[TX Streamer] This is a radio, thus updating sample rate" << std::endl;
-            _tree->access<double>(mb_path / mb_index / "tx_dsps" / blk_ctrl->get_block_id().get_block_count() / "rate" / "value").update();
-        }
+        // Sets tick rate, samp rate and scaling on this streamer
+        update_tx_streamers();
     }
 
     post_streamer_hooks(true);
