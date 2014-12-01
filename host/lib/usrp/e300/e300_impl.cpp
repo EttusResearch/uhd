@@ -20,6 +20,7 @@
 #include "e300_fpga_defs.hpp"
 #include "e300_spi.hpp"
 #include "e300_regs.hpp"
+#include "../device3/device3_radio_regs.hpp"
 #include "e300_eeprom_manager.hpp"
 #include "e300_sensor_manager.hpp"
 #include "e300_common.hpp"
@@ -52,6 +53,7 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
+using namespace uhd::usrp::device3;
 namespace fs = boost::filesystem;
 namespace asio = boost::asio;
 
@@ -469,7 +471,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     // internal gpios
     ////////////////////////////////////////////////////////////////////
     gpio_core_200::sptr fp_gpio = gpio_core_200::make(
-        _radio_perifs[FE0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
+        _radio_perifs[FE0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
     const std::vector<std::string> gpio_attrs = boost::assign::list_of("CTRL")("DDR")("OUT")("ATR_0X")("ATR_RX")("ATR_TX")("ATR_XX");
     BOOST_FOREACH(const std::string &attr, gpio_attrs)
     {
@@ -765,8 +767,8 @@ void e300_impl::_register_loopback_self_test(wb_iface::sptr iface)
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
-        iface->poke32(TOREG(SR_TEST), boost::uint32_t(hash));
-        test_fail = iface->peek32(RB32_TEST) != boost::uint32_t(hash);
+        iface->poke32(radio::sr_addr(radio::TEST), boost::uint32_t(hash));
+        test_fail = iface->peek32(radio::RB32_TEST) != boost::uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
@@ -806,9 +808,9 @@ void e300_impl::_codec_loopback_self_test(wb_iface::sptr iface)
     {
         boost::hash_combine(hash, i);
         const boost::uint32_t word32 = boost::uint32_t(hash) & 0xfff0fff0;
-        iface->poke32(TOREG(SR_CODEC_IDLE), word32);
-        iface->peek64(RB64_CODEC_READBACK); //enough idleness for loopback to propagate
-        const boost::uint64_t rb_word64 = iface->peek64(RB64_CODEC_READBACK);
+        iface->poke32(radio::sr_addr(radio::CODEC_IDLE), word32);
+        iface->peek64(radio::RB64_CODEC_READBACK); //enough idleness for loopback to propagate
+        const boost::uint64_t rb_word64 = iface->peek64(radio::RB64_CODEC_READBACK);
         const boost::uint32_t rb_tx = boost::uint32_t(rb_word64 >> 32);
         const boost::uint32_t rb_rx = boost::uint32_t(rb_word64 & 0xffffffff);
         test_fail = word32 != rb_tx or word32 != rb_rx;
@@ -817,7 +819,7 @@ void e300_impl::_codec_loopback_self_test(wb_iface::sptr iface)
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
 
     /* Zero out the idle data. */
-    iface->poke32(TOREG(SR_CODEC_IDLE), 0);
+    iface->poke32(radio::sr_addr(radio::CODEC_IDLE), 0);
 }
 
 void e300_impl::_setup_dest_mapping(
@@ -1020,14 +1022,14 @@ void e300_impl::_setup_radio(const size_t dspno)
         ctrl_xports.send_sid.get(),
         dspno ? "R1" : "R0");
     this->_register_loopback_self_test(perif.ctrl);
-    perif.atr  = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_GPIO));
-    perif.leds = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_LEDS));
+    perif.atr  = gpio_core_200_32wo::make(perif.ctrl, radio::sr_addr(radio::GPIO));
+    perif.leds = gpio_core_200_32wo::make(perif.ctrl, radio::sr_addr(radio::LEDS));
 
     ////////////////////////////////////////////////////////////////////
     // front end corrections
     ////////////////////////////////////////////////////////////////////
     std::string slot_name = (dspno == 0) ? "A" : "B";
-    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, TOREG(SR_RX_FRONT));
+    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
     const fs_path rx_fe_path = mb_path / "rx_frontends" / slot_name;
     _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
         .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, perif.rx_fe, _1))
@@ -1039,7 +1041,7 @@ void e300_impl::_setup_radio(const size_t dspno)
         .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, perif.rx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
 
-    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, TOREG(SR_TX_FRONT));
+    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::TX_FRONT));
     const fs_path tx_fe_path = mb_path / "tx_frontends" / slot_name;
     _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
         .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, perif.tx_fe, _1))
@@ -1051,8 +1053,8 @@ void e300_impl::_setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
-    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP));
+    perif.framer = rx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_CTRL));
+    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
     perif.ddc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
@@ -1075,8 +1077,8 @@ void e300_impl::_setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
-    perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
+    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL));
+    perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
     perif.duc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
@@ -1098,9 +1100,9 @@ void e300_impl::_setup_radio(const size_t dspno)
     // create time control objects
     ////////////////////////////////////////////////////////////////////
     time_core_3000::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_now = RB64_TIME_NOW;
-    time64_rb_bases.rb_pps = RB64_TIME_PPS;
-    perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
+    time64_rb_bases.rb_now = radio::RB64_TIME_NOW;
+    time64_rb_bases.rb_pps = radio::RB64_TIME_PPS;
+    perif.time64 = time_core_3000::make(perif.ctrl, radio::sr_addr(radio::TIME), time64_rb_bases);
 
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
