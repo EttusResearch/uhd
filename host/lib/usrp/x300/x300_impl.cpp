@@ -17,6 +17,7 @@
 
 #include "x300_impl.hpp"
 #include "x300_regs.hpp"
+#include "../device3/device3_radio_regs.hpp"
 #include "x300_lvbitx.hpp"
 #include "x310_lvbitx.hpp"
 #include <boost/algorithm/string.hpp>
@@ -50,6 +51,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::usrp::device3;
 using namespace uhd::rfnoc;
 using namespace uhd::transport;
 using namespace uhd::niusrprio;
@@ -703,7 +705,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
-    mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
+    mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
     const std::vector<std::string> GPIO_ATTRS = boost::assign::list_of("CTRL")("DDR")("OUT")("ATR_0X")("ATR_RX")("ATR_TX")("ATR_XX");
     BOOST_FOREACH(const std::string &attr, GPIO_ATTRS)
     {
@@ -897,8 +899,8 @@ x300_impl::~x300_impl(void)
     {
         BOOST_FOREACH(mboard_members_t &mb, _mb)
         {
-            mb.radio_perifs[0].ctrl->poke32(TOREG(SR_MISC_OUTS), (1 << 2)); //disable/reset ADC/DAC
-            mb.radio_perifs[1].ctrl->poke32(TOREG(SR_MISC_OUTS), (1 << 2)); //disable/reset ADC/DAC
+            mb.radio_perifs[0].ctrl->poke32(radio::sr_addr(radio::MISC_OUTS), (1 << 2)); //disable/reset ADC/DAC
+            mb.radio_perifs[1].ctrl->poke32(radio::sr_addr(radio::MISC_OUTS), (1 << 2)); //disable/reset ADC/DAC
 
             //kill the claimer task and unclaim the device
             mb.claimer_task.reset();
@@ -920,7 +922,7 @@ x300_impl::~x300_impl(void)
 
 static void check_adc(wb_iface::sptr iface, const boost::uint32_t val)
 {
-    boost::uint32_t adc_rb = iface->peek32(RB32_RX);
+    boost::uint32_t adc_rb = iface->peek32(radio::RB32_RX);
     adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
     //UHD_MSG(status) << "adc_rb " << std::hex << adc_rb << "  val " << std::hex << val << std::endl;
     UHD_ASSERT_THROW(adc_rb == val);
@@ -944,15 +946,15 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     ctrl_sid = xport.send_sid.get();
     UHD_MSG(status) << "Radio " << radio_index << " Ctrl SID: " << uhd::sid_t(ctrl_sid).to_pp_string_hex() << std::endl;
     perif.ctrl = radio_ctrl_core_3000::make(mb.if_pkt_is_big_endian, xport.recv, xport.send, ctrl_sid, slot_name);
-    perif.ctrl->poke32(TOREG(SR_MISC_OUTS), (1 << 2)); //reset adc + dac
-    perif.ctrl->poke32(TOREG(SR_MISC_OUTS),  (1 << 1) | (1 << 0)); //out of reset + dac enable
+    perif.ctrl->poke32(radio::sr_addr(radio::MISC_OUTS), (1 << 2)); //reset adc + dac
+    perif.ctrl->poke32(radio::sr_addr(radio::MISC_OUTS),  (1 << 1) | (1 << 0)); //out of reset + dac enable
 
     this->register_loopback_self_test(perif.ctrl);
 
-    perif.spi = spi_core_3000::make(perif.ctrl, TOREG(SR_SPI), RB32_SPI);
+    perif.spi = spi_core_3000::make(perif.ctrl, radio::sr_addr(radio::SPI), radio::RB32_SPI);
     perif.adc = x300_adc_ctrl::make(perif.spi, DB_ADC_SEN);
     perif.dac = x300_dac_ctrl::make(perif.spi, DB_DAC_SEN, mb.clock->get_master_clock_rate());
-    perif.leds = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_LEDS));
+    perif.leds = gpio_core_200_32wo::make(perif.ctrl, radio::sr_addr(radio::LEDS));
 
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
         .subscribe(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
@@ -993,7 +995,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     ////////////////////////////////////////////////////////////////////
     // front end corrections
     ////////////////////////////////////////////////////////////////////
-    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, TOREG(SR_RX_FRONT));
+    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
     const fs_path rx_fe_path = mb_path / "rx_frontends" / slot_name;
     _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
         .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, perif.rx_fe, _1))
@@ -1005,7 +1007,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
         .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, perif.rx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
 
-    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, TOREG(SR_TX_FRONT));
+    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::TX_FRONT));
     const fs_path tx_fe_path = mb_path / "tx_frontends" / slot_name;
     _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
         .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, perif.tx_fe, _1))
@@ -1017,8 +1019,8 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
-    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP));
+    perif.framer = rx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_CTRL));
+    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
     perif.ddc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
@@ -1041,8 +1043,8 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     ////////////////////////////////////////////////////////////////////
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
-    perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
+    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL));
+    perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
     perif.duc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
@@ -1064,9 +1066,9 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     // create time control objects
     ////////////////////////////////////////////////////////////////////
     time_core_3000::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_now = RB64_TIME_NOW;
-    time64_rb_bases.rb_pps = RB64_TIME_PPS;
-    perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
+    time64_rb_bases.rb_now = radio::RB64_TIME_NOW;
+    time64_rb_bases.rb_pps = radio::RB64_TIME_PPS;
+    perif.time64 = time_core_3000::make(perif.ctrl, radio::sr_addr(radio::TIME), time64_rb_bases);
 
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
@@ -1085,7 +1087,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
 
     //create a new dboard interface
     x300_dboard_iface_config_t db_config;
-    db_config.gpio = gpio_core_200::make(perif.ctrl, TOREG(SR_GPIO), RB32_GPIO);
+    db_config.gpio = gpio_core_200::make(perif.ctrl, radio::sr_addr(radio::GPIO), radio::RB32_GPIO);
     db_config.spi = perif.spi;
     db_config.rx_spi_slaveno = DB_RX_SEN;
     db_config.tx_spi_slaveno = DB_TX_SEN;
@@ -1419,8 +1421,8 @@ void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
-        iface->poke32(TOREG(SR_TEST), boost::uint32_t(hash));
-        test_fail = iface->peek32(RB32_TEST) != boost::uint32_t(hash);
+        iface->poke32(radio::sr_addr(radio::TEST), boost::uint32_t(hash));
+        test_fail = iface->peek32(radio::RB32_TEST) != boost::uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
@@ -1597,7 +1599,7 @@ void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
     //Get a rough estimate of the cumulative command latency
     boost::posix_time::ptime t_start = boost::posix_time::microsec_clock::local_time();
     for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->ctrl->peek64(RB64_TIME_NOW); //Discard value. We are just timing the call
+        radios[i]->ctrl->peek64(radio::RB64_TIME_NOW); //Discard value. We are just timing the call
     }
     boost::posix_time::time_duration t_elapsed =
         boost::posix_time::microsec_clock::local_time() - t_start;
@@ -1612,7 +1614,7 @@ void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
     //Send the sync command
     for (size_t i = 0; i < radios.size(); i++) {
         radios[i]->ctrl->set_time(sync_time);
-        radios[i]->ctrl->poke32(TOREG(SR_DACSYNC), 0x1);    //Arm FRAMEP/N sync pulse
+        radios[i]->ctrl->poke32(radio::sr_addr(radio::DACSYNC), 0x1);    //Arm FRAMEP/N sync pulse
         radios[i]->ctrl->set_time(uhd::time_spec_t(0.0));   //Clear command time
     }
 
