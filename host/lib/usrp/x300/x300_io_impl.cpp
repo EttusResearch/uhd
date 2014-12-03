@@ -20,6 +20,7 @@
 #include "validate_subdev_spec.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
+#include "../rfnoc/radio_ctrl.hpp"
 #include <uhd/transport/nirio_zero_copy.hpp>
 #include "async_packet_handler.hpp"
 #include <uhd/transport/bounded_buffer.hpp>
@@ -182,27 +183,30 @@ void x300_impl::post_streamer_hooks(bool is_tx)
         return;
     }
 
-    // TODO: We should really only be adding the radios used in the
-    // current topology. So, implement a network search routine
-    // that goes through the connections.
-    std::vector<radio_perifs_t*> radios;
-    // Just sync them all:
-    for (size_t mb_index = 0; mb_index < _mb.size(); mb_index++) {
-        mboard_members_t &mb = _mb[mb_index];
-        for (size_t radio_index = 0; radio_index < 2; radio_index++) {
-            radio_perifs_t &perif = mb.radio_perifs[radio_index];
+    // Loop through all tx streamers. Find all radios connected to one
+    // streamer. Sync those.
+    BOOST_FOREACH(const boost::weak_ptr<uhd::tx_streamer> &streamer_w, _tx_streamers.vals()) {
+        const boost::shared_ptr<sph::send_packet_streamer> streamer =
+            boost::dynamic_pointer_cast<sph::send_packet_streamer>(streamer_w.lock());
+        if (not streamer) {
+            continue;
+        }
+
+        std::vector<radio_perifs_t*> radios;
+        std::vector<rfnoc::radio_ctrl::sptr> radio_ctrl_blks =
+            streamer->get_terminator()->find_downstream_node<rfnoc::radio_ctrl>();
+        BOOST_FOREACH(const rfnoc::radio_ctrl::sptr &radio_blk, radio_ctrl_blks) {
+            radio_perifs_t &perif = _mb[radio_blk->get_block_id().get_device_no()].radio_perifs[radio_blk->get_block_id().get_block_count()];
             radios.push_back(&perif);
         }
+        try {
+            UHD_MSG(status) << "[X300] syncing " << radios.size() << " radios " << std::endl;
+            synchronize_dacs(radios);
+        }
+        catch(const uhd::io_error &ex) {
+            throw uhd::io_error(str(boost::format("Failed to sync DACs! %s ") % ex.what()));
+        }
     }
-    try {
-        synchronize_dacs(radios);
-    }
-    catch(const uhd::io_error &ex) {
-        throw uhd::io_error(str(boost::format("Failed to sync DACs! %s ") % ex.what()));
-    }
-
-        //radio_perifs_t &perif = mb.radio_perifs[radio_index];
-        //radios_list.push_back(&perif);
 }
 
 // vim: sw=4 expandtab:
