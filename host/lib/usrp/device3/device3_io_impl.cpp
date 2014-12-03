@@ -27,6 +27,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include "../common/async_packet_handler.hpp"
+#include <uhd/transport/chdr.hpp>
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include "../rfnoc/terminator_recv.hpp"
@@ -38,41 +39,6 @@ using namespace uhd::transport;
 
 //! CVITA uses 12-Bit sequence numbers
 static const boost::uint32_t HW_SEQ_NUM_MASK = 0xfff;
-
-/***********************************************************************
- * CHDR packer/unpacker (TODO: Remove once new chdr class is in)
- **********************************************************************/
-static void device3_if_hdr_unpack_be(
-        const boost::uint32_t *packet_buff,
-        vrt::if_packet_info_t &if_packet_info
-){
-    if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
-    return vrt::if_hdr_unpack_be(packet_buff, if_packet_info);
-}
-
-static void device3_if_hdr_unpack_le(
-    const boost::uint32_t *packet_buff,
-    vrt::if_packet_info_t &if_packet_info
-){
-    if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
-    return vrt::if_hdr_unpack_le(packet_buff, if_packet_info);
-}
-
-static void device3_if_hdr_pack_be(
-    boost::uint32_t *packet_buff,
-    vrt::if_packet_info_t &if_packet_info
-){
-    if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
-    return vrt::if_hdr_pack_be(packet_buff, if_packet_info);
-}
-
-static void device3_if_hdr_pack_le(
-    boost::uint32_t *packet_buff,
-    vrt::if_packet_info_t &if_packet_info
-){
-    if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
-    return vrt::if_hdr_pack_le(packet_buff, if_packet_info);
-}
 
 
 /***********************************************************************
@@ -242,20 +208,16 @@ static void handle_rx_flowctrl(
 
     if (endianness == ENDIANNESS_BIG) {
         // Load Header:
-        device3_if_hdr_pack_be(pkt, packet_info);
+        vrt::chdr::if_hdr_pack_be(pkt, packet_info);
         // Load Payload: (the sequence number)
         pkt[packet_info.num_header_words32+RXFC_CMD_CODE_OFFSET] = uhd::htonx<boost::uint32_t>(0);
         pkt[packet_info.num_header_words32+RXFC_SEQ_NUM_OFFSET]  = uhd::htonx<boost::uint32_t>(seq32);
-        // hardcode bits TODO remove this when chdr fix is merged
-        pkt[0] = (pkt[0] & 0xFFFFFF00) | 0x00000040;
     } else {
         // Load Header:
-        device3_if_hdr_pack_le(pkt, packet_info);
+        vrt::chdr::if_hdr_pack_le(pkt, packet_info);
         // Load Payload: (the sequence number)
         pkt[packet_info.num_header_words32+RXFC_CMD_CODE_OFFSET] = uhd::htowx<boost::uint32_t>(0);
         pkt[packet_info.num_header_words32+RXFC_SEQ_NUM_OFFSET]  = uhd::htowx<boost::uint32_t>(seq32);
-        // hardcode bits TODO remove this when chdr fix is merged
-        pkt[0] = (pkt[0] & 0x00FFFFFF) | 0x40000000;
     }
 
     //std::cout << "  SID=" << std::hex << sid << " hdr bits=" << packet_info.packet_type << " seq32=" << seq32 << std::endl;
@@ -371,12 +333,12 @@ static void handle_tx_async_msgs(
     {
         if (endianness == ENDIANNESS_BIG)
         {
-            device3_if_hdr_unpack_be(packet_buff, if_packet_info);
+            vrt::chdr::if_hdr_unpack_be(packet_buff, if_packet_info);
             endian_conv = uhd::ntohx;
         }
         else
         {
-            device3_if_hdr_unpack_le(packet_buff, if_packet_info);
+            vrt::chdr::if_hdr_unpack_le(packet_buff, if_packet_info);
             endian_conv = uhd::wtohx;
         }
     }
@@ -484,10 +446,10 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         //init some streamer stuff
         std::string conv_endianness;
         if (get_transport_endianness(mb_index) == ENDIANNESS_BIG) {
-            my_streamer->set_vrt_unpacker(&device3_if_hdr_unpack_be);
+            my_streamer->set_vrt_unpacker(&vrt::chdr::if_hdr_unpack_be);
             conv_endianness = "be";
         } else {
-            my_streamer->set_vrt_unpacker(&device3_if_hdr_unpack_le);
+            my_streamer->set_vrt_unpacker(&vrt::chdr::if_hdr_unpack_le);
             conv_endianness = "le";
         }
 
@@ -634,10 +596,10 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         //init some streamer stuff
         std::string conv_endianness;
         if (get_transport_endianness(mb_index) == ENDIANNESS_BIG) {
-            my_streamer->set_vrt_packer(&device3_if_hdr_pack_be);
+            my_streamer->set_vrt_packer(&vrt::chdr::if_hdr_pack_be);
             conv_endianness = "be";
         } else {
-            my_streamer->set_vrt_packer(&device3_if_hdr_pack_le);
+            my_streamer->set_vrt_packer(&vrt::chdr::if_hdr_pack_le);
             conv_endianness = "le";
         }
 
