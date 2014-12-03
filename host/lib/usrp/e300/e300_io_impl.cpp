@@ -61,60 +61,6 @@ void e300_impl::_check_tick_rate_with_current_streamers(const double rate)
     _enforce_tick_rate_limits(max_tx_chan_count, rate, "TX");
 }
 
-void e300_impl::_update_tick_rate(const double rate)
-{
-    _check_tick_rate_with_current_streamers(rate);
-
-    BOOST_FOREACH(const std::string &block_id, _rx_streamers.keys()) {
-        UHD_MSG(status) << "setting rx streamer " << block_id << " rate to " << rate << std::endl;
-        boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
-            boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[block_id].lock());
-        if (my_streamer) {
-            my_streamer->set_tick_rate(rate);
-            my_streamer->set_samp_rate(rate);
-        }
-    }
-    BOOST_FOREACH(const std::string &block_id, _tx_streamers.keys()) {
-        UHD_MSG(status) << "setting tx streamer " << block_id << " rate to " << rate << std::endl;
-        boost::shared_ptr<sph::send_packet_streamer> my_streamer =
-            boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[block_id].lock());
-        if (my_streamer) {
-            my_streamer->set_tick_rate(rate);
-            my_streamer->set_samp_rate(rate);
-        }
-    }
-}
-
-void e300_impl::_update_rx_samp_rate(const size_t dspno, const double rate)
-{
-    const std::string radio_block_id = str(boost::format("Radio_%d") % dspno);
-    if (not _rx_streamers.has_key(radio_block_id))
-        return;
-    boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
-        boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[radio_block_id].lock());
-    if (not my_streamer)
-        return;
-    my_streamer->set_samp_rate(rate);
-    // TODO move these details to radio_ctrl
-    const double adj = _radio_perifs[dspno].ddc->get_scaling_adjustment();
-    my_streamer->set_scale_factor(adj);
-}
-
-void e300_impl::_update_tx_samp_rate(const size_t dspno, const double rate)
-{
-    const std::string radio_block_id = str(boost::format("Radio_%d") % dspno);
-    if (not _tx_streamers.has_key(radio_block_id))
-        return;
-    boost::shared_ptr<sph::send_packet_streamer> my_streamer =
-        boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[radio_block_id].lock());
-    if (not my_streamer)
-        return;
-    my_streamer->set_samp_rate(rate);
-    // TODO move these details to radio_ctrl
-    const double adj = _radio_perifs[dspno].ddc->get_scaling_adjustment();
-    my_streamer->set_scale_factor(adj);
-}
-
 /***********************************************************************
  * frontend selection
  **********************************************************************/

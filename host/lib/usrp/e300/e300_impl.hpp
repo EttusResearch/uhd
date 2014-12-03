@@ -215,10 +215,6 @@ private: // methods
         const double tick_rate,
         const std::string &direction);
 
-    void _update_tick_rate(const double);
-    void _update_rx_samp_rate(const size_t, const double);
-    void _update_tx_samp_rate(const size_t, const double);
-
     void _update_time_source(const std::string &source);
     void _update_clock_source(const std::string &);
 

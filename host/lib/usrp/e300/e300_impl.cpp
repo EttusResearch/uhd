@@ -446,7 +446,9 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _tree->create<double>(mb_path / "tick_rate")
         .coerce(boost::bind(&e300_impl::_set_tick_rate, this, _1))
         .publish(boost::bind(&e300_impl::_get_tick_rate, this, 0))
-        .subscribe(boost::bind(&e300_impl::_update_tick_rate, this, _1));
+        .subscribe(boost::bind(&device3_impl::update_tx_streamers, this, _1))
+        .subscribe(boost::bind(&device3_impl::update_rx_streamers, this, _1))
+    ;
 
     //default some chains on -- needed for setup purposes
     _codec_ctrl->set_active_chains(true, false, true, false);
@@ -1064,7 +1066,7 @@ void e300_impl::_setup_radio(const size_t dspno)
         .publish(boost::bind(&rx_dsp_core_3000::get_host_rates, perif.ddc));
     _tree->create<double>(rx_dsp_path / "rate" / "value")
         .coerce(boost::bind(&rx_dsp_core_3000::set_host_rate, perif.ddc, _1))
-        .subscribe(boost::bind(&e300_impl::_update_rx_samp_rate, this, dspno, _1))
+        .subscribe(boost::bind(&device3_impl::update_rx_streamers, this, _1))
         .set(e300::DEFAULT_RX_SAMP_RATE);
     _tree->create<double>(rx_dsp_path / "freq" / "value")
         .coerce(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
@@ -1088,7 +1090,7 @@ void e300_impl::_setup_radio(const size_t dspno)
         .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, perif.duc));
     _tree->create<double>(tx_dsp_path / "rate" / "value")
         .coerce(boost::bind(&tx_dsp_core_3000::set_host_rate, perif.duc, _1))
-        .subscribe(boost::bind(&e300_impl::_update_tx_samp_rate, this, dspno, _1))
+        .subscribe(boost::bind(&device3_impl::update_tx_streamers, this, _1))
         .set(e300::DEFAULT_TX_SAMP_RATE);
     _tree->create<double>(tx_dsp_path / "freq" / "value")
         .coerce(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
