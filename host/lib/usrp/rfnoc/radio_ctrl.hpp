@@ -22,6 +22,7 @@
 #include <uhd/usrp/rfnoc/tx_block_ctrl_base.hpp>
 #include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/tick_node_ctrl.hpp>
+#include <uhd/usrp/rfnoc/scalar_node_ctrl.hpp>
 #include "rx_vita_core_3000.hpp"
 #include "tx_vita_core_3000.hpp"
 #include "time_core_3000.hpp"
@@ -34,7 +35,12 @@ namespace uhd {
 /*! \brief Provide access to a radio.
  *
  */
-class radio_ctrl : public rx_block_ctrl_base, public tx_block_ctrl_base, public rate_node_ctrl, public tick_node_ctrl
+class radio_ctrl :
+    public rx_block_ctrl_base,
+    public tx_block_ctrl_base,
+    public rate_node_ctrl,
+    public tick_node_ctrl,
+    public scalar_node_ctrl
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(radio_ctrl)

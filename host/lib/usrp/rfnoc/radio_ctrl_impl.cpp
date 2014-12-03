@@ -199,6 +199,18 @@ public:
         return _tree->access<double>("tick_rate").get();
     };
 
+    /***********************************************************************
+     * Scaling controls (from scalar_node_ctrl)
+     **********************************************************************/
+    double get_input_scale_factor(size_t /* port */)
+    {
+        return _perifs.duc->get_scaling_adjustment();
+    }
+
+    double get_output_scale_factor(size_t /* port */)
+    {
+        return _perifs.ddc->get_scaling_adjustment();
+    }
 
     /***********************************************************************
      * Radio controls (radio_ctrl specific)
@@ -249,7 +261,12 @@ protected:
     //! Configures deframer and duc
     void _init_tx(uhd::stream_args_t &args)
     {
-        UHD_MSG(status) << "radio_ctrl::init_tx()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE()
+            << "radio_ctrl::_init_tx()"
+            << args.args.to_string() << " "
+            << args.otw_format << " "
+            << args.cpu_format << " "
+            << std::endl;
 
         _perifs.deframer->setup(args);
         _perifs.duc->setup(args);
