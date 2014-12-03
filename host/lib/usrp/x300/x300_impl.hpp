@@ -293,9 +293,6 @@ private:
     void set_tick_rate(mboard_members_t &, const double);
     //! Returns the tick rate for device with index \p mb_i
     double _get_tick_rate(const size_t mb_i);
-    void update_tick_rate(const size_t, const double);
-    void update_rx_samp_rate(mboard_members_t&, const size_t, const double);
-    void update_tx_samp_rate(mboard_members_t&, const size_t, const double);
 
     void update_clock_control(mboard_members_t&);
     void initialize_clock_control(mboard_members_t &mb);
