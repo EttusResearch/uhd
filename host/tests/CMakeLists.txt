@@ -29,8 +29,9 @@ SET(test_sources
     blockdef_test.cpp
     buffer_test.cpp
     byteswap_test.cpp
-    convert_test.cpp
     cast_test.cpp
+    chdr_test.cpp
+    convert_test.cpp
     device3_test.cpp
     dict_test.cpp
     error_test.cpp

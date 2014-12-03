@@ -2,6 +2,9 @@
 
 \tableofcontents
 
+\b Note: More build information can be found on the UHD wiki page, at
+http://code.ettus.com/redmine/ettus/projects/uhd/wiki .
+
 \section build_dependencies Build Dependencies
 
 <b>Linux Notes:</b>
