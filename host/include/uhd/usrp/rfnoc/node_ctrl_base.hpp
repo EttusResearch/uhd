@@ -30,6 +30,8 @@
 namespace uhd {
     namespace rfnoc {
 
+#define UHD_RFNOC_BLOCK_TRACE() UHD_MSG(status) << "[" << unique_id() << "] "
+
 /*! \brief Abstract base class for streaming nodes.
  *
  */
@@ -54,19 +56,33 @@ public:
      */
     void set_args(const uhd::device_addr_t &args);
 
-    /*! Reset node.
-     *
-     * Clears the list of connected nodes.
+    //! Returns a unique string that identifies this block.
+    virtual std::string unique_id() const;
+
+    /***********************************************************************
+     * Connections
+     **********************************************************************/
+    /*! Clears the list of connected nodes.
      */
     virtual void clear();
 
-    //! See uhd::rfnoc::source_node_ctrl::register_downstream_node().
+    /*! Registers another node as downstream of this node, connected to a given port.
+     *
+     * This implies that this node is a source node, and the downstream node is
+     * a sink node.
+     * See also uhd::rfnoc::source_node_ctrl::register_downstream_node().
+     */
     virtual void register_downstream_node(
             node_ctrl_base::sptr downstream_node,
             size_t port=ANY_PORT
     );
 
-    //! See uhd::rfnoc::sink_node_ctrl::register_upstream_node().
+    /*! Registers another node as upstream of this node, connected to a given port.
+     *
+     * This implies that this node is a sink node, and the upstream node is
+     * a source node.
+     * See also uhd::rfnoc::sink_node_ctrl::register_upstream_node().
+     */
     virtual void register_upstream_node(
             node_ctrl_base::sptr upstream_node,
             size_t port=ANY_PORT
@@ -75,9 +91,17 @@ public:
     node_map_t list_downstream_nodes() { return _downstream_nodes; };
     node_map_t list_upstream_nodes() { return _upstream_nodes; };
 
-    /*! Find the first N nodes downstream that match a predicate.
+    /*! Find nodes downstream that match a predicate.
      *
      * Uses a non-recursive breadth-first search algorithm.
+     * On every branch, the search stops if a block matches.
+     * See this example:
+     * <pre>
+     * A -> B -> C -> C
+     * </pre>
+     * Say node A searches for nodes of type C. It will only find the
+     * first 'C' block, not the second.
+     *
      * Returns blocks that are of type T.
      *
      * Search only goes downstream.

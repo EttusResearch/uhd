@@ -51,11 +51,18 @@ public:
 
     double get_input_scale_factor(size_t) { return scalar_node_ctrl::SCALE_NONE; };
 
+    std::string unique_id() const;
+
 protected:
+    terminator_recv() : _term_index(_count) { _count++; };
 
     /*! Nothing may come after the streamer.
      */
     bool _is_final_tx_block() { return true; };
+
+private:
+    const size_t _term_index;
+    static size_t _count;
 
 }; /* class terminator_recv */
 

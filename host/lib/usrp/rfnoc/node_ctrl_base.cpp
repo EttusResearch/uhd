@@ -22,14 +22,21 @@ using namespace uhd::rfnoc;
 
 void node_ctrl_base::set_args(const uhd::device_addr_t &args)
 {
-    UHD_MSG(status) << "node_ctrl_base::set_args() " << args.to_string() << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "node_ctrl_base::set_args() " << args.to_string() << std::endl;
     _args = args;
     _post_args_hook();
 }
 
 void node_ctrl_base::_post_args_hook()
 {
-    UHD_MSG(status) << "node_ctrl_base::_post_args_hook() " << _args.to_string() << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "node_ctrl_base::_post_args_hook() " << _args.to_string() << std::endl;
+}
+
+std::string node_ctrl_base::unique_id() const
+{
+    // Most instantiations will override this, so we don't need anything
+    // more elegant here.
+    return str(boost::format("%08X") % size_t(this));
 }
 
 void node_ctrl_base::clear()

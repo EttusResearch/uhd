@@ -23,6 +23,7 @@
 #include <uhd/usrp/rfnoc/tick_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/scalar_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/block_ctrl_base.hpp> // For the block macros
+#include <uhd/utils/msg.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -47,7 +48,7 @@ public:
 
     void issue_stream_cmd(const uhd::stream_cmd_t &)
     {
-        UHD_MSG(status) << "[TX Streamer] terminator_send::issue_stream_cmd()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "terminator_send::issue_stream_cmd()" << std::endl;
     }
 
     // A tx streamer doesn't set its output sampling rate,
@@ -57,11 +58,19 @@ public:
     // Same for the scaling factor
     double get_output_scale_factor(size_t) { return scalar_node_ctrl::SCALE_NONE; };
 
+    std::string unique_id() const;
+
 protected:
+    terminator_send() : _term_index(_count) { _count++; };
 
     /*! Nothing may come after the streamer.
      */
     bool _is_final_rx_block() { return true; };
+
+private:
+    //! Every terminator has a unique index
+    const size_t _term_index;
+    static size_t _count;
 
 }; /* class terminator_send */
 
