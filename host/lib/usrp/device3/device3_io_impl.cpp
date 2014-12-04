@@ -436,6 +436,10 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
 
     // II. Iterate over all channels
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer;
+    // The terminator's lifetime is coupled to the streamer.
+    // There is only one terminator. If the streamer has multiple channels,
+    // it will be connected to each upstream block.
+    rfnoc::terminator_recv::sptr recv_terminator = rfnoc::terminator_recv::make();
     for (size_t stream_i = 0; stream_i < chan_list.size(); stream_i++) {
         // Get block ID and mb index
         uhd::rfnoc::block_id_t block_id = chan_list[stream_i];
@@ -491,16 +495,8 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         id.num_outputs = 1;
         my_streamer->set_converter(id);
 
-        // Add terminator. Its lifetime is coupled to the streamer.
-        rfnoc::terminator_recv::sptr recv_terminator;
-        if (my_streamer->get_terminator()) {
-            recv_terminator = my_streamer->get_terminator();
-        } else {
-            recv_terminator = rfnoc::terminator_recv::make();
-        }
         blk_ctrl->register_downstream_node(recv_terminator, block_port);
         recv_terminator->register_upstream_node(blk_ctrl);
-        my_streamer->set_terminator(recv_terminator);
 
         //flow control setup
         const size_t pkt_size = spp * bpi + stream_options.rx_max_len_hdr;
@@ -555,15 +551,21 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
 
         // Tell the streamer which SID is valid for this channel
         my_streamer->set_xport_chan_sid(stream_i, true, xport.send_sid);
-
-        // Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency
-        _rx_streamers[blk_ctrl->get_block_id().get()] = boost::weak_ptr<sph::recv_packet_streamer>(my_streamer);
-
-        // Sets tick rate, samp rate and scaling on this streamer
-        update_rx_streamers();
     }
 
-    post_streamer_hooks(false);
+    // Connect the terminator to the streamer
+    my_streamer->set_terminator(recv_terminator);
+
+    // Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency.
+    // Note that we store the streamer only once, and use its terminator's
+    // ID to do so.
+    _rx_streamers[recv_terminator->unique_id()] = boost::weak_ptr<sph::recv_packet_streamer>(my_streamer);
+
+    // Sets tick rate, samp rate and scaling on this streamer.
+    // A registered terminator is required to do this.
+    update_rx_streamers();
+
+    post_streamer_hooks(false /* is not tx */);
     return my_streamer;
 }
 
@@ -573,7 +575,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
 void device3_impl::update_tx_streamers(double /* rate */)
 {
     BOOST_FOREACH(const std::string &block_id, _tx_streamers.keys()) {
-        UHD_MSG(status) << "[Device3] updating TX streamers to " << block_id << std::endl;
+        UHD_MSG(status) << "[Device3] updating TX streamer: " << block_id << std::endl;
         boost::shared_ptr<sph::send_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[block_id].lock());
         if (my_streamer) {
@@ -612,6 +614,10 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
     // II. Iterate over all channels
     boost::shared_ptr<sph::send_packet_streamer> my_streamer;
+    // The terminator's lifetime is coupled to the streamer.
+    // There is only one terminator. If the streamer has multiple channels,
+    // it will be connected to each downstream block.
+    rfnoc::terminator_send::sptr send_terminator = rfnoc::terminator_send::make();
     for (size_t stream_i = 0; stream_i < chan_list.size(); stream_i++) {
         // Get block ID and mb index
         uhd::rfnoc::block_id_t block_id = chan_list[stream_i];
@@ -667,16 +673,9 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         id.num_outputs = 1;
         my_streamer->set_converter(id);
 
-        // Add terminator. Its lifetime is coupled to the streamer.
-        rfnoc::terminator_send::sptr send_terminator;
-        if (my_streamer->get_terminator()) {
-            send_terminator = my_streamer->get_terminator();
-        } else {
-            send_terminator = rfnoc::terminator_send::make();
-        }
+        // Connect the terminator with this channel's block.
         blk_ctrl->register_upstream_node(send_terminator, block_port);
         send_terminator->register_downstream_node(blk_ctrl);
-        my_streamer->set_terminator(send_terminator);
 
         //flow control setup
         const size_t pkt_size = spp * bpi + stream_options.tx_max_len_hdr;
@@ -724,14 +723,19 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         );
         my_streamer->set_xport_chan_sid(stream_i, true, xport.send_sid);
         my_streamer->set_enable_trailer(false); //TODO not implemented trailer support yet
-
-        //Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency
-        _tx_streamers[blk_ctrl->get_block_id().get()] = boost::weak_ptr<sph::send_packet_streamer>(my_streamer);
-
-        // Sets tick rate, samp rate and scaling on this streamer
-        update_tx_streamers();
     }
 
-    post_streamer_hooks(true);
+    // Connect the terminator to the streamer
+    my_streamer->set_terminator(send_terminator);
+    // Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency.
+    // Note that we store the streamer only once, and use its terminator's
+    // ID to do so.
+    _tx_streamers[send_terminator->unique_id()] = boost::weak_ptr<sph::send_packet_streamer>(my_streamer);
+
+    // Sets tick rate, samp rate and scaling on this streamer
+    // A registered terminator is required to do this.
+    update_tx_streamers();
+
+    post_streamer_hooks(true /* is tx */);
     return my_streamer;
 }
