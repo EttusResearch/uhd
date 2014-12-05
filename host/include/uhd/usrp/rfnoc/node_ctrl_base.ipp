@@ -83,6 +83,47 @@ namespace uhd {
         return results;
     }
 
+    template <typename T, typename value_type>
+    value_type node_ctrl_base::_find_unique_property(
+            boost::function<value_type(boost::shared_ptr<T>, size_t)> get_property,
+            value_type NULL_VALUE,
+            const std::set< boost::shared_ptr<T> > &exclude_nodes,
+            bool downstream
+    ) {
+        std::vector< boost::shared_ptr<T> > descendant_rate_nodes = downstream
+            ? find_downstream_node<T>()
+            : find_upstream_node<T>();
+        value_type ret_val = NULL_VALUE;
+        std::string first_node_id;
+        BOOST_FOREACH(const boost::shared_ptr<T> &node, descendant_rate_nodes) {
+            if (exclude_nodes.count(node)) {
+                continue;
+            }
+            // FIXME we need to know the port!!!
+            size_t port = ANY_PORT; // NOOO! this is wrong!!!! FIXME
+            value_type this_property = get_property(node, port);
+            if (this_property == NULL_VALUE) {
+                continue;
+            }
+            // We use the first property we find as reference
+            if (ret_val == NULL_VALUE) {
+                ret_val = this_property;
+                first_node_id = node->unique_id();
+                continue;
+            }
+            // In all subsequent finds, we make sure the property is equal to the reference
+            if (this_property != ret_val) {
+                throw uhd::runtime_error(
+                    str(
+                        boost::format("Node %1% specifies %2%, node %3% specifies %4%.")
+                            % first_node_id % ret_val % node->unique_id() % this_property
+                    )
+                );
+            }
+        }
+        return ret_val;
+    }
+
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_NODE_CTRL_BASE_IPP */

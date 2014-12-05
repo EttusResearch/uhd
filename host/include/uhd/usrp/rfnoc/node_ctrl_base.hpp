@@ -24,6 +24,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/function.hpp>
 #include <map>
 #include <set>
 
@@ -98,6 +99,38 @@ public:
         return _find_child_node<T>(false);
     }
 
+    /*! Checks if downstream nodes share a common, unique property.
+     *
+     * This will use find_downstream_node() to find all nodes downstream of
+     * this that are of type T. Then it will use \p get_property to return a
+     * property from all of them. If all these properties are identical, it will
+     * return that property. Otherwise, it will throw a uhd::runtime_error.
+     *
+     * \p get_property A functor to return the property from a node
+     * \p null_value If \p get_property returns this value, that node is skipped.
+     * \p explored_nodes A list of nodes to exclude from the search. This is typically
+     *                   to avoid recursion loops.
+     */
+    template <typename T, typename value_type>
+    UHD_INLINE value_type find_downstream_unique_property(
+            boost::function<value_type(boost::shared_ptr<T> node, size_t port)> get_property,
+            value_type null_value,
+            const std::set< boost::shared_ptr<T> > &exclude_nodes=std::set< boost::shared_ptr<T> >()
+    ) {
+        return _find_unique_property<T, value_type>(get_property, null_value, exclude_nodes, true);
+    }
+
+    /*! Like find_downstream_unique_property(), but searches upstream.
+     */
+    template <typename T, typename value_type>
+    UHD_INLINE value_type find_upstream_unique_property(
+            boost::function<value_type(boost::shared_ptr<T> node, size_t port)> get_property,
+            value_type null_value,
+            const std::set< boost::shared_ptr<T> > &exclude_nodes=std::set< boost::shared_ptr<T> >()
+    ) {
+        return _find_unique_property<T, value_type>(get_property, null_value, exclude_nodes, false);
+    }
+
 protected:
     /***********************************************************************
      * Structors
@@ -169,6 +202,22 @@ private:
      */
     template <typename T>
     std::vector< boost::shared_ptr<T> > _find_child_node(bool downstream);
+
+    /*! Implements the search algorithm for find_downstream_unique_property() and
+     * find_upstream_unique_property().
+     *
+     * Depending on \p downstream, "child nodes" are either defined as
+     * nodes connected downstream or upstream.
+     *
+     * \param downstream Set to true if search goes downstream, false for upstream.
+     */
+    template <typename T, typename value_type>
+    value_type _find_unique_property(
+            boost::function<value_type(boost::shared_ptr<T>, size_t)> get_property,
+            value_type NULL_VALUE,
+            const std::set< boost::shared_ptr<T> > &exclude_nodes,
+            bool downstream
+    );
 
 }; /* class node_ctrl_base */
 

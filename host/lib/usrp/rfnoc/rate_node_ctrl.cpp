@@ -16,77 +16,50 @@
 //
 
 #include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
+#include <boost/bind.hpp>
 
 using namespace uhd::rfnoc;
+
+static double _get_input_samp_rate(rate_node_ctrl::sptr node, size_t port)
+{
+    return node->get_input_samp_rate(port);
+}
+
+static double _get_output_samp_rate(rate_node_ctrl::sptr node, size_t port)
+{
+    return node->get_output_samp_rate(port);
+}
+
 
 // FIXME add recursion limiters (i.e. list of explored nodes)
 double rate_node_ctrl::get_input_samp_rate(
         size_t /* port */
 ) {
-    return _get_downstream_unique_input_samp_rate();
+    try {
+        return find_downstream_unique_property<rate_node_ctrl, double>(
+                boost::bind(_get_input_samp_rate, _1, _2),
+                RATE_NONE
+        );
+    } catch (const uhd::runtime_error &ex) {
+        throw uhd::runtime_error(str(
+            boost::format("Multiple sampling rates downstream of %s: %s.")
+            % unique_id() % ex.what()
+        ));
+    }
 }
 
 double rate_node_ctrl::get_output_samp_rate(
         size_t /* port */
 ) {
-    return _get_upstream_unique_output_samp_rate();
-}
-
-double rate_node_ctrl::_get_downstream_unique_input_samp_rate()
-{
-    std::vector< sptr > descendant_rate_nodes = find_downstream_node<rate_node_ctrl>();
-    double ret_val = RATE_NONE;
-    BOOST_FOREACH(const sptr &node, descendant_rate_nodes) {
-        // FIXME we need to know the port!!!
-        size_t port = ANY_PORT; // NOOO! this is wrong!!!!
-        double samp_rate = node->get_input_samp_rate(port);
-        if (samp_rate == RATE_NONE) {
-            continue;
-        }
-        if (ret_val == RATE_NONE) {
-            ret_val = samp_rate;
-            // TODO: Remember name of this node so we can make the throw message more descriptive.
-            continue;
-        }
-        if (samp_rate != ret_val) {
-            throw uhd::runtime_error(
-                str(
-                    // TODO add node names
-                    boost::format("Conflicting sampling rates: One downstream block wants %d Msps, another wants %d Msps.")
-                    % samp_rate % ret_val
-                )
-            );
-        }
+    try {
+        return find_upstream_unique_property<rate_node_ctrl, double>(
+                boost::bind(_get_output_samp_rate, _1, _2),
+                RATE_NONE
+        );
+    } catch (const uhd::runtime_error &ex) {
+        throw uhd::runtime_error(str(
+            boost::format("Multiple sampling rates upstream of %s: %s.")
+            % unique_id() % ex.what()
+        ));
     }
-    return ret_val;
-}
-
-// TODO get rid of this code redundancy
-double rate_node_ctrl::_get_upstream_unique_output_samp_rate()
-{
-    std::vector< sptr > descendant_rate_nodes = find_upstream_node<rate_node_ctrl>();
-    double ret_val = RATE_NONE;
-    BOOST_FOREACH(const sptr &node, descendant_rate_nodes) {
-        // FIXME we need to know the port!!!
-        size_t port = ANY_PORT; // NOOO! this is wrong!!!!
-        double samp_rate = node->get_output_samp_rate(port);
-        if (samp_rate == RATE_NONE) {
-            continue;
-        }
-        if (ret_val == RATE_NONE) {
-            ret_val = samp_rate;
-            // TODO: Remember name of this node so we can make the throw message more descriptive.
-            continue;
-        }
-        if (samp_rate != ret_val) {
-            throw uhd::runtime_error(
-                str(
-                    // TODO add node names
-                    boost::format("Conflicting sampling rates: One upstream block wants %d Msps, another wants %d Msps.")
-                    % samp_rate % ret_val
-                )
-            );
-        }
-    }
-    return ret_val;
 }

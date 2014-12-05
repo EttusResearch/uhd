@@ -16,79 +16,49 @@
 //
 
 #include <uhd/usrp/rfnoc/scalar_node_ctrl.hpp>
+#include <boost/bind.hpp>
 
 using namespace uhd::rfnoc;
+
+static double _get_input_factor(scalar_node_ctrl::sptr node, size_t port)
+{
+    return node->get_input_scale_factor(port);
+}
+
+static double _get_output_factor(scalar_node_ctrl::sptr node, size_t port)
+{
+    return node->get_output_scale_factor(port);
+}
 
 // FIXME add recursion limiters (i.e. list of explored nodes)
 double scalar_node_ctrl::get_input_scale_factor(
         size_t /* port */
 ) {
-    return _get_downstream_unique_scale_factor();
+    try {
+        return find_downstream_unique_property<scalar_node_ctrl, double>(
+                boost::bind(_get_input_factor, _1, _2),
+                SCALE_NONE
+        );
+    } catch (const uhd::runtime_error &ex) {
+        throw uhd::runtime_error(str(
+            boost::format("Multiple scaling factors rates downstream of %s: %s.")
+            % unique_id() % ex.what()
+        ));
+    }
 }
 
 double scalar_node_ctrl::get_output_scale_factor(
         size_t /* port */
 ) {
-    return _get_upstream_unique_scale_factor();
-}
-
-// TODO get rid of this code redundancy
-double scalar_node_ctrl::_get_upstream_unique_scale_factor()
-{
-    std::vector< sptr > descendant_rate_nodes = find_upstream_node<scalar_node_ctrl>();
-    double ret_val = SCALE_NONE;
-    BOOST_FOREACH(const sptr &node, descendant_rate_nodes) {
-        // FIXME we need to know the port!!!
-        size_t port = ANY_PORT; // NOOO! this is wrong!!!!
-        double scaling = node->get_output_scale_factor(port);
-        if (scaling == SCALE_NONE) {
-            continue;
-        }
-        if (ret_val == SCALE_NONE) {
-            ret_val = scaling;
-            // TODO: Remember name of this node so we can make the throw message more descriptive.
-            continue;
-        }
-        if (scaling != ret_val) {
-            throw uhd::runtime_error(
-                str(
-                    // TODO add node names
-                    boost::format("Conflicting scaling values: One upstream block wants %f, another wants %f.")
-                    % scaling % ret_val
-                )
-            );
-        }
+    try {
+        return find_upstream_unique_property<scalar_node_ctrl, double>(
+                boost::bind(_get_output_factor, _1, _2),
+                SCALE_NONE
+        );
+    } catch (const uhd::runtime_error &ex) {
+        throw uhd::runtime_error(str(
+            boost::format("Multiple scaling factors rates upstream of %s: %s.")
+            % unique_id() % ex.what()
+        ));
     }
-    return ret_val;
 }
-
-// TODO get rid of this code redundancy
-double scalar_node_ctrl::_get_downstream_unique_scale_factor()
-{
-    std::vector< sptr > descendant_rate_nodes = find_downstream_node<scalar_node_ctrl>();
-    double ret_val = SCALE_NONE;
-    BOOST_FOREACH(const sptr &node, descendant_rate_nodes) {
-        // FIXME we need to know the port!!!
-        size_t port = ANY_PORT; // NOOO! this is wrong!!!!
-        double scaling = node->get_input_scale_factor(port);
-        if (scaling == SCALE_NONE) {
-            continue;
-        }
-        if (ret_val == SCALE_NONE) {
-            ret_val = scaling;
-            // TODO: Remember name of this node so we can make the throw message more descriptive.
-            continue;
-        }
-        if (scaling != ret_val) {
-            throw uhd::runtime_error(
-                str(
-                    // TODO add node names
-                    boost::format("Conflicting scaling values: One upstream block wants %f, another wants %f.")
-                    % scaling % ret_val
-                )
-            );
-        }
-    }
-    return ret_val;
-}
-

@@ -58,19 +58,6 @@ public:
     virtual double get_input_samp_rate(size_t port=ANY_PORT);
     virtual double get_output_samp_rate(size_t port=ANY_PORT);
 
-protected:
-    /*! Checks all downstream blocks for their input rate.
-     * If it's the same all the time, return that. If it differs,
-     * throw.
-     */
-    double _get_downstream_unique_input_samp_rate();
-
-    /*! Checks all upstream blocks for their output rate.
-     * If it's the same all the time, return that. If it differs,
-     * throw.
-     */
-    double _get_upstream_unique_output_samp_rate();
-
 }; /* class rate_node_ctrl */
 
 }} /* namespace uhd::rfnoc */

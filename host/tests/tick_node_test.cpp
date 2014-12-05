@@ -72,9 +72,12 @@ BOOST_AUTO_TEST_CASE(test_both_ways_search)
     MAKE_TICK_NODE(node_B);
     MAKE_TICK_SETTING_NODE(node_C, test_rate);
 
+    std::cout << "a->b" << std::endl;
     connect_nodes(node_A, node_B);
+    std::cout << "b->a" << std::endl;
     connect_nodes(node_B, node_C);
 
+    std::cout << "search" << std::endl;
     double result_rate = node_B->get_tick_rate();
     BOOST_CHECK_EQUAL(result_rate, test_rate);
 }

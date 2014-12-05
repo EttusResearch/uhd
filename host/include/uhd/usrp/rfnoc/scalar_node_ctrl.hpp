@@ -42,6 +42,7 @@ public:
      * Types
      **********************************************************************/
     typedef boost::shared_ptr<scalar_node_ctrl> sptr;
+    //! Undefined scaling
     static const double SCALE_NONE = -1.0;
 
     /***********************************************************************
@@ -64,10 +65,6 @@ public:
      * \param port Port Number
      */
     virtual double get_output_scale_factor(size_t port=ANY_PORT);
-
-protected:
-    double _get_downstream_unique_scale_factor();
-    double _get_upstream_unique_scale_factor();
 
 }; /* class scalar_node_ctrl */
 

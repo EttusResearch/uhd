@@ -49,6 +49,12 @@ public:
     /***********************************************************************
      * Rate controls
      **********************************************************************/
+    /*! Return a tick rate.
+     *
+     * This might be either a tick rate defined by this block (see also _get_tick_rate())
+     * or it's a tick rate defined by an adjacent block.
+     * In that case, performs a graph search to figure out the tick rate.
+     */
     double get_tick_rate(
             const std::set< node_ctrl_base::sptr > &_explored_nodes=std::set< node_ctrl_base::sptr >()
     );
