@@ -41,10 +41,10 @@ private:
 
 }; /* class test_node */
 
-void connect_nodes(uhd::rfnoc::node_ctrl_base::sptr A, uhd::rfnoc::node_ctrl_base::sptr B)
+void connect_nodes(uhd::rfnoc::source_node_ctrl::sptr A, uhd::rfnoc::sink_node_ctrl::sptr B)
 {
-    A->register_downstream_node(B);
-    B->register_upstream_node(A);
+    A->connect_downstream(B);
+    B->connect_upstream(A);
 }
 
 #endif /* INCLUDED_TEST_GRAPH_HPP */

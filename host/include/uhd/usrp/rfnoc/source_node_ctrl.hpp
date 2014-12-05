@@ -21,6 +21,7 @@
 #include <uhd/usrp/rfnoc/node_ctrl_base.hpp>
 #include <uhd/usrp/rfnoc/constants.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <boost/thread.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -48,21 +49,25 @@ public:
      */
     virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) = 0;
 
-    /*! Register a node downstream of this one (i.e., a node that receives data from this node).
+    /*! Connect another node downstream of this node.
      *
-     * Note: This does *not* affect any settings (flow control etc.). This literally only tells
-     * this node about downstream nodes.
+     * *Note:* If additional settings are required to make this connection work,
+     * e.g. configure flow control, these need to be done separately.
      *
-     * This saves a *weak pointer* to the downstream node.
+     * If the requested connection is not possible, this function will throw.
      *
-     * \param downstream_node A pointer to the node instantiation
-     * \param port If applicable, specify a port number the downstream block is connected to.
+     * \p downstream_node Pointer to the node class to connect
+     * \p port Suggested port number on this block to connect the downstream
+     *         block to.
+     * \p args Any arguments that can be useful for determining the port number.
+     *
+     * \returns The actual port number used.
      */
-    void register_downstream_node(
+    size_t connect_downstream(
             node_ctrl_base::sptr downstream_node,
-            size_t port=ANY_PORT
+            size_t port=ANY_PORT,
+            const uhd::device_addr_t &args=uhd::device_addr_t()
     );
-
 
 protected:
 
@@ -74,6 +79,42 @@ protected:
      * chain.
      */
     bool _is_final_rx_block() { return false; };
+
+    /*! Ask for a port number to connect a downstream block to.
+     *
+     * See sink_node_ctrl::_request_input_port(). This is the same
+     * for output.
+     *
+     * \param suggested_port Try and connect here.
+     * \param args When deciding on a port number, these arguments may be used.
+     *
+     * \returns A valid input port, or ANY_PORT on failure.
+     */
+    virtual size_t _request_output_port(
+            const size_t suggested_port,
+            const uhd::device_addr_t &args
+    ) const;
+
+
+private:
+    /*! Makes connecting something to the output thread-safe.
+     */
+    boost::mutex _output_mutex;
+
+    /*! Register a node downstream of this one (i.e., a node that receives data from this node).
+     *
+     * By definition, the upstream node must of type sink_node_ctrl.
+     *
+     * This saves a *weak pointer* to the downstream node and checks
+     * the port is available. Will throw otherwise.
+     *
+     * \param downstream_node A pointer to the node instantiation
+     * \param port Port number the downstream node is connected to
+     */
+    void _register_downstream_node(
+            node_ctrl_base::sptr downstream_node,
+            size_t port
+    );
 
 }; /* class source_node_ctrl */
 

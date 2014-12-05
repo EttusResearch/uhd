@@ -1212,13 +1212,42 @@ public:
             const uhd::rfnoc::block_id_t &dst_block,
             size_t dst_block_port
     ) {
-        rfnoc::block_ctrl_base::sptr src = get_device3()->get_block_ctrl(src_block);
-        rfnoc::block_ctrl_base::sptr dst = get_device3()->get_block_ctrl(dst_block);
+        rfnoc::rx_block_ctrl_base::sptr src = get_device3()->get_block_ctrl<rfnoc::rx_block_ctrl_base>(src_block);
+        rfnoc::tx_block_ctrl_base::sptr dst = get_device3()->get_block_ctrl<rfnoc::tx_block_ctrl_base>(dst_block);
 
-        src_block_port &= 0xF;
-        dst_block_port &= 0xF;
+        /********************************************************************
+         * 1. Draw the edges (logically connect the nodes)
+         ********************************************************************/
+        size_t actual_src_block_port = src->connect_downstream(
+                boost::dynamic_pointer_cast<uhd::rfnoc::node_ctrl_base>(dst),
+                src_block_port
+        );
+        if (src_block_port == uhd::rfnoc::ANY_PORT) {
+            src_block_port = actual_src_block_port;
+        } else if (src_block_port != actual_src_block_port) {
+            throw uhd::runtime_error(str(
+                boost::format("Can't connect to port %d on block %s.")
+                % src_block_port % src->unique_id()
+            ));
+        }
+        size_t actual_dst_block_port = dst->connect_upstream(
+                boost::dynamic_pointer_cast<uhd::rfnoc::node_ctrl_base>(src),
+                dst_block_port
+        );
+        if (dst_block_port == uhd::rfnoc::ANY_PORT) {
+            dst_block_port = actual_dst_block_port;
+        } else if (dst_block_port != actual_dst_block_port) {
+            throw uhd::runtime_error(str(
+                boost::format("Can't connect to port %d on block %s.")
+                % dst_block_port % dst->unique_id()
+            ));
+        }
+        // At this point, ports are locked and no one else can simply connect
+        // into them.
 
-        // Check IO signatures match
+        /********************************************************************
+         * 2. Check IO signatures match
+         ********************************************************************/
         if (not dst->set_input_signature(src->get_output_signature(src_block_port), dst_block_port)) {
             throw uhd::runtime_error(str(
                 boost::format("Can't connect block %s to %s: IO signature mismatch\n(%s is incompatible with %s).")
@@ -1228,6 +1257,9 @@ public:
             ));
         }
 
+        /********************************************************************
+         * 3. Configure the source block's destination
+         ********************************************************************/
         // Calculate SID
         sid_t sid = dst->get_address(dst_block_port);
         sid.set_src(src->get_address(src_block_port));
@@ -1235,7 +1267,9 @@ public:
         // Set SID on source block
         src->set_destination(sid.get(), src_block_port);
 
-        // Set flow control
+        /********************************************************************
+         * 4. Configure flow control
+         ********************************************************************/
         rfnoc::stream_sig_t output_sig = src->get_output_signature(src_block_port);
         size_t pkt_size = output_sig.packet_size;
         if (pkt_size == 0) { // Unspecified packet rate. Assume max packet size.
@@ -1263,20 +1297,10 @@ public:
                 pkts_per_ack,
                 dst_block_port
         );
-
-        // Register nodes
-        dst->register_upstream_node(
-                boost::dynamic_pointer_cast<uhd::rfnoc::node_ctrl_base>(src),
-                dst_block_port
-        );
-        src->register_downstream_node(
-                boost::dynamic_pointer_cast<uhd::rfnoc::node_ctrl_base>(dst),
-                src_block_port
-        );
     }
 
     void connect(const uhd::rfnoc::block_id_t &src_block, const uhd::rfnoc::block_id_t &dst_block) {
-        connect(src_block, 0, dst_block, 0);
+        connect(src_block, uhd::rfnoc::ANY_PORT, dst_block, uhd::rfnoc::ANY_PORT);
     }
 
     void clear_channels(void)

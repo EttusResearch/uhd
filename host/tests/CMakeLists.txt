@@ -41,6 +41,7 @@ SET(test_sources
     graph_search_test.cpp
     math_test.cpp
     msg_test.cpp
+    node_connect_test.cpp
     property_test.cpp
     ranges_test.cpp
     rate_node_test.cpp

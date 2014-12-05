@@ -444,13 +444,19 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         // Get block ID and mb index
         uhd::rfnoc::block_id_t block_id = chan_list[stream_i];
         size_t mb_index = block_id.get_device_no();
-        // TODO "any port"
-        size_t block_port = chan_args[stream_i].cast<size_t>("block_port", 0);
-        UHD_ASSERT_THROW(block_port < 16); // TODO replace with a check against the actual block definition
+        size_t suggested_block_port = chan_args[stream_i].cast<size_t>("block_port", rfnoc::ANY_PORT);
 
         // Access to this channel's block control
         uhd::rfnoc::rx_block_ctrl_base::sptr blk_ctrl =
             boost::dynamic_pointer_cast<uhd::rfnoc::rx_block_ctrl_base>(get_block_ctrl(block_id));
+
+        // Connect the terminator with this channel's block.
+        size_t block_port = blk_ctrl->connect_downstream(
+                recv_terminator,
+                suggested_block_port,
+                chan_args[stream_i]
+        );
+        recv_terminator->connect_upstream(blk_ctrl);
 
         // Setup the DSP transport hints
         device_addr_t rx_hints = get_rx_hints(mb_index);
@@ -470,7 +476,6 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         const size_t bpp = xport.recv->get_recv_frame_size() - stream_options.rx_max_len_hdr; // bytes per packet
         const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
         const size_t spp = std::min(args.args.cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
-        // TODO: check this is fine with E300
 
         //make the new streamer given the samples per packet
         if (not my_streamer)
@@ -494,9 +499,6 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         id.output_format = args.cpu_format;
         id.num_outputs = 1;
         my_streamer->set_converter(id);
-
-        blk_ctrl->register_downstream_node(recv_terminator, block_port);
-        recv_terminator->register_upstream_node(blk_ctrl);
 
         //flow control setup
         const size_t pkt_size = spp * bpi + stream_options.rx_max_len_hdr;
@@ -622,15 +624,20 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         // Get block ID and mb index
         uhd::rfnoc::block_id_t block_id = chan_list[stream_i];
         size_t mb_index = block_id.get_device_no();
-        // TODO: "any port"
-        size_t block_port = chan_args[stream_i].cast<size_t>("block_port", 0);
-        // TODO: more elegant check, see if this block is actually valid
-        //       (may go into connect call or something)
-        UHD_ASSERT_THROW(block_port < 16);
+        size_t suggested_block_port = chan_args[stream_i].cast<size_t>("block_port", rfnoc::ANY_PORT);
 
         // Access to this channel's block control
         uhd::rfnoc::tx_block_ctrl_base::sptr blk_ctrl =
             boost::dynamic_pointer_cast<uhd::rfnoc::tx_block_ctrl_base>(get_block_ctrl(block_id));
+
+        // Connect the terminator with this channel's block.
+        // This will throw if the connection is not possible.
+        size_t block_port = blk_ctrl->connect_upstream(
+                send_terminator,
+                suggested_block_port,
+                chan_args[stream_i]
+        );
+        send_terminator->connect_downstream(blk_ctrl);
 
         // Setup the dsp transport hints
         device_addr_t tx_hints = get_tx_hints(mb_index);
@@ -672,10 +679,6 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         id.output_format = args.otw_format + "_item32_" + conv_endianness;
         id.num_outputs = 1;
         my_streamer->set_converter(id);
-
-        // Connect the terminator with this channel's block.
-        blk_ctrl->register_upstream_node(send_terminator, block_port);
-        send_terminator->register_downstream_node(blk_ctrl);
 
         //flow control setup
         const size_t pkt_size = spp * bpi + stream_options.tx_max_len_hdr;
@@ -722,7 +725,8 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
             boost::bind(&async_md_type::pop_with_timed_wait, async_md, _1, _2)
         );
         my_streamer->set_xport_chan_sid(stream_i, true, xport.send_sid);
-        my_streamer->set_enable_trailer(false); //TODO not implemented trailer support yet
+        // CHDR does not support trailers
+        my_streamer->set_enable_trailer(false);
     }
 
     // Connect the terminator to the streamer

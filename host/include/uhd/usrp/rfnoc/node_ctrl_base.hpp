@@ -66,28 +66,6 @@ public:
      */
     virtual void clear();
 
-    /*! Registers another node as downstream of this node, connected to a given port.
-     *
-     * This implies that this node is a source node, and the downstream node is
-     * a sink node.
-     * See also uhd::rfnoc::source_node_ctrl::register_downstream_node().
-     */
-    virtual void register_downstream_node(
-            node_ctrl_base::sptr downstream_node,
-            size_t port=ANY_PORT
-    );
-
-    /*! Registers another node as upstream of this node, connected to a given port.
-     *
-     * This implies that this node is a sink node, and the upstream node is
-     * a source node.
-     * See also uhd::rfnoc::sink_node_ctrl::register_upstream_node().
-     */
-    virtual void register_upstream_node(
-            node_ctrl_base::sptr upstream_node,
-            size_t port=ANY_PORT
-    );
-
     node_map_t list_downstream_nodes() { return _downstream_nodes; };
     node_map_t list_upstream_nodes() { return _upstream_nodes; };
 
@@ -134,6 +112,8 @@ protected:
     //! Stores default arguments
     uhd::device_addr_t _args;
 
+    // TODO make these private
+
     //! List of upstream nodes
     node_map_t _upstream_nodes;
 
@@ -152,6 +132,31 @@ protected:
      * May throw.
      */
     virtual void _post_args_hook();
+
+    /***********************************************************************
+     * Connections
+     **********************************************************************/
+    /*! Registers another node as downstream of this node, connected to a given port.
+     *
+     * This implies that this node is a source node, and the downstream node is
+     * a sink node.
+     * See also uhd::rfnoc::source_node_ctrl::_register_downstream_node().
+     */
+    virtual void _register_downstream_node(
+            node_ctrl_base::sptr downstream_node,
+            size_t port
+    );
+
+    /*! Registers another node as upstream of this node, connected to a given port.
+     *
+     * This implies that this node is a sink node, and the upstream node is
+     * a source node.
+     * See also uhd::rfnoc::sink_node_ctrl::_register_upstream_node().
+     */
+    virtual void _register_upstream_node(
+            node_ctrl_base::sptr upstream_node,
+            size_t port
+    );
 
 private:
     /*! Implements the search algorithm for find_downstream_node() and

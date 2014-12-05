@@ -47,14 +47,14 @@ void node_ctrl_base::clear()
     _downstream_nodes.clear();
 }
 
-void node_ctrl_base::register_downstream_node(
+void node_ctrl_base::_register_downstream_node(
     node_ctrl_base::sptr,
     size_t
 ) {
     throw uhd::runtime_error("Attempting to register a downstream block on a non-source node.");
 }
 
-void node_ctrl_base::register_upstream_node(
+void node_ctrl_base::_register_upstream_node(
     node_ctrl_base::sptr,
     size_t
 ) {
