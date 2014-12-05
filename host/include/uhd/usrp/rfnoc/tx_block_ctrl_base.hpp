@@ -55,6 +55,15 @@ protected:
      */
     virtual void _init_tx(uhd::stream_args_t &) { /* nop */ };
 
+
+    /*! Like sink_node_ctrl::_request_input_port(), but also checks
+     * the port has an input signature.
+     */
+    virtual size_t _request_input_port(
+            const size_t suggested_port,
+            const uhd::device_addr_t &args
+    ) const;
+
 }; /* class tx_block_ctrl_base */
 
 }} /* namespace uhd::rfnoc */

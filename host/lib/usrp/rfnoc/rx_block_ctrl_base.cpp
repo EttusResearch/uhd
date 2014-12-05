@@ -79,4 +79,15 @@ void rx_block_ctrl_base::setup_rx_streamer(uhd::stream_args_t &args)
         }
     }
 }
+
+size_t rx_block_ctrl_base::_request_output_port(
+        const size_t suggested_port,
+        const uhd::device_addr_t &args
+) const {
+    size_t port = source_node_ctrl::_request_output_port(suggested_port, args);
+    if (not _tree->exists(_root_path / "output_sig" / port)) {
+        return ANY_PORT;
+    }
+    return port;
+}
 // vim: sw=4 et:

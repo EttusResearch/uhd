@@ -82,6 +82,14 @@ protected:
      */
     virtual void _init_rx(uhd::stream_args_t &) { /* nop */ };
 
+    /*! Like source_node_ctrl::_request_output_port(), but also checks if
+     * the port has an output signature.
+     */
+    virtual size_t _request_output_port(
+            const size_t suggested_port,
+            const uhd::device_addr_t &args
+    ) const;
+
 }; /* class rx_block_ctrl_base */
 
 }} /* namespace uhd::rfnoc */

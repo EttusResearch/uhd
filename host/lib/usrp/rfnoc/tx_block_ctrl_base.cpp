@@ -60,4 +60,16 @@ void tx_block_ctrl_base::setup_tx_streamer(uhd::stream_args_t &args)
         }
     }
 }
+
+size_t tx_block_ctrl_base::_request_input_port(
+        const size_t suggested_port,
+        const uhd::device_addr_t &args
+) const {
+    size_t port = sink_node_ctrl::_request_input_port(suggested_port, args);
+    if (not _tree->exists(_root_path / "input_sig" / port)) {
+        return ANY_PORT;
+    }
+    return port;
+
+}
 // vim: sw=4 et:
