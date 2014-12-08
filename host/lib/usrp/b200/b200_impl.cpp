@@ -833,6 +833,10 @@ void b200_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom)
 
 void b200_impl::update_clock_source(const std::string &source)
 {
+    // present the PLL with a valid 10 MHz signal before switching its reference
+    _gpio_state.ref_sel = (source == "gpsdo")? 1 : 0;
+    this->update_gpio_state();
+
     if (source == "internal"){
         _adf4001_iface->set_lock_to_ext_ref(false);
     }
@@ -843,9 +847,6 @@ void b200_impl::update_clock_source(const std::string &source)
     } else {
         throw uhd::key_error("update_clock_source: unknown source: " + source);
     }
-
-    _gpio_state.ref_sel = (source == "gpsdo")? 1 : 0;
-    this->update_gpio_state();
 }
 
 void b200_impl::update_time_source(const std::string &source)

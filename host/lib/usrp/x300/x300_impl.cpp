@@ -1543,8 +1543,8 @@ bool x300_impl::wait_for_ref_locked(wb_iface::sptr ctrl, double timeout)
         boost::this_thread::sleep(boost::posix_time::milliseconds(1));
     } while (boost::get_system_time() < timeout_time);
 
-    //failed to lock on reference
-    return false;
+    //Check one last time
+    return get_ref_locked(ctrl).to_bool();
 }
 
 sensor_value_t x300_impl::get_ref_locked(wb_iface::sptr ctrl)
