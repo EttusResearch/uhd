@@ -155,50 +155,6 @@ public:
     uhd::sid_t get_ctrl_sid() const { return _ctrl_sid; };
 
     /***********************************************************************
-     * Stream signatures
-     **********************************************************************/
-
-    /*! Return the input stream signature for a given block port.
-     *
-     * If \p block_port is not a valid input port, throws
-     * a uhd::runtime_error.
-     *
-     * Calling set_input_signature() can change the return value
-     * of this function.
-     */
-    stream_sig_t get_input_signature(size_t block_port=0) const;
-
-    /*! Return the output stream signature for a given block port.
-     *
-     * If \p block_port is not a valid output port, throws
-     * a uhd::runtime_error.
-     *
-     * Calling set_output_signature() *or* set_input_signature() can
-     * change the return value of this function.
-     */
-    stream_sig_t get_output_signature(size_t block_port=0) const;
-
-    /*! Tell this block about the stream signature incoming on a given block port.
-     *
-     * If \p block_port is not a valid output port, throws
-     * a uhd::runtime_error.
-     *
-     * If the input signature is incompatible with this block's signature,
-     * it does not throw, but returns false.
-     *
-     * This function may also affect the output stream signature.
-     */
-    virtual bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0);
-
-    /*! Change the output stream signature for a given output block port.
-     *
-     * If the requested stream signature is not possible with this block,
-     * it returns false (does not throw).
-     * Recommended behaviour is not to modify the input signature.
-     */
-    virtual bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0);
-
-    /***********************************************************************
      * FPGA control & communication
      **********************************************************************/
 
@@ -250,61 +206,6 @@ public:
      */
     boost::uint32_t user_reg_read32(const boost::uint32_t addr);
 
-    /*! Return the size of input buffer on a given block port.
-     *
-     * This is necessary for setting up flow control, among other things.
-     * Note: This does not query the block's settings register. This happens
-     * once during construction.
-     *
-     * \param block_port The block port (0 through 15).
-     *
-     * Returns the size of the buffer in bytes.
-     */
-    size_t get_fifo_size(size_t block_port=0) const;
-
-    /*! Configure flow control for incoming streams.
-     *
-     * If flow control is enabled for incoming streams, this block will periodically
-     * send out ACKs, telling the upstream block which packets have been consumed,
-     * so the upstream block can increase his flow control credit.
-     *
-     * In the default implementation, this just sets registers
-     * SR_FLOW_CTRL_CYCS_PER_ACK and SR_FLOW_CTRL_PKTS_PER_ACK accordingly.
-     *
-     * Override this function if your block has port-specific flow control settings.
-     *
-     * \param cycles Send an ACK after this many clock cycles.
-     *               Setting this to zero disables this type of flow control acknowledgement.
-     * \param packets Send an ACK after this many packets have been consumed.
-     *               Setting this to zero disables this type of flow control acknowledgement.
-     * \param block_port Set up flow control for a stream coming in on this particular block port.
-     */
-    virtual void configure_flow_control_in(
-            size_t cycles,
-            size_t packets,
-            size_t block_port=0
-     );
-
-    /*! Configure flow control for outgoing streams.
-     *
-     * In the default implementation, this just sets registers SR_FLOW_CTRL_BUF_SIZE
-     * and SR_FLOW_CTRL_ENABLE accordingly; \b block_port and \p sid are ignored.
-     *
-     * Override this function if your block has port-specific flow control settings.
-     *
-     * \param buf_size_pkts The size of the downstream block's input FIFO size in number of packets. Setting
-     *                      this to zero disables flow control. The block will then produce data as fast as it can.
-     *                     \b Warning: This can cause head-of-line blocking, and potentially lock up your device!
-     * \param Specify on which outgoing port this setting is valid.
-     * \param sid The SID for which this is valid. This is meant for cases where the outgoing block port is
-     *            not sufficient to set the flow control, and as such is rarely used.
-     */
-    virtual void configure_flow_control_out(
-            size_t buf_size_pkts,
-            size_t block_port=0,
-            const uhd::sid_t &sid=uhd::sid_t()
-     );
-
     /*! Reset block after streaming operation.
      *
      * This does the following:
@@ -322,17 +223,6 @@ public:
      * take care of resetting flow control yourself.
      */
     void clear();
-
-    /*! Configures data flowing from port \p output_block_port to go to \p next_address
-     *
-     * In the default implementation, this will write the value in \p next_address
-     * to register SR_NEXT_DST of this blocks settings bus. The value will also
-     * have bit 16 set to 1, since some blocks require this to respect this value.
-     */
-    virtual void set_destination(
-            boost::uint32_t next_address,
-            size_t output_block_port = 0
-    );
 
 protected:
     /***********************************************************************

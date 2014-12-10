@@ -22,6 +22,7 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/usrp/rfnoc/block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/constants.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -29,9 +30,6 @@ using namespace uhd::rfnoc;
 //! Convert register to a peek/poke compatible address
 inline boost::uint32_t _sr_to_addr(boost::uint32_t reg) { return reg * 4; };
 inline boost::uint32_t _sr_to_addr64(boost::uint32_t reg) { return reg * 8; }; // for peek64
-
-// One line in FPGA is 64 Bits
-static const size_t BYTES_PER_LINE = 8;
 
 block_ctrl_base::block_ctrl_base(
         const make_args_t &make_args
@@ -147,46 +145,8 @@ boost::uint32_t block_ctrl_base::user_reg_read32(const boost::uint32_t addr)
     }
 }
 
-size_t block_ctrl_base::get_fifo_size(size_t block_port) const {
-    if (_tree->exists(_root_path / "input_buffer_size" / str(boost::format("%d") % block_port))) {
-        return _tree->access<size_t>(_root_path / "input_buffer_size" / str(boost::format("%d") % block_port)).get();
-    }
-    return 0;
-}
-
 boost::uint32_t block_ctrl_base::get_address(size_t block_port) {
     return (_ctrl_sid.get_dst() & 0xFFF0) | (block_port & 0xF);
-}
-
-void block_ctrl_base::configure_flow_control_in(
-        size_t cycles,
-        size_t packets,
-        size_t block_port)
-  {
-    UHD_RFNOC_BLOCK_TRACE() << boost::format("block_ctrl_base::configure_flow_control_in(cycles=%d, packets=%d)") % cycles % packets << std::endl;
-    boost::uint32_t cycles_word = 0;
-    if (cycles) {
-        cycles_word = (1<<31) | cycles;
-    }
-    sr_write(SR_FLOW_CTRL_CYCS_PER_ACK_BASE + block_port, cycles_word);
-
-    boost::uint32_t packets_word = 0;
-    if (packets) {
-        packets_word = (1<<31) | packets;
-    }
-    sr_write(SR_FLOW_CTRL_PKTS_PER_ACK_BASE + block_port, packets_word);
-}
-
-void block_ctrl_base::configure_flow_control_out(
-            size_t buf_size_pkts,
-            size_t block_port,
-            UHD_UNUSED(const uhd::sid_t &sid)
-) {
-    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::configure_flow_control_out() buf_size_pkts==" << buf_size_pkts << std::endl;
-    // This actually takes counts between acks. So if the buffer size is 1 packet, we
-    // set this to zero.
-    sr_write(SR_FLOW_CTRL_WINDOW_SIZE_BASE + block_port, (buf_size_pkts == 0) ? 0 : buf_size_pkts-1);
-    sr_write(SR_FLOW_CTRL_WINDOW_EN_BASE + block_port, (buf_size_pkts != 0));
 }
 
 void block_ctrl_base::clear()
@@ -206,89 +166,5 @@ void block_ctrl_base::_clear()
     sr_write(SR_FLOW_CTRL_CLR_SEQ, 0x00C1EA12); // 'CLEAR', but we can write anything, really
 }
 
-
-stream_sig_t block_ctrl_base::get_input_signature(size_t block_port) const
-{
-    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::get_input_signature() " << std::endl;
-    if (not _tree->exists(_root_path / "input_sig" / str(boost::format("%d") % block_port))) {
-        throw uhd::runtime_error(str(
-            boost::format("Can't query input signature on block %s: Port %d is not defined.")
-            % get_block_id().to_string() % block_port
-        ));
-    }
-    return _tree->access<stream_sig_t>(_root_path / "input_sig" / str(boost::format("%d") % block_port)).get();
-}
-
-stream_sig_t block_ctrl_base::get_output_signature(size_t block_port) const
-{
-    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::get_output_signature() " << std::endl;
-    if (not _tree->exists(_root_path / "output_sig" / str(boost::format("%d") % block_port))) {
-        throw uhd::runtime_error(str(
-            boost::format("Can't query output signature on block %s: Port %d is not defined.")
-            % get_block_id().to_string() % block_port
-        ));
-    }
-    return _tree->access<stream_sig_t>(_root_path / "output_sig" / str(boost::format("%d") % block_port)).get();
-}
-
-bool block_ctrl_base::set_input_signature(const stream_sig_t &in_sig, size_t block_port)
-{
-    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::set_input_signature() " << in_sig << " " << block_port << std::endl;
-    if (not _tree->exists(_root_path / "input_sig" / str(boost::format("%d") % block_port))) {
-        throw uhd::runtime_error(str(
-            boost::format("Can't modify input signature on block %s: Port %d is not defined.")
-            % get_block_id().to_string() % block_port
-        ));
-    }
-
-    if (not
-        _tree->access<stream_sig_t>(_root_path / "input_sig" / str(boost::format("%d") % block_port))
-        .get().is_compatible(in_sig)
-    ) {
-        return false;
-    }
-
-    // TODO more and better rules, check block definition
-    if (in_sig.packet_size % BYTES_PER_LINE) {
-        return false;
-    }
-
-    _tree->access<stream_sig_t>(_root_path / "input_sig" / str(boost::format("%d") % block_port)).set(in_sig);
-    // FIXME figure out good rules to propagate the signature
-    _tree->access<stream_sig_t>(_root_path / "output_sig" / str(boost::format("%d") % block_port)).set(in_sig);
-    return true;
-}
-
-bool block_ctrl_base::set_output_signature(const stream_sig_t &out_sig, size_t block_port)
-{
-    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::set_output_signature() " << out_sig << " " << block_port << std::endl;
-
-    if (not _tree->exists(_root_path / "output_sig" / str(boost::format("%d") % block_port))) {
-        throw uhd::runtime_error(str(
-            boost::format("Can't modify output signature on block %s: Port %d is not defined.")
-            % get_block_id().to_string() % block_port
-        ));
-    }
-
-    // TODO more and better rules, check block definition
-    if (out_sig.packet_size % BYTES_PER_LINE) {
-        return false;
-    }
-
-    _tree->access<stream_sig_t>(_root_path / "output_sig" / str(boost::format("%d") % block_port)).set(out_sig);
-    return true;
-}
-
-void block_ctrl_base::set_destination(
-        boost::uint32_t next_address,
-        size_t output_block_port
-) {
-    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::set_destination() " << uhd::sid_t(next_address) << std::endl;
-    sid_t new_sid(next_address);
-    new_sid.set_src_addr(_ctrl_sid.get_dst_addr());
-    new_sid.set_src_endpoint(_ctrl_sid.get_dst_endpoint() + output_block_port);
-    UHD_MSG(status) << "  Setting SID: " << new_sid << std::endl << "  ";
-    sr_write(SR_NEXT_DST_BASE+output_block_port, (1<<16) | next_address);
-}
 
 // vim: sw=4 et:

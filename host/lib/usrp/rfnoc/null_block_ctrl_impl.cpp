@@ -100,7 +100,7 @@ public:
         }
         out_sig.packet_size = lines_per_packet * BYTES_PER_LINE;
 
-        if (block_ctrl_base::set_output_signature(out_sig, block_port)) {
+        if (source_block_ctrl_base::set_output_signature(out_sig, block_port)) {
             sr_write(SR_LINES_PER_PACKET, lines_per_packet);
             return true;
         }

@@ -35,6 +35,9 @@ static const std::string DEFAULT_BLOCK_NAME = "Block";
 static const size_t MAX_PACKET_SIZE = 8000; // bytes
 static const size_t DEFAULT_PACKET_SIZE = 1456; // bytes
 
+// One line in FPGA is 64 Bits
+static const size_t BYTES_PER_LINE = 8;
+
 //! For flow control within a single crossbar
 static const size_t DEFAULT_FC_XBAR_PKTS_PER_ACK = 2;
 //! For flow control when data is flowing from device to host (rx)

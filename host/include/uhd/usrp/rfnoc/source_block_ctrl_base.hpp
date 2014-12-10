@@ -37,6 +37,9 @@ class source_block_ctrl_base : virtual public block_ctrl_base, public source_nod
 public:
     typedef boost::shared_ptr<source_block_ctrl_base> sptr;
 
+    /***********************************************************************
+     * Streaming operations
+     **********************************************************************/
     /*! Issue a stream command for this block.
      *
      * There is no guaranteed action for this command. The default implementation
@@ -72,7 +75,66 @@ public:
      */
     virtual void handle_overrun(boost::weak_ptr<uhd::rx_streamer>) { /* nop */ };
 
+    /***********************************************************************
+     * Stream signatures
+     **********************************************************************/
+    /*! Return the output stream signature for a given block port.
+     *
+     * If \p block_port is not a valid output port, throws
+     * a uhd::runtime_error.
+     *
+     * Calling set_output_signature() *or* set_input_signature() can
+     * change the return value of this function.
+     */
+    stream_sig_t get_output_signature(size_t block_port=0) const;
+
+    /*! Change the output stream signature for a given output block port.
+     *
+     * If the requested stream signature is not possible with this block,
+     * it returns false (does not throw).
+     * Recommended behaviour is not to modify the input signature.
+     */
+    virtual bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0);
+
+    /***********************************************************************
+     * FPGA Configuration
+     **********************************************************************/
+    /*! Configures data flowing from port \p output_block_port to go to \p next_address
+     *
+     * In the default implementation, this will write the value in \p next_address
+     * to register SR_NEXT_DST of this blocks settings bus. The value will also
+     * have bit 16 set to 1, since some blocks require this to respect this value.
+     */
+    virtual void set_destination(
+            boost::uint32_t next_address,
+            size_t output_block_port = 0
+    );
+
+    /*! Configure flow control for outgoing streams.
+     *
+     * In the default implementation, this just sets registers SR_FLOW_CTRL_BUF_SIZE
+     * and SR_FLOW_CTRL_ENABLE accordingly; \b block_port and \p sid are ignored.
+     *
+     * Override this function if your block has port-specific flow control settings.
+     *
+     * \param buf_size_pkts The size of the downstream block's input FIFO size in number of packets. Setting
+     *                      this to zero disables flow control. The block will then produce data as fast as it can.
+     *                     \b Warning: This can cause head-of-line blocking, and potentially lock up your device!
+     * \param Specify on which outgoing port this setting is valid.
+     * \param sid The SID for which this is valid. This is meant for cases where the outgoing block port is
+     *            not sufficient to set the flow control, and as such is rarely used.
+     */
+    virtual void configure_flow_control_out(
+            size_t buf_size_pkts,
+            size_t block_port=0,
+            const uhd::sid_t &sid=uhd::sid_t()
+     );
+
+
 protected:
+    /***********************************************************************
+     * Hooks
+     **********************************************************************/
     /*! Before any kind of streaming operation, this will be automatically
      * called to configure the block. Override this to set any rx specific
      * registers etc.

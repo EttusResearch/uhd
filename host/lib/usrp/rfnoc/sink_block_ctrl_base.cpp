@@ -16,11 +16,15 @@
 //
 
 #include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/constants.hpp>
 #include <uhd/utils/msg.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
 
+/***********************************************************************
+ * Streaming operations
+ **********************************************************************/
 void sink_block_ctrl_base::setup_tx_streamer(uhd::stream_args_t &args)
 {
     UHD_RFNOC_BLOCK_TRACE() << "sink_block_ctrl_base::setup_tx_streamer()" << std::endl;
@@ -61,6 +65,82 @@ void sink_block_ctrl_base::setup_tx_streamer(uhd::stream_args_t &args)
     }
 }
 
+/***********************************************************************
+ * Stream signatures
+ **********************************************************************/
+stream_sig_t sink_block_ctrl_base::get_input_signature(size_t block_port) const
+{
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::get_input_signature() " << std::endl;
+    if (not _tree->exists(_root_path / "input_sig" / str(boost::format("%d") % block_port))) {
+        throw uhd::runtime_error(str(
+            boost::format("Can't query input signature on block %s: Port %d is not defined.")
+            % get_block_id().to_string() % block_port
+        ));
+    }
+    return _tree->access<stream_sig_t>(_root_path / "input_sig" / str(boost::format("%d") % block_port)).get();
+}
+
+bool sink_block_ctrl_base::set_input_signature(const stream_sig_t &in_sig, size_t block_port)
+{
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::set_input_signature() " << in_sig << " " << block_port << std::endl;
+    if (not _tree->exists(_root_path / "input_sig" / str(boost::format("%d") % block_port))) {
+        throw uhd::runtime_error(str(
+            boost::format("Can't modify input signature on block %s: Port %d is not defined.")
+            % get_block_id().to_string() % block_port
+        ));
+    }
+
+    if (not
+        _tree->access<stream_sig_t>(_root_path / "input_sig" / str(boost::format("%d") % block_port))
+        .get().is_compatible(in_sig)
+    ) {
+        return false;
+    }
+
+    // TODO more and better rules, check block definition
+    if (in_sig.packet_size % BYTES_PER_LINE) {
+        return false;
+    }
+
+    _tree->access<stream_sig_t>(_root_path / "input_sig" / str(boost::format("%d") % block_port)).set(in_sig);
+    // FIXME figure out good rules to propagate the signature
+    _tree->access<stream_sig_t>(_root_path / "output_sig" / str(boost::format("%d") % block_port)).set(in_sig);
+    return true;
+}
+
+/***********************************************************************
+ * FPGA Configuration
+ **********************************************************************/
+size_t sink_block_ctrl_base::get_fifo_size(size_t block_port) const {
+    if (_tree->exists(_root_path / "input_buffer_size" / str(boost::format("%d") % block_port))) {
+        return _tree->access<size_t>(_root_path / "input_buffer_size" / str(boost::format("%d") % block_port)).get();
+    }
+    return 0;
+}
+
+void sink_block_ctrl_base::configure_flow_control_in(
+        size_t cycles,
+        size_t packets,
+        size_t block_port
+) {
+    UHD_RFNOC_BLOCK_TRACE() << boost::format("sink_block_ctrl_base::configure_flow_control_in(cycles=%d, packets=%d)") % cycles % packets << std::endl;
+    boost::uint32_t cycles_word = 0;
+    if (cycles) {
+        cycles_word = (1<<31) | cycles;
+    }
+    sr_write(SR_FLOW_CTRL_CYCS_PER_ACK_BASE + block_port, cycles_word);
+
+    boost::uint32_t packets_word = 0;
+    if (packets) {
+        packets_word = (1<<31) | packets;
+    }
+    sr_write(SR_FLOW_CTRL_PKTS_PER_ACK_BASE + block_port, packets_word);
+}
+
+
+/***********************************************************************
+ * Hooks
+ **********************************************************************/
 size_t sink_block_ctrl_base::_request_input_port(
         const size_t suggested_port,
         const uhd::device_addr_t &args

@@ -24,12 +24,13 @@
 namespace uhd {
     namespace rfnoc {
 
-/*! \brief Extends block_ctrl_base with transmit capabilities.
+/*! \brief Extends block_ctrl_base with input capabilities.
  *
- * In RFNoC nomenclature, a transmit operation means streaming
- * data to the device (the crossbar) from the host.
- * If a block has transmit capabilities, this means we can transmit
- * data *to* this block.
+ * A sink block is an RFNoC block that can receive data at an input.
+ * We can use this block to transmit data (In RFNoC nomenclature, a
+ * transmit operation means streaming data to the device from the host).
+ *
+ * Every input is defined by a stream signature (stream_sig_t).
  */
 class UHD_API sink_block_ctrl_base;
 class sink_block_ctrl_base : virtual public block_ctrl_base, public sink_node_ctrl
@@ -37,6 +38,9 @@ class sink_block_ctrl_base : virtual public block_ctrl_base, public sink_node_ct
 public:
     typedef boost::shared_ptr<sink_block_ctrl_base> sptr;
 
+    /***********************************************************************
+     * Streaming operations
+     **********************************************************************/
     /*! Set stream args and SID before opening a TX streamer to this block.
      *
      * This is called by the streamer generators. Note this is *not* virtual.
@@ -44,8 +48,76 @@ public:
      */
     void setup_tx_streamer(uhd::stream_args_t &args);
 
-protected:
+    /***********************************************************************
+     * Stream signatures
+     **********************************************************************/
+    /*! Return the input stream signature for a given block port.
+     *
+     * If \p block_port is not a valid input port, throws
+     * a uhd::runtime_error.
+     *
+     * Calling set_input_signature() can change the return value
+     * of this function.
+     */
+    stream_sig_t get_input_signature(size_t block_port=0) const;
 
+    /*! Tell this block about the stream signature incoming on a given block port.
+     *
+     * If \p block_port is not a valid output port, throws
+     * a uhd::runtime_error.
+     *
+     * If the input signature is incompatible with this block's signature,
+     * it does not throw, but returns false.
+     *
+     * This function may also affect the output stream signature.
+     */
+    virtual bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0);
+
+    /***********************************************************************
+     * FPGA Configuration
+     **********************************************************************/
+    /*! Return the size of input buffer on a given block port.
+     *
+     * This is necessary for setting up flow control, among other things.
+     * Note: This does not query the block's settings register. The FIFO size
+     * is queried once during construction and cached.
+     *
+     * If the block port is not defined, it will return 0, and not throw.
+     *
+     * \param block_port The block port (0 through 15).
+     *
+     * Returns the size of the buffer in bytes.
+     */
+    size_t get_fifo_size(size_t block_port=0) const;
+
+    /*! Configure flow control for incoming streams.
+     *
+     * If flow control is enabled for incoming streams, this block will periodically
+     * send out ACKs, telling the upstream block which packets have been consumed,
+     * so the upstream block can increase his flow control credit.
+     *
+     * In the default implementation, this just sets registers
+     * SR_FLOW_CTRL_CYCS_PER_ACK and SR_FLOW_CTRL_PKTS_PER_ACK accordingly.
+     *
+     * Override this function if your block has port-specific flow control settings.
+     *
+     * \param cycles Send an ACK after this many clock cycles.
+     *               Setting this to zero disables this type of flow control acknowledgement.
+     * \param packets Send an ACK after this many packets have been consumed.
+     *               Setting this to zero disables this type of flow control acknowledgement.
+     * \param block_port Set up flow control for a stream coming in on this particular block port.
+     */
+    virtual void configure_flow_control_in(
+            size_t cycles,
+            size_t packets,
+            size_t block_port=0
+     );
+
+
+protected:
+    /***********************************************************************
+     * Hooks
+     **********************************************************************/
     /*! Before any kind of streaming operation, this will be automatically
      * called to configure the block. Override this to set any tx specific
      * registers etc.

@@ -101,7 +101,7 @@ public:
             return false;
         }
 
-        if (block_ctrl_base::set_output_signature(out_sig, block_port)) {
+        if (source_block_ctrl_base::set_output_signature(out_sig, block_port)) {
             _rx_spp = out_sig_.packet_size / _rx_bpi;
             UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::set_output_signature(): Setting spp to " << _rx_spp << std::endl;
             _perifs.framer->set_nsamps_per_packet(_rx_spp);
