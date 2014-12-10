@@ -25,8 +25,8 @@
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
-#include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
-#include <uhd/usrp/rfnoc/tx_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/convert.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread.hpp>
@@ -1212,8 +1212,8 @@ public:
             const uhd::rfnoc::block_id_t &dst_block,
             size_t dst_block_port
     ) {
-        rfnoc::rx_block_ctrl_base::sptr src = get_device3()->get_block_ctrl<rfnoc::rx_block_ctrl_base>(src_block);
-        rfnoc::tx_block_ctrl_base::sptr dst = get_device3()->get_block_ctrl<rfnoc::tx_block_ctrl_base>(dst_block);
+        rfnoc::source_block_ctrl_base::sptr src = get_device3()->get_block_ctrl<rfnoc::source_block_ctrl_base>(src_block);
+        rfnoc::sink_block_ctrl_base::sptr dst = get_device3()->get_block_ctrl<rfnoc::sink_block_ctrl_base>(dst_block);
 
         /********************************************************************
          * 1. Draw the edges (logically connect the nodes)
@@ -1328,7 +1328,7 @@ public:
             const uhd::device_addr_t &args,
             int chan_idx_
     ) {
-        const uhd::rfnoc::block_id_t checked_block_id = _check_block_id<uhd::rfnoc::tx_block_ctrl_base>(block_id);
+        const uhd::rfnoc::block_id_t checked_block_id = _check_block_id<uhd::rfnoc::sink_block_ctrl_base>(block_id);
         if (checked_block_id.get_block_name().empty()) {
             throw uhd::value_error(str(boost::format("No such TX block on this device: %s") % block_id.to_string()));
         }
@@ -1354,7 +1354,7 @@ public:
             const uhd::device_addr_t &args,
             int chan_idx_
     ) {
-        const uhd::rfnoc::block_id_t checked_block_id = _check_block_id<uhd::rfnoc::rx_block_ctrl_base>(block_id);
+        const uhd::rfnoc::block_id_t checked_block_id = _check_block_id<uhd::rfnoc::source_block_ctrl_base>(block_id);
         if (checked_block_id.get_block_name().empty()) {
             throw uhd::value_error(str(boost::format("No such RX block on this device: %s") % block_id.to_string()));
         }

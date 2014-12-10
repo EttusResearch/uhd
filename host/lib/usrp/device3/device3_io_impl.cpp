@@ -21,8 +21,8 @@
 
 #include "device3_impl.hpp"
 #include <uhd/usrp/rfnoc/constants.hpp>
-#include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
-#include <uhd/usrp/rfnoc/tx_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
@@ -447,8 +447,8 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         size_t suggested_block_port = chan_args[stream_i].cast<size_t>("block_port", rfnoc::ANY_PORT);
 
         // Access to this channel's block control
-        uhd::rfnoc::rx_block_ctrl_base::sptr blk_ctrl =
-            boost::dynamic_pointer_cast<uhd::rfnoc::rx_block_ctrl_base>(get_block_ctrl(block_id));
+        uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl =
+            boost::dynamic_pointer_cast<uhd::rfnoc::source_block_ctrl_base>(get_block_ctrl(block_id));
 
         // Connect the terminator with this channel's block.
         size_t block_port = blk_ctrl->connect_downstream(
@@ -524,7 +524,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         my_streamer->set_overflow_handler(
             stream_i,
             boost::bind(
-                &uhd::rfnoc::rx_block_ctrl_base::handle_overrun, blk_ctrl,
+                &uhd::rfnoc::source_block_ctrl_base::handle_overrun, blk_ctrl,
                 boost::weak_ptr<uhd::rx_streamer>(my_streamer)
             )
         );
@@ -548,7 +548,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         //Give the streamer a functor issue stream cmd
         //bind requires a shared pointer to add a streamer->framer lifetime dependency
         my_streamer->set_issue_stream_cmd(
-            stream_i, boost::bind(&uhd::rfnoc::rx_block_ctrl_base::issue_stream_cmd, blk_ctrl, _1)
+            stream_i, boost::bind(&uhd::rfnoc::source_block_ctrl_base::issue_stream_cmd, blk_ctrl, _1)
         );
 
         // Tell the streamer which SID is valid for this channel
@@ -627,8 +627,8 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         size_t suggested_block_port = chan_args[stream_i].cast<size_t>("block_port", rfnoc::ANY_PORT);
 
         // Access to this channel's block control
-        uhd::rfnoc::tx_block_ctrl_base::sptr blk_ctrl =
-            boost::dynamic_pointer_cast<uhd::rfnoc::tx_block_ctrl_base>(get_block_ctrl(block_id));
+        uhd::rfnoc::sink_block_ctrl_base::sptr blk_ctrl =
+            boost::dynamic_pointer_cast<uhd::rfnoc::sink_block_ctrl_base>(get_block_ctrl(block_id));
 
         // Connect the terminator with this channel's block.
         // This will throw if the connection is not possible.

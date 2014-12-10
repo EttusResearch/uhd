@@ -31,11 +31,11 @@ namespace uhd {
  * If a block has transmit capabilities, this means we can transmit
  * data *to* this block.
  */
-class UHD_API tx_block_ctrl_base;
-class tx_block_ctrl_base : virtual public block_ctrl_base, public sink_node_ctrl
+class UHD_API sink_block_ctrl_base;
+class sink_block_ctrl_base : virtual public block_ctrl_base, public sink_node_ctrl
 {
 public:
-    typedef boost::shared_ptr<tx_block_ctrl_base> sptr;
+    typedef boost::shared_ptr<sink_block_ctrl_base> sptr;
 
     /*! Set stream args and SID before opening a TX streamer to this block.
      *
@@ -64,7 +64,7 @@ protected:
             const uhd::device_addr_t &args
     ) const;
 
-}; /* class tx_block_ctrl_base */
+}; /* class sink_block_ctrl_base */
 
 }} /* namespace uhd::rfnoc */
 

@@ -20,7 +20,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -373,8 +373,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             usrp->set_rx_channel(radio_ctrl_id);
         } else {
             // Otherwise, see if the requested block exists and connect it to the radio:
-            uhd::rfnoc::rx_block_ctrl_base::sptr blk_ctrl =
-                usrp->get_device3()->find_block_ctrl< uhd::rfnoc::rx_block_ctrl_base >(blockid);
+            uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl =
+                usrp->get_device3()->find_block_ctrl< uhd::rfnoc::source_block_ctrl_base >(blockid);
             if (not blk_ctrl) {
                 std::cout << "Block does not exist on current device: " << blockid << std::endl;
                 return ~0;

@@ -15,15 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/rfnoc/tx_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/utils/msg.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
 
-void tx_block_ctrl_base::setup_tx_streamer(uhd::stream_args_t &args)
+void sink_block_ctrl_base::setup_tx_streamer(uhd::stream_args_t &args)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "tx_block_ctrl_base::setup_tx_streamer()" << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "sink_block_ctrl_base::setup_tx_streamer()" << std::endl;
 
     // 0. Check if args collides with our own options
     BOOST_FOREACH(const std::string key, _args.keys()) {
@@ -45,7 +45,7 @@ void tx_block_ctrl_base::setup_tx_streamer(uhd::stream_args_t &args)
 
     // 2. Check if we're the last block
     if (_is_final_tx_block()) {
-        UHD_RFNOC_BLOCK_TRACE() << "tx_block_ctrl_base::setup_tx_streamer(): Final block, returning. " << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "sink_block_ctrl_base::setup_tx_streamer(): Final block, returning. " << std::endl;
         return;
     }
 
@@ -54,14 +54,14 @@ void tx_block_ctrl_base::setup_tx_streamer(uhd::stream_args_t &args)
         // Make a copy so that modifications downstream aren't propagated upstream
         uhd::stream_args_t new_args = args;
         sptr this_downstream_block_ctrl =
-            boost::dynamic_pointer_cast<tx_block_ctrl_base>(downstream_node.second.lock());
+            boost::dynamic_pointer_cast<sink_block_ctrl_base>(downstream_node.second.lock());
         if (this_downstream_block_ctrl) {
             this_downstream_block_ctrl->setup_tx_streamer(new_args);
         }
     }
 }
 
-size_t tx_block_ctrl_base::_request_input_port(
+size_t sink_block_ctrl_base::_request_input_port(
         const size_t suggested_port,
         const uhd::device_addr_t &args
 ) const {

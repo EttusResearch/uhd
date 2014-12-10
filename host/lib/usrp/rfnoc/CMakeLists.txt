@@ -30,7 +30,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/blockdef_xml_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/node_ctrl_base.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rate_node_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/rx_block_ctrl_base.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/source_block_ctrl_base.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar_node_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sink_node_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/source_node_ctrl.cpp
@@ -38,7 +38,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/terminator_recv.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/terminator_send.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tick_node_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/tx_block_ctrl_base.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sink_block_ctrl_base.cpp
     # Default block control classes:
     ${CMAKE_CURRENT_SOURCE_DIR}/fir_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fft_block_ctrl_impl.cpp

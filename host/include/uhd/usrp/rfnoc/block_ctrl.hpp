@@ -18,8 +18,8 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_BLOCK_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_BLOCK_CTRL_HPP
 
-#include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
-#include <uhd/usrp/rfnoc/tx_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -30,14 +30,14 @@ namespace uhd {
  * can be set by sr_write(). The default behaviour of functions is documented
  * in uhd::rfnoc::block_ctrl_base.
  */
-class UHD_API block_ctrl : public rx_block_ctrl_base, public tx_block_ctrl_base
+class UHD_API block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
 {
 public:
     // Required macro in RFNoC block classes
     UHD_RFNOC_BLOCK_OBJECT(block_ctrl)
 
     // Nothing else here -- all function definitions are in block_ctrl_base,
-    // rx_block_ctrl_base and tx_block_ctrl_base
+    // source_block_ctrl_base and sink_block_ctrl_base
 
 }; /* class block_ctrl*/
 

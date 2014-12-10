@@ -31,11 +31,11 @@ namespace uhd {
  * If a block has receive capabilities, this means we can receive
  * data *from* this block.
  */
-class UHD_API rx_block_ctrl_base;
-class rx_block_ctrl_base : virtual public block_ctrl_base, public source_node_ctrl
+class UHD_API source_block_ctrl_base;
+class source_block_ctrl_base : virtual public block_ctrl_base, public source_node_ctrl
 {
 public:
-    typedef boost::shared_ptr<rx_block_ctrl_base> sptr;
+    typedef boost::shared_ptr<source_block_ctrl_base> sptr;
 
     /*! Issue a stream command for this block.
      *
@@ -90,7 +90,7 @@ protected:
             const uhd::device_addr_t &args
     ) const;
 
-}; /* class rx_block_ctrl_base */
+}; /* class source_block_ctrl_base */
 
 }} /* namespace uhd::rfnoc */
 

@@ -18,8 +18,8 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_HPP
 
-#include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
-#include <uhd/usrp/rfnoc/tx_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/tick_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/scalar_node_ctrl.hpp>
@@ -36,8 +36,8 @@ namespace uhd {
  *
  */
 class radio_ctrl :
-    public rx_block_ctrl_base,
-    public tx_block_ctrl_base,
+    public source_block_ctrl_base,
+    public sink_block_ctrl_base,
     public rate_node_ctrl,
     public tick_node_ctrl,
     public scalar_node_ctrl

@@ -15,17 +15,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/usrp/rfnoc/constants.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
 
-void rx_block_ctrl_base::issue_stream_cmd(
+void source_block_ctrl_base::issue_stream_cmd(
         const uhd::stream_cmd_t &stream_cmd
 ) {
-    UHD_RFNOC_BLOCK_TRACE() << "rx_block_ctrl_base::issue_stream_cmd()" << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::issue_stream_cmd()" << std::endl;
     if (_upstream_nodes.empty()) {
         UHD_MSG(warning) << "issue_stream_cmd() not implemented for " << get_block_id() << std::endl;
         return;
@@ -39,9 +39,9 @@ void rx_block_ctrl_base::issue_stream_cmd(
 }
 
 // non-virtual
-void rx_block_ctrl_base::setup_rx_streamer(uhd::stream_args_t &args)
+void source_block_ctrl_base::setup_rx_streamer(uhd::stream_args_t &args)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "rx_block_ctrl_base::setup_rx_streamer()" << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::setup_rx_streamer()" << std::endl;
 
     // 0. Check if args collides with our own _args
     // and merge them
@@ -64,7 +64,7 @@ void rx_block_ctrl_base::setup_rx_streamer(uhd::stream_args_t &args)
 
     // 2. Check if we're the last block
     if (_is_final_rx_block()) {
-        UHD_MSG(status) << "rx_block_ctrl_base::setup_rx_streamer(): Final block, returning. " << std::endl;
+        UHD_MSG(status) << "source_block_ctrl_base::setup_rx_streamer(): Final block, returning. " << std::endl;
         return;
     }
 
@@ -73,14 +73,14 @@ void rx_block_ctrl_base::setup_rx_streamer(uhd::stream_args_t &args)
         // Make a copy so that modifications upstream aren't propagated downstream
         uhd::stream_args_t new_args = args;
         sptr this_upstream_block_ctrl =
-            boost::dynamic_pointer_cast<rx_block_ctrl_base>(upstream_node.second.lock());
+            boost::dynamic_pointer_cast<source_block_ctrl_base>(upstream_node.second.lock());
         if (this_upstream_block_ctrl) {
             this_upstream_block_ctrl->setup_rx_streamer(new_args);
         }
     }
 }
 
-size_t rx_block_ctrl_base::_request_output_port(
+size_t source_block_ctrl_base::_request_output_port(
         const size_t suggested_port,
         const uhd::device_addr_t &args
 ) const {

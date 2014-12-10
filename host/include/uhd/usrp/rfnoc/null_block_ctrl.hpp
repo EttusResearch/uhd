@@ -18,7 +18,7 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_NULL_BLOCK_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_NULL_BLOCK_CTRL_HPP
 
-#include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -36,7 +36,7 @@ namespace uhd {
  * that inherit from uhd::rfnoc::block_ctrl_base, as well as
  * functions that are specific to this block.
  */
-class null_block_ctrl : public rx_block_ctrl_base
+class null_block_ctrl : public source_block_ctrl_base
 {
 public:
     // This macro must always be at the top of the public section in an RFNoC block class

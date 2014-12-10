@@ -129,7 +129,7 @@ public:
 
 
     /***********************************************************************
-     * RX Streamer-related methods (from rx_block_ctrl_base)
+     * RX Streamer-related methods (from source_block_ctrl_base)
      **********************************************************************/
     //! Pass stream commands to the radio
     void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd)

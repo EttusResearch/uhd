@@ -18,8 +18,8 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_WINDOW_BLOCK_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_WINDOW_BLOCK_CTRL_HPP
 
-#include <uhd/usrp/rfnoc/rx_block_ctrl_base.hpp>
-#include <uhd/usrp/rfnoc/tx_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -35,7 +35,7 @@ namespace uhd {
  * It will perform one window operation per incoming packet, treating it
  * as a vector of samples.
  */
-class UHD_API window_block_ctrl : public rx_block_ctrl_base, public tx_block_ctrl_base
+class UHD_API window_block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(window_block_ctrl)

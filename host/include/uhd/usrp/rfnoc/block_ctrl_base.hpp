@@ -87,8 +87,8 @@ struct make_args_t
  * uhd::rfnoc::block_ctrl_base. This class provides all functions
  * that a block *must* provide. Typically, you would not derive
  * a block controller class directly from block_ctrl_base, but
- * from a class such as uhd::usrp::rfnoc::rx_block_ctrl_base or
- * uhd::usrp::rfnoc::tx_block_ctrl_base which extends its functionality.
+ * from a class such as uhd::usrp::rfnoc::source_block_ctrl_base or
+ * uhd::usrp::rfnoc::sink_block_ctrl_base which extends its functionality.
  */
 class UHD_API block_ctrl_base;
 class block_ctrl_base : virtual public node_ctrl_base
