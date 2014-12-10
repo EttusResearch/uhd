@@ -116,8 +116,18 @@ public:
         _args.bits = uhd::htonx<boost::uint32_t>(0);
 
         _transact();
-
         return sensor_value_t("RSSI", _retval.rssi, "dB");
+    }
+
+    sensor_value_t get_temperature()
+    {
+        _clear();
+        _args.action = uhd::htonx<boost::uint32_t>(transaction_t::ACTION_GET_TEMPERATURE);
+        _args.which  = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_NONE);  /*Unused*/
+        _args.bits = uhd::htonx<boost::uint32_t>(0);
+
+        _transact();
+        return sensor_value_t("temp", _retval.temp, "C");
     }
 
 private:
