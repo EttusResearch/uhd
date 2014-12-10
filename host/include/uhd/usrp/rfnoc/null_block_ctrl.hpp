@@ -19,6 +19,7 @@
 #define INCLUDED_LIBUHD_RFNOC_NULL_BLOCK_CTRL_HPP
 
 #include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -32,11 +33,16 @@ namespace uhd {
  * - It can be used to dump packets ("null sink", "bit bucket")
  *
  * This block also serves as an example of how to create your own
- * C++ classes to control your block. This class both has functions
- * that inherit from uhd::rfnoc::block_ctrl_base, as well as
- * functions that are specific to this block.
+ * C++ classes to control your block.
+ *
+ * As a true source, it understands the following stream commands:
+ * - STREAM_MODE_START_CONTINUOUS
+ * - STREAM_MODE_STOP_CONTINUOUS
+ *
+ * Other stream commands are not understood and issue_stream_cmd()
+ * will throw if it receives them.
  */
-class null_block_ctrl : public source_block_ctrl_base
+class null_block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
 {
 public:
     // This macro must always be at the top of the public section in an RFNoC block class
@@ -66,18 +72,6 @@ public:
     //! Return the current line rate. Equivalent to reading line_rate/value
     // from the property tree.
     virtual double get_line_rate(double clock_rate=166.6e6) const = 0;
-
-    //! This block can actually initiate streaming, so we need
-    // override this. It supports STREAM_MODE_START_CONTINUOUS and
-    // STREAM_MODE_STOP_CONTINUOUS. Other stream modes will cause
-    // a uhd::not_implemented_error to be thrown.
-    virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) = 0;
-
-    virtual bool set_output_signature(const stream_sig_t &, size_t port=0) = 0;
-
-    //! This must be overridden because as a true source, we must also
-    // set the source address.
-    virtual void set_destination(boost::uint32_t next_address, size_t output_block_port = 0) = 0;
 
 }; /* class null_block_ctrl*/
 

@@ -59,27 +59,6 @@ public:
     //! Returns the current window length.
     virtual size_t get_window_len() const = 0;
 
-    //! In this block, the input signature may not be changed.
-    //
-    // Will return false if \p stream_sig does not match the current stream sig.
-    virtual bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0) = 0;
-
-    //! In this block, the output signature may not be changed.
-    //
-    // Will return false if \p stream_sig does not match the current stream sig.
-    virtual bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0) = 0;
-
-protected:
-    //! Checks the args \p window_len and \p spp are OK.
-    //
-    //  If spp is given, it must match the window length, or we throw.
-    virtual void _post_args_hook() = 0;
-
-    //! Check stream args match window length
-    virtual void _init_rx(uhd::stream_args_t &args) = 0;
-
-    //! Check stream args match window length
-    virtual void _init_tx(uhd::stream_args_t &args) = 0;
 }; /* class window_block_ctrl*/
 
 }} /* namespace uhd::rfnoc */

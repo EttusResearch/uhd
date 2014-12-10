@@ -57,30 +57,6 @@ public:
     // You can use this after calling set_fft_size() to see what
     // the actual, current value is.
     virtual size_t get_fft_size() const = 0;
-
-    //! In this block, the input signature may not be changed.
-    //
-    // Will return false if \p stream_sig does not match the current stream sig.
-    virtual bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0) = 0;
-
-    //! In this block, the output signature may not be changed.
-    //
-    // Will return false if \p stream_sig does not match the current stream sig.
-    virtual bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0) = 0;
-
-protected:
-    //! Checks the args \p fftsize and \p spp are OK.
-    //
-    // If fftsize is given, it will actually change the FFT size (i.e. call
-    // set_fft_size()). If spp is given, it must match the FFT size, or we
-    // throw.
-    virtual void _post_args_hook() = 0;
-
-    //! Check stream args match FFT size
-    virtual void _init_rx(uhd::stream_args_t &args) = 0;
-
-    //! Check stream args match FFT size
-    virtual void _init_tx(uhd::stream_args_t &args) = 0;
 }; /* class fft_block_ctrl*/
 
 }} /* namespace uhd::rfnoc */

@@ -49,11 +49,6 @@ public:
 
     //! Returns the number of filter taps in this block.
     virtual size_t get_n_taps() const = 0;
-
-protected:
-    virtual void _init_rx(uhd::stream_args_t &args) = 0;
-
-    virtual void _init_tx(uhd::stream_args_t &args) = 0;
 }; /* class fir_block_ctrl*/
 
 }} /* namespace uhd::rfnoc */

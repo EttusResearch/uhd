@@ -110,6 +110,9 @@ public:
     }
 
 protected:
+    //! Checks the args \p window_len and \p spp are OK.
+    //
+    //  If spp is given, it must match the window length, or we throw.
     void _post_args_hook()
     {
         UHD_RFNOC_BLOCK_TRACE() << "window_block::_post_args_hook()" << std::endl;
@@ -121,6 +124,7 @@ protected:
         }
     }
 
+    //! Check stream args match window length
     void _init_rx(uhd::stream_args_t &args)
     {
         UHD_RFNOC_BLOCK_TRACE() << "window_block::_init_rx()" << std::endl;
@@ -140,6 +144,7 @@ protected:
         }
     }
 
+    //! Check stream args match window length
     void _init_tx(uhd::stream_args_t &args)
     {
         UHD_RFNOC_BLOCK_TRACE() << "window_block::_init_tx()" << std::endl;
