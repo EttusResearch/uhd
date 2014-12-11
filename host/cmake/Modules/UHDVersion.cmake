@@ -28,7 +28,7 @@ FIND_PACKAGE(Git QUIET)
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
 SET(UHD_VERSION_MINOR 008)
-SET(UHD_VERSION_PATCH git)
+SET(UHD_VERSION_PATCH rfnoc)
 SET(UHD_VERSION_DEVEL TRUE)
 
 ########################################################################
