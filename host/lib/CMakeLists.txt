@@ -99,6 +99,10 @@ LIBUHD_APPEND_SOURCES(
 # Add DLL resource file to Windows build
 ########################################################################
 IF(MSVC)
+    SET(RC_TRIMMED_VERSION_PATCH TRIMMED_VERSION_PATCH)
+    IF(UHD_VERSION_DEVEL)
+        SET(RC_TRIMMED_VERSION_PATCH "999")
+    ENDIF(UHD_VERSION_DEVEL)
     CONFIGURE_FILE(
         ${CMAKE_CURRENT_SOURCE_DIR}/uhd.rc.in
         ${CMAKE_CURRENT_BINARY_DIR}/uhd.rc
