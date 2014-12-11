@@ -475,12 +475,12 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         // to avoid fragmentation should the entire header be used.
         const size_t bpp = xport.recv->get_recv_frame_size() - stream_options.rx_max_len_hdr; // bytes per packet
         const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
-        const size_t spp = std::min(args.args.cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
+        const size_t spp = std::min(chan_args[stream_i].cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
 
         //make the new streamer given the samples per packet
         if (not my_streamer)
             my_streamer = boost::make_shared<sph::recv_packet_streamer>(spp);
-        my_streamer->resize(args.channels.size());
+        my_streamer->resize(chan_list.size());
 
         //init some streamer stuff
         std::string conv_endianness;
@@ -655,12 +655,12 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         // to avoid fragmentation should the entire header be used.
         const size_t bpp = xport.send->get_send_frame_size() - stream_options.tx_max_len_hdr;
         const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
-        const size_t spp = std::min(args.args.cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
+        const size_t spp = std::min(chan_args[stream_i].cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
 
         //make the new streamer given the samples per packet
         if (not my_streamer)
             my_streamer = boost::make_shared<sph::send_packet_streamer>(spp);
-        my_streamer->resize(args.channels.size());
+        my_streamer->resize(chan_list.size());
 
         //init some streamer stuff
         std::string conv_endianness;
