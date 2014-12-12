@@ -23,6 +23,7 @@
 
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
+#include <uhd/transport/chdr.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/sid.hpp>
 #include <uhd/types/metadata.hpp>
@@ -39,9 +40,8 @@ static const size_t DEVICE3_RX_FC_REQUEST_FREQ         = 32;    //per flow-contr
 static const size_t DEVICE3_TX_FC_RESPONSE_FREQ        = 8;
 static const size_t DEVICE3_TX_FC_RESPONSE_CYCLES      = 0;     // Cycles: Off.
 
-// TODO Remove the hardcoded 16 once chdr code is merged
-static const size_t DEVICE3_TX_MAX_HDR_LEN             = 16;    // Bytes
-static const size_t DEVICE3_RX_MAX_HDR_LEN             = 16;    // Bytes
+static const size_t DEVICE3_TX_MAX_HDR_LEN             = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(boost::uint64_t);    // Bytes
+static const size_t DEVICE3_RX_MAX_HDR_LEN             = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(boost::uint64_t);    // Bytes
 
 class device3_impl : public uhd::device3
 {
