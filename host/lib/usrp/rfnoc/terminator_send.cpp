@@ -22,6 +22,14 @@ using namespace uhd::rfnoc;
 
 size_t terminator_send::_count = 0;
 
+terminator_send::terminator_send() :
+    _term_index(_count),
+    _samp_rate(rate_node_ctrl::RATE_UNDEFINED),
+    _tick_rate(tick_node_ctrl::RATE_UNDEFINED)
+{
+    _count++;
+}
+
 std::string terminator_send::unique_id() const
 {
     return str(boost::format("TX Terminator %d") % _term_index);

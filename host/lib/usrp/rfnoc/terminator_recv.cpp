@@ -22,6 +22,14 @@ using namespace uhd::rfnoc;
 
 size_t terminator_recv::_count = 0;
 
+terminator_recv::terminator_recv() :
+    _term_index(_count),
+    _samp_rate(rate_node_ctrl::RATE_UNDEFINED),
+    _tick_rate(tick_node_ctrl::RATE_UNDEFINED)
+{
+    _count++;
+}
+
 std::string terminator_recv::unique_id() const
 {
     return str(boost::format("RX Terminator %d") % _term_index);

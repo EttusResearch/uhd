@@ -51,9 +51,9 @@ public:
         UHD_RFNOC_BLOCK_TRACE() << "terminator_send::issue_stream_cmd()" << std::endl;
     }
 
-    // A tx streamer doesn't set its output sampling rate,
-    // rather, it sets a downstream block's sampling rate.
-    double get_output_samp_rate(size_t) { return rate_node_ctrl::RATE_UNDEFINED; };
+    // If this is called, then by a send terminator at the other end
+    // of a flow graph.
+    double get_output_samp_rate(size_t) { return _samp_rate; };
 
     // Same for the scaling factor
     double get_output_scale_factor(size_t) { return scalar_node_ctrl::SCALE_UNDEFINED; };
@@ -61,16 +61,21 @@ public:
     std::string unique_id() const;
 
 protected:
-    terminator_send() : _term_index(_count) { _count++; };
+    terminator_send();
 
     /*! Nothing may come after the streamer.
      */
     bool _is_final_rx_block() { return true; };
 
+    virtual double _get_tick_rate() { return _tick_rate; };
+
 private:
     //! Every terminator has a unique index
     const size_t _term_index;
     static size_t _count;
+
+    double _samp_rate;
+    double _tick_rate;
 
 }; /* class terminator_send */
 
