@@ -47,9 +47,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rate", po::value<double>(&rate), "rate of incoming samples (sps)")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
-        ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
-        ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
-        ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
+        ("ant", po::value<std::string>(&ant), "antenna selection")
+        ("subdev", po::value<std::string>(&subdev), "subdevice specification")
+        ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         // display parameters
         ("num-bins", po::value<size_t>(&num_bins)->default_value(512), "the number of bins in the DFT")
         ("frame-rate", po::value<double>(&frame_rate)->default_value(5), "frame rate of the display (fps)")
@@ -108,7 +108,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
     }
 
-    //set the IF filter bandwidth
+    //set the analog frontend filter bandwidth
     if (vm.count("bw")){
         std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % bw << std::endl;
         usrp->set_rx_bandwidth(bw);
