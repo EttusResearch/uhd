@@ -37,7 +37,7 @@ double scalar_node_ctrl::get_input_scale_factor(
     try {
         return find_downstream_unique_property<scalar_node_ctrl, double>(
                 boost::bind(_get_input_factor, _1, _2),
-                SCALE_NONE
+                SCALE_UNDEFINED
         );
     } catch (const uhd::runtime_error &ex) {
         throw uhd::runtime_error(str(
@@ -53,7 +53,7 @@ double scalar_node_ctrl::get_output_scale_factor(
     try {
         return find_upstream_unique_property<scalar_node_ctrl, double>(
                 boost::bind(_get_output_factor, _1, _2),
-                SCALE_NONE
+                SCALE_UNDEFINED
         );
     } catch (const uhd::runtime_error &ex) {
         throw uhd::runtime_error(str(

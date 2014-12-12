@@ -25,7 +25,7 @@ double tick_node_ctrl::get_tick_rate(
     // First, see if we've implemented _get_tick_rate()
     {
         double my_tick_rate = _get_tick_rate();
-        if (my_tick_rate != RATE_NONE) {
+        if (my_tick_rate != RATE_UNDEFINED) {
             return my_tick_rate;
         }
     }
@@ -44,16 +44,16 @@ double tick_node_ctrl::get_tick_rate(
                 upstream_neighbouring_tick_nodes.end()
         );
     } // neighbouring_tick_nodes is now initialized
-    double ret_val = RATE_NONE;
+    double ret_val = RATE_UNDEFINED;
     BOOST_FOREACH(const sptr &node, neighbouring_tick_nodes) {
         if (_explored_nodes.count(node)) {
             continue;
         }
         double tick_rate = node->get_tick_rate(explored_nodes);
-        if (tick_rate == RATE_NONE) {
+        if (tick_rate == RATE_UNDEFINED) {
             continue;
         }
-        if (ret_val == RATE_NONE) {
+        if (ret_val == RATE_UNDEFINED) {
             ret_val = tick_rate;
             // TODO: Remember name of this node so we can make the throw message more descriptive.
             continue;

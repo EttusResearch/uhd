@@ -44,7 +44,7 @@ public:
      * Constants
      **********************************************************************/
     //! This value is used by rate nodes that don't actually set a rate themselves
-    static const double RATE_NONE = -1.0;
+    static const double RATE_UNDEFINED = -1.0;
 
     /***********************************************************************
      * Rate controls
@@ -60,7 +60,7 @@ public:
     );
 
 protected:
-    virtual double _get_tick_rate() { return RATE_NONE; };
+    virtual double _get_tick_rate() { return RATE_UNDEFINED; };
 
 }; /* class tick_node_ctrl */
 

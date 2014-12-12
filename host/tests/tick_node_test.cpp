@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(test_simplest_downstream_search)
 BOOST_AUTO_TEST_CASE(test_both_ways_search)
 {
     const double test_rate = 0.25;
-    MAKE_TICK_SETTING_NODE(node_A, tick_node_ctrl::RATE_NONE);
+    MAKE_TICK_SETTING_NODE(node_A, tick_node_ctrl::RATE_UNDEFINED);
     MAKE_TICK_NODE(node_B);
     MAKE_TICK_SETTING_NODE(node_C, test_rate);
 
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(test_both_ways_search_reversed)
     const double test_rate = 0.25;
     MAKE_TICK_SETTING_NODE(node_A, test_rate);
     MAKE_TICK_NODE(node_B);
-    MAKE_TICK_SETTING_NODE(node_C, tick_node_ctrl::RATE_NONE);
+    MAKE_TICK_SETTING_NODE(node_C, tick_node_ctrl::RATE_UNDEFINED);
 
     connect_nodes(node_A, node_B);
     connect_nodes(node_B, node_C);

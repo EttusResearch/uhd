@@ -38,7 +38,7 @@ double rate_node_ctrl::get_input_samp_rate(
     try {
         return find_downstream_unique_property<rate_node_ctrl, double>(
                 boost::bind(_get_input_samp_rate, _1, _2),
-                RATE_NONE
+                RATE_UNDEFINED
         );
     } catch (const uhd::runtime_error &ex) {
         throw uhd::runtime_error(str(
@@ -54,7 +54,7 @@ double rate_node_ctrl::get_output_samp_rate(
     try {
         return find_upstream_unique_property<rate_node_ctrl, double>(
                 boost::bind(_get_output_samp_rate, _1, _2),
-                RATE_NONE
+                RATE_UNDEFINED
         );
     } catch (const uhd::runtime_error &ex) {
         throw uhd::runtime_error(str(

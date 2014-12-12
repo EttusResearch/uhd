@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(test_tree_downstream_search)
     MAKE_NODE(node_B0);
     MAKE_RATE_SETTING_NODE(node_B1, test_rate);
     MAKE_RATE_SETTING_NODE(node_C0, test_rate);
-    MAKE_RATE_SETTING_NODE(node_C1, rate_node_ctrl::RATE_NONE);
+    MAKE_RATE_SETTING_NODE(node_C1, rate_node_ctrl::RATE_UNDEFINED);
 
     // Tree: Downstream of our first node are 3 rate setting blocks.
     // Two set the same rate, the third does not care.

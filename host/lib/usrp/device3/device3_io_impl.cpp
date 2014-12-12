@@ -349,7 +349,7 @@ static void handle_tx_async_msgs(
     }
 
     double tick_rate = get_tick_rate();
-    if (tick_rate == rfnoc::tick_node_ctrl::RATE_NONE) {
+    if (tick_rate == rfnoc::tick_node_ctrl::RATE_UNDEFINED) {
         tick_rate = 1;
     }
 
@@ -407,16 +407,16 @@ void device3_impl::update_rx_streamers(double /* rate */)
             boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[block_id].lock());
         if (my_streamer) {
             double tick_rate = my_streamer->get_terminator()->get_tick_rate();
-            if (tick_rate == rfnoc::tick_node_ctrl::RATE_NONE) {
+            if (tick_rate == rfnoc::tick_node_ctrl::RATE_UNDEFINED) {
                 tick_rate = 1.0;
             }
             my_streamer->set_tick_rate(tick_rate);
             double samp_rate = my_streamer->get_terminator()->get_output_samp_rate();
-            if (tick_rate == rfnoc::rate_node_ctrl::RATE_NONE) {
+            if (tick_rate == rfnoc::rate_node_ctrl::RATE_UNDEFINED) {
                 tick_rate = 1.0;
             }
             double scaling = my_streamer->get_terminator()->get_output_scale_factor();
-            if (scaling == rfnoc::scalar_node_ctrl::SCALE_NONE) {
+            if (scaling == rfnoc::scalar_node_ctrl::SCALE_UNDEFINED) {
                 scaling = 1/32767.;
             }
             UHD_MSG(status) << "  New tick_rate == " << tick_rate << "  New samp_rate == " << samp_rate << " New scaling == " << scaling << std::endl;
@@ -586,15 +586,15 @@ void device3_impl::update_tx_streamers(double /* rate */)
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[block_id].lock());
         if (my_streamer) {
             double tick_rate = my_streamer->get_terminator()->get_tick_rate();
-            if (tick_rate == rfnoc::tick_node_ctrl::RATE_NONE) {
+            if (tick_rate == rfnoc::tick_node_ctrl::RATE_UNDEFINED) {
                 tick_rate = 1.0;
             }
             double samp_rate = my_streamer->get_terminator()->get_input_samp_rate();
-            if (samp_rate == rfnoc::rate_node_ctrl::RATE_NONE) {
+            if (samp_rate == rfnoc::rate_node_ctrl::RATE_UNDEFINED) {
                 samp_rate = 1.0;
             }
             double scaling = my_streamer->get_terminator()->get_input_scale_factor();
-            if (scaling == rfnoc::scalar_node_ctrl::SCALE_NONE) {
+            if (scaling == rfnoc::scalar_node_ctrl::SCALE_UNDEFINED) {
                 scaling = 32767.;
             }
             UHD_MSG(status) << "  New tick_rate == " << tick_rate << "  New samp_rate == " << samp_rate << " New scaling == " << scaling << std::endl;

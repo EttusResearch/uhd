@@ -53,10 +53,10 @@ public:
 
     // A tx streamer doesn't set its output sampling rate,
     // rather, it sets a downstream block's sampling rate.
-    double get_output_samp_rate(size_t) { return rate_node_ctrl::RATE_NONE; };
+    double get_output_samp_rate(size_t) { return rate_node_ctrl::RATE_UNDEFINED; };
 
     // Same for the scaling factor
-    double get_output_scale_factor(size_t) { return scalar_node_ctrl::SCALE_NONE; };
+    double get_output_scale_factor(size_t) { return scalar_node_ctrl::SCALE_UNDEFINED; };
 
     std::string unique_id() const;
 

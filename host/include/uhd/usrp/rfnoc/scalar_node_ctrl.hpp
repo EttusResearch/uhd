@@ -43,7 +43,7 @@ public:
      **********************************************************************/
     typedef boost::shared_ptr<scalar_node_ctrl> sptr;
     //! Undefined scaling
-    static const double SCALE_NONE = -1.0;
+    static const double SCALE_UNDEFINED = -1.0;
 
     /***********************************************************************
      * Scaling controls

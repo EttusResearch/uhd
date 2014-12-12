@@ -47,9 +47,9 @@ public:
 
     // An rx streamer doesn't set its input sampling rate,
     // rather, it sets an upstream block's sampling rate.
-    double get_input_samp_rate(size_t) { return rate_node_ctrl::RATE_NONE; };
+    double get_input_samp_rate(size_t) { return rate_node_ctrl::RATE_UNDEFINED; };
 
-    double get_input_scale_factor(size_t) { return scalar_node_ctrl::SCALE_NONE; };
+    double get_input_scale_factor(size_t) { return scalar_node_ctrl::SCALE_UNDEFINED; };
 
     std::string unique_id() const;
 
