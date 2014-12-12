@@ -364,7 +364,6 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
     UHD_MSG(status) << "X300 initialization sequence..." << std::endl;
     _ignore_cal_file = dev_addr.has_key("ignore-cal-file");
     _tree->create<std::string>("/name").set("X-Series Device");
-    _tick_rate_retriever = boost::bind(&x300_impl::_get_tick_rate, this, _1);
 
     const device_addrs_t device_args = separate_device_addr(dev_addr);
     _mb.resize(device_args.size());

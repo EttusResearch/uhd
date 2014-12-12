@@ -317,7 +317,7 @@ static void handle_tx_async_msgs(
         boost::shared_ptr<tx_fc_cache_t> fc_cache,
         zero_copy_if::sptr xport,
         endianness_t endianness,
-        boost::function<double(size_t)> get_tick_rate, size_t mb_index
+        boost::function<double(void)> get_tick_rate
 ) {
     managed_recv_buffer::sptr buff = xport->get_recv_buff();
     if (not buff)
@@ -349,6 +349,11 @@ static void handle_tx_async_msgs(
         return;
     }
 
+    double tick_rate = get_tick_rate();
+    if (tick_rate == rfnoc::tick_node_ctrl::RATE_NONE) {
+        tick_rate = 1;
+    }
+
     //fill in the async metadata
     async_metadata_t metadata;
     load_metadata_from_buff(
@@ -356,7 +361,7 @@ static void handle_tx_async_msgs(
             metadata,
             if_packet_info,
             packet_buff,
-            get_tick_rate(mb_index),
+            tick_rate,
             fc_cache->stream_channel
     );
 
@@ -702,13 +707,18 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         fc_cache->async_queue = async_md;
         fc_cache->old_async_queue = _async_md;
 
+        boost::function<double(void)> tick_rate_retriever = boost::bind(
+                &rfnoc::tick_node_ctrl::get_tick_rate,
+                send_terminator,
+                std::set< rfnoc::node_ctrl_base::sptr >() // Need to specify default args with bind
+        );
         task::sptr task = task::make(
                 boost::bind(
                     &handle_tx_async_msgs,
                     fc_cache,
                     xport.recv,
                     get_transport_endianness(mb_index),
-                    _tick_rate_retriever, mb_index
+                    tick_rate_retriever
                 )
         );
 

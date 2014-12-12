@@ -281,7 +281,6 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     , _xport_path(device_addr.has_key("addr") ? ETH : AXI)
 {
     stream_options.rx_fc_request_freq = E300_RX_FC_REQUEST_FREQ;
-    _tick_rate_retriever = boost::bind(&e300_impl::_get_tick_rate, this, 0);
 
     ////////////////////////////////////////////////////////////////////
     // load the fpga image
