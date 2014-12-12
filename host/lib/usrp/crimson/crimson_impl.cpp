@@ -65,13 +65,13 @@ void csv_parse(std::vector<std::string> &tokens, char* data, const char delim) {
 
 // base wrapper that calls the simple UDP interface to get messages to and from Crimson
 std::string crimson_impl::get_string(std::string req) {
-    	_iface -> poke_str(req);
+    	_iface -> poke_str("get," + req);
 	std::string ret = _iface -> peek_str();
 	if (ret == "TIMEOUT") 	throw uhd::runtime_error("crimson_impl::get_string - UDP resp. timed out");
 	else 			return ret;
 }
 void crimson_impl::set_string(const std::string pre, std::string data) {
-	_iface -> poke_str(pre + "," + data);
+	_iface -> poke_str("set," + pre + "," + data);
 
 	// read anyways for error check, since Crimson will reply back
 	std::string ret = _iface -> peek_str();
@@ -114,9 +114,9 @@ void crimson_impl::set_int(const std::string pre, int data){
 // wrapper for type <mboard_eeprom_t> through the ASCII Crimson interface
 mboard_eeprom_t crimson_impl::get_mboard_eeprom(std::string req) {
 	mboard_eeprom_t temp;
-	temp["name"]     = get_string("product,get,name");
-	temp["vendor"]   = get_string("product,get,vendor");
-	temp["serial"]   = get_string("product,get,serial");
+	temp["name"]     = get_string("fpga/about/name");
+	temp["vendor"]   = "Per Vices";
+	temp["serial"]   = get_string("fpga/about/serial");
 	return temp;
 }
 void crimson_impl::set_mboard_eeprom(const std::string pre, mboard_eeprom_t data) {
@@ -149,32 +149,12 @@ void crimson_impl::set_sensor_value(const std::string pre, sensor_value_t data) 
 
 // wrapper for type <meta_range_t> through the ASCII Crimson interface
 meta_range_t crimson_impl::get_meta_range(std::string req) {
+	throw uhd::not_implemented_error("set_meta_range not implemented, Crimson does not support range settings");
 	meta_range_t temp;
-	if (req[req.length()-1] >= 'A' && req[req.length()-1] <= 'D') {
-		temp = meta_range_t(	
-			get_double( req.substr(0, req.length()-1) + "start_" + req.substr(req.length()-1, 1)),
-			get_double( req.substr(0, req.length()-1) + "stop_"  + req.substr(req.length()-1, 1)),
-			get_double( req.substr(0, req.length()-1) + "step_"  + req.substr(req.length()-1, 1))
-		);
-	} else {
-		temp = meta_range_t(	
-			get_double( req + "_start"),
-			get_double( req + "_stop"),
-			get_double( req + "_step")
-		);
-	}
 	return temp;
 }
 void crimson_impl::set_meta_range(const std::string pre, meta_range_t data) {
-	if (pre[pre.length()-1] >= 'A' && pre[pre.length()-1] <= 'D') {
-		set_double( pre.substr(0, pre.length()-1) + "start_" + pre.substr(pre.length()-1, 1), data.start());
-		set_double( pre.substr(0, pre.length()-1) + "stop_"  + pre.substr(pre.length()-1, 1), data.stop());
-		set_double( pre.substr(0, pre.length()-1) + "step_"  + pre.substr(pre.length()-1, 1), data.step());
-	} else {
-		set_double( pre + "_start", data.start());
-		set_double( pre + "_stop",  data.stop() );
-		set_double( pre + "_step",  data.step() );
-	}
+	throw uhd::not_implemented_error("set_meta_range not implemented, Crimson does not support range settings");
 	return;
 }
 
@@ -218,7 +198,7 @@ static device_addrs_t crimson_find_with_addr(const device_addr_t &hint)
         hint["addr"], BOOST_STRINGIZE(CRIMSON_FW_COMMS_UDP_PORT));
 
     //send request for echo
-    comm->send(asio::buffer("product,1,get,serial", sizeof("product,1,get,serial")));
+    comm->send(asio::buffer("1,get,fpga/about/serial", sizeof("1,get,fpga/about/serial")));
 
     //loop for replies from the broadcast until it times out
     device_addrs_t addrs;
@@ -231,13 +211,14 @@ static device_addrs_t crimson_find_with_addr(const device_addr_t &hint)
 	// parse the return buffer and store it in a vector
 	std::vector<std::string> tokens;
 	csv_parse(tokens, buff, ',');
-	if (tokens[0] == "ERROR") break;
+	if (tokens.size() < 3) break;
+	if (tokens[1].c_str()[0] == CMD_ERROR) break;
 
         device_addr_t new_addr;
         new_addr["type"]    = "crimson";
         new_addr["addr"]    = comm->get_recv_addr();
 	new_addr["name"]    = "";
-        new_addr["serial"]  = tokens[1];
+        new_addr["serial"]  = tokens[2];
 
         //filter the discovered device below by matching optional keys
         if (
@@ -349,19 +330,22 @@ UHD_STATIC_BLOCK(register_crimson_device)
  * Structors
  **********************************************************************/
 // Macro to create the tree, all properties created with this are R/W properties
-#define TREE_CREATE(PATH, CATEGORY, PROP, TYPE, HANDLER)							\
-	do { _tree->create<TYPE> (PATH)										\
-    		.set( get ## HANDLER (CATEGORY ",get," PROP))							\
-		.subscribe(boost::bind(&crimson_impl::set ## HANDLER, this, (CATEGORY ",set," PROP), _1))	\
-		.publish  (boost::bind(&crimson_impl::get ## HANDLER, this, (CATEGORY ",get," PROP)    ));	\
+#define TREE_CREATE_RW(PATH, PROP, TYPE, HANDLER)						\
+	do { _tree->create<TYPE> (PATH)								\
+    		.set( get ## HANDLER (PROP))							\
+		.subscribe(boost::bind(&crimson_impl::set ## HANDLER, this, (PROP), _1))	\
+		.publish  (boost::bind(&crimson_impl::get ## HANDLER, this, (PROP)    ));	\
 	} while(0)
 
 // Macro to create the tree, all properties created with this are RO properties
-#define TREE_CREATE_READ(PATH, CATEGORY, PROP, TYPE, HANDLER)							\
-	do { _tree->create<TYPE> (PATH)										\
-    		.set( get ## HANDLER (CATEGORY ",get," PROP))							\
-		.publish  (boost::bind(&crimson_impl::get ## HANDLER, this, (CATEGORY ",get," PROP)    ));	\
+#define TREE_CREATE_RO(PATH, PROP, TYPE, HANDLER)						\
+	do { _tree->create<TYPE> (PATH)								\
+    		.set( get ## HANDLER (PROP))							\
+		.publish  (boost::bind(&crimson_impl::get ## HANDLER, this, (PROP)    ));	\
 	} while(0)
+
+// Macro to create the tree, all properties created with this are static
+#define TREE_CREATE_ST(PATH, TYPE, VAL) 	( _tree->create<TYPE>(PATH).set(VAL) )
 
 crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 {
@@ -369,127 +353,100 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
     _type = device::CRIMSON;
 
     // Makes the UDP comm connection
-    _iface = crimson_iface::make( udp_simple::make_connected( dev_addr["addr"],
-    			BOOST_STRINGIZE(CRIMSON_FW_COMMS_UDP_PORT)) );
+    _iface = crimson_iface::make( udp_simple::make_connected(
+    			dev_addr["addr"], BOOST_STRINGIZE(CRIMSON_FW_COMMS_UDP_PORT)) );
 
     // TODO make transports for each RX/TX chain
-
     // TODO check if locked already
+    // TODO lock the Crimson device to this process, this will prevent the Crimson device being used by another program
 
-    // lock the Crimson device to this process, this will prevent the Crimson device being used by another program
-    set_string("product,set,locked", "1");
-
-    // Create the file tree of properties.
-    // Crimson only has support for one mother board, and the RF chains will show up individually as daughter boards.
-    // All the initial settings are read from the current status of the board.
-    _tree = uhd::property_tree::make();
-    _tree->create<std::string>("/name").set("Crimson Device");
-
+    // Property paths
     const fs_path mb_path   = "/mboards/0";
     const fs_path time_path = mb_path / "time";
     const fs_path tx_path   = mb_path / "tx";
     const fs_path rx_path   = mb_path / "rx";
 
-    TREE_CREATE(mb_path / "id",         "product", "id",         std::string, _string);
-    TREE_CREATE(mb_path / "name",       "product", "name",       std::string, _string);
-    TREE_CREATE(mb_path / "serial",     "product", "serial",     std::string, _string);
-    TREE_CREATE(mb_path / "fw_version", "product", "fw_version", std::string, _string);
-    TREE_CREATE(mb_path / "hw_version", "product", "hw_version", std::string, _string);
-    TREE_CREATE(mb_path / "sw_version", "product", "sw_version", std::string, _string);
-    TREE_CREATE(mb_path / "vendor",     "product", "vendor",     std::string, _string);
-
-    TREE_CREATE(time_path / "id",         "time", "id",         std::string, _string);
-    TREE_CREATE(time_path / "name",       "time", "name",       std::string, _string);
-    TREE_CREATE(time_path / "serial",     "time", "serial",     std::string, _string);
-    TREE_CREATE(time_path / "fw_version", "time", "fw_version", std::string, _string);
-    TREE_CREATE(time_path / "hw_version", "time", "hw_version", std::string, _string);
-    TREE_CREATE(time_path / "sw_version", "time", "sw_version", std::string, _string);
-
-    TREE_CREATE(rx_path / "id",         "rx", "id",         std::string, _string);
-    TREE_CREATE(rx_path / "name",       "rx", "name",       std::string, _string);
-    TREE_CREATE(rx_path / "serial",     "rx", "serial",     std::string, _string);
-    TREE_CREATE(rx_path / "fw_version", "rx", "fw_version", std::string, _string);
-    TREE_CREATE(rx_path / "hw_version", "rx", "hw_version", std::string, _string);
-    TREE_CREATE(rx_path / "sw_version", "rx", "sw_version", std::string, _string);
-    TREE_CREATE(rx_path / "spec",       "rx", "spec",       std::string, _string);
-
-    TREE_CREATE(tx_path / "id",         "tx", "id",         std::string, _string);
-    TREE_CREATE(tx_path / "name",       "tx", "name",       std::string, _string);
-    TREE_CREATE(tx_path / "serial",     "tx", "serial",     std::string, _string);
-    TREE_CREATE(tx_path / "fw_version", "tx", "fw_version", std::string, _string);
-    TREE_CREATE(tx_path / "hw_version", "tx", "hw_version", std::string, _string);
-    TREE_CREATE(tx_path / "sw_version", "tx", "sw_version", std::string, _string);
-    TREE_CREATE(tx_path / "spec",       "tx", "spec",       std::string, _string);
-
-    // Link max rate refers to ethernet link rate
-    TREE_CREATE(mb_path / "link_max_rate","product", "link_max_rate", double, _double);
-
-    // This is the master clock rate
-    TREE_CREATE(mb_path / "tick_rate", "product", "tick_rate",     double, _double);
-
-    TREE_CREATE(time_path / "cmd", "time", "cmd", time_spec_t, _time_spec);
-    TREE_CREATE(time_path / "now", "time", "now", time_spec_t, _time_spec);
-    TREE_CREATE(time_path / "pps", "time", "pps", time_spec_t, _time_spec);
-
-    TREE_CREATE(mb_path / "eeprom", "product", "eeprom", mboard_eeprom_t, _mboard_eeprom);
+    // Create the file tree of properties.
+    // Crimson only has support for one mother board, and the RF chains will show up individually as daughter boards.
+    // All the initial settings are read from the current status of the board.
+    _tree = uhd::property_tree::make();
 
     static const std::vector<std::string> time_sources = boost::assign::list_of("internal")("external");
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
-
-
-    // This property chooses internal or external time source
-    TREE_CREATE(mb_path / "time_source" / "value",  "time", "time_src_val", std::string, _string);
-    TREE_CREATE(mb_path / "time_source" / "output", "time", "time_src_out", bool, _bool);
 
     static const std::vector<double> external_freq_options = boost::assign::list_of(10e6);
     _tree->create<std::vector<double> >(mb_path / "clock_source" / "external" / "freq" / "options");
     static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external");
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_source_options);
 
-    // This property chooses internal or external clock source
-    TREE_CREATE(mb_path / "clock_source" / "value",              "time", "clk_src_val",    std::string, _string);
-    TREE_CREATE(mb_path / "clock_source" / "external",           "time", "clk_src_ext",    std::string, _string);
-    TREE_CREATE(mb_path / "clock_source" / "external" / "value", "time", "clk_src_ext_val",double, _double);
-    TREE_CREATE(mb_path / "clock_source" / "output",             "time", "clk_src_out",    bool, _bool);
+    TREE_CREATE_ST("/name", std::string, "Crimson Device");
 
-    TREE_CREATE(mb_path / "sensors" / "ref_locked", "product", "sensors", sensor_value_t, _sensor_value);
+    TREE_CREATE_ST(mb_path / "vendor", std::string, "Per Vices");
+    TREE_CREATE_ST(mb_path / "name",   std::string, "FPGA Board");
+    TREE_CREATE_RW(mb_path / "id",         "fpga/about/id",     std::string, _string);
+    TREE_CREATE_RW(mb_path / "serial",     "fpga/about/serial", std::string, _string);
+    TREE_CREATE_RW(mb_path / "fw_version", "fpga/about/fw_ver", std::string, _string);
+    TREE_CREATE_RW(mb_path / "hw_version", "fpga/about/hw_ver", std::string, _string);
+    TREE_CREATE_RW(mb_path / "sw_version", "fpga/about/sw_ver", std::string, _string);
+
+    TREE_CREATE_ST(time_path / "name", std::string, "Time Board");
+    TREE_CREATE_RW(time_path / "id",         "time/about/id",     std::string, _string);
+    TREE_CREATE_RW(time_path / "serial",     "time/about/serial", std::string, _string);
+    TREE_CREATE_RW(time_path / "fw_version", "time/about/fw_ver", std::string, _string);
+    TREE_CREATE_RW(time_path / "hw_version", "time/about/hw_ver", std::string, _string);
+    TREE_CREATE_RW(time_path / "sw_version", "time/about/sw_ver", std::string, _string);
+
+    TREE_CREATE_ST(rx_path / "name",   std::string, "RX Board");
+    TREE_CREATE_ST(rx_path / "spec",   std::string, "4 RX RF chains, 322MHz BW and DC-6GHz each");
+    TREE_CREATE_RW(rx_path / "id",         "rx_a/about/id",     std::string, _string);
+    TREE_CREATE_RW(rx_path / "serial",     "rx_a/about/serial", std::string, _string);
+    TREE_CREATE_RW(rx_path / "fw_version", "rx_a/about/fw_ver", std::string, _string);
+    TREE_CREATE_RW(rx_path / "hw_version", "rx_a/about/hw_ver", std::string, _string);
+    TREE_CREATE_RW(rx_path / "sw_version", "rx_a/about/sw_ver", std::string, _string);
+
+    TREE_CREATE_ST(tx_path / "name", std::string, "TX Board");
+    TREE_CREATE_ST(tx_path / "spec", std::string, "4 TX RF chains, 322MHz BW and DC-6GHz each");
+    TREE_CREATE_RW(tx_path / "id",         "tx_a/about/id",     std::string, _string);
+    TREE_CREATE_RW(tx_path / "serial",     "tx_a/about/serial", std::string, _string);
+    TREE_CREATE_RW(tx_path / "fw_version", "tx_a/about/fw_ver", std::string, _string);
+    TREE_CREATE_RW(tx_path / "hw_version", "tx_a/about/hw_ver", std::string, _string);
+    TREE_CREATE_RW(tx_path / "sw_version", "tx_a/about/sw_ver", std::string, _string);
+
+    // Link max rate refers to ethernet link rate
+    TREE_CREATE_RW(mb_path / "link_max_rate", "fpga/link/rate", double, _double);
+
+    // This is the master clock rate
+    TREE_CREATE_RW(mb_path / "tick_rate", "time/clk/rate", double, _double);
+
+    TREE_CREATE_ST(time_path / "cmd", time_spec_t, time_spec_t(0.0));
+    TREE_CREATE_RW(time_path / "now", "time/clk/cur_time", time_spec_t, _time_spec);
+    TREE_CREATE_RW(time_path / "pps", "time/clk/pps", 	   time_spec_t, _time_spec);
+
+    TREE_CREATE_ST(mb_path / "eeprom", mboard_eeprom_t, mboard_eeprom_t());
+
+    // This property chooses internal or external clock source
+    TREE_CREATE_RW(mb_path / "time_source"  / "value",  	"time/source/ref",  	std::string, _string);
+    TREE_CREATE_RW(mb_path / "clock_source" / "value",          "time/source/ref",	std::string, _string);
+    TREE_CREATE_RW(mb_path / "clock_source" / "external",	"time/source/ref",	std::string, _string);
+    TREE_CREATE_RW(mb_path / "clock_source" / "external" / "value", "time/clk/rate",	double, _double);
+    TREE_CREATE_ST(mb_path / "clock_source" / "output", bool, true);
+    TREE_CREATE_ST(mb_path / "time_source"  / "output", bool, true);
+
+    TREE_CREATE_ST(mb_path / "sensors" / "ref_locked", sensor_value_t, sensor_value_t("NA", "0", "NA"));
 
     // loop for all RF chains
     for (int chain = 0; chain < 4; chain ++) {
-	std::string num  = boost::lexical_cast<std::string>((char)(chain + 65));
-	std::string chan = "Channel_" + num;
+	std::string lc_num  = boost::lexical_cast<std::string>((char)(chain + 97));
+	std::string num     = boost::lexical_cast<std::string>((char)(chain + 65));
+	std::string chan    = "Channel_" + num;
 
-	// Actual frequency values
-	TREE_CREATE_READ(rx_path / chan / "freq" / "value", "rx", "freq_value_" + num, double, _double);
-	TREE_CREATE_READ(tx_path / chan / "freq" / "value", "tx", "freq_value_" + num, double, _double);
-
-	// Codecs, phony properties for Crimson
 	const fs_path rx_codec_path = mb_path / "rx_codecs" / num;
 	const fs_path tx_codec_path = mb_path / "tx_codecs" / num;
-	TREE_CREATE(rx_codec_path / "gains", "rx", "codec_gains_" + num, int, _int);
-	TREE_CREATE(rx_codec_path / "name",  "rx", "codec_name_"  + num, std::string, _string);
-
-	TREE_CREATE(tx_codec_path / "gains", "tx", "codec_gains_" + num, int, _int);
-	TREE_CREATE(tx_codec_path / "name",  "tx", "codec_name_"  + num,  std::string, _string);
-
-	// Duaghter Boards' Frontend Settings
 	const fs_path rx_fe_path = mb_path / "dboards" / num / "rx_frontends" / chan;
 	const fs_path tx_fe_path = mb_path / "dboards" / num / "tx_frontends" / chan;
-	TREE_CREATE(rx_fe_path / "name",  "rx", "name_" + num, std::string, _string);
-	TREE_CREATE(tx_fe_path / "name",  "tx", "name_" + num, std::string, _string);
-
-	TREE_CREATE(rx_fe_path / "gains" / "ADRF" / "range",  "rx", "fe_gain_range_" + num, meta_range_t, _meta_range);
-	TREE_CREATE(tx_fe_path / "gains" / "RFSA" / "range",  "tx", "fe_gain_range_" + num, meta_range_t, _meta_range);
-
-	TREE_CREATE(rx_fe_path / "freq",  "rx", "fe_freq_range_" + num, meta_range_t, _meta_range);
-	TREE_CREATE(tx_fe_path / "freq",  "tx", "fe_freq_range_" + num, meta_range_t, _meta_range);
-
-	TREE_CREATE(rx_fe_path / "dc_offset" / "value",  "rx", "fe_dc_off_val_"    + num, std::complex<double>, _complex_double);
-	TREE_CREATE(rx_fe_path / "dc_offset" / "enable", "rx", "fe_dc_off_enable_" + num, bool, _bool);
-	TREE_CREATE(rx_fe_path / "iq_balance" / "value", "rx", "fe_dc_off_bal_"    + num, std::complex<double>, _complex_double);
-
-	TREE_CREATE(tx_fe_path / "dc_offset" / "value",  "tx", "fe_dc_off_val_" + num, std::complex<double>, _complex_double);
-	TREE_CREATE(tx_fe_path / "iq_balance" / "value", "tx", "fe_dc_off_bal_" + num, std::complex<double>, _complex_double);
+	const fs_path db_path = mb_path / "dboards" / num;
+	const fs_path rx_dsp_path = mb_path / "rx_dsps" / chan;
+	const fs_path tx_dsp_path = mb_path / "tx_dsps" / chan;
 
         static const std::vector<std::string> antenna_options = boost::assign::list_of("SMA")("None");
         _tree->create<std::vector<std::string> >(rx_fe_path / "antenna" / "options").set(antenna_options);
@@ -499,45 +456,71 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
         _tree->create<std::vector<std::string> >(rx_fe_path / "sensors").set(sensor_options);
         _tree->create<std::vector<std::string> >(tx_fe_path / "sensors").set(sensor_options);
 
-	TREE_CREATE(rx_fe_path / "connection",  "rx", "connection", std::string, _string);
-	TREE_CREATE(tx_fe_path / "connection",  "tx", "connection", std::string, _string);
+	// Actual frequency values
+	TREE_CREATE_RW(rx_path / chan / "freq" / "value", "rx_"+lc_num+"/rf/freq/val", double, _double);
+	TREE_CREATE_RW(tx_path / chan / "freq" / "value", "tx_"+lc_num+"/rf/freq/val", double, _double);
 
-	TREE_CREATE(rx_fe_path / "use_lo_offset",  "rx", "lo_off_" + num, bool, _bool);
-	TREE_CREATE(tx_fe_path / "use_lo_offset",  "tx", "lo_off_" + num, bool, _bool);
+	// Codecs, phony properties for Crimson
+	TREE_CREATE_RW(rx_codec_path / "gains", "rx_"+lc_num+"/dsp/gain", int, _int);
+	TREE_CREATE_ST(rx_codec_path / "name", std::string, "RX Codec");
 
-	TREE_CREATE(rx_fe_path / "freq" / "value", "rx", "fe_freq_val_"  + num, double, _double);
-	TREE_CREATE(rx_fe_path / "freq" / "range", "rx", "fe_freq_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(rx_fe_path / "gain" / "value", "rx", "fe_gain_val_"  + num, double, _double);
-	TREE_CREATE(rx_fe_path / "gain" / "range", "rx", "fe_gain_range_"+ num, meta_range_t, _meta_range);
+	TREE_CREATE_RW(tx_codec_path / "gains", "tx_"+lc_num+"/dsp/gain", int, _int);
+	TREE_CREATE_ST(tx_codec_path / "name", std::string, "TX Codec");
 
-	TREE_CREATE(tx_fe_path / "freq" / "value", "tx", "fe_freq_val_"  + num, double, _double);
-	TREE_CREATE(tx_fe_path / "freq" / "range", "tx", "fe_freq_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(tx_fe_path / "gain" / "value", "tx", "fe_gain_val_"  + num, double, _double);
-	TREE_CREATE(tx_fe_path / "gain" / "range", "tx", "fe_gain_range_"+ num, meta_range_t, _meta_range);
+	// Duaghter Boards' Frontend Settings
+	TREE_CREATE_ST(rx_fe_path / "name",   std::string, "RX Board");
+	TREE_CREATE_ST(tx_fe_path / "name",   std::string, "TX Board");
+
+	TREE_CREATE_ST(rx_fe_path / "gains" / "ADRF" / "range", meta_range_t, meta_range_t(0.0, 28.0, 0.1));
+	TREE_CREATE_ST(tx_fe_path / "gains" / "RFSA" / "range", meta_range_t, meta_range_t(0.0, 28.0, 0.1));
+
+	TREE_CREATE_ST(rx_fe_path / "freq", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
+	TREE_CREATE_ST(tx_fe_path / "freq", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
+
+	TREE_CREATE_ST(rx_fe_path / "dc_offset" / "enable", bool, false);
+	TREE_CREATE_ST(rx_fe_path / "dc_offset" / "value", std::complex<double>, std::complex<double>(0.0, 0.0));
+	TREE_CREATE_ST(rx_fe_path / "iq_balance" / "value", std::complex<double>, std::complex<double>(0.0, 0.0));
+
+	TREE_CREATE_ST(tx_fe_path / "dc_offset" / "value", std::complex<double>, std::complex<double>(0.0, 0.0));
+	TREE_CREATE_ST(tx_fe_path / "iq_balance" / "value", std::complex<double>, std::complex<double>(0.0, 0.0));
+
+	TREE_CREATE_RW(rx_fe_path / "connection",  "rx_"+lc_num+"/link/iface", std::string, _string);
+	TREE_CREATE_RW(tx_fe_path / "connection",  "tx_"+lc_num+"/link/iface", std::string, _string);
+
+	TREE_CREATE_ST(rx_fe_path / "use_lo_offset", bool, false);
+	TREE_CREATE_ST(tx_fe_path / "use_lo_offset", bool, false);
+
+	TREE_CREATE_ST(tx_fe_path / "freq" / "range", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
+	TREE_CREATE_ST(rx_fe_path / "freq" / "range", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
+	TREE_CREATE_ST(rx_fe_path / "gain" / "range", meta_range_t, meta_range_t(0.0, 28.0, 0.1));
+	TREE_CREATE_ST(tx_fe_path / "gain" / "range", meta_range_t, meta_range_t(0.0, 28.0, 0.1));
+
+	TREE_CREATE_RW(rx_fe_path / "freq" / "value", "rx_"+lc_num+"/rf/freq/val", double, _double);
+	TREE_CREATE_RW(rx_fe_path / "gain" / "value", "rx_"+lc_num+"/rf/gain/val", double, _double);
+	TREE_CREATE_RW(tx_fe_path / "freq" / "value", "tx_"+lc_num+"/rf/freq/val", double, _double);
+	TREE_CREATE_RW(tx_fe_path / "gain" / "value", "tx_"+lc_num+"/rf/gain/val", double, _double);
 
 	// these are phony properties for Crimson
-	const fs_path db_path = mb_path / "dboards" / num;
-	TREE_CREATE(db_path / "rx_eeprom",  "product", "rx_eeprom_"  + num, dboard_eeprom_t, _dboard_eeprom);
-	TREE_CREATE(db_path / "tx_eeprom",  "product", "tx_eeprom_"  + num, dboard_eeprom_t, _dboard_eeprom);
-	TREE_CREATE(db_path / "gdb_eeprom", "product", "gdb_eeprom_" + num, dboard_eeprom_t, _dboard_eeprom);
+	TREE_CREATE_ST(db_path / "rx_eeprom",  dboard_eeprom_t, dboard_eeprom_t());
+	TREE_CREATE_ST(db_path / "tx_eeprom",  dboard_eeprom_t, dboard_eeprom_t());
+	TREE_CREATE_ST(db_path / "gdb_eeprom", dboard_eeprom_t, dboard_eeprom_t());
 
 	// DSPs
-	const fs_path rx_dsp_path = mb_path / "rx_dsps" / chan;
-	const fs_path tx_dsp_path = mb_path / "tx_dsps" / chan;
-	TREE_CREATE(rx_dsp_path / "rate" / "range", "rx", "dsp_rate_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(rx_dsp_path / "rate" / "value", "rx", "dsp_rate_val_"  + num, double, _double);
-	TREE_CREATE(rx_dsp_path / "freq" / "value", "rx", "dsp_freq_val_"  + num, double, _double);
-	TREE_CREATE(rx_dsp_path / "freq" / "range", "rx", "dsp_freq_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(rx_dsp_path / "bw" / "value",   "rx", "dsp_bw_val_"    + num, double, _double);
-	TREE_CREATE(rx_dsp_path / "bw" / "range",   "rx", "dsp_bw_range_"  + num, meta_range_t, _meta_range);
-	TREE_CREATE(rx_dsp_path / "stream_cmd",     "rx", "dsp_cmd_"       + num, stream_cmd_t, _stream_cmd);
+	TREE_CREATE_ST(rx_dsp_path / "rate" / "range", meta_range_t, meta_range_t(1258850.0, 161132812.5, 1000000.0));
+	TREE_CREATE_ST(rx_dsp_path / "freq" / "range", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
+	TREE_CREATE_ST(rx_dsp_path / "bw" / "range",   meta_range_t, meta_range_t(1258850.0, 161132812.5, 1000000.0));
+	TREE_CREATE_ST(tx_dsp_path / "rate" / "range", meta_range_t, meta_range_t(1258850.0, 161132812.5, 1000000.0));
+	TREE_CREATE_ST(tx_dsp_path / "freq" / "range", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
+	TREE_CREATE_ST(tx_dsp_path / "bw" / "range",   meta_range_t, meta_range_t(1258850.0, 161132812.5, 1000000.0));
 
-	TREE_CREATE(tx_dsp_path / "rate" / "range", "tx", "dsp_rate_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(tx_dsp_path / "rate" / "value", "tx", "dsp_rate_val_"  + num, double, _double);
-	TREE_CREATE(tx_dsp_path / "freq" / "value", "tx", "dsp_freq_val_"  + num, double, _double);
-	TREE_CREATE(tx_dsp_path / "freq" / "range", "tx", "dsp_freq_range_"+ num, meta_range_t, _meta_range);
-	TREE_CREATE(tx_dsp_path / "bw" / "value",   "tx", "dsp_bw_val_"    + num, double, _double);
-	TREE_CREATE(tx_dsp_path / "bw" / "range",   "tx", "dsp_bw_range_"  + num, meta_range_t, _meta_range);
+	TREE_CREATE_RW(rx_dsp_path / "rate" / "value", "rx_"+lc_num+"/dsp/rate" + num, double, _double);
+	TREE_CREATE_RW(rx_dsp_path / "freq" / "value", "rx_"+lc_num+"/dsp/freq" + num, double, _double);
+	TREE_CREATE_RW(rx_dsp_path / "bw" / "value",   "rx_"+lc_num+"/dsp/rate" + num, double, _double);
+	//TREE_CREATE_ST(rx_dsp_path / "stream_cmd",     stream_cmd_t, (stream_cmd_t)0);
+
+	TREE_CREATE_RW(tx_dsp_path / "rate" / "value", "tx_"+lc_num+"/dsp/rate" + num, double, _double);
+	TREE_CREATE_RW(tx_dsp_path / "freq" / "value", "tx_"+lc_num+"/dsp/freq" + num, double, _double);
+	TREE_CREATE_RW(tx_dsp_path / "bw" / "value",   "tx_"+lc_num+"/dsp/rate" + num, double, _double);
     }
 }
 
@@ -545,7 +528,6 @@ crimson_impl::~crimson_impl(void)
 {
     // TODO send commands to mute all radio chains, mute everything
     // unlock the Crimson device to this process
-    set_string("product,set,locked", "0");
 }
 
 tx_streamer::sptr crimson_impl::get_tx_stream(const stream_args_t &args) {

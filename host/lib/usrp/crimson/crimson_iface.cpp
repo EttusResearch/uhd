@@ -61,7 +61,7 @@ crimson_iface::crimson_iface(udp_simple::sptr ctrl_transport):
 // else it will mess up the protocol with the sequencing and will contian no error checks.
 void crimson_iface::poke_str(std::string data) {
     // populate the command string with sequence number
-    data = data.insert(data.find_first_of(",") + 1, (boost::lexical_cast<std::string>(seq++) + ","));
+    data = data.insert(0, (boost::lexical_cast<std::string>(seq++) + ","));
     _ctrl_transport->send( boost::asio::buffer(data, data.length()) );
     return;
 }
@@ -76,18 +76,20 @@ std::string crimson_iface::peek_str(void) {
 
     do {
         // clears the buffer and receives the message
-        memset(_buff, '\0', CRIMSON_MTU_SIZE);
+        memset(_buff, 0, CRIMSON_MTU_SIZE);
         const size_t nbytes = _ctrl_transport -> recv(boost::asio::buffer(_buff), 0.150);
         if (nbytes == 0) return "TIMEOUT";
 
-        // parses it through tokens
+        // parses it through tokens: seq, status, [data]
         this -> parse(tokens, _buff, ',');
 
+	if (tokens.size() < 3) return "ERROR";
+
         // If the message has an error, return ERROR
-        if(tokens[0] == "ERROR") return tokens[0];
+        if(tokens[1].c_str()[0] == CMD_ERROR) return "ERROR";
 
         // if seq is incorrect, return an error
-        sscanf(tokens[1].c_str(), "%"SCNd32, &iseq);
+        sscanf(tokens[0].c_str(), "%"SCNd32, &iseq);
     } while(iseq != seq - 1 && tries++ < num_tries);
 
     // exits with an error if can't find a matching sequence
