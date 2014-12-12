@@ -412,8 +412,8 @@ void device3_impl::update_rx_streamers(double /* rate */)
             }
             my_streamer->set_tick_rate(tick_rate);
             double samp_rate = my_streamer->get_terminator()->get_output_samp_rate();
-            if (tick_rate == rfnoc::rate_node_ctrl::RATE_UNDEFINED) {
-                tick_rate = 1.0;
+            if (samp_rate == rfnoc::rate_node_ctrl::RATE_UNDEFINED) {
+                samp_rate = 1.0;
             }
             double scaling = my_streamer->get_terminator()->get_output_scale_factor();
             if (scaling == rfnoc::scalar_node_ctrl::SCALE_UNDEFINED) {
