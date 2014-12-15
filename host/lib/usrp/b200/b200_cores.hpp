@@ -57,7 +57,7 @@ public:
     typedef boost::shared_ptr<b200_ref_pll_ctrl> sptr;
 
     b200_ref_pll_ctrl(b200_local_spi_core::sptr spi);
-    void set_lock_to_ext_ref(bool external);
+    virtual void set_lock_to_ext_ref(bool external);
 
 private:
     b200_local_spi_core::sptr _spi;

@@ -285,9 +285,10 @@ namespace uhd { namespace niusrprio
        niriok_proxy_impl_v1::nirio_syncop_out_params_t out = {};
 
        in.function    = niriok_proxy_impl_v1::NIRIO_FUNC::ADD_RESOURCE;
-       in.subfunction = (fifo_info.direction == OUTPUT_FIFO) ?
-               niriok_proxy_impl_v1::NIRIO_RESOURCE::OUTPUT_FIFO :
-               niriok_proxy_impl_v1::NIRIO_RESOURCE::INPUT_FIFO;
+       if (fifo_info.direction == OUTPUT_FIFO)
+           in.subfunction = niriok_proxy_impl_v1::NIRIO_RESOURCE::OUTPUT_FIFO;
+       else
+           in.subfunction = niriok_proxy_impl_v1::NIRIO_RESOURCE::INPUT_FIFO;
 
        in.params.add.fifoWithDataType.channel        = fifo_info.channel;
        in.params.add.fifoWithDataType.baseAddress    = fifo_info.base_addr;
