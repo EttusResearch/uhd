@@ -85,9 +85,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
         ("lo_off", po::value<double>(&lo_off), "Offset for frontend LO in Hz (optional)")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
-        ("ant", po::value<std::string>(&ant), "daughterboard antenna selection")
-        ("subdev", po::value<std::string>(&subdev), "daughterboard subdevice specification")
-        ("bw", po::value<double>(&bw), "daughterboard IF filter bandwidth in Hz")
+        ("ant", po::value<std::string>(&ant), "antenna selection")
+        ("subdev", po::value<std::string>(&subdev), "subdevice specification")
+        ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
         ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
         ("delay", po::value<double>(&delay)->default_value(0.0), "specify a delay between repeated transmission of file")
@@ -148,7 +148,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("Actual TX Gain: %f dB...") % usrp->get_tx_gain() << std::endl << std::endl;
     }
 
-    //set the IF filter bandwidth
+    //set the analog frontend filter bandwidth
     if (vm.count("bw")){
         std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % bw << std::endl;
         usrp->set_tx_bandwidth(bw);

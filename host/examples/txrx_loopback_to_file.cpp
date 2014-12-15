@@ -229,12 +229,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform [0 to 0.7]")
         ("tx-gain", po::value<double>(&tx_gain), "gain for the transmit RF chain")
         ("rx-gain", po::value<double>(&rx_gain), "gain for the receive RF chain")
-        ("tx-ant", po::value<std::string>(&tx_ant), "daughterboard transmit antenna selection")
-        ("rx-ant", po::value<std::string>(&rx_ant), "daughterboard receive antenna selection")
-        ("tx-subdev", po::value<std::string>(&tx_subdev), "daughterboard transmit subdevice specification")
-        ("rx-subdev", po::value<std::string>(&rx_subdev), "daughterboard receive subdevice specification")
-        ("tx-bw", po::value<double>(&tx_bw), "daughterboard transmit IF filter bandwidth in Hz")
-        ("rx-bw", po::value<double>(&rx_bw), "daughterboard receive IF filter bandwidth in Hz")
+        ("tx-ant", po::value<std::string>(&tx_ant), "transmit antenna selection")
+        ("rx-ant", po::value<std::string>(&rx_ant), "receive antenna selection")
+        ("tx-subdev", po::value<std::string>(&tx_subdev), "transmit subdevice specification")
+        ("rx-subdev", po::value<std::string>(&rx_subdev), "receive subdevice specification")
+        ("tx-bw", po::value<double>(&tx_bw), "analog transmit filter bandwidth in Hz")
+        ("rx-bw", po::value<double>(&rx_bw), "analog receive filter bandwidth in Hz")
         ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "waveform type (CONST, SQUARE, RAMP, SINE)")
         ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "clock reference (internal, external, mimo)")
@@ -333,7 +333,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             std::cout << boost::format("Actual TX Gain: %f dB...") % tx_usrp->get_tx_gain(tx_channel_nums[ch]) << std::endl << std::endl;
         }
 
-        //set the IF filter bandwidth
+        //set the analog frontend filter bandwidth
         if (vm.count("tx-bw")){
             std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % tx_bw << std::endl;
             tx_usrp->set_tx_bandwidth(tx_bw, tx_channel_nums[ch]);
@@ -362,7 +362,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format("Actual RX Gain: %f dB...") % rx_usrp->get_rx_gain() << std::endl << std::endl;
     }
 
-    //set the receive IF filter bandwidth
+    //set the receive analog frontend filter bandwidth
     if (vm.count("rx_bw")){
         std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % rx_bw << std::endl;
         rx_usrp->set_rx_bandwidth(rx_bw);
