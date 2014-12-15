@@ -20,7 +20,14 @@
 
 namespace uhd {
 
-    enum direction_t { RX, TX };
+    enum direction_t {
+        //! Receive
+        RX_DIRECTION,
+        //! Transmit
+        TX_DIRECTION,
+        //! Duplex
+        DX_DIRECTION
+    };
 
 } //namespace uhd
 
