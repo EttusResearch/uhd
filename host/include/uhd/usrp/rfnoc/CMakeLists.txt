@@ -40,6 +40,7 @@ UHD_INSTALL(FILES
     addsub_block_ctrl.hpp
     split_stream_block_ctrl.hpp
     packet_resizer_block_ctrl.hpp
+    keep_one_in_n_block_ctrl.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/usrp/rfnoc
     COMPONENT headers
 )
