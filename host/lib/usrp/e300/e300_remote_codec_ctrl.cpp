@@ -106,6 +106,20 @@ public:
         _transact();
     }
 
+    sensor_value_t get_rssi(const std::string &which)
+    {
+        _clear();
+        _args.action = uhd::htonx<boost::uint32_t>(transaction_t::ACTION_GET_RSSI);
+        if (which == "RX1") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX1);
+        else if (which == "RX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX2);
+        else throw std::runtime_error("e300_remote_codec_ctrl_impl incorrect chain string.");
+        _args.bits = uhd::htonx<boost::uint32_t>(0);
+
+        _transact();
+
+        return sensor_value_t("RSSI", _retval.rssi, "dB");
+    }
+
 private:
     void _transact() {
         {
