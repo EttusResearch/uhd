@@ -83,8 +83,7 @@ std::string crimson_iface::peek_str(void) {
         // parses it through tokens: seq, status, [data]
         this -> parse(tokens, _buff, ',');
 
-	// ptoperty is not initialized/populated
-	if (tokens.size() < 3) return "0";
+	if (tokens.size() < 3) return "ERROR";
 
         // If the message has an error, return ERROR
         if(tokens[1].c_str()[0] == CMD_ERROR) return "ERROR";

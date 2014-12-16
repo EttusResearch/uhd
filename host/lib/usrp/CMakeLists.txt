@@ -28,6 +28,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/gps_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mboard_eeprom.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/multi_usrp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/multi_crimson.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/subdev_spec.cpp
 )
 
