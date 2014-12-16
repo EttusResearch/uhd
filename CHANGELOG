@@ -1,6 +1,17 @@
 Change Log for Releases
 ==============================
 
+## 003.008.001
+* B2x0: Fixed PLL settings, Fixed external ref selection, serialized
+  streamer setup (thread-safety)
+* X3x0: Fixed flow control issue, improved DAC ctrl + init logic,
+  Fixed I/Q alignment issue
+* Generation-3 devices: Fixed LED registers
+* UHD: Improved tuning logic for manual tunes
+* Tools: Multiple kitchen sink fixes, coloured output
+* Examples: Multiple bugfixes (multi-channel ops)
+* Docs/Manual: Multiple fixes, E310 panel images
+
 ## 003.008.000
 * Added E310 support
 * B200/B210: Moved AD9361 controls from firmware to host
