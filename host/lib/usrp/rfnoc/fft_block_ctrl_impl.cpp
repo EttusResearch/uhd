@@ -27,7 +27,8 @@ public:
     UHD_RFNOC_BLOCK_CONSTRUCTOR(fft_block_ctrl),
         _item_type("sc16"), // We only support sc16 in this block
         _bpi(uhd::convert::get_bytes_per_item("sc16")),
-        _fft_size(DEFAULT_FFT_SIZE)
+        _fft_size(DEFAULT_FFT_SIZE),
+        _magnitude_out(DEFAULT_MAGNITUDE_OUT)
     {
 
         // TODO: Read the default initial FFT size from the block definition
@@ -37,10 +38,35 @@ public:
         //       with the fact the FFT can receive packets that are not
         //       fft_size and can put the FFT core in a bad state that is only
         //       recoverable with a reset.
-        sr_write(SR_FFT_RESET, 1);
+        reset_fft();
+        _fft_reset = get_fft_reset();
+        UHD_ASSERT_THROW(_fft_reset == false);
+
+        set_magnitude_out(_magnitude_out);
+        bool actual_magnitude_out = get_magnitude_out();
+        // FFT RFNoC block can be configured to have magnitude output logic not
+        // synthesized forcing the magnitude out register to always be 0 regardless if
+        // it is set.
+        UHD_ASSERT_THROW(_magnitude_out == actual_magnitude_out);
 
         // This also sets the stream signatures:
         set_fft_size(_fft_size);
+    }
+
+    void reset_fft()
+    {
+        set_fft_reset(true);
+        set_fft_reset(false);
+    }
+
+    void set_fft_reset(bool enable)
+    {
+        sr_write(SR_FFT_RESET, enable);
+    }
+
+    bool get_fft_reset()
+    {
+        return(user_reg_read64(RB_FFT_RESET) != 0);
     }
 
     void set_fft_size(size_t fft_size)
@@ -83,6 +109,17 @@ public:
     size_t get_fft_size() const
     {
         return _fft_size;
+    }
+
+    void set_magnitude_out(bool enable)
+    {
+        reset_fft();
+        sr_write(SR_MAGNITUDE_OUT,enable);
+    } /* set_fft_size() */
+
+    bool get_magnitude_out()
+    {
+        return (user_reg_read64(RB_MAGNITUDE_OUT) != 0);
     }
 
     bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0)
@@ -174,6 +211,8 @@ private:
     //! Bytes per item (bytes per sample)
     const size_t _bpi;
     size_t _fft_size;
+    bool _fft_reset;
+    bool _magnitude_out;
 };
 
 UHD_RFNOC_BLOCK_REGISTER(fft_block_ctrl, "FFT");
