@@ -92,6 +92,7 @@ public:
         //// 2. Update block
         // TODO FFT scaling set conservatively (1/N), need method to allow user to set
         sr_write(AXIS_CONFIG_BUS, (0x6AA << 9) + (0 << 8) + log2_fft_size);
+        sr_write(SR_FFT_SIZE_LOG2, log2_fft_size);
         _fft_size = requested_fft_size;
 
         //// 3. Set stream signatures
