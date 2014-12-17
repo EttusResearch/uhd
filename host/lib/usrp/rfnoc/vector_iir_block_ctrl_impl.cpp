@@ -78,7 +78,7 @@ public:
     void set_alpha(double alpha)
     {
         //// 1. Sanity check
-        const size_t requested_alpha = alpha;
+        const double requested_alpha = alpha;
         // Check vector length is within bounds
         if (alpha > 1.0 or alpha < -1.0) {
             // TODO read this bounds from the prop tree (block def)
@@ -100,7 +100,7 @@ public:
     void set_beta(double beta)
     {
         //// 1. Sanity check
-        const size_t requested_beta = beta;
+        const double requested_beta = beta;
         // Check vector length is within bounds
         if (beta > 1.0 or beta < -1.0) {
             // TODO read this bounds from the prop tree (block def)
