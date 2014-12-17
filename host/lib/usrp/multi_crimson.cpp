@@ -37,16 +37,29 @@ using namespace uhd;
 using namespace uhd::usrp;
 
 /***********************************************************************
+ * Helper Functions
+ **********************************************************************/
+// TODO Need to check if: the sample rate, channels enabled, and bytes per I/Q sample,
+// will overflow, or under flow the data stream
+bool _check_link_rate(const stream_args_t &args) {
+	// insert logic to calculate bytes_per_sample
+
+	// insert logic to compare link_max_rate > 0 && sample_rate * bytes_per_sample
+	// <> link_max_rate
+
+	// assume no under/overflow
+	return true;
+}
+
+
+
+/***********************************************************************
  * Multi Crimson Implementation
  **********************************************************************/
 multi_crimson_impl::multi_crimson_impl(const device_addr_t &addr) {
     // this make will invoke the correct inherited crimson device class
     _dev  = device::make(addr, device::CRIMSON);
     _tree = _dev  -> get_tree();
-
-    // streaming pointers
-    stream_args_t dummy;
-    _stream = _dev -> get_tx_stream(dummy);
 }
 
 device::sptr multi_crimson_impl::get_device(void){
@@ -207,12 +220,22 @@ void multi_crimson_impl::set_command_time(const time_spec_t &time_spec, size_t m
 void multi_crimson_impl::clear_command_time(size_t mboard){
     // Not implemented
     throw uhd::not_implemented_error("timed command feature not implemented on this hardware");
-    return;    
+    return;
 }
 
 void multi_crimson_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t chan){
-    // Not implemented
-    throw uhd::not_implemented_error("timed command feature not implemented on this hardware");
+    // TODO insert code to handle stream_cmd, which defines how data is streamed
+    if( stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
+		// set register to start the stream
+    } else if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS) {
+		// set register to stop the stream
+    } else if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE) {
+		// set register to wait for a stream cmd after num_samps
+    } else if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE) {
+		// set register to not wait for a stream cmd after num_samps
+    } else {
+		// set register to stop the stream
+    }
     return;
 }
 
@@ -310,7 +333,8 @@ void multi_crimson_impl::set_user_register(const boost::uint8_t addr, const boos
  ******************************************************************/
 // This feature has not been implemented yet
 rx_streamer::sptr multi_crimson_impl::get_rx_stream(const stream_args_t &args) {
-    throw uhd::not_implemented_error("rx stream not implemented yet");
+    _check_link_rate(args);
+    return this->get_device()->get_rx_stream(args);
 }
 
 // Crimson does not support changing subdev properties because you can't add daughter boards
@@ -335,23 +359,23 @@ std::string multi_crimson_impl::get_rx_subdev_name(size_t chan){
 
 // Set the current RX sampling rate on specified channel
 void multi_crimson_impl::set_rx_rate(double rate, size_t chan){
-    _tree->access<double>(mb_root(0) / "rx_dsps" / chan_to_string(chan) / "rate" / "value").set(rate);
+    _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").set(rate);
 }
 
 // Get the current RX sampling rate on specified channel
 double multi_crimson_impl::get_rx_rate(size_t chan){
-    return _tree->access<double>(mb_root(0) / "rx_dsps" / chan_to_string(chan) / "rate" / "value").get();
+    return _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").get();
 }
 
 // get the range of possible RX rates on specified channel
 meta_range_t multi_crimson_impl::get_rx_rates(size_t chan){
-    return _tree->access<meta_range_t>(mb_root(0) / "rx_dsps" / chan_to_string(chan) / "rate" / "range").get();
+    return _tree->access<meta_range_t>(rx_dsp_root(chan) / "rate" / "range").get();
 }
 
 // set the RX frequency on specified channel
 tune_result_t multi_crimson_impl::set_rx_freq(const tune_request_t &tune_request, size_t chan){
-    _tree->access<double>(mb_root(0) / "rx_frontends" / chan_to_string(chan) / "freq" / "value").set(tune_request.target_freq);
-    _tree->access<double>(mb_root(0) / "rx_dsps" / chan_to_string(chan) / "freq" / "value").set(tune_request.target_freq);
+    _tree->access<double>(rx_rf_fe_root(chan) / "freq" / "value").set(tune_request.target_freq);
+    _tree->access<double>(rx_dsp_root(chan) / "freq" / "value").set(tune_request.target_freq);
     tune_result_t result;
     result.target_rf_freq  = tune_request.target_freq;
     result.target_dsp_freq = tune_request.target_freq;
@@ -363,32 +387,32 @@ tune_result_t multi_crimson_impl::set_rx_freq(const tune_request_t &tune_request
 
 // get the RX frequency on specified channel
 double multi_crimson_impl::get_rx_freq(size_t chan){
-    return _tree->access<double>(mb_root(0) / "rx_dsps" / chan_to_string(chan) / "freq" / "value").get();
+    return _tree->access<double>(rx_dsp_root(chan) / "freq" / "value").get();
 }
 
 // get the RX frequency range on specified channel
 freq_range_t multi_crimson_impl::get_rx_freq_range(size_t chan){
-    return _tree->access<meta_range_t>(mb_root(0) / "rx_dsps" / chan_to_string(chan) / "freq" / "range").get();
+    return _tree->access<meta_range_t>(rx_dsp_root(chan) / "freq" / "range").get();
 }
 
 // get front end RX frequency on specified channel
 freq_range_t multi_crimson_impl::get_fe_rx_freq_range(size_t chan){
-    return _tree->access<meta_range_t>(mb_root(0) / "rx_frontends" / chan_to_string(chan) / "freq" / "range").get();
+    return _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "freq" / "range").get();
 }
 
 // set RX frontend gain on specified channel, name specifies which IC to configure the gain for
 void multi_crimson_impl::set_rx_gain(double gain, const std::string &name, size_t chan){
-    _tree->access<double>(mb_root(0) / "rx_frontends" / chan_to_string(chan) / "gain" / "value").set(gain);
+    _tree->access<double>(rx_rf_fe_root(chan) / "gain" / "value").set(gain);
 }
 
 // get RX frontend gain on specified channel
 double multi_crimson_impl::get_rx_gain(const std::string &name, size_t chan){
-    return _tree->access<double>(mb_root(0) / "rx_frontends" / chan_to_string(chan) / "gain" / "value").get();
+    return _tree->access<double>(rx_rf_fe_root(chan) / "gain" / "value").get();
 }
 
 // get RX frontend gain range on specified channel
 gain_range_t multi_crimson_impl::get_rx_gain_range(const std::string &name, size_t chan){
-    return _tree->access<meta_range_t>(mb_root(0) / "rx_frontends" / chan_to_string(chan) / "gain" / "range").get();
+    return _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "gain" / "range").get();
 }
 
 // get RX frontend gain names/options. There is only one configurable gain on the RX rf chain.
@@ -413,15 +437,15 @@ std::vector<std::string> multi_crimson_impl::get_rx_antennas(size_t chan){
 
 // Set the RX bandwidth on specified channel
 void multi_crimson_impl::set_rx_bandwidth(double bandwidth, size_t chan){
-    _tree->access<double>(mb_root(0) / "rx_dsps" / chan_to_string(chan) / "bw" / "value").set(bandwidth);
+    _tree->access<double>(rx_dsp_root(chan) / "bw" / "value").set(bandwidth);
 }
 // Get the RX bandwidth on specified channel
 double multi_crimson_impl::get_rx_bandwidth(size_t chan){
-    return _tree->access<double>(mb_root(0) / "rx_dsps" / chan_to_string(chan) / "bw" / "value").get();
+    return _tree->access<double>(rx_dsp_root(chan) / "bw" / "value").get();
 }
 // Get the RX bandwidth range on specified channel
 meta_range_t multi_crimson_impl::get_rx_bandwidth_range(size_t chan){
-    return _tree->access<meta_range_t>(mb_root(0) / "rx_dsps" / chan_to_string(chan) / "bw" / "range").get();
+    return _tree->access<meta_range_t>(rx_dsp_root(chan) / "bw" / "range").get();
 }
 
 // There is no dboard interface available for Crimson. Everything is communicated through the mboard (Digital board)
@@ -457,7 +481,8 @@ void multi_crimson_impl::set_rx_iq_balance(const std::complex<double> &offset, s
  ******************************************************************/
 // This feature has not been implemented yet
 tx_streamer::sptr multi_crimson_impl::get_tx_stream(const stream_args_t &args) {
-    throw uhd::not_implemented_error("tx stream not implemented yet");
+    _check_link_rate(args);
+    return this->get_device()->get_tx_stream(args);
 }
 
 // Crimson does not support changing subdev properties because you can't add daughter boards
@@ -482,23 +507,23 @@ std::string multi_crimson_impl::get_tx_subdev_name(size_t chan){
 
 // Set the current TX sampling rate on specified channel
 void multi_crimson_impl::set_tx_rate(double rate, size_t chan){
-    _tree->access<double>(mb_root(0) / "tx_dsps" / chan_to_string(chan) / "rate" / "value").set(rate);
+    _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").set(rate);
 }
 
 // Get the current TX sampling rate on specified channel
 double multi_crimson_impl::get_tx_rate(size_t chan){
-    return _tree->access<double>(mb_root(0) / "tx_dsps" / chan_to_string(chan) / "rate" / "value").get();
+    return _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").get();
 }
 
 // get the range of possible TX rates on specified channel
 meta_range_t multi_crimson_impl::get_tx_rates(size_t chan){
-    return _tree->access<meta_range_t>(mb_root(0) / "tx_dsps" / chan_to_string(chan) / "rate" / "range").get();
+    return _tree->access<meta_range_t>(tx_dsp_root(chan) / "rate" / "range").get();
 }
 
 // set the TX frequency on specified channel
 tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request, size_t chan){
-    _tree->access<double>(mb_root(0) / "rx_frontends" / chan_to_string(chan) / "freq" / "value").set(tune_request.target_freq);
-    _tree->access<double>(mb_root(0) / "rx_dsps" / chan_to_string(chan) / "freq" / "value").set(tune_request.target_freq);
+    _tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").set(tune_request.target_freq);
+    _tree->access<double>(tx_dsp_root(chan) / "freq" / "value").set(tune_request.target_freq);
     tune_result_t result;
     result.target_rf_freq  = tune_request.target_freq;
     result.target_dsp_freq = tune_request.target_freq;
@@ -510,32 +535,32 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
 
 // get the TX frequency on specified channel
 double multi_crimson_impl::get_tx_freq(size_t chan){
-    return _tree->access<double>(mb_root(0) / "tx_dsps" / chan_to_string(chan) / "freq" / "value").get();
+    return _tree->access<double>(tx_dsp_root(chan) / "freq" / "value").get();
 }
 
 // get the TX frequency on specified channel
 freq_range_t multi_crimson_impl::get_tx_freq_range(size_t chan){
-    return _tree->access<meta_range_t>(mb_root(0) / "tx_dsps" / chan_to_string(chan) / "freq" / "range").get();
+    return _tree->access<meta_range_t>(tx_dsp_root(chan) / "freq" / "range").get();
 }
 
 // get the TX frequency range on specified channel
 freq_range_t multi_crimson_impl::get_fe_tx_freq_range(size_t chan){
-    return _tree->access<meta_range_t>(mb_root(0) / "tx_frontends" / chan_to_string(chan) / "freq" / "range").get();
+    return _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "freq" / "range").get();
 }
 
 // set TX frontend gain on specified channel, name specifies which IC to configure the gain for
 void multi_crimson_impl::set_tx_gain(double gain, const std::string &name, size_t chan){
-    _tree->access<double>(mb_root(0) / "tx_frontends" / chan_to_string(chan) / "gain" / "value").set(gain);
+    _tree->access<double>(tx_rf_fe_root(chan) / "gain" / "value").set(gain);
 }
 
 // get TX frontend gain on specified channel
 double multi_crimson_impl::get_tx_gain(const std::string &name, size_t chan){
-    return _tree->access<double>(mb_root(0) / "tx_frontends" / chan_to_string(chan) / "gain" / "value").get();
+    return _tree->access<double>(tx_rf_fe_root(chan) / "gain" / "value").get();
 }
 
 // get TX frontend gain range on specified channel
 gain_range_t multi_crimson_impl::get_tx_gain_range(const std::string &name, size_t chan){
-    return _tree->access<meta_range_t>(mb_root(0) / "tx_frontends" / chan_to_string(chan) / "gain" / "range").get();
+    return _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "gain" / "range").get();
 }
 
 // get TX frontend gain names/options. There is only one configurable gain on the TX rf chain.
@@ -560,17 +585,17 @@ std::vector<std::string> multi_crimson_impl::get_tx_antennas(size_t chan){
 
 // Set the TX bandwidth on specified channel
 void multi_crimson_impl::set_tx_bandwidth(double bandwidth, size_t chan){
-    _tree->access<double>(mb_root(0) / "tx_dsps" / chan_to_string(chan) / "bw" / "value").set(bandwidth);
+    _tree->access<double>(tx_dsp_root(chan) / "bw" / "value").set(bandwidth);
 }
 
 // Get the TX bandwidth on specified channel
 double multi_crimson_impl::get_tx_bandwidth(size_t chan){
-    return _tree->access<double>(mb_root(0) / "tx_dsps" / chan_to_string(chan) / "bw" / "value").get();
+    return _tree->access<double>(tx_dsp_root(chan) / "bw" / "value").get();
 }
 
 // Get the TX bandwidth range on specified channel
 meta_range_t multi_crimson_impl::get_tx_bandwidth_range(size_t chan){
-    return _tree->access<meta_range_t>(mb_root(0) / "tx_dsps" / chan_to_string(chan) / "bw" / "range").get();
+    return _tree->access<meta_range_t>(tx_dsp_root(chan) / "bw" / "range").get();
 }
 
 // There is no dboard interface available for Crimson. Everything is communicated through the mboard (Digital board)
@@ -590,12 +615,12 @@ std::vector<std::string> multi_crimson_impl::get_tx_sensor_names(size_t chan){
 
 // Set dc offset on specified channel
 void multi_crimson_impl::set_tx_dc_offset(const std::complex<double> &offset, size_t chan){
-    _tree->access< std::complex<double> >(mb_root(0) / "tx_frontends" / chan_to_string(chan) / "dc_offset" / "value").set(offset);
+    _tree->access< std::complex<double> >(tx_rf_fe_root(chan) / "dc_offset" / "value").set(offset);
 }
 
 // set iq balance on specified channel
 void multi_crimson_impl::set_tx_iq_balance(const std::complex<double> &offset, size_t chan){
-    _tree->access< std::complex<double> >(mb_root(0) / "tx_frontends" / chan_to_string(chan) / "iq_balance" / "value").set(offset);
+    _tree->access< std::complex<double> >(tx_rf_fe_root(chan) / "iq_balance" / "value").set(offset);
 }
 
 /*******************************************************************
@@ -620,6 +645,7 @@ boost::uint32_t multi_crimson_impl::get_gpio_attr(const std::string &bank, const
 /*******************************************************************
  * Helper methods
  ******************************************************************/
+// Getting FS paths
 fs_path multi_crimson_impl::mb_root(const size_t mboard)
 {
     try
@@ -634,19 +660,41 @@ fs_path multi_crimson_impl::mb_root(const size_t mboard)
 }
 
 fs_path multi_crimson_impl::rx_rf_fe_root(const size_t chan) {
-    return mb_root(0) / "rx_frontends" / chan;
+    size_t channel;
+    if (chan > CRIMSON_RX_CHANNELS) 	channel = 0;
+    else				channel = chan;
+
+    return mb_root(0) / "dboards" / chan_to_alph(channel) / "rx_frontends" / chan_to_string(channel);
 }
+
 fs_path multi_crimson_impl::rx_dsp_root(const size_t chan) {
-    return mb_root(0) / "rx_dsps" / chan;    
+    size_t channel;
+    if (chan > CRIMSON_RX_CHANNELS) 	channel = 0;
+    else				channel = chan;
+    return mb_root(0) / "rx_dsps" / chan_to_string(channel);
 }
 
 fs_path multi_crimson_impl::tx_rf_fe_root(const size_t chan) {
-    return mb_root(0) / "tx_frontends" / chan;
-}
-fs_path multi_crimson_impl::tx_dsp_root(const size_t chan) {
-    return mb_root(0) / "tx_dsps" / chan;    
+    size_t channel;
+    if (chan > CRIMSON_TX_CHANNELS) 	channel = 0;
+    else				channel = chan;
+
+    return mb_root(0) / "dboards" / chan_to_alph(channel) / "tx_frontends" / chan_to_string(channel);
 }
 
+fs_path multi_crimson_impl::tx_dsp_root(const size_t chan) {
+    size_t channel;
+    if (chan > CRIMSON_TX_CHANNELS) 	channel = 0;
+    else				channel = chan;
+    return mb_root(0) / "tx_dsps" / chan_to_string(channel);
+}
+
+
+// Channel string handling
 std::string multi_crimson_impl::chan_to_string(size_t chan) {
     return "Channel_" + boost::lexical_cast<std::string>((char)(chan + 65));
-};
+}
+
+std::string multi_crimson_impl::chan_to_alph(size_t chan) {
+    return boost::lexical_cast<std::string>((char)(chan + 65));
+}

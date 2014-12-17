@@ -37,6 +37,7 @@
 #include <boost/asio.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/metadata.hpp>
+#include <uhd/types/ranges.hpp>
 #include "crimson_fw_common.h"
 #include "crimson_iface.hpp"
 
@@ -75,6 +76,8 @@ public:
 
     // UHD legacy support
     virtual bool recv_async_msg(uhd::async_metadata_t &async_metadata, double timeout = 0.1);
+
+    uhd::device_addr_t _addr;
 
 private:
     // helper functions to wrap send and recv as get and set

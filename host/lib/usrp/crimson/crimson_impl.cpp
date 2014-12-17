@@ -351,6 +351,7 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 {
     UHD_MSG(status) << "Opening a Crimson device..." << std::endl;
     _type = device::CRIMSON;
+    _addr = dev_addr;
 
     // Makes the UDP comm connection
     _iface = crimson_iface::make( udp_simple::make_connected(
@@ -379,7 +380,7 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
     static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external");
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_source_options);
 
-    TREE_CREATE_ST("/name", std::string, "Crimson");
+    TREE_CREATE_ST("/name", std::string, "Crimson Device (USRP2 Compatible)");
 
     TREE_CREATE_ST(mb_path / "vendor", std::string, "Per Vices");
     TREE_CREATE_ST(mb_path / "name",   std::string, "FPGA Board");
@@ -513,14 +514,14 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	TREE_CREATE_ST(tx_dsp_path / "freq" / "range", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
 	TREE_CREATE_ST(tx_dsp_path / "bw" / "range",   meta_range_t, meta_range_t(1258850.0, 161132812.5, 1000000.0));
 
-	TREE_CREATE_RW(rx_dsp_path / "rate" / "value", "rx_"+lc_num+"/dsp/rate" + num, double, _double);
-	TREE_CREATE_RW(rx_dsp_path / "freq" / "value", "rx_"+lc_num+"/dsp/freq" + num, double, _double);
-	TREE_CREATE_RW(rx_dsp_path / "bw" / "value",   "rx_"+lc_num+"/dsp/rate" + num, double, _double);
+	TREE_CREATE_RW(rx_dsp_path / "rate" / "value", "rx_"+lc_num+"/dsp/rate", double, _double);
+	TREE_CREATE_RW(rx_dsp_path / "freq" / "value", "rx_"+lc_num+"/dsp/freq", double, _double);
+	TREE_CREATE_RW(rx_dsp_path / "bw" / "value",   "rx_"+lc_num+"/dsp/rate", double, _double);
 	//TREE_CREATE_ST(rx_dsp_path / "stream_cmd",     stream_cmd_t, (stream_cmd_t)0);
 
-	TREE_CREATE_RW(tx_dsp_path / "rate" / "value", "tx_"+lc_num+"/dsp/rate" + num, double, _double);
-	TREE_CREATE_RW(tx_dsp_path / "freq" / "value", "tx_"+lc_num+"/dsp/freq" + num, double, _double);
-	TREE_CREATE_RW(tx_dsp_path / "bw" / "value",   "tx_"+lc_num+"/dsp/rate" + num, double, _double);
+	TREE_CREATE_RW(tx_dsp_path / "rate" / "value", "tx_"+lc_num+"/dsp/rate", double, _double);
+	TREE_CREATE_RW(tx_dsp_path / "freq" / "value", "tx_"+lc_num+"/dsp/freq", double, _double);
+	TREE_CREATE_RW(tx_dsp_path / "bw" / "value",   "tx_"+lc_num+"/dsp/rate", double, _double);
     }
 }
 
@@ -529,21 +530,3 @@ crimson_impl::~crimson_impl(void)
     // TODO send commands to mute all radio chains, mute everything
     // unlock the Crimson device to this process
 }
-
-tx_streamer::sptr crimson_impl::get_tx_stream(const stream_args_t &args) {
-    throw uhd::not_implemented_error("get_tx_stream not implemented");
-}
-
-rx_streamer::sptr crimson_impl::get_rx_stream(const stream_args_t &args) {
-    throw uhd::not_implemented_error("get_rx_stream not implemented");
-}
-
-bool crimson_impl::recv_async_msg(async_metadata_t &async_metadata, double timeout) {
-    throw uhd::not_implemented_error("recv_async_msg not implemented");
-}
-
-
-
-
-
-

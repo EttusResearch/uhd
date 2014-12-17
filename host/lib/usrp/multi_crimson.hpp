@@ -188,6 +188,8 @@ private:
 
     // get the string representation of the channel: 1 -> "chan1"
     std::string chan_to_string(size_t chan);
+    // channel: 1 -> A, 2 -> B....
+    std::string chan_to_alph(size_t chan);
 
     // get the root path
     fs_path mb_root(const size_t mboard);
