@@ -43,7 +43,7 @@ public:
         UHD_ASSERT_THROW(_fft_reset == false);
 
         set_magnitude_out(_magnitude_out);
-        bool actual_magnitude_out = get_magnitude_out();
+        magnitude_t actual_magnitude_out = get_magnitude_out();
         // FFT RFNoC block can be configured to have magnitude output logic not
         // synthesized forcing the magnitude out register to always be 0 regardless if
         // it is set.
@@ -111,15 +111,15 @@ public:
         return _fft_size;
     }
 
-    void set_magnitude_out(bool enable)
+    void set_magnitude_out(magnitude_t magnitude_out)
     {
         reset_fft();
-        sr_write(SR_MAGNITUDE_OUT,enable);
+        sr_write(SR_MAGNITUDE_OUT,magnitude_out);
     } /* set_fft_size() */
 
-    bool get_magnitude_out()
+    magnitude_t get_magnitude_out()
     {
-        return (user_reg_read64(RB_MAGNITUDE_OUT) != 0);
+        return (static_cast<magnitude_t>(user_reg_read64(RB_MAGNITUDE_OUT)));
     }
 
     bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0)
@@ -212,7 +212,7 @@ private:
     const size_t _bpi;
     size_t _fft_size;
     bool _fft_reset;
-    bool _magnitude_out;
+    magnitude_t _magnitude_out;
 };
 
 UHD_RFNOC_BLOCK_REGISTER(fft_block_ctrl, "FFT");

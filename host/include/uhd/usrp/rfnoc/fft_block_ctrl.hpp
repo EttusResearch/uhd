@@ -40,8 +40,15 @@ class UHD_API fft_block_ctrl : public source_block_ctrl_base, public sink_block_
 public:
     UHD_RFNOC_BLOCK_OBJECT(fft_block_ctrl)
 
+    typedef enum magnitude_t
+    {
+        COMPLEX = 0,
+        MAGNITUDE = 1,
+        MAGNITUDE_SQUARED = 2
+    } magnitude_t;
+
     static const size_t DEFAULT_FFT_SIZE            = 256;
-    static const bool DEFAULT_MAGNITUDE_OUT         = false;
+    static const magnitude_t DEFAULT_MAGNITUDE_OUT  = COMPLEX;
     static const boost::uint32_t SR_FFT_RESET       = 131;  // Note: AXI config bus uses 129 & 130
     static const boost::uint32_t SR_MAGNITUDE_OUT   = 132;
     static const boost::uint32_t RB_FFT_RESET       = 0;
@@ -83,13 +90,13 @@ public:
     // FFT output can be sc16 or magnitude (still sc16 with mag in real,
     // imag set to 0). This sets the magnitude out register. It is advisable to
     // reset the FFT core via set_reset() when changing this value.
-    virtual void set_magnitude_out(bool enable) = 0;
+    virtual void set_magnitude_out(magnitude_t magnitude_out) = 0;
 
     //! Returns the whether magnitude output is enabled or not
     //
     // This queries the magnitude out readback register (instead of a class variable) as the
     // FFT RFNoC block can be configured to not include the magnitude calculation logic.
-    virtual bool get_magnitude_out() = 0;
+    virtual magnitude_t get_magnitude_out() = 0;
 }; /* class fft_block_ctrl*/
 
 }} /* namespace uhd::rfnoc */
