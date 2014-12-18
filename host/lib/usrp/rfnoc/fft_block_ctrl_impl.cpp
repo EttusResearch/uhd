@@ -114,8 +114,8 @@ public:
 
     void set_magnitude_out(magnitude_t magnitude_out)
     {
-        reset_fft();
         sr_write(SR_MAGNITUDE_OUT,magnitude_out);
+        _magnitude_out = magnitude_out;
     } /* set_fft_size() */
 
     magnitude_t get_magnitude_out()
@@ -158,6 +158,13 @@ protected:
             size_t req_fft_size = _args.cast<size_t>("fftsize", _fft_size);
             if (req_fft_size != _fft_size) {
                 set_fft_size(req_fft_size);
+            }
+        }
+
+        if (_args.has_key("magnitude_out")) {
+            magnitude_t req_magnitude_out = static_cast<magnitude_t>(_args.cast<size_t>("magnitude_out", _magnitude_out));
+            if (req_magnitude_out != _magnitude_out) {
+                set_magnitude_out(req_magnitude_out);
             }
         }
 
