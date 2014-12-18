@@ -49,6 +49,19 @@ public:
         return _n;
     } /* get_n() */
 
+protected:
+    void _post_args_hook()
+    {
+        UHD_RFNOC_BLOCK_TRACE() << "_post_args_hook()" << std::endl;
+
+        if (_args.has_key("n")) {
+            boost::uint16_t req_n = _args.cast<boost::uint16_t>("n", _n);
+            if (req_n != _n) {
+                set_n(req_n);
+            }
+        }
+    }
+
 private:
     const std::string _item_type;
     //! Bytes per item (bytes per sample)
