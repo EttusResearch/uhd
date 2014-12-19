@@ -393,16 +393,16 @@ public:
         dict<std::string, std::string> usrp_info;
 
         mboard_eeprom_t mb_eeprom = _tree->access<mboard_eeprom_t>(mb_root(mcp.mboard) / "eeprom").get();
-        dboard_eeprom_t db_eeprom = _tree->access<dboard_eeprom_t>(rx_rf_fe_root(mcp.chan).branch_path().branch_path() / "rx_eeprom").get();
+        dboard_eeprom_t db_eeprom = _tree->access<dboard_eeprom_t>(rx_rf_fe_root(chan).branch_path().branch_path() / "rx_eeprom").get();
 
         usrp_info["mboard_id"] = _tree->access<std::string>(mb_root(mcp.mboard) / "name").get();
         usrp_info["mboard_name"] = mb_eeprom["name"];
         usrp_info["mboard_serial"] = mb_eeprom["serial"];
         usrp_info["rx_id"] = db_eeprom.id.to_pp_string();
-        usrp_info["rx_subdev_name"] = _tree->access<std::string>(rx_rf_fe_root(mcp.chan) / "name").get();
+        usrp_info["rx_subdev_name"] = _tree->access<std::string>(rx_rf_fe_root(chan) / "name").get();
         usrp_info["rx_subdev_spec"] = _tree->access<subdev_spec_t>(mb_root(mcp.mboard) / "rx_subdev_spec").get().to_string();
         usrp_info["rx_serial"] = db_eeprom.serial;
-        usrp_info["rx_antenna"] =  _tree->access<std::string>(rx_rf_fe_root(mcp.chan) / "antenna" / "value").get();
+        usrp_info["rx_antenna"] =  _tree->access<std::string>(rx_rf_fe_root(chan) / "antenna" / "value").get();
 
         return usrp_info;
     }
@@ -412,16 +412,16 @@ public:
         dict<std::string, std::string> usrp_info;
 
         mboard_eeprom_t mb_eeprom = _tree->access<mboard_eeprom_t>(mb_root(mcp.mboard) / "eeprom").get();
-        dboard_eeprom_t db_eeprom = _tree->access<dboard_eeprom_t>(tx_rf_fe_root(mcp.chan).branch_path().branch_path() / "tx_eeprom").get();
+        dboard_eeprom_t db_eeprom = _tree->access<dboard_eeprom_t>(tx_rf_fe_root(chan).branch_path().branch_path() / "tx_eeprom").get();
 
         usrp_info["mboard_id"] = _tree->access<std::string>(mb_root(mcp.mboard) / "name").get();
         usrp_info["mboard_name"] = mb_eeprom["name"];
         usrp_info["mboard_serial"] = mb_eeprom["serial"];
         usrp_info["tx_id"] = db_eeprom.id.to_pp_string();
-        usrp_info["tx_subdev_name"] = _tree->access<std::string>(tx_rf_fe_root(mcp.chan) / "name").get();
+        usrp_info["tx_subdev_name"] = _tree->access<std::string>(tx_rf_fe_root(chan) / "name").get();
         usrp_info["tx_subdev_spec"] = _tree->access<subdev_spec_t>(mb_root(mcp.mboard) / "tx_subdev_spec").get().to_string();
         usrp_info["tx_serial"] = db_eeprom.serial;
-        usrp_info["tx_antenna"] = _tree->access<std::string>(tx_rf_fe_root(mcp.chan) / "antenna" / "value").get();
+        usrp_info["tx_antenna"] = _tree->access<std::string>(tx_rf_fe_root(chan) / "antenna" / "value").get();
 
         return usrp_info;
     }
