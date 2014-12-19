@@ -52,7 +52,7 @@ rpc_client::rpc_client (
         //- address_configured: Only return addresses if a non-loopback address is configured for the system.
         //- numeric_host: No name resolution should be attempted for host
         //- numeric_service: No name resolution should be attempted for service
-        tcp::resolver::query::flags query_flags;
+        tcp::resolver::query::flags query_flags = tcp::resolver::query::passive;
         tcp::resolver::query query(tcp::v4(), server, port, query_flags);
         tcp::resolver::iterator iterator = resolver.resolve(query);
 
