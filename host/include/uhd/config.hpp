@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,6 +53,13 @@ typedef ptrdiff_t ssize_t;
     #define UHD_EXPORT         __declspec(dllexport)
     #define UHD_IMPORT         __declspec(dllimport)
     #define UHD_INLINE         __forceinline
+    #define UHD_DEPRECATED     __declspec(deprecated)
+    #define UHD_ALIGNED(x)     __declspec(align(x))
+    #define UHD_UNUSED(x)      x
+#elif defined(__MINGW32__)
+    #define UHD_EXPORT         __declspec(dllexport)
+    #define UHD_IMPORT         __declspec(dllimport)
+    #define UHD_INLINE         inline
     #define UHD_DEPRECATED     __declspec(deprecated)
     #define UHD_ALIGNED(x)     __declspec(align(x))
     #define UHD_UNUSED(x)      x

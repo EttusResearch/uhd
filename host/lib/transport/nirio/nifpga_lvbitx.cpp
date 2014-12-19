@@ -115,7 +115,7 @@ std::string nifpga_lvbitx::_get_fpga_images_dir(const std::string search_paths)
     // directories searched for a LVBITX image.
     //
     char* uhd_images_dir;
-#ifdef UHD_PLATFORM_WIN32
+#if defined(UHD_PLATFORM_WIN32) && !defined(__MINGW32__) // Some versions of MinGW don't expose _dupenv_s
     size_t len;
     errno_t err = _dupenv_s(&uhd_images_dir, &len, "UHD_IMAGES_DIR");
     if(not err and uhd_images_dir != NULL) search_path_vtr.push_back(std::string(uhd_images_dir));
