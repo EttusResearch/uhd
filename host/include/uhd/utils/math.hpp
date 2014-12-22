@@ -243,7 +243,7 @@ namespace fp_compare {
     {
         // C++11 defines std::log2(), when that's universally supported
         // we can switch over.
-        return std::log(x) / std::log(2);
+        return std::log(x) / std::log(float_t(2));
     }
 
 
