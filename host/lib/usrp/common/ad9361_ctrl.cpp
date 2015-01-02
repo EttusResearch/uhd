@@ -123,6 +123,13 @@ public:
         const meta_range_t clock_rate_range = ad9361_ctrl::get_clock_rate_range();
         const double clipped_rate = clock_rate_range.clip(rate);
 
+        if (clipped_rate != rate) {
+            UHD_MSG(warning) << boost::format(
+                    "The requested master_clock_rate %f MHz exceeds bounds imposed by UHD.\n"
+                    "The master_clock_rate has been forced to %f MHz.\n"
+            ) % (rate/1e6) % (clipped_rate/1e6) << std::endl;
+        }
+
         return _device.set_clock_rate(clipped_rate);
     }
 

@@ -73,8 +73,8 @@ public:
 
 private:    //Methods
     void _program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs);
-    void _setup_tx_fir(size_t num_taps);
-    void _setup_rx_fir(size_t num_taps);
+    void _setup_tx_fir(size_t num_taps, boost::int32_t interpolation);
+    void _setup_rx_fir(size_t num_taps, boost::int32_t interpolation);
     void _calibrate_lock_bbpll();
     void _calibrate_synth_charge_pumps();
     double _calibrate_baseband_rx_analog_filter();
@@ -118,6 +118,7 @@ private:    //Members
     boost::uint8_t      _curr_gain_table;
     boost::uint32_t     _rx1_gain, _rx2_gain, _tx1_gain, _tx2_gain;
     boost::int32_t      _tfir_factor;
+    boost::int32_t      _rfir_factor;
     //Register soft-copies
     chip_regs_t         _regs;
     //Synchronization
