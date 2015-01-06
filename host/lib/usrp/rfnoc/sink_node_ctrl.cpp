@@ -45,7 +45,7 @@ void sink_node_ctrl::_register_upstream_node(
 ) {
     // Do all the checks:
     if (port == ANY_PORT) {
-        throw uhd::runtime_error("Cannot register a node if no port number is given.");
+        throw uhd::type_error("Invalid input port number.");
     }
     if (_upstream_nodes.count(port)) {
         throw uhd::runtime_error(str(boost::format("On node %s, input port %d is already connected.") % unique_id() % port));

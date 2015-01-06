@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "utils.hpp"
 #include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/usrp/rfnoc/constants.hpp>
@@ -150,12 +151,9 @@ void source_block_ctrl_base::configure_flow_control_out(
  **********************************************************************/
 size_t source_block_ctrl_base::_request_output_port(
         const size_t suggested_port,
-        const uhd::device_addr_t &args
+        const uhd::device_addr_t &
 ) const {
-    size_t port = source_node_ctrl::_request_output_port(suggested_port, args);
-    if (not _tree->exists(_root_path / "output_sig" / port)) {
-        return ANY_PORT;
-    }
-    return port;
+    const std::set<size_t> valid_output_ports = utils::str_list_to_set<size_t>(_tree->list(_root_path / "output_sig"));
+    return utils::node_map_find_first_free(_downstream_nodes, suggested_port, valid_output_ports);
 }
 // vim: sw=4 et:
