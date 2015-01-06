@@ -28,6 +28,7 @@ public:
         _item_type("sc16"), // We only support sc16 in this block
         _bpi(uhd::convert::get_bytes_per_item("sc16"))
     {
+        _tree->create<stream_sig_t>(_root_path / "output_sig/1").set(stream_sig_t("sc16", 0, DEFAULT_PACKET_SIZE));
     }
 
 private:
