@@ -1,0 +1,109 @@
+/*! \page page_configuration Configuring Devices and Streamers
+
+\section config_devaddr Device Configuration through address string
+
+The address string for a device is mainly used to identify a device
+(see also \ref page_identification), but it can also be used to propagate
+settings to the device.
+
+As an example, say you run `rx_samples_to_file` with the following settings:
+
+    $ rx_samples_to_file --args type=b200,master_clock_rate=16e6
+
+This will first use the `type` flag to search your system for connected B200
+or B210 devices, as described on \ref page_identification. Once it has found
+one of these, it will connect to it and pass the `master_clock_rate=16e6` option
+to the device initialization (in this case, it will set the master clock rate
+to 16 MHz as described on \ref b200_mcr).
+
+The following table lists the configuration options you can pass as device
+arguments. Also check out the individual device manuals for more information
+and possible more options.
+
+ Key                 | Description                                                                  | Supported Devices | Example Value
+---------------------|------------------------------------------------------------------------------|-------------------|---------------------
+ blank_eeprom        | *Caution!* Having this key will erase the EEPROM and can damage your device! | X3x0              | blank_eeprom=1
+ fpga                | Provide alternative FPGA bitfile                                             | All USB Devices, X3x0 (PCIe only), All embedded devices | fpga=/path/to/bitfile.bit
+ fw                  | Provide alternative firmware                                                 | All USB Devices, X3x0 | fw=/path/to/fw.bin
+ ignore-cal-file     | Ignores existing device calibration files                                    | All Devices with cal-file support| See \ref ignore_cal_file
+ master_clock_rate   | Master Clock Rate in Hz                                                      | X3x0, B2x0, B1x0, E3x0, E1x0 | master_clock_rate=16e6
+ mcr                 | Override master clock rate settings (see \ref usrp1_hw_extclk)               | USRP1              | mcr=52e6
+ niusrprpc_port      | RPC Port for NI USRP RIO                                                     | X3x0               | niusrprpc_port=5445
+ system_ref_rate     | Reference Clock Rate in Hz                                                   | X3x0               | system_ref_rate=10e6
+
+
+In addition, many of the streaming-related options can be set per-device at configuration time.
+See \ref config_stream_args and \ref page_transport for more details.
+
+\section config_subdev Specifying the Subdevice
+
+A subdevice specification (or "subdev spec") string for USRP family devices is composed of:
+
+    <motherboard slot name>:<daughterboard frontend name>
+
+Ex: The subdev spec markup string to select a WBX on slot B.
+
+    B:0
+
+Ex: The subdev spec markup string to select a BasicRX on slot B.
+
+    B:AB
+
+    -- OR --
+
+    B:A
+
+    -- OR --
+
+    B:B
+
+A subdev spec can consist of multiple strings if a motherboard has the option
+for more than one radio device. In the X300, you may have an SBX in slot A and
+a CBX in slot B. Both of these daughterboards have one frontend ("0"), so the
+subdev spec to configure both these radio channels would look like this:
+
+    A:0 B:0
+
+The individual subdev specs are separated by spaces. On some devices, such as the
+X300 or the B200, it is possible to swap these to hint that slot B should be the
+first radio ("channel 0") and slot A should be the second radio ("channel 1"):
+
+    B:0 A:0
+
+On devices with more than one radio, setting the subdev spec to a single value
+declares that the other radio is not used. In a configuration with multiple USRPs,
+this means that this device will only be assigned a single channel.
+
+Note that a subdev spec string always only pertains to a *single* USRP, even if
+multiple USRPs are configured to run together. For such a configuration, you set
+a subdev spec string for every device individually.
+
+\subsection config_subdev_slotnames USRP Family Motherboard Slot Names
+
+All USRP family motherboards have a first slot named **A:**. The USRP1 and X3x0
+have two daughterboard subdevice slots, known as **A:** and **B:**.
+
+The B210 and E310 series have a different configuration, since their two radios
+are logically connected to the same "daughterboard" (which is in reality the
+integrated AD9361), but different frontends.
+To select both radios on a B200 or an E300, use this string:
+
+    A:A A:B
+
+\subsection config_subdev_default USRP Family Motherboard Slot Names
+
+\subsection config_subdev_dbnames Daughterboard Frontend Names
+
+Daughterboard frontend names can be used to specify which signal path is
+used from a daughterboard. Most daughterboards have only one frontend `:0`.
+A few daughterboards (Basic, LF and TVRX2) have multiple
+frontend names available. The frontend names are documented in \ref page_dboards.
+
+\section config_stream_args Streaming Arguments (Stream Args)
+
+When initializing a streamer using uhd::device::get_tx_stream() and/or uhd::device::get_rx_stream(),
+you must specify a uhd::stream_args_t object (see the manual for this struct and an in-depth
+explanation of the individual components).
+
+*/
+// vim:ft=doxygen:

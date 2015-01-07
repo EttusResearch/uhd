@@ -10,19 +10,23 @@ devices. Most UHD utility applications and examples have an `--args`
 parameter that takes a device address, which is expressed as a delimited
 string.
 
-See device_addr.hpp for reference.
+See uhd::device_addr_t for reference.
+
+Note that the device "address" can also take configuration options.
+See \ref page_configuration for a list of those options.
 
 \subsection id_identifying_common Common device identifiers
 
 Every device has several ways of identifying it on the host system:
 
-Identifier | Key      | Notes                                                     | Example
------------|----------|-----------------------------------------------------------|---------------------------------
-Serial     | serial   | globally unique identifier                                | 12345678
-Address    | addr     | unique identifier on a network                            | 192.168.10.2
-Resource   | resource | unique identifier for USRP RIO devices (over PCI Express) | RIO0
-Name       | name     | optional user-set identifier                              | my_usrp1 (User-defined value)
-Type       | type     | hardware series identifier                                | usrp1, usrp2, b200, x300, ...
+Identifier        | Key      | Notes                                                     | Example
+------------------|----------|-----------------------------------------------------------|---------------------------------
+Serial #          | serial   | globally unique identifier                                | 12345678
+IP Address        | addr     | unique identifier on a network                            | 192.168.10.2
+Resource          | resource | unique identifier for USRP RIO devices (over PCI Express) | RIO0
+Name              | name     | optional user-set identifier                              | my_usrp1 (User-defined value)
+Type              | type     | hardware series identifier                                | usrp1, usrp2, b200, x300, ...
+Vendor/Product ID | vid,pid  | For USB devices. Both must be provided                    | vid=0x04b4,pid=0x8613
 
 \subsection id_identifying_cmdline Device discovery via command line
 
