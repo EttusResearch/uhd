@@ -29,6 +29,13 @@
  */
 #define UHD_VERSION_ABI_STRING "3.8.0-0"
 
+/*!
+ * A macro to check UHD version at compile-time.
+ * The value of this macro is MAJOR * 10000 + MINOR * 100 + PATCH
+ * (e.g., for UHD 3.8.1 this is 30801).
+ */
+#cmakedefine UHD_VERSION @UHD_VERSION_ADDED@
+
 namespace uhd{
 
     //! Get the version string (dotted version number + build info)
