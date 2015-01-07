@@ -74,9 +74,9 @@ public:
         //// 1. Sanity checks
         const size_t requested_fft_size = fft_size;
         // Check fft_size is within bounds
-        if (fft_size < 16 or fft_size > 2048) {
+        if (fft_size < 16 or fft_size > 4096) {
             // TODO read this bounds from the prop tree (block def)
-            throw uhd::value_error("FFT size must be a power of two and within [16, 2048]");
+            throw uhd::value_error("FFT size must be a power of two and within [16, 4096]");
         }
         boost::uint32_t log2_fft_size = 0;
         // Calculate log2(fft_size) and make sure fft_size is a power of 2
@@ -86,7 +86,7 @@ public:
         }
         if (fft_size != 1) {
             // Not a power of 2
-            throw uhd::value_error("FFT size must be a power of two and within [16, 2048]");
+            throw uhd::value_error("FFT size must be a power of two and within [16, 4096]");
         }
 
         //// 2. Update block

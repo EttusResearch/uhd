@@ -48,9 +48,9 @@ public:
         //// 1. Sanity check
         const size_t requested_vector_len = vector_len;
         // Check vector length is within bounds
-        if (vector_len < 1 or vector_len > 2048) {
+        if (vector_len < 1 or vector_len > 4096) {
             // TODO read this bounds from the prop tree (block def)
-            throw uhd::value_error("Vector IIR length must be within [1, 2048]");
+            throw uhd::value_error("Vector IIR length must be within [1, 4096]");
         }
 
         //// 2. Update block
