@@ -116,7 +116,7 @@ public:
     {
         sr_write(SR_MAGNITUDE_OUT,magnitude_out);
         _magnitude_out = magnitude_out;
-    } /* set_fft_size() */
+    } /* set_magnitude_out() */
 
     magnitude_t get_magnitude_out()
     {

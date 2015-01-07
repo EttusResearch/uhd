@@ -39,11 +39,25 @@ public:
         UHD_MSG(status) << "packet_resizer::set_packet_size() pkt_size == " << pkt_size << std::endl;
         UHD_ASSERT_THROW(pkt_size);
         sr_write(SR_PKT_SIZE, pkt_size);
+        _pkt_size = pkt_size;
     }
 
     boost::uint16_t get_packet_size()
     {
         return(_pkt_size);
+    }
+
+protected:
+    void _post_args_hook()
+    {
+        UHD_RFNOC_BLOCK_TRACE() << "_post_args_hook()" << std::endl;
+
+        if (_args.has_key("pkt_size")) {
+            boost::uint16_t req_pkt_size = _args.cast<boost::uint16_t>("pkt_size", _pkt_size);
+            if (req_pkt_size != _pkt_size) {
+                set_packet_size(req_pkt_size);
+            }
+        }
     }
 
 private:
