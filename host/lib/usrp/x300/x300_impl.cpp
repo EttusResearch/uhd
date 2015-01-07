@@ -41,7 +41,7 @@
 
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
 
-#define X300_REV(x) (x - "A" + 1)
+#define X300_REV(x) ((x) - "A" + 1)
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -1722,14 +1722,20 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& res
                 case X300_USRP_PCIE_SSID:
                     mb_type = USRP_X300_MB; break;
                 case X310_USRP_PCIE_SSID:
-                case X310_2940R_PCIE_SSID:
-                case X310_2942R_PCIE_SSID:
-                case X310_2943R_PCIE_SSID:
-                case X310_2944R_PCIE_SSID:
-                case X310_2950R_PCIE_SSID:
-                case X310_2952R_PCIE_SSID:
-                case X310_2953R_PCIE_SSID:
-                case X310_2954R_PCIE_SSID:
+                case X310_2940R_40MHz_PCIE_SSID:
+                case X310_2940R_120MHz_PCIE_SSID:
+                case X310_2942R_40MHz_PCIE_SSID:
+                case X310_2942R_120MHz_PCIE_SSID:
+                case X310_2943R_40MHz_PCIE_SSID:
+                case X310_2943R_120MHz_PCIE_SSID:
+                case X310_2944R_40MHz_PCIE_SSID:
+                case X310_2950R_40MHz_PCIE_SSID:
+                case X310_2950R_120MHz_PCIE_SSID:
+                case X310_2952R_40MHz_PCIE_SSID:
+                case X310_2952R_120MHz_PCIE_SSID:
+                case X310_2953R_40MHz_PCIE_SSID:
+                case X310_2953R_120MHz_PCIE_SSID:
+                case X310_2954R_40MHz_PCIE_SSID:
                     mb_type = USRP_X310_MB; break;
                 default:
                     mb_type = UNKNOWN;      break;
@@ -1757,14 +1763,20 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
             case X300_USRP_PCIE_SSID:
                 mb_type = USRP_X300_MB; break;
             case X310_USRP_PCIE_SSID:
-            case X310_2940R_PCIE_SSID:
-            case X310_2942R_PCIE_SSID:
-            case X310_2943R_PCIE_SSID:
-            case X310_2944R_PCIE_SSID:
-            case X310_2950R_PCIE_SSID:
-            case X310_2952R_PCIE_SSID:
-            case X310_2953R_PCIE_SSID:
-            case X310_2954R_PCIE_SSID:
+            case X310_2940R_40MHz_PCIE_SSID:
+            case X310_2940R_120MHz_PCIE_SSID:
+            case X310_2942R_40MHz_PCIE_SSID:
+            case X310_2942R_120MHz_PCIE_SSID:
+            case X310_2943R_40MHz_PCIE_SSID:
+            case X310_2943R_120MHz_PCIE_SSID:
+            case X310_2944R_40MHz_PCIE_SSID:
+            case X310_2950R_40MHz_PCIE_SSID:
+            case X310_2950R_120MHz_PCIE_SSID:
+            case X310_2952R_40MHz_PCIE_SSID:
+            case X310_2952R_120MHz_PCIE_SSID:
+            case X310_2953R_40MHz_PCIE_SSID:
+            case X310_2953R_120MHz_PCIE_SSID:
+            case X310_2954R_40MHz_PCIE_SSID:
                 mb_type = USRP_X310_MB; break;
             default:
                 UHD_MSG(warning) << "X300 unknown product code in EEPROM: " << product_num << std::endl;
