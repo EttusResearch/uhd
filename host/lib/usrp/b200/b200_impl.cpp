@@ -87,14 +87,16 @@ static device_addrs_t b200_find(const device_addr_t &hint)
     //since an address and resource is intended for a different, non-USB, device.
     if (hint.has_key("addr") || hint.has_key("resource")) return b200_addrs;
 
-    boost::uint16_t vid, pid;
+    size_t found = 0;
+    std::vector<usb_device_handle::vid_pid_pair_t> vid_pid_pair_list;//vid pid pair search list for devices.
 
     if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "b200") {
-        vid = uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid"));
-        pid = uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid")),
+                                                                    uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"))));
     } else {
-        vid = B200_VENDOR_ID;
-        pid = B200_PRODUCT_ID;
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID));
     }
 
     // Important note:
@@ -104,8 +106,9 @@ static device_addrs_t b200_find(const device_addr_t &hint)
     // This requirement is a courtesy of libusb1.0 on windows.
 
     //find the usrps and load firmware
-    size_t found = 0;
-    BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
+    std::vector<usb_device_handle::sptr> uhd_usb_device_vector = usb_device_handle::get_device_list(vid_pid_pair_list);
+
+    BOOST_FOREACH(usb_device_handle::sptr handle, uhd_usb_device_vector) {
         //extract the firmware path for the b200
         std::string b200_fw_image;
         try{
@@ -138,7 +141,7 @@ static device_addrs_t b200_find(const device_addr_t &hint)
     //search for the device until found or timeout
     while (boost::get_system_time() < timeout_time and b200_addrs.empty() and found != 0)
     {
-        BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid))
+        BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid_pid_pair_list))
         {
             usb_control::sptr control;
             try{control = usb_control::make(handle, 0);}
@@ -155,12 +158,16 @@ static device_addrs_t b200_find(const device_addr_t &hint)
             {
                 switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
                 {
+                //0x0001 and 0x7737 are Ettus B200 product Ids.
                 case 0x0001:
                 case 0x7737:
+                case B200_PRODUCT_NI_ID:
                     new_addr["product"] = "B200";
                     break;
-                case 0x7738:
+                //0x0002 and 0x7738 are Ettus B210 product Ids.
                 case 0x0002:
+                case 0x7738:
+                case B210_PRODUCT_NI_ID:
                     new_addr["product"] = "B210";
                     break;
                 default: UHD_MSG(error) << "B200 unknown product code: " << mb_eeprom["product"] << std::endl;
@@ -204,13 +211,50 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     //try to match the given device address with something on the USB bus
     boost::uint16_t vid = B200_VENDOR_ID;
     boost::uint16_t pid = B200_PRODUCT_ID;
-    if (device_addr.has_key("vid"))
-        vid = uhd::cast::hexstr_cast<boost::uint16_t>(device_addr.get("vid"));
-    if (device_addr.has_key("pid"))
-        pid = uhd::cast::hexstr_cast<boost::uint16_t>(device_addr.get("pid"));
+    bool specified_vid = false;
+    bool specified_pid = false;
 
-    std::vector<usb_device_handle::sptr> device_list =
-        usb_device_handle::get_device_list(vid, pid);
+    if (device_addr.has_key("vid"))
+    {
+        vid = uhd::cast::hexstr_cast<boost::uint16_t>(device_addr.get("vid"));
+        specified_vid = true;
+    }
+
+    if (device_addr.has_key("pid"))
+    {
+        pid = uhd::cast::hexstr_cast<boost::uint16_t>(device_addr.get("pid"));
+        specified_pid = true;
+    }
+
+    std::vector<usb_device_handle::vid_pid_pair_t> vid_pid_pair_list;//search list for devices.
+
+    // Search only for specified VID and PID if both specified
+    if (specified_vid && specified_pid)
+    {
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid,pid));
+    }
+    // Search for all supported PIDs limited to specified VID if only VID specified
+    else if (specified_vid)
+    {
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid,B200_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid,B200_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid,B210_PRODUCT_NI_ID));
+    }
+    // Search for all supported VIDs limited to specified PID if only PID specified
+    else if (specified_pid)
+    {
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,pid));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID,pid));
+    }
+    // Search for all supported devices if neither VID nor PID specified
+    else
+    {
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,B200_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID,B200_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID,B210_PRODUCT_NI_ID));
+    }
+
+    std::vector<usb_device_handle::sptr> device_list = usb_device_handle::get_device_list(vid_pid_pair_list);
 
     //locate the matching handle in the device list
     usb_device_handle::sptr handle;
@@ -244,13 +288,17 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     {
         switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
         {
+        //0x0001 and 0x7737 are Ettus B200 product Ids.
         case 0x0001:
         case 0x7737:
+        case B200_PRODUCT_NI_ID:
             product_name = "B200";
             default_file_name = B200_FPGA_FILE_NAME;
             break;
-        case 0x7738:
+        //0x0002 and 0x7738 are Ettus B210 product Ids.
         case 0x0002:
+        case 0x7738:
+        case B210_PRODUCT_NI_ID:
             product_name = "B210";
             default_file_name = B210_FPGA_FILE_NAME;
             break;

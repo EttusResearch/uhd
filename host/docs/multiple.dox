@@ -1,0 +1,99 @@
+/*! \page page_multiple Multiple USRP configurations
+
+\tableofcontents
+
+\section multiple_intro Introduction
+
+Some USRP devices are capable of being grouped to form a single, virtual device.
+A single uhd::usrp::multi_usrp instantiation can control such a compound of devices.
+
+Currently, the following devices support this capability:
+
+- USRP2 / N2x0 Series
+- X3x0 Series
+
+Note that only USRPs of the same type can be combined.
+
+\section multiple_setup Setting up devices
+
+A description of a multiple-USRP setup can be found on the respective device's manual pages.
+
+Addressing of a compound of devices is done by listing multiple addresses, e.g.:
+
+    addr0=192.168.10.2,addr1=192.168.20.2
+
+\section multiple_channumbers Channel and Device Numbering
+
+Assume we have combined 2 X310 USRPs into a single multi_usrp using the address string
+given above, maybe using the following command:
+
+\code{.cpp}
+uhd::device_addr_t args("addr0=192.168.10.2,addr1=192.168.20.2");
+uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+\endcode
+Some uhd::usrp::multi_usrp commands require passing a device index. This is simply
+the index in the address list, so say we want to check the master clock rate on both
+devices, this would be valid:
+\code{.cpp}
+double mcr0 = usrp->get_master_clock_rate(0);
+double mcr1 = usrp->get_master_clock_rate(1);
+\endcode
+
+Some methods default to applying to all devices, so the following command
+would set the time on all devices to zero:
+\code{.cpp}
+usrp->set_time_next_pps(uhd::time_spec_t(0));
+\endcode
+
+So, device indexes run from 0 to N-1 where N is the number of devices.
+
+Channels are indexed in a similar way. Channel indexes run from 0 to M-1 where
+M is the total number of channels on all devices.
+
+The number and order of channels per device depends on the subdev spec (see
+also \ref config_subdev). In the current example, assume all the X310 USRPs
+are using their standard configuration, and all have two daughterboards inside.
+
+In this case channels 0 and 1 map to slot A and B of the first USRP, respectively.
+Channels 2 and 3 map to slots A and B of the second USRP, and so on.
+
+However, by changing the subdev spec on individual devices, this can change.
+Say we have this unusual piece of code next:
+
+\code{.cpp}
+usrp->set_rx_subdev_spec("A:0 B:0", 0);
+usrp->set_rx_subdev_spec("A:0", 1);
+usrp->set_rx_subdev_spec("B:0 A:0", 2);
+\endcode
+
+The first device uses the default configuration. The second device artificially
+disables slot B, giving this USRP a single channel only. The third device uses
+both devices, but flips their order.
+
+Now, there's a total of 5 channels, mapped as:
+- Channel 0: Slot A of Device 0
+- Channel 1: Slot B of Device 0
+- Channel 2: Slot A of Device 1
+- Channel 3: Slot A of Device 2
+- Channel 1: Slot B of Device 2
+
+While valid, this kind of configuration is not recommended unless heavily
+documented. It is usually simplest to call `set_rx_subdev_spec()` without
+a device index, which will set the same subdev spec on all devices.
+This assumes all devices have a similar daughterboard configuration
+
+\section multiple_mimo MIMO Operation
+
+When a multi-channel streamer is generated from a compound multi_usrp, and
+a streamer with multiple channels is generated, MIMO operations is automatically
+chosen. This means samples will be aligned between streams automatically.
+
+In order for this to work, all devices must use a common time and frequency
+reference. This can be achieved in different ways, e.g. by daisy-chaining
+devices (for a small number of X-Series devices), using the MIMO cable (when
+only 2 N2x0 devices are used), or using a clock distribution system, e.g. an
+OctoClock. See \ref page_sync and the individual device manuals on more details
+on how to do this.
+
+*/
+// vim:ft=doxygen:

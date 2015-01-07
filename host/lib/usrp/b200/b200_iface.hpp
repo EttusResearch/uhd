@@ -26,7 +26,10 @@
 #include "ad9361_ctrl.hpp"
 
 const static boost::uint16_t B200_VENDOR_ID  = 0x2500;
+const static boost::uint16_t B200_VENDOR_NI_ID = 0x3923;
 const static boost::uint16_t B200_PRODUCT_ID = 0x0020;
+const static boost::uint16_t B200_PRODUCT_NI_ID = 0x7813;
+const static boost::uint16_t B210_PRODUCT_NI_ID = 0x7814;
 const static boost::uint16_t FX3_VID = 0x04b4;
 const static boost::uint16_t FX3_DEFAULT_PID = 0x00f3;
 const static boost::uint16_t FX3_REENUM_PID = 0x00f0;

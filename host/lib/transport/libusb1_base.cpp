@@ -343,15 +343,21 @@ libusb::special_handle::sptr libusb::special_handle::make(device::sptr dev){
 std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(
     boost::uint16_t vid, boost::uint16_t pid
 ){
+    return usb_device_handle::get_device_list(std::vector<usb_device_handle::vid_pid_pair_t>(1,usb_device_handle::vid_pid_pair_t(vid,pid)));
+}
+
+std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(const std::vector<usb_device_handle::vid_pid_pair_t>& vid_pid_pair_list)
+{
     std::vector<usb_device_handle::sptr> handles;
-
     libusb::device_list::sptr dev_list = libusb::device_list::make();
-    for (size_t i = 0; i < dev_list->size(); i++){
-        usb_device_handle::sptr handle = libusb::special_handle::make(dev_list->at(i));
-        if (handle->get_vendor_id() == vid and handle->get_product_id() == pid){
-            handles.push_back(handle);
-        }
+    for(size_t iter = 0; iter < vid_pid_pair_list.size(); ++iter)
+    {
+       for (size_t i = 0; i < dev_list->size(); i++){
+           usb_device_handle::sptr handle = libusb::special_handle::make(dev_list->at(i));
+           if (handle->get_vendor_id() == vid_pid_pair_list[iter].first and handle->get_product_id() == vid_pid_pair_list[iter].second){
+               handles.push_back(handle);
+           }
+       }
     }
-
     return handles;
 }

@@ -21,12 +21,15 @@ standard Berkeley sockets API using send()/recv().
 \subsection transport_udp_params Transport parameters
 
 The following parameters can be used to alter the transport's default
-behavior:
+behavior (these options can be passed to a USRP device as arguments
+at initialization time, see also \ref config_devaddr, or to a streamer,
+see uhd::stream_args_t::args):
 
 -   `recv_frame_size:` The size of a single receive buffer in bytes
 -   `num_recv_frames:` The number of receive buffers to allocate
 -   `send_frame_size:` The size of a single send buffer in bytes
 -   `num_send_frames:` The number of send buffers to allocate
+-   `recv_buff_fullness:` The targetted fullness factor of the the buffer (typically around 90%)
 
 <b>Notes:</b>
 - `num_recv_frames` does not affect performance.

@@ -378,6 +378,8 @@ Example:
 - Ethernet interface subnet mask: `255.255.255.0`
 - USRP-X Series device IPv4 address: `192.168.110.2`
 
+If all devices are to be used in a compound, see also \ref page_multiple.
+
 \subsection x3x0_setup_change_ip Change the USRP's IP address
 
 You may need to change the USRP's IP address for several reasons:
@@ -436,6 +438,7 @@ Example device address string representation for 2 USRPs with IPv4 addresses **1
 
     addr0=192.168.10.2, addr1=192.168.20.2
 
+See also \ref page_multiple.
 
 \section x3x0_comm_problems Communication Problems
 
@@ -606,6 +609,16 @@ USRP-X series devices can be used with Xilinx chipscope using the onboard USB JT
 Further information on how to use Chipscope can be found in the Xilinx Chipscope Pro Software and Cores User Guide (UG029).
 
 \section x3x0_misc Miscellaneous
+
+\subsection x3x0_misc_settings Configuring the device in an application
+
+During runtime, the device can be configured in several different ways.
+
+The following pages may shed some light:
+
+- \ref page_configuration
+- uhd::stream_args_t
+- \ref multiple_channumbers
 
 \subsection x3x0_misc_multirx Multiple RX channels
 
