@@ -2,8 +2,10 @@
 
 ## General Usage Manuals
 
-\li \subpage page_general "Notes on tuning, subdev specs, overflow/underflow, other miscellaneous topics"
+\li \subpage page_general "Notes on tuning, overflow/underflow and other miscellaneous topics"
 \li \subpage page_identification
+\li \subpage page_configuration
+\li \subpage page_multiple
 \li \subpage page_images
 \li \subpage page_transport
 \li \subpage page_sync
@@ -11,7 +13,7 @@
 
 ## USRP N-Series Devices
 
-\li \subpage page_usrp2
+\li \subpage page_usrp2 "USRP N2x0 Series"
 
 ## USRP B-Series Devices
 
@@ -30,7 +32,7 @@
 
 ## USRP Legacy Series
 
-\li \subpage page_usrp2
+\li \ref page_usrp2 "USRP2 Series"
 
 ## Daughterboards
 

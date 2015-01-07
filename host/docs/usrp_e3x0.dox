@@ -489,8 +489,8 @@ by pinging the USRP and making sure the LEDs start to blink.
 \subsection e3x0 Frequently Asked Questions
 
  - Communication
-  -# How do I enable X forwarding so I can run X apps on the e3x0?\n
-     In the file `/etc/ssh/sshd_config`, uncomment the line `#X11Forwarding no`
+  -# How do I enable X forwarding so I can run X apps on the E3x0?<br>
+     In the file `/etc/ssh/sshd_config`, uncomment the line \#`X11Forwarding no`
      and change "no" to "yes".
 
 \section e3x0_apps Applications
