@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -223,7 +223,7 @@ static void send_file_to_fpga(const std::string &file_name, gpio &error, gpio &d
 
 	bitstream.open(file_name.c_str(), std::ios::binary);
 	if (!bitstream.is_open()) throw uhd::os_error(
-		"Coult not open the file: " + file_name
+		"Could not open the file: " + file_name
 	);
 
 	spidev spi("/dev/spidev1.0");
