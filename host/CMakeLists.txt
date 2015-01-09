@@ -66,6 +66,14 @@ INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/include)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
 ########################################################################
+# Static Lib Configuration
+########################################################################
+OPTION(ENABLE_STATIC_LIBS "Enable building of static libraries" OFF)
+IF(ENABLE_STATIC_LIBS)
+    MESSAGE(STATUS "Building Static Libraries: ${ENABLE_STATIC_LIBS}")
+ENDIF(ENABLE_STATIC_LIBS)
+
+########################################################################
 # On Apple only, set install name and use rpath correctly, if not already set
 ########################################################################
 IF(APPLE)
@@ -315,14 +323,35 @@ IF(NOT CMAKE_MODULES_DIR)
    SET(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
 ENDIF(NOT CMAKE_MODULES_DIR)
 
+# UHDConfig.cmake needs UHD_LINK_LIST_STATIC set:
+LIST(APPEND UHD_LINK_LIST_STATIC "dl")
+LIST(APPEND UHD_LINK_LIST_STATIC "pthread")
+FOREACH(Boost_Comp ${BOOST_REQUIRED_COMPONENTS})
+    IF(NOT ${Boost_Comp} STREQUAL "unit_test_framework")
+        LIST(APPEND UHD_LINK_LIST_STATIC "boost_${Boost_Comp}")
+    ENDIF(NOT ${Boost_Comp} STREQUAL "unit_test_framework")
+ENDFOREACH(Boost_Comp)
+IF(ENABLE_USB)
+    LIST(APPEND UHD_LINK_LIST_STATIC "usb-1.0")
+ENDIF(ENABLE_USB)
+IF(ENABLE_ORC)
+    LIST(APPEND UHD_LINK_LIST_STATIC "orc-0.4")
+ENDIF(ENABLE_ORC)
+message(STATUS "libs: ${UHD_LINK_LIST_STATIC}")
+
 CONFIGURE_FILE(
     ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in
     ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
     @ONLY
 )
+CONFIGURE_FILE(
+    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfig.cmake.in
+    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
+    @ONLY
+)
 
 SET(cmake_configs
-    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfig.cmake
+    ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
     ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
 )
 

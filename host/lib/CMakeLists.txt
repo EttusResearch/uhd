@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2014 Ettus Research LLC
+# Copyright 2010-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -128,3 +128,14 @@ IF(NOT UHDHOST_PKG) #Syntax makes it unusable by UHD_INSTALL
         RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT libraries # .dll file
     )
 ENDIF(NOT UHDHOST_PKG)
+
+#######################################################
+# Setup libuhd library (static)
+#######################################################
+IF(ENABLE_STATIC_LIBS)
+    ADD_LIBRARY(uhd_static STATIC ${libuhd_sources})
+    SET_TARGET_PROPERTIES(uhd_static PROPERTIES OUTPUT_NAME uhd)
+    INSTALL(TARGETS uhd_static
+        ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib or .a file
+    )
+ENDIF(ENABLE_STATIC_LIBS)

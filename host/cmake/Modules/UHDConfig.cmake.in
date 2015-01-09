@@ -60,6 +60,19 @@ ENDIF()
 LIST(APPEND UHD_INCLUDE_HINTS ${CMAKE_INSTALL_PREFIX}/include)
 LIST(APPEND UHD_LIBDIR_HINTS ${CMAKE_INSTALL_PREFIX}/lib)
 
+
+# Search for static libs if so required
+IF( UHD_USE_STATIC_LIBS )
+    SET( _UHD_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+    IF(WIN32)
+        SET(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+    ELSE()
+        SET(CMAKE_FIND_LIBRARY_SUFFIXES .a )
+    ENDIF()
+    # This is set during build of UHD to match the installed version:
+    SET(UHD_STATIC_LIB_DEPS "@UHD_LINK_LIST_STATIC@")
+ENDIF()
+
 # Verify that <uhd/config.hpp> and libuhd are available, and, if a
 # version is provided, that UHD meets the version requirements -- no
 # matter what pkg-config might think.
@@ -79,6 +92,18 @@ FIND_LIBRARY(
     PATHS /usr/local/lib
           /usr/lib
 )
+
+# Set up linker flags for static linking:
+IF(UHD_USE_STATIC_LIBS)
+    IF(WIN32)
+        MESSAGE(FATAL_ERROR "Static linking not available on Windows")
+    ELSE(WIN32)
+        # This works for gcc and Clang:
+        SET(UHD_STATIC_LIB_LINK_FLAG "-Wl,-whole-archive ${UHD_LIBRARIES} -Wl,-no-whole-archive")
+    ENDIF(WIN32)
+    # Restore the library suffixes, if we changed them:
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ${_UHD_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
+ENDIF(UHD_USE_STATIC_LIBS)
 
 IF(UHD_LIBRARIES AND UHD_INCLUDE_DIRS)
 
