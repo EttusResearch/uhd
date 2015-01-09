@@ -188,5 +188,45 @@ front of the shell `PATH` environment variable.  Do \b NOT set
 permanently; these work differently than under Linux and should be 
 used for testing / temporary purposes only. 
 
+\section build_apps Building applications that require UHD using CMake
+
+If your application uses CMake as a build system, the following command
+will setup up your build environment to link against UHD:
+
+\code{.cmake}
+find_package(UHD "3.8.0")
+\endcode
+
+This will set the CMake variable `UHD_INCLUDE_DIRS` and `UHD_LIBRARIES`
+accordingly.
+
+See the example in `examples/init_usrp` for more details, as well as
+the UHDConfig.cmake file that gets installed along with the UHD libraries.
+
+\section build_static Static Builds
+
+Using CMake, UHD can be built as a static library by switching on
+`ENABLE_STATIC_LIBS`.
+
+    cmake -DENABLE_STATIC_LIBS=On <path to UHD source>
+
+When linking the static library, you must ensure that the library
+is loaded in its entirety, otherwise global objects aren't initialized
+at load-time and it will always fail to detect any devices.
+Also, \b all UHD dependencies for UHD must be provided unless your
+linker has other ways of resolving library dependencies.
+
+With the GNU ld linker (e.g. on Linux platforms), this is done using
+the `--whole-archive` switch. Using the GNU C++ compiler, the correct
+command line is:
+
+    g++ your_uhd_app.cpp -Wl,-whole-archive <path to UHD libs>/libuhd.a -Wl,-no-whole-archive -ldl -lpthread -l<all other libraries>
+
+Note that `--whole-archive` is disabled after including `libuhd.a`.
+The exact list of libraries depends on your UHD build. When using `UHDConfig.cmake`
+(see \ref build_apps), the path to `libuhd.a` is saved into `UHD_LIBRARIES`,
+and `UHD_STATIC_LIB_DEPS` lists the required dependencies. See `UHDConfig.cmake`
+for details.
+
 */
 // vim:ft=doxygen:
