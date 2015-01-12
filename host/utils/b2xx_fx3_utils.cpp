@@ -51,7 +51,9 @@ struct vid_pid_t {
 const static vid_pid_t known_vid_pids[] = {
     {FX3_VID, FX3_DEFAULT_PID},
     {FX3_VID, FX3_REENUM_PID},
-    {B200_VENDOR_ID, B200_PRODUCT_ID}
+    {B200_VENDOR_ID, B200_PRODUCT_ID},
+    {B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID},
+    {B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID}
     };
 const static std::vector<vid_pid_t> known_vid_pid_vector(known_vid_pids, known_vid_pids + (sizeof(known_vid_pids) / sizeof(known_vid_pids[0])));
 
