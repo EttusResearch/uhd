@@ -768,7 +768,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //initialize tick rate (must be done before setting time)
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&x300_impl::set_tick_rate, this, boost::ref(mb), _1))
-        .subscribe(boost::bind(&x300_impl::update_tick_rate, this, boost::ref(mb), _1))
+        .subscribe(boost::bind(&device3_impl::update_tx_streamers, this, _1))
+        .subscribe(boost::bind(&device3_impl::update_rx_streamers, this, _1))
         .set(mb.clock->get_master_clock_rate());
 
     ////////////////////////////////////////////////////////////////////
