@@ -765,6 +765,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     _tree->create<bool>(mb_path / "clock_source" / "output")
         .subscribe(boost::bind(&x300_clock_ctrl::set_ref_out, mb.clock, _1));
 
+    //initialize tick rate (must be done before setting time)
+    _tree->access<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&x300_impl::set_tick_rate, this, boost::ref(mb), _1))
+        .subscribe(boost::bind(&x300_impl::update_tick_rate, this, boost::ref(mb), _1))
+        .set(mb.clock->get_master_clock_rate());
+
     ////////////////////////////////////////////////////////////////////
     // initialize clock and time sources
     ////////////////////////////////////////////////////////////////////
@@ -798,15 +804,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<sensor_value_t>(mb_path / "sensors" / "ref_locked")
         .publish(boost::bind(&x300_impl::get_ref_locked, this, mb.zpu_ctrl));
-
-    ////////////////////////////////////////////////////////////////////
-    // create clock properties
-    ////////////////////////////////////////////////////////////////////
-    _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&x300_impl::set_tick_rate, this, boost::ref(mb), _1))
-        .subscribe(boost::bind(&device3_impl::update_tx_streamers, this, _1))
-        .subscribe(boost::bind(&device3_impl::update_rx_streamers, this, _1))
-        .set(mb.clock->get_master_clock_rate());
 
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks

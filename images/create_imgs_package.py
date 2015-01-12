@@ -49,6 +49,10 @@ def parse_args():
                        help='Supply a commit message to the changes to host/CMakeLists.txt.')
     parser.add_argument('-r', '--release-mode', default=None,
                        help='Specify UHD_RELEASE_MODE. Typically "release" or "rc1" or similar.')
+    parser.add_argument('--skip-edit', default=False, action='store_true',
+                       help='Do not edit the CMakeLists.txt file.')
+    parser.add_argument('--skip-move', default=False, action='store_true',
+                       help='Do not move the archives after creating them.')
     return parser.parse_args()
 
 def move_zip_to_repo(base_url, zipfilename):
@@ -69,7 +73,7 @@ def main():
     os.chdir(uhdimgs.get_images_dir())
     print "== Clearing out the images directory..."
     clear_img_dir(img_root_dir)
-    print "== Creating ZIP file..."
+    print "== Creating archives..."
     cpack_cmd = ["./make_zip.sh",]
     if args.release_mode is not None:
         cpack_cmd.append(args.release_mode)
@@ -84,7 +88,7 @@ def main():
     md5 = uhdimgs.md5_checksum(zipfilename)
     print 'MD5: ', md5
     base_url = uhdimgs.get_base_url()
-    if uhdimgs.base_url_is_local(base_url) and os.access(base_url, os.W_OK):
+    if not args.skip_move and uhdimgs.base_url_is_local(base_url) and os.access(base_url, os.W_OK):
         print "== Moving ZIP file to {0}...".format(base_url)
         move_zip_to_repo(base_url, zipfilename)
     print "== Updating CMakeLists.txt..."
