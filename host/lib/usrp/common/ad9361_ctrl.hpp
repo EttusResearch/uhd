@@ -21,6 +21,7 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/serial.hpp>
+#include <uhd/types/sensors.hpp>
 #include <boost/shared_ptr.hpp>
 #include <ad9361_device.h>
 #include <string>
@@ -94,8 +95,11 @@ public:
     //! tune the given frontend, return the exact value
     virtual double tune(const std::string &which, const double value) = 0;
 
-    //! turn on/off Catalina's data port loopback
+    //! turn on/off data port loopback
     virtual void data_port_loopback(const bool on) = 0;
+
+    //! read internal RSSI sensor
+    virtual sensor_value_t get_rssi(const std::string &which) = 0;
 };
 
 }}

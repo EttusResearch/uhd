@@ -24,6 +24,14 @@ set(BOOST_REQUIRED_COMPONENTS
     system
     thread
 )
+if(MSVC)
+    set(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
+    if(BOOST_ALL_DYN_LINK)
+        add_definitions(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
+    else(BOOST_ALL_DYN_LINK)
+        set(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
+    endif(BOOST_ALL_DYN_LINK)
+endif(MSVC)
 find_package(Boost "1.46" REQUIRED ${BOOST_REQUIRED_COMPONENTS})
 
 # To add UHD as a dependency to this project, add a line such as this:
@@ -37,6 +45,7 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
     ${UHD_INCLUDE_DIRS}
 )
+link_directories(${Boost_LIBRARY_DIRS})
 
 ### Make the executable #######################################################
 add_executable(init_usrp init_usrp.cpp)

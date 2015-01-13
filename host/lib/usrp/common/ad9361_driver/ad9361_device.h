@@ -63,6 +63,9 @@ public:
     /* Turn on/off AD9361's TX port --> RX port loopback. */
     void data_port_loopback(const bool loopback_enabled);
 
+    /* Read back the internal RSSI measurement data. */
+    double get_rssi(chain_t chain);
+
     //Constants
     static const double AD9361_MAX_GAIN;
     static const double AD9361_MAX_CLOCK_RATE;

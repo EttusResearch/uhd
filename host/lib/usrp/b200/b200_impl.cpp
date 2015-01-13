@@ -709,7 +709,7 @@ void b200_impl::setup_radio(const size_t dspno)
         _tree->create<meta_range_t>(rf_fe_path / "freq" / "range")
             .publish(boost::bind(&ad9361_ctrl::get_rf_freq_range));
 
-        //setup antenna stuff
+        //setup RX related stuff
         if (key[0] == 'R')
         {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
@@ -717,6 +717,8 @@ void b200_impl::setup_radio(const size_t dspno)
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
                 .subscribe(boost::bind(&b200_impl::update_antenna_sel, this, dspno, _1))
                 .set("RX2");
+            _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "rssi")
+                .publish(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key));
         }
         if (key[0] == 'T')
         {
