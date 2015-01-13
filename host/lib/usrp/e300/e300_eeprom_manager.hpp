@@ -34,6 +34,12 @@ static const boost::uint16_t E310_MB_PID = 0x77d2;
 static const boost::uint16_t E300_DB_PID = 0x0100;
 static const boost::uint16_t E310_DB_PID = 0x0110;
 
+static const boost::uint16_t E310_MB_MAP_MAJOR = 0x0001;
+static const boost::uint16_t E310_MB_MAP_MINOR = 0x0000;
+
+static const boost::uint16_t E310_DB_MAP_MAJOR = 0x0001;
+static const boost::uint16_t E310_DB_MAP_MINOR = 0x0000;
+
 class e300_eeprom_manager : boost::noncopyable
 {
 public:
@@ -69,11 +75,11 @@ public:
     std::string get_mb_type_string(void) const;
 
 private: // types
-    const static size_t MB_SERIAL_LEN = 6;
+    const static size_t MB_SERIAL_LEN = 8;
     const static size_t MB_NAME_LEN   = 32;
     const static size_t MB_ADDR       = 0x51;
 
-    const static size_t DB_SERIAL_LEN = 6;
+    const static size_t DB_SERIAL_LEN = 8;
     const static size_t DB_ADDR       = 0x50;
 
     struct mb_eeprom_map_t
@@ -108,8 +114,8 @@ private: // types
         boost::uint16_t hw_revision;
 
         // serial
-        boost::uint8_t serial[MB_SERIAL_LEN];
-        boost::uint8_t pad[20 - MB_SERIAL_LEN];
+        boost::uint8_t serial[DB_SERIAL_LEN];
+        boost::uint8_t pad[20 - DB_SERIAL_LEN];
     };
 
 private: // members
