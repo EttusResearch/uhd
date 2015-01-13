@@ -32,11 +32,13 @@ or install msysGit from http://code.google.com/p/msysgit/downloads/list.
 
 \section cpp_compiler C++ Compiler
 
-The following compilers are known to work:
+The following compilers are known to work and officially supported:
 
-- GCC
-- Clang
-- MSVC
+- GCC >= 4.4
+- Clang >= 3.1
+- MSVC >= 2010
+
+Other compilers (or lower versions) may work, but are unsupported.
 
 ### CMake
 
