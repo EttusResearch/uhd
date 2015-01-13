@@ -61,14 +61,14 @@ static const size_t EEPROM_INIT_VALUE_VECTOR_SIZE = 8;
 static uhd::byte_vector_t construct_eeprom_init_value_vector(boost::uint16_t vid, boost::uint16_t pid)
 {
     uhd::byte_vector_t init_values(EEPROM_INIT_VALUE_VECTOR_SIZE);
-    init_values.push_back(0x43);
-    init_values.push_back(0x59);
-    init_values.push_back(0x14);
-    init_values.push_back(0xB2);
-    init_values.push_back(static_cast<boost::uint8_t>(pid & 0xff));
-    init_values.push_back(static_cast<boost::uint8_t>(pid >> 8));
-    init_values.push_back(static_cast<boost::uint8_t>(vid & 0xff));
-    init_values.push_back(static_cast<boost::uint8_t>(vid >> 8));
+    init_values.at(0) = 0x43;
+    init_values.at(1) = 0x59;
+    init_values.at(2) = 0x14;
+    init_values.at(3) = 0xB2;
+    init_values.at(4) = static_cast<boost::uint8_t>(pid & 0xff);
+    init_values.at(5) = static_cast<boost::uint8_t>(pid >> 8);
+    init_values.at(6) = static_cast<boost::uint8_t>(vid & 0xff);
+    init_values.at(7) = static_cast<boost::uint8_t>(vid >> 8);
     return init_values;
 }
 
@@ -234,7 +234,7 @@ int read_eeprom(b200_iface::sptr& b200, uhd::byte_vector_t& data)
 int write_eeprom(b200_iface::sptr& b200, const uhd::byte_vector_t& data)
 {
     try {
-        b200->write_eeprom(0x0, 0x0, data);
+      b200->write_eeprom(0x0, 0x0, data);
     } catch (std::exception &e) {
         std::cerr << "Exception while writing EEPROM: " << e.what() << std::endl;
         return -1;
