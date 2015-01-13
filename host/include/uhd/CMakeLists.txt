@@ -21,6 +21,11 @@ ADD_SUBDIRECTORY(usrp)
 ADD_SUBDIRECTORY(usrp_clock)
 ADD_SUBDIRECTORY(utils)
 
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/version.hpp
+)
+
 UHD_INSTALL(FILES
     config.hpp
     convert.hpp
@@ -31,7 +36,7 @@ UHD_INSTALL(FILES
     property_tree.ipp
     property_tree.hpp
     stream.hpp
-    version.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version.hpp
     DESTINATION ${INCLUDE_DIR}/uhd
     COMPONENT headers
 )

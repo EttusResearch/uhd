@@ -62,6 +62,7 @@ SET(PKG_MAN_DIR share/man/man1)
 ########################################################################
 # Local Include Dir
 ########################################################################
+INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/include)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
 ########################################################################
@@ -204,6 +205,11 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
 MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
 MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+
+########################################################################
+# Additional settings for build environment
+########################################################################
+INCLUDE(UHDGlobalDefs)
 
 ########################################################################
 # Check Python Modules
