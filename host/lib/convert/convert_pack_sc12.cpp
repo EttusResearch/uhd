@@ -36,6 +36,7 @@ enum item32_sc12_3x_enable {
     CONVERT12_LINE0 = 0x01,
     CONVERT12_LINE1 = 0x02,
     CONVERT12_LINE2 = 0x04,
+    CONVERT12_LINE_ALL = 0x07,
 };
 
 /*
@@ -89,24 +90,6 @@ void convert_star_4_to_sc12_item32_3
         output.line2 = towire(line2);
 }
 
-/*
- * Packed 12-bit converter with all lines enabled
- */
-template <typename type, towire32_type towire>
-void convert_star_4_to_sc12_item32_3
-(
-    const std::complex<type> &in0,
-    const std::complex<type> &in1,
-    const std::complex<type> &in2,
-    const std::complex<type> &in3,
-    item32_sc12_3x &output,
-    const double scalar
-)
-{
-    int enable = CONVERT12_LINE0 | CONVERT12_LINE1 | CONVERT12_LINE2;
-    convert_star_4_to_sc12_item32_3<type, towire>(in0, in1, in2, in3, enable, output, scalar);
-}
-
 template <typename type, towire32_type towire>
 struct convert_star_1_to_sc12_item32_1 : public converter
 {
@@ -157,7 +140,8 @@ struct convert_star_1_to_sc12_item32_1 : public converter
             convert_star_4_to_sc12_item32_3<type, towire>(0, 0, input[0], input[1], enable, output[o++], _scalar);
             break;
         case 3:
-            convert_star_4_to_sc12_item32_3<type, towire>(0, input[0], input[1], input[2], output[o++], _scalar);
+            enable = CONVERT12_LINE2 | CONVERT12_LINE1 | CONVERT12_LINE0;
+            convert_star_4_to_sc12_item32_3<type, towire>(0, input[0], input[1], input[2], enable, output[o++], _scalar);
             break;
         }
         i += head_samps;
@@ -165,7 +149,7 @@ struct convert_star_1_to_sc12_item32_1 : public converter
         //convert the body
         while (i+3 < nsamps)
         {
-            convert_star_4_to_sc12_item32_3<type, towire>(input[i+0], input[i+1], input[i+2], input[i+3], output[o], _scalar);
+            convert_star_4_to_sc12_item32_3<type, towire>(input[i+0], input[i+1], input[i+2], input[i+3], CONVERT12_LINE_ALL, output[o], _scalar);
             o++; i += 4;
         }
 
@@ -184,7 +168,8 @@ struct convert_star_1_to_sc12_item32_1 : public converter
             convert_star_4_to_sc12_item32_3<type, towire>(input[i+0], input[i+1], 0, 0, enable, output[o], _scalar);
             break;
         case 3:
-            convert_star_4_to_sc12_item32_3<type, towire>(input[i+0], input[i+1], input[i+2], 0, output[o], _scalar);
+            enable = CONVERT12_LINE0 | CONVERT12_LINE1 | CONVERT12_LINE2;
+            convert_star_4_to_sc12_item32_3<type, towire>(input[i+0], input[i+1], input[i+2], 0, enable, output[o], _scalar);
             break;
         }
     }
