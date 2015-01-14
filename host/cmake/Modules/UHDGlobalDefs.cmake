@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011,2013-2014 Ettus Research LLC
+# Copyright 2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,29 +15,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-ADD_SUBDIRECTORY(transport)
-ADD_SUBDIRECTORY(types)
-ADD_SUBDIRECTORY(usrp)
-ADD_SUBDIRECTORY(usrp_clock)
-ADD_SUBDIRECTORY(utils)
+# This file sets up all the stuff for the config.h file
 
-CONFIGURE_FILE(
-    ${CMAKE_CURRENT_SOURCE_DIR}/version.hpp.in
-    ${CMAKE_CURRENT_BINARY_DIR}/version.hpp
-)
+INCLUDE(CheckCXXSymbolExists)
 
-UHD_INSTALL(FILES
-    config.hpp
-    convert.hpp
-    deprecated.hpp
-    device.hpp
-    device3.hpp
-    device_deprecated.ipp
-    exception.hpp
-    property_tree.ipp
-    property_tree.hpp
-    stream.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/version.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd
-    COMPONENT headers
-)
+## Check for std::log2
+CHECK_CXX_SYMBOL_EXISTS("log2" "cmath" HAVE_LOG2)
+
+## Macros for the version number
+MATH(EXPR UHD_VERSION_ADDED "10000 * ${TRIMMED_VERSION_MAJOR} + 100 * ${TRIMMED_VERSION_MINOR} + ${TRIMMED_VERSION_PATCH}")
+ADD_DEFINITIONS(-DUHD_VERSION=${UHD_VERSION_ADDED})
+
+## make sure the code knows about config.h
+ADD_DEFINITIONS(-DHAVE_CONFIG_H)

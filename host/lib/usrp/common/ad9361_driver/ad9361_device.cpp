@@ -1911,4 +1911,26 @@ void ad9361_device_t::data_port_loopback(const bool loopback_enabled)
     _io_iface->poke8(0x3F5, (loopback_enabled ? 0x01 : 0x00));
 }
 
+/* Read back the internal RSSI measurement data. The result is in dB
+ * but not in absolute units. If absolute units are required
+ * a bench calibration should be done.
+ * -0.25dB / bit 9bit resolution.*/
+double ad9361_device_t::get_rssi(chain_t chain)
+{
+    boost::uint32_t reg_rssi = 0;
+    boost::uint8_t lsb_bit_pos = 0;
+    if (chain == CHAIN_1) {
+        reg_rssi = 0x1A7;
+        lsb_bit_pos = 0;
+    }else {
+        reg_rssi = 0x1A9;
+        lsb_bit_pos = 1;
+    }
+    boost::uint8_t msbs = _io_iface->peek8(reg_rssi);
+    boost::uint8_t lsb = ((_io_iface->peek8(0x1AB)) >> lsb_bit_pos) & 0x01;
+    boost::uint16_t val = ((msbs << 1) | lsb);
+    double rssi = (-0.25f * ((double)val)); //-0.25dB/lsb (See Gain Control Users Guide p. 25)
+    return rssi;
+}
+
 }}

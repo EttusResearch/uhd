@@ -1143,7 +1143,7 @@ void e300_impl::_setup_radio(const size_t dspno)
         _tree->create<meta_range_t>(rf_fe_path / "freq" / "range")
             .publish(boost::bind(&ad9361_ctrl::get_rf_freq_range));
 
-        //setup antenna stuff
+        //setup RX related stuff
         if (key[0] == 'R') {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
@@ -1151,7 +1151,8 @@ void e300_impl::_setup_radio(const size_t dspno)
                 .subscribe(boost::bind(&e300_impl::_update_antenna_sel, this, dspno, _1))
                 .subscribe(boost::bind(&e300_impl::_update_atr_leds, this, _radio_perifs[dspno].leds, _1))
                 .set("RX2");
-
+            _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "rssi")
+                .publish(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key));
         }
         if (key[0] == 'T') {
             static const std::vector<std::string> ants(1, "TX/RX");

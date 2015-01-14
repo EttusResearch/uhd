@@ -1,5 +1,5 @@
 #
-# Copyright 2010 Ettus Research LLC
+# Copyright 2010,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,5 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/config.h
+)
 
 ADD_SUBDIRECTORY(uhd)

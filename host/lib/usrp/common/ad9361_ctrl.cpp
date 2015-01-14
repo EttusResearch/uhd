@@ -148,12 +148,21 @@ public:
         return _device.tune(direction, value);
     }
 
-    //! turn on/off Catalina's data port loopback
+    //! turn on/off data port loopback
     void data_port_loopback(const bool on)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
         _device.data_port_loopback(on);
+    }
+
+    //! read internal RSSI sensor
+    sensor_value_t get_rssi(const std::string &which)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::chain_t chain =_get_chain_from_antenna(which);
+        return sensor_value_t("RSSI", _device.get_rssi(chain), "dB");
     }
 
 private:
