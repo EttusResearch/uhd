@@ -42,6 +42,19 @@
         const input_type &inputs, const output_type &outputs, const size_t nsamps \
     )
 
+/*! Convenience macro to declare a single-function converter
+ *
+ * Most converters consist of a single for loop, and can make use of
+ * this macro for declaration and registering.
+ *
+ * Following this macro should be a function block in curly braces
+ * which runs the conversion. Available parameters in this function block
+ * are:
+ * - `inputs`: Vector of pointers to the input data. Size of the vector == `num_in`
+ * - `outputs`: Vector of pointers to where the output data goes. Size of the vector == `num_out`
+ * - `nsamps`: Number of items per input buffer to convert
+ * - `scale_factor`: Scaling factor for float conversions
+ */
 #define DECLARE_CONVERTER(in_form, num_in, out_form, num_out, prio) \
     _DECLARE_CONVERTER(__convert_##in_form##_##num_in##_##out_form##_##num_out##_##prio, in_form, num_in, out_form, num_out, prio)
 
