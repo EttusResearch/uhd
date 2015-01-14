@@ -149,6 +149,7 @@ private:
     void update_bandsel(const std::string& which, double freq);
     void update_antenna_sel(const size_t which, const std::string &ant);
     uhd::sensor_value_t get_ref_locked(void);
+    uhd::sensor_value_t get_fe_pll_locked(const bool is_tx);
 
     //perifs in the radio core
     struct radio_perifs_t

@@ -684,7 +684,9 @@ void b200_impl::setup_radio(const size_t dspno)
         const fs_path rf_fe_path = mb_path / "dboards" / "A" / (x+"_frontends") / (dspno? "B" : "A");
 
         _tree->create<std::string>(rf_fe_path / "name").set("FE-"+key);
-        _tree->create<int>(rf_fe_path / "sensors"); //empty TODO
+        _tree->create<int>(rf_fe_path / "sensors");
+        _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
+            .publish(boost::bind(&b200_impl::get_fe_pll_locked, this, x == "tx"));
         BOOST_FOREACH(const std::string &name, ad9361_ctrl::get_gain_names(key))
         {
             _tree->create<meta_range_t>(rf_fe_path / "gains" / name / "range")
@@ -1058,4 +1060,11 @@ sensor_value_t b200_impl::get_ref_locked(void)
 {
     const bool lock = (_local_ctrl->peek32(RB32_CORE_MISC) & 0x1) == 0x1;
     return sensor_value_t("Ref", lock, "locked", "unlocked");
+}
+
+sensor_value_t b200_impl::get_fe_pll_locked(const bool is_tx)
+{
+    const boost::uint32_t st = _local_ctrl->peek32(RB32_CORE_PLL);
+    const bool locked = is_tx ? st & 0x1 : st & 0x2;
+    return sensor_value_t("LO", locked, "locked", "unlocked");
 }

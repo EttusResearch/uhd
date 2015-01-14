@@ -32,6 +32,7 @@ localparam SR_CORE_PPS_SEL   = 48;
 localparam RB32_CORE_SPI     = 8;
 localparam RB32_CORE_MISC    = 16;
 localparam RB32_CORE_STATUS  = 20;
+localparam RB32_CORE_PLL     = 24;
 
 localparam SR_SPI       = 8;
 localparam SR_ATR       = 12;
