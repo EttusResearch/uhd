@@ -22,10 +22,10 @@
 #include <boost/cstdint.hpp>
 
 /*! \file byteswap.hpp
+ *
  * Provide fast byteswaping routines for 16, 32, and 64 bit integers,
  * by using the system's native routines/intrinsics when available.
  */
-
 namespace uhd{
 
     //! perform a byteswap on a 16 bit integer
@@ -44,9 +44,15 @@ namespace uhd{
     template<typename T> T htonx(T);
 
     //! worknet to host: short, long, or long-long
+    //
+    // The argument is assumed to be little-endian (i.e, the inverse
+    // of typical network endianness).
     template<typename T> T wtohx(T);
 
     //! host to worknet: short, long, or long-long
+    //
+    // The return value is little-endian (i.e, the inverse
+    // of typical network endianness).
     template<typename T> T htowx(T);
 
 } //namespace uhd
