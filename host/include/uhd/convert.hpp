@@ -46,7 +46,14 @@ namespace uhd{ namespace convert{
 
     private:
         //! Callable method: input vectors, output vectors, num samples
-        virtual void operator()(const input_type&, const output_type&, const size_t) = 0;
+        //
+        // This is the guts of the converter. When deriving new converter types,
+        // this is where the actual conversion routines go.
+        //
+        // \param in Pointers to the input buffers
+        // \param out Pointers to the output buffers
+        // \param num Number of items in the input buffers to convert
+        virtual void operator()(const input_type& in, const output_type& out, const size_t num) = 0;
     };
 
     //! Conversion factory function typedef
@@ -69,6 +76,9 @@ namespace uhd{ namespace convert{
 
     /*!
      * Register a converter function.
+     *
+     * Converters with higher priority are given preference.
+     *
      * \param id identify the conversion
      * \param fcn makes a new converter
      * \param prio the function priority

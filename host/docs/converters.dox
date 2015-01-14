@@ -1,0 +1,85 @@
+/*! \page page_converters Converters
+
+\section converters_overview Overview
+
+When streaming from device to host, the converter has a central role: It converts
+the sample (or streaming) data from a format the device understands to a format
+the user can deal with. During conversion, data is copied from the transport buffer
+to the buffer provided by the user (or vice versa). For zero-copy architectures,
+this means there are the fewest possible copies between the device transport and
+the user application.
+
+The conversion encompasses several elements. The most obvious is that of the data type:
+Most FPGAs use integer data types, the most common being complex 16-bit integers (16 bit
+for I and Q, respectively). If the user wants his data in float, the converter casts
+the data type, and also scales the data, typically such that the full dynamic range
+of the 16-Bit integers is mapped onto the float range of -1 to 1.
+The converter also handles the endianness: On the network, data is usually stored as
+big-endian, whereas most platforms store data internally as little-endian.
+
+The format used by the user application is coined the 'CPU Format', whereas the format
+used between the device and UHD is called the 'OTW Format' (*Over-the-wire* format).
+
+The most common combinations of OTW and CPU formats are shipped with UHD. If your
+application requires a more exotic CPU format, there is an API to register your own
+converters.
+
+\section converters_formats Formats and Converter Choice
+
+To obtain a list of names of data formats, see uhd::stream_args_t. This also provides
+an example for how to instantiate a streamer that uses `sc16` over the wire, and `fc32`
+as CPU format.
+
+Any pair of OTW and CPU formats can only be used if a converter was registered
+for that specific pair.
+
+\subsection converters_formats_internal Internal format strings
+
+The CPU format is always as defined by the host system, so for example `fc32` is always
+a `std::complex<float>`, whatever that is.
+
+For the OTW format, there are more subtleties to observe: On top of the actual
+data format, there are device-specific components to the OTW format, such as
+the endianness and the data encapsulation. Internally, the OTW format strings
+are thus more descriptive than the formats listed at uhd::stream_args_t::otw_format
+(i.e., the format types you can specify in the stream args).
+
+As an example, the N2x0 series encapsulates all data in 32-bit chunks, and
+always uses big-endian transport type. When using `sc16` over the wire, the
+internal format description would be `sc16_item32_be`, which describes all
+those elements. During a receive operation, UHD would instantiate a converter
+from `sc16_item32_be` to `fc32`. The same converter could not be used for the
+B2x0 series, for example, which uses little-endian transport format and would
+require a `sc16_item32_le` converter.
+
+\section converters_accel Hardware-specific Converters
+
+Given enough knowledge about the platform architecture, it is possible to
+have converters that use mechanisms to accelerate the conversion (e.g. chipset
+intrinsics). It is possible to register multiple converters for the same
+OTW/CPU format pair, and have UHD choose one depending on the current platform.
+
+\section converters_register Registering converters
+
+The converter architecture was designed to be dynamically extendable. If your
+application requires converters not shipped with UHD, they can be added from
+your application without having to modify UHD.
+Modifying UHD may be required, e.g. when adding new devices or functionality
+to UHD.
+
+\subsection converters_register_extra Outside of UHD
+
+Registering a converter from your application requires deriving
+from uhd::convert::converter and overriding all the pure virtual functions.
+
+Before any UHD operations are performed, this converter class needs to be
+registered by calling uhd::convert::converter::register_converter.
+
+\subsection converters_register_internal Inside UHD
+
+If the converters shipped with UHD need to be amended, new converter classes
+should be added to `lib/convert`. Use the DECLARE_CONVERTER convenience macro
+where possible. See this directory for examples.
+
+*/
+// vim:ft=doxygen:

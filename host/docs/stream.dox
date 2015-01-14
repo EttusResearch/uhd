@@ -49,8 +49,7 @@ at the expense of precision, **complex-int8** may be used.
 The user may request arbitrary combinations of host and link data types;
 however, not all combinations are supported. The user may register
 custom data type formats and conversion routines. See
-convert.hpp for further documentation.
+convert.hpp and \ref page_converters for further documentation.
 
-TODO: provide example of convert API
 */
 // vim:ft=doxygen:
