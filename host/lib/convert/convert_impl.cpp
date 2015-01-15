@@ -43,11 +43,20 @@ bool convert::operator==(const convert::id_type &lhs, const convert::id_type &rh
 std::string convert::id_type::to_pp_string(void) const{
     return str(boost::format(
         "conversion ID\n"
-        "  Input format: %s\n"
-        "  Num inputs: %d\n"
+        "  Input format:  %s\n"
+        "  Num inputs:    %d\n"
         "  Output format: %s\n"
-        "  Num outputs: %d\n"
+        "  Num outputs:   %d\n"
     )
+        % this->input_format
+        % this->num_inputs
+        % this->output_format
+        % this->num_outputs
+    );
+}
+
+std::string convert::id_type::to_string(void) const{
+    return str(boost::format("%s (%d) -> %s (%d)")
         % this->input_format
         % this->num_inputs
         % this->output_format
