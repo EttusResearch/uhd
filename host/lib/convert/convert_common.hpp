@@ -86,6 +86,7 @@ typedef float                        f32_t;
 typedef boost::int32_t               s32_t;
 typedef boost::int16_t               s16_t;
 typedef boost::int8_t                s8_t;
+typedef boost::uint8_t               u8_t;
 
 typedef boost::uint32_t              item32_t;
 

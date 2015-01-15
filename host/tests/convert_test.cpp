@@ -415,3 +415,43 @@ BOOST_AUTO_TEST_CASE(test_convert_types_sc16_and_sc8){
         test_convert_types_sc16(nsamps, id, 256);
     }
 }
+
+/***********************************************************************
+ * Test short conversion
+ **********************************************************************/
+static void test_convert_types_u8(
+    size_t nsamps, convert::id_type &id
+){
+    //fill the input samples
+    std::vector<boost::uint8_t> input(nsamps), output(nsamps);
+    //BOOST_FOREACH(boost::uint8_t &in, input) in = boost::uint8_t(std::rand() & 0xFF);
+    boost::uint32_t d = 48;
+    BOOST_FOREACH(boost::uint8_t &in, input) in = d++;
+
+    //run the loopback and test
+    convert::id_type in_id = id;
+    convert::id_type out_id = id;
+    std::swap(out_id.input_format, out_id.output_format);
+    std::swap(out_id.num_inputs, out_id.num_outputs);
+    loopback(nsamps, in_id, out_id, input, output);
+    BOOST_CHECK_EQUAL_COLLECTIONS(input.begin(), input.end(), output.begin(), output.end());
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_u8_and_u8){
+    convert::id_type id;
+    id.input_format = "u8";
+    id.num_inputs = 1;
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    id.output_format = "u8_item32_le";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_u8(nsamps, id);
+    }
+
+    //try various lengths to test edge cases
+    id.output_format = "u8_item32_be";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_u8(nsamps, id);
+    }
+}
