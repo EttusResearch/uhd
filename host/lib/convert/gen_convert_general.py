@@ -26,26 +26,79 @@ TMPL_HEADER = """
 \#include <uhd/utils/byteswap.hpp>
 
 using namespace uhd::convert;
+
+
+// item32 -> item32: Just a memcpy. No scaling possible.
+DECLARE_CONVERTER(item32, 1, item32, 1, PRIORITY_GENERAL) {
+    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
+    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+
+    memcpy(output, input, nsamps * sizeof(item32_t));
+}
 """
 
 TMPL_CONV_GEN2_ITEM32 = """
-DECLARE_CONVERTER(item32, 1, sc16_item32_$(end), 1, PRIORITY_GENERAL){
+DECLARE_CONVERTER(item32, 1, sc16_item32_{end}, 1, PRIORITY_GENERAL) {{
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
-    for (size_t i = 0; i < nsamps; i++){
-        output[i] = $(to_wire)(input[i]);
-    }
-}
+    for (size_t i = 0; i < nsamps; i++) {{
+        output[i] = {to_wire}(input[i]);
+    }}
+}}
 
-DECLARE_CONVERTER(sc16_item32_$(end), 1, item32, 1, PRIORITY_GENERAL){
+DECLARE_CONVERTER(sc16_item32_{end}, 1, item32, 1, PRIORITY_GENERAL) {{
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
-    for (size_t i = 0; i < nsamps; i++){
-        output[i] = $(to_host)(input[i]);
-    }
-}
+    for (size_t i = 0; i < nsamps; i++) {{
+        output[i] = {to_host}(input[i]);
+    }}
+}}
+"""
+
+TMPL_CONV_U8 = """
+DECLARE_CONVERTER(u8, 1, u8_item32_{end}, 1, PRIORITY_GENERAL) {{
+    const boost::uint32_t *input = reinterpret_cast<const boost::uint32_t *>(inputs[0]);
+    boost::uint32_t *output = reinterpret_cast<boost::uint32_t *>(outputs[0]);
+
+    // 1) Copy all the 4-byte tuples
+    size_t n_words = nsamps / 4;
+    for (size_t i = 0; i < n_words; i++) {{
+        output[i] = {to_wire}(input[i]);
+    }}
+    // 2) If nsamps was not a multiple of 4, copy the rest by hand
+    size_t bytes_left = nsamps % 4;
+    if (bytes_left) {{
+        const u8_t *last_input_word  = reinterpret_cast<const u8_t *>(&input[n_words]);
+        u8_t *last_output_word = reinterpret_cast<u8_t *>(&output[n_words]);
+        for (size_t k = 0; k < bytes_left; k++) {{
+            last_output_word[k] = last_input_word[k];
+        }}
+        output[n_words] = {to_wire}(output[n_words]);
+    }}
+}}
+
+DECLARE_CONVERTER(u8_item32_{end}, 1, u8, 1, PRIORITY_GENERAL) {{
+    const boost::uint32_t *input = reinterpret_cast<const boost::uint32_t *>(inputs[0]);
+    boost::uint32_t *output = reinterpret_cast<boost::uint32_t *>(outputs[0]);
+
+    // 1) Copy all the 4-byte tuples
+    size_t n_words = nsamps / 4;
+    for (size_t i = 0; i < n_words; i++) {{
+        output[i] = {to_host}(input[i]);
+    }}
+    // 2) If nsamps was not a multiple of 4, copy the rest by hand
+    size_t bytes_left = nsamps % 4;
+    if (bytes_left) {{
+        boost::uint32_t last_input_word = {to_host}(input[n_words]);
+        const u8_t *last_input_word_ptr = reinterpret_cast<const u8_t *>(&last_input_word);
+        u8_t *last_output_word = reinterpret_cast<u8_t *>(&output[n_words]);
+        for (size_t k = 0; k < bytes_left; k++) {{
+            last_output_word[k] = last_input_word_ptr[k];
+        }}
+    }}
+}}
 """
 
 TMPL_CONV_USRP1_COMPLEX = """
@@ -114,12 +167,19 @@ if __name__ == '__main__':
         ('be', 'uhd::ntohx', 'uhd::htonx'),
         ('le', 'uhd::wtohx', 'uhd::htowx'),
     ):
-        output += parse_tmpl(
-                TMPL_CONV_GEN2_ITEM32,
+        output += TMPL_CONV_GEN2_ITEM32.format(
                 end=end, to_host=to_host, to_wire=to_wire
-            )
+        )
+    #generate raw (u8) converters:
+    for end, to_host, to_wire in (
+        ('be', 'uhd::ntohx', 'uhd::htonx'),
+        ('le', 'uhd::wtohx', 'uhd::htowx'),
+    ):
+        output += TMPL_CONV_U8.format(
+                end=end, to_host=to_host, to_wire=to_wire
+        )
 
-    #generate complex converters for usrp1 format
+    #generate complex converters for usrp1 format (requires Cheetah)
     for width in 1, 2, 4:
         for cpu_type, do_scale in (
             ('fc64', '*scale_factor'),
