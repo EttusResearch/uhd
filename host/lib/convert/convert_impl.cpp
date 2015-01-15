@@ -101,13 +101,28 @@ convert::function_type convert::get_converter(
     //find a matching priority
     priority_type best_prio = -1;
     BOOST_FOREACH(priority_type prio_i, get_table()[id].keys()){
-        if (prio_i == prio) return get_table()[id][prio];
+        if (prio_i == prio) {
+            //----------------------------------------------------------------//
+            UHD_LOGV(always) << "get_converter: For converter ID: " << id.to_pp_string() << std::endl
+                << "Using prio: " << prio << std::endl
+                << std::endl
+            ;
+            //----------------------------------------------------------------//
+            return get_table()[id][prio];
+        }
         best_prio = std::max(best_prio, prio_i);
     }
 
     //wanted a specific prio, didnt find
     if (prio != -1) throw uhd::key_error(
         "Cannot find a conversion routine [with prio] for " + id.to_pp_string());
+
+    //----------------------------------------------------------------//
+    UHD_LOGV(always) << "get_converter: For converter ID: " << id.to_pp_string() << std::endl
+        << "Using prio: " << best_prio << std::endl
+        << std::endl
+    ;
+    //----------------------------------------------------------------//
 
     //otherwise, return best prio
     return get_table()[id][best_prio];
