@@ -1872,10 +1872,10 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
             gain_index = 0;
 
         if (chain == CHAIN_1) {
-            _rx1_gain = boost::uint32_t(value);
+            _rx1_gain = value;
             _io_iface->poke8(0x109, gain_index);
         } else {
-            _rx2_gain = boost::uint32_t(value);
+            _rx2_gain = value;
             _io_iface->poke8(0x10c, gain_index);
         }
 
@@ -1888,15 +1888,19 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
 
         /* Each gain step is -0.25dB. Calculate the attenuation necessary
          * for the requested gain, convert it into gain steps, then write
-         * the attenuation word. Max gain (so zero attenuation) is 89.75. */
+         * the attenuation word. Max gain (so zero attenuation) is 89.75.
+         * Ugly values will be written to the attenuation registers if
+         * "value" is out of bounds, so range checking must be performed
+         * outside this function.
+         */
         double atten = AD9361_MAX_GAIN - value;
         boost::uint32_t attenreg = boost::uint32_t(atten * 4);
         if (chain == CHAIN_1) {
-            _tx1_gain = boost::uint32_t(value);
+            _tx1_gain = value;
             _io_iface->poke8(0x073, attenreg & 0xFF);
             _io_iface->poke8(0x074, (attenreg >> 8) & 0x01);
         } else {
-            _tx2_gain = boost::uint32_t(value);
+            _tx2_gain = value;
             _io_iface->poke8(0x075, attenreg & 0xFF);
             _io_iface->poke8(0x076, (attenreg >> 8) & 0x01);
         }
