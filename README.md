@@ -1,9 +1,24 @@
-USRP Hardware Driver (UHD™) Software
+USRP Hardware Driver (UHD™) - Spire Version!
 ========================================
 
-Welcome to the UHD™ software distribution! UHD is the free & open-source
-software driver and API for the Universal Software Radio Peripheral (USRP™) SDR
-platform, created and sold by Ettus Research.
+This is a Spire fork of the UHD project made mostly to enforce internal
+versioning and build procedures.  Little, if any, internal code has been
+modified.
+
+## How to build UHD (debian package):
+
+```
+sudo apt-get install libboost1.48-all-dev
+mkdir -p uhd/host/build
+cd uhd/host/build
+cmake ..
+make
+cpack
+./build.sh
+```
+
+UHD is the free & open-source software driver and API for the Universal Software
+Radio Peripheral (USRP™) SDR platform, created and sold by Ettus Research.
 
 UHD supports all Ettus Research USRP™ hardware, including all motherboards and
 daughterboards, and the combinations thereof.

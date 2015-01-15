@@ -111,9 +111,9 @@ ENDIF()
 ########################################################################
 # Setup CPack General
 ########################################################################
-SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - USRP Hardware Driver")
-SET(CPACK_PACKAGE_VENDOR              "Ettus Research LLC")
-SET(CPACK_PACKAGE_CONTACT             "Ettus Research <support@ettus.com>")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Spire Fork of Ettus Research's USRP Hardware Driver")
+SET(CPACK_PACKAGE_VENDOR              "Spire")
+SET(CPACK_PACKAGE_CONTACT             "Spire <jint@spire.com>")
 SET(CPACK_PACKAGE_VERSION "${UHD_VERSION}")
 SET(CPACK_RESOURCE_FILE_WELCOME ${CMAKE_SOURCE_DIR}/README.md)
 SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
@@ -165,7 +165,7 @@ SET(CPACK_COMPONENTS_ALL libraries headers utilities examples manual doxygen rea
 ########################################################################
 # Setup CPack Debian
 ########################################################################
-SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev")
+SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost1.48-all-dev")
 SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
 FOREACH(filename preinst postinst prerm postrm)
     LIST(APPEND CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_BINARY_DIR}/debian/${filename})
