@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,82 +41,77 @@ typedef std::complex<float> samp_type;
  * Constants
  **********************************************************************/
 static const double tau = 6.28318531;
-static const size_t wave_table_len = 8192;
+static const size_t wave_table_len = 65536;
 static const size_t num_search_steps = 5;
-static const size_t num_search_iters = 7;
+static const double default_precision = 0.0001;
 static const double default_freq_step = 7.3e6;
-static const size_t default_num_samps = 10000;
+static const size_t default_fft_bin_size = 1000;
 
 /***********************************************************************
  * Set standard defaults for devices
  **********************************************************************/
-static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp){
+static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
+{
     uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
     // Will work on 1st subdev, top-level must make sure it's the right one
     uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
 
     const uhd::fs_path mb_path = "/mboards/0";
     const std::string mb_name = tree->access<std::string>(mb_path / "name").get();
-    if (mb_name.find("USRP2") != std::string::npos or mb_name.find("N200") != std::string::npos or mb_name.find("N210") != std::string::npos  or mb_name.find("X300") != std::string::npos  or mb_name.find("X310") != std::string::npos){
+    if (mb_name.find("USRP2") != std::string::npos or
+        mb_name.find("N200") != std::string::npos or
+        mb_name.find("N210") != std::string::npos or
+        mb_name.find("X300") != std::string::npos or
+        mb_name.find("X310") != std::string::npos)
+    {
         usrp->set_tx_rate(12.5e6);
         usrp->set_rx_rate(12.5e6);
     }
-    else if (mb_name.find("B100") != std::string::npos){
+    else if (mb_name.find("B100") != std::string::npos)
+    {
         usrp->set_tx_rate(4e6);
         usrp->set_rx_rate(4e6);
     }
-    else if (mb_name.find("E100") != std::string::npos or mb_name.find("E110") != std::string::npos){
+    else if (mb_name.find("E100") != std::string::npos or mb_name.find("E110") != std::string::npos)
+    {
         usrp->set_tx_rate(4e6);
         usrp->set_rx_rate(8e6);
     }
-    else{
-        throw std::runtime_error("self-calibration is not supported for this hardware");
+    else
+    {
+        throw std::runtime_error("self-calibration is not supported for this device");
     }
 
     const uhd::fs_path tx_fe_path = "/mboards/0/dboards/" + subdev_spec[0].db_name + "/tx_frontends/0";
     const std::string tx_name = tree->access<std::string>(tx_fe_path / "name").get();
-    if (tx_name.find("WBX") != std::string::npos){
-        usrp->set_tx_gain(0);
+    if (tx_name.find("WBX") == std::string::npos and
+        tx_name.find("SBX") == std::string::npos and
+        tx_name.find("CBX") == std::string::npos and
+        tx_name.find("RFX") == std::string::npos
+        )
+    {
+        throw std::runtime_error("self-calibration is not supported for this TX dboard");
     }
-    else if (tx_name.find("SBX") != std::string::npos){
-        usrp->set_tx_gain(0);
-    }
-    else if (tx_name.find("CBX") != std::string::npos){
-        usrp->set_tx_gain(0);
-    }
-    else if (tx_name.find("RFX") != std::string::npos){
-        usrp->set_tx_gain(0);
-    }
-    else{
-        throw std::runtime_error("self-calibration is not supported for this hardware");
-    }
+    usrp->set_tx_gain(0);
 
     const uhd::fs_path rx_fe_path = "/mboards/0/dboards/" + subdev_spec[0].db_name + "/rx_frontends/0";
     const std::string rx_name = tree->access<std::string>(rx_fe_path / "name").get();
-    if (rx_name.find("WBX") != std::string::npos){
-        usrp->set_rx_gain(25);
+    if (rx_name.find("WBX") == std::string::npos and
+        rx_name.find("SBX") == std::string::npos and
+        rx_name.find("CBX") == std::string::npos and
+        rx_name.find("RFX") == std::string::npos
+        )
+    {
+        throw std::runtime_error("self-calibration is not supported for this RX dboard");
     }
-    else if (rx_name.find("SBX") != std::string::npos){
-        usrp->set_rx_gain(25);
-    }
-    else if (rx_name.find("CBX") != std::string::npos){
-        usrp->set_rx_gain(25);
-    }
-    else if (rx_name.find("RFX") != std::string::npos){
-        usrp->set_rx_gain(25);
-    }
-    else{
-        throw std::runtime_error("self-calibration is not supported for this hardware");
-    }
-
+    usrp->set_rx_gain(0);
 }
 
 /***********************************************************************
  * Check for empty serial
  **********************************************************************/
-void check_for_empty_serial(
-    uhd::usrp::multi_usrp::sptr usrp
-){
+void check_for_empty_serial(uhd::usrp::multi_usrp::sptr usrp)
+{
     // Will work on 1st subdev, top-level must make sure it's the right one
     uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
 
@@ -127,22 +122,25 @@ void check_for_empty_serial(
     const uhd::usrp::dboard_eeprom_t db_eeprom = tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
 
     std::string error_string = "This dboard has no serial!\n\nPlease see the Calibration documentation for details on how to fix this.";
-    if (db_eeprom.serial.empty()) throw std::runtime_error(error_string);
+    if (db_eeprom.serial.empty())
+        throw std::runtime_error(error_string);
 }
 
 /***********************************************************************
  * Sinusoid wave table
  **********************************************************************/
-class wave_table{
+class wave_table
+{
 public:
-    wave_table(const double ampl){
+    wave_table(const double ampl)
+    {
         _table.resize(wave_table_len);
-        for (size_t i = 0; i < wave_table_len; i++){
+        for (size_t i = 0; i < wave_table_len; i++)
             _table[i] = samp_type(std::polar(ampl, (tau*i)/wave_table_len));
-        }
     }
 
-    inline samp_type operator()(const size_t index) const{
+    inline samp_type operator()(const size_t index) const
+    {
         return _table[index % wave_table_len];
     }
 
@@ -154,15 +152,14 @@ private:
  * Compute power of a tone
  **********************************************************************/
 static inline double compute_tone_dbrms(
-    const std::vector<samp_type > &samples,
-    const double freq //freq is fractional
-){
+    const std::vector<samp_type> &samples,
+    const double freq)  //freq is fractional
+{
     //shift the samples so the tone at freq is down at DC
     //and average the samples to measure the DC component
     samp_type average = 0;
-    for (size_t i = 0; i < samples.size(); i++){
+    for (size_t i = 0; i < samples.size(); i++)
         average += samp_type(std::polar(1.0, -freq*tau*i)) * samples[i];
-    }
 
     return 20*std::log10(std::abs(average/float(samples.size())));
 }
@@ -171,8 +168,8 @@ static inline double compute_tone_dbrms(
  * Write a dat file
  **********************************************************************/
 static inline void write_samples_to_file(
-    const std::vector<samp_type > &samples, const std::string &file
-){
+    const std::vector<samp_type > &samples, const std::string &file)
+{
     std::ofstream outfile(file.c_str(), std::ofstream::binary);
     outfile.write((const char*)&samples.front(), samples.size()*sizeof(samp_type));
     outfile.close();
@@ -184,8 +181,8 @@ static inline void write_samples_to_file(
  **********************************************************************/
 static std::string get_serial(
     uhd::usrp::multi_usrp::sptr usrp,
-    const std::string &tx_rx
-){
+    const std::string &tx_rx)
+{
     uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
     // Will work on 1st subdev, top-level must make sure it's the right one
     uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
@@ -202,17 +199,16 @@ static void store_results(
     const std::string &XX, // "TX" or "RX"
     const std::string &xx, // "tx" or "rx"
     const std::string &what, // Type of test, e.g. "iq",
-    const std::string &serial
-){
+    const std::string &serial)
+{
     //make the calibration file path
     fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd";
     fs::create_directory(cal_data_path);
     cal_data_path = cal_data_path / "cal";
     fs::create_directory(cal_data_path);
     cal_data_path = cal_data_path / str(boost::format("%s_%s_cal_v0.2_%s.csv") % xx % what % serial);
-    if (fs::exists(cal_data_path)){
+    if (fs::exists(cal_data_path))
         fs::rename(cal_data_path, cal_data_path.string() + str(boost::format(".%d") % time(NULL)));
-    }
 
     //fill the calibration file
     std::ofstream cal_data(cal_data_path.string().c_str());
@@ -223,7 +219,8 @@ static void store_results(
     cal_data << boost::format("DATA STARTS HERE\n");
     cal_data << "lo_frequency, correction_real, correction_imag, measured, delta\n";
 
-    for (size_t i = 0; i < results.size(); i++){
+    for (size_t i = 0; i < results.size(); i++)
+    {
         cal_data
             << results[i].freq << ", "
             << results[i].real_corr << ", "
@@ -243,31 +240,50 @@ static void capture_samples(
     uhd::usrp::multi_usrp::sptr usrp,
     uhd::rx_streamer::sptr rx_stream,
     std::vector<samp_type > &buff,
-    const size_t nsamps_requested
-){
+    const size_t nsamps_requested)
+{
     buff.resize(nsamps_requested);
     uhd::rx_metadata_t md;
 
+    // Right after the stream is started, there will be transient data.
+    // That transient data is discarded and only "good" samples are returned.
+    size_t nsamps_to_discard = usrp->get_rx_rate() * 0.001; // 1ms to be discarded
+    std::vector<samp_type> discard_buff(nsamps_to_discard);
+
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-    stream_cmd.num_samps = buff.size();
+    stream_cmd.num_samps = buff.size() + nsamps_to_discard;
     stream_cmd.stream_now = true;
     usrp->issue_stream_cmd(stream_cmd);
-    const size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md);
+    size_t num_rx_samps = 0;
 
-    //validate the received data
-    if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
+    // Discard the transient samples.
+    rx_stream->recv(&discard_buff.front(), discard_buff.size(), md);
+    if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE)
+    {
         throw std::runtime_error(str(boost::format(
             "Receiver error: %s"
         ) % md.strerror()));
     }
+
+    // Now capture the data we want
+    num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md);
+
+    //validate the received data
+    if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE)
+    {
+        throw std::runtime_error(str(boost::format(
+            "Receiver error: %s"
+        ) % md.strerror()));
+    }
+
     //we can live if all the data didnt come in
-    if (num_rx_samps > buff.size()/2){
+    if (num_rx_samps > buff.size()/2)
+    {
         buff.resize(num_rx_samps);
         return;
     }
-    if (num_rx_samps != buff.size()){
+    if (num_rx_samps != buff.size())
         throw std::runtime_error("did not get all the samples requested");
-    }
 }
 
 /***********************************************************************
@@ -280,7 +296,8 @@ static uhd::usrp::multi_usrp::sptr setup_usrp_for_cal(std::string &args, std::st
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
     // Configure subdev
-    if (!subdev.empty()) {
+    if (!subdev.empty())
+    {
         usrp->set_tx_subdev_spec(subdev);
         usrp->set_rx_subdev_spec(subdev);
     }
@@ -289,9 +306,8 @@ static uhd::usrp::multi_usrp::sptr setup_usrp_for_cal(std::string &args, std::st
     UHD_MSG(status) << "Daughterboard serial: " << serial << std::endl;
 
     //set the antennas to cal
-    if (not uhd::has(usrp->get_rx_antennas(), "CAL") or not uhd::has(usrp->get_tx_antennas(), "CAL")){
+    if (not uhd::has(usrp->get_rx_antennas(), "CAL") or not uhd::has(usrp->get_tx_antennas(), "CAL"))
         throw std::runtime_error("This board does not have the CAL antenna option, cannot self-calibrate.");
-    }
     usrp->set_rx_antenna("CAL");
     usrp->set_tx_antenna("CAL");
 
@@ -302,5 +318,74 @@ static uhd::usrp::multi_usrp::sptr setup_usrp_for_cal(std::string &args, std::st
     set_optimum_defaults(usrp);
 
     return usrp;
+}
+
+/***********************************************************************
+ * Function to find optimal RX gain setting (for the current frequency)
+ **********************************************************************/
+UHD_INLINE void set_optimal_rx_gain(
+    uhd::usrp::multi_usrp::sptr usrp,
+    uhd::rx_streamer::sptr rx_stream,
+    double wave_freq = 0.0)
+{
+    const double gain_step = 3.0;
+    const double gain_compression_threshold = gain_step * 0.5;
+    const double actual_rx_rate = usrp->get_rx_rate();
+    const double actual_tx_freq = usrp->get_tx_freq();
+    const double actual_rx_freq = usrp->get_rx_freq();
+    const double bb_tone_freq = actual_tx_freq - actual_rx_freq + wave_freq;
+    const size_t nsamps = size_t(actual_rx_rate / default_fft_bin_size);
+
+    std::vector<samp_type> buff(nsamps);
+    uhd::gain_range_t rx_gain_range = usrp->get_rx_gain_range();
+    double rx_gain = rx_gain_range.start() + gain_step;
+    double curr_dbrms = 0.0;
+    double prev_dbrms = 0.0;
+    double delta = 0.0;
+
+    // No sense in setting the gain where this is no gain range
+    if (rx_gain_range.stop() - rx_gain_range.start() < gain_step)
+        return;
+
+    // The algorithm below cycles through the RX gain range
+    // looking for the point where the signal begins to get
+    // clipped and the gain begins to be compressed.  It does
+    // this by looking for the gain setting where the increase
+    // in the tone is less than the gain step by more than the
+    // gain compression threshold (curr - prev < gain - threshold).
+
+    // Initialize prev_dbrms value
+    usrp->set_rx_gain(rx_gain);
+    capture_samples(usrp, rx_stream, buff, nsamps);
+    prev_dbrms = compute_tone_dbrms(buff, bb_tone_freq/actual_rx_rate);
+    rx_gain += gain_step;
+
+    // Find RX gain where signal begins to clip
+    while (rx_gain <= rx_gain_range.stop())
+    {
+        usrp->set_rx_gain(rx_gain);
+        capture_samples(usrp, rx_stream, buff, nsamps);
+        curr_dbrms = compute_tone_dbrms(buff, bb_tone_freq/actual_rx_rate);
+        delta = curr_dbrms - prev_dbrms;
+
+        // check if the gain is compressed beyone the threshold
+        if (delta < gain_step - gain_compression_threshold)
+            break;  // if so, we are done
+
+        prev_dbrms = curr_dbrms;
+        rx_gain += gain_step;
+    }
+
+    // The rx_gain value at this point is the gain setting where clipping
+    // occurs or the gain setting that is just beyond the gain range.
+    // The gain is reduced by 2 steps to make sure it is within the range and
+    // under the point where it is clipped with enough room to make adjustments.
+    rx_gain -= 2 * gain_step;
+
+    // Make sure the gain is within the range.
+    rx_gain = rx_gain_range.clip(rx_gain);
+
+    // Finally, set the gain.
+    usrp->set_rx_gain(rx_gain);
 }
 
