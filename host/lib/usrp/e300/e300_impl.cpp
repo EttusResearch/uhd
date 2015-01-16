@@ -681,35 +681,6 @@ double e300_impl::_set_tick_rate(const double rate)
     return _tick_rate;
 }
 
-void e300_impl::_load_fpga_image(const std::string &path)
-{
-    if (not fs::exists("/dev/xdevcfg"))
-    {
-        ::system("mknod /dev/xdevcfg c 259 0");
-        //throw uhd::runtime_error("no xdevcfg, please run: mknod /dev/xdevcfg c 259 0");
-    }
-
-    UHD_MSG(status) << "Loading FPGA image: " << path << "..." << std::flush;
-
-    std::ifstream fpga_file(path.c_str(), std::ios_base::binary);
-    UHD_ASSERT_THROW(fpga_file.good());
-
-    std::FILE *wfile;
-    wfile = std::fopen("/dev/xdevcfg", "wb");
-    UHD_ASSERT_THROW(!(wfile == NULL));
-
-    char buff[16384]; // devcfg driver can't handle huge writes
-    do {
-        fpga_file.read(buff, sizeof(buff));
-        std::fwrite(buff, 1, fpga_file.gcount(), wfile);
-    } while (fpga_file);
-
-    fpga_file.close();
-    std::fclose(wfile);
-
-    UHD_MSG(status) << " done" << std::endl;
-}
-
 void e300_impl::_register_loopback_self_test(wb_iface::sptr iface)
 {
     bool test_fail = false;

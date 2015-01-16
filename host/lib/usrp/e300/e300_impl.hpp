@@ -194,8 +194,6 @@ private: // types
     };
 
 private: // methods
-    void _load_fpga_image(const std::string &path);
-
     void _register_loopback_self_test(uhd::wb_iface::sptr iface);
 
     boost::uint32_t _get_version(compat_t which);
