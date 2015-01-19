@@ -74,7 +74,7 @@ public:
 private:    //Methods
     void _program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs);
     void _setup_tx_fir(size_t num_taps, boost::int32_t interpolation);
-    void _setup_rx_fir(size_t num_taps, boost::int32_t interpolation);
+    void _setup_rx_fir(size_t num_taps, boost::int32_t decimation);
     void _calibrate_lock_bbpll();
     void _calibrate_synth_charge_pumps();
     double _calibrate_baseband_rx_analog_filter();
