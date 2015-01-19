@@ -22,6 +22,7 @@ UHD_INSTALL(FILES
     dict.ipp
     dict.hpp
     direction.hpp
+    endianness.hpp
     io_type.hpp
     mac_addr.hpp
     metadata.hpp
