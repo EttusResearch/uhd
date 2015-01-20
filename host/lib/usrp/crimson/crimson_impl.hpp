@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Per Vices Corporation
+// Copyright 2014-2015 Per Vices Corporation
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -71,6 +71,7 @@ public:
     ~crimson_impl(void);
 
     // pointers to the streams for the device
+    // these functions are defined in io_impl.cpp
     virtual uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args);
     virtual uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
 

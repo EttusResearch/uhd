@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Per Vices Corporation
+// Copyright 2014-2015 Per Vices Corporation
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -416,6 +416,12 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
     // Link max rate refers to ethernet link rate
     TREE_CREATE_RW(mb_path / "link_max_rate", "fpga/link/rate", double, _double);
 
+    // SFP settings
+    TREE_CREATE_RW(mb_path / "sfpa" / "link_ip",     "fpga/link/sfpa/ip_addr", std::string, _string);
+    TREE_CREATE_RW(mb_path / "sfpa" / "link_paylen", "fpga/link/sfpa/pay_len", std::string, _string);
+    TREE_CREATE_RW(mb_path / "sfpb" / "link_ip",     "fpga/link/sfpb/ip_addr", std::string, _string);
+    TREE_CREATE_RW(mb_path / "sfpb" / "link_paylen", "fpga/link/sfpb/pay_len", std::string, _string);
+
     // This is the master clock rate
     TREE_CREATE_RW(mb_path / "tick_rate", "time/clk/rate", double, _double);
 
@@ -443,11 +449,13 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 
 	const fs_path rx_codec_path = mb_path / "rx_codecs" / num;
 	const fs_path tx_codec_path = mb_path / "tx_codecs" / num;
-	const fs_path rx_fe_path = mb_path / "dboards" / num / "rx_frontends" / chan;
-	const fs_path tx_fe_path = mb_path / "dboards" / num / "tx_frontends" / chan;
-	const fs_path db_path = mb_path / "dboards" / num;
-	const fs_path rx_dsp_path = mb_path / "rx_dsps" / chan;
-	const fs_path tx_dsp_path = mb_path / "tx_dsps" / chan;
+	const fs_path rx_fe_path    = mb_path / "dboards" / num / "rx_frontends" / chan;
+	const fs_path tx_fe_path    = mb_path / "dboards" / num / "tx_frontends" / chan;
+	const fs_path db_path       = mb_path / "dboards" / num;
+	const fs_path rx_dsp_path   = mb_path / "rx_dsps" / chan;
+	const fs_path tx_dsp_path   = mb_path / "tx_dsps" / chan;
+	const fs_path rx_link_path  = mb_path / "rx_link" / chan;
+	const fs_path tx_link_path  = mb_path / "tx_link" / chan;
 
         static const std::vector<std::string> antenna_options = boost::assign::list_of("SMA")("None");
         _tree->create<std::vector<std::string> >(rx_fe_path / "antenna" / "options").set(antenna_options);
@@ -460,6 +468,10 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	// Actual frequency values
 	TREE_CREATE_RW(rx_path / chan / "freq" / "value", "rx_"+lc_num+"/rf/freq/val", double, _double);
 	TREE_CREATE_RW(tx_path / chan / "freq" / "value", "tx_"+lc_num+"/rf/freq/val", double, _double);
+
+	// Power status
+	TREE_CREATE_RW(rx_path / chan / "pwr", "rx_"+lc_num+"/pwr", std::string, _string);
+	TREE_CREATE_RW(tx_path / chan / "pwr", "tx_"+lc_num+"/pwr", std::string, _string);
 
 	// Codecs, phony properties for Crimson
 	TREE_CREATE_RW(rx_codec_path / "gains", "rx_"+lc_num+"/dsp/gain", int, _int);
@@ -522,6 +534,14 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	TREE_CREATE_RW(tx_dsp_path / "rate" / "value", "tx_"+lc_num+"/dsp/rate", double, _double);
 	TREE_CREATE_RW(tx_dsp_path / "freq" / "value", "tx_"+lc_num+"/dsp/freq", double, _double);
 	TREE_CREATE_RW(tx_dsp_path / "bw" / "value",   "tx_"+lc_num+"/dsp/rate", double, _double);
+
+	// Link settings
+	TREE_CREATE_RW(rx_link_path / "ip_dest", "rx_"+lc_num+"/link/ip_dest", std::string, _string);
+	TREE_CREATE_RW(rx_link_path / "port",    "rx_"+lc_num+"/link/port",    std::string, _string);
+	TREE_CREATE_RW(rx_link_path / "iface",   "rx_"+lc_num+"/link/iface",   std::string, _string);
+
+	TREE_CREATE_RW(tx_link_path / "port",    "tx_"+lc_num+"/link/port",    std::string, _string);
+	TREE_CREATE_RW(tx_link_path / "iface",   "tx_"+lc_num+"/link/iface",   std::string, _string);
     }
 }
 

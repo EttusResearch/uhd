@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2014-2015 Per Vices
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -44,9 +44,33 @@ static long time_stamp = 0;
 
 class crimson_rx_streamer : public uhd::rx_streamer {
 public:
-	crimson_rx_streamer(device_addr_t addr) {
-		_iface = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
-    			addr["addr"], BOOST_STRINGIZE(CRIMSON_SFP0_STREAM_UDP_PORT)) );
+	crimson_rx_streamer(device_addr_t addr, property_tree::sptr tree) {
+		// save the tree
+		_tree = tree;
+
+		// get the property root path
+		const fs_path mb_path   = "/mboards/0";
+		const fs_path prop_path = mb_path / "rx_link";
+
+		for (int i = 0; i < 4; i++) {
+			std::string ch       = boost::lexical_cast<std::string>((char)(i + 65));
+			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
+			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
+
+			// SFPA
+			if (strcmp(sink.c_str(), "sfpa") == 0) {
+				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
+					tree->access<std::string>( mb_path / "sfpa" / "link_ip").get(), udp_port) );
+			// SFPB
+			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
+				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
+					tree->access<std::string>( mb_path / "sfpb" / "link_ip").get(), udp_port) );
+			// MANAGEMENT
+			} else {
+				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
+					addr["addr"], udp_port));
+			}
+		}
 	}
 
 	~crimson_rx_streamer() {
@@ -55,8 +79,14 @@ public:
 
 	// number of channels for streamer
 	size_t get_num_channels(void) const {
-		// insert code to call crimson_impl.cpp function get_enabled_chan();
-		return 4;
+		const fs_path rx_path = "/mboards/0/rx";
+		size_t num = 0;
+		for (int i = 0; i < 4; i++) {
+			std::string ch = boost::lexical_cast<std::string>((char)(i + 65));
+			std::string pwr = _tree->access<std::string>(rx_path / "Channel_"+ch / "pwr").get();
+			if ( strcmp(pwr.c_str(), "1") == 0 ) num++;
+		}
+		return num;
 	}
 
 	// max samples per buffer per packet
@@ -93,14 +123,40 @@ public:
 	}
 
 private:
-	crimson_str_iface::sptr _iface;
+	// 0-channel A, 1-channel B, 2-channel C, 3-channel D
+	crimson_str_iface::sptr _iface[4];
+	property_tree::sptr _tree;
 };
 
 class crimson_tx_streamer : public uhd::tx_streamer {
 public:
-	crimson_tx_streamer(device_addr_t addr) {
-		_iface = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
-    			addr["addr"], BOOST_STRINGIZE(CRIMSON_SFP1_STREAM_UDP_PORT)) );
+	crimson_tx_streamer(device_addr_t addr, property_tree::sptr tree) {
+		// save the tree
+		_tree = tree;
+
+		// get the property root path
+		const fs_path mb_path   = "/mboards/0";
+		const fs_path prop_path = mb_path / "tx_link";
+
+		for (int i = 0; i < 4; i++) {
+			std::string ch       = boost::lexical_cast<std::string>((char)(i + 65));
+			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
+			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
+
+			// SFPA
+			if (strcmp(sink.c_str(), "sfpa") == 0) {
+				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
+					addr["addr"], udp_port));
+			// SFPB
+			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
+				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
+					addr["addr"], udp_port));
+			// MANAGEMENT
+			} else {
+				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
+					addr["addr"], udp_port));
+			}
+		}
 	}
 
 	~crimson_tx_streamer() {
@@ -109,8 +165,14 @@ public:
 
 	// number of channels for streamer
 	size_t get_num_channels(void) const {
-		// insert code to call crimson_impl.cpp function get_enabled_chan();
-		return 4;
+		const fs_path tx_path = "/mboards/0/tx";
+		size_t num = 0;
+		for (int i = 0; i < 4; i++) {
+			std::string ch = boost::lexical_cast<std::string>((char)(i + 65));
+			std::string pwr = _tree->access<std::string>(tx_path / "Channel_"+ch / "pwr").get();
+			if ( strcmp(pwr.c_str(), "1") == 0 ) num++;
+		}
+		return num;
 	}
 
 	// max samples per buffer per packet
@@ -134,7 +196,9 @@ public:
 	}
 
 private:
-	crimson_str_iface::sptr _iface;
+	// 0-channel A, 1-channel B, 2-channel C, 3-channel D
+	crimson_str_iface::sptr _iface[4];
+	property_tree::sptr _tree;
 };
 
 /***********************************************************************
@@ -152,7 +216,7 @@ bool crimson_impl::recv_async_msg(
  **********************************************************************/
 rx_streamer::sptr crimson_impl::get_rx_stream(const uhd::stream_args_t &args){
 	// insert code to process the args and set internal registers
-	return rx_streamer::sptr(new crimson_rx_streamer(this->_addr));
+	return rx_streamer::sptr(new crimson_rx_streamer(this->_addr, this->_tree));
 }
 
 /***********************************************************************
@@ -160,5 +224,5 @@ rx_streamer::sptr crimson_impl::get_rx_stream(const uhd::stream_args_t &args){
  **********************************************************************/
 tx_streamer::sptr crimson_impl::get_tx_stream(const uhd::stream_args_t &args){
 	// insert code to process the args and set internal registers
-	return tx_streamer::sptr(new crimson_tx_streamer(this->_addr));
+	return tx_streamer::sptr(new crimson_tx_streamer(this->_addr, this->_tree));
 }
