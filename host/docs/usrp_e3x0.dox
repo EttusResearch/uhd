@@ -11,7 +11,7 @@
 	- Configurable clock rate
 	- Internal GPIO connector with UHD API control
 	- 2 USB 2.0 Host ports
-	- Internal GPSDO
+	- Internal GPS
 	- Soundcard mono input / stereo output
 	- USB UART
 	- Zynq-7020 FPGA
@@ -284,9 +284,9 @@ To test the PPS input, you can use the following tool from the UHD examples:
     cd <install-path>/lib/uhd/examples
     ./test_pps_input --args=\<args\>
 
-\subsection e3x0_hw_gpsdo Internal GPSDO
+\subsection e3x0_hw_gps Internal GPS
 
-Your USRP-E Series device comes with an internal GPSDO.
+Your USRP-E Series device comes with an internal GPS.
 In order to get a lock on a satellite an external GPS antenna is required.
 
 The device provides a 3.3V supply voltage to an external antenna connected to the *GPS* port
@@ -397,7 +397,7 @@ they can be queried through the API.
 
 - **fe_locked** - rx / tx frontend pll locked
 - **temp** - processor temperature value
-- **gps_time** and **gps_locked** sensors are added when the GPSDO is found
+- **gps_time** and **gps_locked** sensors are added when the GPS is found
 
 \subsection e3x0_network_mode Network Mode
 
