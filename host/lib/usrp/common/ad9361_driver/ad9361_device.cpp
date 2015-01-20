@@ -143,22 +143,22 @@ void ad9361_device_t::_program_fir_filter(direction_t direction, int num_taps, b
 
 
 /* Program the RX FIR Filter. */
-void ad9361_device_t::_setup_rx_fir(size_t num_taps)
+void ad9361_device_t::_setup_rx_fir(size_t num_taps, boost::int32_t interpolation)
 {
     boost::scoped_array<boost::uint16_t> coeffs(new boost::uint16_t[num_taps]);
     for (size_t i = 0; i < num_taps; i++) {
         switch (num_taps) {
         case 128:
-            coeffs[i] = boost::uint16_t(hb127_coeffs[i]);
+            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_128_x4_coeffs[i] : hb127_coeffs[i]);
             break;
         case 96:
-            coeffs[i] = boost::uint16_t(hb95_coeffs[i]);
+            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_96_x4_coeffs[i] : hb95_coeffs[i]);
             break;
         case 64:
-            coeffs[i] = boost::uint16_t(hb63_coeffs[i]);
+            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_64_x4_coeffs[i] : hb63_coeffs[i]);
             break;
         case 48:
-            coeffs[i] = boost::uint16_t(hb47_coeffs[i]);
+            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_48_x4_coeffs[i] : hb47_coeffs[i]);
             break;
         default:
             throw uhd::runtime_error("[ad9361_device_t] Unsupported number of Rx FIR taps.");
@@ -169,22 +169,22 @@ void ad9361_device_t::_setup_rx_fir(size_t num_taps)
 }
 
 /* Program the TX FIR Filter. */
-void ad9361_device_t::_setup_tx_fir(size_t num_taps)
+void ad9361_device_t::_setup_tx_fir(size_t num_taps, boost::int32_t interpolation)
 {
     boost::scoped_array<boost::uint16_t> coeffs(new boost::uint16_t[num_taps]);
     for (size_t i = 0; i < num_taps; i++) {
         switch (num_taps) {
         case 128:
-            coeffs[i] = boost::uint16_t(hb127_coeffs[i]);
+	    coeffs[i] = boost::uint16_t((interpolation==4) ? fir_128_x4_coeffs[i] : hb127_coeffs[i]);
             break;
         case 96:
-            coeffs[i] = boost::uint16_t(hb95_coeffs[i]);
+            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_96_x4_coeffs[i] : hb95_coeffs[i]);
             break;
         case 64:
-            coeffs[i] = boost::uint16_t(hb63_coeffs[i]);
+            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_64_x4_coeffs[i] : hb63_coeffs[i]);
             break;
         case 48:
-            coeffs[i] = boost::uint16_t(hb47_coeffs[i]);
+            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_48_x4_coeffs[i] : hb47_coeffs[i]);
             break;
         default:
             throw uhd::runtime_error("[ad9361_device_t] Unsupported number of Tx FIR taps.");
@@ -1231,6 +1231,7 @@ double ad9361_device_t::_setup_rates(const double rate)
     /* If we make it into this function, then we are tuning to a new rate.
      * Store the new rate. */
     _req_clock_rate = rate;
+    UHD_LOG << boost::format("[ad9361_device_t::_setup_rates] rate=%d\n") % rate;
 
     /* Set the decimation and interpolation values in the RX and TX chains.
      * This also switches filters in / out. Note that all transmitters and
@@ -1239,6 +1240,7 @@ double ad9361_device_t::_setup_rates(const double rate)
      * user-requested antenna selections. */
     int divfactor = 0;
     _tfir_factor = 0;
+    _rfir_factor = 0;
     if (rate < 0.33e6) {
         // RX1 + RX2 enabled, 3, 2, 2, 4
         _regs.rxfilt = B8(11101111);
@@ -1247,7 +1249,8 @@ double ad9361_device_t::_setup_rates(const double rate)
         _regs.txfilt = B8(11101111);
 
         divfactor = 48;
-        _tfir_factor = 2;
+        _tfir_factor = 4;
+        _rfir_factor = 4;
     } else if (rate < 0.66e6) {
         // RX1 + RX2 enabled, 2, 2, 2, 4
         _regs.rxfilt = B8(11011111);
@@ -1256,7 +1259,8 @@ double ad9361_device_t::_setup_rates(const double rate)
         _regs.txfilt = B8(11011111);
 
         divfactor = 32;
-        _tfir_factor = 2;
+        _tfir_factor = 4;
+        _rfir_factor = 4;
     } else if (rate <= 20e6) {
         // RX1 + RX2 enabled, 2, 2, 2, 2
         _regs.rxfilt = B8(11011110);
@@ -1266,6 +1270,7 @@ double ad9361_device_t::_setup_rates(const double rate)
 
         divfactor = 16;
         _tfir_factor = 2;
+        _rfir_factor = 2;
     } else if ((rate > 20e6) && (rate < 23e6)) {
         // RX1 + RX2 enabled, 3, 2, 2, 2
         _regs.rxfilt = B8(11101110);
@@ -1275,6 +1280,7 @@ double ad9361_device_t::_setup_rates(const double rate)
 
         divfactor = 24;
         _tfir_factor = 2;
+        _rfir_factor = 2;
     } else if ((rate >= 23e6) && (rate < 41e6)) {
         // RX1 + RX2 enabled, 2, 2, 2, 2
         _regs.rxfilt = B8(11011110);
@@ -1284,6 +1290,7 @@ double ad9361_device_t::_setup_rates(const double rate)
 
         divfactor = 16;
         _tfir_factor = 2;
+        _rfir_factor = 2;
     } else if ((rate >= 41e6) && (rate <= 56e6)) {
         // RX1 + RX2 enabled, 3, 1, 2, 2
         _regs.rxfilt = B8(11100110);
@@ -1293,6 +1300,7 @@ double ad9361_device_t::_setup_rates(const double rate)
 
         divfactor = 12;
         _tfir_factor = 2;
+        _rfir_factor = 2;
     } else if ((rate > 56e6) && (rate <= 61.44e6)) {
         // RX1 + RX2 enabled, 3, 1, 1, 2
         _regs.rxfilt = B8(11100010);
@@ -1302,6 +1310,7 @@ double ad9361_device_t::_setup_rates(const double rate)
 
         divfactor = 6;
         _tfir_factor = 1;
+        _rfir_factor = 2;
     } else {
         // should never get in here
         throw uhd::runtime_error("[ad9361_device_t] [_setup_rates] INVALID_CODE_PATH");
@@ -1349,8 +1358,8 @@ double ad9361_device_t::_setup_rates(const double rate)
     const size_t num_tx_taps = get_num_taps(max_tx_taps);
     const size_t num_rx_taps = get_num_taps(max_rx_taps);
 
-    _setup_tx_fir(num_tx_taps);
-    _setup_rx_fir(num_rx_taps);
+    _setup_tx_fir(num_tx_taps,_tfir_factor);
+    _setup_rx_fir(num_rx_taps,_rfir_factor);
 
     return _baseband_bw;
 }
@@ -1604,7 +1613,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
      * starts up. This prevents that, and any bugs in user code that request
      * the same rate over and over. */
     if (freq_is_nearly_equal(req_rate, _req_clock_rate)) {
-        return _baseband_bw;
+        return _baseband_bw; // IJB. Should this not return req_rate?
     }
 
     /* We must be in the SLEEP / WAIT state to do this. If we aren't already
@@ -1863,10 +1872,10 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
             gain_index = 0;
 
         if (chain == CHAIN_1) {
-            _rx1_gain = boost::uint32_t(value);
+            _rx1_gain = value;
             _io_iface->poke8(0x109, gain_index);
         } else {
-            _rx2_gain = boost::uint32_t(value);
+            _rx2_gain = value;
             _io_iface->poke8(0x10c, gain_index);
         }
 
@@ -1879,15 +1888,19 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
 
         /* Each gain step is -0.25dB. Calculate the attenuation necessary
          * for the requested gain, convert it into gain steps, then write
-         * the attenuation word. Max gain (so zero attenuation) is 89.75. */
+         * the attenuation word. Max gain (so zero attenuation) is 89.75.
+         * Ugly values will be written to the attenuation registers if
+         * "value" is out of bounds, so range checking must be performed
+         * outside this function.
+         */
         double atten = AD9361_MAX_GAIN - value;
         boost::uint32_t attenreg = boost::uint32_t(atten * 4);
         if (chain == CHAIN_1) {
-            _tx1_gain = boost::uint32_t(value);
+            _tx1_gain = value;
             _io_iface->poke8(0x073, attenreg & 0xFF);
             _io_iface->poke8(0x074, (attenreg >> 8) & 0x01);
         } else {
-            _tx2_gain = boost::uint32_t(value);
+            _tx2_gain = value;
             _io_iface->poke8(0x075, attenreg & 0xFF);
             _io_iface->poke8(0x076, (attenreg >> 8) & 0x01);
         }
