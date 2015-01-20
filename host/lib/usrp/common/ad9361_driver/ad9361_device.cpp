@@ -1485,7 +1485,7 @@ void ad9361_device_t::initialize()
     /* Setup AuxADC */
     _io_iface->poke8(0x00B, 0x00); // Temp Sensor Setup (Offset)
     _io_iface->poke8(0x00C, 0x00); // Temp Sensor Setup (Temp Window)
-    _io_iface->poke8(0x00D, 0x03); // Temp Sensor Setup (Periodic Measure)
+    _io_iface->poke8(0x00D, 0x00); // Temp Sensor Setup (Manual  Measure)
     _io_iface->poke8(0x00F, 0x04); // Temp Sensor Setup (Decimation)
     _io_iface->poke8(0x01C, 0x10); // AuxADC Setup (Clock Div)
     _io_iface->poke8(0x01D, 0x01); // AuxADC Setup (Decimation/Enable)
@@ -1944,6 +1944,50 @@ double ad9361_device_t::get_rssi(chain_t chain)
     boost::uint16_t val = ((msbs << 1) | lsb);
     double rssi = (-0.25f * ((double)val)); //-0.25dB/lsb (See Gain Control Users Guide p. 25)
     return rssi;
+}
+
+/*
+ * Returns the reading of the internal temperature sensor.
+ * One point calibration of the sensor was done according to datasheet
+ * leading to the given default constant correction factor.
+ */
+double ad9361_device_t::_get_temperature(const double cal_offset, const double timeout)
+{
+    //set 0x01D[0] to 1 to disable AuxADC GPIO reading
+    boost::uint8_t tmp = 0;
+    tmp = _io_iface->peek8(0x01D);
+    _io_iface->poke8(0x01D, (tmp | 0x01));
+    _io_iface->poke8(0x00B, 0); //set offset to 0
+
+    _io_iface->poke8(0x00C, 0x01); //start reading, clears bit 0x00C[1]
+    boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
+    boost::posix_time::time_duration elapsed;
+    //wait for valid data (toggle of bit 1 in 0x00C)
+    while(((_io_iface->peek8(0x00C) >> 1) & 0x01) == 0) {
+        boost::this_thread::sleep(boost::posix_time::microseconds(100));
+        elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+        if(elapsed.total_milliseconds() > (timeout*1000))
+        {
+            throw uhd::runtime_error("[ad9361_device_t] timeout while reading temperature");
+        }
+    }
+    _io_iface->poke8(0x00C, 0x00); //clear read flag
+
+    boost::uint8_t temp = _io_iface->peek8(0x00E); //read temperature.
+    double tmp_temp = temp/1.140f; //according to ADI driver
+    tmp_temp = tmp_temp + cal_offset; //Constant offset acquired by one point calibration.
+
+    return tmp_temp;
+}
+
+double ad9361_device_t::get_average_temperature(const double cal_offset, const size_t num_samples)
+{
+    double d_temp = 0;
+    for(size_t i = 0; i < num_samples; i++) {
+        double tmp_temp = _get_temperature(cal_offset);
+        d_temp += (tmp_temp/num_samples);
+    }
+    return d_temp;
 }
 
 }}

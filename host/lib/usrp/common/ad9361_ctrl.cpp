@@ -172,6 +172,12 @@ public:
         return sensor_value_t("RSSI", _device.get_rssi(chain), "dB");
     }
 
+    //! read the internal temp sensor. Average over 3 results
+    sensor_value_t get_temperature()
+    {
+        return sensor_value_t("temp", _device.get_average_temperature(), "C");
+    }
+
 private:
     static ad9361_device_t::direction_t _get_direction_from_antenna(const std::string& antenna)
     {

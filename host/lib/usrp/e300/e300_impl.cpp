@@ -1090,6 +1090,8 @@ void e300_impl::_setup_radio(const size_t dspno)
         _tree->create<int>(rf_fe_path / "sensors"); //empty TODO
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
             .publish(boost::bind(&e300_impl::_get_fe_pll_lock, this, direction == "tx"));
+        _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "temp")
+            .publish(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl));
         BOOST_FOREACH(const std::string &name, ad9361_ctrl::get_gain_names(key))
         {
             _tree->create<meta_range_t>(rf_fe_path / "gains" / name / "range")
