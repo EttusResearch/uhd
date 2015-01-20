@@ -100,6 +100,9 @@ public:
 
     //! read internal RSSI sensor
     virtual sensor_value_t get_rssi(const std::string &which) = 0;
+
+    //! read the internal temp sensor
+    virtual sensor_value_t get_temperature() = 0;
 };
 
 }}

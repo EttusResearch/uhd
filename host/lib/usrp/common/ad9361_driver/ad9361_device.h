@@ -66,6 +66,12 @@ public:
     /* Read back the internal RSSI measurement data. */
     double get_rssi(chain_t chain);
 
+    /*! Read the internal temperature sensor
+     *\param calibrate return raw sensor readings or apply calibration factor.
+     *\param num_samples number of measurements to average over
+     */
+    double get_average_temperature(const double cal_offset = -30.0, const size_t num_samples = 3);
+
     //Constants
     static const double AD9361_MAX_GAIN;
     static const double AD9361_MAX_CLOCK_RATE;
@@ -95,6 +101,7 @@ private:    //Methods
     void _reprogram_gains();
     double _tune_helper(direction_t direction, const double value);
     double _setup_rates(const double rate);
+    double _get_temperature(const double cal_offset, const double timeout = 0.1);
 
 private:    //Members
     typedef struct {
