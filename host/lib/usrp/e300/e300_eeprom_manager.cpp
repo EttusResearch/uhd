@@ -126,6 +126,10 @@ void e300_eeprom_manager::write_db_eeprom(const dboard_eeprom_t& eeprom)
 
     db_eeprom_map_t &map = *map_ptr;
 
+    // set the data version, that can be used to distinguish eeprom layouts
+    map.data_version_major = E310_DB_MAP_MAJOR;
+    map.data_version_minor = E310_DB_MAP_MINOR;
+
     if (_db_eeprom.id != dboard_id_t::none()) {
         map.hw_product = uhd::htonx<boost::uint16_t>(
             _db_eeprom.id.to_uint16());
@@ -159,6 +163,11 @@ void e300_eeprom_manager::write_mb_eeprom(const mboard_eeprom_t& eeprom)
         bytes[i] = _i2c->get_i2c_reg8(MB_ADDR, i);
 
     mb_eeprom_map_t &map = *map_ptr;
+
+    // set the data version, that can be used to distinguish eeprom layouts
+    map.data_version_major = E310_MB_MAP_MAJOR;
+    map.data_version_minor = E310_MB_MAP_MINOR;
+
 
     if (_mb_eeprom.has_key("product")) {
         map.hw_product = uhd::htonx<boost::uint16_t>(

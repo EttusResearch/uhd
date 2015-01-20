@@ -116,7 +116,7 @@ private:    //Members
     double              _req_clock_rate, _req_coreclk;
     boost::uint16_t     _rx_bbf_tunediv;
     boost::uint8_t      _curr_gain_table;
-    boost::uint32_t     _rx1_gain, _rx2_gain, _tx1_gain, _tx2_gain;
+    double              _rx1_gain, _rx2_gain, _tx1_gain, _tx2_gain;
     boost::int32_t      _tfir_factor;
     boost::int32_t      _rfir_factor;
     //Register soft-copies
