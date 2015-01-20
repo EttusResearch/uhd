@@ -710,6 +710,8 @@ void b200_impl::setup_radio(const size_t dspno)
             .set(B200_DEFAULT_FREQ);
         _tree->create<meta_range_t>(rf_fe_path / "freq" / "range")
             .publish(boost::bind(&ad9361_ctrl::get_rf_freq_range));
+        _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "temp")
+                .publish(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl));
 
         //setup RX related stuff
         if (key[0] == 'R')
