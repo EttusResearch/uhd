@@ -34,7 +34,7 @@ public:
         UHD_ASSERT_THROW(_max_len);
 
         // Default to rectangular window
-        std::vector<int> default_coeffs(_window_len, (((1 << 15)-1) << 16) + ((1 << 15)-1));
+        std::vector<int> default_coeffs(_window_len, (1 << 15)-1);
         set_window(default_coeffs);
     }
 
@@ -43,21 +43,33 @@ public:
         UHD_RFNOC_BLOCK_TRACE() << "window_block::set_window()" << std::endl;
         if (coeffs.size() > _max_len) {
             throw uhd::value_error(str(
-                boost::format("Window block: Too many window coefficients! Provided %d, window allows up to %d.\n")
+                boost::format("window_block::set_window(): Too many window coefficients! Provided %d, window allows up to %d.\n")
                 % coeffs.size() % _max_len
             ));
         }
 
         _window_len = coeffs.size();
 
+        // Window block can take complex coefficients in sc16 format, but typical usage is
+        // to have real(coeffs) == imag(coeffs)
+        std::vector<boost::uint32_t> coeffs_;
+        for (size_t i = 0; i < _window_len - 1; i++) {
+            if (coeffs[i] > 32767 || coeffs[i] < -32768) {
+                throw uhd::value_error(str(
+                    boost::format("window_block::set_window(): Coefficient %d (index %d) outside coefficient range [-32768,32767].\n")
+                    % coeffs[i] % i));
+            }
+            coeffs_.push_back(coeffs[i]);
+        }
+
         // Write coefficients via the load bus
         for (size_t i = 0; i < _window_len - 1; i++) {
-            sr_write(AXIS_WINDOW_LOAD, boost::uint32_t(coeffs[i]));
+            sr_write(AXIS_WINDOW_LOAD, coeffs_[i]);
         }
         // Assert tlast when sending the final coefficient (sorry, no joke here)
-        sr_write(AXIS_WINDOW_LOAD_TLAST, boost::uint32_t(coeffs.back()));
+        sr_write(AXIS_WINDOW_LOAD_TLAST, coeffs_.back());
         // Set the window length
-        sr_write(SR_WINDOW_LEN, coeffs.size());
+        sr_write(SR_WINDOW_LEN, _window_len);
 
         // Set stream signatures
         stream_sig_t stream_sig(
