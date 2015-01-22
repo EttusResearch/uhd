@@ -7,7 +7,6 @@
 - Hardware Capabilities:
 	  Integrated RF frontend (70 MHz - 6 GHz)
 	- External PPS reference input
-	- External 10 MHz reference input
 	- Configurable clock rate
 	- Internal GPIO connector with UHD API control
 	- 2 USB 2.0 Host ports
@@ -132,7 +131,7 @@ which should return 'arm-oe-linux-gnueabi'.
 -# Setup your environment as described in \ref e3x0_sdk_usage
 -# Type the following in the build directory (assuming a build in host/build):
 
-        $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DENABLE_E300 ..
+        $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DENABLE_E300=ON ..
         $ make
 
 \subsubsection e3x0_sdk_usage_gnuradio Building GNU Radio
@@ -276,6 +275,8 @@ You may need to change the USRP's IP address for several reasons:
 
 \subsection e3x0_hw_pps PPS - Pulse Per Second
 Using a PPS signal for timestamp synchronization requires a square wave signal with the following a 5Vpp amplitude.
+An external PPS can be used to discipline the internal reference clock. This feature is automatically 
+enabled with the time source is set to "external".
 
 To test the PPS input, you can use the following tool from the UHD examples:
 
@@ -288,6 +289,8 @@ To test the PPS input, you can use the following tool from the UHD examples:
 
 Your USRP-E Series device comes with an internal GPS.
 In order to get a lock on a satellite an external GPS antenna is required.
+The PPS from the internal GPS can be used to discipline the internal reference clock. This feature is automatically 
+enabled with the time source is set to "gpsdo".
 
 The device provides a 3.3V supply voltage to an external antenna connected to the *GPS* port
 of your device. Note that this supply voltage is turned off in order to safe power upon destruction of the software object.

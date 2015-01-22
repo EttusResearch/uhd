@@ -622,7 +622,7 @@ network_server_impl::network_server_impl(const uhd::device_addr_t &device_addr)
     // This is horrible ... why do I have to sleep here?
     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
     _sensor_manager = e300_sensor_manager::make_local(
-        gps::ublox::ubx::control::make("/dev/ttyPS1", 9600));
+        gps::ublox::ubx::control::make("/dev/ttyPS1", 9600), _global_regs);
 }
 
 }}} // namespace

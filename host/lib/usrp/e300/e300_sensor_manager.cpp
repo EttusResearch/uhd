@@ -38,7 +38,7 @@ public:
 
     std::vector<std::string> get_sensors()
     {
-        return boost::assign::list_of("temp")("gps_locked")("gps_time");
+        return boost::assign::list_of("temp")("gps_locked")("gps_time")("ref_locked");
     }
 
     uhd::sensor_value_t get_sensor(const std::string &key)
@@ -49,6 +49,8 @@ public:
             return get_gps_lock();
         else if (key == "gps_time")
             return get_gps_time();
+        else if (key == "ref_locked")
+            return get_ref_lock();
         else
             throw uhd::lookup_error(
                 str(boost::format("Invalid sensor %s requested.") % key));
@@ -194,6 +196,40 @@ public:
         return sensor_value_t("GPS lock status", static_cast<bool>(uhd::ntohx(transaction.value)), "locked", "unlocked");
     }
 
+    uhd::sensor_value_t get_ref_lock(void)
+    {
+        boost::mutex::scoped_lock(_mutex);
+        sensor_transaction_t transaction;
+        transaction.which = uhd::htonx<boost::uint32_t>(REF_LOCK);
+        {
+            uhd::transport::managed_send_buffer::sptr buff
+                = _xport->get_send_buff(1.0);
+            if (not buff or buff->size() < sizeof(transaction)) {
+                throw uhd::runtime_error("sensor proxy send timeout");
+            }
+            std::memcpy(
+                buff->cast<void *>(),
+                &transaction,
+                sizeof(transaction));
+            buff->commit(sizeof(transaction));
+        }
+        {
+            uhd::transport::managed_recv_buffer::sptr buff
+                = _xport->get_recv_buff(1.0);
+
+            if (not buff or buff->size() < sizeof(transaction))
+                throw uhd::runtime_error("sensor proxy recv timeout");
+
+            std::memcpy(
+                &transaction,
+                buff->cast<const void *>(),
+                sizeof(transaction));
+        }
+        UHD_ASSERT_THROW(uhd::ntohx<boost::uint32_t>(transaction.which) == REF_LOCK);
+        // TODO: Use proper serialization here ...
+        return sensor_value_t("Ref", static_cast<bool>(uhd::ntohx(transaction.value)), "locked", "unlocked");
+    }
+
 private:
     uhd::transport::zero_copy_if::sptr _xport;
     boost::mutex                       _mutex;
@@ -219,13 +255,14 @@ static const std::string E300_TEMP_SYSFS = "iio:device0";
 class e300_sensor_local : public e300_sensor_manager
 {
 public:
-    e300_sensor_local(uhd::gps_ctrl::sptr gps_ctrl) : _gps_ctrl(gps_ctrl)
+    e300_sensor_local(uhd::gps_ctrl::sptr gps_ctrl, global_regs::sptr global_regs) :
+        _gps_ctrl(gps_ctrl), _global_regs(global_regs)
     {
     }
 
     std::vector<std::string> get_sensors()
     {
-        return boost::assign::list_of("temp")("gps_locked")("gps_time");
+        return boost::assign::list_of("temp")("gps_locked")("gps_time")("ref_locked");
     }
 
     uhd::sensor_value_t get_sensor(const std::string &key)
@@ -236,6 +273,8 @@ public:
             return get_gps_lock();
         else if (key == "gps_time")
             return get_gps_time();
+        else if (key == "ref_locked")
+            return get_ref_lock();
         else
             throw uhd::lookup_error(
                 str(boost::format("Invalid sensor %s requested.") % key));
@@ -267,22 +306,38 @@ public:
         return _gps_ctrl->get_sensor("gps_time");
     }
 
+    uhd::sensor_value_t get_ref_lock(void)
+    {
+        //PPSLOOP_LOCKED_MASK is asserted in the following cases:
+        //- (Time source = GPS or External) AND (Loop is locked and is in fine adj mode)
+        //- Time source is Internal
+        static const boost::uint32_t PPSLOOP_LOCKED_MASK = 0x04;
+        static const boost::uint32_t REFPLL_LOCKED_MASK = 0x20;
+
+        const boost::uint32_t status =
+            _global_regs->peek32(global_regs::RB32_CORE_MISC);
+        bool ref_locked = (status & PPSLOOP_LOCKED_MASK) && (status & REFPLL_LOCKED_MASK);
+
+        return sensor_value_t("Ref", ref_locked, "locked", "unlocked");
+    }
+
 private:
-    gps_ctrl::sptr _gps_ctrl;
+    gps_ctrl::sptr      _gps_ctrl;
+    global_regs::sptr   _global_regs;
 };
 }}}
 
 using namespace uhd::usrp::e300;
 e300_sensor_manager::sptr e300_sensor_manager::make_local(
-    uhd::gps_ctrl::sptr gps_ctrl)
+    uhd::gps_ctrl::sptr gps_ctrl, global_regs::sptr global_regs)
 {
-    return sptr(new e300_sensor_local(gps_ctrl));
+    return sptr(new e300_sensor_local(gps_ctrl, global_regs));
 }
 
 #else
 using namespace uhd::usrp::e300;
 e300_sensor_manager::sptr e300_sensor_manager::make_local(
-    uhd::gps_ctrl::sptr gps_ctrl)
+    uhd::gps_ctrl::sptr, global_regs::sptr)
 {
     throw uhd::assertion_error("e300_sensor_manager::make_local() !E300_NATIVE");
 }
