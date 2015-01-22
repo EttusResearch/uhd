@@ -371,6 +371,95 @@ usrp->get_rx_sensor("lo-locked");
 usrp->get_tx_sensor("lo-locked");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+\subsubsection e3x0_dboard_e310_band_select Frontend Filter and Antenna Switches
+
+The transmit and receive filter banks uses switches to select between the available filters. These paths are
+also dependent on the antenna switch settings. Incorrectly setting the switches generally results
+in attenuated input / output power. Receive filters are band pass (series high & low pass filters), 
+transmit filters are low pass.
+
+Source code related to controlling the filter band and antenna switches resides in e300_impl.c. Specifically, refer to methods 
+`e300_impl::_update_bandsel`, `e300_impl::_update_atrs`, `e300_impl::_update_gpio`, and `e300_impl::_update_enables`. Generally, these 
+methods set the switches depending on the state of transmit and receive streams.
+
+The following sections provide switch setting tables for antenna and filter selection for frontends A & B receive and transmit paths.
+For futher details refer to the schematics. 
+
+\subsubsection e3x0_dboard_e310_frontend_a_switches Frontend Side A Filter and Antenna Switches
+
+_Note: X = don't care, T = If full duplex, set bits according to transmit table, otherwise don't care.
+Filter range A – B will be selected if A <= freq < B._
+
+__Receive__
+RX Port | RX Filter (MHz) | VCTXRX2_V1,V2 | VCRX2_V1,V2 | RX2_BANDSEL[2:0] | RX2B_BANDSEL[1:0] | RX2C_BANDSEL[1:0]
+:-----: | :-------------: | :-----------: | :---------: | :--------------: | :---------------: | :---------------:
+TRX-A   | < 450           | 01            | 10          | 101              | XX                | 01               
+TRX-A   | 450 – 700       | 01            | 10          | 011              | XX                | 11               
+TRX-A   | 700 – 1200      | 01            | 10          | 001              | XX                | 10               
+TRX-A   | 1200 – 1800     | 01            | 10          | 000              | 01                | XX               
+TRX-A   | 1800 – 2350     | 01            | 10          | 010              | 11                | XX               
+TRX-A   | 2350 – 2600     | 01            | 10          | 100              | 10                | XX               
+TRX-A   | 2600 – 6000     | 01            | 01          | XXX              | XX                | XX               
+RX2-A   | 70  – 450       | TT            | 01          | 101              | XX                | 01               
+RX2-A   | 450 – 700       | TT            | 01          | 011              | XX                | 11               
+RX2-A   | 700 – 1200      | TT            | 01          | 001              | XX                | 10               
+RX2-A   | 1200 – 1800     | TT            | 01          | 000              | 01                | XX               
+RX2-A   | 1800 – 2350     | TT            | 01          | 010              | 11                | XX               
+RX2-A   | 2350 – 2600     | TT            | 01          | 100              | 10                | XX               
+RX2-A   | >= 2600         | TT            | 10          | XXX              | XX                | XX               
+
+__Transmit__
+TX Port | TX Filter (MHz) | VCTXRX2_V1,V2 | TX_ENABLE2A,2B | TX_BANDSEL[2:0]
+:-----: | :-------------: | :-----------: | :------------: | :-------------:
+TRX-A   | < 117.7         | 10            | 01             | 111            
+TRX-A   | 117.7 – 178.2   | 10            | 01             | 110            
+TRX-A   | 178.2 – 284.3   | 10            | 01             | 101            
+TRX-A   | 284.3 – 453.7   | 10            | 01             | 100            
+TRX-A   | 453.7 – 723.8   | 10            | 01             | 011            
+TRX-A   | 723.8 – 1154.9  | 10            | 01             | 010            
+TRX-A   | 1154.9 – 1842.6 | 10            | 01             | 001            
+TRX-A   | 1842.6 – 2940.0 | 10            | 01             | 000            
+TRX-A   | >= 2940.0       | 11            | 10             | XXX            
+_Note: Although the transmit filters are low pass, this table describes UHD's tuning range for selecting each filter path.
+The table also includes the required transmit enable state._
+
+\subsubsection e3x0_dboard_e310_frontend_b_switches Frontend Side B Filter and Antenna Switches
+
+_Note: X = don't care, T = If full duplex, set bits according to transmit table, otherwise don't care.
+Filter range A – B will be selected if A <= freq < B._
+
+__Receive__
+RX Port | RX Filter (MHz) | VCTXRX1_V1,V2 | VCRX1_V1,V2 | RX1_BANDSEL[2:0] | RX1B_BANDSEL[1:0] | RX1C_BANDSEL[1:0]
+:-----: | :-------------: | :-----------: | :---------: | :--------------: | :---------------: | :---------------:
+TRX-B   | < 450           | 10            | 01          | 100              | XX                | 10               
+TRX-B   | 450 – 700       | 10            | 01          | 010              | XX                | 11               
+TRX-B   | 700 – 1200      | 10            | 01          | 000              | XX                | 01               
+TRX-B   | 1200 – 1800     | 10            | 01          | 001              | 10                | XX               
+TRX-B   | 1800 – 2350     | 10            | 01          | 011              | 11                | XX               
+TRX-B   | 2350 – 2600     | 10            | 01          | 101              | 01                | XX               
+TRX-B   | 2600 – 6000     | 10            | 10          | XXX              | XX                | XX               
+RX2-B   | 70  – 450       | TT            | 10          | 100              | XX                | 10               
+RX2-B   | 450 – 700       | TT            | 10          | 010              | XX                | 11               
+RX2-B   | 700 – 1200      | TT            | 10          | 000              | XX                | 01               
+RX2-B   | 1200 – 1800     | TT            | 10          | 001              | 10                | XX               
+RX2-B   | 1800 – 2350     | TT            | 10          | 011              | 11                | XX               
+RX2-B   | 2350 – 2600     | TT            | 10          | 101              | 01                | XX               
+RX2-B   | >= 2600         | TT            | 01          | XXX              | XX                | XX               
+
+__Transmit__
+TX Port | TX Filter (MHz) | VCTXRX1_V1,V2 | TX_ENABLE1A,1B | TX1_BANDSEL[2:0]
+:-----: | :-------------: | :-----------: | :------------: | :--------------:
+TRX-B   | < 117.7         | 00            | 01             | 111             
+TRX-B   | 117.7 – 178.2   | 00            | 01             | 110             
+TRX-B   | 178.2 – 284.3   | 00            | 01             | 101             
+TRX-B   | 284.3 – 453.7   | 00            | 01             | 100             
+TRX-B   | 453.7 – 723.8   | 00            | 01             | 011             
+TRX-B   | 723.8 – 1154.9  | 00            | 01             | 010             
+TRX-B   | 1154.9 – 1842.6 | 00            | 01             | 001             
+TRX-B   | 1842.6 – 2940.0 | 00            | 01             | 000             
+TRX-B   | >= 2940.0       | 11            | 10             | XXX             
+_Note: Although the transmit filters are low pass, the following table describes UHD's tuning range for selecting each filter path.
+The table also includes the required transmit enable states._
 
 \section e3x0_misc Miscellaneous
 

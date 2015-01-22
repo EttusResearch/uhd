@@ -179,7 +179,7 @@ Features:
 -   2 quadrature frontends (1 transmit, 1 receive)
     -   Defaults to direct conversion
     -   Can be used in low IF mode through lo_offset with uhd::tune_request_t
--   Independent recieve and transmit LO's and synthesizers
+-   Independent receive and transmit LO's and synthesizers
     -   Allows for full-duplex operation on different transmit and receive frequencies
     -   Can be set to use Integer-N tuning for better spur performance
         with uhd::tune_request_t
@@ -214,7 +214,7 @@ Features:
 -   2 quadrature frontends (1 transmit, 1 receive)
     -   Defaults to direct conversion
     -   Can be used in low IF mode through lo_offset with uhd::tune_request_t
--   Independent recieve and transmit LO's and synthesizers
+-   Independent receive and transmit LO's and synthesizers
     -   Allows for full-duplex operation on different transmit and
         receive frequencies
     -   Can be set to use Integer-N tuning for better spur performance with uhd::tune_request_t
@@ -256,7 +256,7 @@ Features:
 -   2 quadrature frontends (1 transmit, 1 receive)
     -   Defaults to direct conversion
     -   Can be used in low IF mode through lo_offset with uhd::tune_request_t
--   Independent recieve and transmit LO's and synthesizers
+-   Independent receive and transmit LO's and synthesizers
     -   Allows for full-duplex operation on different transmit and
         receive frequencies
     -   Can be set to use Integer-N tuning for better spur performance with uhd::tune_request_t
@@ -291,6 +291,47 @@ LEDs:
 -   **TX/RX**: Receiver on TX/RX antenna port (No TX)
 -   **RX LD**: Receive Synthesizer Lock Detect
 -   **RX1/RX2**: Receiver on RX2 antenna port
+
+\subsection dboards_ubx UBX Series
+
+Features:
+-   2 quadrature frontends (1 transmit, 1 receive)
+    -   Defaults to direct conversion
+    -   Can be used in low IF mode through lo_offset with uhd::tune_request_t
+-   Independent receive and transmit LO's and synthesizers
+    -   Allows for full-duplex operation on different transmit and
+        receive frequencies
+    -   Can be set to use Integer-N tuning for better spur performance with uhd::tune_request_t
+
+Transmit Antennas: **TX/RX**
+
+Receive Antennas: **TX/RX** or **RX2**
+
+-   **Frontend 0:** Complex baseband signal for selected antenna
+
+-   **Note:** The user may set the receive antenna to be TX/RX or RX2.
+    However, when using a UBX board in full-duplex mode, the receive
+    antenna will always be set to RX2, regardless of the settings.
+
+Transmit Gains: **PGA0**, Range: 0-31.5dB
+
+Receive Gains: **PGA0**, Range: 0-31.5dB
+
+Bandwidths:
+
+-   **UBX**: 40 MHz, RX & TX
+-   **UBX-160**: 160 MHz, RX & TX
+
+Sensors:
+
+-   **lo_locked**: boolean for LO lock state
+
+LEDs:
+
+-   **LOCK**: Synthesizer Lock Detect
+-   **TX/RX TXD**: Transmitting on TX/RX antenna port
+-   **TX/RX RXD**: Receiving on TX/RX antenna port
+-   **RX2 RXD**: Receiving on RX2 antenna port
 
 \subsection dboards_tvrx TVRX
 
