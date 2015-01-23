@@ -143,22 +143,25 @@ void ad9361_device_t::_program_fir_filter(direction_t direction, int num_taps, b
 
 
 /* Program the RX FIR Filter. */
-void ad9361_device_t::_setup_rx_fir(size_t num_taps, boost::int32_t interpolation)
+void ad9361_device_t::_setup_rx_fir(size_t num_taps, boost::int32_t decimation)
 {
+    if (not (decimation == 1 or decimation == 2 or decimation == 4)) {
+        throw uhd::runtime_error("[ad9361_device_t] Invalid Rx FIR decimation.");
+    }
     boost::scoped_array<boost::uint16_t> coeffs(new boost::uint16_t[num_taps]);
     for (size_t i = 0; i < num_taps; i++) {
         switch (num_taps) {
         case 128:
-            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_128_x4_coeffs[i] : hb127_coeffs[i]);
+            coeffs[i] = boost::uint16_t((decimation==4) ? fir_128_x4_coeffs[i] : hb127_coeffs[i]);
             break;
         case 96:
-            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_96_x4_coeffs[i] : hb95_coeffs[i]);
+            coeffs[i] = boost::uint16_t((decimation==4) ? fir_96_x4_coeffs[i] : hb95_coeffs[i]);
             break;
         case 64:
-            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_64_x4_coeffs[i] : hb63_coeffs[i]);
+            coeffs[i] = boost::uint16_t((decimation==4) ? fir_64_x4_coeffs[i] : hb63_coeffs[i]);
             break;
         case 48:
-            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_48_x4_coeffs[i] : hb47_coeffs[i]);
+            coeffs[i] = boost::uint16_t((decimation==4) ? fir_48_x4_coeffs[i] : hb47_coeffs[i]);
             break;
         default:
             throw uhd::runtime_error("[ad9361_device_t] Unsupported number of Rx FIR taps.");
@@ -171,11 +174,17 @@ void ad9361_device_t::_setup_rx_fir(size_t num_taps, boost::int32_t interpolatio
 /* Program the TX FIR Filter. */
 void ad9361_device_t::_setup_tx_fir(size_t num_taps, boost::int32_t interpolation)
 {
+    if (not (interpolation == 1 or interpolation == 2 or interpolation == 4)) {
+        throw uhd::runtime_error("[ad9361_device_t] Invalid Tx FIR interpolation.");
+    }
+    if (interpolation == 1 and num_taps > 64) {
+        throw uhd::runtime_error("[ad9361_device_t] Too many Tx FIR taps for interpolation value.");
+    }
     boost::scoped_array<boost::uint16_t> coeffs(new boost::uint16_t[num_taps]);
     for (size_t i = 0; i < num_taps; i++) {
         switch (num_taps) {
         case 128:
-	    coeffs[i] = boost::uint16_t((interpolation==4) ? fir_128_x4_coeffs[i] : hb127_coeffs[i]);
+            coeffs[i] = boost::uint16_t((interpolation==4) ? fir_128_x4_coeffs[i] : hb127_coeffs[i]);
             break;
         case 96:
             coeffs[i] = boost::uint16_t((interpolation==4) ? fir_96_x4_coeffs[i] : hb95_coeffs[i]);
