@@ -66,6 +66,11 @@ extern "C" {
 #define CRIMSON_FW_COMMS_FLAGS_POKE32     (1 << 2)
 #define CRIMSON_FW_COMMS_FLAGS_PEEK32     (1 << 3)
 
+// Crimson RF Settings
+#define CRIMSON_RF_GAIN_RANGE_START	0.0
+#define CRIMSON_RF_GAIN_RANGE_STOP	28.0
+#define CRIMSON_RF_GAIN_RANGE_STEP	1.0
+
 #ifdef __cplusplus
 }
 #endif

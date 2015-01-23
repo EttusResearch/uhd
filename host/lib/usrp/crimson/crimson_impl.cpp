@@ -484,8 +484,10 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	TREE_CREATE_ST(rx_fe_path / "name",   std::string, "RX Board");
 	TREE_CREATE_ST(tx_fe_path / "name",   std::string, "TX Board");
 
-	TREE_CREATE_ST(rx_fe_path / "gains" / "ADRF" / "range", meta_range_t, meta_range_t(0.0, 28.0, 0.1));
-	TREE_CREATE_ST(tx_fe_path / "gains" / "RFSA" / "range", meta_range_t, meta_range_t(0.0, 28.0, 0.1));
+	TREE_CREATE_ST(rx_fe_path / "gains" / "ADRF" / "range", meta_range_t,
+		meta_range_t(CRIMSON_RF_GAIN_RANGE_START, CRIMSON_RF_GAIN_RANGE_STOP, CRIMSON_RF_GAIN_RANGE_STEP));
+	TREE_CREATE_ST(tx_fe_path / "gains" / "RFSA" / "range",	meta_range_t,
+		meta_range_t(CRIMSON_RF_GAIN_RANGE_START, CRIMSON_RF_GAIN_RANGE_STOP, CRIMSON_RF_GAIN_RANGE_STEP));
 
 	TREE_CREATE_ST(rx_fe_path / "freq", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
 	TREE_CREATE_ST(tx_fe_path / "freq", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
@@ -505,8 +507,8 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 
 	TREE_CREATE_ST(tx_fe_path / "freq" / "range", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
 	TREE_CREATE_ST(rx_fe_path / "freq" / "range", meta_range_t, meta_range_t(50.0, 6000000000.0, 50.0));
-	TREE_CREATE_ST(rx_fe_path / "gain" / "range", meta_range_t, meta_range_t(0.0, 28.0, 0.1));
-	TREE_CREATE_ST(tx_fe_path / "gain" / "range", meta_range_t, meta_range_t(0.0, 28.0, 0.1));
+	TREE_CREATE_ST(rx_fe_path / "gain" / "range", meta_range_t, meta_range_t(0.0, 28.0, 1.0));
+	TREE_CREATE_ST(tx_fe_path / "gain" / "range", meta_range_t, meta_range_t(0.0, 28.0, 1.0));
 
 	TREE_CREATE_RW(rx_fe_path / "freq" / "value", "rx_"+lc_num+"/rf/freq/val", double, _double);
 	TREE_CREATE_RW(rx_fe_path / "gain" / "value", "rx_"+lc_num+"/rf/gain/val", double, _double);

@@ -89,10 +89,13 @@ public:
 		return num;
 	}
 
-	// max samples per buffer per packet
+	// max samples per buffer per packet for sfpa
+	// it is HIGHLY recommended that the user keep the payload len equal for both SFP ports
 	size_t get_max_num_samps(void) const {
-		// insert code to call crimson_impl.cpp function get_sample_rate();
-		return 1472/4;	// 32-bit wide samples, (16 I, 16 Q)
+		int sample_size = boost::lexical_cast<int>(
+			_tree->access<std::string>("/mboards/0/fpga/link/sfpa/pay_len").get());
+
+		return sample_size/4;	// 32-bit (4-bytes) wide samples, (16 I, 16 Q)
 	}
 
 	size_t recv(
@@ -175,10 +178,13 @@ public:
 		return num;
 	}
 
-	// max samples per buffer per packet
+	// max samples per buffer per packet for sfpa
+	// it is HIGHLY recommended that the user keep the payload len equal for both SFP ports
 	size_t get_max_num_samps(void) const {
-		// insert code to call crimson_impl.cpp function get_sample_rate();
-		return 1472/4;	// 32-bit wide samples, (16 I, 16 Q)
+		int sample_size = boost::lexical_cast<int>(
+			_tree->access<std::string>("/mboards/0/fpga/link/sfpa/pay_len").get());
+
+		return sample_size/4;	// 32-bit (4-bytes) wide samples, (16 I, 16 Q)
 	}
 
 	size_t send(
@@ -215,7 +221,19 @@ bool crimson_impl::recv_async_msg(
  * Receive streamer
  **********************************************************************/
 rx_streamer::sptr crimson_impl::get_rx_stream(const uhd::stream_args_t &args){
-	// insert code to process the args and set internal registers
+	// Crimson currently only supports cpu_format of "sc16" (complex<int16_t>) stream
+	if (strcmp(args.cpu_format.c_str(), "sc16") != 0 && strcmp(args.cpu_format.c_str(), "") != 0 ) {
+		UHD_MSG(error) << "CRIMSON Stream only supports cpu_format of \
+			\"sc16\" complex\<int16_t\>" << std::endl;
+	}
+
+	// Crimson currently only supports (over the wire) otw_format of "sc16" - Q16 I16 if specified
+	if (strcmp(args.otw_format.c_str(), "sc16") != 0 && strcmp(args.otw_format.c_str(), "") != 0 ) {
+		UHD_MSG(error) << "CRIMSON Stream only supports otw_format of \
+			\"sc16\" Q16 I16" << std::endl;
+	}
+
+	// TODO firmware support for other otw_format, cpu_format
 	return rx_streamer::sptr(new crimson_rx_streamer(this->_addr, this->_tree));
 }
 
@@ -223,6 +241,18 @@ rx_streamer::sptr crimson_impl::get_rx_stream(const uhd::stream_args_t &args){
  * Transmit streamer
  **********************************************************************/
 tx_streamer::sptr crimson_impl::get_tx_stream(const uhd::stream_args_t &args){
-	// insert code to process the args and set internal registers
+	// Crimson currently only supports cpu_format of "sc16" (complex<int16_t>) stream
+	if (strcmp(args.cpu_format.c_str(), "sc16") != 0 && strcmp(args.cpu_format.c_str(), "") != 0 ) {
+		UHD_MSG(error) << "CRIMSON Stream only supports cpu_format of \
+			\"sc16\" complex\<int16_t\>" << std::endl;
+	}
+
+	// Crimson currently only supports (over the wire) otw_format of "sc16" - Q16 I16 if specified
+	if (strcmp(args.otw_format.c_str(), "sc16") != 0 && strcmp(args.otw_format.c_str(), "") != 0 ) {
+		UHD_MSG(error) << "CRIMSON Stream only supports otw_format of \
+			\"sc16\" Q16 I16" << std::endl;
+	}
+
+	// TODO firmware support for other otw_format, cpu_format
 	return tx_streamer::sptr(new crimson_tx_streamer(this->_addr, this->_tree));
 }
