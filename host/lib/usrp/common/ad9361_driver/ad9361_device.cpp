@@ -177,7 +177,7 @@ void ad9361_device_t::_setup_tx_fir(size_t num_taps, boost::int32_t interpolatio
     if (not (interpolation == 1 or interpolation == 2 or interpolation == 4)) {
         throw uhd::runtime_error("[ad9361_device_t] Invalid Tx FIR interpolation.");
     }
-    if (interpolation == 1 and num_t > 64) {
+    if (interpolation == 1 and num_taps > 64) {
         throw uhd::runtime_error("[ad9361_device_t] Too many Tx FIR taps for interpolation value.");
     }
     boost::scoped_array<boost::uint16_t> coeffs(new boost::uint16_t[num_taps]);
