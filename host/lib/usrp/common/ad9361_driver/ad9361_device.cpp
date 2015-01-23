@@ -135,9 +135,15 @@ void ad9361_device_t::_program_fir_filter(direction_t direction, int num_taps, b
     _io_iface->poke8(base + 5, reg_numtaps | 0x1A);
     if (direction == RX) {
         _io_iface->poke8(base + 5, reg_numtaps | 0x18);
+        /* Rx Gain, set to prevent digital overflow/saturation in filters
+           0:+6dB, 1:0dB, 2:-6dB, 3:-12dB
+           page 35 of UG-671 */
         _io_iface->poke8(base + 6, 0x02); /* Also turn on -6dB Rx gain here, to stop filter overfow.*/
     } else {
-        _io_iface->poke8(base + 5, reg_numtaps | 0x19); /* Also turn on -6dB Tx gain here, to stop filter overfow.*/
+        /* Tx Gain. bit[0]. set to prevent digital overflow/saturation in filters
+           0: 0dB, 1:-6dB
+           page 25 of UG-671 */
+        _io_iface->poke8(base + 5, reg_numtaps | 0x18);
     }
 }
 
