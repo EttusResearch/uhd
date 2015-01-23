@@ -33,11 +33,10 @@ public:
         UHD_MSG(status) << "window_block::window_block() max_len ==" << _max_len << std::endl;
         UHD_ASSERT_THROW(_max_len);
 
-        // Default to rectangular window
-        std::vector<int> default_coeffs(_window_len, (1 << 15)-1);
-        set_window(default_coeffs);
+        _set_default_window(_window_len);
     }
 
+    //! Set window coefficients and length
     void set_window(const std::vector<int> &coeffs)
     {
         UHD_RFNOC_BLOCK_TRACE() << "window_block::set_window()" << std::endl;
@@ -71,6 +70,8 @@ public:
         // Set the window length
         sr_write(SR_WINDOW_LEN, _window_len);
 
+        // This block requires spp to match the window length:
+        _args["spp"] = str(boost::format("%s") % _window_len);
         // Set stream signatures
         stream_sig_t stream_sig(
                 _item_type,
@@ -124,55 +125,46 @@ public:
 protected:
     //! Checks the args \p window_len and \p spp are OK.
     //
-    //  If spp is given, it must match the window length, or we throw.
+    // If \p window_len is given, this will actually change the length
+    // of the window.
+    //
+    // If \p spp is given, it must match the window length, or we throw.
+    //
+    // If both are given, window_len is evaluated first.
     void _post_args_hook()
     {
         UHD_RFNOC_BLOCK_TRACE() << "window_block::_post_args_hook()" << std::endl;
-        if (_args.has_key("spp")) {
-            size_t spp = _args.cast<size_t>("spp", _window_len);
-            if (spp != _window_len) {
-                throw uhd::value_error("In the window block, spp cannot differ from the window length.");
-            }
+        size_t window_len = _args.cast<int>("window_len", _window_len);
+        if (window_len != _window_len) {
+            UHD_RFNOC_BLOCK_TRACE() << "window_block::_post_args_hook(): Updating window length." << std::endl;
+            // This sets _window_len:
+            _set_default_window(window_len);
+        }
+
+        size_t spp = _args.cast<size_t>("spp", _window_len);
+        if (spp != _window_len) {
+            throw uhd::value_error(str(
+                boost::format("In the window block, spp cannot differ from the window length (upstream block requested spp == %d, we have window_len = %d)")
+                % spp % _window_len
+            ));
         }
     }
 
-    //! Check stream args match window length
+    //! Check otw_format is valid
     void _init_rx(uhd::stream_args_t &args)
     {
         UHD_RFNOC_BLOCK_TRACE() << "window_block::_init_rx()" << std::endl;
         if (args.otw_format != "sc16") {
             throw uhd::value_error("Window only supports otw_format sc16");
         }
-        // Check if the downstream block wants a specific spp.
-        // If it's not the window length, throw. Otherwise, tell the upstream
-        // block about what spp we need.
-        if (not args.args.has_key("spp")) {
-            args.args["spp"] = str(boost::format("%d") % _window_len);
-        } else {
-            size_t req_spp = args.args.cast<size_t>("spp", _window_len);
-            if (req_spp != _window_len) {
-                throw uhd::value_error("In the window block, spp cannot differ from the window length (upstream block requested other spp value)");
-            }
-        }
     }
 
-    //! Check stream args match window length
+    //! Check otw_format is valid
     void _init_tx(uhd::stream_args_t &args)
     {
         UHD_RFNOC_BLOCK_TRACE() << "window_block::_init_tx()" << std::endl;
         if (args.otw_format != "sc16") {
             throw uhd::value_error("Window only supports otw_format sc16");
-        }
-        // Check if the upstream block wants a specific spp.
-        // If it's not the window length, throw. Otherwise, tell the downstream
-        // block about what spp we need.
-        if (not args.args.has_key("spp")) {
-            args.args["spp"] = str(boost::format("%d") % _window_len);
-        } else {
-            size_t req_spp = args.args.cast<size_t>("spp", _window_len);
-            if (req_spp != _window_len) {
-                throw uhd::value_error("In the window block, spp cannot differ from the window length (downstream block requested other spp value)");
-            }
         }
     }
 
@@ -181,6 +173,12 @@ private:
     const size_t _bpi;
     size_t _max_len;
     size_t _window_len;
+
+    //! Default is a rectangular window
+    void _set_default_window(size_t window_len) {
+        std::vector<int> default_coeffs(window_len, (1 << 15)-1);
+        set_window(default_coeffs);
+    }
 };
 
 UHD_RFNOC_BLOCK_REGISTER(window_block_ctrl, "Window");
