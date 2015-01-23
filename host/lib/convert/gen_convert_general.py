@@ -57,10 +57,10 @@ DECLARE_CONVERTER(sc16_item32_{end}, 1, item32, 1, PRIORITY_GENERAL) {{
 }}
 """
 
-TMPL_CONV_U8 = """
-DECLARE_CONVERTER(u8, 1, u8_item32_{end}, 1, PRIORITY_GENERAL) {{
-    const boost::uint32_t *input = reinterpret_cast<const boost::uint32_t *>(inputs[0]);
-    boost::uint32_t *output = reinterpret_cast<boost::uint32_t *>(outputs[0]);
+TMPL_CONV_U8S8 = """
+DECLARE_CONVERTER({us8}, 1, {us8}_item32_{end}, 1, PRIORITY_GENERAL) {{
+    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
+    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
     // 1) Copy all the 4-byte tuples
     size_t n_words = nsamps / 4;
@@ -70,8 +70,8 @@ DECLARE_CONVERTER(u8, 1, u8_item32_{end}, 1, PRIORITY_GENERAL) {{
     // 2) If nsamps was not a multiple of 4, copy the rest by hand
     size_t bytes_left = nsamps % 4;
     if (bytes_left) {{
-        const u8_t *last_input_word  = reinterpret_cast<const u8_t *>(&input[n_words]);
-        u8_t *last_output_word = reinterpret_cast<u8_t *>(&output[n_words]);
+        const {us8}_t *last_input_word  = reinterpret_cast<const {us8}_t *>(&input[n_words]);
+        {us8}_t *last_output_word = reinterpret_cast<{us8}_t *>(&output[n_words]);
         for (size_t k = 0; k < bytes_left; k++) {{
             last_output_word[k] = last_input_word[k];
         }}
@@ -79,9 +79,9 @@ DECLARE_CONVERTER(u8, 1, u8_item32_{end}, 1, PRIORITY_GENERAL) {{
     }}
 }}
 
-DECLARE_CONVERTER(u8_item32_{end}, 1, u8, 1, PRIORITY_GENERAL) {{
-    const boost::uint32_t *input = reinterpret_cast<const boost::uint32_t *>(inputs[0]);
-    boost::uint32_t *output = reinterpret_cast<boost::uint32_t *>(outputs[0]);
+DECLARE_CONVERTER({us8}_item32_{end}, 1, {us8}, 1, PRIORITY_GENERAL) {{
+    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
+    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
     // 1) Copy all the 4-byte tuples
     size_t n_words = nsamps / 4;
@@ -91,12 +91,50 @@ DECLARE_CONVERTER(u8_item32_{end}, 1, u8, 1, PRIORITY_GENERAL) {{
     // 2) If nsamps was not a multiple of 4, copy the rest by hand
     size_t bytes_left = nsamps % 4;
     if (bytes_left) {{
-        boost::uint32_t last_input_word = {to_host}(input[n_words]);
-        const u8_t *last_input_word_ptr = reinterpret_cast<const u8_t *>(&last_input_word);
-        u8_t *last_output_word = reinterpret_cast<u8_t *>(&output[n_words]);
+        item32_t last_input_word = {to_host}(input[n_words]);
+        const {us8}_t *last_input_word_ptr = reinterpret_cast<const {us8}_t *>(&last_input_word);
+        {us8}_t *last_output_word = reinterpret_cast<{us8}_t *>(&output[n_words]);
         for (size_t k = 0; k < bytes_left; k++) {{
             last_output_word[k] = last_input_word_ptr[k];
         }}
+    }}
+}}
+"""
+
+TMPL_CONV_S16 = """
+DECLARE_CONVERTER(s16, 1, s16_item32_{end}, 1, PRIORITY_GENERAL) {{
+    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
+    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+
+    // 1) Copy all the 4-byte tuples
+    size_t n_words = nsamps / 2;
+    for (size_t i = 0; i < n_words; i++) {{
+        output[i] = {to_wire}(input[i]);
+    }}
+    // 2) If nsamps was not a multiple of 2, copy the last one by hand
+    if (nsamps % 2) {{
+        const s16_t *last_input_word = reinterpret_cast<const s16_t *>(&input[n_words]);
+        s16_t *last_output_word = reinterpret_cast<s16_t *>(&output[n_words]);
+        last_output_word[0] = last_input_word[0];
+        output[n_words] = {to_wire}(output[n_words]);
+    }}
+}}
+
+DECLARE_CONVERTER(s16_item32_{end}, 1, s16, 1, PRIORITY_GENERAL) {{
+    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
+    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+
+    // 1) Copy all the 4-byte tuples
+    size_t n_words = nsamps / 2;
+    for (size_t i = 0; i < n_words; i++) {{
+        output[i] = {to_host}(input[i]);
+    }}
+    // 2) If nsamps was not a multiple of 2, copy the last one by hand
+    if (nsamps % 2) {{
+        item32_t last_input_word = {to_host}(input[n_words]);
+        const s16_t *last_input_word_ptr = reinterpret_cast<const s16_t *>(&last_input_word);
+        s16_t *last_output_word = reinterpret_cast<s16_t *>(&output[n_words]);
+        last_output_word[0] = last_input_word_ptr[0];
     }}
 }}
 """
@@ -162,22 +200,29 @@ if __name__ == '__main__':
     file = os.path.basename(__file__)
     output = parse_tmpl(TMPL_HEADER, file=file)
 
-    #generate complex converters for all gen2 platforms
+    #generate converters for all gen2 platforms
     for end, to_host, to_wire in (
         ('be', 'uhd::ntohx', 'uhd::htonx'),
         ('le', 'uhd::wtohx', 'uhd::htowx'),
     ):
+        # All complex formats:
         output += TMPL_CONV_GEN2_ITEM32.format(
                 end=end, to_host=to_host, to_wire=to_wire
         )
-    #generate raw (u8) converters:
-    for end, to_host, to_wire in (
-        ('be', 'uhd::ntohx', 'uhd::htonx'),
-        ('le', 'uhd::wtohx', 'uhd::htowx'),
-    ):
-        output += TMPL_CONV_U8.format(
-                end=end, to_host=to_host, to_wire=to_wire
+        # Real 16-bit signed:
+        output += TMPL_CONV_S16.format(
+            end=end, to_host=to_host, to_wire=to_wire
         )
+
+    #generate 8-bit real type converters:
+    for us8 in ('u8', 's8'):
+        for end, to_host, to_wire in (
+            ('be', 'uhd::ntohx', 'uhd::htonx'),
+            ('le', 'uhd::wtohx', 'uhd::htowx'),
+        ):
+            output += TMPL_CONV_U8S8.format(
+                    us8=us8, end=end, to_host=to_host, to_wire=to_wire
+            )
 
     #generate complex converters for usrp1 format (requires Cheetah)
     for width in 1, 2, 4:
