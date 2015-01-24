@@ -332,6 +332,9 @@ static void e300_sensor_tunnel(
             } else if (uhd::ntohx(in->which) == GPS_LOCK) {
                 in->value = uhd::htonx<boost::uint32_t>(
                     sensor_manager->get_gps_lock().to_bool() ? 1 : 0);
+            } else if (uhd::ntohx(in->which) == REF_LOCK) {
+                in->value = uhd::htonx<boost::uint32_t>(
+                    sensor_manager->get_ref_lock().to_bool() ? 1 : 0);
             } else if (uhd::ntohx(in->which) == GPS_TIME) {
                 in->value = uhd::htonx<boost::uint32_t>(
                     sensor_manager->get_gps_time().to_int());
