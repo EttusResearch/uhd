@@ -60,11 +60,11 @@ public:
 			// SFPA
 			if (strcmp(sink.c_str(), "sfpa") == 0) {
 				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
-					tree->access<std::string>( mb_path / "sfpa" / "link_ip").get(), udp_port) );
+					tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get(), udp_port) );
 			// SFPB
 			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
 				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
-					tree->access<std::string>( mb_path / "sfpb" / "link_ip").get(), udp_port) );
+					tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get(), udp_port) );
 			// MANAGEMENT
 			} else {
 				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
@@ -93,7 +93,7 @@ public:
 	// it is HIGHLY recommended that the user keep the payload len equal for both SFP ports
 	size_t get_max_num_samps(void) const {
 		int sample_size = boost::lexical_cast<int>(
-			_tree->access<std::string>("/mboards/0/fpga/link/sfpa/pay_len").get());
+			_tree->access<std::string>("/mboards/0/link/sfpa/pay_len").get());
 
 		return sample_size/4;	// 32-bit (4-bytes) wide samples, (16 I, 16 Q)
 	}
@@ -182,7 +182,7 @@ public:
 	// it is HIGHLY recommended that the user keep the payload len equal for both SFP ports
 	size_t get_max_num_samps(void) const {
 		int sample_size = boost::lexical_cast<int>(
-			_tree->access<std::string>("/mboards/0/fpga/link/sfpa/pay_len").get());
+			_tree->access<std::string>("/mboards/0/link/sfpa/pay_len").get());
 
 		return sample_size/4;	// 32-bit (4-bytes) wide samples, (16 I, 16 Q)
 	}

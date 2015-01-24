@@ -417,10 +417,10 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
     TREE_CREATE_RW(mb_path / "link_max_rate", "fpga/link/rate", double, _double);
 
     // SFP settings
-    TREE_CREATE_RW(mb_path / "sfpa" / "link_ip",     "fpga/link/sfpa/ip_addr", std::string, _string);
-    TREE_CREATE_RW(mb_path / "sfpa" / "link_paylen", "fpga/link/sfpa/pay_len", std::string, _string);
-    TREE_CREATE_RW(mb_path / "sfpb" / "link_ip",     "fpga/link/sfpb/ip_addr", std::string, _string);
-    TREE_CREATE_RW(mb_path / "sfpb" / "link_paylen", "fpga/link/sfpb/pay_len", std::string, _string);
+    TREE_CREATE_RW(mb_path / "link" / "sfpa" / "ip_addr",  "fpga/link/sfpa/ip_addr", std::string, _string);
+    TREE_CREATE_RW(mb_path / "link" / "sfpa" / "pay_len", "fpga/link/sfpa/pay_len", std::string, _string);
+    TREE_CREATE_RW(mb_path / "link" / "sfpb" / "ip_addr",     "fpga/link/sfpb/ip_addr", std::string, _string);
+    TREE_CREATE_RW(mb_path / "link" / "sfpb" / "pay_len", "fpga/link/sfpb/pay_len", std::string, _string);
 
     // This is the master clock rate
     TREE_CREATE_RW(mb_path / "tick_rate", "time/clk/rate", double, _double);
