@@ -70,3 +70,28 @@ BOOST_AUTO_TEST_CASE(test_dict_pop){
     BOOST_CHECK(d.keys()[0] == -1);
     BOOST_CHECK(d.keys()[1] == 1);
 }
+
+BOOST_AUTO_TEST_CASE(test_dict_update)
+{
+    uhd::dict<std::string, std::string> d1 = boost::assign::map_list_of
+        ("key1", "val1")
+        ("key2", "val2")
+    ;
+    uhd::dict<std::string, std::string> d2 = boost::assign::map_list_of
+        ("key2", "val2x")
+        ("key3", "val3")
+    ;
+
+    d1.update(d2, false /* don't throw cause of conflict */);
+    BOOST_CHECK_EQUAL(d1["key1"], "val1");
+    BOOST_CHECK_EQUAL(d1["key2"], "val2x");
+    BOOST_CHECK_EQUAL(d1["key3"], "val3");
+
+    uhd::dict<std::string, std::string> d3 = boost::assign::map_list_of
+        ("key1", "val1")
+        ("key2", "val2")
+    ;
+    BOOST_CHECK_THROW(d3.update(d2), uhd::value_error);
+}
+
+

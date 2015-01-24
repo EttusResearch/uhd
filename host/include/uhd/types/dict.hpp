@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -116,6 +116,23 @@ namespace uhd{
          * \throw an exception when not found
          */
         Val pop(const Key &key);
+
+        /*! Update this dictionary with values from another.
+         *
+         * Basically, this copies all the key/value pairs from \p new_dict
+         * into this dict. When the key is already present in the current
+         * dict, it either overwrites the current value (if \p fail_on_conflict
+         * is false) or it throws (if \p fail_on_conflict is true *and* the
+         * values differ).
+         *
+         * With the exception of \p fail_on_conflict, this behaves analogously
+         * to Python's dict.update() method.
+         *
+         * \param new_args The arguments to copy.
+         * \param fail_on_conflict If true, throws.
+         * \throws uhd::value_error
+         */
+        void update(const dict<Key, Val> &new_dict, bool fail_on_conflict=true);
 
     private:
         typedef std::pair<Key, Val> pair_t;

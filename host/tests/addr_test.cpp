@@ -66,6 +66,13 @@ BOOST_AUTO_TEST_CASE(test_device_addr){
         old_dev_addr_vals.begin(), old_dev_addr_vals.end(),
         new_dev_addr_vals.begin(), new_dev_addr_vals.end()
     );
+
+    uhd::device_addr_t dev_addr_lhs1("key1=val1,key2=val2");
+    dev_addr_lhs1.update(uhd::device_addr_t("key2=val2x,key3=val3"), false);
+    BOOST_CHECK_EQUAL(dev_addr_lhs1["key1"], "val1");
+    BOOST_CHECK_EQUAL(dev_addr_lhs1["key2"], "val2x");
+    BOOST_CHECK_EQUAL(dev_addr_lhs1["key3"], "val3");
+    std::cout << "Merged: " << dev_addr_lhs1.to_string() << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(test_dboard_id){
