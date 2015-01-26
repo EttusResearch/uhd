@@ -13,6 +13,7 @@
 	- Internal GPS
 	- Soundcard mono input / stereo output
 	- USB UART
+	- Internal IMU
 	- Zynq-7020 FPGA
 - FPGA Capabilities:
         - 2 RX DDC chains in FPGA
@@ -294,6 +295,40 @@ enabled with the time source is set to "gpsdo".
 
 The device provides a 3.3V supply voltage to an external antenna connected to the *GPS* port
 of your device. Note that this supply voltage is turned off in order to safe power upon destruction of the software object.
+
+\subsection e3x0_hw_imu Inertial Measurement Unit (IMU)
+
+Your USRP-E Series device has an onboard IMU that provides
+9 axis (Gyro, Accelerometer and compass) functionality.
+
+The USRP-E Series images ship with several example applications based on
+<a href="https://github.com/richards-tech/RTIMULib">RTIMULib</a> that allow the user
+to explore the basic functionality of the IMU as well as to calibrate it.
+
+To test the accelerometer, run:
+
+    $ RTIMULibDrive
+
+This will print the current acclerometer values on the console.
+
+To launch the IMU calibration procedure, run:
+
+    $ RTIMULibCal
+
+and follow the onscreen instructions. Please note that magnetometer calibration is important to obtain
+sensible results if the IMU is to be used in sensor fusion applications.
+
+Using X11 forwarding over SSH (see \ref e3x0_faq) a complete sensor fusion application can be run over SSH
+from a host computer by typing:
+
+    $ RTIMULibDemo
+
+This should open a graphical window on the host computer that displays the various outputs of the IMU,
+as well as quaternion measurements based on different sensor fusion algorithms.
+
+\image html e3x0_imu_demo.png "RTIMULibDemo"
+
+For more advanced IMU based applications please refer to the <a href="https://github.com/richards-tech/RTIMULib">RTIMULib repository</a> as well as the datasheets.
 
 \subsection e3x0_hw_gpio Internal GPIO
 
@@ -578,7 +613,7 @@ You can use this to make sure the network connection is correctly set up, e.g.
 by pinging the USRP and making sure the LEDs start to blink.
 
 
-\subsection e3x0 Frequently Asked Questions
+\subsection e3x0_faq Frequently Asked Questions
 
  - Communication
   -# How do I enable X forwarding so I can run X apps on the E3x0?<br>
