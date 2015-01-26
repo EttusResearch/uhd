@@ -521,7 +521,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_s16_and_s16){
 
     //try various lengths to test edge cases
     id.output_format = "s16_item32_le";
-    for (size_t nsamps = 1; nsamps < 3; nsamps++){
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
         test_convert_types_s16(nsamps, id);
     }
 
@@ -529,5 +529,84 @@ BOOST_AUTO_TEST_CASE(test_convert_types_s16_and_s16){
     id.output_format = "s16_item32_be";
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
         test_convert_types_s16(nsamps, id);
+    }
+}
+
+/***********************************************************************
+ * Test fc32 -> fc32 conversion
+ **********************************************************************/
+static void test_convert_types_fc32(
+    size_t nsamps, convert::id_type &id
+){
+    //fill the input samples
+    std::vector< std::complex<float> > input(nsamps), output(nsamps);
+    BOOST_FOREACH(fc32_t &in, input) in = fc32_t(
+        (std::rand()/float(RAND_MAX/2)) - 1,
+        (std::rand()/float(RAND_MAX/2)) - 1
+    );
+
+    //run the loopback and test
+    convert::id_type in_id = id;
+    convert::id_type out_id = id;
+    std::swap(out_id.input_format, out_id.output_format);
+    std::swap(out_id.num_inputs, out_id.num_outputs);
+    loopback(nsamps, in_id, out_id, input, output);
+    BOOST_CHECK_EQUAL_COLLECTIONS(input.begin(), input.end(), output.begin(), output.end());
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_fc32){
+    convert::id_type id;
+    id.input_format = "fc32";
+    id.num_inputs = 1;
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    id.output_format = "fc32_item32_le";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_fc32(nsamps, id);
+    }
+
+    //try various lengths to test edge cases
+    id.output_format = "fc32_item32_be";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_fc32(nsamps, id);
+    }
+}
+
+/***********************************************************************
+ * Test f32 -> f32 conversion
+ **********************************************************************/
+static void test_convert_types_f32(
+    size_t nsamps, convert::id_type &id
+){
+    //fill the input samples
+    std::vector<float> input(nsamps), output(nsamps);
+    BOOST_FOREACH(float &in, input) in = float((std::rand()/float(RAND_MAX/2)) - 1);
+
+    //run the loopback and test
+    convert::id_type in_id = id;
+    convert::id_type out_id = id;
+    std::swap(out_id.input_format, out_id.output_format);
+    std::swap(out_id.num_inputs, out_id.num_outputs);
+    loopback(nsamps, in_id, out_id, input, output);
+    BOOST_CHECK_EQUAL_COLLECTIONS(input.begin(), input.end(), output.begin(), output.end());
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_f32_and_f32){
+    convert::id_type id;
+    id.input_format = "f32";
+    id.num_inputs = 1;
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    id.output_format = "f32_item32_le";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_f32(nsamps, id);
+    }
+
+    //try various lengths to test edge cases
+    id.output_format = "f32_item32_be";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_f32(nsamps, id);
     }
 }

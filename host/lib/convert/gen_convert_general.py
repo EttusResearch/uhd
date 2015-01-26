@@ -37,25 +37,32 @@ DECLARE_CONVERTER(item32, 1, item32, 1, PRIORITY_GENERAL) {
 }
 """
 
-TMPL_CONV_GEN2_ITEM32 = """
-DECLARE_CONVERTER(item32, 1, sc16_item32_{end}, 1, PRIORITY_GENERAL) {{
+# Some 32-bit types converters are also defined in convert_item32.cpp to
+# take care of quirks such as I/Q ordering on the wire etc.
+TMPL_CONV_ITEM32 = """
+DECLARE_CONVERTER({in_type}, 1, {out_type}, 1, PRIORITY_GENERAL) {{
     const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
     item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
 
     for (size_t i = 0; i < nsamps; i++) {{
-        output[i] = {to_wire}(input[i]);
-    }}
-}}
-
-DECLARE_CONVERTER(sc16_item32_{end}, 1, item32, 1, PRIORITY_GENERAL) {{
-    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
-    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
-
-    for (size_t i = 0; i < nsamps; i++) {{
-        output[i] = {to_host}(input[i]);
+        output[i] = {to_wire_or_host}(input[i]);
     }}
 }}
 """
+
+# 64-bit data types are two consecutive item32 items
+TMPL_CONV_ITEM64 = """
+DECLARE_CONVERTER({in_type}, 1, {out_type}, 1, PRIORITY_GENERAL) {{
+    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
+    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+
+    // An item64 is two item32_t's
+    for (size_t i = 0; i < nsamps * 2; i++) {{
+        output[i] = {to_wire_or_host}(input[i]);
+    }}
+}}
+"""
+
 
 TMPL_CONV_U8S8 = """
 DECLARE_CONVERTER({us8}, 1, {us8}_item32_{end}, 1, PRIORITY_GENERAL) {{
@@ -200,21 +207,43 @@ if __name__ == '__main__':
     file = os.path.basename(__file__)
     output = parse_tmpl(TMPL_HEADER, file=file)
 
-    #generate converters for all gen2 platforms
+    ## Generate all data types that are exactly
+    ## item32 or multiples thereof:
+    for end in ('be', 'le'):
+        host_to_wire = {'be': 'uhd::htonx', 'le': 'uhd::htowx'}[end]
+        wire_to_host = {'be': 'uhd::ntohx', 'le': 'uhd::wtohx'}[end]
+        # item32 types (sc16->sc16 is a special case because it defaults
+        # to Q/I order on the wire:
+        for in_type, out_type, to_wire_or_host in (
+                ('item32', 'sc16_item32_{end}', host_to_wire),
+                ('sc16_item32_{end}', 'item32', wire_to_host),
+                ('f32', 'f32_item32_{end}', host_to_wire),
+                ('f32_item32_{end}', 'f32', wire_to_host),
+        ):
+            output += TMPL_CONV_ITEM32.format(
+                    end=end, to_wire_or_host=to_wire_or_host,
+                    in_type=in_type.format(end=end), out_type=out_type.format(end=end)
+            )
+        # 2xitem32 types:
+        for in_type, out_type in (
+                ('fc32', 'fc32_item32_{end}'),
+                ('fc32_item32_{end}', 'fc32'),
+        ):
+            output += TMPL_CONV_ITEM64.format(
+                    end=end, to_wire_or_host=to_wire_or_host,
+                    in_type=in_type.format(end=end), out_type=out_type.format(end=end)
+            )
+
+    ## Real 16-Bit:
     for end, to_host, to_wire in (
         ('be', 'uhd::ntohx', 'uhd::htonx'),
         ('le', 'uhd::wtohx', 'uhd::htowx'),
     ):
-        # All complex formats:
-        output += TMPL_CONV_GEN2_ITEM32.format(
-                end=end, to_host=to_host, to_wire=to_wire
-        )
-        # Real 16-bit signed:
         output += TMPL_CONV_S16.format(
             end=end, to_host=to_host, to_wire=to_wire
         )
 
-    #generate 8-bit real type converters:
+    ## Real 8-Bit Types:
     for us8 in ('u8', 's8'):
         for end, to_host, to_wire in (
             ('be', 'uhd::ntohx', 'uhd::htonx'),
