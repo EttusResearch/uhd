@@ -71,6 +71,19 @@ extern "C" {
 #define CRIMSON_RF_GAIN_RANGE_STOP	28.0
 #define CRIMSON_RF_GAIN_RANGE_STEP	1.0
 
+// Crimson Rate Settings
+#define CRIMSON_RATE_RANGE_START	629425.048828
+#define CRIMSON_RATE_RANGE_STOP		161132812.5
+#define CRIMSON_RATE_RANGE_STEP		1000000.0
+
+// Crimson Freq Settings
+#define CRIMSON_FREQ_RANGE_START	50.0
+#define CRIMSON_FREQ_RANGE_STOP		6000000000.0
+#define CRIMSON_FREQ_RANGE_STEP		1.0
+
+// Crimson Clk Settings
+#define CRIMSON_MASTER_CLOCK_RATE	322265625
+
 #ifdef __cplusplus
 }
 #endif

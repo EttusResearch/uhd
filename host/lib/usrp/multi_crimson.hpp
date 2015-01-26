@@ -195,8 +195,10 @@ private:
     fs_path mb_root(const size_t mboard);
     fs_path rx_rf_fe_root(const size_t chan);
     fs_path rx_dsp_root(const size_t chan);
+    fs_path rx_link_root(const size_t chan);
     fs_path tx_rf_fe_root(const size_t chan);
     fs_path tx_dsp_root(const size_t chan);
+    fs_path tx_link_root(const size_t chan);
 };
 
 }}

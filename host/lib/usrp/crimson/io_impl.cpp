@@ -59,14 +59,19 @@ public:
 
 			// SFPA
 			if (strcmp(sink.c_str(), "sfpa") == 0) {
+				//std::cout << __func__ << "(): opened UDP[ IP: " << tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
+				//	<< " PORT: " << udp_port << "]" << std::endl;
 				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
 					tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get(), udp_port) );
 			// SFPB
 			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
+				//std::cout << __func__ << "(): opened UDP[ IP: " << tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
+				//	<< " PORT: " << udp_port << "]" << std::endl;
 				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
 					tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get(), udp_port) );
 			// MANAGEMENT
 			} else {
+				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: " << udp_port << "]" << std::endl;
 				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
 					addr["addr"], udp_port));
 			}
@@ -146,16 +151,19 @@ public:
 			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
 			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
 
-			// SFPA
+			// SFPA (all the same because this is a sink)
 			if (strcmp(sink.c_str(), "sfpa") == 0) {
+				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: " << udp_port << "]" << std::endl;
 				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
 					addr["addr"], udp_port));
-			// SFPB
+			// SFPB (all the same because this is a sink)
 			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
+				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: " << udp_port << "]" << std::endl;
 				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
 					addr["addr"], udp_port));
-			// MANAGEMENT
+			// MANAGEMENT (all the same because this is a sink)
 			} else {
+				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: " << udp_port << "]" << std::endl;
 				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
 					addr["addr"], udp_port));
 			}
@@ -224,7 +232,7 @@ rx_streamer::sptr crimson_impl::get_rx_stream(const uhd::stream_args_t &args){
 	// Crimson currently only supports cpu_format of "sc16" (complex<int16_t>) stream
 	if (strcmp(args.cpu_format.c_str(), "sc16") != 0 && strcmp(args.cpu_format.c_str(), "") != 0 ) {
 		UHD_MSG(error) << "CRIMSON Stream only supports cpu_format of \
-			\"sc16\" complex\<int16_t\>" << std::endl;
+			\"sc16\" complex<int16_t>" << std::endl;
 	}
 
 	// Crimson currently only supports (over the wire) otw_format of "sc16" - Q16 I16 if specified
@@ -244,7 +252,7 @@ tx_streamer::sptr crimson_impl::get_tx_stream(const uhd::stream_args_t &args){
 	// Crimson currently only supports cpu_format of "sc16" (complex<int16_t>) stream
 	if (strcmp(args.cpu_format.c_str(), "sc16") != 0 && strcmp(args.cpu_format.c_str(), "") != 0 ) {
 		UHD_MSG(error) << "CRIMSON Stream only supports cpu_format of \
-			\"sc16\" complex\<int16_t\>" << std::endl;
+			\"sc16\" complex<int16_t>" << std::endl;
 	}
 
 	// Crimson currently only supports (over the wire) otw_format of "sc16" - Q16 I16 if specified

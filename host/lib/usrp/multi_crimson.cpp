@@ -116,8 +116,8 @@ dict<std::string, std::string> multi_crimson_impl::get_usrp_tx_info(size_t chan)
 /*******************************************************************
  * Mboard methods
  ******************************************************************/
+// Master clock rate is fixed at 322.265625 MHz
 void multi_crimson_impl::set_master_clock_rate(double rate, size_t mboard){
-    _tree->access<double>(mb_root(0) / "tick_rate").set(rate);
     return;
 }
 
@@ -224,17 +224,27 @@ void multi_crimson_impl::clear_command_time(size_t mboard){
 }
 
 void multi_crimson_impl::issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t chan){
-    // TODO insert code to handle stream_cmd, which defines how data is streamed
+    // set register to start the stream
     if( stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
-		// set register to start the stream
+        _tree->access<std::string>(tx_link_root(chan) / "enable").set("1");
+        _tree->access<std::string>(rx_link_root(chan) / "enable").set("1");
+
+    // set register to stop the stream
     } else if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS) {
-		// set register to stop the stream
-    } else if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE) {
-		// set register to wait for a stream cmd after num_samps
-    } else if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE) {
-		// set register to not wait for a stream cmd after num_samps
+        _tree->access<std::string>(tx_link_root(chan) / "enable").set("0");
+        _tree->access<std::string>(rx_link_root(chan) / "enable").set("0");
+
+    //} else if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE) {
+	// set register to wait for a stream cmd after num_samps
+	// not supported in Crimson
+
+    //} else if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE) {
+	// set register to not wait for a stream cmd after num_samps
+	// not supported in Crimson
+
     } else {
-		// set register to stop the stream
+        _tree->access<std::string>(tx_link_root(chan) / "enable").set("0");
+        _tree->access<std::string>(rx_link_root(chan) / "enable").set("0");
     }
     return;
 }
@@ -277,9 +287,9 @@ std::vector<std::string> multi_crimson_impl::get_time_sources(const size_t mboar
     return _tree->access<std::vector<std::string> >(mb_root(0) / "time_source" / "options").get();
 }
 
-// set the current clock source
+// set the current clock source (Crimson only uses internal reference for now, because it is a really good clock already)
 void multi_crimson_impl::set_clock_source(const std::string &source, const size_t mboard){
-    _tree->access<std::string>(mb_root(0) / "clock_source" / "value").set(source);
+    //_tree->access<std::string>(mb_root(0) / "clock_source" / "value").set(source);
     return;
 }
 
@@ -374,14 +384,41 @@ meta_range_t multi_crimson_impl::get_rx_rates(size_t chan){
 
 // set the RX frequency on specified channel
 tune_result_t multi_crimson_impl::set_rx_freq(const tune_request_t &tune_request, size_t chan){
-    _tree->access<double>(rx_rf_fe_root(chan) / "freq" / "value").set(tune_request.target_freq);
-    _tree->access<double>(rx_dsp_root(chan) / "freq" / "value").set(tune_request.target_freq);
+    tune_request_t req = tune_request;
     tune_result_t result;
-    result.target_rf_freq  = tune_request.target_freq;
-    result.target_dsp_freq = tune_request.target_freq;
-    result.actual_rf_freq  = _tree->access<double>(mb_root(0) / "rx" / chan_to_string(chan) / "freq" / "value").get();
-    result.actual_dsp_freq = result.actual_rf_freq;
+
+    // check the tuning ranges first, and clip if necessary
+    meta_range_t rf_range  = _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "freq" / "range").get();
+    meta_range_t dsp_range = _tree->access<meta_range_t>(rx_dsp_root(chan)   / "freq" / "range").get();
+    if (req.rf_freq < rf_range.start())	req.rf_freq 	= rf_range.start();
+    if (req.rf_freq > rf_range.stop())		req.rf_freq 	= rf_range.stop();
+    if (req.dsp_freq < dsp_range.start())	req.dsp_freq	= dsp_range.start();
+    if (req.dsp_freq > dsp_range.stop())	req.dsp_freq	= dsp_range.stop();
+    if (req.target_freq < rf_range.start())	req.target_freq = rf_range.start();
+    if (req.target_freq > rf_range.stop())	req.target_freq = rf_range.stop();
+
+    // tune request, use target_freq when none of the policies are set to manual
+    if( req.rf_freq_policy == tune_request_t::POLICY_MANUAL ) {
+        _tree->access<double>(rx_rf_fe_root(chan) / "freq" / "value").set(req.rf_freq);
+	result.actual_rf_freq = req.rf_freq;
+    } else {
+	_tree->access<double>(rx_rf_fe_root(chan) / "freq" / "value").set(req.target_freq);
+	result.actual_rf_freq = req.target_freq;
+    }
+
+    if( req.dsp_freq_policy == tune_request_t::POLICY_MANUAL ) {
+        _tree->access<double>(rx_dsp_root(chan) / "freq" / "value").set(req.dsp_freq);
+	result.actual_dsp_freq = req.dsp_freq;
+    } else {
+	_tree->access<double>(rx_dsp_root(chan) / "freq" / "value").set(req.target_freq);
+	result.actual_dsp_freq = req.target_freq;
+    }
+
+    result.target_rf_freq  = result.actual_rf_freq;
     result.clipped_rf_freq = result.actual_rf_freq;
+    result.target_dsp_freq = result.actual_dsp_freq;
+
+    // tune_request.args are ignored for Crimson
     return result;
 }
 
@@ -522,14 +559,41 @@ meta_range_t multi_crimson_impl::get_tx_rates(size_t chan){
 
 // set the TX frequency on specified channel
 tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request, size_t chan){
-    _tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").set(tune_request.target_freq);
-    _tree->access<double>(tx_dsp_root(chan) / "freq" / "value").set(tune_request.target_freq);
+    tune_request_t req = tune_request;
     tune_result_t result;
-    result.target_rf_freq  = tune_request.target_freq;
-    result.target_dsp_freq = tune_request.target_freq;
-    result.actual_rf_freq  = _tree->access<double>(mb_root(0) / "rx" / chan_to_string(chan) / "freq" / "value").get();
-    result.actual_dsp_freq = result.actual_rf_freq;
+
+    // check the tuning ranges first, and clip if necessary
+    meta_range_t rf_range  = _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "freq" / "range").get();
+    meta_range_t dsp_range = _tree->access<meta_range_t>(tx_dsp_root(chan)   / "freq" / "range").get();
+    if (req.rf_freq < rf_range.start())	req.rf_freq 	= rf_range.start();
+    if (req.rf_freq > rf_range.stop())		req.rf_freq 	= rf_range.stop();
+    if (req.dsp_freq < dsp_range.start())	req.dsp_freq	= dsp_range.start();
+    if (req.dsp_freq > dsp_range.stop())	req.dsp_freq	= dsp_range.stop();
+    if (req.target_freq < rf_range.start())	req.target_freq = rf_range.start();
+    if (req.target_freq > rf_range.stop())	req.target_freq = rf_range.stop();
+
+    // tune request, use target_freq when none of the policies are set to manual
+    if( req.rf_freq_policy == tune_request_t::POLICY_MANUAL ) {
+        _tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").set(req.rf_freq);
+	result.actual_rf_freq = req.rf_freq;
+    } else {
+	_tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").set(req.target_freq);
+	result.actual_rf_freq = req.target_freq;
+    }
+
+    if( req.dsp_freq_policy == tune_request_t::POLICY_MANUAL ) {
+        _tree->access<double>(tx_dsp_root(chan) / "freq" / "value").set(req.dsp_freq);
+	result.actual_dsp_freq = req.dsp_freq;
+    } else {
+	_tree->access<double>(tx_dsp_root(chan) / "freq" / "value").set(req.target_freq);
+	result.actual_dsp_freq = req.target_freq;
+    }
+
+    result.target_rf_freq  = result.actual_rf_freq;
     result.clipped_rf_freq = result.actual_rf_freq;
+    result.target_dsp_freq = result.actual_dsp_freq;
+
+    // tune_request.args are ignored for Crimson
     return result;
 }
 
@@ -674,6 +738,13 @@ fs_path multi_crimson_impl::rx_dsp_root(const size_t chan) {
     return mb_root(0) / "rx_dsps" / chan_to_string(channel);
 }
 
+fs_path multi_crimson_impl::rx_link_root(const size_t chan) {
+    size_t channel;
+    if (chan > CRIMSON_RX_CHANNELS) 	channel = 0;
+    else				channel = chan;
+    return mb_root(0) / "rx_link" / chan_to_string(channel);
+}
+
 fs_path multi_crimson_impl::tx_rf_fe_root(const size_t chan) {
     size_t channel;
     if (chan > CRIMSON_TX_CHANNELS) 	channel = 0;
@@ -689,6 +760,12 @@ fs_path multi_crimson_impl::tx_dsp_root(const size_t chan) {
     return mb_root(0) / "tx_dsps" / chan_to_string(channel);
 }
 
+fs_path multi_crimson_impl::tx_link_root(const size_t chan) {
+    size_t channel;
+    if (chan > CRIMSON_TX_CHANNELS) 	channel = 0;
+    else				channel = chan;
+    return mb_root(0) / "tx_link" / chan_to_string(channel);
+}
 
 // Channel string handling
 std::string multi_crimson_impl::chan_to_string(size_t chan) {
