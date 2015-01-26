@@ -88,6 +88,7 @@ void device3_impl::generate_channel_list(
             }
             chan_list.push_back(_tree->access<uhd::rfnoc::block_id_t>(chan_root).get());
             chan_args.push_back(this_chan_args);
+            // FIXME merge args.args, they can never be ignored
         }
     }
 }
@@ -437,6 +438,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
     std::vector<uhd::rfnoc::block_id_t> chan_list;
     std::vector<device_addr_t> chan_args;
     generate_channel_list(args, chan_list, chan_args, "rx");
+    // Note: All 'args.args' are merged into chan_args now.
 
     // II. Iterate over all channels
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer;
@@ -447,8 +449,10 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
     for (size_t stream_i = 0; stream_i < chan_list.size(); stream_i++) {
         // Get block ID and mb index
         uhd::rfnoc::block_id_t block_id = chan_list[stream_i];
+        // Update args so args.args is always valid for this particular channel:
+        args.args = chan_args[stream_i];
         size_t mb_index = block_id.get_device_no();
-        size_t suggested_block_port = chan_args[stream_i].cast<size_t>("block_port", rfnoc::ANY_PORT);
+        size_t suggested_block_port = args.args.cast<size_t>("block_port", rfnoc::ANY_PORT);
 
         // Access to this channel's block control
         uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl =
@@ -458,7 +462,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         size_t block_port = blk_ctrl->connect_downstream(
                 recv_terminator,
                 suggested_block_port,
-                chan_args[stream_i]
+                args.args
         );
         recv_terminator->connect_upstream(blk_ctrl);
 
@@ -471,7 +475,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         both_xports_t xport = make_transport(stream_address, RX_DATA, rx_hints);
         UHD_MSG(status) << std::hex << "[RX Streamer] data_sid = " << xport.send_sid << std::dec << " actual recv_buff_size = " << xport.recv_buff_size << std::endl;
 
-        // Configure the block (this may change args)
+        // Configure the block (this may change args.args)
         blk_ctrl->setup_rx_streamer(args);
         blk_ctrl->set_destination(xport.send_sid.get_src(), block_port);
 
@@ -479,7 +483,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         // to avoid fragmentation should the entire header be used.
         const size_t bpp = xport.recv->get_recv_frame_size() - stream_options.rx_max_len_hdr; // bytes per packet
         const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
-        const size_t spp = std::min(chan_args[stream_i].cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
+        const size_t spp = std::min(args.args.cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
 
         //make the new streamer given the samples per packet
         if (not my_streamer)
@@ -614,6 +618,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
     std::vector<uhd::rfnoc::block_id_t> chan_list;
     std::vector<device_addr_t> chan_args;
     generate_channel_list(args, chan_list, chan_args, "tx");
+    // Note: All 'args.args' are merged into chan_args now.
 
     //shared async queue for all channels in streamer
     boost::shared_ptr<async_md_type> async_md(new async_md_type(1000/*messages deep*/));
@@ -627,8 +632,10 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
     for (size_t stream_i = 0; stream_i < chan_list.size(); stream_i++) {
         // Get block ID and mb index
         uhd::rfnoc::block_id_t block_id = chan_list[stream_i];
+        // Update args so args.args is always valid for this particular channel:
+        args.args = chan_args[stream_i];
         size_t mb_index = block_id.get_device_no();
-        size_t suggested_block_port = chan_args[stream_i].cast<size_t>("block_port", rfnoc::ANY_PORT);
+        size_t suggested_block_port = args.args.cast<size_t>("block_port", rfnoc::ANY_PORT);
 
         // Access to this channel's block control
         uhd::rfnoc::sink_block_ctrl_base::sptr blk_ctrl =
@@ -639,7 +646,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         size_t block_port = blk_ctrl->connect_upstream(
                 send_terminator,
                 suggested_block_port,
-                chan_args[stream_i]
+                args.args
         );
         send_terminator->connect_downstream(blk_ctrl);
 
@@ -659,7 +666,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         // to avoid fragmentation should the entire header be used.
         const size_t bpp = xport.send->get_send_frame_size() - stream_options.tx_max_len_hdr;
         const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
-        const size_t spp = std::min(chan_args[stream_i].cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
+        const size_t spp = std::min(args.args.cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
 
         //make the new streamer given the samples per packet
         if (not my_streamer)
