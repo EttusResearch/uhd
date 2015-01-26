@@ -56,9 +56,13 @@ UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${RUNTIME_DIR} COM
 # Utilities that get installed into the share path
 ########################################################################
 SET(util_share_sources
+    converter_benchmark.cpp
     query_gpsdo_sensors.cpp
     usrp_burn_db_eeprom.cpp
     usrp_burn_mb_eeprom.cpp
+)
+SET(util_share_sources_py
+    converter_benchmark.py
 )
 IF(ENABLE_USB)
     LIST(APPEND util_share_sources
@@ -108,6 +112,13 @@ FOREACH(util_source ${util_share_sources})
     ADD_EXECUTABLE(${util_name} ${util_source})
     TARGET_LINK_LIBRARIES(${util_name} uhd ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+ENDFOREACH(util_source)
+FOREACH(util_source ${util_share_sources_py})
+    UHD_INSTALL(PROGRAMS
+        ${CMAKE_CURRENT_SOURCE_DIR}/${util_source}
+        DESTINATION ${PKG_LIB_DIR}/utils
+        COMPONENT utilities
+    )
 ENDFOREACH(util_source)
 
 UHD_INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
