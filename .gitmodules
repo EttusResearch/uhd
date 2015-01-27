@@ -1,4 +1,4 @@
 [submodule "fpga-src"]
 	path = fpga-src
-	url = git@github.com:EttusResearch/fpga.git
+	url = https://github.com/EttusResearch/fpga.git
 	branch = master
