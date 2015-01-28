@@ -27,7 +27,7 @@ MACRO(LIBUHD_LVBITX_GEN_SOURCE_AND_BITSTREAM lvbitx binfile)
     ENDIF( ${binfile} STREQUAL "OFF" )
 
     SET(OUTPUT_PATH_OPT --output-src-path=${CMAKE_CURRENT_BINARY_DIR})
-    SET(IMAGES_PATH_OPT --uhd-images-path=${FPGA_IMAGES_DIR})
+    SET(IMAGES_PATH_OPT --uhd-images-path=${UHD_IMAGES_DIR})
 
     ADD_CUSTOM_COMMAND(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${lvbitxprefix}_lvbitx.hpp 
@@ -52,11 +52,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 MESSAGE(STATUS "")
 MESSAGE(STATUS "Processing NI-RIO FPGA LVBITX Bitstreams...")
-
-FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/share/uhd/images default_images_dir)
-SET( FPGA_IMAGES_DIR ${default_images_dir} CACHE STRING "Path to installed FPGA image files." )
-OPTION( FPGA_IMAGES_DIR "Path to installed FPGA image files." "" )
-MESSAGE( STATUS "  LVBITX install directory: ${FPGA_IMAGES_DIR}" )
 
 # X300 Stuff
 LIBUHD_LVBITX_GEN_SOURCE_AND_BITSTREAM(x300.lvbitx_base OFF)

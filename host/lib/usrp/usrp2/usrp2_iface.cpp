@@ -23,7 +23,7 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>
@@ -375,7 +375,7 @@ public:
             fpga_image_path = uhd::find_image_path(fpga_image);
         }
         catch(const std::exception &){
-            return str(boost::format("Could not find %s and %s in your images path!\n%s") % fw_image % fpga_image % print_images_error());
+            return str(boost::format("Could not find %s and %s in your images path!\n%s") % fw_image % fpga_image % print_utility_error("uhd_images_downloader.py"));
         }
 
         //escape char for multi-line cmd + newline + indent?
@@ -389,13 +389,13 @@ public:
         if (this->get_rev() == USRP2_REV3 or this->get_rev() == USRP2_REV4){
             const std::string card_burner = (fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / "usrp2_card_burner.py").string();
             const std::string card_burner_cmd = str(boost::format("\"%s%s\" %s--fpga=\"%s\" %s--fw=\"%s\"") % sudo % card_burner % ml % fpga_image_path % ml % fw_image_path);
-            return str(boost::format("%s\n%s") % print_images_error() % card_burner_cmd);
+            return str(boost::format("%s\n%s") % print_utility_error("uhd_images_downloader.py") % card_burner_cmd);
         }
         else{
             const std::string addr = _ctrl_transport->get_recv_addr();
             const std::string net_burner_path = (fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / "usrp_n2xx_simple_net_burner").string();
             const std::string net_burner_cmd = str(boost::format("\"%s\" %s--addr=\"%s\"") % net_burner_path % ml % addr);
-            return str(boost::format("%s\n%s") % print_images_error() % net_burner_cmd);
+            return str(boost::format("%s\n%s") % print_utility_error("uhd_images_downloader.py") % net_burner_cmd);
         }
     }
 

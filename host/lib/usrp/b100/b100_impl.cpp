@@ -23,7 +23,7 @@
 #include <uhd/utils/cast.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/format.hpp>
 #include <boost/assign/list_of.hpp>
@@ -82,7 +82,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
             b100_fw_image = find_image_path(hint.get("fw", B100_FW_FILE_NAME));
         }
         catch(...){
-            UHD_MSG(warning) << boost::format("Could not locate B100 firmware. %s\n") % print_images_error();
+            UHD_MSG(warning) << boost::format("Could not locate B100 firmware. %s\n") % print_utility_error("uhd_images_downloader.py");
             return b100_addrs;
         }
         UHD_LOG << "the firmware image: " << b100_fw_image << std::endl;
@@ -532,10 +532,10 @@ void b100_impl::check_fw_compat(void){
     );
     if (fw_compat_num != B100_FW_COMPAT_NUM){
         throw uhd::runtime_error(str(boost::format(
-            "Expected firmware compatibility number 0x%x, but got 0x%x:\n"
+            "Expected firmware compatibility number %d, but got %d:\n"
             "The firmware build is not compatible with the host code build.\n"
             "%s"
-        ) % B100_FW_COMPAT_NUM % fw_compat_num % print_images_error()));
+        ) % int(B100_FW_COMPAT_NUM) % fw_compat_num % print_utility_error("uhd_images_downloader.py")));
     }
     _tree->create<std::string>("/mboards/0/fw_version").set(str(boost::format("%u.0") % fw_compat_num));
 }
@@ -552,7 +552,7 @@ void b100_impl::check_fpga_compat(void){
             "Expected FPGA compatibility number %d, but got %d:\n"
             "The FPGA build is not compatible with the host code build."
             "%s"
-        ) % int(B100_FPGA_COMPAT_NUM) % fpga_major % print_images_error()));
+        ) % int(B100_FPGA_COMPAT_NUM) % fpga_major % print_utility_error("uhd_images_downloader.py")));
     }
     _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
 }

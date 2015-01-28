@@ -37,7 +37,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/images.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_main.hpp>
 
