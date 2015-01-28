@@ -65,9 +65,9 @@ configure-time.
 
 <b>Option 2:</b>
 
-Unpack the archive anywhere and set the `UHD_IMAGES_PATH`
-environment variable. `UHD_IMAGES_PATH` may contain a list of
-directories to search for image files.
+Unpack the archive anywhere and set the `UHD_IMAGES_DIR` environment variable.
+The `UHD_IMAGES_DIR` environment variable may contain a list of paths. They
+should be ordered by preference.
 
 \section images_building Building Images
 

@@ -60,6 +60,26 @@ SET(PKG_DOC_DIR share/doc/uhd)
 SET(PKG_MAN_DIR share/man/man1)
 
 ########################################################################
+# UHD Image Directories
+########################################################################
+IF(NOT DEFINED UHD_IMAGES_DIR)
+    IF(DEFINED FPGA_IMAGES_DIR)
+        SET(UHD_IMAGES_DIR ${FPGA_IMAGES_DIR})
+    ELSE(DEFINED FPGA_IMAGES_DIR)
+        FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX}/share/uhd/images using_images_dir)
+        SET(UHD_IMAGES_DIR ${using_images_dir})
+    ENDIF(DEFINED FPGA_IMAGES_DIR)
+ENDIF(NOT DEFINED UHD_IMAGES_DIR)
+
+OPTION(UHD_IMAGES_DIR "Path to installed UHD image binaries.")
+MESSAGE( STATUS "Using UHD Images Directory: ${UHD_IMAGES_DIR}" )
+ADD_DEFINITIONS(-DUHD_IMAGES_DIR=${UHD_IMAGES_DIR})
+
+IF(DEFINED USE_NIUSRP_WINREG_KEY)
+    ADD_DEFINITIONS(-DUSE_NIUSRP_WINREG_KEY)
+ENDIF(DEFINED USE_NIUSRP_WINREG_KEY)
+
+########################################################################
 # Local Include Dir
 ########################################################################
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/include)
@@ -378,7 +398,7 @@ UHD_INSTALL(
 )
 
 ########################################################################
-# Handle pre-built images
+# Handle pre-built UHD Images meant for installation
 ########################################################################
 IF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
     FILE(GLOB_RECURSE _image_files "${UHD_IMAGES_DIR}/*")

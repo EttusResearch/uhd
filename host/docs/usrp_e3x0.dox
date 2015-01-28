@@ -132,7 +132,7 @@ which should return 'arm-oe-linux-gnueabi'.
 -# Setup your environment as described in \ref e3x0_sdk_usage
 -# Type the following in the build directory (assuming a build in host/build):
 
-        $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DENABLE_E300=On ..
+        $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_E300=ON ..
         $ make
 
 \subsubsection e3x0_sdk_usage_gnuradio Building GNU Radio
@@ -143,7 +143,7 @@ which should return 'arm-oe-linux-gnueabi'.
 
 \code{.sh}
 $ mkdir build-arm
-$ cmake -Wno-dev -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/oe-sdk_cross.cmake \-DCMAKE_INSTALL_PREFIX=/usr -DENABLE_GR_VOCODER=OFF -DGR_ENABLE_ATSC=OFF \
+$ cmake -Wno-dev -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/oe-sdk_cross.cmake \-DCMAKE_INSTALL_PREFIX=/usr -DENABLE_GR_VOCODER=OFF -DENABLE_GR_ATSC=OFF \
 -DENABLE_GR_DTV=OFF -DENABLE_DOXYGEN=OFF ../
 \endcode
 
@@ -274,8 +274,18 @@ You may need to change the USRP's IP address for several reasons:
 - **USB**: USB 2.0 Port
 - **SERIAL**: Micro USB connection for serial uart console
 
+\subsection e3x0_hw_sync Clock and Time Synchronization
+Unlike most USRP devices, the E310 does not have independent reference clock and time source inputs.
+It is possible, however, to discipline the internal reference clock using an external time (PPS) source
+connected to the SYNC input pin. The E310 FPGA has a subsystem that can use the PPS signal from the
+SYNC pin or the internal GPS to align edges of the reference clock to edges of a shared PPS signal. 
+This alignment happens automatically when the time source in UHD is set to "gpsdo" or "external". 
+Please note that because the SYNC input can only accept a PPS signal, the only supported value for 
+the reference clock source is "internal".
+
+
 \subsection e3x0_hw_pps PPS - Pulse Per Second
-Using a PPS signal for timestamp synchronization requires a square wave signal with the following a 5Vpp amplitude.
+Using a PPS signal for timestamp synchronization requires a LVCMOS or a 5V logic input signal.
 An external PPS can be used to discipline the internal reference clock. This feature is automatically 
 enabled with the time source is set to "external".
 
