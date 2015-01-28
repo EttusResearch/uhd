@@ -92,4 +92,16 @@ typedef ptrdiff_t ssize_t;
     #define UHD_PLATFORM_BSD
 #endif
 
+// Define 'stringize' preprocessor macros. The stringize macro, XSTR, takes
+// variable arguments so that it can deal with strings that contain commas.
+// There are two different versions because MSVC handles this syntax a bit
+// differently than other compilers.
+#if defined(BOOST_MSVC)
+    #define XSTR(x,...) #x
+#else
+    #define XSTR(x...) #x
+#endif
+
+#define STR(x) XSTR(x)
+
 #endif /* INCLUDED_UHD_CONFIG_HPP */

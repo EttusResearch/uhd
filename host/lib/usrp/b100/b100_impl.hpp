@@ -46,7 +46,7 @@
 static const double          B100_LINK_RATE_BPS = 256e6/5; //pratical link rate (< 480 Mbps)
 static const std::string     B100_FW_FILE_NAME = "usrp_b100_fw.ihx";
 static const std::string     B100_FPGA_FILE_NAME = "usrp_b100_fpga.bin";
-static const boost::uint16_t B100_FW_COMPAT_NUM = 0x04;
+static const boost::uint16_t B100_FW_COMPAT_NUM = 4;
 static const boost::uint16_t B100_FPGA_COMPAT_NUM = 11;
 static const boost::uint32_t B100_RX_SID_BASE = 30;
 static const boost::uint32_t B100_TX_ASYNC_SID = 10;
