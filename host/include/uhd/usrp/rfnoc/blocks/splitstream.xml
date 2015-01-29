@@ -6,6 +6,18 @@
   <ids>
     <id revision="0">5757</id>
   </ids>
+  <!-- This block takes any type, hence we skip the <type> tag: -->
+  <ports>
+    <sink>
+      <name>in</name>
+    </sink>
+    <source>
+      <name>out0</name>
+    </source>
+    <source>
+      <name>out1</name>
+    </source>
+  </ports>
   <!--<components>-->
     <!--<component>-->
       <!--<key revision="1">nocshell</key>-->

@@ -5,4 +5,12 @@
   <ids>
     <id revision="0">0000000000000000</id>
   </ids>
+  <ports>
+    <sink>
+      <name>dump</name>
+    </sink>
+    <source>
+      <name>src</name>
+    </source>
+  </ports>
 </nocblock>

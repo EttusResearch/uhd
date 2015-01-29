@@ -6,6 +6,14 @@
   <ids>
     <id revision="0">12E5</id>
   </ids>
+  <ports>
+    <sink>
+      <name>in</name>
+    </sink>
+    <source>
+      <name>out</name>
+    </source>
+  </ports>
   <!--<components>-->
     <!--<component>-->
       <!--<key revision="1">nocshell</key>-->

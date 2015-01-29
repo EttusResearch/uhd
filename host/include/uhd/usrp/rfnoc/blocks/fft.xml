@@ -6,6 +6,17 @@
   <ids>
     <id revision="0">FF70</id>
   </ids>
+  <!--All the connections to the outside world are listed in 'ports':-->
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>sc16</type>
+    </source>
+  </ports>
   <!--<components>-->
     <!--<component>-->
       <!--<key revision="1">nocshell</key>-->

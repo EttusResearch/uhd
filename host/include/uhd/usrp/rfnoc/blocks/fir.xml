@@ -6,6 +6,16 @@
   <ids>
     <id revision="0">F112</id>
   </ids>
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>sc16</type>
+    </source>
+  </ports>
   <!--<components>-->
     <!--<component>-->
       <!--<key revision="1">nocshell</key>-->
