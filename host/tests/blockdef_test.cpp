@@ -21,6 +21,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
+#include <boost/foreach.hpp>
 #include <uhd/usrp/rfnoc/blockdef.hpp>
 
 using namespace uhd::rfnoc;
@@ -45,7 +46,24 @@ BOOST_AUTO_TEST_CASE(test_lookup) {
         BOOST_CHECK(block_definition->is_block());
         BOOST_CHECK_EQUAL(block_definition->get_name(), it->second);
     }
+}
 
+BOOST_AUTO_TEST_CASE(test_ports) {
+    // Create an FFT:
+    blockdef::sptr block_definition = blockdef::make_from_noc_id(0xFF70000000000000);
+    blockdef::ports_t in_ports = block_definition->get_input_ports();
+    BOOST_REQUIRE_EQUAL(in_ports.size(), 1);
+    BOOST_CHECK_EQUAL(in_ports[0].name, "in");
+    BOOST_REQUIRE_EQUAL(in_ports[0].types.size(), 1);
+    BOOST_REQUIRE_EQUAL(in_ports[0].types[0], "sc16");
+    BOOST_CHECK(in_ports[0].match_type("sc16"));
+    BOOST_CHECK(in_ports[0].match_type(""));
+    BOOST_CHECK(not in_ports[0].match_type("not_a_type"));
 
+    blockdef::ports_t out_ports = block_definition->get_output_ports();
+    BOOST_REQUIRE_EQUAL(out_ports.size(), 1);
+    BOOST_CHECK_EQUAL(out_ports[0].name, "out");
+    BOOST_REQUIRE_EQUAL(out_ports[0].types.size(), 1);
+    BOOST_REQUIRE_EQUAL(out_ports[0].types[0], "sc16");
 }
 

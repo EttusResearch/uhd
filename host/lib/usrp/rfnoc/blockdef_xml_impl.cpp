@@ -37,6 +37,14 @@ static const fs::path XML_BLOCKS_SUBDIR("blocks");
 static const fs::path XML_COMPONENTS_SUBDIR("components");
 static const fs::path XML_EXTENSION(".xml");
 
+// TODO this should really be in blockdef_impl.cpp or something
+bool blockdef::port_t::match_type(const std::string &type) {
+    return type.empty()
+        or types.empty()
+        or std::find(types.begin(), types.end(), type) != types.end()
+     ;
+}
+
 class blockdef_xml_impl : public blockdef
 {
 public:
@@ -46,8 +54,9 @@ public:
     };
 
     //! Returns a list of base paths for the XML files.
-    // It is assumed that block definitions are in a subdir called 'blocks'
-    // and component definitions in a subdir called 'components'.
+    // It is assumed that block definitions are in a subdir with name
+    // XML_BLOCKS_SUBDIR and component definitions in a subdir with name
+    // XML_COMPONENTS_SUBDIR
     static std::vector<boost::filesystem::path> get_xml_paths()
     {
         std::vector<boost::filesystem::path> paths;
@@ -65,7 +74,6 @@ public:
     }
 
     //! Matches a NoC ID through substring matching
-    //
     static bool match_noc_id(const std::string &lhs_, boost::uint64_t rhs_)
     {
         // Sanitize input: Make both values strings with all uppercase
@@ -89,7 +97,7 @@ public:
     //! Open the file at filename and see if it's a block definition for the given NoC ID
     static bool has_noc_id(boost::uint64_t noc_id, const fs::path &filename)
     {
-        boost::property_tree::ptree propt;
+        pt::ptree propt;
         try {
             read_xml(filename.native(), propt);
             BOOST_FOREACH(pt::ptree::value_type &v, propt.get_child("nocblock.ids")) {
@@ -108,7 +116,16 @@ public:
         _type(type),
         _noc_id(noc_id)
     {
+        UHD_MSG(status) << "Reading XML file: " << filename.native() << std::endl;
         read_xml(filename.native(), _pt);
+        try {
+            get_name();
+        } catch (const pt::ptree_error &e) {
+            throw uhd::runtime_error(str(
+                        boost::format("Invalid block definition in %s: %s")
+                        % filename.native() % e.what()
+            ));
+        }
         // TODO: check validity of XML
         // - Read all important stuff in constructor
         //   - Name
@@ -135,6 +152,37 @@ public:
         return _noc_id;
     }
 
+    ports_t get_input_ports()
+    {
+        UHD_MSG(status) << "get_input_ports()" << std::endl;
+        return _get_ports("sink");
+    }
+
+    ports_t get_output_ports()
+    {
+        return _get_ports("source");
+    }
+
+    ports_t _get_ports(const std::string &port_type)
+    {
+        ports_t ports;
+        BOOST_FOREACH(pt::ptree::value_type &v, _pt.get_child("nocblock.ports")) {
+            if (v.first != port_type) continue;
+            port_t port(v.second.get("name", ""));
+            std::string types = v.second.get("type", "");
+            boost::split(
+                    port.types,
+                    types,
+                    boost::is_any_of(" \t\n"), // Split at whitespace
+                    boost::token_compress_on // Avoid empty results
+            );
+            port.optional = bool(v.second.get("optional", 0));
+            ports.push_back(port);
+            // TODO vector length or whatever
+        }
+        return ports;
+    }
+
 
 private:
 
@@ -145,7 +193,7 @@ private:
 
     //! This is a boost property tree, not the same as
     // our property tree.
-    boost::property_tree::ptree _pt;
+    pt::ptree _pt;
 
 };
 

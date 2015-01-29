@@ -21,6 +21,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <uhd/config.hpp>
+#include <vector>
 
 namespace uhd { namespace rfnoc {
 
@@ -30,6 +31,35 @@ class UHD_API blockdef : public boost::enable_shared_from_this<blockdef>
 {
 public:
     typedef boost::shared_ptr<blockdef> sptr;
+
+    //! Describes port options for a block definition.
+    //
+    // This is not the same as a uhd::rfnoc::stream_sig_t. This is used
+    // to describe which ports are defined in a block definition, and
+    // to describe what kind of connection is allowed for this port.
+    struct port_t {
+        std::string name;
+        //! A list of valid data types
+        std::vector<std::string> types;
+        //! If true, this port does not need to be connected in order
+        // for the block to operate.
+        bool optional;
+
+        port_t(
+            const std::string &name_,
+            const std::vector<std::string> &types_=std::vector<std::string>(),
+            const bool optional_=false
+        ) : name(name_), types(types_), optional(optional_) {};
+
+        //! Returns true if \p type matches with this port definition.
+        //
+        // This is true if:
+        // - \p type is in \p types
+        // - \p Either type or \p types is empty
+        bool match_type(const std::string &type);
+    };
+
+    typedef std::vector<port_t> ports_t;
 
     /*! Create a block definition object for a NoC block given
      * a NoC ID. This cannot be used for components.
@@ -50,6 +80,9 @@ public:
 
     //! Return the one NoC that is valid for this block
     virtual boost::uint64_t noc_id() const = 0;
+
+    virtual ports_t get_input_ports() = 0;
+    virtual ports_t get_output_ports() = 0;
 };
 
 }} /* namespace uhd::rfnoc */
