@@ -99,12 +99,12 @@ public:
     {
         UHD_RFNOC_BLOCK_TRACE() << "window_block::set_input_signature()" << std::endl;
         UHD_ASSERT_THROW(port == 0);
-        if (stream_sig.get_item_type() != _item_type
-            //or (stream_sig.packet_size != 0 and stream_sig.packet_size != _window_len * _bpi) FIXME put this back in
-            or (stream_sig.vlen != 0 and stream_sig.vlen != _window_len)) {
-            UHD_MSG(status) << "not valid." << std::endl;
-            return false;
-        }
+        //if (stream_sig.get_item_type() != _item_type
+            ////or (stream_sig.packet_size != 0 and stream_sig.packet_size != _window_len * _bpi) FIXME put this back in
+            //or (stream_sig.vlen != 0 and stream_sig.vlen != _window_len)) {
+            //UHD_MSG(status) << "not valid." << std::endl;
+            //return false;
+        //}
 
         return true;
     }
@@ -113,11 +113,11 @@ public:
     {
         UHD_RFNOC_BLOCK_TRACE() << "window_block::set_output_signature()" << std::endl;
         UHD_ASSERT_THROW(port == 0);
-        if (stream_sig.get_item_type() != _item_type
-            //or (stream_sig.packet_size != 0 and stream_sig.packet_size != _window_len * _bpi) FIXME put this back in
-            or (stream_sig.vlen != 0 and stream_sig.vlen != _window_len)) {
-            return false;
-        }
+        //if (stream_sig.get_item_type() != _item_type
+            ////or (stream_sig.packet_size != 0 and stream_sig.packet_size != _window_len * _bpi) FIXME put this back in
+            //or (stream_sig.vlen != 0 and stream_sig.vlen != _window_len)) {
+            //return false;
+        //}
 
         return true;
     }

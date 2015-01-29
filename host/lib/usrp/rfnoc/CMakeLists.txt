@@ -44,7 +44,6 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/fft_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/null_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window_block_ctrl_impl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/addsub_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/split_stream_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/packet_resizer_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/vector_iir_block_ctrl_impl.cpp

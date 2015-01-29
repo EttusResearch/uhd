@@ -85,11 +85,14 @@ block_ctrl_base::block_ctrl_base(
         }
     }
 
-    // Add I/O signature
-    // TODO actually use values from the block definition
-    _tree->create<stream_sig_t>(_root_path / "input_sig/0").set(stream_sig_t("sc16", 0));
-    // FIXME default packet size?
-    _tree->create<stream_sig_t>(_root_path / "output_sig/0").set(stream_sig_t("sc16", 0, DEFAULT_PACKET_SIZE));
+    /*** Init I/O signature *************************************************/
+    if (_block_def) { // It is possible that we never got a valid block def
+        _init_stream_sigs("input_sig",  _block_def->get_input_ports());
+        _init_stream_sigs("output_sig", _block_def->get_output_ports());
+    }
+    // TODO: It's possible that the number of input sigs doesn't match the
+    // number of input buffers. We should probably warn about that or
+    // something.
 }
 
 block_ctrl_base::~block_ctrl_base()
@@ -97,6 +100,22 @@ block_ctrl_base::~block_ctrl_base()
     // nop
 }
 
+void block_ctrl_base::_init_stream_sigs(
+        const std::string &sig_node,
+        blockdef::ports_t ports
+) {
+    for (size_t i = 0; i < ports.size(); i++) {
+        std::string type = ports[i].types.empty() ? stream_sig_t::PASSTHRU_TYPE : ports[i].types[0];
+        size_t packet_size = DEFAULT_PACKET_SIZE;
+        // TODO don't ignore this
+        size_t vlen = 0;
+        // TODO name, optional?
+        UHD_MSG(status) << "Adding stream signature at " << (_root_path / sig_node / i)
+            << ": type = " << type << " packet_size = " << packet_size << " vlen = " << vlen << std::endl;
+        _tree->create<stream_sig_t>(_root_path / sig_node / i)
+            .set(stream_sig_t(type, vlen, packet_size));
+    }
+}
 
 /***********************************************************************
  * FPGA control & communication

@@ -38,10 +38,10 @@ public:
         // Default: 1 Channel
         _rx_stream_args.channels = std::vector<size_t>(1, 0);
         // SPP is stored for calls to set_output_signature() etc.
-        _rx_spp = get_output_signature(0).packet_size / _rx_bpi;
-        if (_rx_spp == 0) {
+        //_rx_spp = get_output_signature(0).packet_size / _rx_bpi;
+        //if (_rx_spp == 0) {
             _rx_spp = DEFAULT_PACKET_SIZE / _rx_bpi;
-        }
+        //}
         UHD_MSG(status) << "radio_ctrl::radio_ctrl() _rx_spp==" << _rx_spp << std::endl;
 
         // TODO: Once the radio looks like a NoC-Block, remove this!
@@ -51,7 +51,16 @@ public:
         // TODO this is a hack
         stream_sig_t out_sig("sc16", 0, false);
         out_sig.packet_size = _rx_spp * _rx_bpi;
-        _tree->access<stream_sig_t>(_root_path / "output_sig/0").set(out_sig);
+        if (_tree->exists(_root_path / "output_sig/0")) {
+            _tree->access<stream_sig_t>(_root_path / "output_sig/0").set(out_sig);
+        } else {
+            _tree->create<stream_sig_t>(_root_path / "output_sig/0").set(out_sig);
+        }
+        if (_tree->exists(_root_path / "input_sig/0")) {
+            _tree->access<stream_sig_t>(_root_path / "input_sig/0").set(out_sig);
+        } else {
+            _tree->create<stream_sig_t>(_root_path / "input_sig/0").set(out_sig);
+        }
 
         _tree->create<bool>(_root_path / "tx_active").set(false);
         _tree->create<bool>(_root_path / "rx_active").set(false);

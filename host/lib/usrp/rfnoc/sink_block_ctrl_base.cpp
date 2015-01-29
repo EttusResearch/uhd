@@ -81,31 +81,33 @@ stream_sig_t sink_block_ctrl_base::get_input_signature(size_t block_port) const
     return _tree->access<stream_sig_t>(_root_path / "input_sig" / str(boost::format("%d") % block_port)).get();
 }
 
-bool sink_block_ctrl_base::set_input_signature(const stream_sig_t &in_sig, size_t block_port)
+bool sink_block_ctrl_base::set_input_signature(const stream_sig_t &sig, size_t block_port)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::set_input_signature() " << in_sig << " " << block_port << std::endl;
-    if (not _tree->exists(_root_path / "input_sig" / str(boost::format("%d") % block_port))) {
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::set_input_signature() " << sig << " " << block_port << std::endl;
+
+    /// Check if valid block port:
+    if (not _tree->exists(_root_path / "input_sig" / block_port)) {
         throw uhd::runtime_error(str(
             boost::format("Can't modify input signature on block %s: Port %d is not defined.")
             % get_block_id().to_string() % block_port
         ));
     }
 
-    if (not
-        _tree->access<stream_sig_t>(_root_path / "input_sig" / str(boost::format("%d") % block_port))
-        .get().is_compatible(in_sig)
-    ) {
-        return false;
-    }
+    //if (not
+        //_tree->access<stream_sig_t>(_root_path / "input_sig" / str(boost::format("%d") % block_port))
+        //.get().is_compatible(in_sig)
+    //) {
+        //return false;
+    //}
 
-    // TODO more and better rules, check block definition
-    if (in_sig.packet_size % BYTES_PER_LINE) {
-        return false;
-    }
+    //// TODO more and better rules, check block definition
+    //if (in_sig.packet_size % BYTES_PER_LINE) {
+        //return false;
+    //}
 
-    _tree->access<stream_sig_t>(_root_path / "input_sig" / str(boost::format("%d") % block_port)).set(in_sig);
+    _tree->access<stream_sig_t>(_root_path / "input_sig" / block_port).set(sig);
     // FIXME figure out good rules to propagate the signature
-    _tree->access<stream_sig_t>(_root_path / "output_sig" / str(boost::format("%d") % block_port)).set(in_sig);
+    _tree->access<stream_sig_t>(_root_path / "output_sig" / block_port).set(sig);
     return true;
 }
 

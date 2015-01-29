@@ -99,11 +99,12 @@ stream_sig_t source_block_ctrl_base::get_output_signature(size_t block_port) con
     return _tree->access<stream_sig_t>(_root_path / "output_sig" / str(boost::format("%d") % block_port)).get();
 }
 
-bool source_block_ctrl_base::set_output_signature(const stream_sig_t &out_sig, size_t block_port)
+bool source_block_ctrl_base::set_output_signature(const stream_sig_t &sig, size_t block_port)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::set_output_signature() " << out_sig << " " << block_port << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::set_output_signature() " << sig << " " << block_port << std::endl;
 
-    if (not _tree->exists(_root_path / "output_sig" / str(boost::format("%d") % block_port))) {
+    /// Check if valid block port:
+    if (not _tree->exists(_root_path / "output_sig" / block_port)) {
         throw uhd::runtime_error(str(
             boost::format("Can't modify output signature on block %s: Port %d is not defined.")
             % get_block_id().to_string() % block_port
@@ -111,11 +112,11 @@ bool source_block_ctrl_base::set_output_signature(const stream_sig_t &out_sig, s
     }
 
     // TODO more and better rules, check block definition
-    if (out_sig.packet_size % BYTES_PER_LINE) {
-        return false;
-    }
+    //if (out_sig.packet_size % BYTES_PER_LINE) {
+        //return false;
+    //}
 
-    _tree->access<stream_sig_t>(_root_path / "output_sig" / str(boost::format("%d") % block_port)).set(out_sig);
+    _tree->access<stream_sig_t>(_root_path / "output_sig" / block_port).set(sig);
     return true;
 }
 

@@ -37,7 +37,6 @@ UHD_INSTALL(FILES
     fft_block_ctrl.hpp
     null_block_ctrl.hpp
     window_block_ctrl.hpp
-    addsub_block_ctrl.hpp
     split_stream_block_ctrl.hpp
     packet_resizer_block_ctrl.hpp
     vector_iir_block_ctrl.hpp

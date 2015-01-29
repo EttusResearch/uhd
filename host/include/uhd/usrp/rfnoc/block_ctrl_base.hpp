@@ -270,6 +270,8 @@ protected:
     blockdef::sptr _block_def;
 
 private:
+    void _init_stream_sigs(const std::string &sig_node, blockdef::ports_t ports);
+
     /***********************************************************************
      * Private members
      **********************************************************************/

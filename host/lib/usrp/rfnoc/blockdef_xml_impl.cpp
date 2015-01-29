@@ -154,7 +154,6 @@ public:
 
     ports_t get_input_ports()
     {
-        UHD_MSG(status) << "get_input_ports()" << std::endl;
         return _get_ports("sink");
     }
 
