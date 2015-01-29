@@ -27,6 +27,7 @@
 #include <uhd/usrp/rfnoc/node_ctrl_base.hpp>
 #include <uhd/usrp/rfnoc/block_id.hpp>
 #include <uhd/usrp/rfnoc/stream_sig.hpp>
+#include <uhd/usrp/rfnoc/blockdef.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -264,6 +265,9 @@ protected:
 
     //! Endianness of underlying transport (for data transport)
     bool _transport_is_big_endian;
+
+    //! Block definition (stores info about the block such as ports)
+    blockdef::sptr _block_def;
 
 private:
     /***********************************************************************

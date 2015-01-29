@@ -27,10 +27,16 @@
 using namespace uhd;
 using namespace uhd::rfnoc;
 
+/***********************************************************************
+ * Helpers
+ **********************************************************************/
 //! Convert register to a peek/poke compatible address
 inline boost::uint32_t _sr_to_addr(boost::uint32_t reg) { return reg * 4; };
 inline boost::uint32_t _sr_to_addr64(boost::uint32_t reg) { return reg * 8; }; // for peek64
 
+/***********************************************************************
+ * Structors
+ **********************************************************************/
 block_ctrl_base::block_ctrl_base(
         const make_args_t &make_args
 ) : _ctrl_iface(make_args.ctrl_iface),
@@ -39,19 +45,23 @@ block_ctrl_base::block_ctrl_base(
     _ctrl_sid(make_args.ctrl_sid)
 {
     UHD_MSG(status) << "block_ctrl_base()" << std::endl;
-    // Read NoC-ID
+
+    /*** Identify this block (NoC-ID, block-ID, and block definition) *******/
+    // Read NoC-ID (name is passed in through make_args):
     boost::uint64_t noc_id = sr_read64(SR_READBACK_REG_ID);
-    UHD_MSG(status) << "NOC ID: " << str(boost::format("0x%016X") % noc_id) << std::endl;
-
-    std::string blockname = make_args.block_name;
-
-    _block_id.set(make_args.device_index, blockname, 0);
+    _block_def = blockdef::make_from_noc_id(noc_id);
+    if (_block_def) UHD_MSG(status) <<  "Running with valid blockdef" << std::endl;
+    // For the block ID, we start with block count 0 and increase until
+    // we get a block ID that's not already registered:
+    _block_id.set(make_args.device_index, make_args.block_name, 0);
     while (_tree->exists("xbar/" + _block_id.get_local())) {
         _block_id++;
     }
-    UHD_MSG(status) << "Using block ID: " << _block_id << std::endl;
+    UHD_MSG(status)
+        << "NOC ID: " << str(boost::format("0x%016X  ") % noc_id)
+        << "Block ID: " << _block_id << std::endl;
 
-    // Populate property tree
+    /*** Initialize property tree *******************************************/
     _root_path = "xbar/" + _block_id.get_local();
     _tree->create<boost::uint64_t>(_root_path / "noc_id").set(noc_id);
 
@@ -88,6 +98,9 @@ block_ctrl_base::~block_ctrl_base()
 }
 
 
+/***********************************************************************
+ * FPGA control & communication
+ **********************************************************************/
 void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t data)
 {
     UHD_MSG(status) << "  ";
@@ -145,10 +158,6 @@ boost::uint32_t block_ctrl_base::user_reg_read32(const boost::uint32_t addr)
     }
 }
 
-boost::uint32_t block_ctrl_base::get_address(size_t block_port) {
-    return (_ctrl_sid.get_dst() & 0xFFF0) | (block_port & 0xF);
-}
-
 void block_ctrl_base::clear()
 {
     UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::clear() " << std::endl;
@@ -160,11 +169,17 @@ void block_ctrl_base::clear()
     _clear();
 }
 
+boost::uint32_t block_ctrl_base::get_address(size_t block_port) {
+    return (_ctrl_sid.get_dst() & 0xFFF0) | (block_port & 0xF);
+}
+
+/***********************************************************************
+ * Hooks & Derivables
+ **********************************************************************/
 void block_ctrl_base::_clear()
 {
     UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::_clear() " << std::endl;
     sr_write(SR_FLOW_CTRL_CLR_SEQ, 0x00C1EA12); // 'CLEAR', but we can write anything, really
 }
-
 
 // vim: sw=4 et:
