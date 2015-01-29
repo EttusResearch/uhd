@@ -48,7 +48,6 @@ crimson_str_iface::crimson_str_iface():
     _ctrl_seq_num(0),
     _protocol_compat(0)
 {
-    
 }
 
 crimson_str_iface::crimson_str_iface(udp_simple::sptr ctrl_transport):
@@ -56,13 +55,23 @@ crimson_str_iface::crimson_str_iface(udp_simple::sptr ctrl_transport):
     _ctrl_seq_num(0),
     _protocol_compat(0)
 {
-    memset(_buff, '\0', CRIMSON_MTU_SIZE);
 }
 
 /***********************************************************************
  * Stream In/Out
  **********************************************************************/
+size_t crimson_str_iface::read_str(void* buffs, size_t bytes) {
 
+    // clears the buffer and receives the message
+    memset(buffs, 0, bytes);
+    const size_t nbytes = _ctrl_transport -> recv(boost::asio::buffer(buffs, bytes), 0.150);
+
+    return nbytes;
+}
+
+size_t crimson_str_iface::write_str(char* buffs, size_t bytes) {
+    return _ctrl_transport->send( boost::asio::buffer(buffs, bytes));
+}
 
 /***********************************************************************
  * Public make function for crimson interface

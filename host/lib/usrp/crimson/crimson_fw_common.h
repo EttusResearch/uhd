@@ -39,9 +39,7 @@ extern "C" {
 #define CRIMSON_FW_NUM_BYTES (1 << 15) //64k
 #define CRIMSON_FW_COMMS_MTU (1 << 13) //8k
 
-#define CRIMSON_FW_COMMS_UDP_PORT 	 42820
-#define CRIMSON_SFP0_STREAM_UDP_PORT 	 42821
-#define CRIMSON_SFP1_STREAM_UDP_PORT 	 42822
+#define CRIMSON_FW_COMMS_UDP_PORT 	 42799
 
 #define CRIMSON_DEFAULT_MAC_ADDR_0         {0x00, 0x50, 0xC2, 0x85, 0x3f, 0xff}
 #define CRIMSON_DEFAULT_MAC_ADDR_1         {0x00, 0x50, 0xC2, 0x85, 0x3f, 0x33}
@@ -83,6 +81,21 @@ extern "C" {
 
 // Crimson Clk Settings
 #define CRIMSON_MASTER_CLOCK_RATE	322265625
+
+// Crimson VITA settings
+#define CRIMSON_VITA_HDR_TYPE	0x1
+
+#define CRIMSON_VITA_HDR	
+#define CRIMSON_VITA_STREAM	
+
+#define CRIMSON_VITA_TLR_EN	0xe00
+#define CRIMSON_VITA_TLR_IND	0x0
+#define CRIMSON_VITA_TLR_E	0x0
+#define CRIMSON_VITA_TLR_PCKCNT	0x0
+#define CRIMSON_VITA_TLR	((CRIMSON_VITA_TLR_EN     << 20)|\
+				( CRIMSON_VITA_TLR_IND    << 8) |\
+				( CRIMSON_VITA_TLR_E      << 7) |\
+				( CRIMSON_VITA_TLR_PCKCNT << 0) )
 
 #ifdef __cplusplus
 }

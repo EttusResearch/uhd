@@ -43,6 +43,11 @@ public:
     crimson_str_iface();
     crimson_str_iface(uhd::transport::udp_simple::sptr ctrl_transport);
 
+    // Streaming commands
+    size_t read_str(void* buffs, size_t bytes);
+    size_t write_str(char* buffs, size_t bytes);
+ 
+    // making the streaming interface
     static crimson_str_iface::sptr make(uhd::transport::udp_simple::sptr ctrl_transport);
 
 private:
@@ -59,7 +64,7 @@ private:
     boost::uint32_t _protocol_compat;
 
     // buffer for in and out
-    char _buff[CRIMSON_MTU_SIZE];
+    //char _buff[CRIMSON_MTU_SIZE];
 };
 
 #endif /* INCLUDED_CRIMSON_IFACE_HPP */

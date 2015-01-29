@@ -24,6 +24,7 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/transport/udp_stream.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
@@ -39,14 +40,12 @@ using namespace uhd::transport;
 namespace asio = boost::asio;
 namespace pt = boost::posix_time;
 
-// TODO we are faking timestamps right now, this needs to be updated
-static long time_stamp = 0;
-
 class crimson_rx_streamer : public uhd::rx_streamer {
 public:
 	crimson_rx_streamer(device_addr_t addr, property_tree::sptr tree) {
 		// save the tree
 		_tree = tree;
+		_prev_frame = 0;
 
 		// get the property root path
 		const fs_path mb_path   = "/mboards/0";
@@ -59,21 +58,23 @@ public:
 
 			// SFPA
 			if (strcmp(sink.c_str(), "sfpa") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: " << tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
-				//	<< " PORT: " << udp_port << "]" << std::endl;
-				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
-					tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get(), udp_port) );
+				//std::cout << __func__ << "(): opened UDP[ IP: "
+				//	<< tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
+				//	<< " PORT: " << udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream(
+					tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get(), udp_port);
 			// SFPB
 			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: " << tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
-				//	<< " PORT: " << udp_port << "]" << std::endl;
-				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
-					tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get(), udp_port) );
+				//std::cout << __func__ << "(): opened UDP[ IP: "
+				//	<< tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
+				//	<< " PORT: " << udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream(
+					tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get(), udp_port);
 			// MANAGEMENT
 			} else {
-				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: " << udp_port << "]" << std::endl;
-				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
-					addr["addr"], udp_port));
+				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: "
+				//	<< udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream( addr["addr"], udp_port );
 			}
 		}
 	}
@@ -108,22 +109,66 @@ public:
         	const size_t nsamps_per_buff,
         	rx_metadata_t &metadata,
         	const double timeout = 0.1,
-        	const bool one_packet = false ) {
-		// only handles one_packet
-		// samples are 32 bit wide, 16-bit I, 16-bit Q
-		// populates buffer
-		for (int i = 0; i < nsamps_per_buff; i++) buffs[i];
+        	const bool one_packet = true )
+	{
+		// keep looping if more than one packet for recv
+		size_t nbytes = 0;
+		do {
+			// defaults to read from the first channel because OpenBTS only requires one RX, one TX
+			// One sample is 32 bits wide, thus multiply nsamps by 4 to get number of bytes
+			// Buffs is an array of buffer, this accesses the first buffer in the array of buffers
+			nbytes += _udp_stream[0] -> stream_in(buffs[0], (nsamps_per_buff + 5) * 4, timeout);
+		} while (!one_packet && nbytes < nsamps_per_buff * 4);
+		uint32_t* data = (uint32_t*)buffs[0];
+
+		/* VITA Header
+		 * ------------------
+		 * -1. Trailer
+		 *  1. Header
+		 *  2. Stream
+		 *  3. Fractional Time Stamp (1)
+		 *  4. Fractional Time Stamp (2)
+		 */
+		// parse the VITA time stamp
+		// fix endianess for time
+		data[2] = (data[2] & 0x000000ff) << 24 |
+			  (data[2] & 0x0000ff00) << 8  |
+			  (data[2] & 0x00ff0000) >> 8  |
+			  (data[2] & 0xff000000) >> 24;
+		data[3] = (data[3] & 0x000000ff) << 24 |
+			  (data[3] & 0x0000ff00) << 8  |
+			  (data[3] & 0x00ff0000) >> 8  |
+			  (data[3] & 0xff000000) >> 24;
+
+		// get the time
+		uint64_t time_ticks = ((uint64_t)data[2] << 32) | ((uint64_t)data[3]);
+		double time = (double)time_ticks / 322265625;
+		metadata.time_spec = time_spec_t((time_t)time, time - (time_t)time);
+		//printf("time: %lfs\n", time);
+
+		// parse VITA for sequencing
+		uint32_t header = data[0];
+		if (_prev_frame > (header & 0xf0000) >> 16)
+			metadata.out_of_sequence = true;
+		else
+			metadata.out_of_sequence = false;
+		_prev_frame = (header & 0xf0000) >> 16;
+
+		// Debugging code
+		//printf("Received %li bytes\n", nbytes);
+		//for (size_t i = 0; i < nbytes / 4; i++) {
+		//	if (i % 4 == 0) printf("\n");
+		//	printf("0x%08x ", ((uint32_t*)buffs[0])[i]);
+		//}
 
 		// populate metadata
 		metadata.error_code = rx_metadata_t::ERROR_CODE_NONE;
-		metadata.out_of_sequence = false;
-		metadata.start_of_burst = true;
-		metadata.end_of_burst = true;
-		metadata.fragment_offset = 0;
-		metadata.more_fragments = false;
-		metadata.has_time_spec = true;
-		metadata.time_spec = time_spec_t(time_stamp++);
-		return nsamps_per_buff;
+		metadata.start_of_burst = true;		// valid for a one packet
+		metadata.end_of_burst = true;		// valid for a one packet
+		metadata.fragment_offset = 0;		// valid for a one packet
+		metadata.more_fragments = false;	// valid for a one packet
+		metadata.has_time_spec = true;		// valis for Crimson
+		return nbytes / 4;
 	}
 
 	void issue_stream_cmd(const stream_cmd_t &stream_cmd) {
@@ -132,8 +177,9 @@ public:
 
 private:
 	// 0-channel A, 1-channel B, 2-channel C, 3-channel D
-	crimson_str_iface::sptr _iface[4];
+	uhd::transport::udp_stream::sptr _udp_stream[4];
 	property_tree::sptr _tree;
+	size_t _prev_frame;
 };
 
 class crimson_tx_streamer : public uhd::tx_streamer {
@@ -153,19 +199,23 @@ public:
 
 			// SFPA (all the same because this is a sink)
 			if (strcmp(sink.c_str(), "sfpa") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: " << udp_port << "]" << std::endl;
-				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
-					addr["addr"], udp_port));
+				//std::cout << __func__ << "(): opened UDP[ IP: "
+				//	<< tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
+				//	<< " PORT: " << udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream(
+					tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get(), udp_port);
 			// SFPB (all the same because this is a sink)
 			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: " << udp_port << "]" << std::endl;
-				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
-					addr["addr"], udp_port));
+				//std::cout << __func__ << "(): opened UDP[ IP: "
+				//	<< tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
+				//	<< " PORT: " << udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream(
+					tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get(), udp_port);
 			// MANAGEMENT (all the same because this is a sink)
 			} else {
-				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: " << udp_port << "]" << std::endl;
-				_iface[i] = crimson_str_iface::make( uhd::transport::udp_simple::make_connected(
-					addr["addr"], udp_port));
+				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: "
+				//	<< udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream( addr["addr"], udp_port );
 			}
 		}
 	}
@@ -211,7 +261,7 @@ public:
 
 private:
 	// 0-channel A, 1-channel B, 2-channel C, 3-channel D
-	crimson_str_iface::sptr _iface[4];
+	uhd::transport::udp_stream::sptr _udp_stream[4];
 	property_tree::sptr _tree;
 };
 

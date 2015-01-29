@@ -23,6 +23,7 @@ UHD_INSTALL(FILES
     if_addrs.hpp
     udp_constants.hpp
     udp_simple.hpp
+    udp_stream.hpp
     udp_zero_copy.hpp
     tcp_zero_copy.hpp
     usb_control.hpp
