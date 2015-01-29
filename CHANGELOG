@@ -1,6 +1,20 @@
 Change Log for Releases
 ==============================
 
+## 003.008.002
+* CMake: Introducing named versions for dev branches, enable static libs,
+* E300: Docs updates, compat number bump, VCTCXO updates,
+  more status bits for ref locking, fixed serial number length fix,
+  RSSI Sensor
+* B200: RSSI sensor
+* AD9361: Better handling of different interpolation rates in FIR,
+  fix for gain value truncation
+* UBX: Added drivers
+* Manual/Docs: Numerous updates, minimum compiler versions now specified,
+* Converters: Multiple fixes for sc12
+* Examples: Fixes to txrx_loopback_to_file
+* Minor UHD fixes
+
 ## 003.008.001
 * B2x0: Fixed PLL settings, Fixed external ref selection, serialized
   streamer setup (thread-safety)

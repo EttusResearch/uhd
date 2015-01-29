@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string>
+#include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 
 #define ENABLE_EXTENDED_ERROR_INFO false
@@ -40,9 +41,9 @@ struct nirio_err_info {
     static const size_t NIRIO_ERROR_TABLE_SIZE;
 };
 
-const std::string lookup_err_msg(nirio_status code);
+UHD_API const std::string lookup_err_msg(nirio_status code);
 
-void nirio_status_to_exception(const nirio_status& status, const std::string& message);
+UHD_API void nirio_status_to_exception(const nirio_status& status, const std::string& message);
 }}
 
 #define nirio_status_fatal(status) ((status) < 0)

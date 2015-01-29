@@ -24,10 +24,12 @@ FIND_PACKAGE(Git QUIET)
 #  - increment major on api compatibility changes
 #  - increment minor on feature-level changes
 #  - increment patch on for bug fixes and docs
+#  - set UHD_VERSION_DEVEL to true for master and development branches
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
 SET(UHD_VERSION_MINOR 008)
-SET(UHD_VERSION_PATCH 001)
+SET(UHD_VERSION_PATCH 002)
+SET(UHD_VERSION_DEVEL FALSE)
 
 ########################################################################
 # Set up trimmed version numbers for DLL resource files and packages
@@ -36,7 +38,7 @@ SET(UHD_VERSION_PATCH 001)
 FUNCTION(DEPAD_NUM input_num output_num)
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "print int('${input_num}')"
+        COMMAND ${PYTHON_EXECUTABLE} -c "print int('${input_num}') if isinstance('${input_num}', (int, long)) else '${input_num}'"
         OUTPUT_VARIABLE depadded_num OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     SET(${output_num} ${depadded_num} PARENT_SCOPE)
