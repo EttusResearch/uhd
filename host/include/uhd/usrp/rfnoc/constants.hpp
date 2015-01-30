@@ -27,10 +27,12 @@ namespace uhd {
 // All these configure the XML reader
 //! Where the RFNoC block/component definition files lie, relative to UHD_PKG_DIR
 static const std::string XML_DEFAULT_PATH = "share/uhd/rfnoc";
+//! The name of the environment variable storing the bath to the block definition files
 static const std::string XML_PATH_ENV = "UHD_RFNOC_XML_PATH";
 
 //! If the block name can't be automatically detected, this name is used
 static const std::string DEFAULT_BLOCK_NAME = "Block";
+static const boost::uint64_t DEFAULT_NOC_ID = 0xFFFFFFFFFFFFFFFF;
 
 static const size_t MAX_PACKET_SIZE = 8000; // bytes
 static const size_t DEFAULT_PACKET_SIZE = 1456; // bytes

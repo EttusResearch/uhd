@@ -50,7 +50,10 @@ block_ctrl_base::block_ctrl_base(
     // Read NoC-ID (name is passed in through make_args):
     boost::uint64_t noc_id = sr_read64(SR_READBACK_REG_ID);
     _block_def = blockdef::make_from_noc_id(noc_id);
-    if (_block_def) UHD_MSG(status) <<  "Running with valid blockdef" << std::endl;
+    if (_block_def) UHD_MSG(status) <<  "Found valid blockdef" << std::endl;
+    if (not _block_def)
+        _block_def = blockdef::make_from_noc_id(DEFAULT_NOC_ID);
+    UHD_ASSERT_THROW(_block_def);
     // For the block ID, we start with block count 0 and increase until
     // we get a block ID that's not already registered:
     _block_id.set(make_args.device_index, make_args.block_name, 0);
@@ -86,10 +89,8 @@ block_ctrl_base::block_ctrl_base(
     }
 
     /*** Init I/O signature *************************************************/
-    if (_block_def) { // It is possible that we never got a valid block def
-        _init_stream_sigs("input_sig",  _block_def->get_input_ports());
-        _init_stream_sigs("output_sig", _block_def->get_output_ports());
-    }
+    _init_stream_sigs("input_sig",  _block_def->get_input_ports());
+    _init_stream_sigs("output_sig", _block_def->get_output_ports());
     // TODO: It's possible that the number of input sigs doesn't match the
     // number of input buffers. We should probably warn about that or
     // something.
