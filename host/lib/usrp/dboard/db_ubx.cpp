@@ -34,521 +34,10 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/mutex.hpp>
 #include <map>
+#include "max287x.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
-
-#define fMHz (1000000.0)
-#define UBX_PROTO_V3_TX_ID   0x73
-#define UBX_PROTO_V3_RX_ID   0x74
-#define UBX_PROTO_V4_TX_ID   0x75
-#define UBX_PROTO_V4_RX_ID   0x76
-#define UBX_V1_40MHZ_TX_ID   0x77
-#define UBX_V1_40MHZ_RX_ID   0x78
-#define UBX_V1_160MHZ_TX_ID  0x79
-#define UBX_V1_160MHZ_RX_ID  0x7a
-
-/***********************************************************************
- * UBX Synthesizers
- **********************************************************************/
-#include "max2870_regs.hpp"
-#include "max2871_regs.hpp"
-
-typedef boost::function<void(std::vector<boost::uint32_t>)> max287x_write_fn;
-
-class max287x_synthesizer_iface
-{
-public:
-    virtual bool is_shutdown(void) = 0;
-    virtual void shutdown(void) = 0;
-    virtual void power_up(void) = 0;
-    virtual double set_freq_and_power(double target_freq, double ref_freq, bool is_int_n, int output_power) = 0;
-};
-
-class max287x : public max287x_synthesizer_iface
-{
-public:
-    max287x(max287x_write_fn write_fn) : _write_fn(write_fn) {};
-    virtual ~max287x() {};
-
-protected:
-    virtual std::set<boost::uint32_t> get_changed_addrs(void) = 0;
-    virtual boost::uint32_t get_reg(boost::uint32_t addr) = 0;
-    virtual void save_state(void) = 0;
-
-    void write_regs(void)
-    {
-        std::vector<boost::uint32_t> regs;
-        std::set<boost::uint32_t> changed_regs;
-
-        // Get only regs with changes
-        try {
-            changed_regs = get_changed_addrs();
-        } catch (uhd::runtime_error&) {
-            // No saved state - write all regs
-            for (int addr = 5; addr >= 0; addr--)
-                changed_regs.insert(boost::uint32_t(addr));
-        }
-
-        for (int addr = 5; addr >= 0; addr--)
-        {
-            if (changed_regs.find(boost::uint32_t(addr)) != changed_regs.end())
-                regs.push_back(get_reg(boost::uint32_t(addr)));
-        }
-
-        // writing reg 0 initiates VCO auto select, so this makes sure it is written
-        if (changed_regs.size() and changed_regs.find(0) == changed_regs.end())
-            regs.push_back(get_reg(0));
-
-        _write_fn(regs);
-        save_state();
-    }
-
-    double calculate_freq_settings(
-        double target_freq,
-        double ref_freq,
-        double target_pfd_freq,
-        bool is_int_n,
-        double &pfd_freq,
-        int& T,
-        int& D,
-        int& R,
-        int& BS,
-        int& N,
-        int& FRAC,
-        int& MOD,
-        int& RFdiv)
-    {
-        //map mode setting to valid integer divider (N) values
-        static const uhd::range_t int_n_mode_div_range(16,4095,1);
-        static const uhd::range_t frac_n_mode_div_range(19,4091,1);
-
-        double actual_freq = 0.0;
-
-        T = 0;
-        D = ref_freq <= 10.0e6 ? 1 : 0;
-        R = 0;
-        BS = 0;
-        N = 0;
-        FRAC = 0;
-        MOD = 4095;
-        RFdiv = 1;
-
-        //increase RF divider until acceptable VCO frequency (MIN freq for MAX287x VCO is 3GHz)
-        double vco_freq = target_freq;
-        while (vco_freq < 3e9)
-        {
-            vco_freq *= 2;
-            RFdiv *= 2;
-        }
-
-        /*
-         * The goal here is to loop though possible R dividers,
-         * band select clock dividers, N (int) dividers, and FRAC
-         * (frac) dividers.
-         *
-         * Calculate the N and F dividers for each set of values.
-         * The loop exits when it meets all of the constraints.
-         * The resulting loop values are loaded into the registers.
-         *
-         * f_pfd = f_ref*(1+D)/(R*(1+T))
-         * f_vco = (N + (FRAC/MOD))*f_pfd
-         *     N = f_vco/f_pfd - FRAC/MOD = f_vco*((R*(T+1))/(f_ref*(1+D))) - FRAC/MOD
-         * f_rf  = f_vco/RFdiv
-         */
-        for(R = int(ref_freq*(1+D)/(target_pfd_freq*(1+T))); R <= 1023; R++)
-        {
-            //PFD input frequency = f_ref/R ... ignoring Reference doubler/divide-by-2 (D & T)
-            pfd_freq = ref_freq*(1+D)/(R*(1+T));
-
-            //keep the PFD frequency at or below target
-            if (pfd_freq > target_pfd_freq)
-                continue;
-
-            //ignore fractional part of tuning
-            N = int(vco_freq/pfd_freq);
-
-            //Fractional-N calculation
-            FRAC = int(boost::math::round((vco_freq/pfd_freq - N)*MOD));
-
-            if(is_int_n)
-            {
-                if (FRAC > (MOD / 2)) //Round integer such that actual freq is closest to target
-                    N++;
-                FRAC = 0;
-            }
-
-            //keep N within int divider requirements
-            if(is_int_n)
-            {
-                if(N < int_n_mode_div_range.start()) continue;
-                if(N > int_n_mode_div_range.stop()) continue;
-            }
-            else
-            {
-                if(N < frac_n_mode_div_range.start()) continue;
-                if(N > frac_n_mode_div_range.stop()) continue;
-            }
-
-            //keep pfd freq low enough to achieve 50kHz BS clock
-            BS = int(std::ceil(pfd_freq / 50e3));
-            if(BS <= 1023) break;
-        }
-        UHD_ASSERT_THROW(R <= 1023);
-
-        //Reference divide-by-2 for 50% duty cycle
-        // if R even, move one divide by 2 to to regs.reference_divide_by_2
-        if(R % 2 == 0)
-        {
-            T = 1;
-            R /= 2;
-        }
-
-        //actual frequency calculation
-        actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))/RFdiv);
-
-        UHD_LOGV(rarely)
-            << boost::format("MAX287x: Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f"
-                ) % (ref_freq*(1+int(D))/(R*(1+int(T)))) % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
-            << boost::format("MAX287x: tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, type=%s"
-                ) % R % BS % N % FRAC % MOD % T % D % RFdiv % ((is_int_n) ? "Integer-N" : "Fractional") << std::endl
-            << boost::format("MAX287x: Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
-                ) % (pfd_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
-
-        return actual_freq;
-    }
-
-    max287x_write_fn _write_fn;
-};
-
-class max2870 : public max287x
-{
-public:
-    max2870(max287x_write_fn write_fn) : max287x(write_fn), _first_tune(true)
-    {
-        // initialize register values (override defaults)
-        _regs.retune = max2870_regs_t::RETUNE_DISABLED;
-        _regs.clock_div_mode = max2870_regs_t::CLOCK_DIV_MODE_FAST_LOCK;
-
-        // MAX2870 data sheet says that all registers must be written twice
-        // with at least a 20ms delay between writes upon power up.  One
-        // write and a 20ms wait are done in power_up().  The second write
-        // is done when any other function that does a write to the registers
-        // is called.  To ensure all registers are written the second time, the
-        // state of the registers is not saved during the first write.
-        _save_state = false;
-        power_up();
-        _save_state = true;
-    };
-
-    ~max2870()
-    {
-        shutdown();
-    };
-
-    bool is_shutdown(void)
-    {
-        return (_regs.power_down == max2870_regs_t::POWER_DOWN_SHUTDOWN);
-    };
-
-    void shutdown(void)
-    {
-        _regs.rf_output_enable = max2870_regs_t::RF_OUTPUT_ENABLE_DISABLED;
-        _regs.aux_output_enable = max2870_regs_t::AUX_OUTPUT_ENABLE_DISABLED;
-        _regs.power_down = max2870_regs_t::POWER_DOWN_SHUTDOWN;
-        _regs.muxout = max2870_regs_t::MUXOUT_LOW;
-        _regs.ld_pin_mode = max2870_regs_t::LD_PIN_MODE_LOW;
-        write_regs();
-    };
-
-    void power_up(void)
-    {
-        _regs.muxout = max2870_regs_t::MUXOUT_DLD;
-        _regs.ld_pin_mode = max2870_regs_t::LD_PIN_MODE_DLD;
-        _regs.power_down = max2870_regs_t::POWER_DOWN_NORMAL;
-        write_regs();
-
-        // MAX270 data sheet says to wait at least 20 ms after exiting low power mode
-        // before programming final VCO frequency
-        boost::this_thread::sleep(boost::posix_time::milliseconds(20));
-
-        _first_tune = true;
-    };
-
-    double set_freq_and_power(double target_freq, double ref_freq, bool is_int_n, int output_power)
-    {
-        //map rf divider select output dividers to enums
-        static const uhd::dict<int, max2870_regs_t::rf_divider_select_t> rfdivsel_to_enum =
-            boost::assign::map_list_of
-            (1,   max2870_regs_t::RF_DIVIDER_SELECT_DIV1)
-            (2,   max2870_regs_t::RF_DIVIDER_SELECT_DIV2)
-            (4,   max2870_regs_t::RF_DIVIDER_SELECT_DIV4)
-            (8,   max2870_regs_t::RF_DIVIDER_SELECT_DIV8)
-            (16,  max2870_regs_t::RF_DIVIDER_SELECT_DIV16)
-            (32,  max2870_regs_t::RF_DIVIDER_SELECT_DIV32)
-            (64,  max2870_regs_t::RF_DIVIDER_SELECT_DIV64)
-            (128, max2870_regs_t::RF_DIVIDER_SELECT_DIV128);
-
-        int T = 0;
-        int D = ref_freq <= 10.0e6 ? 1 : 0;
-        int R, BS, N, FRAC, MOD, RFdiv;
-        double pfd_freq = 25e6;
-
-        double actual_freq = calculate_freq_settings(
-            target_freq, ref_freq, 25e6, is_int_n, pfd_freq, T, D, R, BS, N, FRAC, MOD, RFdiv);
-
-        //load the register values
-        _regs.rf_output_enable = max2870_regs_t::RF_OUTPUT_ENABLE_ENABLED;
-
-        if(is_int_n) {
-            _regs.cpl = max2870_regs_t::CPL_DISABLED;
-            _regs.ldf = max2870_regs_t::LDF_INT_N;
-            _regs.cpoc = max2870_regs_t::CPOC_ENABLED;
-            _regs.int_n_mode = max2870_regs_t::INT_N_MODE_INT_N;
-        } else {
-            _regs.cpl = max2870_regs_t::CPL_ENABLED;
-            _regs.ldf = max2870_regs_t::LDF_FRAC_N;
-            _regs.cpoc = max2870_regs_t::CPOC_DISABLED;
-            _regs.int_n_mode = max2870_regs_t::INT_N_MODE_FRAC_N;
-        }
-
-        _regs.lds = pfd_freq <= 32e6 ? max2870_regs_t::LDS_SLOW : max2870_regs_t::LDS_FAST;
-
-        _regs.frac_12_bit = FRAC;
-        _regs.int_16_bit = N;
-        _regs.mod_12_bit = MOD;
-        _regs.clock_divider_12_bit = std::max(1, int(std::ceil(400e-6*pfd_freq/MOD)));
-        _regs.feedback_select = (target_freq >= 3.0e9) ?
-            max2870_regs_t::FEEDBACK_SELECT_DIVIDED :
-            max2870_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
-        _regs.r_counter_10_bit = R;
-        _regs.reference_divide_by_2 = T ?
-            max2870_regs_t::REFERENCE_DIVIDE_BY_2_ENABLED :
-            max2870_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED;
-        _regs.reference_doubler = D ?
-            max2870_regs_t::REFERENCE_DOUBLER_ENABLED :
-            max2870_regs_t::REFERENCE_DOUBLER_DISABLED;
-        _regs.band_select_clock_div = BS;
-        _regs.bs_msb = (BS & 0x300) >> 8;
-        UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(RFdiv));
-        _regs.rf_divider_select = rfdivsel_to_enum[RFdiv];
-
-        switch (output_power)
-        {
-        case -4:
-            _regs.output_power = max2870_regs_t::OUTPUT_POWER_M4DBM;
-            break;
-        case -1:
-            _regs.output_power = max2870_regs_t::OUTPUT_POWER_M1DBM;
-            break;
-        case 2:
-            _regs.output_power = max2870_regs_t::OUTPUT_POWER_2DBM;
-            break;
-        case 5:
-            _regs.output_power = max2870_regs_t::OUTPUT_POWER_5DBM;
-            break;
-        }
-
-        // Write the register values
-        write_regs();
-
-        // MAX2870 needs a 20ms delay after tuning for the first time
-        // for the lock detect to be reliable.
-        if (_first_tune)
-        {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(20));
-            _first_tune = false;
-        }
-
-        return actual_freq;
-    };
-
-private:
-    std::set<boost::uint32_t> get_changed_addrs()
-    {
-        return _regs.get_changed_addrs<boost::uint32_t>();
-    };
-
-    boost::uint32_t get_reg(boost::uint32_t addr)
-    {
-        return _regs.get_reg(addr);
-    };
-
-    void save_state()
-    {
-        if (_save_state)
-            _regs.save_state();
-    }
-
-    max2870_regs_t _regs;
-    bool _save_state;
-    bool _first_tune;
-};
-
-class max2871 : public max287x
-{
-public:
-    max2871(max287x_write_fn write_fn) : max287x(write_fn), _first_tune(true)
-    {
-        // initialize register values (override defaults)
-        _regs.retune = max2871_regs_t::RETUNE_DISABLED;
-        //_regs.csm = max2871_regs_t::CSM_ENABLED;  // tried it - caused long lock times
-        _regs.charge_pump_current = max2871_regs_t::CHARGE_PUMP_CURRENT_5_12MA;
-
-        // MAX2871 data sheet says that all registers must be written twice
-        // with at least a 20ms delay between writes upon power up.  One
-        // write and a 20ms wait are done in power_up().  The second write
-        // is done when any other function that does a write to the registers
-        // is called.  To ensure all registers are written the second time, the
-        // state of the registers is not saved during the first write.
-        _save_state = false;
-        power_up();
-        _save_state = true;
-    };
-
-    ~max2871()
-    {
-        shutdown();
-    };
-
-    bool is_shutdown(void)
-    {
-        return (_regs.power_down == max2871_regs_t::POWER_DOWN_SHUTDOWN);
-    };
-
-    void shutdown(void)
-    {
-        _regs.rf_output_enable = max2871_regs_t::RF_OUTPUT_ENABLE_DISABLED;
-        _regs.aux_output_enable = max2871_regs_t::AUX_OUTPUT_ENABLE_DISABLED;
-        _regs.power_down = max2871_regs_t::POWER_DOWN_SHUTDOWN;
-        _regs.ld_pin_mode = max2871_regs_t::LD_PIN_MODE_LOW;
-        _regs.muxout = max2871_regs_t::MUXOUT_TRI_STATE;
-        write_regs();
-    };
-
-    void power_up(void)
-    {
-        _regs.ld_pin_mode = max2871_regs_t::LD_PIN_MODE_DLD;
-        _regs.power_down = max2871_regs_t::POWER_DOWN_NORMAL;
-        _regs.muxout = max2871_regs_t::MUXOUT_TRI_STATE;
-        write_regs();
-
-        // MAX271 data sheet says to wait at least 20 ms after exiting low power mode
-        // before programming final VCO frequency
-        boost::this_thread::sleep(boost::posix_time::milliseconds(20));
-
-        _first_tune = true;
-    };
-
-    double set_freq_and_power(double target_freq, double ref_freq, bool is_int_n, int output_power)
-    {
-        //map rf divider select output dividers to enums
-        static const uhd::dict<int, max2871_regs_t::rf_divider_select_t> rfdivsel_to_enum =
-            boost::assign::map_list_of
-            (1,   max2871_regs_t::RF_DIVIDER_SELECT_DIV1)
-            (2,   max2871_regs_t::RF_DIVIDER_SELECT_DIV2)
-            (4,   max2871_regs_t::RF_DIVIDER_SELECT_DIV4)
-            (8,   max2871_regs_t::RF_DIVIDER_SELECT_DIV8)
-            (16,  max2871_regs_t::RF_DIVIDER_SELECT_DIV16)
-            (32,  max2871_regs_t::RF_DIVIDER_SELECT_DIV32)
-            (64,  max2871_regs_t::RF_DIVIDER_SELECT_DIV64)
-            (128, max2871_regs_t::RF_DIVIDER_SELECT_DIV128);
-
-        int T = 0;
-        int D = ref_freq <= 10.0e6 ? 1 : 0;
-        int R, BS, N, FRAC, MOD, RFdiv;
-        double pfd_freq = 50e6;
-
-        double actual_freq = calculate_freq_settings(
-            target_freq, ref_freq, 50e6, is_int_n, pfd_freq, T, D, R, BS, N, FRAC, MOD, RFdiv);
-
-        //load the register values
-        _regs.rf_output_enable = max2871_regs_t::RF_OUTPUT_ENABLE_ENABLED;
-
-        if(is_int_n) {
-            _regs.cpl = max2871_regs_t::CPL_DISABLED;
-            _regs.ldf = max2871_regs_t::LDF_INT_N;
-            _regs.int_n_mode = max2871_regs_t::INT_N_MODE_INT_N;
-        } else {
-            _regs.cpl = max2871_regs_t::CPL_ENABLED;
-            _regs.ldf = max2871_regs_t::LDF_FRAC_N;
-            _regs.int_n_mode = max2871_regs_t::INT_N_MODE_FRAC_N;
-        }
-
-        _regs.lds = pfd_freq <= 32e6 ? max2871_regs_t::LDS_SLOW : max2871_regs_t::LDS_FAST;
-
-        _regs.frac_12_bit = FRAC;
-        _regs.int_16_bit = N;
-        _regs.mod_12_bit = MOD;
-        _regs.clock_divider_12_bit = std::max(1, int(std::ceil(400e-6*pfd_freq/MOD)));
-        _regs.feedback_select = (target_freq >= 3.0e9) ?
-            max2871_regs_t::FEEDBACK_SELECT_DIVIDED :
-            max2871_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
-        _regs.r_counter_10_bit = R;
-        _regs.reference_divide_by_2 = T ?
-            max2871_regs_t::REFERENCE_DIVIDE_BY_2_ENABLED :
-            max2871_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED;
-        _regs.reference_doubler = D ?
-            max2871_regs_t::REFERENCE_DOUBLER_ENABLED :
-            max2871_regs_t::REFERENCE_DOUBLER_DISABLED;
-        _regs.band_select_clock_div = BS;
-        _regs.bs_msb = (BS & 0x300) >> 8;
-        UHD_ASSERT_THROW(rfdivsel_to_enum.has_key(RFdiv));
-        _regs.rf_divider_select = rfdivsel_to_enum[RFdiv];
-
-        switch (output_power)
-        {
-        case -4:
-            _regs.output_power = max2871_regs_t::OUTPUT_POWER_M4DBM;
-            break;
-        case -1:
-            _regs.output_power = max2871_regs_t::OUTPUT_POWER_M1DBM;
-            break;
-        case 2:
-            _regs.output_power = max2871_regs_t::OUTPUT_POWER_2DBM;
-            break;
-        case 5:
-            _regs.output_power = max2871_regs_t::OUTPUT_POWER_5DBM;
-            break;
-        default:
-            UHD_THROW_INVALID_CODE_PATH();
-            break;
-        }
-
-        write_regs();
-
-        // MAX2871 needs a 20ms delay after tuning for the first time
-        // for the lock detect to be reliable.
-        if (_first_tune)
-        {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(20));
-            _first_tune = false;
-        }
-
-        return actual_freq;
-    };
-
-private:
-    std::set<boost::uint32_t> get_changed_addrs()
-    {
-        return _regs.get_changed_addrs<boost::uint32_t>();
-    };
-
-    boost::uint32_t get_reg(boost::uint32_t addr)
-    {
-        return _regs.get_reg(addr);
-    };
-
-    void save_state()
-    {
-        if (_save_state)
-            _regs.save_state();
-    }
-
-    max2871_regs_t _regs;
-    bool _save_state;
-    bool _first_tune;
-};
 
 /***********************************************************************
  * UBX Data Structures
@@ -653,6 +142,15 @@ enum spi_dest_t {
 /***********************************************************************
  * UBX Constants
  **********************************************************************/
+#define fMHz (1000000.0)
+static const dboard_id_t UBX_PROTO_V3_TX_ID(0x73);
+static const dboard_id_t UBX_PROTO_V3_RX_ID(0x74);
+static const dboard_id_t UBX_PROTO_V4_TX_ID(0x75);
+static const dboard_id_t UBX_PROTO_V4_RX_ID(0x76);
+static const dboard_id_t UBX_V1_40MHZ_TX_ID(0x77);
+static const dboard_id_t UBX_V1_40MHZ_RX_ID(0x78);
+static const dboard_id_t UBX_V1_160MHZ_TX_ID(0x79);
+static const dboard_id_t UBX_V1_160MHZ_RX_ID(0x7A);
 static const freq_range_t ubx_freq_range(1.0e7, 6.0e9);
 static const gain_range_t ubx_tx_gain_range(0, 31.5, double(0.5));
 static const gain_range_t ubx_rx_gain_range(0, 31.5, double(0.5));
@@ -801,17 +299,37 @@ public:
         // Initialize LOs
         if (_rev == 0)
         {
-            _txlo1.reset(new max2870(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO1, _1)));
-            _txlo2.reset(new max2870(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO2, _1)));
-            _rxlo1.reset(new max2870(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO1, _1)));
-            _rxlo2.reset(new max2870(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO2, _1)));
+            _txlo1 = max287x_iface::make<max2870>(boost::bind(&write_spi_regs, _iface, TXLO1, _1));
+            _txlo2 = max287x_iface::make<max2870>(boost::bind(&write_spi_regs, _iface, TXLO2, _1));
+            _rxlo1 = max287x_iface::make<max2870>(boost::bind(&write_spi_regs, _iface, RXLO1, _1));
+            _rxlo2 = max287x_iface::make<max2870>(boost::bind(&write_spi_regs, _iface, RXLO2, _1));
+            _target_pfd_freq = 25e6;
+            std::vector<max287x_iface::sptr> los = boost::assign::list_of(_txlo1)(_txlo2)(_rxlo1)(_rxlo2);
+            BOOST_FOREACH(max287x_iface::sptr lo, los)
+            {
+                lo->set_auto_retune(false);
+                lo->set_clock_divider_mode(max287x_iface::CLOCK_DIV_MODE_FAST_LOCK);
+                lo->set_muxout_mode(max287x_iface::MUXOUT_DLD);
+                lo->set_ld_pin_mode(max287x_iface::LD_PIN_MODE_DLD);
+            }
         }
         else if (_rev == 1)
         {
-            _txlo1.reset(new max2871(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO1, _1)));
-            _txlo2.reset(new max2871(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO2, _1)));
-            _rxlo1.reset(new max2871(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO1, _1)));
-            _rxlo2.reset(new max2871(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO2, _1)));
+            _txlo1 = max287x_iface::make<max2871>(boost::bind(&write_spi_regs, _iface, TXLO1, _1));
+            _txlo2 = max287x_iface::make<max2871>(boost::bind(&write_spi_regs, _iface, TXLO2, _1));
+            _rxlo1 = max287x_iface::make<max2871>(boost::bind(&write_spi_regs, _iface, RXLO1, _1));
+            _rxlo2 = max287x_iface::make<max2871>(boost::bind(&write_spi_regs, _iface, RXLO2, _1));
+            _target_pfd_freq = 50e6;
+            std::vector<max287x_iface::sptr> los = boost::assign::list_of(_txlo1)(_txlo2)(_rxlo1)(_rxlo2);
+            BOOST_FOREACH(max287x_iface::sptr lo, los)
+            {
+                lo->set_auto_retune(false);
+                lo->set_clock_divider_mode(max287x_iface::CLOCK_DIV_MODE_CLOCK_DIVIDER_OFF);
+                //lo->set_cycle_slip_mode(true);  // tried it - caused longer lock times
+                lo->set_charge_pump_current(max287x_iface::CHARGE_PUMP_CURRENT_5_12MA);
+                lo->set_muxout_mode(max287x_iface::MUXOUT_TRI_STATE);
+                lo->set_ld_pin_mode(max287x_iface::LD_PIN_MODE_DLD);
+            }
         }
         else
         {
@@ -1133,9 +651,11 @@ private:
             set_cpld_field(TXHB_SEL, 0);
             write_cpld_reg();
             // Set LO1 to IF of 2100 MHz (offset from RX IF to reduce leakage)
-            freq_lo1 = _txlo1->set_freq_and_power(2100*fMHz, ref_freq, is_int_n, 5);
+            freq_lo1 = _txlo1->set_frequency(2100*fMHz, ref_freq, _target_pfd_freq, is_int_n);
+            _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
             // Set LO2 to IF minus desired frequency
-            freq_lo2 = _txlo2->set_freq_and_power(freq_lo1 - freq, ref_freq, is_int_n, 2);
+            freq_lo2 = _txlo2->set_frequency(freq_lo1 - freq, ref_freq, _target_pfd_freq, is_int_n);
+            _txlo2->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= (500*fMHz)) && (freq <= (800*fMHz)))
         {
@@ -1145,7 +665,8 @@ private:
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _txlo1->set_freq_and_power(freq, ref_freq, is_int_n, 2);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq > (800*fMHz)) && (freq <= (1000*fMHz)))
         {
@@ -1155,7 +676,8 @@ private:
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _txlo1->set_freq_and_power(freq, ref_freq, is_int_n, 5);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
         else if ((freq > (1000*fMHz)) && (freq <= (2200*fMHz)))
         {
@@ -1165,7 +687,8 @@ private:
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _txlo1->set_freq_and_power(freq, ref_freq, is_int_n, 2);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq > (2200*fMHz)) && (freq <= (2500*fMHz)))
         {
@@ -1175,7 +698,8 @@ private:
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _txlo1->set_freq_and_power(freq, ref_freq, is_int_n, 2);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq > (2500*fMHz)) && (freq <= (6000*fMHz)))
         {
@@ -1185,8 +709,12 @@ private:
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _txlo1->set_freq_and_power(freq, ref_freq, is_int_n, 5);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
+
+        _txlo1->commit();
+        if (freq <= (500*fMHz)) _txlo2->commit();
 
         _tx_freq = freq_lo1 - freq_lo2;
         _txlo1_freq = freq_lo1;
@@ -1233,9 +761,11 @@ private:
             set_cpld_field(RXHB_SEL, 0);
             write_cpld_reg();
             // Set LO1 to IF of 2380 MHz (2440 MHz filter center minus 60 MHz offset to minimize LO leakage)
-            freq_lo1 = _rxlo1->set_freq_and_power(2380*fMHz, ref_freq, is_int_n, 5);
+            freq_lo1 = _rxlo1->set_frequency(2380*fMHz, ref_freq, _target_pfd_freq, is_int_n);
+            _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
             // Set LO2 to IF minus desired frequency
-            freq_lo2 = _rxlo2->set_freq_and_power(freq_lo1 - freq, ref_freq, is_int_n, 2);
+            freq_lo2 = _rxlo2->set_frequency(freq_lo1 - freq, ref_freq, _target_pfd_freq, is_int_n);
+            _rxlo2->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 100*fMHz) && (freq < 500*fMHz))
         {
@@ -1248,9 +778,11 @@ private:
             set_cpld_field(RXHB_SEL, 0);
             write_cpld_reg();
             // Set LO1 to IF of 2440 (center of filter)
-            freq_lo1 = _rxlo1->set_freq_and_power(2440*fMHz, ref_freq, is_int_n, 5);
+            freq_lo1 = _rxlo1->set_frequency(2440*fMHz, ref_freq, _target_pfd_freq, is_int_n);
+            _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
             // Set LO2 to IF minus desired frequency
-            freq_lo2 = _rxlo2->set_freq_and_power(freq_lo1 - freq, ref_freq, is_int_n, 2);
+            freq_lo2 = _rxlo2->set_frequency(freq_lo1 - freq, ref_freq, _target_pfd_freq, is_int_n);
+            _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 500*fMHz) && (freq < 800*fMHz))
         {
@@ -1262,7 +794,8 @@ private:
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _rxlo1->set_freq_and_power(freq, ref_freq, is_int_n, 2);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 800*fMHz) && (freq < 1000*fMHz))
         {
@@ -1274,7 +807,8 @@ private:
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _rxlo1->set_freq_and_power(freq, ref_freq, is_int_n, 5);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
         else if ((freq >= 1000*fMHz) && (freq < 1500*fMHz))
         {
@@ -1286,7 +820,8 @@ private:
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _rxlo1->set_freq_and_power(freq, ref_freq, is_int_n, 2);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 1500*fMHz) && (freq < 2200*fMHz))
         {
@@ -1298,7 +833,8 @@ private:
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _rxlo1->set_freq_and_power(freq, ref_freq, is_int_n, 2);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 2200*fMHz) && (freq < 2500*fMHz))
         {
@@ -1310,7 +846,8 @@ private:
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _rxlo1->set_freq_and_power(freq, ref_freq, is_int_n, 2);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 2500*fMHz) && (freq <= 6000*fMHz))
         {
@@ -1322,8 +859,12 @@ private:
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
             write_cpld_reg();
-            freq_lo1 = _rxlo1->set_freq_and_power(freq, ref_freq, is_int_n, 5);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
+
+        _rxlo1->commit();
+        if (freq < (500*fMHz)) _rxlo2->commit();
 
         freq = freq_lo1 - freq_lo2;
 
@@ -1394,10 +935,11 @@ private:
     dboard_iface::sptr _iface;
     boost::mutex _spi_lock;
     ubx_cpld_reg_t _cpld_reg;
-    boost::shared_ptr<max287x_synthesizer_iface> _txlo1;
-    boost::shared_ptr<max287x_synthesizer_iface> _txlo2;
-    boost::shared_ptr<max287x_synthesizer_iface> _rxlo1;
-    boost::shared_ptr<max287x_synthesizer_iface> _rxlo2;
+    boost::shared_ptr<max287x_iface> _txlo1;
+    boost::shared_ptr<max287x_iface> _txlo2;
+    boost::shared_ptr<max287x_iface> _rxlo1;
+    boost::shared_ptr<max287x_iface> _rxlo2;
+    double _target_pfd_freq;
     double _tx_gain;
     double _rx_gain;
     double _tx_freq;
@@ -1431,8 +973,8 @@ static dboard_base::sptr make_ubx(dboard_base::ctor_args_t args)
 
 UHD_STATIC_BLOCK(reg_ubx_dboards)
 {
-    dboard_manager::register_dboard(0x0074, 0x0073, &make_ubx, "UBX v0.3");
-    dboard_manager::register_dboard(0x0076, 0x0075, &make_ubx, "UBX v0.4");
-    dboard_manager::register_dboard(0x0078, 0x0077, &make_ubx, "UBX-40 v1");
-    dboard_manager::register_dboard(0x007a, 0x0079, &make_ubx, "UBX-160 v1");
+    dboard_manager::register_dboard(UBX_PROTO_V3_RX_ID, UBX_PROTO_V3_TX_ID, &make_ubx, "UBX v0.3");
+    dboard_manager::register_dboard(UBX_PROTO_V4_RX_ID, UBX_PROTO_V4_TX_ID, &make_ubx, "UBX v0.4");
+    dboard_manager::register_dboard(UBX_V1_40MHZ_RX_ID, UBX_V1_40MHZ_TX_ID, &make_ubx, "UBX-40 v1");
+    dboard_manager::register_dboard(UBX_V1_160MHZ_RX_ID, UBX_V1_160MHZ_TX_ID, &make_ubx, "UBX-160 v1");
 }
