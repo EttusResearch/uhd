@@ -99,7 +99,7 @@ LIBUHD_APPEND_SOURCES(
 # Add DLL resource file to Windows build
 ########################################################################
 IF(MSVC)
-    SET(RC_TRIMMED_VERSION_PATCH TRIMMED_VERSION_PATCH)
+    SET(RC_TRIMMED_VERSION_PATCH ${TRIMMED_VERSION_PATCH})
     IF(UHD_VERSION_DEVEL)
         SET(RC_TRIMMED_VERSION_PATCH "999")
     ENDIF(UHD_VERSION_DEVEL)
