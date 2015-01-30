@@ -554,11 +554,13 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 
 	// Link settings
 	TREE_CREATE_RW(rx_link_path / "enable",  "rx_"+lc_num+"/link/enable",  std::string, string);
+	TREE_CREATE_RW(rx_link_path / "vita_en", "rx_"+lc_num+"/link/vita_en", std::string, string);
 	TREE_CREATE_RW(rx_link_path / "ip_dest", "rx_"+lc_num+"/link/ip_dest", std::string, string);
 	TREE_CREATE_RW(rx_link_path / "port",    "rx_"+lc_num+"/link/port",    std::string, string);
 	TREE_CREATE_RW(rx_link_path / "iface",   "rx_"+lc_num+"/link/iface",   std::string, string);
 
 	TREE_CREATE_RW(tx_link_path / "enable",  "tx_"+lc_num+"/link/enable",  std::string, string);
+	TREE_CREATE_RW(tx_link_path / "vita_en", "tx_"+lc_num+"/link/vita_en", std::string, string);
 	TREE_CREATE_RW(tx_link_path / "port",    "tx_"+lc_num+"/link/port",    std::string, string);
 	TREE_CREATE_RW(tx_link_path / "iface",   "tx_"+lc_num+"/link/iface",   std::string, string);
     }
