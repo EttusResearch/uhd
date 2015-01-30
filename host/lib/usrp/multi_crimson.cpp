@@ -370,6 +370,15 @@ std::string multi_crimson_impl::get_rx_subdev_name(size_t chan){
 // Set the current RX sampling rate on specified channel
 void multi_crimson_impl::set_rx_rate(double rate, size_t chan){
     _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").set(rate);
+    double actual_rate = _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").get();
+    boost::format base_message (
+            "Sample Rate Request:\n"
+    	    "  Requested sample rate: %f MSps\n"
+            "  Actual sample rate: %f MSps\n");
+    base_message % (rate/1e6) % (actual_rate/1e6);
+    std::string results_string = base_message.str();
+
+    UHD_MSG(status) << results_string;
 }
 
 // Get the current RX sampling rate on specified channel
@@ -417,6 +426,47 @@ tune_result_t multi_crimson_impl::set_rx_freq(const tune_request_t &tune_request
     result.target_rf_freq  = result.actual_rf_freq;
     result.clipped_rf_freq = result.actual_rf_freq;
     result.target_dsp_freq = result.actual_dsp_freq;
+
+    // print out tuning messages
+    boost::format base_message ("RX Tune Request: %f MHz\n");
+    base_message % (req.target_freq / 1e6);
+    std::string results_string = base_message.str();
+
+    // results of tuning RF LO
+    if (result.target_rf_freq != req.target_freq) {
+            boost::format rf_lo_message(
+                "  The RF LO does not support the requested frequency:\n"
+                "    Requested LO Frequency: %f MHz\n"
+                "    RF LO Result: %f MHz\n");
+            rf_lo_message % (req.target_freq / 1e6) % (result.actual_rf_freq / 1e6);
+            results_string += rf_lo_message.str();
+    } else {
+            boost::format rf_lo_message(
+                "  The RF LO supports the requested frequency:\n"
+                "    Requested LO Frequency: %f MHz\n"
+                "    RF LO Result: %f MHz\n");
+            rf_lo_message % (req.target_freq / 1e6) % (result.actual_rf_freq / 1e6);
+            results_string += rf_lo_message.str();
+    }
+
+    // results of tuning DSP
+    if (result.target_dsp_freq != req.target_freq) {
+            boost::format dsp_lo_message(
+                "  The DSP does not support the requested frequency:\n"
+                "    Requested DSP Frequency: %f MHz\n"
+                "    DSP Result: %f MHz\n");
+            dsp_lo_message % (req.target_freq / 1e6) % (result.actual_dsp_freq / 1e6);
+            results_string += dsp_lo_message.str();
+    } else {
+            boost::format dsp_lo_message(
+                "  The DSP supports the requested frequency:\n"
+                "    Requested DSP Frequency: %f MHz\n"
+                "    DSP Result: %f MHz\n");
+            dsp_lo_message % (req.target_freq / 1e6) % (result.actual_dsp_freq / 1e6);
+            results_string += dsp_lo_message.str();
+    }
+
+    UHD_MSG(status) << results_string;
 
     // tune_request.args are ignored for Crimson
     return result;
@@ -545,6 +595,15 @@ std::string multi_crimson_impl::get_tx_subdev_name(size_t chan){
 // Set the current TX sampling rate on specified channel
 void multi_crimson_impl::set_tx_rate(double rate, size_t chan){
     _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").set(rate);
+    double actual_rate = _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").get();
+    boost::format base_message (
+            "Sample Rate Request:\n"
+    	    "  Requested sample rate: %f MSps\n"
+            "  Actual sample rate: %f MSps\n");
+    base_message % (rate/1e6) % (actual_rate/1e6);
+    std::string results_string = base_message.str();
+
+    UHD_MSG(status) << results_string;
 }
 
 // Get the current TX sampling rate on specified channel
@@ -592,6 +651,47 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
     result.target_rf_freq  = result.actual_rf_freq;
     result.clipped_rf_freq = result.actual_rf_freq;
     result.target_dsp_freq = result.actual_dsp_freq;
+
+    // print out tuning messages
+    boost::format base_message ("TX Tune Request: %f MHz\n");
+    base_message % (req.target_freq / 1e6);
+    std::string results_string = base_message.str();
+
+    // results of tuning RF LO
+    if (result.target_rf_freq != req.target_freq) {
+            boost::format rf_lo_message(
+                "  The RF LO does not support the requested frequency:\n"
+                "    Requested LO Frequency: %f MHz\n"
+                "    RF LO Result: %f MHz\n");
+            rf_lo_message % (req.target_freq / 1e6) % (result.actual_rf_freq / 1e6);
+            results_string += rf_lo_message.str();
+    } else {
+            boost::format rf_lo_message(
+                "  The RF LO supports the requested frequency:\n"
+                "    Requested LO Frequency: %f MHz\n"
+                "    RF LO Result: %f MHz\n");
+            rf_lo_message % (req.target_freq / 1e6) % (result.actual_rf_freq / 1e6);
+            results_string += rf_lo_message.str();
+    }
+
+    // results of tuning DSP
+    if (result.target_dsp_freq != req.target_freq) {
+            boost::format dsp_lo_message(
+                "  The DSP does not support the requested frequency:\n"
+                "    Requested DSP Frequency: %f MHz\n"
+                "    DSP Result: %f MHz\n");
+            dsp_lo_message % (req.target_freq / 1e6) % (result.actual_dsp_freq / 1e6);
+            results_string += dsp_lo_message.str();
+    } else {
+            boost::format dsp_lo_message(
+                "  The DSP supports the requested frequency:\n"
+                "    Requested DSP Frequency: %f MHz\n"
+                "    DSP Result: %f MHz\n");
+            dsp_lo_message % (req.target_freq / 1e6) % (result.actual_dsp_freq / 1e6);
+            results_string += dsp_lo_message.str();
+    }
+
+    UHD_MSG(status) << results_string;
 
     // tune_request.args are ignored for Crimson
     return result;
