@@ -30,6 +30,8 @@
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
+#include <algorithm>
 #include <cmath>
 
 using namespace uhd;
@@ -1005,6 +1007,87 @@ public:
         for (size_t c = 0; c < get_rx_num_channels(); c++){
             this->set_rx_iq_balance(offset, c);
         }
+    }
+
+    std::vector<std::string> get_filter_names(const std::string &search_mask)
+    {
+        std::vector<std::string> ret;
+
+        for (size_t chan = 0; chan < get_rx_num_channels(); chan++){
+
+            if (_tree->exists(rx_rf_fe_root(chan) / "filters")) {
+                std::vector<std::string> names = _tree->list(rx_rf_fe_root(chan) / "filters");
+                for(size_t i = 0; i < names.size(); i++)
+                {
+                    std::string name = rx_rf_fe_root(chan) / "filters" / names[i];
+                    if((search_mask.empty()) or boost::contains(name, search_mask)) {
+                        ret.push_back(name);
+                    }
+                }
+            }
+            if (_tree->exists(rx_dsp_root(chan) / "filters")) {
+                std::vector<std::string> names = _tree->list(rx_dsp_root(chan) / "filters");
+                for(size_t i = 0; i < names.size(); i++)
+                {
+                    std::string name = rx_dsp_root(chan) / "filters" / names[i];
+                    if((search_mask.empty()) or (boost::contains(name, search_mask))) {
+                        ret.push_back(name);
+                    }
+                }
+            }
+
+        }
+
+        for (size_t chan = 0; chan < get_tx_num_channels(); chan++){
+
+            if (_tree->exists(tx_rf_fe_root(chan) / "filters")) {
+                std::vector<std::string> names = _tree->list(tx_rf_fe_root(chan) / "filters");
+                for(size_t i = 0; i < names.size(); i++)
+                {
+                    std::string name = tx_rf_fe_root(chan) / "filters" / names[i];
+                    if((search_mask.empty()) or (boost::contains(name, search_mask))) {
+                        ret.push_back(name);
+                    }
+                }
+            }
+            if (_tree->exists(rx_dsp_root(chan) / "filters")) {
+                std::vector<std::string> names = _tree->list(tx_dsp_root(chan) / "filters");
+                for(size_t i = 0; i < names.size(); i++)
+                {
+                    std::string name = tx_dsp_root(chan) / "filters" / names[i];
+                    if((search_mask.empty()) or (boost::contains(name, search_mask))) {
+                        ret.push_back(name);
+                    }
+                }
+            }
+
+        }
+
+        return ret;
+    }
+
+    filter_info_base::sptr get_filter(const std::string &path)
+    {
+        std::vector<std::string> possible_names = get_filter_names("");
+        std::vector<std::string>::iterator it;
+        it = find(possible_names.begin(), possible_names.end(), path);
+        if (it == possible_names.end()) {
+            throw uhd::runtime_error("Attempting to get non-existing filter: "+path);
+        }
+
+        return _tree->access<filter_info_base::sptr>(path / "value").get();
+    }
+
+    void set_filter(const std::string &path, filter_info_base::sptr filter)
+    {
+        std::vector<std::string> possible_names = get_filter_names("");
+        std::vector<std::string>::iterator it;
+        it = find(possible_names.begin(), possible_names.end(), path);
+        if (it == possible_names.end()) {
+            throw uhd::runtime_error("Attempting to set non-existing filter: "+path);
+        }
+
+        _tree->access<filter_info_base::sptr>(path / "value").set(filter);
     }
 
     /*******************************************************************

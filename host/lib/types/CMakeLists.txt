@@ -91,4 +91,5 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/tune.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wb_iface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/filters.cpp
 )
