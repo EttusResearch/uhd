@@ -119,17 +119,21 @@ public:
         UHD_MSG(status) << "Reading XML file: " << filename.native() << std::endl;
         read_xml(filename.native(), _pt);
         try {
+            // Check name is valid
             get_name();
-        } catch (const pt::ptree_error &e) {
+            // Check there's at least one port
+            ports_t in = get_input_ports();
+            ports_t out = get_output_ports();
+            if (in.size() + out.size() == 0) {
+                throw uhd::runtime_error("Block does not define inputs or outputs.");
+            }
+            // TODO any more checks?
+        } catch (const std::exception &e) {
             throw uhd::runtime_error(str(
                         boost::format("Invalid block definition in %s: %s")
                         % filename.native() % e.what()
             ));
         }
-        // TODO: check validity of XML
-        // - Read all important stuff in constructor
-        //   - Name
-        //   - IO Sigs
     }
 
     bool is_block() const
