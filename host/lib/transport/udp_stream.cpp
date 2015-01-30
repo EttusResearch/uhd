@@ -44,7 +44,7 @@ public:
 	_isConnected = false;
 	_isTX = isTX;
 	_isRX = isRX;
-	_slen = sizeof(_si_other);
+	_slen = sizeof(_si);
 
     	if (_isRX) {
         	UHD_LOG << boost::format("Creating RX udp stream for %s %s") % addr % port << std::endl;
@@ -62,13 +62,13 @@ public:
 	// setup is different for RX stream and TX stream
 	if (_isRX) {
 		// clear the sock structure
-		memset((char *) &_si_other, 0, sizeof(_si_other));
-		_si_other.sin_family = AF_INET;
-		_si_other.sin_port = htons(boost::lexical_cast<int>(port));
-		inet_pton(AF_INET, addr.c_str(), &(_si_other.sin_addr));
+		memset((char *) &_si, 0, sizeof(_si));
+		_si.sin_family = AF_INET;
+		_si.sin_port = htons(boost::lexical_cast<int>(port));
+		inet_pton(AF_INET, addr.c_str(), &(_si.sin_addr));
 
 		// bind the settings to the socket
-		if ( bind(_sockfd, (struct sockaddr *) &_si_other, sizeof(_si_other)) < 0) {
+		if ( bind(_sockfd, (struct sockaddr *) &_si, sizeof(_si)) < 0) {
 			UHD_MSG(error) << boost::format("ERROR bind(): %s") % strerror(errno) << std::endl;
 			return;
 		}
@@ -76,6 +76,13 @@ public:
 
 	// setting up TX stream
 	} else if (_isTX) {
+		// clear the sock structure
+		memset((char *) &_si, 0, sizeof(_si));
+		_si.sin_family = AF_INET;
+		_si.sin_port = htons(boost::lexical_cast<int>(port));
+		inet_pton(AF_INET, addr.c_str(), &(_si.sin_addr));
+
+		// don't need to bind for TX stream
 		_isConnected = true;
 	}
     }
@@ -88,7 +95,7 @@ public:
     	if (!_isConnected) UHD_MSG(error) << "UDP stream not connected." << std::endl;
 	if (!_isTX) UHD_MSG(error) << "UDP stream cannot stream in because not a TX stream." << std::endl;
 
-	return sendto(_sockfd, buff, size, 0, (struct sockaddr*) &_si_me, sizeof(_si_me));
+	return sendto(_sockfd, buff, size, 0, (struct sockaddr*) &_si, sizeof(_si));
     }
 
     size_t stream_in(void* buff, size_t size, double timeout){
@@ -108,7 +115,7 @@ public:
 	}
 
 	// receive from the socket
-	ret = recvfrom(_sockfd, buff, size, 0, (struct sockaddr *) &_si_other, &_slen);
+	ret = recvfrom(_sockfd, buff, size, 0, (struct sockaddr *) &_si, &_slen);
 	if (ret < 0) {
 		UHD_LOG << "UDP stream timedout." << std::endl;
 		ret = 0;
@@ -123,8 +130,7 @@ private:
     bool _isRX;
     int _sockfd;
     socklen_t _slen;
-    struct sockaddr_in _si_other;
-    struct sockaddr_in _si_me;
+    struct sockaddr_in _si;
 };
 
 udp_stream::~udp_stream(void){
