@@ -69,8 +69,11 @@ extern "C" {
 #define CRIMSON_RF_TX_GAIN_RANGE_STOP	0.0
 #define CRIMSON_RF_TX_GAIN_RANGE_STEP	1.0
 
+
+// The real start is -36, but because the initial gain is too small,
+// the start has been shifted up to 0dB
 #define CRIMSON_RF_RX_GAIN_RANGE_START	0.0
-#define CRIMSON_RF_RX_GAIN_RANGE_STOP	42.0
+#define CRIMSON_RF_RX_GAIN_RANGE_STOP	39.0
 #define CRIMSON_RF_RX_GAIN_RANGE_STEP	1.0
 
 // Crimson Rate Settings
