@@ -32,7 +32,6 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
-#include "crimson_str_iface.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -304,10 +303,11 @@ public:
 
 		// Debug data
 		for (size_t i = 0; i < vita_pck; i++) {
-			if (i % 4 == 0) vita_buf[i] = 0x11223344;
-			if (i % 4 == 1) vita_buf[i] = 0x55667788;
-			if (i % 4 == 2) vita_buf[i] = 0x99aabbcc;
-			if (i % 4 == 3)	vita_buf[i] = 0xddeeff00;
+			//if (i % 4 == 0) 
+			vita_buf[i] = 0x11223344;
+			//if (i % 4 == 1) vita_buf[i] = 0x55667788;
+			//if (i % 4 == 2) vita_buf[i] = 0x99aabbcc;
+			//if (i % 4 == 3) vita_buf[i] = 0xddeeff00;
 		}
 
 		//printf("sending\n");
@@ -366,6 +366,10 @@ rx_streamer::sptr crimson_impl::get_rx_stream(const uhd::stream_args_t &args){
 			\"sc16\" Q16 I16" << std::endl;
 	}
 
+	// reset the channel, (errata)
+	//_tree->access<std::string>( "/mboards/0/rx/Channel_A/pwr").set("0");
+	//_tree->access<std::string>( "/mboards/0/rx/Channel_A/pwr").set("1");
+
 	// TODO firmware support for other otw_format, cpu_format
 	return rx_streamer::sptr(new crimson_rx_streamer(this->_addr, this->_tree));
 }
@@ -385,6 +389,10 @@ tx_streamer::sptr crimson_impl::get_tx_stream(const uhd::stream_args_t &args){
 		UHD_MSG(error) << "CRIMSON Stream only supports otw_format of \
 			\"sc16\" Q16 I16" << std::endl;
 	}
+
+	// reset the channel (errata)
+	//_tree->access<std::string>( "/mboards/0/tx/Channel_A/pwr").set("0");
+	//_tree->access<std::string>( "/mboards/0/tx/Channel_A/pwr").set("1");
 
 	// TODO firmware support for other otw_format, cpu_format
 	return tx_streamer::sptr(new crimson_tx_streamer(this->_addr, this->_tree));
