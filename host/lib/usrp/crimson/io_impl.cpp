@@ -287,35 +287,34 @@ public:
 	{
 		const size_t vita_hdr = 4;
 		const size_t vita_tlr = 1;
-		const size_t vita_pck = nsamps_per_buff + vita_hdr + vita_tlr;
-		uint32_t vita_buf[vita_pck];	// buffer to read in data plus room for vita
-		memset(vita_buf, 0, vita_pck * 4);
-
-		// create the VITA header
-		memcpy((void*)vita_buf, buffs[0], nsamps_per_buff * 4);
-
-		// sampling rate
-		if (_got_rate[0] == false) {
-			_rate[0] = _tree->access<double>( "/mboards/0/tx_dsps/Channel_A/rate/value").get();
-			_got_rate[0] = true;
-			//printf("tx0 rate: %lf\n", _rate[0]);
-		}
+		const size_t vita_pck = nsamps_per_buff;// + vita_hdr + vita_tlr;	// vita is disabled
+		uint32_t vita_buf[vita_pck];						// buffer to read in data plus room for VITA
+		memcpy((void*)vita_buf, buffs[0], nsamps_per_buff * 4);			// copy over data to VITA buffer
 
 		// Debug data
-		for (size_t i = 0; i < vita_pck; i++) {
-			//if (i % 4 == 0) 
-			vita_buf[i] = 0x11223344;
-			//if (i % 4 == 1) vita_buf[i] = 0x55667788;
-			//if (i % 4 == 2) vita_buf[i] = 0x99aabbcc;
-			//if (i % 4 == 3) vita_buf[i] = 0xddeeff00;
+		/*for (size_t i = 0; i < vita_pck; i++) {
+			if (i % 8 == 0) vita_buf[i] = 0x11223344;
+			if (i % 8 == 1) vita_buf[i] = 0x55667788;
+			if (i % 8 == 2) vita_buf[i] = 0x99aabbcc;
+			if (i % 8 == 3) vita_buf[i] = 0xddeeff00;
+			if (i % 8 == 4) vita_buf[i] = 0x01234567;
+			if (i % 8 == 5) vita_buf[i] = 0x89abcdef;
+			if (i % 8 == 6) vita_buf[i] = 0xdeadbeef;
+			if (i % 8 == 7) vita_buf[i] = 0xbadeb01a;
+		}*/
+
+		// sending samples, only send 900 at a time
+		size_t ret = 0;
+		while ((ret / 4) < nsamps_per_buff) {
+			size_t remaining_bytes = (nsamps_per_buff*4) - ret;
+
+			if (remaining_bytes >= 900)
+				ret += _udp_stream[0] -> stream_out((void*)vita_buf, 900);
+			else
+				ret += _udp_stream[0] -> stream_out((void*)vita_buf, remaining_bytes);
 		}
-
-		//printf("sending\n");
-
-		// sending samples
-		const int ret = _udp_stream[0] -> stream_out((void*)vita_buf, vita_pck * 4);
 		//printf("send nsamps_per_buff: %li ret: %i\n", nsamps_per_buff, ret);
-		return (ret / 4) - 5;
+		return (ret / 4);// -  vita_hdr - vita_tlr;	// vita is disabled
 	}
 
 	// async messages are currently disabled
@@ -366,10 +365,6 @@ rx_streamer::sptr crimson_impl::get_rx_stream(const uhd::stream_args_t &args){
 			\"sc16\" Q16 I16" << std::endl;
 	}
 
-	// reset the channel, (errata)
-	//_tree->access<std::string>( "/mboards/0/rx/Channel_A/pwr").set("0");
-	//_tree->access<std::string>( "/mboards/0/rx/Channel_A/pwr").set("1");
-
 	// TODO firmware support for other otw_format, cpu_format
 	return rx_streamer::sptr(new crimson_rx_streamer(this->_addr, this->_tree));
 }
@@ -389,10 +384,6 @@ tx_streamer::sptr crimson_impl::get_tx_stream(const uhd::stream_args_t &args){
 		UHD_MSG(error) << "CRIMSON Stream only supports otw_format of \
 			\"sc16\" Q16 I16" << std::endl;
 	}
-
-	// reset the channel (errata)
-	//_tree->access<std::string>( "/mboards/0/tx/Channel_A/pwr").set("0");
-	//_tree->access<std::string>( "/mboards/0/tx/Channel_A/pwr").set("1");
 
 	// TODO firmware support for other otw_format, cpu_format
 	return tx_streamer::sptr(new crimson_tx_streamer(this->_addr, this->_tree));
