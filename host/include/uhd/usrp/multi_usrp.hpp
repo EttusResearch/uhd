@@ -26,6 +26,7 @@
 #define UHD_USRP_MULTI_USRP_BW_RANGE_API
 #define UHD_USRP_MULTI_USRP_USER_REGS_API
 #define UHD_USRP_MULTI_USRP_GET_USRP_INFO_API
+#define UHD_USRP_MULTI_USRP_NORMALIZED_GAIN
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -495,6 +496,24 @@ public:
     }
 
     /*!
+     * Set the normalized RX gain value.
+     *
+     * The normalized gain is a value in [0, 1], where 0 is the
+     * smallest gain value available, and 1 is the largest, independent
+     * of the device. In between, gains are linearly interpolated.
+     *
+     * Check the individual device manual for notes on the gain range.
+     *
+     * Note that it is not possible to specify a gain name for
+     * this function, it will always set the overall gain.
+     *
+     * \param gain the normalized gain value
+     * \param chan the channel index 0 to N-1
+     * \throws A uhd::runtime_error if the gain value is outside [0, 1].
+     */
+    virtual void set_normalized_rx_gain(double gain, size_t chan = 0) = 0;
+
+    /*!
      * Get the RX gain value for the specified gain element.
      * For an empty name, sum across all gain elements.
      * \param name the name of the gain element
@@ -507,6 +526,19 @@ public:
     double get_rx_gain(size_t chan = 0){
         return this->get_rx_gain(ALL_GAINS, chan);
     }
+
+    /*!
+     * Return the normalized RX gain value.
+     *
+     * See set_normalized_rx_gain() for a discussion of normalized
+     * gains.
+     *
+     * \param gain the normalized gain value
+     * \param chan the channel index 0 to N-1
+     * \returns The normalized gain (in [0, 1])
+     * \throws A uhd::runtime_error if the gain value is outside [0, 1].
+     */
+    virtual double get_normalized_rx_gain(size_t chan = 0) = 0;
 
     /*!
      * Get the RX gain range for the specified gain element.
@@ -733,6 +765,18 @@ public:
     }
 
     /*!
+     * Set the normalized TX gain value.
+     *
+     * See set_normalized_rx_gain() for a discussion on normalized
+     * gains.
+     *
+     * \param gain the normalized gain value
+     * \param chan the channel index 0 to N-1
+     * \throws A uhd::runtime_error if the gain value is outside [0, 1].
+     */
+    virtual void set_normalized_tx_gain(double gain, size_t chan = 0) = 0;
+
+    /*!
      * Get the TX gain value for the specified gain element.
      * For an empty name, sum across all gain elements.
      * \param name the name of the gain element
@@ -745,6 +789,19 @@ public:
     double get_tx_gain(size_t chan = 0){
         return this->get_tx_gain(ALL_GAINS, chan);
     }
+
+    /*!
+     * Return the normalized TX gain value.
+     *
+     * See set_normalized_rx_gain() for a discussion of normalized
+     * gains.
+     *
+     * \param gain the normalized gain value
+     * \param chan the channel index 0 to N-1
+     * \returns The normalized gain (in [0, 1])
+     * \throws A uhd::runtime_error if the gain value is outside [0, 1].
+     */
+    virtual double get_normalized_tx_gain(size_t chan = 0) = 0;
 
     /*!
      * Get the TX gain range for the specified gain element.
