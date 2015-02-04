@@ -419,9 +419,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         //set the receive analog frontend filter bandwidth
         if (vm.count("rx-bw")){
-            std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % rx_bw << std::endl;
+            std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % (rx_bw/1e6) << std::endl;
             rx_usrp->set_rx_bandwidth(rx_bw, channel);
-            std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % rx_usrp->get_rx_bandwidth(channel) << std::endl << std::endl;
+            std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % (rx_usrp->get_rx_bandwidth(channel)/1e6) << std::endl << std::endl;
         }
     }
     //set the receive antenna
