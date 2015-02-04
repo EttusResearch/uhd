@@ -509,6 +509,7 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 
 	TREE_CREATE_ST(rx_fe_path / "use_lo_offset", bool, false);
 	TREE_CREATE_ST(tx_fe_path / "use_lo_offset", bool, false);
+	TREE_CREATE_RW(tx_fe_path / "lo_offset" / "value", "tx_"+lc_num+"/rf/dac/nco", double, double);
 
 	TREE_CREATE_ST(tx_fe_path / "freq" / "range", meta_range_t,
 		meta_range_t(CRIMSON_FREQ_RANGE_START, CRIMSON_FREQ_RANGE_STOP, CRIMSON_FREQ_RANGE_STEP));
