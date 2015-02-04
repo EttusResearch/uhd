@@ -382,16 +382,16 @@ UHD_INSTALL(
 )
 
 ########################################################################
-# Handle pre-built UHD Images meant for installation
+# Handle pre-built UHD Images for packaging
 ########################################################################
-IF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
-    FILE(GLOB_RECURSE _image_files "${UHD_IMAGES_DIR}/*")
+IF(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
+    FILE(GLOB_RECURSE _image_files "${UHD_IMAGES_SRC_DIR}/*")
     MESSAGE(STATUS "Using images:")
     FOREACH(_img ${_image_files})
         MESSAGE(STATUS "  ${_img}")
     ENDFOREACH(_img)
     UHD_INSTALL(FILES ${_image_files} DESTINATION ${PKG_DATA_DIR}/images COMPONENT images)
-ENDIF(DEFINED UHD_IMAGES_DIR AND EXISTS "${UHD_IMAGES_DIR}")
+ENDIF(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
 
 ########################################################################
 # Print Summary
