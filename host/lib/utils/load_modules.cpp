@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
@@ -97,13 +98,11 @@ static void load_module_path(const fs::path &path){
     }
 }
 
-std::vector<fs::path> get_module_paths(void); //defined in paths.cpp
-
 /*!
  * Load all the modules given in the module paths.
  */
 UHD_STATIC_BLOCK(load_modules){
-    BOOST_FOREACH(const fs::path &path, get_module_paths()){
+    BOOST_FOREACH(const fs::path &path, uhd::get_module_paths()){
         load_module_path(path);
     }
 }

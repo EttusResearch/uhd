@@ -43,11 +43,20 @@ bool convert::operator==(const convert::id_type &lhs, const convert::id_type &rh
 std::string convert::id_type::to_pp_string(void) const{
     return str(boost::format(
         "conversion ID\n"
-        "  Input format: %s\n"
-        "  Num inputs: %d\n"
+        "  Input format:  %s\n"
+        "  Num inputs:    %d\n"
         "  Output format: %s\n"
-        "  Num outputs: %d\n"
+        "  Num outputs:   %d\n"
     )
+        % this->input_format
+        % this->num_inputs
+        % this->output_format
+        % this->num_outputs
+    );
+}
+
+std::string convert::id_type::to_string(void) const{
+    return str(boost::format("%s (%d) -> %s (%d)")
         % this->input_format
         % this->num_inputs
         % this->output_format
@@ -92,13 +101,28 @@ convert::function_type convert::get_converter(
     //find a matching priority
     priority_type best_prio = -1;
     BOOST_FOREACH(priority_type prio_i, get_table()[id].keys()){
-        if (prio_i == prio) return get_table()[id][prio];
+        if (prio_i == prio) {
+            //----------------------------------------------------------------//
+            UHD_LOGV(always) << "get_converter: For converter ID: " << id.to_pp_string() << std::endl
+                << "Using prio: " << prio << std::endl
+                << std::endl
+            ;
+            //----------------------------------------------------------------//
+            return get_table()[id][prio];
+        }
         best_prio = std::max(best_prio, prio_i);
     }
 
     //wanted a specific prio, didnt find
     if (prio != -1) throw uhd::key_error(
         "Cannot find a conversion routine [with prio] for " + id.to_pp_string());
+
+    //----------------------------------------------------------------//
+    UHD_LOGV(always) << "get_converter: For converter ID: " << id.to_pp_string() << std::endl
+        << "Using prio: " << best_prio << std::endl
+        << std::endl
+    ;
+    //----------------------------------------------------------------//
 
     //otherwise, return best prio
     return get_table()[id][best_prio];

@@ -35,7 +35,7 @@ static const double DEFAULT_FE_GAIN         = 0.0;
 static const double DEFAULT_FE_FREQ         = 1.0e9;
 static const double DEFAULT_FE_BW           = 56e6;
 
-static const std::string DEFAULT_TIME_SRC   = "none";
+static const std::string DEFAULT_TIME_SRC   = "internal";
 static const std::string DEFAULT_CLOCK_SRC  = "internal";
 
 static const size_t DEFAULT_RX_DATA_FRAME_SIZE = 4096;

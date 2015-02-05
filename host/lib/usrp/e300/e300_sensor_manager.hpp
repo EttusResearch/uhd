@@ -22,6 +22,7 @@
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
+#include "e300_global_regs.hpp"
 
 #ifndef INCLUDED_E300_SENSOR_MANAGER_HPP
 #define INCLUDED_E300_SENSOR_MANAGER_HPP
@@ -39,7 +40,7 @@ struct sensor_transaction_t {
 
 
 enum sensor {ZYNQ_TEMP=0, GPS_FOUND=1, GPS_TIME=2,
-             GPS_LOCK=3};
+             GPS_LOCK=3, REF_LOCK=4};
 
 class e300_sensor_manager : boost::noncopyable
 {
@@ -53,9 +54,10 @@ public:
     virtual uhd::sensor_value_t get_mb_temp(void) = 0;
     virtual uhd::sensor_value_t get_gps_lock(void) = 0;
     virtual uhd::sensor_value_t get_gps_time(void) = 0;
+    virtual uhd::sensor_value_t get_ref_lock(void) = 0;
 
     static sptr make_proxy(uhd::transport::zero_copy_if::sptr xport);
-    static sptr make_local(uhd::gps_ctrl::sptr gps_ctrl);
+    static sptr make_local(uhd::gps_ctrl::sptr gps_ctrl, global_regs::sptr global_regs);
 
     // Note: This is a hack
     static boost::uint32_t pack_float_in_uint32_t(const float &v)

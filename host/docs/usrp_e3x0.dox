@@ -7,13 +7,13 @@
 - Hardware Capabilities:
 	  Integrated RF frontend (70 MHz - 6 GHz)
 	- External PPS reference input
-	- External 10 MHz reference input
 	- Configurable clock rate
 	- Internal GPIO connector with UHD API control
 	- 2 USB 2.0 Host ports
 	- Internal GPS
 	- Soundcard mono input / stereo output
 	- USB UART
+	- Internal IMU
 	- Zynq-7020 FPGA
 - FPGA Capabilities:
         - 2 RX DDC chains in FPGA
@@ -132,7 +132,7 @@ which should return 'arm-oe-linux-gnueabi'.
 -# Setup your environment as described in \ref e3x0_sdk_usage
 -# Type the following in the build directory (assuming a build in host/build):
 
-        $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DENABLE_E300=On ..
+        $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_E300=ON ..
         $ make
 
 \subsubsection e3x0_sdk_usage_gnuradio Building GNU Radio
@@ -143,7 +143,7 @@ which should return 'arm-oe-linux-gnueabi'.
 
 \code{.sh}
 $ mkdir build-arm
-$ cmake -Wno-dev -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/oe-sdk_cross.cmake \-DCMAKE_INSTALL_PREFIX=/usr -DENABLE_GR_VOCODER=OFF -DGR_ENABLE_ATSC=OFF \
+$ cmake -Wno-dev -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/oe-sdk_cross.cmake \-DCMAKE_INSTALL_PREFIX=/usr -DENABLE_GR_VOCODER=OFF -DENABLE_GR_ATSC=OFF \
 -DENABLE_GR_DTV=OFF -DENABLE_DOXYGEN=OFF ../
 \endcode
 
@@ -274,8 +274,20 @@ You may need to change the USRP's IP address for several reasons:
 - **USB**: USB 2.0 Port
 - **SERIAL**: Micro USB connection for serial uart console
 
+\subsection e3x0_hw_sync Clock and Time Synchronization
+Unlike most USRP devices, the E310 does not have independent reference clock and time source inputs.
+It is possible, however, to discipline the internal reference clock using an external time (PPS) source
+connected to the SYNC input pin. The E310 FPGA has a subsystem that can use the PPS signal from the
+SYNC pin or the internal GPS to align edges of the reference clock to edges of a shared PPS signal. 
+This alignment happens automatically when the time source in UHD is set to "gpsdo" or "external". 
+Please note that because the SYNC input can only accept a PPS signal, the only supported value for 
+the reference clock source is "internal".
+
+
 \subsection e3x0_hw_pps PPS - Pulse Per Second
-Using a PPS signal for timestamp synchronization requires a square wave signal with the following a 5Vpp amplitude.
+Using a PPS signal for timestamp synchronization requires a LVCMOS or a 5V logic input signal.
+An external PPS can be used to discipline the internal reference clock. This feature is automatically 
+enabled with the time source is set to "external".
 
 To test the PPS input, you can use the following tool from the UHD examples:
 
@@ -288,9 +300,45 @@ To test the PPS input, you can use the following tool from the UHD examples:
 
 Your USRP-E Series device comes with an internal GPS.
 In order to get a lock on a satellite an external GPS antenna is required.
+The PPS from the internal GPS can be used to discipline the internal reference clock. This feature is automatically 
+enabled with the time source is set to "gpsdo".
 
 The device provides a 3.3V supply voltage to an external antenna connected to the *GPS* port
 of your device. Note that this supply voltage is turned off in order to safe power upon destruction of the software object.
+
+\subsection e3x0_hw_imu Inertial Measurement Unit (IMU)
+
+Your USRP-E Series device has an onboard IMU that provides
+9 axis (Gyro, Accelerometer and compass) functionality.
+
+The USRP-E Series images ship with several example applications based on
+<a href="https://github.com/richards-tech/RTIMULib">RTIMULib</a> that allow the user
+to explore the basic functionality of the IMU as well as to calibrate it.
+
+To test the accelerometer, run:
+
+    $ RTIMULibDrive
+
+This will print the current acclerometer values on the console.
+
+To launch the IMU calibration procedure, run:
+
+    $ RTIMULibCal
+
+and follow the onscreen instructions. Please note that magnetometer calibration is important to obtain
+sensible results if the IMU is to be used in sensor fusion applications.
+
+Using X11 forwarding over SSH (see \ref e3x0_faq) a complete sensor fusion application can be run over SSH
+from a host computer by typing:
+
+    $ RTIMULibDemo
+
+This should open a graphical window on the host computer that displays the various outputs of the IMU,
+as well as quaternion measurements based on different sensor fusion algorithms.
+
+\image html e3x0_imu_demo.png "RTIMULibDemo"
+
+For more advanced IMU based applications please refer to the <a href="https://github.com/richards-tech/RTIMULib">RTIMULib repository</a> as well as the datasheets.
 
 \subsection e3x0_hw_gpio Internal GPIO
 
@@ -575,7 +623,7 @@ You can use this to make sure the network connection is correctly set up, e.g.
 by pinging the USRP and making sure the LEDs start to blink.
 
 
-\subsection e3x0 Frequently Asked Questions
+\subsection e3x0_faq Frequently Asked Questions
 
  - Communication
   -# How do I enable X forwarding so I can run X apps on the E3x0?<br>

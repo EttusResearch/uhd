@@ -63,12 +63,13 @@ namespace uhd{ namespace convert{
     typedef int priority_type;
 
     //! Identify a conversion routine in the registry
-    struct id_type : boost::equality_comparable<id_type>{
+    struct UHD_API id_type : boost::equality_comparable<id_type>{
         std::string input_format;
         size_t num_inputs;
         std::string output_format;
         size_t num_outputs;
         std::string to_pp_string(void) const;
+        std::string to_string(void) const;
     };
 
     //! Implement equality_comparable interface

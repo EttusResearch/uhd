@@ -21,6 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <boost/cstdint.hpp>
+#include <string>
 
 namespace uhd{
 
@@ -120,8 +121,8 @@ namespace uhd{
 
         /*!
          * Convert a rx_metadata_t into a pretty print string.
-	 *
-	 * \param compact Set to false for a more verbose output.
+         *
+         * \param compact Set to false for a more verbose output.
          * \return a printable string representing the metadata.
          */
         std::string to_pp_string(bool compact=true) const;
@@ -130,7 +131,7 @@ namespace uhd{
          * Similar to C's strerror() function, creates a std::string describing the error code.
          * \return a printable string representing the error.
          */
-	std::string strerror(void) const;
+        std::string strerror(void) const;
     };
 
     /*!

@@ -51,8 +51,8 @@ public:
 
 protected:
     std::string _get_bitstream_checksum(const std::string& file_path);
-    std::string _get_fpga_images_dir(const std::string search_paths);
 };
+
 }}
 
 #endif /* INCLUDED_UHD_TRANSPORT_NIRIO_NIFPGA_LVBITX_H */

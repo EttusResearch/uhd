@@ -8,6 +8,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
+#include <uhd/utils/paths.hpp>
 
 namespace uhd {{ namespace niusrprio {{
 
@@ -27,8 +28,9 @@ const char* {lvbitx_classname}_lvbitx::INPUT_FIFOS[] = {{{in_fifo_list}
 
 {lvbitx_classname}_lvbitx::{lvbitx_classname}_lvbitx(const std::string& option)
 {{
-    boost::filesystem::path fpga_path(_get_fpga_images_dir(SEARCH_PATHS));
-    fpga_path /= "usrp_{lvbitx_classname}_fpga_" + option + ".lvbitx";
+    std::string fpga_file = "usrp_{lvbitx_classname}_fpga_" + option + ".lvbitx";
+    boost::filesystem::path fpga_path(uhd::find_image_path(fpga_file, SEARCH_PATHS));
+
     _fpga_file_name = fpga_path.string();
     _bitstream_checksum = _get_bitstream_checksum(_fpga_file_name);
 }}

@@ -135,6 +135,20 @@ namespace uhd{
         throw key_not_found<Key, Val>(key);
     }
 
+    template <typename Key, typename Val>
+    void dict<Key, Val>::update(const dict<Key, Val> &new_dict, bool fail_on_conflict)
+    {
+        BOOST_FOREACH(const Key &key, new_dict.keys()) {
+            if (fail_on_conflict and has_key(key) and get(key) != new_dict[key]) {
+                throw uhd::value_error(str(
+                    boost::format("Option merge conflict: %s:%s != %s:%s")
+                    % key % get(key) % key % new_dict[key]
+                ));
+            }
+            set(key, new_dict[key]);
+        }
+    }
+
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_TYPES_DICT_IPP */
