@@ -951,12 +951,7 @@ void e300_impl::_update_clock_source(const std::string &source)
 void e300_impl::_update_antenna_sel(const size_t &which, const std::string &ant)
 {
     if (ant != "TX/RX" and ant != "RX2")
-<<<<<<< HEAD
-        throw uhd::value_error("e300: unknown RX antenna option: " + ant);
-
-=======
         throw uhd::value_error("Unknown RX antenna option: " + ant);
->>>>>>> origin/master
     _radio_perifs[which].ant_rx2 = (ant == "RX2");
     this->_update_atrs();
 }
