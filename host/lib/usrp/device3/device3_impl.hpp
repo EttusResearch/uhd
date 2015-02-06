@@ -28,6 +28,7 @@
 #include <uhd/types/sid.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/endianness.hpp>
+#include <uhd/types/direction.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/device3.hpp>
 
@@ -144,6 +145,23 @@ protected:
 
     //! Is called after a streamer is generated
     virtual void post_streamer_hooks(bool /* is_tx */) {};
+
+    /*! Merge a list of channels into the existing channel definition.
+     *
+     * Intelligently merge the channels described in \p chan_ids
+     * into the current channel definition. If none of the channels in
+     * \p chan_ids is in the current definition, they simply get appended.
+     * Otherwise, they get overwritten in the order of \p chan_ids.
+     *
+     * \param chan_ids List of block IDs for the channels.
+     * \param chan_args New channel args. Must have same length as chan_ids.
+     *
+     */
+    void merge_channel_defs(
+            const std::vector<rfnoc::block_id_t> &chan_ids,
+            const std::vector<uhd::device_addr_t> &chan_args,
+            const uhd::direction_t dir
+    );
 
     /***********************************************************************
      * Members
