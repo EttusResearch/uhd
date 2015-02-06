@@ -753,10 +753,6 @@ public:
     void set_rx_subdev_spec(const subdev_spec_t &spec, size_t mboard){
         if (mboard != ALL_MBOARDS){
             _tree->access<subdev_spec_t>(mb_root(mboard) / "rx_subdev_spec").set(spec);
-            // TODO: Revisit if we want to keep this
-            if (is_device3()) {
-                _update_chans_from_subdev_spec(spec, mboard, false);
-            }
             return;
         }
         for (size_t m = 0; m < get_num_mboards(); m++){
@@ -962,10 +958,6 @@ public:
         }
         for (size_t m = 0; m < get_num_mboards(); m++){
             set_tx_subdev_spec(spec, m);
-        }
-        // TODO: Revisit if we want to keep this
-        if (is_device3()) {
-            _update_chans_from_subdev_spec(spec, mboard, true);
         }
     }
 
@@ -1375,53 +1367,6 @@ public:
         return chan_idx;
     }
 
-
-    // Translation unit: When setting a subdev spec, the channel list
-    // must be updated as well.
-    //
-    // This *resets all previous channel settings*.
-    void _update_chans_from_subdev_spec(
-            const subdev_spec_t &spec,
-            size_t mboard,
-            bool tx
-    ) {
-        bool multi_radio_on_one_fe = false;
-        if (_tree->access<std::string>("/mboards/0/name").get() == "E310" or
-            _tree->access<std::string>("/mboards/0/name").get() == "E300" or
-            _tree->access<std::string>("/mboards/0/name").get() == "B210" or
-            _tree->access<std::string>("/mboards/0/name").get() == "B200")
-        {
-            multi_radio_on_one_fe = true;
-        }
-        clear_channels();
-        uhd::rfnoc::block_id_t radio_blk_id(mboard, "Radio", 0);
-        for (size_t i = 0; i < spec.size(); i++) {
-            device_addr_t radio_args;
-            if (multi_radio_on_one_fe) {
-                if (spec[i].sd_name == "A") {
-                    radio_blk_id.set_block_count(0);
-                } else if (spec[i].sd_name == "B") {
-                    radio_blk_id.set_block_count(1);
-                } else {
-                    UHD_THROW_INVALID_CODE_PATH();
-                }
-            } else {
-                if (spec[i].db_name == "A") {
-                    radio_blk_id.set_block_count(0);
-                } else if (spec[i].db_name == "B") {
-                    radio_blk_id.set_block_count(1);
-                } else {
-                    UHD_THROW_INVALID_CODE_PATH();
-                }
-                radio_args["frontend"] = spec[i].sd_name;
-            }
-            if (tx) {
-                set_tx_channel(radio_blk_id, radio_args, -1);
-            } else {
-                set_rx_channel(radio_blk_id, radio_args, -1);
-            }
-        }
-    }
 
     uhd::rfnoc::block_id_t get_tx_channel_id(size_t chan_idx)
     {

@@ -49,26 +49,18 @@ void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, 
 
     //sanity checking
     validate_subdev_spec(_tree, spec, tx_rx, mb_name);
-    UHD_ASSERT_THROW(spec.size() <= 2);
-    if (spec.size() == 1) {
-        UHD_ASSERT_THROW(spec[0].db_name == "A" || spec[0].db_name == "B");
-    }
-    else if (spec.size() == 2) {
-        UHD_ASSERT_THROW(
-            (spec[0].db_name == "A" && spec[1].db_name == "B") ||
-            (spec[0].db_name == "B" && spec[1].db_name == "A")
-        );
-    }
 
-    std::vector<size_t> chan_to_dsp_map(spec.size(), 0);
-    // setup mux for this spec
+    std::vector<uhd::rfnoc::block_id_t> chan_ids(spec.size());
+    std::vector<device_addr_t>          chan_args(spec.size());
     for (size_t i = 0; i < spec.size(); i++)
     {
         const int radio_idx = _mb[mb_i].get_radio_index(spec[i].db_name);
-        chan_to_dsp_map[i] = radio_idx;
+        chan_ids.push_back(uhd::rfnoc::block_id_t(mb_i, "Radio", radio_idx));
+        chan_args.push_back(device_addr_t(str(boost::format("frontend=%s") % spec[i].sd_name)));
     }
 
-    _tree->access<std::vector<size_t> >(mb_root / (tx_rx + "_chan_dsp_mapping")).set(chan_to_dsp_map);
+    // Actually change the channel definitions:
+    merge_channel_defs(chan_ids, chan_args, (tx_rx == "tx") ? TX_DIRECTION : RX_DIRECTION);
 }
 
 

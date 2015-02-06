@@ -74,24 +74,15 @@ void e300_impl::_update_subdev_spec(
 
     UHD_ASSERT_THROW(spec.size() <= fpga::NUM_RADIOS);
 
-    if (spec.size() >= 1)
-    {
-        UHD_ASSERT_THROW(spec[0].db_name == "A");
-        UHD_ASSERT_THROW(spec[0].sd_name == "A" or spec[0].sd_name == "B");
-    }
-    if (spec.size() == 2)
-    {
-        UHD_ASSERT_THROW(spec[1].db_name == "A");
-        UHD_ASSERT_THROW(
-            (spec[0].sd_name == "A" and spec[1].sd_name == "B") or
-            (spec[0].sd_name == "B" and spec[1].sd_name == "A")
-        );
+    std::vector<uhd::rfnoc::block_id_t> chan_ids(spec.size());
+    std::vector<device_addr_t>          chan_args(spec.size());
+    for (size_t i = 0; i < spec.size(); i++) {
+        const int radio_idx = (spec[i].sd_name == "A") ? 0 : 1;
+        chan_ids.push_back(uhd::rfnoc::block_id_t(mb_i, "Radio", radio_idx));
     }
 
-    std::vector<size_t> chan_to_dsp_map(spec.size(), 0);
-    for (size_t i = 0; i < spec.size(); i++)
-        chan_to_dsp_map[i] = (spec[i].sd_name == "A") ? 0 : 1;
-    _tree->access<std::vector<size_t> >("/mboards/0" / (txrx + "_chan_dsp_mapping")).set(chan_to_dsp_map);
+    // Actually change the channel definitions:
+    merge_channel_defs(chan_ids, chan_args, (tx_rx == "tx") ? TX_DIRECTION : RX_DIRECTION);
 
     this->_update_enables();
 }
