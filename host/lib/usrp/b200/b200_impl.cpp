@@ -86,7 +86,9 @@ static device_addrs_t b200_find(const device_addr_t &hint)
 
     //Return an empty list of addresses when an address or resource is specified,
     //since an address and resource is intended for a different, non-USB, device.
-    if (hint.has_key("addr") || hint.has_key("resource")) return b200_addrs;
+    BOOST_FOREACH(device_addr_t hint_i, separate_device_addr(hint)) {
+        if (hint_i.has_key("addr") || hint_i.has_key("resource")) return b200_addrs;
+    }
 
     boost::uint16_t vid, pid;
 
