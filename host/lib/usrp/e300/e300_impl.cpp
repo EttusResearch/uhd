@@ -1154,8 +1154,13 @@ void e300_impl::_setup_radio(const size_t dspno)
         perif.framer,
         perif.ddc,
         perif.deframer,
-        perif.duc
+        perif.duc,
+        perif.rx_fe,
+        perif.tx_fe
     );
+    r_ctrl->set_dboard_type(uhd::rfnoc::radio_ctrl::DBOARD_TYPE_AD9361);
+    r_ctrl->update_muxes(TX_DIRECTION);
+    r_ctrl->update_muxes(RX_DIRECTION);
     _rfnoc_block_ctrl.push_back(r_ctrl);
 
     ////// Add default channels

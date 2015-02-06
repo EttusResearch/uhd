@@ -66,20 +66,6 @@ void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, 
     {
         const int radio_idx = _mb[mb_i].get_radio_index(spec[i].db_name);
         chan_to_dsp_map[i] = radio_idx;
-
-        //extract connection
-        const std::string conn = _tree->access<std::string>(mb_root / "dboards" / spec[i].db_name / (tx_rx + "_frontends") / spec[i].sd_name / "connection").get();
-
-        if (tx_rx == "tx") {
-            //swap condition
-            _mb[mb_i].radio_perifs[radio_idx].tx_fe->set_mux(conn);
-        } else {
-            //swap condition
-            const bool fe_swapped = (conn == "QI" or conn == "Q");
-            _mb[mb_i].radio_perifs[radio_idx].ddc->set_mux(conn, fe_swapped);
-            //see usrp/io_impl.cpp if multiple DSPs share the frontend:
-            _mb[mb_i].radio_perifs[radio_idx].rx_fe->set_mux(fe_swapped);
-        }
     }
 
     _tree->access<std::vector<size_t> >(mb_root / (tx_rx + "_chan_dsp_mapping")).set(chan_to_dsp_map);

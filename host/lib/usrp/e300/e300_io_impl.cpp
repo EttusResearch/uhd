@@ -93,30 +93,6 @@ void e300_impl::_update_subdev_spec(
         chan_to_dsp_map[i] = (spec[i].sd_name == "A") ? 0 : 1;
     _tree->access<std::vector<size_t> >("/mboards/0" / (txrx + "_chan_dsp_mapping")).set(chan_to_dsp_map);
 
-    const fs_path mb_path = "/mboards/0";
-
-    if (txrx == "tx") {
-        for (size_t i = 0; i < spec.size(); i++)
-        {
-            const std::string conn = _tree->access<std::string>(
-                mb_path / "dboards" / spec[i].db_name /
-                ("tx_frontends") / spec[i].sd_name / "connection").get();
-            _radio_perifs[i].tx_fe->set_mux(conn);
-        }
-
-    } else {
-        for (size_t i = 0; i < spec.size(); i++)
-        {
-            const std::string conn = _tree->access<std::string>(
-                mb_path / "dboards" / spec[i].db_name /
-                ("rx_frontends") / spec[i].sd_name / "connection").get();
-
-            const bool fe_swapped = (conn == "QI" or conn == "Q");
-            _radio_perifs[i].ddc->set_mux(conn, fe_swapped);
-            _radio_perifs[i].rx_fe->set_mux(fe_swapped);
-        }
-    }
-
     this->_update_enables();
 }
 

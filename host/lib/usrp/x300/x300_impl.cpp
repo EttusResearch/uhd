@@ -1138,8 +1138,11 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
             perif.framer,
             perif.ddc,
             perif.deframer,
-            perif.duc
+            perif.duc,
+            perif.rx_fe,
+            perif.tx_fe
     );
+    r_ctrl->set_dboard_type(radio_ctrl::DBOARD_TYPE_SLOT);
     _rfnoc_block_ctrl.push_back(r_ctrl);
 
     ////// Add default channels

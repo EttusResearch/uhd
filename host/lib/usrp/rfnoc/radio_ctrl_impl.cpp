@@ -64,6 +64,8 @@ public:
 
         _tree->create<bool>(_root_path / "tx_active").set(false);
         _tree->create<bool>(_root_path / "rx_active").set(false);
+
+        _dboard_type = DBOARD_TYPE_UNKNOWN;
     }
 
     /***********************************************************************
@@ -225,17 +227,69 @@ public:
      * Radio controls (radio_ctrl specific)
      **********************************************************************/
     void set_perifs(
-        time_core_3000::sptr    time64,
-        rx_vita_core_3000::sptr framer,
-        rx_dsp_core_3000::sptr  ddc,
-        tx_vita_core_3000::sptr deframer,
-        tx_dsp_core_3000::sptr  duc
+        time_core_3000::sptr       time64,
+        rx_vita_core_3000::sptr    framer,
+        rx_dsp_core_3000::sptr     ddc,
+        tx_vita_core_3000::sptr    deframer,
+        tx_dsp_core_3000::sptr     duc,
+        rx_frontend_core_200::sptr rx_fe,
+        tx_frontend_core_200::sptr tx_fe
     ) {
         _perifs.time64 = time64;
         _perifs.framer = framer;
         _perifs.ddc = ddc;
         _perifs.deframer = deframer;
         _perifs.duc = duc;
+        _perifs.rx_fe = rx_fe;
+        _perifs.tx_fe = tx_fe;
+    }
+
+    void set_dboard_type(dboard_type_t type)
+    {
+        _dboard_type = type;
+    }
+
+    void update_muxes(uhd::direction_t dir)
+    {
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::update_muxes() " << std::endl;
+
+        // 1) Figure out dboard and frontend name
+        std::string db, fe;
+        std::string fe_path = (dir == TX_DIRECTION) ? "tx_frontends" : "rx_frontends";
+        switch (_dboard_type) {
+            case DBOARD_TYPE_UNKNOWN:
+                return;
+
+            case DBOARD_TYPE_SLOT:
+                db = (get_block_id().get_block_count() == 0) ? "A" : "B";
+                // TODO: This key might be stored elsewhere too, e.g. in the stream args
+                if (_args.has_key("frontend")) {
+                    fe = _args["frontend"];
+                } else {
+                    fe = _tree->list("dboards" / db / fe_path).at(0);
+                }
+                break;
+
+            case DBOARD_TYPE_AD9361:
+                db = "A";
+                fe = (get_block_id().get_block_count() == 0) ? "A" : "B";
+                break;
+
+            default:
+                UHD_THROW_INVALID_CODE_PATH();
+        }
+
+        // 2) Set the muxes
+        uhd::fs_path dbpath = uhd::fs_path("dboards") / db / fe_path / fe / "connection";
+        const std::string conn = _tree->access<std::string>(dbpath).get();
+        UHD_MSG(status) << "  " << dbpath << " == " << conn << std::endl;
+        if (dir == TX_DIRECTION) {
+            _perifs.tx_fe->set_mux(conn);
+        } else {
+            const bool fe_swapped = (conn == "QI" or conn == "Q");
+            _perifs.ddc->set_mux(conn, fe_swapped);
+            _perifs.rx_fe->set_mux(fe_swapped);
+        }
     }
 
 protected:
@@ -261,6 +315,8 @@ protected:
             throw uhd::value_error("radio_ctrl::init_rx(): Invalid spp value.");
         }
 
+        update_muxes(uhd::RX_DIRECTION);
+
         _perifs.framer->setup(args);
         _perifs.ddc->setup(args);
 
@@ -276,6 +332,8 @@ protected:
             << args.otw_format << " "
             << args.cpu_format << " "
             << std::endl;
+
+        update_muxes(uhd::TX_DIRECTION);
 
         _perifs.deframer->setup(args);
         _perifs.duc->setup(args);
@@ -301,11 +359,13 @@ private:
     //! Stores pointers to all streaming-related radio cores
     struct radio_v_perifs_t
     {
-        time_core_3000::sptr    time64;
-        rx_vita_core_3000::sptr framer;
-        rx_dsp_core_3000::sptr  ddc;
-        tx_vita_core_3000::sptr deframer;
-        tx_dsp_core_3000::sptr  duc;
+        time_core_3000::sptr       time64;
+        rx_vita_core_3000::sptr    framer;
+        rx_dsp_core_3000::sptr     ddc;
+        tx_vita_core_3000::sptr    deframer;
+        tx_dsp_core_3000::sptr     duc;
+        rx_frontend_core_200::sptr rx_fe;
+        tx_frontend_core_200::sptr tx_fe;
     } _perifs;
 
     uhd::stream_args_t _rx_stream_args;
@@ -313,6 +373,7 @@ private:
     size_t _rx_bpi;
     size_t _rx_spp;
 
+    dboard_type_t _dboard_type;
 };
 
 UHD_RFNOC_BLOCK_REGISTER(radio_ctrl, "Radio");
