@@ -170,6 +170,17 @@ private: // types
         static const size_t RX_BANDSELC = 17;
     };
 
+protected:
+    void subdev_to_blockid(
+            const std::string &db, const std::string &fe, const size_t mb_i,
+            uhd::rfnoc::block_id_t &block_id, uhd::device_addr_t &block_args
+    );
+
+    void blockid_to_subdev(
+            const uhd::rfnoc::block_id_t &blockid, const uhd::device_addr_t &block_args,
+            std::string &db, std::string &fe
+    );
+
 private: // methods
     void _register_loopback_self_test(uhd::wb_iface::sptr iface);
 

@@ -149,4 +149,32 @@ void x300_impl::post_streamer_hooks(bool is_tx)
     }
 }
 
+void x300_impl::subdev_to_blockid(
+        const std::string &db, const std::string &fe, const size_t mb_i,
+        rfnoc::block_id_t &block_id, device_addr_t &args
+) {
+    UHD_ASSERT_THROW(db == "A" || db == "B");
+
+    block_id.set_device_no(mb_i);
+    block_id.set_block_name("Radio");
+    block_id.set_block_count(db == "A" ? 0 : 1);
+    args["frontend"] = fe;
+}
+
+void x300_impl::blockid_to_subdev(
+        const rfnoc::block_id_t &block_id, const device_addr_t &args,
+        std::string &db, std::string &fe
+) {
+    UHD_ASSERT_THROW(block_id.get_block_count() == 0 || block_id.get_block_count() == 1);
+    UHD_ASSERT_THROW(block_id.get_block_name() == "Radio");
+
+    db = (block_id.get_block_count() == 0) ? "A" : "B";
+    if (args.has_key("frontend")) {
+        fe = args["frontend"];
+    } else {
+        fs_path mb_root = "/mboards/" + block_id.get_device_no();
+        fe = _tree->list(mb_root / "dboards" / db / "tx_frontends").at(0);
+    }
+}
+
 // vim: sw=4 expandtab:

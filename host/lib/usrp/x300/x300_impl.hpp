@@ -143,6 +143,17 @@ public:
     static x300_mboard_t get_mb_type_from_pcie(const std::string& resource, const std::string& rpc_port);
     static x300_mboard_t get_mb_type_from_eeprom(const uhd::usrp::mboard_eeprom_t& mb_eeprom);
 
+protected:
+    void subdev_to_blockid(
+            const std::string &db, const std::string &fe, const size_t mb_i,
+            uhd::rfnoc::block_id_t &block_id, uhd::device_addr_t &block_args
+    );
+
+    void blockid_to_subdev(
+            const uhd::rfnoc::block_id_t &blockid, const uhd::device_addr_t &block_args,
+            std::string &db, std::string &fe
+    );
+
 private:
 
     //perifs in the radio core

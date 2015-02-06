@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -146,6 +146,9 @@ protected:
     //! Is called after a streamer is generated
     virtual void post_streamer_hooks(bool /* is_tx */) {};
 
+    /***********************************************************************
+     * Channel-related
+     **********************************************************************/
     /*! Merge a list of channels into the existing channel definition.
      *
      * Intelligently merge the channels described in \p chan_ids
@@ -162,6 +165,20 @@ protected:
             const std::vector<uhd::device_addr_t> &chan_args,
             const uhd::direction_t dir
     );
+
+    /*! Translate a subdev spec pair into a block ID.
+     */
+    virtual void subdev_to_blockid(
+            const std::string &db, const std::string &fe, const size_t mb_i,
+            rfnoc::block_id_t &block_id, device_addr_t &block_args
+    ) = 0;
+
+    /*! Translate a block ID into a subdev spec pair.
+     */
+    virtual void blockid_to_subdev(
+            const rfnoc::block_id_t &blockid, const device_addr_t &block_args,
+            std::string &db, std::string &fe
+    ) = 0;
 
     /***********************************************************************
      * Members
