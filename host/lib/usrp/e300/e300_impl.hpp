@@ -31,16 +31,7 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include "e300_fifo_config.hpp"
-#include "radio_ctrl_core_3000.hpp"
-#include "rx_frontend_core_200.hpp"
-#include "tx_frontend_core_200.hpp"
-#include "rx_vita_core_3000.hpp"
-#include "tx_vita_core_3000.hpp"
-#include "time_core_3000.hpp"
-#include "rx_dsp_core_3000.hpp"
-#include "tx_dsp_core_3000.hpp"
 #include "ad9361_ctrl.hpp"
-#include "gpio_core_200.hpp"
 
 #include "e300_global_regs.hpp"
 #include "e300_i2c.hpp"
@@ -115,18 +106,9 @@ public:
 private: // types
 
     // perifs in the radio core
-    struct radio_perifs_t
+    struct radio_perifs_t : public device3_impl::radio_v_perifs_t
     {
-        radio_ctrl_core_3000::sptr ctrl;
         gpio_core_200_32wo::sptr atr;
-        gpio_core_200_32wo::sptr leds;
-        time_core_3000::sptr time64;
-        rx_vita_core_3000::sptr framer;
-        rx_dsp_core_3000::sptr ddc;
-        tx_vita_core_3000::sptr deframer;
-        tx_dsp_core_3000::sptr duc;
-        rx_frontend_core_200::sptr rx_fe;
-        tx_frontend_core_200::sptr tx_fe;
 
         bool ant_rx2;
     };

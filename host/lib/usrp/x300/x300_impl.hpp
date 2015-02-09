@@ -31,16 +31,7 @@
 #include "spi_core_3000.hpp"
 #include "x300_adc_ctrl.hpp"
 #include "x300_dac_ctrl.hpp"
-#include "rx_vita_core_3000.hpp"
-#include "tx_vita_core_3000.hpp"
-#include "time_core_3000.hpp"
-#include "rx_dsp_core_3000.hpp"
-#include "tx_dsp_core_3000.hpp"
 #include "i2c_core_100_wb32.hpp"
-#include "radio_ctrl_core_3000.hpp"
-#include "rx_frontend_core_200.hpp"
-#include "tx_frontend_core_200.hpp"
-#include "gpio_core_200.hpp"
 #include <boost/weak_ptr.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -155,20 +146,11 @@ protected:
 private:
 
     //perifs in the radio core
-    struct radio_perifs_t
+    struct radio_perifs_t : public device3_impl::radio_v_perifs_t
     {
-        radio_ctrl_core_3000::sptr ctrl;
         spi_core_3000::sptr spi;
         x300_adc_ctrl::sptr adc;
         x300_dac_ctrl::sptr dac;
-        time_core_3000::sptr time64;
-        rx_vita_core_3000::sptr framer;
-        rx_dsp_core_3000::sptr ddc;
-        tx_vita_core_3000::sptr deframer;
-        tx_dsp_core_3000::sptr duc;
-        gpio_core_200_32wo::sptr leds;
-        rx_frontend_core_200::sptr rx_fe;
-        tx_frontend_core_200::sptr tx_fe;
     };
 
     //vector of member objects per motherboard
