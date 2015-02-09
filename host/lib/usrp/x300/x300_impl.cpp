@@ -42,7 +42,6 @@
 
 ////// RFNOC ////////////
 #include <uhd/usrp/rfnoc/null_block_ctrl.hpp>
-#include "../rfnoc/radio_ctrl.hpp"
 ////// RFNOC ////////////
 
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
@@ -1110,42 +1109,16 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
             .subscribe(boost::bind(&x300_impl::set_rx_fe_corrections, this, mb_path, slot_name, _1));
     }
 
-    /////// Create the RFNoC block
-    UHD_MSG(status) << "[RFNOC] ------- Radio Setup -----------" << std::endl;
-    uhd::rfnoc::make_args_t make_args("Radio");
-    make_args.ctrl_iface = perif.ctrl;
-    make_args.ctrl_sid = ctrl_sid;
-    make_args.device_index = mb_i;
-    make_args.tree = _tree->subtree(mb_path);
-    make_args.is_big_endian = mb.if_pkt_is_big_endian;
-    radio_ctrl::sptr r_ctrl = boost::dynamic_pointer_cast<radio_ctrl>(block_ctrl_base::make(make_args));
-    r_ctrl->set_perifs(
-            perif.time64,
-            perif.framer,
-            perif.ddc,
-            perif.deframer,
-            perif.duc,
-            perif.rx_fe,
-            perif.tx_fe
+    ////////////////////////////////////////////////////////////////////
+    // RFNoC: Radio block control setup
+    ////////////////////////////////////////////////////////////////////
+    init_radio_ctrl(
+            perif,
+            ctrl_sid,
+            mb_i,
+            mb.if_pkt_is_big_endian ? ENDIANNESS_BIG : ENDIANNESS_LITTLE,
+            radio_ctrl::DBOARD_TYPE_SLOT
     );
-    r_ctrl->set_dboard_type(radio_ctrl::DBOARD_TYPE_SLOT);
-    r_ctrl->update_muxes(TX_DIRECTION);
-    r_ctrl->update_muxes(RX_DIRECTION);
-    _rfnoc_block_ctrl.push_back(r_ctrl);
-
-    ////// Add default channels
-    size_t channel_idx = 0;
-    while (_tree->exists(str(boost::format("/channels/tx/%d") % channel_idx))) {
-        channel_idx++;
-    }
-    _tree->create<uhd::rfnoc::block_id_t>(str(boost::format("/channels/tx/%d") % channel_idx))
-            .set(r_ctrl->get_block_id());
-    _tree->create<uhd::rfnoc::block_id_t>(str(boost::format("/channels/rx/%d") % channel_idx))
-            .set(r_ctrl->get_block_id());
-    _tree->create<uhd::device_addr_t>(str(boost::format("/channels/tx/%d/args") % channel_idx))
-            .set(uhd::device_addr_t());
-    _tree->create<uhd::device_addr_t>(str(boost::format("/channels/rx/%d/args") % channel_idx))
-            .set(uhd::device_addr_t());
 }
 
 void x300_impl::set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq)

@@ -42,6 +42,8 @@
 #include "tx_frontend_core_200.hpp"
 #include "time_core_3000.hpp"
 #include "gpio_core_200.hpp"
+// RFNoC-specific includes:
+#include "../rfnoc/radio_ctrl.hpp"
 
 namespace uhd { namespace usrp {
 
@@ -227,6 +229,13 @@ protected:
     /***********************************************************************
      * RFNoC-Specific
      **********************************************************************/
+    void init_radio_ctrl(
+            const radio_v_perifs_t &perifs,
+            const uhd::sid_t &address,
+            const size_t mb_i,
+            const endianness_t endianness,
+            const uhd::rfnoc::radio_ctrl::dboard_type_t dboard_type
+    );
 
     /***********************************************************************
      * Members

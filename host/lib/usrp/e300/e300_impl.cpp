@@ -1120,43 +1120,16 @@ void e300_impl::_setup_radio(const size_t dspno)
         }
     }
 
-    /////// Create the RFNoC block
-    uhd::rfnoc::make_args_t make_args("Radio");
-    make_args.ctrl_iface = perif.ctrl;
-    make_args.ctrl_sid = ctrl_xports.send_sid.get();
-    make_args.device_index = 0;
-    make_args.tree = _tree->subtree(mb_path);
-    make_args.is_big_endian = false; /* lilE */
-    uhd::rfnoc::radio_ctrl::sptr r_ctrl = boost::dynamic_pointer_cast<uhd::rfnoc::radio_ctrl>(
-        uhd::rfnoc::block_ctrl_base::make(make_args));
-    r_ctrl->set_perifs(
-        perif.time64,
-        perif.framer,
-        perif.ddc,
-        perif.deframer,
-        perif.duc,
-        perif.rx_fe,
-        perif.tx_fe
+    ////////////////////////////////////////////////////////////////////
+    // RFNoC: Radio block control setup
+    ////////////////////////////////////////////////////////////////////
+    init_radio_ctrl(
+            perif,
+            ctrl_xports.send_sid.get(),
+            0,
+            ENDIANNESS_LITTLE,
+            rfnoc::radio_ctrl::DBOARD_TYPE_AD9361
     );
-    r_ctrl->set_dboard_type(uhd::rfnoc::radio_ctrl::DBOARD_TYPE_AD9361);
-    r_ctrl->update_muxes(TX_DIRECTION);
-    r_ctrl->update_muxes(RX_DIRECTION);
-    _rfnoc_block_ctrl.push_back(r_ctrl);
-
-    ////// Add default channels
-    size_t channel_idx = 0;
-    while (_tree->exists(str(boost::format("/channels/tx/%d") % channel_idx))) {
-        channel_idx++;
-    }
-    _tree->create<uhd::rfnoc::block_id_t>(str(boost::format("/channels/tx/%d") % channel_idx))
-        .set(r_ctrl->get_block_id());
-
-    _tree->create<uhd::rfnoc::block_id_t>(str(boost::format("/channels/rx/%d") % channel_idx))
-        .set(r_ctrl->get_block_id());
-    _tree->create<uhd::device_addr_t>(str(boost::format("/channels/tx/%d/args") % channel_idx))
-        .set(uhd::device_addr_t());
-    _tree->create<uhd::device_addr_t>(str(boost::format("/channels/rx/%d/args") % channel_idx))
-        .set(uhd::device_addr_t());
 }
 
 void e300_impl::_update_enables(void)

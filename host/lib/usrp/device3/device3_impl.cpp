@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/utils/msg.hpp>
 #include "device3_impl.hpp"
 #include <algorithm>
 
@@ -80,4 +81,58 @@ void device3_impl::merge_channel_defs(
         _tree->access<rfnoc::block_id_t>(chans_root / chan_idxs[i]).set(chan_ids[i]);
         _tree->access<uhd::device_addr_t>(chans_root / chan_idxs[i] / "args").set(chan_args[i]);
     }
+}
+
+/***********************************************************************
+ * RFNoC-Specific
+ **********************************************************************/
+void device3_impl::init_radio_ctrl(
+        const radio_v_perifs_t &perif,
+        const uhd::sid_t &ctrl_sid,
+        const size_t mb_i,
+        const endianness_t endianness,
+        const uhd::rfnoc::radio_ctrl::dboard_type_t dboard_type
+) {
+    using namespace uhd::rfnoc;
+
+    // 1) Create the block control
+    UHD_MSG(status) << "[RFNOC] ------- Radio Setup -----------" << std::endl;
+    uhd::rfnoc::make_args_t make_args("Radio");
+    make_args.ctrl_iface = perif.ctrl;
+    make_args.ctrl_sid = ctrl_sid;
+    make_args.device_index = mb_i;
+    make_args.tree = _tree->subtree(fs_path("/mboards") / mb_i);
+    make_args.is_big_endian = (endianness == ENDIANNESS_BIG);
+    radio_ctrl::sptr r_ctrl = boost::dynamic_pointer_cast<radio_ctrl>(block_ctrl_base::make(make_args));
+
+    // 2) Configure the radio control block and the radio itself
+    r_ctrl->set_perifs(
+            perif.time64,
+            perif.framer,
+            perif.ddc,
+            perif.deframer,
+            perif.duc,
+            perif.rx_fe,
+            perif.tx_fe
+    );
+    r_ctrl->set_dboard_type(dboard_type);
+    r_ctrl->update_muxes(TX_DIRECTION);
+    r_ctrl->update_muxes(RX_DIRECTION);
+
+    // 3) Add block to block list and configure default channels
+    _rfnoc_block_ctrl.push_back(r_ctrl);
+
+    size_t channel_idx = 0;
+    while (_tree->exists(str(boost::format("/channels/tx/%d") % channel_idx))) {
+        channel_idx++;
+    }
+    // This makes the assumption that all radios can Tx and Rx
+    _tree->create<uhd::rfnoc::block_id_t>(str(boost::format("/channels/tx/%d") % channel_idx))
+            .set(r_ctrl->get_block_id());
+    _tree->create<uhd::rfnoc::block_id_t>(str(boost::format("/channels/rx/%d") % channel_idx))
+            .set(r_ctrl->get_block_id());
+    _tree->create<uhd::device_addr_t>(str(boost::format("/channels/tx/%d/args") % channel_idx))
+            .set(uhd::device_addr_t());
+    _tree->create<uhd::device_addr_t>(str(boost::format("/channels/rx/%d/args") % channel_idx))
+            .set(uhd::device_addr_t());
 }
