@@ -109,15 +109,14 @@ public:
     /*! Translate a subdev spec pair into a block ID and block args.
      */
     virtual void subdev_to_blockid(
-            const std::string &db, const std::string &fe, const size_t mb_i,
+            const uhd::usrp::subdev_spec_pair_t &spec, const size_t mb_i,
             rfnoc::block_id_t &block_id, device_addr_t &block_args
     ) = 0;
 
     /*! Translate a block ID and args into a subdev spec pair.
      */
-    virtual void blockid_to_subdev(
-            const rfnoc::block_id_t &blockid, const device_addr_t &block_args,
-            std::string &db, std::string &fe
+    virtual uhd::usrp::subdev_spec_pair_t blockid_to_subdev(
+            const rfnoc::block_id_t &blockid, const device_addr_t &block_args
     ) = 0;
 
     /*! Updates a mboards settings from a subdev spec.

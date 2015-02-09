@@ -64,26 +64,27 @@ void e300_impl::_check_tick_rate_with_current_streamers(const double rate)
  * Legacy Subdev-spec support
  **********************************************************************/
 void e300_impl::subdev_to_blockid(
-        const std::string &db, const std::string &fe, const size_t mb_i,
-        rfnoc::block_id_t &block_id, device_addr_t &,
+        const subdev_spec_pair_t &spec, const size_t mb_i,
+        rfnoc::block_id_t &block_id, device_addr_t &
 ) {
-    UHD_ASSERT_THROW(db == "A");
-    UHD_ASSERT_THROW(fe == "A" || fe == "B");
+    UHD_ASSERT_THROW(spec.db_name == "A");
+    UHD_ASSERT_THROW(spec.sd_name == "A" || spec.sd_name == "B");
 
     block_id.set_device_no(mb_i);
     block_id.set_block_name("Radio");
-    block_id.set_block_count(fe == "A" ? 0 : 1);
+    block_id.set_block_count(spec.sd_name == "A" ? 0 : 1);
 }
 
-void e300_impl::blockid_to_subdev(
-        const rfnoc::block_id_t &block_id, const device_addr_t &,
-        std::string &db, std::string &fe
+subdev_spec_pair_t e300_impl::blockid_to_subdev(
+        const rfnoc::block_id_t &block_id, const uhd::device_addr_t &
 ) {
     UHD_ASSERT_THROW(block_id.get_block_count() == 0 || block_id.get_block_count() == 1);
     UHD_ASSERT_THROW(block_id.get_block_name() == "Radio");
 
-    db = "A";
-    fe = (block_id.get_block_count() == 0) ? "A" : "B";
+    subdev_spec_pair_t spec;
+    spec.db_name = "A";
+    spec.sd_name = (block_id.get_block_count() == 0) ? "A" : "B";
+    return spec;
 }
 
 }}} // namespace
