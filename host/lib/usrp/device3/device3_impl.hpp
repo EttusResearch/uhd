@@ -131,6 +131,12 @@ public:
             const size_t mb_i=0
     );
 
+    uhd::usrp::subdev_spec_t get_subdev_spec(
+            const direction_t direction,
+            const size_t mb_i=0
+    );
+
+
 protected:
     /***********************************************************************
      * Structors

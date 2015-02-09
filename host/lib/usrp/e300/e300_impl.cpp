@@ -543,10 +543,11 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     // Compatibility layer for legacy subdev spec
     ////////////////////////////////////////////////////////////////////
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
-        .subscribe(boost::bind(&device3_impl::update_subdev_spec, this, _1, RX_DIRECTION, mb_i));
+        .subscribe(boost::bind(&device3_impl::update_subdev_spec, this, _1, RX_DIRECTION, 0))
+        .publish(boost::bind(&device3_impl::get_subdev_spec, this, RX_DIRECTION, 0));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
-        .subscribe(boost::bind(&device3_impl::update_subdev_spec, this, _1, TX_DIRECTION, mb_i));
-    // FIXME add publishers to read back from channel defs!
+        .subscribe(boost::bind(&device3_impl::update_subdev_spec, this, _1, TX_DIRECTION, 0))
+        .publish(boost::bind(&device3_impl::get_subdev_spec, this, RX_DIRECTION, 0));
 
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks

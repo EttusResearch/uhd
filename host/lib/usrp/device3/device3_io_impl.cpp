@@ -795,3 +795,31 @@ void device3_impl::update_subdev_spec(
     // 3) Update the channel definitions:
     merge_channel_defs(chan_ids, chan_args, direction);
 }
+
+subdev_spec_t device3_impl::get_subdev_spec(
+        const direction_t direction,
+        const size_t mb_i
+) {
+    UHD_ASSERT_THROW(direction == RX_DIRECTION or direction == TX_DIRECTION);
+    fs_path chan_root = "/channels/";
+    if (direction == RX_DIRECTION) {
+        chan_root = chan_root / "rx";
+    } else {
+        chan_root = chan_root / "tx";
+    }
+
+    // Find all active radio channels and convert them to subdevs
+    subdev_spec_t subdev_spec;
+    std::vector<std::string> available_chans = _tree->list(chan_root);
+    BOOST_FOREACH(const std::string &chan, available_chans) {
+        rfnoc::block_id_t block_id = _tree->access<rfnoc::block_id_t>(chan_root / chan).get();
+        if (block_id.get_block_name() == "Radio" and block_id.get_device_no() == mb_i) {
+            device_addr_t block_args = _tree->access<device_addr_t>(chan_root / chan / "args").get();
+            subdev_spec_pair_t spec = blockid_to_subdev(block_id, block_args);
+            subdev_spec.push_back(spec);
+        }
+    }
+
+    return subdev_spec;
+}
+
