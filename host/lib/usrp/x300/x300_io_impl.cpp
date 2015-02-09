@@ -67,9 +67,9 @@ device_addr_t x300_impl::get_tx_hints(size_t mb_index)
     return _mb[mb_index].send_args;
 }
 
-void x300_impl::post_streamer_hooks(bool is_tx)
+void x300_impl::post_streamer_hooks(direction_t dir)
 {
-    if (not is_tx) {
+    if (dir != TX_DIRECTION) {
         return;
     }
 

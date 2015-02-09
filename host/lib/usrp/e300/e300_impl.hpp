@@ -251,7 +251,7 @@ private: // methods
         return uhd::ENDIANNESS_LITTLE;
     };
 
-    void post_streamer_hooks(bool /* is tx */) { _update_enables(); };
+    void post_streamer_hooks(uhd::direction_t) { _update_enables(); };
 
 private: // members
     uhd::device_addr_t                     _device_addr;

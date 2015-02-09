@@ -577,7 +577,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
     // A registered terminator is required to do this.
     update_rx_streamers();
 
-    post_streamer_hooks(false /* is not tx */);
+    post_streamer_hooks(RX_DIRECTION);
     return my_streamer;
 }
 
@@ -759,7 +759,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
     // A registered terminator is required to do this.
     update_tx_streamers();
 
-    post_streamer_hooks(true /* is tx */);
+    post_streamer_hooks(TX_DIRECTION);
     return my_streamer;
 }
 

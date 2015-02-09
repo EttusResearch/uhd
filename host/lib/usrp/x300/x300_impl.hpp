@@ -329,7 +329,7 @@ private:
         return _mb[mb_index].if_pkt_is_big_endian ? uhd::ENDIANNESS_BIG : uhd::ENDIANNESS_LITTLE;
     };
 
-    void post_streamer_hooks(bool is_tx);
+    void post_streamer_hooks(uhd::direction_t dir);
 };
 
 #endif /* INCLUDED_X300_IMPL_HPP */

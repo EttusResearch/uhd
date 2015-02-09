@@ -178,7 +178,7 @@ protected:
     virtual uhd::endianness_t get_transport_endianness(size_t mb_index) = 0;
 
     //! Is called after a streamer is generated
-    virtual void post_streamer_hooks(bool /* is_tx */) {};
+    virtual void post_streamer_hooks(uhd::direction_t) {};
 
     /***********************************************************************
      * Channel-related
