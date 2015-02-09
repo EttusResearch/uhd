@@ -20,9 +20,9 @@
 
 #include "../device3/device3_impl.hpp"
 #include <uhd/property_tree.hpp>
-#include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/sensors.hpp>
 
@@ -226,10 +226,6 @@ private: // methods
 
     void _update_time_source(const std::string &source);
     void _update_clock_source(const std::string &);
-
-    void _update_subdev_spec(
-        const std::string &txrx,
-        const uhd::usrp::subdev_spec_t &spec);
 
     void _codec_loopback_self_test(uhd::wb_iface::sptr iface);
 

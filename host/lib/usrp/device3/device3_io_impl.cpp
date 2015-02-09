@@ -27,6 +27,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include "../common/async_packet_handler.hpp"
+#include "../common/validate_subdev_spec.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include "../rfnoc/terminator_recv.hpp"
@@ -760,4 +761,37 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
     post_streamer_hooks(true /* is tx */);
     return my_streamer;
+}
+
+
+/***********************************************************************
+ * Subdev Spec legacy support
+ **********************************************************************/
+void device3_impl::update_subdev_spec(
+        const subdev_spec_t &spec,
+        const direction_t direction,
+        const size_t mb_i
+) {
+    if (spec.empty()) {
+        return;
+    }
+    // 1) Check if subdev spec is valid (this will make sure d'board name,
+    // frontend name etc. are valid and that the number of specs is OK)
+    validate_subdev_spec(_tree, spec, (direction == RX_DIRECTION) ? "rx" : "tx");
+
+    // 2) Translate every subdev spec into a block ID and chan args.
+    // This translation is device-specific and thus requires functions
+    // from the individual device impls.
+    std::vector<uhd::rfnoc::block_id_t> chan_ids;
+    std::vector<device_addr_t>          chan_args;
+    for (size_t i = 0; i < spec.size(); i++) {
+        rfnoc::block_id_t id;
+        device_addr_t     args;
+        subdev_to_blockid(spec[i], mb_i, id, args);
+        chan_ids.push_back(id);
+        chan_args.push_back(args);
+    }
+
+    // 3) Update the channel definitions:
+    merge_channel_defs(chan_ids, chan_args, direction);
 }

@@ -21,6 +21,7 @@
 #ifndef INCLUDED_DEVICE3_IMPL_HPP
 #define INCLUDED_DEVICE3_IMPL_HPP
 
+#include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/chdr.hpp>
@@ -102,6 +103,34 @@ public:
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &);
     bool recv_async_msg(uhd::async_metadata_t &async_metadata, double timeout);
 
+    /***********************************************************************
+     * Subdev-Spec legacy support
+     **********************************************************************/
+    /*! Translate a subdev spec pair into a block ID and block args.
+     */
+    virtual void subdev_to_blockid(
+            const std::string &db, const std::string &fe, const size_t mb_i,
+            rfnoc::block_id_t &block_id, device_addr_t &block_args
+    ) = 0;
+
+    /*! Translate a block ID and args into a subdev spec pair.
+     */
+    virtual void blockid_to_subdev(
+            const rfnoc::block_id_t &blockid, const device_addr_t &block_args,
+            std::string &db, std::string &fe
+    ) = 0;
+
+    /*! Updates a mboards settings from a subdev spec.
+     *
+     * Since device3's don't actually use subdev specs internally,
+     * this will translate the spec into a channel definition and
+     * update this devices channels.
+     */
+    void update_subdev_spec(
+            const uhd::usrp::subdev_spec_t &spec,
+            const direction_t direction,
+            const size_t mb_i=0
+    );
 
 protected:
     /***********************************************************************
@@ -165,20 +194,6 @@ protected:
             const std::vector<uhd::device_addr_t> &chan_args,
             const uhd::direction_t dir
     );
-
-    /*! Translate a subdev spec pair into a block ID.
-     */
-    virtual void subdev_to_blockid(
-            const std::string &db, const std::string &fe, const size_t mb_i,
-            rfnoc::block_id_t &block_id, device_addr_t &block_args
-    ) = 0;
-
-    /*! Translate a block ID into a subdev spec pair.
-     */
-    virtual void blockid_to_subdev(
-            const rfnoc::block_id_t &blockid, const device_addr_t &block_args,
-            std::string &db, std::string &fe
-    ) = 0;
 
     /***********************************************************************
      * Members

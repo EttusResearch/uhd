@@ -540,22 +540,13 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     }
 
     ////////////////////////////////////////////////////////////////////
-    // create frontend mapping
+    // Compatibility layer for legacy subdev spec
     ////////////////////////////////////////////////////////////////////
-
-     std::vector<size_t> default_map(2, 0);
-     default_map[0] = 0; // set A->0
-     default_map[1] = 1; // set B->1, even if there's only A
-
-    _tree->create<std::vector<size_t> >(mb_path / "rx_chan_dsp_mapping").set(default_map);
-    _tree->create<std::vector<size_t> >(mb_path / "tx_chan_dsp_mapping").set(default_map);
-
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
-        .set(subdev_spec_t())
-        .subscribe(boost::bind(&e300_impl::_update_subdev_spec, this, "rx", _1));
+        .subscribe(boost::bind(&device3_impl::update_subdev_spec, this, _1, RX_DIRECTION, mb_i));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
-        .set(subdev_spec_t())
-        .subscribe(boost::bind(&e300_impl::_update_subdev_spec, this, "tx", _1));
+        .subscribe(boost::bind(&device3_impl::update_subdev_spec, this, _1, TX_DIRECTION, mb_i));
+    // FIXME add publishers to read back from channel defs!
 
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
@@ -564,19 +555,6 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     // init the clock rate to something reasonable
     _tree->access<double>(mb_path / "tick_rate").set(
         device_addr.cast<double>("master_clock_rate", e300::DEFAULT_TICK_RATE));
-
-    // subdev spec contains full width of selections
-    subdev_spec_t rx_spec, tx_spec;
-    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "rx_frontends"))
-    {
-        rx_spec.push_back(subdev_spec_pair_t("A", fe));
-    }
-    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "tx_frontends"))
-    {
-        tx_spec.push_back(subdev_spec_pair_t("A", fe));
-    }
-    _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
-    _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
 
     if (_sensor_manager->get_gps_found()) {
         _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
@@ -647,6 +625,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     }
     //////////////// RFNOC /////////////////
 
+    this->_update_enables();
 }
 
 boost::uint8_t e300_impl::_get_internal_gpio(

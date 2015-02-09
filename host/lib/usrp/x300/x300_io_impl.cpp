@@ -19,7 +19,6 @@
 
 #include "x300_regs.hpp"
 #include "x300_impl.hpp"
-#include "validate_subdev_spec.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include "../rfnoc/radio_ctrl.hpp"
@@ -36,33 +35,6 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
-
-/***********************************************************************
- * Setup dboard muxing for IQ
- **********************************************************************/
-void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, const subdev_spec_t &spec)
-{
-    UHD_ASSERT_THROW(tx_rx == "tx" or tx_rx == "rx");
-    UHD_ASSERT_THROW(mb_i < _mb.size());
-    const std::string mb_name = boost::lexical_cast<std::string>(mb_i);
-    fs_path mb_root = "/mboards/" + mb_name;
-
-    //sanity checking
-    validate_subdev_spec(_tree, spec, tx_rx, mb_name);
-
-    std::vector<uhd::rfnoc::block_id_t> chan_ids(spec.size());
-    std::vector<device_addr_t>          chan_args(spec.size());
-    for (size_t i = 0; i < spec.size(); i++)
-    {
-        const int radio_idx = _mb[mb_i].get_radio_index(spec[i].db_name);
-        chan_ids.push_back(uhd::rfnoc::block_id_t(mb_i, "Radio", radio_idx));
-        chan_args.push_back(device_addr_t(str(boost::format("frontend=%s") % spec[i].sd_name)));
-    }
-
-    // Actually change the channel definitions:
-    merge_channel_defs(chan_ids, chan_args, (tx_rx == "tx") ? TX_DIRECTION : RX_DIRECTION);
-}
-
 
 /***********************************************************************
  * Hooks for get_tx_stream() and get_rx_stream()

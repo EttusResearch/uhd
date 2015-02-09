@@ -790,12 +790,13 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     UHD_MSG(status) << "done"  << std::endl;
 
     ////////////////////////////////////////////////////////////////////
-    // create frontend mapping
+    // Compatibility layer for legacy subdev spec
     ////////////////////////////////////////////////////////////////////
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
-        .subscribe(boost::bind(&x300_impl::update_subdev_spec, this, "rx", mb_i, _1));
+        .subscribe(boost::bind(&device3_impl::update_subdev_spec, this, _1, RX_DIRECTION, mb_i));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
-        .subscribe(boost::bind(&x300_impl::update_subdev_spec, this, "tx", mb_i, _1));
+        .subscribe(boost::bind(&device3_impl::update_subdev_spec, this, _1, TX_DIRECTION, mb_i));
+    // FIXME add publishers to read back from channel defs!
 
     ////////////////////////////////////////////////////////////////////
     // and do the misc mboard sensors
@@ -806,19 +807,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
     ////////////////////////////////////////////////////////////////////
-    subdev_spec_t rx_fe_spec, tx_fe_spec;
-    rx_fe_spec.push_back(subdev_spec_pair_t("A",
-                _tree->list(mb_path / "dboards" / "A" / "rx_frontends").at(0)));
-    rx_fe_spec.push_back(subdev_spec_pair_t("B",
-                _tree->list(mb_path / "dboards" / "B" / "rx_frontends").at(0)));
-    tx_fe_spec.push_back(subdev_spec_pair_t("A",
-                _tree->list(mb_path / "dboards" / "A" / "tx_frontends").at(0)));
-    tx_fe_spec.push_back(subdev_spec_pair_t("B",
-                _tree->list(mb_path / "dboards" / "B" / "tx_frontends").at(0)));
-
-    _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_fe_spec);
-    _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_fe_spec);
-
     UHD_MSG(status) << "Initializing clock and PPS references..." << std::endl;
     //Set to the GPSDO if installed
     if (mb.gps and mb.gps->gps_detected())
@@ -1140,6 +1128,8 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
             perif.tx_fe
     );
     r_ctrl->set_dboard_type(radio_ctrl::DBOARD_TYPE_SLOT);
+    r_ctrl->update_muxes(TX_DIRECTION);
+    r_ctrl->update_muxes(RX_DIRECTION);
     _rfnoc_block_ctrl.push_back(r_ctrl);
 
     ////// Add default channels

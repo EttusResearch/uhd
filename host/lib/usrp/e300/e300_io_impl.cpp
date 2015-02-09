@@ -18,7 +18,6 @@
 #include "e300_regs.hpp"
 #include "e300_impl.hpp"
 #include "e300_fpga_defs.hpp"
-#include "validate_subdev_spec.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include <boost/bind.hpp>
@@ -62,31 +61,8 @@ void e300_impl::_check_tick_rate_with_current_streamers(const double rate)
 }
 
 /***********************************************************************
- * frontend selection
+ * Legacy Subdev-spec support
  **********************************************************************/
-void e300_impl::_update_subdev_spec(
-        const std::string &txrx,
-        const uhd::usrp::subdev_spec_t &spec)
-{
-    //sanity checking
-    if (spec.size())
-        validate_subdev_spec(_tree, spec, "rx");
-
-    UHD_ASSERT_THROW(spec.size() <= fpga::NUM_RADIOS);
-
-    std::vector<uhd::rfnoc::block_id_t> chan_ids(spec.size());
-    std::vector<device_addr_t>          chan_args(spec.size());
-    for (size_t i = 0; i < spec.size(); i++) {
-        const int radio_idx = (spec[i].sd_name == "A") ? 0 : 1;
-        chan_ids.push_back(uhd::rfnoc::block_id_t(mb_i, "Radio", radio_idx));
-    }
-
-    // Actually change the channel definitions:
-    merge_channel_defs(chan_ids, chan_args, (tx_rx == "tx") ? TX_DIRECTION : RX_DIRECTION);
-
-    this->_update_enables();
-}
-
 void e300_impl::subdev_to_blockid(
         const std::string &db, const std::string &fe, const size_t mb_i,
         rfnoc::block_id_t &block_id, device_addr_t &,

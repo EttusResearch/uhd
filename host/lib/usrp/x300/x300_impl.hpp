@@ -290,17 +290,6 @@ private:
     void set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
     bool _ignore_cal_file;
 
-
-    /*! Update the IQ MUX settings for the radio peripheral according to given subdev spec.
-     *
-     * Also checks if the given subdev is valid for this device and updates the channel to DSP mapping.
-     *
-     * \param tx_rx "tx" or "rx", depending where you're setting the subdev spec
-     * \param mb_i Mainboard index number.
-     * \param spec Subdev spec
-     */
-    void update_subdev_spec(const std::string &tx_rx, const size_t mb_i, const uhd::usrp::subdev_spec_t &spec);
-
     void set_tick_rate(mboard_members_t &, const double);
     //! Returns the tick rate for device with index \p mb_i
     double _get_tick_rate(const size_t mb_i);
