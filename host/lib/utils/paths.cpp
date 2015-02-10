@@ -348,6 +348,7 @@ std::string uhd::find_image_path(const std::string &image_name, const std::strin
     }
 
     /* If we made it this far, then we didn't find anything. */
+    images_dir = "<no images directory located>";
     throw uhd::io_error("Could not find path for image: " + image_name
             + "\n\n"
             + "Using images directory: " + images_dir
