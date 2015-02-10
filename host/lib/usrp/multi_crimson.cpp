@@ -322,17 +322,14 @@ size_t multi_crimson_impl::get_num_mboards(void){
     return 1;
 }
 
-// Crimson doesn't have any sensors on the digital board.
 sensor_value_t multi_crimson_impl::get_mboard_sensor(const std::string &name, size_t mboard){
-    // Not supported
-    throw uhd::runtime_error("multi_crimson::get_mboard_sensor - not supported on this device");
+        return _tree->access<sensor_value_t>(mb_root(0) / "sensors" / name).get();
 }
 
-// Crimson doesn't have any sensors on the digital board.
 std::vector<std::string> multi_crimson_impl::get_mboard_sensor_names(size_t mboard){
-    // Not supported
-    throw uhd::runtime_error("multi_crimson::get_mboard_sensor_names - not supported on this device");
+    return _tree->list(mb_root(0) / "sensors");
 }
+
 void multi_crimson_impl::set_user_register(const boost::uint8_t addr, const boost::uint32_t data, size_t mboard){
     // Not implemented
     throw uhd::not_implemented_error("timed command feature not implemented on this hardware");
@@ -540,14 +537,12 @@ dboard_iface::sptr multi_crimson_impl::get_rx_dboard_iface(size_t chan){
     throw uhd::runtime_error("multi_crimson::get_rx_dboard_iface - not supported on this device");
 }
 
-// Crimson does not have sensors
 sensor_value_t multi_crimson_impl::get_rx_sensor(const std::string &name, size_t chan){
-    throw uhd::runtime_error("multi_crimson::get_rx_sensor - not supported on this device");
+    return _tree->access<sensor_value_t>(rx_rf_fe_root(0) / "sensors" / name).get();
 }
 
-// Crimson does not have sensors
 std::vector<std::string> multi_crimson_impl::get_rx_sensor_names(size_t chan){
-    throw uhd::runtime_error("multi_crimson::get_rx_sensor_names - not supported on this device");
+    return _tree->list(rx_rf_fe_root(0) / "sensors");
 }
 
 // Enable dc offset on specified channel
@@ -779,14 +774,12 @@ dboard_iface::sptr multi_crimson_impl::get_tx_dboard_iface(size_t chan){
     throw uhd::runtime_error("multi_crimson::get_tx_dboard_iface - not supported on this device");
 }
 
-// Crimson does not have sensors
 sensor_value_t multi_crimson_impl::get_tx_sensor(const std::string &name, size_t chan){
-    throw uhd::runtime_error("multi_crimson::get_tx_sensor - not supported on this device");
+    return _tree->access<sensor_value_t>(tx_rf_fe_root(chan) / "sensors" / name).get();
 }
 
-// Crimson does not have sensors
 std::vector<std::string> multi_crimson_impl::get_tx_sensor_names(size_t chan){
-    throw uhd::runtime_error("multi_crimson::get_tx_sensor_names - not supported on this device");
+    return _tree->list(tx_rf_fe_root(chan) / "sensors");
 }
 
 // Set dc offset on specified channel

@@ -444,6 +444,9 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 
     TREE_CREATE_ST(mb_path / "sensors" / "ref_locked", sensor_value_t, sensor_value_t("NA", "0", "NA"));
 
+    // No GPSDO support on Crimson
+    // TREE_CREATE_ST(mb_path / "sensors" / "ref_locked", sensor_value_t, sensor_value_t("NA", "0", "NA"));
+
     // loop for all RF chains
     for (int chain = 0; chain < 4; chain ++) {
 	std::string lc_num  = boost::lexical_cast<std::string>((char)(chain + 97));
@@ -509,7 +512,7 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 
 	TREE_CREATE_ST(rx_fe_path / "use_lo_offset", bool, false);
 	TREE_CREATE_ST(tx_fe_path / "use_lo_offset", bool, false);
-	TREE_CREATE_RW(tx_fe_path / "lo_offset" / "value", "tx_"+lc_num+"/rf/dac/nco", double, double);
+	//TREE_CREATE_RW(tx_fe_path / "lo_offset" / "value", "tx_"+lc_num+"/rf/dac/nco", double, double);
 
 	TREE_CREATE_ST(tx_fe_path / "freq" / "range", meta_range_t,
 		meta_range_t(CRIMSON_FREQ_RANGE_START, CRIMSON_FREQ_RANGE_STOP, CRIMSON_FREQ_RANGE_STEP));
