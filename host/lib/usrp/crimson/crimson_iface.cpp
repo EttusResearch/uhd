@@ -77,7 +77,7 @@ std::string crimson_iface::peek_str(void) {
     do {
         // clears the buffer and receives the message
         memset(_buff, 0, CRIMSON_MTU_SIZE);
-        const size_t nbytes = _ctrl_transport -> recv(boost::asio::buffer(_buff), 0.150);
+        const size_t nbytes = _ctrl_transport -> recv(boost::asio::buffer(_buff), 0.250);
         if (nbytes == 0) return "TIMEOUT";
 
         // parses it through tokens: seq, status, [data]

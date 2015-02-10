@@ -67,7 +67,7 @@ void csv_parse(std::vector<std::string> &tokens, char* data, const char delim) {
 std::string crimson_impl::get_string(std::string req) {
     	_iface -> poke_str("get," + req);
 	std::string ret = _iface -> peek_str();
-	if (ret == "TIMEOUT") 	throw uhd::runtime_error("crimson_impl::get_string - UDP resp. timed out");
+	if (ret == "TIMEOUT") 	throw uhd::runtime_error("crimson_impl::get_string - UDP resp. timed out: " + req);
 	else 			return ret;
 }
 void crimson_impl::set_string(const std::string pre, std::string data) {
@@ -76,7 +76,7 @@ void crimson_impl::set_string(const std::string pre, std::string data) {
 	// read anyways for error check, since Crimson will reply back
 	std::string ret = _iface -> peek_str();
 	if (ret == "TIMEOUT" || ret == "ERROR")
-		throw uhd::runtime_error("crimson_impl::get_string - UDP resp. timed out");
+		throw uhd::runtime_error("crimson_impl::set_string - UDP resp. timed out: set: " + pre + " = " + data);
 	else
 		return;
 }
