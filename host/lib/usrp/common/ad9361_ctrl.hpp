@@ -52,7 +52,7 @@ public:
     static uhd::meta_range_t get_gain_range(const std::string &which)
     {
         if(which[0] == 'R') {
-            return uhd::meta_range_t(0.0, 73.0, 1.0);
+            return uhd::meta_range_t(0.0, 76.0, 1.0);
         } else {
             return uhd::meta_range_t(0.0, 89.75, 0.25);
         }

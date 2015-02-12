@@ -362,6 +362,11 @@ For more advanced IMU based applications please refer to the <a href="https://gi
 Please see the \ref page_gpio_api for information on configuring and using the GPIO bus.
 
 \subsection e3x0_hw_audio Audio connectors
+The E3x0 2.5 mm Audio Jack TRRS pins are assigned as follows: Tip=Mic, Ring1=Right, Ring2=Left, Sleeve=GND. 
+
+\image html TRRS.png "Audio Jack"
+
+The Left/Right audio outputs are compatible with typical low-impedance headphones (16 to 32 Ohms). The Microphone pin provides approximately 2 mA bias at 2.2 V when not suspended. A variety of pin configurations can be found on commonly available headsets, so an adapter may be required.
 
 \subsection e3x0_hw_chipscope Debugging custom FPGA designs with Xilinx Chipscope
 

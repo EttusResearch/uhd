@@ -1854,31 +1854,16 @@ double ad9361_device_t::tune(direction_t direction, const double value)
 
 /* Set the gain of RX1, RX2, TX1, or TX2.
  *
- * Note that the 'value' passed to this function is the actual gain value,
- * _not_ the gain index. This is the opposite of the eval software's GUI!
- * Also note that the RX chains are done in terms of gain, and the TX chains
- * are done in terms of attenuation. */
+ * Note that the 'value' passed to this function is the gain index 
+ * for RX. Also note that the RX chains are done in terms of gain, and 
+ * the TX chains  are done in terms of attenuation. */
 double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const double value)
 {
     boost::lock_guard<boost::recursive_mutex> lock(_mutex);
 
     if (direction == RX) {
-        /* Indexing the gain tables requires an offset from the requested
-         * amount of total gain in dB:
-         *      < 1300MHz: dB + 5
-         *      >= 1300MHz and < 4000MHz: dB + 3
-         *      >= 4000MHz and <= 6000MHz: dB + 14
-         */
-        int gain_offset = 0;
-        if (_rx_freq < 1300e6) {
-            gain_offset = 5;
-        } else if (_rx_freq < 4000e6) {
-            gain_offset = 3;
-        } else {
-            gain_offset = 14;
-        }
 
-        int gain_index = static_cast<int>(value + gain_offset);
+        int gain_index = static_cast<int>(value);
 
         /* Clip the gain values to the proper min/max gain values. */
         if (gain_index > 76)
@@ -1894,7 +1879,7 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
             _io_iface->poke8(0x10c, gain_index);
         }
 
-        return gain_index - gain_offset;
+        return gain_index;
     } else {
         /* Setting the below bits causes a change in the TX attenuation word
          * to immediately take effect. */
