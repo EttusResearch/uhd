@@ -140,7 +140,7 @@ void block_ctrl_base::_init_stream_sigs(
 ) {
     for (size_t i = 0; i < ports.size(); i++) {
         stream_sig_t sig;
-        sig.item_type = ports[i].types.empty() ? "" : ports[i].types[0];
+        sig.item_type = ports[i]["type"];
         sig.packet_size = DEFAULT_PACKET_SIZE;
         // TODO don't ignore this
         sig.vlen = 0;

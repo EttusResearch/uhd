@@ -30,6 +30,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <cstdlib>
 
+using namespace uhd;
 using namespace uhd::rfnoc;
 namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
@@ -38,12 +39,63 @@ static const fs::path XML_BLOCKS_SUBDIR("blocks");
 static const fs::path XML_COMPONENTS_SUBDIR("components");
 static const fs::path XML_EXTENSION(".xml");
 
-// TODO this should really be in blockdef_impl.cpp or something
-bool blockdef::port_t::match_type(const std::string &type) {
-    return type.empty()
-        or types.empty()
-        or std::find(types.begin(), types.end(), type) != types.end()
-     ;
+
+/****************************************************************************
+ * port_t stuff
+ ****************************************************************************/
+const device_addr_t blockdef::port_t::PORT_ARGS(
+        "name,"
+        "type,"
+        "vlen=0,"
+        "pkt_size=0,"
+        "optional=0,"
+        "bursty=0,"
+);
+
+blockdef::port_t::port_t()
+{
+    // This guarantees that we can access these keys
+    // even if they were never initialized:
+    BOOST_FOREACH(const std::string &key, PORT_ARGS.keys()) {
+        set(key, PORT_ARGS[key]);
+    }
+}
+
+bool blockdef::port_t::is_variable(const std::string &key) const
+{
+    const std::string &val = get(key);
+    return (val[0] == '$');
+}
+
+bool blockdef::port_t::is_keyword(const std::string &key) const
+{
+    const std::string &val = get(key);
+    return (val[0] == '%');
+}
+
+bool blockdef::port_t::is_valid() const
+{
+    // Check we have all the keys:
+    BOOST_FOREACH(const std::string &key, PORT_ARGS.keys()) {
+        if (not has_key(key)) {
+            return false;
+        }
+    }
+
+    // Twelve of the clock, all seems well
+    return true;
+}
+
+std::string blockdef::port_t::to_string() const
+{
+    std::string result;
+    BOOST_FOREACH(const std::string &key, PORT_ARGS.keys()) {
+        if (has_key(key)) {
+            result += str(boost::format("%s=%s,") % key % get(key));
+        }
+    }
+
+    return result;
 }
 
 /****************************************************************************
@@ -184,7 +236,7 @@ public:
             // Check there's at least one port
             ports_t in = get_input_ports();
             ports_t out = get_output_ports();
-            if (in.size() + out.size() == 0) {
+            if (in.empty() and out.empty()) {
                 throw uhd::runtime_error("Block does not define inputs or outputs.");
             }
             // Check args are valid
@@ -233,17 +285,12 @@ public:
         ports_t ports;
         BOOST_FOREACH(pt::ptree::value_type &v, _pt.get_child("nocblock.ports")) {
             if (v.first != port_type) continue;
-            port_t port(v.second.get("name", ""));
-            std::string types = v.second.get("type", "");
-            boost::split(
-                    port.types,
-                    types,
-                    boost::is_any_of(" \t\n"), // Split at whitespace
-                    boost::token_compress_on // Avoid empty results
-            );
-            port.optional = bool(v.second.get("optional", 0));
+            // Now we have the correct sink or source node:
+            port_t port;
+            BOOST_FOREACH(const std::string &key, port_t::PORT_ARGS.keys()) {
+                port[key] = v.second.get(key, port_t::PORT_ARGS[key]);
+            }
             ports.push_back(port);
-            // TODO vector length or whatever
         }
         return ports;
     }

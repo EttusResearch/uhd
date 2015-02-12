@@ -53,18 +53,17 @@ BOOST_AUTO_TEST_CASE(test_ports) {
     blockdef::sptr block_definition = blockdef::make_from_noc_id(0xFF70000000000000);
     blockdef::ports_t in_ports = block_definition->get_input_ports();
     BOOST_REQUIRE_EQUAL(in_ports.size(), 1);
-    BOOST_CHECK_EQUAL(in_ports[0].name, "in");
-    BOOST_REQUIRE_EQUAL(in_ports[0].types.size(), 1);
-    BOOST_REQUIRE_EQUAL(in_ports[0].types[0], "sc16");
-    BOOST_CHECK(in_ports[0].match_type("sc16"));
-    BOOST_CHECK(in_ports[0].match_type(""));
-    BOOST_CHECK(not in_ports[0].match_type("not_a_type"));
+    BOOST_CHECK_EQUAL(in_ports[0]["name"], "in");
+    BOOST_CHECK_EQUAL(in_ports[0]["type"], "sc16");
+    BOOST_CHECK(in_ports[0].has_key("vlen"));
+    BOOST_CHECK(in_ports[0].has_key("pkt_size"));
 
     blockdef::ports_t out_ports = block_definition->get_output_ports();
     BOOST_REQUIRE_EQUAL(out_ports.size(), 1);
-    BOOST_CHECK_EQUAL(out_ports[0].name, "out");
-    BOOST_REQUIRE_EQUAL(out_ports[0].types.size(), 1);
-    BOOST_REQUIRE_EQUAL(out_ports[0].types[0], "sc16");
+    BOOST_CHECK_EQUAL(out_ports[0]["name"], "out");
+    BOOST_CHECK_EQUAL(out_ports[0]["type"], "sc16");
+    BOOST_CHECK(out_ports[0].has_key("vlen"));
+    BOOST_CHECK(out_ports[0].has_key("pkt_size"));
 }
 
 BOOST_AUTO_TEST_CASE(test_args) {

@@ -21,7 +21,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <uhd/config.hpp>
-#include <uhd/types/dict.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <vector>
 #include <set>
 
@@ -39,32 +39,28 @@ public:
     // This is not the same as a uhd::rfnoc::stream_sig_t. This is used
     // to describe which ports are defined in a block definition, and
     // to describe what kind of connection is allowed for this port.
-    struct port_t {
-        std::string name;
-        //! A list of valid data types
-        std::vector<std::string> types;
-        //! If true, this port does not need to be connected in order
-        // for the block to operate.
-        bool optional;
+    //
+    // All the keys listed in PORT_ARGS will be available in this class.
+    class port_t : public uhd::dict<std::string, std::string> {
+      public:
+        //! A list of args a port can have.
+        static const device_addr_t PORT_ARGS;
 
-        port_t(
-            const std::string &name_,
-            const std::vector<std::string> &types_=std::vector<std::string>(),
-            const bool optional_=false
-        ) : name(name_), types(types_), optional(optional_) {};
+        port_t();
 
-        //! Returns true if \p type matches with this port definition.
-        //
-        // This is true if:
-        // - \p type is in \p types
-        // - \p Either type or \p types is empty
-        bool match_type(const std::string &type);
+        //! Checks if the value at \p key is a variable (e.g. '$fftlen')
+        bool is_variable(const std::string &key) const;
+        //! Checks if the value at \p key is a keyword (e.g. '%vlen')
+        bool is_keyword(const std::string &key) const;
+        //! Basic validity check of this port definition. Variables and
+        //  keywords are not resolved.
+        bool is_valid() const;
+        //! Returns a string with the most important keys
+        std::string to_string() const;
     };
-
     typedef std::vector<port_t> ports_t;
 
-
-
+    //! Describes arguments in a block definition.
     class arg_t : public uhd::dict<std::string, std::string> {
       public:
         //! A list of args an argument can have.
