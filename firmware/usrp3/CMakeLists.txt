@@ -68,6 +68,20 @@ FIND_PROGRAM(OBJDUMP zpu-elf-objdump)
 FIND_PROGRAM(HEXDUMP hexdump)
 
 ########################################################################
+# Firmware tracing support
+########################################################################
+# Look at include/trace.h to see what the different trace levels map to.
+SET(TRACE_LEVEL "0" CACHE STRING "Firmware Trace Level") #0 by default
+OPTION(TRACE_LEVEL "Firmware Trace Level" "") 
+IF(TRACE_LEVEL)
+    #If TRACE_LEVEL == 0, don't define UHD_FW_TRACE_LEVEL so that the C
+    #code can easily detect if tracing is requested
+    IF(${TRACE_LEVEL} GREATER 0)
+        ADD_DEFINITIONS(-DUHD_FW_TRACE_LEVEL=${TRACE_LEVEL})
+    ENDIF(${TRACE_LEVEL} GREATER 0)
+ENDIF(TRACE_LEVEL)
+
+########################################################################
 # helper functions to build output formats
 ########################################################################
 SET(GEN_OUTPUTS_BIN_SIZE "bin_size_not_set") #set before calling
