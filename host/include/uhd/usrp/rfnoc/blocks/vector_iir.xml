@@ -6,14 +6,36 @@
   <ids>
     <id revision="0">1112</id>
   </ids>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>256</value>
+    </arg>
+    <arg>
+      <name>alpha</name>
+      <type>double</type>
+      <value>0.9</value>
+    </arg>
+    <arg>
+      <name>beta</name>
+      <type>double</type>
+      <value>0.1</value>
+    </arg>
+  </args>
   <ports>
     <sink>
       <name>in</name>
       <type>s16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
     </sink>
     <source>
       <name>out</name>
       <type>s16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
     </source>
   </ports>
   <!--<components>-->

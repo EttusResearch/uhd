@@ -6,15 +6,32 @@
   <ids>
     <id revision="0">FF70</id>
   </ids>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>256</value>
+    </arg>
+    <arg>
+      <name>magnitude_out</name>
+      <type>string</type>
+      <value>COMPLEX</value>
+    </arg>
+  </args>
   <!--All the connections to the outside world are listed in 'ports':-->
   <ports>
     <sink>
       <name>in</name>
       <type>sc16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
     </sink>
     <source>
       <name>out</name>
       <type>sc16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
     </source>
   </ports>
   <!--<components>-->

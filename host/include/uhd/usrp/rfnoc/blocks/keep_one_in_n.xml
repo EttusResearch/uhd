@@ -6,6 +6,13 @@
   <ids>
     <id revision="0">0246</id>
   </ids>
+  <args>
+    <arg>
+      <name>n</name>
+      <type>int</type>
+      <value>256</value>
+    </arg>
+  </args>
   <ports>
     <sink>
       <name>in</name>
