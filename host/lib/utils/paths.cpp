@@ -173,11 +173,14 @@ std::string uhd::get_tmp_path(void){
 }
 
 std::string uhd::get_app_path(void){
-    const char *appdata_path = std::getenv("APPDATA");
-    if (appdata_path != NULL) return appdata_path;
+    const std::string uhdcalib_path = get_env_var("UHD_CONFIG_DIR");
+    if (not uhdcalib_path.empty()) return uhdcalib_path;
 
-    const char *home_path = std::getenv("HOME");
-    if (home_path != NULL) return home_path;
+    const std::string appdata_path = get_env_var("APPDATA");
+    if (not appdata_path.empty()) return appdata_path;
+
+    const std::string home_path = get_env_var("HOME");
+    if (not home_path.empty()) return home_path;
 
     return uhd::get_tmp_path();
 }
@@ -348,6 +351,7 @@ std::string uhd::find_image_path(const std::string &image_name, const std::strin
     }
 
     /* If we made it this far, then we didn't find anything. */
+    images_dir = "<no images directory located>";
     throw uhd::io_error("Could not find path for image: " + image_name
             + "\n\n"
             + "Using images directory: " + images_dir

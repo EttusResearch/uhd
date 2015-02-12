@@ -57,14 +57,22 @@ daughterboard's EEPROM: :
 
 \subsection calibration_data Calibration Data
 
-Calibration files are stored in the user's home/application directory.
-They can easily be moved from machine to another by copying the "cal"
-directory. Re-running a calibration utility will replace the existing
-calibration file. The old calibration file will be renamed so it may be
-recovered by the user.
+By default, calibration files are stored in the user's home/application
+directory:
 
 -   **Linux:** `${HOME}/.uhd/cal/`
 -   **Windows:** `%APPDATA%\.uhd\cal\`
+
+If you would like to specify a custom directory, you can do so with the
+`$UHD_CONFIG_DIR` environment variable:
+
+-   **Custom (any OS):** `${UHD_CONFIG_DIR}/.uhd/cal/`
+
+Calibration files can easily be moved from one machine to another by copying the
+"cal" directory. Re-running a calibration utility will replace the existing
+calibration file. The old calibration file will be renamed so it may be
+recovered by the user.
+
 
 \subsection ignore_cal_file Ignoring Calibration Files
 
