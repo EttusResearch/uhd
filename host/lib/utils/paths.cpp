@@ -173,7 +173,7 @@ std::string uhd::get_tmp_path(void){
 }
 
 std::string uhd::get_app_path(void){
-    const std::string uhdcalib_path = get_env_var("UHDCALIBPATH");
+    const std::string uhdcalib_path = get_env_var("UHD_CONFIG_DIR");
     if (not uhdcalib_path.empty()) return uhdcalib_path;
 
     const std::string appdata_path = get_env_var("APPDATA");
