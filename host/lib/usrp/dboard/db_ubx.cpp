@@ -906,10 +906,10 @@ public:
     ~ubx_xcvr(void)
     {
         // Shutdown synthesizers
-        _txlo1.reset();
-        _txlo2.reset();
-        _rxlo1.reset();
-        _rxlo2.reset();
+        _txlo1->shutdown();
+        _txlo2->shutdown();
+        _rxlo1->shutdown();
+        _rxlo2->shutdown();
 
         // Reset CPLD values
         _cpld_reg.value = 0;
