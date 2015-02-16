@@ -51,12 +51,6 @@ public:
     /***********************************************************************
      * Node control
      **********************************************************************/
-    /*! Initialize the block arguments.
-     *
-     * This triggers a _post_args_hook().
-     */
-    void set_args(const uhd::device_addr_t &args);
-
     //! Returns a unique string that identifies this block.
     virtual std::string unique_id() const;
 
@@ -152,19 +146,6 @@ protected:
 
     //! List of downstream nodes
     node_map_t _downstream_nodes;
-
-    /***********************************************************************
-     * Hooks
-     **********************************************************************/
-
-    /*! This method is called whenever _args is changed.
-     *
-     * Derive it to update block-specific settings, or to sanity-check
-     * the new _args.
-     *
-     * May throw.
-     */
-    virtual void _post_args_hook();
 
     /***********************************************************************
      * Connections

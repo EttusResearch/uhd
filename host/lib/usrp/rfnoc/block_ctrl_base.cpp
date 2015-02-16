@@ -68,7 +68,7 @@ block_ctrl_base::block_ctrl_base(
     _root_path = "xbar/" + _block_id.get_local();
     _tree->create<boost::uint64_t>(_root_path / "noc_id").set(noc_id);
 
-    // Read buffer sizes (also, identifies which ports may receive connections)
+    /*** Input buffer sizes *************************************************/
     std::vector<size_t> buf_sizes(16, 0);
     for (size_t port_offset = 0; port_offset < 16; port_offset += 8) {
         // FIXME: Eventually need to implement per block port buffers
@@ -85,6 +85,39 @@ block_ctrl_base::block_ctrl_base(
             _tree->create<size_t>(
                     _root_path / str(boost::format("input_buffer_size/%d") % size_t(i + port_offset))
             ).set(buf_size_bytes);
+        }
+    }
+
+    /*** Init default block args ********************************************/
+    blockdef::args_t args = _block_def->get_args();
+    fs_path arg_path = _root_path / "args";
+    _tree->create<std::string>(arg_path);
+    // TODO: Add coercer
+    // TODO: Add subscribers
+    BOOST_FOREACH(const blockdef::arg_t &arg, args) {
+        fs_path arg_type_path = arg_path / arg["name"] / "type";
+        _tree->create<std::string>(arg_type_path).set(arg["type"]);
+        fs_path arg_val_path = arg_path / arg["name"] / "value";
+        if (arg["type"] == "string") {
+            _tree->create<std::string>(arg_val_path);
+            if (not arg["value"].empty()) {
+                _tree->access<std::string>(arg_val_path).set(arg["value"]);
+            }
+        }
+        else if (arg["type"] == "int") {
+            _tree->create<int>(arg_val_path);
+            if (not arg["value"].empty()) {
+                _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(arg["value"]));
+            }
+        }
+        else if (arg["type"] == "double") {
+            _tree->create<double>(arg_val_path);
+            if (not arg["value"].empty()) {
+                _tree->access<double>(arg_val_path).set(boost::lexical_cast<double>(arg["value"]));
+            }
+        }
+        else if (arg["type"] == "int_vector") {
+            throw uhd::runtime_error("not yet implemented: int_vector");
         }
     }
 
@@ -192,6 +225,83 @@ void block_ctrl_base::clear()
 boost::uint32_t block_ctrl_base::get_address(size_t block_port) {
     return (_ctrl_sid.get_dst() & 0xFFF0) | (block_port & 0xF);
 }
+
+/***********************************************************************
+ * Argument handling
+ **********************************************************************/
+void block_ctrl_base::set_args(const uhd::device_addr_t &args)
+{
+    BOOST_FOREACH(const std::string &key, _tree->list(_root_path / "args")) {
+        if (args.has_key(key)) {
+            set_arg(key, args.get(key));
+        }
+    }
+}
+
+void block_ctrl_base::set_arg(const std::string &key, const std::string &val)
+{
+    fs_path arg_path = _root_path / "args" / key;
+    if (not _tree->exists(arg_path / "value")) {
+        throw uhd::runtime_error(str(
+                boost::format("Attempting to set uninitialized argument '%s' on block '%s'")
+                % key % unique_id()
+        ));
+    }
+
+    std::string type = _tree->access<std::string>(arg_path / "type").get();
+    fs_path arg_val_path = arg_path / "value";
+    if (type == "string") {
+        _tree->access<std::string>(arg_val_path).set(val);
+    }
+    else if (type == "int") {
+        _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(val));
+    }
+    else if (type == "double") {
+        _tree->access<double>(arg_val_path).set(boost::lexical_cast<double>(val));
+    }
+    else if (type == "int_vector") {
+        throw uhd::runtime_error("not yet implemented: int_vector");
+    }
+}
+
+device_addr_t block_ctrl_base::get_args() const
+{
+    device_addr_t args;
+    BOOST_FOREACH(const std::string &key, _tree->list(_root_path / "args")) {
+        args[key] = get_arg(key);
+    }
+    return args;
+}
+
+std::string block_ctrl_base::get_arg(const std::string &key) const
+{
+    fs_path arg_path = _root_path / "args" / key;
+    if (not _tree->exists(arg_path / "value")) {
+        throw uhd::runtime_error(str(
+                boost::format("Attempting to get uninitialized argument '%s' on block '%s'")
+                % key % unique_id()
+        ));
+    }
+
+    std::string type = _tree->access<std::string>(arg_path / "type").get();
+    fs_path arg_val_path = arg_path / "value";
+    if (type == "string") {
+        return _tree->access<std::string>(arg_val_path).get();
+    }
+    else if (type == "int") {
+        return boost::lexical_cast<std::string>(_tree->access<int>(arg_val_path).get());
+    }
+    else if (type == "double") {
+        return boost::lexical_cast<std::string>(_tree->access<double>(arg_val_path).get());
+    }
+    else if (type == "int_vector") {
+        throw uhd::runtime_error("not yet implemented: int_vector");
+    }
+
+    UHD_THROW_INVALID_CODE_PATH();
+    return "";
+}
+
 
 /***********************************************************************
  * Hooks & Derivables

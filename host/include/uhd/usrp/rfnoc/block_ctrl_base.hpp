@@ -30,6 +30,7 @@
 #include <uhd/usrp/rfnoc/blockdef.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -224,6 +225,37 @@ public:
      * take care of resetting flow control yourself.
      */
     void clear();
+
+    /***********************************************************************
+     * Argument handling
+     **********************************************************************/
+    //! Set multiple block args. Calls set_arg() for all individual items.
+    //
+    // Note that this function will ignore any keys in \p args that aren't
+    // already registered as block arguments.
+    void set_args(const uhd::device_addr_t &args);
+
+    //! Set a specific block argument. \p val is converted to the corresponding
+    // data type using by looking up its type in the block definition.
+    void set_arg(const std::string &key, const std::string &val);
+
+    //! Direct access to set a block argument.
+    template <typename T>
+    void set_arg(const std::string &key, const T &val) {
+        _tree->access<T>(_root_path / "args" / key / "value").set(val);
+    }
+
+    //! Return all block arguments as a device_addr_t.
+    uhd::device_addr_t get_args() const;
+
+    //! Return a single block argument in string format.
+    std::string get_arg(const std::string &key) const;
+
+    //! Direct access to get a block argument.
+    template <typename T>
+    T get_arg(const std::string &key) const {
+        return _tree->access<T>(_root_path / "args" / key / "value").get();
+    }
 
 protected:
     /***********************************************************************
