@@ -60,12 +60,11 @@ public:
         _vector_len = vector_len;
 
         //// 3. Set stream signatures
-        stream_sig_t stream_sig(
-                _item_type,
-                _vector_len,
-                _vector_len * _bpi,
-                false
-        );
+        stream_sig_t stream_sig;
+        stream_sig.item_type = _item_type;
+        stream_sig.vlen = _vector_len;
+        stream_sig.packet_size = _vector_len * _bpi;
+
         // The stream signature is identical on input & output
         _tree->access<stream_sig_t>(_root_path / "input_sig/0").set(stream_sig);
         _tree->access<stream_sig_t>(_root_path / "output_sig/0").set(stream_sig);
@@ -123,7 +122,7 @@ public:
     {
         UHD_RFNOC_BLOCK_TRACE() << "vector_iir_block::set_input_signature()" << std::endl;
         UHD_ASSERT_THROW(port == 0);
-        if (stream_sig.get_item_type() != _item_type
+        if (stream_sig.item_type != _item_type
             or (stream_sig.vlen != 0 and stream_sig.vlen != _vector_len)) {
             UHD_MSG(status) << "not valid." << std::endl;
             return false;
@@ -136,7 +135,7 @@ public:
     {
         UHD_RFNOC_BLOCK_TRACE() << "vector_iir_block::set_output_signature()" << std::endl;
         UHD_ASSERT_THROW(port == 0);
-        if (stream_sig.get_item_type() != _item_type
+        if (stream_sig.item_type != _item_type
             or (stream_sig.vlen != 0 and stream_sig.vlen != _vector_len)) {
             return false;
         }

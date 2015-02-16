@@ -139,15 +139,14 @@ void block_ctrl_base::_init_stream_sigs(
         blockdef::ports_t ports
 ) {
     for (size_t i = 0; i < ports.size(); i++) {
-        std::string type = ports[i].types.empty() ? stream_sig_t::PASSTHRU_TYPE : ports[i].types[0];
-        size_t packet_size = DEFAULT_PACKET_SIZE;
+        stream_sig_t sig;
+        sig.item_type = ports[i].types.empty() ? "" : ports[i].types[0];
+        sig.packet_size = DEFAULT_PACKET_SIZE;
         // TODO don't ignore this
-        size_t vlen = 0;
+        sig.vlen = 0;
         // TODO name, optional?
-        UHD_MSG(status) << "Adding stream signature at " << (_root_path / sig_node / i)
-            << ": type = " << type << " packet_size = " << packet_size << " vlen = " << vlen << std::endl;
-        _tree->create<stream_sig_t>(_root_path / sig_node / i)
-            .set(stream_sig_t(type, vlen, packet_size));
+        UHD_MSG(status) << "Adding stream signature at " << (_root_path / sig_node / i) << sig.to_string() << std::endl;
+        _tree->create<stream_sig_t>(_root_path / sig_node / i).set(sig);
     }
 }
 

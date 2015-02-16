@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,18 +25,36 @@ namespace uhd { namespace rfnoc {
 
 /*! Describes a stream signature for data going to or coming from
  * RFNoC ports.
+ *
+ * The stream signature may depend on a block's configuration. Even
+ * so, some attributes may be left undefined (e.g., a FIFO block
+ * works for any item type, so it doesn't need to set it).
  */
 class UHD_API stream_sig_t {
  public:
-     //! A special value for the data type, if this is selected,
-     // a transparent type is assumed (i.e. we use whatever is
-     // upstream).
-    static const std::string PASSTHRU_TYPE;
+    /***********************************************************************
+     * Structors
+     ***********************************************************************/
     stream_sig_t();
-    stream_sig_t(std::string, size_t vlen, size_t packet_size=0, bool is_bursty = false);
 
-    // Getters
+    /***********************************************************************
+     * The stream signature attributes
+     ***********************************************************************/
+    //! The data type of the individual items (e.g. 'sc16'). If undefined, set
+    // to empty.
+    std::string item_type;
 
+    //! The vector length in multiples of items. If undefined, set to zero.
+    size_t vlen;
+
+    //! Packet size in bytes. If undefined, set to zero.
+    size_t packet_size;
+
+    bool is_bursty;
+
+    /***********************************************************************
+     * Helpers
+     ***********************************************************************/
     //! Compact string representation
     std::string to_string();
     //! Pretty-print string representation
@@ -44,32 +62,16 @@ class UHD_API stream_sig_t {
 
     //! Returns the number of bytes necessary to store one item.
     // Note: The vector length is *not* considered here.
+    //
+    // \returns Number of bytes per item or 0 if the item type is
+    //          undefined.
+    // \throws uhd::key_error if the item type is invalid.
     size_t get_bytes_per_item() const;
-    std::string get_item_type() const { return _item_type; };
-
-    size_t get_packet_size() const { return packet_size; };
-
-    // Setters
-
-    //! Will throw if \p type is invalid.
-    void set_item_type(const std::string &type);
-
-    // Utilities
 
     /*! Check if an output with signature \p output_sig could
      * stream to input with this signature.
      */
-    bool is_compatible(const stream_sig_t &output_sig) const;
-
-    // Attributes
-
-    size_t vlen;
-    //! Packet size in bytes
-    size_t packet_size;
-    bool is_bursty;
-
- private:
-    std::string _item_type;
+    static bool is_compatible(const stream_sig_t &input_sig, const stream_sig_t &output_sig);
 };
 
 //! Shortcut for << stream_sig.to_string()

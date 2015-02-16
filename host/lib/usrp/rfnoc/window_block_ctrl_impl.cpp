@@ -73,12 +73,11 @@ public:
         // This block requires spp to match the window length:
         set_arg<int>("spp", int(window_len));
         // Set stream signatures
-        stream_sig_t stream_sig(
-                _item_type,
-                window_len, // Vector length equals window size
-                window_len * _bpi,
-                false
-        );
+        stream_sig_t stream_sig;
+        stream_sig.item_type = _item_type;
+        stream_sig.vlen = window_len;
+        stream_sig.packet_size = window_len * _bpi;
+
         // The stream signature is identical on input & output
         _tree->access<stream_sig_t>(_root_path / "input_sig/0").set(stream_sig);
         _tree->access<stream_sig_t>(_root_path / "output_sig/0").set(stream_sig);

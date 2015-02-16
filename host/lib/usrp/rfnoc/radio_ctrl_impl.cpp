@@ -51,7 +51,8 @@ public:
         _tree->create<size_t>(_root_path / "input_buffer_size/0").set(520*1024/2);
 
         // TODO this is a hack
-        stream_sig_t out_sig("sc16", 0, false);
+        stream_sig_t out_sig;
+        out_sig.item_type = "sc16";
         out_sig.packet_size = _rx_spp * _rx_bpi;
         if (_tree->exists(_root_path / "output_sig/0")) {
             _tree->access<stream_sig_t>(_root_path / "output_sig/0").set(out_sig);
