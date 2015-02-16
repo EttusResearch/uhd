@@ -387,7 +387,7 @@ public:
 
         //create the burner commands
         if (this->get_rev() == USRP2_REV3 or this->get_rev() == USRP2_REV4){
-            const std::string card_burner = (fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / "usrp2_card_burner.py").string();
+            const std::string card_burner = (fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / "usrp2_card_burner_gui.py").string();
             const std::string card_burner_cmd = str(boost::format("\"%s%s\" %s--fpga=\"%s\" %s--fw=\"%s\"") % sudo % card_burner % ml % fpga_image_path % ml % fw_image_path);
             return str(boost::format("%s\n%s") % print_utility_error("uhd_images_downloader.py") % card_burner_cmd);
         }
