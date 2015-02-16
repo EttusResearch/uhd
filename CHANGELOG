@@ -8,11 +8,12 @@ Change Log for Releases
   RSSI Sensor
 * B200: RSSI sensor
 * AD9361: Better handling of different interpolation rates in FIR,
-  fix for gain value truncation
+  fix for gain value truncation, removed gain value offset
 * UBX: Added drivers
 * Manual/Docs: Numerous updates, minimum compiler versions now specified,
 * Converters: Multiple fixes for sc12
 * Examples: Fixes to txrx_loopback_to_file
+* Path handling vastly improved, made more consistent
 * Minor UHD fixes
 
 ## 003.008.001
