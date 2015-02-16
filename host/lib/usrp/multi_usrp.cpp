@@ -845,12 +845,37 @@ public:
         }
     }
 
+    void set_normalized_rx_gain(double gain, size_t chan = 0)
+    {
+      if (gain > 1.0 || gain < 0.0) {
+        throw uhd::runtime_error("Normalized gain out of range, must be in [0, 1].");
+      }
+      gain_range_t gain_range = get_rx_gain_range(ALL_GAINS, chan);
+      double abs_gain = (gain * (gain_range.stop() - gain_range.start())) + gain_range.start();
+      set_rx_gain(abs_gain, ALL_GAINS, chan);
+    }
+
     double get_rx_gain(const std::string &name, size_t chan){
         try {
             return rx_gain_group(chan)->get_value(name);
         } catch (uhd::key_error &e) {
             THROW_GAIN_NAME_ERROR(name,chan,rx);
         }
+    }
+
+    double get_normalized_rx_gain(size_t chan)
+    {
+      gain_range_t gain_range = get_rx_gain_range(ALL_GAINS, chan);
+      double gain_range_width = gain_range.stop() - gain_range.start();
+      // In case we have a device without a range of gains:
+      if (gain_range_width == 0.0) {
+          return 0;
+      }
+      double norm_gain = (get_rx_gain(ALL_GAINS, chan) - gain_range.start()) / gain_range_width;
+      // Avoid rounding errors:
+      if (norm_gain > 1.0) return 1.0;
+      if (norm_gain < 0.0) return 0.0;
+      return norm_gain;
     }
 
     gain_range_t get_rx_gain_range(const std::string &name, size_t chan){
@@ -1046,12 +1071,38 @@ public:
         }
     }
 
+    void set_normalized_tx_gain(double gain, size_t chan = 0)
+    {
+      if (gain > 1.0 || gain < 0.0) {
+        throw uhd::runtime_error("Normalized gain out of range, must be in [0, 1].");
+      }
+      gain_range_t gain_range = get_tx_gain_range(ALL_GAINS, chan);
+      double abs_gain = (gain * (gain_range.stop() - gain_range.start())) + gain_range.start();
+      set_tx_gain(abs_gain, ALL_GAINS, chan);
+    }
+
+
     double get_tx_gain(const std::string &name, size_t chan){
         try {
             return tx_gain_group(chan)->get_value(name);
         } catch (uhd::key_error &e) {
             THROW_GAIN_NAME_ERROR(name,chan,tx);
         }
+    }
+
+    double get_normalized_tx_gain(size_t chan)
+    {
+      gain_range_t gain_range = get_tx_gain_range(ALL_GAINS, chan);
+      double gain_range_width = gain_range.stop() - gain_range.start();
+      // In case we have a device without a range of gains:
+      if (gain_range_width == 0.0) {
+          return 0.0;
+      }
+      double norm_gain = (get_rx_gain(ALL_GAINS, chan) - gain_range.start()) / gain_range_width;
+      // Avoid rounding errors:
+      if (norm_gain > 1.0) return 1.0;
+      if (norm_gain < 0.0) return 0.0;
+      return norm_gain;
     }
 
     gain_range_t get_tx_gain_range(const std::string &name, size_t chan){
