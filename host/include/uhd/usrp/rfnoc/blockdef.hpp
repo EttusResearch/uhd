@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,7 +21,9 @@
 #include <boost/cstdint.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <uhd/config.hpp>
+#include <uhd/types/dict.hpp>
 #include <vector>
+#include <set>
 
 namespace uhd { namespace rfnoc {
 
@@ -61,6 +63,24 @@ public:
 
     typedef std::vector<port_t> ports_t;
 
+
+
+    class arg_t : public uhd::dict<std::string, std::string> {
+      public:
+        //! A list of args an argument can have.
+        static const std::vector<std::string> ARG_ARGS;
+        static const std::set<std::string> VALID_TYPES;
+
+        arg_t();
+
+        //! Basic validity check of this argument definition.
+        bool is_valid() const;
+        //! Returns a string with the most important keys
+        std::string to_string() const;
+
+    };
+    typedef std::vector<arg_t> args_t;
+
     /*! Create a block definition object for a NoC block given
      * a NoC ID. This cannot be used for components.
      *
@@ -83,6 +103,11 @@ public:
 
     virtual ports_t get_input_ports() = 0;
     virtual ports_t get_output_ports() = 0;
+
+    //! Returns the args for this block. Checks if args are valid.
+    //
+    // \throws uhd::runtime_error if args are invalid.
+    virtual args_t get_args() = 0;
 };
 
 }} /* namespace uhd::rfnoc */

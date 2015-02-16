@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #include <uhd/usrp/rfnoc/blockdef.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/paths.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -45,6 +46,65 @@ bool blockdef::port_t::match_type(const std::string &type) {
      ;
 }
 
+/****************************************************************************
+ * arg_t stuff
+ ****************************************************************************/
+const std::vector<std::string> blockdef::arg_t::ARG_ARGS = boost::assign::list_of
+    // List all tags/args an <arg> can have here:
+            ("name")
+            ("type")
+            ("value")
+;
+const std::set<std::string> blockdef::arg_t::VALID_TYPES = boost::assign::list_of
+    // List all tags/args an <arg> can have here:
+            ("string")
+            ("int")
+            ("int_vector")
+            ("double")
+;
+
+blockdef::arg_t::arg_t()
+{
+    // This guarantees that we can access these keys
+    // even if they were never initialized:
+    BOOST_FOREACH(const std::string &key, ARG_ARGS) {
+        set(key, "");
+    }
+}
+
+bool blockdef::arg_t::is_valid() const
+{
+    // 1. Check we have all the keys:
+    BOOST_FOREACH(const std::string &key, ARG_ARGS) {
+        if (not has_key(key)) {
+            return false;
+        }
+    }
+
+    // 2. Check arg type is valid
+    if (not get("type").empty() and not VALID_TYPES.count(get("type"))) {
+        return false;
+    }
+
+    // Twelve of the clock, all seems well
+    return true;
+}
+
+std::string blockdef::arg_t::to_string() const
+{
+    std::string result;
+    BOOST_FOREACH(const std::string &key, ARG_ARGS) {
+        if (has_key(key)) {
+            result += str(boost::format("%s=%s,") % key % get(key));
+        }
+    }
+
+    return result;
+}
+
+/****************************************************************************
+ * blockdef_impl stuff
+ ****************************************************************************/
 class blockdef_xml_impl : public blockdef
 {
 public:
@@ -127,6 +187,8 @@ public:
             if (in.size() + out.size() == 0) {
                 throw uhd::runtime_error("Block does not define inputs or outputs.");
             }
+            // Check args are valid
+            get_args();
             // TODO any more checks?
         } catch (const std::exception &e) {
             throw uhd::runtime_error(str(
@@ -184,6 +246,35 @@ public:
             // TODO vector length or whatever
         }
         return ports;
+    }
+
+    blockdef::args_t get_args()
+    {
+        args_t args;
+        bool is_valid = true;
+        pt::ptree def;
+        BOOST_FOREACH(pt::ptree::value_type &v, _pt.get_child("nocblock.args", def)) {
+            arg_t arg;
+            if (v.first != "arg") continue;
+            BOOST_FOREACH(const std::string &key, arg_t::ARG_ARGS) {
+                arg[key] = v.second.get(key, "");
+            }
+            if (arg["type"].empty()) {
+                arg["type"] = "string";
+            }
+            if (not arg.is_valid()) {
+                UHD_MSG(warning) << boost::format("Found invalid argument: %s") % arg.to_string() << std::endl;
+                is_valid = false;
+            }
+            args.push_back(arg);
+        }
+        if (not is_valid) {
+            throw uhd::runtime_error(str(
+                    boost::format("Found invalid arguments for block %s.")
+                    % get_name()
+            ));
+        }
+        return args;
     }
 
 

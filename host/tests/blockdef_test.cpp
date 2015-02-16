@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,5 +65,15 @@ BOOST_AUTO_TEST_CASE(test_ports) {
     BOOST_CHECK_EQUAL(out_ports[0].name, "out");
     BOOST_REQUIRE_EQUAL(out_ports[0].types.size(), 1);
     BOOST_REQUIRE_EQUAL(out_ports[0].types[0], "sc16");
+}
+
+BOOST_AUTO_TEST_CASE(test_args) {
+    // Create an FFT:
+    blockdef::sptr block_definition = blockdef::make_from_noc_id(0xFF70000000000000);
+    blockdef::args_t args = block_definition->get_args();
+    BOOST_REQUIRE_EQUAL(args.size(), 2);
+    BOOST_CHECK_EQUAL(args[0]["name"], "spp");
+    BOOST_CHECK_EQUAL(args[0]["type"], "int");
+    BOOST_CHECK_EQUAL(args[0]["value"], "256");
 }
 
