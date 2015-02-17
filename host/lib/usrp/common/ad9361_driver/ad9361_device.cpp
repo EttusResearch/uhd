@@ -1049,7 +1049,7 @@ double ad9361_device_t::_tune_bbvco(const double rate)
     const double vcomin = 672e6;
     double vcorate;
     int vcodiv;
-
+ 
     /* Iterate over VCO dividers until appropriate divider is found. */
     int i = 1;
     for (; i <= 6; i++) {
@@ -1306,7 +1306,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         divfactor = 16;
         _tfir_factor = 2;
         _rfir_factor = 2;
-    } else if ((rate >= 41e6) && (rate <= 56e6)) {
+    } else if ((rate >= 41e6) && (rate <= 58e6)) {
         // RX1 + RX2 enabled, 3, 1, 2, 2
         _regs.rxfilt = B8(11100110);
 
@@ -1316,15 +1316,15 @@ double ad9361_device_t::_setup_rates(const double rate)
         divfactor = 12;
         _tfir_factor = 2;
         _rfir_factor = 2;
-    } else if ((rate > 56e6) && (rate <= 61.44e6)) {
-        // RX1 + RX2 enabled, 3, 1, 1, 2
-        _regs.rxfilt = B8(11100010);
+    } else if ((rate > 58e6) && (rate <= 61.44e6)) {
+        // RX1 + RX2 enabled, 2, 1, 2, 2
+        _regs.rxfilt = B8(11010110);
 
-        // TX1 + TX2 enabled, 3, 1, 1, 1
-        _regs.txfilt = B8(11100001);
+        // TX1 + TX2 enabled, 2, 1, 1, 2
+        _regs.txfilt = B8(11010010);
 
-        divfactor = 6;
-        _tfir_factor = 1;
+        divfactor = 8;
+        _tfir_factor = 2;
         _rfir_factor = 2;
     } else {
         // should never get in here
@@ -1340,7 +1340,7 @@ double ad9361_device_t::_setup_rates(const double rate)
     /* The DAC clock must be <= 336e6, and is either the ADC clock or 1/2 the
      * ADC clock.*/
     if (adcclk > 336e6) {
-        /* Make the DAC clock = ADC/2, and bypass the TXFIR. */
+        /* Make the DAC clock = ADC/2 */
         _regs.bbpll = _regs.bbpll | 0x08;
         dacclk = adcclk / 2.0;
     } else {
