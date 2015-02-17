@@ -31,7 +31,7 @@ typedef void (*ethernet_link_changed_callback_t)(int ethnum, int speed);
 /*!
  * \brief one time call to initialize ethernet
  */
-void xge_ethernet_init(const uint32_t eth);
+void ethernet_init(const uint32_t eth);
 
 /*!
  * \brief Return number of ethernet interfaces
@@ -44,8 +44,7 @@ void dump_mdio_regs(const uint8_t eth, uint32_t mdio_port);
 /*!
  * \brief Test status of SFP+ modules
  */
-void
-xge_poll_sfpp_status(const uint32_t eth);
+void poll_sfpp_status(const uint32_t eth);
 
 //! get the link status of eth (true for link up)
 bool ethernet_get_link_up(const uint32_t eth);

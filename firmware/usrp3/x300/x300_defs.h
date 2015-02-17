@@ -51,6 +51,7 @@ static const int RB_SPI_RDY      = 1;
 static const int RB_SPI_DATA     = 2;
 static const int RB_ETH_TYPE0    = 4;
 static const int RB_ETH_TYPE1    = 5;
+static const int RB_FPGA_COMPAT  = 6;
 static const int RB_SFPP_STATUS0 = 8;
 static const int RB_SFPP_STATUS1 = 9;
 

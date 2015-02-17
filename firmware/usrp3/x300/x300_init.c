@@ -130,7 +130,11 @@ void x300_init(void)
     //udp_uart_init(UART0_BASE, X300_GPSDO_UDP_PORT);
 
     //now we can init the rest with prints
-    UHD_FW_TRACE_FSTR(INFO, "[ZPU Init Begin -- CPU CLOCK is %d MHz]", (CPU_CLOCK/1000000));
+    UHD_FW_TRACE(INFO, "[ZPU Initializing]");
+    UHD_FW_TRACE_FSTR(INFO, "-- Firmware Compat Number: %u.%u", (int)X300_FW_COMPAT_MAJOR, (int)X300_FW_COMPAT_MINOR);
+    uint32_t fpga_compat = wb_peek32(SR_ADDR(SET0_BASE, RB_FPGA_COMPAT));
+    UHD_FW_TRACE_FSTR(INFO, "-- FPGA Compat Number: %u.%u", (fpga_compat>>16), (fpga_compat&0xFFFF));
+    UHD_FW_TRACE_FSTR(INFO, "-- Clock Frequency: %u MHz", (CPU_CLOCK/1000000));
 
     //i2c rate init
     wb_i2c_init(I2C0_BASE, CPU_CLOCK);
@@ -140,30 +144,26 @@ void x300_init(void)
     //hold phy in reset
     wb_poke32(SR_ADDR(SET0_BASE, SR_SW_RST), SW_RST_PHY);
 
-    UHD_FW_TRACE_FSTR(INFO, "eth0 is %2dG", ((wb_peek32(SR_ADDR(RB0_BASE, RB_ETH_TYPE0))==1) ? 10 : 1));
-    UHD_FW_TRACE_FSTR(INFO, "eth1 is %2dG", ((wb_peek32(SR_ADDR(RB0_BASE, RB_ETH_TYPE1))==1) ? 10 : 1));
-
     //setup net stack and eth state machines
     init_network();
 
     //phy reset release
     wb_poke32(SR_ADDR(SET0_BASE, SR_SW_RST), 0);
 
-    // For eth interfaces, initialize the PHY's
-    mdelay(100);
-    if (wb_peek32(SR_ADDR(RB0_BASE, RB_ETH_TYPE0)) == 1) {
-        xge_ethernet_init(0);
-    }
-    if (wb_peek32(SR_ADDR(RB0_BASE, RB_ETH_TYPE1)) == 1) {
-        xge_ethernet_init(1);
-    }
-
     //print network summary
     for (uint8_t e = 0; e < ethernet_ninterfaces(); e++)
     {
-        UHD_FW_TRACE_FSTR(INFO, "  MAC%u:     %s", (int)e, mac_addr_to_str(u3_net_stack_get_mac_addr(e)));
-        UHD_FW_TRACE_FSTR(INFO, "  IP%u:      %s", (int)e, ip_addr_to_str(u3_net_stack_get_ip_addr(e)));
-        UHD_FW_TRACE_FSTR(INFO, "  SUBNET%u:  %s", (int)e, ip_addr_to_str(u3_net_stack_get_subnet(e)));
-        UHD_FW_TRACE_FSTR(INFO, "  BCAST%u:   %s", (int)e, ip_addr_to_str(u3_net_stack_get_bcast(e)));
+        uint32_t offset = SR_ADDR(RB0_BASE, ((e==1)?RB_ETH_TYPE1:RB_ETH_TYPE0));
+        UHD_FW_TRACE_FSTR(INFO, "Ethernet Port %u:", (int)e);
+        UHD_FW_TRACE_FSTR(INFO, "-- PHY:    %s", ((wb_peek32(offset)==1) ? "10Gbps" : "1Gbps"));
+        UHD_FW_TRACE_FSTR(INFO, "-- MAC:    %s", mac_addr_to_str(u3_net_stack_get_mac_addr(e)));
+        UHD_FW_TRACE_FSTR(INFO, "-- IP:     %s", ip_addr_to_str(u3_net_stack_get_ip_addr(e)));
+        UHD_FW_TRACE_FSTR(INFO, "-- SUBNET: %s", ip_addr_to_str(u3_net_stack_get_subnet(e)));
+        UHD_FW_TRACE_FSTR(INFO, "-- BCAST:  %s", ip_addr_to_str(u3_net_stack_get_bcast(e)));
     }
+
+    // For eth interfaces, initialize the PHY's
+    mdelay(100);
+    ethernet_init(0);
+    ethernet_init(1);
 }
