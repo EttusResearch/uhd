@@ -43,9 +43,6 @@ class UHD_API vector_iir_block_ctrl : public source_block_ctrl_base, public sink
 public:
     UHD_RFNOC_BLOCK_OBJECT(vector_iir_block_ctrl)
 
-    static const size_t DEFAULT_VECTOR_LEN      = 256;
-    static const double DEFAULT_ALPHA           = 0.9;
-    static const double DEFAULT_BETA            = 0.1;
     static const boost::uint32_t SR_VECTOR_LEN  = 129;
     static const boost::uint32_t SR_ALPHA       = 130;
     static const boost::uint32_t SR_BETA        = 131;
@@ -57,7 +54,7 @@ public:
     //
     // Note that not all vector lengths are valid for this block. Throws if
     // an invalid value is provided.
-    virtual void set_vector_len(size_t vector_len) = 0;
+    virtual void set_vector_len(int vector_len) = 0;
 
     //! Returns the current vector length.
     //

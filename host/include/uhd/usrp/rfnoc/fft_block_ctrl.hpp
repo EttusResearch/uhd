@@ -47,8 +47,6 @@ public:
         MAGNITUDE_SQUARED = 2
     } magnitude_t;
 
-    static const size_t DEFAULT_FFT_SIZE            = 256;
-    static const magnitude_t DEFAULT_MAGNITUDE_OUT  = COMPLEX;
     static const boost::uint32_t SR_FFT_RESET       = 131;  // Note: AXI config bus uses 129 & 130
     static const boost::uint32_t SR_FFT_SIZE_LOG2   = 132;
     static const boost::uint32_t SR_MAGNITUDE_OUT   = 133;
@@ -78,7 +76,7 @@ public:
     //
     // Note that not all FFT sizes are valid for this core. If
     // an invalid FFT size is selected, it will return false.
-    virtual void set_fft_size(size_t fft_size) = 0;
+    virtual void set_fft_size(int fft_size) = 0;
 
     //! Returns the currently selected FFT size.
     //

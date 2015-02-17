@@ -28,22 +28,23 @@ class vector_iir_block_ctrl_impl : public vector_iir_block_ctrl
 public:
     UHD_RFNOC_BLOCK_CONSTRUCTOR(vector_iir_block_ctrl),
         _item_type("sc16"), // We only support sc16 in this block
-        _bpi(uhd::convert::get_bytes_per_item("sc16")),
-        _vector_len(DEFAULT_VECTOR_LEN),
-        _alpha(DEFAULT_ALPHA),
-        _beta(DEFAULT_BETA)
+        _bpi(uhd::convert::get_bytes_per_item("sc16"))
     {
-
-        // TODO: Read the default vector length, beta, and alpha from the block definition
-        // TODO: Register the vector length, beta, and alpha into the property tree
-
-        // This also sets the stream signatures
-        set_vector_len(_vector_len);
-        set_alpha(_alpha);
-        set_beta(_beta);
+        _tree->access<int>(_root_path / "args" / "spp" / "value")
+            .subscribe(boost::bind(&vector_iir_block_ctrl_impl::set_vector_len, this, _1))
+            .update()
+        ;
+        _tree->access<double>(_root_path / "args" / "alpha" / "value")
+            .subscribe(boost::bind(&vector_iir_block_ctrl_impl::set_alpha, this, _1))
+            .update()
+        ;
+        _tree->access<double>(_root_path / "args" / "beta" / "value")
+            .subscribe(boost::bind(&vector_iir_block_ctrl_impl::set_beta, this, _1))
+            .update()
+        ;
     }
 
-    void set_vector_len(size_t vector_len)
+    void set_vector_len(int vector_len)
     {
         //// 1. Sanity check
         const size_t requested_vector_len = vector_len;
@@ -89,12 +90,11 @@ public:
         const boost::int32_t requested_alpha_q1_31 = boost::math::iround(requested_alpha*pow(2.0,31.0));
         // sr_write expects unsigned int data
         sr_write(SR_ALPHA, static_cast<boost::uint32_t>(requested_alpha_q1_31));
-        _alpha = alpha;
     } /* set_alpha() */
 
     double get_alpha() const
     {
-        return _alpha;
+        return _tree->access<double>(_root_path / "args" / "alpha" / "value").get();
     }
 
     void set_beta(double beta)
@@ -111,12 +111,11 @@ public:
         const boost::int32_t requested_beta_q1_31 = boost::math::iround(requested_beta*pow(2.0,31.0));
         // sr_write expects unsigned int data
         sr_write(SR_BETA, static_cast<boost::uint32_t>(requested_beta_q1_31));
-        _beta = beta;
     } /* set_beta() */
 
     double get_beta() const
     {
-        return _beta;
+        return _tree->access<double>(_root_path / "args" / "beta" / "value").get();
     }
 
 
@@ -146,38 +145,6 @@ public:
     }
 
 protected:
-    void _post_args_hook()
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "_post_args_hook()" << std::endl;
-        if (_args.has_key("vector_len")) {
-            size_t req_vector_len = _args.cast<size_t>("vector_len", _vector_len);
-            if (req_vector_len != _vector_len) {
-                set_vector_len(req_vector_len);
-            }
-        }
-
-        if (_args.has_key("alpha")) {
-            double req_alpha = _args.cast<double>("alpha", _alpha);
-            if (req_alpha != _alpha) {
-                set_alpha(req_alpha);
-            }
-        }
-
-        if (_args.has_key("beta")) {
-            double req_beta = _args.cast<double>("beta", _beta);
-            if (req_beta != _beta) {
-                set_beta(req_beta);
-            }
-        }
-
-        if (_args.has_key("spp")) {
-            size_t spp = _args.cast<size_t>("spp", _vector_len);
-            if (spp != _vector_len) {
-                throw uhd::value_error("In the Vector IIR block, spp cannot differ from the vector length.");
-            }
-        }
-    }
-
     void _init_rx(uhd::stream_args_t &args)
     {
         UHD_RFNOC_BLOCK_TRACE() << "vector_iir_block::_init_rx()" << std::endl;
@@ -221,8 +188,6 @@ private:
     //! Bytes per item (bytes per sample)
     const size_t _bpi;
     size_t _vector_len;
-    double _alpha;
-    double _beta;
 };
 
 UHD_RFNOC_BLOCK_REGISTER(vector_iir_block_ctrl, "VectorIIR");

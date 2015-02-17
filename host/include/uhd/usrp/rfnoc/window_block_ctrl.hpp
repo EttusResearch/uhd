@@ -40,7 +40,6 @@ class UHD_API window_block_ctrl : public source_block_ctrl_base, public sink_blo
 public:
     UHD_RFNOC_BLOCK_OBJECT(window_block_ctrl)
 
-    static const size_t          DEFAULT_WINDOW_LEN     = 256;
     static const size_t          MAX_COEFF_VAL          = 32767;
     static const boost::uint32_t SR_WINDOW_LEN          = 131;               // Note: AXI config bus uses 129 & 130
     static const boost::uint32_t RB_MAX_WINDOW_LEN      = 0;

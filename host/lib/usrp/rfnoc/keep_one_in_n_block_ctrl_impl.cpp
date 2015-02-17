@@ -24,49 +24,25 @@ using namespace uhd::rfnoc;
 class keep_one_in_n_block_ctrl_impl : public keep_one_in_n_block_ctrl
 {
 public:
-    UHD_RFNOC_BLOCK_CONSTRUCTOR(keep_one_in_n_block_ctrl),
-        _item_type("sc16"), // We only support sc16 in this block
-        _bpi(uhd::convert::get_bytes_per_item("sc16")),
-        _n(DEFAULT_N)
+    UHD_RFNOC_BLOCK_CONSTRUCTOR(keep_one_in_n_block_ctrl)
     {
-
-        // TODO: Read the default initial keep one in n size from the block definition
-        // TODO: Register the keep one in n size into the property tree
-
-        set_n(_n);
+        _tree->access<int>(_root_path / "args" / "n" / "value")
+            .subscribe(boost::bind(&keep_one_in_n_block_ctrl_impl::set_n, this, _1))
+            .update() // Call set_n()
+        ;
     }
 
-    void set_n(boost::uint16_t n)
+    void set_n(int n)
     {
-        //// 2. Update block
-        sr_write(SR_N,n);
-        _n = n;
-
+        UHD_RFNOC_BLOCK_TRACE() << "set_n()" << std::endl;
+        sr_write(SR_N, boost::uint16_t(n));
     } /* set_n() */
 
-    boost::uint16_t get_n() const
+    int get_n() const
     {
-        return _n;
+        return _tree->access<int>(_root_path / "args" / "n" / "value").get();
     } /* get_n() */
 
-protected:
-    void _post_args_hook()
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "_post_args_hook()" << std::endl;
-
-        if (_args.has_key("n")) {
-            boost::uint16_t req_n = _args.cast<boost::uint16_t>("n", _n);
-            if (req_n != _n) {
-                set_n(req_n);
-            }
-        }
-    }
-
-private:
-    const std::string _item_type;
-    //! Bytes per item (bytes per sample)
-    const size_t _bpi;
-    boost::uint16_t _n;
 };
 
 UHD_RFNOC_BLOCK_REGISTER(keep_one_in_n_block_ctrl, "KeepOneInN");

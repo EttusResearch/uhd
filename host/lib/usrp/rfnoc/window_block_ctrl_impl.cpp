@@ -26,14 +26,14 @@ class window_block_ctrl_impl : public window_block_ctrl
 public:
     UHD_RFNOC_BLOCK_CONSTRUCTOR(window_block_ctrl),
         _item_type("sc16"), // We only support sc16 in this block
-        _bpi(uhd::convert::get_bytes_per_item("sc16")),
-        _window_len(DEFAULT_WINDOW_LEN)
+        _bpi(uhd::convert::get_bytes_per_item("sc16"))
     {
         _max_len = boost::uint32_t(user_reg_read64(RB_MAX_WINDOW_LEN));
         UHD_MSG(status) << "window_block::window_block() max_len ==" << _max_len << std::endl;
         UHD_ASSERT_THROW(_max_len);
 
-        _set_default_window(_window_len);
+        // TODO we need a coercer to check that spp on the prop tree doesn't get set to anything invalid
+        _set_default_window(get_arg<int>("spp"));
     }
 
     //! Set window coefficients and length
@@ -47,12 +47,12 @@ public:
             ));
         }
 
-        _window_len = coeffs.size();
+        size_t window_len = coeffs.size();
 
         // Window block can take complex coefficients in sc16 format, but typical usage is
         // to have real(coeffs) == imag(coeffs)
         std::vector<boost::uint32_t> coeffs_;
-        for (size_t i = 0; i < _window_len - 1; i++) {
+        for (size_t i = 0; i < window_len - 1; i++) {
             if (coeffs[i] > 32767 || coeffs[i] < -32768) {
                 throw uhd::value_error(str(
                     boost::format("window_block::set_window(): Coefficient %d (index %d) outside coefficient range [-32768,32767].\n")
@@ -62,21 +62,21 @@ public:
         }
 
         // Write coefficients via the load bus
-        for (size_t i = 0; i < _window_len - 1; i++) {
+        for (size_t i = 0; i < window_len - 1; i++) {
             sr_write(AXIS_WINDOW_LOAD, coeffs_[i]);
         }
         // Assert tlast when sending the final coefficient (sorry, no joke here)
         sr_write(AXIS_WINDOW_LOAD_TLAST, coeffs_.back());
         // Set the window length
-        sr_write(SR_WINDOW_LEN, _window_len);
+        sr_write(SR_WINDOW_LEN, window_len);
 
         // This block requires spp to match the window length:
-        _args["spp"] = str(boost::format("%s") % _window_len);
+        set_arg<int>("spp", int(window_len));
         // Set stream signatures
         stream_sig_t stream_sig(
                 _item_type,
-                _window_len, // Vector length equals window size
-                _window_len * _bpi,
+                window_len, // Vector length equals window size
+                window_len * _bpi,
                 false
         );
         // The stream signature is identical on input & output
@@ -92,64 +92,11 @@ public:
 
     size_t get_window_len() const
     {
-        return _window_len;
+        return size_t(get_arg<int>("spp"));
     }
 
-    bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "window_block::set_input_signature()" << std::endl;
-        UHD_ASSERT_THROW(port == 0);
-        //if (stream_sig.get_item_type() != _item_type
-            ////or (stream_sig.packet_size != 0 and stream_sig.packet_size != _window_len * _bpi) FIXME put this back in
-            //or (stream_sig.vlen != 0 and stream_sig.vlen != _window_len)) {
-            //UHD_MSG(status) << "not valid." << std::endl;
-            //return false;
-        //}
-
-        return true;
-    }
-
-    bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "window_block::set_output_signature()" << std::endl;
-        UHD_ASSERT_THROW(port == 0);
-        //if (stream_sig.get_item_type() != _item_type
-            ////or (stream_sig.packet_size != 0 and stream_sig.packet_size != _window_len * _bpi) FIXME put this back in
-            //or (stream_sig.vlen != 0 and stream_sig.vlen != _window_len)) {
-            //return false;
-        //}
-
-        return true;
-    }
 
 protected:
-    //! Checks the args \p window_len and \p spp are OK.
-    //
-    // If \p window_len is given, this will actually change the length
-    // of the window.
-    //
-    // If \p spp is given, it must match the window length, or we throw.
-    //
-    // If both are given, window_len is evaluated first.
-    void _post_args_hook()
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "window_block::_post_args_hook()" << std::endl;
-        size_t window_len = _args.cast<int>("window_len", _window_len);
-        if (window_len != _window_len) {
-            UHD_RFNOC_BLOCK_TRACE() << "window_block::_post_args_hook(): Updating window length." << std::endl;
-            // This sets _window_len:
-            _set_default_window(window_len);
-        }
-
-        size_t spp = _args.cast<size_t>("spp", _window_len);
-        if (spp != _window_len) {
-            throw uhd::value_error(str(
-                boost::format("In the window block, spp cannot differ from the window length (upstream block requested spp == %d, we have window_len = %d)")
-                % spp % _window_len
-            ));
-        }
-    }
-
     //! Check otw_format is valid
     void _init_rx(uhd::stream_args_t &args)
     {

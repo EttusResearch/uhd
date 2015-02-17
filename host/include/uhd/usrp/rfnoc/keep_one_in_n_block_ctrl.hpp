@@ -35,7 +35,6 @@ class UHD_API keep_one_in_n_block_ctrl : public source_block_ctrl_base, public s
 public:
     UHD_RFNOC_BLOCK_OBJECT(keep_one_in_n_block_ctrl)
 
-    static const size_t DEFAULT_N               = 256;
     static const boost::uint32_t SR_N           = 129;
 
     //! Configure N
@@ -43,13 +42,13 @@ public:
     // This function sets N, which configures the block to
     // drop all but one packet in N consecutive packets.
     // Packet counter in block is 16-bits.
-    virtual void set_n(boost::uint16_t n) = 0;
+    virtual void set_n(int n) = 0;
 
     //! Returns the currently selected FFT size.
     //
     // You can use this after calling set_n() to see what
     // the set value.
-    virtual boost::uint16_t get_n() const = 0;
+    virtual int get_n() const = 0;
 }; /* class keep_one_in_n_block_ctrl*/
 
 }} /* namespace uhd::rfnoc */

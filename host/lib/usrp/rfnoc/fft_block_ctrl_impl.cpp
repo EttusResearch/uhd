@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 #include <uhd/usrp/rfnoc/fft_block_ctrl.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/utils/msg.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -26,14 +28,8 @@ class fft_block_ctrl_impl : public fft_block_ctrl
 public:
     UHD_RFNOC_BLOCK_CONSTRUCTOR(fft_block_ctrl),
         _item_type("sc16"), // We only support sc16 in this block
-        _bpi(uhd::convert::get_bytes_per_item("sc16")),
-        _fft_size(DEFAULT_FFT_SIZE),
-        _magnitude_out(DEFAULT_MAGNITUDE_OUT)
+        _bpi(uhd::convert::get_bytes_per_item("sc16"))
     {
-
-        // TODO: Read the default initial FFT size from the block definition
-        // TODO: Register the FFT size into the property tree
-
         // TODO: Remove this reset. Currently used as a workaround due to deal
         //       with the fact the FFT can receive packets that are not
         //       fft_size and can put the FFT core in a bad state that is only
@@ -42,15 +38,24 @@ public:
         _fft_reset = get_fft_reset();
         UHD_ASSERT_THROW(_fft_reset == false);
 
-        set_magnitude_out(_magnitude_out);
-        magnitude_t actual_magnitude_out = get_magnitude_out();
+        // Register hooks for magnitude out
+        _tree->access<std::string>(_root_path / "args" / "magnitude_out" / "value")
+            .subscribe(boost::bind(&fft_block_ctrl_impl::set_magnitude_out_str, this, _1))
+            .update()
+        ;
         // FFT RFNoC block can be configured to have magnitude output logic not
         // synthesized forcing the magnitude out register to always be 0 regardless if
-        // it is set.
-        UHD_ASSERT_THROW(_magnitude_out == actual_magnitude_out);
+        // it is set. So, check it's all fine by reading back the register value:
+        magnitude_t actual_magnitude_out = get_magnitude_out();
+        magnitude_t my_magnitude_out = str_to_mag(get_arg("magnitude_out"));
+        UHD_ASSERT_THROW(my_magnitude_out == actual_magnitude_out);
 
+        // Register hooks for spp:
         // This also sets the stream signatures:
-        set_fft_size(_fft_size);
+        _tree->access<int>(_root_path / "args" / "spp" / "value")
+            .subscribe(boost::bind(&fft_block_ctrl_impl::set_fft_size, this, _1))
+            .update()
+        ;
     }
 
     void reset_fft()
@@ -69,10 +74,11 @@ public:
         return(user_reg_read64(RB_FFT_RESET) != 0);
     }
 
-    void set_fft_size(size_t fft_size)
+    void set_fft_size(int fft_size)
     {
+        UHD_RFNOC_BLOCK_TRACE() << "fft_block::set_fft_size()" << std::endl;
         //// 1. Sanity checks
-        const size_t requested_fft_size = fft_size;
+        const size_t requested_fft_size = size_t(fft_size);
         // Check fft_size is within bounds
         if (fft_size < 16 or fft_size > 4096) {
             // TODO read this bounds from the prop tree (block def)
@@ -93,15 +99,16 @@ public:
         // TODO FFT scaling set conservatively (1/N), need method to allow user to set
         sr_write(AXIS_CONFIG_BUS, (0x6AA << 9) + (0 << 8) + log2_fft_size);
         sr_write(SR_FFT_SIZE_LOG2, log2_fft_size);
-        _fft_size = requested_fft_size;
 
         //// 3. Set stream signatures
         stream_sig_t stream_sig(
                 _item_type,
-                _fft_size, // Vector length equals FFT size
-                _fft_size * _bpi,
+                requested_fft_size, // Vector length equals FFT size
+                requested_fft_size * _bpi,
                 false
         );
+
+        UHD_RFNOC_BLOCK_TRACE() << "Setting stream sig to: " << stream_sig.to_string() << std::endl;
         // The stream signature is identical on input & output
         _tree->access<stream_sig_t>(_root_path / "input_sig/0").set(stream_sig);
         _tree->access<stream_sig_t>(_root_path / "output_sig/0").set(stream_sig);
@@ -109,13 +116,17 @@ public:
 
     size_t get_fft_size() const
     {
-        return _fft_size;
+        return size_t(get_arg<int>("spp"));
+    }
+
+    void set_magnitude_out_str(const std::string &magnitude_out)
+    {
+        set_magnitude_out(str_to_mag(magnitude_out));
     }
 
     void set_magnitude_out(magnitude_t magnitude_out)
     {
-        sr_write(SR_MAGNITUDE_OUT,magnitude_out);
-        _magnitude_out = magnitude_out;
+        sr_write(SR_MAGNITUDE_OUT, magnitude_out);
     } /* set_magnitude_out() */
 
     magnitude_t get_magnitude_out()
@@ -123,59 +134,7 @@ public:
         return (static_cast<magnitude_t>(user_reg_read64(RB_MAGNITUDE_OUT)));
     }
 
-    bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "fft_block::set_input_signature()" << std::endl;
-        UHD_ASSERT_THROW(port == 0);
-        //if (stream_sig.get_item_type() != _item_type
-            ////or (stream_sig.packet_size != 0 and stream_sig.packet_size != _fft_size * _bpi) FIXME put this back in
-            //or (stream_sig.vlen != 0 and stream_sig.vlen != _fft_size)) {
-            //UHD_MSG(status) << "not valid." << std::endl;
-            //return false;
-        //}
-
-        return true;
-    }
-
-    bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "fft_block::set_output_signature()" << std::endl;
-        UHD_ASSERT_THROW(port == 0);
-        //if (stream_sig.get_item_type() != _item_type
-            ////or (stream_sig.packet_size != 0 and stream_sig.packet_size != _fft_size * _bpi) FIXME put this back in
-            //or (stream_sig.vlen != 0 and stream_sig.vlen != _fft_size)) {
-            //return false;
-        //}
-
-        return true;
-    }
-
 protected:
-    void _post_args_hook()
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "_post_args_hook()" << std::endl;
-        if (_args.has_key("fftsize")) {
-            size_t req_fft_size = _args.cast<size_t>("fftsize", _fft_size);
-            if (req_fft_size != _fft_size) {
-                set_fft_size(req_fft_size);
-            }
-        }
-
-        if (_args.has_key("magnitude_out")) {
-            magnitude_t req_magnitude_out = static_cast<magnitude_t>(_args.cast<size_t>("magnitude_out", _magnitude_out));
-            if (req_magnitude_out != _magnitude_out) {
-                set_magnitude_out(req_magnitude_out);
-            }
-        }
-
-        if (_args.has_key("spp")) {
-            size_t spp = _args.cast<size_t>("spp", _fft_size);
-            if (spp != _fft_size) {
-                throw uhd::value_error("In the FFT block, spp cannot differ from the FFT size.");
-            }
-        }
-    }
-
     void _init_rx(uhd::stream_args_t &args)
     {
         UHD_RFNOC_BLOCK_TRACE() << "fft_block::_init_rx()" << std::endl;
@@ -186,10 +145,10 @@ protected:
         // If it's not the FFT size, throw. Otherwise, tell the upstream
         // block about what spp we need.
         if (not args.args.has_key("spp")) {
-            args.args["spp"] = str(boost::format("%d") % _fft_size);
+            args.args["spp"] = str(boost::format("%d") % get_fft_size());
         } else {
-            size_t req_spp = args.args.cast<size_t>("spp", _fft_size);
-            if (req_spp != _fft_size) {
+            size_t req_spp = args.args.cast<size_t>("spp", get_fft_size());
+            if (req_spp != get_fft_size()) {
                 throw uhd::value_error("In the FFT block, spp cannot differ from the FFT size (downstream block requested other spp value)");
             }
         }
@@ -205,22 +164,46 @@ protected:
         // If it's not the FFT size, throw. Otherwise, tell the downstream
         // block about what spp we need.
         if (not args.args.has_key("spp")) {
-            args.args["spp"] = str(boost::format("%d") % _fft_size);
+            args.args["spp"] = str(boost::format("%d") % get_fft_size());
         } else {
-            size_t req_spp = args.args.cast<size_t>("spp", _fft_size);
-            if (req_spp != _fft_size) {
+            size_t req_spp = args.args.cast<size_t>("spp", get_fft_size());
+            if (req_spp != get_fft_size()) {
                 throw uhd::value_error("In the FFT block, spp cannot differ from the FFT size (downstream block requested other spp value)");
             }
         }
     }
 
 private:
+    magnitude_t str_to_mag(const std::string &magnitude_out)
+    {
+        // Try int version:
+        try {
+            size_t mag_out = boost::lexical_cast<size_t>(magnitude_out);
+            if (mag_out <= 2) {
+                return static_cast<magnitude_t>(mag_out);
+            }
+        } catch (const boost::bad_lexical_cast &e) {
+            // OK, that didn't work
+        }
+
+        // Try string version:
+        std::string mag_out_upper = boost::to_upper_copy(magnitude_out);
+        if (mag_out_upper == "COMPLEX") {
+            return COMPLEX;
+        } else if (mag_out_upper == "MAGNITUDE") {
+            return MAGNITUDE;
+        } else if (mag_out_upper == "MAGNITUDE_SQUARED") {
+            return MAGNITUDE_SQUARED;
+        }
+
+        throw uhd::runtime_error("Invalid magnitude_out value.");
+        return COMPLEX;
+    }
+
     const std::string _item_type;
     //! Bytes per item (bytes per sample)
     const size_t _bpi;
-    size_t _fft_size;
     bool _fft_reset;
-    magnitude_t _magnitude_out;
 };
 
 UHD_RFNOC_BLOCK_REGISTER(fft_block_ctrl, "FFT");

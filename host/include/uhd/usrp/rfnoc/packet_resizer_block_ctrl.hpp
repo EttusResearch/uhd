@@ -34,15 +34,14 @@ class UHD_API packet_resizer_block_ctrl : public source_block_ctrl_base, public 
 public:
     UHD_RFNOC_BLOCK_OBJECT(packet_resizer_block_ctrl)
 
-    static const boost::uint16_t DEFAULT_PKT_SIZE  = 32;
     // Settings bus address for packet size
     static const boost::uint32_t SR_PKT_SIZE       = 129;
 
     //! Set the output packet size
-    virtual void set_packet_size(const boost::uint16_t pkt_size) = 0;
+    virtual void set_packet_size(const int pkt_size) = 0;
 
     //! Get the output packet size
-    virtual boost::uint16_t get_packet_size() = 0;
+    virtual int get_packet_size() = 0;
 
 }; /* class packet_resizer_block_ctrl*/
 
