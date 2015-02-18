@@ -29,18 +29,20 @@ using namespace uhd::rfnoc;
 class radio_ctrl_impl : public radio_ctrl
 {
 public:
-    UHD_RFNOC_BLOCK_CONSTRUCTOR(radio_ctrl)
+    UHD_RFNOC_BLOCK_CONSTRUCTOR(radio_ctrl),
+        _dboard_type(DBOARD_TYPE_UNKNOWN)
     {
         //// RX Streamer args
         // CPU format doesn't really matter, just init it to something
         _rx_stream_args = uhd::stream_args_t("fc32", "sc16");
+        _tx_stream_args = uhd::stream_args_t("fc32", "sc16");
         _rx_bpi = uhd::convert::get_bytes_per_item(_rx_stream_args.otw_format);
         // Default: 1 Channel
         _rx_stream_args.channels = std::vector<size_t>(1, 0);
         // SPP is stored for calls to set_output_signature() etc.
         //_rx_spp = get_output_signature(0).packet_size / _rx_bpi;
         //if (_rx_spp == 0) {
-            _rx_spp = DEFAULT_PACKET_SIZE / _rx_bpi;
+            int _rx_spp = DEFAULT_PACKET_SIZE / _rx_bpi;
         //}
         UHD_MSG(status) << "radio_ctrl::radio_ctrl() _rx_spp==" << _rx_spp << std::endl;
 
@@ -65,7 +67,13 @@ public:
         _tree->create<bool>(_root_path / "tx_active").set(false);
         _tree->create<bool>(_root_path / "rx_active").set(false);
 
-        _dboard_type = DBOARD_TYPE_UNKNOWN;
+        // TODO These should come from an XML file:
+        fs_path spp_arg_path = _root_path / "args" / "spp";
+        _tree->create<std::string>(spp_arg_path / "type").set("int");
+        _tree->create<int>(spp_arg_path / "value").set(_rx_spp)
+            .subscribe(boost::bind(&radio_ctrl_impl::_update_spp, this, _1))
+        ;
+        // TODO add tx_args so we can set underflow_policy
     }
 
     /***********************************************************************
@@ -108,14 +116,9 @@ public:
         if (out_sig_.packet_size % _rx_bpi) {
             return false;
         }
-        if (out_sig_.packet_size == 0) {
-            return false;
-        }
 
         if (source_block_ctrl_base::set_output_signature(out_sig, block_port)) {
-            _rx_spp = out_sig_.packet_size / _rx_bpi;
-            UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::set_output_signature(): Setting spp to " << _rx_spp << std::endl;
-            _perifs.framer->set_nsamps_per_packet(_rx_spp);
+            set_arg<int>("spp", int(out_sig_.packet_size / _rx_bpi));
             return true;
         }
 
@@ -303,22 +306,12 @@ protected:
         if (args.otw_format != "sc16") {
             throw uhd::value_error("this radio only supports otw_format sc16");
         }
-        // Set spp, if applicable
-        if (not args.args.has_key("spp")) {
-            args.args["spp"] = str(boost::format("%d") % _rx_spp);
-        } else {
-            _rx_spp = args.args.cast<size_t>("spp", _rx_spp);
-        }
-        stream_sig_t new_stream_sig = get_output_signature();
-        new_stream_sig.packet_size = _rx_spp * _rx_bpi;
-        if (not set_output_signature(new_stream_sig, 0)) {
-            throw uhd::value_error("radio_ctrl::init_rx(): Invalid spp value.");
-        }
 
         update_muxes(uhd::RX_DIRECTION);
 
-        _perifs.framer->setup(args);
-        _perifs.ddc->setup(args);
+        _perifs.framer->setup(_rx_stream_args);
+        // Cares about otw_format, 'peak' and 'fullscale'
+        _perifs.ddc->setup(_rx_stream_args);
 
         _tree->access<bool>(_root_path / "rx_active").set(true);
     }
@@ -335,8 +328,10 @@ protected:
 
         update_muxes(uhd::TX_DIRECTION);
 
-        _perifs.deframer->setup(args);
-        _perifs.duc->setup(args);
+        // Cares about 'underflow_policy'
+        _perifs.deframer->setup(_tx_stream_args);
+        // Cares about otw_format, 'peak' and 'fullscale'
+        _perifs.duc->setup(_tx_stream_args);
 
         _tree->access<bool>(_root_path / "tx_active").set(true);
         return;
@@ -354,6 +349,17 @@ protected:
         return true;
     }
 
+    void _update_spp(int spp)
+    {
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::_update_spp(): Requested spp: " << spp << std::endl;
+        if (spp == 0) {
+            spp = DEFAULT_PACKET_SIZE / _rx_bpi;
+        }
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::_update_spp(): Setting spp to: " << spp << std::endl;
+        if (_perifs.framer)
+            _perifs.framer->set_nsamps_per_packet(size_t(spp));
+    }
+
 private:
 
     //! Stores pointers to all streaming-related radio cores
@@ -369,9 +375,9 @@ private:
     } _perifs;
 
     uhd::stream_args_t _rx_stream_args;
+    uhd::stream_args_t _tx_stream_args;
     //! Bytes per item
     size_t _rx_bpi;
-    size_t _rx_spp;
 
     dboard_type_t _dboard_type;
 };
