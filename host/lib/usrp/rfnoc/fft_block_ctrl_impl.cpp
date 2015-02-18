@@ -134,45 +134,6 @@ public:
         return (static_cast<magnitude_t>(user_reg_read64(RB_MAGNITUDE_OUT)));
     }
 
-protected:
-    void _init_rx(uhd::stream_args_t &args)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "fft_block::_init_rx()" << std::endl;
-        if (args.otw_format != "sc16") {
-            throw uhd::value_error("FFT only supports otw_format sc16");
-        }
-        // Check if the downstream block wants a specific spp.
-        // If it's not the FFT size, throw. Otherwise, tell the upstream
-        // block about what spp we need.
-        if (not args.args.has_key("spp")) {
-            args.args["spp"] = str(boost::format("%d") % get_fft_size());
-        } else {
-            size_t req_spp = args.args.cast<size_t>("spp", get_fft_size());
-            if (req_spp != get_fft_size()) {
-                throw uhd::value_error("In the FFT block, spp cannot differ from the FFT size (downstream block requested other spp value)");
-            }
-        }
-    }
-
-    void _init_tx(uhd::stream_args_t &args)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "fft_block::_init_tx()" << std::endl;
-        if (args.otw_format != "sc16") {
-            throw uhd::value_error("FFT only supports otw_format sc16");
-        }
-        // Check if the upstream block wants a specific spp.
-        // If it's not the FFT size, throw. Otherwise, tell the downstream
-        // block about what spp we need.
-        if (not args.args.has_key("spp")) {
-            args.args["spp"] = str(boost::format("%d") % get_fft_size());
-        } else {
-            size_t req_spp = args.args.cast<size_t>("spp", get_fft_size());
-            if (req_spp != get_fft_size()) {
-                throw uhd::value_error("In the FFT block, spp cannot differ from the FFT size (downstream block requested other spp value)");
-            }
-        }
-    }
-
 private:
     magnitude_t str_to_mag(const std::string &magnitude_out)
     {

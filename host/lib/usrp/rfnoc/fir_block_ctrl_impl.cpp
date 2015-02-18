@@ -73,23 +73,6 @@ public:
         return _n_taps;
     }
 
-protected:
-    void _init_rx(uhd::stream_args_t &args)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "fir_block::_init_rx()" << std::endl;
-        if (args.otw_format != "sc16") {
-            throw uhd::value_error("FIR only supports otw_format sc16");
-        }
-    }
-
-    void _init_tx(uhd::stream_args_t &args)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "fir_block::_init_tx()" << std::endl;
-        if (args.otw_format != "sc16") {
-            throw uhd::value_error("FIR only supports otw_format sc16");
-        }
-    }
-
 private:
     const std::string _item_type;
     size_t _n_taps;

@@ -96,25 +96,6 @@ public:
     }
 
 
-protected:
-    //! Check otw_format is valid
-    void _init_rx(uhd::stream_args_t &args)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "window_block::_init_rx()" << std::endl;
-        if (args.otw_format != "sc16") {
-            throw uhd::value_error("Window only supports otw_format sc16");
-        }
-    }
-
-    //! Check otw_format is valid
-    void _init_tx(uhd::stream_args_t &args)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "window_block::_init_tx()" << std::endl;
-        if (args.otw_format != "sc16") {
-            throw uhd::value_error("Window only supports otw_format sc16");
-        }
-    }
-
 private:
     const std::string _item_type;
     const size_t _bpi;
