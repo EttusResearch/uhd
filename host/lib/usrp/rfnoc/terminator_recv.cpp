@@ -16,6 +16,8 @@
 //
 
 #include "terminator_recv.hpp"
+#include <uhd/utils/msg.hpp>
+#include <uhd/usrp/rfnoc/source_node_ctrl.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd::rfnoc;
@@ -34,3 +36,28 @@ std::string terminator_recv::unique_id() const
 {
     return str(boost::format("RX Terminator %d") % _term_index);
 }
+
+void terminator_recv::set_tx_streamer(bool)
+{
+    /* nop */
+}
+
+void terminator_recv::set_rx_streamer(bool active)
+{
+    // TODO this is identical to source_node_ctrl::set_rx_streamer() -> factor out
+    UHD_MSG(status) << "[" << unique_id() << "] terminator_recv::set_rx_streamer() " << active << std::endl;
+    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
+        source_node_ctrl::sptr curr_upstream_block_ctrl =
+            boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
+        if (curr_upstream_block_ctrl) {
+            curr_upstream_block_ctrl->set_rx_streamer(active);
+        }
+    }
+}
+
+terminator_recv::~terminator_recv()
+{
+    UHD_MSG(status) << "[" << unique_id() << "] terminator_recv::~terminator_recv() " << std::endl;
+    set_rx_streamer(false);
+}
+

@@ -39,16 +39,6 @@ public:
     typedef boost::shared_ptr<sink_block_ctrl_base> sptr;
 
     /***********************************************************************
-     * Streaming operations
-     **********************************************************************/
-    /*! Set stream args and SID before opening a TX streamer to this block.
-     *
-     * This is called by the streamer generators. Note this is *not* virtual.
-     * To change which settings are set during rx configuration, override _init_tx().
-     */
-    void setup_tx_streamer(uhd::stream_args_t &args);
-
-    /***********************************************************************
      * Stream signatures
      **********************************************************************/
     /*! Return the input stream signature for a given block port.
@@ -118,16 +108,6 @@ protected:
     /***********************************************************************
      * Hooks
      **********************************************************************/
-    /*! Before any kind of streaming operation, this will be automatically
-     * called to configure the block. Override this to set any tx specific
-     * registers etc.
-     *
-     * Note: \p args may be changed in this function. In a chained operation,
-     * the modified value of \p args will be propagated upstream.
-     */
-    virtual void _init_tx(uhd::stream_args_t &) { /* nop */ };
-
-
     /*! Like sink_node_ctrl::_request_input_port(), but also checks
      * the port has an input signature.
      */

@@ -16,6 +16,7 @@
 //
 
 #include "utils.hpp"
+#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/rfnoc/source_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/sink_node_ctrl.hpp>
 
@@ -30,6 +31,19 @@ size_t source_node_ctrl::connect_downstream(
     port = _request_output_port(port, args);
     _register_downstream_node(downstream_node, port);
     return port;
+}
+
+void source_node_ctrl::set_rx_streamer(bool active)
+{
+    UHD_MSG(status) << "[" << unique_id() << "] source_node_ctrl::set_rx_streamer() " << active << std::endl;
+
+    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
+        sptr curr_upstream_block_ctrl =
+            boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
+        if (curr_upstream_block_ctrl) {
+            curr_upstream_block_ctrl->set_rx_streamer(active);
+        }
+    }
 }
 
 size_t source_node_ctrl::_request_output_port(

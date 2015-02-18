@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 
 #include "terminator_send.hpp"
 #include <boost/format.hpp>
+#include <uhd/usrp/rfnoc/sink_node_ctrl.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -34,3 +35,28 @@ std::string terminator_send::unique_id() const
 {
     return str(boost::format("TX Terminator %d") % _term_index);
 }
+
+void terminator_send::set_rx_streamer(bool)
+{
+    /* nop */
+}
+
+void terminator_send::set_tx_streamer(bool active)
+{
+    // TODO this is identical to sink_node_ctrl::set_tx_streamer() -> factor out
+    UHD_MSG(status) << "[" << unique_id() << "] terminator_send::set_tx_streamer() " << active << std::endl;
+    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t downstream_node, _downstream_nodes) {
+        sink_node_ctrl::sptr curr_downstream_block_ctrl =
+            boost::dynamic_pointer_cast<sink_node_ctrl>(downstream_node.second.lock());
+        if (curr_downstream_block_ctrl) {
+            curr_downstream_block_ctrl->set_tx_streamer(active);
+        }
+    }
+}
+
+terminator_send::~terminator_send()
+{
+    UHD_MSG(status) << "[" << unique_id() << "] terminator_send::~terminator_send() " << std::endl;
+    set_tx_streamer(false);
+}
+

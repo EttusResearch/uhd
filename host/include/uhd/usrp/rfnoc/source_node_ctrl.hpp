@@ -69,6 +69,14 @@ public:
             const uhd::device_addr_t &args=uhd::device_addr_t()
     );
 
+    /*! Call this function to notify a node about its streamer activity.
+     *
+     * When \p active is set to true, this means this block is now part of
+     * an active rx streamer chain. Conversely, when set to false, this means
+     * the node has been removed from an rx streamer chain.
+     */
+    virtual void set_rx_streamer(bool active);
+
 protected:
 
     /*! If this function returns true, rx-specific settings (such as rx streamer

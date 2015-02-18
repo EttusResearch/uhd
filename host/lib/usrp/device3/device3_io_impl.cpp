@@ -459,6 +459,9 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl =
             boost::dynamic_pointer_cast<uhd::rfnoc::source_block_ctrl_base>(get_block_ctrl(block_id));
 
+        // Check if the block connection is compatible (spp and item type)
+        // FIXME
+
         // Connect the terminator with this channel's block.
         size_t block_port = blk_ctrl->connect_downstream(
                 recv_terminator,
@@ -476,8 +479,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         both_xports_t xport = make_transport(stream_address, RX_DATA, rx_hints);
         UHD_MSG(status) << std::hex << "[RX Streamer] data_sid = " << xport.send_sid << std::dec << " actual recv_buff_size = " << xport.recv_buff_size << std::endl;
 
-        // Configure the block (this may change args.args)
-        blk_ctrl->setup_rx_streamer(args);
+        // Configure the block
         blk_ctrl->set_destination(xport.send_sid.get_src(), block_port);
 
         // To calculate the max number of samples per packet, we assume the maximum header length
@@ -568,6 +570,9 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
     // Connect the terminator to the streamer
     my_streamer->set_terminator(recv_terminator);
 
+    // Notify all blocks in this chain that they are connected to an active streamer
+    recv_terminator->set_rx_streamer(true);
+
     // Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency.
     // Note that we store the streamer only once, and use its terminator's
     // ID to do so.
@@ -643,6 +648,9 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         uhd::rfnoc::sink_block_ctrl_base::sptr blk_ctrl =
             boost::dynamic_pointer_cast<uhd::rfnoc::sink_block_ctrl_base>(get_block_ctrl(block_id));
 
+        // Check if the block connection is compatible (spp and item type)
+        // FIXME
+
         // Connect the terminator with this channel's block.
         // This will throw if the connection is not possible.
         size_t block_port = blk_ctrl->connect_upstream(
@@ -660,9 +668,6 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         UHD_MSG(status) << "[TX Streamer] creating tx stream " << tx_hints.to_string() << std::endl;
         both_xports_t xport = make_transport(stream_address, TX_DATA, tx_hints);
         UHD_MSG(status) << std::hex << "[TX Streamer] data_sid = " << xport.send_sid << std::dec << std::endl;
-
-        // Configure the block (this may change args)
-        blk_ctrl->setup_tx_streamer(args);
 
         // To calculate the max number of samples per packet, we assume the maximum header length
         // to avoid fragmentation should the entire header be used.
@@ -750,6 +755,10 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
     // Connect the terminator to the streamer
     my_streamer->set_terminator(send_terminator);
+
+    // Notify all blocks in this chain that they are connected to an active streamer
+    send_terminator->set_tx_streamer(true);
+
     // Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency.
     // Note that we store the streamer only once, and use its terminator's
     // ID to do so.

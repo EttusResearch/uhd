@@ -54,6 +54,12 @@ public:
 
     std::string unique_id() const;
 
+    void set_rx_streamer(bool active);
+
+    void set_tx_streamer(bool active);
+
+    virtual ~terminator_recv();
+
 protected:
     terminator_recv();
 

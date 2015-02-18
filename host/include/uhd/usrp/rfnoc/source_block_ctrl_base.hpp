@@ -63,13 +63,6 @@ public:
      */
     virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
 
-    /*! Set stream args and SID before opening an RX streamer to this block.
-     *
-     * This is called by the streamer generators. Note this is *not* virtual.
-     * To change which settings are set during rx configuration, override init_rx().
-     */
-    void setup_rx_streamer(uhd::stream_args_t &args);
-
     /*! If an overrun ("O") is received, this function is called to straighten
      * things out, if necessary.
      */
@@ -135,15 +128,6 @@ protected:
     /***********************************************************************
      * Hooks
      **********************************************************************/
-    /*! Before any kind of streaming operation, this will be automatically
-     * called to configure the block. Override this to set any rx specific
-     * registers etc.
-     *
-     * Note: \p args may be changed in this function. In a chained operation,
-     * the modified value of \p args will be propagated upstream.
-     */
-    virtual void _init_rx(uhd::stream_args_t &) { /* nop */ };
-
     /*! Like source_node_ctrl::_request_output_port(), but also checks if
      * the port has an output signature.
      */

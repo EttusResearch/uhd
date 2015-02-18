@@ -306,32 +306,16 @@ public:
     }
 
 protected:
-    /***********************************************************************
-     * Hooks
-     **********************************************************************/
-    //! Configures framer and ddc
-    void _init_rx(uhd::stream_args_t &args)
+    void set_rx_streamer(bool active)
     {
-        UHD_MSG(status) << "radio_ctrl::init_rx()" << std::endl;
-        if (args.otw_format != "sc16") {
-            throw uhd::value_error("this radio only supports otw_format sc16");
-        }
-
-        _tree->access<bool>(_root_path / "rx_active").set(true);
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::set_rx_streamer() " << active << std::endl;
+        _tree->access<bool>(_root_path / "rx_active").set(active);
     }
 
-    //! Configures deframer and duc
-    void _init_tx(uhd::stream_args_t &args)
+    void set_tx_streamer(bool active)
     {
-        UHD_RFNOC_BLOCK_TRACE()
-            << "radio_ctrl::_init_tx()"
-            << args.args.to_string() << " "
-            << args.otw_format << " "
-            << args.cpu_format << " "
-            << std::endl;
-
-        _tree->access<bool>(_root_path / "tx_active").set(true);
-        return;
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::set_tx_streamer() " << active << std::endl;
+        _tree->access<bool>(_root_path / "tx_active").set(active);
     }
 
     bool _is_final_rx_block()
