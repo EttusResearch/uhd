@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -68,12 +68,21 @@ public:
         _tree->create<bool>(_root_path / "rx_active").set(false);
 
         // TODO These should come from an XML file:
-        fs_path spp_arg_path = _root_path / "args" / "spp";
-        _tree->create<std::string>(spp_arg_path / "type").set("int");
-        _tree->create<int>(spp_arg_path / "value").set(_rx_spp)
+        fs_path arg_path = _root_path / "args";
+        // spp:
+        _tree->create<std::string>(arg_path / "spp" / "type").set("int");
+        _tree->create<int>(arg_path / "spp" / "value").set(_rx_spp)
             .subscribe(boost::bind(&radio_ctrl_impl::_update_spp, this, _1))
         ;
-        // TODO add tx_args so we can set underflow_policy
+        // rx args:
+        _tree->create<std::string>(arg_path / "rx_args" / "type").set("string");
+        _tree->create<std::string>(arg_path / "rx_args" / "value").set("")
+            .subscribe(boost::bind(&radio_ctrl_impl::_update_rx_args, this, _1))
+        ;
+        _tree->create<std::string>(arg_path / "tx_args" / "type").set("string");
+        _tree->create<std::string>(arg_path / "tx_args" / "value").set("")
+            .subscribe(boost::bind(&radio_ctrl_impl::_update_tx_args, this, _1))
+        ;
     }
 
     /***********************************************************************
@@ -245,6 +254,11 @@ public:
         _perifs.duc = duc;
         _perifs.rx_fe = rx_fe;
         _perifs.tx_fe = tx_fe;
+
+        // Now we can access the perifs, update their settings:
+        _tree->access<int>(_root_path / "args" / "spp" / "value").update();
+        _tree->access<int>(_root_path / "args" / "rx_args" / "value").update();
+        _tree->access<int>(_root_path / "args" / "tx_args" / "value").update();
     }
 
     void set_dboard_type(dboard_type_t type)
@@ -259,18 +273,14 @@ public:
         // 1) Figure out dboard and frontend name
         std::string db, fe;
         std::string fe_path = (dir == TX_DIRECTION) ? "tx_frontends" : "rx_frontends";
+        device_addr_t args = (dir == TX_DIRECTION) ? _tx_stream_args.args : _rx_stream_args.args;
         switch (_dboard_type) {
             case DBOARD_TYPE_UNKNOWN:
                 return;
 
             case DBOARD_TYPE_SLOT:
                 db = (get_block_id().get_block_count() == 0) ? "A" : "B";
-                // TODO: This key might be stored elsewhere too, e.g. in the stream args
-                if (_args.has_key("frontend")) {
-                    fe = _args["frontend"];
-                } else {
-                    fe = _tree->list("dboards" / db / fe_path).at(0);
-                }
+                fe = args.cast<std::string>("frontend", _tree->list("dboards" / db / fe_path).at(0));
                 break;
 
             case DBOARD_TYPE_AD9361:
@@ -307,12 +317,6 @@ protected:
             throw uhd::value_error("this radio only supports otw_format sc16");
         }
 
-        update_muxes(uhd::RX_DIRECTION);
-
-        _perifs.framer->setup(_rx_stream_args);
-        // Cares about otw_format, 'peak' and 'fullscale'
-        _perifs.ddc->setup(_rx_stream_args);
-
         _tree->access<bool>(_root_path / "rx_active").set(true);
     }
 
@@ -325,13 +329,6 @@ protected:
             << args.otw_format << " "
             << args.cpu_format << " "
             << std::endl;
-
-        update_muxes(uhd::TX_DIRECTION);
-
-        // Cares about 'underflow_policy'
-        _perifs.deframer->setup(_tx_stream_args);
-        // Cares about otw_format, 'peak' and 'fullscale'
-        _perifs.duc->setup(_tx_stream_args);
 
         _tree->access<bool>(_root_path / "tx_active").set(true);
         return;
@@ -349,6 +346,8 @@ protected:
         return true;
     }
 
+private:
+
     void _update_spp(int spp)
     {
         UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::_update_spp(): Requested spp: " << spp << std::endl;
@@ -360,7 +359,43 @@ protected:
             _perifs.framer->set_nsamps_per_packet(size_t(spp));
     }
 
-private:
+    void _update_rx_args(const std::string &new_rx_args)
+    {
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::_update_rx_args()" << std::endl;
+        _rx_stream_args.args = device_addr_t(new_rx_args);
+        if (_perifs.framer) {
+            UHD_MSG(status) << "  Setting VITA core" << std::endl;
+            _perifs.framer->setup(_rx_stream_args);
+        }
+        if (_perifs.ddc) {
+            UHD_MSG(status) << "  Setting DSP core " << _rx_stream_args.args.to_string() << std::endl;
+            // Cares about otw_format, 'peak' and 'fullscale'
+            _perifs.ddc->setup(_rx_stream_args);
+        }
+        if (_perifs.rx_fe) {
+            UHD_MSG(status) << "  Updating muxes " << std::endl;
+            update_muxes(uhd::RX_DIRECTION);
+        }
+    }
+
+    void _update_tx_args(const std::string &new_tx_args)
+    {
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::_update_tx_args()" << std::endl;
+        _tx_stream_args.args = device_addr_t(new_tx_args);
+        if (_perifs.deframer) {
+            UHD_MSG(status) << "  Setting VITA core" << std::endl;
+            _perifs.deframer->setup(_tx_stream_args);
+        }
+        if (_perifs.duc) {
+            UHD_MSG(status) << "  Setting DSP core " << _tx_stream_args.args.to_string() << std::endl;
+            // Cares about otw_format, 'peak' and 'fullscale'
+            _perifs.duc->setup(_tx_stream_args);
+        }
+        if (_perifs.tx_fe) {
+            UHD_MSG(status) << "  Updating muxes " << std::endl;
+            update_muxes(uhd::TX_DIRECTION);
+        }
+    }
 
     //! Stores pointers to all streaming-related radio cores
     struct radio_v_perifs_t
