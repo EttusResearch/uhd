@@ -28,11 +28,12 @@
 namespace uhd {
     namespace rfnoc {
 
-/*! \brief Receive-end block control terminator.
+/*! \brief Terminator node for Rx streamers.
  *
- * This node terminates an RFNoC flow graph in the rx streamer.
+ * This node is only used by rx_streamers. It terminates the flow graph
+ * inside the streamer and does not have a counterpart on the FPGA.
  */
-class terminator_recv :
+class rx_stream_terminator :
     public sink_node_ctrl,
     public rate_node_ctrl,
     public tick_node_ctrl,
@@ -40,11 +41,11 @@ class terminator_recv :
     public terminator_node_ctrl
 {
 public:
-    UHD_RFNOC_BLOCK_OBJECT(terminator_recv)
+    UHD_RFNOC_BLOCK_OBJECT(rx_stream_terminator)
 
     static sptr make()
     {
-        return sptr(new terminator_recv);
+        return sptr(new rx_stream_terminator);
     }
 
     // If this is called, then by a send terminator at the other end
@@ -60,10 +61,10 @@ public:
 
     void set_tx_streamer(bool active);
 
-    virtual ~terminator_recv();
+    virtual ~rx_stream_terminator();
 
 protected:
-    terminator_recv();
+    rx_stream_terminator();
 
     virtual double _get_tick_rate() { return _tick_rate; };
 
@@ -75,7 +76,7 @@ private:
     double _samp_rate;
     double _tick_rate;
 
-}; /* class terminator_recv */
+}; /* class rx_stream_terminator */
 
 }} /* namespace uhd::rfnoc */
 

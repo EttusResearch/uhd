@@ -30,8 +30,8 @@
 #include "../common/validate_subdev_spec.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "../rfnoc/terminator_recv.hpp"
-#include "../rfnoc/terminator_send.hpp"
+#include "../rfnoc/rx_stream_terminator.hpp"
+#include "../rfnoc/tx_stream_terminator.hpp"
 #include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
 
 using namespace uhd;
@@ -446,7 +446,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
     // The terminator's lifetime is coupled to the streamer.
     // There is only one terminator. If the streamer has multiple channels,
     // it will be connected to each upstream block.
-    rfnoc::terminator_recv::sptr recv_terminator = rfnoc::terminator_recv::make();
+    rfnoc::rx_stream_terminator::sptr recv_terminator = rfnoc::rx_stream_terminator::make();
     for (size_t stream_i = 0; stream_i < chan_list.size(); stream_i++) {
         // Get block ID and mb index
         uhd::rfnoc::block_id_t block_id = chan_list[stream_i];
@@ -635,7 +635,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
     // The terminator's lifetime is coupled to the streamer.
     // There is only one terminator. If the streamer has multiple channels,
     // it will be connected to each downstream block.
-    rfnoc::terminator_send::sptr send_terminator = rfnoc::terminator_send::make();
+    rfnoc::tx_stream_terminator::sptr send_terminator = rfnoc::tx_stream_terminator::make();
     for (size_t stream_i = 0; stream_i < chan_list.size(); stream_i++) {
         // Get block ID and mb index
         uhd::rfnoc::block_id_t block_id = chan_list[stream_i];

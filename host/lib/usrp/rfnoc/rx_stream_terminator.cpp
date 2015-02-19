@@ -15,16 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "terminator_recv.hpp"
+#include "rx_stream_terminator.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/usrp/rfnoc/source_node_ctrl.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd::rfnoc;
 
-size_t terminator_recv::_count = 0;
+size_t rx_stream_terminator::_count = 0;
 
-terminator_recv::terminator_recv() :
+rx_stream_terminator::rx_stream_terminator() :
     _term_index(_count),
     _samp_rate(rate_node_ctrl::RATE_UNDEFINED),
     _tick_rate(tick_node_ctrl::RATE_UNDEFINED)
@@ -32,20 +32,20 @@ terminator_recv::terminator_recv() :
     _count++;
 }
 
-std::string terminator_recv::unique_id() const
+std::string rx_stream_terminator::unique_id() const
 {
     return str(boost::format("RX Terminator %d") % _term_index);
 }
 
-void terminator_recv::set_tx_streamer(bool)
+void rx_stream_terminator::set_tx_streamer(bool)
 {
     /* nop */
 }
 
-void terminator_recv::set_rx_streamer(bool active)
+void rx_stream_terminator::set_rx_streamer(bool active)
 {
     // TODO this is identical to source_node_ctrl::set_rx_streamer() -> factor out
-    UHD_MSG(status) << "[" << unique_id() << "] terminator_recv::set_rx_streamer() " << active << std::endl;
+    UHD_MSG(status) << "[" << unique_id() << "] rx_stream_terminator::set_rx_streamer() " << active << std::endl;
     BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
         source_node_ctrl::sptr curr_upstream_block_ctrl =
             boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
@@ -55,9 +55,9 @@ void terminator_recv::set_rx_streamer(bool active)
     }
 }
 
-terminator_recv::~terminator_recv()
+rx_stream_terminator::~rx_stream_terminator()
 {
-    UHD_MSG(status) << "[" << unique_id() << "] terminator_recv::~terminator_recv() " << std::endl;
+    UHD_MSG(status) << "[" << unique_id() << "] rx_stream_terminator::~rx_stream_terminator() " << std::endl;
     set_rx_streamer(false);
 }
 

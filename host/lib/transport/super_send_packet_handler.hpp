@@ -30,7 +30,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #ifdef DEVICE3_STREAMER
-#  include "../usrp/rfnoc/terminator_send.hpp"
+#  include "../usrp/rfnoc/tx_stream_terminator.hpp"
 #endif
 #include <boost/thread/thread_time.hpp>
 #include <boost/foreach.hpp>
@@ -123,12 +123,12 @@ public:
     }
 
     #ifdef DEVICE3_STREAMER
-    void set_terminator(uhd::rfnoc::terminator_send::sptr terminator)
+    void set_terminator(uhd::rfnoc::tx_stream_terminator::sptr terminator)
     {
         _terminator = terminator;
     }
 
-    uhd::rfnoc::terminator_send::sptr get_terminator()
+    uhd::rfnoc::tx_stream_terminator::sptr get_terminator()
     {
         return _terminator;
     }
@@ -330,7 +330,7 @@ private:
     uhd::tx_metadata_t _metadata_cache;
 
     #ifdef DEVICE3_STREAMER
-    uhd::rfnoc::terminator_send::sptr _terminator;
+    uhd::rfnoc::tx_stream_terminator::sptr _terminator;
     #endif
 
 #ifdef UHD_TXRX_DEBUG_PRINTS

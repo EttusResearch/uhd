@@ -35,8 +35,8 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/sink_node_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/source_node_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/stream_sig.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/terminator_recv.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/terminator_send.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tx_stream_terminator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/rx_stream_terminator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tick_node_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sink_block_ctrl_base.cpp
     # Default block control classes:

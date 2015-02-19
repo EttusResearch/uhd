@@ -29,11 +29,12 @@
 namespace uhd {
     namespace rfnoc {
 
-/*! \brief Transmit-end block control terminator.
+/*! \brief Terminator node for Tx streamers.
  *
- * This node terminates an RFNoC flow graph in the tx streamer.
+ * This node is only used by tx_streamers. It terminates the flow graph
+ * inside the streamer and does not have a counterpart on the FPGA.
  */
-class terminator_send :
+class tx_stream_terminator :
     public source_node_ctrl,
     public rate_node_ctrl,
     public tick_node_ctrl,
@@ -41,16 +42,16 @@ class terminator_send :
     public terminator_node_ctrl
 {
 public:
-    UHD_RFNOC_BLOCK_OBJECT(terminator_send)
+    UHD_RFNOC_BLOCK_OBJECT(tx_stream_terminator)
 
     static sptr make()
     {
-        return sptr(new terminator_send);
+        return sptr(new tx_stream_terminator);
     }
 
     void issue_stream_cmd(const uhd::stream_cmd_t &)
     {
-        UHD_RFNOC_BLOCK_TRACE() << "terminator_send::issue_stream_cmd()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "tx_stream_terminator::issue_stream_cmd()" << std::endl;
     }
 
     // If this is called, then by a send terminator at the other end
@@ -66,10 +67,10 @@ public:
 
     void set_tx_streamer(bool active);
 
-    virtual ~terminator_send();
+    virtual ~tx_stream_terminator();
 
 protected:
-    terminator_send();
+    tx_stream_terminator();
 
     virtual double _get_tick_rate() { return _tick_rate; };
 
@@ -81,7 +82,7 @@ private:
     double _samp_rate;
     double _tick_rate;
 
-}; /* class terminator_send */
+}; /* class tx_stream_terminator */
 
 }} /* namespace uhd::rfnoc */
 

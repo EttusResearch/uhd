@@ -30,7 +30,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #ifdef DEVICE3_STREAMER
-#  include "../usrp/rfnoc/terminator_recv.hpp"
+#  include "../usrp/rfnoc/rx_stream_terminator.hpp"
 #endif
 #include <boost/dynamic_bitset.hpp>
 #include <boost/foreach.hpp>
@@ -141,12 +141,12 @@ public:
     }
 
     #ifdef DEVICE3_STREAMER
-    void set_terminator(uhd::rfnoc::terminator_recv::sptr terminator)
+    void set_terminator(uhd::rfnoc::rx_stream_terminator::sptr terminator)
     {
         _terminator = terminator;
     }
 
-    uhd::rfnoc::terminator_recv::sptr get_terminator()
+    uhd::rfnoc::rx_stream_terminator::sptr get_terminator()
     {
         return _terminator;
     }
@@ -392,7 +392,7 @@ private:
     #endif
 
     #ifdef DEVICE3_STREAMER
-    uhd::rfnoc::terminator_recv::sptr _terminator;
+    uhd::rfnoc::rx_stream_terminator::sptr _terminator;
     #endif
 
     /*******************************************************************

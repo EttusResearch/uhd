@@ -15,15 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "terminator_send.hpp"
+#include "tx_stream_terminator.hpp"
 #include <boost/format.hpp>
 #include <uhd/usrp/rfnoc/sink_node_ctrl.hpp>
 
 using namespace uhd::rfnoc;
 
-size_t terminator_send::_count = 0;
+size_t tx_stream_terminator::_count = 0;
 
-terminator_send::terminator_send() :
+tx_stream_terminator::tx_stream_terminator() :
     _term_index(_count),
     _samp_rate(rate_node_ctrl::RATE_UNDEFINED),
     _tick_rate(tick_node_ctrl::RATE_UNDEFINED)
@@ -31,20 +31,20 @@ terminator_send::terminator_send() :
     _count++;
 }
 
-std::string terminator_send::unique_id() const
+std::string tx_stream_terminator::unique_id() const
 {
     return str(boost::format("TX Terminator %d") % _term_index);
 }
 
-void terminator_send::set_rx_streamer(bool)
+void tx_stream_terminator::set_rx_streamer(bool)
 {
     /* nop */
 }
 
-void terminator_send::set_tx_streamer(bool active)
+void tx_stream_terminator::set_tx_streamer(bool active)
 {
     // TODO this is identical to sink_node_ctrl::set_tx_streamer() -> factor out
-    UHD_MSG(status) << "[" << unique_id() << "] terminator_send::set_tx_streamer() " << active << std::endl;
+    UHD_MSG(status) << "[" << unique_id() << "] tx_stream_terminator::set_tx_streamer() " << active << std::endl;
     BOOST_FOREACH(const node_ctrl_base::node_map_pair_t downstream_node, _downstream_nodes) {
         sink_node_ctrl::sptr curr_downstream_block_ctrl =
             boost::dynamic_pointer_cast<sink_node_ctrl>(downstream_node.second.lock());
@@ -54,9 +54,9 @@ void terminator_send::set_tx_streamer(bool active)
     }
 }
 
-terminator_send::~terminator_send()
+tx_stream_terminator::~tx_stream_terminator()
 {
-    UHD_MSG(status) << "[" << unique_id() << "] terminator_send::~terminator_send() " << std::endl;
+    UHD_MSG(status) << "[" << unique_id() << "] tx_stream_terminator::~tx_stream_terminator() " << std::endl;
     set_tx_streamer(false);
 }
 
