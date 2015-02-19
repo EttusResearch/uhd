@@ -1330,8 +1330,12 @@ public:
             ));
         }
         src->configure_flow_control_out(buf_size_pkts, src_block_port);
-
-        size_t pkts_per_ack = uhd::rfnoc::DEFAULT_FC_XBAR_PKTS_PER_ACK;
+        // On the same crossbar, use lots of FC packets
+        size_t pkts_per_ack = std::min(
+                uhd::rfnoc::DEFAULT_FC_XBAR_PKTS_PER_ACK,
+                buf_size_pkts - 1
+        );
+        // Over the network, use less or we'd flood the transport
         if (sid.get_src_addr() != sid.get_dst_addr()) {
             pkts_per_ack = std::max<size_t>(buf_size_pkts / uhd::rfnoc::DEFAULT_FC_TX_RESPONSE_FREQ, 1);
         }
