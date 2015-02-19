@@ -71,21 +71,20 @@ static void check_stream_sig_compatible(const rfnoc::stream_sig_t &stream_sig, s
                 % tx_rx % args.otw_format % stream_sig.item_type
         ));
     }
-    // TODO put back in
-    //const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
-    //if (stream_sig.packet_size) {
-        //if (args.args.has_key("spp")) {
-            //size_t args_spp = args.args.cast<size_t>("spp", 0);
-            //if (args_spp * bpi != stream_sig.packet_size) {
-                //throw uhd::runtime_error(str(
-                        //boost::format("[%s Streamer] Conflicting packet sizes defined: args yields %d bytes but stream_sig.packet_size is %d bytes")
-                        //% tx_rx % (args_spp * bpi) % stream_sig.packet_size
-                //));
-            //}
-        //} else {
-            //args.args["spp"] = str(boost::format("%d") % stream_sig.packet_size);
-        //}
-    //}
+    const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
+    if (stream_sig.packet_size) {
+        if (args.args.has_key("spp")) {
+            size_t args_spp = args.args.cast<size_t>("spp", 0);
+            if (args_spp * bpi != stream_sig.packet_size) {
+                throw uhd::runtime_error(str(
+                        boost::format("[%s Streamer] Conflicting packet sizes defined: args yields %d bytes but stream_sig.packet_size is %d bytes")
+                        % tx_rx % (args_spp * bpi) % stream_sig.packet_size
+                ));
+            }
+        } else {
+            args.args["spp"] = str(boost::format("%d") % stream_sig.packet_size);
+        }
+    }
 }
 
 void device3_impl::generate_channel_list(
