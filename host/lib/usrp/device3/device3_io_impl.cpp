@@ -48,14 +48,44 @@ static const boost::uint32_t HW_SEQ_NUM_MASK = 0xfff;
 static uhd::stream_args_t sanitize_stream_args(const uhd::stream_args_t &args_)
 {
     uhd::stream_args_t args = args_;
-    if (args.otw_format.empty()) {
-        args.otw_format = "sc16";
-    }
     if (args.channels.empty()) {
         args.channels = std::vector<size_t>(1, 0);
     }
 
     return args;
+}
+
+static void check_stream_sig_compatible(const rfnoc::stream_sig_t &stream_sig, stream_args_t &args, const std::string &tx_rx)
+{
+    if (args.otw_format.empty()) {
+        if (stream_sig.item_type.empty()) {
+            throw uhd::runtime_error(str(
+                    boost::format("[%s Streamer] No otw_format defined!") % tx_rx
+            ));
+        } else {
+            args.otw_format = stream_sig.item_type;
+        }
+    } else if (not stream_sig.item_type.empty() and stream_sig.item_type != args.otw_format) {
+        throw uhd::runtime_error(str(
+                boost::format("[%s Streamer] Conflicting OTW types defined: args.otw_format = '%s' <=> stream_sig.item_type = '%s'")
+                % tx_rx % args.otw_format % stream_sig.item_type
+        ));
+    }
+    // TODO put back in
+    //const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
+    //if (stream_sig.packet_size) {
+        //if (args.args.has_key("spp")) {
+            //size_t args_spp = args.args.cast<size_t>("spp", 0);
+            //if (args_spp * bpi != stream_sig.packet_size) {
+                //throw uhd::runtime_error(str(
+                        //boost::format("[%s Streamer] Conflicting packet sizes defined: args yields %d bytes but stream_sig.packet_size is %d bytes")
+                        //% tx_rx % (args_spp * bpi) % stream_sig.packet_size
+                //));
+            //}
+        //} else {
+            //args.args["spp"] = str(boost::format("%d") % stream_sig.packet_size);
+        //}
+    //}
 }
 
 void device3_impl::generate_channel_list(
@@ -459,9 +489,6 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl =
             boost::dynamic_pointer_cast<uhd::rfnoc::source_block_ctrl_base>(get_block_ctrl(block_id));
 
-        // Check if the block connection is compatible (spp and item type)
-        // FIXME
-
         // Connect the terminator with this channel's block.
         size_t block_port = blk_ctrl->connect_downstream(
                 recv_terminator,
@@ -469,6 +496,9 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
                 args.args
         );
         recv_terminator->connect_upstream(blk_ctrl);
+
+        // Check if the block connection is compatible (spp and item type)
+        check_stream_sig_compatible(blk_ctrl->get_output_signature(block_port), args, "RX");
 
         // Setup the DSP transport hints
         device_addr_t rx_hints = get_rx_hints(mb_index);
@@ -648,9 +678,6 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         uhd::rfnoc::sink_block_ctrl_base::sptr blk_ctrl =
             boost::dynamic_pointer_cast<uhd::rfnoc::sink_block_ctrl_base>(get_block_ctrl(block_id));
 
-        // Check if the block connection is compatible (spp and item type)
-        // FIXME
-
         // Connect the terminator with this channel's block.
         // This will throw if the connection is not possible.
         size_t block_port = blk_ctrl->connect_upstream(
@@ -659,6 +686,9 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
                 args.args
         );
         send_terminator->connect_downstream(blk_ctrl);
+
+        // Check if the block connection is compatible (spp and item type)
+        check_stream_sig_compatible(blk_ctrl->get_input_signature(block_port), args, "TX");
 
         // Setup the dsp transport hints
         device_addr_t tx_hints = get_tx_hints(mb_index);
