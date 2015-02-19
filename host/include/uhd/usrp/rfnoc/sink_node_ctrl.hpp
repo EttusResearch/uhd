@@ -75,15 +75,6 @@ public:
 
 protected:
 
-    /*! If this function returns true, tx-specific settings (such as tx streamer
-     * setup) are not propagated downstream.
-     * An example for a block where this is necessary is a radio: If it's
-     * operating in full duplex mode, it will have a downstream block on the rx
-     * side, but we don't want to configure those while setting up an tx stream
-     * chain.
-     */
-    virtual bool _is_final_tx_block() { return false; };
-
     /*! Ask for a port number to connect an upstream block to.
      *
      * Typically, this will be overridden for custom behaviour.

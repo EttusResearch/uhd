@@ -23,6 +23,7 @@
 #include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/tick_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/scalar_node_ctrl.hpp>
+#include <uhd/usrp/rfnoc/terminator_node_ctrl.hpp>
 #include <uhd/types/direction.hpp>
 #include "rx_vita_core_3000.hpp"
 #include "tx_vita_core_3000.hpp"
@@ -43,7 +44,8 @@ class radio_ctrl :
     public sink_block_ctrl_base,
     public rate_node_ctrl,
     public tick_node_ctrl,
-    public scalar_node_ctrl
+    public scalar_node_ctrl,
+    public terminator_node_ctrl
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(radio_ctrl)

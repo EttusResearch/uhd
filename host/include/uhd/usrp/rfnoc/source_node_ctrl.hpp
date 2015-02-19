@@ -79,15 +79,6 @@ public:
 
 protected:
 
-    /*! If this function returns true, rx-specific settings (such as rx streamer
-     * setup) are not propagated upstream.
-     * An example for a block where this is necessary is a radio: If it's
-     * operating in full duplex mode, it will have an upstream block on the tx
-     * side, but we don't want to configure those while setting up an rx stream
-     * chain.
-     */
-    bool _is_final_rx_block() { return false; };
-
     /*! Ask for a port number to connect a downstream block to.
      *
      * See sink_node_ctrl::_request_input_port(). This is the same

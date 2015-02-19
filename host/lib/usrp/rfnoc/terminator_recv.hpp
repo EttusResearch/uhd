@@ -22,6 +22,7 @@
 #include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/tick_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/scalar_node_ctrl.hpp>
+#include <uhd/usrp/rfnoc/terminator_node_ctrl.hpp>
 #include <uhd/usrp/rfnoc/block_ctrl_base.hpp> // For the block macros
 
 namespace uhd {
@@ -35,7 +36,8 @@ class terminator_recv :
     public sink_node_ctrl,
     public rate_node_ctrl,
     public tick_node_ctrl,
-    public scalar_node_ctrl
+    public scalar_node_ctrl,
+    public terminator_node_ctrl
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(terminator_recv)
@@ -62,10 +64,6 @@ public:
 
 protected:
     terminator_recv();
-
-    /*! Nothing may come after the streamer.
-     */
-    bool _is_final_tx_block() { return true; };
 
     virtual double _get_tick_rate() { return _tick_rate; };
 

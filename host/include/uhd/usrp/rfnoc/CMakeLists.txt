@@ -30,6 +30,7 @@ UHD_INSTALL(FILES
     sink_node_ctrl.hpp
     source_node_ctrl.hpp
     stream_sig.hpp
+    terminator_node_ctrl.hpp
     tick_node_ctrl.hpp
     sink_block_ctrl_base.hpp
     # Block controllers

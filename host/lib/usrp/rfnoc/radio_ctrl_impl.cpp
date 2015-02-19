@@ -319,18 +319,6 @@ protected:
         _tree->access<bool>(_root_path / "tx_active").set(active);
     }
 
-    bool _is_final_rx_block()
-    {
-        // Radio is end of line
-        return true;
-    }
-
-    bool _is_final_tx_block()
-    {
-        // Radio is end of line
-        return true;
-    }
-
 private:
 
     void _update_spp(int spp)
