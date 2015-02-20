@@ -916,6 +916,9 @@ public:
         if (chan != ALL_CHANS){
             if (_tree->exists(rx_fe_root(chan) / "dc_offset" / "enable")) {
                 _tree->access<bool>(rx_fe_root(chan) / "dc_offset" / "enable").set(enb);
+            } else if (_tree->exists(rx_rf_fe_root(chan) / "dc_offset" / "enable")) {
+                /*For B2xx devices the dc-offset correction is implemented in the rf front-end*/
+                _tree->access<bool>(rx_rf_fe_root(chan) / "dc_offset" / "enable").set(enb);
             } else {
                 UHD_MSG(warning) << "Setting DC offset compensation is not possible on this device." << std::endl;
             }
@@ -937,6 +940,20 @@ public:
         }
         for (size_t c = 0; c < get_rx_num_channels(); c++){
             this->set_rx_dc_offset(offset, c);
+        }
+    }
+
+    void set_rx_iq_balance(const bool enb, size_t chan){
+        if (chan != ALL_CHANS){
+            if (_tree->exists(rx_rf_fe_root(chan) / "iq_balance" / "enable")) {
+                _tree->access<bool>(rx_rf_fe_root(chan) / "iq_balance" / "enable").set(enb);
+            } else {
+                UHD_MSG(warning) << "Setting IQ imbalance compensation is not possible on this device." << std::endl;
+            }
+            return;
+        }
+        for (size_t c = 0; c < get_rx_num_channels(); c++){
+            this->set_rx_iq_balance(enb, c);
         }
     }
 
