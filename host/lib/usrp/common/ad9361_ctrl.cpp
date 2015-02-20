@@ -178,6 +178,34 @@ public:
         return sensor_value_t("temp", _device.get_average_temperature(), "C");
     }
 
+    void set_dc_offset_auto(const std::string &which, const bool on)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        _device.set_dc_offset_auto(direction,on);
+    }
+
+    void set_dc_offset(const std::string &which, const std::complex<double> value)
+    {
+        //This feature should not be used according to Analog Devices
+        throw uhd::runtime_error("ad9361_ctrl::set_dc_offset this feature is not supported on this device.");
+    }
+
+    void set_iq_balance_auto(const std::string &which, const bool on)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        _device.set_iq_balance_auto(direction,on);
+    }
+
+    void set_iq_balance(const std::string &which, const std::complex<double> value)
+    {
+        //This feature should not be used according to Analog Devices
+        throw uhd::runtime_error("ad9361_ctrl::set_iq_balance this feature is not supported on this device.");
+    }
+
 private:
     static ad9361_device_t::direction_t _get_direction_from_antenna(const std::string& antenna)
     {

@@ -72,6 +72,12 @@ public:
      */
     double get_average_temperature(const double cal_offset = -30.0, const size_t num_samples = 3);
 
+    /* Turn on/off AD9361's RX DC offset correction */
+    void set_dc_offset_auto(direction_t direction, const bool on);
+
+    /* Turn on/off AD9361's RX IQ imbalance correction */
+    void set_iq_balance_auto(direction_t direction, const bool on);
+
     //Constants
     static const double AD9361_MAX_GAIN;
     static const double AD9361_MAX_CLOCK_RATE;
@@ -102,6 +108,7 @@ private:    //Methods
     double _tune_helper(direction_t direction, const double value);
     double _setup_rates(const double rate);
     double _get_temperature(const double cal_offset, const double timeout = 0.1);
+    void _configure_bb_rf_dc_tracking(const bool on);
 
 private:    //Members
     typedef struct {
@@ -130,6 +137,8 @@ private:    //Members
     chip_regs_t         _regs;
     //Synchronization
     boost::recursive_mutex  _mutex;
+    bool _use_dc_offset_correction;
+    bool _use_iq_balance_correction;
 };
 
 }}  //namespace

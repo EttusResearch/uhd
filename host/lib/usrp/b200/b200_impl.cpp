@@ -591,7 +591,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
 
 b200_impl::~b200_impl(void)
 {
-	UHD_SAFE_CALL
+    UHD_SAFE_CALL
     (
         _async_task.reset();
     )
@@ -702,7 +702,7 @@ void b200_impl::setup_radio(const size_t dspno)
         _tree->create<bool>(rf_fe_path / "use_lo_offset").set(false);
         _tree->create<double>(rf_fe_path / "bandwidth" / "value")
             .coerce(boost::bind(&ad9361_ctrl::set_bw_filter, _codec_ctrl, key, _1))
-            .set(40e6);
+            .set(56e6);
         _tree->create<meta_range_t>(rf_fe_path / "bandwidth" / "range")
             .publish(boost::bind(&ad9361_ctrl::get_bw_filter_range, key));
         _tree->create<double>(rf_fe_path / "freq" / "value")
@@ -715,6 +715,16 @@ void b200_impl::setup_radio(const size_t dspno)
                 .publish(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl));
 
         //setup RX related stuff
+        if(direction)
+        {
+            _tree->create<bool>(rf_fe_path / "dc_offset" / "enable" )
+                .subscribe(boost::bind(&ad9361_ctrl::set_dc_offset_auto, _codec_ctrl, key, _1)).set(true);
+
+            _tree->create<bool>(rf_fe_path / "iq_balance" / "enable" )
+                .subscribe(boost::bind(&ad9361_ctrl::set_iq_balance_auto, _codec_ctrl, key, _1)).set(true);
+        }
+
+        //setup antenna stuff
         if (key[0] == 'R')
         {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
