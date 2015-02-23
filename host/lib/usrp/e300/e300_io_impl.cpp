@@ -590,7 +590,13 @@ tx_streamer::sptr e300_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         //flow control setup
         const size_t fc_window = data_xports.send->get_num_send_frames();
-        perif.deframer->configure_flow_control(0/*cycs off*/, fc_window/8/*pkts*/);
+        const size_t fc_handle_window = std::max<size_t>(1, fc_window/E300_TX_FC_RESPONSE_FREQ);
+
+        UHD_LOG << "TX Flow Control Window = " << fc_window
+                << ", TX Flow Control Handler Window = "
+                << fc_handle_window << std::endl;
+
+        perif.deframer->configure_flow_control(0/*cycs off*/, fc_handle_window/*pkts*/);
         boost::shared_ptr<e300_tx_fc_cache_t> fc_cache(new e300_tx_fc_cache_t());
         fc_cache->stream_channel = stream_i;
         fc_cache->device_channel = args.channels[stream_i];

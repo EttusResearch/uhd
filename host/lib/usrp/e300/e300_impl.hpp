@@ -71,6 +71,7 @@ static std::string E300_SERVER_SENSOR_PORT = "21762";
 
 static const double E300_RX_SW_BUFF_FULLNESS = 0.9;        //Buffer should be half full
 static const size_t E300_RX_FC_REQUEST_FREQ = 32; // per flow ctrl window
+static const size_t E300_TX_FC_RESPONSE_FREQ = 8; // per flow ctrl window
 
 // crossbar settings
 static const boost::uint8_t E300_RADIO_DEST_PREFIX_TX   = 0;
