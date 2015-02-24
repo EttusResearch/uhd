@@ -16,7 +16,6 @@
 //
 
 #include "ad9361_ctrl.hpp"
-#include <uhd/exception.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/types/serial.hpp>
@@ -186,24 +185,12 @@ public:
         _device.set_dc_offset_auto(direction,on);
     }
 
-    void set_dc_offset(const std::string &which, const std::complex<double> value)
-    {
-        //This feature should not be used according to Analog Devices
-        throw uhd::runtime_error("ad9361_ctrl::set_dc_offset this feature is not supported on this device.");
-    }
-
     void set_iq_balance_auto(const std::string &which, const bool on)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         _device.set_iq_balance_auto(direction,on);
-    }
-
-    void set_iq_balance(const std::string &which, const std::complex<double> value)
-    {
-        //This feature should not be used according to Analog Devices
-        throw uhd::runtime_error("ad9361_ctrl::set_iq_balance this feature is not supported on this device.");
     }
 
 private:

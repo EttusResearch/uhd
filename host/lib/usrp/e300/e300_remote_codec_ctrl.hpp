@@ -35,6 +35,8 @@ public:
             double          freq;
             double          rssi;
             double          temp;
+            boost::uint32_t use_dc_correction;
+            boost::uint32_t use_iq_correction;
             boost::uint64_t bits;
         };
 
@@ -46,6 +48,8 @@ public:
         static const boost::uint32_t ACTION_SET_LOOPBACK        = 14;
         static const boost::uint32_t ACTION_GET_RSSI            = 15;
         static const boost::uint32_t ACTION_GET_TEMPERATURE     = 16;
+        static const boost::uint32_t ACTION_SET_DC_OFFSET_AUTO  = 17;
+        static const boost::uint32_t ACTION_SET_IQ_BALANCE_AUTO = 18;
 
         //Values for "which"
         static const boost::uint32_t CHAIN_NONE = 0;
