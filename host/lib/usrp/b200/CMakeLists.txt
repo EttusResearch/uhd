@@ -20,7 +20,7 @@
 ########################################################################
 
 ########################################################################
-# Conditionally configure the B100 support
+# Conditionally configure the B200 support
 ########################################################################
 LIBUHD_REGISTER_COMPONENT("B200" ENABLE_B200 ON "ENABLE_LIBUHD;ENABLE_USB" OFF)
 
