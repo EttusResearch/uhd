@@ -116,6 +116,7 @@ private:
     bool _ignore_cal_file;
 
     //io impl methods and members
+    uhd::device_addr_t device_addr;
     UHD_PIMPL_DECL(io_impl) _io_impl;
     void io_init(void);
     void update_tick_rate(const double rate);
