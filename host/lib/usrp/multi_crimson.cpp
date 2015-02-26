@@ -323,7 +323,7 @@ size_t multi_crimson_impl::get_num_mboards(void){
 }
 
 sensor_value_t multi_crimson_impl::get_mboard_sensor(const std::string &name, size_t mboard){
-        return _tree->access<sensor_value_t>(mb_root(0) / "sensors" / name).get();
+    return _tree->access<sensor_value_t>(mb_root(0) / "sensors" / name).get();
 }
 
 std::vector<std::string> multi_crimson_impl::get_mboard_sensor_names(size_t mboard){
@@ -613,12 +613,7 @@ meta_range_t multi_crimson_impl::get_tx_rates(size_t chan){
 
 // set the TX frequency on specified channel
 tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request, size_t chan){
-    // To remove spurs during mixing, the mixing occurs at 15.2 MHz lower
-    // and then mixed higher again by 15.2 MHz.
     tune_request_t req = tune_request;
-    req.rf_freq -= 15000000;
-    req.dsp_freq -= 15000000;
-    req.target_freq -= 15000000;
     tune_result_t result;
 
     // check the tuning ranges first, and clip if necessary
@@ -647,13 +642,6 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
 	_tree->access<double>(tx_dsp_root(chan) / "freq" / "value").set(req.target_freq);
 	result.actual_dsp_freq = req.target_freq;
     }
-
-    // compensate for the mixing offset
-    result.actual_rf_freq += 15000000;
-    result.actual_dsp_freq += 15000000;
-    req.rf_freq += 15000000;
-    req.dsp_freq += 15000000;
-    req.target_freq += 15000000;
 
     result.target_rf_freq  = result.actual_rf_freq;
     result.clipped_rf_freq = result.actual_rf_freq;
