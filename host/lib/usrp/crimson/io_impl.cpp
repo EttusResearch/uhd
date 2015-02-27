@@ -303,17 +303,18 @@ public:
 			if (i % 8 == 7) vita_buf[i] = 0xbadeb01a;
 		}*/
 
-		// sending samples, only send 900 at a time
+		// sending samples, restricted to a jumbo frame of 9000 bytes at a time
 		size_t ret = 0;
 		while ((ret / 4) < nsamps_per_buff) {
 			size_t remaining_bytes = (nsamps_per_buff*4) - ret;
 
-			if (remaining_bytes >= 900)
-				ret += _udp_stream[0] -> stream_out((void*)vita_buf, 900);
+			if (remaining_bytes >= 9000)
+				ret += _udp_stream[0] -> stream_out((void*)vita_buf, 9000);
 			else
 				ret += _udp_stream[0] -> stream_out((void*)vita_buf, remaining_bytes);
 		}
 		//printf("send nsamps_per_buff: %li ret: %i\n", nsamps_per_buff, ret);
+
 		return (ret / 4);// -  vita_hdr - vita_tlr;	// vita is disabled
 	}
 
@@ -365,6 +366,14 @@ rx_streamer::sptr crimson_impl::get_rx_stream(const uhd::stream_args_t &args){
 			\"sc16\" Q16 I16" << std::endl;
 	}
 
+	// Warning for preference to set the MTU size to 9000 to support Jumbo Frames
+        boost::format base_message (
+            "\nCrimson Warning:"
+            "   Please set the MTU size for SFP ports to 9000.\n"
+            "   The device has been optimized for Jumbo Frames\n"
+	    "   to lower overhead.\n\n");
+	UHD_MSG(status) << base_message.str();
+
 	// TODO firmware support for other otw_format, cpu_format
 	return rx_streamer::sptr(new crimson_rx_streamer(this->_addr, this->_tree));
 }
@@ -384,6 +393,14 @@ tx_streamer::sptr crimson_impl::get_tx_stream(const uhd::stream_args_t &args){
 		UHD_MSG(error) << "CRIMSON Stream only supports otw_format of \
 			\"sc16\" Q16 I16" << std::endl;
 	}
+
+	// Warning for preference to set the MTU size to 9000 to support Jumbo Frames
+        boost::format base_message (
+            "\nCrimson Warning:"
+            "   Please set the MTU size for SFP ports to 9000.\n"
+            "   The device has been optimized for Jumbo Frames\n"
+	    "   to lower overhead.\n\n");
+	UHD_MSG(status) << base_message.str();
 
 	// TODO firmware support for other otw_format, cpu_format
 	return tx_streamer::sptr(new crimson_tx_streamer(this->_addr, this->_tree));
