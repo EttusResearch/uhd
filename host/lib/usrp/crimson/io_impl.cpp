@@ -41,48 +41,12 @@ namespace pt = boost::posix_time;
 
 class crimson_rx_streamer : public uhd::rx_streamer {
 public:
+	crimson_rx_streamer(device_addr_t addr, property_tree::sptr tree, std::vector<size_t> channels) {
+		init_rx_streamer(addr, tree, channels);
+	}
+
 	crimson_rx_streamer(device_addr_t addr, property_tree::sptr tree) {
-		// save the tree
-		_tree = tree;
-		_prev_frame = 0;
-
-		// get the property root path
-		const fs_path mb_path   = "/mboards/0";
-		const fs_path prop_path = mb_path / "rx_link";
-
-		for (int i = 0; i < 4; i++) {
-			std::string ch       = boost::lexical_cast<std::string>((char)(i + 65));
-			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
-			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
-
-			// initialize the sample rate
-			_rate[i] = 0;
-			_got_rate[i] = false;
-
-			// vita enable
-			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("1");
-
-			// SFPA
-			if (strcmp(sink.c_str(), "sfpa") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: "
-				//	<< tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
-				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream(
-					"10.10.10.10", udp_port);
-			// SFPB
-			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: "
-				//	<< tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
-				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream(
-					"10.10.11.10", udp_port);
-			// MANAGEMENT
-			} else {
-				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: "
-				//	<< udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream( addr["addr"], udp_port );
-			}
-		}
+		init_rx_streamer(addr, tree, std::vector<size_t>(1, 0));
 	}
 
 	~crimson_rx_streamer() {
@@ -132,13 +96,6 @@ public:
 
 		memcpy(buffs[0], vita_buf + vita_hdr , nsamps_per_buff * 4);
 
-		// sampling rate
-		if (_got_rate[0] == false) {
-			_rate[0] = _tree->access<double>( "/mboards/0/rx_dsps/Channel_A/rate/value").get();
-			_got_rate[0] = true;
-			//printf("rx0 rate: %lf\n", _rate[0]);
-		}
-
 		/* VITA Header
 		 * ------------------
 		 * -1. Trailer
@@ -149,10 +106,10 @@ public:
 		 */
 		// parse the VITA time stamp
 		// fix endianess for time
-		this -> _32_align(&(vita_buf[0]));
-		this -> _32_align(&(vita_buf[1]));
-		this -> _32_align(&(vita_buf[2]));
-		this -> _32_align(&(vita_buf[3]));
+		//this -> _32_align(&(vita_buf[0]));
+		//this -> _32_align(&(vita_buf[1]));
+		//this -> _32_align(&(vita_buf[2]));
+		//this -> _32_align(&(vita_buf[3]));
 
 		// get the time
 		uint64_t time_ticks = ((uint64_t)vita_buf[2] << 32) | ((uint64_t)vita_buf[3]);
@@ -192,6 +149,53 @@ public:
 	}
 
 private:
+	// init function, common to both constructors
+	void init_rx_streamer(device_addr_t addr, property_tree::sptr tree, std::vector<size_t> channels) {
+		// save the tree
+		_tree = tree;
+		_channels = channels;
+		_prev_frame = 0;
+
+		// get the property root path
+		const fs_path mb_path   = "/mboards/0";
+		const fs_path prop_path = mb_path / "rx_link";
+
+		// if no channels specified, default to channel 1 (0)
+		_channels = _channels.empty()? std::vector<size_t>(1, 0) : _channels;
+
+		for (int i = 0; i < _channels.size(); i++) {
+			//printf("streaming rx channel: %i\n", _channels[i]);
+
+			std::string ch       = boost::lexical_cast<std::string>((char)(i + 65));
+			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
+			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
+
+			// vita enable
+			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("1");
+
+			// SFPA
+			if (strcmp(sink.c_str(), "sfpa") == 0) {
+				//std::cout << __func__ << "(): opened UDP[ IP: "
+				//	<< tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
+				//	<< " PORT: " << udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream(
+					"10.10.10.10", udp_port);
+			// SFPB
+			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
+				//std::cout << __func__ << "(): opened UDP[ IP: "
+				//	<< tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
+				//	<< " PORT: " << udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream(
+					"10.10.11.10", udp_port);
+			// MANAGEMENT
+			} else {
+				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: "
+				//	<< udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream( addr["addr"], udp_port );
+			}
+		}
+	}
+
 	// helper function to swap bytes, within 32-bits
 	// (conversion from 8-bit allignment to 32-bit allignment
 	void _32_align(uint32_t* data) {
@@ -205,53 +209,17 @@ private:
 	uhd::transport::udp_stream::sptr _udp_stream[4];
 	property_tree::sptr _tree;
 	size_t _prev_frame;
-	double _rate[4];
-	bool _got_rate[4];
+	std::vector<size_t> _channels;
 };
 
 class crimson_tx_streamer : public uhd::tx_streamer {
 public:
+	crimson_tx_streamer(device_addr_t addr, property_tree::sptr tree, std::vector<size_t> channels) {
+		init_tx_streamer(addr, tree, channels);
+	}
+
 	crimson_tx_streamer(device_addr_t addr, property_tree::sptr tree) {
-		// save the tree
-		_tree = tree;
-
-		// get the property root path
-		const fs_path mb_path   = "/mboards/0";
-		const fs_path prop_path = mb_path / "tx_link";
-
-		for (int i = 0; i < 4; i++) {
-			std::string ch       = boost::lexical_cast<std::string>((char)(i + 65));
-			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
-			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
-
-			// initialize the sample rates
-			_rate[i] = 0;
-			_got_rate[i] = false;
-
-			// vita disable
-			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("0");
-
-			// SFPA (all the same because this is a sink)
-			if (strcmp(sink.c_str(), "sfpa") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: "
-				//	<< tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
-				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_tx_stream(
-					tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get(), udp_port);
-			// SFPB (all the same because this is a sink)
-			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: "
-				//	<< tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
-				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_tx_stream(
-					tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get(), udp_port);
-			// MANAGEMENT (all the same because this is a sink)
-			} else {
-				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: "
-				//	<< udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_tx_stream( addr["addr"], udp_port );
-			}
-		}
+		init_tx_streamer(addr, tree, std::vector<size_t>(1, 0));
 	}
 
 	~crimson_tx_streamer() {
@@ -324,6 +292,52 @@ public:
 	}
 
 private:
+	// init function, common to both constructors
+	void init_tx_streamer( device_addr_t addr, property_tree::sptr tree, std::vector<size_t> channels) {
+		// save the tree
+		_tree = tree;
+		_channels = channels;
+
+		// get the property root path
+		const fs_path mb_path   = "/mboards/0";
+		const fs_path prop_path = mb_path / "tx_link";
+
+		// if no channels specified, default to channel 1 (0)
+		_channels = _channels.empty()? std::vector<size_t>(1, 0) : _channels;
+
+		for (int i = 0; i < _channels.size(); i++) {
+			//printf("streaming tx channel: %i\n", _channels[i]);
+
+			std::string ch       = boost::lexical_cast<std::string>((char)(i + 65));
+			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
+			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
+
+			// vita disable
+			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("0");
+
+			// SFPA (all the same because this is a sink)
+			if (strcmp(sink.c_str(), "sfpa") == 0) {
+				//std::cout << __func__ << "(): opened UDP[ IP: "
+				//	<< tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
+				//	<< " PORT: " << udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_tx_stream(
+					tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get(), udp_port);
+			// SFPB (all the same because this is a sink)
+			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
+				//std::cout << __func__ << "(): opened UDP[ IP: "
+				//	<< tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
+				//	<< " PORT: " << udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_tx_stream(
+					tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get(), udp_port);
+			// MANAGEMENT (all the same because this is a sink)
+			} else {
+				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: "
+				//	<< udp_port << " ]" << std::endl;
+				_udp_stream[i] = uhd::transport::udp_stream::make_tx_stream( addr["addr"], udp_port );
+			}
+		}
+	}
+
 	// helper function to swap bytes, within 32-bits
 	// (conversion from 8-bit allignment to 32-bit allignment
 	void _32_align(uint32_t* data) {
@@ -336,8 +350,7 @@ private:
 	// 0-channel A, 1-channel B, 2-channel C, 3-channel D
 	uhd::transport::udp_stream::sptr _udp_stream[4];
 	property_tree::sptr _tree;
-	double _rate[4];
-	bool _got_rate[4];
+	std::vector<size_t> _channels;
 };
 
 /***********************************************************************
@@ -368,14 +381,14 @@ rx_streamer::sptr crimson_impl::get_rx_stream(const uhd::stream_args_t &args){
 
 	// Warning for preference to set the MTU size to 9000 to support Jumbo Frames
         boost::format base_message (
-            "\nCrimson Warning:"
+            "\nCrimson Warning:\n"
             "   Please set the MTU size for SFP ports to 9000.\n"
             "   The device has been optimized for Jumbo Frames\n"
-	    "   to lower overhead.\n\n");
+	    "   to lower overhead.\n");
 	UHD_MSG(status) << base_message.str();
 
 	// TODO firmware support for other otw_format, cpu_format
-	return rx_streamer::sptr(new crimson_rx_streamer(this->_addr, this->_tree));
+	return rx_streamer::sptr(new crimson_rx_streamer(this->_addr, this->_tree, args.channels));
 }
 
 /***********************************************************************
@@ -396,12 +409,12 @@ tx_streamer::sptr crimson_impl::get_tx_stream(const uhd::stream_args_t &args){
 
 	// Warning for preference to set the MTU size to 9000 to support Jumbo Frames
         boost::format base_message (
-            "\nCrimson Warning:"
+            "\nCrimson Warning:\n"
             "   Please set the MTU size for SFP ports to 9000.\n"
             "   The device has been optimized for Jumbo Frames\n"
-	    "   to lower overhead.\n\n");
+	    "   to lower overhead.\n");
 	UHD_MSG(status) << base_message.str();
 
 	// TODO firmware support for other otw_format, cpu_format
-	return tx_streamer::sptr(new crimson_tx_streamer(this->_addr, this->_tree));
+	return tx_streamer::sptr(new crimson_tx_streamer(this->_addr, this->_tree, args.channels));
 }

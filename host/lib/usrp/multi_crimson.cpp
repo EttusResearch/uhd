@@ -338,7 +338,6 @@ void multi_crimson_impl::set_user_register(const boost::uint8_t addr, const boos
 /*******************************************************************
  * RX methods
  ******************************************************************/
-// This feature has not been implemented yet
 rx_streamer::sptr multi_crimson_impl::get_rx_stream(const stream_args_t &args) {
     _check_link_rate(args);
     return this->get_device()->get_rx_stream(args);
@@ -561,7 +560,6 @@ void multi_crimson_impl::set_rx_iq_balance(const std::complex<double> &offset, s
 /*******************************************************************
  * TX methods
  ******************************************************************/
-// This feature has not been implemented yet
 tx_streamer::sptr multi_crimson_impl::get_tx_stream(const stream_args_t &args) {
     _check_link_rate(args);
     return this->get_device()->get_tx_stream(args);

@@ -69,7 +69,7 @@ public:
 
 		// bind the settings to the socket
 		if ( bind(_sockfd, (struct sockaddr *) &_si, sizeof(_si)) < 0) {
-			UHD_MSG(error) << boost::format("ERROR bind(): %s") % strerror(errno) << std::endl;
+			UHD_MSG(error) << boost::format("ERROR bind(): %s:%i %s") % addr.c_str() % port % strerror(errno) << std::endl;
 			return;
 		}
 		_isConnected = true;
