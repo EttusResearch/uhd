@@ -178,20 +178,22 @@ private:
 				//std::cout << __func__ << "(): opened UDP[ IP: "
 				//	<< tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
 				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream(
-					"10.10.10.10", udp_port);
+				_udp_stream.push_back(uhd::transport::udp_stream::make_rx_stream(
+					"10.10.10.10", udp_port));
+
 			// SFPB
 			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
 				//std::cout << __func__ << "(): opened UDP[ IP: "
 				//	<< tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
 				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream(
-					"10.10.11.10", udp_port);
+				_udp_stream.push_back(uhd::transport::udp_stream::make_rx_stream(
+					"10.10.11.10", udp_port));
+
 			// MANAGEMENT
 			} else {
 				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: "
 				//	<< udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_rx_stream( addr["addr"], udp_port );
+				_udp_stream.push_back(uhd::transport::udp_stream::make_rx_stream( addr["addr"], udp_port ));
 			}
 		}
 	}
@@ -205,8 +207,7 @@ private:
 			(*data & 0xff000000) >> 24;
 	}
 
-	// 0-channel A, 1-channel B, 2-channel C, 3-channel D
-	uhd::transport::udp_stream::sptr _udp_stream[4];
+	std::vector<uhd::transport::udp_stream::sptr> _udp_stream;
 	property_tree::sptr _tree;
 	size_t _prev_frame;
 	std::vector<size_t> _channels;
@@ -320,20 +321,22 @@ private:
 				//std::cout << __func__ << "(): opened UDP[ IP: "
 				//	<< tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
 				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_tx_stream(
-					tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get(), udp_port);
+				_udp_stream.push_back(uhd::transport::udp_stream::make_tx_stream(
+					tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get(), udp_port));
+
 			// SFPB (all the same because this is a sink)
 			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
 				//std::cout << __func__ << "(): opened UDP[ IP: "
 				//	<< tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
 				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_tx_stream(
-					tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get(), udp_port);
+				_udp_stream.push_back(uhd::transport::udp_stream::make_tx_stream(
+					tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get(), udp_port));
+
 			// MANAGEMENT (all the same because this is a sink)
 			} else {
 				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: "
 				//	<< udp_port << " ]" << std::endl;
-				_udp_stream[i] = uhd::transport::udp_stream::make_tx_stream( addr["addr"], udp_port );
+				_udp_stream.push_back(uhd::transport::udp_stream::make_tx_stream( addr["addr"], udp_port ));
 			}
 		}
 	}
@@ -347,8 +350,7 @@ private:
 			(*data & 0xff000000) >> 24;
 	}
 
-	// 0-channel A, 1-channel B, 2-channel C, 3-channel D
-	uhd::transport::udp_stream::sptr _udp_stream[4];
+	std::vector<uhd::transport::udp_stream::sptr> _udp_stream;
 	property_tree::sptr _tree;
 	std::vector<size_t> _channels;
 };
