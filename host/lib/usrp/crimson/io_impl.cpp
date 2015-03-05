@@ -116,6 +116,15 @@ public:
 
 		// vita counter increments according to the sample rate
 		double time = time_ticks / 390625.0;//(int)_rate[0];
+
+		// determine the beginning of time
+		if (_start_time == 0) {
+			_start_time = time;
+		}
+
+		//printf("0x%08x  0x%08x\n", vita_buf[2], vita_buf[3]);
+		time = time - _start_time;
+
 		metadata.time_spec = time_spec_t((time_t)time, time - (time_t)time);
 		//printf("time: %lfs\n", time);
 
@@ -155,6 +164,7 @@ private:
 		_tree = tree;
 		_channels = channels;
 		_prev_frame = 0;
+		_start_time = 0;
 
 		// get the property root path
 		const fs_path mb_path   = "/mboards/0";
@@ -166,7 +176,7 @@ private:
 		for (int i = 0; i < _channels.size(); i++) {
 			//printf("streaming rx channel: %i\n", _channels[i]);
 
-			std::string ch       = boost::lexical_cast<std::string>((char)(i + 65));
+			std::string ch       = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
 			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
 
@@ -211,6 +221,7 @@ private:
 	property_tree::sptr _tree;
 	size_t _prev_frame;
 	std::vector<size_t> _channels;
+	double _start_time;
 };
 
 class crimson_tx_streamer : public uhd::tx_streamer {
@@ -232,7 +243,7 @@ public:
 		const fs_path tx_path = "/mboards/0/tx";
 		size_t num = 0;
 		for (int i = 0; i < 4; i++) {
-			std::string ch = boost::lexical_cast<std::string>((char)(i + 65));
+			std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 			std::string pwr = _tree->access<std::string>(tx_path / "Channel_"+ch / "pwr").get();
 			if ( strcmp(pwr.c_str(), "1") == 0 ) num++;
 		}
