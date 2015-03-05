@@ -17,7 +17,7 @@
 
 # This file sets up all the stuff for the config.h file
 
-INCLUDE(CheckCXXSymbolExists)
+INCLUDE(CheckCXXSymbolExistsCopy)
 
 ## Check for std::log2
 CHECK_CXX_SYMBOL_EXISTS("log2" "cmath" HAVE_LOG2)
