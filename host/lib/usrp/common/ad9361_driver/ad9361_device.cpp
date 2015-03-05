@@ -945,28 +945,58 @@ void ad9361_device_t::_program_gain_table() {
 
 /* Setup gain control registers.
  *
- * This really only needs to be done once, at initialization. */
-void ad9361_device_t::_setup_gain_control()
+ * This really only needs to be done once, at initialization.
+ * If AGC is used the mode select bits (Reg 0x0FA) must be written manually */
+void ad9361_device_t::_setup_gain_control(bool agc)
 {
-    _io_iface->poke8(0x0FA, 0xE0); // Gain Control Mode Select
-    _io_iface->poke8(0x0FB, 0x08); // Table, Digital Gain, Man Gain Ctrl
-    _io_iface->poke8(0x0FC, 0x23); // Incr Step Size, ADC Overrange Size
-    _io_iface->poke8(0x0FD, 0x4C); // Max Full/LMT Gain Table Index
-    _io_iface->poke8(0x0FE, 0x44); // Decr Step Size, Peak Overload Time
-    _io_iface->poke8(0x100, 0x6F); // Max Digital Gain
-    _io_iface->poke8(0x104, 0x2F); // ADC Small Overload Threshold
-    _io_iface->poke8(0x105, 0x3A); // ADC Large Overload Threshold
-    _io_iface->poke8(0x107, 0x31); // Large LMT Overload Threshold
-    _io_iface->poke8(0x108, 0x39); // Small LMT Overload Threshold
-    _io_iface->poke8(0x109, 0x23); // Rx1 Full/LMT Gain Index
-    _io_iface->poke8(0x10A, 0x58); // Rx1 LPF Gain Index
-    _io_iface->poke8(0x10B, 0x00); // Rx1 Digital Gain Index
-    _io_iface->poke8(0x10C, 0x23); // Rx2 Full/LMT Gain Index
-    _io_iface->poke8(0x10D, 0x18); // Rx2 LPF Gain Index
-    _io_iface->poke8(0x10E, 0x00); // Rx2 Digital Gain Index
-    _io_iface->poke8(0x114, 0x30); // Low Power Threshold
-    _io_iface->poke8(0x11A, 0x27); // Initial LMT Gain Limit
-    _io_iface->poke8(0x081, 0x00); // Tx Symbol Gain Control
+    /* The AGC mode configuration should be good for all cases.
+     * However, non AGC configuration still used for backward compatibility. */
+    if (agc) {
+        /*mode select bits must be written before hand!*/
+        _io_iface->poke8(0x0FB, 0x08); // Table, Digital Gain, Man Gain Ctrl
+        _io_iface->poke8(0x0FC, 0x23); // Incr Step Size, ADC Overrange Size
+        _io_iface->poke8(0x0FD, 0x4C); // Max Full/LMT Gain Table Index
+        _io_iface->poke8(0x0FE, 0x44); // Decr Step Size, Peak Overload Time
+        _io_iface->poke8(0x100, 0x6F); // Max Digital Gain
+        _io_iface->poke8(0x101, 0x0A); // Max Digital Gain
+        _io_iface->poke8(0x103, 0x08); // Max Digital Gain
+        _io_iface->poke8(0x104, 0x2F); // ADC Small Overload Threshold
+        _io_iface->poke8(0x105, 0x3A); // ADC Large Overload Threshold
+        _io_iface->poke8(0x106, 0x22); // Max Digital Gain
+        _io_iface->poke8(0x107, 0x2B); // Large LMT Overload Threshold
+        _io_iface->poke8(0x108, 0x31);
+        _io_iface->poke8(0x111, 0x0A);
+        _io_iface->poke8(0x11A, 0x1C);
+        _io_iface->poke8(0x120, 0x0C);
+        _io_iface->poke8(0x121, 0x44);
+        _io_iface->poke8(0x122, 0x44);
+        _io_iface->poke8(0x123, 0x11);
+        _io_iface->poke8(0x124, 0xF5);
+        _io_iface->poke8(0x125, 0x3B);
+        _io_iface->poke8(0x128, 0x03);
+        _io_iface->poke8(0x129, 0x56);
+        _io_iface->poke8(0x12A, 0x22);
+    } else {
+        _io_iface->poke8(0x0FA, 0xE0); // Gain Control Mode Select
+        _io_iface->poke8(0x0FB, 0x08); // Table, Digital Gain, Man Gain Ctrl
+        _io_iface->poke8(0x0FC, 0x23); // Incr Step Size, ADC Overrange Size
+        _io_iface->poke8(0x0FD, 0x4C); // Max Full/LMT Gain Table Index
+        _io_iface->poke8(0x0FE, 0x44); // Decr Step Size, Peak Overload Time
+        _io_iface->poke8(0x100, 0x6F); // Max Digital Gain
+        _io_iface->poke8(0x104, 0x2F); // ADC Small Overload Threshold
+        _io_iface->poke8(0x105, 0x3A); // ADC Large Overload Threshold
+        _io_iface->poke8(0x107, 0x31); // Large LMT Overload Threshold
+        _io_iface->poke8(0x108, 0x39); // Small LMT Overload Threshold
+        _io_iface->poke8(0x109, 0x23); // Rx1 Full/LMT Gain Index
+        _io_iface->poke8(0x10A, 0x58); // Rx1 LPF Gain Index
+        _io_iface->poke8(0x10B, 0x00); // Rx1 Digital Gain Index
+        _io_iface->poke8(0x10C, 0x23); // Rx2 Full/LMT Gain Index
+        _io_iface->poke8(0x10D, 0x18); // Rx2 LPF Gain Index
+        _io_iface->poke8(0x10E, 0x00); // Rx2 Digital Gain Index
+        _io_iface->poke8(0x114, 0x30); // Low Power Threshold
+        _io_iface->poke8(0x11A, 0x27); // Initial LMT Gain Limit
+        _io_iface->poke8(0x081, 0x00); // Tx Symbol Gain Control
+    }
 }
 
 /* Setup the RX or TX synthesizers.
@@ -1421,6 +1451,10 @@ void ad9361_device_t::initialize()
     _tx2_gain = 0;
     _use_dc_offset_correction = true;
     _use_iq_balance_correction = true;
+    _rx1_agc_mode = GAIN_MODE_SLOW_AGC;
+    _rx2_agc_mode = GAIN_MODE_SLOW_AGC;
+    _rx1_agc_enable = false;
+    _rx2_agc_enable = false;
 
     /* Reset the device. */
     _io_iface->poke8(0x000, 0x01);
@@ -1564,7 +1598,7 @@ void ad9361_device_t::initialize()
 
     _program_mixer_gm_subtable();
     _program_gain_table();
-    _setup_gain_control();
+    _setup_gain_control(false);
 
     _calibrate_baseband_rx_analog_filter();
     _calibrate_baseband_tx_analog_filter();
@@ -1690,7 +1724,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
 
     _program_mixer_gm_subtable();
     _program_gain_table();
-    _setup_gain_control();
+    _setup_gain_control(false);
     _reprogram_gains();
 
     _calibrate_baseband_rx_analog_filter();
@@ -2064,6 +2098,96 @@ void ad9361_device_t::set_iq_balance_auto(direction_t direction, const bool on)
         }
     } else {
         throw uhd::runtime_error("[ad9361_device_t] [set_iq_balance_auto] INVALID_CODE_PATH");
+    }
+}
+
+/* Sets the RX gain mode to be used.
+ * If a transition from an AGC to an non AGC mode occurs (or vice versa)
+ * the gain configuration will be reloaded. */
+void ad9361_device_t::_setup_agc(chain_t chain, gain_mode_t gain_mode)
+{
+    boost::uint8_t gain_mode_reg = 0;
+    boost::uint8_t gain_mode_prev = 0;
+    boost::uint8_t gain_mode_bits_pos = 0;
+
+    gain_mode_reg = _io_iface->peek8(0x0FA);
+    gain_mode_prev = (gain_mode_reg & 0x0F);
+
+    if (chain == CHAIN_1) {
+        gain_mode_bits_pos = 0;
+    } else if (chain == CHAIN_2) {
+        gain_mode_bits_pos = 2;
+    } else
+    {
+        throw uhd::runtime_error("[ad9361_device_t] Wrong value for chain");
+    }
+
+    gain_mode_reg = (gain_mode_reg & (~(0x03<<gain_mode_bits_pos))); //clear mode bits
+    switch (gain_mode) {
+        case GAIN_MODE_MANUAL:
+            //leave bits cleared
+            break;
+        case GAIN_MODE_SLOW_AGC:
+            gain_mode_reg = (gain_mode_reg | (0x02<<gain_mode_bits_pos));
+            break;
+        case GAIN_MODE_FAST_AGC:
+            gain_mode_reg = (gain_mode_reg | (0x01<<gain_mode_bits_pos));
+            break;
+        default:
+            throw uhd::runtime_error("[ad9361_device_t] Gain mode does not exist");
+    }
+    _io_iface->poke8(0x0FA, gain_mode_reg);
+    boost::uint8_t gain_mode_status = _io_iface->peek8(0x0FA);
+    gain_mode_status = (gain_mode_status & 0x0F);
+    /*Check if gain mode configuration needs to be reprogrammed*/
+    if (((gain_mode_prev == 0) && (gain_mode_status != 0)) || ((gain_mode_prev != 0) && (gain_mode_status == 0))) {
+        if (gain_mode_status == 0) {
+            /*load manual mode config*/
+            _setup_gain_control(false);
+        } else {
+            /*load agc mode config*/
+            _setup_gain_control(true);
+        }
+    }
+}
+
+void ad9361_device_t::set_agc(chain_t chain, bool enable)
+{
+    if(chain == CHAIN_1) {
+        _rx1_agc_enable = enable;
+        if(enable) {
+            _setup_agc(chain, _rx1_agc_mode);
+        } else {
+            _setup_agc(chain, GAIN_MODE_MANUAL);
+        }
+    } else if (chain == CHAIN_2){
+        _rx2_agc_enable = enable;
+        if(enable) {
+            _setup_agc(chain, _rx2_agc_mode);
+        } else {
+            _setup_agc(chain, GAIN_MODE_MANUAL);
+        }
+    } else
+    {
+        throw uhd::runtime_error("[ad9361_device_t] Wrong value for chain");
+    }
+}
+
+void ad9361_device_t::set_agc_mode(chain_t chain, gain_mode_t gain_mode)
+{
+    if(chain == CHAIN_1) {
+        _rx1_agc_mode = gain_mode;
+        if(_rx1_agc_enable) {
+            _setup_agc(chain, _rx1_agc_mode);
+        }
+    } else if(chain == CHAIN_2){
+        _rx2_agc_mode = gain_mode;
+        if(_rx2_agc_enable) {
+            _setup_agc(chain, _rx2_agc_mode);
+        }
+    } else
+    {
+        throw uhd::runtime_error("[ad9361_device_t] Wrong value for chain");
     }
 }
 

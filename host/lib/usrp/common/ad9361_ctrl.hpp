@@ -88,6 +88,12 @@ public:
     //! set the gain for a particular gain element
     virtual double set_gain(const std::string &which, const double value) = 0;
 
+    //! Enable or disable the AGC module
+    virtual void set_agc(const std::string &which, bool enable) = 0;
+
+    //! configure the AGC module to slow or fast mode
+    virtual void set_agc_mode(const std::string &which, const std::string &mode) = 0;
+
     //! set a new clock rate, return the exact value
     virtual double set_clock_rate(const double rate) = 0;
 

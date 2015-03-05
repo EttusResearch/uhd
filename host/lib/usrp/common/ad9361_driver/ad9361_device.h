@@ -16,6 +16,7 @@ class ad9361_device_t : public boost::noncopyable
 public:
     enum direction_t { RX, TX };
     enum chain_t { CHAIN_1, CHAIN_2 };
+    enum gain_mode_t {GAIN_MODE_MANUAL, GAIN_MODE_SLOW_AGC, GAIN_MODE_FAST_AGC};
 
     ad9361_device_t(ad9361_params::sptr client, ad9361_io::sptr io_iface) :
         _client_params(client), _io_iface(io_iface) {}
@@ -78,6 +79,12 @@ public:
     /* Turn on/off AD9361's RX IQ imbalance correction */
     void set_iq_balance_auto(direction_t direction, const bool on);
 
+    /* Configure AD9361's AGC module to use either fast or slow AGC mode. */
+    void set_agc_mode(chain_t chain, gain_mode_t gain_mode);
+
+    /* Enable AD9361's AGC gain mode. */
+    void set_agc(chain_t chain, bool enable);
+
     //Constants
     static const double AD9361_MAX_GAIN;
     static const double AD9361_MAX_CLOCK_RATE;
@@ -101,7 +108,7 @@ private:    //Methods
     void _calibrate_tx_quadrature();
     void _program_mixer_gm_subtable();
     void _program_gain_table();
-    void _setup_gain_control();
+    void _setup_gain_control(bool use_agc);
     void _setup_synth(direction_t direction, double vcorate);
     double _tune_bbvco(const double rate);
     void _reprogram_gains();
@@ -109,6 +116,7 @@ private:    //Methods
     double _setup_rates(const double rate);
     double _get_temperature(const double cal_offset, const double timeout = 0.1);
     void _configure_bb_rf_dc_tracking(const bool on);
+    void _setup_agc(chain_t chain, gain_mode_t gain_mode);
 
 private:    //Members
     typedef struct {
@@ -133,6 +141,8 @@ private:    //Members
     double              _rx1_gain, _rx2_gain, _tx1_gain, _tx2_gain;
     boost::int32_t      _tfir_factor;
     boost::int32_t      _rfir_factor;
+    gain_mode_t         _rx1_agc_mode, _rx2_agc_mode;
+    bool                _rx1_agc_enable, _rx2_agc_enable;
     //Register soft-copies
     chip_regs_t         _regs;
     //Synchronization

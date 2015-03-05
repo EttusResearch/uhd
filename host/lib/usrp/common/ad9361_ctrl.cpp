@@ -107,6 +107,27 @@ public:
         return _device.set_gain(direction, chain, value);
     }
 
+    void set_agc(const std::string &which, bool enable)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::chain_t chain =_get_chain_from_antenna(which);
+         _device.set_agc(chain, enable);
+    }
+
+    void set_agc_mode(const std::string &which, const std::string &mode)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+        ad9361_device_t::chain_t chain =_get_chain_from_antenna(which);
+        if(mode == "slow") {
+            _device.set_agc_mode(chain, ad9361_device_t::GAIN_MODE_SLOW_AGC);
+        } else if (mode == "fast"){
+            _device.set_agc_mode(chain, ad9361_device_t::GAIN_MODE_FAST_AGC);
+        } else {
+            throw uhd::runtime_error("ad9361_ctrl got an invalid AGC option.");
+        }
+    }
+
     //! set a new clock rate, return the exact value
     double set_clock_rate(const double rate)
     {

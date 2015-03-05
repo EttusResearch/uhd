@@ -734,6 +734,16 @@ void b200_impl::setup_radio(const size_t dspno)
                 .set("RX2");
             _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "rssi")
                 .publish(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key));
+
+            //AGC setup
+            const std::list<std::string> mode_strings = boost::assign::list_of("slow")("fast");
+            _tree->create<bool>(rf_fe_path / "gain" / "agc" / "enable")
+                .subscribe(boost::bind((&ad9361_ctrl::set_agc), _codec_ctrl, key, _1))
+                .set(false);
+            _tree->create<std::string>(rf_fe_path / "gain" / "agc" / "mode" / "value")
+                .subscribe(boost::bind((&ad9361_ctrl::set_agc_mode), _codec_ctrl, key, _1)).set(mode_strings.front());
+            _tree->create<std::list<std::string> >(rf_fe_path / "gain" / "agc" / "mode" / "options")
+                            .set(mode_strings);
         }
         if (key[0] == 'T')
         {
