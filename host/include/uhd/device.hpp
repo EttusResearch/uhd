@@ -77,7 +77,9 @@ public:
     /*!
      * \brief Create a new device from the device address hint.
      *
-     * The make routine will call find and pick one of the results.
+     * The method will go through the registered device types and pick one of
+     * the discovered devices.
+     *
      * By default, the first result will be used to create a new device.
      * Use the which parameter as an index into the list of results.
      *

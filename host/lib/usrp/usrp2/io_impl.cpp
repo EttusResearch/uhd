@@ -239,7 +239,8 @@ void usrp2_impl::io_init(void){
         //init the tx xport and flow control monitor
         _io_impl->tx_xports.push_back(_mbc[mb].tx_dsp_xport);
         _io_impl->fc_mons.push_back(flow_control_monitor::sptr(new flow_control_monitor(
-            USRP2_SRAM_BYTES/_mbc[mb].tx_dsp_xport->get_send_frame_size()
+            device_addr.cast("send_buff_size", USRP2_SRAM_BYTES) /
+            _mbc[mb].tx_dsp_xport->get_send_frame_size()
         )));
     }
 
