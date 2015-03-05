@@ -147,13 +147,49 @@ public:
     void set_iq_balance_auto(const std::string &which, const bool on)
     {
         _clear();
-       _args.action = uhd::htonx<boost::uint32_t>(transaction_t::ACTION_SET_IQ_BALANCE_AUTO);
+        _args.action = uhd::htonx<boost::uint32_t>(transaction_t::ACTION_SET_IQ_BALANCE_AUTO);
+        if (which == "TX1")     _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_TX1);
+        else if (which == "TX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_TX2);
+        else if (which == "RX1") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX1);
+        else if (which == "RX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX2);
+        else throw std::runtime_error("e300_remote_codec_ctrl_impl incorrect chain string.");
+        _args.use_iq_correction = on ? 1 : 0;
+
+        _transact();
+    }
+
+    void set_agc(const std::string &which, bool enable)
+    {
+        _clear();
+       _args.action = uhd::htonx<boost::uint32_t>(transaction_t::ACTION_SET_AGC);
        if (which == "TX1")      _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_TX1);
        else if (which == "TX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_TX2);
        else if (which == "RX1") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX1);
        else if (which == "RX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX2);
        else throw std::runtime_error("e300_remote_codec_ctrl_impl incorrect chain string.");
-       _args.use_iq_correction = on ? 1 : 0;
+       _args.use_agc = enable ? 1 : 0;
+
+       _transact();
+    }
+
+    void set_agc_mode(const std::string &which, const std::string &mode)
+    {
+        _clear();
+       _args.action = uhd::htonx<boost::uint32_t>(transaction_t::ACTION_SET_AGC_MODE);
+
+       if (which == "TX1")      _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_TX1);
+       else if (which == "TX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_TX2);
+       else if (which == "RX1") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX1);
+       else if (which == "RX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX2);
+       else throw std::runtime_error("e300_remote_codec_ctrl_impl incorrect chain string.");
+
+       if(mode == "slow") {
+           _args.agc_mode = 0;
+       } else if (mode == "fast") {
+           _args.agc_mode = 1;
+       } else {
+           throw std::runtime_error("e300_remote_codec_ctrl_impl incorrect agc mode.");
+       }
 
        _transact();
     }
