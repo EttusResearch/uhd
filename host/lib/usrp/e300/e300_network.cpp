@@ -226,6 +226,7 @@ static void e300_codec_ctrl_tunnel(
                 break;
             case codec_xact_t::ACTION_GET_RSSI:
                 out->rssi = _codec_ctrl->get_rssi(which_str).to_real();
+                break;
             case codec_xact_t::ACTION_GET_TEMPERATURE:
                 out->temp = _codec_ctrl->get_temperature().to_real();
                 break;
