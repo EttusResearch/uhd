@@ -824,6 +824,26 @@ public:
     }
 
     void set_rx_gain(double gain, const std::string &name, size_t chan){
+        /* Check if any AGC mode is enable and if so warn the user */
+        if (chan != ALL_CHANS) {
+            if (_tree->exists(rx_rf_fe_root(chan) / "gain" / "agc")) {
+                bool agc = _tree->access<bool>(rx_rf_fe_root(chan) / "gain" / "agc" / "enable").get();
+                if(agc) {
+                    UHD_MSG(warning) << "AGC enabled for this channel. Setting will be ignored." << std::endl;
+                }
+            }
+        } else {
+            for (size_t c = 0; c < get_rx_num_channels(); c++){
+                if (_tree->exists(rx_rf_fe_root(c) / "gain" / "agc")) {
+                    bool agc = _tree->access<bool>(rx_rf_fe_root(chan) / "gain" / "agc" / "enable").get();
+                    if(agc) {
+                        UHD_MSG(warning) << "AGC enabled for this channel. Setting will be ignored." << std::endl;
+                    }
+                }
+            }
+        }
+        /* Apply gain setting.
+         * If device is in AGC mode it will ignore the setting. */
         try {
             return rx_gain_group(chan)->set_value(gain, name);
         } catch (uhd::key_error &e) {
@@ -839,6 +859,22 @@ public:
       gain_range_t gain_range = get_rx_gain_range(ALL_GAINS, chan);
       double abs_gain = (gain * (gain_range.stop() - gain_range.start())) + gain_range.start();
       set_rx_gain(abs_gain, ALL_GAINS, chan);
+    }
+
+    void set_rx_agc(bool enable, size_t chan = 0)
+    {
+        if (chan != ALL_CHANS){
+            if (_tree->exists(rx_rf_fe_root(chan) / "gain" / "agc" / "enable")) {
+                _tree->access<bool>(rx_rf_fe_root(chan) / "gain" / "agc" / "enable").set(enable);
+            } else {
+                UHD_MSG(warning) << "AGC is not available on this device." << std::endl;
+            }
+            return;
+        }
+        for (size_t c = 0; c < get_rx_num_channels(); c++){
+            this->set_rx_agc(enable, c);
+        }
+
     }
 
     double get_rx_gain(const std::string &name, size_t chan){
