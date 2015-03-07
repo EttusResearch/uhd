@@ -498,7 +498,7 @@ control::sptr control::make(const std::string &node, const size_t baud_rate)
 #else
 using namespace uhd::usrp::gps::ublox::ubx;
 
-control::sptr control::make(const std::string &node, const size_t baud_rate)
+control::sptr control::make(const std::string& /* node */, const size_t /* baud_rate */)
 {
     throw uhd::assertion_error("control::sptr::make: !E300_NATIVE");
 }
