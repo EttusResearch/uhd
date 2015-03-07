@@ -35,14 +35,14 @@ using namespace uhd::usrp_clock;
 using namespace uhd::usrp;
 
 void wait_for_pps(multi_usrp::sptr usrp, size_t chan, double timeout){
-    boost::uint32_t last_pps_time = usrp->get_time_last_pps(chan).get_full_secs();
-    boost::uint32_t system_time = uhd::time_spec_t::get_system_time().get_full_secs();
-    boost::uint32_t exit_time = system_time + timeout;
+    time_t last_pps_time = usrp->get_time_last_pps(chan).get_full_secs();
+    time_t system_time = uhd::time_spec_t::get_system_time().get_full_secs();
+    time_t exit_time = system_time + timeout;
     bool detected_pps = false;
 
     //Otherwise, this would hang if the USRP doesn't detect any PPS
     while(uhd::time_spec_t::get_system_time().get_full_secs() < exit_time){
-        boost::uint32_t time_now = usrp->get_time_last_pps(chan).get_full_secs();
+        time_t time_now = usrp->get_time_last_pps(chan).get_full_secs();
         if(last_pps_time < time_now){
             detected_pps = true;
             break;

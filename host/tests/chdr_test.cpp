@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(test_with_chdr){
     if_packet_info.eob = false;
     if_packet_info.packet_count = 7;
     if_packet_info.has_tsf = true;
-    if_packet_info.tsf = 0x1234567890ABCDEF;
+    if_packet_info.tsf = 0x1234567890ABCDEFull;
     if_packet_info.sid = 0xAABBCCDD;
     if_packet_info.num_payload_words32 = 24;
     if_packet_info.num_payload_bytes = 95;
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(test_with_chdr_fc){
     if_packet_info.eob = false;
     if_packet_info.packet_count = 19;
     if_packet_info.has_tsf = false;
-    if_packet_info.tsf = 0x1234567890ABCDEF;
+    if_packet_info.tsf = 0x1234567890ABCDEFull;
     if_packet_info.sid = 0xAABBCCDD;
     if_packet_info.num_payload_words32 = 4;
     if_packet_info.num_payload_bytes = 16;
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(test_with_chdr_cmd){
     if_packet_info.packet_type = if_packet_info_t::PACKET_TYPE_CMD;
     if_packet_info.packet_count = 19;
     if_packet_info.has_tsf = true;
-    if_packet_info.tsf = 0x1234567890ABCDEF;
+    if_packet_info.tsf = 0x1234567890ABCDEFull;
     if_packet_info.sid = 0xAABBCCDD;
     if_packet_info.num_payload_words32 = 4;
     if_packet_info.num_payload_bytes = 16;
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(test_with_chdr_resp){
     if_packet_info.packet_type = if_packet_info_t::PACKET_TYPE_RESP;
     if_packet_info.packet_count = 123;
     if_packet_info.has_tsf = false;
-    if_packet_info.tsf = 0x1234567890ABCDEF;
+    if_packet_info.tsf = 0x1234567890ABCDEFull;
     if_packet_info.sid = 0xAABBCCDD;
     if_packet_info.num_payload_words32 = 4;
     if_packet_info.num_payload_bytes = 16;
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(test_with_chdr_err){
     if_packet_info.eob = false;
     if_packet_info.error = false; // Needs to be set explicitly
     if_packet_info.has_tsf = false;
-    if_packet_info.tsf = 0x1234567890ABCDEF;
+    if_packet_info.tsf = 0x1234567890ABCDEFull;
     if_packet_info.sid = 0xAABBCCDD;
     if_packet_info.num_payload_words32 = 4;
     if_packet_info.num_payload_bytes = 16;

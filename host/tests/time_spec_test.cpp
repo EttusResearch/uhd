@@ -112,8 +112,8 @@ BOOST_AUTO_TEST_CASE(test_time_large_ticks_to_time_spec)
 
 BOOST_AUTO_TEST_CASE(test_time_error_irrational_rate)
 {
-    static const double rate = 1625e3/6;
-    const long long tick_in = 23423436291667;
+    static const double rate = 1625e3/6.0;
+    const long long tick_in = 23423436291667ll;
     const uhd::time_spec_t ts = uhd::time_spec_t::from_ticks(tick_in, rate);
     const long long tick_out = ts.to_ticks(rate);
     const long long err = tick_in - tick_out;
