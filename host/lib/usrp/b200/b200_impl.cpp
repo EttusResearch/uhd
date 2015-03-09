@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2014 Ettus Research LLC
+// Copyright 2012-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -529,6 +529,19 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_sources);
 
     ////////////////////////////////////////////////////////////////////
+    // front panel gpio
+    ////////////////////////////////////////////////////////////////////
+    _radio_perifs[0].fp_gpio = gpio_core_200::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
+    BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
+    {
+            _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
+            .set(0)
+            .subscribe(boost::bind(&b200_impl::set_fp_gpio, this, _radio_perifs[0].fp_gpio, attr.first, _1));
+    }
+    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
+        .publish(boost::bind(&b200_impl::get_fp_gpio, this, _radio_perifs[0].fp_gpio));
+
+    ////////////////////////////////////////////////////////////////////
     // dboard eeproms but not really
     ////////////////////////////////////////////////////////////////////
     dboard_eeprom_t db_eeprom;
@@ -591,7 +604,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
 
 b200_impl::~b200_impl(void)
 {
-	UHD_SAFE_CALL
+    UHD_SAFE_CALL
     (
         _async_task.reset();
     )
@@ -702,7 +715,7 @@ void b200_impl::setup_radio(const size_t dspno)
         _tree->create<bool>(rf_fe_path / "use_lo_offset").set(false);
         _tree->create<double>(rf_fe_path / "bandwidth" / "value")
             .coerce(boost::bind(&ad9361_ctrl::set_bw_filter, _codec_ctrl, key, _1))
-            .set(40e6);
+            .set(56e6);
         _tree->create<meta_range_t>(rf_fe_path / "bandwidth" / "range")
             .publish(boost::bind(&ad9361_ctrl::get_bw_filter_range, key));
         _tree->create<double>(rf_fe_path / "freq" / "value")
@@ -715,6 +728,16 @@ void b200_impl::setup_radio(const size_t dspno)
                 .publish(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl));
 
         //setup RX related stuff
+        if(direction)
+        {
+            _tree->create<bool>(rf_fe_path / "dc_offset" / "enable" )
+                .subscribe(boost::bind(&ad9361_ctrl::set_dc_offset_auto, _codec_ctrl, key, _1)).set(true);
+
+            _tree->create<bool>(rf_fe_path / "iq_balance" / "enable" )
+                .subscribe(boost::bind(&ad9361_ctrl::set_iq_balance_auto, _codec_ctrl, key, _1)).set(true);
+        }
+
+        //setup antenna stuff
         if (key[0] == 'R')
         {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
@@ -724,6 +747,16 @@ void b200_impl::setup_radio(const size_t dspno)
                 .set("RX2");
             _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "rssi")
                 .publish(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key));
+
+            //AGC setup
+            const std::list<std::string> mode_strings = boost::assign::list_of("slow")("fast");
+            _tree->create<bool>(rf_fe_path / "gain" / "agc" / "enable")
+                .subscribe(boost::bind((&ad9361_ctrl::set_agc), _codec_ctrl, key, _1))
+                .set(false);
+            _tree->create<std::string>(rf_fe_path / "gain" / "agc" / "mode" / "value")
+                .subscribe(boost::bind((&ad9361_ctrl::set_agc_mode), _codec_ctrl, key, _1)).set(mode_strings.front());
+            _tree->create<std::list<std::string> >(rf_fe_path / "gain" / "agc" / "mode" / "options")
+                            .set(mode_strings);
         }
         if (key[0] == 'T')
         {
@@ -881,6 +914,26 @@ void b200_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom)
     mb_eeprom.commit(*_iface, "B200");
 }
 
+
+boost::uint32_t b200_impl::get_fp_gpio(gpio_core_200::sptr gpio)
+{
+    return boost::uint32_t(gpio->read_gpio(dboard_iface::UNIT_RX));
+}
+
+void b200_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, const boost::uint32_t value)
+{
+    switch (attr)
+    {
+    case CTRL:      return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
+    case DDR:       return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
+    case OUT:       return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
+    case ATR_0X:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
+    case ATR_RX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
+    case ATR_TX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
+    case ATR_XX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
+    default:        UHD_THROW_INVALID_CODE_PATH();
+    }
+}
 
 /***********************************************************************
  * Reference time and clock

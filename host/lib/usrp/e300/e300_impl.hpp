@@ -62,7 +62,9 @@ static std::string E300_SERVER_GREGS_PORT  = "21760";
 static std::string E300_SERVER_I2C_PORT    = "21761";
 static std::string E300_SERVER_SENSOR_PORT = "21762";
 
-static const size_t E300_RX_FC_REQUEST_FREQ = 8;
+static const double E300_RX_SW_BUFF_FULLNESS = 0.9;        //Buffer should be half full
+static const size_t E300_RX_FC_REQUEST_FREQ = 32; // per flow ctrl window
+static const size_t E300_TX_FC_RESPONSE_FREQ = 8; // per flow ctrl window
 
 // crossbar settings
 static const boost::uint8_t E300_RADIO_DEST_PREFIX_TX   = 0;
@@ -219,13 +221,11 @@ private: // methods
     uhd::sensor_value_t _get_fe_pll_lock(const bool is_tx);
 
     // internal gpios
-    boost::uint8_t _get_internal_gpio(
-        gpio_core_200::sptr,
-        const std::string &);
+    boost::uint8_t _get_internal_gpio(gpio_core_200::sptr);
 
     void _set_internal_gpio(
         gpio_core_200::sptr gpio,
-        const std::string &attr,
+        const gpio_attr_t attr,
         const boost::uint32_t value);
 
     // Transport funcs

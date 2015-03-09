@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011,2014 Ettus Research LLC
+// Copyright 2010-2011,2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -90,9 +90,9 @@ device_addrs_t device::find(const device_addr_t &hint, device_filter_t filter){
 
     device_addrs_t device_addrs;
 
-    BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
-        try{
-            if(filter == ANY or fcn.get<2>() == filter){
+    BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()) {
+        try {
+            if (filter == ANY or fcn.get<2>() == filter) {
                 device_addrs_t discovered_addrs = fcn.get<0>()(hint);
                 device_addrs.insert(
                     device_addrs.begin(),
@@ -101,7 +101,7 @@ device_addrs_t device::find(const device_addr_t &hint, device_filter_t filter){
                 );
             }
         }
-        catch(const std::exception &e){
+        catch (const std::exception &e) {
             UHD_MSG(error) << "Device discovery error: " << e.what() << std::endl;
         }
     }
@@ -119,11 +119,16 @@ device::sptr device::make(const device_addr_t &hint, device_filter_t filter, siz
     std::vector<dev_addr_make_t> dev_addr_makers;
 
     BOOST_FOREACH(const dev_fcn_reg_t &fcn, get_dev_fcn_regs()){
-        if(filter == ANY or fcn.get<2>() == filter){
-            BOOST_FOREACH(device_addr_t dev_addr, fcn.get<0>()(hint)){
-                //append the discovered address and its factory function
-                dev_addr_makers.push_back(dev_addr_make_t(dev_addr, fcn.get<1>()));
+        try{
+            if(filter == ANY or fcn.get<2>() == filter){
+                BOOST_FOREACH(device_addr_t dev_addr, fcn.get<0>()(hint)){
+                    //append the discovered address and its factory function
+                    dev_addr_makers.push_back(dev_addr_make_t(dev_addr, fcn.get<1>()));
+                }
             }
+        }
+        catch(const std::exception &e){
+            UHD_MSG(error) << "Device discovery error: " << e.what() << std::endl;
         }
     }
 

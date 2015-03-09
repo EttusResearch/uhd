@@ -16,7 +16,6 @@
 //
 
 #include "ad9361_ctrl.hpp"
-#include <uhd/exception.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/types/serial.hpp>
@@ -108,6 +107,27 @@ public:
         return _device.set_gain(direction, chain, value);
     }
 
+    void set_agc(const std::string &which, bool enable)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::chain_t chain =_get_chain_from_antenna(which);
+         _device.set_agc(chain, enable);
+    }
+
+    void set_agc_mode(const std::string &which, const std::string &mode)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+        ad9361_device_t::chain_t chain =_get_chain_from_antenna(which);
+        if(mode == "slow") {
+            _device.set_agc_mode(chain, ad9361_device_t::GAIN_MODE_SLOW_AGC);
+        } else if (mode == "fast"){
+            _device.set_agc_mode(chain, ad9361_device_t::GAIN_MODE_FAST_AGC);
+        } else {
+            throw uhd::runtime_error("ad9361_ctrl got an invalid AGC option.");
+        }
+    }
+
     //! set a new clock rate, return the exact value
     double set_clock_rate(const double rate)
     {
@@ -176,6 +196,22 @@ public:
     sensor_value_t get_temperature()
     {
         return sensor_value_t("temp", _device.get_average_temperature(), "C");
+    }
+
+    void set_dc_offset_auto(const std::string &which, const bool on)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        _device.set_dc_offset_auto(direction,on);
+    }
+
+    void set_iq_balance_auto(const std::string &which, const bool on)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        _device.set_iq_balance_auto(direction,on);
     }
 
 private:

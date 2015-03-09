@@ -46,11 +46,13 @@ localparam SR_TX_DSP    = 184;
 localparam SR_TIME      = 128;
 localparam SR_RX_FMT    = 136;
 localparam SR_TX_FMT    = 138;
+localparam SR_FP_GPIO   = 200;
 
 localparam RB32_TEST            = 0;
 localparam RB64_TIME_NOW        = 8;
 localparam RB64_TIME_PPS        = 16;
 localparam RB64_CODEC_READBACK  = 24;
+localparam RB32_FP_GPIO         = 32;
 
 //pll constants
 static const int AD9361_SLAVENO = (1 << 0);

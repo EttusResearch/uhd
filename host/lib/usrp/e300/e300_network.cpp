@@ -226,8 +226,24 @@ static void e300_codec_ctrl_tunnel(
                 break;
             case codec_xact_t::ACTION_GET_RSSI:
                 out->rssi = _codec_ctrl->get_rssi(which_str).to_real();
+                break;
             case codec_xact_t::ACTION_GET_TEMPERATURE:
                 out->temp = _codec_ctrl->get_temperature().to_real();
+                break;
+            case codec_xact_t::ACTION_SET_DC_OFFSET_AUTO:
+                _codec_ctrl->set_dc_offset_auto(which_str, in->use_dc_correction == 1);
+                break;
+            case codec_xact_t::ACTION_SET_IQ_BALANCE_AUTO:
+                _codec_ctrl->set_iq_balance_auto(which_str, in->use_iq_correction == 1);
+            case codec_xact_t::ACTION_SET_AGC:
+                _codec_ctrl->set_agc(which_str, in->use_agc == 1);
+                break;
+            case codec_xact_t::ACTION_SET_AGC_MODE:
+                if(in->agc_mode == 0) {
+                    _codec_ctrl->set_agc_mode(which_str, "slow");
+                } else if (in->agc_mode == 1) {
+                    _codec_ctrl->set_agc_mode(which_str, "fast");
+                }
                 break;
             default:
                 UHD_MSG(status) << "Got unknown request?!" << std::endl;

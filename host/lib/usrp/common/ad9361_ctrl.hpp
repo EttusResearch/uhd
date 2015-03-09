@@ -22,9 +22,11 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/sensors.hpp>
+#include <uhd/exception.hpp>
 #include <boost/shared_ptr.hpp>
 #include <ad9361_device.h>
 #include <string>
+#include <complex>
 
 namespace uhd { namespace usrp {
 
@@ -86,6 +88,12 @@ public:
     //! set the gain for a particular gain element
     virtual double set_gain(const std::string &which, const double value) = 0;
 
+    //! Enable or disable the AGC module
+    virtual void set_agc(const std::string &which, bool enable) = 0;
+
+    //! configure the AGC module to slow or fast mode
+    virtual void set_agc_mode(const std::string &which, const std::string &mode) = 0;
+
     //! set a new clock rate, return the exact value
     virtual double set_clock_rate(const double rate) = 0;
 
@@ -95,7 +103,27 @@ public:
     //! tune the given frontend, return the exact value
     virtual double tune(const std::string &which, const double value) = 0;
 
-    //! turn on/off data port loopback
+    //! set the DC offset for I and Q manually
+    void set_dc_offset(const std::string &, const std::complex<double>)
+    {
+        //This feature should not be used according to Analog Devices
+        throw uhd::runtime_error("ad9361_ctrl::set_dc_offset this feature is not supported on this device.");
+    }
+
+    //! enable or disable the BB/RF DC tracking feature
+    virtual void set_dc_offset_auto(const std::string &which, const bool on) = 0;
+
+    //! set the IQ correction value manually
+    void set_iq_balance(const std::string &, const std::complex<double>)
+    {
+        //This feature should not be used according to Analog Devices
+        throw uhd::runtime_error("ad9361_ctrl::set_iq_balance this feature is not supported on this device.");
+    }
+
+    //! enable or disable the quadrature calibration
+    virtual void set_iq_balance_auto(const std::string &which, const bool on) = 0;
+
+    //! turn on/off Catalina's data port loopback
     virtual void data_port_loopback(const bool on) = 0;
 
     //! read internal RSSI sensor

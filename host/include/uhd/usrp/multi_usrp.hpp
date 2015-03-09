@@ -532,6 +532,16 @@ public:
     virtual void set_normalized_rx_gain(double gain, size_t chan = 0) = 0;
 
     /*!
+     * Enable or disable the RX AGC module.
+     * Once this module is enabled manual gain settings will be ignored.
+     * The AGC will start in a default configuration which should be good for most use cases.
+     * Device specific configuration parameters can be found in the property tree.
+     * \param on Enable or Disable the AGC
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_rx_agc(bool enable, size_t chan = 0) = 0;
+
+    /*!
      * Get the RX gain value for the specified gain element.
      * For an empty name, sum across all gain elements.
      * \param name the name of the gain element
@@ -668,6 +678,14 @@ public:
      * \param chan the channel index 0 to N-1
      */
     virtual void set_rx_dc_offset(const std::complex<double> &offset, size_t chan = ALL_CHANS) = 0;
+
+    /*!
+     * Enable/disable the automatic IQ imbalance correction.
+     *
+     * \param enb true to enable automatic IQ balance correction
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_rx_iq_balance(const bool enb, size_t chan) = 0;
 
     /*!
      * Set the RX frontend IQ imbalance correction.

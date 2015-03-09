@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2013 Ettus Research LLC
+// Copyright 2012-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -156,6 +156,7 @@ private:
     {
         radio_ctrl_core_3000::sptr ctrl;
         gpio_core_200_32wo::sptr atr;
+        gpio_core_200::sptr fp_gpio;
         time_core_3000::sptr time64;
         rx_vita_core_3000::sptr framer;
         rx_dsp_core_3000::sptr ddc;
@@ -193,6 +194,9 @@ private:
 
     void update_enables(void);
     void update_atrs(void);
+
+    boost::uint32_t get_fp_gpio(gpio_core_200::sptr);
+    void set_fp_gpio(gpio_core_200::sptr, const gpio_attr_t, const boost::uint32_t);
 
     double _tick_rate;
     double get_tick_rate(void){return _tick_rate;}
@@ -245,6 +249,7 @@ private:
     //! Coercer, attached to the "rate/value" property on the rx dsps.
     double coerce_rx_samp_rate(rx_dsp_core_3000::sptr, size_t, const double);
     void update_rx_samp_rate(const size_t, const double);
+
     //! Coercer, attached to the "rate/value" property on the tx dsps.
     double coerce_tx_samp_rate(tx_dsp_core_3000::sptr, size_t, const double);
     void update_tx_samp_rate(const size_t, const double);
