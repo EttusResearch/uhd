@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2014 Ettus Research LLC
+// Copyright 2012-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -529,6 +529,19 @@ b200_impl::b200_impl(const device_addr_t &device_addr)
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_sources);
 
     ////////////////////////////////////////////////////////////////////
+    // front panel gpio
+    ////////////////////////////////////////////////////////////////////
+    _radio_perifs[0].fp_gpio = gpio_core_200::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
+    BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
+    {
+            _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
+            .set(0)
+            .subscribe(boost::bind(&b200_impl::set_fp_gpio, this, _radio_perifs[0].fp_gpio, attr.first, _1));
+    }
+    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
+        .publish(boost::bind(&b200_impl::get_fp_gpio, this, _radio_perifs[0].fp_gpio));
+
+    ////////////////////////////////////////////////////////////////////
     // dboard eeproms but not really
     ////////////////////////////////////////////////////////////////////
     dboard_eeprom_t db_eeprom;
@@ -901,6 +914,26 @@ void b200_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom)
     mb_eeprom.commit(*_iface, "B200");
 }
 
+
+boost::uint32_t b200_impl::get_fp_gpio(gpio_core_200::sptr gpio)
+{
+    return boost::uint32_t(gpio->read_gpio(dboard_iface::UNIT_RX));
+}
+
+void b200_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, const boost::uint32_t value)
+{
+    switch (attr)
+    {
+    case CTRL:      return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
+    case DDR:       return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
+    case OUT:       return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
+    case ATR_0X:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
+    case ATR_RX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
+    case ATR_TX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
+    case ATR_XX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
+    default:        UHD_THROW_INVALID_CODE_PATH();
+    }
+}
 
 /***********************************************************************
  * Reference time and clock

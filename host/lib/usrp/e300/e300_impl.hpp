@@ -264,13 +264,11 @@ private: // methods
     uhd::sensor_value_t _get_fe_pll_lock(const bool is_tx);
 
     // internal gpios
-    boost::uint8_t _get_internal_gpio(
-        gpio_core_200::sptr,
-        const std::string &);
+    boost::uint8_t _get_internal_gpio(gpio_core_200::sptr);
 
     void _set_internal_gpio(
         gpio_core_200::sptr gpio,
-        const std::string &attr,
+        const gpio_attr_t attr,
         const boost::uint32_t value);
 
 private: // members

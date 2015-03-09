@@ -469,15 +469,14 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     // internal gpios
     ////////////////////////////////////////////////////////////////////
     gpio_core_200::sptr fp_gpio = gpio_core_200::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
-    const std::vector<std::string> gpio_attrs = boost::assign::list_of("CTRL")("DDR")("OUT")("ATR_0X")("ATR_RX")("ATR_TX")("ATR_XX");
-    BOOST_FOREACH(const std::string &attr, gpio_attrs)
+    BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
-        _tree->create<boost::uint32_t>(mb_path / "gpio" / "INT0" / attr)
-            .subscribe(boost::bind(&e300_impl::_set_internal_gpio, this, fp_gpio, attr, _1))
+        _tree->create<boost::uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
+            .subscribe(boost::bind(&e300_impl::_set_internal_gpio, this, fp_gpio, attr.first, _1))
             .set(0);
     }
     _tree->create<boost::uint8_t>(mb_path / "gpio" / "INT0" / "READBACK")
-        .publish(boost::bind(&e300_impl::_get_internal_gpio, this, fp_gpio, "READBACK"));
+        .publish(boost::bind(&e300_impl::_get_internal_gpio, this, fp_gpio));
 
 
     ////////////////////////////////////////////////////////////////////
@@ -576,32 +575,35 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
 }
 
-boost::uint8_t e300_impl::_get_internal_gpio(
-    gpio_core_200::sptr gpio,
-    const std::string &)
+boost::uint8_t e300_impl::_get_internal_gpio(gpio_core_200::sptr gpio)
 {
     return boost::uint32_t(gpio->read_gpio(dboard_iface::UNIT_RX));
 }
 
 void e300_impl::_set_internal_gpio(
     gpio_core_200::sptr gpio,
-    const std::string &attr,
+    const gpio_attr_t attr,
     const boost::uint32_t value)
 {
-    if (attr == "CTRL")
+    switch (attr)
+    {
+    case CTRL:
         return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    else if (attr == "DDR")
+    case DDR:
         return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    else if (attr == "OUT")
+    case OUT:
         return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    else if (attr == "ATR_0X")
+    case ATR_0X:
         return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    else if (attr == "ATR_RX")
+    case ATR_RX:
         return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    else if (attr == "ATR_TX")
+    case ATR_TX:
         return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    else if (attr == "ATR_XX")
+    case ATR_XX:
         return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
+    default:
+        UHD_THROW_INVALID_CODE_PATH();
+    }
 }
 
 uhd::sensor_value_t e300_impl::_get_fe_pll_lock(const bool is_tx)
