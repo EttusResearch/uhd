@@ -239,12 +239,12 @@ BOOST_AUTO_TEST_CASE(double_greaterthanequals_operators) {
 
 BOOST_AUTO_TEST_CASE(frequency_compare_function) {
 
-    BOOST_CHECK(uhd::math::frequencies_are_equal(6817333232, 6817333232));
-    BOOST_CHECK(!uhd::math::frequencies_are_equal(6817333233, 6817333232));
+    BOOST_CHECK(uhd::math::frequencies_are_equal(6817333232.0, 6817333232.0));
+    BOOST_CHECK(!uhd::math::frequencies_are_equal(6817333233.0, 6817333232.0));
     BOOST_CHECK(uhd::math::frequencies_are_equal(6817333232.1, 6817333232.1));
     BOOST_CHECK(!uhd::math::frequencies_are_equal(6817333232.5, 6817333232.6));
     BOOST_CHECK(uhd::math::frequencies_are_equal(16.8173332321e9, 16.8173332321e9));
     BOOST_CHECK(!uhd::math::frequencies_are_equal(16.8173332322e9, 16.8173332321e9));
     BOOST_CHECK(!uhd::math::frequencies_are_equal(5.0, 4.0));
-    BOOST_CHECK(uhd::math::frequencies_are_equal(48750000, 48749999.9946));
+    BOOST_CHECK(uhd::math::frequencies_are_equal(48750000.0, 48749999.9946));
 }

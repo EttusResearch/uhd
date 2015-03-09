@@ -59,8 +59,8 @@ public:
 
     inline const std::string& get_name() const { return _name; }
     inline uint32_t get_channel() const { return _fifo_channel; }
-    inline uint32_t get_direction() const { return _fifo_direction; }
-    inline uint32_t get_scalar_type() const { return _datatype_info.scalar_type; }
+    inline fifo_direction_t get_direction() const { return _fifo_direction; }
+    inline nirio_scalar_type_t get_scalar_type() const { return _datatype_info.scalar_type; }
 
     nirio_status start();
 

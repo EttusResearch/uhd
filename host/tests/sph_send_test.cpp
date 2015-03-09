@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(test_sph_send_one_channel_full_buffer_mode){
     for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
         std::cout << "data check " << i << std::endl;
         dummy_send_xport.pop_front_packet(ifpi);
-        BOOST_CHECK_EQUAL(ifpi.num_payload_words32, 20);
+        BOOST_CHECK_EQUAL(ifpi.num_payload_words32, (size_t)20);
         BOOST_CHECK(ifpi.has_tsf);
         BOOST_CHECK_EQUAL(ifpi.tsf, num_accum_samps*TICK_RATE/SAMP_RATE);
         BOOST_CHECK_EQUAL(ifpi.sob, i == 0);
