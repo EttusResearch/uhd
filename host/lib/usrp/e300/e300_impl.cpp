@@ -471,7 +471,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     // internal gpios
     ////////////////////////////////////////////////////////////////////
-    gpio_core_200::sptr fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::GPIO), radio::RB32_FP_GPIO);
+    gpio_core_200::sptr fp_gpio = gpio_core_200::make(_radio_perifs[0].ctrl, radio::sr_addr(radio::GPIO), radio::RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
         _tree->create<boost::uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
