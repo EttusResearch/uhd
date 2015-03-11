@@ -155,7 +155,7 @@ namespace fp_compare {
      * These are the default deltas used by the 'fp_compare_delta' class for
      * single and double-precision floating point comparisons.
      */
-    static const float SINGLE_PRECISION_DELTA = 1e-3;
+    static const float SINGLE_PRECISION_DELTA = 1e-3f;
     static const double DOUBLE_PRECISION_DELTA = 1e-5;
 
     /*! Floating-point delta to use for frequency comparisons. */

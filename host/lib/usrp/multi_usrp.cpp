@@ -1162,7 +1162,7 @@ public:
     {
         if (_tree->exists(mb_root(mboard) / "gpio" / bank))
         {
-            return _tree->access<boost::uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get();
+            return boost::uint32_t(_tree->access<boost::uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get());
         }
         if (bank.size() > 2 and bank[1] == 'X')
         {

@@ -249,7 +249,7 @@ static void capture_samples(
 
     // Right after the stream is started, there will be transient data.
     // That transient data is discarded and only "good" samples are returned.
-    size_t nsamps_to_discard = usrp->get_rx_rate() * 0.001; // 1ms to be discarded
+    size_t nsamps_to_discard = size_t(usrp->get_rx_rate() * 0.001); // 1ms to be discarded
     std::vector<samp_type> discard_buff(nsamps_to_discard);
 
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);

@@ -72,7 +72,7 @@ public:
     {
         UHD_SAFE_CALL
         (
-            //NOP
+            ;//NOP
         )
     }
 
