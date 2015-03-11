@@ -196,7 +196,8 @@ UHD_STATIC_BLOCK(register_b200_device)
 /***********************************************************************
  * Structors
  **********************************************************************/
-b200_impl::b200_impl(const device_addr_t &device_addr)
+b200_impl::b200_impl(const device_addr_t &device_addr) :
+    _tick_rate(0.0) // Forces a clock initialization at startup
 {
     _tree = property_tree::make();
     _type = device::USRP;
