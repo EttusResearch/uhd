@@ -173,7 +173,7 @@ uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, c
         if (!handle)
             std::cerr << "Cannot open device" << std::endl;
     }
-    catch(const std::exception &e) {
+    catch(const std::exception &) {
         std::cerr << "Failed to communicate with the device!" << std::endl;
         #ifdef UHD_PLATFORM_WIN32
         std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details:\nhttp://files.ettus.com/manual/page_transport.html" << std::endl;
@@ -195,7 +195,7 @@ b200_iface::sptr make_b200_iface(const uhd::transport::usb_device_handle::sptr &
         if (!b200)
             std::cerr << "Cannot create device interface" << std::endl;
     }
-    catch(const std::exception &e) {
+    catch(const std::exception &) {
         std::cerr << "Failed to communicate with the device!" << std::endl;
         #ifdef UHD_PLATFORM_WIN32
         std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details:\nhttp://files.ettus.com/manual/page_transport.html" << std::endl;

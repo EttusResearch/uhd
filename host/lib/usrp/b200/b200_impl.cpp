@@ -1007,6 +1007,6 @@ sensor_value_t b200_impl::get_ref_locked(void)
 sensor_value_t b200_impl::get_fe_pll_locked(const bool is_tx)
 {
     const boost::uint32_t st = _local_ctrl->peek32(RB32_CORE_PLL);
-    const bool locked = is_tx ? st & 0x1 : st & 0x2;
+    const bool locked = is_tx ? bool(st & 0x1) : bool(st & 0x2);
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }

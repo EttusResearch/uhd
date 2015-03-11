@@ -60,7 +60,7 @@ namespace math {
      * values, a custom epsilon should be defined for those computations. This
      * use-case is provided for in the `fp_compare_epsilon` class constructor.
      */
-    static const float SINGLE_PRECISION_EPSILON = 1.19e-7;
+    static const float SINGLE_PRECISION_EPSILON = 1.19e-7f;
     static const double DOUBLE_PRECISION_EPSILON = 2.22e-16;
 
 namespace fp_compare {

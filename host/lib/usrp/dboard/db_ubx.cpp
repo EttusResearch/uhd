@@ -84,7 +84,7 @@ protected:
         // Get only regs with changes
         try {
             changed_regs = get_changed_addrs();
-        } catch (uhd::runtime_error& e) {
+        } catch (uhd::runtime_error&) {
             // No saved state - write all regs
             for (int addr = 5; addr >= 0; addr--)
                 changed_regs.insert(boost::uint32_t(addr));

@@ -417,7 +417,7 @@ std::string octoclock_impl::_get_images_help_message(const std::string &addr){
     try{
         image_location = uhd::find_image_path(image_name);
     }
-    catch(const std::exception &e){
+    catch(const std::exception &){
         return str(boost::format("Could not find %s in your images path.\n%s")
                    % image_name
                    % uhd::print_utility_error("uhd_images_downloader.py"));
