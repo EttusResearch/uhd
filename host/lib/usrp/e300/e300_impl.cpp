@@ -587,19 +587,19 @@ void e300_impl::_set_internal_gpio(
 {
     switch (attr)
     {
-    case CTRL:
+    case GPIO_CTRL:
         return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    case DDR:
+    case GPIO_DDR:
         return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    case OUT:
+    case GPIO_OUT:
         return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    case ATR_0X:
+    case GPIO_ATR_0X:
         return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    case ATR_RX:
+    case GPIO_ATR_RX:
         return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    case ATR_TX:
+    case GPIO_ATR_TX:
         return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    case ATR_XX:
+    case GPIO_ATR_XX:
         return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
     default:
         UHD_THROW_INVALID_CODE_PATH();

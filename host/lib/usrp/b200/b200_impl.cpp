@@ -925,13 +925,13 @@ void b200_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, co
 {
     switch (attr)
     {
-    case CTRL:      return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    case DDR:       return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    case OUT:       return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    case ATR_0X:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    case ATR_RX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    case ATR_TX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    case ATR_XX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
+    case GPIO_CTRL:   return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
+    case GPIO_DDR:    return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
+    case GPIO_OUT:    return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
+    case GPIO_ATR_0X: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
+    case GPIO_ATR_RX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
+    case GPIO_ATR_TX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
+    case GPIO_ATR_XX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
     default:        UHD_THROW_INVALID_CODE_PATH();
     }
 }

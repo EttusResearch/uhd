@@ -27,10 +27,27 @@
 #include <uhd/types/wb_iface.hpp>
 #include <map>
 
-typedef enum{CTRL,DDR,OUT,ATR_0X,ATR_RX,ATR_TX,ATR_XX} gpio_attr_t;
+typedef enum {
+    GPIO_CTRL,
+    GPIO_DDR,
+    GPIO_OUT,
+    GPIO_ATR_0X,
+    GPIO_ATR_RX,
+    GPIO_ATR_TX,
+    GPIO_ATR_XX
+} gpio_attr_t;
+
 typedef std::map<gpio_attr_t,std::string> gpio_attr_map_t;
 static const gpio_attr_map_t gpio_attr_map =
-    boost::assign::map_list_of(CTRL,"CTRL")(DDR,"DDR")(OUT,"OUT")(ATR_0X,"ATR_0X")(ATR_RX,"ATR_RX")(ATR_TX,"ATR_TX")(ATR_XX,"ATR_XX");
+    boost::assign::map_list_of
+        (GPIO_CTRL,   "CTRL")
+        (GPIO_DDR,    "DDR")
+        (GPIO_OUT,    "OUT")
+        (GPIO_ATR_0X, "ATR_0X")
+        (GPIO_ATR_RX, "ATR_RX")
+        (GPIO_ATR_TX, "ATR_TX")
+        (GPIO_ATR_XX, "ATR_XX")
+;
 
 class gpio_core_200 : boost::noncopyable{
 public:
