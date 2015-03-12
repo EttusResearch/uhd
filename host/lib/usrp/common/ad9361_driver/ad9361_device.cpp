@@ -80,6 +80,7 @@ int get_num_taps(int max_num_taps) {
 const double ad9361_device_t::AD9361_MAX_GAIN        = 89.75;
 const double ad9361_device_t::AD9361_MAX_CLOCK_RATE  = 61.44e6;
 const double ad9361_device_t::AD9361_RECOMMENDED_MAX_CLOCK_RATE = 56e6;
+const double ad9361_device_t::AD9361_CAL_VALID_WINDOW = 100e6;
 
 /* Program either the RX or TX FIR filter.
  *
@@ -1455,6 +1456,7 @@ void ad9361_device_t::initialize()
     _rx2_agc_mode = GAIN_MODE_SLOW_AGC;
     _rx1_agc_enable = false;
     _rx2_agc_enable = false;
+    _last_calibration_freq = -AD9361_CAL_VALID_WINDOW;
 
     /* Reset the device. */
     _io_iface->poke8(0x000, 0x01);
@@ -1890,12 +1892,17 @@ double ad9361_device_t::tune(direction_t direction, const double value)
     /* Update the gain settings. */
     _reprogram_gains();
 
-    /* Run the calibration algorithms. */
-    _calibrate_baseband_dc_offset();
-    _calibrate_rf_dc_offset();
-    _calibrate_tx_quadrature();
-    _calibrate_rx_quadrature();
-    _configure_bb_rf_dc_tracking(_use_dc_offset_correction); //if this is not done here, bb dc offset is not good
+    /* Only run the following calibrations if we are more than 100MHz away
+     * from the previous calibration point. */
+    if (std::abs(_last_calibration_freq - tune_freq) > AD9361_CAL_VALID_WINDOW) {
+        /* Run the calibration algorithms. */
+        _calibrate_rf_dc_offset();
+        _calibrate_tx_quadrature();
+        _calibrate_rx_quadrature();
+        _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
+        _last_calibration_freq = tune_freq;
+    }
+
     /* If we were in the FDD state, return it now. */
     if (not_in_alert) {
         _io_iface->poke8(0x014, 0x21);
