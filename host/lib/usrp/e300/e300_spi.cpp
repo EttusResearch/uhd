@@ -82,13 +82,13 @@ public:
         int ret(0);
         struct spi_ioc_transfer tr;
 
-        uint8_t *tx_data = reinterpret_cast<uint8_t *>(&data);
+        boost::uint8_t *tx_data = reinterpret_cast<boost::uint8_t *>(&data);
 
 
         UHD_ASSERT_THROW(num_bits == 24);
-        uint8_t tx[] = {tx_data[2], tx_data[1], tx_data[0]};
+        boost::uint8_t tx[] = {tx_data[2], tx_data[1], tx_data[0]};
 
-        uint8_t rx[3];
+        boost::uint8_t rx[3];
         tr.tx_buf = (unsigned long) &tx[0];
         tr.rx_buf = (unsigned long) &rx[0];
         tr.len = num_bits >> 3;
