@@ -848,7 +848,7 @@ public:
          * If device is in AGC mode it will ignore the setting. */
         try {
             return rx_gain_group(chan)->set_value(gain, name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,rx);
         }
     }
@@ -882,7 +882,7 @@ public:
     double get_rx_gain(const std::string &name, size_t chan){
         try {
             return rx_gain_group(chan)->get_value(name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,rx);
         }
     }
@@ -905,7 +905,7 @@ public:
     gain_range_t get_rx_gain_range(const std::string &name, size_t chan){
         try {
             return rx_gain_group(chan)->get_range(name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,rx);
         }
     }
@@ -1188,7 +1188,7 @@ public:
     void set_tx_gain(double gain, const std::string &name, size_t chan){
         try {
             return tx_gain_group(chan)->set_value(gain, name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,tx);
         }
     }
@@ -1207,7 +1207,7 @@ public:
     double get_tx_gain(const std::string &name, size_t chan){
         try {
             return tx_gain_group(chan)->get_value(name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,tx);
         }
     }
@@ -1230,7 +1230,7 @@ public:
     gain_range_t get_tx_gain_range(const std::string &name, size_t chan){
         try {
             return tx_gain_group(chan)->get_range(name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,tx);
         }
     }
@@ -1352,7 +1352,7 @@ public:
     {
         if (_tree->exists(mb_root(mboard) / "gpio" / bank))
         {
-            return _tree->access<boost::uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get();
+            return boost::uint32_t(_tree->access<boost::uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get());
         }
         if (bank.size() > 2 and bank[1] == 'X')
         {

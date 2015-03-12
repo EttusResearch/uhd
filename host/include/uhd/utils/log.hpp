@@ -76,7 +76,7 @@ namespace uhd{ namespace _log{
         regularly   = 3,
         rarely      = 4,
         very_rarely = 5,
-        never       = 6,
+        never       = 6
     };
 
     //! Internal logging object (called by UHD_LOG macros)
@@ -101,12 +101,12 @@ namespace uhd{ namespace _log{
 
         // General insertion overload
         template <typename T>
-        INSERTION_OVERLOAD(T val);
+        INSERTION_OVERLOAD(T val)
 
         // Insertion overloads for std::ostream manipulators
-        INSERTION_OVERLOAD(std::ostream& (*val)(std::ostream&));
-        INSERTION_OVERLOAD(std::ios& (*val)(std::ios&));
-        INSERTION_OVERLOAD(std::ios_base& (*val)(std::ios_base&));
+        INSERTION_OVERLOAD(std::ostream& (*val)(std::ostream&))
+        INSERTION_OVERLOAD(std::ios& (*val)(std::ios&))
+        INSERTION_OVERLOAD(std::ios_base& (*val)(std::ios_base&))
 
     private:
         std::ostringstream _ss;
