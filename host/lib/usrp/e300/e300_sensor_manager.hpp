@@ -62,7 +62,7 @@ public:
     // Note: This is a hack
     static boost::uint32_t pack_float_in_uint32_t(const float &v)
     {
-        const boost::uint32_t *cast = reinterpret_cast<const uint32_t*>(&v);
+        const boost::uint32_t *cast = reinterpret_cast<const boost::uint32_t*>(&v);
         return *cast;
     }
 
