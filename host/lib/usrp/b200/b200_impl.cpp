@@ -910,7 +910,7 @@ void b200_impl::update_gpio_state(void)
         | (_gpio_state.ref_sel << 0)
     ;
 
-    _local_ctrl->poke32(TOREG(RB32_CORE_MISC), misc_word);
+    _local_ctrl->poke32(TOREG(SR_CORE_MISC), misc_word);
 }
 
 void b200_impl::reset_codec_dcm(void)
