@@ -101,6 +101,8 @@ public:
     void check_streamer_args(const uhd::stream_args_t &args, double tick_rate, const char* direction = NULL);
 
 private:
+    b200_type_t _b200_type;
+
     //controllers
     b200_iface::sptr _iface;
     radio_ctrl_core_3000::sptr _local_ctrl;
