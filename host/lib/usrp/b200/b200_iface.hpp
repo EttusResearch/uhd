@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2013 Ettus Research LLC
+// Copyright 2012-2013,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,22 +21,48 @@
 #include <stdint.h>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/types/serial.hpp> //i2c iface
+#include <uhd/types/dict.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include "ad9361_ctrl.hpp"
 
-const static boost::uint16_t B200_VENDOR_ID  = 0x2500;
-const static boost::uint16_t B200_VENDOR_NI_ID = 0x3923;
-const static boost::uint16_t B200_PRODUCT_ID = 0x0020;
+enum b200_type_t {
+    B200,
+    B210
+};
+
+const static boost::uint16_t B200_VENDOR_ID     = 0x2500;
+const static boost::uint16_t B200_VENDOR_NI_ID  = 0x3923;
+const static boost::uint16_t B200_PRODUCT_ID    = 0x0020;
 const static boost::uint16_t B200_PRODUCT_NI_ID = 0x7813;
 const static boost::uint16_t B210_PRODUCT_NI_ID = 0x7814;
-const static boost::uint16_t FX3_VID = 0x04b4;
-const static boost::uint16_t FX3_DEFAULT_PID = 0x00f3;
-const static boost::uint16_t FX3_REENUM_PID = 0x00f0;
+const static boost::uint16_t FX3_VID            = 0x04b4;
+const static boost::uint16_t FX3_DEFAULT_PID    = 0x00f3;
+const static boost::uint16_t FX3_REENUM_PID     = 0x00f0;
 
 static const std::string     B200_FW_FILE_NAME = "usrp_b200_fw.hex";
-static const std::string     B200_FPGA_FILE_NAME = "usrp_b200_fpga.bin";
-static const std::string     B210_FPGA_FILE_NAME = "usrp_b210_fpga.bin";
+
+//! Map the product ID (in the EEPROM) to a device type
+static const uhd::dict<boost::uint16_t, b200_type_t> B2X0_PRODUCT_ID = boost::assign::map_list_of
+        (0x0001,             B200)
+        (0x7737,             B200)
+        (B200_PRODUCT_NI_ID, B200)
+        (0x0002,             B210)
+        (0x7738,             B210)
+        (B210_PRODUCT_NI_ID, B210)
+;
+
+static const uhd::dict<b200_type_t, std::string> B2X0_STR_NAMES = boost::assign::map_list_of
+        (B200, "B200")
+        (B210, "B210")
+;
+
+static const uhd::dict<b200_type_t, std::string> B2X0_FPGA_FILE_NAME = boost::assign::map_list_of
+        (B200, "usrp_b200_fpga.bin")
+        (B210, "usrp_b210_fpga.bin")
+;
+
 
 class UHD_API b200_iface: boost::noncopyable, public virtual uhd::i2c_iface {
 public:

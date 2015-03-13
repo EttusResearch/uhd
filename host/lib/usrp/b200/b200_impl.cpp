@@ -77,6 +77,24 @@ public:
 /***********************************************************************
  * Discovery
  **********************************************************************/
+//! Look up the type of B-Series device we're currently running.
+//  If the product ID stored in mb_eeprom is invalid, throws a
+//  uhd::runtime_error.
+static b200_type_t get_b200_type(const mboard_eeprom_t &mb_eeprom)
+{
+    if (mb_eeprom["product"].empty()) {
+        throw uhd::runtime_error("B200: Missing product ID on EEPROM.");
+    }
+    boost::uint16_t product_id = boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]);
+    if (not B2X0_PRODUCT_ID.has_key(product_id)) {
+        throw uhd::runtime_error(str(
+            boost::format("B200 unknown product code: 0x%04x")
+            % product_id
+        ));
+    }
+    return B2X0_PRODUCT_ID[product_id];
+}
+
 static device_addrs_t b200_find(const device_addr_t &hint)
 {
     device_addrs_t b200_addrs;
@@ -155,24 +173,14 @@ static device_addrs_t b200_find(const device_addr_t &hint)
             new_addr["type"] = "b200";
             new_addr["name"] = mb_eeprom["name"];
             new_addr["serial"] = handle->get_serial();
-            if (not mb_eeprom["product"].empty())
-            {
-                switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
-                {
-                //0x0001 and 0x7737 are Ettus B200 product Ids.
-                case 0x0001:
-                case 0x7737:
-                case B200_PRODUCT_NI_ID:
-                    new_addr["product"] = "B200";
-                    break;
-                //0x0002 and 0x7738 are Ettus B210 product Ids.
-                case 0x0002:
-                case 0x7738:
-                case B210_PRODUCT_NI_ID:
-                    new_addr["product"] = "B210";
-                    break;
-                default: UHD_MSG(error) << "B200 unknown product code: " << mb_eeprom["product"] << std::endl;
-                }
+            try {
+                // Turn the 16-Bit product ID into a string representation
+                new_addr["product"] = B2X0_STR_NAMES[get_b200_type(mb_eeprom)];
+            } catch (const uhd::runtime_error &e) {
+                // No problem if this fails -- this is just device discovery, after all.
+                UHD_MSG(error) << e.what() << std::endl;
+                // Skip this loop.
+                continue;
             }
             //this is a found b200 when the hint serial and name match or blank
             if (
@@ -282,36 +290,29 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
         .subscribe(boost::bind(&b200_impl::set_mb_eeprom, this, _1));
 
     ////////////////////////////////////////////////////////////////////
-    // Load the FPGA image, then reset GPIF
+    // Identify the device type
     ////////////////////////////////////////////////////////////////////
     std::string default_file_name;
-    std::string product_name = "B200?";
-    if (not mb_eeprom["product"].empty())
-    {
-        switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
-        {
-        //0x0001 and 0x7737 are Ettus B200 product Ids.
-        case 0x0001:
-        case 0x7737:
-        case B200_PRODUCT_NI_ID:
-            product_name = "B200";
-            default_file_name = B200_FPGA_FILE_NAME;
-            break;
-        //0x0002 and 0x7738 are Ettus B210 product Ids.
-        case 0x0002:
-        case 0x7738:
-        case B210_PRODUCT_NI_ID:
-            product_name = "B210";
-            default_file_name = B210_FPGA_FILE_NAME;
-            break;
-        default: UHD_MSG(error) << "B200 unknown product code: " << mb_eeprom["product"] << std::endl;
+    std::string product_name;
+    try {
+        // This will throw if the product ID is invalid:
+        _b200_type = get_b200_type(mb_eeprom);
+        default_file_name = B2X0_FPGA_FILE_NAME.get(_b200_type);
+        product_name      = B2X0_STR_NAMES.get(_b200_type);
+    } catch (const uhd::runtime_error &e) {
+        // The only reason we may let this pass is if the user specified
+        // the FPGA file name:
+        if (not device_addr.has_key("fpga")) {
+            throw e;
         }
-    }
-    if (default_file_name.empty())
-    {
-        UHD_ASSERT_THROW(device_addr.has_key("fpga"));
+        // In this case, we must provide a default product name:
+        product_name = "B200?";
+        _b200_type = B200;
     }
 
+    ////////////////////////////////////////////////////////////////////
+    // Load the FPGA image, then reset GPIF
+    ////////////////////////////////////////////////////////////////////
     //extract the FPGA path for the B200
     std::string b200_fpga_image = find_image_path(
         device_addr.has_key("fpga")? device_addr["fpga"] : default_file_name
