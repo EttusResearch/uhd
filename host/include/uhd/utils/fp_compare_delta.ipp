@@ -100,8 +100,8 @@ namespace uhd { namespace math { namespace fp_compare {
 
     template<typename float_t> UHD_INLINE
     bool operator==(fp_compare_delta<float_t> lhs, double rhs) {
-        float_t delta = fp_compare_select_delta(double(lhs._delta),
-                DOUBLE_PRECISION_DELTA);
+        float_t delta = float_t(fp_compare_select_delta(double(lhs._delta),
+                DOUBLE_PRECISION_DELTA));
         return (std::fabs(lhs._value - rhs) < delta);
     }
 
@@ -112,8 +112,8 @@ namespace uhd { namespace math { namespace fp_compare {
 
     template<typename float_t> UHD_INLINE
     bool operator<(fp_compare_delta<float_t> lhs, double rhs) {
-        float_t delta = fp_compare_select_delta(double(lhs._delta),
-                DOUBLE_PRECISION_DELTA);
+        float_t delta = float_t(fp_compare_select_delta(double(lhs._delta),
+                DOUBLE_PRECISION_DELTA));
         return ((rhs - lhs._value) > delta);
     }
 
@@ -124,8 +124,8 @@ namespace uhd { namespace math { namespace fp_compare {
 
     template<typename float_t> UHD_INLINE
     bool operator>(fp_compare_delta<float_t> lhs, double rhs) {
-        float_t delta = fp_compare_select_delta(double(lhs._delta),
-                DOUBLE_PRECISION_DELTA);
+        float_t delta = float_t(fp_compare_select_delta(double(lhs._delta),
+                DOUBLE_PRECISION_DELTA));
         return ((lhs._value - rhs) > delta);
     }
 
@@ -148,8 +148,8 @@ namespace uhd { namespace math { namespace fp_compare {
 
     template<typename float_t> UHD_INLINE
     bool operator<(double lhs, fp_compare_delta<float_t> rhs) {
-        float_t delta = fp_compare_select_delta(DOUBLE_PRECISION_DELTA,
-                double(rhs._delta));
+        float_t delta = float_t(fp_compare_select_delta(DOUBLE_PRECISION_DELTA,
+                double(rhs._delta)));
         return ((rhs._value - lhs) > delta);
     }
 
@@ -160,8 +160,8 @@ namespace uhd { namespace math { namespace fp_compare {
 
     template<typename float_t> UHD_INLINE
     bool operator>(double lhs, fp_compare_delta<float_t> rhs) {
-        float_t delta = fp_compare_select_delta(DOUBLE_PRECISION_DELTA,
-                double(rhs._delta));
+        float_t delta = float_t(fp_compare_select_delta(DOUBLE_PRECISION_DELTA,
+                double(rhs._delta)));
         return ((lhs - rhs._value) > delta);
     }
 

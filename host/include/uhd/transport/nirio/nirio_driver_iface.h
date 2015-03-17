@@ -24,9 +24,9 @@
 #include <uhd/transport/nirio/status.h>
 #include <uhd/config.hpp>
 #if defined(UHD_PLATFORM_WIN32)
-    #include <Windows.h>
+    #include <windows.h>
     #pragma warning(disable:4201)  // nonstandard extension used : nameless struct/union
-        #include <WinIoCtl.h>
+        #include <winioctl.h>
     #pragma warning(default:4201)
 #elif !defined(UHD_PLATFORM_LINUX)
     #include <IOKit/IOKitLib.h>

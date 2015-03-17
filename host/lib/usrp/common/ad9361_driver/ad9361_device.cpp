@@ -11,6 +11,7 @@
 #include <cmath>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/msg.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
@@ -79,6 +80,7 @@ int get_num_taps(int max_num_taps) {
 const double ad9361_device_t::AD9361_MAX_GAIN        = 89.75;
 const double ad9361_device_t::AD9361_MAX_CLOCK_RATE  = 61.44e6;
 const double ad9361_device_t::AD9361_RECOMMENDED_MAX_CLOCK_RATE = 56e6;
+const double ad9361_device_t::AD9361_CAL_VALID_WINDOW = 100e6;
 
 /* Program either the RX or TX FIR filter.
  *
@@ -650,11 +652,12 @@ void ad9361_device_t::_setup_adc()
 }
 
 /* Calibrate the baseband DC offset.
- *
- * Note that this function is called from within the TX quadrature
- * calibration function! */
+ * Disables tracking
+ */
 void ad9361_device_t::_calibrate_baseband_dc_offset()
 {
+    _io_iface->poke8(0x18b, 0x83); //Reset RF DC tracking flag
+
     _io_iface->poke8(0x193, 0x3f); // Calibration settings
     _io_iface->poke8(0x190, 0x0f); // Set tracking coefficient
     //write_ad9361_reg(device, 0x190, /*0x0f*//*0xDF*/0x80*1 | 0x40*1 | (16+8/*+4*/)); // Set tracking coefficient: don't *4 counter, do decim /4, increased gain shift
@@ -674,9 +677,8 @@ void ad9361_device_t::_calibrate_baseband_dc_offset()
 }
 
 /* Calibrate the RF DC offset.
- *
- * Note that this function is called from within the TX quadrature
- * calibration function. */
+ * Disables tracking
+ */
 void ad9361_device_t::_calibrate_rf_dc_offset()
 {
     /* Some settings are frequency-dependent. */
@@ -691,7 +693,7 @@ void ad9361_device_t::_calibrate_rf_dc_offset()
     }
 
     _io_iface->poke8(0x185, 0x20); // RF DC Offset wait count
-    _io_iface->poke8(0x18b, 0x83);
+    _io_iface->poke8(0x18b, 0x83); // Disable tracking
     _io_iface->poke8(0x189, 0x30);
 
     /* Run the calibration! */
@@ -707,6 +709,16 @@ void ad9361_device_t::_calibrate_rf_dc_offset()
     }
 }
 
+void ad9361_device_t::_configure_bb_rf_dc_tracking(const bool on)
+{
+    if(on)
+    {
+        _io_iface->poke8(0x18b, 0xad); // Enable BB and RF DC tracking
+    } else {
+        _io_iface->poke8(0x18b, 0x83); // Disable BB and RF DC tracking
+    }
+}
+
 /* Start the RX quadrature calibration.
  *
  * Note that we are using AD9361's 'tracking' feature for RX quadrature
@@ -719,16 +731,20 @@ void ad9361_device_t::_calibrate_rx_quadrature()
     _io_iface->poke8(0x16e, 0x25); // RX Gain index to use for cal
     _io_iface->poke8(0x16a, 0x75); // Set Kexp phase
     _io_iface->poke8(0x16b, 0x15); // Set Kexp amplitude
-    _io_iface->poke8(0x169, 0xcf); // Continuous tracking mode
-    _io_iface->poke8(0x18b, 0xad);
+
+    if(_use_iq_balance_correction)
+    {
+        _io_iface->poke8(0x169, 0xcf); // Continuous tracking mode. Gets disabled in _tx_quadrature_cal_routine!
+    }
 }
 
-/* TX quadtrature calibration routine.
+/* TX quadrature calibration routine.
  *
  * The TX quadrature needs to be done twice, once for each TX chain, with
  * only one register change in between. Thus, this function enacts the
  * calibrations, and it is called from calibrate_tx_quadrature. */
 void ad9361_device_t::_tx_quadrature_cal_routine() {
+
     /* This is a weird process, but here is how it works:
      * 1) Read the calibrated NCO frequency bits out of 0A3.
      * 2) Write the two bits to the RX NCO freq part of 0A0.
@@ -773,12 +789,6 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
     _io_iface->poke8(0x0a4, 0xf0); // Cal setting conut
     _io_iface->poke8(0x0ae, 0x00); // Cal LPF gain index (split mode)
 
-    /* First, calibrate the baseband DC offset. */
-    _calibrate_baseband_dc_offset();
-
-    /* Second, calibrate the RF DC offset. */
-    _calibrate_rf_dc_offset();
-
     /* Now, calibrate the TX quadrature! */
     size_t count = 0;
     _io_iface->poke8(0x016, 0x10);
@@ -793,9 +803,7 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
 }
 
 /* Run the TX quadrature calibration.
- *
- * Note that from within this function we are also triggering the baseband
- * and RF DC calibrations. */
+ */
 void ad9361_device_t::_calibrate_tx_quadrature()
 {
     /* Make sure we are, in fact, in the ALERT state. If not, something is
@@ -879,7 +887,7 @@ void ad9361_device_t::_program_mixer_gm_subtable()
 void ad9361_device_t::_program_gain_table() {
     /* Figure out which gain table we should be using for our current
      * frequency band. */
-    boost::uint8_t (*gain_table)[5] = NULL;
+    boost::uint8_t (*gain_table)[3] = NULL;
     boost::uint8_t new_gain_table;
     if (_rx_freq < 1300e6) {
         gain_table = gain_table_sub_1300mhz;
@@ -910,9 +918,9 @@ void ad9361_device_t::_program_gain_table() {
     boost::uint8_t index = 0;
     for (; index < 77; index++) {
         _io_iface->poke8(0x130, index);
-        _io_iface->poke8(0x131, gain_table[index][1]);
-        _io_iface->poke8(0x132, gain_table[index][2]);
-        _io_iface->poke8(0x133, gain_table[index][3]);
+        _io_iface->poke8(0x131, gain_table[index][0]);
+        _io_iface->poke8(0x132, gain_table[index][1]);
+        _io_iface->poke8(0x133, gain_table[index][2]);
         _io_iface->poke8(0x137, 0x1E);
         _io_iface->poke8(0x134, 0x00);
         _io_iface->poke8(0x134, 0x00);
@@ -938,28 +946,58 @@ void ad9361_device_t::_program_gain_table() {
 
 /* Setup gain control registers.
  *
- * This really only needs to be done once, at initialization. */
-void ad9361_device_t::_setup_gain_control()
+ * This really only needs to be done once, at initialization.
+ * If AGC is used the mode select bits (Reg 0x0FA) must be written manually */
+void ad9361_device_t::_setup_gain_control(bool agc)
 {
-    _io_iface->poke8(0x0FA, 0xE0); // Gain Control Mode Select
-    _io_iface->poke8(0x0FB, 0x08); // Table, Digital Gain, Man Gain Ctrl
-    _io_iface->poke8(0x0FC, 0x23); // Incr Step Size, ADC Overrange Size
-    _io_iface->poke8(0x0FD, 0x4C); // Max Full/LMT Gain Table Index
-    _io_iface->poke8(0x0FE, 0x44); // Decr Step Size, Peak Overload Time
-    _io_iface->poke8(0x100, 0x6F); // Max Digital Gain
-    _io_iface->poke8(0x104, 0x2F); // ADC Small Overload Threshold
-    _io_iface->poke8(0x105, 0x3A); // ADC Large Overload Threshold
-    _io_iface->poke8(0x107, 0x31); // Large LMT Overload Threshold
-    _io_iface->poke8(0x108, 0x39); // Small LMT Overload Threshold
-    _io_iface->poke8(0x109, 0x23); // Rx1 Full/LMT Gain Index
-    _io_iface->poke8(0x10A, 0x58); // Rx1 LPF Gain Index
-    _io_iface->poke8(0x10B, 0x00); // Rx1 Digital Gain Index
-    _io_iface->poke8(0x10C, 0x23); // Rx2 Full/LMT Gain Index
-    _io_iface->poke8(0x10D, 0x18); // Rx2 LPF Gain Index
-    _io_iface->poke8(0x10E, 0x00); // Rx2 Digital Gain Index
-    _io_iface->poke8(0x114, 0x30); // Low Power Threshold
-    _io_iface->poke8(0x11A, 0x27); // Initial LMT Gain Limit
-    _io_iface->poke8(0x081, 0x00); // Tx Symbol Gain Control
+    /* The AGC mode configuration should be good for all cases.
+     * However, non AGC configuration still used for backward compatibility. */
+    if (agc) {
+        /*mode select bits must be written before hand!*/
+        _io_iface->poke8(0x0FB, 0x08); // Table, Digital Gain, Man Gain Ctrl
+        _io_iface->poke8(0x0FC, 0x23); // Incr Step Size, ADC Overrange Size
+        _io_iface->poke8(0x0FD, 0x4C); // Max Full/LMT Gain Table Index
+        _io_iface->poke8(0x0FE, 0x44); // Decr Step Size, Peak Overload Time
+        _io_iface->poke8(0x100, 0x6F); // Max Digital Gain
+        _io_iface->poke8(0x101, 0x0A); // Max Digital Gain
+        _io_iface->poke8(0x103, 0x08); // Max Digital Gain
+        _io_iface->poke8(0x104, 0x2F); // ADC Small Overload Threshold
+        _io_iface->poke8(0x105, 0x3A); // ADC Large Overload Threshold
+        _io_iface->poke8(0x106, 0x22); // Max Digital Gain
+        _io_iface->poke8(0x107, 0x2B); // Large LMT Overload Threshold
+        _io_iface->poke8(0x108, 0x31);
+        _io_iface->poke8(0x111, 0x0A);
+        _io_iface->poke8(0x11A, 0x1C);
+        _io_iface->poke8(0x120, 0x0C);
+        _io_iface->poke8(0x121, 0x44);
+        _io_iface->poke8(0x122, 0x44);
+        _io_iface->poke8(0x123, 0x11);
+        _io_iface->poke8(0x124, 0xF5);
+        _io_iface->poke8(0x125, 0x3B);
+        _io_iface->poke8(0x128, 0x03);
+        _io_iface->poke8(0x129, 0x56);
+        _io_iface->poke8(0x12A, 0x22);
+    } else {
+        _io_iface->poke8(0x0FA, 0xE0); // Gain Control Mode Select
+        _io_iface->poke8(0x0FB, 0x08); // Table, Digital Gain, Man Gain Ctrl
+        _io_iface->poke8(0x0FC, 0x23); // Incr Step Size, ADC Overrange Size
+        _io_iface->poke8(0x0FD, 0x4C); // Max Full/LMT Gain Table Index
+        _io_iface->poke8(0x0FE, 0x44); // Decr Step Size, Peak Overload Time
+        _io_iface->poke8(0x100, 0x6F); // Max Digital Gain
+        _io_iface->poke8(0x104, 0x2F); // ADC Small Overload Threshold
+        _io_iface->poke8(0x105, 0x3A); // ADC Large Overload Threshold
+        _io_iface->poke8(0x107, 0x31); // Large LMT Overload Threshold
+        _io_iface->poke8(0x108, 0x39); // Small LMT Overload Threshold
+        _io_iface->poke8(0x109, 0x23); // Rx1 Full/LMT Gain Index
+        _io_iface->poke8(0x10A, 0x58); // Rx1 LPF Gain Index
+        _io_iface->poke8(0x10B, 0x00); // Rx1 Digital Gain Index
+        _io_iface->poke8(0x10C, 0x23); // Rx2 Full/LMT Gain Index
+        _io_iface->poke8(0x10D, 0x18); // Rx2 LPF Gain Index
+        _io_iface->poke8(0x10E, 0x00); // Rx2 Digital Gain Index
+        _io_iface->poke8(0x114, 0x30); // Low Power Threshold
+        _io_iface->poke8(0x11A, 0x27); // Initial LMT Gain Limit
+        _io_iface->poke8(0x081, 0x00); // Tx Symbol Gain Control
+    }
 }
 
 /* Setup the RX or TX synthesizers.
@@ -1049,7 +1087,7 @@ double ad9361_device_t::_tune_bbvco(const double rate)
     const double vcomin = 672e6;
     double vcorate;
     int vcodiv;
-
+ 
     /* Iterate over VCO dividers until appropriate divider is found. */
     int i = 1;
     for (; i <= 6; i++) {
@@ -1256,6 +1294,7 @@ double ad9361_device_t::_setup_rates(const double rate)
     int divfactor = 0;
     _tfir_factor = 0;
     _rfir_factor = 0;
+
     if (rate < 0.33e6) {
         // RX1 + RX2 enabled, 3, 2, 2, 4
         _regs.rxfilt = B8(11101111);
@@ -1306,7 +1345,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         divfactor = 16;
         _tfir_factor = 2;
         _rfir_factor = 2;
-    } else if ((rate >= 41e6) && (rate <= 56e6)) {
+    } else if ((rate >= 41e6) && (rate <= 58e6)) {
         // RX1 + RX2 enabled, 3, 1, 2, 2
         _regs.rxfilt = B8(11100110);
 
@@ -1316,15 +1355,15 @@ double ad9361_device_t::_setup_rates(const double rate)
         divfactor = 12;
         _tfir_factor = 2;
         _rfir_factor = 2;
-    } else if ((rate > 56e6) && (rate <= 61.44e6)) {
-        // RX1 + RX2 enabled, 3, 1, 1, 2
-        _regs.rxfilt = B8(11100010);
+    } else if ((rate > 58e6) && (rate <= 61.44e6)) {
+        // RX1 + RX2 enabled, 2, 1, 2, 2
+        _regs.rxfilt = B8(11010110);
 
-        // TX1 + TX2 enabled, 3, 1, 1, 1
-        _regs.txfilt = B8(11100001);
+        // TX1 + TX2 enabled, 2, 1, 1, 2
+        _regs.txfilt = B8(11010010);
 
-        divfactor = 6;
-        _tfir_factor = 1;
+        divfactor = 8;
+        _tfir_factor = 2;
         _rfir_factor = 2;
     } else {
         // should never get in here
@@ -1340,7 +1379,7 @@ double ad9361_device_t::_setup_rates(const double rate)
     /* The DAC clock must be <= 336e6, and is either the ADC clock or 1/2 the
      * ADC clock.*/
     if (adcclk > 336e6) {
-        /* Make the DAC clock = ADC/2, and bypass the TXFIR. */
+        /* Make the DAC clock = ADC/2 */
         _regs.bbpll = _regs.bbpll | 0x08;
         dacclk = adcclk / 2.0;
     } else {
@@ -1411,6 +1450,13 @@ void ad9361_device_t::initialize()
     _rx2_gain = 0;
     _tx1_gain = 0;
     _tx2_gain = 0;
+    _use_dc_offset_correction = true;
+    _use_iq_balance_correction = true;
+    _rx1_agc_mode = GAIN_MODE_SLOW_AGC;
+    _rx2_agc_mode = GAIN_MODE_SLOW_AGC;
+    _rx1_agc_enable = false;
+    _rx2_agc_enable = false;
+    _last_calibration_freq = -AD9361_CAL_VALID_WINDOW;
 
     /* Reset the device. */
     _io_iface->poke8(0x000, 0x01);
@@ -1500,7 +1546,7 @@ void ad9361_device_t::initialize()
     /* Setup AuxADC */
     _io_iface->poke8(0x00B, 0x00); // Temp Sensor Setup (Offset)
     _io_iface->poke8(0x00C, 0x00); // Temp Sensor Setup (Temp Window)
-    _io_iface->poke8(0x00D, 0x03); // Temp Sensor Setup (Periodic Measure)
+    _io_iface->poke8(0x00D, 0x00); // Temp Sensor Setup (Manual  Measure)
     _io_iface->poke8(0x00F, 0x04); // Temp Sensor Setup (Decimation)
     _io_iface->poke8(0x01C, 0x10); // AuxADC Setup (Clock Div)
     _io_iface->poke8(0x01D, 0x01); // AuxADC Setup (Decimation/Enable)
@@ -1554,7 +1600,7 @@ void ad9361_device_t::initialize()
 
     _program_mixer_gm_subtable();
     _program_gain_table();
-    _setup_gain_control();
+    _setup_gain_control(false);
 
     _calibrate_baseband_rx_analog_filter();
     _calibrate_baseband_tx_analog_filter();
@@ -1563,8 +1609,11 @@ void ad9361_device_t::initialize()
 
     _setup_adc();
 
+    _calibrate_baseband_dc_offset();
+    _calibrate_rf_dc_offset();
     _calibrate_tx_quadrature();
     _calibrate_rx_quadrature();
+    _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
 
     // cals done, set PPORT config
     switch (_client_params->get_digital_interface_mode()) {
@@ -1677,7 +1726,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
 
     _program_mixer_gm_subtable();
     _program_gain_table();
-    _setup_gain_control();
+    _setup_gain_control(false);
     _reprogram_gains();
 
     _calibrate_baseband_rx_analog_filter();
@@ -1687,8 +1736,11 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
 
     _setup_adc();
 
+    _calibrate_baseband_dc_offset();
+    _calibrate_rf_dc_offset();
     _calibrate_tx_quadrature();
     _calibrate_rx_quadrature();
+    _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
 
     // cals done, set PPORT config
     switch (_client_params->get_digital_interface_mode()) {
@@ -1840,9 +1892,16 @@ double ad9361_device_t::tune(direction_t direction, const double value)
     /* Update the gain settings. */
     _reprogram_gains();
 
-    /* Run the calibration algorithms. */
-    _calibrate_tx_quadrature();
-    _calibrate_rx_quadrature();
+    /* Only run the following calibrations if we are more than 100MHz away
+     * from the previous calibration point. */
+    if (std::abs(_last_calibration_freq - tune_freq) > AD9361_CAL_VALID_WINDOW) {
+        /* Run the calibration algorithms. */
+        _calibrate_rf_dc_offset();
+        _calibrate_tx_quadrature();
+        _calibrate_rx_quadrature();
+        _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
+        _last_calibration_freq = tune_freq;
+    }
 
     /* If we were in the FDD state, return it now. */
     if (not_in_alert) {
@@ -1944,6 +2003,199 @@ double ad9361_device_t::get_rssi(chain_t chain)
     boost::uint16_t val = ((msbs << 1) | lsb);
     double rssi = (-0.25f * ((double)val)); //-0.25dB/lsb (See Gain Control Users Guide p. 25)
     return rssi;
+}
+
+/*
+ * Returns the reading of the internal temperature sensor.
+ * One point calibration of the sensor was done according to datasheet
+ * leading to the given default constant correction factor.
+ */
+double ad9361_device_t::_get_temperature(const double cal_offset, const double timeout)
+{
+    //set 0x01D[0] to 1 to disable AuxADC GPIO reading
+    boost::uint8_t tmp = 0;
+    tmp = _io_iface->peek8(0x01D);
+    _io_iface->poke8(0x01D, (tmp | 0x01));
+    _io_iface->poke8(0x00B, 0); //set offset to 0
+
+    _io_iface->poke8(0x00C, 0x01); //start reading, clears bit 0x00C[1]
+    boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
+    boost::posix_time::time_duration elapsed;
+    //wait for valid data (toggle of bit 1 in 0x00C)
+    while(((_io_iface->peek8(0x00C) >> 1) & 0x01) == 0) {
+        boost::this_thread::sleep(boost::posix_time::microseconds(100));
+        elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+        if(elapsed.total_milliseconds() > (timeout*1000))
+        {
+            throw uhd::runtime_error("[ad9361_device_t] timeout while reading temperature");
+        }
+    }
+    _io_iface->poke8(0x00C, 0x00); //clear read flag
+
+    boost::uint8_t temp = _io_iface->peek8(0x00E); //read temperature.
+    double tmp_temp = temp/1.140f; //according to ADI driver
+    tmp_temp = tmp_temp + cal_offset; //Constant offset acquired by one point calibration.
+
+    return tmp_temp;
+}
+
+double ad9361_device_t::get_average_temperature(const double cal_offset, const size_t num_samples)
+{
+    double d_temp = 0;
+    for(size_t i = 0; i < num_samples; i++) {
+        double tmp_temp = _get_temperature(cal_offset);
+        d_temp += (tmp_temp/num_samples);
+    }
+    return d_temp;
+}
+
+void ad9361_device_t::set_dc_offset_auto(direction_t direction, const bool on)
+{
+    if(direction == RX)
+    {
+         _use_dc_offset_correction = on;
+         _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
+        if(on)
+        {
+            _io_iface->poke8(0x182, (_io_iface->peek8(0x182) & (~((1 << 7) | (1 << 6) | (1 << 3) | (1 << 2))))); //Clear force bits
+            //Do a single shot DC offset cal before enabling tracking (Not possible if not in ALERT state. Is it necessary?)
+        } else {
+            //clear current config values
+            _io_iface->poke8(0x182, (_io_iface->peek8(0x182) | ((1 << 7) | (1 << 6) | (1 << 3) | (1 << 2)))); //Set input A and input B&C force enable bits
+            _io_iface->poke8(0x174, 0x00);
+            _io_iface->poke8(0x175, 0x00);
+            _io_iface->poke8(0x176, 0x00);
+            _io_iface->poke8(0x177, 0x00);
+            _io_iface->poke8(0x178, 0x00);
+            _io_iface->poke8(0x17D, 0x00);
+            _io_iface->poke8(0x17E, 0x00);
+            _io_iface->poke8(0x17F, 0x00);
+            _io_iface->poke8(0x180, 0x00);
+            _io_iface->poke8(0x181, 0x00);
+        }
+    } else {
+        // DC offset is removed during TX quad cal
+        throw uhd::runtime_error("[ad9361_device_t] [set_iq_balance_auto] INVALID_CODE_PATH");
+    }
+}
+
+void ad9361_device_t::set_iq_balance_auto(direction_t direction, const bool on)
+{
+    if(direction == RX)
+    {
+        _use_iq_balance_correction = on;
+        if(on)
+        {
+            //disable force registers and enable tracking
+            _io_iface->poke8(0x182, (_io_iface->peek8(0x182) & (~ ( (1<<1) | (1<<0) | (1<<5) | (1<<4) ))));
+            _calibrate_rx_quadrature();
+        } else {
+            //disable IQ tracking
+            _io_iface->poke8(0x169, 0xc0);
+            //clear current config values
+            _io_iface->poke8(0x182, (_io_iface->peek8(0x182) | ((1 << 1) | (1 << 0) | (1 << 5) | (1 << 4)))); //Set Rx2 input B&C force enable bit
+            _io_iface->poke8(0x17B, 0x00);
+            _io_iface->poke8(0x17C, 0x00);
+            _io_iface->poke8(0x179, 0x00);
+            _io_iface->poke8(0x17A, 0x00);
+            _io_iface->poke8(0x170, 0x00);
+            _io_iface->poke8(0x171, 0x00);
+            _io_iface->poke8(0x172, 0x00);
+            _io_iface->poke8(0x173, 0x00);
+        }
+    } else {
+        throw uhd::runtime_error("[ad9361_device_t] [set_iq_balance_auto] INVALID_CODE_PATH");
+    }
+}
+
+/* Sets the RX gain mode to be used.
+ * If a transition from an AGC to an non AGC mode occurs (or vice versa)
+ * the gain configuration will be reloaded. */
+void ad9361_device_t::_setup_agc(chain_t chain, gain_mode_t gain_mode)
+{
+    boost::uint8_t gain_mode_reg = 0;
+    boost::uint8_t gain_mode_prev = 0;
+    boost::uint8_t gain_mode_bits_pos = 0;
+
+    gain_mode_reg = _io_iface->peek8(0x0FA);
+    gain_mode_prev = (gain_mode_reg & 0x0F);
+
+    if (chain == CHAIN_1) {
+        gain_mode_bits_pos = 0;
+    } else if (chain == CHAIN_2) {
+        gain_mode_bits_pos = 2;
+    } else
+    {
+        throw uhd::runtime_error("[ad9361_device_t] Wrong value for chain");
+    }
+
+    gain_mode_reg = (gain_mode_reg & (~(0x03<<gain_mode_bits_pos))); //clear mode bits
+    switch (gain_mode) {
+        case GAIN_MODE_MANUAL:
+            //leave bits cleared
+            break;
+        case GAIN_MODE_SLOW_AGC:
+            gain_mode_reg = (gain_mode_reg | (0x02<<gain_mode_bits_pos));
+            break;
+        case GAIN_MODE_FAST_AGC:
+            gain_mode_reg = (gain_mode_reg | (0x01<<gain_mode_bits_pos));
+            break;
+        default:
+            throw uhd::runtime_error("[ad9361_device_t] Gain mode does not exist");
+    }
+    _io_iface->poke8(0x0FA, gain_mode_reg);
+    boost::uint8_t gain_mode_status = _io_iface->peek8(0x0FA);
+    gain_mode_status = (gain_mode_status & 0x0F);
+    /*Check if gain mode configuration needs to be reprogrammed*/
+    if (((gain_mode_prev == 0) && (gain_mode_status != 0)) || ((gain_mode_prev != 0) && (gain_mode_status == 0))) {
+        if (gain_mode_status == 0) {
+            /*load manual mode config*/
+            _setup_gain_control(false);
+        } else {
+            /*load agc mode config*/
+            _setup_gain_control(true);
+        }
+    }
+}
+
+void ad9361_device_t::set_agc(chain_t chain, bool enable)
+{
+    if(chain == CHAIN_1) {
+        _rx1_agc_enable = enable;
+        if(enable) {
+            _setup_agc(chain, _rx1_agc_mode);
+        } else {
+            _setup_agc(chain, GAIN_MODE_MANUAL);
+        }
+    } else if (chain == CHAIN_2){
+        _rx2_agc_enable = enable;
+        if(enable) {
+            _setup_agc(chain, _rx2_agc_mode);
+        } else {
+            _setup_agc(chain, GAIN_MODE_MANUAL);
+        }
+    } else
+    {
+        throw uhd::runtime_error("[ad9361_device_t] Wrong value for chain");
+    }
+}
+
+void ad9361_device_t::set_agc_mode(chain_t chain, gain_mode_t gain_mode)
+{
+    if(chain == CHAIN_1) {
+        _rx1_agc_mode = gain_mode;
+        if(_rx1_agc_enable) {
+            _setup_agc(chain, _rx1_agc_mode);
+        }
+    } else if(chain == CHAIN_2){
+        _rx2_agc_mode = gain_mode;
+        if(_rx2_agc_enable) {
+            _setup_agc(chain, _rx2_agc_mode);
+        }
+    } else
+    {
+        throw uhd::runtime_error("[ad9361_device_t] Wrong value for chain");
+    }
 }
 
 }}

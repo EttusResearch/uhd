@@ -147,7 +147,7 @@ public:
      */
     void set_xport_chan_get_buff(const size_t xport_chan, const get_buff_type &get_buff, const bool flush = false){
         if (flush){
-            while (get_buff(0.0));
+            while (get_buff(0.0)) {};
         }
         _props.at(xport_chan).get_buff = get_buff;
     }

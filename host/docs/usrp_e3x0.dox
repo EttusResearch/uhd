@@ -191,7 +191,7 @@ builds)
  $ bitbake gnuradio-dev-image
 \endcode
 
-When this completes, the files needed to create the sd card are in
+When this completes, the files needed to create the SD card are in
 `tmp-glibc/deploy/images/ettus-e300`
 
 -# Build the toolchain.
@@ -537,7 +537,7 @@ usrp->set_rx_subdev_spec("A:A A:B");
 The following sensors are available for the USRP-E Series motherboards;
 they can be queried through the API.
 
-- **fe_locked** - rx / tx frontend pll locked
+- **fe_locked** - rx / tx frontend PLL locked
 - **temp** - processor temperature value
 - **gps_time** and **gps_locked** sensors are added when the GPS is found
 

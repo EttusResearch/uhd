@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include "wavetable.hpp"
 #include <uhd/types/tune_request.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
@@ -31,7 +32,6 @@
 #include <iostream>
 #include <fstream>
 #include <csignal>
-#include <cmath>
 
 namespace po = boost::program_options;
 
@@ -61,51 +61,6 @@ std::string generate_out_filename(const std::string &base_fn, size_t n_names, si
     return base_fn_fp.string();
 }
 
-/***********************************************************************
- * Waveform generators
- **********************************************************************/
-static const size_t wave_table_len = 8192;
-
-class wave_table_class{
-public:
-    wave_table_class(const std::string &wave_type, const float ampl):
-        _wave_table(wave_table_len)
-    {
-        //compute real wave table with 1.0 amplitude
-        std::vector<double> real_wave_table(wave_table_len);
-        if (wave_type == "CONST"){
-            for (size_t i = 0; i < wave_table_len; i++)
-                real_wave_table[i] = 1.0;
-        }
-        else if (wave_type == "SQUARE"){
-            for (size_t i = 0; i < wave_table_len; i++)
-                real_wave_table[i] = (i < wave_table_len/2)? 0.0 : 1.0;
-        }
-        else if (wave_type == "RAMP"){
-            for (size_t i = 0; i < wave_table_len; i++)
-                real_wave_table[i] = 2.0*i/(wave_table_len-1) - 1.0;
-        }
-        else if (wave_type == "SINE"){
-            static const double tau = 2*std::acos(-1.0);
-            for (size_t i = 0; i < wave_table_len; i++)
-                real_wave_table[i] = std::sin((tau*i)/wave_table_len);
-        }
-        else throw std::runtime_error("unknown waveform type: " + wave_type);
-
-        //compute i and q pairs with 90% offset and scale to amplitude
-        for (size_t i = 0; i < wave_table_len; i++){
-            const size_t q = (i+(3*wave_table_len)/4)%wave_table_len;
-            _wave_table[i] = std::complex<float>(ampl*real_wave_table[i], ampl*real_wave_table[q]);
-        }
-    }
-
-    inline std::complex<float> operator()(const size_t index) const{
-        return _wave_table[index % wave_table_len];
-    }
-
-private:
-    std::vector<std::complex<float> > _wave_table;
-};
 
 /***********************************************************************
  * transmit_worker function
@@ -182,7 +137,7 @@ template<typename samp_type> void recv_to_file(
     UHD_ASSERT_THROW(outfiles.size() == buffs.size());
     UHD_ASSERT_THROW(buffs.size() == rx_channel_nums.size());
     bool overflow_message = true;
-    float timeout = settling_time + 0.1; //expected settling time + padding for first recv
+    float timeout = settling_time + 0.1f; //expected settling time + padding for first recv
 
     //setup streaming
     uhd::stream_cmd_t stream_cmd((num_requested_samples == 0)?
@@ -196,7 +151,7 @@ template<typename samp_type> void recv_to_file(
 
     while(not stop_signal_called and (num_requested_samples != num_total_samps or num_requested_samples == 0)){
         size_t num_rx_samps = rx_stream->recv(buff_ptrs, samps_per_buff, md, timeout);
-        timeout = 0.1; //small timeout for subsequent recv
+        timeout = 0.1f; //small timeout for subsequent recv
 
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
             std::cout << boost::format("Timeout while streaming") << std::endl;

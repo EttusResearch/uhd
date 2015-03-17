@@ -32,6 +32,7 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/thread.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/thread/mutex.hpp>
 #include <map>
 
 using namespace uhd;
@@ -83,7 +84,7 @@ protected:
         // Get only regs with changes
         try {
             changed_regs = get_changed_addrs();
-        } catch (uhd::runtime_error& e) {
+        } catch (uhd::runtime_error&) {
             // No saved state - write all regs
             for (int addr = 5; addr >= 0; addr--)
                 changed_regs.insert(boost::uint32_t(addr));
@@ -691,26 +692,13 @@ static const ubx_gpio_field_info_t ubx_v1_gpio_info[] = {
 };
 
 /***********************************************************************
- * Macros and helper functions for routing and writing SPI registers
+ * Macros for routing and writing SPI registers
  **********************************************************************/
 #define ROUTE_SPI(iface, dest)  \
     iface->set_gpio_out(dboard_iface::UNIT_TX, dest, 0x7);
 
 #define WRITE_SPI(iface, val)   \
     iface->write_spi(dboard_iface::UNIT_TX, spi_config_t::EDGE_RISE, val, 32);
-
-UHD_INLINE void write_spi_reg(dboard_iface::sptr iface, spi_dest_t dest, boost::uint32_t value)
-{
-    ROUTE_SPI(iface, dest);
-    WRITE_SPI(iface, value);
-}
-
-UHD_INLINE void write_spi_regs(dboard_iface::sptr iface, spi_dest_t dest, std::vector<boost::uint32_t> values)
-{
-    ROUTE_SPI(iface, dest);
-    for (size_t i = 0; i < values.size(); i++)
-        WRITE_SPI(iface, values[i]);
-}
 
 /***********************************************************************
  * UBX Class Definition
@@ -813,17 +801,17 @@ public:
         // Initialize LOs
         if (_rev == 0)
         {
-            _txlo1.reset(new max2870(boost::bind(&write_spi_regs, _iface, TXLO1, _1)));
-            _txlo2.reset(new max2870(boost::bind(&write_spi_regs, _iface, TXLO2, _1)));
-            _rxlo1.reset(new max2870(boost::bind(&write_spi_regs, _iface, RXLO1, _1)));
-            _rxlo2.reset(new max2870(boost::bind(&write_spi_regs, _iface, RXLO2, _1)));
+            _txlo1.reset(new max2870(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO1, _1)));
+            _txlo2.reset(new max2870(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO2, _1)));
+            _rxlo1.reset(new max2870(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO1, _1)));
+            _rxlo2.reset(new max2870(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO2, _1)));
         }
         else if (_rev == 1)
         {
-            _txlo1.reset(new max2871(boost::bind(&write_spi_regs, _iface, TXLO1, _1)));
-            _txlo2.reset(new max2871(boost::bind(&write_spi_regs, _iface, TXLO2, _1)));
-            _rxlo1.reset(new max2871(boost::bind(&write_spi_regs, _iface, RXLO1, _1)));
-            _rxlo2.reset(new max2871(boost::bind(&write_spi_regs, _iface, RXLO2, _1)));
+            _txlo1.reset(new max2871(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO1, _1)));
+            _txlo2.reset(new max2871(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO2, _1)));
+            _rxlo1.reset(new max2871(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO1, _1)));
+            _rxlo2.reset(new max2871(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO2, _1)));
         }
         else
         {
@@ -948,6 +936,21 @@ private:
     /***********************************************************************
     * Helper Functions
     **********************************************************************/
+    void write_spi_reg(spi_dest_t dest, boost::uint32_t value)
+    {
+        boost::mutex::scoped_lock lock(_spi_lock);
+        ROUTE_SPI(_iface, dest);
+        WRITE_SPI(_iface, value);
+    }
+
+    void write_spi_regs(spi_dest_t dest, std::vector<boost::uint32_t> values)
+    {
+        boost::mutex::scoped_lock lock(_spi_lock);
+        ROUTE_SPI(_iface, dest);
+        BOOST_FOREACH(boost::uint32_t value, values)
+            WRITE_SPI(_iface, value);
+    }
+
     void set_cpld_field(ubx_cpld_field_id_t id, boost::uint32_t value)
     {
         _cpld_reg.set_field(id, value);
@@ -955,7 +958,7 @@ private:
 
     void write_cpld_reg()
     {
-        write_spi_reg(_iface, CPLD, _cpld_reg.value);
+        write_spi_reg(CPLD, _cpld_reg.value);
     }
 
     void set_gpio_field(ubx_gpio_field_id_t id, boost::uint32_t value)
@@ -1389,6 +1392,7 @@ private:
     * Variables
     **********************************************************************/
     dboard_iface::sptr _iface;
+    boost::mutex _spi_lock;
     ubx_cpld_reg_t _cpld_reg;
     boost::shared_ptr<max287x_synthesizer_iface> _txlo1;
     boost::shared_ptr<max287x_synthesizer_iface> _txlo2;

@@ -26,6 +26,7 @@
 #define UHD_USRP_MULTI_USRP_BW_RANGE_API
 #define UHD_USRP_MULTI_USRP_USER_REGS_API
 #define UHD_USRP_MULTI_USRP_GET_USRP_INFO_API
+#define UHD_USRP_MULTI_USRP_NORMALIZED_GAIN
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -35,6 +36,7 @@
 #include <uhd/types/tune_request.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/types/sensors.hpp>
+#include <uhd/types/filters.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <boost/shared_ptr.hpp>
@@ -155,6 +157,11 @@ public:
      * If the specified rate is not available, this method will throw.
      * On other devices, this method notifies the software of the rate,
      * but requires the the user has made the necessary hardware change.
+     *
+     * If the device has an 'auto clock rate' setting (e.g. B200, see also
+     * \ref b200_auto_mcr), this will get disabled and the clock rate will be
+     * fixed to \p rate.
+     *
      * \param rate the new master clock rate in Hz
      * \param mboard the motherboard index 0 to M-1
      */
@@ -490,6 +497,34 @@ public:
     }
 
     /*!
+     * Set the normalized RX gain value.
+     *
+     * The normalized gain is a value in [0, 1], where 0 is the
+     * smallest gain value available, and 1 is the largest, independent
+     * of the device. In between, gains are linearly interpolated.
+     *
+     * Check the individual device manual for notes on the gain range.
+     *
+     * Note that it is not possible to specify a gain name for
+     * this function, it will always set the overall gain.
+     *
+     * \param gain the normalized gain value
+     * \param chan the channel index 0 to N-1
+     * \throws A uhd::runtime_error if the gain value is outside [0, 1].
+     */
+    virtual void set_normalized_rx_gain(double gain, size_t chan = 0) = 0;
+
+    /*!
+     * Enable or disable the RX AGC module.
+     * Once this module is enabled manual gain settings will be ignored.
+     * The AGC will start in a default configuration which should be good for most use cases.
+     * Device specific configuration parameters can be found in the property tree.
+     * \param on Enable or Disable the AGC
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_rx_agc(bool enable, size_t chan = 0) = 0;
+
+    /*!
      * Get the RX gain value for the specified gain element.
      * For an empty name, sum across all gain elements.
      * \param name the name of the gain element
@@ -502,6 +537,19 @@ public:
     double get_rx_gain(size_t chan = 0){
         return this->get_rx_gain(ALL_GAINS, chan);
     }
+
+    /*!
+     * Return the normalized RX gain value.
+     *
+     * See set_normalized_rx_gain() for a discussion of normalized
+     * gains.
+     *
+     * \param gain the normalized gain value
+     * \param chan the channel index 0 to N-1
+     * \returns The normalized gain (in [0, 1])
+     * \throws A uhd::runtime_error if the gain value is outside [0, 1].
+     */
+    virtual double get_normalized_rx_gain(size_t chan = 0) = 0;
 
     /*!
      * Get the RX gain range for the specified gain element.
@@ -613,6 +661,14 @@ public:
      * \param chan the channel index 0 to N-1
      */
     virtual void set_rx_dc_offset(const std::complex<double> &offset, size_t chan = ALL_CHANS) = 0;
+
+    /*!
+     * Enable/disable the automatic IQ imbalance correction.
+     *
+     * \param enb true to enable automatic IQ balance correction
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_rx_iq_balance(const bool enb, size_t chan) = 0;
 
     /*!
      * Set the RX frontend IQ imbalance correction.
@@ -728,6 +784,18 @@ public:
     }
 
     /*!
+     * Set the normalized TX gain value.
+     *
+     * See set_normalized_rx_gain() for a discussion on normalized
+     * gains.
+     *
+     * \param gain the normalized gain value
+     * \param chan the channel index 0 to N-1
+     * \throws A uhd::runtime_error if the gain value is outside [0, 1].
+     */
+    virtual void set_normalized_tx_gain(double gain, size_t chan = 0) = 0;
+
+    /*!
      * Get the TX gain value for the specified gain element.
      * For an empty name, sum across all gain elements.
      * \param name the name of the gain element
@@ -740,6 +808,19 @@ public:
     double get_tx_gain(size_t chan = 0){
         return this->get_tx_gain(ALL_GAINS, chan);
     }
+
+    /*!
+     * Return the normalized TX gain value.
+     *
+     * See set_normalized_rx_gain() for a discussion of normalized
+     * gains.
+     *
+     * \param gain the normalized gain value
+     * \param chan the channel index 0 to N-1
+     * \returns The normalized gain (in [0, 1])
+     * \throws A uhd::runtime_error if the gain value is outside [0, 1].
+     */
+    virtual double get_normalized_tx_gain(size_t chan = 0) = 0;
 
     /*!
      * Get the TX gain range for the specified gain element.
@@ -892,6 +973,38 @@ public:
      * \return the value set for this attribute
      */
     virtual boost::uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard = 0) = 0;
+
+    /*******************************************************************
+     * Filter API methods
+     ******************************************************************/
+
+    /*!
+     * Enumerate the available filters in the signal path.
+     * \param search_mask
+     * \parblock
+     * Select only certain filter names by specifying this search mask.
+     *
+     * E.g. if search mask is set to "rx_frontends/A" only filter names including that string will be returned.
+     * \endparblock
+     * \return a vector of strings representing the selected filter names.
+     */
+    virtual std::vector<std::string> get_filter_names(const std::string &search_mask = "") = 0;
+
+    /*!
+     * Return the filter object for the given name.
+     * \param path the name of the filter as returned from get_filter_names().
+     * \return a filter_info_base::sptr.
+     */
+    virtual filter_info_base::sptr get_filter(const std::string &path) = 0;
+
+    /*!
+     * Write back a filter obtained by get_filter() to the signal path.
+     * This filter can be a modified version of the originally returned one.
+     * The information about Rx or Tx is contained in the path parameter.
+     * \param path the name of the filter as returned from get_filter_names().
+     * \param filter the filter_info_base::sptr of the filter object to be written
+     */
+    virtual void set_filter(const std::string &path, filter_info_base::sptr filter) = 0;
 
 };
 

@@ -19,9 +19,11 @@
 #include <uhd/transport/nirio/niriok_proxy_impl_v2.h>
 #include <cstring>
 
-#ifdef __clang__
-    #pragma GCC diagnostic push ignored "-Wmissing-field-initializers"
-#elif defined(__GNUC__)
+// "push" and "pop" introduced in GCC 4.6; works with all clang
+#if defined(__clang__) || defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC_MINOR__ > 5)
+    #pragma GCC diagnostic push
+#endif
+#if defined(__clang__) || defined(__GNUC__)
     #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 
@@ -642,6 +644,6 @@ namespace uhd { namespace niusrprio
 
 }}
 
-#ifdef __GNUC__
+#if defined(__clang__) || defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC_MINOR__ > 5)
     #pragma GCC diagnostic pop
 #endif

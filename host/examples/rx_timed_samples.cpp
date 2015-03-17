@@ -48,7 +48,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
         ("dilv", "specify to disable inner-loop verbose")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
-    
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

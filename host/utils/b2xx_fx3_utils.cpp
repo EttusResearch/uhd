@@ -51,20 +51,26 @@ struct vid_pid_t {
 const static vid_pid_t known_vid_pids[] = {
     {FX3_VID, FX3_DEFAULT_PID},
     {FX3_VID, FX3_REENUM_PID},
-    {B200_VENDOR_ID, B200_PRODUCT_ID}
+    {B200_VENDOR_ID, B200_PRODUCT_ID},
+    {B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID},
+    {B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID}
     };
 const static std::vector<vid_pid_t> known_vid_pid_vector(known_vid_pids, known_vid_pids + (sizeof(known_vid_pids) / sizeof(known_vid_pids[0])));
-const static boost::uint8_t eeprom_init_values[] = {
-    0x43,
-    0x59,
-    0x14,
-    0xB2,
-    (B200_PRODUCT_ID & 0xff),
-    (B200_PRODUCT_ID >> 8),
-    (B200_VENDOR_ID & 0xff),
-    (B200_VENDOR_ID >> 8)
-    };
-const static uhd::byte_vector_t eeprom_init_value_vector(eeprom_init_values, eeprom_init_values + (sizeof(eeprom_init_values) / sizeof(eeprom_init_values[0])));
+
+static const size_t EEPROM_INIT_VALUE_VECTOR_SIZE = 8;
+static uhd::byte_vector_t construct_eeprom_init_value_vector(boost::uint16_t vid, boost::uint16_t pid)
+{
+    uhd::byte_vector_t init_values(EEPROM_INIT_VALUE_VECTOR_SIZE);
+    init_values.at(0) = 0x43;
+    init_values.at(1) = 0x59;
+    init_values.at(2) = 0x14;
+    init_values.at(3) = 0xB2;
+    init_values.at(4) = static_cast<boost::uint8_t>(pid & 0xff);
+    init_values.at(5) = static_cast<boost::uint8_t>(pid >> 8);
+    init_values.at(6) = static_cast<boost::uint8_t>(vid & 0xff);
+    init_values.at(7) = static_cast<boost::uint8_t>(vid >> 8);
+    return init_values;
+}
 
 //!used with lexical cast to parse a hex string
 template <class T> struct to_hex{
@@ -153,15 +159,22 @@ uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, c
 
     try {
         // try caller's VID/PID first
-        handles = uhd::transport::usb_device_handle::get_device_list(vp.vid,vp.pid);
-        if (user_supplied && handles.size() == 0)
-            std::cerr << (boost::format("Failed to open device with VID 0x%04x and PID 0x%04x - trying other known VID/PIDs") % vid % pid).str() << std::endl;
-
-        // try known VID/PIDs next
-        for (size_t i = 0; handles.size() == 0 && i < known_vid_pid_vector.size(); i++)
+        std::vector<uhd::transport::usb_device_handle::vid_pid_pair_t> vid_pid_pair_list(1,uhd::transport::usb_device_handle::vid_pid_pair_t(vid,pid));
+        handles = uhd::transport::usb_device_handle::get_device_list(vid_pid_pair_list);
+        if (handles.size() == 0)
         {
-            vp = known_vid_pid_vector[i];
-            handles = uhd::transport::usb_device_handle::get_device_list(vp.vid,vp.pid);
+            if (user_supplied)
+            {
+                std::cerr << (boost::format("Failed to open device with VID 0x%04x and PID 0x%04x - trying other known VID/PIDs") % vid % pid).str() << std::endl;
+            }
+
+            // try known VID/PIDs next
+            for (size_t i = 0; handles.size() == 0 && i < known_vid_pid_vector.size(); i++)
+            {
+                vp = known_vid_pid_vector[i];
+                handles = uhd::transport::usb_device_handle::get_device_list(vp.vid, vp.pid);
+            }
+           
         }
 
         if (handles.size() > 0)
@@ -173,7 +186,7 @@ uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, c
         if (!handle)
             std::cerr << "Cannot open device" << std::endl;
     }
-    catch(const std::exception &e) {
+    catch(const std::exception &) {
         std::cerr << "Failed to communicate with the device!" << std::endl;
         #ifdef UHD_PLATFORM_WIN32
         std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details:\nhttp://files.ettus.com/manual/page_transport.html" << std::endl;
@@ -195,7 +208,7 @@ b200_iface::sptr make_b200_iface(const uhd::transport::usb_device_handle::sptr &
         if (!b200)
             std::cerr << "Cannot create device interface" << std::endl;
     }
-    catch(const std::exception &e) {
+    catch(const std::exception &) {
         std::cerr << "Failed to communicate with the device!" << std::endl;
         #ifdef UHD_PLATFORM_WIN32
         std::cerr << "The necessary drivers are not installed. Read the UHD Transport Application Notes for details:\nhttp://files.ettus.com/manual/page_transport.html" << std::endl;
@@ -221,7 +234,7 @@ int read_eeprom(b200_iface::sptr& b200, uhd::byte_vector_t& data)
 int write_eeprom(b200_iface::sptr& b200, const uhd::byte_vector_t& data)
 {
     try {
-        b200->write_eeprom(0x0, 0x0, data);
+      b200->write_eeprom(0x0, 0x0, data);
     } catch (std::exception &e) {
         std::cerr << "Exception while writing EEPROM: " << e.what() << std::endl;
         return -1;
@@ -281,7 +294,7 @@ int erase_eeprom(b200_iface::sptr& b200)
 
 boost::int32_t main(boost::int32_t argc, char *argv[]) {
     boost::uint16_t vid, pid;
-    std::string pid_str, vid_str, fw_file, fpga_file;
+    std::string pid_str, vid_str, fw_file, fpga_file, writevid_str, writepid_str;
     bool user_supplied_vid_pid = false;
 
     po::options_description visible("Allowed options");
@@ -295,7 +308,6 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         ("reset-device,D", "Reset the B2xx Device.")
         ("reset-fpga,F", "Reset the FPGA (does not require re-programming.")
         ("reset-usb,U", "Reset the USB subsystem on your host computer.")
-        ("init-device,I", "Initialize a B2xx device.")
         ("load-fw,W", po::value<std::string>(&fw_file),
             "Load a firmware (hex) file into the FX3.")
         ("load-fpga,L", po::value<std::string>(&fpga_file),
@@ -305,9 +317,14 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
     // Hidden options provided for testing - use at your own risk!
     po::options_description hidden("Hidden options");
     hidden.add_options()
-    ("uninit-device,U", "Uninitialize a B2xx device.")
+    ("init-device,I", "Initialize a B2xx device.")
+    ("uninit-device", "Uninitialize a B2xx device.")
     ("read-eeprom,R", "Read first 8 bytes of EEPROM")
-    ("erase-eeprom,E", "Erase first 8 bytes of EEPROM");
+    ("erase-eeprom,E", "Erase first 8 bytes of EEPROM")
+    ("write-vid", po::value<std::string>(&writevid_str),
+        "Write VID field of EEPROM")
+    ("write-pid", po::value<std::string>(&writepid_str),
+        "Write PID field of EEPROM");
 
     po::options_description desc;
     desc.add(visible);
@@ -486,9 +503,24 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
      * Cypress VID/PID for the initial FW load, but we can initialize from any state. */
     if (vm.count("init-device"))
     {
+        uint16_t writevid = B200_VENDOR_ID;
+        uint16_t writepid = B200_PRODUCT_ID;
+
         /* Now, initialize the device. */
-        if (write_and_verify_eeprom(b200, eeprom_init_value_vector))
-            return -1;
+           // Added for testing purposes - not exposed
+        if (vm.count("write-vid") && vm.count("write-pid"))
+        {
+            try {
+                  writevid = atoh(writevid_str);
+                  writepid = atoh(writepid_str);
+            } catch (std::exception &e) {
+                  std::cerr << "Exception while parsing write VID and PID: " << e.what() << std:: endl;
+                  return ~0;
+            }
+        }
+
+        std::cout << "Writing VID and PID to EEPROM..." << std::endl << std::endl;
+        if (write_and_verify_eeprom(b200, construct_eeprom_init_value_vector(writevid, writepid))) return -1;
 
         std::cout << "EEPROM initialized, resetting device..."
             << std::endl << std::endl;

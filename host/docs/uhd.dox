@@ -12,6 +12,7 @@ Some additional pages on developing UHD are also available here:
 \li \subpage page_coding
 \li \subpage page_converters
 \li \subpage page_stream
+\li \subpage page_rtp
 
 */
 // vim:ft=doxygen:

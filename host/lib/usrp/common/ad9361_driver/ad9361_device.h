@@ -16,6 +16,7 @@ class ad9361_device_t : public boost::noncopyable
 public:
     enum direction_t { RX, TX };
     enum chain_t { CHAIN_1, CHAIN_2 };
+    enum gain_mode_t {GAIN_MODE_MANUAL, GAIN_MODE_SLOW_AGC, GAIN_MODE_FAST_AGC};
 
     ad9361_device_t(ad9361_params::sptr client, ad9361_io::sptr io_iface) :
         _client_params(client), _io_iface(io_iface) {}
@@ -66,10 +67,29 @@ public:
     /* Read back the internal RSSI measurement data. */
     double get_rssi(chain_t chain);
 
+    /*! Read the internal temperature sensor
+     *\param calibrate return raw sensor readings or apply calibration factor.
+     *\param num_samples number of measurements to average over
+     */
+    double get_average_temperature(const double cal_offset = -30.0, const size_t num_samples = 3);
+
+    /* Turn on/off AD9361's RX DC offset correction */
+    void set_dc_offset_auto(direction_t direction, const bool on);
+
+    /* Turn on/off AD9361's RX IQ imbalance correction */
+    void set_iq_balance_auto(direction_t direction, const bool on);
+
+    /* Configure AD9361's AGC module to use either fast or slow AGC mode. */
+    void set_agc_mode(chain_t chain, gain_mode_t gain_mode);
+
+    /* Enable AD9361's AGC gain mode. */
+    void set_agc(chain_t chain, bool enable);
+
     //Constants
     static const double AD9361_MAX_GAIN;
     static const double AD9361_MAX_CLOCK_RATE;
     static const double AD9361_RECOMMENDED_MAX_CLOCK_RATE;
+    static const double AD9361_CAL_VALID_WINDOW;
 
 private:    //Methods
     void _program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs);
@@ -89,12 +109,15 @@ private:    //Methods
     void _calibrate_tx_quadrature();
     void _program_mixer_gm_subtable();
     void _program_gain_table();
-    void _setup_gain_control();
+    void _setup_gain_control(bool use_agc);
     void _setup_synth(direction_t direction, double vcorate);
     double _tune_bbvco(const double rate);
     void _reprogram_gains();
     double _tune_helper(direction_t direction, const double value);
     double _setup_rates(const double rate);
+    double _get_temperature(const double cal_offset, const double timeout = 0.1);
+    void _configure_bb_rf_dc_tracking(const bool on);
+    void _setup_agc(chain_t chain, gain_mode_t gain_mode);
 
 private:    //Members
     typedef struct {
@@ -112,6 +135,7 @@ private:    //Members
     ad9361_io::sptr     _io_iface;
     //Intermediate state
     double              _rx_freq, _tx_freq, _req_rx_freq, _req_tx_freq;
+    double              _last_calibration_freq;
     double              _baseband_bw, _bbpll_freq, _adcclock_freq;
     double              _req_clock_rate, _req_coreclk;
     boost::uint16_t     _rx_bbf_tunediv;
@@ -119,10 +143,14 @@ private:    //Members
     double              _rx1_gain, _rx2_gain, _tx1_gain, _tx2_gain;
     boost::int32_t      _tfir_factor;
     boost::int32_t      _rfir_factor;
+    gain_mode_t         _rx1_agc_mode, _rx2_agc_mode;
+    bool                _rx1_agc_enable, _rx2_agc_enable;
     //Register soft-copies
     chip_regs_t         _regs;
     //Synchronization
     boost::recursive_mutex  _mutex;
+    bool _use_dc_offset_correction;
+    bool _use_iq_balance_correction;
 };
 
 }}  //namespace

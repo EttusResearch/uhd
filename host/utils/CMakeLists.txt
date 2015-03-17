@@ -65,14 +65,19 @@ SET(util_share_sources
 IF(ENABLE_USB)
     LIST(APPEND util_share_sources
         fx2_init_eeprom.cpp
-        b2xx_fx3_utils.cpp
     )
     INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIRS})
-    # Additional include directories for b2xx_fx3_utils
-    INCLUDE_DIRECTORIES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/b200
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/common
-        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/common/ad9361_driver)
+    IF(ENABLE_B200)
+        LIST(APPEND util_share_sources
+            b2xx_fx3_utils.cpp
+        )
+        # Additional include directories for b2xx_fx3_utils
+        INCLUDE_DIRECTORIES(
+            ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/b200
+            ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/common
+            ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/common/ad9361_driver
+        )
+    ENDIF(ENABLE_B200)
 ENDIF(ENABLE_USB)
 IF(ENABLE_OCTOCLOCK)
     LIST(APPEND util_share_sources

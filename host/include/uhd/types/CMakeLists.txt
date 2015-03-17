@@ -31,11 +31,13 @@ UHD_INSTALL(FILES
     ref_vector.hpp
     sensors.hpp
     serial.hpp
+    sid.hpp
     stream_cmd.hpp
     time_spec.hpp
     tune_request.hpp
     tune_result.hpp
     wb_iface.hpp
+    filters.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/types
     COMPONENT headers
 )

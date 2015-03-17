@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@
 
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
 
-#define X300_REV(x) (x - "A" + 1)
+#define X300_REV(x) ((x) - "A" + 1)
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -695,15 +695,14 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
     mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
-    const std::vector<std::string> GPIO_ATTRS = boost::assign::list_of("CTRL")("DDR")("OUT")("ATR_0X")("ATR_RX")("ATR_TX")("ATR_XX");
-    BOOST_FOREACH(const std::string &attr, GPIO_ATTRS)
+    BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
-        _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr)
+        _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
             .set(0)
-            .subscribe(boost::bind(&x300_impl::set_fp_gpio, this, mb.fp_gpio, attr, _1));
+            .subscribe(boost::bind(&x300_impl::set_fp_gpio, this, mb.fp_gpio, attr.first, _1));
     }
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
-        .publish(boost::bind(&x300_impl::get_fp_gpio, this, mb.fp_gpio, "READBACK"));
+        .publish(boost::bind(&x300_impl::get_fp_gpio, this, mb.fp_gpio));
 
     ////////////////////////////////////////////////////////////////////
     // register the time keepers - only one can be the highlander
@@ -1353,7 +1352,7 @@ void x300_impl::set_time_source_out(mboard_members_t &mb, const bool enb)
 void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &source)
 {
     //Optimize for the case when the current source is internal and we are trying
-    //to set it to internal. This is the only case where we are guaranteed that 
+    //to set it to internal. This is the only case where we are guaranteed that
     //the clock has not gone away so we can skip setting the MUX and reseting the LMK.
     if (not (mb.current_refclk_src == "internal" and source == "internal")) {
         //Update the clock MUX on the motherboard to select the requested source
@@ -1432,8 +1431,8 @@ bool x300_impl::wait_for_ref_locked(wb_iface::sptr ctrl, double timeout)
         boost::this_thread::sleep(boost::posix_time::milliseconds(1));
     } while (boost::get_system_time() < timeout_time);
 
-    //failed to lock on reference
-    return false;
+    //Check one last time
+    return get_ref_locked(ctrl).to_bool();
 }
 
 sensor_value_t x300_impl::get_ref_locked(wb_iface::sptr ctrl)
@@ -1534,20 +1533,24 @@ void x300_impl::set_mb_eeprom(i2c_iface::sptr i2c, const mboard_eeprom_t &mb_eep
  * front-panel GPIO
  **********************************************************************/
 
-boost::uint32_t x300_impl::get_fp_gpio(gpio_core_200::sptr gpio, const std::string &)
+boost::uint32_t x300_impl::get_fp_gpio(gpio_core_200::sptr gpio)
 {
     return boost::uint32_t(gpio->read_gpio(dboard_iface::UNIT_RX));
 }
 
-void x300_impl::set_fp_gpio(gpio_core_200::sptr gpio, const std::string &attr, const boost::uint32_t value)
+void x300_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, const boost::uint32_t value)
 {
-    if (attr == "CTRL") return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    if (attr == "DDR") return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    if (attr == "OUT") return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    if (attr == "ATR_0X") return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    if (attr == "ATR_RX") return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    if (attr == "ATR_TX") return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    if (attr == "ATR_XX") return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
+    switch (attr)
+    {
+    case GPIO_CTRL:   return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
+    case GPIO_DDR:    return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
+    case GPIO_OUT:    return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
+    case GPIO_ATR_0X: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
+    case GPIO_ATR_RX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
+    case GPIO_ATR_TX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
+    case GPIO_ATR_XX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
+    default:        UHD_THROW_INVALID_CODE_PATH();
+    }
 }
 
 /***********************************************************************
@@ -1720,14 +1723,20 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& res
                 case X300_USRP_PCIE_SSID:
                     mb_type = USRP_X300_MB; break;
                 case X310_USRP_PCIE_SSID:
-                case X310_2940R_PCIE_SSID:
-                case X310_2942R_PCIE_SSID:
-                case X310_2943R_PCIE_SSID:
-                case X310_2944R_PCIE_SSID:
-                case X310_2950R_PCIE_SSID:
-                case X310_2952R_PCIE_SSID:
-                case X310_2953R_PCIE_SSID:
-                case X310_2954R_PCIE_SSID:
+                case X310_2940R_40MHz_PCIE_SSID:
+                case X310_2940R_120MHz_PCIE_SSID:
+                case X310_2942R_40MHz_PCIE_SSID:
+                case X310_2942R_120MHz_PCIE_SSID:
+                case X310_2943R_40MHz_PCIE_SSID:
+                case X310_2943R_120MHz_PCIE_SSID:
+                case X310_2944R_40MHz_PCIE_SSID:
+                case X310_2950R_40MHz_PCIE_SSID:
+                case X310_2950R_120MHz_PCIE_SSID:
+                case X310_2952R_40MHz_PCIE_SSID:
+                case X310_2952R_120MHz_PCIE_SSID:
+                case X310_2953R_40MHz_PCIE_SSID:
+                case X310_2953R_120MHz_PCIE_SSID:
+                case X310_2954R_40MHz_PCIE_SSID:
                     mb_type = USRP_X310_MB; break;
                 default:
                     mb_type = UNKNOWN;      break;
@@ -1755,14 +1764,20 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
             case X300_USRP_PCIE_SSID:
                 mb_type = USRP_X300_MB; break;
             case X310_USRP_PCIE_SSID:
-            case X310_2940R_PCIE_SSID:
-            case X310_2942R_PCIE_SSID:
-            case X310_2943R_PCIE_SSID:
-            case X310_2944R_PCIE_SSID:
-            case X310_2950R_PCIE_SSID:
-            case X310_2952R_PCIE_SSID:
-            case X310_2953R_PCIE_SSID:
-            case X310_2954R_PCIE_SSID:
+            case X310_2940R_40MHz_PCIE_SSID:
+            case X310_2940R_120MHz_PCIE_SSID:
+            case X310_2942R_40MHz_PCIE_SSID:
+            case X310_2942R_120MHz_PCIE_SSID:
+            case X310_2943R_40MHz_PCIE_SSID:
+            case X310_2943R_120MHz_PCIE_SSID:
+            case X310_2944R_40MHz_PCIE_SSID:
+            case X310_2950R_40MHz_PCIE_SSID:
+            case X310_2950R_120MHz_PCIE_SSID:
+            case X310_2952R_40MHz_PCIE_SSID:
+            case X310_2952R_120MHz_PCIE_SSID:
+            case X310_2953R_40MHz_PCIE_SSID:
+            case X310_2953R_120MHz_PCIE_SSID:
+            case X310_2954R_40MHz_PCIE_SSID:
                 mb_type = USRP_X310_MB; break;
             default:
                 UHD_MSG(warning) << "X300 unknown product code in EEPROM: " << product_num << std::endl;

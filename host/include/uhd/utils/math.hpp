@@ -18,10 +18,10 @@
 #ifndef INCLUDED_UHD_UTILS_MATH_HPP
 #define INCLUDED_UHD_UTILS_MATH_HPP
 
+#include <cmath>
 #include <uhd/config.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/numeric/conversion/bounds.hpp>
-
 
 namespace uhd {
 
@@ -60,7 +60,7 @@ namespace math {
      * values, a custom epsilon should be defined for those computations. This
      * use-case is provided for in the `fp_compare_epsilon` class constructor.
      */
-    static const float SINGLE_PRECISION_EPSILON = 1.19e-7;
+    static const float SINGLE_PRECISION_EPSILON = 1.19e-7f;
     static const double DOUBLE_PRECISION_EPSILON = 2.22e-16;
 
 namespace fp_compare {
@@ -155,7 +155,7 @@ namespace fp_compare {
      * These are the default deltas used by the 'fp_compare_delta' class for
      * single and double-precision floating point comparisons.
      */
-    static const float SINGLE_PRECISION_DELTA = 1e-3;
+    static const float SINGLE_PRECISION_DELTA = 1e-3f;
     static const double DOUBLE_PRECISION_DELTA = 1e-5;
 
     /*! Floating-point delta to use for frequency comparisons. */
@@ -236,6 +236,16 @@ namespace fp_compare {
         return(fp_compare::fp_compare_delta<double>(lhs, FREQ_COMPARISON_DELTA_HZ)
                 == fp_compare::fp_compare_delta<double>(rhs, FREQ_COMPARISON_DELTA_HZ));
     }
+
+    //! Portable log2()
+    template <typename float_t> UHD_INLINE
+    float_t log2(float_t x)
+    {
+        // C++11 defines std::log2(), when that's universally supported
+        // we can switch over.
+        return std::log(x) / std::log(float_t(2));
+    }
+
 
 } // namespace math
 } // namespace uhd

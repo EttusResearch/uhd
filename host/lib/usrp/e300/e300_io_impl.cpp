@@ -25,6 +25,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/bind.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>
 
@@ -226,6 +227,18 @@ void e300_impl::_handle_overflow(
     }
 }
 
+static size_t get_rx_flow_control_window(size_t frame_size, size_t sw_buff_size, double fullness_factor)
+{
+    if (fullness_factor < 0.01 || fullness_factor > 1) {
+        throw uhd::value_error("recv_buff_fullness must be between 0.01 and 1 inclusive (1% to 100%)");
+    }
+
+    size_t window_in_pkts = (static_cast<size_t>(sw_buff_size * fullness_factor) / frame_size);
+    if (window_in_pkts == 0) {
+        throw uhd::value_error("recv_buff_size must be larger than the recv_frame_size.");
+    }
+    return window_in_pkts;
+}
 
 static void handle_rx_flowctrl(
     const boost::uint32_t sid,
@@ -457,25 +470,38 @@ rx_streamer::sptr e300_impl::get_rx_stream(const uhd::stream_args_t &args_)
         id.num_outputs = 1;
         my_streamer->set_converter(id);
 
+        perif.framer->clear();
         perif.framer->set_nsamps_per_packet(spp); //seems to be a good place to set this
         perif.framer->set_sid((data_sid << 16) | (data_sid >> 16));
         perif.framer->setup(args);
         perif.ddc->setup(args);
+
+        // flow control setup
+        const size_t frame_size = data_xports.recv->get_recv_frame_size();
+        const size_t num_frames = data_xports.recv->get_num_recv_frames();
+        const size_t fc_window = get_rx_flow_control_window(
+            frame_size,num_frames * frame_size,
+            E300_RX_SW_BUFF_FULLNESS);
+        const size_t fc_handle_window = std::max<size_t>(1, fc_window / E300_RX_FC_REQUEST_FREQ);
+
+        UHD_LOG << "RX Flow Control Window = " << fc_window
+                << ", RX Flow Control Handler Window = "
+                << fc_handle_window << std::endl;
+
+        perif.framer->configure_flow_control(fc_window);
+        boost::shared_ptr<e300_rx_fc_cache_t> fc_cache(new e300_rx_fc_cache_t());
+
         my_streamer->set_xport_chan_get_buff(stream_i, boost::bind(
             &zero_copy_if::get_recv_buff, data_xports.recv, _1
         ), true /*flush*/);
         my_streamer->set_overflow_handler(stream_i,
-            boost::bind(&rx_vita_core_3000::handle_overflow, perif.framer)
+            boost::bind(&e300_impl::_handle_overflow, this, boost::ref(perif),
+            boost::weak_ptr<uhd::rx_streamer>(my_streamer))
         );
 
-        //setup flow control
-        const size_t fc_window = data_xports.recv->get_num_recv_frames();
-        perif.framer->configure_flow_control(fc_window);
-        boost::shared_ptr<e300_rx_fc_cache_t> fc_cache(new e300_rx_fc_cache_t());
         my_streamer->set_xport_handle_flowctrl(stream_i,
             boost::bind(&handle_rx_flowctrl, data_sid, data_xports.send, fc_cache, _1),
-            static_cast<size_t>(static_cast<double>(fc_window) * E300_RX_SW_BUFF_FULLNESS),
-            true/*init*/);
+            fc_handle_window, true/*init*/);
 
         my_streamer->set_issue_stream_cmd(stream_i,
             boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1)
@@ -564,7 +590,13 @@ tx_streamer::sptr e300_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         //flow control setup
         const size_t fc_window = data_xports.send->get_num_send_frames();
-        perif.deframer->configure_flow_control(0/*cycs off*/, fc_window/8/*pkts*/);
+        const size_t fc_handle_window = std::max<size_t>(1, fc_window/E300_TX_FC_RESPONSE_FREQ);
+
+        UHD_LOG << "TX Flow Control Window = " << fc_window
+                << ", TX Flow Control Handler Window = "
+                << fc_handle_window << std::endl;
+
+        perif.deframer->configure_flow_control(0/*cycs off*/, fc_handle_window/*pkts*/);
         boost::shared_ptr<e300_tx_fc_cache_t> fc_cache(new e300_tx_fc_cache_t());
         fc_cache->stream_channel = stream_i;
         fc_cache->device_channel = args.channels[stream_i];

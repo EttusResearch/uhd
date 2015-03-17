@@ -30,6 +30,8 @@
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
+#include <algorithm>
 #include <cmath>
 
 using namespace uhd;
@@ -431,6 +433,9 @@ public:
      ******************************************************************/
     void set_master_clock_rate(double rate, size_t mboard){
         if (mboard != ALL_MBOARDS){
+            if (_tree->exists(mb_root(mboard) / "auto_tick_rate")) {
+                _tree->access<bool>(mb_root(mboard) / "auto_tick_rate").set(false);
+            }
             _tree->access<double>(mb_root(mboard) / "tick_rate").set(rate);
             return;
         }
@@ -821,25 +826,86 @@ public:
     }
 
     void set_rx_gain(double gain, const std::string &name, size_t chan){
+        /* Check if any AGC mode is enable and if so warn the user */
+        if (chan != ALL_CHANS) {
+            if (_tree->exists(rx_rf_fe_root(chan) / "gain" / "agc")) {
+                bool agc = _tree->access<bool>(rx_rf_fe_root(chan) / "gain" / "agc" / "enable").get();
+                if(agc) {
+                    UHD_MSG(warning) << "AGC enabled for this channel. Setting will be ignored." << std::endl;
+                }
+            }
+        } else {
+            for (size_t c = 0; c < get_rx_num_channels(); c++){
+                if (_tree->exists(rx_rf_fe_root(c) / "gain" / "agc")) {
+                    bool agc = _tree->access<bool>(rx_rf_fe_root(chan) / "gain" / "agc" / "enable").get();
+                    if(agc) {
+                        UHD_MSG(warning) << "AGC enabled for this channel. Setting will be ignored." << std::endl;
+                    }
+                }
+            }
+        }
+        /* Apply gain setting.
+         * If device is in AGC mode it will ignore the setting. */
         try {
             return rx_gain_group(chan)->set_value(gain, name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,rx);
         }
+    }
+
+    void set_normalized_rx_gain(double gain, size_t chan = 0)
+    {
+      if (gain > 1.0 || gain < 0.0) {
+        throw uhd::runtime_error("Normalized gain out of range, must be in [0, 1].");
+      }
+      gain_range_t gain_range = get_rx_gain_range(ALL_GAINS, chan);
+      double abs_gain = (gain * (gain_range.stop() - gain_range.start())) + gain_range.start();
+      set_rx_gain(abs_gain, ALL_GAINS, chan);
+    }
+
+    void set_rx_agc(bool enable, size_t chan = 0)
+    {
+        if (chan != ALL_CHANS){
+            if (_tree->exists(rx_rf_fe_root(chan) / "gain" / "agc" / "enable")) {
+                _tree->access<bool>(rx_rf_fe_root(chan) / "gain" / "agc" / "enable").set(enable);
+            } else {
+                UHD_MSG(warning) << "AGC is not available on this device." << std::endl;
+            }
+            return;
+        }
+        for (size_t c = 0; c < get_rx_num_channels(); c++){
+            this->set_rx_agc(enable, c);
+        }
+
     }
 
     double get_rx_gain(const std::string &name, size_t chan){
         try {
             return rx_gain_group(chan)->get_value(name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,rx);
         }
+    }
+
+    double get_normalized_rx_gain(size_t chan)
+    {
+      gain_range_t gain_range = get_rx_gain_range(ALL_GAINS, chan);
+      double gain_range_width = gain_range.stop() - gain_range.start();
+      // In case we have a device without a range of gains:
+      if (gain_range_width == 0.0) {
+          return 0;
+      }
+      double norm_gain = (get_rx_gain(ALL_GAINS, chan) - gain_range.start()) / gain_range_width;
+      // Avoid rounding errors:
+      if (norm_gain > 1.0) return 1.0;
+      if (norm_gain < 0.0) return 0.0;
+      return norm_gain;
     }
 
     gain_range_t get_rx_gain_range(const std::string &name, size_t chan){
         try {
             return rx_gain_group(chan)->get_range(name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,rx);
         }
     }
@@ -888,6 +954,9 @@ public:
         if (chan != ALL_CHANS){
             if (_tree->exists(rx_fe_root(chan) / "dc_offset" / "enable")) {
                 _tree->access<bool>(rx_fe_root(chan) / "dc_offset" / "enable").set(enb);
+            } else if (_tree->exists(rx_rf_fe_root(chan) / "dc_offset" / "enable")) {
+                /*For B2xx devices the dc-offset correction is implemented in the rf front-end*/
+                _tree->access<bool>(rx_rf_fe_root(chan) / "dc_offset" / "enable").set(enb);
             } else {
                 UHD_MSG(warning) << "Setting DC offset compensation is not possible on this device." << std::endl;
             }
@@ -912,6 +981,20 @@ public:
         }
     }
 
+    void set_rx_iq_balance(const bool enb, size_t chan){
+        if (chan != ALL_CHANS){
+            if (_tree->exists(rx_rf_fe_root(chan) / "iq_balance" / "enable")) {
+                _tree->access<bool>(rx_rf_fe_root(chan) / "iq_balance" / "enable").set(enb);
+            } else {
+                UHD_MSG(warning) << "Setting IQ imbalance compensation is not possible on this device." << std::endl;
+            }
+            return;
+        }
+        for (size_t c = 0; c < get_rx_num_channels(); c++){
+            this->set_rx_iq_balance(enb, c);
+        }
+    }
+
     void set_rx_iq_balance(const std::complex<double> &offset, size_t chan){
         if (chan != ALL_CHANS){
             if (_tree->exists(rx_fe_root(chan) / "iq_balance" / "value")) {
@@ -924,6 +1007,87 @@ public:
         for (size_t c = 0; c < get_rx_num_channels(); c++){
             this->set_rx_iq_balance(offset, c);
         }
+    }
+
+    std::vector<std::string> get_filter_names(const std::string &search_mask)
+    {
+        std::vector<std::string> ret;
+
+        for (size_t chan = 0; chan < get_rx_num_channels(); chan++){
+
+            if (_tree->exists(rx_rf_fe_root(chan) / "filters")) {
+                std::vector<std::string> names = _tree->list(rx_rf_fe_root(chan) / "filters");
+                for(size_t i = 0; i < names.size(); i++)
+                {
+                    std::string name = rx_rf_fe_root(chan) / "filters" / names[i];
+                    if((search_mask.empty()) or boost::contains(name, search_mask)) {
+                        ret.push_back(name);
+                    }
+                }
+            }
+            if (_tree->exists(rx_dsp_root(chan) / "filters")) {
+                std::vector<std::string> names = _tree->list(rx_dsp_root(chan) / "filters");
+                for(size_t i = 0; i < names.size(); i++)
+                {
+                    std::string name = rx_dsp_root(chan) / "filters" / names[i];
+                    if((search_mask.empty()) or (boost::contains(name, search_mask))) {
+                        ret.push_back(name);
+                    }
+                }
+            }
+
+        }
+
+        for (size_t chan = 0; chan < get_tx_num_channels(); chan++){
+
+            if (_tree->exists(tx_rf_fe_root(chan) / "filters")) {
+                std::vector<std::string> names = _tree->list(tx_rf_fe_root(chan) / "filters");
+                for(size_t i = 0; i < names.size(); i++)
+                {
+                    std::string name = tx_rf_fe_root(chan) / "filters" / names[i];
+                    if((search_mask.empty()) or (boost::contains(name, search_mask))) {
+                        ret.push_back(name);
+                    }
+                }
+            }
+            if (_tree->exists(rx_dsp_root(chan) / "filters")) {
+                std::vector<std::string> names = _tree->list(tx_dsp_root(chan) / "filters");
+                for(size_t i = 0; i < names.size(); i++)
+                {
+                    std::string name = tx_dsp_root(chan) / "filters" / names[i];
+                    if((search_mask.empty()) or (boost::contains(name, search_mask))) {
+                        ret.push_back(name);
+                    }
+                }
+            }
+
+        }
+
+        return ret;
+    }
+
+    filter_info_base::sptr get_filter(const std::string &path)
+    {
+        std::vector<std::string> possible_names = get_filter_names("");
+        std::vector<std::string>::iterator it;
+        it = find(possible_names.begin(), possible_names.end(), path);
+        if (it == possible_names.end()) {
+            throw uhd::runtime_error("Attempting to get non-existing filter: "+path);
+        }
+
+        return _tree->access<filter_info_base::sptr>(path / "value").get();
+    }
+
+    void set_filter(const std::string &path, filter_info_base::sptr filter)
+    {
+        std::vector<std::string> possible_names = get_filter_names("");
+        std::vector<std::string>::iterator it;
+        it = find(possible_names.begin(), possible_names.end(), path);
+        if (it == possible_names.end()) {
+            throw uhd::runtime_error("Attempting to set non-existing filter: "+path);
+        }
+
+        _tree->access<filter_info_base::sptr>(path / "value").set(filter);
     }
 
     /*******************************************************************
@@ -1024,23 +1188,49 @@ public:
     void set_tx_gain(double gain, const std::string &name, size_t chan){
         try {
             return tx_gain_group(chan)->set_value(gain, name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,tx);
         }
     }
 
+    void set_normalized_tx_gain(double gain, size_t chan = 0)
+    {
+      if (gain > 1.0 || gain < 0.0) {
+        throw uhd::runtime_error("Normalized gain out of range, must be in [0, 1].");
+      }
+      gain_range_t gain_range = get_tx_gain_range(ALL_GAINS, chan);
+      double abs_gain = (gain * (gain_range.stop() - gain_range.start())) + gain_range.start();
+      set_tx_gain(abs_gain, ALL_GAINS, chan);
+    }
+
+
     double get_tx_gain(const std::string &name, size_t chan){
         try {
             return tx_gain_group(chan)->get_value(name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,tx);
         }
+    }
+
+    double get_normalized_tx_gain(size_t chan)
+    {
+      gain_range_t gain_range = get_tx_gain_range(ALL_GAINS, chan);
+      double gain_range_width = gain_range.stop() - gain_range.start();
+      // In case we have a device without a range of gains:
+      if (gain_range_width == 0.0) {
+          return 0.0;
+      }
+      double norm_gain = (get_rx_gain(ALL_GAINS, chan) - gain_range.start()) / gain_range_width;
+      // Avoid rounding errors:
+      if (norm_gain > 1.0) return 1.0;
+      if (norm_gain < 0.0) return 0.0;
+      return norm_gain;
     }
 
     gain_range_t get_tx_gain_range(const std::string &name, size_t chan){
         try {
             return tx_gain_group(chan)->get_range(name);
-        } catch (uhd::key_error &e) {
+        } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,tx);
         }
     }
@@ -1162,7 +1352,7 @@ public:
     {
         if (_tree->exists(mb_root(mboard) / "gpio" / bank))
         {
-            return _tree->access<boost::uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get();
+            return boost::uint32_t(_tree->access<boost::uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get());
         }
         if (bank.size() > 2 and bank[1] == 'X')
         {

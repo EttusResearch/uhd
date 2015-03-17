@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -360,8 +360,8 @@ private:
     void check_fpga_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
 
     void update_atr_leds(gpio_core_200_32wo::sptr, const std::string &ant);
-    boost::uint32_t get_fp_gpio(gpio_core_200::sptr, const std::string &);
-    void set_fp_gpio(gpio_core_200::sptr, const std::string &, const boost::uint32_t);
+    boost::uint32_t get_fp_gpio(gpio_core_200::sptr);
+    void set_fp_gpio(gpio_core_200::sptr, const gpio_attr_t, const boost::uint32_t);
 
     //**PRECONDITION**
     //This function assumes that all the VITA times in "radios" are synchronized

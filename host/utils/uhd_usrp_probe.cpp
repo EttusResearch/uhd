@@ -88,6 +88,11 @@ static std::string get_frontend_pp_string(const std::string &type, property_tree
         meta_range_t gain_range = tree->access<meta_range_t>(path / "gains" / name / "range").get();
         ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % name % gain_range.start() % gain_range.stop() % gain_range.step() << std::endl;
     }
+    if (tree->exists(path / "bandwidth" / "range"))
+    {
+        meta_range_t bw_range = tree->access<meta_range_t>(path / "bandwidth" / "range").get();
+        ss << boost::format("Bandwidth range: %.1f to %.1f step %.1f Hz") % bw_range.start() % bw_range.stop() % bw_range.step() << std::endl;
+    }
 
     ss << boost::format("Connection Type: %s") % (tree->access<std::string>(path / "connection").get()) << std::endl;
     ss << boost::format("Uses LO offset: %s") % ((tree->access<bool>(path / "use_lo_offset").get())? "Yes" : "No") << std::endl;
