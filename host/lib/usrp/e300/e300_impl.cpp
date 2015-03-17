@@ -555,29 +555,6 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _tree->access<double>(mb_path / "tick_rate").set(
         device_addr.cast<double>("master_clock_rate", e300::DEFAULT_TICK_RATE));
 
-    if (_sensor_manager->get_gps_found()) {
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
-        UHD_MSG(status) << "References initialized to GPSDO sources" << std::endl;
-        const time_t tp = time_t(_sensor_manager->get_gps_time().to_int());
-        _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
-        //wait for time to be set (timeout after 1 second)
-        for (int i = 0; i < 10; i++)
-        {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-            if(tp == (_tree->access<time_spec_t>(mb_path / "time" / "pps").get()).get_full_secs())
-                break;
-        }
-    } else {
-        // init to default time and clock source
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set(
-            e300::DEFAULT_CLOCK_SRC);
-        _tree->access<std::string>(mb_path / "time_source" / "value").set(
-            e300::DEFAULT_TIME_SRC);
-
-            UHD_MSG(status) << "References initialized to internal sources" << std::endl;
-    }
-
     //////////////// RFNOC /////////////////
     // Here's the plan:
     // - We cycle through all ports on this mb's xbar
