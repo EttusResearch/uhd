@@ -1056,6 +1056,18 @@ void e300_impl::_setup_radio(const size_t dspno)
         _tree->create<meta_range_t>(rf_fe_path / "freq" / "range")
             .publish(boost::bind(&ad9361_ctrl::get_rf_freq_range));
 
+        //only in local mode
+        if(_xport_path == AXI) {
+            //add all frontend filters
+            std::vector<std::string> filter_names = _codec_ctrl->get_filter_names(key);
+            for(size_t i = 0;i < filter_names.size(); i++)
+            {
+                _tree->create<filter_info_base::sptr>(rf_fe_path / "filters" / filter_names[i] / "value" )
+                    .publish(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_names[i]))
+                    .subscribe(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_names[i], _1));
+            }
+        }
+
         //setup RX related stuff
         if (key[0] == 'R') {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
