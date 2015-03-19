@@ -214,6 +214,40 @@ public:
         _device.set_iq_balance_auto(direction,on);
     }
 
+    double set_bw_filter(const std::string &which, const double bw)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        return _device.set_bw_filter(direction, bw);
+    }
+
+    std::vector<std::string> get_filter_names(const std::string &which)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        return _device.get_filter_names(direction);
+    }
+
+    filter_info_base::sptr get_filter(const std::string &which, const std::string &filter_name)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        ad9361_device_t::chain_t chain =_get_chain_from_antenna(which);
+        return _device.get_filter(direction, chain, filter_name);
+    }
+
+    void set_filter(const std::string &which, const std::string &filter_name, const filter_info_base::sptr filter)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        ad9361_device_t::chain_t chain = _get_chain_from_antenna(which);
+        _device.set_filter(direction, chain, filter_name, filter);
+    }
+
 private:
     static ad9361_device_t::direction_t _get_direction_from_antenna(const std::string& antenna)
     {

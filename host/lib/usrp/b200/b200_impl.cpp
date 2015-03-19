@@ -738,6 +738,15 @@ void b200_impl::setup_radio(const size_t dspno)
                 .subscribe(boost::bind(&ad9361_ctrl::set_iq_balance_auto, _codec_ctrl, key, _1)).set(true);
         }
 
+        //add all frontend filters
+        std::vector<std::string> filter_names = _codec_ctrl->get_filter_names(key);
+        for(size_t i = 0;i < filter_names.size(); i++)
+        {
+            _tree->create<filter_info_base::sptr>(rf_fe_path / "filters" / filter_names[i] / "value" )
+                .publish(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_names[i]))
+                .subscribe(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_names[i], _1));
+        }
+
         //setup antenna stuff
         if (key[0] == 'R')
         {

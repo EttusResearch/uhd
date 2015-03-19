@@ -27,6 +27,8 @@
 #include <ad9361_device.h>
 #include <string>
 #include <complex>
+#include <uhd/types/filters.hpp>
+#include <vector>
 
 namespace uhd { namespace usrp {
 
@@ -79,11 +81,8 @@ public:
         return uhd::meta_range_t(5e6, ad9361_device_t::AD9361_MAX_CLOCK_RATE); //5 MHz DCM low end
     }
 
-    //! set the filter bandwidth for the frontend
-    double set_bw_filter(const std::string &/*which*/, const double /*bw*/)
-    {
-        return 56e6; //TODO
-    }
+    //! set the filter bandwidth for the frontend's analog low pass
+    virtual double set_bw_filter(const std::string &/*which*/, const double /*bw*/) = 0;
 
     //! set the gain for a particular gain element
     virtual double set_gain(const std::string &which, const double value) = 0;
@@ -131,6 +130,15 @@ public:
 
     //! read the internal temp sensor
     virtual sensor_value_t get_temperature() = 0;
+
+    //! List all available filters by name
+    virtual std::vector<std::string> get_filter_names(const std::string &which) = 0;
+
+    //! Return a list of all filters
+    virtual filter_info_base::sptr get_filter(const std::string &which, const std::string &filter_name) = 0;
+
+    //! Write back a filter
+    virtual void set_filter(const std::string &which, const std::string &filter_name, const filter_info_base::sptr) = 0;
 };
 
 }}
