@@ -17,6 +17,7 @@
 
 
 UHD_INSTALL(FILES
+    byte_vector.hpp
     clock_config.hpp
     device_addr.hpp
     dict.ipp

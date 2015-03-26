@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #include <uhd/usrp_clock/octoclock_eeprom.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/types/byte_vector.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/assign/list_of.hpp>
@@ -35,26 +36,6 @@ typedef boost::asio::ip::address_v4 ip_v4;
 using namespace uhd;
 using namespace uhd::usrp_clock;
 using namespace uhd::transport;
-
-/***********************************************************************
- * Utility functions
- **********************************************************************/
-
-//! A wrapper around std::copy that takes ranges instead of iterators.
-template<typename RangeSrc, typename RangeDst> inline
-void byte_copy(const RangeSrc &src, RangeDst &dst){
-    std::copy(boost::begin(src), boost::end(src), boost::begin(dst));
-}
-
-//! create a string from a byte vector, return empty if invalid ascii
-static const std::string bytes_to_string(const byte_vector_t &bytes){
-    std::string out;
-    BOOST_FOREACH(boost::uint8_t byte, bytes){
-        if (byte < 32 or byte > 127) return out;
-        out += byte;
-    }
-    return out;
-}
 
 /***********************************************************************
  * Implementation
