@@ -190,7 +190,7 @@ private:
                 try
                 {
                     UHD_ASSERT_THROW(bool(buff));
-                    UHD_ASSERT_THROW(bool(buff->size()));
+                    UHD_ASSERT_THROW(buff->size() > 0);
                 }
                 catch(const std::exception &ex)
                 {

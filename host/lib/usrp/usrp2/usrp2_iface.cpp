@@ -139,19 +139,19 @@ public:
 /***********************************************************************
  * Peek and Poke
  **********************************************************************/
-    void poke32(wb_addr_type addr, boost::uint32_t data){
+    void poke32(const wb_addr_type addr, const boost::uint32_t data){
         this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FPGA_POKE32>(addr, data);
     }
 
-    boost::uint32_t peek32(wb_addr_type addr){
+    boost::uint32_t peek32(const wb_addr_type addr){
         return this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FPGA_PEEK32>(addr);
     }
 
-    void poke16(wb_addr_type addr, boost::uint16_t data){
+    void poke16(const wb_addr_type addr, const boost::uint16_t data){
         this->get_reg<boost::uint16_t, USRP2_REG_ACTION_FPGA_POKE16>(addr, data);
     }
 
-    boost::uint16_t peek16(wb_addr_type addr){
+    boost::uint16_t peek16(const wb_addr_type addr){
         return this->get_reg<boost::uint16_t, USRP2_REG_ACTION_FPGA_PEEK16>(addr);
     }
 
@@ -219,7 +219,7 @@ public:
         //setup the out data
         usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
-        out_data.data.i2c_args.addr = addr;
+        out_data.data.i2c_args.addr = uint8_t(addr);
         out_data.data.i2c_args.bytes = buf.size();
 
         //limitation of i2c transaction size
@@ -237,7 +237,7 @@ public:
         //setup the out data
         usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
-        out_data.data.i2c_args.addr = addr;
+        out_data.data.i2c_args.addr = uint8_t(addr);
         out_data.data.i2c_args.bytes = num_bytes;
 
         //limitation of i2c transaction size

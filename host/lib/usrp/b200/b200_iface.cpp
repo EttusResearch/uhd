@@ -549,7 +549,7 @@ public:
         size_t file_size = 0;
         {
             std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
-            file_size = file.tellg();
+            file_size = size_t(file.tellg());
         }
 
         std::ifstream file;

@@ -159,7 +159,7 @@ public:
         }
         UHD_ASSERT_THROW(uhd::ntohx<boost::uint32_t>(transaction.which) == GPS_FOUND);
         // TODO: Use proper serialization here ...
-        return static_cast<bool>(uhd::ntohx(transaction.value));
+        return (uhd::ntohx(transaction.value) > 0);
     }
 
     uhd::sensor_value_t get_gps_lock(void)
@@ -193,7 +193,7 @@ public:
         }
         UHD_ASSERT_THROW(uhd::ntohx<boost::uint32_t>(transaction.which) == GPS_LOCK);
         // TODO: Use proper serialization here ...
-        return sensor_value_t("GPS lock status", static_cast<bool>(uhd::ntohx(transaction.value)), "locked", "unlocked");
+        return sensor_value_t("GPS lock status", (uhd::ntohx(transaction.value) > 0), "locked", "unlocked");
     }
 
     uhd::sensor_value_t get_ref_lock(void)
@@ -227,7 +227,7 @@ public:
         }
         UHD_ASSERT_THROW(uhd::ntohx<boost::uint32_t>(transaction.which) == REF_LOCK);
         // TODO: Use proper serialization here ...
-        return sensor_value_t("Ref", static_cast<bool>(uhd::ntohx(transaction.value)), "locked", "unlocked");
+        return sensor_value_t("Ref", (uhd::ntohx(transaction.value) > 0), "locked", "unlocked");
     }
 
 private:

@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -78,7 +78,7 @@ public:
         }
 
         if (fifo->get_channel() != fifo_info_ptr->channel) return NiRio_Status_InvalidParameter;
-        if (fifo->get_scalar_type() != fifo_info_ptr->scalar_type) return NiRio_Status_InvalidParameter;
+        if (nirio_scalar_type_t(fifo->get_scalar_type()) != fifo_info_ptr->scalar_type) return NiRio_Status_InvalidParameter;
 
         return NiRio_Status_Success;
     }
@@ -94,7 +94,7 @@ public:
         }
 
         if (fifo->get_channel() != fifo_info_ptr->channel) return NiRio_Status_InvalidParameter;
-        if (fifo->get_scalar_type() != fifo_info_ptr->scalar_type) return NiRio_Status_InvalidParameter;
+        if (nirio_scalar_type_t(fifo->get_scalar_type()) != fifo_info_ptr->scalar_type) return NiRio_Status_InvalidParameter;
 
         return NiRio_Status_Success;
     }

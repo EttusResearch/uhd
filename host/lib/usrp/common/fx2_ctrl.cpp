@@ -421,7 +421,7 @@ public:
         boost::uint16_t offset,
         size_t num_bytes
     ){
-        this->write_i2c(addr, byte_vector_t(1, offset));
+        this->write_i2c(addr, byte_vector_t(1, boost::uint8_t(offset)));
         return this->read_i2c(addr, num_bytes);
     }
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,7 +51,8 @@ public:
     UHD_INLINE sptr get_new(const double timeout, size_t &index)
     {
         nirio_status status = 0;
-        size_t elems_acquired, elems_remaining;
+        size_t elems_acquired = 0;
+        size_t elems_remaining = 0;
         nirio_status_chain(_fifo.acquire(
             _typed_buffer, _frame_size / sizeof(fifo_data_t),
             static_cast<uint32_t>(timeout*1000),
@@ -91,7 +92,8 @@ public:
     UHD_INLINE sptr get_new(const double timeout, size_t &index)
     {
         nirio_status status = 0;
-        size_t elems_acquired, elems_remaining;
+        size_t elems_acquired = 0;
+        size_t elems_remaining = 0;
         nirio_status_chain(_fifo.acquire(
             _typed_buffer, _frame_size / sizeof(fifo_data_t),
             static_cast<uint32_t>(timeout*1000),
@@ -299,10 +301,10 @@ private:
 
         nirio_status_chain(_proxy()->peek(
             PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
-        tx_busy = (reg_data & DMA_STATUS_BUSY);
+        tx_busy = (reg_data & DMA_STATUS_BUSY) > 0;
         nirio_status_chain(_proxy()->peek(
             PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
-        rx_busy = (reg_data & DMA_STATUS_BUSY);
+        rx_busy = (reg_data & DMA_STATUS_BUSY) > 0;
 
         if (nirio_status_not_fatal(status) && (tx_busy || rx_busy)) {
             start_time = boost::posix_time::microsec_clock::local_time();
@@ -311,10 +313,10 @@ private:
                 elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
                 nirio_status_chain(_proxy()->peek(
                     PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
-                tx_busy = (reg_data & DMA_STATUS_BUSY);
+                tx_busy = (reg_data & DMA_STATUS_BUSY) > 0;
                 nirio_status_chain(_proxy()->peek(
                     PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
-                rx_busy = (reg_data & DMA_STATUS_BUSY);
+                rx_busy = (reg_data & DMA_STATUS_BUSY) > 0;
             } while (
                 nirio_status_not_fatal(status) &&
                 (tx_busy || rx_busy) &&

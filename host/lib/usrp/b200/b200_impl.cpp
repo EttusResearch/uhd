@@ -786,7 +786,7 @@ void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
 {
     bool test_fail = false;
     UHD_MSG(status) << "Performing register loopback test... " << std::flush;
-    size_t hash = time(NULL);
+    size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
@@ -1131,6 +1131,6 @@ sensor_value_t b200_impl::get_ref_locked(void)
 sensor_value_t b200_impl::get_fe_pll_locked(const bool is_tx)
 {
     const boost::uint32_t st = _local_ctrl->peek32(RB32_CORE_PLL);
-    const bool locked = is_tx ? bool(st & 0x1) : bool(st & 0x2);
+    const bool locked = is_tx ? ((st & 0x1) > 0) : ((st & 0x2) > 0);
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }
