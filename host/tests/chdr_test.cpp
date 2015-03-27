@@ -47,7 +47,10 @@ static void pack_and_unpack(
     );
     std::cout << std::endl;
     boost::uint32_t header_bits = (uhd::ntohx(packet_buff[0]) >> 28);
-    std::cout << boost::format("header bits = 0b%d%d%d%d") % bool(header_bits & 8) %  bool(header_bits & 4) % bool(header_bits & 2) % bool(header_bits & 1) << std::endl;
+    std::cout << boost::format("header bits = 0b%d%d%d%d") % ((header_bits & 8) > 0)
+                                                           % ((header_bits & 4) > 0)
+                                                           % ((header_bits & 2) > 0)
+                                                           % ((header_bits & 1) > 0) << std::endl;
     for (size_t i = 0; i < 5; i++)
     {
         std::cout << boost::format("packet_buff[%u] = 0x%08x") % i % uhd::ntohx(packet_buff[i]) << std::endl;

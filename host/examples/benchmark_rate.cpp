@@ -142,7 +142,7 @@ void benchmark_tx_rate(
     md.has_time_spec = (buffs.size() != 1);
 
     if (random_nsamps) {
-        std::srand( time(NULL) );
+        std::srand( (unsigned int)time(NULL) );
         while(not boost::this_thread::interruption_requested()){
             size_t total_num_samps = rand() % max_samps_per_packet;
             size_t num_acc_samps = 0;

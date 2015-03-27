@@ -74,7 +74,7 @@ static void check_priority_range(float priority){
 #ifdef HAVE_WIN_SETTHREADPRIORITY
     #include <windows.h>
 
-    void uhd::set_thread_priority(float priority, bool realtime){
+    void uhd::set_thread_priority(float priority, UHD_UNUSED(bool realtime)){
         check_priority_range(priority);
 
         /*
