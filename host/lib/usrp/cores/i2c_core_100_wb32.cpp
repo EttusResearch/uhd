@@ -70,7 +70,7 @@ public:
     void set_clock_rate(const double rate)
     {
         static const boost::uint32_t i2c_datarate = 400000;
-        boost::uint16_t prescaler = rate / (i2c_datarate*5) - 1;
+        boost::uint16_t prescaler = boost::uint16_t(rate / (i2c_datarate*5) - 1);
         _iface->poke32(REG_I2C_PRESCALER_LO, prescaler & 0xFF);
         _iface->poke32(REG_I2C_PRESCALER_HI, (prescaler >> 8) & 0xFF);
     }
@@ -127,7 +127,7 @@ public:
     //the default implementation calls read i2c once per byte
     byte_vector_t read_eeprom(boost::uint16_t addr, boost::uint16_t offset, size_t num_bytes)
     {
-        this->write_i2c(addr, byte_vector_t(1, offset));
+        this->write_i2c(addr, byte_vector_t(1, boost::uint8_t(offset)));
         return this->read_i2c(addr, num_bytes);
     }
 

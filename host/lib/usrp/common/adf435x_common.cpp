@@ -129,11 +129,11 @@ adf435x_tuning_settings tune_adf435x_synth(
     settings.frac_12_bit = FRAC;
     settings.int_16_bit = N;
     settings.mod_12_bit = MOD;
-    settings.clock_divider_12_bit = std::max<boost::uint16_t>(1, std::ceil(PHASE_RESYNC_TIME*pfd_freq/MOD));
+    settings.clock_divider_12_bit = std::max<boost::uint16_t>(1, boost::uint16_t(std::ceil(PHASE_RESYNC_TIME*pfd_freq/MOD)));
     settings.r_counter_10_bit = R;
     settings.r_divide_by_2_en = T;
     settings.r_doubler_en = D;
-    settings.band_select_clock_div = BS;
+    settings.band_select_clock_div = boost::uint8_t(BS);
     settings.rf_divider = RFdiv;
 
     std::string tuning_str = (constraints.force_frac0) ? "Integer-N" : "Fractional";

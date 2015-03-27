@@ -361,7 +361,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         e300_fifo_config_t fifo_cfg;
         try {
             fifo_cfg = e300_read_sysfs();
-        } catch (uhd::lookup_error &e) {
+        } catch (...) {
             throw uhd::runtime_error("Failed to get driver parameters from sysfs.");
         }
         _fifo_iface = e300_fifo_interface::make(fifo_cfg);
@@ -608,7 +608,7 @@ uhd::sensor_value_t e300_impl::_get_fe_pll_lock(const bool is_tx)
 {
     const boost::uint32_t st =
         _global_regs->peek32(global_regs::RB32_CORE_PLL);
-    const bool locked = is_tx ? st & 0x1 : st & 0x2;
+    const bool locked = is_tx ? ((st & 0x1) > 0) : ((st & 0x2) > 0);
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }
 
@@ -663,7 +663,7 @@ void e300_impl::_register_loopback_self_test(wb_iface::sptr iface)
 {
     bool test_fail = false;
     UHD_MSG(status) << "Performing register loopback test... " << std::flush;
-    size_t hash = time(NULL);
+    size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
@@ -703,7 +703,7 @@ void e300_impl::_codec_loopback_self_test(wb_iface::sptr iface)
     bool test_fail = false;
     UHD_ASSERT_THROW(bool(iface));
     UHD_MSG(status) << "Performing CODEC loopback test... " << std::flush;
-    size_t hash = time(NULL);
+    size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);

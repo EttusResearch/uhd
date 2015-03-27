@@ -487,7 +487,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if(vm.count("addr")){
         udp_simple::sptr udp_transport = udp_simple::make_connected(ip_addr, BOOST_STRINGIZE(X300_FPGA_PROG_UDP_PORT));
 
-        ethernet_burn(udp_transport, fpga_path, vm.count("verify"));
+        ethernet_burn(udp_transport, fpga_path, (vm.count("verify") > 0));
 
         if(vm.count("configure")){
             if(configure_fpga(udp_transport, ip_addr)) std::cout << "Successfully configured FPGA!" << std::endl;

@@ -60,7 +60,7 @@ static const std::string bytes_to_string(const byte_vector_t &bytes){
  * Implementation
  **********************************************************************/
 void octoclock_eeprom_t::_load(){
-    boost::uint32_t octoclock_data[udp_simple::mtu];
+    boost::uint8_t octoclock_data[udp_simple::mtu];
     const octoclock_packet_t *pkt_in = reinterpret_cast<const octoclock_packet_t*>(octoclock_data);
     const octoclock_fw_eeprom_t *eeprom_in = reinterpret_cast<const octoclock_fw_eeprom_t*>(pkt_in->data);
 
@@ -109,7 +109,7 @@ void octoclock_eeprom_t::_load(){
 }
 
 void octoclock_eeprom_t::_store() const {
-    boost::uint32_t octoclock_data[udp_simple::mtu];
+    boost::uint8_t octoclock_data[udp_simple::mtu];
     const octoclock_packet_t *pkt_in = reinterpret_cast<const octoclock_packet_t *>(octoclock_data);
 
     octoclock_packet_t pkt_out;

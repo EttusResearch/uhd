@@ -191,7 +191,7 @@ protected:
             }
 
             //keep pfd freq low enough to achieve 50kHz BS clock
-            BS = std::ceil(pfd_freq / 50e3);
+            BS = int(std::ceil(pfd_freq / 50e3));
             if(BS <= 1023) break;
         }
         UHD_ASSERT_THROW(R <= 1023);

@@ -120,7 +120,7 @@ INCLUDE(CheckCXXCompilerFlag)
 MACRO(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
     CHECK_CXX_COMPILER_FLAG(${flag} ${have})
     IF(${have})
-        ADD_DEFINITIONS(${flag})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
     ENDIF(${have})
 ENDMACRO(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG)
 
