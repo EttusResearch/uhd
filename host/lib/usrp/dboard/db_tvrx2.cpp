@@ -1014,7 +1014,7 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
 
         _freq_scalar = (6*16.0e6)/this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
     } else if (ref_clock == 200e6)  {
-        UHD_MSG(warning) << boost::format("ref_clock was 200e6, setting ref_clock divider for 100e6.") % ref_clock << std::endl;
+        UHD_MSG(warning) << boost::format("ref_clock was 200e6, setting ref_clock divider for 100e6.") << std::endl;
         this->get_iface()->set_clock_rate(dboard_iface::UNIT_RX, 100e6);
         this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, REFCLOCK_DIV6);
 
