@@ -7,7 +7,7 @@
 #include <wb_i2c.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <printf.h>
+#include <trace.h>
 #include <wb_pkt_iface64.h>
 #include <u3_net_stack.h>
 #include <link_state_route_proto.h>
@@ -73,7 +73,6 @@ const void *pick_inited_field(const void *eeprom, const void *def, const size_t 
 static void init_network(void)
 {
     pkt_config = wb_pkt_iface64_init(PKT_RAM0_BASE, 0x1ffc);
-    printf("PKT RAM0 BASE 0x%x\n", (&pkt_config)->base);
     u3_net_stack_init(&pkt_config);
 
     link_state_route_proto_init();
@@ -115,7 +114,9 @@ static void init_network(void)
 
 static void putc(void *p, char c)
 {
-#ifdef X300_DEBUG_UART
+//If FW_TRACE_LEVEL is defined, then the trace level is set
+//to a non-zero number. Turn on the debug UART to enable tracing
+#ifdef UHD_FW_TRACE_LEVEL
     wb_uart_putc(UART1_BASE, c);
 #endif
 }
@@ -129,7 +130,7 @@ void x300_init(void)
     //udp_uart_init(UART0_BASE, X300_GPSDO_UDP_PORT);
 
     //now we can init the rest with prints
-    printf("X300 ZPU Init Begin -- CPU CLOCK is %d MHz\n", CPU_CLOCK/1000000);
+    UHD_FW_TRACE_FSTR(INFO, "[ZPU Init Begin -- CPU CLOCK is %d MHz]", (CPU_CLOCK/1000000));
 
     //i2c rate init
     wb_i2c_init(I2C0_BASE, CPU_CLOCK);
@@ -139,8 +140,8 @@ void x300_init(void)
     //hold phy in reset
     wb_poke32(SR_ADDR(SET0_BASE, SR_SW_RST), SW_RST_PHY);
 
-    printf("DEBUG: eth0 is %2dG\n",(wb_peek32(SR_ADDR(RB0_BASE, RB_ETH_TYPE0))==1) ? 10 : 1);
-    printf("DEBUG: eth1 is %2dG\n",(wb_peek32(SR_ADDR(RB0_BASE, RB_ETH_TYPE1))==1) ? 10 : 1);
+    UHD_FW_TRACE_FSTR(INFO, "eth0 is %2dG", ((wb_peek32(SR_ADDR(RB0_BASE, RB_ETH_TYPE0))==1) ? 10 : 1));
+    UHD_FW_TRACE_FSTR(INFO, "eth1 is %2dG", ((wb_peek32(SR_ADDR(RB0_BASE, RB_ETH_TYPE1))==1) ? 10 : 1));
 
     //setup net stack and eth state machines
     init_network();
@@ -160,9 +161,9 @@ void x300_init(void)
     //print network summary
     for (uint8_t e = 0; e < ethernet_ninterfaces(); e++)
     {
-        printf("  MAC%u:     %s\n", (int)e, mac_addr_to_str(u3_net_stack_get_mac_addr(e)));
-        printf("    IP%u:      %s\n", (int)e, ip_addr_to_str(u3_net_stack_get_ip_addr(e)));
-        printf("    SUBNET%u:  %s\n", (int)e, ip_addr_to_str(u3_net_stack_get_subnet(e)));
-        printf("    BCAST%u:   %s\n", (int)e, ip_addr_to_str(u3_net_stack_get_bcast(e)));
+        UHD_FW_TRACE_FSTR(INFO, "  MAC%u:     %s", (int)e, mac_addr_to_str(u3_net_stack_get_mac_addr(e)));
+        UHD_FW_TRACE_FSTR(INFO, "  IP%u:      %s", (int)e, ip_addr_to_str(u3_net_stack_get_ip_addr(e)));
+        UHD_FW_TRACE_FSTR(INFO, "  SUBNET%u:  %s", (int)e, ip_addr_to_str(u3_net_stack_get_subnet(e)));
+        UHD_FW_TRACE_FSTR(INFO, "  BCAST%u:   %s", (int)e, ip_addr_to_str(u3_net_stack_get_bcast(e)));
     }
 }

@@ -22,7 +22,7 @@
 #include "../x300/x300_defs.h"
 #include "ethernet.h"
 #include "mdelay.h"
-#include "printf.h"
+#include <trace.h>
 #include "wb_i2c.h"
 #include "wb_utils.h"
 //#include "memory_map.h"
@@ -225,7 +225,7 @@ xge_read_sfpp_type(const uint32_t base, const uint32_t delay_ms)
   x = xge_i2c_rd(base, MODULE_DEV_ADDR, 3);
   // I2C Error?
   if (x < 0) {
-    printf("DEBUG: I2C error in SFPP_TYPE.\n");
+    UHD_FW_TRACE(ERROR, "I2C error in SFPP_TYPE.");
     return x;
     }
   // Decode module type. These registers and values are defined in SFF-8472
@@ -235,55 +235,55 @@ xge_read_sfpp_type(const uint32_t base, const uint32_t delay_ms)
     }
   if (x & 0x10)
     {
-      printf("DEBUG: SFFP_TYPE_SR.\n");
+      UHD_FW_TRACE(DEBUG, "SFFP_TYPE_SR.");
       return SFFP_TYPE_SR;
     }
   if (x & 0x20)
     {
-      printf("DEBUG: SFFP_TYPE_LR.\n");
+      UHD_FW_TRACE(DEBUG, "SFFP_TYPE_LR.");
       return SFFP_TYPE_LR;
     }
   if (x & 0x40)
     {
-      printf("DEBUG: SFFP_TYPE_LRM.\n");
+      UHD_FW_TRACE(DEBUG, "SFFP_TYPE_LRM.");
       return SFFP_TYPE_LRM;
     }
   // Search for legacy 1000-Base SFP types
   x = xge_i2c_rd(base, MODULE_DEV_ADDR, 0x6);
   if (x < 0) {
-    printf("DEBUG: I2C error in SFPP_TYPE.\n");
+    UHD_FW_TRACE(ERROR, "I2C error in SFPP_TYPE.");
     return x;
   }
   if (x & 0x01) {
-    printf("DEBUG: SFFP_TYPE_1000BASE_SX.\n");
+    UHD_FW_TRACE(DEBUG, "SFFP_TYPE_1000BASE_SX.");
     return SFFP_TYPE_1000BASE_SX;
   }
   if (x & 0x02) {
-    printf("DEBUG: SFFP_TYPE_1000BASE_LX.\n");
+    UHD_FW_TRACE(DEBUG, "SFFP_TYPE_1000BASE_LX.");
     return SFFP_TYPE_1000BASE_LX;
   }
   if (x & 0x08) {
-    printf("DEBUG: SFFP_TYPE_1000BASE_T.\n");
+    UHD_FW_TRACE(DEBUG, "SFFP_TYPE_1000BASE_T.");
     return SFFP_TYPE_1000BASE_T;
   }
   // Not one of the standard optical types..now try to deduce if it's twinax aka 10GSFP+CU
   // which is not covered explicitly in SFF-8472
   x = xge_i2c_rd(base, MODULE_DEV_ADDR, 8);
   if (x < 0) {
-    printf("DEBUG: I2C error in SFPP_TYPE.\n");
+    UHD_FW_TRACE(ERROR, "I2C error in SFPP_TYPE.");
     return x;
   }
   if ((x & 4) == 0) // Passive SFP+ cable type
     goto unknown;
 //  x = xge_i2c_rd(MODULE_DEV_ADDR, 6);
-//   printf("SFP+ reg6 read as %x\n",x);
+//   UHD_FW_TRACE(DEBUG, "SFP+ reg6 read as %x",x);
 //  if (x < 0)
 //    return x;
 //  if (x != 0x04)  // Returns  1000Base-CX as Compliance code
 //    goto unknown;
   x = xge_i2c_rd(base, MODULE_DEV_ADDR, 0xA);
   if (x < 0) {
-    printf("DEBUG: I2C error in SFPP_TYPE.\n");
+    UHD_FW_TRACE(ERROR, "I2C error in SFPP_TYPE.");
     return x;
   }
   if (x & 0x80) {
@@ -292,35 +292,23 @@ xge_read_sfpp_type(const uint32_t base, const uint32_t delay_ms)
     x = xge_i2c_rd(base, MODULE_DEV_ADDR, 0x12);
 
     if (x < 0) {
-      printf("DEBUG: I2C error in SFPP_TYPE.\n");
+      UHD_FW_TRACE(ERROR, "I2C error in SFPP_TYPE.");
       return x;
     }
-    printf("DEBUG: TwinAx.\n");
+    UHD_FW_TRACE(DEBUG, "TwinAx.");
     // If cable length support is greater than 10M then pick correct type
     return x > 10 ? SFFP_TYPE_TWINAX_LONG : SFFP_TYPE_TWINAX;
   }
 unknown:
-  printf("DEBUG: Unknown SFP+ type.\n");
+  UHD_FW_TRACE(WARN, "Unknown SFP+ type.");
   // Not a supported Module type
   return SFFP_TYPE_UNKNOWN;
-}
-
-
-// Pull  reset line low for 100ms then release and wait 100ms
-static void
-xge_hard_phy_reset(const uint32_t base)
-{
-  wb_poke32(base, 1);
-  mdelay(100);
-  wb_poke32(base, 0);
-  mdelay(100);
-
 }
 
 static void
 xge_mac_init(const uint32_t base)
 {
-  printf("INFO: Begining XGE MAC init sequence.\n");
+  UHD_FW_TRACE(INFO, "Begining XGE MAC init sequence.");
   xge_regs->config =  XGE_TX_ENABLE;
 }
 
@@ -331,7 +319,7 @@ xge_phy_init(const uint8_t eth, const uint32_t mdio_port)
   int x;
   // Read LASI Ctrl register to capture state.
   //y = xge_read_mdio(0x9002,XGE_MDIO_DEVICE_PMA,XGE_MDIO_ADDR_PHY_A);
-  printf("INFO: Begining XGE PHY init sequence.\n");
+  UHD_FW_TRACE(INFO, "Begining XGE PHY init sequence.");
   // Software reset
   x = read_mdio(eth, 0x0, XGE_MDIO_DEVICE_PMA,mdio_port);
   x = x | (1 << 15);
@@ -348,11 +336,11 @@ xge_poll_sfpp_status(const uint32_t eth)
   x = wb_peek32(SR_ADDR(RB0_BASE, (eth==0) ? RB_SFPP_STATUS0 : RB_SFPP_STATUS1 ));
 
   if (x & SFPP_STATUS_RXLOS_CHG)
-    printf("DEBUG: eth%1d RXLOS changed state: %d\n", eth, x & SFPP_STATUS_RXLOS);
+    UHD_FW_TRACE_FSTR(INFO, "eth%1d RXLOS changed state: %d", eth, (x & SFPP_STATUS_RXLOS));
   if (x & SFPP_STATUS_TXFAULT_CHG)
-    printf("DEBUG: eth%1d TXFAULT changed state: %d\n", eth,(x & SFPP_STATUS_TXFAULT) >> 1 );
+    UHD_FW_TRACE_FSTR(INFO, "eth%1d TXFAULT changed state: %d", eth, ((x & SFPP_STATUS_TXFAULT) >> 1));
   if (x & SFPP_STATUS_MODABS_CHG)
-    printf("DEBUG: eth%1d MODABS changed state: %d\n", eth, (x & SFPP_STATUS_MODABS) >> 2);
+    UHD_FW_TRACE_FSTR(INFO, "eth%1d MODABS changed state: %d", eth, ((x & SFPP_STATUS_MODABS) >> 2));
 
   if (x & (SFPP_STATUS_RXLOS_CHG|SFPP_STATUS_TXFAULT_CHG|SFPP_STATUS_MODABS_CHG))
   {
@@ -374,11 +362,11 @@ xge_poll_sfpp_status(const uint32_t eth)
     // MODDET has changed state since last checked
     if (x & SFPP_STATUS_MODABS) {
       // MODDET is high, module currently removed.
-      printf("INFO: An SFP+ module has been removed from eth port %d.\n", eth);
+      UHD_FW_TRACE_FSTR(INFO, "An SFP+ module has been removed from eth port %d.", eth);
     } else {
       // MODDET is low, module currently inserted.
       // Return status.
-      printf("INFO: A new SFP+ module has been inserted into eth port %d.\n", eth);
+      UHD_FW_TRACE_FSTR(INFO, "A new SFP+ module has been inserted into eth port %d.", eth);
       xge_read_sfpp_type((eth==0) ? I2C0_BASE : I2C2_BASE,1);
     }
   }
@@ -397,12 +385,14 @@ xge_ethernet_init(const uint32_t eth)
   xge_mac_init((eth==0) ? XGE0_BASE : XGE1_BASE);
  //xge_hard_phy_reset();
   xge_phy_init(eth ,MDIO_PORT);
+#ifdef UHD_FW_TRACE_LEVEL
   uint32_t x = wb_peek32(SR_ADDR(RB0_BASE, (eth==0) ? RB_SFPP_STATUS0 : RB_SFPP_STATUS1 ));
-  printf(" eth%1d SFP initial state: RXLOS: %d  TXFAULT: %d  MODABS: %d\n",
+  UHD_FW_TRACE_FSTR(INFO, "eth%1d SFP initial state: RXLOS: %d  TXFAULT: %d  MODABS: %d",
 	 eth,
-	 x & SFPP_STATUS_RXLOS,
-	 (x & SFPP_STATUS_TXFAULT) >> 1,
-	 (x & SFPP_STATUS_MODABS) >> 2);
+	 (x & SFPP_STATUS_RXLOS),
+	 ((x & SFPP_STATUS_TXFAULT) >> 1),
+	 ((x & SFPP_STATUS_MODABS) >> 2));
+#endif
 }
 
 //
@@ -412,187 +402,179 @@ xge_ethernet_init(const uint32_t eth)
 
 void decode_reg(uint32_t address, uint32_t device, uint32_t data)
 {
+    UHD_FW_TRACE_FSTR(DEBUG,
+        "[MDIO Register Dump for Addr=%x, Device=%x]\n- Raw Value = %x",
+        address, device, data);
   int x;
-  printf("Device: ");
-  printf("%x",device);
-  printf("  ");
   switch(address) {
   case XGE_MDIO_CONTROL1:
-    printf("CONTROL1: ");
-    printf("%x",data); printf("  ");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "CONTROL1: %x = ", data);
     for (x=15; x >= 0 ; x--)
       if ((data & (1 << x)) != 0)
 	// Bits set.
 	switch(x) {
-	case 15: printf("Reset,"); break;
-	case 14: printf("Loopback,"); break;
-	case 11: printf("Low Power Mode,"); break;
-	case 5:case 4:case 3:case 2: printf("RESERVED speed value,"); break;
-	case 0: printf("PMA loopback,"); break;
+	case 15: UHD_FW_TRACE_SHORT(DEBUG, "Reset,"); break;
+	case 14: UHD_FW_TRACE_SHORT(DEBUG, "Loopback,"); break;
+	case 11: UHD_FW_TRACE_SHORT(DEBUG, "Low Power Mode,"); break;
+	case 5:case 4:case 3:case 2: UHD_FW_TRACE_SHORT(DEBUG, "RESERVED speed value,"); break;
+	case 0: UHD_FW_TRACE_SHORT(DEBUG, "PMA loopback,"); break;
 	} //else
 	// Bits clear.
 	//switch (x) {
-	//case 13: case 6: printf(" None 10Gb/s speed set!"); break;
+	//case 13: case 6: UHD_FW_TRACE_SHORT(DEBUG, " None 10Gb/s speed set!"); break;
 	//}
-    printf(" \n");
+    UHD_FW_TRACE_SHORT(DEBUG, " \n");
     break;
   case XGE_MDIO_STATUS1:
-    printf("STATUS1: ");
-    printf("%x",data); printf("  ");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "STATUS1: %x = ", data);
     for (x=15; x >= 0 ; x--)
       if ((data & (1 << x)) != 0)
 	// Bits set.
 	switch(x) {
-	case 7: printf("Fault Detected,"); break;
-	case 2: printf("Link is Up,"); break;
-	case 1: printf("Supports Low Power,"); break;
+	case 7: UHD_FW_TRACE_SHORT(DEBUG, "Fault Detected,"); break;
+	case 2: UHD_FW_TRACE_SHORT(DEBUG, "Link is Up,"); break;
+	case 1: UHD_FW_TRACE_SHORT(DEBUG, "Supports Low Power,"); break;
 	} else
 	// Bits Clear
 	switch(x) {
-	case 2: printf("Link is Down,"); break;
+	case 2: UHD_FW_TRACE_SHORT(DEBUG, "Link is Down,"); break;
 	}
-    printf(" \n");
+    UHD_FW_TRACE_SHORT(DEBUG, " \n");
     break;
   case XGE_MDIO_SPEED:
-    printf("SPEED ABILITY: ");
-    printf("%x",data); printf("  ");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "SPEED ABILITY: %x = ", data);
     for (x=15; x >= 0 ; x--)
       if ((data & (1 << x)) != 0)
 	// Bits set.
 	switch(x) {
 	case 15:case 14:case 13:case 12:case 11:case 10:case 9:
-	case 8:case 7:case 6:case 5:case 4:case 3:case 2:case 1: printf("RESERVED bits set!,"); break;
-	case 0: printf("Capable of 10Gb/s,");
+	case 8:case 7:case 6:case 5:case 4:case 3:case 2:case 1: UHD_FW_TRACE_SHORT(DEBUG, "RESERVED bits set!,"); break;
+	case 0: UHD_FW_TRACE_SHORT(DEBUG, "Capable of 10Gb/s,");
 	} else
 	// Bits clear.
 	switch(x) {
-	case 0: printf("Incapable of 10Gb/s,"); break;
+	case 0: UHD_FW_TRACE_SHORT(DEBUG, "Incapable of 10Gb/s,"); break;
 	}
-    printf(" \n");
+    UHD_FW_TRACE_SHORT(DEBUG, " \n");
     break;
   case XGE_MDIO_DEVICES1:
-    printf("DEVICES IN PACKAGE: ");
-    printf("%x",data); printf("  ");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "DEVICES IN PACKAGE: %x = ", data);
     for (x=15; x >= 0 ; x--)
       if ((data & (1 << x)) != 0)
 	// Bits set.
 	switch(x) {
-	case 7: printf("Auto-Negotiation,"); break;
-	case 6: printf("TC,"); break;
- 	case 5: printf("DTE XS,"); break;
-	case 4: printf("PHY XS,"); break;
-	case 3: printf("PCS,"); break;
-	case 2: printf("WIS,"); break;
-	case 1: printf("PMD/PMA,"); break;
-	case 0: printf("Clause 22 registers,"); break;
+	case 7: UHD_FW_TRACE_SHORT(DEBUG, "Auto-Negotiation,"); break;
+	case 6: UHD_FW_TRACE_SHORT(DEBUG, "TC,"); break;
+ 	case 5: UHD_FW_TRACE_SHORT(DEBUG, "DTE XS,"); break;
+	case 4: UHD_FW_TRACE_SHORT(DEBUG, "PHY XS,"); break;
+	case 3: UHD_FW_TRACE_SHORT(DEBUG, "PCS,"); break;
+	case 2: UHD_FW_TRACE_SHORT(DEBUG, "WIS,"); break;
+	case 1: UHD_FW_TRACE_SHORT(DEBUG, "PMD/PMA,"); break;
+	case 0: UHD_FW_TRACE_SHORT(DEBUG, "Clause 22 registers,"); break;
 	}
-    printf(" \n");
+    UHD_FW_TRACE_SHORT(DEBUG, " \n");
     break;
   case XGE_MDIO_DEVICES2:
-    printf("DEVICES IN PACKAGE (cont): ");
-    printf("%x",data); printf("  ");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "DEVICES IN PACKAGE (cont): %x = ", data);
     for (x=15; x >= 0 ; x--)
       if ((data & (1 << x)) != 0)
 	// Bits set.
 	switch(x) {
-	case 15: printf("Vendor device 2,"); break;
-	case 14: printf("Vendor device 1,"); break;
-	case 13: printf("Clause 22 extension,"); break;
+	case 15: UHD_FW_TRACE_SHORT(DEBUG, "Vendor device 2,"); break;
+	case 14: UHD_FW_TRACE_SHORT(DEBUG, "Vendor device 1,"); break;
+	case 13: UHD_FW_TRACE_SHORT(DEBUG, "Clause 22 extension,"); break;
 	}
-    printf(" \n");
+    UHD_FW_TRACE_SHORT(DEBUG, " \n");
     break;
   case XGE_MDIO_CONTROL2:
-    printf("CONTROL2: ");
-    printf("%x",data); printf("  ");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "CONTROL2: %x = ", data);
     // PMA/PMD
     if (device == XGE_MDIO_DEVICE_PMA)
       switch((data & 0xf)) {
-      case 0xF: printf("10BASE-T,"); break;
-      case 0xE: printf("100BASE-TX,"); break;
-      case 0xD: printf("1000BASE-KX,"); break;
-      case 0xC: printf("1000BASE-T,"); break;
-      case 0xB: printf("10GBASE-KR,"); break;
-      case 0xA: printf("10GBASE-KX4,"); break;
-      case 0x9: printf("10GBASE-T,"); break;
-      case 0x8: printf("10GBASE-LRM,"); break;
-      case 0x7: printf("10GBASE-SR,"); break;
-      case 0x6: printf("10GBASE-LR,"); break;
-      case 0x5: printf("10GBASE-ER,"); break;
-      case 0x4: printf("10GBASE-LX4,"); break;
-	//     case 0x3: printf("10GBASE-SW,"); break;
-	//      case 0x2: printf("10GBASE-LW,"); break;
-	//     case 0x1: printf("10GBASE-EW,"); break;
-      case 0x0: printf("10GBASE-CX4,"); break;
+      case 0xF: UHD_FW_TRACE_SHORT(DEBUG, "10BASE-T,"); break;
+      case 0xE: UHD_FW_TRACE_SHORT(DEBUG, "100BASE-TX,"); break;
+      case 0xD: UHD_FW_TRACE_SHORT(DEBUG, "1000BASE-KX,"); break;
+      case 0xC: UHD_FW_TRACE_SHORT(DEBUG, "1000BASE-T,"); break;
+      case 0xB: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-KR,"); break;
+      case 0xA: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-KX4,"); break;
+      case 0x9: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-T,"); break;
+      case 0x8: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-LRM,"); break;
+      case 0x7: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-SR,"); break;
+      case 0x6: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-LR,"); break;
+      case 0x5: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-ER,"); break;
+      case 0x4: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-LX4,"); break;
+	//     case 0x3: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-SW,"); break;
+	//      case 0x2: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-LW,"); break;
+	//     case 0x1: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-EW,"); break;
+      case 0x0: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-CX4,"); break;
       } else if (device == XGE_MDIO_DEVICE_PCS)
       // PCS
       switch((data & 0x3)) {
-      case 0x3: printf("10GBASE-T PCS,"); break;
-      case 0x2: printf("10GBASE-W PCS,"); break;
-      case 0x1: printf("10GBASE-X PCS,"); break;
-      case 0x0: printf("10GBASE-R PCS,"); break;
+      case 0x3: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-T PCS,"); break;
+      case 0x2: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-W PCS,"); break;
+      case 0x1: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-X PCS,"); break;
+      case 0x0: UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-R PCS,"); break;
       }
-    printf(" \n");
+    UHD_FW_TRACE_SHORT(DEBUG, " \n");
     break;
   case XGE_MDIO_STATUS2:
-    printf("STATUS2: ");
-    printf("%x",data); printf("  ");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "STATUS2: %x = ", data);
     for (x=15; x >= 0 ; x--)
       if ((data & (1 << x)) != 0)
 	// Bits set.
 	switch(x) {
-	case 15: if ((data & (1 << 14)) == 0) printf("Device responding,"); break;
-	case 13: if (device == XGE_MDIO_DEVICE_PMA) printf("Able detect a Tx fault,"); break;
-	case 12: if (device == XGE_MDIO_DEVICE_PMA) printf("Able detect an Rx fault,"); break;
-	case 11: printf("Fault on Tx path,"); break;
-	case 10: printf("Fault on Rx path,"); break;
-	case 9:  if (device == XGE_MDIO_DEVICE_PMA) printf("Extended abilities in Reg1.11,"); break;
-	case 8:  if (device == XGE_MDIO_DEVICE_PMA) printf("Able to disable TX,"); break;
-	case 7:  if (device == XGE_MDIO_DEVICE_PMA) printf("10GBASE-SR,"); break;
-	case 6:  if (device == XGE_MDIO_DEVICE_PMA) printf("10GBASE-LR,"); break;
-	case 5:  if (device == XGE_MDIO_DEVICE_PMA) printf("10GBASE-ER,"); break;
-	case 4:  if (device == XGE_MDIO_DEVICE_PMA) printf("10GBASE-LX4,"); break;
-	case 3:  if (device == XGE_MDIO_DEVICE_PMA) printf("10GBASE-SW,"); break;
-	case 2:  if (device == XGE_MDIO_DEVICE_PMA) printf("10GBASE-LW,"); break;
-	case 1:  if (device == XGE_MDIO_DEVICE_PMA) printf("10GBASE-EW,"); break;
-	case 0:  if (device == XGE_MDIO_DEVICE_PMA) printf("loopback,"); break;
+	case 15: if ((data & (1 << 14)) == 0) UHD_FW_TRACE_SHORT(DEBUG, "Device responding,"); break;
+	case 13: if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "Able detect a Tx fault,"); break;
+	case 12: if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "Able detect an Rx fault,"); break;
+	case 11: UHD_FW_TRACE_SHORT(DEBUG, "Fault on Tx path,"); break;
+	case 10: UHD_FW_TRACE_SHORT(DEBUG, "Fault on Rx path,"); break;
+	case 9:  if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "Extended abilities in Reg1.11,"); break;
+	case 8:  if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "Able to disable TX,"); break;
+	case 7:  if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-SR,"); break;
+	case 6:  if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-LR,"); break;
+	case 5:  if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-ER,"); break;
+	case 4:  if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-LX4,"); break;
+	case 3:  if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-SW,"); break;
+	case 2:  if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-LW,"); break;
+	case 1:  if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "10GBASE-EW,"); break;
+	case 0:  if (device == XGE_MDIO_DEVICE_PMA) UHD_FW_TRACE_SHORT(DEBUG, "loopback,"); break;
 	}
-    printf(" \n");
+    UHD_FW_TRACE_SHORT(DEBUG, " \n");
     break;
   case XGE_MDIO_LANESTATUS:
-    printf("LANE STATUS: ");
-    printf("%x",data); printf("  ");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "LANE STATUS: %x = ", data);
     for (x=15; x >= 0 ; x--)
       if ((data & (1 << x)) != 0)
 	// Bits set.
 	switch(x) {
-	case 12: printf("Lanes aligned,"); break;
-	case 11: printf("Able to generate test patterns,"); break;
-	case 3:  printf("Lane 3 synced,"); break;
-	case 2:  printf("Lane 2 synced,"); break;
-	case 1:  printf("Lane 1 synced,"); break;
-	case 0:  printf("Lane 0 synced,"); break;
+	case 12: UHD_FW_TRACE_SHORT(DEBUG, "Lanes aligned,"); break;
+	case 11: UHD_FW_TRACE_SHORT(DEBUG, "Able to generate test patterns,"); break;
+	case 3:  UHD_FW_TRACE_SHORT(DEBUG, "Lane 3 synced,"); break;
+	case 2:  UHD_FW_TRACE_SHORT(DEBUG, "Lane 2 synced,"); break;
+	case 1:  UHD_FW_TRACE_SHORT(DEBUG, "Lane 1 synced,"); break;
+	case 0:  UHD_FW_TRACE_SHORT(DEBUG, "Lane 0 synced,"); break;
 	} else
 	// Bits clear
 	switch(x) {
- 	case 3:  printf("Lane 3 not synced,"); break;
-	case 2:  printf("Lane 2 not synced,"); break;
-	case 1:  printf("Lane 1 not synced,"); break;
-	case 0:  printf("Lane 0 not synced,"); break;
+ 	case 3:  UHD_FW_TRACE_SHORT(DEBUG, "Lane 3 not synced,"); break;
+	case 2:  UHD_FW_TRACE_SHORT(DEBUG, "Lane 2 not synced,"); break;
+	case 1:  UHD_FW_TRACE_SHORT(DEBUG, "Lane 1 not synced,"); break;
+	case 0:  UHD_FW_TRACE_SHORT(DEBUG, "Lane 0 not synced,"); break;
 	}
-    printf(" \n");
+    UHD_FW_TRACE_SHORT(DEBUG, " \n");
     break;
   case XILINX_CORE_VERSION:
-    printf("XILINX CORE VERSION: %x  ",data);
-    printf("Version: %d.%d ",(data&0xf000)>>12,(data&0xf00)>>8);
-    printf("Patch: %d ",(data&0xE)>>1);
-    if (data&0x1) printf("Evaluation Version of core");
-    printf("\n");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "XILINX CORE VERSION: %x  ",data);
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "Version: %d.%d ",((data&0xf000)>>12),((data&0xf00)>>8));
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "Patch: %d ",((data&0xE)>>1));
+    UHD_FW_TRACE_SHORT(DEBUG, " \n");
+    if (data&0x1) UHD_FW_TRACE(WARN, "Evaluation Version of core");
     break;
   default:
-    printf("Register @ address: ");
-    printf("%x",address);
-    printf(" has value: ");
-    printf("%x\n",data);
+    UHD_FW_TRACE_SHORT(DEBUG, "Register @ address: ");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "%x",address);
+    UHD_FW_TRACE_SHORT(DEBUG, " has value: ");
+    UHD_FW_TRACE_FSTR_SHORT(DEBUG, "%x\n",data);
     break;
   }
 }
@@ -605,7 +587,6 @@ dump_mdio_regs(const uint8_t eth, uint32_t mdio_port)
     unsigned int regs_a[9] = {0,1,4,5,6,7,8,32,33};
     unsigned int regs_b[10] = {0,1,4,5,6,7,8,10,11,65535};
 
-    printf("\n");
 
     for (y = 0; y < 10; y++)
 	{
@@ -621,7 +602,6 @@ dump_mdio_regs(const uint8_t eth, uint32_t mdio_port)
 	  decode_reg(regs_a[y],XGE_MDIO_DEVICE_PCS,x);
 	}
 
-     printf("\n");
 
       /* for (y = 0; y < 8; y++) */
       /* 	{ */
