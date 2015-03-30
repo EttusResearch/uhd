@@ -84,6 +84,10 @@ private:
     property_tree::sptr _tree;
 };
 
+multi_usrp_clock::~multi_usrp_clock(void){
+    /* NOP */
+}
+
 /***********************************************************************
  * Multi USRP Clock factory function
  **********************************************************************/

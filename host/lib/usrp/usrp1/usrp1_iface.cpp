@@ -45,7 +45,7 @@ public:
     /*******************************************************************
      * Peek and Poke
      ******************************************************************/
-    void poke32(boost::uint32_t addr, boost::uint32_t value)
+    void poke32(const boost::uint32_t addr, const boost::uint32_t value)
     {
         boost::uint32_t swapped = uhd::htonx(value);
 
@@ -68,7 +68,7 @@ public:
         if (ret < 0) throw uhd::io_error("USRP1: failed control write");
     }
 
-    boost::uint32_t peek32(boost::uint32_t addr)
+    boost::uint32_t peek32(const boost::uint32_t addr)
     {
         UHD_LOGV(always)
             << "peek32("
@@ -92,11 +92,11 @@ public:
         return uhd::ntohx(value_out);
     }
 
-    void poke16(boost::uint32_t, boost::uint16_t) {
+    void poke16(const boost::uint32_t, const boost::uint16_t) {
         throw uhd::not_implemented_error("Unhandled command poke16()");
     }
 
-    boost::uint16_t peek16(boost::uint32_t) {
+    boost::uint16_t peek16(const boost::uint32_t) {
         throw uhd::not_implemented_error("Unhandled command peek16()");
         return 0;
     }

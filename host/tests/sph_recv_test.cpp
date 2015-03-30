@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012 Ettus Research LLC
+// Copyright 2011-2012,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -675,7 +675,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(metadata.has_time_spec);
         BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
-        BOOST_CHECK_EQUAL(num_samps_ret, (size_t)10);
+        BOOST_CHECK_EQUAL(num_samps_ret, 10UL);
         num_accum_samps += num_samps_ret;
 
         if (not metadata.more_fragments) continue;
@@ -685,7 +685,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
         BOOST_CHECK(not metadata.more_fragments);
-        BOOST_CHECK_EQUAL(metadata.fragment_offset, (size_t)10);
+        BOOST_CHECK_EQUAL(metadata.fragment_offset, 10UL);
         BOOST_CHECK(metadata.has_time_spec);
         BOOST_CHECK_TS_CLOSE(metadata.time_spec, uhd::time_spec_t::from_ticks(num_accum_samps, SAMP_RATE));
         BOOST_CHECK_EQUAL(num_samps_ret, i%10);

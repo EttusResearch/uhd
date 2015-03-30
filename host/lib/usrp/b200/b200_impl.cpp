@@ -738,6 +738,15 @@ void b200_impl::setup_radio(const size_t dspno)
                 .subscribe(boost::bind(&ad9361_ctrl::set_iq_balance_auto, _codec_ctrl, key, _1)).set(true);
         }
 
+        //add all frontend filters
+        std::vector<std::string> filter_names = _codec_ctrl->get_filter_names(key);
+        for(size_t i = 0;i < filter_names.size(); i++)
+        {
+            _tree->create<filter_info_base::sptr>(rf_fe_path / "filters" / filter_names[i] / "value" )
+                .publish(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_names[i]))
+                .subscribe(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_names[i], _1));
+        }
+
         //setup antenna stuff
         if (key[0] == 'R')
         {
@@ -777,7 +786,7 @@ void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
 {
     bool test_fail = false;
     UHD_MSG(status) << "Performing register loopback test... " << std::flush;
-    size_t hash = time(NULL);
+    size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
@@ -1025,7 +1034,7 @@ void b200_impl::update_gpio_state(void)
         | (_gpio_state.ref_sel << 0)
     ;
 
-    _local_ctrl->poke32(TOREG(RB32_CORE_MISC), misc_word);
+    _local_ctrl->poke32(TOREG(SR_CORE_MISC), misc_word);
 }
 
 void b200_impl::reset_codec_dcm(void)
@@ -1122,6 +1131,6 @@ sensor_value_t b200_impl::get_ref_locked(void)
 sensor_value_t b200_impl::get_fe_pll_locked(const bool is_tx)
 {
     const boost::uint32_t st = _local_ctrl->peek32(RB32_CORE_PLL);
-    const bool locked = is_tx ? bool(st & 0x1) : bool(st & 0x2);
+    const bool locked = is_tx ? ((st & 0x1) > 0) : ((st & 0x2) > 0);
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }

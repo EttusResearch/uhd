@@ -224,7 +224,7 @@ namespace uhd{
             "\ttaps: "<<std::endl;
 
             os<<"\t\t";
-            for(int i = 0; i < _taps.size(); i++)
+            for(size_t i = 0; i < _taps.size(); i++)
             {
                 os<<"(tap "<<i<<": "<<_taps[i]<<")";
                 if( ((i%10) == 0) && (i != 0))

@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,43 +19,43 @@
 namespace nirio_driver_iface {
 
 nirio_status rio_open(
-    const std::string& /* device_path */,
-    rio_dev_handle_t& /* device_handle */)
+    UHD_UNUSED(const std::string& device_path),
+    UHD_UNUSED(rio_dev_handle_t& device_handle))
 {
     return NiRio_Status_FeatureNotSupported;
 }
 
-void rio_close(rio_dev_handle_t& /* device_handle */)
+void rio_close(UHD_UNUSED(rio_dev_handle_t& device_handle))
 {
 }
 
-bool rio_isopen(rio_dev_handle_t /* device_handle */)
+bool rio_isopen(UHD_UNUSED(rio_dev_handle_t device_handle))
 {
     return false;
 }
 
 nirio_status rio_ioctl(
-    rio_dev_handle_t /* device_handle */,
-    uint32_t /* ioctl_code */,
-    const void* /* write_buf */,
-    size_t /* write_buf_len */,
-    void* /* read_buf */,
-    size_t /* read_buf_len */)
+    UHD_UNUSED(rio_dev_handle_t device_handle),
+    UHD_UNUSED(uint32_t ioctl_code),
+    UHD_UNUSED(const void *write_buf),
+    UHD_UNUSED(size_t write_buf_len),
+    UHD_UNUSED(void *read_buf),
+    UHD_UNUSED(size_t read_buf_len))
 {
     return NiRio_Status_FeatureNotSupported;
 }
 
 nirio_status rio_mmap(
-    rio_dev_handle_t /* device_handle */,
-    uint16_t /* memory_type */,
-    size_t /* size */,
-    bool /* writable */,
-    rio_mmap_t& /* map */)
+    UHD_UNUSED(rio_dev_handle_t device_handle),
+    UHD_UNUSED(uint16_t memory_type),
+    UHD_UNUSED(size_t size),
+    UHD_UNUSED(bool writable),
+    UHD_UNUSED(rio_mmap_t &map))
 {
     return NiRio_Status_FeatureNotSupported;
 }
 
-nirio_status rio_munmap(rio_mmap_t& /* map */)
+nirio_status rio_munmap(UHD_UNUSED(rio_mmap_t &map))
 {
     return NiRio_Status_FeatureNotSupported;
 }

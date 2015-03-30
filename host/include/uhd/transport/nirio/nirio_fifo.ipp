@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,8 @@ nirio_fifo<data_t>::nirio_fifo(
 {
     nirio_status status = 0;
     nirio_status_chain(_riok_proxy_ptr->set_attribute(RIO_ADDRESS_SPACE, BUS_INTERFACE), status);
-    uint32_t base_addr, addr_space_word;
+    uint32_t base_addr = 0;
+    uint32_t addr_space_word = 0;
     nirio_status_chain(_riok_proxy_ptr->peek(0x1C, base_addr), status);
     nirio_status_chain(_riok_proxy_ptr->peek(0xC, addr_space_word), status);
     _dma_base_addr = base_addr + (_fifo_channel * (1<<((addr_space_word>>16)&0xF)));

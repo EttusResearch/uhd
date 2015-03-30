@@ -89,7 +89,7 @@ typedef boost::uint32_t hash_type;
  * Create a file hash
  * The hash will be used to identify the loaded firmware and fpga image
  * \param filename file used to generate hash value
- * \return hash value in a size_t type
+ * \return hash value in a uint32_t type
  */
 static hash_type generate_hash(const char *filename)
 {
@@ -101,13 +101,15 @@ static hash_type generate_hash(const char *filename)
         throw uhd::io_error(std::string("cannot open input file ") + filename);
     }
 
-    size_t hash = 0;
+    hash_type hash = 0;
 
     char ch;
     long long count = 0;
     while (file.get(ch)) {
         count++;
-        boost::hash_combine(hash, ch);
+        //hash algorithm derived from boost hash_combine
+        //http://www.boost.org/doc/libs/1_35_0/doc/html/boost/hash_combine_id241013.html
+        hash ^= ch + 0x9e3779b9 + (hash<<6) + (hash>>2);
     }
 
     if (count == 0){
@@ -547,7 +549,7 @@ public:
         size_t file_size = 0;
         {
             std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
-            file_size = file.tellg();
+            file_size = size_t(file.tellg());
         }
 
         std::ifstream file;

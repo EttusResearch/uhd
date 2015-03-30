@@ -192,7 +192,7 @@ public:
                 result.usb_transfer_complete.timed_wait(lock, timeout_time, lut_result_completed(result));
             }
         }
-        return result.completed;
+        return (result.completed > 0);
     }
 
 private:

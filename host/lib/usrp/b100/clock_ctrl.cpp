@@ -114,8 +114,8 @@ static clock_settings_type get_clock_settings(double rate){
     const size_t gcd = size_t(boost::math::gcd(ref_rate, out_rate));
 
     for (size_t i = 1; i <= 100; i++){
-        const size_t X = i*ref_rate/gcd;
-        const size_t Y = i*out_rate/gcd;
+        const size_t X = size_t(i*ref_rate/gcd);
+        const size_t Y = size_t(i*out_rate/gcd);
 
         //determine A and B (P is fixed)
         cs.b_counter = Y/cs.prescaler;

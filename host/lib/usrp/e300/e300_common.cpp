@@ -45,7 +45,7 @@ void load_fpga_image(const std::string &path)
     char buff[16384]; // devcfg driver can't handle huge writes
     do {
         fpga_file.read(buff, sizeof(buff));
-        std::fwrite(buff, 1, fpga_file.gcount(), wfile);
+        std::fwrite(buff, 1, size_t(fpga_file.gcount()), wfile);
     } while (fpga_file);
 
     fpga_file.close();

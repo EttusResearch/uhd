@@ -55,7 +55,7 @@ template<typename samp_type> void send_from_file(
     while(not md.end_of_burst and not stop_signal_called){
 
         infile.read((char*)&buff.front(), buff.size()*sizeof(samp_type));
-        size_t num_tx_samps = infile.gcount()/sizeof(samp_type);
+        size_t num_tx_samps = size_t(infile.gcount()/sizeof(samp_type));
 
         md.end_of_burst = infile.eof();
 
@@ -104,7 +104,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
 
-    bool repeat = vm.count("repeat");
+    bool repeat = vm.count("repeat") > 0;
 
     //create a usrp device
     std::cout << std::endl;

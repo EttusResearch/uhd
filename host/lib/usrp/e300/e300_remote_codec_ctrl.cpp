@@ -194,6 +194,40 @@ public:
        _transact();
     }
 
+    //! set the filter bandwidth for the frontend's analog low pass
+    double set_bw_filter(const std::string &which, const double bw)
+    {
+        _clear();
+        _args.action = uhd::htonx<boost::uint32_t>(transaction_t::ACTION_SET_BW);
+        if (which == "TX1")      _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_TX1);
+        else if (which == "TX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_TX2);
+        else if (which == "RX1") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX1);
+        else if (which == "RX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX2);
+        else throw std::runtime_error("e300_remote_codec_ctrl_impl incorrect chain string.");
+        _args.bw = bw;
+
+        _transact();
+        return _retval.bw;
+    }
+
+    //! List all available filters by name
+    std::vector<std::string> get_filter_names(const std::string &)
+    {
+        UHD_THROW_INVALID_CODE_PATH();
+    }
+
+    //! Return a list of all filters
+    filter_info_base::sptr get_filter(const std::string &, const std::string &)
+    {
+        UHD_THROW_INVALID_CODE_PATH();
+    }
+
+    //! Write back a filter
+    void set_filter(const std::string &, const std::string &, const filter_info_base::sptr)
+    {
+        UHD_THROW_INVALID_CODE_PATH();
+    }
+
 private:
     void _transact() {
         {

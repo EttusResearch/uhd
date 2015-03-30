@@ -245,6 +245,9 @@ static void e300_codec_ctrl_tunnel(
                     _codec_ctrl->set_agc_mode(which_str, "fast");
                 }
                 break;
+            case codec_xact_t::ACTION_SET_BW:
+                out->bw = _codec_ctrl->set_bw_filter(which_str, in->bw);
+                break;
             default:
                 UHD_MSG(status) << "Got unknown request?!" << std::endl;
                 //Zero out actions to fail this request on client
