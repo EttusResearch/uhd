@@ -3,7 +3,7 @@
 
 #include <u3_net_stack.h>
 #include <string.h> //memcmp
-#include <printf.h>
+#include <trace.h>
 
 #define MAX_NETHS 4
 
@@ -281,7 +281,7 @@ void u3_net_stack_send_arp_request(const uint8_t ethno, const struct ip_addr *ad
 
 static void handle_arp_packet(const uint8_t ethno, const struct arp_eth_ipv4 *p)
 {
-    //printf("handle_arp_packet\n");
+    UHD_FW_TRACE(DEBUG, "handle_arp_packet");
     if (p->ar_hrd != ARPHRD_ETHER
       || p->ar_pro != ETHERTYPE_IPV4
       || p->ar_hln != sizeof(eth_mac_addr_t)
@@ -291,7 +291,7 @@ static void handle_arp_packet(const uint8_t ethno, const struct arp_eth_ipv4 *p)
     //got an arp reply -- injest it into the arp cache
     if (p->ar_op == ARPOP_REPLY)
     {
-        //printf("ARPOP_REPLY\n");
+        UHD_FW_TRACE(DEBUG, "ARPOP_REPLY");
         struct ip_addr ip_addr;
         memcpy(&ip_addr, p->ar_sip, sizeof(ip_addr));
         eth_mac_addr_t mac_addr;
@@ -302,7 +302,7 @@ static void handle_arp_packet(const uint8_t ethno, const struct arp_eth_ipv4 *p)
     //got an arp request -- reply if its for our address
     if (p->ar_op == ARPOP_REQUEST)
     {
-        //printf("ARPOP_REQUEST\n");
+        UHD_FW_TRACE(DEBUG, "ARPOP_REQUEST");
         if (memcmp(p->ar_tip, u3_net_stack_get_ip_addr(ethno), sizeof(struct ip_addr)) == 0)
         {
             send_arp_reply(ethno, p, u3_net_stack_get_mac_addr(ethno));
@@ -344,7 +344,7 @@ void u3_net_stack_send_udp_pkt(
     eth_mac_addr_t dst_mac_addr;
     if (!resolve_ip(dst, &dst_mac_addr))
     {
-        printf("u3_net_stack_send_udp_pkt arp_cache_lookup fail\n");
+        UHD_FW_TRACE(WARN, "u3_net_stack_send_udp_pkt arp_cache_lookup fail");
         return;
     }
 
@@ -396,7 +396,7 @@ static void handle_udp_packet(
             return;
         }
     }
-    printf("Unhandled UDP packet src=%u, dest=%u\n", udp->src, udp->dest);
+    UHD_FW_TRACE_FSTR(ERROR, "Unhandled UDP packet src=%u, dest=%u", udp->src, udp->dest);
     //TODO send destination unreachable
 }
 
@@ -445,7 +445,7 @@ static void handle_icmp_packet(
             return;
         }
     }
-    printf("Unhandled ICMP packet type=%u\n", icmp->type);
+    UHD_FW_TRACE_FSTR(ERROR, "Unhandled ICMP packet type=%u", icmp->type);
 }
 
 static void handle_icmp_dur_packet(
@@ -484,7 +484,7 @@ void u3_net_stack_send_icmp_pkt(
     eth_mac_addr_t dst_mac_addr;
     if (!resolve_ip(dst, &dst_mac_addr))
     {
-        printf("u3_net_stack_send_echo_request arp_cache_lookup fail\n");
+        UHD_FW_TRACE(WARN, "u3_net_stack_send_echo_request arp_cache_lookup fail");
         return;
     }
 
@@ -533,17 +533,17 @@ static void handle_eth_packet(const void *buff, const size_t num_bytes)
 {
     const padded_eth_hdr_t *eth_hdr = (padded_eth_hdr_t *)buff;
     const uint8_t *eth_body = ((const uint8_t *)buff) + sizeof(padded_eth_hdr_t);
-    //printf("handle_eth_packet got ethertype 0x%x\n", (unsigned)eth_hdr->ethertype);
+    UHD_FW_TRACE_FSTR(DEBUG, "handle_eth_packet got ethertype 0x%x", (unsigned)eth_hdr->ethertype);
 
     if (eth_hdr->ethertype == ETHERTYPE_ARP)
     {
-        //printf("eth_hdr->ethertype == ETHERTYPE_ARP\n");
+        UHD_FW_TRACE(DEBUG, "eth_hdr->ethertype == ETHERTYPE_ARP");
         const struct arp_eth_ipv4 *arp = (const struct arp_eth_ipv4 *)eth_body;
         handle_arp_packet(eth_hdr->ethno, arp);
     }
     else if (eth_hdr->ethertype == ETHERTYPE_IPV4)
     {
-        //printf("eth_hdr->ethertype == ETHERTYPE_IPV4\n");
+        UHD_FW_TRACE(DEBUG, "eth_hdr->ethertype == ETHERTYPE_IPV4");
         const struct ip_hdr *ip = (const struct ip_hdr *)eth_body;
         const uint8_t *ip_body = eth_body + IP_HLEN;
 
@@ -572,7 +572,7 @@ static void handle_eth_packet(const void *buff, const size_t num_bytes)
             );
         }
     }
-    else return;	// Not ARP or IPV4, ignore
+    else return;    // Not ARP or IPV4, ignore
 }
 
 void u3_net_stack_handle_one(void)
@@ -581,7 +581,7 @@ void u3_net_stack_handle_one(void)
     const void *ptr = wb_pkt_iface64_rx_try_claim(pkt_iface_config, &num_bytes);
     if (ptr != NULL)
     {
-        //printf("u3_net_stack_handle_one got %u bytes\n", (unsigned)num_bytes);
+        UHD_FW_TRACE_FSTR(DEBUG, "u3_net_stack_handle_one got %u bytes", (unsigned)num_bytes);
         incr_stat_counts(ptr);
         handle_eth_packet(ptr, num_bytes);
         wb_pkt_iface64_rx_release(pkt_iface_config);

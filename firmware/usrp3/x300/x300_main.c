@@ -13,7 +13,7 @@
 #include <udp_uart.h>
 #include <u3_net_stack.h>
 #include <link_state_route_proto.h>
-#include <printf.h>
+#include <trace.h>
 #include <string.h>
 #include <print_addrs.h>
 
@@ -33,7 +33,7 @@ void program_udp_framer(
     const eth_mac_addr_t *dst_mac = u3_net_stack_arp_cache_lookup(dst_ip);
     const size_t ethbase = (ethno == 0)? SR_ETHINT0 : SR_ETHINT1;
     const size_t vdest = (sid >> 16) & 0xff;
-    printf("handle_udp_prog_framer sid %u vdest %u\n", sid, vdest);
+    UHD_FW_TRACE_FSTR(INFO, "handle_udp_prog_framer sid %u vdest %u\n", sid, vdest);
 
     //setup source framer
     const eth_mac_addr_t *src_mac = u3_net_stack_get_mac_addr(ethno);
@@ -204,7 +204,7 @@ void handle_udp_mtu_detect(
     if (buff == NULL) {
         return;
     } else if (!(request->flags & X300_MTU_DETECT_ECHO_REQUEST)) {
-        printf("DEBUG: MTU detect got unknown request\n");
+        UHD_FW_TRACE(WARN, "MTU detect got unknown request");
         reply.flags |= X300_MTU_DETECT_ERROR;
     }
 
