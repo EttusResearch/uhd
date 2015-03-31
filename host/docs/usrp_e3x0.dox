@@ -179,7 +179,6 @@ knowledge of Linux.
  $ repo sync
  $ TEMPLATECONF=`pwd`/meta-ettus/conf source ./oe-core/oe-init-build-env ./build ./bitbake
 \endcode
-
 At this point you should review the file in conf/local.conf and make sure
 path names make sense for your machine.
 
@@ -198,19 +197,28 @@ When this completes, the files needed to create the SD card are in
 \code{.sh}
  $ bitbake -c populate_sdk gnuradio-dev-image
 \endcode
-
 The sdk is in `tmp-glibc/deploy/sdk`
-
 Note that you can set the `MACHINE` variable in `local.conf so that you no
 longer need to set it from the command line.
 
+-# Using the environment
 When you log back in, you will need to setup the OpenEmbedded environment
 again by:
+    \code{.sh}
+     $ cd e300-oe-build/oe-core
+     $ . oe-core/oe-init-build-env ./build ./bitbake
+    \endcode
 
-\code{.sh}
- $ cd e300-oe-build/oe-core
- $ . oe-core/oe-init-build-env ./build ./bitbake
-\endcode
+\section e3x0_upgrade_sd_card Upgrading / Writing image to sd card
+
+In order to upgrade or reinitialize a sd card for the first time, you can use the 'dd' tool.
+Make sure that you are using the right block device for your sd card as failing to do so can wipe your harddrive.
+
+Replace <yourimage>.direct with your image file name and yoursdcard with your blockdevice e.g. /dev/mmcblk0 or /dev/sdb.
+
+    $ sudo dd if=<yourimage>.direct of=/dev/<yoursdcard> bs=1M
+
+Notes: The commands will wipe the entire sd card and reinitialize it. Newer images need a 8GB sd card.
 
 \section e3x0_load_fpga_imgs Specifying a Non-standard FPGA Image
 

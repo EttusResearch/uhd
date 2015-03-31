@@ -190,7 +190,7 @@ void set_master_clock_rate(double clock_rate) {
             // PLL1 - 2 MHz compare frequency
             _lmk04816_regs.PLL1_N_28 = 100;
             _lmk04816_regs.PLL1_R_27 = 5;
-            _lmk04816_regs.PLL1_CP_GAIN_27 = lmk04816_regs_t::PLL1_CP_GAIN_27_100UA;
+            _lmk04816_regs.PLL1_CP_GAIN_27 = lmk04816_regs_t::PLL1_CP_GAIN_27_1600UA;
 
             // PLL2 - 96 MHz compare frequency
             _lmk04816_regs.PLL2_N_30 = 5;
