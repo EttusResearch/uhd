@@ -128,6 +128,10 @@ extern const uint8_t b200_usb_ss_config_desc[];
 extern const uint8_t b200_string_lang_id_desc[];
 extern const uint8_t b200_usb_manufacture_desc[];
 extern const uint8_t b200_usb_product_desc[];
+extern const uint8_t niusrp_usb_manufacture_desc[];
+extern const uint8_t niusrp_2900_usb_product_desc[];
+extern const uint8_t niusrp_2901_usb_product_desc[];
+extern const uint8_t unknown_desc[];
 extern uint8_t dev_serial[];
 
 
