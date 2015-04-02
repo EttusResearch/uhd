@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ class e100_dboard_iface : public dboard_iface{
 public:
 
     e100_dboard_iface(
-        wb_iface::sptr wb_iface,
+        timed_wb_iface::sptr wb_iface,
         i2c_iface::sptr i2c_iface,
         spi_iface::sptr spi_iface,
         e100_clock_ctrl::sptr clock,
@@ -99,7 +99,7 @@ public:
     double get_codec_rate(unit_t);
 
 private:
-    wb_iface::sptr _wb_iface;
+    timed_wb_iface::sptr _wb_iface;
     i2c_iface::sptr _i2c_iface;
     spi_iface::sptr _spi_iface;
     e100_clock_ctrl::sptr _clock;
@@ -111,7 +111,7 @@ private:
  * Make Function
  **********************************************************************/
 dboard_iface::sptr make_e100_dboard_iface(
-    wb_iface::sptr wb_iface,
+    timed_wb_iface::sptr wb_iface,
     i2c_iface::sptr i2c_iface,
     spi_iface::sptr spi_iface,
     e100_clock_ctrl::sptr clock,
