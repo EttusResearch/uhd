@@ -1014,6 +1014,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     db_config.which_rx_clk = (slot_name == "A")? X300_CLOCK_WHICH_DB0_RX : X300_CLOCK_WHICH_DB1_RX;
     db_config.which_tx_clk = (slot_name == "A")? X300_CLOCK_WHICH_DB0_TX : X300_CLOCK_WHICH_DB1_TX;
     db_config.dboard_slot = (slot_name == "A")? 0 : 1;
+    db_config.cmd_time_ctrl = perif.ctrl;
     _dboard_ifaces[db_path] = x300_make_dboard_iface(db_config);
 
     //create a new dboard manager
@@ -1353,7 +1354,7 @@ void x300_impl::set_time_source_out(mboard_members_t &mb, const bool enb)
 void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &source)
 {
     //Optimize for the case when the current source is internal and we are trying
-    //to set it to internal. This is the only case where we are guaranteed that 
+    //to set it to internal. This is the only case where we are guaranteed that
     //the clock has not gone away so we can skip setting the MUX and reseting the LMK.
     if (not (mb.current_refclk_src == "internal" and source == "internal")) {
         //Update the clock MUX on the motherboard to select the requested source

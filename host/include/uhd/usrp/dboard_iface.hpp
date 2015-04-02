@@ -21,6 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/serial.hpp>
+#include <uhd/types/time_spec.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include <string>
@@ -279,6 +280,18 @@ public:
      * \return the codec rate in Hz
      */
     virtual double get_codec_rate(unit_t unit) = 0;
+
+    /*!
+     * Get the command time.
+     * \return the command time
+     */
+    virtual uhd::time_spec_t get_command_time(void);
+
+    /*!
+     * Set the command time.
+     * \param t the time
+     */
+    virtual void set_command_time(const uhd::time_spec_t& t);
 
 private:
     UHD_PIMPL_DECL(impl) _impl;

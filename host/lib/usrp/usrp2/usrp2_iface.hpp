@@ -33,7 +33,7 @@
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class usrp2_iface : public uhd::wb_iface, public uhd::spi_iface, public uhd::i2c_iface
+class usrp2_iface : public uhd::timed_wb_iface, public uhd::spi_iface, public uhd::i2c_iface
 {
 public:
     typedef boost::shared_ptr<usrp2_iface> sptr;

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #include <uhd/types/serial.hpp>
 #include "clock_ctrl.hpp"
 #include "usrp2_regs.hpp" //wishbone address constants
+#include "usrp2_fifo_ctrl.hpp"
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
@@ -36,7 +37,7 @@ using namespace boost::assign;
 class usrp2_dboard_iface : public dboard_iface{
 public:
     usrp2_dboard_iface(
-        wb_iface::sptr wb_iface,
+        timed_wb_iface::sptr wb_iface,
         uhd::i2c_iface::sptr i2c_iface,
         uhd::spi_iface::sptr spi_iface,
         usrp2_clock_ctrl::sptr clock_ctrl
@@ -59,6 +60,8 @@ public:
     void _set_gpio_out(unit_t, boost::uint16_t);
     void set_gpio_debug(unit_t, int);
     boost::uint16_t read_gpio(unit_t);
+    void set_command_time(const uhd::time_spec_t& t);
+    uhd::time_spec_t get_command_time(void);
 
     void write_i2c(boost::uint16_t, const byte_vector_t &);
     byte_vector_t read_i2c(boost::uint16_t, size_t);
@@ -84,6 +87,7 @@ public:
     );
 
 private:
+    timed_wb_iface::sptr _wb_iface;
     uhd::i2c_iface::sptr _i2c_iface;
     uhd::spi_iface::sptr _spi_iface;
     usrp2_clock_ctrl::sptr _clock_ctrl;
@@ -98,7 +102,7 @@ private:
  * Make Function
  **********************************************************************/
 dboard_iface::sptr make_usrp2_dboard_iface(
-    wb_iface::sptr wb_iface,
+    timed_wb_iface::sptr wb_iface,
     uhd::i2c_iface::sptr i2c_iface,
     uhd::spi_iface::sptr spi_iface,
     usrp2_clock_ctrl::sptr clock_ctrl
@@ -110,11 +114,12 @@ dboard_iface::sptr make_usrp2_dboard_iface(
  * Structors
  **********************************************************************/
 usrp2_dboard_iface::usrp2_dboard_iface(
-    wb_iface::sptr wb_iface,
+    timed_wb_iface::sptr wb_iface,
     uhd::i2c_iface::sptr i2c_iface,
     uhd::spi_iface::sptr spi_iface,
     usrp2_clock_ctrl::sptr clock_ctrl
 ):
+    _wb_iface(wb_iface),
     _i2c_iface(i2c_iface),
     _spi_iface(spi_iface),
     _clock_ctrl(clock_ctrl)
@@ -246,7 +251,7 @@ void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
         (UNIT_TX, SPI_SS_TX_DAC)
     ;
     _spi_iface->write_spi(
-        unit_to_spi_dac[unit], spi_config_t::EDGE_FALL, 
+        unit_to_spi_dac[unit], spi_config_t::EDGE_FALL,
         _dac_regs[unit].get_reg(), 24
     );
 }
@@ -304,4 +309,14 @@ double usrp2_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which){
 
     //convert to voltage and return
     return 3.3*ad7922_regs.result/4095;
+}
+
+uhd::time_spec_t usrp2_dboard_iface::get_command_time()
+{
+    return _wb_iface->get_time();
+}
+
+void usrp2_dboard_iface::set_command_time(const uhd::time_spec_t& t)
+{
+    _wb_iface->set_time(t);
 }

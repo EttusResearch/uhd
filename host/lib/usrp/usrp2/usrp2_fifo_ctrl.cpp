@@ -155,6 +155,12 @@ public:
         if (_use_time) _timeout = MASSIVE_TIMEOUT; //permanently sets larger timeout
     }
 
+    uhd::time_spec_t get_time()
+    {
+        boost::mutex::scoped_lock lock(_mutex);
+        return _time;
+    }
+
     void set_tick_rate(const double rate){
         boost::mutex::scoped_lock lock(_mutex);
         _tick_rate = rate;

@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,6 +49,9 @@ public:
     void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
     void _set_gpio_ddr(unit_t, boost::uint16_t);
     void _set_gpio_out(unit_t, boost::uint16_t);
+
+    void set_command_time(const uhd::time_spec_t& t);
+    uhd::time_spec_t get_command_time(void);
 
     void set_gpio_debug(unit_t, int);
     boost::uint16_t read_gpio(unit_t);
@@ -330,4 +333,14 @@ double x300_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which)
 
     //convert to voltage and return
     return 3.3*ad7922_regs.result/4095;
+}
+
+uhd::time_spec_t x300_dboard_iface::get_command_time()
+{
+    return _config.cmd_time_ctrl->get_time();
+}
+
+void x300_dboard_iface::set_command_time(const uhd::time_spec_t& t)
+{
+    _config.cmd_time_ctrl->set_time(t);
 }
