@@ -95,7 +95,7 @@ struct ubx_gpio_field_info_t
     boost::uint32_t offset;
     boost::uint32_t mask;
     boost::uint32_t width;
-    enum direction_t {OUTPUT,INPUT} direction;
+    enum {OUTPUT,INPUT} direction;
     bool is_atr_controlled;
     boost::uint32_t atr_idle;
     boost::uint32_t atr_tx;
@@ -151,7 +151,7 @@ static const dboard_id_t UBX_V1_40MHZ_TX_ID(0x77);
 static const dboard_id_t UBX_V1_40MHZ_RX_ID(0x78);
 static const dboard_id_t UBX_V1_160MHZ_TX_ID(0x79);
 static const dboard_id_t UBX_V1_160MHZ_RX_ID(0x7A);
-static const freq_range_t ubx_freq_range(1.0e7, 6.0e9);
+static const freq_range_t ubx_freq_range(10e6, 6.0e9);
 static const gain_range_t ubx_tx_gain_range(0, 31.5, double(0.5));
 static const gain_range_t ubx_rx_gain_range(0, 31.5, double(0.5));
 static const std::vector<std::string> ubx_pgas = boost::assign::list_of("PGA-TX")("PGA-RX");
@@ -162,6 +162,7 @@ static const std::vector<std::string> ubx_power_modes = boost::assign::list_of("
 static const std::vector<std::string> ubx_xcvr_modes = boost::assign::list_of("FDX")("TX")("TX/RX")("RX");
 
 static const ubx_gpio_field_info_t ubx_proto_gpio_info[] = {
+    //Field         Unit                  Offset Mask      Width    Direction                   ATR    IDLE,TX,RX,FDX
     {SPI_ADDR,      dboard_iface::UNIT_TX,  0,  0x7,        3,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
     {TX_EN_N,       dboard_iface::UNIT_TX,  3,  0x1<<3,     1,  ubx_gpio_field_info_t::INPUT,  true,   1,  0,  1,  0},
     {RX_EN_N,       dboard_iface::UNIT_TX,  4,  0x1<<4,     1,  ubx_gpio_field_info_t::INPUT,  true,   1,  1,  0,  0},
@@ -174,6 +175,7 @@ static const ubx_gpio_field_info_t ubx_proto_gpio_info[] = {
 };
 
 static const ubx_gpio_field_info_t ubx_v1_gpio_info[] = {
+    //Field         Unit                  Offset Mask      Width    Direction                   ATR    IDLE,TX,RX,FDX
     {SPI_ADDR,      dboard_iface::UNIT_TX,   0,  0x7,        3,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
     {CPLD_RST_N,    dboard_iface::UNIT_TX,   3,  0x1<<3,     1,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
     {RX_ANT,        dboard_iface::UNIT_TX,   4,  0x1<<4,     1,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
@@ -193,7 +195,8 @@ static const ubx_gpio_field_info_t ubx_v1_gpio_info[] = {
  * Macros for routing and writing SPI registers
  **********************************************************************/
 #define ROUTE_SPI(iface, dest)  \
-    iface->set_gpio_out(dboard_iface::UNIT_TX, dest, 0x7);
+    set_gpio_field(SPI_ADDR, dest); \
+    write_gpio();
 
 #define WRITE_SPI(iface, val)   \
     iface->write_spi(dboard_iface::UNIT_TX, spi_config_t::EDGE_RISE, val, 32);
@@ -206,6 +209,9 @@ class ubx_xcvr : public xcvr_dboard_base
 public:
     ubx_xcvr(ctor_args_t args) : xcvr_dboard_base(args)
     {
+        double bw = 40e6;
+        double pfd_freq_max = 25e6;
+
         ////////////////////////////////////////////////////////////////////
         // Setup GPIO hardware
         ////////////////////////////////////////////////////////////////////
@@ -214,12 +220,15 @@ public:
         dboard_id_t tx_id = get_tx_id();
         if (rx_id == UBX_PROTO_V3_RX_ID and tx_id == UBX_PROTO_V3_TX_ID)
             _rev = 0;
-        if (rx_id == UBX_PROTO_V4_RX_ID and tx_id == UBX_PROTO_V4_TX_ID)
+        else if (rx_id == UBX_PROTO_V4_RX_ID and tx_id == UBX_PROTO_V4_TX_ID)
             _rev = 1;
         else if (rx_id == UBX_V1_40MHZ_RX_ID and tx_id == UBX_V1_40MHZ_TX_ID)
             _rev = 1;
         else if (rx_id == UBX_V1_160MHZ_RX_ID and tx_id == UBX_V1_160MHZ_TX_ID)
+        {
+            bw = 160e6;
             _rev = 1;
+        }
         else
             UHD_THROW_INVALID_CODE_PATH();
 
@@ -228,10 +237,12 @@ public:
         case 0:
             for (size_t i = 0; i < sizeof(ubx_proto_gpio_info) / sizeof(ubx_gpio_field_info_t); i++)
                 _gpio_map[ubx_proto_gpio_info[i].id] = ubx_proto_gpio_info[i];
+            pfd_freq_max = 25e6;
             break;
         case 1:
             for (size_t i = 0; i < sizeof(ubx_v1_gpio_info) / sizeof(ubx_gpio_field_info_t); i++)
                 _gpio_map[ubx_v1_gpio_info[i].id] = ubx_v1_gpio_info[i];
+            pfd_freq_max = 50e6;
             break;
         }
 
@@ -255,6 +266,34 @@ public:
         }
 
         // Enable the reference clocks that we need
+        if (_rev >= 1)
+        {
+            // set dboard clock rates to as close to the max PFD freq as possible
+            if (_iface->get_clock_rate(dboard_iface::UNIT_RX) > pfd_freq_max)
+            {
+                std::vector<double> rates = _iface->get_clock_rates(dboard_iface::UNIT_RX);
+                double highest_rate = 0.0;
+                BOOST_FOREACH(double rate, rates)
+                {
+                    if (rate <= pfd_freq_max and rate > highest_rate)
+                        highest_rate = rate;
+                }
+                _iface->set_clock_rate(dboard_iface::UNIT_RX, highest_rate);
+                _rx_target_pfd_freq = highest_rate;
+            }
+            if (_iface->get_clock_rate(dboard_iface::UNIT_TX) > pfd_freq_max)
+            {
+                std::vector<double> rates = _iface->get_clock_rates(dboard_iface::UNIT_TX);
+                double highest_rate = 0.0;
+                BOOST_FOREACH(double rate, rates)
+                {
+                    if (rate <= pfd_freq_max and rate > highest_rate)
+                        highest_rate = rate;
+                }
+                _iface->set_clock_rate(dboard_iface::UNIT_TX, highest_rate);
+                _tx_target_pfd_freq = highest_rate;
+            }
+        }
         _iface->set_clock_enabled(dboard_iface::UNIT_TX, true);
         _iface->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
@@ -299,27 +338,25 @@ public:
         // Initialize LOs
         if (_rev == 0)
         {
-            _txlo1 = max287x_iface::make<max2870>(boost::bind(&write_spi_regs, _iface, TXLO1, _1));
-            _txlo2 = max287x_iface::make<max2870>(boost::bind(&write_spi_regs, _iface, TXLO2, _1));
-            _rxlo1 = max287x_iface::make<max2870>(boost::bind(&write_spi_regs, _iface, RXLO1, _1));
-            _rxlo2 = max287x_iface::make<max2870>(boost::bind(&write_spi_regs, _iface, RXLO2, _1));
-            _target_pfd_freq = 25e6;
+            _txlo1 = max287x_iface::make<max2870>(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO1, _1));
+            _txlo2 = max287x_iface::make<max2870>(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO2, _1));
+            _rxlo1 = max287x_iface::make<max2870>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO1, _1));
+            _rxlo2 = max287x_iface::make<max2870>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO2, _1));
             std::vector<max287x_iface::sptr> los = boost::assign::list_of(_txlo1)(_txlo2)(_rxlo1)(_rxlo2);
             BOOST_FOREACH(max287x_iface::sptr lo, los)
             {
                 lo->set_auto_retune(false);
-                lo->set_clock_divider_mode(max287x_iface::CLOCK_DIV_MODE_FAST_LOCK);
+                lo->set_clock_divider_mode(max287x_iface::CLOCK_DIV_MODE_CLOCK_DIVIDER_OFF);
                 lo->set_muxout_mode(max287x_iface::MUXOUT_DLD);
                 lo->set_ld_pin_mode(max287x_iface::LD_PIN_MODE_DLD);
             }
         }
         else if (_rev == 1)
         {
-            _txlo1 = max287x_iface::make<max2871>(boost::bind(&write_spi_regs, _iface, TXLO1, _1));
-            _txlo2 = max287x_iface::make<max2871>(boost::bind(&write_spi_regs, _iface, TXLO2, _1));
-            _rxlo1 = max287x_iface::make<max2871>(boost::bind(&write_spi_regs, _iface, RXLO1, _1));
-            _rxlo2 = max287x_iface::make<max2871>(boost::bind(&write_spi_regs, _iface, RXLO2, _1));
-            _target_pfd_freq = 50e6;
+            _txlo1 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO1, _1));
+            _txlo2 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO2, _1));
+            _rxlo1 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO1, _1));
+            _rxlo2 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO2, _1));
             std::vector<max287x_iface::sptr> los = boost::assign::list_of(_txlo1)(_txlo2)(_rxlo1)(_rxlo2);
             BOOST_FOREACH(max287x_iface::sptr lo, los)
             {
@@ -327,8 +364,10 @@ public:
                 lo->set_clock_divider_mode(max287x_iface::CLOCK_DIV_MODE_CLOCK_DIVIDER_OFF);
                 //lo->set_cycle_slip_mode(true);  // tried it - caused longer lock times
                 lo->set_charge_pump_current(max287x_iface::CHARGE_PUMP_CURRENT_5_12MA);
-                lo->set_muxout_mode(max287x_iface::MUXOUT_TRI_STATE);
+                lo->set_muxout_mode(max287x_iface::MUXOUT_SYNC);
                 lo->set_ld_pin_mode(max287x_iface::LD_PIN_MODE_DLD);
+                lo->set_low_noise_and_spur(max287x_iface::LOW_NOISE_AND_SPUR_LOW_NOISE);
+                lo->set_phase(0);
             }
         }
         else
@@ -337,6 +376,7 @@ public:
         }
 
         // Initialize CPLD register
+        _prev_cpld_value = 0xFFFF;
         _cpld_reg.value = 0;
         write_cpld_reg();
 
@@ -383,9 +423,9 @@ public:
         get_tx_subtree()->create<bool>("use_lo_offset")
             .set(false);
         get_tx_subtree()->create<double>("bandwidth/value")
-            .set(2*20.0e6); //20MHz low-pass, complex double-sided, so it should be 2x20MHz=40MHz
+            .set(bw);
         get_tx_subtree()->create<meta_range_t>("bandwidth/range")
-            .set(freq_range_t(2*20.0e6, 2*20.0e6));
+            .set(freq_range_t(bw, bw));
 
         ////////////////////////////////////////////////////////////////////
         // Register RX properties
@@ -416,9 +456,9 @@ public:
         get_rx_subtree()->create<bool>("use_lo_offset")
             .set(false);
         get_rx_subtree()->create<double>("bandwidth/value")
-            .set(2*20.0e6); //20MHz low-pass, complex double-sided, so it should be 2x20MHz=40MHz
+            .set(bw);
         get_rx_subtree()->create<meta_range_t>("bandwidth/range")
-            .set(freq_range_t(2*20.0e6, 2*20.0e6));
+            .set(freq_range_t(bw, bw));
     }
 
     ~ubx_xcvr(void)
@@ -456,14 +496,14 @@ private:
     **********************************************************************/
     void write_spi_reg(spi_dest_t dest, boost::uint32_t value)
     {
-        boost::mutex::scoped_lock lock(_spi_lock);
+        boost::mutex::scoped_lock lock(_spi_mutex);
         ROUTE_SPI(_iface, dest);
         WRITE_SPI(_iface, value);
     }
 
     void write_spi_regs(spi_dest_t dest, std::vector<boost::uint32_t> values)
     {
-        boost::mutex::scoped_lock lock(_spi_lock);
+        boost::mutex::scoped_lock lock(_spi_mutex);
         ROUTE_SPI(_iface, dest);
         BOOST_FOREACH(boost::uint32_t value, values)
             WRITE_SPI(_iface, value);
@@ -476,7 +516,11 @@ private:
 
     void write_cpld_reg()
     {
-        write_spi_reg(CPLD, _cpld_reg.value);
+        if (_cpld_reg.value != _prev_cpld_value)
+        {
+            write_spi_reg(CPLD, _cpld_reg.value);
+            _prev_cpld_value = _cpld_reg.value;
+        }
     }
 
     void set_gpio_field(ubx_gpio_field_id_t id, boost::uint32_t value)
@@ -514,7 +558,10 @@ private:
             return 0;
         ubx_gpio_field_info_t field_info = entry->second;
         if (field_info.direction == ubx_gpio_field_info_t::INPUT)
-            return 0;
+        {
+            ubx_gpio_reg_t *reg = (field_info.unit == dboard_iface::UNIT_TX ? &_tx_gpio_reg : &_rx_gpio_reg);
+            return (reg->value >> field_info.offset) & field_info.mask;
+        }
 
         // Read register
         boost::uint32_t value = _iface->read_gpio(field_info.unit);
@@ -546,6 +593,7 @@ private:
      **********************************************************************/
     sensor_value_t get_locked(const std::string &pll_name)
     {
+        boost::mutex::scoped_lock lock(_mutex);
         assert_has(ubx_plls, pll_name, "ubx pll name");
 
         if(pll_name == "TXLO")
@@ -571,6 +619,7 @@ private:
     // Set RX antennas
     void set_rx_ant(const std::string &ant)
     {
+        boost::mutex::scoped_lock lock(_mutex);
         //validate input
         assert_has(ubx_rx_antennas, ant, "ubx rx antenna name");
 
@@ -588,6 +637,7 @@ private:
      **********************************************************************/
     double set_tx_gain(double gain)
     {
+        boost::mutex::scoped_lock lock(_mutex);
         gain = ubx_tx_gain_range.clip(gain);
         int attn_code = int(std::floor(gain * 2));
         _ubx_tx_atten_val = ((attn_code & 0x3F) << 10);
@@ -600,6 +650,7 @@ private:
 
     double set_rx_gain(double gain)
     {
+        boost::mutex::scoped_lock lock(_mutex);
         gain = ubx_rx_gain_range.clip(gain);
         int attn_code = int(std::floor(gain * 2));
         _ubx_rx_atten_val = ((attn_code & 0x3F) << 10);
@@ -615,6 +666,7 @@ private:
     **********************************************************************/
     double set_tx_freq(double freq)
     {
+        boost::mutex::scoped_lock lock(_mutex);
         double freq_lo1 = 0.0;
         double freq_lo2 = 0.0;
         double ref_freq = _iface->get_clock_rate(dboard_iface::UNIT_TX);
@@ -649,12 +701,11 @@ private:
             set_cpld_field(TXLO1_FSEL1, 0);
             set_cpld_field(TXLB_SEL, 1);
             set_cpld_field(TXHB_SEL, 0);
-            write_cpld_reg();
             // Set LO1 to IF of 2100 MHz (offset from RX IF to reduce leakage)
-            freq_lo1 = _txlo1->set_frequency(2100*fMHz, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(2100*fMHz, ref_freq, _tx_target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
             // Set LO2 to IF minus desired frequency
-            freq_lo2 = _txlo2->set_frequency(freq_lo1 - freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo2 = _txlo2->set_frequency(freq_lo1 - freq, ref_freq, _tx_target_pfd_freq, is_int_n);
             _txlo2->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= (500*fMHz)) && (freq <= (800*fMHz)))
@@ -664,8 +715,7 @@ private:
             set_cpld_field(TXLO1_FSEL1, 1);
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _tx_target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq > (800*fMHz)) && (freq <= (1000*fMHz)))
@@ -675,8 +725,7 @@ private:
             set_cpld_field(TXLO1_FSEL1, 1);
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _tx_target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
         else if ((freq > (1000*fMHz)) && (freq <= (2200*fMHz)))
@@ -686,8 +735,7 @@ private:
             set_cpld_field(TXLO1_FSEL1, 0);
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _tx_target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq > (2200*fMHz)) && (freq <= (2500*fMHz)))
@@ -697,8 +745,7 @@ private:
             set_cpld_field(TXLO1_FSEL1, 0);
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _tx_target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq > (2500*fMHz)) && (freq <= (6000*fMHz)))
@@ -708,13 +755,51 @@ private:
             set_cpld_field(TXLO1_FSEL1, 0);
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _tx_target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
 
-        _txlo1->commit();
-        if (freq <= (500*fMHz)) _txlo2->commit();
+        // To reduce the number of commands issued to the device, write to the
+        // SPI destination already addressed first.  This avoids the writes to
+        // the GPIO registers to route the SPI to the same destination.
+        switch (get_gpio_field(SPI_ADDR))
+        {
+        case TXLO1:
+            _txlo1->commit();
+            if (freq < (500*fMHz)) _txlo2->commit();
+            write_cpld_reg();
+            break;
+        case TXLO2:
+            if (freq < (500*fMHz)) _txlo2->commit();
+            _txlo1->commit();
+            write_cpld_reg();
+        break;
+        default:
+            write_cpld_reg();
+            _txlo1->commit();
+            if (freq < (500*fMHz)) _txlo2->commit();
+            break;
+        }
+
+        if (_txlo1->can_sync())
+        {
+            // Send phase sync signal only if the command time is set
+            uhd::time_spec_t cmd_time = _iface->get_command_time();
+            if (cmd_time != uhd::time_spec_t(0.0))
+            {
+                // Delay 400 microseconds to allow LOs to lock
+                cmd_time += uhd::time_spec_t(0.0004);
+                _iface->set_command_time(cmd_time);
+                set_gpio_field(TXLO1_SYNC, 1);
+                set_gpio_field(TXLO2_SYNC, 1);
+                write_gpio();
+                // De-assert SYNC
+                // Head of line blocking means the time does not need to be set.
+                set_gpio_field(TXLO1_SYNC, 0);
+                set_gpio_field(TXLO2_SYNC, 0);
+                write_gpio();
+            }
+        }
 
         _tx_freq = freq_lo1 - freq_lo2;
         _txlo1_freq = freq_lo1;
@@ -727,6 +812,7 @@ private:
 
     double set_rx_freq(double freq)
     {
+        boost::mutex::scoped_lock lock(_mutex);
         double freq_lo1 = 0.0;
         double freq_lo2 = 0.0;
         double ref_freq = _iface->get_clock_rate(dboard_iface::UNIT_RX);
@@ -759,12 +845,11 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 1);
             set_cpld_field(RXHB_SEL, 0);
-            write_cpld_reg();
             // Set LO1 to IF of 2380 MHz (2440 MHz filter center minus 60 MHz offset to minimize LO leakage)
-            freq_lo1 = _rxlo1->set_frequency(2380*fMHz, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(2380*fMHz, ref_freq, _rx_target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
             // Set LO2 to IF minus desired frequency
-            freq_lo2 = _rxlo2->set_frequency(freq_lo1 - freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo2 = _rxlo2->set_frequency(freq_lo1 - freq, ref_freq, _rx_target_pfd_freq, is_int_n);
             _rxlo2->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 100*fMHz) && (freq < 500*fMHz))
@@ -776,12 +861,11 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 1);
             set_cpld_field(RXHB_SEL, 0);
-            write_cpld_reg();
             // Set LO1 to IF of 2440 (center of filter)
-            freq_lo1 = _rxlo1->set_frequency(2440*fMHz, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(2440*fMHz, ref_freq, _rx_target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
             // Set LO2 to IF minus desired frequency
-            freq_lo2 = _rxlo2->set_frequency(freq_lo1 - freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo2 = _rxlo2->set_frequency(freq_lo1 - freq, ref_freq, _rx_target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 500*fMHz) && (freq < 800*fMHz))
@@ -793,8 +877,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 1);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 800*fMHz) && (freq < 1000*fMHz))
@@ -806,8 +889,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 1);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
         else if ((freq >= 1000*fMHz) && (freq < 1500*fMHz))
@@ -819,8 +901,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 1500*fMHz) && (freq < 2200*fMHz))
@@ -832,8 +913,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 2200*fMHz) && (freq < 2500*fMHz))
@@ -845,8 +925,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 2500*fMHz) && (freq <= 6000*fMHz))
@@ -858,19 +937,59 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            write_cpld_reg();
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
 
-        _rxlo1->commit();
-        if (freq < (500*fMHz)) _rxlo2->commit();
+        // To reduce the number of commands issued to the device, write to the
+        // SPI destination already addressed first.  This avoids the writes to
+        // the GPIO registers to route the SPI to the same destination.
+        switch (get_gpio_field(SPI_ADDR))
+        {
+        case RXLO1:
+            _rxlo1->commit();
+            if (freq < (500*fMHz)) _rxlo2->commit();
+            write_cpld_reg();
+            break;
+        case RXLO2:
+            if (freq < (500*fMHz)) _rxlo2->commit();
+            _rxlo1->commit();
+            write_cpld_reg();
+        break;
+        default:
+            write_cpld_reg();
+            _rxlo1->commit();
+            if (freq < (500*fMHz)) _rxlo2->commit();
+            break;
+        }
 
-        freq = freq_lo1 - freq_lo2;
+        if (_rxlo1->can_sync())
+        {
+            // Send phase sync signal only if the command time is set
+            uhd::time_spec_t cmd_time = _iface->get_command_time();
+            if (cmd_time != uhd::time_spec_t(0.0))
+            {
+                // Delay 400 microseconds to allow LOs to lock
+                cmd_time += uhd::time_spec_t(0.0004);
+                _iface->set_command_time(cmd_time);
+                set_gpio_field(RXLO1_SYNC, 1);
+                set_gpio_field(RXLO2_SYNC, 1);
+                write_gpio();
+                // De-assert SYNC
+                // Head of line blocking means the time does not need to be set.
+                set_gpio_field(RXLO1_SYNC, 0);
+                set_gpio_field(RXLO2_SYNC, 0);
+                write_gpio();
+            }
+        }
 
-        UHD_LOGV(rarely) << boost::format("UBX RX: the actual frequency is %f MHz") % (freq/1e6) << std::endl;
+        _rx_freq = freq_lo1 - freq_lo2;
+        _rxlo1_freq = freq_lo1;
+        _rxlo2_freq = freq_lo2;
 
-        return freq;
+        UHD_LOGV(rarely) << boost::format("UBX RX: the actual frequency is %f MHz") % (_rx_freq/1e6) << std::endl;
+
+        return _rx_freq;
     }
 
     /***********************************************************************
@@ -878,6 +997,7 @@ private:
     **********************************************************************/
     void set_power_mode(std::string mode)
     {
+        boost::mutex::scoped_lock lock(_mutex);
         if (mode == "performance")
         {
             // FIXME:  Response to ATR change is too slow for some components,
@@ -933,13 +1053,16 @@ private:
     * Variables
     **********************************************************************/
     dboard_iface::sptr _iface;
-    boost::mutex _spi_lock;
+    boost::mutex _spi_mutex;
+    boost::mutex _mutex;
     ubx_cpld_reg_t _cpld_reg;
+    boost::uint32_t _prev_cpld_value;
     boost::shared_ptr<max287x_iface> _txlo1;
     boost::shared_ptr<max287x_iface> _txlo2;
     boost::shared_ptr<max287x_iface> _rxlo1;
     boost::shared_ptr<max287x_iface> _rxlo2;
-    double _target_pfd_freq;
+    double _tx_target_pfd_freq;
+    double _rx_target_pfd_freq;
     double _tx_gain;
     double _rx_gain;
     double _tx_freq;
