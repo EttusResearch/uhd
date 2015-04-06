@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ struct fifo_ctrl_excelsior_config
 /*!
  * Provide access to peek, poke, spi, and async messages.
  */
-class fifo_ctrl_excelsior : public uhd::wb_iface, public uhd::spi_iface
+class fifo_ctrl_excelsior : public uhd::timed_wb_iface, public uhd::spi_iface
 {
 public:
     typedef boost::shared_ptr<fifo_ctrl_excelsior> sptr;
@@ -50,9 +50,6 @@ public:
         uhd::transport::zero_copy_if::sptr xport,
         const fifo_ctrl_excelsior_config &config
     );
-
-    //! Set the command time that will activate
-    virtual void set_time(const uhd::time_spec_t &time) = 0;
 
     //! Set the tick rate (converting time into ticks)
     virtual void set_tick_rate(const double rate) = 0;

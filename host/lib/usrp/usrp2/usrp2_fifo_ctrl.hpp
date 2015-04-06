@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,16 +30,13 @@
  * The usrp2 FIFO control class:
  * Provide high-speed peek/poke interface.
  */
-class usrp2_fifo_ctrl : public uhd::wb_iface, public uhd::spi_iface
+class usrp2_fifo_ctrl : public uhd::timed_wb_iface, public uhd::spi_iface
 {
 public:
     typedef boost::shared_ptr<usrp2_fifo_ctrl> sptr;
 
     //! Make a new FIFO control object
     static sptr make(uhd::transport::zero_copy_if::sptr xport);
-
-    //! Set the command time that will activate
-    virtual void set_time(const uhd::time_spec_t &time) = 0;
 
     //! Set the tick rate (converting time into ticks)
     virtual void set_tick_rate(const double rate) = 0;

@@ -1013,6 +1013,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     db_config.which_rx_clk = (slot_name == "A")? X300_CLOCK_WHICH_DB0_RX : X300_CLOCK_WHICH_DB1_RX;
     db_config.which_tx_clk = (slot_name == "A")? X300_CLOCK_WHICH_DB0_TX : X300_CLOCK_WHICH_DB1_TX;
     db_config.dboard_slot = (slot_name == "A")? 0 : 1;
+    db_config.cmd_time_ctrl = perif.ctrl;
     _dboard_ifaces[db_path] = x300_make_dboard_iface(db_config);
 
     //create a new dboard manager

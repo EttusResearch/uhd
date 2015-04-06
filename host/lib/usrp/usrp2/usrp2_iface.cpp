@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012,2014 Ettus Research LLC
+// Copyright 2010-2012,2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -397,6 +397,16 @@ public:
             const std::string net_burner_cmd = str(boost::format("\"%s\" %s--addr=\"%s\"") % net_burner_path % ml % addr);
             return str(boost::format("%s\n%s") % print_utility_error("uhd_images_downloader.py") % net_burner_cmd);
         }
+    }
+
+    void set_time(const time_spec_t&)
+    {
+        throw uhd::not_implemented_error("Timed commands not supported");
+    }
+
+    time_spec_t get_time(void)
+    {
+        return (0.0);
     }
 
 private:
