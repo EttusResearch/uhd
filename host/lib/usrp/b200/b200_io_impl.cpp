@@ -118,8 +118,7 @@ void b200_impl::set_auto_tick_rate(
 
     // Step 2: Determine whether if we can use lcm_rate (preferred),
     // or have to give up because too large:
-    const double max_tick_rate =
-        ((num_chans <= 1) ? ad9361_device_t::AD9361_RECOMMENDED_MAX_CLOCK_RATE : ad9361_device_t::AD9361_MAX_CLOCK_RATE/2);
+    const double max_tick_rate = ad9361_device_t::AD9361_MAX_CLOCK_RATE/num_chans;
     double base_rate = static_cast<double>(lcm_rate);
     if (base_rate > max_tick_rate) {
         UHD_MSG(warning)
