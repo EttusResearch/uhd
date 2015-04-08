@@ -245,7 +245,7 @@ private:
         }
 
         if (_args.action != _retval.action)
-            throw std::runtime_error("e300_remote_codec_ctrl_impl trancation failed.");
+            throw std::runtime_error("e300_remote_codec_ctrl_impl transaction failed.");
     }
 
     void _clear() {
