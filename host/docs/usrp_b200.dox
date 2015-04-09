@@ -9,10 +9,12 @@
     -   External PPS reference input
     -   External 10 MHz reference input
     -   Configurable clock rate
+    -   Variable analog bandwidth (200 kHz - 56 MHz)
     -   Internal GPSDO option (see \subpage page_gpsdo_b2x0 for details)
     -   B210 Only:
         -   MICTOR Debug Connector
         -   JTAG Connector
+    -   Revision 6 with GPIO header
 - FPGA Capabilities:
     -   Timed commands in FPGA
     -   Timed sampling in FPGA
@@ -64,6 +66,24 @@ frontends have 73 dB of available gain; and the transmit frontends have
 89.5 dB of available gain. Gain settings are application specific, but
 it is recommended that users consider using at least half of the
 available gain to get reasonable dynamic range.
+
+\subsection b200_fe_bw Frontend bandwidth
+
+The analog frontend has a seamlessly adjustable bandwidth of 200 kHz to 56 MHz.
+
+Generally, when requesting any possible master clock rate, UHD will
+automatically configure the analog filters to avoid any aliasing (RX) or
+out-of-band emissions whilst letting through the cleanest possible signal.
+
+If you, however, happen to have a very strong interferer within half the master
+clock rate of your RX LO frequency, you might want to reduce this analog
+bandwidth.  You can do so by calling
+uhd::usrp::multi_usrp::set_rx_bandwidth(bw).
+
+The property to control the analog RX bandwidth is `bandwidth/value`.
+
+UHD will not allow you to set bandwidths larger than your current master clock
+rate.
 
 \section Hardware Reference
 
@@ -156,11 +176,17 @@ Below is a table showing the external connections and respective power informati
 
 Below is a table showing the on-board connectors and switches:
 
-Component ID  |  Description               | Details
---------------|----------------------------|----------------------------------------------------------
- J502*        |  Mictor Connector          | Interface to FPGA for I/O and inspection.
- J503*        |  JTAG Header               | Interface to FPGA for programming and debugging.
- S700         |  FX3 Hard Reset Switch     | -
+Component ID            |  Description               | Details
+------------------------|----------------------------|---------------------------------------------------
+ J502<sup>1</sup>       |  Mictor Connector          | Interface to FPGA for I/O and inspection.
+ J503<sup>1</sup>       |  JTAG Header               | Interface to FPGA for programming and debugging.
+ J504<sup>2</sup>       |  GPIO Header               | Header running to the FPGA for GPIO purposes.
+ S700                   |  FX3 Hard Reset Switch     | Resets the USB controller / System reset
+ U100                   |  GPSDO socket              | Interface to GPS disciplined reference oscillator
+
+<sup>1</sup> Only on the B210
+
+<sup>2</sup> Only since rev. 6 (green board)
 
 */
 
