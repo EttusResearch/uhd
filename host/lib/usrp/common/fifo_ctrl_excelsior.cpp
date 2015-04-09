@@ -1,5 +1,5 @@
 //
-// Copyright 2012 Ettus Research LLC
+// Copyright 2012,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -205,6 +205,12 @@ public:
         _time = time;
         _use_time = _time != uhd::time_spec_t(0.0);
         if (_use_time) _timeout = MASSIVE_TIMEOUT; //permanently sets larger timeout
+    }
+
+    uhd::time_spec_t get_time(void)
+    {
+        boost::mutex::scoped_lock lock(_mutex);
+        return _time;
     }
 
     void set_tick_rate(const double rate){

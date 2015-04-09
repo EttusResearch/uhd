@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2014 Ettus Research LLC
+// Copyright 2012-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 /*!
  * Provide access to peek, poke for the radio ctrl module
  */
-class radio_ctrl_core_3000 : public uhd::wb_iface
+class radio_ctrl_core_3000 : public uhd::timed_wb_iface
 {
 public:
     typedef boost::shared_ptr<radio_ctrl_core_3000> sptr;
@@ -53,6 +53,9 @@ public:
 
     //! Set the command time that will activate
     virtual void set_time(const uhd::time_spec_t &time) = 0;
+
+    //! Get the command time that will activate
+    virtual uhd::time_spec_t get_time(void) = 0;
 
     //! Set the tick rate (converting time into ticks)
     virtual void set_tick_rate(const double rate) = 0;

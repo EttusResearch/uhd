@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2013 Ettus Research LLC
+// Copyright 2011-2013,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TYPES_WB_IFACE_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/time_spec.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -74,7 +75,24 @@ public:
      * \return the 16bit data
      */
     virtual boost::uint16_t peek16(const wb_addr_type addr);
+};
 
+class UHD_API timed_wb_iface : public wb_iface
+{
+public:
+    typedef boost::shared_ptr<timed_wb_iface> sptr;
+
+    /*!
+     * Get the command time.
+     * \return the command time
+     */
+    virtual time_spec_t get_time(void) = 0;
+
+    /*!
+     * Set the command time.
+     * \param t the command time
+     */
+    virtual void set_time(const time_spec_t& t) = 0;
 };
 
 } //namespace uhd
