@@ -263,7 +263,7 @@ private:
 class max2870 : public max287x<max2870_regs_t>
 {
 public:
-    max2870(write_fn func) : max287x(func) {}
+    max2870(write_fn func) : max287x<max2870_regs_t>(func) {}
     ~max2870() {}
     double set_frequency(
         double target_freq,
@@ -276,13 +276,13 @@ public:
             max2870_regs_t::FEEDBACK_SELECT_DIVIDED :
             max2870_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
 
-        return max287x::set_frequency(target_freq, ref_freq, target_pfd_freq, is_int_n);
+        return max287x<max2870_regs_t>::set_frequency(target_freq, ref_freq, target_pfd_freq, is_int_n);
     }
     void commit(void)
     {
         // For MAX2870, we always need to write all registers.
         _write_all_regs = true;
-        max287x::commit();
+        max287x<max2870_regs_t>::commit();
     }
 };
 
@@ -292,7 +292,7 @@ public:
 class max2871 : public max287x<max2871_regs_t>
 {
 public:
-    max2871(write_fn func) : max287x(func) {}
+    max2871(write_fn func) : max287x<max2871_regs_t>(func) {}
     ~max2871() {};
     void set_muxout_mode(muxout_mode_t mode)
     {
@@ -305,7 +305,7 @@ public:
             _regs.muxout = max2871_regs_t::MUXOUT_SPI;
             break;
         default:
-            max287x::set_muxout_mode(mode);
+            max287x<max2871_regs_t>::set_muxout_mode(mode);
         }
     }
 
@@ -316,7 +316,7 @@ public:
         bool is_int_n)
     {
         _regs.feedback_select = max2871_regs_t::FEEDBACK_SELECT_DIVIDED;
-        double freq = max287x::set_frequency(target_freq, ref_freq, target_pfd_freq, is_int_n);
+        double freq = max287x<max2871_regs_t>::set_frequency(target_freq, ref_freq, target_pfd_freq, is_int_n);
 
         // According to Maxim support, the following factors must be true to allow for synchronization
         if (_regs.r_counter_10_bit == 1 and
