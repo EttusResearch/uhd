@@ -1,6 +1,18 @@
 Change Log for Releases
 ==============================
 
+## 003.008.003
+* UBX: Fixed phase synchronization issues
+  (Related changes: Change X300 daughterboard frequency, increase
+   N210 FIFO depth)
+* Fixed many compiler warnings
+* B200: Fixed timing issues, fixed tick rate issue, stabilized
+  operations at high clock rates
+* X300: Improved phase alignment across devices
+* CMake: Build fixes
+* E300: Flow control fix
+
+
 ## 003.008.002
 * CMake: Introducing named versions for dev branches, enable static libs,
 * E300: Docs updates, compat number bump, VCTCXO updates,
