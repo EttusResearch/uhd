@@ -132,8 +132,8 @@ public:
     //Constants
     static const double AD9361_MAX_GAIN;
     static const double AD9361_MAX_CLOCK_RATE;
-    static const double AD9361_RECOMMENDED_MAX_CLOCK_RATE;
     static const double AD9361_CAL_VALID_WINDOW;
+    static const double AD9361_RECOMMENDED_MAX_BANDWIDTH;
 
 private:    //Methods
     void _program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs);
