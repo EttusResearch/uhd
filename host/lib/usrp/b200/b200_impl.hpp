@@ -119,6 +119,10 @@ private:
 
     boost::mutex _transport_setup_mutex;
 
+    // mapping of frontend to radio perif index
+    size_t _fe1;
+    size_t _fe2;
+
     //async ctrl + msgs
     uhd::msg_task::sptr _async_task;
     typedef uhd::transport::bounded_buffer<uhd::async_metadata_t> async_md_type;
