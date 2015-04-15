@@ -27,9 +27,9 @@ FIND_PACKAGE(Git QUIET)
 #  - set UHD_VERSION_DEVEL to true for master and development branches
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
-SET(UHD_VERSION_MINOR 008)
-SET(UHD_VERSION_PATCH 003)
-SET(UHD_VERSION_DEVEL FALSE)
+SET(UHD_VERSION_MINOR 009)
+SET(UHD_VERSION_PATCH git)
+SET(UHD_VERSION_DEVEL TRUE)
 
 ########################################################################
 # Set up trimmed version numbers for DLL resource files and packages
