@@ -192,7 +192,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("version", "print the version string and exit")
         ("args", po::value<std::string>()->default_value(""), "device address args")
         ("tree", "specify to print a complete property tree")
-        ("string", po::value<std::string>(), "query a string value from the properties tree")
+        ("string", po::value<std::string>(), "query a string value from the property tree")
+        ("double", po::value<std::string>(), "query a double precision floating point value from the property tree")
+        ("int", po::value<std::string>(), "query a integer value from the property tree")
+        ("range", po::value<std::string>(), "query a range (gain, bandwidth, frequency, ...)  from the property tree")
         ("init-only", "skip all queries, only initialize device")
     ;
 
@@ -216,6 +219,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     if (vm.count("string")){
         std::cout << tree->access<std::string>(vm["string"].as<std::string>()).get() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    if (vm.count("double")){
+        std::cout << tree->access<double>(vm["double"].as<std::string>()).get() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    if (vm.count("int")){
+        std::cout << tree->access<int>(vm["int"].as<std::string>()).get() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    if (vm.count("range")){
+        meta_range_t range = tree->access<meta_range_t>(vm["range"].as<std::string>()).get();
+        std::cout << boost::format("%.1f:%.1f:%.1f") % range.start() % range.step() % range.stop() << std::endl;
         return EXIT_SUCCESS;
     }
 
