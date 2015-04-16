@@ -39,25 +39,22 @@ struct sensor_transaction_t {
 
 
 
-enum sensor {ZYNQ_TEMP=0, GPS_FOUND=1, GPS_TIME=2,
-             GPS_LOCK=3, REF_LOCK=4};
+enum sensor {ZYNQ_TEMP=0, REF_LOCK=4};
 
 class e300_sensor_manager : boost::noncopyable
 {
 public:
     typedef boost::shared_ptr<e300_sensor_manager> sptr;
-    virtual bool get_gps_found(void) = 0;
 
     virtual uhd::sensor_value_t get_sensor(const std::string &key) = 0;
     virtual std::vector<std::string> get_sensors(void) = 0;
 
     virtual uhd::sensor_value_t get_mb_temp(void) = 0;
-    virtual uhd::sensor_value_t get_gps_lock(void) = 0;
-    virtual uhd::sensor_value_t get_gps_time(void) = 0;
     virtual uhd::sensor_value_t get_ref_lock(void) = 0;
 
+
     static sptr make_proxy(uhd::transport::zero_copy_if::sptr xport);
-    static sptr make_local(uhd::gps_ctrl::sptr gps_ctrl, global_regs::sptr global_regs);
+    static sptr make_local(global_regs::sptr global_regs);
 
     // Note: This is a hack
     static boost::uint32_t pack_float_in_uint32_t(const float &v)

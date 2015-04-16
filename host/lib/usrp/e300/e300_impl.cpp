@@ -394,19 +394,35 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         // This is horrible ... why do I have to sleep here?
         boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         _eeprom_manager = boost::make_shared<e300_eeprom_manager>(i2c::make_i2cdev(E300_I2CDEV_DEVICE));
+        _sensor_manager = e300_sensor_manager::make_local(_global_regs);
     }
     _codec_mgr = ad936x_manager::make(_codec_ctrl, fpga::NUM_RADIOS);
 
-    UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
-    if (_xport_path == AXI) {
-        try {
-            _gps = gps::ublox::ubx::control::make("/dev/ttyPS1", 9600);
-        } catch (std::exception &e) {
-            UHD_MSG(error) << "An error occured making GPSDO control: " << e.what() << std::endl;
-        }
-        _sensor_manager = e300_sensor_manager::make_local(_gps, _global_regs);
+#ifdef E300_GPSD
+    UHD_MSG(status) << "Detecting internal GPSDO " << std::flush;
+    try {
+        if (_xport_path == AXI)
+            _gps = gpsd_iface::make("localhost", 2947);
+        else
+            _gps = gpsd_iface::make(device_addr["addr"], 2947);
+    } catch (std::exception &e) {
+        UHD_MSG(error) << "An error occured making GPSDd interface: " << e.what() << std::endl;
     }
-    UHD_MSG(status) << (_sensor_manager->get_gps_found() ? "found" : "not found")  << std::endl;
+
+    if (_gps) {
+        for (size_t i = 0; i < _GPS_TIMEOUT; i++)
+        {
+            boost::this_thread::sleep(boost::posix_time::seconds(1));
+            if (!_gps->gps_detected())
+                std::cout << "." << std::flush;
+            else {
+                std::cout << ".... " << std::flush;
+                break;
+            }
+        }
+        UHD_MSG(status) << (_gps->gps_detected() ? "found" : "not found") << std::endl;
+    }
+#endif
 
     // Verify we can talk to the e300 core control registers ...
     UHD_MSG(status) << "Initializing core control..." << std::endl;
@@ -451,6 +467,15 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         _tree->create<sensor_value_t>(mb_path / "sensors" / name)
             .publish(boost::bind(&e300_sensor_manager::get_sensor, _sensor_manager, name));
     }
+#ifdef E300_GPSD
+    if (_gps) {
+        BOOST_FOREACH(const std::string &name, _gps->get_sensors())
+        {
+            _tree->create<sensor_value_t>(mb_path / "sensors" / name)
+                .publish(boost::bind(&gpsd_iface::get_sensor, _gps, name));
+        }
+    }
+#endif
 
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
@@ -513,7 +538,11 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _tree->create<std::string>(mb_path / "time_source" / "value")
         .subscribe(boost::bind(&e300_impl::_update_time_source, this, _1))
         .set(e300::DEFAULT_TIME_SRC);
+#ifdef E300_GPSD
     static const std::vector<std::string> time_sources = boost::assign::list_of("none")("internal")("external")("gpsdo");
+#else
+    static const std::vector<std::string> time_sources = boost::assign::list_of("none")("internal")("external");
+#endif
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
     //setup reference source props
     _tree->create<std::string>(mb_path / "clock_source" / "value")
@@ -593,12 +622,25 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
 
-    UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
-    const time_t tp = time_t(_sensor_manager->get_sensor("gps_time").to_int()+1);
-    _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
+#ifdef E300_GPSD
+    //GPS installed: use external ref, time, and init time spec
+    if (_gps and _gps->gps_detected()) {
+        UHD_MSG(status) << "Setting references to the internal GPSDO"
+                        << std::endl;
+        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
+        UHD_MSG(status) << "Initializing time to the internal GPSDO"
+                        << std::endl;
+        const time_t tp = time_t(_gps->get_sensor("gps_time").to_int()+1);
+        _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
 
-    // wait for time to be actually set
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+        // wait for time to be actually set
+        boost::this_thread::sleep(boost::posix_time::seconds(1));
+    }
+#else
+    //init to internal clock and time source
+    _tree->access<std::string>(mb_path / "time_source/value").set("internal");
+#endif// E300_GPSD
+
 }
 
 boost::uint8_t e300_impl::_get_internal_gpio(gpio_core_200::sptr gpio)
@@ -792,8 +834,10 @@ void e300_impl::_update_time_source(const std::string &source)
     UHD_MSG(status) << boost::format("Setting time source to %s") % source << std::endl;
     if (source == "none" or source == "internal") {
         _misc.pps_sel = global_regs::PPS_INT;
+#ifdef E300_GPSD
     } else if (source == "gpsdo") {
         _misc.pps_sel = global_regs::PPS_GPS;
+#endif
     } else if (source == "external") {
         _misc.pps_sel = global_regs::PPS_EXT;
     } else {

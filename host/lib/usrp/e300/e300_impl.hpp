@@ -47,7 +47,11 @@
 #include "e300_i2c.hpp"
 #include "e300_eeprom_manager.hpp"
 #include "e300_sensor_manager.hpp"
-#include "e300_ublox_control.hpp"
+
+/* if we don't compile with gpsd support, don't bother */
+#ifdef E300_GPSD
+#include "gpsd_iface.hpp"
+#endif
 
 namespace uhd { namespace usrp { namespace e300 {
 
@@ -299,7 +303,10 @@ private: // members
     std::string                            _idle_image;
     bool                                   _do_not_reload;
     gpio_t                                 _misc;
-    gps::ublox::ubx::control::sptr _gps;
+#ifdef E300_GPSD
+    gpsd_iface::sptr                       _gps;
+    static const size_t                    _GPS_TIMEOUT = 5;
+#endif
 };
 
 }}} // namespace

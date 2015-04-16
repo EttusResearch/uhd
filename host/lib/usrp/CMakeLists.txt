@@ -18,6 +18,10 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
+find_package(GPSD)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/dboard_base.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dboard_eeprom.cpp
@@ -29,6 +33,15 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/multi_usrp.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/subdev_spec.cpp
 )
+
+LIBUHD_REGISTER_COMPONENT("GPSD" ENABLE_GPSD OFF "ENABLE_LIBUHD;ENABLE_GPSD;LIBGPS_FOUND" OFF)
+
+IF(ENABLE_GPSD)
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/gpsd_iface.cpp
+    )
+    LIBUHD_APPEND_LIBS(${LIBGPS_LIBRARY})
+ENDIF(ENABLE_GPSD)
 
 INCLUDE_SUBDIRECTORY(cores)
 INCLUDE_SUBDIRECTORY(dboard)
