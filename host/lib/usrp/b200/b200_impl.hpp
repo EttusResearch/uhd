@@ -119,10 +119,6 @@ private:
 
     boost::mutex _transport_setup_mutex;
 
-    // mapping of frontend to radio perif index
-    size_t _fe1;
-    size_t _fe2;
-
     //async ctrl + msgs
     uhd::msg_task::sptr _async_task;
     typedef uhd::transport::bounded_buffer<uhd::async_metadata_t> async_md_type;
@@ -164,6 +160,13 @@ private:
         bool ant_rx2;
     };
     std::vector<radio_perifs_t> _radio_perifs;
+
+    //mapping of AD936x frontends (FE1 and FE2) to radio perif index (0 and 1)
+    //FE1 corresponds to the ports labeled "RF B" on the B200/B210
+    //FE2 corresponds to the ports labeled "RF A" on the B200/B210
+    //the mapping is product and revision specific
+    size_t _fe1;
+    size_t _fe2;
 
     /*! \brief Setup the DSP chain for one radio front-end.
      *

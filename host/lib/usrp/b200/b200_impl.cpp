@@ -238,6 +238,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     ////////////////////////////////////////////////////////////////////
     std::string default_file_name;
     std::string product_name = "B200?";
+    enum {UNKNOWN,B200,B210} product = UNKNOWN;
     if (not mb_eeprom["product"].empty())
     {
         switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
@@ -246,11 +247,13 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
         case 0x7737:
             product_name = "B200";
             default_file_name = B200_FPGA_FILE_NAME;
+            product = B200;
             break;
         case 0x7738:
         case 0x0002:
             product_name = "B210";
             default_file_name = B210_FPGA_FILE_NAME;
+            product = B210;
             break;
         default: UHD_MSG(error) << "B200 unknown product code: " << mb_eeprom["product"] << std::endl;
         }
@@ -263,14 +266,12 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     //set up frontend mapping
     _fe1 = 1;
     _fe2 = 0;
-    if (not mb_eeprom["revision"].empty())
+    if (product == B200 and
+        not mb_eeprom["revision"].empty() and
+        boost::lexical_cast<size_t>(mb_eeprom["revision"]) >= 5)
     {
-        size_t rev = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
-        if (rev == 5)
-        {
-            _fe1 = 0;
-            _fe2 = 1;
-        }
+        _fe1 = 0;
+        _fe2 = 1;
     }
 
     //extract the FPGA path for the B200
