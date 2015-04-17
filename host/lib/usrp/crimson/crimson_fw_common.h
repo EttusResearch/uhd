@@ -65,8 +65,8 @@ extern "C" {
 #define CRIMSON_FW_COMMS_FLAGS_PEEK32     (1 << 3)
 
 // Crimson RF Settings
-#define CRIMSON_RF_TX_GAIN_RANGE_START	-28.0
-#define CRIMSON_RF_TX_GAIN_RANGE_STOP	0.0
+#define CRIMSON_RF_TX_GAIN_RANGE_START	0.0
+#define CRIMSON_RF_TX_GAIN_RANGE_STOP	28.0
 #define CRIMSON_RF_TX_GAIN_RANGE_STEP	1.0
 
 // Ranges from, 0dB to 95dB
