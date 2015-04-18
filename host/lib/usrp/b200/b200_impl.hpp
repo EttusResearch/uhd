@@ -47,7 +47,7 @@
 #include "recv_packet_demuxer_3000.hpp"
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 7;
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
-static const boost::uint16_t B200_FPGA_COMPAT_NUM = 4;
+static const boost::uint16_t B200_FPGA_COMPAT_NUM = 5;
 static const double          B200_BUS_CLOCK_RATE = 100e6;
 static const double          B200_DEFAULT_TICK_RATE = 32e6;
 static const double          B200_DEFAULT_FREQ = 100e6; // Hz
@@ -177,7 +177,7 @@ private:
     void handle_overflow(const size_t radio_index);
 
     struct gpio_state {
-        boost::uint32_t  tx_bandsel_a, tx_bandsel_b, rx_bandsel_a, rx_bandsel_b, rx_bandsel_c, codec_arst, mimo, ref_sel;
+        boost::uint32_t  tx_bandsel_a, tx_bandsel_b, rx_bandsel_a, rx_bandsel_b, rx_bandsel_c, codec_arst, mimo, ref_sel, atr_sel;
 
         gpio_state() {
             tx_bandsel_a = 0;
@@ -188,6 +188,7 @@ private:
             codec_arst = 0;
             mimo = 0;
             ref_sel = 0;
+            atr_sel = 0;
         }
     } _gpio_state;
 

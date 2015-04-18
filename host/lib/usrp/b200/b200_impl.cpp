@@ -273,8 +273,9 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
         not mb_eeprom["revision"].empty() and
         boost::lexical_cast<size_t>(mb_eeprom["revision"]) >= 5)
     {
-        _fe1 = 0;
-        _fe2 = 1;
+        _fe1 = 0;                   //map radio0 to FE1
+        _fe2 = 1;                   //map radio1 to FE2
+        _gpio_state.atr_sel = 1;    //map radio0 ATR pins to FE2
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -332,7 +333,6 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
 
     /* Initialize the GPIOs, set the default bandsels to the lower range. Note
      * that calling update_bandsel calls update_gpio_state(). */
-    _gpio_state = gpio_state();
     update_bandsel("RX", 800e6);
     update_bandsel("TX", 850e6);
 
@@ -916,6 +916,7 @@ void b200_impl::update_bandsel(const std::string& which, double freq)
 void b200_impl::update_gpio_state(void)
 {
     const boost::uint32_t misc_word = 0
+        | (_gpio_state.atr_sel << 8)
         | (_gpio_state.tx_bandsel_a << 7)
         | (_gpio_state.tx_bandsel_b << 6)
         | (_gpio_state.rx_bandsel_a << 5)
