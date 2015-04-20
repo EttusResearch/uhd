@@ -24,7 +24,7 @@
 # Project setup
 ########################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(UHD CXX)
+PROJECT(UHD CXX C)
 ENABLE_TESTING()
 
 #make sure our local CMake Modules path comes first

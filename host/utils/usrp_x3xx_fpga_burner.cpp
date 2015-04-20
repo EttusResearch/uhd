@@ -49,13 +49,9 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/safe_call.hpp>
 
-#ifdef _MSC_VER
 extern "C" {
-#endif
 #include "cdecode.h"
-#ifdef _MSC_VER
 }
-#endif
 
 #define X300_FPGA_BIN_SIZE_BYTES 15877916
 #define X300_FPGA_BIT_MAX_SIZE_BYTES 15878022
