@@ -67,7 +67,7 @@ template<typename samp_type> void recv_to_file(
         uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
         uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
     );
-    stream_cmd.num_samps = num_requested_samples;
+    stream_cmd.num_samps = size_t(num_requested_samples);
     stream_cmd.stream_now = true;
     stream_cmd.time_spec = uhd::time_spec_t();
     std::cout << "Issueing stream cmd" << std::endl;

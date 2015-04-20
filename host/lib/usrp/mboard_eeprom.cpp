@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2013,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 //
 
 #include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/types/byte_vector.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/asio/ip/address_v4.hpp>
@@ -38,32 +39,6 @@ static const size_t NAME_MAX_LEN = 32 - SERIAL_LEN;
 /***********************************************************************
  * Utility functions
  **********************************************************************/
-
-//! A wrapper around std::copy that takes ranges instead of iterators.
-template<typename RangeSrc, typename RangeDst> inline
-void byte_copy(const RangeSrc &src, RangeDst &dst){
-    std::copy(boost::begin(src), boost::end(src), boost::begin(dst));
-}
-
-//! create a string from a byte vector, return empty if invalid ascii
-static const std::string bytes_to_string(const byte_vector_t &bytes){
-    std::string out;
-    BOOST_FOREACH(boost::uint8_t byte, bytes){
-        if (byte < 32 or byte > 127) return out;
-        out += byte;
-    }
-    return out;
-}
-
-//! create a byte vector from a string, null terminate unless max length
-static const byte_vector_t string_to_bytes(const std::string &string, size_t max_length){
-    byte_vector_t bytes;
-    for (size_t i = 0; i < std::min(string.size(), max_length); i++){
-        bytes.push_back(string[i]);
-    }
-    if (bytes.size() < max_length - 1) bytes.push_back('\0');
-    return bytes;
-}
 
 //! convert a string to a byte vector to write to eeprom
 static byte_vector_t string_to_uint16_bytes(const std::string &num_str){

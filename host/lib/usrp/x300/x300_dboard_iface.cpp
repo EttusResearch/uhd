@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,6 +49,9 @@ public:
     void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
     void _set_gpio_ddr(unit_t, boost::uint16_t);
     void _set_gpio_out(unit_t, boost::uint16_t);
+
+    void set_command_time(const uhd::time_spec_t& t);
+    uhd::time_spec_t get_command_time(void);
 
     void set_gpio_debug(unit_t, int);
     boost::uint16_t read_gpio(unit_t);
@@ -108,11 +111,11 @@ x300_dboard_iface::x300_dboard_iface(const x300_dboard_iface_config_t &config):
         this->_write_aux_dac(unit);
     }
 
+    _clock_rates[UNIT_RX] = _config.clock->get_dboard_rate(_config.which_rx_clk);
+    _clock_rates[UNIT_TX] = _config.clock->get_dboard_rate(_config.which_tx_clk);
+
     this->set_clock_enabled(UNIT_RX, false);
     this->set_clock_enabled(UNIT_TX, false);
-
-    this->set_clock_rate(UNIT_RX, _config.clock->get_master_clock_rate());
-    this->set_clock_rate(UNIT_TX, _config.clock->get_master_clock_rate());
 
 
     //some test code
@@ -150,16 +153,20 @@ x300_dboard_iface::~x300_dboard_iface(void)
  **********************************************************************/
 void x300_dboard_iface::set_clock_rate(unit_t unit, double rate)
 {
-    _clock_rates[unit] = rate; //set to shadow
+    // Just return if the requested rate is already set
+    if (std::fabs(_clock_rates[unit] - rate) < std::numeric_limits<double>::epsilon())
+        return;
+
     switch(unit)
     {
         case UNIT_RX:
             _config.clock->set_dboard_rate(_config.which_rx_clk, rate);
-            return;
+            break;
         case UNIT_TX:
             _config.clock->set_dboard_rate(_config.which_tx_clk, rate);
-            return;
+            break;
     }
+    _clock_rates[unit] = rate; //set to shadow
 }
 
 double x300_dboard_iface::get_clock_rate(unit_t unit)
@@ -180,9 +187,17 @@ std::vector<double> x300_dboard_iface::get_clock_rates(unit_t unit)
     }
 }
 
-void x300_dboard_iface::set_clock_enabled(UHD_UNUSED(unit_t unit), UHD_UNUSED(bool enb))
+void x300_dboard_iface::set_clock_enabled(unit_t unit, bool enb)
 {
-    // TODO Variable DBoard clock control needs to be implemented for X300.
+    switch(unit)
+    {
+        case UNIT_RX:
+            return _config.clock->enable_dboard_clock(_config.which_rx_clk, enb);
+        case UNIT_TX:
+            return _config.clock->enable_dboard_clock(_config.which_tx_clk, enb);
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
 }
 
 double x300_dboard_iface::get_codec_rate(unit_t)
@@ -330,4 +345,14 @@ double x300_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which)
 
     //convert to voltage and return
     return 3.3*ad7922_regs.result/4095;
+}
+
+uhd::time_spec_t x300_dboard_iface::get_command_time()
+{
+    return _config.cmd_time_ctrl->get_time();
+}
+
+void x300_dboard_iface::set_command_time(const uhd::time_spec_t& t)
+{
+    _config.cmd_time_ctrl->set_time(t);
 }

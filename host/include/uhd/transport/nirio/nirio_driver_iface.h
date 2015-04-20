@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,9 +25,13 @@
 #include <uhd/config.hpp>
 #if defined(UHD_PLATFORM_WIN32)
     #include <windows.h>
-    #pragma warning(disable:4201)  // nonstandard extension used : nameless struct/union
+    #ifdef _MSC_VER
+        #pragma warning(disable:4201)  // nonstandard extension used : nameless struct/union
+    #endif
         #include <winioctl.h>
-    #pragma warning(default:4201)
+    #ifdef _MSC_VER
+        #pragma warning(default:4201)
+    #endif
 #elif !defined(UHD_PLATFORM_LINUX)
     #include <IOKit/IOKitLib.h>
 #endif

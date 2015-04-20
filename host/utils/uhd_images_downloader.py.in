@@ -308,11 +308,12 @@ def main():
                 if options.verbose:
                     print "Downloaded %d of %d bytes" % (downloaded_size, reported_size)
             else:
-                temp_images_dest = os.path.join(options.base_url, options.filename)
-                print "Copying images from: {0}".format(temp_images_dest)
-                if not os.path.isfile(temp_images_dest):
+                local_images_pkg = os.path.join(options.base_url, options.filename)
+                print "Copying images from:     {0}".format(local_images_pkg)
+                if not os.path.isfile(local_images_pkg):
                     print "[ERROR] No such file."
                     return 1
+                shutil.copyfile(local_images_pkg, temp_images_dest)
             (checksum_match, calculated_checksum) = downloader.validate_checksum(
                     checksum_fn,
                     temp_images_dest,

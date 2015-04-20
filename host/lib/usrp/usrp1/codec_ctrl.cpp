@@ -357,7 +357,7 @@ double usrp1_codec_ctrl_impl::fine_tune(double codec_rate, double target_freq)
     static const double scale_factor = std::pow(2.0, 24);
 
     boost::uint32_t freq_word = boost::uint32_t(
-        boost::math::round(abs((target_freq / codec_rate) * scale_factor)));
+        boost::math::round(std::abs((target_freq / codec_rate) * scale_factor)));
 
     double actual_freq = freq_word * codec_rate / scale_factor;
 

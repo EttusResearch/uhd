@@ -67,7 +67,7 @@ public:
     digital_interface_delays_t get_digital_interface_timing() {
         digital_interface_delays_t delays;
         delays.rx_clk_delay = 0;
-        delays.rx_data_delay = 0xF;
+        delays.rx_data_delay = 0x6;
         delays.tx_clk_delay = 0;
         delays.tx_data_delay = 0xF;
         return delays;
@@ -203,7 +203,8 @@ UHD_STATIC_BLOCK(register_b200_device)
 /***********************************************************************
  * Structors
  **********************************************************************/
-b200_impl::b200_impl(const device_addr_t &device_addr)
+b200_impl::b200_impl(const device_addr_t &device_addr) :
+    _tick_rate(0.0) // Forces a clock initialization at startup
 {
     _tree = property_tree::make();
     _type = device::USRP;
@@ -737,6 +738,15 @@ void b200_impl::setup_radio(const size_t dspno)
                 .subscribe(boost::bind(&ad9361_ctrl::set_iq_balance_auto, _codec_ctrl, key, _1)).set(true);
         }
 
+        //add all frontend filters
+        std::vector<std::string> filter_names = _codec_ctrl->get_filter_names(key);
+        for(size_t i = 0;i < filter_names.size(); i++)
+        {
+            _tree->create<filter_info_base::sptr>(rf_fe_path / "filters" / filter_names[i] / "value" )
+                .publish(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_names[i]))
+                .subscribe(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_names[i], _1));
+        }
+
         //setup antenna stuff
         if (key[0] == 'R')
         {
@@ -776,7 +786,7 @@ void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
 {
     bool test_fail = false;
     UHD_MSG(status) << "Performing register loopback test... " << std::flush;
-    size_t hash = time(NULL);
+    size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
@@ -924,13 +934,13 @@ void b200_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, co
 {
     switch (attr)
     {
-    case CTRL:      return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    case DDR:       return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    case OUT:       return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    case ATR_0X:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    case ATR_RX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    case ATR_TX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    case ATR_XX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
+    case GPIO_CTRL:   return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
+    case GPIO_DDR:    return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
+    case GPIO_OUT:    return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
+    case GPIO_ATR_0X: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
+    case GPIO_ATR_RX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
+    case GPIO_ATR_TX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
+    case GPIO_ATR_XX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
     default:        UHD_THROW_INVALID_CODE_PATH();
     }
 }
@@ -1024,7 +1034,7 @@ void b200_impl::update_gpio_state(void)
         | (_gpio_state.ref_sel << 0)
     ;
 
-    _local_ctrl->poke32(TOREG(RB32_CORE_MISC), misc_word);
+    _local_ctrl->poke32(TOREG(SR_CORE_MISC), misc_word);
 }
 
 void b200_impl::reset_codec_dcm(void)
@@ -1121,6 +1131,6 @@ sensor_value_t b200_impl::get_ref_locked(void)
 sensor_value_t b200_impl::get_fe_pll_locked(const bool is_tx)
 {
     const boost::uint32_t st = _local_ctrl->peek32(RB32_CORE_PLL);
-    const bool locked = is_tx ? st & 0x1 : st & 0x2;
+    const bool locked = is_tx ? ((st & 0x1) > 0) : ((st & 0x2) > 0);
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }

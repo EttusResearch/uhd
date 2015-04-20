@@ -1078,6 +1078,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     db_config.which_rx_clk = (slot_name == "A")? X300_CLOCK_WHICH_DB0_RX : X300_CLOCK_WHICH_DB1_RX;
     db_config.which_tx_clk = (slot_name == "A")? X300_CLOCK_WHICH_DB0_TX : X300_CLOCK_WHICH_DB1_TX;
     db_config.dboard_slot = (slot_name == "A")? 0 : 1;
+    db_config.cmd_time_ctrl = perif.ctrl;
     _dboard_ifaces[db_path] = x300_make_dboard_iface(db_config);
 
     //create a new dboard manager
@@ -1378,7 +1379,7 @@ void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
 {
     bool test_fail = false;
     UHD_MSG(status) << "Performing register loopback test... " << std::flush;
-    size_t hash = time(NULL);
+    size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
@@ -1614,13 +1615,13 @@ void x300_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, co
 {
     switch (attr)
     {
-    case CTRL:      return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    case DDR:       return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    case OUT:       return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    case ATR_0X:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    case ATR_RX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    case ATR_TX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    case ATR_XX:    return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
+    case GPIO_CTRL:   return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
+    case GPIO_DDR:    return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
+    case GPIO_OUT:    return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
+    case GPIO_ATR_0X: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
+    case GPIO_ATR_RX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
+    case GPIO_ATR_TX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
+    case GPIO_ATR_XX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
     default:        UHD_THROW_INVALID_CODE_PATH();
     }
 }
@@ -1633,7 +1634,7 @@ void x300_impl::claimer_loop(wb_iface::sptr iface)
 {
     {   //Critical section
         boost::mutex::scoped_lock(claimer_mutex);
-        iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), time(NULL));
+        iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), uint32_t(time(NULL)));
         iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), get_process_hash());
     }
     boost::this_thread::sleep(boost::posix_time::milliseconds(1000)); //1 second

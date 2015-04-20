@@ -115,12 +115,12 @@ UHD_INLINE void _hdr_unpack_chdr(
     if_packet_info.sob = false;
 
     // Set configurable members
-    if_packet_info.has_tsf = bool(chdr & HDR_FLAG_TSF);
+    if_packet_info.has_tsf = (chdr & HDR_FLAG_TSF) > 0;
     if_packet_info.packet_type = if_packet_info_t::packet_type_t((chdr >> 30) & 0x3);
     if_packet_info.eob = (if_packet_info.packet_type == if_packet_info_t::PACKET_TYPE_DATA)
-                         && bool(chdr & HDR_FLAG_EOB);
+                         && ((chdr & HDR_FLAG_EOB) > 0);
     if_packet_info.error = (if_packet_info.packet_type == if_packet_info_t::PACKET_TYPE_RESP)
-                         && bool(chdr & HDR_FLAG_ERROR);
+                         && ((chdr & HDR_FLAG_ERROR) > 0);
     if_packet_info.packet_count = (chdr >> 16) & 0xFFF;
 
     // Set packet length variables

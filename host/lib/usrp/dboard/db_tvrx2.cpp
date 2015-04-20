@@ -1014,7 +1014,7 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
 
         _freq_scalar = (6*16.0e6)/this->get_iface()->get_clock_rate(dboard_iface::UNIT_RX);
     } else if (ref_clock == 200e6)  {
-        UHD_MSG(warning) << boost::format("ref_clock was 200e6, setting ref_clock divider for 100e6.") % ref_clock << std::endl;
+        UHD_MSG(warning) << boost::format("ref_clock was 200e6, setting ref_clock divider for 100e6.") << std::endl;
         this->get_iface()->set_clock_rate(dboard_iface::UNIT_RX, 100e6);
         this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, REFCLOCK_DIV6);
 
@@ -1103,7 +1103,7 @@ tvrx2::~tvrx2(void){
  * TDA18272 Register IO Functions
  **********************************************************************/
 void tvrx2::set_scaled_rf_freq(double rf_freq){
-    _tda18272hnm_regs.set_rf_freq(_freq_scalar*rf_freq/1e3);
+    _tda18272hnm_regs.set_rf_freq(boost::uint32_t(_freq_scalar*rf_freq/1e3));
 }
 
 double tvrx2::get_scaled_rf_freq(void){
@@ -1320,9 +1320,9 @@ void tvrx2::tvrx2_tda18272_tune_rf_filter(boost::uint32_t uRF)
     read_reg(0x26, 0x2B);
 
     subband_freqs = get_tda18272_rfcal_result_freq_range(1);
-    uRFCal0 = subband_freqs.start();
+    uRFCal0 = boost::uint32_t(subband_freqs.start());
     subband_freqs = get_tda18272_rfcal_result_freq_range(4);
-    uRFCal1 = subband_freqs.start();
+    uRFCal1 = boost::uint32_t(subband_freqs.start());
 
     if(uRF < uRFCal0)
         subband = 0;
@@ -1335,9 +1335,9 @@ void tvrx2::tvrx2_tda18272_tune_rf_filter(boost::uint32_t uRF)
     else
     {
         subband_freqs = get_tda18272_rfcal_result_freq_range(7);
-        uRFCal0 = subband_freqs.start();
+        uRFCal0 = boost::uint32_t(subband_freqs.start());
         subband_freqs = get_tda18272_rfcal_result_freq_range(10);
-        uRFCal1 = subband_freqs.start();
+        uRFCal1 = boost::uint32_t(subband_freqs.start());
 
         if(uRF < uRFCal0)
             subband = 4;
@@ -1351,7 +1351,7 @@ void tvrx2::tvrx2_tda18272_tune_rf_filter(boost::uint32_t uRF)
 
     cal_result = _rfcal_coeffs[subband].cal_number;
     subband_freqs = get_tda18272_rfcal_result_freq_range(cal_result);
-    uRFCal0 = subband_freqs.start();
+    uRFCal0 = boost::uint32_t(subband_freqs.start());
 
     RF_A1 = _rfcal_coeffs[subband].RF_A1;
     RF_B1 = _rfcal_coeffs[subband].RF_B1;
@@ -1721,7 +1721,7 @@ void tvrx2::wait_irq(void){
     send_reg(0xA, 0xA);
     read_reg(0xA, 0xB);
 
-    irq = (this->get_iface()->read_gpio(dboard_iface::UNIT_RX) & tvrx2_sd_name_to_irq_io[get_subdev_name()]);
+    irq = (this->get_iface()->read_gpio(dboard_iface::UNIT_RX) & tvrx2_sd_name_to_irq_io[get_subdev_name()]) > 0;
 
     UHD_LOGV(often) << boost::format(
         "\nTVRX2 (%s): Cleared IRQ, subdev = %d, mask = 0x%x, Status: 0x%x\n") % (get_subdev_name()) % get_subdev_name() % (int(tvrx2_sd_name_to_irq_io[get_subdev_name()])) % irq << std::endl;

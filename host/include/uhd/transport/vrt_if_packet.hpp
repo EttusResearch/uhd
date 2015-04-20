@@ -46,7 +46,7 @@ namespace vrt{
         {
             LINK_TYPE_NONE = 0x0,
             LINK_TYPE_CHDR = 0x1,
-            LINK_TYPE_VRLP = 0x2,
+            LINK_TYPE_VRLP = 0x2
         } link_type;
 
         //packet type
@@ -63,7 +63,7 @@ namespace vrt{
             PACKET_TYPE_ACK       = 0x1, // Flow control (ack)
             PACKET_TYPE_CMD       = 0x2, // Command
             PACKET_TYPE_RESP      = 0x3, // Command response
-            PACKET_TYPE_ERROR     = 0x3, // Command response: Error (the EOB bit is raised in this case)
+            PACKET_TYPE_ERROR     = 0x3  // Command response: Error (the EOB bit is raised in this case)
         } packet_type;
 
         //size fields

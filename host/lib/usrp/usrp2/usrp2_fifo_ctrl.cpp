@@ -33,7 +33,7 @@ static const size_t POKE32_CMD = (1 << 8);
 static const size_t PEEK32_CMD = 0;
 static const double ACK_TIMEOUT = 0.5;
 static const double MASSIVE_TIMEOUT = 10.0; //for when we wait on a timed command
-static const boost::uint32_t MAX_SEQS_OUT = 15;
+static const boost::uint32_t MAX_SEQS_OUT = 63;
 
 #define SPI_DIV SR_SPI_CORE + 0
 #define SPI_CTRL SR_SPI_CORE + 1
@@ -67,7 +67,7 @@ public:
     /*******************************************************************
      * Peek and poke 32 bit implementation
      ******************************************************************/
-    void poke32(wb_addr_type addr, boost::uint32_t data){
+    void poke32(const wb_addr_type addr, const boost::uint32_t data){
         boost::mutex::scoped_lock lock(_mutex);
 
         this->send_pkt((addr - SETTING_REGS_BASE)/4, data, POKE32_CMD);
@@ -75,7 +75,7 @@ public:
         this->wait_for_ack(_seq_out-MAX_SEQS_OUT);
     }
 
-    boost::uint32_t peek32(wb_addr_type addr){
+    boost::uint32_t peek32(const wb_addr_type addr){
         boost::mutex::scoped_lock lock(_mutex);
 
         this->send_pkt((addr - READBACK_BASE)/4, 0, PEEK32_CMD);
@@ -86,11 +86,11 @@ public:
     /*******************************************************************
      * Peek and poke 16 bit not implemented
      ******************************************************************/
-    void poke16(wb_addr_type, boost::uint16_t){
+    void poke16(const wb_addr_type, const boost::uint16_t){
         throw uhd::not_implemented_error("poke16 not implemented in fifo ctrl module");
     }
 
-    boost::uint16_t peek16(wb_addr_type){
+    boost::uint16_t peek16(const wb_addr_type){
         throw uhd::not_implemented_error("peek16 not implemented in fifo ctrl module");
     }
 
@@ -153,6 +153,12 @@ public:
         _time = time;
         _use_time = _time != uhd::time_spec_t(0.0);
         if (_use_time) _timeout = MASSIVE_TIMEOUT; //permanently sets larger timeout
+    }
+
+    uhd::time_spec_t get_time()
+    {
+        boost::mutex::scoped_lock lock(_mutex);
+        return _time;
     }
 
     void set_tick_rate(const double rate){

@@ -123,7 +123,7 @@ device_addrs_t bootloader_find(const std::string &ip_addr){
 void read_firmware(){
     std::ifstream firmware_file(firmware_path.c_str(), std::ios::binary);
     firmware_file.seekg(0, std::ios::end);
-    firmware_size = firmware_file.tellg();
+    firmware_size = size_t(firmware_file.tellg());
     if(firmware_size > MAX_FIRMWARE_SIZE){
         firmware_file.close();
         throw uhd::runtime_error(str(boost::format("Firmware file too large: %d > %d")

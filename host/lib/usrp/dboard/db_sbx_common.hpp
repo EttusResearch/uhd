@@ -17,7 +17,8 @@
 
 #include <uhd/types/device_addr.hpp>
 
-#include "../common/adf435x_common.hpp"
+#include "adf435x_common.hpp"
+#include "max287x.hpp"
 
 // Common IO Pins
 #define LO_LPF_EN       (1 << 15)
@@ -223,6 +224,10 @@ protected:
 
         /*! This is the registered instance of the wrapper class, sbx_base. */
         sbx_xcvr *self_base;
+    private:
+        void write_lo_regs(dboard_iface::unit_t unit, std::vector<boost::uint32_t> &regs);
+        max287x_iface::sptr _txlo;
+        max287x_iface::sptr _rxlo;
     };
 
     /*!

@@ -137,7 +137,7 @@ template<typename samp_type> void recv_to_file(
     UHD_ASSERT_THROW(outfiles.size() == buffs.size());
     UHD_ASSERT_THROW(buffs.size() == rx_channel_nums.size());
     bool overflow_message = true;
-    float timeout = settling_time + 0.1; //expected settling time + padding for first recv
+    float timeout = settling_time + 0.1f; //expected settling time + padding for first recv
 
     //setup streaming
     uhd::stream_cmd_t stream_cmd((num_requested_samples == 0)?
@@ -151,7 +151,7 @@ template<typename samp_type> void recv_to_file(
 
     while(not stop_signal_called and (num_requested_samples != num_total_samps or num_requested_samples == 0)){
         size_t num_rx_samps = rx_stream->recv(buff_ptrs, samps_per_buff, md, timeout);
-        timeout = 0.1; //small timeout for subsequent recv
+        timeout = 0.1f; //small timeout for subsequent recv
 
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
             std::cout << boost::format("Timeout while streaming") << std::endl;

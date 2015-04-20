@@ -57,6 +57,8 @@ class UHD_API multi_usrp_clock : boost::noncopyable {
 public:
     typedef boost::shared_ptr<multi_usrp_clock> sptr;
 
+    virtual ~multi_usrp_clock(void) = 0;
+
     /*!
      * Make a new Multi-USRP-Clock from the given device address.
      * \param dev_addr the device address

@@ -35,14 +35,14 @@ using namespace uhd::usrp_clock;
 using namespace uhd::usrp;
 
 void wait_for_pps(multi_usrp::sptr usrp, size_t chan, double timeout){
-    boost::uint32_t last_pps_time = usrp->get_time_last_pps(chan).get_full_secs();
-    boost::uint32_t system_time = uhd::time_spec_t::get_system_time().get_full_secs();
-    boost::uint32_t exit_time = system_time + timeout;
+    time_t last_pps_time = usrp->get_time_last_pps(chan).get_full_secs();
+    time_t system_time = uhd::time_spec_t::get_system_time().get_full_secs();
+    time_t exit_time = system_time + time_t(timeout);
     bool detected_pps = false;
 
     //Otherwise, this would hang if the USRP doesn't detect any PPS
     while(uhd::time_spec_t::get_system_time().get_full_secs() < exit_time){
-        boost::uint32_t time_now = usrp->get_time_last_pps(chan).get_full_secs();
+        time_t time_now = usrp->get_time_last_pps(chan).get_full_secs();
         if(last_pps_time < time_now){
             detected_pps = true;
             break;
@@ -54,7 +54,7 @@ void wait_for_pps(multi_usrp::sptr usrp, size_t chan, double timeout){
 
 }
 
-void get_usrp_time(multi_usrp::sptr usrp, size_t chan, std::vector<boost::uint32_t> *times){
+void get_usrp_time(multi_usrp::sptr usrp, size_t chan, std::vector<time_t> *times){
     wait_for_pps(usrp, chan, 2);
     (*times)[chan] = usrp->get_time_now(chan).get_full_secs();
 }
@@ -130,7 +130,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //Wait for next PPS to start polling
     wait_for_pps(usrp, 0, 2);
 
-    srand(time(NULL));
+    srand((unsigned int)time(NULL));
 
     std::cout << boost::format("\nRunning %d comparisons at random intervals.") % num_tests << std::endl << std::endl;
     boost::uint32_t num_matches = 0;
@@ -140,7 +140,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         boost::this_thread::sleep(boost::posix_time::milliseconds(wait_time));
 
         //Get all times before output
-        std::vector<boost::uint32_t> usrp_times(usrp->get_num_mboards());
+        std::vector<time_t> usrp_times(usrp->get_num_mboards());
         boost::thread_group thread_group;
         clock_time = clock->get_time();
         for(size_t j = 0; j < usrp->get_num_mboards(); j++){

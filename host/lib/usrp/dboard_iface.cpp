@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2013,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -80,4 +80,14 @@ void dboard_iface::set_gpio_out(
 
 boost::uint16_t dboard_iface::get_gpio_out(unit_t unit){
     return _impl->gpio_out_shadow[unit];
+}
+
+void dboard_iface::set_command_time(const uhd::time_spec_t&)
+{
+    throw uhd::not_implemented_error("timed command feature not implemented on this hardware");
+}
+
+uhd::time_spec_t dboard_iface::get_command_time()
+{
+    return uhd::time_spec_t(0.0);
 }

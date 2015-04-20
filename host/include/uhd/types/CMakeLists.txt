@@ -17,6 +17,7 @@
 
 
 UHD_INSTALL(FILES
+    byte_vector.hpp
     clock_config.hpp
     device_addr.hpp
     dict.ipp
@@ -37,6 +38,7 @@ UHD_INSTALL(FILES
     tune_request.hpp
     tune_result.hpp
     wb_iface.hpp
+    filters.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/types
     COMPONENT headers
 )

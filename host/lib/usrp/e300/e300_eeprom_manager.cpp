@@ -21,7 +21,7 @@
 
 namespace uhd { namespace usrp { namespace e300 {
 
-static const std::string _bytes_to_string(const uint8_t* bytes, size_t max_len)
+static const std::string _bytes_to_string(const boost::uint8_t* bytes, size_t max_len)
 {
     std::string out;
     for (size_t i = 0; i < max_len; i++) {
@@ -31,7 +31,7 @@ static const std::string _bytes_to_string(const uint8_t* bytes, size_t max_len)
     return out;
 }
 
-static void _string_to_bytes(const std::string &string, size_t max_len, uint8_t* buffer)
+static void _string_to_bytes(const std::string &string, size_t max_len, boost::uint8_t* buffer)
 {
     byte_vector_t bytes;
     const size_t len = std::min(string.size(), max_len);

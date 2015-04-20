@@ -111,6 +111,7 @@ namespace uhd{
     void octoclock_uart_iface::_update_cache(){
         octoclock_packet_t pkt_out;
         pkt_out.len = 0;
+		pkt_out.sequence = 0;
         size_t len = 0;
 
         boost::uint8_t octoclock_data[udp_simple::mtu];

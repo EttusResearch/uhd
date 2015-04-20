@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011 Ettus Research LLC
+// Copyright 2010-2011,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/types/byte_vector.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
@@ -26,30 +27,6 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
-
-/***********************************************************************
- * Utility functions
- **********************************************************************/
-
-//! create a string from a byte vector, return empty if invalid ascii
-static const std::string bytes_to_string(const byte_vector_t &bytes){
-    std::string out;
-    BOOST_FOREACH(boost::uint8_t byte, bytes){
-        if (byte < 32 or byte > 127) return out;
-        out += byte;
-    }
-    return out;
-}
-
-//! create a byte vector from a string, null terminate unless max length
-static const byte_vector_t string_to_bytes(const std::string &string, size_t max_length){
-    byte_vector_t bytes;
-    for (size_t i = 0; i < std::min(string.size(), max_length); i++){
-        bytes.push_back(string[i]);
-    }
-    if (bytes.size() < max_length - 1) bytes.push_back('\0');
-    return bytes;
-}
 
 ////////////////////////////////////////////////////////////////////////
 // format of daughterboard EEPROM

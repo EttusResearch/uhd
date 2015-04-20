@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
         ss >> peek_addr;
 
         niriok_scoped_addr_space(dev_proxy, peek_tokens[0]=="c"?BUS_INTERFACE:FPGA, status);
-        uint32_t reg_val;
+        uint32_t reg_val = 0;
         if (peek_tokens[0]=="z") {
             nirio_status_chain(dev_proxy->poke((uint32_t)0x60000 + peek_addr, (uint32_t)0), status);
             do {
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
     //Display attributes
     if (vm.count("stats")){
         printf("[Interface %u]\n", interface_num);
-        uint32_t attr_val;
+        uint32_t attr_val = 0;
         nirio_status_chain(dev_proxy->get_attribute(RIO_IS_FPGA_PROGRAMMED, attr_val), status);
         printf("* Is FPGA Programmed? = %s\n", (attr_val==1)?"YES":"NO");
 
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
         }
         printf("* FPGA Bitstream Checksum = %s\n", checksum.c_str());
 
-        uint32_t reg_val;
+        uint32_t reg_val = 0;
         nirio_status_chain(dev_proxy->set_attribute(RIO_ADDRESS_SPACE, BUS_INTERFACE), status);
         nirio_status_chain(dev_proxy->peek(0, reg_val), status);
         printf("* Chinch Signature = %x\n", reg_val);

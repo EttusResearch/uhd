@@ -8,6 +8,14 @@
 #include <ad9361_client.h>
 #include <boost/noncopyable.hpp>
 #include <boost/thread/recursive_mutex.hpp>
+#include <uhd/types/filters.hpp>
+#include <uhd/types/sensors.hpp>
+#include <complex>
+#include <vector>
+#include <map>
+#include "boost/assign.hpp"
+#include "boost/bind.hpp"
+#include "boost/function.hpp"
 
 namespace uhd { namespace usrp {
 
@@ -15,11 +23,34 @@ class ad9361_device_t : public boost::noncopyable
 {
 public:
     enum direction_t { RX, TX };
-    enum chain_t { CHAIN_1, CHAIN_2 };
     enum gain_mode_t {GAIN_MODE_MANUAL, GAIN_MODE_SLOW_AGC, GAIN_MODE_FAST_AGC};
+    enum chain_t { CHAIN_1, CHAIN_2, CHAIN_BOTH };
 
     ad9361_device_t(ad9361_params::sptr client, ad9361_io::sptr io_iface) :
-        _client_params(client), _io_iface(io_iface) {}
+        _client_params(client), _io_iface(io_iface) {
+
+        _rx_filters = boost::assign::map_list_of("LPF_TIA", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_lp_tia_sec, this, _1),
+                                                    boost::bind(&ad9361_device_t::_set_filter_lp_tia_sec, this, _1, _3)))
+                                            ("LPF_BB", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_lp_bb, this, _1),
+                                                    boost::bind(&ad9361_device_t::_set_filter_lp_bb, this, _1, _3)))
+                                            ("HB_3", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_3, this, _1), 0))
+                                            ("DEC_3", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_dec_int_3, this, _1), 0))
+                                            ("HB_2", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_2, this, _1), 0))
+                                            ("HB_1", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_1, this, _1), 0))
+                                            ("FIR_1", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_fir, this, _1, _2),
+                                                    boost::bind(&ad9361_device_t::_set_filter_fir, this, _1, _2, _3)));
+
+        _tx_filters = boost::assign::map_list_of("LPF_SECONDARY", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_lp_tia_sec, this, _1),
+                                                    boost::bind(&ad9361_device_t::_set_filter_lp_tia_sec, this, _1, _3)))
+                                            ("LPF_BB", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_lp_bb, this, _1),
+                                                    boost::bind(&ad9361_device_t::_set_filter_lp_bb, this, _1, _3)))
+                                            ("HB_3", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_3, this, _1), 0))
+                                            ("INT_3", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_dec_int_3, this, _1), 0))
+                                            ("HB_2", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_2, this, _1), 0))
+                                            ("HB_1", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_1, this, _1), 0))
+                                            ("FIR_1", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_fir, this, _1, _2),
+                                                    boost::bind(&ad9361_device_t::_set_filter_fir, this, _1, _2, _3)));
+    }
 
     /* Initialize the AD9361 codec. */
     void initialize();
@@ -85,21 +116,38 @@ public:
     /* Enable AD9361's AGC gain mode. */
     void set_agc(chain_t chain, bool enable);
 
+    /* Set bandwidth of AD9361's analog LP filters.
+     * Bandwidth should be RF bandwidth */
+    double set_bw_filter(direction_t direction, const double rf_bw);
+
+    /*
+     * Filter API implementation
+     * */
+    filter_info_base::sptr get_filter(direction_t direction, chain_t chain, const std::string &name);
+
+    void set_filter(direction_t direction, chain_t chain, const std::string &name, filter_info_base::sptr filter);
+
+    std::vector<std::string> get_filter_names(direction_t direction);
+
     //Constants
     static const double AD9361_MAX_GAIN;
     static const double AD9361_MAX_CLOCK_RATE;
-    static const double AD9361_RECOMMENDED_MAX_CLOCK_RATE;
+    static const double AD9361_CAL_VALID_WINDOW;
+    static const double AD9361_RECOMMENDED_MAX_BANDWIDTH;
 
 private:    //Methods
     void _program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs);
     void _setup_tx_fir(size_t num_taps, boost::int32_t interpolation);
     void _setup_rx_fir(size_t num_taps, boost::int32_t decimation);
+    void _program_fir_filter(direction_t direction, chain_t chain, int num_taps, boost::uint16_t *coeffs);
+    void _setup_tx_fir(size_t num_taps);
+    void _setup_rx_fir(size_t num_taps);
     void _calibrate_lock_bbpll();
     void _calibrate_synth_charge_pumps();
-    double _calibrate_baseband_rx_analog_filter();
-    double _calibrate_baseband_tx_analog_filter();
-    void _calibrate_secondary_tx_filter();
-    void _calibrate_rx_TIAs();
+    double _calibrate_baseband_rx_analog_filter(double rfbw);
+    double _calibrate_baseband_tx_analog_filter(double rfbw);
+    double _calibrate_secondary_tx_filter(double rfbw);
+    double _calibrate_rx_TIAs(double rfbw);
     void _setup_adc();
     void _calibrate_baseband_dc_offset();
     void _calibrate_rf_dc_offset();
@@ -117,6 +165,20 @@ private:    //Methods
     double _get_temperature(const double cal_offset, const double timeout = 0.1);
     void _configure_bb_rf_dc_tracking(const bool on);
     void _setup_agc(chain_t chain, gain_mode_t gain_mode);
+    void _set_fir_taps(direction_t direction, chain_t chain, const std::vector<boost::int16_t>& taps);
+    std::vector<boost::int16_t> _get_fir_taps(direction_t direction, chain_t chain);
+    size_t _get_num_fir_taps(direction_t direction);
+    size_t _get_fir_dec_int(direction_t direction);
+    filter_info_base::sptr _get_filter_lp_tia_sec(direction_t direction);
+    filter_info_base::sptr _get_filter_lp_bb(direction_t direction);
+    filter_info_base::sptr _get_filter_dec_int_3(direction_t direction);
+    filter_info_base::sptr _get_filter_hb_3(direction_t direction);
+    filter_info_base::sptr _get_filter_hb_2(direction_t direction);
+    filter_info_base::sptr _get_filter_hb_1(direction_t direction);
+    filter_info_base::sptr _get_filter_fir(direction_t direction, chain_t chain);
+    void _set_filter_fir(direction_t direction, chain_t channel, filter_info_base::sptr filter);
+    void _set_filter_lp_bb(direction_t direction, filter_info_base::sptr filter);
+    void _set_filter_lp_tia_sec(direction_t direction, filter_info_base::sptr filter);
 
 private:    //Members
     typedef struct {
@@ -129,12 +191,31 @@ private:    //Members
         boost::uint8_t bbftune_mode;
     } chip_regs_t;
 
+    struct filter_query_helper
+    {
+        filter_query_helper(
+                boost::function<filter_info_base::sptr (direction_t, chain_t)> p_get,
+                boost::function<void (direction_t, chain_t, filter_info_base::sptr)> p_set
+                ) : get(p_get), set(p_set) {  }
+
+        filter_query_helper(){ }
+
+        boost::function<filter_info_base::sptr (direction_t, chain_t)> get;
+        boost::function<void (direction_t, chain_t, filter_info_base::sptr)> set;
+    };
+
+    std::map<std::string, filter_query_helper> _rx_filters;
+    std::map<std::string, filter_query_helper> _tx_filters;
+
     //Interfaces
     ad9361_params::sptr _client_params;
     ad9361_io::sptr     _io_iface;
     //Intermediate state
     double              _rx_freq, _tx_freq, _req_rx_freq, _req_tx_freq;
+    double              _last_calibration_freq;
     double              _baseband_bw, _bbpll_freq, _adcclock_freq;
+    double              _rx_analog_bw, _tx_analog_bw, _rx_bb_lp_bw, _tx_bb_lp_bw;
+    double              _rx_tia_lp_bw, _tx_sec_lp_bw;
     double              _req_clock_rate, _req_coreclk;
     boost::uint16_t     _rx_bbf_tunediv;
     boost::uint8_t      _curr_gain_table;

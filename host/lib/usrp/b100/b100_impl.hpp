@@ -68,7 +68,7 @@ static const size_t          B100_MAX_RATE_USB2  =  32000000; // bytes/s
 
 //! Make a b100 dboard interface
 uhd::usrp::dboard_iface::sptr make_b100_dboard_iface(
-    uhd::wb_iface::sptr wb_iface,
+    uhd::timed_wb_iface::sptr wb_iface,
     uhd::i2c_iface::sptr i2c_iface,
     uhd::spi_iface::sptr spi_iface,
     b100_clock_ctrl::sptr clock,

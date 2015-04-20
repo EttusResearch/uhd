@@ -27,7 +27,7 @@ FIND_PACKAGE(Git QUIET)
 #  - set UHD_VERSION_DEVEL to true for master and development branches
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
-SET(UHD_VERSION_MINOR 008)
+SET(UHD_VERSION_MINOR 009)
 SET(UHD_VERSION_PATCH rfnoc)
 SET(UHD_VERSION_DEVEL TRUE)
 

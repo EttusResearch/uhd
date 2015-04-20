@@ -60,13 +60,13 @@ static const size_t X300_PCIE_RX_DATA_FRAME_SIZE    = 8184;     //bytes
 static const size_t X300_PCIE_TX_DATA_FRAME_SIZE    = 8192;     //bytes
 static const size_t X300_PCIE_DATA_NUM_FRAMES       = 2048;
 static const size_t X300_PCIE_MSG_FRAME_SIZE        = 256;      //bytes
-static const size_t X300_PCIE_MSG_NUM_FRAMES        = 32;
+static const size_t X300_PCIE_MSG_NUM_FRAMES        = 64;
 
 static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     //bytes
 static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     //bytes
 static const size_t X300_ETH_MSG_FRAME_SIZE         = uhd::transport::udp_simple::mtu;  //bytes
 
-static const size_t X300_ETH_MSG_NUM_FRAMES         = 32;
+static const size_t X300_ETH_MSG_NUM_FRAMES         = 64;
 static const size_t X300_ETH_DATA_NUM_FRAMES        = 32;
 static const double X300_DEFAULT_SYSREF_RATE        = 10e6;
 
@@ -108,6 +108,7 @@ struct x300_dboard_iface_config_t
     x300_clock_which_t which_rx_clk;
     x300_clock_which_t which_tx_clk;
     boost::uint8_t dboard_slot;
+    uhd::timed_wb_iface::sptr cmd_time_ctrl;
 };
 
 uhd::usrp::dboard_iface::sptr x300_make_dboard_iface(const x300_dboard_iface_config_t &);

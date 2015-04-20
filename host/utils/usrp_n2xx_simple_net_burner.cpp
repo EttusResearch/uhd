@@ -262,7 +262,7 @@ int read_fpga_image(std::string& fpga_path){
     //Check size of given image
     std::ifstream fpga_file(fpga_path.c_str(), std::ios::binary);
     fpga_file.seekg(0, std::ios::end);
-    int fpga_image_size = fpga_file.tellg();
+    size_t fpga_image_size = size_t(fpga_file.tellg());
     if(fpga_image_size > FPGA_IMAGE_SIZE_BYTES){
         throw std::runtime_error(str(boost::format("FPGA image is too large. %d > %d")
                                      % fpga_image_size % FPGA_IMAGE_SIZE_BYTES));
@@ -297,7 +297,7 @@ int read_fw_image(std::string& fw_path){
     //Check size of given image
     std::ifstream fw_file(fw_path.c_str(), std::ios::binary);
     fw_file.seekg(0, std::ios::end);
-    int fw_image_size = fw_file.tellg();
+    size_t fw_image_size = size_t(fw_file.tellg());
     if(fw_image_size > FW_IMAGE_SIZE_BYTES){
         throw std::runtime_error(str(boost::format("Firmware image is too large. %d > %d")
                                      % fw_image_size % FW_IMAGE_SIZE_BYTES));

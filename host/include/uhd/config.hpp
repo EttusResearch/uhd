@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011,2014 Ettus Research LLC
+// Copyright 2010-2011,2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ typedef ptrdiff_t ssize_t;
     #define UHD_INLINE         inline
     #define UHD_DEPRECATED     __declspec(deprecated)
     #define UHD_ALIGNED(x)     __declspec(align(x))
-    #define UHD_UNUSED(x)      x
+    #define UHD_UNUSED(x)      x __attribute__((unused))
 #elif defined(__GNUG__) && __GNUG__ >= 4
     #define UHD_EXPORT         __attribute__((visibility("default")))
     #define UHD_IMPORT         __attribute__((visibility("default")))
