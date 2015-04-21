@@ -345,23 +345,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     //////// 4. Configure blocks (packet size and rate) /////////////////////
     /////////////////////////////////////////////////////////////////////////
     std::cout << "Samples per packet coming from null source: " << spp << std::endl;
-    // This could be made a setter in the null block control, but we can always
-    // change these kind of things by changing the output signature of a block:
-    uhd::rfnoc::stream_sig_t out_sig = null_src_ctrl->get_output_signature(0);
+    // To access properties, there's two ways. You can access args as defined
+    // in the XML file:
     const size_t BYTES_PER_SAMPLE = 4;
-    out_sig.packet_size = spp * BYTES_PER_SAMPLE;
-    if (not null_src_ctrl->set_output_signature(out_sig)) {
+    null_src_ctrl->set_arg<int>("bpp", int(spp * BYTES_PER_SAMPLE));
+    if (null_src_ctrl->get_arg<int>("bpp") != int(spp * BYTES_PER_SAMPLE)) {
         std::cout << "[ERROR] Could not set samples per packet!" << std::endl;
         return ~0;
     }
 
-    // To access properties, there's two ways. Either, you can directly
-    // call setters and getters:
+    // Or, if our block has its own getters + setters, you can call those:
     std::cout << str(boost::format("Requesting rate:   %.2f Msps (%.2f MByte/s).") % (rate / 1e6) % (rate * 4 / 1e6)) << std::endl;
     const size_t SAMPLES_PER_LINE = 2;
     null_src_ctrl->set_line_rate(rate / SAMPLES_PER_LINE, bus_clock);
     // Now, it's possible that this requested rate is not available.
-    //
     // Let's read back the true rate with the getter:
     double actual_rate_mega = null_src_ctrl->get_line_rate(bus_clock) / 1e6 * SAMPLES_PER_LINE;
     std::cout
@@ -370,10 +367,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
                 % actual_rate_mega % (actual_rate_mega * BYTES_PER_SAMPLE)
            )
         << std::endl;
-
-    // The other way is to access the property tree and read the line
-    // delay from <null block root>/line_delay_cycles/value and doing
-    // the math for the rate conversions ourselves.
 
     /////////////////////////////////////////////////////////////////////////
     //////// 5. Connect blocks //////////////////////////////////////////////

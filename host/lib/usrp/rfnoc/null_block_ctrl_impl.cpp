@@ -26,22 +26,28 @@ using namespace uhd::rfnoc;
 class null_block_ctrl_impl : public null_block_ctrl
 {
 public:
-    UHD_RFNOC_BLOCK_CONSTRUCTOR(null_block_ctrl),
-        _line_delay_cycles(0xFFFF) // This is set implicitly by the subscriber in the prop tree
+    UHD_RFNOC_BLOCK_CONSTRUCTOR(null_block_ctrl)
     {
-        // Add prop tree entry for line rate
-        // We actually use _line_rate to store the rate, because we can't
-        // read back the actual register (yet)
-        UHD_MSG(status) << "populating " << _root_path / "line_delay_cycles/value" << std::endl;
-        _tree->create<boost::uint32_t>(_root_path / "line_delay_cycles/value")
+        // Register hooks for line_rate:
+        _tree->access<int>(_root_path / "args" / "line_rate" / "value")
             .subscribe(boost::bind(&null_block_ctrl_impl::set_line_delay_cycles, this, _1))
-            .set(0xFFFF); // Default: slowest rate possible
+            .update()
+        ;
+        // Register hooks for bpp:
+        _tree->access<int>(_root_path / "args" / "bpp" / "value")
+            .subscribe(boost::bind(&null_block_ctrl_impl::set_bytes_per_packet, this, _1))
+            .update()
+        ;
     }
 
-    void set_line_delay_cycles(boost::uint32_t cycles)
+    void set_line_delay_cycles(int cycles)
     {
-        _line_delay_cycles = cycles;
-        sr_write(SR_LINE_RATE, cycles);
+        sr_write(SR_LINE_RATE, boost::uint32_t(cycles));
+    }
+
+    void set_bytes_per_packet(int bpp)
+    {
+        sr_write(SR_LINES_PER_PACKET, boost::uint32_t(bpp / BYTES_PER_LINE));
     }
 
     double set_line_rate(double rate, double clock_rate)
@@ -53,14 +59,14 @@ public:
                 << str(boost::format("null_block_ctrl: Requested rate %f is larger than possible with the current clock rate (%.2f MHz).") % rate % (clock_rate / 1e6))
                 << std::endl;
         }
-        _line_delay_cycles = std::max(0, cycs_between_lines);
-        sr_write(SR_LINE_RATE, boost::uint32_t(_line_delay_cycles));
-        return _line_rate_from_reg_val(_line_delay_cycles, clock_rate);
+        cycs_between_lines = std::max(0, cycs_between_lines);
+        set_arg<int>("line_rate", cycs_between_lines);
+        return _line_rate_from_reg_val(cycs_between_lines, clock_rate);
     }
 
     double get_line_rate(double clock_rate) const
     {
-        return _line_rate_from_reg_val(_line_delay_cycles, clock_rate);
+        return _line_rate_from_reg_val(get_arg<int>("line_rate"), clock_rate);
     }
 
     double _line_rate_from_reg_val(boost::uint32_t reg_val, double clock_rate) const
@@ -91,23 +97,6 @@ public:
         }
     }
 
-    bool set_output_signature(const stream_sig_t &out_sig_, size_t block_port)
-    {
-        stream_sig_t out_sig = out_sig_;
-        boost::uint32_t lines_per_packet = DEFAULT_LINES_PER_PACKET;
-        if (out_sig.packet_size) {
-            lines_per_packet = std::max<size_t>(out_sig.packet_size / BYTES_PER_LINE, 1);;
-        }
-        out_sig.packet_size = lines_per_packet * BYTES_PER_LINE;
-
-        if (source_block_ctrl_base::set_output_signature(out_sig, block_port)) {
-            sr_write(SR_LINES_PER_PACKET, lines_per_packet);
-            return true;
-        }
-
-        return false;
-    }
-
     void set_destination(
             boost::uint32_t next_address,
             UHD_UNUSED(size_t output_block_port)
@@ -118,12 +107,6 @@ public:
         }
         sr_write(SR_NEXT_DST_BASE, sid.get());
     }
-
-private:
-
-    //! Store the line delay cycles. TODO remove once we have readback from the block to query this.
-    size_t _line_delay_cycles;
-
 };
 
 UHD_RFNOC_BLOCK_REGISTER(null_block_ctrl, "NullSrcSink");
