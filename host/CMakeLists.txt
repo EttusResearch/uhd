@@ -284,8 +284,8 @@ UHD_INSTALL(FILES
 #{{{IMG_SECTION
 # This section is written automatically by /images/create_imgs_package.py
 # Any manual changes in here will be overwritten.
-SET(UHD_IMAGES_MD5SUM "f5f67a3b7037e254ecf47fbfee920743")
-SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.008.002-157-gbe03e694.zip")
+SET(UHD_IMAGES_MD5SUM "37d4899e320809951149c3670fb054ee")
+SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.009.git-139-g3e3e236a.zip")
 #}}}
 
 ########################################################################
@@ -423,5 +423,19 @@ ELSEIF(UHDHOST_PKG)
     SET(PRINT_APPEND " (Debian uhd-host package configuration)")
 ENDIF(LIBUHD_PKG)
 UHD_PRINT_COMPONENT_SUMMARY()
+IF(UHD_VERSION_DEVEL)
+    MESSAGE(STATUS "******************************************************")
+    IF(UHD_VERSION_PATCH STREQUAL "git")
+        MESSAGE(STATUS "* You are building the UHD development master branch.")
+        MESSAGE(STATUS "* For production code, we recommend our stable,")
+        MESSAGE(STATUS "* releases or using the release branch (maint).")
+    ELSE()
+        MESSAGE(STATUS "* You are building a development branch of UHD.")
+        MESSAGE(STATUS "* These branches are designed to provide early access")
+        MESSAGE(STATUS "* to UHD and USRP features, but should be considered")
+        MESSAGE(STATUS "* unstable and/or experimental!")
+    ENDIF(UHD_VERSION_PATCH STREQUAL "git")
+    MESSAGE(STATUS "******************************************************")
+ENDIF(UHD_VERSION_DEVEL)
 MESSAGE(STATUS "Building version: ${UHD_VERSION}${PRINT_APPEND}")
 MESSAGE(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")

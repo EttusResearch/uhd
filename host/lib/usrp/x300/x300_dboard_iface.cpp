@@ -111,11 +111,11 @@ x300_dboard_iface::x300_dboard_iface(const x300_dboard_iface_config_t &config):
         this->_write_aux_dac(unit);
     }
 
+    _clock_rates[UNIT_RX] = _config.clock->get_dboard_rate(_config.which_rx_clk);
+    _clock_rates[UNIT_TX] = _config.clock->get_dboard_rate(_config.which_tx_clk);
+
     this->set_clock_enabled(UNIT_RX, false);
     this->set_clock_enabled(UNIT_TX, false);
-
-    this->set_clock_rate(UNIT_RX, _config.clock->get_master_clock_rate());
-    this->set_clock_rate(UNIT_TX, _config.clock->get_master_clock_rate());
 
 
     //some test code
@@ -153,16 +153,20 @@ x300_dboard_iface::~x300_dboard_iface(void)
  **********************************************************************/
 void x300_dboard_iface::set_clock_rate(unit_t unit, double rate)
 {
-    _clock_rates[unit] = rate; //set to shadow
+    // Just return if the requested rate is already set
+    if (std::fabs(_clock_rates[unit] - rate) < std::numeric_limits<double>::epsilon())
+        return;
+
     switch(unit)
     {
         case UNIT_RX:
             _config.clock->set_dboard_rate(_config.which_rx_clk, rate);
-            return;
+            break;
         case UNIT_TX:
             _config.clock->set_dboard_rate(_config.which_tx_clk, rate);
-            return;
+            break;
     }
+    _clock_rates[unit] = rate; //set to shadow
 }
 
 double x300_dboard_iface::get_clock_rate(unit_t unit)
@@ -183,9 +187,17 @@ std::vector<double> x300_dboard_iface::get_clock_rates(unit_t unit)
     }
 }
 
-void x300_dboard_iface::set_clock_enabled(UHD_UNUSED(unit_t unit), UHD_UNUSED(bool enb))
+void x300_dboard_iface::set_clock_enabled(unit_t unit, bool enb)
 {
-    // TODO Variable DBoard clock control needs to be implemented for X300.
+    switch(unit)
+    {
+        case UNIT_RX:
+            return _config.clock->enable_dboard_clock(_config.which_rx_clk, enb);
+        case UNIT_TX:
+            return _config.clock->enable_dboard_clock(_config.which_tx_clk, enb);
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
 }
 
 double x300_dboard_iface::get_codec_rate(unit_t)

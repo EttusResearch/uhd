@@ -118,8 +118,7 @@ void b200_impl::set_auto_tick_rate(
 
     // Step 2: Determine whether if we can use lcm_rate (preferred),
     // or have to give up because too large:
-    const double max_tick_rate =
-        ((num_chans <= 1) ? ad9361_device_t::AD9361_RECOMMENDED_MAX_CLOCK_RATE : ad9361_device_t::AD9361_MAX_CLOCK_RATE/2);
+    const double max_tick_rate = ad9361_device_t::AD9361_MAX_CLOCK_RATE/num_chans;
     double base_rate = static_cast<double>(lcm_rate);
     if (base_rate > max_tick_rate) {
         UHD_MSG(warning)
@@ -176,7 +175,6 @@ void b200_impl::update_tick_rate(const double new_tick_rate)
     }
 }
 
-
 double b200_impl::coerce_rx_samp_rate(rx_dsp_core_3000::sptr ddc, size_t dspno, const double rx_rate)
 {
     // Have to set tick rate first, or the ddc will change the requested rate based on default tick rate
@@ -187,6 +185,14 @@ double b200_impl::coerce_rx_samp_rate(rx_dsp_core_3000::sptr ddc, size_t dspno, 
     return ddc->set_host_rate(rx_rate);
 }
 
+#define CHECK_BANDWIDTH(dir) \
+    if (rate > _codec_ctrl->get_bw_filter_range(dir).stop()) { \
+        UHD_MSG(warning) \
+            << "Selected " << dir << " bandwidth (" << (rate/1e6) << " MHz) exceeds\n" \
+            << "analog frontend filter bandwidth (" << (_codec_ctrl->get_bw_filter_range(dir).stop()/1e6) << " MHz)." \
+            << std::endl; \
+    }
+
 void b200_impl::update_rx_samp_rate(const size_t dspno, const double rate)
 {
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
@@ -195,6 +201,7 @@ void b200_impl::update_rx_samp_rate(const size_t dspno, const double rate)
     my_streamer->set_samp_rate(rate);
     const double adj = _radio_perifs[dspno].ddc->get_scaling_adjustment();
     my_streamer->set_scale_factor(adj);
+    CHECK_BANDWIDTH("Rx");
 }
 
 double b200_impl::coerce_tx_samp_rate(tx_dsp_core_3000::sptr duc, size_t dspno, const double tx_rate)
@@ -215,6 +222,7 @@ void b200_impl::update_tx_samp_rate(const size_t dspno, const double rate)
     my_streamer->set_samp_rate(rate);
     const double adj = _radio_perifs[dspno].duc->get_scaling_adjustment();
     my_streamer->set_scale_factor(adj);
+    CHECK_BANDWIDTH("Tx");
 }
 
 /***********************************************************************

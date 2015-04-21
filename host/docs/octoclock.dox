@@ -29,14 +29,15 @@ schematics</a>. Once you verify that the programmer is properly connected, run t
     cd <install path>/share/uhd/images
     avrdude -p atmega128 -c <programmer name> -P usb -U efuse:w:0xFF:m -U hfuse:w:0x80:m -U lfuse:w:0xFF:m -U flash:w:octoclock_bootloader.hex:i
 
-**Note:** On Linux, **sudo** must be used with the **avrdude** command.
+\b Note:
+On Linux, `sudo avrdude ...` might be necessary to gain access to the programmer.
 
 Once the bootloader has been burned, power-cycle your OctoClock device and refer to the below instructions on burning the OctoClock's
 primary firmware.
 
 \subsection application Primary Octoclock firmware
 
-To load firmware onto the OctoClock, you must use the *octoclock_firmware_burner* utility, specifying the IP
+To load firmware onto the OctoClock, you must use the `octoclock_firmware_burner` utility, specifying the IP
 address of the OctoClock device, as follows:
 
     octoclock_firmware_burner --addr=192.168.10.3
@@ -45,12 +46,13 @@ address of the OctoClock device, as follows:
 
 \subsection host_interface Setting up the host interface
 
-The OctoClock communicates with the host machine at the UDP layer over Gigabit Ethernet. The default device
-of the OctoClock is **192.168.10.3**. You will need to configure the host machine's Ethernet interface with
-a static IP address to enable communication. An address of **192.168.10.1** and a subnet mask of
-**255.255.255.0** is recommended.
+The OctoClock communicates with the host machine at the UDP layer over Ethernet. The default device
+of the OctoClock is `192.168.10.3`. You will need to configure the host machine's Ethernet interface with
+a static IP address to enable communication. An address of `192.168.10.1` and a subnet mask of
+`255.255.255.0` is recommended.
 
-**Note:** When using UHD software, if an IP address for the OctoClock is not specified, the software will
+\b Note:
+When using UHD software, if an IP address for the OctoClock is not specified, the software will
 use UDP broadcast packets to locate the OctoClock. On some systems, the firewall will block UDP broadcast
 packets. It is recommended that you change your firewall settings.
 
@@ -110,17 +112,17 @@ The same applies for an external signal.
 The following sensors are available on both the OctoClock and Octoclock-G; these can be queried through the
 <a href="classuhd_1_1octoclock.html">API</a>.
 
-- **ext_ref_detected:** whether or not the device detects an external reference
-- **gps_detected:** whether or not the device detects an internal GPSDO
-- **using_ref:** which reference the device is using (internal or external)
-- **switch_pos:** the position of the front switch (internal or external)
+- `ext_ref_detected:` whether or not the device detects an external reference
+- `gps_detected:` whether or not the device detects an internal GPSDO
+- `using_ref:` which reference the device is using (internal or external)
+- `switch_pos:` the position of the front switch (internal or external)
 
 On the OctoClock-G, the following sensors are added:
 
-- **gps_gpgga:** the latest GPGGA string sent by the GPSDO
-- **gps_gprmc:** the latest GPRMC string sent by the GPSDO
-- **gps_time:** the time reported by the GPSDO
-- **gps_locked:** whether or not the GPSDO is locked (true/false)
-- **gps_servo:** the latest debug trace information sent by the GPSDO
+- `gps_gpgga:` the latest GPGGA string sent by the GPSDO
+- `gps_gprmc:` the latest GPRMC string sent by the GPSDO
+- `gps_time:` the time reported by the GPSDO
+- `gps_locked:` whether or not the GPSDO is locked (true/false)
+- `gps_servo:` the latest debug trace information sent by the GPSDO
 
 */

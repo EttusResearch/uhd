@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2014 Ettus Research LLC
+// Copyright 2012-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -132,12 +132,6 @@ public:
     double set_clock_rate(const double rate)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
-
-        //warning for known trouble rates
-        if (rate > ad9361_device_t::AD9361_RECOMMENDED_MAX_CLOCK_RATE) UHD_MSG(warning) << boost::format(
-            "The requested clock rate %f MHz may cause slow configuration.\n"
-            "The driver recommends a master clock rate less than %f MHz.\n"
-        ) % (rate/1e6) % (ad9361_device_t::AD9361_RECOMMENDED_MAX_CLOCK_RATE/1e6) << std::endl;
 
         //clip to known bounds
         const meta_range_t clock_rate_range = ad9361_ctrl::get_clock_rate_range();
