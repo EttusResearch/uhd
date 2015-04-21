@@ -39,7 +39,7 @@ public:
         _rx_bpi = uhd::convert::get_bytes_per_item(_rx_stream_args.otw_format);
         // Default: 1 Channel
         _rx_stream_args.channels = std::vector<size_t>(1, 0);
-        // SPP is stored for calls to set_output_signature() etc.
+        // SPP is stored for the stream sig etc.
         //_rx_spp = get_output_signature(0).packet_size / _rx_bpi;
         //if (_rx_spp == 0) {
             int _rx_spp = DEFAULT_PACKET_SIZE / _rx_bpi;
@@ -51,18 +51,18 @@ public:
         _tree->create<size_t>(_root_path / "input_buffer_size/0").set(520*1024/2);
 
         // TODO this is a hack
-        stream_sig_t out_sig;
-        out_sig.item_type = "sc16";
-        out_sig.packet_size = _rx_spp * _rx_bpi;
-        if (_tree->exists(_root_path / "output_sig/0")) {
-            _tree->access<stream_sig_t>(_root_path / "output_sig/0").set(out_sig);
+        blockdef::port_t port;
+        port["type"] = "sc16";
+        port["pkt_size"] = str(boost::format("%d") % (_rx_spp * _rx_bpi));
+        if (_tree->exists(_root_path / "ports/out/0")) {
+            _tree->access<blockdef::port_t>(_root_path / "ports/out/0").set(port);
         } else {
-            _tree->create<stream_sig_t>(_root_path / "output_sig/0").set(out_sig);
+            _tree->create<blockdef::port_t>(_root_path / "ports/out/0").set(port);
         }
-        if (_tree->exists(_root_path / "input_sig/0")) {
-            _tree->access<stream_sig_t>(_root_path / "input_sig/0").set(out_sig);
+        if (_tree->exists(_root_path / "ports/in/0")) {
+            _tree->access<blockdef::port_t>(_root_path / "ports/in/0").set(port);
         } else {
-            _tree->create<stream_sig_t>(_root_path / "input_sig/0").set(out_sig);
+            _tree->create<blockdef::port_t>(_root_path / "ports/in/0").set(port);
         }
 
         _tree->create<bool>(_root_path / "tx_active").set(false);
@@ -115,24 +115,6 @@ public:
     {
         _perifs.deframer->clear();
         _perifs.framer->clear();
-    }
-
-    //! Set packet size in the VITA framer
-    bool set_output_signature(const stream_sig_t &out_sig_, size_t block_port)
-    {
-        UHD_ASSERT_THROW(block_port == 0);
-        stream_sig_t out_sig = out_sig_;
-
-        if (out_sig_.packet_size % _rx_bpi) {
-            return false;
-        }
-
-        if (source_block_ctrl_base::set_output_signature(out_sig, block_port)) {
-            set_arg<int>("spp", int(out_sig_.packet_size / _rx_bpi));
-            return true;
-        }
-
-        return false;
     }
 
     //! Writes the full source address to the VITA core
@@ -321,6 +303,7 @@ protected:
 
 private:
 
+    // Subscribers to block args:
     void _update_spp(int spp)
     {
         UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::_update_spp(): Requested spp: " << spp << std::endl;

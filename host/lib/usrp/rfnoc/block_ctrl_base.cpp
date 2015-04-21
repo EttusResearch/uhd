@@ -21,6 +21,7 @@
 #include <boost/format.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/convert.hpp>
 #include <uhd/usrp/rfnoc/block_ctrl_base.hpp>
 #include <uhd/usrp/rfnoc/constants.hpp>
 
@@ -121,9 +122,9 @@ block_ctrl_base::block_ctrl_base(
         }
     }
 
-    /*** Init I/O signature *************************************************/
-    _init_stream_sigs("input_sig",  _block_def->get_input_ports());
-    _init_stream_sigs("output_sig", _block_def->get_output_ports());
+    /*** Init I/O port definitions ******************************************/
+    _init_port_defs("in",  _block_def->get_input_ports());
+    _init_port_defs("out", _block_def->get_output_ports());
     // TODO: It's possible that the number of input sigs doesn't match the
     // number of input buffers. We should probably warn about that or
     // something.
@@ -134,19 +135,22 @@ block_ctrl_base::~block_ctrl_base()
     // nop
 }
 
-void block_ctrl_base::_init_stream_sigs(
-        const std::string &sig_node,
-        blockdef::ports_t ports
+void block_ctrl_base::_init_port_defs(
+            const std::string &direction,
+            blockdef::ports_t ports,
+            const size_t first_port_index
 ) {
-    for (size_t i = 0; i < ports.size(); i++) {
-        stream_sig_t sig;
-        sig.item_type = ports[i]["type"];
-        sig.packet_size = 0;
-        // TODO don't ignore this
-        sig.vlen = 0;
-        // TODO name, optional?
-        UHD_MSG(status) << "Adding stream signature at " << (_root_path / sig_node / i) << sig.to_string() << std::endl;
-        _tree->create<stream_sig_t>(_root_path / sig_node / i).set(sig);
+    size_t port_index = first_port_index;
+    BOOST_FOREACH(const blockdef::port_t &port_def, ports) {
+        fs_path port_path = _root_path / "ports" / direction / port_index;
+        if (not _tree->exists(port_path)) {
+            _tree->create<blockdef::port_t>(port_path);
+        }
+        UHD_RFNOC_BLOCK_TRACE()  << "Adding port definition at " << port_path
+            << boost::format("type = '%s' pkt_size = '%s' vlen = '%s'") % port_def["type"] % port_def["pkt_size"] % port_def["vlen"]
+            << std::endl;
+        _tree->access<blockdef::port_t>(port_path).set(port_def);
+        port_index++;
     }
 }
 
@@ -299,6 +303,66 @@ std::string block_ctrl_base::get_arg(const std::string &key) const
 
     UHD_THROW_INVALID_CODE_PATH();
     return "";
+}
+
+stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def) const
+{
+    if (not port_def.is_valid()) {
+        throw uhd::runtime_error(str(
+                boost::format("Invalid port definition: %s") % port_def.to_string()
+        ));
+    }
+    UHD_RFNOC_BLOCK_TRACE() << "_resolve_port_def()" << std::endl;
+
+    // TODO this entire section is pretty dumb at this point. Needs better
+    // checks.
+    stream_sig_t stream_sig;
+    // Item Type
+    if (port_def.is_variable("type")) {
+        std::string var_name = port_def["type"].substr(1);
+        // TODO check this is even a string
+        stream_sig.item_type = get_arg(var_name);
+    } else if (port_def.is_keyword("type")) {
+        throw uhd::runtime_error("keywords resolution for type not yet implemented");
+    } else {
+        stream_sig.item_type = port_def["type"];
+    }
+    UHD_RFNOC_BLOCK_TRACE() << "  item type: " << stream_sig.item_type << std::endl;
+
+    // Vector length
+    if (port_def.is_variable("vlen")) {
+        std::string var_name = port_def["vlen"].substr(1);
+        stream_sig.vlen = boost::lexical_cast<size_t>(get_arg(var_name));
+    } else if (port_def.is_keyword("vlen")) {
+        throw uhd::runtime_error("keywords resolution for vlen not yet implemented");
+    } else {
+        stream_sig.vlen = boost::lexical_cast<size_t>(port_def["vlen"]);
+    }
+    UHD_RFNOC_BLOCK_TRACE() << "  vector length: " << stream_sig.vlen << std::endl;
+
+    // Packet size
+    if (port_def.is_variable("pkt_size")) {
+        std::string var_name = port_def["pkt_size"].substr(1);
+        stream_sig.packet_size = boost::lexical_cast<size_t>(get_arg(var_name));
+    } else if (port_def.is_keyword("pkt_size")) {
+        if (port_def["pkt_size"] != "%vlen") {
+            throw uhd::runtime_error("generic keywords resolution for pkt_size not yet implemented");
+        }
+        if (stream_sig.vlen == 0) {
+            stream_sig.packet_size = 0;
+        } else {
+            if (stream_sig.item_type.empty()) {
+                throw uhd::runtime_error("cannot resolve pkt_size if item type is not given");
+            }
+            size_t bpi = uhd::convert::get_bytes_per_item(stream_sig.item_type);
+            stream_sig.packet_size = stream_sig.vlen * bpi;
+        }
+    } else {
+        stream_sig.packet_size = boost::lexical_cast<size_t>(port_def["pkt_size"]);
+    }
+    UHD_RFNOC_BLOCK_TRACE() << "  packet size: " << stream_sig.vlen << std::endl;
+
+    return stream_sig;
 }
 
 

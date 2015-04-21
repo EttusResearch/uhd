@@ -1427,14 +1427,17 @@ public:
         /********************************************************************
          * 2. Check IO signatures match
          ********************************************************************/
-        if (not dst->set_input_signature(src->get_output_signature(src_block_port), dst_block_port)) {
-            throw uhd::runtime_error(str(
-                boost::format("Can't connect block %s to %s: IO signature mismatch\n(%s is incompatible with %s).")
-                % src->get_block_id().get() % dst->get_block_id().get()
-                % src->get_output_signature(src_block_port)
-                % dst->get_input_signature(dst_block_port)
-            ));
-        }
+        UHD_MSG(status) << "Attempting to connect: " << src->get_output_signature(src_block_port)
+                        << " ==> " << dst->get_input_signature(dst_block_port) << std::endl;
+        // FIXME put back check
+        //if (IO SIGNATURES DONT MATCH) {
+            //throw uhd::runtime_error(str(
+                //boost::format("Can't connect block %s to %s: IO signature mismatch\n(%s is incompatible with %s).")
+                //% src->get_block_id().get() % dst->get_block_id().get()
+                //% src->get_output_signature(src_block_port)
+                //% dst->get_input_signature(dst_block_port)
+            //));
+        //}
 
         /********************************************************************
          * 3. Configure the source block's destination

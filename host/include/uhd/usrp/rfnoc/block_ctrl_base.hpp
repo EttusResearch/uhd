@@ -275,6 +275,11 @@ protected:
     );
 
     /***********************************************************************
+     * Helpers
+     **********************************************************************/
+    stream_sig_t _resolve_port_def(const blockdef::port_t &port_def) const;
+
+    /***********************************************************************
      * Hooks & Derivables
      **********************************************************************/
 
@@ -302,7 +307,12 @@ protected:
     blockdef::sptr _block_def;
 
 private:
-    void _init_stream_sigs(const std::string &sig_node, blockdef::ports_t ports);
+    //! Helper function to initialize the port definition nodes in the prop tree
+    void _init_port_defs(
+            const std::string &direction,
+            blockdef::ports_t ports,
+            const size_t first_port_index=0
+    );
 
     /***********************************************************************
      * Private members

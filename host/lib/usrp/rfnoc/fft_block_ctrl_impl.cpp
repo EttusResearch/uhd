@@ -99,17 +99,6 @@ public:
         // TODO FFT scaling set conservatively (1/N), need method to allow user to set
         sr_write(AXIS_CONFIG_BUS, (0x6AA << 9) + (0 << 8) + log2_fft_size);
         sr_write(SR_FFT_SIZE_LOG2, log2_fft_size);
-
-        //// 3. Set stream signatures
-        stream_sig_t stream_sig;
-        stream_sig.item_type = _item_type;
-        stream_sig.vlen = requested_fft_size;
-        stream_sig.packet_size = requested_fft_size * _bpi;
-
-        UHD_RFNOC_BLOCK_TRACE() << "Setting stream sig to: " << stream_sig.to_string() << std::endl;
-        // The stream signature is identical on input & output
-        _tree->access<stream_sig_t>(_root_path / "input_sig/0").set(stream_sig);
-        _tree->access<stream_sig_t>(_root_path / "output_sig/0").set(stream_sig);
     } /* set_fft_size() */
 
     size_t get_fft_size() const

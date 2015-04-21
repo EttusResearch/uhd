@@ -58,16 +58,6 @@ public:
         // TODO FFT scaling set conservatively (1/N), need method to allow user to set
         sr_write(SR_VECTOR_LEN, requested_vector_len);
         _vector_len = vector_len;
-
-        //// 3. Set stream signatures
-        stream_sig_t stream_sig;
-        stream_sig.item_type = _item_type;
-        stream_sig.vlen = _vector_len;
-        stream_sig.packet_size = _vector_len * _bpi;
-
-        // The stream signature is identical on input & output
-        _tree->access<stream_sig_t>(_root_path / "input_sig/0").set(stream_sig);
-        _tree->access<stream_sig_t>(_root_path / "output_sig/0").set(stream_sig);
     } /* set_vector_len() */
 
     size_t get_vector_len() const
@@ -115,32 +105,6 @@ public:
     double get_beta() const
     {
         return _tree->access<double>(_root_path / "args" / "beta" / "value").get();
-    }
-
-
-    bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "vector_iir_block::set_input_signature()" << std::endl;
-        UHD_ASSERT_THROW(port == 0);
-        if (stream_sig.item_type != _item_type
-            or (stream_sig.vlen != 0 and stream_sig.vlen != _vector_len)) {
-            UHD_MSG(status) << "not valid." << std::endl;
-            return false;
-        }
-
-        return true;
-    }
-
-    bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "vector_iir_block::set_output_signature()" << std::endl;
-        UHD_ASSERT_THROW(port == 0);
-        if (stream_sig.item_type != _item_type
-            or (stream_sig.vlen != 0 and stream_sig.vlen != _vector_len)) {
-            return false;
-        }
-
-        return true;
     }
 
 private:

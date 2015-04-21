@@ -30,7 +30,7 @@ namespace uhd {
  * We can use this block to transmit data (In RFNoC nomenclature, a
  * transmit operation means streaming data to the device from the host).
  *
- * Every input is defined by a stream signature (stream_sig_t).
+ * Every input is defined by a port definition (port_t).
  */
 class UHD_API sink_block_ctrl_base;
 class sink_block_ctrl_base : virtual public block_ctrl_base, public sink_node_ctrl
@@ -43,25 +43,15 @@ public:
      **********************************************************************/
     /*! Return the input stream signature for a given block port.
      *
-     * If \p block_port is not a valid input port, throws
-     * a uhd::runtime_error.
+     * The actual signature is determined by the current configuration
+     * and the block definition file. The value returned here is calculated
+     * on-the-fly and is only valid as long as the configuration does not
+     * change.
      *
-     * Calling set_input_signature() can change the return value
-     * of this function.
+     * \returns The stream signature for port \p block_port
+     * \throws uhd::runtime_error if \p block_port is not a valid port
      */
     stream_sig_t get_input_signature(size_t block_port=0) const;
-
-    /*! Tell this block about the stream signature incoming on a given block port.
-     *
-     * If \p block_port is not a valid output port, throws
-     * a uhd::runtime_error.
-     *
-     * If the input signature is incompatible with this block's signature,
-     * it does not throw, but returns false.
-     *
-     * This function may also affect the output stream signature.
-     */
-    virtual bool set_input_signature(const stream_sig_t &stream_sig, size_t port=0);
 
     /***********************************************************************
      * FPGA Configuration

@@ -47,35 +47,16 @@ void source_block_ctrl_base::issue_stream_cmd(
  **********************************************************************/
 stream_sig_t source_block_ctrl_base::get_output_signature(size_t block_port) const
 {
-    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::get_output_signature() " << std::endl;
-    if (not _tree->exists(_root_path / "output_sig" / str(boost::format("%d") % block_port))) {
+    if (not _tree->exists(_root_path / "ports" / "out" / block_port)) {
         throw uhd::runtime_error(str(
-            boost::format("Can't query output signature on block %s: Port %d is not defined.")
-            % get_block_id().to_string() % block_port
-        ));
-    }
-    return _tree->access<stream_sig_t>(_root_path / "output_sig" / str(boost::format("%d") % block_port)).get();
-}
-
-bool source_block_ctrl_base::set_output_signature(const stream_sig_t &sig, size_t block_port)
-{
-    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::set_output_signature() " << sig << " " << block_port << std::endl;
-
-    /// Check if valid block port:
-    if (not _tree->exists(_root_path / "output_sig" / block_port)) {
-        throw uhd::runtime_error(str(
-            boost::format("Can't modify output signature on block %s: Port %d is not defined.")
-            % get_block_id().to_string() % block_port
+                boost::format("Invalid port number %d for block %s")
+                % block_port % unique_id()
         ));
     }
 
-    // TODO more and better rules, check block definition
-    //if (out_sig.packet_size % BYTES_PER_LINE) {
-        //return false;
-    //}
-
-    _tree->access<stream_sig_t>(_root_path / "output_sig" / block_port).set(sig);
-    return true;
+    return _resolve_port_def(
+            _tree->access<blockdef::port_t>(_root_path / "ports" / "out" / block_port).get()
+    );
 }
 
 /***********************************************************************
@@ -112,7 +93,7 @@ size_t source_block_ctrl_base::_request_output_port(
         const size_t suggested_port,
         const uhd::device_addr_t &
 ) const {
-    const std::set<size_t> valid_output_ports = utils::str_list_to_set<size_t>(_tree->list(_root_path / "output_sig"));
+    const std::set<size_t> valid_output_ports = utils::str_list_to_set<size_t>(_tree->list(_root_path / "ports" / "out"));
     return utils::node_map_find_first_free(_downstream_nodes, suggested_port, valid_output_ports);
 }
 // vim: sw=4 et:

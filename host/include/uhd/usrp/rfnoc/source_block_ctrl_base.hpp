@@ -73,21 +73,15 @@ public:
      **********************************************************************/
     /*! Return the output stream signature for a given block port.
      *
-     * If \p block_port is not a valid output port, throws
-     * a uhd::runtime_error.
+     * The actual signature is determined by the current configuration
+     * and the block definition file. The value returned here is calculated
+     * on-the-fly and is only valid as long as the configuration does not
+     * change.
      *
-     * Calling set_output_signature() *or* set_input_signature() can
-     * change the return value of this function.
+     * \returns The stream signature for port \p block_port
+     * \throws uhd::runtime_error if \p block_port is not a valid port
      */
     stream_sig_t get_output_signature(size_t block_port=0) const;
-
-    /*! Change the output stream signature for a given output block port.
-     *
-     * If the requested stream signature is not possible with this block,
-     * it returns false (does not throw).
-     * Recommended behaviour is not to modify the input signature.
-     */
-    virtual bool set_output_signature(const stream_sig_t &stream_sig, size_t port=0);
 
     /***********************************************************************
      * FPGA Configuration
