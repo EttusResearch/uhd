@@ -69,9 +69,11 @@ class UHD_API stream_sig_t {
     size_t get_bytes_per_item() const;
 
     /*! Check if an output with signature \p output_sig could
-     * stream to input with this signature.
+     * stream to an input signature \p input_sig.
+     *
+     * \return true if streams are compatible
      */
-    static bool is_compatible(const stream_sig_t &input_sig, const stream_sig_t &output_sig);
+    static bool is_compatible(const stream_sig_t &output_sig, const stream_sig_t &input_sig);
 };
 
 //! Shortcut for << stream_sig.to_string()

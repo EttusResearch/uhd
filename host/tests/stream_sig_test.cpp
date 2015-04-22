@@ -57,6 +57,7 @@ BOOST_AUTO_TEST_CASE(test_stream_sig_compat) {
     BOOST_CHECK(stream_sig_t::is_compatible(upstream_sig, downstream_sig));
     downstream_sig.item_type = "";
     BOOST_CHECK(stream_sig_t::is_compatible(upstream_sig, downstream_sig));
+    upstream_sig.item_type = "sc16";
     downstream_sig.item_type = "s8";
     BOOST_CHECK(not stream_sig_t::is_compatible(upstream_sig, downstream_sig));
 }

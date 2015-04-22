@@ -57,31 +57,24 @@ size_t stream_sig_t::get_bytes_per_item() const
     return uhd::convert::get_bytes_per_item(item_type);
 }
 
-bool stream_sig_t::is_compatible(const stream_sig_t &input_sig, const stream_sig_t &output_sig)
+bool stream_sig_t::is_compatible(const stream_sig_t &output_sig, const stream_sig_t &input_sig)
 {
     /// Item types:
-    if (not input_sig.item_type.empty()
-        and not output_sig.item_type.empty()
+    if (not (input_sig.item_type.empty() or output_sig.item_type.empty())
         and input_sig.item_type != output_sig.item_type) {
         return false;
     }
 
     /// Vector lengths
-    if (output_sig.vlen) {
-        if (input_sig.vlen and input_sig.vlen != output_sig.vlen) {
-            return false;
-        }
-        if (not input_sig.vlen) {
+    if (output_sig.vlen and input_sig.vlen) {
+        if (input_sig.vlen != output_sig.vlen) {
             return false;
         }
     }
 
     /// Packet sizes
-    if (output_sig.packet_size) {
-        if (input_sig.packet_size and input_sig.packet_size != output_sig.packet_size) {
-            return false;
-        }
-        if (not input_sig.packet_size) {
+    if (output_sig.packet_size and input_sig.packet_size) {
+        if (input_sig.packet_size != output_sig.packet_size) {
             return false;
         }
     }
