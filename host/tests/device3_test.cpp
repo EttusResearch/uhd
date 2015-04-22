@@ -22,7 +22,6 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/device3.hpp>
 #include <uhd/usrp/rfnoc/block_ctrl.hpp>
-#include <uhd/usrp/rfnoc/null_block_ctrl.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -39,11 +38,11 @@ class pseudo_wb_iface_impl : public uhd::wb_iface
     ~pseudo_wb_iface_impl() {};
 
     void poke64(const wb_addr_type addr, const boost::uint64_t data) {
-        std::cout << str(boost::format("poke64 to addr: %016X, data == %016X") % addr % data) << std::endl;
+        std::cout << str(boost::format("[PSEUDO] poke64 to addr: %016X, data == %016X") % addr % data) << std::endl;
     };
 
     boost::uint64_t peek64(const wb_addr_type addr) {
-        std::cout << str(boost::format("peek64 to addr: %016X") % addr) << std::endl;
+        std::cout << str(boost::format("[PSEUDO] peek64 to addr: %016X") % addr) << std::endl;
         switch (addr) {
             case SR_READBACK_REG_ID:
                 return TEST_NOC_ID;
@@ -88,12 +87,12 @@ class pseudo_device3_impl : public uhd::device3
         make_args.device_index = 0;
         make_args.tree = _tree;
         make_args.is_big_endian = false;
-        std::cout << "Generating block controls " << std::endl;
-
+        std::cout << "[PSEUDO] Generating block controls 1/2:" << std::endl;
         _rfnoc_block_ctrl.push_back( block_ctrl_base::make(make_args) );
 
+        std::cout << "[PSEUDO] Generating block controls 2/2:" << std::endl;
         make_args.ctrl_sid = TEST_SID1;
-        _rfnoc_block_ctrl.push_back( block_ctrl::make(make_args, 0) );
+        _rfnoc_block_ctrl.push_back( block_ctrl::make(make_args) );
     }
 
     rx_streamer::sptr get_rx_stream(const stream_args_t &args) {
@@ -124,9 +123,9 @@ BOOST_AUTO_TEST_CASE(test_device3) {
     BOOST_CHECK_EQUAL(block0->get_block_id(), "0/Block_0");
 
     std::cout << "Getting block 1..." << std::endl;
-    block_ctrl_base::sptr block1 = my_device->get_block_ctrl(block_id_t("0/NullSrcSink_0"));
+    block_ctrl_base::sptr block1 = my_device->get_block_ctrl(block_id_t("0/Block_1"));
     BOOST_REQUIRE(block1);
-    BOOST_CHECK_EQUAL(block1->get_block_id(), "0/NullSrcSink_0");
+    BOOST_CHECK_EQUAL(block1->get_block_id(), "0/Block_1");
 }
 
 BOOST_AUTO_TEST_CASE(test_device3_cast) {
@@ -138,8 +137,8 @@ BOOST_AUTO_TEST_CASE(test_device3_cast) {
     BOOST_CHECK_EQUAL(block0->get_block_id(), "0/Block_0");
 
     std::cout << "Getting block 1..." << std::endl;
-    block_ctrl_base::sptr block1 = my_device->get_block_ctrl<null_block_ctrl>(block_id_t("0/NullSrcSink_0"));
-    BOOST_CHECK_EQUAL(block1->get_block_id(), "0/NullSrcSink_0");
+    block_ctrl_base::sptr block1 = my_device->get_block_ctrl<block_ctrl>(block_id_t("0/Block_1"));
+    BOOST_CHECK_EQUAL(block1->get_block_id(), "0/Block_1");
 }
 
 BOOST_AUTO_TEST_CASE(test_device3_fail) {
