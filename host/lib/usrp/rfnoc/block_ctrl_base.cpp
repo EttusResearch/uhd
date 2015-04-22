@@ -253,17 +253,24 @@ void block_ctrl_base::set_arg(const std::string &key, const std::string &val)
 
     std::string type = _tree->access<std::string>(arg_path / "type").get();
     fs_path arg_val_path = arg_path / "value";
-    if (type == "string") {
-        _tree->access<std::string>(arg_val_path).set(val);
-    }
-    else if (type == "int") {
-        _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(val));
-    }
-    else if (type == "double") {
-        _tree->access<double>(arg_val_path).set(boost::lexical_cast<double>(val));
-    }
-    else if (type == "int_vector") {
-        throw uhd::runtime_error("not yet implemented: int_vector");
+    try {
+        if (type == "string") {
+            _tree->access<std::string>(arg_val_path).set(val);
+        }
+        else if (type == "int") {
+            _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(val));
+        }
+        else if (type == "double") {
+            _tree->access<double>(arg_val_path).set(boost::lexical_cast<double>(val));
+        }
+        else if (type == "int_vector") {
+            throw uhd::runtime_error("not yet implemented: int_vector");
+        }
+    } catch (const boost::bad_lexical_cast &) {
+        throw uhd::value_error(str(
+                    boost::format("Error trying to cast value %s == '%s' to type '%s'")
+                    % key % val % type
+        ));
     }
 }
 
