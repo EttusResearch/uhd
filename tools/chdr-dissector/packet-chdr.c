@@ -71,7 +71,7 @@ void proto_reg_handoff_chdr(void);
 static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
 
 /* heuristic dissector call. Will always return. */
-static gboolean heur_dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+static gboolean heur_dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* whatislove)
 {
     if(heur_warning_printed < 1){
         printf(LOG_HEADER"heuristic dissector always returns true!\n");
@@ -169,7 +169,7 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
         if (len >= 4){
             chdr_size = 8;
-            bytes = tvb_get_string(tvb, 0, 4);
+            bytes = tvb_get_string(wmem_packet_scope(), tvb, 0, 4);
             flag_has_time = bytes[flag_offset] & 0x20;
             if (flag_has_time)
                 chdr_size += 8; // 64-bit timestamp
@@ -208,7 +208,7 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                     if (is_network)
                         item = proto_tree_add_item(chdr_tree, hf_chdr_timestamp, tvb, 8, 8, endianness);
                     else{
-                        bytes = (guint8*) tvb_get_string(tvb, 8, sizeof(unsigned long long));
+                        bytes = (guint8*) tvb_get_string(wmem_packet_scope(), tvb, 8, sizeof(unsigned long long));
                         timestamp = get_timestamp(bytes, sizeof(unsigned long long));
                         proto_tree_add_uint64(chdr_tree, hf_chdr_timestamp, tvb, 8, 8, timestamp);
                     }
