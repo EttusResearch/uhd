@@ -43,10 +43,6 @@ using namespace uhd::transport;
 
 static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
 
-//! mapping of frontend to radio perif index
-static const size_t FE1 = 1;
-static const size_t FE2 = 0;
-
 class b200_ad9361_client_t : public ad9361_params {
 public:
     ~b200_ad9361_client_t() {}
@@ -310,6 +306,18 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
         _b200_type = B200;
     }
 
+    //set up frontend mapping
+    _fe1 = 1;
+    _fe2 = 0;
+    if (_b200_type == B200 and
+        not mb_eeprom["revision"].empty() and
+        boost::lexical_cast<size_t>(mb_eeprom["revision"]) >= 5)
+    {
+        _fe1 = 0;                   //map radio0 to FE1
+        _fe2 = 1;                   //map radio1 to FE2
+        _gpio_state.atr_sel = 1;    //map radio0 ATR pins to FE2
+    }
+
     ////////////////////////////////////////////////////////////////////
     // Load the FPGA image, then reset GPIF
     ////////////////////////////////////////////////////////////////////
@@ -365,7 +373,6 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
 
     /* Initialize the GPIOs, set the default bandsels to the lower range. Note
      * that calling update_bandsel calls update_gpio_state(). */
-    _gpio_state = gpio_state();
     update_bandsel("RX", 800e6);
     update_bandsel("TX", 850e6);
 
@@ -696,7 +703,7 @@ void b200_impl::setup_radio(const size_t dspno)
     for(size_t direction = 0; direction < 2; direction++)
     {
         const std::string x = direction? "rx" : "tx";
-        const std::string key = std::string((direction? "RX" : "TX")) + std::string(((dspno == FE1)? "1" : "2"));
+        const std::string key = std::string((direction? "RX" : "TX")) + std::string(((dspno == _fe1)? "1" : "2"));
         const fs_path rf_fe_path = mb_path / "dboards" / "A" / (x+"_frontends") / (dspno? "B" : "A");
 
         _tree->create<std::string>(rf_fe_path / "name").set("FE-"+key);
@@ -1025,6 +1032,7 @@ void b200_impl::update_bandsel(const std::string& which, double freq)
 void b200_impl::update_gpio_state(void)
 {
     const boost::uint32_t misc_word = 0
+        | (_gpio_state.atr_sel << 8)
         | (_gpio_state.tx_bandsel_a << 7)
         | (_gpio_state.tx_bandsel_b << 6)
         | (_gpio_state.rx_bandsel_a << 5)
@@ -1049,9 +1057,9 @@ void b200_impl::reset_codec_dcm(void)
 
 void b200_impl::update_atrs(void)
 {
-    if (_radio_perifs.size() > FE1 and _radio_perifs[FE1].atr)
+    if (_radio_perifs.size() > _fe1 and _radio_perifs[_fe1].atr)
     {
-        radio_perifs_t &perif = _radio_perifs[FE1];
+        radio_perifs_t &perif = _radio_perifs[_fe1];
         const bool enb_rx = bool(perif.rx_streamer.lock());
         const bool enb_tx = bool(perif.tx_streamer.lock());
         const bool is_rx2 = perif.ant_rx2;
@@ -1067,9 +1075,9 @@ void b200_impl::update_atrs(void)
         atr->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, txonly);
         atr->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, fd);
     }
-    if (_radio_perifs.size() > FE2 and _radio_perifs[FE2].atr)
+    if (_radio_perifs.size() > _fe2 and _radio_perifs[_fe2].atr)
     {
-        radio_perifs_t &perif = _radio_perifs[FE2];
+        radio_perifs_t &perif = _radio_perifs[_fe2];
         const bool enb_rx = bool(perif.rx_streamer.lock());
         const bool enb_tx = bool(perif.tx_streamer.lock());
         const bool is_rx2 = perif.ant_rx2;
@@ -1097,10 +1105,10 @@ void b200_impl::update_antenna_sel(const size_t which, const std::string &ant)
 void b200_impl::update_enables(void)
 {
     //extract settings from state variables
-    const bool enb_tx1 = (_radio_perifs.size() > FE1) and bool(_radio_perifs[FE1].tx_streamer.lock());
-    const bool enb_rx1 = (_radio_perifs.size() > FE1) and bool(_radio_perifs[FE1].rx_streamer.lock());
-    const bool enb_tx2 = (_radio_perifs.size() > FE2) and bool(_radio_perifs[FE2].tx_streamer.lock());
-    const bool enb_rx2 = (_radio_perifs.size() > FE2) and bool(_radio_perifs[FE2].rx_streamer.lock());
+    const bool enb_tx1 = (_radio_perifs.size() > _fe1) and bool(_radio_perifs[_fe1].tx_streamer.lock());
+    const bool enb_rx1 = (_radio_perifs.size() > _fe1) and bool(_radio_perifs[_fe1].rx_streamer.lock());
+    const bool enb_tx2 = (_radio_perifs.size() > _fe2) and bool(_radio_perifs[_fe2].tx_streamer.lock());
+    const bool enb_rx2 = (_radio_perifs.size() > _fe2) and bool(_radio_perifs[_fe2].rx_streamer.lock());
     const size_t num_rx = (enb_rx1?1:0) + (enb_rx2?1:0);
     const size_t num_tx = (enb_tx1?1:0) + (enb_tx2?1:0);
     const bool mimo = num_rx == 2 or num_tx == 2;
