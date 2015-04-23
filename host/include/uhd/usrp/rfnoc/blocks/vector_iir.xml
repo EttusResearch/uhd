@@ -27,13 +27,13 @@
   <ports>
     <sink>
       <name>in</name>
-      <type>s16</type>
+      <type>sc16</type>
       <vlen>$spp</vlen>
       <pkt_size>%vlen</pkt_size>
     </sink>
     <source>
       <name>out</name>
-      <type>s16</type>
+      <type>sc16</type>
       <vlen>$spp</vlen>
       <pkt_size>%vlen</pkt_size>
     </source>
