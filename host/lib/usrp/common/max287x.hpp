@@ -25,6 +25,7 @@
 #include <boost/assign.hpp>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <vector>
 #include "max2870_regs.hpp"
 #include "max2871_regs.hpp"

@@ -395,14 +395,35 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
             fpga_major = fpga_minor;
             fpga_minor = 0;
         }
-        if (fpga_major != USRP2_FPGA_COMPAT_NUM){
+        int expected_fpga_compat_num = std::min(USRP2_FPGA_COMPAT_NUM, N200_FPGA_COMPAT_NUM);
+        switch (_mbc[mb].iface->get_rev())
+        {
+        case usrp2_iface::USRP2_REV3:
+        case usrp2_iface::USRP2_REV4:
+            expected_fpga_compat_num = USRP2_FPGA_COMPAT_NUM;
+            break;
+        case usrp2_iface::USRP_N200:
+        case usrp2_iface::USRP_N200_R4:
+        case usrp2_iface::USRP_N210:
+        case usrp2_iface::USRP_N210_R4:
+            expected_fpga_compat_num = N200_FPGA_COMPAT_NUM;
+            break;
+        default:
+            // handle case where the MB EEPROM is not programmed
+            if (fpga_major == USRP2_FPGA_COMPAT_NUM or fpga_major == N200_FPGA_COMPAT_NUM)
+            {
+                UHD_MSG(warning)  << "Unable to identify device - assuming USRP2/N-Series device" << std::endl;
+                expected_fpga_compat_num = fpga_major;
+            }
+        }
+        if (fpga_major != expected_fpga_compat_num){
             throw uhd::runtime_error(str(boost::format(
                 "\nPlease update the firmware and FPGA images for your device.\n"
                 "See the application notes for USRP2/N-Series for instructions.\n"
                 "Expected FPGA compatibility number %d, but got %d:\n"
                 "The FPGA build is not compatible with the host code build.\n"
                 "%s\n"
-            ) % int(USRP2_FPGA_COMPAT_NUM) % fpga_major % _mbc[mb].iface->images_warn_help_message()));
+            ) % expected_fpga_compat_num % fpga_major % _mbc[mb].iface->images_warn_help_message()));
         }
         _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u") % fpga_major % fpga_minor));
 
