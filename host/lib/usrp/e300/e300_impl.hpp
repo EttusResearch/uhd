@@ -74,11 +74,9 @@ static const boost::uint8_t E300_RADIO_DEST_PREFIX_RX   = 2;
 static const boost::uint8_t E300_XB_DST_AXI = 0;
 static const boost::uint8_t E300_XB_DST_R0  = 1;
 static const boost::uint8_t E300_XB_DST_R1  = 2;
-static const boost::uint8_t E300_XB_DST_CE0 = 3;
-static const boost::uint8_t E300_XB_DST_CE1 = 4;
-static const boost::uint8_t E300_XB_DST_CE2 = 5;
-static const boost::uint8_t E300_XB_DST_CE3 = 6;
-static const boost::uint8_t E300_XB_DST_CE4 = 7;
+// RFNoC blocks are connected to the first port
+// after the last radio (there might be less than 2
+// radios).
 
 static const boost::uint8_t E300_DEVICE_THERE = 2;
 static const boost::uint8_t E300_DEVICE_HERE  = 0;
@@ -239,6 +237,7 @@ private: // members
     uhd::device_addr_t                     _device_addr;
     xport_t                                _xport_path;
     e300_fifo_interface::sptr              _fifo_iface;
+    size_t                                 _num_radios;
     radio_perifs_t                         _radio_perifs[2];
     double                                 _tick_rate;
     ad9361_ctrl::sptr                      _codec_ctrl;

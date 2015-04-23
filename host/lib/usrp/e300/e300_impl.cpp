@@ -279,6 +279,7 @@ static device::sptr e300_make(const device_addr_t &device_addr)
 e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     : _device_addr(device_addr)
     , _xport_path(device_addr.has_key("addr") ? ETH : AXI)
+    , _num_radios(fpga::NUM_RADIOS) // We might need to query this somehow
 {
     stream_options.rx_fc_request_freq = E300_RX_FC_REQUEST_FREQ;
 
@@ -456,15 +457,14 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     // setup radios
     ////////////////////////////////////////////////////////////////////
-    for(size_t instance = 0; instance < fpga::NUM_RADIOS; instance++)
+    for(size_t instance = 0; instance < _num_radios; instance++)
         this->_setup_radio(instance);
 
     _codec_ctrl->data_port_loopback(true);
 
-    // Radio 0 loopback through AD9361
-    this->_codec_loopback_self_test(_radio_perifs[0].ctrl);
-    // Radio 1 loopback through AD9361
-    this->_codec_loopback_self_test(_radio_perifs[1].ctrl);
+    // Radios loopback through AD9361
+    for(size_t instance = 0; instance < _num_radios; instance++)
+        this->_codec_loopback_self_test(_radio_perifs[instance].ctrl);
 
     _codec_ctrl->data_port_loopback(false);
 
@@ -484,14 +484,27 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     // register the time keepers - only one can be the highlander
     ////////////////////////////////////////////////////////////////////
-    _tree->create<time_spec_t>(mb_path / "time" / "now")
-        .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
-        .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[0].time64, _1))
-        .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[1].time64, _1));
-    _tree->create<time_spec_t>(mb_path / "time" / "pps")
-        .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64))
-        .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[0].time64, _1))
-        .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[1].time64, _1));
+    if (_num_radios >= 1) {
+        _tree->create<time_spec_t>(mb_path / "time" / "now")
+            .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
+            .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[0].time64, _1))
+        ;
+    }
+    if (_num_radios == 2) {
+        _tree->create<time_spec_t>(mb_path / "time" / "now")
+            .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[1].time64, _1));
+    }
+    if (_num_radios >= 1) {
+        _tree->create<time_spec_t>(mb_path / "time" / "pps")
+            .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64))
+            .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[0].time64, _1))
+        ;
+    }
+    if (_num_radios == 2) {
+        _tree->create<time_spec_t>(mb_path / "time" / "pps")
+            .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[1].time64, _1))
+        ;
+    }
     //setup time source props
     _tree->create<std::string>(mb_path / "time_source" / "value")
         .subscribe(boost::bind(&e300_impl::_update_time_source, this, _1))
@@ -570,7 +583,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     size_t NUM_CE = _global_regs->peek32(global_regs::RB32_CORE_NUM_CE);
     UHD_VAR(NUM_CE);
     for (size_t i = 0; i < NUM_CE; i++) {
-        boost::uint8_t xbar_port = (i & 0xff) + E300_XB_DST_CE0;
+        boost::uint8_t xbar_port = (i & 0xff) + E300_XB_DST_R0 + _num_radios;
         uhd::sid_t ctrl_sid(E300_DEVICE_HERE, 0, E300_DEVICE_THERE, xbar_port << 4);
         both_xports_t xport = make_transport(
             ctrl_sid,
@@ -1260,7 +1273,7 @@ void e300_impl::_update_bandsel(const std::string& which, double freq)
 
 void e300_impl::_update_atrs(void)
 {
-    for (size_t instance = 0; instance < fpga::NUM_RADIOS; instance++)
+    for (size_t instance = 0; instance < _num_radios; instance++)
     {
         // if we're not ready, no point ...
         if (not _radio_perifs[instance].atr)
