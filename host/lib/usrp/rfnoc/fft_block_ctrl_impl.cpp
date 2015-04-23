@@ -27,7 +27,7 @@ class fft_block_ctrl_impl : public fft_block_ctrl
 {
 public:
     UHD_RFNOC_BLOCK_CONSTRUCTOR(fft_block_ctrl),
-        _item_type("sc16"), // We only support sc16 in this block
+        _output_type("sc16"), // Output is either 
         _bpi(uhd::convert::get_bytes_per_item("sc16"))
     {
         // TODO: Remove this reset. Currently used as a workaround due to deal
@@ -56,6 +56,34 @@ public:
             .subscribe(boost::bind(&fft_block_ctrl_impl::set_fft_size, this, _1))
             .update()
         ;
+
+        _tree->access<std::string>(_root_path / "args" / "otype" / "value")
+            .subscribe(boost::bind(&fft_block_ctrl_impl::check_otype, this, _1))
+            .publish(boost::bind(&fft_block_ctrl_impl::get_otype_from_magout, this))
+            .update()
+        ;
+    }
+
+    void check_otype(const std::string &otype)
+    {
+        // See get_otype_from_magout(). Right now, it's always sc16
+        if (otype != "sc16") {
+            throw uhd::value_error("Invalid output type for FFT block.");
+        }
+    }
+
+    std::string get_otype_from_magout(void)
+    {
+        const std::string magout = get_arg("magnitude_out");
+        UHD_RFNOC_BLOCK_TRACE() << "magout: " << magout << std::endl;
+        if (magout == "COMPLEX") {
+            return "sc16";
+        }
+        if (magout == "MAGNITUDE" or magout == "MAGNITUDE_SQUARED") {
+            // Yeah, it's always sc16. But this will probably change soon.
+            return "sc16";
+        }
+        UHD_THROW_INVALID_CODE_PATH();
     }
 
     void reset_fft()
@@ -78,7 +106,6 @@ public:
     {
         UHD_RFNOC_BLOCK_TRACE() << "fft_block::set_fft_size()" << std::endl;
         //// 1. Sanity checks
-        const size_t requested_fft_size = size_t(fft_size);
         // Check fft_size is within bounds
         if (fft_size < 16 or fft_size > 4096) {
             // TODO read this bounds from the prop tree (block def)
@@ -101,13 +128,15 @@ public:
         sr_write(SR_FFT_SIZE_LOG2, log2_fft_size);
     } /* set_fft_size() */
 
-    size_t get_fft_size() const
-    {
-        return size_t(get_arg<int>("spp"));
-    }
-
     void set_magnitude_out_str(const std::string &magnitude_out)
     {
+        if (not (magnitude_out == "COMPLEX" or magnitude_out == "MAGNITUDE" or magnitude_out == "MAGNITUDE_SQUARED")) {
+            throw uhd::value_error(str(
+                        boost::format("Invalid magnitude_out value: %s")
+                        % magnitude_out
+            ));
+
+        }
         set_magnitude_out(str_to_mag(magnitude_out));
     }
 
@@ -148,7 +177,7 @@ private:
         return COMPLEX;
     }
 
-    const std::string _item_type;
+    std::string _output_type;
     //! Bytes per item (bytes per sample)
     const size_t _bpi;
     bool _fft_reset;

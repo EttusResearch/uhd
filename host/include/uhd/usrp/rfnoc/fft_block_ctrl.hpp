@@ -31,6 +31,10 @@ namespace uhd {
  * - Configurable FFT size, limited to powers of two
  * - Supports data type sc16 (16-Bit fix-point complex samples)
  *
+ * Args:
+ * - spp: This will set the actual FFT size, as well as the vector
+ *   and packet lengths.
+ *
  * This block requires packets to be the same size as the FFT length.
  * It will perform one FFT operation per incoming packet, treating it
  * as a vector of samples.
@@ -68,21 +72,6 @@ public:
     //
     // This queries the FFT reset readback register
     virtual bool get_fft_reset() = 0;
-
-    //! Configure the FFT size.
-    //
-    // This will not only configure the FFT core, but also sets
-    // the packet size in the in- and output signatures.
-    //
-    // Note that not all FFT sizes are valid for this core. If
-    // an invalid FFT size is selected, it will return false.
-    virtual void set_fft_size(int fft_size) = 0;
-
-    //! Returns the currently selected FFT size.
-    //
-    // You can use this after calling set_fft_size() to see what
-    // the actual, current value is.
-    virtual size_t get_fft_size() const = 0;
 
     //! Enable magnitude output
     //

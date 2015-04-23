@@ -14,6 +14,10 @@
       <value>256</value>
     </arg>
     <arg>
+      <name>otype</name>
+      <value>sc16</value>
+    </arg>
+    <arg>
       <name>magnitude_out</name>
       <type>string</type>
       <value>COMPLEX</value>
@@ -29,7 +33,7 @@
     </sink>
     <source>
       <name>out</name>
-      <type>sc16</type>
+      <type>$otype</type>
       <vlen>$spp</vlen>
       <pkt_size>%vlen</pkt_size>
     </source>
