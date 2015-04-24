@@ -70,7 +70,7 @@ public:
     digital_interface_delays_t get_digital_interface_timing() {
         digital_interface_delays_t delays;
         delays.rx_clk_delay = 0;
-        delays.rx_data_delay = 0xF;
+        delays.rx_data_delay = 0x8;
         delays.tx_clk_delay = 0;
         delays.tx_data_delay = 0xF;
         return delays;
