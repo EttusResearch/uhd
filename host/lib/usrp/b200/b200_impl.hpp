@@ -177,7 +177,7 @@ private:
     void handle_overflow(const size_t radio_index);
 
     struct gpio_state {
-        boost::uint32_t  tx_bandsel_a, tx_bandsel_b, rx_bandsel_a, rx_bandsel_b, rx_bandsel_c, codec_arst, mimo, ref_sel, atr_sel;
+        boost::uint32_t  tx_bandsel_a, tx_bandsel_b, rx_bandsel_a, rx_bandsel_b, rx_bandsel_c, codec_arst, mimo, ref_sel, swap_atr;
 
         gpio_state() {
             tx_bandsel_a = 0;
@@ -188,7 +188,7 @@ private:
             codec_arst = 0;
             mimo = 0;
             ref_sel = 0;
-            atr_sel = 0;
+            swap_atr = 0;
         }
     } _gpio_state;
 
