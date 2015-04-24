@@ -306,16 +306,30 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
         _b200_type = B200;
     }
 
-    //set up frontend mapping
+    ////////////////////////////////////////////////////////////////////
+    // Set up frontend mapping
+    ////////////////////////////////////////////////////////////////////
+    // Explanation: The AD9361 has 2 frontends, FE1 and FE2.
+    // On the B210 FE1 maps to the B-side (or radio 1), and FE2 maps
+    // to the A-side (or radio 0). So, logically, the radios are swapped
+    // between the host side and the AD9361-side.
+    // B200 is more complicated: On Revs <= 4, the A-side is connected,
+    // which means FE2 is used (like B210). On Revs >= 5, the left side
+    // ("B-side") is connected, because these revs use an AD9364, which
+    // does not have an FE2, so we don't swap FEs.
+
+    // Swapped setup:
     _fe1 = 1;
     _fe2 = 0;
+    _gpio_state.swap_atr = 1;
+    // Unswapped setup:
     if (_b200_type == B200 and
         not mb_eeprom["revision"].empty() and
         boost::lexical_cast<size_t>(mb_eeprom["revision"]) >= 5)
     {
         _fe1 = 0;                   //map radio0 to FE1
         _fe2 = 1;                   //map radio1 to FE2
-        _gpio_state.atr_sel = 1;    //map radio0 ATR pins to FE2
+        _gpio_state.swap_atr = 0;    //map radio0 ATR pins to FE2
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -1032,7 +1046,7 @@ void b200_impl::update_bandsel(const std::string& which, double freq)
 void b200_impl::update_gpio_state(void)
 {
     const boost::uint32_t misc_word = 0
-        | (_gpio_state.atr_sel << 8)
+        | (_gpio_state.swap_atr << 8)
         | (_gpio_state.tx_bandsel_a << 7)
         | (_gpio_state.tx_bandsel_b << 6)
         | (_gpio_state.rx_bandsel_a << 5)
