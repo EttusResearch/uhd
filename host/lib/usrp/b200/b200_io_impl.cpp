@@ -122,29 +122,31 @@ void b200_impl::update_tx_samp_rate(const size_t dspno, const double rate)
 /***********************************************************************
  * frontend selection
  **********************************************************************/
+uhd::usrp::subdev_spec_t b200_impl::coerce_subdev_spec(const uhd::usrp::subdev_spec_t &spec_)
+{
+    uhd::usrp::subdev_spec_t spec = spec_;
+    // Because of the confusing nature of the subdevs on B200
+    // with different revs, we provide a convenience override,
+    // where both A:A and A:B are mapped to A:A.
+    //
+    // Any other spec is probably illegal and will be caught by
+    // validate_subdev_spec().
+    if (spec.size() and _b200_type == B200 and spec[0].sd_name == "B") {
+        spec[0].sd_name = "A";
+    }
+    return spec;
+}
+
 void b200_impl::update_subdev_spec(const std::string &tx_rx, const uhd::usrp::subdev_spec_t &spec)
 {
     //sanity checking
-    if (spec.size()) validate_subdev_spec(_tree, spec, tx_rx);
-    UHD_ASSERT_THROW(spec.size() <= _radio_perifs.size());
-
-    if (spec.size() >= 1)
-    {
-        UHD_ASSERT_THROW(spec[0].db_name == "A");
-        UHD_ASSERT_THROW(spec[0].sd_name == "A" or spec[0].sd_name == "B");
-    }
-    if (spec.size() == 2)
-    {
-        UHD_ASSERT_THROW(spec[1].db_name == "A");
-        UHD_ASSERT_THROW(
-            (spec[0].sd_name == "A" and spec[1].sd_name == "B") or
-            (spec[0].sd_name == "B" and spec[1].sd_name == "A")
-        );
+    if (spec.size()) {
+        validate_subdev_spec(_tree, spec, tx_rx);
     }
 
     std::vector<size_t> chan_to_dsp_map(spec.size(), 0);
     for (size_t i = 0; i < spec.size(); i++) {
-	chan_to_dsp_map[i] = (spec[i].sd_name == "A") ? 0 : 1;
+        chan_to_dsp_map[i] = (spec[i].sd_name == "A") ? 0 : 1;
     }
     _tree->access<std::vector<size_t> >("/mboards/0" / (tx_rx + "_chan_dsp_mapping")).set(chan_to_dsp_map);
 
