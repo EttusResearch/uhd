@@ -108,6 +108,7 @@ public:
 
 private:
     b200_type_t _b200_type;
+    size_t      _revision;
 
     //controllers
     b200_iface::sptr _iface;
@@ -145,6 +146,7 @@ private:
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
     void check_fw_compat(void);
     void check_fpga_compat(void);
+    uhd::usrp::subdev_spec_t coerce_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_subdev_spec(const std::string &tx_rx, const uhd::usrp::subdev_spec_t &);
     void update_time_source(const std::string &);
     void update_clock_source(const std::string &);

@@ -208,7 +208,8 @@ UHD_STATIC_BLOCK(register_b200_device)
  * Structors
  **********************************************************************/
 b200_impl::b200_impl(const device_addr_t &device_addr) :
-    _tick_rate(0.0) // Forces a clock initialization at startup
+    _tick_rate(0.0), // Forces a clock initialization at startup
+    _revision(0)
 {
     _tree = property_tree::make();
     _type = device::USRP;
@@ -305,6 +306,9 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
         product_name = "B200?";
         _b200_type = B200;
     }
+    if (not mb_eeprom["revision"].empty()) {
+        _revision = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
+    }
 
     ////////////////////////////////////////////////////////////////////
     // Set up frontend mapping
@@ -323,13 +327,10 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     _fe2 = 0;
     _gpio_state.swap_atr = 1;
     // Unswapped setup:
-    if (_b200_type == B200 and
-        not mb_eeprom["revision"].empty() and
-        boost::lexical_cast<size_t>(mb_eeprom["revision"]) >= 5)
-    {
+    if (_b200_type == B200 and _revision >= 5) {
         _fe1 = 0;                   //map radio0 to FE1
         _fe2 = 1;                   //map radio1 to FE2
-        _gpio_state.swap_atr = 0;    //map radio0 ATR pins to FE2
+        _gpio_state.swap_atr = 0; // ATRs for radio0 are mapped to FE1
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -503,9 +504,11 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     _tree->create<std::vector<size_t> >(mb_path / "rx_chan_dsp_mapping").set(default_map);
     _tree->create<std::vector<size_t> >(mb_path / "tx_chan_dsp_mapping").set(default_map);
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
+        .coerce(boost::bind(&b200_impl::coerce_subdev_spec, this, _1))
         .set(subdev_spec_t())
         .subscribe(boost::bind(&b200_impl::update_subdev_spec, this, "rx", _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
+        .coerce(boost::bind(&b200_impl::coerce_subdev_spec, this, _1))
         .set(subdev_spec_t())
         .subscribe(boost::bind(&b200_impl::update_subdev_spec, this, "tx", _1));
 
