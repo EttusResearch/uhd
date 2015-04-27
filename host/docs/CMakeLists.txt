@@ -31,12 +31,33 @@ SET(ENABLE_MANUAL_OR_DOXYGEN false)
 MESSAGE(STATUS "")
 LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF)
 
+# Check if fpga submodule is there. If yes:
+# - Add fpga-src/docs and fpga-src/README.md to inputs
+# - Add fpga-src docs dirs to strip?
+# If no:
+# - Make FPGA Manual reference link to our website
+
 IF(ENABLE_MANUAL)
     SET(ENABLE_MANUAL_OR_DOXYGEN true)
+    # First: Set up UHD manual only
     FILE(GLOB manual_sources "*.dox")
     SET(DOXYGEN_DEPENDENCIES ${manual_sources})
-    SET(DOXYGEN_INPUT_DIRS ${CMAKE_SOURCE_DIR}/docs)
+    SET(DOXYGEN_INPUT_DIRS "${CMAKE_SOURCE_DIR}/docs")
     SET(DOXYGEN_DEP_COMPONENT "manual")
+    SET(DOXYGEN_FPGA_MANUAL_REFERENCE "<a href=\"http://files.ettus.com/manual/page_fpga.html\">Part III: FPGA Manual</a>")
+    # Now, check if we have the FPGA sources as well.
+    # If so, pull them in:
+    IF(HAS_FPGA_SUBMODULE)
+        FILE(GLOB_RECURSE fpga_manual_sources "${FPGA_SUBMODULE_DIR}/docs/*.md")
+        LIST(APPEND manual_sources ${fpga_manual_sources})
+        SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${FPGA_SUBMODULE_DIR}/docs")
+        SET(DOXYGEN_FPGA_MANUAL_REFERENCE "\\subpage page_fpga \"Part III: FPGA Manual\"")
+    ENDIF(HAS_FPGA_SUBMODULE)
+    message(STATUS ${manual_sources})
+    CONFIGURE_FILE(
+        ${CMAKE_CURRENT_SOURCE_DIR}/mainpage.dox.in
+        ${CMAKE_CURRENT_BINARY_DIR}/mainpage.dox
+    @ONLY)
 ENDIF(ENABLE_MANUAL)
 
 ########################################################################
