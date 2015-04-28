@@ -77,6 +77,8 @@ public:
     };
     typedef std::vector<arg_t> args_t;
 
+    typedef uhd::dict<std::string, size_t> registers_t;
+
     /*! Create a block definition object for a NoC block given
      * a NoC ID. This cannot be used for components.
      *
@@ -104,6 +106,12 @@ public:
     //
     // \throws uhd::runtime_error if args are invalid.
     virtual args_t get_args() = 0;
+
+    //! Returns a list of settings registers by name.
+    virtual registers_t get_settings_registers() = 0;
+
+    //! Returns a list of readback (user) registers by name.
+    virtual registers_t get_readback_registers() = 0;
 };
 
 }} /* namespace uhd::rfnoc */

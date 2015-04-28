@@ -61,7 +61,6 @@ BOOST_AUTO_TEST_CASE(test_ports) {
     blockdef::ports_t out_ports = block_definition->get_output_ports();
     BOOST_REQUIRE_EQUAL(out_ports.size(), 1);
     BOOST_CHECK_EQUAL(out_ports[0]["name"], "out");
-    BOOST_CHECK_EQUAL(out_ports[0]["type"], "sc16");
     BOOST_CHECK(out_ports[0].has_key("vlen"));
     BOOST_CHECK(out_ports[0].has_key("pkt_size"));
 }
@@ -70,9 +69,23 @@ BOOST_AUTO_TEST_CASE(test_args) {
     // Create an FFT:
     blockdef::sptr block_definition = blockdef::make_from_noc_id(0xFF70000000000000);
     blockdef::args_t args = block_definition->get_args();
-    BOOST_REQUIRE_EQUAL(args.size(), 2);
+    BOOST_REQUIRE_EQUAL(args.size(), 3);
     BOOST_CHECK_EQUAL(args[0]["name"], "spp");
     BOOST_CHECK_EQUAL(args[0]["type"], "int");
     BOOST_CHECK_EQUAL(args[0]["value"], "256");
+}
+
+BOOST_AUTO_TEST_CASE(test_regs) {
+    // Create an FFT:
+    blockdef::sptr block_definition = blockdef::make_from_noc_id(0xFF70000000000000);
+    blockdef::registers_t sregs = block_definition->get_settings_registers();
+    BOOST_REQUIRE_EQUAL(sregs.size(), 3);
+    BOOST_CHECK_EQUAL(sregs["FFT_RESET"], 131);
+    BOOST_CHECK_EQUAL(sregs["FFT_SIZE_LOG2"], 132);
+    BOOST_CHECK_EQUAL(sregs["MAGNITUDE_OUT"], 133);
+    blockdef::registers_t user_regs = block_definition->get_readback_registers();
+    BOOST_REQUIRE_EQUAL(user_regs.size(), 2);
+    BOOST_CHECK_EQUAL(user_regs["RB_FFT_RESET"], 0);
+    BOOST_CHECK_EQUAL(user_regs["RB_MAGNITUDE_OUT"], 1);
 }
 

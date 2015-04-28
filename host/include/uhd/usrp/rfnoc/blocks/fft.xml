@@ -6,6 +6,30 @@
   <ids>
     <id revision="0">FF70</id>
   </ids>
+  <!-- Registers -->
+  <registers>
+    <!--Note: AXI config bus uses 129 & 130-->
+    <setreg>
+      <name>FFT_RESET</name>
+      <address>131</address>
+    </setreg>
+    <setreg>
+      <name>FFT_SIZE_LOG2</name>
+      <address>132</address>
+    </setreg>
+    <setreg>
+      <name>MAGNITUDE_OUT</name>
+      <address>133</address>
+    </setreg>
+    <readback>
+      <name>RB_FFT_RESET</name>
+      <address>0</address>
+    </readback>
+    <readback>
+      <name>RB_MAGNITUDE_OUT</name>
+      <address>1</address>
+    </readback>
+  </registers>
   <!-- Args -->
   <args>
     <arg>

@@ -108,7 +108,7 @@ const std::vector<std::string> blockdef::arg_t::ARG_ARGS = boost::assign::list_o
             ("value")
 ;
 const std::set<std::string> blockdef::arg_t::VALID_TYPES = boost::assign::list_of
-    // List all tags/args an <arg> can have here:
+    // List all tags/args a <type> can have here:
             ("string")
             ("int")
             ("int_vector")
@@ -322,6 +322,28 @@ public:
             ));
         }
         return args;
+    }
+
+    registers_t get_settings_registers()
+    {
+        return _get_regs("setreg");
+    }
+
+    registers_t get_readback_registers()
+    {
+        return _get_regs("readback");
+    }
+
+    registers_t _get_regs(const std::string &reg_type)
+    {
+        registers_t registers;
+        pt::ptree def;
+        BOOST_FOREACH(pt::ptree::value_type &v, _pt.get_child("nocblock.registers", def)) {
+            if (v.first != reg_type) continue;
+            registers[v.second.get<std::string>("name")] =
+                boost::lexical_cast<size_t>(v.second.get<size_t>("address"));
+        }
+        return registers;
     }
 
 
