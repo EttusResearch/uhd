@@ -170,6 +170,17 @@ public:
      */
     void sr_write(const boost::uint32_t reg, const boost::uint32_t data);
 
+    /*! Allows setting one register on the settings bus.
+     *
+     * Like sr_write(), but takes a register name as argument.
+     *
+     * \param reg The settings register to write to.
+     * \param data New value of this register.
+     * \throw uhd::key_error if \p reg is not a valid register name
+     *
+     */
+    void sr_write(const std::string &reg, const boost::uint32_t data);
+
     /*! Allows reading one register on the settings bus (64-Bit version).
      *
      * \param reg The settings register to be read.
@@ -197,6 +208,18 @@ public:
      */
     boost::uint64_t user_reg_read64(const boost::uint32_t addr);
 
+    /*! Allows reading one user-defined register (64-Bit version).
+     *
+     * Identical to user_reg_read64(), but takes a register name
+     * instead of a numeric address. The register name must be
+     * defined in the block definition file.
+     *
+     * \param addr The user register address.
+     * \returns the readback value.
+     * \throws uhd::key_error if \p reg is not a valid register name
+     */
+    boost::uint64_t user_reg_read64(const std::string &reg);
+
     /*! Allows reading one user-defined register (32-Bit version).
      *
      * This is a shorthand for setting the requested address
@@ -207,6 +230,18 @@ public:
      * \returns the readback value.
      */
     boost::uint32_t user_reg_read32(const boost::uint32_t addr);
+
+    /*! Allows reading one user-defined register (32-Bit version).
+     *
+     * Identical to user_reg_read32(), but takes a register name
+     * instead of a numeric address. The register name must be
+     * defined in the block definition file.
+     *
+     * \param reg The user register name.
+     * \returns the readback value.
+     * \throws uhd::key_error if \p reg is not a valid register name
+     */
+    boost::uint32_t user_reg_read32(const std::string &reg);
 
     /*! Reset block after streaming operation.
      *

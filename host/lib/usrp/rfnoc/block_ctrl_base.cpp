@@ -89,6 +89,16 @@ block_ctrl_base::block_ctrl_base(
         }
     }
 
+    /*** Register names *****************************************************/
+    blockdef::registers_t sregs = _block_def->get_settings_registers();
+    BOOST_FOREACH(const std::string &reg_name, sregs.keys()) {
+        _tree->create<size_t>(_root_path / "registers" / "sr" / reg_name).set(sregs.get(reg_name));
+    }
+    blockdef::registers_t rbacks = _block_def->get_readback_registers();
+    BOOST_FOREACH(const std::string &reg_name, rbacks.keys()) {
+        _tree->create<size_t>(_root_path / "registers"/ "rb" / reg_name).set(rbacks.get(reg_name));
+    }
+
     /*** Init default block args ********************************************/
     blockdef::args_t args = _block_def->get_args();
     fs_path arg_path = _root_path / "args";
@@ -169,6 +179,20 @@ void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t 
     }
 }
 
+void block_ctrl_base::sr_write(const std::string &reg, const boost::uint32_t data)
+{
+    if (not _tree->exists(_root_path / "registers" / "sr" / reg)) {
+        throw uhd::key_error(str(
+                boost::format("Invalid settings register name: %s")
+                % reg
+        ));
+    }
+    return sr_write(
+            boost::uint32_t(_tree->access<size_t>(_root_path / "registers" / "sr" / reg).get()),
+            data
+    );
+}
+
 boost::uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg)
 {
     try {
@@ -201,6 +225,19 @@ boost::uint64_t block_ctrl_base::user_reg_read64(const boost::uint32_t addr)
     }
 }
 
+boost::uint64_t block_ctrl_base::user_reg_read64(const std::string &reg)
+{
+    if (not _tree->exists(_root_path / "registers" / "rb" / reg)) {
+        throw uhd::key_error(str(
+                boost::format("Invalid readback register name: %s")
+                % reg
+        ));
+    }
+    return user_reg_read64(boost::uint32_t(
+        _tree->access<size_t>(_root_path / "registers" / "rb" / reg).get()
+    ));
+}
+
 boost::uint32_t block_ctrl_base::user_reg_read32(const boost::uint32_t addr)
 {
     try {
@@ -212,6 +249,19 @@ boost::uint32_t block_ctrl_base::user_reg_read32(const boost::uint32_t addr)
     catch(const std::exception &ex) {
         throw uhd::io_error(str(boost::format("[%s] user_reg_read32() failed: %s") % get_block_id().get() % ex.what()));
     }
+}
+
+boost::uint32_t block_ctrl_base::user_reg_read32(const std::string &reg)
+{
+    if (not _tree->exists(_root_path / "registers" / "rb" / reg)) {
+        throw uhd::key_error(str(
+                boost::format("Invalid readback register name: %s")
+                % reg
+        ));
+    }
+    return user_reg_read32(boost::uint32_t(
+        _tree->access<size_t>(_root_path / "registers" / "sr" / reg).get()
+    ));
 }
 
 void block_ctrl_base::clear()
