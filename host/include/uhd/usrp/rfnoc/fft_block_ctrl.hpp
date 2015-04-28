@@ -51,12 +51,6 @@ public:
         MAGNITUDE_SQUARED = 2
     } magnitude_t;
 
-    static const boost::uint32_t SR_FFT_RESET       = 131;  // Note: AXI config bus uses 129 & 130
-    static const boost::uint32_t SR_FFT_SIZE_LOG2   = 132;
-    static const boost::uint32_t SR_MAGNITUDE_OUT   = 133;
-    static const boost::uint32_t RB_FFT_RESET       = 0;
-    static const boost::uint32_t RB_MAGNITUDE_OUT   = 1;
-
     //! Reset FFT
     //
     // Toggles FFT reset bit

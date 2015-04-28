@@ -94,12 +94,12 @@ public:
 
     void set_fft_reset(bool enable)
     {
-        sr_write(SR_FFT_RESET, enable);
+        sr_write("FFT_RESET", enable);
     }
 
     bool get_fft_reset()
     {
-        return(user_reg_read64(RB_FFT_RESET) != 0);
+        return(user_reg_read64("RB_FFT_RESET") != 0);
     }
 
     void set_fft_size(int fft_size)
@@ -125,7 +125,7 @@ public:
         //// 2. Update block
         // TODO FFT scaling set conservatively (1/N), need method to allow user to set
         sr_write(AXIS_CONFIG_BUS, (0x6AA << 9) + (0 << 8) + log2_fft_size);
-        sr_write(SR_FFT_SIZE_LOG2, log2_fft_size);
+        sr_write("FFT_SIZE_LOG2", log2_fft_size);
     } /* set_fft_size() */
 
     void set_magnitude_out_str(const std::string &magnitude_out)
@@ -142,12 +142,12 @@ public:
 
     void set_magnitude_out(magnitude_t magnitude_out)
     {
-        sr_write(SR_MAGNITUDE_OUT, magnitude_out);
+        sr_write("MAGNITUDE_OUT", magnitude_out);
     } /* set_magnitude_out() */
 
     magnitude_t get_magnitude_out()
     {
-        return (static_cast<magnitude_t>(user_reg_read64(RB_MAGNITUDE_OUT)));
+        return (static_cast<magnitude_t>(user_reg_read64("RB_MAGNITUDE_OUT")));
     }
 
 private:
