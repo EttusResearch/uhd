@@ -646,7 +646,7 @@ void e300_impl::_enforce_tick_rate_limits(
         }
         // Minimum rate restriction due to MMCM used in capture interface to AD9361.
         // Xilinx Artix-7 FPGA MMCM minimum input frequency is 10 MHz.
-        const double min_tick_rate = uhd::usrp::e300::MIN_TICK_RATE;
+        const double min_tick_rate = uhd::usrp::e300::MIN_TICK_RATE / ((chan_count <= 1) ? 1 : 2);
         if (tick_rate - min_tick_rate < 0.0)
         {
             throw uhd::value_error(boost::str(
