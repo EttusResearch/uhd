@@ -55,7 +55,6 @@ IF(ENABLE_MANUAL)
         SET(DOXYGEN_FPGA_MANUAL_REFERENCE "\\subpage md_fpga \"Part III: FPGA Manual\"")
 	SET(DOXYGEN_STRIP_EXTRA "${FPGA_SUBMODULE_DIR}/docs")
     ENDIF(HAS_FPGA_SUBMODULE)
-    message(STATUS ${manual_sources})
     CONFIGURE_FILE(
         ${CMAKE_CURRENT_SOURCE_DIR}/mainpage.dox.in
         ${CMAKE_CURRENT_BINARY_DIR}/mainpage.dox
