@@ -65,7 +65,10 @@ std::vector<std::string> control_impl::get_sensors(void)
 uhd::sensor_value_t control_impl::get_sensor(std::string key)
 {
     if (key == "gps_time") {
-        return sensor_value_t("GPS epoch time", int(_get_epoch_time()), "seconds");
+        bool lock;
+        _locked.wait_and_see(lock);
+        return sensor_value_t("GPS epoch time",
+            lock ? int(_get_epoch_time()) : 0, "seconds");
     } else if (key == "gps_locked") {
         bool lock;
         _locked.wait_and_see(lock);
