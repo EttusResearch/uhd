@@ -70,6 +70,7 @@ SET(CMAKE_REQUIRED_FLAGS)
 
 IF(HAVE_EMMINTRIN_H)
     SET(convert_with_sse2_sources
+        ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_sc16.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_fc64.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_fc32.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc8_to_fc64.cpp
