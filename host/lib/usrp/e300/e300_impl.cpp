@@ -574,6 +574,17 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     }
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
+
+    // GPS installed: use external ref, time, and init time spec
+    if (_sensor_manager->get_gps_found()) {
+        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
+        UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
+        const time_t tp = time_t(_sensor_manager->get_sensor("gps_time").to_int()+1);
+        _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
+    } else {
+        //init to internal clock and time source
+        _tree->access<std::string>(mb_path / "time_source/value").set("internal");
+    }
 }
 
 boost::uint8_t e300_impl::_get_internal_gpio(
