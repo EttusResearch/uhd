@@ -266,6 +266,8 @@ public:
         }
 
         // Enable the reference clocks that we need
+        _rx_target_pfd_freq = pfd_freq_max;
+        _tx_target_pfd_freq = pfd_freq_max;
         if (_rev >= 1)
         {
             // set dboard clock rates to as close to the max PFD freq as possible

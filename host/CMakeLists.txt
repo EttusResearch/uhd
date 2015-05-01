@@ -24,7 +24,7 @@
 # Project setup
 ########################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-PROJECT(UHD CXX)
+PROJECT(UHD CXX C)
 ENABLE_TESTING()
 
 #make sure our local CMake Modules path comes first
@@ -284,8 +284,8 @@ UHD_INSTALL(FILES
 #{{{IMG_SECTION
 # This section is written automatically by /images/create_imgs_package.py
 # Any manual changes in here will be overwritten.
-SET(UHD_IMAGES_MD5SUM "37d4899e320809951149c3670fb054ee")
-SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.009.git-139-g3e3e236a.zip")
+SET(UHD_IMAGES_MD5SUM "4b30c563530a3339a1a1510762afe555")
+SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.009.git-166-ged632e6a.zip")
 #}}}
 
 ########################################################################
@@ -295,6 +295,19 @@ LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLA
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF)
+
+########################################################################
+# Check for fpga-src submodule
+########################################################################
+SET(HAS_FPGA_SUBMODULE FALSE)
+EXECUTE_PROCESS(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import os; print os.path.abspath(os.path.join('${CMAKE_SOURCE_DIR}', '..', 'fpga-src'))"
+    OUTPUT_VARIABLE FPGA_SUBMODULE_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS ${FPGA_SUBMODULE_DIR})
+IF(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
+    SET(HAS_FPGA_SUBMODULE TRUE)
+ENDIF(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
 
 ########################################################################
 # Add the subdirectories

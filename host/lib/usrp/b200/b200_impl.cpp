@@ -43,10 +43,6 @@ using namespace uhd::transport;
 
 static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
 
-//! mapping of frontend to radio perif index
-static const size_t FE1 = 1;
-static const size_t FE2 = 0;
-
 class b200_ad9361_client_t : public ad9361_params {
 public:
     ~b200_ad9361_client_t() {}
@@ -77,6 +73,24 @@ public:
 /***********************************************************************
  * Discovery
  **********************************************************************/
+//! Look up the type of B-Series device we're currently running.
+//  If the product ID stored in mb_eeprom is invalid, throws a
+//  uhd::runtime_error.
+static b200_type_t get_b200_type(const mboard_eeprom_t &mb_eeprom)
+{
+    if (mb_eeprom["product"].empty()) {
+        throw uhd::runtime_error("B200: Missing product ID on EEPROM.");
+    }
+    boost::uint16_t product_id = boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]);
+    if (not B2X0_PRODUCT_ID.has_key(product_id)) {
+        throw uhd::runtime_error(str(
+            boost::format("B200 unknown product code: 0x%04x")
+            % product_id
+        ));
+    }
+    return B2X0_PRODUCT_ID[product_id];
+}
+
 static device_addrs_t b200_find(const device_addr_t &hint)
 {
     device_addrs_t b200_addrs;
@@ -155,24 +169,14 @@ static device_addrs_t b200_find(const device_addr_t &hint)
             new_addr["type"] = "b200";
             new_addr["name"] = mb_eeprom["name"];
             new_addr["serial"] = handle->get_serial();
-            if (not mb_eeprom["product"].empty())
-            {
-                switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
-                {
-                //0x0001 and 0x7737 are Ettus B200 product Ids.
-                case 0x0001:
-                case 0x7737:
-                case B200_PRODUCT_NI_ID:
-                    new_addr["product"] = "B200";
-                    break;
-                //0x0002 and 0x7738 are Ettus B210 product Ids.
-                case 0x0002:
-                case 0x7738:
-                case B210_PRODUCT_NI_ID:
-                    new_addr["product"] = "B210";
-                    break;
-                default: UHD_MSG(error) << "B200 unknown product code: " << mb_eeprom["product"] << std::endl;
-                }
+            try {
+                // Turn the 16-Bit product ID into a string representation
+                new_addr["product"] = B2X0_STR_NAMES[get_b200_type(mb_eeprom)];
+            } catch (const uhd::runtime_error &e) {
+                // No problem if this fails -- this is just device discovery, after all.
+                UHD_MSG(error) << e.what() << std::endl;
+                // Skip this loop.
+                continue;
             }
             //this is a found b200 when the hint serial and name match or blank
             if (
@@ -204,6 +208,7 @@ UHD_STATIC_BLOCK(register_b200_device)
  * Structors
  **********************************************************************/
 b200_impl::b200_impl(const device_addr_t &device_addr) :
+    _revision(0),
     _tick_rate(0.0) // Forces a clock initialization at startup
 {
     _tree = property_tree::make();
@@ -282,36 +287,55 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
         .subscribe(boost::bind(&b200_impl::set_mb_eeprom, this, _1));
 
     ////////////////////////////////////////////////////////////////////
-    // Load the FPGA image, then reset GPIF
+    // Identify the device type
     ////////////////////////////////////////////////////////////////////
     std::string default_file_name;
-    std::string product_name = "B200?";
-    if (not mb_eeprom["product"].empty())
-    {
-        switch (boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]))
-        {
-        //0x0001 and 0x7737 are Ettus B200 product Ids.
-        case 0x0001:
-        case 0x7737:
-        case B200_PRODUCT_NI_ID:
-            product_name = "B200";
-            default_file_name = B200_FPGA_FILE_NAME;
-            break;
-        //0x0002 and 0x7738 are Ettus B210 product Ids.
-        case 0x0002:
-        case 0x7738:
-        case B210_PRODUCT_NI_ID:
-            product_name = "B210";
-            default_file_name = B210_FPGA_FILE_NAME;
-            break;
-        default: UHD_MSG(error) << "B200 unknown product code: " << mb_eeprom["product"] << std::endl;
+    std::string product_name;
+    try {
+        // This will throw if the product ID is invalid:
+        _b200_type = get_b200_type(mb_eeprom);
+        default_file_name = B2X0_FPGA_FILE_NAME.get(_b200_type);
+        product_name      = B2X0_STR_NAMES.get(_b200_type);
+    } catch (const uhd::runtime_error &e) {
+        // The only reason we may let this pass is if the user specified
+        // the FPGA file name:
+        if (not device_addr.has_key("fpga")) {
+            throw e;
         }
+        // In this case, we must provide a default product name:
+        product_name = "B200?";
+        _b200_type = B200;
     }
-    if (default_file_name.empty())
-    {
-        UHD_ASSERT_THROW(device_addr.has_key("fpga"));
+    if (not mb_eeprom["revision"].empty()) {
+        _revision = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
     }
 
+    ////////////////////////////////////////////////////////////////////
+    // Set up frontend mapping
+    ////////////////////////////////////////////////////////////////////
+    // Explanation: The AD9361 has 2 frontends, FE1 and FE2.
+    // On the B210 FE1 maps to the B-side (or radio 1), and FE2 maps
+    // to the A-side (or radio 0). So, logically, the radios are swapped
+    // between the host side and the AD9361-side.
+    // B200 is more complicated: On Revs <= 4, the A-side is connected,
+    // which means FE2 is used (like B210). On Revs >= 5, the left side
+    // ("B-side") is connected, because these revs use an AD9364, which
+    // does not have an FE2, so we don't swap FEs.
+
+    // Swapped setup:
+    _fe1 = 1;
+    _fe2 = 0;
+    _gpio_state.swap_atr = 1;
+    // Unswapped setup:
+    if (_b200_type == B200 and _revision >= 5) {
+        _fe1 = 0;                   //map radio0 to FE1
+        _fe2 = 1;                   //map radio1 to FE2
+        _gpio_state.swap_atr = 0; // ATRs for radio0 are mapped to FE1
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    // Load the FPGA image, then reset GPIF
+    ////////////////////////////////////////////////////////////////////
     //extract the FPGA path for the B200
     std::string b200_fpga_image = find_image_path(
         device_addr.has_key("fpga")? device_addr["fpga"] : default_file_name
@@ -364,7 +388,6 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
 
     /* Initialize the GPIOs, set the default bandsels to the lower range. Note
      * that calling update_bandsel calls update_gpio_state(). */
-    _gpio_state = gpio_state();
     update_bandsel("RX", 800e6);
     update_bandsel("TX", 850e6);
 
@@ -481,9 +504,11 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     _tree->create<std::vector<size_t> >(mb_path / "rx_chan_dsp_mapping").set(default_map);
     _tree->create<std::vector<size_t> >(mb_path / "tx_chan_dsp_mapping").set(default_map);
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
+        .coerce(boost::bind(&b200_impl::coerce_subdev_spec, this, _1))
         .set(subdev_spec_t())
         .subscribe(boost::bind(&b200_impl::update_subdev_spec, this, "rx", _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
+        .coerce(boost::bind(&b200_impl::coerce_subdev_spec, this, _1))
         .set(subdev_spec_t())
         .subscribe(boost::bind(&b200_impl::update_subdev_spec, this, "tx", _1));
 
@@ -695,7 +720,7 @@ void b200_impl::setup_radio(const size_t dspno)
     for(size_t direction = 0; direction < 2; direction++)
     {
         const std::string x = direction? "rx" : "tx";
-        const std::string key = std::string((direction? "RX" : "TX")) + std::string(((dspno == FE1)? "1" : "2"));
+        const std::string key = std::string((direction? "RX" : "TX")) + std::string(((dspno == _fe1)? "1" : "2"));
         const fs_path rf_fe_path = mb_path / "dboards" / "A" / (x+"_frontends") / (dspno? "B" : "A");
 
         _tree->create<std::string>(rf_fe_path / "name").set("FE-"+key);
@@ -1024,6 +1049,7 @@ void b200_impl::update_bandsel(const std::string& which, double freq)
 void b200_impl::update_gpio_state(void)
 {
     const boost::uint32_t misc_word = 0
+        | (_gpio_state.swap_atr << 8)
         | (_gpio_state.tx_bandsel_a << 7)
         | (_gpio_state.tx_bandsel_b << 6)
         | (_gpio_state.rx_bandsel_a << 5)
@@ -1048,9 +1074,9 @@ void b200_impl::reset_codec_dcm(void)
 
 void b200_impl::update_atrs(void)
 {
-    if (_radio_perifs.size() > FE1 and _radio_perifs[FE1].atr)
+    if (_radio_perifs.size() > _fe1 and _radio_perifs[_fe1].atr)
     {
-        radio_perifs_t &perif = _radio_perifs[FE1];
+        radio_perifs_t &perif = _radio_perifs[_fe1];
         const bool enb_rx = bool(perif.rx_streamer.lock());
         const bool enb_tx = bool(perif.tx_streamer.lock());
         const bool is_rx2 = perif.ant_rx2;
@@ -1066,9 +1092,9 @@ void b200_impl::update_atrs(void)
         atr->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, txonly);
         atr->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, fd);
     }
-    if (_radio_perifs.size() > FE2 and _radio_perifs[FE2].atr)
+    if (_radio_perifs.size() > _fe2 and _radio_perifs[_fe2].atr)
     {
-        radio_perifs_t &perif = _radio_perifs[FE2];
+        radio_perifs_t &perif = _radio_perifs[_fe2];
         const bool enb_rx = bool(perif.rx_streamer.lock());
         const bool enb_tx = bool(perif.tx_streamer.lock());
         const bool is_rx2 = perif.ant_rx2;
@@ -1096,10 +1122,10 @@ void b200_impl::update_antenna_sel(const size_t which, const std::string &ant)
 void b200_impl::update_enables(void)
 {
     //extract settings from state variables
-    const bool enb_tx1 = (_radio_perifs.size() > FE1) and bool(_radio_perifs[FE1].tx_streamer.lock());
-    const bool enb_rx1 = (_radio_perifs.size() > FE1) and bool(_radio_perifs[FE1].rx_streamer.lock());
-    const bool enb_tx2 = (_radio_perifs.size() > FE2) and bool(_radio_perifs[FE2].tx_streamer.lock());
-    const bool enb_rx2 = (_radio_perifs.size() > FE2) and bool(_radio_perifs[FE2].rx_streamer.lock());
+    const bool enb_tx1 = (_radio_perifs.size() > _fe1) and bool(_radio_perifs[_fe1].tx_streamer.lock());
+    const bool enb_rx1 = (_radio_perifs.size() > _fe1) and bool(_radio_perifs[_fe1].rx_streamer.lock());
+    const bool enb_tx2 = (_radio_perifs.size() > _fe2) and bool(_radio_perifs[_fe2].tx_streamer.lock());
+    const bool enb_rx2 = (_radio_perifs.size() > _fe2) and bool(_radio_perifs[_fe2].rx_streamer.lock());
     const size_t num_rx = (enb_rx1?1:0) + (enb_rx2?1:0);
     const size_t num_tx = (enb_tx1?1:0) + (enb_tx2?1:0);
     const bool mimo = num_rx == 2 or num_tx == 2;

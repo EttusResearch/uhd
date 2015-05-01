@@ -2034,6 +2034,7 @@ void b200_usb_init(void) {
 
     /* Check to see if a VID/PID is in the EEPROM that we should use. */
     uint8_t valid[4];
+    uint8_t vidpid[4];
     CyU3PMemSet(valid, 0, 4);
     CyFxUsbI2cTransfer(0x0, 0xA0, 4, valid, CyTrue);
     if(*((uint32_t *) &(valid[0])) == 0xB2145943) {
@@ -2041,7 +2042,6 @@ void b200_usb_init(void) {
         /* Pull the programmed device serial out of the i2c EEPROM, and copy the
          * characters into the device serial string, which is then advertised as
          * part of the USB descriptors. */
-        uint8_t vidpid[4];
         CyU3PMemSet(vidpid, 0, 4);
         CyFxUsbI2cTransfer(0x4, 0xA0, 4, vidpid, CyTrue);
         b200_usb2_dev_desc[8] = vidpid[2];
@@ -2053,6 +2053,35 @@ void b200_usb_init(void) {
         b200_usb3_dev_desc[9] = vidpid[3];
         b200_usb3_dev_desc[10] = vidpid[0];
         b200_usb3_dev_desc[11] = vidpid[1];
+    }
+
+    /* We support two VIDs:
+     *  Ettus Research:         0x2500
+     *  National Instruments:   0x3923
+     *
+     * We support three PIDs:
+     *  Ettus B200/B210:        0x0020
+     *  NI USRP-2900:           0x7813
+     *  NI USRP-2901:           0x7814
+     */
+    uint8_t *mfr_string = NULL;
+    uint8_t *product_string = NULL;
+    if((vidpid[3] == 0x25) && (vidpid[2] == 0x00)) {
+        mfr_string = b200_usb_manufacture_desc;
+        product_string = b200_usb_product_desc;
+    } else if((vidpid[3] == 0x39) && (vidpid[2] == 0x23)) {
+        mfr_string = niusrp_usb_manufacture_desc;
+
+        if((vidpid[1] == 0x78) && (vidpid[0] == 0x13)) {
+            product_string = niusrp_2900_usb_product_desc;
+        } else if((vidpid[1] == 0x78) && (vidpid[0] == 0x14)) {
+            product_string = niusrp_2901_usb_product_desc;
+        } else {
+            product_string = unknown_desc;
+        }
+    } else {
+        mfr_string = unknown_desc;
+        product_string = unknown_desc;
     }
 
     uint8_t ascii_serial[9];
@@ -2101,10 +2130,10 @@ void b200_usb_init(void) {
             (uint8_t *) b200_string_lang_id_desc);
 
     CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 1,
-            (uint8_t *) b200_usb_manufacture_desc);
+            (uint8_t *) mfr_string);
 
     CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 2,
-            (uint8_t *) b200_usb_product_desc);
+            (uint8_t *) product_string);
 
     CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 3,
             (uint8_t *) dev_serial);

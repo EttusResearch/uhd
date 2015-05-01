@@ -19,16 +19,16 @@ distributed by the FX3 manufacturer, Cypress Semiconductor. You can download the
 [FX3 SDK from here](http://www.cypress.com/?rID=57990).
 *Note*: You *must* use SDK version 1.2.3!
 
-Once you have downloaded it, extract the ARM cross-compiler sub-directory from
-the zip file and put it somewhere useful. The highest level directory you need
-is `arm-2011.03/`.
+Once you have downloaded it, extract the ARM cross-compiler from the tarball
+`ARM_GCC.tar.gz` and put it somewhere useful. The highest level directory you
+need is `arm-2013.03/`.
 
 Now that you have extracted the cross compilation toolchain, you need to set up
 some environment variables to tell the B2xx `makefile` where to look for the
 tools. These variables are:
 
 ```
-    $ export ARMGCC_INSTALL_PATH=<your path>/arm-2011.03
+    $ export ARMGCC_INSTALL_PATH=<your path>/arm-2013.03
     $ export ARMGCC_VERSION=4.5.2
 ```
 
@@ -61,7 +61,7 @@ into the `common/` directory you just copied from the Cypress SDK, and apply the
 patch `b200/fx3_mem_map.patch`.
 
 ```
-    # cd uhd.git/firmware/common/
+    # cd uhd.git/firmware/fx3/common/
     $ patch -p2 < ../b200/fx3_mem_map.patch
 ```
 

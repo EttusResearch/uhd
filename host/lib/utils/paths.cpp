@@ -367,10 +367,10 @@ std::string uhd::find_utility(std::string name) {
         .string();
 }
 
-std::string uhd::print_utility_error(std::string name){
+std::string uhd::print_utility_error(const std::string &name, const std::string &args){
     #ifdef UHD_PLATFORM_WIN32
-    return "As an Administrator, please run:\n\n\"" + find_utility(name) + "\"";
+    return "As an Administrator, please run:\n\n\"" + find_utility(name) + args +  "\"";
     #else
-    return "Please run:\n\n \"" + find_utility(name) + "\"";
+    return "Please run:\n\n \"" + find_utility(name) + (args.empty() ? "" : (" " + args)) + "\"";
     #endif
 }

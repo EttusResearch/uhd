@@ -81,6 +81,7 @@ void b200_impl::set_auto_tick_rate(
     if (num_chans == 0) { // Divine them
         num_chans = std::max(size_t(1), max_chan_count());
     }
+    const double max_tick_rate = ad9361_device_t::AD9361_MAX_CLOCK_RATE/num_chans;
 
     // See also the doxygen documentation for these steps in b200_impl.hpp
     // Step 1: Obtain LCM and max rate from all relevant dsps
@@ -94,6 +95,13 @@ void b200_impl::set_auto_tick_rate(
                 continue;
             }
             double this_dsp_rate = _tree->access<double>(dsp_path / "rate/value").get();
+            // Check if the user selected something completely unreasonable:
+            if (this_dsp_rate > max_tick_rate) {
+                throw uhd::value_error(str(
+                        boost::format("Requested sampling rate (%.2f Msps) exceeds maximum tick rate of %.2f MHz.")
+                        % (this_dsp_rate / 1e6) % (max_tick_rate / 1e6)
+                ));
+            }
             // If this_dsp_rate == B200_DEFAULT_RATE, we assume the user did not actually set
             // the sampling rate. If the user *did* set the rate to
             // B200_DEFAULT_RATE on all DSPs, then this will still work (see below).
@@ -118,7 +126,6 @@ void b200_impl::set_auto_tick_rate(
 
     // Step 2: Determine whether if we can use lcm_rate (preferred),
     // or have to give up because too large:
-    const double max_tick_rate = ad9361_device_t::AD9361_MAX_CLOCK_RATE/num_chans;
     double base_rate = static_cast<double>(lcm_rate);
     if (base_rate > max_tick_rate) {
         UHD_MSG(warning)
@@ -175,10 +182,19 @@ void b200_impl::update_tick_rate(const double new_tick_rate)
     }
 }
 
+#define CHECK_RATE_AND_THROW(rate)  \
+        if (rate >ad9361_device_t::AD9361_MAX_CLOCK_RATE ) { \
+            throw uhd::value_error(str( \
+                    boost::format("Requested sampling rate (%.2f Msps) exceeds maximum tick rate.") \
+                    % (rate / 1e6) \
+            )); \
+        }
+
 double b200_impl::coerce_rx_samp_rate(rx_dsp_core_3000::sptr ddc, size_t dspno, const double rx_rate)
 {
     // Have to set tick rate first, or the ddc will change the requested rate based on default tick rate
     if (_tree->access<bool>("/mboards/0/auto_tick_rate").get()) {
+        CHECK_RATE_AND_THROW(rx_rate);
         const std::string dsp_path = (boost::format("/mboards/0/rx_dsps/%s") % dspno).str();
         set_auto_tick_rate(rx_rate, dsp_path);
     }
@@ -208,6 +224,7 @@ double b200_impl::coerce_tx_samp_rate(tx_dsp_core_3000::sptr duc, size_t dspno, 
 {
     // Have to set tick rate first, or the duc will change the requested rate based on default tick rate
     if (_tree->access<bool>("/mboards/0/auto_tick_rate").get()) {
+        CHECK_RATE_AND_THROW(tx_rate);
         const std::string dsp_path = (boost::format("/mboards/0/tx_dsps/%s") % dspno).str();
         set_auto_tick_rate(tx_rate, dsp_path);
     }
@@ -228,29 +245,31 @@ void b200_impl::update_tx_samp_rate(const size_t dspno, const double rate)
 /***********************************************************************
  * frontend selection
  **********************************************************************/
+uhd::usrp::subdev_spec_t b200_impl::coerce_subdev_spec(const uhd::usrp::subdev_spec_t &spec_)
+{
+    uhd::usrp::subdev_spec_t spec = spec_;
+    // Because of the confusing nature of the subdevs on B200
+    // with different revs, we provide a convenience override,
+    // where both A:A and A:B are mapped to A:A.
+    //
+    // Any other spec is probably illegal and will be caught by
+    // validate_subdev_spec().
+    if (spec.size() and _b200_type == B200 and spec[0].sd_name == "B") {
+        spec[0].sd_name = "A";
+    }
+    return spec;
+}
+
 void b200_impl::update_subdev_spec(const std::string &tx_rx, const uhd::usrp::subdev_spec_t &spec)
 {
     //sanity checking
-    if (spec.size()) validate_subdev_spec(_tree, spec, tx_rx);
-    UHD_ASSERT_THROW(spec.size() <= _radio_perifs.size());
-
-    if (spec.size() >= 1)
-    {
-        UHD_ASSERT_THROW(spec[0].db_name == "A");
-        UHD_ASSERT_THROW(spec[0].sd_name == "A" or spec[0].sd_name == "B");
-    }
-    if (spec.size() == 2)
-    {
-        UHD_ASSERT_THROW(spec[1].db_name == "A");
-        UHD_ASSERT_THROW(
-            (spec[0].sd_name == "A" and spec[1].sd_name == "B") or
-            (spec[0].sd_name == "B" and spec[1].sd_name == "A")
-        );
+    if (spec.size()) {
+        validate_subdev_spec(_tree, spec, tx_rx);
     }
 
     std::vector<size_t> chan_to_dsp_map(spec.size(), 0);
     for (size_t i = 0; i < spec.size(); i++) {
-	chan_to_dsp_map[i] = (spec[i].sd_name == "A") ? 0 : 1;
+        chan_to_dsp_map[i] = (spec[i].sd_name == "A") ? 0 : 1;
     }
     _tree->access<std::vector<size_t> >("/mboards/0" / (tx_rx + "_chan_dsp_mapping")).set(chan_to_dsp_map);
 
@@ -300,7 +319,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
 {
     managed_recv_buffer::sptr buff = xport->get_recv_buff();
     if (not buff or buff->size() < 8)
-        return NULL;
+        return uhd::msg_task::msg_type_t(0, uhd::msg_task::msg_payload_t());
 
     const boost::uint32_t sid = uhd::wtohx(buff->cast<const boost::uint32_t *>()[1]);
     switch (sid) {
@@ -364,7 +383,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
     default:
         UHD_MSG(error) << "Got a ctrl packet with unknown SID " << sid << std::endl;
     }
-    return NULL;
+    return uhd::msg_task::msg_type_t(0, uhd::msg_task::msg_payload_t());
 }
 
 /***********************************************************************
