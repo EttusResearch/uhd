@@ -42,6 +42,7 @@ LIBUHD_APPEND_SOURCES(
     # Default block control classes:
     ${CMAKE_CURRENT_SOURCE_DIR}/fir_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fft_block_ctrl_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/fosphor_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/null_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/packet_resizer_block_ctrl_impl.cpp
