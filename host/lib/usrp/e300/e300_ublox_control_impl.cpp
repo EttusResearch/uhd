@@ -83,9 +83,6 @@ std::time_t control_impl::_get_epoch_time(void)
 
 control_impl::~control_impl(void)
 {
-    // turn it all off again
-    configure_antenna(0x001a, 0x8251);
-    configure_pps(0xf4240, 0x3d090, 1, 1, 0, 0, 0, 0);
 }
 
 void control_impl::_decode_init(void)
