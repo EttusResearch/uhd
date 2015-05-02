@@ -101,11 +101,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   }else
     std::cout << boost::format("ref_locked sensor not present on this board.\n");
 
+  // Explicitly set time source to gpsdo
+  usrp->set_time_source("gpsdo");
+
   //Check PPS and compare UHD device time to GPS time
   boost::this_thread::sleep(boost::posix_time::seconds(1));
   uhd::sensor_value_t gps_time = usrp->get_mboard_sensor("gps_time");
   const time_t pc_clock_time = time(NULL);
   const uhd::time_spec_t last_pps_time = usrp->get_time_last_pps();
+
   if (last_pps_time.to_ticks(1.0) == gps_time.to_int()) {
       std::cout << boost::format("GPS and UHD Device time are aligned.\n");
   } else {
