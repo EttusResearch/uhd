@@ -171,10 +171,8 @@ static device_addrs_t b200_find(const device_addr_t &hint)
                 new_addr["product"] = B2X0_STR_NAMES[get_b200_type(mb_eeprom)];
             } catch (const uhd::runtime_error &e) {
                 // No problem if this fails -- this is just device discovery, after all.
-                UHD_MSG(error) << e.what() << std::endl;
-                // Skip this loop.
-                continue;
             }
+
             //this is a found b200 when the hint serial and name match or blank
             if (
                 (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
