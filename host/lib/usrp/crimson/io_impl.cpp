@@ -180,6 +180,9 @@ private:
 			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
 			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
 
+         // power on the channel
+         tree->access<std::string>(mb_path / "rx" / "Channel_"+ch / "pwr").set("1");
+
 			// vita enable
 			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("1");
 
@@ -326,6 +329,9 @@ private:
 			std::string ch       = boost::lexical_cast<std::string>((char)(i + 65));
 			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
 			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
+
+         // power on the channel
+         tree->access<std::string>(mb_path / "tx" / "Channel_"+ch / "pwr").set("1");
 
 			// vita disable
 			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("0");
