@@ -397,12 +397,12 @@ tune_result_t multi_crimson_impl::set_rx_freq(const tune_request_t &tune_request
    if ( req.rf_freq_policy == tune_request_t::POLICY_MANUAL ) {
       if (req.rf_freq > 15000000.0) {
          req.rf_freq -= 15000000.0;
-         _tree->access<double>(rx_dsp_root(chan) / "nco").set(-15000000);
+         _tree->access<int>(rx_dsp_root(chan) / "nco").set(-15000000);
       }
    } else {
       if (req.target_freq > 15000000.0) {
          req.target_freq -= 15000000.0;
-         _tree->access<double>(rx_dsp_root(chan) / "nco").set(-15000000);
+         _tree->access<int>(rx_dsp_root(chan) / "nco").set(-15000000);
       }
    }
 
@@ -633,12 +633,12 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
    if ( req.rf_freq_policy == tune_request_t::POLICY_MANUAL ) {
       if (req.rf_freq > 15000000.0) {
          req.rf_freq -= 15000000.0;
-         _tree->access<double>(tx_rf_fe_root(chan) / "nco").set(15);
+         _tree->access<int>(tx_rf_fe_root(chan) / "nco").set(15);
       }
    } else {
       if (req.target_freq > 15000000.0) {
          req.target_freq -= 15000000.0;
-         _tree->access<double>(tx_rf_fe_root(chan) / "nco").set(15);
+         _tree->access<int>(tx_rf_fe_root(chan) / "nco").set(15);
       }
    }
 
