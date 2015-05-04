@@ -183,6 +183,9 @@ private:
 			// vita enable
 			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("1");
 
+         // rf band high
+			tree->access<std::string>(mb_path / "dboards" / ch / "rx_frontends" / "Channel_"+ch / "freq" / "band").set("1");
+
 			// SFPA
 			if (strcmp(sink.c_str(), "sfpa") == 0) {
 				//std::cout << __func__ << "(): opened UDP[ IP: "
@@ -326,6 +329,9 @@ private:
 
 			// vita disable
 			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("0");
+
+         // rf band high
+			tree->access<std::string>(mb_path / "dboards" / ch / "tx_frontends" / "Channel_"+ch / "freq" / "band").set("1");
 
 			// SFPA (all the same because this is a sink)
 			if (strcmp(sink.c_str(), "sfpa") == 0) {

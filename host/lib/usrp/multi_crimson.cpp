@@ -368,7 +368,7 @@ void multi_crimson_impl::set_rx_rate(double rate, size_t chan){
     _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").set(rate);
     double actual_rate = _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").get();
     boost::format base_message (
-            "Sample Rate Request:\n"
+            "RX Sample Rate Request:\n"
     	    "  Requested sample rate: %f MSps\n"
             "  Actual sample rate: %f MSps\n");
     base_message % (rate/1e6) % (actual_rate/1e6);
@@ -388,9 +388,23 @@ meta_range_t multi_crimson_impl::get_rx_rates(size_t chan){
 }
 
 // set the RX frequency on specified channel
-tune_result_t multi_crimson_impl::set_rx_freq(const tune_request_t &tune_request, size_t chan){
+tune_result_t multi_crimson_impl::set_rx_freq(const tune_request_t &tune_request, size_t chan) {
     tune_request_t req = tune_request;
     tune_result_t result;
+
+   // check if the freuqnecy is greater than 15 MHz, if it is, then mix it 15 MHz off
+   // and then mix it back down tot he correct frequency with DSP NCO
+   if ( req.rf_freq_policy == tune_request_t::POLICY_MANUAL ) {
+      if (req.rf_freq > 15000000.0) {
+         req.rf_freq -= 15000000.0;
+         _tree->access<double>(rx_dsp_root(chan) / "nco").set(-15000000);
+      }
+   } else {
+      if (req.target_freq > 15000000.0) {
+         req.target_freq -= 15000000.0;
+         _tree->access<double>(rx_dsp_root(chan) / "nco").set(-15000000);
+      }
+   }
 
     // check the tuning ranges first, and clip if necessary
     meta_range_t rf_range  = _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "freq" / "range").get();
@@ -590,7 +604,7 @@ void multi_crimson_impl::set_tx_rate(double rate, size_t chan){
     _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").set(rate);
     double actual_rate = _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").get();
     boost::format base_message (
-            "Sample Rate Request:\n"
+            "TX Sample Rate Request:\n"
     	    "  Requested sample rate: %f MSps\n"
             "  Actual sample rate: %f MSps\n");
     base_message % (rate/1e6) % (actual_rate/1e6);
@@ -613,6 +627,20 @@ meta_range_t multi_crimson_impl::get_tx_rates(size_t chan){
 tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request, size_t chan){
     tune_request_t req = tune_request;
     tune_result_t result;
+
+   // check if the freuqnecy is greater than 15 MHz, if it is, then mix it 15 MHz off
+   // and then mix it back down tot he correct frequency with DSP NCO
+   if ( req.rf_freq_policy == tune_request_t::POLICY_MANUAL ) {
+      if (req.rf_freq > 15000000.0) {
+         req.rf_freq -= 15000000.0;
+         _tree->access<double>(tx_rf_fe_root(chan) / "nco").set(15);
+      }
+   } else {
+      if (req.target_freq > 15000000.0) {
+         req.target_freq -= 15000000.0;
+         _tree->access<double>(tx_rf_fe_root(chan) / "nco").set(15);
+      }
+   }
 
     // check the tuning ranges first, and clip if necessary
     meta_range_t rf_range  = _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "freq" / "range").get();

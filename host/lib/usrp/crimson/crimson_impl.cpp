@@ -527,7 +527,7 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 
 	TREE_CREATE_ST(rx_fe_path / "use_lo_offset", bool, false);
 	TREE_CREATE_ST(tx_fe_path / "use_lo_offset", bool, false);
-	//TREE_CREATE_RW(tx_fe_path / "lo_offset" / "value", "tx_"+lc_num+"/rf/dac/nco", double, double);
+	TREE_CREATE_RW(tx_fe_path / "lo_offset" / "value", "tx_"+lc_num+"/rf/dac/nco", double, double);
 
 	TREE_CREATE_ST(tx_fe_path / "freq" / "range", meta_range_t,
 		meta_range_t(CRIMSON_FREQ_RANGE_START, CRIMSON_FREQ_RANGE_STOP, CRIMSON_FREQ_RANGE_STEP));
@@ -542,6 +542,10 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	TREE_CREATE_RW(rx_fe_path / "gain" / "value", "rx_"+lc_num+"/rf/gain/val", double, double);
 	TREE_CREATE_RW(tx_fe_path / "freq" / "value", "tx_"+lc_num+"/rf/freq/val", double, double);
 	TREE_CREATE_RW(tx_fe_path / "gain" / "value", "tx_"+lc_num+"/rf/gain/val", double, double);
+
+   // RF band
+	TREE_CREATE_RW(rx_fe_path / "freq" / "band", "rx_"+lc_num+"/rf/freq/band", int, int);
+	TREE_CREATE_RW(tx_fe_path / "freq" / "band", "tx_"+lc_num+"/rf/freq/band", int, int);
 
 	// these are phony properties for Crimson
 	TREE_CREATE_ST(db_path / "rx_eeprom",  dboard_eeprom_t, dboard_eeprom_t());
@@ -570,6 +574,10 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	TREE_CREATE_RW(tx_dsp_path / "rate" / "value", "tx_"+lc_num+"/dsp/rate", double, double);
 	TREE_CREATE_RW(tx_dsp_path / "freq" / "value", "tx_"+lc_num+"/dsp/freq", double, double);
 	TREE_CREATE_RW(tx_dsp_path / "bw" / "value",   "tx_"+lc_num+"/dsp/rate", double, double);
+
+	TREE_CREATE_RW(rx_dsp_path / "nco", "rx_"+lc_num+"/dsp/nco_adj", int, int);
+	TREE_CREATE_RW(tx_dsp_path / "nco", "tx_"+lc_num+"/dsp/nco_adj", int, int);
+	TREE_CREATE_RW(tx_fe_path / "nco", "tx_"+lc_num+"/rf/dac/nco", int, int);
 
 	// Link settings
 	TREE_CREATE_RW(rx_link_path / "enable",  "rx_"+lc_num+"/link/enable",  std::string, string);
