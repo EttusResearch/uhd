@@ -21,7 +21,6 @@
 	- Timed commands in FPGA
 	- Timed sampling in FPGA
 	- 16-bit fixed point sample mode (sc16)
-	- Up to 10 MHz of RF bandwidth with 16-bit samples
 
 \section e3x0_getting_started Getting started
 
