@@ -96,7 +96,10 @@ void b200_impl::set_auto_tick_rate(
             }
             double this_dsp_rate = _tree->access<double>(dsp_path / "rate/value").get();
             // Check if the user selected something completely unreasonable:
-            if (this_dsp_rate > max_tick_rate) {
+            if (uhd::math::fp_compare::fp_compare_delta<double>(this_dsp_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) >
+                uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)) {
+                UHD_MSG(status) << boost::format("%.20d") % this_dsp_rate << std::endl;
+                UHD_MSG(status) << boost::format("%.20d") % max_tick_rate << std::endl;
                 throw uhd::value_error(str(
                         boost::format("Requested sampling rate (%.2f Msps) exceeds maximum tick rate of %.2f MHz.")
                         % (this_dsp_rate / 1e6) % (max_tick_rate / 1e6)
@@ -127,7 +130,8 @@ void b200_impl::set_auto_tick_rate(
     // Step 2: Determine whether if we can use lcm_rate (preferred),
     // or have to give up because too large:
     double base_rate = static_cast<double>(lcm_rate);
-    if (base_rate > max_tick_rate) {
+    if (uhd::math::fp_compare::fp_compare_delta<double>(base_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) >
+        uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)) {
         UHD_MSG(warning)
             << "Cannot automatically determine an appropriate tick rate for these sampling rates." << std::endl
             << "Consider using different sampling rates, or manually specify a suitable master clock rate." << std::endl;
@@ -154,8 +158,14 @@ void b200_impl::set_auto_tick_rate(
         multiplier = 1;
     }
     double new_rate = base_rate * multiplier;
-    UHD_ASSERT_THROW(new_rate >= min_tick_rate);
-    UHD_ASSERT_THROW(new_rate <= max_tick_rate);
+    UHD_ASSERT_THROW(
+        uhd::math::fp_compare::fp_compare_delta<double>(new_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) >=
+        uhd::math::fp_compare::fp_compare_delta<double>(min_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)
+    );
+    UHD_ASSERT_THROW(
+        uhd::math::fp_compare::fp_compare_delta<double>(new_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) <=
+        uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)
+    );
 
     if (_tree->access<double>("/mboards/0/tick_rate").get() != new_rate) {
         _tree->access<double>("/mboards/0/tick_rate").set(new_rate);
@@ -183,7 +193,8 @@ void b200_impl::update_tick_rate(const double new_tick_rate)
 }
 
 #define CHECK_RATE_AND_THROW(rate)  \
-        if (rate >ad9361_device_t::AD9361_MAX_CLOCK_RATE ) { \
+        if (uhd::math::fp_compare::fp_compare_delta<double>(rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) > \
+            uhd::math::fp_compare::fp_compare_delta<double>(ad9361_device_t::AD9361_MAX_CLOCK_RATE, uhd::math::FREQ_COMPARISON_DELTA_HZ)) { \
             throw uhd::value_error(str( \
                     boost::format("Requested sampling rate (%.2f Msps) exceeds maximum tick rate.") \
                     % (rate / 1e6) \
