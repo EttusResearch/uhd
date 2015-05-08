@@ -484,26 +484,27 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     // register the time keepers - only one can be the highlander
     ////////////////////////////////////////////////////////////////////
-    if (_num_radios >= 1) {
+    if (_num_radios == 1) {
+        _tree->create<time_spec_t>(mb_path / "time" / "now")
+            .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
+            .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[0].time64, _1));
+    }
+    if (_num_radios == 2) {
         _tree->create<time_spec_t>(mb_path / "time" / "now")
             .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
             .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[0].time64, _1))
-        ;
-    }
-    if (_num_radios == 2) {
-        _tree->create<time_spec_t>(mb_path / "time" / "now")
             .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[1].time64, _1));
     }
-    if (_num_radios >= 1) {
+    if (_num_radios == 1) {
+        _tree->create<time_spec_t>(mb_path / "time" / "pps")
+            .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64))
+            .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[0].time64, _1));
+    }
+    if (_num_radios == 2) {
         _tree->create<time_spec_t>(mb_path / "time" / "pps")
             .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64))
             .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[0].time64, _1))
-        ;
-    }
-    if (_num_radios == 2) {
-        _tree->create<time_spec_t>(mb_path / "time" / "pps")
-            .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[1].time64, _1))
-        ;
+            .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[1].time64, _1));
     }
     //setup time source props
     _tree->create<std::string>(mb_path / "time_source" / "value")
