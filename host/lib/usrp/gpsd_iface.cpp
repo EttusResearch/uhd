@@ -64,7 +64,8 @@ public:
         _bthread.swap(t);
 
 
-        _sensors = boost::assign::list_of("gps_locked")("gps_time")("gps_position")("gps_gprmc");
+        _sensors = boost::assign::list_of("gps_locked")("gps_time") \
+            ("gps_position")("gps_gpgga")("gps_gprmc");
     }
 
     virtual ~gpsd_iface_impl(void)
@@ -90,6 +91,9 @@ public:
         } else if (key == "gps_time") {
             return sensor_value_t(
                 "GPS epoch time", int(_epoch_time()), "seconds");
+        } else if (key == "gps_gpgga") {
+            return sensor_value_t(
+                "GPGGA", _gps_gpgga(), "");
         } else if (key == "gps_gprmc") {
             return sensor_value_t(
                 "GPRMC", _gps_gprmc(), "");
@@ -220,6 +224,63 @@ private: // member functions
         % _zeroize(_gps_data.fix.speed * MPS_TO_KNOTS)
         % _zeroize(_gps_data.fix.track)
         % tm.tm_mday % tm.tm_mon % tm.tm_year);
+
+        string.append(str(
+            boost::format("*%02X") % _nmea_checksum(string)));
+
+        return string;
+    }
+
+    std::string _gps_gpgga(void)
+    {
+        struct tm tm;
+        time_t intfixtime;
+
+        // currently not supported, make it blank
+        float mag_var = NAN;
+
+        boost::shared_lock<boost::shared_mutex> l(_d_mutex);
+
+        intfixtime = (time_t) _gps_data.fix.time;
+        (void) gmtime_r(&intfixtime, &tm);
+
+        std::string string = str(boost::format(
+            "$GPGGA,%02d%02d%02d,%09.4f,%c,%010.4f,%c,%d,%02d,")
+            % tm.tm_hour
+            % tm.tm_min
+            % tm.tm_sec
+            % _deg_to_dm(std::fabs(_gps_data.fix.latitude))
+            % ((_gps_data.fix.latitude > 0) ? 'N' : 'S')
+            % _deg_to_dm(std::fabs(_gps_data.fix.longitude))
+            % ((_gps_data.fix.longitude > 0) ? 'E' : 'W')
+            % _gps_data.status
+            % _gps_data.satellites_used);
+
+        if (std::isnan(_gps_data.dop.hdop))
+            string.append(",");
+        else
+            string.append(
+                str(boost::format("%.2f,") % _gps_data.dop.hdop));
+
+        if (std::isnan(_gps_data.fix.altitude))
+            string.append(",");
+        else
+            string.append(
+                str(boost::format("%.2f,M,") % _gps_data.fix.altitude));
+
+        if (std::isnan(_gps_data.separation))
+            string.append(",");
+        else
+            string.append(
+                str(boost::format("%.3f,M,") % _gps_data.separation));
+
+        if (std::isnan(mag_var))
+            string.append(",");
+        else {
+            string.append(
+                str(boost::format("%3.2f,%s") % std::fabs(mag_var)
+                % (mag_var > 0 ? "E" : "W")));
+        }
 
         string.append(str(
             boost::format("*%02X") % _nmea_checksum(string)));
