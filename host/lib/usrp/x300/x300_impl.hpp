@@ -48,7 +48,7 @@ static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 static const double X300_DEFAULT_TICK_RATE      = 200e6;        //Hz
 static const double X300_BUS_CLOCK_RATE         = 166.666667e6; //Hz
 
-static const size_t X300_TX_HW_BUFF_SIZE        = 520*1024;      //512K SRAM buffer + 8K 2Clk FIFO
+static const size_t X300_TX_HW_BUFF_SIZE        = 392*1024;      //384K SRAM buffer + 8K 2Clk FIFO
 
 static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
 static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib

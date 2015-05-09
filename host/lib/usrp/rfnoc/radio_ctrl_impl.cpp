@@ -48,7 +48,7 @@ public:
 
         // TODO: Once the radio looks like a NoC-Block, remove this!
         _tree->remove(_root_path / "input_buffer_size");
-        _tree->create<size_t>(_root_path / "input_buffer_size/0").set(520*1024/2);
+        _tree->create<size_t>(_root_path / "input_buffer_size/0").set(392*1024);
 
         // TODO this is a hack
         blockdef::port_t port;
