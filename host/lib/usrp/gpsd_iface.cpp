@@ -27,6 +27,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 
 #include <uhd/exception.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
@@ -173,7 +174,7 @@ private: // member functions
 
     float _zeroize(float x)
     {
-      return std::isnan(x) ? 0.0 : x;
+      return boost::math::isnan(x) ? 0.0 : x;
     }
 
     int _nmea_checksum(const std::string &s)
@@ -205,7 +206,7 @@ private: // member functions
         tm.tm_mday = tm.tm_mon = tm.tm_year = 0;
         tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
 
-        if (std::isnan(_gps_data.fix.time) == 0) {
+        if (boost::math::isnan(_gps_data.fix.time) == 0) {
             intfixtime = (time_t) _gps_data.fix.time;
             (void)gmtime_r(&intfixtime, &tm);
             tm.tm_mon++;
@@ -256,25 +257,25 @@ private: // member functions
             % _gps_data.status
             % _gps_data.satellites_used);
 
-        if (std::isnan(_gps_data.dop.hdop))
+        if (boost::math::isnan(_gps_data.dop.hdop))
             string.append(",");
         else
             string.append(
                 str(boost::format("%.2f,") % _gps_data.dop.hdop));
 
-        if (std::isnan(_gps_data.fix.altitude))
+        if (boost::math::isnan(_gps_data.fix.altitude))
             string.append(",");
         else
             string.append(
                 str(boost::format("%.2f,M,") % _gps_data.fix.altitude));
 
-        if (std::isnan(_gps_data.separation))
+        if (boost::math::isnan(_gps_data.separation))
             string.append(",");
         else
             string.append(
                 str(boost::format("%.3f,M,") % _gps_data.separation));
 
-        if (std::isnan(mag_var))
+        if (boost::math::isnan(mag_var))
             string.append(",");
         else {
             string.append(
