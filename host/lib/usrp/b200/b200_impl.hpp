@@ -55,8 +55,7 @@ static const double          B200_DEFAULT_RATE = 250e3; // Sps
 static const double          B200_DEFAULT_RX_GAIN = 0; // dB
 static const double          B200_DEFAULT_TX_GAIN = 0; // dB
 static const boost::uint32_t B200_GPSDO_ST_NONE = 0x83;
-
-static const size_t B200_MAX_RATE_USB2              =  32000000; // bytes/s
+static const size_t B200_MAX_RATE_USB2              =  53248000; // bytes/s
 static const size_t B200_MAX_RATE_USB3              = 500000000; // bytes/s
 
 #define FLIP_SID(sid) (((sid)<<16)|((sid)>>16))

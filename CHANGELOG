@@ -1,6 +1,14 @@
 Change Log for Releases
 ==============================
 
+## 003.008.004
+* B200: Fixed EEPROM writing bug, updated images for B200 Rev5/6
+* E300: GPS antenna power defaults to staying on, GPS time used as
+  default if available
+* UBX: PDF frequency fix on X300
+* USRP2: Bugfix that allows latest UHD to work with USRP2
+* Documentation: Many fixes for E300 section, added FPGA manual
+
 ## 003.008.003
 * UBX: Fixed phase synchronization issues
   (Related changes: Change X300 daughterboard frequency, increase
