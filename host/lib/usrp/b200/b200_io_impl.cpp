@@ -98,8 +98,6 @@ void b200_impl::set_auto_tick_rate(
             // Check if the user selected something completely unreasonable:
             if (uhd::math::fp_compare::fp_compare_delta<double>(this_dsp_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) >
                 uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)) {
-                UHD_MSG(status) << boost::format("%.20d") % this_dsp_rate << std::endl;
-                UHD_MSG(status) << boost::format("%.20d") % max_tick_rate << std::endl;
                 throw uhd::value_error(str(
                         boost::format("Requested sampling rate (%.2f Msps) exceeds maximum tick rate of %.2f MHz.")
                         % (this_dsp_rate / 1e6) % (max_tick_rate / 1e6)
