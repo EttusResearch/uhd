@@ -82,6 +82,14 @@ void b200_impl::set_auto_tick_rate(
         num_chans = std::max(size_t(1), max_chan_count());
     }
     const double max_tick_rate = ad9361_device_t::AD9361_MAX_CLOCK_RATE/num_chans;
+    if (rate != 0.0 and
+        (uhd::math::fp_compare::fp_compare_delta<double>(rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) >
+         uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ))) {
+        throw uhd::value_error(str(
+                boost::format("Requested sampling rate (%.2f Msps) exceeds maximum tick rate of %.2f MHz.")
+                % (rate / 1e6) % (max_tick_rate / 1e6)
+        ));
+    }
 
     // See also the doxygen documentation for these steps in b200_impl.hpp
     // Step 1: Obtain LCM and max rate from all relevant dsps
