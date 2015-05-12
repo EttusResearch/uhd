@@ -578,6 +578,9 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
     const time_t tp = time_t(_sensor_manager->get_sensor("gps_time").to_int()+1);
     _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
+
+    // wait for time to be actually set
+    boost::this_thread::sleep(boost::posix_time::seconds(1));
 }
 
 boost::uint8_t e300_impl::_get_internal_gpio(
