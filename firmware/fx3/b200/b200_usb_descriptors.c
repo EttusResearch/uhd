@@ -458,6 +458,39 @@ const uint8_t b200_usb_manufacture_desc[] __attribute__ ((aligned (32))) =
         'C',0x00
     };
 
+/* NI Manufacturer String Descriptor */
+const uint8_t niusrp_usb_manufacture_desc[] __attribute__ ((aligned (32))) =
+    {
+        0x36,                           /* Descriptor Size */
+        CY_U3P_USB_STRING_DESCR,        /* Device Descriptor Type */
+        'N',0x00,
+        'a',0x00,
+        't',0x00,
+        'i',0x00,
+        'o',0x00,
+        'n',0x00,
+        'a',0x00,
+        'l',0x00,
+        ' ',0x00,
+        'I',0x00,
+        'n',0x00,
+        's',0x00,
+        't',0x00,
+        'r',0x00,
+        'u',0x00,
+        'm',0x00,
+        'e',0x00,
+        'n',0x00,
+        't',0x00,
+        's',0x00,
+        ' ',0x00,
+        'C',0x00,
+        'o',0x00,
+        'r',0x00,
+        'p',0x00,
+        '.',0x00
+    };
+
 
 /* Standard Product String Descriptor */
 const uint8_t b200_usb_product_desc[] __attribute__ ((aligned (32))) =
@@ -473,6 +506,57 @@ const uint8_t b200_usb_product_desc[] __attribute__ ((aligned (32))) =
         '2',0x00,
         '0',0x00,
         '0',0x00
+    };
+
+/* NI-USRP 2900 Product String Descriptor */
+const uint8_t niusrp_2900_usb_product_desc[] __attribute__ ((aligned (32))) =
+    {
+        0x1A,                           /* Descriptor Size */
+        CY_U3P_USB_STRING_DESCR,        /* Device Descriptor Type */
+        'N',0x00,
+        'I',0x00,
+        ' ',0x00,
+        'U',0x00,
+        'S',0x00,
+        'R',0x00,
+        'P',0x00,
+        '-',0x00,
+        '2',0x00,
+        '9',0x00,
+        '0',0x00,
+        '0',0x00
+    };
+
+/* NI-USRP 2901 Product String Descriptor */
+const uint8_t niusrp_2901_usb_product_desc[] __attribute__ ((aligned (32))) =
+    {
+        0x1A,                           /* Descriptor Size */
+        CY_U3P_USB_STRING_DESCR,        /* Device Descriptor Type */
+        'N',0x00,
+        'I',0x00,
+        ' ',0x00,
+        'U',0x00,
+        'S',0x00,
+        'R',0x00,
+        'P',0x00,
+        '-',0x00,
+        '2',0x00,
+        '9',0x00,
+        '0',0x00,
+        '1',0x00
+    };
+
+const uint8_t unknown_desc[] __attribute__ ((aligned (32))) =
+    {
+        0x10,                           /* Descriptor Size */
+        CY_U3P_USB_STRING_DESCR,        /* Device Descriptor Type */
+        'U',0x00,
+        'n',0x00,
+        'k',0x00,
+        'n',0x00,
+        'o',0x00,
+        'w',0x00,
+        'n',0x00
     };
 
 /* Microsoft OS Descriptor. */

@@ -21,7 +21,6 @@
 	- Timed commands in FPGA
 	- Timed sampling in FPGA
 	- 16-bit fixed point sample mode (sc16)
-	- Up to 10 MHz of RF bandwidth with 16-bit samples
 
 \section e3x0_getting_started Getting started
 
@@ -171,7 +170,7 @@ knowledge of Linux.
 \code{.sh}
  $ mkdir e300-oe-build
  $ cd e300-oe-build
- $ repo init -u git://github.com/EttusResearch/e300-manifest.git -b release1
+ $ repo init -u git://github.com/EttusResearch/e300-manifest.git -b Release-2
 \endcode
 
 -# Initialize the environment. This will take a little while.
@@ -277,7 +276,7 @@ You may need to change the USRP's IP address for several reasons:
 
 \image html e3x0_rp_overlay.png "USRP E310 Rear Panel"
 
-- **PWR**: Locking connector for the USRP-E Series power supply
+- **PWR**: Locking connector (Kycon KLDHCX-0202-A-LT) for the USRP-E Series power supply
 - **1G ETH**: RJ45 port for Ethernet interfaces
 - **USB**: USB 2.0 Port
 - **SERIAL**: Micro USB connection for serial uart console

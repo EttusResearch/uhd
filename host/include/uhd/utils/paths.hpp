@@ -87,7 +87,7 @@ namespace uhd {
      * The error string will include the full path to the utility to run.
      * \return the message suggesting the use of the named utility.
      */
-    UHD_API std::string print_utility_error(std::string name);
+    UHD_API std::string print_utility_error(const std::string &name, const std::string &args="");
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_UTILS_PATHS_HPP */

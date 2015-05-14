@@ -517,9 +517,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         x300_load_fw(mb.zpu_ctrl, x300_fw_image);
     }
 
-    //check compat -- good place to do after conditional loading
-    this->check_fw_compat(mb_path, mb.zpu_ctrl);
+    //check compat numbers
+    //check fpga compat before fw compat because the fw is a subset of the fpga image
     this->check_fpga_compat(mb_path, mb.zpu_ctrl);
+    this->check_fw_compat(mb_path, mb.zpu_ctrl);
 
     //store which FPGA image is loaded
     mb.loaded_fpga_image = get_fpga_option(mb.zpu_ctrl);

@@ -129,12 +129,16 @@ public:
         _check_pll();
 
         // Configure digital interface settings
-        write_ad9146_reg(0x16, 0x02); // Skew DCI signal by 615ps to find stable data eye
-        write_ad9146_reg(0x03, 0x00); // 2's comp, I first, byte wide interface
-        //fpga wants I,Q in the sample word:
-        //first transaction goes into low bits
-        //second transaction goes into high bits
-        //therefore, we want Q to go first (bit 6 == 1)
+        // Bypass DCI delay. We center the clock edge in the data
+        // valid window in the FPGA by phase shifting the DCI going
+        // to the DAC.
+        write_ad9146_reg(0x16, 0x04);
+        // 2's comp, I first, byte wide interface
+        write_ad9146_reg(0x03, 0x00);
+        // FPGA wants I,Q in the sample word:
+        // - First transaction goes into low bits
+        // - Second transaction goes into high bits
+        //   therefore, we want Q to go first (bit 6 == 1)
         write_ad9146_reg(0x03, (1 << 6)); //2s comp, i first, byte mode
 
         // Configure interpolation filters

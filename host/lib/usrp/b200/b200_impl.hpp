@@ -47,7 +47,7 @@
 #include "recv_packet_demuxer_3000.hpp"
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 7;
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
-static const boost::uint16_t B200_FPGA_COMPAT_NUM = 5;
+static const boost::uint16_t B200_FPGA_COMPAT_NUM = 7;
 static const double          B200_BUS_CLOCK_RATE = 100e6;
 static const double          B200_DEFAULT_TICK_RATE = 32e6;
 static const double          B200_DEFAULT_FREQ = 100e6; // Hz
@@ -55,8 +55,7 @@ static const double          B200_DEFAULT_RATE = 250e3; // Sps
 static const double          B200_DEFAULT_RX_GAIN = 0; // dB
 static const double          B200_DEFAULT_TX_GAIN = 0; // dB
 static const boost::uint32_t B200_GPSDO_ST_NONE = 0x83;
-
-static const size_t B200_MAX_RATE_USB2              =  32000000; // bytes/s
+static const size_t B200_MAX_RATE_USB2              =  53248000; // bytes/s
 static const size_t B200_MAX_RATE_USB3              = 500000000; // bytes/s
 
 #define FLIP_SID(sid) (((sid)<<16)|((sid)>>16))
@@ -107,6 +106,9 @@ public:
     void check_streamer_args(const uhd::stream_args_t &args, double tick_rate, const std::string &direction = "");
 
 private:
+    b200_type_t _b200_type;
+    size_t      _revision;
+
     //controllers
     b200_iface::sptr _iface;
     radio_ctrl_core_3000::sptr _local_ctrl;
@@ -143,6 +145,7 @@ private:
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
     void check_fw_compat(void);
     void check_fpga_compat(void);
+    uhd::usrp::subdev_spec_t coerce_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_subdev_spec(const std::string &tx_rx, const uhd::usrp::subdev_spec_t &);
     void update_time_source(const std::string &);
     void update_clock_source(const std::string &);
@@ -168,6 +171,13 @@ private:
     };
     std::vector<radio_perifs_t> _radio_perifs;
 
+    //mapping of AD936x frontends (FE1 and FE2) to radio perif index (0 and 1)
+    //FE1 corresponds to the ports labeled "RF B" on the B200/B210
+    //FE2 corresponds to the ports labeled "RF A" on the B200/B210
+    //the mapping is product and revision specific
+    size_t _fe1;
+    size_t _fe2;
+
     /*! \brief Setup the DSP chain for one radio front-end.
      *
      */
@@ -175,7 +185,7 @@ private:
     void handle_overflow(const size_t radio_index);
 
     struct gpio_state {
-        boost::uint32_t  tx_bandsel_a, tx_bandsel_b, rx_bandsel_a, rx_bandsel_b, rx_bandsel_c, codec_arst, mimo, ref_sel;
+        boost::uint32_t  tx_bandsel_a, tx_bandsel_b, rx_bandsel_a, rx_bandsel_b, rx_bandsel_c, codec_arst, mimo, ref_sel, swap_atr;
 
         gpio_state() {
             tx_bandsel_a = 0;
@@ -186,6 +196,7 @@ private:
             codec_arst = 0;
             mimo = 0;
             ref_sel = 0;
+            swap_atr = 0;
         }
     } _gpio_state;
 

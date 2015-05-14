@@ -327,6 +327,7 @@ public:
 
     bool firmware_loaded() {
         return (get_manufacturer() == "Ettus Research LLC") or
+               (get_manufacturer() == "National Instruments Corp.") or
                (get_manufacturer() == "Free Software Folks");
     }
 

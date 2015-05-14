@@ -445,12 +445,12 @@ int main(void)
         static const uint32_t tick_delta = CPU_CLOCK/1000;
         if (ticks_passed > tick_delta)
         {
+            poll_sfpp_status(0); // Every so often poll XGE Phy to look for SFP+ hotplug events.
+            poll_sfpp_status(1); // Every so often poll XGE Phy to look for SFP+ hotplug events.
             handle_link_state(); //deal with router table update
             handle_claim(); //deal with the host claim register
             update_leds(); //run the link and activity leds
             garp(); //send periodic garps
-            xge_poll_sfpp_status(0); // Every so often poll XGE Phy to look for SFP+ hotplug events.
-            xge_poll_sfpp_status(1); // Every so often poll XGE Phy to look for SFP+ hotplug events.
             last_cronjob = wb_peek32(SR_ADDR(RB0_BASE, RB_COUNTER));
         }
 

@@ -568,6 +568,16 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _tree->access<double>(mb_path / "tick_rate").set(
         device_addr.cast<double>("master_clock_rate", e300::DEFAULT_TICK_RATE));
 
+    _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
+    _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
+
+    UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
+    const time_t tp = time_t(_sensor_manager->get_sensor("gps_time").to_int()+1);
+    _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
+
+    // wait for time to be actually set
+    boost::this_thread::sleep(boost::posix_time::seconds(1));
+
     //////////////// RFNOC /////////////////
     // Here's the plan:
     // - We cycle through all ports on this mb's xbar
@@ -684,6 +694,17 @@ void e300_impl::_enforce_tick_rate_limits(
                     % (max_tick_rate/1e6)
                     % chan_count
                     % direction
+            ));
+        }
+        // Minimum rate restriction due to MMCM used in capture interface to AD9361.
+        // Xilinx Artix-7 FPGA MMCM minimum input frequency is 10 MHz.
+        const double min_tick_rate = uhd::usrp::e300::MIN_TICK_RATE / ((chan_count <= 1) ? 1 : 2);
+        if (tick_rate - min_tick_rate < 0.0)
+        {
+            throw uhd::value_error(boost::str(
+                boost::format("current master clock rate (%.6f MHz) set below minimum possible master clock rate (%.6f MHz)")
+                    % (tick_rate/1e6)
+                    % (min_tick_rate/1e6)
             ));
         }
     }

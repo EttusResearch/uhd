@@ -158,7 +158,7 @@ GPIO bank, where the controlled GPIO is now GPIO3 instead of GPIO6.
     usrp_e300->set_gpio_attr("INT0", "DDR", GPIO_DDR, ATR_MASKS);
 
     // let's manually set GPIO4 high
-    usrp_e300->set_gpio_attr("INT0", "OUT", 1, MAN_GPIO_MASK);
+    usrp_e300->set_gpio_attr("INT0", "OUT", (1 << 4), MAN_GPIO_MASK);
 
     // finally, let's set up GPIO6 as we described above
     usrp_e300->set_gpio_attr("INT0", "ATR_0X", 0, AMP_GPIO_MASK);
