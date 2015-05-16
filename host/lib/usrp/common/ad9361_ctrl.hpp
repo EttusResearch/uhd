@@ -95,6 +95,9 @@ public:
     //! tune the given frontend, return the exact value
     virtual double tune(const std::string &which, const double value) = 0;
 
+    //! get the current frequency for the given frontend
+    virtual double get_freq(const std::string &which) = 0;
+
     //! turn on/off data port loopback
     virtual void data_port_loopback(const bool on) = 0;
 

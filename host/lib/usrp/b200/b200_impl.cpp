@@ -684,6 +684,7 @@ void b200_impl::setup_radio(const size_t dspno)
         _tree->create<meta_range_t>(rf_fe_path / "bandwidth" / "range")
             .publish(boost::bind(&ad9361_ctrl::get_bw_filter_range, key));
         _tree->create<double>(rf_fe_path / "freq" / "value")
+            .publish(boost::bind(&ad9361_ctrl::get_freq, _codec_ctrl, key))
             .coerce(boost::bind(&ad9361_ctrl::tune, _codec_ctrl, key, _1))
             .subscribe(boost::bind(&b200_impl::update_bandsel, this, key, _1))
             .set(B200_DEFAULT_FREQ);

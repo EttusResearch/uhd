@@ -1050,7 +1050,7 @@ double ad9361_device_t::_tune_bbvco(const double rate)
     const double vcomin = 672e6;
     double vcorate;
     int vcodiv;
- 
+
     /* Iterate over VCO dividers until appropriate divider is found. */
     int i = 1;
     for (; i <= 6; i++) {
@@ -1855,10 +1855,21 @@ double ad9361_device_t::tune(direction_t direction, const double value)
     return tune_freq;
 }
 
+/* Get the current RX or TX frequency. */
+double ad9361_device_t::get_freq(direction_t direction)
+{
+    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+
+    if (direction == RX)
+        return _rx_freq;
+    else
+        return _tx_freq;
+}
+
 /* Set the gain of RX1, RX2, TX1, or TX2.
  *
- * Note that the 'value' passed to this function is the gain index 
- * for RX. Also note that the RX chains are done in terms of gain, and 
+ * Note that the 'value' passed to this function is the gain index
+ * for RX. Also note that the RX chains are done in terms of gain, and
  * the TX chains  are done in terms of attenuation. */
 double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const double value)
 {

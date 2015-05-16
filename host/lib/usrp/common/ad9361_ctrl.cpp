@@ -149,6 +149,15 @@ public:
         return _device.tune(direction, value);
     }
 
+    //! get the current frequency for the given frontend
+    double get_freq(const std::string &which)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
+        return _device.get_freq(direction);
+    }
+
     //! turn on/off data port loopback
     void data_port_loopback(const bool on)
     {

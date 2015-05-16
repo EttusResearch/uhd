@@ -49,6 +49,9 @@ public:
      * After tuning, it runs any appropriate calibrations. */
     double tune(direction_t direction, const double value);
 
+    /* Get the current RX or TX frequency. */
+    double get_freq(direction_t direction);
+
     /* Set the gain of RX1, RX2, TX1, or TX2.
      *
      * Note that the 'value' passed to this function is the actual gain value,
