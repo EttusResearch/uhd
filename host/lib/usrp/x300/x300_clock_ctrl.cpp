@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #include "lmk04816_regs.hpp"
 #include "x300_clock_ctrl.hpp"
 #include <uhd/utils/safe_call.hpp>
+#include <uhd/utils/math.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/format.hpp>
 #include <stdexcept>
@@ -96,7 +97,7 @@ public:
         boost::uint8_t addr = 0xFF;
 
         // Make sure requested rate is an even divisor of the VCO frequency
-        if (not doubles_are_equal(_vco_freq / div, rate))
+        if (not math::frequencies_are_equal(_vco_freq / div, rate))
             throw uhd::value_error("invalid dboard rate requested");
 
         switch (which)
@@ -236,27 +237,42 @@ private:
          * clock, in zero-delay mode. */
         opmode_t clocking_mode = INVALID;
 
-        if(doubles_are_equal(_system_ref_rate, 10e6)) {
-            if(doubles_are_equal(_master_clock_rate, 184.32e6)) {
+        if (math::frequencies_are_equal(_system_ref_rate, 10e6)) {
+            if (math::frequencies_are_equal(_master_clock_rate, 184.32e6)) {
                 /* 10MHz reference, 184.32 MHz master clock out, NOT Zero Delay. */
                 clocking_mode = m10M_184_32M_NOZDEL;
-            } else if(doubles_are_equal(_master_clock_rate, 200e6)) {
+            } else if (math::frequencies_are_equal(_master_clock_rate, 200e6)) {
                 /* 10MHz reference, 200 MHz master clock out, Zero Delay */
                 clocking_mode = m10M_200M_ZDEL;
-            } else if(doubles_are_equal(_master_clock_rate, 120e6)) {
+            } else if (math::frequencies_are_equal(_master_clock_rate, 120e6)) {
                 /* 10MHz reference, 120 MHz master clock rate, Zero Delay */
                 clocking_mode = m10M_120M_ZDEL;
+            } else {
+                throw uhd::runtime_error(str(
+                    boost::format("Invalid master clock rate: %.2f MHz.\n"
+                                  "Valid master clock rates when using a %f MHz reference clock are:\n"
+                                  "120 MHz, 184.32 MHz and 200 MHz.")
+                    % (_master_clock_rate / 1e6)  % (_system_ref_rate / 1e6)
+                ));
             }
-        } else if(doubles_are_equal(_system_ref_rate, 30.72e6)) {
-            if(doubles_are_equal(_master_clock_rate, 184.32e6)) {
+        } else if (math::frequencies_are_equal(_system_ref_rate, 30.72e6)) {
+            if (math::frequencies_are_equal(_master_clock_rate, 184.32e6)) {
                 /* 30.72MHz reference, 184.32 MHz master clock out, Zero Delay */
                 clocking_mode = m30_72M_184_32M_ZDEL;
+            } else {
+                throw uhd::runtime_error(str(
+                    boost::format("Invalid master clock rate: %.2f MHz.\n"
+                                  "Valid master clock rate when using a %.2f MHz reference clock is: 184.32 MHz.")
+                    % (_master_clock_rate / 1e6)  % (_system_ref_rate / 1e6)
+                ));
             }
+        } else {
+            throw uhd::runtime_error(str(
+                boost::format("Invalid system reference rate: %.2f MHz.\nValid reference frequencies are: 10 MHz, 30.72 MHz.")
+                % (_system_ref_rate / 1e6)
+            ));
         }
-
-        if(clocking_mode == INVALID) {
-            throw uhd::runtime_error(str(boost::format("A master clock rate of %f cannot be derived from a system reference rate of %f") % _master_clock_rate % _system_ref_rate));
-        }
+        UHD_ASSERT_THROW(clocking_mode != INVALID);
 
         // For 200 MHz output, the VCO is run at 2400 MHz
         // For the LTE/CPRI rate of 184.32 MHz, the VCO runs at 2580.48 MHz
@@ -494,10 +510,6 @@ private:
         }
 
         this->sync_clocks();
-    }
-
-    UHD_INLINE bool doubles_are_equal(double a, double b) {
-        return  (std::fabs(a - b) < std::numeric_limits<double>::epsilon());
     }
 
     const spi_iface::sptr _spiface;
