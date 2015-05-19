@@ -568,6 +568,16 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _tree->access<double>(mb_path / "tick_rate").set(
         device_addr.cast<double>("master_clock_rate", e300::DEFAULT_TICK_RATE));
 
+    // subdev spec contains full width of selections
+    subdev_spec_t rx_spec, tx_spec;
+    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "rx_frontends"))
+    {
+        rx_spec.push_back(subdev_spec_pair_t("A", fe));
+    }
+    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "tx_frontends"))
+    {
+        tx_spec.push_back(subdev_spec_pair_t("A", fe));
+    }
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
 
