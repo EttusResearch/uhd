@@ -220,6 +220,9 @@ static void e300_codec_ctrl_tunnel(
             case codec_xact_t::ACTION_TUNE:
                 out->freq = _codec_ctrl->tune(which_str, in->freq);
                 break;
+            case codec_xact_t::ACTION_GET_FREQ:
+                    out->freq = _codec_ctrl->get_freq(which_str);
+                break;
             case codec_xact_t::ACTION_SET_LOOPBACK:
                 _codec_ctrl->data_port_loopback(
                     uhd::ntohx<boost::uint32_t>(in->bits) & 1);

@@ -96,6 +96,20 @@ public:
         return _retval.freq;
     }
 
+    double get_freq(const std::string &which)
+    {
+        _clear();
+        _args.action = uhd::htonx<boost::uint32_t>(transaction_t::ACTION_GET_FREQ);
+        if (which == "TX1")      _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_TX1);
+        else if (which == "TX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_TX2);
+        else if (which == "RX1") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX1);
+        else if (which == "RX2") _args.which = uhd::htonx<boost::uint32_t>(transaction_t::CHAIN_RX2);
+        else throw std::runtime_error("e300_remote_codec_ctrl_impl incorrect chain string.");
+
+        _transact();
+        return _retval.freq;
+    }
+
     void data_port_loopback(const bool on)
     {
         _clear();
