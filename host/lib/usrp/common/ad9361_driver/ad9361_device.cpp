@@ -1247,7 +1247,7 @@ double ad9361_device_t::_setup_rates(const double rate)
     /* If we make it into this function, then we are tuning to a new rate.
      * Store the new rate. */
     _req_clock_rate = rate;
-    UHD_LOG << boost::format("[ad9361_device_t::_setup_rates] rate=%d\n") % rate;
+    UHD_LOG << boost::format("[ad9361_device_t::_setup_rates] rate=%.6d\n") % rate;
 
     /* Set the decimation and interpolation values in the RX and TX chains.
      * This also switches filters in / out. Note that all transmitters and
@@ -1629,7 +1629,9 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
      * starts up. This prevents that, and any bugs in user code that request
      * the same rate over and over. */
     if (freq_is_nearly_equal(req_rate, _req_clock_rate)) {
-        return _baseband_bw; // IJB. Should this not return req_rate?
+        // We return _baseband_bw, because that's closest to the
+        // actual value we're currently running.
+        return _baseband_bw;
     }
 
     /* We must be in the SLEEP / WAIT state to do this. If we aren't already
