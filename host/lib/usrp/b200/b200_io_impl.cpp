@@ -184,7 +184,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
 {
     managed_recv_buffer::sptr buff = xport->get_recv_buff();
     if (not buff or buff->size() < 8)
-        return NULL;
+        return boost::none;
 
     const boost::uint32_t sid = uhd::wtohx(buff->cast<const boost::uint32_t *>()[1]);
     switch (sid) {
@@ -248,7 +248,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
     default:
         UHD_MSG(error) << "Got a ctrl packet with unknown SID " << sid << std::endl;
     }
-    return NULL;
+    return boost::none;
 }
 
 /***********************************************************************
