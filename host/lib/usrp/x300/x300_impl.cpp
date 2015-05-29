@@ -819,13 +819,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     if (mb.gps and mb.gps->gps_detected())
     {
-        UHD_MSG(status) << "Initializing clock and time using GPSDO... " << std::flush;
+        UHD_MSG(status) << "Setting references to the internal GPSDO" << std::flush;
         _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
         _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
-        const time_t tp = time_t(mb.gps->get_sensor("gps_time").to_int() + 1);
-        _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
     } else {
-        UHD_MSG(status) << "Initializing clock and time using internal sources... " << std::flush;
         _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
         _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
     }
