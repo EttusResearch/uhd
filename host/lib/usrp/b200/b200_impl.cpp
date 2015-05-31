@@ -609,15 +609,26 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
         UHD_MSG(status) << "Setting master clock rate selection to 'automatic'." << std::endl;
     }
 
-    //GPS installed: use external ref, time, and init time spec
+    //GPS installed: prefer external ref, time, and init time spec
     if (_gps and _gps->gps_detected())
     {
-        UHD_MSG(status) << "Setting references to the internal GPSDO" << std::endl;
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
-        UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
-        const time_t tp = time_t(_gps->get_sensor("gps_time").to_int()+1);
-        _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
+        if (device_addr.has_key("clock_source"))
+            _tree->access<std::string>(mb_path / "clock_source" / "value").set(device_addr.get("clock_source"));
+        else
+            _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
+        UHD_MSG(status) << "Setting clock source to " <<  _tree->access<std::string>(mb_path / "clock_source" / "value").get() <<std::endl;
+
+        if (device_addr.has_key("time_source"))
+            _tree->access<std::string>(mb_path / "time_source" / "value").set(device_addr.get("time_source"));
+        else
+            _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
+        UHD_MSG(status) << "Setting time source to " <<  _tree->access<std::string>(mb_path / "time_source" / "value").get() <<std::endl;
+
+        if ("gpsdo" == _tree->access<std::string>(mb_path / "time_source" / "value").get()) {
+            UHD_MSG(status) << "Initializing time from the internal GPSDO" << std::endl;
+            const time_t tp = time_t(_gps->get_sensor("gps_time").to_int()+1);
+            _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
+        }
     } else {
         //init to internal clock and time source
         _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
