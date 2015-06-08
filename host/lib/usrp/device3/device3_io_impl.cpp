@@ -82,7 +82,7 @@ static void check_stream_sig_compatible(const rfnoc::stream_sig_t &stream_sig, s
                 ));
             }
         } else {
-            args.args["spp"] = str(boost::format("%d") % stream_sig.packet_size);
+            args.args["spp"] = str(boost::format("%d") % (stream_sig.packet_size / bpi));
         }
     }
 }
