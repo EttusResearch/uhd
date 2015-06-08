@@ -48,6 +48,13 @@
       <name>magnitude_out</name>
       <type>string</type>
       <value>COMPLEX</value>
+      <check>EQUAL($magnitude_out, "COMPLEX") OR EQUAL($magnitude_out, "MAGNITUDE") OR EQUAL($magnitude_out, "MAGNITUDE_SQUARED")</check>
+      <check_message>Output format must be one of: COMPLEX, MAGNITUDE, MAGNITUDE_SQUARED.</check_message>
+      <action>
+          IF(EQUAL($magnitude_out, "COMPLEX"),           SR_WRITE("MAGNITUDE_OUT", 0)) OR
+          IF(EQUAL($magnitude_out, "MAGNITUDE"),         SR_WRITE("MAGNITUDE_OUT", 1)) OR
+          IF(EQUAL($magnitude_out, "MAGNITUDE_SQUARED"), SR_WRITE("MAGNITUDE_OUT", 2))
+      </action>
     </arg>
   </args>
   <!--All the connections to the outside world are listed in 'ports':-->
@@ -60,7 +67,7 @@
     </sink>
     <source>
       <name>out</name>
-      <type>$otype</type>
+      <type>sc16</type> <!--TODO make this dependent on the output type -->
       <vlen>$spp</vlen>
       <pkt_size>%vlen</pkt_size>
     </source>

@@ -38,24 +38,12 @@ public:
         _fft_reset = get_fft_reset();
         UHD_ASSERT_THROW(_fft_reset == false);
 
-        // Register hooks for magnitude out
-        _tree->access<std::string>(_root_path / "args" / "magnitude_out" / "value")
-            .subscribe(boost::bind(&fft_block_ctrl_impl::set_magnitude_out_str, this, _1))
-            .update()
-        ;
         // FFT RFNoC block can be configured to have magnitude output logic not
         // synthesized forcing the magnitude out register to always be 0 regardless if
         // it is set. So, check it's all fine by reading back the register value:
         magnitude_t actual_magnitude_out = get_magnitude_out();
         magnitude_t my_magnitude_out = str_to_mag(get_arg("magnitude_out"));
         UHD_ASSERT_THROW(my_magnitude_out == actual_magnitude_out);
-
-        // Register hooks for spp:
-        // This also sets the stream signatures:
-        //_tree->access<int>(_root_path / "args" / "spp" / "value")
-            //.subscribe(boost::bind(&fft_block_ctrl_impl::set_fft_size, this, _1))
-            //.update()
-        //;
 
         _tree->access<std::string>(_root_path / "args" / "otype" / "value")
             .subscribe(boost::bind(&fft_block_ctrl_impl::check_otype, this, _1))
@@ -101,49 +89,6 @@ public:
     {
         return(user_reg_read64("RB_FFT_RESET") != 0);
     }
-
-    void set_fft_size(int fft_size)
-    {
-        UHD_RFNOC_BLOCK_TRACE() << "fft_block::set_fft_size()" << std::endl;
-        //// 1. Sanity checks
-        // Check fft_size is within bounds
-        if (fft_size < 16 or fft_size > 4096) {
-            // TODO read this bounds from the prop tree (block def)
-            throw uhd::value_error("FFT size must be a power of two and within [16, 4096]");
-        }
-        boost::uint32_t log2_fft_size = 0;
-        // Calculate log2(fft_size) and make sure fft_size is a power of 2
-        while ( (fft_size & 1) == 0 and (fft_size > 1) ) {
-            fft_size >>= 1;
-            log2_fft_size++;
-        }
-        if (fft_size != 1) {
-            // Not a power of 2
-            throw uhd::value_error("FFT size must be a power of two and within [16, 4096]");
-        }
-
-        //// 2. Update block
-        // TODO FFT scaling set conservatively (1/N), need method to allow user to set
-        sr_write(AXIS_CONFIG_BUS, (0x6AA << 9) + (0 << 8) + log2_fft_size);
-        sr_write("FFT_SIZE_LOG2", log2_fft_size);
-    } /* set_fft_size() */
-
-    void set_magnitude_out_str(const std::string &magnitude_out)
-    {
-        if (not (magnitude_out == "COMPLEX" or magnitude_out == "MAGNITUDE" or magnitude_out == "MAGNITUDE_SQUARED")) {
-            throw uhd::value_error(str(
-                        boost::format("Invalid magnitude_out value: %s")
-                        % magnitude_out
-            ));
-
-        }
-        set_magnitude_out(str_to_mag(magnitude_out));
-    }
-
-    void set_magnitude_out(magnitude_t magnitude_out)
-    {
-        sr_write("MAGNITUDE_OUT", magnitude_out);
-    } /* set_magnitude_out() */
 
     magnitude_t get_magnitude_out()
     {

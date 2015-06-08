@@ -67,13 +67,6 @@ public:
     // This queries the FFT reset readback register
     virtual bool get_fft_reset() = 0;
 
-    //! Enable magnitude output
-    //
-    // FFT output can be sc16 or magnitude (still sc16 with mag in real,
-    // imag set to 0). This sets the magnitude out register. It is advisable to
-    // reset the FFT core via set_reset() when changing this value.
-    virtual void set_magnitude_out(magnitude_t magnitude_out) = 0;
-
     //! Returns the whether magnitude output is enabled or not
     //
     // This queries the magnitude out readback register (instead of a class variable) as the

@@ -120,7 +120,6 @@ block_ctrl_base::block_ctrl_base(
     /*** Init default block args ********************************************/
     _nocscript_iface = nocscript::block_iface::make(this);
     _init_block_args();
-
 }
 
 block_ctrl_base::~block_ctrl_base()

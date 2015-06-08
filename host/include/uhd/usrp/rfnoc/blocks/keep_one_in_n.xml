@@ -2,15 +2,29 @@
 <nocblock>
   <name>Keep One in N</name>
   <blockname>KeepOneInN</blockname>
+  <doc>
+    Block controller for the Keep One in N RFNoC block.
+
+    For every N packets received, this block will output a single packet.
+    - One input / output block port
+    - N up to 65535
+  </doc>
   <!--There can be several of these:-->
   <ids>
     <id revision="0">0246</id>
   </ids>
+  <registers>
+    <setreg>
+      <name>SR_N</name>
+      <address>129</address>
+    </setreg>
+  </registers>
   <args>
     <arg>
       <name>n</name>
       <type>int</type>
       <value>256</value>
+      <action>SR_WRITE("SR_N", $n)</action>
     </arg>
   </args>
   <ports>

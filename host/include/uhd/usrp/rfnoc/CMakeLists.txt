@@ -39,9 +39,6 @@ UHD_INSTALL(FILES
     fosphor_block_ctrl.hpp
     null_block_ctrl.hpp
     window_block_ctrl.hpp
-    packet_resizer_block_ctrl.hpp
-    vector_iir_block_ctrl.hpp
-    keep_one_in_n_block_ctrl.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/usrp/rfnoc
     COMPONENT headers
 )
