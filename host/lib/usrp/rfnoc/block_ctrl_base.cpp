@@ -157,7 +157,7 @@ void block_ctrl_base::_init_port_defs(
             _tree->create<blockdef::port_t>(port_path);
         }
         UHD_RFNOC_BLOCK_TRACE()  << "Adding port definition at " << port_path
-            << boost::format("type = '%s' pkt_size = '%s' vlen = '%s'") % port_def["type"] % port_def["pkt_size"] % port_def["vlen"]
+            << boost::format(": type = '%s' pkt_size = '%s' vlen = '%s'") % port_def["type"] % port_def["pkt_size"] % port_def["vlen"]
             << std::endl;
         _tree->access<blockdef::port_t>(port_path).set(port_def);
         port_index++;

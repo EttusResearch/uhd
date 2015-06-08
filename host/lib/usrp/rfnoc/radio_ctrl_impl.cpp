@@ -313,6 +313,13 @@ private:
         UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::_update_spp(): Setting spp to: " << spp << std::endl;
         if (_perifs.framer)
             _perifs.framer->set_nsamps_per_packet(size_t(spp));
+
+        rfnoc::blockdef::port_t port_def = _tree->access<blockdef::port_t>(_root_path / "ports" / "out" / 0).get();
+        // Argh, another hack
+        // TODO solve this in the XML file
+        port_def["vlen"] = boost::lexical_cast<std::string>(spp);
+        port_def["pkt_size"] = boost::lexical_cast<std::string>(spp * _rx_bpi);
+        _tree->access<blockdef::port_t>(_root_path / "ports" / "out" / 0).set(port_def);
     }
 
     void _update_rx_args(const std::string &new_rx_args)
