@@ -1208,6 +1208,12 @@ void e300_impl::_update_enables(void)
     //set_active_chains could cause a clock rate change - reset dcm
     _reset_codec_mmcm();
 
+    // Set radio data direction register cleared due to reset
+    for (size_t instance = 0; instance < _num_radios; instance++)
+    {
+        _radio_perifs[instance].atr->set_ddr_reg();
+    }
+
     //figure out if mimo is enabled based on new state
     _misc.mimo = (mimo)? 1 : 0;
     _update_gpio_state();
@@ -1236,6 +1242,7 @@ void e300_impl::_reset_codec_mmcm(void)
     boost::this_thread::sleep(boost::posix_time::milliseconds(10));
     _misc.codec_arst = 0;
     _update_gpio_state();
+    boost::this_thread::sleep(boost::posix_time::milliseconds(10));
 }
 
 ////////////////////////////////////////////////////////////////////////

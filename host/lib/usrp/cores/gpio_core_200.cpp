@@ -118,8 +118,13 @@ public:
     gpio_core_200_32wo_impl(wb_iface::sptr iface, const size_t base):
         _iface(iface), _base(base)
     {
+        set_ddr_reg();
+    }
+
+    void set_ddr_reg(){
         _iface->poke32(REG_GPIO_DDR, 0xffffffff);
     }
+
 
     void set_atr_reg(const atr_reg_t atr, const boost::uint32_t value){
         if (atr == dboard_iface::ATR_REG_IDLE)        _iface->poke32(REG_GPIO_IDLE, value);
