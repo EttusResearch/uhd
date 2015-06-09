@@ -1140,7 +1140,7 @@ double ad9361_device_t::_tune_bbvco(const double rate)
     const double vcomin = 672e6;
     double vcorate;
     int vcodiv;
- 
+
     /* Iterate over VCO dividers until appropriate divider is found. */
     int i = 1;
     for (; i <= 6; i++) {
@@ -1337,7 +1337,7 @@ double ad9361_device_t::_setup_rates(const double rate)
     /* If we make it into this function, then we are tuning to a new rate.
      * Store the new rate. */
     _req_clock_rate = rate;
-    UHD_LOG << boost::format("[ad9361_device_t::_setup_rates] rate=%d\n") % rate;
+    UHD_LOG << boost::format("[ad9361_device_t::_setup_rates] rate=%.6d\n") % rate;
 
     /* Set the decimation and interpolation values in the RX and TX chains.
      * This also switches filters in / out. Note that all transmitters and
@@ -1734,7 +1734,9 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
      * starts up. This prevents that, and any bugs in user code that request
      * the same rate over and over. */
     if (freq_is_nearly_equal(req_rate, _req_clock_rate)) {
-        return _baseband_bw; // IJB. Should this not return req_rate?
+        // We return _baseband_bw, because that's closest to the
+        // actual value we're currently running.
+        return _baseband_bw;
     }
 
     /* We must be in the SLEEP / WAIT state to do this. If we aren't already
@@ -1966,10 +1968,21 @@ double ad9361_device_t::tune(direction_t direction, const double value)
     return tune_freq;
 }
 
+/* Get the current RX or TX frequency. */
+double ad9361_device_t::get_freq(direction_t direction)
+{
+    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+
+    if (direction == RX)
+        return _rx_freq;
+    else
+        return _tx_freq;
+}
+
 /* Set the gain of RX1, RX2, TX1, or TX2.
  *
- * Note that the 'value' passed to this function is the gain index 
- * for RX. Also note that the RX chains are done in terms of gain, and 
+ * Note that the 'value' passed to this function is the gain index
+ * for RX. Also note that the RX chains are done in terms of gain, and
  * the TX chains  are done in terms of attenuation. */
 double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const double value)
 {

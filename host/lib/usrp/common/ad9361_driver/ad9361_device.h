@@ -81,6 +81,9 @@ public:
      * After tuning, it runs any appropriate calibrations. */
     double tune(direction_t direction, const double value);
 
+    /* Get the current RX or TX frequency. */
+    double get_freq(direction_t direction);
+
     /* Set the gain of RX1, RX2, TX1, or TX2.
      *
      * Note that the 'value' passed to this function is the actual gain value,
@@ -213,10 +216,17 @@ private:    //Members
     //Intermediate state
     double              _rx_freq, _tx_freq, _req_rx_freq, _req_tx_freq;
     double              _last_calibration_freq;
-    double              _baseband_bw, _bbpll_freq, _adcclock_freq;
     double              _rx_analog_bw, _tx_analog_bw, _rx_bb_lp_bw, _tx_bb_lp_bw;
     double              _rx_tia_lp_bw, _tx_sec_lp_bw;
-    double              _req_clock_rate, _req_coreclk;
+    //! Current baseband sampling rate (this is the actual rate the device is
+    //  is running at)
+    double              _baseband_bw;
+    double              _bbpll_freq, _adcclock_freq;
+    //! This was the last clock rate value that was requested.
+    //  It is cached so we don't need to re-set the clock rate
+    //  if another call to set_clock_rate() actually has the same value.
+    double              _req_clock_rate;
+    double              _req_coreclk;
     boost::uint16_t     _rx_bbf_tunediv;
     boost::uint8_t      _curr_gain_table;
     double              _rx1_gain, _rx2_gain, _tx1_gain, _tx2_gain;

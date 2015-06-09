@@ -122,6 +122,9 @@ public:
     //! enable or disable the quadrature calibration
     virtual void set_iq_balance_auto(const std::string &which, const bool on) = 0;
 
+    //! get the current frequency for the given frontend
+    virtual double get_freq(const std::string &which) = 0;
+
     //! turn on/off Catalina's data port loopback
     virtual void data_port_loopback(const bool on) = 0;
 
