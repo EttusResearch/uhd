@@ -317,7 +317,6 @@ private:
         rfnoc::blockdef::port_t port_def = _tree->access<blockdef::port_t>(_root_path / "ports" / "out" / 0).get();
         // Argh, another hack
         // TODO solve this in the XML file
-        port_def["vlen"] = boost::lexical_cast<std::string>(spp);
         port_def["pkt_size"] = boost::lexical_cast<std::string>(spp * _rx_bpi);
         _tree->access<blockdef::port_t>(_root_path / "ports" / "out" / 0).set(port_def);
     }
