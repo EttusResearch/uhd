@@ -26,6 +26,8 @@
 #define UHD_USRP_MULTI_USRP_BW_RANGE_API
 #define UHD_USRP_MULTI_USRP_USER_REGS_API
 #define UHD_USRP_MULTI_USRP_GET_USRP_INFO_API
+#define UHD_USRP_MULTI_USRP_NORMALIZED_GAIN
+#define UHD_USRP_MULTI_USRP_GPIO_API
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
