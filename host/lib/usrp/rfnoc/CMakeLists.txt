@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Ettus Research LLC
+# Copyright 2014-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,3 +50,5 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/keep_one_in_n_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/radio_ctrl_impl.cpp
 )
+
+INCLUDE_SUBDIRECTORY(nocscript)

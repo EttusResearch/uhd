@@ -18,8 +18,10 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_CONSTANTS_HPP
 #define INCLUDED_LIBUHD_RFNOC_CONSTANTS_HPP
 
-#include <string>
+#include <uhd/types/dict.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/cstdint.hpp>
+#include <string>
 
 namespace uhd {
     namespace rfnoc {
@@ -71,6 +73,12 @@ enum settingsbus_reg_t {
 static const boost::uint32_t AXI_WRAPPER_BASE      = SR_NEXT_DST_BASE;
 static const boost::uint32_t AXIS_CONFIG_BUS       = AXI_WRAPPER_BASE+1; // tdata with tvalid asserted
 static const boost::uint32_t AXIS_CONFIG_BUS_TLAST = AXI_WRAPPER_BASE+2; // tdata with tvalid & tlast asserted
+
+// Named settings registers
+static const uhd::dict<std::string, boost::uint32_t> DEFAULT_NAMED_SR = boost::assign::map_list_of
+        ("AXIS_CONFIG_BUS", AXIS_CONFIG_BUS)
+        ("AXIS_CONFIG_BUS_TLAST", AXIS_CONFIG_BUS_TLAST)
+;
 
 // Block ports
 static const size_t ANY_PORT = size_t(~0);

@@ -133,6 +133,13 @@ namespace uhd{
         virtual void dynamic_throw(void) const;
     };
 
+    struct UHD_API syntax_error : exception{
+        syntax_error(const std::string &what);
+        virtual unsigned code(void) const;
+        virtual syntax_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
+    };
+
     /*!
      * Create a formated string with throw-site information.
      * Fills in the function name, file name, and line number.

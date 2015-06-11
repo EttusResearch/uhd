@@ -34,6 +34,10 @@
 
 namespace uhd {
     namespace rfnoc {
+        namespace nocscript {
+            // Forward declaration
+            class block_iface;
+        }
 
 
 // TODO: Move this out of public section
@@ -292,6 +296,8 @@ public:
         return _tree->access<T>(_root_path / "args" / key / "value").get();
     }
 
+    std::string get_arg_type(const std::string &key) const;
+
 protected:
     /***********************************************************************
      * Structors
@@ -349,6 +355,9 @@ private:
             const size_t first_port_index=0
     );
 
+    //! Helper function to initialize the block args (used by ctor only)
+    void _init_block_args();
+
     /***********************************************************************
      * Private members
      **********************************************************************/
@@ -359,6 +368,9 @@ private:
 
     //! The (unique) block ID.
     block_id_t _block_id;
+
+    //! Interface to NocScript parser
+    boost::shared_ptr<nocscript::block_iface> _nocscript_iface;
 }; /* class block_ctrl_base */
 
 }} /* namespace uhd::rfnoc */

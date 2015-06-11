@@ -74,6 +74,36 @@ FOREACH(test_source ${test_sources})
     UHD_INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 ENDFOREACH(test_source)
 
+# Other tests that don't directly link with libuhd: (TODO find a nicer way to do this)
+INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/lib/usrp/rfnoc/nocscript/)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/rfnoc/nocscript/)
+ADD_EXECUTABLE(nocscript_expr_test
+    nocscript_expr_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/rfnoc/nocscript/expression.cpp
+)
+TARGET_LINK_LIBRARIES(nocscript_expr_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(nocscript_expr_test nocscript_expr_test)
+UHD_INSTALL(TARGETS nocscript_expr_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
+
+ADD_EXECUTABLE(nocscript_ftable_test
+    nocscript_ftable_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/rfnoc/nocscript/function_table.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/rfnoc/nocscript/expression.cpp
+)
+TARGET_LINK_LIBRARIES(nocscript_ftable_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(nocscript_ftable_test nocscript_ftable_test)
+UHD_INSTALL(TARGETS nocscript_ftable_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
+
+ADD_EXECUTABLE(nocscript_parser_test
+    nocscript_parser_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/rfnoc/nocscript/parser.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/rfnoc/nocscript/function_table.cpp
+    ${CMAKE_SOURCE_DIR}/lib/usrp/rfnoc/nocscript/expression.cpp
+)
+TARGET_LINK_LIBRARIES(nocscript_parser_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(nocscript_parser_test nocscript_parser_test)
+UHD_INSTALL(TARGETS nocscript_parser_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################

@@ -36,6 +36,9 @@
       <name>spp</name>
       <type>int</type>
       <value>256</value>
+      <check>GE($spp, 16) AND LE($spp, 4096) AND IS_PWR_OF_2($spp)</check>
+      <check_message>FFT size must be in [16, 4096] and a power of two.</check_message>
+      <action>SR_WRITE("AXIS_CONFIG_BUS", ADD(873472, LOG2($spp))) AND SR_WRITE("FFT_SIZE_LOG2", LOG2($spp))</action>
     </arg>
     <arg>
       <name>otype</name>

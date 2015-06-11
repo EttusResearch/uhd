@@ -52,10 +52,10 @@ public:
 
         // Register hooks for spp:
         // This also sets the stream signatures:
-        _tree->access<int>(_root_path / "args" / "spp" / "value")
-            .subscribe(boost::bind(&fft_block_ctrl_impl::set_fft_size, this, _1))
-            .update()
-        ;
+        //_tree->access<int>(_root_path / "args" / "spp" / "value")
+            //.subscribe(boost::bind(&fft_block_ctrl_impl::set_fft_size, this, _1))
+            //.update()
+        //;
 
         _tree->access<std::string>(_root_path / "args" / "otype" / "value")
             .subscribe(boost::bind(&fft_block_ctrl_impl::check_otype, this, _1))

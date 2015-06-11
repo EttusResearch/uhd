@@ -106,6 +106,9 @@ const std::vector<std::string> blockdef::arg_t::ARG_ARGS = boost::assign::list_o
             ("name")
             ("type")
             ("value")
+            ("check")
+            ("check_message")
+            ("action")
 ;
 const std::set<std::string> blockdef::arg_t::VALID_TYPES = boost::assign::list_of
     // List all tags/args a <type> can have here:

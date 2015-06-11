@@ -18,15 +18,18 @@
 // This file contains the block control functions for block controller classes.
 // See block_ctrl_base_factory.cpp for discovery and factory functions.
 
-#include <boost/format.hpp>
+#include "nocscript/block_iface.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/usrp/rfnoc/block_ctrl_base.hpp>
 #include <uhd/usrp/rfnoc/constants.hpp>
+#include <boost/format.hpp>
+#include <boost/bind.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
+using std::string;
 
 /***********************************************************************
  * Helpers
@@ -92,44 +95,19 @@ block_ctrl_base::block_ctrl_base(
     /*** Register names *****************************************************/
     blockdef::registers_t sregs = _block_def->get_settings_registers();
     BOOST_FOREACH(const std::string &reg_name, sregs.keys()) {
-        _tree->create<size_t>(_root_path / "registers" / "sr" / reg_name).set(sregs.get(reg_name));
+        if (DEFAULT_NAMED_SR.has_key(reg_name)) {
+            throw uhd::runtime_error(str(
+                    boost::format("Register name %s is already defined!")
+                    % reg_name
+            ));
+        }
+        _tree->create<size_t>(_root_path / "registers" / "sr" / reg_name)
+            .set(sregs.get(reg_name));
     }
     blockdef::registers_t rbacks = _block_def->get_readback_registers();
     BOOST_FOREACH(const std::string &reg_name, rbacks.keys()) {
-        _tree->create<size_t>(_root_path / "registers"/ "rb" / reg_name).set(rbacks.get(reg_name));
-    }
-
-    /*** Init default block args ********************************************/
-    blockdef::args_t args = _block_def->get_args();
-    fs_path arg_path = _root_path / "args";
-    _tree->create<std::string>(arg_path);
-    // TODO: Add coercer
-    // TODO: Add subscribers
-    BOOST_FOREACH(const blockdef::arg_t &arg, args) {
-        fs_path arg_type_path = arg_path / arg["name"] / "type";
-        _tree->create<std::string>(arg_type_path).set(arg["type"]);
-        fs_path arg_val_path = arg_path / arg["name"] / "value";
-        if (arg["type"] == "string") {
-            _tree->create<std::string>(arg_val_path);
-            if (not arg["value"].empty()) {
-                _tree->access<std::string>(arg_val_path).set(arg["value"]);
-            }
-        }
-        else if (arg["type"] == "int") {
-            _tree->create<int>(arg_val_path);
-            if (not arg["value"].empty()) {
-                _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(arg["value"]));
-            }
-        }
-        else if (arg["type"] == "double") {
-            _tree->create<double>(arg_val_path);
-            if (not arg["value"].empty()) {
-                _tree->access<double>(arg_val_path).set(boost::lexical_cast<double>(arg["value"]));
-            }
-        }
-        else if (arg["type"] == "int_vector") {
-            throw uhd::runtime_error("not yet implemented: int_vector");
-        }
+        _tree->create<size_t>(_root_path / "registers"/ "rb" / reg_name)
+            .set(rbacks.get(reg_name));
     }
 
     /*** Init I/O port definitions ******************************************/
@@ -138,6 +116,11 @@ block_ctrl_base::block_ctrl_base(
     // TODO: It's possible that the number of input sigs doesn't match the
     // number of input buffers. We should probably warn about that or
     // something.
+
+    /*** Init default block args ********************************************/
+    _nocscript_iface = nocscript::block_iface::make(this);
+    _init_block_args();
+
 }
 
 block_ctrl_base::~block_ctrl_base()
@@ -164,6 +147,58 @@ void block_ctrl_base::_init_port_defs(
     }
 }
 
+void block_ctrl_base::_init_block_args()
+{
+    blockdef::args_t args = _block_def->get_args();
+    fs_path arg_path = _root_path / "args";
+    _tree->create<std::string>(arg_path);
+
+    // First, create all nodes.
+    BOOST_FOREACH(const blockdef::arg_t &arg, args) {
+        fs_path arg_type_path = arg_path / arg["name"] / "type";
+        _tree->create<std::string>(arg_type_path).set(arg["type"]);
+        fs_path arg_val_path = arg_path / arg["name"] / "value";
+        if (arg["type"] == "int_vector") { throw uhd::runtime_error("not yet implemented: int_vector"); }
+        else if (arg["type"] == "int") { _tree->create<int>(arg_val_path); }
+        else if (arg["type"] == "double") { _tree->create<double>(arg_val_path); }
+        else if (arg["type"] == "string") { _tree->create<string>(arg_val_path); }
+        else { UHD_THROW_INVALID_CODE_PATH(); }
+    }
+    // Next: Create all the subscribers and coercers.
+    // TODO: Add coercer
+#define _SUBSCRIBE_CHECK_AND_RUN(type, arg_tag, error_message) \
+    _tree->access<type>(arg_val_path).subscribe(boost::bind((&nocscript::block_iface::run_and_check), _nocscript_iface, arg[#arg_tag], error_message))
+    BOOST_FOREACH(const blockdef::arg_t &arg, args) {
+        fs_path arg_val_path = arg_path / arg["name"] / "value";
+        if (not arg["check"].empty()) {
+            if (arg["type"] == "string") { _SUBSCRIBE_CHECK_AND_RUN(string, check, arg["check_message"]); }
+            else if (arg["type"] == "int") { _SUBSCRIBE_CHECK_AND_RUN(int, check, arg["check_message"]); }
+            else if (arg["type"] == "double") { _SUBSCRIBE_CHECK_AND_RUN(double, check, arg["check_message"]); }
+            else if (arg["type"] == "int_vector") { throw uhd::runtime_error("not yet implemented: int_vector"); }
+            else { UHD_THROW_INVALID_CODE_PATH(); }
+        }
+        if (not arg["action"].empty()) {
+            if (arg["type"] == "string") { _SUBSCRIBE_CHECK_AND_RUN(string, action, ""); }
+            else if (arg["type"] == "int") { _SUBSCRIBE_CHECK_AND_RUN(int, action, ""); }
+            else if (arg["type"] == "double") { _SUBSCRIBE_CHECK_AND_RUN(double, action, ""); }
+            else if (arg["type"] == "int_vector") { throw uhd::runtime_error("not yet implemented: int_vector"); }
+            else { UHD_THROW_INVALID_CODE_PATH(); }
+        }
+    }
+
+    // Finally: Set the values. This will call subscribers, if we have any.
+    BOOST_FOREACH(const blockdef::arg_t &arg, args) {
+        fs_path arg_val_path = arg_path / arg["name"] / "value";
+        if (not arg["value"].empty()) {
+            if (arg["type"] == "int_vector") { throw uhd::runtime_error("not yet implemented: int_vector"); }
+            else if (arg["type"] == "int") { _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(arg["value"])); }
+            else if (arg["type"] == "double") { _tree->access<double>(arg_val_path).set(boost::lexical_cast<double>(arg["value"])); }
+            else if (arg["type"] == "string") { _tree->access<string>(arg_val_path).set(arg["value"]); }
+            else { UHD_THROW_INVALID_CODE_PATH(); }
+        }
+    }
+}
+
 /***********************************************************************
  * FPGA control & communication
  **********************************************************************/
@@ -181,16 +216,21 @@ void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t 
 
 void block_ctrl_base::sr_write(const std::string &reg, const boost::uint32_t data)
 {
-    if (not _tree->exists(_root_path / "registers" / "sr" / reg)) {
-        throw uhd::key_error(str(
-                boost::format("Invalid settings register name: %s")
-                % reg
-        ));
+    boost::uint32_t reg_addr = 255;
+    if (DEFAULT_NAMED_SR.has_key(reg)) {
+        reg_addr = DEFAULT_NAMED_SR[reg];
+    } else {
+        if (not _tree->exists(_root_path / "registers" / "sr" / reg)) {
+            throw uhd::key_error(str(
+                    boost::format("Unknown settings register name: %s")
+                    % reg
+            ));
+        }
+        reg_addr = boost::uint32_t(_tree->access<size_t>(_root_path / "registers" / "sr" / reg).get());
     }
-    return sr_write(
-            boost::uint32_t(_tree->access<size_t>(_root_path / "registers" / "sr" / reg).get()),
-            data
-    );
+    UHD_MSG(status) << "  ";
+    UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%s, %08X) ==> ") % reg % data;
+    return sr_write(reg_addr, data);
 }
 
 boost::uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg)
@@ -360,6 +400,12 @@ std::string block_ctrl_base::get_arg(const std::string &key) const
 
     UHD_THROW_INVALID_CODE_PATH();
     return "";
+}
+
+std::string block_ctrl_base::get_arg_type(const std::string &key) const
+{
+    fs_path arg_type_path = _root_path / "args" / key / "type";
+    return _tree->access<std::string>(arg_type_path).get();
 }
 
 stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def) const
