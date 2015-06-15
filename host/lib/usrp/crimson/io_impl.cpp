@@ -181,15 +181,12 @@ private:
 			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
 
          // power on the channel
-	 sleep(2);
+	 sleep(1);
          tree->access<std::string>(mb_path / "rx" / "Channel_"+ch / "pwr").set("1");
-	 sleep(2);
+	 sleep(4);
 
 			// vita enable
 			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("1");
-
-         // rf band high
-			tree->access<int>(mb_path / "dboards" / ch / "rx_frontends" / "Channel_"+ch / "freq" / "band").set(1);
 
 			// SFPA
 			if (strcmp(sink.c_str(), "sfpa") == 0) {
@@ -333,15 +330,12 @@ private:
 			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
 
          // power on the channel
-	 sleep(2);
+	 sleep(1);
          tree->access<std::string>(mb_path / "tx" / "Channel_"+ch / "pwr").set("1");
-	 sleep(2);
+	 sleep(4);
 
 			// vita disable
 			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("0");
-
-         // rf band high
-			tree->access<int>(mb_path / "dboards" / ch / "tx_frontends" / "Channel_"+ch / "freq" / "band").set(1);
 
 			// SFPA (all the same because this is a sink)
 			if (strcmp(sink.c_str(), "sfpa") == 0) {
