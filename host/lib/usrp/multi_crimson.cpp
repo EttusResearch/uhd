@@ -648,20 +648,27 @@ meta_range_t multi_crimson_impl::get_tx_rates(size_t chan){
 tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request, size_t chan){
     tune_request_t req = tune_request;
     tune_result_t result;
+    bool offset = false;
 
-   // check if the freuqnecy is greater than 15 MHz, if it is, then mix it 15 MHz off
-   // and then mix it back down tot he correct frequency with DSP NCO
-   if ( req.rf_freq_policy == tune_request_t::POLICY_MANUAL ) {
-      if (req.rf_freq > 15000000.0) {
-         req.rf_freq -= 15000000.0;
-         _tree->access<int>(tx_rf_fe_root(chan) / "nco").set(15);
-      }
-   } else {
-      if (req.target_freq > 15000000.0) {
-         req.target_freq -= 15000000.0;
-         _tree->access<int>(tx_rf_fe_root(chan) / "nco").set(15);
-      }
-   }
+    // pointer to the frequency we use
+    double* freq;
+    if ( req.rf_freq_policy == tune_request_t::POLICY_MANUAL )
+       freq = &(req.rf_freq);
+    else
+       freq = &(req.target_freq);
+
+    // switch bands if less/greater than 100 MHz
+    if (*freq > 100000000.0) _tree->access<int>(tx_rf_fe_root(chan) / "freq" / "band").set(1);
+    else                     _tree->access<int>(tx_rf_fe_root(chan) / "freq" / "band").set(0);
+
+    // offset it by 15 MHz
+    if (*freq > 15000000.0) {
+       *freq -= 15000000.0;
+       offset = true;
+       _tree->access<int>(tx_rf_fe_root(chan) / "nco").set(15);
+    } else {
+       _tree->access<int>(tx_rf_fe_root(chan) / "nco").set(0);
+    }
 
     // check the tuning ranges first, and clip if necessary
     meta_range_t rf_range  = _tree->access<meta_range_t>(tx_rf_fe_root(chan) / "freq" / "range").get();
@@ -673,22 +680,36 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
     if (req.target_freq < rf_range.start())	req.target_freq = rf_range.start();
     if (req.target_freq > rf_range.stop())	req.target_freq = rf_range.stop();
 
-    // tune request, use target_freq when none of the policies are set to manual
-    if( req.rf_freq_policy == tune_request_t::POLICY_MANUAL ) {
-        _tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").set(req.rf_freq);
-	result.actual_rf_freq = req.rf_freq;
+    // use the DSP NCO with base band
+    if (_tree->access<int>(tx_rf_fe_root(chan) / "freq" / "band").get() == 0) {
+        int cur_dac_nco = _tree->access<int>(tx_rf_fe_root(chan) / "nco").get();
+	int set_dsp_nco = *freq;
+        _tree->access<int>(tx_dsp_root(chan) / "nco").set(set_dsp_nco);
+
+	result.actual_rf_freq = set_dsp_nco + cur_dac_nco;
+
+    // use the LO with high band
     } else {
-	_tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").set(req.target_freq);
-	result.actual_rf_freq = req.target_freq;
+        _tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").set(*freq);
+
+	// read back the frequency and adjust for the errors with DSP NCO if possible
+        double cur_lo_freq = _tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").get();
+        int cur_dac_nco = _tree->access<int>(tx_rf_fe_root(chan) / "nco").get();
+	int set_dsp_nco = *freq - cur_lo_freq;
+
+	if (set_dsp_nco >  161000000) set_dsp_nco = 161000000;
+	if (set_dsp_nco < -161000000) set_dsp_nco = -161000000;
+        _tree->access<int>(tx_dsp_root(chan) / "nco").set(set_dsp_nco);
+
+	result.actual_rf_freq = cur_lo_freq + set_dsp_nco + cur_dac_nco;
     }
 
-    if( req.dsp_freq_policy == tune_request_t::POLICY_MANUAL ) {
-        _tree->access<double>(tx_dsp_root(chan) / "freq" / "value").set(req.dsp_freq);
-	result.actual_dsp_freq = req.dsp_freq;
-    } else {
-	_tree->access<double>(tx_dsp_root(chan) / "freq" / "value").set(req.target_freq);
-	result.actual_dsp_freq = req.target_freq;
-    }
+    // account back for the offset
+    if (offset)
+       *freq += 15000000.0;
+
+    req.dsp_freq = result.actual_rf_freq;
+    result.actual_dsp_freq = req.dsp_freq;   // no DSP freq tuning it possible
 
     result.target_rf_freq  = result.actual_rf_freq;
     result.clipped_rf_freq = result.actual_rf_freq;
