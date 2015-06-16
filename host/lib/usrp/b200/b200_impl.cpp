@@ -524,8 +524,8 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     ////////////////////////////////////////////////////////////////////
 
     //init the clock rate to something reasonable
-    _tree->access<double>(mb_path / "tick_rate").set(
-        device_addr.cast<double>("master_clock_rate", B200_DEFAULT_TICK_RATE));
+    double default_tick_rate = device_addr.cast<double>("master_clock_rate", B200_DEFAULT_TICK_RATE);
+    _tree->access<double>(mb_path / "tick_rate").set(default_tick_rate);
 
     //subdev spec contains full width of selections
     subdev_spec_t rx_spec, tx_spec;
@@ -544,10 +544,10 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
     _tree->access<std::string>(mb_path / "time_source/value").set("none");
 
-    // Set default rates (can't be done in setup_radio() because tick rate is not yet set)
+    // Set the DSP chains to some safe value
     for (size_t i = 0; i < _radio_perifs.size(); i++) {
-        _tree->access<double>(mb_path / "rx_dsps" / str(boost::format("%u") % i)/ "rate/value").set(B200_DEFAULT_RATE);
-        _tree->access<double>(mb_path / "tx_dsps" / str(boost::format("%u") % i) / "rate/value").set(B200_DEFAULT_RATE);
+        _radio_perifs[i].ddc->set_host_rate(default_tick_rate / B200_DEFAULT_DECIM);
+        _radio_perifs[i].duc->set_host_rate(default_tick_rate / B200_DEFAULT_INTERP);
     }
 
     //GPS installed: use external ref, time, and init time spec
@@ -569,9 +569,9 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
 
 b200_impl::~b200_impl(void)
 {
-	UHD_SAFE_CALL
+    UHD_SAFE_CALL
     (
-        _async_task.reset();
+         _async_task.reset();
     )
 }
 
@@ -608,13 +608,14 @@ void b200_impl::setup_radio(const size_t dspno)
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
         .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
-    const fs_path rx_dsp_path = mb_path / "rx_dsps" / str(boost::format("%u") % dspno);
+    const fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
     _tree->create<meta_range_t>(rx_dsp_path / "rate" / "range")
         .publish(boost::bind(&rx_dsp_core_3000::get_host_rates, perif.ddc));
     _tree->create<double>(rx_dsp_path / "rate" / "value")
+        .set(0.0) // We can only load a sensible value after the tick rate was set
         .coerce(boost::bind(&rx_dsp_core_3000::set_host_rate, perif.ddc, _1))
         .subscribe(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
-        .set(0.0); // Can only set this after tick rate is initialized.
+    ;
     _tree->create<double>(rx_dsp_path / "freq" / "value")
         .coerce(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
         .set(0.0);
@@ -632,13 +633,14 @@ void b200_impl::setup_radio(const size_t dspno)
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
         .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
-    const fs_path tx_dsp_path = mb_path / "tx_dsps" / str(boost::format("%u") % dspno);
+    const fs_path tx_dsp_path = mb_path / "tx_dsps" / dspno;
     _tree->create<meta_range_t>(tx_dsp_path / "rate" / "range")
         .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, perif.duc));
     _tree->create<double>(tx_dsp_path / "rate" / "value")
+        .set(0.0) // We can only load a sensible value after the tick rate was set
         .coerce(boost::bind(&tx_dsp_core_3000::set_host_rate, perif.duc, _1))
         .subscribe(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
-        .set(0.0); // Can only set this after tick rate is initialized.
+    ;
     _tree->create<double>(tx_dsp_path / "freq" / "value")
         .coerce(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
         .set(0.0);
