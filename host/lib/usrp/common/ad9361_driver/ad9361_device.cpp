@@ -1594,13 +1594,20 @@ void ad9361_device_t::initialize()
     _io_iface->poke8(0x019, 0x00); // AuxDAC2 Word[9:2]
     _io_iface->poke8(0x01A, 0x00); // AuxDAC1 Config and Word[1:0]
     _io_iface->poke8(0x01B, 0x00); // AuxDAC2 Config and Word[1:0]
-    _io_iface->poke8(0x022, 0x4A); // Invert Bypassed LNA
     _io_iface->poke8(0x023, 0xFF); // AuxDAC Manaul/Auto Control
     _io_iface->poke8(0x026, 0x00); // AuxDAC Manual Select Bit/GPO Manual Select
     _io_iface->poke8(0x030, 0x00); // AuxDAC1 Rx Delay
     _io_iface->poke8(0x031, 0x00); // AuxDAC1 Tx Delay
     _io_iface->poke8(0x032, 0x00); // AuxDAC2 Rx Delay
     _io_iface->poke8(0x033, 0x00); // AuxDAC2 Tx Delay
+
+    /* LNA bypass polarity inversion
+     *     According to the register map, we should invert the bypass path to
+     *     match LNA phase. Extensive testing, however, shows otherwise and that
+     *     to align bypass and LNA phases, the bypass inversion switch should be
+     *     turned off.
+     */
+    _io_iface->poke8(0x022, 0x0A);
 
     /* Setup AuxADC */
     _io_iface->poke8(0x00B, 0x00); // Temp Sensor Setup (Offset)
