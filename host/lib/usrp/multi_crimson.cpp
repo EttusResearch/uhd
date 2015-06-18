@@ -366,7 +366,18 @@ std::string multi_crimson_impl::get_rx_subdev_name(size_t chan){
 // Set the current RX sampling rate on specified channel
 void multi_crimson_impl::set_rx_rate(double rate, size_t chan){
     _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").set(rate);
+
     double actual_rate = _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").get();
+
+    // re-tune the frequency
+    int cur_dsp_nco = _tree->access<int>(rx_dsp_root(chan) / "nco").get();
+    double cur_lo_freq = 0;
+    if (_tree->access<int>(rx_rf_fe_root(chan) / "freq" / "band").get() == 1) {
+        cur_lo_freq = _tree->access<double>(rx_rf_fe_root(chan) / "freq" / "value").get();
+    }
+    tune_request_t tune_request(cur_lo_freq - cur_dsp_nco);
+    set_rx_freq(tune_request, chan);
+
     boost::format base_message (
             "RX Sample Rate Request:\n"
     	    "  Requested sample rate: %f MSps\n"
@@ -404,8 +415,9 @@ tune_result_t multi_crimson_impl::set_rx_freq(const tune_request_t &tune_request
     if (*freq > 100000000.0) _tree->access<int>(rx_rf_fe_root(chan) / "freq" / "band").set(1);
     else                     _tree->access<int>(rx_rf_fe_root(chan) / "freq" / "band").set(0);
 
-    // offset it by 15 MHz
-    if (*freq > 15000000.0) {
+    // offset it by 15 MHz if sampling rate is low.
+    double cur_rx_rate = get_rx_rate(chan);
+    if (*freq > 15000000.0 && !(cur_rx_rate > (CRIMSON_MASTER_CLOCK_RATE / 9)) ) {
        *freq -= 15000000.0;
        offset = true;
        _tree->access<int>(rx_dsp_root(chan) / "nco").set(-15000000);
@@ -623,7 +635,19 @@ std::string multi_crimson_impl::get_tx_subdev_name(size_t chan){
 // Set the current TX sampling rate on specified channel
 void multi_crimson_impl::set_tx_rate(double rate, size_t chan){
     _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").set(rate);
+
     double actual_rate = _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").get();
+
+    // re-tune the frequency
+    int cur_dac_nco = _tree->access<int>(tx_rf_fe_root(chan) / "nco").get();
+    int cur_dsp_nco = _tree->access<int>(tx_dsp_root(chan) / "nco").get();
+    double cur_lo_freq = 0;
+    if (_tree->access<int>(tx_rf_fe_root(chan) / "freq" / "band").get() == 1) {
+    	cur_lo_freq = _tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").get();
+    }
+    tune_request_t tune_request(cur_lo_freq + cur_dac_nco + cur_dsp_nco);
+    set_tx_freq(tune_request, chan);
+
     boost::format base_message (
             "TX Sample Rate Request:\n"
     	    "  Requested sample rate: %f MSps\n"
@@ -661,8 +685,9 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
     if (*freq > 100000000.0) _tree->access<int>(tx_rf_fe_root(chan) / "freq" / "band").set(1);
     else                     _tree->access<int>(tx_rf_fe_root(chan) / "freq" / "band").set(0);
 
-    // offset it by 15 MHz
-    if (*freq > 15000000.0) {
+    // offset it by 15 MHz if sampling rate is low.
+    double cur_tx_rate = get_tx_rate(chan);
+    if (*freq > 15000000.0 && !(cur_tx_rate > (CRIMSON_MASTER_CLOCK_RATE / 9))) {
        *freq -= 15000000.0;
        offset = true;
        _tree->access<int>(tx_rf_fe_root(chan) / "nco").set(15);
