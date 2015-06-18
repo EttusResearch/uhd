@@ -783,7 +783,7 @@ void ad9361_device_t::_calibrate_rx_quadrature()
     _io_iface->poke8(0x168, 0x03); // Set tone level for cal
     _io_iface->poke8(0x16e, 0x25); // RX Gain index to use for cal
     _io_iface->poke8(0x16a, 0x75); // Set Kexp phase
-    _io_iface->poke8(0x16b, 0x15); // Set Kexp amplitude
+    _io_iface->poke8(0x16b, 0x95); // Set Kexp amplitude
 
     if(_use_iq_balance_correction)
     {
