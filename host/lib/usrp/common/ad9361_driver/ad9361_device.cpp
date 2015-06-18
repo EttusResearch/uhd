@@ -833,7 +833,7 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
 
     /* The gain table index used for calibration must be adjusted for the
      * mid-table to get a TIA index = 1 and LPF index = 0. */
-    if ((_rx_freq >= 1300e6) && (_rx_freq < 4000e6)) {
+    if (_rx_freq < 1300e6) {
         _io_iface->poke8(0x0aa, 0x22); // Cal gain table index
     } else {
         _io_iface->poke8(0x0aa, 0x25); // Cal gain table index
