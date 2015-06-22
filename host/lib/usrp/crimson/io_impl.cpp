@@ -181,9 +181,8 @@ private:
 			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
 
          // power on the channel
-	 sleep(1);
          tree->access<std::string>(mb_path / "rx" / "Channel_"+ch / "pwr").set("1");
-	 sleep(4);
+	 sleep(5);
 
 			// vita enable
 			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("1");
@@ -330,9 +329,8 @@ private:
 			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
 
          // power on the channel
-	 sleep(1);
          tree->access<std::string>(mb_path / "tx" / "Channel_"+ch / "pwr").set("1");
-	 sleep(4);
+	 sleep(5);
 
 			// vita disable
 			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("0");

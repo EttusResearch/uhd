@@ -645,7 +645,7 @@ void multi_crimson_impl::set_tx_rate(double rate, size_t chan){
     if (_tree->access<int>(tx_rf_fe_root(chan) / "freq" / "band").get() == 1) {
     	cur_lo_freq = _tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").get();
     }
-    tune_request_t tune_request(cur_lo_freq + cur_dac_nco + cur_dsp_nco);
+    tune_request_t tune_request(cur_lo_freq + (cur_dac_nco * 1e6) + cur_dsp_nco);
     set_tx_freq(tune_request, chan);
 
     boost::format base_message (
@@ -711,7 +711,7 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
 	int set_dsp_nco = *freq;
         _tree->access<int>(tx_dsp_root(chan) / "nco").set(set_dsp_nco);
 
-	result.actual_rf_freq = set_dsp_nco + cur_dac_nco;
+	result.actual_rf_freq = set_dsp_nco + (cur_dac_nco * 1e6);
 
     // use the LO with high band
     } else {
@@ -726,7 +726,7 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
 	if (set_dsp_nco < -161000000) set_dsp_nco = -161000000;
         _tree->access<int>(tx_dsp_root(chan) / "nco").set(set_dsp_nco);
 
-	result.actual_rf_freq = cur_lo_freq + set_dsp_nco + cur_dac_nco;
+	result.actual_rf_freq = cur_lo_freq + set_dsp_nco + (cur_dac_nco * 1e6);
     }
 
     // account back for the offset
