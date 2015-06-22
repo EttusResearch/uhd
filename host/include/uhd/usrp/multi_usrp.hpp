@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012,2014 Ettus Research LLC
+// Copyright 2010-2012,2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -521,7 +521,7 @@ public:
      * Once this module is enabled manual gain settings will be ignored.
      * The AGC will start in a default configuration which should be good for most use cases.
      * Device specific configuration parameters can be found in the property tree.
-     * \param on Enable or Disable the AGC
+     * \param enable Enable or Disable the AGC
      * \param chan the channel index 0 to N-1
      */
     virtual void set_rx_agc(bool enable, size_t chan = 0) = 0;
@@ -546,7 +546,6 @@ public:
      * See set_normalized_rx_gain() for a discussion of normalized
      * gains.
      *
-     * \param gain the normalized gain value
      * \param chan the channel index 0 to N-1
      * \returns The normalized gain (in [0, 1])
      * \throws A uhd::runtime_error if the gain value is outside [0, 1].
@@ -817,7 +816,6 @@ public:
      * See set_normalized_rx_gain() for a discussion of normalized
      * gains.
      *
-     * \param gain the normalized gain value
      * \param chan the channel index 0 to N-1
      * \returns The normalized gain (in [0, 1])
      * \throws A uhd::runtime_error if the gain value is outside [0, 1].
