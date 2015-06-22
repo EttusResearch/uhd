@@ -103,8 +103,24 @@ IF(MSVC)
     IF(UHD_VERSION_DEVEL)
         SET(RC_TRIMMED_VERSION_PATCH "999")
     ENDIF(UHD_VERSION_DEVEL)
+
+    # Allow a custom .rc template file to be used
+    IF(CUSTOM_RC_FILE)
+        IF(IS_ABSOLUTE "${CUSTOM_RC_FILE}")
+            SET(UHD_RC_IN "${CUSTOM_RC_FILE}")
+        ELSE()
+            SET(UHD_RC_IN "${CMAKE_BINARY_DIR}/${CUSTOM_RC_FILE}")
+        ENDIF(IS_ABSOLUTE "${CUSTOM_RC_FILE}")
+        MESSAGE(STATUS "")
+        MESSAGE(STATUS "Using custom RC template: ${UHD_RC_IN}")
+        MESSAGE(STATUS "")
+    ELSE()
+        SET(UHD_RC_IN "${CMAKE_CURRENT_SOURCE_DIR}/uhd.rc.in")
+    ENDIF(CUSTOM_RC_FILE)
+    SET(UHD_RC_IN ${UHD_RC_IN} CACHE STRING "uhd.rc template filepath")
+
     CONFIGURE_FILE(
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd.rc.in
+        ${UHD_RC_IN}
         ${CMAKE_CURRENT_BINARY_DIR}/uhd.rc
     @ONLY)
 
