@@ -22,40 +22,6 @@ INCLUDE(CheckIncludeFileCXX)
 MESSAGE(STATUS "")
 
 ########################################################################
-# Look for Orc support
-########################################################################
-FIND_PACKAGE(ORC)
-
-IF(NOT ORCC_EXECUTABLE)
-    FIND_PROGRAM(ORCC_EXECUTABLE orcc)
-ENDIF()
-
-LIBUHD_REGISTER_COMPONENT("ORC" ENABLE_ORC ON "ENABLE_LIBUHD;ORC_FOUND;ORCC_EXECUTABLE" OFF)
-
-IF(ENABLE_ORC)
-    INCLUDE_DIRECTORIES(${ORC_INCLUDE_DIRS})
-    LINK_DIRECTORIES(${ORC_LIBRARY_DIRS})
-    ENABLE_LANGUAGE(C)
-
-    SET(orcc_src ${CMAKE_CURRENT_SOURCE_DIR}/convert_orc.orc)
-
-    GET_FILENAME_COMPONENT(orc_file_name_we ${orcc_src} NAME_WE)
-    SET(orcc_gen ${CMAKE_CURRENT_BINARY_DIR}/${orc_file_name_we}.c)
-    MESSAGE(STATUS "Orc found, enabling Orc support.")
-    ADD_CUSTOM_COMMAND(
-        COMMAND ${ORCC_EXECUTABLE} --implementation -o ${orcc_gen} ${orcc_src}
-        DEPENDS ${orcc_src} OUTPUT ${orcc_gen}
-    )
-    LIBUHD_APPEND_SOURCES(${orcc_gen})
-    LIBUHD_APPEND_SOURCES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_orc.cpp
-    )
-    LIBUHD_APPEND_LIBS(${ORC_LIBRARIES})
-ELSE(ENABLE_ORC)
-    MESSAGE(STATUS "Orc not found, disabling orc support.")
-ENDIF(ENABLE_ORC)
-
-########################################################################
 # Check for SSE2 SIMD headers
 ########################################################################
 IF(CMAKE_COMPILER_IS_GNUCXX)
