@@ -1187,10 +1187,6 @@ void e300_impl::_update_enables(void)
         enb_rx2 = _tree->access<bool>("/mboards/0/xbar/Radio_0/rx_active").get();
     }
 
-    UHD_MSG(status) << boost::format ("e300_impl::_update_enables: tx1=%u rx1=%u tx2=%u rx2=%u") % enb_tx1 % enb_rx1
-                       % enb_tx2 % enb_rx2 << std::endl;
-
-
     const size_t num_rx = (enb_rx1 ? 1 : 0) + (enb_rx2 ? 1 : 0);
     const size_t num_tx = (enb_tx1 ? 1 : 0) + (enb_tx2 ? 1 : 0);
     const bool mimo = num_rx == 2 or num_tx == 2;
