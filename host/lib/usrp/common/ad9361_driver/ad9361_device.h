@@ -187,6 +187,7 @@ private:    //Methods
     double _setup_rates(const double rate);
     double _get_temperature(const double cal_offset, const double timeout = 0.1);
     void _configure_bb_rf_dc_tracking(const bool on);
+    void _configure_rx_iq_tracking();
     void _setup_agc(chain_t chain, gain_mode_t gain_mode);
     void _set_fir_taps(direction_t direction, chain_t chain, const std::vector<boost::int16_t>& taps);
     std::vector<boost::int16_t> _get_fir_taps(direction_t direction, chain_t chain);
@@ -259,7 +260,7 @@ private:    //Members
     //Synchronization
     boost::recursive_mutex  _mutex;
     bool _use_dc_offset_correction;
-    bool _use_iq_balance_correction;
+    bool _use_iq_balance_tracking;
 };
 
 }}  //namespace

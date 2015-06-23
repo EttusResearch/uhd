@@ -785,11 +785,21 @@ void ad9361_device_t::_configure_bb_rf_dc_tracking(const bool on)
     }
 }
 
-/* Start the RX quadrature calibration.
+void ad9361_device_t::_configure_rx_iq_tracking()
+{
+    if (_use_iq_balance_tracking)
+        _io_iface->poke8(0x169, 0xcf); // Enable Rx IQ tracking
+    else
+        _io_iface->poke8(0x169, 0xc0); // Disable Rx IQ tracking
+}
+
+/* Single shot Rx quadrature calibration
  *
- * Note that we are using AD9361's 'tracking' feature for RX quadrature
- * calibration, so once it starts it continues to free-run during operation.
- * It should be re-run for large frequency changes. */
+ * Procedure documented in "AD9361 Calibration Guide". Prior to calibration,
+ * state should be set to ALERT, FDD, and Dual Synth Mode. Rx quadrature
+ * tracking will be disabled, so run before or instead of enabling Rx
+ * quadrature tracking.
+ */
 void ad9361_device_t::_calibrate_rx_quadrature()
 {
     /* Configure RX Quadrature calibration settings. */
@@ -797,11 +807,27 @@ void ad9361_device_t::_calibrate_rx_quadrature()
     _io_iface->poke8(0x16e, 0x25); // RX Gain index to use for cal
     _io_iface->poke8(0x16a, 0x75); // Set Kexp phase
     _io_iface->poke8(0x16b, 0x95); // Set Kexp amplitude
+    _io_iface->poke8(0x057, 0x33); // Power down Tx mixer
+    _io_iface->poke8(0x169, 0xc0); // Disable tracking and free run mode
 
-    if(_use_iq_balance_correction)
-    {
-        _io_iface->poke8(0x169, 0xcf); // Continuous tracking mode. Gets disabled in _tx_quadrature_cal_routine!
+    /* Place Tx LO within passband of Rx spectrum */
+    double current_tx_freq = _tx_freq;
+    _tune_helper(TX, _rx_freq + _rx_bb_lp_bw / 2.0);
+
+    size_t count = 0;
+    _io_iface->poke8(0x016, 0x20);
+    while (_io_iface->peek8(0x016) & 0x20) {
+        if (count > 100) {
+            throw uhd::runtime_error("[ad9361_device_t] Rx Quadrature Calibration Failure");
+            break;
+        }
+        count++;
+        boost::this_thread::sleep(boost::posix_time::milliseconds(5));
     }
+
+    _io_iface->poke8(0x057, 0x30); // Re-enable Tx mixers
+
+    _tune_helper(TX, current_tx_freq);
 }
 
 /* TX quadrature calibration routine.
@@ -1517,7 +1543,7 @@ void ad9361_device_t::initialize()
     _tx1_gain = 0;
     _tx2_gain = 0;
     _use_dc_offset_correction = true;
-    _use_iq_balance_correction = true;
+    _use_iq_balance_tracking = true;
     _rx1_agc_mode = GAIN_MODE_SLOW_AGC;
     _rx2_agc_mode = GAIN_MODE_SLOW_AGC;
     _rx1_agc_enable = false;
@@ -1692,6 +1718,9 @@ void ad9361_device_t::initialize()
     _calibrate_rx_quadrature();
     _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
 
+    if (_use_iq_balance_tracking)
+        _configure_rx_iq_tracking();
+
     // cals done, set PPORT config
     switch (_client_params->get_digital_interface_mode()) {
     case AD9361_DDR_FDD_LVCMOS: {
@@ -1818,6 +1847,9 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     _calibrate_tx_quadrature();
     _calibrate_rx_quadrature();
     _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
+
+    if (_use_iq_balance_tracking)
+        _configure_rx_iq_tracking();
 
     // cals done, set PPORT config
     switch (_client_params->get_digital_interface_mode()) {
@@ -1975,8 +2007,13 @@ double ad9361_device_t::tune(direction_t direction, const double value)
         /* Run the calibration algorithms. */
         _calibrate_rf_dc_offset();
         _calibrate_tx_quadrature();
-        _calibrate_rx_quadrature();
         _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
+
+        if (_use_iq_balance_tracking)
+            _configure_rx_iq_tracking();
+        else
+            _calibrate_rx_quadrature();
+
         _last_calibration_freq = tune_freq;
     }
 
@@ -2167,32 +2204,26 @@ void ad9361_device_t::set_dc_offset_auto(direction_t direction, const bool on)
     }
 }
 
+/*
+ * Enable/Disable IQ balance tracking
+ *
+ * Run static Rx quadrature calibration after disabling quadrature tracking.
+ * This avoids the situation where a user might disable tracking when the loop
+ * is in a confused state (e.g. at or near saturation). Otherwise, the
+ * calibration setting could be forced to and left in a bad state.
+ */
 void ad9361_device_t::set_iq_balance_auto(direction_t direction, const bool on)
 {
-    if(direction == RX)
-    {
-        _use_iq_balance_correction = on;
-        if(on)
-        {
-            //disable force registers and enable tracking
-            _io_iface->poke8(0x182, (_io_iface->peek8(0x182) & (~ ( (1<<1) | (1<<0) | (1<<5) | (1<<4) ))));
+    if (direction == RX) {
+        _use_iq_balance_tracking = on;
+        _configure_rx_iq_tracking();
+        if (!on) {
+            _io_iface->poke8(0x014, 0x05); // ALERT mode
             _calibrate_rx_quadrature();
-        } else {
-            //disable IQ tracking
-            _io_iface->poke8(0x169, 0xc0);
-            //clear current config values
-            _io_iface->poke8(0x182, (_io_iface->peek8(0x182) | ((1 << 1) | (1 << 0) | (1 << 5) | (1 << 4)))); //Set Rx2 input B&C force enable bit
-            _io_iface->poke8(0x17B, 0x00);
-            _io_iface->poke8(0x17C, 0x00);
-            _io_iface->poke8(0x179, 0x00);
-            _io_iface->poke8(0x17A, 0x00);
-            _io_iface->poke8(0x170, 0x00);
-            _io_iface->poke8(0x171, 0x00);
-            _io_iface->poke8(0x172, 0x00);
-            _io_iface->poke8(0x173, 0x00);
+            _io_iface->poke8(0x014, 0x21); // FDD mode
         }
     } else {
-        throw uhd::runtime_error("[ad9361_device_t] [set_iq_balance_auto] INVALID_CODE_PATH");
+        throw uhd::runtime_error("[ad9361_device_t] [set_iq_balance_auto] Tx IQ tracking not supported");
     }
 }
 
