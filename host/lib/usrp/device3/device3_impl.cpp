@@ -36,7 +36,7 @@ bool _compare_string_indexes(const std::string &lhs, const std::string &rhs)
 }
 
 void device3_impl::merge_channel_defs(
-    const std::vector<rfnoc::block_id_t> &chan_ids,
+    const std::vector<uhd::rfnoc::block_id_t> &chan_ids,
     const std::vector<uhd::device_addr_t> &chan_args,
     const uhd::direction_t dir
 ) {
@@ -90,7 +90,7 @@ void device3_impl::init_radio_ctrl(
         const radio_v_perifs_t &perif,
         const uhd::sid_t &ctrl_sid,
         const size_t mb_i,
-        const endianness_t endianness,
+        const uhd::endianness_t endianness,
         const uhd::rfnoc::radio_ctrl::dboard_type_t dboard_type
 ) {
     using namespace uhd::rfnoc;

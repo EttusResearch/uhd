@@ -77,8 +77,8 @@ class UHD_API stream_sig_t {
 };
 
 //! Shortcut for << stream_sig.to_string()
-inline std::ostream& operator<< (std::ostream& out, stream_sig_t stream_sig) {
-    out << stream_sig.to_string();
+UHD_INLINE std::ostream& operator<< (std::ostream& out, stream_sig_t stream_sig) {
+    out << stream_sig.to_string().c_str();
     return out;
 }
 

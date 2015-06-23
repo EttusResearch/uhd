@@ -43,7 +43,7 @@ public:
      **********************************************************************/
     typedef boost::shared_ptr<rate_node_ctrl> sptr;
     //! This value is used by rate nodes that don't actually set a rate themselves
-    static const double RATE_UNDEFINED = -1.0;
+    static const double RATE_UNDEFINED;
 
     /***********************************************************************
      * Rate controls

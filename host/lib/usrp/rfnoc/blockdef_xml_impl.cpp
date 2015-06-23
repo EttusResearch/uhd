@@ -214,7 +214,7 @@ public:
     {
         pt::ptree propt;
         try {
-            read_xml(filename.native(), propt);
+            read_xml(filename.string(), propt);
             BOOST_FOREACH(pt::ptree::value_type &v, propt.get_child("nocblock.ids")) {
                 if (v.first == "id" and match_noc_id(v.second.data(), noc_id)) {
                     return true;
@@ -231,8 +231,8 @@ public:
         _type(type),
         _noc_id(noc_id)
     {
-        UHD_MSG(status) << "Reading XML file: " << filename.native() << std::endl;
-        read_xml(filename.native(), _pt);
+        UHD_MSG(status) << "Reading XML file: " << filename.string().c_str() << std::endl;
+        read_xml(filename.string(), _pt);
         try {
             // Check name is valid
             get_name();
@@ -248,7 +248,7 @@ public:
         } catch (const std::exception &e) {
             throw uhd::runtime_error(str(
                         boost::format("Invalid block definition in %s: %s")
-                        % filename.native() % e.what()
+                        % filename.string() % e.what()
             ));
         }
     }

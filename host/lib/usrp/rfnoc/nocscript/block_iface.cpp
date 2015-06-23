@@ -23,6 +23,7 @@
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
+using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::nocscript;
 
 block_iface::block_iface(block_ctrl_base *block_ptr)
