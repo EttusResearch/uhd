@@ -96,6 +96,10 @@ const double ad9361_device_t::AD9361_CAL_VALID_WINDOW = 100e6;
 // Max bandwdith is due to filter rolloff in analog filter stage
 const double ad9361_device_t::AD9361_RECOMMENDED_MAX_BANDWIDTH = 56e6;
 
+/* Startup RF frequencies */
+const double ad9361_device_t::DEFAULT_RX_FREQ = 800e6;
+const double ad9361_device_t::DEFAULT_TX_FREQ = 850e6;
+
 /* Program either the RX or TX FIR filter.
  *
  * The process is the same for both filters, but the function must be told
@@ -1527,8 +1531,8 @@ void ad9361_device_t::initialize()
     _regs.bbftune_mode = 0x1e;
 
     /* Initialize private VRQ fields. */
-    _rx_freq = 0.0;
-    _tx_freq = 0.0;
+    _rx_freq = DEFAULT_RX_FREQ;
+    _tx_freq = DEFAULT_TX_FREQ;
     _req_rx_freq = 0.0;
     _req_tx_freq = 0.0;
     _baseband_bw = 0.0;
@@ -1548,7 +1552,6 @@ void ad9361_device_t::initialize()
     _rx2_agc_mode = GAIN_MODE_SLOW_AGC;
     _rx1_agc_enable = false;
     _rx2_agc_enable = false;
-    _last_calibration_freq = -AD9361_CAL_VALID_WINDOW;
     _rx_analog_bw = 0;
     _tx_analog_bw = 0;
     _rx_tia_lp_bw = 0;
@@ -1700,8 +1703,8 @@ void ad9361_device_t::initialize()
 
     _calibrate_synth_charge_pumps();
 
-    _tune_helper(RX, 800e6);
-    _tune_helper(TX, 850e6);
+    _tune_helper(RX, _rx_freq);
+    _tune_helper(TX, _tx_freq);
 
     _program_mixer_gm_subtable();
     _program_gain_table();
@@ -1725,6 +1728,9 @@ void ad9361_device_t::initialize()
         _configure_bb_dc_tracking();
     if (_use_iq_balance_tracking)
         _configure_rx_iq_tracking();
+
+    _last_rx_cal_freq = _rx_freq;
+    _last_tx_cal_freq = _tx_freq;
 
     // cals done, set PPORT config
     switch (_client_params->get_digital_interface_mode()) {
@@ -1861,6 +1867,9 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     if (_use_iq_balance_tracking)
         _configure_rx_iq_tracking();
 
+    _last_rx_cal_freq = _rx_freq;
+    _last_tx_cal_freq = _tx_freq;
+
     // cals done, set PPORT config
     switch (_client_params->get_digital_interface_mode()) {
         case AD9361_DDR_FDD_LVCMOS: {
@@ -1976,17 +1985,18 @@ void ad9361_device_t::set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
 double ad9361_device_t::tune(direction_t direction, const double value)
 {
     boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    double last_cal_freq;
 
     if (direction == RX) {
         if (freq_is_nearly_equal(value, _req_rx_freq)) {
             return _rx_freq;
         }
-
+        last_cal_freq = _last_rx_cal_freq;
     } else if (direction == TX) {
         if (freq_is_nearly_equal(value, _req_tx_freq)) {
             return _tx_freq;
         }
-
+        last_cal_freq = _last_tx_cal_freq;
     } else {
         throw uhd::runtime_error("[ad9361_device_t] [tune] INVALID_CODE_PATH");
     }
@@ -2011,21 +2021,29 @@ double ad9361_device_t::tune(direction_t direction, const double value)
     /* Update the gain settings. */
     _reprogram_gains();
 
-    /* Only run the following calibrations if we are more than 100MHz away
-     * from the previous calibration point. */
-    if (std::abs(_last_calibration_freq - tune_freq) > AD9361_CAL_VALID_WINDOW) {
+    /*
+     * Only run the following calibrations if we are more than 100MHz away
+     * from the previous Tx or Rx calibration point. Leave out single shot
+     * Rx quadrature unless Rx quad-cal is disabled.
+     */
+    if (std::abs(last_cal_freq - tune_freq) > AD9361_CAL_VALID_WINDOW) {
         /* Run the calibration algorithms. */
-        _calibrate_rf_dc_offset();
-        _calibrate_tx_quadrature();
+        if (direction == RX) {
+            _calibrate_rf_dc_offset();
+            if (!_use_iq_balance_tracking)
+                _calibrate_rx_quadrature();
+            if (_use_dc_offset_tracking)
+                _configure_bb_dc_tracking();
 
-        if (_use_dc_offset_tracking)
-            _configure_bb_dc_tracking();
+            _last_rx_cal_freq = tune_freq;
+        } else {
+            _calibrate_tx_quadrature();
+            _last_tx_cal_freq = tune_freq;
+        }
+
+        /* Rx IQ tracking can be disabled on Rx or Tx re-calibration */
         if (_use_iq_balance_tracking)
             _configure_rx_iq_tracking();
-        else
-            _calibrate_rx_quadrature();
-
-        _last_calibration_freq = tune_freq;
     }
 
     /* If we were in the FDD state, return it now. */

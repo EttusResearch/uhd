@@ -157,6 +157,8 @@ public:
     static const double AD9361_MAX_CLOCK_RATE;
     static const double AD9361_CAL_VALID_WINDOW;
     static const double AD9361_RECOMMENDED_MAX_BANDWIDTH;
+    static const double DEFAULT_RX_FREQ;
+    static const double DEFAULT_TX_FREQ;
 
 private:    //Methods
     void _program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs);
@@ -236,7 +238,7 @@ private:    //Members
     ad9361_io::sptr     _io_iface;
     //Intermediate state
     double              _rx_freq, _tx_freq, _req_rx_freq, _req_tx_freq;
-    double              _last_calibration_freq;
+    double              _last_rx_cal_freq, _last_tx_cal_freq;
     double              _rx_analog_bw, _tx_analog_bw, _rx_bb_lp_bw, _tx_bb_lp_bw;
     double              _rx_tia_lp_bw, _tx_sec_lp_bw;
     //! Current baseband sampling rate (this is the actual rate the device is
