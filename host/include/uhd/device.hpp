@@ -55,6 +55,7 @@ public:
      *
      * \param find a function that discovers devices
      * \param make a factory function that makes a device
+     * \param filter include only USRP devices, clock devices, or both
      */
     static void register_device(
         const find_t &find,
