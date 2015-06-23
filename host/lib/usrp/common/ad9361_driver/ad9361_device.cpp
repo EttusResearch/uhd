@@ -773,16 +773,16 @@ void ad9361_device_t::_calibrate_rf_dc_offset()
         count++;
         boost::this_thread::sleep(boost::posix_time::milliseconds(50));
     }
+
+    _io_iface->poke8(0x18b, 0x8d); // Enable RF DC tracking
 }
 
-void ad9361_device_t::_configure_bb_rf_dc_tracking(const bool on)
+void ad9361_device_t::_configure_bb_dc_tracking()
 {
-    if(on)
-    {
-        _io_iface->poke8(0x18b, 0xad); // Enable BB and RF DC tracking
-    } else {
-        _io_iface->poke8(0x18b, 0x83); // Disable BB and RF DC tracking
-    }
+    if (_use_dc_offset_tracking)
+        _io_iface->poke8(0x18b, 0xad); // Enable BB tracking
+    else
+        _io_iface->poke8(0x18b, 0x8d); // Disable BB tracking
 }
 
 void ad9361_device_t::_configure_rx_iq_tracking()
@@ -1542,7 +1542,7 @@ void ad9361_device_t::initialize()
     _rx2_gain = 0;
     _tx1_gain = 0;
     _tx2_gain = 0;
-    _use_dc_offset_correction = true;
+    _use_dc_offset_tracking = true;
     _use_iq_balance_tracking = true;
     _rx1_agc_mode = GAIN_MODE_SLOW_AGC;
     _rx2_agc_mode = GAIN_MODE_SLOW_AGC;
@@ -1716,8 +1716,13 @@ void ad9361_device_t::initialize()
     _calibrate_rf_dc_offset();
     _calibrate_tx_quadrature();
     _calibrate_rx_quadrature();
-    _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
 
+    /*
+     * Rx BB DC and IQ tracking are both disabled by calibration at this
+     * point. Only issue commands if tracking needs to be turned on.
+     */
+    if (_use_dc_offset_tracking)
+        _configure_bb_dc_tracking();
     if (_use_iq_balance_tracking)
         _configure_rx_iq_tracking();
 
@@ -1846,8 +1851,13 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     _calibrate_rf_dc_offset();
     _calibrate_tx_quadrature();
     _calibrate_rx_quadrature();
-    _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
 
+    /*
+     * Rx BB DC and IQ tracking are both disabled by calibration at this
+     * point. Only issue commands if tracking needs to be turned on.
+     */
+    if (_use_dc_offset_tracking)
+        _configure_bb_dc_tracking();
     if (_use_iq_balance_tracking)
         _configure_rx_iq_tracking();
 
@@ -2007,8 +2017,9 @@ double ad9361_device_t::tune(direction_t direction, const double value)
         /* Run the calibration algorithms. */
         _calibrate_rf_dc_offset();
         _calibrate_tx_quadrature();
-        _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
 
+        if (_use_dc_offset_tracking)
+            _configure_bb_dc_tracking();
         if (_use_iq_balance_tracking)
             _configure_rx_iq_tracking();
         else
@@ -2174,33 +2185,24 @@ double ad9361_device_t::get_average_temperature(const double cal_offset, const s
     return d_temp;
 }
 
+/*
+ * Enable/Disable DC offset tracking
+ *
+ * Only disable BB tracking while leaving static RF and BB DC calibrations enabled.
+ * According to correspondance from ADI, turning off Rx BB DC tracking clears the
+ * correction words so we don't need to be concerned with leaving the calibration
+ * in a bad state upon disabling. Testing also confirms this behavior.
+ *
+ * Note that Rx IQ tracking does not show similar state clearing behavior when
+ * disabled.
+ */
 void ad9361_device_t::set_dc_offset_auto(direction_t direction, const bool on)
 {
-    if(direction == RX)
-    {
-         _use_dc_offset_correction = on;
-         _configure_bb_rf_dc_tracking(_use_dc_offset_correction);
-        if(on)
-        {
-            _io_iface->poke8(0x182, (_io_iface->peek8(0x182) & (~((1 << 7) | (1 << 6) | (1 << 3) | (1 << 2))))); //Clear force bits
-            //Do a single shot DC offset cal before enabling tracking (Not possible if not in ALERT state. Is it necessary?)
-        } else {
-            //clear current config values
-            _io_iface->poke8(0x182, (_io_iface->peek8(0x182) | ((1 << 7) | (1 << 6) | (1 << 3) | (1 << 2)))); //Set input A and input B&C force enable bits
-            _io_iface->poke8(0x174, 0x00);
-            _io_iface->poke8(0x175, 0x00);
-            _io_iface->poke8(0x176, 0x00);
-            _io_iface->poke8(0x177, 0x00);
-            _io_iface->poke8(0x178, 0x00);
-            _io_iface->poke8(0x17D, 0x00);
-            _io_iface->poke8(0x17E, 0x00);
-            _io_iface->poke8(0x17F, 0x00);
-            _io_iface->poke8(0x180, 0x00);
-            _io_iface->poke8(0x181, 0x00);
-        }
+    if (direction == RX) {
+        _use_dc_offset_tracking = on;
+        _configure_bb_dc_tracking();
     } else {
-        // DC offset is removed during TX quad cal
-        throw uhd::runtime_error("[ad9361_device_t] [set_iq_balance_auto] INVALID_CODE_PATH");
+        throw uhd::runtime_error("[ad9361_device_t] [set_dc_offset_auto] Tx DC tracking not supported");
     }
 }
 
