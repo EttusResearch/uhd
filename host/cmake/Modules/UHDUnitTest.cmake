@@ -93,7 +93,7 @@ function(UHD_ADD_TEST test_name)
 
         #replace list separator with the path separator (escaped)
         string(REPLACE ";" "\\;" libpath "${libpath}")
-        list(APPEND environs "PATH=${libpath}" "UHD_RFNOC_XML_PATH=${CMAKE_SOURCE_DIR}/include/uhd/usrp/rfnoc/blocks")
+        list(APPEND environs "PATH=${libpath}" "UHD_RFNOC_XML_PATH=${CMAKE_SOURCE_DIR}/include/uhd/usrp/rfnoc")
 
         #generate a bat file that sets the environment and runs the test
         set(bat_file ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_test.bat)
