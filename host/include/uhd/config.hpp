@@ -36,7 +36,7 @@
 # pragma warning(disable: 4275) // non dll-interface class ... used as base for dll-interface class ...
 //# pragma warning(disable: 4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
 //# pragma warning(disable: 4511) // 'class' : copy constructor could not be generated
-//# pragma warning(disable: 4250) // 'class' : inherits 'method' via dominance
+# pragma warning(disable: 4250) // 'class' : inherits 'method' via dominance
 # pragma warning(disable: 4200) // nonstandard extension used : zero-sized array in struct/union
 
 // define logical operators
