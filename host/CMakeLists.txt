@@ -288,11 +288,11 @@ EXECUTE_PROCESS(
     COMMAND ${PYTHON_EXECUTABLE} -c "import os; print os.path.abspath(os.path.join('${CMAKE_SOURCE_DIR}', '..', 'fpga-src'))"
     OUTPUT_VARIABLE FPGA_SUBMODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
-    OUTPUT_QUIET
 )
-message(STATUS ${FPGA_SUBMODULE_DIR})
 IF(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
     SET(HAS_FPGA_SUBMODULE TRUE)
+    MESSAGE(STATUS "")
+    MESSAGE(STATUS "Found FPGA submodule: ${FPGA_SUBMODULE_DIR}")
 ENDIF(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
 
 ########################################################################
