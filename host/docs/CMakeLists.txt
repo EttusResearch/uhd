@@ -28,7 +28,6 @@ SET(ENABLE_MANUAL_OR_DOXYGEN false)
 ########################################################################
 # Setup Manual (using Doxygen)
 ########################################################################
-MESSAGE(STATUS "")
 LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF)
 
 # Check if fpga submodule is there. If yes:
