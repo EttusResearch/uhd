@@ -16,14 +16,12 @@ Follow these links to get to the section of the manual you wish to consult, or u
 
 ### Further Information
 
-\li <a href="http://www.ettus.com/">Ettus Research LLC Website</a>
-\li <a href="http://code.ettus.com/redmine/ettus/projects/uhd/wiki/">UHD Wiki Page</a>
+\li <a href="http://www.ettus.com/">Ettus Research Website</a>
 
-### Building and Installing UHD
+### Installing and/or Building UHD
 
+\li \subpage page_install
 \li \subpage page_build_guide
-\li <a href="http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_Linux">Installation Guide (Linux)</a>
-\li <a href="http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_Windows">Installation Guide (Windows)</a>
 
 */
 // vim:ft=doxygen:

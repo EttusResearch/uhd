@@ -44,7 +44,7 @@ IF(ENABLE_MANUAL)
     SET(DOXYGEN_DEPENDENCIES ${manual_sources})
     SET(DOXYGEN_INPUT_DIRS "${CMAKE_SOURCE_DIR}/docs")
     SET(DOXYGEN_DEP_COMPONENT "manual")
-    SET(DOXYGEN_FPGA_MANUAL_REFERENCE "<a href=\"http://files.ettus.com/manual/page_fpga.html\">Part III: FPGA Manual</a>")
+    SET(DOXYGEN_FPGA_MANUAL_REFERENCE "<a href=\"http://files.ettus.com/manual/md_fpga.html\">Part III: FPGA Manual</a>")
     SET(DOXYGEN_STRIP_EXTRA "")
     # Now, check if we have the FPGA sources as well.
     # If so, pull them in:
