@@ -102,6 +102,9 @@ the front-panel LEDs blink and remain solid.
 
 When in safe-mode, the USRP-N device will always have the IP address **192.168.10.2**.
 
+For more information on using external tools to unbrick your device
+when even this fails, see \ref usrp2_unbrick_n2x0.
+
 \section usrp2_network Setup Networking
 
 The USRP2 only supports Gigabit Ethernet and will not work with a 10/100
@@ -419,6 +422,56 @@ from subdevice **RX1**, and channel 1 is sourced from subdevice **RX2**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
     usrp->set_rx_subdev_spec("A:RX1 A:RX2");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\subsection usrp2_unbrick_n2x0 Unbricking an N-Series Device
+
+You'll need:
+
+- JTAG programmer: please connect it to the JTAG connector on the motherboard as shown in the attachment
+- Xilinx 'iMPACT': launch and cancel the new project wizards. You should be left with the screen which shows a single FPGA chip in the main document (auto-detected by the programmer).
+
+\image html N2xx-JTAG.jpg "N2x0 JTAG Connection"
+
+Download the latest FPGA images, e.g. using `uhd_images_downloader`.
+
+There is a sub-directory in the archive below the firmware/images called 'bit'. Use Impact to load `usrp_n210_r4_fpga.bit` via the programmer (the filename may be different depending on your device type and revision).
+
+The USRP should now be able to communicate on the network (you'll see some LEDs light up and network link be established). The next step is to flash the device and program the serial number. Both these steps can be done with UHD (the JTAG step is complete).
+
+To be sure, run `uhd_find_devices` and it should appear in the list - remember this IP address for the burner utility (should be 192.168.10.2 - make sure your network settings enable to you communicate with that subnet!).
+
+The first step is to flash the unit's safe-mode image, and then do a normal flash - both with the USRP N-series image burner utility.
+
+Make sure you have UHD installed, and the images from before, and follow the instructions in \ref usrp2_load.
+You can combine the `--fw` and `--fpga` arguments into the single invocation of the burner.
+
+You will probably use "usrp_n210_fw.bin" for the firmware and "usrp_n210_r4_fpga.bin" for the FPGA image parameters (use the full/relative file path if your current directory is not that of the images).
+
+    usrp_n2xx_net_burner.py --addr=192.168.10.2 --fw=usrp_n210_fw.bin --fpga=usrp_n210_r4_fpga.bin --overwrite-safe
+
+Use `--overwrite-safe` the first time, and then repeat without it for the second time.
+Don't forget to power-cycle the device after it has been flashed.
+
+If you see a Python exception thrown (e.g. KeyError 65535) and something about if(check_rev)... use the --dont-check-rev option too (this is when the EEPROM has not yet been initialised, or has been blanked).
+
+You can change the normal IP address by following the instructions in \ref usrp2_network_changeip.
+
+If you run `uhd_usrp_probe`, you can see the EEPROM keys at the top. Example:
+
+    Mboard: N210r4
+     hardware: 2577
+     mac-addr: a0:36:fa:25:34:a7
+     ip-addr: 192.168.10.4
+     subnet: 255.255.255.255
+     gateway: 255.255.255.255
+     gpsdo: none
+     serial: EAR14U7UP
+
+If you need to change any of there, you should then be able to run:
+
+    usrp_burn_mb_eeprom --key=<key> --val=<val>
+
+to set the 'mac-addr', 'serial' and 'Mboard'.
 
 */
 // vim:ft=doxygen:

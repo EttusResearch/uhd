@@ -1,0 +1,119 @@
+/*! \page page_install Binary Installation
+
+\tableofcontents
+
+\section install_win Installation on Windows
+
+We provide UHD software installers for Windows users who do not wish
+to install UHD from source.
+
+\subsection install_win_libusb LibUSBx
+
+All Windows installers are built with LibUSBx to enable USB3 support.
+
+\subsection install_win_installer Installer Packages
+
+Installer packages are built from release tags of the maint branch.
+
+Please find the latest installer here: http://files.ettus.com/binaries/uhd/latest_release
+
+Older installers of all previous releases can be downloaded from: http://files.ettus.com/binaries/uhd/ (browse to the desired release).
+
+\subsection install_win_post Post-Install Tasks
+
+Using a USB-based device?
+
+- Download and install Windows UHD USB Drivers: http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip
+- \ref transport_usb_installwin
+
+Install the MSVC Redistributable Package:
+
+- Download <a href="http://www.microsoft.com/downloads/en/details.aspx?FamilyID=a7b7a05e-6de6-4d3a-a423-37bf0912db84
+">MSVC Redistributable Package</a>
+
+\subsection install_win_source Building from source
+
+You can build UHD software from source. There are two choices of compilers for Windows users:
+
+- Microsoft Visual Studio Express.
+  + Users can develop with the free version.
+- MinGW
+  + An alternative to using a Microsoft compiler.
+
+Refer to \ref build_instructions_windows
+
+\section install_linux Installation on Linux
+
+\subsection install_linux_pkgmgr Using your package manager
+
+Most distributions provide UHD as part of their package management.
+On Debian and Ubuntu systems, this will install the base UHD library, all headers
+and build-specific files, as well as utilities:
+
+    sudo apt-get install libuhd-dev libuhd003 uhd-host
+
+On Fedora systems, an equivalent command would be:
+
+    sudo yum install uhd uhd-devel
+
+On other distributions, please refer to your package manager's documentation.
+
+\subsection install_linux_ourbins Using binaries provided by Ettus Research
+
+We provide UHD binary installers for Ubuntu and Fedora users for every stable release.
+Typically, we will provide binaries for latest two LTS versions of Ubuntu, and for the
+latest two versions of Fedora.
+
+The latest versions of these binaries can be downloaded from here: http://files.ettus.com/binaries/uhd_stable/latest_release/
+
+\subsubsection install_linux_ourbins_ubuntu Ubuntu
+
+Copy and paste these commands into your terminal. This will install UHD software as well as allow you to receive package updates.
+
+    sudo bash -c 'echo "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/`lsb_release -cs` `lsb_release -cs` main" > /etc/apt/sources.list.d/ettus.list'
+    sudo apt-get update
+    sudo apt-get install -t `lsb_release -cs` uhd
+
+\subsubsection install_linux_ourbins_fedora Fedora
+
+\b Note: You might want to run the following command if you're updating repositories:
+
+    yum clean metadata all
+
+Create the file /etc/yum.repos.d/ettus.repo. Copy this into the file:
+
+    [ettus-uhd-stable-repo]
+    name=Ettus Research - UHD Stable $releasever-$basearchthon serial timeout
+    baseurl=http://files.ettus.com/binaries/uhd/repo/uhd/fedora/$releasever/$basearch
+    gpgcheck=0
+
+Run the following commands:
+
+    sudo yum --enablerepo='ettus-uhd-stable-repo' install uhd
+
+\subsection install_linux_pybombs Using PyBOMBS
+
+This is an automated way of installing UHD from source. See also \ref build_pybombs.
+
+\section install_osx Installation on Mac OS X
+
+\section install_osx_macports Via MacPorts
+
+We recommend using MacPorts and actively support UHD development on OS X via this method.
+Using MacPorts, the correct hardware device images are automatically installed for you,
+and there are no post install tasks. WIth a single command, you can be up and running in short order.
+
+If you do not already have MacPorts installed, you will need to install it first. Make sure to follow the MacPorts shell environment changes needed such that MacPorts installed executables are found before all others. These are the only changes to the shell environment needed to execute any MacPorts-installed executable. Setting any DYLD environment variable (e.g., DYLD_LIBRARY_PATH) for general use is highly discouraged, because doing so, in our experience, leads to problems down the road that are very difficult to diagnose. OSX provides robust means for correcting DYLD-based issues even after dependencies are installed.
+
+Once MacPorts is installed, UHD and all of its dependencies can be installed by executing
+
+    sudo port install uhd
+
+The latest developments in UHD can be installed via
+
+    sudo port install uhd-devel
+
+Please note that the uhd-devel port, while tested for basic compilation and functionality, is not a formal release and hence should be considered beta software which might contain bugs or major issues.
+
+*/
+// vim:ft=doxygen:
