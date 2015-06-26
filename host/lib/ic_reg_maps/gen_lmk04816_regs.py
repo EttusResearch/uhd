@@ -26,7 +26,7 @@ address0		 0[0:4]     0
 CLKout0_1_DIV	         0[5:15]    25          
 CLKout0_1_HS             0[16]      0          
 RESET                    0[17]      0          no_reset, reset
-CLKout0_1_DDLY	         0[18:27]   0          five
+CLKout0_1_DDLY	         0[18:27]   0          
 CLKout0_ADLY_SEL         0[28]      0          d_pd, d_ev_x, d_odd_y, d_both
 CLKout1_ADLY_SEL	 0[29]      0          d_pd, d_ev_x, d_odd_y, d_both
 Required_0		 0[30]      0         

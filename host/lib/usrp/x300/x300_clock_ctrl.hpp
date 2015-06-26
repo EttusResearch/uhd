@@ -33,7 +33,7 @@ enum x300_clock_which_t
     X300_CLOCK_WHICH_DB0_TX,
     X300_CLOCK_WHICH_DB1_RX,
     X300_CLOCK_WHICH_DB1_TX,
-    X300_CLOCK_WHICH_TEST,
+    X300_CLOCK_WHICH_FPGA,
 };
 
 class x300_clock_ctrl : boost::noncopyable
@@ -93,6 +93,22 @@ public:
      * \param true = on, false = off
      */
     virtual void set_ref_out(const bool) = 0;
+
+    /*! Set the clock delay for the given clock divider.
+     * \param which which clock
+     * \param rate the delay in nanoseconds
+     * \param resync resync clocks to apply delays
+     * \return the actual delay value set
+     * \throw exception when which invalid or delay_ns out of range
+     */
+    virtual double set_clock_delay(const x300_clock_which_t which, const double delay_ns, const bool resync = true) = 0;
+
+    /*! Get the clock delay for the given clock divider.
+     * \param which which clock
+     * \return the actual delay value set
+     * \throw exception when which invalid
+     */
+    virtual double get_clock_delay(const x300_clock_which_t which) = 0;
 
     /*! Reset the clocks.
      *  Should be called if the reference clock changes

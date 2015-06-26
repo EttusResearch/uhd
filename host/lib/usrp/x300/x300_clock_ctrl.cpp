@@ -29,6 +29,31 @@ static const double X300_REF_CLK_OUT_RATE  = 10e6;
 static const boost::uint16_t X300_MAX_CLKOUT_DIV = 1045;
 static const double X300_DEFAULT_DBOARD_CLK_RATE = 50e6;
 
+struct x300_clk_delays {
+    x300_clk_delays() :
+        fpga_dly_ns(0.0),adc_dly_ns(0.0),dac_dly_ns(0.0),db_rx_dly_ns(0.0),db_tx_dly_ns(0.0)
+    {}
+    x300_clk_delays(double fpga, double adc, double dac, double db_rx, double db_tx) :
+        fpga_dly_ns(fpga),adc_dly_ns(adc),dac_dly_ns(dac),db_rx_dly_ns(db_rx),db_tx_dly_ns(db_tx)
+    {}
+
+    double fpga_dly_ns;
+    double adc_dly_ns;
+    double dac_dly_ns;
+    double db_rx_dly_ns;
+    double db_tx_dly_ns;
+};
+
+// Delay the FPGA_CLK by 900ps to ensure a safe ADC_SSCLK -> RADIO_CLK crossing.
+// If the FPGA_CLK is delayed, we also need to delay the reference clocks going to the DAC
+// because the data interface clock is generated from FPGA_CLK.
+// NOTE: This delay value was verified at room temperature only.
+static const x300_clk_delays X300_REV0_6_CLK_DELAYS = x300_clk_delays(
+    /*fpga=*/0.900, /*adc=*/0.000, /*dac=*/0.900, /*db_rx=*/0.000, /*db_tx=*/0.000);
+
+static const x300_clk_delays X300_REV7_CLK_DELAYS = x300_clk_delays(
+    /*fpga=*/0.900, /*adc=*/0.000, /*dac=*/0.900, /*db_rx=*/0.000, /*db_tx=*/0.000);
+
 using namespace uhd;
 
 x300_clock_ctrl::~x300_clock_ctrl(void){
@@ -213,6 +238,187 @@ public:
         _spiface->write_spi(_slaveno, spi_config_t::EDGE_RISE, data,32);
     }
 
+    double set_clock_delay(const x300_clock_which_t which, const double delay_ns, const bool resync = true) {
+        //All dividers have are delayed by 5 taps by default. The delay
+        //set by this function is relative to the 5 tap delay
+        static const boost::uint16_t DDLY_MIN_TAPS  = 5;
+        static const boost::uint16_t DDLY_MAX_TAPS  = 522;  //Extended mode
+
+        //The resolution and range of the analog delay is fixed
+        static const double ADLY_RES_NS = 0.025;
+        static const double ADLY_MIN_NS = 0.500;
+        static const double ADLY_MAX_NS = 0.975;
+
+        //Each digital tap delays the clock by one VCO period
+        double vco_period_ns = 1.0e9/_vco_freq;
+        double half_vco_period_ns = vco_period_ns/2.0;
+
+        //Implement as much of the requested delay using digital taps. Whatever is leftover
+        //will be made up using the analog delay element and the half-cycle digital tap.
+        //A caveat here is that the analog delay starts at ADLY_MIN_NS, so we need to back off
+        //by that much when coming up with the digital taps so that the difference can be made
+        //up using the analog delay.
+        boost::uint16_t ddly_taps = 0;
+        if (delay_ns < ADLY_MIN_NS) {
+            ddly_taps = static_cast<boost::uint16_t>(std::floor((delay_ns)/vco_period_ns));
+        } else {
+            ddly_taps = static_cast<boost::uint16_t>(std::floor((delay_ns-ADLY_MIN_NS)/vco_period_ns));
+        }
+        double leftover_delay = delay_ns - (vco_period_ns * ddly_taps);
+
+        //Compute settings
+        boost::uint16_t ddly_value    = ddly_taps + DDLY_MIN_TAPS;
+        bool            adly_en       = false;
+        boost::uint8_t  adly_value    = 0;
+        boost::uint8_t  half_shift_en = 0;
+
+        if (ddly_value > DDLY_MAX_TAPS) {
+            throw uhd::value_error("set_clock_delay: Requested delay is out of range.");
+        }
+
+        double coerced_delay = (vco_period_ns * ddly_taps);
+        if (leftover_delay > ADLY_MAX_NS) {
+            //The VCO is running too slowly for us to compensate the digital delay difference using
+            //analog delay. Do the best we can.
+            adly_en = true;
+            adly_value = static_cast<boost::uint8_t>(round((ADLY_MAX_NS-ADLY_MIN_NS)/ADLY_RES_NS));
+            coerced_delay += ADLY_MAX_NS;
+        } else if (leftover_delay >= ADLY_MIN_NS && leftover_delay <= ADLY_MAX_NS) {
+            //The leftover delay can be compensated by the analog delay up to the analog delay resolution
+            adly_en = true;
+            adly_value = static_cast<boost::uint8_t>(round((leftover_delay-ADLY_MIN_NS)/ADLY_RES_NS));
+            coerced_delay += ADLY_MIN_NS+(ADLY_RES_NS*adly_value);
+        } else if (leftover_delay >= (ADLY_MIN_NS - half_vco_period_ns) && leftover_delay < ADLY_MIN_NS) {
+            //The leftover delay if less than the minimum supported analog delay but if we move the digital
+            //delay back by half a VCO cycle then it will be in the range of the analog delay. So do that!
+            adly_en = true;
+            adly_value = static_cast<boost::uint8_t>(round((leftover_delay+half_vco_period_ns-ADLY_MIN_NS)/ADLY_RES_NS));
+            half_shift_en = 1;
+            coerced_delay += ADLY_MIN_NS+(ADLY_RES_NS*adly_value)-half_vco_period_ns;
+        } else {
+            //Even after moving the digital delay back by half a cycle, we cannot make up the difference
+            //so give up on compensating for the difference from the digital delay tap.
+            //If control reaches here then the value of leftover_delay is possible very small and will still
+            //be close to what the client requested.
+        }
+
+        UHD_LOGV(often)
+            << boost::format("x300_clock_ctrl::set_clock_delay: Which=%d, Requested=%f, Digital Taps=%d, Half Shift=%d, Analog Delay=%d (%s), Coerced Delay=%fns"
+            ) % which % delay_ns % ddly_value % (half_shift_en?"ON":"OFF") % ((int)adly_value) % (adly_en?"ON":"OFF") % coerced_delay << std::endl;
+
+        //Apply settings
+        switch (which)
+        {
+        case X300_CLOCK_WHICH_FPGA:
+            _lmk04816_regs.CLKout0_1_DDLY = ddly_value;
+            _lmk04816_regs.CLKout0_1_HS = half_shift_en;
+            if (adly_en) {
+                _lmk04816_regs.CLKout0_ADLY_SEL = lmk04816_regs_t::CLKOUT0_ADLY_SEL_D_BOTH;
+                _lmk04816_regs.CLKout1_ADLY_SEL = lmk04816_regs_t::CLKOUT1_ADLY_SEL_D_BOTH;
+                _lmk04816_regs.CLKout0_1_ADLY = adly_value;
+            } else {
+                _lmk04816_regs.CLKout0_ADLY_SEL = lmk04816_regs_t::CLKOUT0_ADLY_SEL_D_PD;
+                _lmk04816_regs.CLKout1_ADLY_SEL = lmk04816_regs_t::CLKOUT1_ADLY_SEL_D_PD;
+            }
+            write_regs(0);
+            write_regs(6);
+            _delays.fpga_dly_ns = coerced_delay;
+            break;
+        case X300_CLOCK_WHICH_DB0_RX:
+        case X300_CLOCK_WHICH_DB1_RX:
+            _lmk04816_regs.CLKout2_3_DDLY = ddly_value;
+            _lmk04816_regs.CLKout2_3_HS = half_shift_en;
+            if (adly_en) {
+                _lmk04816_regs.CLKout2_ADLY_SEL = lmk04816_regs_t::CLKOUT2_ADLY_SEL_D_BOTH;
+                _lmk04816_regs.CLKout3_ADLY_SEL = lmk04816_regs_t::CLKOUT3_ADLY_SEL_D_BOTH;
+                _lmk04816_regs.CLKout2_3_ADLY = adly_value;
+            } else {
+                _lmk04816_regs.CLKout2_ADLY_SEL = lmk04816_regs_t::CLKOUT2_ADLY_SEL_D_PD;
+                _lmk04816_regs.CLKout3_ADLY_SEL = lmk04816_regs_t::CLKOUT3_ADLY_SEL_D_PD;
+            }
+            write_regs(1);
+            write_regs(6);
+            _delays.db_rx_dly_ns = coerced_delay;
+            break;
+        case X300_CLOCK_WHICH_DB0_TX:
+        case X300_CLOCK_WHICH_DB1_TX:
+            _lmk04816_regs.CLKout4_5_DDLY = ddly_value;
+            _lmk04816_regs.CLKout4_5_HS = half_shift_en;
+            if (adly_en) {
+                _lmk04816_regs.CLKout4_ADLY_SEL = lmk04816_regs_t::CLKOUT4_ADLY_SEL_D_BOTH;
+                _lmk04816_regs.CLKout5_ADLY_SEL = lmk04816_regs_t::CLKOUT5_ADLY_SEL_D_BOTH;
+                _lmk04816_regs.CLKout4_5_ADLY = adly_value;
+            } else {
+                _lmk04816_regs.CLKout4_ADLY_SEL = lmk04816_regs_t::CLKOUT4_ADLY_SEL_D_PD;
+                _lmk04816_regs.CLKout5_ADLY_SEL = lmk04816_regs_t::CLKOUT5_ADLY_SEL_D_PD;
+            }
+            write_regs(2);
+            write_regs(7);
+            _delays.db_tx_dly_ns = coerced_delay;
+            break;
+        case X300_CLOCK_WHICH_DAC0:
+        case X300_CLOCK_WHICH_DAC1:
+            _lmk04816_regs.CLKout6_7_DDLY = ddly_value;
+            _lmk04816_regs.CLKout6_7_HS = half_shift_en;
+            if (adly_en) {
+                _lmk04816_regs.CLKout6_ADLY_SEL = lmk04816_regs_t::CLKOUT6_ADLY_SEL_D_BOTH;
+                _lmk04816_regs.CLKout7_ADLY_SEL = lmk04816_regs_t::CLKOUT7_ADLY_SEL_D_BOTH;
+                _lmk04816_regs.CLKout6_7_ADLY = adly_value;
+            } else {
+                _lmk04816_regs.CLKout6_ADLY_SEL = lmk04816_regs_t::CLKOUT6_ADLY_SEL_D_PD;
+                _lmk04816_regs.CLKout7_ADLY_SEL = lmk04816_regs_t::CLKOUT7_ADLY_SEL_D_PD;
+            }
+            write_regs(3);
+            write_regs(7);
+            _delays.dac_dly_ns = coerced_delay;
+            break;
+        case X300_CLOCK_WHICH_ADC0:
+        case X300_CLOCK_WHICH_ADC1:
+            _lmk04816_regs.CLKout8_9_DDLY = ddly_value;
+            _lmk04816_regs.CLKout8_9_HS = half_shift_en;
+            if (adly_en) {
+                _lmk04816_regs.CLKout8_ADLY_SEL = lmk04816_regs_t::CLKOUT8_ADLY_SEL_D_BOTH;
+                _lmk04816_regs.CLKout9_ADLY_SEL = lmk04816_regs_t::CLKOUT9_ADLY_SEL_D_BOTH;
+                _lmk04816_regs.CLKout8_9_ADLY = adly_value;
+            } else {
+                _lmk04816_regs.CLKout8_ADLY_SEL = lmk04816_regs_t::CLKOUT8_ADLY_SEL_D_PD;
+                _lmk04816_regs.CLKout9_ADLY_SEL = lmk04816_regs_t::CLKOUT9_ADLY_SEL_D_PD;
+            }
+            write_regs(4);
+            write_regs(8);
+            _delays.adc_dly_ns = coerced_delay;
+            break;
+        default:
+            throw uhd::value_error("set_clock_delay: Requested source is invalid.");
+        }
+
+        //Delays are applied only on a sync event
+        if (resync) sync_clocks();
+
+        return coerced_delay;
+    }
+
+    double get_clock_delay(const x300_clock_which_t which) {
+        switch (which)
+        {
+        case X300_CLOCK_WHICH_FPGA:
+            return _delays.fpga_dly_ns;
+        case X300_CLOCK_WHICH_DB0_RX:
+        case X300_CLOCK_WHICH_DB1_RX:
+            return _delays.db_rx_dly_ns;
+        case X300_CLOCK_WHICH_DB0_TX:
+        case X300_CLOCK_WHICH_DB1_TX:
+            return _delays.db_tx_dly_ns;
+        case X300_CLOCK_WHICH_DAC0:
+        case X300_CLOCK_WHICH_DAC1:
+            return _delays.dac_dly_ns;
+        case X300_CLOCK_WHICH_ADC0:
+        case X300_CLOCK_WHICH_ADC1:
+            return _delays.adc_dly_ns;
+        default:
+            throw uhd::value_error("get_clock_delay: Requested source is invalid.");
+        }
+    }
 
 private:
 
@@ -409,9 +615,6 @@ private:
         _lmk04816_regs.CLKout0_1_PD = lmk04816_regs_t::CLKOUT0_1_PD_POWER_UP;
         this->write_regs(0);
         _lmk04816_regs.CLKout0_1_DIV = master_clock_div;
-        _lmk04816_regs.CLKout0_ADLY_SEL = lmk04816_regs_t::CLKOUT0_ADLY_SEL_D_EV_X;
-        _lmk04816_regs.CLKout6_ADLY_SEL = lmk04816_regs_t::CLKOUT6_ADLY_SEL_D_BOTH;
-        _lmk04816_regs.CLKout7_ADLY_SEL = lmk04816_regs_t::CLKOUT7_ADLY_SEL_D_BOTH;
         this->write_regs(0);
 
         // Register 1
@@ -435,11 +638,6 @@ private:
         _lmk04816_regs.CLKout1_TYPE = lmk04816_regs_t::CLKOUT1_TYPE_P_DOWN; //CPRI feedback clock, use LVDS
         _lmk04816_regs.CLKout2_TYPE = lmk04816_regs_t::CLKOUT2_TYPE_LVPECL_700MVPP; //DB_0_RX
         _lmk04816_regs.CLKout3_TYPE = lmk04816_regs_t::CLKOUT3_TYPE_LVPECL_700MVPP; //DB_1_RX
-        // Delay the FPGA_CLK by 900ps to ensure a safe ADC_SSCLK -> RADIO_CLK crossing.
-        // If the FPGA_CLK is delayed, we also need to delay the reference clocks going to the DAC
-        // because the data interface clock is generated from FPGA_CLK.
-        // NOTE: This delay value was verified at room temperature only.
-        _lmk04816_regs.CLKout0_1_ADLY = 0x10;
 
         // Register 7
         _lmk04816_regs.CLKout4_TYPE = lmk04816_regs_t::CLKOUT4_TYPE_LVPECL_700MVPP; //DB_1_TX
@@ -447,7 +645,6 @@ private:
         _lmk04816_regs.CLKout6_TYPE = lmk04816_regs_t::CLKOUT6_TYPE_LVPECL_700MVPP; //DB0_DAC
         _lmk04816_regs.CLKout7_TYPE = lmk04816_regs_t::CLKOUT7_TYPE_LVPECL_700MVPP; //DB1_DAC
         _lmk04816_regs.CLKout8_TYPE = lmk04816_regs_t::CLKOUT8_TYPE_LVPECL_700MVPP; //DB0_ADC
-        _lmk04816_regs.CLKout6_7_ADLY = _lmk04816_regs.CLKout0_1_ADLY;
 
         // Register 8
         _lmk04816_regs.CLKout9_TYPE = lmk04816_regs_t::CLKOUT9_TYPE_LVPECL_700MVPP; //DB1_ADC
@@ -506,6 +703,19 @@ private:
         // PLL2_P_30 set in individual cases above
         // PLL2_N_30 set in individual cases above
 
+        if (_hw_rev >= 7) {
+            _delays = X300_REV7_CLK_DELAYS;
+        } else {
+            _delays = X300_REV0_6_CLK_DELAYS;
+        }
+
+        //Apply delay values
+        set_clock_delay(X300_CLOCK_WHICH_FPGA,   _delays.fpga_dly_ns,  false);
+        set_clock_delay(X300_CLOCK_WHICH_DB0_RX, _delays.db_rx_dly_ns, false);  //Sets both Ch0 and Ch1
+        set_clock_delay(X300_CLOCK_WHICH_DB0_TX, _delays.db_tx_dly_ns, false);  //Sets both Ch0 and Ch1
+        set_clock_delay(X300_CLOCK_WHICH_ADC0,   _delays.adc_dly_ns,   false);  //Sets both Ch0 and Ch1
+        set_clock_delay(X300_CLOCK_WHICH_DAC0,   _delays.dac_dly_ns,   false);  //Sets both Ch0 and Ch1
+
         /* Write the configuration values into the LMK */
         for (size_t i = 1; i <= 16; ++i) {
             this->write_regs(i);
@@ -517,13 +727,14 @@ private:
         this->sync_clocks();
     }
 
-    const spi_iface::sptr _spiface;
-    const size_t _slaveno;
-    const size_t _hw_rev;
-    const double _master_clock_rate;
-    const double _system_ref_rate;
-    lmk04816_regs_t _lmk04816_regs;
-    double _vco_freq;
+    const spi_iface::sptr   _spiface;
+    const size_t            _slaveno;
+    const size_t            _hw_rev;
+    const double            _master_clock_rate;
+    const double            _system_ref_rate;
+    lmk04816_regs_t         _lmk04816_regs;
+    double                  _vco_freq;
+    x300_clk_delays         _delays;
 };
 
 x300_clock_ctrl::sptr x300_clock_ctrl::make(uhd::spi_iface::sptr spiface,
