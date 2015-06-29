@@ -49,6 +49,8 @@
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include "recv_packet_demuxer_3000.hpp"
+#include <uhd/utils/soft_register.hpp>
+#include "x300_regs.hpp"
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 
@@ -169,9 +171,35 @@ public:
 private:
     boost::shared_ptr<async_md_type> _async_md;
 
+    class radio_misc_outs_reg : public uhd::soft_reg32_wo_t {
+    public:
+        UHD_DEFINE_SOFT_REG_FIELD(DAC_ENABLED,          /*width*/ 1, /*shift*/ 0);  //[0]
+        UHD_DEFINE_SOFT_REG_FIELD(DAC_RESET_N,          /*width*/ 1, /*shift*/ 1);  //[1]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_RESET,            /*width*/ 1, /*shift*/ 2);  //[2]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_ENABLED,  /*width*/ 1, /*shift*/ 4);  //[4]
+
+        radio_misc_outs_reg(): uhd::soft_reg32_wo_t(TOREG(SR_MISC_OUTS)) {
+            //Initial values
+            set(DAC_ENABLED, 0);
+            set(DAC_RESET_N, 0);
+            set(ADC_RESET, 0);
+            set(ADC_CHECKER_ENABLED, 0);
+        }
+    };
+    class radio_misc_ins_reg : public uhd::soft_reg32_ro_t {
+    public:
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_Q_LOCKED, /*width*/ 1, /*shift*/ 0);  //[0]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_I_LOCKED, /*width*/ 1, /*shift*/ 1);  //[1]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_Q_ERROR,  /*width*/ 1, /*shift*/ 2);  //[2]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_I_ERROR,  /*width*/ 1, /*shift*/ 3);  //[3]
+
+        radio_misc_ins_reg(): uhd::soft_reg32_ro_t(RB32_MISC_INS) { }
+    };
+
     //perifs in the radio core
     struct radio_perifs_t
     {
+        //Interfaces
         radio_ctrl_core_3000::sptr ctrl;
         spi_core_3000::sptr spi;
         x300_adc_ctrl::sptr adc;
@@ -184,6 +212,9 @@ private:
         gpio_core_200_32wo::sptr leds;
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
+        //Registers
+        radio_misc_outs_reg::sptr misc_outs;
+        radio_misc_ins_reg::sptr misc_ins;
     };
 
     //overflow recovery impl
@@ -211,7 +242,8 @@ private:
         i2c_core_100_wb32::sptr zpu_i2c;
 
         //perifs in each radio
-        radio_perifs_t radio_perifs[2]; //!< This is hardcoded s.t. radio_perifs[0] points to slot A and [1] to B
+        static const size_t NUM_RADIOS = 2;
+        radio_perifs_t radio_perifs[NUM_RADIOS]; //!< This is hardcoded s.t. radio_perifs[0] points to slot A and [1] to B
         uhd::usrp::dboard_eeprom_t db_eeproms[8];
         //! Return the index of a radio component, given a slot name. This means DSPs, radio_perifs
         size_t get_radio_index(const std::string &slot_name) {
@@ -363,6 +395,9 @@ private:
     void update_atr_leds(gpio_core_200_32wo::sptr, const std::string &ant);
     boost::uint32_t get_fp_gpio(gpio_core_200::sptr);
     void set_fp_gpio(gpio_core_200::sptr, const gpio_attr_t, const boost::uint32_t);
+
+    double self_cal_adc_delay(mboard_members_t& mb, bool apply_delay = false);
+    void self_test_adcs(mboard_members_t& mb);
 
     //**PRECONDITION**
     //This function assumes that all the VITA times in "radios" are synchronized

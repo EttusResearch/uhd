@@ -16,7 +16,6 @@
 //
 
 #include "x300_impl.hpp"
-#include "x300_regs.hpp"
 #include "x300_lvbitx.hpp"
 #include "x310_lvbitx.hpp"
 #include <boost/algorithm/string.hpp>
@@ -693,6 +692,14 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     this->setup_radio(mb_i, "B");
 
     ////////////////////////////////////////////////////////////////////
+    // ADC test and cal
+    ////////////////////////////////////////////////////////////////////
+    if (dev_addr.has_key("self_cal_adc_delay")) {
+        self_cal_adc_delay(mb, true /* Apply ADC delay */);
+    }
+    self_test_adcs(mb);
+
+    ////////////////////////////////////////////////////////////////////
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
     mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
@@ -820,8 +827,15 @@ x300_impl::~x300_impl(void)
     {
         BOOST_FOREACH(mboard_members_t &mb, _mb)
         {
-            mb.radio_perifs[0].ctrl->poke32(TOREG(SR_MISC_OUTS), (1 << 2)); //disable/reset ADC/DAC
-            mb.radio_perifs[1].ctrl->poke32(TOREG(SR_MISC_OUTS), (1 << 2)); //disable/reset ADC/DAC
+            //disable/reset ADC/DAC
+            mb.radio_perifs[0].misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
+            mb.radio_perifs[0].misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
+            mb.radio_perifs[0].misc_outs->set(radio_misc_outs_reg::DAC_ENABLED, 0);
+            mb.radio_perifs[0].misc_outs->flush();
+            mb.radio_perifs[1].misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
+            mb.radio_perifs[1].misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
+            mb.radio_perifs[1].misc_outs->set(radio_misc_outs_reg::DAC_ENABLED, 0);
+            mb.radio_perifs[1].misc_outs->flush();
 
             //kill the claimer task and unclaim the device
             mb.claimer_task.reset();
@@ -841,14 +855,6 @@ x300_impl::~x300_impl(void)
     }
 }
 
-static void check_adc(wb_iface::sptr iface, const boost::uint32_t val)
-{
-    boost::uint32_t adc_rb = iface->peek32(RB32_RX);
-    adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
-    //UHD_MSG(status) << "adc_rb " << std::hex << adc_rb << "  val " << std::hex << val << std::endl;
-    UHD_ASSERT_THROW(adc_rb == val);
-}
-
 void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
 {
     const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
@@ -864,8 +870,20 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     boost::uint32_t ctrl_sid;
     both_xports_t xport = this->make_transport(mb_i, dest, X300_RADIO_DEST_PREFIX_CTRL, device_addr_t(), ctrl_sid);
     perif.ctrl = radio_ctrl_core_3000::make(mb.if_pkt_is_big_endian, xport.recv, xport.send, ctrl_sid, slot_name);
-    perif.ctrl->poke32(TOREG(SR_MISC_OUTS), (1 << 2)); //reset adc + dac
-    perif.ctrl->poke32(TOREG(SR_MISC_OUTS),  (1 << 1) | (1 << 0)); //out of reset + dac enable
+
+    perif.misc_outs = boost::make_shared<radio_misc_outs_reg>();
+    perif.misc_ins = boost::make_shared<radio_misc_ins_reg>();
+    perif.misc_outs->initialize(*perif.ctrl, true);
+    perif.misc_ins->initialize(*perif.ctrl);
+
+    //reset adc + dac
+    perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
+    perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
+    perif.misc_outs->flush();
+    perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 0);
+    perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 1);
+    perif.misc_outs->set(radio_misc_outs_reg::DAC_ENABLED, 1);
+    perif.misc_outs->flush();
 
     this->register_loopback_self_test(perif.ctrl);
 
@@ -878,25 +896,6 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
         .subscribe(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
-
-    ////////////////////////////////////////////////////////////////
-    // ADC self test
-    ////////////////////////////////////////////////////////////////
-    perif.adc->set_test_word("ones", "ones"); check_adc(perif.ctrl, 0xfffcfffc);
-    perif.adc->set_test_word("zeros", "zeros"); check_adc(perif.ctrl, 0x00000000);
-    perif.adc->set_test_word("ones", "zeros"); check_adc(perif.ctrl, 0xfffc0000);
-    perif.adc->set_test_word("zeros", "ones"); check_adc(perif.ctrl, 0x0000fffc);
-    for (size_t k = 0; k < 14; k++)
-    {
-        perif.adc->set_test_word("zeros", "custom", 1 << k);
-        check_adc(perif.ctrl, 1 << (k+2));
-    }
-    for (size_t k = 0; k < 14; k++)
-    {
-        perif.adc->set_test_word("custom", "zeros", 1 << k);
-        check_adc(perif.ctrl, 1 << (k+18));
-    }
-    perif.adc->set_test_word("normal", "normal");
 
     ////////////////////////////////////////////////////////////////
     // create codec control objects
@@ -1787,5 +1786,176 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
         }
     }
     return mb_type;
+}
+
+double x300_impl::self_cal_adc_delay(mboard_members_t& mb, bool apply_delay)
+{
+    UHD_MSG(status) << "Running ADC delay self-calibration: " << std::flush;
+
+    //Effective resolution of the self-cal.
+    static const size_t NUM_DELAY_STEPS = 100;
+
+    double master_clk_period = (1.0e9 / mb.clock->get_master_clock_rate()); //in ns
+    double delay_start = 0.0;
+    double delay_range = 2 * master_clk_period;
+    double delay_incr = delay_range / NUM_DELAY_STEPS;
+
+    UHD_MSG(status) << "Measuring..." << std::flush;
+
+    //Iterate through several values of delays and measure ADC data integrity
+    std::vector< std::pair<double,bool> > results;
+    for (size_t i = 0; i < NUM_DELAY_STEPS; i++) {
+        //Delay the ADC clock (will set both Ch0 and Ch1 delays)
+        double delay = mb.clock->set_clock_delay(X300_CLOCK_WHICH_ADC0, delay_incr*i + delay_start);
+        wait_for_ref_locked(mb.zpu_ctrl, 0.1);
+
+        boost::uint32_t err_code = 0;
+        for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
+            //Test each channel (I and Q) individually so as to not accidentally trigger
+            //on the data from the other channel if there is a swap
+
+            // -- Test I Channel --
+            //Put ADC in ramp test mode. Tie the other channel to all ones.
+            mb.radio_perifs[r].adc->set_test_word("ramp", "ones");
+            //Turn on the pattern checker in the FPGA. It will lock when it sees a zero
+            //and count deviations from the expected value
+            mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
+            mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
+            //50ms @ 200MHz = 10 million samples
+            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+            if (mb.radio_perifs[r].misc_ins->read(radio_misc_ins_reg::ADC_CHECKER_I_LOCKED)) {
+                err_code += mb.radio_perifs[r].misc_ins->get(radio_misc_ins_reg::ADC_CHECKER_I_ERROR);
+            } else {
+                err_code += 100;    //Increment error code by 100 to indicate no lock
+            }
+
+            // -- Test Q Channel --
+            //Put ADC in ramp test mode. Tie the other channel to all ones.
+            mb.radio_perifs[r].adc->set_test_word("ones", "ramp");
+            //Turn on the pattern checker in the FPGA. It will lock when it sees a zero
+            //and count deviations from the expected value
+            mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
+            mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
+            //50ms @ 200MHz = 10 million samples
+            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+            if (mb.radio_perifs[r].misc_ins->read(radio_misc_ins_reg::ADC_CHECKER_Q_LOCKED)) {
+                err_code += mb.radio_perifs[r].misc_ins->get(radio_misc_ins_reg::ADC_CHECKER_Q_ERROR);
+            } else {
+                err_code += 100;    //Increment error code by 100 to indicate no lock
+            }
+        }
+        //UHD_MSG(status) << (boost::format("Delay=%fns, Error=%d\n") % delay % err_code);
+        results.push_back(std::pair<double,bool>(delay, err_code==0));
+    }
+
+    //Calculate the valid window
+    int win_start_idx = -1, win_stop_idx = -1, cur_start_idx = -1, cur_stop_idx = -1;
+    for (size_t i = 0; i < results.size(); i++) {
+        std::pair<double,bool>& item = results[i];
+        if (item.second) {  //If data is stable
+            if (cur_start_idx == -1) {  //This is the first window
+                cur_start_idx = i;
+                cur_stop_idx = i;
+            } else {                    //We are extending the window
+                cur_stop_idx = i;
+            }
+        } else {
+            if (cur_start_idx == -1) {  //We haven't yet seen valid data
+                //Do nothing
+            } else if (win_start_idx == -1) {   //We passed the first valid window
+                win_start_idx = cur_start_idx;
+                win_stop_idx = cur_stop_idx;
+            } else {                    //Update cached window if current window is larger
+                double cur_win_len = results[cur_stop_idx].first - results[cur_start_idx].first;
+                double cached_win_len = results[win_stop_idx].first - results[win_start_idx].first;
+                if (cur_win_len > cached_win_len) {
+                    win_start_idx = cur_start_idx;
+                    win_stop_idx = cur_stop_idx;
+                }
+            }
+            //Reset current window
+            cur_start_idx = -1;
+            cur_stop_idx = -1;
+        }
+    }
+    if (win_start_idx == -1) {
+        throw uhd::runtime_error("self_cal_adc_delay: Self calibration failed. Convergence error.");
+    }
+
+    double win_center = (results[win_stop_idx].first + results[win_start_idx].first) / 2.0;
+    double win_length = results[win_stop_idx].first - results[win_start_idx].first;
+    if (win_length < master_clk_period/4) {
+        throw uhd::runtime_error("self_cal_adc_delay: Self calibration failed. Valid window too narrow.");
+    }
+
+    if (apply_delay) {
+        UHD_MSG(status) << "Applying..." << std::flush;
+        win_center = mb.clock->set_clock_delay(X300_CLOCK_WHICH_ADC0, win_center);  //Sets ADC0 and ADC1
+        wait_for_ref_locked(mb.zpu_ctrl, 0.1);
+
+        UHD_MSG(status) << "Validating..." << std::flush;
+        //Validate delay value
+        for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
+            mb.radio_perifs[r].adc->set_test_word("ramp", "ramp");
+            mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
+            mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
+        }
+        boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
+        for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
+            if (!mb.radio_perifs[r].misc_ins->read(radio_misc_ins_reg::ADC_CHECKER_I_LOCKED) ||
+                mb.radio_perifs[r].misc_ins->read(radio_misc_ins_reg::ADC_CHECKER_I_ERROR) ||
+                !mb.radio_perifs[r].misc_ins->read(radio_misc_ins_reg::ADC_CHECKER_Q_LOCKED) ||
+                mb.radio_perifs[r].misc_ins->read(radio_misc_ins_reg::ADC_CHECKER_Q_ERROR))
+            {
+                throw uhd::runtime_error("self_cal_adc_delay: Self calibration verification failed.");
+            }
+        }
+    }
+
+    //Teardown
+    for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
+        mb.radio_perifs[r].adc->set_test_word("normal", "normal");
+        mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
+    }
+
+    //Report
+    UHD_MSG(status) << " done" << std::endl;
+    UHD_MSG(status) << (boost::format(
+        "ADC delay self-calibration results: Delay=%.3fns, Window=%.3fns, FPGA->ADC=%.3fns\n")
+        % win_center % win_length % (win_center - mb.clock->get_clock_delay(X300_CLOCK_WHICH_FPGA)));
+
+    return win_center;
+}
+
+static void check_adc(wb_iface::sptr iface, const boost::uint32_t val, const boost::uint32_t i)
+{
+    boost::uint32_t adc_rb = iface->peek32(RB32_RX);
+    adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
+    if (val != adc_rb) {
+        throw uhd::runtime_error(
+            (boost::format("ADC self-test failed for Radio%d. (Exp=0x%x, Got=0x%x)")%i%val%adc_rb).str());
+    }
+}
+
+void x300_impl::self_test_adcs(mboard_members_t& mb) {
+    for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
+        radio_perifs_t &perif = mb.radio_perifs[r];
+
+        perif.adc->set_test_word("ones", "ones"); check_adc(perif.ctrl, 0xfffcfffc,r);
+        perif.adc->set_test_word("zeros", "zeros"); check_adc(perif.ctrl, 0x00000000,r);
+        perif.adc->set_test_word("ones", "zeros"); check_adc(perif.ctrl, 0xfffc0000,r);
+        perif.adc->set_test_word("zeros", "ones"); check_adc(perif.ctrl, 0x0000fffc,r);
+        for (size_t k = 0; k < 14; k++)
+        {
+            perif.adc->set_test_word("zeros", "custom", 1 << k);
+            check_adc(perif.ctrl, 1 << (k+2),r);
+        }
+        for (size_t k = 0; k < 14; k++)
+        {
+            perif.adc->set_test_word("custom", "zeros", 1 << k);
+            check_adc(perif.ctrl, 1 << (k+18),r);
+        }
+        perif.adc->set_test_word("normal", "normal");
+    }
 }
 
