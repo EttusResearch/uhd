@@ -66,8 +66,8 @@
                              DEBUG_LOG_HEX(((uint8_t*)&num)[0]);
 
 #define DEBUG_LOG_INT(num) DEBUG_LOG_HEX_NNL(((uint8_t*)&num)[3]); \
-                           DEBUG_LOG_HEX(((uint8_t*)&num)[2]); \
-                           DEBUG_LOG_HEX(((uint8_t*)&num)[1]); \
+                           DEBUG_LOG_HEX_NNL(((uint8_t*)&num)[2]); \
+                           DEBUG_LOG_HEX_NNL(((uint8_t*)&num)[1]); \
                            DEBUG_LOG_HEX(((uint8_t*)&num)[0]);
 
 #else

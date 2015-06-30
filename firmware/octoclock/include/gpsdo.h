@@ -27,6 +27,4 @@ gpsdo_cache_state_t gpsdo_state;
 
 void send_gpsdo_cmd(char* buf, uint8_t size);
 
-void process_gpsdo_output(void);
-
 #endif /* _GPSDO_H_ */

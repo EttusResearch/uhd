@@ -21,6 +21,8 @@
 #include <clkdist.h>
 #include <state.h>
 
+#include <util/delay.h>
+
 #define wait() for(uint16_t u=14000; u; u--) asm("nop");
 
 #define CLK   (PA0) // Shift by 0 bits
@@ -33,7 +35,7 @@
 // Table of 32-bit constants to be written to the TI chip's registers. These are
 // from the "Special Settings" on Page 35 of the datasheet.
 // For the GPS's 10 MHz output
-static uint32_t table_Pri_Ref[] = {
+static const uint32_t table_Pri_Ref[] = {
     Bits_32(1,01010100,0,0),    // Reg 0
     Bits_32(1,01010100,0,0),    // Outputs LVCMOS Positive&Negative Active - Non-inverted
     Bits_32(1,01010100,0,0),
@@ -47,7 +49,7 @@ static uint32_t table_Pri_Ref[] = {
 
 // For the External 10 MHz input LVDS with external termination, 
 // Effectively DC coupled
-static uint32_t table_Sec_Ref[] = {
+static const uint32_t table_Sec_Ref[] = {
     Bits_32(0001,01010100,0,100000),    // Reg 0 -- use Secondary Reference for all channels
     Bits_32(0001,01010100,0,100000),    // Outputs LVCMOS Positive&Negative Active - Non-inverted
     Bits_32(0001,01010100,0,100000),
@@ -81,7 +83,6 @@ static bool get_bit(uint8_t  bit_number) {
 // Send 32 bits to TI chip, LSB first.
 // Don't worry about reading any bits back at this time
 static void send_SPI(uint32_t bits) {
-
     // Basically, when the clock is low, one can set MOSI to anything, as it's
     // ignored.
     set_bit(CE_, Lo);    // Start SPI transaction with TI chip
@@ -130,7 +131,8 @@ void setup_TI_CDCE18005(TI_Input_10_MHz which_input) {
         for(uint8_t i=0; i<table_size; i++){
             temp = table_Pri_Ref[i]<<4;
             temp |= i;
-            send_SPI(temp); // Make sure the register's address is in the LSBs
+            // Make sure the register's address is in the LSBs
+            send_SPI(temp);
         }
     } else {
         // is Secondary_Ext -- External 10 MHz input from SMA connector
@@ -167,6 +169,10 @@ uint32_t get_TI_CDCE18005(CDCE18005 which_register){
     // This tells the TI chip to send us the reg. value requested
     send_SPI(get_reg_value);
     return receive_SPI();
+}
+
+void set_TI_CDCE18005(CDCE18005 which_register, uint32_t bits){
+    send_SPI((bits << 4) | which_register);
 }
 
 bool check_TI_CDCE18005(TI_Input_10_MHz which_input,

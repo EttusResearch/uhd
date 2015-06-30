@@ -34,16 +34,8 @@ char usart_getc(void){
     return UDR1;
 }
 
-char usart_getc_noblock(void){
-    return ((UCSR1A & (1 << RXC))) ? UDR1 : -1;
-}
-
 void usart_putc(char ch){
     while((UCSR1A & (1 << UDRE1)) == 0);
 
     UDR1 = ch;
-}
-
-void usart_putc_nowait(char ch){
-    if((UCSR1A & (1 << UDRE1)) != 0) UDR1 = ch;
 }

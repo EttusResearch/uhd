@@ -22,23 +22,24 @@
 
 #include <octoclock.h>
 
-// NOT PRESENT unless proven so...
-static ref_t global_which_ref = NO_REF;
-static bool global_gps_present = false;
-static bool global_ext_ref_is_present = false;
+// Global state variables
+extern volatile bool         g_ext_ref_present;
+extern volatile bool         g_gps_present;
+extern volatile switch_pos_t g_switch_pos;
+extern volatile ref_t        g_ref;
 
-void led(LEDs which, int turn_it_on);
+typedef enum {
+    LED_TOP,    // Internal
+    LED_MIDDLE, // External
+    LED_BOTTOM  // Status
+} led_t;
 
-void LEDs_off(void);
+void led(led_t which, bool on);
 
-void force_internal(void);
+void leds_off(void);
 
 void prefer_internal(void);
 
 void prefer_external(void);
-
-ref_t which_ref(void);
-
-switch_pos_t get_switch_pos(void);
 
 #endif /* _STATE_H_ */

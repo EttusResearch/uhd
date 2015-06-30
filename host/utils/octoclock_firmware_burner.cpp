@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -74,8 +74,23 @@ boost::uint8_t firmware_image[MAX_FIRMWARE_SIZE];
 size_t firmware_size = 0;
 boost::uint8_t octoclock_data[udp_simple::mtu];
 octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t *>(octoclock_data);
-std::string firmware_path;
+std::string firmware_path, actual_firmware_path;
 size_t num_blocks = 0;
+bool hex = true;
+
+static uint16_t calculate_crc(boost::uint8_t* buffer, boost::uint16_t len){
+    boost::uint16_t crc = 0xFFFF;
+
+    for(size_t i = 0; i < len; i++){
+        crc ^= buffer[i];
+        for(boost::uint8_t j = 0; j < 8; ++j){
+            if(crc & 1) crc = (crc >> 1) ^ 0xA001;
+            else crc = (crc >> 1);
+        }
+    }
+
+    return crc;
+}
 
 /*
  * Functions
@@ -121,26 +136,25 @@ device_addrs_t bootloader_find(const std::string &ip_addr){
 }
 
 void read_firmware(){
-    std::ifstream firmware_file(firmware_path.c_str(), std::ios::binary);
-    firmware_file.seekg(0, std::ios::end);
-    firmware_size = size_t(firmware_file.tellg());
+    std::ifstream firmware_file(actual_firmware_path.c_str(), std::ios::binary);
+    firmware_size = size_t(fs::file_size(actual_firmware_path));
     if(firmware_size > MAX_FIRMWARE_SIZE){
         firmware_file.close();
         throw uhd::runtime_error(str(boost::format("Firmware file too large: %d > %d")
                                      % firmware_size % (MAX_FIRMWARE_SIZE)));
     }
-    firmware_file.seekg(0, std::ios::beg);
     firmware_file.read((char*)firmware_image, firmware_size);
     firmware_file.close();
 
-    num_blocks = (firmware_size % BLOCK_SIZE) ? (firmware_size / BLOCK_SIZE)
-                                              : ((firmware_size / BLOCK_SIZE) + 1);
+    num_blocks = (firmware_size % BLOCK_SIZE) ? ((firmware_size / BLOCK_SIZE) + 1)
+                                              : (firmware_size / BLOCK_SIZE);
 }
 
 void burn_firmware(udp_simple::sptr udp_transport){
     octoclock_packet_t pkt_out;
     pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
-    pkt_out.len = uhd::htonx<boost::uint16_t>((boost::uint16_t)firmware_size);
+    pkt_out.len = (boost::uint16_t)firmware_size;
+    pkt_out.crc = calculate_crc(firmware_image, firmware_size);
     size_t len = 0, current_pos = 0;
 
     //Tell OctoClock not to jump to application, wait for us instead
@@ -149,6 +163,7 @@ void burn_firmware(udp_simple::sptr udp_transport){
     if(UHD_OCTOCLOCK_PACKET_MATCHES(FW_BURN_READY_ACK, pkt_out, pkt_in, len)) std::cout << "ready." << std::endl;
     else{
         std::cout << std::endl;
+        if(hex) fs::remove(actual_firmware_path);
         throw uhd::runtime_error("Could not get OctoClock in valid state for firmware download.");
     }
 
@@ -165,7 +180,7 @@ void burn_firmware(udp_simple::sptr udp_transport){
                   << "% (" << (i+1) << "/" << num_blocks << " blocks)" << std::flush;
 
         memset(pkt_out.data, 0, BLOCK_SIZE);
-        memcpy((void*)(pkt_out.data), &firmware_image[i*BLOCK_SIZE], std::min(int(firmware_size-current_pos), BLOCK_SIZE));
+        memcpy((void*)(pkt_out.data), &firmware_image[i*BLOCK_SIZE], BLOCK_SIZE);
 
         bool success = false;
         while(num_tries <= 5){
@@ -181,6 +196,7 @@ void burn_firmware(udp_simple::sptr udp_transport){
         }
         if(not success){
             std::cout << std::endl;
+            if(hex) fs::remove(actual_firmware_path);
             throw uhd::runtime_error("Failed to burn firmware to OctoClock!");
         }
 
@@ -196,7 +212,6 @@ void verify_firmware(udp_simple::sptr udp_transport){
     pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
     size_t len = 0, current_pos = 0;
 
-
     for(size_t i = 0; i < num_blocks; i++){
         pkt_out.sequence++;
         pkt_out.addr = i*BLOCK_SIZE;
@@ -208,11 +223,13 @@ void verify_firmware(udp_simple::sptr udp_transport){
             if(memcmp((void*)(pkt_in->data), &firmware_image[i*BLOCK_SIZE],
                       std::min(int(firmware_size-current_pos), BLOCK_SIZE))){
                 std::cout << std::endl;
+                if(hex) fs::remove(actual_firmware_path);
                 throw uhd::runtime_error("Failed to verify OctoClock firmware!");
             }
         }
         else{
             std::cout << std::endl;
+            if(hex) fs::remove(actual_firmware_path);
             throw uhd::runtime_error("Failed to verify OctoClock firmware!");
         }
     }
@@ -230,6 +247,7 @@ bool reset_octoclock(const std::string &ip_addr){
     UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, RESET_CMD, pkt_out, len, octoclock_data);
     if(not UHD_OCTOCLOCK_PACKET_MATCHES(RESET_ACK, pkt_out, pkt_in, len)){
         std::cout << std::endl;
+        if(hex) fs::remove(actual_firmware_path);
         throw uhd::runtime_error("Failed to place device in state to receive firmware.");
     }
 
@@ -246,11 +264,13 @@ void finalize(udp_simple::sptr udp_transport){
     UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, FINALIZE_BURNING_CMD, pkt_out, len, octoclock_data);
     if(not UHD_OCTOCLOCK_PACKET_MATCHES(FINALIZE_BURNING_ACK, pkt_out, pkt_in, len)){
         std::cout << std::endl;
+        if(hex) fs::remove(actual_firmware_path);
         std::cout << "no ACK. Bootloader may not have loaded application." << std::endl;
     }
 }
 
-int UHD_SAFE_MAIN(int argc, char *argv[]){
+int UHD_SAFE_MAIN(UHD_UNUSED(int argc), UHD_UNUSED(char *argv[])){
+
     std::string ip_addr;
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -300,7 +320,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             throw uhd::runtime_error(str(boost::format("This filepath does not exist: %s") % firmware_path));
         }
     }
-    else firmware_path = find_image_path("octoclock_r4_fw.bin");
+    else firmware_path = find_image_path("octoclock_r4_fw.hex");
 
     //If Intel hex file detected, convert to binary
     std::string ext = fs::extension(firmware_path);
@@ -312,9 +332,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                                                           % time_spec_t::get_system_time().get_full_secs()));
         Hex2Bin(firmware_path.c_str(), temp_bin.string().c_str(), false);
 
-        firmware_path = temp_bin.string();
+        actual_firmware_path = temp_bin.string();
     }
     else if(ext == ".bin"){
+        hex = false;
+        actual_firmware_path = firmware_path;
         std::cout << "Found firmware at path: " << firmware_path << std::endl;
     }
     else throw uhd::runtime_error("The firmware file has in improper extension (must be .hex or .bin).");
@@ -327,6 +349,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             if(reset_octoclock(ip_addr)) std::cout << "successful." << std::endl;
             else{
                 std::cout << "failed." << std::endl;
+                if(hex) fs::remove(actual_firmware_path);
                 throw uhd::runtime_error("Failed to reset OctoClock device into its bootloader.");
             }
         }
@@ -334,6 +357,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
     else{
         std::cout << "failed." << std::endl;
+        if(hex) fs::remove(actual_firmware_path);
         throw uhd::runtime_error("Could not find OctoClock with given IP address!");
     }
 
@@ -354,7 +378,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if(octoclocks.size() == 1){
         if(octoclocks[0]["type"] == "octoclock-bootloader"){
             std::cout << std::endl;
-            throw uhd::runtime_error("OctoClock failed to leave bootloader state.");
+            if(hex) fs::remove(actual_firmware_path);
+            throw uhd::runtime_error("Firmware did not load properly.");
         }
         else{
             std::cout << "found." << std::endl << std::endl
@@ -363,8 +388,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
     else{
         std::cout << std::endl;
+        if(hex) fs::remove(actual_firmware_path);
         throw uhd::runtime_error("Failed to reinitialize OctoClock.");
     }
+    if(hex) fs::remove(actual_firmware_path);
 
     return EXIT_SUCCESS;
 }

@@ -43,7 +43,7 @@ add_custom_target(
 )
 add_custom_target(
     upload_r4
-    ${AVRDUDE} -p atmega128 -c ${PROGRAMMER} -P usb -U efuse:w:0xFF:m -U hfuse:w:0x81:m -U lfuse:w:0xFF:m -U flash:w:octoclock_r4_fw.hex:i
+    ${AVRDUDE} -p atmega128 -c ${PROGRAMMER} -P usb -U efuse:w:0xFF:m -U hfuse:w:0x81:m -U lfuse:w:0xEF:m -U flash:w:octoclock_r4_fw.hex:i
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     DEPENDS octoclock_r4_fw_hex
     COMMENT "Uploading OctoClock firmware to device with ${PROGRAMMER}"

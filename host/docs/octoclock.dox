@@ -7,40 +7,23 @@
 - Hardware Capabilities:
     -   Fully integrated timing source with 8-Way distribution (10 MHz and 1 PPS)
     -   User selection between internal GPSDO (when present) or external 10 MHz/1 PPS source
+    -   Ethernet bootloader for easy firmware upgrade
     -   Source detection with automatic switch over in case of failure or disconnect
     -   Streaming GPS time and NMEA strings over Ethernet (OctoClock-G only)
 
 \section octoclock_load Loading Firmware onto the Octoclock
 
-\subsection bootloader OctoClock bootloader
-
-If you purchased your OctoClock device before Ethernet functionality was introduced, or if your unit's
-bootloader has somehow become corrupted, you must burn the bootloader onto the device before you can load
-the primary firmware.
-
-To load the bootloader onto the OctoClock, two things are needed:
-
-- AVR programmer
-- AVRdude software
-
-Connect the AVR programmer to J108, as specified on the <a href="http://files.ettus.com/schematics/octoclock/octoclock.pdf">
-schematics</a>. Once you verify that the programmer is properly connected, run the following commands to burn the firmware:
+First, the OctoClock's bootloader needs to be loaded onto the device. Connect the AVR programmer to J108, as
+specified on the <a href="http://files.ettus.com/schematics/octoclock/octoclock.pdf">schematics</a>. Once you
+verify that the programmer is properly connected, run the following commands to load the bootloader:
 
     cd <install path>/share/uhd/images
-    avrdude -p atmega128 -c <programmer name> -P usb -U efuse:w:0xFF:m -U hfuse:w:0x80:m -U lfuse:w:0xFF:m -U flash:w:octoclock_bootloader.hex:i
+    avrdude -p atmega128 -c <programmer name> -P usb -U efuse:w:0xFF:m -U hfuse:w:0x80:m -U lfuse:w:0xEF:m -U flash:w:octoclock_r4_fw.hex:i
+
+When the bootloader is loaded, it will have a default IP address of `192.168.10.3`.
 
 \b Note:
 On Linux, `sudo avrdude ...` might be necessary to gain access to the programmer.
-
-Once the bootloader has been burned, power-cycle your OctoClock device and refer to the below instructions on burning the OctoClock's
-primary firmware.
-
-\subsection application Primary Octoclock firmware
-
-To load firmware onto the OctoClock, you must use the `octoclock_firmware_burner` utility, specifying the IP
-address of the OctoClock device, as follows:
-
-    octoclock_firmware_burner --addr=192.168.10.3
 
 \section octoclock_network Setting Up Networking
 

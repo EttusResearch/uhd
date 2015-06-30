@@ -357,14 +357,14 @@ void octoclock_impl::_get_state(const std::string &oc){
 }
 
 uhd::dict<ref_t, std::string> _ref_strings = boost::assign::map_list_of
-    (NO_REF, "none")
+    (NO_REF,   "none")
     (INTERNAL, "internal")
     (EXTERNAL, "external")
 ;
 
 uhd::dict<switch_pos_t, std::string> _switch_pos_strings = boost::assign::map_list_of
-    (UP, "Prefer internal")
-    (DOWN, "Prefer external")
+    (PREFER_INTERNAL, "Prefer internal")
+    (PREFER_EXTERNAL, "Prefer external")
 ;
 
 sensor_value_t octoclock_impl::_ext_ref_detected(const std::string &oc){
@@ -410,7 +410,7 @@ boost::uint32_t octoclock_impl::_get_time(const std::string &oc){
 }
 
 std::string octoclock_impl::_get_images_help_message(const std::string &addr){
-    const std::string image_name = "octoclock_r4_fw.bin";
+    const std::string image_name = "octoclock_r4_fw.hex";
 
     //Check to see if image is in default location
     std::string image_location;

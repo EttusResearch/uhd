@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ettus Research LLC
+ * Copyright 2014-2015 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,11 +42,11 @@ extern "C" {
  * only valid C code should go in this section.
  */
 
-//These values are placed in the octoclock_packet_t.proto_ver field
+// These values are placed in the octoclock_packet_t.proto_ver field
 #define OCTOCLOCK_BOOTLOADER_PROTO_VER 1234
-#define OCTOCLOCK_FW_COMPAT_NUM 2
+#define OCTOCLOCK_FW_COMPAT_NUM           3
 
-//UDP ports assigned for different tasks
+// UDP ports assigned for different tasks
 #define OCTOCLOCK_UDP_CTRL_PORT   50000
 #define OCTOCLOCK_UDP_GPSDO_PORT  50001
 #define OCTOCLOCK_UDP_FW_PORT     50002
@@ -98,11 +98,21 @@ typedef enum {
 } ref_t;
 
 typedef enum {
-    UP,
-    DOWN
+    PREFER_INTERNAL,
+    PREFER_EXTERNAL
 } switch_pos_t;
 
+/*
+ * Some versions of AVR-GCC ignore #pragma pack, so
+ * if AVR-GCC is being used, use __attribute__
+ * instead.
+ */
+#ifdef AVR
+#define __AVR_ALIGNED__ __attribute__((aligned(1)))
+#else
+#define __AVR_ALIGNED__
 #pragma pack(push,1)
+#endif
 
 // Structure of values in EEPROM, starting in location 0
 typedef struct {
@@ -113,34 +123,37 @@ typedef struct {
     uint8_t serial[10];
     uint8_t name[10];
     uint8_t revision;
-} octoclock_fw_eeprom_t;
+} octoclock_fw_eeprom_t __AVR_ALIGNED__;
 
 typedef struct {
     uint8_t external_detected;
     uint8_t gps_detected;
     uint8_t which_ref;
     uint8_t switch_pos;
-} octoclock_state_t;
+} octoclock_state_t __AVR_ALIGNED__;
 
 typedef struct {
     uint8_t num_wraps;
     uint8_t pos;
-} gpsdo_cache_state_t;
+} gpsdo_cache_state_t __AVR_ALIGNED__;
 
 typedef struct {
     uint32_t proto_ver;
     uint32_t sequence;
     uint8_t code;
     union {
-        uint16_t len;
+        uint16_t crc;
         gpsdo_cache_state_t state;
         uint16_t poolsize;
         uint16_t addr;
     };
     uint8_t data[256];
-} octoclock_packet_t;
+    uint16_t len;
+} octoclock_packet_t __AVR_ALIGNED__;
 
+#ifndef AVR
 #pragma pack(pop)
+#endif
 
 #ifdef __cplusplus
 }
