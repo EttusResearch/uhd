@@ -1717,7 +1717,6 @@ void ad9361_device_t::initialize()
 
     _calibrate_baseband_dc_offset();
     _calibrate_rf_dc_offset();
-    _calibrate_tx_quadrature();
     _calibrate_rx_quadrature();
 
     /*
@@ -1855,7 +1854,6 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
 
     _calibrate_baseband_dc_offset();
     _calibrate_rf_dc_offset();
-    _calibrate_tx_quadrature();
     _calibrate_rx_quadrature();
 
     /*
@@ -1969,6 +1967,14 @@ void ad9361_device_t::set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
     /* Turn on / off the chains. */
     _io_iface->poke8(0x002, _regs.txfilt);
     _io_iface->poke8(0x003, _regs.rxfilt);
+
+    /*
+     * Last unconditional Tx calibration point. Any later Tx calibration will
+     * require user intervention (currently triggered by tuning difference that
+     * is > 100 MHz). Late calibration provides better performance.
+     */
+    if (tx1 | tx2)
+        _calibrate_tx_quadrature();
 
     /* Put back into FDD state if necessary */
     if (set_back_to_fdd)
