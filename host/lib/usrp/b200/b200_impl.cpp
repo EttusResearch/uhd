@@ -825,7 +825,6 @@ void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
 
 void b200_impl::codec_loopback_self_test(wb_iface::sptr iface)
 {
-    bool test_fail = false;
     UHD_MSG(status) << "Performing CODEC loopback test... " << std::flush;
     size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
@@ -837,11 +836,13 @@ void b200_impl::codec_loopback_self_test(wb_iface::sptr iface)
         const boost::uint64_t rb_word64 = iface->peek64(RB64_CODEC_READBACK);
         const boost::uint32_t rb_tx = boost::uint32_t(rb_word64 >> 32);
         const boost::uint32_t rb_rx = boost::uint32_t(rb_word64 & 0xffffffff);
-        test_fail = word32 != rb_tx or word32 != rb_rx;
-        if (test_fail) break; //exit loop on any failure
+        bool test_fail = word32 != rb_tx or word32 != rb_rx;
+        if (test_fail) {
+            UHD_MSG(status) << "fail" << std::endl;
+            throw uhd::runtime_error("CODEC loopback test failed.");
+        }
     }
-    UHD_MSG(status) << ((test_fail)? "fail" : "pass") << std::endl;
-
+    UHD_MSG(status) << "pass" << std::endl;
     /* Zero out the idle data. */
     iface->poke32(TOREG(SR_CODEC_IDLE), 0);
 }
