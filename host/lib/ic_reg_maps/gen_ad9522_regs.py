@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2011,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -88,39 +88,38 @@ ref2_freq_gt_thresh         0x01F[2]                 0
 ref1_freq_gt_thresh         0x01F[1]                 0
 digital_lock_detect         0x01F[0]                 0
 ########################################################################
-#for $i in range(12)
-#set $addr = ($i + 0x0F0)
-out$(i)_format              $(addr)[7]             0             lvds, cmos
-out$(i)_cmos_configuration  $(addr)[6:5]           3             off, a_on, b_on, ab_on
-out$(i)_polarity            $(addr)[4:3]           0             lvds_a_non_b_inv=0, lvds_a_inv_b_non=1, cmos_ab_non=0, cmos_ab_inv=1, cmos_a_non_b_inv=2, cmos_a_inv_b_non=3
-out$(i)_lvds_diff_voltage   $(addr)[2:1]           1             1_75ma, 3_5ma, 5_25ma, 7_0ma
-out$(i)_lvds_power_down     $(addr)[0]             0
-#end for
+% for i in range(12):
+<% addr = (i + 0x0F0) %>\
+out${i}_format              ${addr}[7]             0             lvds, cmos
+out${i}_cmos_configuration  ${addr}[6:5]           3             off, a_on, b_on, ab_on
+out${i}_polarity            ${addr}[4:3]           0             lvds_a_non_b_inv=0, lvds_a_inv_b_non=1, cmos_ab_non=0, cmos_ab_inv=1, cmos_a_non_b_inv=2, cmos_a_inv_b_non=3
+out${i}_lvds_diff_voltage   ${addr}[2:1]           1             1_75ma, 3_5ma, 5_25ma, 7_0ma
+out${i}_lvds_power_down     ${addr}[0]             0
+% endfor
 ########################################################################
-#for $i in reversed(range(8))
-csdld_en_out_$i             0x0FC[$i]                0           ignore, async
-#end for
+% for i in reversed(range(8)):
+csdld_en_out_${i}           0x0FC[${i}]                0           ignore, async
+% endfor
 ########################################################################
-#for $i in reversed(range(4))
-csdld_en_out_$(8 + $i)      0x0FD[$i]                0           ignore, async
-#end for
+% for i in reversed(range(4)):
+csdld_en_out_${8 + i}      0x0FD[${i}]                0           ignore, async
+% endfor
 ########################################################################
-#set $default_val = 0x7
-#for $i in range(4)
-#set $addr0 = hex($i*3 + 0x190)
-#set $addr1 = hex($i*3 + 0x191)
-#set $addr2 = hex($i*3 + 0x192)
-divider$(i)_low_cycles      $(addr0)[7:4]         $default_val
-divider$(i)_high_cycles     $(addr0)[3:0]         $default_val
-divider$(i)_bypass          $(addr1)[7]           0
-divider$(i)_ignore_sync     $(addr1)[6]           0
-divider$(i)_force_high      $(addr1)[5]           0
-divider$(i)_start_high      $(addr1)[4]           0
-divider$(i)_phase_offset    $(addr1)[3:0]         0
-channel$(i)_power_down      $(addr2)[2]           0
-disable_divider$(i)_ddc     $(addr2)[0]           0
-#set $default_val /= 2
-#end for
+% for i in range(4):
+<% default_val = int(0x7 / (2**i)) %>\
+<% addr0 = hex(i*3 + 0x190) %>\
+<% addr1 = hex(i*3 + 0x191) %>\
+<% addr2 = hex(i*3 + 0x192) %>\
+divider${i}_low_cycles      ${addr0}[7:4]         ${default_val}
+divider${i}_high_cycles     ${addr0}[3:0]         ${default_val}
+divider${i}_bypass          ${addr1}[7]           0
+divider${i}_ignore_sync     ${addr1}[6]           0
+divider${i}_force_high      ${addr1}[5]           0
+divider${i}_start_high      ${addr1}[4]           0
+divider${i}_phase_offset    ${addr1}[3:0]         0
+channel${i}_power_down      ${addr2}[2]           0
+disable_divider${i}_ddc     ${addr2}[0]           0
+% endfor
 ########################################################################
 vco_divider                  0x1E0[2:0]              2             div2, div3, div4, div5, div6, static, div1
 power_down_clock_input_sel   0x1E1[4]                0
@@ -145,13 +144,13 @@ BODY_TMPL="""\
 boost::uint32_t get_reg(boost::uint16_t addr){
     boost::uint32_t reg = 0;
     switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        reg |= (boost::uint8_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
-        #end for
+    % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        reg |= (boost::uint8_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        % endfor
         break;
-    #end for
+    % endfor
     }
     if (addr == 0){ //mirror 4 bits in register 0
         reg |= ((reg >> 7) & 0x1) << 0;
@@ -164,13 +163,13 @@ boost::uint32_t get_reg(boost::uint16_t addr){
 
 void set_reg(boost::uint16_t addr, boost::uint32_t reg){
     switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        $reg.get_name() = $(reg.get_type())((reg >> $reg.get_shift()) & $reg.get_mask());
-        #end for
+    % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        ${reg.get_name()} = ${reg.get_type()}((reg >> ${reg.get_shift()}) & ${reg.get_mask()});
+        % endfor
         break;
-    #end for
+    % endfor
     }
 }
 

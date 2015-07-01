@@ -11,7 +11,7 @@ package manager.
 
 <b>Mac OS X Notes:</b>
 Install the Xcode app to get the build tools (GCC and Make).
-Use MacPorts to get the Boost and Cheetah dependencies.
+Use MacPorts to get the Boost and Mako dependencies.
 Other dependencies can be downloaded as DMG installers from the web
 or installed via MacPorts.
 See the UHD OS X build instructions for more information: \ref build_instructions_osx
@@ -57,22 +57,20 @@ Other compilers (or lower versions) may work, but are unsupported.
 
 ### Python
 
-- **Purpose:** used by Cheetah and utility scripts
+- **Purpose:** used by mako and utility scripts
 - **Minimum Version:** 2.6
 - **Usage:** build time + runtime utility scripts (required)
 - **Download URL:** http://www.python.org/download/
 
-### Cheetah
+### Mako
 
 - **Purpose:** source code generation
-- **Minimum Version:** 2.0
+- **Minimum Version:** 0.5.0
 - **Usage:** build time (required)
-- **Download URL:** http://www.cheetahtemplate.org/download.html
-- **Download URL (Windows installer):** http://feisley.com/python/cheetah/
+- **Download URL:** http://www.makotemplates.org/download.html
 
 **Alternative method:**
-Install **setuptools**, and use the **easy_install** command to install Cheetah.
-http://pypi.python.org/pypi/setuptools
+You can use `pip` or `easy_install` to install Mako from PyPi.
 
 ### Doxygen
 
@@ -96,7 +94,7 @@ or install msysGit from http://code.google.com/p/msysgit/downloads/list.
 
 You can install all the dependencies through the package manager:
 
-    sudo apt-get install libboost-all-dev libusb-1.0-0-dev python-cheetah doxygen python-docutils cmake
+    sudo apt-get install libboost-all-dev libusb-1.0-0-dev python-mako doxygen python-docutils cmake
 
 Your actual command may differ.
 
@@ -104,7 +102,7 @@ Your actual command may differ.
 
 You can install all the dependencies through the package manager:
 
-    sudo yum -y install boost-devel libusb1-devel python-cheetah doxygen python-docutils cmake
+    sudo yum -y install boost-devel libusb1-devel python-mako doxygen python-docutils cmake
 
 Your actual command may differ.
 

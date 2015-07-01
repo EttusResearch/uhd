@@ -251,9 +251,9 @@ PYTHON_CHECK_MODULE(
 )
 
 PYTHON_CHECK_MODULE(
-    "Cheetah templates 2.0.0 or greater"
-    "Cheetah" "Cheetah.Version >= '2.0.0'"
-    HAVE_PYTHON_MODULE_CHEETAH
+    "Mako templates 0.4 or greater"
+    "mako" "mako.__version__ >= '0.4.2'"
+    HAVE_PYTHON_MODULE_MAKO
 )
 
 ########################################################################
@@ -291,7 +291,7 @@ SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.008.005-rc1.zip")
 ########################################################################
 # Register top level components
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_CHEETAH" OFF)
+LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_MAKO" OFF)
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF)

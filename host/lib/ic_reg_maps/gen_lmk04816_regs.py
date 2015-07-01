@@ -1,4 +1,4 @@
-#Copyright 2010 Ettus Research LLC
+#Copyright 2010,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -94,15 +94,15 @@ CLKout10_11_PD           5[31] 	    1	       normal, power_down
 ########################################################################
 ## address 6
 ########################################################################
-#set $CLKoutX_TYPE_ENUMS = "p_down=0, LVDS=1, LVPECL_700mVpp=2, LVPECL_1200mVpp=3, LVPECL_1600mVpp=4, LVPECL_200mVpp=5, LVCMOS=6, LVCMOS_IN=7, LVCMOS_NN=8, LVCMOS_II=9, LVCMOS_LN=10, LVCMOS_LI=11, LVCMOS_NL=12, LVCMOS_IL=13, LVCMOS_LL=1"
+<% CLKoutX_TYPE_ENUMS = "p_down=0, LVDS=1, LVPECL_700mVpp=2, LVPECL_1200mVpp=3, LVPECL_1600mVpp=4, LVPECL_200mVpp=5, LVCMOS=6, LVCMOS_IN=7, LVCMOS_NN=8, LVCMOS_II=9, LVCMOS_LN=10, LVCMOS_LI=11, LVCMOS_NL=12, LVCMOS_IL=13, LVCMOS_LL=1" %>\
 address6		 6[0:4]     6          
 CLKout0_1_ADLY	         6[5:9]     0          
 Required_6_10	         6[10]      0          
 CLKout2_3_ADLY           6[11:15]   0         
-CLKout0_TYPE	         6[16:19]   0       $(CLKoutX_TYPE_ENUMS)
-CLKout1_TYPE             6[20:23]   0       $(CLKoutX_TYPE_ENUMS)
-CLKout2_TYPE	         6[24:27]   0       $(CLKoutX_TYPE_ENUMS)
-CLKout3_TYPE	         6[28:31]   0       $(CLKoutX_TYPE_ENUMS)
+CLKout0_TYPE	         6[16:19]   0       ${CLKoutX_TYPE_ENUMS}
+CLKout1_TYPE             6[20:23]   0       ${CLKoutX_TYPE_ENUMS}
+CLKout2_TYPE	         6[24:27]   0       ${CLKoutX_TYPE_ENUMS}
+CLKout3_TYPE	         6[28:31]   0       ${CLKoutX_TYPE_ENUMS}
 ########################################################################
 ## address 7
 ########################################################################
@@ -110,21 +110,21 @@ address7	                 7[0:4]     7
 CLKout4_5_ADLY	         7[5:9]     0          
 Required_7_10	         7[10]      0          
 CLKout6_7_ADLY           7[11:15]   0         
-CLKout4_TYPE	         7[16:19]   0          $(CLKoutX_TYPE_ENUMS)
-CLKout5_TYPE	         7[20:23]   0          $(CLKoutX_TYPE_ENUMS)
-CLKout6_TYPE	         7[24:27]   0          $(CLKoutX_TYPE_ENUMS)
-CLKout7_TYPE	         7[28:31]   0          $(CLKoutX_TYPE_ENUMS)
+CLKout4_TYPE	         7[16:19]   0          ${CLKoutX_TYPE_ENUMS}
+CLKout5_TYPE	         7[20:23]   0          ${CLKoutX_TYPE_ENUMS}
+CLKout6_TYPE	         7[24:27]   0          ${CLKoutX_TYPE_ENUMS}
+CLKout7_TYPE	         7[28:31]   0          ${CLKoutX_TYPE_ENUMS}
 ########################################################################
 ## address 8
 ########################################################################
 address8		 8[0:4]     8          
 CLKout8_9_ADLY	         8[5:9]     0          
 Required_8_10	         8[10]      0          
-CLKout10_11_ADLY         8[11:15]   0          $(CLKoutX_TYPE_ENUMS)
-CLKout8_TYPE	         8[16:19]   0          $(CLKoutX_TYPE_ENUMS)
-CLKout9_TYPE	         8[20:23]   0          $(CLKoutX_TYPE_ENUMS)
-CLKout10_TYPE	         8[24:27]   0          $(CLKoutX_TYPE_ENUMS)
-CLKout11_TYPE	         8[28:31]   0          $(CLKoutX_TYPE_ENUMS)
+CLKout10_11_ADLY         8[11:15]   0          ${CLKoutX_TYPE_ENUMS}
+CLKout8_TYPE	         8[16:19]   0          ${CLKoutX_TYPE_ENUMS}
+CLKout9_TYPE	         8[20:23]   0          ${CLKoutX_TYPE_ENUMS}
+CLKout10_TYPE	         8[24:27]   0          ${CLKoutX_TYPE_ENUMS}
+CLKout11_TYPE	         8[28:31]   0          ${CLKoutX_TYPE_ENUMS}
 ########################################################################
 ## address 9
 ########################################################################
@@ -378,21 +378,17 @@ BODY_TMPL = """\
 boost::uint32_t get_reg(int addr){
     boost::uint32_t reg = 0;
     switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        reg |= (boost::uint32_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
-        #end for
+    % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        reg |= (boost::uint32_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        % endfor
         break;
-    #end for
+    % endfor
     }
     return reg;
 }
 """
-
-
-
-
 
 if __name__ == '__main__':
     import common; common.generate(
@@ -402,6 +398,3 @@ if __name__ == '__main__':
         file=__file__,
     )
 
-
-
-            

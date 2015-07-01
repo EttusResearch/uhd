@@ -53,13 +53,14 @@ f_divider_lsb         4[0:7]        0x84
 ########################################################################
 ## XTAL-Divider R-Divider (5) Write
 ########################################################################
-#set $xtal_divider_names = ', '.join(map(lambda x: 'div' + str(x), range(1,9)))
-xtal_divider          5[5:7]        0       $xtal_divider_names
+<% xtal_divider_names = ', '.join(map(lambda x: 'div' + str(x), range(1,9))) %>\
+xtal_divider          5[5:7]        0       ${xtal_divider_names}
 r_divider             5[0:4]        1       
 ########################################################################
 ## PLL (6) Write
 ########################################################################
-d24                   6[7]          1       div2, div4  ## div2 for LO <= 1125M, div4 > 1125M
+## div2 for LO <= 1125M, div4 > 1125M
+d24                   6[7]          1       div2, div4
 cps                   6[6]          1       i_cp_from_icp, i_cp_from_vas
 icp                   6[5]          0       i_cp_600ua, i_cp_1200ua
 ##reserved            6[0:4]        0
@@ -73,7 +74,8 @@ ade                   7[0]          1       disabled, enabled
 ########################################################################
 ## LPF (8) Write
 ########################################################################
-lp                    8[0:7]        0x4B    ## map(lambda x: "%0.2f"%((4e6 + (x - 12) * 290e3)/1e6), range(255)) in MHz
+## map(lambda x: "%0.2f"%((4e6 + (x - 12) * 290e3)/1e6), range(255)) in MHz
+lp                    8[0:7]        0x4B
 ########################################################################
 ## Control (9) Write
 ########################################################################
@@ -81,7 +83,8 @@ stby                  9[7]          0       normal, disable_sig_and_synth
 ##reserved            9[6]          0
 pwdn                  9[5]          0       normal, invalid
 ##reserved            9[4]          0
-bbg                   9[0:3]        0       ## Baseband Gain in dB
+## Baseband Gain in dB
+bbg                   9[0:3]        0
 ########################################################################
 ## Shutdown (0xA) Write
 ########################################################################
@@ -118,7 +121,8 @@ ld                    0xC[4]        0       unlocked, locked
 ########################################################################
 ## Status Byte-2 (0xD) Read
 ########################################################################
-vcosbr                0xD[3:7]      0       ## vco band readback
+## vco band readback
+vcosbr                0xD[3:7]      0       
 adc                   0xD[0:2]      0       ool0, lock0, vaslock0, vaslock1, vaslock2, vaslock3, lock1, ool1
 """
 
@@ -129,40 +133,29 @@ BODY_TMPL="""\
 boost::uint8_t get_reg(boost::uint8_t addr){
     boost::uint8_t reg = 0;
     switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        reg |= (boost::uint8_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
-        #end for
+    % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        reg |= (boost::uint8_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        % endfor
         break;
-    #end for
+    % endfor
     }
     return boost::uint8_t(reg);
 }
 
 void set_reg(boost::uint8_t addr, boost::uint8_t reg){
     switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        $reg.get_name() = $(reg.get_type())((reg >> $reg.get_shift()) & $reg.get_mask());
-        #end for
+    % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        ${reg.get_name()} = ${reg.get_type()}((reg >> ${reg.get_shift()}) & ${reg.get_mask()});
+        % endfor
         break;
-    #end for
+    % endfor
     }
 }
 """
-
-SPLIT_REGS_HELPER_TMPL="""\
-#for $divname in ['n','f']
-void set_$(divname)_divider(boost::uint32_t $divname){
-    #for $regname in sorted(map(lambda r: r.get_name(), filter(lambda r: r.get_name().find(divname + '_divider') == 0, $regs)))
-    #end for
-}
-#end for
-"""
-    #$regname = boost::uint8_t($divname & $regs[regname].get_mask());
-    #$divname = boost::uint32_t($divname >> $regs[regname].get_shift());
 
 if __name__ == '__main__':
     import common; common.generate(

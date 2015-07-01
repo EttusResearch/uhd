@@ -32,9 +32,9 @@ cmd              0[19:21]          0       wr_input_n, up_dac_n, wr_input_n_up_a
 BODY_TMPL="""\
 boost::uint32_t get_reg(void){
     boost::uint32_t reg = 0;
-    #for $reg in filter(lambda r: r.get_addr() == 0, $regs)
-    reg |= (boost::uint32_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
-    #end for
+    % for reg in filter(lambda r: r.get_addr() == 0, regs):
+    reg |= (boost::uint32_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+    % endfor
     return reg;
 }
 """

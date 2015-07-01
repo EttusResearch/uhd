@@ -44,8 +44,8 @@ power_down              2[5]        0       disabled, enabled
 pd_polarity             2[6]        1       negative, positive
 ldp                     2[7]        0       10ns, 6ns
 ldf                     2[8]        0       frac_n, int_n
-#set $current_setting_enums = ', '.join(map(lambda x: '_'.join(("%0.2fma"%(round(x*31.27 + 31.27)/100)).split('.')), range(0,16)))
-charge_pump_current     2[9:12]     5       $current_setting_enums
+<% current_setting_enums = ', '.join(map(lambda x: '_'.join(("%0.2fma"%(round(x*31.27 + 31.27)/100)).split('.')), range(0,16))) %>\
+charge_pump_current     2[9:12]     5       ${current_setting_enums}
 double_buffer           2[13]       0       disabled, enabled
 r_counter_10_bit        2[14:23]    0
 reference_divide_by_2   2[24]       1       disabled, enabled
@@ -105,13 +105,13 @@ enum addr_t{
 boost::uint32_t get_reg(boost::uint8_t addr){
     boost::uint32_t reg = addr & 0x7;
     switch(addr){
-    #for $addr in range(5+1)
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        reg |= (boost::uint32_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
-        #end for
+    % for addr in range(5+1):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        reg |= (boost::uint32_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        % endfor
         break;
-    #end for
+    % endfor
     }
     return reg;
 }

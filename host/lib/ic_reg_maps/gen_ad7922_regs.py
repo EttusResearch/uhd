@@ -32,16 +32,16 @@ chn              0[13]          0
 BODY_TMPL="""\
 boost::uint16_t get_reg(void){
     boost::uint16_t reg = 0;
-    #for $reg in filter(lambda r: r.get_addr() == 0, $regs)
-    reg |= (boost::uint32_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
-    #end for
+    % for reg in filter(lambda r: r.get_addr() == 0, regs):
+    reg |= (boost::uint32_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+    % endfor
     return reg;
 }
 
 void set_reg(boost::uint16_t reg){
-    #for $reg in filter(lambda r: r.get_addr() == 0, $regs)
-    $reg.get_name() = $(reg.get_type())((reg >> $reg.get_shift()) & $reg.get_mask());
-    #end for
+    % for reg in filter(lambda r: r.get_addr() == 0, regs):
+    ${reg.get_name()} = ${reg.get_type()}((reg >> ${reg.get_shift()}) & ${reg.get_mask()});
+    % endfor
 }
 """
 
