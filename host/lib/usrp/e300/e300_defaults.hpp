@@ -41,7 +41,7 @@ static const std::string DEFAULT_CLOCK_SRC  = "internal";
 static const size_t DEFAULT_RX_DATA_FRAME_SIZE = 4096;
 static const size_t DEFAULT_RX_DATA_NUM_FRAMES = 32;
 
-static const size_t DEFAULT_TX_DATA_FRAME_SIZE = 2048;
+static const size_t DEFAULT_TX_DATA_FRAME_SIZE = 4096;
 static const size_t DEFAULT_TX_DATA_NUM_FRAMES = 32;
 
 static const size_t DEFAULT_CTRL_FRAME_SIZE    = 64;
