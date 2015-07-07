@@ -52,7 +52,7 @@ static const x300_clk_delays X300_REV0_6_CLK_DELAYS = x300_clk_delays(
     /*fpga=*/0.900, /*adc=*/0.000, /*dac=*/0.900, /*db_rx=*/0.000, /*db_tx=*/0.000);
 
 static const x300_clk_delays X300_REV7_CLK_DELAYS = x300_clk_delays(
-    /*fpga=*/0.900, /*adc=*/0.000, /*dac=*/0.900, /*db_rx=*/0.000, /*db_tx=*/0.000);
+    /*fpga=*/0.000, /*adc=*/4.400, /*dac=*/0.000, /*db_rx=*/0.000, /*db_tx=*/0.000);
 
 using namespace uhd;
 
