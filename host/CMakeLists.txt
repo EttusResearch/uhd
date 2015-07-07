@@ -301,7 +301,7 @@ LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF)
 ########################################################################
 SET(HAS_FPGA_SUBMODULE FALSE)
 EXECUTE_PROCESS(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import os; print os.path.abspath(os.path.join('${CMAKE_SOURCE_DIR}', '..', 'fpga-src'))"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import os; print(os.path.abspath(os.path.join('${CMAKE_SOURCE_DIR}', '..', 'fpga-src')))"
     OUTPUT_VARIABLE FPGA_SUBMODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )

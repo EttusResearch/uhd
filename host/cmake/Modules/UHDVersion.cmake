@@ -38,7 +38,7 @@ SET(UHD_VERSION_DEVEL TRUE)
 FUNCTION(DEPAD_NUM input_num output_num)
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "print int('${input_num}')"
+        COMMAND ${PYTHON_EXECUTABLE} -c "print(int('${input_num}'))"
         OUTPUT_VARIABLE depadded_num OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     SET(${output_num} ${depadded_num} PARENT_SCOPE)
@@ -69,12 +69,12 @@ EXECUTE_PROCESS(
 IF(_git_describe_result EQUAL 0)
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "print '${_git_describe}'.split('-')[-2]"
+        COMMAND ${PYTHON_EXECUTABLE} -c "print('${_git_describe}'.split('-')[-2])"
         OUTPUT_VARIABLE UHD_GIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "print '${_git_describe}'.split('-')[-1]"
+        COMMAND ${PYTHON_EXECUTABLE} -c "print('${_git_describe}'.split('-')[-1])"
         OUTPUT_VARIABLE UHD_GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 ENDIF()

@@ -109,8 +109,8 @@ def to_num(arg): return int(eval(arg))
 class reg:
     def __init__(self, reg_des):
         try: self.parse(reg_des)
-        except Exception, e:
-            raise Exception, 'Error parsing register description: "%s"\nWhat: %s'%(reg_des, e)
+        except Exception as e:
+            raise Exception('Error parsing register description: "%s"\nWhat: %s'%(reg_des, e))
 
     def parse(self, reg_des):
         x = re.match('^(\w*)\s*(\w*)\[(.*)\]\s*(\w*)\s*(.*)$', reg_des)
@@ -153,8 +153,8 @@ class reg:
 class mreg:
     def __init__(self, mreg_des, regs):
         try: self.parse(mreg_des, regs)
-        except Exception, e:
-            raise Exception, 'Error parsing meta register description: "%s"\nWhat: %s'%(mreg_des, e)
+        except Exception as e:
+            raise Exception('Error parsing meta register description: "%s"\nWhat: %s'%(mreg_des, e))
 
     def parse(self, mreg_des, regs):
         x = re.match('^~(\w*)\s+(.*)\s*$', mreg_des)
