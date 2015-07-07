@@ -176,22 +176,30 @@ private:
         UHD_DEFINE_SOFT_REG_FIELD(DAC_ENABLED,          /*width*/ 1, /*shift*/ 0);  //[0]
         UHD_DEFINE_SOFT_REG_FIELD(DAC_RESET_N,          /*width*/ 1, /*shift*/ 1);  //[1]
         UHD_DEFINE_SOFT_REG_FIELD(ADC_RESET,            /*width*/ 1, /*shift*/ 2);  //[2]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_ENABLED,  /*width*/ 1, /*shift*/ 4);  //[4]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_STB,     /*width*/ 1, /*shift*/ 3);  //[3]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_VAL,     /*width*/ 5, /*shift*/ 4);  //[8:4]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_ENABLED,  /*width*/ 1, /*shift*/ 9);  //[9]
 
         radio_misc_outs_reg(): uhd::soft_reg32_wo_t(TOREG(SR_MISC_OUTS)) {
             //Initial values
             set(DAC_ENABLED, 0);
             set(DAC_RESET_N, 0);
             set(ADC_RESET, 0);
+            set(ADC_DATA_DLY_STB, 0);
+            set(ADC_DATA_DLY_VAL, 16);
             set(ADC_CHECKER_ENABLED, 0);
         }
     };
     class radio_misc_ins_reg : public uhd::soft_reg32_ro_t {
     public:
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_Q_LOCKED, /*width*/ 1, /*shift*/ 0);  //[0]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_I_LOCKED, /*width*/ 1, /*shift*/ 1);  //[1]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_Q_ERROR,  /*width*/ 1, /*shift*/ 2);  //[2]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_I_ERROR,  /*width*/ 1, /*shift*/ 3);  //[3]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_Q_LOCKED, /*width*/ 1, /*shift*/ 0);  //[0]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_I_LOCKED, /*width*/ 1, /*shift*/ 1);  //[1]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_LOCKED, /*width*/ 1, /*shift*/ 2);  //[2]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_LOCKED, /*width*/ 1, /*shift*/ 3);  //[3]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_Q_ERROR,  /*width*/ 1, /*shift*/ 4);  //[4]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_I_ERROR,  /*width*/ 1, /*shift*/ 5);  //[5]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_ERROR,  /*width*/ 1, /*shift*/ 6);  //[6]
+        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_ERROR,  /*width*/ 1, /*shift*/ 7);  //[7]
 
         radio_misc_ins_reg(): uhd::soft_reg32_ro_t(RB32_MISC_INS) { }
     };
@@ -291,7 +299,7 @@ private:
       * \param mb_i Motherboard index
       * \param slot_name Slot name (A or B).
       */
-    void setup_radio(const size_t, const std::string &slot_name);
+    void setup_radio(const size_t, const std::string &slot_name, const uhd::device_addr_t &dev_addr);
 
     size_t _sid_framer;
     struct sid_config_t
@@ -396,8 +404,9 @@ private:
     boost::uint32_t get_fp_gpio(gpio_core_200::sptr);
     void set_fp_gpio(gpio_core_200::sptr, const gpio_attr_t, const boost::uint32_t);
 
-    double self_cal_adc_delay(mboard_members_t& mb, bool apply_delay = false);
-    void self_test_adcs(mboard_members_t& mb);
+    void self_cal_adc_capture_delay(mboard_members_t& mb, const size_t radio_i, bool print_status = false);
+    double self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay = false);
+    void self_test_adcs(mboard_members_t& mb, boost::uint32_t ramp_time_ms = 100);
 
     //**PRECONDITION**
     //This function assumes that all the VITA times in "radios" are synchronized

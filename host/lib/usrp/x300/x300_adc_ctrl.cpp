@@ -55,8 +55,8 @@ public:
         _ads62p48_regs.lvds_cmos = ads62p48_regs_t::LVDS_CMOS_DDR_LVDS;
         _ads62p48_regs.channel_control = ads62p48_regs_t::CHANNEL_CONTROL_INDEPENDENT;
         _ads62p48_regs.data_format = ads62p48_regs_t::DATA_FORMAT_2S_COMPLIMENT;
-        _ads62p48_regs.clk_out_pos_edge = ads62p48_regs_t::CLK_OUT_POS_EDGE_MINUS7_26;
-        _ads62p48_regs.clk_out_neg_edge = ads62p48_regs_t::CLK_OUT_NEG_EDGE_MINUS7_26;
+        _ads62p48_regs.clk_out_pos_edge = ads62p48_regs_t::CLK_OUT_POS_EDGE_NORMAL;
+        _ads62p48_regs.clk_out_neg_edge = ads62p48_regs_t::CLK_OUT_NEG_EDGE_NORMAL;
 
 
         this->send_ads62p48_reg(0);
