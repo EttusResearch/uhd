@@ -284,32 +284,36 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     // load the fpga image
     ////////////////////////////////////////////////////////////////////
     if (_xport_path == AXI) {
-        if (not device_addr.has_key("no_reload_fpga")) {
+        _do_not_reload = device_addr.has_key("no_reload_fpga");
+        if (not _do_not_reload) {
             // Load FPGA image if provided via args
-            if (device_addr.has_key("fpga")) {
-                common::load_fpga_image(device_addr["fpga"]);
-            // Else load the FPGA image based on the product ID
-            } else {
-                //extract the FPGA path for the e300
-                const boost::uint16_t pid = boost::lexical_cast<boost::uint16_t>(
+            const boost::uint16_t pid = boost::lexical_cast<boost::uint16_t>(
                     device_addr["product"]);
-                std::string fpga_image;
-                switch(e300_eeprom_manager::get_mb_type(pid)) {
-                case e300_eeprom_manager::USRP_E310_MB:
-                    fpga_image = find_image_path(E310_FPGA_FILE_NAME);
-                    break;
-                case e300_eeprom_manager::USRP_E300_MB:
-                    fpga_image = find_image_path(E300_FPGA_FILE_NAME);
-                    break;
-                case e300_eeprom_manager::UNKNOWN:
-                default:
-                    UHD_MSG(warning) << "Unknown motherboard type, loading e300 image."
+
+            std::string fpga_image;
+
+            //extract the FPGA path for the e300
+            switch(e300_eeprom_manager::get_mb_type(pid)) {
+            case e300_eeprom_manager::USRP_E310_MB:
+                fpga_image = device_addr.cast<std::string>("fpga",
+                    find_image_path(E310_FPGA_FILE_NAME));
+                _idle_image = find_image_path(E310_FPGA_IDLE_FILE_NAME);
+                break;
+            case e300_eeprom_manager::USRP_E300_MB:
+                fpga_image = device_addr.cast<std::string>("fpga",
+                    find_image_path(E300_FPGA_FILE_NAME));
+                _idle_image = find_image_path(E300_FPGA_IDLE_FILE_NAME);
+                break;
+            case e300_eeprom_manager::UNKNOWN:
+            default:
+                UHD_MSG(warning) << "Unknown motherboard type, loading e300 image."
                                      << std::endl;
-                    fpga_image = find_image_path(E300_FPGA_FILE_NAME);
-                    break;
-                }
-                common::load_fpga_image(fpga_image);
+                fpga_image = device_addr.cast<std::string>("fpga",
+                    find_image_path(E300_FPGA_FILE_NAME));
+                _idle_image = find_image_path(E300_FPGA_IDLE_FILE_NAME);
+                break;
             }
+            common::load_fpga_image(fpga_image);
         }
     }
 
@@ -621,7 +625,8 @@ uhd::sensor_value_t e300_impl::_get_fe_pll_lock(const bool is_tx)
 
 e300_impl::~e300_impl(void)
 {
-    /* NOP */
+    if (_xport_path == AXI and not _do_not_reload)
+        common::load_fpga_image(_idle_image);
 }
 
 void e300_impl::_enforce_tick_rate_limits(
