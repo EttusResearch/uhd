@@ -65,11 +65,10 @@ static const int PRIORITY_GENERAL = 0;
 static const int PRIORITY_EMPTY = -1;
 
 #ifdef __ARM_NEON__
-static const int PRIORITY_LIBORC = 3;
-static const int PRIORITY_SIMD = 2; //neon conversions could be implemented better, orc wins
+static const int PRIORITY_SIMD = 2;
 static const int PRIORITY_TABLE = 1; //tables require large cache, so they are slower on arm
 #else
-static const int PRIORITY_LIBORC = 2;
+// We used to have ORC, too, so SIMD is 3
 static const int PRIORITY_SIMD = 3;
 static const int PRIORITY_TABLE = 1;
 #endif

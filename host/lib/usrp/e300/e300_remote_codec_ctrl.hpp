@@ -56,7 +56,7 @@ public:
         static const boost::uint32_t ACTION_SET_AGC             = 19;
         static const boost::uint32_t ACTION_SET_AGC_MODE        = 20;
         static const boost::uint32_t ACTION_SET_BW              = 21;
-
+        static const boost::uint32_t ACTION_GET_FREQ            = 22;
 
         //Values for "which"
         static const boost::uint32_t CHAIN_NONE = 0;

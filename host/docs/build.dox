@@ -1,9 +1,6 @@
-/*! \page page_build_guide Building and Installing UHD
+/*! \page page_build_guide Building and Installing UHD from source
 
 \tableofcontents
-
-\b Note: More build information can be found on the UHD wiki page, at
-http://code.ettus.com/redmine/ettus/projects/uhd/wiki .
 
 \section build_dependencies Build Dependencies
 
@@ -17,7 +14,7 @@ Install the Xcode app to get the build tools (GCC and Make).
 Use MacPorts to get the Boost and Cheetah dependencies.
 Other dependencies can be downloaded as DMG installers from the web
 or installed via MacPorts.
-See the UHD OS X page for more information: http://code.ettus.com/redmine/ettus/projects/uhd/wiki/UHD_OS_X 
+See the UHD OS X build instructions for more information: \ref build_instructions_osx
 
 <b>Windows Notes:</b>
 The dependencies can be acquired through installable EXE files.
@@ -25,12 +22,7 @@ Usually, the Windows installer can be found on the project's website.
 Some projects do not host Windows installers, and if this is the case,
 follow the auxiliary download URL for the Windows installer (below).
 
-\section git Git
-Required to check out the repository.
-On Windows, install Cygwin with Git support to checkout the repository
-or install msysGit from http://code.google.com/p/msysgit/downloads/list.
-
-\section cpp_compiler C++ Compiler
+### C++ Compiler
 
 The following compilers are known to work and officially supported:
 
@@ -92,6 +84,62 @@ http://pypi.python.org/pypi/setuptools
 **Alternate method:**
 Install **setuptools**, and use the **easy_install** command to install Docutils.
 http://pypi.python.org/pypi/setuptools
+
+### Git
+
+Required to check out the repository (not necessary if building from tarballs).
+
+On Windows, install Cygwin with Git support to checkout the repository
+or install msysGit from http://code.google.com/p/msysgit/downloads/list.
+
+\subsection build_dependencies_ubuntu Setting up the dependencies on Ubuntu
+
+You can install all the dependencies through the package manager:
+
+    sudo apt-get install libboost-all-dev libusb-1.0-0-dev python-cheetah doxygen python-docutils cmake
+
+Your actual command may differ.
+
+\subsection build_dependencies_fedora Setting up the dependencies on Fedora
+
+You can install all the dependencies through the package manager:
+
+    sudo yum -y install boost-devel libusb1-devel python-cheetah doxygen python-docutils cmake
+
+Your actual command may differ.
+
+\section build_get_source Getting the source code
+
+The UHD source is stored in a Git repository. To download it, follow these instructions:
+
+    git clone git://github.com/EttusResearch/uhd.git
+
+If you also want the FPGA code (which is not necessary for building UHD and applications which depend on it), run:
+
+    git clone --recursive git://github.com/EttusResearch/uhd.git
+
+This will populate the `fpga-src` submodule inside the repository. You can also do this after cloning the repository by running these commands from the top level source directory:
+
+    git submodule init
+    git submodule update
+
+Our source code repository contains two branches:
+
+\li \b master: This is the main development branch, with updated new features and bug fixes.
+\li \b maint: This branch has all bugfixes since the last major release, but there are no new features. This is what you should be using if you need a stable release.
+
+We might also be publishing experimental feature branches which can then be found in the same repository.
+All of our releases are associated with tags in the repository.
+
+\li <a href="https://github.com/EttusResearch/UHD/tags">Source archives for release tags</a>
+
+\section build_pybombs Using PyBOMBS
+
+PyBOMBS is a command-line tool for Linuxes (and some Unixes) from the GNU Radio ecosystem and will do a source build of UHD, including setting up prerequisites/dependencies (regardless of the distribution) with the following command:
+
+$ ./pybombs install uhd
+
+Head to the <a href="http://gnuradio.org/pybombs">PyBOMBS Homepage</a> for more instructions. PyBOMBS can install UHD (as well as GNU Radio or similar projects) both into system directories as well as into user's home directories, omitting the requirement for superuser access.
 
 \section build_instructions_unix Build Instructions (Unix)
 
@@ -160,7 +208,7 @@ so we must manually tell CMake how to locate the LibUSB header and lib.
 You may not have permission to build the install target.
 You need to be an administrator or to run MSVC as administrator.
 
-\section build_msvc_cmd_line Build the project in MSVC (command line)
+\subsection build_msvc_cmd_line Build the project in MSVC (command line)
 Open the Visual Studio Command Prompt Shorcut:
 
     cd <uhd-repo-path>\host\build
@@ -174,19 +222,73 @@ Open the Visual Studio Command Prompt Shorcut:
 The default interface for editing environment variable paths in Windows is very poor.
 We recommend using "Rapid Environment Editor" (http://www.rapidee.com) over the default editor.
 
+\section build_instructions_osx Build Instructions (Mac OS X)
+
+### X11/XQuartz or Terminal
+
+For the purposes of building and using UHD, you can use Apple's Terminal.app if you so choose, no matter how you install UHD.
+
+That said, running almost any graphical interface (GUI) will require downloading and installing X11/XQuartz first. Through OSX 10.8, Apple provided a means to install X11.app, but XQuartz has always been more up to date. Staring in 10.9, Apple no longer provides a full working version of X11.app. Hence, just use XQuartz from the get-go. Note that unless you experiment with using the Quartz interface to various graphical toolkits (e.g., GTK), you must use X11 as the terminal interface for any GUI applications.
+
+### Xcode
+
+Apple provides a fully integrated development environment via their Xcode toolkit, which can be downloaded either via the App store or directly from Apple's Developer area depending on the version of OSX in use. Xcode provides the compilers and related development tools needed to build or execute UHD and its dependencies.
+
+Once Xcode is installed, you must still install the Command Line Tools, which can be accomplished by running Xcode.app, then going to Preferences... -> Downloads and making sure Command Line Tools is selected/enabled [feel free to select other downloads too]. You might be able to install the Command Line Tools in a terminal using
+
+    xcode-select --install
+
+but this command will not work with every OSX / Xcode combination (e.g., does not work with OSX 10.8 and Xcode 5, but does work with OSX 10.9 and Xcode 5).
+
+Once the Command Line Tools are installed, UHD and other projects can be installed either from source or, preferably, via MacPorts.
+
+### Background Dependencies
+
+There are a number of background libraries and applications that must be installed from source or binary in order to compile or execute UHD; for a full list, see \ref build_dependencies. These can be obtained by using <a href="http://www.macports.org/">MacPorts</a>, <a href="http://fink.sourceforge.net/">Fink</a>, <a href="http://brew.sh/">HomeBrew</a>, and/or from source / scratch. MacPorts tends to be more up-to-date with respect to new releases, which can be both a blessing and a curse since sometimes new released are untested and result in build or runtime errors. MacPorts, HomeBrew, and Fink offer thousands of ready-to-install libraries and applications, and hence they are highly recommended to use instead of installing from source / scratch.
+
+Many UHD developers first install UHD using MacPorts in order to get all of the necessary background dependencies installed, then remove just UHD via
+
+    sudo port install uhd
+    sudo port uninstall uhd
+
+\b NOTE: We highly recommended that all dependencies be installed via the same package manager! When issues arise, they are much easier to track down, and updating to newer versions of UHD as well as dependencies is much easier.
+
+\b NOTE: Other package managers (e.g., Fink, HomeBrew) will require diffrent commands than the above to install all dependencies and then remove the UHD install. Please consult the specific package manager in use for how to do these commands properly; they will not be covered here.
+
+#### Compiling UHD from Source
+
+Installing UHD from source follows the standard cmake method as found in many places, with a few arguments to make sure cmake always finds the correct version of Python, and uses the desired compiler. First, download the source code either via a release or via GIT.
+
+For example, on OSX 10.8+ and using Xcode's legacy Apple GCC (via llvm), MacPorts installed into /opt/local (the default), and for Python 2.7 as installed by MacPorts, issue the following commands from within the UHD source directory:
+
+    $ mkdir build
+    $ cd build
+    $ CC=/usr/bin/llvm-gcc CXX=/usr/bin/llvm-g++ cmake -DCMAKE_INSTALL_PREFIX=/opt/local -DPYTHON_EXECUTABLE=/opt/local/bin/python2.7 -DPYTHON_INCLUDE_DIR=/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Headers -DPYTHON_LIBRARY=/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Python ../host
+    $ make
+
+If make succeeds, then you can test the build for errors via
+
+    $ make test
+
+To install the build, issue
+
+    $ sudo make install
+
+Selecting another compiler is as simple as changing the CC and CXX pre-arguments to the cmake command. Similarly, one can change the install prefix by changing the setting of the variable CMAKE_INSTALL_PREFIX.
+
+\b NOTE: All of the PYTHON defines must point to the same install of Python, otherwise runtime errors are likely to occur.
+
+\b NOTE: When using some other package manager (e.g., Fink, HomeBrew), the actual variable settings (-D...=...) will be different than those above. Please consult the specific package manager in use for how to do these settings properly; they will not be covered here.
+
 \section post_install_tasks Post-Install Tasks
 
-For USB-based devices,
-see the `USB Transport Application Notes <./transport.html#usb-transport-libusb>`_
-for platform-specific post-installation tasks.
+- After installing, you might want to download the FPGA images packages by running
+  `uhd_images_downloader` on the command line, or one of these executables (the actual path may differ based on your installation):
+  + Linux: /usr/local/lib/uhd/utils/uhd_images_downloader.py
+  + Windows: C:\\Program Files\\share\\uhd\\utils\\uhd_images_downloader.py
+  + Mac OS X: In MacPorts, when UHD is installed the images are automatically downloaded and installed into their proper location. For any other package manager or install method, you should execute the uhd_images_downloader.py script to get the images installed appropriately.
 
-\section post_install_tasks_macosx Post-Install Tasks (Mac OS X)
-
-Make sure that the value of `CMAKE_INSTALL_PREFIX` is at or near the 
-front of the shell `PATH` environment variable.  Do \b NOT set 
-`DYLD_LIBRARY_PATH` or any related DYLD environment variable 
-permanently; these work differently than under Linux and should be 
-used for testing / temporary purposes only. 
+- For USB-Based devices, make sure to read \ref transport_usb for platform-specific post-installation tasks.
 
 \section build_apps Building applications that require UHD using CMake
 

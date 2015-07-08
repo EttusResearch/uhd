@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2014 Ettus Research LLC
+# Copyright 2010-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -302,11 +302,13 @@ LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF)
 SET(HAS_FPGA_SUBMODULE FALSE)
 EXECUTE_PROCESS(
     COMMAND ${PYTHON_EXECUTABLE} -c "import os; print os.path.abspath(os.path.join('${CMAKE_SOURCE_DIR}', '..', 'fpga-src'))"
-    OUTPUT_VARIABLE FPGA_SUBMODULE_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE FPGA_SUBMODULE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-message(STATUS ${FPGA_SUBMODULE_DIR})
 IF(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
     SET(HAS_FPGA_SUBMODULE TRUE)
+    MESSAGE(STATUS "")
+    MESSAGE(STATUS "Found FPGA submodule: ${FPGA_SUBMODULE_DIR}")
 ENDIF(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
 
 ########################################################################
@@ -383,10 +385,6 @@ ENDFOREACH(Boost_Comp)
 IF(ENABLE_USB)
     LIST(APPEND UHD_LINK_LIST_STATIC "usb-1.0")
 ENDIF(ENABLE_USB)
-IF(ENABLE_ORC)
-    LIST(APPEND UHD_LINK_LIST_STATIC "orc-0.4")
-ENDIF(ENABLE_ORC)
-message(STATUS "libs: ${UHD_LINK_LIST_STATIC}")
 
 CONFIGURE_FILE(
     ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in

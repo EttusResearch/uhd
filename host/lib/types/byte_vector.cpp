@@ -16,7 +16,6 @@
 //
 
 #include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <uhd/types/byte_vector.hpp>
 
@@ -31,11 +30,6 @@ std::string bytes_to_string(const byte_vector_t &bytes){
     return out;
 }
 
-std::string uint16_bytes_to_string(const byte_vector_t &bytes){
-    const boost::uint16_t num = (boost::uint16_t(bytes.at(0)) << 0) | (boost::uint16_t(bytes.at(1)) << 8);
-    return (num == 0 or num == 0xffff)? "" : boost::lexical_cast<std::string>(num);
-}
-
 byte_vector_t string_to_bytes(const std::string &str, size_t max_length){
     byte_vector_t bytes;
     for (size_t i = 0; i < std::min(str.size(), max_length); i++){
@@ -43,13 +37,6 @@ byte_vector_t string_to_bytes(const std::string &str, size_t max_length){
     }
     if (bytes.size() < max_length - 1) bytes.push_back('\0');
     return bytes;
-}
-
-byte_vector_t string_to_uint16_bytes(const std::string &num_str){
-    const boost::uint16_t num = boost::lexical_cast<boost::uint16_t>(num_str);
-    const byte_vector_t lsb_msb = boost::assign::list_of
-        (boost::uint8_t(num >> 0))(boost::uint8_t(num >> 8));
-    return lsb_msb;
 }
 
 } /* namespace uhd */

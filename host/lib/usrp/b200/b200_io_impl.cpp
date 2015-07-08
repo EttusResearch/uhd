@@ -111,16 +111,9 @@ void b200_impl::set_auto_tick_rate(
                         % (this_dsp_rate / 1e6) % (max_tick_rate / 1e6)
                 ));
             }
-            // If this_dsp_rate == B200_DEFAULT_RATE, we assume the user did not actually set
-            // the sampling rate. If the user *did* set the rate to
-            // B200_DEFAULT_RATE on all DSPs, then this will still work (see below).
-            // If the user set one DSP to B200_DEFAULT_RATE and the other to
-            // a different rate, this also works if the rates are integer multiples
-            // of one another. Only for certain configurations of B200_DEFAULT_RATE
-            // and another rate that is not an integer multiple, this will be problematic.
-            // Since this case is less common than the case where a rate is left unset,
-            // we don't handle that but rather explain that corner case in the documentation.
-            if (this_dsp_rate == B200_DEFAULT_RATE) {
+            // If this_dsp_rate == 0.0, the sampling rate for this DSP hasn't been set, so
+            // we don't take that into consideration.
+            if (this_dsp_rate == 0.0) {
                 continue;
             }
             lcm_rate = boost::math::lcm<boost::uint32_t>(
@@ -130,11 +123,11 @@ void b200_impl::set_auto_tick_rate(
         }
     }
     if (lcm_rate == 1) {
-        lcm_rate = static_cast<boost::uint32_t>(B200_DEFAULT_RATE);
+        // In this case, no one has ever set a sampling rate.
+        return;
     }
 
-    // Step 2: Determine whether if we can use lcm_rate (preferred),
-    // or have to give up because too large:
+    // Step 2: Check if the lcm_rate is within available limits:
     double base_rate = static_cast<double>(lcm_rate);
     if (uhd::math::fp_compare::fp_compare_delta<double>(base_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) >
         uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)) {
@@ -152,6 +145,7 @@ void b200_impl::set_auto_tick_rate(
     // An equation that does all that is:
     //
     // f_auto = r * 2^floor(log2(f_max/r))
+    //        = base_rate * multiplier
     //
     // where r is the base rate and f_max is the maximum tick rate. The case
     // where floor() yields 1 must be caught.
@@ -173,7 +167,7 @@ void b200_impl::set_auto_tick_rate(
         uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)
     );
 
-    if (_tree->access<double>("/mboards/0/tick_rate").get() != new_rate) {
+    if (!uhd::math::frequencies_are_equal(_tree->access<double>("/mboards/0/tick_rate").get(), new_rate)) {
         _tree->access<double>("/mboards/0/tick_rate").set(new_rate);
     }
 }
