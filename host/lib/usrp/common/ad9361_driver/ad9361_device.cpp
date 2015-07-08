@@ -1559,13 +1559,13 @@ void ad9361_device_t::initialize()
      *      Force TX on one port, RX on the other. */
     switch (_client_params->get_digital_interface_mode()) {
     case AD9361_DDR_FDD_LVCMOS: {
-        _io_iface->poke8(0x010, 0xc8);
+        _io_iface->poke8(0x010, 0xc8); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode
         _io_iface->poke8(0x011, 0x00);
         _io_iface->poke8(0x012, 0x02);
     } break;
 
     case AD9361_DDR_FDD_LVDS: {
-        _io_iface->poke8(0x010, 0xcc);
+        _io_iface->poke8(0x010, 0xcc); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode, 2R2T timing.
         _io_iface->poke8(0x011, 0x00);
         _io_iface->poke8(0x012, 0x10);
 
