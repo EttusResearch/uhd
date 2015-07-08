@@ -320,38 +320,12 @@ Real-time scheduling is enabled via different methods depending on your
 application and operating system. In GNU Radio Companion, it can be
 turned on in each individual flowgraph.
 
-\subsection x3x0cfg_hostpc_volk Building with ORC & Volk
+\subsection x3x0cfg_hostpc_volk SIMD Acceleration
 
 Especially when running high-performance applications, processing
-performance can be dramatically improved by SIMD instructions. UHD uses
-ORC to provide SIMD capability, and GNU Radio includes a SIMD library
-called "Volk". These should both be used to guarantee optimum
-performance.
-
-\subsubsection x3x0cfg_hostpc_volk_orc Compiling UHD with ORC
-
-ORC, the <a href="http://code.entropywave.com/orc/">Oil Runtime Compiler</a>,
-is a third-party compiler that UHD uses to create efficient SIMD code for
-your particular computer. ORC is generally easily installed from your
-OS's package manager.
-
-On Fedora:
-
-    $ sudo yum update; sudo yum install orc-compiler orc-devel
-
-On Ubuntu:
-
-    $ sudo apt-get update; sudo apt-get install liborc-<version> liborc-<version>-dev
-
-After installing ORC, when building UHD from source, you should see
-"ORC" as one of the configured UHD components.
-
-    -- ######################################################
-    -- # UHD enabled components
-    -- ######################################################
-    --   * LibUHD
-         <cut for brevity>
-    --   * ORC
+performance can be dramatically improved by SIMD instructions.
+GNU Radio includes a SIMD library
+called "Volk", which should be used to guarantee optimum performance.
 
 \subsubsection x3x0cfg_hostpc_volk_volk Compiling GNURadio with Volk
 
