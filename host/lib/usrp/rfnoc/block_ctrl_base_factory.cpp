@@ -30,59 +30,65 @@ UHD_SINGLETON_FCN(block_fcn_reg_t, get_block_fcn_regs);
 
 void block_ctrl_base::register_block(
         const make_t &make,
-        const std::string &name
+        const std::string &key
 ) {
-    if (get_block_fcn_regs().has_key(name)) {
+    if (get_block_fcn_regs().has_key(key)) {
         throw uhd::runtime_error(
-            str(boost::format("Attempting to register an RFNoC block with name %s for the second time.") % name)
+            str(boost::format("Attempting to register an RFNoC block with key %s for the second time.") % key)
        );
     }
 
-    get_block_fcn_regs().set(name, make);
+    get_block_fcn_regs().set(key, make);
 }
 
 /*! Look up names for blocks in XML files using NoC ID.
  */
-static std::string lookup_block_name(boost::uint64_t noc_id)
+static void lookup_block_key(boost::uint64_t noc_id, make_args_t &make_args)
 {
     try {
         blockdef::sptr bd = blockdef::make_from_noc_id(noc_id);
         if (not bd) {
-            return DEFAULT_BLOCK_NAME;
+            make_args.block_key  = DEFAULT_BLOCK_NAME;
+            make_args.block_name = DEFAULT_BLOCK_NAME;
+            return;
         }
         UHD_ASSERT_THROW(bd->is_block());
-        UHD_MSG(status) << "created blockdef with name " << bd->get_name() << std::endl;
-        return bd->get_name();
+        make_args.block_key  = bd->get_key();
+        make_args.block_name = bd->get_name();
+        return;
     } catch (std::exception &e) {
         UHD_MSG(warning) << str(boost::format("Error while looking up name for NoC-ID %016X.\n%s") % noc_id % e.what()) << std::endl;
     }
 
-    return DEFAULT_BLOCK_NAME;
+    make_args.block_key  = DEFAULT_BLOCK_NAME;
+    make_args.block_name = DEFAULT_BLOCK_NAME;
 }
 
 
 block_ctrl_base::sptr block_ctrl_base::make(
-        const make_args_t &make_args,
+        const make_args_t &make_args_,
         boost::uint64_t noc_id
 ) {
     UHD_MSG(status) << "[RFNoC Factory] block_ctrl_base::make() " << std::endl;
-    make_args_t new_make_args = make_args;
-    std::string key = make_args.block_name;
+    make_args_t make_args = make_args_;
 
-    // Check if a block name was provided, in this case, we *must* either
-    // create an specialized block controller class or throw
-    if (key.empty()) {
-        key = new_make_args.block_name = lookup_block_name(noc_id);
-    } else if (not get_block_fcn_regs().has_key(key)) {
+    // Check if a block key was specified, in this case, we *must* either
+    // create a specialized block controller class or throw
+    if (make_args.block_key.empty()) {
+        lookup_block_key(noc_id, make_args);
+    } else if (not get_block_fcn_regs().has_key(make_args.block_key)) {
         throw uhd::runtime_error(
-            str(boost::format("No block controller class registered for type '%s'.") % key)
+            str(boost::format("No block controller class registered for key '%s'.") % make_args.block_key)
         );
     }
-    UHD_MSG(status) << "[RFNoC Factory] Using controller key '" << key << "' and block name '" << new_make_args.block_name << "'" << std::endl;
-
-    if (not get_block_fcn_regs().has_key(key)) {
-        key = DEFAULT_BLOCK_NAME;
+    if (not get_block_fcn_regs().has_key(make_args.block_key)) {
+        make_args.block_key = DEFAULT_BLOCK_NAME;
     }
-    return get_block_fcn_regs()[key](new_make_args);
+    if (make_args.block_name.empty()) {
+        make_args.block_name = make_args.block_key;
+    }
+
+    UHD_MSG(status) << "[RFNoC Factory] Using controller key '" << make_args.block_key << "' and block name '" << make_args.block_name << "'" << std::endl;
+    return get_block_fcn_regs()[make_args.block_key](make_args);
 }
 

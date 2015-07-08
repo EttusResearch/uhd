@@ -43,10 +43,11 @@ namespace uhd {
 // TODO: Move this out of public section
 struct make_args_t
 {
-    make_args_t(const std::string &name = "") :
+    make_args_t(const std::string &key="") :
         device_index(0),
         is_big_endian(true),
-        block_name(name)
+        block_name(""),
+        block_key(key)
     {}
 
     //! A valid interface that allows us to do peeks and pokes
@@ -60,7 +61,10 @@ struct make_args_t
     //  to the constructor.
     uhd::property_tree::sptr tree;
     bool is_big_endian;
+    //! The name of the block as it will be addressed
     std::string block_name;
+    //! The key of the block, i.e. how it was registered
+    std::string block_key;
 };
 
 //! This macro must be put in the public section of an RFNoC

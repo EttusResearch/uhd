@@ -234,6 +234,8 @@ public:
         UHD_MSG(status) << "Reading XML file: " << filename.string().c_str() << std::endl;
         read_xml(filename.string(), _pt);
         try {
+            // Check key is valid
+            get_key();
             // Check name is valid
             get_name();
             // Check there's at least one port
@@ -261,6 +263,15 @@ public:
     bool is_component() const
     {
         return _type == DESCRIBES_COMPONENT;
+    }
+
+    std::string get_key() const
+    {
+        try {
+            return _pt.get<std::string>("nocblock.key");
+        } catch (const pt::ptree_bad_path &) {
+            return _pt.get<std::string>("nocblock.blockname");
+        }
     }
 
     std::string get_name() const

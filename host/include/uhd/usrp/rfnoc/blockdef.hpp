@@ -93,6 +93,9 @@ public:
     //! Returns true if this represents a component
     virtual bool is_component() const = 0;
 
+    //! Returns block key (i.e. what is used for the registry)
+    virtual std::string get_key() const = 0;
+
     //! For blocks, returns the block name. For components, returns it's canonical name.
     virtual std::string get_name() const = 0;
 
