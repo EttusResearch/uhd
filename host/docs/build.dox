@@ -246,21 +246,24 @@ Once the Command Line Tools are installed, UHD and other projects can be install
 
 There are a number of background libraries and applications that must be installed from source or binary in order to compile or execute UHD; for a full list, see \ref build_dependencies. These can be obtained by using <a href="http://www.macports.org/">MacPorts</a>, <a href="http://fink.sourceforge.net/">Fink</a>, <a href="http://brew.sh/">HomeBrew</a>, and/or from source / scratch. MacPorts tends to be more up-to-date with respect to new releases, which can be both a blessing and a curse since sometimes new released are untested and result in build or runtime errors. MacPorts, HomeBrew, and Fink offer thousands of ready-to-install libraries and applications, and hence they are highly recommended to use instead of installing from source / scratch.
 
-\b Note: We highly recommended that you install all dependencies via the same package manager! When issues arise, they are much easier to track down, and your updating to newer versions is also much easier.
-
 Many UHD developers first install UHD using MacPorts in order to get all of the necessary background dependencies installed, then remove just UHD via
 
+    sudo port install uhd
     sudo port uninstall uhd
+
+\b NOTE: We highly recommended that all dependencies be installed via the same package manager! When issues arise, they are much easier to track down, and updating to newer versions of UHD as well as dependencies is much easier.
+
+\b NOTE: Other package managers (e.g., Fink, HomeBrew) will require diffrent commands than the above to install all dependencies and then remove the UHD install. Please consult the specific package manager in use for how to do these commands properly; they will not be covered here.
 
 #### Compiling UHD from Source
 
 Installing UHD from source follows the standard cmake method as found in many places, with a few arguments to make sure cmake always finds the correct version of Python, and uses the desired compiler. First, download the source code either via a release or via GIT.
 
-For example, on OSX 10.8 or 10.9 using Xcode 5's Apple GCC, MacPorts installed into /opt/local (the default), and for Python 2.7 (as installed by MacPorts), issue the following commands from within the UHD source directory:
+For example, on OSX 10.8+ and using Xcode's legacy Apple GCC (via llvm), MacPorts installed into /opt/local (the default), and for Python 2.7 as installed by MacPorts, issue the following commands from within the UHD source directory:
 
     $ mkdir build
     $ cd build
-    $ CC=/usr/bin/llvm-gcc CXX=/usr/bin/llvm-g++ cmake -DPYTHON_EXECUTABLE=/opt/local/bin/python2.7 -DPYTHON_INCLUDE_DIR=/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Headers -DPYTHON_LIBRARY=/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Python ../host
+    $ CC=/usr/bin/llvm-gcc CXX=/usr/bin/llvm-g++ cmake -DCMAKE_INSTALL_PREFIX=/opt/local -DPYTHON_EXECUTABLE=/opt/local/bin/python2.7 -DPYTHON_INCLUDE_DIR=/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Headers -DPYTHON_LIBRARY=/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Python ../host
     $ make
 
 If make succeeds, then you can test the build for errors via
@@ -271,7 +274,11 @@ To install the build, issue
 
     $ sudo make install
 
-Selecting another compiler is as simple as changing the CC and CXX pre-arguments to the cmake command. Note that all of the PYTHON defines must point to the same install of Python, otherwise runtime errors are likely to occur.
+Selecting another compiler is as simple as changing the CC and CXX pre-arguments to the cmake command. Similarly, one can change the install prefix by changing the setting of the variable CMAKE_INSTALL_PREFIX.
+
+\b NOTE: All of the PYTHON defines must point to the same install of Python, otherwise runtime errors are likely to occur.
+
+\b NOTE: When using some other package manager (e.g., Fink, HomeBrew), the actual variable settings (-D...=...) will be different than those above. Please consult the specific package manager in use for how to do these settings properly; they will not be covered here.
 
 \section post_install_tasks Post-Install Tasks
 
@@ -279,6 +286,8 @@ Selecting another compiler is as simple as changing the CC and CXX pre-arguments
   `uhd_images_downloader` on the command line, or one of these executables (the actual path may differ based on your installation):
   + Linux: /usr/local/lib/uhd/utils/uhd_images_downloader.py
   + Windows: C:\\Program Files\\share\\uhd\\utils\\uhd_images_downloader.py
+  + Mac OS X: In MacPorts, when UHD is installed the images are automatically downloaded and installed into their proper location. For any other package manager or install method, you should execute the uhd_images_downloader.py script to get the images installed appropriately.
+
 - For USB-Based devices, make sure to read \ref transport_usb for platform-specific post-installation tasks.
 
 \section build_apps Building applications that require UHD using CMake
