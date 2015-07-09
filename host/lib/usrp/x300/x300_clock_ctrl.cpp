@@ -21,6 +21,7 @@
 #include <uhd/utils/math.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/format.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <stdexcept>
 #include <cmath>
 #include <cstdlib>
@@ -281,18 +282,18 @@ public:
             //The VCO is running too slowly for us to compensate the digital delay difference using
             //analog delay. Do the best we can.
             adly_en = true;
-            adly_value = static_cast<boost::uint8_t>(round((ADLY_MAX_NS-ADLY_MIN_NS)/ADLY_RES_NS));
+            adly_value = static_cast<boost::uint8_t>(boost::math::round((ADLY_MAX_NS-ADLY_MIN_NS)/ADLY_RES_NS));
             coerced_delay += ADLY_MAX_NS;
         } else if (leftover_delay >= ADLY_MIN_NS && leftover_delay <= ADLY_MAX_NS) {
             //The leftover delay can be compensated by the analog delay up to the analog delay resolution
             adly_en = true;
-            adly_value = static_cast<boost::uint8_t>(round((leftover_delay-ADLY_MIN_NS)/ADLY_RES_NS));
+            adly_value = static_cast<boost::uint8_t>(boost::math::round((leftover_delay-ADLY_MIN_NS)/ADLY_RES_NS));
             coerced_delay += ADLY_MIN_NS+(ADLY_RES_NS*adly_value);
         } else if (leftover_delay >= (ADLY_MIN_NS - half_vco_period_ns) && leftover_delay < ADLY_MIN_NS) {
             //The leftover delay if less than the minimum supported analog delay but if we move the digital
             //delay back by half a VCO cycle then it will be in the range of the analog delay. So do that!
             adly_en = true;
-            adly_value = static_cast<boost::uint8_t>(round((leftover_delay+half_vco_period_ns-ADLY_MIN_NS)/ADLY_RES_NS));
+            adly_value = static_cast<boost::uint8_t>(boost::math::round((leftover_delay+half_vco_period_ns-ADLY_MIN_NS)/ADLY_RES_NS));
             half_shift_en = 1;
             coerced_delay += ADLY_MIN_NS+(ADLY_RES_NS*adly_value)-half_vco_period_ns;
         } else {
