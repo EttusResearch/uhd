@@ -519,15 +519,17 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     UHD_ASSERT_THROW(num_radio_chains > 0);
     UHD_ASSERT_THROW(num_radio_chains <= 2);
     _radio_perifs.resize(num_radio_chains);
-    for (size_t i = 0; i < _radio_perifs.size(); i++) this->setup_radio(i);
+    _codec_mgr = ad936x_manager::make(_codec_ctrl, num_radio_chains);
+    _codec_mgr->init_codec();
+    for (size_t i = 0; i < _radio_perifs.size(); i++)
+        this->setup_radio(i);
+
 
     //now test each radio module's connection to the codec interface
-    _codec_ctrl->data_port_loopback(true);
     BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
     {
-        this->codec_loopback_self_test(perif.ctrl);
+        _codec_mgr->loopback_self_test(perif.ctrl, TOREG(SR_CODEC_IDLE), RB64_CODEC_READBACK);
     }
-    _codec_ctrl->data_port_loopback(false);
 
     //register time now and pps onto available radio cores
     _tree->create<time_spec_t>(mb_path / "time" / "now")
@@ -579,7 +581,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     ////////////////////////////////////////////////////////////////////
 
     //init the clock rate to something reasonable
-    double default_tick_rate = device_addr.cast<double>("master_clock_rate", B200_DEFAULT_TICK_RATE);
+    double default_tick_rate = device_addr.cast<double>("master_clock_rate", ad936x_manager::DEFAULT_TICK_RATE);
     _tree->access<double>(mb_path / "tick_rate").set(default_tick_rate);
 
     //subdev spec contains full width of selections
@@ -601,8 +603,8 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
 
     // Set the DSP chains to some safe value
     for (size_t i = 0; i < _radio_perifs.size(); i++) {
-        _radio_perifs[i].ddc->set_host_rate(default_tick_rate / B200_DEFAULT_DECIM);
-        _radio_perifs[i].duc->set_host_rate(default_tick_rate / B200_DEFAULT_INTERP);
+        _radio_perifs[i].ddc->set_host_rate(default_tick_rate / ad936x_manager::DEFAULT_DECIM);
+        _radio_perifs[i].duc->set_host_rate(default_tick_rate / ad936x_manager::DEFAULT_INTERP);
     }
     // We can automatically choose a master clock rate, but not if the user specifies one
     _tree->access<bool>(mb_path / "auto_tick_rate").set(not device_addr.has_key("master_clock_rate"));
@@ -645,10 +647,18 @@ void b200_impl::setup_radio(const size_t dspno)
     const fs_path mb_path = "/mboards/0";
 
     ////////////////////////////////////////////////////////////////////
+    // Set up transport
+    ////////////////////////////////////////////////////////////////////
+    const boost::uint32_t sid = (dspno == 0) ? B200_CTRL0_MSG_SID : B200_CTRL1_MSG_SID;
+
+    ////////////////////////////////////////////////////////////////////
     // radio control
     ////////////////////////////////////////////////////////////////////
-    const boost::uint32_t sid = (dspno == 0)? B200_CTRL0_MSG_SID : B200_CTRL1_MSG_SID;
-    perif.ctrl = radio_ctrl_core_3000::make(false/*lilE*/, _ctrl_transport, zero_copy_if::sptr()/*null*/, sid);
+    perif.ctrl = radio_ctrl_core_3000::make(
+            false/*lilE*/,
+            _ctrl_transport,
+            zero_copy_if::sptr()/*null*/,
+            sid);
     perif.ctrl->hold_task(_async_task);
     _async_task_data->radio_ctrl[dspno] = perif.ctrl; //weak
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
@@ -656,15 +666,33 @@ void b200_impl::setup_radio(const size_t dspno)
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
     this->register_loopback_self_test(perif.ctrl);
-    perif.atr = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_ATR));
 
     ////////////////////////////////////////////////////////////////////
-    // create rx dsp control objects
+    // Set up peripherals
     ////////////////////////////////////////////////////////////////////
+    perif.atr = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_ATR));
+    // create rx dsp control objects
     perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP), true /*is_b200?*/);
     perif.ddc->set_link_rate(10e9/8); //whatever
     perif.ddc->set_mux("IQ", false, dspno == 1 ? true : false, dspno == 1 ? true : false);
+    perif.ddc->set_freq(0.0);
+    perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
+    perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
+    perif.duc->set_link_rate(10e9/8); //whatever
+    perif.duc->set_freq(0.0);
+
+    ////////////////////////////////////////////////////////////////////
+    // create time control objects
+    ////////////////////////////////////////////////////////////////////
+    time_core_3000::readback_bases_type time64_rb_bases;
+    time64_rb_bases.rb_now = RB64_TIME_NOW;
+    time64_rb_bases.rb_pps = RB64_TIME_PPS;
+    perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
+
+    ////////////////////////////////////////////////////////////////////
+    // create rx dsp control objects
+    ////////////////////////////////////////////////////////////////////
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
         .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
@@ -677,8 +705,9 @@ void b200_impl::setup_radio(const size_t dspno)
         .subscribe(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
     ;
     _tree->create<double>(rx_dsp_path / "freq" / "value")
+        .set(0.0)
         .coerce(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
-        .set(0.0);
+    ;
     _tree->create<meta_range_t>(rx_dsp_path / "freq" / "range")
         .publish(boost::bind(&rx_dsp_core_3000::get_freq_range, perif.ddc));
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
@@ -687,9 +716,6 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
-    perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
-    perif.duc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
         .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
@@ -702,106 +728,51 @@ void b200_impl::setup_radio(const size_t dspno)
         .subscribe(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
     ;
     _tree->create<double>(tx_dsp_path / "freq" / "value")
+        .set(0.0)
         .coerce(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
-        .set(0.0);
+    ;
     _tree->create<meta_range_t>(tx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc));
-
-    ////////////////////////////////////////////////////////////////////
-    // create time control objects
-    ////////////////////////////////////////////////////////////////////
-    time_core_3000::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_now = RB64_TIME_NOW;
-    time64_rb_bases.rb_pps = RB64_TIME_PPS;
-    perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
+        .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc))
+    ;
 
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
     ////////////////////////////////////////////////////////////////////
-    for(size_t direction = 0; direction < 2; direction++)
-    {
-        const std::string x = direction? "rx" : "tx";
-        const std::string key = std::string((direction? "RX" : "TX")) + std::string(((dspno == _fe1)? "1" : "2"));
-        const fs_path rf_fe_path = mb_path / "dboards" / "A" / (x+"_frontends") / (dspno? "B" : "A");
+    static const std::vector<direction_t> dirs = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
+    BOOST_FOREACH(direction_t dir, dirs) {
+        const std::string x = (dir == RX_DIRECTION) ? "rx" : "tx";
+        const std::string key = std::string(((dir == RX_DIRECTION) ? "RX" : "TX")) + std::string(((dspno == _fe1) ? "1" : "2"));
+        const fs_path rf_fe_path
+            = mb_path / "dboards" / "A" / (x + "_frontends") / (dspno ? "B" : "A");
 
-        _tree->create<std::string>(rf_fe_path / "name").set("FE-"+key);
-        _tree->create<int>(rf_fe_path / "sensors");
+        // This will connect all the AD936x-specific items
+        _codec_mgr->populate_frontend_subtree(
+            _tree->subtree(rf_fe_path), key, dir
+        );
+
+        // Now connect all the b200_impl-specific items
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
-            .publish(boost::bind(&b200_impl::get_fe_pll_locked, this, x == "tx"));
-        BOOST_FOREACH(const std::string &name, ad9361_ctrl::get_gain_names(key))
-        {
-            _tree->create<meta_range_t>(rf_fe_path / "gains" / name / "range")
-                .set(ad9361_ctrl::get_gain_range(key));
-
-            _tree->create<double>(rf_fe_path / "gains" / name / "value")
-                .coerce(boost::bind(&ad9361_ctrl::set_gain, _codec_ctrl, key, _1))
-                .set(x == "rx" ? B200_DEFAULT_RX_GAIN : B200_DEFAULT_TX_GAIN);
-        }
-        _tree->create<std::string>(rf_fe_path / "connection").set("IQ");
-        _tree->create<bool>(rf_fe_path / "enabled").set(true);
-        _tree->create<bool>(rf_fe_path / "use_lo_offset").set(false);
-        _tree->create<double>(rf_fe_path / "bandwidth" / "value")
-            .coerce(boost::bind(&ad9361_ctrl::set_bw_filter, _codec_ctrl, key, _1))
-            .set(56e6);
-        _tree->create<meta_range_t>(rf_fe_path / "bandwidth" / "range")
-            .publish(boost::bind(&ad9361_ctrl::get_bw_filter_range, key));
-        _tree->create<double>(rf_fe_path / "freq" / "value")
-            .publish(boost::bind(&ad9361_ctrl::get_freq, _codec_ctrl, key))
-            .coerce(boost::bind(&ad9361_ctrl::tune, _codec_ctrl, key, _1))
+            .publish(boost::bind(&b200_impl::get_fe_pll_locked, this, dir == TX_DIRECTION))
+        ;
+        _tree->access<double>(rf_fe_path / "freq" / "value")
             .subscribe(boost::bind(&b200_impl::update_bandsel, this, key, _1))
-            .set(B200_DEFAULT_FREQ);
-        _tree->create<meta_range_t>(rf_fe_path / "freq" / "range")
-            .publish(boost::bind(&ad9361_ctrl::get_rf_freq_range));
-        _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "temp")
-                .publish(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl));
-
-        //setup RX related stuff
-        if(direction)
-        {
-            _tree->create<bool>(rf_fe_path / "dc_offset" / "enable" )
-                .subscribe(boost::bind(&ad9361_ctrl::set_dc_offset_auto, _codec_ctrl, key, _1)).set(true);
-
-            _tree->create<bool>(rf_fe_path / "iq_balance" / "enable" )
-                .subscribe(boost::bind(&ad9361_ctrl::set_iq_balance_auto, _codec_ctrl, key, _1)).set(true);
-        }
-
-        //add all frontend filters
-        std::vector<std::string> filter_names = _codec_ctrl->get_filter_names(key);
-        for(size_t i = 0;i < filter_names.size(); i++)
-        {
-            _tree->create<filter_info_base::sptr>(rf_fe_path / "filters" / filter_names[i] / "value" )
-                .publish(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_names[i]))
-                .subscribe(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_names[i], _1));
-        }
-
-        //setup antenna stuff
-        if (key[0] == 'R')
+        ;
+        if (dir == RX_DIRECTION)
         {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
                 .subscribe(boost::bind(&b200_impl::update_antenna_sel, this, dspno, _1))
-                .set("RX2");
-            _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "rssi")
-                .publish(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key));
+                .set("RX2")
+            ;
 
-            //AGC setup
-            const std::list<std::string> mode_strings = boost::assign::list_of("slow")("fast");
-            _tree->create<bool>(rf_fe_path / "gain" / "agc" / "enable")
-                .subscribe(boost::bind((&ad9361_ctrl::set_agc), _codec_ctrl, key, _1))
-                .set(false);
-            _tree->create<std::string>(rf_fe_path / "gain" / "agc" / "mode" / "value")
-                .subscribe(boost::bind((&ad9361_ctrl::set_agc_mode), _codec_ctrl, key, _1)).set(mode_strings.front());
-            _tree->create<std::list<std::string> >(rf_fe_path / "gain" / "agc" / "mode" / "options")
-                            .set(mode_strings);
         }
-        if (key[0] == 'T')
+        else if (dir == TX_DIRECTION)
         {
             static const std::vector<std::string> ants(1, "TX/RX");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value").set("TX/RX");
         }
-
     }
 }
 
@@ -822,30 +793,6 @@ void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
         if (test_fail) break; //exit loop on any failure
     }
     UHD_MSG(status) << ((test_fail)? "fail" : "pass") << std::endl;
-}
-
-void b200_impl::codec_loopback_self_test(wb_iface::sptr iface)
-{
-    UHD_MSG(status) << "Performing CODEC loopback test... " << std::flush;
-    size_t hash = size_t(time(NULL));
-    for (size_t i = 0; i < 100; i++)
-    {
-        boost::hash_combine(hash, i);
-        const boost::uint32_t word32 = boost::uint32_t(hash) & 0xfff0fff0;
-        iface->poke32(TOREG(SR_CODEC_IDLE), word32);
-        iface->peek64(RB64_CODEC_READBACK); //enough idleness for loopback to propagate
-        const boost::uint64_t rb_word64 = iface->peek64(RB64_CODEC_READBACK);
-        const boost::uint32_t rb_tx = boost::uint32_t(rb_word64 >> 32);
-        const boost::uint32_t rb_rx = boost::uint32_t(rb_word64 & 0xffffffff);
-        bool test_fail = word32 != rb_tx or word32 != rb_rx;
-        if (test_fail) {
-            UHD_MSG(status) << "fail" << std::endl;
-            throw uhd::runtime_error("CODEC loopback test failed.");
-        }
-    }
-    UHD_MSG(status) << "pass" << std::endl;
-    /* Zero out the idle data. */
-    iface->poke32(TOREG(SR_CODEC_IDLE), 0);
 }
 
 /***********************************************************************

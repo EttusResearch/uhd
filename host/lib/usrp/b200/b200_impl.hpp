@@ -22,6 +22,7 @@
 #include "b200_uart.hpp"
 #include "b200_cores.hpp"
 #include "ad9361_ctrl.hpp"
+#include "ad936x_manager.hpp"
 #include "adf4001_ctrl.hpp"
 #include "rx_vita_core_3000.hpp"
 #include "tx_vita_core_3000.hpp"
@@ -50,12 +51,6 @@ static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
 static const boost::uint16_t B200_FPGA_COMPAT_NUM = 9;
 static const double          B200_BUS_CLOCK_RATE = 100e6;
-static const double          B200_DEFAULT_TICK_RATE = 16e6;
-static const double          B200_DEFAULT_FREQ = 100e6; // Hz
-static const double          B200_DEFAULT_DECIM  = 128;
-static const double          B200_DEFAULT_INTERP = 128;
-static const double          B200_DEFAULT_RX_GAIN = 0; // dB
-static const double          B200_DEFAULT_TX_GAIN = 0; // dB
 static const boost::uint32_t B200_GPSDO_ST_NONE = 0x83;
 static const size_t B200_MAX_RATE_USB2              =  53248000; // bytes/s
 static const size_t B200_MAX_RATE_USB3              = 500000000; // bytes/s
@@ -124,6 +119,7 @@ private:
     b200_iface::sptr _iface;
     radio_ctrl_core_3000::sptr _local_ctrl;
     uhd::usrp::ad9361_ctrl::sptr _codec_ctrl;
+    uhd::usrp::ad936x_manager::sptr _codec_mgr;
     b200_local_spi_core::sptr _spi_iface;
     boost::shared_ptr<uhd::usrp::adf4001_ctrl> _adf4001_iface;
     uhd::gps_ctrl::sptr _gps;
@@ -152,7 +148,6 @@ private:
     boost::optional<uhd::msg_task::msg_type_t> handle_async_task(uhd::transport::zero_copy_if::sptr, boost::shared_ptr<AsyncTaskData>);
 
     void register_loopback_self_test(uhd::wb_iface::sptr iface);
-    void codec_loopback_self_test(uhd::wb_iface::sptr iface);
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
     void check_fw_compat(void);
     void check_fpga_compat(void);

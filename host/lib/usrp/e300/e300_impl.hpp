@@ -40,6 +40,7 @@
 #include "rx_dsp_core_3000.hpp"
 #include "tx_dsp_core_3000.hpp"
 #include "ad9361_ctrl.hpp"
+#include "ad936x_manager.hpp"
 #include "gpio_core_200.hpp"
 
 #include "e300_global_regs.hpp"
@@ -288,6 +289,7 @@ private: // members
     radio_perifs_t                         _radio_perifs[2];
     double                                 _tick_rate;
     ad9361_ctrl::sptr                      _codec_ctrl;
+    ad936x_manager::sptr                   _codec_mgr;
     fe_control_settings_t                  _settings;
     global_regs::sptr                      _global_regs;
     e300_sensor_manager::sptr              _sensor_manager;

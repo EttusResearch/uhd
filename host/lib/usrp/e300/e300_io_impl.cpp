@@ -91,21 +91,13 @@ void e300_impl::_update_tick_rate(const double rate)
     }
 }
 
-#define CHECK_BANDWIDTH(dir) \
-    if (rate > _codec_ctrl->get_bw_filter_range(dir).stop()) { \
-        UHD_MSG(warning) \
-            << "Selected " << dir << " bandwidth (" << (rate/1e6) << " MHz) exceeds\n" \
-            << "analog frontend filter bandwidth (" << (_codec_ctrl->get_bw_filter_range(dir).stop()/1e6) << " MHz)." \
-            << std::endl; \
-    }
-
 void e300_impl::_update_rx_samp_rate(const size_t dspno, const double rate)
 {
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
         boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_radio_perifs[dspno].rx_streamer.lock());
     if (my_streamer)
         my_streamer->set_samp_rate(rate);
-    CHECK_BANDWIDTH("Rx");
+    _codec_mgr->check_bandwidth(rate, "Rx");
 }
 
 void e300_impl::_update_tx_samp_rate(const size_t dspno, const double rate)
@@ -114,7 +106,7 @@ void e300_impl::_update_tx_samp_rate(const size_t dspno, const double rate)
         boost::dynamic_pointer_cast<sph::send_packet_streamer>(_radio_perifs[dspno].tx_streamer.lock());
     if (my_streamer)
         my_streamer->set_samp_rate(rate);
-    CHECK_BANDWIDTH("Tx");
+    _codec_mgr->check_bandwidth(rate, "Tx");
 }
 
 /***********************************************************************

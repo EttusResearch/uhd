@@ -127,48 +127,19 @@ void b200_impl::set_auto_tick_rate(
         return;
     }
 
-    // Step 2: Check if the lcm_rate is within available limits:
     double base_rate = static_cast<double>(lcm_rate);
-    if (uhd::math::fp_compare::fp_compare_delta<double>(base_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) >
-        uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)) {
+    try {
+        // Step 2: Get a good tick rate value
+        const double new_rate = _codec_mgr->get_auto_tick_rate(base_rate, num_chans);
+        // Step 3: Set the new tick rate value (if any change)
+        if (!uhd::math::frequencies_are_equal(_tree->access<double>("/mboards/0/tick_rate").get(), new_rate)) {
+            _tree->access<double>("/mboards/0/tick_rate").set(new_rate);
+        }
+    } catch (const uhd::value_error &e) {
         UHD_MSG(warning)
             << "Cannot automatically determine an appropriate tick rate for these sampling rates." << std::endl
             << "Consider using different sampling rates, or manually specify a suitable master clock rate." << std::endl;
         return; // Let the others handle this
-    }
-
-    // Step 3: Choose the new rate
-    // Rules for choosing the tick rate:
-    // Choose a rate that is a power of 2 larger than the sampling rate,
-    // but at least 4. Cannot exceed the max tick rate, of course, but must
-    // be larger than the minimum tick rate.
-    // An equation that does all that is:
-    //
-    // f_auto = r * 2^floor(log2(f_max/r))
-    //        = base_rate * multiplier
-    //
-    // where r is the base rate and f_max is the maximum tick rate. The case
-    // where floor() yields 1 must be caught.
-    const double min_tick_rate = _codec_ctrl->get_clock_rate_range().start();
-    // We use shifts here instead of 2^x because exp2() is not available in all compilers,
-    // also this guarantees no rounding issues. The type cast to int32_t serves as floor():
-    boost::int32_t multiplier = (1 << boost::int32_t(uhd::math::log2(max_tick_rate / base_rate)));
-    if (multiplier == 2 and base_rate >= min_tick_rate) {
-        // Don't bother (see above)
-        multiplier = 1;
-    }
-    double new_rate = base_rate * multiplier;
-    UHD_ASSERT_THROW(
-        uhd::math::fp_compare::fp_compare_delta<double>(new_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) >=
-        uhd::math::fp_compare::fp_compare_delta<double>(min_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)
-    );
-    UHD_ASSERT_THROW(
-        uhd::math::fp_compare::fp_compare_delta<double>(new_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) <=
-        uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)
-    );
-
-    if (!uhd::math::frequencies_are_equal(_tree->access<double>("/mboards/0/tick_rate").get(), new_rate)) {
-        _tree->access<double>("/mboards/0/tick_rate").set(new_rate);
     }
 }
 
@@ -212,14 +183,6 @@ double b200_impl::coerce_rx_samp_rate(rx_dsp_core_3000::sptr ddc, size_t dspno, 
     return ddc->set_host_rate(rx_rate);
 }
 
-#define CHECK_BANDWIDTH(dir) \
-    if (rate > _codec_ctrl->get_bw_filter_range(dir).stop()) { \
-        UHD_MSG(warning) \
-            << "Selected " << dir << " bandwidth (" << (rate/1e6) << " MHz) exceeds\n" \
-            << "analog frontend filter bandwidth (" << (_codec_ctrl->get_bw_filter_range(dir).stop()/1e6) << " MHz)." \
-            << std::endl; \
-    }
-
 void b200_impl::update_rx_samp_rate(const size_t dspno, const double rate)
 {
     boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
@@ -228,7 +191,7 @@ void b200_impl::update_rx_samp_rate(const size_t dspno, const double rate)
     my_streamer->set_samp_rate(rate);
     const double adj = _radio_perifs[dspno].ddc->get_scaling_adjustment();
     my_streamer->set_scale_factor(adj);
-    CHECK_BANDWIDTH("Rx");
+    _codec_mgr->check_bandwidth(rate, "Rx");
 }
 
 double b200_impl::coerce_tx_samp_rate(tx_dsp_core_3000::sptr duc, size_t dspno, const double tx_rate)
@@ -250,7 +213,7 @@ void b200_impl::update_tx_samp_rate(const size_t dspno, const double rate)
     my_streamer->set_samp_rate(rate);
     const double adj = _radio_perifs[dspno].duc->get_scaling_adjustment();
     my_streamer->set_scale_factor(adj);
-    CHECK_BANDWIDTH("Tx");
+    _codec_mgr->check_bandwidth(rate, "Tx");
 }
 
 /***********************************************************************

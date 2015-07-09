@@ -395,6 +395,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         _eeprom_manager = boost::make_shared<e300_eeprom_manager>(i2c::make_i2cdev(E300_I2CDEV_DEVICE));
     }
+    _codec_mgr = ad936x_manager::make(_codec_ctrl, fpga::NUM_RADIOS);
 
     UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
     if (_xport_path == AXI) {
@@ -478,14 +479,10 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     for(size_t instance = 0; instance < fpga::NUM_RADIOS; instance++)
         this->_setup_radio(instance);
 
-    _codec_ctrl->data_port_loopback(true);
-
     // Radio 0 loopback through AD9361
-    this->_codec_loopback_self_test(_radio_perifs[0].ctrl);
+    _codec_mgr->loopback_self_test(_radio_perifs[0].ctrl, TOREG(SR_CODEC_IDLE), RB64_CODEC_READBACK);
     // Radio 1 loopback through AD9361
-    this->_codec_loopback_self_test(_radio_perifs[1].ctrl);
-
-    _codec_ctrl->data_port_loopback(false);
+    _codec_mgr->loopback_self_test(_radio_perifs[1].ctrl, TOREG(SR_CODEC_IDLE), RB64_CODEC_READBACK);
 
     ////////////////////////////////////////////////////////////////////
     // internal gpios
@@ -581,7 +578,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
 
     // init the clock rate to something reasonable
     _tree->access<double>(mb_path / "tick_rate").set(
-        device_addr.cast<double>("master_clock_rate", e300::DEFAULT_TICK_RATE));
+        device_addr.cast<double>("master_clock_rate", ad936x_manager::DEFAULT_TICK_RATE));
 
     // subdev spec contains full width of selections
     subdev_spec_t rx_spec, tx_spec;
@@ -739,30 +736,6 @@ std::string e300_impl::_get_version_hash(void)
     return str(boost::format("%7x%s")
         % (git_hash & 0x0FFFFFFF)
         % ((git_hash & 0xF000000) ? "-dirty" : ""));
-}
-
-void e300_impl::_codec_loopback_self_test(wb_iface::sptr iface)
-{
-    bool test_fail = false;
-    UHD_ASSERT_THROW(bool(iface));
-    UHD_MSG(status) << "Performing CODEC loopback test... " << std::flush;
-    size_t hash = size_t(time(NULL));
-    for (size_t i = 0; i < 100; i++)
-    {
-        boost::hash_combine(hash, i);
-        const boost::uint32_t word32 = boost::uint32_t(hash) & 0xfff0fff0;
-        iface->poke32(TOREG(SR_CODEC_IDLE), word32);
-        iface->peek64(RB64_CODEC_READBACK); //enough idleness for loopback to propagate
-        const boost::uint64_t rb_word64 = iface->peek64(RB64_CODEC_READBACK);
-        const boost::uint32_t rb_tx = boost::uint32_t(rb_word64 >> 32);
-        const boost::uint32_t rb_rx = boost::uint32_t(rb_word64 & 0xffffffff);
-        test_fail = word32 != rb_tx or word32 != rb_rx;
-        if (test_fail) break; //exit loop on any failure
-    }
-    UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
-
-    /* Zero out the idle data. */
-    iface->poke32(TOREG(SR_CODEC_IDLE), 0);
 }
 
 boost::uint32_t e300_impl::_allocate_sid(const sid_config_t &config)
@@ -1060,67 +1033,38 @@ void e300_impl::_setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
     ////////////////////////////////////////////////////////////////////
-    static const std::vector<std::string> data_directions = boost::assign::list_of("rx")("tx");
-    BOOST_FOREACH(const std::string& direction, data_directions)
-    {
-        const std::string key = boost::to_upper_copy(direction) + std::string(((dspno == FE0)? "1" : "2"));
+    static const std::vector<direction_t> dirs = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
+    BOOST_FOREACH(direction_t dir, dirs) {
+        const std::string x = (dir == RX_DIRECTION) ? "rx" : "tx";
+        const std::string key = boost::to_upper_copy(x) + std::string(((dspno == FE0)? "1" : "2"));
         const fs_path rf_fe_path
             = mb_path / "dboards" / "A" / (direction + "_frontends") / ((dspno == 0) ? "A" : "B");
 
-        _tree->create<std::string>(rf_fe_path / "name").set("FE-"+key);
-        _tree->create<int>(rf_fe_path / "sensors"); //empty TODO
+        // This will connect all the AD936x-specific items
+        _codec_mgr->populate_frontend_subtree(
+            _tree->subtree(rf_fe_path), key, dir
+        );
+
+        // This will connect all the e300_impl-specific items
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
-            .publish(boost::bind(&e300_impl::_get_fe_pll_lock, this, direction == "tx"));
-        _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "temp")
-            .publish(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl));
-        BOOST_FOREACH(const std::string &name, ad9361_ctrl::get_gain_names(key))
-        {
-            _tree->create<meta_range_t>(rf_fe_path / "gains" / name / "range")
-                .set(ad9361_ctrl::get_gain_range(key));
+            .publish(boost::bind(&e300_impl::_get_fe_pll_lock, this, direction == "tx"))
+        ;
 
-            _tree->create<double>(rf_fe_path / "gains" / name / "value")
-                .coerce(boost::bind(&ad9361_ctrl::set_gain, _codec_ctrl, key, _1))
-                .set(e300::DEFAULT_FE_GAIN);
-        }
-        _tree->create<std::string>(rf_fe_path / "connection").set("IQ");
-        _tree->create<bool>(rf_fe_path / "enabled").set(true);
-        _tree->create<bool>(rf_fe_path / "use_lo_offset").set(false);
-        _tree->create<double>(rf_fe_path / "bandwidth" / "value")
-            .coerce(boost::bind(&ad9361_ctrl::set_bw_filter, _codec_ctrl, key, _1))
-            .set(e300::DEFAULT_FE_BW);
-        _tree->create<meta_range_t>(rf_fe_path / "bandwidth" / "range")
-            .publish(boost::bind(&ad9361_ctrl::get_bw_filter_range, key));
-        _tree->create<double>(rf_fe_path / "freq" / "value")
-            .publish(boost::bind(&ad9361_ctrl::get_freq, _codec_ctrl, key))
-            .coerce(boost::bind(&ad9361_ctrl::tune, _codec_ctrl, key, _1))
-            .subscribe(boost::bind(&e300_impl::_update_fe_lo_freq, this, key, _1))
-            .set(e300::DEFAULT_FE_FREQ);
-        _tree->create<meta_range_t>(rf_fe_path / "freq" / "range")
-            .publish(boost::bind(&ad9361_ctrl::get_rf_freq_range));
-
-        //only in local mode
-        if(_xport_path == AXI) {
-            //add all frontend filters
-            std::vector<std::string> filter_names = _codec_ctrl->get_filter_names(key);
-            for(size_t i = 0;i < filter_names.size(); i++)
-            {
-                _tree->create<filter_info_base::sptr>(rf_fe_path / "filters" / filter_names[i] / "value" )
-                    .publish(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_names[i]))
-                    .subscribe(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_names[i], _1));
-            }
+        // Network mode currently doesn't support the filter API, so
+        // prevent it from using it:
+        if(_xport_path != AXI) {
+            _tree->remove(rf_fe_path / "filters");
         }
 
-        //setup RX related stuff
-        if (key[0] == 'R') {
+        // Antenna Setup
+        if (dir == RX_DIRECTION) {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
                 .subscribe(boost::bind(&e300_impl::_update_antenna_sel, this, dspno, _1))
                 .set("RX2");
-            _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "rssi")
-                .publish(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key));
         }
-        if (key[0] == 'T') {
+        if (dir == TX_DIRECTION) {
             static const std::vector<std::string> ants(1, "TX/RX");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value").set("TX/RX");
