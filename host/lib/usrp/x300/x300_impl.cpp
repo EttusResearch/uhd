@@ -622,6 +622,16 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         mb.hw_rev = X300_REV("D");
     }
 
+    UHD_VAR(mb.hw_rev)
+    if (mb.hw_rev > X300_MAX_HW_REV) {
+        throw uhd::runtime_error(str(
+                boost::format("Unsupported board revision number: %d.\n"
+                              "The maximum board revision number supported in this version is %d.\n"
+                              "Please update your UHD version.")
+                % mb.hw_rev % X300_MAX_HW_REV
+        ));
+    }
+
     //Create clock control. NOTE: This does not configure the LMK yet.
     initialize_clock_control(mb);
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,

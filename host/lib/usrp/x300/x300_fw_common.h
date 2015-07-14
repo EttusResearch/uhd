@@ -29,6 +29,7 @@
 extern "C" {
 #endif
 
+#define X300_MAX_HW_REV 6
 #define X300_FW_COMPAT_MAJOR 3
 #define X300_FW_COMPAT_MINOR 0
 #define X300_FPGA_COMPAT_MAJOR 9
