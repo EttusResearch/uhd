@@ -1799,59 +1799,77 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
     if (print_status) UHD_MSG(status) << "Running ADC capture delay self-cal..." << std::flush;
 
     static const boost::uint32_t NUM_DELAY_STEPS = 32;   //The IDELAYE2 element has 32 steps
-    int win_start = -1, win_stop = -1;
+    static const boost::uint32_t NUM_RETRIES     = 2;    //Retry self-cal if it fails in warmup situations
+    static const boost::int32_t  MIN_WINDOW_LEN  = 4;
 
-    for (boost::uint32_t dly_tap = 0; dly_tap < NUM_DELAY_STEPS; dly_tap++) {
-        //Apply delay
-        perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_VAL, dly_tap);
-        perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_STB, 1);
-        perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_STB, 0);
+    boost::int32_t win_start = -1, win_stop = -1;
+    boost::uint32_t iter = 0;
+    while (iter++ < NUM_RETRIES) {
+        for (boost::uint32_t dly_tap = 0; dly_tap < NUM_DELAY_STEPS; dly_tap++) {
+            //Apply delay
+            perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_VAL, dly_tap);
+            perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_STB, 1);
+            perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_STB, 0);
 
-        boost::uint32_t err_code = 0;
+            boost::uint32_t err_code = 0;
 
-        // -- Test I Channel --
-        //Put ADC in ramp test mode. Tie the other channel to all ones.
-        perif.adc->set_test_word("ramp", "ones");
-        //Turn on the pattern checker in the FPGA. It will lock when it sees a zero
-        //and count deviations from the expected value
-        perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
-        perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
-        //10ms @ 200MHz = 2 million samples
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-        if (perif.misc_ins->read(radio_misc_ins_reg::ADC_CHECKER0_I_LOCKED)) {
-            err_code += perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER0_I_ERROR);
-        } else {
-            err_code += 100;    //Increment error code by 100 to indicate no lock
-        }
-
-        // -- Test Q Channel --
-        //Put ADC in ramp test mode. Tie the other channel to all ones.
-        perif.adc->set_test_word("ones", "ramp");
-        //Turn on the pattern checker in the FPGA. It will lock when it sees a zero
-        //and count deviations from the expected value
-        perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
-        perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
-        //10ms @ 200MHz = 2 million samples
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-        if (perif.misc_ins->read(radio_misc_ins_reg::ADC_CHECKER0_Q_LOCKED)) {
-            err_code += perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER0_Q_ERROR);
-        } else {
-            err_code += 100;    //Increment error code by 100 to indicate no lock
-        }
-
-        if (err_code == 0) {
-            if (win_start == -1) {      //This is the first window
-                win_start = dly_tap;
-                win_stop = dly_tap;
-            } else {                    //We are extending the window
-                win_stop = dly_tap;
+            // -- Test I Channel --
+            //Put ADC in ramp test mode. Tie the other channel to all ones.
+            perif.adc->set_test_word("ramp", "ones");
+            //Turn on the pattern checker in the FPGA. It will lock when it sees a zero
+            //and count deviations from the expected value
+            perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
+            perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
+            //10ms @ 200MHz = 2 million samples
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            if (perif.misc_ins->read(radio_misc_ins_reg::ADC_CHECKER0_I_LOCKED)) {
+                err_code += perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER0_I_ERROR);
+            } else {
+                err_code += 100;    //Increment error code by 100 to indicate no lock
             }
-        } else {
-            if (win_start != -1) {      //A valid window turned invalid
-                if (win_stop - win_start >= 4) break;
+
+            // -- Test Q Channel --
+            //Put ADC in ramp test mode. Tie the other channel to all ones.
+            perif.adc->set_test_word("ones", "ramp");
+            //Turn on the pattern checker in the FPGA. It will lock when it sees a zero
+            //and count deviations from the expected value
+            perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
+            perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
+            //10ms @ 200MHz = 2 million samples
+            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            if (perif.misc_ins->read(radio_misc_ins_reg::ADC_CHECKER0_Q_LOCKED)) {
+                err_code += perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER0_Q_ERROR);
+            } else {
+                err_code += 100;    //Increment error code by 100 to indicate no lock
             }
+
+            if (err_code == 0) {
+                if (win_start == -1) {      //This is the first window
+                    win_start = dly_tap;
+                    win_stop = dly_tap;
+                } else {                    //We are extending the window
+                    win_stop = dly_tap;
+                }
+            } else {
+                if (win_start != -1) {      //A valid window turned invalid
+                    if (win_stop - win_start >= MIN_WINDOW_LEN) {
+                        break;              //Valid window found
+                    } else {
+                        win_start = -1;     //Reset window
+                    }
+                }
+            }
+            //UHD_MSG(status) << (boost::format("CapTap=%d, Error=%d\n") % dly_tap % err_code);
         }
-        //UHD_MSG(status) << (boost::format("CapTap=%d, Error=%d\n") % dly_tap % err_code);
+
+        //Retry the self-cal if it fails
+        if ((win_start == -1 || (win_stop - win_start) < MIN_WINDOW_LEN) && iter < NUM_RETRIES /*not last iteration*/) {
+            win_start = -1;
+            win_stop = -1;
+            boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
+        } else {
+            break;
+        }
     }
     perif.adc->set_test_word("normal", "normal");
     perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
@@ -1860,7 +1878,7 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
         throw uhd::runtime_error("self_cal_adc_capture_delay: Self calibration failed. Convergence error.");
     }
 
-    if (win_stop-win_start < 4) {
+    if (win_stop-win_start < MIN_WINDOW_LEN) {
         throw uhd::runtime_error("self_cal_adc_capture_delay: Self calibration failed. Valid window too narrow.");
     }
 
@@ -1871,7 +1889,7 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
 
     if (print_status) {
         double tap_delay = (1.0e12 / mb.clock->get_master_clock_rate()) / (2*32); //in ps
-        UHD_MSG(status) << boost::format(" done (Tap=%d, Window=%d, TapDelay=%.3fps)\n") % ideal_tap % (win_stop-win_start) % tap_delay;
+        UHD_MSG(status) << boost::format(" done (Tap=%d, Window=%d, TapDelay=%.3fps, Iter=%d)\n") % ideal_tap % (win_stop-win_start) % tap_delay % iter;
     }
 }
 
