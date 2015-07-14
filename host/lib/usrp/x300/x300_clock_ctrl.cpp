@@ -45,12 +45,11 @@ struct x300_clk_delays {
     double db_tx_dly_ns;
 };
 
-// Delay the FPGA_CLK by 900ps to ensure a safe ADC_SSCLK -> RADIO_CLK crossing.
+// Tune the FPGA->ADC clock delay to ensure a safe ADC_SSCLK -> RADIO_CLK crossing.
 // If the FPGA_CLK is delayed, we also need to delay the reference clocks going to the DAC
 // because the data interface clock is generated from FPGA_CLK.
-// NOTE: This delay value was verified at room temperature only.
 static const x300_clk_delays X300_REV0_6_CLK_DELAYS = x300_clk_delays(
-    /*fpga=*/0.900, /*adc=*/0.000, /*dac=*/0.900, /*db_rx=*/0.000, /*db_tx=*/0.000);
+    /*fpga=*/0.000, /*adc=*/1.600, /*dac=*/0.000, /*db_rx=*/0.000, /*db_tx=*/0.000);
 
 static const x300_clk_delays X300_REV7_CLK_DELAYS = x300_clk_delays(
     /*fpga=*/0.000, /*adc=*/4.400, /*dac=*/0.000, /*db_rx=*/0.000, /*db_tx=*/0.000);
