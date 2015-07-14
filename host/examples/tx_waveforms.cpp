@@ -178,15 +178,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::vector<std::complex<float> > buff(spb);
     std::vector<std::complex<float> *> buffs(channel_nums.size(), &buff.front());
 
-    //setup the metadata flags
-    uhd::tx_metadata_t md;
-    md.start_of_burst = true;
-    md.end_of_burst   = false;
-    md.has_time_spec  = true;
-    md.time_spec = uhd::time_spec_t(0.1);
-
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-    usrp->set_time_now(uhd::time_spec_t(0.0));
+    if (channel_nums.size() > 1) {
+        // This is the worst-case setup scenario, because this example has to
+        // work for all configurations. set_time_now() and set_time_next_pps()
+        // might also work, depending on what USRPs are being used, and can
+        // accelerate the setup. To keep this example generic, we use
+        // set_time_unknown_pps() to guarantee synchronization.
+        usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
+    } else {
+        usrp->set_time_now(uhd::time_spec_t(0.0));
+    }
 
     //Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
@@ -210,6 +212,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     std::signal(SIGINT, &sig_int_handler);
     std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
+
+    // Set up metadata. We start streaming a bit in the future
+    // to allow MIMO operation:
+    uhd::tx_metadata_t md;
+    md.start_of_burst = true;
+    md.end_of_burst   = false;
+    md.has_time_spec  = true;
+    md.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.1);
 
     //send data until the signal handler gets called
     while(not stop_signal_called){

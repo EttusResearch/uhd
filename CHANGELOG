@@ -1,6 +1,20 @@
 Change Log for Releases
 ==============================
 
+## 003.008.005
+* E3xx: Added support for battery-based E3xx device (E312),
+  get_freq() for network mode, fixed GPS time initialization bug
+* AD9361-based devices: Fixed frequency readback bug
+* B200: Fixed DCM issues, better loopback failure handling,
+  fix erroneous warning for custom clock rates
+* X3x0: Better warnings for clock reate / ref freq
+* multi_usrp: Added define for GPIO capabilities (enables
+  exposure in GNU Radio)
+* UHD: sc16->sc16 SSE converter
+* Manual: Multiple minor updates, FPGA manual improvements,
+* Build System: Fixed builds on some Windows platforms, removed
+  stray prints
+
 ## 003.008.004
 * B200: Fixed EEPROM writing bug, updated images for B200 Rev5/6
 * E300: GPS antenna power defaults to staying on, GPS time used as
