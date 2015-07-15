@@ -622,7 +622,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         mb.hw_rev = X300_REV("D");
     }
 
-    UHD_VAR(mb.hw_rev)
     if (mb.hw_rev > X300_MAX_HW_REV) {
         throw uhd::runtime_error(str(
                 boost::format("Unsupported board revision number: %d.\n"
