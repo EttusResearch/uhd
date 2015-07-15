@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2011,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -89,6 +89,45 @@ def seq():
     global _seq
     _seq = _seq+1
     return _seq
+
+########################################################################
+# print equivalent uhd_image_loader command
+########################################################################
+def print_image_loader_warning(fw, fpga, reset, safe, addr):
+
+    # Newline + indent
+    if platform.system() == "Windows":
+        nl = " ^\n    "
+    else:
+        nl = " \\\n    "
+
+    # Generate uhd_image_loader command based on given arguments
+    uhd_image_loader = "uhd_image_loader --args=\"type=usrp2,addr={0}".format(addr)
+    if reset:
+        uhd_image_loader += ",reset"
+    if safe:
+        uhd_image_loader += ",overwrite-safe"
+    uhd_image_loader += "\""
+
+    if fw:
+        uhd_image_loader += "{0}--fw-path=\"{1}\"".format(nl, fw)
+    else:
+        uhd_image_loader += "{0}--no-fw".format(nl)
+
+    if fpga:
+        uhd_image_loader += "{0}--fpga-path=\"{1}\"".format(nl, fpga)
+    else:
+        uhd_image_loader += "{0}--no-fpga".format(nl)
+
+    print("")
+    print("************************************************************************************************")
+    print("WARNING: This utility will be removed in an upcoming version of UHD. In the future, use")
+    print("         this command:")
+    print("")
+    print(uhd_image_loader)
+    print("")
+    print("************************************************************************************************")
+    print("")
 
 ########################################################################
 # helper functions
@@ -234,6 +273,7 @@ def enumerate_devices():
 class burner_socket(object):
     def __init__(self, addr, quiet):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._addr = addr
         self._quiet = quiet
         self._sock.settimeout(UDP_TIMEOUT)
         self._sock.connect((addr, UDP_FW_UPDATE_PORT))
@@ -284,6 +324,8 @@ class burner_socket(object):
         return (self.memory_size_bytes, self.sector_size_bytes)
 
     def burn_fw(self, fw, fpga, reset, safe, check_rev=True):
+        print_image_loader_warning(fw, fpga, reset, safe, self._addr)
+
         (flash_size, sector_size) = self.get_flash_info()
         hw_rev = self.get_hw_rev()
 
@@ -501,7 +543,12 @@ if __name__=='__main__':
     if options.overwrite_safe and not options.read:
         print("Are you REALLY, REALLY sure you want to overwrite the safe image? This is ALMOST ALWAYS a terrible idea.")
         print("If your image is faulty, your USRP2+ will become a brick until reprogrammed via JTAG.")
-        response = raw_input("""Type "yes" to continue, or anything else to quit: """)
+
+        python_major_version = int(platform.python_version_tuple()[0])
+        if python_major_version > 2:
+            response = input("""Type "yes" to continue, or anything else to quit: """)
+        else:
+            response = raw_input("""Type "yes" to continue, or anything else to quit: """)
         if response != "yes": sys.exit(0)
 
     burner = burner_socket(addr=options.addr,quiet=False)

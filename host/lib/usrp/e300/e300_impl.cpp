@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -121,7 +121,7 @@ static bool is_loopback(const if_addrs_t &if_addrs)
        return if_addrs.inet == asio::ip::address_v4::loopback().to_string();
 }
 
-static device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
+device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
 {
     // handle multi device discovery
     device_addrs_t hints = separate_device_addr(multi_dev_hint);
@@ -268,6 +268,36 @@ static device::sptr e300_make(const device_addr_t &device_addr)
         return device::sptr(new e300_impl(device_addr));
 }
 
+// Common code used by e300_impl and e300_image_loader
+void get_e3x0_fpga_images(const uhd::device_addr_t &device_addr,
+                          std::string &fpga_image,
+                          std::string &idle_image){
+    const boost::uint16_t pid = boost::lexical_cast<boost::uint16_t>(
+            device_addr["product"]);
+
+    //extract the FPGA path for the e300
+    switch(e300_eeprom_manager::get_mb_type(pid)) {
+    case e300_eeprom_manager::USRP_E310_MB:
+        fpga_image = device_addr.cast<std::string>("fpga",
+            find_image_path(E310_FPGA_FILE_NAME));
+        idle_image = find_image_path(E310_FPGA_IDLE_FILE_NAME);
+        break;
+    case e300_eeprom_manager::USRP_E300_MB:
+        fpga_image = device_addr.cast<std::string>("fpga",
+            find_image_path(E300_FPGA_FILE_NAME));
+        idle_image = find_image_path(E300_FPGA_IDLE_FILE_NAME);
+        break;
+    case e300_eeprom_manager::UNKNOWN:
+    default:
+        UHD_MSG(warning) << "Unknown motherboard type, loading e300 image."
+                             << std::endl;
+        fpga_image = device_addr.cast<std::string>("fpga",
+            find_image_path(E300_FPGA_FILE_NAME));
+        idle_image = find_image_path(E300_FPGA_IDLE_FILE_NAME);
+        break;
+    }
+}
+
 /***********************************************************************
  * Structors
  **********************************************************************/
@@ -286,33 +316,10 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     if (_xport_path == AXI) {
         _do_not_reload = device_addr.has_key("no_reload_fpga");
         if (not _do_not_reload) {
-            // Load FPGA image if provided via args
-            const boost::uint16_t pid = boost::lexical_cast<boost::uint16_t>(
-                    device_addr["product"]);
-
             std::string fpga_image;
-
-            //extract the FPGA path for the e300
-            switch(e300_eeprom_manager::get_mb_type(pid)) {
-            case e300_eeprom_manager::USRP_E310_MB:
-                fpga_image = device_addr.cast<std::string>("fpga",
-                    find_image_path(E310_FPGA_FILE_NAME));
-                _idle_image = find_image_path(E310_FPGA_IDLE_FILE_NAME);
-                break;
-            case e300_eeprom_manager::USRP_E300_MB:
-                fpga_image = device_addr.cast<std::string>("fpga",
-                    find_image_path(E300_FPGA_FILE_NAME));
-                _idle_image = find_image_path(E300_FPGA_IDLE_FILE_NAME);
-                break;
-            case e300_eeprom_manager::UNKNOWN:
-            default:
-                UHD_MSG(warning) << "Unknown motherboard type, loading e300 image."
-                                     << std::endl;
-                fpga_image = device_addr.cast<std::string>("fpga",
-                    find_image_path(E300_FPGA_FILE_NAME));
-                _idle_image = find_image_path(E300_FPGA_IDLE_FILE_NAME);
-                break;
-            }
+            get_e3x0_fpga_images(device_addr,
+                                 fpga_image,
+                                 _idle_image);
             common::load_fpga_image(fpga_image);
         }
     }

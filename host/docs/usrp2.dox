@@ -62,31 +62,20 @@ both the FPGA and firmware images before power cycling. This ensures
 that when the device reboots, it has a compatible set of images to boot
 into.
 
-\subsection usrp2_loadflash_netburner Use the net burner tool
+\subsection usrp2_loadflash_imageloader Use the image loader
 
 Use default images:
 
-    usrp_n2xx_simple_net_burner --addr=<IP address>
+    uhd_image_loader --args="type=usrp2,addr=<IP address>"
 
 Use custom-built images:
 
-    usrp_n2xx_simple_net_burner --addr=<IP address> --fw=<firmware path> --fpga=<FPGA path>
+    uhd_image_loader --args="type=usrp2,addr=<IP address>" --fw-path="<firmware path>" --fpga-path="<FPGA path>"
 
 <b>Note:</b> Different hardware revisions require different FPGA images.
 Determine the revision number from the sticker on the rear of the
 chassis. Use this number to select the correct FPGA image for your
 device.
-
-For users who would prefer a graphical utility, a Python-based
-alternative exists.
-
-\subsection usrp2_loadflash_gui Use the graphical net burner tool (Linux)
-
-    <install-path>/lib/uhd/utils/usrp_n2xx_net_burner_gui.py
-
-\subsection usrp2_loadflash_guiwin Use the graphical net burner tool (Windows)
-
-    <path_to_python.exe> <install-path>/lib/uhd/utils/usrp_n2xx_net_burner_gui.py
 
 \subsection usrp2_loadflash_brick Device recovery and bricking
 
@@ -438,21 +427,19 @@ There is a sub-directory in the archive below the firmware/images called 'bit'. 
 
 The USRP should now be able to communicate on the network (you'll see some LEDs light up and network link be established). The next step is to flash the device and program the serial number. Both these steps can be done with UHD (the JTAG step is complete).
 
-To be sure, run `uhd_find_devices` and it should appear in the list - remember this IP address for the burner utility (should be 192.168.10.2 - make sure your network settings enable to you communicate with that subnet!).
+To be sure, run `uhd_find_devices` and it should appear in the list - remember this IP address for the image loader utility (should be 192.168.10.2 - make sure your network settings enable to you communicate with that subnet!).
 
-The first step is to flash the unit's safe-mode image, and then do a normal flash - both with the USRP N-series image burner utility.
+The first step is to flash the unit's safe-mode image, and then do a normal flash - both with the UHD Image Loader utility.
 
 Make sure you have UHD installed, and the images from before, and follow the instructions in \ref usrp2_load.
-You can combine the `--fw` and `--fpga` arguments into the single invocation of the burner.
+You can combine the `--fw-path` and `--fpga-path` arguments into the single invocation of the image loader.
 
 You will probably use "usrp_n210_fw.bin" for the firmware and "usrp_n210_r4_fpga.bin" for the FPGA image parameters (use the full/relative file path if your current directory is not that of the images).
 
-    usrp_n2xx_net_burner.py --addr=192.168.10.2 --fw=usrp_n210_fw.bin --fpga=usrp_n210_r4_fpga.bin --overwrite-safe
+    uhd_image_loader --args="type=usrp2,addr=192.168.10.2,overwrite-safe" --fw-path=usrp_n210_fw.bin --fpga-path=usrp_n210_r4_fpga.bin
 
-Use `--overwrite-safe` the first time, and then repeat without it for the second time.
+Use the `overwrite-safe` option the first time, and then repeat without it for the second time.
 Don't forget to power-cycle the device after it has been flashed.
-
-If you see a Python exception thrown (e.g. KeyError 65535) and something about if(check_rev)... use the --dont-check-rev option too (this is when the EEPROM has not yet been initialised, or has been blanked).
 
 You can change the normal IP address by following the instructions in \ref usrp2_network_changeip.
 

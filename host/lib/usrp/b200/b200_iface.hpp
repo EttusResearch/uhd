@@ -97,7 +97,7 @@ public:
     virtual void set_fpga_reset_pin(const bool reset) = 0;
 
     //! load an FPGA image
-    virtual boost::uint32_t load_fpga(const std::string filestring) = 0;
+    virtual boost::uint32_t load_fpga(const std::string filestring, bool force=false) = 0;
 
     virtual void write_eeprom(boost::uint16_t addr, boost::uint16_t offset, const uhd::byte_vector_t &bytes) = 0;
 

@@ -76,7 +76,7 @@ public:
 //! Look up the type of B-Series device we're currently running.
 //  If the product ID stored in mb_eeprom is invalid, throws a
 //  uhd::runtime_error.
-static b200_type_t get_b200_type(const mboard_eeprom_t &mb_eeprom)
+b200_type_t get_b200_type(const mboard_eeprom_t &mb_eeprom)
 {
     if (mb_eeprom["product"].empty()) {
         throw uhd::runtime_error("B200: Missing product ID on EEPROM.");
@@ -89,6 +89,21 @@ static b200_type_t get_b200_type(const mboard_eeprom_t &mb_eeprom)
         ));
     }
     return B2X0_PRODUCT_ID[product_id];
+}
+
+std::vector<usb_device_handle::sptr> get_b200_device_handles(const device_addr_t &hint)
+{
+    std::vector<usb_device_handle::vid_pid_pair_t> vid_pid_pair_list;
+
+    if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "b200") {
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid")),
+                                                                      uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"))));
+    } else {
+        vid_pid_pair_list = b200_vid_pid_pairs;
+    }
+
+    //find the usrps and load firmware
+    return usb_device_handle::get_device_list(vid_pid_pair_list);
 }
 
 static device_addrs_t b200_find(const device_addr_t &hint)
@@ -104,28 +119,14 @@ static device_addrs_t b200_find(const device_addr_t &hint)
         if (hint_i.has_key("addr") || hint_i.has_key("resource")) return b200_addrs;
     }
 
-    size_t found = 0;
-    std::vector<usb_device_handle::vid_pid_pair_t> vid_pid_pair_list;//vid pid pair search list for devices.
-
-    if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "b200") {
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid")),
-                                                                    uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"))));
-    } else {
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200_PRODUCT_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID));
-    }
-
     // Important note:
     // The get device list calls are nested inside the for loop.
     // This allows the usb guts to decontruct when not in use,
     // so that re-enumeration after fw load can occur successfully.
     // This requirement is a courtesy of libusb1.0 on windows.
-
-    //find the usrps and load firmware
-    std::vector<usb_device_handle::sptr> uhd_usb_device_vector = usb_device_handle::get_device_list(vid_pid_pair_list);
-
-    BOOST_FOREACH(usb_device_handle::sptr handle, uhd_usb_device_vector) {
+    size_t found = 0;
+    std::vector<usb_device_handle::sptr> b200_device_handles = get_b200_device_handles(hint);
+    BOOST_FOREACH(usb_device_handle::sptr handle, b200_device_handles) {
         //extract the firmware path for the b200
         std::string b200_fw_image;
         try{
@@ -156,7 +157,7 @@ static device_addrs_t b200_find(const device_addr_t &hint)
     //search for the device until found or timeout
     while (boost::get_system_time() < timeout_time and b200_addrs.empty() and found != 0)
     {
-        BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid_pid_pair_list))
+        BOOST_FOREACH(usb_device_handle::sptr handle, b200_device_handles)
         {
             usb_control::sptr control;
             try{control = usb_control::make(handle, 0);}

@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -193,6 +193,71 @@ void extract_from_lvbitx(std::string lvbitx_path, std::vector<char> &bitstream){
                                 encoded_bitstream.size(), &decoded_bitstream.front(), &decode_state);
     decoded_bitstream.resize(decoded_size);
     bitstream.swap(decoded_bitstream);
+}
+
+void print_image_loader_warning(const std::string &fpga_path, const po::variables_map &vm){
+
+    // Newline + indent
+    #ifdef UHD_PLATFORM_WIN32
+    const std::string nl = " ^\n    ";
+    #else
+    const std::string nl = " \\\n    ";
+    #endif
+
+    // Generate equivalent uhd_image_loader command
+    std::string uhd_image_loader = "uhd_image_loader --args=\"type=x300";
+
+    if(vm.count("addr") > 0){
+        uhd_image_loader += str(boost::format(",addr=%s")
+                                % vm["addr"].as<std::string>());
+
+        if(vm.count("configure") > 0){
+            uhd_image_loader += ",configure";
+        }
+
+        if(vm.count("verify") > 0){
+            uhd_image_loader += ",verify";
+        }
+    }
+    else{
+        uhd_image_loader += str(boost::format(",resource=%s")
+                                % vm["resource"].as<std::string>());
+
+        /*
+         * Since we have a default value, vm.count("rpc-port") will
+         * always be > 0, so only add the option if a different port
+         * is given.
+         */
+        if(vm["rpc-port"].as<std::string>() != "5444"){
+            uhd_image_loader += str(boost::format(",rpc-port=%s")
+                                    % vm["rpc-port"].as<std::string>());
+        }
+    }
+
+    if(vm.count("type") > 0){
+        uhd_image_loader += str(boost::format(",fpga=%s")
+                                % vm["type"].as<std::string>());
+    }
+
+    uhd_image_loader += "\"";
+
+    /*
+     * The --type option overrides any given path, so only add an FPGA path
+     * if there was no --type argument.
+     */
+    if(vm.count("type") == 0){
+        uhd_image_loader += str(boost::format("%s--fpga-path=\"%s\"")
+                                % nl % fpga_path);
+    }
+
+    std::cout << "************************************************************************************************" << std::endl
+              << "WARNING: This utility will be removed in an upcoming version of UHD. In the future, use" << std::endl
+              << "         this command:" << std::endl
+              << std::endl
+              << uhd_image_loader << std::endl
+              << std::endl
+              << "************************************************************************************************" << std::endl
+              << std::endl;
 }
 
 void ethernet_burn(udp_simple::sptr udp_transport, std::string fpga_path, bool verify){
@@ -478,6 +543,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if(ext != ".bin" and ext != ".bit" and ext != ".lvbitx"){
         throw std::runtime_error("The image filename must end in .bin, .bit, or .lvbitx.");
     }
+
+    print_image_loader_warning(fpga_path, vm);
 
     std::signal(SIGINT, &sig_int_handler);
     if(vm.count("addr")){

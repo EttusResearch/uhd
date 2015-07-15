@@ -89,13 +89,13 @@ number, you will have to update the FPGA image before you can start using your U
 
 1. Download the current UHD images. You can use the `uhd_images_downloader` script provided
    with UHD (see also \ref page_images).
-2. Use the `usrp_x3xx_fpga_burner` utility to update the FPGA image. On the command line, run:
+2. Use the `uhd_image_loader` utility to update the FPGA image. On the command line, run:
 
-          usrp_x3xx_fpga_burner --addr=192.168.10.2 --type=HGS
+          uhd_image_loader --args="type=x300,addr=192.168.10.2,fpga=HGS"
 
   If you have installed the images to a non-standard location, you might need to run (change the filename according to your device):
 
-          usrp_x3xx_fpga_burner --addr=192.168.10.2 --fpga-path <path_to_images>/usrp_x310_fpga_HGS.bit
+          uhd_image_loader --args="type=x300,addr=192.168.10.2" --fpga-path="<path_to_images>/usrp_x310_fpga_HGS.bit"
 
   The process of updating the FPGA image will take several minutes. Make sure the process of flashing the image does not get interrupted.
 
@@ -303,31 +303,31 @@ detect your device information, and you will need to use this number to
 select which image to burn.
 
 \b Note:
-The burner utility will default to using the appropriate BIT file if no custom
+The image loader utility will default to using the appropriate BIT file if no custom
 FPGA image path is specified, but it is compatible with BIN, BIT, and LVBITX
 images.
 
-\subsection x3x0_flash_burner_tool Use the burner tool over Ethernet
+\subsection uhd_image_loader_tool Use the image loader over Ethernet
 
     Automatic FPGA path, detect image type:
-    usrp_x3xx_fpga_burner --addr=<IP address>
+    uhd_image_loader --args="type=x300,addr=<IP address>"
 
     Automatic FPGA path, select image type:
-    usrp_x3xx_fpga_burner --addr=<IP address> --type=<HGS or XGS>
+    uhd_image_loader --args="type=x300,addr=<IP address>,fpga=<HGS or XGS>"
 
     Manual FPGA path:
-    usrp_x3xx_fpga_burner --addr=<IP address> --fpga-path=<path to FPGA image>
+    uhd_image_loader --args="type=x300,addr=<IP address>" --fpga-path="<path to FPGA image>"
 
-\subsection x3x0_flash_burner_tool_pcie Use the burner tool over PCI Express
+\subsection uhd_image_loader_tool_pcie Use the image loader over PCI Express
 
     Automatic FPGA path, detect image type:
-    usrp_x3xx_fpga_burner --resource=<NI-RIO resource>
+    uhd_image_loader --args="type=x300,resource=<NI-RIO resource>"
 
     Automatic FPGA path, select image type:
-    usrp_x3xx_fpga_burner --resource=<NI-RIO resource> --type=<HGS or XGS>
+    uhd_image_loader --args="type=x300,resource=<NI-RIO resource>,fpga=<HGS or XGS>"
 
     Manual FPGA path:
-    usrp_x3xx_fpga_burner --resource=<NI-RIO resource> --fpga-path=<path to FPGA image>
+    uhd_image_loader --args="type=x300,resource=<NI-RIO resource>" --fpga-path="<path to FPGA image>"
 
 \subsection x3x0_flash_bricking Device recovery and bricking
 It is possible to put the device into an unusable state by loading bad images ("bricking").

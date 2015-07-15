@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2013 Ettus Research LLC
+# Copyright 2010-2013,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -120,6 +120,7 @@ SET(man_page_sources
     uhd_cal_tx_dc_offset.1
     uhd_cal_tx_iq_balance.1
     uhd_find_devices.1
+    uhd_image_loader.1
     uhd_images_downloader.1
     uhd_usrp_probe.1
     usrp_n2xx_simple_net_burner.1

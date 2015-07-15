@@ -42,6 +42,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <boost/weak_ptr.hpp>
@@ -54,6 +55,8 @@ static const size_t USRP2_SRAM_BYTES = size_t(1 << 20);
 static const boost::uint32_t USRP2_TX_ASYNC_SID = 2;
 static const boost::uint32_t USRP2_RX_SID_BASE = 3;
 static const std::string USRP2_EEPROM_MAP_KEY = "N100";
+
+uhd::device_addrs_t usrp2_find(const uhd::device_addr_t &hint_);
 
 //! Make a usrp2 dboard interface.
 uhd::usrp::dboard_iface::sptr make_usrp2_dboard_iface(

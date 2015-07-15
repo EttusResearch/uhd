@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2014 Ettus Research LLC
+// Copyright 2012-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -179,6 +179,59 @@ void list_usrps(){
             std::cout << boost::format(" * %s (%s)\n") % udp_bc_transport->get_recv_addr() % filename_map[hw_rev];
         }
     }
+}
+
+/***********************************************************************
+ * Find USRP N2XX with specified IP address and return type
+ **********************************************************************/
+void print_image_loader_warning(const std::string &fw_path,
+                                const std::string &fpga_path,
+                                const po::variables_map &vm){
+
+    // Newline + indent
+    #ifdef UHD_PLATFORM_WIN32
+    const std::string nl = " ^\n    ";
+    #else
+    const std::string nl = " \\\n    ";
+    #endif
+
+    std::string uhd_image_loader = str(boost::format("uhd_image_loader --args=\"type=usrp2,addr=%s")
+                                       % vm["addr"].as<std::string>());
+    if(vm.count("auto-reboot") > 0)
+        uhd_image_loader += ",reset";
+    if(vm.count("overwrite-safe") > 0)
+        uhd_image_loader += ",overwrite-safe";
+    if(vm.count("dont-check-rev") > 0)
+        uhd_image_loader += ",dont-check-rev";
+
+    uhd_image_loader += "\"";
+
+    if(vm.count("no-fw") == 0){
+        uhd_image_loader += str(boost::format("%s--fw-path=\"%s\"")
+                                % nl % fw_path);
+    }
+    else{
+        uhd_image_loader += str(boost::format("%s--no-fw")
+                                % nl);
+    }
+
+    if(vm.count("no-fpga") == 0){
+        uhd_image_loader += str(boost::format("%s--fpga-path=\"%s\"")
+                                % nl % fpga_path);
+    }
+    else{
+        uhd_image_loader += str(boost::format("%s--no-fpga")
+                                % nl);
+    }
+
+    std::cout << "************************************************************************************************" << std::endl
+              << "WARNING: This utility will be removed in an upcoming version of UHD. In the future, use" << std::endl
+              << "         this command:" << std::endl
+              << std::endl
+              << uhd_image_loader << std::endl
+              << std::endl
+              << "************************************************************************************************" << std::endl
+              << std::endl;
 }
 
 /***********************************************************************
@@ -626,6 +679,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         fw_image_size = read_fw_image(fw_path);
     }
+
+    print_image_loader_warning(fw_path, fpga_path, vm);
 
     std::cout << "Will burn the following images:" << std::endl;
     if(burn_fw) std::cout << boost::format(" * Firmware: %s\n") % fw_path;

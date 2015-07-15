@@ -104,6 +104,28 @@ void list_octoclocks(){
     }
 }
 
+void print_image_loader_warning(const std::string &fw_path, const po::variables_map &vm){
+    // Newline + indent
+    #ifdef UHD_PLATFORM_WIN32
+    const std::string nl = " ^\n    ";
+    #else
+    const std::string nl = " \\\n    ";
+    #endif
+
+    std::string uhd_image_loader = str(boost::format("uhd_image_loader --args=\"type=octoclock,addr=%s\""
+                                                     "%s --fw-path=%s")
+                                       % vm["addr"].as<std::string>() % nl % fw_path);
+
+    std::cout << "************************************************************************************************" << std::endl
+              << "WARNING: This utility will be removed in an upcoming version of UHD. In the future, use" << std::endl
+              << "         this command:" << std::endl
+              << std::endl
+              << uhd_image_loader << std::endl
+              << std::endl
+              << "************************************************************************************************" << std::endl
+              << std::endl; 
+}
+
 /*
  * Manually find bootloader. This sends multiple packets in order to increase chances of getting
  * bootloader before it switches to the application.
@@ -362,6 +384,8 @@ int UHD_SAFE_MAIN(UHD_UNUSED(int argc), UHD_UNUSED(char *argv[])){
     }
 
     read_firmware();
+
+    print_image_loader_warning(firmware_path, vm);
 
     std::signal(SIGINT, &sig_int_handler);
 

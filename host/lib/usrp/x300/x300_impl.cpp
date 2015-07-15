@@ -235,7 +235,7 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
     return addrs;
 }
 
-static device_addrs_t x300_find(const device_addr_t &hint_)
+device_addrs_t x300_find(const device_addr_t &hint_)
 {
     //handle the multi-device discovery
     device_addrs_t hints = separate_device_addr(hint_);
@@ -509,7 +509,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
     //check compat numbers
     //check fpga compat before fw compat because the fw is a subset of the fpga image
-    this->check_fpga_compat(mb_path, mb.zpu_ctrl);
+    this->check_fpga_compat(mb_path, mb);
     this->check_fw_compat(mb_path, mb.zpu_ctrl);
 
     //store which FPGA image is loaded
@@ -1696,25 +1696,33 @@ void x300_impl::check_fw_compat(const fs_path &mb_path, wb_iface::sptr iface)
                 % compat_major % compat_minor));
 }
 
-void x300_impl::check_fpga_compat(const fs_path &mb_path, wb_iface::sptr iface)
+void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t &members)
 {
-    boost::uint32_t compat_num = iface->peek32(SR_ADDR(SET0_BASE, ZPU_RB_COMPAT_NUM));
+    boost::uint32_t compat_num = members.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_COMPAT_NUM));
     boost::uint32_t compat_major = (compat_num >> 16);
     boost::uint32_t compat_minor = (compat_num & 0xffff);
 
     if (compat_major != X300_FPGA_COMPAT_MAJOR)
     {
+        std::string image_loader_path = (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
+        std::string image_loader_cmd = str(boost::format("\"%s\" --args=\"type=x300,%s=%s\"")
+                                              % image_loader_path
+                                              % (members.xport_path == "eth" ? "addr"
+                                                                             : "resource")
+                                              % members.addr);
+
         throw uhd::runtime_error(str(boost::format(
             "Expected FPGA compatibility number %d, but got %d:\n"
             "The FPGA image on your device is not compatible with this host code build.\n"
             "Download the appropriate FPGA images for this version of UHD.\n"
             "%s\n\n"
             "Then burn a new image to the on-board flash storage of your\n"
-            "USRP X3xx device using the burner utility. %s\n\n"
+            "USRP X3xx device using the image loader utility. Use this command:\n\n%s\n\n"
             "For more information, refer to the UHD manual:\n\n"
             " http://files.ettus.com/manual/page_usrp_x3x0.html#x3x0_flash"
         )   % int(X300_FPGA_COMPAT_MAJOR) % compat_major
-            % print_utility_error("uhd_images_downloader.py") % print_utility_error("usrp_x3xx_fpga_burner")));
+            % print_utility_error("uhd_images_downloader.py")
+            % image_loader_cmd));
     }
     _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));

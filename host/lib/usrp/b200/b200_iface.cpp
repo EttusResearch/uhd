@@ -511,7 +511,7 @@ public:
             throw uhd::io_error((boost::format("Short write on set FPGA hash (expecting: %d, returned: %d)") % bytes_to_send % ret).str());
     }
 
-    boost::uint32_t load_fpga(const std::string filestring) {
+    boost::uint32_t load_fpga(const std::string filestring, bool force) {
 
         boost::uint8_t fx3_state = 0;
         boost::uint32_t wait_count;
@@ -522,7 +522,7 @@ public:
 
         hash_type hash = generate_hash(filename);
         hash_type loaded_hash; usrp_get_fpga_hash(loaded_hash);
-        if (hash == loaded_hash) return 0;
+        if (hash == loaded_hash and !force) return 0;
 
         // Establish default largest possible control request transfer size based on operating USB speed
         int transfer_size = VREQ_DEFAULT_SIZE;

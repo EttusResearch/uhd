@@ -142,6 +142,8 @@ uhd::uart_iface::sptr x300_make_uart_iface(uhd::wb_iface::sptr iface);
 uhd::wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp);
 uhd::wb_iface::sptr x300_make_ctrl_iface_pcie(uhd::niusrprio::niriok_proxy::sptr drv_proxy);
 
+uhd::device_addrs_t x300_find(const uhd::device_addr_t &hint_);
+
 class x300_impl : public uhd::device
 {
 public:
@@ -398,7 +400,7 @@ private:
     void set_mb_eeprom(uhd::i2c_iface::sptr i2c, const uhd::usrp::mboard_eeprom_t &);
 
     void check_fw_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
-    void check_fpga_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
+    void check_fpga_compat(const uhd::fs_path &mb_path, const mboard_members_t &members);
 
     void update_atr_leds(gpio_core_200_32wo::sptr, const std::string &ant);
     boost::uint32_t get_fp_gpio(gpio_core_200::sptr);

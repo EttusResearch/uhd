@@ -43,6 +43,7 @@
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <boost/assign.hpp>
 #include <boost/weak_ptr.hpp>
 #include "recv_packet_demuxer_3000.hpp"
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
@@ -82,9 +83,18 @@ static const boost::uint32_t B200_RX_GPS_UART_SID = FLIP_SID(B200_TX_GPS_UART_SI
 static const boost::uint32_t B200_LOCAL_CTRL_SID = 0x00000040;
 static const boost::uint32_t B200_LOCAL_RESP_SID = FLIP_SID(B200_LOCAL_CTRL_SID);
 
-/***********************************************************************
- * The B200 Capability Constants
- **********************************************************************/
+/*
+ * VID/PID pairs for all B2xx products
+ */
+static std::vector<uhd::transport::usb_device_handle::vid_pid_pair_t> b200_vid_pid_pairs =
+    boost::assign::list_of
+        (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200_PRODUCT_ID))
+        (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID))
+        (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID))
+    ;
+
+b200_type_t get_b200_type(const uhd::usrp::mboard_eeprom_t &mb_eeprom);
+std::vector<uhd::transport::usb_device_handle::sptr> get_b200_device_handles(const uhd::device_addr_t &hint);
 
 //! Implementation guts
 class b200_impl : public uhd::device

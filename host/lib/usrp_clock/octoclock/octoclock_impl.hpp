@@ -31,6 +31,8 @@
 
 #include "common.h"
 
+uhd::device_addrs_t octoclock_find(const uhd::device_addr_t &hint);
+
 /*!
  * OctoClock implementation guts
  */

@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
@@ -28,6 +29,7 @@
 #include <uhd/types/sensors.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
+#include <string>
 #include "e300_fifo_config.hpp"
 #include "radio_ctrl_core_3000.hpp"
 #include "rx_frontend_core_200.hpp"
@@ -98,6 +100,10 @@ static const size_t E300_R1_CTRL_STREAM    = (1 << 2) | E300_RADIO_DEST_PREFIX_C
 static const size_t E300_R1_TX_DATA_STREAM = (1 << 2) | E300_RADIO_DEST_PREFIX_TX;
 static const size_t E300_R1_RX_DATA_STREAM = (1 << 2) | E300_RADIO_DEST_PREFIX_RX;
 
+uhd::device_addrs_t e300_find(const uhd::device_addr_t &multi_dev_hint);
+void get_e3x0_fpga_images(const uhd::device_addr_t &device_args,
+                          std::string &fpga_image,
+                          std::string &idle_image);
 
 /*!
  * USRP-E300 implementation guts:

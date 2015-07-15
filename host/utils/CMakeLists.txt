@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2014 Ettus Research LLC
+# Copyright 2010-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 SET(util_runtime_sources
     uhd_find_devices.cpp
     uhd_usrp_probe.cpp
+    uhd_image_loader.cpp
     uhd_cal_rx_iq_balance.cpp
     uhd_cal_tx_dc_offset.cpp
     uhd_cal_tx_iq_balance.cpp

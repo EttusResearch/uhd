@@ -48,7 +48,7 @@ static const size_t DEFAULT_NUM_FRAMES = 32;
 /***********************************************************************
  * Discovery over the udp transport
  **********************************************************************/
-static device_addrs_t usrp2_find(const device_addr_t &hint_){
+device_addrs_t usrp2_find(const device_addr_t &hint_){
     //handle the multi-device discovery
     device_addrs_t hints = separate_device_addr(hint_);
     if (hints.size() > 1){
