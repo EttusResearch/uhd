@@ -264,13 +264,50 @@ You may need to change the USRP's IP address for several reasons:
 - **RF B Group**
   + **TX/RX LED**: Indicates that data is streaming on the TX/RX channel on frontend B
   + **RX2 LED**: Indicates that data is streaming on the RX2 channel on frontend B
-- **PWR**: Power switch
+- **PWR**: Power switch with integrated status LED, for status description see below.
 
 - **SYNC**: Input port for external PPS signal
 
 - **GPS**: Connection for the GPS antenna
 
 - **AUDIO**: Audio input / output
+
+The status LED in the power switch indicates the power and charge status.
+It's behavior is firmware version dependent.
+
+- **Version 1** (original E310)
+  + **Off**: Indicates device is off and not charging
+  + **Solid Red**: Indicates device is charging
+  + **Solid Green**: Indicates device is on
+  + **Fast Blinking Red**: Indicates an error code
+    + 1 - Low voltage error
+    + 2 - Regulator low voltage error
+    + 3 - FPGA power error
+    + 5 - 1.8V rail power error
+    + 6 - 3.3V rail power error
+    + 7 - Daughterboard / TX power error
+    + 9 - Temperature error
+
+- **Version 2** (E312 and upgraded E310)
+  + **Off**: Indicates device is off and not charging
+  + **Slow Blinking Green**: Indicates device is off and charging
+  + **Fast Blinking Green**: Indicates device is on and charging
+  + **Solid Green**: Indicates device is on (and not charging, if E312)
+  + **Solid Orange**: Indicates device is on and discharging
+  + **Fast Blinking Orange**: Indicates device is on, discharging, and charge is below 10% charge
+  + **Fast Blinking Red**: Indicates an error code
+    + 1 - Low voltage error
+    + 2 - Regulator low voltage error
+    + 3 - FPGA power error
+    + 4 - DRAM power error
+    + 5 - 1.8V rail power error
+    + 6 - 3.3V rail power error
+    + 7 - Daughterboard / TX power error
+    + 8 - Charger error
+    + 9 - Charger temperature error
+    + 10 - Battery low error
+    + 11 - Fuel Gauge temperature error
+    + 12 - Global (case) temperature error
 
 \subsection e3x0_hw_rear_panel Rear Panel
 
