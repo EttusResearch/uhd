@@ -388,7 +388,7 @@ For more advanced IMU based applications please refer to the <a href="https://gi
 
 ### Connector
 
-\image html e3x0_gpio_conn.png "E3x0 GPIO Connector"
+\image html e3x0_gpio_conn.png "E3xx GPIO Connector"
 
 ### Pin Mapping
 
@@ -416,7 +416,7 @@ The Left/Right audio outputs are compatible with typical low-impedance headphone
 
 ### Connector
 
-\image html e3x0_jtag_conn.png "E3x0 JTAG Connector"
+\image html e3x0_jtag_conn.png "E3xx JTAG Connector"
 
 ### Pin Mapping
 
@@ -432,6 +432,73 @@ Xilinx chipscope allows for debugging custom FPGA designs similar to a logic ana
 USRP-E series devices can be used with Xilinx chipscope using the internal JTAG connector.
 
 Further information on how to use Chipscope can be found in the *Xilinx Chipscope Pro Software and Cores User Guide (UG029)*.
+
+\section e3xx_battery Battery notes
+
+The USRP E312 (and with upgraded firmware E310) supports LiIon Battery packs (e.g. AA Portable Power Corp, 749801-01).
+
+\subsection e3xx_battery_connector Connector
+
+The connector J1 on E312's motherboard is a Molex 53014-6310. The corresponding mating connector is a Molex 51004-0300.
+
+\image html e3xx_conn_photo.png "Battery pack connector"
+
+The pins are as follows:
+- Pin 1 (Red): VBat
+- Pin 2 (Black): GND
+- Pin 3 (White): Battery Thermistor
+
+\subsection e3xx_battery_information Driver
+
+The battery information is exposed on the device via the sysfs directory under:
+
+    /sys/class/power_supply/BAT/
+
+and for the charger:
+
+    /sys/class/power_supply/AC/
+
+The values can be accessed via libudev or manually e.g.:
+
+    root@ettus-e3xx: cat /sys/class/power_supply/BAT/status
+
+The driver emits uevents on changes, that can be used to write custom UDev rules.
+Using UDev rules one can configure the USRP E3xx to shut down on certain events,
+such as low battery charge, high temperatures or AC power plug in.
+
+The following example will cause the system to shut down at a reported temperature
+of 73C:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SUBSYSTEM=="power_supply", ATTR{online}=="1", ATTR{temp}=="730", RUN+="/sbin/shutdown -h now"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Another example will cause a safe shutdown once the battery level reaches 5 percent
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SUBSYSTEM=="power_supply", ATTR{online}=="1", ATTR{status}=="Discharging", ATTR{capacity}=="5", RUN+="/sbin/shutdown -h now"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For more information, please see the udev manual pages and <a href ="https://www.kernel.org/doc/Documentation/power/power_supply_class.txt"> Kernel Power Supply Docs </a>.
+
+\subsection e3xx_battery_calibration Calibration Procedure
+
+In order for the fuel gauge to give a usable indication of remaining charge it needs to be calibrated.
+The procedure for calibration is as follows:
+
+1. Completely discharge battery (e.g. by booting up without SD card, so OS doesn't autoshutdown)
+2. Unplug the battery pack and external power
+3. Reconnect the battery pack
+4. Reconnect AC power and charge until charge completed.
+
+A faster (less accurate) calibration procedure is as follows:
+
+1. Completly charge battery
+2. Type:
+
+    $ echo 3200000 > /sys/class/power_supply/BAT/charge_now
+
+3. Unplug AC power
+4. Replug AC power and wait until charge completes
 
 \section e3x0_dboards Daughterboard notes
 
