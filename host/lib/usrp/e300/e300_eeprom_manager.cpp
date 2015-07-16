@@ -226,10 +226,10 @@ std::string e300_eeprom_manager::get_mb_type_string(void) const
         _mb_eeprom["product"]);
     switch (product) {
     case E300_MB_PID:
-        return "E300";
+        return "E3XX";
 
     case E310_MB_PID:
-        return "E310";
+        return "E3XX";
 
     default:
         return "UNKNOWN";
