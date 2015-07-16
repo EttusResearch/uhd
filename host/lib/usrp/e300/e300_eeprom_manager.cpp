@@ -38,7 +38,7 @@ static void _string_to_bytes(const std::string &string, size_t max_len, boost::u
     for (size_t i = 0; i < len; i++){
         buffer[i] = string[i];
     }
-    if (len < max_len - 1)
+    if (len < max_len)
         buffer[len] = '\0';
 }
 
