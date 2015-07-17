@@ -861,8 +861,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         boost::uint64_t noc_id = ctrl->peek64(0);
         UHD_MSG(status) << str(boost::format("Port %d: Found NoC-Block with ID %016X.") % int(xbar_port) % noc_id) << std::endl;
         uhd::rfnoc::make_args_t make_args;
-        make_args.ctrl_iface = ctrl;
-        make_args.ctrl_sid = xport.send_sid;
+        make_args.ctrl_ifaces = boost::assign::map_list_of(0, ctrl);
+        make_args.base_address = xport.send_sid.get_dst();
         make_args.device_index = mb_i;
         make_args.tree = _tree->subtree(mb_path);
         make_args.is_big_endian = mb.if_pkt_is_big_endian;

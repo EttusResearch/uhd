@@ -28,7 +28,7 @@ using namespace uhd::rfnoc;
 
 static const boost::uint64_t TEST_NOC_ID = 0xAAAABBBBCCCCDDDD;
 static const sid_t TEST_SID0 = 0x00000200; // 0.0.2.0
-static const sid_t TEST_SID1 = 0x00000201; // 0.0.2.1
+static const sid_t TEST_SID1 = 0x00000210; // 0.0.2.F
 
 // Pseudo-wb-iface
 class pseudo_wb_iface_impl : public uhd::wb_iface
@@ -78,12 +78,14 @@ class pseudo_device3_impl : public uhd::device3
         _tree->create<std::string>("/name").set("Test Pseudo-Device3");
 
         // We can re-use this:
-        wb_iface::sptr ctrl_iface = wb_iface::sptr(new pseudo_wb_iface_impl());
+        std::map<size_t, wb_iface::sptr> ctrl_ifaces = boost::assign::map_list_of
+            (0, wb_iface::sptr(new pseudo_wb_iface_impl()))
+        ;
 
         // Add two block controls:
         uhd::rfnoc::make_args_t make_args;
-        make_args.ctrl_iface = ctrl_iface;
-        make_args.ctrl_sid = TEST_SID0;
+        make_args.ctrl_ifaces = ctrl_ifaces;
+        make_args.base_address = TEST_SID0.get_dst();
         make_args.device_index = 0;
         make_args.tree = _tree;
         make_args.is_big_endian = false;
@@ -91,7 +93,7 @@ class pseudo_device3_impl : public uhd::device3
         _rfnoc_block_ctrl.push_back( block_ctrl_base::make(make_args) );
 
         std::cout << "[PSEUDO] Generating block controls 2/2:" << std::endl;
-        make_args.ctrl_sid = TEST_SID1;
+        make_args.base_address = TEST_SID1.get_dst();
         _rfnoc_block_ctrl.push_back( block_ctrl::make(make_args) );
     }
 

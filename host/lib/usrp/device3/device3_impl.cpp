@@ -88,7 +88,7 @@ void device3_impl::merge_channel_defs(
  **********************************************************************/
 void device3_impl::init_radio_ctrl(
         const radio_v_perifs_t &perif,
-        const uhd::sid_t &ctrl_sid,
+        const uhd::sid_t &base_address,
         const size_t mb_i,
         const uhd::endianness_t endianness,
         const uhd::rfnoc::radio_ctrl::dboard_type_t dboard_type
@@ -98,8 +98,8 @@ void device3_impl::init_radio_ctrl(
     // 1) Create the block control
     UHD_MSG(status) << "[RFNOC] ------- Radio Setup -----------" << std::endl;
     uhd::rfnoc::make_args_t make_args("Radio");
-    make_args.ctrl_iface = perif.ctrl;
-    make_args.ctrl_sid = ctrl_sid;
+    make_args.ctrl_ifaces = boost::assign::map_list_of(size_t(0), perif.ctrl);
+    make_args.base_address = base_address;
     make_args.device_index = mb_i;
     make_args.tree = _tree->subtree(fs_path("/mboards") / mb_i);
     make_args.is_big_endian = (endianness == ENDIANNESS_BIG);

@@ -68,8 +68,7 @@ void source_block_ctrl_base::set_destination(
 ) {
     UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::set_destination() " << uhd::sid_t(next_address) << std::endl;
     sid_t new_sid(next_address);
-    new_sid.set_src_addr(get_ctrl_sid().get_dst_addr());
-    new_sid.set_src_endpoint(get_ctrl_sid().get_dst_endpoint() + output_block_port);
+    new_sid.set_src(get_address(output_block_port));
     UHD_MSG(status) << "  Setting SID: " << new_sid << std::endl << "  ";
     sr_write(SR_NEXT_DST_BASE+output_block_port, (1<<16) | next_address);
 }

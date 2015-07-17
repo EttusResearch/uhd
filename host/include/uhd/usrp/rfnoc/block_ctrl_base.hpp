@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,9 +51,9 @@ struct make_args_t
     {}
 
     //! A valid interface that allows us to do peeks and pokes
-    uhd::wb_iface::sptr ctrl_iface;
-    //! The SID corresponding to ctrl_iface. ctrl_sid.get_dst_address() must yield this block's address.
-    uhd::sid_t ctrl_sid;
+    std::map<size_t, uhd::wb_iface::sptr> ctrl_ifaces;
+    //! This block's base address (address of block port 0)
+    uint32_t base_address;
     //! The device index (or motherboard index).
     size_t device_index;
     //! A property tree for this motherboard. Example: If the root a device's
@@ -160,10 +160,6 @@ public:
      */
     std::string unique_id() const { return _block_id.to_string(); };
 
-    /*! Returns the SID for the control transport.
-     */
-    uhd::sid_t get_ctrl_sid() const { return _ctrl_sid; };
-
     /***********************************************************************
      * FPGA control & communication
      **********************************************************************/
@@ -176,7 +172,7 @@ public:
      * \param reg The settings register to write to.
      * \param data New value of this register.
      */
-    void sr_write(const boost::uint32_t reg, const boost::uint32_t data);
+    void sr_write(const boost::uint32_t reg, const boost::uint32_t data, const size_t port = 0);
 
     /*! Allows setting one register on the settings bus.
      *
@@ -187,7 +183,7 @@ public:
      * \throw uhd::key_error if \p reg is not a valid register name
      *
      */
-    void sr_write(const std::string &reg, const boost::uint32_t data);
+    void sr_write(const std::string &reg, const boost::uint32_t data, const size_t port = 0);
 
     /*! Allows reading one register on the settings bus (64-Bit version).
      *
@@ -195,7 +191,7 @@ public:
      *
      * Returns the readback value.
      */
-    boost::uint64_t sr_read64(const settingsbus_reg_t reg);
+    boost::uint64_t sr_read64(const settingsbus_reg_t reg, const size_t port = 0);
 
     /*! Allows reading one register on the settings bus (32-Bit version).
      *
@@ -203,7 +199,7 @@ public:
      *
      * Returns the readback value.
      */
-    boost::uint32_t sr_read32(const settingsbus_reg_t reg);
+    boost::uint32_t sr_read32(const settingsbus_reg_t reg, const size_t port = 0);
 
     /*! Allows reading one user-defined register (64-Bit version).
      *
@@ -214,7 +210,7 @@ public:
      * \param addr The user register address.
      * \returns the readback value.
      */
-    boost::uint64_t user_reg_read64(const boost::uint32_t addr);
+    boost::uint64_t user_reg_read64(const boost::uint32_t addr, const size_t port = 0);
 
     /*! Allows reading one user-defined register (64-Bit version).
      *
@@ -226,7 +222,7 @@ public:
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
      */
-    boost::uint64_t user_reg_read64(const std::string &reg);
+    boost::uint64_t user_reg_read64(const std::string &reg, const size_t port = 0);
 
     /*! Allows reading one user-defined register (32-Bit version).
      *
@@ -237,7 +233,7 @@ public:
      * \param addr The user register address.
      * \returns the readback value.
      */
-    boost::uint32_t user_reg_read32(const boost::uint32_t addr);
+    boost::uint32_t user_reg_read32(const boost::uint32_t addr, const size_t port = 0);
 
     /*! Allows reading one user-defined register (32-Bit version).
      *
@@ -249,7 +245,7 @@ public:
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
      */
-    boost::uint32_t user_reg_read32(const std::string &reg);
+    boost::uint32_t user_reg_read32(const std::string &reg, const size_t port = 0);
 
     /*! Reset block after streaming operation.
      *
@@ -267,7 +263,7 @@ public:
      * For custom behaviour, overwrite _clear(). If you do so, you must take
      * take care of resetting flow control yourself.
      */
-    void clear();
+    void clear(const size_t port = 0/* reserved, currently not used */);
 
     /***********************************************************************
      * Argument handling
@@ -336,9 +332,6 @@ protected:
      * Protected members
      **********************************************************************/
 
-    //! An object to actually send and receive the commands
-    wb_iface::sptr _ctrl_iface;
-
     //! Property sub-tree
     uhd::property_tree::sptr _tree;
 
@@ -365,10 +358,11 @@ private:
     /***********************************************************************
      * Private members
      **********************************************************************/
+    //! Objects to actually send and receive the commands
+    std::map<size_t, wb_iface::sptr> _ctrl_ifaces;
 
-    //! The SID of the control transport.
-    // _ctrl_sid.get_dst_address() yields this block's address.
-    uhd::sid_t _ctrl_sid;
+    //! The base address of this block (the address of block port 0)
+    uint32_t _base_address;
 
     //! The (unique) block ID.
     block_id_t _block_id;
