@@ -86,6 +86,7 @@ extern "C" {
 
 // Crimson Clk Settings
 #define CRIMSON_MASTER_CLOCK_RATE	322265625
+#define CRIMSON_EXT_CLK_RATE		10000000	// only 10 MHz input sources allowed
 
 // Crimson VITA settings
 #define CRIMSON_VITA_HDR_TYPE	0x1

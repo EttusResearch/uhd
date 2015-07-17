@@ -453,7 +453,7 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
     TREE_CREATE_RW(mb_path / "time_source"  / "value",  	"time/source/ref",  	std::string, string);
     TREE_CREATE_RW(mb_path / "clock_source" / "value",          "time/source/ref",	std::string, string);
     TREE_CREATE_RW(mb_path / "clock_source" / "external",	"time/source/ref",	std::string, string);
-    TREE_CREATE_RW(mb_path / "clock_source" / "external" / "value", "time/source/rate",	double, double);
+    TREE_CREATE_ST(mb_path / "clock_source" / "external" / "value", double, CRIMSON_EXT_CLK_RATE);
     TREE_CREATE_ST(mb_path / "clock_source" / "output", bool, true);
     TREE_CREATE_ST(mb_path / "time_source"  / "output", bool, true);
 
