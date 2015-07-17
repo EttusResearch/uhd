@@ -164,6 +164,10 @@ public:
      * FPGA control & communication
      **********************************************************************/
 
+    /*! Returns a list of valid ports that can be used for sr_write(), sr_read() etc.
+     */
+    std::vector<size_t> get_ctrl_ports() const;
+
     /*! Allows setting one register on the settings bus.
      *
      * Note: There is no address translation ("memory mapping") necessary.
@@ -272,31 +276,31 @@ public:
     //
     // Note that this function will ignore any keys in \p args that aren't
     // already registered as block arguments.
-    void set_args(const uhd::device_addr_t &args);
+    void set_args(const uhd::device_addr_t &args, const size_t port = 0);
 
     //! Set a specific block argument. \p val is converted to the corresponding
     // data type using by looking up its type in the block definition.
-    void set_arg(const std::string &key, const std::string &val);
+    void set_arg(const std::string &key, const std::string &val, const size_t port = 0);
 
     //! Direct access to set a block argument.
     template <typename T>
-    void set_arg(const std::string &key, const T &val) {
-        _tree->access<T>(_root_path / "args" / key / "value").set(val);
+    void set_arg(const std::string &key, const T &val, const size_t port = 0) {
+        _tree->access<T>(_root_path / "args" / port / key / "value").set(val);
     }
 
     //! Return all block arguments as a device_addr_t.
-    uhd::device_addr_t get_args() const;
+    uhd::device_addr_t get_args(const size_t port = 0) const;
 
     //! Return a single block argument in string format.
-    std::string get_arg(const std::string &key) const;
+    std::string get_arg(const std::string &key, const size_t port = 0) const;
 
     //! Direct access to get a block argument.
     template <typename T>
-    T get_arg(const std::string &key) const {
-        return _tree->access<T>(_root_path / "args" / key / "value").get();
+    T get_arg(const std::string &key, const size_t port = 0) const {
+        return _tree->access<T>(_root_path / "args" / port / key / "value").get();
     }
 
-    std::string get_arg_type(const std::string &key) const;
+    std::string get_arg_type(const std::string &key, const size_t port = 0) const;
 
 protected:
     /***********************************************************************

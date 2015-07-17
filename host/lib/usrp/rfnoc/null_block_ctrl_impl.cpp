@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,12 +29,12 @@ public:
     UHD_RFNOC_BLOCK_CONSTRUCTOR(null_block_ctrl)
     {
         // Register hooks for line_rate:
-        _tree->access<int>(_root_path / "args" / "line_rate" / "value")
+        _tree->access<int>(_root_path / "args" / 0 /  "line_rate" / "value")
             .subscribe(boost::bind(&null_block_ctrl_impl::set_line_delay_cycles, this, _1))
             .update()
         ;
         // Register hooks for bpp:
-        _tree->access<int>(_root_path / "args" / "bpp" / "value")
+        _tree->access<int>(_root_path / "args" / 0 /  "bpp" / "value")
             .subscribe(boost::bind(&null_block_ctrl_impl::set_bytes_per_packet, this, _1))
             .update()
         ;

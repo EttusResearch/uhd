@@ -25,6 +25,7 @@
 #include <uhd/usrp/rfnoc/block_ctrl_base.hpp>
 #include <uhd/usrp/rfnoc/constants.hpp>
 #include <boost/format.hpp>
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 using namespace uhd;
@@ -73,7 +74,7 @@ block_ctrl_base::block_ctrl_base(
     _tree->create<boost::uint64_t>(_root_path / "noc_id").set(noc_id);
 
     /*** Input buffer sizes *************************************************/
-    std::vector<size_t> buf_sizes(16, 0);
+    size_t n_valid_input_buffers = 0;
     for (size_t port_offset = 0; port_offset < 16; port_offset += 8) {
         // FIXME: Eventually need to implement per block port buffers
         // settingsbus_reg_t reg =
@@ -85,10 +86,8 @@ block_ctrl_base::block_ctrl_base(
             // size_t buf_size_log2 = (value >> (i * 8)) & 0xFF; // Buffer size in x = log2(lines)
             size_t buf_size_log2 = value & 0xFF;
             size_t buf_size_bytes = BYTES_PER_LINE * (1 << buf_size_log2); // Bytes == 8 * 2^x
-            buf_sizes[i + port_offset] = BYTES_PER_LINE * (1 << buf_size_log2); // Bytes == 8 * 2^x
-            _tree->create<size_t>(
-                    _root_path / str(boost::format("input_buffer_size/%d") % size_t(i + port_offset))
-            ).set(buf_size_bytes);
+            if (buf_size_bytes) n_valid_input_buffers++;
+            _tree->create<size_t>(_root_path / "input_buffer_size" / size_t(i + port_offset)).set(buf_size_bytes);
         }
     }
 
@@ -113,9 +112,13 @@ block_ctrl_base::block_ctrl_base(
     /*** Init I/O port definitions ******************************************/
     _init_port_defs("in",  _block_def->get_input_ports());
     _init_port_defs("out", _block_def->get_output_ports());
-    // TODO: It's possible that the number of input sigs doesn't match the
-    // number of input buffers. We should probably warn about that or
-    // something.
+    // FIXME this warning always fails until the input buffer code above is fixed
+    //if (_tree->list(_root_path / "ports/in").size() != n_valid_input_buffer_sizes) {
+        //UHD_MSG(warning) <<
+            //boost::format("[%s] defines %d input buffer sizes, but %d input ports")
+            //% get_block_id().get() % n_valid_input_buffers % _tree->list(_root_path / "ports/in").size()
+            //<< std::endl;
+    //}
 
     /*** Init default block args ********************************************/
     _nocscript_iface = nocscript::block_iface::make(this);
@@ -150,13 +153,15 @@ void block_ctrl_base::_init_block_args()
 {
     blockdef::args_t args = _block_def->get_args();
     fs_path arg_path = _root_path / "args";
-    _tree->create<std::string>(arg_path);
+    BOOST_FOREACH(const size_t port, get_ctrl_ports()) {
+        _tree->create<std::string>(arg_path / port);
+    }
 
     // First, create all nodes.
     BOOST_FOREACH(const blockdef::arg_t &arg, args) {
-        fs_path arg_type_path = arg_path / arg["name"] / "type";
+        fs_path arg_type_path = arg_path / arg["port"] / arg["name"] / "type";
         _tree->create<std::string>(arg_type_path).set(arg["type"]);
-        fs_path arg_val_path = arg_path / arg["name"] / "value";
+        fs_path arg_val_path  = arg_path / arg["port"] / arg["name"] / "value";
         if (arg["type"] == "int_vector") { throw uhd::runtime_error("not yet implemented: int_vector"); }
         else if (arg["type"] == "int") { _tree->create<int>(arg_val_path); }
         else if (arg["type"] == "double") { _tree->create<double>(arg_val_path); }
@@ -168,7 +173,7 @@ void block_ctrl_base::_init_block_args()
 #define _SUBSCRIBE_CHECK_AND_RUN(type, arg_tag, error_message) \
     _tree->access<type>(arg_val_path).subscribe(boost::bind((&nocscript::block_iface::run_and_check), _nocscript_iface, arg[#arg_tag], error_message))
     BOOST_FOREACH(const blockdef::arg_t &arg, args) {
-        fs_path arg_val_path = arg_path / arg["name"] / "value";
+        fs_path arg_val_path = arg_path / arg["port"] / arg["name"] / "value";
         if (not arg["check"].empty()) {
             if (arg["type"] == "string") { _SUBSCRIBE_CHECK_AND_RUN(string, check, arg["check_message"]); }
             else if (arg["type"] == "int") { _SUBSCRIBE_CHECK_AND_RUN(int, check, arg["check_message"]); }
@@ -187,7 +192,7 @@ void block_ctrl_base::_init_block_args()
 
     // Finally: Set the values. This will call subscribers, if we have any.
     BOOST_FOREACH(const blockdef::arg_t &arg, args) {
-        fs_path arg_val_path = arg_path / arg["name"] / "value";
+        fs_path arg_val_path = arg_path / arg["port"] / arg["name"] / "value";
         if (not arg["value"].empty()) {
             if (arg["type"] == "int_vector") { throw uhd::runtime_error("not yet implemented: int_vector"); }
             else if (arg["type"] == "int") { _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(arg["value"])); }
@@ -201,12 +206,23 @@ void block_ctrl_base::_init_block_args()
 /***********************************************************************
  * FPGA control & communication
  **********************************************************************/
+std::vector<size_t> block_ctrl_base::block_ctrl_base::get_ctrl_ports() const
+{
+    std::vector<size_t> ctrl_ports;
+    ctrl_ports.reserve(_ctrl_ifaces.size());
+    std::pair<size_t, wb_iface::sptr> it;
+    BOOST_FOREACH(it, _ctrl_ifaces) {
+        ctrl_ports.push_back(it.first);
+    }
+    return ctrl_ports;
+}
+
 void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t data, const size_t port)
 {
     UHD_MSG(status) << "  ";
     UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%d, %08X, %d)") % reg % data % port << std::endl;
     if (not _ctrl_ifaces.count(port)) {
-        throw uhd::key_error(str(boost::format("[%s] sr_write(): No such channel: %d") % get_block_id().get() % port));
+        throw uhd::key_error(str(boost::format("[%s] sr_write(): No such port: %d") % get_block_id().get() % port));
     }
     try {
         _ctrl_ifaces[port]->poke32(_sr_to_addr(reg), data);
@@ -238,7 +254,7 @@ void block_ctrl_base::sr_write(const std::string &reg, const boost::uint32_t dat
 boost::uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg, const size_t port)
 {
     if (not _ctrl_ifaces.count(port)) {
-        throw uhd::key_error(str(boost::format("[%s] sr_read64(): No such channel: %d") % get_block_id().get() % port));
+        throw uhd::key_error(str(boost::format("[%s] sr_read64(): No such port: %d") % get_block_id().get() % port));
     }
     try {
         return _ctrl_ifaces[port]->peek64(_sr_to_addr64(reg));
@@ -251,7 +267,7 @@ boost::uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg, const si
 boost::uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg, const size_t port)
 {
     if (not _ctrl_ifaces.count(port)) {
-        throw uhd::key_error(str(boost::format("[%s] sr_read32(): No such channel: %d") % get_block_id().get() % port));
+        throw uhd::key_error(str(boost::format("[%s] sr_read32(): No such port: %d") % get_block_id().get() % port));
     }
     try {
         return _ctrl_ifaces[port]->peek32(_sr_to_addr(reg));
@@ -332,18 +348,18 @@ boost::uint32_t block_ctrl_base::get_address(size_t block_port) {
 /***********************************************************************
  * Argument handling
  **********************************************************************/
-void block_ctrl_base::set_args(const uhd::device_addr_t &args)
+void block_ctrl_base::set_args(const uhd::device_addr_t &args, const size_t port)
 {
-    BOOST_FOREACH(const std::string &key, _tree->list(_root_path / "args")) {
+    BOOST_FOREACH(const std::string &key, _tree->list(_root_path / "args" / port)) {
         if (args.has_key(key)) {
             set_arg(key, args.get(key));
         }
     }
 }
 
-void block_ctrl_base::set_arg(const std::string &key, const std::string &val)
+void block_ctrl_base::set_arg(const std::string &key, const std::string &val, const size_t port)
 {
-    fs_path arg_path = _root_path / "args" / key;
+    fs_path arg_path = _root_path / "args" / port / key;
     if (not _tree->exists(arg_path / "value")) {
         throw uhd::runtime_error(str(
                 boost::format("Attempting to set uninitialized argument '%s' on block '%s'")
@@ -374,18 +390,18 @@ void block_ctrl_base::set_arg(const std::string &key, const std::string &val)
     }
 }
 
-device_addr_t block_ctrl_base::get_args() const
+device_addr_t block_ctrl_base::get_args(const size_t port) const
 {
     device_addr_t args;
-    BOOST_FOREACH(const std::string &key, _tree->list(_root_path / "args")) {
+    BOOST_FOREACH(const std::string &key, _tree->list(_root_path / "args" / port)) {
         args[key] = get_arg(key);
     }
     return args;
 }
 
-std::string block_ctrl_base::get_arg(const std::string &key) const
+std::string block_ctrl_base::get_arg(const std::string &key, const size_t port) const
 {
-    fs_path arg_path = _root_path / "args" / key;
+    fs_path arg_path = _root_path / "args" / port / key;
     if (not _tree->exists(arg_path / "value")) {
         throw uhd::runtime_error(str(
                 boost::format("Attempting to get uninitialized argument '%s' on block '%s'")
@@ -412,9 +428,9 @@ std::string block_ctrl_base::get_arg(const std::string &key) const
     return "";
 }
 
-std::string block_ctrl_base::get_arg_type(const std::string &key) const
+std::string block_ctrl_base::get_arg_type(const std::string &key, const size_t port) const
 {
-    fs_path arg_type_path = _root_path / "args" / key / "type";
+    fs_path arg_type_path = _root_path / "args" / port / key / "type";
     return _tree->access<std::string>(arg_type_path).get();
 }
 

@@ -64,7 +64,7 @@ public:
     class arg_t : public uhd::dict<std::string, std::string> {
       public:
         //! A list of args an argument can have.
-        static const std::vector<std::string> ARG_ARGS;
+        static const device_addr_t ARG_ARGS;
         static const std::set<std::string> VALID_TYPES;
 
         arg_t();

@@ -45,7 +45,7 @@ public:
         magnitude_t my_magnitude_out = str_to_mag(get_arg("magnitude_out"));
         UHD_ASSERT_THROW(my_magnitude_out == actual_magnitude_out);
 
-        _tree->access<std::string>(_root_path / "args" / "otype" / "value")
+        _tree->access<std::string>(_root_path / "args" / 0 / "otype" / "value")
             .subscribe(boost::bind(&fft_block_ctrl_impl::check_otype, this, _1))
             .publish(boost::bind(&fft_block_ctrl_impl::get_otype_from_magout, this))
             .update()

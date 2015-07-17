@@ -50,6 +50,7 @@ const device_addr_t blockdef::port_t::PORT_ARGS(
         "pkt_size=0,"
         "optional=0,"
         "bursty=0,"
+        "port,"
 );
 
 blockdef::port_t::port_t()
@@ -101,15 +102,17 @@ std::string blockdef::port_t::to_string() const
 /****************************************************************************
  * arg_t stuff
  ****************************************************************************/
-const std::vector<std::string> blockdef::arg_t::ARG_ARGS = boost::assign::list_of
+const device_addr_t blockdef::arg_t::ARG_ARGS(
     // List all tags/args an <arg> can have here:
-            ("name")
-            ("type")
-            ("value")
-            ("check")
-            ("check_message")
-            ("action")
-;
+        "name,"
+        "type,"
+        "value,"
+        "check,"
+        "check_message,"
+        "action,"
+        "port=0,"
+);
+
 const std::set<std::string> blockdef::arg_t::VALID_TYPES = boost::assign::list_of
     // List all tags/args a <type> can have here:
             ("string")
@@ -122,15 +125,15 @@ blockdef::arg_t::arg_t()
 {
     // This guarantees that we can access these keys
     // even if they were never initialized:
-    BOOST_FOREACH(const std::string &key, ARG_ARGS) {
-        set(key, "");
+    BOOST_FOREACH(const std::string &key, ARG_ARGS.keys()) {
+        set(key, ARG_ARGS[key]);
     }
 }
 
 bool blockdef::arg_t::is_valid() const
 {
     // 1. Check we have all the keys:
-    BOOST_FOREACH(const std::string &key, ARG_ARGS) {
+    BOOST_FOREACH(const std::string &key, ARG_ARGS.keys()) {
         if (not has_key(key)) {
             return false;
         }
@@ -148,7 +151,7 @@ bool blockdef::arg_t::is_valid() const
 std::string blockdef::arg_t::to_string() const
 {
     std::string result;
-    BOOST_FOREACH(const std::string &key, ARG_ARGS) {
+    BOOST_FOREACH(const std::string &key, ARG_ARGS.keys()) {
         if (has_key(key)) {
             result += str(boost::format("%s=%s,") % key % get(key));
         }
@@ -317,8 +320,8 @@ public:
         BOOST_FOREACH(pt::ptree::value_type &v, _pt.get_child("nocblock.args", def)) {
             arg_t arg;
             if (v.first != "arg") continue;
-            BOOST_FOREACH(const std::string &key, arg_t::ARG_ARGS) {
-                arg[key] = v.second.get(key, "");
+            BOOST_FOREACH(const std::string &key, arg_t::ARG_ARGS.keys()) {
+                arg[key] = v.second.get(key, arg_t::ARG_ARGS[key]);
             }
             if (arg["type"].empty()) {
                 arg["type"] = "string";
