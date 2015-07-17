@@ -645,7 +645,7 @@ void multi_crimson_impl::set_tx_rate(double rate, size_t chan){
     if (_tree->access<int>(tx_rf_fe_root(chan) / "freq" / "band").get() == 1) {
     	cur_lo_freq = _tree->access<double>(tx_rf_fe_root(chan) / "freq" / "value").get();
     }
-    tune_request_t tune_request(cur_lo_freq + (cur_dac_nco * 1e6) + cur_dsp_nco);
+    tune_request_t tune_request(cur_lo_freq + cur_dac_nco + cur_dsp_nco);
     set_tx_freq(tune_request, chan);
 
     boost::format base_message (
@@ -685,12 +685,12 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
     if (*freq > 100000000.0) _tree->access<int>(tx_rf_fe_root(chan) / "freq" / "band").set(1);
     else                     _tree->access<int>(tx_rf_fe_root(chan) / "freq" / "band").set(0);
 
-    // offset it by 15 MHz if sampling rate is low.
+    // offset it by 85 MHz if sampling rate is low.
     double cur_tx_rate = get_tx_rate(chan);
-    if (*freq > 15000000.0 && !(cur_tx_rate > (CRIMSON_MASTER_CLOCK_RATE / 9))) {
-       *freq -= 15000000.0;
+    if (*freq > 85000000.0 && !(cur_tx_rate > (CRIMSON_MASTER_CLOCK_RATE / 9))) {
+       *freq -= 85000000.0;
        offset = true;
-       _tree->access<int>(tx_rf_fe_root(chan) / "nco").set(15);
+       _tree->access<int>(tx_rf_fe_root(chan) / "nco").set(85000000);
     } else {
        _tree->access<int>(tx_rf_fe_root(chan) / "nco").set(0);
     }
@@ -711,7 +711,7 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
 	int set_dsp_nco = *freq;
         _tree->access<int>(tx_dsp_root(chan) / "nco").set(set_dsp_nco);
 
-	result.actual_rf_freq = set_dsp_nco + (cur_dac_nco * 1e6);
+	result.actual_rf_freq = set_dsp_nco + cur_dac_nco;
 
     // use the LO with high band
     } else {
@@ -726,12 +726,12 @@ tune_result_t multi_crimson_impl::set_tx_freq(const tune_request_t &tune_request
 	if (set_dsp_nco < -161000000) set_dsp_nco = -161000000;
         _tree->access<int>(tx_dsp_root(chan) / "nco").set(set_dsp_nco);
 
-	result.actual_rf_freq = cur_lo_freq + set_dsp_nco + (cur_dac_nco * 1e6);
+	result.actual_rf_freq = cur_lo_freq + set_dsp_nco + cur_dac_nco;
     }
 
     // account back for the offset
     if (offset)
-       *freq += 15000000.0;
+       *freq += 85000000.0;
 
     req.dsp_freq = result.actual_rf_freq;
     result.actual_dsp_freq = req.dsp_freq;   // no DSP freq tuning it possible
