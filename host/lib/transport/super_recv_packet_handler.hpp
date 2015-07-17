@@ -560,6 +560,11 @@ private:
                     _props[index].handle_overflow();
                     curr_info.metadata = metadata;
                     UHD_MSG(fastpath) << "O";
+
+                    // Not sending flow control would cause timeouts due to source flow control locking up
+                    if(_props[index].handle_flowctrl) {
+                        _props[index].handle_flowctrl(next_info[index].ifpi.packet_count);
+                    }
                 }
                 return;
 
