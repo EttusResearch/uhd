@@ -828,50 +828,15 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     }
 
     //////////////// RFNOC /////////////////
-    // Here's the plan:
-    // - We cycle through all ports on this mb's xbar
-    //     - For now: Just check ports 5, 6, 7 and add radios manually
-    // - Calculate destination address and create a transport
-    // - Create a block_ctrl and connect it
-    // - Poll readback register 1
-    // - Figure out if there's a better derivative of block_ctrl_base than the standard
-    // - If yes, add that sptr to the list of block controls
-    // - Else, just add the original block_ctrl sptr
-    //
-    //const size_t NUM_CE = 0;
-    const size_t NUM_CE = mb.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_NUM_CE));
-    for (size_t i = 0; i < NUM_CE; i++) {
-        UHD_MSG(status) << "[RFNOC] ------- Block Setup -----------" << std::endl;
-        boost::uint8_t xbar_port = (i & 0xFF) + X300_XB_DST_CE0;
-        uhd::sid_t ctrl_sid(X300_DEVICE_HERE, 0, X300_DEVICE_THERE, xbar_port << 4);
-        both_xports_t xport = this->make_transport(
-            ctrl_sid,
-            CTRL,
-            dev_addr
-        );
-        UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control #%d (SID: %s)...") % i % ctrl_sid.to_pp_string_hex());
-        radio_ctrl_core_3000::sptr ctrl = radio_ctrl_core_3000::make(
-                mb.if_pkt_is_big_endian,
-                xport.recv,
-                xport.send,
-                xport.send_sid,
-                str(boost::format("CE_%02d_Port_%02d") % i % xbar_port)
-        );
-        UHD_MSG(status) << "OK" << std::endl;
-        boost::uint64_t noc_id = ctrl->peek64(0);
-        UHD_MSG(status) << str(boost::format("Port %d: Found NoC-Block with ID %016X.") % int(xbar_port) % noc_id) << std::endl;
-        uhd::rfnoc::make_args_t make_args;
-        make_args.ctrl_ifaces = boost::assign::map_list_of(0, ctrl);
-        make_args.base_address = xport.send_sid.get_dst();
-        make_args.device_index = mb_i;
-        make_args.tree = _tree->subtree(mb_path);
-        make_args.is_big_endian = mb.if_pkt_is_big_endian;
-        _rfnoc_block_ctrl.push_back(block_ctrl_base::make(make_args, noc_id));
-    }
-    UHD_MSG(status) << "========== Full list of RFNoC blocks: ============" << std::endl;
-    BOOST_FOREACH(uhd::rfnoc::block_ctrl_base::sptr this_block, _rfnoc_block_ctrl) {
-        UHD_MSG(status) << "* " << this_block->get_block_id() << std::endl;
-    }
+    const size_t n_rfnoc_blocks = mb.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_NUM_CE));
+    enumerate_rfnoc_blocks(
+        mb_i,
+        n_rfnoc_blocks,
+        X300_XB_DST_CE0, /* base port */
+        uhd::sid_t(X300_DEVICE_HERE, 0, X300_DEVICE_THERE, 0),
+        dev_addr,
+        mb.if_pkt_is_big_endian ? ENDIANNESS_BIG : ENDIANNESS_LITTLE
+    );
     //////////////// RFNOC /////////////////
     mb.initialization_done = true;
 }

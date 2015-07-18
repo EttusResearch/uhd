@@ -590,49 +590,15 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     boost::this_thread::sleep(boost::posix_time::seconds(1));
 
     //////////////// RFNOC /////////////////
-    // Here's the plan:
-    // - We cycle through all ports on this mb's xbar
-    //     - For now: Just check ports 5, 6, 7 and add radios manually
-    // - Calculate destination address and create a transport
-    // - Create a block_ctrl and connect it
-    // - Poll readback register 1
-    // - Figure out if there's a better derivative of block_ctrl_base than the standard
-    // - If yes, add that sptr to the list of block controls
-    // - Else, just add the original block_ctrl sptr
-    //
-    //const size_t NUM_CE = 0;
-    size_t NUM_CE = _global_regs->peek32(global_regs::RB32_CORE_NUM_CE);
-    UHD_VAR(NUM_CE);
-    for (size_t i = 0; i < NUM_CE; i++) {
-        boost::uint8_t xbar_port = (i & 0xff) + E300_XB_DST_R0 + _num_radios;
-        uhd::sid_t ctrl_sid(E300_DEVICE_HERE, 0, E300_DEVICE_THERE, xbar_port << 4);
-        both_xports_t xport = make_transport(
-            ctrl_sid,
-            CTRL,
-            device_addr_t());
-        UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control #%d (SID: %s)...") % i % xport.send_sid.to_pp_string());
-        radio_ctrl_core_3000::sptr ctrl = radio_ctrl_core_3000::make(
-            false, /* lilE */
-            xport.send,
-            xport.recv,
-            xport.send_sid,
-            str(boost::format("CE_%02d_Port_%02d") % i % xbar_port)
-        );
-        UHD_MSG(status) << "OK" << std::endl;
-        boost::uint64_t noc_id = ctrl->peek64(0);
-        UHD_MSG(status) << str(boost::format("Port %d: Found NoC-Block with ID %016X.") % int(xbar_port) % noc_id) << std::endl;
-        uhd::rfnoc::make_args_t make_args;
-        make_args.ctrl_iface = ctrl;
-        make_args.ctrl_sid = xport.send_sid;
-        make_args.device_index = 0;
-        make_args.tree = _tree->subtree(mb_path);
-        make_args.is_big_endian = false, /* lilE */
-        _rfnoc_block_ctrl.push_back(uhd::rfnoc::block_ctrl_base::make(make_args, noc_id));
-    }
-    UHD_MSG(status) << "========== Full list of RFNoC blocks: ============" << std::endl;
-    BOOST_FOREACH(uhd::rfnoc::block_ctrl_base::sptr this_block, _rfnoc_block_ctrl) {
-        UHD_MSG(status) << "* " << this_block->get_block_id() << std::endl;
-    }
+    const size_t n_rfnoc_blocks = _global_regs->peek32(global_regs::RB32_CORE_NUM_CE);
+    enumerate_rfnoc_blocks(
+        0, /* mboard index */
+        n_rfnoc_blocks,
+        E300_XB_DST_R0 + _num_radios, /* base port, rfnoc blocks come after the radios */
+        uhd::sid_t(E300_DEVICE_HERE, 0, E300_DEVICE_THERE, 0),
+        device_addr_t(),
+        ENDIANNESS_LITTLE
+    );
     //////////////// RFNOC /////////////////
 
     this->_update_enables();

@@ -229,6 +229,15 @@ protected:
     /***********************************************************************
      * RFNoC-Specific
      **********************************************************************/
+    void enumerate_rfnoc_blocks(
+            size_t device_index,
+            size_t n_blocks,
+            size_t base_port,
+            const uhd::sid_t &base_sid,
+            uhd::device_addr_t transport_args,
+            uhd::endianness_t endianness
+    );
+
     void init_radio_ctrl(
             const radio_v_perifs_t &perifs,
             const uhd::sid_t &address,

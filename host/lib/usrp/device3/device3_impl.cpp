@@ -15,8 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils/msg.hpp>
 #include "device3_impl.hpp"
+#include <uhd/utils/msg.hpp>
+#include <uhd/usrp/rfnoc/block_ctrl_base.hpp>
 #include <algorithm>
 
 using namespace uhd::usrp;
@@ -86,6 +87,57 @@ void device3_impl::merge_channel_defs(
 /***********************************************************************
  * RFNoC-Specific
  **********************************************************************/
+void device3_impl::enumerate_rfnoc_blocks(
+        size_t device_index,
+        size_t n_blocks,
+        size_t base_port,
+        const uhd::sid_t &base_sid,
+        uhd::device_addr_t transport_args,
+        uhd::endianness_t endianness
+) {
+    // entries that are already connected to this block
+    uhd::sid_t ctrl_sid = base_sid;
+    uhd::property_tree subtree = _tree->subtree(uhd::fs_path("/mboards") / device_index);
+    // 1) Clean property tree entries
+    if (subtree->exists("xbar")) {
+        subtree->remove("xbar");
+    }
+    // 2) Destroy existing block controllers
+    // TODO: Clear out all the old block control classes and property tree
+    // 3) Create new block controllers
+    for (size_t i = 0; i < n_blocks; i++) {
+        UHD_MSG(status) << "[RFNOC] ------- Block Setup -----------" << std::endl;
+        ctrl_sid.set_dst_xbarport(base_port + i);
+        both_xports_t xport = this->make_transport(
+            ctrl_sid,
+            CTRL,
+            transport_args
+        );
+        UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control #%d (SID: %s)...") % i % ctrl_sid.to_pp_string_hex());
+        radio_ctrl_core_3000::sptr ctrl = radio_ctrl_core_3000::make(
+                endianness == ENDIANNESS_BIG,
+                xport.recv,
+                xport.send,
+                xport.send_sid,
+                str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint())
+        );
+        UHD_MSG(status) << "OK" << std::endl;
+        uint64_t noc_id = ctrl->peek64(uhd::rfnoc::SR_READBACK_REG_ID);
+        UHD_MSG(status) << str(boost::format("Port %d: Found NoC-Block with ID %016X.") % int(ctrl_sid.get_dst_endpoint()) % noc_id) << std::endl;
+        uhd::rfnoc::make_args_t make_args;
+        make_args.ctrl_ifaces = boost::assign::map_list_of(0, ctrl);
+        make_args.base_address = xport.send_sid.get_dst();
+        make_args.device_index = device_index;
+        make_args.tree = subtree;
+        make_args.is_big_endian = (endianness == ENDIANNESS_BIG);
+        _rfnoc_block_ctrl.push_back(uhd::rfnoc::block_ctrl_base::make(make_args, noc_id));
+    }
+    UHD_MSG(status) << "========== Full list of RFNoC blocks: ============" << std::endl;
+    BOOST_FOREACH(uhd::rfnoc::block_ctrl_base::sptr this_block, _rfnoc_block_ctrl) {
+        UHD_MSG(status) << "* " << this_block->get_block_id() << std::endl;
+    }
+}
+
 void device3_impl::init_radio_ctrl(
         const radio_v_perifs_t &perif,
         const uhd::sid_t &base_address,
