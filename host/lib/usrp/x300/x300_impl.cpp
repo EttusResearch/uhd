@@ -604,10 +604,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     }
 
     ////////////////////////////////////////////////////////////////////
-    // create clock control objects
+    // read hardware revision and compatibility number
     ////////////////////////////////////////////////////////////////////
-    UHD_MSG(status) << "Setup RF frontend clocking..." << std::endl;
-
     mb.hw_rev = 0;
     if(mb_eeprom.has_key("revision") and not mb_eeprom["revision"].empty()) {
         try {
@@ -624,16 +622,33 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         mb.hw_rev = X300_REV("D");
     }
 
-    if (mb.hw_rev > X300_MAX_HW_REV) {
-        throw uhd::runtime_error(str(
-                boost::format("Unsupported board revision number: %d.\n"
-                              "The maximum board revision number supported in this version is %d.\n"
-                              "Please update your UHD version.")
-                % mb.hw_rev % X300_MAX_HW_REV
-        ));
+    if (mb_eeprom.has_key("revision_compat") and not mb_eeprom["revision_compat"].empty()) {
+        size_t hw_rev_compat = 0;
+        try {
+            hw_rev_compat = boost::lexical_cast<size_t>(mb_eeprom["revision_compat"]);
+        } catch(...) {
+            UHD_MSG(warning) << "Revision compat in EEPROM is invalid! Please reprogram your EEPROM." << std::endl;
+        }
+
+        if (hw_rev_compat > X300_REVISION_COMPAT) {
+            throw uhd::runtime_error(str(boost::format(
+                "Hardware is too new for this software. Please upgrade to a UHD/NI-USRP that supports hardware revision %d.")
+                % mb.hw_rev));
+        } else if (hw_rev_compat < X300_REVISION_COMPAT) {
+            throw uhd::runtime_error(str(boost::format(
+                "Hardware is too new for this software. Please downgrade to a UHD/NI-USRP that supports hardware revision %d.")
+                % mb.hw_rev));
+        }
+    } else if (mb.hw_rev >= 7) {    //Revision compat was added with revision 7
+        UHD_MSG(warning) << "No revision compat detected MB EEPROM must be reprogrammed!" << std::endl;
     }
 
-    //Create clock control. NOTE: This does not configure the LMK yet.
+    ////////////////////////////////////////////////////////////////////
+    // create clock control objects
+    ////////////////////////////////////////////////////////////////////
+    UHD_MSG(status) << "Setup RF frontend clocking..." << std::endl;
+
+    //Initialize clock control registers. NOTE: This does not configure the LMK yet.
     initialize_clock_control(mb);
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
