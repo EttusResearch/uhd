@@ -558,6 +558,13 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         .set(mb_eeprom)
         .subscribe(boost::bind(&x300_impl::set_mb_eeprom, this, mb.zpu_i2c, _1));
 
+    bool recover_mb_eeprom = dev_addr.has_key("recover_mb_eeprom");
+    if (recover_mb_eeprom) {
+        UHD_MSG(warning) << "UHD is operating in EEPROM Recovery Mode which disables hardware version "
+                            "checks. Operating in this mode may cause hardware damage and unstable "
+                            "radio performance!"<< std::endl;
+    }
+
     ////////////////////////////////////////////////////////////////////
     // parse the product number
     ////////////////////////////////////////////////////////////////////
@@ -570,9 +577,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             product_name = "X310";
             break;
         default:
-            throw uhd::runtime_error("Unrecognized product type. \n"
-                                     "Either the software does not support this device or it is too old for the hardware.\n"
-                                     "Please update your UHD/NI-USRP version and retry.");
+            if (not recover_mb_eeprom)
+                throw uhd::runtime_error("Unrecognized product type.\n"
+                                         "Either the software does not support this device in which case please update UHD/NI-USRP to the latest version and retry OR\n"
+                                         "The product code in the EEPROM is corrupt and may require reprogramming.");
     }
     _tree->create<std::string>(mb_path / "name").set(product_name);
     _tree->create<std::string>(mb_path / "codename").set("Yetti");
@@ -611,15 +619,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         try {
             mb.hw_rev = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
         } catch(...) {
-            UHD_MSG(warning) << "Revision in EEPROM is invalid! Please reprogram your EEPROM." << std::endl;
+            if (not recover_mb_eeprom)
+                throw uhd::runtime_error("Revision in EEPROM is invalid! Please reprogram your EEPROM.");
         }
     } else {
-        UHD_MSG(warning) << "No revision detected MB EEPROM must be reprogrammed!" << std::endl;
-    }
-
-    if(mb.hw_rev == 0) {
-        UHD_MSG(warning) << "Defaulting to X300 RevD Clock Settings. This will result in non-optimal lock times." << std::endl;
-        mb.hw_rev = X300_REV("D");
+        if (not recover_mb_eeprom)
+            throw uhd::runtime_error("No revision detected MB EEPROM must be reprogrammed!");
     }
 
     if (mb_eeprom.has_key("revision_compat") and not mb_eeprom["revision_compat"].empty()) {
@@ -627,7 +632,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         try {
             hw_rev_compat = boost::lexical_cast<size_t>(mb_eeprom["revision_compat"]);
         } catch(...) {
-            UHD_MSG(warning) << "Revision compat in EEPROM is invalid! Please reprogram your EEPROM." << std::endl;
+            if (not recover_mb_eeprom)
+                throw uhd::runtime_error("Revision compat in EEPROM is invalid! Please reprogram your EEPROM.");
         }
 
         if (hw_rev_compat > X300_REVISION_COMPAT) {
@@ -636,11 +642,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 % mb.hw_rev));
         } else if (hw_rev_compat < X300_REVISION_COMPAT) {
             throw uhd::runtime_error(str(boost::format(
-                "Hardware is too new for this software. Please downgrade to a UHD/NI-USRP that supports hardware revision %d.")
+                "Software is too new for this hardware. Please downgrade to a UHD/NI-USRP that supports hardware revision %d.")
                 % mb.hw_rev));
         }
     } else if (mb.hw_rev >= 7) {    //Revision compat was added with revision 7
-        UHD_MSG(warning) << "No revision compat detected MB EEPROM must be reprogrammed!" << std::endl;
+        if (not recover_mb_eeprom)
+            throw uhd::runtime_error("No revision compat detected MB EEPROM must be reprogrammed!");
     }
 
     ////////////////////////////////////////////////////////////////////
