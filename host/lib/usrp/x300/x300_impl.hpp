@@ -410,6 +410,8 @@ private:
     double self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay = false);
     void self_test_adcs(mboard_members_t& mb, boost::uint32_t ramp_time_ms = 100);
 
+    void extended_adc_test(mboard_members_t& mb, double duration_s);
+
     //**PRECONDITION**
     //This function assumes that all the VITA times in "radios" are synchronized
     //to a common reference. Currently, this function is called in get_tx_stream

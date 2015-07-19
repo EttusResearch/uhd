@@ -37,6 +37,7 @@
 #include <uhd/transport/nirio_zero_copy.hpp>
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/utils/platform.hpp>
+#include <boost/date_time/posix_time/posix_time_io.hpp>
 
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
 
@@ -729,7 +730,11 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     if (dev_addr.has_key("self_cal_adc_delay")) {
         self_cal_adc_xfer_delay(mb, true /* Apply ADC delay */);
     }
-    self_test_adcs(mb);
+    if (dev_addr.has_key("ext_adc_self_test")) {
+        extended_adc_test(mb, dev_addr.cast<double>("ext_adc_self_test", 30));
+    } else {
+        self_test_adcs(mb);
+    }
 
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
@@ -2134,20 +2139,72 @@ void x300_impl::self_test_adcs(mboard_members_t& mb, boost::uint32_t ramp_time_m
         perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
     }
     boost::this_thread::sleep(boost::posix_time::milliseconds(ramp_time_ms));
+
+    bool passed = true;
+    std::string status_str;
     for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
         radio_perifs_t &perif = mb.radio_perifs[r];
+        perif.misc_ins->refresh();
 
-        if (!perif.misc_ins->read(radio_misc_ins_reg::ADC_CHECKER1_I_LOCKED) ||
-            perif.misc_ins->read(radio_misc_ins_reg::ADC_CHECKER1_I_ERROR) ||
-            !perif.misc_ins->read(radio_misc_ins_reg::ADC_CHECKER1_Q_LOCKED) ||
-            perif.misc_ins->read(radio_misc_ins_reg::ADC_CHECKER1_Q_ERROR))
-        {
-            throw uhd::runtime_error(
-                (boost::format("ADC self-test failed for Radio%d. (Ramp checker failure)")%r).str());
-        }
+        std::string i_status, q_status;
+        if (perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER1_I_LOCKED))
+            if (perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER1_I_ERROR))
+                i_status = "Bit Errors!";
+            else
+                i_status = "Good";
+        else
+            i_status = "Not Locked!";
+
+        if (perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER1_Q_LOCKED))
+            if (perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER1_Q_ERROR))
+                q_status = "Bit Errors!";
+            else
+                q_status = "Good";
+        else
+            q_status = "Not Locked!";
+
+        passed &= (i_status == "Good") && (q_status == "Good");
+        status_str += (boost::format(", ADC%d_I=%s, ADC%d_Q=%s")%r%i_status%r%q_status).str();
 
         //Return to normal mode
         perif.adc->set_test_word("normal", "normal");
     }
+
+    if (not passed) {
+        throw uhd::runtime_error(
+            (boost::format("ADC self-test failed! Ramp checker status: {%s}")%status_str.substr(2)).str());
+    }
 }
 
+void x300_impl::extended_adc_test(mboard_members_t& mb, double duration_s)
+{
+    static const size_t SECS_PER_ITER = 5;
+    UHD_MSG(status) << boost::format("Running Extended ADC Self-Test (Duration=%.0fs, %ds/iteration)...\n")
+        % duration_s % SECS_PER_ITER;
+
+    size_t num_iters = static_cast<size_t>(ceil(duration_s/SECS_PER_ITER));
+    size_t num_failures = 0;
+    for (size_t iter = 0; iter < num_iters; iter++) {
+        //Print date and time
+        boost::posix_time::time_facet *facet = new boost::posix_time::time_facet("%d-%b-%Y %H:%M:%S");
+        std::ostringstream time_strm;
+        time_strm.imbue(std::locale(std::locale::classic(), facet));
+        time_strm << boost::posix_time::second_clock::local_time();
+        //Run self-test
+        UHD_MSG(status) << boost::format("-- [%s] Iteration %06d... ") % time_strm.str() % (iter+1);
+        try {
+            self_test_adcs(mb, SECS_PER_ITER*1000);
+            UHD_MSG(status) << "done" << std::endl;
+        } catch(std::exception &e) {
+            num_failures++;
+            UHD_MSG(status) << e.what() << std::endl;
+        }
+
+    }
+    if (num_failures == 0) {
+        UHD_MSG(status) << "Extended ADC Self-Test PASSED\n";
+    } else {
+        throw uhd::runtime_error(
+                (boost::format("Extended ADC FAILED!!! (%d/%d failures)\n") % num_failures % num_iters).str());
+    }
+}
