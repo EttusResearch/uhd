@@ -92,8 +92,8 @@ The same applies for an external signal.
 
 \subsection available_sensors Available Sensors
 
-The following sensors are available on both the OctoClock and Octoclock-G; these can be queried through the
-<a href="classuhd_1_1octoclock.html">API</a>.
+The following sensors are available on both the OctoClock and Octoclock-G;
+these can be queried through the API (see uhd::usrp_clock::multi_usrp_clock::get_sensor()).
 
 - `ext_ref_detected:` whether or not the device detects an external reference
 - `gps_detected:` whether or not the device detects an internal GPSDO
