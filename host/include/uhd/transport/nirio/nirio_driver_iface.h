@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
     #pragma warning(disable:4201)  // nonstandard extension used : nameless struct/union
         #include <WinIoCtl.h>
     #pragma warning(default:4201)
-#elif !defined(UHD_PLATFORM_LINUX)
+#elif defined(UHD_PLATFORM_MACOS)
     #include <IOKit/IOKitLib.h>
 #endif
 
@@ -81,8 +81,10 @@ const uint32_t NIRIO_IOCTL_PRE_CLOSE =
     typedef int rio_dev_handle_t;
 #elif defined(UHD_PLATFORM_WIN32)
     typedef HANDLE rio_dev_handle_t;
-#else
+#elif defined(UHD_PLATFORM_MACOS)
     typedef io_connect_t rio_dev_handle_t;
+#else //Unsupported platforms
+    typedef int rio_dev_handle_t;
 #endif
 static const rio_dev_handle_t INVALID_RIO_HANDLE = ((rio_dev_handle_t)-1);
 
