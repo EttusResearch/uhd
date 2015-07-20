@@ -299,6 +299,8 @@ public:
 
     ports_t _get_ports(const std::string &port_type)
     {
+        std::set<size_t> port_numbers;
+        size_t n_ports = 0;
         ports_t ports;
         BOOST_FOREACH(pt::ptree::value_type &v, _pt.get_child("nocblock.ports")) {
             if (v.first != port_type) continue;
@@ -307,10 +309,44 @@ public:
             BOOST_FOREACH(const std::string &key, port_t::PORT_ARGS.keys()) {
                 port[key] = v.second.get(key, port_t::PORT_ARGS[key]);
             }
+            // We have to be extra-careful with the port numbers:
+            if (port["port"].empty()) {
+                port["port"] = boost::lexical_cast<std::string>(n_ports);
+            }
+            size_t new_port_number;
+            try {
+                new_port_number = boost::lexical_cast<size_t>(port["port"]);
+            } catch (const boost::bad_lexical_cast &e) {
+                throw uhd::value_error(str(
+                        boost::format("Invalid port number '%s' on port '%s'")
+                        % port["port"] % port["name"]
+                ));
+            }
+            if (port_numbers.count(new_port_number) or new_port_number > MAX_NUM_PORTS) {
+                throw uhd::value_error(str(
+                        boost::format("Port '%s' has invalid port number %d!")
+                        % port["name"] % new_port_number
+                ));
+            }
+            port_numbers.insert(new_port_number);
+            n_ports++;
             ports.push_back(port);
         }
         return ports;
     }
+
+    std::vector<size_t> get_all_port_numbers()
+    {
+        std::set<size_t> set_ports;
+        BOOST_FOREACH(const port_t &port, get_input_ports()) {
+            set_ports.insert(boost::lexical_cast<size_t>(port["port"]));
+        }
+        BOOST_FOREACH(const port_t &port, get_output_ports()) {
+            set_ports.insert(boost::lexical_cast<size_t>(port["port"]));
+        }
+        return std::vector<size_t>(set_ports.begin(), set_ports.end());
+    }
+
 
     blockdef::args_t get_args()
     {

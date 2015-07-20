@@ -82,6 +82,7 @@ static const uhd::dict<std::string, boost::uint32_t> DEFAULT_NAMED_SR = boost::a
 
 // Block ports
 static const size_t ANY_PORT = size_t(~0);
+static const size_t MAX_NUM_PORTS = 16;
 
 // Regular expressions
 static const std::string VALID_BLOCKNAME_REGEX = "[A-Za-z][A-Za-z0-9]*";

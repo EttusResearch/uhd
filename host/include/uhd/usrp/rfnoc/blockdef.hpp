@@ -105,6 +105,9 @@ public:
     virtual ports_t get_input_ports() = 0;
     virtual ports_t get_output_ports() = 0;
 
+    //! Returns the full list of port numbers used
+    virtual std::vector<size_t> get_all_port_numbers() = 0;
+
     //! Returns the args for this block. Checks if args are valid.
     //
     // \throws uhd::runtime_error if args are invalid.

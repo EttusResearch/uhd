@@ -14,10 +14,12 @@
     <sink>
       <name>in0</name>
       <type>sc16</type>
+      <port>0</port>
     </sink>
     <sink>
       <name>in1</name>
       <type>sc16</type>
+      <port>1</port>
     </sink>
     <source>
       <name>sum</name>

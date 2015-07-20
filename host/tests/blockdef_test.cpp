@@ -63,6 +63,9 @@ BOOST_AUTO_TEST_CASE(test_ports) {
     BOOST_CHECK_EQUAL(out_ports[0]["name"], "out");
     BOOST_CHECK(out_ports[0].has_key("vlen"));
     BOOST_CHECK(out_ports[0].has_key("pkt_size"));
+
+    BOOST_CHECK_EQUAL(block_definition->get_all_port_numbers().size(), 1);
+    BOOST_CHECK_EQUAL(block_definition->get_all_port_numbers()[0], 0);
 }
 
 BOOST_AUTO_TEST_CASE(test_args) {
