@@ -32,7 +32,7 @@
     #ifdef _MSC_VER
         #pragma warning(default:4201)
     #endif
-#elif !defined(UHD_PLATFORM_LINUX)
+#elif defined(UHD_PLATFORM_MACOS)
     #include <IOKit/IOKitLib.h>
 #endif
 
@@ -85,8 +85,10 @@ const uint32_t NIRIO_IOCTL_PRE_CLOSE =
     typedef int rio_dev_handle_t;
 #elif defined(UHD_PLATFORM_WIN32)
     typedef HANDLE rio_dev_handle_t;
-#else
+#elif defined(UHD_PLATFORM_MACOS)
     typedef io_connect_t rio_dev_handle_t;
+#else
+    typedef int rio_dev_handle_t;
 #endif
 static const rio_dev_handle_t INVALID_RIO_HANDLE = ((rio_dev_handle_t)-1);
 
