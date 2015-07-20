@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 #define X300_REVISION_COMPAT 7
+#define X300_REVISION_MIN    2
 #define X300_FW_COMPAT_MAJOR 4
 #define X300_FW_COMPAT_MINOR 0
 #define X300_FPGA_COMPAT_MAJOR 11
