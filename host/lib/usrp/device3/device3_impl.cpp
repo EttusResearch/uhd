@@ -97,13 +97,13 @@ void device3_impl::enumerate_rfnoc_blocks(
 ) {
     // entries that are already connected to this block
     uhd::sid_t ctrl_sid = base_sid;
-    uhd::property_tree subtree = _tree->subtree(uhd::fs_path("/mboards") / device_index);
+    uhd::property_tree::sptr subtree = _tree->subtree(uhd::fs_path("/mboards") / device_index);
     // 1) Clean property tree entries
     if (subtree->exists("xbar")) {
         subtree->remove("xbar");
     }
     // 2) Destroy existing block controllers
-    // TODO: Clear out all the old block control classes and property tree
+    // TODO: Clear out all the old block control classes
     // 3) Create new block controllers
     for (size_t i = 0; i < n_blocks; i++) {
         UHD_MSG(status) << "[RFNOC] ------- Block Setup -----------" << std::endl;
