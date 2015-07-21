@@ -334,6 +334,10 @@ It is possible to put the device into an unusable state by loading bad images ("
 Fortunately, the USRP-X Series device can be loaded with a good image temporarily using the USB-JTAG interface.
 Once booted into the safe image, the user can once again load images onto the device over Ethernet or PCI Express.
 
+See Section \ref x3x0_load_fpga_imgs_jtag on how to load the FPGA image onto the device using a JTAG interface.
+After running the JTAG process, a new image can be flashed onto the device using the usual procedure
+to permently recover the device.
+
 \section x3x0_setup_network Setup Networking
 The USRP-X Series only supports Gigabit and Ten Gigabit Ethernet and will not work with a 10/100 Mbps interface.
 
