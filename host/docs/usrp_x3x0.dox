@@ -584,6 +584,10 @@ Please see \ref page_gpsdo_x3x0 for information on configuring and using the int
 
 \image html x3x0_gpio_conn.png "X3x0 GPIO Connector"
 
+The GPIO port is not meant to drive big loads. You should not try to source more than 5mA per pin.
+
+The +3.3V is for ESD clamping purposes only and not designed to deliver high currents.
+
 ### Pin Mapping
 
 - Pin 1:  +3.3V
