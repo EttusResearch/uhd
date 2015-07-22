@@ -283,6 +283,7 @@ It's behavior is firmware version dependent.
     + 1 - Low voltage error
     + 2 - Regulator low voltage error
     + 3 - FPGA power error
+    + 4 - DRAM power error
     + 5 - 1.8V rail power error
     + 6 - 3.3V rail power error
     + 7 - Daughterboard / TX power error
@@ -745,6 +746,16 @@ by pinging the USRP and making sure the LEDs start to blink.
   -# How do I enable X forwarding so I can run X apps on the E3x0?<br>
      In the file `/etc/ssh/sshd_config`, uncomment the line \#`X11Forwarding no`
      and change "no" to "yes".
+
+ - Firmware
+  -# With Firmware 2.0 the device no longer turns on when AC power is plugged.<br>
+     This setting can be adjusted via `/sys/devices/axi_pmu.3/autoboot`.
+
+     Using `$ echo 1 > /sys/devices/axi_pmu.3/autoboot` autoboot is turned on.
+
+     Using `$ echo 0 > /sys/devices/axi_pmu.3/autoboot` autoboot is turned off.
+
+     Note that the path above is subject to change depending on device tree changes.
 
 \section e3x0_apps Applications
 
