@@ -39,17 +39,18 @@ MMCU = attiny88
 PROGRAMMER = jtag3isp
 PORT = usb
 AVRDUDE = avrdude -p $(MMCU) -c $(PROGRAMMER) -P $(PORT) -V
+FUSES = -U hfuse:w:hfuse.hex:i -U lfuse:w:lfuse.hex:i -U efuse:w:efuse.hex:i -u
 
 ##################################################
 # Global Targets
 ##################################################
-all: $(TARGET).hex size
+all: $(TARGET).hex size hfuse.hex lfuse.hex efuse.hex
 
 clean:
 	$(RM) *.o *.elf *.hex
 
 install: all
-	$(AVRDUDE) -U flash:w:$(TARGET).hex:i
+	$(AVRDUDE) -U flash:w:$(TARGET).hex:i $(FUSES)
 
 size: $(TARGET).hex
 	@$(SIZE) --format=SysV --mcu=$(MMCU) $(TARGET).elf
@@ -66,6 +67,9 @@ lfuse.hex: fuses.hex
 
 hfuse.hex: fuses.hex
 	$(SREC) $< -Intel -crop 0x01 0x02 -offset -0x01 -O $@ -Intel
+
+efuse.hex: fuses.hex
+	$(SREC) $< -Intel -crop 0x02 0x03 -offset -0x02 -O $@ -Intel
 
 $(TARGET).hex: $(TARGET).elf
 	$(OBJCOPY) -R .eeprom -R .fuse -O ihex $< $@
