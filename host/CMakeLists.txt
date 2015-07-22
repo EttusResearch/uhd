@@ -167,22 +167,6 @@ IF(MSVC)
     ADD_DEFINITIONS(/bigobj) #Increases the number of addressable sections in an .obj file.
 ENDIF(MSVC)
 
-IF(MINGW)
-    #Avoid depending on MinGW runtime DLLs
-    CHECK_CXX_COMPILER_FLAG(-static-libgcc HAVE_STATIC_LIBGCC_FLAG)
-    IF(HAVE_STATIC_LIBGCC_FLAG)
-        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc")
-        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc")
-        SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static-libgcc")
-    ENDIF()
-    CHECK_CXX_COMPILER_FLAG(-static-libstdc++ HAVE_STATIC_LIBSTDCXX_FLAG)
-    IF(HAVE_STATIC_LIBSTDCXX_FLAG)
-        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++")
-        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libstdc++")
-        SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static-libstdc++")
-    ENDIF()
-ENDIF()
-
 IF(CYGWIN)
     ADD_DEFINITIONS(-D__USE_W32_SOCKETS) #boost asio says we need this
 ENDIF(CYGWIN)
