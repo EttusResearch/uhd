@@ -871,13 +871,11 @@ x300_impl::~x300_impl(void)
     {
         BOOST_FOREACH(mboard_members_t &mb, _mb)
         {
-            //disable/reset ADC/DAC
+            //Disable/reset ADC/DAC
             mb.radio_perifs[0].misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
             mb.radio_perifs[0].misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
             mb.radio_perifs[0].misc_outs->set(radio_misc_outs_reg::DAC_ENABLED, 0);
             mb.radio_perifs[0].misc_outs->flush();
-            mb.radio_perifs[1].misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
-            mb.radio_perifs[1].misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
             mb.radio_perifs[1].misc_outs->set(radio_misc_outs_reg::DAC_ENABLED, 0);
             mb.radio_perifs[1].misc_outs->flush();
 
@@ -922,14 +920,16 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     perif.misc_outs->initialize(*perif.ctrl, true);
     perif.misc_ins->initialize(*perif.ctrl);
 
-    //reset adc + dac
-    perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
-    perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
-    perif.misc_outs->flush();
-    perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 0);
-    perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 1);
-    perif.misc_outs->set(radio_misc_outs_reg::DAC_ENABLED, 1);
-    perif.misc_outs->flush();
+    //Only Radio0 has the ADC/DAC reset bits. Those bits are reserved for Radio1
+    if (radio_index == 0) {
+        perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
+        perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
+        perif.misc_outs->flush();
+        perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 0);
+        perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 1);
+        perif.misc_outs->flush();
+    }
+    perif.misc_outs->write(radio_misc_outs_reg::DAC_ENABLED, 1);
 
     this->register_loopback_self_test(perif.ctrl);
 
