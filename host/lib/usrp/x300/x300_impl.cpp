@@ -935,6 +935,12 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     perif.adc = x300_adc_ctrl::make(perif.spi, DB_ADC_SEN);
     perif.dac = x300_dac_ctrl::make(perif.spi, DB_DAC_SEN, mb.clock->get_master_clock_rate());
     perif.leds = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_LEDS));
+    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, TOREG(SR_RX_FRONT));
+    perif.rx_fe->set_dc_offset(rx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
+    perif.rx_fe->set_dc_offset_auto(rx_frontend_core_200::DEFAULT_DC_OFFSET_ENABLE);
+    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, TOREG(SR_TX_FRONT));
+    perif.tx_fe->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
+    perif.tx_fe->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
 
     //Capture delays are calibrated every time. The status is only printed is the user
     //asks to run the xfer self cal using "self_cal_adc_delay"
@@ -960,26 +966,8 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     ////////////////////////////////////////////////////////////////////
     // front end corrections
     ////////////////////////////////////////////////////////////////////
-    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, TOREG(SR_RX_FRONT));
-    const fs_path rx_fe_path = mb_path / "rx_frontends" / slot_name;
-    _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
-        .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, perif.rx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
-    _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
-        .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, perif.rx_fe, _1))
-        .set(true);
-    _tree->create<std::complex<double> >(rx_fe_path / "iq_balance" / "value")
-        .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, perif.rx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
-
-    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, TOREG(SR_TX_FRONT));
-    const fs_path tx_fe_path = mb_path / "tx_frontends" / slot_name;
-    _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
-        .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, perif.tx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
-    _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
-        .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, perif.tx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
+    perif.rx_fe->populate_subtree(_tree->subtree(mb_path / "rx_frontends" / slot_name));
+    perif.tx_fe->populate_subtree(_tree->subtree(mb_path / "tx_frontends" / slot_name));
 
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects

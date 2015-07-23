@@ -20,6 +20,7 @@
 #include <uhd/exception.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/bind.hpp>
 
 using namespace uhd;
 
@@ -28,6 +29,9 @@ using namespace uhd;
 #define REG_TX_FE_MAG_CORRECTION      _base + 8 //18 bits
 #define REG_TX_FE_PHASE_CORRECTION    _base + 12 //18 bits
 #define REG_TX_FE_MUX                 _base + 16 //8 bits (std output = 0x10, reversed = 0x01)
+
+const std::complex<double> tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE = std::complex<double>(0.0, 0.0);
+const std::complex<double> tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE = std::complex<double>(0.0, 0.0);
 
 static boost::uint32_t fs_to_bits(const double num, const size_t bits){
     return boost::int32_t(boost::math::round(num * (1 << (bits-1))));
@@ -69,6 +73,18 @@ public:
     void set_iq_balance(const std::complex<double> &cor){
         _iface->poke32(REG_TX_FE_MAG_CORRECTION, fs_to_bits(cor.real(), 18));
         _iface->poke32(REG_TX_FE_PHASE_CORRECTION, fs_to_bits(cor.imag(), 18));
+    }
+
+    void populate_subtree(uhd::property_tree::sptr subtree)
+    {
+        subtree->create< std::complex<double> >("dc_offset/value")
+            .set(DEFAULT_DC_OFFSET_VALUE)
+            .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, this, _1))
+        ;
+        subtree->create< std::complex<double> >("iq_balance/value")
+            .set(DEFAULT_IQ_BALANCE_VALUE)
+            .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, this, _1))
+        ;
     }
 
 private:

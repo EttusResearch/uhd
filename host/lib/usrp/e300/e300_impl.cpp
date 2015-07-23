@@ -982,28 +982,8 @@ void e300_impl::_setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // front end corrections
     ////////////////////////////////////////////////////////////////////
-    const fs_path rx_fe_path = mb_path / "rx_frontends" / slot_name;
-    _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
-        .set(std::complex<double>(0.0, 0.0))
-        .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, perif.rx_fe, _1))
-    ;
-    _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
-        .set(true)
-        .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, perif.rx_fe, _1))
-    ;
-    _tree->create<std::complex<double> >(rx_fe_path / "iq_balance" / "value")
-        .set(std::complex<double>(0.0, 0.0))
-        .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, perif.rx_fe, _1))
-    ;
-    const fs_path tx_fe_path = mb_path / "tx_frontends" / slot_name;
-    _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
-        .set(std::complex<double>(0.0, 0.0))
-        .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, perif.tx_fe, _1))
-    ;
-    _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
-        .set(std::complex<double>(0.0, 0.0))
-        .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, perif.tx_fe, _1))
-    ;
+    perif.rx_fe->populate_subtree(_tree->subtree(mb_path / "rx_frontends" / slot_name));
+    perif.tx_fe->populate_subtree(_tree->subtree(mb_path / "tx_frontends" / slot_name));
 
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
