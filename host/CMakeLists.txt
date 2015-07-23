@@ -164,6 +164,7 @@ IF(MSVC)
         -D_CRT_NONSTDC_NO_DEPRECATE
     )
     ADD_DEFINITIONS(/MP) #multi-threaded build
+    ADD_DEFINITIONS(/bigobj) #Increases the number of addressable sections in an .obj file.
 ENDIF(MSVC)
 
 IF(MINGW)
