@@ -965,8 +965,6 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
 
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
         .subscribe(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
-    _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
 
     ////////////////////////////////////////////////////////////////
     // create codec control objects
@@ -989,10 +987,6 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     ////////////////////////////////////////////////////////////////////
     // connect rx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
-        .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
-
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / str(boost::format("%u") % radio_index);
     perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
     _tree->access<double>(rx_dsp_path / "rate" / "value")
@@ -1004,9 +998,6 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     ////////////////////////////////////////////////////////////////////
     // connect tx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
-        .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / str(boost::format("%u") % radio_index);
     perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
     _tree->access<double>(tx_dsp_path / "rate" / "value")
@@ -1325,8 +1316,14 @@ void x300_impl::update_atr_leds(gpio_core_200_32wo::sptr leds, const std::string
 
 void x300_impl::set_tick_rate(mboard_members_t &mb, const double rate)
 {
-    BOOST_FOREACH(radio_perifs_t &perif, mb.radio_perifs)
+    BOOST_FOREACH(radio_perifs_t &perif, mb.radio_perifs) {
+        perif.ctrl->set_tick_rate(rate);
         perif.time64->set_tick_rate(rate);
+        perif.framer->set_tick_rate(rate);
+        perif.ddc->set_tick_rate(rate);
+        perif.deframer->set_tick_rate(rate);
+        perif.duc->set_tick_rate(rate);
+    }
 }
 
 void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
