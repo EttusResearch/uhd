@@ -921,6 +921,7 @@ void e300_impl::_setup_radio(const size_t dspno)
 {
     radio_perifs_t &perif = _radio_perifs[dspno];
     const fs_path mb_path = "/mboards/0";
+    std::string slot_name = (dspno == 0) ? "A" : "B";
 
     ////////////////////////////////////////////////////////////////////
     // crossbar config for ctrl xports
@@ -949,39 +950,64 @@ void e300_impl::_setup_radio(const size_t dspno)
         ctrl_sid,
         dspno ? "1" : "0");
     this->_register_loopback_self_test(perif.ctrl);
+
+    ////////////////////////////////////////////////////////////////////
+    // Set up peripherals
+    ////////////////////////////////////////////////////////////////////
     perif.atr = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_GPIO));
+    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, TOREG(SR_RX_FRONT));
+    perif.rx_fe->set_dc_offset(std::complex<double>(0.0, 0.0));
+    perif.rx_fe->set_dc_offset_auto(true);
+    perif.rx_fe->set_iq_balance(std::complex<double>(0.0, 0.0));
+    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, TOREG(SR_TX_FRONT));
+    perif.tx_fe->set_dc_offset(std::complex<double>(0.0, 0.0));
+    perif.tx_fe->set_iq_balance(std::complex<double>(0.0, 0.0));
+    perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
+    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP));
+    perif.ddc->set_link_rate(10e9/8); //whatever
+    perif.ddc->set_freq(e300::DEFAULT_DDC_FREQ);
+    perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
+    perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
+    perif.duc->set_link_rate(10e9/8); //whatever
+    perif.duc->set_freq(e300::DEFAULT_DUC_FREQ);
+
+    ////////////////////////////////////////////////////////////////////
+    // create time control objects
+    ////////////////////////////////////////////////////////////////////
+    time_core_3000::readback_bases_type time64_rb_bases;
+    time64_rb_bases.rb_now = RB64_TIME_NOW;
+    time64_rb_bases.rb_pps = RB64_TIME_PPS;
+    perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
 
     ////////////////////////////////////////////////////////////////////
     // front end corrections
     ////////////////////////////////////////////////////////////////////
-    std::string slot_name = (dspno == 0) ? "A" : "B";
-    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, TOREG(SR_RX_FRONT));
     const fs_path rx_fe_path = mb_path / "rx_frontends" / slot_name;
     _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
+        .set(std::complex<double>(0.0, 0.0))
         .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, perif.rx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
+    ;
     _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
+        .set(true)
         .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, perif.rx_fe, _1))
-        .set(true);
+    ;
     _tree->create<std::complex<double> >(rx_fe_path / "iq_balance" / "value")
+        .set(std::complex<double>(0.0, 0.0))
         .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, perif.rx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
-
-    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, TOREG(SR_TX_FRONT));
+    ;
     const fs_path tx_fe_path = mb_path / "tx_frontends" / slot_name;
     _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
+        .set(std::complex<double>(0.0, 0.0))
         .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, perif.tx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
+    ;
     _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
+        .set(std::complex<double>(0.0, 0.0))
         .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, perif.tx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
+    ;
 
     ////////////////////////////////////////////////////////////////////
     // create rx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
-    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP));
-    perif.ddc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
         .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
@@ -993,8 +1019,9 @@ void e300_impl::_setup_radio(const size_t dspno)
         .subscribe(boost::bind(&e300_impl::_update_rx_samp_rate, this, dspno, _1))
         .set(e300::DEFAULT_RX_SAMP_RATE);
     _tree->create<double>(rx_dsp_path / "freq" / "value")
+        .set(e300::DEFAULT_DDC_FREQ)
         .coerce(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
-        .set(e300::DEFAULT_DDC_FREQ);
+    ;
     _tree->create<meta_range_t>(rx_dsp_path / "freq" / "range")
         .publish(boost::bind(&rx_dsp_core_3000::get_freq_range, perif.ddc));
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
@@ -1003,9 +1030,6 @@ void e300_impl::_setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
-    perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
-    perif.duc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
         .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
@@ -1017,18 +1041,11 @@ void e300_impl::_setup_radio(const size_t dspno)
         .subscribe(boost::bind(&e300_impl::_update_tx_samp_rate, this, dspno, _1))
         .set(e300::DEFAULT_TX_SAMP_RATE);
     _tree->create<double>(tx_dsp_path / "freq" / "value")
+        .set(e300::DEFAULT_DUC_FREQ)
         .coerce(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
-        .set(e300::DEFAULT_DUC_FREQ);
+    ;
     _tree->create<meta_range_t>(tx_dsp_path / "freq" / "range")
         .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc));
-
-    ////////////////////////////////////////////////////////////////////
-    // create time control objects
-    ////////////////////////////////////////////////////////////////////
-    time_core_3000::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_now = RB64_TIME_NOW;
-    time64_rb_bases.rb_pps = RB64_TIME_PPS;
-    perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
 
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
@@ -1052,7 +1069,7 @@ void e300_impl::_setup_radio(const size_t dspno)
 
         // Network mode currently doesn't support the filter API, so
         // prevent it from using it:
-        if(_xport_path != AXI) {
+        if (_xport_path != AXI) {
             _tree->remove(rf_fe_path / "filters");
         }
 
@@ -1064,7 +1081,7 @@ void e300_impl::_setup_radio(const size_t dspno)
                 .subscribe(boost::bind(&e300_impl::_update_antenna_sel, this, dspno, _1))
                 .set("RX2");
         }
-        if (dir == TX_DIRECTION) {
+        else if (dir == TX_DIRECTION) {
             static const std::vector<std::string> ants(1, "TX/RX");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value").set("TX/RX");
