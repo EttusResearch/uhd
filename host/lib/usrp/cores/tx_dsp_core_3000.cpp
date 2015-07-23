@@ -37,6 +37,9 @@ template <class T> T ceil_log2(T num){
 
 using namespace uhd;
 
+const double tx_dsp_core_3000::DEFAULT_CORDIC_FREQ = 0.0;
+const double tx_dsp_core_3000::DEFAULT_RATE = 1e6;
+
 tx_dsp_core_3000::~tx_dsp_core_3000(void){
     /* NOP */
 }
@@ -198,6 +201,24 @@ public:
         _host_extra_scaling /= stream_args.args.cast<double>("fullscale", 1.0);
 
         this->update_scalar();
+    }
+
+    void populate_subtree(property_tree::sptr subtree)
+    {
+        subtree->create<meta_range_t>("rate/range")
+            .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, this))
+        ;
+        subtree->create<double>("rate/value")
+            .set(DEFAULT_RATE)
+            .coerce(boost::bind(&tx_dsp_core_3000::set_host_rate, this, _1))
+        ;
+        subtree->create<double>("freq/value")
+            .set(DEFAULT_CORDIC_FREQ)
+            .coerce(boost::bind(&tx_dsp_core_3000::set_freq, this, _1))
+        ;
+        subtree->create<meta_range_t>("freq/range")
+            .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, this))
+        ;
     }
 
 private:

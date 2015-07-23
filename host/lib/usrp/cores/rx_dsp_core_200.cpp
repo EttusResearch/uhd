@@ -295,6 +295,7 @@ public:
         _iface->poke32(REG_RX_CTRL_FORMAT, format_word);
     }
 
+
 private:
     wb_iface::sptr _iface;
     const size_t _dsp_base, _ctrl_base;

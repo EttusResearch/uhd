@@ -931,6 +931,9 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
 
     this->register_loopback_self_test(perif.ctrl);
 
+    ////////////////////////////////////////////////////////////////
+    // Setup peripherals
+    ////////////////////////////////////////////////////////////////
     perif.spi = spi_core_3000::make(perif.ctrl, TOREG(SR_SPI), RB32_SPI);
     perif.adc = x300_adc_ctrl::make(perif.spi, DB_ADC_SEN);
     perif.dac = x300_dac_ctrl::make(perif.spi, DB_DAC_SEN, mb.clock->get_master_clock_rate());
@@ -941,6 +944,20 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, TOREG(SR_TX_FRONT));
     perif.tx_fe->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
     perif.tx_fe->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
+    perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
+    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP));
+    perif.ddc->set_link_rate(10e9/8); //whatever
+    perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
+    perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
+    perif.duc->set_link_rate(10e9/8); //whatever
+
+    ////////////////////////////////////////////////////////////////////
+    // create time control objects
+    ////////////////////////////////////////////////////////////////////
+    time_core_3000::readback_bases_type time64_rb_bases;
+    time64_rb_bases.rb_now = RB64_TIME_NOW;
+    time64_rb_bases.rb_pps = RB64_TIME_PPS;
+    perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
 
     //Capture delays are calibrated every time. The status is only printed is the user
     //asks to run the xfer self cal using "self_cal_adc_delay"
@@ -970,58 +987,31 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     perif.tx_fe->populate_subtree(_tree->subtree(mb_path / "tx_frontends" / slot_name));
 
     ////////////////////////////////////////////////////////////////////
-    // create rx dsp control objects
+    // connect rx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
-    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP));
-    perif.ddc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
         .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
+
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / str(boost::format("%u") % radio_index);
-    _tree->create<meta_range_t>(rx_dsp_path / "rate" / "range")
-        .publish(boost::bind(&rx_dsp_core_3000::get_host_rates, perif.ddc));
-    _tree->create<double>(rx_dsp_path / "rate" / "value")
-        .coerce(boost::bind(&rx_dsp_core_3000::set_host_rate, perif.ddc, _1))
+    perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
+    _tree->access<double>(rx_dsp_path / "rate" / "value")
         .subscribe(boost::bind(&x300_impl::update_rx_samp_rate, this, boost::ref(mb), radio_index, _1))
-        .set(1e6);
-    _tree->create<double>(rx_dsp_path / "freq" / "value")
-        .coerce(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
-        .set(0.0);
-    _tree->create<meta_range_t>(rx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&rx_dsp_core_3000::get_freq_range, perif.ddc));
+    ;
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
         .subscribe(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
 
     ////////////////////////////////////////////////////////////////////
-    // create tx dsp control objects
+    // connect tx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
-    perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
-    perif.duc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
         .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / str(boost::format("%u") % radio_index);
-    _tree->create<meta_range_t>(tx_dsp_path / "rate" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, perif.duc));
-    _tree->create<double>(tx_dsp_path / "rate" / "value")
-        .coerce(boost::bind(&tx_dsp_core_3000::set_host_rate, perif.duc, _1))
+    perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
+    _tree->access<double>(tx_dsp_path / "rate" / "value")
         .subscribe(boost::bind(&x300_impl::update_tx_samp_rate, this, boost::ref(mb), radio_index, _1))
-        .set(1e6);
-    _tree->create<double>(tx_dsp_path / "freq" / "value")
-        .coerce(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
-        .set(0.0);
-    _tree->create<meta_range_t>(tx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc));
-
-    ////////////////////////////////////////////////////////////////////
-    // create time control objects
-    ////////////////////////////////////////////////////////////////////
-    time_core_3000::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_now = RB64_TIME_NOW;
-    time64_rb_bases.rb_pps = RB64_TIME_PPS;
-    perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
+    ;
 
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing

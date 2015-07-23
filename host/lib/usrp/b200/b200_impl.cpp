@@ -676,11 +676,11 @@ void b200_impl::setup_radio(const size_t dspno)
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP), true /*is_b200?*/);
     perif.ddc->set_link_rate(10e9/8); //whatever
     perif.ddc->set_mux("IQ", false, dspno == 1 ? true : false, dspno == 1 ? true : false);
-    perif.ddc->set_freq(0.0);
+    perif.ddc->set_freq(rx_dsp_core_3000::DEFAULT_CORDIC_FREQ);
     perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
     perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
     perif.duc->set_link_rate(10e9/8); //whatever
-    perif.duc->set_freq(0.0);
+    perif.duc->set_freq(tx_dsp_core_3000::DEFAULT_CORDIC_FREQ);
 
     ////////////////////////////////////////////////////////////////////
     // create time control objects
@@ -691,25 +691,17 @@ void b200_impl::setup_radio(const size_t dspno)
     perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
 
     ////////////////////////////////////////////////////////////////////
-    // create rx dsp control objects
+    // connect rx dsp control objects
     ////////////////////////////////////////////////////////////////////
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
         .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
-    _tree->create<meta_range_t>(rx_dsp_path / "rate" / "range")
-        .publish(boost::bind(&rx_dsp_core_3000::get_host_rates, perif.ddc));
-    _tree->create<double>(rx_dsp_path / "rate" / "value")
-        .set(0.0) // We can only load a sensible value after the tick rate was set
+    perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
+    _tree->access<double>(rx_dsp_path / "rate" / "value")
         .coerce(boost::bind(&b200_impl::coerce_rx_samp_rate, this, perif.ddc, dspno, _1))
         .subscribe(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
     ;
-    _tree->create<double>(rx_dsp_path / "freq" / "value")
-        .set(0.0)
-        .coerce(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
-    ;
-    _tree->create<meta_range_t>(rx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&rx_dsp_core_3000::get_freq_range, perif.ddc));
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
         .subscribe(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
 
@@ -720,19 +712,10 @@ void b200_impl::setup_radio(const size_t dspno)
         .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
         .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / dspno;
-    _tree->create<meta_range_t>(tx_dsp_path / "rate" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, perif.duc));
-    _tree->create<double>(tx_dsp_path / "rate" / "value")
-        .set(0.0) // We can only load a sensible value after the tick rate was set
+    perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
+    _tree->access<double>(tx_dsp_path / "rate" / "value")
         .coerce(boost::bind(&b200_impl::coerce_tx_samp_rate, this, perif.duc, dspno, _1))
         .subscribe(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
-    ;
-    _tree->create<double>(tx_dsp_path / "freq" / "value")
-        .set(0.0)
-        .coerce(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
-    ;
-    _tree->create<meta_range_t>(tx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc))
     ;
 
     ////////////////////////////////////////////////////////////////////

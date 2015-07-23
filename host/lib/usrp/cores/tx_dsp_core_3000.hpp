@@ -21,12 +21,16 @@
 #include <uhd/config.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/wb_iface.hpp>
+#include <uhd/property_tree.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <uhd/types/wb_iface.hpp>
 
 class tx_dsp_core_3000 : boost::noncopyable{
 public:
+    static const double DEFAULT_CORDIC_FREQ;
+    static const double DEFAULT_RATE;
+
     typedef boost::shared_ptr<tx_dsp_core_3000> sptr;
 
     virtual ~tx_dsp_core_3000(void) = 0;
@@ -51,6 +55,8 @@ public:
     virtual double set_freq(const double freq) = 0;
 
     virtual void setup(const uhd::stream_args_t &stream_args) = 0;
+
+    virtual void populate_subtree(uhd::property_tree::sptr subtree) = 0;
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_TX_DSP_CORE_3000_HPP */
