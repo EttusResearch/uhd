@@ -390,10 +390,9 @@ private:
     void set_time_source_out(mboard_members_t&, const bool);
     void update_clock_source(mboard_members_t&, const std::string &);
     void update_time_source(mboard_members_t&, const std::string &);
-    void reset_radios(mboard_members_t&);
 
     uhd::sensor_value_t get_ref_locked(uhd::wb_iface::sptr);
-    bool wait_for_ref_locked(uhd::wb_iface::sptr, double timeout = 0.0);
+    bool wait_for_clk_locked(uhd::wb_iface::sptr, boost::uint32_t which, double timeout);
     bool is_pps_present(uhd::wb_iface::sptr);
 
     void set_db_eeprom(uhd::i2c_iface::sptr i2c, const size_t, const uhd::usrp::dboard_eeprom_t &);

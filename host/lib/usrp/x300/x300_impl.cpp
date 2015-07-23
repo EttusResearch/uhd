@@ -787,8 +787,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
         .set("internal")
-        .subscribe(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1))
-        .subscribe(boost::bind(&x300_impl::reset_radios, this, boost::ref(mb)));
+        .subscribe(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1));
 
     static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external")("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_source_options);
@@ -1405,7 +1404,8 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
     //Optimize for the case when the current source is internal and we are trying
     //to set it to internal. This is the only case where we are guaranteed that
     //the clock has not gone away so we can skip setting the MUX and reseting the LMK.
-    if (not (mb.current_refclk_src == "internal" and source == "internal")) {
+    const bool reconfigure_clks = (mb.current_refclk_src != "internal") or (source != "internal");
+    if (reconfigure_clks) {
         //Update the clock MUX on the motherboard to select the requested source
         mb.clock_control_regs_clock_source = 0;
         mb.clock_control_regs_tcxo_enb = 0;
@@ -1434,15 +1434,50 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
     //The programming code in x300_clock_ctrl is not compatible with revs <= 4 and may
     //lead to locking issues. So, disable the ref-locked check for older (unsupported) boards.
     if (mb.hw_rev > 4) {
-        if (not wait_for_ref_locked(mb.zpu_ctrl, timeout)) {
+        if (not wait_for_clk_locked(mb.zpu_ctrl, ZPU_RB_CLK_STATUS_LMK_LOCK, timeout)) {
             //failed to lock on reference
             if (mb.initialization_done) {
-                throw uhd::runtime_error((boost::format("Reference Clock failed to lock to %s source.") % source).str());
+                throw uhd::runtime_error((boost::format("Reference Clock PLL failed to lock to %s source.") % source).str());
             } else {
                 //TODO: Re-enable this warning when we figure out a reliable lock time
                 //UHD_MSG(warning) << "Reference clock failed to lock to " + source + " during device initialization.  " <<
                 //    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
             }
+        }
+    }
+
+    if (reconfigure_clks) {
+        //Reset the radio clock PLL in the FPGA
+        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), ZPU_SR_SW_RST_RADIO_CLK_PLL);
+        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), 0);
+
+        //Wait for radio clock PLL to lock
+        if (not wait_for_clk_locked(mb.zpu_ctrl, ZPU_RB_CLK_STATUS_RADIO_CLK_LOCK, 0.01)) {
+            throw uhd::runtime_error((boost::format("Reference Clock PLL in FPGA failed to lock to %s source.") % source).str());
+        }
+
+        //Reset the logic in the radio clock domain
+        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), ZPU_SR_SW_RST_RADIO_RST);
+        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), 0);
+
+        //Wait for the ADC IDELAYCTRL to be ready
+        if (not wait_for_clk_locked(mb.zpu_ctrl, ZPU_RB_CLK_STATUS_IDELAYCTRL_LOCK, 0.01)) {
+            throw uhd::runtime_error((boost::format("ADC Calibration Clock in FPGA failed to lock to %s source.") % source).str());
+        }
+
+        // Reset ADCs and DACs
+        for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
+            radio_perifs_t &perif = mb.radio_perifs[r];
+            if (perif.misc_outs && r==0) {  //ADC/DAC reset lines only exist in Radio0
+                perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
+                perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
+                perif.misc_outs->flush();
+                perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 0);
+                perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 1);
+                perif.misc_outs->flush();
+            }
+            if (perif.adc) perif.adc->reset();
+            if (perif.dac) perif.dac->reset();
         }
     }
 
@@ -1472,24 +1507,29 @@ void x300_impl::update_time_source(mboard_members_t &mb, const std::string &sour
     }
 }
 
-bool x300_impl::wait_for_ref_locked(wb_iface::sptr ctrl, double timeout)
+static bool get_clk_locked(wb_iface::sptr ctrl, boost::uint32_t which)
+{
+    return (ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS)) & which) != 0;
+}
+
+bool x300_impl::wait_for_clk_locked(wb_iface::sptr ctrl, boost::uint32_t which, double timeout)
 {
     boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(timeout * 1000.0);
-    do
-    {
-        if (get_ref_locked(ctrl).to_bool())
+    do {
+        if (get_clk_locked(ctrl, which))
             return true;
         boost::this_thread::sleep(boost::posix_time::milliseconds(1));
     } while (boost::get_system_time() < timeout_time);
 
     //Check one last time
-    return get_ref_locked(ctrl).to_bool();
+    return get_clk_locked(ctrl, which);
 }
 
 sensor_value_t x300_impl::get_ref_locked(wb_iface::sptr ctrl)
 {
-    boost::uint32_t clk_status = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS));
-    const bool lock = ((clk_status & ZPU_RB_CLK_STATUS_LMK_LOCK) != 0);
+    const bool lock = get_clk_locked(ctrl, ZPU_RB_CLK_STATUS_LMK_LOCK) &&
+                      get_clk_locked(ctrl, ZPU_RB_CLK_STATUS_RADIO_CLK_LOCK) &&
+                      get_clk_locked(ctrl, ZPU_RB_CLK_STATUS_IDELAYCTRL_LOCK);
     return sensor_value_t("Ref", lock, "locked", "unlocked");
 }
 
@@ -1511,16 +1551,6 @@ bool x300_impl::is_pps_present(wb_iface::sptr ctrl)
 /***********************************************************************
  * reset and synchronization logic
  **********************************************************************/
-
-void x300_impl::reset_radios(mboard_members_t &mb)
-{
-    // Reset ADCs and DACs
-    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
-    {
-        perif.adc->reset();
-        perif.dac->reset();
-    }
-}
 
 void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
 {
@@ -1999,7 +2029,7 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
     for (size_t i = 0; i < NUM_DELAY_STEPS; i++) {
         //Delay the ADC clock (will set both Ch0 and Ch1 delays)
         double delay = mb.clock->set_clock_delay(X300_CLOCK_WHICH_ADC0, delay_incr*i + delay_start);
-        wait_for_ref_locked(mb.zpu_ctrl, 0.1);
+        wait_for_clk_locked(mb.zpu_ctrl, ZPU_RB_CLK_STATUS_LMK_LOCK, 0.1);
 
         boost::uint32_t err_code = 0;
         for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
@@ -2091,7 +2121,7 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
         UHD_MSG(status) << "Validating..." << std::flush;
         //Apply delay
         win_center = mb.clock->set_clock_delay(X300_CLOCK_WHICH_ADC0, win_center);  //Sets ADC0 and ADC1
-        wait_for_ref_locked(mb.zpu_ctrl, 0.1);
+        wait_for_clk_locked(mb.zpu_ctrl, ZPU_RB_CLK_STATUS_LMK_LOCK, 0.1);
         //Validate
         self_test_adcs(mb, 2000);
     } else {

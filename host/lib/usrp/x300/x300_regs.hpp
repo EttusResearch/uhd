@@ -63,12 +63,17 @@ localparam BL_DATA       = 1;
 #define SR_ADDR(base, offset) ((base) + (offset)*4)
 
 localparam ZPU_SR_LEDS       = 00;
-localparam ZPU_SR_PHY_RST    = 01;
+localparam ZPU_SR_SW_RST     = 01;
 localparam ZPU_SR_CLOCK_CTRL = 02;
 localparam ZPU_SR_XB_LOCAL   = 03;
 localparam ZPU_SR_SPI        = 32;
 localparam ZPU_SR_ETHINT0    = 40;
 localparam ZPU_SR_ETHINT1    = 56;
+
+//reset bits
+#define ZPU_SR_SW_RST_ETH_PHY           (1<<0)
+#define ZPU_SR_SW_RST_RADIO_RST         (1<<1)
+#define ZPU_SR_SW_RST_RADIO_CLK_PLL     (1<<2)
 
 //clock controls
 #define ZPU_SR_CLOCK_CTRL_CLK_SRC_EXTERNAL 0x00
@@ -85,10 +90,12 @@ localparam ZPU_RB_ETH_TYPE0  = 4;
 localparam ZPU_RB_ETH_TYPE1  = 5;
 
 //clock status
-#define ZPU_RB_CLK_STATUS_LMK_STATUS   (0x3 << 0)
-#define ZPU_RB_CLK_STATUS_LMK_LOCK     (0x1 << 2)
-#define ZPU_RB_CLK_STATUS_LMK_HOLDOVER (0x1 << 3)
-#define ZPU_RB_CLK_STATUS_PPS_DETECT   (0x1 << 4)
+#define ZPU_RB_CLK_STATUS_LMK_STATUS        (0x3 << 0)
+#define ZPU_RB_CLK_STATUS_LMK_LOCK          (0x1 << 2)
+#define ZPU_RB_CLK_STATUS_LMK_HOLDOVER      (0x1 << 3)
+#define ZPU_RB_CLK_STATUS_PPS_DETECT        (0x1 << 4)
+#define ZPU_RB_CLK_STATUS_RADIO_CLK_LOCK    (0x1 << 5)
+#define ZPU_RB_CLK_STATUS_IDELAYCTRL_LOCK   (0x1 << 6)
 
 //spi slaves on radio
 #define DB_DAC_SEN      (1 << 7)
