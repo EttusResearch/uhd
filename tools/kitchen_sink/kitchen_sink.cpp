@@ -269,6 +269,33 @@ static void msg_handler(uhd::msg::type_t type, const std::string& msg)
 }
 
 /***********************************************************************
+ * Checker thread
+ **********************************************************************/
+
+void check_thread(uhd::usrp::multi_usrp::sptr usrp)
+{
+    {
+        std::stringstream ss;
+        ss << "(" << get_stringified_time() << ") Checker running..." << std::endl;
+        std::cout << ss.str();
+    }
+    
+    while (running)
+    {
+        uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked");
+        if (ref_locked.to_bool() == false) {
+            std::stringstream ss;
+            ss << HEADER_WARN"(" << get_stringified_time() << ") " << boost::format("ref_locked: unlocked") << std::endl;
+            std::cout << ss.str();
+        }
+        
+        boost::this_thread::sleep(boost::posix_time::seconds(0) + boost::posix_time::microseconds(1000 * 500)); // MAGIC
+    }
+
+    std::cout << "Checker exiting..." << std::endl;
+}
+
+/***********************************************************************
  * Benchmark RX Rate
  **********************************************************************/
 
@@ -1511,6 +1538,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             }
         }
 
+        if (usrp->get_time_source(0) == "gpsdo")
+        {
+            std::cout << boost::format(HEADER "Waiting for GPSDO time to latch") << std::endl;
+            sleep(1);
+        }
+
         uhd::time_spec_t time_start = usrp->get_time_now();	// Usually DSP #0 on mboard #0
 
         std::cout << boost::format(HEADER "Time now:  %f seconds (%llu ticks)") % time_start.get_real_secs() % time_start.to_ticks(usrp->get_master_clock_rate()) << std::endl;
@@ -1754,6 +1787,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
             running = true;
             std::cout << HEADER "Begin..." << std::endl;
+
+            thread_group.create_thread(boost::bind(&check_thread, usrp));
 
             if (tx_channel_nums.size() > 0)
                 tx_thread_begin.wait(l_tx);
