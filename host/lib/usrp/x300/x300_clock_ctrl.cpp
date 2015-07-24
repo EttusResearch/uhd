@@ -49,10 +49,10 @@ struct x300_clk_delays {
 // If the FPGA_CLK is delayed, we also need to delay the reference clocks going to the DAC
 // because the data interface clock is generated from FPGA_CLK.
 static const x300_clk_delays X300_REV0_6_CLK_DELAYS = x300_clk_delays(
-    /*fpga=*/0.000, /*adc=*/1.600, /*dac=*/0.000, /*db_rx=*/0.000, /*db_tx=*/0.000);
+    /*fpga=*/0.000, /*adc=*/2.200, /*dac=*/0.000, /*db_rx=*/0.000, /*db_tx=*/0.000);
 
 static const x300_clk_delays X300_REV7_CLK_DELAYS = x300_clk_delays(
-    /*fpga=*/0.000, /*adc=*/4.400, /*dac=*/0.000, /*db_rx=*/0.000, /*db_tx=*/0.000);
+    /*fpga=*/0.000, /*adc=*/0.000, /*dac=*/0.000, /*db_rx=*/0.000, /*db_tx=*/0.000);
 
 using namespace uhd;
 
