@@ -128,7 +128,7 @@ namespace uhd{
          * With the exception of \p fail_on_conflict, this behaves analogously
          * to Python's dict.update() method.
          *
-         * \param new_args The arguments to copy.
+         * \param new_dict The arguments to copy.
          * \param fail_on_conflict If true, throws.
          * \throws uhd::value_error
          */
