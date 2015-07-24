@@ -74,6 +74,7 @@ localparam ZPU_SR_ETHINT1    = 56;
 #define ZPU_SR_SW_RST_ETH_PHY           (1<<0)
 #define ZPU_SR_SW_RST_RADIO_RST         (1<<1)
 #define ZPU_SR_SW_RST_RADIO_CLK_PLL     (1<<2)
+#define ZPU_SR_SW_RST_ADC_IDELAYCTRL    (1<<3)
 
 //clock controls
 #define ZPU_SR_CLOCK_CTRL_CLK_SRC_EXTERNAL 0x00

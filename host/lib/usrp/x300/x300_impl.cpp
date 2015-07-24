@@ -1455,8 +1455,8 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
             throw uhd::runtime_error((boost::format("Reference Clock PLL in FPGA failed to lock to %s source.") % source).str());
         }
 
-        //Reset the logic in the radio clock domain
-        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), ZPU_SR_SW_RST_RADIO_RST);
+        //Reset the IDELAYCTRL used to calibrate the data interface delays
+        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), ZPU_SR_SW_RST_ADC_IDELAYCTRL);
         mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), 0);
 
         //Wait for the ADC IDELAYCTRL to be ready
