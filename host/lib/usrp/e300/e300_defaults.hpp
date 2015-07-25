@@ -23,7 +23,6 @@
 namespace uhd { namespace usrp { namespace e300 {
 
 static const double DEFAULT_TICK_RATE       = 32e6;
-static const double MAX_TICK_RATE           = 50e6;
 static const double MIN_TICK_RATE           = 10e6;
 
 static const double DEFAULT_TX_SAMP_RATE    = 1.0e6;
