@@ -43,3 +43,8 @@ make_exception_impl("EnvironmentError",      environment_error,       exception)
 make_exception_impl("IOError",               io_error,                environment_error)
 make_exception_impl("OSError",               os_error,                environment_error)
 make_exception_impl("SystemError",           system_error,            exception)
+
+usb_error::usb_error(int code, const std::string &what):
+    runtime_error(str(boost::format("%s %d: %s") % "USBError" % code % what)), _code(code) {}
+usb_error *usb_error::dynamic_clone(void) const{return new usb_error(*this);} \
+void usb_error::dynamic_throw(void) const{throw *this;}
