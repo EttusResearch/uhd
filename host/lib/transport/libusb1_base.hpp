@@ -135,6 +135,10 @@ namespace libusb {
          * Control interface: 0
          */
         virtual void claim_interface(int) = 0;
+
+        virtual void clear_endpoints(unsigned char recv_endpoint, unsigned char send_endpoint) = 0;
+
+        virtual void reset_device(void) = 0;
     };
 
     /*!

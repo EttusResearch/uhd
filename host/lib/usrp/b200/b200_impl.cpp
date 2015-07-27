@@ -37,6 +37,8 @@
 #include <ctime>
 #include <cmath>
 
+#include "../../transport/libusb1_base.hpp"
+
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
@@ -194,7 +196,24 @@ static device_addrs_t b200_find(const device_addr_t &hint)
  **********************************************************************/
 static device::sptr b200_make(const device_addr_t &device_addr)
 {
-    return device::sptr(new b200_impl(device_addr));
+    uhd::transport::usb_device_handle::sptr handle;
+
+    // We try twice, because the first time, the link might be in a bad state
+    // and we might need to reset the link, but if that didn't help, trying
+    // a third time is pointless.
+    try {
+        return device::sptr(new b200_impl(device_addr, handle));
+    }
+    catch (const uhd::usb_error &e) {
+        libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
+            boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
+        ));
+        dev_handle->clear_endpoints(B200_USB_CTRL_RECV_ENDPOINT, B200_USB_CTRL_SEND_ENDPOINT);
+        dev_handle->clear_endpoints(B200_USB_DATA_RECV_ENDPOINT, B200_USB_DATA_SEND_ENDPOINT);
+        dev_handle->reset_device();
+    }
+
+    return device::sptr(new b200_impl(device_addr, handle));
 }
 
 UHD_STATIC_BLOCK(register_b200_device)
@@ -205,7 +224,7 @@ UHD_STATIC_BLOCK(register_b200_device)
 /***********************************************************************
  * Structors
  **********************************************************************/
-b200_impl::b200_impl(const device_addr_t &device_addr) :
+b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::sptr &handle) :
     _revision(0),
     _tick_rate(0.0) // Forces a clock initialization at startup
 {
@@ -262,7 +281,6 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     std::vector<usb_device_handle::sptr> device_list = usb_device_handle::get_device_list(vid_pid_pair_list);
 
     //locate the matching handle in the device list
-    usb_device_handle::sptr handle;
     BOOST_FOREACH(usb_device_handle::sptr dev_handle, device_list) {
         if (dev_handle->get_serial() == device_addr["serial"]){
             handle = dev_handle;
@@ -360,10 +378,11 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     ctrl_xport_args["send_frame_size"] = min_frame_size;
     ctrl_xport_args["num_send_frames"] = "16";
 
+    // This may throw a uhd::usb_error, which will be caught by b200_make().
     _ctrl_transport = usb_zero_copy::make(
         handle,
-        4, 8, //interface, endpoint
-        3, 4, //interface, endpoint
+        B200_USB_CTRL_RECV_INTERFACE, B200_USB_CTRL_RECV_ENDPOINT, //interface, endpoint
+        B200_USB_CTRL_SEND_INTERFACE, B200_USB_CTRL_SEND_ENDPOINT, //interface, endpoint
         ctrl_xport_args
     );
     while (_ctrl_transport->get_recv_buff(0.0)){} //flush ctrl xport
@@ -442,10 +461,11 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     data_xport_args["send_frame_size"] = device_addr.get("send_frame_size", "8192");
     data_xport_args["num_send_frames"] = device_addr.get("num_send_frames", "16");
 
+    // This may throw a uhd::usb_error, which will be caught by b200_make().
     _data_transport = usb_zero_copy::make(
         handle,        // identifier
-        2, 6,          // IN interface, endpoint
-        1, 2,          // OUT interface, endpoint
+        B200_USB_DATA_RECV_INTERFACE, B200_USB_DATA_RECV_ENDPOINT, //interface, endpoint
+        B200_USB_DATA_SEND_INTERFACE, B200_USB_DATA_SEND_ENDPOINT, //interface, endpoint
         data_xport_args    // param hints
     );
     while (_data_transport->get_recv_buff(0.0)){} //flush ctrl xport

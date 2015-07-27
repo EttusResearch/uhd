@@ -251,6 +251,21 @@ public:
         _claimed.push_back(interface);
     }
 
+    void clear_endpoints(unsigned char recv_endpoint, unsigned char send_endpoint)
+    {
+        int ret;
+        ret = libusb_clear_halt(this->get(), recv_endpoint  | 0x80);
+        UHD_LOG << "usb device handle: recv endpoint clear: " << libusb_error_name(ret) << std::endl;
+        ret = libusb_clear_halt(this->get(), send_endpoint | 0x00);
+        UHD_LOG << "usb device handle: send endpoint clear: " << libusb_error_name(ret) << std::endl;
+    }
+
+    void reset_device(void)
+    {
+        int ret = libusb_reset_device(this->get());
+        UHD_LOG << "usb device handle: dev Reset: " << libusb_error_name(ret) << std::endl;
+    }
+
 private:
     libusb::device::sptr _dev; //always keep a reference to device
     libusb_device_handle *_handle;

@@ -148,14 +148,14 @@ public:
 
     UHD_INLINE void submit(void)
     {
-    	_lut->length = (_is_recv)? _frame_size : size(); //always set length
+        _lut->length = (_is_recv)? _frame_size : size(); //always set length
 #ifdef UHD_TXRX_DEBUG_PRINTS
         result.start_time = boost::get_system_time().time_of_day().total_microseconds();
         result.buff_num = num();
         result.is_recv = _is_recv;
 #endif
         const int ret = libusb_submit_transfer(_lut);
-        if (ret != 0) throw uhd::runtime_error(str(boost::format(
+        if (ret != 0) throw uhd::usb_error(ret, str(boost::format(
             "usb %s submit failed: %s") % _name % libusb_error_name(ret)));
     }
 
