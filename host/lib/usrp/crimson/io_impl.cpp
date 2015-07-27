@@ -91,6 +91,14 @@ public:
 		// defaults to read from the first channel because OpenBTS only requires one RX, one TX
 		// One sample is 32 bits wide, thus multiply nsamps by 4 to get number of bytes
 		// Buffs is an array of buffer, this accesses the first buffer in the array of buffers
+
+		// if it's the first time to read, flush the buffer
+		if (_start_time == 0) {
+			for (int i = 0; i <= 129; i++) {
+				_udp_stream[0] -> stream_in(vita_buf, vita_pck * 4, timeout);
+			}
+		}
+
 		const size_t nbytes = _udp_stream[0] -> stream_in(vita_buf, vita_pck * 4, timeout);
 		if (nbytes == 0) return 0;
 
@@ -180,9 +188,9 @@ private:
 			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
 			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
 
-         // power on the channel
-         tree->access<std::string>(mb_path / "rx" / "Channel_"+ch / "pwr").set("1");
-	 sleep(5);
+			// power on the channel
+			tree->access<std::string>(mb_path / "rx" / "Channel_"+ch / "pwr").set("1");
+			sleep(5);
 
 			// vita enable
 			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("1");
