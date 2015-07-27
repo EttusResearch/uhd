@@ -38,7 +38,7 @@ sbx_xcvr::cbx::~cbx(void){
     /* NOP */
 }
 
-void sbx_xcvr::cbx::write_lo_regs(dboard_iface::unit_t unit, std::vector<boost::uint32_t> &regs)
+void sbx_xcvr::cbx::write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs)
 {
     BOOST_FOREACH(boost::uint32_t reg, regs)
     {
