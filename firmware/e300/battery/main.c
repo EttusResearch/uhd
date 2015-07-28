@@ -35,6 +35,7 @@
 FUSES = {
 	.low	=	(FUSE_CKSEL0 & FUSE_SUT0),
 	.high	=	(FUSE_EESAVE & FUSE_SPIEN),
+	.extended = EFUSE_DEFAULT,
 };
 
 
