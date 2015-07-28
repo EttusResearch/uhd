@@ -325,17 +325,28 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _ctrl_xport_params.send_frame_size = e300::DEFAULT_CTRL_FRAME_SIZE;
     _ctrl_xport_params.num_send_frames = e300::DEFAULT_CTRL_NUM_FRAMES;
 
-    _data_xport_params.recv_frame_size = e300::DEFAULT_RX_DATA_FRAME_SIZE;
-    _data_xport_params.num_recv_frames = e300::DEFAULT_RX_DATA_NUM_FRAMES;
-    _data_xport_params.send_frame_size = e300::DEFAULT_TX_DATA_FRAME_SIZE;
-    _data_xport_params.num_send_frames = e300::DEFAULT_TX_DATA_NUM_FRAMES;
+    _data_xport_params.recv_frame_size = device_addr.cast<size_t>("recv_frame_size",
+        e300::DEFAULT_RX_DATA_FRAME_SIZE);
+    _data_xport_params.num_recv_frames = device_addr.cast<size_t>("num_recv_frames",
+	e300::DEFAULT_RX_DATA_NUM_FRAMES);
+    _data_xport_params.send_frame_size = device_addr.cast<size_t>("send_frame_size",
+        e300::DEFAULT_TX_DATA_FRAME_SIZE);
+    _data_xport_params.num_send_frames = device_addr.cast<size_t>("num_send_frames",
+	e300::DEFAULT_TX_DATA_NUM_FRAMES);
 
-    // until we figure out why this goes wrong we'll keep this hack around
+
+    // until we figure out why this goes wrong we'll keep this hack around for
+    // the ethernet case, in the AXI case we cannot go above one page
     if (_xport_path == ETH) {
         _data_xport_params.recv_frame_size =
             std::min(e300::MAX_NET_RX_DATA_FRAME_SIZE, _data_xport_params.recv_frame_size);
         _data_xport_params.send_frame_size =
             std::min(e300::MAX_NET_TX_DATA_FRAME_SIZE, _data_xport_params.send_frame_size);
+    } else {
+        _data_xport_params.recv_frame_size =
+            std::min(e300::MAX_AXI_RX_DATA_FRAME_SIZE, _data_xport_params.recv_frame_size);
+        _data_xport_params.send_frame_size =
+            std::min(e300::MAX_AXI_TX_DATA_FRAME_SIZE, _data_xport_params.send_frame_size);
     }
     udp_zero_copy::buff_params dummy_buff_params_out;
 
