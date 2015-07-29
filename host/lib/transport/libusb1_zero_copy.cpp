@@ -148,15 +148,16 @@ public:
 
     UHD_INLINE void submit(void)
     {
-        _lut->length = (_is_recv)? _frame_size : size(); //always set length
+    	_lut->length = (_is_recv)? _frame_size : size(); //always set length
 #ifdef UHD_TXRX_DEBUG_PRINTS
         result.start_time = boost::get_system_time().time_of_day().total_microseconds();
         result.buff_num = num();
         result.is_recv = _is_recv;
 #endif
         const int ret = libusb_submit_transfer(_lut);
-        if (ret != 0) throw uhd::usb_error(ret, str(boost::format(
-            "usb %s submit failed: %s") % _name % libusb_error_name(ret)));
+        if (ret != LIBUSB_SUCCESS)
+            throw uhd::runtime_error(str(boost::format("usb %s submit failed: %s")
+                                         % _name % libusb_strerror((libusb_error)ret)));
     }
 
     template <typename buffer_type>
@@ -164,8 +165,9 @@ public:
     {
         if (wait_for_completion(timeout))
         {
-            if (result.status != LIBUSB_TRANSFER_COMPLETED) throw uhd::runtime_error(str(boost::format(
-                "usb %s transfer status: %d") % _name % int(result.status)));
+            if (result.status != LIBUSB_TRANSFER_COMPLETED)
+                throw uhd::runtime_error(str(boost::format("usb %s transfer status: %d")
+                                             % _name % libusb_error_name(result.status)));
             result.completed = 0;
             return make(reinterpret_cast<buffer_type *>(this), _lut->buffer, (_is_recv)? result.actual_length : _frame_size);
         }
@@ -219,7 +221,8 @@ public:
         _num_frames(num_frames),
         _frame_size(frame_size),
         _buffer_pool(buffer_pool::make(_num_frames, _frame_size)),
-        _enqueued(_num_frames), _released(_num_frames)
+        _enqueued(_num_frames), _released(_num_frames),
+        _status(RUNNING)
     {
         const bool is_recv = (endpoint & 0x80) != 0;
         const std::string name = str(boost::format("%s%d") % ((is_recv)? "rx" : "tx") % int(endpoint & 0x7f));
@@ -304,18 +307,24 @@ public:
     UHD_INLINE typename buffer_type::sptr get_buff(double timeout)
     {
         typename buffer_type::sptr buff;
-        libusb_zero_copy_mb *front = NULL;
-        boost::mutex::scoped_lock lock(_mutex);
+
+        if (_status == ERROR)
+            return buff;
+
+        // Serialize access to buffers
+        boost::mutex::scoped_lock get_buff_lock(_get_buff_mutex);
+
+        boost::mutex::scoped_lock queue_lock(_queue_mutex);
         if (_enqueued.empty())
         {
-            _cond.timed_wait(lock, boost::posix_time::microseconds(long(timeout*1e6)));
+            _buff_ready_cond.timed_wait(queue_lock, boost::posix_time::microseconds(long(timeout*1e6)));
         }
         if (_enqueued.empty()) return buff;
-        front = _enqueued.front();
+        libusb_zero_copy_mb *front = _enqueued.front();
 
-        lock.unlock();
+        queue_lock.unlock();
         buff = front->get_new<buffer_type>(timeout);
-        lock.lock();
+        queue_lock.lock();
 
         if (buff) _enqueued.pop_front();
         this->submit_what_we_can();
@@ -333,28 +342,39 @@ private:
     buffer_pool::sptr _buffer_pool;
     std::vector<boost::shared_ptr<libusb_zero_copy_mb> > _mb_pool;
 
-    boost::mutex _mutex;
-    boost::condition_variable _cond;
+    boost::mutex _queue_mutex;
+    boost::condition_variable _buff_ready_cond;
+    boost::mutex _get_buff_mutex;
 
     //! why 2 queues? there is room in the future to have > N buffers but only N in flight
     boost::circular_buffer<libusb_zero_copy_mb *> _enqueued, _released;
 
+    enum {RUNNING,ERROR} _status;
+
     void enqueue_buffer(libusb_zero_copy_mb *mb)
     {
-        boost::mutex::scoped_lock l(_mutex);
+        boost::mutex::scoped_lock l(_queue_mutex);
         _released.push_back(mb);
         this->submit_what_we_can();
-        l.unlock();
-        _cond.notify_one();
+        _buff_ready_cond.notify_one();
     }
 
     void submit_what_we_can(void)
     {
+        if (_status == ERROR)
+            return;
         while (not _released.empty() and not _enqueued.full())
         {
-            _released.front()->submit();
-            _enqueued.push_back(_released.front());
-            _released.pop_front();
+            try {
+                _released.front()->submit();
+                _enqueued.push_back(_released.front());
+                _released.pop_front();
+            }
+            catch (uhd::runtime_error& e)
+            {
+                _status = ERROR;
+                throw e;
+            }
         }
     }
 

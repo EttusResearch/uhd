@@ -71,7 +71,18 @@ private:
         timeval tv;
         tv.tv_sec = 0;
         tv.tv_usec = 100000;
-        libusb_handle_events_timeout(context, &tv);
+        int ret = libusb_handle_events_timeout(context, &tv);
+        switch (ret)
+        {
+        case LIBUSB_SUCCESS:
+        case LIBUSB_ERROR_TIMEOUT:
+            break;
+        case LIBUSB_ERROR_NO_DEVICE:
+            throw uhd::io_error(libusb_strerror(LIBUSB_ERROR_NO_DEVICE));
+        default:
+            UHD_MSG(error) << __FUNCTION__ << ": " << libusb_strerror((libusb_error)ret) << std::endl;
+            break;
+        }
     }
 };
 
