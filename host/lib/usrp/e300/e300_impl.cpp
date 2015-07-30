@@ -951,6 +951,7 @@ void e300_impl::_setup_radio(const size_t dspno)
 {
     radio_perifs_t &perif = _radio_perifs[dspno];
     const fs_path mb_path = "/mboards/0";
+    std::string slot_name = (dspno == 0) ? "A" : "B";
 
     ////////////////////////////////////////////////////////////////////
     // crossbar config for ctrl xports
@@ -967,16 +968,41 @@ void e300_impl::_setup_radio(const size_t dspno)
         ctrl_xports.send,
         ctrl_xports.recv,
         ctrl_xports.send_sid.get(),
-        dspno ? "R1" : "R0");
+        dspno ? "1" : "0");
     this->_register_loopback_self_test(perif.ctrl);
+
+    ////////////////////////////////////////////////////////////////////
+    // Set up peripherals
+    ////////////////////////////////////////////////////////////////////
     perif.atr  = gpio_core_200_32wo::make(perif.ctrl, radio::sr_addr(radio::GPIO));
     perif.leds = gpio_core_200_32wo::make(perif.ctrl, radio::sr_addr(radio::LEDS));
+    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
+    perif.rx_fe->set_dc_offset(std::complex<double>(0, 0));
+    perif.rx_fe->set_dc_offset_auto(true);
+    perif.rx_fe->set_iq_balance(std::complex<double>(0, 0));
+    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::TX_FRONT));
+    perif.tx_fe->set_dc_offset(std::complex<double>(0, 0));
+    perif.tx_fe->set_iq_balance(std::complex<double>(0, 0));
+    perif.framer = rx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_CTRL));
+    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
+    perif.ddc->set_link_rate(10e9/8); //whatever
+    perif.ddc->set_freq(e300::DEFAULT_DDC_FREQ);
+    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL));
+    perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
+    perif.duc->set_link_rate(10e9/8); //whatever
+    perif.duc->set_freq(e300::DEFAULT_DUC_FREQ);
+
+    ////////////////////////////////////////////////////////////////////
+    // create time control objects
+    ////////////////////////////////////////////////////////////////////
+    time_core_3000::readback_bases_type time64_rb_bases;
+    time64_rb_bases.rb_now = radio::RB64_TIME_NOW;
+    time64_rb_bases.rb_pps = radio::RB64_TIME_PPS;
+    perif.time64 = time_core_3000::make(perif.ctrl, radio::sr_addr(radio::TIME), time64_rb_bases);
 
     ////////////////////////////////////////////////////////////////////
     // front end corrections
     ////////////////////////////////////////////////////////////////////
-    std::string slot_name = (dspno == 0) ? "A" : "B";
-    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
     const fs_path rx_fe_path = mb_path / "rx_frontends" / slot_name;
     _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
         .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, perif.rx_fe, _1))
@@ -988,7 +1014,6 @@ void e300_impl::_setup_radio(const size_t dspno)
         .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, perif.rx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
 
-    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::TX_FRONT));
     const fs_path tx_fe_path = mb_path / "tx_frontends" / slot_name;
     _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
         .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, perif.tx_fe, _1))
@@ -998,11 +1023,8 @@ void e300_impl::_setup_radio(const size_t dspno)
         .set(std::complex<double>(0.0, 0.0));
 
     ////////////////////////////////////////////////////////////////////
-    // create rx dsp control objects
+    // connect rx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.framer = rx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_CTRL));
-    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
-    perif.ddc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
         .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
@@ -1024,9 +1046,6 @@ void e300_impl::_setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL));
-    perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
-    perif.duc->set_link_rate(10e9/8); //whatever
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
         .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
@@ -1044,27 +1063,19 @@ void e300_impl::_setup_radio(const size_t dspno)
         .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc));
 
     ////////////////////////////////////////////////////////////////////
-    // create time control objects
-    ////////////////////////////////////////////////////////////////////
-    time_core_3000::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_now = radio::RB64_TIME_NOW;
-    time64_rb_bases.rb_pps = radio::RB64_TIME_PPS;
-    perif.time64 = time_core_3000::make(perif.ctrl, radio::sr_addr(radio::TIME), time64_rb_bases);
-
-    ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
     ////////////////////////////////////////////////////////////////////
-    static const std::vector<std::string> data_directions = boost::assign::list_of("rx")("tx");
-    BOOST_FOREACH(const std::string& direction, data_directions)
-    {
-        const std::string key = boost::to_upper_copy(direction) + std::string(((dspno == FE0)? "1" : "2"));
+    static const std::vector<direction_t> dirs = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
+    BOOST_FOREACH(direction_t dir, dirs) {
+        const std::string x = (dir == RX_DIRECTION) ? "rx" : "tx";
+        const std::string key = boost::to_upper_copy(x) + std::string(((dspno == FE0)? "1" : "2"));
         const fs_path rf_fe_path
-            = mb_path / "dboards" / "A" / (direction + "_frontends") / ((dspno == 0) ? "A" : "B");
+            = mb_path / "dboards" / "A" / (x + "_frontends") / ((dspno == 0) ? "A" : "B");
 
         _tree->create<std::string>(rf_fe_path / "name").set("FE-"+key);
         _tree->create<int>(rf_fe_path / "sensors"); //empty TODO
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
-            .publish(boost::bind(&e300_impl::_get_fe_pll_lock, this, direction == "tx"));
+            .publish(boost::bind(&e300_impl::_get_fe_pll_lock, this, dir == TX_DIRECTION));
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "temp")
             .publish(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl));
         BOOST_FOREACH(const std::string &name, ad9361_ctrl::get_gain_names(key))
@@ -1104,8 +1115,8 @@ void e300_impl::_setup_radio(const size_t dspno)
             }
         }
 
-        //setup RX related stuff
-        if (key[0] == 'R') {
+        // Antenna Setup
+        if (dir == RX_DIRECTION) {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
@@ -1115,7 +1126,7 @@ void e300_impl::_setup_radio(const size_t dspno)
             _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "rssi")
                 .publish(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key));
         }
-        if (key[0] == 'T') {
+        else if (dir == TX_DIRECTION) {
             static const std::vector<std::string> ants(1, "TX/RX");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value").set("TX/RX");
