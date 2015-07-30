@@ -206,7 +206,7 @@ void block_ctrl_base::_init_block_args()
 /***********************************************************************
  * FPGA control & communication
  **********************************************************************/
-std::vector<size_t> block_ctrl_base::block_ctrl_base::get_ctrl_ports() const
+std::vector<size_t> block_ctrl_base::get_ctrl_ports() const
 {
     std::vector<size_t> ctrl_ports;
     ctrl_ports.reserve(_ctrl_ifaces.size());
