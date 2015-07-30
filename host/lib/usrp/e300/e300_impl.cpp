@@ -1063,7 +1063,7 @@ void e300_impl::_setup_radio(const size_t dspno)
         const std::string x = (dir == RX_DIRECTION) ? "rx" : "tx";
         const std::string key = boost::to_upper_copy(x) + std::string(((dspno == FE0)? "1" : "2"));
         const fs_path rf_fe_path
-            = mb_path / "dboards" / "A" / (direction + "_frontends") / ((dspno == 0) ? "A" : "B");
+            = mb_path / "dboards" / "A" / (x + "_frontends") / ((dspno == 0) ? "A" : "B");
 
         // This will connect all the AD936x-specific items
         _codec_mgr->populate_frontend_subtree(
@@ -1072,7 +1072,7 @@ void e300_impl::_setup_radio(const size_t dspno)
 
         // This will connect all the e300_impl-specific items
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
-            .publish(boost::bind(&e300_impl::_get_fe_pll_lock, this, direction == "tx"))
+            .publish(boost::bind(&e300_impl::_get_fe_pll_lock, this, dir == TX_DIRECTION))
         ;
 
         // Network mode currently doesn't support the filter API, so
