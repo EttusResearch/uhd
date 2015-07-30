@@ -745,7 +745,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
-    mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
+    mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::GPIO), radio::RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
         _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
@@ -934,30 +934,30 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     ////////////////////////////////////////////////////////////////
     // Setup peripherals
     ////////////////////////////////////////////////////////////////
-    perif.spi = spi_core_3000::make(perif.ctrl, TOREG(SR_SPI), RB32_SPI);
+    perif.spi = spi_core_3000::make(perif.ctrl, radio::sr_addr(radio::SPI), radio::RB32_SPI);
     perif.adc = x300_adc_ctrl::make(perif.spi, DB_ADC_SEN);
     perif.dac = x300_dac_ctrl::make(perif.spi, DB_DAC_SEN, mb.clock->get_master_clock_rate());
-    perif.leds = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_LEDS));
-    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, TOREG(SR_RX_FRONT));
+    perif.leds = gpio_core_200_32wo::make(perif.ctrl, radio::sr_addr(radio::LEDS));
+    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
     perif.rx_fe->set_dc_offset(rx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
     perif.rx_fe->set_dc_offset_auto(rx_frontend_core_200::DEFAULT_DC_OFFSET_ENABLE);
-    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, TOREG(SR_TX_FRONT));
+    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::TX_FRONT));
     perif.tx_fe->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
     perif.tx_fe->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
-    perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
-    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP));
+    perif.framer = rx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_CTRL));
+    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
     perif.ddc->set_link_rate(10e9/8); //whatever
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
-    perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
+    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL));
+    perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
     perif.duc->set_link_rate(10e9/8); //whatever
 
     ////////////////////////////////////////////////////////////////////
     // create time control objects
     ////////////////////////////////////////////////////////////////////
     time_core_3000::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_now = RB64_TIME_NOW;
-    time64_rb_bases.rb_pps = RB64_TIME_PPS;
-    perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
+    time64_rb_bases.rb_now = radio::RB64_TIME_NOW;
+    time64_rb_bases.rb_pps = radio::RB64_TIME_PPS;
+    perif.time64 = time_core_3000::make(perif.ctrl, radio::sr_addr(radio::TIME), time64_rb_bases);
 
     //Capture delays are calibrated every time. The status is only printed is the user
     //asks to run the xfer self cal using "self_cal_adc_delay"
@@ -1021,7 +1021,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
 
     //create a new dboard interface
     x300_dboard_iface_config_t db_config;
-    db_config.gpio = gpio_core_200::make(perif.ctrl, TOREG(SR_GPIO), RB32_GPIO);
+    db_config.gpio = gpio_core_200::make(perif.ctrl, radio::sr_addr(radio::GPIO), radio::RB32_GPIO);
     db_config.spi = perif.spi;
     db_config.rx_spi_slaveno = DB_RX_SEN;
     db_config.tx_spi_slaveno = DB_TX_SEN;
@@ -1334,8 +1334,8 @@ void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
-        iface->poke32(TOREG(SR_TEST), boost::uint32_t(hash));
-        test_fail = iface->peek32(RB32_TEST) != boost::uint32_t(hash);
+        iface->poke32(radio::sr_addr(radio::TEST), boost::uint32_t(hash));
+        test_fail = iface->peek32(radio::RB32_TEST) != boost::uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;

@@ -182,7 +182,7 @@ private:
         UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_VAL,     /*width*/ 5, /*shift*/ 4);  //[8:4]
         UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_ENABLED,  /*width*/ 1, /*shift*/ 9);  //[9]
 
-        radio_misc_outs_reg(): uhd::soft_reg32_wo_t(TOREG(SR_MISC_OUTS)) {
+        radio_misc_outs_reg(): uhd::soft_reg32_wo_t(uhd::usrp::radio::sr_addr(uhd::usrp::radio::MISC_OUTS)) {
             //Initial values
             set(DAC_ENABLED, 0);
             set(DAC_RESET_N, 0);
@@ -203,7 +203,7 @@ private:
         UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_ERROR,  /*width*/ 1, /*shift*/ 6);  //[6]
         UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_ERROR,  /*width*/ 1, /*shift*/ 7);  //[7]
 
-        radio_misc_ins_reg(): uhd::soft_reg32_ro_t(RB32_MISC_INS) { }
+        radio_misc_ins_reg(): uhd::soft_reg32_ro_t(uhd::usrp::radio::RB32_MISC_INS) { }
     };
 
     //perifs in the radio core

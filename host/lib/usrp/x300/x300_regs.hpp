@@ -18,38 +18,45 @@
 #ifndef INCLUDED_X300_REGS_HPP
 #define INCLUDED_X300_REGS_HPP
 
+#include <uhd/config.hpp>
 #include <stdint.h>
-#include <boost/cstdint.hpp>
 
-#define TOREG(x) ((x)*4)
+namespace uhd { namespace usrp { namespace radio {
+
+static UHD_INLINE uint32_t sr_addr(const uint32_t offset)
+{
+    return offset * 4;
+}
+
+static const uint32_t DACSYNC    = 5;
+static const uint32_t LOOPBACK   = 6;
+static const uint32_t TEST       = 7;
+static const uint32_t SPI        = 8;
+static const uint32_t GPIO       = 16;
+static const uint32_t MISC_OUTS  = 24;
+static const uint32_t READBACK   = 32;
+static const uint32_t TX_CTRL    = 64;
+static const uint32_t RX_CTRL    = 96;
+static const uint32_t TIME       = 128;
+static const uint32_t RX_DSP     = 144;
+static const uint32_t TX_DSP     = 184;
+static const uint32_t LEDS       = 195;
+static const uint32_t FP_GPIO    = 200;
+static const uint32_t RX_FRONT   = 208;
+static const uint32_t TX_FRONT   = 216;
+
+static const uint32_t RB32_GPIO            = 0;
+static const uint32_t RB32_SPI             = 4;
+static const uint32_t RB64_TIME_NOW        = 8;
+static const uint32_t RB64_TIME_PPS        = 16;
+static const uint32_t RB32_TEST            = 24;
+static const uint32_t RB32_RX              = 28;
+static const uint32_t RB32_FP_GPIO         = 32;
+static const uint32_t RB32_MISC_INS        = 36;
+
+}}} // namespace
 
 #define localparam static const int
-
-localparam SR_DACSYNC    = 5;
-localparam SR_LOOPBACK   = 6;
-localparam SR_TEST       = 7;
-localparam SR_SPI        = 8;
-localparam SR_GPIO       = 16;
-localparam SR_MISC_OUTS  = 24;
-localparam SR_READBACK   = 32;
-localparam SR_TX_CTRL    = 64;
-localparam SR_RX_CTRL    = 96;
-localparam SR_TIME       = 128;
-localparam SR_RX_DSP     = 144;
-localparam SR_TX_DSP     = 184;
-localparam SR_LEDS       = 195;
-localparam SR_FP_GPIO    = 200;
-localparam SR_RX_FRONT   = 208;
-localparam SR_TX_FRONT   = 216;
-
-localparam RB32_GPIO     = 0;
-localparam RB32_SPI      = 4;
-localparam RB64_TIME_NOW = 8;
-localparam RB64_TIME_PPS = 16;
-localparam RB32_TEST     = 24;
-localparam RB32_RX       = 28;
-localparam RB32_FP_GPIO  = 32;
-localparam RB32_MISC_INS = 36;
 
 localparam BL_ADDRESS    = 0;
 localparam BL_DATA       = 1;

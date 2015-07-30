@@ -39,7 +39,7 @@ void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
     //Get a rough estimate of the cumulative command latency
     boost::posix_time::ptime t_start = boost::posix_time::microsec_clock::local_time();
     for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->ctrl->peek64(RB64_TIME_NOW); //Discard value. We are just timing the call
+        radios[i]->ctrl->peek64(uhd::usrp::radio::RB64_TIME_NOW); //Discard value. We are just timing the call
     }
     boost::posix_time::time_duration t_elapsed =
         boost::posix_time::microsec_clock::local_time() - t_start;
@@ -54,7 +54,7 @@ void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
     //Send the sync command
     for (size_t i = 0; i < radios.size(); i++) {
         radios[i]->ctrl->set_time(sync_time);
-        radios[i]->ctrl->poke32(TOREG(SR_DACSYNC), 0x1);    //Arm FRAMEP/N sync pulse
+        radios[i]->ctrl->poke32(uhd::usrp::radio::sr_addr(uhd::usrp::radio::DACSYNC), 0x1);    //Arm FRAMEP/N sync pulse
         radios[i]->ctrl->set_time(uhd::time_spec_t(0.0));   //Clear command time
     }
 
@@ -71,7 +71,7 @@ void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
 
 static void check_adc(uhd::wb_iface::sptr iface, const boost::uint32_t val, const boost::uint32_t i)
 {
-    boost::uint32_t adc_rb = iface->peek32(RB32_RX);
+    boost::uint32_t adc_rb = iface->peek32(uhd::usrp::radio::RB32_RX);
     adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
     if (val != adc_rb) {
         throw uhd::runtime_error(
