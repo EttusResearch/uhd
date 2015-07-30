@@ -1,4 +1,4 @@
-/*! \page page_usrp_e3x0 USRP-E3x0 Series
+/*! \page page_usrp_e3x0 USRP-E3xx Series
 
 \tableofcontents
 
@@ -35,7 +35,7 @@ There are two different methods to connect to the device
 - using the gigabit ethernet connector and a ssh client on your host computer
 
 For the first boot, booting with the serial cable connected to the device
-is recommended, as it allows to review and modify the network configuration,
+is recommended, as it allows to review and modify the \ref e3xx_network_configuration
 and allows to enter the bootloader in case of issues during the boot.
 
 
@@ -248,8 +248,7 @@ You may need to change the USRP's IP address for several reasons:
 - to use multiple USRP-E Series devices with the same host computer
 - to set a known IP address into USRP (in case you forgot)
 
-
-
+For examples refer to the \ref e3xx_network_configuration section.
 
 \section e3x0_hw Hardware Notes
 
@@ -625,6 +624,51 @@ TRX-B   | 1842.6 – 2940.0 | 00            | 01             | 000
 TRX-B   | >= 2940.0       | 11            | 10             | XXX             
 _Note: Although the transmit filters are low pass, the following table describes UHD's tuning range for selecting each filter path.
 The table also includes the required transmit enable states._
+
+\section e3xx_network_configuration Network configuration
+
+Your USRP E3XX Series device can be configured by editing the /etc/network/interfaces.<br>
+The device defaults to *DHCP*, meaning it will query the local network's DHCP server for an address.
+
+\subsection e3xx_network_dhcp DHCP
+
+The default configuration should look similar to, instructing your device to query
+local DHCP servers for an IP address, gateway, etc.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+auto eth0
+iface eth0 inet dhcp
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to change the hostname used to obtain an IP address via DHCP change
+
+    /etc/hostname
+
+and edit:
+
+    /etc/network/interfaces
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+auto eth0
+iface eth0 inet dhcp
+    hostname your-hostname
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+\subsection e3xx_network_static Static IP
+
+To configure a static IP address edit
+
+    /etc/hostname
+
+to look like
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+auto eth0
+iface eth0 inet static
+    address your-ip
+    netmask your-netmask
+    gateway your-gateway
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 \section e3x0_misc Miscellaneous
 
