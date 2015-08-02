@@ -609,6 +609,30 @@ The +3.3V is for ESD clamping purposes only and not designed to deliver high cur
 
 Please see the \ref page_gpio_api for information on configuring and using the GPIO bus.
 
+\subsection x3x0_hw_on_board_leds On-Board LEDs
+
+|LED	| 	 	| Description			|
+|-------|---------------|-------------------------------|
+|DS1	|1.2V		|power				|
+|DS2	|TXRX1		|Red: TX,  Green: RX		|
+|DS3	|RX1		|Green: RX			|
+|DS4	|REF		|reference lock			|
+|DS5	|PPS		|flashes on edge		|
+|DS6	|GPS		|GPS lock			|
+|DS7	|SFP0		|link				|
+|DS8	|SFP0		|link activity			|
+|DS10	|TXRX2		|Red: TX Green: RX		|
+|DS11	|RX2		|Green: RX			|
+|DS12	|6V		|daughterboard power		|
+|DS13	|3.8V		|power				|
+|DS14	|3.3V		|management power		|
+|DS15	|3.3V		|auxiliary management power	|
+|DS16	|1.8V		|FPGA power			|
+|DS16	|3.3V		|FPGA power			|
+|DS19	|SFP1		|link				|
+|DS20	|SFP1		|link active			|
+|DS21	|LINK		|link activity			|
+
 \subsection x3x0_hw_chipscope Debugging custom FPGA designs with Xilinx Chipscope
 
 Xilinx chipscope allows for debugging custom FPGA designs similar to a logic analyzer.
