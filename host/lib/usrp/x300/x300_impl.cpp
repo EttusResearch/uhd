@@ -46,6 +46,7 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 using namespace uhd::niusrprio;
+using namespace uhd::usrp::x300;
 namespace asio = boost::asio;
 
 /***********************************************************************
@@ -512,6 +513,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     this->check_fpga_compat(mb_path, mb);
     this->check_fw_compat(mb_path, mb.zpu_ctrl);
 
+    mb.fw_regmap = boost::make_shared<fw_regmap_t>();
+    mb.fw_regmap->initialize(*mb.zpu_ctrl.get(), true);
+
     //store which FPGA image is loaded
     mb.loaded_fpga_image = get_fpga_option(mb.zpu_ctrl);
 
@@ -663,7 +667,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     UHD_MSG(status) << "Setup RF frontend clocking..." << std::endl;
 
     //Initialize clock control registers. NOTE: This does not configure the LMK yet.
-    initialize_clock_control(mb);
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
         mb.hw_rev,
@@ -842,7 +845,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // and do the misc mboard sensors
     ////////////////////////////////////////////////////////////////////
     _tree->create<sensor_value_t>(mb_path / "sensors" / "ref_locked")
-        .publish(boost::bind(&x300_impl::get_ref_locked, this, mb.zpu_ctrl));
+        .publish(boost::bind(&x300_impl::get_ref_locked, this, mb));
 
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
@@ -860,6 +863,14 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_fe_spec);
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_fe_spec);
 
+    mb.regmap_db = boost::make_shared<uhd::soft_regmap_db_t>();
+    mb.regmap_db->add(*mb.fw_regmap);
+    mb.regmap_db->add(*mb.radio_perifs[0].regmap);
+    mb.regmap_db->add(*mb.radio_perifs[1].regmap);
+
+    _tree->create<uhd::soft_regmap_accessor_t::sptr>(mb_path / "registers")
+        .set(mb.regmap_db);
+
     mb.initialization_done = true;
 }
 
@@ -870,12 +881,12 @@ x300_impl::~x300_impl(void)
         BOOST_FOREACH(mboard_members_t &mb, _mb)
         {
             //Disable/reset ADC/DAC
-            mb.radio_perifs[0].misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
-            mb.radio_perifs[0].misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
-            mb.radio_perifs[0].misc_outs->set(radio_misc_outs_reg::DAC_ENABLED, 0);
-            mb.radio_perifs[0].misc_outs->flush();
-            mb.radio_perifs[1].misc_outs->set(radio_misc_outs_reg::DAC_ENABLED, 0);
-            mb.radio_perifs[1].misc_outs->flush();
+            mb.radio_perifs[0].regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 1);
+            mb.radio_perifs[0].regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 0);
+            mb.radio_perifs[0].regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_ENABLED, 0);
+            mb.radio_perifs[0].regmap->misc_outs_reg.flush();
+            mb.radio_perifs[1].regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_ENABLED, 0);
+            mb.radio_perifs[1].regmap->misc_outs_reg.flush();
 
             //kill the claimer task and unclaim the device
             mb.claimer_task.reset();
@@ -913,21 +924,19 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     both_xports_t xport = this->make_transport(mb_i, dest, X300_RADIO_DEST_PREFIX_CTRL, device_addr_t(), ctrl_sid);
     perif.ctrl = radio_ctrl_core_3000::make(mb.if_pkt_is_big_endian, xport.recv, xport.send, ctrl_sid, slot_name);
 
-    perif.misc_outs = boost::make_shared<radio_misc_outs_reg>();
-    perif.misc_ins = boost::make_shared<radio_misc_ins_reg>();
-    perif.misc_outs->initialize(*perif.ctrl, true);
-    perif.misc_ins->initialize(*perif.ctrl);
+    perif.regmap = boost::make_shared<radio_regmap_t>(radio_index);
+    perif.regmap->initialize(*perif.ctrl, true);
 
     //Only Radio0 has the ADC/DAC reset bits. Those bits are reserved for Radio1
     if (radio_index == 0) {
-        perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
-        perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
-        perif.misc_outs->flush();
-        perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 0);
-        perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 1);
-        perif.misc_outs->flush();
+        perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 1);
+        perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 0);
+        perif.regmap->misc_outs_reg.flush();
+        perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 0);
+        perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 1);
+        perif.regmap->misc_outs_reg.flush();
     }
-    perif.misc_outs->write(radio_misc_outs_reg::DAC_ENABLED, 1);
+    perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_ENABLED, 1);
 
     this->register_loopback_self_test(perif.ctrl);
 
@@ -1345,32 +1354,9 @@ void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
  * clock and time control logic
  **********************************************************************/
 
-void x300_impl::update_clock_control(mboard_members_t &mb)
-{
-    const size_t reg = mb.clock_control_regs_clock_source
-        | (mb.clock_control_regs_pps_select << 2)
-        | (mb.clock_control_regs_pps_out_enb << 4)
-        | (mb.clock_control_regs_tcxo_enb << 5)
-        | (mb.clock_control_regs_gpsdo_pwr << 6)
-    ;
-    mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_CLOCK_CTRL), reg);
-}
-
-void x300_impl::initialize_clock_control(mboard_members_t &mb)
-{
-    //Initialize clock control register soft copies
-    mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
-    mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
-    mb.clock_control_regs_pps_out_enb = 0;
-    mb.clock_control_regs_tcxo_enb = 1;
-    mb.clock_control_regs_gpsdo_pwr = 1;    //GPSDO power always ON
-    this->update_clock_control(mb);
-}
-
 void x300_impl::set_time_source_out(mboard_members_t &mb, const bool enb)
 {
-    mb.clock_control_regs_pps_out_enb = enb? 1 : 0;
-    this->update_clock_control(mb);
+    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::fw_regmap_t::clk_ctrl_reg_t::PPS_OUT_EN, enb?1:0);
 }
 
 void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &source)
@@ -1381,19 +1367,19 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
     const bool reconfigure_clks = (mb.current_refclk_src != "internal") or (source != "internal");
     if (reconfigure_clks) {
         //Update the clock MUX on the motherboard to select the requested source
-        mb.clock_control_regs_clock_source = 0;
-        mb.clock_control_regs_tcxo_enb = 0;
         if (source == "internal") {
-            mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
-            mb.clock_control_regs_tcxo_enb = 1;
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::CLK_SOURCE, fw_regmap_t::clk_ctrl_reg_t::SRC_INTERNAL);
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::TCXO_EN, 1);
         } else if (source == "external") {
-            mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_EXTERNAL;
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::CLK_SOURCE, fw_regmap_t::clk_ctrl_reg_t::SRC_EXTERNAL);
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::TCXO_EN, 0);
         } else if (source == "gpsdo") {
-            mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_GPSDO;
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::CLK_SOURCE, fw_regmap_t::clk_ctrl_reg_t::SRC_GPSDO);
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::TCXO_EN, 0);
         } else {
             throw uhd::key_error("update_clock_source: unknown source: " + source);
         }
-        this->update_clock_control(mb);
+        mb.fw_regmap->clock_ctrl_reg.flush();
 
         //Reset the LMK to make sure it re-locks to the new reference
         mb.clock->reset_clocks();
@@ -1408,7 +1394,7 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
     //The programming code in x300_clock_ctrl is not compatible with revs <= 4 and may
     //lead to locking issues. So, disable the ref-locked check for older (unsupported) boards.
     if (mb.hw_rev > 4) {
-        if (not wait_for_clk_locked(mb.zpu_ctrl, ZPU_RB_CLK_STATUS_LMK_LOCK, timeout)) {
+        if (not wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, timeout)) {
             //failed to lock on reference
             if (mb.initialization_done) {
                 throw uhd::runtime_error((boost::format("Reference Clock PLL failed to lock to %s source.") % source).str());
@@ -1426,7 +1412,7 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
         mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), 0);
 
         //Wait for radio clock PLL to lock
-        if (not wait_for_clk_locked(mb.zpu_ctrl, ZPU_RB_CLK_STATUS_RADIO_CLK_LOCK, 0.01)) {
+        if (not wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::RADIO_CLK_LOCK, 0.01)) {
             throw uhd::runtime_error((boost::format("Reference Clock PLL in FPGA failed to lock to %s source.") % source).str());
         }
 
@@ -1435,20 +1421,20 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
         mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), 0);
 
         //Wait for the ADC IDELAYCTRL to be ready
-        if (not wait_for_clk_locked(mb.zpu_ctrl, ZPU_RB_CLK_STATUS_IDELAYCTRL_LOCK, 0.01)) {
+        if (not wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::IDELAYCTRL_LOCK, 0.01)) {
             throw uhd::runtime_error((boost::format("ADC Calibration Clock in FPGA failed to lock to %s source.") % source).str());
         }
 
         // Reset ADCs and DACs
         for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
             radio_perifs_t &perif = mb.radio_perifs[r];
-            if (perif.misc_outs && r==0) {  //ADC/DAC reset lines only exist in Radio0
-                perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 1);
-                perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 0);
-                perif.misc_outs->flush();
-                perif.misc_outs->set(radio_misc_outs_reg::ADC_RESET, 0);
-                perif.misc_outs->set(radio_misc_outs_reg::DAC_RESET_N, 1);
-                perif.misc_outs->flush();
+            if (perif.regmap && r==0) {  //ADC/DAC reset lines only exist in Radio0
+                perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 1);
+                perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 0);
+                perif.regmap->misc_outs_reg.flush();
+                perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 0);
+                perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 1);
+                perif.regmap->misc_outs_reg.flush();
             }
             if (perif.adc) perif.adc->reset();
             if (perif.dac) perif.dac->reset();
@@ -1462,61 +1448,54 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
 void x300_impl::update_time_source(mboard_members_t &mb, const std::string &source)
 {
     if (source == "internal") {
-        mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
+        mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_SELECT, fw_regmap_t::clk_ctrl_reg_t::SRC_INTERNAL);
     } else if (source == "external") {
-        mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_EXTERNAL;
+        mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_SELECT, fw_regmap_t::clk_ctrl_reg_t::SRC_EXTERNAL);
     } else if (source == "gpsdo") {
-        mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_GPSDO;
+        mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_SELECT, fw_regmap_t::clk_ctrl_reg_t::SRC_GPSDO);
     } else {
         throw uhd::key_error("update_time_source: unknown source: " + source);
     }
 
-    this->update_clock_control(mb);
-
     //check for valid pps
-    if (!is_pps_present(mb.zpu_ctrl))
+    if (!is_pps_present(mb))
     {
         // TODO - Implement intelligent PPS detection
         /* throw uhd::runtime_error((boost::format("The %d PPS was not detected.  Please check the PPS source and try again.") % source).str()); */
     }
 }
 
-static bool get_clk_locked(wb_iface::sptr ctrl, boost::uint32_t which)
-{
-    return (ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS)) & which) != 0;
-}
-
-bool x300_impl::wait_for_clk_locked(wb_iface::sptr ctrl, boost::uint32_t which, double timeout)
+bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout)
 {
     boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(timeout * 1000.0);
     do {
-        if (get_clk_locked(ctrl, which))
+        if (mb.fw_regmap->clock_status_reg.read(which)==1)
             return true;
         boost::this_thread::sleep(boost::posix_time::milliseconds(1));
     } while (boost::get_system_time() < timeout_time);
 
     //Check one last time
-    return get_clk_locked(ctrl, which);
+    return (mb.fw_regmap->clock_status_reg.read(which)==1);
 }
 
-sensor_value_t x300_impl::get_ref_locked(wb_iface::sptr ctrl)
+sensor_value_t x300_impl::get_ref_locked(mboard_members_t& mb)
 {
-    const bool lock = get_clk_locked(ctrl, ZPU_RB_CLK_STATUS_LMK_LOCK) &&
-                      get_clk_locked(ctrl, ZPU_RB_CLK_STATUS_RADIO_CLK_LOCK) &&
-                      get_clk_locked(ctrl, ZPU_RB_CLK_STATUS_IDELAYCTRL_LOCK);
+    mb.fw_regmap->clock_status_reg.refresh();
+    const bool lock = (mb.fw_regmap->clock_status_reg.get(fw_regmap_t::clk_status_reg_t::LMK_LOCK)==1) &&
+                      (mb.fw_regmap->clock_status_reg.get(fw_regmap_t::clk_status_reg_t::RADIO_CLK_LOCK)==1) &&
+                      (mb.fw_regmap->clock_status_reg.get(fw_regmap_t::clk_status_reg_t::IDELAYCTRL_LOCK)==1);
     return sensor_value_t("Ref", lock, "locked", "unlocked");
 }
 
-bool x300_impl::is_pps_present(wb_iface::sptr ctrl)
+bool x300_impl::is_pps_present(mboard_members_t& mb)
 {
     // The ZPU_RB_CLK_STATUS_PPS_DETECT bit toggles with each rising edge of the PPS.
     // We monitor it for up to 1.5 seconds looking for it to toggle.
-    boost::uint32_t pps_detect = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS)) & ZPU_RB_CLK_STATUS_PPS_DETECT;
+    boost::uint32_t pps_detect = mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT);
     for (int i = 0; i < 15; i++)
     {
         boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-        boost::uint32_t clk_status = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS));
-        if (pps_detect != (clk_status & ZPU_RB_CLK_STATUS_PPS_DETECT))
+        if (pps_detect != mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT))
             return true;
     }
     return false;

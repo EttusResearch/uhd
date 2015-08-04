@@ -49,7 +49,6 @@
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include "recv_packet_demuxer_3000.hpp"
-#include <uhd/utils/soft_register.hpp>
 #include "x300_regs.hpp"
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
@@ -173,39 +172,6 @@ public:
 private:
     boost::shared_ptr<async_md_type> _async_md;
 
-    class radio_misc_outs_reg : public uhd::soft_reg32_wo_t {
-    public:
-        UHD_DEFINE_SOFT_REG_FIELD(DAC_ENABLED,          /*width*/ 1, /*shift*/ 0);  //[0]
-        UHD_DEFINE_SOFT_REG_FIELD(DAC_RESET_N,          /*width*/ 1, /*shift*/ 1);  //[1]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_RESET,            /*width*/ 1, /*shift*/ 2);  //[2]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_STB,     /*width*/ 1, /*shift*/ 3);  //[3]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_VAL,     /*width*/ 5, /*shift*/ 4);  //[8:4]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_ENABLED,  /*width*/ 1, /*shift*/ 9);  //[9]
-
-        radio_misc_outs_reg(): uhd::soft_reg32_wo_t(TOREG(SR_MISC_OUTS)) {
-            //Initial values
-            set(DAC_ENABLED, 0);
-            set(DAC_RESET_N, 0);
-            set(ADC_RESET, 0);
-            set(ADC_DATA_DLY_STB, 0);
-            set(ADC_DATA_DLY_VAL, 16);
-            set(ADC_CHECKER_ENABLED, 0);
-        }
-    };
-    class radio_misc_ins_reg : public uhd::soft_reg32_ro_t {
-    public:
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_Q_LOCKED, /*width*/ 1, /*shift*/ 0);  //[0]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_I_LOCKED, /*width*/ 1, /*shift*/ 1);  //[1]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_LOCKED, /*width*/ 1, /*shift*/ 2);  //[2]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_LOCKED, /*width*/ 1, /*shift*/ 3);  //[3]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_Q_ERROR,  /*width*/ 1, /*shift*/ 4);  //[4]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_I_ERROR,  /*width*/ 1, /*shift*/ 5);  //[5]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_ERROR,  /*width*/ 1, /*shift*/ 6);  //[6]
-        UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_ERROR,  /*width*/ 1, /*shift*/ 7);  //[7]
-
-        radio_misc_ins_reg(): uhd::soft_reg32_ro_t(RB32_MISC_INS) { }
-    };
-
     //perifs in the radio core
     struct radio_perifs_t
     {
@@ -223,8 +189,7 @@ private:
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
         //Registers
-        radio_misc_outs_reg::sptr misc_outs;
-        radio_misc_ins_reg::sptr misc_ins;
+        uhd::usrp::x300::radio_regmap_t::sptr regmap;
     };
 
     //overflow recovery impl
@@ -266,18 +231,15 @@ private:
         uhd::gps_ctrl::sptr gps;
         gpio_core_200::sptr fp_gpio;
 
-        //clock control register bits
-        int clock_control_regs_clock_source;
-        int clock_control_regs_pps_select;
-        int clock_control_regs_pps_out_enb;
-        int clock_control_regs_tcxo_enb;
-        int clock_control_regs_gpsdo_pwr;
+        uhd::usrp::x300::fw_regmap_t::sptr fw_regmap;
 
         //which FPGA image is loaded
         std::string loaded_fpga_image;
 
         size_t hw_rev;
         std::string current_refclk_src;
+
+        uhd::soft_regmap_db_t::sptr regmap_db;
     };
     std::vector<mboard_members_t> _mb;
 
@@ -391,9 +353,9 @@ private:
     void update_clock_source(mboard_members_t&, const std::string &);
     void update_time_source(mboard_members_t&, const std::string &);
 
-    uhd::sensor_value_t get_ref_locked(uhd::wb_iface::sptr);
-    bool wait_for_clk_locked(uhd::wb_iface::sptr, boost::uint32_t which, double timeout);
-    bool is_pps_present(uhd::wb_iface::sptr);
+    uhd::sensor_value_t get_ref_locked(mboard_members_t& mb);
+    bool wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout);
+    bool is_pps_present(mboard_members_t& mb);
 
     void set_db_eeprom(uhd::i2c_iface::sptr i2c, const size_t, const uhd::usrp::dboard_eeprom_t &);
     void set_mb_eeprom(uhd::i2c_iface::sptr i2c, const uhd::usrp::mboard_eeprom_t &);

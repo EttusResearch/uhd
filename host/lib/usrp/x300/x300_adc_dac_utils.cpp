@@ -18,6 +18,8 @@
 #include "x300_impl.hpp"
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 
+using namespace uhd::usrp::x300;
+
 /***********************************************************************
  * DAC: Reset and synchronization operations
  **********************************************************************/
@@ -101,8 +103,8 @@ void x300_impl::self_test_adcs(mboard_members_t& mb, boost::uint32_t ramp_time_m
 
         //Turn on ramp pattern test
         perif.adc->set_test_word("ramp", "ramp");
-        perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
-        perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
+        perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
+        perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
     }
     boost::this_thread::sleep(boost::posix_time::milliseconds(ramp_time_ms));
 
@@ -110,19 +112,19 @@ void x300_impl::self_test_adcs(mboard_members_t& mb, boost::uint32_t ramp_time_m
     std::string status_str;
     for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
         radio_perifs_t &perif = mb.radio_perifs[r];
-        perif.misc_ins->refresh();
+        perif.regmap->misc_ins_reg.refresh();
 
         std::string i_status, q_status;
-        if (perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER1_I_LOCKED))
-            if (perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER1_I_ERROR))
+        if (perif.regmap->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_I_LOCKED))
+            if (perif.regmap->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_I_ERROR))
                 i_status = "Bit Errors!";
             else
                 i_status = "Good";
         else
             i_status = "Not Locked!";
 
-        if (perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER1_Q_LOCKED))
-            if (perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER1_Q_ERROR))
+        if (perif.regmap->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_Q_LOCKED))
+            if (perif.regmap->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_Q_ERROR))
                 q_status = "Bit Errors!";
             else
                 q_status = "Good";
@@ -193,9 +195,9 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
     while (iter++ < NUM_RETRIES) {
         for (boost::uint32_t dly_tap = 0; dly_tap < NUM_DELAY_STEPS; dly_tap++) {
             //Apply delay
-            perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_VAL, dly_tap);
-            perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_STB, 1);
-            perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_STB, 0);
+            perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_VAL, dly_tap);
+            perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 1);
+            perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 0);
 
             boost::uint32_t err_code = 0;
 
@@ -204,12 +206,12 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
             perif.adc->set_test_word("ramp", "ones");
             //Turn on the pattern checker in the FPGA. It will lock when it sees a zero
             //and count deviations from the expected value
-            perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
-            perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
+            perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
+            perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //10ms @ 200MHz = 2 million samples
             boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-            if (perif.misc_ins->read(radio_misc_ins_reg::ADC_CHECKER0_I_LOCKED)) {
-                err_code += perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER0_I_ERROR);
+            if (perif.regmap->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_I_LOCKED)) {
+                err_code += perif.regmap->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_I_ERROR);
             } else {
                 err_code += 100;    //Increment error code by 100 to indicate no lock
             }
@@ -219,12 +221,12 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
             perif.adc->set_test_word("ones", "ramp");
             //Turn on the pattern checker in the FPGA. It will lock when it sees a zero
             //and count deviations from the expected value
-            perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
-            perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
+            perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
+            perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //10ms @ 200MHz = 2 million samples
             boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-            if (perif.misc_ins->read(radio_misc_ins_reg::ADC_CHECKER0_Q_LOCKED)) {
-                err_code += perif.misc_ins->get(radio_misc_ins_reg::ADC_CHECKER0_Q_ERROR);
+            if (perif.regmap->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_Q_LOCKED)) {
+                err_code += perif.regmap->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_Q_ERROR);
             } else {
                 err_code += 100;    //Increment error code by 100 to indicate no lock
             }
@@ -258,7 +260,7 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
         }
     }
     perif.adc->set_test_word("normal", "normal");
-    perif.misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
+    perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
 
     if (win_start == -1) {
         throw uhd::runtime_error("self_cal_adc_capture_delay: Self calibration failed. Convergence error.");
@@ -269,9 +271,9 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
     }
 
     boost::uint32_t ideal_tap = (win_stop + win_start) / 2;
-    perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_VAL, ideal_tap);
-    perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_STB, 1);
-    perif.misc_outs->write(radio_misc_outs_reg::ADC_DATA_DLY_STB, 0);
+    perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_VAL, ideal_tap);
+    perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 1);
+    perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 0);
 
     if (print_status) {
         double tap_delay = (1.0e12 / mb.clock->get_master_clock_rate()) / (2*32); //in ps
@@ -300,7 +302,7 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
     for (size_t i = 0; i < NUM_DELAY_STEPS; i++) {
         //Delay the ADC clock (will set both Ch0 and Ch1 delays)
         double delay = mb.clock->set_clock_delay(X300_CLOCK_WHICH_ADC0, delay_incr*i + delay_start);
-        wait_for_clk_locked(mb.zpu_ctrl, ZPU_RB_CLK_STATUS_LMK_LOCK, 0.1);
+        wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, 0.1);
 
         boost::uint32_t err_code = 0;
         for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
@@ -312,12 +314,12 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
             mb.radio_perifs[r].adc->set_test_word("ramp", "ones");
             //Turn on the pattern checker in the FPGA. It will lock when it sees a zero
             //and count deviations from the expected value
-            mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
-            mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
+            mb.radio_perifs[r].regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
+            mb.radio_perifs[r].regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //50ms @ 200MHz = 10 million samples
             boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-            if (mb.radio_perifs[r].misc_ins->read(radio_misc_ins_reg::ADC_CHECKER1_I_LOCKED)) {
-                err_code += mb.radio_perifs[r].misc_ins->get(radio_misc_ins_reg::ADC_CHECKER1_I_ERROR);
+            if (mb.radio_perifs[r].regmap->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_I_LOCKED)) {
+                err_code += mb.radio_perifs[r].regmap->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_I_ERROR);
             } else {
                 err_code += 100;    //Increment error code by 100 to indicate no lock
             }
@@ -327,12 +329,12 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
             mb.radio_perifs[r].adc->set_test_word("ones", "ramp");
             //Turn on the pattern checker in the FPGA. It will lock when it sees a zero
             //and count deviations from the expected value
-            mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
-            mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 1);
+            mb.radio_perifs[r].regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
+            mb.radio_perifs[r].regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //50ms @ 200MHz = 10 million samples
             boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-            if (mb.radio_perifs[r].misc_ins->read(radio_misc_ins_reg::ADC_CHECKER1_Q_LOCKED)) {
-                err_code += mb.radio_perifs[r].misc_ins->get(radio_misc_ins_reg::ADC_CHECKER1_Q_ERROR);
+            if (mb.radio_perifs[r].regmap->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_Q_LOCKED)) {
+                err_code += mb.radio_perifs[r].regmap->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_Q_ERROR);
             } else {
                 err_code += 100;    //Increment error code by 100 to indicate no lock
             }
@@ -392,7 +394,7 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
         UHD_MSG(status) << "Validating..." << std::flush;
         //Apply delay
         win_center = mb.clock->set_clock_delay(X300_CLOCK_WHICH_ADC0, win_center);  //Sets ADC0 and ADC1
-        wait_for_clk_locked(mb.zpu_ctrl, ZPU_RB_CLK_STATUS_LMK_LOCK, 0.1);
+        wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, 0.1);
         //Validate
         self_test_adcs(mb, 2000);
     } else {
@@ -403,7 +405,7 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
     //Teardown
     for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
         mb.radio_perifs[r].adc->set_test_word("normal", "normal");
-        mb.radio_perifs[r].misc_outs->write(radio_misc_outs_reg::ADC_CHECKER_ENABLED, 0);
+        mb.radio_perifs[r].regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
     }
     UHD_MSG(status) << (boost::format(" done (FPGA->ADC=%.3fns%s, Window=%.3fns)\n") %
         (win_center-fpga_clk_delay) % (cycle_slip?" +cyc":"") % win_length);

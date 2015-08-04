@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <boost/cstdint.hpp>
+#include <uhd/utils/soft_register.hpp>
 
 #define TOREG(x) ((x)*4)
 
@@ -76,27 +77,11 @@ localparam ZPU_SR_ETHINT1    = 56;
 #define ZPU_SR_SW_RST_RADIO_CLK_PLL     (1<<2)
 #define ZPU_SR_SW_RST_ADC_IDELAYCTRL    (1<<3)
 
-//clock controls
-#define ZPU_SR_CLOCK_CTRL_CLK_SRC_EXTERNAL 0x00
-#define ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL 0x02
-#define ZPU_SR_CLOCK_CTRL_CLK_SRC_GPSDO    0x03
-#define ZPU_SR_CLOCK_CTRL_PPS_SRC_EXTERNAL 0x00
-#define ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL 0x02
-#define ZPU_SR_CLOCK_CTRL_PPS_SRC_GPSDO    0x03
-
 localparam ZPU_RB_SPI        = 2;
 localparam ZPU_RB_CLK_STATUS = 3;
 localparam ZPU_RB_COMPAT_NUM = 6;
 localparam ZPU_RB_ETH_TYPE0  = 4;
 localparam ZPU_RB_ETH_TYPE1  = 5;
-
-//clock status
-#define ZPU_RB_CLK_STATUS_LMK_STATUS        (0x3 << 0)
-#define ZPU_RB_CLK_STATUS_LMK_LOCK          (0x1 << 2)
-#define ZPU_RB_CLK_STATUS_LMK_HOLDOVER      (0x1 << 3)
-#define ZPU_RB_CLK_STATUS_PPS_DETECT        (0x1 << 4)
-#define ZPU_RB_CLK_STATUS_RADIO_CLK_LOCK    (0x1 << 5)
-#define ZPU_RB_CLK_STATUS_IDELAYCTRL_LOCK   (0x1 << 6)
 
 //spi slaves on radio
 #define DB_DAC_SEN      (1 << 7)
@@ -202,5 +187,97 @@ static const uint32_t PCIE_ZPU_READ_CLOBBER     = 0x80000000;
 static const uint32_t PCIE_ZPU_STATUS_BUSY      = 0x1;
 static const uint32_t PCIE_ZPU_STATUS_SUSPENDED = 0x80000000;
 
+//-------------------------------------------------------------------
+// Register Maps
+//-------------------------------------------------------------------
+namespace uhd { namespace usrp { namespace x300 {
+    class fw_regmap_t : public uhd::soft_regmap_t {
+    public:
+        typedef boost::shared_ptr<fw_regmap_t> sptr;
+
+        class clk_ctrl_reg_t : public uhd::soft_reg32_wo_t {
+        public:
+            UHD_DEFINE_SOFT_REG_FIELD(CLK_SOURCE,   /*width*/ 2, /*shift*/ 0);  //[1:0]
+            UHD_DEFINE_SOFT_REG_FIELD(PPS_SELECT,   /*width*/ 2, /*shift*/ 2);  //[3:2]
+            UHD_DEFINE_SOFT_REG_FIELD(PPS_OUT_EN,   /*width*/ 1, /*shift*/ 4);  //[4]
+            UHD_DEFINE_SOFT_REG_FIELD(TCXO_EN,      /*width*/ 1, /*shift*/ 5);  //[5]
+            UHD_DEFINE_SOFT_REG_FIELD(GPSDO_PWR_EN, /*width*/ 1, /*shift*/ 6);  //[6]
+
+            static const boost::uint32_t SRC_EXTERNAL = 0x0;
+            static const boost::uint32_t SRC_INTERNAL = 0x2;
+            static const boost::uint32_t SRC_GPSDO    = 0x3;
+
+            clk_ctrl_reg_t(): uhd::soft_reg32_wo_t(SR_ADDR(SET0_BASE, ZPU_SR_CLOCK_CTRL)) {
+                //Initial values
+                set(CLK_SOURCE, SRC_INTERNAL);
+                set(PPS_SELECT, SRC_INTERNAL);
+                set(PPS_OUT_EN, 0);
+                set(TCXO_EN, 1);
+                set(GPSDO_PWR_EN, 1);   //GPSDO power always ON
+            }
+        } clock_ctrl_reg;
+
+        class clk_status_reg_t : public uhd::soft_reg32_ro_t {
+        public:
+            UHD_DEFINE_SOFT_REG_FIELD(LMK_STATUS,       /*width*/ 2, /*shift*/ 0);  //[1:0]
+            UHD_DEFINE_SOFT_REG_FIELD(LMK_LOCK,         /*width*/ 1, /*shift*/ 2);  //[2]
+            UHD_DEFINE_SOFT_REG_FIELD(LMK_HOLDOVER,     /*width*/ 1, /*shift*/ 3);  //[3]
+            UHD_DEFINE_SOFT_REG_FIELD(PPS_DETECT,       /*width*/ 1, /*shift*/ 4);  //[4]
+            UHD_DEFINE_SOFT_REG_FIELD(RADIO_CLK_LOCK,   /*width*/ 1, /*shift*/ 5);  //[5]
+            UHD_DEFINE_SOFT_REG_FIELD(IDELAYCTRL_LOCK,  /*width*/ 1, /*shift*/ 6);  //[6]
+
+            clk_status_reg_t(): uhd::soft_reg32_ro_t(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS)) {}
+        } clock_status_reg;
+
+        fw_regmap_t() : soft_regmap_t("fw_regmap") {
+            add_to_map(clock_ctrl_reg, "clock_ctrl_reg", PUBLIC);
+            add_to_map(clock_status_reg, "clock_status_reg", PUBLIC);
+        }
+    };
+
+    class radio_regmap_t : public uhd::soft_regmap_t {
+    public:
+        typedef boost::shared_ptr<radio_regmap_t> sptr;
+        class misc_outs_reg_t : public uhd::soft_reg32_wo_t {
+        public:
+            UHD_DEFINE_SOFT_REG_FIELD(DAC_ENABLED,          /*width*/ 1, /*shift*/ 0);  //[0]
+            UHD_DEFINE_SOFT_REG_FIELD(DAC_RESET_N,          /*width*/ 1, /*shift*/ 1);  //[1]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_RESET,            /*width*/ 1, /*shift*/ 2);  //[2]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_STB,     /*width*/ 1, /*shift*/ 3);  //[3]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_VAL,     /*width*/ 5, /*shift*/ 4);  //[8:4]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_ENABLED,  /*width*/ 1, /*shift*/ 9);  //[9]
+
+            misc_outs_reg_t(): uhd::soft_reg32_wo_t(TOREG(SR_MISC_OUTS)) {
+                //Initial values
+                set(DAC_ENABLED, 0);
+                set(DAC_RESET_N, 0);
+                set(ADC_RESET, 0);
+                set(ADC_DATA_DLY_STB, 0);
+                set(ADC_DATA_DLY_VAL, 16);
+                set(ADC_CHECKER_ENABLED, 0);
+            }
+        } misc_outs_reg;
+
+        class misc_ins_reg_t : public uhd::soft_reg32_ro_t {
+        public:
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_Q_LOCKED, /*width*/ 1, /*shift*/ 0);  //[0]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_I_LOCKED, /*width*/ 1, /*shift*/ 1);  //[1]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_LOCKED, /*width*/ 1, /*shift*/ 2);  //[2]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_LOCKED, /*width*/ 1, /*shift*/ 3);  //[3]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_Q_ERROR,  /*width*/ 1, /*shift*/ 4);  //[4]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_I_ERROR,  /*width*/ 1, /*shift*/ 5);  //[5]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_ERROR,  /*width*/ 1, /*shift*/ 6);  //[6]
+            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_ERROR,  /*width*/ 1, /*shift*/ 7);  //[7]
+
+            misc_ins_reg_t(): uhd::soft_reg32_ro_t(RB32_MISC_INS) { }
+        } misc_ins_reg;
+
+        radio_regmap_t(int radio_num) : soft_regmap_t("radio" + boost::lexical_cast<std::string>(radio_num) + "_regmap") {
+            add_to_map(misc_outs_reg, "misc_outs_reg", PUBLIC);
+            add_to_map(misc_ins_reg, "misc_ins_reg", PUBLIC);
+        }
+    };
+
+}}}
 
 #endif /* INCLUDED_X300_REGS_HPP */
