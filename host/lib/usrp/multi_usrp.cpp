@@ -26,6 +26,7 @@
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/convert.hpp>
+#include <uhd/utils/soft_register.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
@@ -1369,6 +1370,95 @@ public:
             if (attr == "READBACK") return iface->read_gpio(unit);
         }
         return 0;
+    }
+
+    void write_register(const std::string &path, const boost::uint32_t field, const boost::uint64_t value, const size_t mboard)
+    {
+        if (_tree->exists(mb_root(mboard) / "registers"))
+        {
+            uhd::soft_regmap_accessor_t::sptr accessor =
+                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
+            uhd::soft_register_base& reg = accessor->lookup(path);
+
+            switch (reg.get_bitwidth()) {
+            case 16:
+                if (reg.is_readable())
+                    uhd::soft_register_base::cast<uhd::soft_reg16_rw_t>(reg).write(field, static_cast<boost::uint16_t>(value));
+                else
+                    uhd::soft_register_base::cast<uhd::soft_reg16_wo_t>(reg).write(field, static_cast<boost::uint16_t>(value));
+            break;
+
+            case 32:
+                if (reg.is_readable())
+                    uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).write(field, static_cast<boost::uint32_t>(value));
+                else
+                    uhd::soft_register_base::cast<uhd::soft_reg32_wo_t>(reg).write(field, static_cast<boost::uint32_t>(value));
+            break;
+
+            case 64:
+                if (reg.is_readable())
+                    uhd::soft_register_base::cast<uhd::soft_reg64_rw_t>(reg).write(field, value);
+                else
+                    uhd::soft_register_base::cast<uhd::soft_reg64_wo_t>(reg).write(field, value);
+            break;
+
+            default:
+                throw uhd::assertion_error("register has invalid bitwidth");
+            }
+
+        } else {
+            throw uhd::not_implemented_error("register IO not supported for this device");
+        }
+    }
+
+    boost::uint64_t read_register(const std::string &path, const boost::uint32_t field, const size_t mboard)
+    {
+        if (_tree->exists(mb_root(mboard) / "registers"))
+        {
+            uhd::soft_regmap_accessor_t::sptr accessor =
+                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
+            uhd::soft_register_base& reg = accessor->lookup(path);
+
+            switch (reg.get_bitwidth()) {
+            case 16:
+                if (reg.is_writable())
+                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg16_rw_t>(reg).read(field));
+                else
+                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg16_ro_t>(reg).read(field));
+            break;
+
+            case 32:
+                if (reg.is_writable())
+                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).read(field));
+                else
+                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_ro_t>(reg).read(field));
+            break;
+
+            case 64:
+                if (reg.is_writable())
+                    return uhd::soft_register_base::cast<uhd::soft_reg64_rw_t>(reg).read(field);
+                else
+                    return uhd::soft_register_base::cast<uhd::soft_reg64_ro_t>(reg).read(field);
+            break;
+
+            default:
+                throw uhd::assertion_error("register has invalid bitwidth: " + path);
+            }
+        } else {
+            throw uhd::not_implemented_error("register IO not supported for this device");
+        }
+    }
+
+    std::vector<std::string> enumerate_registers(const size_t mboard)
+    {
+        if (_tree->exists(mb_root(mboard) / "registers"))
+        {
+            uhd::soft_regmap_accessor_t::sptr accessor =
+                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
+            return accessor->enumerate();
+        } else {
+            return std::vector<std::string>();
+        }
     }
 
 private:

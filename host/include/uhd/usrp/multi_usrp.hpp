@@ -975,6 +975,35 @@ public:
     virtual boost::uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard = 0) = 0;
 
     /*******************************************************************
+     * Register IO methods
+     ******************************************************************/
+
+    /*!
+     * Write a low-level register field for a register in the USRP hardware
+     * \param path the full path to the register
+     * \param field the identifier of bitfield to be written (all other bits remain unchanged)
+     * \param value the value to write to the register field
+     * \param mboard the motherboard index 0 to M-1
+     */
+    virtual void write_register(const std::string &path, const boost::uint32_t field, const boost::uint64_t value, const size_t mboard = 0) = 0;
+
+    /*!
+     * Read a low-level register field from a register in the USRP hardware
+     * \param path the full path to the register
+     * \param field the identifier of bitfield to be read
+     * \param mboard the motherboard index 0 to M-1
+     * \return the value of the register field
+     */
+    virtual boost::uint64_t read_register(const std::string &path, const boost::uint32_t field, const size_t mboard = 0) = 0;
+
+    /*!
+     * Enumerate the full paths of all low-level USRP register accessible to read/write
+     * \param mboard the motherboard index 0 to M-1
+     * \return a vector of register paths
+     */
+    virtual std::vector<std::string> enumerate_registers(const size_t mboard = 0) = 0;
+
+    /*******************************************************************
      * Filter API methods
      ******************************************************************/
 
