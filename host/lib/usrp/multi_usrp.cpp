@@ -312,7 +312,9 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     //-- Tune the RF frontend
     //------------------------------------------------------------------
-    rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
+    if (tune_request.rf_freq_policy != tune_request_t::POLICY_NONE) {
+        rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
+    }
     const double actual_rf_freq = rf_fe_subtree->access<double>("freq/value").get();
 
     //------------------------------------------------------------------
@@ -349,7 +351,9 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     //-- Tune the DSP
     //------------------------------------------------------------------
-    dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
+    if (tune_request.dsp_freq_policy != tune_request_t::POLICY_NONE) {
+        dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
+    }
     const double actual_dsp_freq = dsp_subtree->access<double>("freq/value").get();
 
     //------------------------------------------------------------------
