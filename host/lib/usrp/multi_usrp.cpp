@@ -810,7 +810,7 @@ public:
                 _tree->subtree(rx_dsp_root(chan)),
                 _tree->subtree(rx_rf_fe_root(chan)),
                 tune_request);
-        do_tune_freq_results_message(tune_request, result, get_rx_freq(chan), "RX");
+        //do_tune_freq_results_message(tune_request, result, get_rx_freq(chan), "RX");
         return result;
     }
 
@@ -1170,7 +1170,7 @@ public:
                 _tree->subtree(tx_dsp_root(chan)),
                 _tree->subtree(tx_rf_fe_root(chan)),
                 tune_request);
-        do_tune_freq_results_message(tune_request, result, get_tx_freq(chan), "TX");
+        //do_tune_freq_results_message(tune_request, result, get_tx_freq(chan), "TX");
         return result;
     }
 
