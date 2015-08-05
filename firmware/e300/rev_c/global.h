@@ -1,8 +1,7 @@
 /*
  * global.h
  *
- * Created: 31/08/2012 8:47:14 PM
- *  Author: Balint Seeber
+ * Copyright 2015 National Instruments Corp
  */ 
 
 #ifndef GLOBAL_H_
