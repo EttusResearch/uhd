@@ -1,8 +1,7 @@
 /*
  * error.h
  *
- * Created: 4/09/2012 6:25:53 PM
- *  Author: Balint Seeber
+ * Copyright 2015 National Instruments Corp
  */ 
 
 
