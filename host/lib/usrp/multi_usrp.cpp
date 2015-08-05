@@ -311,7 +311,7 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     //-- Tune the RF frontend
     //------------------------------------------------------------------
-    rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
+    if (target_rf_freq) rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
     const double actual_rf_freq = rf_fe_subtree->access<double>("freq/value").get();
 
     //------------------------------------------------------------------
