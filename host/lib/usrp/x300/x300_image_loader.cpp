@@ -158,17 +158,31 @@ static void x300_validate_image(x300_session_t &session){
 static void x300_setup_session(x300_session_t &session,
                                const device_addr_t &args,
                                const std::string &filepath){
-    device_addr_t find_args;
-    find_args["type"] = "x300";
-    if(args.has_key("name")) find_args["name"] = args["name"];
-    if(args.has_key("serial")) find_args["serial"] = args["serial"];
-    if(args.has_key("ip-addr")) find_args["addr"] = args["ip-addr"];
-    else if(args.has_key("resource")) find_args["resource"] = args["resource"];
-
     device_addrs_t devs = x300_find(args);
-    session.found = (devs.size() > 0);
-    if(!session.found) return;
+    if(devs.size() == 0){
+        session.found = false;
+        return;
+    }
+    else if(devs.size() > 1){
+        std::string err_msg = "Could not resolve given args to a single X-Series device.\n"
+                              "Applicable devices:\n";
 
+        BOOST_FOREACH(const uhd::device_addr_t &dev, devs){
+            std::string identifier = dev.has_key("addr") ? "addr"
+                                                         : "resource";
+
+            err_msg += str(boost::format(" * %s (%s=%s)\n")
+                           % dev.get("product", "X3XX")
+                           % identifier
+                           % dev.get(identifier));
+        }
+
+        err_msg += "\nSpecify one of these devices with the given args to load an image onto it.";
+
+        throw uhd::runtime_error(err_msg);
+    }
+
+    session.found = true;
     session.dev_addr = devs[0];
     session.ethernet = session.dev_addr.has_key("addr");
     if(session.ethernet){

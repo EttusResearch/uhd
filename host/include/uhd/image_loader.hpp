@@ -46,8 +46,9 @@ public:
      *
      * This function must return true upon the end of a successful image load
      * or false if no applicable device was found. It may only throw a runtime
-     * error under one of two conditions:
+     * error under one of three conditions:
      *
+     *  * The function finds multiple devices that fit the user's arguments.
      *  * The function has already engaged with a specific device and
      *    something goes wrong.
      *  * The user gives arguments that unambiguously lead to a specific

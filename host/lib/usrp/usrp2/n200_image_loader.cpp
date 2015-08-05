@@ -210,36 +210,62 @@ static uhd::device_addr_t n200_find(const image_loader::image_loader_args_t &ima
                           image_loader_args.args.has_key("name");
 
     uhd::device_addrs_t found = usrp2_find(image_loader_args.args);
+
     if(found.size() > 0){
-        uhd::device_addr_t ret = found[0];
-
-        /*
-         * Make sure the device found is an N-Series and not a USRP2. A USRP2
-         * will not respond to this query. If the user supplied specific
-         * arguments that led to a USRP2, throw an error.
-         */
-        udp_simple::sptr rev_xport = udp_simple::make_connected(
-                                         ret["addr"],
-                                         BOOST_STRINGIZE(N200_UDP_FW_UPDATE_PORT)
-                                     );
-
+        uhd::device_addrs_t n200_found;
+        udp_simple::sptr rev_xport;
         n200_fw_update_data_t pkt_out;
         boost::uint8_t data_in[udp_simple::mtu];
         const n200_fw_update_data_t *pkt_in = reinterpret_cast<const n200_fw_update_data_t*>(data_in);
+        size_t len = 0;
 
-        size_t len = n200_send_and_recv(rev_xport, GET_HW_REV_CMD, &pkt_out, data_in);
-        if(n200_response_matches(pkt_in, GET_HW_REV_ACK, len)){
-            boost::uint32_t rev = ntohl(pkt_in->data.hw_rev);
-            ret["hw_rev"] = n200_filename_map.get(rev, "n2xx");
-            return ret;
+        /*
+         * Filter out any USRP2 devices by sending a query over the
+         * UDP update port. Only N-Series devices will respond to
+         * this query. If the user supplied specific arguments that
+         * led to a USRP2, throw an error.
+         */
+        BOOST_FOREACH(const uhd::device_addr_t &dev, found){
+            rev_xport = udp_simple::make_connected(
+                            dev.get("addr"),
+                            BOOST_STRINGIZE(N200_UDP_FW_UPDATE_PORT)
+                        );
+
+            len = n200_send_and_recv(rev_xport, GET_HW_REV_CMD, &pkt_out, data_in);
+            if(n200_response_matches(pkt_in, GET_HW_REV_ACK, len)){
+                boost::uint32_t rev = ntohl(pkt_in->data.hw_rev);
+                std::string hw_rev = n200_filename_map.get(rev, "n2xx");
+
+                n200_found.push_back(dev);
+                n200_found[n200_found.size()-1]["hw_rev"] = hw_rev;
+            }
+            else if(len > offsetof(n200_fw_update_data_t, data) and ntohl(pkt_in->id) != GET_HW_REV_ACK){
+                throw uhd::runtime_error(str(boost::format("Received invalid reply %d from device.")
+                                             % ntohl(pkt_in->id)));
+            }
+            else if(user_specified){
+                // At this point, we haven't received any response, so assume it's a USRP2
+                print_usrp2_error(image_loader_args);
+            }
         }
-        else if(len > offsetof(n200_fw_update_data_t, data) and ntohl(pkt_in->id) != GET_HW_REV_ACK){
-            throw uhd::runtime_error(str(boost::format("Received invalid reply %d from device.")
-                                         % ntohl(pkt_in->id)));
+
+        // At this point, we should have a single N-Series device
+        if(n200_found.size() == 1){
+            return n200_found[0];
         }
-        else if(user_specified){
-            // At this point, we haven't received any response, so assume it's a USRP2
-            print_usrp2_error(image_loader_args);
+        else if(n200_found.size() > 1){
+            std::string err_msg = "Could not resolve given args to a single N-Series device.\n"
+                                  "Applicable devices:\n";
+
+            BOOST_FOREACH(const uhd::device_addr_t &dev, n200_found){
+                err_msg += str(boost::format("* %s (addr=%s)\n")
+                               % dev.get("hw_rev")
+                               % dev.get("addr"));
+            }
+
+            err_msg += "\nSpecify one of these devices with the given args to load an image onto it.";
+
+            throw uhd::runtime_error(err_msg);
         }
     }
 
@@ -259,7 +285,7 @@ static void n200_validate_firmware_image(n200_session_t &session){
     session.max_size = N200_FW_MAX_SIZE_BYTES;
 
     if(session.size > session.max_size){
-        throw uhd::runtime_error(str(boost::format("The specified FPGA image is too large: %d vs. %d")
+        throw uhd::runtime_error(str(boost::format("The specified firmware image is too large: %d vs. %d")
                                      % session.size % session.max_size));
     }
 
@@ -559,11 +585,15 @@ static std::string nice_name(const std::string &fw_rev){
 }
 
 static bool n200_image_loader(const image_loader::image_loader_args_t &image_loader_args){
+    if(!image_loader_args.load_firmware and !image_loader_args.load_fpga){
+        return false;
+    }
+
     // See if any N2x0 with the given args is found
     // This will throw if specific args lead to a USRP2
     n200_session_t session;
     session.dev_addr = n200_find(image_loader_args);
-    if(session.dev_addr.size() == 0 or (!image_loader_args.load_firmware and !image_loader_args.load_fpga)){
+    if(session.dev_addr.size() == 0){
         return false;
     }
 

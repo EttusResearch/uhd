@@ -40,27 +40,50 @@ static b200_iface::sptr get_b200_iface(const image_loader::image_loader_args_t &
                                        bool user_specified){
 
     std::vector<usb_device_handle::sptr> dev_handles = get_b200_device_handles(image_loader_args.args);
+    std::vector<usb_device_handle::sptr> applicable_dev_handles;
     b200_iface::sptr iface;
+    mboard_eeprom_t eeprom; // Internal use
 
     if(dev_handles.size() > 0){
         BOOST_FOREACH(usb_device_handle::sptr dev_handle, dev_handles){
             if(dev_handle->firmware_loaded()){
                 iface = b200_iface::make(usb_control::make(dev_handle,0));
-                mb_eeprom = mboard_eeprom_t(*iface, "B200");
+                eeprom = mboard_eeprom_t(*iface, "B200");
                 if(user_specified){
                     if(image_loader_args.args.has_key("serial") and
-                       mb_eeprom.get("serial") != image_loader_args.args.get("serial")){
+                       eeprom.get("serial") != image_loader_args.args.get("serial")){
                            continue;
                     }
                     if(image_loader_args.args.has_key("name") and
-                       mb_eeprom.get("name") != image_loader_args.args.get("name")){
+                       eeprom.get("name") != image_loader_args.args.get("name")){
                            continue;
                     }
-                    return iface;
+                    applicable_dev_handles.push_back(dev_handle);
                 }
-                else return iface; // Just return first found
+                else applicable_dev_handles.push_back(dev_handle);
             }
         }
+
+        // At this point, we should have a single B2XX
+        if(applicable_dev_handles.size() == 1){
+            mb_eeprom = eeprom;
+            return iface;
+        }
+        else if(applicable_dev_handles.size() > 1){
+            std::string err_msg = "Could not resolve given args to a single B2XX device.\n"
+                                  "Applicable devices:\n";
+
+            BOOST_FOREACH(usb_device_handle::sptr dev_handle, applicable_dev_handles){
+                eeprom = mboard_eeprom_t(*b200_iface::make(usb_control::make(dev_handle,0)), "B200");
+                err_msg += str(boost::format(" * %s (serial=%s)\n")
+                               % B2X0_STR_NAMES.get(get_b200_type(mb_eeprom), "B2XX")
+                               % mb_eeprom.get("serial"));
+            }
+
+            err_msg += "\nSpecify one of these devices with the given args to load an image onto it.";
+
+            throw uhd::runtime_error(err_msg);
+         }
     }
 
     // No applicable devices found, return empty sptr so we can exit

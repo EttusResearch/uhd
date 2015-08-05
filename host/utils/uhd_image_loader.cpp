@@ -91,6 +91,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     image_loader_args.firmware_path = vm["fw-path"].as<std::string>();
     image_loader_args.fpga_path     = vm["fpga-path"].as<std::string>();
 
+    // Force user to specify a device
+    if(not image_loader_args.args.has_key("type")){
+        throw uhd::runtime_error("You must specify a device type.");
+    }
+
     // Clean up paths, if given
     if(image_loader_args.firmware_path != ""){
         #ifndef UHD_PLATFORM_WIN32
