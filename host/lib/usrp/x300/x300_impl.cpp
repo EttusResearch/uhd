@@ -40,10 +40,6 @@
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/utils/platform.hpp>
 
-////// RFNOC ////////////
-#include <uhd/usrp/rfnoc/null_block_ctrl.hpp>
-////// RFNOC ////////////
-
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
 
 #define X300_REV(x) ((x) - "A" + 1)
