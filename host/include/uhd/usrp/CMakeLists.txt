@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2011,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
 
 UHD_INSTALL(FILES
 
@@ -36,3 +35,14 @@ UHD_INSTALL(FILES
     DESTINATION ${INCLUDE_DIR}/uhd/usrp
     COMPONENT headers
 )
+
+IF(ENABLE_C_API)
+    UHD_INSTALL(FILES
+        dboard_eeprom.h
+        mboard_eeprom.h
+        subdev_spec.h
+        usrp.h
+        DESTINATION ${INCLUDE_DIR}/uhd/usrp
+        COMPONENT headers
+    )
+ENDIF(ENABLE_C_API)

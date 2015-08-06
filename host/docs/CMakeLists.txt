@@ -74,7 +74,7 @@ ENDIF(LIBUHDDEV_PKG)
 IF(ENABLE_DOXYGEN)
     SET(ENABLE_MANUAL_OR_DOXYGEN true)
     #make doxygen directory depend on the header files
-    FILE(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
+    FILE(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.h*)
     SET(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files})
     IF(ENABLE_DOXYGEN_FULL)
         SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib")

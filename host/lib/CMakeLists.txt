@@ -96,6 +96,12 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
 )
 
+IF(ENABLE_C_API)
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/error_c.cpp
+    )
+ENDIF(ENABLE_C_API)
+
 ########################################################################
 # Add DLL resource file to Windows build
 ########################################################################

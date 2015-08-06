@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2013 Ettus Research LLC
+# Copyright 2010-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,6 +33,15 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/multi_usrp.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/subdev_spec.cpp
 )
+
+IF(ENABLE_C_API)
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/dboard_eeprom_c.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mboard_eeprom_c.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/subdev_spec_c.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_c.cpp
+    )
+ENDIF(ENABLE_C_API)
 
 LIBUHD_REGISTER_COMPONENT("GPSD" ENABLE_GPSD OFF "ENABLE_LIBUHD;ENABLE_GPSD;LIBGPS_FOUND" OFF)
 

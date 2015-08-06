@@ -42,3 +42,11 @@ UHD_INSTALL(FILES
     DESTINATION ${INCLUDE_DIR}/uhd/utils
     COMPONENT headers
 )
+
+IF(ENABLE_C_API)
+    UHD_INSTALL(FILES
+        thread_priority.h
+        DESTINATION ${INCLUDE_DIR}/uhd/utils
+        COMPONENT headers
+    )
+ENDIF(ENABLE_C_API)

@@ -1,0 +1,86 @@
+/*! \page page_c_api UHD - C API
+
+\tableofcontents
+
+\section c_api_intro Introduction
+
+Alongside its C++ API, UHD provides a C API wrapper for the uhd::usrp::multi_usrp and
+uhd::usrp_clock::multi_usrp_clock classes, as well as their associated classes and
+structs. Other important UHD functions are also included in this API. To use this
+API, simply:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.c}
+#include <uhd.h>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+...and all UHD C-level structs and functions will be available to you. The sections below
+give more detail on the key features of the C API.
+
+\subsection c_api_handles C-Level Handles
+
+Most of the UHD classes that can be accessed on the C level are done so through handles,
+which internally store the C++ representation and allow access to internal values
+through helper functions.
+
+All handles have associated *_make() and *_free() functions. After creating a handle, it must
+be passed through its make() function before it can be used in your program. Before the program
+terminates, you must pass the handle into its free() function, or your program will have a memory
+leak. The example below shows the proper usage of an RX metadata handle over the course of its
+lifetime, from instantiation to destruction.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+uhd_rx_metadata_handle md;
+uhd_rx_metadata_make(&md);
+
+// Streaming here puts useful information into metadata
+time_t full_secs;
+double frac_secs;
+uhd_rx_metadata_time_spec(md, &full_secs, &frac_secs);
+
+uhd_rx_metadata_free(&md);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Again, make sure to pass your handle into a make() function before using it, or you will
+run into undefined behavior. Also be careful not to use the handle after passing it into
+a free() function, or your program will segfault.
+
+\subsection c_api_errorcode Error Codes
+
+As C cannot handle C++ runtime exceptions, UHD's C wrapper functions catch all exceptions
+and translate them into error codes, which are returned by each function. Any output variables
+are passed in as pointers into the function, which will set them internally.
+
+Each uhd::runtime_error has a corresponding ::uhd_error value. Separate error codes indicate
+that a boost::exception or std::exception has been thrown, and any other exceptions are
+indicated by a catch-all ::UHD_ERROR_UNKNOWN code.
+
+All UHD C-level handles store the string representation of the last C++ exception thrown internally.
+These handles have corresponding *_get_last_error() functions that will place the error string into a
+supplied string buffer.
+
+For example, if a USRP device's handle throws an exception internally, the following code can access
+its error info:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+char err_msg[256];
+uhd_usrp_handle usrp;
+double gain;
+// USRP configuration done here
+uhd_error error_code = uhd_usrp_get_rx_gain(usrp, 0, "", &gain);
+if(error_code){
+    uhd_usrp_get_last_error(usrp, err_msg, 256);
+    fprintf(stderr, "Error code %d: %s\n", error_code, err_msg);
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All error codes can be found in <uhd/error.h>.
+
+\subsection c_api_examples Example Code
+
+UHD provides two examples that demonstrate the typical use case of the C API: RX and TX streaming.
+The <b>rx_samples_c</b> example is a simplified C version of <b>rx_samples_to_file</b>,
+and the <b>tx_samples_c</b> example is a simplified C version of <b>tx_waveforms</b>. These examples
+can be easily adapted or serve as a starting point for your own UHD C applications.
+
+*/
+// vim:ft=doxygen:

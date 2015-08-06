@@ -53,6 +53,16 @@ ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 SET(UHD_TEST_TARGET_DEPS uhd)
 SET(UHD_TEST_LIBRARY_DIRS ${Boost_LIBRARY_DIRS})
 
+IF(ENABLE_C_API)
+    LIST(APPEND test_sources
+        eeprom_c_test.c
+        error_c_test.cpp
+        ranges_c_test.c
+        sensors_c_test.c
+        subdev_spec_c_test.c
+    )
+ENDIF(ENABLE_C_API)
+
 #for each source: build an executable, register it as a test
 FOREACH(test_source ${test_sources})
     GET_FILENAME_COMPONENT(test_name ${test_source} NAME_WE)
