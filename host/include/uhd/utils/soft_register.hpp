@@ -28,7 +28,6 @@
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/lockfree/detail/branch_hints.hpp>
 
 //==================================================================
 // Soft Register Definition
@@ -38,6 +37,28 @@
     static const uhd::soft_reg_field_t name = (((shift & 0xFF) << 8) | (width & 0xFF))
 
 namespace uhd {
+
+//TODO: These hints were added to boost 1.53.
+
+/** \brief hint for the branch prediction */
+inline bool likely(bool expr)
+{
+#ifdef __GNUC__
+    return __builtin_expect(expr, true);
+#else
+    return expr;
+#endif
+    }
+
+/** \brief hint for the branch prediction */
+inline bool unlikely(bool expr)
+{
+#ifdef __GNUC__
+    return __builtin_expect(expr, false);
+#else
+    return expr;
+#endif
+}
 
 /* A register field is defined as a tuple of the mask and the shift.
  * It can be used to make read-modify-write operations more convenient
@@ -62,7 +83,7 @@ namespace soft_reg_field {
         //Behavior for the left shit operation is undefined in C++
         //if the shift amount is >= bitwidth of the datatype
         //So we treat that as a special case with a branch predicition hint
-        if (boost::lockfree::detail::likely((sizeof(data_t)*8) != width(field)))
+        if (likely((sizeof(data_t)*8) != width(field)))
             return ((ONE<<width(field))-ONE)<<shift(field);
         else
             return (0-ONE)<<shift(field);
