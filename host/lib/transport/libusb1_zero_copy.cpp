@@ -43,23 +43,6 @@ using namespace uhd::transport;
 static const size_t DEFAULT_NUM_XFERS = 16;     //num xfers
 static const size_t DEFAULT_XFER_SIZE = 32*512; //bytes
 
-//! Define LIBUSB_CALL when its missing (non-windows)
-#ifndef LIBUSB_CALL
-    #define LIBUSB_CALL
-#endif /*LIBUSB_CALL*/
-
-//! libusb_handle_events_timeout_completed is only in newer API
-#ifndef HAVE_LIBUSB_HANDLE_EVENTS_TIMEOUT_COMPLETED
-    #define libusb_handle_events_timeout_completed(ctx, tx, completed) \
-        libusb_handle_events_timeout(ctx, tx)
-#endif
-
-//! libusb_error_name is only in newer API
-#ifndef HAVE_LIBUSB_ERROR_NAME
-    #define libusb_error_name(code) \
-        str(boost::format("LIBUSB_ERROR_CODE %d") % code)
-#endif
-
 //! type for sharing the release queue with managed buffers
 class libusb_zero_copy_mb;
 typedef boost::shared_ptr<bounded_buffer<libusb_zero_copy_mb *> > mb_queue_sptr;

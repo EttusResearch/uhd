@@ -24,6 +24,29 @@
 #include <uhd/transport/usb_device_handle.hpp>
 #include <libusb.h>
 
+//! Define LIBUSB_CALL when its missing (non-windows)
+#ifndef LIBUSB_CALL
+    #define LIBUSB_CALL
+#endif /*LIBUSB_CALL*/
+
+//! libusb_handle_events_timeout_completed is only in newer API
+#ifndef HAVE_LIBUSB_HANDLE_EVENTS_TIMEOUT_COMPLETED
+    #define libusb_handle_events_timeout_completed(ctx, tx, completed) \
+        libusb_handle_events_timeout(ctx, tx)
+#endif /* HAVE_LIBUSB_HANDLE_EVENTS_TIMEOUT_COMPLETED */
+
+//! libusb_error_name is only in newer API
+#ifndef HAVE_LIBUSB_ERROR_NAME
+    #define libusb_error_name(code) \
+        str(boost::format("LIBUSB_ERROR_CODE %d") % code)
+#endif /* HAVE_LIBUSB_ERROR_NAME */
+
+//! libusb_strerror is only in newer API
+#ifndef HAVE_LIBUSB_STRERROR
+    #define libusb_strerror(code) \
+        libusb_error_name(code)
+#endif /* HAVE_LIBUSB_STRERROR */
+
 /***********************************************************************
  * Libusb object oriented smart pointer wrappers:
  * The following wrappers provide allocation and automatic deallocation
