@@ -222,7 +222,7 @@ public:
         _frame_size(frame_size),
         _buffer_pool(buffer_pool::make(_num_frames, _frame_size)),
         _enqueued(_num_frames), _released(_num_frames),
-        _status(RUNNING)
+        _status(STATUS_RUNNING)
     {
         const bool is_recv = (endpoint & 0x80) != 0;
         const std::string name = str(boost::format("%s%d") % ((is_recv)? "rx" : "tx") % int(endpoint & 0x7f));
@@ -308,7 +308,7 @@ public:
     {
         typename buffer_type::sptr buff;
 
-        if (_status == ERROR)
+        if (_status == STATUS_ERROR)
             return buff;
 
         // Serialize access to buffers
@@ -349,7 +349,7 @@ private:
     //! why 2 queues? there is room in the future to have > N buffers but only N in flight
     boost::circular_buffer<libusb_zero_copy_mb *> _enqueued, _released;
 
-    enum {RUNNING,ERROR} _status;
+    enum {STATUS_RUNNING, STATUS_ERROR} _status;
 
     void enqueue_buffer(libusb_zero_copy_mb *mb)
     {
@@ -361,7 +361,7 @@ private:
 
     void submit_what_we_can(void)
     {
-        if (_status == ERROR)
+        if (_status == STATUS_ERROR)
             return;
         while (not _released.empty() and not _enqueued.full())
         {
@@ -372,7 +372,7 @@ private:
             }
             catch (uhd::runtime_error& e)
             {
-                _status = ERROR;
+                _status = STATUS_ERROR;
                 throw e;
             }
         }
