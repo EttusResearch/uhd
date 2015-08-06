@@ -1380,6 +1380,10 @@ public:
                 _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
             uhd::soft_register_base& reg = accessor->lookup(path);
 
+            if (not reg.is_writable()) {
+                throw uhd::runtime_error("multi_usrp::write_register - register not writable: " + path);
+            }
+
             switch (reg.get_bitwidth()) {
             case 16:
                 if (reg.is_readable())
@@ -1403,11 +1407,11 @@ public:
             break;
 
             default:
-                throw uhd::assertion_error("register has invalid bitwidth");
+                throw uhd::assertion_error("multi_usrp::write_register - register has invalid bitwidth");
             }
 
         } else {
-            throw uhd::not_implemented_error("register IO not supported for this device");
+            throw uhd::not_implemented_error("multi_usrp::write_register - register IO not supported for this device");
         }
     }
 
@@ -1418,6 +1422,10 @@ public:
             uhd::soft_regmap_accessor_t::sptr accessor =
                 _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
             uhd::soft_register_base& reg = accessor->lookup(path);
+
+            if (not reg.is_readable()) {
+                throw uhd::runtime_error("multi_usrp::read_register - register not readable: " + path);
+            }
 
             switch (reg.get_bitwidth()) {
             case 16:
@@ -1442,10 +1450,10 @@ public:
             break;
 
             default:
-                throw uhd::assertion_error("register has invalid bitwidth: " + path);
+                throw uhd::assertion_error("multi_usrp::read_register - register has invalid bitwidth: " + path);
             }
         } else {
-            throw uhd::not_implemented_error("register IO not supported for this device");
+            throw uhd::not_implemented_error("multi_usrp::read_register - register IO not supported for this device");
         }
     }
 
@@ -1458,6 +1466,24 @@ public:
             return accessor->enumerate();
         } else {
             return std::vector<std::string>();
+        }
+    }
+
+    register_info_t get_register_info(const std::string &path, const size_t mboard = 0)
+    {
+        if (_tree->exists(mb_root(mboard) / "registers"))
+        {
+            uhd::soft_regmap_accessor_t::sptr accessor =
+                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
+            uhd::soft_register_base& reg = accessor->lookup(path);
+
+            register_info_t info;
+            info.bitwidth = reg.get_bitwidth();
+            info.readable = reg.is_readable();
+            info.writable = reg.is_writable();
+            return info;
+        } else {
+            throw uhd::not_implemented_error("multi_usrp::read_register - register IO not supported for this device");
         }
     }
 

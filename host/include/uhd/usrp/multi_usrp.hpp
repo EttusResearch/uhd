@@ -977,6 +977,26 @@ public:
     /*******************************************************************
      * Register IO methods
      ******************************************************************/
+    struct register_info_t {
+        size_t bitwidth;
+        bool readable;
+        bool writable;
+    };
+
+    /*!
+     * Enumerate the full paths of all low-level USRP register accessible to read/write
+     * \param mboard the motherboard index 0 to M-1
+     * \return a vector of register paths
+     */
+    virtual std::vector<std::string> enumerate_registers(const size_t mboard = 0) = 0;
+
+    /*!
+     * Get more information about a low-level device register
+     * \param path the full path to the register
+     * \param mboard the motherboard index 0 to M-1
+     * \return the info struct which contains the bitwidth and read-write access information
+     */
+    virtual register_info_t get_register_info(const std::string &path, const size_t mboard = 0) = 0;
 
     /*!
      * Write a low-level register field for a register in the USRP hardware
@@ -995,13 +1015,6 @@ public:
      * \return the value of the register field
      */
     virtual boost::uint64_t read_register(const std::string &path, const boost::uint32_t field, const size_t mboard = 0) = 0;
-
-    /*!
-     * Enumerate the full paths of all low-level USRP register accessible to read/write
-     * \param mboard the motherboard index 0 to M-1
-     * \return a vector of register paths
-     */
-    virtual std::vector<std::string> enumerate_registers(const size_t mboard = 0) = 0;
 
     /*******************************************************************
      * Filter API methods
