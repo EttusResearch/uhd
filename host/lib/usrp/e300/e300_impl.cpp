@@ -1078,12 +1078,6 @@ void e300_impl::_setup_radio(const size_t dspno)
             .subscribe(boost::bind(&e300_impl::_update_fe_lo_freq, this, key, _1))
         ;
 
-        // Network mode currently doesn't support the filter API, so
-        // prevent it from using it:
-        if (_xport_path != AXI) {
-            _tree->remove(rf_fe_path / "filters");
-        }
-
         // Antenna Setup
         if (dir == RX_DIRECTION) {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
