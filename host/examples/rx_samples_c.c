@@ -108,19 +108,19 @@ int main(int argc, char* argv[])
     // Create USRP
     uhd_usrp_handle usrp;
     fprintf(stderr, "Creating USRP with args \"%s\"...\n", device_args);
-    EXECUTE_OR_GOTO(free_usrp,
+    EXECUTE_OR_GOTO(free_option_strings,
         uhd_usrp_make(&usrp, device_args)
     )
 
     // Create RX streamer
     uhd_rx_streamer_handle rx_streamer;
-    EXECUTE_OR_GOTO(free_rx_streamer,
+    EXECUTE_OR_GOTO(free_usrp,
         uhd_rx_streamer_make(&rx_streamer)
     )
 
     // Create RX metadata
     uhd_rx_metadata_handle md;
-    EXECUTE_OR_GOTO(free_rx_metadata,
+    EXECUTE_OR_GOTO(free_rx_streamer,
         uhd_rx_metadata_make(&md)
     )
 
@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
         if(verbose){
             fprintf(stderr, "Cleaning up USRP.\n");
         }
-        if(return_code != EXIT_SUCCESS){
+        if(return_code != EXIT_SUCCESS && usrp != NULL){
             uhd_usrp_last_error(usrp, error_string, 512);
             fprintf(stderr, "USRP reported the following error: %s\n", error_string);
         }

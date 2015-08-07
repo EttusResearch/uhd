@@ -55,6 +55,7 @@ SET(UHD_TEST_LIBRARY_DIRS ${Boost_LIBRARY_DIRS})
 
 IF(ENABLE_C_API)
     LIST(APPEND test_sources
+	device_addrs_c_test.c
         eeprom_c_test.c
         error_c_test.cpp
         ranges_c_test.c

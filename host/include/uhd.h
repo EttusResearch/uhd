@@ -21,6 +21,7 @@
 #include <uhd/config.h>
 #include <uhd/error.h>
 
+#include <uhd/types/device_addrs.h>
 #include <uhd/types/metadata.h>
 #include <uhd/types/ranges.h>
 #include <uhd/types/sensors.h>

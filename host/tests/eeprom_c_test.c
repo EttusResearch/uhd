@@ -140,12 +140,14 @@ int main(){
             uhd_dboard_eeprom_last_error(db_eeprom, str_buffer, BUFFER_SIZE);
             fprintf(stderr, "db_eeprom error: %s\n", str_buffer);
         }
+	uhd_dboard_eeprom_free(&db_eeprom);
 
     free_mboard_eeprom:
         if(return_code){
             uhd_mboard_eeprom_last_error(mb_eeprom, str_buffer, BUFFER_SIZE);
             fprintf(stderr, "mb_eeprom error: %s\n", str_buffer);
         }
+	uhd_mboard_eeprom_free(&mb_eeprom);
 
     end_of_test:
         if(!return_code){

@@ -20,6 +20,7 @@
 
 #include <uhd/config.h>
 #include <uhd/error.h>
+#include <uhd/types/device_addrs.h>
 #include <uhd/types/metadata.h>
 #include <uhd/types/ranges.h>
 #include <uhd/types/sensors.h>
@@ -290,6 +291,16 @@ typedef struct uhd_usrp* uhd_usrp_handle;
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//! Find all connected USRP devices.
+/*!
+ * See uhd::device::find() for more details.
+ */
+UHD_API uhd_error uhd_usrp_find(
+    uhd_device_addrs_handle h,
+    const char* args,
+    size_t *num_found
+);
 
 //! Create a USRP handle.
 /*!

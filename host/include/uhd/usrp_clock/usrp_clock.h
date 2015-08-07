@@ -20,6 +20,7 @@
 
 #include <uhd/config.h>
 #include <uhd/error.h>
+#include <uhd/types/device_addrs.h>
 #include <uhd/types/sensors.h>
 
 #include <stdlib.h>
@@ -47,8 +48,18 @@ typedef struct uhd_usrp_clock* uhd_usrp_clock_handle;
 extern "C" {
 #endif
 
-/*! Create a USRP Clock handle.
- *
+//! Find all connected clock devices.
+/*!
+ * See uhd::device::find() for more details.
+ */
+UHD_API uhd_error uhd_usrp_clock_find(
+    uhd_device_addrs_handle h,
+    const char* args,
+    size_t *num_found
+);
+
+//! Create a clock handle.
+/*!
  * \param h The handle
  * \param args Device args (e.g. "addr=192.168.10.3")
  */
@@ -57,8 +68,8 @@ UHD_API uhd_error uhd_usrp_clock_make(
     const char *args
 );
 
-/*! Safely destroy the USRP_CLOCK object underlying the handle.
- *
+//! Safely destroy the clock object underlying the handle.
+/*!
  * Note: After calling this, usage of h may cause segmentation faults.
  * However, multiple calling of uhd_usrp_free() is safe.
  */

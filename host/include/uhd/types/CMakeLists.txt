@@ -45,6 +45,7 @@ UHD_INSTALL(FILES
 
 IF(ENABLE_C_API)
     UHD_INSTALL(FILES
+	device_addrs.h
         metadata.h
         ranges.h
         sensors.h

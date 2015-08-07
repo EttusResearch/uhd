@@ -249,6 +249,20 @@ uhd_error uhd_tx_streamer_last_error(
 /****************************************************************************
  * Generate / Destroy API calls
  ***************************************************************************/
+static boost::mutex _usrp_find_mutex;
+uhd_error uhd_usrp_find(
+    uhd_device_addrs_handle h,
+    const char* args,
+    size_t *num_found
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        boost::mutex::scoped_lock _lock(_usrp_find_mutex);
+
+        h->device_addrs_cpp = uhd::device::find(std::string(args), uhd::device::USRP);
+        *num_found = h->device_addrs_cpp.size();
+    )
+}
+
 static boost::mutex _usrp_make_mutex;
 uhd_error uhd_usrp_make(
     uhd_usrp_handle *h,

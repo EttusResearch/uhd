@@ -54,6 +54,20 @@ UHD_SINGLETON_FCN(usrp_clock_ptrs, get_usrp_clock_ptrs);
 /****************************************************************************
  * Generate / Destroy API calls
  ***************************************************************************/
+static boost::mutex _usrp_clock_find_mutex;
+uhd_error uhd_usrp_clock_find(
+    uhd_device_addrs_handle h,
+    const char* args,
+    size_t *num_found
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        boost::mutex::scoped_lock lock(_usrp_clock_find_mutex);
+
+        h->device_addrs_cpp = uhd::device::find(std::string(args), uhd::device::CLOCK);
+        *num_found = h->device_addrs_cpp.size();
+    )
+}
+
 static boost::mutex _usrp_clock_make_mutex;
 uhd_error uhd_usrp_clock_make(
     uhd_usrp_clock_handle *h,
