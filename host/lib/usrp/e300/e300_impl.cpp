@@ -1074,6 +1074,9 @@ void e300_impl::_setup_radio(const size_t dspno)
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
             .publish(boost::bind(&e300_impl::_get_fe_pll_lock, this, dir == TX_DIRECTION))
         ;
+        _tree->access<double>(rf_fe_path / "freq" / "value")
+            .subscribe(boost::bind(&e300_impl::_update_fe_lo_freq, this, key, _1))
+        ;
 
         // Network mode currently doesn't support the filter API, so
         // prevent it from using it:
