@@ -34,6 +34,8 @@ support this functionality are:
 - SBX-120
 - CBX
 - CBX-120
+- UBX
+- UBX-160
 
 \subsubsection general_tuning_rxchain Tuning the receive chain:
 
