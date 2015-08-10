@@ -29,6 +29,7 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/assign/list_of.hpp>
 #include <fstream>
