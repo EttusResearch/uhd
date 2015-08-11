@@ -29,6 +29,7 @@
 #include <fstream>
 #include <string>
 
+#ifdef E300_NATIVE
 namespace uhd { namespace usrp { namespace e300 {
 
 namespace common {
@@ -90,3 +91,18 @@ UHD_STATIC_BLOCK(register_e300_image_loader) {
 }
 
 }}}
+
+#else
+namespace uhd { namespace usrp { namespace e300 {
+
+namespace common {
+
+void load_fpga_image(const std::string&)
+{
+    throw uhd::assertion_error("load_fpga_image() !E300_NATIVE");
+}
+
+}
+
+}}}
+#endif

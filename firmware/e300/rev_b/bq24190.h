@@ -1,8 +1,7 @@
 /*
  * bq24190.h
  *
- * Created: 11/12/2012 4:58:23 PM
- *  Author: Balint Seeber
+ * Copyright 2015 National Instruments Corp
  */ 
 
 

@@ -227,7 +227,7 @@ public:
     //! List all available filters by name
     std::vector<std::string> get_filter_names(const std::string &)
     {
-        UHD_THROW_INVALID_CODE_PATH();
+        return std::vector<std::string>();
     }
 
     //! Return a list of all filters
@@ -239,7 +239,7 @@ public:
     //! Write back a filter
     void set_filter(const std::string &, const std::string &, const filter_info_base::sptr)
     {
-        UHD_THROW_INVALID_CODE_PATH();
+        UHD_MSG(warning) << "Attempting to set filter on E300 in network mode." << std::endl;
     }
 
 private:

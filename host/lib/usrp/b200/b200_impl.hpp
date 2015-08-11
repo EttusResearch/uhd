@@ -78,6 +78,16 @@ static const boost::uint32_t B200_RX_GPS_UART_SID = FLIP_SID(B200_TX_GPS_UART_SI
 static const boost::uint32_t B200_LOCAL_CTRL_SID = 0x00000040;
 static const boost::uint32_t B200_LOCAL_RESP_SID = FLIP_SID(B200_LOCAL_CTRL_SID);
 
+static const unsigned char B200_USB_CTRL_RECV_INTERFACE = 4;
+static const unsigned char B200_USB_CTRL_RECV_ENDPOINT  = 8;
+static const unsigned char B200_USB_CTRL_SEND_INTERFACE = 3;
+static const unsigned char B200_USB_CTRL_SEND_ENDPOINT  = 4;
+
+static const unsigned char B200_USB_DATA_RECV_INTERFACE = 2;
+static const unsigned char B200_USB_DATA_RECV_ENDPOINT  = 6;
+static const unsigned char B200_USB_DATA_SEND_INTERFACE = 1;
+static const unsigned char B200_USB_DATA_SEND_ENDPOINT  = 2;
+
 /*
  * VID/PID pairs for all B2xx products
  */
@@ -96,7 +106,7 @@ class b200_impl : public uhd::device
 {
 public:
     //structors
-    b200_impl(const uhd::device_addr_t &);
+    b200_impl(const uhd::device_addr_t &, uhd::transport::usb_device_handle::sptr &handle);
     ~b200_impl(void);
 
     //the io interface

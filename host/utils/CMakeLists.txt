@@ -34,11 +34,11 @@ SET(x3xx_burner_sources
 )
 
 find_package(UDev)
-IF(ENABLE_E300)
+IF(ENABLE_E300 AND NOT E300_FORCE_NETWORK)
     IF(UDEV_FOUND)
         LIST(APPEND util_runtime_sources usrp_e3x0_network_mode.cpp)
     ENDIF(UDEV_FOUND)
-ENDIF(ENABLE_E300)
+ENDIF(ENABLE_E300 AND NOT E300_FORCE_NETWORK)
 
 #for each source: build an executable and install
 FOREACH(util_source ${util_runtime_sources})

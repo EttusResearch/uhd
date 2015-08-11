@@ -1,8 +1,9 @@
 #!/usr/bin/env python2
 ##################################################
 # GNU Radio Python Flow Graph
+# Copyright 2014 National Instruments
+#
 # Title: Mega FFT
-# Author: Balint Seeber, Ettus Research
 # Description: Standard edition, single-channel
 # Generated: Fri Jul 24 11:56:33 2015
 ##################################################
@@ -171,7 +172,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         		cpu_format="fc32",
         		channels=range(1),
         	),
-        	
+
         )
         if spec != "": self.src.set_subdev_spec(spec, 0)
         self.src.set_samp_rate(requested_sample_rate)
@@ -217,7 +218,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -258,7 +259,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         self.nb.GetPage(0).Add(self.fft_sink.win)
         def fft_sink_callback(x, y):
         	self.set_clicked_freq(x)
-        
+
         self.fft_sink.set_callback(fft_sink_callback)
         self.waterfall_sink = waterfallsink2.waterfall_sink_c(
         	self.nb.GetPage(2).GetWin(),
@@ -279,7 +280,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         self.nb.GetPage(2).Add(self.waterfall_sink.win)
         def waterfall_sink_callback(x, y):
         	self.set_clicked_freq(x)
-        
+
         self.waterfall_sink.set_callback(waterfall_sink_callback)
         self._test_chooser = forms.button(
         	parent=self.nb_test.GetPage(0).GetWin(),
@@ -365,7 +366,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -410,7 +411,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -455,7 +456,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -562,7 +563,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -725,7 +726,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -769,7 +770,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -814,7 +815,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -859,7 +860,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -903,7 +904,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -948,7 +949,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -993,7 +994,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1038,7 +1039,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1083,7 +1084,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1159,7 +1160,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1334,7 +1335,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1417,7 +1418,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1485,7 +1486,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1598,7 +1599,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1671,7 +1672,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1714,7 +1715,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1759,7 +1760,7 @@ class mega_fft(grc_wxgui.top_block_gui):
         			de = wx.PyEvent()
         			de.SetEventType(wxEVT_AnyCode)
         			wx.PostEvent(self.GetWin(), de)
-        		except TypeError: 
+        		except TypeError:
         			pass
         		except AttributeError:	# FIXME
         			print "Cannot post message"
@@ -1784,23 +1785,23 @@ class mega_fft(grc_wxgui.top_block_gui):
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.blks2_selector_0, 0), (self.wxgui_scopesink2_0, 0))    
-        self.connect((self.blks2_selector_0_0, 0), (self.blks2_selector_0, 0))    
-        self.connect((self.blks2_selector_0_0, 1), (self.blocks_complex_to_mag_0, 0))    
-        self.connect((self.blocks_argmax_xx_0, 1), (self.blocks_null_sink_0, 0))    
-        self.connect((self.blocks_argmax_xx_0, 0), (self.fft_max_idx_probe, 0))    
-        self.connect((self.blocks_complex_to_mag_0, 0), (self.blocks_float_to_complex_0, 1))    
-        self.connect((self.blocks_complex_to_mag_0, 0), (self.blocks_float_to_complex_0, 0))    
-        self.connect((self.blocks_float_to_complex_0, 0), (self.blks2_selector_0, 1))    
-        self.connect((self.blocks_max_xx_0, 0), (self.fft_max_lvl_probe, 0))    
-        self.connect((self.logpwrfft_x_0, 0), (self.blocks_argmax_xx_0, 0))    
-        self.connect((self.logpwrfft_x_0, 0), (self.blocks_max_xx_0, 0))    
-        self.connect((self.src, 0), (self.blocks_tag_debug_0, 0))    
-        self.connect((self.src, 0), (self.blks2_selector_0_0, 0))    
-        self.connect((self.src, 0), (self.fft_sink, 0))    
-        self.connect((self.src, 0), (self.waterfall_sink, 0))    
-        self.connect((self.src, 0), (self.probe_avg_mag, 0))    
-        self.connect((self.src, 0), (self.logpwrfft_x_0, 0))    
+        self.connect((self.blks2_selector_0, 0), (self.wxgui_scopesink2_0, 0))
+        self.connect((self.blks2_selector_0_0, 0), (self.blks2_selector_0, 0))
+        self.connect((self.blks2_selector_0_0, 1), (self.blocks_complex_to_mag_0, 0))
+        self.connect((self.blocks_argmax_xx_0, 1), (self.blocks_null_sink_0, 0))
+        self.connect((self.blocks_argmax_xx_0, 0), (self.fft_max_idx_probe, 0))
+        self.connect((self.blocks_complex_to_mag_0, 0), (self.blocks_float_to_complex_0, 1))
+        self.connect((self.blocks_complex_to_mag_0, 0), (self.blocks_float_to_complex_0, 0))
+        self.connect((self.blocks_float_to_complex_0, 0), (self.blks2_selector_0, 1))
+        self.connect((self.blocks_max_xx_0, 0), (self.fft_max_lvl_probe, 0))
+        self.connect((self.logpwrfft_x_0, 0), (self.blocks_argmax_xx_0, 0))
+        self.connect((self.logpwrfft_x_0, 0), (self.blocks_max_xx_0, 0))
+        self.connect((self.src, 0), (self.blocks_tag_debug_0, 0))
+        self.connect((self.src, 0), (self.blks2_selector_0_0, 0))
+        self.connect((self.src, 0), (self.fft_sink, 0))
+        self.connect((self.src, 0), (self.waterfall_sink, 0))
+        self.connect((self.src, 0), (self.probe_avg_mag, 0))
+        self.connect((self.src, 0), (self.logpwrfft_x_0, 0))
 
 
     def get_antenna(self):

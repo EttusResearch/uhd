@@ -141,3 +141,9 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/tasks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
 )
+
+IF(ENABLE_C_API)
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority_c.cpp
+    )
+ENDIF(ENABLE_C_API)

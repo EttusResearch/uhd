@@ -51,7 +51,7 @@ using namespace uhd::transport;
  * OctoClock burn session
  */
 typedef struct {
-    bool                        valid;
+    bool                        found;
     uhd::device_addr_t          dev_addr;
     std::string                 given_filepath;
     std::string                 actual_filepath; // If using a .hex, this is the converted .bin
@@ -113,18 +113,43 @@ static void octoclock_validate_firmware_image(octoclock_session_t &session){
                                                                : (session.size / OCTOCLOCK_BLOCK_SIZE);
 
     octoclock_calculate_crc(session);
-    session.valid = true;
 }
 
 static void octoclock_setup_session(octoclock_session_t &session,
+                                    const uhd::device_addr_t &args,
                                     const std::string &filepath){
+
+    // See if we can find an OctoClock with the given args
+    device_addrs_t devs = octoclock_find(args);
+    if(devs.size() == 0){
+        session.found = false;
+        return;
+    }
+    else if(devs.size() > 1){
+        std::string err_msg = "Could not resolve given args to a single OctoClock device.\n"
+                              "Applicable devices:\n";
+
+        BOOST_FOREACH(const uhd::device_addr_t &dev, devs){
+            std::string name = (dev["type"] == "octoclock") ? str(boost::format("OctoClock r%d")
+                                                                  % dev.get("revision","4"))
+                                                          : "OctoClock Bootloader";
+            err_msg += str(boost::format(" * %s (addr=%s)\n")
+                           % name
+                           % dev.get("addr"));
+        }
+
+        err_msg += "\nSpecify one of these devices with the given args to load an image onto it.";
+
+        throw uhd::runtime_error(err_msg);
+    }
+
+    session.dev_addr = devs[0];
 
     // If no filepath is given, use the default
     if(filepath == ""){
-        session.given_filepath = find_image_path(str(boost::format("octoclock_r%d_fw.hex")
-                                                     % boost::lexical_cast<std::string>(
-                                                     session.dev_addr.get("revision","4")
-                                                 )));
+        session.given_filepath = find_image_path(str(boost::format("octoclock_r%s_fw.hex")
+                                                     % session.dev_addr.get("revision","4")
+                                                 ));
     }
     else session.given_filepath = filepath;
 
@@ -287,7 +312,7 @@ static void octoclock_verify(octoclock_session_t &session){
 }
 
 static void octoclock_finalize(octoclock_session_t &session){
-    
+
     octoclock_packet_t pkt_out;
     pkt_out.sequence = htonx<boost::uint32_t>(std::rand());
     const octoclock_packet_t* pkt_in = reinterpret_cast<const octoclock_packet_t*>(session.data_in);
@@ -305,15 +330,12 @@ static void octoclock_finalize(octoclock_session_t &session){
 }
 
 bool octoclock_image_loader(const image_loader::image_loader_args_t &image_loader_args){
-    // See if we can find an OctoClock with the given args
-    device_addrs_t devs = octoclock_find(image_loader_args.args);
-    if(devs.size() == 0 or !image_loader_args.load_firmware) return false;
-
     octoclock_session_t session;
-    session.dev_addr = devs[0];
     octoclock_setup_session(session,
+                            image_loader_args.args,
                             image_loader_args.firmware_path
                            );
+    if(!session.found or !image_loader_args.load_firmware) return false;
 
     std::cout << boost::format("Unit: OctoClock (%s)")
                  % session.dev_addr["addr"]
@@ -329,7 +351,7 @@ bool octoclock_image_loader(const image_loader::image_loader_args_t &image_loade
 
 UHD_STATIC_BLOCK(register_octoclock_image_loader){
     std::string recovery_instructions = "Aborting. Your OctoClock firmware is now corrupt. The bootloader\n"
-                                        "is functional, but the device will not have functional clock distribution."
+                                        "is functional, but the device will not have functional clock distribution.\n"
                                         "Run this utility again to restore functionality or refer to:\n\n"
                                         "http://files.ettus.com/manual/page_octoclock.html\n\n"
                                         "for alternative setups.";

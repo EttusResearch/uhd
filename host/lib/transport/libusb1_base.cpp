@@ -71,7 +71,18 @@ private:
         timeval tv;
         tv.tv_sec = 0;
         tv.tv_usec = 100000;
-        libusb_handle_events_timeout(context, &tv);
+        int ret = libusb_handle_events_timeout(context, &tv);
+        switch (ret)
+        {
+        case LIBUSB_SUCCESS:
+        case LIBUSB_ERROR_TIMEOUT:
+            break;
+        case LIBUSB_ERROR_NO_DEVICE:
+            throw uhd::io_error(libusb_strerror(LIBUSB_ERROR_NO_DEVICE));
+        default:
+            UHD_MSG(error) << __FUNCTION__ << ": " << libusb_strerror((libusb_error)ret) << std::endl;
+            break;
+        }
     }
 };
 
@@ -249,6 +260,21 @@ public:
     void claim_interface(int interface){
         UHD_ASSERT_THROW(libusb_claim_interface(this->get(), interface) == 0);
         _claimed.push_back(interface);
+    }
+
+    void clear_endpoints(unsigned char recv_endpoint, unsigned char send_endpoint)
+    {
+        int ret;
+        ret = libusb_clear_halt(this->get(), recv_endpoint  | 0x80);
+        UHD_LOG << "usb device handle: recv endpoint clear: " << libusb_error_name(ret) << std::endl;
+        ret = libusb_clear_halt(this->get(), send_endpoint | 0x00);
+        UHD_LOG << "usb device handle: send endpoint clear: " << libusb_error_name(ret) << std::endl;
+    }
+
+    void reset_device(void)
+    {
+        int ret = libusb_reset_device(this->get());
+        UHD_LOG << "usb device handle: dev Reset: " << libusb_error_name(ret) << std::endl;
     }
 
 private:

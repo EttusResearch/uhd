@@ -34,6 +34,8 @@ support this functionality are:
 - SBX-120
 - CBX
 - CBX-120
+- UBX
+- UBX-160
 
 \subsubsection general_tuning_rxchain Tuning the receive chain:
 
@@ -77,6 +79,45 @@ second).
     }
     usrp->issue_stream_command(...);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\section general_sampleratenotes Sample rate notes
+
+Sample rates as delivered to the host computer for USRP devices are constrained to follow several important rules.
+
+It is important to understand that strictly-integer <b>decimation</b> and <b>interpolation</b> are used within USRP
+hardware to meet the requested sample-rate requirements of the application at hand.  That means that the desired
+sample rate must meet the requirement that master-clock-rate/desired-sample-rate be an integer ratio.  Further, it is
+strongly desirable for that ratio to be <b>even</b>.
+
+There are further constraints on the desired sample rate, such that if the required decimation or interpolation exceeds 128,
+then the resulting decimation <b>must</b> be evenly divisible by 2, and that if the required decimation exceeds 256, the
+resulting decimation \b must be evenly divisible by 4.
+
+For USRP devices with fixed master clocks (notably: USRP1, USRP2, N2xx), there are fewer effective sample rates available than
+on USRP hardware that provides some flexibility in selecting a master clock.  Several USRP devices support flexible master
+clock selection, allowing a broader range of sample rate selections by applications. See the individual devices' manual
+pages for more details.
+
+In many cases using USRPs with flexible master-clock rates, it is possible to achieve lower sample rates without running into
+the constraints of higher decimations, simply by choosing a lower master-clock rate to keep required decimation below 128.
+
+\subsection general_sampleratenotes_automatic Automatic master-clock selection
+
+In recent versions of UHD software (3.8.5 and newer), and on some devices (currently: B2xx and E3xx series),
+the master clock rate is chosen automatically (unless specified by the user).
+UHD will select a master clock rate that is consistent with the desired sample rate indicated by the application.
+
+\subsection general_sampleratenotes_nyquist Master clock rate and Nyquist
+
+In selecting a master clock rate on certain USRP hardware (X3xx and B1xx), it is important to select a rate that still provides
+correct alias suppression by the analog hardware.  For daughtercards with a 40 MHz analog bandwidth, this means the clock rate 
+must be <b>at least</b> 40 MHz, with better performance to be expected with a higher clock rate.  For daughtercards
+with 160 MHz bandwidth, it must be <b>at least</b> 160 MHz, again, better performance is to expected with a higher clock rate.
+
+For hardware with fixed master clock rates, of course, this isn't a consideration.
+
+For B2xx and E3xx hardware, the alias suppression is handled differently by the AD936x RFIC, and master clock rate
+is significantly more flexible as a result.
 
 \section general_ounotes Overflow/Underflow Notes
 

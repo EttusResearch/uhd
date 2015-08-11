@@ -16,6 +16,11 @@ The Multi-USRP-Clock class provides a high-level interface to a single clock
 device or set of clock devices, from which the time can be queried. See the
 documentation for uhd::usrp_clock::multi_usrp_clock.
 
+\subsection coding_api_hilevelc High-Level: The C API
+
+Both USRP and clock devices can be interacted with using a C API wrapper included
+by default in all UHD builds. More information can be found \subpage page_c_api "here".
+
 \subsection coding_api_lowlevel Low-Level: The device API
 
 A device is an abstraction for hardware that is connected to the host

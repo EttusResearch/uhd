@@ -42,3 +42,17 @@ UHD_INSTALL(FILES
     DESTINATION ${INCLUDE_DIR}/uhd/types
     COMPONENT headers
 )
+
+IF(ENABLE_C_API)
+    UHD_INSTALL(FILES
+	device_addrs.h
+        metadata.h
+        ranges.h
+        sensors.h
+        tune_request.h
+        tune_result.h
+        usrp_info.h
+        DESTINATION ${INCLUDE_DIR}/uhd/types
+        COMPONENT headers
+    )
+ENDIF(ENABLE_C_API)

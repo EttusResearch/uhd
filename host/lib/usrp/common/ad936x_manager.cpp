@@ -34,7 +34,7 @@ const uint32_t ad936x_manager::DEFAULT_DECIM  = 128;
 const uint32_t ad936x_manager::DEFAULT_INTERP = 128;
 const bool     ad936x_manager::DEFAULT_AUTO_DC_OFFSET = true;
 const bool     ad936x_manager::DEFAULT_AUTO_IQ_BALANCE = true;
-const bool     ad936x_manager::DEFAULT_AGC_ENABLE = true;
+const bool     ad936x_manager::DEFAULT_AGC_ENABLE = false;
 
 class ad936x_manager_impl : public ad936x_manager
 {

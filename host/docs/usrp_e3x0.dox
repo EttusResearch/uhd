@@ -1,4 +1,4 @@
-/*! \page page_usrp_e3x0 USRP-E3x0 Series
+/*! \page page_usrp_e3x0 USRP-E3xx Series
 
 \tableofcontents
 
@@ -35,7 +35,7 @@ There are two different methods to connect to the device
 - using the gigabit ethernet connector and a ssh client on your host computer
 
 For the first boot, booting with the serial cable connected to the device
-is recommended, as it allows to review and modify the network configuration,
+is recommended, as it allows to review and modify the \ref e3xx_network_configuration
 and allows to enter the bootloader in case of issues during the boot.
 
 
@@ -133,6 +133,8 @@ which should return 'arm-oe-linux-gnueabi'.
 
         $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_E300=ON ..
         $ make
+
+For instructions on building UHD on a PC to interact with your E-Series device, follow these instructions: \ref e3x0_uhd_build
 
 \subsubsection e3x0_sdk_usage_gnuradio Building GNU Radio
 
@@ -248,8 +250,7 @@ You may need to change the USRP's IP address for several reasons:
 - to use multiple USRP-E Series devices with the same host computer
 - to set a known IP address into USRP (in case you forgot)
 
-
-
+For examples refer to the \ref e3xx_network_configuration section.
 
 \section e3x0_hw Hardware Notes
 
@@ -626,6 +627,51 @@ TRX-B   | >= 2940.0       | 11            | 10             | XXX
 _Note: Although the transmit filters are low pass, the following table describes UHD's tuning range for selecting each filter path.
 The table also includes the required transmit enable states._
 
+\section e3xx_network_configuration Network configuration
+
+Your USRP E3XX Series device can be configured by editing the /etc/network/interfaces.<br>
+The device defaults to *DHCP*, meaning it will query the local network's DHCP server for an address.
+
+\subsection e3xx_network_dhcp DHCP
+
+The default configuration should look similar to, instructing your device to query
+local DHCP servers for an IP address, gateway, etc.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+auto eth0
+iface eth0 inet dhcp
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to change the hostname used to obtain an IP address via DHCP change
+
+    /etc/hostname
+
+and edit:
+
+    /etc/network/interfaces
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+auto eth0
+iface eth0 inet dhcp
+    hostname your-hostname
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+\subsection e3xx_network_static Static IP
+
+To configure a static IP address edit
+
+    /etc/hostname
+
+to look like
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+auto eth0
+iface eth0 inet static
+    address your-ip
+    netmask your-netmask
+    gateway your-gateway
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 \section e3x0_misc Miscellaneous
 
 \subsection e3x0_misc_multirx Multiple RX channels
@@ -655,9 +701,21 @@ they can be queried through the API.
 
 \subsection e3x0_network_mode Network Mode
 
-Your USRP-E series device can be used in network mode for narrow band signal observation, evaluation and debugging purposes.
+Your USRP-E series device can be used in network mode for narrow band signal observation, evaluation and debugging purposes. See the instructions below for how to use network mode.
 
 Please note that when compared with normal operation as a standalone device the usable bandwidth is limited and therefore Network Mode is not the recommended mode of operation.
+
+\subsubsection e3x0_uhd_build Building UHD
+
+To work with your E-Series device in network mode, you will need to build UHD on your PC with extra CMake flags. Assuming you are in the host/build directory,
+see below:
+
+        $ cmake -DENABLE_E300=ON -DE300_FORCE_NETWORK=ON ..
+        $ make
+
+Once UHD is installed on your device, it will be able to interact with an E-Series device with network mode active (see below).
+
+\subsubsection e3x0_activating_network Activating Network Mode on the Device
 
 In order to use the device in network mode it is necessary to start the *usrp_e3x0_network_mode* executable on the device.
 In order to start the executable please log into your device either via SSH or serial console(see \ref e3x0_first_boot) and type

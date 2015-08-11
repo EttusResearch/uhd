@@ -1,8 +1,7 @@
 /*
  * bq24190.c
  *
- * Created: 11/12/2012 4:58:12 PM
- *  Author: Balint Seeber
+ * Copyright 2015 National Instruments Corp
  */
 
 #ifdef CHARGER_TI
