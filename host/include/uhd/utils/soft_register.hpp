@@ -22,6 +22,7 @@
 #include <boost/noncopyable.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/dirty_tracked.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/locks.hpp>
 #include <boost/unordered_map.hpp>
@@ -115,6 +116,8 @@ public:
     }
 };
 
+enum soft_reg_flush_mode_t { OPTIMIZED_FLUSH, ALWAYS_FLUSH };
+
 /*!
  * Soft register object that holds offset, soft-copy and the control iface.
  * Methods give convenient field-level access to soft-copy and the ability
@@ -131,16 +134,21 @@ public:
     /*!
      * Generic constructor for all soft_register types
      */
-    soft_register_t(wb_iface::wb_addr_type wr_addr, wb_iface::wb_addr_type rd_addr):
-        _iface(NULL), _wr_addr(wr_addr), _rd_addr(rd_addr), _soft_copy(0)
+    explicit soft_register_t(
+            wb_iface::wb_addr_type wr_addr,
+            wb_iface::wb_addr_type rd_addr,
+            soft_reg_flush_mode_t mode = ALWAYS_FLUSH):
+        _iface(NULL), _wr_addr(wr_addr), _rd_addr(rd_addr), _soft_copy(0), _flush_mode(mode)
     {}
 
     /*!
      * Constructor for read-only, write-only registers and read-write registers
      * with rd_addr == wr_addr
      */
-    soft_register_t(wb_iface::wb_addr_type addr):
-        _iface(NULL), _wr_addr(addr), _rd_addr(addr), _soft_copy(0)
+    explicit soft_register_t(
+            wb_iface::wb_addr_type addr,
+            soft_reg_flush_mode_t mode = ALWAYS_FLUSH):
+        _iface(NULL), _wr_addr(addr), _rd_addr(addr), _soft_copy(0), _flush_mode(mode)
     {}
 
     /*!
@@ -183,14 +191,20 @@ public:
     inline void flush()
     {
         if (writable && _iface) {
-            if (get_bitwidth() <= 16) {
-                _iface->poke16(_wr_addr, static_cast<boost::uint16_t>(_soft_copy));
-            } else if (get_bitwidth() <= 32) {
-                _iface->poke32(_wr_addr, static_cast<boost::uint32_t>(_soft_copy));
-            } else if (get_bitwidth() <= 64) {
-                _iface->poke64(_wr_addr, static_cast<boost::uint64_t>(_soft_copy));
-            } else {
-                throw uhd::not_implemented_error("soft_register only supports up to 64 bits.");
+            //If optimized flush then poke only if soft copy is dirty
+            //If flush mode is ALWAYS, the dirty flag should get optimized
+            //out by the compiler because it is never read
+            if (_flush_mode == ALWAYS_FLUSH || _soft_copy.is_dirty()) {
+                if (get_bitwidth() <= 16) {
+                    _iface->poke16(_wr_addr, static_cast<boost::uint16_t>(_soft_copy));
+                } else if (get_bitwidth() <= 32) {
+                    _iface->poke32(_wr_addr, static_cast<boost::uint32_t>(_soft_copy));
+                } else if (get_bitwidth() <= 64) {
+                    _iface->poke64(_wr_addr, static_cast<boost::uint64_t>(_soft_copy));
+                } else {
+                    throw uhd::not_implemented_error("soft_register only supports up to 64 bits.");
+                }
+                _soft_copy.mark_clean();
             }
         } else {
             throw uhd::not_implemented_error("soft_register is not writable.");
@@ -212,6 +226,7 @@ public:
             } else {
                 throw uhd::not_implemented_error("soft_register only supports up to 64 bits.");
             }
+            _soft_copy.mark_clean();
         } else {
             throw uhd::not_implemented_error("soft_register is not readable.");
         }
@@ -264,7 +279,8 @@ private:
     wb_iface*                       _iface;
     const wb_iface::wb_addr_type    _wr_addr;
     const wb_iface::wb_addr_type    _rd_addr;
-    reg_data_t                      _soft_copy;
+    dirty_tracked<reg_data_t>       _soft_copy;
+    const soft_reg_flush_mode_t     _flush_mode;
 };
 
 /*!
@@ -276,12 +292,17 @@ class UHD_API soft_register_sync_t : public soft_register_t<reg_data_t, readable
 public:
     typedef boost::shared_ptr< soft_register_sync_t<reg_data_t, readable, writable> > sptr;
 
-    soft_register_sync_t(wb_iface::wb_addr_type wr_addr, wb_iface::wb_addr_type rd_addr):
-        soft_register_t<reg_data_t, readable, writable>(wr_addr, rd_addr), _mutex()
+    explicit soft_register_sync_t(
+            wb_iface::wb_addr_type wr_addr,
+            wb_iface::wb_addr_type rd_addr,
+            soft_reg_flush_mode_t mode = ALWAYS_FLUSH):
+        soft_register_t<reg_data_t, readable, writable>(wr_addr, rd_addr, mode), _mutex()
     {}
 
-    soft_register_sync_t(wb_iface::wb_addr_type addr):
-        soft_register_t<reg_data_t, readable, writable>(addr), _mutex()
+    explicit soft_register_sync_t(
+            wb_iface::wb_addr_type addr,
+            soft_reg_flush_mode_t mode = ALWAYS_FLUSH):
+        soft_register_t<reg_data_t, readable, writable>(addr, mode), _mutex()
     {}
 
     inline void initialize(wb_iface& iface, bool sync = false)
