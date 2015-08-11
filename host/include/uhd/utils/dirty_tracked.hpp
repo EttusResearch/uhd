@@ -123,8 +123,8 @@ namespace uhd{
         }
 
     private:
-        bool   _dirty;
         data_t _data;
+        bool   _dirty;
     };
 
 } //namespace uhd
