@@ -272,8 +272,10 @@ def prep_function_list():
     - Split the function list into individual functions
     - Split the functions into return value, name, argument list and body
     """
-    func_list_wo_comments = re.sub(r'^\s*#.*$', '', FUNCTION_LIST, flags=re.MULTILINE)
-    func_list_split = re.split(r'(?<=^})\s*$', func_list_wo_comments, flags=re.MULTILINE)
+    comment_remove_re = re.compile(r'^\s*#.*$', flags=re.MULTILINE)
+    func_list_wo_comments = comment_remove_re.sub('', FUNCTION_LIST)
+    func_splitter_re = re.compile(r'(?<=^})\s*$', flags=re.MULTILINE)
+    func_list_split = func_splitter_re.split(func_list_wo_comments)
     func_list_split = [x.strip() for x in func_list_split if len(x.strip())]
     func_list = []
     for func in func_list_split:
