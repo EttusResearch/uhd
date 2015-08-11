@@ -50,28 +50,16 @@ public:
 	}
 
 	~crimson_rx_streamer() {
-		// nothing
 	}
 
 	// number of channels for streamer
 	size_t get_num_channels(void) const {
-		const fs_path rx_path = "/mboards/0/rx";
-		size_t num = 0;
-		for (int i = 0; i < 4; i++) {
-			std::string ch = boost::lexical_cast<std::string>((char)(i + 65));
-			std::string pwr = _tree->access<std::string>(rx_path / "Channel_"+ch / "pwr").get();
-			if ( strcmp(pwr.c_str(), "1") == 0 ) num++;
-		}
-		return num;
+		return _channels.size();
 	}
 
-	// max samples per buffer per packet for sfpa
-	// it is HIGHLY recommended that the user keep the payload len equal for both SFP ports
+	// max samples per buffer per packet for sfpa, (4-bytes: 16 I, 16Q)
 	size_t get_max_num_samps(void) const {
-		int sample_size = boost::lexical_cast<int>(
-			_tree->access<std::string>("/mboards/0/link/sfpa/pay_len").get());
-
-		return sample_size/4;	// 32-bit (4-bytes) wide samples, (16 I, 16 Q)
+		return _pay_len/4;
 	}
 
 	size_t recv(
@@ -84,72 +72,49 @@ public:
 		const size_t vita_hdr = 4;
 		const size_t vita_tlr = 1;
 		const size_t vita_pck = nsamps_per_buff + vita_hdr + vita_tlr;
-		uint32_t vita_buf[vita_pck];	// buffer to read in data plus room for vita
-		memset(vita_buf, 0, vita_pck * 4);
-		memset(buffs[0], 0, nsamps_per_buff * 4);
+		size_t nbytes = 0;
 
-		// defaults to read from the first channel because OpenBTS only requires one RX, one TX
-		// One sample is 32 bits wide, thus multiply nsamps by 4 to get number of bytes
-		// Buffs is an array of buffer, this accesses the first buffer in the array of buffers
+		// temp buffer: vita hdr + data
+		uint32_t vita_buf[vita_pck];
 
-		// if it's the first time to read, flush the buffer
-		if (_start_time == 0) {
-			for (int i = 0; i <= 129; i++) {
-				_udp_stream[0] -> stream_in(vita_buf, vita_pck * 4, timeout);
-			}
+		// read from each connected stream and dump it into the buffs[i]
+		for (unsigned int i = 0; i < _channels.size(); i++) {
+
+			// clear temp buffer and otuput buffer
+			memset(vita_buf, 0, vita_pck * 4);
+			memset(buffs[i], 0, nsamps_per_buff * 4);
+
+			// read in vita_pck*4 bytes to temp buffer
+			nbytes = _udp_stream[i] -> stream_in(vita_buf, vita_pck * 4, timeout);
+			if (nbytes == 0) return 0;
+
+			// copy non-vita packets to buffs[0]
+			memcpy(buffs[i], vita_buf + vita_hdr , nsamps_per_buff * 4);
 		}
 
-		const size_t nbytes = _udp_stream[0] -> stream_in(vita_buf, vita_pck * 4, timeout);
-		if (nbytes == 0) return 0;
-
-		memcpy(buffs[0], vita_buf + vita_hdr , nsamps_per_buff * 4);
-
-		/* VITA Header
-		 * ------------------
-		 * -1. Trailer
-		 *  1. Header
-		 *  2. Stream
-		 *  3. Fractional Time Stamp (1)
-		 *  4. Fractional Time Stamp (2)
-		 */
-		// parse the VITA time stamp
-		// fix endianess for time
-		//this -> _32_align(&(vita_buf[0]));
-		//this -> _32_align(&(vita_buf[1]));
-		//this -> _32_align(&(vita_buf[2]));
-		//this -> _32_align(&(vita_buf[3]));
-
-		// get the time
+		// process vita timestamps based on the last stream input's time stamp
 		uint64_t time_ticks = ((uint64_t)vita_buf[2] << 32) | ((uint64_t)vita_buf[3]);
 
-		// vita counter increments according to the sample rate
-		double time = time_ticks / 390625.0;//(int)_rate[0];
+		// vita counter increments according to sample rate (all channels have to be same sample rate)
+		double time = time_ticks / _rate;
 
 		// determine the beginning of time
 		if (_start_time == 0) {
 			_start_time = time;
 		}
 
-		//printf("0x%08x  0x%08x\n", vita_buf[2], vita_buf[3]);
+		// save the time to metadata
 		time = time - _start_time;
-
 		metadata.time_spec = time_spec_t((time_t)time, time - (time_t)time);
-		//printf("time: %lfs\n", time);
 
-		// parse VITA for sequencing
+		// process vita sequencing
 		uint32_t header = vita_buf[0];
-		if (_prev_frame > (header & 0xf0000) >> 16)
+		if (_prev_frame > (header & 0xf0000) >> 16) {
 			metadata.out_of_sequence = true;
-		else
+		} else {
 			metadata.out_of_sequence = false;
+		}
 		_prev_frame = (header & 0xf0000) >> 16;
-
-		// Debugging code
-		//printf("Received %li bytes\n", nbytes);
-		//for (size_t i = 0; i < nsamps_per_buff; i++) {
-		//	if (i % 4 == 0) printf("\n");
-		//	printf("0x%08x ", ((uint32_t*)buffs[0])[i]);
-		//}
 
 		// populate metadata
 		metadata.error_code = rx_metadata_t::ERROR_CODE_NONE;
@@ -162,7 +127,6 @@ public:
 	}
 
 	void issue_stream_cmd(const stream_cmd_t &stream_cmd) {
-
 	}
 
 private:
@@ -176,52 +140,33 @@ private:
 
 		// get the property root path
 		const fs_path mb_path   = "/mboards/0";
-		const fs_path prop_path = mb_path / "rx_link";
+		const fs_path link_path = mb_path / "rx_link";
 
 		// if no channels specified, default to channel 1 (0)
-		_channels = _channels.empty()? std::vector<size_t>(1, 0) : _channels;
+		_channels = _channels.empty() ? std::vector<size_t>(1, 0) : _channels;
 
-		for (int i = 0; i < _channels.size(); i++) {
-			//printf("streaming rx channel: %i\n", _channels[i]);
-
+		for (unsigned int i = 0; i < _channels.size(); i++) {
+			// get the channel parameters
 			std::string ch       = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
-			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
-			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
+			std::string udp_port = tree->access<std::string>(link_path / "Channel_"+ch / "port").get();
+			std::string ip_addr  = tree->access<std::string>(link_path / "Channel_"+ch / "ip_dest").get();
+			std::string iface    = tree->access<std::string>(link_path / "Channel_"+ch / "iface").get();
+			_rate = tree->access<double>(mb_path / "rx_dsps" / "Channel_"+ch / "rate" / "value").get();
+			_pay_len = tree->access<int>(mb_path / "link" / iface / "pay_len").get();
 
 			// power on the channel
 			tree->access<std::string>(mb_path / "rx" / "Channel_"+ch / "pwr").set("1");
 			sleep(5);
 
 			// vita enable
-			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("1");
+			tree->access<std::string>(link_path / "Channel_"+ch / "vita_en").set("1");
 
-			// SFPA
-			if (strcmp(sink.c_str(), "sfpa") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: "
-				//	<< tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
-				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream.push_back(uhd::transport::udp_stream::make_rx_stream(
-					"10.10.10.10", udp_port));
-
-			// SFPB
-			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: "
-				//	<< tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
-				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream.push_back(uhd::transport::udp_stream::make_rx_stream(
-					"10.10.11.10", udp_port));
-
-			// MANAGEMENT
-			} else {
-				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: "
-				//	<< udp_port << " ]" << std::endl;
-				_udp_stream.push_back(uhd::transport::udp_stream::make_rx_stream( addr["addr"], udp_port ));
-			}
+			// connect to UDP port
+			_udp_stream.push_back(uhd::transport::udp_stream::make_rx_stream( ip_addr, udp_port));
 		}
 	}
 
-	// helper function to swap bytes, within 32-bits
-	// (conversion from 8-bit allignment to 32-bit allignment
+	// helper function to convert 8-bit allignment ==> 32-bit allignment
 	void _32_align(uint32_t* data) {
 		*data = (*data & 0x000000ff) << 24 |
 			(*data & 0x0000ff00) << 8  |
@@ -230,10 +175,13 @@ private:
 	}
 
 	std::vector<uhd::transport::udp_stream::sptr> _udp_stream;
+	std::vector<size_t> _channels;
 	property_tree::sptr _tree;
 	size_t _prev_frame;
-	std::vector<size_t> _channels;
+	size_t _pay_len;
+	double _rate;
 	double _start_time;
+
 };
 
 class crimson_tx_streamer : public uhd::tx_streamer {
@@ -247,28 +195,16 @@ public:
 	}
 
 	~crimson_tx_streamer() {
-		// nothing
 	}
 
 	// number of channels for streamer
 	size_t get_num_channels(void) const {
-		const fs_path tx_path = "/mboards/0/tx";
-		size_t num = 0;
-		for (int i = 0; i < 4; i++) {
-			std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
-			std::string pwr = _tree->access<std::string>(tx_path / "Channel_"+ch / "pwr").get();
-			if ( strcmp(pwr.c_str(), "1") == 0 ) num++;
-		}
-		return num;
+		return _channels.size();
 	}
 
-	// max samples per buffer per packet for sfpa
-	// it is HIGHLY recommended that the user keep the payload len equal for both SFP ports
+	// max samples per buffer per packet for sfpa, (4-bytes: 16 I, 16Q)
 	size_t get_max_num_samps(void) const {
-		int sample_size = boost::lexical_cast<int>(
-			_tree->access<std::string>("/mboards/0/link/sfpa/pay_len").get());
-
-		return sample_size/4;	// 32-bit (4-bytes) wide samples, (16 I, 16 Q)
+		return _pay_len/4;
 	}
 
 	size_t send(
@@ -277,36 +213,31 @@ public:
         	const tx_metadata_t &metadata,
         	const double timeout = 0.1)
 	{
-		const size_t vita_hdr = 4;
-		const size_t vita_tlr = 1;
+		//const size_t vita_hdr = 4;
+		//const size_t vita_tlr = 1;
 		const size_t vita_pck = nsamps_per_buff;// + vita_hdr + vita_tlr;	// vita is disabled
 		uint32_t vita_buf[vita_pck];						// buffer to read in data plus room for VITA
-		memcpy((void*)vita_buf, buffs[0], nsamps_per_buff * 4);			// copy over data to VITA buffer
+		size_t ret;
 
-		// Debug data
-		/*for (size_t i = 0; i < vita_pck; i++) {
-			if (i % 8 == 0) vita_buf[i] = 0x11223344;
-			if (i % 8 == 1) vita_buf[i] = 0x55667788;
-			if (i % 8 == 2) vita_buf[i] = 0x99aabbcc;
-			if (i % 8 == 3) vita_buf[i] = 0xddeeff00;
-			if (i % 8 == 4) vita_buf[i] = 0x01234567;
-			if (i % 8 == 5) vita_buf[i] = 0x89abcdef;
-			if (i % 8 == 6) vita_buf[i] = 0xdeadbeef;
-			if (i % 8 == 7) vita_buf[i] = 0xbadeb01a;
-		}*/
+		// send to each connected stream data in buffs[i]
+		for (unsigned int i = 0; i < _channels.size(); i++) {
 
-		// sending samples, restricted to a jumbo frame of 9000 bytes at a time
-		size_t ret = 0;
-		while ((ret / 4) < nsamps_per_buff) {
-			size_t remaining_bytes = (nsamps_per_buff*4) - ret;
+			//clear temp buffer and copy data into it
+			memset((void*)vita_buf, 0, vita_pck*4);
+			memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
 
-			if (remaining_bytes >= 9000)
-				ret += _udp_stream[0] -> stream_out((void*)vita_buf, 9000);
-			else
-				ret += _udp_stream[0] -> stream_out((void*)vita_buf, remaining_bytes);
+			// sending samples, restricted to a jumbo frame of 9000 bytes at a time
+			ret = 0;
+			while ((ret / 4) < nsamps_per_buff) {
+				size_t remaining_bytes = (nsamps_per_buff*4) - ret;
+
+				if (remaining_bytes >= 9000) {
+					ret += _udp_stream[i] -> stream_out((void*)vita_buf, 9000);
+				} else {
+					ret += _udp_stream[i] -> stream_out((void*)vita_buf, remaining_bytes);
+				}
+			}
 		}
-		//printf("send nsamps_per_buff: %li ret: %i\n", nsamps_per_buff, ret);
-
 		return (ret / 4);// -  vita_hdr - vita_tlr;	// vita is disabled
 	}
 
@@ -327,49 +258,29 @@ private:
 		const fs_path prop_path = mb_path / "tx_link";
 
 		// if no channels specified, default to channel 1 (0)
-		_channels = _channels.empty()? std::vector<size_t>(1, 0) : _channels;
+		_channels = _channels.empty() ? std::vector<size_t>(1, 0) : _channels;
 
-		for (int i = 0; i < _channels.size(); i++) {
-			//printf("streaming tx channel: %i\n", _channels[i]);
-
-			std::string ch       = boost::lexical_cast<std::string>((char)(i + 65));
+		for (unsigned int i = 0; i < _channels.size(); i++) {
+			std::string ch       = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 			std::string udp_port = tree->access<std::string>(prop_path / "Channel_"+ch / "port").get();
-			std::string sink     = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
+			std::string iface    = tree->access<std::string>(prop_path / "Channel_"+ch / "iface").get();
+			std::string ip_addr  = tree->access<std::string>( mb_path / "link" / iface / "ip_addr").get();
+			_pay_len = tree->access<int>(mb_path / "link" / iface / "pay_len").get();
 
-         // power on the channel
-         tree->access<std::string>(mb_path / "tx" / "Channel_"+ch / "pwr").set("1");
-	 sleep(5);
+			// power on the channel
+			tree->access<std::string>(mb_path / "tx" / "Channel_"+ch / "pwr").set("1");
+			sleep(5);
 
 			// vita disable
 			tree->access<std::string>(prop_path / "Channel_"+ch / "vita_en").set("0");
 
-			// SFPA (all the same because this is a sink)
-			if (strcmp(sink.c_str(), "sfpa") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: "
-				//	<< tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get()
-				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream.push_back(uhd::transport::udp_stream::make_tx_stream(
-					tree->access<std::string>( mb_path / "link" / "sfpa" / "ip_addr").get(), udp_port));
+			// connect to UDP port
+			_udp_stream.push_back(uhd::transport::udp_stream::make_tx_stream(ip_addr, udp_port));
 
-			// SFPB (all the same because this is a sink)
-			} else if (strcmp(sink.c_str(), "sfpb") == 0) {
-				//std::cout << __func__ << "(): opened UDP[ IP: "
-				//	<< tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get()
-				//	<< " PORT: " << udp_port << " ]" << std::endl;
-				_udp_stream.push_back(uhd::transport::udp_stream::make_tx_stream(
-					tree->access<std::string>( mb_path / "link" / "sfpb" / "ip_addr").get(), udp_port));
-
-			// MANAGEMENT (all the same because this is a sink)
-			} else {
-				//std::cout << __func__ << "(): opened UDP[ IP: " << addr["addr"] << " PORT: "
-				//	<< udp_port << " ]" << std::endl;
-				_udp_stream.push_back(uhd::transport::udp_stream::make_tx_stream( addr["addr"], udp_port ));
-			}
 		}
 	}
 
 	// helper function to swap bytes, within 32-bits
-	// (conversion from 8-bit allignment to 32-bit allignment
 	void _32_align(uint32_t* data) {
 		*data = (*data & 0x000000ff) << 24 |
 			(*data & 0x0000ff00) << 8  |
@@ -378,8 +289,9 @@ private:
 	}
 
 	std::vector<uhd::transport::udp_stream::sptr> _udp_stream;
-	property_tree::sptr _tree;
 	std::vector<size_t> _channels;
+	property_tree::sptr _tree;
+	size_t _pay_len;
 };
 
 /***********************************************************************
