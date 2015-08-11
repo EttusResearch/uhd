@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011,2013 Ettus Research LLC
+# Copyright 2010-2011,2013,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,17 +26,30 @@ SET(_uhd_disabled_components "" CACHE INTERNAL "" FORCE)
 #  - enb the default enable setting
 #  - deps a list of dependencies
 #  - dis the default disable setting
+#  - req fail if dependencies not met (unless specifically disabled)
 ########################################################################
-MACRO(LIBUHD_REGISTER_COMPONENT name var enb deps dis)
+MACRO(LIBUHD_REGISTER_COMPONENT name var enb deps dis req)
     MESSAGE(STATUS "")
     MESSAGE(STATUS "Configuring ${name} support...")
     FOREACH(dep ${deps})
         MESSAGE(STATUS "  Dependency ${dep} = ${${dep}}")
     ENDFOREACH(dep)
 
+    #if user specified option, store here
+    IF("${${var}}" STREQUAL "OFF")
+        SET(user_disabled TRUE)
+    ELSE()
+        SET(user_disabled FALSE)
+    ENDIF("${${var}}" STREQUAL "OFF")
+
     #setup the dependent option for this component
     INCLUDE(CMakeDependentOption)
     CMAKE_DEPENDENT_OPTION(${var} "enable ${name} support" ${enb} "${deps}" ${dis})
+
+    #if a required option's dependencies aren't met, fail unless user specifies otherwise
+    IF(NOT ${var} AND ${req} AND NOT user_disabled)
+        MESSAGE(FATAL_ERROR "Dependencies for required component ${name} not met.")
+    ENDIF(NOT ${var} AND ${req} AND NOT user_disabled)
 
     #append the component into one of the lists
     IF(${var})

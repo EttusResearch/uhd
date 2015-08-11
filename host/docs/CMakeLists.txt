@@ -28,7 +28,7 @@ SET(ENABLE_MANUAL_OR_DOXYGEN false)
 ########################################################################
 # Setup Manual (using Doxygen)
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF)
+LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF OFF)
 
 # Check if fpga submodule is there. If yes:
 # - Add fpga-src/docs and fpga-src/README.md to inputs
@@ -64,7 +64,7 @@ ENDIF(ENABLE_MANUAL)
 # Setup API documentation (using Doxygen)
 ########################################################################
 MESSAGE(STATUS "")
-LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF)
+LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF OFF)
 OPTION(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
 
 IF(LIBUHDDEV_PKG)
@@ -141,7 +141,7 @@ IF(NOT WIN32)
     SET(NOT_WIN32 TRUE)
 ENDIF(NOT WIN32)
 
-LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "GZIP_FOUND;NOT_WIN32" OFF)
+LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "GZIP_FOUND;NOT_WIN32" OFF OFF)
 
 IF(ENABLE_MAN_PAGES)
     #Generate man pages
