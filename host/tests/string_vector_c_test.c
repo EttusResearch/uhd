@@ -34,53 +34,53 @@ int main(){
 
     // Variables
     int return_code;
-    uhd_device_addrs_handle device_addrs;
+    uhd_string_vector_handle string_vector;
     size_t size;
     char str_buffer[BUFFER_SIZE];
 
     return_code = EXIT_SUCCESS;
 
-    // Create device_addrs
+    // Create string_vector
     UHD_TEST_EXECUTE_OR_GOTO(end_of_test,
-        uhd_device_addrs_make(&device_addrs)
+        uhd_string_vector_make(&string_vector)
     )
 
     // Add values
-    UHD_TEST_EXECUTE_OR_GOTO(free_device_addrs,
-	uhd_device_addrs_push_back(device_addrs, "key1=value1,key2=value2")
+    UHD_TEST_EXECUTE_OR_GOTO(free_string_vector,
+        uhd_string_vector_push_back(&string_vector, "foo")
     )
-    UHD_TEST_EXECUTE_OR_GOTO(free_device_addrs,
-	uhd_device_addrs_push_back(device_addrs, "key3=value3,key4=value4")
+    UHD_TEST_EXECUTE_OR_GOTO(free_string_vector,
+        uhd_string_vector_push_back(&string_vector, "bar")
     )
 
     // Check size
-    UHD_TEST_EXECUTE_OR_GOTO(free_device_addrs,
-	uhd_device_addrs_size(device_addrs, &size)
+    UHD_TEST_EXECUTE_OR_GOTO(free_string_vector,
+        uhd_string_vector_size(string_vector, &size)
     )
     if(size != 2){
-	return_code = EXIT_FAILURE;
+        return_code = EXIT_FAILURE;
         fprintf(stderr, "%s:%d: Invalid size: %lu vs. 2",
                         __FILE__, __LINE__,size);
-        goto free_device_addrs;
+        goto free_string_vector;
     }
 
     // Make sure we get right value
-    UHD_TEST_EXECUTE_OR_GOTO(free_device_addrs,
-	uhd_device_addrs_at(device_addrs, 1, str_buffer, BUFFER_SIZE)
+    UHD_TEST_EXECUTE_OR_GOTO(free_string_vector,
+        uhd_string_vector_at(string_vector, 1, str_buffer, BUFFER_SIZE)
     )
-    if(strcmp(str_buffer, "key3=value3,key4=value4")){
+    if(strcmp(str_buffer, "bar")){
         return_code = EXIT_FAILURE;
         fprintf(stderr, "%s:%d: Mismatched daughterboard serial: \"%s\" vs. \"key3=value3,key4=value4\"\n",
                         __FILE__, __LINE__,
                         str_buffer);
     }
 
-    free_device_addrs:
+    free_string_vector:
         if(return_code){
-	    uhd_device_addrs_last_error(device_addrs, str_buffer, BUFFER_SIZE);
-            fprintf(stderr, "device_addrs error: %s\n", str_buffer);
-	}
-	uhd_device_addrs_free(&device_addrs);
+            uhd_string_vector_last_error(string_vector, str_buffer, BUFFER_SIZE);
+            fprintf(stderr, "string_vector error: %s\n", str_buffer);
+        }
+        uhd_string_vector_free(&string_vector);
 
     end_of_test:
         if(!return_code){

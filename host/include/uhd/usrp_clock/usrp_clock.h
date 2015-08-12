@@ -20,8 +20,8 @@
 
 #include <uhd/config.h>
 #include <uhd/error.h>
-#include <uhd/types/device_addrs.h>
 #include <uhd/types/sensors.h>
+#include <uhd/types/string_vector.h>
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -53,9 +53,8 @@ extern "C" {
  * See uhd::device::find() for more details.
  */
 UHD_API uhd_error uhd_usrp_clock_find(
-    uhd_device_addrs_handle h,
     const char* args,
-    size_t *num_found
+    uhd_string_vector_t *devices_out
 );
 
 //! Create a clock handle.
@@ -109,16 +108,14 @@ UHD_API uhd_error uhd_usrp_clock_get_sensor(
     uhd_usrp_clock_handle h,
     const char* name,
     size_t board,
-    uhd_sensor_value_handle sensor_value_out
+    uhd_sensor_value_handle *sensor_value_out
 );
 
 //! Get sensor names
 UHD_API uhd_error uhd_usrp_clock_get_sensor_names(
     uhd_usrp_clock_handle h,
     size_t board,
-    char *sensor_names_out,
-    size_t strbuffer_len,
-    size_t *num_sensors_out
+    uhd_string_vector_handle *sensor_names_out
 );
 
 #ifdef __cplusplus

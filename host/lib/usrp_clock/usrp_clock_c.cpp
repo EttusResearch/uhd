@@ -56,15 +56,17 @@ UHD_SINGLETON_FCN(usrp_clock_ptrs, get_usrp_clock_ptrs);
  ***************************************************************************/
 static boost::mutex _usrp_clock_find_mutex;
 uhd_error uhd_usrp_clock_find(
-    uhd_device_addrs_handle h,
     const char* args,
-    size_t *num_found
+    uhd_string_vector_t *devices_out
 ){
-    UHD_SAFE_C_SAVE_ERROR(h,
+    UHD_SAFE_C(
         boost::mutex::scoped_lock lock(_usrp_clock_find_mutex);
 
-        h->device_addrs_cpp = uhd::device::find(std::string(args), uhd::device::CLOCK);
-        *num_found = h->device_addrs_cpp.size();
+        uhd::device_addrs_t devs = uhd::device::find(std::string(args), uhd::device::CLOCK);
+        devices_out->string_vector_cpp.clear();
+        BOOST_FOREACH(const uhd::device_addr_t &dev, devs){
+            devices_out->string_vector_cpp.push_back(dev.to_string());
+        }
     )
 }
 
@@ -155,35 +157,20 @@ uhd_error uhd_usrp_clock_get_sensor(
     uhd_usrp_clock_handle h,
     const char* name,
     size_t board,
-    uhd_sensor_value_handle sensor_value_out
+    uhd_sensor_value_handle *sensor_value_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        delete sensor_value_out->sensor_value_cpp;
-        sensor_value_out->sensor_value_cpp = new uhd::sensor_value_t(USRP_CLOCK(h)->get_sensor(name, board));
+        delete (*sensor_value_out)->sensor_value_cpp;
+        (*sensor_value_out)->sensor_value_cpp = new uhd::sensor_value_t(USRP_CLOCK(h)->get_sensor(name, board));
     )
 }
 
 uhd_error uhd_usrp_clock_get_sensor_names(
     uhd_usrp_clock_handle h,
     size_t board,
-    char* sensor_names_out,
-    size_t strbuffer_len,
-    size_t *num_sensors_out
+    uhd_string_vector_handle *sensor_names_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> sensor_names = USRP_CLOCK(h)->get_sensor_names(board);
-        *num_sensors_out = sensor_names.size();
-
-        std::string sensor_names_str = "";
-        BOOST_FOREACH(const std::string &sensor_name, sensor_names){
-            sensor_names_str += sensor_name;
-            sensor_names_str += ','; 
-        }
-        if(sensor_names.size() > 0){
-            sensor_names_str.resize(sensor_names_str.size()-1);
-        }
-
-        memset(sensor_names_out, '\0', strbuffer_len);
-        strncpy(sensor_names_out, sensor_names_str.c_str(), strbuffer_len);
-    )    
+        (*sensor_names_out)->string_vector_cpp = USRP_CLOCK(h)->get_sensor_names(board);
+    )
 }

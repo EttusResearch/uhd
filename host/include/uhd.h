@@ -21,10 +21,10 @@
 #include <uhd/config.h>
 #include <uhd/error.h>
 
-#include <uhd/types/device_addrs.h>
 #include <uhd/types/metadata.h>
 #include <uhd/types/ranges.h>
 #include <uhd/types/sensors.h>
+#include <uhd/types/string_vector.h>
 #include <uhd/types/tune_request.h>
 #include <uhd/types/tune_result.h>
 #include <uhd/types/usrp_info.h>

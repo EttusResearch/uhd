@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -55,11 +55,11 @@ SET(UHD_TEST_LIBRARY_DIRS ${Boost_LIBRARY_DIRS})
 
 IF(ENABLE_C_API)
     LIST(APPEND test_sources
-	device_addrs_c_test.c
         eeprom_c_test.c
         error_c_test.cpp
         ranges_c_test.c
         sensors_c_test.c
+        string_vector_c_test.c
         subdev_spec_c_test.c
     )
 ENDIF(ENABLE_C_API)

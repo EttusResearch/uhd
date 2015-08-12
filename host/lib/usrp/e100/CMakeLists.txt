@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2011,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 ########################################################################
 # Conditionally configure the USRP-E100 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("E100" ENABLE_E100 OFF "ENABLE_LIBUHD;LINUX" OFF)
+LIBUHD_REGISTER_COMPONENT("E100" ENABLE_E100 OFF "ENABLE_LIBUHD;LINUX" OFF OFF)
 
 IF(ENABLE_E100)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)

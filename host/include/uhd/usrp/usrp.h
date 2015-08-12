@@ -20,10 +20,10 @@
 
 #include <uhd/config.h>
 #include <uhd/error.h>
-#include <uhd/types/device_addrs.h>
 #include <uhd/types/metadata.h>
 #include <uhd/types/ranges.h>
 #include <uhd/types/sensors.h>
+#include <uhd/types/string_vector.h>
 #include <uhd/types/tune_request.h>
 #include <uhd/types/tune_result.h>
 #include <uhd/types/usrp_info.h>
@@ -158,7 +158,7 @@ UHD_API uhd_error uhd_rx_streamer_recv(
     uhd_rx_streamer_handle h,
     void** buffs,
     size_t samps_per_buff,
-    uhd_rx_metadata_handle md,
+    uhd_rx_metadata_handle *md,
     double timeout,
     bool one_packet,
     size_t *items_recvd
@@ -237,7 +237,7 @@ UHD_API uhd_error uhd_tx_streamer_send(
     uhd_tx_streamer_handle h,
     const void **buffs,
     size_t samps_per_buff,
-    uhd_tx_metadata_handle md,
+    uhd_tx_metadata_handle *md,
     double timeout,
     size_t *items_sent
 );
@@ -248,7 +248,7 @@ UHD_API uhd_error uhd_tx_streamer_send(
  */
 UHD_API uhd_error uhd_tx_streamer_recv_async_msg(
     uhd_tx_streamer_handle h,
-    uhd_async_metadata_handle md,
+    uhd_async_metadata_handle *md,
     double timeout,
     bool *valid
 );
@@ -297,9 +297,8 @@ extern "C" {
  * See uhd::device::find() for more details.
  */
 UHD_API uhd_error uhd_usrp_find(
-    uhd_device_addrs_handle h,
     const char* args,
-    size_t *num_found
+    uhd_string_vector_handle *strings_out
 );
 
 //! Create a USRP handle.
@@ -488,16 +487,6 @@ UHD_API uhd_error uhd_usrp_clear_command_time(
     size_t mboard
 );
 
-//! Issue a stream command to tell the device to send samples to the host
-/*!
- * See uhd::usrp::multi_usrp::issue_stream_command() for more details.
- */
-UHD_API uhd_error uhd_usrp_issue_stream_cmd(
-    uhd_usrp_handle h,
-    uhd_stream_cmd_t *stream_cmd,
-    size_t chan
-);
-
 //! Set the time source for the given device
 /*!
  * See uhd::usrp::multi_usrp::set_time_source() for more details.
@@ -520,23 +509,10 @@ UHD_API uhd_error uhd_usrp_get_time_source(
 );
 
 //! Get a list of time sources for the given device
-/*!
- * The list will be returned as a comma-delimited list that can
- * be parsed with strtok(). The function will also return the number
- * of time sources.
- *
- * \param h USRP handle
- * \param mboard which motherboard to use
- * \param time_sources_out string buffer in which to place time sources
- * \param strbuffer_len buffer length
- * \param num_time_sources_out variable in which to place number of time sources
- */
 UHD_API uhd_error uhd_usrp_get_time_sources(
     uhd_usrp_handle h,
     size_t mboard,
-    char* time_sources_out,
-    size_t strbuffer_len,
-    size_t *num_time_sources_out
+    uhd_string_vector_handle *time_sources_out
 );
 
 //! Set the given device's clock source
@@ -561,23 +537,10 @@ UHD_API uhd_error uhd_usrp_get_clock_source(
 );
 
 //! Get a list of clock sources for the given device
-/*!
- * The list will be returned as a comma-delimited list that can
- * be parsed with strtok(). The function will also return the number
- * of clock sources.
- *
- * \param h USRP handle
- * \param mboard which motherboard to use
- * \param clock_sources_out string buffer in which to place clock sources
- * \param strbuffer_len buffer length
- * \param num_clock_sources_out variable in which to place number of clock sources
- */
 UHD_API uhd_error uhd_usrp_get_clock_sources(
     uhd_usrp_handle h,
     size_t mboard,
-    char* clock_sources_out,
-    size_t strbuffer_len,
-    size_t *num_clock_sources_out
+    uhd_string_vector_handle *clock_sources_out
 );
 
 //! Enable or disable sending the clock source to an output connector
@@ -611,27 +574,14 @@ UHD_API uhd_error uhd_usrp_get_mboard_sensor(
     uhd_usrp_handle h,
     const char* name,
     size_t mboard,
-    uhd_sensor_value_handle sensor_value_out
+    uhd_sensor_value_handle *sensor_value_out
 );
 
 //! Get a list of motherboard sensors for the given device
-/*!
- * The list will be returned as a comma-delimited list that can
- * be parsed with strtok(). The function will also return the number
- * of motherboard sensors.
- *
- * \param h USRP handle
- * \param mboard which motherboard to use
- * \param mboard_sensors_out string buffer in which to place motherboard sensors
- * \param strbuffer_len buffer length
- * \param num_mboard_sensors_out variable in which to place number of motherboard sensors
- */
 UHD_API uhd_error uhd_usrp_get_mboard_sensor_names(
     uhd_usrp_handle h,
     size_t mboard,
-    char* mboard_sensor_names_out,
-    size_t strbuffer_len,
-    size_t *num_mboard_sensors_out
+    uhd_string_vector_handle *mboard_sensor_names_out
 );
 
 //! Perform a write on a user configuration register bus
@@ -824,23 +774,10 @@ UHD_API uhd_error uhd_usrp_get_rx_gain_range(
 );
 
 //! Get a list of RX gain names for the given channel
-/*!
- * The list will be returned as a comma-delimited list that can
- * be parsed with strtok(). The function will also return the number
- * of RX gain names.
- *
- * \param h USRP handle
- * \param channel which channel to use
- * \param rx_gain_names_out string buffer in which to place RX gain names
- * \param strbuffer_len buffer length
- * \param num_rx_gain_names_out variable in which to place number of RX gain names
- */
 UHD_API uhd_error uhd_usrp_get_rx_gain_names(
     uhd_usrp_handle h,
     size_t chan,
-    char* gain_names_out,
-    size_t strbuffer_len,
-    size_t *num_rx_gain_names_out
+    uhd_string_vector_handle *gain_names_out
 );
 
 //! Set the RX antenna for the given channel
@@ -859,43 +796,17 @@ UHD_API uhd_error uhd_usrp_get_rx_antenna(
 );
 
 //! Get a list of RX antennas associated with the given channels
-/*!
- * The list will be returned as a comma-delimited list that can
- * be parsed with strtok(). The function will also return the number
- * of RX gain names.
- *
- * \param h USRP handle
- * \param channel which channel to use
- * \param rx_antennas_out string buffer in which to place RX antennas
- * \param strbuffer_len buffer length
- * \param num_rx_antennas_out variable in which to place number of RX gain names
- */
 UHD_API uhd_error uhd_usrp_get_rx_antennas(
     uhd_usrp_handle h,
     size_t chan,
-    char* antennas_out,
-    size_t strbuffer_len,
-    size_t *num_rx_antennas_out
+    uhd_string_vector_handle *antennas_out
 );
 
 //! Get a list of RX sensors associated with the given channels
-/*!
- * The list will be returned as a comma-delimited list that can
- * be parsed with strtok(). The function will also return the number
- * of RX gain names.
- *
- * \param h USRP handle
- * \param channel which channel to use
- * \param sensor_names_out string buffer in which to place RX sensor names
- * \param strbuffer_len buffer length
- * \param num_rx_sensors_out variable in which to place number of RX sensor names
- */
 UHD_API uhd_error uhd_usrp_get_rx_sensor_names(
     uhd_usrp_handle h,
     size_t chan,
-    char* sensor_names_out,
-    size_t strbuffer_len,
-    size_t *num_rx_sensors_out
+    uhd_string_vector_handle *sensor_names_out
 );
 
 //! Set the bandwidth for the given channel's RX frontend
@@ -924,7 +835,7 @@ UHD_API uhd_error uhd_usrp_get_rx_sensor(
     uhd_usrp_handle h,
     const char* name,
     size_t chan,
-    uhd_sensor_value_handle sensor_value_out
+    uhd_sensor_value_handle *sensor_value_out
 );
 
 //! Enable or disable RX DC offset correction for the given channel
@@ -1077,23 +988,10 @@ UHD_API uhd_error uhd_usrp_get_normalized_tx_gain(
 );
 
 //! Get a list of TX gain names for the given channel
-/*!
- * The list will be returned as a comma-delimited list that can
- * be parsed with strtok(). The function will also return the number
- * of TX gain names.
- *
- * \param h USRP handle
- * \param channel which channel to use
- * \param tx_gain_names_out string buffer in which to place TX gain names
- * \param strbuffer_len buffer length
- * \param num_tx_gain_names_out variable in which to place number of TX gain names
- */
 UHD_API uhd_error uhd_usrp_get_tx_gain_names(
     uhd_usrp_handle h,
     size_t chan,
-    char* gain_names_out,
-    size_t strbuffer_len,
-    size_t *num_tx_gain_names_out
+    uhd_string_vector_handle *gain_names_out
 );
 
 //! Set the TX antenna for the given channel
@@ -1112,23 +1010,10 @@ UHD_API uhd_error uhd_usrp_get_tx_antenna(
 );
 
 //! Get a list of tx antennas associated with the given channels
-/*!
- * The list will be returned as a comma-delimited list that can
- * be parsed with strtok(). The function will also return the number
- * of tx gain names.
- *
- * \param h USRP handle
- * \param channel which channel to use
- * \param tx_antennas_out string buffer in which to place TX antennas
- * \param strbuffer_len buffer length
- * \param num_tx_antennas_out variable in which to place number of TX gain names
- */
 UHD_API uhd_error uhd_usrp_get_tx_antennas(
     uhd_usrp_handle h,
     size_t chan,
-    char* antennas_out,
-    size_t strbuffer_len,
-    size_t *num_tx_antennas_out
+    uhd_string_vector_handle *antennas_out
 );
 
 //! Set the bandwidth for the given channel's TX frontend
@@ -1157,27 +1042,14 @@ UHD_API uhd_error uhd_usrp_get_tx_sensor(
     uhd_usrp_handle h,
     const char* name,
     size_t chan,
-    uhd_sensor_value_handle sensor_value_out
+    uhd_sensor_value_handle *sensor_value_out
 );
 
 //! Get a list of TX sensors associated with the given channels
-/*!
- * The list will be returned as a comma-delimited list that can
- * be parsed with strtok(). The function will also return the number
- * of TX gain names.
- *
- * \param h USRP handle
- * \param channel which channel to use
- * \param sensor_names_out string buffer in which to place TX sensor names
- * \param strbuffer_len buffer length
- * \param num_tx_sensors_out variable in which to place number of TX sensor names
- */
 UHD_API uhd_error uhd_usrp_get_tx_sensor_names(
     uhd_usrp_handle h,
     size_t chan,
-    char* sensor_names_out,
-    size_t strbuffer_len,
-    size_t *num_tx_sensors_out
+    uhd_string_vector_handle *sensor_names_out
 );
 
 //! Enable or disable TX DC offset correction for the given channel
@@ -1202,23 +1074,10 @@ UHD_API uhd_error uhd_usrp_set_tx_iq_balance_enabled(
  ***************************************************************************/
 
 //! Get a list of GPIO banks associated with the given channels
-/*!
- * The list will be returned as a comma-delimited list that can
- * be parsed with strtok(). The function will also return the number
- * of TX gain names.
- *
- * \param h USRP handle
- * \param channel which channel to use
- * \param gpio_banks_out string buffer in which to place GPIO banks
- * \param strbuffer_len buffer length
- * \param num_gpio_banks_out variable in which to place number of GPIO banks
- */
 UHD_API uhd_error uhd_usrp_get_gpio_banks(
     uhd_usrp_handle h,
     size_t mboard,
-    char* gpio_banks_out,
-    size_t strbuffer_len,
-    size_t *num_gpio_banks_out
+    uhd_string_vector_handle *gpio_banks_out
 );
 
 //! Set a GPIO attribute for a given GPIO bank

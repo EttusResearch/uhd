@@ -261,7 +261,7 @@ std::string _get_images_path_from_registry(const std::string& registry_key_path)
 }
 #endif  /*UHD_PLATFORM_WIN32*/
 
-std::string uhd::get_images_dir(const std::string search_paths) {
+std::string uhd::get_images_dir(const std::string &search_paths) {
 
     /*   This function will check for the existence of directories in this
      *   order:
@@ -332,7 +332,7 @@ std::string uhd::get_images_dir(const std::string search_paths) {
     }
 }
 
-std::string uhd::find_image_path(const std::string &image_name, const std::string search_paths){
+std::string uhd::find_image_path(const std::string &image_name, const std::string &search_paths){
     /* If a path was provided on the command-line or as a hint from the caller,
      * we default to that. */
     if (fs::exists(image_name)){
@@ -364,7 +364,7 @@ std::string uhd::find_image_path(const std::string &image_name, const std::strin
             + uhd::print_utility_error("uhd_images_downloader.py"));
 }
 
-std::string uhd::find_utility(std::string name) {
+std::string uhd::find_utility(const std::string &name) {
     return fs::path(fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / name)
         .string();
 }

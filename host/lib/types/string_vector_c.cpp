@@ -15,18 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/types/device_addrs.h>
+#include <uhd/types/string_vector.h>
 
-uhd_error uhd_device_addrs_make(
-    uhd_device_addrs_handle *h
+#include <string.h>
+
+uhd_error uhd_string_vector_make(
+    uhd_string_vector_handle *h
 ){
     UHD_SAFE_C(
-        (*h) = new uhd_device_addrs_t;
+        (*h) = new uhd_string_vector_t;
     )
 }
 
-uhd_error uhd_device_addrs_free(
-    uhd_device_addrs_handle *h
+uhd_error uhd_string_vector_free(
+    uhd_string_vector_handle *h
 ){
     UHD_SAFE_C(
         delete (*h);
@@ -34,17 +36,17 @@ uhd_error uhd_device_addrs_free(
     )
 }
 
-uhd_error uhd_device_addrs_push_back(
-    uhd_device_addrs_handle h,
+uhd_error uhd_string_vector_push_back(
+    uhd_string_vector_handle *h,
     const char* value
 ){
-    UHD_SAFE_C_SAVE_ERROR(h,
-        h->device_addrs_cpp.push_back(uhd::device_addr_t(value));
+    UHD_SAFE_C_SAVE_ERROR((*h),
+        (*h)->string_vector_cpp.push_back(value);
     )
 }
 
-uhd_error uhd_device_addrs_at(
-    uhd_device_addrs_handle h,
+uhd_error uhd_string_vector_at(
+    uhd_string_vector_handle h,
     size_t index,
     char* value_out,
     size_t strbuffer_len
@@ -52,22 +54,22 @@ uhd_error uhd_device_addrs_at(
     UHD_SAFE_C_SAVE_ERROR(h,
         memset(value_out, '\0', strbuffer_len);
 
-        std::string value_cpp = h->device_addrs_cpp.at(index).to_string();
+        const std::string& value_cpp = h->string_vector_cpp.at(index);
         strncpy(value_out, value_cpp.c_str(), strbuffer_len);
     )
 }
 
-uhd_error uhd_device_addrs_size(
-    uhd_device_addrs_handle h,
+uhd_error uhd_string_vector_size(
+    uhd_string_vector_handle h,
     size_t *size_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *size_out = h->device_addrs_cpp.size();
+        *size_out = h->string_vector_cpp.size();
     )
 }
 
-uhd_error uhd_device_addrs_last_error(
-    uhd_device_addrs_handle h,
+uhd_error uhd_string_vector_last_error(
+    uhd_string_vector_handle h,
     char* error_out,
     size_t strbuffer_len
 ){

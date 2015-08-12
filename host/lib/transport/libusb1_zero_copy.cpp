@@ -139,8 +139,8 @@ public:
 #endif
         const int ret = libusb_submit_transfer(_lut);
         if (ret != LIBUSB_SUCCESS)
-            throw uhd::runtime_error(str(boost::format("usb %s submit failed: %s")
-                                         % _name % libusb_strerror((libusb_error)ret)));
+	  throw uhd::usb_error(ret, str(boost::format(
+            "usb %s submit failed: %s") % _name % libusb_error_name(ret)));
     }
 
     template <typename buffer_type>
@@ -353,7 +353,7 @@ private:
                 _enqueued.push_back(_released.front());
                 _released.pop_front();
             }
-            catch (uhd::runtime_error& e)
+            catch (uhd::usb_error& e)
             {
                 _status = STATUS_ERROR;
                 throw e;
