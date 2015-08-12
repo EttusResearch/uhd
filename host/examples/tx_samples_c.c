@@ -201,7 +201,7 @@ int main(int argc, char* argv[]){
     size_t num_samps_sent = 0;
     while(!stop_signal_called){
         EXECUTE_OR_GOTO(free_tx_streamer,
-            uhd_tx_streamer_send(tx_streamer, buffs_ptr, samps_per_buff, md, 0.1, &num_samps_sent)
+            uhd_tx_streamer_send(tx_streamer, buffs_ptr, samps_per_buff, &md, 0.1, &num_samps_sent)
         )
         if(verbose){
             fprintf(stderr, "Sent %zu samples\n", num_samps_sent);

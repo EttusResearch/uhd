@@ -17,6 +17,11 @@
 
 #include <uhd/error.h>
 #include <uhd/exception.hpp>
+#include <uhd/utils/static.hpp>
+
+#include <boost/thread/mutex.hpp>
+
+#include <cstring>
 
 #define MAP_TO_ERROR(exception_type, error_type) \
     if (dynamic_cast<const uhd::exception_type*>(e)) return error_type;
@@ -37,4 +42,35 @@ uhd_error error_from_uhd_exception(const uhd::exception* e){
     MAP_TO_ERROR(system_error,          UHD_ERROR_SYSTEM)
 
     return UHD_ERROR_EXCEPT;
+}
+
+// Store the error string in a single place in library
+UHD_SINGLETON_FCN(std::string, _c_global_error_string)
+
+static boost::mutex _error_c_mutex;
+
+const std::string& get_c_global_error_string(){
+    boost::mutex::scoped_lock lock(_error_c_mutex);
+    return _c_global_error_string();
+}
+
+void set_c_global_error_string(
+    const std::string &msg
+){
+    boost::mutex::scoped_lock lock(_error_c_mutex);
+    _c_global_error_string() = msg;
+}
+
+uhd_error uhd_get_last_error(
+    char* error_out,
+    size_t strbuffer_len
+){
+    try{
+        memset(error_out, '\0', strbuffer_len);
+        strncpy(error_out, _c_global_error_string().c_str(), strbuffer_len);
+    }
+    catch(...){
+        return UHD_ERROR_UNKNOWN;
+    }
+    return UHD_ERROR_NONE;
 }

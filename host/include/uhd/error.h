@@ -18,6 +18,8 @@
 #ifndef INCLUDED_UHD_ERROR_H
 #define INCLUDED_UHD_ERROR_H
 
+#include <stdlib.h>
+
 //! UHD error codes
 /*!
  * Each error code corresponds to a specific uhd::exception, with
@@ -81,7 +83,13 @@ typedef enum {
 
 #include <boost/exception/diagnostic_information.hpp>
 
+#include <string>
+
 UHD_API uhd_error error_from_uhd_exception(const uhd::exception* e);
+
+UHD_API const std::string& get_c_global_error_string();
+
+UHD_API void set_c_global_error_string(const std::string &msg);
 
 /*!
  * This macro runs the given C++ code, and if there are any exceptions
@@ -91,17 +99,22 @@ UHD_API uhd_error error_from_uhd_exception(const uhd::exception* e);
 #define UHD_SAFE_C(...) \
     try{ __VA_ARGS__ } \
     catch (const uhd::exception &e) { \
+        set_c_global_error_string(e.what()); \
         return error_from_uhd_exception(&e); \
     } \
-    catch (const boost::exception&) { \
+    catch (const boost::exception &e) { \
+        set_c_global_error_string(boost::diagnostic_information(e)); \
         return UHD_ERROR_BOOSTEXCEPT; \
     } \
-    catch (const std::exception&) { \
+    catch (const std::exception &e) { \
+        set_c_global_error_string(e.what()); \
         return UHD_ERROR_STDEXCEPT; \
     } \
     catch (...) { \
+        set_c_global_error_string("Unrecognized exception caught."); \
         return UHD_ERROR_UNKNOWN; \
     } \
+    set_c_global_error_string("None"); \
     return UHD_ERROR_NONE;
 
 /*!
@@ -113,24 +126,44 @@ UHD_API uhd_error error_from_uhd_exception(const uhd::exception* e);
     h->last_error.clear(); \
     try{ __VA_ARGS__ } \
     catch (const uhd::exception &e) { \
+        set_c_global_error_string(e.what()); \
         h->last_error = e.what(); \
         return error_from_uhd_exception(&e); \
     } \
     catch (const boost::exception &e) { \
+        set_c_global_error_string(boost::diagnostic_information(e)); \
         h->last_error = boost::diagnostic_information(e); \
         return UHD_ERROR_BOOSTEXCEPT; \
     } \
     catch (const std::exception &e) { \
+        set_c_global_error_string(e.what()); \
         h->last_error = e.what(); \
         return UHD_ERROR_STDEXCEPT; \
     } \
     catch (...) { \
+        set_c_global_error_string("Unrecognized exception caught."); \
         h->last_error = "Unrecognized exception caught."; \
         return UHD_ERROR_UNKNOWN; \
     } \
     h->last_error = "None"; \
+    set_c_global_error_string("None"); \
     return UHD_ERROR_NONE;
 
+extern "C" {
+#endif
+
+//! Return the last error string reported by UHD
+/*!
+ * Functions that do not take in UHD structs/handles will place any error
+ * strings into a buffer that can be queried with this function. Functions that
+ * do take in UHD structs/handles will place their error strings in both locations.
+ */
+uhd_error uhd_get_last_error(
+    char* error_out,
+    size_t strbuffer_len
+);
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* INCLUDED_UHD_ERROR_H */

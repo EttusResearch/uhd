@@ -140,7 +140,7 @@ public:
         const int ret = libusb_submit_transfer(_lut);
         if (ret != LIBUSB_SUCCESS)
 	  throw uhd::usb_error(ret, str(boost::format(
-            "usb %s submit failed: %s") % _name % libusb_strerror((libusb_error)ret)));
+            "usb %s submit failed: %s") % _name % libusb_error_name(ret)));
     }
 
     template <typename buffer_type>
@@ -149,7 +149,7 @@ public:
         if (wait_for_completion(timeout))
         {
             if (result.status != LIBUSB_TRANSFER_COMPLETED)
-                throw uhd::usb_error(result.status, str(boost::format("usb %s transfer status: %s")
+                throw uhd::runtime_error(str(boost::format("usb %s transfer status: %d")
                                              % _name % libusb_error_name(result.status)));
             result.completed = 0;
             return make(reinterpret_cast<buffer_type *>(this), _lut->buffer, (_is_recv)? result.actual_length : _frame_size);

@@ -82,10 +82,11 @@ static const uhd::dict<std::string, std::string> pretty_exception_names =
     uhd::cpp_exception_type cpp_exception_type ## _foo(expected_msg); \
     error_code = throw_uhd_exception<uhd::cpp_exception_type>(&handle, &cpp_exception_type ## _foo); \
     BOOST_CHECK_EQUAL(error_code, c_error_code); \
-    BOOST_CHECK_EQUAL(handle.last_error, \
-                      str(boost::format("%s: %s") \
-                          % pretty_exception_names.get(BOOST_STRINGIZE(cpp_exception_type)) \
-                          % expected_msg));
+    expected_msg = str(boost::format("%s: %s") \
+                       % pretty_exception_names.get(BOOST_STRINGIZE(cpp_exception_type)) \
+                       % expected_msg); \
+    BOOST_CHECK_EQUAL(handle.last_error, expected_msg); \
+    BOOST_CHECK_EQUAL(get_c_global_error_string(), expected_msg);
 
 // uhd::usb_error has a different constructor
 #define UHD_TEST_CHECK_USB_ERROR_CODE() \
@@ -93,10 +94,11 @@ static const uhd::dict<std::string, std::string> pretty_exception_names =
     uhd::usb_error usb_error_foo(1, expected_msg); \
     error_code = throw_uhd_exception<uhd::usb_error>(&handle, &usb_error_foo); \
     BOOST_CHECK_EQUAL(error_code, UHD_ERROR_USB); \
-    BOOST_CHECK_EQUAL(handle.last_error, \
-                      str(boost::format("%s: %s") \
-                          % pretty_exception_names.get("usb_error") \
-                          % expected_msg));
+    expected_msg = str(boost::format("%s: %s") \
+                       % pretty_exception_names.get("usb_error") \
+                       % expected_msg); \
+    BOOST_CHECK_EQUAL(handle.last_error, expected_msg); \
+    BOOST_CHECK_EQUAL(get_c_global_error_string(), expected_msg);
 
 BOOST_AUTO_TEST_CASE(test_uhd_exception){
     dummy_handle_t handle;

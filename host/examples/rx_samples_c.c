@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
     while (num_acc_samps < n_samples) {
         size_t num_rx_samps = 0;
         EXECUTE_OR_GOTO(close_file,
-            uhd_rx_streamer_recv(rx_streamer, buffs_ptr, samps_per_buff, md, 3.0, false, &num_rx_samps)
+            uhd_rx_streamer_recv(rx_streamer, buffs_ptr, samps_per_buff, &md, 3.0, false, &num_rx_samps)
         )
 
         uhd_rx_metadata_error_code_t error_code;

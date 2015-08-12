@@ -132,14 +132,14 @@ uhd_error uhd_rx_streamer_recv(
     uhd_rx_streamer_handle h,
     void **buffs,
     size_t samps_per_buff,
-    uhd_rx_metadata_handle md,
+    uhd_rx_metadata_handle *md,
     double timeout,
     bool one_packet,
     size_t *items_recvd
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
         uhd::rx_streamer::buffs_type buffs_cpp(buffs, RX_STREAMER(h)->get_num_channels());
-        *items_recvd = RX_STREAMER(h)->recv(buffs_cpp, samps_per_buff, md->rx_metadata_cpp, timeout, one_packet);
+        *items_recvd = RX_STREAMER(h)->recv(buffs_cpp, samps_per_buff, (*md)->rx_metadata_cpp, timeout, one_packet);
     )
 }
 
@@ -208,9 +208,9 @@ uhd_error uhd_tx_streamer_max_num_samps(
 uhd_error uhd_tx_streamer_send(
     uhd_tx_streamer_handle h,
     const void **buffs,
-    const size_t samps_per_buff,
-    const uhd_tx_metadata_handle md,
-    const double timeout,
+    size_t samps_per_buff,
+    uhd_tx_metadata_handle *md,
+    double timeout,
     size_t *items_sent
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
@@ -218,7 +218,7 @@ uhd_error uhd_tx_streamer_send(
         *items_sent = TX_STREAMER(h)->send(
             buffs_cpp,
             samps_per_buff,
-            md->tx_metadata_cpp,
+            (*md)->tx_metadata_cpp,
             timeout
         );
     )
@@ -226,12 +226,12 @@ uhd_error uhd_tx_streamer_send(
 
 uhd_error uhd_tx_streamer_recv_async_msg(
     uhd_tx_streamer_handle h,
-    uhd_async_metadata_handle md,
+    uhd_async_metadata_handle *md,
     const double timeout,
     bool *valid
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *valid = TX_STREAMER(h)->recv_async_msg(md->async_metadata_cpp, timeout);
+        *valid = TX_STREAMER(h)->recv_async_msg((*md)->async_metadata_cpp, timeout);
     )
 }
 
@@ -251,15 +251,17 @@ uhd_error uhd_tx_streamer_last_error(
  ***************************************************************************/
 static boost::mutex _usrp_find_mutex;
 uhd_error uhd_usrp_find(
-    uhd_device_addrs_handle h,
     const char* args,
-    size_t *num_found
+    uhd_string_vector_handle *strings_out
 ){
-    UHD_SAFE_C_SAVE_ERROR(h,
+    UHD_SAFE_C(
         boost::mutex::scoped_lock _lock(_usrp_find_mutex);
 
-        h->device_addrs_cpp = uhd::device::find(std::string(args), uhd::device::USRP);
-        *num_found = h->device_addrs_cpp.size();
+        uhd::device_addrs_t devs = uhd::device::find(std::string(args), uhd::device::USRP);
+        (*strings_out)->string_vector_cpp.clear();
+        BOOST_FOREACH(const uhd::device_addr_t &dev, devs){
+            (*strings_out)->string_vector_cpp.push_back(dev.to_string());
+        }
     )
 }
 
@@ -539,16 +541,6 @@ uhd_error uhd_usrp_clear_command_time(
     )
 }
 
-uhd_error uhd_usrp_issue_stream_cmd(
-    uhd_usrp_handle h,
-    uhd_stream_cmd_t *stream_cmd,
-    size_t chan
-){
-    UHD_SAFE_C_SAVE_ERROR(h,
-        USRP(h)->issue_stream_cmd(stream_cmd_c_to_cpp(stream_cmd), chan);
-    )
-}
-
 uhd_error uhd_usrp_set_time_source(
     uhd_usrp_handle h,
     const char* time_source,
@@ -573,25 +565,10 @@ uhd_error uhd_usrp_get_time_source(
 uhd_error uhd_usrp_get_time_sources(
     uhd_usrp_handle h,
     size_t mboard,
-    char* time_sources_out,
-    size_t strbuffer_len,
-    size_t *num_time_sources_out
+    uhd_string_vector_handle *time_sources_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> time_sources = USRP(h)->get_time_sources(mboard);
-        *num_time_sources_out = time_sources.size();
-
-        std::string time_sources_str = "";
-        BOOST_FOREACH(const std::string &time_source, time_sources){
-            time_sources_str += time_source;
-            time_sources_str += ',';
-        }
-        if(time_sources.size() > 0){
-            time_sources_str.resize(time_sources_str.size()-1);
-        }
-
-        memset(time_sources_out, '\0', strbuffer_len);
-        strncpy(time_sources_out, time_sources_str.c_str(), strbuffer_len);
+        (*time_sources_out)->string_vector_cpp = USRP(h)->get_time_sources(mboard);
     )
 }
 
@@ -619,25 +596,10 @@ uhd_error uhd_usrp_get_clock_source(
 uhd_error uhd_usrp_get_clock_sources(
     uhd_usrp_handle h,
     size_t mboard,
-    char* clock_sources_out,
-    size_t strbuffer_len,
-    size_t *num_clock_sources_out
+    uhd_string_vector_handle *clock_sources_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> clock_sources = USRP(h)->get_clock_sources(mboard);
-        *num_clock_sources_out = clock_sources.size();
-
-        std::string clock_sources_str = "";
-        BOOST_FOREACH(const std::string &clock_source, clock_sources){
-            clock_sources_str += clock_source;
-            clock_sources_str += ',';
-        }
-        if(clock_sources.size() > 0){
-            clock_sources_str.resize(clock_sources_str.size()-1);
-        }
-
-        memset(clock_sources_out, '\0', strbuffer_len);
-        strncpy(clock_sources_out, clock_sources_str.c_str(), strbuffer_len);
+        (*clock_sources_out)->string_vector_cpp = USRP(h)->get_clock_sources(mboard);
     )
 }
 
@@ -664,36 +626,21 @@ uhd_error uhd_usrp_get_mboard_sensor(
     uhd_usrp_handle h,
     const char* name,
     size_t mboard,
-    uhd_sensor_value_handle sensor_value_out
+    uhd_sensor_value_handle *sensor_value_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        delete sensor_value_out->sensor_value_cpp;
-        sensor_value_out->sensor_value_cpp = new uhd::sensor_value_t(USRP(h)->get_mboard_sensor(name, mboard));
+        delete (*sensor_value_out)->sensor_value_cpp;
+        (*sensor_value_out)->sensor_value_cpp = new uhd::sensor_value_t(USRP(h)->get_mboard_sensor(name, mboard));
     )
 }
 
 uhd_error uhd_usrp_get_mboard_sensor_names(
     uhd_usrp_handle h,
     size_t mboard,
-    char* mboard_sensor_names_out,
-    size_t strbuffer_len,
-    size_t *num_mboard_sensors_out
+    uhd_string_vector_handle *mboard_sensor_names_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> mboard_sensor_names = USRP(h)->get_mboard_sensor_names(mboard);
-        *num_mboard_sensors_out = mboard_sensor_names.size();
-
-        std::string mboard_sensor_names_str = "";
-        BOOST_FOREACH(const std::string &mboard_sensor_name, mboard_sensor_names){
-            mboard_sensor_names_str += mboard_sensor_name;
-            mboard_sensor_names_str += ',';
-        }
-        if(mboard_sensor_names.size() > 0){
-            mboard_sensor_names_str.resize(mboard_sensor_names_str.size()-1);
-        }
-
-        memset(mboard_sensor_names_out, '\0', strbuffer_len);
-        strncpy(mboard_sensor_names_out, mboard_sensor_names_str.c_str(), strbuffer_len);
+        (*mboard_sensor_names_out)->string_vector_cpp = USRP(h)->get_mboard_sensor_names(mboard);
     )
 }
 
@@ -968,25 +915,10 @@ uhd_error uhd_usrp_get_rx_gain_range(
 uhd_error uhd_usrp_get_rx_gain_names(
     uhd_usrp_handle h,
     size_t chan,
-    char* gain_names_out,
-    size_t strbuffer_len,
-    size_t *num_rx_gain_names_out
+    uhd_string_vector_handle *gain_names_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> rx_gain_names = USRP(h)->get_rx_gain_names(chan);
-        *num_rx_gain_names_out = rx_gain_names.size();
-
-        std::string rx_gain_names_str = "";
-        BOOST_FOREACH(const std::string &gain_name, rx_gain_names){
-            rx_gain_names_str += gain_name;
-            rx_gain_names_str += ',';
-        }
-        if(rx_gain_names.size() > 0){
-            rx_gain_names_str.resize(rx_gain_names_str.size()-1);
-        }
-
-        memset(gain_names_out, '\0', strbuffer_len);
-        strncpy(gain_names_out, rx_gain_names_str.c_str(), strbuffer_len);
+        (*gain_names_out)->string_vector_cpp = USRP(h)->get_rx_gain_names(chan);
     )
 }
 
@@ -1015,25 +947,10 @@ uhd_error uhd_usrp_get_rx_antenna(
 uhd_error uhd_usrp_get_rx_antennas(
     uhd_usrp_handle h,
     size_t chan,
-    char* antennas_out,
-    size_t strbuffer_len,
-    size_t *num_rx_antennas_out
+    uhd_string_vector_handle *antennas_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> rx_antennas = USRP(h)->get_rx_antennas(chan);
-        *num_rx_antennas_out = rx_antennas.size();
-
-        std::string rx_antennas_str = "";
-        BOOST_FOREACH(const std::string &rx_antenna, rx_antennas){
-            rx_antennas_str += rx_antenna;
-            rx_antennas_str += ',';
-        }
-        if(rx_antennas.size() > 0){
-            rx_antennas_str.resize(rx_antennas_str.size()-1);
-        }
-
-        memset(antennas_out, '\0', strbuffer_len);
-        strncpy(antennas_out, rx_antennas_str.c_str(), strbuffer_len);
+        (*antennas_out)->string_vector_cpp = USRP(h)->get_rx_antennas(chan);
     )
 }
 
@@ -1071,36 +988,21 @@ uhd_error uhd_usrp_get_rx_sensor(
     uhd_usrp_handle h,
     const char* name,
     size_t chan,
-    uhd_sensor_value_handle sensor_value_out
+    uhd_sensor_value_handle *sensor_value_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        delete sensor_value_out->sensor_value_cpp;
-        sensor_value_out->sensor_value_cpp = new uhd::sensor_value_t(USRP(h)->get_rx_sensor(name, chan));
+        delete (*sensor_value_out)->sensor_value_cpp;
+        (*sensor_value_out)->sensor_value_cpp = new uhd::sensor_value_t(USRP(h)->get_rx_sensor(name, chan));
     )
 }
 
 uhd_error uhd_usrp_get_rx_sensor_names(
     uhd_usrp_handle h,
     size_t chan,
-    char* sensor_names_out,
-    size_t strbuffer_len,
-    size_t *num_rx_sensors_out
+    uhd_string_vector_handle *sensor_names_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> rx_sensor_names = USRP(h)->get_rx_sensor_names(chan);
-        *num_rx_sensors_out = rx_sensor_names.size();
-
-        std::string rx_sensor_names_str = "";
-        BOOST_FOREACH(const std::string &rx_sensor_name, rx_sensor_names){
-            rx_sensor_names_str += rx_sensor_name;
-            rx_sensor_names_str += ',';
-        }
-        if(rx_sensor_names.size() > 0){
-            rx_sensor_names_str.resize(rx_sensor_names_str.size()-1);
-        }
-
-        memset(sensor_names_out, '\0', strbuffer_len);
-        strncpy(sensor_names_out, rx_sensor_names_str.c_str(), strbuffer_len);
+        (*sensor_names_out)->string_vector_cpp = USRP(h)->get_rx_sensor_names(chan);
     )
 }
 
@@ -1311,25 +1213,10 @@ uhd_error uhd_usrp_get_tx_gain_range(
 uhd_error uhd_usrp_get_tx_gain_names(
     uhd_usrp_handle h,
     size_t chan,
-    char* gain_names_out,
-    size_t strbuffer_len,
-    size_t *num_tx_gain_names_out
+    uhd_string_vector_handle *gain_names_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> tx_gain_names = USRP(h)->get_tx_gain_names(chan);
-        *num_tx_gain_names_out = tx_gain_names.size();
-
-        std::string tx_gain_names_str = "";
-        BOOST_FOREACH(const std::string &tx_gain_name, tx_gain_names){
-            tx_gain_names_str += tx_gain_name;
-            tx_gain_names_str += ',';
-        }
-        if(tx_gain_names.size() > 0){
-            tx_gain_names_str.resize(tx_gain_names_str.size()-1);
-        }
-
-        memset(gain_names_out, '\0', strbuffer_len);
-        strncpy(gain_names_out, tx_gain_names_str.c_str(), strbuffer_len);
+        (*gain_names_out)->string_vector_cpp = USRP(h)->get_tx_gain_names(chan);
     )
 }
 
@@ -1358,25 +1245,10 @@ uhd_error uhd_usrp_get_tx_antenna(
 uhd_error uhd_usrp_get_tx_antennas(
     uhd_usrp_handle h,
     size_t chan,
-    char* antennas_out,
-    size_t strbuffer_len,
-    size_t *num_tx_antennas_out
+    uhd_string_vector_handle *antennas_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> tx_antennas = USRP(h)->get_tx_antennas(chan);
-        *num_tx_antennas_out = tx_antennas.size();
-
-        std::string tx_antennas_str = "";
-        BOOST_FOREACH(const std::string &tx_antenna, tx_antennas){
-            tx_antennas_str += tx_antenna;
-            tx_antennas_str += ',';
-        }
-        if(tx_antennas.size() > 0){
-            tx_antennas_str.resize(tx_antennas_str.size()-1);
-        }
-
-        memset(antennas_out, '\0', strbuffer_len);
-        strncpy(antennas_out, tx_antennas_str.c_str(), strbuffer_len);
+        (*antennas_out)->string_vector_cpp = USRP(h)->get_tx_antennas(chan);
     )
 }
 
@@ -1414,36 +1286,21 @@ uhd_error uhd_usrp_get_tx_sensor(
     uhd_usrp_handle h,
     const char* name,
     size_t chan,
-    uhd_sensor_value_handle sensor_value_out
+    uhd_sensor_value_handle *sensor_value_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        delete sensor_value_out->sensor_value_cpp;
-        sensor_value_out->sensor_value_cpp = new uhd::sensor_value_t(USRP(h)->get_tx_sensor(name, chan));
+        delete (*sensor_value_out)->sensor_value_cpp;
+        (*sensor_value_out)->sensor_value_cpp = new uhd::sensor_value_t(USRP(h)->get_tx_sensor(name, chan));
     )
 }
 
 uhd_error uhd_usrp_get_tx_sensor_names(
     uhd_usrp_handle h,
     size_t chan,
-    char* sensor_names_out,
-    size_t strbuffer_len,
-    size_t *num_tx_sensors_out
+    uhd_string_vector_handle *sensor_names_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> tx_sensor_names = USRP(h)->get_tx_sensor_names(chan);
-        *num_tx_sensors_out = tx_sensor_names.size();
-
-        std::string tx_sensor_names_str = "";
-        BOOST_FOREACH(const std::string &tx_sensor_name, tx_sensor_names){
-            tx_sensor_names_str += tx_sensor_name;
-            tx_sensor_names_str += ',';
-        }
-        if(tx_sensor_names.size() > 0){
-            tx_sensor_names_str.resize(tx_sensor_names_str.size()-1);
-        }
-
-        memset(sensor_names_out, '\0', strbuffer_len);
-        strncpy(sensor_names_out, tx_sensor_names_str.c_str(), strbuffer_len);
+        (*sensor_names_out)->string_vector_cpp = USRP(h)->get_tx_sensor_names(chan);
     )
 }
 
@@ -1474,25 +1331,10 @@ uhd_error uhd_usrp_set_tx_iq_balance_enabled(
 uhd_error uhd_usrp_get_gpio_banks(
     uhd_usrp_handle h,
     size_t chan,
-    char* gpio_banks_out,
-    size_t strbuffer_len,
-    size_t *num_gpio_banks_out
+    uhd_string_vector_handle *gpio_banks_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        std::vector<std::string> gpio_banks = USRP(h)->get_gpio_banks(chan);
-        *num_gpio_banks_out = gpio_banks.size();
-
-        std::string gpio_banks_str = "";
-        BOOST_FOREACH(const std::string &gpio_bank, gpio_banks){
-            gpio_banks_str += gpio_bank;
-            gpio_banks_str += ',';
-        }
-        if(gpio_banks.size() > 0){
-            gpio_banks_str.resize(gpio_banks_str.size()-1);
-        }
-
-        memset(gpio_banks_out, '\0', strbuffer_len);
-        strncpy(gpio_banks_out, gpio_banks_str.c_str(), strbuffer_len);
+        (*gpio_banks_out)->string_vector_cpp = USRP(h)->get_gpio_banks(chan);
     )
 }
 
