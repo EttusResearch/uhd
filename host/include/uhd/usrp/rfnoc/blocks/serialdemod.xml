@@ -1,0 +1,78 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>Serializer / Demod</name>
+  <blockname>SerialDemod</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">5E12D</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <setreg>
+      <name>W_ADDR</name>
+      <address>131</address>
+    </setreg>
+    <setreg>
+      <name>W_DATA</name>
+      <address>132</address>
+    </setreg>
+    <setreg>
+      <name>MOD_ORDER</name>
+      <address>133</address>
+    </setreg>
+    <readback>
+      <name>PUNCPAT</name>
+      <address>0</address>
+    </readback>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>fftsize</name>
+      <type>int</type>
+      <value>64</value>
+    </arg>
+    <arg>
+      <name>mod_order</name>
+      <type>int</type>
+      <value>4</value>
+      <check>EQUAL($fftsize, 2) OR EQUAL($fftsize, 4) OR EQUAL($fftsize, 16)</check>
+      <check_message>Modulation must be in (2, 4, 16).</check_message>
+      <action>SR_WRITE("MOD_ORDER", $mod_order)</action>
+    </arg>
+    <arg>
+      <name>punc_pat</name>
+      <type>int</type>
+      <value>0</value>
+      <action>SR_WRITE("PUNCPAT", $punc_pat)</action>
+    </arg>
+  </args>
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+      <vlen>$fftsize</vlen>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>u8</type>
+    </source>
+  </ports>
+  <!--<components>-->
+    <!--<component>-->
+      <!--<key revision="1">nocshell</key>-->
+    <!--</component>-->
+    <!--<component srbase="0">-->
+      <!--[>Will look for a component with this key:<]-->
+      <!--<key revision="1">componentname</key>-->
+    <!--</component>-->
+  <!--</components>-->
+  <!--<connection>-->
+    <!--<source port="0">nocshell</source>-->
+    <!--<sink port="0">componentname</sink>-->
+  <!--</connection>-->
+  <!--<connection>-->
+    <!--<source port="0">componentname</source>-->
+    <!--<sink port="0">nocshell</sink>-->
+  <!--</connection>-->
+</nocblock>

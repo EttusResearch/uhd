@@ -6,29 +6,63 @@
   <ids>
     <id revision="0">5CC0</id>
   </ids>
+  <!-- Registers -->
+  <registers>
+    <setreg>
+      <name>NUM_SYMBOLS_MAX</name>
+      <address>132</address>
+    </setreg>
+    <setreg>
+      <name>OFFSET</name>
+      <address>131</address>
+    </setreg>
+    <setreg>
+      <name>THRESHOLD</name>
+      <address>135</address>
+    </setreg>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>fftsize</name>
+      <type>int</type>
+      <value>64</value>
+    </arg>
+    <arg>
+      <name>threshold</name>
+      <type>double</type>
+      <value>0.8</value>
+      <check>GE($threshold, 0.0) AND LE($threshold, 1.0)</check>
+      <check_message>Detection threshold must be in [0, 1].</check_message>
+      <action>SR_WRITE("THRESHOLD", MULT(32768, $threshold))</action>
+    </arg>
+    <arg>
+      <name>delay</name>
+      <type>int</type>
+      <value>128</value>
+      <check>GE($delay, 0) AND LE($delay, 1000)</check>
+      <check_message>Invalid delay.</check_message>
+      <action>SR_WRITE("OFFSET", $delay)</action>
+    </arg>
+    <arg>
+      <name>max_num_symbols</name>
+      <type>int</type>
+      <value>64</value>
+      <check>GE($max_num_symbols, 0) AND LE($max_num_symbols, 1000)</check>
+      <check_message>Invalid number of max symbols.</check_message>
+      <action>SR_WRITE("NUM_SYMBOLS_MAX", $max_num_symbols)</action>
+    </arg>
+  </args>
   <ports>
     <sink>
       <name>in</name>
+      <type>sc16</type>
     </sink>
     <source>
       <name>out</name>
+      <type>sc16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
     </source>
   </ports>
-  <!--<components>-->
-    <!--<component>-->
-      <!--<key revision="1">nocshell</key>-->
-    <!--</component>-->
-    <!--<component srbase="0">-->
-      <!--[>Will look for a component with this key:<]-->
-      <!--<key revision="1">componentname</key>-->
-    <!--</component>-->
-  <!--</components>-->
-  <!--<connection>-->
-    <!--<source port="0">nocshell</source>-->
-    <!--<sink port="0">componentname</sink>-->
-  <!--</connection>-->
-  <!--<connection>-->
-    <!--<source port="0">componentname</source>-->
-    <!--<sink port="0">nocshell</sink>-->
-  <!--</connection>-->
 </nocblock>
