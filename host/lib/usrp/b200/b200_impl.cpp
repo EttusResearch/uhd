@@ -618,7 +618,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
 
     //init to internal clock and time source
     _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
-    _tree->access<std::string>(mb_path / "time_source/value").set("none");
+    _tree->access<std::string>(mb_path / "time_source/value").set("internal");
 
     // Set the DSP chains to some safe value
     for (size_t i = 0; i < _radio_perifs.size(); i++) {
@@ -629,18 +629,6 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     _tree->access<bool>(mb_path / "auto_tick_rate").set(not device_addr.has_key("master_clock_rate"));
     if (not device_addr.has_key("master_clock_rate")) {
         UHD_MSG(status) << "Setting master clock rate selection to 'automatic'." << std::endl;
-    }
-
-    //GPS installed: use external ref, time, and init time spec
-    if (_gps and _gps->gps_detected())
-    {
-        UHD_MSG(status) << "Setting references to the internal GPSDO" << std::endl;
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
-    } else {
-        //init to internal clock and time source
-        _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
-        _tree->access<std::string>(mb_path / "time_source/value").set("internal");
     }
 
 }

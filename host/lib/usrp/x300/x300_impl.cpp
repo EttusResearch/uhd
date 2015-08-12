@@ -815,20 +815,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         .set(mb.clock->get_master_clock_rate());
 
     ////////////////////////////////////////////////////////////////////
-    // initialize clock and time sources
-    ////////////////////////////////////////////////////////////////////
-    if (mb.gps and mb.gps->gps_detected())
-    {
-        UHD_MSG(status) << "Setting references to the internal GPSDO" << std::flush;
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
-    } else {
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
-    }
-    UHD_MSG(status) << "done"  << std::endl;
-
-    ////////////////////////////////////////////////////////////////////
     // create frontend mapping
     ////////////////////////////////////////////////////////////////////
     std::vector<size_t> default_map(2, 0); default_map[1] = 1;
