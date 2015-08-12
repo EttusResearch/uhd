@@ -39,7 +39,7 @@ namespace uhd {
     UHD_API std::string get_pkg_path(void);
 
     //! Get UHD library paths
-    std::vector<fs::path> get_module_paths(void);
+    UHD_API std::vector<fs::path> get_module_paths(void);
 
     /*! Return the UHD images directory path.
     *
@@ -58,7 +58,7 @@ namespace uhd {
     * \param search_paths A comma-separated list of hints for paths to include.
     * \returns A path string if one is found, or an empty string on failure.
     */
-    UHD_API std::string get_images_dir(const std::string search_paths);
+    UHD_API std::string get_images_dir(const std::string &search_paths);
 
     /*! Return the full path to particular UHD binary image.
      *
@@ -72,7 +72,7 @@ namespace uhd {
      * \return the full system path to the file
      * \throw exception uhd::io_error if the file was not found.
      */
-    UHD_API std::string find_image_path(const std::string &image_name, const std::string search_paths = "");
+    UHD_API std::string find_image_path(const std::string &image_name, const std::string &search_paths = "");
 
     /*!
      * Search for the location of a particular UHD utility.
@@ -80,14 +80,14 @@ namespace uhd {
      * \param name the name of the utility to search for
      * \return the full system path to the given utility
      */
-    UHD_API std::string find_utility(std::string name);
+    UHD_API std::string find_utility(const std::string &name);
 
     /*!
      * Return an error string recommending the user run the utility.
      * The error string will include the full path to the utility to run.
      * \return the message suggesting the use of the named utility.
      */
-    UHD_API std::string print_utility_error(const std::string &name, const std::string &args="");
+    UHD_API std::string print_utility_error(const std::string &name, const std::string &args = "");
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_UTILS_PATHS_HPP */
