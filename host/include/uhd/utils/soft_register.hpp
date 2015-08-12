@@ -30,6 +30,20 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 
+/*! \file soft_register.hpp
+ * Utilities to access and index hardware registers.
+ *
+ * This file contains three main utilities:
+ * - A soft_register wrapper class that can manage a soft-copy,
+ *   do dirty tracking and allow symbolic access to various field
+ *   of a register.
+ * - A register map class that can own multiple soft registers that
+ *   share the same underlying control interface.
+ * - A register map database that can be used to collect multiple
+ *   register maps and other databases to create a hierarchy of
+ *   registers that can be accessed using the UHD register API.
+ */
+
 //==================================================================
 // Soft Register Definition
 //==================================================================
@@ -61,7 +75,8 @@ inline bool unlikely(bool expr)
 #endif
 }
 
-/* A register field is defined as a tuple of the mask and the shift.
+/*!
+ * A register field is defined as a tuple of the mask and the shift.
  * It can be used to make read-modify-write operations more convenient
  * For efficiency reasons, it is recommended to always use a constant
  * of this type because it will get optimized out by the compiler and
@@ -81,7 +96,7 @@ namespace soft_reg_field {
     template<typename data_t>
     inline size_t mask(const soft_reg_field_t field) {
         static const data_t ONE = static_cast<data_t>(1);
-        //Behavior for the left shit operation is undefined in C++
+        //Behavior for the left shift operation is undefined in C++
         //if the shift amount is >= bitwidth of the datatype
         //So we treat that as a special case with a branch predicition hint
         if (likely((sizeof(data_t)*8) != width(field)))
@@ -435,11 +450,16 @@ public:
     virtual const std::string& get_name() const = 0;
 };
 
-// A regmap is a collection of registers that share the same
-// bus (control iface). A regmap must have an identifier.
-// A regmap must manage storage for each register.
-// The recommended way to use a regmap is to define individual registers
-// within the scope of the regmap and instantiate them in the ragmap.
+/*!
+ * A regmap is a collection of registers that share the same
+ * bus (control iface). A regmap must have an identifier.
+ * A regmap must manage storage for each register.
+ * The recommended way to use a regmap is to define individual registers
+ * within the scope of the regmap and instantiate them in the ragmap.
+ * Soft register object that holds offset, soft-copy and the control iface.
+ * Methods give convenient field-level access to soft-copy and the ability
+ * to do read-modify-write operations.
+ */
 class UHD_API soft_regmap_t : public soft_regmap_accessor_t, public boost::noncopyable {
 public:
     soft_regmap_t(const std::string& name) : _name(name) {}
@@ -543,10 +563,12 @@ private:
 };
 
 
-// A regmap database is a collection of regmaps or other regmap databases
-// this allows for efficient encapsulation for multiple registers in a hierarchical
-// fashion.
-// A regmap_db *does not* manage storage for regmaps. It is simply a wrapper.
+/*!
+ * A regmap database is a collection of regmaps or other regmap databases
+ * this allows for efficient encapsulation for multiple registers in a hierarchical
+ * fashion.
+ * A regmap_db *does not* manage storage for regmaps. It is simply a wrapper.
+ */
 class UHD_API soft_regmap_db_t : public soft_regmap_accessor_t, public boost::noncopyable {
 public:
     typedef boost::shared_ptr<soft_regmap_db_t> sptr;

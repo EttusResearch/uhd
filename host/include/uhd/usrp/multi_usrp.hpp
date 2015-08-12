@@ -986,7 +986,7 @@ public:
     };
 
     /*!
-     * Enumerate the full paths of all low-level USRP register accessible to read/write
+     * Enumerate the full paths of all low-level USRP registers accessible to read/write
      * \param mboard the motherboard index 0 to M-1
      * \return a vector of register paths
      */
