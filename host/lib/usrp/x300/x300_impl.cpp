@@ -1340,7 +1340,7 @@ void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
 
 void x300_impl::set_time_source_out(mboard_members_t &mb, const bool enb)
 {
-    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::fw_regmap_t::clk_ctrl_reg_t::PPS_OUT_EN, enb?1:0);
+    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_OUT_EN, enb?1:0);
 }
 
 void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &source)
