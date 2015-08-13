@@ -4,25 +4,17 @@
   <blockname>SerialDemod</blockname>
   <!--There can be several of these:-->
   <ids>
-    <id revision="0">5E12D</id>
+    <id revision="0">0FCD</id>
   </ids>
   <!-- Registers -->
   <registers>
     <setreg>
-      <name>W_ADDR</name>
-      <address>131</address>
-    </setreg>
-    <setreg>
-      <name>W_DATA</name>
-      <address>132</address>
-    </setreg>
-    <setreg>
       <name>MOD_ORDER</name>
-      <address>133</address>
+      <address>129</address>
     </setreg>
     <readback>
-      <name>PUNCPAT</name>
-      <address>0</address>
+      <name>SCALING</name>
+      <address>130</address>
     </readback>
   </registers>
   <!-- Args -->
@@ -36,15 +28,17 @@
       <name>mod_order</name>
       <type>int</type>
       <value>4</value>
-      <check>EQUAL($fftsize, 2) OR EQUAL($fftsize, 4) OR EQUAL($fftsize, 16)</check>
-      <check_message>Modulation must be in (2, 4, 16).</check_message>
-      <action>SR_WRITE("MOD_ORDER", $mod_order)</action>
+      <check>GE($mod_order, 2) AND LE($mod_order, 64) AND IS_PWR_OF_2($mod_order)</check>
+      <check_message>Modulation order must be in (2, 4, 16, 64).</check_message>
+      <action>SR_WRITE("MOD_ORDER", LOG2($mod_order))</action>
     </arg>
     <arg>
-      <name>punc_pat</name>
-      <type>int</type>
-      <value>0</value>
-      <action>SR_WRITE("PUNCPAT", $punc_pat)</action>
+      <name>scaling</name>
+      <type>double</type>
+      <value>1.4142135623730951</value>
+      <check>GE($scaling, 0.1) AND LT($scalign, 4.0)</check>
+      <check_message>Invalid scaling.</check_message>
+      <action>SR_WRITE("SCALING", MULT(16384, $scaling))</action>
     </arg>
   </args>
   <ports>

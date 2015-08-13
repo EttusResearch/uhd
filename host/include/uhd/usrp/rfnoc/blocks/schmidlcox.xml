@@ -9,16 +9,24 @@
   <!-- Registers -->
   <registers>
     <setreg>
-      <name>NUM_SYMBOLS_MAX</name>
-      <address>132</address>
+      <name>FRAME_LENGTH</name>
+      <address>129</address>
+    </setreg>
+    <setreg>
+      <name>CP_LENGTH</name>
+      <address>130</address>
     </setreg>
     <setreg>
       <name>OFFSET</name>
       <address>131</address>
     </setreg>
     <setreg>
+      <name>NUM_SYMBOLS_MAX</name>
+      <address>132</address>
+    </setreg>
+    <setreg>
       <name>THRESHOLD</name>
-      <address>135</address>
+      <address>134</address>
     </setreg>
   </registers>
   <!-- Args -->
@@ -29,6 +37,12 @@
       <value>64</value>
     </arg>
     <arg>
+      <name>cp_len</name>
+      <type>int</type>
+      <value>16</value>
+      <action>SR_WRITE("CP_LENGTH", $cp_len)</action>
+    </arg>
+    <arg>
       <name>threshold</name>
       <type>double</type>
       <value>0.8</value>
@@ -37,12 +51,12 @@
       <action>SR_WRITE("THRESHOLD", MULT(32768, $threshold))</action>
     </arg>
     <arg>
-      <name>delay</name>
+      <name>offset</name>
       <type>int</type>
-      <value>128</value>
+      <value>77</value>
       <check>GE($delay, 0) AND LE($delay, 1000)</check>
       <check_message>Invalid delay.</check_message>
-      <action>SR_WRITE("OFFSET", $delay)</action>
+      <action>SR_WRITE("OFFSET", $offset)</action>
     </arg>
     <arg>
       <name>max_num_symbols</name>
@@ -61,7 +75,7 @@
     <source>
       <name>out</name>
       <type>sc16</type>
-      <vlen>$spp</vlen>
+      <vlen>$fftsize</vlen>
       <pkt_size>%vlen</pkt_size>
     </source>
   </ports>
