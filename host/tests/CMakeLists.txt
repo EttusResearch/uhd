@@ -50,9 +50,6 @@ SET(test_sources
 #turn each test cpp file into an executable with an int main() function
 ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 
-SET(UHD_TEST_TARGET_DEPS uhd)
-SET(UHD_TEST_LIBRARY_DIRS ${Boost_LIBRARY_DIRS})
-
 IF(ENABLE_C_API)
     LIST(APPEND test_sources
         eeprom_c_test.c
