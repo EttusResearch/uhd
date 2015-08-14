@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011,2014 Ettus Research LLC
+// Copyright 2010-2011,2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -157,7 +157,7 @@ public:
     _send("HAAAY GUYYYYS\n"); //to elicit a response from the GPSDO
 
     //wait for _send(...) to return
-    sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
+    sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
 
     //then we loop until we either timeout, or until we get a response that indicates we're a JL device
     const boost::system_time comm_timeout = boost::get_system_time() + milliseconds(GPS_COMM_TIMEOUT_MS);
@@ -237,19 +237,19 @@ private:
     //issue some setup stuff so it spits out the appropriate data
     //none of these should issue replies so we don't bother looking for them
     //we have to sleep between commands because the JL device, despite not acking, takes considerable time to process each command.
-     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
+     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
     _send("SYST:COMM:SER:ECHO OFF\n");
-     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
+     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
     _send("SYST:COMM:SER:PRO OFF\n");
-     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
+     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
     _send("GPS:GPGGA 1\n");
-     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
+     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
     _send("GPS:GGAST 0\n");
-     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
+     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
     _send("GPS:GPRMC 1\n");
-     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
+     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
     _send("SERV:TRAC 0\n");
-     sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
+     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
   }
 
   //retrieve a raw NMEA sentence
@@ -352,7 +352,7 @@ private:
 
     //enable servo reporting
     _send("SERV:TRAC 1\n");
-    sleep(milliseconds(GPSDO_STUPID_DELAY_MS));
+    sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
 
     std::string reply;
 
@@ -399,7 +399,7 @@ private:
   static const int GPS_SERVO_FRESHNESS = 2500;
   static const int GPS_LOCK_FRESHNESS = 2500;
   static const int GPS_TIMEOUT_DELAY_MS = 200;
-  static const int GPSDO_STUPID_DELAY_MS = 200;
+  static const int GPSDO_COMMAND_DELAY_MS = 200;
 };
 
 /***********************************************************************
