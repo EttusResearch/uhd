@@ -35,7 +35,6 @@ UHD_INSTALL(FILES
     sink_block_ctrl_base.hpp
     # Block controllers
     fir_block_ctrl.hpp
-    fft_block_ctrl.hpp
     fosphor_block_ctrl.hpp
     null_block_ctrl.hpp
     window_block_ctrl.hpp
