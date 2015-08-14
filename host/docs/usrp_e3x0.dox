@@ -753,6 +753,76 @@ Example device address string representation for 2 USRPs with IPv4 addresses **1
 
     addr0=192.168.10.2, addr1=192.168.20.2
 
+\subsection e3xx_nfs_root Booting from a NFS root
+
+Booting your device from a NFS root might be desirable for remote deployment, management or similar applications.
+
+Requirements:
+
+- NFS server (for configuration see your Linux distribution's documentation)
+- dtc (devicetree compiler)
+- Filesystem image
+
+\subsubsection e3xx_nfs_root_extract Extracting the filesystems
+
+The first step to make a root filesystem available via NFS is to extract the root file system.
+This can be done as follows:
+
+    $ sfdisk -l -uS <your-image>.direct
+
+Which should produce output similar to:
+
+    Disk release3-image.direct: 7 GiB, 7516197888 bytes, 14680074 sectors
+    Units: sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disklabel type: dos
+    Disk identifier: 0x8bc3587b
+
+    Device                 Boot Start      End  Sectors Size Id Type
+    release3-image.direct1 *        8    36871    36864  18M  c W95 FAT32 (LBA)
+    release3-image.direct2      36872 14680071 14643200   7G 83 Linux
+
+From this one can see the second partition (root filesystem) starts at sector *36872*,
+and has a length of *14680071*. We can use the *dd* tool to extract the root filesystem
+into a handy file.
+
+    $ dd if=<yourimage>.direct of=<yourimage_rootfs>.direct offset=36872 count=14643200
+
+The same procedure can be done for the boot partition.
+
+    $ dd if=<yourimage>.direct of=<yourimage_boot>.direct offset=8 count=36864
+
+Both of these files are mountable on your NFS server, e.g. by:
+
+    $ mount <yourimage_rootfs>.direct /srv/nfs/root-e3xx
+    $ mount <yourimage_rootfs>.direct /srv/nfs/root-e3xx/media/FAT
+
+Copy the uImage, uEnv.txt, u-boot.img, boot.bin from the extracted boot partition to the
+boot partition of your device's card.
+
+Use the devicetree compiler to modify e300-devicetree.dtb file as follows:
+
+    $ dtc -I dtb -O dts e300-devicetree.dtb -o e300-devicetree.dts
+
+Using your editor of choice modify the *chosen* property in e300-devicetree.dts from:
+
+    console=ttyPS0,115200 root=/dev/mmc0blkp2 rw rootwait earlyprintk
+
+to:
+
+    console=ttyPS0,115200 root=/dev/nfs rw nfsroot=<yourserverip>:<yourpath>,vers=3 rootwait ip=dhcp earlyprintk
+
+Use the devicetree compiler to compile the modified devicetree as follows:
+
+    $ dtc e300-devicetree.dts -o e300-devicetree.dtb
+
+Copy the modified *e300-devicetree.dtb* to your device's card.
+
+For more information on server configuration please refer to your Linux distribution's NFS Server manual,
+for more information about NFS root see the
+<a href=https://www.kernel.org/doc/Documentation/filesystems/nfs/nfsroot.txt>Linux Kernel NFS Root documentation</a>
+
 \section e3x0_comm_problems Communication Problems
 
 When setting up a development machine for the first time,
