@@ -42,7 +42,7 @@
 #include <uhd/utils/safe_main.hpp>
 
 #include "../lib/usrp_clock/octoclock/common.h"
-#include "ihexcvt.hpp"
+#include "kk_ihex_read.h"
 
 #define MAX_FIRMWARE_SIZE 1024*120
 #define BLOCK_SIZE 256
@@ -291,6 +291,25 @@ void finalize(udp_simple::sptr udp_transport){
     }
 }
 
+void octoclock_convert_ihex(const std::string &hex_path, const std::string &bin_path){
+    struct ihex_state ihex;
+    ihex_count_t count;
+    char buf[256];
+    FILE* infile = fopen(hex_path.c_str(), "r");
+    FILE* outfile = fopen(bin_path.c_str(), "w");
+    uint64_t line_number = 1;
+
+    ihex_begin_read(&ihex);
+    while(fgets(buf, 256, infile)){
+        count = ihex_count_t(strlen(buf));
+        ihex_read_bytes(&ihex, buf, count, outfile);
+        line_number += (count && buf[count - 1] == '\n');
+    }
+    ihex_end_read(&ihex, outfile); // Closes outfile
+
+    (void)fclose(infile);
+}
+
 int UHD_SAFE_MAIN(UHD_UNUSED(int argc), UHD_UNUSED(char *argv[])){
 
     std::string ip_addr;
@@ -352,7 +371,7 @@ int UHD_SAFE_MAIN(UHD_UNUSED(int argc), UHD_UNUSED(char *argv[])){
         //Write firmware .bin file to temporary directory
         fs::path temp_bin = fs::path(fs::path(get_tmp_path()) / str(boost::format("octoclock_fw_%d.bin")
                                                           % time_spec_t::get_system_time().get_full_secs()));
-        Hex2Bin(firmware_path.c_str(), temp_bin.string().c_str(), false);
+        octoclock_convert_ihex(firmware_path, temp_bin.string());
 
         actual_firmware_path = temp_bin.string();
     }

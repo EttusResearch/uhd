@@ -84,9 +84,11 @@ IF(ENABLE_OCTOCLOCK)
 
     SET(octoclock_burner_sources
         octoclock_firmware_burner.cpp
-        ihexcvt.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp_clock/octoclock/kk_ihex_read.c
     )
 
+    ADD_DEFINITIONS(-DIHEX_USE_STDBOOL)
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp_clock/octoclock)
     ADD_EXECUTABLE(octoclock_firmware_burner ${octoclock_burner_sources})
     TARGET_LINK_LIBRARIES(octoclock_firmware_burner uhd ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS octoclock_firmware_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)

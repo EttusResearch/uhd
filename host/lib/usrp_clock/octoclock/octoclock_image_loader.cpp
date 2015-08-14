@@ -15,16 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <string>
-
-#include <boost/cstdint.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/thread.hpp>
+#include "octoclock_impl.hpp"
+#include "common.h"
+#include "kk_ihex_read.h"
 
 #include <uhd/device.hpp>
 #include <uhd/image_loader.hpp>
@@ -35,9 +28,17 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 
-#include "octoclock_impl.hpp"
-#include "common.h"
-#include "ihexcvt.hpp"
+#include <boost/cstdint.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/thread.hpp>
+
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <string>
 
 namespace fs = boost::filesystem;
 using namespace uhd;
@@ -74,11 +75,30 @@ static void octoclock_calculate_crc(octoclock_session_t &session){
         session.crc ^= temp_image[i];
         for(boost::uint8_t j = 0; j < 8; ++j){
             if(session.crc & 1) session.crc = (session.crc >> 1) ^ 0xA001;
-            else session.crc = (session.crc >> 1); 
-        }   
-    }   
+            else session.crc = (session.crc >> 1);
+        }
+    }
 
     ifile.close();
+}
+
+static void octoclock_convert_ihex(octoclock_session_t &session){
+    struct ihex_state ihex;
+    ihex_count_t count;
+    char buf[256];
+    FILE* infile = fopen(session.given_filepath.c_str(), "r");
+    FILE* outfile = fopen(session.actual_filepath.c_str(), "w");
+    uint64_t line_number = 1;
+
+    ihex_begin_read(&ihex);
+    while(fgets(buf, 256, infile)){
+        count = ihex_count_t(strlen(buf));
+        ihex_read_bytes(&ihex, buf, count, outfile);
+        line_number += (count && buf[count - 1] == '\n');
+    }
+    ihex_end_read(&ihex, outfile); // Closes outfile
+
+    (void)fclose(infile);
 }
 
 static void octoclock_validate_firmware_image(octoclock_session_t &session){
@@ -98,7 +118,7 @@ static void octoclock_validate_firmware_image(octoclock_session_t &session){
                                                % time_spec_t::get_system_time().get_full_secs())
                                           ).string();
 
-        Hex2Bin(session.given_filepath.c_str(), session.actual_filepath.c_str(), false);
+        octoclock_convert_ihex(session);
         session.from_hex = true;
     }
     else throw uhd::runtime_error(str(boost::format("Invalid extension \"%s\". Extension must be .hex or .bin.")));
