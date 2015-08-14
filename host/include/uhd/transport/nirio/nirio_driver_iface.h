@@ -34,51 +34,74 @@
     #endif
 #elif defined(UHD_PLATFORM_MACOS)
     #include <IOKit/IOKitLib.h>
+#elif defined(UHD_PLATFORM_LINUX)
+   #include <linux/ioctl.h>
 #endif
 
-// CTL_CODE macro for non-win OSes
-#ifndef UHD_PLATFORM_WIN32
-    #define CTL_CODE(a,controlCode,b,c) (controlCode)
+#if __GNUC__
+    typedef uint64_t  aligned_uint64_t __attribute__ ((aligned(8)));
+#else
+    typedef uint64_t  aligned_uint64_t;
+#endif
+
+//IOCTL Definitions
+
+#if defined(UHD_PLATFORM_WIN32)
+
+    #define IOCTL_ACCESS_ANY       (FILE_ANY_ACCESS)
+    #define IOCTL_ACCESS_READ      (FILE_READ_ACCESS)
+    #define IOCTL_ACCESS_WRITE     (FILE_WRITE_ACCESS)
+    #define IOCTL_ACCESS_RW        (FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+
+    #define IOCTL(type, function, access) \
+        CTL_CODE((0x8000+type), (0x800+function), METHOD_BUFFERED, access)
+
+#elif defined(UHD_PLATFORM_MACOS)
+
+    #define IOCTL_ACCESS_ANY       (0U)
+    #define IOCTL_ACCESS_READ      (1U)
+    #define IOCTL_ACCESS_WRITE     (2U)
+    #define IOCTL_ACCESS_RW        (3U)
+
+    #define IOCTL(type, function, access) \
+        (((access   & 0x0003) << 30) | \
+         ((type     & 0x00FF) << 16) | \
+         ((function & 0xFFFF) << 0))
+
+#elif defined(UHD_PLATFORM_LINUX)
+
+    #define IOCTL_ACCESS_ANY       (_IOC_NONE)
+    #define IOCTL_ACCESS_READ      (_IOC_READ)
+    #define IOCTL_ACCESS_WRITE     (_IOC_WRITE)
+    #define IOCTL_ACCESS_RW        (_IOC_READ | _IOC_WRITE)
+
+    struct nirio_ioctl_block_t {
+        aligned_uint64_t in_buf;
+        aligned_uint64_t out_buf;
+        uint32_t in_buf_len;
+        uint32_t out_buf_len;
+        uint32_t bytes_returned;
+        uint32_t padding;
+    };
+
+    #define IOCTL(type, function, access) \
+        _IOC(access, type, function, sizeof(nirio_ioctl_block_t))
+
+#else
+
+    #define IOCTL_ACCESS_ANY       (0U)
+    #define IOCTL_ACCESS_READ      (1U)
+    #define IOCTL_ACCESS_WRITE     (2U)
+    #define IOCTL_ACCESS_RW        (3U)
+
+    #define IOCTL(type, function, access) \
+        (((access   & 0x0003) << 30) | \
+         ((type     & 0x00FF) << 16) | \
+         ((function & 0xFFFF) << 0))
+
 #endif
 
 namespace nirio_driver_iface {
-
-const uint32_t NIRIO_IOCTL_BASE = 0x800;
-
-const uint32_t NIRIO_IOCTL_SYNCOP =
-   CTL_CODE(FILE_DEVICE_UNKNOWN,
-            NIRIO_IOCTL_BASE + 4,
-            METHOD_OUT_DIRECT,
-            FILE_READ_DATA | FILE_WRITE_DATA);
-                                ///< The synchronous operation code. Note: We
-                                /// must use METHOD_OUT_DIRECT on the syncOp()
-                                /// IOCTL to ensure the contents of the output
-                                /// block are available in the kernel.
-
-const uint32_t NIRIO_IOCTL_GET_IFACE_NUM =
-   CTL_CODE(FILE_DEVICE_UNKNOWN,
-            NIRIO_IOCTL_BASE + 6,
-            METHOD_BUFFERED,
-            FILE_READ_DATA);    ///< Get the interface number for a device
-
-const uint32_t NIRIO_IOCTL_GET_SESSION =
-   CTL_CODE(FILE_DEVICE_UNKNOWN,
-            NIRIO_IOCTL_BASE + 8,
-            METHOD_BUFFERED,
-            FILE_READ_ACCESS);  ///< Gets a previously opened session to a device
-
-const uint32_t NIRIO_IOCTL_POST_OPEN =
-   CTL_CODE(FILE_DEVICE_UNKNOWN,
-            NIRIO_IOCTL_BASE + 9,
-            METHOD_BUFFERED,
-            FILE_READ_ACCESS);  ///< Called after opening a session
-
-const uint32_t NIRIO_IOCTL_PRE_CLOSE =
-   CTL_CODE(FILE_DEVICE_UNKNOWN,
-            NIRIO_IOCTL_BASE + 10,
-            METHOD_BUFFERED,
-            FILE_READ_ACCESS);  ///< Called before closing a session
-
 
 //Device handle definition
 #if defined(UHD_PLATFORM_LINUX)
