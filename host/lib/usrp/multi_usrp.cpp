@@ -72,7 +72,7 @@ static void do_samp_rate_warning_message(
     }
 }
 
-static void do_tune_freq_results_message(
+/*static void do_tune_freq_results_message(
     const tune_request_t &tune_req,
     const tune_result_t &tune_result,
     double actual_freq,
@@ -174,7 +174,7 @@ static void do_tune_freq_results_message(
 
         UHD_MSG(warning) << results_string << std::endl;
     }
-}
+}*/
 
 /*! The CORDIC can be used to shift the baseband below / past the tunable
  * limits of the actual RF front-end. The baseband filter, located on the
