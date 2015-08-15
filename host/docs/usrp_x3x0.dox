@@ -480,7 +480,7 @@ and that it is using the expected IP address.
 
     ping 192.168.10.2
 
-\subsection x3x0_comm_problems_not_enumerated USRP device not enumerated (Linux)
+\subsection x3x0_comm_problems_not_enumerated Device not enumerated over PCI-Express (Linux)
 
 UHD requires the RIO device manager service to be running in order to
 communicate with an X-Series USRP over PCIe.  This service is installed as
@@ -493,19 +493,24 @@ run the following command:
 If the device still does not enumerate after starting the device manager, make sure that the host computer
 has successfully detected it. You can do so by running the following command:
 
-   lspci -k -d 1093:c4c4
+    lspci -k -d 1093:c4c4
 
 A device similar to the following should be detected:
 
-   $ lspci -k -d 1093:c4c4
-   04:00.0 Signal processing controller: National Instruments ...
+    $ lspci -k -d 1093:c4c4
+    04:00.0 Signal processing controller: National Instruments ...
            Subsystem: National Instruments Device 76ca
            Kernel driver in use: niusrpriok_shipped
 
-- A USRP X300 should appear with 'Subsystem: National Instruments Device 7736'
-- A USRP X310 should appear with 'Subsystem: National Instruments Device 76ca'
+- All USRP X-Series devices should appear with 'Subsystem: National Instruments Device'
+- The device ID following can be:
+    - USRP X300: 7736 or 7861
+    - USRP X310: 76CA or 7862
+    - NI-USRP 294xR: 772B, 77FB, 772C, 77FC, 772D, 77FD, 772E, 7853, 785B, 7854, 785C, 7855, 785D or 7856
+    - NI-USRP 295xR: 772F, 77FE, 7730, 77FF, 7731, 7800, 7732, 7857, 785E, 7858, 785F, 7859, 7860 or 785A
 
-\subsection x3x0_comm_problems_not_enumerated_win USRP device not enumerated (Windows)
+
+\subsection x3x0_comm_problems_not_enumerated_win Device not enumerated over PCI-Express (Windows)
 
 UHD requires the RIO device manager service to be running in order to
 communicate with an X-Series USRP over PCIe.

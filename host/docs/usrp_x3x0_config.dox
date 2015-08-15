@@ -133,134 +133,19 @@ The above file was generated and modified on a Fedora 20 system.
 
 \subsection x3x0cfg_hostpc_pcie PCI Express Configuration
 
+\ref page_ni_rio_kernel
+
 \b Note: These instructions are \b only relevant for using a
 USRP X3xx device over a cabled PCIe transport (PCIe over MXIe cable).
 If you are using your USRP X3xx device over 1 Gigabit Ethernet or
 10 Gigabit Ethernet, these instructions do <em>not apply to you.</em>
 
-\subsubsection x3x0cfg_hostpc_pcie_linux Linux Systems
-
 In order to use the USRP X300/X310 with PCI Express on Linux,
 NI USRP RIO kernel modules needs to be installed. In order to use
 the PCIe kernel module, and thus PCIe-over-cable with the X3xx,
-your kernel version must be supported by the kernel module.
-Only 64-bit kernels are supported. To check if your kernel is supported
-by the drivers, check the NI USRP RIO website.
+your operating and kernel must be supported by the drivers. Please look
+at the page above for a list of supported OS/kernel versions.
 
-#### Downloading and Extracting Installer
-
-- Download the installer from here: http://files.ettus.com/binaries/niusrprio/niusrprio-installer.tar.gz
-- Extract it with the following command:
-
-    tar zxf niusrprio-installer.tar.gz
-
-The files will be extracted into a directory called `niusrprio-installer`.
-
-#### Installation
-
-To install the NI USRPRIO kernel modules and RPC server, run the following command:
-
-    sudo niusrprio-installer/INSTALL
-
-Select `y` for each prompt, and the script will install all necessary components.
-This script will automatically load all necessary kernel modules for
-the duration of the session.
-
-#### Enabling/Disabling Usage
-
-Once everything is installed, run the following commands to enable
-use of the X300/X310 over PCI Express (the assumption is that `niusrprio_pcie`
-was installed into your `$PATH`):
-
-    sudo niusrprio_pcie start
-
-To stop these processes, run the following command:
-
-    sudo niusrprio_pcie stop
-
-To check if the kernel modules are loaded and if the RPC server
-is running, run the following command:
-
-    niusrprio_pcie status
-
-\b Note: `niusrprio_pcie` start does not run when the host system is booted.
-If you would like the USRP PCIe device to be available automatically after
-a system restart, please create an init.d script that runs `niusrprio_pcie start`.
-
-#### Hot-plugging/Power-cycling
-
-The USRP X3x0, NI USRP-294x and NI USRP-295x devices cannot be hot-swapped when
-connected over PCI Express. Unplugging the PCI Express connection or powering
-the device should be done only after disabling the device using the following command.
-
-    sudo /usr/local/bin/niusrprio_pcie stop
-
-\b Warning: If the device is unplugged without running the above command, the system
-can become unstable and crash.
-
-#### Linux kernel upgrades
-
-The NI USRP RIO kernel modules are built for a specific kernel version.
-If you upgrade/downgrade the linux kernel on the host to a version different
-from the one that the installer was run on, then you may see the following
-error message when running `niusrprio start`:
-
-    ERROR: could not insert 'NiRioSrv': Unknown symbol in module, or unknown parameter (see dmesg)
-    ERROR: could not insert 'niusrpriok': Unknown symbol in module, or unknown parameter (see dmesg)
-
-To rebuild the kernel modules for the currently running kernel, simple run the following
-
-    sudo /usr/local/bin/niusrprio_pcie stop
-    sudo /usr/local/bin/updateNIDrivers --no-prompt
-    sudo /usr/local/bin/niusrprio_pcie start
-
-#### Uninstallation
-
-To uninstall the NI USRP RIO kernel modules and RPC server, run the following command:
-
-    sudo niusrprio-installer/UNINSTALL
-
-Select `y` at the prompt, and the script will uninstall all installed components.
-
-\subsubsection x3x0cfg_hostpc_pcie_windows Windows
-
-In order to use the USRP X300/X310 with PCI Express on Windows, the
-NI-RIO driver package and the NI-USRP RIO kernel driver needs to be installed.
-
-\b Note: The kernel driver is only supported with certain Windows versions.
-Check the NI USRP RIO website to see if your version is supported.
-
-#### Installing NI-USRP
-
-The NI-USRP 1.3 installer can be downloaded from this location: http://www.ni.com/download/ni-usrp-1.3/4711/en/
-
-You will need to create a free NI User Account to download the installer.
-Perform the following steps to download and install the NI-USRP exe driver package:
-
-- Choose the "2. Standard Download:NIUSRP130.exe" option to download NIUSRP130.exe to your computer
-- Run NIUSRP130.exe as an Administrator and extract the contents to C:\\National Instruments Downloads\\NI-USRP\\1.3
-- In the extract location, run setup.exe and follow the prompts.
-
-Reboot the computer after both the NI-USRP package has been installed.
-
-#### Enabling/Disabling Usage
-
-Once everything is installed and the system is rebooted, your X300/X310 PCI Express device should automatically be detected by the Windows Device Manager. The device should be enabled by default.
-
-- To disable the USRPRIO device, navigate to "Device Manager", locate your USRPRIO-X3x0 device, right-click on it and choose "Disable".
-- To enable the USRPRIO device, navigate to "Device Manager", locate your USRPRIO-X3x0 device, right-click on it and choose "Enable".
-
-#### Hot-plugging/Power-cycling
-
-The USRP X3x0, NI USRP-294x and NI USRP-295x devices cannot be hot-swapped when connected over PCI Express. Unplugging the PCI Express connection or powering the device should be done only after disabling the device.
-
-\b Warning: If the device is unplugged without running the above command, the system can become unstable and crash
-
-#### Uninstalling NI-USRP
-
-Navigate to the Control Panel and open "Programs". Then select National Instruments
-Software and select NI-USRP and NI-RIO from the list. Click on uninstall
-to remove the drivers from your system.
 
 \subsection x3x0cfg_hostpc_pwr Power Management
 
@@ -282,20 +167,22 @@ issues, set the governor to "performance".
 
 1. Install cpufrequtils:
 
-    sudo apt-get install cpufrequtils
+    `sudo apt-get install cpufrequtils`
 
 2.  Edit `/etc/init.d/cpufrequtils` and set `GOVERNOR="performance"` on the
     appropriate line (run as root):
 
-    sed s/^GOVERNOR=.*$/GOVERNOR=\"performance\"/g /etc/init.d/cpufrequtils > /etc/init.d/cpufrequtils
+    `sed s/^GOVERNOR=.*$/GOVERNOR=\"performance\"/g /etc/init.d/cpufrequtils > /etc/init.d/cpufrequtils`
 
 3.  Restart cpufrequtils:
 
-    sudo /etc/init.d/cpufrequtils restart
+    `sudo /etc/init.d/cpufrequtils restart`
 
 \b Fedora:
 
-    sudo cpupower frequency-set -g performance
+1. Change the CPU governor:
+
+    `sudo cpupower frequency-set -g performance`
 
 \subsection x3x0cfg_hostpc_rtprio Real-Time & Priority Scheduling
 
