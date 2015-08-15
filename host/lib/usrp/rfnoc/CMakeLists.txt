@@ -41,7 +41,6 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/sink_block_ctrl_base.cpp
     # Default block control classes:
     ${CMAKE_CURRENT_SOURCE_DIR}/fir_block_ctrl_impl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/fosphor_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/null_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/radio_ctrl_impl.cpp

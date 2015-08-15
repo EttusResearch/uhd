@@ -56,41 +56,70 @@
       <name>decim</name>
       <type>int</type>
       <value>2</value>
+      <check>GE($decim, 2) AND LE($decim, 1024)</check>
+      <check_message>fosphor decim constant must be within [2, 1024]</check_message>
+      <action>SR_WRITE("DECIM", ADD($decim, -2))</action>
     </arg>
     <arg>
       <name>offset</name>
       <type>int</type>
       <value>0</value>
+      <check>GE($offset, 0) AND LE($offset, 65536)</check>
+      <check_message>"fosphor offset value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("OFFSET", $offset)</action>
     </arg>
     <arg>
       <name>scale</name>
       <type>int</type>
       <value>256</value>
+      <check>GE($scale, 0) AND LE($scale, 65536)</check>
+      <check_message>"fosphor scale value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("SCALE", $scale)</action>
     </arg>
     <arg>
       <name>trise</name>
       <type>int</type>
       <value>4096</value>
+      <check>GE($trise, 0) AND LE($trise, 65536)</check>
+      <check_message>"fosphor trise value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("TRISE", $trise)</action>
     </arg>
     <arg>
       <name>tdecay</name>
       <type>int</type>
       <value>16384</value>
+      <check>GE($tdecay, 0) AND LE($tdecay, 65536)</check>
+      <check_message>"fosphor tdecay value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("TDECAY", $tdecay)</action>
     </arg>
     <arg>
       <name>alpha</name>
       <type>int</type>
       <value>65280</value>
+      <check>GE($alpha, 0) AND LE($alpha, 65536)</check>
+      <check_message>"fosphor alpha value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("ALPHA", $alpha)</action>
     </arg>
     <arg>
       <name>epsilon</name>
       <type>int</type>
       <value>1</value>
+      <check>GE($epsilon, 0) AND LE($epsilon, 65536)</check>
+      <check_message>"fosphor epsilon value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("EPSILON", $epsilon)</action>
     </arg>
     <arg>
       <name>random</name>
       <type>int</type>
       <value>1</value>
+      <check>GE($random, 0) AND LE($random, 3)</check>
+      <check_message>"fosphor random value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("RANDOM", $random)</action>
+    </arg>
+    <arg>
+      <name>clear</name>
+      <type>int</type>
+      <action>IF(NOT(EQUAL($clear, 0)), SR_WRITE("CLEAR", $clear))</action>
     </arg>
   </args>
   <!--All the connections to the outside world are listed in 'ports':-->
