@@ -60,6 +60,12 @@ class block_iface {
     //! Variable value getter that can be used within NocScript
     expression_literal _nocscript__var_get_val(const std::string &varname);
 
+    //! Variable value setters:
+    expression_literal _nocscript__var_set_int(const expression_container::expr_list_type &);
+    expression_literal _nocscript__var_set_string(const expression_container::expr_list_type &);
+    expression_literal _nocscript__var_set_double(const expression_container::expr_list_type &);
+    expression_literal _nocscript__var_set_intvec(const expression_container::expr_list_type &);
+
     //! Raw pointer to the block class. Note that since block_iface may
     // only live as a member of a block_ctrl_base, we don't really need
     // the reference counting.

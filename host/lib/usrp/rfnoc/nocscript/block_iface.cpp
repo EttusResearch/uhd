@@ -42,6 +42,34 @@ block_iface::block_iface(block_ctrl_base *block_ptr)
         expression::TYPE_BOOL,
         sr_write_args
     );
+    expression_function::argtype_list_type var_set_args_wo_port = boost::assign::list_of
+        (expression::TYPE_STRING)
+        (expression::TYPE_INT)
+    ;
+    expression_function::argtype_list_type var_set_args_w_port = boost::assign::list_of
+        (expression::TYPE_STRING)
+        (expression::TYPE_INT)
+        (expression::TYPE_INT)
+    ;
+#define REGISTER_VAR_SETTER(noctype, setter_func) \
+    var_set_args_wo_port[1] = expression::noctype; \
+    var_set_args_w_port[1] = expression::noctype; \
+    ft->register_function( \
+        "SET_ARG", \
+        boost::bind(&block_iface::setter_func, this, _1), \
+        expression::TYPE_BOOL, \
+        var_set_args_wo_port \
+    ); \
+    ft->register_function( \
+        "SET_ARG", \
+        boost::bind(&block_iface::setter_func, this, _1), \
+        expression::TYPE_BOOL, \
+        var_set_args_w_port \
+    );
+    REGISTER_VAR_SETTER(TYPE_INT,        _nocscript__var_set_int);
+    REGISTER_VAR_SETTER(TYPE_STRING,     _nocscript__var_set_string);
+    REGISTER_VAR_SETTER(TYPE_DOUBLE,     _nocscript__var_set_double);
+    REGISTER_VAR_SETTER(TYPE_INT_VECTOR, _nocscript__var_set_intvec);
 
     // Create the parser
     _parser = parser::make(
@@ -121,6 +149,50 @@ expression_literal block_iface::_nocscript__var_get_val(const std::string &varna
     } else {
         UHD_THROW_INVALID_CODE_PATH();
     }
+}
+
+expression_literal block_iface::_nocscript__var_set_int(const expression_container::expr_list_type &args)
+{
+    const std::string var_name = args[0]->eval().get_string();
+    const int val              = args[1]->eval().get_int();
+    size_t port = 0;
+    if (args.size() == 3) {
+        port = size_t(args[2]->eval().get_int());
+    }
+    UHD_MSG(status) << "[NocScript] Setting $" << var_name << std::endl;
+    _block_ptr->set_arg<int>(var_name, val, port);
+    return expression_literal(true);
+}
+
+expression_literal block_iface::_nocscript__var_set_string(const expression_container::expr_list_type &args)
+{
+    const std::string var_name = args[0]->eval().get_string();
+    const std::string val      = args[1]->eval().get_string();
+    size_t port = 0;
+    if (args.size() == 3) {
+        port = size_t(args[2]->eval().get_int());
+    }
+    UHD_MSG(status) << "[NocScript] Setting $" << var_name << std::endl;
+    _block_ptr->set_arg<std::string>(var_name, val, port);
+    return expression_literal(true);
+}
+
+expression_literal block_iface::_nocscript__var_set_double(const expression_container::expr_list_type &args)
+{
+    const std::string var_name = args[0]->eval().get_string();
+    const double val              = args[1]->eval().get_double();
+    size_t port = 0;
+    if (args.size() == 3) {
+        port = size_t(args[2]->eval().get_int());
+    }
+    UHD_MSG(status) << "[NocScript] Setting $" << var_name << std::endl;
+    _block_ptr->set_arg<double>(var_name, val, port);
+    return expression_literal(true);
+}
+
+expression_literal block_iface::_nocscript__var_set_intvec(const expression_container::expr_list_type &)
+{
+    UHD_THROW_INVALID_CODE_PATH();
 }
 
 block_iface::sptr block_iface::make(uhd::rfnoc::block_ctrl_base* block_ptr)
