@@ -1,7 +1,7 @@
 <!--This defines one NoC-Block.-->
 <nocblock>
-  <name>Serializer / Demod</name>
-  <blockname>SerialDemod</blockname>
+  <name>OFDM Constellation Demod</name>
+  <blockname>OFDMDemap</blockname>
   <!--There can be several of these:-->
   <ids>
     <id revision="0">0FCD</id>
@@ -12,10 +12,10 @@
       <name>MOD_ORDER</name>
       <address>129</address>
     </setreg>
-    <readback>
+    <setreg>
       <name>SCALING</name>
       <address>130</address>
-    </readback>
+    </setreg>
   </registers>
   <!-- Args -->
   <args>
@@ -36,9 +36,9 @@
       <name>scaling</name>
       <type>double</type>
       <value>1.4142135623730951</value>
-      <check>GE($scaling, 0.1) AND LT($scalign, 4.0)</check>
+      <check>GE($scaling, 0.1) AND LT($scaling, 4.0)</check>
       <check_message>Invalid scaling.</check_message>
-      <action>SR_WRITE("SCALING", MULT(16384, $scaling))</action>
+      <action>SR_WRITE("SCALING", IROUND(MULT(16384.0, $scaling)))</action>
     </arg>
   </args>
   <ports>
