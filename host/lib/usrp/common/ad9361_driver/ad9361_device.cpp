@@ -1286,16 +1286,16 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
 
         /* Set band-specific settings. */
         if (value < _client_params->get_band_edge(AD9361_RX_BAND0)) {
-            _regs.inputsel = (_regs.inputsel & 0xC0) | 0x30;
+            _regs.inputsel = (_regs.inputsel & 0xC0) | 0x30; // Port C, balanced
         } else if ((value
                 >= _client_params->get_band_edge(AD9361_RX_BAND0))
                 && (value
                         < _client_params->get_band_edge(AD9361_RX_BAND1))) {
-            _regs.inputsel = (_regs.inputsel & 0xC0) | 0x0C;
+            _regs.inputsel = (_regs.inputsel & 0xC0) | 0x0C; // Port B, balanced
         } else if ((value
                 >= _client_params->get_band_edge(AD9361_RX_BAND1))
                 && (value <= 6e9)) {
-            _regs.inputsel = (_regs.inputsel & 0xC0) | 0x03;
+            _regs.inputsel = (_regs.inputsel & 0xC0) | 0x03; // Port A, balanced
         } else {
             throw uhd::runtime_error("[ad9361_device_t] [_tune_helper] INVALID_CODE_PATH");
         }
@@ -2127,7 +2127,7 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
     }
 }
 
-void ad9361_device_t::output_test_tone()
+void ad9361_device_t::output_test_tone()  // On RF side!
 {
     boost::lock_guard<boost::recursive_mutex> lock(_mutex);
     /* Output a 480 kHz tone at 800 MHz */
@@ -2135,6 +2135,12 @@ void ad9361_device_t::output_test_tone()
     _io_iface->poke8(0x3FC, 0xFF);
     _io_iface->poke8(0x3FD, 0xFF);
     _io_iface->poke8(0x3FE, 0x3F);
+}
+
+void ad9361_device_t::digital_test_tone(bool enb) // Digital output
+{
+    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    _io_iface->poke8(0x3F4, 0x02 | (enb ? 0x01 : 0x00));
 }
 
 void ad9361_device_t::data_port_loopback(const bool loopback_enabled)

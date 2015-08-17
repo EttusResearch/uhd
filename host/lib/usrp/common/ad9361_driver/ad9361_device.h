@@ -115,6 +115,8 @@ public:
     /* Make AD9361 output its test tone. */
     void output_test_tone();
 
+    void digital_test_tone(bool enb); // Digital output
+
     /* Turn on/off AD9361's TX port --> RX port loopback. */
     void data_port_loopback(const bool loopback_enabled);
 

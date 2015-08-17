@@ -154,6 +154,8 @@ public:
 
     //! Write back a filter
     virtual void set_filter(const std::string &which, const std::string &filter_name, const filter_info_base::sptr) = 0;
+
+    virtual void output_digital_test_tone(bool enb) = 0;
 };
 
 }}

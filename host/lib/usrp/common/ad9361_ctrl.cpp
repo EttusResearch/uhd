@@ -251,6 +251,11 @@ public:
         _device.set_filter(direction, chain, filter_name, filter);
     }
 
+    void output_digital_test_tone(bool enb)
+    {
+        _device.digital_test_tone(enb);
+    }
+
 private:
     static ad9361_device_t::direction_t _get_direction_from_antenna(const std::string& antenna)
     {

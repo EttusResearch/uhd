@@ -45,14 +45,15 @@ using namespace uhd::transport;
 
 static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
 
+// B200 + B210:
 class b200_ad9361_client_t : public ad9361_params {
 public:
     ~b200_ad9361_client_t() {}
     double get_band_edge(frequency_band_t band) {
         switch (band) {
-        case AD9361_RX_BAND0:   return 2.2e9;
-        case AD9361_RX_BAND1:   return 4.0e9;
-        case AD9361_TX_BAND0:   return 2.5e9;
+        case AD9361_RX_BAND0:   return 2.2e9; // Port C
+        case AD9361_RX_BAND1:   return 4.0e9; // Port B
+        case AD9361_TX_BAND0:   return 2.5e9; // Port B
         default:                return 0;
         }
     }
@@ -72,25 +73,77 @@ public:
     }
 };
 
+// B205
+class b205_ad9361_client_t : public ad9361_params {
+public:
+    ~b205_ad9361_client_t() {}
+    double get_band_edge(frequency_band_t band) {
+        switch (band) {
+        case AD9361_RX_BAND0:   return 0; // Set these all to
+        case AD9361_RX_BAND1:   return 0; // zero, so RF port A
+        case AD9361_TX_BAND0:   return 0; // is used all the time
+        default:                return 0; // On both Rx and Tx
+        }
+    }
+    clocking_mode_t get_clocking_mode() {
+        return AD9361_XTAL_N_CLK_PATH;
+    }
+    digital_interface_mode_t get_digital_interface_mode() {
+        return AD9361_DDR_FDD_LVCMOS;
+    }
+    digital_interface_delays_t get_digital_interface_timing() {
+        digital_interface_delays_t delays;
+        delays.rx_clk_delay = 0;
+        delays.rx_data_delay = 0x6;
+        delays.tx_clk_delay = 0;
+        delays.tx_data_delay = 0xF;
+        return delays;
+    }
+};
+
+/***********************************************************************
+ * Helpers
+ **********************************************************************/
+std::string check_option_valid(
+        const std::string &name,
+        const std::vector<std::string> &valid_options,
+        const std::string &option
+) {
+    if (std::find(valid_options.begin(), valid_options.end(), option) == valid_options.end()) {
+        throw uhd::runtime_error(str(
+                boost::format("Invalid option chosen for: %s")
+                % name
+        ));
+    }
+
+    return option;
+}
+
 /***********************************************************************
  * Discovery
  **********************************************************************/
 //! Look up the type of B-Series device we're currently running.
-//  If the product ID stored in mb_eeprom is invalid, throws a
-//  uhd::runtime_error.
-b200_type_t get_b200_type(const mboard_eeprom_t &mb_eeprom)
+//  Throws a uhd::runtime_error if the USB PID and the product ID stored
+//  in the MB EEPROM are invalid,
+b200_product_t get_b200_product(const usb_device_handle::sptr& handle, const mboard_eeprom_t &mb_eeprom)
 {
+    // Try USB PID first
+    boost::uint16_t product_id = handle->get_product_id();
+    if (B2XX_PID_TO_PRODUCT.has_key(product_id))
+        return B2XX_PID_TO_PRODUCT[product_id];
+
+    // Try EEPROM product ID code second
     if (mb_eeprom["product"].empty()) {
         throw uhd::runtime_error("B200: Missing product ID on EEPROM.");
     }
-    boost::uint16_t product_id = boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]);
-    if (not B2X0_PRODUCT_ID.has_key(product_id)) {
+    product_id = boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]);
+    if (not B2XX_PRODUCT_ID.has_key(product_id)) {
         throw uhd::runtime_error(str(
             boost::format("B200 unknown product code: 0x%04x")
             % product_id
         ));
     }
-    return B2X0_PRODUCT_ID[product_id];
+    return B2XX_PRODUCT_ID[product_id];
 }
 
 std::vector<usb_device_handle::sptr> get_b200_device_handles(const device_addr_t &hint)
@@ -173,9 +226,10 @@ static device_addrs_t b200_find(const device_addr_t &hint)
             new_addr["serial"] = handle->get_serial();
             try {
                 // Turn the 16-Bit product ID into a string representation
-                new_addr["product"] = B2X0_STR_NAMES[get_b200_type(mb_eeprom)];
+                new_addr["product"] = B2XX_STR_NAMES[get_b200_product(handle, mb_eeprom)];
             } catch (const uhd::runtime_error &e) {
                 // No problem if this fails -- this is just device discovery, after all.
+                new_addr["product"] = "B2??";
             }
 
             //this is a found b200 when the hint serial and name match or blank
@@ -225,7 +279,9 @@ UHD_STATIC_BLOCK(register_b200_device)
  * Structors
  **********************************************************************/
 b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::sptr &handle) :
+    _product(B200), // Some safe value
     _revision(0),
+    _time_source(UNKNOWN),
     _tick_rate(0.0) // Forces a clock initialization at startup
 {
     _tree = property_tree::make();
@@ -260,9 +316,10 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // Search for all supported PIDs limited to specified VID if only VID specified
     else if (specified_vid)
     {
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid,B200_PRODUCT_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid,B200_PRODUCT_NI_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid,B210_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B200_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B205_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B200_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B210_PRODUCT_NI_ID));
     }
     // Search for all supported VIDs limited to specified PID if only PID specified
     else if (specified_pid)
@@ -273,9 +330,10 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // Search for all supported devices if neither VID nor PID specified
     else
     {
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,B200_PRODUCT_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID,B200_PRODUCT_NI_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID,B210_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B200_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B205_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID));
     }
 
     std::vector<usb_device_handle::sptr> device_list = usb_device_handle::get_device_list(vid_pid_pair_list);
@@ -309,9 +367,9 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     std::string product_name;
     try {
         // This will throw if the product ID is invalid:
-        _b200_type = get_b200_type(mb_eeprom);
-        default_file_name = B2X0_FPGA_FILE_NAME.get(_b200_type);
-        product_name      = B2X0_STR_NAMES.get(_b200_type);
+        _product = get_b200_product(handle, mb_eeprom);
+        default_file_name = B2XX_FPGA_FILE_NAME.get(_product);
+        product_name      = B2XX_STR_NAMES.get(_product);
     } catch (const uhd::runtime_error &e) {
         // The only reason we may let this pass is if the user specified
         // the FPGA file name:
@@ -320,11 +378,14 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         }
         // In this case, we must provide a default product name:
         product_name = "B200?";
-        _b200_type = B200;
     }
     if (not mb_eeprom["revision"].empty()) {
         _revision = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
     }
+
+    UHD_MSG(status) << "Detected Device: " << B2XX_STR_NAMES[_product] << std::endl;
+
+    _gpsdo_capable = (_product != B205);
 
     ////////////////////////////////////////////////////////////////////
     // Set up frontend mapping
@@ -343,7 +404,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     _fe2 = 0;
     _gpio_state.swap_atr = 1;
     // Unswapped setup:
-    if (_b200_type == B200 and _revision >= 5) {
+    if (_product == B205 or (_product == B200 and _revision >= 5)) {
         _fe1 = 0;                   //map radio0 to FE1
         _fe2 = 1;                   //map radio1 to FE2
         _gpio_state.swap_atr = 0; // ATRs for radio0 are mapped to FE1
@@ -411,34 +472,37 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // Create the GPSDO control
     ////////////////////////////////////////////////////////////////////
-    _async_task_data->gpsdo_uart = b200_uart::make(_ctrl_transport, B200_TX_GPS_UART_SID);
-    _async_task_data->gpsdo_uart->set_baud_divider(B200_BUS_CLOCK_RATE/115200);
-    _async_task_data->gpsdo_uart->write_uart("\n"); //cause the baud and response to be setup
-    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for a little propagation
-
-    if ((_local_ctrl->peek32(RB32_CORE_STATUS) & 0xff) != B200_GPSDO_ST_NONE)
+    if (_gpsdo_capable)
     {
-        UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
-        try
+        _async_task_data->gpsdo_uart = b200_uart::make(_ctrl_transport, B200_TX_GPS_UART_SID);
+        _async_task_data->gpsdo_uart->set_baud_divider(B200_BUS_CLOCK_RATE/115200);
+        _async_task_data->gpsdo_uart->write_uart("\n"); //cause the baud and response to be setup
+        boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for a little propagation
+
+        if ((_local_ctrl->peek32(RB32_CORE_STATUS) & 0xff) != B200_GPSDO_ST_NONE)
         {
-            _gps = gps_ctrl::make(_async_task_data->gpsdo_uart);
-        }
-        catch(std::exception &e)
-        {
-            UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
-        }
-        if (_gps and _gps->gps_detected())
-        {
-            //UHD_MSG(status) << "found" << std::endl;
-            BOOST_FOREACH(const std::string &name, _gps->get_sensors())
+            UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
+            try
             {
-                _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                    .publish(boost::bind(&gps_ctrl::get_sensor, _gps, name));
+                _gps = gps_ctrl::make(_async_task_data->gpsdo_uart);
             }
-        }
-        else
-        {
-            _local_ctrl->poke32(TOREG(SR_CORE_GPSDO_ST), B200_GPSDO_ST_NONE);
+            catch(std::exception &e)
+            {
+                UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
+            }
+            if (_gps and _gps->gps_detected())
+            {
+                //UHD_MSG(status) << "found" << std::endl;
+                BOOST_FOREACH(const std::string &name, _gps->get_sensors())
+                {
+                    _tree->create<sensor_value_t>(mb_path / "sensors" / name)
+                        .publish(boost::bind(&gps_ctrl::get_sensor, _gps, name));
+                }
+            }
+            else
+            {
+                _local_ctrl->poke32(TOREG(SR_CORE_GPSDO_ST), B200_GPSDO_ST_NONE);
+            }
         }
     }
 
@@ -447,7 +511,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>("/name").set("B-Series Device");
     _tree->create<std::string>(mb_path / "name").set(product_name);
-    _tree->create<std::string>(mb_path / "codename").set("Sasquatch");
+    _tree->create<std::string>(mb_path / "codename").set((_product == B205) ? "Pixie" : "Sasquatch");
 
     ////////////////////////////////////////////////////////////////////
     // Create data transport
@@ -475,13 +539,20 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // create time and clock control objects
     ////////////////////////////////////////////////////////////////////
     _spi_iface = b200_local_spi_core::make(_local_ctrl);
-    _adf4001_iface = boost::make_shared<b200_ref_pll_ctrl>(_spi_iface);
+    if (_product != B205) {
+        _adf4001_iface = boost::make_shared<b200_ref_pll_ctrl>(_spi_iface);
+    }
 
     ////////////////////////////////////////////////////////////////////
     // Init codec - turns on clocks
     ////////////////////////////////////////////////////////////////////
     UHD_MSG(status) << "Initialize CODEC control..." << std::endl;
-    ad9361_params::sptr client_settings = boost::make_shared<b200_ad9361_client_t>();
+    ad9361_params::sptr client_settings;
+    if (_product == B205) {
+        client_settings = boost::make_shared<b205_ad9361_client_t>();
+    } else {
+        client_settings = boost::make_shared<b200_ad9361_client_t>();
+    }
     _codec_ctrl = ad9361_ctrl::make_spi(client_settings, _spi_iface, AD9361_SLAVENO);
     this->reset_codec_dcm();
 
@@ -564,15 +635,23 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     }
 
     //setup time source props
+    static const std::vector<std::string> time_sources = (_gpsdo_capable) ?
+                                boost::assign::list_of("none")("internal")("external")("gpsdo") :
+                                boost::assign::list_of("none")("internal")("external") ;
+    _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options")
+        .set(time_sources);
     _tree->create<std::string>(mb_path / "time_source" / "value")
+        .coerce(boost::bind(&check_option_valid, "time source", time_sources, _1))
         .subscribe(boost::bind(&b200_impl::update_time_source, this, _1));
-    static const std::vector<std::string> time_sources = boost::assign::list_of("none")("internal")("external")("gpsdo");
-    _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
     //setup reference source props
+    static const std::vector<std::string> clock_sources = (_gpsdo_capable) ?
+                                boost::assign::list_of("internal")("external")("gpsdo") :
+                                boost::assign::list_of("internal")("external") ;
+    _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options")
+        .set(clock_sources);
     _tree->create<std::string>(mb_path / "clock_source" / "value")
+        .coerce(boost::bind(&check_option_valid, "clock source", clock_sources, _1))
         .subscribe(boost::bind(&b200_impl::update_clock_source, this, _1));
-    static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("gpsdo");
-    _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_sources);
 
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
@@ -870,12 +949,14 @@ void b200_impl::check_fpga_compat(void)
     if (signature != 0xACE0BA5E) throw uhd::runtime_error(
         "b200::check_fpga_compat signature register readback failed");
 
-    if (compat_major != B200_FPGA_COMPAT_NUM){
+    const boost::uint16_t expected = (_product == B205 ? B205_FPGA_COMPAT_NUM : B200_FPGA_COMPAT_NUM);
+    if (compat_major != expected)
+    {
         throw uhd::runtime_error(str(boost::format(
             "Expected FPGA compatibility number %d, but got %d:\n"
             "The FPGA build is not compatible with the host code build.\n"
             "%s"
-        ) % int(B200_FPGA_COMPAT_NUM) % compat_major % print_utility_error("uhd_images_downloader.py")));
+        ) % int(expected) % compat_major % print_utility_error("uhd_images_downloader.py")));
     }
     _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));
@@ -913,35 +994,92 @@ void b200_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, co
 
 void b200_impl::update_clock_source(const std::string &source)
 {
-    // present the PLL with a valid 10 MHz signal before switching its reference
-    _gpio_state.ref_sel = (source == "gpsdo")? 1 : 0;
-    this->update_gpio_state();
+    // For B205, ref_sel selects whether or not to lock to the external clock source
+    if (_product == B205)
+    {
+        if (source == "external" and _time_source == EXTERNAL)
+        {
+            throw uhd::value_error("external reference cannot be both a clock source and a time source");
+        }
 
-    if (source == "internal"){
+        if (source == "internal")
+        {
+            if (_gpio_state.ref_sel != 0)
+            {
+                _gpio_state.ref_sel = 0;
+                this->update_gpio_state();
+            }
+        }
+        else if (source == "external")
+        {
+            if (_gpio_state.ref_sel != 1)
+            {
+                _gpio_state.ref_sel = 1;
+                this->update_gpio_state();
+            }
+        }
+        else
+        {
+            throw uhd::key_error("update_clock_source: unknown source: " + source);
+        }
+        return;
+    }
+
+    // For all other devices, ref_sel selects the external or gpsdo clock source
+    // and the ADF4001 selects whether to lock to it or not
+    if (source == "internal")
+    {
         _adf4001_iface->set_lock_to_ext_ref(false);
     }
-    else if ((source == "external")
-              or (source == "gpsdo")){
-
+    else if (source == "external")
+    {
+        if (_gpio_state.ref_sel != 0)
+        {
+            _gpio_state.ref_sel = 0;
+            this->update_gpio_state();
+        }
         _adf4001_iface->set_lock_to_ext_ref(true);
-    } else {
+    }
+    else if (_gps and source == "gpsdo")
+    {
+        if (_gpio_state.ref_sel != 1)
+        {
+            _gpio_state.ref_sel = 1;
+            this->update_gpio_state();
+        }
+        _adf4001_iface->set_lock_to_ext_ref(true);
+    }
+    else
+    {
         throw uhd::key_error("update_clock_source: unknown source: " + source);
     }
 }
 
 void b200_impl::update_time_source(const std::string &source)
 {
-    boost::uint32_t value = 0;
+    if (_product == B205 and source == "external" and _gpio_state.ref_sel == 1)
+    {
+        throw uhd::value_error("external reference cannot be both a time source and a clock source");
+    }
+
+    // We assume source is valid for this device (if it's gone through
+    // the prop three, then it definitely is thanks to our coercer)
+    time_source_t value;
     if (source == "none")
-        value = 3;
+        value = NONE;
     else if (source == "internal")
-        value = 2;
+        value = INTERNAL;
     else if (source == "external")
-        value = 1;
-    else if (source == "gpsdo")
-        value = 0;
-    else throw uhd::key_error("update_time_source: unknown source: " + source);
-    _local_ctrl->poke32(TOREG(SR_CORE_PPS_SEL), value);
+        value = EXTERNAL;
+    else if (_gps and source == "gpsdo")
+        value = GPSDO;
+    else
+        throw uhd::key_error("update_time_source: unknown source: " + source);
+    if (_time_source != value)
+    {
+        _local_ctrl->poke32(TOREG(SR_CORE_PPS_SEL), value);
+        _time_source = value;
+    }
 }
 
 /***********************************************************************
@@ -950,6 +1088,11 @@ void b200_impl::update_time_source(const std::string &source)
 
 void b200_impl::update_bandsel(const std::string& which, double freq)
 {
+    // B205 does not have bandsels
+    if (_product == B205) {
+        return;
+    }
+
     if(which[0] == 'R') {
         if(freq < 2.2e9) {
             _gpio_state.rx_bandsel_a = 0;

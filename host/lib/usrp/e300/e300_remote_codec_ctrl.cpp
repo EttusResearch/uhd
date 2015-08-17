@@ -242,6 +242,11 @@ public:
         UHD_MSG(warning) << "Attempting to set filter on E300 in network mode." << std::endl;
     }
 
+    void output_digital_test_tone(bool enb)
+    {
+        UHD_THROW_INVALID_CODE_PATH();
+    }
+
 private:
     void _transact() {
         {

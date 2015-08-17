@@ -50,6 +50,7 @@
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
 static const boost::uint16_t B200_FPGA_COMPAT_NUM = 10;
+static const boost::uint16_t B205_FPGA_COMPAT_NUM = 1;
 static const double          B200_BUS_CLOCK_RATE = 100e6;
 static const boost::uint32_t B200_GPSDO_ST_NONE = 0x83;
 static const size_t B200_MAX_RATE_USB2              =  53248000; // bytes/s
@@ -94,11 +95,12 @@ static const unsigned char B200_USB_DATA_SEND_ENDPOINT  = 2;
 static std::vector<uhd::transport::usb_device_handle::vid_pid_pair_t> b200_vid_pid_pairs =
     boost::assign::list_of
         (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200_PRODUCT_ID))
+        (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B205_PRODUCT_ID))
         (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID))
         (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID))
     ;
 
-b200_type_t get_b200_type(const uhd::usrp::mboard_eeprom_t &mb_eeprom);
+b200_product_t get_b200_product(const uhd::transport::usb_device_handle::sptr& handle, const uhd::usrp::mboard_eeprom_t &mb_eeprom);
 std::vector<uhd::transport::usb_device_handle::sptr> get_b200_device_handles(const uhd::device_addr_t &hint);
 
 //! Implementation guts
@@ -122,8 +124,9 @@ public:
     void check_streamer_args(const uhd::stream_args_t &args, double tick_rate, const std::string &direction = "");
 
 private:
-    b200_type_t _b200_type;
-    size_t      _revision;
+    b200_product_t  _product;
+    size_t          _revision;
+    bool            _gpsdo_capable;
 
     //controllers
     b200_iface::sptr _iface;
@@ -215,6 +218,8 @@ private:
             swap_atr = 0;
         }
     } _gpio_state;
+
+    enum time_source_t {GPSDO=0,EXTERNAL=1,INTERNAL=2,NONE=3,UNKNOWN=4} _time_source;
 
     void update_gpio_state(void);
     void reset_codec_dcm(void);

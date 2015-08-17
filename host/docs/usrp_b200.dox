@@ -2,7 +2,7 @@
 
 \tableofcontents
 
-\section b200_features Comparative features list - B200/B210
+\section b200_features Comparative features list - B200/B210/B200mini
 
 - Hardware Capabilities:
     -   Integrated RF frontend (70 MHz - 6 GHz)
@@ -10,16 +10,20 @@
     -   External 10 MHz reference input
     -   Configurable clock rate
     -   Variable analog bandwidth (200 kHz - 56 MHz)
-    -   Internal GPSDO option (see \subpage page_gpsdo_b2x0 for details)
-    -   B210 Only:
-        -   MICTOR Debug Connector
-        -   JTAG Connector
-    -   Revision 6 with GPIO header
+    -   GPIO header
+    -   [B200/B210] Internal GPSDO option (see \subpage page_gpsdo_b2x0 for details)
+    -   [B210/B200mini] JTAG Connector
+    -   [B210] MICTOR Debug Connector
 - FPGA Capabilities:
     -   Timed commands in FPGA
     -   Timed sampling in FPGA
 
-\section b200_imgs Specify a Non-standard Image
+\section b200_power Power
+In most cases, USB 3.0 bus power will be sufficient to power the device.
+If using USB 2.0 or a internal GPSDO, an external power supply or a cable designed
+to pull power from 2 USB ports (USB 3.0 dual A to micro-B or B) must be used.
+
+\section b200_imgs Specifying a Non-standard Image
 
 UHD software will automatically select the USRP B2X0 images from the
 installed images package. The image selection can be overridden with the
@@ -79,7 +83,7 @@ The B200 features an integrated RF frontend.
 \subsection b200_fe_tuning Frontend tuning
 
 The RF frontend has individually tunable receive and transmit chains. On
-the B200, there is one transmit and one receive RF frontend. On the
+the B200 and B200 mini, there is one transmit and one receive RF frontend. On the
 B210, both transmit and receive can be used in a MIMO configuration. For
 the MIMO case, both receive frontends share the RX LO, and both transmit
 frontends share the TX LO. Each LO is tunable between 50 MHz and 6 GHz.
@@ -114,7 +118,7 @@ rate.
 
 \subsection LED Indicators
 
-Below is a table of the LED indicators and their meanings:
+Below is a table of the B200/B210 LED indicators and their meanings:
 
 <table>
   <tr>
@@ -150,6 +154,36 @@ Below is a table of the LED indicators and their meanings:
   </tr>
 </table>
 
+Below is a table of the B200mini LED indicators and their meanings:
+
+<table>
+  <tr>
+    <th>Component ID</th><th>Description</th><th>Details</th>
+  </tr>
+  <tr>
+    <td>PWR LED</td> <td>Power Indicator</td> <td>off = no power applied<br>
+                                                 on = power applied (external or USB)</td>
+  </tr>
+  <tr>
+    <td>TRX LED</td> <td>TX/RX Activity</td> <td>off = no activity<br>
+                                                          green = receiving<br>
+                                                          red = transmitting<br>
+                                                          orange = switching between transmitting and receiving</td>
+  </tr>
+  <tr>
+    <td>RX2 LED</td> <td>RX2 Activity</td> <td>off = no activity<br>
+                                                        green = receiving</td>
+  </tr>
+  <tr>
+    <td>S0 LED</td> <td>Reference Lock</td> <td>off = no activity
+                                                          green = locked</td>
+  </tr>
+  <tr>
+    <td>S1 LED</td> <td>Reference Present</td> <td>off = reference level low or not present<br>
+                                                        green = reference level high</td>
+  </tr>
+</table>
+
 TX LED indicators are on when transimitting data and off when no samples are
 available to transmit.  RX LED indicators are on when sending samples to the
 host and off when unable to do so.  This means that TX/RX activity LED
@@ -160,7 +194,7 @@ well.
 
 \subsection External Connections
 
-Below is a table showing the external connections and respective power information:
+Below is a table showing the B200/B210 external connections and respective power information:
 
 <table>
 <tr>
@@ -197,21 +231,52 @@ Below is a table showing the external connections and respective power informati
 </tr>
 </table>
 
+Below is a table showing the B200mini external connections and respective power information:
+
+<table>
+<tr>
+  <th>Component ID</th> <th>Description</th>            <th> Details</th>
+</tr>
+<tr>
+  <td>USB3</td>         <td>USB Connector</td>          <td>USB 3.0</td>
+</tr>
+<tr>
+  <td>J1</td>           <td>TRX</td>                    <td>TX power +20dBm max<br>
+                                                            RX power -15dBm max</td>
+</tr>
+<tr>
+  <td>J2</td>           <td>RX2</td>                    <td>RX power -15dBm max</td>
+</tr>
+<tr>
+  <td>J3</td>           <td>External 10MHz/PPS Reference</td>  <td>+15 dBm max</td
+</tr>
+</table>
+
 \subsection b200_switches On-Board Connectors and Switches
 
-Below is a table showing the on-board connectors and switches:
+Below is a table showing the B200/B210 on-board connectors and switches:
 
 Component ID            |  Description               | Details
 ------------------------|----------------------------|---------------------------------------------------
  J502<sup>1</sup>       |  Mictor Connector          | Interface to FPGA for I/O and inspection.
  J503<sup>1</sup>       |  JTAG Header               | Interface to FPGA for programming and debugging.
- J504<sup>2</sup>       |  GPIO Header               | Header running to the FPGA for GPIO purposes.
+ J504<sup>2</sup>       |  GPIO Header               | Header connected to the FPGA for GPIO purposes.
  S700                   |  FX3 Hard Reset Switch     | Resets the USB controller / System reset
  U100                   |  GPSDO socket              | Interface to GPS disciplined reference oscillator
 
 <sup>1</sup> Only on the B210
 
 <sup>2</sup> Only since rev. 6 (green board)
+
+Below is a table showing the B200mini on-board connectors and switches:
+
+Component ID            |  Description               | Details
+------------------------|----------------------------|---------------------------------------------------
+ J5                     |  JTAG Header               | Interface to FPGA for programming and debugging.
+ J6<sup>1</sup>         |  GPIO Header               | Header connected to the FPGA for GPIO purposes.
+ SW1                    |  FX3 Hard Reset Switch     | Resets the USB controller / System reset
+
+ <sup>1</sup> GPIO pinout is 1=3.3V, 2=GPIO_0, 3=GPIO_1, 4=GPIO_2, 5=GPIO_3, 6=GND, 7=3.3V, 8=GPIO_4, 9=GPIO_5, 10=,GPIO_6 11=GPIO_7, 12=GND
 
 */
 
