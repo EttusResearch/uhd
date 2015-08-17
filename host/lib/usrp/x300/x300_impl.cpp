@@ -1441,12 +1441,12 @@ void x300_impl::update_time_source(mboard_members_t &mb, const std::string &sour
         throw uhd::key_error("update_time_source: unknown source: " + source);
     }
 
+    /* TODO - Implement intelligent PPS detection
     //check for valid pps
-    if (!is_pps_present(mb))
-    {
-        // TODO - Implement intelligent PPS detection
-        /* throw uhd::runtime_error((boost::format("The %d PPS was not detected.  Please check the PPS source and try again.") % source).str()); */
+    if (!is_pps_present(mb)) {
+        throw uhd::runtime_error((boost::format("The %d PPS was not detected.  Please check the PPS source and try again.") % source).str());
     }
+    */
 }
 
 bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout)
