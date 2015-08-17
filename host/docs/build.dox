@@ -94,7 +94,7 @@ or install msysGit from http://code.google.com/p/msysgit/downloads/list.
 
 You can install all the dependencies through the package manager:
 
-    sudo apt-get install libboost-all-dev libusb-1.0-0-dev python-mako doxygen python-docutils cmake
+    sudo apt-get install libboost-all-dev libusb-1.0-0-dev python-mako doxygen python-docutils cmake build-essential
 
 Your actual command may differ.
 
@@ -102,7 +102,7 @@ Your actual command may differ.
 
 You can install all the dependencies through the package manager:
 
-    sudo yum -y install boost-devel libusb1-devel python-mako doxygen python-docutils cmake
+    sudo yum -y install boost-devel libusb1-devel python-mako doxygen python-docutils cmake make gcc gcc-c++
 
 Your actual command may differ.
 
