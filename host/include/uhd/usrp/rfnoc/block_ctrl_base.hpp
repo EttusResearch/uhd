@@ -272,10 +272,11 @@ public:
     /***********************************************************************
      * Argument handling
      **********************************************************************/
-    //! Set multiple block args. Calls set_arg() for all individual items.
-    //
-    // Note that this function will ignore any keys in \p args that aren't
-    // already registered as block arguments.
+    /*! Set multiple block args. Calls set_arg() for all individual items.
+     *
+     * Note that this function will silently ignore any keys in \p args that
+     * aren't already registered as block arguments.
+     */
     void set_args(const uhd::device_addr_t &args, const size_t port = 0);
 
     //! Set a specific block argument. \p val is converted to the corresponding
@@ -285,7 +286,7 @@ public:
     //! Direct access to set a block argument.
     template <typename T>
     void set_arg(const std::string &key, const T &val, const size_t port = 0) {
-        _tree->access<T>(_root_path / "args" / port / key / "value").set(val);
+        _tree->access<T>(get_arg_path(key, port) / "value").set(val);
     }
 
     //! Return all block arguments as a device_addr_t.
@@ -297,7 +298,7 @@ public:
     //! Direct access to get a block argument.
     template <typename T>
     T get_arg(const std::string &key, const size_t port = 0) const {
-        return _tree->access<T>(_root_path / "args" / port / key / "value").get();
+        return _tree->access<T>(get_arg_path(key, port) / "value").get();
     }
 
     std::string get_arg_type(const std::string &key, const size_t port = 0) const;
@@ -323,6 +324,11 @@ protected:
      * Helpers
      **********************************************************************/
     stream_sig_t _resolve_port_def(const blockdef::port_t &port_def) const;
+
+    uhd::fs_path get_arg_path(const std::string key, size_t port = 0) const {
+        return _root_path / "args" / port / key;
+    };
+
 
     /***********************************************************************
      * Hooks & Derivables

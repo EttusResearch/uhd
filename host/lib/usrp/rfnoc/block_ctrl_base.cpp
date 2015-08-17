@@ -350,16 +350,16 @@ boost::uint32_t block_ctrl_base::get_address(size_t block_port) {
  **********************************************************************/
 void block_ctrl_base::set_args(const uhd::device_addr_t &args, const size_t port)
 {
-    BOOST_FOREACH(const std::string &key, _tree->list(_root_path / "args" / port)) {
-        if (args.has_key(key)) {
-            set_arg(key, args.get(key));
+    BOOST_FOREACH(const std::string &key, args.keys()) {
+        if (_tree->exists(get_arg_path(key, port))) {
+            set_arg(key, args.get(key), port);
         }
     }
 }
 
 void block_ctrl_base::set_arg(const std::string &key, const std::string &val, const size_t port)
 {
-    fs_path arg_path = _root_path / "args" / port / key;
+    fs_path arg_path = get_arg_path(key, port);
     if (not _tree->exists(arg_path / "value")) {
         throw uhd::runtime_error(str(
                 boost::format("Attempting to set uninitialized argument '%s' on block '%s'")
@@ -401,7 +401,7 @@ device_addr_t block_ctrl_base::get_args(const size_t port) const
 
 std::string block_ctrl_base::get_arg(const std::string &key, const size_t port) const
 {
-    fs_path arg_path = _root_path / "args" / port / key;
+    fs_path arg_path = get_arg_path(key, port);
     if (not _tree->exists(arg_path / "value")) {
         throw uhd::runtime_error(str(
                 boost::format("Attempting to get uninitialized argument '%s' on block '%s'")
