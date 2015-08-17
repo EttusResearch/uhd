@@ -39,7 +39,17 @@ BOOL LE(INT, INT)
     return expression_literal(bool($args[0] <= $args[1]));
 }
 
+BOOL LE(DOUBLE, DOUBLE)
+{
+    return expression_literal(bool($args[0] <= $args[1]));
+}
+
 BOOL GE(INT, INT)
+{
+    return expression_literal(bool($args[0] >= $args[1]));
+}
+
+BOOL GE(DOUBLE, DOUBLE)
 {
     return expression_literal(bool($args[0] >= $args[1]));
 }
