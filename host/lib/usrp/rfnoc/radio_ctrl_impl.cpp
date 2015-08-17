@@ -56,6 +56,7 @@ public:
         port["pkt_size"] = str(boost::format("%d") % (_rx_spp * _rx_bpi));
         if (_tree->exists(_root_path / "ports/out/0")) {
             _tree->access<blockdef::port_t>(_root_path / "ports/out/0").set(port);
+            UHD_MSG(status) << "setting " << (_root_path / "ports/out/0") << std::endl;
         } else {
             _tree->create<blockdef::port_t>(_root_path / "ports/out/0").set(port);
         }
@@ -69,19 +70,18 @@ public:
         _tree->create<bool>(_root_path / "rx_active").set(false);
 
         // TODO These should come from an XML file:
-        fs_path arg_path = _root_path / "args";
         // spp:
-        _tree->create<std::string>(arg_path / "spp" / "type").set("int");
-        _tree->create<int>(arg_path / "spp" / "value").set(_rx_spp)
+        _tree->create<std::string>(get_arg_path("spp") / "type").set("int");
+        _tree->create<int>(get_arg_path("spp") / "value").set(_rx_spp)
             .subscribe(boost::bind(&radio_ctrl_impl::_update_spp, this, _1))
         ;
         // rx args:
-        _tree->create<std::string>(arg_path / "rx_args" / "type").set("string");
-        _tree->create<std::string>(arg_path / "rx_args" / "value").set("")
+        _tree->create<std::string>(get_arg_path("rx_args") / "type").set("string");
+        _tree->create<std::string>(get_arg_path("rx_args") / "value").set("")
             .subscribe(boost::bind(&radio_ctrl_impl::_update_rx_args, this, _1))
         ;
-        _tree->create<std::string>(arg_path / "tx_args" / "type").set("string");
-        _tree->create<std::string>(arg_path / "tx_args" / "value").set("")
+        _tree->create<std::string>(get_arg_path("tx_args") / "type").set("string");
+        _tree->create<std::string>(get_arg_path("tx_args") / "value").set("")
             .subscribe(boost::bind(&radio_ctrl_impl::_update_tx_args, this, _1))
         ;
     }
@@ -239,9 +239,9 @@ public:
         _perifs.tx_fe = tx_fe;
 
         // Now we can access the perifs, update their settings:
-        _tree->access<int>(_root_path / "args" / "spp" / "value").update();
-        _tree->access<int>(_root_path / "args" / "rx_args" / "value").update();
-        _tree->access<int>(_root_path / "args" / "tx_args" / "value").update();
+        _tree->access<int>(get_arg_path("spp") / "value").update();
+        _tree->access<int>(get_arg_path("rx_args") / "value").update();
+        _tree->access<int>(get_arg_path("tx_args") / "value").update();
     }
 
     void set_dboard_type(dboard_type_t type)
