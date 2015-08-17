@@ -28,7 +28,7 @@ The following compilers are known to work and officially supported:
 
 - GCC >= 4.4
 - Clang >= 3.1
-- MSVC >= 2010
+- MSVC >= 2012
 
 Other compilers (or lower versions) may work, but are unsupported.
 
