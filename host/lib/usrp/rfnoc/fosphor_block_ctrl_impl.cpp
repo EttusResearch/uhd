@@ -26,35 +26,35 @@ class fosphor_block_ctrl_impl : public fosphor_block_ctrl
 public:
     UHD_RFNOC_BLOCK_CONSTRUCTOR(fosphor_block_ctrl)
     {
-        _tree->access<int>(_root_path / "args" / "decim" / "value")
+        _tree->access<int>(_root_path / "args" / 0 / "decim" / "value")
             .subscribe(boost::bind(&fosphor_block_ctrl_impl::set_decim, this, _1))
             .update() // Call set_decim()
         ;
-        _tree->access<int>(_root_path / "args" / "offset" / "value")
+        _tree->access<int>(_root_path / "args" / 0 / "offset" / "value")
             .subscribe(boost::bind(&fosphor_block_ctrl_impl::set_offset, this, _1))
             .update() // Call set_offset()
         ;
-        _tree->access<int>(_root_path / "args" / "scale" / "value")
+        _tree->access<int>(_root_path / "args" / 0 / "scale" / "value")
             .subscribe(boost::bind(&fosphor_block_ctrl_impl::set_scale, this, _1))
             .update() // Call set_scale()
         ;
-        _tree->access<int>(_root_path / "args" / "trise" / "value")
+        _tree->access<int>(_root_path / "args" / 0 / "trise" / "value")
             .subscribe(boost::bind(&fosphor_block_ctrl_impl::set_trise, this, _1))
             .update() // Call set_trise()
         ;
-        _tree->access<int>(_root_path / "args" / "tdecay" / "value")
+        _tree->access<int>(_root_path / "args" / 0 / "tdecay" / "value")
             .subscribe(boost::bind(&fosphor_block_ctrl_impl::set_tdecay, this, _1))
             .update() // Call set_tdecay()
         ;
-        _tree->access<int>(_root_path / "args" / "alpha" / "value")
+        _tree->access<int>(_root_path / "args" / 0 / "alpha" / "value")
             .subscribe(boost::bind(&fosphor_block_ctrl_impl::set_alpha, this, _1))
             .update() // Call set_alpha()
         ;
-        _tree->access<int>(_root_path / "args" / "epsilon" / "value")
+        _tree->access<int>(_root_path / "args" / 0 / "epsilon" / "value")
             .subscribe(boost::bind(&fosphor_block_ctrl_impl::set_epsilon, this, _1))
             .update() // Call set_epsilon()
         ;
-        _tree->access<int>(_root_path / "args" / "random" / "value")
+        _tree->access<int>(_root_path / "args" / 0 / "random" / "value")
             .subscribe(boost::bind(&fosphor_block_ctrl_impl::set_random, this, _1))
             .update() // Call set_random()
         ;
@@ -82,7 +82,7 @@ public:
 
     int get_decim() const
     {
-        return _tree->access<int>(_root_path / "args" / "decim" / "value").get();
+        return _tree->access<int>(_root_path / "args" / 0 / "decim" / "value").get();
     } /* get_decim() */
 
     void set_offset(int offset)
@@ -97,7 +97,7 @@ public:
 
     int get_offset() const
     {
-        return _tree->access<int>(_root_path / "args" / "offset" / "value").get();
+        return _tree->access<int>(_root_path / "args" / 0 / "offset" / "value").get();
     } /* get_offset() */
 
     void set_scale(int scale)
@@ -112,7 +112,7 @@ public:
 
     int get_scale() const
     {
-        return _tree->access<int>(_root_path / "args" / "scale" / "value").get();
+        return _tree->access<int>(_root_path / "args" / 0 / "scale" / "value").get();
     } /* get_scale() */
 
     void set_trise(int trise)
@@ -127,7 +127,7 @@ public:
 
     int get_trise() const
     {
-        return _tree->access<int>(_root_path / "args" / "trise" / "value").get();
+        return _tree->access<int>(_root_path / "args" / 0 / "trise" / "value").get();
     } /* get_trise() */
 
     void set_tdecay(int tdecay)
@@ -142,7 +142,7 @@ public:
 
     int get_tdecay() const
     {
-        return _tree->access<int>(_root_path / "args" / "tdecay" / "value").get();
+        return _tree->access<int>(_root_path / "args" / 0 / "tdecay" / "value").get();
     } /* get_tdecay() */
 
     void set_alpha(int alpha)
@@ -157,7 +157,7 @@ public:
 
     int get_alpha() const
     {
-        return _tree->access<int>(_root_path / "args" / "alpha" / "value").get();
+        return _tree->access<int>(_root_path / "args" / 0 / "alpha" / "value").get();
     } /* get_alpha() */
 
     void set_epsilon(int epsilon)
@@ -172,7 +172,7 @@ public:
 
     int get_epsilon() const
     {
-        return _tree->access<int>(_root_path / "args" / "epsilon" / "value").get();
+        return _tree->access<int>(_root_path / "args" / 0 / "epsilon" / "value").get();
     } /* get_epsilon() */
 
     void set_random(int random)
@@ -187,7 +187,7 @@ public:
 
     int get_random() const
     {
-        return _tree->access<int>(_root_path / "args" / "random" / "value").get();
+        return _tree->access<int>(_root_path / "args" / 0 / "random" / "value").get();
     } /* get_random() */
 };
 
