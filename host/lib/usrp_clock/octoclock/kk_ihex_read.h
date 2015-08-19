@@ -54,11 +54,11 @@ void ihex_begin_read(struct ihex_state * const ihex);
 // Begin reading at `address` (the lowest 16 bits of which will be ignored);
 // this is required only if the high bytes of the 32-bit starting address
 // are not specified in the input data and they are non-zero
-void ihex_read_at_address(struct ihex_state *ihex,
+void ihex_read_at_address(struct ihex_state * const ihex,
                           ihex_address_t address);
 
 // Read a single character
-void ihex_read_byte(struct ihex_state *ihex, char chr, FILE* outfile);
+void ihex_read_byte(struct ihex_state * const ihex, const char byte, FILE* outfile);
 
 // Read `count` bytes from `data`
 void ihex_read_bytes(struct ihex_state * ihex,
@@ -67,7 +67,7 @@ void ihex_read_bytes(struct ihex_state * ihex,
                      FILE* outfile);
 
 // End reading (may call `ihex_data_read` if there is data waiting)
-void ihex_end_read(struct ihex_state *ihex, FILE* outfile);
+void ihex_end_read(struct ihex_state * const ihex, FILE* outfile);
 
 // Called when a complete line has been read, the record type of which is
 // passed as `type`. The `ihex` structure will have its fields `data`,

@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2014 Ettus Research LLC
+// Copyright 2012-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -135,7 +135,7 @@ void b200_impl::set_auto_tick_rate(
         if (!uhd::math::frequencies_are_equal(_tree->access<double>("/mboards/0/tick_rate").get(), new_rate)) {
             _tree->access<double>("/mboards/0/tick_rate").set(new_rate);
         }
-    } catch (const uhd::value_error &e) {
+    } catch (const uhd::value_error &) {
         UHD_MSG(warning)
             << "Cannot automatically determine an appropriate tick rate for these sampling rates." << std::endl
             << "Consider using different sampling rates, or manually specify a suitable master clock rate." << std::endl;

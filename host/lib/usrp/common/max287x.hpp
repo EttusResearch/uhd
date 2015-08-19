@@ -772,7 +772,7 @@ void max287x<max287x_regs_t>::commit()
                 if (changed_regs.find(boost::uint32_t(addr)) != changed_regs.end())
                     regs.push_back(_regs.get_reg(boost::uint32_t(addr)));
             }
-        } catch (uhd::runtime_error& e) {
+        } catch (uhd::runtime_error&) {
             // No saved state - write all regs
             for (int addr = 5; addr >= 0; addr--)
                 regs.push_back(_regs.get_reg(boost::uint32_t(addr)));
