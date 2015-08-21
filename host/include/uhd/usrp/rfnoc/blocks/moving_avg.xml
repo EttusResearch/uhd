@@ -1,0 +1,67 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>Moving Average</name>
+  <blockname>MovingAverage</blockname>
+  <ids>
+    <id revision="0">AAD2</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <!--Note: AXI config bus uses 129 & 130-->
+    <setreg>
+      <name>SUM_LEN</name>
+      <address>192</address>
+    </setreg>
+    <setreg>
+      <name>DIVISOR</name>
+      <address>193</address>
+    </setreg>
+    <readback>
+      <name>RB_SUM_LEN</name>
+      <address>0</address>
+    </readback>
+    <readback>
+      <name>RB_DIVISOR</name>
+      <address>1</address>
+    </readback>
+  </registers>
+  <args>
+    <arg>
+      <name>length</name>
+      <type>int</type>
+      <value>10</value>
+      <check>GE($length, 1) AND LE($length, 255)</check>
+      <check_message>Average length must be in [1, 255].</check_message>
+      <action>SR_WRITE("SUM_LEN", $length) AND SR_WRITE("DIVISOR", $length)</action>
+    </arg>
+  </args>
+  <!-- Ports -->
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+      <port>0</port>
+    </sink>
+    <source>
+      <name>avg</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+  <!--<components>-->
+    <!--<component>-->
+      <!--<key revision="1">nocshell</key>-->
+    <!--</component>-->
+    <!--<component srbase="0">-->
+      <!--[>Will look for a component with this key:<]-->
+      <!--<key revision="1">componentname</key>-->
+    <!--</component>-->
+  <!--</components>-->
+  <!--<connection>-->
+    <!--<source port="0">nocshell</source>-->
+    <!--<sink port="0">componentname</sink>-->
+  <!--</connection>-->
+  <!--<connection>-->
+    <!--<source port="0">componentname</source>-->
+    <!--<sink port="0">nocshell</sink>-->
+  <!--</connection>-->
+</nocblock>
