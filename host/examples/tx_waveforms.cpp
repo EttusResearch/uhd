@@ -46,7 +46,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, wave_type, ant, subdev, ref, otw, channel_list;
+    std::string args, wave_type, ant, subdev, ref, pps, otw, channel_list;
     size_t spb;
     double rate, freq, gain, wave_freq, bw;
     float ampl;
@@ -66,7 +66,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "waveform type (CONST, SQUARE, RAMP, SINE)")
         ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "clock reference (internal, external, mimo)")
+        ("ref", po::value<std::string>(&ref)->default_value("internal"), "clock reference (internal, external, mimo, gpsdo)")
+        ("pps", po::value<std::string>(&pps), "PPS source (internal, external, mimo, gpsdo)")
         ("otw", po::value<std::string>(&otw)->default_value("sc16"), "specify the over-the-wire sample mode")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channels to use (specify \"0\", \"1\", \"0,1\", etc)")
         ("int-n", "tune USRP with integer-N tuning")
@@ -179,15 +180,33 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::vector<std::complex<float> *> buffs(channel_nums.size(), &buff.front());
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-    if (channel_nums.size() > 1) {
-        // This is the worst-case setup scenario, because this example has to
-        // work for all configurations. set_time_now() and set_time_next_pps()
-        // might also work, depending on what USRPs are being used, and can
-        // accelerate the setup. To keep this example generic, we use
-        // set_time_unknown_pps() to guarantee synchronization.
-        usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
-    } else {
-        usrp->set_time_now(uhd::time_spec_t(0.0));
+    if (channel_nums.size() > 1)
+    {
+        // Sync times
+        if (pps == "mimo")
+        {
+            UHD_ASSERT_THROW(usrp->get_num_mboards() == 2);
+
+            //make mboard 1 a slave over the MIMO Cable
+            usrp->set_time_source("mimo", 1);
+
+            //set time on the master (mboard 0)
+            usrp->set_time_now(uhd::time_spec_t(0.0), 0);
+
+            //sleep a bit while the slave locks its time to the master
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        }
+        else
+        {
+            if (pps == "internal" or pps == "external" or pps == "gpsdo")
+                usrp->set_time_source(pps);
+            usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
+            boost::this_thread::sleep(boost::posix_time::seconds(1)); //wait for pps sync pulse
+        }
+    }
+    else
+    {
+        usrp->set_time_now(0.0);
     }
 
     //Check Ref and LO Lock detect
