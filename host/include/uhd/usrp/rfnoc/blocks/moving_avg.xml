@@ -7,7 +7,6 @@
   </ids>
   <!-- Registers -->
   <registers>
-    <!--Note: AXI config bus uses 129 & 130-->
     <setreg>
       <name>SUM_LEN</name>
       <address>192</address>
@@ -25,6 +24,7 @@
       <address>1</address>
     </readback>
   </registers>
+  <!-- Args -->
   <args>
     <arg>
       <name>length</name>
@@ -47,21 +47,4 @@
       <type>sc16</type>
     </source>
   </ports>
-  <!--<components>-->
-    <!--<component>-->
-      <!--<key revision="1">nocshell</key>-->
-    <!--</component>-->
-    <!--<component srbase="0">-->
-      <!--[>Will look for a component with this key:<]-->
-      <!--<key revision="1">componentname</key>-->
-    <!--</component>-->
-  <!--</components>-->
-  <!--<connection>-->
-    <!--<source port="0">nocshell</source>-->
-    <!--<sink port="0">componentname</sink>-->
-  <!--</connection>-->
-  <!--<connection>-->
-    <!--<source port="0">componentname</source>-->
-    <!--<sink port="0">nocshell</sink>-->
-  <!--</connection>-->
 </nocblock>
