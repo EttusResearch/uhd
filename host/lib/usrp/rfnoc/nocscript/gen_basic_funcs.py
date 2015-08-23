@@ -4,178 +4,193 @@ Generate the function list for the basic NocScript functions
 """
 
 import re
+import os
 import sys
-from Cheetah.Template import Template
+from mako.template import Template
 
 #############################################################################
 # This is the interesting part: Add new functions in here
 #
-# End of functions is delimited by s/^}/, so take care with
-# the indents!
+# Notes:
+# - Function signature is RETURN_VALUE NAME(LIST_OF_ARG_TYPES)
+# - Function body is valid C++
+# - If your function requires special includes, put them in INCLUDE_LIST
+# - End of functions is delimited by s/^}/, so take care with the indents!
+# - Use these substitutions:
+#   - ${RETURN}(...): Create a valid return value
+#   - ${args[n]}: Access the n-th argument
+#
+INCLUDE_LIST = """
+#include <boost/math/special_functions/round.hpp>
+#include <boost/thread/thread.hpp>
+"""
 FUNCTION_LIST = """
 ### Math
 INT ADD(INT, INT)
 {
-    return expression_literal($args[0] + $args[1]);
+    ${RETURN}(${args[0]} + ${args[1]});
 }
 
 DOUBLE ADD(DOUBLE, DOUBLE)
 {
-    return expression_literal($args[0] + $args[1]);
+    ${RETURN}(${args[0]} + ${args[1]});
 }
 
 DOUBLE MULT(DOUBLE, DOUBLE)
 {
-    return expression_literal($args[0] * $args[1]);
+    ${RETURN}(${args[0]} * ${args[1]});
 }
 
 INT MULT(INT, INT)
 {
-    return expression_literal($args[0] * $args[1]);
+    ${RETURN}(${args[0]} * ${args[1]});
 }
 
 BOOL LE(INT, INT)
 {
-    return expression_literal(bool($args[0] <= $args[1]));
+    ${RETURN}(bool(${args[0]} <= ${args[1]}));
 }
 
 BOOL LE(DOUBLE, DOUBLE)
 {
-    return expression_literal(bool($args[0] <= $args[1]));
+    ${RETURN}(bool(${args[0]} <= ${args[1]}));
 }
 
 BOOL GE(INT, INT)
 {
-    return expression_literal(bool($args[0] >= $args[1]));
+    ${RETURN}(bool(${args[0]} >= ${args[1]}));
 }
 
 BOOL GE(DOUBLE, DOUBLE)
 {
-    return expression_literal(bool($args[0] >= $args[1]));
+    ${RETURN}(bool(${args[0]} >= ${args[1]}));
 }
 
 BOOL LT(INT, INT)
 {
-    return expression_literal(bool($args[0] < $args[1]));
+    ${RETURN}(bool(${args[0]} < ${args[1]}));
 }
 
 BOOL GT(INT, INT)
 {
-    return expression_literal(bool($args[0] > $args[1]));
+    ${RETURN}(bool(${args[0]} > ${args[1]}));
 }
 
 BOOL LT(DOUBLE, DOUBLE)
 {
-    return expression_literal(bool($args[0] < $args[1]));
+    ${RETURN}(bool(${args[0]} < ${args[1]}));
 }
 
 BOOL GT(DOUBLE, DOUBLE)
 {
-    return expression_literal(bool($args[0] > $args[1]));
+    ${RETURN}(bool(${args[0]} > ${args[1]}));
 }
 
 INT IROUND(DOUBLE)
 {
-    return expression_literal(int(boost::math::iround($args[0])));
+    ${RETURN}(int(boost::math::iround(${args[0]})));
 }
 
 BOOL IS_PWR_OF_2(INT)
 {
-    if ($args[0] < 0) return $FALSE;
-    int i = $args[0];
+    if (${args[0]} < 0) return ${FALSE};
+    int i = ${args[0]};
     while ( (i & 1) == 0 and (i > 1) ) {
         i >>= 1;
     }
-    return expression_literal(bool(i == 1));
+    ${RETURN}(bool(i == 1));
 }
 
 INT LOG2(INT)
 {
-    if ($args[0] < 0) {
+    if (${args[0]} < 0) {
         throw uhd::runtime_error(str(
             boost::format("In NoCScript function ${func_name}: Cannot calculate log2() of negative number.")
         ));
     }
 
-    int power_value = $args[0];
+    int power_value = ${args[0]};
     int log2_value = 0;
     while ( (power_value & 1) == 0 and (power_value > 1) ) {
         power_value >>= 1;
         log2_value++;
     }
-    return expression_literal(log2_value);
+    ${RETURN}(log2_value);
 }
 
 BOOL EQUAL(INT, INT)
 {
-    return expression_literal(bool($args[0] == $args[1]));
+    ${RETURN}(bool(${args[0]} == ${args[1]}));
 }
 
 BOOL EQUAL(DOUBLE, DOUBLE)
 {
-    return expression_literal(bool($args[0] == $args[1]));
+    ${RETURN}(bool(${args[0]} == ${args[1]}));
 }
 
 BOOL EQUAL(STRING, STRING)
 {
-    return expression_literal(bool($args[0] == $args[1]));
+    ${RETURN}(bool(${args[0]} == ${args[1]}));
 }
 
 ### Boolean Logic
 BOOL XOR(BOOL, BOOL)
 {
-    return expression_literal($args[0] xor $args[1]);
+    ${RETURN}(${args[0]} xor ${args[1]});
 }
 
 BOOL NOT(BOOL)
 {
-    return expression_literal(not $args[0]);
+    ${RETURN}(not ${args[0]});
 }
 
 BOOL TRUE()
 {
-    return $TRUE;
+    return ${TRUE};
 }
 
 BOOL FALSE()
 {
-    return $FALSE;
+    return ${FALSE};
 }
 
 ### Conditional Execution
 BOOL IF(BOOL, BOOL)
 {
-    if ($args[0]) {
-        $args[1];
-        return expression_literal(true);
+    if (${args[0]}) {
+        ${args[1]};
+        ${RETURN}(true);
     }
-    return expression_literal(false);
+    ${RETURN}(false);
 }
 
 BOOL IF_ELSE(BOOL, BOOL, BOOL)
 {
-    if ($args[0]) {
-        $args[1];
-        return expression_literal(true);
+    if (${args[0]}) {
+        ${args[1]};
+        ${RETURN}(true);
     } else {
-        $args[2];
+        ${args[2]};
     }
-    return expression_literal(false);
+    ${RETURN}(false);
 }
 
 ### Execution Control
 BOOL SLEEP(DOUBLE)
 {
-    int ms = $args[0] * 1000;
+    int ms = ${args[0]} / 1000;
     boost::this_thread::sleep(boost::posix_time::milliseconds(ms));
-    return expression_literal(true);
+    ${RETURN}(true);
 }
 """
 # End of interesting part. The rest will take this and turn into a C++
 # header file.
 #############################################################################
 
-HEADER = """//
+HEADER = """<% import time %>//
+///////////////////////////////////////////////////////////////////////
+// This file was generated by ${file} on ${time.strftime("%c")}
+///////////////////////////////////////////////////////////////////////
 // Copyright 2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
@@ -202,8 +217,7 @@ HEADER = """//
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/math/special_functions/round.hpp>
-#include <boost/thread/thread.hpp>
+${INCLUDE_LIST}
 
 #ifndef INCLUDED_LIBUHD_RFNOC_NOCSCRIPT_BASICFUNCS_HPP
 #define INCLUDED_LIBUHD_RFNOC_NOCSCRIPT_BASICFUNCS_HPP
@@ -211,30 +225,32 @@ HEADER = """//
 namespace uhd { namespace rfnoc { namespace nocscript {
 """
 
+# Not a Mako template:
 FOOTER="""
 }}} /* namespace uhd::rfnoc::nocscript */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_NOCSCRIPT_BASICFUNCS_HPP */
 """
 
+# Not a Mako template:
 FUNC_TEMPLATE = """
 expression_literal {NAME}(expression_container::expr_list_type &{ARGS})
 {BODY}
 """
 
-REGISTER_MACRO_TEMPLATE = """\#define _REGISTER_ALL_FUNCS()$registry
+REGISTER_MACRO_TEMPLATE = """#define _REGISTER_ALL_FUNCS()${registry}
 """
 
 REGISTER_COMMANDS_TEMPLATE = """
-    #if len($arglist):
+    % if len(arglist):
     expression_function::argtype_list_type ${func_name}_args = boost::assign::list_of
-    #for $this_type in $arglist
+    % for this_type in arglist:
         (expression::TYPE_${this_type})
-    #end for
+    % endfor
     ;
-    #else
+    % else:
     expression_function::argtype_list_type ${func_name}_args;
-    #end if
+    % endif
     register_function(
             "${name}",
             boost::bind(&${func_name}, _1),
@@ -243,7 +259,7 @@ REGISTER_COMMANDS_TEMPLATE = """
     );"""
 
 def parse_tmpl(_tmpl_text, **kwargs):
-    return str(Template(_tmpl_text, kwargs))
+    return Template(_tmpl_text).render(**kwargs)
 
 def make_cxx_func_name(func_dict):
     """
@@ -273,6 +289,7 @@ def make_cxx_func_body(func_dict):
         args=args_lookup,
         FALSE='expression_literal(false)',
         TRUE='expression_literal(true)',
+        RETURN='return expression_literal',
         **func_dict
     )
 
@@ -323,10 +340,10 @@ def write_function_header():
 
     # Final step: Join parts and write to file
     full_file = "\n".join((
-            HEADER,
+            parse_tmpl(HEADER, file = os.path.basename(__file__), INCLUDE_LIST=INCLUDE_LIST),
             func_prototypes,
             register_func,
-            FOOTER
+            FOOTER,
     ))
     open(sys.argv[1], 'w').write(full_file)
 
