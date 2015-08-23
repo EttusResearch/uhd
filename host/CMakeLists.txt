@@ -314,8 +314,6 @@ ENDIF(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
 ########################################################################
 # Add the subdirectories
 ########################################################################
-ADD_SUBDIRECTORY(docs)
-
 IF(ENABLE_LIBUHD)
     ADD_SUBDIRECTORY(lib)
 ENDIF(ENABLE_LIBUHD)
@@ -333,6 +331,8 @@ ENDIF(ENABLE_TESTS)
 IF(ENABLE_UTILS)
     ADD_SUBDIRECTORY(utils)
 ENDIF(ENABLE_UTILS)
+
+ADD_SUBDIRECTORY(docs)
 
 ########################################################################
 # Create Pkg Config File

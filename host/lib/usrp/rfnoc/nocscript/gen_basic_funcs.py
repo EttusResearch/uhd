@@ -12,7 +12,11 @@ from mako.template import Template
 # This is the interesting part: Add new functions in here
 #
 # Notes:
-# - Function signature is RETURN_VALUE NAME(LIST_OF_ARG_TYPES)
+# - Lines starting with # are considered comments, and will be removed from
+#   the output
+# - C++ comments will be copied onto the generated file if inside functions
+# - Docstrings start with //! and are required
+# - Function signature is RETURN_TYPE NAME(ARG_TYPE1, ARG_TYPE2, ...)
 # - Function body is valid C++
 # - If your function requires special includes, put them in INCLUDE_LIST
 # - End of functions is delimited by s/^}/, so take care with the indents!
@@ -25,72 +29,86 @@ INCLUDE_LIST = """
 #include <boost/thread/thread.hpp>
 """
 FUNCTION_LIST = """
-### Math
+CATEGORY: Math Functions
+//! Returns x + y
 INT ADD(INT, INT)
 {
     ${RETURN}(${args[0]} + ${args[1]});
 }
 
+//! Returns x + y
 DOUBLE ADD(DOUBLE, DOUBLE)
 {
     ${RETURN}(${args[0]} + ${args[1]});
 }
 
+//! Returns x * y
 DOUBLE MULT(DOUBLE, DOUBLE)
 {
     ${RETURN}(${args[0]} * ${args[1]});
 }
 
+//! Returns x * y
 INT MULT(INT, INT)
 {
     ${RETURN}(${args[0]} * ${args[1]});
 }
 
+//! Returns true if x <= y (Less or Equal)
 BOOL LE(INT, INT)
 {
     ${RETURN}(bool(${args[0]} <= ${args[1]}));
 }
 
+//! Returns true if x <= y (Less or Equal)
 BOOL LE(DOUBLE, DOUBLE)
 {
     ${RETURN}(bool(${args[0]} <= ${args[1]}));
 }
 
+//! Returns true if x >= y (Greater or Equal)
 BOOL GE(INT, INT)
 {
     ${RETURN}(bool(${args[0]} >= ${args[1]}));
 }
 
+//! Returns true if x >= y (Greater or Equal)
 BOOL GE(DOUBLE, DOUBLE)
 {
     ${RETURN}(bool(${args[0]} >= ${args[1]}));
 }
 
+//! Returns true if x < y (Less Than)
 BOOL LT(INT, INT)
 {
     ${RETURN}(bool(${args[0]} < ${args[1]}));
 }
 
+//! Returns true if x > y (Greater Than)
 BOOL GT(INT, INT)
 {
     ${RETURN}(bool(${args[0]} > ${args[1]}));
 }
 
+//! Returns true if x < y (Less Than)
 BOOL LT(DOUBLE, DOUBLE)
 {
     ${RETURN}(bool(${args[0]} < ${args[1]}));
 }
 
+//! Returns true if x > y (Greater Than)
 BOOL GT(DOUBLE, DOUBLE)
 {
     ${RETURN}(bool(${args[0]} > ${args[1]}));
 }
 
+//! Round x and return it as an integer
 INT IROUND(DOUBLE)
 {
     ${RETURN}(int(boost::math::iround(${args[0]})));
 }
 
+//! Returns true if x is a power of 2
 BOOL IS_PWR_OF_2(INT)
 {
     if (${args[0]} < 0) return ${FALSE};
@@ -101,11 +119,12 @@ BOOL IS_PWR_OF_2(INT)
     ${RETURN}(bool(i == 1));
 }
 
+//! Returns floor(log2(x)).
 INT LOG2(INT)
 {
     if (${args[0]} < 0) {
         throw uhd::runtime_error(str(
-            boost::format("In NoCScript function ${func_name}: Cannot calculate log2() of negative number.")
+            boost::format("In NocScript function ${func_name}: Cannot calculate log2() of negative number.")
         ));
     }
 
@@ -118,43 +137,51 @@ INT LOG2(INT)
     ${RETURN}(log2_value);
 }
 
+//! Returns true if x == y
 BOOL EQUAL(INT, INT)
 {
     ${RETURN}(bool(${args[0]} == ${args[1]}));
 }
 
+//! Returns true if x == y
 BOOL EQUAL(DOUBLE, DOUBLE)
 {
     ${RETURN}(bool(${args[0]} == ${args[1]}));
 }
 
+//! Returns true if x == y
 BOOL EQUAL(STRING, STRING)
 {
     ${RETURN}(bool(${args[0]} == ${args[1]}));
 }
 
-### Boolean Logic
+CATEGORY: Boolean Logic
+//! Returns x xor y.
 BOOL XOR(BOOL, BOOL)
 {
     ${RETURN}(${args[0]} xor ${args[1]});
 }
 
+//! Returns !x
 BOOL NOT(BOOL)
 {
     ${RETURN}(not ${args[0]});
 }
 
+//! Always returns true
 BOOL TRUE()
 {
     return ${TRUE};
 }
 
+//! Always returns false
 BOOL FALSE()
 {
     return ${FALSE};
 }
 
-### Conditional Execution
+CATEGORY: Conditional Execution
+//! Executes x, if true, execute y. Returns true if x is true.
 BOOL IF(BOOL, BOOL)
 {
     if (${args[0]}) {
@@ -164,6 +191,7 @@ BOOL IF(BOOL, BOOL)
     ${RETURN}(false);
 }
 
+//! Executes x, if true, execute y, otherwise, execute z. Returns true if x is true.
 BOOL IF_ELSE(BOOL, BOOL, BOOL)
 {
     if (${args[0]}) {
@@ -175,7 +203,8 @@ BOOL IF_ELSE(BOOL, BOOL, BOOL)
     ${RETURN}(false);
 }
 
-### Execution Control
+CATEGORY: Execution Control
+//! Sleep for x seconds. Fractions are allowed. Millisecond accuracy.
 BOOL SLEEP(DOUBLE)
 {
     int ms = ${args[0]} / 1000;
@@ -258,6 +287,20 @@ REGISTER_COMMANDS_TEMPLATE = """
             ${func_name}_args
     );"""
 
+DOXY_TEMPLATE = """/*! \page page_nocscript_funcs NocScript Function Reference
+% for cat, func_by_name in func_list_tree.iteritems():
+- ${cat}
+%   for func_name, func_info_list in func_by_name.iteritems():
+  - ${func_name}: ${func_info_list[0]['docstring']}
+%     for func_info in func_info_list:
+    - ${func_info['arglist']} -> ${func_info['retval']}
+%     endfor
+%   endfor
+% endfor
+
+*/
+"""
+
 def parse_tmpl(_tmpl_text, **kwargs):
     return Template(_tmpl_text).render(**kwargs)
 
@@ -305,21 +348,33 @@ def prep_function_list():
     func_list_split = func_splitter_re.split(func_list_wo_comments)
     func_list_split = [x.strip() for x in func_list_split if len(x.strip())]
     func_list = []
+    last_category = ''
     for func in func_list_split:
-        split_regex = r'(?P<retval>[A-Z][A-Z0-9_]*)\s+(?P<funcname>[A-Z][A-Z0-9_]*)\s*\((?P<arglist>[^\)]*)\)\s*(?P<funcbody>^{.*)'
+        split_regex = r'(^CATEGORY: (?P<cat>[^\n]*)\s*)?' \
+                      r'//!(?P<docstring>[^\n]*)\s*' + \
+                      r'(?P<retval>[A-Z][A-Z0-9_]*)\s+' + \
+                      r'(?P<funcname>[A-Z][A-Z0-9_]*)\s*\((?P<arglist>[^\)]*)\)\s*' + \
+                      r'(?P<funcbody>^{.*)'
         split_re = re.compile(split_regex, flags=re.MULTILINE|re.DOTALL)
         mo = split_re.match(func)
+        if mo.group('cat'):
+            last_category = mo.group('cat').strip()
         func_dict = {
+            'docstring': mo.group('docstring').strip(),
             'name': mo.group('funcname'),
             'retval': mo.group('retval'),
             'arglist': [x.strip() for x in mo.group('arglist').split(',') if len(x.strip())],
             'body': mo.group('funcbody'),
+            'category': last_category,
         }
         func_dict['func_name'] = make_cxx_func_name(func_dict)
         func_list.append(func_dict)
     return func_list
 
-def write_function_header():
+def write_function_header(output_filename):
+    """
+    Create the .hpp file that defines all the NocScript functions in C++.
+    """
     func_list = prep_function_list()
     # Step 1: Write the prototypes
     func_prototypes = ''
@@ -345,10 +400,33 @@ def write_function_header():
             register_func,
             FOOTER,
     ))
-    open(sys.argv[1], 'w').write(full_file)
+    open(output_filename, 'w').write(full_file)
+
+def write_manual_file(output_filename):
+    """
+    Write the Doxygen file for the NocScript functions.
+    """
+    func_list = prep_function_list()
+    func_list_tree = {}
+    for func in func_list:
+        if not func_list_tree.has_key(func['category']):
+            func_list_tree[func['category']] = {}
+        if not func_list_tree[func['category']].has_key(func['name']):
+            func_list_tree[func['category']][func['name']] = []
+        func_list_tree[func['category']][func['name']].append(func)
+    print 'woooooooohoooooooooooo'
+    open(output_filename, 'w').write(parse_tmpl(DOXY_TEMPLATE, func_list_tree=func_list_tree))
+
 
 def main():
-    write_function_header()
+    if len(sys.argv) < 2:
+        print("No output file specified!")
+        exit(1)
+    outfile = sys.argv[1]
+    if os.path.splitext(outfile)[1] == '.dox':
+        write_manual_file(outfile)
+    else:
+        write_function_header(outfile)
 
 if __name__ == "__main__":
     main()
