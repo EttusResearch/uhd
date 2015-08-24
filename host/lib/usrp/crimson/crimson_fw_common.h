@@ -84,6 +84,11 @@ extern "C" {
 #define CRIMSON_FREQ_RANGE_STOP		6000000000.0
 #define CRIMSON_FREQ_RANGE_STEP		1.0
 
+// Crimson DSP Freq Settings
+#define CRIMSON_DSP_FREQ_RANGE_START	0.0
+#define CRIMSON_DSP_FREQ_RANGE_STOP	161000000.0
+#define CRIMSON_DSP_FREQ_RANGE_STEP	1.0
+
 // Crimson Clk Settings
 #define CRIMSON_MASTER_CLOCK_RATE	322265625
 #define CRIMSON_EXT_CLK_RATE		10000000	// only 10 MHz input sources allowed

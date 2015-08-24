@@ -556,37 +556,35 @@ crimson_impl::crimson_impl(const device_addr_t &dev_addr)
 	TREE_CREATE_ST(rx_dsp_path / "rate" / "range", meta_range_t,
 		meta_range_t(CRIMSON_RATE_RANGE_START, CRIMSON_RATE_RANGE_STOP, CRIMSON_RATE_RANGE_STEP));
 	TREE_CREATE_ST(rx_dsp_path / "freq" / "range", meta_range_t,
-		meta_range_t(CRIMSON_FREQ_RANGE_START, CRIMSON_FREQ_RANGE_STOP, CRIMSON_FREQ_RANGE_STEP));
+		meta_range_t(CRIMSON_DSP_FREQ_RANGE_START, CRIMSON_DSP_FREQ_RANGE_STOP, CRIMSON_DSP_FREQ_RANGE_STEP));
 	TREE_CREATE_ST(rx_dsp_path / "bw" / "range",   meta_range_t,
 		meta_range_t(CRIMSON_RATE_RANGE_START, CRIMSON_RATE_RANGE_STOP, CRIMSON_RATE_RANGE_STEP));
 	TREE_CREATE_ST(tx_dsp_path / "rate" / "range", meta_range_t,
 		meta_range_t(CRIMSON_RATE_RANGE_START, CRIMSON_RATE_RANGE_STOP, CRIMSON_RATE_RANGE_STEP));
 	TREE_CREATE_ST(tx_dsp_path / "freq" / "range", meta_range_t,
-		meta_range_t(CRIMSON_FREQ_RANGE_START, CRIMSON_FREQ_RANGE_STOP, CRIMSON_FREQ_RANGE_STEP));
+		meta_range_t(CRIMSON_DSP_FREQ_RANGE_START, CRIMSON_DSP_FREQ_RANGE_STOP, CRIMSON_DSP_FREQ_RANGE_STEP));
 	TREE_CREATE_ST(tx_dsp_path / "bw" / "range",   meta_range_t,
 		meta_range_t(CRIMSON_RATE_RANGE_START, CRIMSON_RATE_RANGE_STOP, CRIMSON_RATE_RANGE_STEP));
 
-	TREE_CREATE_RW(rx_dsp_path / "rate" / "value", "rx_"+lc_num+"/dsp/rate", double, double);
-	TREE_CREATE_RW(rx_dsp_path / "freq" / "value", "rx_"+lc_num+"/dsp/freq", double, double);
-	TREE_CREATE_RW(rx_dsp_path / "bw" / "value",   "rx_"+lc_num+"/dsp/rate", double, double);
+	TREE_CREATE_RW(rx_dsp_path / "rate" / "value", "rx_"+lc_num+"/dsp/rate",    double, double);
+	TREE_CREATE_RW(rx_dsp_path / "freq" / "value", "rx_"+lc_num+"/dsp/nco_adj", double, double);
+	TREE_CREATE_RW(rx_dsp_path / "bw" / "value",   "rx_"+lc_num+"/dsp/rate",    double, double);
 	//TREE_CREATE_ST(rx_dsp_path / "stream_cmd",     stream_cmd_t, (stream_cmd_t)0);
 
-	TREE_CREATE_RW(tx_dsp_path / "rate" / "value", "tx_"+lc_num+"/dsp/rate", double, double);
-	TREE_CREATE_RW(tx_dsp_path / "freq" / "value", "tx_"+lc_num+"/dsp/freq", double, double);
-	TREE_CREATE_RW(tx_dsp_path / "bw" / "value",   "tx_"+lc_num+"/dsp/rate", double, double);
+	TREE_CREATE_RW(tx_dsp_path / "rate" / "value", "tx_"+lc_num+"/dsp/rate",    double, double);
+	TREE_CREATE_RW(tx_dsp_path / "freq" / "value", "tx_"+lc_num+"/dsp/nco_adj", double, double);
+	TREE_CREATE_RW(tx_dsp_path / "bw" / "value",   "tx_"+lc_num+"/dsp/rate",    double, double);
 
 	TREE_CREATE_RW(rx_dsp_path / "nco", "rx_"+lc_num+"/dsp/nco_adj", int, int);
 	TREE_CREATE_RW(tx_dsp_path / "nco", "tx_"+lc_num+"/dsp/nco_adj", int, int);
 	TREE_CREATE_RW(tx_fe_path / "nco", "tx_"+lc_num+"/rf/dac/nco", int, int);
 
 	// Link settings
-	TREE_CREATE_RW(rx_link_path / "enable",  "rx_"+lc_num+"/link/enable",  std::string, string);
 	TREE_CREATE_RW(rx_link_path / "vita_en", "rx_"+lc_num+"/link/vita_en", std::string, string);
 	TREE_CREATE_RW(rx_link_path / "ip_dest", "rx_"+lc_num+"/link/ip_dest", std::string, string);
 	TREE_CREATE_RW(rx_link_path / "port",    "rx_"+lc_num+"/link/port",    std::string, string);
 	TREE_CREATE_RW(rx_link_path / "iface",   "rx_"+lc_num+"/link/iface",   std::string, string);
 
-	TREE_CREATE_RW(tx_link_path / "enable",  "tx_"+lc_num+"/link/enable",  std::string, string);
 	TREE_CREATE_RW(tx_link_path / "vita_en", "tx_"+lc_num+"/link/vita_en", std::string, string);
 	TREE_CREATE_RW(tx_link_path / "port",    "tx_"+lc_num+"/link/port",    std::string, string);
 	TREE_CREATE_RW(tx_link_path / "iface",   "tx_"+lc_num+"/link/iface",   std::string, string);
