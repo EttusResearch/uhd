@@ -91,6 +91,12 @@ namespace uhd{
             const std::string &unit
         );
 
+        /*!
+         * Create a sensor value from another sensor value.
+         * \param source the source sensor value to copy
+         */
+        sensor_value_t(const sensor_value_t& source);
+
         //! convert the sensor value to a boolean
         bool to_bool(void) const;
 
@@ -101,21 +107,21 @@ namespace uhd{
         double to_real(void) const;
 
         //! The name of the sensor value
-        const std::string name;
+        std::string name;
 
         /*!
          * The sensor value as a string.
          * For integer and real number types, this will be the output of the formatter.
          * For boolean types, the value will be the string literal "true" or "false".
          */
-        const std::string value;
+        std::string value;
 
         /*!
          * The sensor value's unit type.
          * For boolean types, this will be the one of the two units
          * depending upon the value of the boolean true or false.
          */
-        const std::string unit;
+        std::string unit;
 
         //! Enumeration of possible data types in a sensor
         enum data_type_t {
@@ -126,10 +132,13 @@ namespace uhd{
         };
 
         //! The data type of the value
-        const data_type_t type;
+        data_type_t type;
 
         //! Convert this sensor value into a printable string
         std::string to_pp_string(void) const;
+
+        //! Assignment operator for sensor value
+        sensor_value_t& operator=(const sensor_value_t& value);
     };
 
 } //namespace uhd
