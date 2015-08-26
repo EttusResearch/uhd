@@ -88,7 +88,7 @@ wbx_simple::wbx_simple(ctor_args_t args) : wbx_base(args){
         std::string(str(boost::format("%s+GDB") % this->get_rx_subtree()->access<std::string>("name").get()
     )));
     this->get_rx_subtree()->create<std::string>("antenna/value")
-        .subscribe(boost::bind(&wbx_simple::set_rx_ant, this, _1))
+        .add_coerced_subscriber(boost::bind(&wbx_simple::set_rx_ant, this, _1))
         .set("RX2");
     this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
         .set(wbx_rx_antennas);
@@ -100,7 +100,7 @@ wbx_simple::wbx_simple(ctor_args_t args) : wbx_base(args){
         std::string(str(boost::format("%s+GDB") % this->get_tx_subtree()->access<std::string>("name").get()
     )));
     this->get_tx_subtree()->create<std::string>("antenna/value")
-        .subscribe(boost::bind(&wbx_simple::set_tx_ant, this, _1))
+        .add_coerced_subscriber(boost::bind(&wbx_simple::set_tx_ant, this, _1))
         .set(wbx_tx_antennas.at(0));
     this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
         .set(wbx_tx_antennas);

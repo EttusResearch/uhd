@@ -83,15 +83,15 @@ public:
     {
         subtree->create<std::complex<double> >("dc_offset/value")
             .set(DEFAULT_DC_OFFSET_VALUE)
-            .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, this, _1))
+            .set_coercer(boost::bind(&rx_frontend_core_200::set_dc_offset, this, _1))
         ;
         subtree->create<bool>("dc_offset/enable")
             .set(DEFAULT_DC_OFFSET_ENABLE)
-            .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, this, _1))
+            .add_coerced_subscriber(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, this, _1))
         ;
         subtree->create<std::complex<double> >("iq_balance/value")
             .set(DEFAULT_IQ_BALANCE_VALUE)
-            .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, this, _1))
+            .add_coerced_subscriber(boost::bind(&rx_frontend_core_200::set_iq_balance, this, _1))
         ;
     }
 

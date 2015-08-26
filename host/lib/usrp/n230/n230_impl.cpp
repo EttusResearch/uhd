@@ -314,7 +314,7 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
     //------------------------------------------------------------------
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(_eeprom_mgr->get_mb_eeprom())  //Set first...
-        .subscribe(boost::bind(&n230_eeprom_manager::write_mb_eeprom, _eeprom_mgr, _1));  //..then enable writer
+        .add_coerced_subscriber(boost::bind(&n230_eeprom_manager::write_mb_eeprom, _eeprom_mgr, _1));  //..then enable writer
 
     //------------------------------------------------------------------
     // Create codec nodes
@@ -333,22 +333,22 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
     // Create clock and time control nodes
     //------------------------------------------------------------------
     _tree->create<double>(mb_path / "tick_rate")
-        .coerce(boost::bind(&n230_clk_pps_ctrl::set_tick_rate, _resource_mgr->get_clk_pps_ctrl_sptr(), _1))
-        .publish(boost::bind(&n230_clk_pps_ctrl::get_tick_rate, _resource_mgr->get_clk_pps_ctrl_sptr()))
-        .subscribe(boost::bind(&n230_stream_manager::update_tick_rate, _stream_mgr, _1));
+        .set_coercer(boost::bind(&n230_clk_pps_ctrl::set_tick_rate, _resource_mgr->get_clk_pps_ctrl_sptr(), _1))
+        .set_publisher(boost::bind(&n230_clk_pps_ctrl::get_tick_rate, _resource_mgr->get_clk_pps_ctrl_sptr()))
+        .add_coerced_subscriber(boost::bind(&n230_stream_manager::update_tick_rate, _stream_mgr, _1));
 
     //Register time now and pps onto available radio cores
     //radio0 is the master
     _tree->create<time_spec_t>(mb_path / "time" / "cmd");
     _tree->create<time_spec_t>(mb_path / "time" / "now")
-        .publish(boost::bind(&time_core_3000::get_time_now, _resource_mgr->get_radio(0).time));
+        .set_publisher(boost::bind(&time_core_3000::get_time_now, _resource_mgr->get_radio(0).time));
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
-        .publish(boost::bind(&time_core_3000::get_time_last_pps, _resource_mgr->get_radio(0).time));
+        .set_publisher(boost::bind(&time_core_3000::get_time_last_pps, _resource_mgr->get_radio(0).time));
 
     //Setup time source props
     _tree->create<std::string>(mb_path / "time_source" / "value")
-        .subscribe(boost::bind(&n230_impl::_check_time_source, this, _1))
-        .subscribe(boost::bind(&n230_clk_pps_ctrl::set_pps_source, _resource_mgr->get_clk_pps_ctrl_sptr(), _1))
+        .add_coerced_subscriber(boost::bind(&n230_impl::_check_time_source, this, _1))
+        .add_coerced_subscriber(boost::bind(&n230_clk_pps_ctrl::set_pps_source, _resource_mgr->get_clk_pps_ctrl_sptr(), _1))
         .set(n230::DEFAULT_TIME_SRC);
     static const std::vector<std::string> time_sources = boost::assign::list_of("none")("external")("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options")
@@ -356,24 +356,24 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
 
     //Setup reference source props
     _tree->create<std::string>(mb_path / "clock_source" / "value")
-        .subscribe(boost::bind(&n230_impl::_check_clock_source, this, _1))
-        .subscribe(boost::bind(&n230_clk_pps_ctrl::set_clock_source, _resource_mgr->get_clk_pps_ctrl_sptr(), _1))
+        .add_coerced_subscriber(boost::bind(&n230_impl::_check_clock_source, this, _1))
+        .add_coerced_subscriber(boost::bind(&n230_clk_pps_ctrl::set_clock_source, _resource_mgr->get_clk_pps_ctrl_sptr(), _1))
         .set(n230::DEFAULT_CLOCK_SRC);
     static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options")
         .set(clock_sources);
     _tree->create<sensor_value_t>(mb_path / "sensors" / "ref_locked")
-        .publish(boost::bind(&n230_clk_pps_ctrl::get_ref_locked, _resource_mgr->get_clk_pps_ctrl_sptr()));
+        .set_publisher(boost::bind(&n230_clk_pps_ctrl::get_ref_locked, _resource_mgr->get_clk_pps_ctrl_sptr()));
 
     //------------------------------------------------------------------
     // Create frontend mapping
     //------------------------------------------------------------------
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
         .set(subdev_spec_t())
-        .subscribe(boost::bind(&n230_impl::_update_rx_subdev_spec, this, _1));
+        .add_coerced_subscriber(boost::bind(&n230_impl::_update_rx_subdev_spec, this, _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
         .set(subdev_spec_t())
-        .subscribe(boost::bind(&n230_impl::_update_tx_subdev_spec, this, _1));
+        .add_coerced_subscriber(boost::bind(&n230_impl::_update_tx_subdev_spec, this, _1));
 
     //------------------------------------------------------------------
     // Create a fake dboard to put frontends in
@@ -413,24 +413,24 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
     //------------------------------------------------------------------
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "DDR")
         .set(0)
-        .subscribe(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
+        .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
             _resource_mgr->get_minisas_gpio_ctrl_sptr(0), gpio_atr::GPIO_DDR, _1));
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP1" / "DDR")
         .set(0)
-        .subscribe(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
+        .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
             _resource_mgr->get_minisas_gpio_ctrl_sptr(1), gpio_atr::GPIO_DDR, _1));
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "OUT")
         .set(0)
-        .subscribe(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
+        .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
             _resource_mgr->get_minisas_gpio_ctrl_sptr(0), gpio_atr::GPIO_OUT, _1));
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP1" / "OUT")
         .set(0)
-        .subscribe(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
+        .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
             _resource_mgr->get_minisas_gpio_ctrl_sptr(1), gpio_atr::GPIO_OUT, _1));
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
-        .publish(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(0)));
+        .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(0)));
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP1" / "READBACK")
-        .publish(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(1)));
+        .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(1)));
 
     //------------------------------------------------------------------
     // GPSDO sensors
@@ -440,7 +440,7 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
         BOOST_FOREACH(const std::string &name, gps_ctrl->get_sensors())
         {
             _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                .publish(boost::bind(&gps_ctrl::get_sensor, gps_ctrl, name));
+                .set_publisher(boost::bind(&gps_ctrl::get_sensor, gps_ctrl, name));
         }
     }
 }
@@ -454,48 +454,48 @@ void n230_impl::_initialize_radio_properties(const fs_path& mb_path, size_t inst
 
     //Time
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
-        .subscribe(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
+        .add_coerced_subscriber(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
+        .add_coerced_subscriber(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
     _tree->access<time_spec_t>(mb_path / "time" / "now")
-        .subscribe(boost::bind(&time_core_3000::set_time_now, perif.time, _1));
+        .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_now, perif.time, _1));
     _tree->access<time_spec_t>(mb_path / "time" / "pps")
-        .subscribe(boost::bind(&time_core_3000::set_time_next_pps, perif.time, _1));
+        .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_next_pps, perif.time, _1));
 
     //RX DSP
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
-        .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
+        .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
+        .add_coerced_subscriber(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / str(boost::format("%u") % instance);
     _tree->create<meta_range_t>(rx_dsp_path / "rate" / "range")
-        .publish(boost::bind(&rx_dsp_core_3000::get_host_rates, perif.ddc));
+        .set_publisher(boost::bind(&rx_dsp_core_3000::get_host_rates, perif.ddc));
     _tree->create<double>(rx_dsp_path / "rate" / "value")
-        .coerce(boost::bind(&rx_dsp_core_3000::set_host_rate, perif.ddc, _1))
-        .subscribe(boost::bind(&n230_stream_manager::update_rx_samp_rate, _stream_mgr, instance, _1))
+        .set_coercer(boost::bind(&rx_dsp_core_3000::set_host_rate, perif.ddc, _1))
+        .add_coerced_subscriber(boost::bind(&n230_stream_manager::update_rx_samp_rate, _stream_mgr, instance, _1))
         .set(n230::DEFAULT_RX_SAMP_RATE);
     _tree->create<double>(rx_dsp_path / "freq" / "value")
-        .coerce(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
+        .set_coercer(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
         .set(n230::DEFAULT_DDC_FREQ);
     _tree->create<meta_range_t>(rx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&rx_dsp_core_3000::get_freq_range, perif.ddc));
+        .set_publisher(boost::bind(&rx_dsp_core_3000::get_freq_range, perif.ddc));
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
-        .subscribe(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
+        .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
 
     //TX DSP
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
+        .add_coerced_subscriber(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / str(boost::format("%u") % instance);
     _tree->create<meta_range_t>(tx_dsp_path / "rate" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, perif.duc));
+        .set_publisher(boost::bind(&tx_dsp_core_3000::get_host_rates, perif.duc));
     _tree->create<double>(tx_dsp_path / "rate" / "value")
-        .coerce(boost::bind(&tx_dsp_core_3000::set_host_rate, perif.duc, _1))
-        .subscribe(boost::bind(&n230_stream_manager::update_tx_samp_rate, _stream_mgr, instance, _1))
+        .set_coercer(boost::bind(&tx_dsp_core_3000::set_host_rate, perif.duc, _1))
+        .add_coerced_subscriber(boost::bind(&n230_stream_manager::update_tx_samp_rate, _stream_mgr, instance, _1))
         .set(n230::DEFAULT_TX_SAMP_RATE);
     _tree->create<double>(tx_dsp_path / "freq" / "value")
-        .coerce(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
+        .set_coercer(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
         .set(n230::DEFAULT_DUC_FREQ);
     _tree->create<meta_range_t>(tx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc));
+        .set_publisher(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc));
 
     //RF Frontend Interfacing
     static const std::vector<direction_t> data_directions = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
@@ -517,7 +517,7 @@ void n230_impl::_initialize_radio_properties(const fs_path& mb_path, size_t inst
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options")
                 .set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
-                .subscribe(boost::bind(&n230_frontend_ctrl::set_antenna_sel, _resource_mgr->get_frontend_ctrl_sptr(), instance, _1))
+                .add_coerced_subscriber(boost::bind(&n230_frontend_ctrl::set_antenna_sel, _resource_mgr->get_frontend_ctrl_sptr(), instance, _1))
                 .set("RX2");
         }
         if (key[0] == 'T') {

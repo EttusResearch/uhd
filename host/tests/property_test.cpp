@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(test_prop_with_subscriber){
     uhd::property<int> &prop = tree->create<int>("/");
 
     setter_type setter;
-    prop.subscribe(boost::bind(&setter_type::doit, &setter, _1));
+    prop.add_coerced_subscriber(boost::bind(&setter_type::doit, &setter, _1));
 
     prop.set(42);
     BOOST_CHECK_EQUAL(prop.get(), 42);
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(test_prop_with_publisher){
 
     BOOST_CHECK(prop.empty());
     getter_type getter;
-    prop.publish(boost::bind(&getter_type::doit, &getter));
+    prop.set_publisher(boost::bind(&getter_type::doit, &getter));
     BOOST_CHECK(not prop.empty());
 
     getter._x = 42;
@@ -96,10 +96,10 @@ BOOST_AUTO_TEST_CASE(test_prop_with_publisher_and_subscriber){
     uhd::property<int> &prop = tree->create<int>("/");
 
     getter_type getter;
-    prop.publish(boost::bind(&getter_type::doit, &getter));
+    prop.set_publisher(boost::bind(&getter_type::doit, &getter));
 
     setter_type setter;
-    prop.subscribe(boost::bind(&setter_type::doit, &setter, _1));
+    prop.add_coerced_subscriber(boost::bind(&setter_type::doit, &setter, _1));
 
     getter._x = 42;
     prop.set(0);
@@ -117,10 +117,10 @@ BOOST_AUTO_TEST_CASE(test_prop_with_coercion){
     uhd::property<int> &prop = tree->create<int>("/");
 
     setter_type setter;
-    prop.subscribe(boost::bind(&setter_type::doit, &setter, _1));
+    prop.add_coerced_subscriber(boost::bind(&setter_type::doit, &setter, _1));
 
     coercer_type coercer;
-    prop.coerce(boost::bind(&coercer_type::doit, &coercer, _1));
+    prop.set_coercer(boost::bind(&coercer_type::doit, &coercer, _1));
 
     prop.set(42);
     BOOST_CHECK_EQUAL(prop.get(), 40);

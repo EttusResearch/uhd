@@ -180,18 +180,18 @@ public:
     void populate_subtree(property_tree::sptr subtree)
     {
         subtree->create<meta_range_t>("rate/range")
-            .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, this))
+            .set_publisher(boost::bind(&tx_dsp_core_3000::get_host_rates, this))
         ;
         subtree->create<double>("rate/value")
             .set(DEFAULT_RATE)
-            .coerce(boost::bind(&tx_dsp_core_3000::set_host_rate, this, _1))
+            .set_coercer(boost::bind(&tx_dsp_core_3000::set_host_rate, this, _1))
         ;
         subtree->create<double>("freq/value")
             .set(DEFAULT_CORDIC_FREQ)
-            .coerce(boost::bind(&tx_dsp_core_3000::set_freq, this, _1))
+            .set_coercer(boost::bind(&tx_dsp_core_3000::set_freq, this, _1))
         ;
         subtree->create<meta_range_t>("freq/range")
-            .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, this))
+            .set_publisher(boost::bind(&tx_dsp_core_3000::get_freq_range, this))
         ;
     }
 

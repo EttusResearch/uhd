@@ -42,31 +42,38 @@ public:
      * Register a coercer into the property.
      * A coercer is a special subscriber that coerces the value.
      * Only one coercer may be registered per property.
-     * Registering a coercer replaces the previous coercer.
      * \param coercer the coercer callback function
      * \return a reference to this property for chaining
      */
-    virtual property<T> &coerce(const coercer_type &coercer) = 0;
+    virtual property<T> &set_coercer(const coercer_type &coercer) = 0;
 
     /*!
      * Register a publisher into the property.
      * A publisher is a special callback the provides the value.
      * Publishers are useful for creating read-only properties.
      * Only one publisher may be registered per property.
-     * Registering a publisher replaces the previous publisher.
      * \param publisher the publisher callback function
      * \return a reference to this property for chaining
      */
-    virtual property<T> &publish(const publisher_type &publisher) = 0;
+    virtual property<T> &set_publisher(const publisher_type &publisher) = 0;
 
     /*!
      * Register a subscriber into the property.
-     * All subscribers are called when the value changes.
+     * All desired subscribers are called when the value changes.
      * Once a subscriber is registered, it cannot be unregistered.
      * \param subscriber the subscriber callback function
      * \return a reference to this property for chaining
      */
-    virtual property<T> &subscribe(const subscriber_type &subscriber) = 0;
+    virtual property<T> &add_desired_subscriber(const subscriber_type &subscriber) = 0;
+
+    /*!
+     * Register a subscriber into the property.
+     * All coerced subscribers are called when the value changes.
+     * Once a subscriber is registered, it cannot be unregistered.
+     * \param subscriber the subscriber callback function
+     * \return a reference to this property for chaining
+     */
+    virtual property<T> &add_coerced_subscriber(const subscriber_type &subscriber) = 0;
 
     /*!
      * Update calls all subscribers w/ the current value.
@@ -89,7 +96,14 @@ public:
      * otherwise an internal shadow is used for the value.
      * \return the current value in the property
      */
-    virtual T get(void) const = 0;
+    virtual const T get(void) const = 0;
+
+    /*!
+     * Get the current desired value of this property.
+     * A desired value does not defined if a property has a publisher.
+     * \return the current desired value in the property
+     */
+    virtual const T get_desired(void) const = 0;
 
     /*!
      * A property is empty if it has never been set.

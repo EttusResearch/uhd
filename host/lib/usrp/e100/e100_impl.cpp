@@ -217,20 +217,20 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(mb_eeprom)
-        .subscribe(boost::bind(&e100_impl::set_mb_eeprom, this, _1));
+        .add_coerced_subscriber(boost::bind(&e100_impl::set_mb_eeprom, this, _1));
 
     ////////////////////////////////////////////////////////////////////
     // create clock control objects
     ////////////////////////////////////////////////////////////////////
     //^^^ clock created up top, just reg props here... ^^^
     _tree->create<double>(mb_path / "tick_rate")
-        .publish(boost::bind(&e100_clock_ctrl::get_fpga_clock_rate, _clock_ctrl))
-        .subscribe(boost::bind(&fifo_ctrl_excelsior::set_tick_rate, _fifo_ctrl, _1))
-        .subscribe(boost::bind(&e100_impl::update_tick_rate, this, _1));
+        .set_publisher(boost::bind(&e100_clock_ctrl::get_fpga_clock_rate, _clock_ctrl))
+        .add_coerced_subscriber(boost::bind(&fifo_ctrl_excelsior::set_tick_rate, _fifo_ctrl, _1))
+        .add_coerced_subscriber(boost::bind(&e100_impl::update_tick_rate, this, _1));
 
-    //subscribe the command time while we are at it
+    //add_coerced_subscriber the command time while we are at it
     _tree->create<time_spec_t>(mb_path / "time/cmd")
-        .subscribe(boost::bind(&fifo_ctrl_excelsior::set_time, _fifo_ctrl, _1));
+        .add_coerced_subscriber(boost::bind(&fifo_ctrl_excelsior::set_time, _fifo_ctrl, _1));
 
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
@@ -241,18 +241,18 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tree->create<std::string>(rx_codec_path / "name").set("ad9522");
     _tree->create<meta_range_t>(rx_codec_path / "gains/pga/range").set(e100_codec_ctrl::rx_pga_gain_range);
     _tree->create<double>(rx_codec_path / "gains/pga/value")
-        .coerce(boost::bind(&e100_impl::update_rx_codec_gain, this, _1));
+        .set_coercer(boost::bind(&e100_impl::update_rx_codec_gain, this, _1));
     _tree->create<std::string>(tx_codec_path / "name").set("ad9522");
     _tree->create<meta_range_t>(tx_codec_path / "gains/pga/range").set(e100_codec_ctrl::tx_pga_gain_range);
     _tree->create<double>(tx_codec_path / "gains/pga/value")
-        .subscribe(boost::bind(&e100_codec_ctrl::set_tx_pga_gain, _codec_ctrl, _1))
-        .publish(boost::bind(&e100_codec_ctrl::get_tx_pga_gain, _codec_ctrl));
+        .add_coerced_subscriber(boost::bind(&e100_codec_ctrl::set_tx_pga_gain, _codec_ctrl, _1))
+        .set_publisher(boost::bind(&e100_codec_ctrl::get_tx_pga_gain, _codec_ctrl));
 
     ////////////////////////////////////////////////////////////////////
     // and do the misc mboard sensors
     ////////////////////////////////////////////////////////////////////
     _tree->create<sensor_value_t>(mb_path / "sensors/ref_locked")
-        .publish(boost::bind(&e100_impl::get_ref_locked, this));
+        .set_publisher(boost::bind(&e100_impl::get_ref_locked, this));
 
     ////////////////////////////////////////////////////////////////////
     // Create the GPSDO control
@@ -272,7 +272,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
             BOOST_FOREACH(const std::string &name, _gps->get_sensors())
             {
                 _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                    .publish(boost::bind(&gps_ctrl::get_sensor, _gps, name));
+                    .set_publisher(boost::bind(&gps_ctrl::get_sensor, _gps, name));
             }
         }
         else
@@ -288,27 +288,27 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _tx_fe = tx_frontend_core_200::make(_fifo_ctrl, TOREG(SR_TX_FE));
 
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
-        .subscribe(boost::bind(&e100_impl::update_rx_subdev_spec, this, _1));
+        .add_coerced_subscriber(boost::bind(&e100_impl::update_rx_subdev_spec, this, _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
-        .subscribe(boost::bind(&e100_impl::update_tx_subdev_spec, this, _1));
+        .add_coerced_subscriber(boost::bind(&e100_impl::update_tx_subdev_spec, this, _1));
 
     const fs_path rx_fe_path = mb_path / "rx_frontends" / "A";
     const fs_path tx_fe_path = mb_path / "tx_frontends" / "A";
 
     _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
-        .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, _rx_fe, _1))
+        .set_coercer(boost::bind(&rx_frontend_core_200::set_dc_offset, _rx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
     _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
-        .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, _rx_fe, _1))
+        .add_coerced_subscriber(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, _rx_fe, _1))
         .set(true);
     _tree->create<std::complex<double> >(rx_fe_path / "iq_balance" / "value")
-        .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, _rx_fe, _1))
+        .add_coerced_subscriber(boost::bind(&rx_frontend_core_200::set_iq_balance, _rx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
     _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
-        .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, _tx_fe, _1))
+        .set_coercer(boost::bind(&tx_frontend_core_200::set_dc_offset, _tx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
     _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
-        .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, _tx_fe, _1))
+        .add_coerced_subscriber(boost::bind(&tx_frontend_core_200::set_iq_balance, _tx_fe, _1))
         .set(std::complex<double>(0.0, 0.0));
 
     ////////////////////////////////////////////////////////////////////
@@ -327,20 +327,20 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
 
         _rx_dsps[dspno]->set_link_rate(E100_RX_LINK_RATE_BPS);
         _tree->access<double>(mb_path / "tick_rate")
-            .subscribe(boost::bind(&rx_dsp_core_200::set_tick_rate, _rx_dsps[dspno], _1));
+            .add_coerced_subscriber(boost::bind(&rx_dsp_core_200::set_tick_rate, _rx_dsps[dspno], _1));
         fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
         _tree->create<meta_range_t>(rx_dsp_path / "rate/range")
-            .publish(boost::bind(&rx_dsp_core_200::get_host_rates, _rx_dsps[dspno]));
+            .set_publisher(boost::bind(&rx_dsp_core_200::get_host_rates, _rx_dsps[dspno]));
         _tree->create<double>(rx_dsp_path / "rate/value")
             .set(1e6) //some default
-            .coerce(boost::bind(&rx_dsp_core_200::set_host_rate, _rx_dsps[dspno], _1))
-            .subscribe(boost::bind(&e100_impl::update_rx_samp_rate, this, dspno, _1));
+            .set_coercer(boost::bind(&rx_dsp_core_200::set_host_rate, _rx_dsps[dspno], _1))
+            .add_coerced_subscriber(boost::bind(&e100_impl::update_rx_samp_rate, this, dspno, _1));
         _tree->create<double>(rx_dsp_path / "freq/value")
-            .coerce(boost::bind(&rx_dsp_core_200::set_freq, _rx_dsps[dspno], _1));
+            .set_coercer(boost::bind(&rx_dsp_core_200::set_freq, _rx_dsps[dspno], _1));
         _tree->create<meta_range_t>(rx_dsp_path / "freq/range")
-            .publish(boost::bind(&rx_dsp_core_200::get_freq_range, _rx_dsps[dspno]));
+            .set_publisher(boost::bind(&rx_dsp_core_200::get_freq_range, _rx_dsps[dspno]));
         _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
-            .subscribe(boost::bind(&rx_dsp_core_200::issue_stream_command, _rx_dsps[dspno], _1));
+            .add_coerced_subscriber(boost::bind(&rx_dsp_core_200::issue_stream_command, _rx_dsps[dspno], _1));
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -351,17 +351,17 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     );
     _tx_dsp->set_link_rate(E100_TX_LINK_RATE_BPS);
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&tx_dsp_core_200::set_tick_rate, _tx_dsp, _1));
+        .add_coerced_subscriber(boost::bind(&tx_dsp_core_200::set_tick_rate, _tx_dsp, _1));
     _tree->create<meta_range_t>(mb_path / "tx_dsps/0/rate/range")
-        .publish(boost::bind(&tx_dsp_core_200::get_host_rates, _tx_dsp));
+        .set_publisher(boost::bind(&tx_dsp_core_200::get_host_rates, _tx_dsp));
     _tree->create<double>(mb_path / "tx_dsps/0/rate/value")
         .set(1e6) //some default
-        .coerce(boost::bind(&tx_dsp_core_200::set_host_rate, _tx_dsp, _1))
-        .subscribe(boost::bind(&e100_impl::update_tx_samp_rate, this, 0, _1));
+        .set_coercer(boost::bind(&tx_dsp_core_200::set_host_rate, _tx_dsp, _1))
+        .add_coerced_subscriber(boost::bind(&e100_impl::update_tx_samp_rate, this, 0, _1));
     _tree->create<double>(mb_path / "tx_dsps/0/freq/value")
-        .coerce(boost::bind(&tx_dsp_core_200::set_freq, _tx_dsp, _1));
+        .set_coercer(boost::bind(&tx_dsp_core_200::set_freq, _tx_dsp, _1));
     _tree->create<meta_range_t>(mb_path / "tx_dsps/0/freq/range")
-        .publish(boost::bind(&tx_dsp_core_200::get_freq_range, _tx_dsp));
+        .set_publisher(boost::bind(&tx_dsp_core_200::get_freq_range, _tx_dsp));
 
     ////////////////////////////////////////////////////////////////////
     // create time control objects
@@ -375,21 +375,21 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         _fifo_ctrl, TOREG(SR_TIME64), time64_rb_bases
     );
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&time64_core_200::set_tick_rate, _time64, _1));
+        .add_coerced_subscriber(boost::bind(&time64_core_200::set_tick_rate, _time64, _1));
     _tree->create<time_spec_t>(mb_path / "time/now")
-        .publish(boost::bind(&time64_core_200::get_time_now, _time64))
-        .subscribe(boost::bind(&time64_core_200::set_time_now, _time64, _1));
+        .set_publisher(boost::bind(&time64_core_200::get_time_now, _time64))
+        .add_coerced_subscriber(boost::bind(&time64_core_200::set_time_now, _time64, _1));
     _tree->create<time_spec_t>(mb_path / "time/pps")
-        .publish(boost::bind(&time64_core_200::get_time_last_pps, _time64))
-        .subscribe(boost::bind(&time64_core_200::set_time_next_pps, _time64, _1));
+        .set_publisher(boost::bind(&time64_core_200::get_time_last_pps, _time64))
+        .add_coerced_subscriber(boost::bind(&time64_core_200::set_time_next_pps, _time64, _1));
     //setup time source props
     _tree->create<std::string>(mb_path / "time_source/value")
-        .subscribe(boost::bind(&time64_core_200::set_time_source, _time64, _1));
+        .add_coerced_subscriber(boost::bind(&time64_core_200::set_time_source, _time64, _1));
     _tree->create<std::vector<std::string> >(mb_path / "time_source/options")
-        .publish(boost::bind(&time64_core_200::get_time_sources, _time64));
+        .set_publisher(boost::bind(&time64_core_200::get_time_sources, _time64));
     //setup reference source props
     _tree->create<std::string>(mb_path / "clock_source/value")
-        .subscribe(boost::bind(&e100_impl::update_clock_source, this, _1));
+        .add_coerced_subscriber(boost::bind(&e100_impl::update_clock_source, this, _1));
     std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("auto");
     if (_gps and _gps->gps_detected()) clock_sources.push_back("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
@@ -399,7 +399,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     _user = user_settings_core_200::make(_fifo_ctrl, TOREG(SR_USER_REGS));
     _tree->create<user_settings_core_200::user_reg_t>(mb_path / "user/regs")
-        .subscribe(boost::bind(&user_settings_core_200::set_reg, _user, _1));
+        .add_coerced_subscriber(boost::bind(&user_settings_core_200::set_reg, _user, _1));
 
     ////////////////////////////////////////////////////////////////////
     // create dboard control objects
@@ -417,13 +417,13 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     //create the properties and register subscribers
     _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/rx_eeprom")
         .set(rx_db_eeprom)
-        .subscribe(boost::bind(&e100_impl::set_db_eeprom, this, "rx", _1));
+        .add_coerced_subscriber(boost::bind(&e100_impl::set_db_eeprom, this, "rx", _1));
     _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/tx_eeprom")
         .set(tx_db_eeprom)
-        .subscribe(boost::bind(&e100_impl::set_db_eeprom, this, "tx", _1));
+        .add_coerced_subscriber(boost::bind(&e100_impl::set_db_eeprom, this, "tx", _1));
     _tree->create<dboard_eeprom_t>(mb_path / "dboards/A/gdb_eeprom")
         .set(gdb_eeprom)
-        .subscribe(boost::bind(&e100_impl::set_db_eeprom, this, "gdb", _1));
+        .add_coerced_subscriber(boost::bind(&e100_impl::set_db_eeprom, this, "gdb", _1));
 
     //create a new dboard interface and manager
     _dboard_iface = make_e100_dboard_iface(_fifo_ctrl, _fpga_i2c_ctrl, _fifo_ctrl/*spi*/, _clock_ctrl, _codec_ctrl);
@@ -437,12 +437,12 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     const fs_path db_tx_fe_path = mb_path / "dboards" / "A" / "tx_frontends";
     BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)){
         _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
-            .subscribe(boost::bind(&e100_impl::set_tx_fe_corrections, this, _1));
+            .add_coerced_subscriber(boost::bind(&e100_impl::set_tx_fe_corrections, this, _1));
     }
     const fs_path db_rx_fe_path = mb_path / "dboards" / "A" / "rx_frontends";
     BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)){
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
-            .subscribe(boost::bind(&e100_impl::set_rx_fe_corrections, this, _1));
+            .add_coerced_subscriber(boost::bind(&e100_impl::set_rx_fe_corrections, this, _1));
     }
 
     //initialize io handling
@@ -457,8 +457,8 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     this->update_rates();
 
-    _tree->access<double>(mb_path / "tick_rate") //now subscribe the clock rate setter
-        .subscribe(boost::bind(&e100_clock_ctrl::set_fpga_clock_rate, _clock_ctrl, _1));
+    _tree->access<double>(mb_path / "tick_rate") //now add_coerced_subscriber the clock rate setter
+        .add_coerced_subscriber(boost::bind(&e100_clock_ctrl::set_fpga_clock_rate, _clock_ctrl, _1));
 
     //reset cordic rates and their properties to zero
     BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){

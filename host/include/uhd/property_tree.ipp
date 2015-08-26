@@ -20,6 +20,7 @@
 
 #include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <vector>
 
 /***********************************************************************
@@ -34,18 +35,29 @@ public:
         /* NOP */
     }
 
-    property<T> &coerce(const typename property<T>::coercer_type &coercer){
+    property<T> &set_coercer(const typename property<T>::coercer_type &coercer){
+        if (not _coercer.empty()) uhd::assertion_error("cannot register more than one coercer for a property");
+        if (not _publisher.empty()) uhd::assertion_error("cannot register a coercer and publisher for the same property");
+
         _coercer = coercer;
         return *this;
     }
 
-    property<T> &publish(const typename property<T>::publisher_type &publisher){
+    property<T> &set_publisher(const typename property<T>::publisher_type &publisher){
+        if (not _publisher.empty()) uhd::assertion_error("cannot register more than one publisher for a property");
+        if (not _coercer.empty()) uhd::assertion_error("cannot register a coercer and publisher for the same property");
+
         _publisher = publisher;
         return *this;
     }
 
-    property<T> &subscribe(const typename property<T>::subscriber_type &subscriber){
-        _subscribers.push_back(subscriber);
+    property<T> &add_desired_subscriber(const typename property<T>::subscriber_type &subscriber){
+        _desired_subscribers.push_back(subscriber);
+        return *this;
+    }
+
+    property<T> &add_coerced_subscriber(const typename property<T>::subscriber_type &subscriber){
+        _coerced_subscribers.push_back(subscriber);
         return *this;
     }
 
@@ -55,16 +67,33 @@ public:
     }
 
     property<T> &set(const T &value){
-        _value = boost::shared_ptr<T>(new T(_coercer.empty()? value : _coercer(value)));
-        BOOST_FOREACH(typename property<T>::subscriber_type &subscriber, _subscribers){
-            subscriber(*_value); //let errors propagate
+        init_or_set_value(_value, value);
+        BOOST_FOREACH(typename property<T>::subscriber_type &dsub, _desired_subscribers){
+            dsub(get_value_ref(_value)); //let errors propagate
+        }
+        if (not _coercer.empty()) {
+            init_or_set_value(_coerced_value, _coercer(get_value_ref(_value)));
+        }
+        BOOST_FOREACH(typename property<T>::subscriber_type &csub, _coerced_subscribers){
+            csub(get_value_ref(_coercer.empty() ? _value : _coerced_value)); //let errors propagate
         }
         return *this;
     }
 
-    T get(void) const{
+    const T get(void) const{
         if (empty()) throw uhd::runtime_error("Cannot get() on an empty property");
-        return _publisher.empty()? *_value : _publisher();
+        if (not _publisher.empty()) {
+            return _publisher();
+        } else {
+            return get_value_ref(_coercer.empty() ? _value : _coerced_value);
+        }
+    }
+
+    const T get_desired(void) const{
+        if (_value.get() == NULL) throw uhd::runtime_error("Cannot get_desired() on an empty property");
+        if (not _publisher.empty()) throw uhd::runtime_error("Cannot get_desired() on a property with a publisher");
+
+        return get_value_ref(_value);
     }
 
     bool empty(void) const{
@@ -72,10 +101,25 @@ public:
     }
 
 private:
-    std::vector<typename property<T>::subscriber_type> _subscribers;
-    typename property<T>::publisher_type _publisher;
-    typename property<T>::coercer_type _coercer;
-    boost::shared_ptr<T> _value;
+    static void init_or_set_value(boost::scoped_ptr<T>& scoped_value, const T& init_val) {
+        if (scoped_value.get() == NULL) {
+            scoped_value.reset(new T(init_val));
+        } else {
+            *scoped_value = init_val;
+        }
+    }
+
+    static const T& get_value_ref(const boost::scoped_ptr<T>& scoped_value) {
+        if (scoped_value.get() == NULL) throw uhd::assertion_error("Cannot use uninitialized property data");
+        return *static_cast<const T*>(scoped_value.get());
+    }
+
+    std::vector<typename property<T>::subscriber_type>  _desired_subscribers;
+    std::vector<typename property<T>::subscriber_type>  _coerced_subscribers;
+    typename property<T>::publisher_type                _publisher;
+    typename property<T>::coercer_type                  _coercer;
+    boost::scoped_ptr<T>                                _value;
+    boost::scoped_ptr<T>                                _coerced_value;
 };
 
 }} //namespace uhd::/*anon*/
