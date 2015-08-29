@@ -1,5 +1,5 @@
 //
-// Copyright 2011,2014 Ettus Research LLC
+// Copyright 2011,2014-2016 Ettus Research
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,8 +27,51 @@
 namespace uhd{
 
 /*!
- * A templated property interface for holding a value
+ * A templated property interface for holding the state
+ * associated with a property in a uhd::property_tree
  * and registering callbacks when that value changes.
+ *
+ * A property is defined to have two separate vales:
+ * - Desired value: Value requested by the user
+ * - Coerced value: Value that was actually possible
+ *                  given HW and other requirements
+ *
+ * By default, the desired and coerced values are
+ * identical as long as the property is not coerced.
+ * A property can be coerced in two way:
+ * 1. Using a coercer: A callback function that takes
+ *    in a desired value and produces a coerced value.
+ *    A property must have *exactly one* coercer.
+ * 2. Manual coercion: Manually calling the set_coerced
+ *    API fnction to coerce the value of the propery. In
+ *    order to use manual coercion, the propery must be
+ *    created with the MANUAL_COERCE mode.
+ * If the coerce mode for a property is AUTO_COERCE then
+ * it always has a coercer. If the set_coercer API is
+ * never used, then the default coercer is used which
+ * simply set the coerced value to the desired value.
+ *
+ * It is possible to get notified every time the desired
+ * or coerced values of a property potentially change
+ * using subscriber callbacks. Every property can have
+ * zero or more desired and coerced subscribers.
+ *
+ * If storing the property readback state in software is
+ * not appropriate (for example if it needs to be queried
+ * from hardware) then it is possible to use a publisher
+ * callback to get the value of the property. Calling
+ * get on the property will always call the publisher and
+ * the cached desired and coerced values are updated only
+ * using set* calls. A preprty must have *at most one*
+ * publisher. It is legal to have both a coercer
+ * and publisher for a property but the only way to access
+ * the desired and coerced values in that case would be by
+ * notification using the desired and coerced subscribers.
+ * Publishers are useful for creating read-only properties.
+ *
+ * Requirements for the template type T:
+ * - T must have a copy constructor
+ * - T must have an assignment operator
  */
 template <typename T> class property : boost::noncopyable{
 public:
@@ -40,26 +83,33 @@ public:
 
     /*!
      * Register a coercer into the property.
-     * A coercer is a special subscriber that coerces the value.
+     * A coercer is a callback function that updates the
+     * coerced value of a property.
+     *
      * Only one coercer may be registered per property.
      * \param coercer the coercer callback function
      * \return a reference to this property for chaining
+     * \throws uhd::assertion_error if called more than once
      */
     virtual property<T> &set_coercer(const coercer_type &coercer) = 0;
 
     /*!
      * Register a publisher into the property.
-     * A publisher is a special callback the provides the value.
-     * Publishers are useful for creating read-only properties.
+     * A publisher is a callback function the provides the value
+     * for a property.
+     *
      * Only one publisher may be registered per property.
      * \param publisher the publisher callback function
      * \return a reference to this property for chaining
+     * \throws uhd::assertion_error if called more than once
      */
     virtual property<T> &set_publisher(const publisher_type &publisher) = 0;
 
     /*!
      * Register a subscriber into the property.
-     * All desired subscribers are called when the value changes.
+     * All desired subscribers are called when the desired value
+     * potentially changes.
+     *
      * Once a subscriber is registered, it cannot be unregistered.
      * \param subscriber the subscriber callback function
      * \return a reference to this property for chaining
@@ -68,7 +118,9 @@ public:
 
     /*!
      * Register a subscriber into the property.
-     * All coerced subscribers are called when the value changes.
+     * All coerced subscribers are called when the coerced value
+     * potentially changes.
+     *
      * Once a subscriber is registered, it cannot be unregistered.
      * \param subscriber the subscriber callback function
      * \return a reference to this property for chaining
@@ -77,37 +129,61 @@ public:
 
     /*!
      * Update calls all subscribers w/ the current value.
+     *
      * \return a reference to this property for chaining
+     * \throws uhd::assertion_error
      */
     virtual property<T> &update(void) = 0;
 
     /*!
-     * Set the new value and call all subscribers.
-     * The coercer (when provided) is called initially,
-     * and the coerced value is used to set the subscribers.
+     * Set the new value and call all the necessary subscribers.
+     * Order of operations:
+     * - The desired value of the property is updated
+     * - All desired subscribers are called
+     * - If coerce mode is AUTO then the coercer is called
+     * - If coerce mode is AUTO then all coerced subscribers are called
+     *
      * \param value the new value to set on this property
      * \return a reference to this property for chaining
+     * \throws uhd::assertion_error
      */
     virtual property<T> &set(const T &value) = 0;
 
     /*!
+     * Set a coerced value and call all subscribers.
+     * The coercer is bypassed, and the specified value is
+     * used as the coerced value. All coerced subscribers
+     * are called. This function can only be used when the
+     * coerce mode is set to MANUAL_COERCE.
+     *
+     * \param value the new value to set on this property
+     * \return a reference to this property for chaining
+     * \throws uhd::assertion_error
+     */
+    virtual property<T> &set_coerced(const T &value) = 0;
+
+    /*!
      * Get the current value of this property.
      * The publisher (when provided) yields the value,
-     * otherwise an internal shadow is used for the value.
+     * otherwise an internal coerced value is returned.
+     *
      * \return the current value in the property
+     * \throws uhd::assertion_error
      */
     virtual const T get(void) const = 0;
 
     /*!
      * Get the current desired value of this property.
-     * A desired value does not defined if a property has a publisher.
+     *
      * \return the current desired value in the property
+     * \throws uhd::assertion_error
      */
     virtual const T get_desired(void) const = 0;
 
     /*!
      * A property is empty if it has never been set.
      * A property with a publisher is never empty.
+     *
      * \return true if the property is empty
      */
     virtual bool empty(void) const = 0;
@@ -143,6 +219,8 @@ class UHD_API property_tree : boost::noncopyable{
 public:
     typedef boost::shared_ptr<property_tree> sptr;
 
+    enum coerce_mode_t { AUTO_COERCE, MANUAL_COERCE };
+
     virtual ~property_tree(void) = 0;
 
     //! Create a new + empty property tree
@@ -161,7 +239,9 @@ public:
     virtual std::vector<std::string> list(const fs_path &path) const = 0;
 
     //! Create a new property entry in the tree
-    template <typename T> property<T> &create(const fs_path &path);
+    template <typename T> property<T> &create(
+        const fs_path &path,
+        coerce_mode_t coerce_mode = AUTO_COERCE);
 
     //! Get access to a property in the tree
     template <typename T> property<T> &access(const fs_path &path);
