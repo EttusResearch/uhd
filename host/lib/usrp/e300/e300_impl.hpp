@@ -89,7 +89,7 @@ static const size_t E300_R1_CTRL_STREAM    = (1 << 2) | E300_RADIO_DEST_PREFIX_C
 static const size_t E300_R1_TX_DATA_STREAM = (1 << 2) | E300_RADIO_DEST_PREFIX_TX;
 static const size_t E300_R1_RX_DATA_STREAM = (1 << 2) | E300_RADIO_DEST_PREFIX_RX;
 
-
+uhd::device_addrs_t e300_find(const uhd::device_addr_t &multi_dev_hint);
 
 /*!
  * USRP-E300 implementation guts:

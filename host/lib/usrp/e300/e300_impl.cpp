@@ -126,7 +126,7 @@ static bool is_loopback(const if_addrs_t &if_addrs)
        return if_addrs.inet == asio::ip::address_v4::loopback().to_string();
 }
 
-static device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
+device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
 {
     // handle multi device discovery
     device_addrs_t hints = separate_device_addr(multi_dev_hint);

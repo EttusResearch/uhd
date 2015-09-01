@@ -117,6 +117,8 @@ uhd::uart_iface::sptr x300_make_uart_iface(uhd::wb_iface::sptr iface);
 uhd::wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp);
 uhd::wb_iface::sptr x300_make_ctrl_iface_pcie(uhd::niusrprio::niriok_proxy::sptr drv_proxy);
 
+uhd::device_addrs_t x300_find(const uhd::device_addr_t &hint_);
+
 class x300_impl : public uhd::usrp::device3_impl
 {
 public:

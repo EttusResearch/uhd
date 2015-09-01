@@ -239,7 +239,7 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
     return addrs;
 }
 
-static device_addrs_t x300_find(const device_addr_t &hint_)
+device_addrs_t x300_find(const device_addr_t &hint_)
 {
     //handle the multi-device discovery
     device_addrs_t hints = separate_device_addr(hint_);
@@ -768,23 +768,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         .set(mb.clock->get_master_clock_rate());
 
     ////////////////////////////////////////////////////////////////////
-    // initialize clock and time sources
-    ////////////////////////////////////////////////////////////////////
-    if (mb.gps and mb.gps->gps_detected())
-    {
-        UHD_MSG(status) << "Initializing clock and time using GPSDO... " << std::flush;
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
-        const time_t tp = time_t(mb.gps->get_sensor("gps_time").to_int() + 1);
-        _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
-    } else {
-        UHD_MSG(status) << "Initializing clock and time using internal sources... " << std::flush;
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("internal");
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("internal");
-    }
-    UHD_MSG(status) << "done"  << std::endl;
-
-    ////////////////////////////////////////////////////////////////////
     // Compatibility layer for legacy subdev spec
     ////////////////////////////////////////////////////////////////////
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
@@ -803,25 +786,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
     ////////////////////////////////////////////////////////////////////
-    UHD_MSG(status) << "Initializing clock and PPS references..." << std::endl;
-    //Set to the GPSDO if installed
-    if (mb.gps and mb.gps->gps_detected())
-    {
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
-        try {
-            wait_for_ref_locked(mb.zpu_ctrl, 1.0);
-        } catch (uhd::exception::runtime_error &e) {
-            UHD_MSG(warning) << "Clock reference failed to lock to GPSDO during device initialization.  " <<
-                "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
-        }
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
-        UHD_MSG(status) << "References initialized to GPSDO sources" << std::endl;
-        UHD_MSG(status) << "Initializing time to the GPSDO time" << std::endl;
-        const time_t tp = time_t(mb.gps->get_sensor("gps_time").to_int()+1);
-        _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
-    } else {
-        UHD_MSG(status) << "References initialized to internal sources" << std::endl;
-    }
 
     //////////////// RFNOC /////////////////
     const size_t n_rfnoc_blocks = mb.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_NUM_CE));
@@ -895,6 +859,9 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
 
     this->register_loopback_self_test(perif.ctrl);
 
+    ////////////////////////////////////////////////////////////////
+    // Setup peripherals
+    ////////////////////////////////////////////////////////////////
     perif.spi = spi_core_3000::make(perif.ctrl, radio::sr_addr(radio::SPI), radio::RB32_SPI);
     perif.adc = x300_adc_ctrl::make(perif.spi, DB_ADC_SEN);
     perif.dac = x300_dac_ctrl::make(perif.spi, DB_DAC_SEN, mb.clock->get_master_clock_rate());
