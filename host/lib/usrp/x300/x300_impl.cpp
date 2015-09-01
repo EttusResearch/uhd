@@ -749,7 +749,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
-    mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::GPIO), radio::RB32_FP_GPIO);
+    mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
         _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)

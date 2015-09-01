@@ -649,7 +649,7 @@ public:
                 BOOST_FOREACH(const soft_regmap_accessor_t* db, _regmap_dbs) {
                     try {
                         return db->lookup(newpath.substr(1));
-                    } catch (std::exception& e) {
+                    } catch (std::exception&) {
                         continue;
                     }
                 }

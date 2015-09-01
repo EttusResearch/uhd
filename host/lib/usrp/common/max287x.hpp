@@ -412,7 +412,7 @@ double max287x<max287x_regs_t>::set_frequency(
         (128, max287x_regs_t::RF_DIVIDER_SELECT_DIV128);
 
     //map mode setting to valid integer divider (N) values
-    static const uhd::range_t int_n_mode_div_range(16,65536,1);
+    static const uhd::range_t int_n_mode_div_range(16,65535,1);
     static const uhd::range_t frac_n_mode_div_range(19,4091,1);
 
     //other ranges and constants from MAX287X datasheets
@@ -486,13 +486,13 @@ double max287x<max287x_regs_t>::set_frequency(
         //keep N within int divider requirements
         if(is_int_n)
         {
-            if(N < int_n_mode_div_range.start()) continue;
-            if(N > int_n_mode_div_range.stop()) continue;
+            if(N <= int_n_mode_div_range.start()) continue;
+            if(N >= int_n_mode_div_range.stop()) continue;
         }
         else
         {
-            if(N < frac_n_mode_div_range.start()) continue;
-            if(N > frac_n_mode_div_range.stop()) continue;
+            if(N <= frac_n_mode_div_range.start()) continue;
+            if(N >= frac_n_mode_div_range.stop()) continue;
         }
 
         //keep pfd freq low enough to achieve 50kHz BS clock
@@ -772,7 +772,7 @@ void max287x<max287x_regs_t>::commit()
                 if (changed_regs.find(boost::uint32_t(addr)) != changed_regs.end())
                     regs.push_back(_regs.get_reg(boost::uint32_t(addr)));
             }
-        } catch (uhd::runtime_error& e) {
+        } catch (uhd::runtime_error&) {
             // No saved state - write all regs
             for (int addr = 5; addr >= 0; addr--)
                 regs.push_back(_regs.get_reg(boost::uint32_t(addr)));

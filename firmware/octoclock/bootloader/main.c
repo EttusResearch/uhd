@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ettus Research LLC
+ * Copyright 2014-2015 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,11 +34,7 @@
 
 #include "octoclock/common.h"
 
-/*
- * The number for 5 seconds is close enough to 65535 that the
- * timer may have overflowed before the main loop queries it.
- */
-#define TIME_PASSED (TCNT1 > (TIMER1_ONE_SECOND*5) || (TIFR & _BV(TOV1)))
+#define TIME_PASSED (TCNT1 > TIMER1_ONE_SECOND)
 
 /*
  * States

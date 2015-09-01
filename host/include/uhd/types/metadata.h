@@ -164,7 +164,7 @@ UHD_API uhd_error uhd_rx_metadata_out_of_sequence(
  *
  * \param h metadata handle
  * \param pp_string_out string buffer for pp_string
- * \param buffer length
+ * \param strbuffer_len buffer length
  */
 UHD_API uhd_error uhd_rx_metadata_to_pp_string(
     uhd_rx_metadata_handle h,
@@ -190,7 +190,7 @@ UHD_API uhd_error uhd_rx_metadata_error_code(
  *
  * \param h metadata handle
  * \param strerror_out string buffer for strerror
- * \param buffer length
+ * \param strbuffer_len buffer length
  */
 UHD_API uhd_error uhd_rx_metadata_strerror(
     uhd_rx_metadata_handle h,
@@ -210,7 +210,7 @@ UHD_API uhd_error uhd_rx_metadata_strerror(
  *
  * \param h metadata handle
  * \param error_out string buffer for error
- * \param buffer length
+ * \param strbuffer_len buffer length
  */
 UHD_API uhd_error uhd_rx_metadata_last_error(
     uhd_rx_metadata_handle h,
@@ -269,7 +269,7 @@ UHD_API uhd_error uhd_tx_metadata_end_of_burst(
  *
  * \param h metadata handle
  * \param error_out string buffer for error
- * \param buffer length
+ * \param strbuffer_len buffer length
  */
 UHD_API uhd_error uhd_tx_metadata_last_error(
     uhd_tx_metadata_handle h,
@@ -349,7 +349,7 @@ UHD_API uhd_error uhd_async_metadata_user_payload(
  *
  * \param h metadata handle
  * \param error_out string buffer for error
- * \param buffer length
+ * \param strbuffer_len buffer length
  */
 UHD_API uhd_error uhd_async_metadata_last_error(
     uhd_async_metadata_handle h,

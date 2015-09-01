@@ -660,7 +660,7 @@ iface eth0 inet dhcp
 
 To configure a static IP address edit
 
-    /etc/hostname
+    /etc/network/interfaces
 
 to look like
 

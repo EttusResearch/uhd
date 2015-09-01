@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ namespace uhd{
         while(boost::get_system_time() < exit_time){
             _update_cache();
 
-            for(char ch = _getchar(); ch != -1; ch = _getchar()){
+            for(char ch = _getchar(); ch != 0; ch = _getchar()){
                 if(ch == '\r') continue; //Skip carriage returns
                 _rxbuff += ch;
 
@@ -111,7 +111,7 @@ namespace uhd{
     void octoclock_uart_iface::_update_cache(){
         octoclock_packet_t pkt_out;
         pkt_out.len = 0;
-		pkt_out.sequence = 0;
+        pkt_out.sequence = 0;
         size_t len = 0;
 
         boost::uint8_t octoclock_data[udp_simple::mtu];
@@ -146,7 +146,7 @@ namespace uhd{
 
     char octoclock_uart_iface::_getchar(){
         if(LOCAL_STATE_AHEAD){
-            return -1;
+            return 0;
         }
 
         char ch = _cache[_state.pos];

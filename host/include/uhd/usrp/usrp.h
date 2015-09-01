@@ -155,7 +155,7 @@ UHD_API uhd_error uhd_rx_streamer_max_num_samps(
  *
  * \param h RX streamer handle
  * \param buffs pointer to buffers in which to receive samples
- * \param samps_per_buffer max number of samples per buffer
+ * \param samps_per_buff max number of samples per buffer
  * \param md handle to RX metadata in which to receive results
  * \param timeout timeout in seconds to wait for a packet
  * \param one_packet send a single packet
@@ -235,7 +235,7 @@ UHD_API uhd_error uhd_tx_streamer_max_num_samps(
  *
  * \param h TX streamer handle
  * \param buffs pointer to buffers containing samples to send
- * \param samps_per_buffer max number of samples per buffer
+ * \param samps_per_buff max number of samples per buffer
  * \param md handle to TX metadata
  * \param timeout timeout in seconds to wait for a packet
  * \param items_sent pointer to output variable for number of samples send

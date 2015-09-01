@@ -273,7 +273,7 @@ bool reset_octoclock(const std::string &ip_addr){
         throw uhd::runtime_error("Failed to place device in state to receive firmware.");
     }
 
-    boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
+    boost::this_thread::sleep(boost::posix_time::milliseconds(500));
     return (bootloader_find(ip_addr).size() == 1);
 }
 
@@ -416,7 +416,7 @@ int UHD_SAFE_MAIN(UHD_UNUSED(int argc), UHD_UNUSED(char *argv[])){
     std::cout << "done." << std::endl;
 
     std::cout << "Waiting for OctoClock to reinitialize..." << std::flush;
-    boost::this_thread::sleep(boost::posix_time::milliseconds(5000));
+    boost::this_thread::sleep(boost::posix_time::milliseconds(500));
     octoclocks = device::find(str(boost::format("addr=%s") % ip_addr), device::CLOCK);
     if(octoclocks.size() == 1){
         if(octoclocks[0]["type"] == "octoclock-bootloader"){

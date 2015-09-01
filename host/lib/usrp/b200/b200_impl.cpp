@@ -227,7 +227,7 @@ static device_addrs_t b200_find(const device_addr_t &hint)
             try {
                 // Turn the 16-Bit product ID into a string representation
                 new_addr["product"] = B2XX_STR_NAMES[get_b200_product(handle, mb_eeprom)];
-            } catch (const uhd::runtime_error &e) {
+            } catch (const uhd::runtime_error &) {
                 // No problem if this fails -- this is just device discovery, after all.
                 new_addr["product"] = "B2??";
             }
@@ -258,7 +258,8 @@ static device::sptr b200_make(const device_addr_t &device_addr)
     try {
         return device::sptr(new b200_impl(device_addr, handle));
     }
-    catch (const uhd::usb_error &e) {
+    catch (const uhd::usb_error &) {
+        UHD_MSG(status) << "Detected bad USB state; resetting." << std::flush;
         libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
             boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
         ));
