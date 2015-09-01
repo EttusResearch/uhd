@@ -112,13 +112,13 @@ BODY_TMPL="""\
 boost::uint32_t get_reg(boost::uint8_t addr){
     boost::uint16_t reg = 0;
     switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        reg |= (boost::uint16_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
-        #end for
+    % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        reg |= (boost::uint16_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        % endfor
         break;
-    #end for
+    % endfor
     }
     return (boost::uint32_t(reg) << 4) | (addr & 0xf);
 }

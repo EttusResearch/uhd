@@ -28,7 +28,7 @@ REGS_TMPL="""\
 ########################################################################
 ##  ID_byte_1 (0x00) Read
 ########################################################################
-##reserved as 1       0x00[7]       1
+## reserved as 1       0x00[7]       1
 ident_14_8            0x00[0:6]     0
 ########################################################################
 ##  ID_byte_2 (0x01) Read
@@ -43,23 +43,25 @@ minor_rev             0x02[0:3]     0
 ########################################################################
 ##  Thermo_byte_1 (0x03) Read
 ########################################################################
-##reserved            0x03[7]       0
-tm_d                  0x03[0:6]     0   ## 22-127deg C junction temp
+## reserved            0x03[7]       0
+## 22-127deg C junction temp
+tm_d                  0x03[0:6]     0
 ########################################################################
 ##  Thermo_byte_2 (0x04) Write
 ########################################################################
-##reserved            0x04[1:7]     0
+## reserved            0x04[1:7]     0
 tm_on                 0x04[0]       0   sensor_off, sensor_on
 ########################################################################
 ##  Power_state_byte_1 (0x05) Read
 ########################################################################
-##reserved            0x05[2:7]     0
+## reserved            0x05[2:7]     0
 por                   0x05[1]       0   read, reset
 lo_lock               0x05[0]       0   unlocked, locked
 ########################################################################
-##  Power_state_byte_2 (0x06) Read/Write ## Standby modes
+## Standby modes
+##  Power_state_byte_2 (0x06) Read/Write
 ########################################################################
-##reserved            0x06[4:7]     0
+## reserved            0x06[4:7]     0
 sm                    0x06[3]       0   normal, standby
 sm_pll                0x06[2]       0   on, off
 sm_lna                0x06[1]       0   on, off
@@ -68,14 +70,15 @@ sm_lna                0x06[1]       0   on, off
 ########################################################################
 ##  Input_Power_Level_byte (0x07) Read
 ########################################################################
-##reserved            0x07[7]       0
-power_level           0x07[0:6]     0   ## 40dB_Vrms to 110dB_Vrms
+## reserved            0x07[7]       0
+## 40dB_Vrms to 110dB_Vrms
+power_level           0x07[0:6]     0
 ## Trigger power level calculation with MSM_byte_1 and MSM_byte_2
 ########################################################################
 ##  IRQ_status (0x08) Read/Write
 ########################################################################
 irq_status            0x08[7]       0   cleared, set
-##reserved            0x08[6]       0
+## reserved            0x08[6]       0
 irq_xtalcal_end       0x08[5]       0   false, true
 irq_rssi_end          0x08[4]       0   false, true
 irq_localc_end        0x08[3]       0   false, true
@@ -86,7 +89,7 @@ irq_rccal_end         0x08[0]       0   false, true
 ##  IRQ_enable (0x09) Read/Write
 ########################################################################
 irq_enable            0x09[7]       1   false, true
-##reserved            0x09[6]       0
+## reserved            0x09[6]       0
 irq_xtalcal_enable    0x09[5]       0   false, true
 irq_rssi_enable       0x09[4]       0   false, true
 irq_localc_enable     0x09[3]       0   false, true
@@ -97,7 +100,7 @@ irq_rccal_enable      0x09[0]       0   false, true
 ##  IRQ_clear (0x0a) Read/Write
 ########################################################################
 irq_clear             0x0a[7]       0   false, true
-##reserved            0x0a[6]       0
+## reserved            0x0a[6]       0
 irq_xtalcal_clear     0x0a[5]       0   false, true
 irq_rssi_clear        0x0a[4]       0   false, true
 irq_localc_clear      0x0a[3]       0   false, true
@@ -108,7 +111,7 @@ irq_rccal_clear       0x0a[0]       0   false, true
 ##  IRQ_set (0x0b) Read
 ########################################################################
 irq_set               0x0b[7]       0   false, true
-##reserved            0x0b[6]       0
+## reserved            0x0b[6]       0
 irq_xtalcal_set       0x0b[5]       0   false, true
 irq_rssi_set          0x0b[4]       0   false, true
 irq_localc_set        0x0b[3]       0   false, true
@@ -120,12 +123,12 @@ irq_rccal_set         0x0b[0]       0   false, true
 ########################################################################
 lt_enable             0x0c[7]       0
 agc1_6_15db           0x0c[6]       1
-##reserved            0x0c[4:5]     0
+## reserved            0x0c[4:5]     0
 agc1_top              0x0c[0:3]     0
 ########################################################################
 ##  AGC2_byte_1 (0x0d) Read
 ########################################################################
-##reserved            0x0d[5:7]     0
+## reserved            0x0d[5:7]     0
 agc2_top              0x0d[0:4]     0xf
 ########################################################################
 ##  AGCK_byte_1 (0x0e) Read/Write
@@ -141,24 +144,25 @@ agck_mode             0x0e[0:1]     1   analog_tv=1, digital_tv=2
 pd_rfagc_adapt        0x0f[7]       0   on, off
 rfagc_adapt_top       0x0f[5:6]     0
 rfagc_low_bw          0x0f[4]       1
-rf_atten_3db          0x0f[3]       0   0db, 3db ## FIXME
+## FIXME
+rf_atten_3db          0x0f[3]       0   0db, 3db
 agc3_top              0x0f[0:2]     1
 ########################################################################
 ##  IR_MIXER_byte_1 (0x10) Read/Write
 ########################################################################
-##reserved            0x10[4:7]     0
+## reserved            0x10[4:7]     0
 agc4_top              0x10[0:3]     1
 ########################################################################
 ##  AGC5_byte_1 (0x11) Read/Write
 ########################################################################
-##reserved            0x11[7]       0
+## reserved            0x11[7]       0
 agcs_do_step_assym    0x11[5:6]     2
 agc5_hpf              0x11[4]       1   off, on
 agc5_top              0x11[0:3]     1
 ########################################################################
 ##  IF_AGC_byte (0x12) Read/Write
 ########################################################################
-##reserved            0x12[3:7]     0
+## reserved            0x12[3:7]     0
 if_level              0x12[0:2]     0   0_5vpp=7, 0_6vpp=6, 0_7vpp=5, 0_85vpp=4, 0_8vpp=3, 1_0vpp=2, 1_25vpp=1, 2_0vpp=0
 ########################################################################
 ##  IF_byte_1 (0x13) Read/Write
@@ -172,18 +176,19 @@ lp_fc                 0x13[0:2]     3   1_7mhz=4, 6_0mhz=0, 7_0mhz=1, 8_0mhz=2, 
 ########################################################################
 i2c_clock_mode        0x14[7]       0
 digital_clock         0x14[6]       1   spread_off, spread_on
-##reserved            0x14[5]       0
+## reserved            0x14[5]       0
 xtalosc_anareg_en     0x14[4]       0
-##reserved            0x14[2:3]     0
+## reserved            0x14[2:3]     0
 xtout                 0x14[0:1]     0   no=0, 16mhz=3
 ########################################################################
 ##  IF_Frequency_byte (0x15) Read/Write
 ########################################################################
-if_freq               0x15[0:7]     0   ## IF frequency = if_freq*50 (kHz)
+## IF frequency = if_freq*50 (kHz)
+if_freq               0x15[0:7]     0
 ########################################################################
 ##  RF_Frequency_byte_1 (0x16) Read/Write
 ########################################################################
-##reserved            0x16[4:7]     0
+## reserved           0x16[4:7]     0
 rf_freq_19_16         0x16[0:3]     0
 ########################################################################
 ##  RF_Frequency_byte_2 (0x17) Read/Write
@@ -209,7 +214,7 @@ calc_pll              0x19[0]       0
 ########################################################################
 ##  MSM_byte_2 (0x1a) Read
 ########################################################################
-##reserved            0x1a[2:7]     0
+## reserved           0x1a[2:7]     0
 xtalcal_launch        0x1a[1]       0
 msm_launch            0x1a[0]       0
 ########################################################################
@@ -227,11 +232,11 @@ psm_lodriver          0x1b[0:1]     0
 dcc_bypass            0x1c[7]       0
 dcc_slow              0x1c[6]       0
 dcc_psm               0x1c[5]       0
-##reserved            0x1c[0:4]     0
+## reserved           0x1c[0:4]     0
 ########################################################################
 ##  FLO_Max_byte (0x1d) Read
 ########################################################################
-##reserved            0x1d[6:7]     0
+## reserved           0x1d[6:7]     0
 fmax_lo               0x1d[0:5]     0xA
 ########################################################################
 ##  IR_Cal_byte_1 (0x1e) Read
@@ -249,12 +254,12 @@ ir_freqlow            0x1f[0:4]     0
 ########################################################################
 ##  IR_Cal_byte_3 (0x20) Read
 ########################################################################
-##reserved            0x20[5:7]     0
+## reserved           0x20[5:7]     0
 ir_freqmid            0x20[0:4]     0
 ########################################################################
 ##  IR_Cal_byte_4 (0x21) Read
 ########################################################################
-##reserved            0x21[5:7]     0
+## reserved           0x21[5:7]     0
 coarse_ir_freqhigh    0x21[4]       0
 ir_freqhigh           0x21[0:3]     0
 ########################################################################
@@ -270,8 +275,9 @@ agc_ovld_timer        0x22[0:1]     0
 ########################################################################
 ir_mixer_loop_off     0x23[7]       0
 ir_mixer_do_step      0x23[5:6]     0
-##reserved            0x23[2:4]     0
-hi_pass               0x23[1]       0   disable, enable ## FIXME Logic Unclear
+## reserved            0x23[2:4]     0
+## FIXME Logic Unclear
+hi_pass               0x23[1]       0   disable, enable
 if_notch              0x23[0]       1   on, off
 ########################################################################
 ##  AGC1_byte_2 (0x24) Read
@@ -285,9 +291,9 @@ agc1_gain             0x24[0:3]     8
 ########################################################################
 agc5_loop_off         0x25[7]       0
 agc5_do_step          0x25[5:6]     0
-##reserved            0x25[4]       0
+## reserved            0x25[4]       0
 force_agc5_gain       0x25[3]       0
-##reserved            0x25[2]       0
+## reserved            0x25[2]       0
 agc5_gain             0x25[0:1]     2
 ########################################################################
 ##  RF_Cal_byte_1 (0x26) Read
@@ -335,7 +341,7 @@ rfcal_freq11          0x2b[0:1]     0
 ##  RF_Filter_byte_1 (0x2c) Read
 ########################################################################
 rf_filter_bypass      0x2c[7]       0
-##reserved as 0       0x2c[6]       0
+## reserved as 0       0x2c[6]       0
 agc2_loop_off         0x2c[5]       0
 force_agc2_gain       0x2c[4]       0
 rf_filter_gv          0x2c[2:3]     2
@@ -353,12 +359,12 @@ gain_taper            0x2e[0:5]     0
 ##  RF_Band_Pass_Filter_byte (0x2f) Read
 ########################################################################
 rf_bpf_bypass         0x2f[7]       0
-##reserved            0x2f[3:6]     0
+## reserved            0x2f[3:6]     0
 rf_bpf                0x2f[0:2]     0
 ########################################################################
 ##  CP_Current_byte (0x30) Read
 ########################################################################
-##reserved            0x30[7]       0
+## reserved            0x30[7]       0
 n_cp_current          0x30[0:6]     0x68
 ########################################################################
 ##  AGC_Det_Out_byte (0x31) Read
@@ -374,24 +380,26 @@ do_agc1               0x31[0]       0
 ########################################################################
 ##  RF_AGC_Gain_byte_1 (0x32) Read
 ########################################################################
-#set $lna_gain_names = ', '.join(map(lambda x: {0: '', 1: 'm'}[3*x-12 < 0] + str(abs(3*x-12)) + 'db=' + str(x), range(0,10)))
-##reserved            0x32[6:7]     0
+## reserved            0x32[6:7]     0
 agc2_gain_read        0x32[4:5]     3   m11db, m8db, m5db, m2db
-agc1_gain_read        0x32[0:3]     9   $lna_gain_names
+<% lna_gain_names = ', '.join(map(lambda x: {0: '', 1: 'm'}[3*x-12 < 0] + str(abs(3*x-12)) + 'db=' + str(x), range(0,10))) %>\
+agc1_gain_read        0x32[0:3]     9   ${lna_gain_names}
 ########################################################################
 ##  RF_AGC_Gain_byte_2 (0x33) Read
 ########################################################################
-#set $top_agc3_read_names = ', '.join(map(lambda x: str(int(round(1.92*x+94))) + 'dbuvrms=' + str(x), range(0,8)))
-##reserved            0x33[3:7]     0
-top_agc3_read         0x33[0:2]     0   $top_agc3_read_names
+## reserved            0x33[3:7]     0
+<% top_agc3_read_names = ', '.join(map(lambda x: str(int(round(1.92*x+94))) + 'dbuvrms=' + str(x), range(0,8))) %>\
+top_agc3_read         0x33[0:2]     0   ${top_agc3_read_names}
 ########################################################################
 ##  IF_AGC_Gain_byte (0x34) Read
 ########################################################################
-#set $lpf_gain_names = ', '.join(map(lambda x: str(3*x) + 'db=' + str(x), range(0,4)))
-#set $ir_mixer_names = ', '.join(map(lambda x: str(3*x+2) + 'db=' + str(x), range(0,5)))
-##reserved            0x34[5:7]     0
-agc5_gain_read        0x34[3:4]     3   $lpf_gain_names
-agc4_gain_read        0x34[0:2]     4   $ir_mixer_names
+## reserved            0x34[5:7]     0
+<%
+    lpf_gain_names = ', '.join(map(lambda x: str(3*x) + 'db=' + str(x), range(0,4)))
+    ir_mixer_names = ', '.join(map(lambda x: str(3*x+2) + 'db=' + str(x), range(0,5)))
+%>\
+agc5_gain_read        0x34[3:4]     3   ${lpf_gain_names}
+agc4_gain_read        0x34[0:2]     4   ${ir_mixer_names}
 ########################################################################
 ##  Power_byte_1 (0x35) Read
 ########################################################################
@@ -399,9 +407,9 @@ rssi                  0x35[0:7]     0
 ########################################################################
 ##  Power_byte_2 (0x36) Read
 ########################################################################
-##reserved            0x36[6:7]     0
+## reserved           0x36[6:7]     0
 rssi_av               0x36[5]       0
-##reserved            0x36[4]       0
+## reserved           0x36[4]       0
 rssi_cap_reset_en     0x36[3]       1
 rssi_cap_val          0x36[2]       1
 rssi_ck_speed         0x36[1]       0
@@ -479,37 +487,28 @@ BODY_TMPL="""\
 boost::uint8_t get_reg(boost::uint8_t addr){
     boost::uint8_t reg = 0;
     switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        reg |= (boost::uint8_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
-        #end for
+    % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        reg |= (boost::uint8_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        % endfor
         break;
-    #end for
+    % endfor
     }
     return boost::uint8_t(reg);
 }
 
 void set_reg(boost::uint8_t addr, boost::uint8_t reg){
     switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        $reg.get_name() = $(reg.get_type())((reg >> $reg.get_shift()) & $reg.get_mask());
-        #end for
+    % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        ${reg.get_name()} = ${reg.get_type()}((reg >> ${reg.get_shift()}) & ${reg.get_mask()});
+        % endfor
         break;
-    #end for
+    % endfor
     }
 }
-"""
-
-SPLIT_REGS_HELPER_TMPL="""\
-#for $divname in ['n','f']
-void set_$(divname)_divider(boost::uint32_t $divname){
-    #for $regname in sorted(map(lambda r: r.get_name(), filter(lambda r: r.get_name().find(divname + '_divider') == 0, $regs)))
-    #end for
-}
-#end for
 """
 
 if __name__ == '__main__':

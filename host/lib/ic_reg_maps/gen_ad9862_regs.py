@@ -41,10 +41,10 @@ all_rx_pd          1[0]              0
 ########################################################################
 ## Rx A and B
 ########################################################################
-#for $x, $i in (('a', 2), ('b', 3))
-byp_buffer_$x      $(i)[7]           0
-rx_pga_$x          $(i)[0:4]         0
-#end for
+% for x, i in (('a', 2), ('b', 3)):
+byp_buffer_${x}      ${i}[7]           0
+rx_pga_${x}          ${i}[0:4]         0
+% endfor
 ########################################################################
 ## Rx Misc
 ########################################################################
@@ -76,13 +76,13 @@ tx_analog_pd       8[0:2]            0        none=0, txb=4, txa=2, both=7
 ########################################################################
 ## Tx Offset and Gain
 ########################################################################
-#for $x, $i, $j, $k in (('a', 10, 11, 14), ('b', 12, 13, 15))
-dac_$(x)_offset_1_0   $(i)[6:7]           0
-dac_$(x)_offset_dir   $(i)[0]             0        neg_diff, pos_dif
-dac_$(x)_offset_9_2   $(j)[0:7]           0
-dac_$(x)_coarse_gain  $(k)[6:7]           0
-dac_$(x)_fine_gain    $(k)[0:5]           0
-#end for
+% for x, i, j, k in (('a', 10, 11, 14), ('b', 12, 13, 15)):
+dac_${x}_offset_1_0   ${i}[6:7]           0
+dac_${x}_offset_dir   ${i}[0]             0        neg_diff, pos_dif
+dac_${x}_offset_9_2   ${j}[0:7]           0
+dac_${x}_coarse_gain  ${k}[6:7]           0
+dac_${x}_fine_gain    ${k}[0:5]           0
+% endfor
 tx_pga_gain            16[0:7]            0
 ########################################################################
 ## Tx Misc
@@ -139,20 +139,20 @@ dis1                   25[0]              0       enb, dis
 ########################################################################
 ## Aux ADC
 ########################################################################
-#for $x, $i in (('a2', 26), ('a1', 28), ('b2', 30), ('b1', 32))
-aux_adc_$(x)_1_0       $(i)[6:7]          0
-aux_adc_$(x)_9_2       $int(1+$i)[0:7]    0
-#end for
+% for x, i in (('a2', 26), ('a1', 28), ('b2', 30), ('b1', 32)):
+aux_adc_${x}_1_0       ${i}[6:7]          0
+aux_adc_${x}_9_2       ${int(1+i)}[0:7]    0
+% endfor
 ########################################################################
 ## Aux ADC Control
 ########################################################################
 aux_spi                34[7]              0       dis, enb
 sel_bnota              34[6]              0       adc_a, adc_b
-#for $x, $i in (('b', 5), ('a', 2))
-refsel_$(x)            34[$i]             0       external, internal
-select_$(x)            34[$int($i-1)]     0       aux_adc2, aux_adc1
-start_$(x)             34[$int($i-2)]     0
-#end for
+% for x, i in (('b', 5), ('a', 2)):
+refsel_${x}            34[${i}]           0       external, internal
+select_${x}            34[${int(i-1)}]    0       aux_adc2, aux_adc1
+start_${x}             34[${int(i-2)}]    0
+% endfor
 ########################################################################
 ## Aux ADC Clock
 ########################################################################
@@ -160,9 +160,9 @@ clk_4                  35[0]              0       1_2, 1_4
 ########################################################################
 ## Aux DAC
 ########################################################################
-#for $x, $i in (('a', 36), ('b', 37), ('c', 38))
-aux_dac_$x             $(i)[0:7]          0
-#end for
+% for x, i in (('a', 36), ('b', 37), ('c', 38)):
+aux_dac_${x}           ${i}[0:7]          0
+% endfor
 ########################################################################
 ## Aux DAC Update
 ########################################################################
@@ -205,26 +205,26 @@ BODY_TMPL="""
 boost::uint8_t get_reg(boost::uint8_t addr){
     boost::uint8_t reg = 0;
     switch(addr){
-    #for $addr in range(0, 63+1)
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        reg |= (boost::uint16_t($reg.get_name()) & $reg.get_mask()) << $reg.get_shift();
-        #end for
+    % for addr in range(0, 63+1):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        reg |= (boost::uint16_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        % endfor
         break;
-    #end for
+    % endfor
     }
     return reg;
 }
 
 void set_reg(boost::uint8_t addr, boost::uint16_t reg){
     switch(addr){
-    #for $addr in sorted(set(map(lambda r: r.get_addr(), $regs)))
-    case $addr:
-        #for $reg in filter(lambda r: r.get_addr() == addr, $regs)
-        $reg.get_name() = $(reg.get_type())((reg >> $reg.get_shift()) & $reg.get_mask());
-        #end for
+    % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
+    case ${addr}:
+        % for reg in filter(lambda r: r.get_addr() == addr, regs):
+        ${reg.get_name()} = ${reg.get_type()}((reg >> ${reg.get_shift()}) & ${reg.get_mask()});
+        % endfor
         break;
-    #end for
+    % endfor
     }
 }
 
