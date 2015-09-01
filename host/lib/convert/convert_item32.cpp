@@ -38,7 +38,10 @@
     _DECLARE_ITEM32_CONVERTER(cpu_type, sc8) \
     _DECLARE_ITEM32_CONVERTER(cpu_type, sc16)
 
+/* Create sc16<->sc16,sc8(otw) */
 DECLARE_ITEM32_CONVERTER(sc16)
+/* Create fc32<->sc16,sc8(otw) */
 DECLARE_ITEM32_CONVERTER(fc32)
+/* Create fc64<->sc16,sc8(otw) */
 DECLARE_ITEM32_CONVERTER(fc64)
 _DECLARE_ITEM32_CONVERTER(sc8, sc8)
