@@ -116,6 +116,7 @@ int main(){
         goto free_boolean_sensor;
     }
 
+    bool_out = false;
     // Check the casted value
     UHD_TEST_EXECUTE_OR_GOTO(free_boolean_sensor,
         uhd_sensor_value_to_bool(
