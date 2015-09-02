@@ -259,7 +259,7 @@ static device::sptr b200_make(const device_addr_t &device_addr)
         return device::sptr(new b200_impl(device_addr, handle));
     }
     catch (const uhd::usb_error &) {
-        UHD_MSG(status) << "Detected bad USB state; resetting." << std::flush;
+        UHD_MSG(status) << "Detected bad USB state; resetting." << std::endl;
         libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
             boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
         ));
