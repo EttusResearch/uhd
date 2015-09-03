@@ -110,20 +110,25 @@ public:
             ) % interp_rate % (_tick_rate/1e6) % (rate/1e6);
         }
 
-        // Calculate CIC interpolation (i.e., without halfband interpolators)
-        // Calculate closest multiplier constant to reverse gain absent scale multipliers
+        // Caclulate algorithmic gain of CIC for a given interpolation
+        // For Ettus CIC R=decim, M=1, N=3. Gain = (R * M) ^ N
         const double rate_pow = std::pow(double(interp & 0xff), 3);
-        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.65*rate_pow);
+        // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
+        // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
+        // CORDIC algorithmic gain limits asymptotically around 1.647 after many iterations.
+        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.648*rate_pow);
         this->update_scalar();
 
         return _tick_rate/interp_rate;
     }
 
+  // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
+  // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
+  // Further more factor in OTW format which adds further gain factor to weight output samples correctly.
     void update_scalar(void){
-        const double factor = 1.0 + std::max(ceil_log2(_scaling_adjustment), 0.0);
-        const double target_scalar = (1 << 17)*_scaling_adjustment/_dsp_extra_scaling/factor;
+        const double target_scalar = (1 << 16)*_scaling_adjustment/_dsp_extra_scaling;
         const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
-        _fxpt_scalar_correction = target_scalar/actual_scalar*factor; //should be small
+        _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
         _iface->poke32(REG_DSP_TX_SCALE_IQ, actual_scalar);
     }
 

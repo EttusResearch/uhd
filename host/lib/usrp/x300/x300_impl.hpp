@@ -250,6 +250,8 @@ private:
 
     void register_loopback_self_test(uhd::wb_iface::sptr iface);
 
+    void radio_loopback(uhd::wb_iface::sptr iface, const bool on);
+
      /*! \brief Initialize the radio component on a given slot.
       *
       * Call this function once per slot (A and B) and motherboard to initialize all the radio components.

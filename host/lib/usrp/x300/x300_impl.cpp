@@ -1334,6 +1334,14 @@ void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
 }
 
+void x300_impl::radio_loopback(wb_iface::sptr iface, const bool on)
+{
+  iface->poke32(radio::sr_addr(radio::LOOPBACK), (on ? 0x1 : 0x0));
+  UHD_MSG(status) << ((on)? "Radio Loopback On" : "Radio Loopback Off") << std::endl;
+}
+
+
+
 /***********************************************************************
  * clock and time control logic
  **********************************************************************/
