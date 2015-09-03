@@ -94,7 +94,7 @@ public:
     digital_interface_delays_t get_digital_interface_timing() {
         digital_interface_delays_t delays;
         delays.rx_clk_delay = 0;
-        delays.rx_data_delay = 0x6;
+        delays.rx_data_delay = 0xF;
         delays.tx_clk_delay = 0;
         delays.tx_data_delay = 0xF;
         return delays;
@@ -555,8 +555,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         client_settings = boost::make_shared<b200_ad9361_client_t>();
     }
     _codec_ctrl = ad9361_ctrl::make_spi(client_settings, _spi_iface, AD9361_SLAVENO);
-    this->reset_codec_dcm();
-
+   
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
     ////////////////////////////////////////////////////////////////////
@@ -908,9 +907,6 @@ double b200_impl::set_tick_rate(const double new_tick_rate)
     _tick_rate = _codec_ctrl->set_clock_rate(new_tick_rate);
     UHD_MSG(status) << std::endl << (boost::format("Actually got clock rate %.6f MHz.") % (_tick_rate/1e6)) << std::endl;
 
-    //reset after clock rate change
-    this->reset_codec_dcm();
-
     BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
     {
         perif.time64->set_tick_rate(_tick_rate);
@@ -1136,21 +1132,12 @@ void b200_impl::update_gpio_state(void)
         | (_gpio_state.rx_bandsel_a << 5)
         | (_gpio_state.rx_bandsel_b << 4)
         | (_gpio_state.rx_bandsel_c << 3)
-        | (_gpio_state.codec_arst << 2)
+        | (_gpio_state.codec_arst << 2) // OBSELETE. DCM removed from B2xx
         | (_gpio_state.mimo << 1)
         | (_gpio_state.ref_sel << 0)
     ;
 
     _local_ctrl->poke32(TOREG(SR_CORE_MISC), misc_word);
-}
-
-void b200_impl::reset_codec_dcm(void)
-{
-    _gpio_state.codec_arst = 1;
-    this->update_gpio_state();
-    boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-    _gpio_state.codec_arst = 0;
-    this->update_gpio_state();
 }
 
 void b200_impl::update_atrs(void)
@@ -1219,7 +1206,6 @@ void b200_impl::update_enables(void)
     //setup the active chains in the codec
     _codec_ctrl->set_active_chains(enb_tx1, enb_tx2, enb_rx1, enb_rx2);
     if ((num_rx + num_tx) == 0) _codec_ctrl->set_active_chains(true, false, true, false); //enable something
-    this->reset_codec_dcm(); //set_active_chains could cause a clock rate change - reset dcm
 
     //figure out if mimo is enabled based on new state
     _gpio_state.mimo = (mimo)? 1 : 0;
