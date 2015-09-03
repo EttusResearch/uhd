@@ -1132,7 +1132,7 @@ void b200_impl::update_gpio_state(void)
         | (_gpio_state.rx_bandsel_a << 5)
         | (_gpio_state.rx_bandsel_b << 4)
         | (_gpio_state.rx_bandsel_c << 3)
-        | (_gpio_state.codec_arst << 2) // OBSELETE. DCM removed from B2xx
+        // Bit 2 currently not used.
         | (_gpio_state.mimo << 1)
         | (_gpio_state.ref_sel << 0)
     ;
