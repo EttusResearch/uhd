@@ -173,20 +173,35 @@ public:
             }
         }
 
-        // Calculate CIC decimation (i.e., without halfband decimators)
-        // Calculate closest multiplier constant to reverse gain absent scale multipliers
+        // Caclulate algorithmic gain of CIC for a given decimation.
+        // For Ettus CIC R=decim, M=1, N=4. Gain = (R * M) ^ N
         const double rate_pow = std::pow(double(decim & 0xff), 4);
-        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.65*rate_pow);
+        // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
+        // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
+        // CORDIC algorithmic gain limits asymptotically around 1.647 after many iterations.
+        //
+        // The polar rotation of [I,Q] = [1,1] by Pi/8 also yields max magnitude of SQRT(2) (~1.4142) however
+        // input to the CORDIC thats outside the unit circle can only be sourced from a saturated RF frontend.
+        // To provide additional dynamic range head room accordingly using scale factor applied at egress from DDC would
+        // cost us small signal performance, thus we do no provide compensation gain for a saturated front end and allow
+        // the signal to clip in the H/W as needed. If we wished to avoid the signal clipping in these circumstances then adjust code to read:
+        // _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.648*rate_pow*1.415);
+        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.648*rate_pow);
+
         this->update_scalar();
 
         return _tick_rate/decim_rate;
     }
 
+    // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
+    // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
+    // Further more factor in OTW format which adds further gain factor to weight output samples correctly.
     void update_scalar(void){
-        const double factor = 1.0 + std::max(ceil_log2(_scaling_adjustment), 0.0);
-        const double target_scalar = (1 << (_is_b200 ? 17 : 15))*_scaling_adjustment/_dsp_extra_scaling/factor;
+        const double target_scalar = (1 << (_is_b200 ? 16 : 15))*_scaling_adjustment/_dsp_extra_scaling;
         const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
-        _fxpt_scalar_correction = target_scalar/actual_scalar*factor; //should be small
+        // Calculate the error introduced by using integer representation for the scalar, can be corrected in host later.
+        _fxpt_scalar_correction = target_scalar/actual_scalar;
+        // Write DDC with scaling correction for CIC and CORDIC that maximizes dynamic range in 32/16/12/8bits.
         _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);
     }
 
