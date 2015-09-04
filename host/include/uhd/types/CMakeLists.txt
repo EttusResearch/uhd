@@ -33,6 +33,7 @@ UHD_INSTALL(FILES
     sensors.hpp
     serial.hpp
     sid.hpp
+    stdint.hpp
     stream_cmd.hpp
     time_spec.hpp
     tune_request.hpp
