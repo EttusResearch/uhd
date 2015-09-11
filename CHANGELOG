@@ -1,6 +1,15 @@
 Change Log for Releases
 ==============================
 
+## 003.009.001
+* B200mini: Updated udev rules, removed DCM
+* B200: Better USB error messages
+* Cores: Fixed CORDIC scaling issue on all devices that use
+  dsp_core_3000
+* X300: Fixed GPIO issue
+* Examples: Added PPS source option
+* Docs: Multiple manual updates
+
 ## 003.009.000
 * X300: Updated DAC ctrl, FPGA toolchain is now entirely Vivado,
   improved master clock controls, added ADC self-cal capability,
