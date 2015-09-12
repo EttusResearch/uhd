@@ -37,20 +37,23 @@
 #include <ctime>
 #include <cmath>
 
+#include "../../transport/libusb1_base.hpp"
+
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
 static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
 
+// B200 + B210:
 class b200_ad9361_client_t : public ad9361_params {
 public:
     ~b200_ad9361_client_t() {}
     double get_band_edge(frequency_band_t band) {
         switch (band) {
-        case AD9361_RX_BAND0:   return 2.2e9;
-        case AD9361_RX_BAND1:   return 4.0e9;
-        case AD9361_TX_BAND0:   return 2.5e9;
+        case AD9361_RX_BAND0:   return 2.2e9; // Port C
+        case AD9361_RX_BAND1:   return 4.0e9; // Port B
+        case AD9361_TX_BAND0:   return 2.5e9; // Port B
         default:                return 0;
         }
     }
@@ -63,7 +66,35 @@ public:
     digital_interface_delays_t get_digital_interface_timing() {
         digital_interface_delays_t delays;
         delays.rx_clk_delay = 0;
-        delays.rx_data_delay = 0x6;
+        delays.rx_data_delay = 0xF;
+        delays.tx_clk_delay = 0;
+        delays.tx_data_delay = 0xF;
+        return delays;
+    }
+};
+
+// B205
+class b205_ad9361_client_t : public ad9361_params {
+public:
+    ~b205_ad9361_client_t() {}
+    double get_band_edge(frequency_band_t band) {
+        switch (band) {
+        case AD9361_RX_BAND0:   return 0; // Set these all to
+        case AD9361_RX_BAND1:   return 0; // zero, so RF port A
+        case AD9361_TX_BAND0:   return 0; // is used all the time
+        default:                return 0; // On both Rx and Tx
+        }
+    }
+    clocking_mode_t get_clocking_mode() {
+        return AD9361_XTAL_N_CLK_PATH;
+    }
+    digital_interface_mode_t get_digital_interface_mode() {
+        return AD9361_DDR_FDD_LVCMOS;
+    }
+    digital_interface_delays_t get_digital_interface_timing() {
+        digital_interface_delays_t delays;
+        delays.rx_clk_delay = 0;
+        delays.rx_data_delay = 0xF;
         delays.tx_clk_delay = 0;
         delays.tx_data_delay = 0xF;
         return delays;
@@ -71,24 +102,63 @@ public:
 };
 
 /***********************************************************************
+ * Helpers
+ **********************************************************************/
+std::string check_option_valid(
+        const std::string &name,
+        const std::vector<std::string> &valid_options,
+        const std::string &option
+) {
+    if (std::find(valid_options.begin(), valid_options.end(), option) == valid_options.end()) {
+        throw uhd::runtime_error(str(
+                boost::format("Invalid option chosen for: %s")
+                % name
+        ));
+    }
+
+    return option;
+}
+
+/***********************************************************************
  * Discovery
  **********************************************************************/
 //! Look up the type of B-Series device we're currently running.
-//  If the product ID stored in mb_eeprom is invalid, throws a
-//  uhd::runtime_error.
-static b200_type_t get_b200_type(const mboard_eeprom_t &mb_eeprom)
+//  Throws a uhd::runtime_error if the USB PID and the product ID stored
+//  in the MB EEPROM are invalid,
+b200_product_t get_b200_product(const usb_device_handle::sptr& handle, const mboard_eeprom_t &mb_eeprom)
 {
+    // Try USB PID first
+    boost::uint16_t product_id = handle->get_product_id();
+    if (B2XX_PID_TO_PRODUCT.has_key(product_id))
+        return B2XX_PID_TO_PRODUCT[product_id];
+
+    // Try EEPROM product ID code second
     if (mb_eeprom["product"].empty()) {
         throw uhd::runtime_error("B200: Missing product ID on EEPROM.");
     }
-    boost::uint16_t product_id = boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]);
-    if (not B2X0_PRODUCT_ID.has_key(product_id)) {
+    product_id = boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]);
+    if (not B2XX_PRODUCT_ID.has_key(product_id)) {
         throw uhd::runtime_error(str(
             boost::format("B200 unknown product code: 0x%04x")
             % product_id
         ));
     }
-    return B2X0_PRODUCT_ID[product_id];
+    return B2XX_PRODUCT_ID[product_id];
+}
+
+std::vector<usb_device_handle::sptr> get_b200_device_handles(const device_addr_t &hint)
+{
+    std::vector<usb_device_handle::vid_pid_pair_t> vid_pid_pair_list;
+
+    if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "b200") {
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid")),
+                                                                      uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"))));
+    } else {
+        vid_pid_pair_list = b200_vid_pid_pairs;
+    }
+
+    //find the usrps and load firmware
+    return usb_device_handle::get_device_list(vid_pid_pair_list);
 }
 
 static device_addrs_t b200_find(const device_addr_t &hint)
@@ -104,28 +174,13 @@ static device_addrs_t b200_find(const device_addr_t &hint)
         if (hint_i.has_key("addr") || hint_i.has_key("resource")) return b200_addrs;
     }
 
-    size_t found = 0;
-    std::vector<usb_device_handle::vid_pid_pair_t> vid_pid_pair_list;//vid pid pair search list for devices.
-
-    if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "b200") {
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid")),
-                                                                    uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"))));
-    } else {
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200_PRODUCT_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID));
-    }
-
     // Important note:
     // The get device list calls are nested inside the for loop.
     // This allows the usb guts to decontruct when not in use,
     // so that re-enumeration after fw load can occur successfully.
     // This requirement is a courtesy of libusb1.0 on windows.
-
-    //find the usrps and load firmware
-    std::vector<usb_device_handle::sptr> uhd_usb_device_vector = usb_device_handle::get_device_list(vid_pid_pair_list);
-
-    BOOST_FOREACH(usb_device_handle::sptr handle, uhd_usb_device_vector) {
+    size_t found = 0;
+    BOOST_FOREACH(usb_device_handle::sptr handle, get_b200_device_handles(hint)) {
         //extract the firmware path for the b200
         std::string b200_fw_image;
         try{
@@ -156,7 +211,7 @@ static device_addrs_t b200_find(const device_addr_t &hint)
     //search for the device until found or timeout
     while (boost::get_system_time() < timeout_time and b200_addrs.empty() and found != 0)
     {
-        BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid_pid_pair_list))
+        BOOST_FOREACH(usb_device_handle::sptr handle, get_b200_device_handles(hint))
         {
             usb_control::sptr control;
             try{control = usb_control::make(handle, 0);}
@@ -171,9 +226,10 @@ static device_addrs_t b200_find(const device_addr_t &hint)
             new_addr["serial"] = handle->get_serial();
             try {
                 // Turn the 16-Bit product ID into a string representation
-                new_addr["product"] = B2X0_STR_NAMES[get_b200_type(mb_eeprom)];
-            } catch (const uhd::runtime_error &e) {
+                new_addr["product"] = B2XX_STR_NAMES[get_b200_product(handle, mb_eeprom)];
+            } catch (const uhd::runtime_error &) {
                 // No problem if this fails -- this is just device discovery, after all.
+                new_addr["product"] = "B2??";
             }
 
             //this is a found b200 when the hint serial and name match or blank
@@ -194,7 +250,25 @@ static device_addrs_t b200_find(const device_addr_t &hint)
  **********************************************************************/
 static device::sptr b200_make(const device_addr_t &device_addr)
 {
-    return device::sptr(new b200_impl(device_addr));
+    uhd::transport::usb_device_handle::sptr handle;
+
+    // We try twice, because the first time, the link might be in a bad state
+    // and we might need to reset the link, but if that didn't help, trying
+    // a third time is pointless.
+    try {
+        return device::sptr(new b200_impl(device_addr, handle));
+    }
+    catch (const uhd::usb_error &) {
+        UHD_MSG(status) << "Detected bad USB state; resetting." << std::endl;
+        libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
+            boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
+        ));
+        dev_handle->clear_endpoints(B200_USB_CTRL_RECV_ENDPOINT, B200_USB_CTRL_SEND_ENDPOINT);
+        dev_handle->clear_endpoints(B200_USB_DATA_RECV_ENDPOINT, B200_USB_DATA_SEND_ENDPOINT);
+        dev_handle->reset_device();
+    }
+
+    return device::sptr(new b200_impl(device_addr, handle));
 }
 
 UHD_STATIC_BLOCK(register_b200_device)
@@ -205,8 +279,10 @@ UHD_STATIC_BLOCK(register_b200_device)
 /***********************************************************************
  * Structors
  **********************************************************************/
-b200_impl::b200_impl(const device_addr_t &device_addr) :
+b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::sptr &handle) :
+    _product(B200), // Some safe value
     _revision(0),
+    _time_source(UNKNOWN),
     _tick_rate(0.0) // Forces a clock initialization at startup
 {
     _tree = property_tree::make();
@@ -241,9 +317,10 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     // Search for all supported PIDs limited to specified VID if only VID specified
     else if (specified_vid)
     {
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid,B200_PRODUCT_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid,B200_PRODUCT_NI_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid,B210_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B200_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B205_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B200_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B210_PRODUCT_NI_ID));
     }
     // Search for all supported VIDs limited to specified PID if only PID specified
     else if (specified_pid)
@@ -254,15 +331,15 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     // Search for all supported devices if neither VID nor PID specified
     else
     {
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,B200_PRODUCT_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID,B200_PRODUCT_NI_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID,B210_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B200_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B205_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID));
     }
 
     std::vector<usb_device_handle::sptr> device_list = usb_device_handle::get_device_list(vid_pid_pair_list);
 
     //locate the matching handle in the device list
-    usb_device_handle::sptr handle;
     BOOST_FOREACH(usb_device_handle::sptr dev_handle, device_list) {
         if (dev_handle->get_serial() == device_addr["serial"]){
             handle = dev_handle;
@@ -291,9 +368,9 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     std::string product_name;
     try {
         // This will throw if the product ID is invalid:
-        _b200_type = get_b200_type(mb_eeprom);
-        default_file_name = B2X0_FPGA_FILE_NAME.get(_b200_type);
-        product_name      = B2X0_STR_NAMES.get(_b200_type);
+        _product = get_b200_product(handle, mb_eeprom);
+        default_file_name = B2XX_FPGA_FILE_NAME.get(_product);
+        product_name      = B2XX_STR_NAMES.get(_product);
     } catch (const uhd::runtime_error &e) {
         // The only reason we may let this pass is if the user specified
         // the FPGA file name:
@@ -302,11 +379,14 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
         }
         // In this case, we must provide a default product name:
         product_name = "B200?";
-        _b200_type = B200;
     }
     if (not mb_eeprom["revision"].empty()) {
         _revision = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
     }
+
+    UHD_MSG(status) << "Detected Device: " << B2XX_STR_NAMES[_product] << std::endl;
+
+    _gpsdo_capable = (_product != B205);
 
     ////////////////////////////////////////////////////////////////////
     // Set up frontend mapping
@@ -325,7 +405,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     _fe2 = 0;
     _gpio_state.swap_atr = 1;
     // Unswapped setup:
-    if (_b200_type == B200 and _revision >= 5) {
+    if (_product == B205 or (_product == B200 and _revision >= 5)) {
         _fe1 = 0;                   //map radio0 to FE1
         _fe2 = 1;                   //map radio1 to FE2
         _gpio_state.swap_atr = 0; // ATRs for radio0 are mapped to FE1
@@ -360,10 +440,11 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     ctrl_xport_args["send_frame_size"] = min_frame_size;
     ctrl_xport_args["num_send_frames"] = "16";
 
+    // This may throw a uhd::usb_error, which will be caught by b200_make().
     _ctrl_transport = usb_zero_copy::make(
         handle,
-        4, 8, //interface, endpoint
-        3, 4, //interface, endpoint
+        B200_USB_CTRL_RECV_INTERFACE, B200_USB_CTRL_RECV_ENDPOINT, //interface, endpoint
+        B200_USB_CTRL_SEND_INTERFACE, B200_USB_CTRL_SEND_ENDPOINT, //interface, endpoint
         ctrl_xport_args
     );
     while (_ctrl_transport->get_recv_buff(0.0)){} //flush ctrl xport
@@ -392,34 +473,37 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     ////////////////////////////////////////////////////////////////////
     // Create the GPSDO control
     ////////////////////////////////////////////////////////////////////
-    _async_task_data->gpsdo_uart = b200_uart::make(_ctrl_transport, B200_TX_GPS_UART_SID);
-    _async_task_data->gpsdo_uart->set_baud_divider(B200_BUS_CLOCK_RATE/115200);
-    _async_task_data->gpsdo_uart->write_uart("\n"); //cause the baud and response to be setup
-    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for a little propagation
-
-    if ((_local_ctrl->peek32(RB32_CORE_STATUS) & 0xff) != B200_GPSDO_ST_NONE)
+    if (_gpsdo_capable)
     {
-        UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
-        try
+        _async_task_data->gpsdo_uart = b200_uart::make(_ctrl_transport, B200_TX_GPS_UART_SID);
+        _async_task_data->gpsdo_uart->set_baud_divider(B200_BUS_CLOCK_RATE/115200);
+        _async_task_data->gpsdo_uart->write_uart("\n"); //cause the baud and response to be setup
+        boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for a little propagation
+
+        if ((_local_ctrl->peek32(RB32_CORE_STATUS) & 0xff) != B200_GPSDO_ST_NONE)
         {
-            _gps = gps_ctrl::make(_async_task_data->gpsdo_uart);
-        }
-        catch(std::exception &e)
-        {
-            UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
-        }
-        if (_gps and _gps->gps_detected())
-        {
-            //UHD_MSG(status) << "found" << std::endl;
-            BOOST_FOREACH(const std::string &name, _gps->get_sensors())
+            UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
+            try
             {
-                _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                    .publish(boost::bind(&gps_ctrl::get_sensor, _gps, name));
+                _gps = gps_ctrl::make(_async_task_data->gpsdo_uart);
             }
-        }
-        else
-        {
-            _local_ctrl->poke32(TOREG(SR_CORE_GPSDO_ST), B200_GPSDO_ST_NONE);
+            catch(std::exception &e)
+            {
+                UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
+            }
+            if (_gps and _gps->gps_detected())
+            {
+                //UHD_MSG(status) << "found" << std::endl;
+                BOOST_FOREACH(const std::string &name, _gps->get_sensors())
+                {
+                    _tree->create<sensor_value_t>(mb_path / "sensors" / name)
+                        .publish(boost::bind(&gps_ctrl::get_sensor, _gps, name));
+                }
+            }
+            else
+            {
+                _local_ctrl->poke32(TOREG(SR_CORE_GPSDO_ST), B200_GPSDO_ST_NONE);
+            }
         }
     }
 
@@ -428,7 +512,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>("/name").set("B-Series Device");
     _tree->create<std::string>(mb_path / "name").set(product_name);
-    _tree->create<std::string>(mb_path / "codename").set("Sasquatch");
+    _tree->create<std::string>(mb_path / "codename").set((_product == B205) ? "Pixie" : "Sasquatch");
 
     ////////////////////////////////////////////////////////////////////
     // Create data transport
@@ -442,10 +526,11 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     data_xport_args["send_frame_size"] = device_addr.get("send_frame_size", "8192");
     data_xport_args["num_send_frames"] = device_addr.get("num_send_frames", "16");
 
+    // This may throw a uhd::usb_error, which will be caught by b200_make().
     _data_transport = usb_zero_copy::make(
         handle,        // identifier
-        2, 6,          // IN interface, endpoint
-        1, 2,          // OUT interface, endpoint
+        B200_USB_DATA_RECV_INTERFACE, B200_USB_DATA_RECV_ENDPOINT, //interface, endpoint
+        B200_USB_DATA_SEND_INTERFACE, B200_USB_DATA_SEND_ENDPOINT, //interface, endpoint
         data_xport_args    // param hints
     );
     while (_data_transport->get_recv_buff(0.0)){} //flush ctrl xport
@@ -455,16 +540,22 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     // create time and clock control objects
     ////////////////////////////////////////////////////////////////////
     _spi_iface = b200_local_spi_core::make(_local_ctrl);
-    _adf4001_iface = boost::make_shared<b200_ref_pll_ctrl>(_spi_iface);
+    if (_product != B205) {
+        _adf4001_iface = boost::make_shared<b200_ref_pll_ctrl>(_spi_iface);
+    }
 
     ////////////////////////////////////////////////////////////////////
     // Init codec - turns on clocks
     ////////////////////////////////////////////////////////////////////
     UHD_MSG(status) << "Initialize CODEC control..." << std::endl;
-    ad9361_params::sptr client_settings = boost::make_shared<b200_ad9361_client_t>();
+    ad9361_params::sptr client_settings;
+    if (_product == B205) {
+        client_settings = boost::make_shared<b205_ad9361_client_t>();
+    } else {
+        client_settings = boost::make_shared<b200_ad9361_client_t>();
+    }
     _codec_ctrl = ad9361_ctrl::make_spi(client_settings, _spi_iface, AD9361_SLAVENO);
-    this->reset_codec_dcm();
-
+   
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
     ////////////////////////////////////////////////////////////////////
@@ -518,15 +609,17 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     UHD_ASSERT_THROW(num_radio_chains > 0);
     UHD_ASSERT_THROW(num_radio_chains <= 2);
     _radio_perifs.resize(num_radio_chains);
-    for (size_t i = 0; i < _radio_perifs.size(); i++) this->setup_radio(i);
+    _codec_mgr = ad936x_manager::make(_codec_ctrl, num_radio_chains);
+    _codec_mgr->init_codec();
+    for (size_t i = 0; i < _radio_perifs.size(); i++)
+        this->setup_radio(i);
+
 
     //now test each radio module's connection to the codec interface
-    _codec_ctrl->data_port_loopback(true);
     BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
     {
-        this->codec_loopback_self_test(perif.ctrl);
+        _codec_mgr->loopback_self_test(perif.ctrl, TOREG(SR_CODEC_IDLE), RB64_CODEC_READBACK);
     }
-    _codec_ctrl->data_port_loopback(false);
 
     //register time now and pps onto available radio cores
     _tree->create<time_spec_t>(mb_path / "time" / "now")
@@ -542,15 +635,23 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     }
 
     //setup time source props
+    static const std::vector<std::string> time_sources = (_gpsdo_capable) ?
+                                boost::assign::list_of("none")("internal")("external")("gpsdo") :
+                                boost::assign::list_of("none")("internal")("external") ;
+    _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options")
+        .set(time_sources);
     _tree->create<std::string>(mb_path / "time_source" / "value")
+        .coerce(boost::bind(&check_option_valid, "time source", time_sources, _1))
         .subscribe(boost::bind(&b200_impl::update_time_source, this, _1));
-    static const std::vector<std::string> time_sources = boost::assign::list_of("none")("internal")("external")("gpsdo");
-    _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
     //setup reference source props
+    static const std::vector<std::string> clock_sources = (_gpsdo_capable) ?
+                                boost::assign::list_of("internal")("external")("gpsdo") :
+                                boost::assign::list_of("internal")("external") ;
+    _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options")
+        .set(clock_sources);
     _tree->create<std::string>(mb_path / "clock_source" / "value")
+        .coerce(boost::bind(&check_option_valid, "clock source", clock_sources, _1))
         .subscribe(boost::bind(&b200_impl::update_clock_source, this, _1));
-    static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("gpsdo");
-    _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_sources);
 
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
@@ -578,7 +679,7 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
     ////////////////////////////////////////////////////////////////////
 
     //init the clock rate to something reasonable
-    double default_tick_rate = device_addr.cast<double>("master_clock_rate", B200_DEFAULT_TICK_RATE);
+    double default_tick_rate = device_addr.cast<double>("master_clock_rate", ad936x_manager::DEFAULT_TICK_RATE);
     _tree->access<double>(mb_path / "tick_rate").set(default_tick_rate);
 
     //subdev spec contains full width of selections
@@ -596,32 +697,17 @@ b200_impl::b200_impl(const device_addr_t &device_addr) :
 
     //init to internal clock and time source
     _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
-    _tree->access<std::string>(mb_path / "time_source/value").set("none");
+    _tree->access<std::string>(mb_path / "time_source/value").set("internal");
 
     // Set the DSP chains to some safe value
     for (size_t i = 0; i < _radio_perifs.size(); i++) {
-        _radio_perifs[i].ddc->set_host_rate(default_tick_rate / B200_DEFAULT_DECIM);
-        _radio_perifs[i].duc->set_host_rate(default_tick_rate / B200_DEFAULT_INTERP);
+        _radio_perifs[i].ddc->set_host_rate(default_tick_rate / ad936x_manager::DEFAULT_DECIM);
+        _radio_perifs[i].duc->set_host_rate(default_tick_rate / ad936x_manager::DEFAULT_INTERP);
     }
     // We can automatically choose a master clock rate, but not if the user specifies one
     _tree->access<bool>(mb_path / "auto_tick_rate").set(not device_addr.has_key("master_clock_rate"));
     if (not device_addr.has_key("master_clock_rate")) {
         UHD_MSG(status) << "Setting master clock rate selection to 'automatic'." << std::endl;
-    }
-
-    //GPS installed: use external ref, time, and init time spec
-    if (_gps and _gps->gps_detected())
-    {
-        UHD_MSG(status) << "Setting references to the internal GPSDO" << std::endl;
-        _tree->access<std::string>(mb_path / "time_source" / "value").set("gpsdo");
-        _tree->access<std::string>(mb_path / "clock_source" / "value").set("gpsdo");
-        UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
-        const time_t tp = time_t(_gps->get_sensor("gps_time").to_int()+1);
-        _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
-    } else {
-        //init to internal clock and time source
-        _tree->access<std::string>(mb_path / "clock_source/value").set("internal");
-        _tree->access<std::string>(mb_path / "time_source/value").set("internal");
     }
 
 }
@@ -644,10 +730,18 @@ void b200_impl::setup_radio(const size_t dspno)
     const fs_path mb_path = "/mboards/0";
 
     ////////////////////////////////////////////////////////////////////
+    // Set up transport
+    ////////////////////////////////////////////////////////////////////
+    const boost::uint32_t sid = (dspno == 0) ? B200_CTRL0_MSG_SID : B200_CTRL1_MSG_SID;
+
+    ////////////////////////////////////////////////////////////////////
     // radio control
     ////////////////////////////////////////////////////////////////////
-    const boost::uint32_t sid = (dspno == 0)? B200_CTRL0_MSG_SID : B200_CTRL1_MSG_SID;
-    perif.ctrl = radio_ctrl_core_3000::make(false/*lilE*/, _ctrl_transport, zero_copy_if::sptr()/*null*/, sid);
+    perif.ctrl = radio_ctrl_core_3000::make(
+            false/*lilE*/,
+            _ctrl_transport,
+            zero_copy_if::sptr()/*null*/,
+            sid);
     perif.ctrl->hold_task(_async_task);
     _async_task_data->radio_ctrl[dspno] = perif.ctrl; //weak
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
@@ -655,56 +749,21 @@ void b200_impl::setup_radio(const size_t dspno)
     _tree->access<double>(mb_path / "tick_rate")
         .subscribe(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
     this->register_loopback_self_test(perif.ctrl);
-    perif.atr = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_ATR));
 
     ////////////////////////////////////////////////////////////////////
-    // create rx dsp control objects
+    // Set up peripherals
     ////////////////////////////////////////////////////////////////////
+    perif.atr = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_ATR));
+    // create rx dsp control objects
     perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP), true /*is_b200?*/);
     perif.ddc->set_link_rate(10e9/8); //whatever
     perif.ddc->set_mux("IQ", false, dspno == 1 ? true : false, dspno == 1 ? true : false);
-    _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
-        .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
-    const fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
-    _tree->create<meta_range_t>(rx_dsp_path / "rate" / "range")
-        .publish(boost::bind(&rx_dsp_core_3000::get_host_rates, perif.ddc));
-    _tree->create<double>(rx_dsp_path / "rate" / "value")
-        .set(0.0) // We can only load a sensible value after the tick rate was set
-        .coerce(boost::bind(&b200_impl::coerce_rx_samp_rate, this, perif.ddc, dspno, _1))
-        .subscribe(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
-    ;
-    _tree->create<double>(rx_dsp_path / "freq" / "value")
-        .coerce(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
-        .set(0.0);
-    _tree->create<meta_range_t>(rx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&rx_dsp_core_3000::get_freq_range, perif.ddc));
-    _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
-        .subscribe(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
-
-    ////////////////////////////////////////////////////////////////////
-    // create tx dsp control objects
-    ////////////////////////////////////////////////////////////////////
+    perif.ddc->set_freq(rx_dsp_core_3000::DEFAULT_CORDIC_FREQ);
     perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
     perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
     perif.duc->set_link_rate(10e9/8); //whatever
-    _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
-        .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
-    const fs_path tx_dsp_path = mb_path / "tx_dsps" / dspno;
-    _tree->create<meta_range_t>(tx_dsp_path / "rate" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, perif.duc));
-    _tree->create<double>(tx_dsp_path / "rate" / "value")
-        .set(0.0) // We can only load a sensible value after the tick rate was set
-        .coerce(boost::bind(&b200_impl::coerce_tx_samp_rate, this, perif.duc, dspno, _1))
-        .subscribe(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
-    ;
-    _tree->create<double>(tx_dsp_path / "freq" / "value")
-        .coerce(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
-        .set(0.0);
-    _tree->create<meta_range_t>(tx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc));
+    perif.duc->set_freq(tx_dsp_core_3000::DEFAULT_CORDIC_FREQ);
 
     ////////////////////////////////////////////////////////////////////
     // create time control objects
@@ -715,92 +774,71 @@ void b200_impl::setup_radio(const size_t dspno)
     perif.time64 = time_core_3000::make(perif.ctrl, TOREG(SR_TIME), time64_rb_bases);
 
     ////////////////////////////////////////////////////////////////////
+    // connect rx dsp control objects
+    ////////////////////////////////////////////////////////////////////
+    _tree->access<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
+        .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
+    const fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
+    perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
+    _tree->access<double>(rx_dsp_path / "rate" / "value")
+        .coerce(boost::bind(&b200_impl::coerce_rx_samp_rate, this, perif.ddc, dspno, _1))
+        .subscribe(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
+    ;
+    _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
+        .subscribe(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
+
+    ////////////////////////////////////////////////////////////////////
+    // create tx dsp control objects
+    ////////////////////////////////////////////////////////////////////
+    _tree->access<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
+        .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
+    const fs_path tx_dsp_path = mb_path / "tx_dsps" / dspno;
+    perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
+    _tree->access<double>(tx_dsp_path / "rate" / "value")
+        .coerce(boost::bind(&b200_impl::coerce_tx_samp_rate, this, perif.duc, dspno, _1))
+        .subscribe(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
+    ;
+
+    ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
     ////////////////////////////////////////////////////////////////////
-    for(size_t direction = 0; direction < 2; direction++)
-    {
-        const std::string x = direction? "rx" : "tx";
-        const std::string key = std::string((direction? "RX" : "TX")) + std::string(((dspno == _fe1)? "1" : "2"));
-        const fs_path rf_fe_path = mb_path / "dboards" / "A" / (x+"_frontends") / (dspno? "B" : "A");
+    static const std::vector<direction_t> dirs = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
+    BOOST_FOREACH(direction_t dir, dirs) {
+        const std::string x = (dir == RX_DIRECTION) ? "rx" : "tx";
+        const std::string key = std::string(((dir == RX_DIRECTION) ? "RX" : "TX")) + std::string(((dspno == _fe1) ? "1" : "2"));
+        const fs_path rf_fe_path
+            = mb_path / "dboards" / "A" / (x + "_frontends") / (dspno ? "B" : "A");
 
-        _tree->create<std::string>(rf_fe_path / "name").set("FE-"+key);
-        _tree->create<int>(rf_fe_path / "sensors");
+        // This will connect all the AD936x-specific items
+        _codec_mgr->populate_frontend_subtree(
+            _tree->subtree(rf_fe_path), key, dir
+        );
+
+        // Now connect all the b200_impl-specific items
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
-            .publish(boost::bind(&b200_impl::get_fe_pll_locked, this, x == "tx"));
-        BOOST_FOREACH(const std::string &name, ad9361_ctrl::get_gain_names(key))
-        {
-            _tree->create<meta_range_t>(rf_fe_path / "gains" / name / "range")
-                .set(ad9361_ctrl::get_gain_range(key));
-
-            _tree->create<double>(rf_fe_path / "gains" / name / "value")
-                .coerce(boost::bind(&ad9361_ctrl::set_gain, _codec_ctrl, key, _1))
-                .set(x == "rx" ? B200_DEFAULT_RX_GAIN : B200_DEFAULT_TX_GAIN);
-        }
-        _tree->create<std::string>(rf_fe_path / "connection").set("IQ");
-        _tree->create<bool>(rf_fe_path / "enabled").set(true);
-        _tree->create<bool>(rf_fe_path / "use_lo_offset").set(false);
-        _tree->create<double>(rf_fe_path / "bandwidth" / "value")
-            .coerce(boost::bind(&ad9361_ctrl::set_bw_filter, _codec_ctrl, key, _1))
-            .set(56e6);
-        _tree->create<meta_range_t>(rf_fe_path / "bandwidth" / "range")
-            .publish(boost::bind(&ad9361_ctrl::get_bw_filter_range, key));
-        _tree->create<double>(rf_fe_path / "freq" / "value")
-            .publish(boost::bind(&ad9361_ctrl::get_freq, _codec_ctrl, key))
-            .coerce(boost::bind(&ad9361_ctrl::tune, _codec_ctrl, key, _1))
+            .publish(boost::bind(&b200_impl::get_fe_pll_locked, this, dir == TX_DIRECTION))
+        ;
+        _tree->access<double>(rf_fe_path / "freq" / "value")
             .subscribe(boost::bind(&b200_impl::update_bandsel, this, key, _1))
-            .set(B200_DEFAULT_FREQ);
-        _tree->create<meta_range_t>(rf_fe_path / "freq" / "range")
-            .publish(boost::bind(&ad9361_ctrl::get_rf_freq_range));
-        _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "temp")
-                .publish(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl));
-
-        //setup RX related stuff
-        if(direction)
-        {
-            _tree->create<bool>(rf_fe_path / "dc_offset" / "enable" )
-                .subscribe(boost::bind(&ad9361_ctrl::set_dc_offset_auto, _codec_ctrl, key, _1)).set(true);
-
-            _tree->create<bool>(rf_fe_path / "iq_balance" / "enable" )
-                .subscribe(boost::bind(&ad9361_ctrl::set_iq_balance_auto, _codec_ctrl, key, _1)).set(true);
-        }
-
-        //add all frontend filters
-        std::vector<std::string> filter_names = _codec_ctrl->get_filter_names(key);
-        for(size_t i = 0;i < filter_names.size(); i++)
-        {
-            _tree->create<filter_info_base::sptr>(rf_fe_path / "filters" / filter_names[i] / "value" )
-                .publish(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_names[i]))
-                .subscribe(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_names[i], _1));
-        }
-
-        //setup antenna stuff
-        if (key[0] == 'R')
+        ;
+        if (dir == RX_DIRECTION)
         {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
                 .subscribe(boost::bind(&b200_impl::update_antenna_sel, this, dspno, _1))
-                .set("RX2");
-            _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "rssi")
-                .publish(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key));
+                .set("RX2")
+            ;
 
-            //AGC setup
-            const std::list<std::string> mode_strings = boost::assign::list_of("slow")("fast");
-            _tree->create<bool>(rf_fe_path / "gain" / "agc" / "enable")
-                .subscribe(boost::bind((&ad9361_ctrl::set_agc), _codec_ctrl, key, _1))
-                .set(false);
-            _tree->create<std::string>(rf_fe_path / "gain" / "agc" / "mode" / "value")
-                .subscribe(boost::bind((&ad9361_ctrl::set_agc_mode), _codec_ctrl, key, _1)).set(mode_strings.front());
-            _tree->create<std::list<std::string> >(rf_fe_path / "gain" / "agc" / "mode" / "options")
-                            .set(mode_strings);
         }
-        if (key[0] == 'T')
+        else if (dir == TX_DIRECTION)
         {
             static const std::vector<std::string> ants(1, "TX/RX");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value").set("TX/RX");
         }
-
     }
 }
 
@@ -821,30 +859,6 @@ void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
         if (test_fail) break; //exit loop on any failure
     }
     UHD_MSG(status) << ((test_fail)? "fail" : "pass") << std::endl;
-}
-
-void b200_impl::codec_loopback_self_test(wb_iface::sptr iface)
-{
-    UHD_MSG(status) << "Performing CODEC loopback test... " << std::flush;
-    size_t hash = size_t(time(NULL));
-    for (size_t i = 0; i < 100; i++)
-    {
-        boost::hash_combine(hash, i);
-        const boost::uint32_t word32 = boost::uint32_t(hash) & 0xfff0fff0;
-        iface->poke32(TOREG(SR_CODEC_IDLE), word32);
-        iface->peek64(RB64_CODEC_READBACK); //enough idleness for loopback to propagate
-        const boost::uint64_t rb_word64 = iface->peek64(RB64_CODEC_READBACK);
-        const boost::uint32_t rb_tx = boost::uint32_t(rb_word64 >> 32);
-        const boost::uint32_t rb_rx = boost::uint32_t(rb_word64 & 0xffffffff);
-        bool test_fail = word32 != rb_tx or word32 != rb_rx;
-        if (test_fail) {
-            UHD_MSG(status) << "fail" << std::endl;
-            throw uhd::runtime_error("CODEC loopback test failed.");
-        }
-    }
-    UHD_MSG(status) << "pass" << std::endl;
-    /* Zero out the idle data. */
-    iface->poke32(TOREG(SR_CODEC_IDLE), 0);
 }
 
 /***********************************************************************
@@ -893,9 +907,6 @@ double b200_impl::set_tick_rate(const double new_tick_rate)
     _tick_rate = _codec_ctrl->set_clock_rate(new_tick_rate);
     UHD_MSG(status) << std::endl << (boost::format("Actually got clock rate %.6f MHz.") % (_tick_rate/1e6)) << std::endl;
 
-    //reset after clock rate change
-    this->reset_codec_dcm();
-
     BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
     {
         perif.time64->set_tick_rate(_tick_rate);
@@ -935,12 +946,14 @@ void b200_impl::check_fpga_compat(void)
     if (signature != 0xACE0BA5E) throw uhd::runtime_error(
         "b200::check_fpga_compat signature register readback failed");
 
-    if (compat_major != B200_FPGA_COMPAT_NUM){
+    const boost::uint16_t expected = (_product == B205 ? B205_FPGA_COMPAT_NUM : B200_FPGA_COMPAT_NUM);
+    if (compat_major != expected)
+    {
         throw uhd::runtime_error(str(boost::format(
             "Expected FPGA compatibility number %d, but got %d:\n"
             "The FPGA build is not compatible with the host code build.\n"
             "%s"
-        ) % int(B200_FPGA_COMPAT_NUM) % compat_major % print_utility_error("uhd_images_downloader.py")));
+        ) % int(expected) % compat_major % print_utility_error("uhd_images_downloader.py")));
     }
     _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));
@@ -978,35 +991,92 @@ void b200_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, co
 
 void b200_impl::update_clock_source(const std::string &source)
 {
-    // present the PLL with a valid 10 MHz signal before switching its reference
-    _gpio_state.ref_sel = (source == "gpsdo")? 1 : 0;
-    this->update_gpio_state();
+    // For B205, ref_sel selects whether or not to lock to the external clock source
+    if (_product == B205)
+    {
+        if (source == "external" and _time_source == EXTERNAL)
+        {
+            throw uhd::value_error("external reference cannot be both a clock source and a time source");
+        }
 
-    if (source == "internal"){
+        if (source == "internal")
+        {
+            if (_gpio_state.ref_sel != 0)
+            {
+                _gpio_state.ref_sel = 0;
+                this->update_gpio_state();
+            }
+        }
+        else if (source == "external")
+        {
+            if (_gpio_state.ref_sel != 1)
+            {
+                _gpio_state.ref_sel = 1;
+                this->update_gpio_state();
+            }
+        }
+        else
+        {
+            throw uhd::key_error("update_clock_source: unknown source: " + source);
+        }
+        return;
+    }
+
+    // For all other devices, ref_sel selects the external or gpsdo clock source
+    // and the ADF4001 selects whether to lock to it or not
+    if (source == "internal")
+    {
         _adf4001_iface->set_lock_to_ext_ref(false);
     }
-    else if ((source == "external")
-              or (source == "gpsdo")){
-
+    else if (source == "external")
+    {
+        if (_gpio_state.ref_sel != 0)
+        {
+            _gpio_state.ref_sel = 0;
+            this->update_gpio_state();
+        }
         _adf4001_iface->set_lock_to_ext_ref(true);
-    } else {
+    }
+    else if (_gps and source == "gpsdo")
+    {
+        if (_gpio_state.ref_sel != 1)
+        {
+            _gpio_state.ref_sel = 1;
+            this->update_gpio_state();
+        }
+        _adf4001_iface->set_lock_to_ext_ref(true);
+    }
+    else
+    {
         throw uhd::key_error("update_clock_source: unknown source: " + source);
     }
 }
 
 void b200_impl::update_time_source(const std::string &source)
 {
-    boost::uint32_t value = 0;
+    if (_product == B205 and source == "external" and _gpio_state.ref_sel == 1)
+    {
+        throw uhd::value_error("external reference cannot be both a time source and a clock source");
+    }
+
+    // We assume source is valid for this device (if it's gone through
+    // the prop three, then it definitely is thanks to our coercer)
+    time_source_t value;
     if (source == "none")
-        value = 3;
+        value = NONE;
     else if (source == "internal")
-        value = 2;
+        value = INTERNAL;
     else if (source == "external")
-        value = 1;
-    else if (source == "gpsdo")
-        value = 0;
-    else throw uhd::key_error("update_time_source: unknown source: " + source);
-    _local_ctrl->poke32(TOREG(SR_CORE_PPS_SEL), value);
+        value = EXTERNAL;
+    else if (_gps and source == "gpsdo")
+        value = GPSDO;
+    else
+        throw uhd::key_error("update_time_source: unknown source: " + source);
+    if (_time_source != value)
+    {
+        _local_ctrl->poke32(TOREG(SR_CORE_PPS_SEL), value);
+        _time_source = value;
+    }
 }
 
 /***********************************************************************
@@ -1015,6 +1085,11 @@ void b200_impl::update_time_source(const std::string &source)
 
 void b200_impl::update_bandsel(const std::string& which, double freq)
 {
+    // B205 does not have bandsels
+    if (_product == B205) {
+        return;
+    }
+
     if(which[0] == 'R') {
         if(freq < 2.2e9) {
             _gpio_state.rx_bandsel_a = 0;
@@ -1057,21 +1132,12 @@ void b200_impl::update_gpio_state(void)
         | (_gpio_state.rx_bandsel_a << 5)
         | (_gpio_state.rx_bandsel_b << 4)
         | (_gpio_state.rx_bandsel_c << 3)
-        | (_gpio_state.codec_arst << 2)
+        // Bit 2 currently not used.
         | (_gpio_state.mimo << 1)
         | (_gpio_state.ref_sel << 0)
     ;
 
     _local_ctrl->poke32(TOREG(SR_CORE_MISC), misc_word);
-}
-
-void b200_impl::reset_codec_dcm(void)
-{
-    _gpio_state.codec_arst = 1;
-    this->update_gpio_state();
-    boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-    _gpio_state.codec_arst = 0;
-    this->update_gpio_state();
 }
 
 void b200_impl::update_atrs(void)
@@ -1140,7 +1206,6 @@ void b200_impl::update_enables(void)
     //setup the active chains in the codec
     _codec_ctrl->set_active_chains(enb_tx1, enb_tx2, enb_rx1, enb_rx2);
     if ((num_rx + num_tx) == 0) _codec_ctrl->set_active_chains(true, false, true, false); //enable something
-    this->reset_codec_dcm(); //set_active_chains could cause a clock rate change - reset dcm
 
     //figure out if mimo is enabled based on new state
     _gpio_state.mimo = (mimo)? 1 : 0;

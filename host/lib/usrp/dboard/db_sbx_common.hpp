@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2014 Ettus Research LLC
+// Copyright 2011-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -225,7 +225,7 @@ protected:
         /*! This is the registered instance of the wrapper class, sbx_base. */
         sbx_xcvr *self_base;
     private:
-        void write_lo_regs(dboard_iface::unit_t unit, std::vector<boost::uint32_t> &regs);
+        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs);
         max287x_iface::sptr _txlo;
         max287x_iface::sptr _rxlo;
     };

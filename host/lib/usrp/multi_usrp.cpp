@@ -28,6 +28,7 @@
 #include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/convert.hpp>
+#include <uhd/utils/soft_register.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
@@ -74,7 +75,7 @@ static void do_samp_rate_warning_message(
     }
 }
 
-static void do_tune_freq_results_message(
+/*static void do_tune_freq_results_message(
     const tune_request_t &tune_req,
     const tune_result_t &tune_result,
     double actual_freq,
@@ -176,7 +177,7 @@ static void do_tune_freq_results_message(
 
         UHD_MSG(warning) << results_string << std::endl;
     }
-}
+}*/
 
 /*! The CORDIC can be used to shift the baseband below / past the tunable
  * limits of the actual RF front-end. The baseband filter, located on the
@@ -314,7 +315,9 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     //-- Tune the RF frontend
     //------------------------------------------------------------------
-    rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
+    if (tune_request.rf_freq_policy != tune_request_t::POLICY_NONE) {
+        rf_fe_subtree->access<double>("freq/value").set(target_rf_freq);
+    }
     const double actual_rf_freq = rf_fe_subtree->access<double>("freq/value").get();
 
     //------------------------------------------------------------------
@@ -351,7 +354,9 @@ static tune_result_t tune_xx_subdev_and_dsp(
     //------------------------------------------------------------------
     //-- Tune the DSP
     //------------------------------------------------------------------
-    dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
+    if (tune_request.dsp_freq_policy != tune_request_t::POLICY_NONE) {
+        dsp_subtree->access<double>("freq/value").set(target_dsp_freq);
+    }
     const double actual_dsp_freq = dsp_subtree->access<double>("freq/value").get();
 
     //------------------------------------------------------------------
@@ -819,7 +824,7 @@ public:
                 _tree->subtree(rx_dsp_root(chan)),
                 _tree->subtree(rx_rf_fe_root(chan)),
                 tune_request);
-        do_tune_freq_results_message(tune_request, result, get_rx_freq(chan), "RX");
+        //do_tune_freq_results_message(tune_request, result, get_rx_freq(chan), "RX");
         return result;
     }
 
@@ -1179,7 +1184,7 @@ public:
                 _tree->subtree(tx_dsp_root(chan)),
                 _tree->subtree(tx_rf_fe_root(chan)),
                 tune_request);
-        do_tune_freq_results_message(tune_request, result, get_tx_freq(chan), "TX");
+        //do_tune_freq_results_message(tune_request, result, get_tx_freq(chan), "TX");
         return result;
     }
 
@@ -1385,6 +1390,124 @@ public:
         return 0;
     }
 
+    void write_register(const std::string &path, const boost::uint32_t field, const boost::uint64_t value, const size_t mboard)
+    {
+        if (_tree->exists(mb_root(mboard) / "registers"))
+        {
+            uhd::soft_regmap_accessor_t::sptr accessor =
+                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
+            uhd::soft_register_base& reg = accessor->lookup(path);
+
+            if (not reg.is_writable()) {
+                throw uhd::runtime_error("multi_usrp::write_register - register not writable: " + path);
+            }
+
+            switch (reg.get_bitwidth()) {
+            case 16:
+                if (reg.is_readable())
+                    uhd::soft_register_base::cast<uhd::soft_reg16_rw_t>(reg).write(field, static_cast<boost::uint16_t>(value));
+                else
+                    uhd::soft_register_base::cast<uhd::soft_reg16_wo_t>(reg).write(field, static_cast<boost::uint16_t>(value));
+            break;
+
+            case 32:
+                if (reg.is_readable())
+                    uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).write(field, static_cast<boost::uint32_t>(value));
+                else
+                    uhd::soft_register_base::cast<uhd::soft_reg32_wo_t>(reg).write(field, static_cast<boost::uint32_t>(value));
+            break;
+
+            case 64:
+                if (reg.is_readable())
+                    uhd::soft_register_base::cast<uhd::soft_reg64_rw_t>(reg).write(field, value);
+                else
+                    uhd::soft_register_base::cast<uhd::soft_reg64_wo_t>(reg).write(field, value);
+            break;
+
+            default:
+                throw uhd::assertion_error("multi_usrp::write_register - register has invalid bitwidth");
+            }
+
+        } else {
+            throw uhd::not_implemented_error("multi_usrp::write_register - register IO not supported for this device");
+        }
+    }
+
+    boost::uint64_t read_register(const std::string &path, const boost::uint32_t field, const size_t mboard)
+    {
+        if (_tree->exists(mb_root(mboard) / "registers"))
+        {
+            uhd::soft_regmap_accessor_t::sptr accessor =
+                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
+            uhd::soft_register_base& reg = accessor->lookup(path);
+
+            if (not reg.is_readable()) {
+                throw uhd::runtime_error("multi_usrp::read_register - register not readable: " + path);
+            }
+
+            switch (reg.get_bitwidth()) {
+            case 16:
+                if (reg.is_writable())
+                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg16_rw_t>(reg).read(field));
+                else
+                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg16_ro_t>(reg).read(field));
+            break;
+
+            case 32:
+                if (reg.is_writable())
+                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).read(field));
+                else
+                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_ro_t>(reg).read(field));
+            break;
+
+            case 64:
+                if (reg.is_writable())
+                    return uhd::soft_register_base::cast<uhd::soft_reg64_rw_t>(reg).read(field);
+                else
+                    return uhd::soft_register_base::cast<uhd::soft_reg64_ro_t>(reg).read(field);
+            break;
+
+            default:
+                throw uhd::assertion_error("multi_usrp::read_register - register has invalid bitwidth: " + path);
+            }
+        } else {
+            throw uhd::not_implemented_error("multi_usrp::read_register - register IO not supported for this device");
+        }
+    }
+
+    std::vector<std::string> enumerate_registers(const size_t mboard)
+    {
+        if (_tree->exists(mb_root(mboard) / "registers"))
+        {
+            uhd::soft_regmap_accessor_t::sptr accessor =
+                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
+            return accessor->enumerate();
+        } else {
+            return std::vector<std::string>();
+        }
+    }
+
+    register_info_t get_register_info(const std::string &path, const size_t mboard = 0)
+    {
+        if (_tree->exists(mb_root(mboard) / "registers"))
+        {
+            uhd::soft_regmap_accessor_t::sptr accessor =
+                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
+            uhd::soft_register_base& reg = accessor->lookup(path);
+
+            register_info_t info;
+            info.bitwidth = reg.get_bitwidth();
+            info.readable = reg.is_readable();
+            info.writable = reg.is_writable();
+            return info;
+        } else {
+            throw uhd::not_implemented_error("multi_usrp::read_register - register IO not supported for this device");
+        }
+    }
+
+    /*******************************************************************
+     * RFNoC Methods
+     ******************************************************************/
     void connect(
             const uhd::rfnoc::block_id_t &src_block,
             size_t src_block_port,

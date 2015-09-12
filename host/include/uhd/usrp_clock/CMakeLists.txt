@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Ettus Research LLC
+# Copyright 2014-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,12 @@
 UHD_INSTALL(FILES
     octoclock_eeprom.hpp
     multi_usrp_clock.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd/octoclock
+    DESTINATION ${INCLUDE_DIR}/uhd/usrp_clock
     COMPONENT headers
 )
+
+IF(ENABLE_C_API)
+    UHD_INSTALL(FILES
+        usrp_clock.h
+    )
+ENDIF(ENABLE_C_API)

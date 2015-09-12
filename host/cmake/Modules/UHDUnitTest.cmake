@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2012 Ettus Research LLC
+# Copyright 2010-2012,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,31 +18,30 @@
 ########################################################################
 # Add a unit test and setup the environment for a unit test.
 # Takes the same arguments as the ADD_TEST function.
-#
-# Before calling set the following variables:
-# UHD_TEST_TARGET_DEPS  - built targets for the library path
-# UHD_TEST_LIBRARY_DIRS - directories for the library path
 ########################################################################
 function(UHD_ADD_TEST test_name)
 
         #Ensure that the build exe also appears in the PATH.
         list(APPEND UHD_TEST_TARGET_DEPS ${ARGN})
 
-        #In the land of windows, all libraries must be in the PATH.
-        #Since the dependent libraries are not yet installed,
-        #we must manually set them in the PATH to run tests.
-        #The following appends the path of a target dependency.
-        foreach(target ${UHD_TEST_TARGET_DEPS})
-            get_target_property(location ${target} LOCATION)
-            if(location)
-                get_filename_component(path ${location} PATH)
-                string(REGEX REPLACE "\\$\\(.*\\)" ${CMAKE_BUILD_TYPE} path ${path})
-                list(APPEND UHD_TEST_LIBRARY_DIRS ${path})
-            endif(location)
-        endforeach(target)
+        #We need to put the directory with the .so/.dll file in the
+        #appropriate environment variable, as well as the test
+        #directory itself.
+        if(WIN32)
+            set(UHD_TEST_LIBRARY_DIRS
+                "${Boost_LIBRARY_DIRS}"
+                "${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}"
+                "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}"
+            )
+        else()
+            set(UHD_TEST_LIBRARY_DIRS
+                "${Boost_LIBRARY_DIRS}"
+                "${CMAKE_BINARY_DIR}/lib"
+                "${CMAKE_CURRENT_BINARY_DIR}"
+            )
+        endif(WIN32)
 
-    file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR} srcdir)
-    file(TO_NATIVE_PATH "${UHD_TEST_LIBRARY_DIRS}" libpath) #ok to use on dir list?
+    file(TO_NATIVE_PATH "${UHD_TEST_LIBRARY_DIRS}" libpath)
 
     #http://www.cmake.org/pipermail/cmake/2009-May/029464.html
     #Replaced this add test + set environs code with the shell script generation.

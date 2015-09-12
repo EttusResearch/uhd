@@ -20,7 +20,7 @@
 INCLUDE(CheckCXXSymbolExistsCopy)
 
 ## Check for std::log2
-CHECK_CXX_SYMBOL_EXISTS("log2" "cmath" HAVE_LOG2)
+CHECK_CXX_SYMBOL_EXISTS(log2 cmath HAVE_LOG2)
 
 ## Macros for the version number
 IF(UHD_VERSION_DEVEL)

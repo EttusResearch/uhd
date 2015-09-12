@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2012 Ettus Research LLC
+# Copyright 2010-2012,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@ UHD_INSTALL(FILES
     byteswap.ipp
     cast.hpp
     csv.hpp
+    fp_compare_delta.ipp
+    fp_compare_epsilon.ipp
     gain_group.hpp
     log.hpp
     math.hpp
@@ -40,3 +42,11 @@ UHD_INSTALL(FILES
     DESTINATION ${INCLUDE_DIR}/uhd/utils
     COMPONENT headers
 )
+
+IF(ENABLE_C_API)
+    UHD_INSTALL(FILES
+        thread_priority.h
+        DESTINATION ${INCLUDE_DIR}/uhd/utils
+        COMPONENT headers
+    )
+ENDIF(ENABLE_C_API)

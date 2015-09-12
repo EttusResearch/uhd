@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2014 Ettus Research LLC
+# Copyright 2013-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 ########################################################################
 find_package(UDev)
 
-LIBUHD_REGISTER_COMPONENT("E300" ENABLE_E300 OFF "ENABLE_LIBUHD" OFF)
+LIBUHD_REGISTER_COMPONENT("E300" ENABLE_E300 OFF "ENABLE_LIBUHD" OFF OFF)
 
 IF(ENABLE_E300)
     LIST(APPEND E300_SOURCES
@@ -39,17 +39,23 @@ IF(ENABLE_E300)
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_i2c.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_eeprom_manager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_common.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/e300_async_serial.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/e300_ublox_control_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_remote_codec_ctrl.cpp
     )
     LIBUHD_APPEND_SOURCES(${E300_SOURCES})
-    IF(UDEV_FOUND)
+    IF(UDEV_FOUND AND NOT E300_FORCE_NETWORK)
         INCLUDE_DIRECTORIES(${UDEV_INCLUDE_DIR})
         LIBUHD_APPEND_LIBS(${UDEV_LIBS})
         SET_SOURCE_FILES_PROPERTIES(
             ${E300_SOURCES}
             PROPERTIES COMPILE_DEFINITIONS "E300_NATIVE=1"
         )
-    ENDIF(UDEV_FOUND)
+    ENDIF(UDEV_FOUND AND NOT E300_FORCE_NETWORK)
+
+    IF(ENABLE_GPSD)
+        SET_SOURCE_FILES_PROPERTIES(
+            ${CMAKE_CURRENT_SOURCE_DIR}/e300_impl.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/e300_impl.hpp
+            PROPERTIES COMPILE_DEFINITIONS "E300_GPSD=1"
+        )
+    ENDIF(ENABLE_GPSD)
 ENDIF(ENABLE_E300)

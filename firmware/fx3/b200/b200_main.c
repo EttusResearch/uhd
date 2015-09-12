@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 
 /* This file defines the application that runs on the Cypress FX3 device, and
@@ -34,18 +34,19 @@
  *          Indented features must have the parent feature enabled as well.
  */
 
-//#define HAS_HEAP                    // This requires memory to be set aside for the heap (e.g. required for printing floating-point numbers). You can apply the accompanying patch ('fx3_mem_map.patch') to fx3.ld & cyfxtx.c to create one.
-//#define ENABLE_MSG                  // This will cause the compiled code to exceed the default text memory area (SYS_MEM). You can apply the accompanying patch ('fx3_mem_map.patch') to fx3.ld & cyfxtx.c to resize the memory map so it will fit.
-//#define ENABLE_MANUAL_DMA_XFER
-//#define   ENABLE_MANUAL_DMA_XFER_FROM_HOST
-//#define   ENABLE_MANUAL_DMA_XFER_TO_HOST
+#define HAS_HEAP                    // This requires memory to be set aside for the heap (e.g. required for printing floating-point numbers). You can apply the accompanying patch ('fx3_mem_map.patch') to fx3.ld & cyfxtx.c to create one.
+#define ENABLE_MSG                  // This will cause the compiled code to exceed the default text memory area (SYS_MEM). You can apply the accompanying patch ('fx3_mem_map.patch') to fx3.ld & cyfxtx.c to resize the memory map so it will fit.
+#define ENABLE_MANUAL_DMA_XFER      // Allows us to set it from the host (using the side channel util), doesn't auto-enable it
+//#define   ENABLE_P2U_SUSP_EOP
+#define   ENABLE_MANUAL_DMA_XFER_FROM_HOST
+#define   ENABLE_MANUAL_DMA_XFER_TO_HOST
 //#define   ENABLE_DMA_BUFFER_PACKET_DEBUG
-//#define ENABLE_FPGA_SB              // Be careful: this will add an ever-so-slight delay to some operations (e.g. AD3961 tune)
+#define ENABLE_FPGA_SB              // Be careful: this will add an ever-so-slight delay to some operations (e.g. AD3961 tune)
 #define ENABLE_RE_ENUM_THREAD
 #define ENABLE_USB_EVENT_LOGGING
 //#define PREVENT_LOW_POWER_MODE
-//#define ENABLE_INIT_B_WORKAROUND    // This should only be enabled if you have a board where the FPGA INIT_B line is broken, but the FPGA is known to work
-//#define ENABLE_DONE_WORKAROUND      // This should only be enabled if you have a board where the FPGA DONE line is broken, but the FPGA is known to work
+/*#define ENABLE_INIT_B_WORKAROUND    // This should only be enabled if you have a board where the FPGA INIT_B line is broken, but the FPGA is known to work*/
+/*#define ENABLE_DONE_WORKAROUND      // This should only be enabled if you have a board where the FPGA DONE line is broken, but the FPGA is known to work*/
 
 #define WATCHDOG_TIMEOUT                1500
 #define CHECK_POWER_STATE_SLEEP_TIME    500  // Should be less than WATCHDOG_TIMEOUT
@@ -178,7 +179,7 @@ static uint8_t g_usb_event_log_contiguous_buf[USB_EVENT_LOG_SIZE];
 
 #ifdef ENABLE_FPGA_SB
 static CyBool_t g_fpga_sb_enabled = CyFalse;
-static uint16_t g_fpga_sb_uart_div = 434*2;
+//static uint16_t g_fpga_sb_uart_div = 434*2;
 static uint16_t g_fpga_sb_last_usb_event_log_index = 0;
 static CyU3PThread thread_fpga_sb_poll;
 static CyU3PMutex g_suart_lock;
@@ -215,7 +216,8 @@ enum ConfigFlags {
     CF_DMA_BUFFER_SIZE      = 1 << 5,
     CF_DMA_BUFFER_COUNT     = 1 << 6,
     CF_MANUAL_DMA           = 1 << 7,
-    
+    CF_SB_BAUD_DIV          = 1 << 8,
+
     CF_RE_ENUM              = 1 << 31
 };
 
@@ -236,7 +238,17 @@ typedef struct ConfigMod {
     CONFIG config;
 } CONFIG_MOD, *PCONFIG_MOD;
 
-static CONFIG g_config;
+static CONFIG g_config = {
+    65,     // tx_swing
+    0x11,   // tx_deemphasis
+    0,      // disable_usb2
+    1,      // enable_as_superspeed
+    CY_U3P_DS_THREE_QUARTER_STRENGTH,   // pport_drive_strength
+    64512,  // dma_buffer_size 2**16-1, then aligned to next page boundary
+    1,      // dma_buffer_count
+    0,      // manual_dma
+    434*2   // sb_baud_div
+};
 static CONFIG_MOD g_config_mod;
 
 #define REG_LNK_PHY_ERROR_STATUS 0xE0033044
@@ -251,7 +263,7 @@ enum PhyErrors {
     PHYERR_PHY_ERROR_EB_UND_EV     = 1 << 2,
     PHYERR_PHY_ERROR_EB_OVR_EV     = 1 << 1,
     PHYERR_PHY_ERROR_DECODE_EV     = 1 << 0,
-    
+
     PHYERR_MAX                     = PHYERR_PHY_LOCK_EV,
     PHYERR_MASK                    = (PHYERR_MAX << 1) - 1
 };
@@ -259,7 +271,7 @@ enum PhyErrors {
 typedef struct USBErrorCounters {
     int phy_error_count;
     int link_error_count;
-    
+
     int PHY_LOCK_EV;
     int TRAINING_ERROR_EV;
     int RX_ERROR_CRC32_EV;
@@ -281,35 +293,45 @@ typedef struct DMACounters {
     int ERROR;
     int PROD_SUSP;
     int CONS_SUSP;
-    
+
     int BUFFER_MARKER;
     int BUFFER_EOP;
     int BUFFER_ERROR;
     int BUFFER_OCCUPIED;
-    
+
     int last_count;
     int last_size;
-    
+
     int last_sid;
     int bad_sid_count;
 } DMA_COUNTERS, *PDMA_COUNTERS;
 
+typedef struct PIBCounters
+{
+    int socket_inactive;   // CYU3P_PIB_ERR_THR1_SCK_INACTIVE
+} PIB_COUNTERS, *PPIB_COUNTERS;
+
 typedef struct Counters {
     int magic;
-    
+
     DMA_COUNTERS dma_to_host;
     DMA_COUNTERS dma_from_host;
-    
+
     int log_overrun_count;
-    
+
     int usb_error_update_count;
-    USB_ERROR_COUNTERS usb_error_counters; 
-    
+    USB_ERROR_COUNTERS usb_error_counters;
+
     int usb_ep_underrun_count;
-    
+
     int heap_size;
-    
+
     int resume_count;
+
+    int state_transition_count;
+    int invalid_gpif_state;
+
+    PIB_COUNTERS pib_counters[4];
 } COUNTERS, *PCOUNTERS;
 
 volatile static COUNTERS g_counters;
@@ -333,7 +355,7 @@ caddr_t _sbrk(int incr)
     extern char __heap_end;
     char *prev_heap_end;
 
-    if (heap_end == 0) 
+    if (heap_end == 0)
     {
         heap_end = (char *)&__heap_start;
     }
@@ -366,15 +388,15 @@ void msg(const char* str, ...) {
     va_list args;
     static char buf[LOG_BUFFER_SIZE];
     int idx = 0;
-    
+
     msg_CHECK_USE_LOCK
         LOCK(g_log_lock);
-    
+
     ++log_count;
     log_count %= 10000;
 
     va_start(args, str);
-    
+
     if (1) { // FIXME: Optional
         uint32_t time_now = CyU3PGetTime();
         idx += sprintf(buf, "%08X %04i ", (uint)time_now, log_count);
@@ -382,19 +404,19 @@ void msg(const char* str, ...) {
     else
         idx += sprintf(buf, "%04i ", log_count);
     idx += vsnprintf(buf + idx, LOG_BUFFER_SIZE - idx, str, args);
-    
+
     va_end(args);
-    
+
     if ((LOG_BUFFER_SIZE - log_buffer_len) < (idx + 1 + 1)) {
         msg_CHECK_USE_LOCK
             LOCK(g_counters_lock);
         ++g_counters.log_overrun_count;
         msg_CHECK_USE_LOCK
             UNLOCK(g_counters_lock);
-        
+
         goto msg_exit;
     }
-    
+
     // Circular buffer if we need it later, but currently won't wrap due to above condition
     memcpy(log_buffer + log_buffer_len, buf, min(idx + 1, LOG_BUFFER_SIZE - log_buffer_len));
     if ((idx + 1) > (LOG_BUFFER_SIZE - log_buffer_len))
@@ -404,7 +426,7 @@ void msg(const char* str, ...) {
     }
     else
         log_buffer[log_buffer_len + idx + 1] = '\0';
-    
+
     log_buffer_len += (idx + 1);
 msg_exit:
     msg_CHECK_USE_LOCK
@@ -437,42 +459,42 @@ void msg_nl(const char* str, ...)
 */
 void log_reset(void) {
     //LOCK(g_log_lock);
-	
+
     log_buffer_idx = 0;
-	log_buffer_len = 0;
+    log_buffer_len = 0;
     log_buffer[0] = '\0';
-    
+
     //UNLOCK(g_log_lock);
 }
 
 void counters_auto_reset(void) {
     //LOCK(g_counters_lock);
-    
-	g_counters.log_overrun_count = 0;
-    
+
+    g_counters.log_overrun_count = 0;
+
     //UNLOCK(g_counters_lock);
 }
 
 void counters_dma_reset(void) {
     LOCK(g_counters_lock);
-    
+
     LOCK(g_counters_dma_to_host_lock);
     memset((void*)&g_counters.dma_to_host, 0x00, sizeof(DMA_COUNTERS));
     UNLOCK(g_counters_dma_to_host_lock);
-    
+
     LOCK(g_counters_dma_from_host_lock);
     memset((void*)&g_counters.dma_from_host, 0x00, sizeof(DMA_COUNTERS));
     UNLOCK(g_counters_dma_from_host_lock);
-    
+
     UNLOCK(g_counters_lock);
 }
 
 void counters_reset_usb_errors(void) {
     LOCK(g_counters_lock);
-    
+
     g_counters.usb_error_update_count = 0;
     memset((void*)&g_counters.usb_error_counters, 0x00, sizeof(g_counters.usb_error_counters));
-    
+
     UNLOCK(g_counters_lock);
 }
 
@@ -485,10 +507,10 @@ void dma_callback (
         int from_host)
 {
     CyU3PReturnStatus_t status = CY_U3P_SUCCESS;
-    
+
     PDMA_COUNTERS cnt = (PDMA_COUNTERS)(from_host ? &g_counters.dma_from_host : &g_counters.dma_to_host);
     CyU3PMutex* lock = (from_host ? &g_counters_dma_from_host_lock : &g_counters_dma_to_host_lock);
-    
+
     uint16_t buffer_status = (input->buffer_p.status & CY_U3P_DMA_BUFFER_STATUS_MASK);
     if (buffer_status & CY_U3P_DMA_BUFFER_MARKER)
     {
@@ -513,49 +535,51 @@ void dma_callback (
         LOCKP(lock);
         int prod_cnt = cnt->PROD_EVENT++;
         UNLOCKP(lock);
-        
-        if (cnt->last_count != input->buffer_p.count)
-            msg("[DMA %05d] buffer.count (%d) != last_count (%d)", prod_cnt, input->buffer_p.count, cnt->last_count);
+
+        //if (cnt->last_count != input->buffer_p.count)
+        //    msg("[DMA%d %05d] buffer.count (%05d) != last_count (%05d)", from_host, prod_cnt, input->buffer_p.count, cnt->last_count);
         cnt->last_count = input->buffer_p.count;
-        
+
         if (cnt->last_size != input->buffer_p.size)
-            msg("[DMA %05d] buffer.size (%d) != last_size (%d)", prod_cnt, input->buffer_p.size, cnt->last_size);
+            msg("[DMA%d %05d] buffer.size (%05d) != last_size (%05d)", from_host, prod_cnt, input->buffer_p.size, cnt->last_size);
         cnt->last_size = input->buffer_p.size;
-        
+
         uint32_t* p32 = input->buffer_p.buffer;
         uint32_t sid = p32[1];
         cnt->last_sid = (int)sid;
-        if ((sid != 0xa0) && (sid != 0xb0))
+        if (((from_host == 0) && ((sid != 0xa0) && (sid != 0xb0))) ||
+            ((from_host == 1) && ((sid != 0x50) && (sid != 0x60))))
         {
             cnt->bad_sid_count++;
-            msg("[DMA %05d] Bad SID: 0x%08x", prod_cnt, sid);
+            msg("[DMA%d %05d] Bad SID: 0x%08x", from_host, prod_cnt, sid);
         }
-        
+
         uint16_t* p16 = input->buffer_p.buffer;
-        
+
         if (p32[0] & (((uint32_t)1) << 31))
         {
-            msg("[DMA %05d] Error code: 0x%x (packet len: %d)", prod_cnt, p32[4], p16[0]); // Status
-            
-            //msg("[DMA] 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x", p32[0], p32[1], p32[2], p32[3], p32[4], p32[5]);
+            msg("[DMA%d %05d] Error code: 0x%x (packet len: %05d, buffer count: %05d, seq: %04d)", from_host, prod_cnt, p32[4], p16[0], input->buffer_p.count, (p16[1] & 0x0fff)); // Status
+
+            //msg("[DMA%d] 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x", from_host, p32[0], p32[1], p32[2], p32[3], p32[4], p32[5]);
         }
         else
-        {            
+        {
             if (p16[1] & (((uint16_t)1) << 12))
             {
-                msg("[DMA %05d] EOB", prod_cnt);   // Comes with one sample
+                msg("[DMA%d %05d] EOB (packet len: %05d, buffer count: %05d)", from_host, prod_cnt, p16[0], input->buffer_p.count);   // Comes with one sample
             }
-            
+
             if ((p16[0] != input->buffer_p.count) &&
-                ((p16[0] + 4) != input->buffer_p.count))
+               ((p16[0] + 4) != input->buffer_p.count)) // Case of overrun packet length being padded (being rounded up)
             {
-                msg("[DMA %05d] Packet len (%d) != buffer count (%d)", prod_cnt, p16[0], input->buffer_p.count);
+                if (from_host == 0)
+                    msg("[DMA%d %05d] Packet len (%05d) != buffer count (%05d), seq: %04d [0x%04x 0x%04x]", from_host, prod_cnt, p16[0], input->buffer_p.count, (p16[1] & 0x0fff), p16[0], p16[1]);
             }
-            
-            //msg("[DMA] 0x%04x 0x%04x 0x%04x 0x%04x", p16[0], p16[1], p16[2], p16[3]);
-            
+
+            //msg("[DMA%d] 0x%04x 0x%04x 0x%04x 0x%04x", from_host, p16[0], p16[1], p16[2], p16[3]);
+
             if (p16[1] & (((uint16_t)1) << 12))
-                msg("[DMA %05d] 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x", prod_cnt, p32[0], p32[1], p32[2], p32[3], p32[4], p32[5]);
+                msg("[DMA%d %05d] 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x", from_host, prod_cnt, p32[0], p32[1], p32[2], p32[3], p32[4], p32[5]);
         }
 #endif // ENABLE_DMA_BUFFER_PACKET_DEBUG
         status = CyU3PDmaChannelCommitBuffer (chHandle, input->buffer_p.count, 0);
@@ -594,7 +618,7 @@ void dma_callback (
         LOCKP(lock);
         cnt->ABORTED++;
         UNLOCKP(lock);
-        
+
         msg("! Aborted %i", from_host);
     }
     else if (type == CY_U3P_DMA_CB_ERROR)
@@ -602,7 +626,7 @@ void dma_callback (
         LOCKP(lock);
         cnt->ERROR++;
         UNLOCKP(lock);
-        
+
         msg("! Error %i", from_host);
     }
     else if (type == CY_U3P_DMA_CB_PROD_SUSP)
@@ -610,7 +634,7 @@ void dma_callback (
         LOCKP(lock);
         cnt->PROD_SUSP++;
         UNLOCKP(lock);
-        
+
         msg("! Prod suspend %i", from_host);
     }
     else if (type == CY_U3P_DMA_CB_CONS_SUSP)
@@ -618,8 +642,10 @@ void dma_callback (
         LOCKP(lock);
         cnt->CONS_SUSP++;
         UNLOCKP(lock);
-        
-        msg("! Cons suspend %i", from_host);
+
+        //msg("! Cons suspend %i", from_host);
+
+        CyU3PDmaChannelResume (chHandle, CyFalse, CyTrue);
     }
 }
 
@@ -672,7 +698,7 @@ void gpio_interrupt_callback(uint8_t gpio_id) {
  * everything will come back up properly. */
 void b200_fw_stop(void) {
     msg("b200_fw_stop");
-    
+
     CyU3PEpConfig_t usb_endpoint_config;
 
     /* Update the flag. */
@@ -683,14 +709,14 @@ void b200_fw_stop(void) {
     CyU3PUsbFlushEp(DATA_ENDPOINT_CONSUMER);
     CyU3PUsbFlushEp(CTRL_ENDPOINT_PRODUCER);
     CyU3PUsbFlushEp(CTRL_ENDPOINT_CONSUMER);
-    
+
     /* Reset the DMA channels */
     // SDK 1.3 known issue #1 - probably not necessary since Destroy is next, but just in case
     CyU3PDmaChannelReset(&data_cons_to_prod_chan_handle);
     CyU3PDmaChannelReset(&data_prod_to_cons_chan_handle);
     CyU3PDmaChannelReset(&ctrl_cons_to_prod_chan_handle);
     CyU3PDmaChannelReset(&ctrl_prod_to_cons_chan_handle);
-    
+
     /* Destroy the DMA channels */
     CyU3PDmaChannelDestroy(&data_cons_to_prod_chan_handle);
     CyU3PDmaChannelDestroy(&data_prod_to_cons_chan_handle);
@@ -716,7 +742,7 @@ void reset_gpif(void) {
     CyU3PGpioSetValue(GPIO_FPGA_RESET, CyTrue);
 
     // Bring down GPIF
-    CyU3PGpifDisable(CyTrue);
+    CyU3PGpifDisable(/*CyTrue*/CyFalse);
 
     /* Reset the DMA channels */
     CyU3PDmaChannelReset(&data_cons_to_prod_chan_handle);
@@ -725,42 +751,41 @@ void reset_gpif(void) {
     CyU3PDmaChannelReset(&ctrl_prod_to_cons_chan_handle);
 
     /* Reset the DMA transfers */
-    CyU3PDmaChannelSetXfer(&data_cons_to_prod_chan_handle, \
-            DMA_SIZE_INFINITE);
-
-    CyU3PDmaChannelSetXfer(&data_prod_to_cons_chan_handle, \
-            DMA_SIZE_INFINITE);
-
-    CyU3PDmaChannelSetXfer(&ctrl_cons_to_prod_chan_handle, \
-            DMA_SIZE_INFINITE);
-
-    CyU3PDmaChannelSetXfer(&ctrl_prod_to_cons_chan_handle, \
-            DMA_SIZE_INFINITE);
+    CyU3PDmaChannelSetXfer(&data_cons_to_prod_chan_handle, DMA_SIZE_INFINITE);
+    CyU3PDmaChannelSetXfer(&data_prod_to_cons_chan_handle, DMA_SIZE_INFINITE);
+    CyU3PDmaChannelSetXfer(&ctrl_cons_to_prod_chan_handle, DMA_SIZE_INFINITE);
+    CyU3PDmaChannelSetXfer(&ctrl_prod_to_cons_chan_handle, DMA_SIZE_INFINITE);
 
     /* Flush the USB endpoints */
     CyU3PUsbFlushEp(DATA_ENDPOINT_PRODUCER);
     CyU3PUsbFlushEp(DATA_ENDPOINT_CONSUMER);
     CyU3PUsbFlushEp(CTRL_ENDPOINT_PRODUCER);
     CyU3PUsbFlushEp(CTRL_ENDPOINT_CONSUMER);
-    
+
     /* Load the GPIF configuration for Slave FIFO sync mode. */
-    CyU3PGpifLoad(&CyFxGpifConfig);
-    
+    //CyU3PGpifLoad(&CyFxGpifConfig);
+
     /* Start the state machine. */
-    CyU3PGpifSMStart(RESET, ALPHA_RESET);
-    
+    //if (CyU3PGpifSMStart(RESET, ALPHA_RESET) != CY_U3P_SUCCESS)
+    //    msg("! CyU3PGpifSMStart");
+
     /* Configure the watermarks for the slfifo-write buffers. */
-    CyU3PGpifSocketConfigure(0, DATA_TX_PPORT_SOCKET, 5, CyFalse, 1);
-    CyU3PGpifSocketConfigure(1, DATA_RX_PPORT_SOCKET, 6, CyFalse, 1);
-    CyU3PGpifSocketConfigure(2, CTRL_COMM_PPORT_SOCKET, 5, CyFalse, 1);
-    CyU3PGpifSocketConfigure(3, CTRL_RESP_PPORT_SOCKET, 6, CyFalse, 1);
-    
+    //CyU3PGpifSocketConfigure(0, DATA_TX_PPORT_SOCKET, 5, CyFalse, 1);
+    //CyU3PGpifSocketConfigure(1, DATA_RX_PPORT_SOCKET, 6, CyFalse, 1);
+    //CyU3PGpifSocketConfigure(2, CTRL_COMM_PPORT_SOCKET, 5, CyFalse, 1);
+    //CyU3PGpifSocketConfigure(3, CTRL_RESP_PPORT_SOCKET, 6, CyFalse, 1);
+
     CyU3PGpioSetValue(GPIO_FPGA_RESET, CyFalse);
-    
+
     CyU3PThreadSleep(FPGA_RESET_SETTLING_TIME);
-    
+
+    if (CyU3PGpifSMStart(RESET, ALPHA_RESET) != CY_U3P_SUCCESS)
+        msg("! CyU3PGpifSMStart");
+
+    msg("GPIF reset");
+
     b200_start_fpga_sb_gpio();
-    
+
     g_fx3_state = STATE_RUNNING;
 }
 
@@ -792,11 +817,11 @@ CyU3PReturnStatus_t b200_set_io_matrix(CyBool_t fpga_config_mode) {
     io_config_matrix.useI2C = CyTrue;
     io_config_matrix.useI2S = CyFalse;
     io_config_matrix.useSpi = fpga_config_mode;
-    
+
     res = CyU3PDeviceConfigureIOMatrix(&io_config_matrix);
     if (res != CY_U3P_SUCCESS)
         msg("! ConfigureIOMatrix");
-    
+
     return res;
 }
 
@@ -814,11 +839,11 @@ CyU3PReturnStatus_t b200_gpio_init(CyBool_t set_callback) {
     gpio_clock_config.simpleDiv = CY_U3P_GPIO_SIMPLE_DIV_BY_2;
     gpio_clock_config.clkSrc = CY_U3P_SYS_CLK;
     gpio_clock_config.halfDiv = 0;
-    
+
     res = CyU3PGpioInit(&gpio_clock_config, (set_callback ? gpio_interrupt_callback : NULL));
     if (res != CY_U3P_SUCCESS)
         msg("! CyU3PGpioInit");
-    
+
     return res;
 }
 
@@ -827,36 +852,36 @@ void sb_write(uint8_t reg, uint32_t val) {
 #ifdef ENABLE_FPGA_SB
     const int len = 32;
     int i;
-    
+
     if (g_fpga_sb_enabled == CyFalse)
         return;
-    
+
     reg += FPGA_SB_UART_ADDR_BASE;
-    
+
     //CyU3PBusyWait(1); // Can be used after each SetValue to slow down bit changes
-    
+
     // START
     CyU3PGpioSetValue(GPIO_FPGA_SB_SCL, 1);   // Should already be 1
     CyU3PGpioSetValue(GPIO_FPGA_SB_SDA, 0);
-    
+
     // ADDR[8]
     for (i = 7; i >= 0; i--) {
         uint8_t bit = ((reg & (0x1 << i)) ? 0x01 : 0x00);
         CyU3PGpioSetValue(GPIO_FPGA_SB_SCL, 0);
         CyU3PGpioSetValue(GPIO_FPGA_SB_SDA, bit);
-        
+
         CyU3PGpioSetValue(GPIO_FPGA_SB_SCL, 1); // FPGA reads bit
     }
-    
+
     // DATA[32]
     for (i = (len-1); i >= 0; i--) {
         uint8_t bit = ((val & (0x1 << i)) ? 0x01 : 0x00);
         CyU3PGpioSetValue(GPIO_FPGA_SB_SCL, 0);
         CyU3PGpioSetValue(GPIO_FPGA_SB_SDA, bit);
-        
+
         CyU3PGpioSetValue(GPIO_FPGA_SB_SCL, 1); // FPGA reads bit
     }
-    
+
     // STOP
     CyU3PGpioSetValue(GPIO_FPGA_SB_SDA, 0);
     CyU3PGpioSetValue(GPIO_FPGA_SB_SCL, 0);
@@ -888,10 +913,10 @@ void b200_enable_fpga_sb_gpio(CyBool_t enable) {
 #ifdef ENABLE_FPGA_SB
     CyU3PGpioSimpleConfig_t gpio_config;
     CyU3PReturnStatus_t res;
-    
+
     if (enable == CyFalse) {
         g_fpga_sb_enabled = CyFalse;
-        
+
         return;
     }
 
@@ -900,7 +925,7 @@ void b200_enable_fpga_sb_gpio(CyBool_t enable) {
     gpio_config.driveHighEn = CyTrue;
     gpio_config.inputEn     = CyFalse;
     gpio_config.intrMode    = CY_U3P_GPIO_NO_INTR;
-    
+
     res = CyU3PGpioSetSimpleConfig(GPIO_FPGA_SB_SCL, &gpio_config);
     if (res != CY_U3P_SUCCESS) {
         msg("! GpioSetSimpleConfig GPIO_FPGA_SB_SCL");
@@ -912,9 +937,9 @@ void b200_enable_fpga_sb_gpio(CyBool_t enable) {
 
     CyU3PGpioSetValue(GPIO_FPGA_SB_SCL, 1);
     CyU3PGpioSetValue(GPIO_FPGA_SB_SDA, 1);
-    
+
     g_fpga_sb_enabled = CyTrue;
-    
+
     msg("Debug SB OK");
 #endif // ENABLE_FPGA_SB
 }
@@ -923,10 +948,10 @@ void b200_enable_fpga_sb_gpio(CyBool_t enable) {
 void b200_start_fpga_sb_gpio(void) {
 #ifdef ENABLE_FPGA_SB
     LOCK(g_suart_lock);
-    sb_write(SUART_CLKDIV, g_fpga_sb_uart_div);   // 16-bit reg, master clock = 100 MHz (434*2x = 230400/2)
+    sb_write(SUART_CLKDIV, /*g_fpga_sb_uart_div*/g_config.sb_baud_div);   // 16-bit reg, master clock = 100 MHz (434*2x = 230400/2)
     _sb_write_string("\r\n B2x0 FPGA reset\r\n");
     UNLOCK(g_suart_lock);
-    
+
     msg("Compat:  %d.%d", FX3_COMPAT_MAJOR, FX3_COMPAT_MINOR);
     msg("FX3 SDK: %d.%d.%d (build %d)", CYFX_VERSION_MAJOR, CYFX_VERSION_MINOR, CYFX_VERSION_PATCH, CYFX_VERSION_BUILD);
 #endif // ENABLE_FPGA_SB
@@ -940,15 +965,15 @@ void b200_start_fpga_sb_gpio(void) {
  * application thread will re-configure some of the pins. */
 void b200_gpios_pre_fpga_config(void) {
     CyU3PGpioSimpleConfig_t gpio_config;
-    
+
     //b200_enable_fpga_sb_gpio(CyFalse);
-    
+
     //CyU3PGpioDeInit();
-    
+
     b200_set_io_matrix(CyTrue);
-    
+
     //b200_gpio_init(CyTrue);   // This now done once during startup
-    
+
     ////////////////////////////////////
 
     /* GPIO[0:32] must be set with the DeviceOverride function, instead of the
@@ -989,24 +1014,24 @@ void b200_gpios_pre_fpga_config(void) {
     /* Initialize GPIO output values. */
     CyU3PGpioSetValue(GPIO_FPGA_RESET, 0);
     CyU3PGpioSetValue(GPIO_PROGRAM_B, 1);
-    
+
     b200_enable_fpga_sb_gpio(CyTrue);   // So SCL/SDA are already high when SB state machine activates
 }
 
 
 void b200_slfifo_mode_gpio_config(void) {
     CyU3PGpioSimpleConfig_t gpio_config;
-    
+
     //b200_enable_fpga_sb_gpio(CyFalse);
-    
+
     //CyU3PGpioDeInit();
-    
+
     b200_set_io_matrix(CyFalse);
 
     //b200_gpio_init(CyFalse);  // This now done once during startup
-    
+
     ////////////////////////////////////
-    
+
     /* GPIO[0:32] must be set with the DeviceOverride function, instead of the
      * SimpleEn array configuration. */
     CyU3PDeviceGpioOverride(GPIO_FPGA_RESET, CyTrue);
@@ -1015,7 +1040,7 @@ void b200_slfifo_mode_gpio_config(void) {
     CyU3PDeviceGpioOverride(GPIO_FX3_CE, CyTrue);
     CyU3PDeviceGpioOverride(GPIO_FX3_MISO, CyTrue);
     CyU3PDeviceGpioOverride(GPIO_FX3_MOSI, CyTrue);
-    
+
     /* Configure GPIOs:
      *      Outputs:
      *          driveLowEn = True
@@ -1031,13 +1056,13 @@ void b200_slfifo_mode_gpio_config(void) {
     gpio_config.driveHighEn = CyTrue;
     gpio_config.inputEn = CyFalse;
     gpio_config.intrMode = CY_U3P_GPIO_NO_INTR;
-    
+
     CyU3PGpioSetSimpleConfig(GPIO_FPGA_RESET, &gpio_config);
     CyU3PGpioSetSimpleConfig(GPIO_SHDN_SW, &gpio_config);
     CyU3PGpioSetSimpleConfig(GPIO_FX3_SCLK, &gpio_config);
     CyU3PGpioSetSimpleConfig(GPIO_FX3_CE, &gpio_config);
     CyU3PGpioSetSimpleConfig(GPIO_FX3_MOSI, &gpio_config);
-    
+
     /* Reconfigure the GPIO configure struct for inputs that do NOT require
      * interrupts attached to them. */
     gpio_config.outValue = CyFalse;
@@ -1045,23 +1070,23 @@ void b200_slfifo_mode_gpio_config(void) {
     gpio_config.driveLowEn = CyFalse;
     gpio_config.driveHighEn = CyFalse;
     gpio_config.intrMode = CY_U3P_GPIO_NO_INTR;
-    
+
     CyU3PGpioSetSimpleConfig(GPIO_FX3_MISO, &gpio_config);
     CyU3PGpioSetSimpleConfig(GPIO_AUX_PWR_ON, &gpio_config);
     CyU3PGpioSetSimpleConfig(GPIO_PROGRAM_B, &gpio_config);
     CyU3PGpioSetSimpleConfig(GPIO_INIT_B, &gpio_config);
     CyU3PGpioSetSimpleConfig(GPIO_DONE, &gpio_config);
-    
+
     /* Initialize GPIO output values. */
     CyU3PGpioSetValue(GPIO_FPGA_RESET, 0);
     CyU3PGpioSetValue(GPIO_SHDN_SW, 1);
     CyU3PGpioSetValue(GPIO_FX3_SCLK, 0);
     CyU3PGpioSetValue(GPIO_FX3_CE, 1);
     CyU3PGpioSetValue(GPIO_FX3_MOSI, 0);
-    
+
     // Disabled here as only useful once FPGA has been programmed
     //b200_enable_fpga_sb_gpio(CyTrue);
-    //b200_start_fpga_sb_gpio();  // Set set up SB USART
+    //b200_start_fpga_sb_gpio();  // Set up SB USART
 }
 
 
@@ -1072,7 +1097,7 @@ void b200_slfifo_mode_gpio_config(void) {
  * ready to receive data from the host. */
 void b200_fw_start(void) {
     msg("b200_fw_start");
-    
+
     CyU3PDmaChannelConfig_t dma_channel_config;
     CyU3PEpConfig_t usb_endpoint_config;
     CyU3PUSBSpeed_t usb_speed;
@@ -1095,9 +1120,9 @@ void b200_fw_start(void) {
             data_buffer_size = 512;
             g_vendor_req_buff_size = USB2_VREQ_BUF_SIZE;    // Max 64
             num_packets_per_burst = USB2_PACKETS_PER_BURST; // 1
-            
+
             data_buffer_size_to_host = data_buffer_size_from_host = data_buffer_size;
-            
+
             break;
 
         case CY_U3P_SUPER_SPEED:
@@ -1110,41 +1135,49 @@ void b200_fw_start(void) {
                 msg("LPMDisable OK");
 //#endif // PREVENT_LOW_POWER_MODE
             max_packet_size = 1024; // Per USB3 spec
-            
+
             // SDK ver: total available buffer memory
             // 1.2.3: 204KB
             // 1.3.1: 188KB
-            
+
             // These options should be ignored - data_buffer_count *MUST* be 1
             // They follow is kept for future testing
-            
+
             // 1K
             //data_buffer_count = 64;
             //data_buffer_size = 1024;
-            
+
             // 4K
             //data_buffer_count = 8;
             //data_buffer_size = 4096;
-            
+
+            // 8K
+            //data_buffer_count = 4;
+            //data_buffer_size = 4096*2;
+
             // 16K
             //data_buffer_count = 2*2;
             //data_buffer_size = 16384;    // Default 16K
-            
+
             // 32K
             //data_buffer_count = 2;
             //data_buffer_size = 16384*2;
-            
-            data_buffer_count = 1;
-            data_buffer_size = ((1 << 16) - 1);
-            data_buffer_size -= (data_buffer_size % 1024);  // Align to 1K boundary
-            
+
+            //data_buffer_count = 1;
+            //data_buffer_size = ((1 << 16) - 1);
+            //data_buffer_size = 16384;
+            //data_buffer_size -= (data_buffer_size % 1024);  // Align to 1K boundary
+
+            data_buffer_count = g_config.dma_buffer_count;
+            data_buffer_size = g_config.dma_buffer_size;
+
             data_buffer_size_to_host = data_buffer_size;
             data_buffer_size_from_host = data_buffer_size;
-            
+
             g_vendor_req_buff_size = USB3_VREQ_BUF_SIZE;    // Max 512
-            num_packets_per_burst = USB3_PACKETS_PER_BURST; // 16
+            num_packets_per_burst = USB3_PACKETS_PER_BURST*1+4*0; // 16
             break;
-            
+
         case CY_U3P_NOT_CONNECTED:
             msg("! CY_U3P_NOT_CONNECTED");
             return;
@@ -1152,8 +1185,30 @@ void b200_fw_start(void) {
         default:
             return;
     }
-    
+
     msg("[DMA] to host: %d, from host: %d, depth: %d, burst size: %d", data_buffer_size_to_host, data_buffer_size_from_host, data_buffer_count, num_packets_per_burst);
+
+#ifdef ENABLE_MANUAL_DMA_XFER
+    msg("[DMA] Callback enabled");
+
+#ifdef ENABLE_P2U_SUSP_EOP
+    msg("[DMA] P2U_SUSP_EOP enabled");
+#endif // ENABLE_P2U_SUSP_EOP
+#ifdef ENABLE_MANUAL_DMA_XFER_FROM_HOST
+    msg("[DMA] Manual transfers from host");
+#endif // ENABLE_MANUAL_DMA_XFER_FROM_HOST
+#ifdef ENABLE_MANUAL_DMA_XFER_TO_HOST
+    msg("[DMA] Manual transfers to host");
+#endif // ENABLE_MANUAL_DMA_XFER_TO_HOST
+#ifdef ENABLE_DMA_BUFFER_PACKET_DEBUG
+    msg("[DMA] Packet debugging enabled");
+#endif // ENABLE_DMA_BUFFER_PACKET_DEBUG
+
+#else
+    msg("[DMA] AUTO transfer mode");
+#endif // ENABLE_MANUAL_DMA_XFER
+
+    msg("[DMA] Transfer override: %s", (g_config.manual_dma ? "manual" : "auto"));
 
     /*************************************************************************
      * Slave FIFO Data DMA Channel Configuration
@@ -1205,6 +1260,8 @@ CY_U3P_DMA_CB_PROD_SUSP |
 CY_U3P_DMA_CB_CONS_SUSP |
 #endif // ENABLE_MANUAL_DMA_XFER
     0;
+    //if (g_config.manual_dma == 0)
+    //    dma_channel_config.notification = 0;    // Force all off is manual is disabled
     dma_channel_config.cb =
 #if defined(ENABLE_MANUAL_DMA_XFER) && defined(ENABLE_MANUAL_DMA_XFER_FROM_HOST)
     from_host_dma_callback;
@@ -1218,16 +1275,16 @@ CY_U3P_DMA_CB_CONS_SUSP |
 
     CyU3PDmaChannelCreate (&data_cons_to_prod_chan_handle,
 #if defined(ENABLE_MANUAL_DMA_XFER) && defined(ENABLE_MANUAL_DMA_XFER_FROM_HOST)
-            /*CY_U3P_DMA_TYPE_AUTO_SIGNAL*/CY_U3P_DMA_TYPE_MANUAL,
+            (g_config.manual_dma ? /*CY_U3P_DMA_TYPE_AUTO_SIGNAL*/CY_U3P_DMA_TYPE_MANUAL : CY_U3P_DMA_TYPE_AUTO),
 #else
             CY_U3P_DMA_TYPE_AUTO,
 #endif // ENABLE_MANUAL_DMA_XFER
             &dma_channel_config);
-    
+
     // By default these will adopt 'usb_endpoint_config.pcktSize'
     //CyU3PSetEpPacketSize(DATA_ENDPOINT_PRODUCER, 16384);
     //CyU3PSetEpPacketSize(DATA_ENDPOINT_CONSUMER, 16384);
-    
+
     /* Create a DMA AUTO channel for P2U transfer. */
     dma_channel_config.size = data_buffer_size_to_host;
     dma_channel_config.prodSckId = DATA_RX_PPORT_SOCKET;
@@ -1244,21 +1301,28 @@ CY_U3P_DMA_CB_ERROR |
 CY_U3P_DMA_CB_PROD_SUSP |
 CY_U3P_DMA_CB_CONS_SUSP |
 #endif // ENABLE_MANUAL_DMA_XFER
+#if defined(ENABLE_MANUAL_DMA_XFER) && defined(ENABLE_P2U_SUSP_EOP)
+CY_U3P_DMA_CB_CONS_SUSP |   // For 'CyU3PDmaChannelSetSuspend' below
+#endif // ENABLE_P2U_SUSP_EOP
     0;
+    //if (g_config.manual_dma == 0)
+    //    dma_channel_config.notification = 0;    // Force all off is manual is disabled
     dma_channel_config.cb =
-#if defined(ENABLE_MANUAL_DMA_XFER) && defined(ENABLE_MANUAL_DMA_XFER_TO_HOST)
+#if defined(ENABLE_MANUAL_DMA_XFER) && (defined(ENABLE_MANUAL_DMA_XFER_TO_HOST) || defined(ENABLE_P2U_SUSP_EOP))
     to_host_dma_callback;
 #else
     NULL;
 #endif // ENABLE_MANUAL_DMA_XFER
     CyU3PDmaChannelCreate (&data_prod_to_cons_chan_handle,
 #if defined(ENABLE_MANUAL_DMA_XFER) && defined(ENABLE_MANUAL_DMA_XFER_TO_HOST)
-            /*CY_U3P_DMA_TYPE_AUTO_SIGNAL*/CY_U3P_DMA_TYPE_MANUAL,
+            (g_config.manual_dma ? /*CY_U3P_DMA_TYPE_AUTO_SIGNAL*/CY_U3P_DMA_TYPE_MANUAL : CY_U3P_DMA_TYPE_AUTO),
 #else
             CY_U3P_DMA_TYPE_AUTO,
 #endif // ENABLE_MANUAL_DMA_XFER
             &dma_channel_config);
-
+#ifdef ENABLE_P2U_SUSP_EOP
+    CyU3PDmaChannelSetSuspend(&data_prod_to_cons_chan_handle, CY_U3P_DMA_SCK_SUSP_NONE, CY_U3P_DMA_SCK_SUSP_EOP);
+#endif // ENABLE_P2U_SUSP_EOP
     /* Flush the Endpoint memory */
     CyU3PUsbFlushEp(DATA_ENDPOINT_PRODUCER);
     CyU3PUsbFlushEp(DATA_ENDPOINT_CONSUMER);
@@ -1328,7 +1392,7 @@ CY_U3P_DMA_CB_CONS_SUSP |
     /* Set DMA channel transfer size. */
     CyU3PDmaChannelSetXfer(&ctrl_cons_to_prod_chan_handle, DMA_SIZE_INFINITE);
     CyU3PDmaChannelSetXfer(&ctrl_prod_to_cons_chan_handle, DMA_SIZE_INFINITE);
-    
+
     //CyU3PUsbEnableEPPrefetch();	// To address USB_EVENT_EP_UNDERRUN on EP 0x86 (didn't fix it though)
 
     /* Update the application status flag. */
@@ -1364,76 +1428,76 @@ void event_usb_callback (CyU3PUsbEventType_t event_type, uint16_t event_data) {
                 b200_fw_stop();
             }
             break;
-        
+
         case CY_U3P_USB_EVENT_CONNECT:
             msg("USB_EVENT_CONNECT");
             break;
-        
+
         case CY_U3P_USB_EVENT_SUSPEND:
             msg("USB_EVENT_SUSPEND");
             break;
-        
+
         case CY_U3P_USB_EVENT_RESUME:   // Known issue: this is called repeatedly after a resume
             //msg("USB_EVENT_RESUME");
             g_counters.resume_count++;  // Not locked
             break;
-        
+
         case CY_U3P_USB_EVENT_SPEED:
             msg("USB_EVENT_SPEED");
             break;
-        
+
         case CY_U3P_USB_EVENT_SETINTF:
             msg("USB_EVENT_SETINTF");
             break;
-        
+
         case CY_U3P_USB_EVENT_SET_SEL:
             msg("USB_EVENT_SET_SEL");
             break;
-        
+
         case CY_U3P_USB_EVENT_SOF_ITP:  // CyU3PUsbEnableITPEvent
             //msg("USB_EVENT_SOF_ITP");
             break;
-        
+
         case CY_U3P_USB_EVENT_EP0_STAT_CPLT:
             //msg("USB_EVENT_EP0_STAT_CPLT");   // Occurs each time there's a control transfer
             break;
-        
+
         case CY_U3P_USB_EVENT_VBUS_VALID:
             msg("USB_EVENT_VBUS_VALID");
             break;
-        
+
         case CY_U3P_USB_EVENT_VBUS_REMOVED:
             msg("USB_EVENT_VBUS_REMOVED");
             break;
-            
+
         case CY_U3P_USB_EVENT_HOST_CONNECT:
             msg("USB_EVENT_HOST_CONNECT");
             break;
-        
+
         case CY_U3P_USB_EVENT_HOST_DISCONNECT:
             msg("USB_EVENT_HOST_DISCONNECT");
             break;
-        
+
         case CY_U3P_USB_EVENT_OTG_CHANGE:
             msg("USB_EVENT_OTG_CHANGE");
             break;
-        
+
         case CY_U3P_USB_EVENT_OTG_VBUS_CHG:
             msg("USB_EVENT_OTG_VBUS_CHG");
             break;
-        
+
         case CY_U3P_USB_EVENT_OTG_SRP:
             msg("USB_EVENT_OTG_SRP");
             break;
-        
+
         case CY_U3P_USB_EVENT_EP_UNDERRUN:  // See SDK 1.3 known issues 17 if this happens (can probably ignore first logged occurence)
             LOCK(g_counters_lock);
             ++g_counters.usb_ep_underrun_count;
             UNLOCK(g_counters_lock);
-            
+
             msg("! USB_EVENT_EP_UNDERRUN on EP 0x%02x", event_data);
             break;
-        
+
         case CY_U3P_USB_EVENT_LNK_RECOVERY:
             msg("USB_EVENT_LNK_RECOVERY");
             break;
@@ -1441,16 +1505,16 @@ void event_usb_callback (CyU3PUsbEventType_t event_type, uint16_t event_data) {
         case CY_U3P_USB_EVENT_USB3_LNKFAIL:
             msg("USB_EVENT_USB3_LNKFAIL");
             break;
-        
+
         case CY_U3P_USB_EVENT_SS_COMP_ENTRY:
             msg("USB_EVENT_SS_COMP_ENTRY");
             break;
-        
+
         case CY_U3P_USB_EVENT_SS_COMP_EXIT:
             msg("USB_EVENT_SS_COMP_EXIT");
             break;
 #endif // (CYFX_VERSION_MAJOR >= 1) && (CYFX_VERSION_MINOR >= 3)
-        
+
         default:
             msg("! Unhandled USB event");
             break;
@@ -1510,7 +1574,7 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
             if(wLength > b200_usb_product_desc[0]) {
                 wLength = b200_usb_product_desc[0];
             }
-            
+
             //msg("MS string desc");
 
             CyU3PUsbSendEP0Data(wLength, ((uint8_t *) b200_usb_product_desc));
@@ -1540,7 +1604,7 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                     CyU3PUsbStall(wIndex, CyFalse, CyTrue);
                     handled = CyTrue;
                     CyU3PUsbAckSetup();
-                    
+
                     msg("Clear DATA_ENDPOINT_PRODUCER");
                 }
 
@@ -1553,7 +1617,7 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                     CyU3PUsbStall(wIndex, CyFalse, CyTrue);
                     handled = CyTrue;
                     CyU3PUsbAckSetup();
-                    
+
                     msg("Clear DATA_ENDPOINT_CONSUMER");
                 }
 
@@ -1566,7 +1630,7 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                     CyU3PUsbStall(wIndex, CyFalse, CyTrue);
                     handled = CyTrue;
                     CyU3PUsbAckSetup();
-                    
+
                     msg("Clear CTRL_ENDPOINT_PRODUCER");
                 }
 
@@ -1579,7 +1643,7 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                     CyU3PUsbStall(wIndex, CyFalse, CyTrue);
                     handled = CyTrue;
                     CyU3PUsbAckSetup();
-                    
+
                     msg("Clear CTRL_ENDPOINT_CONSUMER");
                 }
             }
@@ -1595,7 +1659,7 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
         switch(bRequest) {
             case B200_VREQ_BITSTREAM_START: {
                 CyU3PUsbGetEP0Data(1, g_vendor_req_buffer, &read_count);
-                
+
                 g_fpga_programming_write_count = 0;
 
                 CyU3PEventSet(&g_event_usb_config, EVENT_BITSTREAM_START, \
@@ -1614,12 +1678,12 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                 }
                 break;
             }
-            
+
             case B200_VREQ_BITSTREAM_DATA_FILL: {
                 CyU3PUsbGetEP0Data(g_vendor_req_buff_size, g_vendor_req_buffer, &g_vendor_req_read_count);
                 break;
             }
-            
+
             case B200_VREQ_BITSTREAM_DATA_COMMIT: {
                 /*CyU3PReturnStatus_t*/int spi_result = -1;
                 if (g_fx3_state == STATE_CONFIGURING_FPGA) {
@@ -1670,8 +1734,14 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
 
             case B200_VREQ_GET_LOG: {
                 LOCK(g_log_lock);
-                
-                if (log_buffer_idx == 0)
+
+                if (log_buffer_len == 0) {
+                    log_buffer[0] = '\0';
+                    CyU3PUsbSendEP0Data(1, (uint8_t*)log_buffer);
+                    //CyU3PUsbSendEP0Data(0, NULL);
+                    //CyU3PUsbAckSetup();
+                }
+                else if (log_buffer_idx == 0)
                     CyU3PUsbSendEP0Data(log_buffer_len, (uint8_t*)log_buffer);
                 else {
                     int len1 = min(LOG_BUFFER_SIZE - log_buffer_idx, log_buffer_len);
@@ -1681,39 +1751,39 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                         memcpy(log_contiguous_buffer + len1, log_buffer, log_buffer_len - len1);
                     CyU3PUsbSendEP0Data(log_buffer_len, (uint8_t*)log_contiguous_buffer);
                 }
-                
+
                 // FIXME: Necessary? Not used in the other ones
                 //CyU3PUsbSendEP0Data(0, NULL);   // Send ZLP since previous send has resulted in an integral # of packets
-                
+
                 log_reset();
-                
+
                 UNLOCK(g_log_lock);
-                
+
                 //log_reset();
-                
+
                 break;
             }
 
             case B200_VREQ_GET_COUNTERS: {
                 LOCK(g_counters_lock);
-                
+
                 CyU3PUsbSendEP0Data(sizeof(COUNTERS), (uint8_t*)&g_counters);
-                
+
                 counters_auto_reset();
-                
+
                 UNLOCK(g_counters_lock);
-                
+
                 //counters_auto_reset();
-                
+
                 break;
             }
-            
+
             case B200_VREQ_CLEAR_COUNTERS: {
                 CyU3PUsbAckSetup();
                 //CyU3PUsbGetEP0Data(g_vendor_req_buff_size, g_vendor_req_buffer, &read_count);   // Dummy
-                
+
                 counters_dma_reset();
-                
+
                 break;
             }
 
@@ -1750,14 +1820,14 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                         //msg("USB event log [1] %i", (int)len);
                     }
                 }
-                
+
                 //if (len > 0)  // Send a ZLP, otherwise it'll timeout
                     CyU3PUsbSendEP0Data(len, g_usb_event_log_contiguous_buf);
-                
+
                 g_last_usb_event_log_index = idx;
                 break;
             }
-            
+
             case B200_VREQ_SET_CONFIG: {
                 CyU3PUsbGetEP0Data(sizeof(CONFIG_MOD), (uint8_t*)g_vendor_req_buffer, &read_count);
                 if (read_count == sizeof(CONFIG_MOD)) {
@@ -1766,7 +1836,7 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                 }
                 break;
             }
-            
+
             case B200_VREQ_GET_CONFIG: {
                 CyU3PUsbSendEP0Data(sizeof(g_config), (uint8_t*)&g_config);
                 break;
@@ -1780,64 +1850,77 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                 for (i = 0; i < read_count; ++i)
                     sb_write(SUART_TXCHAR, g_vendor_req_buffer[i]);
                 UNLOCK(g_suart_lock);
-                
+
                 msg("Wrote %d SB chars", read_count);
 #else
                 msg("SB is disabled");
 #endif // ENABLE_FPGA_SB
                 break;
             }
-            
+
             case B200_VREQ_SET_SB_BAUD_DIV: {
                 uint16_t div;
                 CyU3PUsbGetEP0Data(sizeof(div), (uint8_t*)&div, &read_count);
-                
+
                 if (read_count == sizeof(div)) {
 #ifdef ENABLE_FPGA_SB
                     LOCK(g_suart_lock);
                     sb_write(SUART_CLKDIV, div);
                     UNLOCK(g_suart_lock);
                     msg("SUART_CLKDIV = %d", div);
-                    g_fpga_sb_uart_div = div;   // Store for GPIF (FPGA) reset
+                    /*g_fpga_sb_uart_div*/g_config.sb_baud_div = div;   // Store for GPIF (FPGA) reset
 #else
                     msg("SB is disabled");
 #endif // ENABLE_FPGA_SB
                 }
                 else
                     msg("! SUART_CLKDIV received %d bytes", read_count);
-                
+
                 break;
             }
-            
+
             case B200_VREQ_FLUSH_DATA_EPS: {
                 //msg("Flushing data EPs...");
-                
-                CyU3PUsbAckSetup();
-                
+
+                //CyU3PUsbAckSetup();
+
+                //CyU3PUsbResetEndpointMemories();
+
                 // From host
                 //CyU3PDmaChannelReset(&data_cons_to_prod_chan_handle);
                 //CyU3PUsbFlushEp(DATA_ENDPOINT_PRODUCER);
                 //CyU3PUsbResetEp(DATA_ENDPOINT_PRODUCER);
                 //CyU3PDmaChannelSetXfer(&data_cons_to_prod_chan_handle, DMA_SIZE_INFINITE);
-                
+
+                //CyU3PDmaSocketDisable(DATA_RX_PPORT_SOCKET);
+
                 //CyU3PDmaChannelReset(&data_cons_to_prod_chan_handle);
-                CyU3PDmaChannelReset(&data_prod_to_cons_chan_handle);
+                if (CyU3PDmaChannelReset(&data_prod_to_cons_chan_handle) != CY_U3P_SUCCESS)
+                {
+                    msg("! CyU3PDmaChannelReset");
+                }
                 //CyU3PUsbFlushEp(DATA_ENDPOINT_PRODUCER);
                 CyU3PUsbFlushEp(DATA_ENDPOINT_CONSUMER);
                 //CyU3PUsbResetEp(DATA_ENDPOINT_PRODUCER);
-                CyU3PUsbResetEp(DATA_ENDPOINT_CONSUMER);
+//                CyU3PUsbResetEp(DATA_ENDPOINT_CONSUMER);
+                //CyU3PUsbStall(DATA_ENDPOINT_CONSUMER, CyFalse, CyTrue);
                 //CyU3PDmaChannelSetXfer(&data_cons_to_prod_chan_handle, DMA_SIZE_INFINITE);
+                //CyU3PDmaSocketEnable(DATA_RX_PPORT_SOCKET);
                 CyU3PDmaChannelSetXfer(&data_prod_to_cons_chan_handle, DMA_SIZE_INFINITE);
-                
+
+                //CyU3PUsbResetEndpointMemories();
+
                 // To host
                 //CyU3PDmaChannelReset(&data_prod_to_cons_chan_handle);
                 //CyU3PUsbFlushEp(DATA_ENDPOINT_CONSUMER);
                 //CyU3PUsbResetEp(DATA_ENDPOINT_CONSUMER);
                 //CyU3PDmaChannelSetXfer(&data_prod_to_cons_chan_handle, DMA_SIZE_INFINITE);
-                
+
+                CyU3PUsbAckSetup();
+
                 break;
             }
-            
+
             case B200_VREQ_EEPROM_WRITE: {
                 i2cAddr = 0xA0 | ((wValue & 0x0007) << 1);
                 CyU3PUsbGetEP0Data(((wLength + 15) & 0xFFF0), g_vendor_req_buffer, NULL);
@@ -1941,6 +2024,97 @@ CyBool_t lpm_request_callback(CyU3PUsbLinkPowerMode link_mode) {
 }
 
 
+/* Callback function to check for PIB ERROR*/
+void gpif_error_cb(CyU3PPibIntrType cbType, uint16_t cbArg)
+{
+    if (cbType==CYU3P_PIB_INTR_ERROR)
+    {
+        switch (CYU3P_GET_PIB_ERROR_TYPE(cbArg))
+        {
+            case CYU3P_PIB_ERR_NONE:
+                break;
+            case CYU3P_PIB_ERR_THR0_WR_OVERRUN:
+                msg("CYU3P_PIB_ERR_THR0_WR_OVERRUN");
+                break;
+            case CYU3P_PIB_ERR_THR1_WR_OVERRUN:
+                msg("CYU3P_PIB_ERR_THR1_WR_OVERRUN");
+                break;
+            case CYU3P_PIB_ERR_THR2_WR_OVERRUN:
+                msg("CYU3P_PIB_ERR_THR2_WR_OVERRUN");
+                break;
+            case CYU3P_PIB_ERR_THR3_WR_OVERRUN:
+                msg("CYU3P_PIB_ERR_THR3_WR_OVERRUN");
+                break;
+            case CYU3P_PIB_ERR_THR0_RD_UNDERRUN:
+                msg("CYU3P_PIB_ERR_THR0_RD_UNDERRUN");
+                break;
+            case CYU3P_PIB_ERR_THR1_RD_UNDERRUN:
+                msg("CYU3P_PIB_ERR_THR1_RD_UNDERRUN");
+                break;
+            case CYU3P_PIB_ERR_THR2_RD_UNDERRUN:
+                msg("CYU3P_PIB_ERR_THR2_RD_UNDERRUN");
+                break;
+            case CYU3P_PIB_ERR_THR3_RD_UNDERRUN:
+                msg("CYU3P_PIB_ERR_THR3_RD_UNDERRUN");
+                break;
+            case CYU3P_PIB_ERR_THR0_ADAP_UNDERRUN:
+                msg("CYU3P_PIB_ERR_THR0_ADAP_UNDERRUN");
+                break;
+            case CYU3P_PIB_ERR_THR1_ADAP_OVERRUN:
+                msg("CYU3P_PIB_ERR_THR1_ADAP_OVERRUN");
+                break;
+            // FIXME: Other threads
+            case CYU3P_PIB_ERR_THR1_SCK_INACTIVE:
+                //msg("CYU3P_PIB_ERR_THR1_SCK_INACTIVE");
+                ++g_counters.pib_counters[1].socket_inactive;   // UNSYNC'd
+                break;
+            default:
+                msg("Unknown CYU3P_PIB_ERR %i", CYU3P_GET_PIB_ERROR_TYPE(cbArg));
+                break;
+        }
+
+        switch (CYU3P_GET_GPIF_ERROR_TYPE(cbArg))
+        {
+            case CYU3P_GPIF_ERR_NONE:             /**< No GPIF state machine errors. */
+                //msg("CYU3P_GPIF_ERR_NONE");
+                break;
+            case CYU3P_GPIF_ERR_INADDR_OVERWRITE: /**< Content of INGRESS_ADDR register is overwritten before read. */
+                msg("CYU3P_GPIF_ERR_INADDR_OVERWRITE");
+                break;
+            case CYU3P_GPIF_ERR_EGADDR_INVALID:   /**< Attempt to read EGRESS_ADDR register before it is written to. */
+                msg("CYU3P_GPIF_ERR_EGADDR_INVALID");
+                break;
+            case CYU3P_GPIF_ERR_DATA_READ_ERR:    /**< Read from DMA data thread which is not ready. */
+                msg("CYU3P_GPIF_ERR_DATA_READ_ERR");
+                break;
+            case CYU3P_GPIF_ERR_DATA_WRITE_ERR:   /**< Write to DMA data thread which is not ready. */
+                msg("CYU3P_GPIF_ERR_DATA_WRITE_ERR");
+                break;
+            case CYU3P_GPIF_ERR_ADDR_READ_ERR:    /**< Read from DMA address thread which is not ready. */
+                msg("CYU3P_GPIF_ERR_ADDR_READ_ERR");
+                break;
+            case CYU3P_GPIF_ERR_ADDR_WRITE_ERR:   /**< Write to DMA address thread which is not ready. */
+                msg("CYU3P_GPIF_ERR_ADDR_WRITE_ERR");
+                break;
+            case CYU3P_GPIF_ERR_INVALID_STATE:    /**< GPIF state machine has reached an invalid state. */
+                //msg("CYU3P_GPIF_ERR_INVALID_STATE");
+                ++g_counters.invalid_gpif_state;    // UNSYNC'd
+                break;
+            default:
+                msg("Unknown CYU3P_GPIF_ERR %i", CYU3P_GET_GPIF_ERROR_TYPE(cbArg));
+                break;
+        }
+    }
+}
+
+
+void GpifStateChangeCb(uint8_t stateId)
+{
+    //msg("%d", stateId);
+    ++g_counters.state_transition_count;
+}
+
+
 /*! Initialize and start the GPIF state machine.
  *
  * This function starts the GPIF Slave FIFO state machine on the FX3. Because on
@@ -1948,7 +2122,7 @@ CyBool_t lpm_request_callback(CyU3PUsbLinkPowerMode link_mode) {
  * after FPGA configuration is complete. */
 void b200_gpif_init(void) {
     msg("b200_gpif_init");
-    
+
     CyU3PPibClock_t pib_clock_config;
 
     /* Initialize the p-port block; disable DLL for sync GPIF. */
@@ -1956,19 +2130,34 @@ void b200_gpif_init(void) {
     pib_clock_config.clkSrc = CY_U3P_SYS_CLK;
     pib_clock_config.isHalfDiv = CyFalse;
     pib_clock_config.isDllEnable = CyFalse;
-    CyU3PPibInit(CyTrue, &pib_clock_config);
+    if (CyU3PPibInit(CyTrue, &pib_clock_config) != CY_U3P_SUCCESS)
+        msg("! CyU3PPibInit");
 
     /* Load the GPIF configuration for Slave FIFO sync mode. */
-    CyU3PGpifLoad(&CyFxGpifConfig);
+    if (CyU3PGpifLoad(&CyFxGpifConfig) != CY_U3P_SUCCESS)
+        msg("! CyU3PGpifLoad");
+
+    msg("GPIF loaded");
+
+    //CyU3PGpifRegisterSMIntrCallback(GpifStateChangeCb);
 
     /* Start the state machine. */
-    CyU3PGpifSMStart(RESET, ALPHA_RESET);
+    //CyU3PGpifSMStart(RESET, ALPHA_RESET);
 
     /* Configure the watermarks for the slfifo-write buffers. */
-    CyU3PGpifSocketConfigure(0, DATA_TX_PPORT_SOCKET, 5, CyFalse, 1);
-    CyU3PGpifSocketConfigure(1, DATA_RX_PPORT_SOCKET, 6, CyFalse, 1);
-    CyU3PGpifSocketConfigure(2, CTRL_COMM_PPORT_SOCKET, 5, CyFalse, 1);
-    CyU3PGpifSocketConfigure(3, CTRL_RESP_PPORT_SOCKET, 6, CyFalse, 1);
+    if (CyU3PGpifSocketConfigure(0, DATA_TX_PPORT_SOCKET, 5, CyFalse, 1) != CY_U3P_SUCCESS)
+        msg("! CyU3PGpifSocketConfigure 0");
+    if (CyU3PGpifSocketConfigure(1, DATA_RX_PPORT_SOCKET, 6, CyFalse, 1) != CY_U3P_SUCCESS)
+        msg("! CyU3PGpifSocketConfigure 1");
+    if (CyU3PGpifSocketConfigure(2, CTRL_COMM_PPORT_SOCKET, 5, CyFalse, 1) != CY_U3P_SUCCESS)
+        msg("! CyU3PGpifSocketConfigure 2");
+    if (CyU3PGpifSocketConfigure(3, CTRL_RESP_PPORT_SOCKET, 6, CyFalse, 1) != CY_U3P_SUCCESS)
+        msg("! CyU3PGpifSocketConfigure 3");
+
+    //CyU3PGpifSMStart(RESET, ALPHA_RESET);
+
+    /* Register a callback for notification of PIB interrupts*/
+    CyU3PPibRegisterCallback(gpif_error_cb, CYU3P_PIB_INTR_ERROR);
 }
 
 
@@ -1979,7 +2168,7 @@ void b200_gpif_init(void) {
  * 32-bit mode. */
 CyU3PReturnStatus_t b200_spi_init(void) {
     msg("b200_spi_init");
-    
+
     CyU3PSpiConfig_t spiConfig;
 
     /* Start the SPI module and configure the master. */
@@ -2000,10 +2189,10 @@ CyU3PReturnStatus_t b200_spi_init(void) {
     spiConfig.wordLen    = 8;
 
     CyU3PReturnStatus_t res = CyU3PSpiSetConfig(&spiConfig, NULL);
-    
+
     if (res != CY_U3P_SUCCESS)
         msg("! CyU3PSpiSetConfig");
-    
+
     return res;
 }
 
@@ -2015,7 +2204,7 @@ CyU3PReturnStatus_t b200_spi_init(void) {
  */
 void b200_usb_init(void) {
     //msg("b200_usb_init");
-    
+
     /* Initialize the I2C interface for the EEPROM of page size 64 bytes. */
     CyFxI2cInit(CY_FX_USBI2C_I2C_PAGE_SIZE);
 
@@ -2137,48 +2326,53 @@ void b200_usb_init(void) {
 
     CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 3,
             (uint8_t *) dev_serial);
-    
+
     ////////////////////////////////////////////////////////
 
     // FIXME: CyU3PUsbSetTxDeemphasis(0x11); <0x1F  // Shouldn't need to change this
 
-    uint32_t tx_swing = /*65*/45;   // 65 & 45 are OK, 120 causes much link recovery. <128. 1.2V is USB3 limit.
+    const uint32_t tx_swing = g_config.tx_swing/*65*//*45*/;   // 65 & 45 are OK, 120 causes much link recovery. <128. 1.2V is USB3 limit.
     if (CyU3PUsbSetTxSwing(tx_swing) == CY_U3P_SUCCESS)
-        msg("CyU3PUsbSetTxSwing %d", tx_swing);
+        msg("CyU3PUsbSetTxSwing: %d", tx_swing);
     else
-        msg("! CyU3PUsbSetTxSwing %d", tx_swing);
+        msg("! CyU3PUsbSetTxSwing: %d", tx_swing);
 
     ////////////////////////////////////////////////////////
 
     /* Connect the USB pins, and enable SuperSpeed (USB 3.0). */
-    CyU3PConnectState(CyTrue, CyTrue);  // connect, ssEnable
+    if (CyU3PConnectState(CyTrue, (g_config.enable_as_superspeed != 0 ? CyTrue : CyFalse)) == CY_U3P_SUCCESS) {  // connect, ssEnable
+        CyU3PUSBSpeed_t usb_speed = CyU3PUsbGetSpeed();
+        msg("Link up (speed: USB %d)", (int)usb_speed); // MAGIC: Values happen to map
+    }
+    else
+        msg("! Failed to establish link");
 }
 
 
 void b200_restore_gpio_for_fpga_config(void) {
     CyU3PDeviceGpioRestore(GPIO_FPGA_RESET);
     CyU3PDeviceGpioRestore(GPIO_DONE);
-    
+
     CyU3PDeviceGpioRestore(GPIO_FX3_SCLK);
     CyU3PDeviceGpioRestore(GPIO_FX3_CE);
     CyU3PDeviceGpioRestore(GPIO_FX3_MISO);
     CyU3PDeviceGpioRestore(GPIO_FX3_MOSI);
-    
+
     //CyU3PGpioDeInit();    // Moved to just before init
 }
 
 void thread_fpga_config_entry(uint32_t input) {
     uint32_t event_flag;
-    
+
     //msg("thread_fpga_config_entry");
-    
+
     for(;;) {
-        
+
         // Event is set through VREQ
         if(CyU3PEventGet(&g_event_usb_config, \
             (EVENT_FPGA_CONFIG), CYU3P_EVENT_AND_CLEAR, \
             &event_flag, CYU3P_WAIT_FOREVER) == CY_U3P_SUCCESS) {
-            
+
             //uint8_t old_state = g_fx3_state;
             uint32_t old_fpga_programming_write_count = 0;
 
@@ -2200,7 +2394,7 @@ void thread_fpga_config_entry(uint32_t input) {
 
             /* Configure the device GPIOs for FPGA programming. */
             b200_gpios_pre_fpga_config();
-            
+
             CyU3PSysWatchDogClear();
 
             /* Initialize the SPI module that will be used for FPGA programming. */
@@ -2213,7 +2407,7 @@ void thread_fpga_config_entry(uint32_t input) {
 
             /* We can now begin configuring the FPGA. */
             g_fx3_state = STATE_FPGA_READY;
-            
+
             msg("Begin FPGA");
 
             // Event is set through VREQ
@@ -2232,7 +2426,7 @@ void thread_fpga_config_entry(uint32_t input) {
                 CyU3PThreadSleep(FPGA_PROGRAMMING_POLL_SLEEP);
                 CyU3PSysWatchDogClear();
             }
-            
+
             if (wait_count >= FPGA_PROGRAMMING_BITSTREAM_START_POLL_COUNT)
                 continue;
 
@@ -2243,7 +2437,7 @@ void thread_fpga_config_entry(uint32_t input) {
 
             /* Wait for INIT_B to fall and rise. */
             wait_count = 0;
-            
+
             msg("Wait FPGA");
 
             while(CyU3PEventGet(&g_event_usb_config, \
@@ -2282,9 +2476,9 @@ void thread_fpga_config_entry(uint32_t input) {
             /* We are ready to accept the FPGA bitstream! */
             wait_count = 0;
             g_fx3_state = STATE_CONFIGURING_FPGA;
-            
+
             msg("Configuring FPGA");
-            
+
             // g_fpga_programming_write_count is zero'd by VREQ triggering EVENT_BITSTREAM_START
 
             while(CyU3PEventGet(&g_event_usb_config, \
@@ -2308,7 +2502,7 @@ void thread_fpga_config_entry(uint32_t input) {
                     wait_count = 0;
                     old_fpga_programming_write_count = g_fpga_programming_write_count;
                 }
-                
+
                 CyU3PThreadSleep(FPGA_PROGRAMMING_POLL_SLEEP);
                 CyU3PSysWatchDogClear();
             }
@@ -2329,42 +2523,42 @@ void thread_fpga_config_entry(uint32_t input) {
 #endif // ENABLE_DONE_WORKAROUND
             if (wait_count >= FPGA_PROGRAMMING_DONE_POLL_COUNT)
                 continue;
-            
+
             msg("FPGA done");
-            
+
             /* Tell the host that we are ignoring it for a while. */
             g_fx3_state = STATE_BUSY;
-            
+
             CyU3PSysWatchDogClear();
-            
+
             /* Now that the FPGA is configured, we need to tear down the current SPI and
             * GPIO configs, and re-config for GPIF & bit-banged SPI operation. */
             CyU3PSpiDeInit();
             b200_restore_gpio_for_fpga_config();
-            
+
             CyU3PSysWatchDogClear();
-            
+
             /* Load the GPIO configuration for normal SLFIFO use. */
             b200_slfifo_mode_gpio_config();
-            
+
             /* Tone down the drive strength on the P-port. */
             //CyU3PSetPportDriveStrength(CY_U3P_DS_HALF_STRENGTH);
-            
+
             CyU3PSysWatchDogClear();
-            
+
             /* FPGA configuration is complete! Time to get the GPIF state machine
             * running for Slave FIFO. */
             b200_gpif_init();
-            
+
             CyU3PThreadSleep(1);
             b200_start_fpga_sb_gpio();  // Moved here to give SB time to init
-            
+
             /* RUN, BABY, RUN! */
             g_fx3_state = STATE_RUNNING;
-            
+
             msg("Running");
         }
-        
+
         CyU3PThreadRelinquish();
     }
 }
@@ -2403,15 +2597,15 @@ void thread_main_app_entry(uint32_t input) {
 
                 while((current_state >= CyU3PUsbLPM_U1) \
                         && (current_state <= CyU3PUsbLPM_U3)) {
-                    
+
                     msg("! LPS = %i", current_state);
 
                     CyU3PUsbSetLinkPowerState(CyU3PUsbLPM_U0);  // This will wake up the host if it's trying to sleep
                     CyU3PThreadSleep(1);
-                    
+
                     if (CyU3PUsbGetSpeed () != CY_U3P_SUPER_SPEED)
                         break;
-                    
+
                     CyU3PUsbGetLinkPowerState (&current_state);
                 }
             }
@@ -2426,12 +2620,12 @@ static uint32_t g_poll_last_phy_error_status = 0;
 void update_error_counters(void) {
     if (CyU3PUsbGetSpeed () != CY_U3P_SUPER_SPEED)
         return;
-    
+
     uvint32_t reg = REG_LNK_PHY_ERROR_STATUS;
     uint32_t val = 0;
     if (CyU3PReadDeviceRegisters((uvint32_t*)reg, 1, &val) == CY_U3P_SUCCESS) {
         g_poll_last_phy_error_status |= (val & PHYERR_MASK);
-        
+
         // Reset after read
         uint32_t zero = PHYERR_MASK;
         if (CyU3PWriteDeviceRegisters((uvint32_t*)reg, 1, &zero) != CY_U3P_SUCCESS)
@@ -2441,12 +2635,12 @@ void update_error_counters(void) {
         // FIXME: Log once
         msg("! Reg read fail");
     }
-    
+
     // Equivalent code:
     //uint32_t* p = (uint32_t*)REG_LNK_PHY_ERROR_STATUS;
     //val = (*p);
     //(*p) = PHYERR_MASK;
-    
+
     uint16_t phy_error_count = 0, link_error_count = 0;
     if (CyU3PUsbGetErrorCounts(&phy_error_count, &link_error_count) == CY_U3P_SUCCESS) {    // Resets internal counters after call
         g_poll_last_phy_error_count += phy_error_count;
@@ -2456,7 +2650,7 @@ void update_error_counters(void) {
         // FIXME: Log once
         msg("! CyU3PUsbGetErrorCounts");
     }
-    
+
     LOCK(g_counters_lock);
     g_counters.usb_error_update_count++;
     g_counters.usb_error_counters.phy_error_count += phy_error_count;
@@ -2478,50 +2672,153 @@ void update_error_counters(void) {
 
 void thread_re_enum_entry(uint32_t input) {
     uint32_t event_flag;
-    
+
     //msg("thread_re_enum_entry");
-    
+
     int keep_alive = 0;
-    
+
     while (1) {
         if (CyU3PEventGet(&g_event_usb_config, \
             (EVENT_RE_ENUM), CYU3P_EVENT_AND_CLEAR, \
             &event_flag, RE_ENUM_THREAD_SLEEP_TIME) == CY_U3P_SUCCESS) {
                 msg("Re-config");
-                
+
                 // FIXME: This section is not finished
-                
+
                 // Not locking this since we only expect one write in VREQ and read afterward here
-                
-                int re_enum = g_config_mod.flags & (CF_RE_ENUM | CF_TX_SWING | CF_TX_DEEMPHASIS);
-                
+
+                int re_enum = g_config_mod.flags & (CF_RE_ENUM | CF_TX_SWING | CF_TX_DEEMPHASIS | CF_DISABLE_USB2 | CF_ENABLE_AS_SUPERSPEED);
+
                 CyU3PThreadSleep(100);  // Wait for EP0 xaction to complete
-                
+
                 //b200_fw_stop();
-                
+
+/*
+    int tx_swing;               // [90] [65] 45
+    int tx_deemphasis;          // 0x11
+    int disable_usb2;           // 0
+    int enable_as_superspeed;   // 1
+    int pport_drive_strength;   // CY_U3P_DS_THREE_QUARTER_STRENGTH
+    int dma_buffer_size;        // [USB3] (max)
+    int dma_buffer_count;       // [USB3] 1
+    int manual_dma;             // 0
+    int sb_baud_div;            // 434*2
+*/
+
                 if (re_enum) {
-                    msg("Link down");
-                    CyU3PConnectState(CyFalse, CyTrue);
-                }
-                
-                if (g_config_mod.flags & CF_TX_DEEMPHASIS) {
-                    //g_config_mod.config.tx_deemphasis
-                    //CyU3PUsbSetTxDeemphasis(0x11); <0x1F
-                }
-                if (g_config_mod.flags & CF_TX_SWING) {
-                    //CyU3PUsbSetTxSwing(90); <128
+                    if (CyU3PConnectState(CyFalse, (g_config.enable_as_superspeed != 0 ? CyTrue : CyFalse)) == CY_U3P_SUCCESS)
+                        msg("Link down");
+                    else
+                        msg("! Failed to bring link down");
                 }
 
-                //CyU3PUsbControlUsb2Support();
-                
+                if (g_config_mod.flags & CF_TX_DEEMPHASIS) {
+#if (CYFX_VERSION_MAJOR >= 1) && (CYFX_VERSION_MINOR >= 3)
+                    if ((g_config_mod.config.tx_deemphasis < 0x1F) && (CyU3PUsbSetTxDeemphasis(g_config_mod.config.tx_deemphasis) == CY_U3P_SUCCESS)) {
+                        msg("TX deemphasis now: %d (was: %d)", g_config_mod.config.tx_deemphasis, g_config.tx_deemphasis);
+                        g_config.tx_deemphasis = g_config_mod.config.tx_deemphasis;
+                    }
+                    else
+#endif // #if (CYFX_VERSION_MAJOR >= 1) && (CYFX_VERSION_MINOR >= 3)
+                        msg("! Failed to set TX deemphasis: %d (still: %d)", g_config_mod.config.tx_deemphasis, g_config.tx_deemphasis);
+                }
+
+                if (g_config_mod.flags & CF_TX_SWING) {
+                    if ((g_config_mod.config.tx_swing < 128) && (CyU3PUsbSetTxSwing(g_config_mod.config.tx_swing) == CY_U3P_SUCCESS)) {
+                        msg("TX swing now: %d (was: %d)", g_config_mod.config.tx_swing, g_config.tx_swing);
+                        g_config.tx_swing = g_config_mod.config.tx_swing;
+                    }
+                    else
+                        msg("! Failed to set TX swing: %d (still: %d)", g_config_mod.config.tx_swing, g_config.tx_swing);
+                }
+
+                if (g_config_mod.flags & CF_DISABLE_USB2) {
+                    if (CyU3PUsbControlUsb2Support((g_config_mod.config.disable_usb2 != 0 ? CyTrue : CyFalse)) == CY_U3P_SUCCESS) {
+                        msg("USB 2 support now: %s (was: %d)", (g_config_mod.config.disable_usb2 ? "disabled" : "enabled"), (g_config.disable_usb2 ? "disabled" : "enabled"));
+                        g_config.disable_usb2 = g_config_mod.config.disable_usb2;
+                    }
+                    else
+                        msg("! Failed to change USB 2 support to: %s (still: %s)", (g_config_mod.config.disable_usb2 ? "enabled" : "disabled"), (g_config.disable_usb2 ? "enabled" : "disabled"));
+                }
+
+                if (g_config_mod.flags & CF_PPORT_DRIVE_STRENGTH) {
+                    // CY_U3P_DS_QUARTER_STRENGTH,CY_U3P_DS_HALF_STRENGTH,CY_U3P_DS_THREE_QUARTER_STRENGTH,CY_U3P_DS_FULL_STRENGTH
+                    if ((g_config_mod.config.pport_drive_strength >= CY_U3P_DS_QUARTER_STRENGTH) &&
+                        (g_config_mod.config.pport_drive_strength <= CY_U3P_DS_FULL_STRENGTH) &&
+                        (CyU3PSetPportDriveStrength(g_config_mod.config.pport_drive_strength) == CY_U3P_SUCCESS)) {
+                        msg("PPort drive strength now: %d (was: %d)", g_config_mod.config.pport_drive_strength, g_config.pport_drive_strength);
+                        g_config.pport_drive_strength = g_config_mod.config.pport_drive_strength;
+                    }
+                    else
+                        msg("! Failed to set PPort drive strength: %d (still: %d)", g_config_mod.config.pport_drive_strength, g_config.pport_drive_strength);
+                }
+
+                int reinit_dma = g_config_mod.flags & (CF_MANUAL_DMA | CF_DMA_BUFFER_COUNT | CF_DMA_BUFFER_SIZE);
+                if (re_enum)
+                    reinit_dma = 0; // Don't need to if re-enumerating
+
+                if (g_config_mod.flags & CF_MANUAL_DMA) {
+#ifdef ENABLE_MANUAL_DMA_XFER
+                    msg("DMA transfers will be: %s (was: %s)", (g_config_mod.config.manual_dma ? "manual" : "auto"), (g_config.manual_dma ? "manual" : "auto"));
+                    g_config.manual_dma = g_config_mod.config.manual_dma;
+#else
+                    msg("! Manual DMA transfers not compiled into FW");
+#endif // ENABLE_MANUAL_DMA_XFER
+                }
+
+                if (g_config_mod.flags & CF_DMA_BUFFER_COUNT) {
+                    msg("DMA buffer count will be: %d (was: %d)", g_config_mod.config.dma_buffer_count, g_config.dma_buffer_count);
+                    g_config.dma_buffer_count = g_config_mod.config.dma_buffer_count;
+                }
+
+                if (g_config_mod.flags & CF_DMA_BUFFER_SIZE) {
+                    msg("DMA buffer size will be: %d (was: %d)", g_config_mod.config.dma_buffer_size, g_config.dma_buffer_size);
+                    g_config.dma_buffer_size = g_config_mod.config.dma_buffer_size;
+                }
+
+                if (g_config_mod.flags & CF_SB_BAUD_DIV) {
+#ifdef ENABLE_FPGA_SB
+                    LOCK(g_suart_lock);
+                    sb_write(SUART_CLKDIV, g_config_mod.config.sb_baud_div);
+                    UNLOCK(g_suart_lock);
+                    msg("SUART_CLKDIV now: %d (was: %d)", g_config_mod.config.sb_baud_div, g_config.sb_baud_div);
+                    g_config.sb_baud_div = g_config_mod.config.sb_baud_div;
+#else
+                    msg("! Failed to set SUART_CLKDIV: SB is disabled (still: %d)", g_config.sb_baud_div);
+#endif // ENABLE_FPGA_SB
+                }
+
                 //b200_fw_start()
 
+                if (g_config_mod.flags & CF_ENABLE_AS_SUPERSPEED) {
+                    msg("Enable SuperSpeed: %s (was: %s)", (g_config_mod.config.enable_as_superspeed ? "yes" : "no"), (g_config.enable_as_superspeed ? "yes" : "no"));
+                    g_config.enable_as_superspeed = g_config_mod.config.enable_as_superspeed;
+                }
+
+                if (reinit_dma) {
+                    if (g_app_running) {
+                        msg("Stopping FW...");
+
+                        b200_fw_stop();
+                    }
+
+                    msg("Starting FW...");
+
+                    b200_fw_start();
+                }
+                else // Shouldn't be re-init'ing AND re-enum'ing
                 /* Connect the USB pins, and enable SuperSpeed (USB 3.0). */
                 if (re_enum) {
-                    msg("Link up");
-                    CyU3PConnectState(CyTrue, CyTrue);  // CHECK: Assuming all other important state will persist
+                    msg("Connecting... (as SuperSpeed: %d)", g_config.enable_as_superspeed);
+
+                    if (CyU3PConnectState(CyTrue, (g_config.enable_as_superspeed != 0 ? CyTrue : CyFalse)) == CY_U3P_SUCCESS) {  // CHECK: Assuming all other important state will persist
+                        CyU3PUSBSpeed_t usb_speed = CyU3PUsbGetSpeed();
+                        msg("Link up (speed: USB %d)", (int)usb_speed); // MAGIC: Values happen to map
+                    }
+                    else
+                        msg("! Failed to bring link up");
                 }
-                
+
                 counters_reset_usb_errors();
         }
         else {
@@ -2533,7 +2830,7 @@ void thread_re_enum_entry(uint32_t input) {
             update_error_counters();
 #endif // !ENABLE_FPGA_SB
         }
-        
+
         CyU3PThreadRelinquish();
     }
 }
@@ -2548,26 +2845,26 @@ void base16_encode(uint8_t v, char out[2], char first) {
 #ifdef ENABLE_FPGA_SB
 void thread_fpga_sb_poll_entry(uint32_t input) {
     //msg("thread_fpga_sb_poll_entry");
-    
+
     while (1) {
         uint16_t i;
         uint8_t has_change = 0;
-        
+
         update_error_counters();
-        
+
         /*if (g_poll_last_phy_error_count > 0)
             has_change = 1;
         if (g_poll_last_link_error_count > 0)
             has_change = 1;*/
         if (g_poll_last_phy_error_status != 0)
             has_change = 1;
-        
+
         uint16_t idx = CyU3PUsbGetEventLogIndex();  // Current *write* pointer
         if (idx > (USB_EVENT_LOG_SIZE-1)) {
             msg("! USB event log idx = %i", (int)idx);
             break;
         }
-        
+
         uint8_t has_usb_events = 0;
         // Assuming logging won't wrap around between get calls (i.e. buffer should be long enough)
         if (g_fpga_sb_last_usb_event_log_index != idx) {
@@ -2578,7 +2875,7 @@ void thread_fpga_sb_poll_entry(uint32_t input) {
                         break;
                     }
                 }
-                
+
                 if (has_usb_events == 0) {
                     for (i = 0; i < idx; i++) {
                         if (g_usb_event_log[i] != 0x14 && g_usb_event_log[i] != 0x15 && g_usb_event_log[i] != 0x16) { // CTRL, STATUS, ACKSETUP
@@ -2597,15 +2894,15 @@ void thread_fpga_sb_poll_entry(uint32_t input) {
                 }
             }
         }
-            
+
         if (has_change || has_usb_events) {
             LOCK(g_suart_lock);
-            
+
             sb_write(SUART_TXCHAR, UPT_USB_EVENTS);
-            
+
             char out[3];
             out[2] = '\0';
-            
+
             if (has_usb_events) {
                 if (idx < g_fpga_sb_last_usb_event_log_index) {
                     for (i = g_fpga_sb_last_usb_event_log_index; i < USB_EVENT_LOG_SIZE; i++) {
@@ -2614,7 +2911,7 @@ void thread_fpga_sb_poll_entry(uint32_t input) {
                         base16_encode(g_usb_event_log[i], out, 'A');
                         _sb_write_string(out);
                     }
-                
+
                     for (i = 0; i < idx; i++) {
                         if (g_usb_event_log[i] == 0x14 || g_usb_event_log[i] == 0x15 || g_usb_event_log[i] == 0x16) // CTRL, STATUS, ACKSETUP
                             continue;
@@ -2631,10 +2928,10 @@ void thread_fpga_sb_poll_entry(uint32_t input) {
                     }
                 }
             }
-            
+
             // USB events: A-P,A-P
             // PHY error status: a,a-i
-            
+
             if (g_poll_last_phy_error_status != 0) {
                 uint32_t mask;
                 size_t offset;
@@ -2645,32 +2942,32 @@ void thread_fpga_sb_poll_entry(uint32_t input) {
                     }
                 }
             }
-            
+
             /*char buf[6];
-            
+
             if (g_poll_last_phy_error_count > 0) {
                 sb_write(SUART_TXCHAR, 'b');
                 snprintf(buf, sizeof(buf)-1, "%d", g_poll_last_phy_error_count);
                 _sb_write_string(buf);
             }
-            
+
             if (g_poll_last_link_error_count > 0) {
                 sb_write(SUART_TXCHAR, 'c');
                 snprintf(buf, sizeof(buf)-1, "%d", g_poll_last_link_error_count);
                 _sb_write_string(buf);
             }*/
-            
+
             _sb_write_string("\r\n");
-            
+
             UNLOCK(g_suart_lock);
         }
-        
+
         g_poll_last_phy_error_count = 0;
         g_poll_last_link_error_count = 0;
         g_poll_last_phy_error_status = 0;
-        
+
         g_fpga_sb_last_usb_event_log_index = idx;
-        
+
         CyU3PThreadRelinquish();
     }
 }
@@ -2692,10 +2989,10 @@ void CyFxApplicationDefine(void) {
 #ifdef ENABLE_FPGA_SB
     void *fpga_sb_poll_thread_ptr;
 #endif // ENABLE_FPGA_SB
-    
+
     g_counters.magic = COUNTER_MAGIC;
-    memset(&g_config, 0xFF, sizeof(g_config));  // Initialise to -1
-    
+    //memset(&g_config, 0xFF, sizeof(g_config));  // Initialise to -1
+
     CyU3PMutexCreate(&g_log_lock, CYU3P_NO_INHERIT);
     CyU3PMutexCreate(&g_counters_lock, CYU3P_NO_INHERIT);
     CyU3PMutexCreate(&g_counters_dma_from_host_lock, CYU3P_NO_INHERIT);
@@ -2706,36 +3003,37 @@ void CyFxApplicationDefine(void) {
 #ifdef ENABLE_USB_EVENT_LOGGING
     CyU3PUsbInitEventLog(g_usb_event_log, USB_EVENT_LOG_SIZE);
 #endif // ENABLE_USB_EVENT_LOGGING
-    
+
     ////////////////////////////////////////////////////////
-    
+
     /* Tell the host that we are ignoring it for a while. */
     g_fx3_state = STATE_BUSY;
-    
+
     /* Set the FX3 compatibility number. */
     compat_num[0] = FX3_COMPAT_MAJOR;
     compat_num[1] = FX3_COMPAT_MINOR;
-    
+
     /* Initialize the USB system. */
     b200_usb_init();
-    
+
     /* Turn on the Watchdog Timer. */
     CyU3PSysWatchDogConfigure(CyTrue, WATCHDOG_TIMEOUT);
-    
+
     /* Go do something. Probably not useful, because you aren't configured. */
     g_fx3_state = STATE_UNCONFIGURED;
-    
+
     ////////////////////////////////////////////////////////
-    
+
     b200_gpio_init(CyTrue);
-    
+
     b200_enable_fpga_sb_gpio(CyTrue);
-    
+
     msg("Compat:  %d.%d", FX3_COMPAT_MAJOR, FX3_COMPAT_MINOR);
     msg("FX3 SDK: %d.%d.%d (build %d)", CYFX_VERSION_MAJOR, CYFX_VERSION_MINOR, CYFX_VERSION_PATCH, CYFX_VERSION_BUILD);
-    
+    msg("FW built: %s %s", __TIME__, __DATE__);
+
     ////////////////////////////////////////////////////////
-    
+
     /* Create the USB event group that we will use to track USB events from the
      * application thread. */
     CyU3PEventCreate(&g_event_usb_config);
@@ -2838,14 +3136,14 @@ int main(void) {
     status = CyU3PDeviceCacheControl(CyTrue, CyFalse, CyFalse); // Icache, Dcache, DMAcache
     if (status != CY_U3P_SUCCESS)
         goto handle_fatal_error;
-    
+
     /* Configure the IO peripherals on the FX3. The gpioSimpleEn arrays are
      * bitmaps, where each bit represents the GPIO of the matching index - the
      * second array is index + 32. */
     status = b200_set_io_matrix(CyTrue);
     if(status != CY_U3P_SUCCESS)
         goto handle_fatal_error;
-    
+
     /* This function calls starts the RTOS kernel.
      *
      * ABANDON ALL HOPE, YE WHO ENTER HERE */

@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,14 +60,13 @@ nirio_status rio_ioctl(
     * DeviceIoControl, even when doing synchronous IO. */
     OVERLAPPED zeroedOverlapped = {0};
     DWORD outLen = 0;
-    int_fast32_t lastError = 0;
 
     if (!(DeviceIoControl(device_handle, ioctl_code,
             const_cast<void*>(write_buf), static_cast<DWORD>(write_buf_len),
             read_buf, static_cast<DWORD>(read_buf_len),
             &outLen, &zeroedOverlapped )))
     {
-        lastError = GetLastError();
+        int_fast32_t lastError = GetLastError();
         return NiRio_Status_SoftwareFault;
     }
 

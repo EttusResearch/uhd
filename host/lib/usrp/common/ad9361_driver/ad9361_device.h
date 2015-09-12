@@ -1,5 +1,18 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014 Ettus Research
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifndef INCLUDED_AD9361_DEVICE_H
@@ -102,6 +115,8 @@ public:
     /* Make AD9361 output its test tone. */
     void output_test_tone();
 
+    void digital_test_tone(bool enb); // Digital output
+
     /* Turn on/off AD9361's TX port --> RX port loopback. */
     void data_port_loopback(const bool loopback_enabled);
 
@@ -144,6 +159,8 @@ public:
     static const double AD9361_MAX_CLOCK_RATE;
     static const double AD9361_CAL_VALID_WINDOW;
     static const double AD9361_RECOMMENDED_MAX_BANDWIDTH;
+    static const double DEFAULT_RX_FREQ;
+    static const double DEFAULT_TX_FREQ;
 
 private:    //Methods
     void _program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs);
@@ -173,7 +190,8 @@ private:    //Methods
     double _tune_helper(direction_t direction, const double value);
     double _setup_rates(const double rate);
     double _get_temperature(const double cal_offset, const double timeout = 0.1);
-    void _configure_bb_rf_dc_tracking(const bool on);
+    void _configure_bb_dc_tracking();
+    void _configure_rx_iq_tracking();
     void _setup_agc(chain_t chain, gain_mode_t gain_mode);
     void _set_fir_taps(direction_t direction, chain_t chain, const std::vector<boost::int16_t>& taps);
     std::vector<boost::int16_t> _get_fir_taps(direction_t direction, chain_t chain);
@@ -222,7 +240,7 @@ private:    //Members
     ad9361_io::sptr     _io_iface;
     //Intermediate state
     double              _rx_freq, _tx_freq, _req_rx_freq, _req_tx_freq;
-    double              _last_calibration_freq;
+    double              _last_rx_cal_freq, _last_tx_cal_freq;
     double              _rx_analog_bw, _tx_analog_bw, _rx_bb_lp_bw, _tx_bb_lp_bw;
     double              _rx_tia_lp_bw, _tx_sec_lp_bw;
     //! Current baseband sampling rate (this is the actual rate the device is
@@ -245,8 +263,8 @@ private:    //Members
     chip_regs_t         _regs;
     //Synchronization
     boost::recursive_mutex  _mutex;
-    bool _use_dc_offset_correction;
-    bool _use_iq_balance_correction;
+    bool _use_dc_offset_tracking;
+    bool _use_iq_balance_tracking;
 };
 
 }}  //namespace

@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2013 Ettus Research LLC
+# Copyright 2011-2013,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 ########################################################################
 # Conditionally configure the B100 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("B100" ENABLE_B100 ON "ENABLE_LIBUHD;ENABLE_USB" OFF)
+LIBUHD_REGISTER_COMPONENT("B100" ENABLE_B100 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
 
 IF(ENABLE_B100)
     LIBUHD_APPEND_SOURCES(

@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2012,2014 Ettus Research LLC
+# Copyright 2011-2012,2014-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,21 +22,9 @@
 ########################################################################
 # Conditionally configure the USRP2 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 ON "ENABLE_LIBUHD" OFF)
+LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 ON "ENABLE_LIBUHD" OFF OFF)
 
 IF(ENABLE_USRP2)
-    ########################################################################
-    # Define UHD_PKG_DATA_PATH for usrp2_iface.cpp
-    ########################################################################
-    FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX} UHD_PKG_PATH)
-    STRING(REPLACE "\\" "\\\\" UHD_PKG_PATH ${UHD_PKG_PATH})
-
-    SET_SOURCE_FILES_PROPERTIES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
-        PROPERTIES COMPILE_DEFINITIONS
-        "UHD_LIB_DIR=\"lib${LIB_SUFFIX}\""
-    )
-
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
@@ -45,5 +33,6 @@ IF(ENABLE_USRP2)
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_fifo_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/n200_image_loader.cpp
     )
 ENDIF(ENABLE_USRP2)

@@ -1,6 +1,71 @@
 Change Log for Releases
 ==============================
 
+## 003.009.001
+* B200mini: Updated udev rules, removed DCM
+* B200: Better USB error messages
+* Cores: Fixed CORDIC scaling issue on all devices that use
+  dsp_core_3000
+* X300: Fixed GPIO issue
+* Examples: Added PPS source option
+* Docs: Multiple manual updates
+
+## 003.009.000
+* X300: Updated DAC ctrl, FPGA toolchain is now entirely Vivado,
+  improved master clock controls, added ADC self-cal capability,
+  prepared for revisions 7 and 8, fixed flow control issue which
+  could cause device to hang when receiving too many overruns
+* B2XX: Auto clock rate setting, added PID/VID pairs to support
+  all B2XX- and derivatives, added temperature sensor, improved
+  DC offset and IQ imbalance correction, added AGC support,
+  support for FPGPIO connector on Rev6+ boards, full clock range support,
+  updated FX3 firmware (side-channel logging capabilities, updated
+  tx voltage swing, better configurability), default tick rate now
+  16 MHz, added B200mini support
+* E3XX: Added temperature sensor, FPGA toolchain is now entirely Vivado,
+  improved DC offset and IQ imbalance correction, added AGC support,
+  improved FPGA capture interface robustness for RFIC, make frame
+  sizes configurable, replaced GPS control code with gpsd interfacing
+  capabilities
+* Octoclock: Fixed bootloader + ethernet capabilities
+* Compilers: Supported MSVC versions are now 2012, 2013, 2015
+  (dropped 2010 support), added MinGW capabilities
+* Documentation: Many minor fixes and updates, merged all the
+  info from code.ettus.com
+* UHD: Added sid_t, CHDR-specific transports now get their own
+  (un)packer codes, fixed a lot of compiler warnings, added
+  filter API (currently available for AD9361 frontend), added
+  soft-register API, replaced Cheetah with Mako, full Py3k
+  compliance, updated images downloader tool (now is one tool
+  for all devices), CMake minimum version is now 2.8, refactored
+  general AD9361 peripheral management, refactored most core
+  control management, added usb_error type (used by B2xx devices),
+  better exception handling at runtime, added C wrapper API,
+  new dependency: python-requests
+* C API: Added to UHD (wraps C++ calls in C)
+* multi_usrp: Added normalized gain setters/getters, IQ imbalance
+  + DC offset correction API, filter API
+* Converters: Converter symbols now exported, better logging,
+  removed ORC dependency, added u8 converters
+* Examples: Whitespace- and other cleanup, multi-channel fixes for
+  some examples
+* Utils: Read more property tree types from the command line
+* Tools: kitchen sink updated, added mega_fft
+
+## 003.008.005
+* E3xx: Added support for battery-based E3xx device (E312),
+  get_freq() for network mode, fixed GPS time initialization bug
+* AD9361-based devices: Fixed frequency readback bug
+* B200: Fixed DCM issues, better loopback failure handling,
+  fix erroneous warning for custom clock rates
+* X3x0: Better warnings for clock reate / ref freq
+* multi_usrp: Added define for GPIO capabilities (enables
+  exposure in GNU Radio)
+* UHD: sc16->sc16 SSE converter
+* Manual: Multiple minor updates, FPGA manual improvements,
+* Build System: Fixed builds on some Windows platforms, removed
+  stray prints
+
 ## 003.008.004
 * B200: Fixed EEPROM writing bug, updated images for B200 Rev5/6
 * E300: GPS antenna power defaults to staying on, GPS time used as

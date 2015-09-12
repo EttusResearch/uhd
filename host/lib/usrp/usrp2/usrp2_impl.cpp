@@ -48,7 +48,7 @@ static const size_t DEFAULT_NUM_FRAMES = 32;
 /***********************************************************************
  * Discovery over the udp transport
  **********************************************************************/
-static device_addrs_t usrp2_find(const device_addr_t &hint_){
+device_addrs_t usrp2_find(const device_addr_t &hint_){
     //handle the multi-device discovery
     device_addrs_t hints = separate_device_addr(hint_);
     if (hints.size() > 1){
@@ -782,9 +782,6 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
             UHD_MSG(status) << "Setting references to the internal GPSDO" << std::endl;
             _tree->access<std::string>(root / "time_source/value").set("gpsdo");
             _tree->access<std::string>(root / "clock_source/value").set("gpsdo");
-            UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
-            const time_t tp = time_t(_mbc[mb].gps->get_sensor("gps_time").to_int()+1);
-            _tree->access<time_spec_t>(root / "time" / "pps").set(time_spec_t(tp));
         }
     }
 

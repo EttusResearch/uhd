@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ettus Research LLC
+ * Copyright 2014-2015 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,17 +24,8 @@
 #include <stdint.h>
 
 // Define frequency
-#define F_CPU 12500000UL
+#define F_CPU 7372800UL
 
-/*
- * Timer 0 (8-bit)
- *  * Set prescaler to 8
- *  * Enable overflow interrupt
- *  * Set timer to 0
- */
-#define TIMER0_INIT() TCCR0 = (1 << CS01); \
-                      TIMSK |= (1 << TOIE0); \
-                      TCNT0 = 0;
 /*
  * Timer 1 (16-bit)
  *  * Set prescaler to 1024
@@ -42,8 +33,12 @@
  *  * Set timer to 0
  */
 #define TIMER1_INIT() TCCR1B = (1 << CS12) | (1 << CS10); \
-        TIMSK |= (1<<TOIE1); \
-        TCNT1 = 0;
+                      TIMSK |= (1<<TOIE1); \
+                      TCNT1 = 0;
+
+#define TIMER1_DISABLE() TCCR1B = 0; \
+                         TIMSK = 0; \
+                         TCNT1 = 0;
 
 #define TIMER1_ONE_SECOND ((uint32_t)(12207))
 
@@ -93,12 +88,6 @@
  * Bits_16(10101010,01010101) = 43605
  * Bits_32(10000000,11111111,10101010,01010101) = 2164238933
  */
-
-typedef enum {
-    Top,
-    Middle,
-    Bottom
-} LEDs;
 
 void setup_atmel_io_ports(void);
 

@@ -16,8 +16,6 @@
 //
 
 #include "x300_impl.hpp"
-#include "x300_regs.hpp"
-#include "../device3/device3_radio_regs.hpp"
 #include "x300_lvbitx.hpp"
 #include "x310_lvbitx.hpp"
 #include <boost/algorithm/string.hpp>
@@ -31,6 +29,7 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/assign/list_of.hpp>
 #include <fstream>
@@ -50,6 +49,7 @@ using namespace uhd::usrp::device3;
 using namespace uhd::rfnoc;
 using namespace uhd::transport;
 using namespace uhd::niusrprio;
+using namespace uhd::usrp::x300;
 namespace asio = boost::asio;
 
 /***********************************************************************
@@ -405,7 +405,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             default:
                 nirio_status_to_exception(status, "Motherboard detection error. Please ensure that you \
                     have a valid USRP X3x0, NI USRP-294xR or NI USRP-295xR device and that all the device \
-                    driver have been loaded.");
+                    drivers have loaded successfully.");
         }
         //Load the lvbitx onto the device
         UHD_MSG(status) << boost::format("Using LVBITX bitfile %s...\n") % lvbitx->get_bitfile_path();
@@ -415,7 +415,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
         //Tell the quirks object which FIFOs carry TX stream data
         const boost::uint32_t tx_data_fifos[2] = {X300_RADIO_DEST_PREFIX_TX, X300_RADIO_DEST_PREFIX_TX + 3};
-        mb.rio_fpga_interface->get_kernel_proxy()->get_rio_quirks().register_tx_streams(tx_data_fifos);
+        mb.rio_fpga_interface->get_kernel_proxy()->get_rio_quirks().register_tx_streams(tx_data_fifos, 2);
 
         _tree->create<double>(mb_path / "link_max_rate").set(X300_MAX_RATE_PCIE);
     }
@@ -515,8 +515,11 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
     //check compat numbers
     //check fpga compat before fw compat because the fw is a subset of the fpga image
-    this->check_fpga_compat(mb_path, mb.zpu_ctrl);
+    this->check_fpga_compat(mb_path, mb);
     this->check_fw_compat(mb_path, mb.zpu_ctrl);
+
+    mb.fw_regmap = boost::make_shared<fw_regmap_t>();
+    mb.fw_regmap->initialize(*mb.zpu_ctrl.get(), true);
 
     //store which FPGA image is loaded
     mb.loaded_fpga_image = get_fpga_option(mb.zpu_ctrl);
@@ -564,6 +567,13 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         .set(mb_eeprom)
         .subscribe(boost::bind(&x300_impl::set_mb_eeprom, this, mb.zpu_i2c, _1));
 
+    bool recover_mb_eeprom = dev_addr.has_key("recover_mb_eeprom");
+    if (recover_mb_eeprom) {
+        UHD_MSG(warning) << "UHD is operating in EEPROM Recovery Mode which disables hardware version "
+                            "checks.\nOperating in this mode may cause hardware damage and unstable "
+                            "radio performance!"<< std::endl;
+    }
+
     ////////////////////////////////////////////////////////////////////
     // parse the product number
     ////////////////////////////////////////////////////////////////////
@@ -576,7 +586,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             product_name = "X310";
             break;
         default:
-            break;
+            if (not recover_mb_eeprom)
+                throw uhd::runtime_error("Unrecognized product type.\n"
+                                         "Either the software does not support this device in which case please update your driver software to the latest version and retry OR\n"
+                                         "The product code in the EEPROM is corrupt and may require reprogramming.");
     }
     _tree->create<std::string>(mb_path / "name").set(product_name);
     _tree->create<std::string>(mb_path / "codename").set("Yetti");
@@ -608,28 +621,57 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     }
 
     ////////////////////////////////////////////////////////////////////
-    // create clock control objects
+    // read hardware revision and compatibility number
     ////////////////////////////////////////////////////////////////////
-    UHD_MSG(status) << "Setup RF frontend clocking..." << std::endl;
-
     mb.hw_rev = 0;
     if(mb_eeprom.has_key("revision") and not mb_eeprom["revision"].empty()) {
         try {
             mb.hw_rev = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
         } catch(...) {
-            UHD_MSG(warning) << "Revision in EEPROM is invalid! Please reprogram your EEPROM." << std::endl;
+            if (not recover_mb_eeprom)
+                throw uhd::runtime_error("Revision in EEPROM is invalid! Please reprogram your EEPROM.");
         }
     } else {
-        UHD_MSG(warning) << "No revision detected MB EEPROM must be reprogrammed!" << std::endl;
+        if (not recover_mb_eeprom)
+            throw uhd::runtime_error("No revision detected. MB EEPROM must be reprogrammed!");
     }
 
-    if(mb.hw_rev == 0) {
-        UHD_MSG(warning) << "Defaulting to X300 RevD Clock Settings. This will result in non-optimal lock times." << std::endl;
-        mb.hw_rev = X300_REV("D");
+    size_t hw_rev_compat = 0;
+    if (mb.hw_rev >= 7) { //Revision compat was added with revision 7
+        if (mb_eeprom.has_key("revision_compat") and not mb_eeprom["revision_compat"].empty()) {
+            try {
+                hw_rev_compat = boost::lexical_cast<size_t>(mb_eeprom["revision_compat"]);
+            } catch(...) {
+                if (not recover_mb_eeprom)
+                    throw uhd::runtime_error("Revision compat in EEPROM is invalid! Please reprogram your EEPROM.");
+            }
+        } else {
+            if (not recover_mb_eeprom)
+                throw uhd::runtime_error("No revision compat detected. MB EEPROM must be reprogrammed!");
+        }
+    } else {
+        //For older HW just assume that revision_compat = revision
+        hw_rev_compat = mb.hw_rev;
     }
 
-    //Create clock control. NOTE: This does not configure the LMK yet.
-    initialize_clock_control(mb);
+    if (hw_rev_compat > X300_REVISION_COMPAT) {
+        if (not recover_mb_eeprom)
+            throw uhd::runtime_error(str(boost::format(
+                "Hardware is too new for this software. Please upgrade to a driver that supports hardware revision %d.")
+                % mb.hw_rev));
+    } else if (mb.hw_rev < X300_REVISION_MIN) { //Compare min against the revision (and not compat) to give us more leeway for partial support for a compat
+        if (not recover_mb_eeprom)
+            throw uhd::runtime_error(str(boost::format(
+                "Software is too new for this hardware. Please downgrade to a driver that supports hardware revision %d.")
+                % mb.hw_rev));
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    // create clock control objects
+    ////////////////////////////////////////////////////////////////////
+    UHD_MSG(status) << "Setup RF frontend clocking..." << std::endl;
+
+    //Initialize clock control registers. NOTE: This does not configure the LMK yet.
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
         mb.hw_rev,
@@ -693,14 +735,25 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // setup radios
     ////////////////////////////////////////////////////////////////////
-    UHD_MSG(status) << "Initialize Radio control..." << std::endl;
-    this->setup_radio(mb_i, "A");
-    this->setup_radio(mb_i, "B");
+    this->setup_radio(mb_i, "A", dev_addr);
+    this->setup_radio(mb_i, "B", dev_addr);
+
+    ////////////////////////////////////////////////////////////////////
+    // ADC test and cal
+    ////////////////////////////////////////////////////////////////////
+    if (dev_addr.has_key("self_cal_adc_delay")) {
+        self_cal_adc_xfer_delay(mb, true /* Apply ADC delay */);
+    }
+    if (dev_addr.has_key("ext_adc_self_test")) {
+        extended_adc_test(mb, dev_addr.cast<double>("ext_adc_self_test", 30));
+    } else {
+        self_test_adcs(mb);
+    }
 
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
-    mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::GPIO), radio::RB32_FP_GPIO);
+    mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
         _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
@@ -741,8 +794,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
         .set("internal")
-        .subscribe(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1))
-        .subscribe(boost::bind(&x300_impl::reset_radios, this, boost::ref(mb)));
+        .subscribe(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1));
 
     static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external")("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_source_options);
@@ -781,11 +833,18 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // and do the misc mboard sensors
     ////////////////////////////////////////////////////////////////////
     _tree->create<sensor_value_t>(mb_path / "sensors" / "ref_locked")
-        .publish(boost::bind(&x300_impl::get_ref_locked, this, mb.zpu_ctrl));
+        .publish(boost::bind(&x300_impl::get_ref_locked, this, mb));
 
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
     ////////////////////////////////////////////////////////////////////
+    mb.regmap_db = boost::make_shared<uhd::soft_regmap_db_t>();
+    mb.regmap_db->add(*mb.fw_regmap);
+    mb.regmap_db->add(*mb.radio_perifs[0].regmap);
+    mb.regmap_db->add(*mb.radio_perifs[1].regmap);
+
+    _tree->create<uhd::soft_regmap_accessor_t::sptr>(mb_path / "registers")
+        .set(mb.regmap_db);
 
     //////////////// RFNOC /////////////////
     const size_t n_rfnoc_blocks = mb.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_NUM_CE));
@@ -798,6 +857,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         mb.if_pkt_is_big_endian ? ENDIANNESS_BIG : ENDIANNESS_LITTLE
     );
     //////////////// RFNOC /////////////////
+
     mb.initialization_done = true;
 }
 
@@ -807,8 +867,13 @@ x300_impl::~x300_impl(void)
     {
         BOOST_FOREACH(mboard_members_t &mb, _mb)
         {
-            mb.radio_perifs[0].ctrl->poke32(radio::sr_addr(radio::MISC_OUTS), (1 << 2)); //disable/reset ADC/DAC
-            mb.radio_perifs[1].ctrl->poke32(radio::sr_addr(radio::MISC_OUTS), (1 << 2)); //disable/reset ADC/DAC
+            //Disable/reset ADC/DAC
+            mb.radio_perifs[0].regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 1);
+            mb.radio_perifs[0].regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 0);
+            mb.radio_perifs[0].regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_ENABLED, 0);
+            mb.radio_perifs[0].regmap->misc_outs_reg.flush();
+            mb.radio_perifs[1].regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_ENABLED, 0);
+            mb.radio_perifs[1].regmap->misc_outs_reg.flush();
 
             //kill the claimer task and unclaim the device
             mb.claimer_task.reset();
@@ -836,13 +901,15 @@ static void check_adc(wb_iface::sptr iface, const boost::uint32_t val)
     UHD_ASSERT_THROW(adc_rb == val);
 }
 
-void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
+void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, const uhd::device_addr_t &dev_addr)
 {
     const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
     UHD_ASSERT_THROW(mb_i < _mb.size());
     mboard_members_t &mb = _mb[mb_i];
     const size_t radio_index = mb.get_radio_index(slot_name);
     radio_perifs_t &perif = mb.radio_perifs[radio_index];
+
+    UHD_MSG(status) << boost::format("Initialize Radio%d control...") % radio_index << std::endl;
 
     ////////////////////////////////////////////////////////////////////
     // radio control
@@ -854,8 +921,20 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     ctrl_sid = xport.send_sid.get();
     UHD_MSG(status) << "Radio " << radio_index << " Ctrl SID: " << uhd::sid_t(ctrl_sid).to_pp_string_hex() << std::endl;
     perif.ctrl = radio_ctrl_core_3000::make(mb.if_pkt_is_big_endian, xport.recv, xport.send, ctrl_sid, slot_name);
-    perif.ctrl->poke32(radio::sr_addr(radio::MISC_OUTS), (1 << 2)); //reset adc + dac
-    perif.ctrl->poke32(radio::sr_addr(radio::MISC_OUTS),  (1 << 1) | (1 << 0)); //out of reset + dac enable
+
+    perif.regmap = boost::make_shared<radio_regmap_t>(radio_index);
+    perif.regmap->initialize(*perif.ctrl, true);
+
+    //Only Radio0 has the ADC/DAC reset bits. Those bits are reserved for Radio1
+    if (radio_index == 0) {
+        perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 1);
+        perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 0);
+        perif.regmap->misc_outs_reg.flush();
+        perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 0);
+        perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 1);
+        perif.regmap->misc_outs_reg.flush();
+    }
+    perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_ENABLED, 1);
 
     this->register_loopback_self_test(perif.ctrl);
 
@@ -866,30 +945,33 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     perif.adc = x300_adc_ctrl::make(perif.spi, DB_ADC_SEN);
     perif.dac = x300_dac_ctrl::make(perif.spi, DB_DAC_SEN, mb.clock->get_master_clock_rate());
     perif.leds = gpio_core_200_32wo::make(perif.ctrl, radio::sr_addr(radio::LEDS));
+    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
+    perif.rx_fe->set_dc_offset(rx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
+    perif.rx_fe->set_dc_offset_auto(rx_frontend_core_200::DEFAULT_DC_OFFSET_ENABLE);
+    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::TX_FRONT));
+    perif.tx_fe->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
+    perif.tx_fe->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
+    perif.framer = rx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_CTRL));
+    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
+    perif.ddc->set_link_rate(10e9/8); //whatever
+    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL));
+    perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
+    perif.duc->set_link_rate(10e9/8); //whatever
+
+    ////////////////////////////////////////////////////////////////////
+    // create time control objects
+    ////////////////////////////////////////////////////////////////////
+    time_core_3000::readback_bases_type time64_rb_bases;
+    time64_rb_bases.rb_now = radio::RB64_TIME_NOW;
+    time64_rb_bases.rb_pps = radio::RB64_TIME_PPS;
+    perif.time64 = time_core_3000::make(perif.ctrl, radio::sr_addr(radio::TIME), time64_rb_bases);
+
+    //Capture delays are calibrated every time. The status is only printed is the user
+    //asks to run the xfer self cal using "self_cal_adc_delay"
+    self_cal_adc_capture_delay(mb, radio_index, dev_addr.has_key("self_cal_adc_delay"));
 
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
         .subscribe(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
-    _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
-
-    ////////////////////////////////////////////////////////////////
-    // ADC self test
-    ////////////////////////////////////////////////////////////////
-    perif.adc->set_test_word("ones", "ones"); check_adc(perif.ctrl, 0xfffcfffc);
-    perif.adc->set_test_word("zeros", "zeros"); check_adc(perif.ctrl, 0x00000000);
-    perif.adc->set_test_word("ones", "zeros"); check_adc(perif.ctrl, 0xfffc0000);
-    perif.adc->set_test_word("zeros", "ones"); check_adc(perif.ctrl, 0x0000fffc);
-    for (size_t k = 0; k < 14; k++)
-    {
-        perif.adc->set_test_word("zeros", "custom", 1 << k);
-        check_adc(perif.ctrl, 1 << (k+2));
-    }
-    for (size_t k = 0; k < 14; k++)
-    {
-        perif.adc->set_test_word("custom", "zeros", 1 << k);
-        check_adc(perif.ctrl, 1 << (k+18));
-    }
-    perif.adc->set_test_word("normal", "normal");
 
     ////////////////////////////////////////////////////////////////
     // create codec control objects
@@ -906,80 +988,28 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name)
     ////////////////////////////////////////////////////////////////////
     // front end corrections
     ////////////////////////////////////////////////////////////////////
-    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
-    const fs_path rx_fe_path = mb_path / "rx_frontends" / slot_name;
-    _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
-        .coerce(boost::bind(&rx_frontend_core_200::set_dc_offset, perif.rx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
-    _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
-        .subscribe(boost::bind(&rx_frontend_core_200::set_dc_offset_auto, perif.rx_fe, _1))
-        .set(true);
-    _tree->create<std::complex<double> >(rx_fe_path / "iq_balance" / "value")
-        .subscribe(boost::bind(&rx_frontend_core_200::set_iq_balance, perif.rx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
-
-    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::TX_FRONT));
-    const fs_path tx_fe_path = mb_path / "tx_frontends" / slot_name;
-    _tree->create<std::complex<double> >(tx_fe_path / "dc_offset" / "value")
-        .coerce(boost::bind(&tx_frontend_core_200::set_dc_offset, perif.tx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
-    _tree->create<std::complex<double> >(tx_fe_path / "iq_balance" / "value")
-        .subscribe(boost::bind(&tx_frontend_core_200::set_iq_balance, perif.tx_fe, _1))
-        .set(std::complex<double>(0.0, 0.0));
+    perif.rx_fe->populate_subtree(_tree->subtree(mb_path / "rx_frontends" / slot_name));
+    perif.tx_fe->populate_subtree(_tree->subtree(mb_path / "tx_frontends" / slot_name));
 
     ////////////////////////////////////////////////////////////////////
-    // create rx dsp control objects
+    // connect rx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.framer = rx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_CTRL));
-    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
-    perif.ddc->set_link_rate(10e9/8); //whatever
-    _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
-        .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / str(boost::format("%u") % radio_index);
-    _tree->create<meta_range_t>(rx_dsp_path / "rate" / "range")
-        .publish(boost::bind(&rx_dsp_core_3000::get_host_rates, perif.ddc));
-    _tree->create<double>(rx_dsp_path / "rate" / "value")
-        .coerce(boost::bind(&rx_dsp_core_3000::set_host_rate, perif.ddc, _1))
+    perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
+    _tree->access<double>(rx_dsp_path / "rate" / "value")
         .subscribe(boost::bind(&device3_impl::update_rx_streamers, this, _1))
-        .set(1e6);
-    _tree->create<double>(rx_dsp_path / "freq" / "value")
-        .coerce(boost::bind(&rx_dsp_core_3000::set_freq, perif.ddc, _1))
-        .set(0.0);
-    _tree->create<meta_range_t>(rx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&rx_dsp_core_3000::get_freq_range, perif.ddc));
+    ;
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
         .subscribe(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
 
     ////////////////////////////////////////////////////////////////////
-    // create tx dsp control objects
+    // connect tx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL));
-    perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
-    perif.duc->set_link_rate(10e9/8); //whatever
-    _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
-        .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / str(boost::format("%u") % radio_index);
-    _tree->create<meta_range_t>(tx_dsp_path / "rate" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, perif.duc));
-    _tree->create<double>(tx_dsp_path / "rate" / "value")
-        .coerce(boost::bind(&tx_dsp_core_3000::set_host_rate, perif.duc, _1))
+    perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
+    _tree->access<double>(tx_dsp_path / "rate" / "value")
         .subscribe(boost::bind(&device3_impl::update_tx_streamers, this, _1))
-        .set(1e6);
-    _tree->create<double>(tx_dsp_path / "freq" / "value")
-        .coerce(boost::bind(&tx_dsp_core_3000::set_freq, perif.duc, _1))
-        .set(0.0);
-    _tree->create<meta_range_t>(tx_dsp_path / "freq" / "range")
-        .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc));
-
-    ////////////////////////////////////////////////////////////////////
-    // create time control objects
-    ////////////////////////////////////////////////////////////////////
-    time_core_3000::readback_bases_type time64_rb_bases;
-    time64_rb_bases.rb_now = radio::RB64_TIME_NOW;
-    time64_rb_bases.rb_pps = radio::RB64_TIME_PPS;
-    perif.time64 = time_core_3000::make(perif.ctrl, radio::sr_addr(radio::TIME), time64_rb_bases);
+    ;
 
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
@@ -1300,8 +1330,14 @@ void x300_impl::update_atr_leds(gpio_core_200_32wo::sptr leds, const std::string
 
 void x300_impl::set_tick_rate(mboard_members_t &mb, const double rate)
 {
-    BOOST_FOREACH(radio_perifs_t &perif, mb.radio_perifs)
+    BOOST_FOREACH(radio_perifs_t &perif, mb.radio_perifs) {
+        perif.ctrl->set_tick_rate(rate);
         perif.time64->set_tick_rate(rate);
+        perif.framer->set_tick_rate(rate);
+        perif.ddc->set_tick_rate(rate);
+        perif.deframer->set_tick_rate(rate);
+        perif.duc->set_tick_rate(rate);
+    }
 }
 
 void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
@@ -1319,36 +1355,21 @@ void x300_impl::register_loopback_self_test(wb_iface::sptr iface)
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
 }
 
+void x300_impl::radio_loopback(wb_iface::sptr iface, const bool on)
+{
+  iface->poke32(radio::sr_addr(radio::LOOPBACK), (on ? 0x1 : 0x0));
+  UHD_MSG(status) << ((on)? "Radio Loopback On" : "Radio Loopback Off") << std::endl;
+}
+
+
+
 /***********************************************************************
  * clock and time control logic
  **********************************************************************/
 
-void x300_impl::update_clock_control(mboard_members_t &mb)
-{
-    const size_t reg = mb.clock_control_regs_clock_source
-        | (mb.clock_control_regs_pps_select << 2)
-        | (mb.clock_control_regs_pps_out_enb << 4)
-        | (mb.clock_control_regs_tcxo_enb << 5)
-        | (mb.clock_control_regs_gpsdo_pwr << 6)
-    ;
-    mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_CLOCK_CTRL), reg);
-}
-
-void x300_impl::initialize_clock_control(mboard_members_t &mb)
-{
-    //Initialize clock control register soft copies
-    mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
-    mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
-    mb.clock_control_regs_pps_out_enb = 0;
-    mb.clock_control_regs_tcxo_enb = 1;
-    mb.clock_control_regs_gpsdo_pwr = 1;    //GPSDO power always ON
-    this->update_clock_control(mb);
-}
-
 void x300_impl::set_time_source_out(mboard_members_t &mb, const bool enb)
 {
-    mb.clock_control_regs_pps_out_enb = enb? 1 : 0;
-    this->update_clock_control(mb);
+    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_OUT_EN, enb?1:0);
 }
 
 void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &source)
@@ -1356,21 +1377,22 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
     //Optimize for the case when the current source is internal and we are trying
     //to set it to internal. This is the only case where we are guaranteed that
     //the clock has not gone away so we can skip setting the MUX and reseting the LMK.
-    if (not (mb.current_refclk_src == "internal" and source == "internal")) {
+    const bool reconfigure_clks = (mb.current_refclk_src != "internal") or (source != "internal");
+    if (reconfigure_clks) {
         //Update the clock MUX on the motherboard to select the requested source
-        mb.clock_control_regs_clock_source = 0;
-        mb.clock_control_regs_tcxo_enb = 0;
         if (source == "internal") {
-            mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_INTERNAL;
-            mb.clock_control_regs_tcxo_enb = 1;
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::CLK_SOURCE, fw_regmap_t::clk_ctrl_reg_t::SRC_INTERNAL);
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::TCXO_EN, 1);
         } else if (source == "external") {
-            mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_EXTERNAL;
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::CLK_SOURCE, fw_regmap_t::clk_ctrl_reg_t::SRC_EXTERNAL);
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::TCXO_EN, 0);
         } else if (source == "gpsdo") {
-            mb.clock_control_regs_clock_source = ZPU_SR_CLOCK_CTRL_CLK_SRC_GPSDO;
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::CLK_SOURCE, fw_regmap_t::clk_ctrl_reg_t::SRC_GPSDO);
+            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::TCXO_EN, 0);
         } else {
             throw uhd::key_error("update_clock_source: unknown source: " + source);
         }
-        this->update_clock_control(mb);
+        mb.fw_regmap->clock_ctrl_reg.flush();
 
         //Reset the LMK to make sure it re-locks to the new reference
         mb.clock->reset_clocks();
@@ -1385,15 +1407,50 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
     //The programming code in x300_clock_ctrl is not compatible with revs <= 4 and may
     //lead to locking issues. So, disable the ref-locked check for older (unsupported) boards.
     if (mb.hw_rev > 4) {
-        if (not wait_for_ref_locked(mb.zpu_ctrl, timeout)) {
+        if (not wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, timeout)) {
             //failed to lock on reference
             if (mb.initialization_done) {
-                throw uhd::runtime_error((boost::format("Reference Clock failed to lock to %s source.") % source).str());
+                throw uhd::runtime_error((boost::format("Reference Clock PLL failed to lock to %s source.") % source).str());
             } else {
                 //TODO: Re-enable this warning when we figure out a reliable lock time
                 //UHD_MSG(warning) << "Reference clock failed to lock to " + source + " during device initialization.  " <<
                 //    "Check for the lock before operation or ignore this warning if using another clock source." << std::endl;
             }
+        }
+    }
+
+    if (reconfigure_clks) {
+        //Reset the radio clock PLL in the FPGA
+        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), ZPU_SR_SW_RST_RADIO_CLK_PLL);
+        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), 0);
+
+        //Wait for radio clock PLL to lock
+        if (not wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::RADIO_CLK_LOCK, 0.01)) {
+            throw uhd::runtime_error((boost::format("Reference Clock PLL in FPGA failed to lock to %s source.") % source).str());
+        }
+
+        //Reset the IDELAYCTRL used to calibrate the data interface delays
+        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), ZPU_SR_SW_RST_ADC_IDELAYCTRL);
+        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), 0);
+
+        //Wait for the ADC IDELAYCTRL to be ready
+        if (not wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::IDELAYCTRL_LOCK, 0.01)) {
+            throw uhd::runtime_error((boost::format("ADC Calibration Clock in FPGA failed to lock to %s source.") % source).str());
+        }
+
+        // Reset ADCs and DACs
+        for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
+            radio_perifs_t &perif = mb.radio_perifs[r];
+            if (perif.regmap && r==0) {  //ADC/DAC reset lines only exist in Radio0
+                perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 1);
+                perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 0);
+                perif.regmap->misc_outs_reg.flush();
+                perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 0);
+                perif.regmap->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 1);
+                perif.regmap->misc_outs_reg.flush();
+            }
+            if (perif.adc) perif.adc->reset();
+            if (perif.dac) perif.dac->reset();
         }
     }
 
@@ -1404,116 +1461,57 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
 void x300_impl::update_time_source(mboard_members_t &mb, const std::string &source)
 {
     if (source == "internal") {
-        mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_INTERNAL;
+        mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_SELECT, fw_regmap_t::clk_ctrl_reg_t::SRC_INTERNAL);
     } else if (source == "external") {
-        mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_EXTERNAL;
+        mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_SELECT, fw_regmap_t::clk_ctrl_reg_t::SRC_EXTERNAL);
     } else if (source == "gpsdo") {
-        mb.clock_control_regs_pps_select = ZPU_SR_CLOCK_CTRL_PPS_SRC_GPSDO;
+        mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_SELECT, fw_regmap_t::clk_ctrl_reg_t::SRC_GPSDO);
     } else {
         throw uhd::key_error("update_time_source: unknown source: " + source);
     }
 
-    this->update_clock_control(mb);
-
+    /* TODO - Implement intelligent PPS detection
     //check for valid pps
-    if (!is_pps_present(mb.zpu_ctrl))
-    {
-        // TODO - Implement intelligent PPS detection
-        /* throw uhd::runtime_error((boost::format("The %d PPS was not detected.  Please check the PPS source and try again.") % source).str()); */
+    if (!is_pps_present(mb)) {
+        throw uhd::runtime_error((boost::format("The %d PPS was not detected.  Please check the PPS source and try again.") % source).str());
     }
+    */
 }
 
-bool x300_impl::wait_for_ref_locked(wb_iface::sptr ctrl, double timeout)
+bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout)
 {
     boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(timeout * 1000.0);
-    do
-    {
-        if (get_ref_locked(ctrl).to_bool())
+    do {
+        if (mb.fw_regmap->clock_status_reg.read(which)==1)
             return true;
         boost::this_thread::sleep(boost::posix_time::milliseconds(1));
     } while (boost::get_system_time() < timeout_time);
 
     //Check one last time
-    return get_ref_locked(ctrl).to_bool();
+    return (mb.fw_regmap->clock_status_reg.read(which)==1);
 }
 
-sensor_value_t x300_impl::get_ref_locked(wb_iface::sptr ctrl)
+sensor_value_t x300_impl::get_ref_locked(mboard_members_t& mb)
 {
-    boost::uint32_t clk_status = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS));
-    const bool lock = ((clk_status & ZPU_RB_CLK_STATUS_LMK_LOCK) != 0);
+    mb.fw_regmap->clock_status_reg.refresh();
+    const bool lock = (mb.fw_regmap->clock_status_reg.get(fw_regmap_t::clk_status_reg_t::LMK_LOCK)==1) &&
+                      (mb.fw_regmap->clock_status_reg.get(fw_regmap_t::clk_status_reg_t::RADIO_CLK_LOCK)==1) &&
+                      (mb.fw_regmap->clock_status_reg.get(fw_regmap_t::clk_status_reg_t::IDELAYCTRL_LOCK)==1);
     return sensor_value_t("Ref", lock, "locked", "unlocked");
 }
 
-bool x300_impl::is_pps_present(wb_iface::sptr ctrl)
+bool x300_impl::is_pps_present(mboard_members_t& mb)
 {
     // The ZPU_RB_CLK_STATUS_PPS_DETECT bit toggles with each rising edge of the PPS.
     // We monitor it for up to 1.5 seconds looking for it to toggle.
-    boost::uint32_t pps_detect = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS)) & ZPU_RB_CLK_STATUS_PPS_DETECT;
+    boost::uint32_t pps_detect = mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT);
     for (int i = 0; i < 15; i++)
     {
         boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-        boost::uint32_t clk_status = ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS));
-        if (pps_detect != (clk_status & ZPU_RB_CLK_STATUS_PPS_DETECT))
+        if (pps_detect != mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT))
             return true;
     }
     return false;
-}
-
-/***********************************************************************
- * reset and synchronization logic
- **********************************************************************/
-
-void x300_impl::reset_radios(mboard_members_t &mb)
-{
-    // Reset ADCs and DACs
-    BOOST_FOREACH (radio_perifs_t& perif, mb.radio_perifs)
-    {
-        perif.adc->reset();
-        perif.dac->reset();
-    }
-}
-
-void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
-{
-    if (radios.size() < 2) return;  //Nothing to synchronize
-
-    //**PRECONDITION**
-    //This function assumes that all the VITA times in "radios" are synchronized
-    //to a common reference. Currently, this function is called in get_tx_stream
-    //which also has the same precondition.
-
-    //Reinitialize and resync all DACs
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->dac->reset_and_resync();
-    }
-
-    //Get a rough estimate of the cumulative command latency
-    boost::posix_time::ptime t_start = boost::posix_time::microsec_clock::local_time();
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->ctrl->peek64(radio::RB64_TIME_NOW); //Discard value. We are just timing the call
-    }
-    boost::posix_time::time_duration t_elapsed =
-        boost::posix_time::microsec_clock::local_time() - t_start;
-
-    //Add 100% of headroom + uncertaintly to the command time
-    boost::uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 13000 /*Scheduler latency*/;
-
-    //Pick radios[0] as the time reference.
-    uhd::time_spec_t sync_time =
-        radios[0]->time64->get_time_now() + uhd::time_spec_t(((double)t_sync_us)/1e6);
-
-    //Send the sync command
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->ctrl->set_time(sync_time);
-        radios[i]->ctrl->poke32(radio::sr_addr(radio::DACSYNC), 0x1);    //Arm FRAMEP/N sync pulse
-        radios[i]->ctrl->set_time(uhd::time_spec_t(0.0));   //Clear command time
-    }
-
-    //Wait and check status
-    boost::this_thread::sleep(boost::posix_time::microseconds(t_sync_us));
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->dac->verify_sync();
-    }
 }
 
 /***********************************************************************
@@ -1683,14 +1681,21 @@ void x300_impl::check_fw_compat(const fs_path &mb_path, wb_iface::sptr iface)
                 % compat_major % compat_minor));
 }
 
-void x300_impl::check_fpga_compat(const fs_path &mb_path, wb_iface::sptr iface)
+void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t &members)
 {
-    boost::uint32_t compat_num = iface->peek32(SR_ADDR(SET0_BASE, ZPU_RB_COMPAT_NUM));
+    boost::uint32_t compat_num = members.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_COMPAT_NUM));
     boost::uint32_t compat_major = (compat_num >> 16);
     boost::uint32_t compat_minor = (compat_num & 0xffff);
 
     if (compat_major != X300_FPGA_COMPAT_MAJOR)
     {
+        std::string image_loader_path = (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
+        std::string image_loader_cmd = str(boost::format("\"%s\" --args=\"type=x300,%s=%s\"")
+                                              % image_loader_path
+                                              % (members.xport_path == "eth" ? "addr"
+                                                                             : "resource")
+                                              % members.addr);
+
         std::cout << "=========================================================" << std::endl;
         std::cout << "Warning:" << std::endl;
         //throw uhd::runtime_error(str(boost::format(
@@ -1700,11 +1705,12 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, wb_iface::sptr iface)
             "Download the appropriate FPGA images for this version of UHD.\n"
             "%s\n\n"
             "Then burn a new image to the on-board flash storage of your\n"
-            "USRP X3xx device using the burner utility. %s\n\n"
+            "USRP X3xx device using the image loader utility. Use this command:\n\n%s\n\n"
             "For more information, refer to the UHD manual:\n\n"
             " http://files.ettus.com/manual/page_usrp_x3x0.html#x3x0_flash"
         )   % int(X300_FPGA_COMPAT_MAJOR) % compat_major
-            % print_utility_error("uhd_images_downloader.py") % print_utility_error("usrp_x3xx_fpga_burner")));
+            % print_utility_error("uhd_images_downloader.py")
+            % image_loader_cmd));
         std::cout << "=========================================================" << std::endl;
     }
     _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u")
@@ -1726,23 +1732,39 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& res
         if (nirio_status_not_fatal(status)) {
             //The PCIe ID -> MB mapping may be different from the EEPROM -> MB mapping
             switch (pid) {
-                case X300_USRP_PCIE_SSID:
+                case X300_USRP_PCIE_SSID_ADC_33:
+                case X300_USRP_PCIE_SSID_ADC_18:
                     mb_type = USRP_X300_MB; break;
-                case X310_USRP_PCIE_SSID:
-                case X310_2940R_40MHz_PCIE_SSID:
-                case X310_2940R_120MHz_PCIE_SSID:
-                case X310_2942R_40MHz_PCIE_SSID:
-                case X310_2942R_120MHz_PCIE_SSID:
-                case X310_2943R_40MHz_PCIE_SSID:
-                case X310_2943R_120MHz_PCIE_SSID:
-                case X310_2944R_40MHz_PCIE_SSID:
-                case X310_2950R_40MHz_PCIE_SSID:
-                case X310_2950R_120MHz_PCIE_SSID:
-                case X310_2952R_40MHz_PCIE_SSID:
-                case X310_2952R_120MHz_PCIE_SSID:
-                case X310_2953R_40MHz_PCIE_SSID:
-                case X310_2953R_120MHz_PCIE_SSID:
-                case X310_2954R_40MHz_PCIE_SSID:
+                case X310_USRP_PCIE_SSID_ADC_33:
+                case X310_2940R_40MHz_PCIE_SSID_ADC_33:
+                case X310_2940R_120MHz_PCIE_SSID_ADC_33:
+                case X310_2942R_40MHz_PCIE_SSID_ADC_33:
+                case X310_2942R_120MHz_PCIE_SSID_ADC_33:
+                case X310_2943R_40MHz_PCIE_SSID_ADC_33:
+                case X310_2943R_120MHz_PCIE_SSID_ADC_33:
+                case X310_2944R_40MHz_PCIE_SSID_ADC_33:
+                case X310_2950R_40MHz_PCIE_SSID_ADC_33:
+                case X310_2950R_120MHz_PCIE_SSID_ADC_33:
+                case X310_2952R_40MHz_PCIE_SSID_ADC_33:
+                case X310_2952R_120MHz_PCIE_SSID_ADC_33:
+                case X310_2953R_40MHz_PCIE_SSID_ADC_33:
+                case X310_2953R_120MHz_PCIE_SSID_ADC_33:
+                case X310_2954R_40MHz_PCIE_SSID_ADC_33:
+                case X310_USRP_PCIE_SSID_ADC_18:
+                case X310_2940R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2940R_120MHz_PCIE_SSID_ADC_18:
+                case X310_2942R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2942R_120MHz_PCIE_SSID_ADC_18:
+                case X310_2943R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2943R_120MHz_PCIE_SSID_ADC_18:
+                case X310_2944R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2950R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2950R_120MHz_PCIE_SSID_ADC_18:
+                case X310_2952R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2952R_120MHz_PCIE_SSID_ADC_18:
+                case X310_2953R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2953R_120MHz_PCIE_SSID_ADC_18:
+                case X310_2954R_40MHz_PCIE_SSID_ADC_18:
                     mb_type = USRP_X310_MB; break;
                 default:
                     mb_type = UNKNOWN;      break;
@@ -1767,23 +1789,39 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
 
         switch (product_num) {
             //The PCIe ID -> MB mapping may be different from the EEPROM -> MB mapping
-            case X300_USRP_PCIE_SSID:
+            case X300_USRP_PCIE_SSID_ADC_33:
+            case X300_USRP_PCIE_SSID_ADC_18:
                 mb_type = USRP_X300_MB; break;
-            case X310_USRP_PCIE_SSID:
-            case X310_2940R_40MHz_PCIE_SSID:
-            case X310_2940R_120MHz_PCIE_SSID:
-            case X310_2942R_40MHz_PCIE_SSID:
-            case X310_2942R_120MHz_PCIE_SSID:
-            case X310_2943R_40MHz_PCIE_SSID:
-            case X310_2943R_120MHz_PCIE_SSID:
-            case X310_2944R_40MHz_PCIE_SSID:
-            case X310_2950R_40MHz_PCIE_SSID:
-            case X310_2950R_120MHz_PCIE_SSID:
-            case X310_2952R_40MHz_PCIE_SSID:
-            case X310_2952R_120MHz_PCIE_SSID:
-            case X310_2953R_40MHz_PCIE_SSID:
-            case X310_2953R_120MHz_PCIE_SSID:
-            case X310_2954R_40MHz_PCIE_SSID:
+            case X310_USRP_PCIE_SSID_ADC_33:
+            case X310_2940R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2940R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2942R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2942R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2943R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2943R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2944R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2950R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2950R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2952R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2952R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2953R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2953R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2954R_40MHz_PCIE_SSID_ADC_33:
+            case X310_USRP_PCIE_SSID_ADC_18:
+            case X310_2940R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2940R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2942R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2942R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2943R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2943R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2944R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2950R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2950R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2952R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2952R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2953R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2953R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2954R_40MHz_PCIE_SSID_ADC_18:
                 mb_type = USRP_X310_MB; break;
             default:
                 UHD_MSG(warning) << "X300 unknown product code in EEPROM: " << product_num << std::endl;
@@ -1792,4 +1830,3 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
     }
     return mb_type;
 }
-// vim: sw=4 expandtab:

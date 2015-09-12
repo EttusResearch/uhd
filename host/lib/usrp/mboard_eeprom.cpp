@@ -213,7 +213,8 @@ struct x300_eeprom_map
     //indentifying numbers
     unsigned char revision[2];
     unsigned char product[2];
-    boost::uint8_t _pad0[4];
+    unsigned char revision_compat[2];
+    boost::uint8_t _pad0[2];
 
     //all the mac addrs
     boost::uint8_t mac_addr0[6];
@@ -237,6 +238,11 @@ static void load_x300(mboard_eeprom_t &mb_eeprom, i2c_iface &iface)
     //extract the revision number
     mb_eeprom["revision"] = uint16_bytes_to_string(
         iface.read_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, revision), 2)
+    );
+
+    //extract the revision compat number
+    mb_eeprom["revision_compat"] = uint16_bytes_to_string(
+        iface.read_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, revision_compat), 2)
     );
 
     //extract the product code
@@ -283,6 +289,12 @@ static void store_x300(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface)
     if (mb_eeprom.has_key("revision")) iface.write_eeprom(
         X300_EEPROM_ADDR, offsetof(x300_eeprom_map, revision),
         string_to_uint16_bytes(mb_eeprom["revision"])
+    );
+
+    //parse the revision compat number
+    if (mb_eeprom.has_key("revision_compat")) iface.write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, revision_compat),
+        string_to_uint16_bytes(mb_eeprom["revision_compat"])
     );
 
     //parse the product code

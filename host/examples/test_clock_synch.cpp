@@ -124,7 +124,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Get GPS time to initially set USRP devices
     std::cout << std::endl << "Querying Clock for time and setting USRP times..." << std::endl << std::endl;
-    boost::uint32_t clock_time = clock->get_time();
+    time_t clock_time = clock->get_time();
     usrp->set_time_unknown_pps(uhd::time_spec_t(double(clock_time+2)));
 
     //Wait for next PPS to start polling

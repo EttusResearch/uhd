@@ -69,17 +69,11 @@
 #define _IPH_PROTO_SET(hdr, proto) (hdr)->_ttl_proto = (htons((proto) | (_IPH_TTL(hdr) << 8)))
 #define _IPH_CHKSUM_SET(hdr, chksum) (hdr)->_chksum = (chksum)
 
-bool using_network_defaults;
+volatile bool using_network_defaults;
 
 // Ethernet I/O buffers
-uint8_t buf_in[512];
-uint8_t buf_out[512];
-
-// Default values loaded if EEPROM is incomplete
-static const uint32_t blank_eeprom_ip = _IP(255,255,255,255);
-static const uint32_t default_ip      = _IP(192,168,10,3);
-static const uint32_t default_dr      = _IP(192,168,10,1);
-static const uint32_t default_netmask = _IP(255,255,255,0);
+#define ETH_BUF_SIZE 512
+uint8_t eth_buf[ETH_BUF_SIZE];
 
 typedef void (*udp_receiver_t)(struct socket_address src, struct socket_address dst,
 			       unsigned char *payload, int payload_len);

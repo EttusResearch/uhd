@@ -98,6 +98,14 @@ namespace uhd{
         virtual void dynamic_throw(void) const;
     };
 
+    struct UHD_API usb_error : runtime_error{
+        int _code;
+        usb_error(int code, const std::string &what);
+        virtual unsigned code(void) const { return _code; };
+        virtual usb_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
+    };
+
     struct UHD_API not_implemented_error : runtime_error{
         not_implemented_error(const std::string &what);
         virtual unsigned code(void) const;

@@ -18,6 +18,7 @@
 #ifndef INCLUDED_DEVICE3_RADIO_REGS_HPP
 #define INCLUDED_DEVICE3_RADIO_REGS_HPP
 
+#include <uhd/config.hpp>
 #include <boost/cstdint.hpp>
 
 namespace uhd { namespace usrp { namespace device3 { namespace radio {
@@ -52,8 +53,10 @@ static const boost::uint32_t RB64_TIME_PPS        = 16;
 static const boost::uint32_t RB32_TEST            = 24;
 static const boost::uint32_t RB32_RX              = 28;
 static const boost::uint32_t RB32_FP_GPIO         = 32;
+static const boost::uint32_t RB32_MISC_INS        = 36;
 static const boost::uint32_t RB64_CODEC_READBACK  = 40;
 static const boost::uint32_t RB32_RADIO_NUM       = 48;
+
 
 }}}} // namespace
 

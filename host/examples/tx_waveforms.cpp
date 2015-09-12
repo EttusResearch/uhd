@@ -46,7 +46,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, wave_type, ant, subdev, ref, otw, channel_list;
+    std::string args, wave_type, ant, subdev, ref, pps, otw, channel_list;
     size_t spb;
     double rate, freq, gain, wave_freq, bw;
     float ampl;
@@ -66,7 +66,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "waveform type (CONST, SQUARE, RAMP, SINE)")
         ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "clock reference (internal, external, mimo)")
+        ("ref", po::value<std::string>(&ref)->default_value("internal"), "clock reference (internal, external, mimo, gpsdo)")
+        ("pps", po::value<std::string>(&pps), "PPS source (internal, external, mimo, gpsdo)")
         ("otw", po::value<std::string>(&otw)->default_value("sc16"), "specify the over-the-wire sample mode")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channels to use (specify \"0\", \"1\", \"0,1\", etc)")
         ("int-n", "tune USRP with integer-N tuning")
@@ -178,15 +179,35 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::vector<std::complex<float> > buff(spb);
     std::vector<std::complex<float> *> buffs(channel_nums.size(), &buff.front());
 
-    //setup the metadata flags
-    uhd::tx_metadata_t md;
-    md.start_of_burst = true;
-    md.end_of_burst   = false;
-    md.has_time_spec  = true;
-    md.time_spec = uhd::time_spec_t(0.1);
-
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-    usrp->set_time_now(uhd::time_spec_t(0.0));
+    if (channel_nums.size() > 1)
+    {
+        // Sync times
+        if (pps == "mimo")
+        {
+            UHD_ASSERT_THROW(usrp->get_num_mboards() == 2);
+
+            //make mboard 1 a slave over the MIMO Cable
+            usrp->set_time_source("mimo", 1);
+
+            //set time on the master (mboard 0)
+            usrp->set_time_now(uhd::time_spec_t(0.0), 0);
+
+            //sleep a bit while the slave locks its time to the master
+            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        }
+        else
+        {
+            if (pps == "internal" or pps == "external" or pps == "gpsdo")
+                usrp->set_time_source(pps);
+            usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
+            boost::this_thread::sleep(boost::posix_time::seconds(1)); //wait for pps sync pulse
+        }
+    }
+    else
+    {
+        usrp->set_time_now(0.0);
+    }
 
     //Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
@@ -210,6 +231,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     std::signal(SIGINT, &sig_int_handler);
     std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
+
+    // Set up metadata. We start streaming a bit in the future
+    // to allow MIMO operation:
+    uhd::tx_metadata_t md;
+    md.start_of_burst = true;
+    md.end_of_burst   = false;
+    md.has_time_spec  = true;
+    md.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.1);
 
     //send data until the signal handler gets called
     while(not stop_signal_called){

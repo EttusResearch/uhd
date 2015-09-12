@@ -49,7 +49,7 @@ add_custom_target(
 
 add_custom_target(
     upload_bootloader
-    ${AVRDUDE} -p atmega128 -c ${PROGRAMMER} -P usb -U efuse:w:0xFF:m -U hfuse:w:0x80:m -U lfuse:w:0xFF:m -U flash:w:octoclock_bootloader.hex:i
+    ${AVRDUDE} -p atmega128 -c ${PROGRAMMER} -P usb -U efuse:w:0xFF:m -U hfuse:w:0x80:m -U lfuse:w:0xEF:m -U flash:w:octoclock_bootloader.hex:i
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     DEPENDS octoclock_bootloader_hex
     COMMENT "Uploading OctoClock bootloader to device with ${PROGRAMMER}"

@@ -38,10 +38,10 @@
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include "recv_packet_demuxer_3000.hpp"
+#include "x300_regs.hpp"
 ///////////// RFNOC /////////////////////
 #include <uhd/usrp/rfnoc/block_ctrl.hpp>
 ///////////// RFNOC /////////////////////
-
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 
@@ -151,9 +151,12 @@ private:
     //perifs in the radio core
     struct radio_perifs_t : public device3_impl::radio_v_perifs_t
     {
+        //Interfaces
         spi_core_3000::sptr spi;
         x300_adc_ctrl::sptr adc;
         x300_dac_ctrl::sptr dac;
+        //Registers
+        uhd::usrp::x300::radio_regmap_t::sptr regmap;
     };
 
     //vector of member objects per motherboard
@@ -175,7 +178,8 @@ private:
         i2c_core_100_wb32::sptr zpu_i2c;
 
         //perifs in each radio
-        radio_perifs_t radio_perifs[2]; //!< This is hardcoded s.t. radio_perifs[0] points to slot A and [1] to B
+        static const size_t NUM_RADIOS = 2;
+        radio_perifs_t radio_perifs[NUM_RADIOS]; //!< This is hardcoded s.t. radio_perifs[0] points to slot A and [1] to B
         uhd::usrp::dboard_eeprom_t db_eeproms[8];
         //! Return the index of a radio component, given a slot name. This means DSPs, radio_perifs
         size_t get_radio_index(const std::string &slot_name) {
@@ -188,18 +192,15 @@ private:
         uhd::gps_ctrl::sptr gps;
         gpio_core_200::sptr fp_gpio;
 
-        //clock control register bits
-        int clock_control_regs_clock_source;
-        int clock_control_regs_pps_select;
-        int clock_control_regs_pps_out_enb;
-        int clock_control_regs_tcxo_enb;
-        int clock_control_regs_gpsdo_pwr;
+        uhd::usrp::x300::fw_regmap_t::sptr fw_regmap;
 
         //which FPGA image is loaded
         std::string loaded_fpga_image;
 
         size_t hw_rev;
         std::string current_refclk_src;
+
+        uhd::soft_regmap_db_t::sptr regmap_db;
     };
     std::vector<mboard_members_t> _mb;
 
@@ -207,6 +208,8 @@ private:
     void claimer_loop(uhd::wb_iface::sptr);
 
     void register_loopback_self_test(uhd::wb_iface::sptr iface);
+
+    void radio_loopback(uhd::wb_iface::sptr iface, const bool on);
 
      /*! \brief Initialize the radio component on a given slot.
       *
@@ -222,7 +225,7 @@ private:
       * \param mb_i Motherboard index
       * \param slot_name Slot name (A or B).
       */
-    void setup_radio(const size_t, const std::string &slot_name);
+    void setup_radio(const size_t, const std::string &slot_name, const uhd::device_addr_t &dev_addr);
 
     uhd::sid_t allocate_sid(mboard_members_t &mb, const uhd::sid_t &address);
     both_xports_t make_transport(
@@ -282,24 +285,26 @@ private:
     void set_time_source_out(mboard_members_t&, const bool);
     void update_clock_source(mboard_members_t&, const std::string &);
     void update_time_source(mboard_members_t&, const std::string &);
-    void reset_radios(mboard_members_t&);
 
-    uhd::sensor_value_t get_ref_locked(uhd::wb_iface::sptr);
-    bool wait_for_ref_locked(uhd::wb_iface::sptr, double timeout = 0.0);
-    bool is_pps_present(uhd::wb_iface::sptr);
+    uhd::sensor_value_t get_ref_locked(mboard_members_t& mb);
+    bool wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout);
+    bool is_pps_present(mboard_members_t& mb);
 
     void set_db_eeprom(uhd::i2c_iface::sptr i2c, const size_t, const uhd::usrp::dboard_eeprom_t &);
     void set_mb_eeprom(uhd::i2c_iface::sptr i2c, const uhd::usrp::mboard_eeprom_t &);
 
     void check_fw_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
-    void check_fpga_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
+    void check_fpga_compat(const uhd::fs_path &mb_path, const mboard_members_t &members);
 
     void update_atr_leds(gpio_core_200_32wo::sptr, const std::string &ant);
     boost::uint32_t get_fp_gpio(gpio_core_200::sptr);
     void set_fp_gpio(gpio_core_200::sptr, const gpio_attr_t, const boost::uint32_t);
 
-    // Loopback stuff
-    void test_rfnoc_loopback(size_t mb_index, int ce_index);
+    void self_cal_adc_capture_delay(mboard_members_t& mb, const size_t radio_i, bool print_status = false);
+    double self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay = false);
+    void self_test_adcs(mboard_members_t& mb, boost::uint32_t ramp_time_ms = 100);
+
+    void extended_adc_test(mboard_members_t& mb, double duration_s);
 
     //**PRECONDITION**
     //This function assumes that all the VITA times in "radios" are synchronized

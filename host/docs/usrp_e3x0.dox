@@ -1,4 +1,4 @@
-/*! \page page_usrp_e3x0 USRP-E3x0 Series
+/*! \page page_usrp_e3x0 USRP-E3xx Series
 
 \tableofcontents
 
@@ -35,7 +35,7 @@ There are two different methods to connect to the device
 - using the gigabit ethernet connector and a ssh client on your host computer
 
 For the first boot, booting with the serial cable connected to the device
-is recommended, as it allows to review and modify the network configuration,
+is recommended, as it allows to review and modify the \ref e3xx_network_configuration
 and allows to enter the bootloader in case of issues during the boot.
 
 
@@ -133,6 +133,8 @@ which should return 'arm-oe-linux-gnueabi'.
 
         $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_E300=ON ..
         $ make
+
+For instructions on building UHD on a PC to interact with your E-Series device, follow these instructions: \ref e3x0_uhd_build
 
 \subsubsection e3x0_sdk_usage_gnuradio Building GNU Radio
 
@@ -248,8 +250,7 @@ You may need to change the USRP's IP address for several reasons:
 - to use multiple USRP-E Series devices with the same host computer
 - to set a known IP address into USRP (in case you forgot)
 
-
-
+For examples refer to the \ref e3xx_network_configuration section.
 
 \section e3x0_hw Hardware Notes
 
@@ -264,13 +265,51 @@ You may need to change the USRP's IP address for several reasons:
 - **RF B Group**
   + **TX/RX LED**: Indicates that data is streaming on the TX/RX channel on frontend B
   + **RX2 LED**: Indicates that data is streaming on the RX2 channel on frontend B
-- **PWR**: Power switch
+- **PWR**: Power switch with integrated status LED, for status description see below.
 
 - **SYNC**: Input port for external PPS signal
 
 - **GPS**: Connection for the GPS antenna
 
 - **AUDIO**: Audio input / output
+
+The status LED in the power switch indicates the power and charge status.
+It's behavior is firmware version dependent.
+
+- **Version 1** (original E310)
+  + **Off**: Indicates device is off and not charging
+  + **Solid Red**: Indicates device is charging
+  + **Solid Green**: Indicates device is on
+  + **Fast Blinking Red**: Indicates an error code
+    + 1 - Low voltage error
+    + 2 - Regulator low voltage error
+    + 3 - FPGA power error
+    + 4 - DRAM power error
+    + 5 - 1.8V rail power error
+    + 6 - 3.3V rail power error
+    + 7 - Daughterboard / TX power error
+    + 9 - Temperature error
+
+- **Version 2** (E312 and upgraded E310)
+  + **Off**: Indicates device is off and not charging
+  + **Slow Blinking Green**: Indicates device is off and charging
+  + **Fast Blinking Green**: Indicates device is on and charging
+  + **Solid Green**: Indicates device is on (and not charging, if E312)
+  + **Solid Orange**: Indicates device is on and discharging
+  + **Fast Blinking Orange**: Indicates device is on, discharging, and charge is below 10% charge
+  + **Fast Blinking Red**: Indicates an error code
+    + 1 - Low voltage error
+    + 2 - Regulator low voltage error
+    + 3 - FPGA power error
+    + 4 - DRAM power error
+    + 5 - 1.8V rail power error
+    + 6 - 3.3V rail power error
+    + 7 - Daughterboard / TX power error
+    + 8 - Charger error
+    + 9 - Charger temperature error
+    + 10 - Battery low error
+    + 11 - Fuel Gauge temperature error
+    + 12 - Global (case) temperature error
 
 \subsection e3x0_hw_rear_panel Rear Panel
 
@@ -351,7 +390,7 @@ For more advanced IMU based applications please refer to the <a href="https://gi
 
 ### Connector
 
-\image html e3x0_gpio_conn.png "E3x0 GPIO Connector"
+\image html e3x0_gpio_conn.png "E3xx GPIO Connector"
 
 ### Pin Mapping
 
@@ -379,7 +418,7 @@ The Left/Right audio outputs are compatible with typical low-impedance headphone
 
 ### Connector
 
-\image html e3x0_jtag_conn.png "E3x0 JTAG Connector"
+\image html e3x0_jtag_conn.png "E3xx JTAG Connector"
 
 ### Pin Mapping
 
@@ -395,6 +434,73 @@ Xilinx chipscope allows for debugging custom FPGA designs similar to a logic ana
 USRP-E series devices can be used with Xilinx chipscope using the internal JTAG connector.
 
 Further information on how to use Chipscope can be found in the *Xilinx Chipscope Pro Software and Cores User Guide (UG029)*.
+
+\section e3xx_battery Battery notes
+
+The USRP E312 (and with upgraded firmware E310) supports LiIon Battery packs (e.g. AA Portable Power Corp, 749801-01).
+
+\subsection e3xx_battery_connector Connector
+
+The connector J1 on E312's motherboard is a Molex 53014-6310. The corresponding mating connector is a Molex 51004-0300.
+
+\image html e3xx_conn_photo.png "Battery pack connector"
+
+The pins are as follows:
+- Pin 1 (Red): VBat
+- Pin 2 (Black): GND
+- Pin 3 (White): Battery Thermistor
+
+\subsection e3xx_battery_information Driver
+
+The battery information is exposed on the device via the sysfs directory under:
+
+    /sys/class/power_supply/BAT/
+
+and for the charger:
+
+    /sys/class/power_supply/AC/
+
+The values can be accessed via libudev or manually e.g.:
+
+    root@ettus-e3xx: cat /sys/class/power_supply/BAT/status
+
+The driver emits uevents on changes, that can be used to write custom UDev rules.
+Using UDev rules one can configure the USRP E3xx to shut down on certain events,
+such as low battery charge, high temperatures or AC power plug in.
+
+The following example will cause the system to shut down at a reported temperature
+of 73C:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SUBSYSTEM=="power_supply", ATTR{online}=="1", ATTR{temp}=="730", RUN+="/sbin/shutdown -h now"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Another example will cause a safe shutdown once the battery level reaches 5 percent
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SUBSYSTEM=="power_supply", ATTR{online}=="1", ATTR{status}=="Discharging", ATTR{capacity}=="5", RUN+="/sbin/shutdown -h now"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For more information, please see the udev manual pages and <a href ="https://www.kernel.org/doc/Documentation/power/power_supply_class.txt"> Kernel Power Supply Docs </a>.
+
+\subsection e3xx_battery_calibration Calibration Procedure
+
+In order for the fuel gauge to give a usable indication of remaining charge it needs to be calibrated.
+The procedure for calibration is as follows:
+
+1. Completely discharge battery (e.g. by booting up without SD card, so OS doesn't autoshutdown)
+2. Unplug the battery pack and external power
+3. Reconnect the battery pack
+4. Reconnect AC power and charge until charge completed.
+
+A faster (less accurate) calibration procedure is as follows:
+
+1. Completly charge battery
+2. Type:
+
+    $ echo 3200000 > /sys/class/power_supply/BAT/charge_now
+
+3. Unplug AC power
+4. Replug AC power and wait until charge completes
 
 \section e3x0_dboards Daughterboard notes
 
@@ -521,6 +627,51 @@ TRX-B   | >= 2940.0       | 11            | 10             | XXX
 _Note: Although the transmit filters are low pass, the following table describes UHD's tuning range for selecting each filter path.
 The table also includes the required transmit enable states._
 
+\section e3xx_network_configuration Network configuration
+
+Your USRP E3XX Series device can be configured by editing the /etc/network/interfaces.<br>
+The device defaults to *DHCP*, meaning it will query the local network's DHCP server for an address.
+
+\subsection e3xx_network_dhcp DHCP
+
+The default configuration should look similar to, instructing your device to query
+local DHCP servers for an IP address, gateway, etc.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+auto eth0
+iface eth0 inet dhcp
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to change the hostname used to obtain an IP address via DHCP change
+
+    /etc/hostname
+
+and edit:
+
+    /etc/network/interfaces
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+auto eth0
+iface eth0 inet dhcp
+    hostname your-hostname
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+\subsection e3xx_network_static Static IP
+
+To configure a static IP address edit
+
+    /etc/network/interfaces
+
+to look like
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+auto eth0
+iface eth0 inet static
+    address your-ip
+    netmask your-netmask
+    gateway your-gateway
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 \section e3x0_misc Miscellaneous
 
 \subsection e3x0_misc_multirx Multiple RX channels
@@ -550,9 +701,21 @@ they can be queried through the API.
 
 \subsection e3x0_network_mode Network Mode
 
-Your USRP-E series device can be used in network mode for narrow band signal observation, evaluation and debugging purposes.
+Your USRP-E series device can be used in network mode for narrow band signal observation, evaluation and debugging purposes. See the instructions below for how to use network mode.
 
 Please note that when compared with normal operation as a standalone device the usable bandwidth is limited and therefore Network Mode is not the recommended mode of operation.
+
+\subsubsection e3x0_uhd_build Building UHD
+
+To work with your E-Series device in network mode, you will need to build UHD on your PC with extra CMake flags. Assuming you are in the host/build directory,
+see below:
+
+        $ cmake -DENABLE_E300=ON -DE300_FORCE_NETWORK=ON ..
+        $ make
+
+Once UHD is installed on your device, it will be able to interact with an E-Series device with network mode active (see below).
+
+\subsubsection e3x0_activating_network Activating Network Mode on the Device
 
 In order to use the device in network mode it is necessary to start the *usrp_e3x0_network_mode* executable on the device.
 In order to start the executable please log into your device either via SSH or serial console(see \ref e3x0_first_boot) and type
@@ -589,6 +752,76 @@ Use this addressing scheme with the uhd::usrp::multi_usrp interface.
 Example device address string representation for 2 USRPs with IPv4 addresses **192.168.10.2** and **192.168.20.2**:
 
     addr0=192.168.10.2, addr1=192.168.20.2
+
+\subsection e3xx_nfs_root Booting from a NFS root
+
+Booting your device from a NFS root might be desirable for remote deployment, management or similar applications.
+
+Requirements:
+
+- NFS server (for configuration see your Linux distribution's documentation)
+- dtc (devicetree compiler)
+- Filesystem image
+
+\subsubsection e3xx_nfs_root_extract Extracting the filesystems
+
+The first step to make a root filesystem available via NFS is to extract the root file system.
+This can be done as follows:
+
+    $ sfdisk -l -uS <your-image>.direct
+
+Which should produce output similar to:
+
+    Disk release3-image.direct: 7 GiB, 7516197888 bytes, 14680074 sectors
+    Units: sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disklabel type: dos
+    Disk identifier: 0x8bc3587b
+
+    Device                 Boot Start      End  Sectors Size Id Type
+    release3-image.direct1 *        8    36871    36864  18M  c W95 FAT32 (LBA)
+    release3-image.direct2      36872 14680071 14643200   7G 83 Linux
+
+From this one can see the second partition (root filesystem) starts at sector *36872*,
+and has a length of *14680071*. We can use the *dd* tool to extract the root filesystem
+into a handy file.
+
+    $ dd if=<yourimage>.direct of=<yourimage_rootfs>.direct offset=36872 count=14643200
+
+The same procedure can be done for the boot partition.
+
+    $ dd if=<yourimage>.direct of=<yourimage_boot>.direct offset=8 count=36864
+
+Both of these files are mountable on your NFS server, e.g. by:
+
+    $ mount <yourimage_rootfs>.direct /srv/nfs/root-e3xx
+    $ mount <yourimage_rootfs>.direct /srv/nfs/root-e3xx/media/FAT
+
+Copy the uImage, uEnv.txt, u-boot.img, boot.bin from the extracted boot partition to the
+boot partition of your device's card.
+
+Use the devicetree compiler to modify e300-devicetree.dtb file as follows:
+
+    $ dtc -I dtb -O dts e300-devicetree.dtb -o e300-devicetree.dts
+
+Using your editor of choice modify the *chosen* property in e300-devicetree.dts from:
+
+    console=ttyPS0,115200 root=/dev/mmc0blkp2 rw rootwait earlyprintk
+
+to:
+
+    console=ttyPS0,115200 root=/dev/nfs rw nfsroot=<yourserverip>:<yourpath>,vers=3 rootwait ip=dhcp earlyprintk
+
+Use the devicetree compiler to compile the modified devicetree as follows:
+
+    $ dtc e300-devicetree.dts -o e300-devicetree.dtb
+
+Copy the modified *e300-devicetree.dtb* to your device's card.
+
+For more information on server configuration please refer to your Linux distribution's NFS Server manual,
+for more information about NFS root see the
+<a href=https://www.kernel.org/doc/Documentation/filesystems/nfs/nfsroot.txt>Linux Kernel NFS Root documentation</a>
 
 \section e3x0_comm_problems Communication Problems
 
@@ -641,6 +874,16 @@ by pinging the USRP and making sure the LEDs start to blink.
   -# How do I enable X forwarding so I can run X apps on the E3x0?<br>
      In the file `/etc/ssh/sshd_config`, uncomment the line \#`X11Forwarding no`
      and change "no" to "yes".
+
+ - Firmware
+  -# With Firmware 2.0 the device no longer turns on when AC power is plugged.<br>
+     This setting can be adjusted via `/sys/devices/axi_pmu.3/autoboot`.
+
+     Using `$ echo 1 > /sys/devices/axi_pmu.3/autoboot` autoboot is turned on.
+
+     Using `$ echo 0 > /sys/devices/axi_pmu.3/autoboot` autoboot is turned off.
+
+     Note that the path above is subject to change depending on device tree changes.
 
 \section e3x0_apps Applications
 

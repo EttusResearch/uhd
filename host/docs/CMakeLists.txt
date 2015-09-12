@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2013 Ettus Research LLC
+# Copyright 2010-2013,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ SET(ENABLE_MANUAL_OR_DOXYGEN false)
 ########################################################################
 # Setup Manual (using Doxygen)
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF)
+LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF OFF)
 
 # Check if fpga submodule is there. If yes:
 # - Add fpga-src/docs and fpga-src/README.md to inputs
@@ -64,7 +64,7 @@ ENDIF(ENABLE_MANUAL)
 # Setup API documentation (using Doxygen)
 ########################################################################
 MESSAGE(STATUS "")
-LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF)
+LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF OFF)
 OPTION(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
 
 IF(LIBUHDDEV_PKG)
@@ -75,6 +75,8 @@ IF(ENABLE_DOXYGEN)
     SET(ENABLE_MANUAL_OR_DOXYGEN true)
     #make doxygen directory depend on the header files
     FILE(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
+    FILE(GLOB_RECURSE h_files ${CMAKE_SOURCE_DIR}/include/*.h)
+    LIST(APPEND header_files ${h_files})
     SET(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files} "${CMAKE_SOURCE_DIR}/lib/usrp/rfnoc/nocscript/gen_basic_funcs.py")
     IF(ENABLE_DOXYGEN_FULL)
         SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib")
@@ -120,6 +122,7 @@ SET(man_page_sources
     uhd_cal_tx_dc_offset.1
     uhd_cal_tx_iq_balance.1
     uhd_find_devices.1
+    uhd_image_loader.1
     uhd_images_downloader.1
     uhd_usrp_probe.1
     usrp_n2xx_simple_net_burner.1
@@ -138,7 +141,7 @@ IF(NOT WIN32)
     SET(NOT_WIN32 TRUE)
 ENDIF(NOT WIN32)
 
-LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "GZIP_FOUND;NOT_WIN32" OFF)
+LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "GZIP_FOUND;NOT_WIN32" OFF OFF)
 
 IF(ENABLE_MAN_PAGES)
     #Generate man pages

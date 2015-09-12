@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 
 /* Define the USB 2.0 and USB 3.0 enumeration descriptions for the USRP B200
@@ -303,7 +303,7 @@ const uint8_t b200_usb_ss_config_desc[] __attribute__ ((aligned (32))) =
     0x6A,0x00,                      /* Length of this descriptor and all sub descriptors */
     0x05,                           /* Number of interfaces */
     0x01,                           /* Configuration number */
-    0x00,                           /* COnfiguration string index */
+    0x00,                           /* Configuration string index */
     0x80,                           /* Config characteristics - D6: Self power; D5: Remote wakeup */
     0x01,                           /* Lie about the max power consumption (in 8mA unit) : 8mA */
 
@@ -406,6 +406,102 @@ const uint8_t b200_usb_ss_config_desc[] __attribute__ ((aligned (32))) =
     0x00,                           /* Interface sub class */
     0x00,                           /* Interface protocol code */
     0x02,                           /* Interface descriptor string index */
+
+    /* Endpoint descriptor for consumer EP */
+    0x07,                           /* Descriptor size */
+    CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
+    CTRL_ENDPOINT_CONSUMER,         /* Endpoint address and description */
+    CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
+    0x00,0x04,                      /* Max packet size = 1024 bytes */
+    0x00,                           /* Servicing interval for data transfers : 0 for Bulk */
+
+    /* Super speed endpoint companion descriptor for consumer EP */
+    0x06,                           /* Descriptor size */
+    CY_U3P_SS_EP_COMPN_DESCR,       /* SS endpoint companion descriptor type */
+    (USB3_PACKETS_PER_BURST - 1),   /* Max no. of packets in a burst : 0: burst 1 packet at a time */
+    0x00,                           /* Max streams for bulk EP = 0 (No streams) */
+    0x00,0x00                       /* Service interval for the EP : 0 for bulk */
+};
+
+
+const uint8_t b200_usb_ss_config_desc_new[] __attribute__ ((aligned (32))) =
+{
+    /* Configuration descriptor */
+    0x09,                           /* Descriptor size */
+    CY_U3P_USB_CONFIG_DESCR,        /* Configuration descriptor type */
+    0x4F,0x00,                      /* Length of this descriptor and all sub descriptors */
+    0x02,                           /* Number of interfaces */
+    0x01,                           /* Configuration number */
+    0x00,                           /* COnfiguration string index */
+    0x80,                           /* Config characteristics - D6: Self power; D5: Remote wakeup */
+    0x01,                           /* Lie about the max power consumption (in 8mA unit) : 8mA */
+
+    /* Interface descriptor */
+    0x09,                           /* Descriptor size */
+    CY_U3P_USB_INTRFC_DESCR,        /* Interface Descriptor type */
+    0x00,                           /* Interface number */
+    0x00,                           /* Alternate setting number */
+    0x00,                           /* Number of end points */
+    0xFF,                           /* Interface class */
+    0x00,                           /* Interface sub class */
+    0x00,                           /* Interface protocol code */
+    0x02,                           /* Interface descriptor string index */
+
+    /* Interface descriptor */
+    0x09,                           /* Descriptor size */
+    CY_U3P_USB_INTRFC_DESCR,        /* Interface Descriptor type */
+    0x01,                           /* Interface number */
+    0x00,                           /* Alternate setting number */
+    0x04,                           /* Number of end points */
+    0xFF,                           /* Interface class */
+    0x00,                           /* Interface sub class */
+    0x00,                           /* Interface protocol code */
+    0x02,                           /* Interface descriptor string index */
+
+    /* Endpoint descriptor for producer EP */
+    0x07,                           /* Descriptor size */
+    CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
+    DATA_ENDPOINT_PRODUCER,         /* Endpoint address and description */
+    CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
+    0x00,0x04,                      /* Max packet size = 1024 bytes */
+    0x00,                           /* Servicing interval for data transfers : 0 for bulk */
+
+    /* Super speed endpoint companion descriptor for producer EP */
+    0x06,                           /* Descriptor size */
+    CY_U3P_SS_EP_COMPN_DESCR,       /* SS endpoint companion descriptor type */
+    (USB3_PACKETS_PER_BURST - 1),   /* Max no. of packets in a burst : 0: burst 1 packet at a time */
+    0x00,                           /* Max streams for bulk EP = 0 (No streams) */
+    0x00,0x00,                      /* Service interval for the EP : 0 for bulk */
+
+    /* Endpoint descriptor for consumer EP */
+    0x07,                           /* Descriptor size */
+    CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
+    DATA_ENDPOINT_CONSUMER,         /* Endpoint address and description */
+    CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
+    0x00,0x04,                      /* Max packet size = 1024 bytes */
+    0x00,                           /* Servicing interval for data transfers : 0 for Bulk */
+
+    /* Super speed endpoint companion descriptor for consumer EP */
+    0x06,                           /* Descriptor size */
+    CY_U3P_SS_EP_COMPN_DESCR,       /* SS endpoint companion descriptor type */
+    (USB3_PACKETS_PER_BURST - 1),   /* Max no. of packets in a burst : 0: burst 1 packet at a time */
+    0x00,                           /* Max streams for bulk EP = 0 (No streams) */
+    0x00,0x00,                      /* Service interval for the EP : 0 for bulk */
+
+    /* Endpoint descriptor for producer EP */
+    0x07,                           /* Descriptor size */
+    CY_U3P_USB_ENDPNT_DESCR,        /* Endpoint descriptor type */
+    CTRL_ENDPOINT_PRODUCER,         /* Endpoint address and description */
+    CY_U3P_USB_EP_BULK,             /* Bulk endpoint type */
+    0x00,0x04,                      /* Max packet size = 1024 bytes */
+    0x00,                           /* Servicing interval for data transfers : 0 for bulk */
+
+    /* Super speed endpoint companion descriptor for producer EP */
+    0x06,                           /* Descriptor size */
+    CY_U3P_SS_EP_COMPN_DESCR,       /* SS endpoint companion descriptor type */
+    (USB3_PACKETS_PER_BURST - 1),   /* Max no. of packets in a burst : 0: burst 1 packet at a time */
+    0x00,                           /* Max streams for bulk EP = 0 (No streams) */
+    0x00,0x00,                      /* Service interval for the EP : 0 for bulk */
 
     /* Endpoint descriptor for consumer EP */
     0x07,                           /* Descriptor size */

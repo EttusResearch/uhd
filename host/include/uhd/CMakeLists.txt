@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011,2013-2014 Ettus Research LLC
+# Copyright 2010-2011,2013-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,3 +41,12 @@ UHD_INSTALL(FILES
     DESTINATION ${INCLUDE_DIR}/uhd
     COMPONENT headers
 )
+
+IF(ENABLE_C_API)
+    UHD_INSTALL(FILES
+        config.h
+        error.h
+        DESTINATION ${INCLUDE_DIR}/uhd
+        COMPONENT headers
+    )
+ENDIF(ENABLE_C_API)

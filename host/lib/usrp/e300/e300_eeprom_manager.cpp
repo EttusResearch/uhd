@@ -38,7 +38,7 @@ static void _string_to_bytes(const std::string &string, size_t max_len, boost::u
     for (size_t i = 0; i < len; i++){
         buffer[i] = string[i];
     }
-    if (len < max_len - 1)
+    if (len < max_len)
         buffer[len] = '\0';
 }
 
@@ -226,10 +226,10 @@ std::string e300_eeprom_manager::get_mb_type_string(void) const
         _mb_eeprom["product"]);
     switch (product) {
     case E300_MB_PID:
-        return "E300";
+        return "E3XX";
 
     case E310_MB_PID:
-        return "E310";
+        return "E3XX";
 
     default:
         return "UNKNOWN";

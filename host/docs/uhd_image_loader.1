@@ -1,0 +1,130 @@
+.TH "uhd_image_loader" 1 "3.9.0" UHD "User Commands"
+.SH NAME
+uhd_image_loader - UHD Image Loader
+
+.SH DESCRIPTION
+Burn firmware and FPGA images onto connected Ettus Research devices.
+
+.SH SYNOPSIS
+.B  uhd_image_loader [OPTIONS]
+
+.SH OPTIONS
+.IP "List options:"
+--help
+.IP "Device and loader arguments:"
+--args=""
+.IP "Custom firmware filepath:"
+--fw-path=""
+.IP "Custom FPGA filepath:"
+--fpga-path=""
+.IP "Don't burn firmware:"
+--no-fw
+.IP "Don't burn FPGA:"
+--no-fpga
+
+.SH SPECIFYING A PARTICULAR DEVICE
+.sp
+Without any arguments given through the \fIargs=""\fR option, this utility will start a session
+with the first Ettus Research device it sees. The arguments shown below will narrow down the
+utility's search for a particular device:
+
+.SS All devices
+.sp
+The \fIname=\fR and \fIserial=\fR arguments can be used to specify any device except an
+uninitialized USB device or an OctoClock bootloader. The \fItype=\fR argument can be used
+to specify any device, as described below:
+
+"type=" argument
+
+Argument       |     Device
+
+type=usrp2     |     USRP N200, USRP N210
+
+type=b200      |     USRP B200, USRP B210
+
+type=e100      |     USRP E100, USRP E110
+
+type=e3x0      |     USRP E310
+
+type=octoclock |     OctoClock
+
+.sp
+NOTE: The USRP1, USRP2, and USRP B100 are not supported.
+
+.SS Network devices
+.sp
+By default, this utility will check all network interfaces for network-based devices, but a specific
+IP address can be specified with the \fIaddr=\fR argument.
+
+.SS NI-RIO devices
+.sp
+An X-Series devices connected via PCIe can be specified by its NI-RIO resource through the \fIresource=\fR
+argument, and the RPC port through which to communicate with it can be specified with the \fIrpc-port=\fR
+argument. Using these options is not recommended, as their default values are almost always used.
+
+.SS OctoClock devices
+An OctoClock's name and serial are only exposed when the firmware is loaded, so if the device only has a
+bootloader, only the \fIaddr=\fR argument can be used to find it.
+
+.SH DEVICE-SPECIFIC LOADER OPTIONS
+.sp
+Certain devices have specific options for customizing their image loading process, and these can be passed
+in through the \fI--args=""\fR option. These arguments are specified below:
+
+.SS USRP N200, USRP N210
+.sp
+The \fIoverwrite-safe\fR option will overwrite the device's safe-mode firmware and FPGA images. This is
+NOT RECOMMENDED, as these images serve as the backup if the device's primary images are corrupted.
+
+.sp
+The \fIreset\fR option will automatically reset the device once the loading process finishes. When the
+device resets, it will have its new images loaded.
+
+.SS USRP X300, USRP X310 (Ethernet only)
+.sp
+The \fIconfigure\fR option will automatically reset the device once the loading process finishes. When
+the device resets, it will have its new FPGA image loaded.
+
+.sp
+The \fIverify\fR option will tell the device to internally verify the integrity of the image as it loads.
+This greatly increases the loading time.
+
+.SH EXAMPLES
+
+.SS Load only the default FPGA image onto a specific N2x0 device and reset
+.sp
+uhd_image_loader --args="type=usrp2,addr=192.168.10.2,reset" --no-fw
+.ft
+
+.SS Load a custom FPGA image onto a specific X3x0 device
+.sp
+uhd_image_loader --args="type=x300,addr=192.168.40.2" --fpga-path="/home/user/my_x300_fpga_image.bit"
+.ft
+
+.fi
+
+.SH SEE ALSO
+UHD documentation:
+.B http://files.ettus.com/manual/
+.LP
+GR-UHD documentation:
+.B http://gnuradio.org/doc/doxygen/page_uhd.html
+.LP
+Other UHD programs:
+.sp
+uhd_images_downloader(1) usrp2_card_burner(1)
+.SH AUTHOR
+This manual page was written by Nicholas Corgan
+for the Debian project (but may be used by others).
+.SH COPYRIGHT
+Copyright (c) 2015 Ettus Research LLC
+.LP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.LP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2013-2014 Ettus Research LLC
+# Copyright 2013-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ parser.add_option("--output-src-path", type="string", dest="output_src_path", he
 
 # Args
 if (len(args) < 1):
-    print 'ERROR: Please specify the input LVBITX file name'
+    print('ERROR: Please specify the input LVBITX file name')
     sys.exit(1)
 
 lvbitx_filename = args[0]
@@ -44,16 +44,16 @@ autogen_src_path = os.path.abspath(options.output_src_path) if (options.output_s
 class_name = os.path.splitext(os.path.basename(input_filename))[0]
 
 if (not os.path.isfile(input_filename)):
-    print 'ERROR: FPGA File ' + input_filename + ' could not be accessed or is not a file.'
+    print('ERROR: FPGA File ' + input_filename + ' could not be accessed or is not a file.')
     sys.exit(1)
 if (options.merge_bin is not None and not os.path.isfile(os.path.abspath(options.merge_bin))):
-    print 'ERROR: FPGA Bin File ' + options.merge_bin + ' could not be accessed or is not a file.'
+    print('ERROR: FPGA Bin File ' + options.merge_bin + ' could not be accessed or is not a file.')
     sys.exit(1)
 if (not os.path.exists(autogen_src_path)):
-    print 'ERROR: Output path ' + autogen_src_path + ' could not be accessed.'
+    print('ERROR: Output path ' + autogen_src_path + ' could not be accessed.')
     sys.exit(1)
 if (options.output_lvbitx_path is not None and input_filename == os.path.join(autogen_src_path, class_name + '.lvbitx')):
-    print 'ERROR: Input and output LVBITX files were the same. Choose a difference input file or output path.'
+    print('ERROR: Input and output LVBITX files were the same. Choose a difference input file or output path.')
     sys.exit(1)
 
 # Get XML Tree Node
@@ -122,7 +122,7 @@ def map_SubType_to_ScalarType(SubType):
     elif SubType == 'U64':
         ScalarType = 'RIO_SCALAR_TYPE_UQ'
     else:
-        print 'ERROR: No corresponding nirio_scalar_type_t value for SubType ' + SubType + ' .'
+        print('ERROR: No corresponding nirio_scalar_type_t value for SubType ' + SubType + ' .')
         sys.exit(1)
     return ScalarType;
 
@@ -187,7 +187,7 @@ codegen_transform['lvbitx_signature'] = str.upper(root.find('SignatureRegister')
 # Write BIN file
 bitstream = base64.b64decode(root.find('Bitstream').text)
 if (options.output_lvbitx_path is not None and hashlib.md5(bitstream).hexdigest() != root.find('BitstreamMD5').text):
-    print 'ERROR: The MD5 sum for the output LVBITX was incorrect. Make sure that the bitstream in the input LVBITX or BIN file is valid.'
+    print('ERROR: The MD5 sum for the output LVBITX was incorrect. Make sure that the bitstream in the input LVBITX or BIN file is valid.')
     sys.exit(1)
 if (options.output_bin):
     fpga_bin_file = open(os.path.join(options.output_lvbitx_path, class_name + '.bin'), 'w')

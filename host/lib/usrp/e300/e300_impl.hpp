@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,19 +30,28 @@
 
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
+#include <string>
 #include "e300_fifo_config.hpp"
 #include "ad9361_ctrl.hpp"
+#include "ad936x_manager.hpp"
 
 #include "e300_global_regs.hpp"
 #include "e300_i2c.hpp"
 #include "e300_eeprom_manager.hpp"
 #include "e300_sensor_manager.hpp"
-#include "e300_ublox_control.hpp"
+
+/* if we don't compile with gpsd support, don't bother */
+#ifdef E300_GPSD
+#include "gpsd_iface.hpp"
+#endif
 
 namespace uhd { namespace usrp { namespace e300 {
 
 static const std::string E300_FPGA_FILE_NAME = "usrp_e300_fpga.bit";
 static const std::string E310_FPGA_FILE_NAME = "usrp_e310_fpga.bit";
+
+static const std::string E300_FPGA_IDLE_FILE_NAME = "usrp_e300_fpga_idle.bit";
+static const std::string E310_FPGA_IDLE_FILE_NAME = "usrp_e310_fpga_idle.bit";
 
 static const std::string E300_TEMP_SYSFS = "iio:device0";
 static const std::string E300_SPIDEV_DEVICE  = "/dev/spidev0.1";
@@ -90,6 +99,9 @@ static const size_t E300_R1_TX_DATA_STREAM = (1 << 2) | E300_RADIO_DEST_PREFIX_T
 static const size_t E300_R1_RX_DATA_STREAM = (1 << 2) | E300_RADIO_DEST_PREFIX_RX;
 
 uhd::device_addrs_t e300_find(const uhd::device_addr_t &multi_dev_hint);
+void get_e3x0_fpga_images(const uhd::device_addr_t &device_args,
+                          std::string &fpga_image,
+                          std::string &idle_image);
 
 /*!
  * USRP-E300 implementation guts:
@@ -241,14 +253,20 @@ private: // members
     radio_perifs_t                         _radio_perifs[2];
     double                                 _tick_rate;
     ad9361_ctrl::sptr                      _codec_ctrl;
+    ad936x_manager::sptr                   _codec_mgr;
     fe_control_settings_t                  _settings;
     global_regs::sptr                      _global_regs;
     e300_sensor_manager::sptr              _sensor_manager;
     e300_eeprom_manager::sptr              _eeprom_manager;
     uhd::transport::zero_copy_xport_params _data_xport_params;
     uhd::transport::zero_copy_xport_params _ctrl_xport_params;
+    std::string                            _idle_image;
+    bool                                   _do_not_reload;
     gpio_t                                 _misc;
-    gps::ublox::ubx::control::sptr         _gps;
+#ifdef E300_GPSD
+    gpsd_iface::sptr                       _gps;
+    static const size_t                    _GPS_TIMEOUT = 5;
+#endif
 };
 
 }}} // namespace

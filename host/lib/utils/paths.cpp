@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012 Ettus Research LLC
+// Copyright 2010-2012,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -111,6 +111,7 @@ static std::vector<std::string> get_env_paths(const std::string &var_name){
     return paths;
 }
 
+#ifndef UHD_PLATFORM_WIN32
 /*! Expand a tilde character to the $HOME path.
  *
  * The path passed to this function must start with the tilde character in order
@@ -132,6 +133,7 @@ static std::string expand_home_directory(std::string path) {
 
     return path;
 }
+#endif
 
 /***********************************************************************
  * Implement the functions in paths.hpp
@@ -239,7 +241,7 @@ std::string _get_images_path_from_registry(const std::string& registry_key_path)
 
     //Get a handle to the key location
     HKEY hkey_location;
-    if (RegOpenKeyExA(hkey_parent, reg_path.c_str(), NULL, KEY_QUERY_VALUE, &hkey_location) != ERROR_SUCCESS)
+    if (RegOpenKeyExA(hkey_parent, reg_path.c_str(), 0, KEY_QUERY_VALUE, &hkey_location) != ERROR_SUCCESS)
         return std::string();
 
     //Query key value
@@ -259,7 +261,7 @@ std::string _get_images_path_from_registry(const std::string& registry_key_path)
 }
 #endif  /*UHD_PLATFORM_WIN32*/
 
-std::string uhd::get_images_dir(const std::string search_paths) {
+std::string uhd::get_images_dir(const std::string &search_paths) {
 
     /*   This function will check for the existence of directories in this
      *   order:
@@ -330,7 +332,7 @@ std::string uhd::get_images_dir(const std::string search_paths) {
     }
 }
 
-std::string uhd::find_image_path(const std::string &image_name, const std::string search_paths){
+std::string uhd::find_image_path(const std::string &image_name, const std::string &search_paths){
     /* If a path was provided on the command-line or as a hint from the caller,
      * we default to that. */
     if (fs::exists(image_name)){
@@ -362,7 +364,7 @@ std::string uhd::find_image_path(const std::string &image_name, const std::strin
             + uhd::print_utility_error("uhd_images_downloader.py"));
 }
 
-std::string uhd::find_utility(std::string name) {
+std::string uhd::find_utility(const std::string &name) {
     return fs::path(fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / name)
         .string();
 }

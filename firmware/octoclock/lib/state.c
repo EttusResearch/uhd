@@ -15,110 +15,80 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <avr/interrupt.h>
 #include <avr/io.h>
 
+#include <avrlibdefs.h>
 #include <debug.h>
 #include <octoclock.h>
 #include <clkdist.h>
 #include <state.h>
 
-void led(LEDs which, int turn_it_on) {
+// Global state variables
+volatile bool g_ext_ref_present    = false;
+volatile bool g_gps_present        = false;
+volatile switch_pos_t g_switch_pos = PREFER_INTERNAL;
+volatile ref_t g_ref               = NO_REF;
 
+void led(led_t which, bool on){
     // selects the proper bit
     uint8_t LED = 0x20 << which;
 
-    if(turn_it_on)
+    if(on)
         PORTC |= LED;
     else
         PORTC &= ~LED;
 }
 
-void LEDs_Off(void){
-    led(Top,false);
-    led(Middle,false);
-    led(Bottom,false);
+void leds_off(void){
+    led(LED_TOP,    false);
+    led(LED_MIDDLE, false);
+    led(LED_BOTTOM, false);
 }
 
-void force_internal(void){
-    led(Top,true);
-    led(Middle,false);
-    led(Bottom,true);
+static void force_internal(void){
+    led(LED_TOP,    true);
+    led(LED_MIDDLE, false);
+    led(LED_BOTTOM, true);
 
+    // Tell ClkDist chip to use internal signals
+    cli();
     setup_TI_CDCE18005(Primary_GPS);
+    sei();
 
-    // Set PPS to Primary (1) n.b.:  "1" in general means "Internal" for all
-    // such signals
+    // Set PPS to internal
     PORTA |= (1<<PA6);
 }
 
-void force_external(void){
-    led(Top, false);
-    led(Middle, true);
-    led(Bottom, true);
+static void force_external(void){
+    led(LED_TOP,    false);
+    led(LED_MIDDLE, true);
+    led(LED_BOTTOM, true);
 
+    // Tell Clkdist chip to use external signals
+    cli();
     setup_TI_CDCE18005(Secondary_Ext);
+    sei();
 
-    // Set PPS to External
+    // Set PPS to external
     PORTA &= ~(1<<PA6);
 }
 
 void prefer_internal(void){
-    // if internal is NOT OK, then force external
-    if(global_gps_present)
+    // If internal is NOT OK, then force external
+    if(g_gps_present)
         force_internal();
-    else if(global_ext_ref_is_present)
+    else if(g_ext_ref_present)
         force_external();
     else
-        LEDs_Off();
+        leds_off();
 }
 
 void prefer_external(void){
-    // if external is NOT OK, then force internal
-    if(global_ext_ref_is_present)
+    // If external is NOT OK, then force internal
+    if(g_ext_ref_present)
         force_external();
-    else if(global_gps_present)
+    else if(g_gps_present)
         force_internal();
     else
-        LEDs_Off();
-}
-
-static uint8_t prev_PE7 = 0;
-static uint32_t timer0_num_overflows = 0;
-
-ISR(TIMER0_OVF_vect){
-    global_gps_present = (PIND & (1<<DDD4));
-
-    // Every ~1/10 second
-    if(!(timer0_num_overflows % 610)){
-        prev_PE7 = (PINE & (1<<DDE7));
-
-        if(get_switch_pos() == UP) prefer_internal();
-        else prefer_external();
-
-        global_ext_ref_is_present = false;
-    }
-
-    if(!global_ext_ref_is_present){
-        global_ext_ref_is_present = (prev_PE7 != (PINE & (1<<DDE7)));
-    }
-
-    timer0_num_overflows++;
-}
-
-ref_t which_ref(void){
-    if(!global_gps_present && !global_ext_ref_is_present) global_which_ref = NO_REF;
-    else if(global_gps_present && !global_ext_ref_is_present) global_which_ref = INTERNAL;
-    else if(!global_gps_present && global_ext_ref_is_present) global_which_ref = EXTERNAL;
-    else global_which_ref = (get_switch_pos() == UP) ? INTERNAL : EXTERNAL;
-
-    return global_which_ref;
-}
-
-switch_pos_t get_switch_pos(void){
-    uint8_t portC = PINC;
-
-    // UP is prefer internal,
-    // DOWN is prefer external
-    return (portC & (1<<DDC1)) ? DOWN : UP;
+        leds_off();
 }

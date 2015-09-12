@@ -235,6 +235,12 @@ public:
     //! Overload call to issue stream commands
     void issue_stream_cmd(const stream_cmd_t &stream_cmd)
     {
+        if (stream_cmd.stream_now
+                and stream_cmd.stream_mode != stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS
+                and _props.size() > 1) {
+            throw uhd::runtime_error("Attempting to do multi-channel receive with stream_now == true will result in misaligned channels. Aborting.");
+        }
+
         for (size_t i = 0; i < _props.size(); i++)
         {
             if (_props[i].issue_stream_cmd) _props[i].issue_stream_cmd(stream_cmd);
@@ -600,6 +606,11 @@ private:
                     _props[index].handle_overflow();
                     curr_info.metadata = metadata;
                     UHD_MSG(fastpath) << "O";
+
+                    // Not sending flow control would cause timeouts due to source flow control locking up
+                    if(_props[index].handle_flowctrl) {
+                        _props[index].handle_flowctrl(next_info[index].ifpi.packet_count);
+                    }
                 }
                 return;
 

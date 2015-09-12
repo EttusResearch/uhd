@@ -145,29 +145,9 @@ namespace uhd { namespace niusrprio
 
     class UHD_API niriok_proxy : public boost::noncopyable {
     public:
-        struct nirio_ioctl_packet_t {
-             nirio_ioctl_packet_t(
-                 void* const _outBuf,
-                 const uint32_t _outSize,
-                 const int32_t _statusCode)
-             {
-                 outBuf._64BitField = 0;
-                 outBuf.pointer = _outBuf;
-                 outSize    = _outSize;
-                 statusCode = _statusCode;
-             };
+        typedef boost::shared_ptr<niriok_proxy> sptr;
 
-             union {
-                 void* pointer;
-                 uint64_t _64BitField;
-             } outBuf;
-
-             uint32_t outSize;
-             int32_t statusCode;
-         };
-      typedef boost::shared_ptr<niriok_proxy> sptr;
-
-      static sptr make_and_open(const std::string& interface_path);
+        static sptr make_and_open(const std::string& interface_path);
 
         niriok_proxy();
         virtual ~niriok_proxy();
@@ -179,9 +159,6 @@ namespace uhd { namespace niusrprio
         virtual nirio_status reset() = 0;
 
         uint32_t get_interface_num() { return _interface_num; }
-
-        virtual nirio_status get_cached_session(
-            uint32_t& session) = 0;
 
         virtual nirio_status get_version(
             nirio_version_t type,

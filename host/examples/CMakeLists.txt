@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2014 Ettus Research LLC
+# Copyright 2010-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,3 +62,48 @@ IF(CURSES_FOUND)
     TARGET_LINK_LIBRARIES(rx_ascii_art_dft uhd ${CURSES_LIBRARIES} ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS rx_ascii_art_dft RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 ENDIF(CURSES_FOUND)
+
+########################################################################
+# Examples using C API
+########################################################################
+IF(ENABLE_C_API)
+    #
+    # Check if this particular C99 feature is available with this compiler
+    #
+    INCLUDE(CheckCSourceCompiles)
+    CHECK_C_SOURCE_COMPILES("
+    typedef struct {
+        int bar;
+        int baz;
+    } foo;
+
+    int main()
+    {
+        foo wat = {
+            .bar = 1,
+            .baz = 2
+        };
+
+        return 0;
+    }
+    " HAVE_C99_STRUCTDECL)
+
+    IF(HAVE_C99_STRUCTDECL)
+        ADD_SUBDIRECTORY(getopt)
+        INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/getopt)
+
+        SET(C_API_EXAMPLES
+            rx_samples_c
+            tx_samples_c
+        )
+
+        FOREACH(example ${C_API_EXAMPLES})
+            ADD_EXECUTABLE(${example} ${example}.c)
+            TARGET_LINK_LIBRARIES(${example} uhd getopt)
+            IF(UNIX)
+                TARGET_LINK_LIBRARIES(${example} m)
+            ENDIF(UNIX)
+            UHD_INSTALL(TARGETS ${example} RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
+        ENDFOREACH(example ${C_API_EXAMPLES})
+    ENDIF(HAVE_C99_STRUCTDECL)
+ENDIF(ENABLE_C_API)

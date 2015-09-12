@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011,2014 Ettus Research LLC
+// Copyright 2010-2011,2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,8 +17,16 @@
 
 #include <uhd/config.hpp>
 #ifdef UHD_DLL_EXPORTS
+#include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/device.hpp>
+#include <uhd/image_loader.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/utils/paths.hpp>
+#include <uhd/utils/static.hpp>
+#include "e100_impl.hpp"
 #else //special case when this file is externally included
 #include <stdexcept>
 #include <iostream>
@@ -270,3 +278,34 @@ void e100_load_fpga(const std::string &bin_file){
 
 }
 
+#ifdef UHD_DLL_EXPORTS
+namespace fs = boost::filesystem;
+
+static bool e100_image_loader(const uhd::image_loader::image_loader_args_t &image_loader_args){
+    // Make sure this is an E1x0
+    uhd::device_addrs_t devs = e100_find(uhd::device_addr_t());
+    if(devs.size() == 0 or !image_loader_args.load_fpga) return false;
+
+    std::string fpga_filename;
+    if(image_loader_args.fpga_path == ""){
+        fpga_filename = uhd::find_image_path(get_default_e1x0_fpga_image(devs[0]));
+    }
+    else{
+        if(not fs::exists(image_loader_args.fpga_path)){
+            throw uhd::runtime_error(str(boost::format("The path \"%s\" does not exist.")
+                                         % image_loader_args.fpga_path));
+        }
+        else fpga_filename = image_loader_args.fpga_path;
+    }
+
+    e100_load_fpga(fpga_filename);
+    return true;
+}
+
+UHD_STATIC_BLOCK(register_e100_image_loader){
+    std::string recovery_instructions = "The default FPGA image will be loaded the next time "
+                                        "UHD uses this device.";
+
+    uhd::image_loader::register_image_loader("e100", e100_image_loader, recovery_instructions);
+}
+#endif /* UHD_DLL_EXPORTS */

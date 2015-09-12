@@ -25,10 +25,6 @@ void usart_init(void);
 
 char usart_getc(void);
 
-char usart_getc_noblock(void);
-
 void usart_putc(char ch);
-
-void usart_putc_nowait(char ch);
 
 #endif /* _USART_H_ */

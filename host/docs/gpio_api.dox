@@ -13,6 +13,10 @@ disabling a TX or RX mixer).
 
 \subsection xgpio_fpanel_gpio X3x0 Front Panel GPIO
 
+The GPIO port is not meant to drive big loads. You should not try to source more than 5mA per pin.
+
+The +3.3V is for ESD clamping purposes only and not designed to deliver high currents.
+
 \subsubsection xgpio_fpanel_conn Connector
 
 \image html x3x0_gpio_conn.png "X3x0 GPIO Connectors"

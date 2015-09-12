@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2013 Ettus Research LLC
+# Copyright 2012-2013,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,10 +22,11 @@
 ########################################################################
 # Conditionally configure the B200 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("B200" ENABLE_B200 ON "ENABLE_LIBUHD;ENABLE_USB" OFF)
+LIBUHD_REGISTER_COMPONENT("B200" ENABLE_B200 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
 
 IF(ENABLE_B200)
     LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/b200_image_loader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_iface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_io_impl.cpp

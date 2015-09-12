@@ -32,9 +32,21 @@
 
 namespace uhd { namespace usrp {
 
-/***********************************************************************
- * AD9361 Control Interface
- **********************************************************************/
+/*! AD936x Control Interface
+ *
+ * This is a convenient way to access the AD936x RF IC.
+ * It basically encodes knowledge of register values etc. into
+ * accessible API calls.
+ *
+ * \section ad936x_which The `which` parameter
+ *
+ * Many function calls require a `which` parameter to select
+ * the RF frontend. Valid values for `which` are:
+ * - RX1, RX2
+ * - TX1, TX2
+ *
+ * Frontend numbering is as designed by the AD9361.
+ */
 class ad9361_ctrl : public boost::noncopyable
 {
 public:
@@ -142,6 +154,8 @@ public:
 
     //! Write back a filter
     virtual void set_filter(const std::string &which, const std::string &filter_name, const filter_info_base::sptr) = 0;
+
+    virtual void output_digital_test_tone(bool enb) = 0;
 };
 
 }}

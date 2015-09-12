@@ -71,7 +71,7 @@ void setup_atmel_io_ports(){
 
 // /pd_cdcd, /sync_code, /ce need to be 1 (disabled) to start
 // all bits are outputs, except PA7 (gps_lock) and PA3 (MISO_CDCE) are inputs
-PORTA = Bits_8(00110010);
+PORTA = Bits_8(00100010);
 DDRA =   1<<DDA6 | 1<<DDA5 | 1<<DDA4 | 1<<DDA2 | 1<<DDA1 | 1<<DDA0;
 
 /*
@@ -90,8 +90,8 @@ DDRA =   1<<DDA6 | 1<<DDA5 | 1<<DDA4 | 1<<DDA2 | 1<<DDA1 | 1<<DDA0;
  *
  */
 
-PORTB = Bits_8(01100001);        // Initial Value is all zeros
-DDRB = 1<<DDB2 | 1<<DDB4 | 1<<DDB7;  // MOSI is an output; the Not Connected pins are also outputs
+PORTB = Bits_8(01100001);   // Initial Value is all zeros
+DDRB = Bits_8(11110111);    // MOSI is an output; the Not Connected pins are also outputs
 
 /*
  * Port C

@@ -23,7 +23,6 @@
 namespace uhd { namespace usrp { namespace e300 {
 
 static const double DEFAULT_TICK_RATE       = 32e6;
-static const double MAX_TICK_RATE           = 50e6;
 static const double MIN_TICK_RATE           = 10e6;
 
 static const double DEFAULT_TX_SAMP_RATE    = 1.0e6;
@@ -31,17 +30,13 @@ static const double DEFAULT_RX_SAMP_RATE    = 1.0e6;
 static const double DEFAULT_DDC_FREQ        = 0.0;
 static const double DEFAULT_DUC_FREQ        = 0.0;
 
-static const double DEFAULT_FE_GAIN         = 0.0;
-static const double DEFAULT_FE_FREQ         = 1.0e9;
-static const double DEFAULT_FE_BW           = 56e6;
-
 static const std::string DEFAULT_TIME_SRC   = "internal";
 static const std::string DEFAULT_CLOCK_SRC  = "internal";
 
 static const size_t DEFAULT_RX_DATA_FRAME_SIZE = 4096;
 static const size_t DEFAULT_RX_DATA_NUM_FRAMES = 32;
 
-static const size_t DEFAULT_TX_DATA_FRAME_SIZE = 2048;
+static const size_t DEFAULT_TX_DATA_FRAME_SIZE = 4096;
 static const size_t DEFAULT_TX_DATA_NUM_FRAMES = 32;
 
 static const size_t DEFAULT_CTRL_FRAME_SIZE    = 64;
@@ -49,6 +44,9 @@ static const size_t DEFAULT_CTRL_NUM_FRAMES    = 32;
 
 static const size_t MAX_NET_RX_DATA_FRAME_SIZE = 1200;
 static const size_t MAX_NET_TX_DATA_FRAME_SIZE = 1200;
+
+static const size_t MAX_AXI_RX_DATA_FRAME_SIZE = 4096;
+static const size_t MAX_AXI_TX_DATA_FRAME_SIZE = 4096;
 
 class e300_ad9361_client_t : public ad9361_params {
 public:

@@ -27,8 +27,262 @@
     #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 
+#define IOCTL_TRANSPORT_GET32                       IOCTL(0, 0, IOCTL_ACCESS_READ)
+#define IOCTL_TRANSPORT_SET32                       IOCTL(0, 1, IOCTL_ACCESS_WRITE)
+#define IOCTL_TRANSPORT_GET_STRING                  IOCTL(0, 2, IOCTL_ACCESS_READ)
+#define IOCTL_TRANSPORT_SET_STRING                  IOCTL(0, 3, IOCTL_ACCESS_WRITE)
+#define IOCTL_TRANSPORT_RESET                       IOCTL(1, 1, IOCTL_ACCESS_WRITE)
+#define IOCTL_TRANSPORT_ADD_INPUT_FIFO_RESOURCE     IOCTL(2, 0, IOCTL_ACCESS_ANY)
+#define IOCTL_TRANSPORT_ADD_OUTPUT_FIFO_RESOURCE    IOCTL(2, 1, IOCTL_ACCESS_ANY)
+#define IOCTL_TRANSPORT_SET_DEVICE_CONFIG           IOCTL(2, 3, IOCTL_ACCESS_WRITE)
+#define IOCTL_TRANSPORT_FIFO_CONFIG                 IOCTL(4, 0, IOCTL_ACCESS_ANY)
+#define IOCTL_TRANSPORT_FIFO_START                  IOCTL(4, 1, IOCTL_ACCESS_ANY)
+#define IOCTL_TRANSPORT_FIFO_STOP                   IOCTL(4, 2, IOCTL_ACCESS_ANY)
+#define IOCTL_TRANSPORT_FIFO_READ                   IOCTL(4, 3, IOCTL_ACCESS_READ)
+#define IOCTL_TRANSPORT_FIFO_WRITE                  IOCTL(4, 4, IOCTL_ACCESS_WRITE)
+#define IOCTL_TRANSPORT_FIFO_WAIT                   IOCTL(4, 5, IOCTL_ACCESS_ANY)
+#define IOCTL_TRANSPORT_FIFO_GRANT                  IOCTL(4, 6, IOCTL_ACCESS_ANY)
+#define IOCTL_TRANSPORT_FIFO_STOP_ALL               IOCTL(4, 7, IOCTL_ACCESS_ANY)
+#define IOCTL_TRANSPORT_PEEK64                      IOCTL(5, 2, IOCTL_ACCESS_READ)
+#define IOCTL_TRANSPORT_PEEK32                      IOCTL(5, 3, IOCTL_ACCESS_READ)
+#define IOCTL_TRANSPORT_POKE64                      IOCTL(5, 6, IOCTL_ACCESS_WRITE)
+#define IOCTL_TRANSPORT_POKE32                      IOCTL(5, 7, IOCTL_ACCESS_WRITE)
+#define IOCTL_TRANSPORT_POST_OPEN                   IOCTL(8, 0, IOCTL_ACCESS_ANY)
+#define IOCTL_TRANSPORT_PRE_CLOSE                   IOCTL(8, 1, IOCTL_ACCESS_ANY)
+
 namespace uhd { namespace niusrprio
 {
+    //-------------------------------------------------------
+    // ioctl param typedefs
+    //-------------------------------------------------------
+    typedef struct {
+       nirio_scalar_type_t scalarType;
+       nirio_u32_t     bitWidth;
+       nirio_i32_t     integerWordLength;
+    } nirio_fifo_data_type_t;
+
+    typedef struct in_transport_get32
+    {
+       nirio_device_attribute32_t attribute;
+       int32_t status;
+    } in_transport_get32_t;
+    typedef struct out_transport_get32
+    {
+       uint32_t retVal__;
+       int32_t status;
+    } out_transport_get32_t;
+    typedef struct in_transport_set32
+    {
+       nirio_device_attribute32_t attribute;
+       uint32_t value;
+       int32_t status;
+    } in_transport_set32_t;
+    typedef struct out_transport_set32
+    {
+       int32_t status;
+    } out_transport_set32_t;
+    typedef struct out_transport_get_string
+    {
+       uint32_t  stringLen;
+       int32_t status;
+    } out_transport_get_string_t;
+    typedef struct out_transport_set_string
+    {
+       int32_t status;
+    } out_transport_set_string_t;
+    typedef struct in_transport_reset
+    {
+       int32_t status;
+    } in_transport_reset_t;
+    typedef struct out_transport_reset
+    {
+       int32_t status;
+    } out_transport_reset_t;
+    typedef struct in_transport_add_input_fifo_resource
+    {
+       uint32_t channel;
+       uint32_t baseAddress;
+       uint32_t depthInSamples;
+       nirio_fifo_data_type_t dataType;
+       uint32_t version;
+       int32_t status;
+    } in_transport_add_input_fifo_resource_t;
+    typedef struct out_transport_addInputFifo_resource
+    {
+       int32_t status;
+    } out_transport_add_input_fifo_resource_t;
+    typedef struct in_transport_addOutputFifo_resource
+    {
+       uint32_t channel;
+       uint32_t baseAddress;
+       uint32_t depthInSamples;
+       nirio_fifo_data_type_t dataType;
+       uint32_t version;
+       int32_t status;
+    } in_transport_add_output_fifo_resource_t;
+    typedef struct out_transport_addOutputFifo_resource
+    {
+       int32_t status;
+    } out_transport_add_output_fifo_resource_t;
+    typedef struct in_transport_setDevice_config
+    {
+       uint32_t attribute;
+       int32_t status;
+    } in_transport_set_device_config_t;
+    typedef struct out_transport_setDevice_config
+    {
+       int32_t status;
+    } out_transport_set_device_config_t;
+    typedef struct in_transport_fifo_config
+    {
+       uint32_t channel;
+       aligned_uint64_t requestedDepth;
+       int32_t status;
+    } in_transport_fifo_config_t;
+    typedef struct out_transport_fifo_config
+    {
+       aligned_uint64_t  actualDepth;
+       aligned_uint64_t  actualSize;
+       int32_t status;
+    } out_transport_fifo_config_t;
+    typedef struct in_transport_fifo_start
+    {
+       uint32_t channel;
+       int32_t status;
+    } in_transport_fifo_start_t;
+    typedef struct out_transport_fifo_start
+    {
+       int32_t status;
+    } out_transport_fifo_start_t;
+    typedef struct in_transport_fifo_stop
+    {
+       uint32_t channel;
+       int32_t status;
+    } in_transport_fifo_stop_t;
+    typedef struct out_transport_fifo_stop
+    {
+       int32_t status;
+    } out_transport_fifo_stop_t;
+    typedef struct in_transport_fifo_read
+    {
+       uint32_t channel;
+       aligned_uint64_t buf;
+       uint32_t numberElements;
+       nirio_fifo_data_type_t dataType;
+       uint32_t timeout;
+       int32_t status;
+    } in_transport_fifo_read_t;
+    typedef struct out_transport_fifo_read
+    {
+       uint32_t  read;
+       uint32_t  remaining;
+       int32_t status;
+    } out_transport_fifo_read_t;
+    typedef struct in_transport_fifo_write
+    {
+       uint32_t channel;
+       aligned_uint64_t buf;
+       uint32_t numberElements;
+       nirio_fifo_data_type_t dataType;
+       uint32_t timeout;
+       int32_t status;
+    } in_transport_fifo_write_t;
+    typedef struct out_transport_fifo_write
+    {
+       uint32_t  remaining;
+       int32_t status;
+    } out_transport_fifo_write_t;
+    typedef struct in_transport_fifo_wait
+    {
+       uint32_t channel;
+       aligned_uint64_t elementsRequested;
+       nirio_fifo_data_type_t dataType;
+       bool output;
+       uint32_t timeout;
+       int32_t status;
+    } in_transport_fifo_wait_t;
+    typedef struct out_transport_fifo_wait
+    {
+       aligned_uint64_t  elements;
+       aligned_uint64_t  elementsAcquired;
+       aligned_uint64_t  elementsRemaining;
+       int32_t status;
+    } out_transport_fifo_wait_t;
+    typedef struct in_transport_fifo_grant
+    {
+       uint32_t channel;
+       aligned_uint64_t elements;
+       int32_t status;
+    } in_transport_fifo_grant_t;
+    typedef struct out_transport_fifo_grant
+    {
+       int32_t status;
+    } out_transport_fifo_grant_t;
+    typedef struct in_transport_fifoStop_all
+    {
+       int32_t status;
+    } in_transport_fifo_stop_all_t;
+    typedef struct out_transport_fifoStop_all
+    {
+       int32_t status;
+    } out_transport_fifo_stop_all_t;
+    typedef struct in_transport_peek64
+    {
+       uint32_t offset;
+       int32_t status;
+    } in_transport_peek64_t;
+    typedef struct out_transport_peek64
+    {
+       aligned_uint64_t retVal__;
+       int32_t status;
+    } out_transport_peek64_t;
+    typedef struct in_transport_peek32
+    {
+       uint32_t offset;
+       int32_t status;
+    } in_transport_peek32_t;
+    typedef struct out_transport_peek32
+    {
+       uint32_t retVal__;
+       int32_t status;
+    } out_transport_peek32_t;
+    typedef struct in_transport_poke64
+    {
+       uint32_t offset;
+       aligned_uint64_t value;
+       int32_t status;
+    } in_transport_poke64_t;
+    typedef struct out_transport_poke64
+    {
+       int32_t status;
+    } out_transport_poke64_t;
+    typedef struct in_transport_poke32
+    {
+       uint32_t offset;
+       uint32_t value;
+       int32_t status;
+    } in_transport_poke32_t;
+    typedef struct out_transport_poke32
+    {
+       int32_t status;
+    } out_transport_poke32_t;
+    typedef struct in_transport_post_open
+    {
+       int32_t status;
+    } in_transport_post_open_t;
+    typedef struct out_transport_post_open
+    {
+       int32_t status;
+    } out_transport_post_open_t;
+    typedef struct in_transport_pre_close
+    {
+       int32_t status;
+    } in_transport_pre_close_t;
+    typedef struct out_transport_pre_close
+    {
+       int32_t status;
+    } out_transport_pre_close_t;
+
     //-------------------------------------------------------
     // niriok_proxy_impl_v2
     //-------------------------------------------------------
@@ -108,18 +362,6 @@ namespace uhd { namespace niusrprio
         if (nirio_status_fatal(ioctl_status)) return ioctl_status;
 
         return out.status;
-    }
-
-    nirio_status niriok_proxy_impl_v2::get_cached_session(
-        uint32_t& session)
-    {
-        READER_LOCK
-
-        nirio_ioctl_packet_t out(&session, sizeof(session), 0);
-        return nirio_driver_iface::rio_ioctl(_device_handle,
-                                    nirio_driver_iface::NIRIO_IOCTL_GET_SESSION,
-                                    NULL, 0,
-                                    &out, sizeof(out));
     }
 
     nirio_status niriok_proxy_impl_v2::get_version(
@@ -580,7 +822,7 @@ namespace uhd { namespace niusrprio
         out_transport_fifo_read_t out = {};
 
         in.channel = channel;
-        in.buf = reinterpret_cast<tAlignedU64>(buffer);
+        in.buf = reinterpret_cast<aligned_uint64_t>(buffer);
         in.numberElements = elements_to_read;
         in.dataType.scalarType = map_int_to_scalar_type(scalar_type);
         in.dataType.bitWidth = bit_width;
@@ -620,7 +862,7 @@ namespace uhd { namespace niusrprio
         out_transport_fifo_write_t out = {};
 
         in.channel = channel;
-        in.buf = reinterpret_cast<tAlignedU64>(buffer);
+        in.buf = reinterpret_cast<aligned_uint64_t>(buffer);
         in.numberElements = elements_to_write;
         in.dataType.scalarType = map_int_to_scalar_type(scalar_type);
         in.dataType.bitWidth = bit_width;

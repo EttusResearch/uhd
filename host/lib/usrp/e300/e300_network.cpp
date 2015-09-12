@@ -349,19 +349,9 @@ static void e300_sensor_tunnel(
                 // TODO: This is ugly ... use proper serialization
                 in->value = uhd::htonx<boost::uint32_t>(
                     e300_sensor_manager::pack_float_in_uint32_t(temp.to_real()));
-            } else if (uhd::ntohx(in->which) == GPS_FOUND) {
-                in->value = uhd::htonx<boost::uint32_t>(
-                    sensor_manager->get_gps_found() ? 1 : 0);
-
-            } else if (uhd::ntohx(in->which) == GPS_LOCK) {
-                in->value = uhd::htonx<boost::uint32_t>(
-                    sensor_manager->get_gps_lock().to_bool() ? 1 : 0);
             } else if (uhd::ntohx(in->which) == REF_LOCK) {
                 in->value = uhd::htonx<boost::uint32_t>(
                     sensor_manager->get_ref_lock().to_bool() ? 1 : 0);
-            } else if (uhd::ntohx(in->which) == GPS_TIME) {
-                in->value = uhd::htonx<boost::uint32_t>(
-                    sensor_manager->get_gps_time().to_int());
             } else
                 UHD_MSG(status) << "Got unknown request?!" << std::endl;
 
@@ -648,8 +638,7 @@ network_server_impl::network_server_impl(const uhd::device_addr_t &device_addr)
     _codec_ctrl = ad9361_ctrl::make_spi(client_settings, spi::make(E300_SPIDEV_DEVICE), 1);
     // This is horrible ... why do I have to sleep here?
     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-    _sensor_manager = e300_sensor_manager::make_local(
-        gps::ublox::ubx::control::make("/dev/ttyPS1", 9600), _global_regs);
+    _sensor_manager = e300_sensor_manager::make_local(_global_regs);
 }
 
 }}} // namespace

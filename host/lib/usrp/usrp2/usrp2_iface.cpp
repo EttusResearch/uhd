@@ -387,15 +387,15 @@ public:
 
         //create the burner commands
         if (this->get_rev() == USRP2_REV3 or this->get_rev() == USRP2_REV4){
-            const std::string card_burner = (fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / "usrp2_card_burner_gui.py").string();
-            const std::string card_burner_cmd = str(boost::format("\"%s%s\" %s--fpga=\"%s\" %s--fw=\"%s\"") % sudo % card_burner % ml % fpga_image_path % ml % fw_image_path);
+            const std::string card_burner = uhd::find_utility("usrp2_card_burner_gui.py");
+            const std::string card_burner_cmd = str(boost::format(" %s\"%s\" %s--fpga=\"%s\" %s--fw=\"%s\"") % sudo % card_burner % ml % fpga_image_path % ml % fw_image_path);
             return str(boost::format("%s\n%s") % print_utility_error("uhd_images_downloader.py") % card_burner_cmd);
         }
         else{
             const std::string addr = _ctrl_transport->get_recv_addr();
-            const std::string net_burner_path = (fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / "usrp_n2xx_simple_net_burner").string();
-            const std::string net_burner_cmd = str(boost::format("\"%s\" %s--addr=\"%s\"") % net_burner_path % ml % addr);
-            return str(boost::format("%s\n%s") % print_utility_error("uhd_images_downloader.py") % net_burner_cmd);
+            const std::string image_loader_path = (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
+            const std::string image_loader_cmd = str(boost::format(" \"%s\" %s--args=\"type=usrp2,addr=%s\"") % image_loader_path % ml % addr);
+            return str(boost::format("%s\n%s") % print_utility_error("uhd_images_downloader.py") % image_loader_cmd);
         }
     }
 

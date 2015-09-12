@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2014 Ettus Research LLC
+# Copyright 2010-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,11 +21,11 @@
 SET(util_runtime_sources
     uhd_find_devices.cpp
     uhd_usrp_probe.cpp
+    uhd_image_loader.cpp
     uhd_cal_rx_iq_balance.cpp
     uhd_cal_tx_dc_offset.cpp
     uhd_cal_tx_iq_balance.cpp
     usrp_n2xx_simple_net_burner.cpp
-    nirio_programmer.cpp
 )
 
 SET(x3xx_burner_sources
@@ -34,11 +34,11 @@ SET(x3xx_burner_sources
 )
 
 find_package(UDev)
-IF(ENABLE_E300)
+IF(ENABLE_E300 AND NOT E300_FORCE_NETWORK)
     IF(UDEV_FOUND)
         LIST(APPEND util_runtime_sources usrp_e3x0_network_mode.cpp)
     ENDIF(UDEV_FOUND)
-ENDIF(ENABLE_E300)
+ENDIF(ENABLE_E300 AND NOT E300_FORCE_NETWORK)
 
 #for each source: build an executable and install
 FOREACH(util_source ${util_runtime_sources})
@@ -84,9 +84,11 @@ IF(ENABLE_OCTOCLOCK)
 
     SET(octoclock_burner_sources
         octoclock_firmware_burner.cpp
-        ihexcvt.cpp
+        ${CMAKE_SOURCE_DIR}/lib/usrp_clock/octoclock/kk_ihex_read.c
     )
 
+    ADD_DEFINITIONS(-DIHEX_USE_STDBOOL)
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp_clock/octoclock)
     ADD_EXECUTABLE(octoclock_firmware_burner ${octoclock_burner_sources})
     TARGET_LINK_LIBRARIES(octoclock_firmware_burner uhd ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS octoclock_firmware_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)

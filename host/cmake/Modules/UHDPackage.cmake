@@ -99,6 +99,8 @@ IF(${CPACK_GENERATOR} STREQUAL NSIS)
             SET(MSVC_VERSION "VS2012")
         ELSEIF(MSVC12) # Visual Studio 2013 (12.0)
             SET(MSVC_VERSION "VS2013")
+        ELSEIF(MSVC14) # Visual Studio 2015 (14.0)
+            SET(MSVC_VERSION "VS2015")
         ENDIF()
         SET(CPACK_PACKAGE_FILE_NAME "uhd_${UHD_VERSION}_Win${BIT_WIDTH}_${MSVC_VERSION}")
     ELSE()
@@ -210,10 +212,10 @@ SET(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
     DeleteRegValue HKLM ${HLKM_ENV} \\\"UHD_PKG_PATH\\\"
 ")
 
-IF(MSVC)
-    #Install necessary MSVC runtime DLL's
+IF(WIN32)
+    #Install necessary runtime DLL's
     INCLUDE(InstallRequiredSystemLibraries)
-ENDIF(MSVC)
+ENDIF(WIN32)
 
 ########################################################################
 IF(NOT ${CPACK_GENERATOR} STREQUAL NSIS)

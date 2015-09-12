@@ -23,7 +23,7 @@
 ########################################################################
 # Project setup
 ########################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(UHD CXX C)
 ENABLE_TESTING()
 
@@ -164,23 +164,8 @@ IF(MSVC)
         -D_CRT_NONSTDC_NO_DEPRECATE
     )
     ADD_DEFINITIONS(/MP) #multi-threaded build
+    ADD_DEFINITIONS(/bigobj) #Increases the number of addressable sections in an .obj file.
 ENDIF(MSVC)
-
-IF(MINGW)
-    #Avoid depending on MinGW runtime DLLs
-    CHECK_CXX_COMPILER_FLAG(-static-libgcc HAVE_STATIC_LIBGCC_FLAG)
-    IF(HAVE_STATIC_LIBGCC_FLAG)
-        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc")
-        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc")
-        SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static-libgcc")
-    ENDIF()
-    CHECK_CXX_COMPILER_FLAG(-static-libstdc++ HAVE_STATIC_LIBSTDCXX_FLAG)
-    IF(HAVE_STATIC_LIBSTDCXX_FLAG)
-        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++")
-        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libstdc++")
-        SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -static-libstdc++")
-    ENDIF()
-ENDIF()
 
 IF(CYGWIN)
     ADD_DEFINITIONS(-D__USE_W32_SOCKETS) #boost asio says we need this
@@ -291,17 +276,18 @@ SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.009.rfnoc-381-gb15afd60.zip")
 ########################################################################
 # Register top level components
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_MAKO" OFF)
-LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF)
-LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF)
-LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF)
+LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_MAKO" OFF ON)
+LIBUHD_REGISTER_COMPONENT("LibUHD - C API" ENABLE_C_API ON "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF OFF)
 
 ########################################################################
 # Check for fpga-src submodule
 ########################################################################
 SET(HAS_FPGA_SUBMODULE FALSE)
 EXECUTE_PROCESS(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import os; print os.path.abspath(os.path.join('${CMAKE_SOURCE_DIR}', '..', 'fpga-src'))"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import os; print(os.path.abspath(os.path.join('${CMAKE_SOURCE_DIR}', '..', 'fpga-src')))"
     OUTPUT_VARIABLE FPGA_SUBMODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )

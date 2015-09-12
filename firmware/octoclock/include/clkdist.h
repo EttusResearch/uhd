@@ -23,7 +23,7 @@
 #include <octoclock.h>
 
 typedef enum {
-    Reg0, Reg1, Reg2, Reg3, Reg4, Reg5, Reg6, Reg7,
+    Reg0=0, Reg1, Reg2, Reg3, Reg4, Reg5, Reg6, Reg7,
     Reg8_Status_Control,
     Read_Command=0xE,
     RAM_EEPROM_Unlock=0x1F,
@@ -45,6 +45,8 @@ void setup_TI_CDCE18005(TI_Input_10_MHz which_input);
 void reset_TI_CDCE18005(void);
 
 uint32_t get_TI_CDCE18005(CDCE18005 which_register);
+
+void set_TI_CDCE18005(CDCE18005 which_register, uint32_t bits);
 
 bool check_TI_CDCE18005(TI_Input_10_MHz which_input, CDCE18005 which_register);
 

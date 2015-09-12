@@ -37,6 +37,9 @@ template <class T> T ceil_log2(T num){
 
 using namespace uhd;
 
+const double tx_dsp_core_3000::DEFAULT_CORDIC_FREQ = 0.0;
+const double tx_dsp_core_3000::DEFAULT_RATE = 1e6;
+
 tx_dsp_core_3000::~tx_dsp_core_3000(void){
     /* NOP */
 }
@@ -107,20 +110,25 @@ public:
             ) % interp_rate % (_tick_rate/1e6) % (rate/1e6);
         }
 
-        // Calculate CIC interpolation (i.e., without halfband interpolators)
-        // Calculate closest multiplier constant to reverse gain absent scale multipliers
+        // Caclulate algorithmic gain of CIC for a given interpolation
+        // For Ettus CIC R=decim, M=1, N=3. Gain = (R * M) ^ N
         const double rate_pow = std::pow(double(interp & 0xff), 3);
-        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.65*rate_pow);
+        // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
+        // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
+        // CORDIC algorithmic gain limits asymptotically around 1.647 after many iterations.
+        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.648*rate_pow);
         this->update_scalar();
 
         return _tick_rate/interp_rate;
     }
 
+  // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
+  // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
+  // Further more factor in OTW format which adds further gain factor to weight output samples correctly.
     void update_scalar(void){
-        const double factor = 1.0 + std::max(ceil_log2(_scaling_adjustment), 0.0);
-        const double target_scalar = (1 << 17)*_scaling_adjustment/_dsp_extra_scaling/factor;
+        const double target_scalar = (1 << 16)*_scaling_adjustment/_dsp_extra_scaling;
         const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
-        _fxpt_scalar_correction = target_scalar/actual_scalar*factor; //should be small
+        _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
         _iface->poke32(REG_DSP_TX_SCALE_IQ, actual_scalar);
     }
 
@@ -198,6 +206,24 @@ public:
         _host_extra_scaling /= stream_args.args.cast<double>("fullscale", 1.0);
 
         this->update_scalar();
+    }
+
+    void populate_subtree(property_tree::sptr subtree)
+    {
+        subtree->create<meta_range_t>("rate/range")
+            .publish(boost::bind(&tx_dsp_core_3000::get_host_rates, this))
+        ;
+        subtree->create<double>("rate/value")
+            .set(DEFAULT_RATE)
+            .coerce(boost::bind(&tx_dsp_core_3000::set_host_rate, this, _1))
+        ;
+        subtree->create<double>("freq/value")
+            .set(DEFAULT_CORDIC_FREQ)
+            .coerce(boost::bind(&tx_dsp_core_3000::set_freq, this, _1))
+        ;
+        subtree->create<meta_range_t>("freq/range")
+            .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, this))
+        ;
     }
 
 private:

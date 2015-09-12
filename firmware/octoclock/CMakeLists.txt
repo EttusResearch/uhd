@@ -31,7 +31,7 @@ if(NOT DEFINED PROGRAMMER)
 endif(NOT DEFINED PROGRAMMER)
 
 if(OCTOCLOCK_DEBUG)
-    message(STATUS "Debug enabled. Interrupts will be disabled.")
+    message(STATUS "Debug enabled.")
     add_definitions(-DDEBUG)
 endif(OCTOCLOCK_DEBUG)
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012,2014 Ettus Research LLC
+// Copyright 2010-2012,2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/assign/list_of.hpp>
 #include <fstream>
+#include <iostream>
 #include <ctime>
 
 using namespace uhd;
@@ -45,7 +46,7 @@ namespace fs = boost::filesystem;
 /***********************************************************************
  * Discovery
  **********************************************************************/
-static device_addrs_t e100_find(const device_addr_t &hint){
+device_addrs_t e100_find(const device_addr_t &hint){
     device_addrs_t e100_addrs;
 
     //return an empty list of addresses when type is set to non-usrp-e
@@ -104,17 +105,10 @@ static const uhd::dict<std::string, std::string> model_to_fpga_file_name = boost
     ("E110", "usrp_e110_fpga.bin")
 ;
 
-/***********************************************************************
- * Structors
- **********************************************************************/
-e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
-    _tree = property_tree::make();
-    _type = device::USRP;
-    _ignore_cal_file = device_addr.has_key("ignore-cal-file");
-
+std::string get_default_e1x0_fpga_image(const uhd::device_addr_t &device_addr){
     //read the eeprom so we can determine the hardware
-    _dev_i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);
-    const mboard_eeprom_t mb_eeprom(*_dev_i2c_iface, E100_EEPROM_MAP_KEY);
+    uhd::i2c_iface::sptr dev_i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);
+    const mboard_eeprom_t mb_eeprom(*dev_i2c_iface, E100_EEPROM_MAP_KEY);
 
     //determine the model string for this device
     const std::string model = device_addr.get("model", mb_eeprom.get("model", ""));
@@ -126,7 +120,21 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     ) % model));
 
     //extract the fpga path and compute hash
-    const std::string default_fpga_file_name = model_to_fpga_file_name[model];
+    return model_to_fpga_file_name[model];
+}
+
+/***********************************************************************
+ * Structors
+ **********************************************************************/
+e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
+    _tree = property_tree::make();
+    _type = device::USRP;
+    _ignore_cal_file = device_addr.has_key("ignore-cal-file");
+
+    _dev_i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);
+    const mboard_eeprom_t mb_eeprom(*_dev_i2c_iface, E100_EEPROM_MAP_KEY);
+    const std::string default_fpga_file_name = get_default_e1x0_fpga_image(device_addr);
+    const std::string model = device_addr["model"];
     std::string e100_fpga_image;
     try{
         e100_fpga_image = find_image_path(device_addr.get("fpga", default_fpga_file_name));

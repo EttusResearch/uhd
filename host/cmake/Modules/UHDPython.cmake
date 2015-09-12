@@ -51,7 +51,7 @@ MESSAGE(STATUS "Python interpreter: ${PYTHON_EXECUTABLE}")
 MESSAGE(STATUS "Override with: -DPYTHON_EXECUTABLE=<path-to-python>")
 
 IF(NOT PYTHONINTERP_FOUND)
-    MESSAGE(FATAL_ERROR "Error: Python interpretor required by the build system.")
+    MESSAGE(FATAL_ERROR "Error: Python interpreter required by the build system.")
 ENDIF(NOT PYTHONINTERP_FOUND)
 
 MACRO(PYTHON_CHECK_MODULE desc mod cmd have)

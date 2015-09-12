@@ -29,6 +29,8 @@
 #define UHD_USRP_MULTI_USRP_GET_USRP_INFO_API
 #define UHD_USRP_MULTI_USRP_NORMALIZED_GAIN
 #define UHD_USRP_MULTI_USRP_GPIO_API
+#define UHD_USRP_MULTI_USRP_REGISTER_API
+#define UHD_USRP_MULTI_USRP_FILTER_API
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -994,6 +996,48 @@ public:
      * \return the value set for this attribute
      */
     virtual boost::uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard = 0) = 0;
+
+    /*******************************************************************
+     * Register IO methods
+     ******************************************************************/
+    struct register_info_t {
+        size_t bitwidth;
+        bool readable;
+        bool writable;
+    };
+
+    /*!
+     * Enumerate the full paths of all low-level USRP registers accessible to read/write
+     * \param mboard the motherboard index 0 to M-1
+     * \return a vector of register paths
+     */
+    virtual std::vector<std::string> enumerate_registers(const size_t mboard = 0) = 0;
+
+    /*!
+     * Get more information about a low-level device register
+     * \param path the full path to the register
+     * \param mboard the motherboard index 0 to M-1
+     * \return the info struct which contains the bitwidth and read-write access information
+     */
+    virtual register_info_t get_register_info(const std::string &path, const size_t mboard = 0) = 0;
+
+    /*!
+     * Write a low-level register field for a register in the USRP hardware
+     * \param path the full path to the register
+     * \param field the identifier of bitfield to be written (all other bits remain unchanged)
+     * \param value the value to write to the register field
+     * \param mboard the motherboard index 0 to M-1
+     */
+    virtual void write_register(const std::string &path, const boost::uint32_t field, const boost::uint64_t value, const size_t mboard = 0) = 0;
+
+    /*!
+     * Read a low-level register field from a register in the USRP hardware
+     * \param path the full path to the register
+     * \param field the identifier of bitfield to be read
+     * \param mboard the motherboard index 0 to M-1
+     * \return the value of the register field
+     */
+    virtual boost::uint64_t read_register(const std::string &path, const boost::uint32_t field, const size_t mboard = 0) = 0;
 
     /*******************************************************************
      * Filter API methods

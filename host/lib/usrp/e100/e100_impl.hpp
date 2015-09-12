@@ -29,6 +29,7 @@
 #include "recv_packet_demuxer.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -67,6 +68,9 @@ uhd::usrp::dboard_iface::sptr make_e100_dboard_iface(
     e100_clock_ctrl::sptr clock,
     e100_codec_ctrl::sptr codec
 );
+
+uhd::device_addrs_t e100_find(const uhd::device_addr_t &hint);
+std::string get_default_e1x0_fpga_image(const uhd::device_addr_t &device_addr);
 
 /*!
  * USRP-E100 implementation guts:

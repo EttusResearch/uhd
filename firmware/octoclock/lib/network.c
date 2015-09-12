@@ -27,6 +27,7 @@
 
 #include <debug.h>
 #include <octoclock.h>
+#include <state.h>
 #include <network.h>
 
 #include <net/enc28j60.h>
@@ -34,12 +35,14 @@
 #include <net/if_arp.h>
 #include <net/ethertype.h>
 
+#include <util/delay.h>
+
 #include "arp_cache.h"
 
 /***********************************************************************
  * Constants + Globals
  **********************************************************************/
-static const size_t out_buff_size = 512;
+static const size_t out_buff_size = ETH_BUF_SIZE;
 static const eth_mac_addr_t BCAST_MAC_ADDR = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
 #define MAX_UDP_LISTENERS 10
 
@@ -139,7 +142,7 @@ send_pkt(
     //grab an out buffer and pointer
     //select the output buffer based on type of packet
     uint8_t *p;
-    p = buf_out;
+    p = eth_buf;
     size_t total_len = 0;
 
     //create a list of all buffers to copy
@@ -149,7 +152,7 @@ send_pkt(
     //copy each buffer into the out buffer
     for (size_t i = 0; i < sizeof(buffs)/sizeof(buffs[0]); i++){
         total_len += lens[i]; //use full length (not clipped)
-        size_t bytes_remaining = out_buff_size - (size_t)(p - (uint8_t*)buf_out);
+        size_t bytes_remaining = out_buff_size - (size_t)(p - (uint8_t*)eth_buf);
         if (lens[i] > bytes_remaining) lens[i] = bytes_remaining;
         memcpy(p, buffs[i], lens[i]);
         p += lens[i];
@@ -161,7 +164,7 @@ send_pkt(
     //For some reason, the ENC28J60 won't send the CRC
     //if you don't tell it to send another byte after
     //the given packet
-    enc28j60PacketSend(total_len+1, buf_out, 0, 0);
+    enc28j60_send(eth_buf, total_len);
 }
 
 static void
@@ -333,15 +336,15 @@ handle_arp_packet(struct arp_eth_ipv4 *p, size_t size)
 void
 handle_eth_packet(size_t recv_len)
 {
-    eth_hdr_t *eth_hdr = (eth_hdr_t *)buf_in;
+    eth_hdr_t *eth_hdr = (eth_hdr_t *)eth_buf;
     uint16_t ethertype = htons(eth_hdr->ethertype);
 
     if (ethertype == ETHERTYPE_ARP){
-        struct arp_eth_ipv4 *arp = (struct arp_eth_ipv4 *)(buf_in + sizeof(eth_hdr_t));
+        struct arp_eth_ipv4 *arp = (struct arp_eth_ipv4 *)(eth_buf + sizeof(eth_hdr_t));
         handle_arp_packet(arp, recv_len-ETH_HLEN);
     }
     else if (ethertype == ETHERTYPE_IPV4){
-        struct ip_hdr *ip = (struct ip_hdr *)(buf_in + sizeof(eth_hdr_t));
+        struct ip_hdr *ip = (struct ip_hdr *)(eth_buf + sizeof(eth_hdr_t));
 
         if (_IPH_V(ip) != 4 || _IPH_HL(ip) != 5)	// ignore pkts w/ bad version or options
             return;
@@ -357,7 +360,7 @@ handle_eth_packet(size_t recv_len)
         bool is_my_ip = memcmp(&ip->dest, &htonl_local_ip_addr, sizeof(_local_ip_addr)) == 0;
         if (!is_bcast && !is_my_ip) return;
 
-        arp_cache_update(&ip->src, (eth_mac_addr_t *)(((char *)buf_in)+6));
+        arp_cache_update(&ip->src, (eth_mac_addr_t *)(((char *)eth_buf)+6));
 
         switch (_IPH_PROTO(ip)){
             case IP_PROTO_UDP:
@@ -381,7 +384,6 @@ handle_eth_packet(size_t recv_len)
  **********************************************************************/
 
 static bool send_garp = false;
-static bool sent_initial_garp = false;
 static uint32_t num_overflows = 0;
 
 // Six overflows is the closest overflow count to one minute.
@@ -390,6 +392,7 @@ ISR(TIMER1_OVF_vect){
     if(!(num_overflows % 6)) send_garp = true;
 }
 
+// Send a GARP packet once per minute.
 static void
 send_gratuitous_arp(){
     send_garp = false;
@@ -415,17 +418,8 @@ send_gratuitous_arp(){
 
 // Executed every loop
 void network_check(void){
-    size_t recv_len = enc28j60PacketReceive(512, buf_in);
+    size_t recv_len = enc28j60_recv(eth_buf, ETH_BUF_SIZE);
     if(recv_len > 0) handle_eth_packet(recv_len);
-
-    /*
-     * Send a gratuitous ARP packet two seconds after Ethernet
-     * initialization.
-     */
-    if(!sent_initial_garp && (num_overflows == 0 && TCNT1 > (TIMER1_ONE_SECOND*2))){
-        sent_initial_garp = true;
-        send_garp = true;
-    }
 
     if(send_garp) send_gratuitous_arp();
 }
@@ -435,9 +429,10 @@ void network_init(void){
      * Read MAC address from EEPROM and initialize Ethernet driver. If EEPROM is blank,
      * use default MAC address instead.
      */
+    eeprom_busy_wait();
     if(eeprom_read_byte(0) == 0xFF){
         _MAC_ADDR(_local_mac_addr.addr, 0x00,0x80,0x2F,0x11,0x22,0x33);
-        _local_ip_addr.addr = default_ip;
+        _local_ip_addr.addr = _IP(192,168,10,3);
         using_network_defaults = true;
     }
     else{
@@ -446,5 +441,8 @@ void network_init(void){
         using_network_defaults = false;
     }
 
-    enc28j60Init((uint8_t*)&_local_mac_addr);
+    enc28j60_init((uint8_t*)&_local_mac_addr);
+    init_udp_listeners();
+
+    send_garp = true;
 }

@@ -87,7 +87,10 @@ public:
 
         if (wait_for_recv_ready(_sock_fd, timeout)){
             _len = ::recv(_sock_fd, (char *)_mem, _frame_size, 0);
-            UHD_ASSERT_THROW(_len > 0); // TODO: Handle case of recv error
+            if (_len == 0)
+                throw uhd::io_error("socket closed");
+            if (_len < 0)
+                throw uhd::io_error(str(boost::format("recv error on socket: %s") % strerror(errno)));
             index++; //advances the caller's buffer
             return make(this, _mem, size_t(_len));
         }
@@ -125,6 +128,10 @@ public:
             {
                 boost::this_thread::sleep(boost::posix_time::microseconds(1));
                 continue; //try to send again
+            }
+            if (ret == -1)
+            {
+                throw uhd::io_error(str(boost::format("send error on socket: %s") % strerror(errno)));
             }
             UHD_ASSERT_THROW(ret == ssize_t(size()));
         }

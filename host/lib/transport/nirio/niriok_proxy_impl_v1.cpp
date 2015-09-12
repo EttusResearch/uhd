@@ -26,8 +26,397 @@
     #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 
+// CTL_CODE macro for non-win OSes
+#ifndef UHD_PLATFORM_WIN32
+    #define CTL_CODE(a,controlCode,b,c) (controlCode)
+#endif
+
+const uint32_t NIRIO_IOCTL_BASE = 0x800;
+
+const uint32_t NIRIO_IOCTL_SYNCOP =
+   CTL_CODE(FILE_DEVICE_UNKNOWN,
+            NIRIO_IOCTL_BASE + 4,
+            METHOD_OUT_DIRECT,
+            FILE_READ_DATA | FILE_WRITE_DATA);
+                                ///< The synchronous operation code. Note: We
+                                /// must use METHOD_OUT_DIRECT on the syncOp()
+                                /// IOCTL to ensure the contents of the output
+                                /// block are available in the kernel.
+
+const uint32_t NIRIO_IOCTL_GET_IFACE_NUM =
+   CTL_CODE(FILE_DEVICE_UNKNOWN,
+            NIRIO_IOCTL_BASE + 6,
+            METHOD_BUFFERED,
+            FILE_READ_DATA);    ///< Get the interface number for a device
+
+const uint32_t NIRIO_IOCTL_GET_SESSION =
+   CTL_CODE(FILE_DEVICE_UNKNOWN,
+            NIRIO_IOCTL_BASE + 8,
+            METHOD_BUFFERED,
+            FILE_READ_ACCESS);  ///< Gets a previously opened session to a device
+
+const uint32_t NIRIO_IOCTL_POST_OPEN =
+   CTL_CODE(FILE_DEVICE_UNKNOWN,
+            NIRIO_IOCTL_BASE + 9,
+            METHOD_BUFFERED,
+            FILE_READ_ACCESS);  ///< Called after opening a session
+
+const uint32_t NIRIO_IOCTL_PRE_CLOSE =
+   CTL_CODE(FILE_DEVICE_UNKNOWN,
+            NIRIO_IOCTL_BASE + 10,
+            METHOD_BUFFERED,
+            FILE_READ_ACCESS);  ///< Called before closing a session
+
 namespace uhd { namespace niusrprio
 {
+    // -------------------------------
+    // Function Codes: defined as integers rather than enums because they
+    // are going to be carried accross boundaries so size matters
+
+    struct NIRIO_FUNC
+    {
+       static const uint32_t GET32             = 0x00000001;
+       static const uint32_t SET32             = 0x00000002;
+       static const uint32_t SET_DRIVER_CONFIG = 0x00000007;
+       static const uint32_t FIFO              = 0x00000008;
+       static const uint32_t IO                = 0x0000000A;
+       static const uint32_t FIFO_STOP_ALL     = 0x0000000C;
+       static const uint32_t ADD_RESOURCE      = 0x0000000D;
+       static const uint32_t GET_STRING        = 0x0000000E;
+       static const uint32_t SET_STRING        = 0x0000000F;
+       static const uint32_t DOWNLOAD          = 0x00000013;
+       static const uint32_t RESET             = 0x00000014;
+    };
+
+    struct NIRIO_RESOURCE
+    {
+       static const uint32_t INPUT_FIFO    = 0xD0000001;
+       static const uint32_t OUTPUT_FIFO   = 0xD0000002;
+    };
+
+    struct NIRIO_FIFO
+    {
+       static const uint32_t CONFIGURE = 0x80000001;
+       static const uint32_t START     = 0x80000002;
+       static const uint32_t STOP      = 0x80000003;
+       static const uint32_t READ      = 0x80000004;
+       static const uint32_t WRITE     = 0x80000005;
+       static const uint32_t WAIT      = 0x80000006;
+       static const uint32_t GRANT     = 0x80000007;
+    };
+
+    struct NIRIO_IO
+    {
+       static const uint32_t POKE64             = 0xA0000005;
+       static const uint32_t POKE32             = 0xA0000006;
+       static const uint32_t POKE16             = 0xA0000007;
+       static const uint32_t POKE8              = 0xA0000008;
+       static const uint32_t PEEK64             = 0xA0000009;
+       static const uint32_t PEEK32             = 0xA000000A;
+       static const uint32_t PEEK16             = 0xA000000B;
+       static const uint32_t PEEK8              = 0xA000000C;
+       static const uint32_t READ_BLOCK         = 0xA000000D;
+       static const uint32_t WRITE_BLOCK        = 0xA000000E;
+       static const uint32_t GET_IO_WINDOW      = 0xA000000F;
+       static const uint32_t GET_IO_WINDOW_SIZE = 0xA0000010;
+    };
+
+    struct nirio_ioctl_packet_t {
+        nirio_ioctl_packet_t(void* const _outBuf, const uint32_t _outSize, const int32_t _statusCode)
+        {
+            outBuf._64BitField = 0;
+            outBuf.pointer = _outBuf;
+            outSize    = _outSize;
+            statusCode = _statusCode;
+        };
+
+        union {
+            void* pointer;
+            uint64_t _64BitField;
+        } outBuf;
+
+        uint32_t outSize;
+        int32_t statusCode;
+    };
+
+    struct nirio_syncop_in_params_t
+    {
+       uint32_t function;
+       uint32_t subfunction;
+
+       union
+       {
+          struct
+          {
+             uint32_t attribute;
+             uint32_t value;
+          } attribute32;
+
+          struct
+          {
+             uint32_t attribute;
+             uint64_t value;
+          } attribute64;
+
+          struct
+          {
+             uint32_t attribute;
+          } attributeStr;
+
+          struct
+          {
+             uint32_t attribute;
+          } download;
+
+          union
+          {
+             struct
+             {
+                uint32_t reserved_field_0_0_0;
+             } reserved_field_0_0;
+             struct
+             {
+                uint32_t reserved_field_0_1_0;
+                uint32_t reserved_field_0_1_1;
+             } reserved_field_0_1;
+             struct
+             {
+                uint32_t reserved_field_0_2_0;
+             } reserved_field_0_2;
+          } reserved_field_0;
+
+          union
+          {
+             struct
+             {
+                uint32_t channel;
+                uint32_t baseAddress;
+                uint32_t depthInSamples;
+                uint32_t version;
+             } fifo;
+             struct
+             {
+                uint32_t channel;
+                uint32_t baseAddress;
+                uint32_t depthInSamples;
+                uint32_t version;
+                uint32_t scalarType;
+                uint32_t bitWidth;
+             } fifoWithDataType;
+             struct
+             {
+                uint64_t rangeBaseAddress;
+                uint32_t rangeSizeInBytes;
+                uint32_t rangeAttribute;
+             } atomic; // obsolete
+          } add;
+
+          struct
+          {
+             uint32_t channel;
+
+             union
+             {
+                struct
+                {
+                   uint32_t requestedDepth;
+                   uint8_t  requiresActuals;
+                } config;
+                struct
+                {
+                   uint32_t timeout;
+                } read;
+                struct
+                {
+                   uint32_t timeout;
+                   uint32_t scalarType;
+                   uint32_t bitWidth;
+                } readWithDataType;
+                struct
+                {
+                   uint32_t timeout;
+                } write;
+                struct
+                {
+                   uint32_t timeout;
+                   uint32_t scalarType;
+                   uint32_t bitWidth;
+                } writeWithDataType;
+                struct
+                {
+                   uint32_t elementsRequested;
+                   uint32_t scalarType;
+                   uint32_t bitWidth;
+                   uint32_t timeout;
+                   uint8_t  output;
+                } wait;
+                struct
+                {
+                   uint32_t elements;
+                } grant;
+             } op;
+          } fifo;
+
+          struct
+          {
+             uint64_t reserved_field_1_0;
+             uint32_t reserved_field_1_1;
+             uint32_t reserved_field_1_2;
+          } reserved_field_1; // Obsolete
+
+          struct
+          {
+             uint32_t offset;
+             union
+             {
+                uint64_t value64;
+                uint32_t value32;
+                uint16_t value16;
+                uint8_t  value8;
+             } value;
+             union
+             {
+                uint32_t   sizeToMap;
+             } memoryMappedIoWindow;
+          } io;
+
+          struct
+          {
+             uint32_t reserved_field_2_0;
+             uint32_t reserved_field_2_1;
+          } reserved_field_2;
+
+          struct
+          {
+             uint32_t reserved_field_3_0;
+          } reserved_field_3;
+
+          union
+          {
+             struct
+             {
+                uint32_t reserved_field_4_0;
+                int32_t  reserved_field_4_1;
+             } wait;
+          } reserved_field_4;
+
+       } params;
+
+       uint32_t inbufByteLen;
+
+       union
+       {
+          const void* pointer;
+          uint64_t    _64BitField;
+       } inbuf;
+    };
+
+    static inline void init_syncop_in_params(nirio_syncop_in_params_t& param, const void* const buf, const uint32_t len)
+    {
+       param.inbuf._64BitField = 0;
+       param.inbuf.pointer = buf;
+       param.inbufByteLen = len;
+    }
+
+    struct nirio_syncop_out_params_t
+    {
+       union
+       {
+          struct
+          {
+             uint32_t value;
+          } attribute32;
+
+          struct
+          {
+             uint64_t value;
+          } attribute64;
+
+          union
+          {
+             struct
+             {
+                uint32_t reserved_field_0_0;
+             } enable;
+          } reserved_field_0;
+
+          struct
+          {
+             union
+             {
+                struct
+                {
+                   uint32_t actualDepth;
+                   uint32_t actualSize;
+                } config;
+                struct
+                {
+                   uint32_t numberRead;
+                   uint32_t numberRemaining;
+                } read;
+                struct
+                {
+                   uint32_t numberRemaining;
+                } write;
+                struct
+                {
+                   union
+                   {
+                      void*    pointer;
+                      uint64_t _64BitField;
+                   } elements;
+                } wait;
+             } op;
+          } fifo;
+
+          struct
+          {
+            union
+             {
+                union
+                {
+                   uint64_t value64;
+                   uint32_t value32;
+                   uint16_t value16;
+                   uint8_t  value8;
+                } value;
+                union
+                {
+                   void*    memoryMappedAddress;
+                   uint64_t _64BitField;
+                } memoryMappedIoWindow;
+                union
+                {
+                   uint32_t   size;
+                } memoryMappedIoWindowSize;
+             };
+          } io;
+
+          uint32_t stringLength;
+
+          struct
+          {
+             uint32_t reserved_field_1_0;
+          } reserved_field_1;
+
+       } params;
+
+       uint32_t    outbufByteLen;
+
+       union
+       {
+          void*    pointer;
+          uint64_t _64BitField;
+       } outbuf;
+    };
+
+    static inline void init_syncop_out_params(nirio_syncop_out_params_t& param, void* buf, uint32_t len)
+    {
+       param.outbuf._64BitField = 0;
+       param.outbuf.pointer = buf;
+       param.outbufByteLen = len;
+    }
+
     //-------------------------------------------------------
     // niriok_proxy_impl_v1
     //-------------------------------------------------------
@@ -55,11 +444,11 @@ namespace uhd { namespace niusrprio
             interface_path, _device_handle), status);
         if (nirio_status_not_fatal(status)) {
             nirio_status_chain(nirio_driver_iface::rio_ioctl(_device_handle,
-                                        nirio_driver_iface::NIRIO_IOCTL_POST_OPEN,
+                                        NIRIO_IOCTL_POST_OPEN,
                                         NULL, 0, NULL, 0), status);
             nirio_ioctl_packet_t out(&_interface_num, sizeof(_interface_num), 0);
             nirio_status_chain(nirio_driver_iface::rio_ioctl(_device_handle,
-                                        nirio_driver_iface::NIRIO_IOCTL_GET_IFACE_NUM,
+                                        NIRIO_IOCTL_GET_IFACE_NUM,
                                         NULL, 0,
                                         &out, sizeof(out)), status);
 
@@ -83,7 +472,7 @@ namespace uhd { namespace niusrprio
        if(nirio_driver_iface::rio_isopen(_device_handle))
        {
             nirio_driver_iface::rio_ioctl(
-                _device_handle, nirio_driver_iface::NIRIO_IOCTL_PRE_CLOSE, NULL, 0, NULL, 0);
+                _device_handle, NIRIO_IOCTL_PRE_CLOSE, NULL, 0, NULL, 0);
             nirio_driver_iface::rio_close(_device_handle);
        }
     }
@@ -98,18 +487,6 @@ namespace uhd { namespace niusrprio
         in.function = NIRIO_FUNC::RESET;
 
         return sync_operation(&in, sizeof(in), &out, sizeof(out));
-    }
-
-    nirio_status niriok_proxy_impl_v1::get_cached_session(
-        uint32_t& session)
-    {
-        READER_LOCK
-
-        nirio_ioctl_packet_t out(&session, sizeof(session), 0);
-        return nirio_driver_iface::rio_ioctl(_device_handle,
-                                    nirio_driver_iface::NIRIO_IOCTL_GET_SESSION,
-                                    NULL, 0,
-                                    &out, sizeof(out));
     }
 
     nirio_status niriok_proxy_impl_v1::get_version(
@@ -150,7 +527,7 @@ namespace uhd { namespace niusrprio
 
         nirio_ioctl_packet_t out(readBuffer, readBufferLength, 0);
         nirio_status ioctl_status = nirio_driver_iface::rio_ioctl(_device_handle,
-                                    nirio_driver_iface::NIRIO_IOCTL_SYNCOP,
+                                    NIRIO_IOCTL_SYNCOP,
                                     writeBuffer, writeBufferLength,
                                     &out, sizeof(out));
         if (nirio_status_fatal(ioctl_status)) return ioctl_status;
@@ -282,14 +659,14 @@ namespace uhd { namespace niusrprio
 
     nirio_status niriok_proxy_impl_v1::add_fifo_resource(const nirio_fifo_info_t& fifo_info)
     {
-       niriok_proxy_impl_v1::nirio_syncop_in_params_t in = {};
-       niriok_proxy_impl_v1::nirio_syncop_out_params_t out = {};
+       nirio_syncop_in_params_t in = {};
+       nirio_syncop_out_params_t out = {};
 
-       in.function    = niriok_proxy_impl_v1::NIRIO_FUNC::ADD_RESOURCE;
+       in.function    = NIRIO_FUNC::ADD_RESOURCE;
        if (fifo_info.direction == OUTPUT_FIFO)
-           in.subfunction = niriok_proxy_impl_v1::NIRIO_RESOURCE::OUTPUT_FIFO;
+           in.subfunction = NIRIO_RESOURCE::OUTPUT_FIFO;
        else
-           in.subfunction = niriok_proxy_impl_v1::NIRIO_RESOURCE::INPUT_FIFO;
+           in.subfunction = NIRIO_RESOURCE::INPUT_FIFO;
 
        in.params.add.fifoWithDataType.channel        = fifo_info.channel;
        in.params.add.fifoWithDataType.baseAddress    = fifo_info.base_addr;
@@ -307,7 +684,7 @@ namespace uhd { namespace niusrprio
       nirio_syncop_in_params_t in = {};
       nirio_syncop_out_params_t out = {};
 
-      in.function    = niriok_proxy_impl_v1::NIRIO_FUNC::SET_DRIVER_CONFIG;
+      in.function    = NIRIO_FUNC::SET_DRIVER_CONFIG;
       in.subfunction = 0;
 
       return sync_operation(&in, sizeof(in), &out, sizeof(out));

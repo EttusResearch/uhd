@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -114,7 +114,7 @@ private:    //Members
     static const uint32_t FIFO_LOCK_TIMEOUT_IN_MS = 5000;
 };
 
-#include "nirio_fifo.ipp"
+#include <uhd/transport/nirio/nirio_fifo.ipp>
 
 }}
 

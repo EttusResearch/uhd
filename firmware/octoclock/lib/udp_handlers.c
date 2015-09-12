@@ -36,7 +36,7 @@ void handle_udp_ctrl_packet(
     pkt_out.proto_ver = OCTOCLOCK_FW_COMPAT_NUM;
     pkt_out.sequence = pkt_in->sequence;
 
-    //If the firmware is incompatible, only respond to queries
+    // If the firmware is incompatible, only respond to queries
     if(pkt_in->code == OCTOCLOCK_QUERY_CMD){
         pkt_out.code = OCTOCLOCK_QUERY_ACK;
         pkt_out.len = 0;
@@ -50,44 +50,43 @@ void handle_udp_ctrl_packet(
 
                 octoclock_fw_eeprom_t *eeprom_info = (octoclock_fw_eeprom_t*)pkt_out.data;
 
-                //Read values from EEPROM into packet
+                // Read values from EEPROM into packet
+                eeprom_busy_wait();
                 eeprom_read_block(eeprom_info, 0, sizeof(octoclock_fw_eeprom_t));
 
-                //If EEPROM network fields are not fully populated, copy defaults
+                // If EEPROM network fields are not fully populated, copy defaults
                 if(using_network_defaults){
                     _MAC_ADDR(eeprom_info->mac_addr, 0x00,0x80,0x2F,0x11,0x22,0x33);
-                    eeprom_info->ip_addr = default_ip;
-                    eeprom_info->dr_addr = default_dr;
-                    eeprom_info->netmask = default_netmask;
+                    eeprom_info->ip_addr = _IP(192,168,10,3);
+                    eeprom_info->dr_addr = _IP(192,168,10,1);
+                    eeprom_info->netmask = _IP(255,255,255,0);
                 }
 
-                //Check if strings or revision is empty
-                if(eeprom_info->serial[0] == 0xFF) memset(eeprom_info->serial, 0, 10);
-                if(eeprom_info->name[0] == 0xFF) memset(eeprom_info->name, 0, 10);
+                // Check if strings or revision is empty
                 if(eeprom_info->revision == 0xFF) eeprom_info->revision = 0;
                 break;
 
             case BURN_EEPROM_CMD:{
-                //Confirm length of data
+                // Confirm length of data
                 if(pkt_in->len != sizeof(octoclock_fw_eeprom_t)){
                     pkt_out.code = BURN_EEPROM_FAILURE_ACK;
                     break;
                 }
 
                 /*
-                 * In all cases, a full octoclock_fw_eeprom_t is written to lower the overall
-                 * number of writes due to this EEPROM's smaller amount of safe writes.
                  * It is up to the host to make sure that the values that should be
                  * preserved are present in the octoclock_fw_eeprom_t struct.
                  */
                 const octoclock_fw_eeprom_t *eeprom_pkt = (octoclock_fw_eeprom_t*)pkt_in->data;
                 pkt_out.len = 0;
 
-                //Write EEPROM data from packet
+                // Write EEPROM data from packet
+                eeprom_busy_wait();
                 eeprom_write_block(eeprom_pkt, 0, sizeof(octoclock_fw_eeprom_t));
 
-                //Read back and compare to packet to confirm successful write
+                // Read back and compare to packet to confirm successful write
                 uint8_t eeprom_contents[sizeof(octoclock_fw_eeprom_t)];
+                eeprom_busy_wait();
                 eeprom_read_block(eeprom_contents, 0, sizeof(octoclock_fw_eeprom_t));
                 uint8_t n = memcmp(eeprom_contents, eeprom_pkt, sizeof(octoclock_fw_eeprom_t));
                 pkt_out.code = n ? BURN_EEPROM_FAILURE_ACK
@@ -99,12 +98,12 @@ void handle_udp_ctrl_packet(
                 pkt_out.code = SEND_STATE_ACK;
                 pkt_out.len = sizeof(octoclock_state_t);
 
-                //Populate octoclock_state_t fields
+                // Populate octoclock_state_t fields
                 octoclock_state_t *state = (octoclock_state_t*)pkt_out.data;
-                state->external_detected = global_ext_ref_is_present ? 1 : 0;
-                state->gps_detected = (PIND & _BV(DDD4)) ? 1 : 0;
-                state->which_ref = (uint8_t)which_ref();
-                state->switch_pos = (uint8_t)get_switch_pos();
+                state->external_detected = g_ext_ref_present ? 1 : 0;
+                state->gps_detected      = g_gps_present     ? 1 : 0;
+                state->which_ref         = (uint8_t)g_ref;
+                state->switch_pos        = (uint8_t)g_switch_pos;
                 break;
 
             case RESET_CMD:

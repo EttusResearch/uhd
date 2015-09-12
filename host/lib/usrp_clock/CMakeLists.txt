@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2014 Ettus Research LLC
+# Copyright 2011-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,5 +22,11 @@
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/multi_usrp_clock.cpp
 )
+
+IF(ENABLE_C_API)
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/usrp_clock_c.cpp
+    )
+ENDIF(ENABLE_C_API)
 
 INCLUDE_SUBDIRECTORY(octoclock)

@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -56,14 +56,18 @@ SET(test_sources
 )
 
 #turn each test cpp file into an executable with an int main() function
-IF(MINGW)
-    ADD_DEFINITIONS(-DBOOST_TEST_MAIN)
-ELSE()
-    ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
-ENDIF()
+ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 
-SET(UHD_TEST_TARGET_DEPS uhd)
-SET(UHD_TEST_LIBRARY_DIRS ${Boost_LIBRARY_DIRS})
+IF(ENABLE_C_API)
+    LIST(APPEND test_sources
+        eeprom_c_test.c
+        error_c_test.cpp
+        ranges_c_test.c
+        sensors_c_test.c
+        string_vector_c_test.c
+        subdev_spec_c_test.c
+    )
+ENDIF(ENABLE_C_API)
 
 #for each source: build an executable, register it as a test
 FOREACH(test_source ${test_sources})
