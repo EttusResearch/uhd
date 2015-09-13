@@ -77,6 +77,8 @@ localparam ZPU_SR_XB_LOCAL   = 03;
 localparam ZPU_SR_SPI        = 32;
 localparam ZPU_SR_ETHINT0    = 40;
 localparam ZPU_SR_ETHINT1    = 56;
+localparam ZPU_SR_DRAM_FIFO0 = 72;
+localparam ZPU_SR_DRAM_FIFO1 = 80;
 
 //reset bits
 #define ZPU_SR_SW_RST_ETH_PHY           (1<<0)
@@ -89,6 +91,8 @@ localparam ZPU_RB_CLK_STATUS = 3;
 localparam ZPU_RB_COMPAT_NUM = 6;
 localparam ZPU_RB_ETH_TYPE0  = 4;
 localparam ZPU_RB_ETH_TYPE1  = 5;
+localparam ZPU_RB_DRAM_FIFO0 = 10;
+localparam ZPU_RB_DRAM_FIFO1 = 11;
 
 //spi slaves on radio
 #define DB_DAC_SEN      (1 << 7)

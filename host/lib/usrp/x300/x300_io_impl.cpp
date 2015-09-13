@@ -216,9 +216,10 @@ struct x300_tx_fc_guts_t
  * FC credit we have is C = F + M - N (i.e. we can send C more packets
  * before getting another ack).
  */
-static size_t get_tx_flow_control_window(size_t frame_size, const device_addr_t& tx_args)
+static size_t get_tx_flow_control_window(size_t frame_size, const bool dram_buff, const device_addr_t& tx_args)
 {
-    double hw_buff_size = tx_args.cast<double>("send_buff_size", X300_TX_HW_BUFF_SIZE);
+    double default_buff_size = dram_buff ? X300_TX_HW_BUFF_SIZE_DRAM : X300_TX_HW_BUFF_SIZE_SRAM;
+    double hw_buff_size = tx_args.cast<double>("send_buff_size", default_buff_size);
     size_t window_in_pkts = (static_cast<size_t>(hw_buff_size) / frame_size);
     if (window_in_pkts == 0) {
         throw uhd::value_error("send_buff_size must be larger than the send_frame_size.");
@@ -580,8 +581,9 @@ tx_streamer::sptr x300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         perif.duc->setup(args);
 
         //flow control setup
-        size_t fc_window = get_tx_flow_control_window(xport.send->get_send_frame_size(), device_addr);  //In packets
-        const size_t fc_handle_window = std::max<size_t>(1, fc_window/X300_TX_FC_RESPONSE_FREQ);
+        size_t fc_window = get_tx_flow_control_window(xport.send->get_send_frame_size(), mb.has_dram_buff, device_addr);  //In packets
+        const size_t fc_handle_window = std::max<size_t>(1,
+            fc_window/ (mb.has_dram_buff ? X300_TX_FC_RESPONSE_FREQ_DRAM : X300_TX_FC_RESPONSE_FREQ_SRAM));
 
         UHD_LOG << "TX Flow Control Window = " << fc_window << ", TX Flow Control Handler Window = " << fc_handle_window << std::endl;
 

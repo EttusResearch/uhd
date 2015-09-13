@@ -50,19 +50,33 @@ using namespace uhd::niusrprio;
 using namespace uhd::usrp::x300;
 namespace asio = boost::asio;
 
+static bool has_dram_buff(wb_iface::sptr zpu_ctrl) {
+    bool dramR0 = dma_fifo_core_3000::check(
+        zpu_ctrl, SR_ADDR(SET0_BASE, ZPU_SR_DRAM_FIFO0), SR_ADDR(SET0_BASE, ZPU_RB_DRAM_FIFO0));
+    bool dramR1 = dma_fifo_core_3000::check(
+        zpu_ctrl, SR_ADDR(SET0_BASE, ZPU_SR_DRAM_FIFO1), SR_ADDR(SET0_BASE, ZPU_RB_DRAM_FIFO1));
+    return (dramR0 and dramR1);
+}
+
+static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
+    //Possible options:
+    //1G  = {0:1G, 1:1G} w/ DRAM, HG  = {0:1G, 1:10G} w/ DRAM, XG  = {0:10G, 1:10G} w/ DRAM
+    //1GS = {0:1G, 1:1G} w/ SRAM, HGS = {0:1G, 1:10G} w/ SRAM, XGS = {0:10G, 1:10G} w/ SRAM
+
+    std::string option;
+    bool eth0XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE0)) == 0x1);
+    bool eth1XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE1)) == 0x1);
+    option = (eth0XG && eth1XG) ? "XG" : (eth1XG ? "HG" : "1G");
+
+    if (not has_dram_buff(zpu_ctrl)) {
+        option += "S";
+    }
+    return option;
+}
+
 /***********************************************************************
  * Discovery over the udp and pcie transport
  **********************************************************************/
-static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
-    //1G = {0:1G, 1:1G} w/ DRAM, HG = {0:1G, 1:10G} w/ DRAM, XG = {0:10G, 1:10G} w/ DRAM
-    //HGS = {0:1G, 1:10G} w/ SRAM, XGS = {0:10G, 1:10G} w/ SRAM
-
-    //In the default configuration, UHD does not support the HG and XG images so
-    //they are never autodetected.
-    bool eth0XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE0)) == 0x1);
-    bool eth1XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE1)) == 0x1);
-    return (eth0XG && eth1XG) ? "XGS" : (eth1XG ? "HGS" : "1G");
-}
 
 //@TODO: Refactor the find functions to collapse common code for ethernet and PCIe
 static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
@@ -729,6 +743,34 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     }
 
     ////////////////////////////////////////////////////////////////////
+    // DRAM FIFO initialization
+    ////////////////////////////////////////////////////////////////////
+    mb.has_dram_buff = has_dram_buff(mb.zpu_ctrl);
+    if (mb.has_dram_buff) {
+        for (size_t i = 0; i < mboard_members_t::NUM_RADIOS; i++) {
+            static const size_t NUM_REGS = 8;
+            mb.dram_buff_ctrl[i] = dma_fifo_core_3000::make(
+                mb.zpu_ctrl,
+                SR_ADDR(SET0_BASE, ZPU_SR_DRAM_FIFO0+(i*NUM_REGS)),
+                SR_ADDR(SET0_BASE, ZPU_RB_DRAM_FIFO0+i));
+            if (mb.dram_buff_ctrl[i]->ext_bist_supported()) {
+                UHD_MSG(status) << boost::format("Running BIST for DRAM FIFO %d... ") % i;
+                boost::uint32_t bisterr = mb.dram_buff_ctrl[i]->run_bist();
+                if (bisterr != 0) {
+                    throw uhd::runtime_error(str(boost::format("DRAM FIFO BIST failed! (code: %d)\n") % bisterr));
+                } else {
+                    double throughput = mb.dram_buff_ctrl[i]->get_bist_throughput(X300_BUS_CLOCK_RATE);
+                    UHD_MSG(status) << (boost::format("pass (Throughput: %.1fMB/s)") % (throughput/1e6)) << std::endl;
+                }
+            } else {
+                if (mb.dram_buff_ctrl[i]->run_bist() != 0) {
+                    throw uhd::runtime_error(str(boost::format("DRAM FIFO %d BIST failed! (code: %d)\n") % i));
+                }
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////
     // setup radios
     ////////////////////////////////////////////////////////////////////
     this->setup_radio(mb_i, "A", dev_addr);
@@ -940,7 +982,10 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     perif.framer = rx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_CTRL));
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
     perif.ddc->set_link_rate(10e9/8); //whatever
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL));
+    //The DRAM FIFO is treated as in internal radio FIFO for flow control purposes
+    tx_vita_core_3000::fc_monitor_loc fc_loc =
+        mb.has_dram_buff ? tx_vita_core_3000::FC_PRE_FIFO : tx_vita_core_3000::FC_PRE_RADIO;
+    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL), fc_loc);
     perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
     perif.duc->set_link_rate(10e9/8); //whatever
 
@@ -1143,7 +1188,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
          * connection type.*/
         size_t eth_data_rec_frame_size = 0;
 
-        if (mb.loaded_fpga_image == "HGS") {
+        if (mb.loaded_fpga_image.substr(0,2) == "HG") {
             if (mb.router_dst_here == X300_XB_DST_E0) {
                 eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
                 _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_1GIGE);
@@ -1151,7 +1196,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
                 eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
                 _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_10GIGE);
             }
-        } else if (mb.loaded_fpga_image == "XGS") {
+        } else if (mb.loaded_fpga_image.substr(0,2) == "XG") {
             eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
             _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_10GIGE);
         }
@@ -1314,7 +1359,6 @@ void x300_impl::set_tick_rate(mboard_members_t &mb, const double rate)
         perif.time64->set_tick_rate(rate);
         perif.framer->set_tick_rate(rate);
         perif.ddc->set_tick_rate(rate);
-        perif.deframer->set_tick_rate(rate);
         perif.duc->set_tick_rate(rate);
     }
 }
