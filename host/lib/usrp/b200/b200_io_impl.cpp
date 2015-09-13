@@ -159,7 +159,6 @@ void b200_impl::update_tick_rate(const double new_tick_rate)
         boost::shared_ptr<sph::send_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(perif.tx_streamer.lock());
         if (my_streamer) my_streamer->set_tick_rate(new_tick_rate);
-        perif.deframer->set_tick_rate(new_tick_rate);
     }
 }
 

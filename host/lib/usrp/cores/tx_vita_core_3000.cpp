@@ -18,9 +18,11 @@
 #include "tx_vita_core_3000.hpp"
 #include <uhd/utils/safe_call.hpp>
 
-#define REG_CTRL_ERROR_POLICY           _base + 0
-#define REG_DEFRAMER_CYCLE_FC_UPS       _base + 2*4 + 0
-#define REG_DEFRAMER_PACKET_FC_UPS      _base + 2*4 + 4
+#define REG_CTRL_ERROR_POLICY       (_base + 0)
+#define REG_FC_PRE_RADIO_RESP_BASE  (_base + 2*4)
+#define REG_FC_PRE_FIFO_RESP_BASE   (_base + 4*4)
+#define REG_CTRL_FC_CYCLE_OFFSET    (0*4)
+#define REG_CTRL_FC_PACKET_OFFSET   (1*4)
 
 using namespace uhd;
 
@@ -32,12 +34,22 @@ struct tx_vita_core_3000_impl : tx_vita_core_3000
 {
     tx_vita_core_3000_impl(
         wb_iface::sptr iface,
-        const size_t base
+        const size_t base,
+        fc_monitor_loc fc_location
     ):
         _iface(iface),
-        _base(base)
+        _base(base),
+        _fc_base((fc_location==FC_PRE_RADIO or fc_location==FC_DEFAULT) ?
+                    REG_FC_PRE_RADIO_RESP_BASE : REG_FC_PRE_FIFO_RESP_BASE),
+        _fc_location(fc_location)
     {
-        this->set_tick_rate(1); //init to non zero
+        if (fc_location != FC_DEFAULT) {
+            //Turn off the other FC monitoring module
+            const size_t other_fc_base = (fc_location==FC_PRE_RADIO) ?
+                    REG_FC_PRE_FIFO_RESP_BASE : REG_FC_PRE_RADIO_RESP_BASE;
+            _iface->poke32(other_fc_base + REG_CTRL_FC_CYCLE_OFFSET, 0);
+            _iface->poke32(other_fc_base + REG_CTRL_FC_PACKET_OFFSET, 0);
+        }
         this->set_underflow_policy("next_packet");
         this->clear();
     }
@@ -54,11 +66,6 @@ struct tx_vita_core_3000_impl : tx_vita_core_3000
     {
         this->configure_flow_control(0, 0);
         this->set_underflow_policy(_policy); //clears the seq
-    }
-
-    void set_tick_rate(const double rate)
-    {
-        _tick_rate = rate;
     }
 
     void set_underflow_policy(const std::string &policy)
@@ -89,23 +96,35 @@ struct tx_vita_core_3000_impl : tx_vita_core_3000
 
     void configure_flow_control(const size_t cycs_per_up, const size_t pkts_per_up)
     {
-        if (cycs_per_up == 0) _iface->poke32(REG_DEFRAMER_CYCLE_FC_UPS, 0);
-        else _iface->poke32(REG_DEFRAMER_CYCLE_FC_UPS, (1 << 31) | ((cycs_per_up) & 0xffffff));
+        if (cycs_per_up == 0) _iface->poke32(_fc_base + REG_CTRL_FC_CYCLE_OFFSET, 0);
+        else _iface->poke32(_fc_base + REG_CTRL_FC_CYCLE_OFFSET, (1 << 31) | ((cycs_per_up) & 0xffffff));
 
-        if (pkts_per_up == 0) _iface->poke32(REG_DEFRAMER_PACKET_FC_UPS, 0);
-        else _iface->poke32(REG_DEFRAMER_PACKET_FC_UPS, (1 << 31) | ((pkts_per_up) & 0xffff));
+        if (pkts_per_up == 0) _iface->poke32(_fc_base + REG_CTRL_FC_PACKET_OFFSET, 0);
+        else _iface->poke32(_fc_base + REG_CTRL_FC_PACKET_OFFSET, (1 << 31) | ((pkts_per_up) & 0xffff));
     }
 
-    wb_iface::sptr _iface;
-    const size_t _base;
-    double _tick_rate;
-    std::string _policy;
+    wb_iface::sptr  _iface;
+    const size_t    _base;
+    const size_t    _fc_base;
+    std::string     _policy;
+    fc_monitor_loc  _fc_location;
+
 };
 
 tx_vita_core_3000::sptr tx_vita_core_3000::make(
     wb_iface::sptr iface,
+    const size_t base,
+    fc_monitor_loc fc_location
+)
+{
+    return tx_vita_core_3000::sptr(new tx_vita_core_3000_impl(iface, base, fc_location));
+}
+
+tx_vita_core_3000::sptr tx_vita_core_3000::make_no_radio_buff(
+    wb_iface::sptr iface,
     const size_t base
 )
 {
-    return tx_vita_core_3000::sptr(new tx_vita_core_3000_impl(iface, base));
+    //No internal radio buffer so only pre-radio monitoring is supported.
+    return tx_vita_core_3000::sptr(new tx_vita_core_3000_impl(iface, base, FC_DEFAULT));
 }

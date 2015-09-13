@@ -32,16 +32,26 @@ class tx_vita_core_3000 : boost::noncopyable
 public:
     typedef boost::shared_ptr<tx_vita_core_3000> sptr;
 
+    enum fc_monitor_loc {
+        FC_DEFAULT,
+        FC_PRE_RADIO,
+        FC_PRE_FIFO
+    };
+
     virtual ~tx_vita_core_3000(void) = 0;
 
     static sptr make(
+        uhd::wb_iface::sptr iface,
+        const size_t base,
+        fc_monitor_loc fc_location = FC_PRE_RADIO
+    );
+
+    static sptr make_no_radio_buff(
         uhd::wb_iface::sptr iface,
         const size_t base
     );
 
     virtual void clear(void) = 0;
-
-    virtual void set_tick_rate(const double rate) = 0;
 
     virtual void setup(const uhd::stream_args_t &stream_args) = 0;
 
