@@ -24,6 +24,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/sid.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
+#include <uhd/usrp/rfnoc/constants.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
@@ -36,7 +37,7 @@ using namespace uhd::transport;
 
 static const double ACK_TIMEOUT = 2.0; //supposed to be worst case practical timeout
 static const double MASSIVE_TIMEOUT = 10.0; //for when we wait on a timed command
-static const size_t SR_READBACK = 127;
+static const size_t SR_READBACK = 32;
 
 radio_ctrl_core_3000::~radio_ctrl_core_3000(void){
     /* NOP */
@@ -49,13 +50,16 @@ public:
     radio_ctrl_core_3000_impl(const bool big_endian,
             uhd::transport::zero_copy_if::sptr ctrl_xport,
             uhd::transport::zero_copy_if::sptr resp_xport,
-            const boost::uint32_t sid, const std::string &name) :
+            const boost::uint32_t sid, const std::string &name,
+            const bool rfnoc_block
+    ) :
             _link_type(vrt::if_packet_info_t::LINK_TYPE_CHDR), _packet_type(
                     vrt::if_packet_info_t::PACKET_TYPE_CONTEXT), _bige(
                     big_endian), _ctrl_xport(ctrl_xport), _resp_xport(
                     resp_xport), _sid(sid), _name(name), _seq_out(0), _timeout(
                     ACK_TIMEOUT), _resp_queue(128/*max response msgs*/), _resp_queue_size(
-                    _resp_xport ? _resp_xport->get_num_recv_frames() : 3)
+                    _resp_xport ? _resp_xport->get_num_recv_frames() : 3),
+                    _rb_address(rfnoc_block ? uhd::rfnoc::SR_READBACK : SR_READBACK)
     {
         if (resp_xport)
         {
@@ -87,7 +91,7 @@ public:
     boost::uint32_t peek32(const wb_addr_type addr)
     {
         boost::mutex::scoped_lock lock(_mutex);
-        this->send_pkt(SR_READBACK, addr/8);
+        this->send_pkt(_rb_address, addr/8);
         const boost::uint64_t res = this->wait_for_ack(true);
         const boost::uint32_t lo = boost::uint32_t(res & 0xffffffff);
         const boost::uint32_t hi = boost::uint32_t(res >> 32);
@@ -97,7 +101,7 @@ public:
     boost::uint64_t peek64(const wb_addr_type addr)
     {
         boost::mutex::scoped_lock lock(_mutex);
-        this->send_pkt(SR_READBACK, addr/8);
+        this->send_pkt(_rb_address, addr/8);
         return this->wait_for_ack(true);
     }
 
@@ -345,13 +349,19 @@ private:
     std::queue<size_t> _outstanding_seqs;
     bounded_buffer<resp_buff_type> _resp_queue;
     const size_t _resp_queue_size;
+
+    const size_t _rb_address;
 };
 
-radio_ctrl_core_3000::sptr radio_ctrl_core_3000::make(const bool big_endian,
-        zero_copy_if::sptr ctrl_xport, zero_copy_if::sptr resp_xport,
-        const boost::uint32_t sid, const std::string &name)
-{
-    return sptr(
-            new radio_ctrl_core_3000_impl(big_endian, ctrl_xport, resp_xport,
-                    sid, name));
+radio_ctrl_core_3000::sptr radio_ctrl_core_3000::make(
+        const bool big_endian,
+        zero_copy_if::sptr ctrl_xport,
+        zero_copy_if::sptr resp_xport,
+        const boost::uint32_t sid,
+        const std::string &name,
+        const bool rfnoc_block
+) {
+    return sptr(new radio_ctrl_core_3000_impl(
+                big_endian, ctrl_xport, resp_xport, sid, name, rfnoc_block
+    ));
 }

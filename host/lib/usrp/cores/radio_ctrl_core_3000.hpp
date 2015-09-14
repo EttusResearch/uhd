@@ -42,7 +42,8 @@ public:
         uhd::transport::zero_copy_if::sptr ctrl_xport,
         uhd::transport::zero_copy_if::sptr resp_xport,
         const boost::uint32_t sid,
-        const std::string &name = "0"
+        const std::string &name = "0",
+        const bool rfnoc_block = true /* set to true for RFNoC blocks TODO unify all radios, make this obsolete */
     );
 
     //! Hold a ref to a task thats feeding push response
