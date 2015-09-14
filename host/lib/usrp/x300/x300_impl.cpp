@@ -893,14 +893,6 @@ x300_impl::~x300_impl(void)
     }
 }
 
-static void check_adc(wb_iface::sptr iface, const boost::uint32_t val)
-{
-    boost::uint32_t adc_rb = iface->peek32(radio::RB32_RX);
-    adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
-    //UHD_MSG(status) << "adc_rb " << std::hex << adc_rb << "  val " << std::hex << val << std::endl;
-    UHD_ASSERT_THROW(adc_rb == val);
-}
-
 void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, const uhd::device_addr_t &dev_addr)
 {
     const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
