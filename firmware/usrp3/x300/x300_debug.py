@@ -87,24 +87,39 @@ class ctrl_socket(object):
         self._sock.send(pkt)
         return self._sock.recv(UDP_MAX_XFER_BYTES)
 
-    def read_router_stats(self):
+    def read_router_stats(self, blocks=None, ignore=None):
         # Readback number of CEs
         num_ports = self.peek(X300_SR_NUM_CE) + X300_FIXED_PORTS
-        print
-        print("Note: CE port names are hard coded and may not be accurate\n")
-        print("            "),
+        ports = ['eth0', 'eth1', 'pcie', 'radio0', 'radio1'] + ["Block{num}".format(num=x) for x in range(num_ports-X300_FIXED_PORTS)]
+        if blocks is None:
+            print("\nNote: Using default CE port names (use --blocks to specify)\n")
+        else:
+            user_ports = [x.strip() for x in blocks.split(",") if len(x.strip())]
+            for idx, user_port in enumerate(user_ports):
+                ports[idx + X300_FIXED_PORTS] = user_port
+        if ignore is None:
+            ignore = []
+        else:
+            ignore = [int(x.strip()) for x in ignore.split(",") if len(x.strip())]
+        print("Egress Port "),
         # Write out xbar ports
-        ports = ['        eth0','        eth1','        pcie','      radio0','      radio1','     addsub0','        fir0','        fft0','     window0','nullsinksrc0','pkt-resizer0','splitstream0','       fifo0','       fifo1','       fifo2','       fifo3']
-        for in_prt in range (0, num_ports):
-            print("%s" % ports[in_prt]),
-        print("   Egress Port")
-        print("             "),
-        for in_prt in range (0, num_ports):
-            print("___________ "),
+        PORT_MAX_LEN = 12
+        for idx, in_prt in enumerate(ports):
+            if idx in ignore:
+                continue
+            print "{spaces}{name}".format(spaces=(" "*max(0, PORT_MAX_LEN-len(in_prt))), name=in_prt),
         print
-        for in_prt in range (0, num_ports):
-            print("%s |" % ports[in_prt]),
-            for out_prt in range (0, num_ports):
+        print(" "*(PORT_MAX_LEN+1)),
+        for in_prt in range(num_ports-len(ignore)):
+            print("_" * (PORT_MAX_LEN-1) + " "),
+        print
+        for in_prt, port_name in enumerate(ports):
+            if in_prt in ignore:
+                continue
+            print "{spaces}{name} |".format(spaces=(" "*max(0, PORT_MAX_LEN-len(port_name))), name=port_name),
+            for out_prt in range(num_ports):
+                if out_prt in ignore:
+                    continue
                 self.poke(X300_SR_RB_ADDR_XBAR,(in_prt*num_ports+out_prt))
                 data = self.peek(X300_RB_CROSSBAR)
                 print("%10d  " % (data)),
@@ -149,8 +164,9 @@ def get_options():
     parser.add_option("--peek", type="int", help="Read from memory map", default=None)
     parser.add_option("--poke", type="int", help="Write to memory map", default=None)
     parser.add_option("--data", type="int", help="Data for poke", default=None)
+    parser.add_option("--blocks", help="List names of blocks (post-radio)", default=None)
+    parser.add_option("--ignore", help="List of ports to ignore", default=None)
     (options, args) = parser.parse_args()
-
     return options
 
 
@@ -165,7 +181,7 @@ if __name__=='__main__':
     status = ctrl_socket(addr=options.addr)
 
     if options.stats:
-        status.read_router_stats()
+        status.read_router_stats(options.blocks, options.ignore)
 
     if options.peek is not None:
         addr = options.peek
