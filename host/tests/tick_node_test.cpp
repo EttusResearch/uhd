@@ -16,7 +16,7 @@
 //
 
 #include "graph.hpp"
-#include <uhd/usrp/rfnoc/tick_node_ctrl.hpp>
+#include <uhd/rfnoc/tick_node_ctrl.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 

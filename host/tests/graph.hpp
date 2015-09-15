@@ -18,9 +18,9 @@
 #ifndef INCLUDED_TEST_GRAPH_HPP
 #define INCLUDED_TEST_GRAPH_HPP
 
-#include <uhd/usrp/rfnoc/node_ctrl_base.hpp>
-#include <uhd/usrp/rfnoc/sink_node_ctrl.hpp>
-#include <uhd/usrp/rfnoc/source_node_ctrl.hpp>
+#include <uhd/rfnoc/node_ctrl_base.hpp>
+#include <uhd/rfnoc/sink_node_ctrl.hpp>
+#include <uhd/rfnoc/source_node_ctrl.hpp>
 
 #define MAKE_NODE(name) test_node::sptr name(new test_node(#name));
 

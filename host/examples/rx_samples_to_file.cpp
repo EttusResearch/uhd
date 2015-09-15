@@ -20,7 +20,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>

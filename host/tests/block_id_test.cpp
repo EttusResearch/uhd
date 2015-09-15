@@ -18,7 +18,7 @@
 #include <iostream>
 #include <boost/test/unit_test.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/usrp/rfnoc/block_id.hpp>
+#include <uhd/rfnoc/block_id.hpp>
 
 using namespace uhd::rfnoc;
 

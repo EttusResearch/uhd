@@ -16,7 +16,7 @@
 //
 
 #include "graph.hpp"
-#include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
+#include <uhd/rfnoc/rate_node_ctrl.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 

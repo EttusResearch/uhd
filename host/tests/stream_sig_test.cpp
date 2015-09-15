@@ -18,7 +18,7 @@
 #include <iostream>
 #include <boost/test/unit_test.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/usrp/rfnoc/stream_sig.hpp>
+#include <uhd/rfnoc/stream_sig.hpp>
 
 using namespace uhd::rfnoc;
 

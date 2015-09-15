@@ -40,7 +40,7 @@
 #include "recv_packet_demuxer_3000.hpp"
 #include "x300_regs.hpp"
 ///////////// RFNOC /////////////////////
-#include <uhd/usrp/rfnoc/block_ctrl.hpp>
+#include <uhd/rfnoc/block_ctrl.hpp>
 ///////////// RFNOC /////////////////////
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";

@@ -25,8 +25,8 @@
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
-#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
-#include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/utils/soft_register.hpp>
 #include <boost/assign/list_of.hpp>

@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_DEVICE3_HPP
 
 #include <uhd/device.hpp>
-#include <uhd/usrp/rfnoc/block_ctrl_base.hpp>
+#include <uhd/rfnoc/block_ctrl_base.hpp>
 
 namespace uhd {
 

@@ -20,9 +20,9 @@
 #define DEVICE3_STREAMER // For the super_*_packet_handlers
 
 #include "device3_impl.hpp"
-#include <uhd/usrp/rfnoc/constants.hpp>
-#include <uhd/usrp/rfnoc/source_block_ctrl_base.hpp>
-#include <uhd/usrp/rfnoc/sink_block_ctrl_base.hpp>
+#include <uhd/rfnoc/constants.hpp>
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
@@ -30,9 +30,9 @@
 #include "../common/validate_subdev_spec.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "../rfnoc/rx_stream_terminator.hpp"
-#include "../rfnoc/tx_stream_terminator.hpp"
-#include <uhd/usrp/rfnoc/rate_node_ctrl.hpp>
+#include "../../rfnoc/rx_stream_terminator.hpp"
+#include "../../rfnoc/tx_stream_terminator.hpp"
+#include <uhd/rfnoc/rate_node_ctrl.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;

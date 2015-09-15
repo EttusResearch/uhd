@@ -31,8 +31,8 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/usrp/rfnoc/block_ctrl.hpp>
-#include <uhd/usrp/rfnoc/null_block_ctrl.hpp>
+#include <uhd/rfnoc/block_ctrl.hpp>
+#include <uhd/rfnoc/null_block_ctrl.hpp>
 
 namespace po = boost::program_options;
 

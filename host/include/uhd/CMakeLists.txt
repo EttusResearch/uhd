@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+ADD_SUBDIRECTORY(rfnoc)
 ADD_SUBDIRECTORY(transport)
 ADD_SUBDIRECTORY(types)
 ADD_SUBDIRECTORY(usrp)

@@ -46,5 +46,3 @@ IF(ENABLE_C_API)
         COMPONENT headers
     )
 ENDIF(ENABLE_C_API)
-
-ADD_SUBDIRECTORY(rfnoc)

@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "../lib/usrp/rfnoc/nocscript/function_table.hpp"
+#include "../lib/rfnoc/nocscript/function_table.hpp"
 #include <boost/test/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/assign/list_of.hpp>

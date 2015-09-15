@@ -21,7 +21,7 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/device3.hpp>
-#include <uhd/usrp/rfnoc/block_ctrl.hpp>
+#include <uhd/rfnoc/block_ctrl.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;

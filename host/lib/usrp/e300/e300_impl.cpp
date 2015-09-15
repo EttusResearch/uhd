@@ -47,7 +47,7 @@
 #include <boost/asio.hpp>
 #include <fstream>
 
-#include <uhd/usrp/rfnoc/null_block_ctrl.hpp>
+#include <uhd/rfnoc/null_block_ctrl.hpp>
 #include "../rfnoc/radio_ctrl.hpp"
 
 using namespace uhd;

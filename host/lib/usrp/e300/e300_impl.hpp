@@ -26,7 +26,7 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/types/sensors.hpp>
 
-#include <uhd/usrp/rfnoc/block_ctrl.hpp>
+#include <uhd/rfnoc/block_ctrl.hpp>
 
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>

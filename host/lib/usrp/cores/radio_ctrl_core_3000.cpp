@@ -24,7 +24,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/sid.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
-#include <uhd/usrp/rfnoc/constants.hpp>
+#include <uhd/rfnoc/constants.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>

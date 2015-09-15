@@ -17,7 +17,7 @@
 
 #include "device3_impl.hpp"
 #include <uhd/utils/msg.hpp>
-#include <uhd/usrp/rfnoc/block_ctrl_base.hpp>
+#include <uhd/rfnoc/block_ctrl_base.hpp>
 #include <algorithm>
 
 using namespace uhd::usrp;

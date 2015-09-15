@@ -30,7 +30,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #ifdef DEVICE3_STREAMER
-#  include "../usrp/rfnoc/tx_stream_terminator.hpp"
+#  include "../rfnoc/tx_stream_terminator.hpp"
 #endif
 #include <boost/thread/thread_time.hpp>
 #include <boost/foreach.hpp>

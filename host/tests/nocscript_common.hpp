@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "../lib/usrp/rfnoc/nocscript/expression.hpp"
+#include "../lib/rfnoc/nocscript/expression.hpp"
 #include <boost/assign/list_of.hpp>
 
 using namespace uhd::rfnoc::nocscript;

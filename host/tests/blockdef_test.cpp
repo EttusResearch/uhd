@@ -22,7 +22,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
-#include <uhd/usrp/rfnoc/blockdef.hpp>
+#include <uhd/rfnoc/blockdef.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(test_args) {
     // Create an FFT:
     blockdef::sptr block_definition = blockdef::make_from_noc_id(0xFF70000000000000);
     blockdef::args_t args = block_definition->get_args();
-    BOOST_REQUIRE_EQUAL(args.size(), 3);
+    BOOST_REQUIRE(args.size() >= 3);
     BOOST_CHECK_EQUAL(args[0]["name"], "spp");
     BOOST_CHECK_EQUAL(args[0]["type"], "int");
     BOOST_CHECK_EQUAL(args[0]["value"], "256");
