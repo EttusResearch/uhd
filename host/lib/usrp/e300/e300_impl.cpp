@@ -47,7 +47,6 @@
 #include <boost/asio.hpp>
 #include <fstream>
 
-#include <uhd/rfnoc/null_block_ctrl.hpp>
 #include "../rfnoc/radio_ctrl.hpp"
 
 using namespace uhd;
@@ -630,13 +629,6 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     }
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
-
-    UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
-    const time_t tp = time_t(_sensor_manager->get_sensor("gps_time").to_int()+1);
-    _tree->access<time_spec_t>(mb_path / "time" / "pps").set(time_spec_t(tp));
-
-    // wait for time to be actually set
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
 
     //////////////// RFNOC /////////////////
     const size_t n_rfnoc_blocks = _global_regs->peek32(global_regs::RB32_CORE_NUM_CE);
