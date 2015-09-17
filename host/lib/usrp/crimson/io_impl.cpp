@@ -226,13 +226,13 @@ public:
 			memset((void*)vita_buf, 0, vita_pck*4);
 			memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
 
-			// sending samples, restricted to a jumbo frame of 9000 bytes at a time
+			// sending samples, restricted to a jumbo frame of CRIMSON_MAX_MTU bytes at a time
 			ret = 0;
 			while ((ret / 4) < nsamps_per_buff) {
 				size_t remaining_bytes = (nsamps_per_buff*4) - ret;
 
-				if (remaining_bytes >= 9000) {
-					ret += _udp_stream[i] -> stream_out((void*)vita_buf, 9000);
+				if (remaining_bytes >= CRIMSON_MAX_MTU) {
+					ret += _udp_stream[i] -> stream_out((void*)vita_buf, CRIMSON_MAX_MTU);
 				} else {
 					ret += _udp_stream[i] -> stream_out((void*)vita_buf, remaining_bytes);
 				}

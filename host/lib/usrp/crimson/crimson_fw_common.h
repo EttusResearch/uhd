@@ -64,6 +64,9 @@ extern "C" {
 #define CRIMSON_FW_COMMS_FLAGS_POKE32     (1 << 2)
 #define CRIMSON_FW_COMMS_FLAGS_PEEK32     (1 << 3)
 
+// Crimson MTU Size
+#define CRIMSON_MAX_MTU		1400
+
 // Crimson RF Settings
 #define CRIMSON_RF_TX_GAIN_RANGE_START	0.0
 #define CRIMSON_RF_TX_GAIN_RANGE_STOP	28.0
