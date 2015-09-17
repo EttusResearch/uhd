@@ -438,8 +438,10 @@ public:
      ******************************************************************/
     void set_master_clock_rate(double rate, size_t mboard){
         if (mboard != ALL_MBOARDS){
-            if (_tree->exists(mb_root(mboard) / "auto_tick_rate")) {
+            if (_tree->exists(mb_root(mboard) / "auto_tick_rate")
+                    and _tree->access<bool>(mb_root(mboard) / "auto_tick_rate").get()) {
                 _tree->access<bool>(mb_root(mboard) / "auto_tick_rate").set(false);
+                UHD_MSG(status) << "Setting master clock rate selection to 'manual'." << std::endl;
             }
             _tree->access<double>(mb_root(mboard) / "tick_rate").set(rate);
             return;

@@ -677,10 +677,14 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
     ////////////////////////////////////////////////////////////////////
-
-    //init the clock rate to something reasonable
-    double default_tick_rate = device_addr.cast<double>("master_clock_rate", ad936x_manager::DEFAULT_TICK_RATE);
+    // Init the clock rate and the auto mcr appropriately
+    if (not device_addr.has_key("master_clock_rate")) {
+        UHD_MSG(status) << "Setting master clock rate selection to 'automatic'." << std::endl;
+    }
+    // We can automatically choose a master clock rate, but not if the user specifies one
+    const double default_tick_rate = device_addr.cast<double>("master_clock_rate", ad936x_manager::DEFAULT_TICK_RATE);
     _tree->access<double>(mb_path / "tick_rate").set(default_tick_rate);
+    _tree->access<bool>(mb_path / "auto_tick_rate").set(not device_addr.has_key("master_clock_rate"));
 
     //subdev spec contains full width of selections
     subdev_spec_t rx_spec, tx_spec;
@@ -704,12 +708,6 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         _radio_perifs[i].ddc->set_host_rate(default_tick_rate / ad936x_manager::DEFAULT_DECIM);
         _radio_perifs[i].duc->set_host_rate(default_tick_rate / ad936x_manager::DEFAULT_INTERP);
     }
-    // We can automatically choose a master clock rate, but not if the user specifies one
-    _tree->access<bool>(mb_path / "auto_tick_rate").set(not device_addr.has_key("master_clock_rate"));
-    if (not device_addr.has_key("master_clock_rate")) {
-        UHD_MSG(status) << "Setting master clock rate selection to 'automatic'." << std::endl;
-    }
-
 }
 
 b200_impl::~b200_impl(void)
