@@ -42,9 +42,19 @@ public:
     static bool check(uhd::wb_iface::sptr iface, const size_t set_base, const size_t rb_addr);
 
     /*!
-     * Get the (approx) number of elements currently in the DMA FIFO
+     * Flush the DMA FIFO. Will clear all contents.
      */
-    virtual boost::uint32_t get_occupied_cnt() = 0;
+    virtual void flush() = 0;
+
+    /*!
+     * Resize and rebase the DMA FIFO. Will clear all contents.
+     */
+    virtual void resize(const boost::uint32_t base_addr, const boost::uint32_t size) = 0;
+
+    /*!
+     * Get the (approx) number of bytes currently in the DMA FIFO
+     */
+    virtual boost::uint32_t get_bytes_occupied() = 0;
 
     /*!
      * Run the built-in-self-test routine for the DMA FIFO

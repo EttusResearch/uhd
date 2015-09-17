@@ -49,6 +49,48 @@ protected:
         }
     };
 
+    class fifo_ctrl_reg_t : public soft_reg32_wo_t {
+    public:
+        UHD_DEFINE_SOFT_REG_FIELD(CLEAR_FIFO,           /*width*/  1, /*shift*/  0);  //[0]
+        UHD_DEFINE_SOFT_REG_FIELD(RD_SUPPRESS_EN,       /*width*/  1, /*shift*/  1);  //[1]
+        UHD_DEFINE_SOFT_REG_FIELD(BURST_TIMEOUT,        /*width*/ 12, /*shift*/  4);  //[15:4]
+        UHD_DEFINE_SOFT_REG_FIELD(RD_SUPPRESS_THRESH,   /*width*/ 16, /*shift*/ 16);  //[31:16]
+
+        fifo_ctrl_reg_t(boost::uint32_t base):
+            soft_reg32_wo_t(base + 4)
+        {
+            //Initial values
+            set(CLEAR_FIFO, 1);
+            set(RD_SUPPRESS_EN, 0);
+            set(BURST_TIMEOUT, 256);
+            set(RD_SUPPRESS_THRESH, 0);
+        }
+    };
+
+    class base_addr_reg_t : public soft_reg32_wo_t {
+    public:
+        UHD_DEFINE_SOFT_REG_FIELD(BASE_ADDR, /*width*/ 30, /*shift*/ 0);  //[29:0]
+
+        base_addr_reg_t(boost::uint32_t base):
+            soft_reg32_wo_t(base + 8)
+        {
+            //Initial values
+            set(BASE_ADDR, 0x00000000);
+        }
+    };
+
+    class addr_mask_reg_t : public soft_reg32_wo_t {
+    public:
+        UHD_DEFINE_SOFT_REG_FIELD(ADDR_MASK, /*width*/ 30, /*shift*/ 0);  //[29:0]
+
+        addr_mask_reg_t(boost::uint32_t base):
+            soft_reg32_wo_t(base + 12)
+        {
+            //Initial values
+            set(ADDR_MASK, 0xFF000000);
+        }
+    };
+
     class bist_ctrl_reg_t : public soft_reg32_wo_t {
     public:
         UHD_DEFINE_SOFT_REG_FIELD(GO,               /*width*/ 1, /*shift*/ 0);  //[0]
@@ -61,7 +103,7 @@ protected:
         static const boost::uint32_t TEST_PATT_COUNT_INV    = 3;
 
         bist_ctrl_reg_t(boost::uint32_t base):
-            soft_reg32_wo_t(base + SR_DRAM_BIST_BASE + 0)
+            soft_reg32_wo_t(base + 16)
         {
             //Initial values
             set(GO, 0);
@@ -77,7 +119,7 @@ protected:
         UHD_DEFINE_SOFT_REG_FIELD(PKT_SIZE_RAMP,    /*width*/ 1,  /*shift*/ 31); //[31]
 
         bist_cfg_reg_t(boost::uint32_t base):
-            soft_reg32_wo_t(base + SR_DRAM_BIST_BASE + 4)
+            soft_reg32_wo_t(base + 20)
         {
             //Initial values
             set(MAX_PKTS, 0);
@@ -92,7 +134,7 @@ protected:
         UHD_DEFINE_SOFT_REG_FIELD(RX_SAMP_DELAY,    /*width*/  8, /*shift*/ 16); //[23:16]
 
         bist_delay_reg_t(boost::uint32_t base):
-            soft_reg32_wo_t(base + SR_DRAM_BIST_BASE + 8)
+            soft_reg32_wo_t(base + 24)
         {
             //Initial values
             set(TX_PKT_DELAY, 0);
@@ -105,7 +147,7 @@ protected:
         UHD_DEFINE_SOFT_REG_FIELD(SID,     /*width*/ 32, /*shift*/ 0);  //[31:0]
 
         bist_sid_reg_t(boost::uint32_t base):
-            soft_reg32_wo_t(base + SR_DRAM_BIST_BASE + 12)
+            soft_reg32_wo_t(base + 28)
         {
             //Initial values
             set(SID, 0);
@@ -130,7 +172,13 @@ public:
         boost::uint32_t get_occupied_cnt() {
             boost::lock_guard<boost::mutex> lock(_mutex);
             _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_FIFO_STATUS);
-            return _iface->peek32(_rb_addr) & 0x1FFFFF;
+            return _iface->peek32(_rb_addr) & 0x7FFFFFF;
+        }
+
+        boost::uint32_t is_fifo_busy() {
+            boost::lock_guard<boost::mutex> lock(_mutex);
+            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_FIFO_STATUS);
+            return _iface->peek32(_rb_addr) & 0x40000000;
         }
 
         struct bist_status_t {
@@ -176,8 +224,12 @@ public:
 public:
     dma_fifo_core_3000_impl(wb_iface::sptr iface, const size_t base, const size_t readback):
         _iface(iface), _base(base), _fifo_readback(iface, base, readback),
+        _fifo_ctrl_reg(base), _base_addr_reg(base), _addr_mask_reg(base),
         _bist_ctrl_reg(base), _bist_cfg_reg(base), _bist_delay_reg(base), _bist_sid_reg(base)
     {
+        _fifo_ctrl_reg.initialize(*iface, true);
+        _base_addr_reg.initialize(*iface, true);
+        _addr_mask_reg.initialize(*iface, true);
         _bist_ctrl_reg.initialize(*iface, true);
         _bist_cfg_reg.initialize(*iface, true);
         _has_ext_bist = _fifo_readback.is_ext_bist_supported();
@@ -185,10 +237,35 @@ public:
             _bist_delay_reg.initialize(*iface, true);
             _bist_sid_reg.initialize(*iface, true);
         }
+        flush();
     }
 
-    virtual boost::uint32_t get_occupied_cnt() {
-        return _fifo_readback.get_occupied_cnt();
+    virtual void flush() {
+        //Clear the FIFO and hold it in that state
+        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 1);
+        //Re-arm the FIFO
+        _wait_for_fifo_empty();
+        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 0);
+    }
+
+    virtual void resize(const boost::uint32_t base_addr, const boost::uint32_t size) {
+        //Validate parameters
+        if (size < 8192) throw uhd::runtime_error("DMA FIFO must be larger than 8KiB");
+        boost::uint32_t size_mask = size - 1;
+        if (size & size_mask) throw uhd::runtime_error("DMA FIFO size must be a power of 2");
+
+        //Clear the FIFO and hold it in that state
+        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 1);
+        //Write base address and mask
+        _base_addr_reg.write(base_addr_reg_t::BASE_ADDR, base_addr);
+        _addr_mask_reg.write(addr_mask_reg_t::ADDR_MASK, ~size_mask);
+
+        //Re-arm the FIFO
+        flush();
+    }
+
+    virtual boost::uint32_t get_bytes_occupied() {
+        return _fifo_readback.get_occupied_cnt() * 8;
     }
 
     virtual bool ext_bist_supported() {
@@ -257,6 +334,18 @@ public:
     }
 
 private:
+    void _wait_for_fifo_empty()
+    {
+        boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
+        boost::posix_time::time_duration elapsed;
+
+        while (_fifo_readback.is_fifo_busy()) {
+            boost::this_thread::sleep(boost::posix_time::microsec(1000));
+            elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+            if (elapsed.total_milliseconds() > 100) break;
+        }
+    }
+
     void _wait_for_bist_done(boost::uint32_t timeout_ms, bool force_stop = false)
     {
         boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
@@ -280,6 +369,9 @@ private:
     bool            _has_ext_bist;
 
     fifo_readback       _fifo_readback;
+    fifo_ctrl_reg_t     _fifo_ctrl_reg;
+    base_addr_reg_t     _base_addr_reg;
+    addr_mask_reg_t     _addr_mask_reg;
     bist_ctrl_reg_t     _bist_ctrl_reg;
     bist_cfg_reg_t      _bist_cfg_reg;
     bist_delay_reg_t    _bist_delay_reg;

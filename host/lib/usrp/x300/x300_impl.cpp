@@ -753,6 +753,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 mb.zpu_ctrl,
                 SR_ADDR(SET0_BASE, ZPU_SR_DRAM_FIFO0+(i*NUM_REGS)),
                 SR_ADDR(SET0_BASE, ZPU_RB_DRAM_FIFO0+i));
+            mb.dram_buff_ctrl[i]->resize(X300_DRAM_FIFO_SIZE * i, X300_DRAM_FIFO_SIZE);
+
             if (mb.dram_buff_ctrl[i]->ext_bist_supported()) {
                 UHD_MSG(status) << boost::format("Running BIST for DRAM FIFO %d... ") % i;
                 boost::uint32_t bisterr = mb.dram_buff_ctrl[i]->run_bist();

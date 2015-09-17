@@ -61,6 +61,7 @@ static const size_t X300_TX_HW_BUFF_SIZE_SRAM       = 520*1024;      //512K SRAM
 static const size_t X300_TX_FC_RESPONSE_FREQ_SRAM   = 8;             //per flow-control window
 static const size_t X300_TX_HW_BUFF_SIZE_DRAM       = 128*1024;
 static const size_t X300_TX_FC_RESPONSE_FREQ_DRAM   = 32;
+static const boost::uint32_t X300_DRAM_FIFO_SIZE    = 32*1024*1024;
 
 static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
 static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
