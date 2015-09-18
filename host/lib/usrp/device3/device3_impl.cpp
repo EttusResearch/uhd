@@ -119,8 +119,8 @@ void device3_impl::enumerate_rfnoc_blocks(
         UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control #%d (SID: %s)...") % i % xport.send_sid.to_pp_string_hex());
         radio_ctrl_core_3000::sptr ctrl = radio_ctrl_core_3000::make(
                 endianness == ENDIANNESS_BIG,
-                xport.recv,
                 xport.send,
+                xport.recv,
                 xport.send_sid,
                 str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint())
         );
