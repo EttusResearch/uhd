@@ -414,7 +414,6 @@ def write_manual_file(output_filename):
         if not func_list_tree[func['category']].has_key(func['name']):
             func_list_tree[func['category']][func['name']] = []
         func_list_tree[func['category']][func['name']].append(func)
-    print 'woooooooohoooooooooooo'
     open(output_filename, 'w').write(parse_tmpl(DOXY_TEMPLATE, func_list_tree=func_list_tree))
 
 
