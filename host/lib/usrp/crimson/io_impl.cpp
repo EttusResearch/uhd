@@ -232,9 +232,9 @@ public:
 				size_t remaining_bytes = (nsamps_per_buff*4) - ret;
 
 				if (remaining_bytes >= CRIMSON_MAX_MTU) {
-					ret += _udp_stream[i] -> stream_out((void*)vita_buf, CRIMSON_MAX_MTU);
+					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
 				} else {
-					ret += _udp_stream[i] -> stream_out((void*)vita_buf, remaining_bytes);
+					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, remaining_bytes);
 				}
 			}
 		}
