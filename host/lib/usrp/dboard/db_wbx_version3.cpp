@@ -129,29 +129,29 @@ wbx_base::wbx_version3::wbx_version3(wbx_base *_self_wbx_base) {
     //slip between bursts).  set TX gain iobits to min gain (max attenuation)
     //when RX_ONLY or IDLE to suppress LO leakage
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
-            dboard_iface::ATR_REG_IDLE, v3_tx_mod, \
+            gpio_atr::ATR_REG_IDLE, v3_tx_mod, \
             TX_ATTN_MASK | TX_MIXER_DIS | v3_tx_mod);
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
-            dboard_iface::ATR_REG_RX_ONLY, v3_tx_mod, \
+            gpio_atr::ATR_REG_RX_ONLY, v3_tx_mod, \
             TX_ATTN_MASK | TX_MIXER_DIS | v3_tx_mod);
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
-            dboard_iface::ATR_REG_TX_ONLY, v3_tx_mod, \
+            gpio_atr::ATR_REG_TX_ONLY, v3_tx_mod, \
             TX_ATTN_MASK | TX_MIXER_DIS | v3_tx_mod);
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
-            dboard_iface::ATR_REG_FULL_DUPLEX, v3_tx_mod, \
+            gpio_atr::ATR_REG_FULL_DUPLEX, v3_tx_mod, \
             TX_ATTN_MASK | TX_MIXER_DIS | v3_tx_mod);
 
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
-            dboard_iface::ATR_REG_IDLE, \
+            gpio_atr::ATR_REG_IDLE, \
             RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
-            dboard_iface::ATR_REG_TX_ONLY, \
+            gpio_atr::ATR_REG_TX_ONLY, \
             RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
-            dboard_iface::ATR_REG_RX_ONLY, \
+            gpio_atr::ATR_REG_RX_ONLY, \
             RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
     self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
-            dboard_iface::ATR_REG_FULL_DUPLEX, \
+            gpio_atr::ATR_REG_FULL_DUPLEX, \
             RX_MIXER_ENB, RX_MIXER_DIS | RX_MIXER_ENB);
 }
 
@@ -181,8 +181,8 @@ double wbx_base::wbx_version3::set_tx_gain(double gain, const std::string &name)
 
         //write the new gain to tx gpio outputs
         //Update ATR with gain io_bits, only update for TX_ONLY and FULL_DUPLEX ATR states
-        self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     io_bits, TX_ATTN_MASK);
-        self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, io_bits, TX_ATTN_MASK);
+        self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_TX_ONLY,     io_bits, TX_ATTN_MASK);
+        self_base->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_FULL_DUPLEX, io_bits, TX_ATTN_MASK);
     }
     else UHD_THROW_INVALID_CODE_PATH();
     return self_base->_tx_gains[name]; //shadow

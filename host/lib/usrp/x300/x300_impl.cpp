@@ -47,6 +47,7 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 using namespace uhd::niusrprio;
+using namespace uhd::usrp::gpio_atr;
 using namespace uhd::usrp::x300;
 namespace asio = boost::asio;
 
@@ -749,15 +750,15 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
-    mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
+    mb.fp_gpio = gpio_atr_3000::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
         _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
             .set(0)
-            .subscribe(boost::bind(&x300_impl::set_fp_gpio, this, mb.fp_gpio, attr.first, _1));
+            .subscribe(boost::bind(&gpio_atr_3000::set_gpio_attr, mb.fp_gpio, attr.first, _1));
     }
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
-        .publish(boost::bind(&x300_impl::get_fp_gpio, this, mb.fp_gpio));
+        .publish(boost::bind(&gpio_atr_3000::read_gpio, mb.fp_gpio));
 
     ////////////////////////////////////////////////////////////////////
     // register the time keepers - only one can be the highlander
@@ -930,7 +931,8 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     perif.spi = spi_core_3000::make(perif.ctrl, radio::sr_addr(radio::SPI), radio::RB32_SPI);
     perif.adc = x300_adc_ctrl::make(perif.spi, DB_ADC_SEN);
     perif.dac = x300_dac_ctrl::make(perif.spi, DB_DAC_SEN, mb.clock->get_master_clock_rate());
-    perif.leds = gpio_core_200_32wo::make(perif.ctrl, radio::sr_addr(radio::LEDS));
+    perif.leds = gpio_atr_3000::make_write_only(perif.ctrl, radio::sr_addr(radio::LEDS));
+    perif.leds->set_atr_mode(MODE_ATR, 0xFFFFFFFF);
     perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
     perif.rx_fe->set_dc_offset(rx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
     perif.rx_fe->set_dc_offset_auto(rx_frontend_core_200::DEFAULT_DC_OFFSET_ENABLE);
@@ -1014,7 +1016,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
 
     //create a new dboard interface
     x300_dboard_iface_config_t db_config;
-    db_config.gpio = gpio_core_200::make(perif.ctrl, radio::sr_addr(radio::GPIO), radio::RB32_GPIO);
+    db_config.gpio = db_gpio_atr_3000::make(perif.ctrl, radio::sr_addr(radio::GPIO), radio::RB32_GPIO);
     db_config.spi = perif.spi;
     db_config.rx_spi_slaveno = DB_RX_SEN;
     db_config.tx_spi_slaveno = DB_TX_SEN;
@@ -1295,16 +1297,16 @@ boost::uint32_t x300_impl::allocate_sid(mboard_members_t &mb, const sid_config_t
     return sid;
 }
 
-void x300_impl::update_atr_leds(gpio_core_200_32wo::sptr leds, const std::string &rx_ant)
+void x300_impl::update_atr_leds(gpio_atr_3000::sptr leds, const std::string &rx_ant)
 {
     const bool is_txrx = (rx_ant == "TX/RX");
     const int rx_led = (1 << 2);
     const int tx_led = (1 << 1);
     const int txrx_led = (1 << 0);
-    leds->set_atr_reg(dboard_iface::ATR_REG_IDLE, 0);
-    leds->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY, is_txrx? txrx_led : rx_led);
-    leds->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, tx_led);
-    leds->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, rx_led | tx_led);
+    leds->set_atr_reg(ATR_REG_IDLE, 0);
+    leds->set_atr_reg(ATR_REG_RX_ONLY, is_txrx? txrx_led : rx_led);
+    leds->set_atr_reg(ATR_REG_TX_ONLY, tx_led);
+    leds->set_atr_reg(ATR_REG_FULL_DUPLEX, rx_led | tx_led);
 }
 
 void x300_impl::set_tick_rate(mboard_members_t &mb, const double rate)
@@ -1506,30 +1508,6 @@ void x300_impl::set_mb_eeprom(i2c_iface::sptr i2c, const mboard_eeprom_t &mb_eep
 {
     i2c_iface::sptr eeprom16 = i2c->eeprom16();
     mb_eeprom.commit(*eeprom16, "X300");
-}
-
-/***********************************************************************
- * front-panel GPIO
- **********************************************************************/
-
-boost::uint32_t x300_impl::get_fp_gpio(gpio_core_200::sptr gpio)
-{
-    return boost::uint32_t(gpio->read_gpio(dboard_iface::UNIT_RX));
-}
-
-void x300_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, const boost::uint32_t value)
-{
-    switch (attr)
-    {
-    case GPIO_CTRL:   return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    case GPIO_DDR:    return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    case GPIO_OUT:    return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    case GPIO_ATR_0X: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    case GPIO_ATR_RX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    case GPIO_ATR_TX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    case GPIO_ATR_XX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
-    default:        UHD_THROW_INVALID_CODE_PATH();
-    }
 }
 
 /***********************************************************************

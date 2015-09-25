@@ -1348,10 +1348,10 @@ public:
             if (attr == "CTRL") iface->set_pin_ctrl(unit, boost::uint16_t(value), boost::uint16_t(mask));
             if (attr == "DDR") iface->set_gpio_ddr(unit, boost::uint16_t(value), boost::uint16_t(mask));
             if (attr == "OUT") iface->set_gpio_out(unit, boost::uint16_t(value), boost::uint16_t(mask));
-            if (attr == "ATR_0X") iface->set_atr_reg(unit, dboard_iface::ATR_REG_IDLE, boost::uint16_t(value), boost::uint16_t(mask));
-            if (attr == "ATR_RX") iface->set_atr_reg(unit, dboard_iface::ATR_REG_RX_ONLY, boost::uint16_t(value), boost::uint16_t(mask));
-            if (attr == "ATR_TX") iface->set_atr_reg(unit, dboard_iface::ATR_REG_TX_ONLY, boost::uint16_t(value), boost::uint16_t(mask));
-            if (attr == "ATR_XX") iface->set_atr_reg(unit, dboard_iface::ATR_REG_FULL_DUPLEX, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "ATR_0X") iface->set_atr_reg(unit, gpio_atr::ATR_REG_IDLE, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "ATR_RX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "ATR_TX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "ATR_XX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX, boost::uint16_t(value), boost::uint16_t(mask));
         }
     }
 
@@ -1369,10 +1369,10 @@ public:
             if (attr == "CTRL") return iface->get_pin_ctrl(unit);
             if (attr == "DDR") return iface->get_gpio_ddr(unit);
             if (attr == "OUT") return iface->get_gpio_out(unit);
-            if (attr == "ATR_0X") return iface->get_atr_reg(unit, dboard_iface::ATR_REG_IDLE);
-            if (attr == "ATR_RX") return iface->get_atr_reg(unit, dboard_iface::ATR_REG_RX_ONLY);
-            if (attr == "ATR_TX") return iface->get_atr_reg(unit, dboard_iface::ATR_REG_TX_ONLY);
-            if (attr == "ATR_XX") return iface->get_atr_reg(unit, dboard_iface::ATR_REG_FULL_DUPLEX);
+            if (attr == "ATR_0X") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_IDLE);
+            if (attr == "ATR_RX") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY);
+            if (attr == "ATR_TX") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY);
+            if (attr == "ATR_XX") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX);
             if (attr == "READBACK") return iface->read_gpio(unit);
         }
         return 0;

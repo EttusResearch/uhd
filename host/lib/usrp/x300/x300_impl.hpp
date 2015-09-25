@@ -41,7 +41,7 @@
 #include "radio_ctrl_core_3000.hpp"
 #include "rx_frontend_core_200.hpp"
 #include "tx_frontend_core_200.hpp"
-#include "gpio_core_200.hpp"
+#include "gpio_atr_3000.hpp"
 #include <boost/weak_ptr.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -123,7 +123,7 @@ enum
 
 struct x300_dboard_iface_config_t
 {
-    gpio_core_200::sptr gpio;
+    uhd::usrp::gpio_atr::db_gpio_atr_3000::sptr gpio;
     spi_core_3000::sptr spi;
     size_t rx_spi_slaveno;
     size_t tx_spi_slaveno;
@@ -185,7 +185,7 @@ private:
         rx_dsp_core_3000::sptr ddc;
         tx_vita_core_3000::sptr deframer;
         tx_dsp_core_3000::sptr duc;
-        gpio_core_200_32wo::sptr leds;
+        uhd::usrp::gpio_atr::gpio_atr_3000::sptr leds;
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
         //Registers
@@ -229,7 +229,7 @@ private:
         //other perifs on mboard
         x300_clock_ctrl::sptr clock;
         uhd::gps_ctrl::sptr gps;
-        gpio_core_200::sptr fp_gpio;
+        uhd::usrp::gpio_atr::gpio_atr_3000::sptr fp_gpio;
 
         uhd::usrp::x300::fw_regmap_t::sptr fw_regmap;
 
@@ -365,9 +365,7 @@ private:
     void check_fw_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
     void check_fpga_compat(const uhd::fs_path &mb_path, const mboard_members_t &members);
 
-    void update_atr_leds(gpio_core_200_32wo::sptr, const std::string &ant);
-    boost::uint32_t get_fp_gpio(gpio_core_200::sptr);
-    void set_fp_gpio(gpio_core_200::sptr, const gpio_attr_t, const boost::uint32_t);
+    void update_atr_leds(uhd::usrp::gpio_atr::gpio_atr_3000::sptr, const std::string &ant);
 
     void self_cal_adc_capture_delay(mboard_members_t& mb, const size_t radio_i, bool print_status = false);
     double self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay = false);

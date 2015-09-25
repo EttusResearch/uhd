@@ -22,6 +22,7 @@
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <uhd/usrp/gpio_defs.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include <string>
@@ -67,14 +68,6 @@ public:
         UNIT_TX = int('t')
     };
 
-    //! possible atr registers
-    enum atr_reg_t{
-        ATR_REG_IDLE        = int('i'),
-        ATR_REG_TX_ONLY     = int('t'),
-        ATR_REG_RX_ONLY     = int('r'),
-        ATR_REG_FULL_DUPLEX = int('f')
-    };
-
     //! aux dac selection enums (per unit)
     enum aux_dac_t{
         AUX_DAC_A = int('a'),
@@ -88,6 +81,8 @@ public:
         AUX_ADC_A = int('a'),
         AUX_ADC_B = int('b')
     };
+
+    typedef uhd::usrp::gpio_atr::gpio_atr_reg_t atr_reg_t;
 
     /*!
      * Get special properties information for this dboard slot.

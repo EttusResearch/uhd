@@ -223,7 +223,7 @@ public:
                 _soft_copy.mark_clean();
             }
         } else {
-            throw uhd::not_implemented_error("soft_register is not writable.");
+            throw uhd::not_implemented_error("soft_register is not writable or uninitialized.");
         }
     }
 
@@ -244,7 +244,7 @@ public:
             }
             _soft_copy.mark_clean();
         } else {
-            throw uhd::not_implemented_error("soft_register is not readable.");
+            throw uhd::not_implemented_error("soft_register is not readable or uninitialized.");
         }
     }
 

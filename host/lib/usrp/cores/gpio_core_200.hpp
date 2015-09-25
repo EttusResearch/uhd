@@ -20,34 +20,13 @@
 
 #include <uhd/config.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
+#include <uhd/usrp/gpio_defs.hpp>
 #include <boost/assign.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <map>
-
-typedef enum {
-    GPIO_CTRL,
-    GPIO_DDR,
-    GPIO_OUT,
-    GPIO_ATR_0X,
-    GPIO_ATR_RX,
-    GPIO_ATR_TX,
-    GPIO_ATR_XX
-} gpio_attr_t;
-
-typedef std::map<gpio_attr_t,std::string> gpio_attr_map_t;
-static const gpio_attr_map_t gpio_attr_map =
-    boost::assign::map_list_of
-        (GPIO_CTRL,   "CTRL")
-        (GPIO_DDR,    "DDR")
-        (GPIO_OUT,    "OUT")
-        (GPIO_ATR_0X, "ATR_0X")
-        (GPIO_ATR_RX, "ATR_RX")
-        (GPIO_ATR_TX, "ATR_TX")
-        (GPIO_ATR_XX, "ATR_XX")
-;
 
 class gpio_core_200 : boost::noncopyable{
 public:

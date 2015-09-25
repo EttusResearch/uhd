@@ -318,14 +318,14 @@ public:
         write_gpio();
 
         // Configure ATR
-        _iface->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE, _tx_gpio_reg.atr_idle);
-        _iface->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY, _tx_gpio_reg.atr_tx);
-        _iface->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY, _tx_gpio_reg.atr_rx);
-        _iface->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, _tx_gpio_reg.atr_full_duplex);
-        _iface->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, _rx_gpio_reg.atr_idle);
-        _iface->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, _rx_gpio_reg.atr_tx);
-        _iface->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, _rx_gpio_reg.atr_rx);
-        _iface->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, _rx_gpio_reg.atr_full_duplex);
+        _iface->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_IDLE, _tx_gpio_reg.atr_idle);
+        _iface->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_TX_ONLY, _tx_gpio_reg.atr_tx);
+        _iface->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_RX_ONLY, _tx_gpio_reg.atr_rx);
+        _iface->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_FULL_DUPLEX, _tx_gpio_reg.atr_full_duplex);
+        _iface->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_IDLE, _rx_gpio_reg.atr_idle);
+        _iface->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_TX_ONLY, _rx_gpio_reg.atr_tx);
+        _iface->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_RX_ONLY, _rx_gpio_reg.atr_rx);
+        _iface->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_FULL_DUPLEX, _rx_gpio_reg.atr_full_duplex);
 
         // Engage ATR control (1 is ATR control, 0 is manual control)
         _iface->set_pin_ctrl(dboard_iface::UNIT_TX, _tx_gpio_reg.atr_mask);

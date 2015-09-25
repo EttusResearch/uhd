@@ -41,6 +41,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::usrp::gpio_atr;
 using namespace uhd::transport;
 
 static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
@@ -656,15 +657,15 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
-    _radio_perifs[0].fp_gpio = gpio_core_200::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
+    _radio_perifs[0].fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
             _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
             .set(0)
-            .subscribe(boost::bind(&b200_impl::set_fp_gpio, this, _radio_perifs[0].fp_gpio, attr.first, _1));
+            .subscribe(boost::bind(&gpio_atr_3000::set_gpio_attr, _radio_perifs[0].fp_gpio, attr.first, _1));
     }
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
-        .publish(boost::bind(&b200_impl::get_fp_gpio, this, _radio_perifs[0].fp_gpio));
+        .publish(boost::bind(&gpio_atr_3000::read_gpio, _radio_perifs[0].fp_gpio));
 
     ////////////////////////////////////////////////////////////////////
     // dboard eeproms but not really
@@ -751,7 +752,8 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // Set up peripherals
     ////////////////////////////////////////////////////////////////////
-    perif.atr = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_ATR));
+    perif.atr = gpio_atr_3000::make_write_only(perif.ctrl, TOREG(SR_ATR));
+    perif.atr->set_atr_mode(MODE_ATR, 0xFFFFFFFF);
     // create rx dsp control objects
     perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP), true /*is_b200?*/);
@@ -962,27 +964,6 @@ void b200_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom)
     mb_eeprom.commit(*_iface, "B200");
 }
 
-
-boost::uint32_t b200_impl::get_fp_gpio(gpio_core_200::sptr gpio)
-{
-    return boost::uint32_t(gpio->read_gpio(dboard_iface::UNIT_RX));
-}
-
-void b200_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, const boost::uint32_t value)
-{
-    switch (attr)
-    {
-    case GPIO_CTRL:   return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    case GPIO_DDR:    return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    case GPIO_OUT:    return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    case GPIO_ATR_0X: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    case GPIO_ATR_RX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    case GPIO_ATR_TX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    case GPIO_ATR_XX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
-    default:        UHD_THROW_INVALID_CODE_PATH();
-    }
-}
-
 /***********************************************************************
  * Reference time and clock
  **********************************************************************/
@@ -1152,11 +1133,11 @@ void b200_impl::update_atrs(void)
         if (enb_rx and enb_tx) fd = STATE_FDX1_TXRX;
         if (enb_rx and not enb_tx) fd = rxonly;
         if (not enb_rx and enb_tx) fd = txonly;
-        gpio_core_200_32wo::sptr atr = perif.atr;
-        atr->set_atr_reg(dboard_iface::ATR_REG_IDLE, STATE_OFF);
-        atr->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY, rxonly);
-        atr->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, txonly);
-        atr->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, fd);
+        gpio_atr_3000::sptr atr = perif.atr;
+        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF);
+        atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly);
+        atr->set_atr_reg(ATR_REG_TX_ONLY, txonly);
+        atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd);
     }
     if (_radio_perifs.size() > _fe2 and _radio_perifs[_fe2].atr)
     {
@@ -1170,11 +1151,11 @@ void b200_impl::update_atrs(void)
         if (enb_rx and enb_tx) fd = STATE_FDX2_TXRX;
         if (enb_rx and not enb_tx) fd = rxonly;
         if (not enb_rx and enb_tx) fd = txonly;
-        gpio_core_200_32wo::sptr atr = perif.atr;
-        atr->set_atr_reg(dboard_iface::ATR_REG_IDLE, STATE_OFF);
-        atr->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY, rxonly);
-        atr->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, txonly);
-        atr->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, fd);
+        gpio_atr_3000::sptr atr = perif.atr;
+        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF);
+        atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly);
+        atr->set_atr_reg(ATR_REG_TX_ONLY, txonly);
+        atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd);
     }
 }
 

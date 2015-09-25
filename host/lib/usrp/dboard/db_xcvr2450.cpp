@@ -315,12 +315,12 @@ xcvr2450::~xcvr2450(void){
 
 void xcvr2450::spi_reset(void){
     //spi reset mode: global enable = off, tx and rx enable = on
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE, TX_ENB_TXIO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, RX_ENB_RXIO | POWER_DOWN_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_IDLE, TX_ENB_TXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_IDLE, RX_ENB_RXIO | POWER_DOWN_RXIO);
     boost::this_thread::sleep(boost::posix_time::milliseconds(10));
 
     //take it back out of spi reset mode and wait a bit
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, RX_DIS_RXIO | POWER_UP_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_IDLE, RX_DIS_RXIO | POWER_UP_RXIO);
     boost::this_thread::sleep(boost::posix_time::milliseconds(10));
 }
 
@@ -337,16 +337,16 @@ void xcvr2450::update_atr(void){
     int ad9515div  = (_ad9515div == 3)? AD9515DIV_3_TXIO : AD9515DIV_2_TXIO;
 
     //set the tx registers
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        band_sel | ad9515div | TX_DIS_TXIO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     band_sel | ad9515div | TX_DIS_TXIO | rx_ant_sel);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     band_sel | ad9515div | TX_ENB_TXIO | tx_ant_sel);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, band_sel | ad9515div | TX_ENB_TXIO | xx_ant_sel);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_IDLE,        band_sel | ad9515div | TX_DIS_TXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_RX_ONLY,     band_sel | ad9515div | TX_DIS_TXIO | rx_ant_sel);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_TX_ONLY,     band_sel | ad9515div | TX_ENB_TXIO | tx_ant_sel);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_FULL_DUPLEX, band_sel | ad9515div | TX_ENB_TXIO | xx_ant_sel);
 
     //set the rx registers
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        POWER_UP_RXIO | RX_DIS_RXIO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     POWER_UP_RXIO | RX_ENB_RXIO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     POWER_UP_RXIO | RX_DIS_RXIO);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, POWER_UP_RXIO | RX_DIS_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_IDLE,        POWER_UP_RXIO | RX_DIS_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_RX_ONLY,     POWER_UP_RXIO | RX_ENB_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_TX_ONLY,     POWER_UP_RXIO | RX_DIS_RXIO);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_FULL_DUPLEX, POWER_UP_RXIO | RX_DIS_RXIO);
 }
 
 /***********************************************************************
