@@ -472,11 +472,10 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         .add_coerced_subscriber(boost::bind(&b100_impl::set_db_eeprom, this, "gdb", _1));
 
     //create a new dboard interface and manager
-    _dboard_iface = make_b100_dboard_iface(_fifo_ctrl, _fpga_i2c_ctrl, _fifo_ctrl/*spi*/, _clock_ctrl, _codec_ctrl);
-    _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_dboard_iface);
     _dboard_manager = dboard_manager::make(
         rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
-        _dboard_iface, _tree->subtree(mb_path / "dboards/A")
+        make_b100_dboard_iface(_fifo_ctrl, _fpga_i2c_ctrl, _fifo_ctrl/*spi*/, _clock_ctrl, _codec_ctrl),
+        _tree->subtree(mb_path / "dboards/A")
     );
 
     //bind frontend corrections to the dboard freq props

@@ -74,6 +74,40 @@ public:
     );
 
     /*!
+     * Register a restricted rx or tx dboard into the system.
+     * For single subdevice boards, omit subdev_names.
+     * The iface for a restricted board is not registered into the property tree.
+     * \param dboard_id the dboard id (rx or tx)
+     * \param dboard_ctor the dboard constructor function pointer
+     * \param name the canonical name for the dboard represented
+     * \param subdev_names the names of the subdevs on this dboard
+     */
+    static void register_dboard_restricted(
+        const dboard_id_t &dboard_id,
+        dboard_ctor_t dboard_ctor,
+        const std::string &name,
+        const std::vector<std::string> &subdev_names = std::vector<std::string>(1, "0")
+    );
+
+    /*!
+     * Register a restricted xcvr dboard into the system.
+     * For single subdevice boards, omit subdev_names.
+     * The iface for a restricted board is not registered into the property tree.
+     * \param rx_dboard_id the rx unit dboard id
+     * \param tx_dboard_id the tx unit dboard id
+     * \param dboard_ctor the dboard constructor function pointer
+     * \param name the canonical name for the dboard represented
+     * \param subdev_names the names of the subdevs on this dboard
+     */
+    static void register_dboard_restricted(
+        const dboard_id_t &rx_dboard_id,
+        const dboard_id_t &tx_dboard_id,
+        dboard_ctor_t dboard_ctor,
+        const std::string &name,
+        const std::vector<std::string> &subdev_names = std::vector<std::string>(1, "0")
+    );
+
+    /*!
      * Make a new dboard manager.
      * \param rx_dboard_id the id of the rx dboard
      * \param tx_dboard_id the id of the tx dboard

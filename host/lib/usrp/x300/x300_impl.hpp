@@ -335,7 +335,6 @@ private:
     ////////////////////////////////////////////////////////////////////
 
     uhd::dict<std::string, uhd::usrp::dboard_manager::sptr> _dboard_managers;
-    uhd::dict<std::string, uhd::usrp::dboard_iface::sptr> _dboard_ifaces;
 
     void set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
     void set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);

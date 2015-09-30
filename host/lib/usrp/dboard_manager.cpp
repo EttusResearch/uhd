@@ -37,11 +37,11 @@ using namespace uhd::usrp;
  **********************************************************************/
 class dboard_key_t{
 public:
-    dboard_key_t(const dboard_id_t &id = dboard_id_t::none()):
-        _rx_id(id), _tx_id(id), _xcvr(false){}
+    dboard_key_t(const dboard_id_t &id = dboard_id_t::none(), bool restricted = false):
+        _rx_id(id), _tx_id(id), _xcvr(false), _restricted(restricted) {}
 
-    dboard_key_t(const dboard_id_t &rx_id, const dboard_id_t &tx_id):
-        _rx_id(rx_id), _tx_id(tx_id), _xcvr(true){}
+    dboard_key_t(const dboard_id_t &rx_id, const dboard_id_t &tx_id, bool restricted = false):
+        _rx_id(rx_id), _tx_id(tx_id), _xcvr(true), _restricted(restricted) {}
 
     dboard_id_t xx_id(void) const{
         UHD_ASSERT_THROW(not this->is_xcvr());
@@ -62,9 +62,14 @@ public:
         return this->_xcvr;
     }
 
+    bool is_restricted(void) const{
+        return this->_restricted;
+    }
+
 private:
     dboard_id_t _rx_id, _tx_id;
     bool _xcvr;
+    bool _restricted;
 };
 
 bool operator==(const dboard_key_t &lhs, const dboard_key_t &rhs){
@@ -123,6 +128,25 @@ void dboard_manager::register_dboard(
     const std::vector<std::string> &subdev_names
 ){
     register_dboard_key(dboard_key_t(rx_dboard_id, tx_dboard_id), dboard_ctor, name, subdev_names);
+}
+
+void dboard_manager::register_dboard_restricted(
+    const dboard_id_t &dboard_id,
+    dboard_ctor_t dboard_ctor,
+    const std::string &name,
+    const std::vector<std::string> &subdev_names
+){
+    register_dboard_key(dboard_key_t(dboard_id, true), dboard_ctor, name, subdev_names);
+}
+
+void dboard_manager::register_dboard_restricted(
+    const dboard_id_t &rx_dboard_id,
+    const dboard_id_t &tx_dboard_id,
+    dboard_ctor_t dboard_ctor,
+    const std::string &name,
+    const std::vector<std::string> &subdev_names
+){
+    register_dboard_key(dboard_key_t(rx_dboard_id, tx_dboard_id, true), dboard_ctor, name, subdev_names);
 }
 
 std::string dboard_id_t::to_cname(void) const{
@@ -243,6 +267,11 @@ void dboard_manager_impl::init(
 
     //initialize the gpio pins before creating subdevs
     set_nice_dboard_if();
+
+    //conditionally register the dboard iface in the tree
+    if (not (rx_dboard_key.is_restricted() or tx_dboard_key.is_restricted() or xcvr_dboard_key.is_restricted())) {
+        subtree->create<dboard_iface::sptr>("iface").set(_iface);
+    }
 
     //dboard constructor args
     dboard_ctor_args_t db_ctor_args;
