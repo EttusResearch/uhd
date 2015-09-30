@@ -766,7 +766,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 }
             } else {
                 if (mb.dram_buff_ctrl[i]->run_bist() != 0) {
-                    throw uhd::runtime_error(str(boost::format("DRAM FIFO %d BIST failed! (code: %d)\n") % i));
+                    throw uhd::runtime_error(str(boost::format("DRAM FIFO %d BIST failed!\n") % i));
                 }
             }
         }

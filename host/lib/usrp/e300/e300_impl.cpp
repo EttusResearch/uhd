@@ -1027,7 +1027,6 @@ void e300_impl::_setup_radio(const size_t dspno)
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
         .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / str(boost::format("%u") % dspno);
     perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
