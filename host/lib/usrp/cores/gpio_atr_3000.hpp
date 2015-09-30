@@ -30,6 +30,8 @@ class gpio_atr_3000 : boost::noncopyable {
 public:
     typedef boost::shared_ptr<gpio_atr_3000> sptr;
 
+    static const boost::uint32_t MASK_SET_ALL = 0xFFFFFFFF;
+
     virtual ~gpio_atr_3000(void) {};
 
     /*!
@@ -39,7 +41,10 @@ public:
      * \param base base settings offset for GPIO ATR registers
      * \param base readback offset for GPIO ATR registers
      */
-    static sptr make(uhd::wb_iface::sptr iface, const size_t base, const size_t rb_addr);
+    static sptr make(
+        uhd::wb_iface::sptr iface,
+        const uhd::wb_iface::wb_addr_type base,
+        const uhd::wb_iface::wb_addr_type rb_addr);
 
     /*!
      * Create a write-only GPIO ATR interface object
@@ -47,7 +52,8 @@ public:
      * \param iface register iface to GPIO ATR registers
      * \param base base settings offset for GPIO ATR registers
      */
-    static sptr make_write_only(uhd::wb_iface::sptr iface, const size_t base);
+    static sptr make_write_only(
+        uhd::wb_iface::sptr iface, const uhd::wb_iface::wb_addr_type base);
 
     /*!
      * Select the ATR mode for all bits in the mask
@@ -72,7 +78,7 @@ public:
      * \param value the value to write
      * \param mask only writes to the bits where mask is non-zero
      */
-    virtual void set_atr_reg(const gpio_atr_reg_t atr, const boost::uint32_t value, const boost::uint32_t mask = 0xFFFFFFFF) = 0;
+    virtual void set_atr_reg(const gpio_atr_reg_t atr, const boost::uint32_t value, const boost::uint32_t mask = MASK_SET_ALL) = 0;
 
     /*!
      * Write to a static GPIO output
@@ -80,7 +86,7 @@ public:
      * \param value the value to write
      * \param mask only writes to the bits where mask is non-zero
      */
-    inline void set_gpio_out(const boost::uint32_t value, const boost::uint32_t mask = 0xFFFFFFFF) {
+    inline void set_gpio_out(const boost::uint32_t value, const boost::uint32_t mask = MASK_SET_ALL) {
         set_atr_reg(ATR_REG_IDLE, value, mask);
     }
 
@@ -117,7 +123,10 @@ public:
      * \param base base settings offset for GPIO ATR registers
      * \param base readback offset for GPIO ATR registers
      */
-    static sptr make(uhd::wb_iface::sptr iface, const size_t base, const size_t rb_addr);
+    static sptr make(
+        uhd::wb_iface::sptr iface,
+        const uhd::wb_iface::wb_addr_type base,
+        const uhd::wb_iface::wb_addr_type rb_addr);
 
     /*!
      * Configure the GPIO mode for all pins in the daughterboard connector

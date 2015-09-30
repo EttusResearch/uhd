@@ -40,7 +40,7 @@ public:
     gpio_atr_3000_impl(
         wb_iface::sptr iface,
         const wb_iface::wb_addr_type base,
-        const wb_iface::wb_addr_type rb_addr = 0xFFFFFFFF
+        const wb_iface::wb_addr_type rb_addr = READBACK_DISABLED
     ):
         _iface(iface), _rb_addr(rb_addr),
         _atr_idle_reg(REG_ATR_IDLE_OFFSET),
@@ -60,13 +60,13 @@ public:
 
     virtual void set_atr_mode(const gpio_atr_mode_t mode, const boost::uint32_t mask)
     {
-        _atr_disable_reg.set_with_mask((mode==MODE_ATR)?0:0xFFFFFFFF, mask);
+        _atr_disable_reg.set_with_mask((mode==MODE_ATR) ? ~MASK_SET_ALL : MASK_SET_ALL, mask);
         _atr_disable_reg.flush();
     }
 
     virtual void set_gpio_ddr(const gpio_ddr_t dir, const boost::uint32_t mask)
     {
-        _ddr_reg.set_with_mask((dir==DDR_INPUT)?0:0xFFFFFFFF, mask);
+        _ddr_reg.set_with_mask((dir==DDR_INPUT) ? ~MASK_SET_ALL : MASK_SET_ALL, mask);
         _ddr_reg.flush();
     }
 
@@ -86,7 +86,7 @@ public:
 
     virtual boost::uint32_t read_gpio()
     {
-        if (_rb_addr != 0xFFFFFFFF) {
+        if (_rb_addr != READBACK_DISABLED) {
             return _iface->peek32(_rb_addr);
         } else {
             throw uhd::runtime_error("read_gpio not supported for write-only interface.");
@@ -126,6 +126,10 @@ public:
     }
 
 protected:
+    //Special RB addr value to indicate no readback
+    //This value is invalid as a real address because it is not a multiple of 4
+    static const wb_iface::wb_addr_type READBACK_DISABLED = 0xFFFFFFFF;
+
     class masked_reg_t : public uhd::soft_reg32_wo_t {
     public:
         masked_reg_t(const wb_iface::wb_addr_type offset): uhd::soft_reg32_wo_t(offset) {
@@ -147,13 +151,17 @@ protected:
     masked_reg_t            _atr_disable_reg;
 };
 
-gpio_atr_3000::sptr gpio_atr_3000::make(wb_iface::sptr iface, const size_t base, const size_t rb_addr) {
+gpio_atr_3000::sptr gpio_atr_3000::make(
+    wb_iface::sptr iface, const wb_iface::wb_addr_type base, const wb_iface::wb_addr_type rb_addr
+) {
     return sptr(new gpio_atr_3000_impl(iface, base, rb_addr));
 }
 
-gpio_atr_3000::sptr gpio_atr_3000::make_write_only(wb_iface::sptr iface, const size_t base) {
+gpio_atr_3000::sptr gpio_atr_3000::make_write_only(
+    wb_iface::sptr iface, const wb_iface::wb_addr_type base
+) {
     gpio_atr_3000::sptr gpio_iface(new gpio_atr_3000_impl(iface, base));
-    gpio_iface->set_gpio_ddr(DDR_OUTPUT, 0xFFFFFFFF);
+    gpio_iface->set_gpio_ddr(DDR_OUTPUT, MASK_SET_ALL);
     return gpio_iface;
 }
 
@@ -207,7 +215,9 @@ private:
     }
 };
 
-db_gpio_atr_3000::sptr db_gpio_atr_3000::make(wb_iface::sptr iface, const size_t base, const size_t rb_addr) {
+db_gpio_atr_3000::sptr db_gpio_atr_3000::make(
+    wb_iface::sptr iface, const wb_iface::wb_addr_type base, const wb_iface::wb_addr_type rb_addr
+) {
     return sptr(new db_gpio_atr_3000_impl(iface, base, rb_addr));
 }
 
