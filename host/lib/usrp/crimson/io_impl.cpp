@@ -230,8 +230,8 @@ public:
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
 				std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
 				//update sample rate to fill an additional half buffer in the first second
-				_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE/2);
-				std::cout  << std::setprecision(20)<< "After Primer: " << _samp_rate[i]<< std::endl;
+			//	_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE/2);
+			//	std::cout  << std::setprecision(20)<< "After Primer: " << _samp_rate[i]<< std::endl;
 			}
 
 			// calculate how many payloads (350 samples) we still need to send out
@@ -265,7 +265,7 @@ public:
 				// calculate the error
 				fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
 				//apply correction
-				_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
+				_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/1000000;
 			}
 			std::cout  << std::setprecision(20)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 			// sending samples, restricted to a jumbo frame of CRIMSON_MAX_MTU bytes at a time
