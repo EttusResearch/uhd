@@ -228,20 +228,10 @@ public:
 			if (_samp_rate[i] == 0) {
 				std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
+				_samp_rate_usr[i] = _samp_rate[i];
 				std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
 				_last_time[i] = time_spec_t::get_system_time();
-				//update sample rate to fill an additional half buffer in the first second
-			//	_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE/2);
-			//	std::cout  << std::setprecision(20)<< "After Primer: " << _samp_rate[i]<< std::endl;
 			}
-
-			// calculate how many payloads (350 samples) we still need to send out
-			// if < 1 payload, block(wait) until enough time has elapsed for a write
-			//time_spec_t period = time_spec_t(0, (double)nsamps_per_buff / (double)_samp_rate[i] );
-			//while ( time_spec_t::get_system_time() - _last_time[i] < period) {
-				// add blocking sleep for 0.1us or less if possible
-			//}
-			//_last_time[i] = time_spec_t::get_system_time();
 
 			// continue and send out the payload
 
@@ -281,6 +271,12 @@ public:
 								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
 								//apply correction
 								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
+								//Limit the correction -magical numbers
+								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/300000)){
+									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/300000;
+								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/300000)){
+									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/300000;
+								}
 							}
 							//DEBUG: Print out adjusted sample rate
 							std::cout  << std::setprecision(20)<< "After Adjust" <<_samp_rate[i]<< std::endl;
@@ -316,6 +312,12 @@ public:
 								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
 								//apply correction
 								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
+								//Limit the correction -magical numbers
+								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/300000)){
+									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/300000;
+								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/300000)){
+									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/300000;
+								}
 							}
 							//DEBUG: Print out adjusted sample rate
 							std::cout  << std::setprecision(20)<< "After Adjust" <<_samp_rate[i]<< std::endl;
@@ -375,6 +377,7 @@ private:
 
 			// initialize sample rate
 			_samp_rate.push_back(0);
+			_samp_rate_usr.push_back(0);
 
 			// initialize the _last_time
 			_last_time.push_back(time_spec_t(0.0));
@@ -392,6 +395,7 @@ private:
 	std::vector<uhd::transport::udp_stream::sptr> _udp_stream;
 	std::vector<size_t> _channels;
 	std::vector<double> _samp_rate;
+	std::vector<double> _samp_rate_usr;
 	std::vector<time_spec_t> _last_time;
 	property_tree::sptr _tree;
 	size_t _pay_len;
