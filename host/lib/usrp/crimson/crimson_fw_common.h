@@ -40,6 +40,7 @@ extern "C" {
 #define CRIMSON_FW_COMMS_MTU (1 << 13) //8k
 
 #define CRIMSON_FW_COMMS_UDP_PORT 	 42799
+#define CRIMSON_FLOW_CNTRL_UDP_PORT 	 42808
 
 #define CRIMSON_DEFAULT_MAC_ADDR_0         {0x00, 0x50, 0xC2, 0x85, 0x3f, 0xff}
 #define CRIMSON_DEFAULT_MAC_ADDR_1         {0x00, 0x50, 0xC2, 0x85, 0x3f, 0x33}
@@ -65,7 +66,7 @@ extern "C" {
 #define CRIMSON_FW_COMMS_FLAGS_PEEK32     (1 << 3)
 
 // Crimson MTU Size
-#define CRIMSON_MAX_MTU		1400
+#define CRIMSON_MAX_MTU		10000
 
 // Crimson RF Settings
 #define CRIMSON_RF_TX_GAIN_RANGE_START	0.0

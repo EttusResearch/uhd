@@ -25,6 +25,7 @@
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/udp_stream.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
@@ -32,6 +33,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
+#include <sstream>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -181,7 +183,6 @@ private:
 	size_t _pay_len;
 	double _rate;
 	double _start_time;
-
 };
 
 class crimson_tx_streamer : public uhd::tx_streamer {
@@ -222,9 +223,45 @@ public:
 		// send to each connected stream data in buffs[i]
 		for (unsigned int i = 0; i < _channels.size(); i++) {
 
+			// update sample rate if we don't know the sample rate
+			if (_samp_rate[i] == 0) {
+				std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
+				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
+			}
+
+			// calculate how many payloads (350 samples) we still need to send out
+			// if < 1 payload, block(wait) until enough time has elapsed for a write
+			//time_spec_t period = time_spec_t(0, (double)nsamps_per_buff / (double)_samp_rate[i] );
+			//while ( time_spec_t::get_system_time() - _last_time[i] < period) {
+				// add blocking sleep for 0.1us or less if possible
+			//}
+			//_last_time[i] = time_spec_t::get_system_time();
+
+			// continue and send out the payload
+
 			//clear temp buffer and copy data into it
 			memset((void*)vita_buf, 0, vita_pck*4);
 			memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
+
+			// test read fifo
+			_flow_iface -> poke_str("Read fifo");
+			std::string fifo_lvl = _flow_iface -> peek_str();
+
+			// remove the "flow," at the beginning of the string
+			fifo_lvl.erase(0, 5);
+			std::stringstream ss(fifo_lvl);
+
+			// read in each fifo level, ignore() will skip the commas
+			double fifo[4];			
+			for (int j = 0; j < 4; j++) {
+				ss >> fifo[j];
+				ss.ignore();
+
+				// calculate the error
+				fifo[j] = (16383 - fifo[j]) / 32768.0 * 100.0;
+			}
+
+			std::cout << "FIFO LEVEL: " << fifo[0] << "%, " << fifo[1] << "%, " << fifo[2] << "%, " << fifo[3] << "%" << std::endl;
 
 			// sending samples, restricted to a jumbo frame of CRIMSON_MAX_MTU bytes at a time
 			ret = 0;
@@ -232,8 +269,18 @@ public:
 				size_t remaining_bytes = (nsamps_per_buff*4) - ret;
 
 				if (remaining_bytes >= CRIMSON_MAX_MTU) {
+					// wait for flow control
+					time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
+					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {}
+					_last_time[i] = time_spec_t::get_system_time();
+
 					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
 				} else {
+					// wait for flow control
+					time_spec_t wait = time_spec_t(0, (double)(remaining_bytes / 4.0) / (double)_samp_rate[i]);
+					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {}
+					_last_time[i] = time_spec_t::get_system_time();
+
 					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, remaining_bytes);
 				}
 			}
@@ -252,6 +299,10 @@ private:
 		// save the tree
 		_tree = tree;
 		_channels = channels;
+
+		// setup the flow control UDP channel
+    		_flow_iface = crimson_iface::make( udp_simple::make_connected(
+		        addr["addr"], BOOST_STRINGIZE(CRIMSON_FLOW_CNTRL_UDP_PORT)) );
 
 		// get the property root path
 		const fs_path mb_path   = "/mboards/0";
@@ -277,6 +328,11 @@ private:
 			// connect to UDP port
 			_udp_stream.push_back(uhd::transport::udp_stream::make_tx_stream(ip_addr, udp_port));
 
+			// initialize sample rate
+			_samp_rate.push_back(0);
+
+			// initialize the _last_time
+			_last_time.push_back(time_spec_t(0.0));
 		}
 	}
 
@@ -290,8 +346,11 @@ private:
 
 	std::vector<uhd::transport::udp_stream::sptr> _udp_stream;
 	std::vector<size_t> _channels;
+	std::vector<uint32_t> _samp_rate;
+	std::vector<time_spec_t> _last_time;
 	property_tree::sptr _tree;
 	size_t _pay_len;
+	uhd::wb_iface::sptr _flow_iface;
 };
 
 /***********************************************************************
