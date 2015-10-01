@@ -164,7 +164,7 @@ public:
         }
     }
 
-private:
+protected:
     //Special RB addr value to indicate no readback
     //This value is invalid as a real address because it is not a multiple of 4
     static const wb_iface::wb_addr_type READBACK_DISABLED = 0xFFFFFFFF;
@@ -172,11 +172,16 @@ private:
     class masked_reg_t : public uhd::soft_reg32_wo_t {
     public:
         masked_reg_t(const wb_iface::wb_addr_type offset): uhd::soft_reg32_wo_t(offset) {
-            set(REGISTER, 0);
+            uhd::soft_reg32_wo_t::set(REGISTER, 0);
         }
 
         virtual void set_with_mask(const boost::uint32_t value, const boost::uint32_t mask) {
-            set(REGISTER, (value&mask)|(get(REGISTER)&(~mask)));
+            uhd::soft_reg32_wo_t::set(REGISTER,
+                (value&mask)|(uhd::soft_reg32_wo_t::get(REGISTER)&(~mask)));
+        }
+
+        virtual boost::uint32_t get() {
+            return uhd::soft_reg32_wo_t::get(uhd::soft_reg32_wo_t::REGISTER);
         }
 
         virtual void flush() {
@@ -196,14 +201,22 @@ private:
             _atr_idle_cache = (value&mask)|(_atr_idle_cache&(~mask));
         }
 
+        virtual boost::uint32_t get() {
+            return _atr_idle_cache;
+        }
+
         void set_gpio_out_with_mask(const boost::uint32_t value, const boost::uint32_t mask) {
             _gpio_out_cache = (value&mask)|(_gpio_out_cache&(~mask));
         }
 
+        virtual boost::uint32_t get_gpio_out() {
+            return _gpio_out_cache;
+        }
+
         virtual void flush() {
             set(REGISTER,
-                (_atr_idle_cache & (~_atr_disable_reg.get(REGISTER))) |
-                (_gpio_out_cache & _atr_disable_reg.get(REGISTER))
+                (_atr_idle_cache & (~_atr_disable_reg.get())) |
+                (_gpio_out_cache & _atr_disable_reg.get())
             );
             masked_reg_t::flush();
         }
@@ -247,44 +260,75 @@ public:
     db_gpio_atr_3000_impl(wb_iface::sptr iface, const wb_iface::wb_addr_type base, const wb_iface::wb_addr_type rb_addr):
         gpio_atr_3000_impl(iface, base, rb_addr) { /* NOP */ }
 
-    inline void set_pin_ctrl(const db_unit_t unit, const boost::uint16_t value)
+    inline void set_pin_ctrl(const db_unit_t unit, const boost::uint32_t value, const boost::uint32_t mask)
     {
-        gpio_atr_3000_impl::set_atr_mode(MODE_ATR,  compute_mask(unit, value));
-        gpio_atr_3000_impl::set_atr_mode(MODE_GPIO, compute_mask(unit, ~value));
+        gpio_atr_3000_impl::set_atr_mode(MODE_ATR,  compute_mask(unit, value&mask));
+        gpio_atr_3000_impl::set_atr_mode(MODE_GPIO, compute_mask(unit, (~value)&mask));
     }
 
-    inline void set_gpio_ddr(const db_unit_t unit, const boost::uint16_t value)
+    inline boost::uint32_t get_pin_ctrl(const db_unit_t unit)
     {
-        gpio_atr_3000_impl::set_gpio_ddr(DDR_OUTPUT, compute_mask(unit, value));
-        gpio_atr_3000_impl::set_gpio_ddr(DDR_INPUT,  compute_mask(unit, ~value));
+        return (~_atr_disable_reg.get()) >> compute_shift(unit);
     }
 
-    inline void set_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr, const boost::uint16_t value)
+    inline void set_gpio_ddr(const db_unit_t unit, const boost::uint32_t value, const boost::uint32_t mask)
     {
-        gpio_atr_3000_impl::set_atr_reg(atr,
-            static_cast<boost::uint32_t>(value) << compute_shift(unit),
-            compute_mask(unit, 0xFFFF));
+        gpio_atr_3000_impl::set_gpio_ddr(DDR_OUTPUT, compute_mask(unit, value&mask));
+        gpio_atr_3000_impl::set_gpio_ddr(DDR_INPUT,  compute_mask(unit, (~value)&mask));
     }
 
-    inline void set_gpio_out(const db_unit_t unit, const boost::uint16_t value)
+    inline boost::uint32_t get_gpio_ddr(const db_unit_t unit)
+    {
+        return _ddr_reg.get() >> compute_shift(unit);
+    }
+
+    inline void set_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr, const boost::uint32_t value, const boost::uint32_t mask)
+    {
+        gpio_atr_3000_impl::set_atr_reg(atr, value << compute_shift(unit), compute_mask(unit, mask));
+    }
+
+    inline boost::uint32_t get_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr)
+    {
+        masked_reg_t* reg = NULL;
+        switch (atr) {
+            case ATR_REG_IDLE:          reg = &_atr_idle_reg; break;
+            case ATR_REG_RX_ONLY:       reg = &_atr_rx_reg;   break;
+            case ATR_REG_TX_ONLY:       reg = &_atr_tx_reg;   break;
+            case ATR_REG_FULL_DUPLEX:   reg = &_atr_fdx_reg;  break;
+            default:                    reg = &_atr_idle_reg; break;
+        }
+        return (reg->get() & compute_mask(unit, MASK_SET_ALL)) >> compute_shift(unit);
+    }
+
+    inline void set_gpio_out(const db_unit_t unit, const boost::uint32_t value, const boost::uint32_t mask)
     {
         gpio_atr_3000_impl::set_gpio_out(
             static_cast<boost::uint32_t>(value) << compute_shift(unit),
-            compute_mask(unit, 0xFFFF));
+            compute_mask(unit, mask));
     }
 
-    inline boost::uint16_t read_gpio(const db_unit_t unit)
+    inline boost::uint32_t get_gpio_out(const db_unit_t unit)
     {
-        return boost::uint16_t(gpio_atr_3000_impl::read_gpio() >> compute_shift(unit));
+        return (_atr_idle_reg.get_gpio_out() & compute_mask(unit, MASK_SET_ALL)) >> compute_shift(unit);
+    }
+
+    inline boost::uint32_t read_gpio(const db_unit_t unit)
+    {
+        return (gpio_atr_3000_impl::read_gpio() & compute_mask(unit, MASK_SET_ALL)) >> compute_shift(unit);
     }
 
 private:
     inline boost::uint32_t compute_shift(const db_unit_t unit) {
-        return (unit == dboard_iface::UNIT_RX) ? 0 : 16;
+        switch (unit) {
+        case dboard_iface::UNIT_RX: return 0;
+        case dboard_iface::UNIT_TX: return 16;
+        default:                    return 0;
+        }
     }
 
-    inline boost::uint32_t compute_mask(const db_unit_t unit, const boost::uint16_t mask) {
-        return static_cast<boost::uint32_t>(mask) << (compute_shift(unit));
+    inline boost::uint32_t compute_mask(const db_unit_t unit, const boost::uint32_t mask) {
+        boost::uint32_t tmp_mask = (unit == dboard_iface::UNIT_BOTH) ? mask : (mask & 0xFFFF);
+        return tmp_mask << (compute_shift(unit));
     }
 };
 

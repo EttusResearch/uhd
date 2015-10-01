@@ -45,16 +45,18 @@ public:
     void write_aux_dac(unit_t, aux_dac_t, double);
     double read_aux_adc(unit_t, aux_adc_t);
 
-    void _set_pin_ctrl(unit_t, boost::uint16_t);
-    void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
-    void _set_gpio_ddr(unit_t, boost::uint16_t);
-    void _set_gpio_out(unit_t, boost::uint16_t);
+    void set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_pin_ctrl(unit_t unit);
+    void set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_atr_reg(unit_t unit, atr_reg_t reg);
+    void set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_gpio_ddr(unit_t unit);
+    void set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_gpio_out(unit_t unit);
+    boost::uint32_t read_gpio(unit_t unit);
 
     void set_command_time(const uhd::time_spec_t& t);
     uhd::time_spec_t get_command_time(void);
-
-    void set_gpio_debug(unit_t, int);
-    boost::uint16_t read_gpio(unit_t);
 
     void write_i2c(boost::uint16_t, const byte_vector_t &);
     byte_vector_t read_i2c(boost::uint16_t, size_t);
@@ -116,27 +118,6 @@ x300_dboard_iface::x300_dboard_iface(const x300_dboard_iface_config_t &config):
 
     this->set_clock_enabled(UNIT_RX, false);
     this->set_clock_enabled(UNIT_TX, false);
-
-
-    //some test code
-    /*
-    {
-
-        this->write_aux_dac(UNIT_TX, AUX_DAC_A, .1);
-        this->write_aux_dac(UNIT_TX, AUX_DAC_B, 1);
-        this->write_aux_dac(UNIT_RX, AUX_DAC_A, 2);
-        this->write_aux_dac(UNIT_RX, AUX_DAC_B, 3);
-        while (1)
-        {
-            UHD_VAR(this->read_aux_adc(UNIT_TX, AUX_ADC_A));
-            UHD_VAR(this->read_aux_adc(UNIT_TX, AUX_ADC_B));
-            UHD_VAR(this->read_aux_adc(UNIT_RX, AUX_ADC_A));
-            UHD_VAR(this->read_aux_adc(UNIT_RX, AUX_ADC_B));
-            sleep(1);
-        }
-    }
-    */
-
 }
 
 x300_dboard_iface::~x300_dboard_iface(void)
@@ -153,6 +134,8 @@ x300_dboard_iface::~x300_dboard_iface(void)
  **********************************************************************/
 void x300_dboard_iface::set_clock_rate(unit_t unit, double rate)
 {
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
+
     // Just return if the requested rate is already set
     if (std::fabs(_clock_rates[unit] - rate) < std::numeric_limits<double>::epsilon())
         return;
@@ -165,17 +148,21 @@ void x300_dboard_iface::set_clock_rate(unit_t unit, double rate)
         case UNIT_TX:
             _config.clock->set_dboard_rate(_config.which_tx_clk, rate);
             break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
     }
     _clock_rates[unit] = rate; //set to shadow
 }
 
 double x300_dboard_iface::get_clock_rate(unit_t unit)
 {
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     return _clock_rates[unit]; //get from shadow
 }
 
 std::vector<double> x300_dboard_iface::get_clock_rates(unit_t unit)
 {
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     switch(unit)
     {
         case UNIT_RX:
@@ -189,6 +176,7 @@ std::vector<double> x300_dboard_iface::get_clock_rates(unit_t unit)
 
 void x300_dboard_iface::set_clock_enabled(unit_t unit, bool enb)
 {
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     switch(unit)
     {
         case UNIT_RX:
@@ -200,42 +188,58 @@ void x300_dboard_iface::set_clock_enabled(unit_t unit, bool enb)
     }
 }
 
-double x300_dboard_iface::get_codec_rate(unit_t)
+double x300_dboard_iface::get_codec_rate(unit_t unit)
 {
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     return _config.clock->get_master_clock_rate();
 }
 
 /***********************************************************************
  * GPIO
  **********************************************************************/
-void x300_dboard_iface::_set_pin_ctrl(unit_t unit, boost::uint16_t value)
+void x300_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask)
 {
-    return _config.gpio->set_pin_ctrl(unit, value);
+    _config.gpio->set_pin_ctrl(unit, value, mask);
 }
 
-void x300_dboard_iface::_set_gpio_ddr(unit_t unit, boost::uint16_t value)
+boost::uint32_t x300_dboard_iface::get_pin_ctrl(unit_t unit)
 {
-    return _config.gpio->set_gpio_ddr(unit, value);
+    return _config.gpio->get_pin_ctrl(unit);
 }
 
-void x300_dboard_iface::_set_gpio_out(unit_t unit, boost::uint16_t value)
+void x300_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask)
 {
-    return _config.gpio->set_gpio_out(unit, value);
+    _config.gpio->set_atr_reg(unit, reg, value, mask);
 }
 
-boost::uint16_t x300_dboard_iface::read_gpio(unit_t unit)
+boost::uint32_t x300_dboard_iface::get_atr_reg(unit_t unit, atr_reg_t reg)
+{
+    return _config.gpio->get_atr_reg(unit, reg);
+}
+
+void x300_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask)
+{
+    _config.gpio->set_gpio_ddr(unit, value, mask);
+}
+
+boost::uint32_t x300_dboard_iface::get_gpio_ddr(unit_t unit)
+{
+    return _config.gpio->get_gpio_ddr(unit);
+}
+
+void x300_dboard_iface::set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask)
+{
+    _config.gpio->set_gpio_out(unit, value, mask);
+}
+
+boost::uint32_t x300_dboard_iface::get_gpio_out(unit_t unit)
+{
+    return _config.gpio->get_gpio_out(unit);
+}
+
+boost::uint32_t x300_dboard_iface::read_gpio(unit_t unit)
 {
     return _config.gpio->read_gpio(unit);
-}
-
-void x300_dboard_iface::_set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value)
-{
-    return _config.gpio->set_atr_reg(unit, atr, value);
-}
-
-void x300_dboard_iface::set_gpio_debug(unit_t, int)
-{
-    throw uhd::not_implemented_error("no set_gpio_debug implemented");
 }
 
 /***********************************************************************
@@ -250,6 +254,7 @@ void x300_dboard_iface::write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     _config.spi->write_spi(toslaveno(unit), config, data, num_bits);
 }
 
@@ -259,6 +264,7 @@ boost::uint32_t x300_dboard_iface::read_write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     return _config.spi->read_spi(toslaveno(unit), config, data, num_bits);
 }
 
@@ -284,6 +290,7 @@ void x300_dboard_iface::_write_aux_dac(unit_t unit)
         (UNIT_RX, DB_RX_LSDAC_SEN)
         (UNIT_TX, DB_TX_LSDAC_SEN)
     ;
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     _config.spi->write_spi(
         unit_to_spi_dac[unit], spi_config_t::EDGE_FALL,
         _dac_regs[unit].get_reg(), 24
@@ -292,6 +299,8 @@ void x300_dboard_iface::_write_aux_dac(unit_t unit)
 
 void x300_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, double value)
 {
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
+
     _dac_regs[unit].data = boost::math::iround(4095*value/3.3);
     _dac_regs[unit].cmd = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
 
@@ -320,6 +329,8 @@ double x300_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which)
         (UNIT_RX, DB_RX_LSADC_SEN)
         (UNIT_TX, DB_TX_LSADC_SEN)
     ;
+
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
 
     //setup spi config args
     spi_config_t config;
