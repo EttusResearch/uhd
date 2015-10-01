@@ -79,29 +79,22 @@ std::string crimson_iface::peek_str(void) {
         // clears the buffer and receives the message
         memset(_buff, 0, CRIMSON_MTU_SIZE);
         const size_t nbytes = _ctrl_transport -> recv(boost::asio::buffer(_buff), 6.250);
-    	std::cout <<"Read Buffer: "<< _buff<< std::endl;
-        if (nbytes == 0){
-        	std::cout <<"TIMEOUT"<< std::endl;
-        	return "TIMEOUT";
-        }
+        if (nbytes == 0) return "TIMEOUT";
+
 
         // parses it through tokens: seq, status, [data]
         this -> parse(tokens, _buff, ',');
 
 		// if parameter was not initialized
-		if (tokens.size() < 3){
-			std::cout <<"return0"<< std::endl;
-			return "0";
-		}
+		if (tokens.size() < 3) return "0";
+
 
 		// if flow control
 		if (tokens[0] == "flow") flow_cntrl = true;
-
+		std::cout<<"buff: "<<_buff<<" token:  "<<tokens[0]<< std::endl;
         // If the message has an error, return ERROR
-        if((~flow_cntrl)&&(tokens[1].c_str()[0] == CMD_ERROR)){
-        	std::cout <<"ERROR"<< std::endl;
-        	return "ERROR";
-        }
+        if((flow_cntrl==false)&&(tokens[1].c_str()[0] == CMD_ERROR)) return "ERROR";
+
 
         // if seq is incorrect, return an error
         sscanf(tokens[0].c_str(), "%"SCNd32, &iseq);

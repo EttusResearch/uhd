@@ -282,8 +282,8 @@ public:
 								}
 							}
 							//DEBUG: Print out adjusted sample rate
-							//std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i];
-							//std::cout  << std::setprecision(8)<<" adj: "<<fifo[i]<< std::endl;
+							std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i];
+							std::cout  << std::setprecision(8)<<" adj: "<<fifo[i]<< std::endl;
 						}
 						while_first = false;
 					}
