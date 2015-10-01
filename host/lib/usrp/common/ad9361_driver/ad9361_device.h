@@ -157,6 +157,7 @@ public:
     //Constants
     static const double AD9361_MAX_GAIN;
     static const double AD9361_MAX_CLOCK_RATE;
+    static const double AD9361_MIN_CLOCK_RATE;
     static const double AD9361_CAL_VALID_WINDOW;
     static const double AD9361_RECOMMENDED_MAX_BANDWIDTH;
     static const double DEFAULT_RX_FREQ;
