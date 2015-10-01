@@ -79,7 +79,12 @@ std::string crimson_iface::peek_str(void) {
         // clears the buffer and receives the message
         memset(_buff, 0, CRIMSON_MTU_SIZE);
         const size_t nbytes = _ctrl_transport -> recv(boost::asio::buffer(_buff), 6.250);
-        if (nbytes == 0) return "TIMEOUT";
+    	std::cout <<"Read Buffer: "<< _buff<< std::endl;
+        if (nbytes == 0){
+        	std::cout <<"TIMEOUT"<< std::endl;
+
+        	return "TIMEOUT";
+        }
 
         // parses it through tokens: seq, status, [data]
         this -> parse(tokens, _buff, ',');
@@ -97,7 +102,6 @@ std::string crimson_iface::peek_str(void) {
 	if (tokens[0] == "flow") flow_cntrl = true; 
 
     } while(iseq != seq - 1 && tries++ < num_tries && !flow_cntrl);
-	std::cout <<"Read Buffer: "<< _buff<< std::endl;
 
     // exits with an error if can't find a matching sequence
     if (tries == num_tries) return "INVLD_SEQ";
