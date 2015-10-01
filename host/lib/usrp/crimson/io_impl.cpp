@@ -227,6 +227,8 @@ public:
 			if (_samp_rate[i] == 0) {
 				std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
+				//update sample rate to fill an additional half buffer in the first 5ms
+				//_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE/2)/
 			}
 
 			// calculate how many payloads (350 samples) we still need to send out
@@ -264,12 +266,14 @@ public:
 			std::cout << "FIFO LEVEL: " << fifo[0] << "%, " << fifo[1] << "%, " << fifo[2] << "%, " << fifo[3] << "%" << std::endl;
 
 			// sending samples, restricted to a jumbo frame of CRIMSON_MAX_MTU bytes at a time
+			//ret: nbytes in buffer, each sample has 4 bytes.
 			ret = 0;
 			while ((ret / 4) < nsamps_per_buff) {
 				size_t remaining_bytes = (nsamps_per_buff*4) - ret;
 
 				if (remaining_bytes >= CRIMSON_MAX_MTU) {
 					// wait for flow control
+					//
 					time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
 					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {}
 					_last_time[i] = time_spec_t::get_system_time();
@@ -278,7 +282,10 @@ public:
 				} else {
 					// wait for flow control
 					time_spec_t wait = time_spec_t(0, (double)(remaining_bytes / 4.0) / (double)_samp_rate[i]);
+
+					//maybe use boost::this_thread::sleep(boost::posix_time::microseconds
 					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {}
+
 					_last_time[i] = time_spec_t::get_system_time();
 
 					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, remaining_bytes);
@@ -346,7 +353,7 @@ private:
 
 	std::vector<uhd::transport::udp_stream::sptr> _udp_stream;
 	std::vector<size_t> _channels;
-	std::vector<uint32_t> _samp_rate;
+	std::vector<double> _samp_rate;
 	std::vector<time_spec_t> _last_time;
 	property_tree::sptr _tree;
 	size_t _pay_len;
