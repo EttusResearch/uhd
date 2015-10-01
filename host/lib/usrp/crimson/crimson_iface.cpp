@@ -97,13 +97,14 @@ std::string crimson_iface::peek_str(void) {
 	if (tokens[0] == "flow") flow_cntrl = true; 
 
     } while(iseq != seq - 1 && tries++ < num_tries && !flow_cntrl);
+	std::cout <<"Read Buffer: "<< _buff<< std::endl;
 
     // exits with an error if can't find a matching sequence
     if (tries == num_tries) return "INVLD_SEQ";
 
     // Return the message, tokens[1] is the sequence number
     if (flow_cntrl) 	{
-		std::cout <<"Read Buffer: "<< _buff<< std::endl;
+		//std::cout <<"Read Buffer: "<< _buff<< std::endl;
 
 
     	return _buff;
