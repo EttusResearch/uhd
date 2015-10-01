@@ -33,6 +33,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 
 using namespace uhd;
@@ -227,7 +228,7 @@ public:
 			if (_samp_rate[i] == 0) {
 				std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
-				std::cout << "Sample Rate: " << _samp_rate[i]<< std::endl;
+				std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
 				//update sample rate to fill an additional half buffer in the first 5ms
 				//_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE/2)/
 			}
