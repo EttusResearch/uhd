@@ -268,17 +268,17 @@ public:
 								ss.ignore();
 								//DEBUG
 								if (j==i)
-									std::cout << std::setprecision(8)<<" adj: "<<fifo[i]<< std::endl;
+									std::cout << std::setprecision(8)<<" preadj: "<<fifo[i]<< "  unchuncked fifo: "<< fifo_lvl<< std::endl;
 
 								// calculate the error
 								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
 								//apply correction
 								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
 								//Limit the correction -magical numbers
-								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/100000)){
-									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/100000;
-								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/100000)){
-									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/100000;
+								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/10000)){
+									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/10000;
+								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/10000)){
+									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/10000;
 								}
 							}
 							//DEBUG: Print out adjusted sample rate
@@ -313,17 +313,17 @@ public:
 								ss.ignore();
 								//DEBUG
 								if (j==i)
-									std::cout << std::setprecision(8)<<" adj: "<<fifo[i]<< std::endl;
+									std::cout << std::setprecision(8)<<" preadj: "<<fifo[i]<< "  unchuncked fifo: "<< fifo_lvl<< std::endl;
 
 								// calculate the error
 								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
 								//apply correction
 								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
 								//Limit the correction -magical numbers
-								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/100000)){
-									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/100000;
-								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/100000)){
-									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/100000;
+								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/10000)){
+									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/10000;
+								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/10000)){
+									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/10000;
 								}
 							}
 							//DEBUG: Print out adjusted sample rate
