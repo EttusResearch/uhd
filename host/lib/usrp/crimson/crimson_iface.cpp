@@ -88,14 +88,17 @@ std::string crimson_iface::peek_str(void) {
         // parses it through tokens: seq, status, [data]
         this -> parse(tokens, _buff, ',');
 
-	// if parameter was not initialized
-	if (tokens.size() < 3){
-    	std::cout <<"return0"<< std::endl;
-		return "0";
-	}
+		// if parameter was not initialized
+		if (tokens.size() < 3){
+			std::cout <<"return0"<< std::endl;
+			return "0";
+		}
+
+		// if flow control
+		if (tokens[0] == "flow") flow_cntrl = true;
 
         // If the message has an error, return ERROR
-        if(tokens[1].c_str()[0] == CMD_ERROR){
+        if((~flow_cntrl)&&(tokens[1].c_str()[0] == CMD_ERROR)){
         	std::cout <<"ERROR"<< std::endl;
         	return "ERROR";
         }
@@ -103,8 +106,6 @@ std::string crimson_iface::peek_str(void) {
         // if seq is incorrect, return an error
         sscanf(tokens[0].c_str(), "%"SCNd32, &iseq);
 
-	// if flow control
-	if (tokens[0] == "flow") flow_cntrl = true; 
 
     } while(iseq != seq - 1 && tries++ < num_tries && !flow_cntrl);
 
