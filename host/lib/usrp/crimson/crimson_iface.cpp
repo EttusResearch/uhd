@@ -91,7 +91,7 @@ std::string crimson_iface::peek_str(void) {
 
 		// if flow control
 		if (tokens[0] == "flow") flow_cntrl = true;
-		std::cout<<"buff: "<<_buff<<" token:  "<<tokens[0]<< std::endl;
+
         // If the message has an error, return ERROR
         if((flow_cntrl==false)&&(tokens[1].c_str()[0] == CMD_ERROR)) return "ERROR";
 
