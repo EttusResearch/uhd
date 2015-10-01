@@ -267,8 +267,8 @@ public:
 								ss >> fifo[j];
 								ss.ignore();
 								//DEBUG
-								if (j==i)
-									std::cout << std::setprecision(8)<<" preadj: "<<fifo[i]<< "  unchuncked fifo: "<< fifo_lvl<< std::endl;
+								//if (j==i)
+									//std::cout << std::setprecision(8)<<" preadj: "<<fifo[i]<< "  unchuncked fifo: "<< fifo_lvl<< std::endl;
 
 								// calculate the error
 								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);

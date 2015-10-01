@@ -102,7 +102,12 @@ std::string crimson_iface::peek_str(void) {
     if (tries == num_tries) return "INVLD_SEQ";
 
     // Return the message, tokens[1] is the sequence number
-    if (flow_cntrl) 	return _buff;
+    if (flow_cntrl) 	{
+		std::cout <<"Read Buffer: "<< _buff<< std::endl;
+
+
+    	return _buff;
+    }
     else		return tokens[2];
 }
 
