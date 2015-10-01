@@ -82,7 +82,6 @@ std::string crimson_iface::peek_str(void) {
     	std::cout <<"Read Buffer: "<< _buff<< std::endl;
         if (nbytes == 0){
         	std::cout <<"TIMEOUT"<< std::endl;
-
         	return "TIMEOUT";
         }
 
@@ -90,10 +89,16 @@ std::string crimson_iface::peek_str(void) {
         this -> parse(tokens, _buff, ',');
 
 	// if parameter was not initialized
-	if (tokens.size() < 3) return "0";
+	if (tokens.size() < 3){
+    	std::cout <<"return0"<< std::endl;
+		return "0";
+	}
 
         // If the message has an error, return ERROR
-        if(tokens[1].c_str()[0] == CMD_ERROR) return "ERROR";
+        if(tokens[1].c_str()[0] == CMD_ERROR){
+        	std::cout <<"ERROR"<< std::endl;
+        	return "ERROR";
+        }
 
         // if seq is incorrect, return an error
         sscanf(tokens[0].c_str(), "%"SCNd32, &iseq);
