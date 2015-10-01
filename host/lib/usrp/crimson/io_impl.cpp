@@ -272,13 +272,14 @@ public:
 
 								// calculate the error
 								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
+								fifo[j] = fifo[j] *fifo[j] ;
 								//apply correction
 								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
 								//Limit the correction -magical numbers
-								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/10000)){
-									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/10000;
-								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/10000)){
-									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/10000;
+								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/50000)){
+									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/50000;
+								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/50000)){
+									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/50000;
 								}
 							}
 							//DEBUG: Print out adjusted sample rate
@@ -317,13 +318,14 @@ public:
 
 								// calculate the error
 								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
+								fifo[j] = fifo[j] *fifo[j] ;
 								//apply correction
 								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
 								//Limit the correction -magical numbers
-								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/10000)){
-									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/10000;
-								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/10000)){
-									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/10000;
+								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/50000)){
+									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/50000;
+								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/50000)){
+									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/50000;
 								}
 							}
 							//DEBUG: Print out adjusted sample rate
