@@ -229,6 +229,7 @@ public:
 				std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
 				std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
+				_last_time[i] = time_spec_t::get_system_time();
 				//update sample rate to fill an additional half buffer in the first second
 			//	_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE/2);
 			//	std::cout  << std::setprecision(20)<< "After Primer: " << _samp_rate[i]<< std::endl;
@@ -252,7 +253,7 @@ public:
 			// sending samples, restricted to a jumbo frame of CRIMSON_MAX_MTU bytes at a time
 			//ret: nbytes in buffer, each sample has 4 bytes.
 			ret = 0;
-			bool while_first =false;
+			bool while_first =true;
 			while ((ret / 4) < nsamps_per_buff) {
 				size_t remaining_bytes = (nsamps_per_buff*4) - ret;
 
@@ -261,7 +262,7 @@ public:
 					//
 					time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
 					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-						if(!while_first){
+						if(while_first){
 							//If we are waiting, now is a good time to look at the fifo level.
 							_flow_iface -> poke_str("Read fifo");
 							std::string fifo_lvl = _flow_iface -> peek_str();
@@ -284,7 +285,7 @@ public:
 							//DEBUG: Print out adjusted sample rate
 							std::cout  << std::setprecision(20)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 						}
-						while_first = true;
+						while_first = false;
 					}
 
 					//update last_time with when it was supposed to have been sent:
@@ -296,7 +297,7 @@ public:
 
 					//maybe use boost::this_thread::sleep(boost::posix_time::microseconds
 					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-						if(!while_first){
+						if(while_first){
 							//If we are waiting, now is a good time to look at the fifo level.
 							_flow_iface -> poke_str("Read fifo");
 							std::string fifo_lvl = _flow_iface -> peek_str();
@@ -319,7 +320,7 @@ public:
 							//DEBUG: Print out adjusted sample rate
 							std::cout  << std::setprecision(20)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 						}
-						while_first = true;
+						while_first = false;
 					}
 
 					//update last_time with when it was supposed to have been sent:
