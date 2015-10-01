@@ -227,6 +227,7 @@ public:
 			if (_samp_rate[i] == 0) {
 				std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
+				std::cout << "Sample Rate: " << _samp_rate[i]<< std::endl;
 				//update sample rate to fill an additional half buffer in the first 5ms
 				//_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE/2)/
 			}
@@ -263,7 +264,7 @@ public:
 				fifo[j] = (16383 - fifo[j]) / 32768.0 * 100.0;
 			}
 
-			std::cout << "FIFO LEVEL: " << fifo[0] << "%, " << fifo[1] << "%, " << fifo[2] << "%, " << fifo[3] << "%" << std::endl;
+			//std::cout << "FIFO LEVEL: " << fifo[0] << "%, " << fifo[1] << "%, " << fifo[2] << "%, " << fifo[3] << "%" << std::endl;
 
 			// sending samples, restricted to a jumbo frame of CRIMSON_MAX_MTU bytes at a time
 			//ret: nbytes in buffer, each sample has 4 bytes.
