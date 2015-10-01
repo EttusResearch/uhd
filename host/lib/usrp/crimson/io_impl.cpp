@@ -248,29 +248,11 @@ public:
 			memset((void*)vita_buf, 0, vita_pck*4);
 			memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
 
-			// test read fifo
-			_flow_iface -> poke_str("Read fifo");
-			std::string fifo_lvl = _flow_iface -> peek_str();
 
-			// remove the "flow," at the beginning of the string
-			fifo_lvl.erase(0, 5);
-			std::stringstream ss(fifo_lvl);
-
-			// read in each fifo level, ignore() will skip the commas
-			double fifo[4];			
-			for (int j = 0; j < 4; j++) {
-				ss >> fifo[j];
-				ss.ignore();
-
-				// calculate the error
-				fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
-				//apply correction
-				_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/1000000;
-			}
-			std::cout  << std::setprecision(20)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 			// sending samples, restricted to a jumbo frame of CRIMSON_MAX_MTU bytes at a time
 			//ret: nbytes in buffer, each sample has 4 bytes.
 			ret = 0;
+			bool while_first =false;
 			while ((ret / 4) < nsamps_per_buff) {
 				size_t remaining_bytes = (nsamps_per_buff*4) - ret;
 
@@ -278,18 +260,70 @@ public:
 					// wait for flow control
 					//
 					time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
-					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {}
-					_last_time[i] = time_spec_t::get_system_time();
+					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
+						if(!while_first){
+							//If we are waiting, now is a good time to look at the fifo level.
+							_flow_iface -> poke_str("Read fifo");
+							std::string fifo_lvl = _flow_iface -> peek_str();
 
+							// remove the "flow," at the beginning of the string
+							fifo_lvl.erase(0, 5);
+							std::stringstream ss(fifo_lvl);
+
+							// read in each fifo level, ignore() will skip the commas
+							double fifo[4];
+							for (int j = 0; j < 4; j++) {
+								ss >> fifo[j];
+								ss.ignore();
+
+								// calculate the error
+								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
+								//apply correction
+								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
+							}
+							//DEBUG: Print out adjusted sample rate
+							std::cout  << std::setprecision(20)<< "After Adjust" <<_samp_rate[i]<< std::endl;
+						}
+						while_first = true;
+					}
+
+					//update last_time with when it was supposed to have been sent:
+					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
 					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
 				} else {
 					// wait for flow control
 					time_spec_t wait = time_spec_t(0, (double)(remaining_bytes / 4.0) / (double)_samp_rate[i]);
 
 					//maybe use boost::this_thread::sleep(boost::posix_time::microseconds
-					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {}
+					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
+						if(!while_first){
+							//If we are waiting, now is a good time to look at the fifo level.
+							_flow_iface -> poke_str("Read fifo");
+							std::string fifo_lvl = _flow_iface -> peek_str();
 
-					_last_time[i] = time_spec_t::get_system_time();
+							// remove the "flow," at the beginning of the string
+							fifo_lvl.erase(0, 5);
+							std::stringstream ss(fifo_lvl);
+
+							// read in each fifo level, ignore() will skip the commas
+							double fifo[4];
+							for (int j = 0; j < 4; j++) {
+								ss >> fifo[j];
+								ss.ignore();
+
+								// calculate the error
+								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
+								//apply correction
+								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
+							}
+							//DEBUG: Print out adjusted sample rate
+							std::cout  << std::setprecision(20)<< "After Adjust" <<_samp_rate[i]<< std::endl;
+						}
+						while_first = true;
+					}
+
+					//update last_time with when it was supposed to have been sent:
+					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
 
 					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, remaining_bytes);
 				}
