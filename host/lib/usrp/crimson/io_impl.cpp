@@ -272,10 +272,10 @@ public:
 								//apply correction
 								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
 								//Limit the correction -magical numbers
-								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/300000)){
-									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/300000;
-								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/300000)){
-									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/300000;
+								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/100000)){
+									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/100000;
+								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/100000)){
+									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/100000;
 								}
 							}
 							//DEBUG: Print out adjusted sample rate
@@ -313,10 +313,10 @@ public:
 								//apply correction
 								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
 								//Limit the correction -magical numbers
-								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/300000)){
-									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/300000;
-								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/300000)){
-									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/300000;
+								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/100000)){
+									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/100000;
+								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/100000)){
+									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/100000;
 								}
 							}
 							//DEBUG: Print out adjusted sample rate
