@@ -268,7 +268,7 @@ public:
 								ss.ignore();
 								//DEBUG
 								//if (j==i)
-									//std::cout << std::setprecision(8)<<" preadj: "<<fifo[i]<< "  unchuncked fifo: "<< fifo_lvl<< std::endl;
+									std::cout << std::setprecision(8)<<" preadj: "<<fifo[i]<< std::endl;
 
 								// calculate the error
 								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
@@ -283,8 +283,7 @@ public:
 								}
 							}
 							//DEBUG: Print out adjusted sample rate
-							std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i];
-							std::cout  << std::setprecision(8)<<" adj: "<<fifo[i]<< std::endl;
+							std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 						}
 						while_first = false;
 					}
