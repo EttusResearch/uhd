@@ -230,8 +230,9 @@ public:
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
 				_samp_rate_usr[i] = _samp_rate[i];
 				//Adjust sample rate to fill up beffer in first half second
-				_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE/2);
-				//std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
+				std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
+				_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE);
+				std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
 				_last_time[i] = time_spec_t::get_system_time();
 
 
@@ -389,7 +390,7 @@ private:
 	}
 	void update_samplerate(){
 		for (unsigned int i = 0; i < _channels.size(); i++) {
-			std::cout  <<  "bufflevel: " <<_fifo_lvl[0]<<"  "<<_buffer_count[0]<<"  "<< _buffer_count[1]<<std::endl;
+			std::cout  <<  "bufflevel: " <<_fifo_lvl[0]<<"  "<<_buffer_count[0]<<"  "<< _buffer_count[1]<< "Sample Rate: " << _samp_rate[0]<<std::endl;
 
 			if(_buffer_count[0]!=_buffer_count[i+1]){
 				//If we are waiting, now is a good time to look at the fifo level.
