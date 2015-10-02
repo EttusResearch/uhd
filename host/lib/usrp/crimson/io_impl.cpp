@@ -393,10 +393,10 @@ private:
 	void update_samplerate(){
 		for (unsigned int i = 0; i < _channels.size(); i++) {
 			if(_buffer_count[0]!=_buffer_count[i+1]){
-				std::cout  << "sample_rate:  "<<_samp_rate[i]<<"  buff1: "<<_buffer_count[0]<<"   buff2: "<<_buffer_count[1]<< std::endl;
 				//If we are waiting, now is a good time to look at the fifo level.
 
 				if(_flowcontrol_mutex.try_lock()){
+					std::cout  << "sample_rate:  "<<_samp_rate[i]<<"  buff1: "<<_buffer_count[0]<<"   buff2: "<<_buffer_count[1]<< std::endl;
 					// calculate the error
 					_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE/2);
 					//apply correction
