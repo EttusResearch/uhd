@@ -389,6 +389,8 @@ private:
 	}
 	void update_samplerate(){
 		for (unsigned int i = 0; i < _channels.size(); i++) {
+			std::cout  <<  "bufflevel: " <<_fifo_lvl[0]<<"  "<<_buffer_count[0]<<"  "<< _buffer_count[1]<<std::endl;
+
 			if(_buffer_count[0]!=_buffer_count[i+1]){
 				//If we are waiting, now is a good time to look at the fifo level.
 
@@ -409,7 +411,7 @@ private:
 					_flowcontrol_mutex.unlock();
 
 					//DEBUG: Print out adjusted sample rate
-					//std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
+					std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 				}
 			}
 		}
