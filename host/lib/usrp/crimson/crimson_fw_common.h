@@ -69,7 +69,7 @@ extern "C" {
 #define CRIMSON_MAX_MTU		3600
 
 // Crimson Flowcontrol Update Per Second
-#define CRIMSON_UPDATE_PER_SEC	40
+#define CRIMSON_UPDATE_PER_SEC	20
 
 // Crimson Buffer Size
 #define CRIMSON_BUFF_SIZE	32766

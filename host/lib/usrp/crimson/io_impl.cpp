@@ -229,7 +229,7 @@ public:
 				std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
 				_samp_rate_usr[i] = _samp_rate[i];
-				std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
+				//std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
 				_last_time[i] = time_spec_t::get_system_time();
 
 
@@ -283,7 +283,7 @@ public:
 
 
 								//DEBUG: Print out adjusted sample rate
-								std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
+								//std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 							}
 						}
 					}
@@ -318,7 +318,7 @@ public:
 								_flowcontrol_mutex.unlock();
 
 								//DEBUG: Print out adjusted sample rate
-								std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
+								//std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 							}
 						}
 					}
