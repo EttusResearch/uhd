@@ -229,6 +229,8 @@ public:
 				std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
 				_samp_rate_usr[i] = _samp_rate[i];
+				//Adjust sample rate to fill up beffer in first half second
+				_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE/2);
 				//std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
 				_last_time[i] = time_spec_t::get_system_time();
 
@@ -236,18 +238,12 @@ public:
 			}
 
 			//Flow control init
-			//check if flow control is running, if not run it and say its running
-			if (_flow_running == false){
-				boost::thread flowcontrolThread(init_flowcontrol,this);
-				_flow_running = true;
-			}
-
-			// continue and send out the payload
+			//check if flow control is running, if not run it
+			if (_flow_running == false)	boost::thread flowcontrolThread(init_flowcontrol,this);
 
 			//clear temp buffer and copy data into it
 			memset((void*)vita_buf, 0, vita_pck*4);
 			memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
-
 
 			// sending samples, restricted to a jumbo frame of CRIMSON_MAX_MTU bytes at a time
 			//ret: nbytes in buffer, each sample has 4 bytes.
@@ -257,37 +253,11 @@ public:
 				size_t remaining_bytes = (nsamps_per_buff*4) - ret;
 
 				if (remaining_bytes >= CRIMSON_MAX_MTU) {
-					// wait for flow control
-					//
 					time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
 					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-						//Check for new buffer read and handle accordingly
-						if(_buffer_count[0]!=_buffer_count[1]){
-							//If we are waiting, now is a good time to look at the fifo level.
-
-							if(_flowcontrol_mutex.try_lock()){
-								// calculate the error
-								_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE/2);
-								//apply correction
-								_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
-								//Limit the correction -magical numbers
-								if(_samp_rate[i] > (_samp_rate_usr[i] + _samp_rate_usr[i]/10000)){
-									_samp_rate[i] = _samp_rate_usr[i] + _samp_rate_usr[i]/10000;
-								}else if(_samp_rate[i] < (_samp_rate_usr[i] - _samp_rate_usr[i]/10000)){
-									_samp_rate[i] = _samp_rate_usr[i] - _samp_rate_usr[i]/10000;
-								}
-
-								//Buffer is now handled
-								_buffer_count[1] = _buffer_count[0];
-								_flowcontrol_mutex.unlock();
-
-
-								//DEBUG: Print out adjusted sample rate
-								//std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
-							}
-						}
+						//Check for new buffer if exists and handle accordingly
+						update_samplerate();
 					}
-
 					//update last_time with when it was supposed to have been sent:
 					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
 					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
@@ -297,35 +267,11 @@ public:
 
 					//maybe use boost::this_thread::sleep(boost::posix_time::microseconds
 					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-						//Check for new buffer read and handle accordingly
-						if(_buffer_count[0]!=_buffer_count[1]){
-							//If we are waiting, now is a good time to look at the fifo level.
-
-							if(_flowcontrol_mutex.try_lock()){
-								// calculate the error
-								_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE/2);
-								//apply correction
-								_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
-								//Limit the correction -magical numbers
-								if(_samp_rate[i] > (_samp_rate_usr[i] + _samp_rate_usr[i]/10000)){
-									_samp_rate[i] = _samp_rate_usr[i] + _samp_rate_usr[i]/10000;
-								}else if(_samp_rate[i] < (_samp_rate_usr[i] - _samp_rate_usr[i]/10000)){
-									_samp_rate[i] = _samp_rate_usr[i] - _samp_rate_usr[i]/10000;
-								}
-
-								//Buffer is now handled
-								_buffer_count[1] = _buffer_count[0];
-								_flowcontrol_mutex.unlock();
-
-								//DEBUG: Print out adjusted sample rate
-								//std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
-							}
-						}
+						//Check for new buffer if exists and handle accordingly
+						update_samplerate();
 					}
-
 					//update last_time with when it was supposed to have been sent:
 					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
-
 					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, remaining_bytes);
 				}
 			}
@@ -381,6 +327,9 @@ private:
 			//tgroup.create_thread(boost::bind(init_flowcontrol));
 			_buffer_count[0] = 0;
 			_buffer_count[1] = 0;
+			_buffer_count[2] = 0;
+			_buffer_count[3] = 0;
+			_buffer_count[4] = 0;
 			//boost::thread flowcontrolThread(init_flowcontrol,this);
 
 
@@ -398,12 +347,16 @@ private:
 
 		//Get flow control updates x times a second
 		uint32_t wait = 1000/CRIMSON_UPDATE_PER_SEC;
+		txstream->_flow_running = true;
+		bool fillToHalf[4] = {true,true,true,true};
 
 		while(true){
 			//get data
 			txstream->_flow_iface -> poke_str("Read fifo");
 			std::string buff_read = txstream->_flow_iface -> peek_str();
 
+			//increment buffer count to say we have data
+			txstream->_buffer_count[0]++;
 			//DEBUG: Print out adjusted sample rate
 			//std::cout  << buff_read<< std::endl;
 
@@ -418,8 +371,11 @@ private:
 			for (int j = 0; j < 4; j++) {
 				ss >> txstream->_fifo_lvl[j];
 				ss.ignore();
+				if (txstream->_fifo_lvl[j] > CRIMSON_BUFF_SIZE/2)
+					fillToHalf[j] = false;
+				if (fillToHalf[j] == true)
+					txstream->_buffer_count[j+1]=txstream->_buffer_count[0];
 			}
-			txstream->_buffer_count[0]++;
 
 			//unlock
 			txstream->_flowcontrol_mutex.unlock();
@@ -431,7 +387,34 @@ private:
 
 
 	}
+	void update_samplerate(){
+		for (unsigned int i = 0; i < _channels.size(); i++) {
+			if(_buffer_count[0]!=_buffer_count[i+1]){
+				//If we are waiting, now is a good time to look at the fifo level.
 
+				if(_flowcontrol_mutex.try_lock()){
+					// calculate the error
+					_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE/2);
+					//apply correction
+					_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
+					//Limit the correction -magical numbers
+					if(_samp_rate[i] > (_samp_rate_usr[i] + _samp_rate_usr[i]/1000000)){
+						_samp_rate[i] = _samp_rate_usr[i] + _samp_rate_usr[i]/1000000;
+					}else if(_samp_rate[i] < (_samp_rate_usr[i] - _samp_rate_usr[i]/1000000)){
+						_samp_rate[i] = _samp_rate_usr[i] - _samp_rate_usr[i]/1000000;
+					}
+
+					//Buffer is now handled
+					_buffer_count[1] = _buffer_count[0];
+					_flowcontrol_mutex.unlock();
+
+					//DEBUG: Print out adjusted sample rate
+					//std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
+				}
+			}
+		}
+
+	}
 	// helper function to swap bytes, within 32-bits
 	void _32_align(uint32_t* data) {
 		*data = (*data & 0x000000ff) << 24 |
@@ -450,7 +433,7 @@ private:
 	uhd::wb_iface::sptr _flow_iface;
 	boost::mutex _flowcontrol_mutex;
 	double _fifo_lvl[4];
-	uint32_t _buffer_count[2];
+	uint32_t _buffer_count[5];
 	bool _flow_running;
 };
 
