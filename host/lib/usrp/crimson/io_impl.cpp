@@ -377,6 +377,8 @@ private:
 				if (fillToHalf[j] == true)
 					txstream->_buffer_count[j+1]=txstream->_buffer_count[0];
 			}
+		   std::cout  <<  "bufflevel: " <<txstream->_fifo_lvl[0]<<" 1: "<<txstream->_buffer_count[0]<<" 2: "<<txstream-> _buffer_count[1]<< "Sample Rate: " <<txstream-> _samp_rate[0]<<std::endl;
+
 
 			//unlock
 			txstream->_flowcontrol_mutex.unlock();
@@ -390,8 +392,6 @@ private:
 	}
 	void update_samplerate(){
 		for (unsigned int i = 0; i < _channels.size(); i++) {
-			//std::cout  <<  "bufflevel: " <<_fifo_lvl[0]<<"  "<<_buffer_count[0]<<"  "<< _buffer_count[1]<< "Sample Rate: " << _samp_rate[0]<<std::endl;
-
 			if(_buffer_count[0]!=_buffer_count[i+1]){
 				//If we are waiting, now is a good time to look at the fifo level.
 
