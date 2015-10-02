@@ -252,37 +252,31 @@ public:
 					//
 					time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
 					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-					/*	if(while_first){
+						//Check for new buffer read and handle accordingly
+						if(_buffer_count[0]!=_buffer_count[1]){
 							//If we are waiting, now is a good time to look at the fifo level.
-							_flow_iface -> poke_str("Read fifo");
-							std::string fifo_lvl = _flow_iface -> peek_str();
 
-							// remove the "flow," at the beginning of the string
-							fifo_lvl.erase(0, 5);
-							std::stringstream ss(fifo_lvl);
-
-							// read in each fifo level, ignore() will skip the commas
-							double fifo[4];
-							for (int j = 0; j < 4; j++) {
-								ss >> fifo[j];
-								ss.ignore();
-
+							if(_flowcontrol_mutex.try_lock()){
 								// calculate the error
-								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
-								fifo[j] = fifo[j] *fifo[j] ;
+								_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE/2);
 								//apply correction
-								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
+								_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
 								//Limit the correction -magical numbers
-								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/10000)){
-									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/10000;
-								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/10000)){
-									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/10000;
+								if(_samp_rate[i] > (_samp_rate_usr[i] + _samp_rate_usr[i]/10000)){
+									_samp_rate[i] = _samp_rate_usr[i] + _samp_rate_usr[i]/10000;
+								}else if(_samp_rate[i] < (_samp_rate_usr[i] - _samp_rate_usr[i]/10000)){
+									_samp_rate[i] = _samp_rate_usr[i] - _samp_rate_usr[i]/10000;
 								}
+
+								//Buffer is now handled
+								_buffer_count[1] = _buffer_count[0];
+								_flowcontrol_mutex.unlock();
+
+
+								//DEBUG: Print out adjusted sample rate
+								std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 							}
-							//DEBUG: Print out adjusted sample rate
-							//std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 						}
-						while_first = false; */
 					}
 
 					//update last_time with when it was supposed to have been sent:
@@ -293,7 +287,32 @@ public:
 					time_spec_t wait = time_spec_t(0, (double)(remaining_bytes / 4.0) / (double)_samp_rate[i]);
 
 					//maybe use boost::this_thread::sleep(boost::posix_time::microseconds
-					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {}
+					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
+						//Check for new buffer read and handle accordingly
+						if(_buffer_count[0]!=_buffer_count[1]){
+							//If we are waiting, now is a good time to look at the fifo level.
+
+							if(_flowcontrol_mutex.try_lock()){
+								// calculate the error
+								_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE/2);
+								//apply correction
+								_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
+								//Limit the correction -magical numbers
+								if(_samp_rate[i] > (_samp_rate_usr[i] + _samp_rate_usr[i]/10000)){
+									_samp_rate[i] = _samp_rate_usr[i] + _samp_rate_usr[i]/10000;
+								}else if(_samp_rate[i] < (_samp_rate_usr[i] - _samp_rate_usr[i]/10000)){
+									_samp_rate[i] = _samp_rate_usr[i] - _samp_rate_usr[i]/10000;
+								}
+
+								//Buffer is now handled
+								_buffer_count[1] = _buffer_count[0];
+								_flowcontrol_mutex.unlock();
+
+								//DEBUG: Print out adjusted sample rate
+								std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
+							}
+						}
+					}
 
 					//update last_time with when it was supposed to have been sent:
 					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
@@ -350,6 +369,8 @@ private:
 			//create thread group
 			//boost::thread_group tgroup;
 			//tgroup.create_thread(boost::bind(init_flowcontrol));
+			_buffer_count[0] = 0;
+			_buffer_count[1] = 0;
 			boost::thread flowcontrolThread(init_flowcontrol,this);
 
 
@@ -371,24 +392,30 @@ private:
 		while(true){
 			//get data
 			txstream->_flow_iface -> poke_str("Read fifo");
-			std::string fifo_lvl = txstream->_flow_iface -> peek_str();
+			std::string buff_read = txstream->_flow_iface -> peek_str();
+
+			//DEBUG: Print out adjusted sample rate
+			//std::cout  << buff_read<< std::endl;
 
 			// remove the "flow," at the beginning of the string
-			fifo_lvl.erase(0, 5);
-			std::stringstream ss(fifo_lvl);
+			buff_read.erase(0, 5);
+
+			//Prevent multiple access
+			txstream->_flowcontrol_mutex.lock();
 
 			// read in each fifo level, ignore() will skip the commas
-			double fifo[4];
+			std::stringstream ss(buff_read);
 			for (int j = 0; j < 4; j++) {
-				ss >> fifo[j];
+				ss >> txstream->_fifo_lvl[j];
 				ss.ignore();
 			}
+			txstream->_buffer_count[0]++;
+
+			//unlock
+			txstream->_flowcontrol_mutex.unlock();
+
+			//sleep for the designated update period
 			boost::this_thread::sleep(boost::posix_time::milliseconds(wait));
-			//DEBUG: Print out adjusted sample rate
-			std::cout  << fifo_lvl<< std::endl;
-
-
-
 		}
 
 
@@ -411,6 +438,9 @@ private:
 	property_tree::sptr _tree;
 	size_t _pay_len;
 	uhd::wb_iface::sptr _flow_iface;
+	boost::mutex _flowcontrol_mutex;
+	double _fifo_lvl[4];
+	uint32_t _buffer_count[2];
 };
 
 /***********************************************************************
