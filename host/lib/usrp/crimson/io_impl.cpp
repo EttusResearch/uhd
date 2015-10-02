@@ -252,7 +252,7 @@ public:
 					//
 					time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
 					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-						if(while_first){
+					/*	if(while_first){
 							//If we are waiting, now is a good time to look at the fifo level.
 							_flow_iface -> poke_str("Read fifo");
 							std::string fifo_lvl = _flow_iface -> peek_str();
@@ -282,7 +282,7 @@ public:
 							//DEBUG: Print out adjusted sample rate
 							//std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 						}
-						while_first = false;
+						while_first = false; */
 					}
 
 					//update last_time with when it was supposed to have been sent:
@@ -293,40 +293,7 @@ public:
 					time_spec_t wait = time_spec_t(0, (double)(remaining_bytes / 4.0) / (double)_samp_rate[i]);
 
 					//maybe use boost::this_thread::sleep(boost::posix_time::microseconds
-					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-						if(while_first){
-							//If we are waiting, now is a good time to look at the fifo level.
-							_flow_iface -> poke_str("Read fifo");
-							std::string fifo_lvl = _flow_iface -> peek_str();
-
-							// remove the "flow," at the beginning of the string
-							fifo_lvl.erase(0, 5);
-							std::stringstream ss(fifo_lvl);
-
-							// read in each fifo level, ignore() will skip the commas
-							double fifo[4];
-							for (int j = 0; j < 4; j++) {
-								ss >> fifo[j];
-								ss.ignore();
-
-								// calculate the error
-								fifo[j] = ((CRIMSON_BUFF_SIZE/2)- fifo[j]) / (CRIMSON_BUFF_SIZE/2);
-								fifo[j] = fifo[j] *fifo[j] ;
-								//apply correction
-								_samp_rate[j]=_samp_rate[j]+(fifo[j]*_samp_rate[j])/10000000;
-								//Limit the correction -magical numbers
-								if(_samp_rate[j] > (_samp_rate_usr[j] + _samp_rate_usr[j]/10000)){
-									_samp_rate[j] = _samp_rate_usr[j] + _samp_rate_usr[j]/10000;
-								}else if(_samp_rate[j] < (_samp_rate_usr[j] - _samp_rate_usr[j]/10000)){
-									_samp_rate[j] = _samp_rate_usr[j] - _samp_rate_usr[j]/10000;
-								}
-							}
-							//DEBUG: Print out adjusted sample rate
-							//std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i];
-							//std::cout  << std::setprecision(8)<<" adj: "<<fifo[i]<< std::endl;
-						}
-						while_first = false;
-					}
+					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {}
 
 					//update last_time with when it was supposed to have been sent:
 					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
@@ -378,6 +345,14 @@ private:
 			// connect to UDP port
 			_udp_stream.push_back(uhd::transport::udp_stream::make_tx_stream(ip_addr, udp_port));
 
+			//Launch thread for flow control
+
+			//create thread group
+			//boost::thread_group tgroup;
+			//tgroup.create_thread(boost::bind(init_flowcontrol));
+			boost::thread flowcontrolThread(init_flowcontrol,this);
+
+
 			// initialize sample rate
 			_samp_rate.push_back(0);
 			_samp_rate_usr.push_back(0);
@@ -385,6 +360,39 @@ private:
 			// initialize the _last_time
 			_last_time.push_back(time_spec_t(0.0));
 		}
+	}
+
+	 // Flow Control (should be called once on seperate thread)
+	static void init_flowcontrol(crimson_tx_streamer* txstream) {
+
+		//Get flow control updates x times a second
+		uint32_t wait = 1000/CRIMSON_UPDATE_PER_SEC;
+
+		while(true){
+			//get data
+			txstream->_flow_iface -> poke_str("Read fifo");
+			std::string fifo_lvl = txstream->_flow_iface -> peek_str();
+
+			// remove the "flow," at the beginning of the string
+			fifo_lvl.erase(0, 5);
+			std::stringstream ss(fifo_lvl);
+
+			// read in each fifo level, ignore() will skip the commas
+			double fifo[4];
+			for (int j = 0; j < 4; j++) {
+				ss >> fifo[j];
+				ss.ignore();
+			}
+			boost::this_thread::sleep(boost::posix_time::milliseconds(wait));
+			//DEBUG: Print out adjusted sample rate
+			std::cout  << fifo_lvl<< std::endl;
+
+
+
+		}
+
+
+
 	}
 
 	// helper function to swap bytes, within 32-bits
