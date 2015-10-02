@@ -231,6 +231,15 @@ public:
 				_samp_rate_usr[i] = _samp_rate[i];
 				std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
 				_last_time[i] = time_spec_t::get_system_time();
+
+
+			}
+
+			//Flow control init
+			//check if flow control is running, if not run it and say its running
+			if (_flow_running == false){
+				boost::thread flowcontrolThread(init_flowcontrol,this);
+				_flow_running = true;
 			}
 
 			// continue and send out the payload
@@ -366,12 +375,13 @@ private:
 
 			//Launch thread for flow control
 
-			//create thread group
+			//Set up initial flow control variables
+			_flow_running=false;
 			//boost::thread_group tgroup;
 			//tgroup.create_thread(boost::bind(init_flowcontrol));
 			_buffer_count[0] = 0;
 			_buffer_count[1] = 0;
-			boost::thread flowcontrolThread(init_flowcontrol,this);
+			//boost::thread flowcontrolThread(init_flowcontrol,this);
 
 
 			// initialize sample rate
@@ -441,6 +451,7 @@ private:
 	boost::mutex _flowcontrol_mutex;
 	double _fifo_lvl[4];
 	uint32_t _buffer_count[2];
+	bool _flow_running;
 };
 
 /***********************************************************************
