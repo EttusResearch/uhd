@@ -215,8 +215,6 @@ public:
         	const tx_metadata_t &metadata,
         	const double timeout = 0.1)
 	{
-		//const size_t vita_hdr = 4;
-		//const size_t vita_tlr = 1;
 		const size_t vita_pck = nsamps_per_buff;// + vita_hdr + vita_tlr;	// vita is disabled
 		uint32_t vita_buf[vita_pck];						// buffer to read in data plus room for VITA
 		size_t ret;
@@ -226,16 +224,17 @@ public:
 
 			// update sample rate if we don't know the sample rate
 			if (_samp_rate[i] == 0) {
+				//Get sample rate
 				std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
+				//Set the user set sample rate to refer to later
 				_samp_rate_usr[i] = _samp_rate[i];
+
 				//Adjust sample rate to fill up buffer in first half second
 				//we do this by setting setting the "last time " data was sent to be half a buffers worth in the past
 				//each element in the buffer is 2 samples worth
 				time_spec_t past_halfbuffer = time_spec_t(0, (double)(CRIMSON_BUFF_SIZE) / (double)_samp_rate[i]);
 				_last_time[i] = time_spec_t::get_system_time()-past_halfbuffer;
-
-
 			}
 
 			//Flow control init
@@ -255,24 +254,28 @@ public:
 
 				if (remaining_bytes >= CRIMSON_MAX_MTU) {
 					time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
+
 					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-						//Check for new buffer if exists and handle accordingly
+						//If we are waiting, check to see if we should update sample rate
 						update_samplerate();
 					}
+
 					//update last_time with when it was supposed to have been sent:
 					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
 					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
+
 				} else {
+
 					// wait for flow control
 					time_spec_t wait = time_spec_t(0, (double)(remaining_bytes / 4.0) / (double)_samp_rate[i]);
 
-					//maybe use boost::this_thread::sleep(boost::posix_time::microseconds
 					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-						//Check for new buffer if exists and handle accordingly
+						//If we are waiting, check to see if we should update sample rate
 						update_samplerate();
 					}
+
 					//update last_time with when it was supposed to have been sent:
-					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
+					_last_time[i] = _last_time[i]+wait;
 					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, remaining_bytes);
 				}
 			}
@@ -324,11 +327,8 @@ private:
 
 			//Set up initial flow control variables
 			_flow_running=false;
-			//boost::thread_group tgroup;
-			//tgroup.create_thread(boost::bind(init_flowcontrol));
 			_buffer_count[0] = 0;
 			_buffer_count[1] = 0;
-			//boost::thread flowcontrolThread(init_flowcontrol,this);
 
 
 			// initialize sample rate
@@ -346,13 +346,11 @@ private:
 		//Get flow control updates x times a second
 		uint32_t wait = 1000/CRIMSON_UPDATE_PER_SEC;
 		txstream->_flow_running = true;
-		bool fillToHalf[4] = {true,true,true,true};
 
 		while(true){
 			//get data
 			txstream->_flow_iface -> poke_str("Read fifo");
 			std::string buff_read = txstream->_flow_iface -> peek_str();
-			//std::cout  << buff_read<< std::endl;
 
 			// remove the "flow," at the beginning of the string
 			buff_read.erase(0, 5);
@@ -366,11 +364,8 @@ private:
 				ss >> txstream->_fifo_lvl[j];
 				ss.ignore();
 			}
-		   std::cout  <<  "bufflevel: " <<txstream->_fifo_lvl[0]<<" 1: "<<txstream->_buffer_count[0]<<" 2: "<<txstream-> _buffer_count[1]<< "Sample Rate: " <<txstream-> _samp_rate[0]<<std::endl;
-
 			//increment buffer count to say we have data
 			txstream->_buffer_count[0]++;
-			//DEBUG: Print out adjusted sample rate
 
 			//unlock
 			txstream->_flowcontrol_mutex.unlock();
@@ -385,19 +380,15 @@ private:
 	void update_samplerate(){
 		for (unsigned int i = 0; i < _channels.size(); i++) {
 			if(_buffer_count[0]!=_buffer_count[1]){
-				//If we are waiting, now is a good time to look at the fifo level.
-
+				//If mutex is locked, let the streamer loop around and try again if we are still waiting
 				if(_flowcontrol_mutex.try_lock()){
-					// calculate the error - aim for 40
+
+					// calculate the error - aim for 50%
 					_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE/2);
 					//apply correction
 					_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
-					//Limit the correction -magical numbers
-					/*if(_samp_rate[i] > (_samp_rate_usr[i] + _samp_rate_usr[i]/1000000)){
-						_samp_rate[i] = _samp_rate_usr[i] + _samp_rate_usr[i]/1000000;
-					}else if(_samp_rate[i] < (_samp_rate_usr[i] - _samp_rate_usr[i]/1000000)){
-						_samp_rate[i] = _samp_rate_usr[i] - _samp_rate_usr[i]/1000000;
-					}*/
+
+					//Limit the correction
 					//Maximum correction is a half buffer per second.
 					if(_samp_rate[i] > (_samp_rate_usr[i] + CRIMSON_BUFF_SIZE)){
 						_samp_rate[i] = _samp_rate_usr[i] + CRIMSON_BUFF_SIZE;
