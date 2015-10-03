@@ -388,24 +388,26 @@ private:
 				//If we are waiting, now is a good time to look at the fifo level.
 
 				if(_flowcontrol_mutex.try_lock()){
-					std::cout  << "sample_rate:  "<<_samp_rate[i]<<"  buff1: "<<_buffer_count[0]<<"   buff2: "<<_buffer_count[1]<< std::endl;
-					// calculate the error
+					// calculate the error - aim for 40
 					_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE/2);
 					//apply correction
 					_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
 					//Limit the correction -magical numbers
-					if(_samp_rate[i] > (_samp_rate_usr[i] + _samp_rate_usr[i]/200000)){
-						_samp_rate[i] = _samp_rate_usr[i] + _samp_rate_usr[i]/200000;
-					}else if(_samp_rate[i] < (_samp_rate_usr[i] - _samp_rate_usr[i]/200000)){
-						_samp_rate[i] = _samp_rate_usr[i] - _samp_rate_usr[i]/200000;
+					/*if(_samp_rate[i] > (_samp_rate_usr[i] + _samp_rate_usr[i]/1000000)){
+						_samp_rate[i] = _samp_rate_usr[i] + _samp_rate_usr[i]/1000000;
+					}else if(_samp_rate[i] < (_samp_rate_usr[i] - _samp_rate_usr[i]/1000000)){
+						_samp_rate[i] = _samp_rate_usr[i] - _samp_rate_usr[i]/1000000;
+					}*/
+					//Maximum correction is a half buffer per second.
+					if(_samp_rate[i] > (_samp_rate_usr[i] + CRIMSON_BUFF_SIZE)){
+						_samp_rate[i] = _samp_rate_usr[i] + CRIMSON_BUFF_SIZE;
+					}else if(_samp_rate[i] < (_samp_rate_usr[i] - CRIMSON_BUFF_SIZE)){
+						_samp_rate[i] = _samp_rate_usr[i] - CRIMSON_BUFF_SIZE;
 					}
 
 					//Buffer is now handled
 					_buffer_count[i+1] = _buffer_count[0];
 					_flowcontrol_mutex.unlock();
-
-					//DEBUG: Print out adjusted sample rate
-				//	std::cout  << std::setprecision(18)<< "After Adjust" <<_samp_rate[i]<< std::endl;
 				}
 			}
 		}
