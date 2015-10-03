@@ -229,11 +229,11 @@ public:
 				std::string ch = boost::lexical_cast<std::string>((char)(_channels[i] + 65));
 				_samp_rate[i] = _tree->access<double>("/mboards/0/tx_dsps/Channel_"+ch+"/rate/value").get();
 				_samp_rate_usr[i] = _samp_rate[i];
-				//Adjust sample rate to fill up beffer in first half second
-			//	std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
-				_samp_rate[i] = _samp_rate[i]+(CRIMSON_BUFF_SIZE);
-			//	std::cout  << std::setprecision(20)<< "Sample Rate: " << _samp_rate[i]<< std::endl;
-				_last_time[i] = time_spec_t::get_system_time();
+				//Adjust sample rate to fill up buffer in first half second
+				//we do this by setting setting the "last time " data was sent to be half a buffers worth in the past
+				//each element in the buffer is 2 samples worth
+				time_spec_t past_halfbuffer = time_spec_t(0, (double)(CRIMSON_BUFF_SIZE) / (double)_samp_rate[i]);
+				_last_time[i] = time_spec_t::get_system_time()-past_halfbuffer;
 
 
 			}
@@ -328,9 +328,6 @@ private:
 			//tgroup.create_thread(boost::bind(init_flowcontrol));
 			_buffer_count[0] = 0;
 			_buffer_count[1] = 0;
-			_buffer_count[2] = 0;
-			_buffer_count[3] = 0;
-			_buffer_count[4] = 0;
 			//boost::thread flowcontrolThread(init_flowcontrol,this);
 
 
@@ -355,10 +352,6 @@ private:
 			//get data
 			txstream->_flow_iface -> poke_str("Read fifo");
 			std::string buff_read = txstream->_flow_iface -> peek_str();
-
-			//increment buffer count to say we have data
-			txstream->_buffer_count[0]++;
-			//DEBUG: Print out adjusted sample rate
 			//std::cout  << buff_read<< std::endl;
 
 			// remove the "flow," at the beginning of the string
@@ -372,13 +365,12 @@ private:
 			for (int j = 0; j < 4; j++) {
 				ss >> txstream->_fifo_lvl[j];
 				ss.ignore();
-				if (txstream->_fifo_lvl[j] > CRIMSON_BUFF_SIZE/2)
-					fillToHalf[j] = false;
-				if (fillToHalf[j] == true)
-					txstream->_buffer_count[j+1]=txstream->_buffer_count[0];
 			}
 		   std::cout  <<  "bufflevel: " <<txstream->_fifo_lvl[0]<<" 1: "<<txstream->_buffer_count[0]<<" 2: "<<txstream-> _buffer_count[1]<< "Sample Rate: " <<txstream-> _samp_rate[0]<<std::endl;
 
+			//increment buffer count to say we have data
+			txstream->_buffer_count[0]++;
+			//DEBUG: Print out adjusted sample rate
 
 			//unlock
 			txstream->_flowcontrol_mutex.unlock();
@@ -392,7 +384,7 @@ private:
 	}
 	void update_samplerate(){
 		for (unsigned int i = 0; i < _channels.size(); i++) {
-			if(_buffer_count[0]!=_buffer_count[i+1]){
+			if(_buffer_count[0]!=_buffer_count[1]){
 				//If we are waiting, now is a good time to look at the fifo level.
 
 				if(_flowcontrol_mutex.try_lock()){
@@ -437,7 +429,7 @@ private:
 	uhd::wb_iface::sptr _flow_iface;
 	boost::mutex _flowcontrol_mutex;
 	double _fifo_lvl[4];
-	uint32_t _buffer_count[5];
+	uint32_t _buffer_count[2];
 	bool _flow_running;
 };
 
