@@ -16,9 +16,14 @@
 //
 
 #include <uhd/types/device_addr.hpp>
-
-#include "adf435x_common.hpp"
+#include "adf435x.hpp"
 #include "max287x.hpp"
+
+// LO Related
+#define ADF435X_CE      (1 << 3)
+#define ADF435X_PDBRF   (1 << 2)
+#define ADF435X_MUXOUT  (1 << 1) // INPUT!!!
+#define LOCKDET_MASK    (1 << 0) // INPUT!!!
 
 // Common IO Pins
 #define LO_LPF_EN       (1 << 15)
@@ -36,6 +41,8 @@
 #define RX_LED_LD       (1 << 6)                // LED for RX Lock Detect
 #define DIS_POWER_RX    (1 << 5)                // on UNIT_RX, 0 powers up RX
 #define RX_DISABLE      (1 << 4)                // on UNIT_RX, 1 disables RX Mixer and Baseband
+#define RX_ATTN_SHIFT   8 //lsb of RX Attenuator Control
+#define RX_ATTN_MASK    (63 << RX_ATTN_SHIFT) //valid bits of RX Attenuator Control
 
 // TX Attenuator Pins
 #define TX_ATTN_SHIFT   8                       // lsb of TX Attenuator Control
@@ -190,6 +197,10 @@ protected:
 
         /*! This is the registered instance of the wrapper class, sbx_base. */
         sbx_xcvr *self_base;
+    private:
+        adf435x_iface::sptr _txlo;
+        adf435x_iface::sptr _rxlo;
+        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs);
     };
 
     /*!
@@ -206,6 +217,10 @@ protected:
 
         /*! This is the registered instance of the wrapper class, sbx_base. */
         sbx_xcvr *self_base;
+    private:
+        adf435x_iface::sptr _txlo;
+        adf435x_iface::sptr _rxlo;
+        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs);
     };
 
     /*!

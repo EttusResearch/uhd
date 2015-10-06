@@ -156,3 +156,9 @@ sensor_value_t wbx_base::get_locked(dboard_iface::unit_t unit){
     const bool locked = (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }
+
+void wbx_base::wbx_versionx::write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs) {
+    BOOST_FOREACH(boost::uint32_t reg, regs) {
+        self_base->get_iface()->write_spi(unit, spi_config_t::EDGE_RISE, reg, 32);
+    }
+}
