@@ -24,8 +24,9 @@
 #define REG_TIME_LO       _base + 4
 #define REG_TIME_CTRL     _base + 8
 
-#define CTRL_LATCH_TIME_PPS (1 << 1)
-#define CTRL_LATCH_TIME_NOW (1 << 0)
+#define CTRL_LATCH_TIME_NOW     (1 << 0)
+#define CTRL_LATCH_TIME_PPS     (1 << 1)
+#define CTRL_LATCH_TIME_SYNC    (1 << 2)
 
 using namespace uhd;
 
@@ -97,6 +98,14 @@ struct time_core_3000_impl : time_core_3000
         _iface->poke32(REG_TIME_HI, boost::uint32_t(ticks >> 32));
         _iface->poke32(REG_TIME_LO, boost::uint32_t(ticks >> 0));
         _iface->poke32(REG_TIME_CTRL, CTRL_LATCH_TIME_NOW);
+    }
+
+    void set_time_sync(const uhd::time_spec_t &time)
+    {
+        const boost::uint64_t ticks = time.to_ticks(_tick_rate);
+        _iface->poke32(REG_TIME_HI, boost::uint32_t(ticks >> 32));
+        _iface->poke32(REG_TIME_LO, boost::uint32_t(ticks >> 0));
+        _iface->poke32(REG_TIME_CTRL, CTRL_LATCH_TIME_SYNC);
     }
 
     void set_time_next_pps(const uhd::time_spec_t &time)

@@ -167,6 +167,7 @@ private:
     uhd::usrp::subdev_spec_t coerce_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_subdev_spec(const std::string &tx_rx, const uhd::usrp::subdev_spec_t &);
     void update_time_source(const std::string &);
+    void sync_times(const uhd::time_spec_t&);
     void update_clock_source(const std::string &);
     void update_bandsel(const std::string& which, double freq);
     void update_antenna_sel(const size_t which, const std::string &ant);

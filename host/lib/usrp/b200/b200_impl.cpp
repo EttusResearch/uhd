@@ -555,7 +555,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         client_settings = boost::make_shared<b200_ad9361_client_t>();
     }
     _codec_ctrl = ad9361_ctrl::make_spi(client_settings, _spi_iface, AD9361_SLAVENO);
-   
+
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
     ////////////////////////////////////////////////////////////////////
@@ -623,15 +623,15 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
 
     //register time now and pps onto available radio cores
     _tree->create<time_spec_t>(mb_path / "time" / "now")
-        .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64));
+        .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
+        .subscribe(boost::bind(&b200_impl::sync_times, this, _1))
+        .set(0.0);
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
         .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64));
-    for (size_t i = 0; i < _radio_perifs.size(); i++)
+    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
     {
-        _tree->access<time_spec_t>(mb_path / "time" / "now")
-            .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[i].time64, _1));
         _tree->access<time_spec_t>(mb_path / "time" / "pps")
-            .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[i].time64, _1));
+            .subscribe(boost::bind(&time_core_3000::set_time_next_pps, perif.time64, _1));
     }
 
     //setup time source props
@@ -1074,9 +1074,17 @@ void b200_impl::update_time_source(const std::string &source)
         throw uhd::key_error("update_time_source: unknown source: " + source);
     if (_time_source != value)
     {
-        _local_ctrl->poke32(TOREG(SR_CORE_PPS_SEL), value);
+        _local_ctrl->poke32(TOREG(SR_CORE_SYNC), value);
         _time_source = value;
     }
+}
+
+void b200_impl::sync_times(const uhd::time_spec_t& t)
+{
+    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+        perif.time64->set_time_sync(t);
+    _local_ctrl->poke32(TOREG(SR_CORE_SYNC), 1 << 2 | boost::uint32_t(_time_source));
+    _local_ctrl->poke32(TOREG(SR_CORE_SYNC), _time_source);
 }
 
 /***********************************************************************
