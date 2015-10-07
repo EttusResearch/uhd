@@ -26,6 +26,7 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/msg.hpp>
 #include <uhd/utils/static.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
@@ -683,6 +684,20 @@ private:
         device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
         is_int_n = boost::iequals(tune_args.get("mode_n",""), "integer");
         UHD_LOGV(rarely) << boost::format("UBX TX: the requested frequency is %f MHz") % (freq/1e6) << std::endl;
+        double target_pfd_freq = _tx_target_pfd_freq;
+        if (is_int_n and tune_args.has_key("int_n_step"))
+        {
+            target_pfd_freq = tune_args.cast<double>("int_n_step", _tx_target_pfd_freq);
+            if (target_pfd_freq > _tx_target_pfd_freq)
+            {
+                UHD_MSG(warning)
+                    << boost::format("Requested int_n_step of %f MHz too large, clipping to %f MHz")
+                    % (target_pfd_freq/1e6)
+                    % (_tx_target_pfd_freq/1e6)
+                    << std::endl;
+                target_pfd_freq = _tx_target_pfd_freq;
+            }
+        }
 
         // Clip the frequency to the valid range
         freq = ubx_freq_range.clip(freq);
@@ -704,10 +719,10 @@ private:
             set_cpld_field(TXLB_SEL, 1);
             set_cpld_field(TXHB_SEL, 0);
             // Set LO1 to IF of 2100 MHz (offset from RX IF to reduce leakage)
-            freq_lo1 = _txlo1->set_frequency(2100*fMHz, ref_freq, _tx_target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(2100*fMHz, ref_freq, target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
             // Set LO2 to IF minus desired frequency
-            freq_lo2 = _txlo2->set_frequency(freq_lo1 - freq, ref_freq, _tx_target_pfd_freq, is_int_n);
+            freq_lo2 = _txlo2->set_frequency(freq_lo1 - freq, ref_freq, target_pfd_freq, is_int_n);
             _txlo2->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= (500*fMHz)) && (freq <= (800*fMHz)))
@@ -717,7 +732,7 @@ private:
             set_cpld_field(TXLO1_FSEL1, 1);
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
-            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _tx_target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq > (800*fMHz)) && (freq <= (1000*fMHz)))
@@ -727,7 +742,7 @@ private:
             set_cpld_field(TXLO1_FSEL1, 1);
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
-            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _tx_target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
         else if ((freq > (1000*fMHz)) && (freq <= (2200*fMHz)))
@@ -737,7 +752,7 @@ private:
             set_cpld_field(TXLO1_FSEL1, 0);
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
-            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _tx_target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq > (2200*fMHz)) && (freq <= (2500*fMHz)))
@@ -747,7 +762,7 @@ private:
             set_cpld_field(TXLO1_FSEL1, 0);
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
-            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _tx_target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq > (2500*fMHz)) && (freq <= (6000*fMHz)))
@@ -757,7 +772,7 @@ private:
             set_cpld_field(TXLO1_FSEL1, 0);
             set_cpld_field(TXLB_SEL, 0);
             set_cpld_field(TXHB_SEL, 1);
-            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, _tx_target_pfd_freq, is_int_n);
+            freq_lo1 = _txlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _txlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
 
@@ -825,6 +840,20 @@ private:
         property_tree::sptr subtree = this->get_rx_subtree();
         device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
         is_int_n = boost::iequals(tune_args.get("mode_n",""), "integer");
+        double target_pfd_freq = _rx_target_pfd_freq;
+        if (is_int_n and tune_args.has_key("int_n_step"))
+        {
+            target_pfd_freq = tune_args.cast<double>("int_n_step", _rx_target_pfd_freq);
+            if (target_pfd_freq > _rx_target_pfd_freq)
+            {
+                UHD_MSG(warning)
+                    << boost::format("Requested int_n_step of %f Mhz too large, clipping to %f MHz")
+                    % (target_pfd_freq/1e6)
+                    % (_rx_target_pfd_freq/1e6)
+                    << std::endl;
+                target_pfd_freq = _rx_target_pfd_freq;
+            }
+        }
 
         // Clip the frequency to the valid range
         freq = ubx_freq_range.clip(freq);
@@ -848,10 +877,10 @@ private:
             set_cpld_field(RXLB_SEL, 1);
             set_cpld_field(RXHB_SEL, 0);
             // Set LO1 to IF of 2380 MHz (2440 MHz filter center minus 60 MHz offset to minimize LO leakage)
-            freq_lo1 = _rxlo1->set_frequency(2380*fMHz, ref_freq, _rx_target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(2380*fMHz, ref_freq, target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
             // Set LO2 to IF minus desired frequency
-            freq_lo2 = _rxlo2->set_frequency(freq_lo1 - freq, ref_freq, _rx_target_pfd_freq, is_int_n);
+            freq_lo2 = _rxlo2->set_frequency(freq_lo1 - freq, ref_freq, target_pfd_freq, is_int_n);
             _rxlo2->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 100*fMHz) && (freq < 500*fMHz))
@@ -864,10 +893,10 @@ private:
             set_cpld_field(RXLB_SEL, 1);
             set_cpld_field(RXHB_SEL, 0);
             // Set LO1 to IF of 2440 (center of filter)
-            freq_lo1 = _rxlo1->set_frequency(2440*fMHz, ref_freq, _rx_target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(2440*fMHz, ref_freq, target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
             // Set LO2 to IF minus desired frequency
-            freq_lo2 = _rxlo2->set_frequency(freq_lo1 - freq, ref_freq, _rx_target_pfd_freq, is_int_n);
+            freq_lo2 = _rxlo2->set_frequency(freq_lo1 - freq, ref_freq, target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 500*fMHz) && (freq < 800*fMHz))
@@ -879,7 +908,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 1);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 800*fMHz) && (freq < 1000*fMHz))
@@ -891,7 +920,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 1);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
         else if ((freq >= 1000*fMHz) && (freq < 1500*fMHz))
@@ -903,7 +932,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 1500*fMHz) && (freq < 2200*fMHz))
@@ -915,7 +944,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 2200*fMHz) && (freq < 2500*fMHz))
@@ -927,7 +956,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_2DBM);
         }
         else if ((freq >= 2500*fMHz) && (freq <= 6000*fMHz))
@@ -939,7 +968,7 @@ private:
             set_cpld_field(RXLO1_FSEL1, 0);
             set_cpld_field(RXLB_SEL, 0);
             set_cpld_field(RXHB_SEL, 1);
-            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, _rx_target_pfd_freq, is_int_n);
+            freq_lo1 = _rxlo1->set_frequency(freq, ref_freq, target_pfd_freq, is_int_n);
             _rxlo1->set_output_power(max287x_iface::OUTPUT_POWER_5DBM);
         }
 
