@@ -60,18 +60,34 @@ public:
 
     virtual void set_atr_mode(const gpio_atr_mode_t mode, const boost::uint32_t mask)
     {
+        //Each bit in the "ATR Disable" register determines whether the respective bit in the GPIO
+        //output bus is driven by the ATR engine or a static register.
+        //For each bit position, a 1 means that the bit is static and 0 means that the bit
+        //is driven by the ATR state machine.
+        //This setting will only get applied to all bits in the "mask" that are 1. All other
+        //bits will retain their old value.
         _atr_disable_reg.set_with_mask((mode==MODE_ATR) ? ~MASK_SET_ALL : MASK_SET_ALL, mask);
         _atr_disable_reg.flush();
     }
 
     virtual void set_gpio_ddr(const gpio_ddr_t dir, const boost::uint32_t mask)
     {
+        //Each bit in the "DDR" register determines whether the respective bit in the GPIO
+        //bus is an input or an output.
+        //For each bit position, a 1 means that the bit is an output and 0 means that the bit
+        //is an input.
+        //This setting will only get applied to all bits in the "mask" that are 1. All other
+        //bits will retain their old value.
         _ddr_reg.set_with_mask((dir==DDR_INPUT) ? ~MASK_SET_ALL : MASK_SET_ALL, mask);
         _ddr_reg.flush();
     }
 
     virtual void set_atr_reg(const gpio_atr_reg_t atr, const boost::uint32_t value, const boost::uint32_t mask)
     {
+        //Set the value of the specified ATR register. For bits with ATR Disable set to 1,
+        //the IDLE register will hold the output state
+        //This setting will only get applied to all bits in the "mask" that are 1. All other
+        //bits will retain their old value.
         masked_reg_t* reg = NULL;
         switch (atr) {
             case ATR_REG_IDLE:          reg = &_atr_idle_reg; break;
@@ -86,6 +102,9 @@ public:
 
     virtual boost::uint32_t read_gpio()
     {
+        //Read the state of the GPIO pins
+        //If a pin is configured as an input, reads the actual value of the pin
+        //If a pin is configured as an output, reads the last value written to the pin
         if (_rb_addr != READBACK_DISABLED) {
             return _iface->peek32(_rb_addr);
         } else {
@@ -93,31 +112,38 @@ public:
         }
     }
 
-    virtual void set_gpio_attr(const gpio_attr_t attr, const boost::uint32_t value)
+    inline virtual void set_gpio_attr(const gpio_attr_t attr, const boost::uint32_t value)
     {
+        //An attribute based API to configure all settings for the GPIO bus in one function
+        //call. This API does not have a mask so it configures all bits at the same time.
         switch (attr)
         {
         case GPIO_CTRL:
-            set_atr_mode(MODE_ATR, value);
-            set_atr_mode(MODE_GPIO, ~value);
+            set_atr_mode(MODE_ATR, value);   //Configure mode=ATR for all bits that are set
+            set_atr_mode(MODE_GPIO, ~value); //Configure mode=GPIO for all bits that are unset
             break;
         case GPIO_DDR:
-            set_gpio_ddr(DDR_OUTPUT, value);
-            set_gpio_ddr(DDR_INPUT, ~value);
+            set_gpio_ddr(DDR_OUTPUT, value); //Configure as output for all bits that are set
+            set_gpio_ddr(DDR_INPUT, ~value); //Configure as input for all bits that are unset
             break;
         case GPIO_OUT:
+            //Only set bits that are driven statically
             set_atr_reg(ATR_REG_IDLE, value, _atr_disable_reg.get(masked_reg_t::REGISTER));
             break;
         case GPIO_ATR_0X:
+            //Only set bits that are driven by the ATR engine
             set_atr_reg(ATR_REG_IDLE, value, ~_atr_disable_reg.get(masked_reg_t::REGISTER));
             break;
         case GPIO_ATR_RX:
+            //Only set bits that are driven by the ATR engine
             set_atr_reg(ATR_REG_RX_ONLY, value, ~_atr_disable_reg.get(masked_reg_t::REGISTER));
             break;
         case GPIO_ATR_TX:
+            //Only set bits that are driven by the ATR engine
             set_atr_reg(ATR_REG_TX_ONLY, value, ~_atr_disable_reg.get(masked_reg_t::REGISTER));
             break;
         case GPIO_ATR_XX:
+            //Only set bits that are driven by the ATR engine
             set_atr_reg(ATR_REG_FULL_DUPLEX, value, ~_atr_disable_reg.get(masked_reg_t::REGISTER));
             break;
         default:
