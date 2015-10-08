@@ -97,7 +97,7 @@ namespace vrt{
      *
      * \section vrt_pack_contract Packing contract
      *
-     * \subsection Requirements:
+     * \subsection vrt_pack_contract_reqs Requirements:
      * - packet_buff points to a valid address space with enough space to write
      *   the entire buffer, regardless of its length. At the very least, it must
      *   be able to hold an entire header.
@@ -107,7 +107,7 @@ namespace vrt{
      *     value (e.g. if `has_sid` is true, `sid` contains a valid SID)
      *   - `num_payload_bytes` and `num_payload_words32` are both set to the correct values
      *
-     * \subsection Result:
+     * \subsection vrt_pack_contract_res Result:
      * - `packet_buff` now points to a valid header that can be sent over the transport
      *   without further modification
      * - The following members on `if_packet_info` are set:
@@ -127,7 +127,7 @@ namespace vrt{
      *
      * \section vrt_unpack_contract Unpacking contract
      *
-     * \subsection Requirements
+     * \subsection vrt_unpack_contract_reqs Requirements
      * - `packet_buff` points to a readable address space with a
      *   CHDR packet, starting at the header. `packet_buff[0]` *must* always
      *   point to a valid first word of the header. This implies that num_packet_words32
@@ -138,7 +138,7 @@ namespace vrt{
      *     readable words from this packet.
      *   - `link_type`
      *
-     * \subsection Result
+     * \subsection vrt_unpack_contract_res Result
      * - `if_packet_info` now has the following values set to correct values:
      *   - `packet_type`
      *   - `num_payload_bytes`
