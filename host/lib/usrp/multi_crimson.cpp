@@ -369,7 +369,8 @@ void multi_crimson_impl::set_rx_rate(double rate, size_t chan){
 
     double actual_rate = _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").get();
 
-    // re-tune the frequency
+    // re-tune the frequency ??/?????
+    /*
     int cur_dsp_nco = _tree->access<int>(rx_dsp_root(chan) / "nco").get();
     double cur_lo_freq = 0;
     if (_tree->access<int>(rx_rf_fe_root(chan) / "freq" / "band").get() == 1) {
@@ -377,7 +378,7 @@ void multi_crimson_impl::set_rx_rate(double rate, size_t chan){
     }
     tune_request_t tune_request(cur_lo_freq - cur_dsp_nco);
     set_rx_freq(tune_request, chan);
-
+*/
     boost::format base_message (
             "RX Sample Rate Request:\n"
     	    "  Requested sample rate: %f MSps\n"
@@ -644,6 +645,7 @@ void multi_crimson_impl::set_tx_rate(double rate, size_t chan){
     double actual_rate = _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").get();
 
     // re-tune the frequency
+    /*
     int cur_dac_nco = _tree->access<int>(tx_rf_fe_root(chan) / "nco").get();
     int cur_dsp_nco = _tree->access<int>(tx_dsp_root(chan) / "nco").get();
     double cur_lo_freq = 0;
@@ -652,7 +654,7 @@ void multi_crimson_impl::set_tx_rate(double rate, size_t chan){
     }
     tune_request_t tune_request(cur_lo_freq + cur_dac_nco + cur_dsp_nco);
     set_tx_freq(tune_request, chan);
-
+*/
     boost::format base_message (
             "TX Sample Rate Request:\n"
     	    "  Requested sample rate: %f MSps\n"
