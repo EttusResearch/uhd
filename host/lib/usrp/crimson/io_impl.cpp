@@ -389,7 +389,7 @@ private:
 					_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
 
 					//Limit the correction
-					//Maximum correction is a half buffer per second.
+					//Maximum correction is a half buffer per second (a buffer element is 2 samples).
 					if(_samp_rate[i] > (_samp_rate_usr[i] + CRIMSON_BUFF_SIZE)){
 						_samp_rate[i] = _samp_rate_usr[i] + CRIMSON_BUFF_SIZE;
 					}else if(_samp_rate[i] < (_samp_rate_usr[i] - CRIMSON_BUFF_SIZE)){
@@ -452,10 +452,10 @@ rx_streamer::sptr crimson_impl::get_rx_stream(const uhd::stream_args_t &args){
 			\"sc16\" Q16 I16" << std::endl;
 	}
 
-	// Warning for preference to set the MTU size to 9000 to support Jumbo Frames
+	// Warning for preference to set the MTU size to 3600 to support Jumbo Frames
         boost::format base_message (
             "\nCrimson Warning:\n"
-            "   Please set the MTU size for SFP ports to 9000.\n"
+            "   Please set the MTU size for SFP ports to 4000.\n"
             "   The device has been optimized for Jumbo Frames\n"
 	    "   to lower overhead.\n");
 	UHD_MSG(status) << base_message.str();
@@ -480,10 +480,10 @@ tx_streamer::sptr crimson_impl::get_tx_stream(const uhd::stream_args_t &args){
 			\"sc16\" Q16 I16" << std::endl;
 	}
 
-	// Warning for preference to set the MTU size to 9000 to support Jumbo Frames
+	// Warning for preference to set the MTU size to 3600 to support Jumbo Frames
         boost::format base_message (
             "\nCrimson Warning:\n"
-            "   Please set the MTU size for SFP ports to 9000.\n"
+            "   Please set the MTU size for SFP ports to 4000 \n"
             "   The device has been optimized for Jumbo Frames\n"
 	    "   to lower overhead.\n");
 	UHD_MSG(status) << base_message.str();
