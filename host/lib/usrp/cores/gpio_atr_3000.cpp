@@ -82,7 +82,7 @@ public:
         _ddr_reg.flush();
     }
 
-    virtual void set_atr_reg(const gpio_atr_reg_t atr, const boost::uint32_t value, const boost::uint32_t mask)
+    virtual void set_atr_reg(const gpio_atr_reg_t atr, const boost::uint32_t value, const boost::uint32_t mask = MASK_SET_ALL)
     {
         //Set the value of the specified ATR register. For bits with ATR Disable set to 1,
         //the IDLE register will hold the output state
@@ -96,8 +96,21 @@ public:
             case ATR_REG_FULL_DUPLEX:   reg = &_atr_fdx_reg;  break;
             default:                    reg = &_atr_idle_reg; break;
         }
-        reg->set_with_mask(value, mask);
+        //For protection we only write to bits that have the mode ATR by masking the user
+        //specified "mask" with ~atr_disable.
+        reg->set_with_mask(value, mask & (~_atr_disable_reg.get(masked_reg_t::REGISTER)));
         reg->flush();
+    }
+
+    virtual void set_gpio_out(const boost::uint32_t value, const boost::uint32_t mask = MASK_SET_ALL) {
+        //Set the value of the specified GPIO output register.
+        //This setting will only get applied to all bits in the "mask" that are 1. All other
+        //bits will retain their old value.
+
+        //For protection we only write to bits that have the mode GPIO by masking the user
+        //specified "mask" with atr_disable.
+        _atr_idle_reg.set_with_mask(value, mask & _atr_disable_reg.get(masked_reg_t::REGISTER));
+        _atr_idle_reg.flush();
     }
 
     virtual boost::uint32_t read_gpio()
@@ -128,23 +141,23 @@ public:
             break;
         case GPIO_OUT:
             //Only set bits that are driven statically
-            set_atr_reg(ATR_REG_IDLE, value, _atr_disable_reg.get(masked_reg_t::REGISTER));
+            set_atr_reg(ATR_REG_IDLE, value);
             break;
         case GPIO_ATR_0X:
             //Only set bits that are driven by the ATR engine
-            set_atr_reg(ATR_REG_IDLE, value, ~_atr_disable_reg.get(masked_reg_t::REGISTER));
+            set_atr_reg(ATR_REG_IDLE, value);
             break;
         case GPIO_ATR_RX:
             //Only set bits that are driven by the ATR engine
-            set_atr_reg(ATR_REG_RX_ONLY, value, ~_atr_disable_reg.get(masked_reg_t::REGISTER));
+            set_atr_reg(ATR_REG_RX_ONLY, value);
             break;
         case GPIO_ATR_TX:
             //Only set bits that are driven by the ATR engine
-            set_atr_reg(ATR_REG_TX_ONLY, value, ~_atr_disable_reg.get(masked_reg_t::REGISTER));
+            set_atr_reg(ATR_REG_TX_ONLY, value);
             break;
         case GPIO_ATR_XX:
             //Only set bits that are driven by the ATR engine
-            set_atr_reg(ATR_REG_FULL_DUPLEX, value, ~_atr_disable_reg.get(masked_reg_t::REGISTER));
+            set_atr_reg(ATR_REG_FULL_DUPLEX, value);
             break;
         default:
             UHD_THROW_INVALID_CODE_PATH();

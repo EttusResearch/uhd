@@ -86,9 +86,7 @@ public:
      * \param value the value to write
      * \param mask only writes to the bits where mask is non-zero
      */
-    inline void set_gpio_out(const boost::uint32_t value, const boost::uint32_t mask = MASK_SET_ALL) {
-        set_atr_reg(ATR_REG_IDLE, value, mask);
-    }
+    virtual void set_gpio_out(const boost::uint32_t value, const boost::uint32_t mask = MASK_SET_ALL) = 0;
 
     /*!
      * Read the state of the GPIO pins
