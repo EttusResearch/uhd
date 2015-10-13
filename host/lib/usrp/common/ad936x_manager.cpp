@@ -19,6 +19,7 @@
 #include <uhd/utils/msg.hpp>
 #include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/thread/thread.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
