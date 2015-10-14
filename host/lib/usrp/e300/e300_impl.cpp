@@ -174,7 +174,7 @@ device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
                 device_addr_t new_hint = hint;
                 new_hint["addr"] = if_addrs.bcast;
 
-                // call discover with the new hint ad append results
+                // call discover with the new hint and append results
                 device_addrs_t new_e300_addrs = e300_find(new_hint);
                 e300_addrs.insert(e300_addrs.begin(),
                     new_e300_addrs.begin(), new_e300_addrs.end());
@@ -528,8 +528,8 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<time_spec_t>(mb_path / "time" / "now")
         .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
-        .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[0].time64, _1))
-        .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[1].time64, _1));
+        .subscribe(boost::bind(&e300_impl::_sync_times, this, _1))
+        .set(0.0);
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
         .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64))
         .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[0].time64, _1))
@@ -826,6 +826,16 @@ void e300_impl::_update_time_source(const std::string &source)
     _update_gpio_state();
 }
 
+void e300_impl::_sync_times(const uhd::time_spec_t& t)
+{
+    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+        perif.time64->set_time_sync(t);
+    _misc.time_sync = 1;
+    _update_gpio_state();
+    _misc.time_sync = 0;
+    _update_gpio_state();
+}
+
 size_t e300_impl::_get_axi_dma_channel(
     boost::uint8_t destination,
     boost::uint8_t prefix)
@@ -1111,7 +1121,8 @@ void e300_impl::_update_gpio_state(void)
         | (_misc.tx_bandsels  << gpio_t::TX_BANDSEL)
         | (_misc.rx_bandsel_a << gpio_t::RX_BANDSELA)
         | (_misc.rx_bandsel_b << gpio_t::RX_BANDSELB)
-        | (_misc.rx_bandsel_c << gpio_t::RX_BANDSELC);
+        | (_misc.rx_bandsel_c << gpio_t::RX_BANDSELC)
+        | (_misc.time_sync    << gpio_t::TIME_SYNC);
     _global_regs->poke32(global_regs::SR_CORE_MISC, misc_reg);
 }
 

@@ -764,8 +764,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<time_spec_t>(mb_path / "time" / "now")
         .publish(boost::bind(&time_core_3000::get_time_now, mb.radio_perifs[0].time64))
-        .subscribe(boost::bind(&time_core_3000::set_time_now, mb.radio_perifs[0].time64, _1))
-        .subscribe(boost::bind(&time_core_3000::set_time_now, mb.radio_perifs[1].time64, _1));
+        .subscribe(boost::bind(&x300_impl::sync_times, this, mb, _1))
+        .set(0.0);
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
         .publish(boost::bind(&time_core_3000::get_time_last_pps, mb.radio_perifs[0].time64))
         .subscribe(boost::bind(&time_core_3000::set_time_next_pps, mb.radio_perifs[0].time64, _1))
@@ -1455,6 +1455,14 @@ void x300_impl::update_time_source(mboard_members_t &mb, const std::string &sour
         throw uhd::runtime_error((boost::format("The %d PPS was not detected.  Please check the PPS source and try again.") % source).str());
     }
     */
+}
+
+void x300_impl::sync_times(mboard_members_t &mb, const uhd::time_spec_t& t)
+{
+    BOOST_FOREACH(radio_perifs_t &perif, mb.radio_perifs)
+        perif.time64->set_time_sync(t);
+    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 1);
+    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 0);
 }
 
 bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout)

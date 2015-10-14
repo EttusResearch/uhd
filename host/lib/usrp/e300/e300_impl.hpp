@@ -200,6 +200,8 @@ private: // types
         boost::uint32_t rx_bandsel_b;
         boost::uint32_t rx_bandsel_c;
 
+        boost::uint32_t time_sync;
+
         static const size_t PPS_SEL     = 0;
         static const size_t MIMO        = 2;
         static const size_t CODEC_ARST  = 3;
@@ -207,6 +209,7 @@ private: // types
         static const size_t RX_BANDSELA = 7;
         static const size_t RX_BANDSELB = 13;
         static const size_t RX_BANDSELC = 17;
+        static const size_t TIME_SYNC   = 21;
     };
 
 private: // methods
@@ -257,6 +260,7 @@ private: // methods
 
     void _update_time_source(const std::string &source);
     void _update_clock_source(const std::string &);
+    void _sync_times(const uhd::time_spec_t&);
 
     void _update_subdev_spec(
         const std::string &txrx,

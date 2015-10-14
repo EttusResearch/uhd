@@ -209,6 +209,7 @@ namespace uhd { namespace usrp { namespace x300 {
             UHD_DEFINE_SOFT_REG_FIELD(PPS_OUT_EN,   /*width*/ 1, /*shift*/ 4);  //[4]
             UHD_DEFINE_SOFT_REG_FIELD(TCXO_EN,      /*width*/ 1, /*shift*/ 5);  //[5]
             UHD_DEFINE_SOFT_REG_FIELD(GPSDO_PWR_EN, /*width*/ 1, /*shift*/ 6);  //[6]
+            UHD_DEFINE_SOFT_REG_FIELD(TIME_SYNC,    /*width*/ 1, /*shift*/ 7);  //[7]
 
             static const boost::uint32_t SRC_EXTERNAL = 0x0;
             static const boost::uint32_t SRC_INTERNAL = 0x2;
@@ -221,6 +222,7 @@ namespace uhd { namespace usrp { namespace x300 {
                 set(PPS_OUT_EN, 0);
                 set(TCXO_EN, 1);
                 set(GPSDO_PWR_EN, 1);   //GPSDO power always ON
+                set(TIME_SYNC, 0);
             }
         } clock_ctrl_reg;
 
