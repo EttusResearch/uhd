@@ -626,6 +626,9 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
         .subscribe(boost::bind(&b200_impl::sync_times, this, _1))
         .set(0.0);
+    //re-sync the times when the tick rate changes
+    _tree->access<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&b200_impl::sync_times, this, _radio_perifs[0].time64->get_time_now()));
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
         .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64));
     BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)

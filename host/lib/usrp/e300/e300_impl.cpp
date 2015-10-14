@@ -530,6 +530,9 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
         .subscribe(boost::bind(&e300_impl::_sync_times, this, _1))
         .set(0.0);
+    //re-sync the times when the tick rate changes
+    _tree->access<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&e300_impl::_sync_times, this, _radio_perifs[0].time64->get_time_now()));
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
         .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64))
         .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[0].time64, _1))
