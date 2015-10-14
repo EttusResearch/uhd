@@ -588,7 +588,6 @@ void pmu_handle_events(void)
 				uint8_t health = pmu_battery_get_health(charger);
 				switch (health) {
 				case PMU_HEALTH_OVERHEAT:
-					pmu_power_down();
 					pmu_error = PMU_ERROR_CHARGER_TEMP;
 					break;
 				default:
