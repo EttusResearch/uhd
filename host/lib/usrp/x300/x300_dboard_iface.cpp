@@ -245,17 +245,17 @@ boost::uint32_t x300_dboard_iface::read_gpio(unit_t unit)
 /***********************************************************************
  * SPI
  **********************************************************************/
-#define toslaveno(unit) \
-    (((unit) == dboard_iface::UNIT_TX)? _config.tx_spi_slaveno : _config.rx_spi_slaveno)
-
 void x300_dboard_iface::write_spi(
     unit_t unit,
     const spi_config_t &config,
     boost::uint32_t data,
     size_t num_bits
 ){
-    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
-    _config.spi->write_spi(toslaveno(unit), config, data, num_bits);
+    boost::uint32_t slave = 0;
+    if (unit == UNIT_TX) slave |= _config.tx_spi_slaveno;
+    if (unit == UNIT_RX) slave |= _config.rx_spi_slaveno;
+
+    _config.spi->write_spi(int(slave), config, data, num_bits);
 }
 
 boost::uint32_t x300_dboard_iface::read_write_spi(
@@ -265,7 +265,9 @@ boost::uint32_t x300_dboard_iface::read_write_spi(
     size_t num_bits
 ){
     if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
-    return _config.spi->read_spi(toslaveno(unit), config, data, num_bits);
+    return _config.spi->read_spi(
+        (unit==dboard_iface::UNIT_TX)?_config.tx_spi_slaveno:_config.rx_spi_slaveno,
+        config, data, num_bits);
 }
 
 /***********************************************************************
