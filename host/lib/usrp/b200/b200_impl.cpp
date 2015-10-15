@@ -624,11 +624,11 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     //register time now and pps onto available radio cores
     _tree->create<time_spec_t>(mb_path / "time" / "now")
         .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
-        .subscribe(boost::bind(&b200_impl::sync_times, this, _1))
+        .subscribe(boost::bind(&b200_impl::set_time, this, _1))
         .set(0.0);
     //re-sync the times when the tick rate changes
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&b200_impl::sync_times, this, _radio_perifs[0].time64->get_time_now()));
+        .subscribe(boost::bind(&b200_impl::sync_times, this));
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
         .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64));
     BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
@@ -1082,12 +1082,17 @@ void b200_impl::update_time_source(const std::string &source)
     }
 }
 
-void b200_impl::sync_times(const uhd::time_spec_t& t)
+void b200_impl::set_time(const uhd::time_spec_t& t)
 {
     BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
         perif.time64->set_time_sync(t);
     _local_ctrl->poke32(TOREG(SR_CORE_SYNC), 1 << 2 | boost::uint32_t(_time_source));
     _local_ctrl->poke32(TOREG(SR_CORE_SYNC), _time_source);
+}
+
+void b200_impl::sync_times()
+{
+    set_time(_radio_perifs[0].time64->get_time_now());
 }
 
 /***********************************************************************

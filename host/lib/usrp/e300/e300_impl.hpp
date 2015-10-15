@@ -260,7 +260,8 @@ private: // methods
 
     void _update_time_source(const std::string &source);
     void _update_clock_source(const std::string &);
-    void _sync_times(const uhd::time_spec_t&);
+    void _set_time(const uhd::time_spec_t&);
+    void _sync_times(void);
 
     void _update_subdev_spec(
         const std::string &txrx,
