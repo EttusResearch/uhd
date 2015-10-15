@@ -248,15 +248,15 @@ rfx_xcvr::rfx_xcvr(
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, output_enables);
 
     //setup the tx atr (this does not change with antenna)
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE,        _power_up | ANT_XX | MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY,     _power_up | ANT_RX | MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_TX | MIXER_ENB);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_TX | MIXER_ENB);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_IDLE,        _power_up | ANT_XX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_RX_ONLY,     _power_up | ANT_RX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_TX_ONLY,     _power_up | ANT_TX | MIXER_ENB);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_FULL_DUPLEX, _power_up | ANT_TX | MIXER_ENB);
 
     //setup the rx atr (this does not change with antenna)
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE,        _power_up | ANT_XX | MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_XX | MIXER_DIS);
-    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_RX2| MIXER_ENB);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_IDLE,        _power_up | ANT_XX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_TX_ONLY,     _power_up | ANT_XX | MIXER_DIS);
+    this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_FULL_DUPLEX, _power_up | ANT_RX2| MIXER_ENB);
 }
 
 rfx_xcvr::~rfx_xcvr(void){
@@ -272,14 +272,14 @@ void rfx_xcvr::set_rx_ant(const std::string &ant){
 
     //set the rx atr regs that change with antenna setting
     if (ant == "CAL") {
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_TXRX  | MIXER_ENB);
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_TXRX  | MIXER_ENB);
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     _power_up | MIXER_ENB | ANT_TXRX );
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_TX_ONLY,     _power_up | ANT_TXRX  | MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_FULL_DUPLEX, _power_up | ANT_TXRX  | MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_RX_ONLY,     _power_up | MIXER_ENB | ANT_TXRX );
     } 
     else {
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_XX | MIXER_DIS);
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_RX2| MIXER_ENB);
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY,     _power_up | MIXER_ENB |
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_TX_ONLY,     _power_up | ANT_XX | MIXER_DIS);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_FULL_DUPLEX, _power_up | ANT_RX2| MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_RX_ONLY,     _power_up | MIXER_ENB |
             ((ant == "TX/RX")? ANT_TXRX : ANT_RX2));
     }
 
@@ -292,12 +292,12 @@ void rfx_xcvr::set_tx_ant(const std::string &ant){
 
     //set the tx atr regs that change with antenna setting
     if (ant == "CAL") {
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_RX | MIXER_ENB);
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_RX | MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_TX_ONLY,     _power_up | ANT_RX | MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_FULL_DUPLEX, _power_up | ANT_RX | MIXER_ENB);
     } 
     else {
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY,     _power_up | ANT_TX | MIXER_ENB);
-        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, _power_up | ANT_TX | MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_TX_ONLY,     _power_up | ANT_TX | MIXER_ENB);
+        this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_FULL_DUPLEX, _power_up | ANT_TX | MIXER_ENB);
     }
 }
 

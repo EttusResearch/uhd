@@ -27,7 +27,7 @@
 #include "rx_vita_core_3000.hpp"
 #include "tx_vita_core_3000.hpp"
 #include "time_core_3000.hpp"
-#include "gpio_core_200.hpp"
+#include "gpio_atr_3000.hpp"
 #include "radio_ctrl_core_3000.hpp"
 #include "rx_dsp_core_3000.hpp"
 #include "tx_dsp_core_3000.hpp"
@@ -177,8 +177,8 @@ private:
     struct radio_perifs_t
     {
         radio_ctrl_core_3000::sptr ctrl;
-        gpio_core_200_32wo::sptr atr;
-        gpio_core_200::sptr fp_gpio;
+        uhd::usrp::gpio_atr::gpio_atr_3000::sptr atr;
+        uhd::usrp::gpio_atr::gpio_atr_3000::sptr fp_gpio;
         time_core_3000::sptr time64;
         rx_vita_core_3000::sptr framer;
         rx_dsp_core_3000::sptr ddc;
@@ -225,9 +225,6 @@ private:
 
     void update_enables(void);
     void update_atrs(void);
-
-    boost::uint32_t get_fp_gpio(gpio_core_200::sptr);
-    void set_fp_gpio(gpio_core_200::sptr, const gpio_attr_t, const boost::uint32_t);
 
     double _tick_rate;
     double get_tick_rate(void){return _tick_rate;}

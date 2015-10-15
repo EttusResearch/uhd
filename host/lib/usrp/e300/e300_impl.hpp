@@ -41,7 +41,7 @@
 #include "tx_dsp_core_3000.hpp"
 #include "ad9361_ctrl.hpp"
 #include "ad936x_manager.hpp"
-#include "gpio_core_200.hpp"
+#include "gpio_atr_3000.hpp"
 
 #include "e300_global_regs.hpp"
 #include "e300_i2c.hpp"
@@ -146,7 +146,7 @@ private: // types
     struct radio_perifs_t
     {
         radio_ctrl_core_3000::sptr ctrl;
-        gpio_core_200_32wo::sptr atr;
+        gpio_atr::gpio_atr_3000::sptr atr;
         time_core_3000::sptr time64;
         rx_vita_core_3000::sptr framer;
         rx_dsp_core_3000::sptr ddc;
@@ -276,14 +276,6 @@ private: // methods
 
     // get frontend lock sensor
     uhd::sensor_value_t _get_fe_pll_lock(const bool is_tx);
-
-    // internal gpios
-    boost::uint8_t _get_internal_gpio(gpio_core_200::sptr);
-
-    void _set_internal_gpio(
-        gpio_core_200::sptr gpio,
-        const gpio_attr_t attr,
-        const boost::uint32_t value);
 
 private: // members
     uhd::device_addr_t                     _device_addr;

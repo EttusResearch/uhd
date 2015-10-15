@@ -48,6 +48,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::usrp::gpio_atr;
 using namespace uhd::transport;
 namespace fs = boost::filesystem;
 namespace asio = boost::asio;
@@ -512,15 +513,15 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     // internal gpios
     ////////////////////////////////////////////////////////////////////
-    gpio_core_200::sptr fp_gpio = gpio_core_200::make(_radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
+    gpio_atr_3000::sptr fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
         _tree->create<boost::uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
-            .subscribe(boost::bind(&e300_impl::_set_internal_gpio, this, fp_gpio, attr.first, _1))
+            .subscribe(boost::bind(&gpio_atr_3000::set_gpio_attr, fp_gpio, attr.first, _1))
             .set(0);
     }
     _tree->create<boost::uint8_t>(mb_path / "gpio" / "INT0" / "READBACK")
-        .publish(boost::bind(&e300_impl::_get_internal_gpio, this, fp_gpio));
+        .publish(boost::bind(&gpio_atr_3000::read_gpio, fp_gpio));
 
 
     ////////////////////////////////////////////////////////////////////
@@ -621,37 +622,6 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     }
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
-}
-
-boost::uint8_t e300_impl::_get_internal_gpio(gpio_core_200::sptr gpio)
-{
-    return boost::uint32_t(gpio->read_gpio(dboard_iface::UNIT_RX));
-}
-
-void e300_impl::_set_internal_gpio(
-    gpio_core_200::sptr gpio,
-    const gpio_attr_t attr,
-    const boost::uint32_t value)
-{
-    switch (attr)
-    {
-    case GPIO_CTRL:
-        return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    case GPIO_DDR:
-        return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    case GPIO_OUT:
-        return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    case GPIO_ATR_0X:
-        return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    case GPIO_ATR_RX:
-        return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    case GPIO_ATR_TX:
-        return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    case GPIO_ATR_XX:
-        return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
-    default:
-        UHD_THROW_INVALID_CODE_PATH();
-    }
 }
 
 uhd::sensor_value_t e300_impl::_get_fe_pll_lock(const bool is_tx)
@@ -978,7 +948,8 @@ void e300_impl::_setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // Set up peripherals
     ////////////////////////////////////////////////////////////////////
-    perif.atr = gpio_core_200_32wo::make(perif.ctrl, radio::sr_addr(radio::GPIO));
+    perif.atr = gpio_atr_3000::make_write_only(perif.ctrl, radio::sr_addr(radio::GPIO));
+    perif.atr->set_atr_mode(MODE_ATR, 0xFFFFFFFF);
     perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
     perif.rx_fe->set_dc_offset(rx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
     perif.rx_fe->set_dc_offset_auto(rx_frontend_core_200::DEFAULT_DC_OFFSET_ENABLE);
@@ -1290,11 +1261,11 @@ void e300_impl::_update_atrs(void)
         if (enb_tx)
             fd_reg |= tx_enables | xx_leds;
 
-        gpio_core_200_32wo::sptr atr = _radio_perifs[instance].atr;
-        atr->set_atr_reg(dboard_iface::ATR_REG_IDLE, oo_reg);
-        atr->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY, rx_reg);
-        atr->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, tx_reg);
-        atr->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, fd_reg);
+        gpio_atr_3000::sptr atr = _radio_perifs[instance].atr;
+        atr->set_atr_reg(ATR_REG_IDLE, oo_reg);
+        atr->set_atr_reg(ATR_REG_RX_ONLY, rx_reg);
+        atr->set_atr_reg(ATR_REG_TX_ONLY, tx_reg);
+        atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd_reg);
     }
 }
 
