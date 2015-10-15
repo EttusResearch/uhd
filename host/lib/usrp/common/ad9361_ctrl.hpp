@@ -89,8 +89,10 @@ public:
     //! get the clock rate range for the frontend
     static uhd::meta_range_t get_clock_rate_range(void)
     {
-        //return uhd::meta_range_t(220e3, 61.44e6);
-        return uhd::meta_range_t(5e6, ad9361_device_t::AD9361_MAX_CLOCK_RATE); //5 MHz DCM low end
+        return uhd::meta_range_t(
+                ad9361_device_t::AD9361_MIN_CLOCK_RATE,
+                ad9361_device_t::AD9361_MAX_CLOCK_RATE
+        );
     }
 
     //! set the filter bandwidth for the frontend's analog low pass
