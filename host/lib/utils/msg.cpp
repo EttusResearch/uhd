@@ -79,6 +79,8 @@ void uhd::msg::register_handler(const handler_t &handler){
 }
 
 static void default_msg_handler(uhd::msg::type_t type, const std::string &msg){
+    static boost::mutex msg_mutex;
+    boost::mutex::scoped_lock lock(msg_mutex);
     switch(type){
     case uhd::msg::fastpath:
         std::cerr << msg << std::flush;

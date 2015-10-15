@@ -530,7 +530,7 @@ When there is network traffic arriving at the Ethernet port, LEDs will light up.
 You can use this to make sure the network connection is correctly set up, e.g.
 by pinging the USRP and making sure the LEDs start to blink.
 
-\section x3x0_hw Hardware Notes
+\section x3x0_hw_notes Hardware Notes
 
 \subsection x3x0_hw_fpanel Front Panel
 

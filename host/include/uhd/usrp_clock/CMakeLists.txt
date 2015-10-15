@@ -24,6 +24,8 @@ UHD_INSTALL(FILES
 
 IF(ENABLE_C_API)
     UHD_INSTALL(FILES
-        usrp_clock.h
+    usrp_clock.h
+    DESTINATION ${INCLUDE_DIR}/uhd/usrp_clock
+    COMPONENT headers
     )
 ENDIF(ENABLE_C_API)

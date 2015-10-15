@@ -77,3 +77,5 @@ IF(MSVC OR APPLE OR LINUX)
     ADD_LIBRARY(module_test MODULE module_test.cpp)
     TARGET_LINK_LIBRARIES(module_test uhd)
 ENDIF()
+
+ADD_SUBDIRECTORY(devtest)

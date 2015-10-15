@@ -215,7 +215,7 @@ again by:
 In order to upgrade or reinitialize a sd card for the first time, you can use the 'dd' tool.
 Make sure that you are using the right block device for your sd card as failing to do so can wipe your harddrive.
 
-Replace <yourimage>.direct with your image file name and yoursdcard with your blockdevice e.g. /dev/mmcblk0 or /dev/sdb.
+Replace `<yourimage>`.direct with your image file name and yoursdcard with your blockdevice e.g. /dev/mmcblk0 or /dev/sdb.
 
     $ sudo dd if=<yourimage>.direct of=/dev/<yoursdcard> bs=1M
 

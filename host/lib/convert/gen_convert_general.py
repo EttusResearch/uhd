@@ -122,10 +122,8 @@ DECLARE_CONVERTER(s16, 1, s16_item32_{end}, 1, PRIORITY_GENERAL) {{
     }}
     // 2) If nsamps was not a multiple of 2, copy the last one by hand
     if (nsamps % 2) {{
-        const s16_t *last_input_word = reinterpret_cast<const s16_t *>(&input[n_words]);
-        s16_t *last_output_word = reinterpret_cast<s16_t *>(&output[n_words]);
-        last_output_word[0] = last_input_word[0];
-        output[n_words] = {to_wire}(output[n_words]);
+        item32_t tmp = item32_t(*reinterpret_cast<const s16_t *>(&input[n_words]));
+        output[n_words] = {to_wire}(tmp);
     }}
 }}
 
@@ -140,10 +138,8 @@ DECLARE_CONVERTER(s16_item32_{end}, 1, s16, 1, PRIORITY_GENERAL) {{
     }}
     // 2) If nsamps was not a multiple of 2, copy the last one by hand
     if (nsamps % 2) {{
-        item32_t last_input_word = {to_host}(input[n_words]);
-        const s16_t *last_input_word_ptr = reinterpret_cast<const s16_t *>(&last_input_word);
-        s16_t *last_output_word = reinterpret_cast<s16_t *>(&output[n_words]);
-        last_output_word[0] = last_input_word_ptr[0];
+        item32_t tmp = {to_host}(input[n_words]);
+        *reinterpret_cast<s16_t *>(&output[n_words]) = s16_t(tmp);
     }}
 }}
 """
