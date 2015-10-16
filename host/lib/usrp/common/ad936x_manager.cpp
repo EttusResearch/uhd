@@ -19,6 +19,7 @@
 #include <uhd/utils/msg.hpp>
 #include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/thread/thread.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -80,34 +81,64 @@ class ad936x_manager_impl : public ad936x_manager
         }
     }
 
+
+    //
+    // loopback_self_test checks the integrity of the FPGA->AD936x->FPGA sample interface.
+    // The AD936x is put in loopback mode that sends the TX data unchanged to the RX side.
+    // A test value is written to the codec_idle register in the TX side of the radio.
+    // The readback register is then used to capture the values on the TX and RX sides
+    // simultaneously for comparison. It is a reasonably effective test for AC timing
+    // since I/Q Ch0/Ch1 alternate over the same wires. Note, however, that it uses
+    // whatever timing is configured at the time the test is called rather than select
+    // worst case conditions to stress the interface.
+    //
     void loopback_self_test(
             wb_iface::sptr iface,
             wb_iface::wb_addr_type codec_idle_addr,
             wb_iface::wb_addr_type codec_readback_addr
     ) {
+        // Put AD936x in loopback mode
         _codec_ctrl->data_port_loopback(true);
         UHD_MSG(status) << "Performing CODEC loopback test... " << std::flush;
         UHD_ASSERT_THROW(bool(iface));
         size_t hash = size_t(time(NULL));
+
+        // Allow some time for AD936x to enter loopback mode.
+        // There is no clear statement in the documentation of how long it takes,
+        // but UG-570 does say to "allow six ADC_CLK/64 clock cycles of flush time"
+        // when leaving the TX or RX states.  That works out to ~75us at the
+        // minimum clock rate of 5 MHz, which lines up with test results.
+        // Sleeping 1ms is far more than enough.
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+
         for (size_t i = 0; i < 100; i++)
         {
+            // Create test word
             boost::hash_combine(hash, i);
             const boost::uint32_t word32 = boost::uint32_t(hash) & 0xfff0fff0;
+
+            // Write test word to codec_idle idle register (on TX side)
             iface->poke32(codec_idle_addr, word32);
-            // We do 2 peeks so we have enough idleness for loopback to propagate
-            iface->peek64(codec_readback_addr);
+
+            // Read back values - TX is lower 32-bits and RX is upper 32-bits
             const boost::uint64_t rb_word64 = iface->peek64(codec_readback_addr);
             const boost::uint32_t rb_tx = boost::uint32_t(rb_word64 >> 32);
             const boost::uint32_t rb_rx = boost::uint32_t(rb_word64 & 0xffffffff);
+
+            // Compare TX and RX values to test word
             bool test_fail = word32 != rb_tx or word32 != rb_rx;
-            if (test_fail) {
+            if(test_fail)
+            {
                 UHD_MSG(status) << "fail" << std::endl;
                 throw uhd::runtime_error("CODEC loopback test failed.");
             }
         }
         UHD_MSG(status) << "pass" << std::endl;
-        /* Zero out the idle data. */
+
+        // Zero out the idle data.
         iface->poke32(codec_idle_addr, 0);
+
+        // Take AD936x out of loopback mode
         _codec_ctrl->data_port_loopback(false);
     }
 

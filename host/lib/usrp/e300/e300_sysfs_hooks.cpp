@@ -67,6 +67,8 @@ std::string e300_get_sysfs_attr(const std::string &node, const std::string &attr
        retstring = udev_device_get_sysattr_value(dev, attr.c_str());
        if (retstring.size())
            break;
+
+       udev_device_unref(dev);
     }
 
     udev_enumerate_unref(enumerate);
