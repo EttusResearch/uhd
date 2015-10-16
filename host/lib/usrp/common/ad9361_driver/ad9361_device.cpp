@@ -91,6 +91,7 @@ int get_num_taps(int max_num_taps) {
 }
 
 const double ad9361_device_t::AD9361_MAX_GAIN        = 89.75;
+const double ad9361_device_t::AD9361_MIN_CLOCK_RATE  = 220e3;
 const double ad9361_device_t::AD9361_MAX_CLOCK_RATE  = 61.44e6;
 const double ad9361_device_t::AD9361_CAL_VALID_WINDOW = 100e6;
 // Max bandwdith is due to filter rolloff in analog filter stage
@@ -770,7 +771,7 @@ void ad9361_device_t::_calibrate_rf_dc_offset()
     size_t count = 0;
     _io_iface->poke8(0x016, 0x02);
     while (_io_iface->peek8(0x016) & 0x02) {
-        if (count > 100) {
+        if (count > 200) {
             throw uhd::runtime_error("[ad9361_device_t] RF DC Offset Calibration Failure");
             break;
         }
@@ -821,7 +822,7 @@ void ad9361_device_t::_calibrate_rx_quadrature()
     size_t count = 0;
     _io_iface->poke8(0x016, 0x20);
     while (_io_iface->peek8(0x016) & 0x20) {
-        if (count > 100) {
+        if (count > 1000) {
             throw uhd::runtime_error("[ad9361_device_t] Rx Quadrature Calibration Failure");
             break;
         }

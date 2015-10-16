@@ -395,7 +395,7 @@ below, and to the left of **R193**. The silkscreen for **R193** is ok,
 but for **R194**, it is upside down, and partially cut off. If you lose
 **R193**, you can use anything from 0 to 10 Ohms there.
 
-\subsubsection dboards_dbsrxmod_1 Step 2: Burn a new daughterboard id into the EEPROM
+\subsubsection dboards_dbsrxmod_2 Step 2: Burn a new daughterboard id into the EEPROM
 
 With the daughterboard plugged-in, run the following commands:
 
