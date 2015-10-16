@@ -434,6 +434,7 @@ double max287x<max287x_regs_t>::set_frequency(
     bool feedback_divided = (_regs.feedback_select == max287x_regs_t::FEEDBACK_SELECT_DIVIDED);
 
     //increase RF divider until acceptable VCO frequency (MIN freq for MAX287x VCO is 3GHz)
+    UHD_ASSERT_THROW(target_freq > 0);
     double vco_freq = target_freq;
     while (vco_freq < MIN_VCO_FREQ)
     {
