@@ -141,7 +141,7 @@ public:
             break;
         case GPIO_OUT:
             //Only set bits that are driven statically
-            set_atr_reg(ATR_REG_IDLE, value);
+            set_gpio_out(value);
             break;
         case GPIO_ATR_0X:
             //Only set bits that are driven by the ATR engine
