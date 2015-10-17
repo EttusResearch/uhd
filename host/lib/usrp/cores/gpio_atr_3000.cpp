@@ -164,7 +164,7 @@ public:
         }
     }
 
-protected:
+private:
     //Special RB addr value to indicate no readback
     //This value is invalid as a real address because it is not a multiple of 4
     static const wb_iface::wb_addr_type READBACK_DISABLED = 0xFFFFFFFF;
@@ -229,14 +229,14 @@ public:
     {
         gpio_atr_3000_impl::set_atr_reg(atr,
             static_cast<boost::uint32_t>(value) << compute_shift(unit),
-            compute_mask(unit, ~(_atr_disable_reg.get(masked_reg_t::REGISTER))));
+            compute_mask(unit, 0xFFFF));
     }
 
     inline void set_gpio_out(const db_unit_t unit, const boost::uint16_t value)
     {
-        gpio_atr_3000_impl::set_atr_reg(ATR_REG_IDLE,
+        gpio_atr_3000_impl::set_gpio_out(
             static_cast<boost::uint32_t>(value) << compute_shift(unit),
-            compute_mask(unit, _atr_disable_reg.get(masked_reg_t::REGISTER)));
+            compute_mask(unit, 0xFFFF));
     }
 
     inline boost::uint16_t read_gpio(const db_unit_t unit)
