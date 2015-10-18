@@ -43,7 +43,7 @@ public:
         const wb_iface::wb_addr_type rb_addr = READBACK_DISABLED
     ):
         _iface(iface), _rb_addr(rb_addr),
-        _atr_idle_reg(REG_ATR_IDLE_OFFSET),
+        _atr_idle_reg(REG_ATR_IDLE_OFFSET, _atr_disable_reg),
         _atr_rx_reg(REG_ATR_RX_OFFSET),
         _atr_tx_reg(REG_ATR_TX_OFFSET),
         _atr_fdx_reg(REG_ATR_FDX_OFFSET),
@@ -98,7 +98,7 @@ public:
         }
         //For protection we only write to bits that have the mode ATR by masking the user
         //specified "mask" with ~atr_disable.
-        reg->set_with_mask(value, mask & (~_atr_disable_reg.get(masked_reg_t::REGISTER)));
+        reg->set_with_mask(value, mask);
         reg->flush();
     }
 
@@ -109,7 +109,7 @@ public:
 
         //For protection we only write to bits that have the mode GPIO by masking the user
         //specified "mask" with atr_disable.
-        _atr_idle_reg.set_with_mask(value, mask & _atr_disable_reg.get(masked_reg_t::REGISTER));
+        _atr_idle_reg.set_gpio_out_with_mask(value, mask);
         _atr_idle_reg.flush();
     }
 
@@ -175,14 +175,48 @@ private:
             set(REGISTER, 0);
         }
 
-        inline void set_with_mask(const boost::uint32_t value, const boost::uint32_t mask) {
+        virtual void set_with_mask(const boost::uint32_t value, const boost::uint32_t mask) {
             set(REGISTER, (value&mask)|(get(REGISTER)&(~mask)));
         }
+
+        virtual void flush() {
+            uhd::soft_reg32_wo_t::flush();
+        }
+    };
+
+    class atr_idle_reg_t : public masked_reg_t {
+    public:
+        atr_idle_reg_t(const wb_iface::wb_addr_type offset, masked_reg_t& atr_disable_reg):
+            masked_reg_t(offset),
+            _atr_idle_cache(0), _gpio_out_cache(0),
+            _atr_disable_reg(atr_disable_reg)
+        { }
+
+        virtual void set_with_mask(const boost::uint32_t value, const boost::uint32_t mask) {
+            _atr_idle_cache = (value&mask)|(_atr_idle_cache&(~mask));
+        }
+
+        void set_gpio_out_with_mask(const boost::uint32_t value, const boost::uint32_t mask) {
+            _gpio_out_cache = (value&mask)|(_gpio_out_cache&(~mask));
+        }
+
+        virtual void flush() {
+            set(REGISTER,
+                (_atr_idle_cache & (~_atr_disable_reg.get(REGISTER))) |
+                (_gpio_out_cache & _atr_disable_reg.get(REGISTER))
+            );
+            masked_reg_t::flush();
+        }
+
+    private:
+        boost::uint32_t _atr_idle_cache;
+        boost::uint32_t _gpio_out_cache;
+        masked_reg_t&   _atr_disable_reg;
     };
 
     wb_iface::sptr          _iface;
     wb_iface::wb_addr_type  _rb_addr;
-    masked_reg_t            _atr_idle_reg;
+    atr_idle_reg_t          _atr_idle_reg;
     masked_reg_t            _atr_rx_reg;
     masked_reg_t            _atr_tx_reg;
     masked_reg_t            _atr_fdx_reg;
