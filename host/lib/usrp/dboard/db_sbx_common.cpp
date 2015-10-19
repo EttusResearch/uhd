@@ -237,6 +237,9 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
 
+    //Initialize ATR registers after direction and pin ctrl configuration
+    update_atr();
+
     UHD_LOGV(often) << boost::format(
         "SBX GPIO Direction: RX: 0x%08x, TX: 0x%08x"
     ) % RXIO_MASK % TXIO_MASK << std::endl;
