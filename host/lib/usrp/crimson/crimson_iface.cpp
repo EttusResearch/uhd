@@ -41,6 +41,9 @@
 using namespace uhd;
 using namespace uhd::transport;
 
+
+static boost::mutex udp_mutex;
+
 static uint32_t seq = 1;
 
 /***********************************************************************
@@ -60,6 +63,9 @@ crimson_iface::crimson_iface(udp_simple::sptr ctrl_transport):
 // Never call this function by itself, always call through crimson_impl::get/set()
 // else it will mess up the protocol with the sequencing and will contian no error checks.
 void crimson_iface::poke_str(std::string data) {
+	//Hack
+	boost::mutex::scoped_lock lock(udp_mutex);
+
     // populate the command string with sequence number
     data = data.insert(0, (boost::lexical_cast<std::string>(seq++) + ","));
     _ctrl_transport->send( boost::asio::buffer(data, data.length()) );
@@ -79,6 +85,7 @@ std::string crimson_iface::peek_str(void) {
         // clears the buffer and receives the message
         memset(_buff, 0, CRIMSON_MTU_SIZE);
         const size_t nbytes = _ctrl_transport -> recv(boost::asio::buffer(_buff), 6.250);
+    	boost::mutex::scoped_lock unlock(udp_mutex);
         if (nbytes == 0) return "TIMEOUT";
 
 
