@@ -237,9 +237,6 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
 
-    //flash LEDs
-    flash_leds();
-
     UHD_LOGV(often) << boost::format(
         "SBX GPIO Direction: RX: 0x%08x, TX: 0x%08x"
     ) % RXIO_MASK % TXIO_MASK << std::endl;
@@ -352,45 +349,3 @@ sensor_value_t sbx_xcvr::get_locked(dboard_iface::unit_t unit) {
 
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }
-
-
-void sbx_xcvr::flash_leds(void) {
-    //Remove LED gpios from ATR control temporarily and set to outputs
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, TXIO_MASK);
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, RXIO_MASK);
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|RX_LED_IO));
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_LD, TX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, \
-            TX_LED_TXRX|TX_LED_LD, TX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_LD, RX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, \
-            RX_LED_RX1RX2|RX_LED_LD, RX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_LD, RX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, 0, RX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_LD, TX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, 0, TX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    //Put LED gpios back in ATR control and update atr
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
-}
-
