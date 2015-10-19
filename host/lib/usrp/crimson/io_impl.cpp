@@ -218,6 +218,7 @@ public:
 		const size_t vita_pck = nsamps_per_buff;// + vita_hdr + vita_tlr;	// vita is disabled
 		uint32_t vita_buf[vita_pck];						// buffer to read in data plus room for VITA
 		size_t ret;
+		ret = 0;
 
 		// send to each connected stream data in buffs[i]
 		for (unsigned int i = 0; i < _channels.size(); i++) {
@@ -241,45 +242,24 @@ public:
 			//check if flow control is running, if not run it
 			if (_flow_running == false)	boost::thread flowcontrolThread(init_flowcontrol,this);
 
-			//clear temp buffer and copy data into it
-			memset((void*)vita_buf, 0, vita_pck*4);
-			memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
 
-			// sending samples, restricted to a jumbo frame of CRIMSON_MAX_MTU bytes at a time
-			//ret: nbytes in buffer, each sample has 4 bytes.
-			ret = 0;
-			bool while_first =true;
-			while ((ret / 4) < nsamps_per_buff) {
-				size_t remaining_bytes = (nsamps_per_buff*4) - ret;
+			//Check if it is time to send data, if so, copy the data over and continue
+			time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
+			if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
 
-				if (remaining_bytes >= CRIMSON_MAX_MTU) {
-					time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
-
-					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-						//If we are waiting, check to see if we should update sample rate
-						update_samplerate();
-					}
-
-					//update last_time with when it was supposed to have been sent:
-					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
-					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
-
-				} else {
-
-					// wait for flow control
-					time_spec_t wait = time_spec_t(0, (double)(remaining_bytes / 4.0) / (double)_samp_rate[i]);
-
-					while ( time_spec_t::get_system_time() - _last_time[i] < wait) {
-						//If we are waiting, check to see if we should update sample rate
-						update_samplerate();
-					}
-
-					//update last_time with when it was supposed to have been sent:
-					_last_time[i] = _last_time[i]+wait;
-					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, remaining_bytes);
+				//Copy over what you can, leave the rest
+				if (nsamps_per_buff >=CRIMSON_MAX_MTU){
+					memcpy((void*)vita_buf, buffs[i], CRIMSON_MAX_MTU * 4);
+					//Edit the buffer length...only if managed buffer
+					//buffs[i]->commit(CRIMSON_MAX_MTU*sizeof(boost::uint32_t));
 				}
+
+				//update last_time with when it was supposed to have been sent:
+				_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
+				ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
 			}
 		}
+		update_samplerate();
 		return (ret / 4);// -  vita_hdr - vita_tlr;	// vita is disabled
 	}
 
@@ -349,8 +329,13 @@ private:
 
 		while(true){
 			//get data
+
+			//udp_mutex.lock();
+			//get_string("Read fifo");
 			txstream->_flow_iface -> poke_str("Read fifo");
 			std::string buff_read = txstream->_flow_iface -> peek_str();
+
+			//udp_mutex.unlock();
 
 			// remove the "flow," at the beginning of the string
 			buff_read.erase(0, 5);
