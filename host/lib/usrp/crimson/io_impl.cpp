@@ -245,29 +245,32 @@ public:
 
 			//Check if it is time to send data, if so, copy the data over and continue
 			time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
-			if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
+			//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
 
 				//Copy over what you can, leave the rest
 				if (nsamps_per_buff >=CRIMSON_MAX_MTU){
-					memcpy((void*)vita_buf, buffs[i], CRIMSON_MAX_MTU * 4);
-					//Edit the buffer length...only if managed buffer
-					//buffs[i]->commit(CRIMSON_MAX_MTU*sizeof(boost::uint32_t));
+					if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
+						memcpy((void*)vita_buf, buffs[i], CRIMSON_MAX_MTU * 4);
+						//Edit the buffer length...only if managed buffer
+						//buffs[i]->commit(CRIMSON_MAX_MTU*sizeof(boost::uint32_t));
 
-					//update last_time with when it was supposed to have been sent:
-					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
-					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
-
+						//update last_time with when it was supposed to have been sent:
+						_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
+						ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
+					}
 				}else{
-					memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
-					//Edit the buffer length...only if managed buffer
-					//buffs[i]->commit(CRIMSON_MAX_MTU*sizeof(boost::uint32_t));
 
-					//update last_time with when it was supposed to have been sent:
-					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
-					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, nsamps_per_buff);
-
+					if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
+						memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
+						//Edit the buffer length...only if managed buffer
+						//buffs[i]->commit(CRIMSON_MAX_MTU*sizeof(boost::uint32_t));
+						wait = time_spec_t(0, (double)(nsamps_per_buff) / (double)_samp_rate[i]);
+						//update last_time with when it was supposed to have been sent:
+						_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
+						ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, nsamps_per_buff);
+					}
 				}
-			}
+
 		}
 		update_samplerate();
 		return (ret / 4);// -  vita_hdr - vita_tlr;	// vita is disabled
