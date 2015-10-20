@@ -331,12 +331,12 @@ private:
 			//get data under mutex lock
 
 			//boost::mutex::scoped_lock lock(*txstream->_udp_mutex_add);
-			*txstream->_udp_mutex_add.lock();
+			txstream->_udp_mutex_add->lock();
 
 			txstream->_flow_iface -> poke_str("Read fifo");
 			std::string buff_read = txstream->_flow_iface -> peek_str();
 
-			*txstream->_udp_mutex_add.unlock();
+			txstream->_udp_mutex_add->unlock();
 			//boost::mutex::scoped_lock unlock(*txstream->_udp_mutex_add);
 
 
