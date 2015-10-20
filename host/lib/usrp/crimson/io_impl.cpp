@@ -252,11 +252,21 @@ public:
 					memcpy((void*)vita_buf, buffs[i], CRIMSON_MAX_MTU * 4);
 					//Edit the buffer length...only if managed buffer
 					//buffs[i]->commit(CRIMSON_MAX_MTU*sizeof(boost::uint32_t));
-				}
 
-				//update last_time with when it was supposed to have been sent:
-				_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
-				ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
+					//update last_time with when it was supposed to have been sent:
+					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
+					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
+
+				}else{
+					memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
+					//Edit the buffer length...only if managed buffer
+					//buffs[i]->commit(CRIMSON_MAX_MTU*sizeof(boost::uint32_t));
+
+					//update last_time with when it was supposed to have been sent:
+					_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
+					ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, nsamps_per_buff);
+
+				}
 			}
 		}
 		update_samplerate();
@@ -329,16 +339,10 @@ private:
 
 		while(true){
 			//get data under mutex lock
-
-			//boost::mutex::scoped_lock lock(*txstream->_udp_mutex_add);
 			txstream->_udp_mutex_add->lock();
-
 			txstream->_flow_iface -> poke_str("Read fifo");
 			std::string buff_read = txstream->_flow_iface -> peek_str();
-
 			txstream->_udp_mutex_add->unlock();
-			//boost::mutex::scoped_lock unlock(*txstream->_udp_mutex_add);
-
 
 			// remove the "flow," at the beginning of the string
 			buff_read.erase(0, 5);
