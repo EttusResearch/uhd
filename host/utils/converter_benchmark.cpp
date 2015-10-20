@@ -26,6 +26,7 @@
 #include <iostream>
 #include <iomanip>
 #include <map>
+#include <complex>
 
 namespace po = boost::program_options;
 using namespace uhd::convert;
