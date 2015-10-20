@@ -328,17 +328,17 @@ private:
 		txstream->_flow_running = true;
 
 		while(true){
-			//get data
+			//get data under mutex lock
 
-			//txstream->*_udp_mutex_add.lock();
-			//get_string("Read fifo");
-			boost::mutex::scoped_lock lock(*txstream->_udp_mutex_add);
+			//boost::mutex::scoped_lock lock(*txstream->_udp_mutex_add);
+			*txstream->_udp_mutex_add.lock();
+
 			txstream->_flow_iface -> poke_str("Read fifo");
 			std::string buff_read = txstream->_flow_iface -> peek_str();
-			boost::mutex::scoped_lock unlock(*txstream->_udp_mutex_add);
 
-			//crimson_impl::get_string("Read fifo");
-			//txstream->*_udp_mutex_add.unlock();
+			*txstream->_udp_mutex_add.unlock();
+			//boost::mutex::scoped_lock unlock(*txstream->_udp_mutex_add);
+
 
 			// remove the "flow," at the beginning of the string
 			buff_read.erase(0, 5);
