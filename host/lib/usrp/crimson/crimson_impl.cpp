@@ -48,7 +48,7 @@ namespace asio = boost::asio;
 // This is a lock to prevent multiple threads from requesting commands from
 // the device at the same time. This is important in GNURadio, as they spawn
 // a new thread per block. If not protected, UDP commands would time out.
-boost::mutex udp_mutex;
+//boost::mutex udp_mutex;
 
 /***********************************************************************
  * Helper Functions

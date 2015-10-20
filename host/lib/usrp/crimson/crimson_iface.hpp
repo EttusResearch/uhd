@@ -50,7 +50,6 @@ public:
     // Recieve/read a data packet (string), null terminated
     virtual std::string peek_str(void);
 
-    boost::mutex udp_mutex;
 private:
     //this lovely lady makes it all possible
     uhd::transport::udp_simple::sptr _ctrl_transport;

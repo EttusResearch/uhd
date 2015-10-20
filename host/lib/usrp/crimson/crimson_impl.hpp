@@ -127,6 +127,8 @@ private:
 
     // private pointer to the UDP interface, this is the path to send commands to Crimson
     uhd::wb_iface::sptr _iface;
+
+    boost::mutex udp_mutex;
 };
 
 #endif /* INCLUDED_CRIMSON_IMPL_HPP */

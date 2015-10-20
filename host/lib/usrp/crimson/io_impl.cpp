@@ -188,12 +188,12 @@ private:
 
 class crimson_tx_streamer : public uhd::tx_streamer {
 public:
-	crimson_tx_streamer(device_addr_t addr, property_tree::sptr tree, std::vector<size_t> channels) {
-		init_tx_streamer(addr, tree, channels);
+	crimson_tx_streamer(device_addr_t addr, property_tree::sptr tree, std::vector<size_t> channels, boost::mutex* udp_mutex_add) {
+		init_tx_streamer(addr, tree, channels, udp_mutex_add);
 	}
 
-	crimson_tx_streamer(device_addr_t addr, property_tree::sptr tree) {
-		init_tx_streamer(addr, tree, std::vector<size_t>(1, 0));
+	crimson_tx_streamer(device_addr_t addr, property_tree::sptr tree, boost::mutex* udp_mutex_add) {
+		init_tx_streamer(addr, tree, std::vector<size_t>(1, 0), udp_mutex_add);
 	}
 
 	~crimson_tx_streamer() {
@@ -270,7 +270,7 @@ public:
 
 private:
 	// init function, common to both constructors
-	void init_tx_streamer( device_addr_t addr, property_tree::sptr tree, std::vector<size_t> channels) {
+	void init_tx_streamer( device_addr_t addr, property_tree::sptr tree, std::vector<size_t> channels,boost::mutex* udp_mutex_add) {
 		// save the tree
 		_tree = tree;
 		_channels = channels;
@@ -309,7 +309,7 @@ private:
 			_flow_running=false;
 			_buffer_count[0] = 0;
 			_buffer_count[1] = 0;
-
+			_udp_mutex_add = udp_mutex_add;
 
 			// initialize sample rate
 			_samp_rate.push_back(0);
@@ -329,15 +329,16 @@ private:
 
 		while(true){
 			//get data
-/*
-			//udp_mutex.lock();
+
+			//txstream->*_udp_mutex_add.lock();
 			//get_string("Read fifo");
-			//boost::mutex::scoped_lock lock(crimson_impl::_udp_mutex);
+			boost::mutex::scoped_lock lock(*txstream->_udp_mutex_add);
 			txstream->_flow_iface -> poke_str("Read fifo");
 			std::string buff_read = txstream->_flow_iface -> peek_str();
+			boost::mutex::scoped_lock unlock(*txstream->_udp_mutex_add);
 
 			//crimson_impl::get_string("Read fifo");
-			//udp_mutex.unlock();
+			//txstream->*_udp_mutex_add.unlock();
 
 			// remove the "flow," at the beginning of the string
 			buff_read.erase(0, 5);
@@ -357,7 +358,7 @@ private:
 			//unlock
 			txstream->_flowcontrol_mutex.unlock();
 
-			*/
+
 			//sleep for the designated update period
 			boost::this_thread::sleep(boost::posix_time::milliseconds(wait));
 		}
@@ -412,6 +413,7 @@ private:
 	double _fifo_lvl[4];
 	uint32_t _buffer_count[2];
 	bool _flow_running;
+	boost::mutex* _udp_mutex_add;
 };
 
 /***********************************************************************
@@ -477,5 +479,5 @@ tx_streamer::sptr crimson_impl::get_tx_stream(const uhd::stream_args_t &args){
 	UHD_MSG(status) << base_message.str();
 
 	// TODO firmware support for other otw_format, cpu_format
-	return tx_streamer::sptr(new crimson_tx_streamer(this->_addr, this->_tree, args.channels));
+	return tx_streamer::sptr(new crimson_tx_streamer(this->_addr, this->_tree, args.channels, &this->udp_mutex));
 }
