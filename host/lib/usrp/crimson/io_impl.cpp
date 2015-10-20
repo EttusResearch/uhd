@@ -329,12 +329,14 @@ private:
 
 		while(true){
 			//get data
-
+/*
 			//udp_mutex.lock();
 			//get_string("Read fifo");
+			//boost::mutex::scoped_lock lock(crimson_impl::_udp_mutex);
 			txstream->_flow_iface -> poke_str("Read fifo");
 			std::string buff_read = txstream->_flow_iface -> peek_str();
 
+			//crimson_impl::get_string("Read fifo");
 			//udp_mutex.unlock();
 
 			// remove the "flow," at the beginning of the string
@@ -355,6 +357,7 @@ private:
 			//unlock
 			txstream->_flowcontrol_mutex.unlock();
 
+			*/
 			//sleep for the designated update period
 			boost::this_thread::sleep(boost::posix_time::milliseconds(wait));
 		}

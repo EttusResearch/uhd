@@ -48,7 +48,7 @@ namespace asio = boost::asio;
 // This is a lock to prevent multiple threads from requesting commands from
 // the device at the same time. This is important in GNURadio, as they spawn
 // a new thread per block. If not protected, UDP commands would time out.
-//boost::mutex udp_mutex;
+boost::mutex udp_mutex;
 
 /***********************************************************************
  * Helper Functions
@@ -71,24 +71,28 @@ void csv_parse(std::vector<std::string> &tokens, char* data, const char delim) {
 
 // base wrapper that calls the simple UDP interface to get messages to and from Crimson
 std::string crimson_impl::get_string(std::string req) {
-	//boost::mutex::scoped_lock lock(udp_mutex);
+	boost::mutex::scoped_lock lock(udp_mutex);
+	//boost::mutex::scoped_lock lock(_iface -> udp_mutex);
 
 	// format the string and poke (write)
     	_iface -> poke_str("get," + req);
 
 	// peek (read) back the data
 	std::string ret = _iface -> peek_str();
+	//boost::mutex::scoped_lock unlock(_iface -> udp_mutex);
 	if (ret == "TIMEOUT") 	throw uhd::runtime_error("crimson_impl::get_string - UDP resp. timed out: " + req);
 	else 			return ret;
 }
 void crimson_impl::set_string(const std::string pre, std::string data) {
-	//boost::mutex::scoped_lock lock(udp_mutex);
+	boost::mutex::scoped_lock lock(udp_mutex);
+	//boost::mutex::scoped_lock lock(_iface -> udp_mutex);
 
 	// format the string and poke (write)
 	_iface -> poke_str("set," + pre + "," + data);
 
 	// peek (read) anyways for error check, since Crimson will reply back
 	std::string ret = _iface -> peek_str();
+	//boost::mutex::scoped_lock unlock(_iface -> udp_mutex);
 	if (ret == "TIMEOUT" || ret == "ERROR")
 		throw uhd::runtime_error("crimson_impl::set_string - UDP resp. timed out: set: " + pre + " = " + data);
 	else
