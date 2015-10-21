@@ -66,7 +66,7 @@ extern "C" {
 #define CRIMSON_FW_COMMS_FLAGS_PEEK32     (1 << 3)
 
 // Crimson MTU Size
-#define CRIMSON_MAX_MTU		3600
+#define CRIMSON_MAX_MTU		3936
 
 // Crimson Flowcontrol Update Per Second
 #define CRIMSON_UPDATE_PER_SEC	20
