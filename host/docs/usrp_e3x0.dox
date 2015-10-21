@@ -172,7 +172,7 @@ knowledge of Linux.
 \code{.sh}
  $ mkdir e300-oe-build
  $ cd e300-oe-build
- $ repo init -u git://github.com/EttusResearch/e300-manifest.git -b Release-2
+ $ repo init -u git://github.com/EttusResearch/e300-manifest.git -b Release-3
 \endcode
 
 -# Initialize the environment. This will take a little while.
