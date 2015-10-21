@@ -387,7 +387,7 @@ private:
 					// calculate the error - aim for 50%
 					_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE/2);
 					//apply correction
-					_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/1000000;
+					_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
 
 					//Limit the correction
 					//Maximum correction is a half buffer per second (a buffer element is 2 samples).
