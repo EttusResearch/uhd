@@ -234,7 +234,7 @@ public:
 				//Adjust sample rate to fill up buffer in first half second
 				//we do this by setting setting the "last time " data was sent to be half a buffers worth in the past
 				//each element in the buffer is 2 samples worth
-				time_spec_t past_halfbuffer = time_spec_t(0, (double)(CRIMSON_BUFF_SIZE) / (double)_samp_rate[i]);
+				time_spec_t past_halfbuffer = time_spec_t(0, (_fifo_level_perc/100*(double)(CRIMSON_BUFF_SIZE*2)) / (double)_samp_rate[i]);
 				_last_time[i] = time_spec_t::get_system_time()-past_halfbuffer;
 			}
 
@@ -387,7 +387,7 @@ private:
 				if(_flowcontrol_mutex.try_lock()){
 
 					// calculate the error - aim for 50%
-					_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE*_fifo_level_perc/100);
+					_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE*_fifo_level_perc/100)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE);
 					//apply correction
 					_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
 
