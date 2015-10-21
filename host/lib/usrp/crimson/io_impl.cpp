@@ -242,14 +242,13 @@ public:
 			//check if flow control is running, if not run it
 			if (_flow_running == false)	boost::thread flowcontrolThread(init_flowcontrol,this);
 
-
 			//Check if it is time to send data, if so, copy the data over and continue
-			time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
-			//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
+			time_spec_t wait;// = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
+			if( time_spec_t::get_system_time() >= _last_time[i]) {
 
 				//Copy over what you can, leave the rest
 				if (nsamps_per_buff*4 >=CRIMSON_MAX_MTU){
-					if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
+					//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
 						//clear temp buffer (byte operation)
 						memset((void*)vita_buf, 0, vita_pck*4);
 						memcpy((void*)vita_buf, buffs[i], CRIMSON_MAX_MTU);
@@ -257,22 +256,25 @@ public:
 						//buffs[i]->commit(CRIMSON_MAX_MTU*sizeof(boost::uint32_t));
 
 						//update last_time with when it was supposed to have been sent:
+
+						wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
 						_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
 						//Send data (byte operation)
 						ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
-					}
+
 				}else{
-					wait = time_spec_t(0, (double)(nsamps_per_buff) / (double)_samp_rate[i]);
-					if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
+					//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
 						//clear temp buffer
 						memset((void*)vita_buf, 0, vita_pck*4);
 						memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
 						//update last_time with when it was supposed to have been sent:
+						wait = time_spec_t(0, (double)(nsamps_per_buff) / (double)_samp_rate[i]);
 						_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
 						//Send data (byte operation)
 						ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, nsamps_per_buff*4);
-					}
+
 				}
+			}
 
 		}
 		update_samplerate();
