@@ -335,6 +335,8 @@ private:
 
 			// initialize the _last_time
 			_last_time.push_back(time_spec_t(0.0));
+			_fifo_level_perc = 100;
+
 		}
 	}
 
@@ -385,7 +387,7 @@ private:
 				if(_flowcontrol_mutex.try_lock()){
 
 					// calculate the error - aim for 50%
-					_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE/2);
+					_fifo_lvl[i] = ((CRIMSON_BUFF_SIZE/2)- _fifo_lvl[i]) / (CRIMSON_BUFF_SIZE*_fifo_level_perc/100);
 					//apply correction
 					_samp_rate[i]=_samp_rate[i]+(_fifo_lvl[i]*_samp_rate[i])/10000000;
 
@@ -426,6 +428,7 @@ private:
 	uint32_t _buffer_count[2];
 	bool _flow_running;
 	boost::mutex* _udp_mutex_add;
+	double _fifo_level_perc;
 };
 
 /***********************************************************************
