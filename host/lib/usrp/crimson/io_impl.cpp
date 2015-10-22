@@ -239,14 +239,14 @@ public:
 			//check if flow control is running, if not run it
 			if (_flow_running == false)	boost::thread flowcontrolThread(init_flowcontrol,this);
 
+			memset((void*)vita_buf, 0, vita_pck*4);
+			memcpy((void*)vita_buf, buffs[i], nsamps_per_buff*4);
 			//Check if it is time to send data, if so, copy the data over and continue
 			size_t remaining_bytes = (nsamps_per_buff*4);
 			while (remaining_bytes >0){
 
 				//If greater then max pl copy over what you can, leave the rest
 				if (remaining_bytes >=CRIMSON_MAX_MTU){
-						memset((void*)vita_buf, 0, vita_pck*4);
-						memcpy((void*)vita_buf, buffs[i], CRIMSON_MAX_MTU);
 
 						while ( time_spec_t::get_system_time() < _last_time[i]) {
 							update_samplerate();
@@ -266,8 +266,6 @@ public:
 						_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
 
 				}else{
-						memset((void*)vita_buf, 0, vita_pck*4);
-						memcpy((void*)vita_buf, buffs[i], remaining_bytes);
 
 						while ( time_spec_t::get_system_time() < _last_time[i]) {
 							update_samplerate();
