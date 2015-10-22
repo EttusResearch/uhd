@@ -244,7 +244,7 @@ public:
 			while (remaining_bytes >0){
 
 				//If greater then max pl copy over what you can, leave the rest
-				if (nsamps_per_buff*4 >=CRIMSON_MAX_MTU){
+				if (remaining_bytes >=CRIMSON_MAX_MTU){
 					//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
 						//clear temp buffer (byte operation)
 						memset((void*)vita_buf, 0, vita_pck*4);
