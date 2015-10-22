@@ -288,8 +288,8 @@ public:
 
 				}
 				remaining_bytes = (nsamps_per_buff*4) - ret;
-				samp_sent += ret;
 			}
+			samp_sent += ret;
 
 		}
 		return (samp_sent / 4);// -  vita_hdr - vita_tlr;	// vita is disabled
