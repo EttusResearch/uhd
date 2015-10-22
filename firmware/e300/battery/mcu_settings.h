@@ -23,6 +23,6 @@
 #define F_CPU 8000000UL
 
 #define VERSION_MAJ 2
-#define VERSION_MIN 0
+#define VERSION_MIN 1
 
 #endif /* MCU_SETTINGS_H */
