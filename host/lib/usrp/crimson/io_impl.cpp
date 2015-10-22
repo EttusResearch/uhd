@@ -233,6 +233,7 @@ public:
 				//each element in the buffer is 2 samples worth
 				time_spec_t past_halfbuffer = time_spec_t(0, (_fifo_level_perc/100*(double)(CRIMSON_BUFF_SIZE*2)) / (double)_samp_rate[i]);
 				_last_time[i] = time_spec_t::get_system_time()-past_halfbuffer;
+				_timer_tofreerun = time_spec_t::get_system_time() + time_spec_t(15,0);
 			}
 
 			//Flow control init
@@ -247,7 +248,7 @@ public:
 
 				//If greater then max pl copy over what you can, leave the rest
 				if (remaining_bytes >=CRIMSON_MAX_MTU){
-
+						if (time_spec_t::get_system_time() < _timer_tofreerun)
 						while ( time_spec_t::get_system_time() < _last_time[i]) {
 							update_samplerate();
 							time_spec_t systime = time_spec_t::get_system_time();
@@ -267,6 +268,7 @@ public:
 
 				}else{
 
+					if (time_spec_t::get_system_time() < _timer_tofreerun)
 						while ( time_spec_t::get_system_time() < _last_time[i]) {
 							update_samplerate();
 							time_spec_t systime = time_spec_t::get_system_time();
@@ -443,6 +445,10 @@ private:
 	bool _flow_running;
 	boost::mutex* _udp_mutex_add;
 	double _fifo_level_perc;
+
+	//debug
+
+	time_spec_t _timer_tofreerun;
 };
 
 /***********************************************************************
