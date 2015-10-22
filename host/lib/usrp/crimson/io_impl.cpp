@@ -98,29 +98,14 @@ public:
 		// process vita timestamps based on the last stream input's time stamp
 		uint64_t time_ticks = ((uint64_t)vita_buf[2] << 32) | ((uint64_t)vita_buf[3]);
 
-		// vita counter increments according to sample rate (all channels have to be same sample rate)
-		double time = time_ticks / _rate;
-
 		// determine the beginning of time
-		if (_start_time == 0) {
-			_start_time = time;
+		if (_start_ticks == 0) {
+			_start_ticks = time_ticks;
 		}
 
 		// save the time to metadata
-		time = time - _start_time;
-		metadata.time_spec = time_spec_t((time_t)time, time - (time_t)time);
-
-
-/*
-
-		// determine the beginning of time
-		if (_start_time == 0) {
-			_start_time = time_ticks;
-		}
-
-		// save the time to metadata
-		time_ticks = time_ticks - _start_time;
-        metadata.time_spec = time_spec_t::from_ticks(if_packet_info.tsf, tick_rate);*/
+		time_ticks = time_ticks - _start_ticks;
+        metadata.time_spec = time_spec_t::from_ticks(time_ticks, _rate);
 
 		// process vita sequencing
 		uint32_t header = vita_buf[0];
@@ -151,7 +136,7 @@ private:
 		_tree = tree;
 		_channels = channels;
 		_prev_frame = 0;
-		_start_time = 0;
+		_start_ticks = 0;
 
 		// get the property root path
 		const fs_path mb_path   = "/mboards/0";
@@ -195,7 +180,7 @@ private:
 	size_t _prev_frame;
 	size_t _pay_len;
 	double _rate;
-	double _start_time;
+	uint64_t _start_ticks;
 };
 
 class crimson_tx_streamer : public uhd::tx_streamer {
