@@ -245,40 +245,23 @@ public:
 
 				//If greater then max pl copy over what you can, leave the rest
 				if (remaining_bytes >=CRIMSON_MAX_MTU){
-					//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
-						//clear temp buffer (byte operation)
 						memset((void*)vita_buf, 0, vita_pck*4);
 						memcpy((void*)vita_buf, buffs[i], CRIMSON_MAX_MTU);
 
-
-						std::cout  << std::setprecision(18)<< "B4 While Last: " <<_last_time[i].get_real_secs()<< "  Now: " <<time_spec_t::get_system_time().get_real_secs()<<std::endl;
 						while ( time_spec_t::get_system_time() < _last_time[i]) {
 							update_samplerate();
 						}
-						std::cout  << std::setprecision(18)<< "After While Last: " <<_last_time[i].get_real_secs()<< "  Now: " <<time_spec_t::get_system_time().get_real_secs()<<std::endl;
-
-
-						std::cout  << std::setprecision(18)<< "Last Time: " <<_last_time[i].get_real_secs()<< std::endl;
 						//Send data (byte operation)
 						ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
-
-						//DEBUG: Print out adjusted sample rate
-						std::cout  << std::setprecision(18)<< "Last Time: " <<_last_time[i].get_real_secs()<< std::endl;
 
 						//update last_time with when it was supposed to have been sent:
 						time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
 
-						std::cout  << std::setprecision(18)<< "Last Time: " <<_last_time[i].get_real_secs()<< std::endl;
-						std::cout  << std::setprecision(18)<< "Wait: " <<wait.get_real_secs()<< std::endl;
 						_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
-						std::cout  << std::setprecision(18)<< "New Last: " <<_last_time[i].get_real_secs()<< std::endl;
 
 				}else{
-					//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
-						//clear temp buffer
 						memset((void*)vita_buf, 0, vita_pck*4);
 						memcpy((void*)vita_buf, buffs[i], remaining_bytes);
-
 
 						while ( time_spec_t::get_system_time() < _last_time[i]) {
 							update_samplerate();
