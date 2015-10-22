@@ -214,11 +214,11 @@ public:
 	{
 		const size_t vita_pck = nsamps_per_buff;// + vita_hdr + vita_tlr;	// vita is disabled
 		uint32_t vita_buf[vita_pck];						// buffer to read in data plus room for VITA
-		size_t ret;
-		ret = 0;
+		size_t samp_sent =0;
 
 		// send to each connected stream data in buffs[i]
-		for (unsigned int i = 0; i < _channels.size(); i++) {
+		for (unsigned int i = 0; i < _channels.size(); i++) {					// buffer to read in data plus room for VITA
+			size_t ret =0;
 
 			// update sample rate if we don't know the sample rate
 			if (_samp_rate[i] == 0) {
@@ -288,10 +288,11 @@ public:
 
 				}
 				remaining_bytes = (nsamps_per_buff*4) - ret;
+				samp_sent += ret;
 			}
 
 		}
-		return (ret / 4);// -  vita_hdr - vita_tlr;	// vita is disabled
+		return (samp_sent / 4);// -  vita_hdr - vita_tlr;	// vita is disabled
 	}
 
 	// async messages are currently disabled
@@ -406,10 +407,12 @@ private:
 
 					//Limit the correction
 					//Maximum correction is a half buffer per second (a buffer element is 2 samples).
-					if(_samp_rate[i] > (_samp_rate_usr[i] + CRIMSON_BUFF_SIZE)){
-						_samp_rate[i] = _samp_rate_usr[i] + CRIMSON_BUFF_SIZE;
-					}else if(_samp_rate[i] < (_samp_rate_usr[i] - CRIMSON_BUFF_SIZE)){
-						_samp_rate[i] = _samp_rate_usr[i] - CRIMSON_BUFF_SIZE;
+					double max_corr = _samp_rate[i]/1000000;
+					if (max_corr> CRIMSON_BUFF_SIZE) max_corr=CRIMSON_BUFF_SIZE;
+					if(_samp_rate[i] > (_samp_rate_usr[i] + max_corr)){
+						_samp_rate[i] = _samp_rate_usr[i] + max_corr;
+					}else if(_samp_rate[i] < (_samp_rate_usr[i] - max_corr)){
+						_samp_rate[i] = _samp_rate_usr[i] - max_corr;
 					}
 
 					//Buffer is now handled
