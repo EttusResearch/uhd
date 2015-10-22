@@ -240,51 +240,48 @@ public:
 			if (_flow_running == false)	boost::thread flowcontrolThread(init_flowcontrol,this);
 
 			//Check if it is time to send data, if so, copy the data over and continue
-			size_t remaining_bytes = (nsamps_per_buff*4) - ret;
+			size_t remaining_bytes = (nsamps_per_buff*4);
 			while (remaining_bytes >0){
-				time_spec_t wait;// = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
-				if( time_spec_t::get_system_time() >= _last_time[i]) {
 
-					//Copy over what you can, leave the rest
-					if (nsamps_per_buff*4 >=CRIMSON_MAX_MTU){
-						//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
-							//clear temp buffer (byte operation)
-							memset((void*)vita_buf, 0, vita_pck*4);
-							memcpy((void*)vita_buf, buffs[i], CRIMSON_MAX_MTU);
-							//Edit the buffer length...only if managed buffer
-							//buffs[i]->commit(CRIMSON_MAX_MTU*sizeof(boost::uint32_t));
+				//If greater then max pl copy over what you can, leave the rest
+				if (nsamps_per_buff*4 >=CRIMSON_MAX_MTU){
+					//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
+						//clear temp buffer (byte operation)
+						memset((void*)vita_buf, 0, vita_pck*4);
+						memcpy((void*)vita_buf, buffs[i], CRIMSON_MAX_MTU);
 
-							//update last_time with when it was supposed to have been sent:
 
-							wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
-							_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
-							//Send data (byte operation)
-							ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
+						while ( time_spec_t::get_system_time() < _last_time[i]) {
+							update_samplerate();
+						}
+						//Send data (byte operation)
+						ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, CRIMSON_MAX_MTU);
 
-					}else{
-						//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
-							//clear temp buffer
-							memset((void*)vita_buf, 0, vita_pck*4);
-							memcpy((void*)vita_buf, buffs[i], nsamps_per_buff * 4);
-							//update last_time with when it was supposed to have been sent:
-							wait = time_spec_t(0, (double)(nsamps_per_buff) / (double)_samp_rate[i]);
-							_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
-							//Send data (byte operation)
-							ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, nsamps_per_buff*4);
+						//update last_time with when it was supposed to have been sent:
+						time_spec_t wait = time_spec_t(0, (double)(CRIMSON_MAX_MTU / 4.0) / (double)_samp_rate[i]);
+						_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
 
-					}
-				}else {
-					update_samplerate();
-					//time_spec_t systime = time_spec_t::get_system_time();
-					//double systime_real = systime.get_real_secs();
-					//double last_time_real = _last_time[i].get_real_secs();
-					//if (systime_real < last_time_real){
-					//	boost::this_thread::sleep(boost::posix_time::milliseconds((last_time_real-systime_real)*1000));
-					//}
+				}else{
+					//if( time_spec_t::get_system_time() - _last_time[i] >= wait) {
+						//clear temp buffer
+						memset((void*)vita_buf, 0, vita_pck*4);
+						memcpy((void*)vita_buf, buffs[i], remaining_bytes);
+						//update last_time with when it was supposed to have been sent:
+						time_spec_t wait = time_spec_t(0, (double)(remaining_bytes/4) / (double)_samp_rate[i]);
+						_last_time[i] = _last_time[i]+wait;//time_spec_t::get_system_time();
+						//Send data (byte operation)
+						ret += _udp_stream[i] -> stream_out((void*)vita_buf + ret, remaining_bytes);
 
 				}
+				remaining_bytes = (nsamps_per_buff*4) - ret;
+				//time_spec_t systime = time_spec_t::get_system_time();
+				//double systime_real = systime.get_real_secs();
+				//double last_time_real = _last_time[i].get_real_secs();
+				//if (systime_real < last_time_real){
+				//	boost::this_thread::sleep(boost::posix_time::milliseconds((last_time_real-systime_real)*1000));
+				//}
 
-			}remaining_bytes = (nsamps_per_buff*4) - ret;
+			}
 
 		}
 		return (ret / 4);// -  vita_hdr - vita_tlr;	// vita is disabled
