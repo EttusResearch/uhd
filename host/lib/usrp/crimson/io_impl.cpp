@@ -293,7 +293,6 @@ public:
 					time_spec_t systime = time_spec_t::get_system_time();
 					double systime_real = systime.get_real_secs();
 					double last_time_real = _last_time[i].get_real_secs();
-					std::cout << std::setprecision(18) << "last time: "<< last_time_real << "  now time: "<< systime_real <<"  DiffX1000:  " << (last_time_real-systime_real)*1000 << std::endl;
 					if (systime_real < last_time_real){
 						boost::this_thread::sleep(boost::posix_time::milliseconds((last_time_real-systime_real)*1000));
 					}
