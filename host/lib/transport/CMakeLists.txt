@@ -22,7 +22,9 @@
 ########################################################################
 # Include subdirectories (different than add)
 ########################################################################
-INCLUDE_SUBDIRECTORY(nirio)
+IF(ENABLE_X300)
+    INCLUDE_SUBDIRECTORY(nirio)
+ENDIF(ENABLE_X300)
 
 ########################################################################
 # Setup libusb
@@ -128,9 +130,14 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/buffer_pool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/nirio_zero_copy.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr.cpp
 )
+
+IF(ENABLE_X300)
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/nirio_zero_copy.cpp
+    )
+ENDIF(ENABLE_X300)
 
 # Verbose Debug output for send/recv
 SET( UHD_TXRX_DEBUG_PRINTS OFF CACHE BOOL "Use verbose debug output for send/recv" )

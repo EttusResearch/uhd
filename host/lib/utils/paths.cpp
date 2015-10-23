@@ -17,7 +17,6 @@
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/transport/nirio/nifpga_lvbitx.h>
 #include <uhd/utils/paths.hpp>
 
 #include <boost/algorithm/string.hpp>

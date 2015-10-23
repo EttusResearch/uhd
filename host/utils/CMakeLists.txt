@@ -48,9 +48,11 @@ FOREACH(util_source ${util_runtime_sources})
     UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
 ENDFOREACH(util_source)
 
-ADD_EXECUTABLE(usrp_x3xx_fpga_burner ${x3xx_burner_sources})
-TARGET_LINK_LIBRARIES(usrp_x3xx_fpga_burner uhd ${Boost_LIBRARIES})
-UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
+IF(ENABLE_X300)
+    ADD_EXECUTABLE(usrp_x3xx_fpga_burner ${x3xx_burner_sources})
+    TARGET_LINK_LIBRARIES(usrp_x3xx_fpga_burner uhd ${Boost_LIBRARIES})
+    UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
+ENDIF(ENABLE_X300)
 
 ########################################################################
 # Utilities that get installed into the share path
@@ -121,8 +123,12 @@ FOREACH(util_source ${util_share_sources_py})
     )
 ENDFOREACH(util_source)
 
-UHD_INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
-UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+IF(ENABLE_USRP2)
+    UHD_INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+ENDIF(ENABLE_USRP2)
+IF(ENABLE_X300)
+    UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+ENDIF(ENABLE_X300)
 
 #UHD images downloader configuration
 CONFIGURE_FILE(

@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Ettus Research LLC
+# Copyright 2013,2015 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,8 +30,8 @@ MACRO(LIBUHD_LVBITX_GEN_SOURCE_AND_BITSTREAM lvbitx binfile)
     SET(IMAGES_PATH_OPT --uhd-images-path=${UHD_IMAGES_DIR})
 
     ADD_CUSTOM_COMMAND(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${lvbitxprefix}_lvbitx.hpp 
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${lvbitxprefix}_lvbitx.cpp
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${lvbitxprefix}_lvbitx.hpp
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/process-lvbitx.py
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/template_lvbitx.hpp
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/template_lvbitx.cpp
@@ -41,6 +41,7 @@ MACRO(LIBUHD_LVBITX_GEN_SOURCE_AND_BITSTREAM lvbitx binfile)
     )
 
     #make libuhd depend on the output file
+    LIBUHD_APPEND_SOURCES(${CMAKE_CURRENT_BINARY_DIR}/${lvbitxprefix}_lvbitx.hpp)
     LIBUHD_APPEND_SOURCES(${CMAKE_CURRENT_BINARY_DIR}/${lvbitxprefix}_lvbitx.cpp)
 ENDMACRO(LIBUHD_LVBITX_GEN_SOURCE_AND_BITSTREAM)
 
