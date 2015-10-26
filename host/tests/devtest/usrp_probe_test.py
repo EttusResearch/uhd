@@ -15,36 +15,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-""" Test for test_pps_input. """
+""" Run the test for tx_burst """
 
 import re
 from uhd_test_base import uhd_example_test_case
 
-class uhd_test_pps_test(uhd_example_test_case):
-    """ Run test_pps_input. """
-    tests = {'default': {},}
+class uhd_usrp_probe_test(uhd_example_test_case):
+    """ Run uhd_usrp_probe """
+    tests = {
+        'default': {
+            'init-only': False,
+        },
+    }
 
     def setup_example(self):
         """
         Set args.
         """
-        self.test_params = uhd_test_pps_test.tests
+        self.test_params = uhd_usrp_probe_test.tests
 
     def run_test(self, test_name, test_args):
-        """ Run the app and scrape for the success message. """
-        self.log.info('Running test {n}'.format(n=test_name,))
+        """ Run the app and scrape for the failure messages. """
+        self.log.info('Running test {name}'.format(name=test_name))
         # Run example:
         args = [
             self.create_addr_args_str(),
         ]
-        if test_args.has_key('source'):
-            args.append('--source')
-            args.append(test_args['source'])
-        (app, run_results) = self.run_example('test_pps_input', args)
+        if test_args.get('init-only'):
+            args.append('--init-only')
+        (app, run_results) = self.run_example('uhd_usrp_probe', args)
         # Evaluate pass/fail:
         run_results['passed'] = all([
             app.returncode == 0,
-            re.search('Success!', app.stdout) is not None,
         ])
         self.report_example_results(test_name, run_results)
         return run_results
