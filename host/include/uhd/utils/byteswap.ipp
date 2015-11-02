@@ -101,7 +101,9 @@
  **********************************************************************/
 #include <boost/detail/endian.hpp>
 
-template<typename T> UHD_INLINE T uhd::ntohx(T num){
+namespace uhd {
+
+template<typename T> UHD_INLINE T ntohx(T num){
     #ifdef BOOST_BIG_ENDIAN
         return num;
     #else
@@ -109,7 +111,7 @@ template<typename T> UHD_INLINE T uhd::ntohx(T num){
     #endif
 }
 
-template<typename T> UHD_INLINE T uhd::htonx(T num){
+template<typename T> UHD_INLINE T htonx(T num){
     #ifdef BOOST_BIG_ENDIAN
         return num;
     #else
@@ -117,7 +119,7 @@ template<typename T> UHD_INLINE T uhd::htonx(T num){
     #endif
 }
 
-template<typename T> UHD_INLINE T uhd::wtohx(T num){
+template<typename T> UHD_INLINE T wtohx(T num){
     #ifdef BOOST_BIG_ENDIAN
         return uhd::byteswap(num);
     #else
@@ -125,12 +127,14 @@ template<typename T> UHD_INLINE T uhd::wtohx(T num){
     #endif
 }
 
-template<typename T> UHD_INLINE T uhd::htowx(T num){
+template<typename T> UHD_INLINE T htowx(T num){
     #ifdef BOOST_BIG_ENDIAN
         return uhd::byteswap(num);
     #else
         return num;
     #endif
 }
+
+} /* namespace uhd */
 
 #endif /* INCLUDED_UHD_UTILS_BYTESWAP_IPP */
