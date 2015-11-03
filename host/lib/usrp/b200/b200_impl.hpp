@@ -49,7 +49,7 @@
 #include "recv_packet_demuxer_3000.hpp"
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
-static const boost::uint16_t B200_FPGA_COMPAT_NUM = 11;
+static const boost::uint16_t B200_FPGA_COMPAT_NUM = 12;
 static const boost::uint16_t B205_FPGA_COMPAT_NUM = 2;
 static const double          B200_BUS_CLOCK_RATE = 100e6;
 static const boost::uint32_t B200_GPSDO_ST_NONE = 0x83;
