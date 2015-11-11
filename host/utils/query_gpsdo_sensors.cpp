@@ -1,5 +1,5 @@
 //
-// Copyright 2012,2014 Ettus Research LLC
+// Copyright 2012,2014,2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -38,7 +38,6 @@ void print_notes(void) {
   std::cout << boost::format("**************************************Helpful Notes on Clock/PPS Selection**************************************\n");
   std::cout << boost::format("As you can see, the default 10 MHz Reference and 1 PPS signals are now from the GPSDO.\n");
   std::cout << boost::format("If you would like to use the internal reference(TCXO) in other applications, you must configure that explicitly.\n");
-  std::cout << boost::format("You can no longer select the external SMAs for 10 MHz or 1 PPS signaling.\n");
   std::cout << boost::format("****************************************************************************************************************\n");
 }
 
@@ -51,7 +50,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help", "help message")
-    ("args", po::value<std::string>(&args)->default_value(""), "Specify a single USRP.")
+    ("args", po::value<std::string>(&args)->default_value(""), "Device address arguments specifying a single USRP")
     ;
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -59,17 +58,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
   //Print the help message
   if (vm.count("help")) {
-    std::cout << boost::format("Query GPSDO Sensors %s") % desc << std::endl;
-    return EXIT_FAILURE;
+      std::cout << boost::format("Query GPSDO Sensors, try to lock the reference oscillator to the GPS disciplined clock, and set the device time to GPS time")
+          << std::endl
+          << std::endl
+          << desc;
+      return EXIT_FAILURE;
   }
 
   //Create a USRP device
   std::cout << boost::format("\nCreating the USRP device with: %s...\n") % args;
   uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
   std::cout << boost::format("Using Device: %s\n") % usrp->get_pp_string();
-
-  print_notes();
-
 
   //Verify GPS sensors are present (i.e. EEPROM has been burnt)
   std::vector<std::string> sensor_names = usrp->get_mboard_sensor_names(0);
@@ -82,38 +81,96 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     exit(EXIT_FAILURE);
   }
 
+  // Explicitly set time source to gpsdo
+  boost::this_thread::sleep(boost::posix_time::seconds(1));
+  try {
+      usrp->set_time_source("gpsdo");
+  } catch (uhd::value_error &e) {
+      std::cout << "could not set the time source to \"gpsdo\"; error was:" <<std::endl;
+      std::cout << e.what() << std::endl;
+      std::cout << "trying \"external\"..." <<std::endl;
+      try {
+          usrp->set_time_source("external");
+      } catch (uhd::value_error &e) {
+          std::cout << "\"external\" failed, too." << std::endl;
+      }
+  }
+  std::cout<< std::endl << "Time source is now " << usrp->get_time_source(0) << std::endl;
+
   //Check for GPS lock
   uhd::sensor_value_t gps_locked = usrp->get_mboard_sensor("gps_locked",0);
   if(not gps_locked.to_bool()) {
-    std::cout << boost::format("\nGPS does not have lock. Wait a few minutes and try again.\n");
-    std::cout << boost::format("NMEA strings and device time may not be accurate until lock is achieved.\n\n");
-  } else
-      std::cout << boost::format("GPS Locked\n");
+      std::cout << boost::format("\nGPS does not have lock. Wait a few minutes and try again.\n");
+      std::cout << boost::format("NMEA strings and device time may not be accurate until lock is achieved.\n\n");
+  } else {
+      std::cout << boost::format("GPS Locked");
+  }
+
+  std::cout << "\nSetting the reference clock source to \"gpsdo\"...\n";
+  try {
+      usrp->set_clock_source("gpsdo");
+  } catch (uhd::value_error &e) {
+      std::cout << "could not set the clock source to \"gpsdo\"; error was:" <<std::endl;
+      std::cout << e.what() << std::endl;
+      std::cout << "trying \"external\"..." <<std::endl;
+      try{
+          usrp->set_clock_source("external");
+      } catch (uhd::value_error &e) {
+          std::cout << "\"external\" failed, too." << std::endl;
+      }
+  }
+  std::cout<< std::endl << "Clock source is now " << usrp->get_clock_source(0) << std::endl;
+
+  print_notes();
+
 
   //Check for 10 MHz lock
   if(std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end()) {
-    uhd::sensor_value_t gps_locked = usrp->get_mboard_sensor("ref_locked",0);
-    if(not gps_locked.to_bool()) {
-      std::cout << boost::format("USRP NOT Locked to GPSDO 10 MHz Reference.\n");
-      std::cout << boost::format("Double check installation instructions (N2X0/E1X0 only): https://www.ettus.com/content/files/gpsdo-kit_4.pdf\n\n");
-    } else
-        std::cout << boost::format("USRP Locked to GPSDO 10 MHz Reference.\n");
-  }else
-    std::cout << boost::format("ref_locked sensor not present on this board.\n");
-
-  // Explicitly set time source to gpsdo
-  usrp->set_time_source("gpsdo");
+      uhd::sensor_value_t gps_locked = usrp->get_mboard_sensor("ref_locked",0);
+      if(not gps_locked.to_bool()) {
+          std::cout << boost::format("USRP NOT Locked to GPSDO 10 MHz Reference.\n");
+          std::cout << boost::format("Double check installation instructions (N2X0/E1X0 only): https://www.ettus.com/content/files/gpsdo-kit_4.pdf\n\n");
+          std::cout << boost::format("Locking the internal reference to the GPSDO might take a second to reach stability. Retrying in 10 s...\n\n");
+          boost::this_thread::sleep(boost::posix_time::seconds(10));
+      }
+      if(usrp->get_mboard_sensor("ref_locked",0).to_bool()) {
+          std::cout << boost::format("USRP Locked to GPSDO 10 MHz Reference.\n");
+      }
+  } else {
+      std::cout << boost::format("ref_locked sensor not present on this board.\n");
+  }
 
   //Check PPS and compare UHD device time to GPS time
   boost::this_thread::sleep(boost::posix_time::seconds(1));
   uhd::sensor_value_t gps_time = usrp->get_mboard_sensor("gps_time");
-  const time_t pc_clock_time = time(NULL);
-  const uhd::time_spec_t last_pps_time = usrp->get_time_last_pps();
+  uhd::time_spec_t last_pps_time = usrp->get_time_last_pps();
 
-  if (last_pps_time.to_ticks(1.0) == gps_time.to_int()) {
+  //we only care about the full seconds
+  signed gps_seconds = gps_time.to_int();
+  long long pps_seconds = last_pps_time.to_ticks(1.0);
+
+  if(pps_seconds != gps_seconds) {
+      std::cout << boost::format("\nGPS and UHD Device time are NOT aligned;\nlast_pps: %ld vs gps: %ld. Trying to set the device time to GPS time...")
+                % pps_seconds % gps_seconds
+                << std::endl;
+      //full next after next second
+      uhd::time_spec_t next_pps_time(gps_seconds + 2.0);
+      //instruct the USRP to wait for the next PPS edge, then set the new time on the following PPS
+      usrp->set_time_unknown_pps(next_pps_time);
+      //allow some time to make sure the PPS has come…
+      boost::this_thread::sleep(boost::posix_time::seconds(1.1));
+      //…then ask
+      gps_seconds = usrp->get_mboard_sensor("gps_time").to_int();
+      pps_seconds = usrp->get_time_last_pps().to_ticks(1.0);
+  }
+
+  std::cout << boost::format("last_pps: %ld vs gps: %ld.")
+            % pps_seconds % gps_seconds
+            << std::endl;
+  if (pps_seconds == gps_seconds) {
       std::cout << boost::format("GPS and UHD Device time are aligned.\n");
   } else {
-      std::cout << boost::format("\nGPS and UHD Device time are NOT aligned last_pps: %ld vs gps: %ld. Try re-running the program. Double check 1 PPS connection from GPSDO.\n\n") % last_pps_time.to_ticks(1.0) % gps_time.to_int() << std::endl;
+      std::cout << boost::format("Could not align UHD Device time to GPS time. Giving up.\n");
   }
 
   //print NMEA strings
@@ -121,12 +178,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
       uhd::sensor_value_t gga_string = usrp->get_mboard_sensor("gps_gpgga");
       uhd::sensor_value_t rmc_string = usrp->get_mboard_sensor("gps_gprmc");
       std::cout << boost::format("Printing available NMEA strings:\n");
-      std::cout << boost::format("%s\n%s\n%s\n") % gga_string.to_pp_string() % rmc_string.to_pp_string() % gps_time.to_pp_string();
-  } catch (std::exception &) {
+      std::cout << boost::format("%s\n%s\n") % gga_string.to_pp_string() % rmc_string.to_pp_string();
+  } catch (uhd::lookup_error &e) {
       std::cout << "NMEA strings not implemented for this device." << std::endl;
   }
-  std::cout << boost::format("UHD Device time: %.0f seconds\n") % (last_pps_time.get_real_secs());
-  std::cout << boost::format("PC Clock time: %.0f seconds\n") % pc_clock_time;
+  std::cout << boost::format("GPS Epoch time at last PPS: %.5f seconds\n") % usrp->get_mboard_sensor("gps_time").to_real();
+  std::cout << boost::format("UHD Device time last PPS:   %.5f seconds\n") % (usrp->get_time_last_pps().get_real_secs());
+  std::cout << boost::format("UHD Device time right now:  %.5f seconds\n") % (usrp->get_time_now().get_real_secs());
+  std::cout << boost::format("PC Clock time:              %.5f seconds\n") % time(NULL);
 
   //finished
   std::cout << boost::format("\nDone!\n\n");
