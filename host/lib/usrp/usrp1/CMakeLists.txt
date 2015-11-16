@@ -22,8 +22,6 @@
 ########################################################################
 # Conditionally configure the USRP1 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("USRP1" ENABLE_USRP1 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
-
 IF(ENABLE_USRP1)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp

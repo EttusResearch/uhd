@@ -22,8 +22,6 @@
 ########################################################################
 # Conditionally configure the B100 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("B100" ENABLE_B100 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
-
 IF(ENABLE_B100)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/b100_impl.cpp

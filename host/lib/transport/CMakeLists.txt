@@ -29,11 +29,6 @@ ENDIF(ENABLE_X300)
 ########################################################################
 # Setup libusb
 ########################################################################
-MESSAGE(STATUS "")
-FIND_PACKAGE(USB1)
-
-LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF OFF)
-
 IF(ENABLE_USB)
     MESSAGE(STATUS "USB support enabled via libusb.")
     INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIRS})

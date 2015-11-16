@@ -22,8 +22,6 @@
 ########################################################################
 # Conditionally configure the X300 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("X300" ENABLE_X300 ON "ENABLE_LIBUHD" OFF OFF)
-
 IF(ENABLE_X300)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/x300_impl.cpp
