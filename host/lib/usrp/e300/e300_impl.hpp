@@ -30,6 +30,7 @@
 
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <string>
 #include "e300_fifo_config.hpp"
 #include "ad9361_ctrl.hpp"
@@ -188,9 +189,11 @@ private: // methods
         const uhd::sid_t &sid,
         const size_t which_stream);
 
-    size_t _get_axi_dma_channel(
-        const boost::uint8_t destination,
-        const xport_type_t);
+    /*! Return the first free AXI channel pair.
+     *
+     * \throws uhd::runtime_error if no free channel pairs are available.
+     */
+    size_t _get_axi_dma_channel_pair();
 
     boost::uint16_t _get_udp_port(
         boost::uint8_t destination,
@@ -251,6 +254,7 @@ private: // members
     e300_fifo_interface::sptr              _fifo_iface;
     size_t                                 _num_radios;
     radio_perifs_t                         _radio_perifs[2];
+    boost::dynamic_bitset<>                _dma_chans_available;
     double                                 _tick_rate;
     ad9361_ctrl::sptr                      _codec_ctrl;
     ad936x_manager::sptr                   _codec_mgr;

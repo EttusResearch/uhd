@@ -309,6 +309,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     : _device_addr(device_addr)
     , _xport_path(device_addr.has_key("addr") ? ETH : AXI)
     , _num_radios(fpga::NUM_RADIOS) // We might need to query this somehow
+    , _dma_chans_available(MAX_DMA_CHANNEL_PAIRS, ~size_t(0) /* all available at the beginning */)
 {
     stream_options.rx_fc_request_freq = E300_RX_FC_REQUEST_FREQ;
 
@@ -787,7 +788,7 @@ void e300_impl::_setup_dest_mapping(
     const uhd::sid_t &sid,
     const size_t which_stream)
 {
-    UHD_MSG(status) << boost::format("Setting up dest map for ep %lu to be stream %d")
+    UHD_MSG(status) << boost::format("[E300] Setting up dest map for host ep %lu to be stream %d")
                                      % sid.get_src_endpoint() % which_stream << std::endl;
     _global_regs->poke32(DST_ADDR(sid.get_src_endpoint()), which_stream);
 }
@@ -809,34 +810,15 @@ void e300_impl::_update_time_source(const std::string &source)
     _update_gpio_state();
 }
 
-size_t e300_impl::_get_axi_dma_channel(
-    const boost::uint8_t destination,
-    const e300_impl::xport_type_t xport_type)
+size_t e300_impl::_get_axi_dma_channel_pair()
 {
-    static const boost::uint32_t group_offset = 3;
+    if (_dma_chans_available.none()) {
+        throw uhd::runtime_error("No more free DMA channels available.");
+    }
 
-    size_t chan_offset = 0;
-
-    switch (xport_type) {
-    case TX_DATA:
-        chan_offset = 0;
-        break;
-    case CTRL:
-        chan_offset = 1;
-        break;
-    case RX_DATA:
-        chan_offset = 2;
-        break;
-    default:
-        UHD_THROW_INVALID_CODE_PATH();
-    };
-
-    // Note: This assumes that R0 is on crossbar port 1 (first)
-    //       and all the other Radios and CEs on the following ones
-    //       The crossbar port 0 is used for the host connection
-    const boost::uint8_t xbar_port = destination - E300_XB_DST_R0;
-
-    return (xbar_port * group_offset) + chan_offset;
+    size_t first_free_pair = _dma_chans_available.find_first();
+    _dma_chans_available.reset(first_free_pair);
+    return first_free_pair;
 }
 
 boost::uint16_t e300_impl::_get_udp_port(
@@ -894,7 +876,7 @@ uhd::sid_t e300_impl::_allocate_sid(
 e300_impl::both_xports_t e300_impl::make_transport(
     const uhd::sid_t &address,
     const xport_type_t type,
-    const uhd::device_addr_t &args)
+    const uhd::device_addr_t &)
 {
     both_xports_t xports;
 
@@ -906,24 +888,14 @@ e300_impl::both_xports_t e300_impl::make_transport(
     xports.recv_buff_size = params.recv_frame_size * params.num_recv_frames;
     xports.send_buff_size = params.send_frame_size * params.num_send_frames;
 
-    if (_xport_path == AXI) {
-        // lookup which dma channel we need
-        // to use to create our transport
-        const size_t stream = _get_axi_dma_channel(
-            address.get_dst_xbarport(),
-            type);
+    if (_xport_path != AXI) {
+        throw uhd::runtime_error("[E300] Currently only AXI transport supported with RFNOC");
+    }
 
-        xports.send =
-            _fifo_iface->make_send_xport(stream, params);
-        xports.recv =
-            _fifo_iface->make_recv_xport(stream, params);
-    } else
-        throw uhd::runtime_error("Currently only AXI transport supported with RFNOC");
-
-    // configure the return path
-    _setup_dest_mapping(
-        xports.send_sid,
-        _get_axi_dma_channel(xports.send_sid.get_dst_xbarport(), type));
+    const size_t chan_pair = _get_axi_dma_channel_pair();
+    xports.send = _fifo_iface->make_send_xport(chan_pair, params);
+    xports.recv = _fifo_iface->make_recv_xport(chan_pair, params);
+    _setup_dest_mapping(xports.send_sid, chan_pair);
 
     return xports;
 }
