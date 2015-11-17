@@ -30,6 +30,7 @@ ENDIF(ENABLE_X300)
 # Setup libusb
 ########################################################################
 IF(ENABLE_USB)
+    MESSAGE(STATUS "")
     MESSAGE(STATUS "USB support enabled via libusb.")
     INCLUDE_DIRECTORIES(${LIBUSB_INCLUDE_DIRS})
     LIBUHD_APPEND_LIBS(${LIBUSB_LIBRARIES})

@@ -18,8 +18,6 @@
 ########################################################################
 # Conditionally configure the OctoClock support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("OctoClock" ENABLE_OCTOCLOCK ON "ENABLE_LIBUHD" OFF OFF)
-
 IF(ENABLE_OCTOCLOCK)
     ADD_DEFINITIONS(-DIHEX_USE_STDBOOL)
 
