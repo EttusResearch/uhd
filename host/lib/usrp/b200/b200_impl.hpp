@@ -95,7 +95,8 @@ static const unsigned char B200_USB_DATA_SEND_ENDPOINT  = 2;
 static std::vector<uhd::transport::usb_device_handle::vid_pid_pair_t> b200_vid_pid_pairs =
     boost::assign::list_of
         (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200_PRODUCT_ID))
-        (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B205_PRODUCT_ID))
+        (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200MINI_PRODUCT_ID))
+        (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B205MINI_PRODUCT_ID))
         (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID))
         (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID))
     ;
