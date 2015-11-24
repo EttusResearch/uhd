@@ -167,7 +167,7 @@ SET(CPACK_COMPONENTS_ALL libraries headers utilities examples manual doxygen rea
 ########################################################################
 # Setup CPack Debian
 ########################################################################
-SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev")
+SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-all-dev, python-requests")
 SET(CPACK_DEBIAN_PACKAGE_RECOMMENDS "python, python-tk")
 FOREACH(filename preinst postinst prerm postrm)
     LIST(APPEND CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_BINARY_DIR}/debian/${filename})
@@ -185,7 +185,7 @@ CONFIGURE_FILE(
 ########################################################################
 # Setup CPack RPM
 ########################################################################
-SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel")
+SET(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, python-requests")
 
 FOREACH(filename post_install post_uninstall pre_install pre_uninstall)
     STRING(TOUPPER ${filename} filename_upper)
