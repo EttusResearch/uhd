@@ -42,7 +42,7 @@
 #include <uhd/utils/safe_main.hpp>
 
 #include "../lib/usrp_clock/octoclock/common.h"
-#include "kk_ihex_read.h"
+#include "../lib/utils/ihex.hpp"
 
 #define MAX_FIRMWARE_SIZE 1024*120
 #define BLOCK_SIZE 256
@@ -142,7 +142,7 @@ device_addrs_t bootloader_find(const std::string &ip_addr){
     device_addrs_t addrs;
 
     boost::system_time comm_timeout = boost::get_system_time() + boost::posix_time::milliseconds(3000);
-    
+
     while(boost::get_system_time() < comm_timeout){
         UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, OCTOCLOCK_QUERY_CMD, pkt_out, len, octoclock_data);
         if(UHD_OCTOCLOCK_PACKET_MATCHES(OCTOCLOCK_QUERY_ACK, pkt_out, pkt_in, len) and
@@ -292,22 +292,8 @@ void finalize(udp_simple::sptr udp_transport){
 }
 
 void octoclock_convert_ihex(const std::string &hex_path, const std::string &bin_path){
-    struct ihex_state ihex;
-    ihex_count_t count;
-    char buf[256];
-    FILE* infile = fopen(hex_path.c_str(), "r");
-    FILE* outfile = fopen(bin_path.c_str(), "w");
-    uint64_t line_number = 1;
-
-    ihex_begin_read(&ihex);
-    while(fgets(buf, 256, infile)){
-        count = ihex_count_t(strlen(buf));
-        ihex_read_bytes(&ihex, buf, count, outfile);
-        line_number += (count && buf[count - 1] == '\n');
-    }
-    ihex_end_read(&ihex, outfile); // Closes outfile
-
-    (void)fclose(infile);
+    ihex_reader hex_reader(hex_path);
+    hex_reader.to_bin_file(bin_path);
 }
 
 int UHD_SAFE_MAIN(UHD_UNUSED(int argc), UHD_UNUSED(char *argv[])){
