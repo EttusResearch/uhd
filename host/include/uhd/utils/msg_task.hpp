@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2014 Ettus Research LLC
+// Copyright 2011-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ namespace uhd{
              */
             virtual msg_payload_t get_msg_from_dump_queue(boost::uint32_t sid) = 0;
 
-            inline static std::vector<boost::uint8_t> buff_to_vector(boost::uint8_t* p, size_t n) {
+            UHD_INLINE static std::vector<boost::uint8_t> buff_to_vector(boost::uint8_t* p, size_t n) {
                 if(p and n > 0){
                     std::vector<boost::uint8_t> v(n);
                     memcpy(&v.front(), p, n);

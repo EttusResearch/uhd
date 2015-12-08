@@ -55,12 +55,12 @@ namespace uhd{
             //NOP
         }
 
-        inline virtual bool is_bypassed()
+        UHD_INLINE virtual bool is_bypassed()
         {
             return _bypass;
         }
 
-        inline filter_type get_type()
+        UHD_INLINE filter_type get_type()
         {
             return _type;
         }
@@ -98,7 +98,7 @@ namespace uhd{
                 //NOP
             }
 
-            inline const std::string& get_analog_type()
+            UHD_INLINE const std::string& get_analog_type()
             {
                 return _analog_type;
             }
@@ -128,17 +128,17 @@ namespace uhd{
             //NOP
         }
 
-        inline double get_cutoff()
+        UHD_INLINE double get_cutoff()
         {
             return _cutoff;
         }
 
-        inline double get_rolloff()
+        UHD_INLINE double get_rolloff()
         {
             return _cutoff;
         }
 
-        inline void set_cutoff(const double cutoff)
+        UHD_INLINE void set_cutoff(const double cutoff)
         {
             _cutoff = cutoff;
         }
@@ -181,32 +181,32 @@ namespace uhd{
             //NOP
         }
 
-        inline double get_output_rate()
+        UHD_INLINE double get_output_rate()
         {
             return (_bypass ? _rate : (_rate / _decimation * _interpolation));
         }
 
-        inline double get_input_rate()
+        UHD_INLINE double get_input_rate()
         {
             return _rate;
         }
 
-        inline double get_interpolation()
+        UHD_INLINE double get_interpolation()
         {
             return _interpolation;
         }
 
-        inline double get_decimation()
+        UHD_INLINE double get_decimation()
         {
             return _decimation;
         }
 
-        inline double get_tap_full_scale()
+        UHD_INLINE double get_tap_full_scale()
         {
             return _tap_full_scale;
         }
 
-        inline std::vector<tap_t>& get_taps()
+        UHD_INLINE std::vector<tap_t>& get_taps()
         {
             return _taps;
         }

@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ namespace uhd{ namespace cast{
     // Example:
     //     boost::uint16_t x = hexstr_cast<boost::uint16_t>("0xDEADBEEF");
     // Uses stringstream.
-    template<typename T> inline T hexstr_cast(const std::string &in)
+    template<typename T> UHD_INLINE T hexstr_cast(const std::string &in)
     {
         T x;
         std::stringstream ss;
