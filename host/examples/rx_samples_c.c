@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
         EXECUTE_OR_GOTO(close_file,
             uhd_rx_metadata_error_code(md, &error_code)
         )
-        if(return_code != UHD_RX_METADATA_ERROR_CODE_NONE){
+        if(error_code != UHD_RX_METADATA_ERROR_CODE_NONE){
             fprintf(stderr, "Error code 0x%x was returned during streaming. Aborting.\n", return_code);
             goto close_file;
         }

@@ -87,7 +87,7 @@ Run the following commands to record the setting into the EEPROM:
     ./usrp_burn_mb_eeprom --args=<optional device args> --values="mcr=<rate>"
 
 The user may override the clock rate specified in the EEPROM by using a
-device address: Example:
+device address. Example:
 
     uhd_usrp_probe --args="mcr=52e6"
 

@@ -64,7 +64,7 @@ position.
 
 To communicate the desired clock rate into UHD software, specify the
 special device address argument, where the key is
-**master_clock_rate** and the value is a rate in Hz. Example: :
+`master_clock_rate` and the value is a rate in Hz. Example:
 
     uhd_usrp_probe --args="master_clock_rate=52e6"
 

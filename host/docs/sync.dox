@@ -166,7 +166,7 @@ chains will remain constant after each re-tune. See notes below:
 -   This phase offset will drift over time due to thermal and other characteristics
 -   Periodic calibration will be necessary for phase-coherent applications
 
-Code snippet example, tuning with timed commands: :
+Code snippet example, tuning with timed commands:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
     //we will tune the frontends in 100ms from now

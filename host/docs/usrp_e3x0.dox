@@ -443,7 +443,7 @@ The USRP E312 (and with upgraded firmware E310) supports LiIon Battery packs (e.
 
 The connector J1 on E312's motherboard is a Molex 53014-6310. The corresponding mating connector is a Molex 51004-0300.
 
-\image html e3xx_conn_photo.png "Battery pack connector"
+\image html e3xx_conn_photo.jpg "Battery pack connector"
 
 The pins are as follows:
 - Pin 1 (Red): VBat
