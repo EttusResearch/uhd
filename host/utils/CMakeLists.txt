@@ -87,7 +87,6 @@ IF(ENABLE_OCTOCLOCK)
         ${CMAKE_SOURCE_DIR}/lib/utils/ihex.cpp
     )
 
-    ADD_DEFINITIONS(-DIHEX_USE_STDBOOL)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp_clock/octoclock)
     ADD_EXECUTABLE(octoclock_firmware_burner ${octoclock_burner_sources})
     TARGET_LINK_LIBRARIES(octoclock_firmware_burner uhd ${Boost_LIBRARIES})

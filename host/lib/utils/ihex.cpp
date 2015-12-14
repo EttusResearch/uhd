@@ -213,7 +213,7 @@ void ihex_reader::to_bin_file(const std::string &bin_filename)
 
 // We need a functor for the cast, a lambda would be perfect...
 int _vector_writer_callback(
-    std::vector<boost::uint8_t> vector,
+    std::vector<boost::uint8_t>& vector,
     unsigned char *buff,
     boost::uint16_t len
 ) {
@@ -229,7 +229,7 @@ std::vector<boost::uint8_t> ihex_reader::to_vector(const size_t size_estimate)
     std::vector<boost::uint8_t> buf;
     buf.reserve(size_estimate == 0 ? DEFAULT_SIZE_ESTIMATE : size_estimate);
 
-    this->read(boost::bind(&_vector_writer_callback, buf, _3, _4));
+    this->read(boost::bind(&_vector_writer_callback, boost::ref(buf), _3, _4));
 
     return buf;
 }

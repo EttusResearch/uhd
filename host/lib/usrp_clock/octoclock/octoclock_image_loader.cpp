@@ -79,20 +79,18 @@ static void octoclock_calculate_crc(octoclock_session_t &session){
 
 static void octoclock_read_bin(octoclock_session_t &session)
 {
-    std::ifstream bin_file(session.image_filepath.c_str());
+    std::ifstream bin_file(session.image_filepath.c_str(), std::ios::in | std::ios::binary);
     if (not bin_file.is_open()) {
         throw uhd::io_error("Could not read image file.");
     }
 
     size_t filesize = fs::file_size(session.image_filepath);
     session.image.clear();
-    session.image.reserve(filesize);
-
-    std::copy(
-        std::istream_iterator<boost::uint8_t>(bin_file),
-        std::istream_iterator<boost::uint8_t>(),
-        std::back_inserter(session.image)
-    );
+    session.image.resize(filesize);
+    bin_file.read((char*)&session.image[0], filesize);
+    if(size_t(bin_file.gcount()) != filesize) {
+        throw uhd::io_error("Failed to read firmware image.");
+    }
 
     bin_file.close();
 }
@@ -111,7 +109,8 @@ static void octoclock_validate_firmware_image(octoclock_session_t &session){
         ihex_reader hex_reader(session.image_filepath);
         session.image = hex_reader.to_vector(OCTOCLOCK_FIRMWARE_MAX_SIZE_BYTES);
     }
-    else throw uhd::runtime_error(str(boost::format("Invalid extension \"%s\". Extension must be .hex or .bin.")));
+    else throw uhd::runtime_error(str(boost::format("Invalid extension \"%s\". Extension must be .hex or .bin.")
+                                      % extension));
 
     if(session.image.size() > OCTOCLOCK_FIRMWARE_MAX_SIZE_BYTES){
         throw uhd::runtime_error(str(boost::format("The specified firmware image is too large: %d vs. %d")
