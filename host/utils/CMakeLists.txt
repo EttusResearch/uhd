@@ -30,7 +30,7 @@ SET(util_runtime_sources
 
 SET(x3xx_burner_sources
     usrp_x3xx_fpga_burner.cpp
-    cdecode.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/x300/cdecode.c
 )
 
 find_package(UDev)
@@ -49,6 +49,7 @@ FOREACH(util_source ${util_runtime_sources})
 ENDFOREACH(util_source)
 
 IF(ENABLE_X300)
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/x300)
     ADD_EXECUTABLE(usrp_x3xx_fpga_burner ${x3xx_burner_sources})
     TARGET_LINK_LIBRARIES(usrp_x3xx_fpga_burner uhd ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
