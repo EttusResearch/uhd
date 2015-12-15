@@ -19,10 +19,7 @@
 # Conditionally configure the OctoClock support
 ########################################################################
 IF(ENABLE_OCTOCLOCK)
-    ADD_DEFINITIONS(-DIHEX_USE_STDBOOL)
-
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/kk_ihex_read.c
         ${CMAKE_CURRENT_SOURCE_DIR}/octoclock_eeprom.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/octoclock_image_loader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/octoclock_impl.cpp

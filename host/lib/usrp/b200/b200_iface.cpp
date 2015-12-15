@@ -17,6 +17,7 @@
 
 #include "b200_iface.hpp"
 
+#include "../../utils/ihex.hpp"
 #include <uhd/config.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
@@ -87,7 +88,7 @@ typedef boost::uint32_t hash_type;
  **********************************************************************/
 /*!
  * Create a file hash
- * The hash will be used to identify the loaded firmware and fpga image
+ * The hash will be used to identify the loaded fpga image
  * \param filename file used to generate hash value
  * \return hash value in a uint32_t type
  */
@@ -122,66 +123,6 @@ static hash_type generate_hash(const char *filename)
 
     file.close();
     return hash_type(hash);
-}
-
-
-/*!
- * Verify checksum of a Intel HEX record
- * \param record a line from an Intel HEX file
- * \return true if record is valid, false otherwise
- */
-bool checksum(const std::string& record) {
-
-    size_t len = record.length();
-    unsigned int i;
-    unsigned char sum = 0;
-    unsigned int val;
-
-    for (i = 1; i < len; i += 2) {
-        std::istringstream(record.substr(i, 2)) >> std::hex >> val;
-        sum += val;
-    }
-
-    if (sum == 0)
-       return true;
-    else
-       return false;
-}
-
-
-/*!
- * Parse Intel HEX record
- *
- * \param record a line from an Intel HEX file
- * \param len output length of record
- * \param addr output address
- * \param type output type
- * \param data output data
- * \return true if record is sucessfully read, false on error
- */
-bool parse_record(const std::string& record, boost::uint16_t &len, \
-        boost::uint16_t &addr, boost::uint16_t &type, unsigned char* data) {
-
-    unsigned int i;
-    std::string _data;
-    unsigned int val;
-
-    if (record.substr(0, 1) != ":")
-        return false;
-
-    std::istringstream(record.substr(1, 2)) >> std::hex >> len;
-    std::istringstream(record.substr(3, 4)) >> std::hex >> addr;
-    std::istringstream(record.substr(7, 2)) >> std::hex >> type;
-
-    if (len > (2 * (record.length() - 9)))  // sanity check to prevent buffer overrun
-        return false;
-
-    for (i = 0; i < len; i++) {
-        std::istringstream(record.substr(9 + 2 * i, 2)) >> std::hex >> val;
-        data[i] = (unsigned char) val;
-    }
-
-    return true;
 }
 
 
@@ -270,109 +211,31 @@ public:
 
     void load_firmware(const std::string filestring, UHD_UNUSED(bool force) = false)
     {
-        const char *filename = filestring.c_str();
+        if (load_img_msg)
+            UHD_MSG(status) << "Loading firmware image: "
+                            << filestring << "..." << std::flush;
 
-        /* Fields used in each USB control transfer. */
-        boost::uint16_t len = 0;
-        boost::uint16_t type = 0;
-        boost::uint16_t lower_address_bits = 0x0000;
-        unsigned char data[512];
-
-        /* Can be set by the Intel HEX record 0x04, used for all 0x00 records
-         * thereafter. Note this field takes the place of the 'index' parameter in
-         * libusb calls, and is necessary for FX3's 32-bit addressing. */
-        boost::uint16_t upper_address_bits = 0x0000;
-
-        std::ifstream file;
-        file.open(filename, std::ifstream::in);
-
-        if(!file.good()) {
-            throw uhd::io_error("fx3_load_firmware: cannot open firmware input file");
+        ihex_reader file_reader(filestring);
+        try {
+            file_reader.read(
+                boost::bind(
+                    &b200_iface_impl::fx3_control_write, this,
+                    FX3_FIRMWARE_LOAD, _1, _2, _3, _4, 0
+                )
+            );
+        } catch (const uhd::io_error &e) {
+            throw uhd::io_error(str(boost::format("Could not load firmware: \n%s") % e.what()));
         }
 
-        if (load_img_msg) UHD_MSG(status) << "Loading firmware image: " \
-            << filestring << "..." << std::flush;
+        UHD_MSG(status) << std::endl;
 
-        while (!file.eof()) {
-            boost::int32_t ret = 0;
-            std::string record;
-            file >> record;
+        //TODO
+        //usrp_set_firmware_hash(hash); //set hash before reset
 
-        if (!(record.length() > 0))
-            continue;
-
-            /* Check for valid Intel HEX record. */
-            if (!checksum(record) || !parse_record(record, len, \
-                        lower_address_bits, type, data)) {
-                throw uhd::io_error("fx3_load_firmware: bad intel hex record checksum");
-            }
-
-            /* Type 0x00: Data. */
-            if (type == 0x00) {
-                ret = fx3_control_write(FX3_FIRMWARE_LOAD, \
-                        lower_address_bits, upper_address_bits, data, len);
-
-                if (ret < 0) {
-                    throw uhd::io_error("usrp_load_firmware: usrp_control_write failed");
-                }
-            }
-
-            /* Type 0x01: EOF. */
-            else if (type == 0x01) {
-                if (lower_address_bits != 0x0000 || len != 0 ) {
-                    throw uhd::io_error("fx3_load_firmware: For EOF record, address must be 0, length must be 0.");
-                }
-
-                //TODO
-                //usrp_set_firmware_hash(hash); //set hash before reset
-
-                /* Successful termination! */
-                file.close();
-
-                /* Let the system settle. */
-                boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-                return;
-            }
-
-            /* Type 0x04: Extended Linear Address Record. */
-            else if (type == 0x04) {
-                if (lower_address_bits != 0x0000 || len != 2 ) {
-                    throw uhd::io_error("fx3_load_firmware: For ELA record, address must be 0, length must be 2.");
-                }
-
-                upper_address_bits = ((boost::uint16_t)((data[0] & 0x00FF) << 8))\
-                                     + ((boost::uint16_t)(data[1] & 0x00FF));
-            }
-
-            /* Type 0x05: Start Linear Address Record. */
-            else if (type == 0x05) {
-                if (lower_address_bits != 0x0000 || len != 4 ) {
-                    throw uhd::io_error("fx3_load_firmware: For SLA record, address must be 0, length must be 4.");
-                }
-
-                /* The firmware load is complete.  We now need to tell the CPU
-                 * to jump to an execution address start point, now contained within
-                 * the data field.  Parse these address bits out, and then push the
-                 * instruction. */
-                upper_address_bits = ((boost::uint16_t)((data[0] & 0x00FF) << 8))\
-                                     + ((boost::uint16_t)(data[1] & 0x00FF));
-                lower_address_bits = ((boost::uint16_t)((data[2] & 0x00FF) << 8))\
-                                     + ((boost::uint16_t)(data[3] & 0x00FF));
-
-                fx3_control_write(FX3_FIRMWARE_LOAD, lower_address_bits, \
-                        upper_address_bits, 0, 0);
-
-                if (load_img_msg) UHD_MSG(status) << " done" << std::endl;
-            }
-
-            /* If we receive an unknown record type, error out. */
-            else {
-                throw uhd::io_error("fx3_load_firmware: unsupported record type.");
-            }
-        }
-
-        /* There was no valid EOF. */
-        throw uhd::io_error("fx3_load_firmware: No EOF record found.");
+        /* Success! Let the system settle. */
+        // TODO: Replace this with a polling loop in the FX3, or find out
+        // what the actual, correct timeout value is.
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
     }
 
     void reset_fx3(void) {

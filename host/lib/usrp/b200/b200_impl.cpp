@@ -75,9 +75,9 @@ public:
 };
 
 // B205
-class b205_ad9361_client_t : public ad9361_params {
+class b2xxmini_ad9361_client_t : public ad9361_params {
 public:
-    ~b205_ad9361_client_t() {}
+    ~b2xxmini_ad9361_client_t() {}
     double get_band_edge(frequency_band_t band) {
         switch (band) {
         case AD9361_RX_BAND0:   return 0; // Set these all to
@@ -319,7 +319,8 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     else if (specified_vid)
     {
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B200_PRODUCT_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B205_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B200MINI_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B205MINI_PRODUCT_ID));
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B200_PRODUCT_NI_ID));
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B210_PRODUCT_NI_ID));
     }
@@ -333,7 +334,8 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     else
     {
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B200_PRODUCT_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B205_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B200MINI_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B205MINI_PRODUCT_ID));
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID));
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID));
     }
@@ -387,7 +389,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
 
     UHD_MSG(status) << "Detected Device: " << B2XX_STR_NAMES[_product] << std::endl;
 
-    _gpsdo_capable = (_product != B205);
+    _gpsdo_capable = (not (_product == B200MINI or _product == B205MINI));
 
     ////////////////////////////////////////////////////////////////////
     // Set up frontend mapping
@@ -406,7 +408,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     _fe2 = 0;
     _gpio_state.swap_atr = 1;
     // Unswapped setup:
-    if (_product == B205 or (_product == B200 and _revision >= 5)) {
+    if (_product == B200MINI or _product == B205MINI or (_product == B200 and _revision >= 5)) {
         _fe1 = 0;                   //map radio0 to FE1
         _fe2 = 1;                   //map radio1 to FE2
         _gpio_state.swap_atr = 0; // ATRs for radio0 are mapped to FE1
@@ -513,7 +515,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>("/name").set("B-Series Device");
     _tree->create<std::string>(mb_path / "name").set(product_name);
-    _tree->create<std::string>(mb_path / "codename").set((_product == B205) ? "Pixie" : "Sasquatch");
+    _tree->create<std::string>(mb_path / "codename").set((_product == B200MINI or _product == B205MINI) ? "Pixie" : "Sasquatch");
 
     ////////////////////////////////////////////////////////////////////
     // Create data transport
@@ -541,7 +543,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // create time and clock control objects
     ////////////////////////////////////////////////////////////////////
     _spi_iface = b200_local_spi_core::make(_local_ctrl);
-    if (_product != B205) {
+    if (not (_product == B200MINI or _product == B205MINI)) {
         _adf4001_iface = boost::make_shared<b200_ref_pll_ctrl>(_spi_iface);
     }
 
@@ -550,13 +552,13 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     UHD_MSG(status) << "Initialize CODEC control..." << std::endl;
     ad9361_params::sptr client_settings;
-    if (_product == B205) {
-        client_settings = boost::make_shared<b205_ad9361_client_t>();
+    if (_product == B200MINI or _product == B205MINI) {
+        client_settings = boost::make_shared<b2xxmini_ad9361_client_t>();
     } else {
         client_settings = boost::make_shared<b200_ad9361_client_t>();
     }
     _codec_ctrl = ad9361_ctrl::make_spi(client_settings, _spi_iface, AD9361_SLAVENO);
-   
+
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
     ////////////////////////////////////////////////////////////////////
@@ -624,15 +626,18 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
 
     //register time now and pps onto available radio cores
     _tree->create<time_spec_t>(mb_path / "time" / "now")
-        .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64));
+        .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
+        .subscribe(boost::bind(&b200_impl::set_time, this, _1))
+        .set(0.0);
+    //re-sync the times when the tick rate changes
+    _tree->access<double>(mb_path / "tick_rate")
+        .subscribe(boost::bind(&b200_impl::sync_times, this));
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
         .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64));
-    for (size_t i = 0; i < _radio_perifs.size(); i++)
+    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
     {
-        _tree->access<time_spec_t>(mb_path / "time" / "now")
-            .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[i].time64, _1));
         _tree->access<time_spec_t>(mb_path / "time" / "pps")
-            .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[i].time64, _1));
+            .subscribe(boost::bind(&time_core_3000::set_time_next_pps, perif.time64, _1));
     }
 
     //setup time source props
@@ -945,7 +950,7 @@ void b200_impl::check_fpga_compat(void)
     if (signature != 0xACE0BA5E) throw uhd::runtime_error(
         "b200::check_fpga_compat signature register readback failed");
 
-    const boost::uint16_t expected = (_product == B205 ? B205_FPGA_COMPAT_NUM : B200_FPGA_COMPAT_NUM);
+    const boost::uint16_t expected = ((_product == B200MINI or _product == B205MINI) ? B205_FPGA_COMPAT_NUM : B200_FPGA_COMPAT_NUM);
     if (compat_major != expected)
     {
         throw uhd::runtime_error(str(boost::format(
@@ -970,7 +975,7 @@ void b200_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom)
 void b200_impl::update_clock_source(const std::string &source)
 {
     // For B205, ref_sel selects whether or not to lock to the external clock source
-    if (_product == B205)
+    if (_product == B200MINI or _product == B205MINI)
     {
         if (source == "external" and _time_source == EXTERNAL)
         {
@@ -1032,7 +1037,7 @@ void b200_impl::update_clock_source(const std::string &source)
 
 void b200_impl::update_time_source(const std::string &source)
 {
-    if (_product == B205 and source == "external" and _gpio_state.ref_sel == 1)
+    if ((_product == B200MINI or _product == B205MINI) and source == "external" and _gpio_state.ref_sel == 1)
     {
         throw uhd::value_error("external reference cannot be both a time source and a clock source");
     }
@@ -1052,9 +1057,22 @@ void b200_impl::update_time_source(const std::string &source)
         throw uhd::key_error("update_time_source: unknown source: " + source);
     if (_time_source != value)
     {
-        _local_ctrl->poke32(TOREG(SR_CORE_PPS_SEL), value);
+        _local_ctrl->poke32(TOREG(SR_CORE_SYNC), value);
         _time_source = value;
     }
+}
+
+void b200_impl::set_time(const uhd::time_spec_t& t)
+{
+    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+        perif.time64->set_time_sync(t);
+    _local_ctrl->poke32(TOREG(SR_CORE_SYNC), 1 << 2 | boost::uint32_t(_time_source));
+    _local_ctrl->poke32(TOREG(SR_CORE_SYNC), _time_source);
+}
+
+void b200_impl::sync_times()
+{
+    set_time(_radio_perifs[0].time64->get_time_now());
 }
 
 /***********************************************************************
@@ -1064,7 +1082,7 @@ void b200_impl::update_time_source(const std::string &source)
 void b200_impl::update_bandsel(const std::string& which, double freq)
 {
     // B205 does not have bandsels
-    if (_product == B205) {
+    if (_product == B200MINI or _product == B205MINI) {
         return;
     }
 

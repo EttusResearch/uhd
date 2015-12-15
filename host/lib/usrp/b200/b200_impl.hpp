@@ -49,8 +49,8 @@
 #include "recv_packet_demuxer_3000.hpp"
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
 static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
-static const boost::uint16_t B200_FPGA_COMPAT_NUM = 12;
-static const boost::uint16_t B205_FPGA_COMPAT_NUM = 3;
+static const boost::uint16_t B200_FPGA_COMPAT_NUM = 13;
+static const boost::uint16_t B205_FPGA_COMPAT_NUM = 4;
 static const double          B200_BUS_CLOCK_RATE = 100e6;
 static const boost::uint32_t B200_GPSDO_ST_NONE = 0x83;
 static const size_t B200_MAX_RATE_USB2              =  53248000; // bytes/s
@@ -95,7 +95,8 @@ static const unsigned char B200_USB_DATA_SEND_ENDPOINT  = 2;
 static std::vector<uhd::transport::usb_device_handle::vid_pid_pair_t> b200_vid_pid_pairs =
     boost::assign::list_of
         (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200_PRODUCT_ID))
-        (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B205_PRODUCT_ID))
+        (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200MINI_PRODUCT_ID))
+        (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B205MINI_PRODUCT_ID))
         (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID))
         (uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID))
     ;
@@ -167,6 +168,8 @@ private:
     uhd::usrp::subdev_spec_t coerce_subdev_spec(const uhd::usrp::subdev_spec_t &);
     void update_subdev_spec(const std::string &tx_rx, const uhd::usrp::subdev_spec_t &);
     void update_time_source(const std::string &);
+    void set_time(const uhd::time_spec_t&);
+    void sync_times(void);
     void update_clock_source(const std::string &);
     void update_bandsel(const std::string& which, double freq);
     void update_antenna_sel(const size_t which, const std::string &ant);

@@ -362,6 +362,7 @@ private:
     void set_time_source_out(mboard_members_t&, const bool);
     void update_clock_source(mboard_members_t&, const std::string &);
     void update_time_source(mboard_members_t&, const std::string &);
+    void sync_times(mboard_members_t&, const uhd::time_spec_t&);
 
     uhd::sensor_value_t get_ref_locked(mboard_members_t& mb);
     bool wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout);
