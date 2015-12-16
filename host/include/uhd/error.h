@@ -158,7 +158,7 @@ extern "C" {
  * strings into a buffer that can be queried with this function. Functions that
  * do take in UHD structs/handles will place their error strings in both locations.
  */
-uhd_error uhd_get_last_error(
+UHD_API uhd_error uhd_get_last_error(
     char* error_out,
     size_t strbuffer_len
 );
