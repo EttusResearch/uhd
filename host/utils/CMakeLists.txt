@@ -19,6 +19,7 @@
 # Utilities that get installed into the runtime path
 ########################################################################
 SET(util_runtime_sources
+    uhd_config_info.cpp
     uhd_find_devices.cpp
     uhd_usrp_probe.cpp
     uhd_image_loader.cpp

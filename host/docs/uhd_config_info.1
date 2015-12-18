@@ -1,0 +1,64 @@
+.TH "uhd_find_devices" 1 "3.9.1" UHD "User Commands"
+.SH NAME
+uhd_config_info \- USRP Hardware Driver Build Configuration Info
+.SH DESCRIPTION
+Print build information corresponding to this installation of the USRP
+Hardware Driver (UHD).
+.LP
+The UHD package is the universal hardware driver for Ettus Research
+products. The goal is to provide a host driver and API for
+current and future Ettus Research products. Users will be able to use
+the UHD driver standalone or with 3rd party applications.
+
+.SH SYNOPSIS
+.B  uhd_config_info [OPTIONS]
+
+.SH OPTIONS
+.IP "Print date this build was compiled:"
+--boost-version
+.IP "Print Boost version used:"
+--build-date
+.IP "Print C compiler used:"
+--c-compiler
+.IP "Print C++ compiler used:"
+--cxx-compiler
+.IP "Print C compile flags:"
+--c-flags
+.IP "Print C++ compile flags:"
+--cxx-flags
+.IP "Print UHD components included in this build (comma-delimited):"
+--enabled-components
+.IP "Print default install prefix for this build:"
+--install-prefix
+.IP "Print libusb version used"
+--libusb-version
+.IP "Print all information listed above:"
+--print-all
+.IP "Print UHD version:"
+--version
+.IP "This help information:"
+--help
+
+.SH SEE ALSO
+UHD documentation:
+.B http://files.ettus.com/manual/
+.LP
+GR-UHD documentation:
+.B http://gnuradio.org/doc/doxygen/page_uhd.html
+
+.SH AUTHOR
+This manual page was written by Nicholas Corgan
+for the Debian project (but may be used by others).
+
+.SH COPYRIGHT
+Copyright (c) 2015 National Instruments Corp.
+.LP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.LP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
