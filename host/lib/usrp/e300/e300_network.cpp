@@ -575,8 +575,11 @@ network_server_impl::network_server_impl(const uhd::device_addr_t &device_addr)
                 _eeprom_manager->get_mb_eeprom()["product"]);
             std::string fpga_image;
             switch(e300_eeprom_manager::get_mb_type(pid)) {
-            case e300_eeprom_manager::USRP_E310_MB:
-                fpga_image = find_image_path(E310_FPGA_FILE_NAME);
+            case e300_eeprom_manager::USRP_E310_SG1_MB:
+                fpga_image = find_image_path(E310_SG1_FPGA_FILE_NAME);
+                break;
+            case e300_eeprom_manager::USRP_E310_SG3_MB:
+                fpga_image = find_image_path(E310_SG3_FPGA_FILE_NAME);
                 break;
             case e300_eeprom_manager::USRP_E300_MB:
                 fpga_image = find_image_path(E300_FPGA_FILE_NAME);

@@ -29,7 +29,8 @@
 namespace uhd { namespace usrp { namespace e300 {
 
 static const boost::uint16_t E300_MB_PID = 0x77d1;
-static const boost::uint16_t E310_MB_PID = 0x77d2;
+static const boost::uint16_t E310_SG1_MB_PID = 0x77d2;
+static const boost::uint16_t E310_SG3_MB_PID = 0x77d3;
 
 static const boost::uint16_t E300_DB_PID = 0x0100;
 static const boost::uint16_t E310_DB_PID = 0x0110;
@@ -68,7 +69,7 @@ public:
 
     i2c::sptr get_i2c_sptr(void);
 
-    enum mboard_t {USRP_E300_MB, USRP_E310_MB, UNKNOWN};
+    enum mboard_t {USRP_E300_MB, USRP_E310_SG1_MB, USRP_E310_SG3_MB, UNKNOWN};
 
     mboard_t get_mb_type(void) const;
     static mboard_t get_mb_type(boost::uint16_t pid);

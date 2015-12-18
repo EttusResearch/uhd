@@ -278,15 +278,20 @@ void get_e3x0_fpga_images(const uhd::device_addr_t &device_addr,
 
     //extract the FPGA path for the e300
     switch(e300_eeprom_manager::get_mb_type(pid)) {
-    case e300_eeprom_manager::USRP_E310_MB:
+    case e300_eeprom_manager::USRP_E310_SG1_MB:
         fpga_image = device_addr.cast<std::string>("fpga",
-            find_image_path(E310_FPGA_FILE_NAME));
-        idle_image = find_image_path(E310_FPGA_IDLE_FILE_NAME);
+            find_image_path(E310_SG1_FPGA_FILE_NAME));
+        idle_image = find_image_path(E3XX_SG1_FPGA_IDLE_FILE_NAME);
+        break;
+    case e300_eeprom_manager::USRP_E310_SG3_MB:
+        fpga_image = device_addr.cast<std::string>("fpga",
+            find_image_path(E310_SG3_FPGA_FILE_NAME));
+        idle_image = find_image_path(E3XX_SG3_FPGA_IDLE_FILE_NAME);
         break;
     case e300_eeprom_manager::USRP_E300_MB:
         fpga_image = device_addr.cast<std::string>("fpga",
             find_image_path(E300_FPGA_FILE_NAME));
-        idle_image = find_image_path(E300_FPGA_IDLE_FILE_NAME);
+        idle_image = find_image_path(E3XX_SG1_FPGA_IDLE_FILE_NAME);
         break;
     case e300_eeprom_manager::UNKNOWN:
     default:
@@ -294,7 +299,7 @@ void get_e3x0_fpga_images(const uhd::device_addr_t &device_addr,
                              << std::endl;
         fpga_image = device_addr.cast<std::string>("fpga",
             find_image_path(E300_FPGA_FILE_NAME));
-        idle_image = find_image_path(E300_FPGA_IDLE_FILE_NAME);
+        idle_image = find_image_path(E3XX_SG1_FPGA_IDLE_FILE_NAME);
         break;
     }
 }

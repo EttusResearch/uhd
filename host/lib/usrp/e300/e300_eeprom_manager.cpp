@@ -210,8 +210,11 @@ e300_eeprom_manager::mboard_t e300_eeprom_manager::get_mb_type(
     case E300_MB_PID:
         return USRP_E300_MB;
 
-    case E310_MB_PID:
-        return USRP_E310_MB;
+    case E310_SG1_MB_PID:
+        return USRP_E310_SG1_MB;
+
+    case E310_SG3_MB_PID:
+        return USRP_E310_SG3_MB;
 
     default:
         return UNKNOWN;
@@ -228,7 +231,8 @@ std::string e300_eeprom_manager::get_mb_type_string(void) const
     case E300_MB_PID:
         return "E3XX";
 
-    case E310_MB_PID:
+    case E310_SG1_MB_PID:
+    case E310_SG3_MB_PID:
         return "E3XX";
 
     default:
