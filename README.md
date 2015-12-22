@@ -10,11 +10,6 @@ daughterboards, and the combinations thereof.
 
 ## Documentation
 
-The [UHD Homepage](http://code.ettus.com/redmine/ettus/projects/uhd/wiki),
-through which you can find installation instructions, documentation, and further
-information, is the primary source of UHD documentation and "Getting
-Started"-type guides.
-
 For technical documentation related to USRP™ hardware or UHD system
 design, check out the [UHD and USRP Manual](http://files.ettus.com/manual/).
 That is where you can find

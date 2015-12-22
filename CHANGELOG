@@ -1,6 +1,19 @@
 Change Log for Releases
 ==============================
 
+## 003.009.002
+* E310: Added support for Speedgrade 3
+* B205mini: Added support
+* E310: Fixed reference counting bug
+* B210: Fixed external clock reference bug for devices using ADF4002 PLLs
+* B210: Fixed codec loopback test
+* OctoClock: Fixed firmware burning on Windows
+* B2XX, E3XX, X3XX: Easier time-syncing features. Fixes bug where B210s would
+  only run after issuing set_time_unknown_pps().
+* X3XX: Fixed bug for IQ imbalance correction
+* E310: DRAM testbenching
+* Docs/Manual: Many updates and fixes
+
 ## 003.009.001
 * B200mini: Updated udev rules, removed DCM
 * B200: Better USB error messages
