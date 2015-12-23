@@ -21,7 +21,7 @@
 #endif
 #include "../x300/x300_defs.h"
 #include "ethernet.h"
-#include "mdelay.h"
+#include "cron.h"
 #include <trace.h>
 #include "wb_i2c.h"
 #include "wb_utils.h"
@@ -220,7 +220,7 @@ xge_read_sfpp_type(const uint32_t base, const uint32_t delay_ms)
   int x;
  // Delay read of SFPP
   if (delay_ms)
-    mdelay(delay_ms);
+    sleep_ms(delay_ms);
   // Read ID code from SFP
   x = xge_i2c_rd(base, MODULE_DEV_ADDR, 3);
   // I2C Error?

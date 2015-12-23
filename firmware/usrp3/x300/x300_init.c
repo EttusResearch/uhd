@@ -1,7 +1,7 @@
 #include "x300_init.h"
 #include "x300_defs.h"
 #include "ethernet.h"
-#include "mdelay.h"
+#include "cron.h"
 #include <wb_utils.h>
 #include <wb_uart.h>
 #include <wb_i2c.h>
@@ -121,6 +121,11 @@ static void putc(void *p, char c)
 #endif
 }
 
+static uint32_t get_counter_val()
+{
+    return wb_peek32(SR_ADDR(RB0_BASE, RB_COUNTER));
+}
+
 void x300_init(void)
 {
     //first - uart
@@ -135,6 +140,9 @@ void x300_init(void)
     uint32_t fpga_compat = wb_peek32(SR_ADDR(SET0_BASE, RB_FPGA_COMPAT));
     UHD_FW_TRACE_FSTR(INFO, "-- FPGA Compat Number: %u.%u", (fpga_compat>>16), (fpga_compat&0xFFFF));
     UHD_FW_TRACE_FSTR(INFO, "-- Clock Frequency: %u MHz", (CPU_CLOCK/1000000));
+
+    //Initialize cron
+    cron_init(get_counter_val, CPU_CLOCK);
 
     //i2c rate init
     wb_i2c_init(I2C0_BASE, CPU_CLOCK);
@@ -163,7 +171,7 @@ void x300_init(void)
     }
 
     // For eth interfaces, initialize the PHY's
-    mdelay(100);
+    sleep_ms(100);
     ethernet_init(0);
     ethernet_init(1);
 }

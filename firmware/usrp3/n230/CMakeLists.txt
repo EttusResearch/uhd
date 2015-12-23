@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2013 Ettus Research LLC
+# Copyright 2010-2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,21 +16,20 @@
 #
 
 ########################################################################
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/../../host/lib/usrp/n230)
 
-add_library(usrp3fw STATIC
-    udp_uart.c
-    wb_uart.c
-    wb_i2c.c
-    wb_spi.c
-    printf.c
-    wb_pkt_iface64.c
-    u3_net_stack.c
-    ethernet.c
-    chinch.c
-    print_addrs.c
-    link_state_route_proto.c
-    cron.c
-    fw_comm_protocol.c
-    flash/spi_flash.c
-    flash/spif_spsn_s25flxx.c
-)
+list(APPEND n230_sources n230_eeprom.c n230_eth_handlers.c n230_init.c n230_main.c)
+
+########################################################################
+set(GEN_OUTPUTS_BIN_SIZE 0x3fff)
+
+add_executable(n230_main.elf ${n230_sources})
+target_link_libraries(n230_main.elf usrp3fw)
+GEN_OUTPUTS(n230_main.elf n230)
+
+#INSTALL(
+#    FILES ${CMAKE_CURRENT_BINARY_DIR}/n230_main.bin
+#    DESTINATION share/uhd/images
+#    RENAME usrp_n230_fw.bin
+#)
