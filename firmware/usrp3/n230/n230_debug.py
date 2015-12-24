@@ -52,8 +52,9 @@ N230_FW_COMMS_ERR_SIZE_ERROR    = 0x20000000
 
 N230_FW_COMMS_ID                = 0x0001ACE3
 
-N230_FW_LOADER_BASE_ADDR        = 0x4000
-N230_FW_LOADER_CHUNK_SIZE       = 16
+N230_FW_LOADER_ADDR             = 0xfa00
+N230_FW_LOADER_DATA             = 0xfa04
+N230_FW_LOADER_NUM_WORDS        = 8192
 N230_FW_LOADER_BOOT_DONE_ADDR   = 0xA004
 N230_FW_LOADER_BOOT_TIMEOUT     = 5
 
@@ -247,18 +248,13 @@ class ctrl_socket(object):
             coe_lines = [line.strip(',;\n ') for line in coe_file]
             start_index = coe_lines.index("memory_initialization_vector=") + 1
             coe_words = coe_lines[start_index:]
-            for i in range(0, len(coe_words), N230_FW_LOADER_CHUNK_SIZE):
-                data_chunk = coe_words[i:i+(N230_FW_LOADER_CHUNK_SIZE)]
-                data = [0] * N230_FW_COMMS_MAX_DATA_WORDS
-                for j in range(len(data_chunk)):
-                    data[j] = int(data_chunk[j], 16)
-                out_pkt = pack_fw_command(
-                    N230_FW_COMMS_CMD_BLOCK_POKE32|N230_FW_COMMS_FLAGS_ACK,
-                    seq(), len(data_chunk), N230_FW_LOADER_BASE_ADDR+(i*4), data)
-                in_pkt = self.send_and_recv(out_pkt)
-                (flags, ack_seq, block_size, addr, data) = unpack_fw_command(in_pkt)
-                draw_progress_bar(((i+N230_FW_LOADER_CHUNK_SIZE)*100)/len(coe_words))
-            print("\nBooting...")
+            if len(coe_words) != N230_FW_LOADER_NUM_WORDS:
+                raise Exception("invalid COE file. Must contain 8192 words!")
+            self.poke(N230_FW_LOADER_ADDR, 0)    #Load start address
+            for i in range(0, len(coe_words)):
+                self.poke(N230_FW_LOADER_DATA, int(coe_words[i],16), (i<len(coe_words)-1))
+                draw_progress_bar(((i+1)*100)/len(coe_words))
+            print("\nRebooting...")
             out_pkt = pack_fw_command(N230_FW_COMMS_CMD_POKE32, seq(), 1, N230_FW_LOADER_BOOT_DONE_ADDR, [1])
             self._sock.send(out_pkt)
             self._sock.settimeout(1)

@@ -55,7 +55,7 @@ typedef struct
  * - wr_addr: The address used to flush the register to HW
  * - rd_addr: The address used to read the register from HW
  */
-inline void initialize_readwrite_soft_reg(soft_reg_t* reg, uint32_t wr_addr, uint32_t rd_addr)
+static inline void initialize_readwrite_soft_reg(soft_reg_t* reg, uint32_t wr_addr, uint32_t rd_addr)
 {
     reg->wr_addr = wr_addr;
     reg->rd_addr = rd_addr;
@@ -68,7 +68,7 @@ inline void initialize_readwrite_soft_reg(soft_reg_t* reg, uint32_t wr_addr, uin
  * - reg: Pointer to the soft_reg struct
  * - addr: The address used to flush the register to HW
  */
-inline void initialize_writeonly_soft_reg(soft_reg_t* reg, uint32_t addr)
+static inline void initialize_writeonly_soft_reg(soft_reg_t* reg, uint32_t addr)
 {
     reg->wr_addr = addr;
     reg->rd_addr = 0;
@@ -80,7 +80,7 @@ inline void initialize_writeonly_soft_reg(soft_reg_t* reg, uint32_t addr)
  * Performs a read-modify-write operation so all other field are preserved.
  * NOTE: This does not write the value to hardware.
  */
-inline void soft_reg_set(soft_reg_t* reg, const soft_reg_field_t field, const uint32_t field_value)
+static inline void soft_reg_set(soft_reg_t* reg, const soft_reg_field_t field, const uint32_t field_value)
 {
     const uint32_t mask = ((1<<field.num_bits)-1)<<field.shift;
     reg->soft_copy = (reg->soft_copy & ~mask) | ((field_value << field.shift) & mask);
@@ -89,7 +89,7 @@ inline void soft_reg_set(soft_reg_t* reg, const soft_reg_field_t field, const ui
 /*!
  * Write the contents of the soft-copy to hardware.
  */
-inline void soft_reg_flush(const soft_reg_t* reg)
+static inline void soft_reg_flush(const soft_reg_t* reg)
 {
     wb_poke32(reg->wr_addr, reg->soft_copy);
 }
@@ -97,7 +97,7 @@ inline void soft_reg_flush(const soft_reg_t* reg)
 /*!
  * Shortcut for a set and a flush.
  */
-inline void soft_reg_write(soft_reg_t* reg, const soft_reg_field_t field, const uint32_t field_value)
+static inline void soft_reg_write(soft_reg_t* reg, const soft_reg_field_t field, const uint32_t field_value)
 {
     soft_reg_set(reg, field, field_value);
     soft_reg_flush(reg);
@@ -107,7 +107,7 @@ inline void soft_reg_write(soft_reg_t* reg, const soft_reg_field_t field, const 
  * Get the value of the specified field from the soft-copy.
  * NOTE: This does not read anything from hardware.
  */
-inline uint32_t soft_reg_get(const soft_reg_t* reg, const soft_reg_field_t field)
+static inline uint32_t soft_reg_get(const soft_reg_t* reg, const soft_reg_field_t field)
 {
     const uint32_t mask = ((1<<field.num_bits)-1)<<field.shift;
     return (reg->soft_copy & mask) >> field.shift;
@@ -116,7 +116,7 @@ inline uint32_t soft_reg_get(const soft_reg_t* reg, const soft_reg_field_t field
 /*!
  * Read the contents of the register from hardware and update the soft copy.
  */
-inline void soft_reg_refresh(soft_reg_t* reg)
+static inline void soft_reg_refresh(soft_reg_t* reg)
 {
     if (reg->rd_addr) {
         reg->soft_copy = wb_peek32(reg->rd_addr);
@@ -126,7 +126,7 @@ inline void soft_reg_refresh(soft_reg_t* reg)
 /*!
  * Shortcut for refresh and get
  */
-inline uint32_t soft_reg_read(soft_reg_t* reg, const soft_reg_field_t field)
+static inline uint32_t soft_reg_read(soft_reg_t* reg, const soft_reg_field_t field)
 {
     soft_reg_refresh(reg);
     return soft_reg_get(reg, field);

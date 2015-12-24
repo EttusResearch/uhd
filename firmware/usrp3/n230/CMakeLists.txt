@@ -22,7 +22,7 @@ include_directories(${CMAKE_SOURCE_DIR}/../../host/lib/usrp/n230)
 list(APPEND n230_sources n230_eeprom.c n230_eth_handlers.c n230_init.c n230_main.c)
 
 ########################################################################
-set(GEN_OUTPUTS_BIN_SIZE 0x3fff)
+set(GEN_OUTPUTS_BIN_SIZE 0x7fff)
 
 add_executable(n230_main.elf ${n230_sources})
 target_link_libraries(n230_main.elf usrp3fw)
