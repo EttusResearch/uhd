@@ -99,6 +99,10 @@ You can install all the dependencies through the package manager:
 
     sudo yum -y install boost-devel libusb1-devel python-mako doxygen python-docutils cmake make gcc gcc-c++
 
+or
+
+    sudo dnf -y install boost-devel libusb1-devel python-mako doxygen python-docutils cmake make gcc gcc-c++
+
 Your actual command may differ.
 
 \section build_get_source Getting the source code
