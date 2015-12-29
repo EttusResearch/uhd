@@ -29,6 +29,11 @@
 
 static n230_host_shared_mem_t* host_shared_mem_ptr;
 
+static const soft_reg_field_t LED_REG_FIELD_ETH_LINK2   = {.num_bits=1, .shift=0};
+static const soft_reg_field_t LED_REG_FIELD_ETH_LINK1   = {.num_bits=1, .shift=1};
+static const soft_reg_field_t LED_REG_FIELD_ETH_ACT2    = {.num_bits=1, .shift=2};
+static const soft_reg_field_t LED_REG_FIELD_ETH_ACT1    = {.num_bits=1, .shift=3};
+
 /***********************************************************************
  * Handler for host <-> firmware communication
  **********************************************************************/
@@ -231,5 +236,79 @@ void n230_handle_flash_prog_comms(
 void n230_register_flash_comms_handler()
 {
     u3_net_stack_register_udp_handler(N230_FW_COMMS_FLASH_PROG_PORT, &n230_handle_flash_prog_comms);
+}
+
+/***********************************************************************
+ * Handler for SFP state changes
+ **********************************************************************/
+#define SFPP_STATUS_MODABS_CHG     (1 << 5)    // Has MODABS changed since last read?
+#define SFPP_STATUS_TXFAULT_CHG    (1 << 4)    // Has TXFAULT changed since last read?
+#define SFPP_STATUS_RXLOS_CHG      (1 << 3)    // Has RXLOS changed since last read?
+#define SFPP_STATUS_MODABS         (1 << 2)    // MODABS state
+#define SFPP_STATUS_TXFAULT        (1 << 1)    // TXFAULT state
+#define SFPP_STATUS_RXLOS          (1 << 0)    // RXLOS state
+
+static bool links_up[N230_MAX_NUM_ETH_PORTS] = {};
+
+void n230_poll_sfp_status(const uint32_t eth)
+{
+    static bool first_poll = 1;
+
+    // Has MODDET/MODAbS changed since we last looked?
+    uint32_t rb = wb_peek32(SR_ADDR(WB_SBRB_BASE, (eth==0) ? RB_ZPU_SFP_STATUS0 : RB_ZPU_SFP_STATUS1));
+
+    if (rb & SFPP_STATUS_RXLOS_CHG)
+        UHD_FW_TRACE_FSTR(DEBUG, "eth%1d RXLOS changed state: %d", eth, (rb & SFPP_STATUS_RXLOS));
+    if (rb & SFPP_STATUS_TXFAULT_CHG)
+        UHD_FW_TRACE_FSTR(DEBUG, "eth%1d TXFAULT changed state: %d", eth, ((rb & SFPP_STATUS_TXFAULT) >> 1));
+    if (rb & SFPP_STATUS_MODABS_CHG)
+        UHD_FW_TRACE_FSTR(DEBUG, "eth%1d MODABS changed state: %d", eth, ((rb & SFPP_STATUS_MODABS) >> 2));
+
+    //update the link up status
+    if ((rb & SFPP_STATUS_RXLOS_CHG) || (rb & SFPP_STATUS_TXFAULT_CHG) || (rb & SFPP_STATUS_MODABS_CHG) || first_poll)
+    {
+        const bool old_link_up = links_up[eth];
+        const uint32_t status_reg_addr = (eth==0) ? RB_ZPU_SFP_STATUS0 : RB_ZPU_SFP_STATUS1;
+
+        uint32_t sfpp_status = wb_peek32(SR_ADDR(WB_SBRB_BASE, status_reg_addr)) & 0xFFFF;
+        if ((sfpp_status & (SFPP_STATUS_RXLOS|SFPP_STATUS_TXFAULT|SFPP_STATUS_MODABS)) == 0) {
+            int8_t timeout = 100;
+            bool link_up = false;
+            do {
+                link_up = ((wb_peek32(SR_ADDR(WB_SBRB_BASE, status_reg_addr)) >> 16) & 0x1) != 0;
+            } while (!link_up && timeout-- > 0);
+
+            links_up[eth] = link_up;
+        } else {
+            links_up[eth] = false;
+        }
+
+        if (!old_link_up && links_up[eth]) u3_net_stack_send_arp_request(eth, u3_net_stack_get_ip_addr(eth));
+        UHD_FW_TRACE_FSTR(INFO, "The link on eth port %u is %s", eth, links_up[eth]?"up":"down");
+        if (rb & SFPP_STATUS_MODABS_CHG) {
+            // MODDET has changed state since last checked
+            if (rb & SFPP_STATUS_MODABS) {
+                // MODDET is high, module currently removed.
+                UHD_FW_TRACE_FSTR(INFO, "An SFP+ module has been removed from eth port %d.", eth);
+            } else {
+                // MODDET is low, module currently inserted.
+                // Return status.
+                UHD_FW_TRACE_FSTR(INFO, "A new SFP+ module has been inserted into eth port %d.", eth);
+            }
+        }
+    }
+
+    first_poll = 0;
+}
+
+void n230_handle_sfp_updates(soft_reg_t* led_reg)
+{
+    for (uint32_t i = 0; i < N230_NUM_ETH_PORTS; i++) {
+        n230_poll_sfp_status(i);
+    }
+
+    //TODO: Swap this when Ethernet port swap issues is fixed
+    soft_reg_write(led_reg, LED_REG_FIELD_ETH_LINK2, links_up[0]?1:0);
+    soft_reg_write(led_reg, LED_REG_FIELD_ETH_LINK1, links_up[1]?1:0);
 }
 

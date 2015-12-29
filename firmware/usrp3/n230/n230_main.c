@@ -33,7 +33,6 @@
 
 //TODO: This is just for initial debugging.
 static soft_reg_t g_led_register;
-static const soft_reg_field_t LED_REG_BLINKY_FIELD = {.num_bits=4, .shift=0};
 
 //Shared memory
 static n230_host_shared_mem_t g_host_shared_mem;
@@ -67,7 +66,6 @@ int main(void)
         //is somewhat stable we should delete this cron job
         if (cron_job_run_due(PER_SECOND_CRON_JOBID)) {
             //Everything in this block runs approx once per second
-            soft_reg_write(&g_led_register, LED_REG_BLINKY_FIELD, heart_beat);
             if (heart_beat % 10 == 0) {
                 UHD_FW_TRACE_FSTR(INFO, "0.1Hz Heartbeat (%u)", heart_beat);
             }
@@ -77,6 +75,7 @@ int main(void)
         if (cron_job_run_due(PER_MILLISEC_CRON_JOBID)) {
             //Everything in this block runs approx once per millisecond
             n230_handle_claim();
+            n230_handle_sfp_updates(&g_led_register);
         }
 
         //run the network stack - poll and handle

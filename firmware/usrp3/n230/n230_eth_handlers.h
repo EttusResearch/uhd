@@ -22,6 +22,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <lwip/ip_addr.h>
+#include <wb_soft_reg.h>
 #include "../n230/n230_fw_host_iface.h"
 
 /*!
@@ -38,5 +39,10 @@ void n230_register_udp_prog_framer();
  * Registrar for host firmware communications handler.
  */
 void n230_register_flash_comms_handler();
+
+/*!
+ * Handle SFP updates.
+ */
+void n230_handle_sfp_updates(soft_reg_t* led_reg);
 
 #endif /* INCLUDED_N230_ETH_HANDLERS_H */

@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-#define N230_NUM_ETH_PORTS 1
+#define N230_NUM_ETH_PORTS 2
 #define N230_MAX_NUM_ETH_PORTS 2
 
 #if (N230_NUM_ETH_PORTS > N230_MAX_NUM_ETH_PORTS)
