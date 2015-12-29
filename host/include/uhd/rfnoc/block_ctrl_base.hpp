@@ -329,6 +329,9 @@ protected:
         return _root_path / "args" / port / key;
     };
 
+    //! Get a control interface object for block port \p block_port
+    wb_iface::sptr get_ctrl_iface(const size_t block_port);
+
 
     /***********************************************************************
      * Hooks & Derivables

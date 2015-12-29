@@ -206,6 +206,11 @@ void block_ctrl_base::_init_block_args()
 /***********************************************************************
  * FPGA control & communication
  **********************************************************************/
+wb_iface::sptr block_ctrl_base::get_ctrl_iface(const size_t block_port)
+{
+    return _ctrl_ifaces[block_port];
+}
+
 std::vector<size_t> block_ctrl_base::get_ctrl_ports() const
 {
     std::vector<size_t> ctrl_ports;
