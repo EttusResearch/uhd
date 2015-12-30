@@ -21,6 +21,10 @@ then
     echo "This script must be run from UHD's top-level directory."
     exit 1
 fi
+if [ -f fpga-src/README.md ]; then
+    echo "This script requires a clean repository without fpga-src checked out!."
+    exit 1
+fi
 
 FORCE_YES=0
 if [ $# -eq 1 ]
@@ -63,7 +67,7 @@ fi
 
 # Generate the TAR file to be uploaded.
 echo "Creating UHD source archive."
-tar --exclude='*git*' --exclude='./debian' --exclude='*.swp' -cJf ../uhd_${VERSION}.orig.tar.xz .
+tar --exclude='*git*' --exclude='./debian' --exclude='*.swp' --exclude='fpga-src' --exclude='build' --exclude='images' --exclude='tags' -cJf ../uhd_${VERSION}.orig.tar.xz .
 if [ $? != 0 ]
 then
     echo "Failed to create UHD source archive."
@@ -86,7 +90,16 @@ cp -r host/cmake/debian .
 cp host/utils/uhd-usrp.rules debian/uhd-host.udev
 find host/docs -name '*.1' > debian/uhd-host.manpages
 rm -f debian/postinst.in debian/postrm.in debian/preinst.in debian/prerm.in
-exit 0
+
+if [ $FORCE_YES -ne 1 ]
+then
+    echo "Proceed to generate package info? (yes/no)"
+    read response
+    if [ "$response" != "yes" ]
+    then
+        exit 0
+    fi
+fi
 
 for RELEASE in ${RELEASES}
 do
@@ -101,6 +114,16 @@ do
     fi
     mv ../changelog.backup debian/changelog
 done
+
+if [ $FORCE_YES -ne 1 ]
+then
+    echo "Proceed to upload to launchpad? (yes/no)"
+    read response
+    if [ "$response" != "yes" ]
+    then
+        exit 0
+    fi
+fi
 
 # Upload package into to Launchpad, which will automatically build packages
 for RELEASE in ${RELEASES}
