@@ -67,7 +67,7 @@ fi
 
 # Generate the TAR file to be uploaded.
 echo "Creating UHD source archive."
-tar --exclude='*git*' --exclude='./debian' --exclude='*.swp' --exclude='fpga-src' --exclude='build' --exclude='images' --exclude='tags' -cJf ../uhd_${VERSION}.orig.tar.xz .
+tar --exclude='*git*' --exclude='./debian' --exclude='*.swp' --exclude='fpga-src' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' -cJf ../uhd_${VERSION}.orig.tar.xz .
 if [ $? != 0 ]
 then
     echo "Failed to create UHD source archive."
@@ -75,9 +75,9 @@ then
 fi
 
 # debuild expects our directory name to be ${source package}-${version}
-cd ..
-ln -fs ${UHD_TOP_LEVEL} uhd-${VERSION}
-cd uhd-${VERSION}
+rm -f ${UHD_TOP_LEVEL}/../uhd-${VERSION}
+ln -s ${UHD_TOP_LEVEL} ${UHD_TOP_LEVEL}/../uhd-${VERSION}
+cd ${UHD_TOP_LEVEL}/../uhd-${VERSION}
 
 #
 # Generate package info for each version.
@@ -109,7 +109,7 @@ do
     if [ $? != 0 ]
     then
         echo "Failed to generate package info for" ${RELEASE}
-        mv changelog.backup debian/changelog
+        mv ../changelog.backup debian/changelog
         exit 1
     fi
     mv ../changelog.backup debian/changelog
@@ -128,7 +128,6 @@ fi
 # Upload package into to Launchpad, which will automatically build packages
 for RELEASE in ${RELEASES}
 do
-    continue
     dput ${PPA} ../uhd_${VERSION}-0ubuntu1~${RELEASE}1_source.changes
     if [ $? != 0 ]
     then
@@ -145,6 +144,6 @@ then
     if [ "$response" = "yes" ]
     then
         cd ..
-        rm -r ${UHD_TOP_LEVEL}/debian uhd-${VERSION} uhd_${VERSION}.orig.tar.xz uhd*dsc uhd*changes uhd*debian.tar.gz uhd*_source.build uhd*.upload
+        rm -r ${UHD_TOP_LEVEL}/debian uhd-${VERSION} uhd_${VERSION}.orig.tar.xz uhd*dsc uhd*changes uhd*debian.tar.xz uhd*_source.build uhd*.upload
     fi
 fi
