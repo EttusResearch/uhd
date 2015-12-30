@@ -1,0 +1,17 @@
+#! /bin/sh
+
+set -e
+if [ "$1" = "configure" ]; then
+ # Create usrp group for udev access
+ if ! getent group usrp >/dev/null; then
+   addgroup --system usrp
+ fi
+ # Apply usrp2 networking optimization
+ if [ -x "`which sysctl 2>/dev/null`" ]; then
+   sysctl -p /etc/sysctl.d/uhd-usrp2.conf
+ fi
+fi
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,1179 @@
+Format: http://dep.debian.net/deps/dep5/
+Upstream-Name: UHD
+Upstream-Contact: http://www.ettus.com/contact
+Source: http://code.ettus.com/redmine/ettus/projects/uhd/wiki#Source-code
+X-Note: The upstream package source tarball was generated from the tag:
+ git archive --format=tar --prefix=uhd-3.7.3/ release_003_007_003 | xz > ../uhd_3.7.3.orig.tar.gz
+Comment: Only the host directory of the distributed source is used to build the uhd-host package for Debian main.
+Copyright: Copyright 2010-2011 Ettus Research LLC
+License: GPL-3+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-3'.
+
+Files: debian/*
+Copyright: © 2011-2012 A. Maitland Bottoms <bottoms@debian.org>
+License: GPL-3+
+
+Files: host/* not listed below:
+Copyright: Copyright 2010-2011 Ettus Research LLC
+License: GPL-3+
+
+Files: host/cmake/Modules/FindGit.cmake
+Copyright: Copyright 2010 Kitware, Inc.
+License: Kitware-BSD
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ .
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+ .
+ * Neither the names of Kitware, Inc., the Insight Software Consortium,
+   nor the names of their contributors may be used to endorse or promote
+   products derived from this software without specific prior written
+   permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Files: host/cmake/Modules/FindUSB1.cmake
+Copyright: Copyright (c) 2006, 2008  Laurent Montel, <montel@kde.org>
+License: Kitware-BSD
+
+Files: host/cmake/msvc/*
+Copyright: Copyright (c) 2006 Alexander Chemeris
+Comment: Not used for building Debian packages.
+License: BSD
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are met:
+ // 
+ //   1. Redistributions of source code must retain the above copyright notice,
+ //      this list of conditions and the following disclaimer.
+ // 
+ //   2. Redistributions in binary form must reproduce the above copyright
+ //      notice, this list of conditions and the following disclaimer in the
+ //      documentation and/or other materials provided with the distribution.
+ // 
+ //   3. The name of the author may be used to endorse or promote products
+ //      derived from this software without specific prior written permission.
+ // 
+ // THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ // WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ // MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ // EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ // OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+ // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Files: images/*
+Copyright: Copyright 2010-2011 Ettus Research LLC
+License: GPL-3+
+Comment: Not used for uhd-host package
+
+Files: firmware/fx3/* firmware/octoclock/* firmware/x300/*
+Copyright: 2013-2014 Ettus Research LLC
+License: GPL-3+
+
+Files: firmware/fx2/* not listed below
+Copyright: 2003,2004,2006,2007 Free Software Foundation, Inc.
+License: GPL-3+
+
+Files: firmware/fx2/b100/CMakeLists.txt
+ firmware/fx2/CMakeLists.txt
+ firmware/fx2/config/CMakeASM_SDCCInformation.cmake
+ firmware/fx2/config/Rename.cmake
+ firmware/fx2/config/Toolchain-sdcc.cmake
+ firmware/fx2/usrp1/CMakeLists.txt
+Copyright: 2010 Ettus Research LLC
+License: GPL-3+
+
+Files: firmware/fx2/config/CMakeTestASM_SDCCCompiler.cmake
+ firmware/fx2/config/CMakeDetermineASM_SDCCCompiler.cmake
+Copyright: 2008-2009 Kitware, Inc.
+License: Kitware-BSD
+
+Files: firmware/zpu/apps* firmware/zpu/lib/*
+ firmware/zpu/lwip/*.h firmware/zpu/usrp2/*
+ firmware/README.txt
+Copyright: Copyright 2010-2011 Ettus Research LLC
+License: GPL-3+
+
+Files: firmware/zpu/apps* firmware/zpu/bin/* firmware/zpu/lib/*
+ firmware/zpu/lwip/*.h firmware/zpu/usrp2/*
+Copyright: Copyright 2007-2009 Free Software Foundation, Inc.
+License: GPL-3+
+
+Files: firmware/zpu/lwip/lwip-1.3.1
+Copyright: (c) 2001-2004 Swedish Institute of Computer Science.
+License: lwip-BSD
+ * Redistribution and use in source and binary forms, with or without modification, 
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission. 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED 
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+ * OF SUCH DAMAGE.
+Comment: liIP Author Adam Dunkels <adam@sics.se>
+ http://savannah.nongnu.org/projects/lwip/
+ Also includes other BSD licensed code from additional copyright
+ holders outlined in detail below...
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/core/dns.c firmware/zpu/lwip/lwip-1.3.1/src/include/lwip/dns.h
+Copyright: (c) 2002-2003, Adam Dunkels.
+License: lwip-BSD
+Comments:
+ * Port to lwIP from uIP
+ * by Jim Pettinato April 2007
+ * ported from uIP resolv.c
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/core/ipv4/autoip.c firmware/zpu/lwip/lwip-1.3.1/src/include/ipv4/lwip/autoip.h
+Copyright: (c) 2007 Dominik Spies <kontakt@dspies.de>
+ * All rights reserved.
+License: lwip-BSD
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/core/dhcp.c
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/etharp.c
+ firmware/zpu/lwip/lwip-1.3.1/src/include/netif/etharp.h
+ firmware/zpu/lwip/lwip-1.3.1/src/include/lwip/snmp.h
+Copyright: (c) 2001-2004 Leon Woestenberg <leon.woestenberg@gmx.net>
+License: lwip-BSD
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/include/netif/etharp.h
+ firmware/zpu/lwip/lwip-1.3.1/src/include/lwip/snmp.h
+ firmware/zpu/lwip/lwip-1.3.1/src/include/lwip/snmp_asn1.h
+ firmware/zpu/lwip/lwip-1.3.1/src/include/lwip/snmp_msg.h
+ firmware/zpu/lwip/lwip-1.3.1/src/include/lwip/snmp_structs.h
+ firmware/zpu/lwip/lwip-1.3.1/src/core/dhcp.c
+ firmware/zpu/lwip/lwip-1.3.1/src/core/snmp/mib2.c
+ firmware/zpu/lwip/lwip-1.3.1/src/core/snmp/msg_out.c
+ firmware/zpu/lwip/lwip-1.3.1/src/core/snmp/msg_in.c
+ firmware/zpu/lwip/lwip-1.3.1/src/core/snmp/asn1_dec.c
+ firmware/zpu/lwip/lwip-1.3.1/src/core/snmp/asn1_enc.c
+ firmware/zpu/lwip/lwip-1.3.1/src/core/snmp/mib_structs.c
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/etharp.c
+Copyright: (c) 2001-2004,2006 Axon Digital Design B.V., The Netherlands.
+License: lwip-BSD
+Comment: Christiaan Simons <christiaan.simons@axon.tv>
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/pppdebug.h:
+Copyright: (c) 2003 by Marc Boucher, Services Informatiques (MBSI) inc.
+ portions Copyright (c) 1998 Global Election Systems Inc.
+ portions Copyright (c) 2001 by Cognizant Pty Ltd.
+License: MBSI-BSD
+ * The authors hereby grant permission to use, copy, modify, distribute,
+ * and license this software and its documentation for any purpose, provided
+ * that existing copyright notices are retained in all copies and that this
+ * notice and the following disclaimer are included verbatim in any 
+ * distributions. No written agreement, license, or royalty fee is required
+ * for any of the authorized uses.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS *AS IS* AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+ * IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/randm.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/randm.h
+Copyright: (c) 2003 by Marc Boucher, Services Informatiques (MBSI) inc.
+ Copyright (c) 1998 Global Election Systems Inc.
+License: MBSI-BSD
+Comments:
+ * 03-01-01 Marc Boucher <marc@mbsi.ca>
+ *   Ported to lwIP.
+ * 98-06-03 Guy Lancaster <lancasterg@acm.org>, Global Election Systems Inc.
+ *   Extracted from avos.
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/chpms.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/chpms.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/chap.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/chap.h
+Copyright: (c) 2003 by Marc Boucher, Services Informatiques (MBSI) inc.
+ portions Copyright (c) 1998 Global Election Systems Inc.
+License: MBSI-BSD
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/auth.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/auth.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/magic.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/magic.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/fsm.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/fsm.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ppp.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ppp.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/pap.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/pap.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/lcp.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/lcp.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ipcp.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ipcp.h
+Copyright: (c) 2003 by Marc Boucher, Services Informatiques (MBSI) inc.
+  portions Copyright (c) 1997,1998 by Global Election Systems Inc.
+License: MBSI-BSD
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/chpms.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/chpms.h
+Copyright: (c) 1995 Eric Rosenquist, Strata Software Limited.
+ * All rights reserved.
+License:
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by Eric Rosenquist.  The name of the author may not be used to
+ * endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+Comments: http://www.strataware.com/
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/chap.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/chap.h
+Copyright: (c) 1991 Gregory M. Christy
+ * All rights reserved.
+License:
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by Gregory M. Christy.  The name of the author may not be used to
+ * endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ppp.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ppp.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/auth.c
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/chap.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/chap.h
+Copyright: (c) 1993,1994 The Australian National University.
+ * All rights reserved.
+License:
+ * Permission to use, copy, modify, and distribute this software and its
+ * documentation is hereby granted, provided that the above copyright
+ * notice appears in all copies.  This software is provided without any
+ * warranty, express or implied. The Australian National University
+ * makes no representations about the suitability of this software for
+ * any purpose.
+ *
+ * IN NO EVENT SHALL THE AUSTRALIAN NATIONAL UNIVERSITY BE LIABLE TO ANY
+ * PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ * ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
+ * THE AUSTRALIAN NATIONAL UNIVERSITY HAVE BEEN ADVISED OF THE POSSIBILITY
+ * OF SUCH DAMAGE.
+ *
+ * THE AUSTRALIAN NATIONAL UNIVERSITY SPECIFICALLY DISCLAIMS ANY WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ * ON AN "AS IS" BASIS, AND THE AUSTRALIAN NATIONAL UNIVERSITY HAS NO
+ * OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS,
+ * OR MODIFICATIONS.
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ppp.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ppp.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/auth.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/auth.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/pap.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/pap.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/lcp.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/lcp.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ipcp.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ipcp.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/fsm.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/fsm.h
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/magic.c firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/magic.h
+Copyright: (c) 1989 Carnegie Mellon University.
+ * All rights reserved.
+License:
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by Carnegie Mellon University.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ppp_oe.c firmware/zpu/lwip/lwip-1.3.1/src/include/netif/ppp_oe.h
+Copyright: (c) 2006 by Marc Boucher, Services Informatiques (MBSI) inc.
+License: MBSI-BSD
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/core/ipv4/igmp.c firmware/zpu/lwip/lwip-1.3.1/src/include/ipv4/lwip/igmp.h
+Copyright: (c) 2002 CITEL Technologies Ltd.
+ * All rights reserved.
+License: CITEL-BSD
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions 
+ * are met: 
+ * 1. Redistributions of source code must retain the above copyright 
+ *    notice, this list of conditions and the following disclaimer. 
+ * 2. Redistributions in binary form must reproduce the above copyright 
+ *    notice, this list of conditions and the following disclaimer in the 
+ *    documentation and/or other materials provided with the distribution. 
+ * 3. Neither the name of CITEL Technologies Ltd nor the names of its contributors 
+ *    may be used to endorse or promote products derived from this software 
+ *    without specific prior written permission. 
+ *
+ * THIS SOFTWARE IS PROVIDED BY CITEL TECHNOLOGIES AND CONTRIBUTORS ``AS IS''
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ * ARE DISCLAIMED.  IN NO EVENT SHALL CITEL TECHNOLOGIES OR CONTRIBUTORS BE LIABLE 
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS 
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY 
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
+ * SUCH DAMAGE. 
+ *
+ * This file is a contribution to the lwIP TCP/IP stack.
+ * The Swedish Institute of Computer Science and Adam Dunkels
+ * are specifically granted permission to redistribute this
+ * source code.
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/ppp_oe.c firmware/zpu/lwip/lwip-1.3.1/src/include/netif/ppp_oe.h
+Copyright: (c) 2002 The NetBSD Foundation, Inc.
+License: NetBSD
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *        This product includes software developed by the NetBSD
+ *        Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+Comments:
+ /* based on NetBSD: if_pppoe.c,v 1.64 2006/01/31 23:50:15 martin Exp */
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Martin Husemann <martin@NetBSD.org>.
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/vj.c
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/vj.h
+Copyright: (c) 1989 Regents of the University of California.
+ * All rights reserved.
+License: VJ-BSD
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+Comments:
+ * Van Jacobson (van@helios.ee.lbl.gov), Dec 31, 1989:
+ *   Initial distribution.
+ *
+ * Modified June 1993 by Paul Mackerras, paulus@cs.anu.edu.au,
+ * so that the entire packet being decompressed doesn't have
+ * to be in contiguous memory (just the compressed header).
+ *
+ * Modified March 1998 by Guy Lancaster, glanca@gesn.com,
+ * for a 16 bit processor.
+
+Files: firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/md5.c
+ firmware/zpu/lwip/lwip-1.3.1/src/netif/ppp/md5.h
+Copyright: (C) 1990, RSA Data Security, Inc. All rights reserved.
+License: RSA-BSD
+ ** License to copy and use this software is granted provided that    **
+ ** it is identified as the "RSA Data Security, Inc. MD5 Message-     **
+ ** Digest Algorithm" in all material mentioning or referencing this  **
+ ** software or this function.                                        **
+ **                                                                   **
+ ** License is also granted to make and use derivative works          **
+ ** provided that such works are identified as "derived from the RSA  **
+ ** Data Security, Inc. MD5 Message-Digest Algorithm" in all          **
+ ** material mentioning or referencing the derived work.              **
+ **                                                                   **
+ ** RSA Data Security, Inc. makes no representations concerning       **
+ ** either the merchantability of this software or the suitability    **
+ ** of this software for any particular purpose.  It is provided "as  **
+ ** is" without express or implied warranty of any kind.              **
+ **                                                                   **
+ ** These notices must be retained in any copies of any part of this  **
+ ** documentation and/or software.                                    **
+
+
+Files: fpga/* not listed below
+Copyright: 2008-2012 Ettus Research LLC
+License: GPL-3+
+Comment: Not used for uhd-host package
+
+Files: fpga/usrp2/opencores/spi_boot/COPYING
+ fpga/usrp1/rbf/rev2/Makefile.am
+ fpga/usrp1/rbf/Makefile.am
+ fpga/usrp1/rbf/rev4/Makefile.am
+ fpga/usrp1/Makefile.am
+ fpga/usrp1/gen_makefile_extra.py
+ fpga/usrp1/toplevel/mrfm/mrfm_fft.py
+ fpga/usrp1/toplevel/mrfm/mrfm.py
+ fpga/usrp1/toplevel/usrp_inband_usb/usrp_inband_usb.v
+Copyright: Copyright (C) 1989,1991,2004-2007,2009 Free Software Foundation, Inc.
+License: GPL-3+
+
+Files: fpga/usrp1/sdr_lib/master_control.v fpga/usrp1/sdr_lib/atr_delay.v
+Copyright: (C) 2007 Corgan Enterprises LLC
+License: GPL-2+
+
+Files: fpga/usrp1/sdr_lib/master_control_multi.v
+ fpga/usrp1/toplevel/include/common_config_2rx_0tx.vh
+ fpga/usrp1/toplevel/include/common_config_2rxhb_0tx.vh
+ fpga/usrp1/toplevel/usrp_multi/config.vh
+ fpga/usrp1/toplevel/usrp_multi/usrp_multi.v
+Copyright: (C) 2006 Martin Dudok van Heel
+License: GPL-2+
+
+Files: fpga/usrp2/sdr_lib/round_reg.v
+ fpga/usrp2/sdr_lib/ddc.v
+ fpga/usrp2/sdr_lib/cordic_z24.v
+ fpga/usrp2/sdr_lib/duc.v
+ fpga/usrp2/sdr_lib/cordic_stage.v
+ fpga/usrp2/sdr_lib/cic_interp.v
+ fpga/usrp2/sdr_lib/clip.v
+ fpga/usrp2/sdr_lib/clip_reg.v
+ fpga/usrp2/sdr_lib/round.v
+ fpga/usrp2/sdr_lib/cordic.v
+ fpga/usrp2/sdr_lib/cic_dec_shifter.v
+ fpga/usrp2/sdr_lib/hb/halfband_decim.v
+ fpga/usrp2/sdr_lib/clip_and_round.v
+ fpga/usrp2/sdr_lib/round_tb.v
+ fpga/usrp2/sdr_lib/cic_decim.v
+ fpga/usrp2/sdr_lib/cic_int_shifter.v
+ fpga/usrp2/sdr_lib/clip_and_round_reg.v
+ fpga/usrp2/sdr_lib/cic_strober.v
+ fpga/usrp2/sdr_lib/sign_extend.v
+ fpga/usrp1/sdr_lib/ddc.v
+ fpga/usrp1/sdr_lib/master_control.v
+ fpga/usrp1/sdr_lib/clk_divider.v
+ fpga/usrp1/sdr_lib/tx_chain_hb.v
+ fpga/usrp1/sdr_lib/duc.v
+ fpga/usrp1/sdr_lib/tx_buffer.v
+ fpga/usrp1/sdr_lib/cordic_stage.v
+ fpga/usrp1/sdr_lib/cic_interp.v
+ fpga/usrp1/sdr_lib/rx_chain_dual.v
+ fpga/usrp1/sdr_lib/cordic.v
+ fpga/usrp1/sdr_lib/rx_chain.v
+ fpga/usrp1/sdr_lib/cic_dec_shifter.v
+ fpga/usrp1/sdr_lib/hb/halfband_decim.v
+ fpga/usrp1/sdr_lib/dpram.v
+ fpga/usrp1/sdr_lib/ext_fifo.v
+ fpga/usrp1/sdr_lib/cic_decim.v
+ fpga/usrp1/sdr_lib/rx_buffer.v
+ fpga/usrp1/sdr_lib/strobe_gen.v
+ fpga/usrp1/sdr_lib/serial_io.v
+ fpga/usrp1/sdr_lib/cic_int_shifter.v
+ fpga/usrp1/sdr_lib/gen_sync.v
+ fpga/usrp1/sdr_lib/tx_chain.v
+ fpga/usrp1/sdr_lib/sign_extend.v
+ fpga/usrp1/sdr_lib/io_pins.v
+ fpga/usrp1/sdr_lib/phase_acc.v
+ fpga/usrp1/tb/interp_tb.v
+ fpga/usrp1/tb/decim_tb.v
+ fpga/usrp1/tb/justinterp_tb.v
+ fpga/usrp1/tb/usrp_tasks.v
+ fpga/usrp1/tb/cordic_tb.v
+ fpga/usrp1/tb/fullchip_tb.v
+ fpga/usrp1/models/pll.v
+ fpga/usrp1/toplevel/usrp_std/usrp_std.v
+ fpga/usrp1/toplevel/usrp_std/config.vh
+ fpga/usrp1/toplevel/include/common_config_bottom.vh
+ fpga/usrp1/toplevel/include/common_config_2rx_0tx.vh
+ fpga/usrp1/toplevel/include/common_config_2rxhb_0tx.vh
+ fpga/usrp1/toplevel/include/common_config_4rx_0tx.vh
+ fpga/usrp1/toplevel/include/common_config_1rxhb_1tx.vh
+ fpga/usrp1/toplevel/include/common_config_2rxhb_2tx.vh
+ fpga/usrp1/toplevel/mrfm/shifter.v
+ fpga/usrp1/toplevel/mrfm/mrfm.v
+ fpga/usrp1/toplevel/sizetest/sizetest.v
+ fpga/usrp1/toplevel/usrp_inband_usb/usrp_inband_usb.v
+ fpga/usrp1/toplevel/usrp_inband_usb/config.vh
+ fpga/usrp1/toplevel/usrp_multi/config.vh
+ fpga/usrp1/toplevel/usrp_multi/usrp_multi.v
+Copyright: (C) 2003-2008 Matt Ettus
+License: GPL-3+
+
+Files:  fpga/usrp2/sdr_lib/integrate.v
+ fpga/usrp2/sdr_lib/hb_interp.v
+ fpga/usrp2/sdr_lib/Makefile.srcs
+ fpga/usrp2/sdr_lib/small_hb_int_tb.v
+ fpga/usrp2/sdr_lib/dspengine_8to16.v
+ fpga/usrp2/sdr_lib/pipectrl.v
+ fpga/usrp2/sdr_lib/add2.v
+ fpga/usrp2/sdr_lib/add2_and_round.v
+ fpga/usrp2/sdr_lib/hb_dec.v
+ fpga/usrp2/sdr_lib/med_hb_int.v
+ fpga/usrp2/sdr_lib/small_hb_dec_tb.v
+ fpga/usrp2/sdr_lib/halfband_tb.v
+ fpga/usrp2/sdr_lib/tx_control.v
+ fpga/usrp2/sdr_lib/small_hb_dec.v
+ fpga/usrp2/sdr_lib/dsp_rx_glue.v
+ fpga/usrp2/sdr_lib/hb_dec_tb.v
+ fpga/usrp2/sdr_lib/rx_dcoffset_tb.v
+ fpga/usrp2/sdr_lib/rssi.v
+ fpga/usrp2/sdr_lib/hb/ram16_2sum.v
+ fpga/usrp2/sdr_lib/hb/ram16_2port.v
+ fpga/usrp2/sdr_lib/hb/ram32_2sum.v
+ fpga/usrp2/sdr_lib/hb/halfband_interp.v
+ fpga/usrp2/sdr_lib/hb/hbd_tb/test_hbd.v
+ fpga/usrp2/sdr_lib/hb/mac.v
+ fpga/usrp2/sdr_lib/hb/acc.v
+ fpga/usrp2/sdr_lib/hb/mult.v
+ fpga/usrp2/sdr_lib/hb/coeff_ram.v
+ fpga/usrp2/sdr_lib/hb/coeff_rom.v
+ fpga/usrp2/sdr_lib/duc_chain.v
+ fpga/usrp2/sdr_lib/acc.v
+ fpga/usrp2/sdr_lib/dspengine_16to8.v
+ fpga/usrp2/sdr_lib/hb_interp_tb.v
+ fpga/usrp2/sdr_lib/hb_tb.v
+ fpga/usrp2/sdr_lib/rx_dcoffset.v
+ fpga/usrp2/sdr_lib/dummy_rx.v
+ fpga/usrp2/sdr_lib/halfband_ideal.v
+ fpga/usrp2/sdr_lib/dsp_tx_glue.v
+ fpga/usrp2/sdr_lib/pipestage.v
+ fpga/usrp2/sdr_lib/ddc_chain.v
+ fpga/usrp2/sdr_lib/add2_reg.v
+ fpga/usrp2/sdr_lib/small_hb_int.v
+ fpga/usrp2/sdr_lib/add2_and_round_reg.v
+ fpga/usrp2/sdr_lib/rx_control.v
+ fpga/usrp2/serdes/Makefile.srcs
+ fpga/usrp2/serdes/serdes.v
+ fpga/usrp2/serdes/serdes_rx.v
+ fpga/usrp2/serdes/serdes_tx.v
+ fpga/usrp2/serdes/serdes_fc_tx.v
+ fpga/usrp2/serdes/serdes_fc_rx.v
+ fpga/usrp2/serdes/serdes_tb.v
+ fpga/usrp2/fifo/dsp_framer36.v
+ fpga/usrp2/fifo/Makefile.srcs
+ fpga/usrp2/fifo/fifo36_to_fifo19.v
+ fpga/usrp2/fifo/fifo19_mux.v
+ fpga/usrp2/fifo/packet_tb.v
+ fpga/usrp2/fifo/buffer_int2.v
+ fpga/usrp2/fifo/fifo19_to_ll8.v
+ fpga/usrp2/fifo/packet_verifier.v
+ fpga/usrp2/fifo/buffer_int.v
+ fpga/usrp2/fifo/fifo_2clock.v
+ fpga/usrp2/fifo/fifo19_pad.v
+ fpga/usrp2/fifo/packet_generator32.v
+ fpga/usrp2/fifo/fifo36_to_ll8.v
+ fpga/usrp2/fifo/packet_verifier32.v
+ fpga/usrp2/fifo/fifo_19to36_tb.v
+ fpga/usrp2/fifo/packet_dispatcher36_x3.v
+ fpga/usrp2/fifo/buffer_pool_tb.v
+ fpga/usrp2/fifo/fifo_2clock_cascade.v
+ fpga/usrp2/fifo/fifo_tb.v
+ fpga/usrp2/fifo/fifo72_to_fifo36.v
+ fpga/usrp2/fifo/fifo36_to_fifo72.v
+ fpga/usrp2/fifo/packet_router.v
+ fpga/usrp2/fifo/fifo19_to_fifo36.v
+ fpga/usrp2/fifo/crossbar36.v
+ fpga/usrp2/fifo/splitter36.v
+ fpga/usrp2/fifo/fifo_long.v
+ fpga/usrp2/fifo/buffer_int_tb.v
+ fpga/usrp2/fifo/packet32_tb.v
+ fpga/usrp2/fifo/fifo_short.v
+ fpga/usrp2/fifo/ll8_to_fifo19.v
+ fpga/usrp2/fifo/ll8_shortfifo.v
+ fpga/usrp2/fifo/packet_generator.v
+ fpga/usrp2/fifo/fifo_pacer.v
+ fpga/usrp2/fifo/fifo36_mux.v
+ fpga/usrp2/fifo/ll8_to_fifo36.v
+ fpga/usrp2/fifo/fifo36_demux.v
+ fpga/usrp2/fifo/buffer_pool.v
+ fpga/usrp2/fifo/fifo_cascade.v
+ fpga/usrp2/fifo/add_routing_header.v
+ fpga/usrp2/fifo/valve36.v
+ fpga/usrp2/control_lib/Makefile.srcs
+ fpga/usrp2/control_lib/bin2gray.v
+ fpga/usrp2/control_lib/mux_32_4.v
+ fpga/usrp2/control_lib/mux8.v
+ fpga/usrp2/control_lib/srl.v
+ fpga/usrp2/control_lib/settings_bus_16LE.v
+ fpga/usrp2/control_lib/reset_sync.v
+ fpga/usrp2/control_lib/ram_harv_cache.v
+ fpga/usrp2/control_lib/quad_uart.v
+ fpga/usrp2/control_lib/gray2bin.v
+ fpga/usrp2/control_lib/user_settings.v
+ fpga/usrp2/control_lib/wb_output_pins32.v
+ fpga/usrp2/control_lib/double_buffer.v
+ fpga/usrp2/control_lib/shortfifo.v
+ fpga/usrp2/control_lib/oneshot_2clk.v
+ fpga/usrp2/control_lib/ram_harvard.v
+ fpga/usrp2/control_lib/settings_bus.v
+ fpga/usrp2/control_lib/sd_spi_wb.v
+ fpga/usrp2/control_lib/wb_bridge_16_32.v
+ fpga/usrp2/control_lib/clock_control.v
+ fpga/usrp2/control_lib/longfifo.v
+ fpga/usrp2/control_lib/dbsm.v
+ fpga/usrp2/control_lib/simple_uart.v
+ fpga/usrp2/control_lib/bootram.v
+ fpga/usrp2/control_lib/sd_spi_tb.v
+ fpga/usrp2/control_lib/system_control.v
+ fpga/usrp2/control_lib/wb_semaphore.v
+ fpga/usrp2/control_lib/dpram32.v
+ fpga/usrp2/control_lib/dcache.v
+ fpga/usrp2/control_lib/clock_bootstrap_rom.v
+ fpga/usrp2/control_lib/v5icap_wb.v
+ fpga/usrp2/control_lib/s3a_icap_wb.v
+ fpga/usrp2/control_lib/priority_enc.v
+ fpga/usrp2/control_lib/simple_uart_tx.v
+ fpga/usrp2/control_lib/wb_regfile_2clock.v
+ fpga/usrp2/control_lib/gray_send.v
+ fpga/usrp2/control_lib/decoder_3_8.v
+ fpga/usrp2/control_lib/wb_ram_dist.v
+ fpga/usrp2/control_lib/wb_bus_writer.v
+ fpga/usrp2/control_lib/traffic_cop.v
+ fpga/usrp2/control_lib/icache.v
+ fpga/usrp2/control_lib/setting_reg.v
+ fpga/usrp2/control_lib/wb_sim.v
+ fpga/usrp2/control_lib/atr_controller16.v
+ fpga/usrp2/control_lib/ram_2port_mixed_width.v
+ fpga/usrp2/control_lib/atr_controller.v
+ fpga/usrp2/control_lib/ram_2port.v
+ fpga/usrp2/control_lib/ss_rcvr.v
+ fpga/usrp2/control_lib/wb_readback_mux_16LE.v
+ fpga/usrp2/control_lib/ram_harvard2.v
+ fpga/usrp2/control_lib/settings_bus_crossclock.v
+ fpga/usrp2/control_lib/fifo_to_wb.v
+ fpga/usrp2/control_lib/mux4.v
+ fpga/usrp2/control_lib/fifo_to_wb_tb.v
+ fpga/usrp2/control_lib/double_buffer_tb.v
+ fpga/usrp2/control_lib/medfifo.v
+ fpga/usrp2/control_lib/simple_uart_rx.v
+ fpga/usrp2/control_lib/ram_loader.v
+ fpga/usrp2/control_lib/system_control_tb.v
+ fpga/usrp2/control_lib/ram_wb_harvard.v
+ fpga/usrp2/control_lib/spi.v
+ fpga/usrp2/control_lib/sd_spi.v
+ fpga/usrp2/control_lib/clock_control_tb.v
+ fpga/usrp2/control_lib/wb_ram_block.v
+ fpga/usrp2/control_lib/gpio_atr.v
+ fpga/usrp2/control_lib/wb_readback_mux.v
+ fpga/usrp2/udp/Makefile.srcs
+ fpga/usrp2/udp/add_onescomp.v
+ fpga/usrp2/udp/prot_eng_tx_tb.v
+ fpga/usrp2/udp/udp_wrapper.v
+ fpga/usrp2/udp/prot_eng_tx.v
+ fpga/usrp2/udp/fifo19_rxrealign.v
+ fpga/usrp2/udp/prot_eng_rx.v
+ fpga/usrp2/opencores/Makefile.srcs
+ fpga/usrp2/gpif/Makefile.srcs
+ fpga/usrp2/gpif/packet_reframer.v
+ fpga/usrp2/gpif/packet_splitter.v
+ fpga/usrp2/gpif/gpif_wr_tb.v
+ fpga/usrp2/gpif/slave_fifo.v
+ fpga/usrp2/gpif/gpif_tb.v
+ fpga/usrp2/gpif/gpif_wr.v
+ fpga/usrp2/gpif/gpif.v
+ fpga/usrp2/gpif/gpif_rd.v
+ fpga/usrp2/gpif/packet_splitter_tb.v
+ fpga/usrp2/testbench/single_u2_sim.v
+ fpga/usrp2/coregen/Makefile.srcs
+ fpga/usrp2/vrt/Makefile.srcs
+ fpga/usrp2/vrt/vita_rx_control.v
+ fpga/usrp2/vrt/gen_context_pkt.v
+ fpga/usrp2/vrt/vita_rx_tb.v
+ fpga/usrp2/vrt/vita_tx_chain.v
+ fpga/usrp2/vrt/trigger_context_pkt.v
+ fpga/usrp2/vrt/vita_pkt_gen.v
+ fpga/usrp2/vrt/vita_rx_chain.v
+ fpga/usrp2/vrt/vita_tx_deframer.v
+ fpga/usrp2/vrt/vita_tx_engine_glue.v
+ fpga/usrp2/vrt/vita_rx_framer.v
+ fpga/usrp2/vrt/vita_tx_control.v
+ fpga/usrp2/vrt/vita_rx_engine_glue.v
+ fpga/usrp2/vrt/vita_tx_tb.v
+ fpga/usrp2/timing/Makefile.srcs
+ fpga/usrp2/timing/time_compare.v
+ fpga/usrp2/timing/timer.v
+ fpga/usrp2/timing/time_transfer_tb.v
+ fpga/usrp2/timing/time_sender.v
+ fpga/usrp2/timing/time_64bit.v
+ fpga/usrp2/timing/time_sync.v
+ fpga/usrp2/timing/time_receiver.v
+ fpga/usrp2/timing/simple_timer.v
+ fpga/usrp2/gpmc/Makefile.srcs
+ fpga/usrp2/gpmc/cross_clock_reader.v
+ fpga/usrp2/gpmc/gpmc_wb.v
+ fpga/usrp2/gpmc/fifo_to_gpmc.v
+ fpga/usrp2/gpmc/gpmc_to_fifo.v
+ fpga/usrp2/gpmc/gpmc.v
+ fpga/usrp2/simple_gemac/eth_tasks_f36.v
+ fpga/usrp2/simple_gemac/Makefile.srcs
+ fpga/usrp2/simple_gemac/crc.v
+ fpga/usrp2/simple_gemac/flow_ctrl_rx.v
+ fpga/usrp2/simple_gemac/simple_gemac_wrapper_tb.v
+ fpga/usrp2/simple_gemac/simple_gemac.v
+ fpga/usrp2/simple_gemac/simple_gemac_tx.v
+ fpga/usrp2/simple_gemac/simple_gemac_tb.v
+ fpga/usrp2/simple_gemac/ll8_to_txmac.v
+ fpga/usrp2/simple_gemac/simple_gemac_wb.v
+ fpga/usrp2/simple_gemac/simple_gemac_wrapper.v
+ fpga/usrp2/simple_gemac/rxmac_to_ll8.v
+ fpga/usrp2/simple_gemac/flow_ctrl_tx.v
+ fpga/usrp2/simple_gemac/eth_tasks.v
+ fpga/usrp2/simple_gemac/ethtx_realign.v
+ fpga/usrp2/simple_gemac/address_filter.v
+ fpga/usrp2/simple_gemac/simple_gemac_wrapper_f36_tb.v
+ fpga/usrp2/simple_gemac/simple_gemac_rx.v
+ fpga/usrp2/simple_gemac/delay_line.v
+ fpga/usrp2/simple_gemac/address_filter_promisc.v
+ fpga/usrp2/simple_gemac/ethrx_realign.v
+ fpga/usrp2/simple_gemac/eth_tasks_f19.v
+ fpga/usrp2/models/M24LC02B.v
+ fpga/usrp2/models/CY7C1356C/cy1356.v
+ fpga/usrp2/models/CY7C1356C/testbench.v
+ fpga/usrp2/models/cpld_model.v
+ fpga/usrp2/models/adc_model.v
+ fpga/usrp2/models/serdes_model.v
+ fpga/usrp2/models/MULT18X18S.v
+ fpga/usrp2/models/gpmc_model_async.v
+ fpga/usrp2/models/xlnx_glbl.v
+ fpga/usrp2/models/gpmc_model_sync.v
+ fpga/usrp2/models/miim_model.v
+ fpga/usrp2/models/uart_rx.v
+ fpga/usrp2/models/M24LC024B.v
+ fpga/usrp2/models/math_real.v
+ fpga/usrp2/custom/power_trig_tb.v
+ fpga/usrp2/custom/custom_dsp_tx.v
+ fpga/usrp2/custom/custom_engine_tx.v
+ fpga/usrp2/custom/custom_engine_rx.v
+ fpga/usrp2/custom/power_trig.v
+ fpga/usrp2/custom/custom_dsp_rx.v
+ fpga/usrp2/extramfifo/Makefile.srcs
+ fpga/usrp2/extramfifo/nobl_fifo.v
+ fpga/usrp2/extramfifo/refill_randomizer.v
+ fpga/usrp2/extramfifo/nobl_if.v
+ fpga/usrp2/extramfifo/ext_fifo.v
+ fpga/usrp2/extramfifo/test_sram_if.v
+ fpga/usrp2/extramfifo/ext_fifo_tb.v
+ fpga/usrp2/top/python/check_timing.py
+ fpga/usrp2/top/python/check_inout.py
+ fpga/usrp2/top/tcl/ise_helper.tcl
+ fpga/usrp2/top/USRP2/u2_rev3.v
+ fpga/usrp2/top/USRP2/u2_core.v
+ fpga/usrp2/top/USRP2/Makefile
+ fpga/usrp2/top/Makefile.common
+ fpga/usrp2/top/E1x0/u1e.v
+ fpga/usrp2/top/E1x0/Makefile.E100
+ fpga/usrp2/top/E1x0/tb_u1e.v
+ fpga/usrp2/top/E1x0/Makefile.E110
+ fpga/usrp2/top/E1x0/u1e_core.v
+ fpga/usrp2/top/E1x0/Makefile
+ fpga/usrp2/top/B100/u1plus.v
+ fpga/usrp2/top/B100/u1plus_core.v
+ fpga/usrp2/top/B100/B100.v
+ fpga/usrp2/top/B100/Makefile.B100
+ fpga/usrp2/top/B100/Makefile
+ fpga/usrp2/top/N2x0/Makefile.N210R3
+ fpga/usrp2/top/N2x0/u2plus.v
+ fpga/usrp2/top/N2x0/u2plus_core.v
+ fpga/usrp2/top/N2x0/capture_ddrlvds.v
+ fpga/usrp2/top/N2x0/Makefile.N200R4
+ fpga/usrp2/top/N2x0/Makefile.N200R3
+ fpga/usrp2/top/N2x0/Makefile.N210R4
+ fpga/usrp2/top/N2x0/Makefile
+Copyright: 2008-2012 Ettus Research LLC
+License: GPL-3+
+
+Files: fpga/usrp1/megacells/*
+ fpga/usrp1/toplevel/*.qsf fpga/usrp1/toplevel/*.qpf
+Copyright: (C) 1991-2004 Altera Corporation
+License:
+ Any  megafunction  design,  and related netlist (encrypted  or  decrypted),
+ support information,  device programming or simulation file,  and any other
+ associated  documentation or information  provided by  Altera  or a partner
+ under  Altera's   Megafunction   Partnership   Program  may  be  used  only
+ to program  PLD  devices (but not masked  PLD  devices) from  Altera.   Any
+ other  use  of such  megafunction  design,  netlist,  support  information,
+ device programming or simulation file,  or any other  related documentation
+ or information  is prohibited  for  any  other purpose,  including, but not
+ limited to  modification,  reverse engineering,  de-compiling, or use  with
+ any other  silicon devices,  unless such use is  explicitly  licensed under
+ a separate agreement with  Altera  or a megafunction partner.  Title to the
+ intellectual property,  including patents,  copyrights,  trademarks,  trade
+ secrets,  or maskworks,  embodied in any such megafunction design, netlist,
+ support  information,  device programming or simulation file,  or any other
+ related documentation or information provided by  Altera  or a megafunction
+ partner, remains with Altera, the megafunction partner, or their respective
+ licensors. No other licenses, including any licenses needed under any third
+ party's intellectual property, are provided herein.
+Comment: Boilerplate terms prepended to files which include design
+ parameters for the project licensed GPL-3+.
+ .
+ Not used for uhd-host package.
+
+Files: fpga/usrp2/coregen/fifo*
+ fpga/usrp2/models/FIFO_GENERATOR_V4_3.v
+ fpga/usrp2/models/FIFO_GENERATOR_V4_3.v
+ fpga/usrp2/models/BUFG.v
+ fpga/usrp2/models/IOBUF.v
+ fpga/usrp2/models/RAMB16_S36_S36.v
+ fpga/usrp2/models/RAMB16_S36_S36.v
+ fpga/usrp2/models/SRLC16E.v
+ fpga/usrp2/models/SRL16E.v
+ fpga/usrp2/models/FIFO_GENERATOR_V6_1.v
+ fpga/usrp2/extramfifo/icon.v
+ fpga/usrp2/extramfifo/ila.v
+Copyright: (c) 1995-2010 Xilinx, Inc.
+License:
+ This file is owned and controlled by Xilinx and must be used
+ solely for design, simulation, implementation and creation of
+ design files limited to Xilinx devices or technologies. Use
+ with non-Xilinx devices or technologies is expressly prohibited
+ and immediately terminates your license.
+ .
+ XILINX IS PROVIDING THIS DESIGN, CODE, OR INFORMATION "AS IS"
+ SOLELY FOR USE IN DEVELOPING PROGRAMS AND SOLUTIONS FOR
+ XILINX DEVICES.  BY PROVIDING THIS DESIGN, CODE, OR INFORMATION
+ AS ONE POSSIBLE IMPLEMENTATION OF THIS FEATURE, APPLICATION
+ OR STANDARD, XILINX IS MAKING NO REPRESENTATION THAT THIS
+ IMPLEMENTATION IS FREE FROM ANY CLAIMS OF INFRINGEMENT,
+ AND YOU ARE RESPONSIBLE FOR OBTAINING ANY RIGHTS YOU MAY REQUIRE
+ FOR YOUR IMPLEMENTATION.  XILINX EXPRESSLY DISCLAIMS ANY
+ WARRANTY WHATSOEVER WITH RESPECT TO THE ADEQUACY OF THE
+ IMPLEMENTATION, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OR
+ REPRESENTATIONS THAT THIS IMPLEMENTATION IS FREE FROM CLAIMS OF
+ INFRINGEMENT, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ FOR A PARTICULAR PURPOSE.
+Comment: Boilerplate terms prepended to files which include design
+ parameters for the project licensed GPL-3+.
+ .
+ Not used for uhd-host package.
+
+Files: fpga/usrp2/opencores/8b10b
+Copyright: (c)2002 Chuck Benz, Hollis, NH   
+License:
+ The information and description contained herein is the
+ property of Chuck Benz.
+ .
+ Permission is granted for any reuse of this information
+ and description as long as this copyright notice is
+ preserved.  Modifications may be made as long as this
+ notice is preserved.
+
+Files: fpga/usrp2/opencores/aemb
+Copyright: (C) 2004-2007 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
+License: LGPL-3+
+ AEMB is free software: you can redistribute it and/or modify it
+ under the terms of the GNU Lesser General Public License as
+ published by the Free Software Foundation, either version 3 of the
+ License, or (at your option) any later version.
+ .
+ AEMB is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General
+ Public License for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public
+ License along with AEMB. If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the complete text of the GNU Lesser General
+ Public License can be found in `/usr/share/common-licenses/LGPL-3'.
+
+Files: fpga/usrp2/opencores/i2c/*
+ fpga/usrp2/opencores/simple_gpio/*
+ fpga/usrp2/opencores/simple_pic/*
+Copyright: (C) 2000,2001,2002,2004 Richard Herveille
+License:
+ This source file may be used and distributed without        
+ restriction provided that this copyright statement is not   
+ removed from the file and that any derivative work contains 
+ the original copyright notice and the associated disclaimer.
+ .                                                            
+     THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY     
+ EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED   
+ TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS   
+ FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL THE AUTHOR      
+ OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,         
+ INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES    
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE   
+ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR        
+ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF  
+ LIABILITY, WHETHER IN  CONTRACT, STRICT LIABILITY, OR TORT  
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  
+ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         
+ POSSIBILITY OF SUCH DAMAGE.                                 
+
+
+Files: fpga/usrp2/opencores/spi
+Copyright: (C) 2002 Simon Srot (simons@opencores.org)
+License:
+ This source file may be used and distributed without         
+ restriction provided that this copyright statement is not    
+ removed from the file and that any derivative work contains  
+ the original copyright notice and the associated disclaimer. 
+ .
+ This source file is free software; you can redistribute it   
+ and/or modify it under the terms of the GNU Lesser General   
+ Public License as published by the Free Software Foundation; 
+ either version 2.1 of the License, or (at your option) any   
+ later version.                                               
+ .
+ This source is distributed in the hope that it will be       
+ useful, but WITHOUT ANY WARRANTY; without even the implied   
+ warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      
+ PURPOSE.  See the GNU Lesser General Public License for more 
+ details.                                                     
+ .
+ You should have received a copy of the GNU Lesser General    
+ Public License along with this source; if not, download it   
+ from http://www.opencores.org/lgpl.shtml
+ .
+ On Debian systems, the complete text of the GNU Lesser General
+ Public License can be found in `/usr/share/common-licenses/LGPL-2.1'.
+
+Files: fpga/usrp2/opencores/spi_boot/*
+Copyright: (c) 2005, Arnim Laeuger (arniml@opencores.org)
+License: GPL-2
+ Redistribution and use in source and synthezised forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+ Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+ .
+ Redistributions in synthesized form must reproduce the above copyright
+ notice, this list of conditions and the following disclaimer in the
+ documentation and/or other materials provided with the distribution.
+ .
+ Neither the name of the author nor the names of other contributors may
+ be used to endorse or promote products derived from this software without
+ specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+ .
+ Please report bugs to the author, but before you do so, please
+ make sure that this is not a derivative work and that
+ you have the latest version of this file.
+ .
+ The latest version of this file can be found at:
+      http://www.opencores.org/projects.cgi/web/spi_boot/overview
+Comment:
+ COPYING file is GPL-2.
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-2'.
+
+Files: fpga/usrp2/opencores/wb_zbt
+Copyright: (C) 2008 Sebastien Bourdeauducq - http://lekernel.net
+License: LGPL-2+
+ * Milkymist is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Library General Public License as published
+ * by the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
+ * USA.
+
+Files: fpga/usrp2/opencores/zpu/*
+Copyright: 2004-2008 oharboe - �yvind Harboe - oyvind.harboe@zylin.com
+License:
+ The FreeBSD license
+ .
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above
+    copyright notice, this list of conditions and the following
+    disclaimer in the documentation and/or other materials
+    provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE ZPU PROJECT ``AS IS'' AND ANY
+ EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ ZPU PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ .
+ The views and conclusions contained in the software and documentation
+ are those of the authors and should not be interpreted as representing
+ official policies, either expressed or implied, of the ZPU Project.
+
+License: lwip-BSD
+ * Redistribution and use in source and binary forms, with or without modification, 
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission. 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED 
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+ * OF SUCH DAMAGE.
+
+License: MBSI-BSD
+ * The authors hereby grant permission to use, copy, modify, distribute,
+ * and license this software and its documentation for any purpose, provided
+ * that existing copyright notices are retained in all copies and that this
+ * notice and the following disclaimer are included verbatim in any 
+ * distributions. No written agreement, license, or royalty fee is required
+ * for any of the authorized uses.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS *AS IS* AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+ * IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: Kitware-BSD
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ .
+ * Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+ .
+ * Neither the names of Kitware, Inc., the Insight Software Consortium,
+   nor the names of their contributors may be used to endorse or promote
+   products derived from this software without specific prior written
+   permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: GPL-2+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-3'.
+
+License: GPL-3+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-3'.

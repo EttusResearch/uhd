@@ -1,0 +1,65 @@
+UHD, the "Universal Software Radio Peripheral" hardware driver on Debian:
+=========================================================================
+
+usrp group
+----------
+
+The Debian uhd-host package installs a usrp group.
+This provides two main benefits:
+ - Access control:
+    The udev rules limit access to members of the group
+    (at least for USB attached USRPs).
+ - Real Time Priority privilege:
+    The pam limits setting allows UHD to boost the
+    thread scheduling priority for usrp group members.
+
+To avail yourself of these benefits, add your username
+to the usrp group, perhaps by running, as root something like:
+
+    adduser myusername usrp
+
+substituting your user name for myusername.
+Settings will not take effect until the user has logged in and out.
+
+
+Multiple packages
+-----------------
+
+uhd-host:
+ The uhd-host package contains the uhd_find_devices and
+ uhd_usrp_probe commands for locating and examining USRP devices
+ available to the host system.
+
+ Also, under /usr/lib/uhd/ are examples, tests and utils
+ directories. The utils include tools for managing the
+ flash memory or EEPROM configuration of various USRPs.
+
+libuhd003:
+ Small package just for the library itself.
+
+libuhd-dev:
+ Small package just for developing applications
+ using the library itself.
+
+UHD Firmware / FPGA images
+--------------------------
+
+ The uhd-images package is not part of the main Debian distribution
+ because the FPGA firmware requires non-free vendor tools to compile
+ from source.
+
+ For USRP devices with non-volatile configuration having the firmware
+ images on the host is optional. But some USRPs are volatile, and
+ the UHD library will fetch files from the /usr/share/uhd/images/
+ directory at runtime.
+
+ The uhd_images_downloader is a python script to download from
+ Ettus.com and install the files.
+
+More Information
+----------------
+
+Additional HTML documentation is installed. See
+file:///usr/share/doc/uhd-host/doxygen/html/index.html
+
+ -- A. Maitland Bottoms <bottoms@debian.org>, Thu,  9 Oct 2014 23:14:19 -0400

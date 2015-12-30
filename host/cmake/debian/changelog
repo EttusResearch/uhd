@@ -1,0 +1,12 @@
+uhd (3.9.1-0ubuntu1) trusty; urgency=low
+
+  * B200mini: Updated udev rules, removed DCM
+  * B200: Better USB error messages
+  * Cores: Fixed CORDIC scaling issue on all devices that use
+    dsp_core_3000
+  * X300: Fixed GPIO issue
+  * Examples: Added PPS source option
+  * Docs: Multiple manual updates
+
+ -- Nicholas Corgan <nick.corgan@ettus.com>  Tue, 29 Dec 2015 03:06:31 -0800
+

@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+export DEB_HOST_MULTIARCH
+
+%:
+	dh $@ --parallel --sourcedirectory=host --builddirectory=build
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DLIB_SUFFIX="/$(DEB_HOST_MULTIARCH)" -DPKG_LIB_DIR="/usr/lib/uhd" -DUHD_RELEASE_MODE="release"
+
+# The test suite for this package is busted on powerpc.
+override_dh_auto_test:
+	- if [ $(DEB_BUILD_ARCH) != powerpc ]; then dh_auto_test; fi
+
+override_dh_auto_install:
+	cp debian/uhd-host.limits debian/uhd-host/etc/security/limits.d/uhd.conf
+	cp debian/uhd-host.sysctl debian/uhd-host/etc/sysctl.d/uhd-usrp2.conf
+	dh_auto_install
+	- rm -f debian/tmp/usr/share/doc/uhd/doxygen/html/jquery.js
+	ln -s /usr/share/javascript/jquery/jquery.js debian/tmp/usr/share/doc/uhd/doxygen/html/jquery.js
