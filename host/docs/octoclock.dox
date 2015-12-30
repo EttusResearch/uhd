@@ -5,107 +5,196 @@
 \section octoclock_features Feature list
 
 - Hardware Capabilities:
-    -   Fully integrated timing source with 8-Way distribution (10 MHz and 1 PPS)
-    -   User selection between internal GPSDO (when present) or external 10 MHz/1 PPS source
+    -   Fully integrated timing and clocking source with 8-way distribution (10 MHz and 1 PPS)
+    -   User selection between internal GPSDO (OctoClock-G) or external 10 MHz/1 PPS source
     -   Ethernet bootloader for easy firmware upgrade
-    -   Source detection with automatic switch over in case of failure or disconnect
+    -   Source detection with automatic switch-over in case of failure or disconnect
     -   Streaming GPS time and NMEA strings over Ethernet (OctoClock-G only)
 
-\section octoclock_load Loading Firmware onto the Octoclock
+\section detecting_new_unit Detecting an Ethernet-compatible device
 
-First, the OctoClock's bootloader needs to be loaded onto the device. Connect the AVR programmer to J108, as
-specified on the <a href="http://files.ettus.com/schematics/octoclock/octoclock.pdf">schematics</a>. Once you
-verify that the programmer is properly connected, run the following commands to load the bootloader:
+Early OctoClock and OctoClock-G units did not have Ethernet functionality and will need to be upgraded
+to utilize it. To test whether or not you have this early model, connect your device via Ethernet to a computer
+with <b>UHD 3.9.2</b> or above. The OctoClock will have a default IP address of <b>192.168.10.3</b>.
 
-    cd <install path>/share/uhd/images
-    avrdude -p atmega128 -c <programmer name> -P usb -U efuse:w:0xFF:m -U hfuse:w:0x80:m -U lfuse:w:0xEF:m -U flash:w:octoclock_r4_fw.hex:i
+Open a terminal and run this command:
 
-When the bootloader is loaded, it will have a default IP address of `192.168.10.3`.
+    ping 192.168.10.3
 
-\b Note:
-On Linux, `sudo avrdude ...` might be necessary to gain access to the programmer.
+If you see an output similar to the following:
 
-\section octoclock_network Setting Up Networking
+    64 bytes from 192.168.10.3: icmp_seq=1 ttl=64 time=3.01 ms
+    64 bytes from 192.168.10.3: icmp_seq=2 ttl=64 time=1.92 ms
+    64 bytes from 192.168.10.3: icmp_seq=3 ttl=64 time=1.78 ms
 
-\subsection host_interface Setting up the host interface
+then you have an Ethernet-compatible device. If not, follow the instructions in the next section to
+upgrade your device.
 
-The OctoClock communicates with the host machine at the UDP layer over Ethernet. The default device
-of the OctoClock is `192.168.10.3`. You will need to configure the host machine's Ethernet interface with
-a static IP address to enable communication. An address of `192.168.10.1` and a subnet mask of
-`255.255.255.0` is recommended.
+<b>NOTE:</b> OctoClock and OctoClock-G devices must be used on 1-Gigabit Ethernet or higher.
 
-\b Note:
-When using UHD software, if an IP address for the OctoClock is not specified, the software will
-use UDP broadcast packets to locate the OctoClock. On some systems, the firewall will block UDP broadcast
-packets. It is recommended that you change your firewall settings.
+\section upgrading_device Upgrading your device
 
-\subsection changing_ip Changing the OctoClock's IP address
+Follow these steps to upgrade your device.
 
-You may need to change the OctoClock's IP address for various reasons.
+\subsection getting_latest Getting the latest firmware images
 
-- To satisfy your particular network configuration
-- To use multiple OctoClocks on the same host computer
+The OctoClock's firmware is divided into two image files: <b>octoclock_bootloader.hex</b> and
+<b>octoclock_r4_fw.hex</b>. All image files can be found <a href="http://files.ettus.com/binaries/images/">here</a>,
+in version-specific ZIP files. Download the version corresponding to the version of UHD that you're running. You must use at least version 3.9.2.
 
-To change the OctoClock's IP address, run the following commands (using the default IP address as an example):
+Alternatively, if you already have UHD installed, then the correct images can be obtained by using
+the <b>uhd_images_downloader</b> utility. Once this is done, check your images directory, which is the
+following by default:
 
-    cd <install path>/lib/uhd/utils
-    ./octoclock_burn_eeprom --args="<optional device args>" --values="ip-addr=192.168.10.3"
+- <b>UNIX/Linux:</b> /usr/local/share/uhd/images
+- <b>Windows:</b>    C:\\Program Files\\UHD\\share\\uhd\\images
 
-\section addressing Addressing the Device
+\subsection bootloader Burning the bootloader onto the device
 
-There are two ways to address the OctoClock from UHD software: the IP address, and the serial.
+To burn the bootloader, you will need a 6-pin Atmel AVR programmer. We recommend the
+<a href="http://www.atmel.com/tools/atatmel-ice.aspx">Atmel-ICE</a> kit. The
+<a href="http://www.atmel.com/tools/AVRISPMKII.aspx">AVRISP mkII</a> programmer, which is no longer sold but is still popular, is also
+compatible.
 
-To use the IP address, address it as follows:
+You will also need the <b>AVRDude</b> utility. To install it on a Linux system, run the following command, as
+appropriate:
 
-    "addr=<ip address>"
+- <b>Ubuntu:</b> sudo apt-get install avrdude
+- <b>Fedora:</b> sudo yum install avrdude
 
-If you want to use multiple OctoClock devices, address it as follows:
+Most other UNIX/Linux package distribution systems include the utility under the name <b>avrdude</b>.
 
-    "addr0=<ip address 1>,addr1=<ip address 2>"
+<b>NOTE:</b> To use AVRDude with the Atmel-ICE programmer, you need at least version 6.1.
 
-To use the serial, address it as follows:
+For Windows users, we provide an AVRDude executable
+<a href="http://files.ettus.com/binaries/octoclock/avrdude-6.1-svn-20131205-mingw32.zip">here</a>. Download
+and unzip the file, and you will see a directory containing the <b>avrdude.exe</b> executable.
 
-    "serial=<serial>"
+Once AVRDude is set up on your machine, navigate to the directory containing the OctoClock firmware images
+and run the following command:
 
-\section hardware_setup Hardware Setup Notes
+    avrdude -p atmega128 -c atmelice_isp -P usb -U efuse:w:0xFF:m -U hfuse:w:0x80:m -U lfuse:w:0xEF:m -U flash:w:octoclock_bootloader.hex:i
+
+If you are using a programmer other than the Atmel-ICE, replace "atmelice_isp" with the appropriate string for your programmer. Run the command:
+
+    avrdude -c help
+
+to see the corresponding string for each programmer.
+
+If all three LEDs in the left column on the front panel are lit, then the bootloader was successfully loaded onto the device.
+
+On Linux, it might be necessary to run the avrdude commands as root, which can be done by preceding them with "sudo".
+
+\subsection firmware Uploading the firmware via Ethernet
+
+Once the bootloader is installed on the device, run the <b>uhd_find_devices</b> utility. You should see an output
+similar to the following:
+
+\verbatim
+--------------------------------------------------
+-- UHD Device 0
+--------------------------------------------------
+Device Address:
+    addr: 192.168.10.3
+    type: octoclock-bootloader
+\endverbatim
+
+This means that UHD successfully recognizes your device's bootloader and can download the firmware image. Run the
+following command:
+
+    uhd_image_loader --args="type=octoclock,addr=192.168.10.3"
+
+Once this completes, your OctoClock will load its firmware. Run the <b>uhd_find_devices</b> utility again, and
+the output should be similar to the following:
+
+\verbatim
+--------------------------------------------------
+-- UHD Device 0
+--------------------------------------------------
+Device Address:
+    addr: 192.168.10.3
+    type: octoclock
+    name:
+    serial:
+\endverbatim
+
+\subsection eeprom Updating the device's EEPROM
+
+As a final step, the device's EEPROM will need to be updated. On the back of your device, you will see a label sticker with a serial number (labelled S/N) and a MAC address (labeled MAC). For later use, the MAC address will have to be used in a different format than is on the label. As an example, if the label lists the MAC address as <b>00802F112233</b>, you will need to format it as <b>00:80:2F:11:22:33</b>.
+
+Update your device's EEPROM with the following command:
+
+    (UHD INSTALL DIRECTORY)/lib/uhd/utils/octoclock_burn_eeprom --args="addr=192.168.10.3" --values="mac-addr=(MAC HERE),ip-addr=192.168.10.3,netmask=255.255.255.0,gateway=192.168.10.1,serial=(SERIAL HERE),revision=4"
+
+Power-cycle your device, and it should now be fully operational. To confirm, you can query your device in one of two ways.
+
+Run the <b>uhd_find_devices</b> utility, and you will see basic information regarding the device. To see more specific information,
+run the following command:
+
+    octoclock_burn_eeprom --args="addr=192.168.10.3" --read-all
+
+\section usage Using your device
+
+\subsection boot_process The boot process
+
+When the device is turned on, it will wait in the bootloader for one second, after which it
+will move into the primary firmware.
+
+\subsection selecting Selecting a reference
+
+Both OctoClock models can input a 10 MHz reference and a 1 PPS signal via the SMA connectors <b>EXT 10 MHZ INPUT</b> and <b>EXT PPS INPUT</b>, respectively, located on the front of the device. Additionally, the OctoClock-G contains an internal GPSDO which provides its
+own internal references to the device.
+
+There is a switch on the front panel of the device with two positions <b>INTERNAL</b> and <b>EXTERNAL</b> that specifies which reference will be used, when applicable. For the OctoClock, there is no internal timing or clocking source, so the OctoClock will always use external 10 MHz and 1 PPS sources, regardless of the position of the switch. For the OctoClock-G, there is an internal GPSDO which provides an internal 10 MHz and 1 PPS, so the switch will specify whether to use that internal timing and clocking source from the GPSDO, or whether to use an external timing and clocking source, such as those provided by a signal generator.
+
+The LEDs in the left column show which reference (if any) the device is using. The top and middle LEDs, labeled
+<b>INTERNAL</b> and <b>EXTERNAL</b>, respectively, show which of the two references the device is using. The bottom
+LED indicates whether or not the device is actively using a reference. If no LEDs are lit, then the OctoClock is not
+using any reference and is not distributing a clock signal. The only situation in which all three LEDs are lit is when
+the device is in its bootloader, as described above.
+
+Once the device is using a reference, connect SMA cables from any of the <b>10 MHz OUT</b> and <b>PPS OUT</b> SMA
+connectors to distribute the signals to other devices.
 
 \subsection front_panel_leds Front Panel LEDs
 
 The LEDs on the front panel show the current status of the device. Each LED is described below:
 
-- **Internal:** the device is using the internal GPSDO
-- **External:** the device is using an external reference
-- **Status:** the device is successfully distributing a 10 MHz and PPS signal
-- **PPS:** lights up when a PPS signal is detected
-- **GPS Lock:** the internal GPSDO has achieved a lock (not necessary to distribute the signals)
+- **Internal:** the device is using the internal GPSDO as the timing and clocking reference
+- **External:** the device is using an external reference as the timing and clocking reference
+- **Status:** the device is successfully distributing a 10 MHz and 1 PPS signal
+- **PPS:** the device has detected a 1 PPS signal
+- **GPS Lock:** the internal GPSDO has achieved a GPS lock (not necessary to distribute the signals)
 - **Power:** the device is receiving power
 
-\subsection front_panel_switch Front Panel Switch
+\subsection uhd Communication with UHD
 
-The front panel switch, marked **Primary Ref** determines which reference the OctoClock will prefer to use. If it is receiving
-both an internal and external reference, the device will use whichever one the switch specifies.
+As with USRP devices, an OctoClock will appear when you run the <b>uhd_find_devices</b> utility. You can narrow your
+search to a specific device with the <b>--args</b> option, as seen below:
 
-However, if it is only receiving an internal reference, it will use this reference no matter what position the switch is in.
-The same applies for an external signal.
+    uhd_find_devices --args="addr=192.168.10.3"
+    uhd_find_devices --args="serial=F12345"
 
-\section misc Miscellaneous
+UHD provides a C++ API for communicating with an OctoClock device, the uhd::usrp_clock::multi_usrp_clock class. To
+instantiate the device or devices, use the factory function as seen below:
 
-\subsection available_sensors Available Sensors
+    uhd::usrp_clock::multi_usrp_clock::sptr clock = uhd::usrp_clock::multi_usrp_clock::make("addr=192.168.10.3");
+    uhd::usrp_clock::multi_usrp_clock::sptr clocks = uhd::usrp_clock::multi_usrp_clock::make("addr0=192.168.10.4,addr1=192.168.10.5");
 
-The following sensors are available on both the OctoClock and Octoclock-G;
-these can be queried through the API (see uhd::usrp_clock::multi_usrp_clock::get_sensor()).
+Once UHD starts a session with your device, you can use the uhd::usrp_clock::multi_usrp_clock::get_sensor() function to
+query for different information from your device. All OctoClock devices provide the following sensors:
 
-- `ext_ref_detected:` whether or not the device detects an external reference
-- `gps_detected:` whether or not the device detects an internal GPSDO
-- `using_ref:` which reference the device is using (internal or external)
-- `switch_pos:` the position of the front switch (internal or external)
+- <b>ext_ref_detected:</b> whether or not an external reference is connected ("true", "false")
+- <b>gps_detected:</b> whether or not the device has an internal GPSDO ("true", "false")
+- <b>using_ref:</b> which reference the device is using ("none", "internal", "external")
+- <b>switch_pos:</b> switch position ("Prefer internal", "Prefer external")
 
-On the OctoClock-G, the following sensors are added:
+Additionally, the OctoClock-G provides the following sensors to query information from the internal GPSDO:
 
-- `gps_gpgga:` the latest GPGGA string sent by the GPSDO
-- `gps_gprmc:` the latest GPRMC string sent by the GPSDO
-- `gps_time:` the time reported by the GPSDO
-- `gps_locked:` whether or not the GPSDO is locked (true/false)
-- `gps_servo:` the latest debug trace information sent by the GPSDO
+- <b>gps_gpgga:</b> raw GPGGA NMEA sentence
+- <b>gps_gprmc:</b> raw GPRMC NMEA sentence
+- <b>gps_time:</b>  GPS epoch time
+- <b>gps_locked:</b> GPSDO lock status ("locked", "unlocked")
+- <b>gps_servo:</b> GPSDO servo status
 
 */
