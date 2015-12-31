@@ -249,12 +249,11 @@ void n230_register_flash_comms_handler()
 #define SFPP_STATUS_TXFAULT        (1 << 1)    // TXFAULT state
 #define SFPP_STATUS_RXLOS          (1 << 0)    // RXLOS state
 
-static bool links_up[N230_MAX_NUM_ETH_PORTS] = {};
+static bool     links_up[N230_MAX_NUM_ETH_PORTS] = {};
+static uint32_t packet_count[N230_MAX_NUM_ETH_PORTS] = {};
 
-void n230_poll_sfp_status(const uint32_t eth)
+void n230_poll_sfp_status(const uint32_t eth, bool force)
 {
-    static bool first_poll = 1;
-
     // Has MODDET/MODAbS changed since we last looked?
     uint32_t rb = wb_peek32(SR_ADDR(WB_SBRB_BASE, (eth==0) ? RB_ZPU_SFP_STATUS0 : RB_ZPU_SFP_STATUS1));
 
@@ -266,7 +265,7 @@ void n230_poll_sfp_status(const uint32_t eth)
         UHD_FW_TRACE_FSTR(DEBUG, "eth%1d MODABS changed state: %d", eth, ((rb & SFPP_STATUS_MODABS) >> 2));
 
     //update the link up status
-    if ((rb & SFPP_STATUS_RXLOS_CHG) || (rb & SFPP_STATUS_TXFAULT_CHG) || (rb & SFPP_STATUS_MODABS_CHG) || first_poll)
+    if ((rb & SFPP_STATUS_RXLOS_CHG) || (rb & SFPP_STATUS_TXFAULT_CHG) || (rb & SFPP_STATUS_MODABS_CHG) || force)
     {
         const bool old_link_up = links_up[eth];
         const uint32_t status_reg_addr = (eth==0) ? RB_ZPU_SFP_STATUS0 : RB_ZPU_SFP_STATUS1;
@@ -298,18 +297,36 @@ void n230_poll_sfp_status(const uint32_t eth)
             }
         }
     }
-
-    first_poll = 0;
 }
 
-void n230_handle_sfp_updates(soft_reg_t* led_reg)
+void n230_update_link_act_state(soft_reg_t* led_reg)
 {
+    static bool first_poll = 1;
+    static uint32_t poll_cnt;
+
+    bool activity[N230_MAX_NUM_ETH_PORTS] = {};
     for (uint32_t i = 0; i < N230_NUM_ETH_PORTS; i++) {
-        n230_poll_sfp_status(i);
+        if (first_poll) {
+            links_up[i] = 0;
+            packet_count[i] = 0;
+            poll_cnt = 0;
+        }
+
+        //Check SFP status
+        n230_poll_sfp_status(i, first_poll);
+
+        //Check packet counters less frequently to keep the LED on for a visible duration
+        uint32_t cnt = wb_peek32(SR_ADDR(WB_SBRB_BASE, (i==0)?RB_ZPU_ETH0_PKT_CNT:RB_ZPU_ETH1_PKT_CNT));
+        activity[i] = (cnt != packet_count[i]);
+        packet_count[i] = cnt;
     }
 
     //TODO: Swap this when Ethernet port swap issues is fixed
     soft_reg_write(led_reg, LED_REG_FIELD_ETH_LINK2, links_up[0]?1:0);
     soft_reg_write(led_reg, LED_REG_FIELD_ETH_LINK1, links_up[1]?1:0);
+    soft_reg_write(led_reg, LED_REG_FIELD_ETH_ACT2,  activity[0]?1:0);
+    soft_reg_write(led_reg, LED_REG_FIELD_ETH_ACT1,  activity[1]?1:0);
+
+    first_poll = 0;
 }
 

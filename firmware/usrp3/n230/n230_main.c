@@ -75,7 +75,7 @@ int main(void)
         if (cron_job_run_due(PER_MILLISEC_CRON_JOBID)) {
             //Everything in this block runs approx once per millisecond
             n230_handle_claim();
-            n230_handle_sfp_updates(&g_led_register);
+            n230_update_link_act_state(&g_led_register);
         }
 
         //run the network stack - poll and handle

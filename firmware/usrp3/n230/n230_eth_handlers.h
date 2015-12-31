@@ -43,6 +43,6 @@ void n230_register_flash_comms_handler();
 /*!
  * Handle SFP updates.
  */
-void n230_handle_sfp_updates(soft_reg_t* led_reg);
+void n230_update_link_act_state(soft_reg_t* led_reg);
 
 #endif /* INCLUDED_N230_ETH_HANDLERS_H */

@@ -82,6 +82,8 @@ static const uint32_t RB_ZPU_COMPAT         = 0;
 static const uint32_t RB_ZPU_COUNTER        = 1;
 static const uint32_t RB_ZPU_SFP_STATUS0    = 2;
 static const uint32_t RB_ZPU_SFP_STATUS1    = 3;
+static const uint32_t RB_ZPU_ETH0_PKT_CNT   = 6;
+static const uint32_t RB_ZPU_ETH1_PKT_CNT   = 7;
 
 /*******************************************************************
  * Ethernet
