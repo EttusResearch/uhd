@@ -76,6 +76,7 @@ void n230_handle_udp_fw_comms(
         bool send_response = process_fw_comm_protocol_pkt(
             request, &response,
             N230_FW_PRODUCT_ID,
+            (uint32_t)ethno,
             n230_poke32, n230_peek32);
 
         if (send_response) {

@@ -54,6 +54,8 @@ extern "C" {
 #define FW_COMM_GENERATE_ID(prod)   ((((uint32_t) FW_COMM_PROTOCOL_SIGNATURE) << 0)  | \
                                      (((uint32_t) prod)                       << 16) | \
                                      (((uint32_t) FW_COMM_PROTOCOL_VERSION)   << 24))
+
+#define FW_COMM_GET_PROTOCOL_SIG(id) ((uint16_t)(id & 0xFFFF))
 #define FW_COMM_GET_PRODUCT_ID(id)   ((uint8_t)(id >> 16))
 #define FW_COMM_GET_PROTOCOL_VER(id) ((uint8_t)(id >> 24))
 
@@ -90,6 +92,7 @@ bool process_fw_comm_protocol_pkt(
     const fw_comm_pkt_t* request,
     fw_comm_pkt_t* response,
     uint8_t product_id,
+    uint32_t iface_id,
     poke32_func poke_callback,
     peek32_func peek_callback
 );

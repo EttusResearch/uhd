@@ -23,6 +23,7 @@ bool process_fw_comm_protocol_pkt(
     const fw_comm_pkt_t* request,
     fw_comm_pkt_t* response,
     uint8_t product_id,
+    uint32_t iface_id,
     poke32_func poke_callback,
     peek32_func peek_callback)
 {
@@ -44,8 +45,9 @@ bool process_fw_comm_protocol_pkt(
         //Otherwise, run the command set by the flags
         switch (request->flags & FW_COMM_FLAGS_CMD_MASK) {
             case FW_COMM_CMD_ECHO: {
-                //Do nothing.
                 UHD_FW_TRACE(DEBUG, "fw_comm_protocol::echo()");
+                response->data_words = 1;
+                response->data[0] = iface_id;
             } break;
 
             case FW_COMM_CMD_POKE32: {
