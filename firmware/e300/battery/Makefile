@@ -40,17 +40,18 @@ PROGRAMMER = jtag3isp
 PORT = usb
 AVRDUDE = avrdude -p $(MMCU) -c $(PROGRAMMER) -P $(PORT) -V
 FUSES = -U hfuse:w:hfuse.hex:i -U lfuse:w:lfuse.hex:i -U efuse:w:efuse.hex:i -u
+EEPROM = -U eeprom:w:$(TARGET).eeprom.hex
 
 ##################################################
 # Global Targets
 ##################################################
-all: $(TARGET).hex size hfuse.hex lfuse.hex efuse.hex
+all: $(TARGET).hex $(TARGET).eeprom.hex size hfuse.hex lfuse.hex efuse.hex
 
 clean:
 	$(RM) *.o *.elf *.hex
 
 install: all
-	$(AVRDUDE) -U flash:w:$(TARGET).hex:i $(FUSES)
+	$(AVRDUDE) -U flash:w:$(TARGET).hex:i $(FUSES) $(EEPROM)
 
 size: $(TARGET).hex
 	@$(SIZE) --format=SysV --mcu=$(MMCU) $(TARGET).elf
@@ -73,6 +74,10 @@ efuse.hex: fuses.hex
 
 $(TARGET).hex: $(TARGET).elf
 	$(OBJCOPY) -R .eeprom -R .fuse -O ihex $< $@
+
+$(TARGET).eeprom.hex: $(TARGET).elf
+	$(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" --change-section-lma \
+		.eeprom=0 -O ihex $(TARGET).elf $@
 
 $(TARGET).elf: $(SRCS:.c=.o)
 	$(CC) -mmcu=$(MMCU) $^ -o $@

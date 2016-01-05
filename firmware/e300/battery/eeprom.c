@@ -16,6 +16,9 @@
 #include "eeprom.h"
 #include <avr/eeprom.h>
 
+/* default values for eeprom */
+char eeprom[] EEMEM = {0x00, 0x00, 0x00};
+
 /* the avr libc wants it this way ... */
 static uint8_t* EEPROM_AUTOBOOT_OFFSET		= (uint8_t *) 0x00;
 static uint16_t *EEPROM_LAST_FULL_OFFSET	= (uint16_t *) 0x04;
