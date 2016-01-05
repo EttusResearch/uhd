@@ -178,6 +178,8 @@ class discovery_socket(object):
             while 1:
                 try:
                     (in_pkt, addr_pair) = self._sock.recvfrom(UDP_MAX_XFER_BYTES)
+                    if len(in_pkt) < 20:
+                        continue
                     (flags, ack_seq, block_size, addr, data) = unpack_fw_command(in_pkt)
                     addrs.append(addr_pair[0])
                 except socket.error:
@@ -189,11 +191,12 @@ class discovery_socket(object):
 # Communications class, holds a socket and send/recv routine
 ########################################################################
 class ctrl_socket(object):
-    def __init__(self, addr):
+    def __init__(self, addr, port):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._sock.settimeout(UDP_TIMEOUT)
-        self._sock.connect((addr, N230_FW_COMMS_UDP_PORT))
+        self._sock.connect((addr, port))
         self.set_callbacks(lambda *a: None, lambda *a: None)
+        self.peek(0)    #Dummy read
 
     def set_callbacks(self, progress_cb, status_cb):
         self._progress_cb = progress_cb
@@ -208,16 +211,6 @@ class ctrl_socket(object):
     def send_and_recv(self, pkt):
         self.send(pkt)
         return self.recv()
-
-    def read_time_stats(self):
-        print
-        regs = ['    ingress1','    ingress2','     egress1','     egress1']
-        for reg in range (0, 4):
-            print("%s " % regs[reg]),
-            data = self.peek64(0xA000 + 32 + (reg*8), fmt='i')
-            print("%10d    " % (data)),
-            print("%10f uS" % (data * 0.0217))
-        print
 
     def peek(self, peek_addr, fmt=None):
         out_pkt = pack_fw_command(N230_FW_COMMS_CMD_PEEK32|N230_FW_COMMS_FLAGS_ACK, seq(), 1, peek_addr, [0])
@@ -252,7 +245,7 @@ class ctrl_socket(object):
                 raise Exception("invalid COE file. Must contain 8192 words!")
             self.poke(N230_FW_LOADER_ADDR, 0)    #Load start address
             for i in range(0, len(coe_words)):
-                self.poke(N230_FW_LOADER_DATA, int(coe_words[i],16), (i<len(coe_words)-1))
+                self.poke(N230_FW_LOADER_DATA, int(coe_words[i],16), (i%10==0) and (i<len(coe_words)-1))
                 draw_progress_bar(((i+1)*100)/len(coe_words))
             print("\nRebooting...")
             out_pkt = pack_fw_command(N230_FW_COMMS_CMD_POKE32, seq(), 1, N230_FW_LOADER_BOOT_DONE_ADDR, [1])
@@ -273,15 +266,15 @@ class ctrl_socket(object):
 
     def read_hash(self):
         fpga_hash = self.peek(N230_FPGA_HASH_ADDR)
-        fpga_status = "clean" if (fpga_hash & 0xf0000000 == 0x0) else "dirty"
+        fpga_status = "clean" if (fpga_hash & 0xf0000000 == 0x0) else "modified"
         fw_hash = self.peek(N230_FW_HASH_ADDR)
-        fw_status = "clean" if (fw_hash & 0xf0000000 == 0x0) else "dirty"
-        print("FPGA Git Hash is: %x (%s)" % (fpga_hash & 0xfffffff, fpga_status))
-        print("Firmware Git Hash is: %x (%s)" % (fw_hash & 0xfffffff, fw_status))
+        fw_status = "clean" if (fw_hash & 0xf0000000 == 0x0) else "modified"
+        print("FPGA Version     : %x (%s)" % (fpga_hash & 0xfffffff, fpga_status))
+        print("Firmware Version : %x (%s)" % (fw_hash & 0xfffffff, fw_status))
 
     def is_claimed(self):
         claimed = self.peek(0x10008)
-        print("Claimed: %s") % ('Yes' if claimed else 'No')
+        print("Claimed          : %s") % ('YES' if claimed else 'NO')
 
     def reset_fpga(self):
         print("Reseting USRP...")
@@ -334,7 +327,6 @@ def get_options():
     parser.add_option("--data", type="int",         help="Data for poke", default=None)
     parser.add_option("--fw",   type="string",      help="Path to FW image to load", default=None)
     parser.add_option("--hash", action="store_true",help="Display FPGA git hash", default=False)
-    parser.add_option("--time", action="store_true",help="Display CHDR timestamp Stats", default=False)
     parser.add_option("--reset", action="store_true",help="Reset and Reload USRP FPGA.", default=False)
     parser.add_option("--jesd204test", action="store_true",help="Test mini-SAS connectors with loopback cable..", default=False)
 
@@ -352,7 +344,7 @@ if __name__=='__main__':
             disc_sock = discovery_socket()
             for addr in disc_sock.discover():
                 print '==== FOUND ' + addr + ' ===='
-                ctrl_sock = ctrl_socket(addr)
+                ctrl_sock = ctrl_socket(addr, N230_FW_COMMS_UDP_PORT)
                 ctrl_sock.read_hash()
                 ctrl_sock.is_claimed()
             sys.exit()
@@ -362,7 +354,7 @@ if __name__=='__main__':
     if not options.addr: 
         raise Exception('No address specified')
 
-    ctrl_sock = ctrl_socket(addr=options.addr)
+    ctrl_sock = ctrl_socket(options.addr, N230_FW_COMMS_UDP_PORT)
    
     if options.fw is not None:
         file_path = options.fw
@@ -387,9 +379,6 @@ if __name__=='__main__':
         data = options.data
         ctrl_sock.poke(addr,data)
         print("POKE[0x%x (%d)] <= 0x%x (%d)" % (addr,addr,data,data))
-
-    if options.time:
-        ctrl_sock.read_time_stats()
 
     if options.reset:
         ctrl_sock.reset_fpga()

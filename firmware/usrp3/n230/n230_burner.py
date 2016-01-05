@@ -216,8 +216,8 @@ class ctrl_socket(object):
             #Map Xilinx header field to N230 specific ones
             if xil_header and xil_header['a'].split(';')[0] == 'n230':
                 n230_header['valid'] = True
-                n230_header['user-id'] = int(xil_header['a'].split(';')[1].split('=')[1][0:-1], 16)
-                n230_header['safe-image'] = n230_header['user-id'] >> 16 == 0x5AFE
+                n230_header['user-id'] = int(xil_header['a'].split(';')[1].split('=')[1], 16)
+                n230_header['safe-image'] = (n230_header['user-id'] >> 16 == 0x5AFE)
                 n230_header['product'] = xil_header['b']
                 n230_header['timestamp'] = xil_header['c'] + ' ' + xil_header['d']
                 n230_header['filesize'] = xil_header['hl'] + xil_header['bl']
