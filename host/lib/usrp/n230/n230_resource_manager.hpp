@@ -181,6 +181,10 @@ public:     //Methods
     }
 
     //GPSDO control
+    inline bool is_gpsdo_present() {
+        return _gps_ctrl.get() and _gps_ctrl->gps_detected();
+    }
+
     inline uhd::gps_ctrl::sptr get_gps_ctrl(void) {
         return _gps_ctrl;
     }
@@ -283,7 +287,7 @@ private:
     fpga::core_radio_ctrl_reg_t     _core_radio_ctrl_reg;
     fpga::core_misc_reg_t           _core_misc_reg;
     fpga::core_pps_sel_reg_t        _core_pps_sel_reg;
-    fpga::core_radio_status_reg_t   _core_status_reg;
+    fpga::core_status_reg_t         _core_status_reg;
 
     //Radio peripherals
     radio_resource_t                _radios[fpga::NUM_RADIOS];

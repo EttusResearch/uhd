@@ -396,9 +396,8 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
     //------------------------------------------------------------------
     // GPSDO sensors
     //------------------------------------------------------------------
-    uhd::gps_ctrl::sptr gps_ctrl = _resource_mgr->get_gps_ctrl();
-    if (gps_ctrl and gps_ctrl->gps_detected())
-    {
+    if (_resource_mgr->is_gpsdo_present()) {
+        uhd::gps_ctrl::sptr gps_ctrl = _resource_mgr->get_gps_ctrl();
         BOOST_FOREACH(const std::string &name, gps_ctrl->get_sensors())
         {
             _tree->create<sensor_value_t>(mb_path / "sensors" / name)

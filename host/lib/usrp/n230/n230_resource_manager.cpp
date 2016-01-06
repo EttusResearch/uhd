@@ -192,23 +192,22 @@ n230_resource_manager::n230_resource_manager(
     _ms1_gpio->set_atr_mode(gpio_atr::MODE_GPIO,gpio_atr::gpio_atr_3000::MASK_SET_ALL);
 
     //Create GPSDO interface
-    const sid_t gps_uart_sid = _generate_sid(GPS_UART, _get_conn(PRI_ETH).type);
-    transport::zero_copy_if::sptr gps_uart_xport =
-        _create_transport(_get_conn(PRI_ETH), gps_uart_sid, device_addr_t(), dummy_out_params);
-    _gps_uart = n230_uart::make(gps_uart_xport, uhd::htonx(gps_uart_sid.get()));
-    _gps_uart->set_baud_divider(fpga::BUS_CLK_RATE/115200);
-    _gps_uart->write_uart("\n"); //cause the baud and response to be setup
-    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for a little propagation
-    if ((_core_ctrl->peek32(fpga::RB_CORE_STATUS) & 0xff) != fpga::GPSDO_ST_NONE)
-    {
+    if (_core_status_reg.read(fpga::core_status_reg_t::GPSDO_STATUS) != fpga::GPSDO_ST_ABSENT) {
         UHD_MSG(status) << "Detecting GPSDO.... " << std::flush;
         try {
+            const sid_t gps_uart_sid = _generate_sid(GPS_UART, _get_conn(PRI_ETH).type);
+            transport::zero_copy_if::sptr gps_uart_xport =
+                _create_transport(_get_conn(PRI_ETH), gps_uart_sid, device_addr_t(), dummy_out_params);
+            _gps_uart = n230_uart::make(gps_uart_xport, uhd::htonx(gps_uart_sid.get()));
+            _gps_uart->set_baud_divider(fpga::BUS_CLK_RATE/fpga::GPSDO_UART_BAUDRATE);
+            _gps_uart->write_uart("\n"); //cause the baud and response to be setup
+            boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for a little propagation
             _gps_ctrl = gps_ctrl::make(_gps_uart);
         } catch(std::exception &e) {
             UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
         }
-        if (not (_gps_ctrl and _gps_ctrl->gps_detected())) {
-            _core_ctrl->poke32(fpga::sr_addr(fpga::SR_CORE_GPSDO_ST), fpga::GPSDO_ST_NONE);
+        if (not is_gpsdo_present()) {
+            _core_ctrl->poke32(fpga::sr_addr(fpga::SR_CORE_GPSDO_ST), fpga::GPSDO_ST_ABSENT);
         }
     }
 

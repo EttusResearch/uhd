@@ -137,10 +137,10 @@ static const double CODEC_DEFAULT_CLK_RATE  = 40e6;
 static const double N230_LINK_RATE_BPS      = 1e9/8;
 
 /*******************************************************************
- * GPSDO status
+ * GPSDO
  *******************************************************************/
-static const uint32_t GPSDO_ST_NONE = 0x83;
-
+static const uint32_t GPSDO_UART_BAUDRATE   = 115200;
+static const uint32_t GPSDO_ST_ABSENT       = 0x83;
 /*******************************************************************
  * Register Objects
  *******************************************************************/
@@ -192,11 +192,12 @@ public:
     }
 };
 
-class core_radio_status_reg_t : public soft_reg64_ro_t {
+class core_status_reg_t : public soft_reg64_ro_t {
 public:
-    UHD_DEFINE_SOFT_REG_FIELD(REF_LOCKED,   /*width*/ 1, /*shift*/ 0);  //[0]
+    UHD_DEFINE_SOFT_REG_FIELD(REF_LOCKED,     /*width*/ 1, /*shift*/ 0);    //[0]
+    UHD_DEFINE_SOFT_REG_FIELD(GPSDO_STATUS,   /*width*/ 8, /*shift*/ 32);   //[32:39]
 
-    core_radio_status_reg_t():
+    core_status_reg_t():
         soft_reg64_ro_t(fpga::rb_addr(fpga::RB_CORE_STATUS))
     { }
 };

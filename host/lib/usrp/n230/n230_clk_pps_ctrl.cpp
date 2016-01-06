@@ -36,7 +36,7 @@ public:
         n230_ref_pll_ctrl::sptr ref_pll_ctrl,
         fpga::core_misc_reg_t& core_misc_reg,
         fpga::core_pps_sel_reg_t& core_pps_sel,
-        fpga::core_radio_status_reg_t& core_status_reg,
+        fpga::core_status_reg_t& core_status_reg,
         const std::vector<time_core_3000::sptr>& time_cores
     ): _codec_ctrl(codec_ctrl),
        _ref_pll_ctrl(ref_pll_ctrl),
@@ -98,7 +98,7 @@ public:
     {
         bool locked = false;
         if (_clock_source == "external" || _clock_source == "gpsdo") {
-            locked = (_core_status_reg.read(fpga::core_radio_status_reg_t::REF_LOCKED) == 1);
+            locked = (_core_status_reg.read(fpga::core_status_reg_t::REF_LOCKED) == 1);
         } else {
             //If the source is internal, the charge pump on the ADF4001 is tristated which
             //means that the 40MHz VCTXXO is free running i.e. always "locked"
@@ -132,7 +132,7 @@ private:
     n230_ref_pll_ctrl::sptr             _ref_pll_ctrl;
     fpga::core_misc_reg_t&              _core_misc_reg;
     fpga::core_pps_sel_reg_t&           _core_pps_sel_reg;
-    fpga::core_radio_status_reg_t&      _core_status_reg;
+    fpga::core_status_reg_t&            _core_status_reg;
     std::vector<time_core_3000::sptr>   _time_cores;
     double                              _tick_rate;
     std::string                         _clock_source;
@@ -149,7 +149,7 @@ n230_clk_pps_ctrl::sptr n230_clk_pps_ctrl::make(
     n230_ref_pll_ctrl::sptr ref_pll_ctrl,
     fpga::core_misc_reg_t& core_misc_reg,
     fpga::core_pps_sel_reg_t& core_pps_sel_reg,
-    fpga::core_radio_status_reg_t& core_status_reg,
+    fpga::core_status_reg_t& core_status_reg,
     const std::vector<time_core_3000::sptr>& time_cores)
 {
     return sptr(new n230_clk_pps_ctrl_impl(

@@ -39,7 +39,7 @@ public:
         n230_ref_pll_ctrl::sptr ref_pll_ctrl,
         fpga::core_misc_reg_t& core_misc_reg,
         fpga::core_pps_sel_reg_t& core_pps_sel_reg,
-        fpga::core_radio_status_reg_t& core_status_reg,
+        fpga::core_status_reg_t& core_status_reg,
         const std::vector<time_core_3000::sptr>& time_cores);
 
     virtual ~n230_clk_pps_ctrl() {}
