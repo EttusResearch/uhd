@@ -20,7 +20,7 @@
 
 #include "radio_ctrl_core_3000.hpp"
 #include "ad9361_ctrl.hpp"
-#include "gpio_core_200.hpp"
+#include "gpio_atr_3000.hpp"
 #include <uhd/types/sensors.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -47,7 +47,7 @@ public:
         radio_ctrl_core_3000::sptr core_ctrl,
         fpga::core_misc_reg_t& core_misc_reg,
         ad9361_ctrl::sptr codec_ctrl,
-        const std::vector<gpio_core_200_32wo::sptr>& gpio_cores);
+        const std::vector<gpio_atr::gpio_atr_3000::sptr>& gpio_cores);
 
     virtual ~n230_frontend_ctrl() {}
 

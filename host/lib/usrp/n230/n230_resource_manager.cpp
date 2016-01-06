@@ -163,7 +163,7 @@ n230_resource_manager::n230_resource_manager(
     _reset_codec_digital_interface();
 
     std::vector<time_core_3000::sptr> time_cores;
-    std::vector<gpio_core_200_32wo::sptr> gpio_cores;
+    std::vector<gpio_atr::gpio_atr_3000::sptr> gpio_cores;
     for (size_t i = 0; i < fpga::NUM_RADIOS; i++) {
         _initialize_radio(i);
         time_cores.push_back(_radios[i].time);
@@ -182,6 +182,14 @@ n230_resource_manager::n230_resource_manager(
     if (_frontend_ctrl.get() == NULL) {
         throw uhd::runtime_error("N230 Initialization Error: Could not create front-end ctrl.)");
     }
+
+    //Create miniSAS GPIO interfaces
+    _ms0_gpio = gpio_atr::gpio_atr_3000::make(
+        _core_ctrl, fpga::sr_addr(fpga::SR_CORE_MS0_GPIO), fpga::rb_addr(fpga::RB_CORE_MS0_GPIO));
+    _ms0_gpio->set_atr_mode(gpio_atr::MODE_GPIO,gpio_atr::gpio_atr_3000::MASK_SET_ALL);
+    _ms1_gpio = gpio_atr::gpio_atr_3000::make(
+        _core_ctrl, fpga::sr_addr(fpga::SR_CORE_MS1_GPIO), fpga::rb_addr(fpga::RB_CORE_MS1_GPIO));
+    _ms1_gpio->set_atr_mode(gpio_atr::MODE_GPIO,gpio_atr::gpio_atr_3000::MASK_SET_ALL);
 
     //Create GPSDO interface
     const sid_t gps_uart_sid = _generate_sid(GPS_UART, _get_conn(PRI_ETH).type);
@@ -299,7 +307,8 @@ void n230_resource_manager::_initialize_radio(size_t instance)
     }
 
     //Write-only ATR interface
-    radio.gpio_atr = gpio_core_200_32wo::make(radio.ctrl, fpga::sr_addr(fpga::SR_RADIO_ATR));
+    radio.gpio_atr = gpio_atr::gpio_atr_3000::make_write_only(radio.ctrl, fpga::sr_addr(fpga::SR_RADIO_ATR));
+    radio.gpio_atr->set_atr_mode(gpio_atr::MODE_ATR,gpio_atr::gpio_atr_3000::MASK_SET_ALL);
 
     //Core VITA time interface
     time_core_3000::readback_bases_type time_bases;

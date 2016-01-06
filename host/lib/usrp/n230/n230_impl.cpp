@@ -369,7 +369,33 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
     _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
     _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
 
+    //------------------------------------------------------------------
+    // MiniSAS GPIO
+    //------------------------------------------------------------------
+    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "DDR")
+        .set(0)
+        .subscribe(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
+            _resource_mgr->get_minisas_gpio_ctrl_sptr(0), gpio_atr::GPIO_DDR, _1));
+    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP1" / "DDR")
+        .set(0)
+        .subscribe(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
+            _resource_mgr->get_minisas_gpio_ctrl_sptr(1), gpio_atr::GPIO_DDR, _1));
+    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "OUT")
+        .set(0)
+        .subscribe(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
+            _resource_mgr->get_minisas_gpio_ctrl_sptr(0), gpio_atr::GPIO_OUT, _1));
+    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP1" / "OUT")
+        .set(0)
+        .subscribe(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
+            _resource_mgr->get_minisas_gpio_ctrl_sptr(1), gpio_atr::GPIO_OUT, _1));
+    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
+        .publish(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(0)));
+    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP1" / "READBACK")
+        .publish(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(1)));
+
+    //------------------------------------------------------------------
     // GPSDO sensors
+    //------------------------------------------------------------------
     uhd::gps_ctrl::sptr gps_ctrl = _resource_mgr->get_gps_ctrl();
     if (gps_ctrl and gps_ctrl->gps_detected())
     {

@@ -61,7 +61,7 @@ public:
         radio_ctrl_core_3000::sptr core_ctrl,
         fpga::core_misc_reg_t& core_misc_reg,
         ad9361_ctrl::sptr codec_ctrl,
-        const std::vector<gpio_core_200_32wo::sptr>& gpio_cores
+        const std::vector<gpio_atr::gpio_atr_3000::sptr>& gpio_cores
     ): _core_ctrl(core_ctrl),
        _codec_ctrl(codec_ctrl),
        _gpio_cores(gpio_cores),
@@ -219,7 +219,7 @@ private:
 
     radio_ctrl_core_3000::sptr              _core_ctrl;
     ad9361_ctrl::sptr                       _codec_ctrl;
-    std::vector<gpio_core_200_32wo::sptr>   _gpio_cores;
+    std::vector<gpio_atr::gpio_atr_3000::sptr>   _gpio_cores;
     fpga::core_misc_reg_t&                  _core_misc_reg;
     uhd::dict<size_t, fe_state_cache_t>     _fe_states;
 };
@@ -232,7 +232,7 @@ n230_frontend_ctrl::sptr n230_frontend_ctrl::make(
         radio_ctrl_core_3000::sptr core_ctrl,
         fpga::core_misc_reg_t& core_misc_reg,
         ad9361_ctrl::sptr codec_ctrl,
-        const std::vector<gpio_core_200_32wo::sptr>& gpio_cores)
+        const std::vector<gpio_atr::gpio_atr_3000::sptr>& gpio_cores)
 {
     return sptr(new n230_frontend_ctrl_impl(core_ctrl, core_misc_reg, codec_ctrl, gpio_cores));
 }

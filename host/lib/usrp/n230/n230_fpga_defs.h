@@ -74,12 +74,16 @@ static const uint32_t SR_CORE_COMPAT        = 24;
 static const uint32_t SR_CORE_READBACK      = 32;
 static const uint32_t SR_CORE_GPSDO_ST      = 40;
 static const uint32_t SR_CORE_PPS_SEL       = 48;
+static const uint32_t SR_CORE_MS0_GPIO      = 50;
+static const uint32_t SR_CORE_MS1_GPIO      = 58;
 
 static const uint32_t RB_CORE_SIGNATUE      = 0;
 static const uint32_t RB_CORE_SPI           = 1;
 static const uint32_t RB_CORE_STATUS        = 2;
 static const uint32_t RB_CORE_BIST          = 3;
 static const uint32_t RB_CORE_VERSION_HASH  = 4;
+static const uint32_t RB_CORE_MS0_GPIO      = 5;
+static const uint32_t RB_CORE_MS1_GPIO      = 6;
 
 /*******************************************************************
  * Seting Register Base addresses

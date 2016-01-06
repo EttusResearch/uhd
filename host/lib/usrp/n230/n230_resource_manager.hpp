@@ -20,7 +20,7 @@
 
 #include "radio_ctrl_core_3000.hpp"
 #include "spi_core_3000.hpp"
-#include "gpio_core_200.hpp"
+#include "gpio_atr_3000.hpp"
 #include "rx_vita_core_3000.hpp"
 #include "tx_vita_core_3000.hpp"
 #include "time_core_3000.hpp"
@@ -82,7 +82,7 @@ enum n230_data_dir_t {
 class radio_resource_t : public boost::noncopyable {
 public:
     radio_ctrl_core_3000::sptr      ctrl;
-    gpio_core_200_32wo::sptr        gpio_atr;
+    gpio_atr::gpio_atr_3000::sptr   gpio_atr;
     time_core_3000::sptr            time;
     rx_vita_core_3000::sptr         framer;
     rx_dsp_core_3000::sptr          ddc;
@@ -169,6 +169,15 @@ public:     //Methods
     }
     inline n230_frontend_ctrl::sptr get_frontend_ctrl_sptr() {
         return _frontend_ctrl;
+    }
+
+    //MiniSAS GPIO control
+    inline gpio_atr::gpio_atr_3000::sptr get_minisas_gpio_ctrl_sptr(size_t idx) {
+        return idx == 0 ? _ms0_gpio : _ms1_gpio;
+    }
+
+    inline gpio_atr::gpio_atr_3000& get_minisas_gpio_ctrl(size_t idx) {
+        return *get_minisas_gpio_ctrl_sptr(idx);
     }
 
     //GPSDO control
@@ -283,6 +292,10 @@ private:
     n230_ref_pll_ctrl::sptr         _ref_pll_ctrl;
     n230_clk_pps_ctrl::sptr         _clk_pps_ctrl;
     n230_frontend_ctrl::sptr        _frontend_ctrl;
+
+    //miniSAS GPIO
+    gpio_atr::gpio_atr_3000::sptr   _ms0_gpio;
+    gpio_atr::gpio_atr_3000::sptr   _ms1_gpio;
 
     //GPSDO
     n230_uart::sptr                 _gps_uart;
