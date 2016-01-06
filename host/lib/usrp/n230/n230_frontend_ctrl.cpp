@@ -53,6 +53,7 @@ static const boost::uint32_t STATE_TX_TXRX  = (TX_ENABLE
                                                 | SFDX_TX
                                                 | LED_TXRX_TX);
 
+using namespace uhd::usrp;
 
 class n230_frontend_ctrl_impl : public n230_frontend_ctrl
 {
