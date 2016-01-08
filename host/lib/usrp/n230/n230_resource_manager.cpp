@@ -88,12 +88,19 @@ n230_resource_manager::n230_resource_manager(
         n230_eth_conn_t conn_iface;
         conn_iface.ip_addr = addr;
 
-        boost::uint32_t iface_id = usrp3::usrp3_fw_ctrl_iface::get_iface_id(
-            conn_iface.ip_addr, BOOST_STRINGIZE(N230_FW_COMMS_UDP_PORT), N230_FW_PRODUCT_ID);
+        boost::uint32_t iface_id = 0xFFFFFFFF;
+        try {
+            iface_id = usrp3::usrp3_fw_ctrl_iface::get_iface_id(
+                conn_iface.ip_addr, BOOST_STRINGIZE(N230_FW_COMMS_UDP_PORT), N230_FW_PRODUCT_ID);
+        } catch (uhd::io_error&) {
+            throw uhd::io_error(str(boost::format(
+                "Could not communicate with the device over address %s") %
+                conn_iface.ip_addr));
+        }
         switch (iface_id) {
             case N230_ETH0_IFACE_ID: conn_iface.type = ETH0; break;
             case N230_ETH1_IFACE_ID: conn_iface.type = ETH1; break;
-            default: throw uhd::runtime_error("N230 Initialization Error: Could not detect iface.)");
+            default: throw uhd::runtime_error("N230 Initialization Error: Could not detect ethernet port number.)");
         }
         _eth_conns.push_back(conn_iface);
     }
