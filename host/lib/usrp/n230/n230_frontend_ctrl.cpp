@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2014,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
+#include <boost/format.hpp>
 #include <boost/thread.hpp>
 #include "n230_fpga_defs.h"
 
@@ -119,7 +120,9 @@ public:
         } else if (which == 1) {
             set_stream_state(_fe_states[0].state, state);
         } else {
-            throw uhd::value_error("n230: unknown stream index option: " + which);
+            throw uhd::value_error(
+                str(boost::format("n230: unknown stream index option: %d") % which)
+            );
         }
     }
 
