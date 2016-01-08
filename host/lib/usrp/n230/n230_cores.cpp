@@ -15,9 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "../../../firmware/usrp3/n230/n230_fw_defs.h"
 #include "n230_cores.hpp"
 #include "n230_fpga_defs.h"
+#include "n230_fw_defs.h"
 
 namespace uhd { namespace usrp { namespace n230 {
 

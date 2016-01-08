@@ -22,8 +22,9 @@
 #include <flash/spi_flash.h>
 #include <flash/spif_spsn_s25flxx.h>
 #include <string.h> //memcpy
-#include "n230_fw_defs.h"
-#include "n230_fw_host_iface.h"
+
+#include "../../../host/lib/usrp/n230/n230_fw_defs.h"
+#include "../../../host/lib/usrp/n230/n230_fw_host_iface.h"
 
 static const wb_spi_slave_t flash_spi_slave = {
     .base      = (void*) 0xB000,

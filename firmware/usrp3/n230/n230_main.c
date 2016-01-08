@@ -19,9 +19,9 @@
 #include <wb_soft_reg.h>
 #include <u3_net_stack.h>
 #include <trace.h>
+#include "../../../host/lib/usrp/n230/n230_fw_defs.h"
+#include "../../../host/lib/usrp/n230/n230_fw_host_iface.h"
 #include "n230_eth_handlers.h"
-#include "n230_fw_defs.h"
-#include "n230_fw_host_iface.h"
 #include "n230_init.h"
 
 //The version hash should come from a cmake build variable

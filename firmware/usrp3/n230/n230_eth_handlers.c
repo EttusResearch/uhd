@@ -17,15 +17,15 @@
 
 #include "n230_eth_handlers.h"
 
-#include <fw_comm_protocol.h>
 #include <wb_utils.h>
 #include <string.h> //memcmp
 #include <u3_net_stack.h>
 #include <print_addrs.h>
 #include <trace.h>
+#include "../../../host/lib/usrp/common/fw_comm_protocol.h"
+#include "../../../host/lib/usrp/n230/n230_fw_defs.h"
 #include "../n230/n230_fw_host_iface.h"
 #include "n230_eeprom.h"
-#include "n230_fw_defs.h"
 
 static n230_host_shared_mem_t* host_shared_mem_ptr;
 

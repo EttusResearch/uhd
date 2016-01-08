@@ -18,11 +18,11 @@
 #ifndef INCLUDED_N230_EEPROM_MANAGER_HPP
 #define INCLUDED_N230_EEPROM_MANAGER_HPP
 
-#include "../../../firmware/usrp3/n230/n230_fw_host_iface.h"
 #include <boost/thread/mutex.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
+#include "n230_fw_host_iface.h"
 
 namespace uhd { namespace usrp { namespace n230 {
 

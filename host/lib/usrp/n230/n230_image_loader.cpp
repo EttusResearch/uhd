@@ -24,8 +24,9 @@
 #include <uhd/transport/udp_simple.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+
+#include "n230_fw_host_iface.h"
 #include "n230_impl.hpp"
-#include "../../../firmware/usrp3/n230/n230_fw_host_iface.h"
 
 using namespace uhd;
 using namespace uhd::usrp;

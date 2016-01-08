@@ -17,9 +17,6 @@
 
 #include "n230_impl.hpp"
 
-#include "../../../firmware/usrp3/n230/n230_fw_host_iface.h"
-#include "../../../firmware/usrp3/n230/n230_fw_defs.h"
-#include "../../../firmware/usrp3/include/fw_comm_protocol.h"
 #include "usrp3_fw_ctrl_iface.hpp"
 #include "validate_subdev_spec.hpp"
 #include <uhd/utils/static.hpp>
@@ -44,8 +41,12 @@
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/make_shared.hpp>
+
+#include "../common/fw_comm_protocol.h"
 #include "n230_defaults.h"
 #include "n230_fpga_defs.h"
+#include "n230_fw_defs.h"
+#include "n230_fw_host_iface.h"
 
 namespace uhd { namespace usrp { namespace n230 {
 

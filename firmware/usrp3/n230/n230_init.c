@@ -25,8 +25,8 @@
 #include <print_addrs.h>
 #include <trace.h>
 #include "n230_eeprom.h"
-#include "n230_fw_defs.h"
 #include "n230_init.h"
+#include "../../../host/lib/usrp/n230/n230_fw_defs.h"
 
 static wb_pkt_iface64_config_t pkt_config;
 

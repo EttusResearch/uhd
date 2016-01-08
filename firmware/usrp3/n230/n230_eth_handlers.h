@@ -23,7 +23,7 @@
 #include <stdbool.h>
 #include <lwip/ip_addr.h>
 #include <wb_soft_reg.h>
-#include "../n230/n230_fw_host_iface.h"
+#include "../../../host/lib/usrp/n230/n230_fw_host_iface.h"
 
 /*!
  * Registrar for host firmware communications handler.

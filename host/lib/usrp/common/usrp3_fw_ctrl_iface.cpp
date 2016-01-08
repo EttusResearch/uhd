@@ -17,13 +17,13 @@
 
 #include "usrp3_fw_ctrl_iface.hpp"
 
-#include "../../../firmware/usrp3/include/fw_comm_protocol.h"
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/foreach.hpp>
+#include "fw_comm_protocol.h"
 
 namespace uhd { namespace usrp { namespace usrp3 {
 

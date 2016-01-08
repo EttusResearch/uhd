@@ -17,8 +17,6 @@
 
 #include "n230_resource_manager.hpp"
 
-#include "../../../firmware/usrp3/n230/n230_fw_host_iface.h"
-#include "../../../firmware/usrp3/n230/n230_fw_defs.h"
 #include "usrp3_fw_ctrl_iface.hpp"
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
@@ -32,6 +30,8 @@
 #include <boost/functional/hash.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/make_shared.hpp>
+#include "n230_fw_defs.h"
+#include "n230_fw_host_iface.h"
 
 #define IF_DATA_I_MASK  0xFFF00000
 #define IF_DATA_Q_MASK  0x0000FFF0
