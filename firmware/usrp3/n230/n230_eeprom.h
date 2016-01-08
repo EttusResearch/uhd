@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 #define N230_EEPROM_VER_MAJOR     1
-#define N230_EEPROM_VER_MINOR     0
+#define N230_EEPROM_VER_MINOR     1
 #define N230_EEPROM_SERIAL_LEN    9
 #define N230_EEPROM_NAME_LEN      32
 
@@ -57,7 +57,9 @@ typedef struct
     uint16_t hw_revision;
     uint16_t hw_product;
     uint8_t serial[N230_EEPROM_SERIAL_LEN];
-    uint8_t _pad0[20 - N230_EEPROM_SERIAL_LEN];
+    uint8_t _pad_serial;
+    uint16_t hw_revision_compat;
+    uint8_t _pad0[18 - (N230_EEPROM_SERIAL_LEN + 1)];
 
     //Ethernet specific
     uint32_t gateway;

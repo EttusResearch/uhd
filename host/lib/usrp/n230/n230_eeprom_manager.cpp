@@ -65,10 +65,22 @@ const mboard_eeprom_t& n230_eeprom_manager::read_mb_eeprom()
     const n230_eeprom_map_t* map_ptr = reinterpret_cast<const n230_eeprom_map_t*>(_response.data);
     const n230_eeprom_map_t& map = *map_ptr;
 
+    uint16_t ver_major = uhd::htonx<boost::uint16_t>(map.data_version_major);
+    uint16_t ver_minor = uhd::htonx<boost::uint16_t>(map.data_version_minor);
+
     _mb_eeprom["product"] = boost::lexical_cast<std::string>(
         uhd::htonx<boost::uint16_t>(map.hw_product));
     _mb_eeprom["revision"] = boost::lexical_cast<std::string>(
         uhd::htonx<boost::uint16_t>(map.hw_revision));
+    //The revision_compat field does not exist in version 1.0
+    //EEPROM version 1.0 will only exist on HW revision 1 so it is safe to set
+    //revision_compat = revision
+    if (ver_major == 1 and ver_minor == 0) {
+        _mb_eeprom["revision_compat"] = _mb_eeprom["revision"];
+    } else {
+        _mb_eeprom["revision_compat"] = boost::lexical_cast<std::string>(
+            uhd::htonx<boost::uint16_t>(map.hw_revision_compat));
+    }
     _mb_eeprom["serial"] = _bytes_to_string(
         map.serial, N230_EEPROM_SERIAL_LEN);
 
@@ -104,6 +116,15 @@ void n230_eeprom_manager::write_mb_eeprom(const mboard_eeprom_t& eeprom)
     memcpy(map_ptr, _response.data, sizeof(n230_eeprom_map_t));
     n230_eeprom_map_t& map = *map_ptr;
 
+    // Automatic version upgrade handling
+    uint16_t old_ver_major = uhd::htonx<boost::uint16_t>(map.data_version_major);
+    uint16_t old_ver_minor = uhd::htonx<boost::uint16_t>(map.data_version_minor);
+
+    //The revision_compat field does not exist for version 1.0 so force write it
+    //EEPROM version 1.0 will only exist on HW revision 1 so it is safe to set
+    //revision_compat = revision for the upgrade
+    bool force_write_version_compat = (old_ver_major == 1 and old_ver_minor == 0);
+
     map.data_version_major = uhd::htonx<boost::uint16_t>(N230_EEPROM_VER_MAJOR);
     map.data_version_minor = uhd::htonx<boost::uint16_t>(N230_EEPROM_VER_MINOR);
 
@@ -114,6 +135,12 @@ void n230_eeprom_manager::write_mb_eeprom(const mboard_eeprom_t& eeprom)
     if (_mb_eeprom.has_key("revision")) {
         map.hw_revision = uhd::htonx<boost::uint16_t>(
             boost::lexical_cast<boost::uint16_t>(_mb_eeprom["revision"]));
+    }
+    if (_mb_eeprom.has_key("revision_compat")) {
+        map.hw_revision_compat = uhd::htonx<boost::uint16_t>(
+            boost::lexical_cast<boost::uint16_t>(_mb_eeprom["revision_compat"]));
+    } else if (force_write_version_compat) {
+        map.hw_revision_compat = map.hw_revision;
     }
     if (_mb_eeprom.has_key("serial")) {
         _string_to_bytes(_mb_eeprom["serial"], N230_EEPROM_SERIAL_LEN, map.serial);

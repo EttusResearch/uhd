@@ -115,6 +115,10 @@ typedef struct
 //
 //--------------------------------------------------
 
+#define N230_HW_REVISION_COMPAT 1
+#define N230_HW_REVISION_MIN    1
+
+
 #define N230_CLAIMER_TIMEOUT_IN_MS        2000
 
 #ifdef __cplusplus

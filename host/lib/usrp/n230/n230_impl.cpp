@@ -181,13 +181,37 @@ n230_impl::n230_impl(const uhd::device_addr_t& dev_addr)
     //TODO: Only supports one motherboard per device class.
     const fs_path mb_path = "/mboards/0";
 
-    //Initialize subsystems
+    //Initialize addresses
     std::vector<std::string> ip_addrs(1, dev_addr["addr"]);
     if (dev_addr.has_key("secondary-addr")) {
         ip_addrs.push_back(dev_addr["secondary-addr"]);
     }
-    _resource_mgr = boost::make_shared<n230_resource_manager>(ip_addrs, _dev_args.get_safe_mode());
+
+    //Read EEPROM and perform version checks before talking to HW
     _eeprom_mgr = boost::make_shared<n230_eeprom_manager>(ip_addrs[0]);
+    const mboard_eeprom_t& mb_eeprom = _eeprom_mgr->get_mb_eeprom();
+    bool recover_mb_eeprom = dev_addr.has_key("recover_mb_eeprom");
+    if (recover_mb_eeprom) {
+        UHD_MSG(warning) << "UHD is operating in EEPROM Recovery Mode which disables hardware version "
+                            "checks.\nOperating in this mode may cause hardware damage and unstable "
+                            "radio performance!"<< std::endl;
+    }
+    boost::uint16_t hw_rev = boost::lexical_cast<boost::uint16_t>(mb_eeprom["revision"]);
+    boost::uint16_t hw_rev_compat = boost::lexical_cast<boost::uint16_t>(mb_eeprom["revision_compat"]);
+    if (not recover_mb_eeprom) {
+        if (hw_rev_compat > N230_HW_REVISION_COMPAT) {
+            throw uhd::runtime_error(str(boost::format(
+                "Hardware is too new for this software. Please upgrade to a driver that supports hardware revision %d.")
+                % hw_rev));
+        } else if (hw_rev < N230_HW_REVISION_MIN) { //Compare min against the revision (and not compat) to give us more leeway for partial support for a compat
+            throw uhd::runtime_error(str(boost::format(
+                "Software is too new for this hardware. Please downgrade to a driver that supports hardware revision %d.")
+                % hw_rev));
+        }
+    }
+
+    //Initialize all subsystems
+    _resource_mgr = boost::make_shared<n230_resource_manager>(ip_addrs, _dev_args.get_safe_mode());
     _stream_mgr = boost::make_shared<n230_stream_manager>(_dev_args, _resource_mgr, _tree);
 
     //Build property tree
