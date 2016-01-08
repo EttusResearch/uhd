@@ -28,6 +28,7 @@
 #include "tx_dsp_core_3000.hpp"
 #include "user_settings_core_3000.hpp"
 #include "ad9361_ctrl.hpp"
+#include "ad936x_manager.hpp"
 #include <uhd/utils/tasks.hpp>
 #include <uhd/types/sid.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -139,12 +140,15 @@ public:     //Methods
         return _core_ctrl;
     }
 
-    //Catalina control interface
+    //AD931 control interface
     inline ad9361_ctrl& get_codec_ctrl() const {
         return *_codec_ctrl;
     }
     inline ad9361_ctrl::sptr get_codec_ctrl_sptr() {
         return _codec_ctrl;
+    }
+    inline uhd::usrp::ad936x_manager& get_codec_mgr() const {
+        return *_codec_mgr;
     }
 
     //Clock PPS controls
@@ -282,6 +286,7 @@ private:
     radio_ctrl_core_3000::sptr      _core_ctrl;
     n230_core_spi_core::sptr        _core_spi_ctrl;
     ad9361_ctrl::sptr               _codec_ctrl;
+    uhd::usrp::ad936x_manager::sptr _codec_mgr;
 
     //Core Registers
     fpga::core_radio_ctrl_reg_t     _core_radio_ctrl_reg;

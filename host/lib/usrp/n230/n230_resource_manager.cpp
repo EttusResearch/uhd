@@ -143,7 +143,7 @@ n230_resource_manager::n230_resource_manager(
         throw uhd::runtime_error("N230 Initialization Error: Could not create SPI ctrl.)");
     }
 
-    //Create Catalina interface
+    //Create AD9361 interface
     UHD_MSG(status) << "Initializing CODEC...\n";
     _codec_ctrl = ad9361_ctrl::make_spi(
         boost::make_shared<n230_ad9361_client_t>(), _core_spi_ctrl, fpga::AD9361_SPI_SLAVE_NUM);
@@ -151,6 +151,8 @@ n230_resource_manager::n230_resource_manager(
         throw uhd::runtime_error("N230 Initialization Error: Could not create Catalina ctrl.)");
     }
     _codec_ctrl->set_clock_rate(fpga::CODEC_DEFAULT_CLK_RATE);
+    _codec_mgr = ad936x_manager::make(_codec_ctrl, fpga::NUM_RADIOS);
+    _codec_mgr->init_codec();
 
     //Create AD4001 interface
     _ref_pll_ctrl = boost::make_shared<n230_ref_pll_ctrl>(_core_spi_ctrl);

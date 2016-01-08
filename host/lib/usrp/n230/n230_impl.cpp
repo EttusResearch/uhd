@@ -31,6 +31,7 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/direction.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
@@ -459,38 +460,14 @@ void n230_impl::_initialize_radio_properties(const fs_path& mb_path, size_t inst
         .publish(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc));
 
     //RF Frontend Interfacing
-    static const std::vector<std::string> data_directions = boost::assign::list_of("tx")("rx");
-    BOOST_FOREACH(const std::string& direction, data_directions) {
-        const std::string key = boost::to_upper_copy(direction) + str(boost::format("%u") % (instance + 1));
-        const fs_path rf_fe_path = mb_path / "dboards" / "A" / (direction + "_frontends") / ((instance==0)?"A":"B");
+    static const std::vector<direction_t> data_directions = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
+    BOOST_FOREACH(direction_t direction, data_directions) {
+        const std::string dir_str = (direction == RX_DIRECTION) ? "rx" : "tx";
+        const std::string key = boost::to_upper_copy(dir_str) + str(boost::format("%u") % (instance + 1));
+        const fs_path rf_fe_path = mb_path / "dboards" / "A" / (dir_str + "_frontends") / ((instance==0)?"A":"B");
 
-        _tree->create<std::string>(rf_fe_path / "name")
-            .set("FE-" + key);
-        _tree->create<int>(rf_fe_path / "sensors"); //empty TODO
-        BOOST_FOREACH(const std::string &name, ad9361_ctrl::get_gain_names(key)) {
-            _tree->create<meta_range_t>(rf_fe_path / "gains" / name / "range")
-                .set(ad9361_ctrl::get_gain_range(key));
-            _tree->create<double>(rf_fe_path / "gains" / name / "value")
-                .coerce(boost::bind(&ad9361_ctrl::set_gain, _resource_mgr->get_codec_ctrl_sptr(), key, _1))
-                .set(n230::DEFAULT_FE_GAIN);
-        }
-        _tree->create<std::string>(rf_fe_path / "connection")
-            .set("IQ");
-        _tree->create<bool>(rf_fe_path / "enabled")
-            .set(true);
-        _tree->create<bool>(rf_fe_path / "use_lo_offset")
-            .set(false);
-        _tree->create<double>(rf_fe_path / "bandwidth" / "value")
-            .coerce(boost::bind(&ad9361_ctrl::set_bw_filter, _resource_mgr->get_codec_ctrl_sptr(), key, _1))
-            .set(n230::DEFAULT_FE_BW);
-        _tree->create<meta_range_t>(rf_fe_path / "bandwidth" / "range")
-            .publish(boost::bind(&ad9361_ctrl::get_bw_filter_range, key));
-        _tree->create<double>(rf_fe_path / "freq" / "value")
-            .set(n230::DEFAULT_FE_FREQ)
-            .coerce(boost::bind(&ad9361_ctrl::tune, _resource_mgr->get_codec_ctrl_sptr(), key, _1))
-            .subscribe(boost::bind(&n230_frontend_ctrl::set_bandsel, _resource_mgr->get_frontend_ctrl_sptr(), key, _1));
-        _tree->create<meta_range_t>(rf_fe_path / "freq" / "range")
-            .publish(boost::bind(&ad9361_ctrl::get_rf_freq_range));
+        //CODEC subtree
+        _resource_mgr->get_codec_mgr().populate_frontend_subtree(_tree->subtree(rf_fe_path), key, direction);
 
         //User settings
         _tree->create<uhd::wb_iface::sptr>(rf_fe_path / "user_settings" / "iface")
