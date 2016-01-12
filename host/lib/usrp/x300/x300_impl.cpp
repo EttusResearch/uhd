@@ -363,6 +363,8 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
         if ((i & 0x1fff) == 0) UHD_MSG(status) << "." << std::flush;
     }
 
+    //Wait for fimrware to reboot. 3s is an upper bound
+    boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
     UHD_MSG(status) << " done!" << std::endl;
 }
 
