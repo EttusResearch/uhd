@@ -252,7 +252,7 @@ void n230_register_flash_comms_handler()
 static bool     links_up[N230_MAX_NUM_ETH_PORTS] = {};
 static uint32_t packet_count[N230_MAX_NUM_ETH_PORTS] = {};
 
-void n230_poll_sfp_status(const uint32_t eth, bool force)
+void n230_poll_sfp_status(const uint32_t eth, bool force, bool* state_updated)
 {
     // Has MODDET/MODAbS changed since we last looked?
     uint32_t rb = wb_peek32(SR_ADDR(WB_SBRB_BASE, (eth==0) ? RB_ZPU_SFP_STATUS0 : RB_ZPU_SFP_STATUS1));
@@ -296,6 +296,9 @@ void n230_poll_sfp_status(const uint32_t eth, bool force)
                 UHD_FW_TRACE_FSTR(INFO, "A new SFP+ module has been inserted into eth port %d.", eth);
             }
         }
+        *state_updated = true;
+    } else {
+        *state_updated = false;
     }
 }
 
@@ -312,13 +315,18 @@ void n230_update_link_act_state(soft_reg_t* led_reg)
             poll_cnt = 0;
         }
 
-        //Check SFP status
-        n230_poll_sfp_status(i, first_poll);
+        //Check SFP status and update links_up
+        bool link_state_from_sfp = false;
+        n230_poll_sfp_status(i, first_poll, &link_state_from_sfp);
 
         //Check packet counters less frequently to keep the LED on for a visible duration
         uint32_t cnt = wb_peek32(SR_ADDR(WB_SBRB_BASE, (i==0)?RB_ZPU_ETH0_PKT_CNT:RB_ZPU_ETH1_PKT_CNT));
         activity[i] = (cnt != packet_count[i]);
         packet_count[i] = cnt;
+
+        //Update links_up if there is activity only if the SFP
+        //handler has not updated it
+        if (activity[i] && !link_state_from_sfp) links_up[i] = true;
     }
 
     //TODO: Swap this when Ethernet port swap issues is fixed
