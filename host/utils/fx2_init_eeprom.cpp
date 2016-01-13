@@ -1,5 +1,5 @@
 //
-// Copyright 2010,2014 Ettus Research LLC
+// Copyright 2010,2014,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,8 +20,17 @@
 #include <uhd/property_tree.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <iostream>
-#include <cstdlib>
+//#include <cstdlib>
+#ifdef UHD_PLATFORM_LINUX
+#include <fstream>
+#include <unistd.h> // syscall constants
+#include <fcntl.h> // O_NONBLOCK
+#include <sys/syscall.h>
+#include <cerrno>
+#include <cstring> // for std::strerror
+#endif //UHD_PLATFORM_LINUX
 
 const std::string FX2_VENDOR_ID("0x04b4");
 const std::string FX2_PRODUCT_ID("0x8613");
@@ -49,10 +58,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return EXIT_FAILURE;
     }
 
-    //cant find a uninitialized usrp with this mystery module in the way...
-    if (std::system("/sbin/rmmod usbtest") != 0){
-        std::cerr << "Did not rmmod usbtest, this may be ok..." << std::endl;
+#ifdef UHD_PLATFORM_LINUX
+    //can't find an uninitialized usrp with this mystery usbtest in the way...
+    std::string module("usbtest");
+    std::ifstream modules("/proc/modules");
+    bool module_found = false;
+    std::string module_line;
+    while(std::getline(modules, module_line) && (!module_found)) {
+        module_found = boost::starts_with(module_line, module);
     }
+    if(module_found) {
+        std::cout << boost::format("Found the '%s' module. Unloading it.\n" ) % module;
+        int fail = syscall(__NR_delete_module, module.c_str(), O_NONBLOCK);
+        if(fail)
+            std::cerr << ( boost::format("Removing the '%s' module failed with error '%s'.\n") % module % std::strerror(errno) );
+    }
+#endif //UHD_PLATFORM_LINUX
 
     //load the options into the address
     uhd::device_addr_t device_addr;
