@@ -30,7 +30,8 @@ class usrp3_fw_ctrl_iface : public uhd::wb_iface
 public:
     usrp3_fw_ctrl_iface(
         uhd::transport::udp_simple::sptr udp_xport,
-        boost::uint16_t product_id);
+        const boost::uint16_t product_id,
+        const bool verbose);
     virtual ~usrp3_fw_ctrl_iface();
 
     // -- uhd::wb_iface --
@@ -40,7 +41,8 @@ public:
 
     static uhd::wb_iface::sptr make(
         uhd::transport::udp_simple::sptr udp_xport,
-        boost::uint16_t product_id);
+        const boost::uint16_t product_id,
+        const bool verbose = true);
     // -- uhd::wb_iface --
 
     static std::vector<std::string> discover_devices(
@@ -56,7 +58,8 @@ private:
     boost::uint32_t _peek32(const wb_addr_type addr);
     void _flush(void);
 
-    boost::uint16_t                     _product_id;
+    const boost::uint16_t               _product_id;
+    const bool                          _verbose;
     uhd::transport::udp_simple::sptr    _udp_xport;
     boost::uint32_t                     _seq_num;
     boost::mutex                        _mutex;

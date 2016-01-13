@@ -240,6 +240,7 @@ private:
 
     void _initialize_radio(size_t instance);
 
+    std::string _get_fpga_upgrade_msg();
     void _check_fw_compat();
     void _check_fpga_compat();
 

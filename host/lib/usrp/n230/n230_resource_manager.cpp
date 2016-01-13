@@ -84,6 +84,7 @@ n230_resource_manager::n230_resource_manager(
     UHD_MSG(status) << "Setup basic communication...\n";
 
     //Discover ethernet interfaces
+    bool dual_eth_expected = (ip_addrs.size() > 1);
     BOOST_FOREACH(const std::string& addr, ip_addrs) {
         n230_eth_conn_t conn_iface;
         conn_iface.ip_addr = addr;
@@ -100,7 +101,15 @@ n230_resource_manager::n230_resource_manager(
         switch (iface_id) {
             case N230_ETH0_IFACE_ID: conn_iface.type = ETH0; break;
             case N230_ETH1_IFACE_ID: conn_iface.type = ETH1; break;
-            default: throw uhd::runtime_error("N230 Initialization Error: Could not detect ethernet port number.)");
+            default: {
+                if (dual_eth_expected) {
+                    throw uhd::runtime_error("N230 Initialization Error: Could not detect ethernet port number.");
+                } else {
+                    //For backwards compatibility, if only one port is specified, assume that a detection
+                    //failure means that the device does not support dual-ethernet behavior.
+                    conn_iface.type = ETH0; break;
+                }
+            }
         }
         _eth_conns.push_back(conn_iface);
     }
@@ -488,6 +497,21 @@ bool n230_resource_manager::_radio_data_loopback_self_test(wb_iface::sptr iface)
     return !test_fail;
 }
 
+std::string n230_resource_manager::_get_fpga_upgrade_msg() {
+    std::string img_loader_path =
+        (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
+
+    return str(boost::format(
+            "\nDownload the appropriate FPGA images for this version of UHD.\n"
+            "%s\n\n"
+            "Then burn a new image to the on-board flash storage of your\n"
+            "USRP N230 device using the image loader utility. Use this command:\n"
+            "\n \"%s\" --args=\"type=n230,addr=%s\"\n")
+        % print_utility_error("uhd_images_downloader.py")
+        % img_loader_path % _get_conn(PRI_ETH).ip_addr);
+
+}
+
 void n230_resource_manager::_check_fw_compat()
 {
     boost::uint32_t compat_num = _fw_ctrl->peek32(N230_FW_HOST_SHMEM_OFFSET(fw_compat_num));
@@ -503,7 +527,7 @@ void n230_resource_manager::_check_fw_compat()
             ) % static_cast<boost::uint32_t>(N230_FW_COMPAT_NUM_MAJOR)
               % static_cast<boost::uint32_t>(_fw_version.compat_major)
               % static_cast<boost::uint32_t>(_fw_version.compat_minor)
-              % print_utility_error("uhd_images_downloader.py")));
+              % _get_fpga_upgrade_msg()));
     }
 }
 
@@ -538,7 +562,7 @@ void n230_resource_manager::_check_fpga_compat()
             ) % static_cast<boost::uint32_t>(fpga::RB_N230_COMPAT_MAJOR)
               % static_cast<boost::uint32_t>(_fpga_version.compat_major)
               % static_cast<boost::uint32_t>(_fpga_version.compat_minor)
-              % print_utility_error("uhd_images_downloader.py")));
+              % _get_fpga_upgrade_msg()));
     }
 }
 

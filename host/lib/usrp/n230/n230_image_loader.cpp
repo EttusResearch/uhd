@@ -21,10 +21,11 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
-
+#include <boost/format.hpp>
 #include "n230_fw_host_iface.h"
 #include "n230_impl.hpp"
 
@@ -129,11 +130,27 @@ static bool n230_image_loader(const image_loader::image_loader_args_t &loader_ar
     device_addr_t dev = devs[0];
 
     // Sanity check the specified bitfile
-    if (not boost::filesystem::exists(loader_args.fpga_path)) {
-        throw uhd::runtime_error(str(boost::format("The file \"%s\" does not exist.") % loader_args.fpga_path));
+    std::string fpga_img_path = loader_args.fpga_path;
+    bool fpga_path_specified = !loader_args.fpga_path.empty();
+    if (not fpga_path_specified) {
+        fpga_img_path = (
+            fs::path(uhd::get_pkg_path()) / "share" / "uhd" / "images" / "usrp_n230_fpga.bit"
+        ).string();
+    }
+
+    if (not boost::filesystem::exists(fpga_img_path)) {
+        if (fpga_path_specified) {
+            throw uhd::runtime_error(str(boost::format("The file \"%s\" does not exist.") % fpga_img_path));
+        } else {
+            throw uhd::runtime_error(str(boost::format(
+                "Could not find the default FPGA image: %s.\n"
+                "Either specify the --fpga-path argument or download the latest prebuilt images:\n"
+                "%s\n")
+            % fpga_img_path % print_utility_error("uhd_images_downloader.py")));
+        }
     }
     xil_bitfile_hdr_t hdr;
-    _parse_bitfile_header(loader_args.fpga_path, hdr);
+    _parse_bitfile_header(fpga_img_path, hdr);
 
     // Create a UDP communication link
     udp_simple::sptr udp_xport =
@@ -142,11 +159,11 @@ static bool n230_image_loader(const image_loader::image_loader_args_t &loader_ar
     if (hdr.valid and hdr.product == "n230") {
         if (hdr.userid != 0x5AFE0000) {
             std::cout << boost::format("Unit: USRP N230 (%s, %s)\n-- FPGA Image: %s\n")
-                         % dev["addr"] % dev["serial"] % loader_args.fpga_path;
+                         % dev["addr"] % dev["serial"] % fpga_img_path;
 
             // Write image
-            std::ifstream image(loader_args.fpga_path.c_str(), std::ios::binary);
-            size_t image_size = boost::filesystem::file_size(loader_args.fpga_path);
+            std::ifstream image(fpga_img_path.c_str(), std::ios::binary);
+            size_t image_size = boost::filesystem::file_size(fpga_img_path);
 
             static const size_t SECTOR_SIZE = 65536;
             static const size_t IMAGE_BASE  = 0x400000;
@@ -171,14 +188,15 @@ static bool n230_image_loader(const image_loader::image_loader_args_t &loader_ar
                              % (int(double(bytes_written) / double(image_size) * 100.0))
                          << std::flush;
             }
-            std::cout << std::endl << "Image loaded successfully." << std::endl;
+            std::cout << std::endl << "FPGA image loaded successfully." << std::endl;
+            std::cout << std::endl << "Power-cycle the device to run the image." << std::endl;
             return true;
         } else {
             throw uhd::runtime_error("This utility cannot burn a failsafe image!");
         }
     } else {
         throw uhd::runtime_error(str(boost::format("The file at path \"%s\" is not a valid USRP N230 FPGA image.")
-                                     % loader_args.fpga_path));
+                                     % fpga_img_path));
     }
 }
 

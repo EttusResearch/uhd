@@ -32,9 +32,10 @@ namespace uhd { namespace usrp { namespace usrp3 {
 //----------------------------------------------------------
 uhd::wb_iface::sptr usrp3_fw_ctrl_iface::make(
     uhd::transport::udp_simple::sptr udp_xport,
-    boost::uint16_t product_id)
+    const boost::uint16_t product_id,
+    const bool verbose)
 {
-    return wb_iface::sptr(new usrp3_fw_ctrl_iface(udp_xport, product_id));
+    return wb_iface::sptr(new usrp3_fw_ctrl_iface(udp_xport, product_id, verbose));
 }
 
 //----------------------------------------------------------
@@ -43,8 +44,10 @@ uhd::wb_iface::sptr usrp3_fw_ctrl_iface::make(
 
 usrp3_fw_ctrl_iface::usrp3_fw_ctrl_iface(
     uhd::transport::udp_simple::sptr udp_xport,
-    boost::uint16_t product_id) :
-    _product_id(product_id), _udp_xport(udp_xport), _seq_num(0)
+    const boost::uint16_t product_id,
+    const bool verbose) :
+    _product_id(product_id), _verbose(verbose), _udp_xport(udp_xport),
+    _seq_num(0)
 {
     flush();
     peek32(0);
@@ -72,7 +75,7 @@ void usrp3_fw_ctrl_iface::poke32(const wb_addr_type addr, const boost::uint32_t 
         } catch(const std::exception &ex) {
             const std::string error_msg = str(boost::format(
                 "udp fw poke32 failure #%u\n%s") % i % ex.what());
-            UHD_MSG(warning) << error_msg << std::endl;
+            if (_verbose) UHD_MSG(warning) << error_msg << std::endl;
             if (i == NUM_RETRIES) throw uhd::io_error(error_msg);
         }
     }
@@ -88,7 +91,7 @@ boost::uint32_t usrp3_fw_ctrl_iface::peek32(const wb_addr_type addr)
         } catch(const std::exception &ex) {
             const std::string error_msg = str(boost::format(
                 "udp fw peek32 failure #%u\n%s") % i % ex.what());
-            UHD_MSG(warning) << error_msg << std::endl;
+            if (_verbose) UHD_MSG(warning) << error_msg << std::endl;
             if (i == NUM_RETRIES) throw uhd::io_error(error_msg);
         }
     }

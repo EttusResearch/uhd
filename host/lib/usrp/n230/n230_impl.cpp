@@ -130,30 +130,47 @@ uhd::device_addrs_t n230_impl::n230_find(const uhd::device_addr_t &multi_dev_hin
         //we may not be able to communicate directly (non-broadcast).
         udp_simple::sptr ctrl_xport = udp_simple::make_connected(new_addr["addr"], BOOST_STRINGIZE(N230_FW_COMMS_UDP_PORT));
 
-        usrp3::usrp3_fw_ctrl_iface::sptr fw_ctrl = usrp3::usrp3_fw_ctrl_iface::make(ctrl_xport, N230_FW_PRODUCT_ID);
-        uint32_t compat_reg_addr = fw::reg_addr(fw::WB_SBRB_BASE, fw::RB_ZPU_COMPAT);
-        if (fw::get_prod_num(fw_ctrl->peek32(compat_reg_addr)) == fw::PRODUCT_NUM) {
-            if (!n230_resource_manager::is_device_claimed(fw_ctrl)) {
-                //Not claimed by another process or host
-                try {
-                    //Try to read the EEPROM to get the name and serial
-                    n230_eeprom_manager eeprom_mgr(new_addr["addr"]);
-                    const mboard_eeprom_t& eeprom = eeprom_mgr.get_mb_eeprom();
-                    new_addr["name"] = eeprom["name"];
-                    new_addr["serial"] = eeprom["serial"];
-                }
-                catch(const std::exception &)
-                {
-                    //set these values as empty string so the device may still be found
-                    //and the filter's below can still operate on the discovered device
-                    new_addr["name"] = "";
-                    new_addr["serial"] = "";
-                }
-                //filter the discovered device below by matching optional keys
-                if ((not hint.has_key("name")    or hint["name"]    == new_addr["name"]) and
-                    (not hint.has_key("serial")  or hint["serial"]  == new_addr["serial"]))
-                {
-                    n230_addrs.push_back(new_addr);
+        //Corner case: If two devices have the same IP but different MAC
+        //addresses and are used back-to-back it takes a while for ARP tables
+        //on the host to update in which period brodcasts will respond but
+        //connected communication can fail. Retry the following call to allow
+        //the stack to update
+        size_t first_conn_retries = 10;
+        usrp3::usrp3_fw_ctrl_iface::sptr fw_ctrl;
+        while (first_conn_retries > 0) {
+            try {
+                fw_ctrl = usrp3::usrp3_fw_ctrl_iface::make(ctrl_xport, N230_FW_PRODUCT_ID, false /*verbose*/);
+                break;
+            } catch (uhd::io_error& ex) {
+                boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+                first_conn_retries--;
+            }
+        }
+        if (first_conn_retries > 0) {
+            uint32_t compat_reg = fw_ctrl->peek32(fw::reg_addr(fw::WB_SBRB_BASE, fw::RB_ZPU_COMPAT));
+            if (fw::get_prod_num(compat_reg) == fw::PRODUCT_NUM) {
+                if (!n230_resource_manager::is_device_claimed(fw_ctrl)) {
+                    //Not claimed by another process or host
+                    try {
+                        //Try to read the EEPROM to get the name and serial
+                        n230_eeprom_manager eeprom_mgr(new_addr["addr"]);
+                        const mboard_eeprom_t& eeprom = eeprom_mgr.get_mb_eeprom();
+                        new_addr["name"] = eeprom["name"];
+                        new_addr["serial"] = eeprom["serial"];
+                    }
+                    catch(const std::exception &)
+                    {
+                        //set these values as empty string so the device may still be found
+                        //and the filter's below can still operate on the discovered device
+                        new_addr["name"] = "";
+                        new_addr["serial"] = "";
+                    }
+                    //filter the discovered device below by matching optional keys
+                    if ((not hint.has_key("name")    or hint["name"]    == new_addr["name"]) and
+                        (not hint.has_key("serial")  or hint["serial"]  == new_addr["serial"]))
+                    {
+                        n230_addrs.push_back(new_addr);
+                    }
                 }
             }
         }
@@ -203,10 +220,6 @@ n230_impl::n230_impl(const uhd::device_addr_t& dev_addr)
         if (hw_rev_compat > N230_HW_REVISION_COMPAT) {
             throw uhd::runtime_error(str(boost::format(
                 "Hardware is too new for this software. Please upgrade to a driver that supports hardware revision %d.")
-                % hw_rev));
-        } else if (hw_rev < N230_HW_REVISION_MIN) { //Compare min against the revision (and not compat) to give us more leeway for partial support for a compat
-            throw uhd::runtime_error(str(boost::format(
-                "Software is too new for this hardware. Please downgrade to a driver that supports hardware revision %d.")
                 % hw_rev));
         }
     }
