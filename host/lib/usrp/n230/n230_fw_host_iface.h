@@ -79,7 +79,7 @@ typedef union
 } n230_host_shared_mem_t;
 
 #define N230_FW_PRODUCT_ID        1
-#define N230_FW_COMPAT_NUM_MAJOR  3
+#define N230_FW_COMPAT_NUM_MAJOR  32
 #define N230_FW_COMPAT_NUM_MINOR  0
 #define N230_FW_COMPAT_NUM        (((N230_FW_COMPAT_NUM_MAJOR & 0xFF) << 16) | (N230_FW_COMPAT_NUM_MINOR & 0xFFFF))
 //
