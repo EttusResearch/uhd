@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2015 Ettus Research LLC
+// Copyright 2013-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -61,8 +61,8 @@ static const size_t X300_PCIE_MSG_NUM_FRAMES        = 64;
 static const size_t X300_PCIE_MAX_CHANNELS          = 6;
 static const size_t X300_PCIE_MAX_MUXED_XPORTS      = 32;
 
-static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     //bytes
-static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     //bytes
+static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     // CHDR packet size in bytes
+static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     // CHDR packet size in bytes
 static const size_t X300_ETH_MSG_FRAME_SIZE         = uhd::transport::udp_simple::mtu;  //bytes
 
 static const double X300_THREAD_BUFFER_TIMEOUT      = 0.1;   // Time in seconds
@@ -72,8 +72,14 @@ static const size_t X300_ETH_DATA_NUM_FRAMES        = 32;
 static const double X300_DEFAULT_SYSREF_RATE        = 10e6;
 
 static const size_t X300_MAX_RATE_PCIE              = 800000000; // bytes/s
-static const size_t X300_MAX_RATE_10GIGE            = 800000000; // bytes/s
-static const size_t X300_MAX_RATE_1GIGE             = 100000000; // bytes/s
+static const size_t X300_MAX_RATE_10GIGE            = (size_t)(  // bytes/s
+        10e9 / 8 *                                               // wire speed multiplied by percentage of packets that is sample data
+        ( float(X300_10GE_DATA_FRAME_MAX_SIZE - uhd::usrp::DEVICE3_TX_MAX_HDR_LEN) /
+          float(X300_10GE_DATA_FRAME_MAX_SIZE + 8 /* UDP header */ + 20 /* Ethernet header length */ )));
+static const size_t X300_MAX_RATE_1GIGE            = (size_t)(  // bytes/s
+        10e9 / 8 *                                               // wire speed multiplied by percentage of packets that is sample data
+        ( float(X300_1GE_DATA_FRAME_MAX_SIZE - uhd::usrp::DEVICE3_TX_MAX_HDR_LEN) /
+          float(X300_1GE_DATA_FRAME_MAX_SIZE + 8 /* UDP header */ + 20 /* Ethernet header length */ )));
 
 #define X300_RADIO_DEST_PREFIX_TX 0
 
