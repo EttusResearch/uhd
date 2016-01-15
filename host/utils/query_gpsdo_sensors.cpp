@@ -1,5 +1,5 @@
 //
-// Copyright 2012,2014,2015 Ettus Research LLC
+// Copyright 2012,2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -158,7 +158,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
       //instruct the USRP to wait for the next PPS edge, then set the new time on the following PPS
       usrp->set_time_unknown_pps(next_pps_time);
       //allow some time to make sure the PPS has come…
-      boost::this_thread::sleep(boost::posix_time::seconds(1.1));
+      boost::this_thread::sleep(boost::posix_time::milliseconds(1100));
       //…then ask
       gps_seconds = usrp->get_mboard_sensor("gps_time").to_int();
       pps_seconds = usrp->get_time_last_pps().to_ticks(1.0);
