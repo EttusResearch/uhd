@@ -41,10 +41,6 @@
 #include <windows.h> //GetTempPath
 #endif
 
-#ifdef USE_NIUSRP_WINREG_KEY
-#define NIUSRP_WINREG_KEY "[HKLM\\Software\\National Instruments\\NI-USRP\\DriverBitfilesDir]"
-#endif
-
 namespace fs = boost::filesystem;
 
 /*! Get the value of an environment variable.
@@ -287,8 +283,8 @@ std::string uhd::get_images_dir(const std::string &search_paths) {
      * (see below). Making a local copy for const correctness. */
     std::string _search_paths = search_paths;
 
-#ifdef USE_NIUSRP_WINREG_KEY
-    _search_paths = std::string(NIUSRP_WINREG_KEY) + "," + search_paths;
+#ifdef UHD_IMAGES_DIR_WINREG_KEY
+    _search_paths = std::string("UHD_IMAGES_DIR_WINREG_KEY") + "," + search_paths;
 #endif
 
     /* Now we will parse and attempt to qualify the paths in the `search_paths`
