@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "n230_eeprom.h"
+#include "../../../host/lib/usrp/n230/n230_eeprom.h"
 
 #include <trace.h>
 #include <stddef.h>
