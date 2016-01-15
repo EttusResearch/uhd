@@ -24,7 +24,7 @@
 #include <u3_net_stack.h>
 #include <print_addrs.h>
 #include <trace.h>
-#include "n230_eeprom.h"
+#include "../../../host/lib/usrp/n230/n230_eeprom.h"
 #include "n230_init.h"
 #include "../../../host/lib/usrp/n230/n230_fw_defs.h"
 

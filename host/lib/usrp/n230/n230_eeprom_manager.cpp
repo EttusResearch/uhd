@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2014,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "../../../firmware/usrp3/n230/n230_eeprom.h"
+#include "n230_eeprom.h"
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
