@@ -51,7 +51,7 @@ SET(test_sources
 ADD_DEFINITIONS(-DBOOST_TEST_MAIN)
 
 IF(NOT BOOST_STATIC)
-       ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
+    ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
 ENDIF()
 
 
@@ -69,11 +69,13 @@ ENDIF(ENABLE_C_API)
 #for each source: build an executable, register it as a test
 FOREACH(test_source ${test_sources})
     GET_FILENAME_COMPONENT(test_name ${test_source} NAME_WE)
+    ADD_EXECUTABLE(${test_name} ${test_source})
     IF(BOOST_STATIC)
         ADD_DEPENDENCIES(${test_name} boost_libs)
+        TARGET_LINK_LIBRARIES(${test_name} uhd ${LIBBOOST_TEST_FRAMEWORK})
+    ELSE()
+        TARGET_LINK_LIBRARIES(${test_name} uhd ${Boost_LIBRARIES})
     ENDIF()
-    ADD_EXECUTABLE(${test_name} ${test_source})
-    TARGET_LINK_LIBRARIES(${test_name} uhd ${Boost_LIBRARIES})
     UHD_ADD_TEST(${test_name} ${test_name})
     UHD_INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 ENDFOREACH(test_source)
