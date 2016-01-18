@@ -179,45 +179,75 @@ ENDIF(WIN32)
 ########################################################################
 # Setup Boost
 ########################################################################
-MESSAGE(STATUS "")
-MESSAGE(STATUS "Configuring Boost C++ Libraries...")
-SET(BOOST_REQUIRED_COMPONENTS
-    date_time
-    filesystem
-    program_options
-    regex
-    system
-    thread
-    unit_test_framework
-    serialization
-)
+option(BOOST_STATIC "Static linking of boost libraries" OFF)
 
-IF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
-    LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
-ENDIF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
+if (BOOST_STATIC)
+	# Boost libs to use, must be set before including boost.txt.
+	SET(project_boost_libs 
+	    date_time
+	    filesystem
+	    program_options
+	    regex
+	    system
+	    thread
+	    test
+	    serialization
+	)
+	INCLUDE(${CMAKE_SOURCE_DIR}/cmake/boost.txt) 
+	SET(Boost_LIBRARIES ${LIBBOOST_LIBS})
+	SET(Boost_FOUND 1)
+	SET(Boost_INCLUDE_DIRS $ENV{BOOST_ROOT})
+	SET(Boost_LIBRARY_DIRS ${LIBBOOST_DIRS})
 
-IF(MSVC)
-    SET(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
-    IF(BOOST_ALL_DYN_LINK)
-        ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
-    ELSE(BOOST_ALL_DYN_LINK)
-        SET(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
-    ENDIF(BOOST_ALL_DYN_LINK)
-ENDIF(MSVC)
+	INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+	LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
-SET(Boost_ADDITIONAL_VERSIONS
-    "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
-    "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
-    "1.56.0" "1.56"
-)
-FIND_PACKAGE(Boost 1.46 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+	MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
+	MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
+	MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+	#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC") 
+	#SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC") 
+else()
+	MESSAGE(STATUS "")
+	MESSAGE(STATUS "Configuring Boost C++ Libraries...")
+	SET(BOOST_REQUIRED_COMPONENTS
+	    date_time
+	    filesystem
+	    program_options
+	    regex
+	    system
+	    thread
+	    unit_test_framework
+	    serialization
+	)
 
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+	IF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
+	    LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
+	ENDIF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
 
-MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
-MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
-MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+	IF(MSVC)
+	    SET(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
+	    IF(BOOST_ALL_DYN_LINK)
+		ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
+	    ELSE(BOOST_ALL_DYN_LINK)
+		SET(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
+	    ENDIF(BOOST_ALL_DYN_LINK)
+	ENDIF(MSVC)
+
+	SET(Boost_ADDITIONAL_VERSIONS
+	    "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
+	    "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
+	    "1.56.0" "1.56"
+	)
+	FIND_PACKAGE(Boost 1.46 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+
+	INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+	LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+
+	MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
+	MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
+	MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+endif()
 
 ########################################################################
 # Additional settings for build environment
