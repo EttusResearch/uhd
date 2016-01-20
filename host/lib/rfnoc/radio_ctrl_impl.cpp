@@ -138,7 +138,7 @@ public:
      * RX Streamer-related methods (from source_block_ctrl_base)
      **********************************************************************/
     //! Pass stream commands to the radio
-    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd)
+    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t)
     {
         UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::issue_stream_cmd()" << std::endl;
         _perifs.framer->issue_stream_command(stream_cmd);

@@ -32,7 +32,7 @@ public:
 
     test_node(const std::string &test_id) : _test_id(test_id) {};
 
-    void issue_stream_cmd(const uhd::stream_cmd_t &) {/* nop */};
+    void issue_stream_cmd(const uhd::stream_cmd_t &, const size_t) {/* nop */};
 
     std::string get_test_id() const { return _test_id; };
 

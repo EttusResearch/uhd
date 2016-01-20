@@ -49,7 +49,7 @@ public:
         return sptr(new tx_stream_terminator);
     }
 
-    void issue_stream_cmd(const uhd::stream_cmd_t &)
+    void issue_stream_cmd(const uhd::stream_cmd_t &, const size_t)
     {
         UHD_RFNOC_BLOCK_TRACE() << "tx_stream_terminator::issue_stream_cmd()" << std::endl;
     }

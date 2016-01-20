@@ -61,7 +61,7 @@ public:
      *
      * \param stream_cmd The stream command.
      */
-    virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
+    virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan=0);
 
     /*! If an overrun ("O") is received, this function is called to straighten
      * things out, if necessary.

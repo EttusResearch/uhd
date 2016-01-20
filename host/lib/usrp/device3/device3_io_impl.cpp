@@ -589,7 +589,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         //Give the streamer a functor issue stream cmd
         //bind requires a shared pointer to add a streamer->framer lifetime dependency
         my_streamer->set_issue_stream_cmd(
-            stream_i, boost::bind(&uhd::rfnoc::source_block_ctrl_base::issue_stream_cmd, blk_ctrl, _1)
+            stream_i, boost::bind(&uhd::rfnoc::source_block_ctrl_base::issue_stream_cmd, blk_ctrl, _1, stream_i)
         );
 
         // Tell the streamer which SID is valid for this channel

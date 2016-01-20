@@ -74,7 +74,7 @@ public:
         return clock_rate / (reg_val + 1);
     }
 
-    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd)
+    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t)
     {
         if (not stream_cmd.stream_now) {
             throw uhd::not_implemented_error("null_block does not support timed commands.");

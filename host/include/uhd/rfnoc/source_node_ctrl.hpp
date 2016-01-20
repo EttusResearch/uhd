@@ -46,8 +46,12 @@ public:
      **********************************************************************/
     /*! Issue a stream command for this block.
      * \param stream_cmd The stream command.
+     * \param chan Channel Index
      */
-    virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) = 0;
+    virtual void issue_stream_cmd(
+        const uhd::stream_cmd_t &stream_cmd,
+        const size_t chan=0
+    ) = 0;
 
     /*! Connect another node downstream of this node.
      *
