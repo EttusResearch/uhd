@@ -53,6 +53,10 @@ public:
      */
     stream_sig_t get_input_signature(size_t block_port=0) const;
 
+    /*! Return a list of valid input ports.
+     */
+    std::vector<size_t> get_input_ports() const;
+
     /***********************************************************************
      * FPGA Configuration
      **********************************************************************/

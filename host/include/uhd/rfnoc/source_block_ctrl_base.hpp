@@ -83,6 +83,10 @@ public:
      */
     stream_sig_t get_output_signature(size_t block_port=0) const;
 
+    /*! Return a list of valid output ports.
+     */
+    std::vector<size_t> get_output_ports() const;
+
     /***********************************************************************
      * FPGA Configuration
      **********************************************************************/

@@ -60,6 +60,16 @@ stream_sig_t source_block_ctrl_base::get_output_signature(size_t block_port) con
     );
 }
 
+std::vector<size_t> source_block_ctrl_base::get_output_ports() const
+{
+    std::vector<size_t> output_ports;
+    output_ports.reserve(_tree->list(_root_path / "ports" / "out").size());
+    BOOST_FOREACH(const std::string port, _tree->list(_root_path / "ports" / "out")) {
+        output_ports.push_back(boost::lexical_cast<size_t>(port));
+    }
+    return output_ports;
+}
+
 /***********************************************************************
  * FPGA Configuration
  **********************************************************************/

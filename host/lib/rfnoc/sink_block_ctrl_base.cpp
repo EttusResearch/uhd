@@ -40,6 +40,16 @@ stream_sig_t sink_block_ctrl_base::get_input_signature(size_t block_port) const
     );
 }
 
+std::vector<size_t> sink_block_ctrl_base::get_input_ports() const
+{
+    std::vector<size_t> input_ports;
+    input_ports.reserve(_tree->list(_root_path / "ports" / "in").size());
+    BOOST_FOREACH(const std::string port, _tree->list(_root_path / "ports" / "in")) {
+        input_ports.push_back(boost::lexical_cast<size_t>(port));
+    }
+    return input_ports;
+}
+
 /***********************************************************************
  * FPGA Configuration
  **********************************************************************/
