@@ -566,7 +566,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
             stream_i,
             boost::bind(
                 &uhd::rfnoc::source_block_ctrl_base::handle_overrun, blk_ctrl,
-                boost::weak_ptr<uhd::rx_streamer>(my_streamer)
+                boost::weak_ptr<uhd::rx_streamer>(my_streamer), block_port
             )
         );
 

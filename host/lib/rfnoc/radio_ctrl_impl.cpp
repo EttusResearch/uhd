@@ -144,7 +144,7 @@ public:
         _perifs.framer->issue_stream_command(stream_cmd);
     }
 
-    void handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer)
+    void handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer, const size_t)
     {
         UHD_MSG(status) << "radio_ctrl::handle_overrun()" << std::endl;
         boost::shared_ptr<transport::sph::recv_packet_streamer> my_streamer =
