@@ -275,7 +275,7 @@ boost::uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg, const si
         throw uhd::key_error(str(boost::format("[%s] sr_read32(): No such port: %d") % get_block_id().get() % port));
     }
     try {
-        return _ctrl_ifaces[port]->peek32(_sr_to_addr(reg));
+        return _ctrl_ifaces[port]->peek32(_sr_to_addr64(reg));
     }
     catch(const std::exception &ex) {
         throw uhd::io_error(str(boost::format("[%s] sr_read32() failed: %s") % get_block_id().get() % ex.what()));
@@ -312,7 +312,7 @@ boost::uint32_t block_ctrl_base::user_reg_read32(const boost::uint32_t addr, con
 {
     try {
         // Set readback register address
-        sr_write(SR_READBACK_ADDR, addr);
+        sr_write(SR_READBACK_ADDR, addr, port);
         // Read readback register via RFNoC
         return sr_read32(SR_READBACK_REG_USER, port);
     }
