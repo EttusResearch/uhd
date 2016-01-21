@@ -57,9 +57,9 @@ public:
 
     std::string unique_id() const;
 
-    void set_rx_streamer(bool active);
+    void set_rx_streamer(bool active, const size_t port);
 
-    void set_tx_streamer(bool active);
+    void set_tx_streamer(bool active, const size_t port);
 
     virtual ~rx_stream_terminator();
 

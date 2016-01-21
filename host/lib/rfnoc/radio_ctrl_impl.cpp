@@ -289,13 +289,13 @@ public:
     }
 
 protected:
-    void set_rx_streamer(bool active)
+    void set_rx_streamer(bool active, const size_t port)
     {
         UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::set_rx_streamer() " << active << std::endl;
         _tree->access<bool>(_root_path / "rx_active").set(active);
     }
 
-    void set_tx_streamer(bool active)
+    void set_tx_streamer(bool active, const size_t port)
     {
         UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl::set_tx_streamer() " << active << std::endl;
         _tree->access<bool>(_root_path / "tx_active").set(active);

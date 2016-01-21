@@ -33,15 +33,18 @@ size_t sink_node_ctrl::connect_upstream(
     return port;
 }
 
-void sink_node_ctrl::set_tx_streamer(bool active)
+void sink_node_ctrl::set_tx_streamer(bool active, const size_t /* port */)
 {
     UHD_MSG(status) << "[" << unique_id() << "] sink_node_ctrl::set_tx_streamer() " << active << std::endl;
 
-    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t downstream_node, _downstream_nodes) {
+    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t downstream_node, list_downstream_nodes()) {
         sptr curr_downstream_block_ctrl =
             boost::dynamic_pointer_cast<sink_node_ctrl>(downstream_node.second.lock());
         if (curr_downstream_block_ctrl) {
-            curr_downstream_block_ctrl->set_tx_streamer(active);
+            curr_downstream_block_ctrl->set_tx_streamer(
+                    active,
+                    get_downstream_port(downstream_node.first)
+            );
         }
     }
 }

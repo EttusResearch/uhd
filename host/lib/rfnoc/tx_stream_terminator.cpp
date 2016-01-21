@@ -36,12 +36,12 @@ std::string tx_stream_terminator::unique_id() const
     return str(boost::format("TX Terminator %d") % _term_index);
 }
 
-void tx_stream_terminator::set_rx_streamer(bool)
+void tx_stream_terminator::set_rx_streamer(bool, const size_t)
 {
     /* nop */
 }
 
-void tx_stream_terminator::set_tx_streamer(bool active)
+void tx_stream_terminator::set_tx_streamer(bool active, const size_t /* port */)
 {
     // TODO this is identical to sink_node_ctrl::set_tx_streamer() -> factor out
     UHD_MSG(status) << "[" << unique_id() << "] tx_stream_terminator::set_tx_streamer() " << active << std::endl;
@@ -49,7 +49,10 @@ void tx_stream_terminator::set_tx_streamer(bool active)
         sink_node_ctrl::sptr curr_downstream_block_ctrl =
             boost::dynamic_pointer_cast<sink_node_ctrl>(downstream_node.second.lock());
         if (curr_downstream_block_ctrl) {
-            curr_downstream_block_ctrl->set_tx_streamer(active);
+            curr_downstream_block_ctrl->set_tx_streamer(
+                    active,
+                    get_downstream_port(downstream_node.first)
+            );
         }
     }
 }
@@ -57,6 +60,6 @@ void tx_stream_terminator::set_tx_streamer(bool active)
 tx_stream_terminator::~tx_stream_terminator()
 {
     UHD_MSG(status) << "[" << unique_id() << "] tx_stream_terminator::~tx_stream_terminator() " << std::endl;
-    set_tx_streamer(false);
+    set_tx_streamer(false, 0);
 }
 

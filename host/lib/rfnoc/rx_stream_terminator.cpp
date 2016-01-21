@@ -37,12 +37,12 @@ std::string rx_stream_terminator::unique_id() const
     return str(boost::format("RX Terminator %d") % _term_index);
 }
 
-void rx_stream_terminator::set_tx_streamer(bool)
+void rx_stream_terminator::set_tx_streamer(bool, const size_t)
 {
     /* nop */
 }
 
-void rx_stream_terminator::set_rx_streamer(bool active)
+void rx_stream_terminator::set_rx_streamer(bool active, const size_t)
 {
     // TODO this is identical to source_node_ctrl::set_rx_streamer() -> factor out
     UHD_MSG(status) << "[" << unique_id() << "] rx_stream_terminator::set_rx_streamer() " << active << std::endl;
@@ -50,7 +50,10 @@ void rx_stream_terminator::set_rx_streamer(bool active)
         source_node_ctrl::sptr curr_upstream_block_ctrl =
             boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
         if (curr_upstream_block_ctrl) {
-            curr_upstream_block_ctrl->set_rx_streamer(active);
+            curr_upstream_block_ctrl->set_rx_streamer(
+                    active,
+                    get_upstream_port(upstream_node.first)
+            );
         }
     }
 }
@@ -58,6 +61,6 @@ void rx_stream_terminator::set_rx_streamer(bool active)
 rx_stream_terminator::~rx_stream_terminator()
 {
     UHD_MSG(status) << "[" << unique_id() << "] rx_stream_terminator::~rx_stream_terminator() " << std::endl;
-    set_rx_streamer(false);
+    set_rx_streamer(false, 0);
 }
 

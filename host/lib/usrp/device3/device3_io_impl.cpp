@@ -601,7 +601,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
     my_streamer->set_terminator(recv_terminator);
 
     // Notify all blocks in this chain that they are connected to an active streamer
-    recv_terminator->set_rx_streamer(true);
+    recv_terminator->set_rx_streamer(true, 0);
 
     // Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency.
     // Note that we store the streamer only once, and use its terminator's
@@ -787,7 +787,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
     my_streamer->set_terminator(send_terminator);
 
     // Notify all blocks in this chain that they are connected to an active streamer
-    send_terminator->set_tx_streamer(true);
+    send_terminator->set_tx_streamer(true, 0);
 
     // Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency.
     // Note that we store the streamer only once, and use its terminator's
