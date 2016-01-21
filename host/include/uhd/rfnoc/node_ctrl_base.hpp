@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -63,6 +63,32 @@ public:
 
     node_map_t list_downstream_nodes() { return _downstream_nodes; };
     node_map_t list_upstream_nodes() { return _upstream_nodes; };
+
+    // TODO we need a more atomic connect procedure, this is too error-prone.
+
+    /*! For an existing connection, store the remote port number.
+     *
+     * \throws uhd::value_error if \p this_port is not connected.
+     */
+    void set_downstream_port(const size_t this_port, const size_t remote_port);
+
+    /*! Return the remote port of a connection on a given port.
+     *
+     * \throws uhd::value_error if \p this_port is not connected.
+     */
+    size_t get_downstream_port(const size_t this_port);
+
+    /*! For an existing connection, store the remote port number.
+     *
+     * \throws uhd::value_error if \p this_port is not connected.
+     */
+    void set_upstream_port(const size_t this_port, const size_t remote_port);
+
+    /*! Return the remote port of a connection on a given port.
+     *
+     * \throws uhd::value_error if \p this_port is not connected.
+     */
+    size_t get_upstream_port(const size_t this_port);
 
     /*! Find nodes downstream that match a predicate.
      *
@@ -199,6 +225,14 @@ private:
             const std::set< boost::shared_ptr<T> > &exclude_nodes,
             bool downstream
     );
+
+    /*! Stores the remote port number of a downstream connection.
+     */
+    std::map<size_t, size_t> _upstream_ports;
+
+    /*! Stores the remote port number of a downstream connection.
+     */
+    std::map<size_t, size_t> _downstream_ports;
 
 }; /* class node_ctrl_base */
 

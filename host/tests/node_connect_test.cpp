@@ -72,6 +72,13 @@ BOOST_AUTO_TEST_CASE(test_simple_connect)
 
     BOOST_CHECK_EQUAL(src_port, 42);
     BOOST_CHECK_EQUAL(dst_port, 23);
+
+    node_A->set_downstream_port(src_port, dst_port);
+    node_B->set_upstream_port(dst_port, src_port);
+    BOOST_CHECK_EQUAL(node_A->get_downstream_port(src_port), dst_port);
+    BOOST_CHECK_EQUAL(node_B->get_upstream_port(dst_port), src_port);
+
+    BOOST_REQUIRE_THROW(node_A->get_downstream_port(999), uhd::value_error);
 }
 
 BOOST_AUTO_TEST_CASE(test_fail)

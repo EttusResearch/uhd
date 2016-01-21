@@ -1546,6 +1546,8 @@ public:
                 % dst_block_port % dst->unique_id()
             ));
         }
+        src->set_downstream_port(actual_src_block_port, actual_dst_block_port);
+        dst->set_upstream_port(actual_dst_block_port, actual_src_block_port);
         // At this point, ports are locked and no one else can simply connect
         // into them.
 
