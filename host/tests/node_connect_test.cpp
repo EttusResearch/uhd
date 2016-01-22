@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(test_fail)
     MAKE_SOURCE_NODE(node_A, 42);
     MAKE_SINK_NODE(node_B, ANY_PORT);
 
-    size_t src_port = node_A->connect_downstream(node_B, 1);
+    node_A->connect_downstream(node_B, 1);
     BOOST_REQUIRE_THROW(node_B->connect_upstream(node_A, 2), uhd::type_error);
 }
 
