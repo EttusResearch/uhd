@@ -45,6 +45,7 @@ SET(test_sources
     subdev_spec_test.cpp
     time_spec_test.cpp
     vrt_test.cpp
+    expert_test.cpp
 )
 
 #turn each test cpp file into an executable with an int main() function

@@ -94,6 +94,7 @@ INCLUDE_SUBDIRECTORY(transport)
 INCLUDE_SUBDIRECTORY(usrp)
 INCLUDE_SUBDIRECTORY(usrp_clock)
 INCLUDE_SUBDIRECTORY(utils)
+INCLUDE_SUBDIRECTORY(experts)
 
 ########################################################################
 # Build info
