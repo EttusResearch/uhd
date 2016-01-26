@@ -16,6 +16,7 @@
 //
 
 #include "rx_dsp_core_3000.hpp"
+#include "dsp_core_utils.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/math.hpp>
@@ -24,7 +25,6 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/thread/thread.hpp> //thread sleep
 #include <boost/math/special_functions/round.hpp>
-#include <boost/math/special_functions/sign.hpp>
 #include <algorithm>
 #include <cmath>
 
@@ -209,42 +209,11 @@ public:
         return _fxpt_scalar_correction*_host_extra_scaling/32767.;
     }
 
-    double set_freq(const double freq_){
-        //correct for outside of rate (wrap around)
-        double freq = std::fmod(freq_, _tick_rate);
-        if (std::abs(freq) > _tick_rate/2.0)
-            freq -= boost::math::sign(freq)*_tick_rate;
-
-        //confirm that the target frequency is within range of the CORDIC
-        UHD_ASSERT_THROW(std::abs(freq) <= _tick_rate/2.0);
-
-        /* Now calculate the frequency word. It is possible for this calculation
-         * to cause an overflow. As the requested DSP frequency approaches the
-         * master clock rate, that ratio multiplied by the scaling factor (2^32)
-         * will generally overflow within the last few kHz of tunable range.
-         * Thus, we check to see if the operation will overflow before doing it,
-         * and if it will, we set it to the integer min or max of this system.
-         */
-        boost::int32_t freq_word = 0;
-
-        static const double scale_factor = std::pow(2.0, 32);
-        if((freq / _tick_rate) >= (uhd::math::BOOST_INT32_MAX / scale_factor)) {
-            /* Operation would have caused a positive overflow of int32. */
-            freq_word = uhd::math::BOOST_INT32_MAX;
-
-        } else if((freq / _tick_rate) <= (uhd::math::BOOST_INT32_MIN / scale_factor)) {
-            /* Operation would have caused a negative overflow of int32. */
-            freq_word = uhd::math::BOOST_INT32_MIN;
-
-        } else {
-            /* The operation is safe. Perform normally. */
-            freq_word = boost::int32_t(boost::math::round((freq / _tick_rate) * scale_factor));
-        }
-
-        //program the frequency word into the device DSP
-        const double actual_freq = (double(freq_word) / scale_factor) * _tick_rate;
+    double set_freq(const double requested_freq){
+        double actual_freq;
+        int32_t freq_word;
+        get_freq_and_freq_word(requested_freq, _tick_rate, actual_freq, freq_word);
         _iface->poke32(REG_DSP_RX_FREQ, boost::uint32_t(freq_word));
-
         return actual_freq;
     }
 
