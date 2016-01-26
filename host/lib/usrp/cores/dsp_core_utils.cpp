@@ -61,7 +61,6 @@ void get_freq_and_freq_word(
         freq_word = int32_t(boost::math::round((freq / tick_rate) * scale_factor));
     }
 
-    //program the frequency word into the device DSP
     actual_freq = (double(freq_word) / scale_factor) * tick_rate;
 }
 
