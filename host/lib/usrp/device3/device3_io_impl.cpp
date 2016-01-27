@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -494,7 +494,9 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
                 suggested_block_port,
                 args.args
         );
-        recv_terminator->connect_upstream(blk_ctrl);
+        const size_t terminator_port = recv_terminator->connect_upstream(blk_ctrl);
+        blk_ctrl->set_downstream_port(block_port, terminator_port);
+        recv_terminator->set_upstream_port(terminator_port, block_port);
 
         // Check if the block connection is compatible (spp and item type)
         check_stream_sig_compatible(blk_ctrl->get_output_signature(block_port), args, "RX");
@@ -685,7 +687,9 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
                 suggested_block_port,
                 args.args
         );
-        send_terminator->connect_downstream(blk_ctrl);
+        const size_t terminator_port = send_terminator->connect_downstream(blk_ctrl);
+        blk_ctrl->set_upstream_port(block_port, terminator_port);
+        send_terminator->set_downstream_port(terminator_port, block_port);
 
         // Check if the block connection is compatible (spp and item type)
         check_stream_sig_compatible(blk_ctrl->get_input_signature(block_port), args, "TX");
