@@ -53,8 +53,11 @@ void device3_impl::merge_channel_defs(
     std::vector<size_t> chan_idxs;
 
     // 1. Get sorted list of currently defined channels
-    std::vector<std::string> curr_channels = _tree->list(chans_root);
-    std::sort(curr_channels.begin(), curr_channels.end(), _compare_string_indexes);
+    std::vector<std::string> curr_channels;
+    if (_tree->exists(chans_root)) {
+        curr_channels = _tree->list(chans_root);
+        std::sort(curr_channels.begin(), curr_channels.end(), _compare_string_indexes);
+    }
 
     // 2. Cycle through existing channels to find out where to merge
     //    the new channels. Rules are:
@@ -68,10 +71,10 @@ void device3_impl::merge_channel_defs(
             chan_idxs.push_back(boost::lexical_cast<size_t>(chan_idx));
         }
     }
-    size_t last_chan_idx = boost::lexical_cast<size_t>(curr_channels.back());
+    size_t last_chan_idx = curr_channels.empty() ? 0 : (boost::lexical_cast<size_t>(curr_channels.back()) + 1);
     while (chan_idxs.size() < chan_ids.size()) {
-        last_chan_idx++;
         chan_idxs.push_back(last_chan_idx);
+        last_chan_idx++;
     }
 
     // 3. Write the new channels
