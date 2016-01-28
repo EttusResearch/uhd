@@ -70,9 +70,9 @@ The latest versions of these binaries can be downloaded from here: http://files.
 
 Copy and paste these commands into your terminal. This will install UHD software as well as allow you to receive package updates.
 
-    sudo bash -c 'echo "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/`lsb_release -cs` `lsb_release -cs` main" > /etc/apt/sources.list.d/ettus.list'
+    sudo add-apt-repository ppa:ettusresearch/uhd
     sudo apt-get update
-    sudo apt-get install -t `lsb_release -cs` uhd
+    sudo apt-get install uhd
 
 \subsubsection install_linux_ourbins_fedora Fedora
 
