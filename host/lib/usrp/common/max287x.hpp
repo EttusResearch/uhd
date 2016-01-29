@@ -22,6 +22,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/math.hpp>
 #include <boost/assign.hpp>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
@@ -216,6 +217,11 @@ public:
      * Check whether this is in a state where it can be synchronized
      */
     virtual bool can_sync(void) = 0;
+
+    /**
+     * Configure synthesizer for phase synchronization
+     */
+    virtual void config_for_sync(bool enable) = 0;
 };
 
 /**
@@ -247,10 +253,12 @@ public:
     virtual void set_phase(boost::uint16_t phase);
     virtual void commit();
     virtual bool can_sync();
+    virtual void config_for_sync(bool enable);
 
 protected:
     max287x_regs_t _regs;
     bool _can_sync;
+    bool _config_for_sync;
     bool _write_all_regs;
 
 private:
@@ -290,6 +298,69 @@ public:
 /**
  * MAX2871
  */
+// Table of frequency ranges for each VCO value.
+// The values were derived from sampling multiple
+// units over a temperature range of -10 to 40 deg C.
+typedef std::map<uint8_t,uhd::range_t> vco_map_t;
+static const vco_map_t max2871_vco_map =
+    boost::assign::map_list_of
+    (0,uhd::range_t(2767776024.0,2838472816.0))
+    (1,uhd::range_t(2838472816.0,2879070053.0))
+    (1,uhd::range_t(2879070053.0,2921202504.0))
+    (3,uhd::range_t(2921202504.0,2960407579.0))
+    (4,uhd::range_t(2960407579.0,3001687422.0))
+    (5,uhd::range_t(3001687422.0,3048662562.0))
+    (6,uhd::range_t(3048662562.0,3097511550.0))
+    (7,uhd::range_t(3097511550.0,3145085864.0))
+    (8,uhd::range_t(3145085864.0,3201050835.0))
+    (9,uhd::range_t(3201050835.0,3259581909.0))
+    (10,uhd::range_t(3259581909.0,3321408729.0))
+    (11,uhd::range_t(3321408729.0,3375217285.0))
+    (12,uhd::range_t(3375217285.0,3432807972.0))
+    (13,uhd::range_t(3432807972.0,3503759088.0))
+    (14,uhd::range_t(3503759088.0,3579011283.0))
+    (15,uhd::range_t(3579011283.0,3683570865.0))
+    (20,uhd::range_t(3683570865.0,3711845712.0))
+    (21,uhd::range_t(3711845712.0,3762188221.0))
+    (22,uhd::range_t(3762188221.0,3814209551.0))
+    (23,uhd::range_t(3814209551.0,3865820020.0))
+    (24,uhd::range_t(3865820020.0,3922520021.0))
+    (25,uhd::range_t(3922520021.0,3981682709.0))
+    (26,uhd::range_t(3981682709.0,4043154280.0))
+    (27,uhd::range_t(4043154280.0,4100400020.0))
+    (28,uhd::range_t(4100400020.0,4159647583.0))
+    (29,uhd::range_t(4159647583.0,4228164842.0))
+    (30,uhd::range_t(4228164842.0,4299359879.0))
+    (31,uhd::range_t(4299359879.0,4395947962.0))
+    (33,uhd::range_t(4395947962.0,4426512061.0))
+    (34,uhd::range_t(4426512061.0,4480333656.0))
+    (35,uhd::range_t(4480333656.0,4526297331.0))
+    (36,uhd::range_t(4526297331.0,4574689510.0))
+    (37,uhd::range_t(4574689510.0,4633102021.0))
+    (38,uhd::range_t(4633102021.0,4693755616.0))
+    (39,uhd::range_t(4693755616.0,4745624435.0))
+    (40,uhd::range_t(4745624435.0,4803922123.0))
+    (41,uhd::range_t(4803922123.0,4871523881.0))
+    (42,uhd::range_t(4871523881.0,4942111286.0))
+    (43,uhd::range_t(4942111286.0,5000192446.0))
+    (44,uhd::range_t(5000192446.0,5059567510.0))
+    (45,uhd::range_t(5059567510.0,5136258187.0))
+    (46,uhd::range_t(5136258187.0,5215827295.0))
+    (47,uhd::range_t(5215827295.0,5341282949.0))
+    (49,uhd::range_t(5341282949.0,5389819310.0))
+    (50,uhd::range_t(5389819310.0,5444868434.0))
+    (51,uhd::range_t(5444868434.0,5500079705.0))
+    (52,uhd::range_t(5500079705.0,5555329630.0))
+    (53,uhd::range_t(5555329630.0,5615049833.0))
+    (54,uhd::range_t(5615049833.0,5676098527.0))
+    (55,uhd::range_t(5676098527.0,5744191577.0))
+    (56,uhd::range_t(5744191577.0,5810869917.0))
+    (57,uhd::range_t(5810869917.0,5879176194.0))
+    (58,uhd::range_t(5879176194.0,5952430629.0))
+    (59,uhd::range_t(5952430629.0,6016743964.0))
+    (60,uhd::range_t(6016743964.0,6090658690.0))
+    (61,uhd::range_t(6090658690.0,6128133570.0));
+
 class max2871 : public max287x<max2871_regs_t>
 {
 public:
@@ -319,16 +390,66 @@ public:
         _regs.feedback_select = max2871_regs_t::FEEDBACK_SELECT_DIVIDED;
         double freq = max287x<max2871_regs_t>::set_frequency(target_freq, ref_freq, target_pfd_freq, is_int_n);
 
-        // According to Maxim support, the following factors must be true to allow for synchronization
-        if (_regs.r_counter_10_bit == 1 and
-            _regs.reference_divide_by_2 == max2871_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED and
-            _regs.reference_doubler == max2871_regs_t::REFERENCE_DOUBLER_DISABLED and
+        // To support phase synchronization on MAX2871, the same VCO
+        // subband must be manually programmed on all synthesizers and
+        // several registers must be set to specific values.
+        if (_config_for_sync)
+        {
+            // Need to manually program VCO value
+            static const double MIN_VCO_FREQ = 3e9;
+            double vco_freq = target_freq;
+            while (vco_freq < MIN_VCO_FREQ)
+                vco_freq *=2;
+            uint8_t vco_index = 0xFF;
+            BOOST_FOREACH(const vco_map_t::value_type &vco, max2871_vco_map)
+            {
+                if (uhd::math::fp_compare::fp_compare_epsilon<double>(vco_freq) < vco.second.stop())
+                {
+                    vco_index = vco.first;
+                    break;
+                }
+            }
+            if (vco_index == 0xFF)
+                throw uhd::index_error("Invalid VCO frequency");
+
+            // Settings required for phase synchronization as per MAX2871 datasheet
+            _regs.shutdown_vas = max2871_regs_t::SHUTDOWN_VAS_DISABLED;
+            _regs.vco = vco_index;
+            _regs.low_noise_and_spur = max2871_regs_t::LOW_NOISE_AND_SPUR_LOW_NOISE;
+            _regs.f01 = max2871_regs_t::F01_FRAC_N;
+            _regs.aux_output_select = max2871_regs_t::AUX_OUTPUT_SELECT_DIVIDED;
+        }
+        else
+        {
+            // Reset values to defaults
+            _regs.shutdown_vas = max2871_regs_t::SHUTDOWN_VAS_ENABLED;  // turn VCO auto selection on
+            _regs.low_noise_and_spur = max2871_regs_t::LOW_NOISE_AND_SPUR_LOW_SPUR_2;
+            _regs.f01 = max2871_regs_t::F01_AUTO;
+            _regs.aux_output_select = max2871_regs_t::AUX_OUTPUT_SELECT_FUNDAMENTAL;
+        }
+
+        return freq;
+    }
+
+    void commit()
+    {
+        max287x<max2871_regs_t>::commit();
+
+        // According to Maxim support, the following factors must be true to allow for phase synchronization
+        if (_regs.int_n_mode == max2871_regs_t::INT_N_MODE_FRAC_N and
+            _regs.feedback_select == max2871_regs_t::FEEDBACK_SELECT_DIVIDED and
+            _regs.aux_output_select == max2871_regs_t::AUX_OUTPUT_SELECT_DIVIDED and
             _regs.rf_divider_select <= max2871_regs_t::RF_DIVIDER_SELECT_DIV16 and
-            _regs.low_noise_and_spur == max2871_regs_t::LOW_NOISE_AND_SPUR_LOW_NOISE)
+            _regs.low_noise_and_spur == max2871_regs_t::LOW_NOISE_AND_SPUR_LOW_NOISE and
+            _regs.f01 == max2871_regs_t::F01_FRAC_N and
+            _regs.reference_doubler == max2871_regs_t::REFERENCE_DOUBLER_DISABLED and
+            _regs.reference_divide_by_2 == max2871_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED and
+            _regs.r_counter_10_bit == 1)
         {
             _can_sync = true;
+        } else {
+            _can_sync = false;
         }
-        return freq;
     }
 };
 
@@ -342,6 +463,7 @@ public:
 template <typename max287x_regs_t>
 max287x<max287x_regs_t>::max287x(write_fn func) :
         _can_sync(false),
+        _config_for_sync(false),
         _write_all_regs(true),
         _write(func),
         _delay_after_write(true)
@@ -397,8 +519,6 @@ double max287x<max287x_regs_t>::set_frequency(
     double target_pfd_freq,
     bool is_int_n)
 {
-    _can_sync = false;
-
     //map rf divider select output dividers to enums
     static const uhd::dict<int, typename max287x_regs_t::rf_divider_select_t> rfdivsel_to_enum =
         boost::assign::map_list_of
@@ -791,11 +911,16 @@ void max287x<max287x_regs_t>::commit()
     }
 }
 
-
 template <typename max287x_regs_t>
 bool max287x<max287x_regs_t>::can_sync(void)
 {
     return _can_sync;
+}
+
+template <typename max287x_regs_t>
+void max287x<max287x_regs_t>::config_for_sync(bool enable)
+{
+    _config_for_sync = enable;
 }
 
 #endif // MAX287X_HPP_INCLUDED

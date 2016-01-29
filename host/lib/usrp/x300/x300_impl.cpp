@@ -672,6 +672,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         1 /*slaveno*/,
         mb.hw_rev,
         dev_addr.cast<double>("master_clock_rate", X300_DEFAULT_TICK_RATE),
+        dev_addr.cast<double>("dboard_clock_rate", X300_DEFAULT_DBOARD_CLK_RATE),
         dev_addr.cast<double>("system_ref_rate", X300_DEFAULT_SYSREF_RATE));
 
     //Initialize clock source to use internal reference and generate
