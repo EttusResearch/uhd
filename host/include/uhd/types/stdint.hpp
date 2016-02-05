@@ -47,7 +47,7 @@ using boost::uint_fast32_t;
 using boost::int_fast64_t;
 using boost::uint_fast64_t;
 
-using boost::intptr_t;
-using boost::uintptr_t;
+using ::intptr_t;
+using ::uintptr_t;
 
 #endif /* INCLUDED_UHD_TYPES_STDINT_HPP */
