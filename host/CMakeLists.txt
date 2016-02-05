@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2015 Ettus Research LLC
+# Copyright 2010-2016 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -187,10 +187,14 @@ SET(BOOST_REQUIRED_COMPONENTS
     program_options
     regex
     system
-    thread
     unit_test_framework
     serialization
 )
+IF(MINGW)
+    LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
+ELSE()
+    LIST(APPEND BOOST_REQUIRED_COMPONENTS thread)
+ENDIF()
 
 IF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
     LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
