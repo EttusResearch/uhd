@@ -162,6 +162,7 @@ IF(MSVC)
         -D_CRT_SECURE_NO_DEPRECATE
         -D_CRT_NONSTDC_NO_WARNINGS
         -D_CRT_NONSTDC_NO_DEPRECATE
+        -D_WINSOCK_DEPRECATED_NO_WARNINGS
     )
     ADD_DEFINITIONS(/MP) #multi-threaded build
     ADD_DEFINITIONS(/bigobj) #Increases the number of addressable sections in an .obj file.
