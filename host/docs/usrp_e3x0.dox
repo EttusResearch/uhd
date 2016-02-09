@@ -86,7 +86,7 @@ You should be presented with a shell similar to the following
 
 \section e3x0_sdk Using the SDK
 
-In order to facilitate software development for the integrated ARM Cortex-A9 processor, a <a href="http://www.yoctoproject.org">Yocto Project</a> based SDK is provided in the download section of our website.
+In order to facilitate software development for the integrated ARM Cortex-A9 processor, a <a href="http://www.yoctoproject.org">Yocto Project</a> based SDK is provided in the download section of our <a href="http://files.ettus.com/e3xx_images">website</a>.
 This SDK contains a cross-compiler, a cross-linker as well as a cross-debugger and can be used to develop your user space applications for the Ettus USRP-E310 devices.
 
 
