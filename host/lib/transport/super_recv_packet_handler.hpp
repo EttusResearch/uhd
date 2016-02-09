@@ -524,10 +524,10 @@ private:
                 );
             }
 
-            //handle the case when the get packet throws
-            catch(const std::exception &e){
+            //handle the case where a bad header exists
+            catch(const uhd::value_error &e){
                 UHD_MSG(error) << boost::format(
-                    "The receive packet handler caught an exception.\n%s"
+                    "The receive packet handler caught a value exception.\n%s"
                 ) % e.what() << std::endl;
                 std::swap(curr_info, next_info); //save progress from curr -> next
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_BAD_PACKET;

@@ -80,6 +80,12 @@ void benchmark_rx_rate(
         try {
             num_rx_samps += rx_stream->recv(buffs, max_samps_per_packet, md)*rx_stream->get_num_channels();
         }
+        catch (uhd::io_error &e) {
+            std::cerr << "Caught an IO exception. " << std::endl;
+            std::cerr << e.what() << std::endl;
+
+            return;
+        }
         catch (...) {
             /* apparently, the boost thread interruption can sometimes result in
                throwing exceptions not of type boost::exception, this catch allows
