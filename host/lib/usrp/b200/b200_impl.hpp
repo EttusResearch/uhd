@@ -224,7 +224,6 @@ private:
     enum time_source_t {GPSDO=0,EXTERNAL=1,INTERNAL=2,NONE=3,UNKNOWN=4} _time_source;
 
     void update_gpio_state(void);
-    void reset_codec_dcm(void);
 
     void update_enables(void);
     void update_atrs(void);
