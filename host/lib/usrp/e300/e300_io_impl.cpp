@@ -157,10 +157,8 @@ void e300_impl::_update_subdev_spec(
             const std::string conn = _tree->access<std::string>(
                 mb_path / "dboards" / spec[i].db_name /
                 ("rx_frontends") / spec[i].sd_name / "connection").get();
-
-            const bool fe_swapped = (conn == "QI" or conn == "Q");
-            _radio_perifs[i].ddc->set_mux(conn, fe_swapped);
-            _radio_perifs[i].rx_fe->set_mux(fe_swapped);
+            _radio_perifs[i].ddc->set_mux(conn);
+            _radio_perifs[i].rx_fe->set_mux(false);
         }
     }
 
