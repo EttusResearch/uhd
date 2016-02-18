@@ -234,6 +234,7 @@ dboard_manager_impl::dboard_manager_impl(
         //clean up the stuff added by the call above
         if (subtree->exists("rx_frontends")) subtree->remove("rx_frontends");
         if (subtree->exists("tx_frontends")) subtree->remove("tx_frontends");
+        if (subtree->exists("iface"))        subtree->remove("iface");
         this->init(dboard_id_t::none(), dboard_id_t::none(), subtree);
     }
 }
