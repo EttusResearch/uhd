@@ -936,16 +936,16 @@ void e300_impl::_update_antenna_sel(const size_t &which, const std::string &ant)
     this->_update_atrs();
 }
 
-void e300_impl::_update_atr_leds(gpio_core_200_32wo::sptr leds, const std::string &rx_ant)
+void e300_impl::_update_atr_leds(gpio_atr::gpio_atr_3000::sptr leds, const std::string &rx_ant)
 {
     const bool is_txrx = (rx_ant == "TX/RX");
     const int rx_led = (1 << 2);
     const int tx_led = (1 << 1);
     const int txrx_led = (1 << 0);
-    leds->set_atr_reg(dboard_iface::ATR_REG_IDLE, 0);
-    leds->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY, is_txrx? txrx_led : rx_led);
-    leds->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, tx_led);
-    leds->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, rx_led | tx_led);
+    leds->set_atr_reg(gpio_atr::ATR_REG_IDLE, 0);
+    leds->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY, is_txrx? txrx_led : rx_led);
+    leds->set_atr_reg(gpio_atr::ATR_REG_TX_ONLY, tx_led);
+    leds->set_atr_reg(gpio_atr::ATR_REG_FULL_DUPLEX, rx_led | tx_led);
 }
 
 void e300_impl::_update_fe_lo_freq(const std::string &fe, const double freq)
@@ -1136,7 +1136,7 @@ void e300_impl::_update_enables(void)
     // Set radio data direction register cleared due to reset
     for (size_t instance = 0; instance < _num_radios; instance++)
     {
-        _radio_perifs[instance].atr->set_ddr_reg();
+        _radio_perifs[instance].atr->set_gpio_ddr(gpio_atr::DDR_OUTPUT, 0xFFFFFFFF);
     }
 
     //figure out if mimo is enabled based on new state

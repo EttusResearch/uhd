@@ -231,7 +231,7 @@ private: // methods
     void _update_atrs(void);
     void _update_antenna_sel(const size_t &fe, const std::string &ant);
 
-    void _update_atr_leds(gpio_core_200_32wo::sptr leds, const std::string &rx_ant);
+    void _update_atr_leds(gpio_atr::gpio_atr_3000::sptr leds, const std::string &rx_ant);
     void _update_fe_lo_freq(const std::string &fe, const double freq);
 
     // get frontend lock sensor
