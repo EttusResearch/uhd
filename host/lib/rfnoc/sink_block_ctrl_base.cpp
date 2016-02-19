@@ -23,6 +23,7 @@
 using namespace uhd;
 using namespace uhd::rfnoc;
 
+
 /***********************************************************************
  * Stream signatures
  **********************************************************************/
@@ -38,6 +39,16 @@ stream_sig_t sink_block_ctrl_base::get_input_signature(size_t block_port) const
     return _resolve_port_def(
             _tree->access<blockdef::port_t>(_root_path / "ports" / "in" / block_port).get()
     );
+}
+
+std::vector<size_t> sink_block_ctrl_base::get_input_ports() const
+{
+    std::vector<size_t> input_ports;
+    input_ports.reserve(_tree->list(_root_path / "ports" / "in").size());
+    BOOST_FOREACH(const std::string port, _tree->list(_root_path / "ports" / "in")) {
+        input_ports.push_back(boost::lexical_cast<size_t>(port));
+    }
+    return input_ports;
 }
 
 /***********************************************************************
@@ -60,15 +71,32 @@ void sink_block_ctrl_base::configure_flow_control_in(
     if (cycles) {
         cycles_word = (1<<31) | cycles;
     }
-    sr_write(SR_FLOW_CTRL_CYCS_PER_ACK_BASE + block_port, cycles_word);
+    sr_write(SR_FLOW_CTRL_CYCS_PER_ACK, cycles_word, block_port);
 
     boost::uint32_t packets_word = 0;
     if (packets) {
         packets_word = (1<<31) | packets;
     }
-    sr_write(SR_FLOW_CTRL_PKTS_PER_ACK_BASE + block_port, packets_word);
+    sr_write(SR_FLOW_CTRL_PKTS_PER_ACK, packets_word, block_port);
 }
 
+void sink_block_ctrl_base::set_error_policy(
+    const std::string &policy
+) {
+    if (policy == "next_packet")
+    {
+        sr_write(SR_ERROR_POLICY, (1 << 1) | 1);
+    }
+    else if (policy == "next_burst")
+    {
+        sr_write(SR_ERROR_POLICY, (1 << 2) | 1);
+    }
+    else if (policy == "wait")
+    {
+        sr_write(SR_ERROR_POLICY, 1);
+    }
+    else throw uhd::value_error("Block input cannot handle requested error policy: " + policy);
+}
 
 /***********************************************************************
  * Hooks

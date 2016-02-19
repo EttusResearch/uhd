@@ -91,11 +91,11 @@ INCLUDE_SUBDIRECTORY(ic_reg_maps)
 INCLUDE_SUBDIRECTORY(types)
 INCLUDE_SUBDIRECTORY(convert)
 INCLUDE_SUBDIRECTORY(rfnoc)
-INCLUDE_SUBDIRECTORY(transport)
 INCLUDE_SUBDIRECTORY(usrp)
 INCLUDE_SUBDIRECTORY(usrp_clock)
 INCLUDE_SUBDIRECTORY(utils)
 INCLUDE_SUBDIRECTORY(experts)
+INCLUDE_SUBDIRECTORY(transport)
 
 ########################################################################
 # Build info

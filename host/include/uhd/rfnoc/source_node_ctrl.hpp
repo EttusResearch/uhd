@@ -46,8 +46,12 @@ public:
      **********************************************************************/
     /*! Issue a stream command for this block.
      * \param stream_cmd The stream command.
+     * \param chan Channel Index
      */
-    virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) = 0;
+    virtual void issue_stream_cmd(
+        const uhd::stream_cmd_t &stream_cmd,
+        const size_t chan=0
+    ) = 0;
 
     /*! Connect another node downstream of this node.
      *
@@ -75,9 +79,18 @@ public:
      * an active rx streamer chain. Conversely, when set to false, this means
      * the node has been removed from an rx streamer chain.
      */
-    virtual void set_rx_streamer(bool active);
+    virtual void set_rx_streamer(bool active, const size_t port);
 
 protected:
+
+    /*! For every output port, store rx streamer activity.
+     *
+     * If _rx_streamer_active[0] == true, this means that an active rx
+     * streamer is operating on port 0. If it is false, or if the entry
+     * does not exist, there is no streamer.
+     * Values are toggled by set_rx_streamer().
+     */
+    std::map<size_t, bool> _rx_streamer_active;
 
     /*! Ask for a port number to connect a downstream block to.
      *

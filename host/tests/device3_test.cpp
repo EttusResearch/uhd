@@ -46,10 +46,8 @@ class pseudo_wb_iface_impl : public uhd::wb_iface
         switch (addr) {
             case SR_READBACK_REG_ID:
                 return TEST_NOC_ID;
-            case SR_READBACK_REG_BUFFALLOC0:
+            case SR_READBACK_REG_FIFOSIZE:
                 return 0x000000000000000B;
-            case SR_READBACK_REG_BUFFALLOC1:
-                return 0x0000000000000000;
             case SR_READBACK_REG_USER:
                 return 0x0123456789ABCDEF;
             default:

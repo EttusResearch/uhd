@@ -36,6 +36,9 @@ public:
     {
     }
 
+    void set_timed_spi(uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num) {};
+    void set_safe_spi(uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num) {};
+
     double set_gain(const std::string &which, const double value)
     {
         _clear();

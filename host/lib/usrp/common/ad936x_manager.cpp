@@ -93,14 +93,12 @@ class ad936x_manager_impl : public ad936x_manager
     // worst case conditions to stress the interface.
     //
     void loopback_self_test(
-            wb_iface::sptr iface,
-            wb_iface::wb_addr_type codec_idle_addr,
-            wb_iface::wb_addr_type codec_readback_addr
+            boost::function<void(uint32_t)> poker_functor,
+            boost::function<uint64_t()> peeker_functor
     ) {
         // Put AD936x in loopback mode
         _codec_ctrl->data_port_loopback(true);
         UHD_MSG(status) << "Performing CODEC loopback test... " << std::flush;
-        UHD_ASSERT_THROW(bool(iface));
         size_t hash = size_t(time(NULL));
 
         // Allow some time for AD936x to enter loopback mode.
@@ -118,10 +116,10 @@ class ad936x_manager_impl : public ad936x_manager
             const boost::uint32_t word32 = boost::uint32_t(hash) & 0xfff0fff0;
 
             // Write test word to codec_idle idle register (on TX side)
-            iface->poke32(codec_idle_addr, word32);
+            poker_functor(word32);
 
             // Read back values - TX is lower 32-bits and RX is upper 32-bits
-            const boost::uint64_t rb_word64 = iface->peek64(codec_readback_addr);
+            const boost::uint64_t rb_word64 = peeker_functor();
             const boost::uint32_t rb_tx = boost::uint32_t(rb_word64 >> 32);
             const boost::uint32_t rb_rx = boost::uint32_t(rb_word64 & 0xffffffff);
 
@@ -136,7 +134,7 @@ class ad936x_manager_impl : public ad936x_manager
         UHD_MSG(status) << "pass" << std::endl;
 
         // Zero out the idle data.
-        iface->poke32(codec_idle_addr, 0);
+        poker_functor(0);
 
         // Take AD936x out of loopback mode
         _codec_ctrl->data_port_loopback(false);

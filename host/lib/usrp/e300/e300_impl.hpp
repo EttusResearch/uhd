@@ -26,15 +26,11 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/types/sensors.hpp>
 
-#include <uhd/rfnoc/block_ctrl.hpp>
-
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <string>
 #include "e300_fifo_config.hpp"
-#include "ad9361_ctrl.hpp"
-#include "ad936x_manager.hpp"
-#include "gpio_atr_3000.hpp"
 
 #include "e300_global_regs.hpp"
 #include "e300_i2c.hpp"
@@ -83,7 +79,7 @@ static const boost::uint8_t E300_RADIO_DEST_PREFIX_CTRL = 1;
 static const boost::uint8_t E300_RADIO_DEST_PREFIX_RX   = 2;
 
 static const boost::uint8_t E300_XB_DST_AXI = 0;
-static const boost::uint8_t E300_XB_DST_R0  = 1;
+static const boost::uint8_t E300_XB_DST_RADIO  = 1;
 static const boost::uint8_t E300_XB_DST_R1  = 2;
 // RFNoC blocks are connected to the first port
 // after the last radio (there might be less than 2
@@ -113,63 +109,19 @@ void get_e3x0_fpga_images(const uhd::device_addr_t &device_args,
 class e300_impl : public uhd::usrp::device3_impl
 {
 public:
-    //structors
+    /************************************************************************
+     * Structors
+     ***********************************************************************/
     e300_impl(const uhd::device_addr_t &);
     virtual ~e300_impl(void);
 
 private: // types
-
-    // perifs in the radio core
-    struct radio_perifs_t : public device3_impl::radio_v_perifs_t
-    {
-        gpio_atr::gpio_atr_3000::sptr atr;
-
-        bool ant_rx2;
-    };
-
-    //frontend cache so we can update gpios
-    struct fe_control_settings_t
-    {
-        fe_control_settings_t(void)
-        {
-            rx_freq = 1e9;
-            tx_freq = 1e9;
-        }
-        double rx_freq;
-        double tx_freq;
-    };
-
     enum compat_t {FPGA_MAJOR, FPGA_MINOR};
 
-    struct gpio_t
-    {
-        gpio_t() : pps_sel(global_regs::PPS_INT),
-            mimo(0), codec_arst(0), tx_bandsels(0),
-            rx_bandsel_a(0), rx_bandsel_b(0), rx_bandsel_c(0)
-        {}
-
-        boost::uint32_t pps_sel;
-        boost::uint32_t mimo;
-        boost::uint32_t codec_arst;
-
-        boost::uint32_t tx_bandsels;
-        boost::uint32_t rx_bandsel_a;
-        boost::uint32_t rx_bandsel_b;
-        boost::uint32_t rx_bandsel_c;
-
-        boost::uint32_t time_sync;
-
-        static const size_t PPS_SEL     = 0;
-        static const size_t MIMO        = 2;
-        static const size_t CODEC_ARST  = 3;
-        static const size_t TX_BANDSEL  = 4;
-        static const size_t RX_BANDSELA = 7;
-        static const size_t RX_BANDSELB = 13;
-        static const size_t RX_BANDSELC = 17;
-        static const size_t TIME_SYNC   = 21;
-    };
-
-protected:
+protected: // methods
+    /************************************************************************
+     * Legacy device3 stuff
+     ***********************************************************************/
     void subdev_to_blockid(
             const uhd::usrp::subdev_spec_pair_t &spec, const size_t mb_i,
             rfnoc::block_id_t &block_id, uhd::device_addr_t &block_args
@@ -178,25 +130,36 @@ protected:
             const rfnoc::block_id_t &blockid, const device_addr_t &block_args
     );
 
+    /************************************************************************
+     * Transport related
+     ***********************************************************************/
+    uhd::device_addr_t get_rx_hints(size_t);
+
 private: // methods
-    void _register_loopback_self_test(uhd::wb_iface::sptr iface);
+    /************************************************************************
+     * Initialization
+     ***********************************************************************/
+    void _register_loopback_self_test(wb_iface::sptr iface, boost::uint32_t w_addr, boost::uint32_t r_addr);
 
     boost::uint32_t _get_version(compat_t which);
     std::string _get_version_hash(void);
 
-    void _setup_radio(const size_t which_radio);
-
-    uhd::sid_t _allocate_sid(
-        const uhd::sid_t &address);
+    /************************************************************************
+     * Transport related
+     ***********************************************************************/
+    uhd::sid_t _allocate_sid(const uhd::sid_t &address);
 
     void _setup_dest_mapping(
         const uhd::sid_t &sid,
         const size_t which_stream);
 
-    size_t _get_axi_dma_channel(
-        const boost::uint8_t destination,
-        const xport_type_t);
+    /*! Return the first free AXI channel pair.
+     *
+     * \throws uhd::runtime_error if no free channel pairs are available.
+     */
+    size_t _get_axi_dma_channel_pair();
 
+    // For network mode
     boost::uint16_t _get_udp_port(
         boost::uint8_t destination,
         boost::uint8_t prefix);
@@ -207,53 +170,20 @@ private: // methods
         const uhd::device_addr_t &args
     );
 
-    double _get_tick_rate(size_t = 0){return _tick_rate;}
-    double _set_tick_rate(const double rate);
-
-    void _update_gpio_state(void);
-    void _update_enables(void);
-    void _reset_codec_mmcm(void);
-    void _update_bandsel(const std::string& which, double freq);
-
-    void _check_tick_rate_with_current_streamers(const double rate);
-    void _enforce_tick_rate_limits(
-        const size_t change,
-        const double tick_rate,
-        const std::string &direction);
-
-    void _update_time_source(const std::string &source);
-    void _update_clock_source(const std::string &);
-    void _set_time(const uhd::time_spec_t&);
-    void _sync_times(void);
-
-    void _codec_loopback_self_test(uhd::wb_iface::sptr iface);
-
-    void _update_atrs(void);
-    void _update_antenna_sel(const size_t &fe, const std::string &ant);
-
-    void _update_atr_leds(gpio_atr::gpio_atr_3000::sptr leds, const std::string &rx_ant);
-    void _update_fe_lo_freq(const std::string &fe, const double freq);
-
-    // get frontend lock sensor
-    uhd::sensor_value_t _get_fe_pll_lock(const bool is_tx);
-
-    // Transport funcs
     uhd::endianness_t get_transport_endianness(size_t) {
         return uhd::ENDIANNESS_LITTLE;
     };
 
-    void post_streamer_hooks(uhd::direction_t) { _update_enables(); };
+    /************************************************************************
+     * Helpers
+     ***********************************************************************/
+    void _update_clock_source(const std::string &);
 
 private: // members
-    uhd::device_addr_t                     _device_addr;
+    const uhd::device_addr_t               _device_addr;
     xport_t                                _xport_path;
     e300_fifo_interface::sptr              _fifo_iface;
-    size_t                                 _num_radios;
-    radio_perifs_t                         _radio_perifs[2];
-    double                                 _tick_rate;
-    ad9361_ctrl::sptr                      _codec_ctrl;
-    ad936x_manager::sptr                   _codec_mgr;
-    fe_control_settings_t                  _settings;
+    boost::dynamic_bitset<>                _dma_chans_available;
     global_regs::sptr                      _global_regs;
     e300_sensor_manager::sptr              _sensor_manager;
     e300_eeprom_manager::sptr              _eeprom_manager;
@@ -261,13 +191,12 @@ private: // members
     uhd::transport::zero_copy_xport_params _ctrl_xport_params;
     std::string                            _idle_image;
     bool                                   _do_not_reload;
-    gpio_t                                 _misc;
 #ifdef E300_GPSD
     gpsd_iface::sptr                       _gps;
     static const size_t                    _GPS_TIMEOUT = 5;
 #endif
 };
 
-}}} // namespace
+}}} // namespace uhd::usrp::e300
 
 #endif /* INCLUDED_E300_IMPL_HPP */

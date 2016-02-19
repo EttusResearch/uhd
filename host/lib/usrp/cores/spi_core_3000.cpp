@@ -20,9 +20,10 @@
 #include <uhd/utils/msg.hpp>
 #include <boost/thread/thread.hpp> //sleep
 
-#define SPI_DIV _base + 0
-#define SPI_CTRL _base + 4
-#define SPI_DATA _base + 8
+#define SPI_DIV      _base + 0
+#define SPI_CTRL     _base + 4
+#define SPI_DATA     _base + 8
+#define SPI_SHUTDOWN _base + 12
 
 using namespace uhd;
 
@@ -78,6 +79,17 @@ public:
         return 0;
     }
 
+    void set_shutdown(const bool shutdown)
+    {
+        _shutdown_cache = shutdown;
+        _iface->poke32(SPI_SHUTDOWN, _shutdown_cache);
+    }
+
+    bool get_shutdown()
+    {
+        return(_shutdown_cache);
+    }
+
     void set_divider(const double div)
     {
         _div = size_t((div/2) - 0.5);
@@ -89,6 +101,7 @@ private:
     const size_t _base;
     const size_t _readback;
     boost::uint32_t _ctrl_word_cache;
+    bool _shutdown_cache;
     boost::mutex _mutex;
     size_t _div;
 };

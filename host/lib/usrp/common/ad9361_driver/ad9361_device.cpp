@@ -1774,6 +1774,10 @@ void ad9361_device_t::initialize()
     _io_iface->poke8(0x014, 0x21);
 }
 
+void ad9361_device_t::set_io_iface(ad9361_io::sptr io_iface)
+{
+    _io_iface = io_iface;
+}
 
 /* This function sets the RX / TX rate between AD9361 and the FPGA, and
  * thus determines the interpolation / decimation required in the FPGA to

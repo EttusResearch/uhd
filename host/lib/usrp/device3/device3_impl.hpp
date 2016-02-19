@@ -43,7 +43,7 @@
 #include "time_core_3000.hpp"
 #include "gpio_atr_3000.hpp"
 // RFNoC-specific includes:
-#include "../rfnoc/radio_ctrl.hpp"
+#include "radio_ctrl_impl.hpp"
 
 namespace uhd { namespace usrp {
 
@@ -114,12 +114,8 @@ public:
         radio_ctrl_core_3000::sptr ctrl;
         time_core_3000::sptr time64;
         rx_vita_core_3000::sptr framer;
-        rx_dsp_core_3000::sptr ddc;
         tx_vita_core_3000::sptr deframer;
-        tx_dsp_core_3000::sptr duc;
         usrp::gpio_atr::gpio_atr_3000::sptr leds;
-        rx_frontend_core_200::sptr rx_fe;
-        tx_frontend_core_200::sptr tx_fe;
     };
 
     /***********************************************************************
@@ -243,7 +239,7 @@ protected:
             const uhd::sid_t &address,
             const size_t mb_i,
             const endianness_t endianness,
-            const uhd::rfnoc::radio_ctrl::dboard_type_t dboard_type
+            const std::string block_key
     );
 
     /***********************************************************************

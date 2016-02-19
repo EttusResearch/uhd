@@ -53,8 +53,11 @@ void device3_impl::merge_channel_defs(
     std::vector<size_t> chan_idxs;
 
     // 1. Get sorted list of currently defined channels
-    std::vector<std::string> curr_channels = _tree->list(chans_root);
-    std::sort(curr_channels.begin(), curr_channels.end(), _compare_string_indexes);
+    std::vector<std::string> curr_channels;
+    if (_tree->exists(chans_root)) {
+        curr_channels = _tree->list(chans_root);
+        std::sort(curr_channels.begin(), curr_channels.end(), _compare_string_indexes);
+    }
 
     // 2. Cycle through existing channels to find out where to merge
     //    the new channels. Rules are:
@@ -63,15 +66,17 @@ void device3_impl::merge_channel_defs(
     //    - If the channels in chan_ids are not yet in the property tree channel list,
     //      they are appended.
     BOOST_FOREACH(const std::string &chan_idx, curr_channels) {
-        rfnoc::block_id_t chan_block_id = _tree->access<rfnoc::block_id_t>(chans_root / chan_idx).get();
-        if (std::find(chan_ids.begin(), chan_ids.end(), chan_block_id) != chan_ids.end()) {
-            chan_idxs.push_back(boost::lexical_cast<size_t>(chan_idx));
+        if (_tree->exists(chans_root / chan_idx)) {
+            rfnoc::block_id_t chan_block_id = _tree->access<rfnoc::block_id_t>(chans_root / chan_idx).get();
+            if (std::find(chan_ids.begin(), chan_ids.end(), chan_block_id) != chan_ids.end()) {
+                chan_idxs.push_back(boost::lexical_cast<size_t>(chan_idx));
+            }
         }
     }
-    size_t last_chan_idx = boost::lexical_cast<size_t>(curr_channels.back());
+    size_t last_chan_idx = curr_channels.empty() ? 0 : (boost::lexical_cast<size_t>(curr_channels.back()) + 1);
     while (chan_idxs.size() < chan_ids.size()) {
-        last_chan_idx++;
         chan_idxs.push_back(last_chan_idx);
+        last_chan_idx++;
     }
 
     // 3. Write the new channels
@@ -80,6 +85,9 @@ void device3_impl::merge_channel_defs(
             _tree->create<rfnoc::block_id_t>(chans_root / chan_idxs[i]);
         }
         _tree->access<rfnoc::block_id_t>(chans_root / chan_idxs[i]).set(chan_ids[i]);
+        if (not _tree->exists(chans_root / chan_idxs[i] / "args")) {
+            _tree->create<uhd::device_addr_t>(chans_root / chan_idxs[i] / "args");
+        }
         _tree->access<uhd::device_addr_t>(chans_root / chan_idxs[i] / "args").set(chan_args[i]);
     }
 }
@@ -116,13 +124,14 @@ void device3_impl::enumerate_rfnoc_blocks(
             CTRL,
             transport_args
         );
-        UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control #%d (SID: %s)...") % i % xport.send_sid.to_pp_string_hex());
+        UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control for port #0 (SID: %s)...") % xport.send_sid.to_pp_string_hex());
         radio_ctrl_core_3000::sptr ctrl = radio_ctrl_core_3000::make(
                 endianness == ENDIANNESS_BIG,
                 xport.send,
                 xport.recv,
                 xport.send_sid,
-                str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint())
+                str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint()),
+                true
         );
         UHD_MSG(status) << "OK" << std::endl;
         uint64_t noc_id = ctrl->peek64(uhd::rfnoc::SR_READBACK_REG_ID);
@@ -140,14 +149,16 @@ void device3_impl::enumerate_rfnoc_blocks(
                 CTRL,
                 transport_args
             );
-            UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control #%d (SID: %s)...") % i % xport1.send_sid.to_pp_string_hex()) << std::endl;
+            UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control for port #%d (SID: %s)...") % port_number % xport1.send_sid.to_pp_string_hex());
             radio_ctrl_core_3000::sptr ctrl1 = radio_ctrl_core_3000::make(
                     endianness == ENDIANNESS_BIG,
-                    xport.recv,
-                    xport.send,
-                    xport.send_sid,
-                    str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint())
+                    xport1.send,
+                    xport1.recv,
+                    xport1.send_sid,
+                    str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint()),
+                    true
             );
+            UHD_MSG(status) << "OK" << std::endl;
             make_args.ctrl_ifaces[port_number] = ctrl1;
         }
 
@@ -168,35 +179,22 @@ void device3_impl::init_radio_ctrl(
         const uhd::sid_t &base_address,
         const size_t mb_i,
         const uhd::endianness_t endianness,
-        const uhd::rfnoc::radio_ctrl::dboard_type_t dboard_type
+        const std::string block_key
 ) {
     using namespace uhd::rfnoc;
 
     // 1) Create the block control
     UHD_MSG(status) << "[RFNOC] ------- Radio Setup -----------" << std::endl;
-    uhd::rfnoc::make_args_t make_args("Radio");
+    uhd::rfnoc::make_args_t make_args(block_key);
     make_args.ctrl_ifaces = boost::assign::map_list_of(size_t(0), perif.ctrl);
     make_args.base_address = base_address;
     make_args.device_index = mb_i;
+    make_args.block_name = "Radio";
     make_args.tree = _tree->subtree(fs_path("/mboards") / mb_i);
     make_args.is_big_endian = (endianness == ENDIANNESS_BIG);
-    radio_ctrl::sptr r_ctrl = boost::dynamic_pointer_cast<radio_ctrl>(block_ctrl_base::make(make_args));
+    boost::shared_ptr<radio_ctrl_impl> r_ctrl = boost::dynamic_pointer_cast<radio_ctrl_impl>(block_ctrl_base::make(make_args));
 
-    // 2) Configure the radio control block and the radio itself
-    r_ctrl->set_perifs(
-            perif.time64,
-            perif.framer,
-            perif.ddc,
-            perif.deframer,
-            perif.duc,
-            perif.rx_fe,
-            perif.tx_fe
-    );
-    r_ctrl->set_dboard_type(dboard_type);
-    r_ctrl->update_muxes(TX_DIRECTION);
-    r_ctrl->update_muxes(RX_DIRECTION);
-
-    // 3) Add block to block list and configure default channels
+    // 2) Add block to block list and configure default channels
     _rfnoc_block_ctrl.push_back(r_ctrl);
 
     size_t channel_idx = 0;

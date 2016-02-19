@@ -74,7 +74,7 @@ public:
         return clock_rate / (reg_val + 1);
     }
 
-    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd)
+    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t)
     {
         if (not stream_cmd.stream_now) {
             throw uhd::not_implemented_error("null_block does not support timed commands.");
@@ -99,13 +99,13 @@ public:
 
     void set_destination(
             boost::uint32_t next_address,
-            UHD_UNUSED(size_t output_block_port)
+            size_t output_block_port
     ) {
         uhd::sid_t sid(next_address);
         if (sid.get_src() == 0) {
             sid.set_src(get_address());
         }
-        sr_write(SR_NEXT_DST_BASE, sid.get());
+        sr_write(SR_NEXT_DST_SID, sid.get(), output_block_port);
     }
 };
 

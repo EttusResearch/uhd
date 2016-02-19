@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include "../../rfnoc/rx_stream_terminator.hpp"
 #include "../../rfnoc/tx_stream_terminator.hpp"
 #include <uhd/rfnoc/rate_node_ctrl.hpp>
+#include <uhd/rfnoc/radio_ctrl.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -150,6 +151,8 @@ struct rx_fc_cache_t
  *                be used for said fullness. Must be between 0.01 and 1.
  * \param fullness If specified, this value will override the value in
  *                 \p rx_args.
+ *
+ *  \returns The size of the flow control window in number of packets
  */
 static size_t get_rx_flow_control_window(
         size_t pkt_size,
@@ -167,6 +170,12 @@ static size_t get_rx_flow_control_window(
     }
 
     size_t window_in_pkts = (static_cast<size_t>(sw_buff_size * fullness_factor) / pkt_size);
+    if (rx_args.has_key("max_recv_window")) {
+        window_in_pkts = std::min(
+            window_in_pkts,
+            rx_args.cast<size_t>("max_recv_window", window_in_pkts)
+        );
+    }
     if (window_in_pkts == 0) {
         throw uhd::value_error("recv_buff_size must be larger than the recv_frame_size.");
     }
@@ -494,7 +503,9 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
                 suggested_block_port,
                 args.args
         );
-        recv_terminator->connect_upstream(blk_ctrl);
+        const size_t terminator_port = recv_terminator->connect_upstream(blk_ctrl);
+        blk_ctrl->set_downstream_port(block_port, terminator_port);
+        recv_terminator->set_upstream_port(terminator_port, block_port);
 
         // Check if the block connection is compatible (spp and item type)
         check_stream_sig_compatible(blk_ctrl->get_output_signature(block_port), args, "RX");
@@ -510,6 +521,16 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
 
         // Configure the block
         blk_ctrl->set_destination(xport.send_sid.get_src(), block_port);
+
+        blk_ctrl->sr_write(uhd::rfnoc::SR_RESP_OUT_DST_SID, xport.send_sid.get_src(), block_port);
+        UHD_MSG(status) << "[RX Streamer] resp_out_dst_sid == " << xport.send_sid.get_src() << std::endl;
+
+        // Find all upstream radio nodes and set their response in SID to the host
+        std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > upstream_radio_nodes = blk_ctrl->find_upstream_node<uhd::rfnoc::radio_ctrl>();
+        UHD_MSG(status) << "[RX Streamer] Number of upstream radio nodes: " << upstream_radio_nodes.size() << std::endl;
+        BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, upstream_radio_nodes) {
+            node->sr_write(uhd::rfnoc::SR_RESP_OUT_DST_SID, xport.send_sid.get_src(), block_port);
+        }
 
         // To calculate the max number of samples per packet, we assume the maximum header length
         // to avoid fragmentation should the entire header be used.
@@ -545,9 +566,9 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         const size_t pkt_size = spp * bpi + stream_options.rx_max_len_hdr;
         const size_t fc_window = get_rx_flow_control_window(pkt_size, xport.recv_buff_size, rx_hints);
         const size_t fc_handle_window = std::max<size_t>(1, fc_window / stream_options.rx_fc_request_freq);
-        UHD_MSG(status)<< "[RX Streamer] Flow Control Window = " << fc_window << ", Flow Control Handler Window = " << fc_handle_window << std::endl;
+        UHD_MSG(status)<< "[RX Streamer] Flow Control Window (minus one) = " << fc_window-1 << ", Flow Control Handler Window = " << fc_handle_window << std::endl;
         blk_ctrl->configure_flow_control_out(
-                fc_window,
+                fc_window-1, // Leave one space for overrun packets TODO make this obsolete
                 block_port
         );
 
@@ -562,13 +583,23 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         //Give the streamer a functor to handle overruns
         //bind requires a weak_ptr to break the a streamer->streamer circular dependency
         //Using "this" is OK because we know that this device3_impl will outlive the streamer
-        my_streamer->set_overflow_handler(
-            stream_i,
-            boost::bind(
-                &uhd::rfnoc::source_block_ctrl_base::handle_overrun, blk_ctrl,
-                boost::weak_ptr<uhd::rx_streamer>(my_streamer)
-            )
-        );
+        // FIXME remove the necessity to do the graph search
+        if (upstream_radio_nodes.size() == 1) {
+          my_streamer->set_overflow_handler(
+              stream_i,
+              boost::bind(&uhd::rfnoc::source_block_ctrl_base::handle_overrun, upstream_radio_nodes[0],
+                          boost::weak_ptr<uhd::rx_streamer>(my_streamer), block_port
+              )
+          );
+        } else {
+          my_streamer->set_overflow_handler(
+              stream_i,
+              boost::bind(
+                  &uhd::rfnoc::source_block_ctrl_base::handle_overrun, blk_ctrl,
+                  boost::weak_ptr<uhd::rx_streamer>(my_streamer), block_port
+              )
+          );
+        }
 
         //Give the streamer a functor to send flow control messages
         //handle_rx_flowctrl is static and has no lifetime issues
@@ -589,7 +620,8 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         //Give the streamer a functor issue stream cmd
         //bind requires a shared pointer to add a streamer->framer lifetime dependency
         my_streamer->set_issue_stream_cmd(
-            stream_i, boost::bind(&uhd::rfnoc::source_block_ctrl_base::issue_stream_cmd, blk_ctrl, _1)
+            stream_i,
+            boost::bind(&uhd::rfnoc::source_block_ctrl_base::issue_stream_cmd, blk_ctrl, _1, block_port)
         );
 
         // Tell the streamer which SID is valid for this channel
@@ -600,7 +632,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
     my_streamer->set_terminator(recv_terminator);
 
     // Notify all blocks in this chain that they are connected to an active streamer
-    recv_terminator->set_rx_streamer(true);
+    recv_terminator->set_rx_streamer(true, 0);
 
     // Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency.
     // Note that we store the streamer only once, and use its terminator's
@@ -684,7 +716,9 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
                 suggested_block_port,
                 args.args
         );
-        send_terminator->connect_downstream(blk_ctrl);
+        const size_t terminator_port = send_terminator->connect_downstream(blk_ctrl);
+        blk_ctrl->set_upstream_port(block_port, terminator_port);
+        send_terminator->set_downstream_port(terminator_port, block_port);
 
         // Check if the block connection is compatible (spp and item type)
         check_stream_sig_compatible(blk_ctrl->get_input_signature(block_port), args, "TX");
@@ -765,6 +799,15 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
                 )
         );
 
+        blk_ctrl->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.recv_sid.get_dst(), block_port);
+        UHD_MSG(status) << "[TX Streamer] resp_in_dst_sid == " << xport.recv_sid.get_dst() << std::endl;
+        // Find all downstream radio nodes and set their response in SID to the host
+        std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
+        UHD_MSG(status) << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
+        BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, downstream_radio_nodes) {
+            node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), block_port);
+        }
+
         //Give the streamer a functor to get the send buffer
         //get_tx_buff_with_flowctrl is static so bind has no lifetime issues
         //xport.send (sptr) is required to add streamer->data-transport lifetime dependency
@@ -786,7 +829,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
     my_streamer->set_terminator(send_terminator);
 
     // Notify all blocks in this chain that they are connected to an active streamer
-    send_terminator->set_tx_streamer(true);
+    send_terminator->set_tx_streamer(true, 0);
 
     // Store a weak pointer to prevent a streamer->device3_impl->streamer circular dependency.
     // Note that we store the streamer only once, and use its terminator's

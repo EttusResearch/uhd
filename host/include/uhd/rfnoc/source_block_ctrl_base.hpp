@@ -32,7 +32,7 @@ namespace uhd {
  * data *from* this block.
  */
 class UHD_API source_block_ctrl_base;
-class source_block_ctrl_base : virtual public block_ctrl_base, public source_node_ctrl
+class source_block_ctrl_base : virtual public block_ctrl_base, virtual public source_node_ctrl
 {
 public:
     typedef boost::shared_ptr<source_block_ctrl_base> sptr;
@@ -61,12 +61,12 @@ public:
      *
      * \param stream_cmd The stream command.
      */
-    virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd);
+    virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan=0);
 
-    /*! If an overrun ("O") is received, this function is called to straighten
+    /*! If an overrun ("O") is received, this function may be called to straighten
      * things out, if necessary.
      */
-    virtual void handle_overrun(boost::weak_ptr<uhd::rx_streamer>) { /* nop */ };
+    virtual void handle_overrun(boost::weak_ptr<uhd::rx_streamer>, const size_t) { /* nop */ };
 
     /***********************************************************************
      * Stream signatures
@@ -82,6 +82,10 @@ public:
      * \throws uhd::runtime_error if \p block_port is not a valid port
      */
     stream_sig_t get_output_signature(size_t block_port=0) const;
+
+    /*! Return a list of valid output ports.
+     */
+    std::vector<size_t> get_output_ports() const;
 
     /***********************************************************************
      * FPGA Configuration

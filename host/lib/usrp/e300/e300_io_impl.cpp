@@ -18,10 +18,12 @@
 #include "e300_regs.hpp"
 #include "e300_impl.hpp"
 #include "e300_fpga_defs.hpp"
+#include "e300_defaults.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include <boost/bind.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <boost/bind.hpp>
+#include <boost/format.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -29,35 +31,9 @@ using namespace uhd::transport;
 
 namespace uhd { namespace usrp { namespace e300 {
 
-/***********************************************************************
- * update streamer rates
- **********************************************************************/
-void e300_impl::_check_tick_rate_with_current_streamers(const double rate)
+uhd::device_addr_t e300_impl::get_rx_hints(size_t)
 {
-    bool enb_tx1 = false;
-    if (_tree->exists("/mboards/0/xbar/Radio_1/tx_active")) {
-        enb_tx1 = _tree->access<bool>("/mboards/0/xbar/Radio_1/tx_active").get();
-    }
-
-    bool enb_tx2 = false;
-    if (_tree->exists("/mboards/0/xbar/Radio_0/tx_active")) {
-        enb_tx2 = _tree->access<bool>("/mboards/0/xbar/Radio_0/tx_active").get();
-    }
-
-    bool enb_rx1 = false;
-    if (_tree->exists("/mboards/0/xbar/Radio_1/rx_active")) {
-        enb_rx1 = _tree->access<bool>("/mboards/0/xbar/Radio_1/rx_active").get();
-    }
-
-    bool enb_rx2 = false;
-    if (_tree->exists("/mboards/0/xbar/Radio_0/tx_active")) {
-        enb_rx2 = _tree->access<bool>("/mboards/0/xbar/Radio_0/rx_active").get();
-    }
-
-    const size_t max_tx_chan_count = (enb_tx1 ? 1 : 0) + (enb_tx2 ? 1 : 0);
-    const size_t max_rx_chan_count = (enb_rx1 ? 1 : 0) + (enb_rx2 ? 1 : 0);
-    _enforce_tick_rate_limits(max_rx_chan_count, rate, "RX");
-    _enforce_tick_rate_limits(max_tx_chan_count, rate, "TX");
+    return uhd::device_addr_t(str(boost::format("max_recv_window=%d") % DEFAULT_RX_DATA_NUM_FRAMES));
 }
 
 /***********************************************************************
@@ -65,25 +41,26 @@ void e300_impl::_check_tick_rate_with_current_streamers(const double rate)
  **********************************************************************/
 void e300_impl::subdev_to_blockid(
         const subdev_spec_pair_t &spec, const size_t mb_i,
-        rfnoc::block_id_t &block_id, device_addr_t &
+        rfnoc::block_id_t &block_id, device_addr_t &args
 ) {
     UHD_ASSERT_THROW(spec.db_name == "A");
     UHD_ASSERT_THROW(spec.sd_name == "A" || spec.sd_name == "B");
 
     block_id.set_device_no(mb_i);
     block_id.set_block_name("Radio");
-    block_id.set_block_count(spec.sd_name == "A" ? 0 : 1);
+    block_id.set_block_count(0);
+    args["block_port"] = spec.sd_name == "A" ? "0" : "1";
 }
 
 subdev_spec_pair_t e300_impl::blockid_to_subdev(
-        const rfnoc::block_id_t &block_id, const uhd::device_addr_t &
+        const rfnoc::block_id_t &block_id, const uhd::device_addr_t &args
 ) {
-    UHD_ASSERT_THROW(block_id.get_block_count() == 0 || block_id.get_block_count() == 1);
+    UHD_ASSERT_THROW(block_id.get_block_count() == 0);
     UHD_ASSERT_THROW(block_id.get_block_name() == "Radio");
 
     subdev_spec_pair_t spec;
     spec.db_name = "A";
-    spec.sd_name = (block_id.get_block_count() == 0) ? "A" : "B";
+    spec.sd_name = (args.cast<size_t>("block_port", 0) == 1 ? "B" : "A");
     return spec;
 }
 

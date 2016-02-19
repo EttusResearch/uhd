@@ -33,15 +33,18 @@ size_t source_node_ctrl::connect_downstream(
     return port;
 }
 
-void source_node_ctrl::set_rx_streamer(bool active)
+void source_node_ctrl::set_rx_streamer(bool active, const size_t /* port */)
 {
     UHD_MSG(status) << "[" << unique_id() << "] source_node_ctrl::set_rx_streamer() " << active << std::endl;
 
-    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
+    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, list_upstream_nodes()) {
         sptr curr_upstream_block_ctrl =
             boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
         if (curr_upstream_block_ctrl) {
-            curr_upstream_block_ctrl->set_rx_streamer(active);
+            curr_upstream_block_ctrl->set_rx_streamer(
+                    active,
+                    get_upstream_port(upstream_node.first)
+            );
         }
     }
 }

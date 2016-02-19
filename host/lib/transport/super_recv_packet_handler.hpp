@@ -483,6 +483,10 @@ private:
 
     void _flush_all(double timeout)
     {
+        get_prev_buffer_info().reset();
+        get_curr_buffer_info().reset();
+        get_next_buffer_info().reset();
+
         for (size_t i = 0; i < _props.size(); i++)
         {
             per_buffer_info_type prev_buffer_info, curr_buffer_info;
@@ -503,9 +507,6 @@ private:
                 curr_buffer_info.reset();
             }
         }
-        get_prev_buffer_info().reset();
-        get_curr_buffer_info().reset();
-        get_next_buffer_info().reset();
     }
 
     /*******************************************************************
@@ -603,16 +604,20 @@ private:
                 curr_info.metadata.time_spec = next_info[index].time;
                 curr_info.metadata.error_code = rx_metadata_t::error_code_t(get_context_code(next_info[index].vrt_hdr, next_info[index].ifpi));
                 if (curr_info.metadata.error_code == rx_metadata_t::ERROR_CODE_OVERFLOW){
+                    // Not sending flow control would cause timeouts due to source flow control locking up.
+                    // Send first as the overrun handler may flush the receive buffers which could contain
+                    // packets with sequence numbers after this packet's sequence number!
+                    if(_props[index].handle_flowctrl) {
+                        _props[index].handle_flowctrl(next_info[index].ifpi.packet_count);
+                    }
+
                     rx_metadata_t metadata = curr_info.metadata;
                     _props[index].handle_overflow();
                     curr_info.metadata = metadata;
                     UHD_MSG(fastpath) << "O";
-
-                    // Not sending flow control would cause timeouts due to source flow control locking up
-                    if(_props[index].handle_flowctrl) {
-                        _props[index].handle_flowctrl(next_info[index].ifpi.packet_count);
-                    }
                 }
+                curr_info[index].buff.reset();
+                curr_info[index].copy_buff = NULL;
                 return;
 
             case PACKET_TIMEOUT_ERROR:

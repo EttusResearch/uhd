@@ -59,7 +59,7 @@ public:
                     resp_xport), _sid(sid), _name(name), _seq_out(0), _timeout(
                     ACK_TIMEOUT), _resp_queue(128/*max response msgs*/), _resp_queue_size(
                     _resp_xport ? _resp_xport->get_num_recv_frames() : 3),
-                    _rb_address(rfnoc_block ? uhd::rfnoc::SR_READBACK : SR_READBACK)
+                    _rb_address(rfnoc_block ? uhd::rfnoc::SR_READBACK : uhd::rfnoc::SR_READBACK_ADDR)
     {
         if (resp_xport)
         {

@@ -42,6 +42,7 @@ public:
     static const size_t SR_CORE_MISC     = 4;
     static const size_t SR_CORE_TEST     = 28;
     static const size_t SR_CORE_XB_LOCAL = 32;
+    static const size_t SR_CORE_SPI_SEL  = 64;
 
     // leave some room for registers,
     // xbar starts with an offset of one

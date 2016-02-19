@@ -48,3 +48,56 @@ void node_ctrl_base::_register_upstream_node(
 ) {
     throw uhd::runtime_error("Attempting to register an upstream block on a non-sink node.");
 }
+
+void node_ctrl_base::set_downstream_port(
+        const size_t this_port,
+        const size_t remote_port
+) {
+    if (not _downstream_nodes.count(this_port) and remote_port != ANY_PORT) {
+        throw uhd::value_error(str(
+            boost::format("[%s] Cannot set remote downstream port: Port %d not connected.")
+            % unique_id() % this_port
+        ));
+    }
+    _downstream_ports[this_port] = remote_port;
+}
+
+size_t node_ctrl_base::get_downstream_port(const size_t this_port)
+{
+    if (not _downstream_ports.count(this_port)
+        or not _downstream_nodes.count(this_port)
+        or _downstream_ports[this_port] == ANY_PORT) {
+        throw uhd::value_error(str(
+            boost::format("[%s] Cannot retrieve remote downstream port: Port %d not connected.")
+            % unique_id() % this_port
+        ));
+    }
+    return _downstream_ports[this_port];
+}
+
+void node_ctrl_base::set_upstream_port(
+        const size_t this_port,
+        const size_t remote_port
+) {
+    if (not _upstream_nodes.count(this_port) and remote_port != ANY_PORT) {
+        throw uhd::value_error(str(
+            boost::format("[%s] Cannot set remote upstream port: Port %d not connected.")
+            % unique_id() % this_port
+        ));
+    }
+    _upstream_ports[this_port] = remote_port;
+}
+
+size_t node_ctrl_base::get_upstream_port(const size_t this_port)
+{
+    if (not _upstream_ports.count(this_port)
+        or not _upstream_nodes.count(this_port)
+        or _upstream_ports[this_port] == ANY_PORT) {
+        throw uhd::value_error(str(
+            boost::format("[%s] Cannot retrieve remote upstream port: Port %d not connected.")
+            % unique_id() % this_port
+        ));
+    }
+    return _upstream_ports[this_port];
+}
+

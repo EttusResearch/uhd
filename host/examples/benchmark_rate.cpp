@@ -39,6 +39,8 @@ unsigned long long num_rx_samps = 0;
 unsigned long long num_tx_samps = 0;
 unsigned long long num_dropped_samps = 0;
 unsigned long long num_seq_errors = 0;
+unsigned long long num_late_commands = 0;
+unsigned long long num_timeouts = 0;
 
 /***********************************************************************
  * Benchmark RX Rate
@@ -104,6 +106,20 @@ void benchmark_rx_rate(
             // check out_of_sequence flag to see if it was a sequence error or overflow
             if (!md.out_of_sequence)
                 num_overflows++;
+            break;
+
+        case uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND:
+            std::cerr << "Receiver error: " << md.strerror() << ", restart streaming..."<< std::endl;
+            num_late_commands++;
+            // Radio core will be in the idle state. Issue stream command to restart streaming.
+            cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.05);
+            cmd.stream_now = (buffs.size() == 1);
+            rx_stream->issue_stream_cmd(cmd);
+            break;
+
+        case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
+            std::cerr << "Receiver error: " << md.strerror() << ", continuing..." << std::endl;
+            num_timeouts++;
             break;
 
         default:
@@ -321,7 +337,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         "  Num transmitted samples: %u\n"
         "  Num sequence errors:     %u\n"
         "  Num underflows detected: %u\n"
-    ) % num_rx_samps % num_dropped_samps % num_overflows % num_tx_samps % num_seq_errors % num_underflows << std::endl;
+        "  Num late commands:       %u\n"
+        "  Num timeouts:            %u\n"
+    ) % num_rx_samps % num_dropped_samps % num_overflows % num_tx_samps % num_seq_errors % num_underflows
+      % num_late_commands % num_timeouts << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;

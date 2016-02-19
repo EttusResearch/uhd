@@ -52,7 +52,7 @@ static std::string make_border(const std::string &text){
 static std::string get_dsp_pp_string(const std::string &type, property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("%s DSP: %s") % type % path.leaf() << std::endl;
-    //ss << std::endl;
+    ss << std::endl;
     meta_range_t freq_range = tree->access<meta_range_t>(path / "freq/range").get();
     ss << boost::format("Freq range: %.3f to %.3f MHz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;;
     return ss.str();
@@ -152,15 +152,15 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path 
     ss << "Time sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "time_source" / "options").get()) << std::endl;
     ss << "Clock sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "clock_source" / "options").get()) << std::endl;
     ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
-    BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
-        ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
-    }
+    //BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
+    //    ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
+    //}
     BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
         ss << make_border(get_dboard_pp_string("RX", tree, path / "dboards" / name));
     }
-    BOOST_FOREACH(const std::string &name, tree->list(path / "tx_dsps")){
-        ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
-    }
+    //BOOST_FOREACH(const std::string &name, tree->list(path / "tx_dsps")){
+    //    ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
+    //}
     BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
         ss << make_border(get_dboard_pp_string("TX", tree, path / "dboards" / name));
     }

@@ -18,6 +18,7 @@
 // This file contains the block control functions for block controller classes.
 // See block_ctrl_base_factory.cpp for discovery and factory functions.
 
+#include "radio_ctrl_core_3000.hpp"
 #include "nocscript/block_iface.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
@@ -73,22 +74,18 @@ block_ctrl_base::block_ctrl_base(
     _root_path = "xbar/" + _block_id.get_local();
     _tree->create<boost::uint64_t>(_root_path / "noc_id").set(noc_id);
 
-    /*** Input buffer sizes *************************************************/
+    /*** Configure ports ****************************************************/
     size_t n_valid_input_buffers = 0;
-    for (size_t port_offset = 0; port_offset < 16; port_offset += 8) {
-        // FIXME: Eventually need to implement per block port buffers
-        // settingsbus_reg_t reg =
-        //     (port_offset == 0) ? SR_READBACK_REG_BUFFALLOC0 : SR_READBACK_REG_BUFFALLOC1;
-        settingsbus_reg_t reg = SR_READBACK_REG_BUFFALLOC0;
-        boost::uint64_t value = sr_read64(reg);
-        for (size_t i = 0; i < 8; i++) {
-            // FIXME: See above
-            // size_t buf_size_log2 = (value >> (i * 8)) & 0xFF; // Buffer size in x = log2(lines)
-            size_t buf_size_log2 = value & 0xFF;
-            size_t buf_size_bytes = BYTES_PER_LINE * (1 << buf_size_log2); // Bytes == 8 * 2^x
-            if (buf_size_bytes) n_valid_input_buffers++;
-            _tree->create<size_t>(_root_path / "input_buffer_size" / size_t(i + port_offset)).set(buf_size_bytes);
-        }
+    BOOST_FOREACH(const size_t ctrl_port, get_ctrl_ports()) {
+        // Set source addresses:
+        sr_write(SR_BLOCK_SID, get_address(ctrl_port), ctrl_port);
+        // Set sink buffer sizes:
+        settingsbus_reg_t reg = SR_READBACK_REG_FIFOSIZE;
+        uint64_t value = sr_read64(reg, ctrl_port);
+        size_t buf_size_log2 = value & 0xFF;
+        size_t buf_size_bytes = BYTES_PER_LINE * (1 << buf_size_log2); // Bytes == 8 * 2^x
+        if (buf_size_bytes > 0) n_valid_input_buffers++;
+        _tree->create<size_t>(_root_path / "input_buffer_size" / ctrl_port).set(buf_size_bytes);
     }
 
     /*** Register names *****************************************************/
@@ -113,12 +110,12 @@ block_ctrl_base::block_ctrl_base(
     _init_port_defs("in",  _block_def->get_input_ports());
     _init_port_defs("out", _block_def->get_output_ports());
     // FIXME this warning always fails until the input buffer code above is fixed
-    //if (_tree->list(_root_path / "ports/in").size() != n_valid_input_buffer_sizes) {
-        //UHD_MSG(warning) <<
-            //boost::format("[%s] defines %d input buffer sizes, but %d input ports")
-            //% get_block_id().get() % n_valid_input_buffers % _tree->list(_root_path / "ports/in").size()
-            //<< std::endl;
-    //}
+    if (_tree->list(_root_path / "ports/in").size() != n_valid_input_buffers) {
+        UHD_MSG(warning) <<
+            boost::format("[%s] defines %d input buffer sizes, but %d input ports")
+            % get_block_id().get() % n_valid_input_buffers % _tree->list(_root_path / "ports/in").size()
+            << std::endl;
+    }
 
     /*** Init default block args ********************************************/
     _nocscript_iface = nocscript::block_iface::make(this);
@@ -206,6 +203,11 @@ void block_ctrl_base::_init_block_args()
 /***********************************************************************
  * FPGA control & communication
  **********************************************************************/
+wb_iface::sptr block_ctrl_base::get_ctrl_iface(const size_t block_port)
+{
+    return _ctrl_ifaces[block_port];
+}
+
 std::vector<size_t> block_ctrl_base::get_ctrl_ports() const
 {
     std::vector<size_t> ctrl_ports;
@@ -270,7 +272,7 @@ boost::uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg, const si
         throw uhd::key_error(str(boost::format("[%s] sr_read32(): No such port: %d") % get_block_id().get() % port));
     }
     try {
-        return _ctrl_ifaces[port]->peek32(_sr_to_addr(reg));
+        return _ctrl_ifaces[port]->peek32(_sr_to_addr64(reg));
     }
     catch(const std::exception &ex) {
         throw uhd::io_error(str(boost::format("[%s] sr_read32() failed: %s") % get_block_id().get() % ex.what()));
@@ -307,7 +309,7 @@ boost::uint32_t block_ctrl_base::user_reg_read32(const boost::uint32_t addr, con
 {
     try {
         // Set readback register address
-        sr_write(SR_READBACK_ADDR, addr);
+        sr_write(SR_READBACK_ADDR, addr, port);
         // Read readback register via RFNoC
         return sr_read32(SR_READBACK_REG_USER, port);
     }
@@ -329,15 +331,47 @@ boost::uint32_t block_ctrl_base::user_reg_read32(const std::string &reg, const s
     ), port);
 }
 
-void block_ctrl_base::clear(const size_t /* reserved */)
+void block_ctrl_base::set_command_time(
+        const time_spec_t &time_spec,
+        const double tick_rate,
+        const size_t port
+) {
+    boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
+        boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
+    if (not iface_sptr) {
+        throw uhd::assertion_error(str(
+            boost::format("[%s] Cannot set command time on port '%d'")
+            % unique_id() % port
+        ));
+    }
+
+    iface_sptr->set_tick_rate(tick_rate);
+    iface_sptr->set_time(time_spec);
+}
+
+void block_ctrl_base::clear_command_time(const size_t port)
+{
+    boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
+        boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
+    if (not iface_sptr) {
+        throw uhd::assertion_error(str(
+            boost::format("[%s] Cannot set command time on port '%d'")
+            % unique_id() % port
+        ));
+    }
+
+    iface_sptr->set_time(time_spec_t(0.0));
+}
+
+void block_ctrl_base::clear(const size_t /* port */)
 {
     UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::clear() " << std::endl;
     // Call parent...
     node_ctrl_base::clear();
-    // TODO: Reset stream signatures to defaults from block definition
-    // Call block-specific reset
     // ...then child
-    _clear();
+    BOOST_FOREACH(const size_t port_index, get_ctrl_ports()) {
+        _clear(port_index);
+    }
 }
 
 boost::uint32_t block_ctrl_base::get_address(size_t block_port) {
@@ -498,10 +532,10 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
 /***********************************************************************
  * Hooks & Derivables
  **********************************************************************/
-void block_ctrl_base::_clear()
+void block_ctrl_base::_clear(const size_t port)
 {
     UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::_clear() " << std::endl;
-    sr_write(SR_FLOW_CTRL_CLR_SEQ, 0x00C1EA12); // 'CLEAR', but we can write anything, really
+    sr_write(SR_CLEAR_TX_FC, 0x00C1EA12, port); // 'CLEAR', but we can write anything, really
 }
 
 // vim: sw=4 et:

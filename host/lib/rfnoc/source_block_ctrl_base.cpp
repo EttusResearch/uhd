@@ -27,7 +27,8 @@ using namespace uhd::rfnoc;
  * Streaming operations
  **********************************************************************/
 void source_block_ctrl_base::issue_stream_cmd(
-        const uhd::stream_cmd_t &stream_cmd
+        const uhd::stream_cmd_t &stream_cmd,
+        const size_t chan
 ) {
     UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::issue_stream_cmd()" << std::endl;
     if (_upstream_nodes.empty()) {
@@ -38,7 +39,7 @@ void source_block_ctrl_base::issue_stream_cmd(
     BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
         source_node_ctrl::sptr this_upstream_block_ctrl =
             boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
-        this_upstream_block_ctrl->issue_stream_cmd(stream_cmd);
+        this_upstream_block_ctrl->issue_stream_cmd(stream_cmd, chan);
     }
 }
 
@@ -59,6 +60,16 @@ stream_sig_t source_block_ctrl_base::get_output_signature(size_t block_port) con
     );
 }
 
+std::vector<size_t> source_block_ctrl_base::get_output_ports() const
+{
+    std::vector<size_t> output_ports;
+    output_ports.reserve(_tree->list(_root_path / "ports" / "out").size());
+    BOOST_FOREACH(const std::string port, _tree->list(_root_path / "ports" / "out")) {
+        output_ports.push_back(boost::lexical_cast<size_t>(port));
+    }
+    return output_ports;
+}
+
 /***********************************************************************
  * FPGA Configuration
  **********************************************************************/
@@ -70,7 +81,7 @@ void source_block_ctrl_base::set_destination(
     sid_t new_sid(next_address);
     new_sid.set_src(get_address(output_block_port));
     UHD_MSG(status) << "  Setting SID: " << new_sid << std::endl << "  ";
-    sr_write(SR_NEXT_DST_BASE+output_block_port, (1<<16) | next_address);
+    sr_write(SR_NEXT_DST_SID, (1<<16) | next_address, output_block_port);
 }
 
 void source_block_ctrl_base::configure_flow_control_out(
@@ -79,10 +90,14 @@ void source_block_ctrl_base::configure_flow_control_out(
             UHD_UNUSED(const uhd::sid_t &sid)
 ) {
     UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::configure_flow_control_out() buf_size_pkts==" << buf_size_pkts << std::endl;
-    // This actually takes counts between acks. So if the buffer size is 1 packet, we
-    // set this to zero.
-    sr_write(SR_FLOW_CTRL_WINDOW_SIZE_BASE + block_port, (buf_size_pkts == 0) ? 0 : buf_size_pkts-1);
-    sr_write(SR_FLOW_CTRL_WINDOW_EN_BASE + block_port, (buf_size_pkts != 0));
+    if (buf_size_pkts < 2) {
+      throw uhd::runtime_error(str(
+              boost::format("Invalid window size %d for block %s. Window size must at least be 2.")
+              % buf_size_pkts % unique_id()
+      ));
+    }
+    sr_write(SR_FLOW_CTRL_WINDOW_SIZE, buf_size_pkts, block_port);
+    sr_write(SR_FLOW_CTRL_WINDOW_EN, (buf_size_pkts != 0), block_port);
 }
 
 /***********************************************************************

@@ -93,9 +93,20 @@ class ad9361_ctrl_impl : public ad9361_ctrl
 {
 public:
     ad9361_ctrl_impl(ad9361_params::sptr client_settings, ad9361_io::sptr io_iface):
-        _device(client_settings, io_iface)
+        _device(client_settings, io_iface), _safe_spi(io_iface), _timed_spi(io_iface)
     {
         _device.initialize();
+    }
+
+    void set_timed_spi(uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num)
+    {
+        _timed_spi = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
+        //_use_timed_spi();
+    }
+
+    void set_safe_spi(uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num)
+    {
+        _safe_spi = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
     }
 
     double set_gain(const std::string &which, const double value)
@@ -104,7 +115,8 @@ public:
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         ad9361_device_t::chain_t chain =_get_chain_from_antenna(which);
-        return _device.set_gain(direction, chain, value);
+        double return_val = _device.set_gain(direction, chain, value);
+        return return_val;
     }
 
     void set_agc(const std::string &which, bool enable)
@@ -112,7 +124,7 @@ public:
         boost::lock_guard<boost::mutex> lock(_mutex);
 
         ad9361_device_t::chain_t chain =_get_chain_from_antenna(which);
-         _device.set_agc(chain, enable);
+        _device.set_agc(chain, enable);
     }
 
     void set_agc_mode(const std::string &which, const std::string &mode)
@@ -133,6 +145,9 @@ public:
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
+        // Changing clock rate will disrupt AD9361's sample clock
+        _use_safe_spi();
+
         //clip to known bounds
         const meta_range_t clock_rate_range = ad9361_ctrl::get_clock_rate_range();
         const double clipped_rate = clock_rate_range.clip(rate);
@@ -144,7 +159,11 @@ public:
             ) % (rate/1e6) % (clipped_rate/1e6) << std::endl;
         }
 
-        return _device.set_clock_rate(clipped_rate);
+        double return_rate = _device.set_clock_rate(clipped_rate);
+
+        //_use_timed_spi();
+
+        return return_rate;
     }
 
     //! set which RX and TX chains/antennas are active
@@ -152,7 +171,11 @@ public:
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
+        // If both RX chains are disabled then the AD9361's sample clock is disabled
+        _use_safe_spi();
         _device.set_active_chains(tx1, tx2, rx1, rx2);
+        //_use_timed_spi();
+
     }
 
     //! tune the given frontend, return the exact value
@@ -160,13 +183,18 @@ public:
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
+        _use_safe_spi();
+
         //clip to known bounds
         const meta_range_t freq_range = ad9361_ctrl::get_rf_freq_range();
         const double clipped_freq = freq_range.clip(freq);
         const double value = ad9361_ctrl::get_rf_freq_range().clip(clipped_freq);
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
-        return _device.tune(direction, value);
+        double return_val = _device.tune(direction, value);
+
+        //_use_timed_spi();
+        return return_val;
     }
 
     //! get the current frequency for the given frontend
@@ -283,16 +311,28 @@ private:
         return ad9361_device_t::CHAIN_1;
     }
 
-    ad9361_device_t _device;
-    boost::mutex    _mutex;
+    void _use_safe_spi() {
+        _device.set_io_iface(_safe_spi);
+    }
+
+    void _use_timed_spi() {
+        _device.set_io_iface(_timed_spi);
+    }
+
+    ad9361_device_t         _device;
+    ad9361_io::sptr         _safe_spi;      // SPI core that uses an always available clock
+    ad9361_io::sptr         _timed_spi;     // SPI core that has a dependency on the AD9361's sample clock (i.e. radio clk)
+    boost::mutex            _mutex;
 };
 
 //----------------------------------------------------------------------
 // Make an instance of the AD9361 Control interface
 //----------------------------------------------------------------------
 ad9361_ctrl::sptr ad9361_ctrl::make_spi(
-    ad9361_params::sptr client_settings, uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num)
-{
+    ad9361_params::sptr client_settings,
+    uhd::spi_iface::sptr spi_iface,
+    boost::uint32_t slave_num
+) {
     boost::shared_ptr<ad9361_io_spi> spi_io_iface = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
     return sptr(new ad9361_ctrl_impl(client_settings, spi_io_iface));
 }

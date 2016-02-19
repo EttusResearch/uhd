@@ -251,6 +251,23 @@ public:
      */
     boost::uint32_t user_reg_read32(const std::string &reg, const size_t port = 0);
 
+
+    /*! Sets a command time for all future command packets.
+     *
+     * \throws uhd::assertion_error if the underlying interface does not
+     *         actually support timing.
+     */
+    void set_command_time(const time_spec_t &time_spec, const double tick_rate, const size_t port = 0);
+
+    /*! Resets the command time.
+     * Any command packet after this call will no longer have a time associated
+     * with it.
+     *
+     * \throws uhd::assertion_error if the underlying interface does not
+     *         actually support timing.
+     */
+    void clear_command_time(const size_t port);
+
     /*! Reset block after streaming operation.
      *
      * This does the following:
@@ -266,6 +283,8 @@ public:
      *
      * For custom behaviour, overwrite _clear(). If you do so, you must take
      * take care of resetting flow control yourself.
+     *
+     * TODO: Find better name (it disconnects, clears FC...)
      */
     void clear(const size_t port = 0/* reserved, currently not used */);
 
@@ -329,14 +348,17 @@ protected:
         return _root_path / "args" / port / key;
     };
 
+    //! Get a control interface object for block port \p block_port
+    wb_iface::sptr get_ctrl_iface(const size_t block_port);
+
 
     /***********************************************************************
      * Hooks & Derivables
      **********************************************************************/
 
     //! Override this function if your block does something else
-    // than reset register SR_FLOW_CTRL_CLR_SEQ.
-    virtual void _clear();
+    // than reset register SR_CLEAR_TX_FC.
+    virtual void _clear(const size_t port = 0);
 
     /***********************************************************************
      * Protected members

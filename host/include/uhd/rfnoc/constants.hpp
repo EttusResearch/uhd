@@ -52,25 +52,35 @@ static const size_t DEFAULT_FC_TX_RESPONSE_FREQ = 8; // ACKs per flow control wi
 static const double DEFAULT_FC_RX_SW_BUFF_FULL_FACTOR     = 0.90; // Buffer should ideally be 90% full.
 
 // Common settings registers.
-static const boost::uint32_t SR_FLOW_CTRL_CYCS_PER_ACK_BASE     = 0;
-static const boost::uint32_t SR_FLOW_CTRL_PKTS_PER_ACK_BASE     = 16;
-static const boost::uint32_t SR_FLOW_CTRL_WINDOW_SIZE_BASE      = 32;
-static const boost::uint32_t SR_FLOW_CTRL_WINDOW_EN_BASE        = 48;
-static const boost::uint32_t SR_FLOW_CTRL_CLR_SEQ               = 126;
+static const boost::uint32_t SR_FLOW_CTRL_CYCS_PER_ACK          = 0;
+static const boost::uint32_t SR_FLOW_CTRL_PKTS_PER_ACK          = 1;
+static const boost::uint32_t SR_FLOW_CTRL_WINDOW_SIZE           = 2;
+static const boost::uint32_t SR_FLOW_CTRL_WINDOW_EN             = 3;
+static const boost::uint32_t SR_ERROR_POLICY                    = 4;
+static const boost::uint32_t SR_BLOCK_SID                       = 5; // TODO rename to SRC_SID
+static const boost::uint32_t SR_NEXT_DST_SID                    = 6;
+static const boost::uint32_t SR_RESP_IN_DST_SID                 = 7;
+static const boost::uint32_t SR_RESP_OUT_DST_SID                = 8;
+
+static const boost::uint32_t SR_READBACK_ADDR                   = 124;
 static const boost::uint32_t SR_READBACK                        = 127;
-static const boost::uint32_t SR_NEXT_DST_BASE                   = 128;
-static const boost::uint32_t SR_READBACK_ADDR                   = 255;
+
+static const boost::uint32_t SR_CLEAR_RX_FC                     = 125;
+static const boost::uint32_t SR_CLEAR_TX_FC                     = 126;
 
 //! Settings register readback
 enum settingsbus_reg_t {
     SR_READBACK_REG_ID         = 0,
-    SR_READBACK_REG_BUFFALLOC0 = 1,
-    SR_READBACK_REG_BUFFALLOC1 = 2,
-    SR_READBACK_REG_USER       = 3,
+    SR_READBACK_REG_GLOBAL_PARAMS       = 1,
+    SR_READBACK_REG_FIFOSIZE   = 2, // fifo size
+    SR_READBACK_REG_MTU       = 3,
+    SR_READBACK_REG_BLOCKPORT_SIDS = 4,
+    SR_READBACK_REG_USER       = 5
+    /* 6 currently unused */
 };
 
 // AXI stream configuration bus (output master bus of axi wrapper) registers
-static const boost::uint32_t AXI_WRAPPER_BASE      = SR_NEXT_DST_BASE;
+static const boost::uint32_t AXI_WRAPPER_BASE      = 128;
 static const boost::uint32_t AXIS_CONFIG_BUS       = AXI_WRAPPER_BASE+1; // tdata with tvalid asserted
 static const boost::uint32_t AXIS_CONFIG_BUS_TLAST = AXI_WRAPPER_BASE+2; // tdata with tvalid & tlast asserted
 

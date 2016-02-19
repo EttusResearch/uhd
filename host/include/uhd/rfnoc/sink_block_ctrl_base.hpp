@@ -33,7 +33,7 @@ namespace uhd {
  * Every input is defined by a port definition (port_t).
  */
 class UHD_API sink_block_ctrl_base;
-class sink_block_ctrl_base : virtual public block_ctrl_base, public sink_node_ctrl
+class sink_block_ctrl_base : virtual public block_ctrl_base, virtual public sink_node_ctrl
 {
 public:
     typedef boost::shared_ptr<sink_block_ctrl_base> sptr;
@@ -52,6 +52,10 @@ public:
      * \throws uhd::runtime_error if \p block_port is not a valid port
      */
     stream_sig_t get_input_signature(size_t block_port=0) const;
+
+    /*! Return a list of valid input ports.
+     */
+    std::vector<size_t> get_input_ports() const;
 
     /***********************************************************************
      * FPGA Configuration
@@ -91,8 +95,16 @@ public:
             size_t cycles,
             size_t packets,
             size_t block_port=0
-     );
+    );
 
+    /*! Configure the behaviour for errors on incoming packets
+     *  (e.g. sequence errors).
+     *
+     *
+     */
+    virtual void set_error_policy(
+        const std::string &policy
+    );
 
 protected:
     /***********************************************************************
