@@ -28,7 +28,6 @@
 
 static const double X300_REF_CLK_OUT_RATE  = 10e6;
 static const boost::uint16_t X300_MAX_CLKOUT_DIV = 1045;
-static const double X300_DEFAULT_DBOARD_CLK_RATE = 50e6;
 
 struct x300_clk_delays {
     x300_clk_delays() :
@@ -70,11 +69,13 @@ public:
         const size_t slaveno,
         const size_t hw_rev,
         const double master_clock_rate,
+        const double dboard_clock_rate,
         const double system_ref_rate):
         _spiface(spiface),
         _slaveno(slaveno),
         _hw_rev(hw_rev),
         _master_clock_rate(master_clock_rate),
+        _dboard_clock_rate(dboard_clock_rate),
         _system_ref_rate(system_ref_rate)
     {
         init();
@@ -603,7 +604,7 @@ private:
             std::ceil(_vco_freq / _master_clock_rate));
 
         boost::uint16_t dboard_div = static_cast<boost::uint16_t>(
-            std::ceil(_vco_freq / X300_DEFAULT_DBOARD_CLK_RATE));
+            std::ceil(_vco_freq / _dboard_clock_rate));
 
         /* Reset the LMK clock controller. */
         _lmk04816_regs.RESET = lmk04816_regs_t::RESET_RESET;
@@ -731,6 +732,7 @@ private:
     const size_t            _slaveno;
     const size_t            _hw_rev;
     const double            _master_clock_rate;
+    const double            _dboard_clock_rate;
     const double            _system_ref_rate;
     lmk04816_regs_t         _lmk04816_regs;
     double                  _vco_freq;
@@ -741,7 +743,8 @@ x300_clock_ctrl::sptr x300_clock_ctrl::make(uhd::spi_iface::sptr spiface,
         const size_t slaveno,
         const size_t hw_rev,
         const double master_clock_rate,
+        const double dboard_clock_rate,
         const double system_ref_rate) {
     return sptr(new x300_clock_ctrl_impl(spiface, slaveno, hw_rev,
-                master_clock_rate, system_ref_rate));
+                master_clock_rate, dboard_clock_rate, system_ref_rate));
 }

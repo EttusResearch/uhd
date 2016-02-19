@@ -39,12 +39,12 @@ gpio_core_200::~gpio_core_200(void){
 class gpio_core_200_impl : public gpio_core_200{
 public:
     gpio_core_200_impl(wb_iface::sptr iface, const size_t base, const size_t rb_addr):
-        _iface(iface), _base(base), _rb_addr(rb_addr) { /* NOP */ }
+        _iface(iface), _base(base), _rb_addr(rb_addr), _first_atr(true) { /* NOP */ }
 
     void set_pin_ctrl(const unit_t unit, const boost::uint16_t value, const boost::uint16_t mask){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
         shadow_it(_pin_ctrl[unit], value, mask);
-        this->update(); //full update
+        update(); //full update
     }
 
     boost::uint16_t get_pin_ctrl(unit_t unit){
@@ -55,7 +55,14 @@ public:
     void set_atr_reg(const unit_t unit, const atr_reg_t atr, const boost::uint16_t value, const boost::uint16_t mask){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
         shadow_it(_atr_regs[unit][atr], value, mask);
-        this->update(); //full update
+        if (_first_atr)
+        {
+            // To preserve legacy behavior, update all registers the first time
+            update();
+            _first_atr = false;
+        }
+        else
+            update(atr);
     }
 
     boost::uint16_t get_atr_reg(unit_t unit, atr_reg_t reg){
@@ -97,6 +104,7 @@ private:
     wb_iface::sptr _iface;
     const size_t _base;
     const size_t _rb_addr;
+    bool _first_atr;
     uhd::dict<size_t, boost::uint32_t> _update_cache;
 
     uhd::dict<unit_t, boost::uint16_t> _pin_ctrl, _gpio_out, _gpio_ddr;
@@ -107,13 +115,31 @@ private:
     }
 
     void update(void){
-        this->update(gpio_atr::ATR_REG_IDLE, REG_GPIO_IDLE);
-        this->update(gpio_atr::ATR_REG_TX_ONLY, REG_GPIO_TX_ONLY);
-        this->update(gpio_atr::ATR_REG_RX_ONLY, REG_GPIO_RX_ONLY);
-        this->update(gpio_atr::ATR_REG_FULL_DUPLEX, REG_GPIO_BOTH);
+        update(gpio_atr::ATR_REG_IDLE);
+        update(gpio_atr::ATR_REG_TX_ONLY);
+        update(gpio_atr::ATR_REG_RX_ONLY);
+        update(gpio_atr::ATR_REG_FULL_DUPLEX);
     }
 
-    void update(const atr_reg_t atr, const size_t addr){
+    void update(const atr_reg_t atr){
+        size_t addr;
+        switch (atr)
+        {
+        case gpio_atr::ATR_REG_IDLE:
+            addr = REG_GPIO_IDLE;
+            break;
+        case gpio_atr::ATR_REG_TX_ONLY:
+            addr = REG_GPIO_TX_ONLY;
+            break;
+        case gpio_atr::ATR_REG_RX_ONLY:
+            addr = REG_GPIO_IDLE;
+            break;
+        case gpio_atr::ATR_REG_FULL_DUPLEX:
+            addr = REG_GPIO_RX_ONLY;
+            break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+        }
         const boost::uint32_t atr_val =
             (boost::uint32_t(_atr_regs[dboard_iface::UNIT_RX][atr]) << shift_by_unit(dboard_iface::UNIT_RX)) |
             (boost::uint32_t(_atr_regs[dboard_iface::UNIT_TX][atr]) << shift_by_unit(dboard_iface::UNIT_TX));
@@ -152,17 +178,23 @@ public:
     }
 
     void set_atr_reg(const atr_reg_t atr, const boost::uint32_t value){
-        if (atr == gpio_atr::ATR_REG_IDLE)        _iface->poke32(REG_GPIO_IDLE, value);
-        if (atr == gpio_atr::ATR_REG_TX_ONLY)     _iface->poke32(REG_GPIO_TX_ONLY, value);
-        if (atr == gpio_atr::ATR_REG_RX_ONLY)     _iface->poke32(REG_GPIO_RX_ONLY, value);
-        if (atr == gpio_atr::ATR_REG_FULL_DUPLEX) _iface->poke32(REG_GPIO_BOTH, value);
+        if (atr == gpio_atr::ATR_REG_IDLE)
+            _iface->poke32(REG_GPIO_IDLE, value);
+        else if (atr == gpio_atr::ATR_REG_TX_ONLY)
+            _iface->poke32(REG_GPIO_TX_ONLY, value);
+        else if (atr == gpio_atr::ATR_REG_RX_ONLY)
+            _iface->poke32(REG_GPIO_RX_ONLY, value);
+        else if (atr == gpio_atr::ATR_REG_FULL_DUPLEX)
+            _iface->poke32(REG_GPIO_BOTH, value);
+        else
+            UHD_THROW_INVALID_CODE_PATH();
     }
 
     void set_all_regs(const boost::uint32_t value){
-        this->set_atr_reg(gpio_atr::ATR_REG_IDLE,        value);
-        this->set_atr_reg(gpio_atr::ATR_REG_TX_ONLY,     value);
-        this->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY,     value);
-        this->set_atr_reg(gpio_atr::ATR_REG_FULL_DUPLEX, value);
+        set_atr_reg(gpio_atr::ATR_REG_IDLE,        value);
+        set_atr_reg(gpio_atr::ATR_REG_TX_ONLY,     value);
+        set_atr_reg(gpio_atr::ATR_REG_RX_ONLY,     value);
+        set_atr_reg(gpio_atr::ATR_REG_FULL_DUPLEX, value);
     }
 
 private:

@@ -149,8 +149,8 @@ public:
         if (wait_for_completion(timeout))
         {
             if (result.status != LIBUSB_TRANSFER_COMPLETED)
-                throw uhd::runtime_error(str(boost::format("usb %s transfer status: %d")
-                                             % _name % libusb_error_name(result.status)));
+                throw uhd::io_error(str(boost::format("usb %s transfer status: %d")
+                                        % _name % libusb_error_name(result.status)));
             result.completed = 0;
             return make(reinterpret_cast<buffer_type *>(this), _lut->buffer, (_is_recv)? result.actual_length : _frame_size);
         }
