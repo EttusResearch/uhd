@@ -20,7 +20,7 @@
 
 \section b200_power Power
 In most cases, USB 3.0 bus power will be sufficient to power the device.
-If using USB 2.0 or a internal GPSDO, an external power supply or a cable designed
+If using USB 2.0 or an internal GPSDO, an external power supply or a cable designed
 to pull power from 2 USB ports (USB 3.0 dual A to micro-B or B) must be used.
 
 \section b200_imgs Specifying a Non-standard Image

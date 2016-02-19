@@ -24,8 +24,6 @@
 ########################################################################
 find_package(UDev)
 
-LIBUHD_REGISTER_COMPONENT("E300" ENABLE_E300 OFF "ENABLE_LIBUHD" OFF OFF)
-
 IF(ENABLE_E300)
     LIST(APPEND E300_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_impl.cpp

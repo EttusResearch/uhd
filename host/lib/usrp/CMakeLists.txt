@@ -18,8 +18,6 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-find_package(GPSD)
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 LIBUHD_APPEND_SOURCES(
@@ -43,8 +41,6 @@ IF(ENABLE_C_API)
     )
 ENDIF(ENABLE_C_API)
 
-LIBUHD_REGISTER_COMPONENT("GPSD" ENABLE_GPSD OFF "ENABLE_LIBUHD;ENABLE_GPSD;LIBGPS_FOUND" OFF OFF)
-
 IF(ENABLE_GPSD)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/gpsd_iface.cpp
@@ -63,3 +59,4 @@ INCLUDE_SUBDIRECTORY(e100)
 INCLUDE_SUBDIRECTORY(e300)
 INCLUDE_SUBDIRECTORY(x300)
 INCLUDE_SUBDIRECTORY(b200)
+INCLUDE_SUBDIRECTORY(n230)

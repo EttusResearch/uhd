@@ -21,12 +21,16 @@ add_library(usrp3fw STATIC
     udp_uart.c
     wb_uart.c
     wb_i2c.c
+    wb_spi.c
     printf.c
     wb_pkt_iface64.c
     u3_net_stack.c
     ethernet.c
-    mdelay.c
     chinch.c
     print_addrs.c
     link_state_route_proto.c
+    cron.c
+    fw_comm_protocol.c
+    flash/spi_flash.c
+    flash/spif_spsn_s25flxx.c
 )

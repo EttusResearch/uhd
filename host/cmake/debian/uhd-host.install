@@ -1,0 +1,4 @@
+usr/bin
+usr/lib/uhd
+usr/share/doc/uhd/doxygen /usr/share/doc/uhd-host/
+debian/NetworkManager-USRP /etc/NetworkManager/system-connections/USRP

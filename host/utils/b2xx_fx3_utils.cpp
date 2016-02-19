@@ -52,7 +52,8 @@ const static vid_pid_t known_vid_pids[] = {
     {FX3_VID, FX3_DEFAULT_PID},
     {FX3_VID, FX3_REENUM_PID},
     {B200_VENDOR_ID, B200_PRODUCT_ID},
-    {B200_VENDOR_ID, B205_PRODUCT_ID},
+    {B200_VENDOR_ID, B200MINI_PRODUCT_ID},
+    {B200_VENDOR_ID, B205MINI_PRODUCT_ID},
     {B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID},
     {B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID}
 };
@@ -175,7 +176,7 @@ uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, c
                 vp = known_vid_pid_vector[i];
                 handles = uhd::transport::usb_device_handle::get_device_list(vp.vid, vp.pid);
             }
-           
+
         }
 
         if (handles.size() > 0)

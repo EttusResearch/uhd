@@ -19,6 +19,7 @@
 # Utilities that get installed into the runtime path
 ########################################################################
 SET(util_runtime_sources
+    uhd_config_info.cpp
     uhd_find_devices.cpp
     uhd_usrp_probe.cpp
     uhd_image_loader.cpp
@@ -30,7 +31,7 @@ SET(util_runtime_sources
 
 SET(x3xx_burner_sources
     usrp_x3xx_fpga_burner.cpp
-    cdecode.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/x300/cdecode.c
 )
 
 find_package(UDev)
@@ -48,17 +49,24 @@ FOREACH(util_source ${util_runtime_sources})
     UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
 ENDFOREACH(util_source)
 
-ADD_EXECUTABLE(usrp_x3xx_fpga_burner ${x3xx_burner_sources})
-TARGET_LINK_LIBRARIES(usrp_x3xx_fpga_burner uhd ${Boost_LIBRARIES})
-UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
+IF(ENABLE_X300)
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/x300)
+    ADD_EXECUTABLE(usrp_x3xx_fpga_burner ${x3xx_burner_sources})
+    TARGET_LINK_LIBRARIES(usrp_x3xx_fpga_burner uhd ${Boost_LIBRARIES})
+    UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
+ENDIF(ENABLE_X300)
 
 ########################################################################
 # Utilities that get installed into the share path
 ########################################################################
 SET(util_share_sources
+    converter_benchmark.cpp
     query_gpsdo_sensors.cpp
     usrp_burn_db_eeprom.cpp
     usrp_burn_mb_eeprom.cpp
+)
+SET(util_share_sources_py
+    converter_benchmark.py
 )
 IF(ENABLE_USB)
     LIST(APPEND util_share_sources
@@ -84,10 +92,9 @@ IF(ENABLE_OCTOCLOCK)
 
     SET(octoclock_burner_sources
         octoclock_firmware_burner.cpp
-        ${CMAKE_SOURCE_DIR}/lib/usrp_clock/octoclock/kk_ihex_read.c
+        ${CMAKE_SOURCE_DIR}/lib/utils/ihex.cpp
     )
 
-    ADD_DEFINITIONS(-DIHEX_USE_STDBOOL)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp_clock/octoclock)
     ADD_EXECUTABLE(octoclock_firmware_burner ${octoclock_burner_sources})
     TARGET_LINK_LIBRARIES(octoclock_firmware_burner uhd ${Boost_LIBRARIES})
@@ -109,9 +116,20 @@ FOREACH(util_source ${util_share_sources})
     TARGET_LINK_LIBRARIES(${util_name} uhd ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
 ENDFOREACH(util_source)
+FOREACH(util_source ${util_share_sources_py})
+    UHD_INSTALL(PROGRAMS
+        ${CMAKE_CURRENT_SOURCE_DIR}/${util_source}
+        DESTINATION ${PKG_LIB_DIR}/utils
+        COMPONENT utilities
+    )
+ENDFOREACH(util_source)
 
-UHD_INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
-UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+IF(ENABLE_USRP2)
+    UHD_INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+ENDIF(ENABLE_USRP2)
+IF(ENABLE_X300)
+    UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
+ENDIF(ENABLE_X300)
 
 #UHD images downloader configuration
 CONFIGURE_FILE(

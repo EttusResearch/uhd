@@ -41,6 +41,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::usrp::gpio_atr;
 using namespace uhd::transport;
 
 static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
@@ -74,9 +75,9 @@ public:
 };
 
 // B205
-class b205_ad9361_client_t : public ad9361_params {
+class b2xxmini_ad9361_client_t : public ad9361_params {
 public:
-    ~b205_ad9361_client_t() {}
+    ~b2xxmini_ad9361_client_t() {}
     double get_band_edge(frequency_band_t band) {
         switch (band) {
         case AD9361_RX_BAND0:   return 0; // Set these all to
@@ -318,7 +319,8 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     else if (specified_vid)
     {
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B200_PRODUCT_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B205_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B200MINI_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B205MINI_PRODUCT_ID));
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B200_PRODUCT_NI_ID));
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(vid, B210_PRODUCT_NI_ID));
     }
@@ -332,7 +334,8 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     else
     {
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B200_PRODUCT_ID));
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B205_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B200MINI_PRODUCT_ID));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID,    B205MINI_PRODUCT_ID));
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID));
         vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID));
     }
@@ -359,7 +362,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     const mboard_eeprom_t mb_eeprom(*_iface, "B200");
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(mb_eeprom)
-        .subscribe(boost::bind(&b200_impl::set_mb_eeprom, this, _1));
+        .add_coerced_subscriber(boost::bind(&b200_impl::set_mb_eeprom, this, _1));
 
     ////////////////////////////////////////////////////////////////////
     // Identify the device type
@@ -386,7 +389,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
 
     UHD_MSG(status) << "Detected Device: " << B2XX_STR_NAMES[_product] << std::endl;
 
-    _gpsdo_capable = (_product != B205);
+    _gpsdo_capable = (not (_product == B200MINI or _product == B205MINI));
 
     ////////////////////////////////////////////////////////////////////
     // Set up frontend mapping
@@ -405,7 +408,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     _fe2 = 0;
     _gpio_state.swap_atr = 1;
     // Unswapped setup:
-    if (_product == B205 or (_product == B200 and _revision >= 5)) {
+    if (_product == B200MINI or _product == B205MINI or (_product == B200 and _revision >= 5)) {
         _fe1 = 0;                   //map radio0 to FE1
         _fe2 = 1;                   //map radio1 to FE2
         _gpio_state.swap_atr = 0; // ATRs for radio0 are mapped to FE1
@@ -497,7 +500,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
                 BOOST_FOREACH(const std::string &name, _gps->get_sensors())
                 {
                     _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                        .publish(boost::bind(&gps_ctrl::get_sensor, _gps, name));
+                        .set_publisher(boost::bind(&gps_ctrl::get_sensor, _gps, name));
                 }
             }
             else
@@ -512,7 +515,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>("/name").set("B-Series Device");
     _tree->create<std::string>(mb_path / "name").set(product_name);
-    _tree->create<std::string>(mb_path / "codename").set((_product == B205) ? "Pixie" : "Sasquatch");
+    _tree->create<std::string>(mb_path / "codename").set((_product == B200MINI or _product == B205MINI) ? "Pixie" : "Sasquatch");
 
     ////////////////////////////////////////////////////////////////////
     // Create data transport
@@ -540,7 +543,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // create time and clock control objects
     ////////////////////////////////////////////////////////////////////
     _spi_iface = b200_local_spi_core::make(_local_ctrl);
-    if (_product != B205) {
+    if (not (_product == B200MINI or _product == B205MINI)) {
         _adf4001_iface = boost::make_shared<b200_ref_pll_ctrl>(_spi_iface);
     }
 
@@ -549,13 +552,13 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     UHD_MSG(status) << "Initialize CODEC control..." << std::endl;
     ad9361_params::sptr client_settings;
-    if (_product == B205) {
-        client_settings = boost::make_shared<b205_ad9361_client_t>();
+    if (_product == B200MINI or _product == B205MINI) {
+        client_settings = boost::make_shared<b2xxmini_ad9361_client_t>();
     } else {
         client_settings = boost::make_shared<b200_ad9361_client_t>();
     }
     _codec_ctrl = ad9361_ctrl::make_spi(client_settings, _spi_iface, AD9361_SLAVENO);
-   
+
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
     ////////////////////////////////////////////////////////////////////
@@ -574,9 +577,9 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // create clock control objects
     ////////////////////////////////////////////////////////////////////
     _tree->create<double>(mb_path / "tick_rate")
-        .coerce(boost::bind(&b200_impl::set_tick_rate, this, _1))
-        .publish(boost::bind(&b200_impl::get_tick_rate, this))
-        .subscribe(boost::bind(&b200_impl::update_tick_rate, this, _1));
+        .set_coercer(boost::bind(&b200_impl::set_tick_rate, this, _1))
+        .set_publisher(boost::bind(&b200_impl::get_tick_rate, this))
+        .add_coerced_subscriber(boost::bind(&b200_impl::update_tick_rate, this, _1));
     _tree->create<time_spec_t>(mb_path / "time" / "cmd");
     _tree->create<bool>(mb_path / "auto_tick_rate").set(false);
 
@@ -584,7 +587,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // and do the misc mboard sensors
     ////////////////////////////////////////////////////////////////////
     _tree->create<sensor_value_t>(mb_path / "sensors" / "ref_locked")
-        .publish(boost::bind(&b200_impl::get_ref_locked, this));
+        .set_publisher(boost::bind(&b200_impl::get_ref_locked, this));
 
     ////////////////////////////////////////////////////////////////////
     // create frontend mapping
@@ -593,13 +596,13 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     _tree->create<std::vector<size_t> >(mb_path / "rx_chan_dsp_mapping").set(default_map);
     _tree->create<std::vector<size_t> >(mb_path / "tx_chan_dsp_mapping").set(default_map);
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
-        .coerce(boost::bind(&b200_impl::coerce_subdev_spec, this, _1))
+        .set_coercer(boost::bind(&b200_impl::coerce_subdev_spec, this, _1))
         .set(subdev_spec_t())
-        .subscribe(boost::bind(&b200_impl::update_subdev_spec, this, "rx", _1));
+        .add_coerced_subscriber(boost::bind(&b200_impl::update_subdev_spec, this, "rx", _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
-        .coerce(boost::bind(&b200_impl::coerce_subdev_spec, this, _1))
+        .set_coercer(boost::bind(&b200_impl::coerce_subdev_spec, this, _1))
         .set(subdev_spec_t())
-        .subscribe(boost::bind(&b200_impl::update_subdev_spec, this, "tx", _1));
+        .add_coerced_subscriber(boost::bind(&b200_impl::update_subdev_spec, this, "tx", _1));
 
     ////////////////////////////////////////////////////////////////////
     // setup radio control
@@ -623,15 +626,18 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
 
     //register time now and pps onto available radio cores
     _tree->create<time_spec_t>(mb_path / "time" / "now")
-        .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64));
+        .set_publisher(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
+        .add_coerced_subscriber(boost::bind(&b200_impl::set_time, this, _1))
+        .set(0.0);
+    //re-sync the times when the tick rate changes
+    _tree->access<double>(mb_path / "tick_rate")
+        .add_coerced_subscriber(boost::bind(&b200_impl::sync_times, this));
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
-        .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64));
-    for (size_t i = 0; i < _radio_perifs.size(); i++)
+        .set_publisher(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64));
+    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
     {
-        _tree->access<time_spec_t>(mb_path / "time" / "now")
-            .subscribe(boost::bind(&time_core_3000::set_time_now, _radio_perifs[i].time64, _1));
         _tree->access<time_spec_t>(mb_path / "time" / "pps")
-            .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[i].time64, _1));
+            .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_next_pps, perif.time64, _1));
     }
 
     //setup time source props
@@ -641,8 +647,8 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options")
         .set(time_sources);
     _tree->create<std::string>(mb_path / "time_source" / "value")
-        .coerce(boost::bind(&check_option_valid, "time source", time_sources, _1))
-        .subscribe(boost::bind(&b200_impl::update_time_source, this, _1));
+        .set_coercer(boost::bind(&check_option_valid, "time source", time_sources, _1))
+        .add_coerced_subscriber(boost::bind(&b200_impl::update_time_source, this, _1));
     //setup reference source props
     static const std::vector<std::string> clock_sources = (_gpsdo_capable) ?
                                 boost::assign::list_of("internal")("external")("gpsdo") :
@@ -650,21 +656,21 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options")
         .set(clock_sources);
     _tree->create<std::string>(mb_path / "clock_source" / "value")
-        .coerce(boost::bind(&check_option_valid, "clock source", clock_sources, _1))
-        .subscribe(boost::bind(&b200_impl::update_clock_source, this, _1));
+        .set_coercer(boost::bind(&check_option_valid, "clock source", clock_sources, _1))
+        .add_coerced_subscriber(boost::bind(&b200_impl::update_clock_source, this, _1));
 
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
-    _radio_perifs[0].fp_gpio = gpio_core_200::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
+    _radio_perifs[0].fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
             _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
             .set(0)
-            .subscribe(boost::bind(&b200_impl::set_fp_gpio, this, _radio_perifs[0].fp_gpio, attr.first, _1));
+            .add_coerced_subscriber(boost::bind(&gpio_atr_3000::set_gpio_attr, _radio_perifs[0].fp_gpio, attr.first, _1));
     }
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
-        .publish(boost::bind(&b200_impl::get_fp_gpio, this, _radio_perifs[0].fp_gpio));
+        .set_publisher(boost::bind(&gpio_atr_3000::read_gpio, _radio_perifs[0].fp_gpio));
 
     ////////////////////////////////////////////////////////////////////
     // dboard eeproms but not really
@@ -746,22 +752,23 @@ void b200_impl::setup_radio(const size_t dspno)
     perif.ctrl->hold_task(_async_task);
     _async_task_data->radio_ctrl[dspno] = perif.ctrl; //weak
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
-        .subscribe(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
+        .add_coerced_subscriber(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
+        .add_coerced_subscriber(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
     this->register_loopback_self_test(perif.ctrl);
 
     ////////////////////////////////////////////////////////////////////
     // Set up peripherals
     ////////////////////////////////////////////////////////////////////
-    perif.atr = gpio_core_200_32wo::make(perif.ctrl, TOREG(SR_ATR));
+    perif.atr = gpio_atr_3000::make_write_only(perif.ctrl, TOREG(SR_ATR));
+    perif.atr->set_atr_mode(MODE_ATR, 0xFFFFFFFF);
     // create rx dsp control objects
     perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP), true /*is_b200?*/);
     perif.ddc->set_link_rate(10e9/8); //whatever
     perif.ddc->set_mux("IQ", false, dspno == 1 ? true : false, dspno == 1 ? true : false);
     perif.ddc->set_freq(rx_dsp_core_3000::DEFAULT_CORDIC_FREQ);
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, TOREG(SR_TX_CTRL));
+    perif.deframer = tx_vita_core_3000::make_no_radio_buff(perif.ctrl, TOREG(SR_TX_CTRL));
     perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
     perif.duc->set_link_rate(10e9/8); //whatever
     perif.duc->set_freq(tx_dsp_core_3000::DEFAULT_CORDIC_FREQ);
@@ -778,28 +785,27 @@ void b200_impl::setup_radio(const size_t dspno)
     // connect rx dsp control objects
     ////////////////////////////////////////////////////////////////////
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
-        .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
+        .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
+        .add_coerced_subscriber(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
     perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
     _tree->access<double>(rx_dsp_path / "rate" / "value")
-        .coerce(boost::bind(&b200_impl::coerce_rx_samp_rate, this, perif.ddc, dspno, _1))
-        .subscribe(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
+        .set_coercer(boost::bind(&b200_impl::coerce_rx_samp_rate, this, perif.ddc, dspno, _1))
+        .add_coerced_subscriber(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
     ;
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
-        .subscribe(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
+        .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
 
     ////////////////////////////////////////////////////////////////////
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&tx_vita_core_3000::set_tick_rate, perif.deframer, _1))
-        .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
+        .add_coerced_subscriber(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / dspno;
     perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
     _tree->access<double>(tx_dsp_path / "rate" / "value")
-        .coerce(boost::bind(&b200_impl::coerce_tx_samp_rate, this, perif.duc, dspno, _1))
-        .subscribe(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
+        .set_coercer(boost::bind(&b200_impl::coerce_tx_samp_rate, this, perif.duc, dspno, _1))
+        .add_coerced_subscriber(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
     ;
 
     ////////////////////////////////////////////////////////////////////
@@ -819,17 +825,17 @@ void b200_impl::setup_radio(const size_t dspno)
 
         // Now connect all the b200_impl-specific items
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
-            .publish(boost::bind(&b200_impl::get_fe_pll_locked, this, dir == TX_DIRECTION))
+            .set_publisher(boost::bind(&b200_impl::get_fe_pll_locked, this, dir == TX_DIRECTION))
         ;
         _tree->access<double>(rf_fe_path / "freq" / "value")
-            .subscribe(boost::bind(&b200_impl::update_bandsel, this, key, _1))
+            .add_coerced_subscriber(boost::bind(&b200_impl::update_bandsel, this, key, _1))
         ;
         if (dir == RX_DIRECTION)
         {
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
-                .subscribe(boost::bind(&b200_impl::update_antenna_sel, this, dspno, _1))
+                .add_coerced_subscriber(boost::bind(&b200_impl::update_antenna_sel, this, dspno, _1))
                 .set("RX2")
             ;
 
@@ -947,7 +953,7 @@ void b200_impl::check_fpga_compat(void)
     if (signature != 0xACE0BA5E) throw uhd::runtime_error(
         "b200::check_fpga_compat signature register readback failed");
 
-    const boost::uint16_t expected = (_product == B205 ? B205_FPGA_COMPAT_NUM : B200_FPGA_COMPAT_NUM);
+    const boost::uint16_t expected = ((_product == B200MINI or _product == B205MINI) ? B205_FPGA_COMPAT_NUM : B200_FPGA_COMPAT_NUM);
     if (compat_major != expected)
     {
         throw uhd::runtime_error(str(boost::format(
@@ -965,27 +971,6 @@ void b200_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom)
     mb_eeprom.commit(*_iface, "B200");
 }
 
-
-boost::uint32_t b200_impl::get_fp_gpio(gpio_core_200::sptr gpio)
-{
-    return boost::uint32_t(gpio->read_gpio(dboard_iface::UNIT_RX));
-}
-
-void b200_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, const boost::uint32_t value)
-{
-    switch (attr)
-    {
-    case GPIO_CTRL:   return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    case GPIO_DDR:    return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    case GPIO_OUT:    return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    case GPIO_ATR_0X: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    case GPIO_ATR_RX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    case GPIO_ATR_TX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    case GPIO_ATR_XX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
-    default:        UHD_THROW_INVALID_CODE_PATH();
-    }
-}
-
 /***********************************************************************
  * Reference time and clock
  **********************************************************************/
@@ -993,7 +978,7 @@ void b200_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, co
 void b200_impl::update_clock_source(const std::string &source)
 {
     // For B205, ref_sel selects whether or not to lock to the external clock source
-    if (_product == B205)
+    if (_product == B200MINI or _product == B205MINI)
     {
         if (source == "external" and _time_source == EXTERNAL)
         {
@@ -1055,7 +1040,7 @@ void b200_impl::update_clock_source(const std::string &source)
 
 void b200_impl::update_time_source(const std::string &source)
 {
-    if (_product == B205 and source == "external" and _gpio_state.ref_sel == 1)
+    if ((_product == B200MINI or _product == B205MINI) and source == "external" and _gpio_state.ref_sel == 1)
     {
         throw uhd::value_error("external reference cannot be both a time source and a clock source");
     }
@@ -1075,9 +1060,22 @@ void b200_impl::update_time_source(const std::string &source)
         throw uhd::key_error("update_time_source: unknown source: " + source);
     if (_time_source != value)
     {
-        _local_ctrl->poke32(TOREG(SR_CORE_PPS_SEL), value);
+        _local_ctrl->poke32(TOREG(SR_CORE_SYNC), value);
         _time_source = value;
     }
+}
+
+void b200_impl::set_time(const uhd::time_spec_t& t)
+{
+    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+        perif.time64->set_time_sync(t);
+    _local_ctrl->poke32(TOREG(SR_CORE_SYNC), 1 << 2 | boost::uint32_t(_time_source));
+    _local_ctrl->poke32(TOREG(SR_CORE_SYNC), _time_source);
+}
+
+void b200_impl::sync_times()
+{
+    set_time(_radio_perifs[0].time64->get_time_now());
 }
 
 /***********************************************************************
@@ -1087,7 +1085,7 @@ void b200_impl::update_time_source(const std::string &source)
 void b200_impl::update_bandsel(const std::string& which, double freq)
 {
     // B205 does not have bandsels
-    if (_product == B205) {
+    if (_product == B200MINI or _product == B205MINI) {
         return;
     }
 
@@ -1155,11 +1153,11 @@ void b200_impl::update_atrs(void)
         if (enb_rx and enb_tx) fd = STATE_FDX1_TXRX;
         if (enb_rx and not enb_tx) fd = rxonly;
         if (not enb_rx and enb_tx) fd = txonly;
-        gpio_core_200_32wo::sptr atr = perif.atr;
-        atr->set_atr_reg(dboard_iface::ATR_REG_IDLE, STATE_OFF);
-        atr->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY, rxonly);
-        atr->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, txonly);
-        atr->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, fd);
+        gpio_atr_3000::sptr atr = perif.atr;
+        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF);
+        atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly);
+        atr->set_atr_reg(ATR_REG_TX_ONLY, txonly);
+        atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd);
     }
     if (_radio_perifs.size() > _fe2 and _radio_perifs[_fe2].atr)
     {
@@ -1173,11 +1171,11 @@ void b200_impl::update_atrs(void)
         if (enb_rx and enb_tx) fd = STATE_FDX2_TXRX;
         if (enb_rx and not enb_tx) fd = rxonly;
         if (not enb_rx and enb_tx) fd = txonly;
-        gpio_core_200_32wo::sptr atr = perif.atr;
-        atr->set_atr_reg(dboard_iface::ATR_REG_IDLE, STATE_OFF);
-        atr->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY, rxonly);
-        atr->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, txonly);
-        atr->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, fd);
+        gpio_atr_3000::sptr atr = perif.atr;
+        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF);
+        atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly);
+        atr->set_atr_reg(ATR_REG_TX_ONLY, txonly);
+        atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd);
     }
 }
 

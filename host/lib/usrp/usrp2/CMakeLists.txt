@@ -22,8 +22,6 @@
 ########################################################################
 # Conditionally configure the USRP2 support
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 ON "ENABLE_LIBUHD" OFF OFF)
-
 IF(ENABLE_USRP2)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp

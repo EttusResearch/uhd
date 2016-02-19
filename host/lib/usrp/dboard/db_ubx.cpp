@@ -319,14 +319,14 @@ public:
         write_gpio();
 
         // Configure ATR
-        _iface->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_IDLE, _tx_gpio_reg.atr_idle);
-        _iface->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_TX_ONLY, _tx_gpio_reg.atr_tx);
-        _iface->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_RX_ONLY, _tx_gpio_reg.atr_rx);
-        _iface->set_atr_reg(dboard_iface::UNIT_TX, dboard_iface::ATR_REG_FULL_DUPLEX, _tx_gpio_reg.atr_full_duplex);
-        _iface->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, _rx_gpio_reg.atr_idle);
-        _iface->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, _rx_gpio_reg.atr_tx);
-        _iface->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, _rx_gpio_reg.atr_rx);
-        _iface->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, _rx_gpio_reg.atr_full_duplex);
+        _iface->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_IDLE, _tx_gpio_reg.atr_idle);
+        _iface->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_TX_ONLY, _tx_gpio_reg.atr_tx);
+        _iface->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_RX_ONLY, _tx_gpio_reg.atr_rx);
+        _iface->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_FULL_DUPLEX, _tx_gpio_reg.atr_full_duplex);
+        _iface->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_IDLE, _rx_gpio_reg.atr_idle);
+        _iface->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_TX_ONLY, _rx_gpio_reg.atr_tx);
+        _iface->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_RX_ONLY, _rx_gpio_reg.atr_rx);
+        _iface->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_FULL_DUPLEX, _rx_gpio_reg.atr_full_duplex);
 
         // Engage ATR control (1 is ATR control, 0 is manual control)
         _iface->set_pin_ctrl(dboard_iface::UNIT_TX, _tx_gpio_reg.atr_mask);
@@ -389,12 +389,12 @@ public:
         get_rx_subtree()->create<std::vector<std::string> >("power_mode/options")
             .set(ubx_power_modes);
         get_rx_subtree()->create<std::string>("power_mode/value")
-            .subscribe(boost::bind(&ubx_xcvr::set_power_mode, this, _1))
+            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_power_mode, this, _1))
             .set("performance");
         get_rx_subtree()->create<std::vector<std::string> >("xcvr_mode/options")
             .set(ubx_xcvr_modes);
         get_rx_subtree()->create<std::string>("xcvr_mode/value")
-            .subscribe(boost::bind(&ubx_xcvr::set_xcvr_mode, this, _1))
+            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_xcvr_mode, this, _1))
             .set("FDX");
 
         ////////////////////////////////////////////////////////////////////
@@ -404,20 +404,20 @@ public:
         get_tx_subtree()->create<device_addr_t>("tune_args")
             .set(device_addr_t());
         get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-            .publish(boost::bind(&ubx_xcvr::get_locked, this, "TXLO"));
+            .set_publisher(boost::bind(&ubx_xcvr::get_locked, this, "TXLO"));
         get_tx_subtree()->create<double>("gains/PGA0/value")
-            .coerce(boost::bind(&ubx_xcvr::set_tx_gain, this, _1)).set(0);
+            .set_coercer(boost::bind(&ubx_xcvr::set_tx_gain, this, _1)).set(0);
         get_tx_subtree()->create<meta_range_t>("gains/PGA0/range")
             .set(ubx_tx_gain_range);
         get_tx_subtree()->create<double>("freq/value")
-            .coerce(boost::bind(&ubx_xcvr::set_tx_freq, this, _1))
+            .set_coercer(boost::bind(&ubx_xcvr::set_tx_freq, this, _1))
             .set(ubx_freq_range.start());
         get_tx_subtree()->create<meta_range_t>("freq/range")
             .set(ubx_freq_range);
         get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
             .set(ubx_tx_antennas);
         get_tx_subtree()->create<std::string>("antenna/value")
-            .subscribe(boost::bind(&ubx_xcvr::set_tx_ant, this, _1))
+            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_tx_ant, this, _1))
             .set(ubx_tx_antennas.at(0));
         get_tx_subtree()->create<std::string>("connection")
             .set("QI");
@@ -437,21 +437,21 @@ public:
         get_rx_subtree()->create<device_addr_t>("tune_args")
             .set(device_addr_t());
         get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-            .publish(boost::bind(&ubx_xcvr::get_locked, this, "RXLO"));
+            .set_publisher(boost::bind(&ubx_xcvr::get_locked, this, "RXLO"));
         get_rx_subtree()->create<double>("gains/PGA0/value")
-            .coerce(boost::bind(&ubx_xcvr::set_rx_gain, this, _1))
+            .set_coercer(boost::bind(&ubx_xcvr::set_rx_gain, this, _1))
             .set(0);
         get_rx_subtree()->create<meta_range_t>("gains/PGA0/range")
             .set(ubx_rx_gain_range);
         get_rx_subtree()->create<double>("freq/value")
-            .coerce(boost::bind(&ubx_xcvr::set_rx_freq, this, _1))
+            .set_coercer(boost::bind(&ubx_xcvr::set_rx_freq, this, _1))
             .set(ubx_freq_range.start());
         get_rx_subtree()->create<meta_range_t>("freq/range")
             .set(ubx_freq_range);
         get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
             .set(ubx_rx_antennas);
         get_rx_subtree()->create<std::string>("antenna/value")
-            .subscribe(boost::bind(&ubx_xcvr::set_rx_ant, this, _1)).set("RX2");
+            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_rx_ant, this, _1)).set("RX2");
         get_rx_subtree()->create<std::string>("connection")
             .set("IQ");
         get_rx_subtree()->create<bool>("enabled")

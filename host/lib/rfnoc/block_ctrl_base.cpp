@@ -171,7 +171,7 @@ void block_ctrl_base::_init_block_args()
     // Next: Create all the subscribers and coercers.
     // TODO: Add coercer
 #define _SUBSCRIBE_CHECK_AND_RUN(type, arg_tag, error_message) \
-    _tree->access<type>(arg_val_path).subscribe(boost::bind((&nocscript::block_iface::run_and_check), _nocscript_iface, arg[#arg_tag], error_message))
+    _tree->access<type>(arg_val_path).add_coerced_subscriber(boost::bind((&nocscript::block_iface::run_and_check), _nocscript_iface, arg[#arg_tag], error_message))
     BOOST_FOREACH(const blockdef::arg_t &arg, args) {
         fs_path arg_val_path = arg_path / arg["port"] / arg["name"] / "value";
         if (not arg["check"].empty()) {

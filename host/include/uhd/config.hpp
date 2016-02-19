@@ -53,6 +53,7 @@ typedef ptrdiff_t ssize_t;
     #define UHD_EXPORT         __declspec(dllexport)
     #define UHD_IMPORT         __declspec(dllimport)
     #define UHD_INLINE         __forceinline
+    #define UHD_FORCE_INLINE   __forceinline
     #define UHD_DEPRECATED     __declspec(deprecated)
     #define UHD_ALIGNED(x)     __declspec(align(x))
     #define UHD_UNUSED(x)      x
@@ -60,6 +61,7 @@ typedef ptrdiff_t ssize_t;
     #define UHD_EXPORT         __declspec(dllexport)
     #define UHD_IMPORT         __declspec(dllimport)
     #define UHD_INLINE         inline
+    #define UHD_FORCE_INLINE   inline
     #define UHD_DEPRECATED     __declspec(deprecated)
     #define UHD_ALIGNED(x)     __declspec(align(x))
     #define UHD_UNUSED(x)      x __attribute__((unused))
@@ -67,6 +69,7 @@ typedef ptrdiff_t ssize_t;
     #define UHD_EXPORT         __attribute__((visibility("default")))
     #define UHD_IMPORT         __attribute__((visibility("default")))
     #define UHD_INLINE         inline __attribute__((always_inline))
+    #define UHD_FORCE_INLINE   inline __attribute__((always_inline))
     #define UHD_DEPRECATED     __attribute__((deprecated))
     #define UHD_ALIGNED(x)     __attribute__((aligned(x)))
     #define UHD_UNUSED(x)      x __attribute__((unused))
@@ -74,6 +77,7 @@ typedef ptrdiff_t ssize_t;
     #define UHD_EXPORT
     #define UHD_IMPORT
     #define UHD_INLINE         inline
+    #define UHD_FORCE_INLINE   inline
     #define UHD_DEPRECATED
     #define UHD_ALIGNED(x)
     #define UHD_UNUSED(x)      x

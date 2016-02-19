@@ -159,7 +159,6 @@ void b200_impl::update_tick_rate(const double new_tick_rate)
         boost::shared_ptr<sph::send_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(perif.tx_streamer.lock());
         if (my_streamer) my_streamer->set_tick_rate(new_tick_rate);
-        perif.deframer->set_tick_rate(new_tick_rate);
     }
 }
 
@@ -228,7 +227,8 @@ uhd::usrp::subdev_spec_t b200_impl::coerce_subdev_spec(const uhd::usrp::subdev_s
     //
     // Any other spec is probably illegal and will be caught by
     // validate_subdev_spec().
-    if (spec.size() and (_product == B200 or _product == B205) and spec[0].sd_name == "B") {
+    if (spec.size() and (_product == B200 or _product == B200MINI or _product == B205MINI) and spec[0].sd_name == "B")
+    {
         spec[0].sd_name = "A";
     }
     return spec;
@@ -293,7 +293,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
 {
     managed_recv_buffer::sptr buff = xport->get_recv_buff();
     if (not buff or buff->size() < 8)
-        return uhd::msg_task::msg_type_t(0, uhd::msg_task::msg_payload_t());
+        return boost::none;
 
     const boost::uint32_t sid = uhd::wtohx(buff->cast<const boost::uint32_t *>()[1]);
     switch (sid) {
@@ -357,7 +357,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
     default:
         UHD_MSG(error) << "Got a ctrl packet with unknown SID " << sid << std::endl;
     }
-    return uhd::msg_task::msg_type_t(0, uhd::msg_task::msg_payload_t());
+    return boost::none;
 }
 
 /***********************************************************************

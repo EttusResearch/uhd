@@ -77,7 +77,11 @@ class uhd_images_downloader():
 
     def download(self, images_url, filename, buffer_size=_DEFAULT_BUFFER_SIZE, print_progress=False):
         """ Run the download, show progress """
-        r = requests.get(images_url, stream=True, headers={'User-Agent': 'UHD Images Downloader'})
+        try:
+            r = requests.get(images_url, stream=True, headers={'User-Agent': 'UHD Images Downloader'})
+        except TypeError as te:
+            ## requests library versions pre-4c3b9df6091b65d8c72763222bd5fdefb7231149 (Dec.'12) workaround
+            r = requests.get(images_url, prefetch=False, headers={'User-Agent': 'UHD Images Downloader'})
         filesize = float(r.headers['content-length'])
         filesize_dl = 0
         with open(filename, "wb") as f:

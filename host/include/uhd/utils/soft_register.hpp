@@ -57,7 +57,7 @@ namespace uhd {
 //TODO: These hints were added to boost 1.53.
 
 /** \brief hint for the branch prediction */
-inline bool likely(bool expr)
+UHD_INLINE bool likely(bool expr)
 {
 #ifdef __GNUC__
     return __builtin_expect(expr, true);
@@ -67,7 +67,7 @@ inline bool likely(bool expr)
     }
 
 /** \brief hint for the branch prediction */
-inline bool unlikely(bool expr)
+UHD_INLINE bool unlikely(bool expr)
 {
 #ifdef __GNUC__
     return __builtin_expect(expr, false);
@@ -86,16 +86,16 @@ inline bool unlikely(bool expr)
 typedef boost::uint32_t soft_reg_field_t;
 
 namespace soft_reg_field {
-    inline size_t width(const soft_reg_field_t field) {
+    UHD_INLINE size_t width(const soft_reg_field_t field) {
         return (field & 0xFF);
     }
 
-    inline size_t shift(const soft_reg_field_t field) {
+    UHD_INLINE size_t shift(const soft_reg_field_t field) {
         return ((field >> 8) & 0xFF);
     }
 
     template<typename data_t>
-    inline size_t mask(const soft_reg_field_t field) {
+    UHD_INLINE size_t mask(const soft_reg_field_t field) {
         static const data_t ONE = static_cast<data_t>(1);
         //Behavior for the left shift operation is undefined in C++
         //if the shift amount is >= bitwidth of the datatype
@@ -122,7 +122,7 @@ public:
      * Cast the soft_register generic reference to a more specific type
      */
     template <typename soft_reg_t>
-    inline static soft_reg_t& cast(soft_register_base& reg) {
+    UHD_INLINE static soft_reg_t& cast(soft_register_base& reg) {
         soft_reg_t* ptr = dynamic_cast<soft_reg_t*>(&reg);
         if (ptr) {
             return *ptr;
@@ -172,7 +172,7 @@ public:
      * Can be optionally synced with hardware.
      * NOTE: Memory management of the iface is up to the caller
      */
-    inline void initialize(wb_iface& iface, bool sync = false)
+    UHD_INLINE void initialize(wb_iface& iface, bool sync = false)
     {
         _iface = &iface;
 
@@ -186,7 +186,7 @@ public:
      * Performs a read-modify-write operation so all other field are preserved.
      * NOTE: This does not write the value to hardware.
      */
-    inline void set(const soft_reg_field_t field, const reg_data_t value)
+    UHD_INLINE void set(const soft_reg_field_t field, const reg_data_t value)
     {
         _soft_copy = (_soft_copy & ~soft_reg_field::mask<reg_data_t>(field)) |
                      ((value << soft_reg_field::shift(field)) & soft_reg_field::mask<reg_data_t>(field));
@@ -196,7 +196,7 @@ public:
      * Get the value of the specified field from the soft-copy.
      * NOTE: This does not read anything from hardware.
      */
-    inline reg_data_t get(const soft_reg_field_t field)
+    UHD_INLINE reg_data_t get(const soft_reg_field_t field)
     {
         return (_soft_copy & soft_reg_field::mask<reg_data_t>(field)) >> soft_reg_field::shift(field);
     }
@@ -204,7 +204,7 @@ public:
     /*!
      * Write the contents of the soft-copy to hardware.
      */
-    inline void flush()
+    UHD_INLINE void flush()
     {
         if (writable && _iface) {
             //If optimized flush then poke only if soft copy is dirty
@@ -223,14 +223,14 @@ public:
                 _soft_copy.mark_clean();
             }
         } else {
-            throw uhd::not_implemented_error("soft_register is not writable.");
+            throw uhd::not_implemented_error("soft_register is not writable or uninitialized.");
         }
     }
 
     /*!
      * Read the contents of the register from hardware and update the soft copy.
      */
-    inline void refresh()
+    UHD_INLINE void refresh()
     {
         if (readable && _iface) {
             if (get_bitwidth() <= 16) {
@@ -244,14 +244,14 @@ public:
             }
             _soft_copy.mark_clean();
         } else {
-            throw uhd::not_implemented_error("soft_register is not readable.");
+            throw uhd::not_implemented_error("soft_register is not readable or uninitialized.");
         }
     }
 
     /*!
      * Shortcut for a set and a flush.
      */
-    inline void write(const soft_reg_field_t field, const reg_data_t value)
+    UHD_INLINE void write(const soft_reg_field_t field, const reg_data_t value)
     {
         set(field, value);
         flush();
@@ -260,7 +260,7 @@ public:
     /*!
      * Shortcut for refresh and get
      */
-    inline reg_data_t read(const soft_reg_field_t field)
+    UHD_INLINE reg_data_t read(const soft_reg_field_t field)
     {
         refresh();
         return get(field);
@@ -269,7 +269,7 @@ public:
     /*!
      * Get bitwidth for this register
      */
-    inline size_t get_bitwidth()
+    UHD_INLINE size_t get_bitwidth()
     {
         static const size_t BITS_IN_BYTE = 8;
         return sizeof(reg_data_t) * BITS_IN_BYTE;
@@ -278,7 +278,7 @@ public:
     /*!
      * Is the register readable?
      */
-    inline bool is_readable()
+    UHD_INLINE bool is_readable()
     {
         return readable;
     }
@@ -286,7 +286,7 @@ public:
     /*!
      * Is the register writable?
      */
-    inline bool is_writable()
+    UHD_INLINE bool is_writable()
     {
         return writable;
     }
@@ -321,43 +321,43 @@ public:
         soft_register_t<reg_data_t, readable, writable>(addr, mode), _mutex()
     {}
 
-    inline void initialize(wb_iface& iface, bool sync = false)
+    UHD_INLINE void initialize(wb_iface& iface, bool sync = false)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         soft_register_t<reg_data_t, readable, writable>::initialize(iface, sync);
     }
 
-    inline void set(const soft_reg_field_t field, const reg_data_t value)
+    UHD_INLINE void set(const soft_reg_field_t field, const reg_data_t value)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         soft_register_t<reg_data_t, readable, writable>::set(field, value);
     }
 
-    inline reg_data_t get(const soft_reg_field_t field)
+    UHD_INLINE reg_data_t get(const soft_reg_field_t field)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         return soft_register_t<reg_data_t, readable, writable>::get(field);
     }
 
-    inline void flush()
+    UHD_INLINE void flush()
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         soft_register_t<reg_data_t, readable, writable>::flush();
     }
 
-    inline void refresh()
+    UHD_INLINE void refresh()
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         soft_register_t<reg_data_t, readable, writable>::refresh();
     }
 
-    inline void write(const soft_reg_field_t field, const reg_data_t value)
+    UHD_INLINE void write(const soft_reg_field_t field, const reg_data_t value)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         soft_register_t<reg_data_t, readable, writable>::write(field, value);
     }
 
-    inline reg_data_t read(const soft_reg_field_t field)
+    UHD_INLINE reg_data_t read(const soft_reg_field_t field)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         return soft_register_t<reg_data_t, readable, writable>::read(field);
@@ -469,7 +469,7 @@ public:
     /*!
      * Get the name of this register map
      */
-    virtual inline const std::string& get_name() const { return _name; }
+    virtual UHD_INLINE const std::string& get_name() const { return _name; }
 
     /*!
      * Initialize all registers in this register map using a bus.
@@ -542,7 +542,7 @@ protected:
     /*!
      * Add a register to this map with an identifier "name" and visibility
      */
-    inline void add_to_map(soft_register_base& reg, const std::string& name, const visibility_t visible = PRIVATE) {
+    UHD_INLINE void add_to_map(soft_register_base& reg, const std::string& name, const visibility_t visible = PRIVATE) {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (visible == PUBLIC) {
             //Only add to the map if this register is publicly visible

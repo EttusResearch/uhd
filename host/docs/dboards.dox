@@ -80,7 +80,7 @@ Sensors:
 \subsection dboards_dbsrx2 DBSRX2
 
 The DBSRX2 board has 1 quadrature frontend. It defaults to direct
-conversion, but can use a low IF through lo_offset in uhd::tune_request_t.
+conversion, but can use a low IF through `lo_offset` in uhd::tune_request_t.
 
 Receive Antennas: **J3**
 
@@ -387,13 +387,14 @@ the standard daughterboard clock lines.
 
 \subsubsection dboards_dbsrxmod_1 Step 1: Move the clock configuration resistor
 
-Remove **R193** (which is 10 Ohms, 0603 size), and put it on **R194**,
-which is empty. This is made somewhat more complicated by the fact that
-the silkscreen is not clear in that area. **R193** is on the back,
-immediately below the large beige connector, **J2**. **R194** is just
-below, and to the left of **R193**. The silkscreen for **R193** is ok,
-but for **R194**, it is upside down, and partially cut off. If you lose
-**R193**, you can use anything from 0 to 10 Ohms there.
+Remove **R193** (which is 10 Ohms, 0603 size), and put it on **R194**, which is
+empty. This is made somewhat more complicated by the fact that the silkscreen
+is not clear in that area. **R193** is on the back, immediately below the large
+beige connector, **J2**. **R194** is just below, and to the left of **R193**.
+
+The silkscreen for **R193** is ok, but for **R194**, it is upside down, and
+partially cut off. If you lose **R193**, you can use anything from 0 to 10 Ohms
+there.
 
 \subsubsection dboards_dbsrxmod_2 Step 2: Burn a new daughterboard id into the EEPROM
 
@@ -402,9 +403,9 @@ With the daughterboard plugged-in, run the following commands:
     cd <install-path>/lib/uhd/utils
     ./usrp_burn_db_eeprom --id=0x000d --unit=RX --args=<args> --slot=<slot>
 
--   **\<args\>** are device address arguments (optional if only one USRP
+-   `<args>` are device address arguments (optional if only one USRP
     device is on your machine)
--   **\<slot\>** is the name of the daughterboard slot (optional if the
+-   `<slot>` is the name of the daughterboard slot (optional if the
     USRP device has only one slot)
 
 \subsection dboards_rfxmod RFX - Modify to use motherboard oscillator

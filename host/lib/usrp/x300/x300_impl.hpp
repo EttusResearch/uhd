@@ -32,6 +32,8 @@
 #include "x300_adc_ctrl.hpp"
 #include "x300_dac_ctrl.hpp"
 #include "i2c_core_100_wb32.hpp"
+#include "gpio_atr_3000.hpp"
+#include "dma_fifo_core_3000.hpp"
 #include <boost/weak_ptr.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -48,7 +50,11 @@ static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 static const double X300_DEFAULT_TICK_RATE      = 200e6;        //Hz
 static const double X300_BUS_CLOCK_RATE         = 166.666667e6; //Hz
 
-static const size_t X300_TX_HW_BUFF_SIZE        = 392*1024;      //384K SRAM buffer + 8K 2Clk FIFO
+static const size_t X300_TX_HW_BUFF_SIZE_SRAM       = 392*1024;      //384K SRAM buffer + 8K 2Clk FIFO
+static const size_t X300_TX_FC_RESPONSE_FREQ_SRAM   = 8;             //per flow-control window
+static const size_t X300_TX_HW_BUFF_SIZE_DRAM       = 128*1024;
+static const size_t X300_TX_FC_RESPONSE_FREQ_DRAM   = 32;
+static const boost::uint32_t X300_DRAM_FIFO_SIZE    = 32*1024*1024;
 
 static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
 static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
@@ -99,7 +105,7 @@ enum
 
 struct x300_dboard_iface_config_t
 {
-    gpio_core_200::sptr gpio;
+    uhd::usrp::gpio_atr::db_gpio_atr_3000::sptr gpio;
     spi_core_3000::sptr spi;
     size_t rx_spi_slaveno;
     size_t tx_spi_slaveno;
@@ -187,10 +193,14 @@ private:
              return slot_name == "A" ? 0 : 1;
         }
 
+        bool has_dram_buff;
+        dma_fifo_core_3000::sptr dram_buff_ctrl[NUM_RADIOS];
+
+
         //other perifs on mboard
         x300_clock_ctrl::sptr clock;
         uhd::gps_ctrl::sptr gps;
-        gpio_core_200::sptr fp_gpio;
+        uhd::usrp::gpio_atr::gpio_atr_3000::sptr fp_gpio;
 
         uhd::usrp::x300::fw_regmap_t::sptr fw_regmap;
 
@@ -285,6 +295,7 @@ private:
     void set_time_source_out(mboard_members_t&, const bool);
     void update_clock_source(mboard_members_t&, const std::string &);
     void update_time_source(mboard_members_t&, const std::string &);
+    void sync_times(mboard_members_t&, const uhd::time_spec_t&);
 
     uhd::sensor_value_t get_ref_locked(mboard_members_t& mb);
     bool wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout);
@@ -296,9 +307,7 @@ private:
     void check_fw_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
     void check_fpga_compat(const uhd::fs_path &mb_path, const mboard_members_t &members);
 
-    void update_atr_leds(gpio_core_200_32wo::sptr, const std::string &ant);
-    boost::uint32_t get_fp_gpio(gpio_core_200::sptr);
-    void set_fp_gpio(gpio_core_200::sptr, const gpio_attr_t, const boost::uint32_t);
+    void update_atr_leds(uhd::usrp::gpio_atr::gpio_atr_3000::sptr, const std::string &ant);
 
     void self_cal_adc_capture_delay(mboard_members_t& mb, const size_t radio_i, bool print_status = false);
     double self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay = false);

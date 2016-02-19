@@ -69,6 +69,12 @@ sensor_value_t::sensor_value_t(
     /* NOP */
 }
 
+sensor_value_t::sensor_value_t(const sensor_value_t& source)
+{
+    *this = source;
+}
+
+
 std::string sensor_value_t::to_pp_string(void) const{
     switch(type){
     case BOOLEAN:
@@ -91,4 +97,13 @@ signed sensor_value_t::to_int(void) const{
 
 double sensor_value_t::to_real(void) const{
     return boost::lexical_cast<double>(value);
+}
+
+sensor_value_t& sensor_value_t::operator=(const sensor_value_t& rhs)
+{
+    this->name = rhs.name;
+    this->value = rhs.value;
+    this->unit = rhs.unit;
+    this->type = rhs.type;
+    return *this;
 }

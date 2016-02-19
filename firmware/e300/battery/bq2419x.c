@@ -571,9 +571,9 @@ int8_t bq2419x_init(void)
 	ir_comp &= ~BQ2419X_BAT_COMP_MASK;
 	ir_comp |= (0x02 << BQ2419X_BAT_COMP_SHIFT);
 
-	/* set thermal regulation to 60 C */
+	/* set thermal regulation to 120 C */
 	ir_comp &= ~BQ2419X_TREG_MASK;
-	ir_comp |= (0x00 << BQ2419X_TREG_SHIFT);
+	ir_comp |= (0x03 << BQ2419X_TREG_SHIFT);
 
 	ret = bq2419x_write(BQ2419X_REG_THERMAL_REG_CTRL, ir_comp);
 	if (ret)

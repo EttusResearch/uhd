@@ -96,6 +96,7 @@ def main():
     if len(uhd_args_list) == 0:
         print("No devices found. Exiting.")
         exit(1)
+    tests_passed = True
     for uhd_idx, uhd_info in enumerate(uhd_args_list):
         print('--- Running all tests for device {dev} ({prod}, Serial: {ser}).'.format(
             dev=uhd_idx,
@@ -125,8 +126,13 @@ def main():
             env=env,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         )
-        print p.communicate()[0]
+        print(p.communicate()[0])
+        if p.returncode != 0:
+            tests_passed = False
     print('--- Done testing all attached devices.')
+    return tests_passed
 
 if __name__ == "__main__":
-    main()
+    if not main():
+        exit(1)
+

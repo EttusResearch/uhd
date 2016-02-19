@@ -236,21 +236,21 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
         _oc_dict[oc].eeprom = octoclock_eeprom_t(_oc_dict[oc].ctrl_xport);
         _tree->create<octoclock_eeprom_t>(oc_path / "eeprom")
             .set(_oc_dict[oc].eeprom)
-            .subscribe(boost::bind(&octoclock_impl::_set_eeprom, this, oc, _1));
+            .add_coerced_subscriber(boost::bind(&octoclock_impl::_set_eeprom, this, oc, _1));
 
         ////////////////////////////////////////////////////////////////////
         // Initialize non-GPSDO sensors
         ////////////////////////////////////////////////////////////////////
         _tree->create<boost::uint32_t>(oc_path / "time")
-            .publish(boost::bind(&octoclock_impl::_get_time, this, oc));
+            .set_publisher(boost::bind(&octoclock_impl::_get_time, this, oc));
         _tree->create<sensor_value_t>(oc_path / "sensors/ext_ref_detected")
-            .publish(boost::bind(&octoclock_impl::_ext_ref_detected, this, oc));
+            .set_publisher(boost::bind(&octoclock_impl::_ext_ref_detected, this, oc));
         _tree->create<sensor_value_t>(oc_path / "sensors/gps_detected")
-            .publish(boost::bind(&octoclock_impl::_gps_detected, this, oc));
+            .set_publisher(boost::bind(&octoclock_impl::_gps_detected, this, oc));
         _tree->create<sensor_value_t>(oc_path / "sensors/using_ref")
-            .publish(boost::bind(&octoclock_impl::_which_ref, this, oc));
+            .set_publisher(boost::bind(&octoclock_impl::_which_ref, this, oc));
         _tree->create<sensor_value_t>(oc_path / "sensors/switch_pos")
-            .publish(boost::bind(&octoclock_impl::_switch_pos, this, oc));
+            .set_publisher(boost::bind(&octoclock_impl::_switch_pos, this, oc));
 
         ////////////////////////////////////////////////////////////////////
         // Check reference and GPSDO
@@ -270,7 +270,7 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
                 if(_oc_dict[oc].gps and _oc_dict[oc].gps->gps_detected()){
                     BOOST_FOREACH(const std::string &name, _oc_dict[oc].gps->get_sensors()){
                         _tree->create<sensor_value_t>(oc_path / "sensors" / name)
-                            .publish(boost::bind(&gps_ctrl::get_sensor, _oc_dict[oc].gps, name));
+                            .set_publisher(boost::bind(&gps_ctrl::get_sensor, _oc_dict[oc].gps, name));
                     }
                 }
                 else{

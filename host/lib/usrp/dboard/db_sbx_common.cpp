@@ -159,20 +159,20 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     else this->get_rx_subtree()->create<std::string>("name").set("SBX/CBX RX");
 
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .publish(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
+        .set_publisher(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
     BOOST_FOREACH(const std::string &name, sbx_rx_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
-            .coerce(boost::bind(&sbx_xcvr::set_rx_gain, this, _1, name))
+            .set_coercer(boost::bind(&sbx_xcvr::set_rx_gain, this, _1, name))
             .set(sbx_rx_gain_ranges[name].start());
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(sbx_rx_gain_ranges[name]);
     }
     this->get_rx_subtree()->create<double>("freq/value")
-        .coerce(boost::bind(&sbx_xcvr::set_lo_freq, this, dboard_iface::UNIT_RX, _1))
+        .set_coercer(boost::bind(&sbx_xcvr::set_lo_freq, this, dboard_iface::UNIT_RX, _1))
         .set((freq_range.start() + freq_range.stop())/2.0);
     this->get_rx_subtree()->create<meta_range_t>("freq/range").set(freq_range);
     this->get_rx_subtree()->create<std::string>("antenna/value")
-        .subscribe(boost::bind(&sbx_xcvr::set_rx_ant, this, _1))
+        .add_coerced_subscriber(boost::bind(&sbx_xcvr::set_rx_ant, this, _1))
         .set("RX2");
     this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
         .set(sbx_rx_antennas);
@@ -200,20 +200,20 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     else this->get_tx_subtree()->create<std::string>("name").set("SBX/CBX TX");
 
     this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .publish(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_TX));
+        .set_publisher(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_TX));
     BOOST_FOREACH(const std::string &name, sbx_tx_gain_ranges.keys()){
         this->get_tx_subtree()->create<double>("gains/"+name+"/value")
-            .coerce(boost::bind(&sbx_xcvr::set_tx_gain, this, _1, name))
+            .set_coercer(boost::bind(&sbx_xcvr::set_tx_gain, this, _1, name))
             .set(sbx_tx_gain_ranges[name].start());
         this->get_tx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(sbx_tx_gain_ranges[name]);
     }
     this->get_tx_subtree()->create<double>("freq/value")
-        .coerce(boost::bind(&sbx_xcvr::set_lo_freq, this, dboard_iface::UNIT_TX, _1))
+        .set_coercer(boost::bind(&sbx_xcvr::set_lo_freq, this, dboard_iface::UNIT_TX, _1))
         .set((freq_range.start() + freq_range.stop())/2.0);
     this->get_tx_subtree()->create<meta_range_t>("freq/range").set(freq_range);
     this->get_tx_subtree()->create<std::string>("antenna/value")
-        .subscribe(boost::bind(&sbx_xcvr::set_tx_ant, this, _1))
+        .add_coerced_subscriber(boost::bind(&sbx_xcvr::set_tx_ant, this, _1))
         .set(sbx_tx_antennas.at(0));
     this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
         .set(sbx_tx_antennas);
@@ -237,8 +237,8 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
 
-    //flash LEDs
-    flash_leds();
+    //Initialize ATR registers after direction and pin ctrl configuration
+    update_atr();
 
     UHD_LOGV(often) << boost::format(
         "SBX GPIO Direction: RX: 0x%08x, TX: 0x%08x"
@@ -265,39 +265,39 @@ void sbx_xcvr::update_atr(void){
 
     //setup the tx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
-            dboard_iface::ATR_REG_IDLE, 0 | tx_lo_lpf_en \
+            gpio_atr::ATR_REG_IDLE, 0 | tx_lo_lpf_en \
             | tx_ld_led | tx_ant_led | TX_POWER_UP | ANT_XX | TX_MIXER_DIS);
 
     //setup the rx atr (this does not change with antenna)
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
-            dboard_iface::ATR_REG_IDLE, rx_pga0_iobits | rx_lo_lpf_en \
+            gpio_atr::ATR_REG_IDLE, rx_pga0_iobits | rx_lo_lpf_en \
             | rx_ld_led | rx_ant_led | RX_POWER_UP | ANT_XX | RX_MIXER_DIS);
 
     //set the RX atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
-            dboard_iface::ATR_REG_RX_ONLY, rx_pga0_iobits | rx_lo_lpf_en \
+            gpio_atr::ATR_REG_RX_ONLY, rx_pga0_iobits | rx_lo_lpf_en \
             | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_ENB \
             | ((_rx_ant != "RX2")? ANT_TXRX : ANT_RX2));
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
-            dboard_iface::ATR_REG_TX_ONLY, rx_pga0_iobits | rx_lo_lpf_en \
+            gpio_atr::ATR_REG_TX_ONLY, rx_pga0_iobits | rx_lo_lpf_en \
             | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_DIS \
             | ((_rx_ant == "CAL")? ANT_TXRX : ANT_RX2));
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, \
-            dboard_iface::ATR_REG_FULL_DUPLEX, rx_pga0_iobits | rx_lo_lpf_en \
+            gpio_atr::ATR_REG_FULL_DUPLEX, rx_pga0_iobits | rx_lo_lpf_en \
             | rx_ld_led | rx_ant_led | RX_POWER_UP | RX_MIXER_ENB \
             | ((_rx_ant == "CAL")? ANT_TXRX : ANT_RX2));
 
     //set the TX atr regs that change with antenna setting
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
-            dboard_iface::ATR_REG_RX_ONLY, 0 | tx_lo_lpf_en \
+            gpio_atr::ATR_REG_RX_ONLY, 0 | tx_lo_lpf_en \
             | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_DIS \
             | ((_rx_ant != "RX2")? ANT_RX : ANT_TX));
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
-            dboard_iface::ATR_REG_TX_ONLY, tx_pga0_iobits | tx_lo_lpf_en \
+            gpio_atr::ATR_REG_TX_ONLY, tx_pga0_iobits | tx_lo_lpf_en \
             | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_ENB \
             | ((_tx_ant == "CAL")? ANT_RX : ANT_TX));
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, \
-            dboard_iface::ATR_REG_FULL_DUPLEX, tx_pga0_iobits | tx_lo_lpf_en \
+            gpio_atr::ATR_REG_FULL_DUPLEX, tx_pga0_iobits | tx_lo_lpf_en \
             | tx_ld_led | tx_ant_led | TX_POWER_UP | TX_MIXER_ENB \
             | ((_tx_ant == "CAL")? ANT_RX : ANT_TX));
 }
@@ -352,45 +352,3 @@ sensor_value_t sbx_xcvr::get_locked(dboard_iface::unit_t unit) {
 
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }
-
-
-void sbx_xcvr::flash_leds(void) {
-    //Remove LED gpios from ATR control temporarily and set to outputs
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, TXIO_MASK);
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, RXIO_MASK);
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|RX_LED_IO));
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_LD, TX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, \
-            TX_LED_TXRX|TX_LED_LD, TX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_LD, RX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, \
-            RX_LED_RX1RX2|RX_LED_LD, RX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, RX_LED_LD, RX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_RX, 0, RX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, TX_LED_LD, TX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    this->get_iface()->set_gpio_out(dboard_iface::UNIT_TX, 0, TX_LED_IO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-
-    //Put LED gpios back in ATR control and update atr
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
-    this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, (TXIO_MASK|TX_LED_IO));
-    this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_RX, (RXIO_MASK|RX_LED_IO));
-}
-

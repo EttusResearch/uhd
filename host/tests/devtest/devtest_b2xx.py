@@ -17,7 +17,7 @@
 """
 Run device tests for the B2xx series.
 """
-
+from usrp_probe_test import uhd_usrp_probe_test
 from benchmark_rate_test import uhd_benchmark_rate_test
 uhd_benchmark_rate_test.tests = {
     #'mimo': {

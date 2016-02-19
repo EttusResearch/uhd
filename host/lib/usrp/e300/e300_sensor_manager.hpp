@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2015 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,6 +45,8 @@ class e300_sensor_manager : boost::noncopyable
 {
 public:
     typedef boost::shared_ptr<e300_sensor_manager> sptr;
+
+    virtual ~e300_sensor_manager() {};
 
     virtual uhd::sensor_value_t get_sensor(const std::string &key) = 0;
     virtual std::vector<std::string> get_sensors(void) = 0;

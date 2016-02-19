@@ -172,7 +172,7 @@ knowledge of Linux.
 \code{.sh}
  $ mkdir e300-oe-build
  $ cd e300-oe-build
- $ repo init -u git://github.com/EttusResearch/e300-manifest.git -b Release-2
+ $ repo init -u git://github.com/EttusResearch/e300-manifest.git -b Release-3
 \endcode
 
 -# Initialize the environment. This will take a little while.
@@ -443,7 +443,7 @@ The USRP E312 (and with upgraded firmware E310) supports LiIon Battery packs (e.
 
 The connector J1 on E312's motherboard is a Molex 53014-6310. The corresponding mating connector is a Molex 51004-0300.
 
-\image html e3xx_conn_photo.png "Battery pack connector"
+\image html e3xx_conn_photo.jpg "Battery pack connector"
 
 The pins are as follows:
 - Pin 1 (Red): VBat
@@ -518,7 +518,7 @@ frontends share the TX LO. Each LO is tunable between 50 MHz and 6 GHz.
 \subsubsection e3x0_dboard_e310_gain Frontend gain
 
 All frontends have individual analog gain controls. The receive
-frontends have 73 dB of available gain; and the transmit frontends have
+frontends have 76 dB of available gain; and the transmit frontends have
 89.5 dB of available gain. Gain settings are application specific, but
 it is recommended that users consider using at least half of the
 available gain to get reasonable dynamic range.

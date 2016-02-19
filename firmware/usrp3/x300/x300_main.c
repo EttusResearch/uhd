@@ -6,7 +6,6 @@
 #include "xge_phy.h"
 #include "ethernet.h"
 #include "chinch.h"
-#include "mdelay.h"
 
 #include <wb_utils.h>
 #include <wb_uart.h>

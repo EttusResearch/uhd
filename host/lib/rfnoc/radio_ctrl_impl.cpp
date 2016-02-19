@@ -73,16 +73,16 @@ public:
         // spp:
         _tree->create<std::string>(get_arg_path("spp") / "type").set("int");
         _tree->create<int>(get_arg_path("spp") / "value").set(_rx_spp)
-            .subscribe(boost::bind(&radio_ctrl_impl::_update_spp, this, _1))
+            .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::_update_spp, this, _1))
         ;
         // rx args:
         _tree->create<std::string>(get_arg_path("rx_args") / "type").set("string");
         _tree->create<std::string>(get_arg_path("rx_args") / "value").set("")
-            .subscribe(boost::bind(&radio_ctrl_impl::_update_rx_args, this, _1))
+            .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::_update_rx_args, this, _1))
         ;
         _tree->create<std::string>(get_arg_path("tx_args") / "type").set("string");
         _tree->create<std::string>(get_arg_path("tx_args") / "value").set("")
-            .subscribe(boost::bind(&radio_ctrl_impl::_update_tx_args, this, _1))
+            .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::_update_tx_args, this, _1))
         ;
     }
 

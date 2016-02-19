@@ -63,6 +63,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
+using namespace uhd::usrp::gpio_atr;
 using namespace boost::assign;
 
 static const dboard_id_t tvrx_id(0x0040);

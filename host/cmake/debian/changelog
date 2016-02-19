@@ -1,0 +1,28 @@
+uhd (3.9.2-0ubuntu1) trusty; urgency=low
+
+  * E310: Added support for Speedgrade 3
+  * B205mini: Added support
+  * E310: Fixed reference counting bug
+  * B210: Fixed external clock reference bug for devices using ADF4002 PLLs
+  * B210: Fixed codec loopback test
+  * OctoClock: Fixed firmware burning on Windows
+  * B2XX, E3XX, X3XX: Easier time-syncing features. Fixes bug where B210s would
+    only run after issuing set_time_unknown_pps().
+  * X3XX: Fixed bug for IQ imbalance correction
+  * E310: DRAM testbenching
+  * Docs/Manual: Many updates and fixes
+
+ -- Martin Braun <martin.braun@ettus.com>  Wed, 30 Dec 2015 11:48:37 -0800
+
+uhd (3.9.1-0ubuntu1) trusty; urgency=low
+
+  * B200mini: Updated udev rules, removed DCM
+  * B200: Better USB error messages
+  * Cores: Fixed CORDIC scaling issue on all devices that use
+    dsp_core_3000
+  * X300: Fixed GPIO issue
+  * Examples: Added PPS source option
+  * Docs: Multiple manual updates
+
+ -- Nicholas Corgan <nick.corgan@ettus.com>  Tue, 29 Dec 2015 03:06:31 -0800
+

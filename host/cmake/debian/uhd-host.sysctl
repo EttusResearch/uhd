@@ -1,0 +1,3 @@
+# USRP2 gigabit ethernet transport tuning
+net.core.rmem_max=50000000
+net.core.wmem_max=1048576

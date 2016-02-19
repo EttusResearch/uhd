@@ -17,8 +17,8 @@
 
 #include "octoclock_impl.hpp"
 #include "common.h"
-#include "kk_ihex_read.h"
 
+#include "../../utils/ihex.hpp"
 #include <uhd/device.hpp>
 #include <uhd/image_loader.hpp>
 #include <uhd/transport/udp_simple.hpp>
@@ -34,6 +34,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
 
+#include <algorithm>
+#include <iterator>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -54,83 +56,70 @@ using namespace uhd::transport;
 typedef struct {
     bool                        found;
     uhd::device_addr_t          dev_addr;
-    std::string                 given_filepath;
-    std::string                 actual_filepath; // If using a .hex, this is the converted .bin
-    bool                        from_hex;
-    boost::uint32_t             size;
+    std::string                 image_filepath;
     boost::uint16_t             crc;
     boost::uint16_t             num_blocks;
     udp_simple::sptr            ctrl_xport;
     udp_simple::sptr            fw_xport;
     boost::uint8_t              data_in[udp_simple::mtu];
+    std::vector<boost::uint8_t> image;
 } octoclock_session_t;
 
 static void octoclock_calculate_crc(octoclock_session_t &session){
-    std::ifstream ifile(session.actual_filepath.c_str());
-    boost::uint8_t temp_image[OCTOCLOCK_FIRMWARE_MAX_SIZE_BYTES];
-    ifile.read((char*)temp_image, session.size);
-
     session.crc = 0xFFFF;
-    for(size_t i = 0; i < session.size; i++){
-        session.crc ^= temp_image[i];
+    for(size_t i = 0; i < session.image.size(); i++)
+    {
+        session.crc ^= session.image[i];
         for(boost::uint8_t j = 0; j < 8; ++j){
             if(session.crc & 1) session.crc = (session.crc >> 1) ^ 0xA001;
             else session.crc = (session.crc >> 1);
         }
     }
-
-    ifile.close();
 }
 
-static void octoclock_convert_ihex(octoclock_session_t &session){
-    struct ihex_state ihex;
-    ihex_count_t count;
-    char buf[256];
-    FILE* infile = fopen(session.given_filepath.c_str(), "r");
-    FILE* outfile = fopen(session.actual_filepath.c_str(), "w");
-    uint64_t line_number = 1;
-
-    ihex_begin_read(&ihex);
-    while(fgets(buf, 256, infile)){
-        count = ihex_count_t(strlen(buf));
-        ihex_read_bytes(&ihex, buf, count, outfile);
-        line_number += (count && buf[count - 1] == '\n');
+static void octoclock_read_bin(octoclock_session_t &session)
+{
+    std::ifstream bin_file(session.image_filepath.c_str(), std::ios::in | std::ios::binary);
+    if (not bin_file.is_open()) {
+        throw uhd::io_error("Could not read image file.");
     }
-    ihex_end_read(&ihex, outfile); // Closes outfile
 
-    (void)fclose(infile);
+    size_t filesize = fs::file_size(session.image_filepath);
+    session.image.clear();
+    session.image.resize(filesize);
+    bin_file.read((char*)&session.image[0], filesize);
+    if(size_t(bin_file.gcount()) != filesize) {
+        throw uhd::io_error("Failed to read firmware image.");
+    }
+
+    bin_file.close();
 }
 
 static void octoclock_validate_firmware_image(octoclock_session_t &session){
-    if(not fs::exists(session.given_filepath)){
+    if(not fs::exists(session.image_filepath)){
         throw uhd::runtime_error(str(boost::format("Could not find image at path \"%s\"")
-                                     % session.given_filepath));
+                                     % session.image_filepath));
     }
 
-    std::string extension = fs::extension(session.given_filepath);
+    std::string extension = fs::extension(session.image_filepath);
     if(extension == ".bin"){
-        session.actual_filepath = session.given_filepath;
-        session.from_hex = false;
+        octoclock_read_bin(session);
     }
     else if(extension == ".hex"){
-        session.actual_filepath = fs::path(fs::path(uhd::get_tmp_path()) /
-                                           str(boost::format("octoclock_fw_%d.bin")
-                                               % time_spec_t::get_system_time().get_full_secs())
-                                          ).string();
-
-        octoclock_convert_ihex(session);
-        session.from_hex = true;
+        ihex_reader hex_reader(session.image_filepath);
+        session.image = hex_reader.to_vector(OCTOCLOCK_FIRMWARE_MAX_SIZE_BYTES);
     }
-    else throw uhd::runtime_error(str(boost::format("Invalid extension \"%s\". Extension must be .hex or .bin.")));
+    else throw uhd::runtime_error(str(boost::format("Invalid extension \"%s\". Extension must be .hex or .bin.")
+                                      % extension));
 
-    session.size = fs::file_size(session.actual_filepath);
-    if(session.size > OCTOCLOCK_FIRMWARE_MAX_SIZE_BYTES){
+    if(session.image.size() > OCTOCLOCK_FIRMWARE_MAX_SIZE_BYTES){
         throw uhd::runtime_error(str(boost::format("The specified firmware image is too large: %d vs. %d")
-                                     % session.size % OCTOCLOCK_FIRMWARE_MAX_SIZE_BYTES));
+                                     % session.image.size() % OCTOCLOCK_FIRMWARE_MAX_SIZE_BYTES));
     }
 
-    session.num_blocks = (session.size % OCTOCLOCK_BLOCK_SIZE) ? ((session.size / OCTOCLOCK_BLOCK_SIZE) + 1)
-                                                               : (session.size / OCTOCLOCK_BLOCK_SIZE);
+    session.num_blocks = (session.image.size() % OCTOCLOCK_BLOCK_SIZE)
+                            ? ((session.image.size() / OCTOCLOCK_BLOCK_SIZE) + 1)
+                            : (session.image.size() / OCTOCLOCK_BLOCK_SIZE);
 
     octoclock_calculate_crc(session);
 }
@@ -164,14 +153,15 @@ static void octoclock_setup_session(octoclock_session_t &session,
     }
 
     session.dev_addr = devs[0];
+    session.found = true;
 
     // If no filepath is given, use the default
     if(filepath == ""){
-        session.given_filepath = find_image_path(str(boost::format("octoclock_r%s_fw.hex")
+        session.image_filepath = find_image_path(str(boost::format("octoclock_r%s_fw.hex")
                                                      % session.dev_addr.get("revision","4")
                                                  ));
     }
-    else session.given_filepath = filepath;
+    else session.image_filepath = filepath;
 
     octoclock_validate_firmware_image(session);
 
@@ -231,10 +221,10 @@ static void octoclock_burn(octoclock_session_t &session){
     const octoclock_packet_t* pkt_in = reinterpret_cast<const octoclock_packet_t*>(session.data_in);
 
     // Tell OctoClock to prepare for burn
-    pkt_out.len = htonx<boost::uint16_t>(session.size);
+    pkt_out.len = htonx<boost::uint16_t>(session.image.size());
     size_t len = 0;
     std::cout << " -- Preparing OctoClock for firmware load..." << std::flush;
-    pkt_out.len = session.size;
+    pkt_out.len = session.image.size();
     pkt_out.crc = session.crc;
     UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, PREPARE_FW_BURN_CMD, pkt_out, len, session.data_in);
     if(UHD_OCTOCLOCK_PACKET_MATCHES(FW_BURN_READY_ACK, pkt_out, pkt_in, len)){
@@ -242,14 +232,10 @@ static void octoclock_burn(octoclock_session_t &session){
     }
     else{
         std::cout << "failed." << std::endl;
-        if(session.from_hex){
-            fs::remove(session.actual_filepath);
-        }
         throw uhd::runtime_error("Failed to prepare OctoClock for firmware load.");
     }
 
     // Start burning
-    std::ifstream image(session.actual_filepath.c_str(), std::ios::binary);
     for(size_t i = 0; i < session.num_blocks; i++){
         pkt_out.sequence++;
         pkt_out.addr = i * OCTOCLOCK_BLOCK_SIZE;
@@ -260,14 +246,10 @@ static void octoclock_burn(octoclock_session_t &session){
                   << std::flush;
 
         memset(pkt_out.data, 0, OCTOCLOCK_BLOCK_SIZE);
-        image.read((char*)pkt_out.data, OCTOCLOCK_BLOCK_SIZE);
+        memcpy((char*)pkt_out.data, &session.image[pkt_out.addr], OCTOCLOCK_BLOCK_SIZE);
         UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, FILE_TRANSFER_CMD, pkt_out, len, session.data_in);
         if(not UHD_OCTOCLOCK_PACKET_MATCHES(FILE_TRANSFER_ACK, pkt_out, pkt_in, len)){
-            image.close();
             std::cout << std::endl;
-            if(session.from_hex){
-                fs::remove(session.actual_filepath);
-            }
             throw uhd::runtime_error("Failed to load firmware.");
         }
     }
@@ -275,7 +257,6 @@ static void octoclock_burn(octoclock_session_t &session){
     std::cout << str(boost::format("\r -- Loading firmware: 100%% (%d/%d blocks)")
                      % session.num_blocks % session.num_blocks)
               << std::endl;
-    image.close();
 }
 
 static void octoclock_verify(octoclock_session_t &session){
@@ -285,7 +266,6 @@ static void octoclock_verify(octoclock_session_t &session){
     const octoclock_packet_t* pkt_in = reinterpret_cast<const octoclock_packet_t*>(session.data_in);
     size_t len = 0;
 
-    std::ifstream image(session.actual_filepath.c_str(), std::ios::binary);
     boost::uint8_t image_part[OCTOCLOCK_BLOCK_SIZE];
     boost::uint16_t cmp_len = 0;
     for(size_t i = 0; i < session.num_blocks; i++){
@@ -298,34 +278,22 @@ static void octoclock_verify(octoclock_session_t &session){
                   << std::flush;
 
         memset(image_part, 0, OCTOCLOCK_BLOCK_SIZE);
-        image.read((char*)image_part, OCTOCLOCK_BLOCK_SIZE);
-        cmp_len = image.gcount();
+        memcpy((char*)image_part, &session.image[pkt_out.addr], OCTOCLOCK_BLOCK_SIZE);
+        cmp_len = std::min<size_t>(OCTOCLOCK_BLOCK_SIZE, session.image.size() - size_t(pkt_out.addr));
 
         UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, READ_FW_CMD, pkt_out, len, session.data_in);
         if(UHD_OCTOCLOCK_PACKET_MATCHES(READ_FW_ACK, pkt_out, pkt_in, len)){
             if(memcmp(pkt_in->data, image_part, cmp_len)){
                 std::cout << std::endl;
-                image.close();
-                if(session.from_hex){
-                    fs::remove(session.actual_filepath);
-                }
                 throw uhd::runtime_error("Failed to verify OctoClock firmware.");
             }
         }
         else{
             std::cout << std::endl;
-            image.close();
-            if(session.from_hex){
-                fs::remove(session.actual_filepath);
-            }
             throw uhd::runtime_error("Failed to verify OctoClock firmware.");
         }
     }
 
-    image.close();
-    if(session.from_hex){
-        fs::remove(session.actual_filepath);
-    }
     std::cout << str(boost::format("\r -- Verifying firmware load: 100%% (%d/%d blocks)")
                      % session.num_blocks % session.num_blocks)
               << std::endl;
@@ -360,7 +328,7 @@ bool octoclock_image_loader(const image_loader::image_loader_args_t &image_loade
     std::cout << boost::format("Unit: OctoClock (%s)")
                  % session.dev_addr["addr"]
               << std::endl;
-    std::cout << "Firmware: " << session.given_filepath << std::endl;
+    std::cout << "Firmware: " << session.image_filepath << std::endl;
 
     octoclock_burn(session);
     octoclock_verify(session);

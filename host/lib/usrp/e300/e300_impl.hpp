@@ -34,6 +34,7 @@
 #include "e300_fifo_config.hpp"
 #include "ad9361_ctrl.hpp"
 #include "ad936x_manager.hpp"
+#include "gpio_atr_3000.hpp"
 
 #include "e300_global_regs.hpp"
 #include "e300_i2c.hpp"
@@ -48,10 +49,11 @@
 namespace uhd { namespace usrp { namespace e300 {
 
 static const std::string E300_FPGA_FILE_NAME = "usrp_e300_fpga.bit";
-static const std::string E310_FPGA_FILE_NAME = "usrp_e310_fpga.bit";
+static const std::string E310_SG1_FPGA_FILE_NAME = "usrp_e310_fpga.bit";
+static const std::string E310_SG3_FPGA_FILE_NAME = "usrp_e310_fpga_sg3.bit";
 
-static const std::string E300_FPGA_IDLE_FILE_NAME = "usrp_e300_fpga_idle.bit";
-static const std::string E310_FPGA_IDLE_FILE_NAME = "usrp_e310_fpga_idle.bit";
+static const std::string E3XX_SG1_FPGA_IDLE_FILE_NAME = "usrp_e3xx_fpga_idle.bit";
+static const std::string E3XX_SG3_FPGA_IDLE_FILE_NAME = "usrp_e3xx_fpga_idle_sg3.bit";
 
 static const std::string E300_TEMP_SYSFS = "iio:device0";
 static const std::string E300_SPIDEV_DEVICE  = "/dev/spidev0.1";
@@ -120,7 +122,7 @@ private: // types
     // perifs in the radio core
     struct radio_perifs_t : public device3_impl::radio_v_perifs_t
     {
-        gpio_core_200_32wo::sptr atr;
+        gpio_atr::gpio_atr_3000::sptr atr;
 
         bool ant_rx2;
     };
@@ -155,6 +157,8 @@ private: // types
         boost::uint32_t rx_bandsel_b;
         boost::uint32_t rx_bandsel_c;
 
+        boost::uint32_t time_sync;
+
         static const size_t PPS_SEL     = 0;
         static const size_t MIMO        = 2;
         static const size_t CODEC_ARST  = 3;
@@ -162,6 +166,7 @@ private: // types
         static const size_t RX_BANDSELA = 7;
         static const size_t RX_BANDSELB = 13;
         static const size_t RX_BANDSELC = 17;
+        static const size_t TIME_SYNC   = 21;
     };
 
 protected:
@@ -218,6 +223,8 @@ private: // methods
 
     void _update_time_source(const std::string &source);
     void _update_clock_source(const std::string &);
+    void _set_time(const uhd::time_spec_t&);
+    void _sync_times(void);
 
     void _codec_loopback_self_test(uhd::wb_iface::sptr iface);
 
@@ -229,14 +236,6 @@ private: // methods
 
     // get frontend lock sensor
     uhd::sensor_value_t _get_fe_pll_lock(const bool is_tx);
-
-    // internal gpios
-    boost::uint8_t _get_internal_gpio(gpio_core_200::sptr);
-
-    void _set_internal_gpio(
-        gpio_core_200::sptr gpio,
-        const gpio_attr_t attr,
-        const boost::uint32_t value);
 
     // Transport funcs
     uhd::endianness_t get_transport_endianness(size_t) {

@@ -41,7 +41,7 @@
 #include "rx_frontend_core_200.hpp"
 #include "tx_frontend_core_200.hpp"
 #include "time_core_3000.hpp"
-#include "gpio_core_200.hpp"
+#include "gpio_atr_3000.hpp"
 // RFNoC-specific includes:
 #include "../rfnoc/radio_ctrl.hpp"
 
@@ -117,7 +117,7 @@ public:
         rx_dsp_core_3000::sptr ddc;
         tx_vita_core_3000::sptr deframer;
         tx_dsp_core_3000::sptr duc;
-        gpio_core_200_32wo::sptr leds;
+        usrp::gpio_atr::gpio_atr_3000::sptr leds;
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
     };

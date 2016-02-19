@@ -248,7 +248,8 @@ void fpga_init(void)
 	fpga_tx2.type = 2;
 
 	/* get autoboot value from eeprom, keep TX reg on */
-	fpga_tx2.settings = BIT(1) | eeprom_get_autoboot() ? 0x1 : 0x0;
+	fpga_tx2.settings = BIT(1);
+	fpga_tx2.settings |= eeprom_get_autoboot() ? BIT(0) : 0x0;
 
 	memset((void *) &fpga_rx, 0, sizeof(fpga_rx));
 

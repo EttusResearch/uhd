@@ -63,7 +63,6 @@ ENDIF(ENABLE_MANUAL)
 ########################################################################
 # Setup API documentation (using Doxygen)
 ########################################################################
-MESSAGE(STATUS "")
 LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF OFF)
 OPTION(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
 
@@ -90,7 +89,6 @@ ENDIF(ENABLE_DOXYGEN)
 ########################################################################
 # Run Doxygen (on code and/or manual, depending on CMake flags)
 ########################################################################
-MESSAGE(STATUS "")
 IF(ENABLE_MANUAL_OR_DOXYGEN)
     #generate the doxygen configuration file
     SET(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
@@ -121,6 +119,7 @@ SET(man_page_sources
     uhd_cal_rx_iq_balance.1
     uhd_cal_tx_dc_offset.1
     uhd_cal_tx_iq_balance.1
+    uhd_config_info.1
     uhd_find_devices.1
     uhd_image_loader.1
     uhd_images_downloader.1
@@ -133,7 +132,6 @@ SET(man_page_sources
 ########################################################################
 # Setup man pages
 ########################################################################
-MESSAGE(STATUS "")
 FIND_PACKAGE(GZip)
 
 # No elegant way in CMake to reverse a boolean

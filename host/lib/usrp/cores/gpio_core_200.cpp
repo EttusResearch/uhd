@@ -77,10 +77,10 @@ private:
     }
 
     void update(void){
-        this->update(dboard_iface::ATR_REG_IDLE, REG_GPIO_IDLE);
-        this->update(dboard_iface::ATR_REG_TX_ONLY, REG_GPIO_TX_ONLY);
-        this->update(dboard_iface::ATR_REG_RX_ONLY, REG_GPIO_RX_ONLY);
-        this->update(dboard_iface::ATR_REG_FULL_DUPLEX, REG_GPIO_BOTH);
+        this->update(gpio_atr::ATR_REG_IDLE, REG_GPIO_IDLE);
+        this->update(gpio_atr::ATR_REG_TX_ONLY, REG_GPIO_TX_ONLY);
+        this->update(gpio_atr::ATR_REG_RX_ONLY, REG_GPIO_RX_ONLY);
+        this->update(gpio_atr::ATR_REG_FULL_DUPLEX, REG_GPIO_BOTH);
     }
 
     void update(const atr_reg_t atr, const size_t addr){
@@ -127,17 +127,17 @@ public:
 
 
     void set_atr_reg(const atr_reg_t atr, const boost::uint32_t value){
-        if (atr == dboard_iface::ATR_REG_IDLE)        _iface->poke32(REG_GPIO_IDLE, value);
-        if (atr == dboard_iface::ATR_REG_TX_ONLY)     _iface->poke32(REG_GPIO_TX_ONLY, value);
-        if (atr == dboard_iface::ATR_REG_RX_ONLY)     _iface->poke32(REG_GPIO_RX_ONLY, value);
-        if (atr == dboard_iface::ATR_REG_FULL_DUPLEX) _iface->poke32(REG_GPIO_BOTH, value);
+        if (atr == gpio_atr::ATR_REG_IDLE)        _iface->poke32(REG_GPIO_IDLE, value);
+        if (atr == gpio_atr::ATR_REG_TX_ONLY)     _iface->poke32(REG_GPIO_TX_ONLY, value);
+        if (atr == gpio_atr::ATR_REG_RX_ONLY)     _iface->poke32(REG_GPIO_RX_ONLY, value);
+        if (atr == gpio_atr::ATR_REG_FULL_DUPLEX) _iface->poke32(REG_GPIO_BOTH, value);
     }
 
     void set_all_regs(const boost::uint32_t value){
-        this->set_atr_reg(dboard_iface::ATR_REG_IDLE,        value);
-        this->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY,     value);
-        this->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY,     value);
-        this->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, value);
+        this->set_atr_reg(gpio_atr::ATR_REG_IDLE,        value);
+        this->set_atr_reg(gpio_atr::ATR_REG_TX_ONLY,     value);
+        this->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY,     value);
+        this->set_atr_reg(gpio_atr::ATR_REG_FULL_DUPLEX, value);
     }
 
 private:

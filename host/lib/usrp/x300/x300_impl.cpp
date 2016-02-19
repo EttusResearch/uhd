@@ -49,22 +49,37 @@ using namespace uhd::usrp::device3;
 using namespace uhd::rfnoc;
 using namespace uhd::transport;
 using namespace uhd::niusrprio;
+using namespace uhd::usrp::gpio_atr;
 using namespace uhd::usrp::x300;
 namespace asio = boost::asio;
+
+static bool has_dram_buff(wb_iface::sptr zpu_ctrl) {
+    bool dramR0 = dma_fifo_core_3000::check(
+        zpu_ctrl, SR_ADDR(SET0_BASE, ZPU_SR_DRAM_FIFO0), SR_ADDR(SET0_BASE, ZPU_RB_DRAM_FIFO0));
+    bool dramR1 = dma_fifo_core_3000::check(
+        zpu_ctrl, SR_ADDR(SET0_BASE, ZPU_SR_DRAM_FIFO1), SR_ADDR(SET0_BASE, ZPU_RB_DRAM_FIFO1));
+    return (dramR0 and dramR1);
+}
+
+static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
+    //Possible options:
+    //1G  = {0:1G, 1:1G} w/ DRAM, HG  = {0:1G, 1:10G} w/ DRAM, XG  = {0:10G, 1:10G} w/ DRAM
+    //1GS = {0:1G, 1:1G} w/ SRAM, HGS = {0:1G, 1:10G} w/ SRAM, XGS = {0:10G, 1:10G} w/ SRAM
+
+    std::string option;
+    bool eth0XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE0)) == 0x1);
+    bool eth1XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE1)) == 0x1);
+    option = (eth0XG && eth1XG) ? "XG" : (eth1XG ? "HG" : "1G");
+
+    if (not has_dram_buff(zpu_ctrl)) {
+        option += "S";
+    }
+    return option;
+}
 
 /***********************************************************************
  * Discovery over the udp and pcie transport
  **********************************************************************/
-static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
-    //1G = {0:1G, 1:1G} w/ DRAM, HG = {0:1G, 1:10G} w/ DRAM, XG = {0:10G, 1:10G} w/ DRAM
-    //HGS = {0:1G, 1:10G} w/ SRAM, XGS = {0:10G, 1:10G} w/ SRAM
-
-    //In the default configuration, UHD does not support the HG and XG images so
-    //they are never autodetected.
-    bool eth0XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE0)) == 0x1);
-    bool eth1XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE1)) == 0x1);
-    return (eth0XG && eth1XG) ? "XGS" : (eth1XG ? "HGS" : "1G");
-}
 
 //@TODO: Refactor the find functions to collapse common code for ethernet and PCIe
 static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
@@ -350,6 +365,8 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
         if ((i & 0x1fff) == 0) UHD_MSG(status) << "." << std::flush;
     }
 
+    //Wait for fimrware to reboot. 3s is an upper bound
+    boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
     UHD_MSG(status) << " done!" << std::endl;
 }
 
@@ -565,7 +582,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     const mboard_eeprom_t mb_eeprom(*eeprom16, "X300");
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(mb_eeprom)
-        .subscribe(boost::bind(&x300_impl::set_mb_eeprom, this, mb.zpu_i2c, _1));
+        .add_coerced_subscriber(boost::bind(&x300_impl::set_mb_eeprom, this, mb.zpu_i2c, _1));
 
     bool recover_mb_eeprom = dev_addr.has_key("recover_mb_eeprom");
     if (recover_mb_eeprom) {
@@ -687,7 +704,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // create clock properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<double>(mb_path / "tick_rate")
-        .publish(boost::bind(&x300_clock_ctrl::get_master_clock_rate, mb.clock));
+        .set_publisher(boost::bind(&x300_clock_ctrl::get_master_clock_rate, mb.clock));
 
     _tree->create<time_spec_t>(mb_path / "time" / "cmd");
 
@@ -716,7 +733,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             BOOST_FOREACH(const std::string &name, mb.gps->get_sensors())
             {
                 _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                    .publish(boost::bind(&gps_ctrl::get_sensor, mb.gps, name));
+                    .set_publisher(boost::bind(&gps_ctrl::get_sensor, mb.gps, name));
             }
         }
         else
@@ -730,6 +747,36 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     for (size_t i = 0; i < 512; i++) {
         mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, i), 0);
+    }
+
+    ////////////////////////////////////////////////////////////////////
+    // DRAM FIFO initialization
+    ////////////////////////////////////////////////////////////////////
+    mb.has_dram_buff = has_dram_buff(mb.zpu_ctrl);
+    if (mb.has_dram_buff) {
+        for (size_t i = 0; i < mboard_members_t::NUM_RADIOS; i++) {
+            static const size_t NUM_REGS = 8;
+            mb.dram_buff_ctrl[i] = dma_fifo_core_3000::make(
+                mb.zpu_ctrl,
+                SR_ADDR(SET0_BASE, ZPU_SR_DRAM_FIFO0+(i*NUM_REGS)),
+                SR_ADDR(SET0_BASE, ZPU_RB_DRAM_FIFO0+i));
+            mb.dram_buff_ctrl[i]->resize(X300_DRAM_FIFO_SIZE * i, X300_DRAM_FIFO_SIZE);
+
+            if (mb.dram_buff_ctrl[i]->ext_bist_supported()) {
+                UHD_MSG(status) << boost::format("Running BIST for DRAM FIFO %d... ") % i;
+                boost::uint32_t bisterr = mb.dram_buff_ctrl[i]->run_bist();
+                if (bisterr != 0) {
+                    throw uhd::runtime_error(str(boost::format("DRAM FIFO BIST failed! (code: %d)\n") % bisterr));
+                } else {
+                    double throughput = mb.dram_buff_ctrl[i]->get_bist_throughput(X300_BUS_CLOCK_RATE);
+                    UHD_MSG(status) << (boost::format("pass (Throughput: %.1fMB/s)") % (throughput/1e6)) << std::endl;
+                }
+            } else {
+                if (mb.dram_buff_ctrl[i]->run_bist() != 0) {
+                    throw uhd::runtime_error(str(boost::format("DRAM FIFO %d BIST failed!\n") % i));
+                }
+            }
+        }
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -753,40 +800,40 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
-    mb.fp_gpio = gpio_core_200::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
+    mb.fp_gpio = gpio_atr_3000::make(mb.radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
         _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
             .set(0)
-            .subscribe(boost::bind(&x300_impl::set_fp_gpio, this, mb.fp_gpio, attr.first, _1));
+            .add_coerced_subscriber(boost::bind(&gpio_atr_3000::set_gpio_attr, mb.fp_gpio, attr.first, _1));
     }
     _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
-        .publish(boost::bind(&x300_impl::get_fp_gpio, this, mb.fp_gpio));
+        .set_publisher(boost::bind(&gpio_atr_3000::read_gpio, mb.fp_gpio));
 
     ////////////////////////////////////////////////////////////////////
     // register the time keepers - only one can be the highlander
     ////////////////////////////////////////////////////////////////////
     _tree->create<time_spec_t>(mb_path / "time" / "now")
-        .publish(boost::bind(&time_core_3000::get_time_now, mb.radio_perifs[0].time64))
-        .subscribe(boost::bind(&time_core_3000::set_time_now, mb.radio_perifs[0].time64, _1))
-        .subscribe(boost::bind(&time_core_3000::set_time_now, mb.radio_perifs[1].time64, _1));
+        .set_publisher(boost::bind(&time_core_3000::get_time_now, mb.radio_perifs[0].time64))
+        .add_coerced_subscriber(boost::bind(&x300_impl::sync_times, this, mb, _1))
+        .set(0.0);
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
-        .publish(boost::bind(&time_core_3000::get_time_last_pps, mb.radio_perifs[0].time64))
-        .subscribe(boost::bind(&time_core_3000::set_time_next_pps, mb.radio_perifs[0].time64, _1))
-        .subscribe(boost::bind(&time_core_3000::set_time_next_pps, mb.radio_perifs[1].time64, _1));
+        .set_publisher(boost::bind(&time_core_3000::get_time_last_pps, mb.radio_perifs[0].time64))
+        .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_next_pps, mb.radio_perifs[0].time64, _1))
+        .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_next_pps, mb.radio_perifs[1].time64, _1));
 
     ////////////////////////////////////////////////////////////////////
     // setup time sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "time_source" / "value")
         .set("internal")
-        .subscribe(boost::bind(&x300_impl::update_time_source, this, boost::ref(mb), _1));
+        .add_coerced_subscriber(boost::bind(&x300_impl::update_time_source, this, boost::ref(mb), _1));
     static const std::vector<std::string> time_sources = boost::assign::list_of("internal")("external")("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
 
     //setup the time output, default to ON
     _tree->create<bool>(mb_path / "time_source" / "output")
-        .subscribe(boost::bind(&x300_impl::set_time_source_out, this, boost::ref(mb), _1))
+        .add_coerced_subscriber(boost::bind(&x300_impl::set_time_source_out, this, boost::ref(mb), _1))
         .set(true);
 
     ////////////////////////////////////////////////////////////////////
@@ -794,7 +841,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
         .set("internal")
-        .subscribe(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1));
+        .add_coerced_subscriber(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1));
 
     static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external")("gpsdo");
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_source_options);
@@ -810,30 +857,30 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
     //setup the clock output, default to ON
     _tree->create<bool>(mb_path / "clock_source" / "output")
-        .subscribe(boost::bind(&x300_clock_ctrl::set_ref_out, mb.clock, _1));
+        .add_coerced_subscriber(boost::bind(&x300_clock_ctrl::set_ref_out, mb.clock, _1));
 
     //initialize tick rate (must be done before setting time)
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&x300_impl::set_tick_rate, this, boost::ref(mb), _1))
-        .subscribe(boost::bind(&device3_impl::update_tx_streamers, this, _1))
-        .subscribe(boost::bind(&device3_impl::update_rx_streamers, this, _1))
+        .add_coerced_subscriber(boost::bind(&x300_impl::set_tick_rate, this, boost::ref(mb), _1))
+        .add_coerced_subscriber(boost::bind(&device3_impl::update_tx_streamers, this, _1))
+        .add_coerced_subscriber(boost::bind(&device3_impl::update_rx_streamers, this, _1))
         .set(mb.clock->get_master_clock_rate());
 
     ////////////////////////////////////////////////////////////////////
     // Compatibility layer for legacy subdev spec
     ////////////////////////////////////////////////////////////////////
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
-        .subscribe(boost::bind(&device3_impl::update_subdev_spec, this, _1, RX_DIRECTION, mb_i))
-        .publish(boost::bind(&device3_impl::get_subdev_spec, this, RX_DIRECTION, mb_i));
+        .add_coerced_subscriber(boost::bind(&device3_impl::update_subdev_spec, this, _1, RX_DIRECTION, mb_i))
+        .set_publisher(boost::bind(&device3_impl::get_subdev_spec, this, RX_DIRECTION, mb_i));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
-        .subscribe(boost::bind(&device3_impl::update_subdev_spec, this, _1, TX_DIRECTION, mb_i))
-        .publish(boost::bind(&device3_impl::get_subdev_spec, this, TX_DIRECTION, mb_i));
+        .add_coerced_subscriber(boost::bind(&device3_impl::update_subdev_spec, this, _1, TX_DIRECTION, mb_i))
+        .set_publisher(boost::bind(&device3_impl::get_subdev_spec, this, TX_DIRECTION, mb_i));
 
     ////////////////////////////////////////////////////////////////////
     // and do the misc mboard sensors
     ////////////////////////////////////////////////////////////////////
     _tree->create<sensor_value_t>(mb_path / "sensors" / "ref_locked")
-        .publish(boost::bind(&x300_impl::get_ref_locked, this, mb));
+        .set_publisher(boost::bind(&x300_impl::get_ref_locked, this, mb));
 
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
@@ -936,7 +983,8 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     perif.spi = spi_core_3000::make(perif.ctrl, radio::sr_addr(radio::SPI), radio::RB32_SPI);
     perif.adc = x300_adc_ctrl::make(perif.spi, DB_ADC_SEN);
     perif.dac = x300_dac_ctrl::make(perif.spi, DB_DAC_SEN, mb.clock->get_master_clock_rate());
-    perif.leds = gpio_core_200_32wo::make(perif.ctrl, radio::sr_addr(radio::LEDS));
+    perif.leds = gpio_atr_3000::make_write_only(perif.ctrl, radio::sr_addr(radio::LEDS));
+    perif.leds->set_atr_mode(MODE_ATR, 0xFFFFFFFF);
     perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
     perif.rx_fe->set_dc_offset(rx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
     perif.rx_fe->set_dc_offset_auto(rx_frontend_core_200::DEFAULT_DC_OFFSET_ENABLE);
@@ -946,7 +994,10 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     perif.framer = rx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_CTRL));
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
     perif.ddc->set_link_rate(10e9/8); //whatever
-    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL));
+    //The DRAM FIFO is treated as in internal radio FIFO for flow control purposes
+    tx_vita_core_3000::fc_monitor_loc fc_loc =
+        mb.has_dram_buff ? tx_vita_core_3000::FC_PRE_FIFO : tx_vita_core_3000::FC_PRE_RADIO;
+    perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL), fc_loc);
     perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
     perif.duc->set_link_rate(10e9/8); //whatever
 
@@ -963,7 +1014,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     self_cal_adc_capture_delay(mb, radio_index, dev_addr.has_key("self_cal_adc_delay"));
 
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
-        .subscribe(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
+        .add_coerced_subscriber(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
 
     ////////////////////////////////////////////////////////////////
     // create codec control objects
@@ -975,7 +1026,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
 
     _tree->create<meta_range_t>(mb_path / "rx_codecs" / slot_name / "gains" / "digital" / "range").set(meta_range_t(0, 6.0, 0.5));
     _tree->create<double>(mb_path / "rx_codecs" / slot_name / "gains" / "digital" / "value")
-        .subscribe(boost::bind(&x300_adc_ctrl::set_gain, perif.adc, _1)).set(0);
+        .add_coerced_subscriber(boost::bind(&x300_adc_ctrl::set_gain, perif.adc, _1)).set(0);
 
     ////////////////////////////////////////////////////////////////////
     // front end corrections
@@ -989,10 +1040,10 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / str(boost::format("%u") % radio_index);
     perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
     _tree->access<double>(rx_dsp_path / "rate" / "value")
-        .subscribe(boost::bind(&device3_impl::update_rx_streamers, this, _1))
+        .add_coerced_subscriber(boost::bind(&device3_impl::update_rx_streamers, this, _1))
     ;
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
-        .subscribe(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
+        .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
 
     ////////////////////////////////////////////////////////////////////
     // connect tx dsp control objects
@@ -1000,7 +1051,7 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / str(boost::format("%u") % radio_index);
     perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
     _tree->access<double>(tx_dsp_path / "rate" / "value")
-        .subscribe(boost::bind(&device3_impl::update_tx_streamers, this, _1))
+        .add_coerced_subscriber(boost::bind(&device3_impl::update_tx_streamers, this, _1))
     ;
 
     ////////////////////////////////////////////////////////////////////
@@ -1010,17 +1061,17 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     const size_t j = (slot_name == "B")? 0x2 : 0x0;
     _tree->create<dboard_eeprom_t>(db_path / "rx_eeprom")
         .set(mb.db_eeproms[X300_DB0_RX_EEPROM | j])
-        .subscribe(boost::bind(&x300_impl::set_db_eeprom, this, mb.zpu_i2c, (0x50 | X300_DB0_RX_EEPROM | j), _1));
+        .add_coerced_subscriber(boost::bind(&x300_impl::set_db_eeprom, this, mb.zpu_i2c, (0x50 | X300_DB0_RX_EEPROM | j), _1));
     _tree->create<dboard_eeprom_t>(db_path / "tx_eeprom")
         .set(mb.db_eeproms[X300_DB0_TX_EEPROM | j])
-        .subscribe(boost::bind(&x300_impl::set_db_eeprom, this, mb.zpu_i2c, (0x50 | X300_DB0_TX_EEPROM | j), _1));
+        .add_coerced_subscriber(boost::bind(&x300_impl::set_db_eeprom, this, mb.zpu_i2c, (0x50 | X300_DB0_TX_EEPROM | j), _1));
     _tree->create<dboard_eeprom_t>(db_path / "gdb_eeprom")
         .set(mb.db_eeproms[X300_DB0_GDB_EEPROM | j])
-        .subscribe(boost::bind(&x300_impl::set_db_eeprom, this, mb.zpu_i2c, (0x50 | X300_DB0_GDB_EEPROM | j), _1));
+        .add_coerced_subscriber(boost::bind(&x300_impl::set_db_eeprom, this, mb.zpu_i2c, (0x50 | X300_DB0_GDB_EEPROM | j), _1));
 
     //create a new dboard interface
     x300_dboard_iface_config_t db_config;
-    db_config.gpio = gpio_core_200::make(perif.ctrl, radio::sr_addr(radio::GPIO), radio::RB32_GPIO);
+    db_config.gpio = db_gpio_atr_3000::make(perif.ctrl, radio::sr_addr(radio::GPIO), radio::RB32_GPIO);
     db_config.spi = perif.spi;
     db_config.rx_spi_slaveno = DB_RX_SEN;
     db_config.tx_spi_slaveno = DB_TX_SEN;
@@ -1045,19 +1096,19 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     //now that dboard is created -- register into rx antenna event
     const std::string fe_name = _tree->list(db_path / "rx_frontends").front();
     _tree->access<std::string>(db_path / "rx_frontends" / fe_name / "antenna" / "value")
-        .subscribe(boost::bind(&x300_impl::update_atr_leds, this, mb.radio_perifs[radio_index].leds, _1));
+        .add_coerced_subscriber(boost::bind(&x300_impl::update_atr_leds, this, mb.radio_perifs[radio_index].leds, _1));
     this->update_atr_leds(mb.radio_perifs[radio_index].leds, ""); //init anyway, even if never called
 
     //bind frontend corrections to the dboard freq props
     const fs_path db_tx_fe_path = db_path / "tx_frontends";
     BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)) {
         _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
-            .subscribe(boost::bind(&x300_impl::set_tx_fe_corrections, this, mb_path, slot_name, _1));
+            .add_coerced_subscriber(boost::bind(&x300_impl::set_tx_fe_corrections, this, mb_path, slot_name, _1));
     }
     const fs_path db_rx_fe_path = db_path / "rx_frontends";
     BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)) {
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
-            .subscribe(boost::bind(&x300_impl::set_rx_fe_corrections, this, mb_path, slot_name, _1));
+            .add_coerced_subscriber(boost::bind(&x300_impl::set_rx_fe_corrections, this, mb_path, slot_name, _1));
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -1165,7 +1216,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
          * connection type.*/
         size_t eth_data_rec_frame_size = 0;
 
-        if (mb.loaded_fpga_image == "HGS") {
+        if (mb.loaded_fpga_image.substr(0,2) == "HG") {
             if (mb.router_dst_here == X300_XB_DST_E0) {
                 eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
                 _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_1GIGE);
@@ -1173,7 +1224,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
                 eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
                 _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_10GIGE);
             }
-        } else if (mb.loaded_fpga_image == "XGS") {
+        } else if (mb.loaded_fpga_image.substr(0,2) == "XG") {
             eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
             _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_10GIGE);
         }
@@ -1308,16 +1359,16 @@ uhd::sid_t x300_impl::allocate_sid(
     return sid;
 }
 
-void x300_impl::update_atr_leds(gpio_core_200_32wo::sptr leds, const std::string &rx_ant)
+void x300_impl::update_atr_leds(gpio_atr_3000::sptr leds, const std::string &rx_ant)
 {
     const bool is_txrx = (rx_ant == "TX/RX");
     const int rx_led = (1 << 2);
     const int tx_led = (1 << 1);
     const int txrx_led = (1 << 0);
-    leds->set_atr_reg(dboard_iface::ATR_REG_IDLE, 0);
-    leds->set_atr_reg(dboard_iface::ATR_REG_RX_ONLY, is_txrx? txrx_led : rx_led);
-    leds->set_atr_reg(dboard_iface::ATR_REG_TX_ONLY, tx_led);
-    leds->set_atr_reg(dboard_iface::ATR_REG_FULL_DUPLEX, rx_led | tx_led);
+    leds->set_atr_reg(ATR_REG_IDLE, 0);
+    leds->set_atr_reg(ATR_REG_RX_ONLY, is_txrx? txrx_led : rx_led);
+    leds->set_atr_reg(ATR_REG_TX_ONLY, tx_led);
+    leds->set_atr_reg(ATR_REG_FULL_DUPLEX, rx_led | tx_led);
 }
 
 void x300_impl::set_tick_rate(mboard_members_t &mb, const double rate)
@@ -1327,7 +1378,6 @@ void x300_impl::set_tick_rate(mboard_members_t &mb, const double rate)
         perif.time64->set_tick_rate(rate);
         perif.framer->set_tick_rate(rate);
         perif.ddc->set_tick_rate(rate);
-        perif.deframer->set_tick_rate(rate);
         perif.duc->set_tick_rate(rate);
     }
 }
@@ -1470,6 +1520,14 @@ void x300_impl::update_time_source(mboard_members_t &mb, const std::string &sour
     */
 }
 
+void x300_impl::sync_times(mboard_members_t &mb, const uhd::time_spec_t& t)
+{
+    BOOST_FOREACH(radio_perifs_t &perif, mb.radio_perifs)
+        perif.time64->set_time_sync(t);
+    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 1);
+    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 0);
+}
+
 bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout)
 {
     boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(timeout * 1000.0);
@@ -1519,30 +1577,6 @@ void x300_impl::set_mb_eeprom(i2c_iface::sptr i2c, const mboard_eeprom_t &mb_eep
 {
     i2c_iface::sptr eeprom16 = i2c->eeprom16();
     mb_eeprom.commit(*eeprom16, "X300");
-}
-
-/***********************************************************************
- * front-panel GPIO
- **********************************************************************/
-
-boost::uint32_t x300_impl::get_fp_gpio(gpio_core_200::sptr gpio)
-{
-    return boost::uint32_t(gpio->read_gpio(dboard_iface::UNIT_RX));
-}
-
-void x300_impl::set_fp_gpio(gpio_core_200::sptr gpio, const gpio_attr_t attr, const boost::uint32_t value)
-{
-    switch (attr)
-    {
-    case GPIO_CTRL:   return gpio->set_pin_ctrl(dboard_iface::UNIT_RX, value);
-    case GPIO_DDR:    return gpio->set_gpio_ddr(dboard_iface::UNIT_RX, value);
-    case GPIO_OUT:    return gpio->set_gpio_out(dboard_iface::UNIT_RX, value);
-    case GPIO_ATR_0X: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_IDLE, value);
-    case GPIO_ATR_RX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_RX_ONLY, value);
-    case GPIO_ATR_TX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_TX_ONLY, value);
-    case GPIO_ATR_XX: return gpio->set_atr_reg(dboard_iface::UNIT_RX, dboard_iface::ATR_REG_FULL_DUPLEX, value);
-    default:        UHD_THROW_INVALID_CODE_PATH();
-    }
 }
 
 /***********************************************************************

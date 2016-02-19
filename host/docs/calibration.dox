@@ -39,19 +39,19 @@ utilities:
 UHD software installs the calibration utilities into
 `<install-path>/bin`. **Disconnect** any external hardware from the
 RF antenna ports, and run the following from the command line. Each
-utility will take several minutes to complete. :
+utility will take several minutes to complete:
 
     uhd_cal_rx_iq_balance --verbose --args=<optional device args>
     uhd_cal_tx_iq_balance --verbose --args=<optional device args>
     uhd_cal_tx_dc_offset --verbose --args=<optional device args>
 
-See the output given by --help for more advanced options, such as:
+See the output given by `--help` for more advanced options, such as
 manually choosing the frequency range and step size for the sweeps.
 
 <b>Note:</b> Your daughterboard needs a serial number to run a calibration
 utility. Some older daughterboards may not have a serial number. If this
 is the case, run the following command to burn a serial number into the
-daughterboard's EEPROM: :
+daughterboard's EEPROM:
 
     <install dir>/lib/uhd/utils/usrp_burn_db_eeprom --ser=<desired serial> --args=<optional device args>
 
@@ -76,7 +76,9 @@ recovered by the user.
 
 \subsection ignore_cal_file Ignoring Calibration Files
 
-At runtime, the user can choose to ignore a daughterboard's calibration file by adding "ignore-cal-file" to the arguments. With the UHD API, it can be done as follows:
+At runtime, the user can choose to ignore a daughterboard's calibration file by
+adding "ignore-cal-file" to the arguments. With the UHD API, it can be done as
+follows:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
     uhd::device_addr_t hint;

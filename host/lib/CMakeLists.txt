@@ -65,6 +65,26 @@ MACRO(INCLUDE_SUBDIRECTORY subdir)
 ENDMACRO(INCLUDE_SUBDIRECTORY)
 
 ########################################################################
+# Register lower level components
+########################################################################
+MESSAGE(STATUS "")
+# Dependencies
+FIND_PACKAGE(USB1)
+FIND_PACKAGE(GPSD)
+LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("GPSD" ENABLE_GPSD OFF "ENABLE_LIBUHD;ENABLE_GPSD;LIBGPS_FOUND" OFF OFF)
+# Devices
+LIBUHD_REGISTER_COMPONENT("B100" ENABLE_B100 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("B200" ENABLE_B200 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("E100" ENABLE_E100 OFF "ENABLE_LIBUHD;LINUX" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("E300" ENABLE_E300 OFF "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("USRP1" ENABLE_USRP1 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 ON "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("X300" ENABLE_X300 ON "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("N230" ENABLE_N230 ON "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("OctoClock" ENABLE_OCTOCLOCK ON "ENABLE_LIBUHD" OFF OFF)
+
+########################################################################
 # Include subdirectories (different than add)
 ########################################################################
 INCLUDE_SUBDIRECTORY(ic_reg_maps)
@@ -75,6 +95,17 @@ INCLUDE_SUBDIRECTORY(transport)
 INCLUDE_SUBDIRECTORY(usrp)
 INCLUDE_SUBDIRECTORY(usrp_clock)
 INCLUDE_SUBDIRECTORY(utils)
+INCLUDE_SUBDIRECTORY(experts)
+
+########################################################################
+# Build info
+########################################################################
+INCLUDE(UHDBuildInfo)
+UHD_LOAD_BUILD_INFO()
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/build_info.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/build_info.cpp
+@ONLY)
 
 ########################################################################
 # Setup UHD_VERSION_STRING for version.cpp
@@ -88,6 +119,7 @@ CONFIGURE_FILE(
 # Append to the list of sources for lib uhd
 ########################################################################
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_BINARY_DIR}/build_info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/deprecated.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device3.cpp

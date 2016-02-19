@@ -81,7 +81,7 @@ boost::uint32_t adf4001_regs_t::get_reg(boost::uint8_t addr) {
         reg |= (boost::uint32_t(timer_counter_control) & 0x00000F) << 11;
         reg |= (boost::uint32_t(charge_pump_current_1) & 0x000007) << 15;
         reg |= (boost::uint32_t(charge_pump_current_2) & 0x000007) << 18;
-        reg |= (boost::uint32_t(power_down) & 0x000002) << 21;
+        reg |= (boost::uint32_t(power_down) & 0x000002) << 20;
         break;
     default:
         break;
@@ -128,15 +128,15 @@ void adf4001_ctrl::set_lock_to_ext_ref(bool external) {
 void adf4001_ctrl::program_regs(void) {
     //no control over CE, only LE, therefore we use the initialization latch method
     write_reg(3);
-    boost::this_thread::sleep(boost::posix_time::microseconds(1));
+
+    //conduct a function latch (2)
+    write_reg(2);
 
     //write R counter latch (0)
     write_reg(0);
-    boost::this_thread::sleep(boost::posix_time::microseconds(1));
 
     //write N counter latch (1)
     write_reg(1);
-    boost::this_thread::sleep(boost::posix_time::microseconds(1));
 }
 
 

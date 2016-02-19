@@ -21,7 +21,7 @@
 #endif
 #include "../x300/x300_defs.h"
 #include "ethernet.h"
-#include "mdelay.h"
+#include "cron.h"
 #include <trace.h>
 #include "wb_i2c.h"
 #include "wb_utils.h"
@@ -220,7 +220,7 @@ xge_read_sfpp_type(const uint32_t base, const uint32_t delay_ms)
   int x;
  // Delay read of SFPP
   if (delay_ms)
-    mdelay(delay_ms);
+    sleep_ms(delay_ms);
   // Read ID code from SFP
   x = xge_i2c_rd(base, MODULE_DEV_ADDR, 3);
   // I2C Error?
@@ -312,10 +312,9 @@ static void xge_mac_init(const uint32_t base)
 }
 
 // base is pointer to XGE MAC on Wishbone.
-static void xge_phy_init(const uint8_t eth, const uint32_t mdio_port_arg)
+static void xge_phy_init(const uint8_t eth, const uint32_t mdio_port)
 {
     int x;
-    uint32_t mdio_port = eth==0 ? 1 : mdio_port_arg;
     // Read LASI Ctrl register to capture state.
     //y = xge_read_mdio(0x9002,XGE_MDIO_DEVICE_PMA,XGE_MDIO_ADDR_PHY_A);
     UHD_FW_TRACE(DEBUG, "Begining XGE PHY init sequence.");
@@ -323,8 +322,10 @@ static void xge_phy_init(const uint8_t eth, const uint32_t mdio_port_arg)
     x = read_mdio(eth, 0x0, XGE_MDIO_DEVICE_PMA,mdio_port);
     x = x | (1 << 15);
     write_mdio(eth, 0x0,XGE_MDIO_DEVICE_PMA,mdio_port,x);
+    uint32_t loopCount = 0;
     while(x&(1<<15)) {
         x = read_mdio(eth, 0x0,XGE_MDIO_DEVICE_PMA,mdio_port);
+        if( loopCount++ > 200 ) break; // usually succeeds after 22 or 23 polls
     }
 }
 

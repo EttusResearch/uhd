@@ -53,6 +53,8 @@ public:
 
     virtual void set_time_now(const uhd::time_spec_t &time) = 0;
 
+    virtual void set_time_sync(const uhd::time_spec_t &time) = 0;
+
     virtual void set_time_next_pps(const uhd::time_spec_t &time) = 0;
 
 };

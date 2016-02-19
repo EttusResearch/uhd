@@ -159,7 +159,7 @@ public:
      * \param threshold number of packets per channel
      */
     void set_alignment_failure_threshold(const size_t threshold){
-        _alignment_faulure_threshold = threshold*this->size();
+        _alignment_failure_threshold = threshold*this->size();
     }
 
     //! Set the rate of ticks per second
@@ -308,7 +308,7 @@ private:
     size_t _header_offset_words32;
     double _tick_rate, _samp_rate;
     bool _queue_error_for_next_call;
-    size_t _alignment_faulure_threshold;
+    size_t _alignment_failure_threshold;
     rx_metadata_t _queue_metadata;
     struct xport_chan_props_type{
         xport_chan_props_type(void):
@@ -634,7 +634,7 @@ private:
             }
 
             //too many iterations: detect alignment failure
-            if (iterations++ > _alignment_faulure_threshold){
+            if (iterations++ > _alignment_failure_threshold){
                 UHD_MSG(error) << boost::format(
                     "The receive packet handler failed to time-align packets.\n"
                     "%u received packets were processed by the handler.\n"

@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2015 Ettus Research LLC
+# Copyright 2010-2016 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,9 +75,9 @@ OPTION(UHD_IMAGES_DIR "Path to installed UHD image binaries.")
 MESSAGE( STATUS "Using UHD Images Directory: ${UHD_IMAGES_DIR}" )
 ADD_DEFINITIONS(-DUHD_IMAGES_DIR=${UHD_IMAGES_DIR})
 
-IF(DEFINED USE_NIUSRP_WINREG_KEY)
-    ADD_DEFINITIONS(-DUSE_NIUSRP_WINREG_KEY)
-ENDIF(DEFINED USE_NIUSRP_WINREG_KEY)
+IF(DEFINED UHD_IMAGES_DIR_WINREG_KEY)
+    ADD_DEFINITIONS(-DUHD_IMAGES_DIR_WINREG_KEY=${UHD_IMAGES_DIR_WINREG_KEY})
+ENDIF(DEFINED UHD_IMAGES_DIR_WINREG_KEY)
 
 ########################################################################
 # Local Include Dir
@@ -162,6 +162,7 @@ IF(MSVC)
         -D_CRT_SECURE_NO_DEPRECATE
         -D_CRT_NONSTDC_NO_WARNINGS
         -D_CRT_NONSTDC_NO_DEPRECATE
+        -D_WINSOCK_DEPRECATED_NO_WARNINGS
     )
     ADD_DEFINITIONS(/MP) #multi-threaded build
     ADD_DEFINITIONS(/bigobj) #Increases the number of addressable sections in an .obj file.
@@ -187,10 +188,14 @@ SET(BOOST_REQUIRED_COMPONENTS
     program_options
     regex
     system
-    thread
     unit_test_framework
     serialization
 )
+IF(MINGW)
+    LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
+ELSE()
+    LIST(APPEND BOOST_REQUIRED_COMPONENTS thread)
+ENDIF()
 
 IF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
     LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix

@@ -32,19 +32,6 @@ namespace uhd {
 namespace math {
 
     /*!
-     * Numeric limits of certain types.
-     *
-     * There are many sources for getting these, including std::numeric_limts,
-     * <cstdint>, <climits>, and Boost. The <cstdint> option is preferable as it
-     * gives us fixed-width constants, but unfortunately is new as of C++11.
-     * Since this isn't available on many systems, we need to use one of the
-     * other options. We will use the Boost option, here, since we use Boost
-     * data types for portability across UHD.
-     */
-    static const boost::int32_t BOOST_INT32_MAX = boost::numeric::bounds<boost::int32_t>::highest();
-    static const boost::int32_t BOOST_INT32_MIN = boost::numeric::bounds<boost::int32_t>::lowest();
-
-    /*!
      * Define epsilon values for floating point comparisons.
      *
      * There are a lot of different sources for epsilon values that we could use

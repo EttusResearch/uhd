@@ -26,6 +26,7 @@ UHD_INSTALL(FILES
 
     ### utilities ###
     gps_ctrl.hpp
+    gpio_defs.hpp
     mboard_eeprom.hpp
     subdev_spec.hpp
 

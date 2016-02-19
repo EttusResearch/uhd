@@ -16,7 +16,7 @@ for the various transports in the UHD software:
 \section transport_udp UDP Transport (Sockets)
 
 The UDP transport is implemented with user-space sockets. This means
-standard Berkeley sockets API using send()/recv().
+standard Berkeley sockets API using `send()`/`recv()`.
 
 \subsection transport_udp_params Transport parameters
 
@@ -97,12 +97,12 @@ Set the values permanently by editing `/etc/sysctl.conf`.
 
 \subsection transport_udp_windows Windows specific notes
 
-**UDP send fast-path:** It is important to change the default UDP
+<b>UDP send fast-path:</b> It is important to change the default UDP
 behavior such that 1500 byte packets still travel through the fast path
 of the sockets stack. This can be adjusted with the
-FastSendDatagramThreshold registry key:
+`FastSendDatagramThreshold` registry key:
 
--   FastSendDatagramThreshold registry key documented here:
+-   `FastSendDatagramThreshold` registry key documented here:
 
     -   <http://www.microsoft.com/windows/windowsmedia/howto/articles/optimize_web.aspx#appendix_e>
 

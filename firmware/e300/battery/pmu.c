@@ -58,10 +58,13 @@ static io_pin_t AVR_IRQ = IO_PD(5);
 static io_pin_t PS_POR = IO_PD(6);
 static io_pin_t PS_SRST = IO_PD(7);
 static io_pin_t OVERTEMP = IO_PC(2);
+static io_pin_t PANICn = IO_PC(1);
 
 static uint16_t last_full_charge;
 static uint16_t charge_on_last_unplug;
 static bool battery_present_last;
+
+static bool panic_last;
 
 static const uint8_t PMU_BLINK_ERROR_DELAY_MS = 250;
 static const uint8_t PMU_BLINK_ERROR_TICKS_PER_BLINK = 10;
@@ -223,6 +226,10 @@ int8_t pmu_init(void)
 	bool battery_present;
 
 	state = OFF;
+
+	/* make panic button an input */
+	io_input_pin(PANICn);
+	panic_last = io_test_pin(PANICn);
 
 	/* make the LED outputs */
 	io_output_pin(CHARGE);
@@ -525,6 +532,7 @@ void pmu_handle_events(void)
 	bool is_charging = false;
 	bool is_full = false;
 	bool overtemp = io_test_pin(OVERTEMP);
+	bool panic = io_test_pin(PANICn);
 
 	/* check if someone plugged the battery late,
 	 * if so init gauge */
@@ -536,6 +544,10 @@ void pmu_handle_events(void)
 		charge_on_last_unplug = pmu_gauge_get_charge();
 	}
 	battery_present_last = battery_present;
+
+	if (panic != panic_last)
+		pmu_power_down();
+	panic_last = panic;
 
 	if (overtemp) {
 		fpga_set_gauge_status(BIT(6));
@@ -588,7 +600,6 @@ void pmu_handle_events(void)
 				uint8_t health = pmu_battery_get_health(charger);
 				switch (health) {
 				case PMU_HEALTH_OVERHEAT:
-					pmu_power_down();
 					pmu_error = PMU_ERROR_CHARGER_TEMP;
 					break;
 				default:

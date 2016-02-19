@@ -31,6 +31,7 @@
  * An alternate way of defining the level is the "TRACE_LEVEL"
  * variable in cmake. (eg. -DTRACE_LEVEL=13).
  */
+
 //#define UHD_FW_TRACE_LEVEL 13
 
 typedef enum
