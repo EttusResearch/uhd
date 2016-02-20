@@ -29,6 +29,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -477,31 +478,34 @@ public:
             .set(-8);
     }
 
-    ~ubx_xcvr(void)
+    virtual ~ubx_xcvr(void)
     {
-        // Shutdown synthesizers
-        _txlo1->shutdown();
-        _txlo2->shutdown();
-        _rxlo1->shutdown();
-        _rxlo2->shutdown();
+        UHD_SAFE_CALL
+        (
+            // Shutdown synthesizers
+            _txlo1->shutdown();
+            _txlo2->shutdown();
+            _rxlo1->shutdown();
+            _rxlo2->shutdown();
 
-        // Reset CPLD values
-        _cpld_reg.value = 0;
-        write_cpld_reg();
+            // Reset CPLD values
+            _cpld_reg.value = 0;
+            write_cpld_reg();
 
-        // Reset GPIO values
-        set_gpio_field(TX_GAIN, 0);
-        set_gpio_field(CPLD_RST_N, 0);
-        set_gpio_field(RX_ANT, 1);
-        set_gpio_field(TX_EN_N, 1);
-        set_gpio_field(RX_EN_N, 1);
-        set_gpio_field(SPI_ADDR, 0x7);
-        set_gpio_field(RX_GAIN, 0);
-        set_gpio_field(TXLO1_SYNC, 0);
-        set_gpio_field(TXLO2_SYNC, 0);
-        set_gpio_field(RXLO1_SYNC, 0);
-        set_gpio_field(RXLO1_SYNC, 0);
-        write_gpio();
+            // Reset GPIO values
+            set_gpio_field(TX_GAIN, 0);
+            set_gpio_field(CPLD_RST_N, 0);
+            set_gpio_field(RX_ANT, 1);
+            set_gpio_field(TX_EN_N, 1);
+            set_gpio_field(RX_EN_N, 1);
+            set_gpio_field(SPI_ADDR, 0x7);
+            set_gpio_field(RX_GAIN, 0);
+            set_gpio_field(TXLO1_SYNC, 0);
+            set_gpio_field(TXLO2_SYNC, 0);
+            set_gpio_field(RXLO1_SYNC, 0);
+            set_gpio_field(RXLO1_SYNC, 0);
+            write_gpio();
+        )
     }
 
 private:

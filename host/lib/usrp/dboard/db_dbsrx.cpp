@@ -66,7 +66,7 @@ static const double usrp1_gpio_clock_rate_limit = 4e6;
 class dbsrx : public rx_dboard_base{
 public:
     dbsrx(ctor_args_t args);
-    ~dbsrx(void);
+    virtual ~dbsrx(void);
 
 private:
     double _lo_freq;

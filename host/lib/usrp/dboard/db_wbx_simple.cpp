@@ -46,7 +46,7 @@ static const std::vector<std::string> wbx_rx_antennas = list_of("TX/RX")("RX2")(
 class wbx_simple : public wbx_base{
 public:
     wbx_simple(ctor_args_t args);
-    ~wbx_simple(void);
+    virtual ~wbx_simple(void);
 
 private:
     void set_rx_ant(const std::string &ant);

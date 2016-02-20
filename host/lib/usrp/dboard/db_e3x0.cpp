@@ -29,7 +29,7 @@ class e310_dboard : public xcvr_dboard_base{
 public:
     e310_dboard(ctor_args_t args) : xcvr_dboard_base(args) {}
 
-    ~e310_dboard(void) {}
+    virtual ~e310_dboard(void) {}
 };
 
 /***********************************************************************
@@ -40,7 +40,7 @@ class e300_dboard : public xcvr_dboard_base{
 public:
     e300_dboard(ctor_args_t args) : xcvr_dboard_base(args) {}
 
-    ~e300_dboard(void) {}
+    virtual ~e300_dboard(void) {}
 };
 
 /***********************************************************************

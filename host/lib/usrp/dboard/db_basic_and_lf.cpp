@@ -50,7 +50,7 @@ static const uhd::dict<std::string, double> subdev_bandwidth_scalar = map_list_o
 class basic_rx : public rx_dboard_base{
 public:
     basic_rx(ctor_args_t args, double max_freq);
-    ~basic_rx(void);
+    virtual ~basic_rx(void);
 
 private:
     double _max_freq;
@@ -59,7 +59,7 @@ private:
 class basic_tx : public tx_dboard_base{
 public:
     basic_tx(ctor_args_t args, double max_freq);
-    ~basic_tx(void);
+    virtual ~basic_tx(void);
 
 private:
     double _max_freq;

@@ -191,7 +191,7 @@ protected:
     class sbx_version3 : public sbx_versionx {
     public:
         sbx_version3(sbx_xcvr *_self_sbx_xcvr);
-        ~sbx_version3(void);
+        virtual ~sbx_version3(void);
 
         double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
 
@@ -211,7 +211,7 @@ protected:
     class sbx_version4 : public sbx_versionx {
     public:
         sbx_version4(sbx_xcvr *_self_sbx_xcvr);
-        ~sbx_version4(void);
+        virtual ~sbx_version4(void);
 
         double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
 
@@ -233,7 +233,7 @@ protected:
     class cbx : public sbx_versionx {
     public:
         cbx(sbx_xcvr *_self_sbx_xcvr);
-        ~cbx(void);
+        virtual ~cbx(void);
 
         double set_lo_freq(dboard_iface::unit_t unit, double target_freq);
 

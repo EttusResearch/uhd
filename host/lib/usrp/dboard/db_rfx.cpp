@@ -78,7 +78,7 @@ public:
         const freq_range_t &freq_range,
         bool rx_div2, bool tx_div2
     );
-    ~rfx_xcvr(void);
+    virtual ~rfx_xcvr(void);
 
 private:
     const freq_range_t _freq_range;

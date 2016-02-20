@@ -44,6 +44,7 @@ public:
 
     //structors
     dboard_base(ctor_args_t);
+    virtual ~dboard_base() {}
 
 protected:
     std::string get_subdev_name(void);
@@ -67,6 +68,7 @@ public:
      * Create a new xcvr dboard object, override in subclasses.
      */
     xcvr_dboard_base(ctor_args_t);
+    virtual ~xcvr_dboard_base() {}
 };
 
 /*!
@@ -79,6 +81,7 @@ public:
      * Create a new rx dboard object, override in subclasses.
      */
     rx_dboard_base(ctor_args_t);
+    virtual ~rx_dboard_base() {}
 };
 
 /*!
@@ -91,6 +94,7 @@ public:
      * Create a new rx dboard object, override in subclasses.
      */
     tx_dboard_base(ctor_args_t);
+    virtual ~tx_dboard_base() {}
 };
 
 }} //namespace
