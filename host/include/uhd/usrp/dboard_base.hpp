@@ -46,6 +46,9 @@ public:
     dboard_base(ctor_args_t);
     virtual ~dboard_base() {}
 
+    //post-construction initializer
+    virtual void initialize() {}
+
 protected:
     std::string get_subdev_name(void);
     dboard_iface::sptr get_iface(void);

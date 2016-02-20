@@ -26,11 +26,17 @@
 
 namespace uhd{ namespace usrp{
 
-    struct dboard_ctor_args_t{
+    class dboard_ctor_args_t {
+    public:
         std::string               sd_name;
         dboard_iface::sptr        db_iface;
         dboard_id_t               rx_id, tx_id;
         property_tree::sptr       rx_subtree, tx_subtree;
+        dboard_base::sptr         rx_container, tx_container;
+
+        static const dboard_ctor_args_t& cast(dboard_base::ctor_args_t args) {
+            return *static_cast<dboard_ctor_args_t*>(args);
+        }
     };
 
 }} //namespace
