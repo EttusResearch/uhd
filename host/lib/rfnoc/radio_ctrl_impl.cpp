@@ -24,11 +24,9 @@
 #include <uhd/types/direction.hpp>
 #include "radio_ctrl_impl.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
-#include "../usrp/device3/device3_radio_regs.hpp"
 
 using namespace uhd;
 using namespace uhd::rfnoc;
-using namespace uhd::usrp::device3;
 
 static const size_t BYTES_PER_SAMPLE = 4;
 
@@ -76,9 +74,9 @@ radio_ctrl_impl::radio_ctrl_impl()
             )
         );
 
-        _perifs[i].leds = usrp::gpio_atr::gpio_atr_3000::make_write_only(ctrl_iface_adapter, radio::sr_addr(radio::LEDS));
-        _perifs[i].framer = rx_vita_core_3000::make(ctrl_iface_adapter, radio::sr_addr(radio::RX_CTRL));
-        _perifs[i].deframer = tx_vita_core_3000::make(ctrl_iface_adapter, radio::sr_addr(uhd::rfnoc::SR_ERROR_POLICY));
+        _perifs[i].leds = usrp::gpio_atr::gpio_atr_3000::make_write_only(ctrl_iface_adapter, regs::sr_addr(regs::LEDS));
+        _perifs[i].framer = rx_vita_core_3000::make(ctrl_iface_adapter, regs::sr_addr(regs::RX_CTRL));
+        _perifs[i].deframer = tx_vita_core_3000::make(ctrl_iface_adapter, regs::sr_addr(uhd::rfnoc::SR_ERROR_POLICY));
 
         // FIXME there's currently no way to set the underflow policy, which would be set here:
         _perifs[i].framer->setup(stream_args_t());
@@ -86,9 +84,9 @@ radio_ctrl_impl::radio_ctrl_impl()
 
         if (i == 0) {
             time_core_3000::readback_bases_type time64_rb_bases;
-            time64_rb_bases.rb_now = radio::RB_TIME_NOW;
-            time64_rb_bases.rb_pps = radio::RB_TIME_PPS;
-            _time64 = time_core_3000::make(ctrl_iface_adapter, radio::sr_addr(radio::TIME), time64_rb_bases);
+            time64_rb_bases.rb_now = regs::RB_TIME_NOW;
+            time64_rb_bases.rb_pps = regs::RB_TIME_PPS;
+            _time64 = time_core_3000::make(ctrl_iface_adapter, regs::sr_addr(regs::TIME), time64_rb_bases);
             _time64->set_time_now(0.0);
         }
     }
@@ -127,8 +125,8 @@ void radio_ctrl_impl::_register_loopback_self_test(size_t chan)
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
-        sr_write(radio::TEST, boost::uint32_t(hash), chan);
-        boost::uint32_t result = user_reg_read32(radio::RB_TEST, chan);
+        sr_write(regs::TEST, boost::uint32_t(hash), chan);
+        boost::uint32_t result = user_reg_read32(regs::RB_TEST, chan);
         if (result != boost::uint32_t(hash)) {
             UHD_MSG(status) << "fail" << std::endl;
             UHD_MSG(status) << boost::format("expected: %x result: %x") % boost::uint32_t(hash) % result << std::endl;
@@ -202,7 +200,7 @@ void radio_ctrl_impl::handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer,
     //stop streaming on all channels
     for (size_t i = 0; i < my_streamer->get_num_channels(); i++) {
         // clear command FIFO to ensure we stop streaming
-        sr_write(radio::RX_CTRL_CLEAR_CMDS, 0, i);
+        sr_write(regs::RX_CTRL_CLEAR_CMDS, 0, i);
         issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS, i);
     }
     //flush transports

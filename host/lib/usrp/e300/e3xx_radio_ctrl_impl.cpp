@@ -19,7 +19,6 @@
 #include "e3xx_radio_ctrl_impl.hpp"
 #include "e300_defaults.hpp"
 #include "e300_regs.hpp"
-#include "../device3/device3_radio_regs.hpp"
 #include <boost/make_shared.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
@@ -30,7 +29,6 @@
 using namespace uhd;
 using namespace uhd::rfnoc;
 using namespace uhd::usrp::e300;
-using namespace uhd::usrp::device3;
 using uhd::usrp::dboard_iface;
 
 //! mapping of frontend to radio perif index
@@ -70,10 +68,10 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(e3xx_radio_ctrl)
         );
 
         if (i == 0) {
-            _spi = spi_core_3000::make(ctrl_iface_adapter, radio::sr_addr(radio::SPI), radio::RB_SPI);
+            _spi = spi_core_3000::make(ctrl_iface_adapter, regs::sr_addr(regs::SPI), regs::RB_SPI);
             _spi->set_divider(6);
         }
-        _atrs[i] = usrp::gpio_atr::gpio_atr_3000::make_write_only(ctrl_iface_adapter, radio::sr_addr(radio::GPIO));
+        _atrs[i] = usrp::gpio_atr::gpio_atr_3000::make_write_only(ctrl_iface_adapter, regs::sr_addr(regs::GPIO));
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -110,8 +108,8 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(e3xx_radio_ctrl)
 
     usrp::gpio_atr::gpio_atr_3000::sptr fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(
         get_ctrl_iface(0),
-        radio::sr_addr(radio::FP_GPIO),
-        radio::RB_FP_GPIO
+        regs::sr_addr(regs::FP_GPIO),
+        regs::RB_FP_GPIO
     );
     BOOST_FOREACH(const usrp::gpio_atr::gpio_attr_map_t::value_type attr, usrp::gpio_atr::gpio_attr_map)
     {
@@ -225,12 +223,12 @@ void e3xx_radio_ctrl_impl::setup_radio(uhd::usrp::ad9361_ctrl::sptr safe_codec_c
             boost::bind(
                 static_cast< void (block_ctrl_base::*)(const boost::uint32_t, const boost::uint32_t, const size_t) >(&block_ctrl_base::sr_write),
                 this,
-                radio::CODEC_IDLE, _1, chan
+                regs::CODEC_IDLE, _1, chan
             ),
             boost::bind(
                 static_cast< boost::uint64_t (block_ctrl_base::*)(const boost::uint32_t, const size_t port) >(&block_ctrl_base::user_reg_read64),
                 this,
-                radio::RB_CODEC_READBACK, chan
+                regs::RB_CODEC_READBACK, chan
             )
         );
     }

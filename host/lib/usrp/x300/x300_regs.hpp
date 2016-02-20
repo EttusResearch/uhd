@@ -18,7 +18,6 @@
 #ifndef INCLUDED_X300_REGS_HPP
 #define INCLUDED_X300_REGS_HPP
 
-#include "../device3/device3_radio_regs.hpp"
 #include <uhd/config.hpp>
 #include <stdint.h>
 #include <uhd/utils/soft_register.hpp>

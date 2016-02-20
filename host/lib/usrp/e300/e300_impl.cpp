@@ -20,7 +20,6 @@
 #include "e300_fpga_defs.hpp"
 #include "e300_spi.hpp"
 #include "e300_regs.hpp"
-#include "../device3/device3_radio_regs.hpp"
 #include "e300_eeprom_manager.hpp"
 #include "e300_sensor_manager.hpp"
 #include "e300_common.hpp"
@@ -52,7 +51,6 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::usrp::gpio_atr;
 using namespace uhd::transport;
-using namespace uhd::usrp::device3;
 namespace fs = boost::filesystem;
 namespace asio = boost::asio;
 
@@ -431,7 +429,8 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     UHD_MSG(status) << "Initializing core control (global registers)..." << std::endl;
     this->_register_loopback_self_test(
         _global_regs,
-        global_regs::SR_CORE_TEST/4, global_regs::RB32_CORE_TEST
+        global_regs::SR_CORE_TEST,
+        global_regs::RB32_CORE_TEST
     );
 
     // Verify fpga compatibility version matches at least for the major
@@ -609,7 +608,7 @@ void e300_impl::_register_loopback_self_test(wb_iface::sptr iface, boost::uint32
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
-        iface->poke32(radio::sr_addr(w_addr), boost::uint32_t(hash));
+        iface->poke32(w_addr, boost::uint32_t(hash));
         test_fail = iface->peek32(r_addr) != boost::uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
