@@ -136,8 +136,8 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(e3xx_radio_ctrl)
  ***************************************************************************/
 double e3xx_radio_ctrl_impl::set_rate(double rate)
 {
-    UHD_MSG(status) << "Setting SPI divider to " << ceil(rate/AD9361_SPI_RATE) << "\n";
-    _spi->set_divider(ceil(rate/AD9361_SPI_RATE)); // ceil() to prevent less than 1 rounding to 0
+    //UHD_MSG(status) << "Setting SPI divider to " << ceil(rate/AD9361_SPI_RATE) << "\n";
+    //_spi->set_divider(ceil(rate/AD9361_SPI_RATE)); // ceil() to prevent less than 1 rounding to 0
     UHD_MSG(status) << "Asking for clock rate " << rate/1e6 << " MHz\n";
     _tick_rate = _codec_ctrl->set_clock_rate(rate);
     UHD_MSG(status) << "Actually got clock rate " << _tick_rate/1e6 << " MHz\n";
