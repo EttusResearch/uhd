@@ -101,7 +101,7 @@ public:
     void set_timed_spi(uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num)
     {
         _timed_spi = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
-        //_use_timed_spi();
+        _use_timed_spi();
     }
 
     void set_safe_spi(uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num)
@@ -161,7 +161,7 @@ public:
 
         double return_rate = _device.set_clock_rate(clipped_rate);
 
-        //_use_timed_spi();
+        _use_timed_spi();
 
         return return_rate;
     }
@@ -174,7 +174,7 @@ public:
         // If both RX chains are disabled then the AD9361's sample clock is disabled
         _use_safe_spi();
         _device.set_active_chains(tx1, tx2, rx1, rx2);
-        //_use_timed_spi();
+        _use_timed_spi();
 
     }
 
@@ -183,8 +183,6 @@ public:
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
-        _use_safe_spi();
-
         //clip to known bounds
         const meta_range_t freq_range = ad9361_ctrl::get_rf_freq_range();
         const double clipped_freq = freq_range.clip(freq);
@@ -192,8 +190,6 @@ public:
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         double return_val = _device.tune(direction, value);
-
-        //_use_timed_spi();
         return return_val;
     }
 
