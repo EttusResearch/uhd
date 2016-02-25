@@ -25,6 +25,7 @@
 #include <boost/foreach.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread.hpp>
+#include <boost/units/detail/utility.hpp>
 #include <memory>
 #include <list>
 
@@ -114,7 +115,8 @@ namespace uhd { namespace experts {
 
         // Basic info
         virtual const std::string& get_dtype() const {
-            static const std::string dtype(typeid(data_t).name());
+            static const std::string dtype(
+                boost::units::detail::demangle(typeid(data_t).name()));
             return dtype;
         }
 
@@ -268,7 +270,8 @@ namespace uhd { namespace experts {
             _datanode = dynamic_cast< data_node_t<data_t>* >(&node());
             if (_datanode == NULL) {
                 throw uhd::type_error("Expected data type for node " + n +
-                                      " was " + typeid(data_t).name() + " but got " + node().get_dtype());
+                                      " was " + boost::units::detail::demangle(typeid(data_t).name()) +
+                                      " but got " + node().get_dtype());
             }
         }
 
@@ -302,6 +305,14 @@ namespace uhd { namespace experts {
         inline operator const data_t&() const {
             return get();
         }
+
+        inline bool operator==(const data_t& rhs) {
+            return get() == rhs;
+        }
+
+        inline bool operator!=(const data_t& rhs) {
+            return !(get() == rhs);
+        }
     };
 
     /*!---------------------------------------------------------
@@ -319,11 +330,19 @@ namespace uhd { namespace experts {
                 retriever, node, ACCESS_WRITER) {}
 
         inline const data_t& get() const {
-            return data_accessor_base<data_t>::_node.get();
+            return data_accessor_base<data_t>::_datanode->get();
         }
 
         inline operator const data_t&() const {
             return get();
+        }
+
+        inline bool operator==(const data_t& rhs) {
+            return get() == rhs;
+        }
+
+        inline bool operator!=(const data_t& rhs) {
+            return !(get() == rhs);
         }
 
         inline void set(const data_t& value) {
