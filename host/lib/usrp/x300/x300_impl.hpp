@@ -42,6 +42,7 @@
 ///////////// RFNOC /////////////////////
 #include <uhd/rfnoc/block_ctrl.hpp>
 ///////////// RFNOC /////////////////////
+#include <boost/dynamic_bitset.hpp>
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 
@@ -61,6 +62,7 @@ static const size_t X300_PCIE_TX_DATA_FRAME_SIZE    = 8192;     //bytes
 static const size_t X300_PCIE_DATA_NUM_FRAMES       = 2048;
 static const size_t X300_PCIE_MSG_FRAME_SIZE        = 256;      //bytes
 static const size_t X300_PCIE_MSG_NUM_FRAMES        = 64;
+static const size_t X300_PCIE_MAX_CHANNELS          = 6;
 
 static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     //bytes
 static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     //bytes
@@ -247,6 +249,14 @@ private:
      * switches etc. into account which might live between the device and the host.
      */
     frame_size_t determine_max_frame_size(const std::string &addr, const frame_size_t &user_mtu);
+
+    std::map<uint32_t, uint32_t>  _dma_chan_pool;
+
+    /*! Allocate or return a previously allocated PCIe channel pair
+     *
+     * Note the SID is always the transmit SID (i.e. from host to device).
+     */
+    uint32_t get_pcie_dma_channel_pair(const uhd::sid_t &tx_sid);
 
     ////////////////////////////////////////////////////////////////////
     //

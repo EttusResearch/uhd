@@ -1086,30 +1086,23 @@ void x300_impl::set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::st
     }
 }
 
-boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, x300_impl::xport_type_t xport_type)
+uint32_t x300_impl::get_pcie_dma_channel_pair(const uhd::sid_t &tx_sid)
 {
-    UHD_ASSERT_THROW(destination == X300_XB_DST_R0 or destination == X300_XB_DST_R0);
-    static const boost::uint32_t RADIO_GRP_SIZE = 3;
-    static const boost::uint32_t RADIO0_GRP     = 0;
-    static const boost::uint32_t RADIO1_GRP     = 1;
+    // sid_t has no comparison defined
+    uint32_t raw_sid = tx_sid.get();
 
-    boost::uint32_t chan_offset = 0;
-    switch (xport_type) {
-        case x300_impl::TX_DATA:
-            chan_offset = 0;
-            break;
-        case x300_impl::CTRL:
-            chan_offset = 1;
-            break;
-        case x300_impl::RX_DATA:
-            chan_offset = 2;
-            break;
-        default:
-            UHD_THROW_INVALID_CODE_PATH();
+    if (_dma_chan_pool.count(raw_sid) == 0) {
+        uint32_t new_chan = _dma_chan_pool.size();
+        _dma_chan_pool[raw_sid] = new_chan;
+        UHD_MSG(status) << "[X300] Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid]
+                        << " to SID " << tx_sid.to_pp_string_hex() << std::endl;
     }
 
-    boost::uint32_t radio_grp = (destination == X300_XB_DST_R0) ? RADIO0_GRP : RADIO1_GRP;
-    return ((radio_grp * RADIO_GRP_SIZE) + chan_offset);
+    if (_dma_chan_pool.size() > X300_PCIE_MAX_CHANNELS) {
+        throw uhd::runtime_error("Trying to allocate more DMA channels than are available");
+    }
+
+    return _dma_chan_pool[raw_sid];
 }
 
 x300_impl::both_xports_t x300_impl::make_transport(
@@ -1149,9 +1142,10 @@ x300_impl::both_xports_t x300_impl::make_transport(
 
         xports.recv = nirio_zero_copy::make(
             mb.rio_fpga_interface,
-            get_pcie_dma_channel(address.get_dst_xbarport(), xport_type),
+            get_pcie_dma_channel_pair(xports.send_sid),
             default_buff_args,
-            xport_args);
+            xport_args
+        );
 
         xports.send = xports.recv;
 
@@ -1293,11 +1287,11 @@ uhd::sid_t x300_impl::allocate_sid(
     mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + (X300_DEVICE_HERE)), mb.router_dst_here);
 
     if (xport_path == "nirio") {
-        UHD_THROW_SITE_INFO("pcie not implemented for rfnoc");
-        // TODO fix pcie
-        //boost::uint32_t router_config_word = ((_sid_framer & 0xff) << 16) |                                    //Return SID
-                                      //get_pcie_dma_channel(config.router_dst_there, config.dst_prefix); //Dest
-        //mb.rio_fpga_interface->get_kernel_proxy().poke(PCIE_ROUTER_REG(0), router_config_word);
+        // Router config word is:
+        // - Upper 16 bits: Destination address (e.g. 0.0)
+        // - Lower 16 bits: DMA channel
+        uint32_t router_config_word = (sid.get_src() << 16) | get_pcie_dma_channel_pair(sid);
+        mb.rio_fpga_interface->get_kernel_proxy()->poke(PCIE_ROUTER_REG(0), router_config_word);
     }
 
     UHD_LOG << "done router config for sid " << sid << std::endl;
