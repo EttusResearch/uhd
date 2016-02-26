@@ -133,6 +133,20 @@ public:
         dboard_iface::sptr iface,
         property_tree::sptr subtree
     );
+
+    virtual ~dboard_manager() {}
+
+    /*!
+     * Returns a vector of RX frontend (subdev) names
+     * \return a vector of names
+     */
+    virtual const std::vector<std::string>& get_rx_frontends() const = 0;
+
+    /*!
+     * Returns a vector of TX frontend (subdev) names
+     * \return a vector of names
+     */
+    virtual const std::vector<std::string>& get_tx_frontends() const = 0;
 };
 
 }} //namespace

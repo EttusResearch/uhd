@@ -184,7 +184,15 @@ public:
         dboard_iface::sptr iface,
         property_tree::sptr subtree
     );
-    ~dboard_manager_impl(void);
+    virtual ~dboard_manager_impl(void);
+
+    inline const std::vector<std::string>& get_rx_frontends() const {
+        return _rx_frontends;
+    }
+
+    inline const std::vector<std::string>& get_tx_frontends() const {
+        return _tx_frontends;
+    }
 
 private:
     void init(dboard_id_t, dboard_id_t, property_tree::sptr);
@@ -193,6 +201,8 @@ private:
     //the subdevice proxy is internal to the cpp file
     uhd::dict<std::string, dboard_base::sptr> _rx_dboards;
     uhd::dict<std::string, dboard_base::sptr> _tx_dboards;
+    std::vector<std::string>                  _rx_frontends;
+    std::vector<std::string>                  _tx_frontends;
     dboard_iface::sptr _iface;
     void set_nice_dboard_if(void);
 };
@@ -319,6 +329,11 @@ void dboard_manager_impl::init(
         if (container_ctor) {
             db_ctor_args.rx_container->initialize();
         }
+
+        //Populate frontend names in-order.
+        //We cannot use _xx_dboards.keys() here because of the ordering requirement
+        _rx_frontends = subdevs;
+        _tx_frontends = subdevs;
     }
 
     //make tx and rx subdevs (separate subdevs for rx and tx dboards)
@@ -393,6 +408,11 @@ void dboard_manager_impl::init(
         if (tx_cont_ctor) {
             db_ctor_args.tx_container->initialize();
         }
+
+        //Populate frontend names in-order.
+        //We cannot use _xx_dboards.keys() here because of the ordering requirement
+        _rx_frontends = rx_subdevs;
+        _tx_frontends = tx_subdevs;
     }
 }
 
