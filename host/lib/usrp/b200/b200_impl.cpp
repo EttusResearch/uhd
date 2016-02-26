@@ -343,10 +343,12 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
 
     //locate the matching handle in the device list
     BOOST_FOREACH(usb_device_handle::sptr dev_handle, device_list) {
-        if (dev_handle->get_serial() == device_addr["serial"]){
-            handle = dev_handle;
-            break;
-        }
+        try {
+            if (dev_handle->get_serial() == device_addr["serial"]){
+                handle = dev_handle;
+                break;
+            }
+        } catch (const uhd::exception &e) { continue; }
     }
     UHD_ASSERT_THROW(handle.get() != NULL); //better be found
 
