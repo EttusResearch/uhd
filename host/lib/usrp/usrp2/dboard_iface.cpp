@@ -54,12 +54,16 @@ public:
     void write_aux_dac(unit_t, aux_dac_t, double);
     double read_aux_adc(unit_t, aux_adc_t);
 
-    void _set_pin_ctrl(unit_t, boost::uint16_t);
-    void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
-    void _set_gpio_ddr(unit_t, boost::uint16_t);
-    void _set_gpio_out(unit_t, boost::uint16_t);
-    void set_gpio_debug(unit_t, int);
-    boost::uint16_t read_gpio(unit_t);
+    void set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_pin_ctrl(unit_t unit);
+    void set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_atr_reg(unit_t unit, atr_reg_t reg);
+    void set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_gpio_ddr(unit_t unit);
+    void set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_gpio_out(unit_t unit);
+    boost::uint32_t read_gpio(unit_t unit);
+
     void set_command_time(const uhd::time_spec_t& t);
     uhd::time_spec_t get_command_time(void);
 
@@ -149,18 +153,22 @@ usrp2_dboard_iface::~usrp2_dboard_iface(void){
  * Clocks
  **********************************************************************/
 void usrp2_dboard_iface::set_clock_rate(unit_t unit, double rate){
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     _clock_rates[unit] = rate; //set to shadow
     switch(unit){
     case UNIT_RX: _clock_ctrl->set_rate_rx_dboard_clock(rate); return;
     case UNIT_TX: _clock_ctrl->set_rate_tx_dboard_clock(rate); return;
+    default: UHD_THROW_INVALID_CODE_PATH();
     }
 }
 
 double usrp2_dboard_iface::get_clock_rate(unit_t unit){
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     return _clock_rates[unit]; //get from shadow
 }
 
 std::vector<double> usrp2_dboard_iface::get_clock_rates(unit_t unit){
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     switch(unit){
     case UNIT_RX: return _clock_ctrl->get_rates_rx_dboard_clock();
     case UNIT_TX: return _clock_ctrl->get_rates_tx_dboard_clock();
@@ -169,40 +177,56 @@ std::vector<double> usrp2_dboard_iface::get_clock_rates(unit_t unit){
 }
 
 void usrp2_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     switch(unit){
-    case UNIT_RX: _clock_ctrl->enable_rx_dboard_clock(enb); return;
-    case UNIT_TX: _clock_ctrl->enable_tx_dboard_clock(enb); return;
+    case UNIT_RX:   _clock_ctrl->enable_rx_dboard_clock(enb); return;
+    case UNIT_TX:   _clock_ctrl->enable_tx_dboard_clock(enb); return;
+    case UNIT_BOTH: set_clock_enabled(UNIT_RX, enb); set_clock_enabled(UNIT_TX, enb); return;
     }
 }
 
-double usrp2_dboard_iface::get_codec_rate(unit_t){
+double usrp2_dboard_iface::get_codec_rate(unit_t unit){
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     return _clock_ctrl->get_master_clock_rate();
 }
+
 /***********************************************************************
  * GPIO
  **********************************************************************/
-void usrp2_dboard_iface::_set_pin_ctrl(unit_t unit, boost::uint16_t value){
-    return _gpio->set_pin_ctrl(unit, value);
+void usrp2_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask){
+    _gpio->set_pin_ctrl(unit, static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask));
 }
 
-void usrp2_dboard_iface::_set_gpio_ddr(unit_t unit, boost::uint16_t value){
-    return _gpio->set_gpio_ddr(unit, value);
+boost::uint32_t usrp2_dboard_iface::get_pin_ctrl(unit_t unit){
+    return static_cast<boost::uint32_t>(_gpio->get_pin_ctrl(unit));
 }
 
-void usrp2_dboard_iface::_set_gpio_out(unit_t unit, boost::uint16_t value){
-    return _gpio->set_gpio_out(unit, value);
+void usrp2_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask){
+    _gpio->set_atr_reg(unit, reg, static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask));
 }
 
-boost::uint16_t usrp2_dboard_iface::read_gpio(unit_t unit){
+boost::uint32_t usrp2_dboard_iface::get_atr_reg(unit_t unit, atr_reg_t reg){
+    return static_cast<boost::uint32_t>(_gpio->get_atr_reg(unit, reg));
+}
+
+void usrp2_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask){
+    _gpio->set_gpio_ddr(unit, static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask));
+}
+
+boost::uint32_t usrp2_dboard_iface::get_gpio_ddr(unit_t unit){
+    return static_cast<boost::uint32_t>(_gpio->get_gpio_ddr(unit));
+}
+
+void usrp2_dboard_iface::set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask){
+    _gpio->set_gpio_out(unit, static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask));
+}
+
+boost::uint32_t usrp2_dboard_iface::get_gpio_out(unit_t unit){
+    return static_cast<boost::uint32_t>(_gpio->get_gpio_out(unit));
+}
+
+boost::uint32_t usrp2_dboard_iface::read_gpio(unit_t unit){
     return _gpio->read_gpio(unit);
-}
-
-void usrp2_dboard_iface::_set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
-    return _gpio->set_atr_reg(unit, atr, value);
-}
-
-void usrp2_dboard_iface::set_gpio_debug(unit_t, int){
-    throw uhd::not_implemented_error("no set_gpio_debug implemented");
 }
 
 /***********************************************************************
@@ -219,6 +243,7 @@ void usrp2_dboard_iface::write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     _spi_iface->write_spi(unit_to_spi_dev[unit], config, data, num_bits);
 }
 
@@ -228,6 +253,7 @@ boost::uint32_t usrp2_dboard_iface::read_write_spi(
     boost::uint32_t data,
     size_t num_bits
 ){
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     return _spi_iface->read_spi(unit_to_spi_dev[unit], config, data, num_bits);
 }
 
@@ -250,6 +276,7 @@ void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
         (UNIT_RX, SPI_SS_RX_DAC)
         (UNIT_TX, SPI_SS_TX_DAC)
     ;
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
     _spi_iface->write_spi(
         unit_to_spi_dac[unit], spi_config_t::EDGE_FALL,
         _dac_regs[unit].get_reg(), 24
@@ -257,6 +284,8 @@ void usrp2_dboard_iface::_write_aux_dac(unit_t unit){
 }
 
 void usrp2_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, double value){
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
+
     _dac_regs[unit].data = boost::math::iround(4095*value/3.3);
     _dac_regs[unit].cmd = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
 
@@ -284,6 +313,8 @@ double usrp2_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which){
         (UNIT_RX, SPI_SS_RX_ADC)
         (UNIT_TX, SPI_SS_TX_ADC)
     ;
+
+    if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
 
     //setup spi config args
     spi_config_t config;

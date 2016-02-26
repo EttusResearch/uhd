@@ -86,7 +86,7 @@ You should be presented with a shell similar to the following
 
 \section e3x0_sdk Using the SDK
 
-In order to facilitate software development for the integrated ARM Cortex-A9 processor, a <a href="http://www.yoctoproject.org">Yocto Project</a> based SDK is provided in the download section of our website.
+In order to facilitate software development for the integrated ARM Cortex-A9 processor, a <a href="http://www.yoctoproject.org">Yocto Project</a> based SDK is provided in the download section of our <a href="http://files.ettus.com/e3xx_images">website</a>.
 This SDK contains a cross-compiler, a cross-linker as well as a cross-debugger and can be used to develop your user space applications for the Ettus USRP-E310 devices.
 
 
@@ -655,6 +655,20 @@ iface eth0 inet dhcp
     hostname your-hostname
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Note: In rare occasions it might be necessary to increase the timeout value
+for the dhcp client running on the device in order for autoconfiguration
+to succeed.
+
+In order to increase the timeout to e.g. 40 seconds edit:
+
+    /etc/network/interfaces
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+auto eth0
+iface eth0 inet dhcp
+    hostname your-hostname
+    udhcpc_opts -t 40
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 \subsection e3xx_network_static Static IP
 

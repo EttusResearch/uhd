@@ -134,7 +134,7 @@ static const double reference_freq = 4.0e6;
 class tvrx : public rx_dboard_base{
 public:
     tvrx(ctor_args_t args);
-    ~tvrx(void);
+    virtual ~tvrx(void);
 
 private:
     uhd::dict<std::string, double> _gains;

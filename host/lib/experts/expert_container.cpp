@@ -145,7 +145,7 @@ public:
         ) {
             const dag_vertex_t& vertex = _get_vertex(*vi.first);
             if (vertex.get_class() != CLASS_WORKER) {
-                dot_str += str(boost::format(" %d [label=\"%s\",shape=%s,xlabel=%s];\n") %
+                dot_str += str(boost::format(" %d [label=\"%s\",shape=%s,xlabel=\"%s\"];\n") %
                                boost::uint32_t(*vi.first) % vertex.get_name() %
                                DATA_SHAPE % vertex.get_dtype());
             } else {
@@ -288,12 +288,12 @@ protected:
         //Sanity check the data node and ensure that it is not already in this graph
         EX_LOG(0, str(boost::format("add_data_node(%s)") % data_node->get_name()));
         if (data_node->get_class() == CLASS_WORKER) {
-            delete data_node;
             throw uhd::runtime_error("Supplied node " + data_node->get_name() + " is not a data/property node.");
+            delete data_node;
         }
         if (_datanode_map.find(data_node->get_name()) != _datanode_map.end()) {
-            delete data_node;
             throw uhd::runtime_error("Data node with name " + data_node->get_name() + " already exists");
+            delete data_node;
         }
 
         try {
@@ -329,12 +329,12 @@ protected:
         //Sanity check the data node and ensure that it is not already in this graph
         EX_LOG(0, str(boost::format("add_worker(%s)") % worker->get_name()));
         if (worker->get_class() != CLASS_WORKER) {
-            delete worker;
             throw uhd::runtime_error("Supplied node " + worker->get_name() + " is not a worker node.");
+            delete worker;
         }
         if (_worker_map.find(worker->get_name()) != _worker_map.end()) {
-            delete worker;
             throw uhd::runtime_error("Resolver with name " + worker->get_name() + " already exists.");
+            delete worker;
         }
 
         try {

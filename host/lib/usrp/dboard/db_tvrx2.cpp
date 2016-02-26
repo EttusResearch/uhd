@@ -751,7 +751,7 @@ static const uhd::dict<std::string, gain_range_t> tvrx2_gain_ranges = map_list_o
 class tvrx2 : public rx_dboard_base{
 public:
     tvrx2(ctor_args_t args);
-    ~tvrx2(void);
+    virtual ~tvrx2(void);
 
 private:
     double _freq_scalar;

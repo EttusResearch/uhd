@@ -283,7 +283,7 @@ std::string uhd::get_images_dir(const std::string &search_paths) {
     std::string _search_paths = search_paths;
 
 #ifdef UHD_IMAGES_DIR_WINREG_KEY
-    _search_paths = std::string("UHD_IMAGES_DIR_WINREG_KEY") + "," + search_paths;
+    _search_paths = std::string(STR(UHD_IMAGES_DIR_WINREG_KEY)) + "," + search_paths;
 #endif
 
     /* Now we will parse and attempt to qualify the paths in the `search_paths`

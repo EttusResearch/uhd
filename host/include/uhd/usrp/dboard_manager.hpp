@@ -45,15 +45,17 @@ public:
      * Register a rx or tx dboard into the system.
      * For single subdevice boards, omit subdev_names.
      * \param dboard_id the dboard id (rx or tx)
-     * \param dboard_ctor the dboard constructor function pointer
+     * \param db_subdev_ctor the dboard sub-device constructor function pointer (one instance per subdev name)
      * \param name the canonical name for the dboard represented
      * \param subdev_names the names of the subdevs on this dboard
+     * \param db_container_ctor the dboard container constructor function pointer (one instance per dboard)
      */
     static void register_dboard(
         const dboard_id_t &dboard_id,
-        dboard_ctor_t dboard_ctor,
+        dboard_ctor_t db_subdev_ctor,
         const std::string &name,
-        const std::vector<std::string> &subdev_names = std::vector<std::string>(1, "0")
+        const std::vector<std::string> &subdev_names = std::vector<std::string>(1, "0"),
+        dboard_ctor_t db_container_ctor = NULL
     );
 
     /*!
@@ -61,16 +63,58 @@ public:
      * For single subdevice boards, omit subdev_names.
      * \param rx_dboard_id the rx unit dboard id
      * \param tx_dboard_id the tx unit dboard id
-     * \param dboard_ctor the dboard constructor function pointer
+     * \param db_subdev_ctor the dboard sub-device constructor function pointer (one instance per subdev name)
      * \param name the canonical name for the dboard represented
      * \param subdev_names the names of the subdevs on this dboard
+     * \param db_container_ctor the dboard container constructor function pointer (one instance per dboard)
      */
     static void register_dboard(
         const dboard_id_t &rx_dboard_id,
         const dboard_id_t &tx_dboard_id,
-        dboard_ctor_t dboard_ctor,
+        dboard_ctor_t db_subdev_ctor,
         const std::string &name,
-        const std::vector<std::string> &subdev_names = std::vector<std::string>(1, "0")
+        const std::vector<std::string> &subdev_names = std::vector<std::string>(1, "0"),
+        dboard_ctor_t db_container_ctor = NULL
+    );
+
+    /*!
+     * Register a restricted rx or tx dboard into the system.
+     * A restricted dboard does not add its dboard_iface object into the property tree.
+     * For single subdevice boards, omit subdev_names.
+     * The iface for a restricted board is not registered into the property tree.
+     * \param dboard_id the dboard id (rx or tx)
+     * \param db_subdev_ctor the dboard sub-device constructor function pointer (one instance per subdev name)
+     * \param name the canonical name for the dboard represented
+     * \param subdev_names the names of the subdevs on this dboard
+     * \param db_container_ctor the dboard container constructor function pointer (one instance per dboard)
+     */
+    static void register_dboard_restricted(
+        const dboard_id_t &dboard_id,
+        dboard_ctor_t db_subdev_ctor,
+        const std::string &name,
+        const std::vector<std::string> &subdev_names = std::vector<std::string>(1, "0"),
+        dboard_ctor_t db_container_ctor = NULL
+    );
+
+    /*!
+     * Register a restricted xcvr dboard into the system.
+     * A restricted dboard does not add its dboard_iface object into the property tree.
+     * For single subdevice boards, omit subdev_names.
+     * The iface for a restricted board is not registered into the property tree.
+     * \param rx_dboard_id the rx unit dboard id
+     * \param tx_dboard_id the tx unit dboard id
+     * \param db_subdev_ctor the dboard sub-device constructor function pointer (one instance per subdev name)
+     * \param name the canonical name for the dboard represented
+     * \param subdev_names the names of the subdevs on this dboard
+     * \param db_container_ctor the dboard container constructor function pointer (one instance per dboard)
+     */
+    static void register_dboard_restricted(
+        const dboard_id_t &rx_dboard_id,
+        const dboard_id_t &tx_dboard_id,
+        dboard_ctor_t db_subdev_ctor,
+        const std::string &name,
+        const std::vector<std::string> &subdev_names = std::vector<std::string>(1, "0"),
+        dboard_ctor_t db_container_ctor = NULL
     );
 
     /*!
@@ -89,6 +133,20 @@ public:
         dboard_iface::sptr iface,
         property_tree::sptr subtree
     );
+
+    virtual ~dboard_manager() {}
+
+    /*!
+     * Returns a vector of RX frontend (subdev) names
+     * \return a vector of names
+     */
+    virtual const std::vector<std::string>& get_rx_frontends() const = 0;
+
+    /*!
+     * Returns a vector of TX frontend (subdev) names
+     * \return a vector of names
+     */
+    virtual const std::vector<std::string>& get_tx_frontends() const = 0;
 };
 
 }} //namespace

@@ -49,6 +49,7 @@
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 
 static const double X300_DEFAULT_TICK_RATE      = 200e6;        //Hz
+static const double X300_DEFAULT_DBOARD_CLK_RATE = 50e6;        //Hz
 static const double X300_BUS_CLOCK_RATE         = 166.666667e6; //Hz
 
 static const size_t X300_TX_HW_BUFF_SIZE_SRAM       = 392*1024;      //384K SRAM buffer + 8K 2Clk FIFO
@@ -290,7 +291,6 @@ private:
     ////////////////////////////////////////////////////////////////////
 
     uhd::dict<std::string, uhd::usrp::dboard_manager::sptr> _dboard_managers;
-    uhd::dict<std::string, uhd::usrp::dboard_iface::sptr> _dboard_ifaces;
 
     void set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
     void set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);

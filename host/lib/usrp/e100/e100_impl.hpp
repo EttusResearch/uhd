@@ -111,7 +111,6 @@ private:
 
     //dboard stuff
     uhd::usrp::dboard_manager::sptr _dboard_manager;
-    uhd::usrp::dboard_iface::sptr _dboard_iface;
     bool _ignore_cal_file;
 
     std::vector<boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;

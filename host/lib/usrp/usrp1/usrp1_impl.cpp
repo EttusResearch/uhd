@@ -374,15 +374,14 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
             .add_coerced_subscriber(boost::bind(&usrp1_impl::set_db_eeprom, this, db, "gdb", _1));
 
         //create a new dboard interface and manager
-        _dbc[db].dboard_iface = make_dboard_iface(
+        dboard_iface::sptr dboard_iface = make_dboard_iface(
             _iface, _dbc[db].codec,
             (db == "A")? DBOARD_SLOT_A : DBOARD_SLOT_B,
             _master_clock_rate, rx_db_eeprom.id
         );
-        _tree->create<dboard_iface::sptr>(mb_path / "dboards" / db/ "iface").set(_dbc[db].dboard_iface);
         _dbc[db].dboard_manager = dboard_manager::make(
             rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
-            _dbc[db].dboard_iface, _tree->subtree(mb_path / "dboards" / db)
+            dboard_iface, _tree->subtree(mb_path / "dboards" / db)
         );
 
         //init the subdev specs if we have a dboard (wont leave this loop empty)

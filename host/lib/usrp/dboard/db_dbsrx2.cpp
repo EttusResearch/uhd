@@ -60,7 +60,7 @@ static const uhd::dict<std::string, gain_range_t> dbsrx2_gain_ranges = map_list_
 class dbsrx2 : public rx_dboard_base{
 public:
     dbsrx2(ctor_args_t args);
-    ~dbsrx2(void);
+    virtual ~dbsrx2(void);
 
 private:
     double _lo_freq;

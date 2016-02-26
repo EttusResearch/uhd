@@ -48,6 +48,7 @@ public:
             const size_t slaveno,
             const size_t hw_rev,
             const double master_clock_rate,
+            const double dboard_clock_rate,
             const double system_ref_rate);
 
     /*! Get the master clock rate of the device.

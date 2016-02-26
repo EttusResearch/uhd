@@ -735,11 +735,10 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
             .add_coerced_subscriber(boost::bind(&usrp2_impl::set_db_eeprom, this, mb, "gdb", _1));
 
         //create a new dboard interface and manager
-        _mbc[mb].dboard_iface = make_usrp2_dboard_iface(_mbc[mb].wbiface, _mbc[mb].iface/*i2c*/, _mbc[mb].spiface, _mbc[mb].clock);
-        _tree->create<dboard_iface::sptr>(mb_path / "dboards/A/iface").set(_mbc[mb].dboard_iface);
         _mbc[mb].dboard_manager = dboard_manager::make(
             rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
-            _mbc[mb].dboard_iface, _tree->subtree(mb_path / "dboards/A")
+            make_usrp2_dboard_iface(_mbc[mb].wbiface, _mbc[mb].iface/*i2c*/, _mbc[mb].spiface, _mbc[mb].clock),
+            _tree->subtree(mb_path / "dboards/A")
         );
 
         //bind frontend corrections to the dboard freq props

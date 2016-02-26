@@ -37,11 +37,11 @@ using namespace uhd::usrp;
  **********************************************************************/
 class dboard_key_t{
 public:
-    dboard_key_t(const dboard_id_t &id = dboard_id_t::none()):
-        _rx_id(id), _tx_id(id), _xcvr(false){}
+    dboard_key_t(const dboard_id_t &id = dboard_id_t::none(), bool restricted = false):
+        _rx_id(id), _tx_id(id), _xcvr(false), _restricted(restricted) {}
 
-    dboard_key_t(const dboard_id_t &rx_id, const dboard_id_t &tx_id):
-        _rx_id(rx_id), _tx_id(tx_id), _xcvr(true){}
+    dboard_key_t(const dboard_id_t &rx_id, const dboard_id_t &tx_id, bool restricted = false):
+        _rx_id(rx_id), _tx_id(tx_id), _xcvr(true), _restricted(restricted) {}
 
     dboard_id_t xx_id(void) const{
         UHD_ASSERT_THROW(not this->is_xcvr());
@@ -62,9 +62,14 @@ public:
         return this->_xcvr;
     }
 
+    bool is_restricted(void) const{
+        return this->_restricted;
+    }
+
 private:
     dboard_id_t _rx_id, _tx_id;
     bool _xcvr;
+    bool _restricted;
 };
 
 bool operator==(const dboard_key_t &lhs, const dboard_key_t &rhs){
@@ -78,8 +83,8 @@ bool operator==(const dboard_key_t &lhs, const dboard_key_t &rhs){
 /***********************************************************************
  * storage and registering for dboards
  **********************************************************************/
-//dboard registry tuple: dboard constructor, canonical name, subdev names
-typedef boost::tuple<dboard_manager::dboard_ctor_t, std::string, std::vector<std::string> > args_t;
+//dboard registry tuple: dboard constructor, canonical name, subdev names, container constructor
+typedef boost::tuple<dboard_manager::dboard_ctor_t, std::string, std::vector<std::string>, dboard_manager::dboard_ctor_t> args_t;
 
 //map a dboard id to a dboard constructor
 typedef uhd::dict<dboard_key_t, args_t> id_to_args_map_t;
@@ -87,9 +92,10 @@ UHD_SINGLETON_FCN(id_to_args_map_t, get_id_to_args_map)
 
 static void register_dboard_key(
     const dboard_key_t &dboard_key,
-    dboard_manager::dboard_ctor_t dboard_ctor,
+    dboard_manager::dboard_ctor_t db_subdev_ctor,
     const std::string &name,
-    const std::vector<std::string> &subdev_names
+    const std::vector<std::string> &subdev_names,
+    dboard_manager::dboard_ctor_t db_container_ctor
 ){
     UHD_LOGV(always) << "registering: " << name << std::endl;
     if (get_id_to_args_map().has_key(dboard_key)){
@@ -103,26 +109,49 @@ static void register_dboard_key(
         ) % dboard_key.xx_id().to_string() % get_id_to_args_map()[dboard_key].get<1>()));
 
     }
-    get_id_to_args_map()[dboard_key] = args_t(dboard_ctor, name, subdev_names);
+    get_id_to_args_map()[dboard_key] = args_t(db_subdev_ctor, name, subdev_names, db_container_ctor);
 }
 
 void dboard_manager::register_dboard(
     const dboard_id_t &dboard_id,
-    dboard_ctor_t dboard_ctor,
+    dboard_ctor_t db_subdev_ctor,
     const std::string &name,
-    const std::vector<std::string> &subdev_names
+    const std::vector<std::string> &subdev_names,
+    dboard_ctor_t db_container_ctor
 ){
-    register_dboard_key(dboard_key_t(dboard_id), dboard_ctor, name, subdev_names);
+    register_dboard_key(dboard_key_t(dboard_id), db_subdev_ctor, name, subdev_names, db_container_ctor);
 }
 
 void dboard_manager::register_dboard(
     const dboard_id_t &rx_dboard_id,
     const dboard_id_t &tx_dboard_id,
-    dboard_ctor_t dboard_ctor,
+    dboard_ctor_t db_subdev_ctor,
     const std::string &name,
-    const std::vector<std::string> &subdev_names
+    const std::vector<std::string> &subdev_names,
+    dboard_ctor_t db_container_ctor
 ){
-    register_dboard_key(dboard_key_t(rx_dboard_id, tx_dboard_id), dboard_ctor, name, subdev_names);
+    register_dboard_key(dboard_key_t(rx_dboard_id, tx_dboard_id), db_subdev_ctor, name, subdev_names, db_container_ctor);
+}
+
+void dboard_manager::register_dboard_restricted(
+    const dboard_id_t &dboard_id,
+    dboard_ctor_t db_subdev_ctor,
+    const std::string &name,
+    const std::vector<std::string> &subdev_names,
+    dboard_ctor_t db_container_ctor
+){
+    register_dboard_key(dboard_key_t(dboard_id, true), db_subdev_ctor, name, subdev_names, db_container_ctor);
+}
+
+void dboard_manager::register_dboard_restricted(
+    const dboard_id_t &rx_dboard_id,
+    const dboard_id_t &tx_dboard_id,
+    dboard_ctor_t db_subdev_ctor,
+    const std::string &name,
+    const std::vector<std::string> &subdev_names,
+    dboard_ctor_t db_container_ctor
+){
+    register_dboard_key(dboard_key_t(rx_dboard_id, tx_dboard_id, true), db_subdev_ctor, name, subdev_names, db_container_ctor);
 }
 
 std::string dboard_id_t::to_cname(void) const{
@@ -155,7 +184,15 @@ public:
         dboard_iface::sptr iface,
         property_tree::sptr subtree
     );
-    ~dboard_manager_impl(void);
+    virtual ~dboard_manager_impl(void);
+
+    inline const std::vector<std::string>& get_rx_frontends() const {
+        return _rx_frontends;
+    }
+
+    inline const std::vector<std::string>& get_tx_frontends() const {
+        return _tx_frontends;
+    }
 
 private:
     void init(dboard_id_t, dboard_id_t, property_tree::sptr);
@@ -164,6 +201,8 @@ private:
     //the subdevice proxy is internal to the cpp file
     uhd::dict<std::string, dboard_base::sptr> _rx_dboards;
     uhd::dict<std::string, dboard_base::sptr> _tx_dboards;
+    std::vector<std::string>                  _rx_frontends;
+    std::vector<std::string>                  _tx_frontends;
     dboard_iface::sptr _iface;
     void set_nice_dboard_if(void);
 };
@@ -210,6 +249,7 @@ dboard_manager_impl::dboard_manager_impl(
         //clean up the stuff added by the call above
         if (subtree->exists("rx_frontends")) subtree->remove("rx_frontends");
         if (subtree->exists("tx_frontends")) subtree->remove("tx_frontends");
+        if (subtree->exists("iface"))        subtree->remove("iface");
         this->init(dboard_id_t::none(), dboard_id_t::none(), subtree);
     }
 }
@@ -244,6 +284,11 @@ void dboard_manager_impl::init(
     //initialize the gpio pins before creating subdevs
     set_nice_dboard_if();
 
+    //conditionally register the dboard iface in the tree
+    if (not (rx_dboard_key.is_restricted() or tx_dboard_key.is_restricted() or xcvr_dboard_key.is_restricted())) {
+        subtree->create<dboard_iface::sptr>("iface").set(_iface);
+    }
+
     //dboard constructor args
     dboard_ctor_args_t db_ctor_args;
     db_ctor_args.db_iface = _iface;
@@ -252,42 +297,81 @@ void dboard_manager_impl::init(
     if (xcvr_dboard_key.is_xcvr()){
 
         //extract data for the xcvr dboard key
-        dboard_ctor_t dboard_ctor; std::string name; std::vector<std::string> subdevs;
-        boost::tie(dboard_ctor, name, subdevs) = get_id_to_args_map()[xcvr_dboard_key];
+        dboard_ctor_t subdev_ctor; std::string name; std::vector<std::string> subdevs; dboard_ctor_t container_ctor;
+        boost::tie(subdev_ctor, name, subdevs, container_ctor) = get_id_to_args_map()[xcvr_dboard_key];
+
+        //create the container class.
+        //a container class exists per N subdevs registered in a register_dboard* call
+        db_ctor_args.sd_name    = "common";
+        db_ctor_args.rx_id      = rx_dboard_id;
+        db_ctor_args.tx_id      = tx_dboard_id;
+        db_ctor_args.rx_subtree = subtree->subtree("rx_frontends/" + db_ctor_args.sd_name);
+        db_ctor_args.tx_subtree = subtree->subtree("tx_frontends/" + db_ctor_args.sd_name);
+        if (container_ctor) {
+            db_ctor_args.rx_container = container_ctor(&db_ctor_args);
+        } else {
+            db_ctor_args.rx_container = dboard_base::sptr();
+        }
+        db_ctor_args.tx_container = db_ctor_args.rx_container;  //Same TX and RX container
 
         //create the xcvr object for each subdevice
         BOOST_FOREACH(const std::string &subdev, subdevs){
             db_ctor_args.sd_name = subdev;
-            db_ctor_args.rx_id = rx_dboard_id;
-            db_ctor_args.tx_id = tx_dboard_id;
-            db_ctor_args.rx_subtree = subtree->subtree("rx_frontends/" + subdev);
-            db_ctor_args.tx_subtree = subtree->subtree("tx_frontends/" + subdev);
-            dboard_base::sptr xcvr_dboard = dboard_ctor(&db_ctor_args);
+            db_ctor_args.rx_subtree = subtree->subtree("rx_frontends/" + db_ctor_args.sd_name);
+            db_ctor_args.tx_subtree = subtree->subtree("tx_frontends/" + db_ctor_args.sd_name);
+            dboard_base::sptr xcvr_dboard = subdev_ctor(&db_ctor_args);
             _rx_dboards[subdev] = xcvr_dboard;
             _tx_dboards[subdev] = xcvr_dboard;
+            xcvr_dboard->initialize();
         }
+
+        //initialize the container after all subdevs have been created
+        if (container_ctor) {
+            db_ctor_args.rx_container->initialize();
+        }
+
+        //Populate frontend names in-order.
+        //We cannot use _xx_dboards.keys() here because of the ordering requirement
+        _rx_frontends = subdevs;
+        _tx_frontends = subdevs;
     }
 
     //make tx and rx subdevs (separate subdevs for rx and tx dboards)
-    else{
-
+    else
+    {
         //force the rx key to the unknown board for bad combinations
         if (rx_dboard_key.is_xcvr() or rx_dboard_key.xx_id() == dboard_id_t::none()){
             rx_dboard_key = dboard_key_t(0xfff1);
         }
 
         //extract data for the rx dboard key
-        dboard_ctor_t rx_dboard_ctor; std::string rx_name; std::vector<std::string> rx_subdevs;
-        boost::tie(rx_dboard_ctor, rx_name, rx_subdevs) = get_id_to_args_map()[rx_dboard_key];
+        dboard_ctor_t rx_dboard_ctor; std::string rx_name; std::vector<std::string> rx_subdevs; dboard_ctor_t rx_cont_ctor;
+        boost::tie(rx_dboard_ctor, rx_name, rx_subdevs, rx_cont_ctor) = get_id_to_args_map()[rx_dboard_key];
+
+        //create the container class.
+        //a container class exists per N subdevs registered in a register_dboard* call
+        db_ctor_args.sd_name    = "common";
+        db_ctor_args.rx_id      = rx_dboard_id;
+        db_ctor_args.tx_id      = dboard_id_t::none();
+        db_ctor_args.rx_subtree = subtree->subtree("rx_frontends/" + db_ctor_args.sd_name);
+        db_ctor_args.tx_subtree = property_tree::sptr();
+        if (rx_cont_ctor) {
+            db_ctor_args.rx_container = rx_cont_ctor(&db_ctor_args);
+        } else {
+            db_ctor_args.rx_container = dboard_base::sptr();
+        }
 
         //make the rx subdevs
         BOOST_FOREACH(const std::string &subdev, rx_subdevs){
             db_ctor_args.sd_name = subdev;
-            db_ctor_args.rx_id = rx_dboard_id;
-            db_ctor_args.tx_id = dboard_id_t::none();
-            db_ctor_args.rx_subtree = subtree->subtree("rx_frontends/" + subdev);
-            db_ctor_args.tx_subtree = property_tree::sptr(); //null
+            db_ctor_args.rx_subtree = subtree->subtree("rx_frontends/" + db_ctor_args.sd_name);
             _rx_dboards[subdev] = rx_dboard_ctor(&db_ctor_args);
+            _rx_dboards[subdev]->initialize();
+        }
+
+        //initialize the container after all subdevs have been created
+        if (rx_cont_ctor) {
+            db_ctor_args.rx_container->initialize();
         }
 
         //force the tx key to the unknown board for bad combinations
@@ -296,18 +380,39 @@ void dboard_manager_impl::init(
         }
 
         //extract data for the tx dboard key
-        dboard_ctor_t tx_dboard_ctor; std::string tx_name; std::vector<std::string> tx_subdevs;
-        boost::tie(tx_dboard_ctor, tx_name, tx_subdevs) = get_id_to_args_map()[tx_dboard_key];
+        dboard_ctor_t tx_dboard_ctor; std::string tx_name; std::vector<std::string> tx_subdevs; dboard_ctor_t tx_cont_ctor;
+        boost::tie(tx_dboard_ctor, tx_name, tx_subdevs, tx_cont_ctor) = get_id_to_args_map()[tx_dboard_key];
+
+        //create the container class.
+        //a container class exists per N subdevs registered in a register_dboard* call
+        db_ctor_args.sd_name    = "common";
+        db_ctor_args.rx_id      = dboard_id_t::none();
+        db_ctor_args.tx_id      = tx_dboard_id;
+        db_ctor_args.rx_subtree = property_tree::sptr();
+        db_ctor_args.tx_subtree = subtree->subtree("tx_frontends/" + db_ctor_args.sd_name);
+        if (tx_cont_ctor) {
+            db_ctor_args.tx_container = tx_cont_ctor(&db_ctor_args);
+        } else {
+            db_ctor_args.tx_container = dboard_base::sptr();
+        }
 
         //make the tx subdevs
         BOOST_FOREACH(const std::string &subdev, tx_subdevs){
             db_ctor_args.sd_name = subdev;
-            db_ctor_args.rx_id = dboard_id_t::none();
-            db_ctor_args.tx_id = tx_dboard_id;
-            db_ctor_args.rx_subtree = property_tree::sptr(); //null
-            db_ctor_args.tx_subtree = subtree->subtree("tx_frontends/" + subdev);
+            db_ctor_args.tx_subtree = subtree->subtree("tx_frontends/" + db_ctor_args.sd_name);
             _tx_dboards[subdev] = tx_dboard_ctor(&db_ctor_args);
+            _tx_dboards[subdev]->initialize();
         }
+
+        //initialize the container after all subdevs have been created
+        if (tx_cont_ctor) {
+            db_ctor_args.tx_container->initialize();
+        }
+
+        //Populate frontend names in-order.
+        //We cannot use _xx_dboards.keys() here because of the ordering requirement
+        _rx_frontends = rx_subdevs;
+        _tx_frontends = tx_subdevs;
     }
 }
 

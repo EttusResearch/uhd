@@ -693,6 +693,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         1 /*slaveno*/,
         mb.hw_rev,
         dev_addr.cast<double>("master_clock_rate", X300_DEFAULT_TICK_RATE),
+        dev_addr.cast<double>("dboard_clock_rate", X300_DEFAULT_DBOARD_CLK_RATE),
         dev_addr.cast<double>("system_ref_rate", X300_DEFAULT_SYSREF_RATE));
 
     //Initialize clock source to use internal reference and generate
@@ -1081,15 +1082,13 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     db_config.which_tx_clk = (slot_name == "A")? X300_CLOCK_WHICH_DB0_TX : X300_CLOCK_WHICH_DB1_TX;
     db_config.dboard_slot = (slot_name == "A")? 0 : 1;
     db_config.cmd_time_ctrl = perif.ctrl;
-    _dboard_ifaces[db_path] = x300_make_dboard_iface(db_config);
 
     //create a new dboard manager
-    _tree->create<dboard_iface::sptr>(db_path / "iface").set(_dboard_ifaces[db_path]);
     _dboard_managers[db_path] = dboard_manager::make(
         mb.db_eeproms[X300_DB0_RX_EEPROM | j].id,
         mb.db_eeproms[X300_DB0_TX_EEPROM | j].id,
         mb.db_eeproms[X300_DB0_GDB_EEPROM | j].id,
-        _dboard_ifaces[db_path],
+        x300_make_dboard_iface(db_config),
         _tree->subtree(db_path)
     );
 

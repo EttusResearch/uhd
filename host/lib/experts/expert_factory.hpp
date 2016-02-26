@@ -103,6 +103,7 @@ namespace uhd { namespace experts {
             property<data_t>& prop = subtree->create<data_t>(path, property_tree::MANUAL_COERCE);
             data_node_t<data_t>* node_ptr =
                 new data_node_t<data_t>(name, init_val, &container->resolve_mutex());
+            prop.set(init_val);
             prop.add_desired_subscriber(boost::bind(&data_node_t<data_t>::commit, node_ptr, _1));
             prop.set_publisher(boost::bind(&data_node_t<data_t>::retrieve, node_ptr));
             container->add_data_node(node_ptr, mode);
@@ -165,10 +166,11 @@ namespace uhd { namespace experts {
 
             property<data_t>& prop = subtree->create<data_t>(path, property_tree::MANUAL_COERCE);
             data_node_t<data_t>* desired_node_ptr =
-                new data_node_t<data_t>(
-                    desired_name, init_val, auto_resolve_desired ? &container->resolve_mutex() : NULL);
+                new data_node_t<data_t>(desired_name, init_val, &container->resolve_mutex());
             data_node_t<data_t>* coerced_node_ptr =
                 new data_node_t<data_t>(coerced_name, init_val, &container->resolve_mutex());
+            prop.set(init_val);
+            prop.set_coerced(init_val);
             prop.add_desired_subscriber(boost::bind(&data_node_t<data_t>::commit, desired_node_ptr, _1));
             prop.set_publisher(boost::bind(&data_node_t<data_t>::retrieve, coerced_node_ptr));
 

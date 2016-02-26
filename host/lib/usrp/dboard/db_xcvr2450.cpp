@@ -112,7 +112,7 @@ static const uhd::dict<std::string, gain_range_t> xcvr_rx_gain_ranges = map_list
 class xcvr2450 : public xcvr_dboard_base{
 public:
     xcvr2450(ctor_args_t args);
-    ~xcvr2450(void);
+    virtual ~xcvr2450(void);
 
 private:
     double _lo_freq;

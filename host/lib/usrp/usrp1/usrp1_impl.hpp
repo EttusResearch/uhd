@@ -92,7 +92,6 @@ private:
     uhd::transport::usb_zero_copy::sptr _data_transport;
     struct db_container_type{
         usrp1_codec_ctrl::sptr codec;
-        uhd::usrp::dboard_iface::sptr dboard_iface;
         uhd::usrp::dboard_manager::sptr dboard_manager;
     };
     uhd::dict<std::string, db_container_type> _dbc;

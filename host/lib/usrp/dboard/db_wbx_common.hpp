@@ -165,7 +165,7 @@ protected:
     class wbx_version2 : public wbx_versionx {
     public:
         wbx_version2(wbx_base *_self_wbx_base);
-        ~wbx_version2(void);
+        virtual ~wbx_version2(void);
 
         double set_tx_gain(double gain, const std::string &name);
         void set_tx_enabled(bool enb);
@@ -180,7 +180,7 @@ protected:
     class wbx_version3 : public wbx_versionx {
     public:
         wbx_version3(wbx_base *_self_wbx_base);
-        ~wbx_version3(void);
+        virtual ~wbx_version3(void);
 
         double set_tx_gain(double gain, const std::string &name);
         void set_tx_enabled(bool enb);
@@ -195,7 +195,7 @@ protected:
     class wbx_version4 : public wbx_versionx {
     public:
         wbx_version4(wbx_base *_self_wbx_base);
-        ~wbx_version4(void);
+        virtual ~wbx_version4(void);
 
         double set_tx_gain(double gain, const std::string &name);
         void set_tx_enabled(bool enb);
