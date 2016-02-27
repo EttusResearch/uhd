@@ -114,13 +114,23 @@ device3::sptr make_pseudo_device()
     return device3::sptr(new pseudo_device3_impl());
 }
 
+class dummy_block_ctrl : public block_ctrl {
+    int foo;
+};
+
 BOOST_AUTO_TEST_CASE(test_device3) {
     device3::sptr my_device = make_pseudo_device();
 
+    std::cout << "Checking block 0..." << std::endl;
+    BOOST_REQUIRE(my_device->find_blocks("Block").size());
+
     std::cout << "Getting block 0..." << std::endl;
-    block_ctrl_base::sptr block0 = my_device->find_block_ctrl("Block");
+    block_ctrl_base::sptr block0 = my_device->get_block_ctrl(my_device->find_blocks("Block")[0]);
     BOOST_REQUIRE(block0);
     BOOST_CHECK_EQUAL(block0->get_block_id(), "0/Block_0");
+
+    std::cout << "Checking block 1..." << std::endl;
+    BOOST_REQUIRE(my_device->has_block(block_id_t("0/Block_1")));
 
     std::cout << "Getting block 1..." << std::endl;
     block_ctrl_base::sptr block1 = my_device->get_block_ctrl(block_id_t("0/Block_1"));
@@ -132,7 +142,7 @@ BOOST_AUTO_TEST_CASE(test_device3_cast) {
     device3::sptr my_device = make_pseudo_device();
 
     std::cout << "Getting block 0..." << std::endl;
-    block_ctrl::sptr block0 = my_device->find_block_ctrl<block_ctrl>("Block");
+    block_ctrl::sptr block0 = my_device->get_block_ctrl<block_ctrl>(block_id_t("0/Block_0"));
     BOOST_REQUIRE(block0);
     BOOST_CHECK_EQUAL(block0->get_block_id(), "0/Block_0");
 
@@ -144,12 +154,19 @@ BOOST_AUTO_TEST_CASE(test_device3_cast) {
 BOOST_AUTO_TEST_CASE(test_device3_fail) {
     device3::sptr my_device = make_pseudo_device();
 
-    BOOST_CHECK(not my_device->find_block_ctrl("FooBarBlock"));
-    BOOST_CHECK(not my_device->find_block_ctrl<block_ctrl>("FooBarBlock"));
+    BOOST_CHECK(not my_device->has_block(block_id_t("0/FooBarBlock_0")));
+    BOOST_CHECK(not my_device->has_block<dummy_block_ctrl>(block_id_t("0/Block_1")));
+
+    BOOST_CHECK(my_device->find_blocks("FooBarBlock").size() == 0);
+    BOOST_CHECK(my_device->find_blocks<block_ctrl>("FooBarBlock").size() == 0);
 
     BOOST_REQUIRE_THROW(
-            my_device->get_block_ctrl(block_id_t("0/FooBarBlock_17")),
-            uhd::lookup_error
+        my_device->get_block_ctrl(block_id_t("0/FooBarBlock_17")),
+        uhd::lookup_error
+    );
+    BOOST_REQUIRE_THROW(
+        my_device->get_block_ctrl<dummy_block_ctrl>(block_id_t("0/Block_1")),
+        uhd::lookup_error
     );
 }
 

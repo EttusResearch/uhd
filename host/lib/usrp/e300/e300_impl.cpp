@@ -564,10 +564,13 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     );
 
     // If we have a radio, we must configure its codec control:
-    boost::shared_ptr<rfnoc::e3xx_radio_ctrl_impl> radio_block_ctrl = find_block_ctrl<rfnoc::e3xx_radio_ctrl_impl>("Radio");
-    if (radio_block_ctrl) {
+    std::vector<rfnoc::block_id_t> radio_ids = find_blocks<rfnoc::e3xx_radio_ctrl_impl>("Radio");
+    if (radio_ids.size() > 0) {
         UHD_MSG(status) << "Initializing Radio Block..." << std::endl;
-        radio_block_ctrl->setup_radio(codec_ctrl);
+        get_block_ctrl<rfnoc::e3xx_radio_ctrl_impl>(radio_ids[0])->setup_radio(codec_ctrl);
+        if (radio_ids.size() != 1) {
+            UHD_MSG(status) << "Too many Radio Blocks found. Using only " << radio_ids[0] << std::endl;
+        }
     } else {
         UHD_MSG(status) << "No Radio Block found. Assuming radio-less operation." << std::endl;
     }

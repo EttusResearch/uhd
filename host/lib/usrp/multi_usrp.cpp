@@ -1633,12 +1633,11 @@ public:
         if (not is_device3()) {
             throw uhd::type_error("Cannot set channels on a non-generation 3 device.");
         }
-        uhd::rfnoc::block_id_t new_block_ctrl;
-        boost::shared_ptr<T> block_ctrl = get_device3()->find_block_ctrl<T>(block_id);
-        if (block_ctrl) {
-            new_block_ctrl = block_ctrl->get_block_id();
+        try {
+            return get_device3()->get_block_ctrl<T>(block_id)->get_block_id();
+        } catch (uhd::lookup_error&) {
+            return uhd::rfnoc::block_id_t();
         }
-        return new_block_ctrl;
     }
 
     size_t set_tx_channel(

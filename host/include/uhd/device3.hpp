@@ -20,6 +20,8 @@
 
 #include <uhd/device.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
+#include <boost/units/detail/utility.hpp>
+#include <vector>
 
 namespace uhd {
 
@@ -41,6 +43,27 @@ class UHD_API device3 : public uhd::device {
      */
     void clear();
 
+    /*! \brief Checks if an RFNoC block exists on the device.
+     *
+     * \param block_id Canonical block name (e.g. "0/FFT_1").
+     * \return true if a block with the specified id exists
+     */
+    bool has_block(const rfnoc::block_id_t &block_id) const;
+
+    /*! Same as has_block(), but with a type check.
+     *
+     * \return true if a block of type T with the specified id exists
+     */
+    template <typename T>
+    bool has_block(const rfnoc::block_id_t &block_id) const
+    {
+        if (has_block(block_id)) {
+            return boost::dynamic_pointer_cast<T>(get_block_ctrl(block_id));
+        } else {
+            return false;
+        }
+    }
+
     /*! \brief Returns a block controller class for an RFNoC block.
      *
      * If the given block ID is not valid (i.e. such a block does not exist
@@ -54,6 +77,8 @@ class UHD_API device3 : public uhd::device {
      *
      * If you have a block controller class that is derived from block_ctrl_base,
      * use this function to access its specific methods.
+     * If the given block ID is not valid (i.e. such a block does not exist
+     * on this device) or if the type does not match, it will throw a uhd::lookup_error.
      *
      * \code{.cpp}
      * // Assume DEV is a device3::sptr
@@ -64,40 +89,44 @@ class UHD_API device3 : public uhd::device {
     template <typename T>
     boost::shared_ptr<T> get_block_ctrl(const rfnoc::block_id_t &block_id) const
     {
-        return boost::dynamic_pointer_cast<T>(get_block_ctrl(block_id));
+        boost::shared_ptr<T> blk = boost::dynamic_pointer_cast<T>(get_block_ctrl(block_id));
+        if (blk) {
+            return blk;
+        } else {
+            throw uhd::lookup_error(str(boost::format("This device does not have a block of type %s with ID: %s")
+                % boost::units::detail::demangle(typeid(T).name())
+                % block_id.to_string()));
+        }
     }
 
-    /*! Like get_block_ctrl(), but uses a less strict method for finding blocks.
-     *
-     * Uses block_ctrl_base::match() internally. The first block that matches
-     * the given string will be returned.
-     *
-     * If no matching block is found, it returns a NULL pointer.
-     * Boolean operations can be used to check for a valid block, e.g.
-     * \code{.cpp}
-     * // Assume DEV is a device3::sptr
-     * if (not DEV->find_block_ctrl("Radio")) {
-     *     std::cout << "Device has no radios." << std::endl;
-     * }
-     * \endcode
+    /*! Returns the block ids of all blocks that match the specified hint
+     * Uses block_ctrl_base::match() internally.
+     * If no matching block is found, it returns an empty vector.
      *
      * To access specialized block controller classes (i.e. derived from block_ctrl_base),
      * use the templated version of this function, e.g.
      * \code{.cpp}
      * // Assume DEV is a device3::sptr
-     * null_block_ctrl::sptr null_block = DEV->find_block_ctrl<null_block_ctrl>("NullSrcSink");
+     * null_block_ctrl::sptr null_block = DEV->find_blocks<null_block_ctrl>("NullSrcSink");
      * \endcode
      */
-    rfnoc::block_ctrl_base::sptr find_block_ctrl(const std::string &block_id) const;
+    std::vector<rfnoc::block_id_t> find_blocks(const std::string &block_id_hint) const;
 
     /*! Type-cast version of find_block_ctrl().
      *
      * See get_block_ctrl().
      */
     template <typename T>
-    boost::shared_ptr<T> find_block_ctrl(const std::string &block_id) const
+    std::vector<rfnoc::block_id_t> find_blocks(const std::string &block_id_hint) const
     {
-        return boost::dynamic_pointer_cast<T>(find_block_ctrl(block_id));
+        std::vector<rfnoc::block_id_t> all_block_ids = find_blocks(block_id_hint);
+        std::vector<rfnoc::block_id_t> filt_block_ids;
+        for (size_t i = 0; i < all_block_ids.size(); i++) {
+            if (has_block<T>(all_block_ids[i])) {
+                filt_block_ids.push_back(all_block_ids[i]);
+            }
+        }
+        return filt_block_ids;
     }
 
   protected:

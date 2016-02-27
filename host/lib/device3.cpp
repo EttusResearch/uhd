@@ -23,6 +23,16 @@
 using namespace uhd;
 using namespace uhd::rfnoc;
 
+bool device3::has_block(const rfnoc::block_id_t &block_id) const
+{
+    for (size_t i = 0; i < _rfnoc_block_ctrl.size(); i++) {
+        if (_rfnoc_block_ctrl[i]->get_block_id() == block_id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 block_ctrl_base::sptr device3::get_block_ctrl(const block_id_t &block_id) const
 {
     for (size_t i = 0; i < _rfnoc_block_ctrl.size(); i++) {
@@ -30,19 +40,18 @@ block_ctrl_base::sptr device3::get_block_ctrl(const block_id_t &block_id) const
             return _rfnoc_block_ctrl[i];
         }
     }
-
     throw uhd::lookup_error(str(boost::format("This device does not have a block with ID: %s") % block_id.to_string()));
 }
 
-block_ctrl_base::sptr device3::find_block_ctrl(const std::string &block_id) const
+std::vector<rfnoc::block_id_t> device3::find_blocks(const std::string &block_id_hint) const
 {
+    std::vector<rfnoc::block_id_t> block_ids;
     for (size_t i = 0; i < _rfnoc_block_ctrl.size(); i++) {
-        if (_rfnoc_block_ctrl[i]->get_block_id().match(block_id)) {
-            return _rfnoc_block_ctrl[i];
+        if (_rfnoc_block_ctrl[i]->get_block_id().match(block_id_hint)) {
+            block_ids.push_back(_rfnoc_block_ctrl[i]->get_block_id());
         }
     }
-
-    return block_ctrl_base::sptr();
+    return block_ids;
 }
 
 void device3::clear()

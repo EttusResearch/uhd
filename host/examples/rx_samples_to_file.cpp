@@ -373,12 +373,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             usrp->set_rx_channel(radio_ctrl_id);
         } else {
             // Otherwise, see if the requested block exists and connect it to the radio:
-            uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl =
-                usrp->get_device3()->find_block_ctrl< uhd::rfnoc::source_block_ctrl_base >(blockid);
-            if (not blk_ctrl) {
+            uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl;
+            if (usrp->get_device3()->has_block<uhd::rfnoc::source_block_ctrl_base>(blockid)) {
+                blk_ctrl = usrp->get_device3()->get_block_ctrl<uhd::rfnoc::source_block_ctrl_base>(blockid);
+            } else {
                 std::cout << "Block does not exist on current device: " << blockid << std::endl;
                 return ~0;
             }
+
             // Set the stream args on both the radio and the other block:
             // (We'll use the same settings for both blocks because this is an example,
             // but typically you'd have different settings for all the blocks).

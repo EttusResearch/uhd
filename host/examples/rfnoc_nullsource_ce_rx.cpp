@@ -306,26 +306,28 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////////////
     // For the processing blocks, we don't care what type these block is,
     // so we make it a block_ctrl_base (default):
-    uhd::rfnoc::block_ctrl_base::sptr proc_block_ctrl = usrp->get_device3()->find_block_ctrl(blockid);
-    uhd::rfnoc::block_ctrl_base::sptr proc_block_ctrl2;
-    if (num_proc_blocks == 2) {
-        proc_block_ctrl2 = usrp->get_device3()->find_block_ctrl(blockid2);
+    std::vector<std::string> blocks;
+    uhd::rfnoc::block_ctrl_base::sptr proc_block_ctrl, proc_block_ctrl2;
+    if (usrp->get_device3()->has_block(blockid)) {
+        proc_block_ctrl = usrp->get_device3()->get_block_ctrl(blockid);
+        blocks.push_back(proc_block_ctrl->get_block_id());
+    }
+    if (num_proc_blocks == 2 and usrp->get_device3()->has_block(blockid2)) {
+        proc_block_ctrl2 = usrp->get_device3()->get_block_ctrl(blockid2);
+        blocks.push_back(proc_block_ctrl2->get_block_id());
     }
 
     // For the null source control, we want to use the subclassed access,
     // so we create a null_block_ctrl:
-    uhd::rfnoc::null_block_ctrl::sptr null_src_ctrl = usrp->get_device3()->find_block_ctrl<uhd::rfnoc::null_block_ctrl>(nullid);
-    if (not null_src_ctrl) {
+    uhd::rfnoc::null_block_ctrl::sptr null_src_ctrl;
+    if (usrp->get_device3()->has_block<uhd::rfnoc::null_block_ctrl>(blockid)) {
+        null_src_ctrl = usrp->get_device3()->get_block_ctrl<uhd::rfnoc::null_block_ctrl>(nullid);
+        blocks.push_back(null_src_ctrl->get_block_id());
+    } else {
         std::cout << "Error: Device has no null block." << std::endl;
         return ~0;
     }
 
-    std::vector<std::string> blocks;
-    blocks.push_back(null_src_ctrl->get_block_id());
-    blocks.push_back(proc_block_ctrl->get_block_id());
-    if (num_proc_blocks == 2) {
-        blocks.push_back(proc_block_ctrl2->get_block_id());
-    }
     blocks.push_back("HOST");
     pretty_print_flow_graph(blocks);
 
