@@ -132,7 +132,7 @@ void device3_impl::enumerate_rfnoc_blocks(
         UHD_MSG(status) << str(boost::format("Port %d: Found NoC-Block with ID %016X.") % int(ctrl_sid.get_dst_endpoint()) % noc_id) << std::endl;
         uhd::rfnoc::make_args_t make_args;
         uhd::rfnoc::blockdef::sptr block_def = uhd::rfnoc::blockdef::make_from_noc_id(noc_id);
-        make_args.ctrl_ifaces = boost::assign::map_list_of(0, ctrl);
+        make_args.ctrl_ifaces[0] = ctrl;
         BOOST_FOREACH(const size_t port_number, block_def->get_all_port_numbers()) {
             if (port_number == 0) { // We've already set this up
                 continue;
@@ -179,7 +179,7 @@ void device3_impl::init_radio_ctrl(
     // 1) Create the block control
     UHD_MSG(status) << "[RFNOC] ------- Radio Setup -----------" << std::endl;
     uhd::rfnoc::make_args_t make_args("Radio");
-    make_args.ctrl_ifaces = boost::assign::map_list_of(size_t(0), perif.ctrl);
+    make_args.ctrl_ifaces[0] = perif.ctrl;
     make_args.base_address = base_address;
     make_args.device_index = mb_i;
     make_args.tree = _tree->subtree(fs_path("/mboards") / mb_i);
