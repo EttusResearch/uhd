@@ -259,6 +259,18 @@ public:
      */
     void set_command_time(const time_spec_t &time_spec, const double tick_rate, const size_t port = 0);
 
+    /*! Returns the current command time for all future command packets.
+     *
+     * \returns the command time as a time_spec_t.
+     */
+    time_spec_t get_command_time(const size_t port = 0);
+
+    /*! Returns the current command timebase tick rate.
+     *
+     * \returns the tick rate in Hz
+     */
+    double get_command_tick_rate(const size_t port = 0);
+
     /*! Resets the command time.
      * Any command packet after this call will no longer have a time associated
      * with it.
@@ -393,6 +405,9 @@ private:
      **********************************************************************/
     //! Objects to actually send and receive the commands
     std::map<size_t, wb_iface::sptr> _ctrl_ifaces;
+
+    //! Command timebase tick rate
+    std::map<size_t, double> _tick_rates;
 
     //! The base address of this block (the address of block port 0)
     uint32_t _base_address;

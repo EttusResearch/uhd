@@ -345,8 +345,39 @@ void block_ctrl_base::set_command_time(
         ));
     }
 
+    _tick_rates[port] = tick_rate;
     iface_sptr->set_tick_rate(tick_rate);
     iface_sptr->set_time(time_spec);
+}
+
+time_spec_t block_ctrl_base::get_command_time(
+        const size_t port
+) {
+    boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
+        boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
+    if (not iface_sptr) {
+        throw uhd::assertion_error(str(
+            boost::format("[%s] Cannot get command time on port '%d'")
+            % unique_id() % port
+        ));
+    }
+
+    return iface_sptr->get_time();
+}
+
+double block_ctrl_base::get_command_tick_rate(
+        const size_t port
+) {
+    boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
+        boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
+    if (not iface_sptr) {
+        throw uhd::assertion_error(str(
+            boost::format("[%s] Cannot get command tick rate on port '%d'")
+            % unique_id() % port
+        ));
+    }
+
+    return _tick_rates.at(port);
 }
 
 void block_ctrl_base::clear_command_time(const size_t port)
