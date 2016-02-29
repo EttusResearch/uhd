@@ -39,7 +39,6 @@ radio_ctrl_impl::radio_ctrl_impl()
 {
     _num_rx_channels = get_output_ports().size();
     _num_tx_channels = get_input_ports().size();
-    _num_radios = std::max(_num_rx_channels, _num_tx_channels);
 
     for (size_t i = 0; i < _num_rx_channels; i++) {
         _rx_streamers_active[i] = false;
@@ -51,10 +50,10 @@ radio_ctrl_impl::radio_ctrl_impl()
     /////////////////////////////////////////////////////////////////////////
     // Setup peripherals
     /////////////////////////////////////////////////////////////////////////
-    for (size_t i = 0; i < _num_radios; i++) {
+    for (size_t i = 0; i < _get_num_radios(); i++) {
         _register_loopback_self_test(i);
 
-        wb_iface_adapter::sptr ctrl_iface_adapter = boost::make_shared<wb_iface_adapter>(
+        _perifs[i].ctrl = boost::make_shared<wb_iface_adapter>(
             // poke32 functor
             boost::bind(
                 static_cast< void (block_ctrl_base::*)(const boost::uint32_t, const boost::uint32_t, const size_t) >(&block_ctrl_base::sr_write),
@@ -62,21 +61,32 @@ radio_ctrl_impl::radio_ctrl_impl()
             ),
             // peek32 functor
             boost::bind(
-                static_cast< boost::uint32_t (block_ctrl_base::*)(const boost::uint32_t, const size_t port) >(&block_ctrl_base::user_reg_read32),
+                static_cast< boost::uint32_t (block_ctrl_base::*)(const boost::uint32_t, const size_t) >(&block_ctrl_base::user_reg_read32),
                 this,
                 _1, i
             ),
             // peek64 functor
             boost::bind(
-                static_cast< boost::uint64_t (block_ctrl_base::*)(const boost::uint32_t, const size_t port) >(&block_ctrl_base::user_reg_read64),
+                static_cast< boost::uint64_t (block_ctrl_base::*)(const boost::uint32_t, const size_t) >(&block_ctrl_base::user_reg_read64),
                 this,
                 _1, i
+            ),
+            // get_time functor
+            boost::bind(
+                static_cast< time_spec_t (block_ctrl_base::*)(const size_t) >(&block_ctrl_base::get_command_time),
+                this,
+                i
+            ),
+            // set_time functor
+            boost::bind(
+                static_cast< void (block_ctrl_base::*)(const time_spec_t&, const double, const size_t) >(&block_ctrl_base::set_command_time),
+                this,
+                _1, get_command_tick_rate(i), i
             )
         );
 
-        _perifs[i].leds = usrp::gpio_atr::gpio_atr_3000::make_write_only(ctrl_iface_adapter, regs::sr_addr(regs::LEDS));
-        _perifs[i].framer = rx_vita_core_3000::make(ctrl_iface_adapter, regs::sr_addr(regs::RX_CTRL));
-        _perifs[i].deframer = tx_vita_core_3000::make(ctrl_iface_adapter, regs::sr_addr(uhd::rfnoc::SR_ERROR_POLICY));
+        _perifs[i].framer = rx_vita_core_3000::make(_perifs[i].ctrl, regs::sr_addr(regs::RX_CTRL));
+        _perifs[i].deframer = tx_vita_core_3000::make(_perifs[i].ctrl, regs::sr_addr(uhd::rfnoc::SR_ERROR_POLICY));
 
         // FIXME there's currently no way to set the underflow policy, which would be set here:
         _perifs[i].framer->setup(stream_args_t());
@@ -86,7 +96,7 @@ radio_ctrl_impl::radio_ctrl_impl()
             time_core_3000::readback_bases_type time64_rb_bases;
             time64_rb_bases.rb_now = regs::RB_TIME_NOW;
             time64_rb_bases.rb_pps = regs::RB_TIME_PPS;
-            _time64 = time_core_3000::make(ctrl_iface_adapter, regs::sr_addr(regs::TIME), time64_rb_bases);
+            _time64 = time_core_3000::make(_perifs[i].ctrl, regs::sr_addr(regs::TIME), time64_rb_bases);
             _time64->set_time_now(0.0);
         }
     }
@@ -105,7 +115,7 @@ radio_ctrl_impl::radio_ctrl_impl()
     _tree->create<time_spec_t>("time/cmd")
         .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, boost::ref(_tick_rate), 0))
     ;
-    for (size_t i = 0; i < _num_radios; i++) {
+    for (size_t i = 0; i < _get_num_radios(); i++) {
         _tree->access<time_spec_t>("time/cmd")
             .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, boost::ref(_tick_rate), i))
         ;
@@ -139,6 +149,42 @@ void radio_ctrl_impl::_register_loopback_self_test(size_t chan)
 /****************************************************************************
  * API calls
  ***************************************************************************/
+double radio_ctrl_impl::set_rate(double rate)
+{
+    _tick_rate = rate;
+    _time64->set_tick_rate(_tick_rate);
+    for (size_t i = 0; i < _num_rx_channels; i++) {
+        _perifs[i].framer->set_tick_rate(_tick_rate);
+    }
+    _time64->self_test();
+    return _tick_rate;
+}
+
+void radio_ctrl_impl::set_antenna(const std::string &ant, const size_t chan)
+{
+    _antenna[chan] = ant;
+}
+
+double radio_ctrl_impl::set_tx_frequency(const double freq, const size_t chan)
+{
+    return _tx_freq[chan] = freq;
+}
+
+double radio_ctrl_impl::set_rx_frequency(const double freq, const size_t chan)
+{
+    return _rx_freq[chan] = freq;
+}
+
+double radio_ctrl_impl::set_tx_gain(const double gain, const size_t chan)
+{
+    return _tx_gain[chan] = gain;
+}
+
+double radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
+{
+    return _rx_gain[chan] = gain;
+}
+
 double radio_ctrl_impl::get_rate() const
 {
     return _tick_rate;

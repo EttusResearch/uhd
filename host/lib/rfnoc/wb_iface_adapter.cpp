@@ -22,10 +22,14 @@ using namespace uhd::rfnoc;
 wb_iface_adapter::wb_iface_adapter(
         const poke32_type &poke32_functor_,
         const peek32_type &peek32_functor_,
-        const peek64_type &peek64_functor_
+        const peek64_type &peek64_functor_,
+        const gettime_type &gettime_functor_,
+        const settime_type &settime_functor_
 ) : poke32_functor(poke32_functor_)
   , peek32_functor(peek32_functor_)
   , peek64_functor(peek64_functor_)
+  , gettime_functor(gettime_functor_)
+  , settime_functor(settime_functor_)
 {
     // nop
 }
@@ -45,3 +49,12 @@ boost::uint64_t wb_iface_adapter::peek64(const wb_addr_type addr)
     return peek64_functor(addr);
 }
 
+uhd::time_spec_t wb_iface_adapter::get_time(void)
+{
+    return gettime_functor();
+}
+
+void wb_iface_adapter::set_time(const time_spec_t& t)
+{
+    settime_functor(t);
+}

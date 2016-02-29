@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "wb_iface_adapter.hpp"
 #include "e3xx_radio_ctrl_impl.hpp"
 #include "e300_defaults.hpp"
 #include "e300_regs.hpp"
@@ -35,7 +34,6 @@ using uhd::usrp::dboard_iface;
 static const size_t FE0 = 1;
 static const size_t FE1 = 0;
 
-
 /****************************************************************************
  * Structors
  ***************************************************************************/
@@ -46,32 +44,14 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(e3xx_radio_ctrl)
     ////////////////////////////////////////////////////////////////////
     // Set up peripherals
     ////////////////////////////////////////////////////////////////////
-    for (size_t i = 0; i < _num_radios; i++) {
-        wb_iface_adapter::sptr ctrl_iface_adapter = boost::make_shared<wb_iface_adapter>(
-            // poke32 functor
-            boost::bind(
-                static_cast< void (block_ctrl_base::*)(const boost::uint32_t, const boost::uint32_t, const size_t) >(&block_ctrl_base::sr_write),
-                this, _1, _2, i
-            ),
-            // peek32 functor
-            boost::bind(
-                static_cast< boost::uint32_t (block_ctrl_base::*)(const boost::uint32_t, const size_t port) >(&block_ctrl_base::user_reg_read32),
-                this,
-                _1, i
-            ),
-            // peek64 functor
-            boost::bind(
-                static_cast< boost::uint64_t (block_ctrl_base::*)(const boost::uint32_t, const size_t port) >(&block_ctrl_base::user_reg_read64),
-                this,
-                _1, i
-            )
-        );
-
+    for (size_t i = 0; i < _get_num_radios(); i++) {
         if (i == 0) {
-            _spi = spi_core_3000::make(ctrl_iface_adapter, regs::sr_addr(regs::SPI), regs::RB_SPI);
+            _spi = spi_core_3000::make(_get_ctrl(i), regs::sr_addr(regs::SPI), regs::RB_SPI);
             _spi->set_divider(6);
         }
-        _atrs[i] = usrp::gpio_atr::gpio_atr_3000::make_write_only(ctrl_iface_adapter, regs::sr_addr(regs::GPIO));
+        _e3xx_perifs[i].atr = usrp::gpio_atr::gpio_atr_3000::make_write_only(_get_ctrl(i), regs::sr_addr(regs::GPIO));
+        _e3xx_perifs[i].leds = usrp::gpio_atr::gpio_atr_3000::make_write_only(_get_ctrl(i), regs::sr_addr(regs::LEDS));
+        _e3xx_perifs[i].leds->set_atr_mode(usrp::gpio_atr::MODE_ATR, usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -139,8 +119,10 @@ double e3xx_radio_ctrl_impl::set_rate(double rate)
     //UHD_MSG(status) << "Setting SPI divider to " << ceil(rate/AD9361_SPI_RATE) << "\n";
     //_spi->set_divider(ceil(rate/AD9361_SPI_RATE)); // ceil() to prevent less than 1 rounding to 0
     UHD_MSG(status) << "Asking for clock rate " << rate/1e6 << " MHz\n";
-    _tick_rate = _codec_ctrl->set_clock_rate(rate);
-    UHD_MSG(status) << "Actually got clock rate " << _tick_rate/1e6 << " MHz\n";
+    double actual_tick_rate = _codec_ctrl->set_clock_rate(rate);
+    UHD_MSG(status) << "Actually got clock rate " << actual_tick_rate/1e6 << " MHz\n";
+
+    actual_tick_rate = radio_ctrl_impl::set_rate(actual_tick_rate);
 
     if (not check_radio_config()) {
         throw std::runtime_error(str(
@@ -149,13 +131,7 @@ double e3xx_radio_ctrl_impl::set_rate(double rate)
         ));
     }
 
-    _time64->set_tick_rate(_tick_rate);
-    for (size_t i = 0; i < _num_rx_channels; i++) {
-        _perifs[i].framer->set_tick_rate(_tick_rate);
-    }
-    _time64->self_test();
-
-    return _tick_rate;
+    return actual_tick_rate;
 }
 
 /*! Select antenna \p for channel \p chan.
@@ -164,9 +140,10 @@ void e3xx_radio_ctrl_impl::set_antenna(const std::string &ant, const size_t chan
 {
     if (ant != "TX/RX" and ant != "RX2")
         throw uhd::value_error("Unknown RX antenna option: " + ant);
-    _antenna[chan] = ant;
+
+    radio_ctrl_impl::set_antenna(ant, chan);
     this->_update_atrs();
-    this->_update_atr_leds(_perifs[chan].leds, ant);
+    this->_update_atr_leds(_e3xx_perifs[chan].leds, ant);
 }
 
 double e3xx_radio_ctrl_impl::set_tx_frequency(const double freq, const size_t)
@@ -183,16 +160,14 @@ double e3xx_radio_ctrl_impl::set_tx_gain(const double gain, const size_t chan)
 {
     const std::string fe_side = (chan == 0) ? "A" : "B";
     double new_gain = _tree->access<double>(fs_path("dboards/A/tx_frontends/" + fe_side + "/gains/PGA/value")).set(gain).get();
-    _tx_gain[chan] = new_gain;
-    return new_gain;
+    return radio_ctrl_impl::set_tx_gain(new_gain, chan);
 }
 
 double e3xx_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
 {
     const std::string fe_side = (chan == 0) ? "A" : "B";
     double new_gain = _tree->access<double>(fs_path("dboards/A/rx_frontends/" + fe_side + "/gains/PGA/value")).set(gain).get();
-    _rx_gain[chan] = new_gain;
-    return new_gain;
+    return radio_ctrl_impl::set_rx_gain(new_gain, chan);
 }
 
 /****************************************************************************
@@ -209,16 +184,16 @@ void e3xx_radio_ctrl_impl::setup_radio(uhd::usrp::ad9361_ctrl::sptr safe_codec_c
     ////////////////////////////////////////////////////////////////////
     _codec_ctrl = safe_codec_ctrl;
     _codec_ctrl->set_timed_spi(_spi, 1);
-    _codec_mgr = uhd::usrp::ad936x_manager::make(_codec_ctrl, _num_radios);
+    _codec_mgr = uhd::usrp::ad936x_manager::make(_codec_ctrl, _get_num_radios());
 
     ////////////////////////////////////////////////////////////////////
     // setup radios
     ////////////////////////////////////////////////////////////////////
-    for (size_t chan = 0; chan < _num_radios; chan++) {
+    for (size_t chan = 0; chan < _get_num_radios(); chan++) {
         _setup_radio_channel(chan);
     }
     // Loopback test
-    for (size_t chan = 0; chan < _num_radios; chan++) {
+    for (size_t chan = 0; chan < _get_num_radios(); chan++) {
         _codec_mgr->loopback_self_test(
             boost::bind(
                 static_cast< void (block_ctrl_base::*)(const boost::uint32_t, const boost::uint32_t, const size_t) >(&block_ctrl_base::sr_write),
@@ -234,11 +209,6 @@ void e3xx_radio_ctrl_impl::setup_radio(uhd::usrp::ad9361_ctrl::sptr safe_codec_c
     }
 
     this->_update_enables();
-}
-
-static void gain_updater(std::map<size_t, double> &gain_map, const size_t index, double value)
-{
-    gain_map[index] = value;
 }
 
 void e3xx_radio_ctrl_impl::_setup_radio_channel(const size_t chan)
@@ -288,12 +258,12 @@ void e3xx_radio_ctrl_impl::_setup_radio_channel(const size_t chan)
         ;
         if (dir == RX_DIRECTION) {
             _tree->access<double>(rf_fe_path / "gains" / "PGA" / "value")
-                .add_coerced_subscriber(boost::bind(&gain_updater, boost::ref(_rx_gain), chan, _1))
+                .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_rx_gain, this, _1, chan))
             ;
         }
         else if (dir == TX_DIRECTION) {
             _tree->access<double>(rf_fe_path / "gains" / "PGA" / "value")
-                .add_coerced_subscriber(boost::bind(&gain_updater, boost::ref(_tx_gain), chan, _1))
+                .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_tx_gain, this, _1, chan))
             ;
         }
 
@@ -329,11 +299,11 @@ void e3xx_radio_ctrl_impl::_reset_radio(void)
  ***************************************************************************/
 bool e3xx_radio_ctrl_impl::check_radio_config()
 {
-    const size_t num_rx = _rx_streamers_active[0] + _rx_streamers_active[1];
-    const size_t num_tx = _tx_streamers_active[0] + _tx_streamers_active[1];
+    const size_t num_rx = _is_streamer_active(RX_DIRECTION, FE0) + _is_streamer_active(RX_DIRECTION, FE1);
+    const size_t num_tx = _is_streamer_active(TX_DIRECTION, FE0) + _is_streamer_active(TX_DIRECTION, FE1);
     _enforce_tick_rate_limits(
         std::max(num_rx, num_tx),
-        _tick_rate
+        get_tick_rate()
     );
 
     this->_update_enables();
@@ -372,13 +342,13 @@ void e3xx_radio_ctrl_impl::_enforce_tick_rate_limits(
 void e3xx_radio_ctrl_impl::_update_fe_lo_freq(const std::string &fe, const double freq)
 {
     if (fe[0] == 'R') {
-        for (size_t i = 0; i < _num_radios; i++) {
-            _rx_freq[i] = freq;
+        for (size_t i = 0; i < _get_num_radios(); i++) {
+            radio_ctrl_impl::set_rx_frequency(freq, i);
         }
     }
     if (fe[0] == 'T') {
-        for (size_t i = 0; i < _num_radios; i++) {
-            _tx_freq[i] = freq;
+        for (size_t i = 0; i < _get_num_radios(); i++) {
+            radio_ctrl_impl::set_tx_frequency(freq, i);
         }
     }
     this->_update_atrs();
@@ -386,15 +356,15 @@ void e3xx_radio_ctrl_impl::_update_fe_lo_freq(const std::string &fe, const doubl
 
 void e3xx_radio_ctrl_impl::_update_atrs(void)
 {
-    for (size_t instance = 0; instance < _num_radios; instance++)
+    for (size_t instance = 0; instance < _get_num_radios(); instance++)
     {
         // if we're not ready, no point ...
-        if (not _atrs[instance])
+        if (not _e3xx_perifs[instance].atr)
             return;
 
-        const bool rx_ant_rx2  = _antenna[instance] == "RX2";
-        const double rx_freq = _rx_freq[instance];
-        const double tx_freq = _tx_freq[instance];
+        const bool rx_ant_rx2  = get_antenna(instance) == "RX2";
+        const double rx_freq = get_rx_frequency(instance);
+        const double tx_freq = get_tx_frequency(instance);
         const bool rx_low_band = rx_freq < 2.6e9;
         const bool tx_low_band = tx_freq < 2940.0e6;
 
@@ -567,7 +537,7 @@ void e3xx_radio_ctrl_impl::_update_atrs(void)
         tx_reg |= tx_enables;
         fd_reg |= tx_enables;
 
-        usrp::gpio_atr::gpio_atr_3000::sptr atr = _atrs[instance];
+        usrp::gpio_atr::gpio_atr_3000::sptr atr = _e3xx_perifs[instance].atr;
         atr->set_atr_reg(usrp::gpio_atr::ATR_REG_IDLE, oo_reg);
         atr->set_atr_reg(usrp::gpio_atr::ATR_REG_RX_ONLY, rx_reg);
         atr->set_atr_reg(usrp::gpio_atr::ATR_REG_TX_ONLY, tx_reg);
@@ -606,8 +576,8 @@ void e3xx_radio_ctrl_impl::_update_enables(void)
         return;
     }
 
-    const size_t num_rx = _rx_streamers_active[0] + _rx_streamers_active[1];
-    const size_t num_tx = _tx_streamers_active[0] + _tx_streamers_active[1];
+    const size_t num_rx = _is_streamer_active(RX_DIRECTION, FE0) + _is_streamer_active(RX_DIRECTION, FE1);
+    const size_t num_tx = _is_streamer_active(TX_DIRECTION, FE0) + _is_streamer_active(TX_DIRECTION, FE1);
 
     const bool mimo = (num_rx == 2) or (num_tx == 2);
 
@@ -621,17 +591,17 @@ void e3xx_radio_ctrl_impl::_update_enables(void)
         _codec_ctrl->set_active_chains(false, false, true, false);
     } else {
         _codec_ctrl->set_active_chains(
-                _tx_streamers_active[FE0],
-                _tx_streamers_active[FE1],
-                _rx_streamers_active[FE0],
-                _rx_streamers_active[FE1]
+                _is_streamer_active(TX_DIRECTION, FE0),
+                _is_streamer_active(TX_DIRECTION, FE1),
+                _is_streamer_active(RX_DIRECTION, FE0),
+                _is_streamer_active(RX_DIRECTION, FE1)
         );
     }
 
     // Set radio data direction register cleared due to reset
-    for (size_t instance = 0; instance < _num_radios; instance++)
+    for (size_t instance = 0; instance < _get_num_radios(); instance++)
     {
-        _atrs[instance]->set_gpio_ddr(usrp::gpio_atr::DDR_OUTPUT, 0xFFFFFFFF);
+        _e3xx_perifs[instance].atr->set_gpio_ddr(usrp::gpio_atr::DDR_OUTPUT, 0xFFFFFFFF);
     }
 
     //figure out if mimo is enabled based on new state

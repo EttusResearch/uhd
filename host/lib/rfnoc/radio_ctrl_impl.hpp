@@ -24,6 +24,7 @@
 #include "gpio_atr_3000.hpp"
 #include <uhd/rfnoc/radio_ctrl.hpp>
 #include <uhd/types/stdint.hpp>
+#include <uhd/types/direction.hpp>
 
 //! Shorthand for radio block constructor
 #define UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR_DECL(CLASS_NAME) \
@@ -52,6 +53,13 @@ public:
     /************************************************************************
      * Public Radio API calls
      ***********************************************************************/
+    virtual double set_rate(double rate);
+    virtual void set_antenna(const std::string &ant, const size_t chan);
+    virtual double set_tx_frequency(const double freq, const size_t chan);
+    virtual double set_rx_frequency(const double freq, const size_t chan);
+    virtual double set_tx_gain(const double gain, const size_t chan);
+    virtual double set_rx_gain(const double gain, const size_t chan);
+
     virtual double get_rate() const;
     virtual std::string get_antenna(const size_t chan) /* const */;
     virtual double get_tx_frequency(const size_t) /* const */;
@@ -125,12 +133,32 @@ protected: // TODO see what's protected and what's private
     /***********************************************************************
      * Block control API calls
      **********************************************************************/
-    double _get_tick_rate() { return get_rate(); };
-
     void _update_spp(int spp);
+
+    inline size_t _get_num_radios() const {
+       return  std::max(_num_rx_channels, _num_tx_channels);
+    }
+
+    inline timed_wb_iface::sptr _get_ctrl(size_t radio_num) const {
+        return _perifs.at(radio_num).ctrl;
+    }
+
+    inline bool _is_streamer_active(uhd::direction_t dir, const size_t chan) const {
+        switch (dir) {
+        case uhd::TX_DIRECTION:
+            return _tx_streamers_active.at(chan);
+        case uhd::RX_DIRECTION:
+            return _rx_streamers_active.at(chan);
+        case uhd::DX_DIRECTION:
+            return _rx_streamers_active.at(chan) and _tx_streamers_active.at(chan);
+        default:
+            return false;
+        }
+    }
 
     virtual bool check_radio_config() { return true; };
 
+private:
     /************************************************************************
      * Peripherals
      ***********************************************************************/
@@ -139,15 +167,14 @@ protected: // TODO see what's protected and what's private
     //! Stores pointers to all streaming-related radio cores
     struct radio_perifs_t
     {
+        timed_wb_iface::sptr     ctrl;
         rx_vita_core_3000::sptr  framer;
         tx_vita_core_3000::sptr  deframer;
-        uhd::usrp::gpio_atr::gpio_atr_3000::sptr leds;
     };
     std::map<size_t, radio_perifs_t> _perifs;
 
     size_t _num_tx_channels;
     size_t _num_rx_channels;
-    size_t _num_radios;
 
     // Cached values
     double _tick_rate;

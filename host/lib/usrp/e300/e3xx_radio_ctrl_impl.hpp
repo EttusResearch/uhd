@@ -116,10 +116,15 @@ private:
     uint8_t _get_internal_gpio(uhd::usrp::gpio_atr::gpio_atr_3000::sptr);
 
 private: // members
+    struct e3xx_perifs_t
+    {
+        usrp::gpio_atr::gpio_atr_3000::sptr      atr;
+        uhd::usrp::gpio_atr::gpio_atr_3000::sptr leds;
+    };
     //! SPI to talk to the AD936x
     spi_core_3000::sptr                    _spi;
     //! One ATR per channel
-    std::map<size_t, usrp::gpio_atr::gpio_atr_3000::sptr> _atrs;
+    std::map<size_t, e3xx_perifs_t>        _e3xx_perifs;
     //! AD936x controls
     uhd::usrp::ad9361_ctrl::sptr           _codec_ctrl;
     uhd::usrp::ad936x_manager::sptr        _codec_mgr;
