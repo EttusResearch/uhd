@@ -42,40 +42,43 @@ block_iface::block_iface(block_ctrl_base *block_ptr)
         expression::TYPE_BOOL,
         sr_write_args
     );
-    expression_function::argtype_list_type var_set_args_wo_port = boost::assign::list_of
+
+    // Add read access to arguments ($foo)
+    expression_function::argtype_list_type arg_set_args_wo_port = boost::assign::list_of
         (expression::TYPE_STRING)
         (expression::TYPE_INT)
     ;
-    expression_function::argtype_list_type var_set_args_w_port = boost::assign::list_of
+    expression_function::argtype_list_type arg_set_args_w_port = boost::assign::list_of
         (expression::TYPE_STRING)
         (expression::TYPE_INT)
         (expression::TYPE_INT)
     ;
-#define REGISTER_VAR_SETTER(noctype, setter_func) \
-    var_set_args_wo_port[1] = expression::noctype; \
-    var_set_args_w_port[1] = expression::noctype; \
+#define REGISTER_ARG_SETTER(noctype, setter_func) \
+    arg_set_args_wo_port[1] = expression::noctype; \
+    arg_set_args_w_port[1] = expression::noctype; \
     ft->register_function( \
         "SET_ARG", \
         boost::bind(&block_iface::setter_func, this, _1), \
         expression::TYPE_BOOL, \
-        var_set_args_wo_port \
+        arg_set_args_wo_port \
     ); \
     ft->register_function( \
         "SET_ARG", \
         boost::bind(&block_iface::setter_func, this, _1), \
         expression::TYPE_BOOL, \
-        var_set_args_w_port \
+        arg_set_args_w_port \
     );
-    REGISTER_VAR_SETTER(TYPE_INT,        _nocscript__var_set_int);
-    REGISTER_VAR_SETTER(TYPE_STRING,     _nocscript__var_set_string);
-    REGISTER_VAR_SETTER(TYPE_DOUBLE,     _nocscript__var_set_double);
-    REGISTER_VAR_SETTER(TYPE_INT_VECTOR, _nocscript__var_set_intvec);
+    REGISTER_ARG_SETTER(TYPE_INT,        _nocscript__arg_set_int);
+    REGISTER_ARG_SETTER(TYPE_STRING,     _nocscript__arg_set_string);
+    REGISTER_ARG_SETTER(TYPE_DOUBLE,     _nocscript__arg_set_double);
+    REGISTER_ARG_SETTER(TYPE_INT_VECTOR, _nocscript__arg_set_intvec);
+    );
 
     // Create the parser
     _parser = parser::make(
         ft,
-        boost::bind(&block_iface::_nocscript__var_get_type, this, _1),
-        boost::bind(&block_iface::_nocscript__var_get_val,  this, _1)
+        boost::bind(&block_iface::_nocscript__arg_get_type, this, _1),
+        boost::bind(&block_iface::_nocscript__arg_get_val,  this, _1)
     );
 }
 
@@ -121,7 +124,7 @@ expression_literal block_iface::_nocscript__sr_write(expression_container::expr_
     return expression_literal(result);
 }
 
-expression::type_t block_iface::_nocscript__var_get_type(const std::string &varname)
+expression::type_t block_iface::_nocscript__arg_get_type(const std::string &varname)
 {
     const std::string var_type = _block_ptr->get_arg_type(varname);
     if (var_type == "int") {
@@ -137,7 +140,7 @@ expression::type_t block_iface::_nocscript__var_get_type(const std::string &varn
     }
 }
 
-expression_literal block_iface::_nocscript__var_get_val(const std::string &varname)
+expression_literal block_iface::_nocscript__arg_get_val(const std::string &varname)
 {
     const std::string var_type = _block_ptr->get_arg_type(varname);
     if (var_type == "int") {
@@ -153,7 +156,7 @@ expression_literal block_iface::_nocscript__var_get_val(const std::string &varna
     }
 }
 
-expression_literal block_iface::_nocscript__var_set_int(const expression_container::expr_list_type &args)
+expression_literal block_iface::_nocscript__arg_set_int(const expression_container::expr_list_type &args)
 {
     const std::string var_name = args[0]->eval().get_string();
     const int val              = args[1]->eval().get_int();
@@ -166,7 +169,7 @@ expression_literal block_iface::_nocscript__var_set_int(const expression_contain
     return expression_literal(true);
 }
 
-expression_literal block_iface::_nocscript__var_set_string(const expression_container::expr_list_type &args)
+expression_literal block_iface::_nocscript__arg_set_string(const expression_container::expr_list_type &args)
 {
     const std::string var_name = args[0]->eval().get_string();
     const std::string val      = args[1]->eval().get_string();
@@ -179,7 +182,7 @@ expression_literal block_iface::_nocscript__var_set_string(const expression_cont
     return expression_literal(true);
 }
 
-expression_literal block_iface::_nocscript__var_set_double(const expression_container::expr_list_type &args)
+expression_literal block_iface::_nocscript__arg_set_double(const expression_container::expr_list_type &args)
 {
     const std::string var_name = args[0]->eval().get_string();
     const double val              = args[1]->eval().get_double();
@@ -192,7 +195,7 @@ expression_literal block_iface::_nocscript__var_set_double(const expression_cont
     return expression_literal(true);
 }
 
-expression_literal block_iface::_nocscript__var_set_intvec(const expression_container::expr_list_type &)
+expression_literal block_iface::_nocscript__arg_set_intvec(const expression_container::expr_list_type &)
 {
     UHD_THROW_INVALID_CODE_PATH();
 }

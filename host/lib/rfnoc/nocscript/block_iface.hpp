@@ -58,17 +58,17 @@ class block_iface {
     //! Wrapper for block_ctrl_base::sr_write, so we can call it from within NocScript
     expression_literal _nocscript__sr_write(expression_container::expr_list_type);
 
-    //! Variable type getter that can be used within NocScript
-    expression::type_t _nocscript__var_get_type(const std::string &varname);
+    //! Argument type getter that can be used within NocScript
+    expression::type_t _nocscript__arg_get_type(const std::string &argname);
 
-    //! Variable value getter that can be used within NocScript
-    expression_literal _nocscript__var_get_val(const std::string &varname);
+    //! Argument value getter that can be used within NocScript
+    expression_literal _nocscript__arg_get_val(const std::string &argname);
 
-    //! Variable value setters:
-    expression_literal _nocscript__var_set_int(const expression_container::expr_list_type &);
-    expression_literal _nocscript__var_set_string(const expression_container::expr_list_type &);
-    expression_literal _nocscript__var_set_double(const expression_container::expr_list_type &);
-    expression_literal _nocscript__var_set_intvec(const expression_container::expr_list_type &);
+    //! Argument value setters:
+    expression_literal _nocscript__arg_set_int(const expression_container::expr_list_type &);
+    expression_literal _nocscript__arg_set_string(const expression_container::expr_list_type &);
+    expression_literal _nocscript__arg_set_double(const expression_container::expr_list_type &);
+    expression_literal _nocscript__arg_set_intvec(const expression_container::expr_list_type &);
 
     //! Raw pointer to the block class. Note that since block_iface may
     // only live as a member of a block_ctrl_base, we don't really need
