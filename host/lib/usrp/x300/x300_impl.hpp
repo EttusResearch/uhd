@@ -21,22 +21,16 @@
 #include <uhd/property_tree.hpp>
 #include "../device3/device3_impl.hpp"
 #include <uhd/usrp/mboard_eeprom.hpp>
-#include <uhd/usrp/dboard_manager.hpp>
-#include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/types/sensors.hpp>
+#include "x300_radio_ctrl_impl.hpp"
 #include "x300_clock_ctrl.hpp"
 #include "x300_fw_common.h"
 #include <uhd/transport/udp_simple.hpp> //mtu
-#include "spi_core_3000.hpp"
-#include "x300_adc_ctrl.hpp"
-#include "x300_dac_ctrl.hpp"
 #include "i2c_core_100_wb32.hpp"
-#include "gpio_atr_3000.hpp"
 #include "dma_fifo_core_3000.hpp"
 #include <boost/weak_ptr.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
-#include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include "recv_packet_demuxer_3000.hpp"
@@ -96,31 +90,7 @@ static const size_t X300_MAX_RATE_1GIGE             = 100000000; // bytes/s
 #define X300_DEVICE_HERE 0
 
 //eeprom addrs for various boards
-enum
-{
-    X300_DB0_RX_EEPROM = 0x5,
-    X300_DB0_TX_EEPROM = 0x4,
-    X300_DB0_GDB_EEPROM = 0x1,
-    X300_DB1_RX_EEPROM = 0x7,
-    X300_DB1_TX_EEPROM = 0x6,
-    X300_DB1_GDB_EEPROM = 0x3,
-};
 
-struct x300_dboard_iface_config_t
-{
-    uhd::usrp::gpio_atr::db_gpio_atr_3000::sptr gpio;
-    spi_core_3000::sptr spi;
-    size_t rx_spi_slaveno;
-    size_t tx_spi_slaveno;
-    i2c_core_100_wb32::sptr i2c;
-    x300_clock_ctrl::sptr clock;
-    x300_clock_which_t which_rx_clk;
-    x300_clock_which_t which_tx_clk;
-    boost::uint8_t dboard_slot;
-    uhd::timed_wb_iface::sptr cmd_time_ctrl;
-};
-
-uhd::usrp::dboard_iface::sptr x300_make_dboard_iface(const x300_dboard_iface_config_t &);
 uhd::uart_iface::sptr x300_make_uart_iface(uhd::wb_iface::sptr iface);
 
 uhd::wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp);
@@ -157,17 +127,6 @@ protected:
 
 private:
 
-    //perifs in the radio core
-    struct radio_perifs_t : public device3_impl::radio_v_perifs_t
-    {
-        //Interfaces
-        spi_core_3000::sptr spi;
-        x300_adc_ctrl::sptr adc;
-        x300_dac_ctrl::sptr dac;
-        //Registers
-        uhd::usrp::x300::radio_regmap_t::sptr regmap;
-    };
-
     //vector of member objects per motherboard
     struct mboard_members_t
     {
@@ -187,23 +146,13 @@ private:
         i2c_core_100_wb32::sptr zpu_i2c;
 
         //perifs in each radio
-        static const size_t NUM_RADIOS = 2;
-        radio_perifs_t radio_perifs[NUM_RADIOS]; //!< This is hardcoded s.t. radio_perifs[0] points to slot A and [1] to B
-        uhd::usrp::dboard_eeprom_t db_eeproms[8];
         //! Return the index of a radio component, given a slot name. This means DSPs, radio_perifs
-        size_t get_radio_index(const std::string &slot_name) {
-             UHD_ASSERT_THROW(slot_name == "A" or slot_name == "B");
-             return slot_name == "A" ? 0 : 1;
-        }
-
         bool has_dram_buff;
-        dma_fifo_core_3000::sptr dram_buff_ctrl[NUM_RADIOS];
-
+        dma_fifo_core_3000::sptr dram_buff_ctrl[2];
 
         //other perifs on mboard
         x300_clock_ctrl::sptr clock;
         uhd::gps_ctrl::sptr gps;
-        uhd::usrp::gpio_atr::gpio_atr_3000::sptr fp_gpio;
 
         uhd::usrp::x300::fw_regmap_t::sptr fw_regmap;
 
@@ -213,16 +162,12 @@ private:
         size_t hw_rev;
         std::string current_refclk_src;
 
-        uhd::soft_regmap_db_t::sptr regmap_db;
+        std::vector<uhd::rfnoc::x300_radio_ctrl_impl::sptr> radios;
     };
     std::vector<mboard_members_t> _mb;
 
     //task for periodically reclaiming the device from others
     void claimer_loop(uhd::wb_iface::sptr);
-
-    void register_loopback_self_test(uhd::wb_iface::sptr iface);
-
-    void radio_loopback(uhd::wb_iface::sptr iface, const bool on);
 
      /*! \brief Initialize the radio component on a given slot.
       *
@@ -318,18 +263,6 @@ private:
     void check_fpga_compat(const uhd::fs_path &mb_path, const mboard_members_t &members);
 
     void update_atr_leds(uhd::usrp::gpio_atr::gpio_atr_3000::sptr, const std::string &ant);
-
-    void self_cal_adc_capture_delay(mboard_members_t& mb, const size_t radio_i, bool print_status = false);
-    double self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay = false);
-    void self_test_adcs(mboard_members_t& mb, boost::uint32_t ramp_time_ms = 100);
-
-    void extended_adc_test(mboard_members_t& mb, double duration_s);
-
-    //**PRECONDITION**
-    //This function assumes that all the VITA times in "radios" are synchronized
-    //to a common reference. Currently, this function is called in get_tx_stream
-    //which also has the same precondition.
-    static void synchronize_dacs(const std::vector<radio_perifs_t*>& mboards);
 
     /// More IO stuff
     uhd::device_addr_t get_tx_hints(size_t mb_index);

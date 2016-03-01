@@ -35,7 +35,8 @@ static const size_t BYTES_PER_SAMPLE = 4;
  ***************************************************************************/
 // Note: block_ctrl_base must be called before this, but has to be called by
 // the derived class because of virtual inheritance
-radio_ctrl_impl::radio_ctrl_impl()
+radio_ctrl_impl::radio_ctrl_impl() :
+    _tick_rate(rfnoc::rate_node_ctrl::RATE_UNDEFINED)
 {
     _num_rx_channels = get_output_ports().size();
     _num_tx_channels = get_input_ports().size();
@@ -52,7 +53,6 @@ radio_ctrl_impl::radio_ctrl_impl()
     /////////////////////////////////////////////////////////////////////////
     for (size_t i = 0; i < _get_num_radios(); i++) {
         _register_loopback_self_test(i);
-
         _perifs[i].ctrl = boost::make_shared<wb_iface_adapter>(
             // poke32 functor
             boost::bind(
@@ -74,14 +74,13 @@ radio_ctrl_impl::radio_ctrl_impl()
             // get_time functor
             boost::bind(
                 static_cast< time_spec_t (block_ctrl_base::*)(const size_t) >(&block_ctrl_base::get_command_time),
-                this,
-                i
+                this, i
             ),
             // set_time functor
             boost::bind(
-                static_cast< void (block_ctrl_base::*)(const time_spec_t&, const double, const size_t) >(&block_ctrl_base::set_command_time),
+                static_cast< void (block_ctrl_base::*)(const time_spec_t&, const size_t) >(&block_ctrl_base::set_command_time),
                 this,
-                _1, get_command_tick_rate(i), i
+                _1, i
             )
         );
 
@@ -104,23 +103,28 @@ radio_ctrl_impl::radio_ctrl_impl()
     ////////////////////////////////////////////////////////////////////
     // Register the time keeper
     ////////////////////////////////////////////////////////////////////
-    _tree->create<time_spec_t>(fs_path("time") / "now")
-        .set_publisher(boost::bind(&time_core_3000::get_time_now, _time64))
-        .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_now, _time64, _1))
-    ;
-    _tree->create<time_spec_t>(fs_path("time") / "pps")
-        .set_publisher(boost::bind(&time_core_3000::get_time_last_pps, _time64))
-        .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_next_pps, _time64, _1))
-    ;
-    _tree->create<time_spec_t>("time/cmd")
-        .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, boost::ref(_tick_rate), 0))
-    ;
-    for (size_t i = 0; i < _get_num_radios(); i++) {
-        _tree->access<time_spec_t>("time/cmd")
-            .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, boost::ref(_tick_rate), i))
+    if (not _tree->exists(fs_path("time") / "now")) {
+        _tree->create<time_spec_t>(fs_path("time") / "now")
+            .set_publisher(boost::bind(&time_core_3000::get_time_now, _time64))
+            .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_now, _time64, _1))
+        ;
+    }
+    if (not _tree->exists(fs_path("time") / "pps")) {
+        _tree->create<time_spec_t>(fs_path("time") / "pps")
+            .set_publisher(boost::bind(&time_core_3000::get_time_last_pps, _time64))
+            .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_next_pps, _time64, _1))
         ;
     }
 
+    if (not _tree->exists(fs_path("time") / "cmd")) {
+        _tree->create<time_spec_t>(fs_path("time") / "cmd");
+        for (size_t i = 0; i < _get_num_radios(); i++) {
+            _tree->access<time_spec_t>("time/cmd")
+                .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_tick_rate, this, boost::ref(_tick_rate), i))
+                .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, i))
+            ;
+        }
+    }
     // spp gets created in the XML file
     _tree->access<int>(get_arg_path("spp") / "value")
         .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::_update_spp, this, _1))

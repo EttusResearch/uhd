@@ -21,7 +21,6 @@
 #include "x300_impl.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "../rfnoc/radio_ctrl.hpp"
 #include <uhd/transport/nirio_zero_copy.hpp>
 #include "async_packet_handler.hpp"
 #include <uhd/transport/bounded_buffer.hpp>
@@ -82,16 +81,11 @@ void x300_impl::post_streamer_hooks(direction_t dir)
             continue;
         }
 
-        std::vector<radio_perifs_t*> radios;
-        std::vector<rfnoc::radio_ctrl::sptr> radio_ctrl_blks =
-            streamer->get_terminator()->find_downstream_node<rfnoc::radio_ctrl>();
-        BOOST_FOREACH(const rfnoc::radio_ctrl::sptr &radio_blk, radio_ctrl_blks) {
-            radio_perifs_t &perif = _mb[radio_blk->get_block_id().get_device_no()].radio_perifs[radio_blk->get_block_id().get_block_count()];
-            radios.push_back(&perif);
-        }
+        std::vector<rfnoc::x300_radio_ctrl_impl::sptr> radio_ctrl_blks =
+            streamer->get_terminator()->find_downstream_node<rfnoc::x300_radio_ctrl_impl>();
         try {
-            UHD_MSG(status) << "[X300] syncing " << radios.size() << " radios " << std::endl;
-            synchronize_dacs(radios);
+            UHD_MSG(status) << "[X300] syncing " << radio_ctrl_blks.size() << " radios " << std::endl;
+            rfnoc::x300_radio_ctrl_impl::synchronize_dacs(radio_ctrl_blks);
         }
         catch(const uhd::io_error &ex) {
             throw uhd::io_error(str(boost::format("Failed to sync DACs! %s ") % ex.what()));

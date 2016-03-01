@@ -257,7 +257,7 @@ public:
      * \throws uhd::assertion_error if the underlying interface does not
      *         actually support timing.
      */
-    void set_command_time(const time_spec_t &time_spec, const double tick_rate, const size_t port = 0);
+    void set_command_time(const time_spec_t &time_spec, const size_t port = 0);
 
     /*! Returns the current command time for all future command packets.
      *
@@ -265,11 +265,11 @@ public:
      */
     time_spec_t get_command_time(const size_t port = 0);
 
-    /*! Returns the current command timebase tick rate.
+    /*! Sets a tick rate for the command timebase.
      *
-     * \returns the tick rate in Hz
+     * \param the tick rate in Hz
      */
-    double get_command_tick_rate(const size_t port = 0);
+    void set_command_tick_rate(const double tick_rate, const size_t port = 0);
 
     /*! Resets the command time.
      * Any command packet after this call will no longer have a time associated
@@ -405,9 +405,6 @@ private:
      **********************************************************************/
     //! Objects to actually send and receive the commands
     std::map<size_t, wb_iface::sptr> _ctrl_ifaces;
-
-    //! Command timebase tick rate
-    std::map<size_t, double> _tick_rates;
 
     //! The base address of this block (the address of block port 0)
     uint32_t _base_address;

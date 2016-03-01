@@ -214,49 +214,6 @@ namespace uhd { namespace usrp { namespace x300 {
         }
     };
 
-    class radio_regmap_t : public uhd::soft_regmap_t {
-    public:
-        typedef boost::shared_ptr<radio_regmap_t> sptr;
-        class misc_outs_reg_t : public uhd::soft_reg32_wo_t {
-        public:
-            UHD_DEFINE_SOFT_REG_FIELD(DAC_ENABLED,          /*width*/ 1, /*shift*/ 0);  //[0]
-            UHD_DEFINE_SOFT_REG_FIELD(DAC_RESET_N,          /*width*/ 1, /*shift*/ 1);  //[1]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_RESET,            /*width*/ 1, /*shift*/ 2);  //[2]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_STB,     /*width*/ 1, /*shift*/ 3);  //[3]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_VAL,     /*width*/ 5, /*shift*/ 4);  //[8:4]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_ENABLED,  /*width*/ 1, /*shift*/ 9);  //[9]
-
-            misc_outs_reg_t(): uhd::soft_reg32_wo_t(uhd::usrp::device3::radio::sr_addr(uhd::usrp::device3::radio::MISC_OUTS)) {
-                //Initial values
-                set(DAC_ENABLED, 0);
-                set(DAC_RESET_N, 0);
-                set(ADC_RESET, 0);
-                set(ADC_DATA_DLY_STB, 0);
-                set(ADC_DATA_DLY_VAL, 16);
-                set(ADC_CHECKER_ENABLED, 0);
-            }
-        } misc_outs_reg;
-
-        class misc_ins_reg_t : public uhd::soft_reg32_ro_t {
-        public:
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_Q_LOCKED, /*width*/ 1, /*shift*/ 0);  //[0]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_I_LOCKED, /*width*/ 1, /*shift*/ 1);  //[1]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_LOCKED, /*width*/ 1, /*shift*/ 2);  //[2]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_LOCKED, /*width*/ 1, /*shift*/ 3);  //[3]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_Q_ERROR,  /*width*/ 1, /*shift*/ 4);  //[4]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_I_ERROR,  /*width*/ 1, /*shift*/ 5);  //[5]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_ERROR,  /*width*/ 1, /*shift*/ 6);  //[6]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_ERROR,  /*width*/ 1, /*shift*/ 7);  //[7]
-
-            misc_ins_reg_t(): uhd::soft_reg32_ro_t(uhd::usrp::device3::radio::RB32_MISC_INS) { }
-        } misc_ins_reg;
-
-        radio_regmap_t(int radio_num) : soft_regmap_t("radio" + boost::lexical_cast<std::string>(radio_num) + "_regmap") {
-            add_to_map(misc_outs_reg, "misc_outs_reg", PUBLIC);
-            add_to_map(misc_ins_reg, "misc_ins_reg", PUBLIC);
-        }
-    };
-
 }}}
 
 #endif /* INCLUDED_X300_REGS_HPP */

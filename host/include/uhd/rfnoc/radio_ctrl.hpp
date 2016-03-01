@@ -40,6 +40,8 @@ class UHD_API radio_ctrl :
 public:
     UHD_RFNOC_BLOCK_OBJECT(radio_ctrl)
 
+    virtual ~radio_ctrl(){}
+
     /************************************************************************
      * API calls
      ***********************************************************************/

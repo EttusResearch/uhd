@@ -15,83 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "x300_impl.hpp"
+#include "x300_dboard_iface.hpp"
 #include "x300_regs.hpp"
-#include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include "ad7922_regs.hpp" //aux adc
-#include "ad5623_regs.hpp" //aux dac
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace boost::assign;
 
-class x300_dboard_iface : public dboard_iface
-{
-public:
-    x300_dboard_iface(const x300_dboard_iface_config_t &config);
-    ~x300_dboard_iface(void);
-
-    special_props_t get_special_props(void)
-    {
-        special_props_t props;
-        props.soft_clock_divider = false;
-        props.mangle_i2c_addrs = (_config.dboard_slot == 1);
-        return props;
-    }
-
-    void write_aux_dac(unit_t, aux_dac_t, double);
-    double read_aux_adc(unit_t, aux_adc_t);
-
-    void set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_pin_ctrl(unit_t unit);
-    void set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_atr_reg(unit_t unit, atr_reg_t reg);
-    void set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_gpio_ddr(unit_t unit);
-    void set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_gpio_out(unit_t unit);
-    boost::uint32_t read_gpio(unit_t unit);
-
-    void set_command_time(const uhd::time_spec_t& t);
-    uhd::time_spec_t get_command_time(void);
-
-    void write_i2c(boost::uint16_t, const byte_vector_t &);
-    byte_vector_t read_i2c(boost::uint16_t, size_t);
-
-    void set_clock_rate(unit_t, double);
-    double get_clock_rate(unit_t);
-    std::vector<double> get_clock_rates(unit_t);
-    void set_clock_enabled(unit_t, bool);
-    double get_codec_rate(unit_t);
-
-    void write_spi(
-        unit_t unit,
-        const spi_config_t &config,
-        boost::uint32_t data,
-        size_t num_bits
-    );
-
-    boost::uint32_t read_write_spi(
-        unit_t unit,
-        const spi_config_t &config,
-        boost::uint32_t data,
-        size_t num_bits
-    );
-
-    const x300_dboard_iface_config_t _config;
-    uhd::dict<unit_t, ad5623_regs_t> _dac_regs;
-    uhd::dict<unit_t, double> _clock_rates;
-    void _write_aux_dac(unit_t);
-
-};
-
 /***********************************************************************
  * Make Function
  **********************************************************************/
-dboard_iface::sptr x300_make_dboard_iface(const x300_dboard_iface_config_t &config)
+dboard_iface::sptr x300_dboard_iface::make(const x300_dboard_iface_config_t &config)
 {
     return dboard_iface::sptr(new x300_dboard_iface(config));
 }

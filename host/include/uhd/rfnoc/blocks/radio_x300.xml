@@ -1,11 +1,11 @@
 <!--This defines one NoC-Block.-->
 <nocblock>
-  <name>Radio (E3XX)</name>
+  <name>Radio (X300)</name>
   <blockname>Radio</blockname>
-  <key>E3XXRadio</key>
+  <key>X300Radio</key>
   <!--There can be several of these:-->
   <ids>
-    <id revision="0">3627362783</id>
+    <id revision="0">12AD100000000000</id>
   </ids>
   <!-- Registers -->
   <registers>

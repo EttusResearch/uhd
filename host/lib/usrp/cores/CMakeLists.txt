@@ -30,6 +30,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/rx_dsp_core_200.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tx_dsp_core_200.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rx_frontend_core_200.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/rx_frontend_core_3000.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tx_frontend_core_200.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/user_settings_core_200.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rx_vita_core_3000.cpp

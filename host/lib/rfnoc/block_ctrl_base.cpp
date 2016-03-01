@@ -221,8 +221,8 @@ std::vector<size_t> block_ctrl_base::get_ctrl_ports() const
 
 void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t data, const size_t port)
 {
-    UHD_MSG(status) << "  ";
-    UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%d, %08X, %d)") % reg % data % port << std::endl;
+    //UHD_MSG(status) << "  ";
+    //UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%d, %08X, %d)") % reg % data % port << std::endl;
     if (not _ctrl_ifaces.count(port)) {
         throw uhd::key_error(str(boost::format("[%s] sr_write(): No such port: %d") % get_block_id().get() % port));
     }
@@ -333,7 +333,6 @@ boost::uint32_t block_ctrl_base::user_reg_read32(const std::string &reg, const s
 
 void block_ctrl_base::set_command_time(
         const time_spec_t &time_spec,
-        const double tick_rate,
         const size_t port
 ) {
     boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
@@ -345,8 +344,6 @@ void block_ctrl_base::set_command_time(
         ));
     }
 
-    _tick_rates[port] = tick_rate;
-    iface_sptr->set_tick_rate(tick_rate);
     iface_sptr->set_time(time_spec);
 }
 
@@ -365,19 +362,20 @@ time_spec_t block_ctrl_base::get_command_time(
     return iface_sptr->get_time();
 }
 
-double block_ctrl_base::get_command_tick_rate(
+void block_ctrl_base::set_command_tick_rate(
+        const double tick_rate,
         const size_t port
 ) {
     boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
         boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
     if (not iface_sptr) {
         throw uhd::assertion_error(str(
-            boost::format("[%s] Cannot get command tick rate on port '%d'")
+            boost::format("[%s] Cannot set command time on port '%d'")
             % unique_id() % port
         ));
     }
 
-    return _tick_rates.at(port);
+    iface_sptr->set_tick_rate(tick_rate);
 }
 
 void block_ctrl_base::clear_command_time(const size_t port)
