@@ -54,6 +54,12 @@ INT MULT(INT, INT)
     ${RETURN}(${args[0]} * ${args[1]});
 }
 
+//! Returns x / y
+DOUBLE DIV(DOUBLE, DOUBLE)
+{
+    ${RETURN}(${args[0]} / ${args[1]});
+}
+
 //! Returns true if x <= y (Less or Equal)
 BOOL LE(INT, INT)
 {
@@ -135,6 +141,12 @@ INT LOG2(INT)
         log2_value++;
     }
     ${RETURN}(log2_value);
+}
+
+//! Returns x % y
+INT MODULO(INT, INT)
+{
+    ${RETURN}(${args[0]} % ${args[1]});
 }
 
 //! Returns true if x == y

@@ -58,6 +58,16 @@ BOOST_AUTO_TEST_CASE(test_basic_funcs)
     BOOST_REQUIRE_EQUAL(e_mult_d.infer_type(), expression::TYPE_DOUBLE);
     BOOST_CHECK_CLOSE(e_mult_d.get_double(), 6.0, 0.01);
 
+    BOOST_REQUIRE_EQUAL(ft->get_type("DIV", two_double_args), expression::TYPE_DOUBLE);
+    expression_literal e_div_d = ft->eval("DIV", two_double_args, two_double_values);
+    BOOST_REQUIRE_EQUAL(e_div_d.infer_type(), expression::TYPE_DOUBLE);
+    BOOST_CHECK_CLOSE(e_div_d.get_double(), 2.0/3.0, 0.01);
+
+    BOOST_REQUIRE_EQUAL(ft->get_type("MODULO", two_int_args), expression::TYPE_INT);
+    expression_literal e_modulo_i = ft->eval("MODULO", two_int_args, two_int_values);
+    BOOST_REQUIRE_EQUAL(e_modulo_i.infer_type(), expression::TYPE_INT);
+    BOOST_CHECK_EQUAL(e_modulo_i.get_int(), 2 % 3);
+
     BOOST_REQUIRE_EQUAL(ft->get_type("LE", two_int_args), expression::TYPE_BOOL);
     expression_literal e_le = ft->eval("LE", two_int_args, two_int_values);
     BOOST_REQUIRE_EQUAL(e_le.infer_type(), expression::TYPE_BOOL);
