@@ -82,6 +82,8 @@ block_iface::block_iface(block_ctrl_base *block_ptr)
 
 void block_iface::run_and_check(const std::string &code, const std::string &error_message)
 {
+    boost::mutex::scoped_lock local_interpreter_lock(_lil_mutex);
+
     UHD_MSG(status) << "[NocScript] Executing and asserting code: " << code << std::endl;
     expression::sptr e = _parser->create_expr_tree(code);
     expression_literal result = e->eval();

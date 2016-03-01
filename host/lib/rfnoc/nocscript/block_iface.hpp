@@ -18,6 +18,7 @@
 #include "expression.hpp"
 #include "parser.hpp"
 #include <uhd/rfnoc/block_ctrl_base.hpp>
+#include <boost/thread/mutex.hpp>
 
 #ifndef INCLUDED_LIBUHD_NOCSCRIPT_BLOCK_IFACE_HPP
 #define INCLUDED_LIBUHD_NOCSCRIPT_BLOCK_IFACE_HPP
@@ -51,6 +52,9 @@ class block_iface {
     void run_and_check(const std::string &code, const std::string &error_message="");
 
   private:
+    //! For the local interpreter lock (lil)
+    boost::mutex _lil_mutex;
+
     //! Wrapper for block_ctrl_base::sr_write, so we can call it from within NocScript
     expression_literal _nocscript__sr_write(expression_container::expr_list_type);
 
