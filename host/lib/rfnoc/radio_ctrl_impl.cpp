@@ -160,9 +160,14 @@ double radio_ctrl_impl::set_rate(double rate)
     return _tick_rate;
 }
 
-void radio_ctrl_impl::set_antenna(const std::string &ant, const size_t chan)
+void radio_ctrl_impl::set_tx_antenna(const std::string &ant, const size_t chan)
 {
-    _antenna[chan] = ant;
+    _tx_antenna[chan] = ant;
+}
+
+void radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t chan)
+{
+    _rx_antenna[chan] = ant;
 }
 
 double radio_ctrl_impl::set_tx_frequency(const double freq, const size_t chan)
@@ -190,9 +195,14 @@ double radio_ctrl_impl::get_rate() const
     return _tick_rate;
 }
 
-std::string radio_ctrl_impl::get_antenna(const size_t chan) /* const */
+std::string radio_ctrl_impl::get_tx_antenna(const size_t chan) /* const */
 {
-    return _antenna[chan];
+    return _tx_antenna[chan];
+}
+
+std::string radio_ctrl_impl::get_rx_antenna(const size_t chan) /* const */
+{
+    return _rx_antenna[chan];
 }
 
 double radio_ctrl_impl::get_tx_frequency(const size_t chan) /* const */

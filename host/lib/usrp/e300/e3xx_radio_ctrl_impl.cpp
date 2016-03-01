@@ -136,12 +136,12 @@ double e3xx_radio_ctrl_impl::set_rate(double rate)
 
 /*! Select antenna \p for channel \p chan.
  */
-void e3xx_radio_ctrl_impl::set_antenna(const std::string &ant, const size_t chan)
+void e3xx_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t chan)
 {
     if (ant != "TX/RX" and ant != "RX2")
         throw uhd::value_error("Unknown RX antenna option: " + ant);
 
-    radio_ctrl_impl::set_antenna(ant, chan);
+    radio_ctrl_impl::set_rx_antenna(ant, chan);
     this->_update_atrs();
     this->_update_atr_leds(_e3xx_perifs[chan].leds, ant);
 }
@@ -272,8 +272,8 @@ void e3xx_radio_ctrl_impl::_setup_radio_channel(const size_t chan)
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
-                .add_coerced_subscriber(boost::bind(&e3xx_radio_ctrl_impl::set_antenna, this, _1, chan))
-                .set_publisher(boost::bind(&e3xx_radio_ctrl_impl::get_antenna, this, chan))
+                .add_coerced_subscriber(boost::bind(&e3xx_radio_ctrl_impl::set_rx_antenna, this, _1, chan))
+                .set_publisher(boost::bind(&e3xx_radio_ctrl_impl::get_rx_antenna, this, chan))
                 .set("RX2");
         }
         else if (dir == TX_DIRECTION) {
@@ -362,7 +362,7 @@ void e3xx_radio_ctrl_impl::_update_atrs(void)
         if (not _e3xx_perifs[instance].atr)
             return;
 
-        const bool rx_ant_rx2  = get_antenna(instance) == "RX2";
+        const bool rx_ant_rx2  = get_rx_antenna(instance) == "RX2";
         const double rx_freq = get_rx_frequency(instance);
         const double tx_freq = get_tx_frequency(instance);
         const bool rx_low_band = rx_freq < 2.6e9;

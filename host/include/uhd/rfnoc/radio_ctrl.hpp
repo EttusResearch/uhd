@@ -55,17 +55,29 @@ public:
      */
     virtual double set_rate(double rate) = 0;
 
-    /*! Return the selected antenna for channel \p chan.
+    /*! Return the selected TX antenna for channel \p chan.
      *
      * \return The selected antenna.
      */
-    virtual std::string get_antenna(const size_t chan) /* const */ = 0;
+    virtual std::string get_tx_antenna(const size_t chan) /* const */ = 0;
 
-    /*! Select antenna \p for channel \p chan.
+    /*! Select RX antenna \p for channel \p chan.
      *
      * \throws uhd::value_error if \p ant is not a valid value.
      */
-    virtual void set_antenna(const std::string &ant, const size_t chan) = 0;
+    virtual void set_tx_antenna(const std::string &ant, const size_t chan) = 0;
+
+    /*! Return the selected RX antenna for channel \p chan.
+     *
+     * \return The selected antenna.
+     */
+    virtual std::string get_rx_antenna(const size_t chan) /* const */ = 0;
+
+    /*! Select RX antenna \p for channel \p chan.
+     *
+     * \throws uhd::value_error if \p ant is not a valid value.
+     */
+    virtual void set_rx_antenna(const std::string &ant, const size_t chan) = 0;
 
     /*! Return the current transmit LO frequency on channel \p chan.
      *

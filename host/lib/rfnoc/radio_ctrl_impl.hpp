@@ -54,14 +54,16 @@ public:
      * Public Radio API calls
      ***********************************************************************/
     virtual double set_rate(double rate);
-    virtual void set_antenna(const std::string &ant, const size_t chan);
+    virtual void set_tx_antenna(const std::string &ant, const size_t chan);
+    virtual void set_rx_antenna(const std::string &ant, const size_t chan);
     virtual double set_tx_frequency(const double freq, const size_t chan);
     virtual double set_rx_frequency(const double freq, const size_t chan);
     virtual double set_tx_gain(const double gain, const size_t chan);
     virtual double set_rx_gain(const double gain, const size_t chan);
 
     virtual double get_rate() const;
-    virtual std::string get_antenna(const size_t chan) /* const */;
+    virtual std::string get_tx_antenna(const size_t chan) /* const */;
+    virtual std::string get_rx_antenna(const size_t chan) /* const */;
     virtual double get_tx_frequency(const size_t) /* const */;
     virtual double get_rx_frequency(const size_t) /* const */;
     virtual double get_tx_gain(const size_t) /* const */;
@@ -158,12 +160,13 @@ protected: // TODO see what's protected and what's private
 
     virtual bool check_radio_config() { return true; };
 
+    //! There is always only one time core per radio
+    time_core_3000::sptr         _time64;
+
 private:
     /************************************************************************
      * Peripherals
      ***********************************************************************/
-    //! There is always only one time core per radio
-    time_core_3000::sptr         _time64;
     //! Stores pointers to all streaming-related radio cores
     struct radio_perifs_t
     {
@@ -178,7 +181,8 @@ private:
 
     // Cached values
     double _tick_rate;
-    std::map<size_t, std::string> _antenna;
+    std::map<size_t, std::string> _tx_antenna;
+    std::map<size_t, std::string> _rx_antenna;
     std::map<size_t, double> _tx_freq;
     std::map<size_t, double> _rx_freq;
     std::map<size_t, double> _tx_gain;
