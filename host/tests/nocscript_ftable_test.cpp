@@ -203,3 +203,47 @@ BOOST_AUTO_TEST_CASE(test_conditionals)
     std::cout << "END." << std::endl;
 }
 
+BOOST_AUTO_TEST_CASE(test_bitwise_funcs)
+{
+    function_table::sptr ft = function_table::make();
+    BOOST_CHECK(ft->function_exists("SHIFT_RIGHT"));
+    BOOST_CHECK(ft->function_exists("SHIFT_RIGHT", two_int_args));
+    BOOST_CHECK(ft->function_exists("SHIFT_LEFT"));
+    BOOST_CHECK(ft->function_exists("SHIFT_LEFT", two_int_args));
+    BOOST_CHECK(ft->function_exists("BITWISE_AND"));
+    BOOST_CHECK(ft->function_exists("BITWISE_AND", two_int_args));
+    BOOST_CHECK(ft->function_exists("BITWISE_OR"));
+    BOOST_CHECK(ft->function_exists("BITWISE_OR", two_int_args));
+    BOOST_CHECK(ft->function_exists("BITWISE_XOR"));
+    BOOST_CHECK(ft->function_exists("BITWISE_XOR", two_int_args));
+
+    // Bitwise Math
+    int int_value1 = 0x2;
+    int int_value2 = 0x3;
+    expression_container::expr_list_type two_int_values = boost::assign::list_of(E(int_value1))(E(int_value2));
+
+    BOOST_REQUIRE_EQUAL(ft->get_type("SHIFT_RIGHT", two_int_args), expression::TYPE_INT);
+    expression_literal e_shift_right = ft->eval("SHIFT_RIGHT", two_int_args, two_int_values);
+    BOOST_REQUIRE_EQUAL(e_shift_right.infer_type(), expression::TYPE_INT);
+    BOOST_CHECK_EQUAL(e_shift_right.get_int(), int_value1 >> int_value2);
+
+    BOOST_REQUIRE_EQUAL(ft->get_type("SHIFT_LEFT", two_int_args), expression::TYPE_INT);
+    expression_literal e_shift_left = ft->eval("SHIFT_LEFT", two_int_args, two_int_values);
+    BOOST_REQUIRE_EQUAL(e_shift_left.infer_type(), expression::TYPE_INT);
+    BOOST_CHECK_EQUAL(e_shift_left.get_int(), int_value1 << int_value2);
+
+    BOOST_REQUIRE_EQUAL(ft->get_type("BITWISE_AND", two_int_args), expression::TYPE_INT);
+    expression_literal e_bitwise_and = ft->eval("BITWISE_AND", two_int_args, two_int_values);
+    BOOST_REQUIRE_EQUAL(e_bitwise_and.infer_type(), expression::TYPE_INT);
+    BOOST_CHECK_EQUAL(e_bitwise_and.get_int(), int_value1 & int_value2);
+
+    BOOST_REQUIRE_EQUAL(ft->get_type("BITWISE_OR", two_int_args), expression::TYPE_INT);
+    expression_literal e_bitwise_or = ft->eval("BITWISE_OR", two_int_args, two_int_values);
+    BOOST_REQUIRE_EQUAL(e_bitwise_or.infer_type(), expression::TYPE_INT);
+    BOOST_CHECK_EQUAL(e_bitwise_or.get_int(), int_value1 | int_value2);
+
+    BOOST_REQUIRE_EQUAL(ft->get_type("BITWISE_XOR", two_int_args), expression::TYPE_INT);
+    expression_literal e_bitwise_xor = ft->eval("BITWISE_XOR", two_int_args, two_int_values);
+    BOOST_REQUIRE_EQUAL(e_bitwise_xor.infer_type(), expression::TYPE_INT);
+    BOOST_CHECK_EQUAL(e_bitwise_xor.get_int(), int_value1 ^ int_value2);
+}

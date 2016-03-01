@@ -155,6 +155,37 @@ BOOL EQUAL(STRING, STRING)
     ${RETURN}(bool(${args[0]} == ${args[1]}));
 }
 
+CATEGORY: Bitwise Operations
+//! Returns x >> y
+INT SHIFT_RIGHT(INT, INT)
+{
+    ${RETURN}(${args[0]} >> ${args[1]});
+}
+
+//! Returns x << y
+INT SHIFT_LEFT(INT, INT)
+{
+    ${RETURN}(${args[0]} << ${args[1]});
+}
+
+//! Returns x & y
+INT BITWISE_AND(INT, INT)
+{
+    ${RETURN}(${args[0]} & ${args[1]});
+}
+
+//! Returns x | y
+INT BITWISE_OR(INT, INT)
+{
+    ${RETURN}(${args[0]} | ${args[1]});
+}
+
+//! Returns x ^ y
+INT BITWISE_XOR(INT, INT)
+{
+    ${RETURN}(${args[0]} ^ ${args[1]});
+}
+
 CATEGORY: Boolean Logic
 //! Returns x xor y.
 BOOL XOR(BOOL, BOOL)
