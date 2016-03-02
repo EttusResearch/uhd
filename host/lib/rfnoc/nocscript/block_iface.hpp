@@ -70,6 +70,12 @@ class block_iface {
     expression_literal _nocscript__arg_set_double(const expression_container::expr_list_type &);
     expression_literal _nocscript__arg_set_intvec(const expression_container::expr_list_type &);
 
+    //! Variable value getter
+    expression_literal _nocscript__var_get(const expression_container::expr_list_type &);
+
+    //! Variable value setter
+    expression_literal _nocscript__var_set(const expression_container::expr_list_type &);
+
     //! Raw pointer to the block class. Note that since block_iface may
     // only live as a member of a block_ctrl_base, we don't really need
     // the reference counting.
@@ -77,6 +83,9 @@ class block_iface {
 
     //! Pointer to the parser object
     parser::sptr _parser;
+
+    //! Container for scoped variables
+    std::map<std::string, expression_literal> _vars;
 };
 
 }}} /* namespace uhd::rfnoc::nocscript */

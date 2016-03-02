@@ -72,7 +72,34 @@ block_iface::block_iface(block_ctrl_base *block_ptr)
     REGISTER_ARG_SETTER(TYPE_STRING,     _nocscript__arg_set_string);
     REGISTER_ARG_SETTER(TYPE_DOUBLE,     _nocscript__arg_set_double);
     REGISTER_ARG_SETTER(TYPE_INT_VECTOR, _nocscript__arg_set_intvec);
+
+
+    // Add read/write access to local variables
+    expression_function::argtype_list_type set_var_args = boost::assign::list_of
+        (expression::TYPE_STRING)
+        (expression::TYPE_INT)
+    ;
+    const expression_function::argtype_list_type get_var_args = boost::assign::list_of
+        (expression::TYPE_STRING)
+    ;
+#define REGISTER_VAR_ACCESS(noctype, typestr) \
+    set_var_args[1] = expression::noctype; \
+    ft->register_function( \
+        "SET_VAR", \
+        boost::bind(&block_iface::_nocscript__var_set, this, _1), \
+        expression::TYPE_BOOL, \
+        set_var_args \
+    ); \
+    ft->register_function( \
+        "GET_"#typestr, \
+        boost::bind(&block_iface::_nocscript__var_get, this, _1), \
+        expression::noctype, \
+        get_var_args \
     );
+    REGISTER_VAR_ACCESS(TYPE_INT, INT);
+    REGISTER_VAR_ACCESS(TYPE_STRING, STRING);
+    REGISTER_VAR_ACCESS(TYPE_DOUBLE, DOUBLE);
+    REGISTER_VAR_ACCESS(TYPE_INT_VECTOR, INT_VECTOR);
 
     // Create the parser
     _parser = parser::make(
@@ -103,6 +130,8 @@ void block_iface::run_and_check(const std::string &code, const std::string &erro
             ));
         }
     }
+
+    _vars.clear(); // We go out of scope, and so do NocScript variables
 }
 
 
@@ -203,5 +232,22 @@ expression_literal block_iface::_nocscript__arg_set_intvec(const expression_cont
 block_iface::sptr block_iface::make(uhd::rfnoc::block_ctrl_base* block_ptr)
 {
     return sptr(new block_iface(block_ptr));
+}
+
+expression_literal block_iface::_nocscript__var_get(const expression_container::expr_list_type &args)
+{
+    expression_literal expr = _vars[args[0]->eval().get_string()];
+    std::cout << "[NocScript] Getting var " << args[0]->eval().get_string() << " == " << expr << std::endl;
+    std::cout << "[NocScript] Type " << expr.infer_type() << std::endl;
+    //return _vars[args[0]->eval().get_string()];
+    return expr;
+}
+
+expression_literal block_iface::_nocscript__var_set(const expression_container::expr_list_type &args)
+{
+    _vars[args[0]->eval().get_string()] = args[1]->eval();
+    std::cout << "[NocScript] Set var " << args[0]->eval().get_string() << " to " << _vars[args[0]->eval().get_string()] << std::endl;
+    std::cout << "[NocScript] Type " << _vars[args[0]->eval().get_string()].infer_type() << std::endl;
+    return expression_literal(true);
 }
 
