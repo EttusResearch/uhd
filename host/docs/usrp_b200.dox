@@ -214,7 +214,7 @@ Below is a table showing the B200/B210 external connections and respective power
   <td>J101</td>         <td>GPS Antenna</td>            <td>GPSDO will supply nominal voltage to antenna.</td>
 </tr>
 <tr>
-  <td>J100</td>         <td>External 10 MHz Input</td>  <td>+15 dBm max</td
+  <td>J100</td>         <td>External 10 MHz Input</td>  <td>+15 dBm max</td>
 </tr>
 <tr>
   <td>J800</td>         <td>RF B: TX/RX</td>            <td>TX power +20dBm max<br>
@@ -249,7 +249,7 @@ Below is a table showing the B200mini external connections and respective power 
   <td>J2</td>           <td>RX2</td>                    <td>RX power -15dBm max</td>
 </tr>
 <tr>
-  <td>J3</td>           <td>External 10MHz/PPS Reference</td>  <td>+15 dBm max</td
+  <td>J3</td>           <td>External 10MHz/PPS Reference</td>  <td>+15 dBm max</td>
 </tr>
 </table>
 
