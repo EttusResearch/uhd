@@ -149,7 +149,7 @@ template<typename samp_type> void recv_to_file(
     stream_cmd.time_spec = uhd::time_spec_t(settling_time);
     rx_stream->issue_stream_cmd(stream_cmd);
 
-    while(not stop_signal_called and (num_requested_samples < num_total_samps or num_requested_samples == 0)){
+    while(not stop_signal_called and (num_requested_samples > num_total_samps or num_requested_samples == 0)){
         size_t num_rx_samps = rx_stream->recv(buff_ptrs, samps_per_buff, md, timeout);
         timeout = 0.1f; //small timeout for subsequent recv
 
