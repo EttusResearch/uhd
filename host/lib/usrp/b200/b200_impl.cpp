@@ -348,7 +348,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
                 handle = dev_handle;
                 break;
             }
-        } catch (const uhd::exception &e) { continue; }
+        } catch (const uhd::exception&) { continue; }
     }
     UHD_ASSERT_THROW(handle.get() != NULL); //better be found
 
