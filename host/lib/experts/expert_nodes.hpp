@@ -353,7 +353,12 @@ namespace uhd { namespace experts {
             set(value);
             return *this;
         }
-    };
+
+        inline data_writer_t<data_t>& operator=(const data_writer_t<data_t>& value) {
+            set(value.get());
+            return *this;
+        }
+};
 
     /*!---------------------------------------------------------
      * class worker_node_t
