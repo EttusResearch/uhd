@@ -59,6 +59,8 @@ namespace uhd { namespace experts {
 
         virtual const std::string& get_dtype() const = 0;
 
+        virtual std::string to_string() const = 0;
+
         // Graph resolution specific
         virtual bool is_dirty() const = 0;
         virtual void mark_clean() = 0;
@@ -79,6 +81,23 @@ namespace uhd { namespace experts {
     private:
         const node_class_t  _class;
         const std::string   _name;
+    };
+
+    class data_node_printer {
+    public:
+        //Generic implementation
+        template<typename data_t>
+        static std::string print(const data_t& val) {
+            std::ostringstream os;
+            os << val;
+            return os.str();
+        }
+
+        static std::string print(const boost::uint8_t& val) {
+            std::ostringstream os;
+            os << int(val);
+            return os.str();
+        }
     };
 
     /*!---------------------------------------------------------
@@ -118,6 +137,10 @@ namespace uhd { namespace experts {
             static const std::string dtype(
                 boost::units::detail::demangle(typeid(data_t).name()));
             return dtype;
+        }
+
+        virtual std::string to_string() const {
+            return data_node_printer::print(get());
         }
 
         inline node_author_t get_author() const {
@@ -429,6 +452,10 @@ namespace uhd { namespace experts {
         virtual const std::string& get_dtype() const {
             static const std::string dtype = "<worker>";
             return dtype;
+        }
+
+        virtual std::string to_string() const {
+            return "<worker>";
         }
 
         // Workers don't have callbacks so implement stubs
