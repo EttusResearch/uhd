@@ -30,19 +30,6 @@
   <!-- Args -->
   <args>
     <arg>
-      <name>decim</name>
-      <type>int</type>
-      <value>200</value>
-      <check>GE($decim, 1) AND LE($spp, 1024)</check>
-      <check_message>DUC decimolation must be in [1, 1024].</check_message>
-      <!--<action>-->
-          <!--IF(EQUAL(MODULO($decim, 4), 0), SR_WRITE("decim_WORD", BITWISE_OR(SHIFT_LEFT(DIV($decim, 4), 2) , 0x3))) OR-->
-          <!--IF(EQUAL(MODULO($decim, 2), 0), SR_WRITE("decim_WORD", BITWISE_OR(SHIFT_LEFT(DIV($decim, 2), 2) , 0x1))) OR-->
-          <!--SR_WRITE("decim_WORD", SHIFT_LEFT(DIV($decim), 2))-->
-      <!--</action>-->
-      <!--FIXME Add scaling foo-->
-    </arg>
-    <arg>
       <name>freq</name>
       <type>double</type>
       <value>0.0</value>

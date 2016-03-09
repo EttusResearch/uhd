@@ -30,19 +30,6 @@
   <!-- Args -->
   <args>
     <arg>
-      <name>interp</name>
-      <type>int</type>
-      <value>200</value>
-      <check>GE($interp, 1) AND LE($spp, 255)</check>
-      <check_message>DUC interpolation must be in [1, 255].</check_message>
-      <!--<action>-->
-          <!--IF(EQUAL(MODULO($interp, 4), 0), SR_WRITE("INTERP_WORD", BITWISE_OR(SHIFT_LEFT(DIV($interp, 4), 2) , 0x3))) OR-->
-          <!--IF(EQUAL(MODULO($interp, 2), 0), SR_WRITE("INTERP_WORD", BITWISE_OR(SHIFT_LEFT(DIV($interp, 2), 2) , 0x1))) OR-->
-          <!--SR_WRITE("INTERP_WORD", SHIFT_LEFT(DIV($interp), 2))-->
-      <!--</action>-->
-      <!--FIXME Add scaling foo-->
-    </arg>
-    <arg>
       <name>freq</name>
       <type>double</type>
       <value>0.0</value>
