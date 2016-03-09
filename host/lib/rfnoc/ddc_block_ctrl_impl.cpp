@@ -95,6 +95,27 @@ public:
         return get_arg<double>("output_rate", port);
     }
 
+
+    void issue_stream_cmd(
+            const uhd::stream_cmd_t &stream_cmd_,
+            const size_t chan
+    ) {
+        UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::issue_stream_cmd()" << std::endl;
+
+        uhd::stream_cmd_t stream_cmd = stream_cmd_;
+        if (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE or
+            stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE) {
+            size_t decimation = get_arg<double>("input_rate", chan) / get_arg<double>("output_rate", chan);
+            stream_cmd.num_samps *= decimation;
+        }
+
+        BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, list_upstream_nodes()) {
+            source_node_ctrl::sptr this_upstream_block_ctrl =
+                boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
+            this_upstream_block_ctrl->issue_stream_cmd(stream_cmd, chan);
+        }
+    }
+
 private:
 
     //! Set the CORDIC frequency shift the signal to \p requested_freq
