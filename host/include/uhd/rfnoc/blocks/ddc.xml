@@ -1,0 +1,95 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>Rx DSP (DDC/CORDIC)</name>
+  <blockname>DDC</blockname>
+  <key>DDC</key>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">DDC0</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <!--Note: AXI config bus uses 129 & 130-->
+    <setreg>
+      <name>DECIM_WORD</name>
+      <address>133</address>
+    </setreg>
+    <setreg>
+      <name>DECIM</name>
+      <address>133</address>
+    </setreg>
+    <setreg>
+      <name>CORDIC_FREQ</name>
+      <address>131</address>
+    </setreg>
+    <setreg>
+      <name>SCALE_IQ</name>
+      <address>132</address>
+    </setreg>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>decim</name>
+      <type>int</type>
+      <value>200</value>
+      <check>GE($decim, 1) AND LE($spp, 1024)</check>
+      <check_message>DUC decimolation must be in [1, 1024].</check_message>
+      <!--<action>-->
+          <!--IF(EQUAL(MODULO($decim, 4), 0), SR_WRITE("decim_WORD", BITWISE_OR(SHIFT_LEFT(DIV($decim, 4), 2) , 0x3))) OR-->
+          <!--IF(EQUAL(MODULO($decim, 2), 0), SR_WRITE("decim_WORD", BITWISE_OR(SHIFT_LEFT(DIV($decim, 2), 2) , 0x1))) OR-->
+          <!--SR_WRITE("decim_WORD", SHIFT_LEFT(DIV($decim), 2))-->
+      <!--</action>-->
+      <!--FIXME Add scaling foo-->
+    </arg>
+    <arg>
+      <name>freq</name>
+      <type>double</type>
+      <value>0.0</value>
+      <!--<action>-->
+          <!--SR_WRITE("CORDIC_FREQ", $cordic_freq)-->
+      <!--</action>-->
+      <!--FIXME Calculate this properly-->
+    </arg>
+    <arg>
+      <name>input_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <check>GE($input_rate, 0.0)</check>
+      <check_message>The input rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>output_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <check>GE($output_rate, 0.0)</check>
+      <check_message>The output rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>fullscale</name>
+      <type>double</type>
+      <value>1.0</value>
+      <check>GE($fullscale, 0.0)</check>
+    </arg>
+  </args>
+  <!--All the connections to the outside world are listed in 'ports':-->
+  <ports>
+    <sink>
+      <name>in0</name>
+      <type>sc16</type>
+    </sink>
+    <sink>
+      <name>in1</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out0</name>
+      <type>sc16</type>
+    </source>
+    <source>
+      <name>out1</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+</nocblock>
+
