@@ -50,7 +50,7 @@ public:
      **********************************************************************/
     /*! Returns the scaling factor for this block on input.
      *
-     * A radio will return the scaling factor as determined by the duc
+     * A DUC block will return the scaling factor as determined by the duc
      * stage.
      *
      * \param port Port Number
@@ -59,7 +59,7 @@ public:
 
     /*! Returns the scaling factor for this block on output.
      *
-     * A radio will return the scaling factor as determined by the ddc
+     * A DDC block will return the scaling factor as determined by the ddc
      * stage.
      *
      * \param port Port Number
