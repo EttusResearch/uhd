@@ -344,7 +344,8 @@ protected:
      **********************************************************************/
     stream_sig_t _resolve_port_def(const blockdef::port_t &port_def) const;
 
-    uhd::fs_path get_arg_path(const std::string key, size_t port = 0) const {
+    //! Return the property tree path to a block argument \key on \p port
+    uhd::fs_path get_arg_path(const std::string &key, size_t port = 0) const {
         return _root_path / "args" / port / key;
     };
 
