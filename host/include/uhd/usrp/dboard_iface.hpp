@@ -22,6 +22,7 @@
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <uhd/usrp/fe_connection.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
@@ -270,6 +271,14 @@ public:
      * \return the codec rate in Hz
      */
     virtual double get_codec_rate(unit_t unit) = 0;
+
+    /*!
+     * Configure the front-end connection parameters.
+     *
+     * \param unit which unit rx or tx
+     * \param fe_conn connection parameters class
+     */
+    virtual void set_fe_connection(unit_t unit, const uhd::usrp::fe_connection_t& fe_conn) = 0;
 
     /*!
      * Get the command time.

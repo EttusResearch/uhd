@@ -80,6 +80,7 @@ public:
         boost::uint32_t data,
         size_t num_bits
     );
+    void set_fe_connection(unit_t unit, const fe_connection_t& fe_conn);
 
     const x300_dboard_iface_config_t _config;
     uhd::dict<unit_t, ad5623_regs_t> _dac_regs;
@@ -368,4 +369,13 @@ uhd::time_spec_t x300_dboard_iface::get_command_time()
 void x300_dboard_iface::set_command_time(const uhd::time_spec_t& t)
 {
     _config.cmd_time_ctrl->set_time(t);
+}
+
+void x300_dboard_iface::set_fe_connection(unit_t unit, const fe_connection_t& fe_conn)
+{
+    if (unit == UNIT_RX) {
+        _config.rx_dsp->set_mux(fe_conn);
+    } else {
+        throw uhd::not_implemented_error("frontend connection not configurable for TX");
+    }
 }

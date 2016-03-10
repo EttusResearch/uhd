@@ -134,6 +134,7 @@ struct x300_dboard_iface_config_t
     size_t tx_spi_slaveno;
     i2c_core_100_wb32::sptr i2c;
     x300_clock_ctrl::sptr clock;
+    rx_dsp_core_3000::sptr rx_dsp;
     x300_clock_which_t which_rx_clk;
     x300_clock_which_t which_tx_clk;
     boost::uint8_t dboard_slot;
