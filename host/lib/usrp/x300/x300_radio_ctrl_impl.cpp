@@ -100,8 +100,9 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     _tree->create<std::string>("tx_codecs" / _radio_slot / "name").set("ad9146");
 
     _tree->create<meta_range_t>("rx_codecs" / _radio_slot / "gains" / "digital" / "range").set(meta_range_t(0, 6.0, 0.5));
-    _tree->create<double>("rx_codecs" / _radio_slot / "gains" / "digital" / "value");
-//        .add_coerced_subscriber(boost::bind(&x300_adc_ctrl::set_gain, _adc, _1)).set(0);
+    _tree->create<double>("rx_codecs" / _radio_slot / "gains" / "digital" / "value")
+        .add_coerced_subscriber(boost::bind(&x300_adc_ctrl::set_gain, _adc, _1)).set(0)
+    ;
 
     ////////////////////////////////////////////////////////////////
     // create front-end objects
@@ -139,12 +140,30 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
             .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_rate, this, _1))
             .set_publisher(boost::bind(&radio_ctrl_impl::get_rate, this))
         ;
-}
+    }
 
 }
 
 x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
 {
+    // Tear down our part of the tree:
+    _tree->remove(fs_path("rx_codecs" / _radio_slot));
+    _tree->remove(fs_path("tx_codecs" / _radio_slot));
+    for (size_t i = 0; i < _get_num_radios(); i++) {
+        const std::string fe_name = _radio_slot + ((i == 0) ? "0" : "1");
+        _tree->remove(fs_path("tx_dsps" / fe_name));
+        _tree->remove(fs_path("rx_dsps" / fe_name));
+        _tree->remove(fs_path("tx_frontends" / fe_name));
+        _tree->remove(fs_path("rx_frontends" / fe_name));
+    }
+    if (_radio_type==PRIMARY) {
+        BOOST_FOREACH(const gpio_atr::gpio_attr_map_t::value_type attr, gpio_atr::gpio_attr_map) {
+            _tree->remove(fs_path("gpio") / "FP0" / attr.second);
+        }
+        _tree->remove(fs_path("gpio") / "FP0" / "READBACK");
+    }
+
+    // Reset peripherals
     if (_radio_type==PRIMARY) {
         _regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 1);
         _regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 0);
