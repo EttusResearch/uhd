@@ -38,7 +38,7 @@ public:
      * Structors
      ***********************************************************************/
     UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR_DECL(e3xx_radio_ctrl)
-    virtual ~e3xx_radio_ctrl_impl() {};
+    virtual ~e3xx_radio_ctrl_impl();
 
     /************************************************************************
      * API calls

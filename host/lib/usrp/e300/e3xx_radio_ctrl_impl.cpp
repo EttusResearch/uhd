@@ -108,6 +108,26 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(e3xx_radio_ctrl)
         .add_coerced_subscriber(boost::bind(&e3xx_radio_ctrl_impl::set_rate, this, _1))
         .set_publisher(boost::bind(&e3xx_radio_ctrl_impl::get_rate, this))
     ;
+}
+
+e3xx_radio_ctrl_impl::~e3xx_radio_ctrl_impl()
+{
+    const std::string _radio_slot = "A";
+    // Tear down our part of the tree:
+    _tree->remove(fs_path("rx_codecs" / _radio_slot));
+    _tree->remove(fs_path("tx_codecs" / _radio_slot));
+    for (size_t i = 0; i < _get_num_radios(); i++) {
+        const std::string fe_name = _radio_slot + ((i == 0) ? "0" : "1");
+        _tree->remove(fs_path("tx_dsps" / fe_name));
+        _tree->remove(fs_path("rx_dsps" / fe_name));
+        _tree->remove(fs_path("tx_frontends" / fe_name));
+        _tree->remove(fs_path("rx_frontends" / fe_name));
+    }
+    BOOST_FOREACH(const usrp::gpio_atr::gpio_attr_map_t::value_type attr, usrp::gpio_atr::gpio_attr_map)
+    {
+        _tree->remove(fs_path("gpio") / "INT0" / attr.second);
+    }
+    _tree->remove(fs_path("gpio") / "INT0" / "READBACK");
 
 }
 
