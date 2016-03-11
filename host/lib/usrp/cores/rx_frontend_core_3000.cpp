@@ -27,12 +27,16 @@ using namespace uhd;
 #define REG_RX_FE_PHASE_CORRECTION  _base + 4  //18 bits
 #define REG_RX_FE_OFFSET_I          _base + 8  //18 bits
 #define REG_RX_FE_OFFSET_Q          _base + 12 //18 bits
-#define REG_RX_FE_SWAP_IQ           _base + 16
+#define REG_RX_FE_MAPPING           _base + 16
 
-#define FLAG_DSP_RX_MUX_SWAP_IQ     (1 << 0)
-#define FLAG_DSP_RX_MUX_REAL_MODE   (1 << 1)
-#define FLAG_DSP_RX_MUX_INVERT_Q    (1 << 2)
-#define FLAG_DSP_RX_MUX_INVERT_I    (1 << 3)
+#define FLAG_DSP_RX_MAPPING_SWAP_IQ     (1 << 0)
+#define FLAG_DSP_RX_MAPPING_REAL_MODE   (1 << 1)
+#define FLAG_DSP_RX_MAPPING_INVERT_Q    (1 << 2)
+#define FLAG_DSP_RX_MAPPING_INVERT_I    (1 << 3)
+#define FLAG_DSP_RX_MAPPING_HET_MODE    (1 << 4)
+//#define FLAG_DSP_RX_MAPPING_RESERVED    (1 << 5)
+//#define FLAG_DSP_RX_MAPPING_RESERVED    (1 << 6)
+#define FLAG_DSP_RX_MAPPING_BYPASS_ALL  (1 << 7)
 
 #define OFFSET_FIXED (1ul << 31)
 #define OFFSET_SET   (1ul << 30)
@@ -53,21 +57,30 @@ const std::complex<double> rx_frontend_core_3000::DEFAULT_IQ_BALANCE_VALUE = std
 class rx_frontend_core_3000_impl : public rx_frontend_core_3000{
 public:
     rx_frontend_core_3000_impl(wb_iface::sptr iface, const size_t base):
-        _i_dc_off(0), _q_dc_off(0), _iface(iface), _base(base)
+        _i_dc_off(0), _q_dc_off(0), _mapping("IQ"), _iface(iface), _base(base)
     {
         //NOP
+    }
+
+    void bypass_all(bool bypass_en) {
+        if (bypass_en) {
+            _iface->poke32(REG_RX_FE_MAPPING, FLAG_DSP_RX_MAPPING_BYPASS_ALL);
+        } else {
+            set_mux(_mapping);
+        }
     }
 
     void set_mux(const std::string &mode, const bool inv_i = false, const bool inv_q = false) {
         static const uhd::dict<std::string, boost::uint32_t> mode_to_mux = boost::assign::map_list_of
             ("IQ", 0)
-            ("QI", FLAG_DSP_RX_MUX_SWAP_IQ)
-            ("I", FLAG_DSP_RX_MUX_REAL_MODE)
-            ("Q", FLAG_DSP_RX_MUX_SWAP_IQ | FLAG_DSP_RX_MUX_REAL_MODE)
+            ("QI", FLAG_DSP_RX_MAPPING_SWAP_IQ)
+            ("I", FLAG_DSP_RX_MAPPING_REAL_MODE)
+            ("Q", FLAG_DSP_RX_MAPPING_SWAP_IQ | FLAG_DSP_RX_MAPPING_REAL_MODE)
         ;
-        _iface->poke32(REG_RX_FE_SWAP_IQ, mode_to_mux[mode]
-            | (inv_i ? FLAG_DSP_RX_MUX_INVERT_I : 0)
-            | (inv_q ? FLAG_DSP_RX_MUX_INVERT_Q : 0));
+        _iface->poke32(REG_RX_FE_MAPPING, mode_to_mux[mode]
+            | (inv_i ? FLAG_DSP_RX_MAPPING_INVERT_I : 0)
+            | (inv_q ? FLAG_DSP_RX_MAPPING_INVERT_Q : 0));
+        _mapping = mode;
     }
 
     void set_dc_offset_auto(const bool enb) {
@@ -112,8 +125,9 @@ public:
 
 private:
     boost::int32_t _i_dc_off, _q_dc_off;
+    std::string    _mapping;
     wb_iface::sptr _iface;
-    const size_t _base;
+    const size_t   _base;
 };
 
 rx_frontend_core_3000::sptr rx_frontend_core_3000::make(wb_iface::sptr iface, const size_t base){

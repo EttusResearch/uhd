@@ -315,8 +315,14 @@ void x300_radio_ctrl_impl::reset_codec()
     }
 }
 
-void x300_radio_ctrl_impl::self_test_adc(boost::uint32_t ramp_time_ms) {
-    //First test basic patterns
+void x300_radio_ctrl_impl::self_test_adc(boost::uint32_t ramp_time_ms)
+{
+    //Bypass all front-end corrections
+    for (size_t i = 0; i < _get_num_radios(); i++) {
+        _rx_fe_map[i].core->bypass_all(true);
+    }
+
+    //Test basic patterns
     _adc->set_test_word("ones", "ones");    _check_adc(0xfffcfffc);
     _adc->set_test_word("zeros", "zeros");  _check_adc(0x00000000);
     _adc->set_test_word("ones", "zeros");   _check_adc(0xfffc0000);
@@ -361,6 +367,11 @@ void x300_radio_ctrl_impl::self_test_adc(boost::uint32_t ramp_time_ms) {
     if ((i_status != "Good") or (q_status != "Good")) {
         throw uhd::runtime_error(
             (boost::format("ADC self-test failed for %s. Ramp checker status: {ADC_A=%s, ADC_B=%s}")%unique_id()%i_status%q_status).str());
+    }
+
+    //Restore front-end corrections
+    for (size_t i = 0; i < _get_num_radios(); i++) {
+        _rx_fe_map[i].core->bypass_all(false);
     }
 }
 
@@ -698,7 +709,7 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
 
 void x300_radio_ctrl_impl::_check_adc(const boost::uint32_t val)
 {
-    boost::uint32_t adc_rb = boost::uint32_t(user_reg_read64(regs::RB_CODEC_READBACK) & 0x00000000FFFFFFFF);
+    boost::uint32_t adc_rb = static_cast<boost::uint32_t>(user_reg_read64(regs::RB_TEST)>>32);
     adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
     if (val != adc_rb) {
         throw uhd::runtime_error(

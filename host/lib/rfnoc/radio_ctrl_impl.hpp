@@ -60,6 +60,7 @@ public:
     virtual double set_rx_frequency(const double freq, const size_t chan);
     virtual double set_tx_gain(const double gain, const size_t chan);
     virtual double set_rx_gain(const double gain, const size_t chan);
+    virtual void set_time_sync(const uhd::time_spec_t &time);
 
     virtual double get_rate() const;
     virtual std::string get_tx_antenna(const size_t chan) /* const */;

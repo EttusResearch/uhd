@@ -194,6 +194,11 @@ double radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
     return _rx_gain[chan] = gain;
 }
 
+void radio_ctrl_impl::set_time_sync(const uhd::time_spec_t &time)
+{
+    _time64->set_time_sync(time);
+}
+
 double radio_ctrl_impl::get_rate() const
 {
     return _tick_rate;

@@ -38,6 +38,8 @@ public:
 
     static sptr make(uhd::wb_iface::sptr iface, const size_t base);
 
+    virtual void bypass_all(bool bypass_en) = 0;
+
     virtual void set_mux(const std::string &mode, const bool inv_i = false, const bool inv_q = false) = 0;
 
     virtual void set_dc_offset_auto(const bool enb) = 0;

@@ -863,15 +863,15 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             boost::bind(&x300_impl::wait_for_clk_locked, this, mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, _1),
             true /* Apply ADC delay */);
     }
-//    if (dev_addr.has_key("ext_adc_self_test")) {
-//        rfnoc::x300_radio_ctrl_impl::extended_adc_test(
-//            mb.radios,
-//            dev_addr.cast<double>("ext_adc_self_test", 30));
-//    } else if (not dev_addr.has_key("recover_mb_eeprom")){
-//        for (size_t i = 0; i < mb.radios.size(); i++) {
-//            mb.radios.at(i)->self_test_adc();
-//        }
-//    }
+    if (dev_addr.has_key("ext_adc_self_test")) {
+        rfnoc::x300_radio_ctrl_impl::extended_adc_test(
+            mb.radios,
+            dev_addr.cast<double>("ext_adc_self_test", 30));
+    } else if (not dev_addr.has_key("recover_mb_eeprom")){
+        for (size_t i = 0; i < mb.radios.size(); i++) {
+            mb.radios.at(i)->self_test_adc();
+        }
+    }
 
     mb.initialization_done = true;
 }
@@ -1318,11 +1318,14 @@ void x300_impl::update_time_source(mboard_members_t &mb, const std::string &sour
 
 void x300_impl::sync_times(mboard_members_t &mb, const uhd::time_spec_t& t)
 {
-//TODO: Ashish
-//    BOOST_FOREACH(radio_perifs_t &perif, mb.radio_perifs)
-//        perif.time64->set_time_sync(t);
-//    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 1);
-//    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 0);
+    std::vector<rfnoc::block_id_t> radio_ids = find_blocks<rfnoc::x300_radio_ctrl_impl>("Radio");
+    BOOST_FOREACH(const rfnoc::block_id_t &id, radio_ids) {
+        get_block_ctrl<rfnoc::x300_radio_ctrl_impl>(id)->set_time_sync(t);
+    }
+
+    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 0);
+    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 1);
+    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 0);
 }
 
 bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout)
