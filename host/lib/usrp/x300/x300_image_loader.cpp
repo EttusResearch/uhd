@@ -365,6 +365,7 @@ static void x300_ethernet_load(x300_session_t &session){
         }
         else std::cout << "successful." << std::endl;
     }
+    std::cout << str(boost::format("Power-cycle the USRP %s to use the new image.") % session.dev_addr.get("product", "")) << std::endl;
 }
 
 static void x300_pcie_load(x300_session_t &session){
@@ -382,6 +383,7 @@ static void x300_pcie_load(x300_session_t &session){
         niusrprio::nirio_status_to_exception(status, "NI-RIO reported the following error:");
     }
     else std::cout << "successful." << std::endl;
+    std::cout << str(boost::format("Power-cycle the USRP %s to use the new image.") % session.dev_addr.get("product", "")) << std::endl;
 }
 
 static bool x300_image_loader(const image_loader::image_loader_args_t &image_loader_args){

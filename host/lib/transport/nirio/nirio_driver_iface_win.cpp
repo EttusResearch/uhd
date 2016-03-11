@@ -1,5 +1,5 @@
 //
-// Copyright 2013,2015 Ettus Research LLC
+// Copyright 2013,2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ nirio_status rio_ioctl(
             read_buf, static_cast<DWORD>(read_buf_len),
             &outLen, &zeroedOverlapped )))
     {
-        int_fast32_t lastError = GetLastError();
+        UHD_UNUSED(int_fast32_t lastError) = GetLastError();
         return NiRio_Status_SoftwareFault;
     }
 
