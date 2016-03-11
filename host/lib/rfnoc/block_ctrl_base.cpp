@@ -124,7 +124,7 @@ block_ctrl_base::block_ctrl_base(
 
 block_ctrl_base::~block_ctrl_base()
 {
-    // nop
+    _tree->remove(_root_path);
 }
 
 void block_ctrl_base::_init_port_defs(
