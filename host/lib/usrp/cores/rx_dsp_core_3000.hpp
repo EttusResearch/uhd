@@ -24,6 +24,7 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhd/usrp/fe_connection.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <string>
@@ -43,7 +44,7 @@ public:
         const bool is_b200 = false  //TODO: Obsolete this when we switch to the new DDC on the B200
     );
 
-    virtual void set_mux(const std::string &mode, const bool fe_swapped = false, const bool invert_i = false, const bool invert_q = false) = 0;
+    virtual void set_mux(const uhd::usrp::fe_connection_t& fe_conn) = 0;
 
     virtual void set_tick_rate(const double rate) = 0;
 

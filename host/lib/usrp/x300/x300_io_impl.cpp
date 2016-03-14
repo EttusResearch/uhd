@@ -111,7 +111,7 @@ void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, 
             //swap condition
             _mb[mb_i].radio_perifs[radio_idx].tx_fe->set_mux(conn);
         } else {
-            _mb[mb_i].radio_perifs[radio_idx].ddc->set_mux(conn);
+            _mb[mb_i].radio_perifs[radio_idx].ddc->set_mux(usrp::fe_connection_t(conn));
             _mb[mb_i].radio_perifs[radio_idx].rx_fe->set_mux(false);
         }
     }

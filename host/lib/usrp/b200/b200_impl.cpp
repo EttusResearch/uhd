@@ -765,7 +765,7 @@ void b200_impl::setup_radio(const size_t dspno)
     perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP), true /*is_b200?*/);
     perif.ddc->set_link_rate(10e9/8); //whatever
-    perif.ddc->set_mux("IQ", false, dspno == 1 ? true : false, dspno == 1 ? true : false);
+    perif.ddc->set_mux(usrp::fe_connection_t(dspno == 1 ? "IbQb" : "IQ"));
     perif.ddc->set_freq(rx_dsp_core_3000::DEFAULT_CORDIC_FREQ);
     perif.deframer = tx_vita_core_3000::make_no_radio_buff(perif.ctrl, TOREG(SR_TX_CTRL));
     perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
