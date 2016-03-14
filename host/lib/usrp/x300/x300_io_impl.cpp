@@ -106,12 +106,15 @@ void x300_impl::update_subdev_spec(const std::string &tx_rx, const size_t mb_i, 
         chan_to_dsp_map[i] = radio_idx;
 
         //extract connection
-        const std::string conn = _tree->access<std::string>(mb_root / "dboards" / spec[i].db_name / (tx_rx + "_frontends") / spec[i].sd_name / "connection").get();
+        const fs_path fe_path(mb_root / "dboards" / spec[i].db_name / (tx_rx + "_frontends") / spec[i].sd_name);
+        const std::string conn = _tree->access<std::string>(fe_path / "connection").get();
         if (tx_rx == "tx") {
             //swap condition
             _mb[mb_i].radio_perifs[radio_idx].tx_fe->set_mux(conn);
         } else {
-            _mb[mb_i].radio_perifs[radio_idx].ddc->set_mux(usrp::fe_connection_t(conn));
+            double if_freq = (_tree->exists(fe_path / "if_freq/value")) ?
+                _tree->access<double>(fe_path / "if_freq/value").get() : 0.0;
+            _mb[mb_i].radio_perifs[radio_idx].ddc->set_mux(usrp::fe_connection_t(conn, if_freq));
             _mb[mb_i].radio_perifs[radio_idx].rx_fe->set_mux(false);
         }
     }

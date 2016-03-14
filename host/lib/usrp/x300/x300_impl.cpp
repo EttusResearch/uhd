@@ -989,12 +989,14 @@ void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, con
     perif.framer = rx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_CTRL));
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
     perif.ddc->set_link_rate(10e9/8); //whatever
+    perif.ddc->set_tick_rate(mb.clock->get_master_clock_rate());
     //The DRAM FIFO is treated as in internal radio FIFO for flow control purposes
     tx_vita_core_3000::fc_monitor_loc fc_loc =
         mb.has_dram_buff ? tx_vita_core_3000::FC_PRE_FIFO : tx_vita_core_3000::FC_PRE_RADIO;
     perif.deframer = tx_vita_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_CTRL), fc_loc);
     perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
     perif.duc->set_link_rate(10e9/8); //whatever
+    perif.duc->set_tick_rate(mb.clock->get_master_clock_rate());
 
     ////////////////////////////////////////////////////////////////////
     // create time control objects
