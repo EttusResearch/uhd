@@ -60,7 +60,7 @@ function(UHD_ADD_TEST test_name)
 
         #replace list separator with the path separator
         string(REPLACE ";" ":" libpath "${libpath}")
-        list(APPEND environs "PATH=${binpath}" "${LD_PATH_VAR}=${libpath}" "UHD_RFNOC_XML_PATH=${CMAKE_SOURCE_DIR}/include/uhd/rfnoc")
+        list(APPEND environs "PATH=${binpath}" "${LD_PATH_VAR}=${libpath}" "UHD_RFNOC_DIR=${CMAKE_SOURCE_DIR}/include/uhd/rfnoc")
 
         #generate a bat file that sets the environment and runs the test
         if (CMAKE_CROSSCOMPILING)
@@ -92,7 +92,7 @@ function(UHD_ADD_TEST test_name)
 
         #replace list separator with the path separator (escaped)
         string(REPLACE ";" "\\;" libpath "${libpath}")
-        list(APPEND environs "PATH=${libpath}" "UHD_RFNOC_XML_PATH=${CMAKE_SOURCE_DIR}/include/uhd/rfnoc")
+        list(APPEND environs "PATH=${libpath}" "UHD_RFNOC_DIR=${CMAKE_SOURCE_DIR}/include/uhd/rfnoc")
 
         #generate a bat file that sets the environment and runs the test
         set(bat_file ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_test.bat)

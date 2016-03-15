@@ -30,7 +30,7 @@ namespace uhd {
 //! Where the RFNoC block/component definition files lie, relative to UHD_PKG_DIR
 static const std::string XML_DEFAULT_PATH = "share/uhd/rfnoc";
 //! The name of the environment variable storing the bath to the block definition files
-static const std::string XML_PATH_ENV = "UHD_RFNOC_XML_PATH";
+static const std::string XML_PATH_ENV = "UHD_RFNOC_DIR";
 
 //! If the block name can't be automatically detected, this name is used
 static const std::string DEFAULT_BLOCK_NAME = "Block";
