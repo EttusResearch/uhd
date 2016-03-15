@@ -138,6 +138,11 @@ void device3_impl::enumerate_rfnoc_blocks(
         UHD_MSG(status) << str(boost::format("Port %d: Found NoC-Block with ID %016X.") % int(ctrl_sid.get_dst_endpoint()) % noc_id) << std::endl;
         uhd::rfnoc::make_args_t make_args;
         uhd::rfnoc::blockdef::sptr block_def = uhd::rfnoc::blockdef::make_from_noc_id(noc_id);
+        if (not block_def) {
+            UHD_MSG(status) << "Using default block configuration." << std::endl;
+            block_def = uhd::rfnoc::blockdef::make_from_noc_id(uhd::rfnoc::DEFAULT_NOC_ID);
+        }
+        UHD_ASSERT_THROW(block_def);
         make_args.ctrl_ifaces = boost::assign::map_list_of(0, ctrl);
         BOOST_FOREACH(const size_t port_number, block_def->get_all_port_numbers()) {
             if (port_number == 0) { // We've already set this up
