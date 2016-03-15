@@ -5,7 +5,7 @@
   <key>X300Radio</key>
   <!--There can be several of these:-->
   <ids>
-    <id revision="0">12AD100000000000</id>
+    <id revision="0">12AD100000000001</id>
   </ids>
   <!-- Registers -->
   <registers>
