@@ -21,6 +21,7 @@
 
 #include <math.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,6 +40,7 @@ void print_help(void){
                     "    -f (frequency in Hz)\n"
                     "    -r (sample rate in Hz)\n"
                     "    -g (gain)\n"
+                    "    -n (number of samples to transmit)\n"
                     "    -v (enable verbose prints)\n"
                     "    -h (print this help message)\n");
 }
@@ -57,12 +59,13 @@ int main(int argc, char* argv[]){
     double gain = 0;
     char* device_args = "";
     size_t channel = 0;
+    uint64_t total_num_samps = 0;
     bool verbose = false;
     int return_code = EXIT_SUCCESS;
     char error_string[512];
 
     // Process options
-    while((option = getopt(argc, argv, "a:f:r:g:vh")) != -1){
+    while((option = getopt(argc, argv, "a:f:r:g:n:vh")) != -1){
         switch(option){
             case 'a':
                 device_args = strdup(optarg);
@@ -78,6 +81,10 @@ int main(int argc, char* argv[]){
 
             case 'g':
                 gain = atof(optarg);
+                break;
+
+            case 'n':
+                total_num_samps = atoll(optarg);
                 break;
 
             case 'v':
@@ -198,11 +205,19 @@ int main(int argc, char* argv[]){
     fprintf(stderr, "Press Ctrl+C to stop streaming...\n");
 
     // Actual streaming
-    size_t num_samps_sent = 0;
-    while(!stop_signal_called){
+    uint64_t num_acc_samps = 0;
+    uint64_t num_samps_sent = 0;
+
+    while(1) {
+        if (stop_signal_called) break;
+        if (total_num_samps > 0 && num_acc_samps >= total_num_samps) break;
+
         EXECUTE_OR_GOTO(free_tx_streamer,
             uhd_tx_streamer_send(tx_streamer, buffs_ptr, samps_per_buff, &md, 0.1, &num_samps_sent)
         )
+
+        num_acc_samps += num_samps_sent;
+
         if(verbose){
             fprintf(stderr, "Sent %zu samples\n", num_samps_sent);
         }

@@ -28,6 +28,7 @@
 #include <boost/thread.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
+#include <stdint.h>
 #include <iostream>
 #include <csignal>
 
@@ -47,7 +48,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args, wave_type, ant, subdev, ref, pps, otw, channel_list;
-    size_t spb;
+    uint64_t total_num_samps, spb;
     double rate, freq, gain, wave_freq, bw;
     float ampl;
 
@@ -56,7 +57,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("spb", po::value<size_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
+        ("spb", po::value<uint64_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
+        ("nsamps", po::value<uint64_t>(&total_num_samps)->default_value(0), "total number of samples to transmit")
         ("rate", po::value<double>(&rate), "rate of outgoing samples")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform [0 to 0.7]")
@@ -241,14 +243,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     md.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.1);
 
     //send data until the signal handler gets called
-    while(not stop_signal_called){
+    //or if we accumulate the number of samples specified (unless it's 0)
+    uint64_t num_acc_samps = 0;
+    while(true){
+
+        if (stop_signal_called) break;
+        if (total_num_samps > 0 and num_acc_samps >= total_num_samps) break;
+
         //fill the buffer with the waveform
         for (size_t n = 0; n < buff.size(); n++){
             buff[n] = wave_table(index += step);
         }
 
         //send the entire contents of the buffer
-        tx_stream->send(buffs, buff.size(), md);
+        num_acc_samps += tx_stream->send(
+            buffs, buff.size(), md
+        );
 
         md.start_of_burst = false;
         md.has_time_spec = false;
