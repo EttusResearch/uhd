@@ -468,7 +468,8 @@ private:
         const size_t expected_packet_count = _props[index].packet_count;
         _props[index].packet_count = (info.ifpi.packet_count + 1) & seq_mask;
         if (expected_packet_count != info.ifpi.packet_count){
-            if (_props[index].handle_flowctrl)
+            UHD_MSG(status) << "expected: " << expected_packet_count << " got: " << info.ifpi.packet_count << std::endl;
+            if (_props[index].handle_flowctrl) {
                 _props[index].handle_flowctrl(info.ifpi.packet_count);
             }
             return PACKET_SEQUENCE_ERROR;
@@ -625,6 +626,7 @@ private:
 
             case PACKET_TIMEOUT_ERROR:
                 std::swap(curr_info, next_info); //save progress from curr -> next
+                _props[index].handle_flowctrl(next_info[index].ifpi.packet_count);
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_TIMEOUT;
                 return;
 
