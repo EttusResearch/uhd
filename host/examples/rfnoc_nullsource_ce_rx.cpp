@@ -218,7 +218,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     //variables to be set by po
     std::string args, file, type, nullid, blockid, blockid2;
     size_t total_num_samps, spb, spp;
-    size_t num_proc_blocks = 1;
     double rate, total_time, setup_time, block_rate, bus_clock;
 
     //setup the program options
@@ -275,7 +274,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             std::cout << "Invalid block ID for the 2nd processing block." << std::endl;
             return ~0;
         }
-        num_proc_blocks = 2;
     }
 
     // Set up SIGINT handler. For indefinite streaming, display info on how to stop.
@@ -304,28 +302,29 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////////////
     //////// 2. Get block control objects ///////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
-    // For the processing blocks, we don't care what type these block is,
-    // so we make it a block_ctrl_base (default):
     std::vector<std::string> blocks;
-    uhd::rfnoc::block_ctrl_base::sptr proc_block_ctrl, proc_block_ctrl2;
-    if (usrp->get_device3()->has_block(blockid)) {
-        proc_block_ctrl = usrp->get_device3()->get_block_ctrl(blockid);
-        blocks.push_back(proc_block_ctrl->get_block_id());
-    }
-    if (num_proc_blocks == 2 and usrp->get_device3()->has_block(blockid2)) {
-        proc_block_ctrl2 = usrp->get_device3()->get_block_ctrl(blockid2);
-        blocks.push_back(proc_block_ctrl2->get_block_id());
-    }
 
     // For the null source control, we want to use the subclassed access,
     // so we create a null_block_ctrl:
     uhd::rfnoc::null_block_ctrl::sptr null_src_ctrl;
-    if (usrp->get_device3()->has_block<uhd::rfnoc::null_block_ctrl>(blockid)) {
+    if (usrp->get_device3()->has_block<uhd::rfnoc::null_block_ctrl>(nullid)) {
         null_src_ctrl = usrp->get_device3()->get_block_ctrl<uhd::rfnoc::null_block_ctrl>(nullid);
         blocks.push_back(null_src_ctrl->get_block_id());
     } else {
         std::cout << "Error: Device has no null block." << std::endl;
         return ~0;
+    }
+
+    // For the processing blocks, we don't care what type these block is,
+    // so we make it a block_ctrl_base (default):
+    uhd::rfnoc::block_ctrl_base::sptr proc_block_ctrl, proc_block_ctrl2;
+    if (usrp->get_device3()->has_block(blockid)) {
+        proc_block_ctrl = usrp->get_device3()->get_block_ctrl(blockid);
+        blocks.push_back(proc_block_ctrl->get_block_id());
+    }
+    if (not blockid2.empty() and usrp->get_device3()->has_block(blockid2)) {
+        proc_block_ctrl2 = usrp->get_device3()->get_block_ctrl(blockid2);
+        blocks.push_back(proc_block_ctrl2->get_block_id());
     }
 
     blocks.push_back("HOST");
@@ -337,10 +336,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     // Here, we define that there is only 1 channel, and it points
     // to the final processing block.
     usrp->clear_channels(); // The default is to use the radios. Let's not do that.
-    if (num_proc_blocks == 2) {
+    if (proc_block_ctrl2 and proc_block_ctrl) {
         usrp->set_rx_channel(proc_block_ctrl2->get_block_id()); // Defaults to being channel 0.
-    } else {
+    } else if (proc_block_ctrl) {
         usrp->set_rx_channel(proc_block_ctrl->get_block_id()); // Defaults to being channel 0.
+    } else {
+        usrp->set_rx_channel(null_src_ctrl->get_block_id()); // Defaults to being channel 0.
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -374,11 +375,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     //////// 5. Connect blocks //////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
     std::cout << "Connecting blocks..." << std::endl;
-    usrp->connect( // Yes, it's that easy!
-            null_src_ctrl->get_block_id(),
-            proc_block_ctrl->get_block_id()
-    );
-    if (num_proc_blocks == 2) {
+    if (proc_block_ctrl) {
+        usrp->connect( // Yes, it's that easy!
+                null_src_ctrl->get_block_id(),
+                proc_block_ctrl->get_block_id()
+        );
+    }
+    if (proc_block_ctrl2 and proc_block_ctrl) {
         usrp->connect(
             proc_block_ctrl->get_block_id(),
             proc_block_ctrl2->get_block_id()
