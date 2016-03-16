@@ -565,6 +565,7 @@ void block_ctrl_base::_clear(const size_t port)
 {
     UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::_clear() " << std::endl;
     sr_write(SR_CLEAR_TX_FC, 0x00C1EA12, port); // 'CLEAR', but we can write anything, really
+    sr_write(SR_CLEAR_RX_FC, 0x00C1EA12, port); // 'CLEAR', but we can write anything, really
 }
 
 // vim: sw=4 et:
