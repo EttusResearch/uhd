@@ -421,6 +421,12 @@ private:
         const size_t expected_packet_count = _props[index].packet_count;
         _props[index].packet_count = (info.ifpi.packet_count + 1) & seq_mask;
         if (expected_packet_count != info.ifpi.packet_count){
+            if (_props[index].handle_flowctrl) {
+                // Always update flow control in this case, because we don't
+                // know which packet was dropped and what state the upstream
+                // flow control is in.
+                _props[index].handle_flowctrl(info.ifpi.packet_count);
+            }
             return PACKET_SEQUENCE_ERROR;
         }
         #endif
