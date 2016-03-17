@@ -569,7 +569,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         UHD_MSG(status) << "Initializing Radio Block..." << std::endl;
         get_block_ctrl<rfnoc::e3xx_radio_ctrl_impl>(radio_ids[0])->setup_radio(codec_ctrl);
         if (radio_ids.size() != 1) {
-            UHD_MSG(status) << "Too many Radio Blocks found. Using only " << radio_ids[0] << std::endl;
+            UHD_MSG(warning) << "Too many Radio Blocks found. Using only " << radio_ids[0] << std::endl;
         }
     } else {
         UHD_MSG(status) << "No Radio Block found. Assuming radio-less operation." << std::endl;
