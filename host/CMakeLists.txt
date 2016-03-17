@@ -34,7 +34,7 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 # Check Compiler Version
 ########################################################################
 # Full C++11 came with GCC 4.7.
-SET(GCC_MIN_VERSION "4.4.0")
+SET(GCC_MIN_VERSION "4.8.0")
 # for c++0x or c++11 support, require:
 #   Apple Clang >= 500
 # or
@@ -265,7 +265,7 @@ SET(Boost_ADDITIONAL_VERSIONS
     "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
     "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60"
 )
-FIND_PACKAGE(Boost 1.46 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
@@ -285,8 +285,8 @@ INCLUDE(UHDGlobalDefs)
 INCLUDE(UHDPython)
 
 PYTHON_CHECK_MODULE(
-    "Python version 2.6 or greater"
-    "platform" "platform.python_version() >= '2.6'"
+    "Python version 2.7 or greater"
+    "platform" "platform.python_version() >= '2.7'"
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
