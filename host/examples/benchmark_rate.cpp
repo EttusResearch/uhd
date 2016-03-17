@@ -24,7 +24,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/atomic.hpp>
+//#include <boost/atomic.hpp>
 #include <iostream>
 #include <complex>
 #include <cstdlib>
@@ -32,7 +32,10 @@
 namespace po = boost::program_options;
 
 const double INIT_DELAY = 0.05;  // 50mS initial delay before transmit
-typedef boost::atomic<bool>   atomic_bool;
+//typedef boost::atomic<bool>   atomic_bool;
+// We'll fake atomic bools for now, for more backward compat.
+// This is just an example, after all.
+typedef bool atomic_bool;
 
 /***********************************************************************
  * Test result variables
@@ -83,7 +86,8 @@ void benchmark_rx_rate(
     float recv_timeout = burst_pkt_time + INIT_DELAY;
 
     while (true) {
-        if (burst_timer_elapsed.load(boost::memory_order_acq_rel)) {
+        //if (burst_timer_elapsed.load(boost::memory_order_relaxed)) {
+        if (burst_timer_elapsed) {
             rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
         }
         if (random_nsamps) {
@@ -128,12 +132,13 @@ void benchmark_rx_rate(
             break;
 
         case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
-            std::cerr << "Receiver error: " << md.strerror() << ", continuing..." << std::endl;
-            num_timeouts++;
-            // If we stopped the streamer, then we expect this at some point
-            if (burst_timer_elapsed.load(boost::memory_order_acq_rel)) {
+            if (burst_timer_elapsed) {
                 return;
             }
+            std::cerr << "Receiver error: " << md.strerror() << ", continuing..." << std::endl;
+            num_timeouts++;
+            break;
+
             // Otherwise, it's an error
         default:
             std::cerr << "Receiver error: " << md.strerror() << std::endl;
@@ -173,7 +178,8 @@ void benchmark_tx_rate(
 
     if (random_nsamps) {
         std::srand((unsigned int)time(NULL));
-        while (not burst_timer_elapsed.load(boost::memory_order_acq_rel)) {
+        //while (not burst_timer_elapsed.load(boost::memory_order_relaxed)) {
+        while (not burst_timer_elapsed) {
             size_t total_num_samps = rand() % max_samps_per_packet;
             size_t num_acc_samps = 0;
             const float timeout = 1;
@@ -186,7 +192,8 @@ void benchmark_tx_rate(
             }
         }
     } else {
-        while (not burst_timer_elapsed.load(boost::memory_order_acq_rel)) {
+        //while (not burst_timer_elapsed.load(boost::memory_order_relaxed)) {
+        while (not burst_timer_elapsed) {
             num_tx_samps += tx_stream->send(buffs, max_samps_per_packet, md)*tx_stream->get_num_channels();
             md.has_time_spec = false;
         }
@@ -206,7 +213,8 @@ void benchmark_tx_rate_async_helper(
     bool exit_flag = false;
 
     while (true) {
-        if (burst_timer_elapsed.load(boost::memory_order_acq_rel)) {
+        //if (burst_timer_elapsed.load(boost::memory_order_relaxed)) {
+        if (burst_timer_elapsed) {
             exit_flag = true;
         }
 
@@ -380,14 +388,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-
     if (pps == "mimo" or ref == "mimo" or channel_nums.size() == 1)
     {
        usrp->set_time_now(0.0);
     } else {
        usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
     }
-
 
     //spawn the receive test thread
     if (vm.count("rx_rate")){
@@ -416,7 +422,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     boost::this_thread::sleep(boost::posix_time::seconds(secs) + boost::posix_time::microseconds(usecs));
 
     //interrupt and join the threads
-    burst_timer_elapsed.store(true, boost::memory_order_acq_rel);
+    //burst_timer_elapsed.store(true, boost::memory_order_relaxed);
+    burst_timer_elapsed = true;
     thread_group.join_all();
 
     //print summary
