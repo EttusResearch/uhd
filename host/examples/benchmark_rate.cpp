@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2015 Ettus Research LLC
+// Copyright 2011-2013 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,15 +24,11 @@
 #include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/atomic.hpp>
 #include <iostream>
 #include <complex>
 #include <cstdlib>
 
 namespace po = boost::program_options;
-
-const double INIT_DELAY = 0.05;  // 50mS initial delay before transmit
-typedef boost::atomic<bool>   atomic_bool;
 
 /***********************************************************************
  * Test result variables
@@ -51,8 +47,7 @@ void benchmark_rx_rate(
         uhd::usrp::multi_usrp::sptr usrp,
         const std::string &rx_cpu,
         uhd::rx_streamer::sptr rx_stream,
-        bool random_nsamps,
-        atomic_bool& burst_timer_elapsed
+        bool random_nsamps
 ) {
     uhd::set_thread_priority_safe();
 
@@ -73,29 +68,30 @@ void benchmark_rx_rate(
     const double rate = usrp->get_rx_rate();
 
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(INIT_DELAY);
+    cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.05);
     cmd.stream_now = (buffs.size() == 1);
     rx_stream->issue_stream_cmd(cmd);
 
-    const float burst_pkt_time = std::max(0.100, (2 * max_samps_per_packet/rate));
-    float recv_timeout = burst_pkt_time + INIT_DELAY;
-
-    while (true) {
-        if (burst_timer_elapsed.load(boost::memory_order_acq_rel)) {
-            rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-        }
+    while (not boost::this_thread::interruption_requested()){
         if (random_nsamps) {
             cmd.num_samps = rand() % max_samps_per_packet;
             rx_stream->issue_stream_cmd(cmd);
         }
         try {
-            num_rx_samps += rx_stream->recv(buffs, max_samps_per_packet, md, recv_timeout)*rx_stream->get_num_channels();
-            recv_timeout = burst_pkt_time;
+            num_rx_samps += rx_stream->recv(buffs, max_samps_per_packet, md)*rx_stream->get_num_channels();
         }
         catch (uhd::io_error &e) {
             std::cerr << "Caught an IO exception. " << std::endl;
             std::cerr << e.what() << std::endl;
+
             return;
+        }
+        catch (...) {
+            /* apparently, the boost thread interruption can sometimes result in
+               throwing exceptions not of type boost::exception, this catch allows
+               this thread to still attempt to issue the STREAM_MODE_STOP_CONTINUOUS
+            */
+            break;
         }
 
         //handle the error codes
@@ -116,18 +112,13 @@ void benchmark_rx_rate(
                 num_overflows++;
             break;
 
-        case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
-            // If we stopped the streamer, then we expect this at some point
-            if (burst_timer_elapsed.load(boost::memory_order_acq_rel)) {
-                return;
-            }
-            // Otherwise, it's an error
         default:
             std::cerr << "Receiver error: " << md.strerror() << std::endl;
             std::cerr << "Unexpected error on recv, continuing..." << std::endl;
             break;
         }
     }
+    rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 }
 
 /***********************************************************************
@@ -137,7 +128,6 @@ void benchmark_tx_rate(
         uhd::usrp::multi_usrp::sptr usrp,
         const std::string &tx_cpu,
         uhd::tx_streamer::sptr tx_stream,
-        atomic_bool& burst_timer_elapsed,
         bool random_nsamps=false
 ) {
     uhd::set_thread_priority_safe();
@@ -149,8 +139,7 @@ void benchmark_tx_rate(
 
     //setup variables and allocate buffer
     uhd::tx_metadata_t md;
-    md.time_spec = usrp->get_time_now() + uhd::time_spec_t(INIT_DELAY);
-    md.has_time_spec = (tx_stream->get_num_channels() > 1);
+    md.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.05);
     const size_t max_samps_per_packet = tx_stream->get_max_num_samps();
     std::vector<char> buff(max_samps_per_packet*uhd::convert::get_bytes_per_item(tx_cpu));
     std::vector<const void *> buffs;
@@ -159,8 +148,8 @@ void benchmark_tx_rate(
     md.has_time_spec = (buffs.size() != 1);
 
     if (random_nsamps) {
-        std::srand((unsigned int)time(NULL));
-        while (not burst_timer_elapsed.load(boost::memory_order_acq_rel)) {
+        std::srand( (unsigned int)time(NULL) );
+        while(not boost::this_thread::interruption_requested()){
             size_t total_num_samps = rand() % max_samps_per_packet;
             size_t num_acc_samps = 0;
             const float timeout = 1;
@@ -173,7 +162,7 @@ void benchmark_tx_rate(
             }
         }
     } else {
-        while (not burst_timer_elapsed.load(boost::memory_order_acq_rel)) {
+        while (not boost::this_thread::interruption_requested()){
             num_tx_samps += tx_stream->send(buffs, max_samps_per_packet, md)*tx_stream->get_num_channels();
             md.has_time_spec = false;
         }
@@ -184,24 +173,13 @@ void benchmark_tx_rate(
     tx_stream->send(buffs, 0, md);
 }
 
-void benchmark_tx_rate_async_helper(
-        uhd::tx_streamer::sptr tx_stream,
-        atomic_bool& burst_timer_elapsed
-) {
+void benchmark_tx_rate_async_helper(uhd::tx_streamer::sptr tx_stream){
     //setup variables and allocate buffer
     uhd::async_metadata_t async_md;
-    bool exit_flag = false;
 
-    while (true) {
-        if (burst_timer_elapsed.load(boost::memory_order_acq_rel)) {
-            exit_flag = true;
-        }
+    while (not boost::this_thread::interruption_requested()){
 
-        if (not tx_stream->recv_async_msg(async_md)) {
-            if (exit_flag == true)
-                return;
-            continue;
-        }
+        if (not tx_stream->recv_async_msg(async_md)) continue;
 
         //handle the error codes
         switch(async_md.event_code){
@@ -238,10 +216,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     double rx_rate, tx_rate;
     std::string rx_otw, tx_otw;
     std::string rx_cpu, tx_cpu;
-    std::string mode, ref, pps;
+    std::string mode;
     std::string channel_list;
     bool random_nsamps = false;
-    atomic_bool burst_timer_elapsed(false);
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -255,9 +232,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("tx_otw", po::value<std::string>(&tx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for TX")
         ("rx_cpu", po::value<std::string>(&rx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for RX")
         ("tx_cpu", po::value<std::string>(&tx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for TX")
-        ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
-        ("pps", po::value<std::string>(&pps), "PPS source (internal, external, mimo, gpsdo)")
-        ("mode", po::value<std::string>(&mode), "DEPRECATED - use \"ref\" and \"pps\" instead (none, mimo)")
+        ("mode", po::value<std::string>(&mode)->default_value("none"), "multi-channel sync mode option: none, mimo")
         ("random", "Run with random values of samples in send() and recv() to stress-test the I/O.")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
     ;
@@ -282,16 +257,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         random_nsamps = true;
     }
 
-    if (vm.count("mode")) {
-        if (vm.count("pps") or vm.count("ref")) {
-            std::cout << "ERROR: The \"mode\" parameter cannot be used with the \"ref\" and \"pps\" parameters.\n" << std::endl;
-            return -1;
-        } else if (mode == "mimo") {
-            ref = pps = "mimo";
-            std::cout << "The use of the \"mode\" parameter is deprecated.  Please use \"ref\" and \"pps\" parameters instead\n" << std::endl;
-        }
-    }
-
     //create a usrp device
     std::cout << std::endl;
     uhd::device_addrs_t device_addrs = uhd::device::find(args, uhd::device::USRP);
@@ -302,57 +267,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
-    int num_mboards = usrp->get_num_mboards();
+
+    if (mode == "mimo"){
+        usrp->set_clock_source("mimo", 0);
+        usrp->set_time_source("mimo", 0);
+        boost::this_thread::sleep(boost::posix_time::seconds(1));
+    }
 
     boost::thread_group thread_group;
-
-    if(vm.count("ref"))
-    {
-        if (ref == "mimo")
-        {
-            if (num_mboards != 2) {
-                std::cerr << "ERROR: ref = \"mimo\" implies 2 motherboards; your system has " << num_mboards << " boards" << std::endl;
-                return -1;
-            }
-            usrp->set_clock_source("mimo",1);
-        } else {
-            usrp->set_clock_source(ref);
-        }
-
-        if(ref != "internal") {
-            std::cout << "Now confirming lock on clock signals..." << std::endl;
-            bool is_locked = false;
-            boost::system_time end_time = boost::get_system_time() + boost::posix_time::milliseconds(80);
-            for (int i = 0; i < num_mboards; i++) {
-                if (ref == "mimo" and i == 0) continue;
-                while((is_locked = usrp->get_mboard_sensor("ref_locked",i).to_bool()) == false and
-                            boost::get_system_time() < end_time )
-                {
-                    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-                }
-                if (is_locked == false) {
-                    std::cerr << "ERROR: Unable to confirm clock signal locked on board:" << i <<  std::endl;
-                    return -1;
-                }
-                is_locked = false;
-            }
-        }
-    }
-
-    if(vm.count("pps"))
-    {
-       if(pps == "mimo")
-       {
-           if (num_mboards != 2) {
-               std::cerr << "ERROR: ref = \"mimo\" implies 2 motherboards; your system has " << num_mboards << " boards" << std::endl;
-               return -1;
-           }
-           //make mboard 1 a slave over the MIMO Cable
-           usrp->set_time_source("mimo", 1);
-       } else {
-           usrp->set_time_source(pps);
-       }
-    }
 
     //detect which channels to use
     std::vector<std::string> channel_strings;
@@ -366,16 +288,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         else channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
     }
 
-    std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-
-    if (pps == "mimo" or ref == "mimo" or channel_nums.size() == 1)
-    {
-       usrp->set_time_now(0.0);
-    } else {
-       usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
-    }
-
-
     //spawn the receive test thread
     if (vm.count("rx_rate")){
         usrp->set_rx_rate(rx_rate);
@@ -383,7 +295,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::stream_args_t stream_args(rx_cpu, rx_otw);
         stream_args.channels = channel_nums;
         uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-        thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_stream, random_nsamps, boost::ref(burst_timer_elapsed)));
+        thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_stream, random_nsamps));
     }
 
     //spawn the transmit test thread
@@ -393,8 +305,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::stream_args_t stream_args(tx_cpu, tx_otw);
         stream_args.channels = channel_nums;
         uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
-        thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_stream, boost::ref(burst_timer_elapsed), random_nsamps));
-        thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, tx_stream, boost::ref(burst_timer_elapsed)));
+        thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_stream, random_nsamps));
+        thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, tx_stream));
     }
 
     //sleep for the required duration
@@ -403,7 +315,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     boost::this_thread::sleep(boost::posix_time::seconds(secs) + boost::posix_time::microseconds(usecs));
 
     //interrupt and join the threads
-    burst_timer_elapsed.store(true, boost::memory_order_acq_rel);
+    thread_group.interrupt_all();
     thread_group.join_all();
 
     //print summary
