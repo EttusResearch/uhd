@@ -419,7 +419,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //sleep for the required duration
     const long secs = long(duration);
     const long usecs = long((duration - secs)*1e6);
-    boost::this_thread::sleep(boost::posix_time::seconds(secs) + boost::posix_time::microseconds(usecs));
+    boost::this_thread::sleep(boost::posix_time::seconds(secs)
+            + boost::posix_time::microseconds(usecs)
+            + boost::posix_time::milliseconds(INIT_DELAY * 1000)
+    );
 
     //interrupt and join the threads
     //burst_timer_elapsed.store(true, boost::memory_order_relaxed);
