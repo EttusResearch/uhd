@@ -117,11 +117,8 @@ e3xx_radio_ctrl_impl::~e3xx_radio_ctrl_impl()
     _tree->remove(fs_path("rx_codecs" / _radio_slot));
     _tree->remove(fs_path("tx_codecs" / _radio_slot));
     for (size_t i = 0; i < _get_num_radios(); i++) {
-        const std::string fe_name = _radio_slot + ((i == 0) ? "0" : "1");
-        _tree->remove(fs_path("tx_dsps" / fe_name));
-        _tree->remove(fs_path("rx_dsps" / fe_name));
-        _tree->remove(fs_path("tx_frontends" / fe_name));
-        _tree->remove(fs_path("rx_frontends" / fe_name));
+        _tree->remove(fs_path("tx_dsps") / i);
+        _tree->remove(fs_path("rx_dsps") / i);
     }
     BOOST_FOREACH(const usrp::gpio_atr::gpio_attr_map_t::value_type attr, usrp::gpio_atr::gpio_attr_map)
     {
