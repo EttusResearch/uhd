@@ -46,6 +46,7 @@ unsigned long long num_rx_samps = 0;
 unsigned long long num_tx_samps = 0;
 unsigned long long num_dropped_samps = 0;
 unsigned long long num_seq_errors = 0;
+unsigned long long num_timeouts = 0;
 
 /***********************************************************************
  * Benchmark RX Rate
@@ -126,6 +127,10 @@ void benchmark_rx_rate(
             if (burst_timer_elapsed) {
                 return;
             }
+            std::cerr << "Receiver error: " << md.strerror() << ", continuing..." << std::endl;
+            num_timeouts++;
+            break;
+
             // Otherwise, it's an error
         default:
             std::cerr << "Receiver error: " << md.strerror() << std::endl;
@@ -421,7 +426,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         "  Num transmitted samples: %u\n"
         "  Num sequence errors:     %u\n"
         "  Num underflows detected: %u\n"
-    ) % num_rx_samps % num_dropped_samps % num_overflows % num_tx_samps % num_seq_errors % num_underflows << std::endl;
+        "  Num timeouts:            %u\n"
+    ) % num_rx_samps % num_dropped_samps
+      % num_overflows % num_tx_samps
+      % num_seq_errors % num_underflows
+      % num_timeouts << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
