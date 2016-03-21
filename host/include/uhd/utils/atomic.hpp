@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2013 Ettus Research LLC
+// Copyright 2012-2013,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,11 +26,7 @@
 #include <boost/interprocess/detail/atomic.hpp>
 
 #include <boost/version.hpp>
-#if BOOST_VERSION >= 104800
-#  define BOOST_IPC_DETAIL boost::interprocess::ipcdetail
-#else
-#  define BOOST_IPC_DETAIL boost::interprocess::detail
-#endif
+#define BOOST_IPC_DETAIL boost::interprocess::ipcdetail
 
 namespace uhd{
 
