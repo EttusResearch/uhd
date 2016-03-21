@@ -18,7 +18,7 @@
 #ifndef INCLUDED_LIBUHD_DSP_CORE_UTILS_HPP
 #define INCLUDED_LIBUHD_DSP_CORE_UTILS_HPP
 
-#include <uhd/types/stdint.hpp>
+#include <stdint.h>
 
 /*! For a requested frequency and sampling rate, return the
  *  correct frequency word (to set the CORDIC) and the actual frequency.
