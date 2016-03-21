@@ -1,3 +1,19 @@
+uhd (3.9.3-0ubuntu1) trusty; urgency=low
+
+  * UBX: Fixed a phase synchronization issue on the sub-1GHz band
+  * USB: Fixed transport issue that crashed when multiple USB devices were
+    connected on a Windows machine, more graceful handling of USB disconnects,,
+    provided .cdf file for installing on Windows
+  * B200: Fixed memory growth/increasing tune times issue
+  * E300: Fixed memory leak with udev, fixed issue with autoboot value, fixes
+    to button behaviour
+  * usrp2, usrp3: Fixed IQ imbalance and DC bias in DDC chain
+  * CMake: Windows registry fixes
+  * Fixed several compiler warnings and minor bugs
+  * Examples: Updated benchmark_rate for improved thread safety
+
+ -- Ettus Research <packages@ettus.com>  Mon, 21 Mar 2016 11:40:26 -0800
+
 uhd (3.9.2-0ubuntu1) trusty; urgency=low
 
   * E310: Added support for Speedgrade 3

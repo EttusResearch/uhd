@@ -7,11 +7,12 @@ Change Log for Releases
   connected on a Windows machine, more graceful handling of USB disconnects,,
   provided .cdf file for installing on Windows
 * B200: Fixed memory growth/increasing tune times issue
-* E300: Fixed memory leak with udev, fixed issue with autoboot value, fixed
-  writing of, fixes to button behaviour
+* E300: Fixed memory leak with udev, fixed issue with autoboot value, fixes
+  to button behaviour
 * usrp2, usrp3: Fixed IQ imbalance and DC bias in DDC chain
 * CMake: Windows registry fixes
 * Fixed several compiler warnings and minor bugs
+* Examples: Updated benchmark_rate for improved thread safety
 
 ## 003.009.002
 * E310: Added support for Speedgrade 3
