@@ -34,6 +34,10 @@ SET(UHD_VERSION_DEVEL TRUE)
 ########################################################################
 # If we're on a development branch, we skip the patch version
 ########################################################################
+IF(DEFINED UHD_VERSION_PATCH_OVERRIDE)
+    SET(UHD_VERSION_DEVEL FALSE)
+    SET(UHD_VERSION_PATCH ${UHD_VERSION_PATCH_OVERRIDE})
+ENDIF(DEFINED UHD_VERSION_PATCH_OVERRIDE)
 IF(NOT DEFINED UHD_VERSION_DEVEL)
     SET(UHD_VERSION_DEVEL FALSE)
 ENDIF(NOT DEFINED UHD_VERSION_DEVEL)
