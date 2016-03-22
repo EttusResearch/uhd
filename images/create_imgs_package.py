@@ -47,12 +47,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Link the current set of images to this commit.')
     parser.add_argument('--commit', default=None,
                        help='Supply a commit message to the changes to host/CMakeLists.txt.')
-    parser.add_argument('-r', '--release-mode', default=None,
+    parser.add_argument('-r', '--release-mode', default="",
                        help='Specify UHD_RELEASE_MODE. Typically "release" or "rc1" or similar.')
     parser.add_argument('--skip-edit', default=False, action='store_true',
                        help='Do not edit the CMakeLists.txt file.')
     parser.add_argument('--skip-move', default=False, action='store_true',
                        help='Do not move the archives after creating them.')
+    parser.add_argument('--patch', help='Override patch version number.')
     return parser.parse_args()
 
 def move_zip_to_repo(base_url, zipfilename):
@@ -75,8 +76,9 @@ def main():
     clear_img_dir(img_root_dir)
     print "== Creating archives..."
     cpack_cmd = ["./make_zip.sh",]
-    if args.release_mode is not None:
-        cpack_cmd.append(args.release_mode)
+    cpack_cmd.append(args.release_mode)
+    if args.patch is not None:
+        cpack_cmd.append("-DUHD_PATCH_OVERRIDE={}".format(args.patch))
     try:
         cpack_output = subprocess.check_output(cpack_cmd)
     except subprocess.CalledProcessError as e:

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Automatically run the make-zip-file process
 # Check we're in the right directory and all is set:
 if [ ! -e 'make_zip.sh' ]; then
@@ -28,12 +28,12 @@ mkdir build
 cd build
 
 # Run the CPack process (ZIP file)
-cmake .. -DCPACK_GENERATOR=ZIP -DUHD_RELEASE_MODE="$1" ..
+cmake .. -DCPACK_GENERATOR=ZIP -DUHD_RELEASE_MODE="$1" $2 ..
 make package
 mv uhd-images*.zip ..
 
 # Run the CPack process (tarball)
-cmake .. -DCPACK_GENERATOR=TGZ -DUHD_RELEASE_MODE="$1" ..
+cmake .. -DCPACK_GENERATOR=TGZ -DUHD_RELEASE_MODE="$1" $2 ..
 make package
 mv uhd-images*.tar.gz ..
 
