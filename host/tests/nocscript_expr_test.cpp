@@ -270,7 +270,7 @@ class functable_mockup_impl : public function_table
     expression_literal eval(
             const std::string &name,
             const expression_function::argtype_list_type &arg_types,
-            const expression_container::expr_list_type &args
+            expression_container::expr_list_type &args
     ) {
         if (name == "XOR") {
             if (arg_types.size() != 2

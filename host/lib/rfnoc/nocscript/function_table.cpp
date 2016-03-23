@@ -82,7 +82,7 @@ class function_table_impl : public function_table
     expression_literal eval(
             const std::string &name,
             const expression_function::argtype_list_type &arg_types,
-            const expression_container::expr_list_type &arguments
+            expression_container::expr_list_type &arguments
     ) {
         if (not function_exists(name, arg_types)) {
             throw uhd::syntax_error(str(
