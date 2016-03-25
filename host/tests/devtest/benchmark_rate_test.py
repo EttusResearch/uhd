@@ -53,10 +53,10 @@ class uhd_benchmark_rate_test(uhd_example_test_case):
             '--duration', str(duration),
             '--channels', str(chan),
         ]
-        if 'tx' in test_args['direction']:
+        if 'tx' in test_args.get('direction', ''):
             args.append('--tx_rate')
             args.append(str(samp_rate))
-        if 'rx' in test_args['direction']:
+        if 'rx' in test_args.get('direction', ''):
             args.append('--rx_rate')
             args.append(str(samp_rate))
         (app, run_results) = self.run_example('benchmark_rate', args)

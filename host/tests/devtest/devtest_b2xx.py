@@ -22,7 +22,7 @@ from benchmark_rate_test import uhd_benchmark_rate_test
 uhd_benchmark_rate_test.tests = {
     'mimo': {
         'duration': 1,
-        'directions': ['tx,rx',],
+        'direction': 'tx,rx',
         'channels': ['0,1',],
         'sample-rates': [1e6],
         'products': ['B210',],
