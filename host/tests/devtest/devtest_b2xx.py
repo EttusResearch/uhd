@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Ettus Research LLC
+# Copyright 2015-2016 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,14 +20,14 @@ Run device tests for the B2xx series.
 from usrp_probe_test import uhd_usrp_probe_test
 from benchmark_rate_test import uhd_benchmark_rate_test
 uhd_benchmark_rate_test.tests = {
-    #'mimo': {
-        #'duration': 1,
-        #'directions': ['tx,rx',],
-        #'channels': ['0,1',],
-        #'sample-rates': [1e6, 30e6],
-        #'products': ['B210',],
-        #'acceptable-underruns': 500,
-    #},
+    'mimo': {
+        'duration': 1,
+        'directions': ['tx,rx',],
+        'channels': ['0,1',],
+        'sample-rates': [1e6],
+        'products': ['B210',],
+        'acceptable-underruns': 500,
+    },
     'siso_chan0_slow': {
         'duration': 1,
         'direction': 'tx,rx',
@@ -35,13 +35,13 @@ uhd_benchmark_rate_test.tests = {
         'rate': 1e6,
         'acceptable-underruns': 50,
     },
-    'siso_chan0_fast': {
-        'duration': 1,
-        'direction': 'tx,rx',
-        'chan': '0',
-        'rate': 40e6,
-        'acceptable-underruns': 500,
-    },
+    #'siso_chan0_fast': {
+        #'duration': 1,
+        #'direction': 'tx,rx',
+        #'chan': '0',
+        #'rate': 40e6,
+        #'acceptable-underruns': 500,
+    #},
     'siso_chan1_slow': {
         'duration': 1,
         'direction': 'tx,rx',
@@ -50,14 +50,14 @@ uhd_benchmark_rate_test.tests = {
         'acceptable-underruns': 50,
         'products': ['B210',],
     },
-    'siso_chan1_fast': {
-        'duration': 1,
-        'direction': 'tx,rx',
-        'chan': '1',
-        'rate': 40e6,
-        'acceptable-underruns': 500,
-        'products': ['B210',],
-    },
+    #'siso_chan1_fast': {
+        #'duration': 1,
+        #'direction': 'tx,rx',
+        #'chan': '1',
+        #'rate': 40e6,
+        #'acceptable-underruns': 500,
+        #'products': ['B210',],
+    #},
 }
 
 from rx_samples_to_file_test import rx_samples_to_file_test
