@@ -1168,6 +1168,7 @@ private:
     boost::mutex _mutex;
     ubx_cpld_reg_t _cpld_reg;
     uint32_t _prev_cpld_value;
+    std::map<ubx_gpio_field_id_t,ubx_gpio_field_info_t> _gpio_map;
     boost::shared_ptr<max287x_iface> _txlo1;
     boost::shared_ptr<max287x_iface> _txlo2;
     boost::shared_ptr<max287x_iface> _rxlo1;
@@ -1192,7 +1193,6 @@ private:
     size_t _rev;
     double _prev_tx_freq;
     double _prev_rx_freq;
-    std::map<ubx_gpio_field_id_t,ubx_gpio_field_info_t> _gpio_map;
     ubx_gpio_reg_t _tx_gpio_reg;
     ubx_gpio_reg_t _rx_gpio_reg;
     int64_t _tx_sync_delay;
