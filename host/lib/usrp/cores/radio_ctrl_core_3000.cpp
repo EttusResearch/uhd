@@ -275,7 +275,16 @@ private:
                     );
                 }
 
-                UHD_ASSERT_THROW(packet_info.packet_count == (seq_to_ack & 0xfff));
+                if (packet_info.packet_count != (seq_to_ack & 0xfff)) {
+                    throw uhd::io_error(
+                        str(
+                            boost::format("Expected packet index: %d  Received index: %d")
+                            % packet_info.packet_count
+                            % (seq_to_ack & 0xfff)
+                        )
+                    );
+                }
+
                 UHD_ASSERT_THROW(packet_info.num_payload_words32 == 2);
                 UHD_ASSERT_THROW(packet_info.packet_type == _packet_type);
             }
