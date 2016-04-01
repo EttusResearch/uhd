@@ -85,11 +85,9 @@ radio_ctrl_impl::radio_ctrl_impl() :
         );
 
         _perifs[i].framer = rx_vita_core_3000::make(_perifs[i].ctrl, regs::sr_addr(regs::RX_CTRL));
-        _perifs[i].deframer = tx_vita_core_3000::make(_perifs[i].ctrl, regs::sr_addr(uhd::rfnoc::SR_ERROR_POLICY));
 
         // FIXME there's currently no way to set the underflow policy, which would be set here:
         _perifs[i].framer->setup(stream_args_t());
-        _perifs[i].deframer->setup(stream_args_t());
 
         if (i == 0) {
             time_core_3000::readback_bases_type time64_rb_bases;
@@ -334,8 +332,7 @@ void radio_ctrl_impl::_update_spp(int spp)
     }
     UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::_update_spp(): Setting spp to: " << spp << std::endl;
     for (size_t i = 0; i < _num_rx_channels; i++) {
-        if (_perifs[i].framer)
-            _perifs[i].framer->set_nsamps_per_packet(size_t(spp));
+        sr_write(regs::RX_CTRL_MAXLEN, uint32_t(spp), i);
     }
 }
 

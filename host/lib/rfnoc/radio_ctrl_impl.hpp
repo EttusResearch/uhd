@@ -177,7 +177,6 @@ private:
     {
         timed_wb_iface::sptr     ctrl;
         rx_vita_core_3000::sptr  framer;
-        tx_vita_core_3000::sptr  deframer;
     };
     std::map<size_t, radio_perifs_t> _perifs;
 
