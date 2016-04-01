@@ -84,10 +84,7 @@ radio_ctrl_impl::radio_ctrl_impl() :
             )
         );
 
-        _perifs[i].framer = rx_vita_core_3000::make(_perifs[i].ctrl, regs::sr_addr(regs::RX_CTRL));
-
-        // FIXME there's currently no way to set the underflow policy, which would be set here:
-        _perifs[i].framer->setup(stream_args_t());
+        // FIXME there's currently no way to set the underflow policy
 
         if (i == 0) {
             time_core_3000::readback_bases_type time64_rb_bases;
@@ -156,9 +153,6 @@ double radio_ctrl_impl::set_rate(double rate)
     boost::mutex::scoped_lock lock(_mutex);
     _tick_rate = rate;
     _time64->set_tick_rate(_tick_rate);
-    for (size_t i = 0; i < _num_rx_channels; i++) {
-        _perifs[i].framer->set_tick_rate(_tick_rate);
-    }
     _time64->self_test();
     return _tick_rate;
 }
@@ -241,9 +235,39 @@ void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, cons
 {
     boost::mutex::scoped_lock lock(_mutex);
     UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << std::endl;
-    _perifs[chan].framer->issue_stream_command(stream_cmd);
+    UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
+    _continuous_streaming[chan] = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+
+    //setup the mode to instruction flags
+    typedef boost::tuple<bool, bool, bool, bool> inst_t;
+    static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst = boost::assign::map_list_of
+                                                            //reload, chain, samps, stop
+        (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false, false))
+        (stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false, true))
+        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true,  false))
+        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true,  false))
+    ;
+
+    //setup the instruction flag values
+    bool inst_reload, inst_chain, inst_samps, inst_stop;
+    boost::tie(inst_reload, inst_chain, inst_samps, inst_stop) = mode_to_inst[stream_cmd.stream_mode];
+
+    //calculate the word from flags and length
+    boost::uint32_t cmd_word = 0;
+    cmd_word |= boost::uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
+    cmd_word |= boost::uint32_t((inst_chain)?            1 : 0) << 30;
+    cmd_word |= boost::uint32_t((inst_reload)?           1 : 0) << 29;
+    cmd_word |= boost::uint32_t((inst_stop)?             1 : 0) << 28;
+    cmd_word |= (inst_samps)? stream_cmd.num_samps : ((inst_stop)? 0 : 1);
+
+    //issue the stream command
+    const boost::uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(get_rate());
+    sr_write(regs::RX_CTRL_CMD, cmd_word, chan);
+    sr_write(regs::RX_CTRL_TIME_HI, boost::uint32_t(ticks >> 32), chan);
+    sr_write(regs::RX_CTRL_TIME_LO, boost::uint32_t(ticks >> 0),  chan); //latches the command
 }
 
+// TODO We might not need the streamer in here if we can come up with a good graphy solution
 void radio_ctrl_impl::handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer, const size_t port)
 {
     UHD_MSG(status) << "radio_ctrl_impl::handle_overrun()" << std::endl;
@@ -252,7 +276,7 @@ void radio_ctrl_impl::handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer,
     if (not my_streamer) return; //If the rx_streamer has expired then overflow handling makes no sense.
 
     //find out if we were in continuous mode before stopping
-    const bool in_continuous_streaming_mode = _perifs[port].framer->in_continuous_streaming_mode();
+    const bool in_continuous_streaming_mode = _continuous_streaming[port];
 
     if (my_streamer->get_num_channels() == 1 and in_continuous_streaming_mode) {
         issue_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS, port);
@@ -269,7 +293,7 @@ void radio_ctrl_impl::handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer,
         issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS, i);
     }
     //flush transports
-    my_streamer->flush_all(0.001);
+    my_streamer->flush_all(0.001); // TODO flushing will probably have to go away.
     //restart streaming on all channels
     if (in_continuous_streaming_mode)
     {

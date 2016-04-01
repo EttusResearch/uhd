@@ -105,7 +105,9 @@ protected: // TODO see what's protected and what's private
         static const uint32_t TEST                 = 133;
         static const uint32_t CODEC_IDLE           = 134;
         static const uint32_t TX_CTRL_ERROR_POLICY = 144;
-        static const uint32_t RX_CTRL              = 152; // command - 152, time hi - 153, time lo - 154
+        static const uint32_t RX_CTRL_CMD          = 152;
+        static const uint32_t RX_CTRL_TIME_HI      = 153;
+        static const uint32_t RX_CTRL_TIME_LO      = 154;
         static const uint32_t RX_CTRL_HALT         = 155;
         static const uint32_t RX_CTRL_MAXLEN       = 156;
         static const uint32_t RX_CTRL_CLEAR_CMDS   = 157;
@@ -176,7 +178,6 @@ private:
     struct radio_perifs_t
     {
         timed_wb_iface::sptr     ctrl;
-        rx_vita_core_3000::sptr  framer;
     };
     std::map<size_t, radio_perifs_t> _perifs;
 
@@ -195,6 +196,7 @@ private:
     std::map<size_t, bool> _rx_streamers_active;
     std::map<size_t, bool> _tx_streamers_active;
 
+    std::map<size_t, bool> _continuous_streaming;
 }; /* class radio_ctrl_impl */
 
 }} /* namespace uhd::rfnoc */
