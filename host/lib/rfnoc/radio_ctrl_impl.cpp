@@ -155,6 +155,7 @@ void radio_ctrl_impl::_register_loopback_self_test(size_t chan)
  ***************************************************************************/
 double radio_ctrl_impl::set_rate(double rate)
 {
+    boost::mutex::scoped_lock lock(_mutex);
     _tick_rate = rate;
     _time64->set_tick_rate(_tick_rate);
     for (size_t i = 0; i < _num_rx_channels; i++) {
@@ -240,6 +241,7 @@ double radio_ctrl_impl::get_rx_gain(const size_t chan) /* const */
 //! Pass stream commands to the radio
 void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan)
 {
+    boost::mutex::scoped_lock lock(_mutex);
     UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << std::endl;
     _perifs[chan].framer->issue_stream_command(stream_cmd);
 }
@@ -325,6 +327,7 @@ void radio_ctrl_impl::set_tx_streamer(bool active, const size_t port)
 // TODO move to nocscript
 void radio_ctrl_impl::_update_spp(int spp)
 {
+    boost::mutex::scoped_lock lock(_mutex);
     UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::_update_spp(): Requested spp: " << spp << std::endl;
     if (spp == 0) {
         spp = DEFAULT_PACKET_SIZE / BYTES_PER_SAMPLE;

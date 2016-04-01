@@ -25,6 +25,7 @@
 #include <uhd/rfnoc/radio_ctrl.hpp>
 #include <uhd/types/stdint.hpp>
 #include <uhd/types/direction.hpp>
+#include <boost/thread.hpp>
 
 //! Shorthand for radio block constructor
 #define UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR_DECL(CLASS_NAME) \
@@ -165,6 +166,8 @@ protected: // TODO see what's protected and what's private
     //! There is always only one time core per radio
     time_core_3000::sptr         _time64;
 
+    boost::mutex _mutex;
+
 private:
     /************************************************************************
      * Peripherals
@@ -192,6 +195,7 @@ private:
 
     std::map<size_t, bool> _rx_streamers_active;
     std::map<size_t, bool> _tx_streamers_active;
+
 }; /* class radio_ctrl_impl */
 
 }} /* namespace uhd::rfnoc */
