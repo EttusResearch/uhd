@@ -85,17 +85,17 @@ public:
 
     double get_output_scale_factor(size_t port=ANY_PORT)
     {
-        return get_arg<double>("scalar_correction", port);
+        return get_arg<double>("scalar_correction", port == ANY_PORT ? 0 : port);
     }
 
     double get_input_samp_rate(size_t port=ANY_PORT)
     {
-        return get_arg<double>("input_rate", port);
+        return get_arg<double>("input_rate", port == ANY_PORT ? 0 : port);
     }
 
     double get_output_samp_rate(size_t port=ANY_PORT)
     {
-        return get_arg<double>("output_rate", port);
+        return get_arg<double>("output_rate", port == ANY_PORT ? 0 : port);
     }
 
 
