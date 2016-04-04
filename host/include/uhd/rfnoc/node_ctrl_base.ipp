@@ -21,14 +21,15 @@
 #define INCLUDED_LIBUHD_NODE_CTRL_BASE_IPP
 
 #include <uhd/exception.hpp>
+#include <uhd/utils/msg.hpp>
 #include <boost/shared_ptr.hpp>
 #include <vector>
 
 namespace uhd {
     namespace rfnoc {
 
-    template <typename T>
-    std::vector< boost::shared_ptr<T> > node_ctrl_base::_find_child_node(bool downstream)
+    template <typename T, bool downstream>
+    std::vector< boost::shared_ptr<T> > node_ctrl_base::_find_child_node()
     {
         typedef boost::shared_ptr<T> T_sptr;
         static const size_t MAX_ITER = 20;
@@ -57,16 +58,15 @@ namespace uhd {
                         ++it
                     ) {
                         sptr one_next_node = it->second.lock();
-                        if (one_next_node and not explored.count(one_next_node)) {
+                        if (not one_next_node or explored.count(one_next_node)) {
+                            continue;
+                        }
+                        T_sptr next_node_sptr = boost::dynamic_pointer_cast<T>(one_next_node);
+                        if (next_node_sptr) {
+                            results.push_back(next_node_sptr);
+                        } else {
                             next_nodes.insert(one_next_node);
                         }
-                    }
-                }
-                // Iterate over all of these nodes, see if they match what we're looking for:
-                BOOST_FOREACH(const sptr &next_node, next_nodes) {
-                    T_sptr next_node_sptr = boost::dynamic_pointer_cast<T>(next_node);
-                    if (next_node_sptr) {
-                        results.push_back(next_node_sptr);
                     }
                 }
                 // Add all of these nodes to the next search queue
@@ -83,16 +83,13 @@ namespace uhd {
         return results;
     }
 
-    template <typename T, typename value_type>
+    template <typename T, typename value_type, bool downstream>
     value_type node_ctrl_base::_find_unique_property(
             boost::function<value_type(boost::shared_ptr<T>, size_t)> get_property,
             value_type NULL_VALUE,
-            const std::set< boost::shared_ptr<T> > &exclude_nodes,
-            bool downstream
+            const std::set< boost::shared_ptr<T> > &exclude_nodes
     ) {
-        std::vector< boost::shared_ptr<T> > descendant_rate_nodes = downstream
-            ? find_downstream_node<T>()
-            : find_upstream_node<T>();
+        std::vector< boost::shared_ptr<T> > descendant_rate_nodes = _find_child_node<T, downstream>();
         value_type ret_val = NULL_VALUE;
         std::string first_node_id;
         BOOST_FOREACH(const boost::shared_ptr<T> &node, descendant_rate_nodes) {

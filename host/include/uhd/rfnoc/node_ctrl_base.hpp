@@ -108,7 +108,7 @@ public:
     template <typename T>
     UHD_INLINE std::vector< boost::shared_ptr<T> > find_downstream_node()
     {
-        return _find_child_node<T>(true);
+        return _find_child_node<T, true>();
     }
 
     /*! Same as find_downstream_node(), but only search upstream.
@@ -116,7 +116,7 @@ public:
     template <typename T>
     UHD_INLINE std::vector< boost::shared_ptr<T> > find_upstream_node()
     {
-        return _find_child_node<T>(false);
+        return _find_child_node<T, false>();
     }
 
     /*! Checks if downstream nodes share a common, unique property.
@@ -137,7 +137,7 @@ public:
             value_type null_value,
             const std::set< boost::shared_ptr<T> > &exclude_nodes=std::set< boost::shared_ptr<T> >()
     ) {
-        return _find_unique_property<T, value_type>(get_property, null_value, exclude_nodes, true);
+        return _find_unique_property<T, value_type, true>(get_property, null_value, exclude_nodes);
     }
 
     /*! Like find_downstream_unique_property(), but searches upstream.
@@ -148,7 +148,7 @@ public:
             value_type null_value,
             const std::set< boost::shared_ptr<T> > &exclude_nodes=std::set< boost::shared_ptr<T> >()
     ) {
-        return _find_unique_property<T, value_type>(get_property, null_value, exclude_nodes, false);
+        return _find_unique_property<T, value_type, false>(get_property, null_value, exclude_nodes);
     }
 
 protected:
@@ -207,8 +207,8 @@ private:
      *
      * \param downstream Set to true if search goes downstream, false for upstream.
      */
-    template <typename T>
-    std::vector< boost::shared_ptr<T> > _find_child_node(bool downstream);
+    template <typename T, bool downstream>
+    std::vector< boost::shared_ptr<T> > _find_child_node();
 
     /*! Implements the search algorithm for find_downstream_unique_property() and
      * find_upstream_unique_property().
@@ -218,12 +218,11 @@ private:
      *
      * \param downstream Set to true if search goes downstream, false for upstream.
      */
-    template <typename T, typename value_type>
+    template <typename T, typename value_type, bool downstream>
     value_type _find_unique_property(
             boost::function<value_type(boost::shared_ptr<T>, size_t)> get_property,
             value_type NULL_VALUE,
-            const std::set< boost::shared_ptr<T> > &exclude_nodes,
-            bool downstream
+            const std::set< boost::shared_ptr<T> > &exclude_nodes
     );
 
     /*! Stores the remote port number of a downstream connection.
