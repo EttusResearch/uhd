@@ -185,7 +185,7 @@ Below is a table of the B200mini LED indicators and their meanings:
   </tr>
 </table>
 
-TX LED indicators are on when transimitting data and off when no samples are
+TX LED indicators are on when transmitting data and off when no samples are
 available to transmit.  RX LED indicators are on when sending samples to the
 host and off when unable to do so.  This means that TX/RX activity LED
 indicators will blink off in a temporary transmit underflow or receive overflow

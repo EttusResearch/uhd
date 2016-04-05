@@ -310,7 +310,7 @@ nirio_status nirio_fifo<data_t>::_ensure_transfer_completed(uint32_t timeout_ms)
     nirio_status_chain(_get_transfer_count(actual_xfer_count), status);
 
     //We count the elapsed time using a simple counter instead of the high
-    //resolution timebase for efficieny reasons. The call to fetch the time
+    //resolution timebase for efficiency reasons. The call to fetch the time
     //requires a user-kernel transition which has a large overhead compared
     //to a simple mem read. As a tradeoff, we deal with a less precise timeout.
     size_t approx_us_elapsed = 0;
