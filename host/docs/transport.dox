@@ -95,6 +95,18 @@ values, run the following commands: :
 
 Set the values permanently by editing `/etc/sysctl.conf`.
 
+It is also possible to tune the network interface controller (NIC)
+by using ethtool. Increasing the number of descriptors for TX or RX can
+dramatically boost performance on some hosts.
+
+To change the number of TX/RX descriptors, run the following command:
+
+    sudo ethtool -G <interface> tx <N> rx <N>
+
+One can query the maximums and current settings with the following command:
+
+    ethtool -g <interface>
+
 \subsection transport_udp_windows Windows specific notes
 
 <b>UDP send fast-path:</b> It is important to change the default UDP
