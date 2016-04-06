@@ -31,18 +31,18 @@
     </setreg>
     <!-- DDC block registers -->
     <setreg>
-      <!-- DDC control word, 10 bits total, 2 bits for Halfbands, 8 bits for CIC rate -->
-      <name>DECIM_WORD</name>
-      <address>132</address>
-    </setreg>
-    <setreg>
       <!-- CORDIC phase increment word -->
       <name>CORDIC_FREQ</name>
-      <address>133</address>
+      <address>132</address>
     </setreg>
     <setreg>
       <!-- Scaling factor to compensate for gain through filters and CORDIC -->
       <name>SCALE_IQ</name>
+      <address>133</address>
+    </setreg>
+    <setreg>
+      <!-- DDC control word, 10 bits total, 2 bits for Halfbands, 8 bits for CIC rate -->
+      <name>DECIM_WORD</name>
       <address>134</address>
     </setreg>
     <setreg>
