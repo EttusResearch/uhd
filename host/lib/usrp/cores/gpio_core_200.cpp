@@ -102,10 +102,10 @@ private:
             addr = REG_GPIO_TX_ONLY;
             break;
         case dboard_iface::ATR_REG_RX_ONLY:
-            addr = REG_GPIO_IDLE;
+            addr = REG_GPIO_RX_ONLY;
             break;
         case dboard_iface::ATR_REG_FULL_DUPLEX:
-            addr = REG_GPIO_RX_ONLY;
+            addr = REG_GPIO_BOTH;
             break;
         default:
             UHD_THROW_INVALID_CODE_PATH();
