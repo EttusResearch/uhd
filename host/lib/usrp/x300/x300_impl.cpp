@@ -413,10 +413,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         nifpga_lvbitx::sptr lvbitx;
         switch (get_mb_type_from_pcie(dev_addr["resource"], rpc_port_name)) {
             case USRP_X300_MB:
-                lvbitx.reset(new x300_lvbitx(dev_addr["fpga"]));
+                lvbitx.reset(new x300_lvbitx("RFNOC_" + dev_addr["fpga"]));
                 break;
             case USRP_X310_MB:
-                lvbitx.reset(new x310_lvbitx(dev_addr["fpga"]));
+                lvbitx.reset(new x310_lvbitx("RFNOC_" + dev_addr["fpga"]));
                 break;
             default:
                 nirio_status_to_exception(status, "Motherboard detection error. Please ensure that you \
