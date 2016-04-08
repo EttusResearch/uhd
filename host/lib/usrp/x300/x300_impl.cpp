@@ -848,29 +848,29 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             mb.radios.push_back(radio);
             radio->setup_radio(mb.zpu_i2c, mb.clock, dev_addr.has_key("self_cal_adc_delay"));
         }
+
+        ////////////////////////////////////////////////////////////////////
+        // ADC test and cal
+        ////////////////////////////////////////////////////////////////////
+        if (dev_addr.has_key("self_cal_adc_delay")) {
+            rfnoc::x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
+                mb.radios, mb.clock,
+                boost::bind(&x300_impl::wait_for_clk_locked, this, mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, _1),
+                true /* Apply ADC delay */);
+        }
+        if (dev_addr.has_key("ext_adc_self_test")) {
+            rfnoc::x300_radio_ctrl_impl::extended_adc_test(
+                mb.radios,
+                dev_addr.cast<double>("ext_adc_self_test", 30));
+        } else if (not dev_addr.has_key("recover_mb_eeprom")){
+            for (size_t i = 0; i < mb.radios.size(); i++) {
+                mb.radios.at(i)->self_test_adc();
+            }
+        }
     } else if (radio_ids.size() == 0) {
         UHD_MSG(status) << "No Radio Block found. Assuming radio-less operation." << std::endl;
     } else {
         UHD_MSG(status) << "Too many Radio Blocks found. Using only the first two." << std::endl;
-    }
-
-    ////////////////////////////////////////////////////////////////////
-    // ADC test and cal
-    ////////////////////////////////////////////////////////////////////
-    if (dev_addr.has_key("self_cal_adc_delay")) {
-        rfnoc::x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
-            mb.radios, mb.clock,
-            boost::bind(&x300_impl::wait_for_clk_locked, this, mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, _1),
-            true /* Apply ADC delay */);
-    }
-    if (dev_addr.has_key("ext_adc_self_test")) {
-        rfnoc::x300_radio_ctrl_impl::extended_adc_test(
-            mb.radios,
-            dev_addr.cast<double>("ext_adc_self_test", 30));
-    } else if (not dev_addr.has_key("recover_mb_eeprom")){
-        for (size_t i = 0; i < mb.radios.size(); i++) {
-            mb.radios.at(i)->self_test_adc();
-        }
     }
 
     mb.initialization_done = true;
