@@ -709,6 +709,11 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
 
 void x300_radio_ctrl_impl::_check_adc(const boost::uint32_t val)
 {
+    //Wait for previous control transaction to flush
+    user_reg_read64(regs::RB_TEST);
+    //Wait for ADC test pattern to propagate
+    boost::this_thread::sleep(boost::posix_time::microsec(5));
+    //Read value of RX readback register and verify
     boost::uint32_t adc_rb = static_cast<boost::uint32_t>(user_reg_read64(regs::RB_TEST)>>32);
     adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
     if (val != adc_rb) {
