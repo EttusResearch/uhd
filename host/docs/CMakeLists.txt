@@ -65,6 +65,7 @@ ENDIF(ENABLE_MANUAL)
 ########################################################################
 LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF OFF)
 OPTION(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
+OPTION(ENABLE_DOXYGEN_DOT "Let Doxygen use dot (requires graphviz)" OFF)
 
 IF(LIBUHDDEV_PKG)
     SET(PKG_DOC_DIR share/doc/libuhd-dev)
@@ -92,6 +93,12 @@ ENDIF(ENABLE_DOXYGEN)
 IF(ENABLE_MANUAL_OR_DOXYGEN)
     #generate the doxygen configuration file
     SET(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
+    IF(ENABLE_DOXYGEN_DOT)
+        SET(DOXYGEN_HAVE_DOT "YES")
+    ELSE(ENABLE_DOXYGEN_DOT)
+        SET(DOXYGEN_HAVE_DOT "NO")
+    ENDIF(ENABLE_DOXYGEN_DOT)
+
     CONFIGURE_FILE(
         ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
         ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
