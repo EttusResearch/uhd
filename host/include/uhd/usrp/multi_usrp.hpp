@@ -199,7 +199,7 @@ public:
     virtual time_spec_t get_time_now(size_t mboard = 0) = 0;
 
     /*!
-     * Get the time when the last pps pulse occured.
+     * Get the time when the last pps pulse occurred.
      * \param mboard which motherboard to query
      * \return a timespec representing the last pps
      */

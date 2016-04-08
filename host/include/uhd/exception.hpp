@@ -142,9 +142,9 @@ namespace uhd{
     };
 
     /*!
-     * Create a formated string with throw-site information.
+     * Create a formatted string with throw-site information.
      * Fills in the function name, file name, and line number.
-     * \param what the std::exeption message
+     * \param what the std::exception message
      * \return the formatted exception message
      */
     #define UHD_THROW_SITE_INFO(what) std::string( \

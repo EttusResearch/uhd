@@ -94,7 +94,7 @@ namespace uhd{
          * Possible keys used by args (depends on implementation):
          *
          * - mode_n: Allows the user to tell the daughterboard tune code
-         * to choose between an integer N diviver or fractional N divider.
+         * to choose between an integer N divider or fractional N divider.
          * Default is fractional N on boards that support fractional N tuning.
          * Fractional N provides greater tuning accuracy at the expense of spurs.
          * Possible options for this key: "integer" or "fractional".

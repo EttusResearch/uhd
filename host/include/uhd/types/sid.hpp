@@ -28,7 +28,7 @@ namespace uhd {
      * \brief Represents a stream ID (SID).
      *
      * A stream ID (SID) is an identifier for data.
-     * It is a 32-Bit value which consistst of 16 Bits
+     * It is a 32-Bit value which consists of 16 Bits
      * for the source address and 16 Bits for the destination
      * address.
      * Every address is split into two parts: The _address_, which

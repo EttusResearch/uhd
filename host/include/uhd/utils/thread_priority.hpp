@@ -28,7 +28,7 @@ namespace uhd{
      * Set the scheduling priority on the current thread.
      *
      * A new thread or calling process should make this call
-     * with the defailts this to enable realtime scheduling.
+     * with the defaults this to enable realtime scheduling.
      *
      * A priority of zero corresponds to normal priority.
      * Positive priority values are higher than normal.

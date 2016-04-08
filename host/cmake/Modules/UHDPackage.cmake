@@ -218,7 +218,4 @@ IF(WIN32)
 ENDIF(WIN32)
 
 ########################################################################
-IF(NOT ${CPACK_GENERATOR} STREQUAL NSIS)
-    SET(CPACK_SET_DESTDIR "ON")
-ENDIF(NOT ${CPACK_GENERATOR} STREQUAL NSIS)
 INCLUDE(CPack) #include after setting vars

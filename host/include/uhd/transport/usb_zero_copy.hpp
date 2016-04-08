@@ -25,12 +25,12 @@
 namespace uhd { namespace transport {
 
 /*!
- * A zero copy usb transport provides an efficient way to handle data.
+ * A zero copy USB transport provides an efficient way to handle data.
  * by avoiding the extra copy when recv() or send() is called on the handle.
  * Rather, the zero copy transport gives the caller memory references.
  * The caller informs the transport when it is finished with the reference.
  *
- * On linux systems, the zero copy transport can use a kernel packet ring.
+ * On Linux systems, the zero copy transport can use a kernel packet ring.
  * If no platform specific solution is available, make returns a boost asio
  * implementation that wraps functionality around standard send/recv calls.
  */
@@ -39,19 +39,19 @@ public:
     typedef boost::shared_ptr<usb_zero_copy> sptr;
 
     /*!
-     * Make a new zero copy usb transport:
+     * Make a new zero copy USB transport:
      * This transport is for sending and receiving between the host
      * and a pair of USB bulk transfer endpoints.
      * The primary usage for this transport is data transactions.
      * The underlying implementation may be platform specific.
      *
      * \param handle a device handle that uniquely identifying the device
-     * \param recv_interface an integer specifiying an IN interface number
-     * \param recv_endpoint an integer specifiying an IN endpoint number
-     * \param send_interface an integer specifiying an OUT interface number
-     * \param send_endpoint an integer specifiying an OUT endpoint number
+     * \param recv_interface an integer specifying an IN interface number
+     * \param recv_endpoint an integer specifying an IN endpoint number
+     * \param send_interface an integer specifying an OUT interface number
+     * \param send_endpoint an integer specifying an OUT endpoint number
      * \param hints optional parameters to pass to the underlying transport
-     * \return a new zero copy usb object
+     * \return a new zero copy USB object
      */
     static sptr make(
         usb_device_handle::sptr handle,

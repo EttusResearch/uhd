@@ -29,7 +29,7 @@ public:
     virtual ~usb_control(void) = 0;
 
     /*!
-     * Create a new usb control transport:
+     * Create a new USB control transport:
      * This transport is for sending and receiving control information from
      * the host to device using the Default Control Pipe.
      *

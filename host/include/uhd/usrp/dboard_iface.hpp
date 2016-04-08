@@ -43,10 +43,10 @@ struct UHD_API dboard_iface_special_props_t{
 
     /*!
      * Mangle i2c addresses:
-     * When i2c is shared across multiple daugterboard slots,
+     * When i2c is shared across multiple daughterboard slots,
      * the i2c addresses will be mangled on the secondary slot
      * to avoid conflicts between slots in the i2c address space.
-     * The mangling is daguhterboard specific so the implementation
+     * The mangling is daughterboard specific so the implementation
      * needs to know whether it should use mangled addresses or not.
      */
     bool mangle_i2c_addrs;
