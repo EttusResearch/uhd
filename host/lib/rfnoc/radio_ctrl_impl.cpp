@@ -93,6 +93,9 @@ radio_ctrl_impl::radio_ctrl_impl() :
             _time64 = time_core_3000::make(_perifs[i].ctrl, regs::sr_addr(regs::TIME), time64_rb_bases);
             _time64->set_time_now(0.0);
         }
+
+        //Reset the RX control engine
+        sr_write(regs::RX_CTRL_HALT, 1, i);
     }
 
     ////////////////////////////////////////////////////////////////////
