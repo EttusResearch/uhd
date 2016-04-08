@@ -96,7 +96,31 @@ void source_block_ctrl_base::configure_flow_control_out(
               % buf_size_pkts % unique_id()
       ));
     }
+
+    //Disable the window and let all upstream data flush out
+    //We need to do this every time the window is changed because
+    //a) We don't know what state the flow-control module was left in
+    //   in the previous run (it should still be enabled)
+    //b) Changing the window size where data is buffered upstream may
+    //   result in stale packets entering the stream.
+    sr_write(SR_FLOW_CTRL_WINDOW_EN, 0, block_port);
+
+    //Wait for data to flush out.
+    //In the FPGA we are guaranteed that all buffered packets are more-or-less consecutive.
+    //1ms@200MHz = 200,000 cycles of "flush time".
+    //200k cycles = 200k * 8 bytes (64 bits) = 1.6MB of data that can be flushed.
+    //Typically in the FPGA we have buffering in the order of kilobytes so waiting for 1MB
+    //to flush is more than enough time.
+    //TODO: Enhancement. We should get feedback from the FPGA about when the source_flow_control
+    //      module is done flushing.
+    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+
+    //Resize the FC window.
+    //Precondition: No data can be buffered upstream.
     sr_write(SR_FLOW_CTRL_WINDOW_SIZE, buf_size_pkts, block_port);
+
+    //Enable the FC window.
+    //Precondition: The window size must be set.
     sr_write(SR_FLOW_CTRL_WINDOW_EN, (buf_size_pkts != 0), block_port);
 }
 
