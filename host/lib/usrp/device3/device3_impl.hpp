@@ -234,14 +234,6 @@ protected:
             uhd::endianness_t endianness
     );
 
-    void init_radio_ctrl(
-            const radio_v_perifs_t &perifs,
-            const uhd::sid_t &address,
-            const size_t mb_i,
-            const endianness_t endianness,
-            const std::string block_key
-    );
-
     /***********************************************************************
      * Members
      **********************************************************************/
