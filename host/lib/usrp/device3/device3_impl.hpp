@@ -108,16 +108,6 @@ public:
         {};
     };
 
-    //! Common cores used by radio.v
-    struct radio_v_perifs_t
-    {
-        radio_ctrl_core_3000::sptr ctrl;
-        time_core_3000::sptr time64;
-        rx_vita_core_3000::sptr framer;
-        tx_vita_core_3000::sptr deframer;
-        usrp::gpio_atr::gpio_atr_3000::sptr leds;
-    };
-
     /***********************************************************************
      * I/O Interface
      **********************************************************************/
