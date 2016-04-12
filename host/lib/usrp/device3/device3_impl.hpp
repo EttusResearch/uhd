@@ -57,7 +57,7 @@ static const size_t DEVICE3_TX_FC_RESPONSE_CYCLES      = 0;     // Cycles: Off.
 static const size_t DEVICE3_TX_MAX_HDR_LEN             = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(boost::uint64_t);    // Bytes
 static const size_t DEVICE3_RX_MAX_HDR_LEN             = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(boost::uint64_t);    // Bytes
 
-class device3_impl : public uhd::device3
+class device3_impl : public uhd::device3, public boost::enable_shared_from_this<device3_impl>
 {
 public:
     /***********************************************************************
@@ -114,6 +114,11 @@ public:
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &);
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &);
     bool recv_async_msg(uhd::async_metadata_t &async_metadata, double timeout);
+
+    /***********************************************************************
+     * Other public APIs
+     **********************************************************************/
+    rfnoc::graph::sptr create_graph(const std::string &name="");
 
     /***********************************************************************
      * Subdev-Spec legacy support

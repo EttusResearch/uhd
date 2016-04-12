@@ -33,7 +33,7 @@ public:
         UHD_ASSERT_THROW(_max_len);
 
         // TODO we need a coercer to check that spp on the prop tree doesn't get set to anything invalid
-        _set_default_window(get_arg<int>("spp"));
+        _set_default_window(std::min<size_t>(get_arg<int>("spp"), _max_len));
     }
 
     //! Set window coefficients and length

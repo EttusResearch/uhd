@@ -19,20 +19,21 @@ UHD_INSTALL(FILES
     # Infrastructure
     block_ctrl_base.hpp
     block_ctrl.hpp
-    block_id.hpp
     blockdef.hpp
+    block_id.hpp
     constants.hpp
+    graph.hpp
     node_ctrl_base.hpp
     node_ctrl_base.ipp
-    source_block_ctrl_base.hpp
     rate_node_ctrl.hpp
     scalar_node_ctrl.hpp
+    sink_block_ctrl_base.hpp
     sink_node_ctrl.hpp
+    source_block_ctrl_base.hpp
     source_node_ctrl.hpp
     stream_sig.hpp
     terminator_node_ctrl.hpp
     tick_node_ctrl.hpp
-    sink_block_ctrl_base.hpp
     # Block controllers
     ddc_block_ctrl.hpp
     duc_block_ctrl.hpp

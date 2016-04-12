@@ -22,6 +22,7 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/device3.hpp>
 #include <uhd/rfnoc/block_ctrl.hpp>
+#include <uhd/rfnoc/graph.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -107,6 +108,7 @@ class pseudo_device3_impl : public uhd::device3
         throw uhd::not_implemented_error(str(boost::format("%d %f") % async_metadata.channel % timeout));
     }
 
+    rfnoc::graph::sptr create_graph(const std::string &) { return rfnoc::graph::sptr(); }
 };
 
 device3::sptr make_pseudo_device()

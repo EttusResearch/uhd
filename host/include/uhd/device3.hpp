@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_DEVICE3_HPP
 
 #include <uhd/device.hpp>
+#include <uhd/rfnoc/graph.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 #include <boost/units/detail/utility.hpp>
 #include <vector>
@@ -36,6 +37,8 @@ class UHD_API device3 : public uhd::device {
 
   public:
     typedef boost::shared_ptr<device3> sptr;
+
+    virtual rfnoc::graph::sptr create_graph(const std::string &name="") = 0;
 
     /*! Reset blocks after a stream.
      *

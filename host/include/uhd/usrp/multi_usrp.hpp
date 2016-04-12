@@ -1076,31 +1076,6 @@ public:
      * RFNoC Methods
      ******************************************************************/
 
-    /*! Connect a RFNOC block with block ID \p src_block to another with block ID \p dst_block.
-     *
-     * This will:
-     * - Check if this connection is valid (IO signatures, see if types match)
-     * - Configure the flow control for the blocks
-     * - Configure SID for the upstream block
-     * - Register the upstream block in the downstream block
-     *
-     */
-    virtual void connect(
-                const uhd::rfnoc::block_id_t &src_block,
-                size_t src_block_port,
-                const uhd::rfnoc::block_id_t &dst_block,
-                size_t dst_block_port
-    ) = 0;
-
-    /*! Shorthand for connect().
-     *
-     * Defaults to using ports 0 for both source and destination.
-     */
-    virtual void connect(
-            const uhd::rfnoc::block_id_t &src_block,
-            const uhd::rfnoc::block_id_t &dst_block
-    ) = 0;
-
     /*! Reset the channel definitions.
      *
      * This clears all previously defined channels.

@@ -16,8 +16,10 @@
 //
 
 #include "device3_impl.hpp"
+#include "graph_impl.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
+#include <boost/make_shared.hpp>
 #include <algorithm>
 
 using namespace uhd::usrp;
@@ -177,5 +179,14 @@ void device3_impl::enumerate_rfnoc_blocks(
     BOOST_FOREACH(uhd::rfnoc::block_ctrl_base::sptr this_block, _rfnoc_block_ctrl) {
         UHD_MSG(status) << "* " << this_block->get_block_id() << std::endl;
     }
+}
+
+
+uhd::rfnoc::graph::sptr device3_impl::create_graph(const std::string &name)
+{
+    return boost::make_shared<uhd::rfnoc::graph_impl>(
+            name,
+            shared_from_this()
+    );
 }
 

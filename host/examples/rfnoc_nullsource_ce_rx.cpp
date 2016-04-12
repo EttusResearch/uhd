@@ -218,7 +218,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     //variables to be set by po
     std::string args, file, type, nullid, blockid, blockid2;
     size_t total_num_samps, spb, spp;
-    double rate, total_time, setup_time, block_rate, bus_clock;
+    double rate, total_time, setup_time, block_rate;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -233,7 +233,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         ("spp", po::value<size_t>(&spp)->default_value(64), "samples per packet (on FPGA and wire)")
         ("block_rate", po::value<double>(&block_rate)->default_value(160e6), "The clock rate of the processing block.")
         ("rate", po::value<double>(&rate)->default_value(1e6), "rate at which samples are produced in the null source")
-        ("busclock", po::value<double>(&bus_clock)->default_value(166.67e6), "clock rate of the null source")
         ("setup", po::value<double>(&setup_time)->default_value(1.0), "seconds of setup time")
         ("type", po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
         ("progress", "periodically display short-term bandwidth")
@@ -298,6 +297,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     boost::this_thread::sleep(boost::posix_time::seconds(setup_time)); //allow for some setup time
     // Reset device streaming state
     usrp->get_device3()->clear();
+    uhd::rfnoc::graph::sptr rx_graph = usrp->get_device3()->create_graph("rx_graph");
 
     /////////////////////////////////////////////////////////////////////////
     //////// 2. Get block control objects ///////////////////////////////////
@@ -360,10 +360,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     // Or, if our block has its own getters + setters, you can call those:
     std::cout << str(boost::format("Requesting rate:   %.2f Msps (%.2f MByte/s).") % (rate / 1e6) % (rate * 4 / 1e6)) << std::endl;
     const size_t SAMPLES_PER_LINE = 2;
-    null_src_ctrl->set_line_rate(rate / SAMPLES_PER_LINE, bus_clock);
+    null_src_ctrl->set_line_rate(rate / SAMPLES_PER_LINE, block_rate);
     // Now, it's possible that this requested rate is not available.
     // Let's read back the true rate with the getter:
-    double actual_rate_mega = null_src_ctrl->get_line_rate(bus_clock) / 1e6 * SAMPLES_PER_LINE;
+    double actual_rate_mega = null_src_ctrl->get_line_rate(block_rate) / 1e6 * SAMPLES_PER_LINE;
     std::cout
         << str(
                 boost::format("Actually got rate: %.2f Msps (%.2f MByte/s).")
@@ -376,13 +376,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////////////
     std::cout << "Connecting blocks..." << std::endl;
     if (proc_block_ctrl) {
-        usrp->connect( // Yes, it's that easy!
+        rx_graph->connect( // Yes, it's that easy!
                 null_src_ctrl->get_block_id(),
                 proc_block_ctrl->get_block_id()
         );
     }
     if (proc_block_ctrl2 and proc_block_ctrl) {
-        usrp->connect(
+        rx_graph->connect(
             proc_block_ctrl->get_block_id(),
             proc_block_ctrl2->get_block_id()
         );

@@ -145,28 +145,25 @@ struct rx_fc_cache_t
  *
  * The FC window size is thus X = floor(B*F/P).
  *
- * \param pkt_size Packet size in bytes
+ * \param pkt_size The maximum packet size in bytes
  * \param sw_buff_size Software buffer size in bytes
  * \param rx_args If this has a key 'recv_buff_fullness', this value will
  *                be used for said fullness. Must be between 0.01 and 1.
- * \param fullness If specified, this value will override the value in
- *                 \p rx_args.
  *
  *  \returns The size of the flow control window in number of packets
  */
 static size_t get_rx_flow_control_window(
         size_t pkt_size,
         size_t sw_buff_size,
-        const device_addr_t& rx_args,
-        const double fullness_=-1
+        const device_addr_t& rx_args
 ) {
-    double fullness_factor = fullness_;
-    if (fullness_factor == -1) {
-        fullness_factor = rx_args.cast<double>("recv_buff_fullness", uhd::rfnoc::DEFAULT_FC_RX_SW_BUFF_FULL_FACTOR);
-    }
+    double fullness_factor = rx_args.cast<double>(
+            "recv_buff_fullness",
+            uhd::rfnoc::DEFAULT_FC_RX_SW_BUFF_FULL_FACTOR
+    );
 
     if (fullness_factor < 0.01 || fullness_factor > 1) {
-        throw uhd::value_error("recv_buff_fullness must be between 0.01 and 1 inclusive (1% to 100%)");
+        throw uhd::value_error("recv_buff_fullness must be in [0.01, 1] inclusive (1% to 100%)");
     }
 
     size_t window_in_pkts = (static_cast<size_t>(sw_buff_size * fullness_factor) / pkt_size);
@@ -179,6 +176,7 @@ static size_t get_rx_flow_control_window(
     if (window_in_pkts == 0) {
         throw uhd::value_error("recv_buff_size must be larger than the recv_frame_size.");
     }
+    UHD_ASSERT_THROW(size_t(sw_buff_size * fullness_factor) >= pkt_size * window_in_pkts);
     return window_in_pkts;
 }
 
