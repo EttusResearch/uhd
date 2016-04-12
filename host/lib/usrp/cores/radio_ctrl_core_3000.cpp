@@ -85,8 +85,7 @@ public:
     {
         boost::mutex::scoped_lock lock(_mutex);
         this->send_pkt(addr/4, data);
-        //this->wait_for_ack(false);
-        this->wait_for_ack(true);
+        this->wait_for_ack(false);
     }
 
     boost::uint32_t peek32(const wb_addr_type addr)
