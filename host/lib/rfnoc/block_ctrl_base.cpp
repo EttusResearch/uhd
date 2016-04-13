@@ -74,6 +74,9 @@ block_ctrl_base::block_ctrl_base(
     _root_path = "xbar/" + _block_id.get_local();
     _tree->create<boost::uint64_t>(_root_path / "noc_id").set(noc_id);
 
+    /*** Reset block state *******************************************/
+    clear();
+
     /*** Configure ports ****************************************************/
     size_t n_valid_input_buffers = 0;
     BOOST_FOREACH(const size_t ctrl_port, get_ctrl_ports()) {
