@@ -18,9 +18,9 @@
 #include "x300_impl.hpp"
 #include "x300_lvbitx.hpp"
 #include "x310_lvbitx.hpp"
+#include "apply_corrections.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
-#include "apply_corrections.hpp"
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/paths.hpp>
@@ -32,12 +32,14 @@
 #include <boost/make_shared.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/assign/list_of.hpp>
-#include <fstream>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/transport/udp_constants.hpp>
+#include <uhd/transport/zero_copy_recv_offload.hpp>
 #include <uhd/transport/nirio_zero_copy.hpp>
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/utils/platform.hpp>
+#include <uhd/types/sid.hpp>
+#include <fstream>
 
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
 
@@ -111,7 +113,12 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
         //This operation can throw due to compatibility mismatch.
         try
         {
-            wb_iface::sptr zpu_ctrl = x300_make_ctrl_iface_enet(udp_simple::make_connected(new_addr["addr"], BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT)));
+            wb_iface::sptr zpu_ctrl = x300_make_ctrl_iface_enet(
+                udp_simple::make_connected(new_addr["addr"],
+                    BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT)),
+                false /* Suppress timeout errors */
+            );
+
             if (x300_impl::is_claimed(zpu_ctrl)) continue; //claimed by another process
             new_addr["fpga"] = get_fpga_option(zpu_ctrl);
 
@@ -208,7 +215,7 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
             if (get_pcie_zpu_iface_registry().has_key(resource_d)) {
                 zpu_ctrl = get_pcie_zpu_iface_registry()[resource_d].lock();
             } else {
-                zpu_ctrl = x300_make_ctrl_iface_pcie(kernel_proxy);
+                zpu_ctrl = x300_make_ctrl_iface_pcie(kernel_proxy, false /* suppress timeout errors */);
                 //We don't put this zpu_ctrl in the registry because we need
                 //a persistent niriok_proxy associated with the object
             }
@@ -386,13 +393,108 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
     }
 }
 
+void x300_impl::mboard_members_t::discover_eth(
+        const mboard_eeprom_t mb_eeprom,
+        const std::vector<std::string> &ip_addrs)
+{
+    // Clear any previous addresses added
+    eth_conns.clear();
+
+    // Index the MB EEPROM addresses
+    std::vector<std::string> mb_eeprom_addrs;
+    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr0"]);
+    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr1"]);
+    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr2"]);
+    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr3"]);
+
+    BOOST_FOREACH(const std::string& addr, ip_addrs) {
+        x300_eth_conn_t conn_iface;
+        conn_iface.addr = addr;
+        conn_iface.type = X300_IFACE_NONE;
+
+        // Decide from the mboard eeprom what IP corresponds
+        // to an interface
+        for (size_t i = 0; i < mb_eeprom_addrs.size(); i++) {
+            if (addr == mb_eeprom_addrs[i]) {
+                // Choose the interface based on the index parity
+                if (i % 2 == 0) {
+                    conn_iface.type = X300_IFACE_ETH0;
+                } else {
+                    conn_iface.type = X300_IFACE_ETH1;
+                }
+            }
+        }
+
+        // Check default IP addresses
+        if (addr == boost::asio::ip::address_v4(
+            boost::uint32_t(X300_DEFAULT_IP_ETH0_1G)).to_string()) {
+            conn_iface.type = X300_IFACE_ETH0;
+        } else if (addr == boost::asio::ip::address_v4(
+            boost::uint32_t(X300_DEFAULT_IP_ETH1_1G)).to_string()) {
+            conn_iface.type = X300_IFACE_ETH1;
+        } else if (addr == boost::asio::ip::address_v4(
+            boost::uint32_t(X300_DEFAULT_IP_ETH0_10G)).to_string()) {
+            conn_iface.type = X300_IFACE_ETH0;
+        } else if (addr == boost::asio::ip::address_v4(
+            boost::uint32_t(X300_DEFAULT_IP_ETH1_10G)).to_string()) {
+            conn_iface.type = X300_IFACE_ETH1;
+        }
+
+        // Save to a vector of connections
+        if (conn_iface.type != X300_IFACE_NONE) {
+            // Check the address before we add it
+            try
+            {
+                wb_iface::sptr zpu_ctrl = x300_make_ctrl_iface_enet(
+                    udp_simple::make_connected(conn_iface.addr,
+                        BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT)),
+                    false /* Suppress timeout errors */
+                );
+
+                // Peek the ZPU ctrl to make sure this connection works
+                zpu_ctrl->peek32(0);
+            }
+
+            // If the address does not work, throw an error
+            catch(std::exception &)
+            {
+                throw uhd::io_error(str(boost::format(
+                    "X300 Initialization: Invalid address %s")
+                    % conn_iface.addr));
+            }
+            eth_conns.push_back(conn_iface);
+        }
+    }
+
+    if (eth_conns.size() == 0)
+        throw uhd::assertion_error("X300 Initialization Error: No ethernet interfaces specified.");
+}
+
 void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 {
     const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
     mboard_members_t &mb = _mb[mb_i];
     mb.initialization_done = false;
 
-    mb.addr = dev_addr.has_key("resource") ? dev_addr["resource"] : dev_addr["addr"];
+    std::vector<std::string> eth_addrs;
+    // Not choosing eth0 based on resource might cause user issues
+    std::string eth0_addr = dev_addr.has_key("resource") ? dev_addr["resource"] : dev_addr["addr"];
+    eth_addrs.push_back(eth0_addr);
+
+    if (dev_addr.has_key("second_addr")) {
+        std::string eth1_addr = dev_addr["second_addr"];
+
+        // Ensure we do not have duplicate addresses
+        if (eth1_addr != eth0_addr)
+            eth_addrs.push_back(eth1_addr);
+    }
+
+    // Initially store the first address provided to setup communication
+    // Once we read the eeprom, we use it to map IP to its interface
+    x300_eth_conn_t init;
+    init.addr = eth_addrs[0];
+    mb.eth_conns.push_back(init);
+
     mb.xport_path = dev_addr.has_key("resource") ? "nirio" : "eth";
     mb.if_pkt_is_big_endian = mb.xport_path != "nirio";
 
@@ -469,7 +571,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
         // Detect the frame size on the path to the USRP
         try {
-            _max_frame_sizes = determine_max_frame_size(mb.addr, req_max_frame_size);
+            _max_frame_sizes = determine_max_frame_size(mb.get_pri_eth().addr, req_max_frame_size);
         } catch(std::exception &e) {
             UHD_MSG(error) << e.what() << std::endl;
         }
@@ -503,15 +605,15 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     UHD_MSG(status) << "Setup basic communication..." << std::endl;
     if (mb.xport_path == "nirio") {
         boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
-        if (get_pcie_zpu_iface_registry().has_key(mb.addr)) {
+        if (get_pcie_zpu_iface_registry().has_key(mb.get_pri_eth().addr)) {
             throw uhd::assertion_error("Someone else has a ZPU transport to the device open. Internal error!");
         } else {
             mb.zpu_ctrl = x300_make_ctrl_iface_pcie(mb.rio_fpga_interface->get_kernel_proxy());
-            get_pcie_zpu_iface_registry()[mb.addr] = boost::weak_ptr<wb_iface>(mb.zpu_ctrl);
+            get_pcie_zpu_iface_registry()[mb.get_pri_eth().addr] = boost::weak_ptr<wb_iface>(mb.zpu_ctrl);
         }
     } else {
-        mb.zpu_ctrl = x300_make_ctrl_iface_enet(udp_simple::make_connected(mb.addr,
-                    BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT)));
+        mb.zpu_ctrl = x300_make_ctrl_iface_enet(udp_simple::make_connected(
+                    mb.get_pri_eth().addr, BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT)));
     }
 
     mb.claimer_task = uhd::task::make(boost::bind(&x300_impl::claimer_loop, this, mb.zpu_ctrl));
@@ -614,14 +716,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     if (mb.xport_path == "nirio") {
         mb.router_dst_here = X300_XB_DST_PCI;
     } else {
-        if (mb.addr == mb_eeprom["ip-addr0"]) mb.router_dst_here = X300_XB_DST_E0;
-        else if (mb.addr == mb_eeprom["ip-addr1"]) mb.router_dst_here = X300_XB_DST_E1;
-        else if (mb.addr == mb_eeprom["ip-addr2"]) mb.router_dst_here = X300_XB_DST_E0;
-        else if (mb.addr == mb_eeprom["ip-addr3"]) mb.router_dst_here = X300_XB_DST_E1;
-        else if (mb.addr == boost::asio::ip::address_v4(boost::uint32_t(X300_DEFAULT_IP_ETH0_1G)).to_string()) mb.router_dst_here = X300_XB_DST_E0;
-        else if (mb.addr == boost::asio::ip::address_v4(boost::uint32_t(X300_DEFAULT_IP_ETH1_1G)).to_string()) mb.router_dst_here = X300_XB_DST_E1;
-        else if (mb.addr == boost::asio::ip::address_v4(boost::uint32_t(X300_DEFAULT_IP_ETH0_10G)).to_string()) mb.router_dst_here = X300_XB_DST_E0;
-        else if (mb.addr == boost::asio::ip::address_v4(boost::uint32_t(X300_DEFAULT_IP_ETH1_10G)).to_string()) mb.router_dst_here = X300_XB_DST_E1;
+        // Discover ethernet interfaces
+        mb.discover_eth(mb_eeprom, eth_addrs);
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -928,7 +1024,7 @@ x300_impl::~x300_impl(void)
                 mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), 0);
                 //If the process is killed, the entire registry will disappear so we
                 //don't need to worry about unclean shutdowns here.
-                get_pcie_zpu_iface_registry().pop(mb.addr);
+                get_pcie_zpu_iface_registry().pop(mb.get_pri_eth().addr);
             }
         }
     }
@@ -1132,7 +1228,6 @@ boost::uint32_t get_pcie_dma_channel(boost::uint8_t destination, boost::uint8_t 
     return ((radio_grp * RADIO_GRP_SIZE) + prefix);
 }
 
-
 x300_impl::both_xports_t x300_impl::make_transport(
     const size_t mb_index,
     const boost::uint8_t& destination,
@@ -1148,8 +1243,19 @@ x300_impl::both_xports_t x300_impl::make_transport(
     config.dst_prefix           = prefix;
     config.router_dst_there     = destination;
     config.router_dst_here      = mb.router_dst_here;
-    sid = this->allocate_sid(mb, config);
 
+    // Choose the endpoint based on the destination
+    size_t endpoint = 0;
+    if (destination == X300_XB_DST_R1) {
+        if (mb.eth_conns.size() > 1)
+            endpoint = 1;
+    }
+
+    // Decide on the IP/Interface pair based on the endpoint index
+    std::string interface_addr = mb.eth_conns[endpoint].addr;
+    config.iface_index = mb.eth_conns[endpoint].type;
+
+    sid = this->allocate_sid(mb, config);
     static const uhd::device_addr_t DEFAULT_XPORT_ARGS;
 
     const uhd::device_addr_t& xport_args =
@@ -1196,17 +1302,21 @@ x300_impl::both_xports_t x300_impl::make_transport(
          * connection type.*/
         size_t eth_data_rec_frame_size = 0;
 
+        fs_path mboard_path = fs_path("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate");
+
         if (mb.loaded_fpga_image.substr(0,2) == "HG") {
             if (mb.router_dst_here == X300_XB_DST_E0) {
                 eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
-                _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_1GIGE);
+                _tree->access<double>(mboard_path).set(X300_MAX_RATE_1GIGE);
             } else if (mb.router_dst_here == X300_XB_DST_E1) {
                 eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
-                _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_10GIGE);
+                _tree->access<double>(mboard_path).set(X300_MAX_RATE_10GIGE);
             }
         } else if (mb.loaded_fpga_image.substr(0,2) == "XG") {
             eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
-            _tree->access<double>("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate").set(X300_MAX_RATE_10GIGE);
+            size_t max_link_rate = X300_MAX_RATE_10GIGE;
+            max_link_rate *= mb.eth_conns.size();
+            _tree->access<double>(mboard_path).set(max_link_rate);
         }
 
         if (eth_data_rec_frame_size == 0) {
@@ -1261,12 +1371,22 @@ x300_impl::both_xports_t x300_impl::make_transport(
 
         //make a new transport - fpga has no idea how to talk to us on this yet
         udp_zero_copy::buff_params buff_params;
-        xports.recv = udp_zero_copy::make(mb.addr,
+
+        xports.recv = udp_zero_copy::make(
+                interface_addr,
                 BOOST_STRINGIZE(X300_VITA_UDP_PORT),
                 default_buff_args,
                 buff_params,
                 xport_args);
 
+        // Create a threaded transport for the receive chain only
+        // Note that this shouldn't affect PCIe
+        if (prefix == X300_RADIO_DEST_PREFIX_RX) {
+            xports.recv = zero_copy_recv_offload::make(
+                    xports.recv,
+                    X300_THREAD_BUFFER_TIMEOUT
+            );
+        }
         xports.send = xports.recv;
 
         //For the UDP transport the buffer size if the size of the socket buffer
@@ -1281,7 +1401,7 @@ x300_impl::both_xports_t x300_impl::make_transport(
         //send a mini packet with SID into the ZPU
         //ZPU will reprogram the ethernet framer
         UHD_LOG << "programming packet for new xport on "
-            << mb.addr << std::hex << "sid 0x" << sid << std::dec << std::endl;
+            << mb.get_pri_eth().addr << std::hex << "sid 0x" << sid << std::dec << std::endl;
         //YES, get a __send__ buffer from the __recv__ socket
         //-- this is the only way to program the framer for recv:
         managed_send_buffer::sptr buff = xports.recv->get_send_buff();
@@ -1299,7 +1419,6 @@ x300_impl::both_xports_t x300_impl::make_transport(
         //ethernet framer has been programmed before we return.
         mb.zpu_ctrl->peek32(0);
     }
-
     return xports;
 }
 
@@ -1308,15 +1427,32 @@ boost::uint32_t x300_impl::allocate_sid(mboard_members_t &mb, const sid_config_t
 {
     const std::string &xport_path = mb.xport_path;
     const boost::uint32_t stream = (config.dst_prefix | (config.router_dst_there << 2)) & 0xff;
+    boost::uint8_t sid_ret_addr = X300_SRC_ADDR_ETH0;
+    boost::uint32_t xb_port     = X300_XB_DST_E0;
+
+    // Use the interface index to decide on the ethernet port
+    if (config.iface_index == X300_IFACE_ETH1) {
+        sid_ret_addr = X300_SRC_ADDR_ETH1;
+        xb_port = X300_XB_DST_E1;
+    }
+
+    // Ensure we choose the right port in the case of NI-RIO
+    if (xport_path == "nirio") {
+        xb_port = X300_XB_DST_PCI;
+    }
+
+    int int_sid_ret_addr = int(sid_ret_addr);
 
     const boost::uint32_t sid = 0
-        | (X300_DEVICE_HERE << 24)
+        | (sid_ret_addr << 24)
         | (_sid_framer << 16)
         | (config.router_addr_there << 8)
         | (stream << 0)
     ;
+
     UHD_LOG << std::hex
         << " sid 0x" << sid
+        << " return address 0x" << int_sid_ret_addr
         << " framer 0x" << _sid_framer
         << " stream 0x" << stream
         << " router_dst_there 0x" << int(config.router_dst_there)
@@ -1330,7 +1466,7 @@ boost::uint32_t x300_impl::allocate_sid(mboard_members_t &mb, const sid_config_t
     mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 256 + (stream)), config.router_dst_there);
     // Program CAM entry for returning packets to us (for example GR host via Eth0)
     // This type of packet does not match the XB_LOCAL address and is looked up in the lower half of the CAM
-    mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + (X300_DEVICE_HERE)), config.router_dst_here);
+    mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + (sid_ret_addr)), xb_port);
 
     if (xport_path == "nirio") {
         boost::uint32_t router_config_word = ((_sid_framer & 0xff) << 16) |                                    //Return SID
@@ -1709,7 +1845,7 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t
                                               % image_loader_path
                                               % (members.xport_path == "eth" ? "addr"
                                                                              : "resource")
-                                              % members.addr);
+                                              % members.get_pri_eth().addr);
 
         throw uhd::runtime_error(str(boost::format(
             "Expected FPGA compatibility number %d, but got %d:\n"

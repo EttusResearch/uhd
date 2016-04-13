@@ -50,7 +50,7 @@ static size_t hash_device_addr(
 
     if(dev_addr.has_key("resource")) {
         boost::hash_combine(hash, "resource");
-        boost::hash_combine(hash, dev_addr["resource"]);   
+        boost::hash_combine(hash, dev_addr["resource"]);
     }
     else {
         BOOST_FOREACH(const std::string &key, uhd::sorted(dev_addr.keys())){

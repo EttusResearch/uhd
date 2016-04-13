@@ -54,9 +54,9 @@
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 
-static const double X300_DEFAULT_TICK_RATE      = 200e6;        //Hz
-static const double X300_DEFAULT_DBOARD_CLK_RATE = 50e6;        //Hz
-static const double X300_BUS_CLOCK_RATE         = 166.666667e6; //Hz
+static const double X300_DEFAULT_TICK_RATE          = 200e6;        //Hz
+static const double X300_DEFAULT_DBOARD_CLK_RATE    = 50e6;         //Hz
+static const double X300_BUS_CLOCK_RATE             = 166.666667e6; //Hz
 
 static const size_t X300_TX_HW_BUFF_SIZE_SRAM       = 520*1024;      //512K SRAM buffer + 8K 2Clk FIFO
 static const size_t X300_TX_FC_RESPONSE_FREQ_SRAM   = 8;             //per flow-control window
@@ -81,6 +81,8 @@ static const size_t X300_PCIE_MSG_NUM_FRAMES        = 64;
 static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     //bytes
 static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     //bytes
 static const size_t X300_ETH_MSG_FRAME_SIZE         = uhd::transport::udp_simple::mtu;  //bytes
+
+static const double X300_THREAD_BUFFER_TIMEOUT      = 0.1;   // Time in seconds
 
 static const size_t X300_ETH_MSG_NUM_FRAMES         = 64;
 static const size_t X300_ETH_DATA_NUM_FRAMES        = 32;
@@ -113,7 +115,8 @@ static const size_t X300_MAX_RATE_1GIGE             = 100000000; // bytes/s
 #define X300_XB_DST_PCI 7
 
 #define X300_DEVICE_THERE 2
-#define X300_DEVICE_HERE 0
+#define X300_SRC_ADDR_ETH0 0
+#define X300_SRC_ADDR_ETH1 1
 
 //eeprom addrs for various boards
 enum
@@ -124,6 +127,20 @@ enum
     X300_DB1_RX_EEPROM = 0x7,
     X300_DB1_TX_EEPROM = 0x6,
     X300_DB1_GDB_EEPROM = 0x3,
+};
+
+// Ethernet ports
+enum x300_eth_iface_t
+{
+    X300_IFACE_NONE = 0,
+    X300_IFACE_ETH0 = 1,
+    X300_IFACE_ETH1 = 2,
+};
+
+struct x300_eth_conn_t
+{
+    std::string addr;
+    x300_eth_iface_t type;
 };
 
 struct x300_dboard_iface_config_t
@@ -144,8 +161,8 @@ struct x300_dboard_iface_config_t
 uhd::usrp::dboard_iface::sptr x300_make_dboard_iface(const x300_dboard_iface_config_t &);
 uhd::uart_iface::sptr x300_make_uart_iface(uhd::wb_iface::sptr iface);
 
-uhd::wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp);
-uhd::wb_iface::sptr x300_make_ctrl_iface_pcie(uhd::niusrprio::niriok_proxy::sptr drv_proxy);
+uhd::wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp, bool enable_errors = true);
+uhd::wb_iface::sptr x300_make_ctrl_iface_pcie(uhd::niusrprio::niriok_proxy::sptr drv_proxy, bool enable_errors = true);
 
 uhd::device_addrs_t x300_find(const uhd::device_addr_t &hint_);
 
@@ -209,9 +226,21 @@ private:
 
         bool initialization_done;
         uhd::task::sptr claimer_task;
-        std::string addr;
         std::string xport_path;
         int router_dst_here;
+
+        std::vector<x300_eth_conn_t> eth_conns;
+
+        // Discover the ethernet connections per motherboard
+        void discover_eth(const uhd::usrp::mboard_eeprom_t mb_eeprom,
+                          const std::vector<std::string> &ip_addrs);
+
+        // Get the primary ethernet connection
+        inline const x300_eth_conn_t& get_pri_eth() const
+        {
+            return eth_conns[0];
+        }
+
         uhd::device_addr_t send_args;
         uhd::device_addr_t recv_args;
         bool if_pkt_is_big_endian;
@@ -284,6 +313,7 @@ private:
         boost::uint8_t dst_prefix; //2bits
         boost::uint8_t router_dst_there;
         boost::uint8_t router_dst_here;
+        x300_eth_iface_t iface_index;
     };
     boost::uint32_t allocate_sid(mboard_members_t &mb, const sid_config_t &config);
 

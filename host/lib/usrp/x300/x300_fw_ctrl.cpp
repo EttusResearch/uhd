@@ -37,6 +37,11 @@ class x300_ctrl_iface : public wb_iface
 public:
     enum {num_retries = 3};
 
+    x300_ctrl_iface(bool enable_errors = true) : errors(enable_errors)
+    {
+        /* NOP */
+    }
+
     void flush(void)
     {
         boost::mutex::scoped_lock lock(reg_access);
@@ -52,11 +57,11 @@ public:
             {
                 return this->__poke32(addr, data);
             }
-            catch(const std::exception &ex)
+            catch(const uhd::io_error &ex)
             {
-                const std::string error_msg = str(boost::format(
+                std::string error_msg = str(boost::format(
                     "x300 fw communication failure #%u\n%s") % i % ex.what());
-                UHD_MSG(error) << error_msg << std::endl;
+                if (errors) UHD_MSG(error) << error_msg << std::endl;
                 if (i == num_retries) throw uhd::io_error(error_msg);
             }
         }
@@ -72,11 +77,11 @@ public:
                 boost::uint32_t data = this->__peek32(addr);
                 return data;
             }
-            catch(const std::exception &ex)
+            catch(const uhd::io_error &ex)
             {
-                const std::string error_msg = str(boost::format(
+                std::string error_msg = str(boost::format(
                     "x300 fw communication failure #%u\n%s") % i % ex.what());
-                UHD_MSG(error) << error_msg << std::endl;
+                if (errors) UHD_MSG(error) << error_msg << std::endl;
                 if (i == num_retries) throw uhd::io_error(error_msg);
             }
         }
@@ -84,6 +89,8 @@ public:
     }
 
 protected:
+    bool errors;
+
     virtual void __poke32(const wb_addr_type addr, const boost::uint32_t data) = 0;
     virtual boost::uint32_t __peek32(const wb_addr_type addr) = 0;
     virtual void __flush() = 0;
@@ -98,8 +105,8 @@ protected:
 class x300_ctrl_iface_enet : public x300_ctrl_iface
 {
 public:
-    x300_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp):
-        udp(udp), seq(0)
+    x300_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp, bool enable_errors = true):
+        x300_ctrl_iface(enable_errors), udp(udp), seq(0)
     {
         try
         {
@@ -187,8 +194,8 @@ private:
 class x300_ctrl_iface_pcie : public x300_ctrl_iface
 {
 public:
-    x300_ctrl_iface_pcie(niriok_proxy::sptr drv_proxy):
-        _drv_proxy(drv_proxy)
+    x300_ctrl_iface_pcie(niriok_proxy::sptr drv_proxy, bool enable_errors = true):
+        x300_ctrl_iface(enable_errors), _drv_proxy(drv_proxy)
     {
         nirio_status status = 0;
         nirio_status_chain(_drv_proxy->set_attribute(RIO_ADDRESS_SPACE, BUS_INTERFACE), status);
@@ -289,12 +296,12 @@ private:
     static const boost::uint32_t INIT_TIMEOUT_IN_MS = 5000;
 };
 
-wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp)
+wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp, bool enable_errors = true)
 {
-    return wb_iface::sptr(new x300_ctrl_iface_enet(udp));
+    return wb_iface::sptr(new x300_ctrl_iface_enet(udp, enable_errors));
 }
 
-wb_iface::sptr x300_make_ctrl_iface_pcie(niriok_proxy::sptr drv_proxy)
+wb_iface::sptr x300_make_ctrl_iface_pcie(niriok_proxy::sptr drv_proxy, bool enable_errors = true)
 {
-    return wb_iface::sptr(new x300_ctrl_iface_pcie(drv_proxy));
+    return wb_iface::sptr(new x300_ctrl_iface_pcie(drv_proxy, enable_errors));
 }
