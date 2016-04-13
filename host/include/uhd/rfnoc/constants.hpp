@@ -45,11 +45,15 @@ static const size_t BYTES_PER_LINE = 8;
 //! For flow control within a single crossbar
 static const size_t DEFAULT_FC_XBAR_PKTS_PER_ACK = 2;
 //! For flow control when data is flowing from device to host (rx)
-static const size_t DEFAULT_FC_RX_RESPONSE_FREQ = 32; // ACKs per flow control window
+static const size_t DEFAULT_FC_RX_RESPONSE_FREQ = 64; // ACKs per flow control window
 //! For flow control when data is flowing from host to device (tx)
 static const size_t DEFAULT_FC_TX_RESPONSE_FREQ = 8; // ACKs per flow control window
 //! On the receive side, how full do we want the buffers?
-static const double DEFAULT_FC_RX_SW_BUFF_FULL_FACTOR     = 0.90; // Buffer should ideally be 90% full.
+//  Why not 100% full? Because we need to have some headroom to account for the inaccuracy
+//  when computing the window size. We compute the flow control window based on the frame
+//  size but the buffer can have overhead due to things like UDP headers, page alignment,
+//  housekeeping info, etc. This number has to be transport agnostic so 20% of headroom is safe.
+static const double DEFAULT_FC_RX_SW_BUFF_FULL_FACTOR = 0.80;
 
 // Common settings registers.
 static const boost::uint32_t SR_FLOW_CTRL_CYCS_PER_ACK          = 0;
