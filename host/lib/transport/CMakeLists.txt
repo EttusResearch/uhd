@@ -128,6 +128,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/if_addrs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/udp_simple.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/muxed_zero_copy_if.cpp
 )
 
 IF(ENABLE_X300)
