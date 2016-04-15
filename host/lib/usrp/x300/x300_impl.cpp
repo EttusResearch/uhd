@@ -971,23 +971,31 @@ void x300_impl::set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::st
     }
 }
 
-uint32_t x300_impl::get_pcie_dma_channel_pair(const uhd::sid_t &tx_sid)
+uint32_t x300_impl::allocate_pcie_dma_chan(const uhd::sid_t &tx_sid, const xport_type_t xport_type)
 {
-    // sid_t has no comparison defined
-    uint32_t raw_sid = tx_sid.get();
+    static const uint32_t CTRL_CHANNEL       = 0;
+    static const uint32_t FIRST_DATA_CHANNEL = 1;
+    if (xport_type == CTRL) {
+        return CTRL_CHANNEL;
+    } else {
+        // sid_t has no comparison defined
+        uint32_t raw_sid = tx_sid.get();
 
-    if (_dma_chan_pool.count(raw_sid) == 0) {
-        uint32_t new_chan = _dma_chan_pool.size();
-        _dma_chan_pool[raw_sid] = new_chan;
-        UHD_MSG(status) << "[X300] Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid]
-                        << " to SID " << tx_sid.to_pp_string_hex() << std::endl;
+        if (_dma_chan_pool.count(raw_sid) == 0) {
+            _dma_chan_pool[raw_sid] = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
+            UHD_MSG(status) << "[X300] Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid]
+                            << " to SID " << tx_sid.to_pp_string_hex() << std::endl;
+        }
+
+        if (_dma_chan_pool.size() + FIRST_DATA_CHANNEL > X300_PCIE_MAX_CHANNELS) {
+            throw uhd::runtime_error("Trying to allocate more DMA channels than are available");
+        }
+        return _dma_chan_pool[raw_sid];
     }
+}
 
-    if (_dma_chan_pool.size() > X300_PCIE_MAX_CHANNELS) {
-        throw uhd::runtime_error("Trying to allocate more DMA channels than are available");
-    }
-
-    return _dma_chan_pool[raw_sid];
+static boost::uint32_t extract_sid_from_pkt(void* pkt, size_t) {
+    return uhd::sid_t(uhd::wtohx(static_cast<const boost::uint32_t*>(pkt)[1])).get_dst();
 }
 
 x300_impl::both_xports_t x300_impl::make_transport(
@@ -1005,34 +1013,60 @@ x300_impl::both_xports_t x300_impl::make_transport(
     xports.recv_sid = xports.send_sid.reversed();
 
     if (mb.xport_path == "nirio") {
-        default_buff_args.send_frame_size =
-            (xport_type == TX_DATA)
-            ? X300_PCIE_TX_DATA_FRAME_SIZE
-            : X300_PCIE_MSG_FRAME_SIZE;
+        uint32_t dma_channel_num = allocate_pcie_dma_chan(xports.send_sid, xport_type);
 
-        default_buff_args.recv_frame_size =
-            (xport_type == RX_DATA)
-            ? X300_PCIE_RX_DATA_FRAME_SIZE
-            : X300_PCIE_MSG_FRAME_SIZE;
+        if (xport_type == CTRL) {
+            //Transport for control stream
+            if (_ctrl_dma_xport.get() == NULL) {
+                //One underlying DMA channel will handle
+                //all control traffic
+                zero_copy_xport_params ctrl_buff_args;
+                ctrl_buff_args.send_frame_size = X300_PCIE_MSG_FRAME_SIZE;
+                ctrl_buff_args.recv_frame_size = X300_PCIE_MSG_FRAME_SIZE;
+                ctrl_buff_args.num_send_frames = X300_PCIE_MSG_NUM_FRAMES * X300_PCIE_MAX_MUXED_XPORTS;
+                ctrl_buff_args.num_recv_frames = X300_PCIE_MSG_NUM_FRAMES * X300_PCIE_MAX_MUXED_XPORTS;
 
-        default_buff_args.num_send_frames =
-            (xport_type == TX_DATA)
-            ? X300_PCIE_DATA_NUM_FRAMES
-            : X300_PCIE_MSG_NUM_FRAMES;
+                zero_copy_if::sptr base_xport = nirio_zero_copy::make(
+                    mb.rio_fpga_interface, dma_channel_num,
+                    ctrl_buff_args, uhd::device_addr_t());
+                _ctrl_dma_xport = muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, X300_PCIE_MAX_MUXED_XPORTS);
+            }
+            //Create a virtual control transport
+            xports.recv = _ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
+        } else {
+            //Transport for data stream
+            default_buff_args.send_frame_size =
+                (xport_type == TX_DATA)
+                ? X300_PCIE_TX_DATA_FRAME_SIZE
+                : X300_PCIE_MSG_FRAME_SIZE;
 
-        default_buff_args.num_recv_frames =
-            (xport_type == RX_DATA)
-            ? X300_PCIE_DATA_NUM_FRAMES
-            : X300_PCIE_MSG_NUM_FRAMES;
+            default_buff_args.recv_frame_size =
+                (xport_type == RX_DATA)
+                ? X300_PCIE_RX_DATA_FRAME_SIZE
+                : X300_PCIE_MSG_FRAME_SIZE;
 
-        xports.recv = nirio_zero_copy::make(
-            mb.rio_fpga_interface,
-            get_pcie_dma_channel_pair(xports.send_sid),
-            default_buff_args,
-            xport_args
-        );
+            default_buff_args.num_send_frames =
+                (xport_type == TX_DATA)
+                ? X300_PCIE_DATA_NUM_FRAMES
+                : X300_PCIE_MSG_NUM_FRAMES;
+
+            default_buff_args.num_recv_frames =
+                (xport_type == RX_DATA)
+                ? X300_PCIE_DATA_NUM_FRAMES
+                : X300_PCIE_MSG_NUM_FRAMES;
+
+            xports.recv = nirio_zero_copy::make(
+                mb.rio_fpga_interface, dma_channel_num,
+                default_buff_args, xport_args);
+        }
 
         xports.send = xports.recv;
+
+        // Router config word is:
+        // - Upper 16 bits: Destination address (e.g. 0.0)
+        // - Lower 16 bits: DMA channel
+        uint32_t router_config_word = (xports.recv_sid.get_dst() << 16) | dma_channel_num;
+        mb.rio_fpga_interface->get_kernel_proxy()->poke(PCIE_ROUTER_REG(0), router_config_word);
 
         //For the nirio transport, buffer size is depends on the frame size and num frames
         xports.recv_buff_size = xports.recv->get_num_recv_frames() * xports.recv->get_recv_frame_size();
@@ -1156,7 +1190,6 @@ uhd::sid_t x300_impl::allocate_sid(
         mboard_members_t &mb,
         const uhd::sid_t &address
 ) {
-    const std::string &xport_path = mb.xport_path;
     uhd::sid_t sid = address;
     sid.set_src_addr(X300_DEVICE_HERE);
     sid.set_src_endpoint(_sid_framer);
@@ -1170,14 +1203,6 @@ uhd::sid_t x300_impl::allocate_sid(
     // Program CAM entry for returning packets to us (for example GR host via Eth0)
     // This type of packet does not match the XB_LOCAL address and is looked up in the lower half of the CAM
     mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + (X300_DEVICE_HERE)), mb.router_dst_here);
-
-    if (xport_path == "nirio") {
-        // Router config word is:
-        // - Upper 16 bits: Destination address (e.g. 0.0)
-        // - Lower 16 bits: DMA channel
-        uint32_t router_config_word = (sid.get_src() << 16) | get_pcie_dma_channel_pair(sid);
-        mb.rio_fpga_interface->get_kernel_proxy()->poke(PCIE_ROUTER_REG(0), router_config_word);
-    }
 
     UHD_LOG << "done router config for sid " << sid << std::endl;
 

@@ -33,6 +33,7 @@
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/vrt_if_packet.hpp>
+#include <uhd/transport/muxed_zero_copy_if.hpp>
 #include "recv_packet_demuxer_3000.hpp"
 #include "x300_regs.hpp"
 ///////////// RFNOC /////////////////////
@@ -64,6 +65,7 @@ static const size_t X300_PCIE_DATA_NUM_FRAMES       = 2048;
 static const size_t X300_PCIE_MSG_FRAME_SIZE        = 256;      //bytes
 static const size_t X300_PCIE_MSG_NUM_FRAMES        = 64;
 static const size_t X300_PCIE_MAX_CHANNELS          = 6;
+static const size_t X300_PCIE_MAX_MUXED_XPORTS      = 32;
 
 static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     //bytes
 static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     //bytes
@@ -206,13 +208,14 @@ private:
      */
     frame_size_t determine_max_frame_size(const std::string &addr, const frame_size_t &user_mtu);
 
-    std::map<uint32_t, uint32_t>  _dma_chan_pool;
+    std::map<uint32_t, uint32_t> _dma_chan_pool;
+    uhd::transport::muxed_zero_copy_if::sptr _ctrl_dma_xport;
 
     /*! Allocate or return a previously allocated PCIe channel pair
      *
      * Note the SID is always the transmit SID (i.e. from host to device).
      */
-    uint32_t get_pcie_dma_channel_pair(const uhd::sid_t &tx_sid);
+    uint32_t allocate_pcie_dma_chan(const uhd::sid_t &tx_sid, const xport_type_t xport_type);
 
     ////////////////////////////////////////////////////////////////////
     //
