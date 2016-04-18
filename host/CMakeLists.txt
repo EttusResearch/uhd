@@ -324,8 +324,8 @@ UHD_INSTALL(FILES
 #{{{IMG_SECTION
 # This section is written automatically by /images/create_imgs_package.py
 # Any manual changes in here will be overwritten.
-SET(UHD_IMAGES_MD5SUM "360d73cf5956ab11947f43d88fbeb345")
-SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.git-173-g2ea1f108.zip")
+SET(UHD_IMAGES_MD5SUM "d82c4b8bb779c1d5a810f0204815b84d")
+SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.git-197-g053111dc.zip")
 #}}}
 
 ########################################################################
