@@ -11,23 +11,17 @@
   <registers>
     <!-- AXI rate change block registers -->
     <setreg>
-      <name>RATE</name>
+      <name>N</name>
       <address>128</address>
     </setreg>
     <setreg>
-      <!-- 2 bits, enable clear eob & enable inject zeros -->
-      <name>CONFIG</name>
+      <name>M</name>
       <address>129</address>
     </setreg>
     <setreg>
-      <!-- Output packet size -->
-      <name>PKT_SIZE</name>
+      <!-- 1 bit, enable clear user -->
+      <name>CONFIG</name>
       <address>130</address>
-    </setreg>
-    <setreg>
-      <!-- Enable dropping partial packets -->
-      <name>DROP_PARTIAL_PKT</name>
-      <address>131</address>
     </setreg>
     <!-- DDC block registers -->
     <setreg>
@@ -58,16 +52,6 @@
   </registers>
   <!-- Args -->
   <args>
-    <arg>
-      <!-- Output packet size must match input packet size! -->
-      <name>spp</name>
-      <type>int</type>
-      <value>256</value>
-      <port>0</port>
-      <check>GE($spp, 16) AND LE($spp, 4096)</check>
-      <check_message>Packet size must be in [16, 4096].</check_message>
-      <action>SR_WRITE("PKT_SIZE", $spp)</action>
-    </arg>
     <arg>
       <name>freq</name>
       <type>double</type>
@@ -106,16 +90,6 @@
       <type>double</type>
       <value>1.0</value>
       <port>0</port>
-    </arg>
-    <arg>
-      <!-- Output packet size must match input packet size! -->
-      <name>spp</name>
-      <type>int</type>
-      <value>256</value>
-      <port>1</port>
-      <check>GE($spp, 16) AND LE($spp, 4096)</check>
-      <check_message>Packet size must be in [16, 4096].</check_message>
-      <action>SR_WRITE("PKT_SIZE", $spp)</action>
     </arg>
     <arg>
       <name>freq</name>

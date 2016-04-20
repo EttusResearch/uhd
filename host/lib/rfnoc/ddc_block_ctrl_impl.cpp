@@ -76,9 +76,10 @@ public:
             _tree->create<uhd::meta_range_t>(dsp_base_path / "freq/range")
                 .set_publisher(boost::bind(&ddc_block_ctrl_impl::get_freq_range, this))
             ;
-            sr_write("RATE", 1, chan);
-            sr_write("CONFIG", 3, chan); // Enable clear EOB & Inject zeros, no need to ever change this
-            sr_write("DROP_PARTIAL_PKT", 0, chan); // Do *NOT* drop packets of length less than spp
+            // Rate 1:1 by default
+            sr_write("N", 1, chan);
+            sr_write("M", 1, chan);
+            sr_write("CONFIG", 1, chan); // Enable clear EOB
         }
     } // end ctor
     virtual ~ddc_block_ctrl_impl() {};
@@ -180,7 +181,10 @@ private:
         UHD_ASSERT_THROW(decim <= CIC_MAX_DECIM);
         // What we can't cover with halfbands, we do with the CIC
         sr_write("DECIM_WORD", (hb_enable << 8) | (decim & 0xff));
-        sr_write("RATE", decim_rate, chan);
+
+        // Rate change = M/N
+        sr_write("N", std::pow(2.0, double(hb_enable)) * (decim & 0xff), chan);
+        sr_write("M", 1, chan);
 
         if (decim > 1 and hb_enable == 0) {
             UHD_MSG(warning) << boost::format(
