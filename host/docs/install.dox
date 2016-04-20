@@ -72,7 +72,7 @@ Copy and paste these commands into your terminal. This will install UHD software
 
     sudo add-apt-repository ppa:ettusresearch/uhd
     sudo apt-get update
-    sudo apt-get install uhd
+    sudo apt-get install libuhd-dev libuhd003 uhd-host
 
 \subsubsection install_linux_ourbins_fedora Fedora
 

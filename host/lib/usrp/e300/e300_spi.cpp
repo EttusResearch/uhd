@@ -93,6 +93,8 @@ public:
         tr.rx_buf = (unsigned long) &rx[0];
         tr.len = num_bits >> 3;
         tr.bits_per_word = _bits;
+        tr.tx_nbits = 1;
+        tr.rx_nbits = 1;
         tr.speed_hz = _speed;
         tr.delay_usecs = _delay;
 
