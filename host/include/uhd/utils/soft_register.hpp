@@ -150,7 +150,7 @@ public:
     /*!
      * Generic constructor for all soft_register types
      */
-    explicit soft_register_t(
+    soft_register_t(
             wb_iface::wb_addr_type wr_addr,
             wb_iface::wb_addr_type rd_addr,
             soft_reg_flush_mode_t mode = ALWAYS_FLUSH):
@@ -308,7 +308,7 @@ class UHD_API soft_register_sync_t : public soft_register_t<reg_data_t, readable
 public:
     typedef boost::shared_ptr< soft_register_sync_t<reg_data_t, readable, writable> > sptr;
 
-    explicit soft_register_sync_t(
+    soft_register_sync_t(
             wb_iface::wb_addr_type wr_addr,
             wb_iface::wb_addr_type rd_addr,
             soft_reg_flush_mode_t mode = ALWAYS_FLUSH):
