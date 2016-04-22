@@ -27,7 +27,7 @@ namespace uhd { namespace math { namespace fp_compare {
 
     template<typename float_t> UHD_INLINE
     float_t fp_compare_select_delta(float_t lhs_delta, float_t rhs_delta) {
-        return ((lhs_delta < rhs_delta) ? lhs_delta : rhs_delta);
+        return ((lhs_delta > rhs_delta) ? lhs_delta : rhs_delta);
     }
 
     template<> UHD_INLINE
