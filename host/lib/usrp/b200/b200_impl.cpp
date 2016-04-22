@@ -731,6 +731,11 @@ b200_impl::~b200_impl(void)
  * setup radio control objects
  **********************************************************************/
 
+void lambda_set_bool_prop(property_tree::sptr tree, fs_path path, bool value, double)
+{
+    tree->access<bool>(path).set(value);
+}
+
 void b200_impl::setup_radio(const size_t dspno)
 {
     radio_perifs_t &perif = _radio_perifs[dspno];
@@ -788,8 +793,10 @@ void b200_impl::setup_radio(const size_t dspno)
         .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
     perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
+    _tree->create<bool>(rx_dsp_path / "rate" / "set").set(false);
     _tree->access<double>(rx_dsp_path / "rate" / "value")
         .coerce(boost::bind(&b200_impl::coerce_rx_samp_rate, this, perif.ddc, dspno, _1))
+        .subscribe(boost::bind(&lambda_set_bool_prop, _tree, rx_dsp_path / "rate" / "set", true, _1))
         .subscribe(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
     ;
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
@@ -803,8 +810,10 @@ void b200_impl::setup_radio(const size_t dspno)
         .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / dspno;
     perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
+    _tree->create<bool>(tx_dsp_path / "rate" / "set").set(false);
     _tree->access<double>(tx_dsp_path / "rate" / "value")
         .coerce(boost::bind(&b200_impl::coerce_tx_samp_rate, this, perif.duc, dspno, _1))
+        .subscribe(boost::bind(&lambda_set_bool_prop, _tree, tx_dsp_path / "rate" / "set", true, _1))
         .subscribe(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
     ;
 
