@@ -24,9 +24,9 @@ def get_usrp_list(device_filter=None):
     """ Returns a list of dicts that contain USRP info """
     try:
         if device_filter is not None:
-            output = subprocess.check_output(['uhd_find_devices', '--args', device_filter])
+            output = subprocess.check_output(['../../utils/uhd_find_devices', '--args', device_filter])
         else:
-            output = subprocess.check_output('uhd_find_devices')
+            output = subprocess.check_output('../../utils/uhd_find_devices')
     except subprocess.CalledProcessError:
         return []
     split_re = "\n*-+\n-- .*\n-+\n"
