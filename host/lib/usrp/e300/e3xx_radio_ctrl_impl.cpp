@@ -188,6 +188,18 @@ double e3xx_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
     return radio_ctrl_impl::set_rx_gain(new_gain, chan);
 }
 
+double e3xx_radio_ctrl_impl::get_tx_gain(const size_t chan)
+{
+    const std::string fe_side = (chan == 0) ? "A" : "B";
+    return _tree->access<double>(fs_path("dboards/A/tx_frontends/" + fe_side + "/gains/PGA/value")).get();
+}
+
+double e3xx_radio_ctrl_impl::get_rx_gain(const size_t chan)
+{
+    const std::string fe_side = (chan == 0) ? "A" : "B";
+    return _tree->access<double>(fs_path("dboards/A/rx_frontends/" + fe_side + "/gains/PGA/value")).get();
+}
+
 /****************************************************************************
  * Radio control and setup
  ***************************************************************************/
@@ -277,16 +289,6 @@ void e3xx_radio_ctrl_impl::_setup_radio_channel(const size_t chan)
         _tree->access<double>(rf_fe_path / "freq" / "value")
             .add_coerced_subscriber(boost::bind(&e3xx_radio_ctrl_impl::_update_fe_lo_freq, this, key, _1))
         ;
-        if (dir == RX_DIRECTION) {
-            _tree->access<double>(rf_fe_path / "gains" / "PGA" / "value")
-                .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_rx_gain, this, _1, chan))
-            ;
-        }
-        else if (dir == TX_DIRECTION) {
-            _tree->access<double>(rf_fe_path / "gains" / "PGA" / "value")
-                .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_tx_gain, this, _1, chan))
-            ;
-        }
 
         // Antenna Setup
         if (dir == RX_DIRECTION) {

@@ -52,6 +52,9 @@ public:
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
 
+    double get_tx_gain(const size_t chan);
+    double get_rx_gain(const size_t chan);
+
     /************************************************************************
      * RFIC setup and control
      ***********************************************************************/
