@@ -102,7 +102,7 @@ If you are not sure which image is installed on your device, upgrading to the la
 
 To install the toolchain you downloaded type:
 
-    $ ./oecore-${TCLIBC}-${SDK_ARCH}-${IMAGE_BASENAME}-${TUNE_PKGARCH}.sh
+    $ ./oecore-x86_64-armv7ahf-vfp-neon-toolchain-nodistro.0.sh
 
 This will prompt you for an installation path.
 Please ensure you have sufficient disk space, as each of the SDKs may require several gigabytes of disk space (depends on the image flavor selected).
@@ -127,16 +127,23 @@ which should return 'arm-oe-linux-gnueabi'.
 
 \subsubsection e3x0_sdk_usage_uhd Building UHD
 
+The E310 comes with UHD already installed on the SD card. You will only need
+to build UHD and install it if there is a critical bug fix in a later UHD or you
+have custom UHD modifications. 
+
 -# Obtain the UHD source code via git or tarball
 -# Setup your environment as described in \ref e3x0_sdk_usage
 -# Type the following in the build directory (assuming a build in host/build):
 
-        $ cmake -DCMAKE_TOOLCHAIN_FILE=<youruhdsrc>/host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_E300=ON ..
+        $ cmake -DCMAKE_TOOLCHAIN_FILE=../host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_E300=ON ..
         $ make
 
 For instructions on building UHD on a PC to interact with your E-Series device, follow these instructions: \ref e3x0_uhd_build
 
 \subsubsection e3x0_sdk_usage_gnuradio Building GNU Radio
+
+GNU Radio is already installed on the SD card. You only need to build GNU Radio
+for the E3XX if you are doing custom GNU Radio development work.
 
 -# Obtain the gnuradio source code via git.
 -# Setup the environment as described in \ref e3x0_sdk_usage
@@ -158,8 +165,11 @@ The file system images are built using OpenEmbedded Core. The `repo` tool is
 used to manage the versions of the various layers that supply recipes for
 building the image. For more documentation see http://www.yoctoproject.org.
 These notes will show you how to rebuild the files used to create the SD
-card included with the E310. These instructions assume you ahve a working
+card included with the E310. These instructions assume you have a working
 knowledge of Linux.
+
+Once you have rebuilt the factory image, you can create your own custom recipes
+to build file system images for specific application.
 
 -# Install `repo`.
 \code{.sh}
@@ -172,7 +182,7 @@ knowledge of Linux.
 \code{.sh}
  $ mkdir e300-oe-build
  $ cd e300-oe-build
- $ repo init -u git://github.com/EttusResearch/e300-manifest.git -b Release-3
+ $ repo init -u git://github.com/EttusResearch/e300-manifest.git -b Release-4
 \endcode
 
 -# Initialize the environment. This will take a little while.
@@ -187,12 +197,13 @@ path names make sense for your machine.
 it will download all the required sources. (These are saved locally for future
 builds)
 \code{.sh}
- $ export MACHINE="ettus-e300"
+ $ export MACHINE="ettus-e3xx-sg1"
  $ bitbake gnuradio-dev-image
 \endcode
 
 When this completes, the files needed to create the SD card are in
-`tmp-glibc/deploy/images/ettus-e300`
+`tmp-glibc/deploy/images/ettus-e300`. Building the file that is written
+directly to the SD card is covered later in this document.
 
 -# Build the toolchain.
 \code{.sh}
@@ -201,6 +212,19 @@ When this completes, the files needed to create the SD card are in
 The sdk is in `tmp-glibc/deploy/sdk`
 Note that you can set the `MACHINE` variable in `local.conf so that you no
 longer need to set it from the command line.
+
+-# Building the complete set of E3XX image files and sdk.
+
+There is a script in the meta-ettus BSP layer that builds SD card images for
+all E3XX series devices and the sdk.
+
+From the build directory run:
+\code{.sh}
+ $ sh ../meta-ettus/scripts/build-all.sh
+\endcode
+
+When the script finishes, the SD ard image files are in ./images and the sdk
+is in tmp-glibc/deploy/sdk/ .
 
 -# Using the environment
 When you log back in, you will need to setup the OpenEmbedded environment
