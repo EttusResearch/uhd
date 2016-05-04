@@ -33,6 +33,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/weak_ptr.hpp>
 #include <cstdio>
 #include <ctime>
 #include <cmath>
@@ -730,9 +731,12 @@ b200_impl::~b200_impl(void)
  * setup radio control objects
  **********************************************************************/
 
-void lambda_set_bool_prop(property_tree::sptr tree, fs_path path, bool value, double)
+void lambda_set_bool_prop(boost::weak_ptr<property_tree> tree_wptr, fs_path path, bool value, double)
 {
-    tree->access<bool>(path).set(value);
+    property_tree::sptr tree = tree_wptr.lock();
+    if (tree) {
+        tree->access<bool>(path).set(value);
+    }
 }
 
 void b200_impl::setup_radio(const size_t dspno)
