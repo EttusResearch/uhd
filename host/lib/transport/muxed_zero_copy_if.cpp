@@ -1,5 +1,5 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #include <uhd/transport/muxed_zero_copy_if.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread.hpp>
@@ -50,23 +50,25 @@ public:
 
     virtual ~muxed_zero_copy_if_impl()
     {
-        try {
+        UHD_SAFE_CALL(
             //Interrupt buffer updater loop
             _recv_thread.interrupt();
             //Wait for loop to finish
+            //No timeout on join. The recv loop is guaranteed
+            //to terminate in a reasonable amount of time because
+            //there are no timed blocks on the underlying.
             _recv_thread.join();
             //Flush base transport
             while (_base_xport->get_recv_buff(0.0001)) /*NOP*/;
             //Release child streams
-            //Not that this will not delete or flush the child streams
+            //Note that this will not delete or flush the child streams
             //until the owners of the streams have released the respective
             //shared pointers. This ensures that packets are not dropped.
             _streams.clear();
-        } catch (...) {
-        }
+        );
     }
 
-    virtual zero_copy_if::sptr make_stream(const boost::uint32_t stream_num)
+    virtual zero_copy_if::sptr make_stream(const uint32_t stream_num)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (_streams.size() >= _max_num_streams) {
@@ -82,7 +84,7 @@ public:
         return _num_dropped_frames;
     }
 
-    void remove_stream(const boost::uint32_t stream_num)
+    void remove_stream(const uint32_t stream_num)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         _streams.erase(stream_num);
@@ -95,7 +97,7 @@ private:
         typedef boost::shared_ptr<stream_impl> sptr;
         typedef boost::weak_ptr<stream_impl> wptr;
 
-        stream_impl(muxed_zero_copy_if_impl::sptr muxed_xport, const boost::uint32_t stream_num):
+        stream_impl(muxed_zero_copy_if_impl::sptr muxed_xport, const uint32_t stream_num):
             _stream_num(stream_num), _muxed_xport(muxed_xport),
             _buff_queue(muxed_xport->base_xport()->get_num_recv_frames())
         {
@@ -149,7 +151,7 @@ private:
         }
 
     private:
-        const boost::uint32_t                       _stream_num;
+        const uint32_t                              _stream_num;
         muxed_zero_copy_if_impl::sptr               _muxed_xport;
         bounded_buffer<managed_recv_buffer::sptr>   _buff_queue;
     };
@@ -167,14 +169,18 @@ private:
                 boost::this_thread::disable_interruption interrupt_disabler;
                 if (not _process_next_buffer()) {
                     //Be a good citizen and yield if no packet is processed
-                    boost::this_thread::sleep(boost::posix_time::microseconds(0));
-                    //We call sleep(0) above instead of yield() to ensure that we
+                    static const size_t MIN_DUR = 1;
+                    boost::this_thread::sleep_for(boost::chrono::nanoseconds(MIN_DUR));
+                    //We call sleep(MIN_DUR) above instead of yield() to ensure that we
                     //relinquish the current scheduler time slot.
                     //yield() is a hint to the scheduler to end the time
                     //slice early and schedule in another thread that is ready to run.
                     //However in most situations, there will be no other thread and
                     //this thread will continue to run which will rail a CPU core.
-                    //We call sleep(0) instead which will sleep for a minimum time.
+                    //We call sleep(MIN_DUR=1) instead which will sleep for a minimum time.
+                    //Ideally we would like to use boost::chrono::.*seconds::min() but that
+                    //is bound to 0, which causes the sleep_for call to be a no-op and
+                    //thus useless to actually force a sleep.
 
                     //****************************************************************
                     //NOTE: This behavior makes this transport a poor choice for
@@ -191,16 +197,20 @@ private:
     {
         managed_recv_buffer::sptr buff = _base_xport->get_recv_buff(0.0);
         if (buff) {
-            const boost::uint32_t stream_num = _classify(buff->cast<void*>(), _base_xport->get_recv_frame_size());
             stream_impl::sptr stream;
-            {
-                //Hold the stream mutex long enough to pull a bounded buffer
-                //and lock it (increment its ref count).
-                boost::lock_guard<boost::mutex> lock(_mutex);
-                stream_map_t::iterator str_iter = _streams.find(stream_num);
-                if (str_iter != _streams.end()) {
-                    stream = (*str_iter).second.lock();
+            try {
+                const uint32_t stream_num = _classify(buff->cast<void*>(), _base_xport->get_recv_frame_size());
+                {
+                    //Hold the stream mutex long enough to pull a bounded buffer
+                    //and lock it (increment its ref count).
+                    boost::lock_guard<boost::mutex> lock(_mutex);
+                    stream_map_t::iterator str_iter = _streams.find(stream_num);
+                    if (str_iter != _streams.end()) {
+                        stream = (*str_iter).second.lock();
+                    }
                 }
+            } catch (std::exception&) {
+                //If _classify throws we simply drop the frame
             }
             //Once a bounded buffer is acquired, we can rely on its
             //thread safety to serialize with the consumer.
@@ -220,7 +230,7 @@ private:
         }
     }
 
-    typedef std::map<boost::uint32_t, stream_impl::wptr> stream_map_t;
+    typedef std::map<uint32_t, stream_impl::wptr> stream_map_t;
 
     zero_copy_if::sptr      _base_xport;
     stream_classifier_fn    _classify;
@@ -236,5 +246,5 @@ muxed_zero_copy_if::sptr muxed_zero_copy_if::make(
     muxed_zero_copy_if::stream_classifier_fn classify_fn,
     size_t max_streams
 ) {
-    return muxed_zero_copy_if::sptr(new muxed_zero_copy_if_impl(base_xport, classify_fn, max_streams));
+    return boost::make_shared<muxed_zero_copy_if_impl>(base_xport, classify_fn, max_streams);
 }
