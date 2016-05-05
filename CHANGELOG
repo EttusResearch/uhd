@@ -1,6 +1,31 @@
 Change Log for Releases
 ==============================
 
+## 003.009.004
+- GPIO control: Fix address mismatch for RX and full duplex.
+  This fixes full-duplex mode for most devices.
+- B200: Fixed auto rate selection (can now select 61.44 Msps)
+- UBX: Fix member declaration order which could cause
+  segfaults for debug builds
+- Manual/Docs: Numerous fixes, use dot for graphs in manual
+- Utils: multiple fixes for query_gpsdo_sensors, fixed floating point
+  comparison
+- Windows: Include registry file in installation
+- Converters: Improve NEON converters
+
+## 003.009.003
+* UBX: Fixed a phase synchronization issue on the sub-1GHz band
+* USB: Fixed transport issue that crashed when multiple USB devices were
+  connected on a Windows machine, more graceful handling of USB disconnects,,
+  provided .cdf file for installing on Windows
+* B200: Fixed memory growth/increasing tune times issue
+* E300: Fixed memory leak with udev, fixed issue with autoboot value, fixes
+  to button behaviour
+* usrp2, usrp3: Fixed IQ imbalance and DC bias in DDC chain
+* CMake: Windows registry fixes
+* Fixed several compiler warnings and minor bugs
+* Examples: Updated benchmark_rate for improved thread safety
+
 ## 003.009.002
 * E310: Added support for Speedgrade 3
 * B205mini: Added support

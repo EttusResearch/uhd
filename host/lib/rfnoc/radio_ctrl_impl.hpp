@@ -23,7 +23,6 @@
 #include "time_core_3000.hpp"
 #include "gpio_atr_3000.hpp"
 #include <uhd/rfnoc/radio_ctrl.hpp>
-#include <uhd/types/stdint.hpp>
 #include <uhd/types/direction.hpp>
 #include <boost/thread.hpp>
 

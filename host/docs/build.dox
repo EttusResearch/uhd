@@ -26,8 +26,8 @@ follow the auxiliary download URL for the Windows installer (below).
 
 The following compilers are known to work and officially supported:
 
-- GCC >= 4.4
-- Clang >= 3.1
+- GCC >= 4.8
+- Clang >= 3.3
 - MSVC >= 2012; the free <a href="https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx">Visual Studio Express Edition for Desktop</a> works.
 
 Other compilers (or lower versions) may work, but are unsupported.
@@ -35,14 +35,14 @@ Other compilers (or lower versions) may work, but are unsupported.
 ### CMake
 
 - **Purpose:** generates project build files
-- **Minimum Version:** 2.6
+- **Minimum Version:** 2.8
 - **Usage:** build time (required)
 - **Download URL:** http://www.cmake.org/cmake/resources/software.html
 
 ### Boost
 
 - **Purpose:** C++ library
-- **Minimum Version:** 1.46
+- **Minimum Version:** 1.53
 - **Usage:** build time + runtime (required)
 - **Download URL:** http://www.boost.org/users/download/
 - **Download URL (Windows installer):** http://sourceforge.net/projects/boost/files/boost-binaries/
@@ -58,7 +58,7 @@ Other compilers (or lower versions) may work, but are unsupported.
 ### Python
 
 - **Purpose:** used by mako and utility scripts
-- **Minimum Version:** 2.6
+- **Minimum Version:** 2.7
 - **Usage:** build time + runtime utility scripts (required)
 - **Download URL:** http://www.python.org/download/
 
@@ -120,21 +120,21 @@ This will populate the `fpga-src` submodule inside the repository. You can also 
     git submodule init
     git submodule update
 
-Our source code repository contains two branches:
+Our source code repository contains of two main branches:
 
 \li \b master: This is the main development branch, with updated new features and bug fixes.
 \li \b maint: This branch has all bugfixes since the last major release, but there are no new features. This is what you should be using if you need a stable release.
 
 We might also be publishing experimental feature branches which can then be found in the same repository.
-All of our releases are associated with tags in the repository.
+All of our versioned releases are associated with tags in the repository.
 
 \li <a href="https://github.com/EttusResearch/UHD/tags">Source archives for release tags</a>
 
 \section build_pybombs Using PyBOMBS
 
-PyBOMBS is a command-line tool for Linuxes (and some Unixes) from the GNU Radio ecosystem and will do a source build of UHD, including setting up prerequisites/dependencies (regardless of the distribution) with the following command:
+PyBOMBS is a command-line tool for Linuxes (and some Unixes) from the GNU Radio ecosystem and will do a source build of UHD, including setting up prerequisites/dependencies (regardless of the distribution). Assuming you have PyBOMBS set up, you can install UHD with the following command:
 
-    $ ./pybombs install uhd
+    $ pybombs install uhd
 
 Head to the <a href="https://github.com/gnuradio/pybombs/#installation">PyBOMBS Homepage</a> for more instructions. PyBOMBS can install UHD (as well as GNU Radio or similar projects) both into system directories as well as into user's home directories, omitting the requirement for superuser access.
 
@@ -301,7 +301,7 @@ If your application uses CMake as a build system, the following command
 will setup up your build environment to link against UHD:
 
 \code{.cmake}
-find_package(UHD "3.8.0")
+find_package(UHD "3.10.0")
 \endcode
 
 This will set the CMake variable `UHD_INCLUDE_DIRS` and `UHD_LIBRARIES`

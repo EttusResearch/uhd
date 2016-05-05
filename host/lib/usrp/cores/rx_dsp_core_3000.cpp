@@ -69,6 +69,7 @@ public:
         _scaling_adjustment = 1.0;
         _dsp_extra_scaling = 1.0;
         _tick_rate = 1.0;
+        _dsp_freq_offset = 0.0;
     }
 
     ~rx_dsp_core_3000_impl(void)
@@ -79,17 +80,41 @@ public:
         )
     }
 
-    void set_mux(const std::string &mode, const bool fe_swapped, const bool invert_i, const bool invert_q){
-        static const uhd::dict<std::string, boost::uint32_t> mode_to_mux = boost::assign::map_list_of
-            ("IQ", 0)
-            ("QI", FLAG_DSP_RX_MUX_SWAP_IQ)
-            ("I", FLAG_DSP_RX_MUX_REAL_MODE)
-            ("Q", FLAG_DSP_RX_MUX_SWAP_IQ | FLAG_DSP_RX_MUX_REAL_MODE)
-        ;
-        _iface->poke32(REG_DSP_RX_MUX, mode_to_mux[mode]
-            | (fe_swapped ? FLAG_DSP_RX_MUX_SWAP_IQ : 0)
-            | (invert_i ? FLAG_DSP_RX_MUX_INVERT_I : 0)
-            | (invert_q ? FLAG_DSP_RX_MUX_INVERT_Q : 0));
+    void set_mux(const uhd::usrp::fe_connection_t& fe_conn){
+        boost::uint32_t reg_val = 0;
+        switch (fe_conn.get_sampling_mode()) {
+        case uhd::usrp::fe_connection_t::REAL:
+        case uhd::usrp::fe_connection_t::HETERODYNE:
+            reg_val = FLAG_DSP_RX_MUX_REAL_MODE;
+            break;
+        default:
+            reg_val = 0;
+            break;
+        }
+
+        if (fe_conn.is_iq_swapped()) reg_val |= FLAG_DSP_RX_MUX_SWAP_IQ;
+        if (fe_conn.is_i_inverted()) reg_val |= FLAG_DSP_RX_MUX_INVERT_I;
+        if (fe_conn.is_q_inverted()) reg_val |= FLAG_DSP_RX_MUX_INVERT_Q;
+
+        _iface->poke32(REG_DSP_RX_MUX, reg_val);
+
+        if (fe_conn.get_sampling_mode() == uhd::usrp::fe_connection_t::HETERODYNE) {
+            //1. Remember the sign of the IF frequency.
+            //   It will be discarded in the next step
+            int if_freq_sign = boost::math::sign(fe_conn.get_if_freq());
+            //2. Map IF frequency to the range [0, _tick_rate)
+            double if_freq = std::abs(std::fmod(fe_conn.get_if_freq(), _tick_rate));
+            //3. Map IF frequency to the range [-_tick_rate/2, _tick_rate/2)
+            //   This is the aliased frequency
+            if (if_freq > (_tick_rate / 2.0)) {
+                if_freq -= _tick_rate;
+            }
+            //4. Set DSP offset to spin the signal in the opposite
+            //   direction as the aliased frequency
+            _dsp_freq_offset = if_freq * (-if_freq_sign);
+        } else {
+            _dsp_freq_offset = 0.0;
+        }
     }
 
     void set_tick_rate(const double rate){
@@ -212,13 +237,15 @@ public:
     double set_freq(const double requested_freq){
         double actual_freq;
         int32_t freq_word;
-        get_freq_and_freq_word(requested_freq, _tick_rate, actual_freq, freq_word);
+        get_freq_and_freq_word(requested_freq + _dsp_freq_offset, _tick_rate, actual_freq, freq_word);
         _iface->poke32(REG_DSP_RX_FREQ, boost::uint32_t(freq_word));
         return actual_freq;
     }
 
     uhd::meta_range_t get_freq_range(void){
-        return uhd::meta_range_t(-_tick_rate/2, +_tick_rate/2, _tick_rate/std::pow(2.0, 32));
+        //Too keep the DSP range symmetric about 0, we use abs(_dsp_freq_offset)
+        const double offset = std::abs<double>(_dsp_freq_offset);
+        return uhd::meta_range_t(-(_tick_rate-offset)/2, +(_tick_rate-offset)/2, _tick_rate/std::pow(2.0, 32));
     }
 
     void setup(const uhd::stream_args_t &stream_args){
@@ -274,6 +301,7 @@ private:
     const bool _is_b200;    //TODO: Obsolete this when we switch to the new DDC on the B200
     double _tick_rate, _link_rate;
     double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling, _fxpt_scalar_correction;
+    double _dsp_freq_offset;
 };
 
 rx_dsp_core_3000::sptr rx_dsp_core_3000::make(wb_iface::sptr iface, const size_t dsp_base, const bool is_b200 /* = false */)

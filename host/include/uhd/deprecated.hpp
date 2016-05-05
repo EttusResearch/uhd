@@ -23,6 +23,7 @@
 #define INCLUDED_UHD_TYPES_OTW_TYPE_HPP
 
 #include <uhd/config.hpp>
+#include <cstddef>
 
 namespace uhd{
 

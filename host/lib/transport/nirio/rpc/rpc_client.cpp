@@ -1,5 +1,5 @@
 ///
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -55,22 +55,7 @@ rpc_client::rpc_client (
         tcp::resolver::query::flags query_flags(tcp::resolver::query::passive);
         tcp::resolver::query query(tcp::v4(), server, port, query_flags);
         tcp::resolver::iterator iterator = resolver.resolve(query);
-
-        #if BOOST_VERSION < 104700
-            // default constructor creates end iterator
-            tcp::resolver::iterator end;
-
-            boost::system::error_code error = boost::asio::error::host_not_found;
-            while (error && iterator != end)
-            {
-                _socket.close();
-                _socket.connect(*iterator++, error);
-            }
-            if (error)
-                throw boost::system::system_error(error);
-        #else
-            boost::asio::connect(_socket, iterator);
-        #endif
+        boost::asio::connect(_socket, iterator);
 
         UHD_LOG << "rpc_client connected to server." << std::endl;
 
@@ -109,11 +94,6 @@ rpc_client::rpc_client (
     } catch (boost::exception&) {
         UHD_LOG << "rpc_client connection request cancelled/aborted." << std::endl;
         _exec_err.assign(boost::asio::error::connection_aborted, boost::asio::error::get_system_category());
-#if BOOST_VERSION < 104700
-    } catch (std::exception& e) {
-        UHD_LOG << "rpc_client connection error: " << e.what() << std::endl;
-        _exec_err.assign(boost::asio::error::connection_aborted, boost::asio::error::get_system_category());
-#endif
     }
 }
 

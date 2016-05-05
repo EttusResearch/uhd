@@ -54,6 +54,7 @@ SET(test_sources
     tick_node_test.cpp
     vrt_test.cpp
     expert_test.cpp
+    fe_conn_test.cpp
 )
 
 #turn each test cpp file into an executable with an int main() function

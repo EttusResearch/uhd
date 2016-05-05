@@ -23,7 +23,6 @@
 #include "ad936x_manager.hpp"
 #include "spi_core_3000.hpp"
 #include "e300_global_regs.hpp"
-#include <uhd/types/stdint.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 
 namespace uhd {

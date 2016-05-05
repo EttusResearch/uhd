@@ -106,7 +106,7 @@ size_t send(
  * will hold a pointer into the remaining portion of the packet.
  * Subsequent calls will load from the remainder of the packet,
  * and will flag the metadata to show that this is a fragment.
- * The next call to receive, after the remainder becomes exahausted,
+ * The next call to receive, after the remainder becomes exhausted,
  * will perform an over-the-wire receive as usual.
  * See the rx metadata fragment flags and offset fields for details.
  *

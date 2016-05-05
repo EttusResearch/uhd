@@ -1,5 +1,5 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <stdint.h>
 #include <vector>
 #include "max2870_regs.hpp"
 #include "max2871_regs.hpp"

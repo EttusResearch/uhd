@@ -388,8 +388,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-    if (pps == "mimo" or ref == "mimo" or channel_nums.size() == 1)
-    {
+    if (pps == "mimo" or ref == "mimo" or channel_nums.size() == 1) {
        usrp->set_time_now(0.0);
     } else {
        usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
@@ -440,8 +439,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         "  Num underflows detected: %u\n"
         "  Num late commands:       %u\n"
         "  Num timeouts:            %u\n"
-    ) % num_rx_samps % num_dropped_samps % num_overflows % num_tx_samps % num_seq_errors % num_underflows
-      % num_late_commands % num_timeouts << std::endl;
+    ) % num_rx_samps % num_dropped_samps
+      % num_overflows % num_tx_samps
+      % num_seq_errors % num_underflows
+      % num_timeouts << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;

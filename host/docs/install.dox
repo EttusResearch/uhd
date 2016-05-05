@@ -72,7 +72,7 @@ Copy and paste these commands into your terminal. This will install UHD software
 
     sudo add-apt-repository ppa:ettusresearch/uhd
     sudo apt-get update
-    sudo apt-get install uhd
+    sudo apt-get install libuhd-dev libuhd003 uhd-host
 
 \subsubsection install_linux_ourbins_fedora Fedora
 
@@ -101,7 +101,7 @@ This is an automated way of installing UHD from source. See also \ref build_pybo
 
 We recommend using MacPorts and actively support UHD development on OS X via this method.
 Using MacPorts, the correct hardware device images are automatically installed for you,
-and there are no post install tasks. WIth a single command, you can be up and running in short order.
+and there are no post install tasks. With a single command, you can be up and running in short order.
 
 If you do not already have MacPorts installed, you will need to install it first. Make sure to follow the MacPorts shell environment changes needed such that MacPorts installed executables are found before all others. These are the only changes to the shell environment needed to execute any MacPorts-installed executable. Setting any DYLD environment variable (e.g., DYLD_LIBRARY_PATH) for general use is highly discouraged, because doing so, in our experience, leads to problems down the road that are very difficult to diagnose. OSX provides robust means for correcting DYLD-based issues even after dependencies are installed.
 

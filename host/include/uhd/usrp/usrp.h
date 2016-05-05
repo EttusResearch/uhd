@@ -652,7 +652,7 @@ UHD_API uhd_error uhd_usrp_set_rx_subdev_spec(
     size_t mboard
 );
 
-//! Get the RX frontend specfication for the given device
+//! Get the RX frontend specification for the given device
 UHD_API uhd_error uhd_usrp_get_rx_subdev_spec(
     uhd_usrp_handle h,
     size_t mboard,
@@ -876,7 +876,7 @@ UHD_API uhd_error uhd_usrp_set_tx_subdev_spec(
     size_t mboard
 );
 
-//! Get the TX frontend specfication for the given device
+//! Get the TX frontend specification for the given device
 UHD_API uhd_error uhd_usrp_get_tx_subdev_spec(
     uhd_usrp_handle h,
     size_t mboard,

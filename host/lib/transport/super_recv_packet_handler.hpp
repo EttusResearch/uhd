@@ -470,6 +470,9 @@ private:
         if (expected_packet_count != info.ifpi.packet_count){
             UHD_MSG(status) << "expected: " << expected_packet_count << " got: " << info.ifpi.packet_count << std::endl;
             if (_props[index].handle_flowctrl) {
+                // Always update flow control in this case, because we don't
+                // know which packet was dropped and what state the upstream
+                // flow control is in.
                 _props[index].handle_flowctrl(info.ifpi.packet_count);
             }
             return PACKET_SEQUENCE_ERROR;

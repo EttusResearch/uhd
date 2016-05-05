@@ -344,10 +344,12 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
 
     //locate the matching handle in the device list
     BOOST_FOREACH(usb_device_handle::sptr dev_handle, device_list) {
-        if (dev_handle->get_serial() == device_addr["serial"]){
-            handle = dev_handle;
-            break;
-        }
+        try {
+            if (dev_handle->get_serial() == device_addr["serial"]){
+                handle = dev_handle;
+                break;
+            }
+        } catch (const uhd::exception&) { continue; }
     }
     UHD_ASSERT_THROW(handle.get() != NULL); //better be found
 
@@ -728,6 +730,11 @@ b200_impl::~b200_impl(void)
  * setup radio control objects
  **********************************************************************/
 
+void lambda_set_bool_prop(property_tree::sptr tree, fs_path path, bool value, double)
+{
+    tree->access<bool>(path).set(value);
+}
+
 void b200_impl::setup_radio(const size_t dspno)
 {
     radio_perifs_t &perif = _radio_perifs[dspno];
@@ -766,7 +773,7 @@ void b200_impl::setup_radio(const size_t dspno)
     perif.framer = rx_vita_core_3000::make(perif.ctrl, TOREG(SR_RX_CTRL));
     perif.ddc = rx_dsp_core_3000::make(perif.ctrl, TOREG(SR_RX_DSP), true /*is_b200?*/);
     perif.ddc->set_link_rate(10e9/8); //whatever
-    perif.ddc->set_mux("IQ", false, dspno == 1 ? true : false, dspno == 1 ? true : false);
+    perif.ddc->set_mux(usrp::fe_connection_t(dspno == 1 ? "IbQb" : "IQ"));
     perif.ddc->set_freq(rx_dsp_core_3000::DEFAULT_CORDIC_FREQ);
     perif.deframer = tx_vita_core_3000::make_no_radio_buff(perif.ctrl, TOREG(SR_TX_CTRL));
     perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
@@ -789,8 +796,10 @@ void b200_impl::setup_radio(const size_t dspno)
         .add_coerced_subscriber(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
     perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
+    _tree->create<bool>(rx_dsp_path / "rate" / "set").set(false);
     _tree->access<double>(rx_dsp_path / "rate" / "value")
         .set_coercer(boost::bind(&b200_impl::coerce_rx_samp_rate, this, perif.ddc, dspno, _1))
+        .add_coerced_subscriber(boost::bind(&lambda_set_bool_prop, _tree, rx_dsp_path / "rate" / "set", true, _1))
         .add_coerced_subscriber(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
     ;
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
@@ -803,8 +812,10 @@ void b200_impl::setup_radio(const size_t dspno)
         .add_coerced_subscriber(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / dspno;
     perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
+    _tree->create<bool>(tx_dsp_path / "rate" / "set").set(false);
     _tree->access<double>(tx_dsp_path / "rate" / "value")
         .set_coercer(boost::bind(&b200_impl::coerce_tx_samp_rate, this, perif.duc, dspno, _1))
+        .add_coerced_subscriber(boost::bind(&lambda_set_bool_prop, _tree, tx_dsp_path / "rate" / "set", true, _1))
         .add_coerced_subscriber(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
     ;
 

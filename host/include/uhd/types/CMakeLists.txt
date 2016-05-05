@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011,2015 Ettus Research LLC
+# Copyright 2010-2011,2015-2016 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ UHD_INSTALL(FILES
     sensors.hpp
     serial.hpp
     sid.hpp
-    stdint.hpp
     stream_cmd.hpp
     time_spec.hpp
     tune_request.hpp

@@ -1,5 +1,5 @@
 //
-// Copyright 2012,2014 Ettus Research LLC
+// Copyright 2012,2014,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -24,19 +24,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/locks.hpp>
-#ifdef BOOST_MSVC
-//whoops! https://svn.boost.org/trac/boost/ticket/5287
-//enjoy this useless dummy class instead
-namespace boost{ namespace interprocess{
-    struct file_lock{
-        file_lock(const char * = NULL){}
-        void lock(void){}
-        void unlock(void){}
-    };
-}} //namespace
-#else
 #include <boost/interprocess/sync/file_lock.hpp>
-#endif
 #include <fstream>
 #include <cctype>
 

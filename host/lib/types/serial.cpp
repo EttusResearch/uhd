@@ -40,7 +40,8 @@ spi_config_t::spi_config_t(edge_t edge):
     mosi_edge(edge),
     miso_edge(edge)
 {
-    /* NOP */
+    // By default don't use a custom clock speed for the transaction
+    use_custom_divider = false;
 }
 
 void i2c_iface::write_eeprom(

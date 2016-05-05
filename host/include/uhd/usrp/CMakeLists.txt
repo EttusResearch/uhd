@@ -18,6 +18,7 @@
 UHD_INSTALL(FILES
 
     #### dboard headers ###
+    fe_connection.hpp
     dboard_base.hpp
     dboard_eeprom.hpp
     dboard_id.hpp

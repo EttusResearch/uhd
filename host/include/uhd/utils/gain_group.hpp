@@ -65,7 +65,7 @@ public:
      * For an empty name, set the overall gain value for this group.
      * The power will be distributed across individual gain elements.
      * The semantics of how to do this are determined by the priority.
-     * \param gain the gain to set for the lement or across the group
+     * \param gain the gain to set for the element or across the group
      * \param name name of the gain element (optional)
      */
     virtual void set_value(double gain, const std::string &name = "") = 0;
@@ -81,7 +81,7 @@ public:
      * Register a set of gain functions into this group:
      *
      * The name should be a unique and non-empty name.
-     * Othwerwise, the implementation will rename it.
+     * Otherwise, the implementation will rename it.
      *
      * Priority determines how power will be distributed
      * with higher priorities getting the power first,

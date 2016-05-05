@@ -32,9 +32,47 @@ SET(UHD_VERSION_PATCH rfnoc)
 SET(UHD_VERSION_DEVEL TRUE)
 
 ########################################################################
+# If we're on a development branch, we skip the patch version
+########################################################################
+IF(DEFINED UHD_VERSION_PATCH_OVERRIDE)
+    SET(UHD_VERSION_DEVEL FALSE)
+    SET(UHD_VERSION_PATCH ${UHD_VERSION_PATCH_OVERRIDE})
+ENDIF(DEFINED UHD_VERSION_PATCH_OVERRIDE)
+IF(NOT DEFINED UHD_VERSION_DEVEL)
+    SET(UHD_VERSION_DEVEL FALSE)
+ENDIF(NOT DEFINED UHD_VERSION_DEVEL)
+SET(UHD_GIT_BRANCH "")
+IF(GIT_FOUND)
+    EXECUTE_PROCESS(
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
+        OUTPUT_VARIABLE _git_branch OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _git_branch_result
+    )
+    IF(_git_branch_result EQUAL 0)
+        IF(_git_branch STREQUAL "maint")
+            MESSAGE(STATUS "Operating on maint branch (stable).")
+        ELSEIF(_git_branch STREQUAL "master")
+            MESSAGE(STATUS "Operating on master branch.")
+            SET(UHD_VERSION_DEVEL TRUE)
+        ELSE()
+            MESSAGE(STATUS "Working off of feature or development branch. Updating version number.")
+            EXECUTE_PROCESS(
+                COMMAND ${PYTHON_EXECUTABLE} -c "print('${_git_branch}'.replace('/', '-'))"
+                OUTPUT_VARIABLE _git_safe_branch OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            SET(UHD_VERSION_PATCH ${_git_safe_branch})
+            SET(UHD_VERSION_DEVEL TRUE)
+            SET(UHD_GIT_BRANCH ${_git_branch})
+        ENDIF()
+    ELSE()
+        MESSAGE(STATUS "Could not determine git branch. Probably building from tarball.")
+    ENDIF()
+ENDIF(GIT_FOUND)
+
+########################################################################
 # Set up trimmed version numbers for DLL resource files and packages
 ########################################################################
-
 FUNCTION(DEPAD_NUM input_num output_num)
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

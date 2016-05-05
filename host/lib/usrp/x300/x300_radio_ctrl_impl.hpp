@@ -28,7 +28,6 @@
 #include "tx_frontend_core_200.hpp"
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
-#include <uhd/types/stdint.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 
 namespace uhd {

@@ -268,6 +268,7 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
     db_config.tx_spi_slaveno = DB_TX_SEN;
     db_config.i2c = zpu_i2c;
     db_config.clock = clock;
+    db_config.rx_dsp.reset();   //TODO: This really should be the FE correction block
     db_config.which_rx_clk = (_radio_slot == "A") ? X300_CLOCK_WHICH_DB0_RX : X300_CLOCK_WHICH_DB1_RX;
     db_config.which_tx_clk = (_radio_slot == "A") ? X300_CLOCK_WHICH_DB0_TX : X300_CLOCK_WHICH_DB1_TX;
     db_config.dboard_slot = (_radio_slot == "A")? 0 : 1;

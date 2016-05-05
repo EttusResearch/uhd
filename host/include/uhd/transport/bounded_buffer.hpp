@@ -55,7 +55,7 @@ namespace uhd{ namespace transport{
         /*!
          * Push a new element into the bounded buffer.
          * If the buffer is full prior to the push,
-         * make room by poping the oldest element.
+         * make room by popping the oldest element.
          * \param elem the new element to push
          * \return true if the element fit without popping for space
          */

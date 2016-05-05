@@ -75,6 +75,7 @@ public:
     std::vector<double> get_clock_rates(unit_t);
     void set_clock_enabled(unit_t, bool);
     double get_codec_rate(unit_t);
+    void set_fe_connection(unit_t unit, const fe_connection_t& fe_conn);
 
     void write_spi(
         unit_t unit,
@@ -350,4 +351,9 @@ uhd::time_spec_t usrp2_dboard_iface::get_command_time()
 void usrp2_dboard_iface::set_command_time(const uhd::time_spec_t& t)
 {
     _wb_iface->set_time(t);
+}
+
+void usrp2_dboard_iface::set_fe_connection(unit_t, const fe_connection_t&)
+{
+    throw uhd::not_implemented_error("fe connection configuration support not implemented");
 }

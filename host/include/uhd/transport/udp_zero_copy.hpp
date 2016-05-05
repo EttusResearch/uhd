@@ -31,7 +31,7 @@ namespace uhd{ namespace transport{
  * Rather, the zero copy transport gives the caller memory references.
  * The caller informs the transport when it is finished with the reference.
  *
- * On linux systems, the zero copy transport can use a kernel packet ring.
+ * On Linux systems, the zero copy transport can use a kernel packet ring.
  * If no platform specific solution is available, make returns a boost asio
  * implementation that wraps the functionality around a standard send/recv calls.
  */

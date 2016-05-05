@@ -80,7 +80,7 @@ public:
      * These instructions should be queried if the user interrupts an image loading
      * session, as this will likely leave the device in an unstable state.
      * \param device_type the "type=foo" value given in an --args option
-     * \return recoverying instructions
+     * \return recovery instructions
      */
     static std::string get_recovery_instructions(const std::string &device_type);
 };

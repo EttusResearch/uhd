@@ -449,14 +449,17 @@ private:
             //Only resolve if the starting node has passed
             if (start_node_encountered) {
                 dag_vertex_t& node = _get_vertex(*node_iter);
+                std::string node_val;
                 if (force or node.is_dirty()) {
                     node.resolve();
                     if (node.get_class() == CLASS_WORKER) {
                         resolved_workers.push_back(&node);
                     }
-                    EX_LOG(1, str(boost::format("resolved node %s (%s)") % node.get_name() % (node.is_dirty()?"dirty":"clean")));
+                    EX_LOG(1, str(boost::format("resolved node %s (%s) [%s]") %
+                                    node.get_name() % (node.is_dirty()?"dirty":"clean") % node.to_string()));
                 } else {
-                    EX_LOG(1, str(boost::format("skipped node %s (%s)") % node.get_name() % (node.is_dirty()?"dirty":"clean")));
+                    EX_LOG(1, str(boost::format("skipped node %s (%s) [%s]") %
+                                    node.get_name() % (node.is_dirty()?"dirty":"clean") % node.to_string()));
                 }
             }
 

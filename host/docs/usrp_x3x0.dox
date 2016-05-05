@@ -131,6 +131,23 @@ Installation instructions for this interface are available on the official Intel
 
 The LEDs on the front panel can be useful in debugging hardware and software issues (see \ref x3x0_hw_fpanel)
 
+### Dual 10 Gigabit Ethernet
+
+In order to utilize the X-series USRP over dual 10 Gigabit Ethernet interfaces, ensure
+either the XG or XGS image is installed (see \ref x3x0_load_fpga_imgs_fpga_flavours).
+In addition to burning the prerequisite FPGA image, it may also be necessary
+to tune the network interface card (NIC) to eliminate drops (Ds) and reduce overflows (Os).
+This is done by increasing the number of RX descriptors (see \ref transport_udp_linux).
+
+The benchmark_rate tool can be used to test this capability.
+Run the following commands to test the X-series USRP over both 10 Gigabit
+Ethernet interfaces with the maximum rate of 200 Msps per channel:
+
+    cd <install-path>/lib/uhd/examples
+    ./benchmark_rate --args="type=x300,addr=<Primary IP>,second_addr=<secondary IP>" --channels="0,1" --rx_rate 200e6
+
+The second interface is specified by the extra argument <b>second_addr</b>.
+
 \subsection x3x0_hw_pcie PCI Express (Desktop)
 
 <b>Important Note: The USRP X-Series provides PCIe connectivity over MXI cable.
