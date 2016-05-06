@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2015,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -101,7 +101,7 @@ public:
     double get_clock_rate(unit_t);
     void set_clock_enabled(unit_t, bool);
     double get_codec_rate(unit_t);
-    void set_fe_connection(unit_t unit, const fe_connection_t& fe_conn);
+    void set_fe_connection(unit_t unit, const std::string&, const fe_connection_t& fe_conn);
 
 private:
     timed_wb_iface::sptr _wb_iface;
@@ -288,7 +288,7 @@ uhd::time_spec_t b100_dboard_iface::get_command_time(void)
     return _wb_iface->get_time();
 }
 
-void b100_dboard_iface::set_fe_connection(unit_t, const fe_connection_t&)
+void b100_dboard_iface::set_fe_connection(unit_t, const std::string&, const fe_connection_t&)
 {
     throw uhd::not_implemented_error("fe connection configuration support not implemented");
 }

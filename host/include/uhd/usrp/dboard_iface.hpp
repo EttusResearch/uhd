@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2013,2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -276,9 +276,14 @@ public:
      * Configure the front-end connection parameters.
      *
      * \param unit which unit rx or tx
+     * \param fe_name name of the front-end to update
      * \param fe_conn connection parameters class
      */
-    virtual void set_fe_connection(unit_t unit, const uhd::usrp::fe_connection_t& fe_conn) = 0;
+    virtual void set_fe_connection(
+        unit_t unit,
+        const std::string& fe_name,
+        const uhd::usrp::fe_connection_t& fe_conn
+    ) = 0;
 
     /*!
      * Get the command time.

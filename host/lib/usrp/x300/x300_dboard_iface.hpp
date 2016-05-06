@@ -97,7 +97,9 @@ public:
         boost::uint32_t data,
         size_t num_bits
     );
-    void set_fe_connection(unit_t unit, const uhd::usrp::fe_connection_t& fe_conn);
+    void set_fe_connection(
+        unit_t unit,  const std::string& name,
+        const uhd::usrp::fe_connection_t& fe_conn);
 
 private:
     const x300_dboard_iface_config_t _config;

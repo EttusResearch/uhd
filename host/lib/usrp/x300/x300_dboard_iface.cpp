@@ -1,5 +1,5 @@
 //
-// Copyright 2013,2015 Ettus Research LLC
+// Copyright 2013,2015,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -307,7 +307,9 @@ void x300_dboard_iface::set_command_time(const uhd::time_spec_t& t)
     _config.cmd_time_ctrl->set_time(t);
 }
 
-void x300_dboard_iface::set_fe_connection(unit_t unit, const fe_connection_t& fe_conn)
+void x300_dboard_iface::set_fe_connection(
+    unit_t unit, const std::string& /*fe_name*/,
+    const fe_connection_t& fe_conn)
 {
     if (unit == UNIT_RX) {
         _config.rx_dsp->set_mux(fe_conn);

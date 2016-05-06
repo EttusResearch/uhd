@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012,2015 Ettus Research LLC
+// Copyright 2010-2012,2015,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ public:
     std::vector<double> get_clock_rates(unit_t);
     void set_clock_enabled(unit_t, bool);
     double get_codec_rate(unit_t);
-    void set_fe_connection(unit_t unit, const fe_connection_t& fe_conn);
+    void set_fe_connection(unit_t unit, const std::string&, const fe_connection_t& fe_conn);
 
     void write_spi(
         unit_t unit,
@@ -353,7 +353,7 @@ void usrp2_dboard_iface::set_command_time(const uhd::time_spec_t& t)
     _wb_iface->set_time(t);
 }
 
-void usrp2_dboard_iface::set_fe_connection(unit_t, const fe_connection_t&)
+void usrp2_dboard_iface::set_fe_connection(unit_t, const std::string&, const fe_connection_t&)
 {
     throw uhd::not_implemented_error("fe connection configuration support not implemented");
 }
