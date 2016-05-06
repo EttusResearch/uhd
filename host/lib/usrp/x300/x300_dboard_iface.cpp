@@ -26,14 +26,6 @@ using namespace uhd::usrp;
 using namespace boost::assign;
 
 /***********************************************************************
- * Make Function
- **********************************************************************/
-dboard_iface::sptr x300_dboard_iface::make(const x300_dboard_iface_config_t &config)
-{
-    return dboard_iface::sptr(new x300_dboard_iface(config));
-}
-
-/***********************************************************************
  * Structors
  **********************************************************************/
 x300_dboard_iface::x300_dboard_iface(const x300_dboard_iface_config_t &config):
@@ -307,12 +299,23 @@ void x300_dboard_iface::set_command_time(const uhd::time_spec_t& t)
     _config.cmd_time_ctrl->set_time(t);
 }
 
+void x300_dboard_iface::add_rx_fe(
+    const std::string& fe_name,
+    rx_frontend_core_3000::sptr fe_core)
+{
+    _rx_fes[fe_name] = fe_core;
+}
+
 void x300_dboard_iface::set_fe_connection(
-    unit_t unit, const std::string& /*fe_name*/,
+    unit_t unit, const std::string& fe_name,
     const fe_connection_t& fe_conn)
 {
     if (unit == UNIT_RX) {
-        _config.rx_dsp->set_mux(fe_conn);
+        if (_rx_fes.has_key(fe_name)) {
+            _rx_fes[fe_name]->set_fe_connection(fe_conn);
+        } else {
+            throw uhd::assertion_error("front-end name was not registered: " + fe_name);
+        }
     } else {
         throw uhd::not_implemented_error("frontend connection not configurable for TX");
     }

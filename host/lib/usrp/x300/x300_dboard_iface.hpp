@@ -22,7 +22,7 @@
 #include "spi_core_3000.hpp"
 #include "i2c_core_100_wb32.hpp"
 #include "gpio_atr_3000.hpp"
-#include "rx_dsp_core_3000.hpp"
+#include "rx_frontend_core_3000.hpp"
 #include <uhd/usrp/dboard_iface.hpp>
 #include "ad7922_regs.hpp" //aux adc
 #include "ad5623_regs.hpp" //aux dac
@@ -36,7 +36,6 @@ struct x300_dboard_iface_config_t
     size_t                                      tx_spi_slaveno;
     uhd::i2c_iface::sptr                        i2c;
     x300_clock_ctrl::sptr                       clock;
-    rx_dsp_core_3000::sptr                      rx_dsp;
     x300_clock_which_t                          which_rx_clk;
     x300_clock_which_t                          which_tx_clk;
     boost::uint8_t                              dboard_slot;
@@ -46,8 +45,6 @@ struct x300_dboard_iface_config_t
 class x300_dboard_iface : public uhd::usrp::dboard_iface::dboard_iface
 {
 public:
-    static uhd::usrp::dboard_iface::sptr make(const x300_dboard_iface_config_t &);
-
     x300_dboard_iface(const x300_dboard_iface_config_t &config);
     ~x300_dboard_iface(void);
 
@@ -101,10 +98,15 @@ public:
         unit_t unit,  const std::string& name,
         const uhd::usrp::fe_connection_t& fe_conn);
 
+    void add_rx_fe(
+        const std::string& fe_name,
+        rx_frontend_core_3000::sptr fe_core);
+
 private:
     const x300_dboard_iface_config_t _config;
     uhd::dict<unit_t, ad5623_regs_t> _dac_regs;
     uhd::dict<unit_t, double> _clock_rates;
+    uhd::dict<std::string, rx_frontend_core_3000::sptr> _rx_fes;
     void _write_aux_dac(unit_t);
 };
 

@@ -49,6 +49,8 @@ public:
     /************************************************************************
      * API calls
      ***********************************************************************/
+    double set_rate(double rate);
+
     void set_tx_antenna(const std::string &ant, const size_t chan);
     void set_rx_antenna(const std::string &ant, const size_t chan);
 

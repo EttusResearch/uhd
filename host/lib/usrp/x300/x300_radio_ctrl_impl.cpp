@@ -113,6 +113,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
         _rx_fe_map[i].name = fe_name;
         _rx_fe_map[i].core = rx_frontend_core_3000::make(_get_ctrl(i), regs::sr_addr(x300_regs::RX_RE_BASE));
         _tree->create<int>("rx_frontends" / fe_name);
+        _rx_fe_map[i].core->set_tick_rate(_radio_clk_rate);
         _rx_fe_map[i].core->populate_subtree(_tree->subtree("rx_frontends" / fe_name));
 
         _tx_fe_map[i].name = fe_name;
@@ -175,6 +176,14 @@ x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
 /****************************************************************************
  * API calls
  ***************************************************************************/
+double x300_radio_ctrl_impl::set_rate(double rate)
+{
+    for (size_t i = 0; i < _get_num_radios(); i++) {
+        _rx_fe_map[i].core->set_tick_rate(rate);
+    }
+    return radio_ctrl_impl::set_rate(rate);
+}
+
 void x300_radio_ctrl_impl::set_tx_antenna(const std::string &ant, const size_t chan)
 {
     _tree->access<std::string>(
@@ -268,26 +277,27 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
     db_config.tx_spi_slaveno = DB_TX_SEN;
     db_config.i2c = zpu_i2c;
     db_config.clock = clock;
-    db_config.rx_dsp.reset();   //TODO: This really should be the FE correction block
     db_config.which_rx_clk = (_radio_slot == "A") ? X300_CLOCK_WHICH_DB0_RX : X300_CLOCK_WHICH_DB1_RX;
     db_config.which_tx_clk = (_radio_slot == "A") ? X300_CLOCK_WHICH_DB0_TX : X300_CLOCK_WHICH_DB1_TX;
     db_config.dboard_slot = (_radio_slot == "A")? 0 : 1;
     db_config.cmd_time_ctrl = _get_ctrl(IO_MASTER_RADIO);
 
     //create a new dboard manager
+    boost::shared_ptr<x300_dboard_iface> db_iface = boost::make_shared<x300_dboard_iface>(db_config);
     _db_manager = dboard_manager::make(
         _db_eeproms[RX_EEPROM_ADDR + DB_OFFSET].id,
         _db_eeproms[TX_EEPROM_ADDR + DB_OFFSET].id,
         _db_eeproms[GDB_EEPROM_ADDR + DB_OFFSET].id,
-        x300_dboard_iface::make(db_config),
-        _tree->subtree(db_path)
+        db_iface, _tree->subtree(db_path)
     );
 
     size_t rx_chan = 0, tx_chan = 0;
     subdev_spec_t rx_spec, tx_spec;
     BOOST_FOREACH(const std::string& fe, _db_manager->get_rx_frontends()) {
-        _rx_fe_map[rx_chan++].db_fe_name = fe;
+        _rx_fe_map[rx_chan].db_fe_name = fe;
         rx_spec.push_back(subdev_spec_pair_t(_radio_slot, fe));
+        db_iface->add_rx_fe(fe, _rx_fe_map[rx_chan].core);
+        rx_chan++;
     }
     BOOST_FOREACH(const std::string& fe, _db_manager->get_tx_frontends()) {
         _tx_fe_map[tx_chan++].db_fe_name = fe;

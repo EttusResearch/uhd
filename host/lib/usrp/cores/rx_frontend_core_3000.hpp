@@ -1,5 +1,5 @@
 //
-// Copyright 2011,2014 Ettus Research LLC
+// Copyright 2011,2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhd/usrp/fe_connection.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <complex>
@@ -38,9 +39,11 @@ public:
 
     static sptr make(uhd::wb_iface::sptr iface, const size_t base);
 
+    virtual void set_tick_rate(const double rate) = 0;
+
     virtual void bypass_all(bool bypass_en) = 0;
 
-    virtual void set_mux(const std::string &mode, const bool inv_i = false, const bool inv_q = false) = 0;
+    virtual void set_fe_connection(const uhd::usrp::fe_connection_t& fe_conn) = 0;
 
     virtual void set_dc_offset_auto(const bool enb) = 0;
 

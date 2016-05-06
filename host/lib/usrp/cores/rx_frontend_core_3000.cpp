@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012,2014 Ettus Research LLC
+// Copyright 2011-2012,2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 //
 
 #include "rx_frontend_core_3000.hpp"
+#include "dsp_core_utils.hpp"
 #include <boost/math/special_functions/round.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
@@ -28,12 +29,13 @@ using namespace uhd;
 #define REG_RX_FE_OFFSET_I          _base + 8  //18 bits
 #define REG_RX_FE_OFFSET_Q          _base + 12 //18 bits
 #define REG_RX_FE_MAPPING           _base + 16
+#define REG_RX_FE_HET_CORDIC_PHASE  _base + 20
 
 #define FLAG_DSP_RX_MAPPING_SWAP_IQ     (1 << 0)
 #define FLAG_DSP_RX_MAPPING_REAL_MODE   (1 << 1)
 #define FLAG_DSP_RX_MAPPING_INVERT_Q    (1 << 2)
 #define FLAG_DSP_RX_MAPPING_INVERT_I    (1 << 3)
-#define FLAG_DSP_RX_MAPPING_HET_MODE    (1 << 4)
+#define FLAG_DSP_RX_MAPPING_REAL_DECIM  (1 << 4)
 //#define FLAG_DSP_RX_MAPPING_RESERVED    (1 << 5)
 //#define FLAG_DSP_RX_MAPPING_RESERVED    (1 << 6)
 #define FLAG_DSP_RX_MAPPING_BYPASS_ALL  (1 << 7)
@@ -41,6 +43,8 @@ using namespace uhd;
 #define OFFSET_FIXED (1ul << 31)
 #define OFFSET_SET   (1ul << 30)
 #define FLAG_MASK (OFFSET_FIXED | OFFSET_SET)
+
+using namespace uhd::usrp;
 
 static boost::uint32_t fs_to_bits(const double num, const size_t bits){
     return boost::int32_t(boost::math::round(num * (1 << (bits-1))));
@@ -57,30 +61,64 @@ const std::complex<double> rx_frontend_core_3000::DEFAULT_IQ_BALANCE_VALUE = std
 class rx_frontend_core_3000_impl : public rx_frontend_core_3000{
 public:
     rx_frontend_core_3000_impl(wb_iface::sptr iface, const size_t base):
-        _i_dc_off(0), _q_dc_off(0), _mapping("IQ"), _iface(iface), _base(base)
+        _i_dc_off(0), _q_dc_off(0), _tick_rate(0.0),
+        _fe_conn(fe_connection_t("IQ")), _iface(iface), _base(base)
     {
         //NOP
+    }
+
+    void set_tick_rate(const double rate) {
+        _tick_rate = rate;
     }
 
     void bypass_all(bool bypass_en) {
         if (bypass_en) {
             _iface->poke32(REG_RX_FE_MAPPING, FLAG_DSP_RX_MAPPING_BYPASS_ALL);
         } else {
-            set_mux(_mapping);
+            set_fe_connection(_fe_conn);
         }
     }
 
-    void set_mux(const std::string &mode, const bool inv_i = false, const bool inv_q = false) {
-        static const uhd::dict<std::string, boost::uint32_t> mode_to_mux = boost::assign::map_list_of
-            ("IQ", 0)
-            ("QI", FLAG_DSP_RX_MAPPING_SWAP_IQ)
-            ("I", FLAG_DSP_RX_MAPPING_REAL_MODE)
-            ("Q", FLAG_DSP_RX_MAPPING_SWAP_IQ | FLAG_DSP_RX_MAPPING_REAL_MODE)
-        ;
-        _iface->poke32(REG_RX_FE_MAPPING, mode_to_mux[mode]
-            | (inv_i ? FLAG_DSP_RX_MAPPING_INVERT_I : 0)
-            | (inv_q ? FLAG_DSP_RX_MAPPING_INVERT_Q : 0));
-        _mapping = mode;
+    void set_fe_connection(const fe_connection_t& fe_conn) {
+        boost::uint32_t mapping_reg_val = 0;
+        switch (fe_conn.get_sampling_mode()) {
+        case fe_connection_t::REAL:
+        case fe_connection_t::HETERODYNE:
+            mapping_reg_val = FLAG_DSP_RX_MAPPING_REAL_MODE|FLAG_DSP_RX_MAPPING_REAL_DECIM;
+            break;
+        default:
+            mapping_reg_val = 0;
+            break;
+        }
+
+        if (fe_conn.is_iq_swapped()) mapping_reg_val |= FLAG_DSP_RX_MAPPING_SWAP_IQ;
+        if (fe_conn.is_i_inverted()) mapping_reg_val |= FLAG_DSP_RX_MAPPING_INVERT_I;
+        if (fe_conn.is_q_inverted()) mapping_reg_val |= FLAG_DSP_RX_MAPPING_INVERT_Q;
+
+        _iface->poke32(REG_RX_FE_MAPPING, mapping_reg_val);
+
+        UHD_ASSERT_THROW(_tick_rate!=0.0)
+        double cordic_freq = 0.0, actual_cordic_freq = 0.0;
+        if (fe_conn.get_sampling_mode() == fe_connection_t::HETERODYNE) {
+            //1. Remember the sign of the IF frequency.
+            //   It will be discarded in the next step
+            int if_freq_sign = boost::math::sign(fe_conn.get_if_freq());
+            //2. Map IF frequency to the range [0, _tick_rate)
+            double if_freq = std::abs(std::fmod(fe_conn.get_if_freq(), _tick_rate));
+            //3. Map IF frequency to the range [-_tick_rate/2, _tick_rate/2)
+            //   This is the aliased frequency
+            if (if_freq > (_tick_rate / 2.0)) {
+                if_freq -= _tick_rate;
+            }
+            //4. Set DSP offset to spin the signal in the opposite
+            //   direction as the aliased frequency
+            cordic_freq = if_freq * (-if_freq_sign);
+        }
+        int32_t freq_word;
+        get_freq_and_freq_word(cordic_freq, _tick_rate, actual_cordic_freq, freq_word);
+        _iface->poke32(REG_RX_FE_HET_CORDIC_PHASE, boost::uint32_t(freq_word));
+
+        _fe_conn = fe_conn;
     }
 
     void set_dc_offset_auto(const bool enb) {
@@ -102,13 +140,12 @@ public:
         _iface->poke32(REG_RX_FE_OFFSET_Q, flags | (_q_dc_off & ~FLAG_MASK));
     }
 
-    void set_iq_balance(const std::complex<double> &cor){
+    void set_iq_balance(const std::complex<double> &cor) {
         _iface->poke32(REG_RX_FE_MAG_CORRECTION, fs_to_bits(cor.real(), 18));
         _iface->poke32(REG_RX_FE_PHASE_CORRECTION, fs_to_bits(cor.imag(), 18));
     }
 
-    void populate_subtree(uhd::property_tree::sptr subtree)
-    {
+    void populate_subtree(uhd::property_tree::sptr subtree) {
         subtree->create<std::complex<double> >("dc_offset/value")
             .set(DEFAULT_DC_OFFSET_VALUE)
             .set_coercer(boost::bind(&rx_frontend_core_3000::set_dc_offset, this, _1))
@@ -124,10 +161,11 @@ public:
     }
 
 private:
-    boost::int32_t _i_dc_off, _q_dc_off;
-    std::string    _mapping;
-    wb_iface::sptr _iface;
-    const size_t   _base;
+    boost::int32_t  _i_dc_off, _q_dc_off;
+    double          _tick_rate;
+    fe_connection_t _fe_conn;
+    wb_iface::sptr  _iface;
+    const size_t    _base;
 };
 
 rx_frontend_core_3000::sptr rx_frontend_core_3000::make(wb_iface::sptr iface, const size_t base){
