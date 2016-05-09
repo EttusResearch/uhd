@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2015 Ettus Research LLC
+# Copyright 2015-2016 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,20 +19,13 @@
 Device test runner.
 """
 
+from __future__ import print_function
 import os
 import sys
 import subprocess
 import argparse
 import logging
-import time
-from threading  import Thread
-try:
-    from Queue import Queue, Empty
-except ImportError:
-    from queue import Queue, Empty  # Py3k
 from usrp_probe import get_usrp_list
-
-ANI = ('.', 'o', 'O', '0', 'O', 'o')
 
 def setup_parser():
     """ Set up argparser """
@@ -46,8 +39,12 @@ def setup_parser():
     return parser
 
 def setup_env(args):
+    " Add build dir into lib + exe paths, depending on OS "
     def setup_env_win(env, build_dir, build_type):
-        env['PATH'] = "{build_dir}/lib/{build_type};{build_dir}/examples/{build_type};{build_dir}/utils/{build_type};{path}".format(
+        " Add build dir into paths (Windows)"
+        env['PATH'] = "{build_dir}/lib/{build_type};" + \
+                      "{build_dir}/examples/{build_type};" + \
+                      "{build_dir}/utils/{build_type};{path}".format(
             build_dir=build_dir, build_type=build_type, path=env.get('PATH', '')
         )
         env['LIBPATH'] = "{build_dir}/lib/{build_type};{path}".format(
@@ -58,6 +55,7 @@ def setup_env(args):
         )
         return env
     def setup_env_unix(env, build_dir):
+        " Add build dir into paths (Unices)"
         env['PATH'] = "{build_dir}/examples:{build_dir}/utils:{path}".format(
             build_dir=build_dir, path=env.get('PATH', '')
         )
@@ -66,6 +64,7 @@ def setup_env(args):
         )
         return env
     def setup_env_osx(env, build_dir):
+        " Add build dir into paths (OS X)"
         env['PATH'] = "{build_dir}/examples:{build_dir}/utils:{path}".format(
                 build_dir=build_dir, path=env.get('PATH', '')
         )
@@ -87,12 +86,11 @@ def setup_env(args):
     return env
 
 def main():
-    """
-    Go, go, go!
-    """
+    " Go, go, go! "
     args = setup_parser().parse_args()
+    env = setup_env(args)
     devtest_pattern = "devtest_{p}.py".format(p=args.devtest_pattern)
-    uhd_args_list = get_usrp_list("type=" + args.device_filter)
+    uhd_args_list = get_usrp_list("type=" + args.device_filter, env)
     if len(uhd_args_list) == 0:
         print("No devices found. Exiting.")
         exit(1)
@@ -104,7 +102,6 @@ def main():
             ser=uhd_info.get('serial')
         ))
         print('--- This will take some time. Better grab a cup of tea.')
-        env = setup_env(args)
         args_str = uhd_info['args']
         env['_UHD_TEST_ARGS_STR'] = args_str
         logfile_name = "log{}.log".format(
@@ -117,7 +114,7 @@ def main():
         env['_UHD_TEST_RESULTSFILE'] = os.path.join(args.log_dir, resultsfile_name)
         env['_UHD_TEST_LOG_LEVEL'] = str(logging.INFO)
         env['_UHD_TEST_PRINT_LEVEL'] = str(logging.WARNING)
-        p = subprocess.Popen(
+        proc = subprocess.Popen(
             [
                 "python", "-m", "unittest", "discover", "-v",
                 "-s", args.src_dir,
@@ -126,13 +123,12 @@ def main():
             env=env,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         )
-        print(p.communicate()[0])
-        if p.returncode != 0:
+        print(proc.communicate()[0])
+        if proc.returncode != 0:
             tests_passed = False
     print('--- Done testing all attached devices.')
     return tests_passed
 
 if __name__ == "__main__":
-    if not main():
-        exit(1)
+    exit(not main())
 
