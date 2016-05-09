@@ -227,7 +227,6 @@ private:
         bool initialization_done;
         uhd::task::sptr claimer_task;
         std::string xport_path;
-        int router_dst_here;
 
         std::vector<x300_eth_conn_t> eth_conns;
 
@@ -312,7 +311,6 @@ private:
         boost::uint8_t router_addr_there;
         boost::uint8_t dst_prefix; //2bits
         boost::uint8_t router_dst_there;
-        boost::uint8_t router_dst_here;
         x300_eth_iface_t iface_index;
     };
     boost::uint32_t allocate_sid(mboard_members_t &mb, const sid_config_t &config);

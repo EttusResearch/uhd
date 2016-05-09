@@ -712,10 +712,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // determine routing based on address match
     ////////////////////////////////////////////////////////////////////
-    mb.router_dst_here = X300_XB_DST_E0; //some default if eeprom not match
-    if (mb.xport_path == "nirio") {
-        mb.router_dst_here = X300_XB_DST_PCI;
-    } else {
+    if (mb.xport_path != "nirio") {
         // Discover ethernet interfaces
         mb.discover_eth(mb_eeprom, eth_addrs);
     }
@@ -1242,7 +1239,6 @@ x300_impl::both_xports_t x300_impl::make_transport(
     config.router_addr_there    = X300_DEVICE_THERE;
     config.dst_prefix           = prefix;
     config.router_dst_there     = destination;
-    config.router_dst_here      = mb.router_dst_here;
 
     // Choose the endpoint based on the destination
     size_t endpoint = 0;
@@ -1305,13 +1301,15 @@ x300_impl::both_xports_t x300_impl::make_transport(
         fs_path mboard_path = fs_path("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate");
 
         if (mb.loaded_fpga_image.substr(0,2) == "HG") {
-            if (mb.router_dst_here == X300_XB_DST_E0) {
+            size_t max_link_rate = 0;
+            if (config.iface_index == X300_IFACE_ETH0) {
                 eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
-                _tree->access<double>(mboard_path).set(X300_MAX_RATE_1GIGE);
-            } else if (mb.router_dst_here == X300_XB_DST_E1) {
+                max_link_rate += X300_MAX_RATE_1GIGE;
+            } else if (config.iface_index == X300_IFACE_ETH1) {
                 eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
-                _tree->access<double>(mboard_path).set(X300_MAX_RATE_10GIGE);
+                max_link_rate += X300_MAX_RATE_10GIGE;
             }
+            _tree->access<double>(mboard_path).set(max_link_rate);
         } else if (mb.loaded_fpga_image.substr(0,2) == "XG") {
             eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
             size_t max_link_rate = X300_MAX_RATE_10GIGE;
