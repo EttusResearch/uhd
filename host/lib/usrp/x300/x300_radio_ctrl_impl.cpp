@@ -340,6 +340,8 @@ void x300_radio_ctrl_impl::self_test_adc(boost::uint32_t ramp_time_ms)
     //Turn on ramp pattern test
     _adc->set_test_word("ramp", "ramp");
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
+    //Short sleep to allow ramp to propogate through ADC
+    boost::this_thread::sleep(boost::posix_time::microsec(1));
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
 
     boost::this_thread::sleep(boost::posix_time::milliseconds(ramp_time_ms));
