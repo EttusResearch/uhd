@@ -1186,13 +1186,15 @@ x300_impl::both_xports_t x300_impl::make_transport(
         fs_path mboard_path = fs_path("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate");
 
         if (mb.loaded_fpga_image.substr(0,2) == "HG") {
+            size_t max_link_rate = 0;
             if (xbar_src_dst == X300_XB_DST_E0) {
                 eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
-                _tree->access<double>(mboard_path).set(X300_MAX_RATE_1GIGE);
+                max_link_rate += X300_MAX_RATE_1GIGE;
             } else if (xbar_src_dst == X300_XB_DST_E1) {
                 eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
-                _tree->access<double>(mboard_path).set(X300_MAX_RATE_10GIGE);
+                max_link_rate += X300_MAX_RATE_10GIGE;
             }
+            _tree->access<double>(mboard_path).set(max_link_rate);
         } else if (mb.loaded_fpga_image.substr(0,2) == "XG") {
             eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
             size_t max_link_rate = X300_MAX_RATE_10GIGE;
