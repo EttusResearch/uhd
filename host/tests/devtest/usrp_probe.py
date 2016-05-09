@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2015 Ettus Research LLC
+# Copyright 2015-2016 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@
 import re
 import subprocess
 
-def get_usrp_list(device_filter=None):
+def get_usrp_list(device_filter=None, env=None):
     """ Returns a list of dicts that contain USRP info """
     try:
+        cmd = ['uhd_find_devices']
         if device_filter is not None:
-            output = subprocess.check_output(['../../utils/uhd_find_devices', '--args', device_filter])
-        else:
-            output = subprocess.check_output('../../utils/uhd_find_devices')
+            cmd += ['--args', device_filter]
+        output = subprocess.check_output(cmd, env=env)
     except subprocess.CalledProcessError:
         return []
     split_re = "\n*-+\n-- .*\n-+\n"
