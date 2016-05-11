@@ -571,7 +571,28 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
         // Detect the frame size on the path to the USRP
         try {
-            _max_frame_sizes = determine_max_frame_size(mb.get_pri_eth().addr, req_max_frame_size);
+            frame_size_t pri_frame_sizes = determine_max_frame_size(
+                eth_addrs.at(0), req_max_frame_size
+            );
+
+            _max_frame_sizes = pri_frame_sizes;
+            if (eth_addrs.size() > 1) {
+                frame_size_t sec_frame_sizes = determine_max_frame_size(
+                    eth_addrs.at(1), req_max_frame_size
+                );
+
+                // Choose the minimum of the max frame sizes
+                // to ensure we don't exceed any one of the links' MTU
+                _max_frame_sizes.recv_frame_size = std::min(
+                    pri_frame_sizes.recv_frame_size,
+                    sec_frame_sizes.recv_frame_size
+                );
+
+                _max_frame_sizes.send_frame_size = std::min(
+                    pri_frame_sizes.send_frame_size,
+                    sec_frame_sizes.send_frame_size
+                );
+            }
         } catch(std::exception &e) {
             UHD_MSG(error) << e.what() << std::endl;
         }
