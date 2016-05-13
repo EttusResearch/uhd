@@ -402,10 +402,19 @@ void x300_impl::mboard_members_t::discover_eth(
 
     // Index the MB EEPROM addresses
     std::vector<std::string> mb_eeprom_addrs;
-    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr0"]);
-    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr1"]);
-    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr2"]);
-    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr3"]);
+    const size_t num_mb_eeprom_addrs = 4;
+    for (size_t i = 0; i < num_mb_eeprom_addrs; i++) {
+        const std::string key = "ip-addr" + boost::to_string(i);
+
+        // Show a warning if there exists duplicate addresses in the mboard eeprom
+        if (std::find(mb_eeprom_addrs.begin(), mb_eeprom_addrs.end(), mb_eeprom[key]) != mb_eeprom_addrs.end()) {
+            UHD_MSG(warning) << str(boost::format(
+                "Duplicate IP address %s found in mboard EEPROM. "
+                "Device may not function properly.\nView and reprogram the values "
+                "using the usrp_burn_mb_eeprom utility.\n") % mb_eeprom[key]);
+        }
+        mb_eeprom_addrs.push_back(mb_eeprom[key]);
+    }
 
     BOOST_FOREACH(const std::string& addr, ip_addrs) {
         x300_eth_conn_t conn_iface;
@@ -422,22 +431,38 @@ void x300_impl::mboard_members_t::discover_eth(
                 } else {
                     conn_iface.type = X300_IFACE_ETH1;
                 }
+                break;
             }
         }
 
-        // Check default IP addresses
-        if (addr == boost::asio::ip::address_v4(
-            boost::uint32_t(X300_DEFAULT_IP_ETH0_1G)).to_string()) {
-            conn_iface.type = X300_IFACE_ETH0;
-        } else if (addr == boost::asio::ip::address_v4(
-            boost::uint32_t(X300_DEFAULT_IP_ETH1_1G)).to_string()) {
-            conn_iface.type = X300_IFACE_ETH1;
-        } else if (addr == boost::asio::ip::address_v4(
-            boost::uint32_t(X300_DEFAULT_IP_ETH0_10G)).to_string()) {
-            conn_iface.type = X300_IFACE_ETH0;
-        } else if (addr == boost::asio::ip::address_v4(
-            boost::uint32_t(X300_DEFAULT_IP_ETH1_10G)).to_string()) {
-            conn_iface.type = X300_IFACE_ETH1;
+        // Check default IP addresses if we couldn't
+        // determine the IP from the mboard eeprom
+        if (conn_iface.type == X300_IFACE_NONE) {
+            UHD_MSG(warning) << str(boost::format(
+                "Address %s not found in mboard EEPROM. Address may be wrong or "
+                "the EEPROM may be corrupt.\n Attempting to continue with default "
+                "IP addresses.\n") % conn_iface.addr
+            );
+
+            if (addr == boost::asio::ip::address_v4(
+                boost::uint32_t(X300_DEFAULT_IP_ETH0_1G)).to_string()) {
+                conn_iface.type = X300_IFACE_ETH0;
+            } else if (addr == boost::asio::ip::address_v4(
+                boost::uint32_t(X300_DEFAULT_IP_ETH1_1G)).to_string()) {
+                conn_iface.type = X300_IFACE_ETH1;
+            } else if (addr == boost::asio::ip::address_v4(
+                boost::uint32_t(X300_DEFAULT_IP_ETH0_10G)).to_string()) {
+                conn_iface.type = X300_IFACE_ETH0;
+            } else if (addr == boost::asio::ip::address_v4(
+                boost::uint32_t(X300_DEFAULT_IP_ETH1_10G)).to_string()) {
+                conn_iface.type = X300_IFACE_ETH1;
+            } else {
+                throw uhd::assertion_error(str(boost::format(
+                    "X300 Initialization Error: Failed to match address %s with "
+                    "any addresses for the device. Please check the address.")
+                    % conn_iface.addr
+                ));
+            }
         }
 
         // Save to a vector of connections
@@ -459,7 +484,7 @@ void x300_impl::mboard_members_t::discover_eth(
             catch(std::exception &)
             {
                 throw uhd::io_error(str(boost::format(
-                    "X300 Initialization: Invalid address %s")
+                    "X300 Initialization Error: Invalid address %s")
                     % conn_iface.addr));
             }
             eth_conns.push_back(conn_iface);
