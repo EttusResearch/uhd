@@ -31,7 +31,8 @@
 
 namespace po = boost::program_options;
 
-const double INIT_DELAY = 0.05;  // 50mS initial delay before transmit
+const double CLOCK_TIMEOUT = 1000;  // 1000mS timeout for external clock locking
+const double INIT_DELAY    = 0.05;  // 50mS initial delay before transmit
 //typedef boost::atomic<bool>   atomic_bool;
 // We'll fake atomic bools for now, for more backward compat.
 // This is just an example, after all.
@@ -330,7 +331,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if(ref != "internal") {
             std::cout << "Now confirming lock on clock signals..." << std::endl;
             bool is_locked = false;
-            boost::system_time end_time = boost::get_system_time() + boost::posix_time::milliseconds(80);
+            boost::system_time end_time = boost::get_system_time() + boost::posix_time::milliseconds(CLOCK_TIMEOUT);
             for (int i = 0; i < num_mboards; i++) {
                 if (ref == "mimo" and i == 0) continue;
                 while((is_locked = usrp->get_mboard_sensor("ref_locked",i).to_bool()) == false and
