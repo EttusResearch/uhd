@@ -1,5 +1,5 @@
 //
-// Copyright 2014-2015 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ radio_ctrl_impl::radio_ctrl_impl() :
             time64_rb_bases.rb_now = regs::RB_TIME_NOW;
             time64_rb_bases.rb_pps = regs::RB_TIME_PPS;
             _time64 = time_core_3000::make(_perifs[i].ctrl, regs::sr_addr(regs::TIME), time64_rb_bases);
-            _time64->set_time_now(0.0);
+            this->set_time_now(0.0);
         }
 
         //Reset the RX control engine
@@ -103,14 +103,14 @@ radio_ctrl_impl::radio_ctrl_impl() :
     ////////////////////////////////////////////////////////////////////
     if (not _tree->exists(fs_path("time") / "now")) {
         _tree->create<time_spec_t>(fs_path("time") / "now")
-            .set_publisher(boost::bind(&time_core_3000::get_time_now, _time64))
-            .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_now, _time64, _1))
+            .set_publisher(boost::bind(&radio_ctrl_impl::get_time_now, this))
+            .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_time_now, this, _1))
         ;
     }
     if (not _tree->exists(fs_path("time") / "pps")) {
         _tree->create<time_spec_t>(fs_path("time") / "pps")
-            .set_publisher(boost::bind(&time_core_3000::get_time_last_pps, _time64))
-            .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_next_pps, _time64, _1))
+            .set_publisher(boost::bind(&radio_ctrl_impl::get_time_last_pps, this))
+            .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_time_next_pps, this, _1))
         ;
     }
 
@@ -302,7 +302,7 @@ void radio_ctrl_impl::handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer,
     {
         stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
         stream_cmd.stream_now = false;
-        stream_cmd.time_spec = _time64->get_time_now() + time_spec_t(0.05);
+        stream_cmd.time_spec = this->get_time_now() + time_spec_t(0.05);
         for (size_t i = 0; i < my_streamer->get_num_channels(); i++) {
             issue_stream_cmd(stream_cmd, i);
         }
@@ -361,5 +361,26 @@ void radio_ctrl_impl::_update_spp(int spp)
     for (size_t i = 0; i < _num_rx_channels; i++) {
         sr_write(regs::RX_CTRL_MAXLEN, uint32_t(spp), i);
     }
+}
+
+void radio_ctrl_impl::set_time_now(const time_spec_t &time_spec)
+{
+    _time64->set_time_now(time_spec);
+}
+
+void radio_ctrl_impl::set_time_next_pps(const time_spec_t &time_spec)
+{
+    _time64->set_time_next_pps(time_spec);
+}
+
+
+time_spec_t radio_ctrl_impl::get_time_now()
+{
+    return _time64->get_time_now();
+}
+
+time_spec_t radio_ctrl_impl::get_time_last_pps()
+{
+    return _time64->get_time_last_pps();
 }
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2014-2015 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -69,6 +69,11 @@ public:
     virtual double get_rx_frequency(const size_t) /* const */;
     virtual double get_tx_gain(const size_t) /* const */;
     virtual double get_rx_gain(const size_t) /* const */;
+
+    void set_time_now(const time_spec_t &time_spec);
+    void set_time_next_pps(const time_spec_t &time_spec);
+    time_spec_t get_time_now();
+    time_spec_t get_time_last_pps();
 
     /***********************************************************************
      * Block control API calls

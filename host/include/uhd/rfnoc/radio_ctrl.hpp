@@ -1,5 +1,5 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -143,6 +143,44 @@ public:
      * \return The actual gain value
      */
     virtual double set_rx_gain(const double gain, const size_t chan) = 0;
+
+    /*! Sets the time in the radio's timekeeper to the given value.
+     *
+     * Note that there is a non-deterministic delay between calling this
+     * function and the valung written to the register. For setting the
+     * time in alignment with a certain reference time, use
+     * set_time_next_pps().
+     */
+    virtual void set_time_now(const time_spec_t &time_spec) = 0;
+
+    /*! Set the time registers at the next pps tick.
+     *
+     * The values will not be latched in until the pulse occurs.
+     * It is recommended that the user sleep(1) after calling to ensure
+     * that the time registers will be in a known state prior to use.
+     *
+     * Note: Because this call sets the time on the "next" pps,
+     * the seconds in the time spec should be current seconds + 1.
+     *
+     * \param time_spec the time to latch into the timekeeper
+     */
+    virtual void set_time_next_pps(const time_spec_t &time_spec) = 0;
+
+    /*! Get the current time in the timekeeper registers.
+     *
+     * Note that there is a non-deterministic delay between the time the
+     * register is read and the time the function value is returned.
+     * To get the time with respect to a tick edge, use get_time_last_pps().
+     *
+     * \return A timespec representing current radio time
+     */
+    virtual time_spec_t get_time_now() = 0;
+
+    /*! Get the time when the last PPS pulse occurred.
+     *
+     * \return A timespec representing the last PPS
+     */
+    virtual time_spec_t get_time_last_pps() = 0;
 
 }; /* class radio_ctrl */
 
