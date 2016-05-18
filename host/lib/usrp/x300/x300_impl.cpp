@@ -1092,7 +1092,7 @@ static boost::uint32_t extract_sid_from_pkt(void* pkt, size_t) {
     return uhd::sid_t(uhd::wtohx(static_cast<const boost::uint32_t*>(pkt)[1])).get_dst();
 }
 
-x300_impl::both_xports_t x300_impl::make_transport(
+uhd::both_xports_t x300_impl::make_transport(
     const uhd::sid_t &address,
     const xport_type_t xport_type,
     const uhd::device_addr_t& args

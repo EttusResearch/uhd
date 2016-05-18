@@ -164,7 +164,7 @@ private: // methods
         boost::uint8_t destination,
         boost::uint8_t prefix);
 
-    both_xports_t make_transport(
+    uhd::both_xports_t make_transport(
         const uhd::sid_t &address,
         const xport_type_t type,
         const uhd::device_addr_t &args

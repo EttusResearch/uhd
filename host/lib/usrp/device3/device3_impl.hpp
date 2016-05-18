@@ -32,6 +32,7 @@
 #include <uhd/types/direction.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/device3.hpp>
+#include "xports.hpp"
 // Common FPGA cores:
 #include "radio_ctrl_core_3000.hpp"
 #include "rx_dsp_core_3000.hpp"
@@ -73,18 +74,6 @@ public:
     };
 
     enum xport_t {AXI, ETH, PCIE};
-
-    /*! Holds all necessary items for a bidirectional link
-     */
-    struct both_xports_t
-    {
-        uhd::transport::zero_copy_if::sptr recv;
-        uhd::transport::zero_copy_if::sptr send;
-        size_t recv_buff_size;
-        size_t send_buff_size;
-        uhd::sid_t send_sid;
-        uhd::sid_t recv_sid;
-    };
 
     //! Stores all streaming-related options
     struct stream_options_t
@@ -184,7 +173,7 @@ protected:
      * \param args Additional arguments for the transport generation. See \ref page_transport
      *             for valid arguments.
      */
-    virtual both_xports_t make_transport(
+    virtual uhd::both_xports_t make_transport(
         const uhd::sid_t &address,
         const xport_type_t xport_type,
         const uhd::device_addr_t& args

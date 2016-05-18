@@ -715,12 +715,12 @@ uhd::sid_t e300_impl::_allocate_sid(
     return sid;
 }
 
-e300_impl::both_xports_t e300_impl::make_transport(
+uhd::both_xports_t e300_impl::make_transport(
     const uhd::sid_t &address,
     const xport_type_t type,
     const uhd::device_addr_t &)
 {
-    both_xports_t xports;
+    uhd::both_xports_t xports;
 
     const uhd::transport::zero_copy_xport_params params =
         (type == CTRL) ? _ctrl_xport_params : _data_xport_params;

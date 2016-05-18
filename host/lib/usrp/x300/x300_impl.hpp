@@ -222,7 +222,7 @@ private:
         const uhd::sid_t &address,
         const uint32_t src_addr,
         const uint32_t src_dst);
-    both_xports_t make_transport(
+    uhd::both_xports_t make_transport(
         const uhd::sid_t &address,
         const xport_type_t xport_type,
         const uhd::device_addr_t& args
