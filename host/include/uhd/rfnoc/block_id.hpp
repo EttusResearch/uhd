@@ -144,6 +144,26 @@ namespace uhd {
                 and (_block_ctr == block_id.get_block_count());
         }
 
+        bool operator != (const block_id_t &block_id) const {
+            return not (*this == block_id);
+        }
+
+        bool operator < (const block_id_t &block_id) const {
+            return (
+                _device_no < block_id.get_device_no()
+                or (_device_no == block_id.get_device_no() and _block_name < block_id.get_block_name())
+                or (_device_no == block_id.get_device_no() and _block_name == block_id.get_block_name() and _block_ctr < block_id.get_block_count())
+           );
+        }
+
+        bool operator > (const block_id_t &block_id) const {
+            return (
+                _device_no > block_id.get_device_no()
+                or (_device_no == block_id.get_device_no() and _block_name > block_id.get_block_name())
+                or (_device_no == block_id.get_device_no() and _block_name == block_id.get_block_name() and _block_ctr > block_id.get_block_count())
+           );
+        }
+
         //! Check if a string matches the entire block ID (not like match())
         bool operator == (const std::string &block_id_str) const {
             return get() == block_id_str;

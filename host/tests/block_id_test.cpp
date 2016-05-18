@@ -109,3 +109,9 @@ BOOST_AUTO_TEST_CASE(test_block_id_set) {
     BOOST_CHECK_EQUAL(block_id_for_set.get_block_count(), 3);
 }
 
+BOOST_AUTO_TEST_CASE(test_block_id_cmp) {
+    BOOST_CHECK(block_id_t("0/FFT_1") == block_id_t("0/FFT_1"));
+    BOOST_CHECK(block_id_t("0/FFT_1") != block_id_t("1/FFT_1"));
+    BOOST_CHECK(block_id_t("0/FFT_1") < block_id_t("1/aaaaaaaaa_0"));
+    BOOST_CHECK(not (block_id_t("0/FFT_1") > block_id_t("1/aaaaaaaaa_0")));
+}
