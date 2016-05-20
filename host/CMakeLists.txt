@@ -453,8 +453,9 @@ UHD_INSTALL(
 # Handle pre-built UHD Images for packaging
 ########################################################################
 IF(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
+    MESSAGE(STATUS "Reading images from directory `${UHD_IMAGES_SRC_DIR}'")
     FILE(GLOB_RECURSE _image_files "${UHD_IMAGES_SRC_DIR}/*")
-    MESSAGE(STATUS "Using images:")
+    MESSAGE(STATUS "These images files will be installed/packaged:")
     FOREACH(_img ${_image_files})
         MESSAGE(STATUS "  ${_img}")
     ENDFOREACH(_img)
