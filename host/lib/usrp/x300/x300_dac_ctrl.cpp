@@ -69,21 +69,13 @@ public:
         //ADI recommendations:
         //- soft reset the chip before configuration
         //- put the chip in sleep mode during configuration and wake it up when done
-        _soft_reset();
-        _sleep_mode(true);
-        _init();
-        _sleep_mode(false);
-    }
-
-    void reset_and_resync()
-    {
-        //ADI recommendations:
-        //- soft reset the chip before configuration
-        //- put the chip in sleep mode during configuration and wake it up when done
         //- configure synchronization settings when sleeping
         _soft_reset();
         _sleep_mode(true);
         _init();
+        //We run backend sync regardless of whether we need to sync multiple DACs
+        //because we use the internal DAC FIFO to meet system synchronous timing
+        //and we need to guarantee that the FIFO is not empty.
         _backend_sync();
         _sleep_mode(false);
     }
