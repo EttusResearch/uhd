@@ -1079,6 +1079,18 @@ private:
         boost::mutex::scoped_lock lock(_mutex);
         if (mode == "performance")
         {
+            // performance mode attempts to reduce tuning and settling time
+            // as much as possible without adding noise.
+
+            // RXLNA2 has a ~100ms warm up time, so the LNAs are forced on
+            // here to reduce the settling time as much as possible.  The
+            // force on signals are gated by the LNA selection so the LNAs
+            // are turned on/off during tuning.  Unfortunately, that means
+            // there is still a long settling time when tuning from the high
+            // band (>1.5 GHz) to the low band (<1.5 GHz).
+            set_cpld_field(RXLNA1_FORCEON, 1);
+            set_cpld_field(RXLNA2_FORCEON, 1);
+
             /*
             // Placeholders in case some components need to be forced on to
             // reduce settling time.  Note that some FORCEON lines are still gated
@@ -1090,36 +1102,43 @@ private:
             set_cpld_field(RXMIXER_FORCEON, 0);
             set_cpld_field(RXLO1_FORCEON, 0);
             set_cpld_field(RXLO2_FORCEON, 0);
-            set_cpld_field(RXLNA1_FORCEON, 0);
-            set_cpld_field(RXLNA2_FORCEON, 0);
             //set_cpld_field(TXDRV_FORCEON, 1);  // controlled by RX antenna selection
             set_cpld_field(TXMOD_FORCEON, 0);
             set_cpld_field(TXMIXER_FORCEON, 0);
             set_cpld_field(TXLO1_FORCEON, 0);
             set_cpld_field(TXLO2_FORCEON, 0);
-            write_cpld_reg();
             */
+            write_cpld_reg();
+
             _power_mode = PERFORMANCE;
         }
         else if (mode == "powersave")
         {
+            // powersave mode attempts to use the least amount of power possible
+            // by powering on components only when needed.  Longer tuning and
+            // settling times are expected.
+
+            // Clear the LNA force on bits.
+            set_cpld_field(RXLNA1_FORCEON, 0);
+            set_cpld_field(RXLNA2_FORCEON, 0);
+
             /*
-            // Placeholders in case force on bits need to be set or cleared.
+            // Placeholders in case other force on bits need to be set or cleared.
             set_cpld_field(RXAMP_FORCEON, 0);
             set_cpld_field(RXDEMOD_FORCEON, 0);
             set_cpld_field(RXDRV_FORCEON, 0);
             set_cpld_field(RXMIXER_FORCEON, 0);
             set_cpld_field(RXLO1_FORCEON, 0);
             set_cpld_field(RXLO2_FORCEON, 0);
-            set_cpld_field(RXLNA1_FORCEON, 0);
-            set_cpld_field(RXLNA2_FORCEON, 0);
             //set_cpld_field(TXDRV_FORCEON, 1);  // controlled by RX antenna selection
             set_cpld_field(TXMOD_FORCEON, 0);
             set_cpld_field(TXMIXER_FORCEON, 0);
             set_cpld_field(TXLO1_FORCEON, 0);
             set_cpld_field(TXLO2_FORCEON, 0);
-            write_cpld_reg();
             */
+
+            write_cpld_reg();
+
             _power_mode = POWERSAVE;
         }
     }
