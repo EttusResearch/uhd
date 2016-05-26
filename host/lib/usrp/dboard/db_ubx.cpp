@@ -698,13 +698,22 @@ private:
         //validate input
         assert_has(ubx_rx_antennas, ant, "ubx rx antenna name");
 
-        if(ant == "RX2")
-            set_gpio_field(RX_ANT, 1);
-        else if(ant == "TX/RX")
+        // Due to an issue with TX path into to the RF switch (U32), there
+        // is a long transient at the beginning of transmission when the RX
+        // antenna is set to RX2.  Forcing on the TX PA removes the transient,
+        // so it is forced on only when the RX2 antenna is selected.  It is
+        // cleared when the TX/RX antenna is selected to avoid a higher noise
+        // floor on RX.
+        if (ant == "TX/RX")
+        {
             set_gpio_field(RX_ANT, 0);
-        else if (ant == "CAL")
+            set_cpld_field(TXDRV_FORCEON, 0);   // Turn off PA in TDD mode
+        } else {
             set_gpio_field(RX_ANT, 1);
+            set_cpld_field(TXDRV_FORCEON, 1);   // Keep PA on
+        }
         write_gpio();
+        write_cpld_reg();
     }
 
     /***********************************************************************
@@ -1103,28 +1112,11 @@ private:
         boost::mutex::scoped_lock lock(_mutex);
         if (mode == "performance")
         {
-            // FIXME:  Response to ATR change is too slow for some components,
-            // so certain components are forced on here.  Force on does not
-            // necessarily mean immediately.  Some FORCEON lines are still gated
-            // by other bits in the CPLD register that are asserted during
+            /*
+            // Placeholders in case some components need to be forced on to
+            // reduce settling time.  Note that some FORCEON lines are still gated
+            // by other bits in the CPLD register are are asserted during
             // frequency tuning.
-            set_cpld_field(RXAMP_FORCEON, 1);
-            set_cpld_field(RXDEMOD_FORCEON, 1);
-            set_cpld_field(RXDRV_FORCEON, 1);
-            set_cpld_field(RXMIXER_FORCEON, 1);
-            set_cpld_field(RXLO1_FORCEON, 1);
-            set_cpld_field(RXLO2_FORCEON, 1);
-            set_cpld_field(RXLNA1_FORCEON, 1);
-            set_cpld_field(RXLNA2_FORCEON, 1);
-            set_cpld_field(TXDRV_FORCEON, 1);
-            set_cpld_field(TXMOD_FORCEON, 1);
-            set_cpld_field(TXMIXER_FORCEON, 1);
-            set_cpld_field(TXLO1_FORCEON, 1);
-            set_cpld_field(TXLO2_FORCEON, 1);
-            _power_mode = PERFORMANCE;
-        }
-        else if (mode == "powersave")
-        {
             set_cpld_field(RXAMP_FORCEON, 0);
             set_cpld_field(RXDEMOD_FORCEON, 0);
             set_cpld_field(RXDRV_FORCEON, 0);
@@ -1133,14 +1125,36 @@ private:
             set_cpld_field(RXLO2_FORCEON, 0);
             set_cpld_field(RXLNA1_FORCEON, 0);
             set_cpld_field(RXLNA2_FORCEON, 0);
-            set_cpld_field(TXDRV_FORCEON, 0);
+            //set_cpld_field(TXDRV_FORCEON, 1);  // controlled by RX antenna selection
             set_cpld_field(TXMOD_FORCEON, 0);
             set_cpld_field(TXMIXER_FORCEON, 0);
             set_cpld_field(TXLO1_FORCEON, 0);
             set_cpld_field(TXLO2_FORCEON, 0);
+            write_cpld_reg();
+            */
+            _power_mode = PERFORMANCE;
+        }
+        else if (mode == "powersave")
+        {
+            /*
+            // Placeholders in case force on bits need to be set or cleared.
+            set_cpld_field(RXAMP_FORCEON, 0);
+            set_cpld_field(RXDEMOD_FORCEON, 0);
+            set_cpld_field(RXDRV_FORCEON, 0);
+            set_cpld_field(RXMIXER_FORCEON, 0);
+            set_cpld_field(RXLO1_FORCEON, 0);
+            set_cpld_field(RXLO2_FORCEON, 0);
+            set_cpld_field(RXLNA1_FORCEON, 0);
+            set_cpld_field(RXLNA2_FORCEON, 0);
+            //set_cpld_field(TXDRV_FORCEON, 1);  // controlled by RX antenna selection
+            set_cpld_field(TXMOD_FORCEON, 0);
+            set_cpld_field(TXMIXER_FORCEON, 0);
+            set_cpld_field(TXLO1_FORCEON, 0);
+            set_cpld_field(TXLO2_FORCEON, 0);
+            write_cpld_reg();
+            */
             _power_mode = POWERSAVE;
         }
-        write_cpld_reg();
     }
 
     void set_xcvr_mode(std::string mode)
