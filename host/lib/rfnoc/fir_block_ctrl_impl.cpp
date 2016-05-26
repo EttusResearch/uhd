@@ -24,11 +24,10 @@ using namespace uhd::rfnoc;
 class fir_block_ctrl_impl : public fir_block_ctrl
 {
 public:
-    static const boost::uint32_t RB_NUM_TAPS            = 0;
-    static const boost::uint32_t AXIS_FIR_RELOAD       = AXIS_CONFIG_BUS+0; // 2*0+0
-    static const boost::uint32_t AXIS_FIR_RELOAD_TLAST = AXIS_CONFIG_BUS+1; // 2*0+1
-    static const boost::uint32_t AXIS_FIR_CONFIG       = AXIS_CONFIG_BUS+2; // 2*1+0
-    static const boost::uint32_t AXIS_FIR_CONFIG_TLAST = AXIS_CONFIG_BUS+3; // 2*1+1
+    static const boost::uint32_t RB_NUM_TAPS     = 0;
+    static const boost::uint32_t SR_RELOAD       = 128;
+    static const boost::uint32_t SR_RELOAD_TLAST = 129;
+    static const boost::uint32_t SR_CONFIG       = 130;
 
     UHD_RFNOC_BLOCK_CONSTRUCTOR(fir_block_ctrl),
         _item_type("sc16") // We only support sc16 in this block
@@ -51,6 +50,13 @@ public:
                 % taps_.size() % _n_taps
             ));
         }
+        for (size_t i = 0; i < taps_.size(); i++) {
+            if (taps_[i] > 32767 || taps_[i] < -32768) {
+                throw uhd::value_error(str(
+                    boost::format("FIR block: Coefficient %d out of range! Value %d, Allowed range [-32768,32767].\n")
+                    % i % taps_[i]));
+            }
+        }
         std::vector<int> taps = taps_;
         if (taps.size() < _n_taps) {
             taps.resize(_n_taps, 0);
@@ -58,13 +64,13 @@ public:
 
         // Write taps via the reload bus
         for (size_t i = 0; i < taps.size() - 1; i++) {
-            sr_write(AXIS_FIR_RELOAD, boost::uint32_t(taps[i]));
+            sr_write(SR_RELOAD, boost::uint32_t(taps[i]));
         }
         // Assert tlast when sending the spinal tap (haha, it's actually the final tap).
-        sr_write(AXIS_FIR_RELOAD_TLAST, boost::uint32_t(taps.back()));
+        sr_write(SR_RELOAD_TLAST, boost::uint32_t(taps.back()));
         // Send the configuration word to replace the existing coefficients with the new ones.
         // Note: This configuration bus does not require tlast
-        sr_write(AXIS_FIR_CONFIG, 0);
+        sr_write(SR_CONFIG, 0);
     }
 
     //! Returns the number of filter taps in this block.

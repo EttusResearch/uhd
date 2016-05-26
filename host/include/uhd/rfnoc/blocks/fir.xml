@@ -16,21 +16,4 @@
       <type>sc16</type>
     </source>
   </ports>
-  <!--<components>-->
-    <!--<component>-->
-      <!--<key revision="1">nocshell</key>-->
-    <!--</component>-->
-    <!--<component srbase="0">-->
-      <!--[>Will look for a component with this key:<]-->
-      <!--<key revision="1">componentname</key>-->
-    <!--</component>-->
-  <!--</components>-->
-  <!--<connection>-->
-    <!--<source port="0">nocshell</source>-->
-    <!--<sink port="0">componentname</sink>-->
-  <!--</connection>-->
-  <!--<connection>-->
-    <!--<source port="0">componentname</source>-->
-    <!--<sink port="0">nocshell</sink>-->
-  <!--</connection>-->
 </nocblock>
