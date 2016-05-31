@@ -43,6 +43,12 @@ public:
         const settime_type &
     );
 
+    wb_iface_adapter(
+        const poke32_type &,
+        const peek32_type &,
+        const peek64_type &
+    );
+
     virtual ~wb_iface_adapter(void) {};
 
     virtual void poke32(const wb_addr_type addr, const boost::uint32_t data);

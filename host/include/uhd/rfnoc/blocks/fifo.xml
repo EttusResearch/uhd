@@ -4,7 +4,7 @@
   <blockname>FIFO</blockname>
   <!--There can be several of these:-->
   <ids>
-    <id revision="0">F1F0</id>
+    <id revision="0">F1F00000</id>
   </ids>
   <ports>
     <sink>

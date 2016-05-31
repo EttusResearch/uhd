@@ -34,6 +34,17 @@ wb_iface_adapter::wb_iface_adapter(
     // nop
 }
 
+wb_iface_adapter::wb_iface_adapter(
+        const poke32_type &poke32_functor_,
+        const peek32_type &peek32_functor_,
+        const peek64_type &peek64_functor_
+) : poke32_functor(poke32_functor_)
+  , peek32_functor(peek32_functor_)
+  , peek64_functor(peek64_functor_)
+{
+    // nop
+}
+
 void wb_iface_adapter::poke32(const wb_addr_type addr, const boost::uint32_t data)
 {
     poke32_functor(addr / 4, data); // FIXME remove the requirement for /4
