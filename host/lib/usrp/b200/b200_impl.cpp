@@ -620,11 +620,15 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     for (size_t i = 0; i < _radio_perifs.size(); i++)
         this->setup_radio(i);
 
-
     //now test each radio module's connection to the codec interface
     BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
     {
-        _codec_mgr->loopback_self_test(perif.ctrl, TOREG(SR_CODEC_IDLE), RB64_CODEC_READBACK);
+        _codec_mgr->loopback_self_test(
+            boost::bind(
+                &radio_ctrl_core_3000::poke32, perif.ctrl, TOREG(SR_CODEC_IDLE), _1
+            ),
+            boost::bind(&radio_ctrl_core_3000::peek32, perif.ctrl, RB64_CODEC_READBACK)
+        );
     }
 
     //register time now and pps onto available radio cores
