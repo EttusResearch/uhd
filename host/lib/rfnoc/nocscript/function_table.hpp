@@ -29,7 +29,7 @@ class function_table
 {
   public:
     typedef boost::shared_ptr<function_table> sptr;
-    typedef boost::function<expression_literal(expression_container::expr_list_type)> function_ptr;
+    typedef boost::function<expression_literal(expression_container::expr_list_type&)> function_ptr;
 
     static sptr make();
     virtual ~function_table() {};
@@ -69,7 +69,7 @@ class function_table
     virtual expression_literal eval(
             const std::string &name,
             const expression_function::argtype_list_type &arg_types,
-            const expression_container::expr_list_type &arguments
+            expression_container::expr_list_type &arguments
     ) = 0;
 
     /*! Register a new function

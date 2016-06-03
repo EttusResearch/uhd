@@ -145,7 +145,7 @@ void device3_impl::enumerate_rfnoc_blocks(
             block_def = uhd::rfnoc::blockdef::make_from_noc_id(uhd::rfnoc::DEFAULT_NOC_ID);
         }
         UHD_ASSERT_THROW(block_def);
-        make_args.ctrl_ifaces = boost::assign::map_list_of(0, ctrl);
+        make_args.ctrl_ifaces[0] = ctrl;
         BOOST_FOREACH(const size_t port_number, block_def->get_all_port_numbers()) {
             if (port_number == 0) { // We've already set this up
                 continue;

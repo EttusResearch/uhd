@@ -95,20 +95,20 @@ void device3_impl::generate_channel_list(
         const std::string &xx
 ) {
     uhd::stream_args_t args = args_;
-    if (args.args.has_key("block_id")) { // Override channel settings
-        // TODO: Figure out how to put in more than one block ID in the stream args args
-        // For now, the assumption is that all chans go to the same block,
-        // and that the channel index is actually the block port index
-        // Block ID is removed from the actual args args
-        uhd::rfnoc::block_id_t blockid = args.args.pop("block_id");
-        BOOST_FOREACH(const size_t chan_idx, args.channels) {
-            chan_list.push_back(uhd::rfnoc::block_id_t(blockid));
-            // Add block port to chan args
-            args.args["block_port"] = str(boost::format("%d") % chan_idx);
+    BOOST_FOREACH(const size_t chan_idx, args.channels) {
+        //// Find block ID for this channel:
+        if (args.args.has_key(str(boost::format("block_id%d") % chan_idx))) {
+            chan_list.push_back(
+                uhd::rfnoc::block_id_t(
+                    args.args.pop(str(boost::format("block_id%d") % chan_idx))
+                )
+            );
             chan_args.push_back(args.args);
-        }
-    } else {
-        BOOST_FOREACH(const size_t chan_idx, args.channels) {
+        } else if (args.args.has_key("block_id")) {
+            chan_list.push_back(args.args.get("block_id"));
+            chan_args.push_back(args.args);
+            chan_args.back().pop("block_id");
+        } else {
             fs_path chan_root = str(boost::format("/channels/%s/%d") % xx % chan_idx);
             if (not _tree->exists(chan_root)) {
                 throw uhd::runtime_error("No channel definition for " + chan_root);
@@ -119,7 +119,17 @@ void device3_impl::generate_channel_list(
             }
             chan_list.push_back(_tree->access<uhd::rfnoc::block_id_t>(chan_root).get());
             chan_args.push_back(this_chan_args);
-            // FIXME merge args.args, they can never be ignored
+            BOOST_FOREACH(const std::string &key, args.args.keys()) {
+                chan_args.back()[key] = args.args[key];
+            }
+        }
+        //// Find block port for this channel
+        if (args.args.has_key(str(boost::format("block_port%d") % chan_idx))) {
+            chan_args.back()["block_port"] = args.args.pop(str(boost::format("block_port%d") % chan_idx));
+        } else if (args.args.has_key("block_port")) {
+            // We have to write it again, because the chan args from the
+            // property tree might have overwritten this
+            chan_args.back()["block_port"] = args.args.get("block_port");
         }
     }
 }
