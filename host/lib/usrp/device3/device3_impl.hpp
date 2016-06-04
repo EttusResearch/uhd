@@ -21,7 +21,6 @@
 #ifndef INCLUDED_DEVICE3_IMPL_HPP
 #define INCLUDED_DEVICE3_IMPL_HPP
 
-#include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/chdr.hpp>
@@ -109,40 +108,6 @@ public:
      **********************************************************************/
     rfnoc::graph::sptr create_graph(const std::string &name="");
 
-    /***********************************************************************
-     * Subdev-Spec legacy support
-     **********************************************************************/
-    /*! Translate a subdev spec pair into a block ID and block args.
-     */
-    virtual void subdev_to_blockid(
-            const uhd::usrp::subdev_spec_pair_t &spec, const size_t mb_i,
-            rfnoc::block_id_t &block_id, device_addr_t &block_args
-    ) = 0;
-
-    /*! Translate a block ID and args into a subdev spec pair.
-     */
-    virtual uhd::usrp::subdev_spec_pair_t blockid_to_subdev(
-            const rfnoc::block_id_t &blockid, const device_addr_t &block_args
-    ) = 0;
-
-    /*! Updates a mboards settings from a subdev spec.
-     *
-     * Since device3's don't actually use subdev specs internally,
-     * this will translate the spec into a channel definition and
-     * update this devices channels.
-     */
-    void update_subdev_spec(
-            const uhd::usrp::subdev_spec_t &spec,
-            const direction_t direction,
-            const size_t mb_i=0
-    );
-
-    uhd::usrp::subdev_spec_t get_subdev_spec(
-            const direction_t direction,
-            const size_t mb_i=0
-    );
-
-
 protected:
     /***********************************************************************
      * Structors
@@ -229,27 +194,6 @@ protected:
     uhd::dict<std::string, boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;
 
 private:
-    /***********************************************************************
-     * Transport related
-     **********************************************************************/
-    /*! \brief Returns a list of rx or tx channels for a streamer.
-     *
-     * If the given stream args contain instructions to set up channels,
-     * those are used. Otherwise, the current device's channel definition
-     * is consulted.
-     *
-     * \param args_ Stream args.
-     * \param[out] chan_list The list of channels in the correct order.
-     * \param[out] chan_args Channel args for every channel. `chan_args.size() == chan_list.size()`
-     * \param xx Either "tx" or "rx".
-     */
-    void generate_channel_list(
-            const uhd::stream_args_t &args_,
-            std::vector<uhd::rfnoc::block_id_t> &chan_list,
-            std::vector<device_addr_t> &chan_args,
-            const std::string &xx
-    );
-
     /***********************************************************************
      * Private Members
      **********************************************************************/

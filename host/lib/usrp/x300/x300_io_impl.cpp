@@ -93,33 +93,4 @@ void x300_impl::post_streamer_hooks(direction_t dir)
     }
 }
 
-void x300_impl::subdev_to_blockid(
-        const subdev_spec_pair_t &spec, const size_t mb_i,
-        rfnoc::block_id_t &block_id, device_addr_t &block_args
-) {
-    UHD_ASSERT_THROW(spec.db_name == "A" || spec.db_name == "B");
-
-    block_id.set_device_no(mb_i);
-    block_id.set_block_name("Radio");
-    block_id.set_block_count(spec.db_name == "A" ? 0 : 1);
-    block_args["frontend"] = spec.sd_name;
-}
-
-subdev_spec_pair_t x300_impl::blockid_to_subdev(
-        const rfnoc::block_id_t &block_id, const uhd::device_addr_t &block_args
-) {
-    UHD_ASSERT_THROW(block_id.get_block_count() == 0 || block_id.get_block_count() == 1);
-    UHD_ASSERT_THROW(block_id.get_block_name() == "Radio");
-
-    subdev_spec_pair_t spec;
-    spec.db_name = (block_id.get_block_count() == 0) ? "A" : "B";
-    if (block_args.has_key("frontend")) {
-        spec.sd_name = block_args["frontend"];
-    } else {
-        fs_path db_root = fs_path("/mboards") / block_id.get_device_no() / "dboards";
-        spec.sd_name = _tree->list(db_root / spec.db_name / "tx_frontends").at(0);
-    }
-    return spec;
-}
-
 // vim: sw=4 expandtab:

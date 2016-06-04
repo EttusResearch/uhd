@@ -95,6 +95,7 @@ namespace uhd{ namespace usrp{
  * dev->set_tx_subdev_spec("A:AB", multi_usrp::ALL_MBOARDS);
  *
  * //now that all the channels are mapped, continue with configuration...
+ *
  * </pre>
  */
 class UHD_API multi_usrp : boost::noncopyable{
@@ -133,11 +134,10 @@ public:
     /*!
      * Get the underlying device3 object. Only works for generation-3 (or later) devices.
      *
-     * If this device is not actually a generation-3 device, it will throw
-     * a uhd::type_error.
-     *
      * This is needed to get access to the streaming API and properties.
+     *
      * \return The uhd::device3 object for this USRP.
+     * \throws uhd::type_error if this device is not actually a generation-3 device.
      */
     virtual device3::sptr get_device3(void) = 0;
 
@@ -419,9 +419,6 @@ public:
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
      * The subdev spec must be the same size across all motherboards.
-     *
-     * *Note*: When using a device3, this will clear and re-set the channel definitions.
-     *
      * \param spec the new frontend specification
      * \param mboard the motherboard index 0 to M-1
      */
@@ -708,9 +705,6 @@ public:
      * The subdev spec maps a physical part of a daughter-board to a channel number.
      * Set the subdev spec before calling into any methods with a channel number.
      * The subdev spec must be the same size across all motherboards.
-     *
-     * *Note*: When using a device3, this will clear and re-set the channel definitions.
-     *
      * \param spec the new frontend specification
      * \param mboard the motherboard index 0 to M-1
      */
@@ -1070,56 +1064,6 @@ public:
      * \param filter the filter_info_base::sptr of the filter object to be written
      */
     virtual void set_filter(const std::string &path, filter_info_base::sptr filter) = 0;
-
-
-    /*******************************************************************
-     * RFNoC Methods
-     ******************************************************************/
-
-    /*! Reset the channel definitions.
-     *
-     * This clears all previously defined channels.
-     */
-    virtual void clear_channels(void) = 0;
-
-    /*! Defines a TX channel.
-     *
-     * \param block_id The block ID this channel will map to.
-     *                 If no such block exists in the device,
-     *                 a uhd::value_error is thrown.
-     * \param args Arguments for this channel.
-     * \param chan_idx. The channel index. If this is left out,
-     *                  the next available channel is used.
-     * \returns the channel index of this channel. If \p chan_idx
-     *          is provided and no exception is thrown, this returns
-     *          chan_idx.
-     */
-    virtual size_t set_tx_channel(
-            const uhd::rfnoc::block_id_t &block_id,
-            const uhd::device_addr_t &args = uhd::device_addr_t(),
-            int chan_idx = -1
-    ) = 0;
-
-    /*! Defines an RX channel.
-     *
-     * \param block_id The block ID this channel will map to.
-     *                 If no such block exists in the device,
-     *                 a uhd::value_error is thrown.
-     * \param args Arguments for this channel.
-     * \param chan_idx. The channel index. If this is left out,
-     *                  the next available channel is used.
-     * \returns the channel index of this channel. If \p chan_idx
-     *          is provided and no exception is thrown, this returns
-     *          chan_idx.
-     */
-    virtual size_t set_rx_channel(
-            const uhd::rfnoc::block_id_t &block_id,
-            const uhd::device_addr_t &args = uhd::device_addr_t(),
-            int chan_idx = -1
-    ) = 0;
-
-    virtual uhd::rfnoc::block_id_t get_tx_channel_id(size_t chan_idx) = 0;
-    virtual uhd::rfnoc::block_id_t get_rx_channel_id(size_t chan_idx) = 0;
 
 };
 

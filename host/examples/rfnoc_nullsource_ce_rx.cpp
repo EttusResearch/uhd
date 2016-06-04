@@ -42,6 +42,7 @@ void sig_int_handler(int){stop_signal_called = true;}
 
 template<typename samp_type> void recv_to_file(
     uhd::usrp::multi_usrp::sptr usrp,
+    uhd::device_addr_t stream_args_args,
     const std::string &cpu_format,
     const std::string &file,
     size_t samps_per_buff,
@@ -55,6 +56,7 @@ template<typename samp_type> void recv_to_file(
     unsigned long long num_total_samps = 0;
     //create a receive streamer
     uhd::stream_args_t stream_args(cpu_format, "sc16");
+    stream_args.args = stream_args_args;
     // Note: Any settings in stream_args will trump those
     // previously set!
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
@@ -333,15 +335,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////////////
     //////// 3. Set channel definitions /////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
+    uhd::device_addr_t stream_args_args;
+    //
     // Here, we define that there is only 1 channel, and it points
     // to the final processing block.
-    usrp->clear_channels(); // The default is to use the radios. Let's not do that.
     if (proc_block_ctrl2 and proc_block_ctrl) {
-        usrp->set_rx_channel(proc_block_ctrl2->get_block_id()); // Defaults to being channel 0.
+        stream_args_args["block_id"] = blockid2;
     } else if (proc_block_ctrl) {
-        usrp->set_rx_channel(proc_block_ctrl->get_block_id()); // Defaults to being channel 0.
+        stream_args_args["block_id"] = blockid;
     } else {
-        usrp->set_rx_channel(null_src_ctrl->get_block_id()); // Defaults to being channel 0.
+        stream_args_args["block_id"] = nullid;
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -392,7 +395,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     //////// 6. Spawn receiver //////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
 #define recv_to_file_args(format) \
-        (usrp, format, file, spb, total_num_samps, total_time, bw_summary, stats, null, continue_on_bad_packet)
+        (usrp, stream_args_args, format, file, spb, total_num_samps, total_time, bw_summary, stats, null, continue_on_bad_packet)
     //recv to file
     if (type == "double") recv_to_file<std::complex<double> >recv_to_file_args("fc64");
     else if (type == "float") recv_to_file<std::complex<float> >recv_to_file_args("fc32");

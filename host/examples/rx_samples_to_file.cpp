@@ -364,16 +364,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
 
+    uhd::device_addr_t streamer_args(streamargs);
     if (usrp->is_device3()) {
         uhd::rfnoc::graph::sptr rx_graph = usrp->get_device3()->create_graph("rx_samples_to_file");
-        usrp->clear_channels();
         usrp->get_device3()->clear();
         uhd::rfnoc::block_id_t radio_ctrl_id(0, "Radio", radio_id);
         // Set the stream args on the radio:
         usrp->get_device3()->get_block_ctrl(radio_ctrl_id)->set_args(streamargs);
         if (blockid.empty()) {
             // If no extra block is required, connect to the radio:
-            usrp->set_rx_channel(radio_ctrl_id);
+            streamer_args["block_id"] = radio_ctrl_id.to_string();
         } else {
             // Otherwise, see if the requested block exists and connect it to the radio:
             uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl;
@@ -391,7 +391,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             // Connect:
             std::cout << "Connecting " << radio_ctrl_id << " ==> " << blk_ctrl->get_block_id() << std::endl;
             rx_graph->connect(radio_ctrl_id, blk_ctrl->get_block_id());
-            usrp->set_rx_channel(blk_ctrl->get_block_id());
+            streamer_args["block_id"] = blk_ctrl->get_block_id().to_string();
         }
     }
 

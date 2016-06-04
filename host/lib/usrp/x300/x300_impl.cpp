@@ -909,12 +909,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // Compatibility layer for legacy subdev spec
     ////////////////////////////////////////////////////////////////////
-    _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
-        .add_coerced_subscriber(boost::bind(&device3_impl::update_subdev_spec, this, _1, RX_DIRECTION, mb_i))
-        .set_publisher(boost::bind(&device3_impl::get_subdev_spec, this, RX_DIRECTION, mb_i));
-    _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
-        .add_coerced_subscriber(boost::bind(&device3_impl::update_subdev_spec, this, _1, TX_DIRECTION, mb_i))
-        .set_publisher(boost::bind(&device3_impl::get_subdev_spec, this, TX_DIRECTION, mb_i));
+    _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec");
+        //.add_coerced_subscriber(boost::bind(&device3_impl::update_subdev_spec, this, _1, RX_DIRECTION, mb_i))
+        //.set_publisher(boost::bind(&device3_impl::get_subdev_spec, this, RX_DIRECTION, mb_i));
+    _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec");
+        //.add_coerced_subscriber(boost::bind(&device3_impl::update_subdev_spec, this, _1, TX_DIRECTION, mb_i))
+        //.set_publisher(boost::bind(&device3_impl::get_subdev_spec, this, TX_DIRECTION, mb_i));
 
     ////////////////////////////////////////////////////////////////////
     // and do the misc mboard sensors

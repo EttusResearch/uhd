@@ -27,7 +27,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include "../common/async_packet_handler.hpp"
-#include "../common/validate_subdev_spec.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include "../../rfnoc/rx_stream_terminator.hpp"
@@ -88,38 +87,45 @@ static void check_stream_sig_compatible(const rfnoc::stream_sig_t &stream_sig, s
     }
 }
 
-void device3_impl::generate_channel_list(
+/*! \brief Returns a list of rx or tx channels for a streamer.
+ *
+ * If the given stream args contain instructions to set up channels,
+ * those are used. Otherwise, the current device's channel definition
+ * is consulted.
+ *
+ * \param args_ Stream args.
+ * \param[out] chan_list The list of channels in the correct order.
+ * \param[out] chan_args Channel args for every channel. `chan_args.size() == chan_list.size()`
+ */
+void generate_channel_list(
         const uhd::stream_args_t &args_,
         std::vector<uhd::rfnoc::block_id_t> &chan_list,
-        std::vector<device_addr_t> &chan_args,
-        const std::string &xx
+        std::vector<device_addr_t> &chan_args
 ) {
     uhd::stream_args_t args = args_;
-    if (args.args.has_key("block_id")) { // Override channel settings
-        // TODO: Figure out how to put in more than one block ID in the stream args args
-        // For now, the assumption is that all chans go to the same block,
-        // and that the channel index is actually the block port index
-        // Block ID is removed from the actual args args
-        uhd::rfnoc::block_id_t blockid = args.args.pop("block_id");
-        BOOST_FOREACH(const size_t chan_idx, args.channels) {
-            chan_list.push_back(uhd::rfnoc::block_id_t(blockid));
-            // Add block port to chan args
-            args.args["block_port"] = str(boost::format("%d") % chan_idx);
+    BOOST_FOREACH(const size_t chan_idx, args.channels) {
+        //// Find block ID for this channel:
+        if (args.args.has_key(str(boost::format("block_id%d") % chan_idx))) {
+            chan_list.push_back(
+                uhd::rfnoc::block_id_t(
+                    args.args.pop(str(boost::format("block_id%d") % chan_idx))
+                )
+            );
             chan_args.push_back(args.args);
+        } else if (args.args.has_key("block_id")) {
+            chan_list.push_back(args.args.get("block_id"));
+            chan_args.push_back(args.args);
+            chan_args.back().pop("block_id");
+        } else {
+            throw uhd::runtime_error("Cannot create streamers: No block_id specified.");
         }
-    } else {
-        BOOST_FOREACH(const size_t chan_idx, args.channels) {
-            fs_path chan_root = str(boost::format("/channels/%s/%d") % xx % chan_idx);
-            if (not _tree->exists(chan_root)) {
-                throw uhd::runtime_error("No channel definition for " + chan_root);
-            }
-            device_addr_t this_chan_args;
-            if (_tree->exists(chan_root / "args")) {
-                this_chan_args = _tree->access<device_addr_t>(chan_root / "args").get();
-            }
-            chan_list.push_back(_tree->access<uhd::rfnoc::block_id_t>(chan_root).get());
-            chan_args.push_back(this_chan_args);
-            // FIXME merge args.args, they can never be ignored
+        //// Find block port for this channel
+        if (args.args.has_key(str(boost::format("block_port%d") % chan_idx))) {
+            chan_args.back()["block_port"] = args.args.pop(str(boost::format("block_port%d") % chan_idx));
+        } else if (args.args.has_key("block_port")) {
+            // We have to write it again, because the chan args from the
+            // property tree might have overwritten this
+            chan_args.back()["block_port"] = args.args.get("block_port");
         }
     }
 }
@@ -474,7 +480,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
     // I. Generate the channel list
     std::vector<uhd::rfnoc::block_id_t> chan_list;
     std::vector<device_addr_t> chan_args;
-    generate_channel_list(args, chan_list, chan_args, "rx");
+    generate_channel_list(args, chan_list, chan_args);
     // Note: All 'args.args' are merged into chan_args now.
 
     // II. Iterate over all channels
@@ -486,6 +492,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
     for (size_t stream_i = 0; stream_i < chan_list.size(); stream_i++) {
         // Get block ID and mb index
         uhd::rfnoc::block_id_t block_id = chan_list[stream_i];
+        UHD_MSG(status) << "[RX Streamer] chan " << stream_i << " connecting to " << block_id << std::endl;
         // Update args so args.args is always valid for this particular channel:
         args.args = chan_args[stream_i];
         size_t mb_index = block_id.get_device_no();
@@ -683,7 +690,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
     // I. Generate the channel list
     std::vector<uhd::rfnoc::block_id_t> chan_list;
     std::vector<device_addr_t> chan_args;
-    generate_channel_list(args, chan_list, chan_args, "tx");
+    generate_channel_list(args, chan_list, chan_args);
     // Note: All 'args.args' are merged into chan_args now.
 
     //shared async queue for all channels in streamer
@@ -842,63 +849,4 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
     return my_streamer;
 }
 
-
-/***********************************************************************
- * Subdev Spec legacy support
- **********************************************************************/
-void device3_impl::update_subdev_spec(
-        const subdev_spec_t &spec,
-        const direction_t direction,
-        const size_t mb_i
-) {
-    if (spec.empty()) {
-        return;
-    }
-    // 1) Check if subdev spec is valid (this will make sure d'board name,
-    // frontend name etc. are valid and that the number of specs is OK)
-    validate_subdev_spec(_tree, spec, (direction == RX_DIRECTION) ? "rx" : "tx");
-
-    // 2) Translate every subdev spec into a block ID and chan args.
-    // This translation is device-specific and thus requires functions
-    // from the individual device impls.
-    std::vector<uhd::rfnoc::block_id_t> chan_ids;
-    std::vector<device_addr_t>          chan_args;
-    for (size_t i = 0; i < spec.size(); i++) {
-        rfnoc::block_id_t id;
-        device_addr_t     args;
-        subdev_to_blockid(spec[i], mb_i, id, args);
-        chan_ids.push_back(id);
-        chan_args.push_back(args);
-    }
-
-    // 3) Update the channel definitions:
-    merge_channel_defs(chan_ids, chan_args, direction);
-}
-
-subdev_spec_t device3_impl::get_subdev_spec(
-        const direction_t direction,
-        const size_t mb_i
-) {
-    UHD_ASSERT_THROW(direction == RX_DIRECTION or direction == TX_DIRECTION);
-    fs_path chan_root = "/channels/";
-    if (direction == RX_DIRECTION) {
-        chan_root = chan_root / "rx";
-    } else {
-        chan_root = chan_root / "tx";
-    }
-
-    // Find all active radio channels and convert them to subdevs
-    subdev_spec_t subdev_spec;
-    std::vector<std::string> available_chans = _tree->list(chan_root);
-    BOOST_FOREACH(const std::string &chan, available_chans) {
-        rfnoc::block_id_t block_id = _tree->access<rfnoc::block_id_t>(chan_root / chan).get();
-        if (block_id.get_block_name() == "Radio" and block_id.get_device_no() == mb_i) {
-            device_addr_t block_args = _tree->access<device_addr_t>(chan_root / chan / "args").get();
-            subdev_spec_pair_t spec = blockid_to_subdev(block_id, block_args);
-            subdev_spec.push_back(spec);
-        }
-    }
-
-    return subdev_spec;
-}
 

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2014 Ettus Research LLC
+// Copyright 2010-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,8 +25,6 @@
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
-#include <uhd/rfnoc/source_block_ctrl_base.hpp>
-#include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/utils/soft_register.hpp>
 #include <boost/assign/list_of.hpp>
@@ -36,7 +34,6 @@
 #include <boost/algorithm/string.hpp>
 #include <algorithm>
 #include <cmath>
-#include <memory>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -392,6 +389,12 @@ public:
     multi_usrp_impl(const device_addr_t &addr){
         _dev = device::make(addr, device::USRP);
         _tree = _dev->get_tree();
+
+        if (is_device3()) {
+            if (get_device3()->find_blocks("Radio").empty()) {
+                throw uhd::runtime_error("[multi_usrp] Attempting to create a multi_usrp object without any radio cores.");
+            }
+        }
     }
 
     device::sptr get_device(void){
@@ -1505,93 +1508,6 @@ public:
         } else {
             throw uhd::not_implemented_error("multi_usrp::read_register - register IO not supported for this device");
         }
-    }
-
-    /*******************************************************************
-     * RFNoC Methods
-     ******************************************************************/
-    void clear_channels(void)
-    {
-        _tree->remove("/channels");
-    }
-
-    template <typename T>
-    uhd::rfnoc::block_id_t _check_block_id(
-            const uhd::rfnoc::block_id_t &block_id
-    ) {
-        if (not is_device3()) {
-            throw uhd::type_error("Cannot set channels on a non-generation 3 device.");
-        }
-        try {
-            return get_device3()->get_block_ctrl<T>(block_id)->get_block_id();
-        } catch (uhd::lookup_error&) {
-            return uhd::rfnoc::block_id_t();
-        }
-    }
-
-    size_t set_tx_channel(
-            const uhd::rfnoc::block_id_t &block_id,
-            const uhd::device_addr_t &args,
-            int chan_idx_
-    ) {
-        const uhd::rfnoc::block_id_t checked_block_id = _check_block_id<uhd::rfnoc::sink_block_ctrl_base>(block_id);
-        if (checked_block_id.get_block_name().empty()) {
-            throw uhd::value_error(str(boost::format("No such TX block on this device: %s") % block_id.to_string()));
-        }
-        fs_path chans_root = "/channels/tx";
-        size_t chan_idx = size_t(chan_idx_);
-        // Find first empty chan index if none given
-        if (chan_idx_ == -1) {
-            chan_idx = 0;
-            while (_tree->exists(chans_root / chan_idx)) {
-                chan_idx++;
-            }
-        }
-        if (_tree->exists(chans_root / chan_idx)) {
-            _tree->remove(chans_root / chan_idx);
-        }
-        _tree->create<uhd::rfnoc::block_id_t>(chans_root / chan_idx).set(block_id);
-        _tree->create<uhd::device_addr_t>(chans_root / chan_idx / "args").set(args);
-        return chan_idx;
-    }
-
-    size_t set_rx_channel(
-            const uhd::rfnoc::block_id_t &block_id,
-            const uhd::device_addr_t &args,
-            int chan_idx_
-    ) {
-        const uhd::rfnoc::block_id_t checked_block_id = _check_block_id<uhd::rfnoc::source_block_ctrl_base>(block_id);
-        if (checked_block_id.get_block_name().empty()) {
-            throw uhd::value_error(str(boost::format("No such RX block on this device: %s") % block_id.to_string()));
-        }
-        fs_path chans_root = "/channels/rx";
-        size_t chan_idx = size_t(chan_idx_);
-        // Find first empty chan index if none given
-        if (chan_idx_ == -1) {
-            chan_idx = 0;
-            while (_tree->exists(chans_root / chan_idx)) {
-                chan_idx++;
-            }
-        }
-        if (_tree->exists(chans_root / chan_idx)) {
-            _tree->remove(chans_root / chan_idx);
-        }
-        _tree->create<uhd::rfnoc::block_id_t>(chans_root / chan_idx).set(block_id);
-        _tree->create<uhd::device_addr_t>(chans_root / chan_idx / "args").set(args);
-        return chan_idx;
-    }
-
-
-    uhd::rfnoc::block_id_t get_tx_channel_id(size_t chan_idx)
-    {
-        fs_path chans_root = "/channels/tx";
-        return _tree->access<uhd::rfnoc::block_id_t>(chans_root / chan_idx).get();
-    }
-
-    uhd::rfnoc::block_id_t get_rx_channel_id(size_t chan_idx)
-    {
-        fs_path chans_root = "/channels/rx";
-        return _tree->access<uhd::rfnoc::block_id_t>(chans_root / chan_idx).get();
     }
 
 private:
