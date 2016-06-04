@@ -743,7 +743,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     }
     if (dev_addr.has_key("ext_adc_self_test")) {
         extended_adc_test(mb, dev_addr.cast<double>("ext_adc_self_test", 30));
-    } else {
+    } else if ( ! dev_addr.has_key("disable_adc_self_test") ) {
         self_test_adcs(mb);
     }
 
