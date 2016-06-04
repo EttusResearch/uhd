@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -115,9 +115,7 @@ class UHD_API device3 : public uhd::device {
      */
     std::vector<rfnoc::block_id_t> find_blocks(const std::string &block_id_hint) const;
 
-    /*! Type-cast version of find_block_ctrl().
-     *
-     * See get_block_ctrl().
+    /*! Type-cast version of find_blocks().
      */
     template <typename T>
     std::vector<rfnoc::block_id_t> find_blocks(const std::string &block_id_hint) const
