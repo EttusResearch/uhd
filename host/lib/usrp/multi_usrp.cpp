@@ -1877,6 +1877,7 @@ private:
 
     //! \param is_tx True for tx
     // Assumption is that all mboards use the same link
+    // and that the rate sum is evenly distributed among the mboards
     bool _check_link_rate(const stream_args_t &args, bool is_tx) {
         bool link_rate_is_ok = true;
         size_t bytes_per_sample = convert::get_bytes_per_item(args.otw_format.empty() ? "sc16" : args.otw_format);
@@ -1892,6 +1893,7 @@ private:
             }
             sum_rate += is_tx ? get_tx_rate(chan) : get_rx_rate(chan);
         }
+        sum_rate /= get_num_mboards();
         if (max_link_rate > 0 and (max_link_rate / bytes_per_sample) < sum_rate) {
             UHD_MSG(warning) << boost::format(
                 "The total sum of rates (%f MSps on %u channels) exceeds the maximum capacity of the connection.\n"
