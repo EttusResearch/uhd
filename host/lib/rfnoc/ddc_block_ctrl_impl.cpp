@@ -61,8 +61,7 @@ public:
             ;
 
             // Legacy properties (for backward compat w/ multi_usrp)
-            const size_t legacy_dsp_base_index = get_block_id().get_block_count() * 2; // 2 == num chans
-            const uhd::fs_path dsp_base_path = uhd::fs_path("rx_dsps") / (legacy_dsp_base_index + chan);
+            const uhd::fs_path dsp_base_path = _root_path / "legacy_api" / chan;
             // Legacy properties
             _tree->create<double>(dsp_base_path / "rate/value")
                 .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan), _1))

@@ -22,7 +22,6 @@
 #include "gpio_atr_3000.hpp"
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <boost/make_shared.hpp>
-#include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/rfnoc/node_ctrl_base.hpp>
@@ -92,7 +91,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     }
 
     ////////////////////////////////////////////////////////////////
-    // create codec control objects
+    // create legacy codec control objects
     ////////////////////////////////////////////////////////////////
     _tree->create<int>("rx_codecs" / _radio_slot / "gains"); //phony property so this dir exists
     _tree->create<int>("tx_codecs" / _radio_slot / "gains"); //phony property so this dir exists
@@ -108,41 +107,13 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     // create front-end objects
     ////////////////////////////////////////////////////////////////
     for (size_t i = 0; i < _get_num_radios(); i++) {
-        std::string fe_name = _radio_slot + ((i == 0) ? "0" : "1");
-
-        _rx_fe_map[i].name = fe_name;
         _rx_fe_map[i].core = rx_frontend_core_3000::make(_get_ctrl(i), regs::sr_addr(x300_regs::RX_RE_BASE));
-        _tree->create<int>("rx_frontends" / fe_name);
         _rx_fe_map[i].core->set_tick_rate(_radio_clk_rate);
-        _rx_fe_map[i].core->populate_subtree(_tree->subtree("rx_frontends" / fe_name));
+        _rx_fe_map[i].core->populate_subtree(_tree->subtree(_root_path / "rx_fe_corrections" / i));
 
-        _tx_fe_map[i].name = fe_name;
         _tx_fe_map[i].core = tx_frontend_core_200::make(_get_ctrl(i), regs::sr_addr(x300_regs::TX_FE_BASE));
-        _tree->create<int>("tx_frontends" / fe_name);
-        _tx_fe_map[i].core->populate_subtree(_tree->subtree("tx_frontends" / fe_name));
-
-        const fs_path rx_dsp_path = fs_path("rx_dsps") / fe_name;
-        _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
-            .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::issue_stream_cmd, this, _1, i));
-
-        ////////////////////////////////////////////////////////////////////
-        // add some dummy nodes on the prop tree (FIXME remove these)
-        ////////////////////////////////////////////////////////////////////
-        const fs_path tx_dsp_path = fs_path("tx_dsps") / fe_name;
-        _tree->create<double>(tx_dsp_path / "freq/value").set(0.0);
-        _tree->create<meta_range_t>(tx_dsp_path / "freq/range").set(meta_range_t(0.0, 0.0, 0.0));
-        _tree->create<double>(rx_dsp_path / "freq/value").set(0.0);
-        _tree->create<meta_range_t>(rx_dsp_path / "freq/range").set(meta_range_t(0.0, 0.0, 0.0));
-        _tree->create<double>(tx_dsp_path / "rate/value")
-            .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_rate, this, _1))
-            .set_publisher(boost::bind(&radio_ctrl_impl::get_rate, this))
-        ;
-        _tree->create<double>(rx_dsp_path / "rate/value")
-            .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_rate, this, _1))
-            .set_publisher(boost::bind(&radio_ctrl_impl::get_rate, this))
-        ;
+        _tx_fe_map[i].core->populate_subtree(_tree->subtree(_root_path / "tx_fe_corrections" / i));
     }
-
 }
 
 x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
@@ -150,13 +121,8 @@ x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
     // Tear down our part of the tree:
     _tree->remove(fs_path("rx_codecs" / _radio_slot));
     _tree->remove(fs_path("tx_codecs" / _radio_slot));
-    for (size_t i = 0; i < _get_num_radios(); i++) {
-        const std::string fe_name = _radio_slot + ((i == 0) ? "0" : "1");
-        _tree->remove(fs_path("tx_dsps" / fe_name));
-        _tree->remove(fs_path("rx_dsps" / fe_name));
-        _tree->remove(fs_path("tx_frontends" / fe_name));
-        _tree->remove(fs_path("rx_frontends" / fe_name));
-    }
+    _tree->remove(_root_path / "rx_fe_corrections");
+    _tree->remove(_root_path / "tx_fe_corrections");
     if (_radio_type==PRIMARY) {
         BOOST_FOREACH(const gpio_atr::gpio_attr_map_t::value_type attr, gpio_atr::gpio_attr_map) {
             _tree->remove(fs_path("gpio") / "FP0" / attr.second);
@@ -331,19 +297,14 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
     );
 
     size_t rx_chan = 0, tx_chan = 0;
-    subdev_spec_t rx_spec, tx_spec;
     BOOST_FOREACH(const std::string& fe, _db_manager->get_rx_frontends()) {
         _rx_fe_map[rx_chan].db_fe_name = fe;
-        rx_spec.push_back(subdev_spec_pair_t(_radio_slot, fe));
         db_iface->add_rx_fe(fe, _rx_fe_map[rx_chan].core);
         rx_chan++;
     }
     BOOST_FOREACH(const std::string& fe, _db_manager->get_tx_frontends()) {
         _tx_fe_map[tx_chan++].db_fe_name = fe;
-        tx_spec.push_back(subdev_spec_pair_t(_radio_slot, fe));
     }
-    _tree->access<subdev_spec_t>("rx_subdev_spec").set(rx_spec);
-    _tree->access<subdev_spec_t>("tx_subdev_spec").set(tx_spec);
 
     //now that dboard is created -- register into rx antenna event
     if (_tree->exists(db_path / "rx_frontends" / _radio_slot / "antenna" / "value")) {
