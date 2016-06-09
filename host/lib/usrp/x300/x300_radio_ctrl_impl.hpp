@@ -60,8 +60,11 @@ public:
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
 
+    size_t get_chan_from_dboard_fe(const std::string &fe, const direction_t dir);
+    std::string get_dboard_fe_from_chan(const size_t chan, const direction_t dir);
+
     /************************************************************************
-     * RFIC setup and control
+     * Hardware setup and control
      ***********************************************************************/
     /*! Set up the radio. No API calls may be made before this one.
      */

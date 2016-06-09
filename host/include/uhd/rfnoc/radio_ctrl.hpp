@@ -18,6 +18,7 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_HPP
 
+#include <uhd/types/direction.hpp>
 #include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/rfnoc/rate_node_ctrl.hpp>
@@ -181,6 +182,18 @@ public:
      * \return A timespec representing the last PPS
      */
     virtual time_spec_t get_time_last_pps() = 0;
+
+    /*! Given a frontend name, return the channel mapping.
+     *
+     * E.g.: For a TwinRX board, there's two frontends, '0' and '1', which
+     * map to channels 0 and 1 respectively. A BasicRX boards has alphabetical
+     * frontends (A, B) which map to channels differently.
+     */
+    virtual size_t get_chan_from_dboard_fe(const std::string &fe, const uhd::direction_t dir) = 0;
+
+    /*! The inverse function to get_chan_from_dboard_fe()
+     */
+    virtual std::string get_dboard_fe_from_chan(const size_t chan, const uhd::direction_t dir) = 0;
 
 }; /* class radio_ctrl */
 

@@ -236,6 +236,45 @@ double x300_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
     }
 }
 
+
+template <typename map_type>
+static size_t _get_chan_from_map(std::map<size_t, map_type> map, const std::string &fe)
+{
+    // TODO replace with 'auto' when possible
+    typedef typename std::map<size_t, map_type>::iterator chan_iterator;
+    for (chan_iterator it = map.begin(); it != map.end(); ++it) {
+        if (it->second.db_fe_name == fe) {
+            return it->first;
+        }
+
+    }
+    throw uhd::runtime_error("Invalid daughterboard frontend name.");
+}
+
+size_t x300_radio_ctrl_impl::get_chan_from_dboard_fe(const std::string &fe, const uhd::direction_t direction)
+{
+    switch (direction) {
+        case uhd::TX_DIRECTION:
+            return _get_chan_from_map(_tx_fe_map, fe);
+        case uhd::RX_DIRECTION:
+            return _get_chan_from_map(_rx_fe_map, fe);
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+}
+
+std::string x300_radio_ctrl_impl::get_dboard_fe_from_chan(const size_t chan, const uhd::direction_t direction)
+{
+    switch (direction) {
+        case uhd::TX_DIRECTION:
+            return _tx_fe_map.at(chan).db_fe_name;
+        case uhd::RX_DIRECTION:
+            return _rx_fe_map.at(chan).db_fe_name;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+}
+
 /****************************************************************************
  * Radio control and setup
  ***************************************************************************/

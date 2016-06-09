@@ -54,6 +54,9 @@ public:
     double get_tx_gain(const size_t chan);
     double get_rx_gain(const size_t chan);
 
+    size_t get_chan_from_dboard_fe(const std::string &fe, const direction_t);
+    std::string get_dboard_fe_from_chan(const size_t chan, const direction_t);
+
     /************************************************************************
      * RFIC setup and control
      ***********************************************************************/

@@ -200,6 +200,16 @@ double e3xx_radio_ctrl_impl::get_rx_gain(const size_t chan)
     return _tree->access<double>(fs_path("dboards/A/rx_frontends/" + fe_side + "/gains/PGA/value")).get();
 }
 
+size_t e3xx_radio_ctrl_impl::get_chan_from_dboard_fe(const std::string &fe, const direction_t)
+{
+    return (fe == "A") ? 0 : 1;
+}
+
+std::string e3xx_radio_ctrl_impl::get_dboard_fe_from_chan(const size_t chan, const direction_t)
+{
+    return (chan == 0) ? "A" : "B";
+}
+
 /****************************************************************************
  * Radio control and setup
  ***************************************************************************/
