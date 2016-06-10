@@ -15,7 +15,7 @@
     <arg>
       <name>base_addr</name>
       <type>int</type>
-      <value>0</value>
+      <!--<value>0</value>-->
       <port>0</port>
       <check>EQUAL($base_addr, 0) OR IS_PWR_OF_2($base_addr)</check>
       <check_message>The base address must be 0 or a positive power of 2.</check_message>
@@ -23,7 +23,7 @@
     <arg>
       <name>depth</name>
       <type>int</type>
-      <value>33554432</value>
+      <!--<value>33554432</value>-->
       <port>0</port>
       <check>IS_PWR_OF_2($depth)</check>
       <check_message>The FIFO depth must be a positive power of 2.</check_message>
@@ -31,7 +31,7 @@
     <arg>
       <name>base_addr</name>
       <type>int</type>
-      <value>33554432</value>
+      <!--<value>33554432</value>-->
       <port>1</port>
       <check>EQUAL($base_addr, 0) OR IS_PWR_OF_2($base_addr)</check>
       <check_message>The base address must be 0 or a positive power of 2.</check_message>
@@ -39,7 +39,7 @@
     <arg>
       <name>depth</name>
       <type>int</type>
-      <value>33554432</value>
+      <!--<value>33554432</value>-->
       <port>1</port>
       <check>IS_PWR_OF_2($depth)</check>
       <check_message>The FIFO depth must be a positive power of 2.</check_message>
