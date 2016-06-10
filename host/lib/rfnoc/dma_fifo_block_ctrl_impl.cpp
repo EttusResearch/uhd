@@ -22,6 +22,7 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/thread/mutex.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -79,17 +80,18 @@ public:
                 }
             }
             _tree->access<int>(get_arg_path("base_addr/value", i))
-                .add_coerced_subscriber(boost::bind(&dma_fifo_core_3000::resize, _perifs[i].core, _1, _perifs[i].depth))
+                .add_coerced_subscriber(boost::bind(&dma_fifo_block_ctrl_impl::resize, this, _1, boost::ref(_perifs[i].depth), i))
                 .set(_perifs[i].base_addr)
             ;
             _tree->access<int>(get_arg_path("depth/value", i))
-                .add_coerced_subscriber(boost::bind(&dma_fifo_core_3000::resize, _perifs[i].core, _perifs[i].base_addr, _1))
+                .add_coerced_subscriber(boost::bind(&dma_fifo_block_ctrl_impl::resize, this, boost::ref(_perifs[i].base_addr), _1, i))
                 .set(_perifs[i].depth)
             ;
         }
     }
 
     void resize(const uint32_t base_addr, const uint32_t depth, const size_t chan) {
+        boost::lock_guard<boost::mutex> lock(_config_mutex);
         _perifs[chan].base_addr = base_addr;
         _perifs[chan].depth = depth;
         _perifs[chan].core->resize(base_addr, depth);
@@ -112,6 +114,8 @@ private:
         uint32_t                 depth;
     };
     std::vector<fifo_perifs_t> _perifs;
+
+    boost::mutex _config_mutex;
 };
 
 UHD_RFNOC_BLOCK_REGISTER(dma_fifo_block_ctrl, "DmaFIFO");
