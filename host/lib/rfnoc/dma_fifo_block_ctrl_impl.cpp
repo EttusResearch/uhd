@@ -21,6 +21,7 @@
 #include <uhd/convert.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/types/wb_iface.hpp>
+#include <boost/make_shared.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
