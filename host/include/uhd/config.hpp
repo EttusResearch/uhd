@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011,2014-2015 Ettus Research LLC
+// Copyright 2010-2011,2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -93,13 +93,13 @@ typedef ptrdiff_t ssize_t;
 // Platform defines for conditional parts of headers:
 // Taken from boost/config/select_platform_config.hpp,
 // however, we define macros, not strings for platforms.
-#if defined(linux) || defined(__linux) || defined(__linux__)
+#if (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GLIBC__)) && !defined(_CRAYC) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
     #define UHD_PLATFORM_LINUX
 #elif defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
     #define UHD_PLATFORM_WIN32
 #elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
     #define UHD_PLATFORM_MACOS
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD_kernel__)
     #define UHD_PLATFORM_BSD
 #endif
 
