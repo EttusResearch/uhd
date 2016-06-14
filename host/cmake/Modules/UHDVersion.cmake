@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2014 Ettus Research LLC
+# Copyright 2010-2014,2016 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,13 +21,15 @@ FIND_PACKAGE(Git QUIET)
 
 ########################################################################
 # Setup Version Numbers
-#  - increment major on api compatibility changes
-#  - increment minor on feature-level changes
-#  - increment patch on for bug fixes and docs
+#  - Increment major on large-scale library changes
+#  - Increment API on API changes
+#  - Increment ABI on ABI changes
+#  - Increment patch for bugfixes and docs
 #  - set UHD_VERSION_DEVEL to true for master and development branches
 ########################################################################
 SET(UHD_VERSION_MAJOR 003)
-SET(UHD_VERSION_MINOR 010)
+SET(UHD_VERSION_API   010)
+SET(UHD_VERSION_ABI   000)
 SET(UHD_VERSION_PATCH git)
 SET(UHD_VERSION_DEVEL TRUE)
 
@@ -83,13 +85,14 @@ FUNCTION(DEPAD_NUM input_num output_num)
 ENDFUNCTION(DEPAD_NUM)
 
 DEPAD_NUM(${UHD_VERSION_MAJOR} TRIMMED_VERSION_MAJOR)
-DEPAD_NUM(${UHD_VERSION_MINOR} TRIMMED_VERSION_MINOR)
+DEPAD_NUM(${UHD_VERSION_API}   TRIMMED_VERSION_API)
+DEPAD_NUM(${UHD_VERSION_ABI}   TRIMMED_VERSION_ABI)
 IF(UHD_VERSION_DEVEL)
     SET(TRIMMED_VERSION_PATCH ${UHD_VERSION_PATCH})
 ELSE(UHD_VERSION_DEVEL)
     DEPAD_NUM(${UHD_VERSION_PATCH} TRIMMED_VERSION_PATCH)
 ENDIF(UHD_VERSION_DEVEL)
-SET(TRIMMED_UHD_VERSION "${TRIMMED_VERSION_MAJOR}.${TRIMMED_VERSION_MINOR}.${TRIMMED_VERSION_PATCH}")
+SET(TRIMMED_UHD_VERSION "${TRIMMED_VERSION_MAJOR}.${TRIMMED_VERSION_API}.${TRIMMED_VERSION_ABI}.${TRIMMED_VERSION_PATCH}")
 
 ########################################################################
 # Version information discovery through git log
@@ -150,7 +153,7 @@ ENDIF()
 
 ########################################################################
 IF(TRIM_UHD_VERSION STREQUAL "True")
-    SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}-${UHD_GIT_HASH}")
+    SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}.${UHD_VERSION_PATCH}-${UHD_GIT_HASH}")
 ELSE()
-    SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}-${UHD_GIT_COUNT}-${UHD_GIT_HASH}")
+    SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}.${UHD_VERSION_PATCH}-${UHD_GIT_COUNT}-${UHD_GIT_HASH}")
 ENDIF()
