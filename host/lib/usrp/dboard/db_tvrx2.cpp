@@ -1,5 +1,5 @@
 //
-// Copyright 2010,2012-2014 Ettus Research LLC
+// Copyright 2010,2012-2014,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1529,7 +1529,7 @@ void tvrx2::test_rf_filter_robustness(void){
 void tvrx2::transition_0(void){
     //Transition 0: Initialize Tuner and place in standby
     UHD_LOGV(often) << boost::format(
-        "\nTVRX2 (%s): Transistion 0: Initialize Tuner, Calibrate and Standby\n") % (get_subdev_name()) << std::endl;
+        "\nTVRX2 (%s): Transition 0: Initialize Tuner, Calibrate and Standby\n") % (get_subdev_name()) << std::endl;
 
     //Check for Power-On Reset, if reset, initialze tuner
     if (get_power_reset()) {
@@ -1583,7 +1583,7 @@ void tvrx2::transition_0(void){
 void tvrx2::transition_1(void){
     //Transition 1: Select TV Standard
     UHD_LOGV(often) << boost::format(
-        "\nTVRX2 (%s): Transistion 1: Select TV Standard\n") % (get_subdev_name()) << std::endl;
+        "\nTVRX2 (%s): Transition 1: Select TV Standard\n") % (get_subdev_name()) << std::endl;
 
     //send magic xtal_cal_dac setting
     send_reg(0x65, 0x65);
@@ -1614,7 +1614,7 @@ void tvrx2::transition_1(void){
 void tvrx2::transition_2(int rf_freq){
     //Transition 2: Select RF Frequency after changing TV Standard
     UHD_LOGV(often) << boost::format(
-        "\nTVRX2 (%s): Transistion 2: Select RF Frequency after changing TV Standard\n") % (get_subdev_name()) << std::endl;
+        "\nTVRX2 (%s): Transition 2: Select RF Frequency after changing TV Standard\n") % (get_subdev_name()) << std::endl;
 
     //send magic xtal_cal_dac setting
     send_reg(0x65, 0x65);
@@ -1652,7 +1652,7 @@ void tvrx2::transition_2(int rf_freq){
 void tvrx2::transition_3(void){
     //Transition 3: Standby Mode
     UHD_LOGV(often) << boost::format(
-        "\nTVRX2 (%s): Transistion 3: Standby Mode\n") % (get_subdev_name()) << std::endl;
+        "\nTVRX2 (%s): Transition 3: Standby Mode\n") % (get_subdev_name()) << std::endl;
 
     //send magic xtal_cal_dac setting
     send_reg(0x65, 0x65);
@@ -1671,7 +1671,7 @@ void tvrx2::transition_3(void){
 void tvrx2::transition_4(int rf_freq){
     //Transition 4: Change RF Frequency without changing TV Standard
     UHD_LOGV(often) << boost::format(
-        "\nTVRX2 (%s): Transistion 4: Change RF Frequency without changing TV Standard\n") % (get_subdev_name()) << std::endl;
+        "\nTVRX2 (%s): Transition 4: Change RF Frequency without changing TV Standard\n") % (get_subdev_name()) << std::endl;
 
     //send magic xtal_cal_dac setting
     send_reg(0x65, 0x65);

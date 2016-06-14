@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -336,7 +336,7 @@ boost::uint32_t octoclock_impl::_get_fw_version(const std::string &oc){
     if(UHD_OCTOCLOCK_PACKET_MATCHES(OCTOCLOCK_QUERY_ACK, pkt_out, pkt_in, len)){
         return pkt_in->proto_ver;
     }
-    else throw uhd::runtime_error("Failed to retrive firmware version from OctoClock.");
+    else throw uhd::runtime_error("Failed to retrieve firmware version from OctoClock.");
 }
 
 void octoclock_impl::_get_state(const std::string &oc){
