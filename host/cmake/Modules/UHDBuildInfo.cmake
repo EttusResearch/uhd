@@ -1,5 +1,5 @@
 #
-# Copyright 2015 National Instruments Corp.
+# Copyright 2015-2016 National Instruments Corp.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,10 +24,14 @@ MACRO(UHD_LOAD_BUILD_INFO)
     MESSAGE(STATUS "Loading build info.")
 
     # Build date
-    EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
-        "import time; print(time.strftime('%a, %d %b %Y %H:%M:%S', time.gmtime()))"
-        OUTPUT_VARIABLE UHD_BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+    IF(IGNORE_BUILD_DATE)
+        SET(UHD_BUILD_DATE "")
+    ELSE()
+        EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+            "import time; print(time.strftime('%a, %d %b %Y %H:%M:%S', time.gmtime()))"
+            OUTPUT_VARIABLE UHD_BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+    ENDIF(IGNORE_BUILD_DATE)
 
     # Compiler name
     IF(MSVC)
