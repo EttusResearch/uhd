@@ -51,10 +51,10 @@ public:
                 .set_coercer(boost::bind(&duc_block_ctrl_impl::set_freq, this, _1, chan))
                 .set(default_freq);
             ;
-            double default_output_rate = get_arg<double>("input_rate", chan);
+            double default_input_rate = get_arg<double>("input_rate", chan);
             _tree->access<double>(get_arg_path("input_rate/value", chan))
                 .set_coercer(boost::bind(&duc_block_ctrl_impl::set_input_rate, this, _1, chan))
-                .set(default_output_rate)
+                .set(default_input_rate)
             ;
             _tree->access<double>(get_arg_path("output_rate/value", chan))
                 .add_coerced_subscriber(boost::bind(&duc_block_ctrl_impl::set_output_rate, this, _1, chan))
@@ -76,6 +76,11 @@ public:
             _tree->create<uhd::meta_range_t>(dsp_base_path / "freq/range")
                 .set_publisher(boost::bind(&duc_block_ctrl_impl::get_freq_range, this))
             ;
+
+            // Rate 1:1 by default
+            sr_write("N", 1, chan);
+            sr_write("M", 1, chan);
+            sr_write("CONFIG", 1, chan); // Enable clear EOB
         }
     } // end ctor
     virtual ~duc_block_ctrl_impl() {};
@@ -93,6 +98,26 @@ public:
     double get_output_samp_rate(size_t port=ANY_PORT)
     {
         return get_arg<double>("output_rate", port == ANY_PORT ? 0 : port);
+    }
+
+    void issue_stream_cmd(
+            const uhd::stream_cmd_t &stream_cmd_,
+            const size_t chan
+    ) {
+        UHD_RFNOC_BLOCK_TRACE() << "ddc_block_ctrl_base::issue_stream_cmd()" << std::endl;
+
+        uhd::stream_cmd_t stream_cmd = stream_cmd_;
+        if (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE or
+            stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE) {
+            size_t interpolation = get_arg<double>("output_rate", chan) / get_arg<double>("input_rate", chan);
+            stream_cmd.num_samps *= interpolation;
+        }
+
+        BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, list_upstream_nodes()) {
+            source_node_ctrl::sptr this_upstream_block_ctrl =
+                boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
+            this_upstream_block_ctrl->issue_stream_cmd(stream_cmd, chan);
+        }
     }
 
 private:
@@ -150,7 +175,7 @@ private:
         }
         UHD_ASSERT_THROW(hb_enable <= NUM_HALFBANDS);
         UHD_ASSERT_THROW(interp > 0 and interp <= CIC_MAX_INTERP);
-        // hacky hack: Unlike the DDC, the DUC actually simply has 2
+        // hacky hack: Unlike the DUC, the DUC actually simply has 2
         // flags to enable either halfband.
         uint32_t hb_enable_word = hb_enable;
         if (hb_enable == 2) {
@@ -159,7 +184,10 @@ private:
         hb_enable_word <<= 8;
         // What we can't cover with halfbands, we do with the CIC
         sr_write("INTERP_WORD", hb_enable_word | (interp & 0xff));
-        sr_write("INTERP", interp_rate, chan);
+
+	// Rate change = M/N
+        sr_write("N", 1, chan);
+        sr_write("M", std::pow(2.0, double(hb_enable)) * (interp & 0xff), chan);
 
         if (interp > 1 and hb_enable == 0) {
             UHD_MSG(warning) << boost::format(
@@ -170,8 +198,8 @@ private:
         }
 
         // Calculate algorithmic gain of CIC for a given interpolation
-        // For Ettus CIC R=interp, M=1, N=3. Gain = (R * M) ^ N
-        const int CIC_N = 3;
+        // For Ettus CIC R=interp, M=1, N=4. Gain = (R * M) ^ N
+        const int CIC_N = 4;
         const double rate_pow = std::pow(double(interp), CIC_N);
         // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
         // gain compensation blocks already hardcoded in place in DUC (that provide simple 1/2^n gain compensation).
@@ -199,7 +227,7 @@ private:
     }
 
     // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
-    // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
+    // gain compensation blocks already hardcoded in place in DUC (that provide simple 1/2^n gain compensation).
     // Further more factor in OTW format which adds further gain factor to weight output samples correctly.
     void update_scalar(const double scalar, const size_t chan)
     {
