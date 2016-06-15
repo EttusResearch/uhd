@@ -5,26 +5,26 @@
   <key>DUC</key>
   <!--There can be several of these:-->
   <ids>
-    <id revision="0">D11C</id>
+    <id revision="0">D0C0</id>
   </ids>
   <!-- Registers -->
   <registers>
     <!--Note: AXI config bus uses 129 & 130-->
     <setreg>
       <name>INTERP_WORD</name> <!--Includes the half-bands and the CIC-->
-      <address>133</address>
-    </setreg>
-    <setreg>
-      <name>INTERP</name>
-      <address>133</address>
-    </setreg>
-    <setreg>
-      <name>CORDIC_FREQ</name>
       <address>131</address>
     </setreg>
     <setreg>
-      <name>SCALE_IQ</name>
+      <name>INTERP</name>
+      <address>129</address>
+    </setreg>
+    <setreg>
+      <name>CORDIC_FREQ</name>
       <address>132</address>
+    </setreg>
+    <setreg>
+      <name>SCALE_IQ</name>
+      <address>133</address>
     </setreg>
   </registers>
   <!-- Args -->
@@ -59,6 +59,12 @@
       <check>GE($fullscale, 0.0)</check>
       <check_message>The output rate must be a positive value (in Hz).</check_message>
       <!--FIXME Calculate this properly-->
+    </arg>
+    <arg>
+      <name>scalar_correction</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
     </arg>
   </args>
   <!--All the connections to the outside world are listed in 'ports':-->

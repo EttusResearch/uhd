@@ -45,7 +45,7 @@ public:
     UHD_RFNOC_BLOCK_CONSTRUCTOR(duc_block_ctrl)
     {
         // Argument/prop tree hooks
-        for (size_t chan = 0; chan < 2; chan++) {
+        for (size_t chan = 0; chan < get_input_ports().size(); chan++) {
             double default_freq = get_arg<double>("freq", chan);
             _tree->access<double>(get_arg_path("freq/value", chan))
                 .set_coercer(boost::bind(&duc_block_ctrl_impl::set_freq, this, _1, chan))
@@ -82,17 +82,17 @@ public:
 
     double get_input_scale_factor(size_t port=ANY_PORT)
     {
-        return get_arg<double>("scalar_correction", port);
+        return get_arg<double>("scalar_correction", port == ANY_PORT ? 0 : port);
     }
 
     double get_input_samp_rate(size_t port=ANY_PORT)
     {
-        return get_arg<double>("input_rate", port);
+        return get_arg<double>("input_rate", port == ANY_PORT ? 0 : port);
     }
 
     double get_output_samp_rate(size_t port=ANY_PORT)
     {
-        return get_arg<double>("output_rate", port);
+        return get_arg<double>("output_rate", port == ANY_PORT ? 0 : port);
     }
 
 private:
