@@ -19,6 +19,7 @@
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/usrp_clock/multi_usrp_clock.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
@@ -41,6 +42,38 @@ void print_notes(void) {
   std::cout << boost::format("****************************************************************************************************************\n");
 }
 
+int query_clock_sensors(const std::string &args) {
+  std::cout << boost::format("\nCreating the clock device with: %s...\n") % args;
+  uhd::usrp_clock::multi_usrp_clock::sptr clock = uhd::usrp_clock::multi_usrp_clock::make(args);
+
+  //Verify GPS sensors are present
+  std::vector<std::string> sensor_names = clock->get_sensor_names(0);
+  if(std::find(sensor_names.begin(), sensor_names.end(), "gps_locked") == sensor_names.end()) {
+    std::cout << boost::format("\ngps_locked sensor not found.  This could mean that this unit does not have a GPSDO.\n\n");
+    return EXIT_FAILURE;
+  }
+
+  // Print NMEA strings
+  try {
+      uhd::sensor_value_t gga_string = clock->get_sensor("gps_gpgga");
+      uhd::sensor_value_t rmc_string = clock->get_sensor("gps_gprmc");
+      uhd::sensor_value_t servo_string = clock->get_sensor("gps_servo");
+      std::cout << boost::format("\nPrinting available NMEA strings:\n");
+      std::cout << boost::format("%s\n%s\n") % gga_string.to_pp_string() % rmc_string.to_pp_string();
+      std::cout << boost::format("\nPrinting GPS servo status:\n");
+      std::cout << boost::format("%s\n\n") % servo_string.to_pp_string();
+  } catch (uhd::lookup_error &e) {
+      std::cout << "NMEA strings not implemented for this device." << std::endl;
+  }
+  std::cout << boost::format("GPS Epoch time: %.5f seconds\n") % clock->get_sensor("gps_time").to_real();
+  std::cout << boost::format("PC Clock time:  %.5f seconds\n") % time(NULL);
+
+  //finished
+  std::cout << boost::format("\nDone!\n\n");
+
+  return EXIT_SUCCESS;
+}
+
 int UHD_SAFE_MAIN(int argc, char *argv[]){
   uhd::set_thread_priority_safe();
 
@@ -51,6 +84,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   desc.add_options()
     ("help", "help message")
     ("args", po::value<std::string>(&args)->default_value(""), "Device address arguments specifying a single USRP")
+    ("clock", "query a clock device's sensors")
     ;
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -63,6 +97,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
           << std::endl
           << desc;
       return EXIT_FAILURE;
+  }
+
+  //If specified, query a clock device instead
+  if(vm.count("clock")) {
+      return query_clock_sensors(args);
   }
 
   //Create a USRP device
