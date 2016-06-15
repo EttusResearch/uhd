@@ -149,20 +149,31 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path 
         ss << "FPGA Version: " << tree->access<std::string>(path / "fpga_version").get() << std::endl;
     }
     ss << std::endl;
-    ss << "Time sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "time_source" / "options").get()) << std::endl;
-    ss << "Clock sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "clock_source" / "options").get()) << std::endl;
-    ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
-    BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
-        ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
+    try {
+        if (tree->exists(path / "time_source" / "options")){
+            const std::vector< std::string > time_sources  = tree->access<std::vector<std::string> >(path / "time_source" / "options").get();
+            ss << "Time sources:  " << prop_names_to_pp_string(time_sources)  << std::endl;
+        }
+        if (tree->exists(path / "clock_source" / "options")){
+            const std::vector< std::string > clock_sources = tree->access<std::vector<std::string> >(path / "clock_source" / "options").get();
+            ss << "Clock sources: " << prop_names_to_pp_string(clock_sources) << std::endl;
+        }
+        ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
+        BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
+            ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
+        }
+        BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
+            ss << make_border(get_dboard_pp_string("RX", tree, path / "dboards" / name));
+        }
+        BOOST_FOREACH(const std::string &name, tree->list(path / "tx_dsps")){
+            ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
+        }
+        BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
+            ss << make_border(get_dboard_pp_string("TX", tree, path / "dboards" / name));
+        }
     }
-    BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
-        ss << make_border(get_dboard_pp_string("RX", tree, path / "dboards" / name));
-    }
-    BOOST_FOREACH(const std::string &name, tree->list(path / "tx_dsps")){
-        ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
-    }
-    BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
-        ss << make_border(get_dboard_pp_string("TX", tree, path / "dboards" / name));
+    catch (const uhd::lookup_error &e) {
+        /* nop */
     }
     return ss.str();
 }
@@ -214,7 +225,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return EXIT_SUCCESS;
     }
 
-    device::sptr dev = device::make(vm["args"].as<std::string>(), device::USRP);
+    device::sptr dev = device::make(vm["args"].as<std::string>());
     property_tree::sptr tree = dev->get_tree();
 
     if (vm.count("string")){
