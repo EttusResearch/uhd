@@ -1,5 +1,5 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -71,7 +71,8 @@ int main(){
         uhd_subdev_spec_size(subdev_spec2, &size2)
     )
     if(size1 != size2){
-        printf("%s:%d: Sizes do not match. %lu vs. %lu\n", __FILE__, __LINE__, size1, size2);
+        printf("%s:%d: Sizes do not match. %lu vs. %lu\n", __FILE__, __LINE__,
+               (unsigned long)size1, (unsigned long)size2);
         return_code = EXIT_FAILURE;
         goto free_subdev_spec2;
     }

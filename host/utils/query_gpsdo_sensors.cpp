@@ -91,7 +91,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
       std::cout << "trying \"external\"..." <<std::endl;
       try {
           usrp->set_time_source("external");
-      } catch (uhd::value_error &e) {
+      } catch (uhd::value_error&) {
           std::cout << "\"external\" failed, too." << std::endl;
       }
   }
@@ -115,7 +115,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
       std::cout << "trying \"external\"..." <<std::endl;
       try{
           usrp->set_clock_source("external");
-      } catch (uhd::value_error &e) {
+      } catch (uhd::value_error&) {
           std::cout << "\"external\" failed, too." << std::endl;
       }
   }
@@ -179,7 +179,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
       uhd::sensor_value_t rmc_string = usrp->get_mboard_sensor("gps_gprmc");
       std::cout << boost::format("Printing available NMEA strings:\n");
       std::cout << boost::format("%s\n%s\n") % gga_string.to_pp_string() % rmc_string.to_pp_string();
-  } catch (uhd::lookup_error &e) {
+  } catch (uhd::lookup_error&) {
       std::cout << "NMEA strings not implemented for this device." << std::endl;
   }
   std::cout << boost::format("GPS Epoch time at last PPS: %.5f seconds\n") % usrp->get_mboard_sensor("gps_time").to_real();

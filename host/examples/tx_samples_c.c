@@ -189,7 +189,7 @@ int main(int argc, char* argv[]){
     buffs_ptr = (const void**)&buff;
     size_t i = 0;
     for(i = 0; i < (samps_per_buff*2); i+=2){
-        buff[i] = 0.1;
+        buff[i]   = 0.1f;
         buff[i+1] = 0;
     }
 
