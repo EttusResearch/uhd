@@ -137,7 +137,7 @@ namespace uhd{
                     //We may have wrapped around locally
                     if(_state.pos == 0) _state.num_wraps++;
                 }
-                _state.pos = (_state.pos+1) % _poolsize;
+                if (_cache[_state.pos] == '\n') _state.pos = (_state.pos+1) % _poolsize;
                 //We may have wrapped around locally
                 if(_state.pos == 0) _state.num_wraps++;
             }
@@ -145,7 +145,7 @@ namespace uhd{
     }
 
     char octoclock_uart_iface::_getchar(){
-        if(LOCAL_STATE_AHEAD){
+        if(STATES_EQUAL or LOCAL_STATE_AHEAD){
             return 0;
         }
 
