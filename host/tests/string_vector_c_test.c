@@ -1,5 +1,5 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ int main(){
     if(size != 2){
         return_code = EXIT_FAILURE;
         fprintf(stderr, "%s:%d: Invalid size: %lu vs. 2",
-                        __FILE__, __LINE__,size);
+                        __FILE__, __LINE__, (unsigned long)size);
         goto free_string_vector;
     }
 

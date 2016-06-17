@@ -1,5 +1,5 @@
 //
-// Copyright 2014-2015 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,11 +47,13 @@ namespace uhd{
         _state.pos = 0;
         _device_state.num_wraps = 0;
         _device_state.pos = 0;
+        // To avoid replicating sequence numbers between sessions
+        _sequence = boost::uint32_t(std::rand());
         size_t len = 0;
 
         //Get pool size from device
         octoclock_packet_t pkt_out;
-        pkt_out.sequence = uhd::htonx<boost::uint16_t>(std::rand());
+        pkt_out.sequence = uhd::htonx<boost::uint32_t>(_sequence);
         pkt_out.len = 0;
 
         boost::uint8_t octoclock_data[udp_simple::mtu];
@@ -70,7 +72,7 @@ namespace uhd{
         size_t len = 0;
 
         octoclock_packet_t pkt_out;
-        pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+        pkt_out.sequence = uhd::htonx<boost::uint32_t>(++_sequence);
         pkt_out.len = to_send.size();
         memcpy(pkt_out.data, to_send.c_str(), to_send.size());
 
@@ -111,14 +113,13 @@ namespace uhd{
     void octoclock_uart_iface::_update_cache(){
         octoclock_packet_t pkt_out;
         pkt_out.len = 0;
-        pkt_out.sequence = 0;
         size_t len = 0;
 
         boost::uint8_t octoclock_data[udp_simple::mtu];
         const octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t*>(octoclock_data);
 
         if(STATES_EQUAL or LOCAL_STATE_AHEAD){
-            pkt_out.sequence++;
+            pkt_out.sequence = uhd::htonx<boost::uint32_t>(++_sequence);
             UHD_OCTOCLOCK_SEND_AND_RECV(_udp, SEND_GPSDO_CACHE_CMD, pkt_out, len, octoclock_data);
             if(UHD_OCTOCLOCK_PACKET_MATCHES(SEND_GPSDO_CACHE_ACK, pkt_out, pkt_in, len)){
                 memcpy(&_cache[0], pkt_in->data, _poolsize);
@@ -137,7 +138,7 @@ namespace uhd{
                     //We may have wrapped around locally
                     if(_state.pos == 0) _state.num_wraps++;
                 }
-                _state.pos = (_state.pos+1) % _poolsize;
+                if (_cache[_state.pos] == '\n') _state.pos = (_state.pos+1) % _poolsize;
                 //We may have wrapped around locally
                 if(_state.pos == 0) _state.num_wraps++;
             }
@@ -145,7 +146,7 @@ namespace uhd{
     }
 
     char octoclock_uart_iface::_getchar(){
-        if(LOCAL_STATE_AHEAD){
+        if(STATES_EQUAL or LOCAL_STATE_AHEAD){
             return 0;
         }
 
