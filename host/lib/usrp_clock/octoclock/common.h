@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 Ettus Research LLC
+ * Copyright 2014-2016 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,8 @@ extern "C" {
 
 // These values are placed in the octoclock_packet_t.proto_ver field
 #define OCTOCLOCK_BOOTLOADER_PROTO_VER 1234
-#define OCTOCLOCK_FW_COMPAT_NUM           3
+#define OCTOCLOCK_FW_MIN_COMPAT_NUM       2
+#define OCTOCLOCK_FW_COMPAT_NUM           4
 
 // UDP ports assigned for different tasks
 #define OCTOCLOCK_UDP_CTRL_PORT   50000

@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ private:
     gpsdo_cache_state_t _device_state;
     std::vector<boost::uint8_t> _cache;
     std::string _rxbuff;
+    boost::uint32_t _sequence;
 
     void _update_cache();
     char _getchar();

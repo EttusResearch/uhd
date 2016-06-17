@@ -110,7 +110,8 @@ device_addrs_t octoclock_find(const device_addr_t &hint){
     //Send a query packet
     octoclock_packet_t pkt_out;
     pkt_out.proto_ver = OCTOCLOCK_FW_COMPAT_NUM;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+    // To avoid replicating sequence numbers between sessions
+    pkt_out.sequence = boost::uint32_t(std::rand());
     pkt_out.len = 0;
     pkt_out.code = OCTOCLOCK_QUERY_CMD;
     try{
@@ -144,12 +145,17 @@ device_addrs_t octoclock_find(const device_addr_t &hint){
                     new_addr["type"] = "octoclock-bootloader";
                     octoclock_addrs.push_back(new_addr);
                 }
-                else{
+                else {
                     new_addr["type"] = "octoclock";
 
-                    octoclock_eeprom_t oc_eeprom(ctrl_xport);
-                    new_addr["name"] = oc_eeprom["name"];
-                    new_addr["serial"] = oc_eeprom["serial"];
+                    if(pkt_in->proto_ver >= OCTOCLOCK_FW_MIN_COMPAT_NUM and pkt_in->proto_ver <= OCTOCLOCK_FW_COMPAT_NUM) {
+                        octoclock_eeprom_t oc_eeprom(ctrl_xport);
+                        new_addr["name"] = oc_eeprom["name"];
+                        new_addr["serial"] = oc_eeprom["serial"];
+                    } else {
+                        new_addr["name"] = "";
+                        new_addr["serial"] = "";
+                    }
 
                     //Filter based on optional keys (if any)
                     if(
@@ -184,7 +190,8 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
     UHD_MSG(status) << "Opening an OctoClock device..." << std::endl;
     _type = device::CLOCK;
     device_addrs_t device_args = separate_device_addr(_device_addr);
-    _sequence = std::rand();
+    // To avoid replicating sequence numbers between sessions
+    _sequence = boost::uint32_t(std::rand());
 
     ////////////////////////////////////////////////////////////////////
     // Initialize the property tree
@@ -220,7 +227,7 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
         // Check the firmware compatibility number
         ////////////////////////////////////////////////////////////////////
         boost::uint32_t fw_version = _get_fw_version(oc);
-        if(fw_version != OCTOCLOCK_FW_COMPAT_NUM){
+        if(fw_version < OCTOCLOCK_FW_MIN_COMPAT_NUM or fw_version > OCTOCLOCK_FW_COMPAT_NUM){
             throw uhd::runtime_error(str(boost::format(
                     "\n\nPlease update your OctoClock's firmware.\n"
                     "Expected firmware compatibility number %d, but got %d:\n"
@@ -325,7 +332,7 @@ void octoclock_impl::_set_eeprom(const std::string &oc, const octoclock_eeprom_t
 
 boost::uint32_t octoclock_impl::_get_fw_version(const std::string &oc){
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = _sequence++;
+    pkt_out.sequence = uhd::htonx<boost::uint32_t>(++_sequence);
     pkt_out.len = 0;
     size_t len;
 
@@ -341,7 +348,7 @@ boost::uint32_t octoclock_impl::_get_fw_version(const std::string &oc){
 
 void octoclock_impl::_get_state(const std::string &oc){
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = _sequence++;
+    pkt_out.sequence = uhd::htonx<boost::uint32_t>(++_sequence);
     pkt_out.len = 0;
     size_t len = 0;
 
