@@ -74,6 +74,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //Lock mboard clocks
     usrp->set_clock_source(ref);
 
+    //always select the subdevice first, the channel mapping affects the other settings
+    if (vm.count("subdev")) {
+        usrp->set_rx_subdev_spec(subdev);
+    }
+
     //set the rx sample rate
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
     usrp->set_rx_rate(rate);
