@@ -792,9 +792,6 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // connect rx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    _tree->access<double>(mb_path / "tick_rate")
-        .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
-        .add_coerced_subscriber(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
     perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
     _tree->create<bool>(rx_dsp_path / "rate" / "set").set(false);
@@ -805,12 +802,14 @@ void b200_impl::setup_radio(const size_t dspno)
     ;
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
         .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
+    _tree->access<double>(mb_path / "tick_rate")
+        .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
+        .add_coerced_subscriber(boost::bind(&b200_impl::update_rx_dsp_tick_rate, this, _1, perif.ddc, rx_dsp_path))
+    ;
 
     ////////////////////////////////////////////////////////////////////
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
-    _tree->access<double>(mb_path / "tick_rate")
-        .add_coerced_subscriber(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / dspno;
     perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
     _tree->create<bool>(tx_dsp_path / "rate" / "set").set(false);
@@ -818,6 +817,9 @@ void b200_impl::setup_radio(const size_t dspno)
         .set_coercer(boost::bind(&b200_impl::coerce_tx_samp_rate, this, perif.duc, dspno, _1))
         .add_coerced_subscriber(boost::bind(&lambda_set_bool_prop, boost::weak_ptr<property_tree>(_tree), tx_dsp_path / "rate" / "set", true, _1))
         .add_coerced_subscriber(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
+    ;
+    _tree->access<double>(mb_path / "tick_rate")
+        .add_coerced_subscriber(boost::bind(&b200_impl::update_tx_dsp_tick_rate, this, _1, perif.duc, tx_dsp_path))
     ;
 
     ////////////////////////////////////////////////////////////////////
