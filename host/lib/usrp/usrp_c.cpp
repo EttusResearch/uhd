@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Ettus Research LLC
+ * Copyright 2015-2016 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -834,6 +834,95 @@ uhd_error uhd_usrp_get_fe_rx_freq_range(
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
         freq_range_out->meta_range_cpp = USRP(h)->get_fe_rx_freq_range(chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_get_rx_lo_names(
+    uhd_usrp_handle h,
+    size_t chan,
+    uhd_string_vector_handle rx_lo_names_out
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        rx_lo_names_out->string_vector_cpp = USRP(h)->get_rx_lo_names(chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_set_rx_lo_source(
+    uhd_usrp_handle h,
+    const char* src,
+    const char* name,
+    size_t chan
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        USRP(h)->set_rx_lo_source(src, name, chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_get_rx_lo_source(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    char* rx_lo_source_out,
+    size_t strbuffer_len
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        strncpy(rx_lo_source_out, USRP(h)->get_rx_lo_source(name, chan).c_str(), strbuffer_len);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_get_rx_lo_sources(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    uhd_string_vector_handle rx_lo_sources_out
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        rx_lo_sources_out->string_vector_cpp = USRP(h)->get_rx_lo_sources(name, chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_set_rx_lo_export_enabled(
+    uhd_usrp_handle h,
+    bool enabled,
+    const char* name,
+    size_t chan
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        USRP(h)->set_rx_lo_export_enabled(enabled, name, chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_get_rx_lo_export_enabled(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    bool* result_out
+) {
+    UHD_SAFE_C_SAVE_ERROR(h,
+        *result_out = USRP(h)->get_rx_lo_export_enabled(name, chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_set_rx_lo_freq(
+    uhd_usrp_handle h,
+    double freq,
+    const char* name,
+    size_t chan,
+    double* coerced_freq_out
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        *coerced_freq_out = USRP(h)->set_rx_lo_freq(freq, name, chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_get_rx_lo_freq(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    double* rx_lo_freq_out
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        *rx_lo_freq_out = USRP(h)->get_rx_lo_freq(name, chan);
     )
 }
 

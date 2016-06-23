@@ -43,7 +43,7 @@ typedef ptrdiff_t ssize_t;
     #define UHD_DEPRECATED     __declspec(deprecated)
     #define UHD_ALIGNED(x)     __declspec(align(x))
     #define UHD_UNUSED(x)      x __attribute__((unused))
-#elif defined(__GNUG__) && __GNUG__ >= 4
+#elif defined(__GNUC__) && __GNUC__ >= 4
     #define UHD_EXPORT         __attribute__((visibility("default")))
     #define UHD_IMPORT         __attribute__((visibility("default")))
     #define UHD_INLINE         inline __attribute__((always_inline))
