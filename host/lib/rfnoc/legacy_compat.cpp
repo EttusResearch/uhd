@@ -34,6 +34,14 @@ using uhd::usrp::subdev_spec_pair_t;
 using uhd::stream_cmd_t;
 
 /************************************************************************
+ * Constants
+ ***********************************************************************/
+static const std::string RADIO_BLOCK_NAME = "Radio";
+static const std::string DFIFO_BLOCK_NAME = "DmaFIFO";
+static const std::string DDC_BLOCK_NAME = "DDC";
+static const std::string DUC_BLOCK_NAME = "DDC";
+
+/************************************************************************
  * Static helpers
  ***********************************************************************/
 uhd::fs_path mb_root(const size_t mboard)
@@ -57,12 +65,13 @@ public:
         _num_radios_per_board(device->find_blocks<radio_ctrl>("0/Radio").size()), // These might throw, maybe we catch that and provide a nicer error message.
         _num_tx_chans_per_radio(_tree->list("/mboards/0/xbar/Radio_0/ports/in").size()),
         _num_rx_chans_per_radio(_tree->list("/mboards/0/xbar/Radio_0/ports/out").size()),
-        _has_ducs(not device->find_blocks<radio_ctrl>("0/DUC").empty()),
-        _has_ddcs(not device->find_blocks<radio_ctrl>("0/DDC").empty()),
-        _has_dmafifo(not device->find_blocks<radio_ctrl>("0/DmaFIFO").empty()),
+        _has_ducs(not device->find_blocks<radio_ctrl>(DUC_BLOCK_NAME).empty()),
+        _has_ddcs(not device->find_blocks<radio_ctrl>(DDC_BLOCK_NAME).empty()),
+        _has_dmafifo(not device->find_blocks<radio_ctrl>(DFIFO_BLOCK_NAME).empty()),
         _rx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board)),
         _tx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board))
     {
+        _device->clear();
         check_available_periphs(); // Throws if invalid configuration.
         setup_prop_tree();
         connect_blocks();
@@ -72,6 +81,9 @@ public:
                 _rx_channel_map[mboard][radio].radio_index = radio;
                 _tx_channel_map[mboard][radio].radio_index = radio;
             }
+
+            const double tick_rate = _tree->access<double>(mb_root(mboard) / "tick_rate").get();
+            update_tick_rate_on_blocks(tick_rate, mboard);
         }
     }
 
@@ -89,11 +101,10 @@ public:
         if (_num_radios_per_board == 0) {
             throw uhd::runtime_error("For legacy APIs, all devices require at least one radio.");
         }
-        // FIXME test for DRAM FIFOs
-        block_id_t radio_block_id(0, "Radio");
-        block_id_t duc_block_id(0, "DUC");
-        block_id_t ddc_block_id(0, "DDC");
-        block_id_t fifo_block_id(0, "DmaFIFO", 0);
+        block_id_t radio_block_id(0, RADIO_BLOCK_NAME);
+        block_id_t duc_block_id(0, DUC_BLOCK_NAME);
+        block_id_t ddc_block_id(0, DDC_BLOCK_NAME);
+        block_id_t fifo_block_id(0, DFIFO_BLOCK_NAME, 0);
         for (size_t i = 0; i < _num_mboards; i++) {
             radio_block_id.set_device_no(i);
             duc_block_id.set_device_no(i);
@@ -175,21 +186,21 @@ public:
                 for (size_t chan = 0; chan < _num_tx_chans_per_radio; chan++) {
                     if (_has_ducs) {
                         _graph->connect(
-                            block_id_t(mboard, "DUC",   radio), chan,
-                            block_id_t(mboard, "Radio", radio), chan
+                            block_id_t(mboard, DUC_BLOCK_NAME,   radio), chan,
+                            block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan
                         );
                         if (_has_dmafifo) {
                             // We have DMA FIFO *and* DUCs
                             _graph->connect(
-                                block_id_t(mboard, "DmaFIFO", 0), radio * _num_radios_per_board + chan,
-                                block_id_t(mboard, "DUC", radio), chan
+                                block_id_t(mboard, DFIFO_BLOCK_NAME, 0), radio * _num_radios_per_board + chan,
+                                block_id_t(mboard, DUC_BLOCK_NAME, radio), chan
                             );
                         }
                     } else if (_has_dmafifo) {
                             // We have DMA FIFO, *no* DUCs
                             _graph->connect(
-                                block_id_t(mboard, "DmaFIFO",   0), radio * _num_radios_per_board + chan,
-                                block_id_t(mboard, "Radio", radio), chan
+                                block_id_t(mboard, DFIFO_BLOCK_NAME,   0), radio * _num_radios_per_board + chan,
+                                block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan
                             );
                     }
                 }
@@ -197,8 +208,8 @@ public:
                 for (size_t chan = 0; chan < _num_rx_chans_per_radio; chan++) {
                     if (_has_ddcs) {
                         _graph->connect(
-                            block_id_t(mboard, "DDC",   radio), chan,
-                            block_id_t(mboard, "Radio", radio), chan
+                            block_id_t(mboard, DDC_BLOCK_NAME,   radio), chan,
+                            block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan
                         );
                     }
                 }
@@ -218,7 +229,7 @@ public:
         size_t dsp_index = _rx_channel_map[mboard_idx][chan].radio_index;
         size_t port_index = _rx_channel_map[mboard_idx][chan].port_index;
         return mb_root(mboard_idx) / "xbar" /
-               str(boost::format("DDC_%d") % dsp_index) /
+               str(boost::format("%s_%d") % DDC_BLOCK_NAME % dsp_index) /
                "legacy_api" / port_index;
     }
 
@@ -231,7 +242,7 @@ public:
         size_t dsp_index = _tx_channel_map[mboard_idx][chan].radio_index;
         size_t port_index = _tx_channel_map[mboard_idx][chan].port_index;
         return mb_root(mboard_idx) / "xbar" /
-               str(boost::format("DUC_%d") % dsp_index) /
+               str(boost::format("%s_%d") % DUC_BLOCK_NAME % dsp_index) /
                "legacy_api" / port_index;
     }
 
@@ -240,8 +251,8 @@ public:
         size_t radio_index = _rx_channel_map[mboard_idx][chan].radio_index;
         size_t port_index = _rx_channel_map[mboard_idx][chan].port_index;
         return uhd::fs_path(str(
-                boost::format("/mboards/%d/xbar/Radio_%d/rx_fe_corrections/%d/")
-                % mboard_idx % radio_index % port_index
+                boost::format("/mboards/%d/xbar/%s_%d/rx_fe_corrections/%d/")
+                % mboard_idx % RADIO_BLOCK_NAME % radio_index % port_index
         ));
     }
 
@@ -250,8 +261,8 @@ public:
         size_t radio_index = _tx_channel_map[mboard_idx][chan].radio_index;
         size_t port_index = _tx_channel_map[mboard_idx][chan].port_index;
         return uhd::fs_path(str(
-                boost::format("/mboards/%d/xbar/Radio_%d/tx_fe_corrections/%d/")
-                % mboard_idx % radio_index % port_index
+                boost::format("/mboards/%d/xbar/%s_%d/tx_fe_corrections/%d/")
+                % mboard_idx % RADIO_BLOCK_NAME % radio_index % port_index
         ));
     }
 
@@ -261,9 +272,9 @@ public:
         const size_t &radio_index = _rx_channel_map[mboard][chan].radio_index;
         const size_t &port_index  = _rx_channel_map[mboard][chan].port_index;
         if (_has_ddcs) {
-            get_block_ctrl<ddc_block_ctrl>(mboard, "DDC", radio_index)->issue_stream_cmd(stream_cmd, port_index);
+            get_block_ctrl<ddc_block_ctrl>(mboard, DDC_BLOCK_NAME, radio_index)->issue_stream_cmd(stream_cmd, port_index);
         } else {
-            get_block_ctrl<radio_ctrl>(mboard, "Radio", radio_index)->issue_stream_cmd(stream_cmd, port_index);
+            get_block_ctrl<radio_ctrl>(mboard, RADIO_BLOCK_NAME, radio_index)->issue_stream_cmd(stream_cmd, port_index);
         }
     }
 
@@ -277,7 +288,7 @@ public:
             UHD_ASSERT_THROW(mboard_idx < _rx_channel_map.size());
             const size_t &radio_index = _rx_channel_map[mboard_idx][chan_idx].radio_index;
             const size_t &port_index = _rx_channel_map[mboard_idx][chan_idx].port_index;
-            block_id_t block_id(mboard_idx, _has_ddcs ? "DDC" : "Radio", radio_index);
+            block_id_t block_id(mboard_idx, _has_ddcs ? DDC_BLOCK_NAME : RADIO_BLOCK_NAME, radio_index);
             args.args[str(boost::format("block_id%d") % i)] = block_id.to_string();
             args.args[str(boost::format("block_port%d") % i)] = str(boost::format("%d") % port_index);
             chan_idx++;
@@ -296,7 +307,7 @@ public:
         uhd::stream_args_t args(args_);
         size_t mboard_idx = 0;
         size_t chan_idx = 0;
-        const std::string block_name = _has_dmafifo ? "DmaFIFO" : (_has_ducs ? "DUC" : "Radio");
+        const std::string block_name = _has_dmafifo ? DFIFO_BLOCK_NAME : (_has_ducs ? DUC_BLOCK_NAME : RADIO_BLOCK_NAME);
         for (size_t i = 0; i < args.channels.size(); i++) {
             UHD_ASSERT_THROW(mboard_idx < _tx_channel_map.size());
             const size_t &radio_index = _tx_channel_map[mboard_idx][chan_idx].radio_index;
@@ -328,6 +339,7 @@ public:
     void set_tick_rate(const double tick_rate, const size_t mboard_idx=0)
     {
         _tree->access<double>(mb_root(mboard_idx) / "tick_rate").set(tick_rate);
+        update_tick_rate_on_blocks(tick_rate, mboard_idx);
     }
 
 private: // methods
@@ -367,8 +379,11 @@ private: // methods
         std::vector<radio_port_pair_t> new_mapping(spec.size());
         for (size_t i = 0; i < spec.size(); i++) {
             const size_t new_radio_index = get_radio_index(spec[i].db_name);
-            const size_t new_port_index =
-                get_block_ctrl<radio_ctrl>(mboard, "Radio", new_radio_index)->get_chan_from_dboard_fe(spec[i].sd_name, dir);
+            radio_ctrl::sptr radio = get_block_ctrl<radio_ctrl>(mboard, "Radio", new_radio_index);
+            size_t new_port_index = radio->get_chan_from_dboard_fe(spec[i].sd_name, dir);
+            if (new_port_index >= radio->get_input_ports().size()) {
+                new_port_index = radio->get_input_ports().at(0);
+            }
             radio_port_pair_t new_radio_port_pair(new_radio_index, new_port_index);
             new_mapping[i] = new_radio_port_pair;
         }
@@ -393,6 +408,25 @@ private: // methods
         return subdev_spec;
     }
 
+    void update_tick_rate_on_blocks(const double tick_rate, const size_t mboard_idx)
+    {
+        block_id_t radio_block_id(mboard_idx, RADIO_BLOCK_NAME);
+        block_id_t duc_block_id(mboard_idx, DUC_BLOCK_NAME);
+        block_id_t ddc_block_id(mboard_idx, DDC_BLOCK_NAME);
+
+        for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
+            radio_block_id.set_block_count(radio);
+            duc_block_id.set_block_count(radio);
+            ddc_block_id.set_block_count(radio);
+            _device->get_block_ctrl<radio_ctrl>(radio_block_id)->set_rate(tick_rate);
+            for (size_t chan = 0; chan < _num_rx_chans_per_radio and _has_ddcs; chan++) {
+                _device->get_block_ctrl(ddc_block_id)->set_arg<double>("input_rate", tick_rate);
+            }
+            for (size_t chan = 0; chan < _num_tx_chans_per_radio and _has_ducs; chan++) {
+                _device->get_block_ctrl(duc_block_id)->set_arg<double>("output_rate", tick_rate);
+            }
+        }
+    }
 
 private: // attributes
     uhd::device3::sptr _device;
