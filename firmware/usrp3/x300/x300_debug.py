@@ -110,7 +110,7 @@ class ctrl_socket(object):
         (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
         if flags & X300_FW_COMMS_FLAGS_ERROR == X300_FW_COMMS_FLAGS_ERROR:
             raise Exception("X300 peek of address %d returns error code" % (addr))
-        print("PEEK of address %d(0x%x) reads %d(0x%x)" % (addr,addr,data,data))
+	return data
 
     def poke(self,poke_addr,poke_data):
         out_pkt = pack_reg_peek_poke_fmt(X300_FW_COMMS_FLAGS_POKE32|X300_FW_COMMS_FLAGS_ACK, seq(), poke_addr, poke_data)
@@ -118,7 +118,6 @@ class ctrl_socket(object):
         (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
         if flags & X300_FW_COMMS_FLAGS_ERROR == X300_FW_COMMS_FLAGS_ERROR:
             raise Exception("X300 peek of address %d returns error code" % (addr))
-        print("POKE of address %d(0x%x) with %d(0x%x)" % (poke_addr,poke_addr,poke_data,poke_data)  )
 
 
 ########################################################################
@@ -159,9 +158,12 @@ if __name__=='__main__':
 
     if options.peek is not None:
         addr = options.peek
-        status.peek(addr)
+        data = status.peek(addr)
+        print("PEEK of address %d(0x%x) reads %d(0x%x)" % (addr,addr,data,data))
 
     if options.poke is not None and options.data is not None:
         addr = options.poke
         data = options.data
         status.poke(addr,data)
+        print("POKE of address %d(0x%x) with %d(0x%x)" % (addr,addr,data,data))
+

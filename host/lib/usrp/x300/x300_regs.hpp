@@ -57,10 +57,8 @@ static const uint32_t RB32_MISC_INS        = 36;
 
 }}} // namespace
 
-#define localparam static const int
-
-localparam BL_ADDRESS    = 0;
-localparam BL_DATA       = 1;
+static const int BL_ADDRESS    = 0;
+static const int BL_DATA       = 1;
 
 //wishbone settings map - relevant to host code
 #define SET0_BASE     0xa000
@@ -70,15 +68,15 @@ localparam BL_DATA       = 1;
 #define I2C1_BASE     0xff00
 #define SR_ADDR(base, offset) ((base) + (offset)*4)
 
-localparam ZPU_SR_LEDS       = 00;
-localparam ZPU_SR_SW_RST     = 01;
-localparam ZPU_SR_CLOCK_CTRL = 02;
-localparam ZPU_SR_XB_LOCAL   = 03;
-localparam ZPU_SR_SPI        = 32;
-localparam ZPU_SR_ETHINT0    = 40;
-localparam ZPU_SR_ETHINT1    = 56;
-localparam ZPU_SR_DRAM_FIFO0 = 72;
-localparam ZPU_SR_DRAM_FIFO1 = 80;
+static const int ZPU_SR_LEDS       = 00;
+static const int ZPU_SR_SW_RST     = 01;
+static const int ZPU_SR_CLOCK_CTRL = 02;
+static const int ZPU_SR_XB_LOCAL   = 03;
+static const int ZPU_SR_SPI        = 32;
+static const int ZPU_SR_ETHINT0    = 40;
+static const int ZPU_SR_ETHINT1    = 56;
+static const int ZPU_SR_DRAM_FIFO0 = 72;
+static const int ZPU_SR_DRAM_FIFO1 = 80;
 
 //reset bits
 #define ZPU_SR_SW_RST_ETH_PHY           (1<<0)
@@ -86,13 +84,17 @@ localparam ZPU_SR_DRAM_FIFO1 = 80;
 #define ZPU_SR_SW_RST_RADIO_CLK_PLL     (1<<2)
 #define ZPU_SR_SW_RST_ADC_IDELAYCTRL    (1<<3)
 
-localparam ZPU_RB_SPI        = 2;
-localparam ZPU_RB_CLK_STATUS = 3;
-localparam ZPU_RB_COMPAT_NUM = 6;
-localparam ZPU_RB_ETH_TYPE0  = 4;
-localparam ZPU_RB_ETH_TYPE1  = 5;
-localparam ZPU_RB_DRAM_FIFO0 = 10;
-localparam ZPU_RB_DRAM_FIFO1 = 11;
+static const int ZPU_RB_SPI        = 2;
+static const int ZPU_RB_CLK_STATUS = 3;
+static const int ZPU_RB_COMPAT_NUM = 6;
+static const int ZPU_RB_SFP0_TYPE  = 4;
+static const int ZPU_RB_SFP1_TYPE  = 5;
+static const int ZPU_RB_DRAM_FIFO0 = 10;
+static const int ZPU_RB_DRAM_FIFO1 = 11;
+
+static const uint32_t RB_SFP_1G_ETH  = 0;
+static const uint32_t RB_SFP_10G_ETH = 1;
+static const uint32_t RB_SFP_AURORA  = 2;
 
 //spi slaves on radio
 #define DB_DAC_SEN      (1 << 7)

@@ -65,12 +65,25 @@ static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
     //Possible options:
     //1G  = {0:1G, 1:1G} w/ DRAM, HG  = {0:1G, 1:10G} w/ DRAM, XG  = {0:10G, 1:10G} w/ DRAM
     //1GS = {0:1G, 1:1G} w/ SRAM, HGS = {0:1G, 1:10G} w/ SRAM, XGS = {0:10G, 1:10G} w/ SRAM
+    //HA  = {0:1G, 1:Aurora} w/ DRAM, XA  = {0:10G, 1:Aurora} w/ DRAM
 
     std::string option;
-    bool eth0XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE0)) == 0x1);
-    bool eth1XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE1)) == 0x1);
-    option = (eth0XG && eth1XG) ? "XG" : (eth1XG ? "HG" : "1G");
+    uint32_t sfp0_type = zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_SFP0_TYPE));
+    uint32_t sfp1_type = zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_SFP1_TYPE));
 
+    if (sfp0_type == RB_SFP_1G_ETH  and sfp1_type == RB_SFP_1G_ETH) {
+        option = "1G";
+    } else if (sfp0_type == RB_SFP_1G_ETH  and sfp1_type == RB_SFP_10G_ETH) {
+        option = "HG";
+    } else if (sfp0_type == RB_SFP_10G_ETH  and sfp1_type == RB_SFP_10G_ETH) {
+        option = "XG";
+    } else if (sfp0_type == RB_SFP_1G_ETH  and sfp1_type == RB_SFP_AURORA) {
+        option = "HA";
+    } else if (sfp0_type == RB_SFP_10G_ETH  and sfp1_type == RB_SFP_AURORA) {
+        option = "XA";
+    } else {
+        option = "HG";  //Default
+    }
     if (not has_dram_buff(zpu_ctrl)) {
         option += "S";
     }
@@ -1356,9 +1369,14 @@ x300_impl::both_xports_t x300_impl::make_transport(
                 max_link_rate += X300_MAX_RATE_10GIGE;
             }
             _tree->access<double>(mboard_path).set(max_link_rate);
-        } else if (mb.loaded_fpga_image.substr(0,2) == "XG") {
+        } else if (mb.loaded_fpga_image.substr(0,2) == "XG" or mb.loaded_fpga_image.substr(0,2) == "XA") {
             eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
             size_t max_link_rate = X300_MAX_RATE_10GIGE;
+            max_link_rate *= mb.eth_conns.size();
+            _tree->access<double>(mboard_path).set(max_link_rate);
+        } else if (mb.loaded_fpga_image.substr(0,2) == "HA") {
+            eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
+            size_t max_link_rate = X300_MAX_RATE_1GIGE;
             max_link_rate *= mb.eth_conns.size();
             _tree->access<double>(mboard_path).set(max_link_rate);
         }
