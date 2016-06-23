@@ -378,6 +378,7 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
 
 x300_impl::x300_impl(const uhd::device_addr_t &dev_addr) 
     : device3_impl()
+    , _sid_framer(0)
 {
     UHD_MSG(status) << "X300 initialization sequence..." << std::endl;
     _ignore_cal_file = dev_addr.has_key("ignore-cal-file");
@@ -1166,8 +1167,6 @@ uhd::both_xports_t x300_impl::make_transport(
 
         xports.send_sid = this->allocate_sid(mb, address, xbar_src_addr, xbar_src_dst);
         xports.recv_sid = xports.send_sid.reversed();
-
-        UHD_MSG(status) << str(boost::format("SEND (SID: %s)...") % xports.send_sid.to_pp_string_hex());
 
         /* Determine what the recommended frame size is for this
          * connection type.*/
