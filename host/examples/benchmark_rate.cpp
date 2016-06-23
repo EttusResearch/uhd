@@ -442,7 +442,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     ) % num_rx_samps % num_dropped_samps
       % num_overflows % num_tx_samps
       % num_seq_errors % num_underflows
-      % num_timeouts << std::endl;
+      % num_late_commands % num_timeouts
+      << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
