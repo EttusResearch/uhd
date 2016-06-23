@@ -17,7 +17,7 @@ More information:
 	- External PPS input & output
 	- External 10 MHz input & output
 	- Expandable via 2nd SFP+ interface
-	- Supported master clock rates: 200 MHz, 184.32 MHz, 120 MHz
+	- Supported master clock rates: 200 MHz and 184.32 MHz
 	- External GPIO Connector with UHD API control
 	- External USB Connection for built-in JTAG debugger
 	- Internal GPSDO option
