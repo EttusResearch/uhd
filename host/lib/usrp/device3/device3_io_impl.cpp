@@ -805,7 +805,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         );
 
         blk_ctrl->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.recv_sid.get_dst(), block_port);
-        UHD_MSG(status) << "[TX Streamer] resp_in_dst_sid == " << xport.recv_sid.get_dst() << std::endl;
+        UHD_MSG(status) << "[TX Streamer] resp_in_dst_sid == " << boost::format("0x%04X") % xport.recv_sid.get_dst() << std::endl;
         // Find all downstream radio nodes and set their response in SID to the host
         std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
         UHD_MSG(status) << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;

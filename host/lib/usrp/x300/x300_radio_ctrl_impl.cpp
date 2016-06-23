@@ -216,7 +216,10 @@ static size_t _get_chan_from_map(std::map<size_t, map_type> map, const std::stri
         }
 
     }
-    throw uhd::runtime_error("Invalid daughterboard frontend name.");
+    throw uhd::runtime_error(str(
+        boost::format("Invalid daughterboard frontend name: %s")
+        % fe
+    ));
 }
 
 size_t x300_radio_ctrl_impl::get_chan_from_dboard_fe(const std::string &fe, const uhd::direction_t direction)
