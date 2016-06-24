@@ -133,13 +133,13 @@ public:
 
     UHD_INLINE void submit(void)
     {
-    	_lut->length = (_is_recv)? _frame_size : size(); //always set length
+        _lut->length = int((_is_recv)? _frame_size : size()); //always set length
 #ifdef UHD_TXRX_DEBUG_PRINTS
         result.start_time = boost::get_system_time().time_of_day().total_microseconds();
         result.buff_num = num();
         result.is_recv = _is_recv;
 #endif
-        const int ret = libusb_submit_transfer(_lut);
+	int ret = libusb_submit_transfer(_lut);
         if (ret != LIBUSB_SUCCESS)
 	  throw uhd::usb_error(ret, str(boost::format(
             "usb %s submit failed: %s") % _name % libusb_error_name(ret)));
@@ -154,7 +154,7 @@ public:
                 throw uhd::io_error(str(boost::format("usb %s transfer status: %d")
                                         % _name % libusb_error_name(result.status)));
             result.completed = 0;
-            return make(reinterpret_cast<buffer_type *>(this), _lut->buffer, (_is_recv)? result.actual_length : _frame_size);
+            return make(reinterpret_cast<buffer_type *>(this), _lut->buffer, (_is_recv)? size_t(result.actual_length) : _frame_size);
         }
         return typename buffer_type::sptr();
     }
@@ -227,7 +227,7 @@ public:
                 _handle->get(), // dev_handle
                 endpoint, // endpoint
                 static_cast<unsigned char *>(buff),
-                sizeof(buff),
+                int(sizeof(buff)),
                 &transfered, //bytes xfered
                 10 //timeout ms
             );
@@ -249,7 +249,7 @@ public:
                 _handle->get(),                                         // dev_handle
                 endpoint,                                               // endpoint
                 static_cast<unsigned char *>(_buffer_pool->at(i)),      // buffer
-                this->get_frame_size(),                                 // length
+                int(this->get_frame_size()),                            // length
                 libusb_transfer_cb_fn(&libusb_async_cb),                // callback
                 static_cast<void *>(&_mb_pool.back()->result),          // user_data
                 0                                                       // timeout (ms)

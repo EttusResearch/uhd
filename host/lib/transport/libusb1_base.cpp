@@ -219,12 +219,12 @@ public:
         );
 
         unsigned char buff[512];
-        ssize_t ret = libusb_get_string_descriptor_ascii(
-            handle->get(), off, buff, sizeof(buff)
+        int ret = libusb_get_string_descriptor_ascii(
+            handle->get(), off, buff, int(sizeof(buff))
         );
         if (ret < 0) return ""; //on error, just return empty string
 
-        std::string string_descriptor((char *)buff, ret);
+        std::string string_descriptor((char *)buff, size_t(ret));
         byte_vector_t string_vec(string_descriptor.begin(), string_descriptor.end());
         std::string out;
         BOOST_FOREACH(boost::uint8_t byte, string_vec){
