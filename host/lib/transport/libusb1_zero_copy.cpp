@@ -125,6 +125,8 @@ public:
         _ctx(libusb::session::get_global_session()->get_context()),
         _lut(lut), _frame_size(frame_size) { /* NOP */ }
 
+    virtual ~libusb_zero_copy_mb(void);
+
     void release(void){
     	_release_cb(this);
     }
@@ -188,6 +190,10 @@ private:
     libusb_transfer *_lut;
     const size_t _frame_size;
 };
+
+libusb_zero_copy_mb::~libusb_zero_copy_mb(void) {
+    /* NOP */
+}
 
 /***********************************************************************
  * USB zero_copy device class
@@ -388,6 +394,8 @@ struct libusb_zero_copy_impl : usb_zero_copy
             size_t(hints.cast<double>("send_frame_size", DEFAULT_XFER_SIZE))));
     }
 
+    virtual ~libusb_zero_copy_impl(void);
+
     managed_recv_buffer::sptr get_recv_buff(double timeout)
     {
         boost::mutex::scoped_lock l(_recv_mutex);
@@ -409,6 +417,17 @@ struct libusb_zero_copy_impl : usb_zero_copy
     boost::shared_ptr<libusb_zero_copy_single> _recv_impl, _send_impl;
     boost::mutex _recv_mutex, _send_mutex;
 };
+
+libusb_zero_copy_impl::~libusb_zero_copy_impl(void) {
+    /* NOP */
+}
+
+/***********************************************************************
+ * USB zero_copy destructor
+ **********************************************************************/
+usb_zero_copy::~usb_zero_copy(void) {
+    /* NOP */
+}
 
 /***********************************************************************
  * USB zero_copy make functions

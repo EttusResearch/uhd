@@ -26,7 +26,7 @@ class UHD_API usb_control : boost::noncopyable {
 public:
     typedef boost::shared_ptr<usb_control> sptr;
 
-    virtual ~usb_control(void) = 0;
+    virtual ~usb_control(void);
 
     /*!
      * Create a new USB control transport:

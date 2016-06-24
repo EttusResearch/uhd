@@ -43,6 +43,8 @@ public:
     typedef boost::shared_ptr<usb_device_handle> sptr;
     typedef std::pair<boost::uint16_t, boost::uint16_t> vid_pid_pair_t;
 
+    virtual ~usb_device_handle(void);
+
     /*!
      * Return the device's serial number
      * \return a string describing the device's serial number

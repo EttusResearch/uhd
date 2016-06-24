@@ -38,6 +38,8 @@ class UHD_API usb_zero_copy : public virtual zero_copy_if {
 public:
     typedef boost::shared_ptr<usb_zero_copy> sptr;
 
+    virtual ~usb_zero_copy(void);
+
     /*!
      * Make a new zero copy USB transport:
      * This transport is for sending and receiving between the host

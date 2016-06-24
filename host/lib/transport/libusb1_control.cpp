@@ -36,6 +36,8 @@ public:
         _handle->claim_interface(interface);
     }
 
+    virtual ~libusb_control_impl(void);
+
     int submit(boost::uint8_t request_type,
                boost::uint8_t request,
                boost::uint16_t value,
@@ -59,6 +61,10 @@ private:
     libusb::device_handle::sptr _handle;
     boost::mutex _mutex;
 };
+
+libusb_control_impl::~libusb_control_impl(void)  {
+  /* NOP */
+}
 
 /***********************************************************************
  * USB control public make functions
