@@ -30,7 +30,7 @@ usb_control::~usb_control(void){
  **********************************************************************/
 class libusb_control_impl : public usb_control {
 public:
-    libusb_control_impl(libusb::device_handle::sptr handle, const size_t interface):
+    libusb_control_impl(libusb::device_handle::sptr handle, const int interface):
         _handle(handle)
     {
         _handle->claim_interface(interface);
@@ -63,7 +63,7 @@ private:
 /***********************************************************************
  * USB control public make functions
  **********************************************************************/
-usb_control::sptr usb_control::make(usb_device_handle::sptr handle, const size_t interface){
+usb_control::sptr usb_control::make(usb_device_handle::sptr handle, const int interface){
     return sptr(new libusb_control_impl(libusb::device_handle::get_cached_handle(
         boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
     ), interface));

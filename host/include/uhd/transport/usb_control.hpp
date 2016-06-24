@@ -36,7 +36,7 @@ public:
      * \param handle a device handle that uniquely identifies a USB device
      * \param interface the USB interface number for the control transport
      */
-    static sptr make(usb_device_handle::sptr handle, const size_t interface);
+    static sptr make(usb_device_handle::sptr handle, const int interface);
 
     /*!
      * Submit a USB device request:

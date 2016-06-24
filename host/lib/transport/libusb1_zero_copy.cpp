@@ -197,7 +197,7 @@ class libusb_zero_copy_single
 public:
     libusb_zero_copy_single(
         libusb::device_handle::sptr handle,
-        const size_t interface, const size_t endpoint,
+        const int interface, const unsigned char endpoint,
         const size_t num_frames, const size_t frame_size
     ):
         _handle(handle),
@@ -372,10 +372,10 @@ struct libusb_zero_copy_impl : usb_zero_copy
 {
     libusb_zero_copy_impl(
         libusb::device_handle::sptr handle,
-        const size_t recv_interface,
-        const size_t recv_endpoint,
-        const size_t send_interface,
-        const size_t send_endpoint,
+        const int recv_interface,
+        const unsigned char recv_endpoint,
+        const int send_interface,
+        const unsigned char send_endpoint,
         const device_addr_t &hints
     ){
         _recv_impl.reset(new libusb_zero_copy_single(
@@ -415,10 +415,10 @@ struct libusb_zero_copy_impl : usb_zero_copy
  **********************************************************************/
 usb_zero_copy::sptr usb_zero_copy::make(
     usb_device_handle::sptr handle,
-    const size_t recv_interface,
-    const size_t recv_endpoint,
-    const size_t send_interface,
-    const size_t send_endpoint,
+    const int recv_interface,
+    const unsigned char recv_endpoint,
+    const int send_interface,
+    const unsigned char send_endpoint,
     const device_addr_t &hints
 ){
     libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(

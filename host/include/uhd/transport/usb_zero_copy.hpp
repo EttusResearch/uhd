@@ -55,10 +55,10 @@ public:
      */
     static sptr make(
         usb_device_handle::sptr handle,
-        const size_t recv_interface,
-        const size_t recv_endpoint,
-        const size_t send_interface,
-        const size_t send_endpoint,
+        const int recv_interface,
+        const unsigned char recv_endpoint,
+        const int send_interface,
+        const unsigned char send_endpoint,
         const device_addr_t &hints = device_addr_t()
     );
 };
