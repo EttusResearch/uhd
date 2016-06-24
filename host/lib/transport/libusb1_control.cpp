@@ -42,7 +42,7 @@ public:
                boost::uint16_t index,
                unsigned char *buff,
                boost::uint16_t length,
-               boost::int32_t libusb_timeout = 0
+               boost::uint32_t libusb_timeout = 0
     ){
         boost::mutex::scoped_lock lock(_mutex);
         return libusb_control_transfer(_handle->get(),

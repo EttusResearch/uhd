@@ -62,7 +62,7 @@ public:
                        boost::uint16_t index, 
                        unsigned char *buff,
                        boost::uint16_t length,
-                       boost::int32_t timeout = 0) = 0;
+                       boost::uint32_t timeout = 0) = 0;
 };
 
 }} //namespace
