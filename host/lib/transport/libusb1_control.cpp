@@ -36,13 +36,13 @@ public:
         _handle->claim_interface(interface);
     }
 
-    ssize_t submit(boost::uint8_t request_type,
-                  boost::uint8_t request,
-                  boost::uint16_t value,
-                  boost::uint16_t index,
-                  unsigned char *buff,
-                  boost::uint16_t length,
-                  boost::int32_t libusb_timeout = 0
+    int submit(boost::uint8_t request_type,
+               boost::uint8_t request,
+               boost::uint16_t value,
+               boost::uint16_t index,
+               unsigned char *buff,
+               boost::uint16_t length,
+               boost::int32_t libusb_timeout = 0
     ){
         boost::mutex::scoped_lock lock(_mutex);
         return libusb_control_transfer(_handle->get(),
