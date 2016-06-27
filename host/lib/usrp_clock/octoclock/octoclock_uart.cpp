@@ -41,12 +41,13 @@ using namespace uhd::transport;
                            (NUM_WRAPS_EQUAL && _state.pos > _device_state.pos))
 
 namespace uhd{
-    octoclock_uart_iface::octoclock_uart_iface(udp_simple::sptr udp): uart_iface(){
+    octoclock_uart_iface::octoclock_uart_iface(udp_simple::sptr udp, uint32_t proto_ver): uart_iface(){
         _udp = udp;
         _state.num_wraps = 0;
         _state.pos = 0;
         _device_state.num_wraps = 0;
         _device_state.pos = 0;
+        _proto_ver = proto_ver;
         // To avoid replicating sequence numbers between sessions
         _sequence = boost::uint32_t(std::rand());
         size_t len = 0;
@@ -59,7 +60,7 @@ namespace uhd{
         boost::uint8_t octoclock_data[udp_simple::mtu];
         const octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t*>(octoclock_data);
 
-        UHD_OCTOCLOCK_SEND_AND_RECV(_udp, SEND_POOLSIZE_CMD, pkt_out, len, octoclock_data);
+        UHD_OCTOCLOCK_SEND_AND_RECV(_udp, _proto_ver, SEND_POOLSIZE_CMD, pkt_out, len, octoclock_data);
         if(UHD_OCTOCLOCK_PACKET_MATCHES(SEND_POOLSIZE_ACK, pkt_out, pkt_in, len)){
             _poolsize = pkt_in->poolsize;
             _cache.resize(_poolsize);
@@ -79,7 +80,7 @@ namespace uhd{
         boost::uint8_t octoclock_data[udp_simple::mtu];
         const octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t*>(octoclock_data);
 
-        UHD_OCTOCLOCK_SEND_AND_RECV(_udp, HOST_SEND_TO_GPSDO_CMD, pkt_out, len, octoclock_data);
+        UHD_OCTOCLOCK_SEND_AND_RECV(_udp, _proto_ver, HOST_SEND_TO_GPSDO_CMD, pkt_out, len, octoclock_data);
         if(not UHD_OCTOCLOCK_PACKET_MATCHES(HOST_SEND_TO_GPSDO_ACK, pkt_out, pkt_in, len)){
             throw uhd::runtime_error("Failed to send commands to GPSDO.");
         }
@@ -120,7 +121,7 @@ namespace uhd{
 
         if(STATES_EQUAL or LOCAL_STATE_AHEAD){
             pkt_out.sequence = uhd::htonx<boost::uint32_t>(++_sequence);
-            UHD_OCTOCLOCK_SEND_AND_RECV(_udp, SEND_GPSDO_CACHE_CMD, pkt_out, len, octoclock_data);
+            UHD_OCTOCLOCK_SEND_AND_RECV(_udp, _proto_ver, SEND_GPSDO_CACHE_CMD, pkt_out, len, octoclock_data);
             if(UHD_OCTOCLOCK_PACKET_MATCHES(SEND_GPSDO_CACHE_ACK, pkt_out, pkt_in, len)){
                 memcpy(&_cache[0], pkt_in->data, _poolsize);
                 _device_state = pkt_in->state;
@@ -158,7 +159,7 @@ namespace uhd{
         return ch;
     }
 
-    uart_iface::sptr octoclock_make_uart_iface(udp_simple::sptr udp){
-        return uart_iface::sptr(new octoclock_uart_iface(udp));
+    uart_iface::sptr octoclock_make_uart_iface(udp_simple::sptr udp, uint32_t proto_ver){
+        return uart_iface::sptr(new octoclock_uart_iface(udp, proto_ver));
     }
 }

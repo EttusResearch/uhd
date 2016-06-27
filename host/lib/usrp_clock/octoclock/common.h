@@ -25,8 +25,8 @@
  */
 #ifdef __cplusplus
 
-#define UHD_OCTOCLOCK_SEND_AND_RECV(xport, pkt_code, pkt_out, len, data) do {\
-                                                                            pkt_out.proto_ver = OCTOCLOCK_FW_COMPAT_NUM; \
+#define UHD_OCTOCLOCK_SEND_AND_RECV(xport, fw_version, pkt_code, pkt_out, len, data) do {\
+                                                                            pkt_out.proto_ver = fw_version; \
                                                                             pkt_out.code = pkt_code; \
                                                                             xport->send(boost::asio::buffer(&pkt_out, sizeof(octoclock_packet_t))); \
                                                                             len = xport->recv(boost::asio::buffer(data), 2);\

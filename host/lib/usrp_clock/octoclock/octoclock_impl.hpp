@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,6 +57,7 @@ private:
     };
     uhd::dict<std::string, oc_container_type> _oc_dict;
     boost::uint32_t _sequence;
+	boost::uint32_t _proto_ver;
 
     void _set_eeprom(const std::string &oc, const uhd::usrp_clock::octoclock_eeprom_t &oc_eeprom);
 
