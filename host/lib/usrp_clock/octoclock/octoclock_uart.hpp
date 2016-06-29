@@ -47,6 +47,7 @@ private:
     std::string _rxbuff;
     boost::uint32_t _sequence;
 	boost::uint32_t _proto_ver;
+    boost::system_time _last_cache_update;
 
     void _update_cache();
     char _getchar();
