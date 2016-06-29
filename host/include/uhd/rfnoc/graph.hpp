@@ -45,7 +45,7 @@ public:
 
     /*! Shorthand for connect().
      *
-     * Defaults to using ports 0 for both source and destination.
+     * Using default ports for both source and destination.
      */
     virtual void connect(
             const block_id_t &src_block,
