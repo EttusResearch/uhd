@@ -38,6 +38,9 @@ class UHD_API device3 : public uhd::device {
   public:
     typedef boost::shared_ptr<device3> sptr;
 
+    //! Same as uhd::device::make(), but will fail if not actually a device3
+    static sptr make(const device_addr_t &hint, const size_t which = 0);
+
     virtual rfnoc::graph::sptr create_graph(const std::string &name="") = 0;
 
     /*! Reset blocks after a stream.

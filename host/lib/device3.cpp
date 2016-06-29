@@ -17,11 +17,23 @@
 
 #include <boost/format.hpp>
 #include <uhd/device3.hpp>
-
 #include <uhd/utils/msg.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
+
+device3::sptr device3::make(const device_addr_t &hint, const size_t which)
+{
+    device3::sptr device3_sptr =
+        boost::dynamic_pointer_cast< device3 >(device::make(hint, device::USRP, which));
+    if (not device3_sptr) {
+        throw uhd::key_error(str(
+            boost::format("No gen-3 devices found for ----->\n%s") % hint.to_pp_string()
+        ));
+    }
+
+    return device3_sptr;
+}
 
 bool device3::has_block(const rfnoc::block_id_t &block_id) const
 {
