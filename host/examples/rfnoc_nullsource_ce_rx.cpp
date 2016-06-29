@@ -20,19 +20,19 @@
 // crossbar (provided it has stream-through capabilities)
 // and then streams the result to the host, writing it into a file.
 
+#include <uhd/device3.hpp>
+#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/safe_main.hpp>
+#include <uhd/exception.hpp>
+#include <uhd/rfnoc/block_ctrl.hpp>
+#include <uhd/rfnoc/null_block_ctrl.hpp>
+#include <boost/program_options.hpp>
+#include <boost/format.hpp>
+#include <boost/thread.hpp>
 #include <iostream>
 #include <fstream>
 #include <csignal>
 #include <complex>
-#include <boost/program_options.hpp>
-#include <boost/format.hpp>
-#include <boost/thread.hpp>
-#include <uhd/utils/thread_priority.hpp>
-#include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/multi_usrp.hpp>
-#include <uhd/exception.hpp>
-#include <uhd/rfnoc/block_ctrl.hpp>
-#include <uhd/rfnoc/null_block_ctrl.hpp>
 
 namespace po = boost::program_options;
 
@@ -41,31 +41,23 @@ void sig_int_handler(int){stop_signal_called = true;}
 
 
 template<typename samp_type> void recv_to_file(
-    uhd::usrp::multi_usrp::sptr usrp,
-    uhd::device_addr_t stream_args_args,
-    const std::string &cpu_format,
+    uhd::rx_streamer::sptr rx_stream,
     const std::string &file,
     size_t samps_per_buff,
     unsigned long long num_requested_samples,
     double time_requested = 0.0,
     bool bw_summary = false,
     bool stats = false,
-    bool null = false,
     bool continue_on_bad_packet = false
 ) {
     unsigned long long num_total_samps = 0;
-    //create a receive streamer
-    uhd::stream_args_t stream_args(cpu_format, "sc16");
-    stream_args.args = stream_args_args;
-    // Note: Any settings in stream_args will trump those
-    // previously set!
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     uhd::rx_metadata_t md;
     std::vector<samp_type> buff(samps_per_buff);
     std::ofstream outfile;
-    if (not null or file == "stdout")
+    if (not file.empty()) {
         outfile.open(file.c_str(), std::ofstream::binary);
+    }
     bool overflow_message = true;
 
     //setup streaming
@@ -103,13 +95,8 @@ template<typename samp_type> void recv_to_file(
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW){
             if (overflow_message){
                 overflow_message = false;
-                std::cerr << boost::format(
-                        "Got an overflow indication. Please consider the following:\n"
-                        "  Your write medium must sustain a rate of %fMB/s.\n"
-                        "  Dropped samples will not be written to the file.\n"
-                        "  Please modify this example for your purposes.\n"
-                        "  This message will not appear again.\n"
-                        ) % (usrp->get_rx_rate()*sizeof(samp_type)/1e6);
+                std::cerr << "Got an overflow indication. If writing to disk, your\n"
+                             "write medium may not be able to keep up.\n";
             }
             continue;
         }
@@ -119,15 +106,17 @@ template<typename samp_type> void recv_to_file(
                 std::cerr << error << std::endl;
                 continue;
             }
-            else
+            else {
                 throw std::runtime_error(error);
+            }
         }
         num_total_samps += num_rx_samps;
 
-        if (outfile.is_open())
+        if (outfile.is_open()) {
             outfile.write((const char*)&buff.front(), num_rx_samps*sizeof(samp_type));
+        }
 
-        if (bw_summary){
+        if (bw_summary) {
             last_update_samps += num_rx_samps;
             boost::posix_time::time_duration update_diff = now - last_update;
             if (update_diff.ticks() > boost::posix_time::time_duration::ticks_per_second()) {
@@ -218,7 +207,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, file, type, nullid, blockid, blockid2;
+    std::string args, file, format, nullid, blockid, blockid2;
     size_t total_num_samps, spb, spp;
     double rate, total_time, setup_time, block_rate;
 
@@ -236,7 +225,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         ("block_rate", po::value<double>(&block_rate)->default_value(160e6), "The clock rate of the processing block.")
         ("rate", po::value<double>(&rate)->default_value(1e6), "rate at which samples are produced in the null source")
         ("setup", po::value<double>(&setup_time)->default_value(1.0), "seconds of setup time")
-        ("type", po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
+        ("format", po::value<std::string>(&format)->default_value("sc16"), "File sample type: sc16, fc32, or fc64")
         ("progress", "periodically display short-term bandwidth")
         ("stats", "show average bandwidth on exit")
         ("continue", "don't abort on a bad packet")
@@ -288,18 +277,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////////////
     std::cout << std::endl;
     std::cout << boost::format("Creating the USRP device with: %s...") % args << std::endl;
-    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    uhd::device3::sptr usrp = uhd::device3::make(args);
 
-    // Check it's a Gen-3 device
-    if (not usrp->is_device3()) {
-        std::cout << "This example only works with generation-3 devices running RFNoC." << std::endl;
-        return ~0;
-    }
-    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
     boost::this_thread::sleep(boost::posix_time::seconds(setup_time)); //allow for some setup time
     // Reset device streaming state
-    usrp->get_device3()->clear();
-    uhd::rfnoc::graph::sptr rx_graph = usrp->get_device3()->create_graph("rx_graph");
+    usrp->clear();
+    uhd::rfnoc::graph::sptr rx_graph = usrp->create_graph("rx_graph");
 
     /////////////////////////////////////////////////////////////////////////
     //////// 2. Get block control objects ///////////////////////////////////
@@ -309,23 +292,23 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     // For the null source control, we want to use the subclassed access,
     // so we create a null_block_ctrl:
     uhd::rfnoc::null_block_ctrl::sptr null_src_ctrl;
-    if (usrp->get_device3()->has_block<uhd::rfnoc::null_block_ctrl>(nullid)) {
-        null_src_ctrl = usrp->get_device3()->get_block_ctrl<uhd::rfnoc::null_block_ctrl>(nullid);
+    if (usrp->has_block<uhd::rfnoc::null_block_ctrl>(nullid)) {
+        null_src_ctrl = usrp->get_block_ctrl<uhd::rfnoc::null_block_ctrl>(nullid);
         blocks.push_back(null_src_ctrl->get_block_id());
     } else {
         std::cout << "Error: Device has no null block." << std::endl;
         return ~0;
     }
 
-    // For the processing blocks, we don't care what type these block is,
+    // For the processing blocks, we don't care what type the block is,
     // so we make it a block_ctrl_base (default):
     uhd::rfnoc::block_ctrl_base::sptr proc_block_ctrl, proc_block_ctrl2;
-    if (usrp->get_device3()->has_block(blockid)) {
-        proc_block_ctrl = usrp->get_device3()->get_block_ctrl(blockid);
+    if (usrp->has_block(blockid)) {
+        proc_block_ctrl = usrp->get_block_ctrl(blockid);
         blocks.push_back(proc_block_ctrl->get_block_id());
     }
-    if (not blockid2.empty() and usrp->get_device3()->has_block(blockid2)) {
-        proc_block_ctrl2 = usrp->get_device3()->get_block_ctrl(blockid2);
+    if (not blockid2.empty() and usrp->has_block(blockid2)) {
+        proc_block_ctrl2 = usrp->get_block_ctrl(blockid2);
         blocks.push_back(proc_block_ctrl2->get_block_id());
     }
 
@@ -374,6 +357,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
            )
         << std::endl;
 
+
     /////////////////////////////////////////////////////////////////////////
     //////// 5. Connect blocks //////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
@@ -394,13 +378,19 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////////////
     //////// 6. Spawn receiver //////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
-#define recv_to_file_args(format) \
-        (usrp, stream_args_args, format, file, spb, total_num_samps, total_time, bw_summary, stats, null, continue_on_bad_packet)
+    uhd::stream_args_t stream_args(format, "sc16");
+    stream_args.args = stream_args_args;
+    stream_args.args["spp"] = boost::lexical_cast<std::string>(spp);
+    UHD_MSG(status) << "Using streamer args: " << stream_args.args.to_string() << std::endl;
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+
+#define recv_to_file_args() \
+        (rx_stream, file, spb, total_num_samps, total_time, bw_summary, stats, continue_on_bad_packet)
     //recv to file
-    if (type == "double") recv_to_file<std::complex<double> >recv_to_file_args("fc64");
-    else if (type == "float") recv_to_file<std::complex<float> >recv_to_file_args("fc32");
-    else if (type == "short") recv_to_file<std::complex<short> >recv_to_file_args("sc16");
-    else throw std::runtime_error("Unknown type " + type);
+    if (format == "fc64") recv_to_file<std::complex<double> >recv_to_file_args();
+    else if (format == "fc32") recv_to_file<std::complex<float> >recv_to_file_args();
+    else if (format == "sc16") recv_to_file<std::complex<short> >recv_to_file_args();
+    else throw std::runtime_error("Unknown type sample type: " + format);
 
     // Finished!
     std::cout << std::endl << "Done!" << std::endl << std::endl;

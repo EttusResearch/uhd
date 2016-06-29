@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011,2014 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,9 +16,12 @@
 //
 
 #include <uhd/types/tune_request.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/device3.hpp>
+#include <uhd/rfnoc/radio_ctrl.hpp>
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/exception.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
@@ -34,29 +37,25 @@ static bool stop_signal_called = false;
 void sig_int_handler(int){stop_signal_called = true;}
 
 template<typename samp_type> void recv_to_file(
-    uhd::usrp::multi_usrp::sptr usrp,
-    const std::string &cpu_format,
-    const std::string &wire_format,
+    uhd::rx_streamer::sptr rx_stream,
     const std::string &file,
-    size_t samps_per_buff,
-    unsigned long long num_requested_samples,
+    const size_t samps_per_buff,
+    const double rx_rate,
+    const unsigned long long num_requested_samples,
     double time_requested = 0.0,
     bool bw_summary = false,
     bool stats = false,
-    bool null = false,
     bool enable_size_map = false,
     bool continue_on_bad_packet = false
 ){
     unsigned long long num_total_samps = 0;
-    //create a receive streamer
-    uhd::stream_args_t stream_args(cpu_format,wire_format);
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     uhd::rx_metadata_t md;
     std::vector<samp_type> buff(samps_per_buff);
     std::ofstream outfile;
-    if (not null)
+    if (not file.empty()) {
         outfile.open(file.c_str(), std::ofstream::binary);
+    }
     bool overflow_message = true;
 
     //setup streaming
@@ -67,7 +66,9 @@ template<typename samp_type> void recv_to_file(
     stream_cmd.num_samps = size_t(num_requested_samples);
     stream_cmd.stream_now = true;
     stream_cmd.time_spec = uhd::time_spec_t();
+    std::cout << "Issueing stream cmd" << std::endl;
     rx_stream->issue_stream_cmd(stream_cmd);
+    std::cout << "Done" << std::endl;
 
     boost::system_time start = boost::get_system_time();
     unsigned long long ticks_requested = (long)(time_requested * (double)boost::posix_time::time_duration::ticks_per_second());
@@ -96,7 +97,7 @@ template<typename samp_type> void recv_to_file(
                     "  Dropped samples will not be written to the file.\n"
                     "  Please modify this example for your purposes.\n"
                     "  This message will not appear again.\n"
-                ) % (usrp->get_rx_rate()*sizeof(samp_type)/1e6);
+                ) % (rx_rate*sizeof(samp_type)/1e6);
             }
             continue;
         }
@@ -119,8 +120,9 @@ template<typename samp_type> void recv_to_file(
 
         num_total_samps += num_rx_samps;
 
-        if (outfile.is_open())
+        if (outfile.is_open()) {
             outfile.write((const char*)&buff.front(), num_rx_samps*sizeof(samp_type));
+        }
 
         if (bw_summary) {
             last_update_samps += num_rx_samps;
@@ -142,7 +144,15 @@ template<typename samp_type> void recv_to_file(
     }
 
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
+    std::cout << "Issueing stop stream cmd" << std::endl;
     rx_stream->issue_stream_cmd(stream_cmd);
+    std::cout << "Done" << std::endl;
+
+    // Run recv until nothing is left
+    int num_post_samps = 0;
+    do {
+        num_post_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0);
+    } while(num_post_samps and md.error_code == uhd::rx_metadata_t::ERROR_CODE_NONE);
 
     if (outfile.is_open())
         outfile.close();
@@ -209,37 +219,43 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, file, type, ant, subdev, ref, wirefmt;
-    size_t total_num_samps, spb;
+    std::string args, file, format, ant, subdev, ref, wirefmt, streamargs, radio_args, block_id, block_args;
+    size_t total_num_samps, spb, radio_id, radio_chan;
     double rate, freq, gain, bw, total_time, setup_time;
 
     //setup the program options
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
         ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to write binary samples to")
-        ("type", po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
+        ("format", po::value<std::string>(&format)->default_value("sc16"), "File sample format: sc16, fc32, or fc64")
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
-        ("time", po::value<double>(&total_time), "(DEPRECATED) will go away soon! Use --duration instead")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
-        ("rate", po::value<double>(&rate)->default_value(1e6), "rate of incoming samples")
-        ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
-        ("gain", po::value<double>(&gain), "gain for the RF chain")
-        ("ant", po::value<std::string>(&ant), "antenna selection")
-        ("subdev", po::value<std::string>(&subdev), "subdevice specification")
-        ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
-        ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
-        ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
-        ("setup", po::value<double>(&setup_time)->default_value(1.0), "seconds of setup time")
+        ("streamargs", po::value<std::string>(&streamargs)->default_value(""), "stream args")
         ("progress", "periodically display short-term bandwidth")
         ("stats", "show average bandwidth on exit")
         ("sizemap", "track packet size and display breakdown on exit")
         ("null", "run without writing to file")
         ("continue", "don't abort on a bad packet")
+
+        ("args", po::value<std::string>(&args)->default_value(""), "USRP device address args")
+        ("setup", po::value<double>(&setup_time)->default_value(1.0), "seconds of setup time")
+
+        ("radio-id", po::value<size_t>(&radio_id)->default_value(0), "Radio ID to use (0 or 1).")
+        ("radio-chan", po::value<size_t>(&radio_chan)->default_value(0), "Radio channel")
+        ("radio-args", po::value<std::string>(&radio_args), "Radio channel")
+        ("rate", po::value<double>(&rate)->default_value(1e6), "RX rate of the radio block")
+        ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
+        ("gain", po::value<double>(&gain), "gain for the RF chain")
+        ("ant", po::value<std::string>(&ant), "antenna selection")
+        ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
+        ("ref", po::value<std::string>(&ref), "reference source (internal, external, mimo)")
         ("skip-lo", "skip checking LO lock status")
         ("int-n", "tune USRP with integer-N tuning")
+
+        ("block-id", po::value<std::string>(&block_id)->default_value(""), "If block ID is specified, this block is inserted between radio and host.")
+        ("block-args", po::value<std::string>(&block_args)->default_value(""), "These args are passed straight to the block.")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -247,7 +263,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //print the help message
     if (vm.count("help")) {
-        std::cout << boost::format("UHD RX samples to file %s") % desc << std::endl;
+        std::cout << boost::format("UHD/RFNoC RX samples to file %s") % desc << std::endl;
         std::cout
             << std::endl
             << "This application streams data from a single channel of a USRP device to a file.\n"
@@ -257,84 +273,147 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     bool bw_summary = vm.count("progress") > 0;
     bool stats = vm.count("stats") > 0;
-    bool null = vm.count("null") > 0;
+    if (vm.count("null") > 0) {
+        file = "";
+    }
     bool enable_size_map = vm.count("sizemap") > 0;
     bool continue_on_bad_packet = vm.count("continue") > 0;
 
-    if (enable_size_map)
+    if (enable_size_map) {
         std::cout << "Packet size tracking enabled - will only recv one packet at a time!" << std::endl;
+    }
 
-    //create a usrp device
+    if (format != "sc16" and format != "fc32" and format != "fc64") {
+        std::cout << "Invalid sample format: " << format << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    /************************************************************************
+     * Create device and block controls
+     ***********************************************************************/
     std::cout << std::endl;
-    std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+    std::cout << boost::format("Creating the USRP device with: %s...") % args << std::endl;
+    uhd::device3::sptr usrp = uhd::device3::make(args);
+    // Create handle for radio object
+    uhd::rfnoc::block_id_t radio_ctrl_id(0, "Radio", radio_id);
+    // This next line will fail if the radio is not actually available
+    uhd::rfnoc::radio_ctrl::sptr radio_ctrl = usrp->get_block_ctrl< uhd::rfnoc::radio_ctrl >(radio_ctrl_id);
+    std::cout << "Using radio " << radio_id << ", channel " << radio_chan << std::endl;
 
-    //Lock mboard clocks
-    usrp->set_clock_source(ref);
-
-    //always select the subdevice first, the channel mapping affects the other settings
-    if (vm.count("subdev")) usrp->set_rx_subdev_spec(subdev);
-
-    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
+    /************************************************************************
+     * Set up radio
+     ***********************************************************************/
+    radio_ctrl->set_args(radio_args);
+    if (vm.count("ref")) {
+        std::cout << "TODO -- Need to implement API call to set clock source." << std::endl;
+        //Lock mboard clocks TODO
+        //usrp->set_clock_source(ref);
+    }
 
     //set the sample rate
     if (rate <= 0.0){
         std::cerr << "Please specify a valid sample rate" << std::endl;
-        return ~0;
+        return EXIT_FAILURE;
     }
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
-    usrp->set_rx_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
+    radio_ctrl->set_rate(rate);
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (radio_ctrl->get_rate()/1e6) << std::endl << std::endl;
 
     //set the center frequency
-    if (vm.count("freq")) { //with default of 0.0 this will always be true
+    if (vm.count("freq")) {
         std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
         uhd::tune_request_t tune_request(freq);
-        if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=integer");
-        usrp->set_rx_freq(tune_request);
-        std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
+        if (vm.count("int-n")) {
+            //tune_request.args = uhd::device_addr_t("mode_n=integer"); TODO
+        }
+        radio_ctrl->set_rx_frequency(freq, radio_chan);
+        std::cout << boost::format("Actual RX Freq: %f MHz...") % (radio_ctrl->get_rx_frequency(radio_chan)/1e6) << std::endl << std::endl;
     }
 
     //set the rf gain
     if (vm.count("gain")) {
         std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
-        usrp->set_rx_gain(gain);
-        std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
+        radio_ctrl->set_rx_gain(gain, radio_chan);
+        std::cout << boost::format("Actual RX Gain: %f dB...") % radio_ctrl->get_rx_gain(radio_chan) << std::endl << std::endl;
     }
 
     //set the IF filter bandwidth
     if (vm.count("bw")) {
-        std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % (bw/1e6) << std::endl;
-        usrp->set_rx_bandwidth(bw);
-        std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % (usrp->get_rx_bandwidth()/1e6) << std::endl << std::endl;
+        //std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % (bw/1e6) << std::endl;
+        //radio_ctrl->set_rx_bandwidth(bw, radio_chan); // TODO
+        //std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % (radio_ctrl->get_rx_bandwidth(radio_chan)/1e6) << std::endl << std::endl;
     }
 
     //set the antenna
-    if (vm.count("ant")) usrp->set_rx_antenna(ant);
+    if (vm.count("ant")) {
+        radio_ctrl->set_rx_antenna(ant, radio_chan);
+    }
 
-    boost::this_thread::sleep(boost::posix_time::seconds(setup_time)); //allow for some setup time
+    boost::this_thread::sleep_for(boost::chrono::milliseconds(long(setup_time*1000))); //allow for some setup time
 
     //check Ref and LO Lock detect
     if (not vm.count("skip-lo")){
-        check_locked_sensor(usrp->get_rx_sensor_names(0), "lo_locked", boost::bind(&uhd::usrp::multi_usrp::get_rx_sensor, usrp, _1, 0), setup_time);
-        if (ref == "mimo")
-            check_locked_sensor(usrp->get_mboard_sensor_names(0), "mimo_locked", boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, 0), setup_time);
-        if (ref == "external")
-            check_locked_sensor(usrp->get_mboard_sensor_names(0), "ref_locked", boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, 0), setup_time);
+        // TODO
+        //check_locked_sensor(usrp->get_rx_sensor_names(0), "lo_locked", boost::bind(&uhd::usrp::multi_usrp::get_rx_sensor, usrp, _1, radio_id), setup_time);
+        //if (ref == "external")
+            //check_locked_sensor(usrp->get_mboard_sensor_names(0), "ref_locked", boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, radio_id), setup_time);
     }
 
-    if (total_num_samps == 0){
+    size_t spp = radio_ctrl->get_arg<int>("spp");
+
+    /************************************************************************
+     * Set up streaming
+     ***********************************************************************/
+    uhd::device_addr_t streamer_args(streamargs);
+
+    uhd::rfnoc::graph::sptr rx_graph = usrp->create_graph("rfnoc_rx_to_file");
+    usrp->clear();
+    // Set the stream args on the radio:
+    if (block_id.empty()) {
+        // If no extra block is required, connect to the radio:
+        streamer_args["block_id"] = radio_ctrl_id.to_string();
+        streamer_args["block_port"] = str(boost::format("%d") % radio_chan);
+    } else {
+        // Otherwise, see if the requested block exists and connect it to the radio:
+        if (not usrp->has_block(block_id)) {
+            std::cout << "Block does not exist on current device: " << block_id << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl =
+            usrp->get_block_ctrl<uhd::rfnoc::source_block_ctrl_base>(block_id);
+
+        if (not block_args.empty()) {
+            // Set the block args on the other block:
+            blk_ctrl->set_args(uhd::device_addr_t(block_args));
+        }
+        // Connect:
+        std::cout << "Connecting " << radio_ctrl_id << " ==> " << blk_ctrl->get_block_id() << std::endl;
+        rx_graph->connect(radio_ctrl_id, radio_chan, blk_ctrl->get_block_id(), uhd::rfnoc::ANY_PORT);
+        streamer_args["block_id"] = blk_ctrl->get_block_id().to_string();
+
+        spp = blk_ctrl->get_args().cast<size_t>("spp", spp);
+    }
+
+    //create a receive streamer
+    UHD_MSG(status) << "Samples per packet: " << spp << std::endl;
+    uhd::stream_args_t stream_args(format, "sc16"); // We should read the wire format from the blocks
+    stream_args.args = streamer_args;
+    stream_args.args["spp"] = boost::lexical_cast<std::string>(spp);
+    UHD_MSG(status) << "Using streamer args: " << stream_args.args.to_string() << std::endl;
+    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+
+    if (total_num_samps == 0) {
         std::signal(SIGINT, &sig_int_handler);
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
-
-#define recv_to_file_args(format) \
-    (usrp, format, wirefmt, file, spb, total_num_samps, total_time, bw_summary, stats, null, enable_size_map, continue_on_bad_packet)
+#define recv_to_file_args() \
+    (rx_stream, file, spb, rate, total_num_samps, total_time, bw_summary, stats, enable_size_map, continue_on_bad_packet)
     //recv to file
-    if (type == "double") recv_to_file<std::complex<double> >recv_to_file_args("fc64");
-    else if (type == "float") recv_to_file<std::complex<float> >recv_to_file_args("fc32");
-    else if (type == "short") recv_to_file<std::complex<short> >recv_to_file_args("sc16");
-    else throw std::runtime_error("Unknown type " + type);
+    if (format == "fc64") recv_to_file<std::complex<double> >recv_to_file_args();
+    else if (format == "fc32") recv_to_file<std::complex<float> >recv_to_file_args();
+    else if (format == "sc16") recv_to_file<std::complex<short> >recv_to_file_args();
+    else throw std::runtime_error("Unknown data format: " + format);
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
