@@ -21,10 +21,10 @@
 #include "wb_iface_adapter.hpp"
 #include "gpio_atr_3000.hpp"
 #include <uhd/usrp/dboard_eeprom.hpp>
-#include <boost/make_shared.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/rfnoc/node_ctrl_base.hpp>
+#include <uhd/transport/chdr.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
@@ -114,6 +114,14 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
         _tx_fe_map[i].core = tx_frontend_core_200::make(_get_ctrl(i), regs::sr_addr(x300_regs::TX_FE_BASE));
         _tx_fe_map[i].core->populate_subtree(_tree->subtree(_root_path / "tx_fe_corrections" / i));
     }
+
+    ////////////////////////////////////////////////////////////////
+    // Update default SPP (overwrites the default value from the XML file)
+    ////////////////////////////////////////////////////////////////
+    const size_t max_bytes_header = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(uint64_t);
+    const size_t default_spp = (_tree->access<size_t>("mtu/recv").get() - max_bytes_header)
+                               / (2 * sizeof(int16_t));
+    _tree->access<int>(get_arg_path("spp") / "value").set(default_spp);
 }
 
 x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
