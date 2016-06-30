@@ -68,9 +68,9 @@ public:
         _has_ducs(not device->find_blocks<radio_ctrl>(DUC_BLOCK_NAME).empty()),
         _has_ddcs(not device->find_blocks<radio_ctrl>(DDC_BLOCK_NAME).empty()),
         _has_dmafifo(not device->find_blocks<radio_ctrl>(DFIFO_BLOCK_NAME).empty()),
+        _spp(get_block_ctrl<radio_ctrl>(0, RADIO_BLOCK_NAME, 0)->get_arg<int>("spp")),
         _rx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board)),
-        _tx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board)),
-        _spp(get_block_ctrl<radio_ctrl>(0, RADIO_BLOCK_NAME, 0)->get_arg<int>("spp"))
+        _tx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board))
     {
         _device->clear();
         check_available_periphs(); // Throws if invalid configuration.
