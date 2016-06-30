@@ -69,7 +69,8 @@ public:
         _has_ddcs(not device->find_blocks<radio_ctrl>(DDC_BLOCK_NAME).empty()),
         _has_dmafifo(not device->find_blocks<radio_ctrl>(DFIFO_BLOCK_NAME).empty()),
         _rx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board)),
-        _tx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board))
+        _tx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board)),
+        _spp(get_block_ctrl<radio_ctrl>(0, RADIO_BLOCK_NAME, 0)->get_arg<int>("spp"))
     {
         _device->clear();
         check_available_periphs(); // Throws if invalid configuration.
@@ -87,6 +88,171 @@ public:
         }
     }
 
+    /************************************************************************
+     * API Calls
+     ***********************************************************************/
+    uhd::fs_path rx_dsp_root(const size_t mboard_idx, const size_t chan)
+    {
+        if (not _has_ddcs) {
+            return uhd::fs_path("/stubs/dsp") / mboard_idx;
+        }
+        // The DSP index is the same as the radio index
+        size_t dsp_index = _rx_channel_map[mboard_idx][chan].radio_index;
+        size_t port_index = _rx_channel_map[mboard_idx][chan].port_index;
+        return mb_root(mboard_idx) / "xbar" /
+               str(boost::format("%s_%d") % DDC_BLOCK_NAME % dsp_index) /
+               "legacy_api" / port_index;
+    }
+
+    uhd::fs_path tx_dsp_root(const size_t mboard_idx, const size_t chan)
+    {
+        if (not _has_ducs) {
+            return uhd::fs_path("/stubs/dsp") / mboard_idx;
+        }
+        // The DSP index is the same as the radio index
+        size_t dsp_index = _tx_channel_map[mboard_idx][chan].radio_index;
+        size_t port_index = _tx_channel_map[mboard_idx][chan].port_index;
+        return mb_root(mboard_idx) / "xbar" /
+               str(boost::format("%s_%d") % DUC_BLOCK_NAME % dsp_index) /
+               "legacy_api" / port_index;
+    }
+
+    uhd::fs_path rx_fe_root(const size_t mboard_idx, const size_t chan)
+    {
+        size_t radio_index = _rx_channel_map[mboard_idx][chan].radio_index;
+        size_t port_index = _rx_channel_map[mboard_idx][chan].port_index;
+        return uhd::fs_path(str(
+                boost::format("/mboards/%d/xbar/%s_%d/rx_fe_corrections/%d/")
+                % mboard_idx % RADIO_BLOCK_NAME % radio_index % port_index
+        ));
+    }
+
+    uhd::fs_path tx_fe_root(const size_t mboard_idx, const size_t chan)
+    {
+        size_t radio_index = _tx_channel_map[mboard_idx][chan].radio_index;
+        size_t port_index = _tx_channel_map[mboard_idx][chan].port_index;
+        return uhd::fs_path(str(
+                boost::format("/mboards/%d/xbar/%s_%d/tx_fe_corrections/%d/")
+                % mboard_idx % RADIO_BLOCK_NAME % radio_index % port_index
+        ));
+    }
+
+    void issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t mboard, size_t chan)
+    {
+        UHD_MSG(status) << "[legacy_compat] issue_stream_cmd() " << std::endl;
+        const size_t &radio_index = _rx_channel_map[mboard][chan].radio_index;
+        const size_t &port_index  = _rx_channel_map[mboard][chan].port_index;
+        if (_has_ddcs) {
+            get_block_ctrl<ddc_block_ctrl>(mboard, DDC_BLOCK_NAME, radio_index)->issue_stream_cmd(stream_cmd, port_index);
+        } else {
+            get_block_ctrl<radio_ctrl>(mboard, RADIO_BLOCK_NAME, radio_index)->issue_stream_cmd(stream_cmd, port_index);
+        }
+    }
+
+    //! Sets block_id<N> and block_port<N> in the streamer args, otherwise forwards the call
+    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args_)
+    {
+        uhd::stream_args_t args(args_);
+        _update_stream_args_for_streaming(args, _rx_channel_map, DDC_BLOCK_NAME);
+        UHD_MSG(status) << "[legacy_compat] rx stream args: " << args.args.to_string() << std::endl;
+        return _device->get_rx_stream(args);
+    }
+
+    //! Sets block_id<N> and block_port<N> in the streamer args, otherwise forwards the call.
+    // If spp is in the args, update the radios. If it's not set, copy the value from the radios.
+    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args_)
+    {
+        uhd::stream_args_t args(args_);
+        _update_stream_args_for_streaming(args, _tx_channel_map, DUC_BLOCK_NAME);
+        UHD_MSG(status) << "[legacy_compat] tx stream args: " << args.args.to_string() << std::endl;
+        return _device->get_tx_stream(args);
+    }
+
+    double get_tick_rate(const size_t mboard_idx=0)
+    {
+        return _tree->access<double>(mb_root(mboard_idx) / "tick_rate").get();
+    }
+
+    uhd::meta_range_t lambda_get_tick_rate_range(const size_t mboard_idx=0)
+    {
+        const double tick_rate = get_tick_rate(mboard_idx);
+        return uhd::meta_range_t(tick_rate, tick_rate, 0.0);
+    }
+
+    void set_tick_rate(const double tick_rate, const size_t mboard_idx=0)
+    {
+        _tree->access<double>(mb_root(mboard_idx) / "tick_rate").set(tick_rate);
+        update_tick_rate_on_blocks(tick_rate, mboard_idx);
+    }
+
+private: // types
+    struct radio_port_pair_t {
+        radio_port_pair_t(const size_t radio=0, const size_t port=0) : radio_index(radio), port_index(port) {}
+        size_t radio_index;
+        size_t port_index;
+    };
+    //! Map: _rx_channel_map[mboard_idx][chan_idx] => (Radio, Port)
+    // Container is not a std::map because we need to guarantee contiguous
+    // ports and correct order anyway.
+    typedef std::vector< std::vector<radio_port_pair_t> > chan_map_t;
+
+private: // methods
+    /************************************************************************
+     * Private helpers
+     ***********************************************************************/
+    std::string get_slot_name(const size_t radio_index)
+    {
+        return (radio_index == 0) ? "A" : "B";
+    }
+
+    size_t get_radio_index(const std::string slot_name)
+    {
+        return (slot_name == "A") ? 0 : 1;
+    }
+
+    template <typename block_type>
+    inline typename block_type::sptr get_block_ctrl(const size_t mboard_idx, const std::string &name, const size_t block_count)
+    {
+        block_id_t block_id(mboard_idx, name, block_count);
+        return _device->get_block_ctrl<block_type>(block_id);
+    }
+
+    void _update_stream_args_for_streaming(
+            uhd::stream_args_t &args,
+            chan_map_t &chan_map,
+            const std::string &dsp_block_name
+    ) {
+        const size_t args_spp = args.args.cast<size_t>("spp", _spp);
+        if (args.args.has_key("spp") and args_spp != _spp) {
+            for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
+                for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
+                    get_block_ctrl<radio_ctrl>(mboard, RADIO_BLOCK_NAME, radio)->set_arg<int>("spp", args_spp);
+                }
+            }
+            _spp = args_spp;
+        } else {
+            args.args["spp"] = str(boost::format("%d") % _spp);
+        }
+        size_t mboard_idx = 0;
+        size_t chan_idx = 0;
+        for (size_t i = 0; i < args.channels.size(); i++) {
+            UHD_ASSERT_THROW(mboard_idx < chan_map.size());
+            const size_t &radio_index = chan_map[mboard_idx][chan_idx].radio_index;
+            const size_t &port_index = chan_map[mboard_idx][chan_idx].port_index;
+            block_id_t block_id(mboard_idx, _has_ddcs ? dsp_block_name : RADIO_BLOCK_NAME, radio_index);
+            args.args[str(boost::format("block_id%d") % i)] = block_id.to_string();
+            args.args[str(boost::format("block_port%d") % i)] = str(boost::format("%d") % port_index);
+            chan_idx++;
+            if (chan_idx > chan_map[mboard_idx].size()) {
+                chan_idx = 0;
+                mboard_idx++;
+            }
+        }
+    }
+
+    /************************************************************************
+     * Initialization
+     ***********************************************************************/
     /*! Check this device has all the required peripherals.
      *
      * Check rules:
@@ -121,6 +287,14 @@ public:
                     or (_has_dmafifo and not _device->has_block(fifo_block_id))
                 ) {
                     throw uhd::runtime_error("For legacy APIs, all devices require the same number of radios, DDCs and DUCs.");
+                }
+
+                const size_t this_spp = get_block_ctrl<radio_ctrl>(i, RADIO_BLOCK_NAME, k)->get_arg<int>("spp");
+                if (this_spp != _spp) {
+                    throw uhd::runtime_error(str(
+                            boost::format("[legacy compat] Radios have differing spp values: %s has %d, others have %d")
+                            % radio_block_id.to_string() % this_spp % _spp
+                    ));
                 }
             }
         }
@@ -217,151 +391,6 @@ public:
         }
     }
 
-    /************************************************************************
-     * API Calls
-     ***********************************************************************/
-    uhd::fs_path rx_dsp_root(const size_t mboard_idx, const size_t chan)
-    {
-        if (not _has_ddcs) {
-            return uhd::fs_path("/stubs/dsp") / mboard_idx;
-        }
-        // The DSP index is the same as the radio index
-        size_t dsp_index = _rx_channel_map[mboard_idx][chan].radio_index;
-        size_t port_index = _rx_channel_map[mboard_idx][chan].port_index;
-        return mb_root(mboard_idx) / "xbar" /
-               str(boost::format("%s_%d") % DDC_BLOCK_NAME % dsp_index) /
-               "legacy_api" / port_index;
-    }
-
-    uhd::fs_path tx_dsp_root(const size_t mboard_idx, const size_t chan)
-    {
-        if (not _has_ducs) {
-            return uhd::fs_path("/stubs/dsp") / mboard_idx;
-        }
-        // The DSP index is the same as the radio index
-        size_t dsp_index = _tx_channel_map[mboard_idx][chan].radio_index;
-        size_t port_index = _tx_channel_map[mboard_idx][chan].port_index;
-        return mb_root(mboard_idx) / "xbar" /
-               str(boost::format("%s_%d") % DUC_BLOCK_NAME % dsp_index) /
-               "legacy_api" / port_index;
-    }
-
-    uhd::fs_path rx_fe_root(const size_t mboard_idx, const size_t chan)
-    {
-        size_t radio_index = _rx_channel_map[mboard_idx][chan].radio_index;
-        size_t port_index = _rx_channel_map[mboard_idx][chan].port_index;
-        return uhd::fs_path(str(
-                boost::format("/mboards/%d/xbar/%s_%d/rx_fe_corrections/%d/")
-                % mboard_idx % RADIO_BLOCK_NAME % radio_index % port_index
-        ));
-    }
-
-    uhd::fs_path tx_fe_root(const size_t mboard_idx, const size_t chan)
-    {
-        size_t radio_index = _tx_channel_map[mboard_idx][chan].radio_index;
-        size_t port_index = _tx_channel_map[mboard_idx][chan].port_index;
-        return uhd::fs_path(str(
-                boost::format("/mboards/%d/xbar/%s_%d/tx_fe_corrections/%d/")
-                % mboard_idx % RADIO_BLOCK_NAME % radio_index % port_index
-        ));
-    }
-
-    void issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t mboard, size_t chan)
-    {
-        UHD_MSG(status) << "[legacy_compat] issue_stream_cmd() " << std::endl;
-        const size_t &radio_index = _rx_channel_map[mboard][chan].radio_index;
-        const size_t &port_index  = _rx_channel_map[mboard][chan].port_index;
-        if (_has_ddcs) {
-            get_block_ctrl<ddc_block_ctrl>(mboard, DDC_BLOCK_NAME, radio_index)->issue_stream_cmd(stream_cmd, port_index);
-        } else {
-            get_block_ctrl<radio_ctrl>(mboard, RADIO_BLOCK_NAME, radio_index)->issue_stream_cmd(stream_cmd, port_index);
-        }
-    }
-
-    //! Sets block_id<N> and block_port<N> in the streamer args, otherwise forwards the call
-    uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args_)
-    {
-        uhd::stream_args_t args(args_);
-        size_t mboard_idx = 0;
-        size_t chan_idx = 0;
-        for (size_t i = 0; i < args.channels.size(); i++) {
-            UHD_ASSERT_THROW(mboard_idx < _rx_channel_map.size());
-            const size_t &radio_index = _rx_channel_map[mboard_idx][chan_idx].radio_index;
-            const size_t &port_index = _rx_channel_map[mboard_idx][chan_idx].port_index;
-            block_id_t block_id(mboard_idx, _has_ddcs ? DDC_BLOCK_NAME : RADIO_BLOCK_NAME, radio_index);
-            args.args[str(boost::format("block_id%d") % i)] = block_id.to_string();
-            args.args[str(boost::format("block_port%d") % i)] = str(boost::format("%d") % port_index);
-            chan_idx++;
-            if (chan_idx > _rx_channel_map[mboard_idx].size()) {
-                chan_idx = 0;
-                mboard_idx++;
-            }
-        }
-        UHD_MSG(status) << "[legacy_compat] rx stream args: " << args.args.to_string() << std::endl;
-        return _device->get_rx_stream(args);
-    }
-
-    //! Sets block_id<N> and block_port<N> in the streamer args, otherwise forwards the call
-    uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args_)
-    {
-        uhd::stream_args_t args(args_);
-        size_t mboard_idx = 0;
-        size_t chan_idx = 0;
-        const std::string block_name = _has_dmafifo ? DFIFO_BLOCK_NAME : (_has_ducs ? DUC_BLOCK_NAME : RADIO_BLOCK_NAME);
-        for (size_t i = 0; i < args.channels.size(); i++) {
-            UHD_ASSERT_THROW(mboard_idx < _tx_channel_map.size());
-            const size_t &radio_index = _tx_channel_map[mboard_idx][chan_idx].radio_index;
-            const size_t &port_index = _has_dmafifo ? chan_idx : _tx_channel_map[mboard_idx][chan_idx].port_index;
-            block_id_t block_id(mboard_idx, block_name, radio_index);
-            args.args[str(boost::format("block_id%d") % i)] = block_id.to_string();
-            args.args[str(boost::format("block_port%d") % i)] = str(boost::format("%d") % port_index);
-            chan_idx++;
-            if (chan_idx > _tx_channel_map[mboard_idx].size()) {
-                chan_idx = 0;
-                mboard_idx++;
-            }
-        }
-        UHD_MSG(status) << "[legacy_compat] tx stream args: " << args.args.to_string() << std::endl;
-        return _device->get_tx_stream(args);
-    }
-
-    double get_tick_rate(const size_t mboard_idx=0)
-    {
-        return _tree->access<double>(mb_root(mboard_idx) / "tick_rate").get();
-    }
-
-    uhd::meta_range_t lambda_get_tick_rate_range(const size_t mboard_idx=0)
-    {
-        const double tick_rate = get_tick_rate(mboard_idx);
-        return uhd::meta_range_t(tick_rate, tick_rate, 0.0);
-    }
-
-    void set_tick_rate(const double tick_rate, const size_t mboard_idx=0)
-    {
-        _tree->access<double>(mb_root(mboard_idx) / "tick_rate").set(tick_rate);
-        update_tick_rate_on_blocks(tick_rate, mboard_idx);
-    }
-
-private: // methods
-    /************************************************************************
-     * Private helpers
-     ***********************************************************************/
-    std::string get_slot_name(const size_t radio_index)
-    {
-        return (radio_index == 0) ? "A" : "B";
-    }
-
-    size_t get_radio_index(const std::string slot_name)
-    {
-        return (slot_name == "A") ? 0 : 1;
-    }
-
-    template <typename block_type>
-    inline typename block_type::sptr get_block_ctrl(const size_t mboard_idx, const std::string &name, const size_t block_count)
-    {
-        block_id_t block_id(mboard_idx, name, block_count);
-        return _device->get_block_ctrl<block_type>(block_id);
-    }
 
     /************************************************************************
      * Subdev translation
@@ -439,21 +468,12 @@ private: // attributes
     const bool _has_ducs;
     const bool _has_ddcs;
     const bool _has_dmafifo;
+    size_t _spp;
 
-    struct radio_port_pair_t {
-        radio_port_pair_t(const size_t radio=0, const size_t port=0) : radio_index(radio), port_index(port) {}
-        size_t radio_index;
-        size_t port_index;
-    };
-    //! Map: _rx_channel_map[mboard_idx][chan_idx] => (Radio, Port)
-    // Container is not a std::map because we need to guarantee contiguous
-    // ports and correct order anyway.
-    typedef std::vector< std::vector<radio_port_pair_t> > chan_map_t;
     chan_map_t _rx_channel_map;
     chan_map_t _tx_channel_map;
 
     graph::sptr _graph;
-
 };
 
 legacy_compat::sptr legacy_compat::make(uhd::device3::sptr device)
