@@ -104,24 +104,27 @@ radio_ctrl_impl::radio_ctrl_impl() :
     if (not _tree->exists(fs_path("time") / "now")) {
         _tree->create<time_spec_t>(fs_path("time") / "now")
             .set_publisher(boost::bind(&radio_ctrl_impl::get_time_now, this))
-            .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_time_now, this, _1))
         ;
     }
     if (not _tree->exists(fs_path("time") / "pps")) {
         _tree->create<time_spec_t>(fs_path("time") / "pps")
             .set_publisher(boost::bind(&radio_ctrl_impl::get_time_last_pps, this))
-            .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_time_next_pps, this, _1))
         ;
     }
-
     if (not _tree->exists(fs_path("time") / "cmd")) {
         _tree->create<time_spec_t>(fs_path("time") / "cmd");
-        for (size_t i = 0; i < _get_num_radios(); i++) {
-            _tree->access<time_spec_t>("time/cmd")
-                .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_tick_rate, this, boost::ref(_tick_rate), i))
-                .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, i))
-            ;
-        }
+    }
+    _tree->access<time_spec_t>(fs_path("time") / "now")
+        .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_time_now, this, _1))
+    ;
+    _tree->access<time_spec_t>(fs_path("time") / "pps")
+        .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_time_next_pps, this, _1))
+    ;
+    for (size_t i = 0; i < _get_num_radios(); i++) {
+        _tree->access<time_spec_t>("time/cmd")
+            .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_tick_rate, this, boost::ref(_tick_rate), i))
+            .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, i))
+        ;
     }
     // spp gets created in the XML file
     _tree->access<int>(get_arg_path("spp") / "value")
@@ -237,7 +240,7 @@ double radio_ctrl_impl::get_rx_gain(const size_t chan) /* const */
 void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan)
 {
     boost::mutex::scoped_lock lock(_mutex);
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << " " << stream_cmd.stream_mode << std::endl;
     UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
     _continuous_streaming[chan] = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
 
