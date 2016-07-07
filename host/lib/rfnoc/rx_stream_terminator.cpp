@@ -16,9 +16,12 @@
 //
 
 #include "rx_stream_terminator.hpp"
+#include "radio_ctrl_impl.hpp"
+#include "../transport/super_recv_packet_handler.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/rfnoc/source_node_ctrl.hpp>
 #include <boost/format.hpp>
+#include <boost/foreach.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -54,6 +57,65 @@ void rx_stream_terminator::set_rx_streamer(bool active, const size_t)
                     active,
                     get_upstream_port(upstream_node.first)
             );
+        }
+    }
+}
+
+void rx_stream_terminator::handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer, const size_t)
+{
+    std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> > upstream_radio_nodes =
+        find_upstream_node<uhd::rfnoc::radio_ctrl_impl>();
+    const size_t n_radios = upstream_radio_nodes.size();
+    if (n_radios == 0) {
+        return;
+    }
+
+    UHD_MSG(status) << "[" << unique_id() << "] rx_stream_terminator::handle_overrun()" << std::endl;
+    boost::shared_ptr<uhd::transport::sph::recv_packet_streamer> my_streamer =
+            boost::dynamic_pointer_cast<uhd::transport::sph::recv_packet_streamer>(streamer.lock());
+    if (not my_streamer) return; //If the rx_streamer has expired then overflow handling makes no sense.
+
+    bool in_continuous_streaming_mode = true;
+    int num_channels = 0;
+    BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> &node, upstream_radio_nodes) {
+        num_channels += node->get_active_rx_ports().size();
+        BOOST_FOREACH(const size_t port, node->get_active_rx_ports()) {
+            in_continuous_streaming_mode = in_continuous_streaming_mode && node->in_continuous_streaming_mode(port);
+        }
+    }
+    if (num_channels == 0) {
+        return;
+    }
+
+    if (num_channels == 1 and in_continuous_streaming_mode) {
+        const size_t port = upstream_radio_nodes[0]->get_active_rx_ports().at(0);
+        upstream_radio_nodes[0]->issue_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS, port);
+        return;
+    }
+
+    /////////////////////////////////////////////////////////////
+    // MIMO overflow recovery time
+    /////////////////////////////////////////////////////////////
+    BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> &node, upstream_radio_nodes) {
+        BOOST_FOREACH(const size_t port, node->get_active_rx_ports()) {
+            // check all the ports on all the radios
+            node->rx_ctrl_clear_cmds(port);
+            node->issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS, port);
+        }
+    }
+    //flush transports
+    my_streamer->flush_all(0.001); // TODO flushing will probably have to go away.
+    //restart streaming on all channels
+    if (in_continuous_streaming_mode) {
+        stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+        stream_cmd.stream_now = false;
+        stream_cmd.time_spec = upstream_radio_nodes[0]->get_time_now() + time_spec_t(0.05);
+
+        BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> &node, upstream_radio_nodes) {
+            BOOST_FOREACH(const size_t port, node->get_active_rx_ports()) {
+                node->issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS, port);
+                node->issue_stream_cmd(stream_cmd, port);
+            }
         }
     }
 }

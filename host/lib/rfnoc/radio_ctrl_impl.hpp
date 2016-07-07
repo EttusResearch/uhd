@@ -82,11 +82,14 @@ public:
     void set_tx_streamer(bool active, const size_t port);
 
     void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t port);
-    void handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer, const size_t port);
 
     double get_input_samp_rate(size_t /* port */) { return get_rate(); }
     double get_output_samp_rate(size_t /* port */) { return get_rate(); }
     double _get_tick_rate() { return get_rate(); }
+
+    std::vector<size_t> get_active_rx_ports();
+    bool in_continuous_streaming_mode(const size_t chan) { return _continuous_streaming.at(chan); }
+    void rx_ctrl_clear_cmds(const size_t port) { sr_write(regs::RX_CTRL_CLEAR_CMDS, 0, port); }
 
 protected: // TODO see what's protected and what's private
     void _register_loopback_self_test(size_t chan);

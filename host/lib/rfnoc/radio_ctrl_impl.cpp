@@ -16,6 +16,7 @@
 //
 
 #include "wb_iface_adapter.hpp"
+#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <uhd/convert.hpp>
@@ -273,43 +274,16 @@ void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, cons
     sr_write(regs::RX_CTRL_TIME_LO, boost::uint32_t(ticks >> 0),  chan); //latches the command
 }
 
-// TODO We might not need the streamer in here if we can come up with a good graphy solution
-void radio_ctrl_impl::handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer, const size_t port)
+std::vector<size_t> radio_ctrl_impl::get_active_rx_ports()
 {
-    UHD_MSG(status) << "radio_ctrl_impl::handle_overrun()" << std::endl;
-    boost::shared_ptr<transport::sph::recv_packet_streamer> my_streamer =
-            boost::dynamic_pointer_cast<transport::sph::recv_packet_streamer>(streamer.lock());
-    if (not my_streamer) return; //If the rx_streamer has expired then overflow handling makes no sense.
-
-    //find out if we were in continuous mode before stopping
-    const bool in_continuous_streaming_mode = _continuous_streaming[port];
-
-    if (my_streamer->get_num_channels() == 1 and in_continuous_streaming_mode) {
-        issue_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS, port);
-        return;
-    }
-
-    /////////////////////////////////////////////////////////////
-    // MIMO overflow recovery time
-    /////////////////////////////////////////////////////////////
-    //stop streaming on all channels
-    for (size_t i = 0; i < my_streamer->get_num_channels(); i++) {
-        // clear command FIFO to ensure we stop streaming
-        sr_write(regs::RX_CTRL_CLEAR_CMDS, 0, i);
-        issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS, i);
-    }
-    //flush transports
-    my_streamer->flush_all(0.001); // TODO flushing will probably have to go away.
-    //restart streaming on all channels
-    if (in_continuous_streaming_mode)
-    {
-        stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-        stream_cmd.stream_now = false;
-        stream_cmd.time_spec = this->get_time_now() + time_spec_t(0.05);
-        for (size_t i = 0; i < my_streamer->get_num_channels(); i++) {
-            issue_stream_cmd(stream_cmd, i);
+    std::vector<size_t> active_rx_ports;
+    typedef std::map<size_t, bool> map_t;
+    BOOST_FOREACH(map_t::value_type &m, _rx_streamers_active) {
+        if (m.second) {
+            active_rx_ports.push_back(m.first);
         }
     }
+    return active_rx_ports;
 }
 
 /***********************************************************************

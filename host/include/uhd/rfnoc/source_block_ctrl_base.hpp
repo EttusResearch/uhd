@@ -63,11 +63,6 @@ public:
      */
     virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan=0);
 
-    /*! If an overrun ("O") is received, this function may be called to straighten
-     * things out, if necessary.
-     */
-    virtual void handle_overrun(boost::weak_ptr<uhd::rx_streamer>, const size_t) { /* nop */ };
-
     /***********************************************************************
      * Stream signatures
      **********************************************************************/

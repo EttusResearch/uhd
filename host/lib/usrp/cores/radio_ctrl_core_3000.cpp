@@ -23,7 +23,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/sid.hpp>
-#include <uhd/transport/vrt_if_packet.hpp>
+#include <uhd/transport/chdr.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
@@ -243,22 +243,22 @@ private:
             try
             {
                 packet_info.link_type = _link_type;
-                if (_bige) vrt::if_hdr_unpack_be(pkt, packet_info);
-                else vrt::if_hdr_unpack_le(pkt, packet_info);
+                if (_bige) vrt::chdr::if_hdr_unpack_be(pkt, packet_info);
+                else vrt::chdr::if_hdr_unpack_le(pkt, packet_info);
             }
             catch(const std::exception &ex)
             {
-                UHD_MSG(error) << "Radio ctrl bad VITA packet: " << ex.what() << std::endl;
+                UHD_MSG(error) << "[" << _name << "] Radio ctrl bad VITA packet: " << ex.what() << std::endl;
                 if (buff){
                     UHD_VAR(buff->size());
+                    UHD_MSG(status) << boost::format("%08X") % pkt[0] << std::endl;
+                    UHD_MSG(status) << boost::format("%08X") % pkt[1] << std::endl;
+                    UHD_MSG(status) << boost::format("%08X") % pkt[2] << std::endl;
+                    UHD_MSG(status) << boost::format("%08X") % pkt[3] << std::endl;
                 }
                 else{
                     UHD_MSG(status) << "buff is NULL" << std::endl;
                 }
-                UHD_MSG(status) << std::hex << pkt[0] << std::dec << std::endl;
-                UHD_MSG(status) << std::hex << pkt[1] << std::dec << std::endl;
-                UHD_MSG(status) << std::hex << pkt[2] << std::dec << std::endl;
-                UHD_MSG(status) << std::hex << pkt[3] << std::dec << std::endl;
             }
 
             //check the buffer
@@ -286,7 +286,7 @@ private:
                 }
 
                 UHD_ASSERT_THROW(packet_info.num_payload_words32 == 2);
-                UHD_ASSERT_THROW(packet_info.packet_type == _packet_type);
+                //UHD_ASSERT_THROW(packet_info.packet_type == _packet_type);
             }
             catch(const std::exception &ex)
             {

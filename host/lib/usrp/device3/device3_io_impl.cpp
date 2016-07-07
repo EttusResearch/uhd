@@ -588,23 +588,13 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         //Give the streamer a functor to handle overruns
         //bind requires a weak_ptr to break the a streamer->streamer circular dependency
         //Using "this" is OK because we know that this device3_impl will outlive the streamer
-        // FIXME remove the necessity to do the graph search
-        if (upstream_radio_nodes.size() == 1) {
-          my_streamer->set_overflow_handler(
-              stream_i,
-              boost::bind(&uhd::rfnoc::source_block_ctrl_base::handle_overrun, upstream_radio_nodes[0],
-                          boost::weak_ptr<uhd::rx_streamer>(my_streamer), block_port
-              )
-          );
-        } else {
-          my_streamer->set_overflow_handler(
+        my_streamer->set_overflow_handler(
               stream_i,
               boost::bind(
-                  &uhd::rfnoc::source_block_ctrl_base::handle_overrun, blk_ctrl,
-                  boost::weak_ptr<uhd::rx_streamer>(my_streamer), block_port
+                  &uhd::rfnoc::rx_stream_terminator::handle_overrun, recv_terminator,
+                  boost::weak_ptr<uhd::rx_streamer>(my_streamer), stream_i
               )
-          );
-        }
+        );
 
         //Give the streamer a functor to send flow control messages
         //handle_rx_flowctrl is static and has no lifetime issues

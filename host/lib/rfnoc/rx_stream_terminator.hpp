@@ -63,6 +63,8 @@ public:
 
     virtual ~rx_stream_terminator();
 
+    void handle_overrun(boost::weak_ptr<uhd::rx_streamer>, const size_t);
+
 protected:
     rx_stream_terminator();
 
