@@ -132,7 +132,7 @@ void device3_impl::enumerate_rfnoc_blocks(
                 xport.send,
                 xport.recv,
                 xport.send_sid,
-                str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint()),
+                str(boost::format("CE_%02d_Port_%02X") % i % ctrl_sid.get_dst_endpoint()),
                 true
         );
         UHD_MSG(status) << "OK" << std::endl;
