@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import range
+from builtins import object
 #!/usr/bin/env python
 #
 # Copyright 2010-2011 Ettus Research LLC
@@ -16,11 +19,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import optparse
+import argparse
 import math
 import socket
 import struct
-
 
 ########################################################################
 # constants
@@ -79,29 +81,29 @@ class ctrl_socket(object):
         return self._sock.recv(UDP_MAX_XFER_BYTES)
 
     def read_router_stats(self):
-        print
-        print("            "),
+        print()
+        print(("            "), end=' ')
         ports = ['        eth0','        eth1','      radio0','      radio1','    compute0','    compute1','    compute2','        pcie']
         for in_prt in ports:
-            print("%s" % in_prt),
+            print(("%s" % in_prt), end=' ')
         print("   Egress Port")
-        print("             "),
+        print(("             "), end=' ')
         for in_prt in range (0, 8):
-            print("____________"),
-        print
+            print(("____________"), end=' ')
+        print()
         for in_prt in range (0, 8):
-            print("%s |" % ports[in_prt]),
+            print(("%s |" % ports[in_prt]), end=' ')
             for out_prt in range (0, 8):
                 out_pkt = pack_reg_peek_poke_fmt(X300_FW_COMMS_FLAGS_PEEK32|X300_FW_COMMS_FLAGS_ACK, seq(), 0xA000+256+((in_prt*8+out_prt)*4), 0)
                 in_pkt = self.send_and_recv(out_pkt)
                 (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
                 if flags & X300_FW_COMMS_FLAGS_ERROR == X300_FW_COMMS_FLAGS_ERROR:
                     raise Exception("X300 peek returns error code")
-                print("%10d  " % (data)),
-            print
-        print
+                print(("%10d  " % (data)), end=' ')
+            print()
+        print()
         print("Ingress Port")
-        print
+        print()
 
 
     def peek(self,peek_addr):
@@ -110,7 +112,7 @@ class ctrl_socket(object):
         (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
         if flags & X300_FW_COMMS_FLAGS_ERROR == X300_FW_COMMS_FLAGS_ERROR:
             raise Exception("X300 peek of address %d returns error code" % (addr))
-	return data
+        return data
 
     def poke(self,poke_addr,poke_data):
         out_pkt = pack_reg_peek_poke_fmt(X300_FW_COMMS_FLAGS_POKE32|X300_FW_COMMS_FLAGS_ACK, seq(), poke_addr, poke_data)
@@ -123,32 +125,23 @@ class ctrl_socket(object):
 ########################################################################
 # command line options
 ########################################################################
+def auto_int(x):
+    return int(x, 0)
+
 def get_options():
-    parser = optparse.OptionParser()
-    parser.add_option("--addr", type="string",              help="USRP-X3X0 device address",       default='')
-    parser.add_option("--list", action="store_true",        help="list possible network devices", default=False)
-    parser.add_option("--peek", type="int",                 help="Read from memory map",     default=None)
-    parser.add_option("--poke", type="int",                 help="Write to memory map",     default=None)
-    parser.add_option("--data", type="int",                 help="Data for poke",     default=None)
-    parser.add_option("--stats", action="store_true",       help="Display SuperMIMO Network Stats", default=False)
-    (options, args) = parser.parse_args()
-
-    return options
-
+    parser = argparse.ArgumentParser(description='Debug utility for the USRP X3X0')
+    parser.add_argument('--addr', type=str, default=None, required=True, help='IP Address of USRP-X3X0 device')
+    parser.add_argument('--peek', type=auto_int, default=None, help='Read from memory map')
+    parser.add_argument('--poke', type=auto_int, default=None, help='Write to memory map')
+    parser.add_argument('--data', type=auto_int, default=None, help='Data for poke')
+    parser.add_argument('--stats', action='store_true', default=False, help='Display crossbar network Stats')
+    return parser.parse_args()
 
 ########################################################################
 # main
 ########################################################################
 if __name__=='__main__':
     options = get_options()
-
-
-    if options.list:
-        print('Possible network devices:')
-        print('  ' + '\n  '.join(enumerate_devices()))
-        exit()
-
-    if not options.addr: raise Exception('no address specified')
 
     status = ctrl_socket(addr=options.addr)
 

@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
 #!/usr/bin/env python
 #
 # Copyright 2016 Ettus Research LLC
@@ -17,7 +20,7 @@
 #
 
 import x300_debug
-import optparse
+import argparse
 import time
 import datetime
 import math
@@ -83,8 +86,9 @@ def get_rate_setting(rate):
             return (div-1, 8e-6 * BUS_CLK_RATE * (1.0 - 1.0/(div-1)))
     return (0, 8e-6 * BUS_CLK_RATE)
 
-def run_loopback_bist(ctrls, duration, (rate_sett, rate)):
-    print '[INFO] Running Loopback BIST at %.0fMB/s for %.0fs...'%(rate,duration)
+def run_loopback_bist(ctrls, duration, xxx_todo_changeme):
+    (rate_sett, rate) = xxx_todo_changeme
+    print('[INFO] Running Loopback BIST at %.0fMB/s for %.0fs...'%(rate,duration))
     # Determine offsets
     (mst_port, link_up) = get_aurora_info(ctrls['master'])
     MST_MAC_REG_BASE = SFP0_MAC_REG_BASE if (mst_port == 0) else SFP1_MAC_REG_BASE
@@ -111,13 +115,13 @@ def run_loopback_bist(ctrls, duration, (rate_sett, rate)):
     time.sleep(0.5)
     mst_status = ctrls['master'].peek(MST_MAC_REG_BASE + MAC_REG_STATUS)
     if (not (mst_status & MAC_STATUS_BIST_LOCKED_MSK)):
-        print '[ERROR] BIST engine did not lock onto a PRBS word!'
+        print('[ERROR] BIST engine did not lock onto a PRBS word!')
     # Wait for requested time
     try:
-        for i in tqdm.tqdm(range(duration), desc='[INFO] Progress'):
+        for i in tqdm.tqdm(list(range(duration)), desc='[INFO] Progress'):
             time.sleep(1.0)
     except KeyboardInterrupt:
-        print '[WARNING] Operation cancelled by user.'
+        print('[WARNING] Operation cancelled by user.')
     # Turn off the BIST generator and loopback
     ctrls['master'].poke(MST_MAC_REG_BASE + MAC_REG_CTRL, MAC_CTRL_BIST_CHECKER_EN)
     stop_time = datetime.datetime.now()
@@ -128,31 +132,31 @@ def run_loopback_bist(ctrls, duration, (rate_sett, rate)):
     mst_status = ctrls['master'].peek(MST_MAC_REG_BASE + MAC_REG_STATUS)
     mst_overruns = ctrls['master'].peek(MST_MAC_REG_BASE + MAC_REG_OVERRUNS)
     if (mst_status & MAC_STATUS_HARD_ERR_MSK):
-        print '[ERROR] Hard errors in master PHY'
+        print('[ERROR] Hard errors in master PHY')
     if (mst_overruns > 0):
-        print '[ERROR] Buffer overruns in master PHY'
+        print('[ERROR] Buffer overruns in master PHY')
     if 'slave' in ctrls:
         sla_status = ctrls['slave'].peek(SLA_MAC_REG_BASE + MAC_REG_STATUS)
         sla_overruns = ctrls['slave'].peek(SLA_MAC_REG_BASE + MAC_REG_OVERRUNS)
         if (sla_status & MAC_STATUS_HARD_ERR_MSK):
-            print '[ERROR] Hard errors in slave PHY'
+            print('[ERROR] Hard errors in slave PHY')
         if (sla_overruns > 0):
-            print '[ERROR] Buffer overruns in slave PHY'
+            print('[ERROR] Buffer overruns in slave PHY')
     # Compure latency
     mst_samps = 65536.0*ctrls['master'].peek(MST_MAC_REG_BASE + MAC_REG_BIST_SAMPS)
     mst_errors = 1.0*ctrls['master'].peek(MST_MAC_REG_BASE + MAC_REG_BIST_ERRORS)
     if (mst_samps != 0):
         mst_latency_cyc = 16.0*((mst_status & MAC_STATUS_BIST_LATENCY_MSK) >> MAC_STATUS_BIST_LATENCY_OFFSET)
         time_diff = stop_time - start_time
-        print '[INFO] BIST Complete!'
-        print '- Elapsed Time              = ' + str(time_diff)
-        print '- Max BER (Bit Error Ratio) = %.4g (%d errors out of %d)'%((mst_errors+1)/mst_samps,mst_errors,mst_samps)
-        print '- Max Roundtrip Latency     = %.1fus'%(1e6*mst_latency_cyc/AURORA_CLK_RATE)
-        print '- Approx Throughput         = %.0fMB/s'%((8e-6*mst_samps)/time_diff.total_seconds())
+        print('[INFO] BIST Complete!')
+        print('- Elapsed Time              = ' + str(time_diff))
+        print('- Max BER (Bit Error Ratio) = %.4g (%d errors out of %d)'%((mst_errors+1)/mst_samps,mst_errors,mst_samps))
+        print('- Max Roundtrip Latency     = %.1fus'%(1e6*mst_latency_cyc/AURORA_CLK_RATE))
+        print('- Approx Throughput         = %.0fMB/s'%((8e-6*mst_samps)/time_diff.total_seconds()))
     else:
-        print '[ERROR] BIST Failed!'
+        print('[ERROR] BIST Failed!')
     # Drain and Cleanup
-    print '[INFO] Cleaning up...'
+    print('[INFO] Cleaning up...')
     ctrls['master'].poke(MST_MAC_REG_BASE + MAC_REG_CTRL, MAC_CTRL_BIST_CHECKER_EN)
     if 'slave' in ctrls:
         ctrls['slave'].poke(SLA_MAC_REG_BASE + MAC_REG_CTRL, MAC_CTRL_BIST_CHECKER_EN)
@@ -165,13 +169,12 @@ def run_loopback_bist(ctrls, duration, (rate_sett, rate)):
 # command line options
 ########################################################################
 def get_options():
-    parser = optparse.OptionParser()
-    parser.add_option("--master", type="string", help="IP Address of master USRP-X3X0 device", default=None)
-    parser.add_option("--slave", type="string", help="IP Address of slave USRP-X3X0 device", default=None)
-    parser.add_option("--duration", type="int", help="Duration of test in seconds", default=10)
-    parser.add_option("--rate", type="int", help="BIST throughput in MB/s", default=1245)
-    (options, args) = parser.parse_args()
-    return options
+    parser = argparse.ArgumentParser(description='Controller for the USRP X3X0 Aurora BIST Engine')
+    parser.add_argument('--master', type=str, default=None, required=True, help='IP Address of master USRP-X3X0 device')
+    parser.add_argument('--slave', type=str, default=None, help='IP Address of slave USRP-X3X0 device')
+    parser.add_argument('--duration', type=int, default=10, help='Duration of test in seconds')
+    parser.add_argument('--rate', type=int, default=1245, help='BIST throughput in MB/s')
+    return parser.parse_args()
 
 ########################################################################
 # main
@@ -179,7 +182,6 @@ def get_options():
 if __name__=='__main__':
     options = get_options()
 
-    if not options.master: raise Exception('No master address specified')
     if (options.duration < 0 or options.duration > BIST_MAX_TIME_LIMIT):
         raise Exception('Invalid duration. Min = 0s and Max = %ds'%(BIST_MAX_TIME_LIMIT))
 
@@ -191,20 +193,20 @@ if __name__=='__main__':
     # Report device and core info
     links_up = True
     for node in ctrls:
-        print '[INFO] ' + node.upper() + ':'
+        print('[INFO] ' + node.upper() + ':')
         ctrl = ctrls[node]
         (aur_port, link_up) = get_aurora_info(ctrl)
         if aur_port >= 0:
             status_str = str(aur_port) + (' UP' if link_up else ' DOWN')
         else:
             status_str = 'Not Detected!'
-        print '- Mgmt IP Addr  : ' + (options.master if node == 'master' else options.slave)
-        print '- Aurora Status : Port ' + status_str
+        print('- Mgmt IP Addr  : ' + (options.master if node == 'master' else options.slave))
+        print('- Aurora Status : Port ' + status_str)
         links_up = links_up & link_up
 
     # Sanity check
     if not links_up:
-        print '[ERROR] At least one of the links is down. Cannot proceed.'
+        print('[ERROR] At least one of the links is down. Cannot proceed.')
         exit(1)
 
     # Run BIST
