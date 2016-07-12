@@ -62,7 +62,10 @@ void source_node_ctrl::_register_downstream_node(
 ) {
     // Do all the checks:
     if (port == ANY_PORT) {
-        throw uhd::type_error("Invalid output port number.");
+        throw uhd::type_error(str(
+                boost::format("[%s] Invalid output port number (ANY).")
+                % unique_id()
+        ));
     }
     if (_downstream_nodes.count(port)) {
         throw uhd::runtime_error(str(boost::format("On node %s, output port %d is already connected.") % unique_id() % port));
