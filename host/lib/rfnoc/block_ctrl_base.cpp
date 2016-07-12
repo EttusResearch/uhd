@@ -507,7 +507,6 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
                 boost::format("Invalid port definition: %s") % port_def.to_string()
         ));
     }
-    UHD_RFNOC_BLOCK_TRACE() << "_resolve_port_def()" << std::endl;
 
     // TODO this entire section is pretty dumb at this point. Needs better
     // checks.
@@ -522,7 +521,7 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
     } else {
         stream_sig.item_type = port_def["type"];
     }
-    UHD_RFNOC_BLOCK_TRACE() << "  item type: " << stream_sig.item_type << std::endl;
+    //UHD_RFNOC_BLOCK_TRACE() << "  item type: " << stream_sig.item_type << std::endl;
 
     // Vector length
     if (port_def.is_variable("vlen")) {
@@ -533,7 +532,7 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
     } else {
         stream_sig.vlen = boost::lexical_cast<size_t>(port_def["vlen"]);
     }
-    UHD_RFNOC_BLOCK_TRACE() << "  vector length: " << stream_sig.vlen << std::endl;
+    //UHD_RFNOC_BLOCK_TRACE() << "  vector length: " << stream_sig.vlen << std::endl;
 
     // Packet size
     if (port_def.is_variable("pkt_size")) {
@@ -555,7 +554,7 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
     } else {
         stream_sig.packet_size = boost::lexical_cast<size_t>(port_def["pkt_size"]);
     }
-    UHD_RFNOC_BLOCK_TRACE() << "  packet size: " << stream_sig.vlen << std::endl;
+    //UHD_RFNOC_BLOCK_TRACE() << "  packet size: " << stream_sig.vlen << std::endl;
 
     return stream_sig;
 }
