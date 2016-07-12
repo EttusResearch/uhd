@@ -39,7 +39,7 @@ using uhd::stream_cmd_t;
 static const std::string RADIO_BLOCK_NAME = "Radio";
 static const std::string DFIFO_BLOCK_NAME = "DmaFIFO";
 static const std::string DDC_BLOCK_NAME = "DDC";
-static const std::string DUC_BLOCK_NAME = "DDC";
+static const std::string DUC_BLOCK_NAME = "DUC";
 
 /************************************************************************
  * Static helpers
@@ -47,6 +47,15 @@ static const std::string DUC_BLOCK_NAME = "DDC";
 uhd::fs_path mb_root(const size_t mboard)
 {
     return uhd::fs_path("/mboards") / mboard;
+}
+
+size_t num_ports(const uhd::property_tree::sptr &tree, const std::string &block_name, const std::string &in_out)
+{
+    return tree->list(
+            uhd::fs_path("/mboards/0/xbar") /
+            str(boost::format("%s_0") % block_name) /
+            "ports" / in_out
+    ).size();
 }
 
 /************************************************************************
@@ -61,13 +70,17 @@ public:
     legacy_compat_impl(uhd::device3::sptr device)
       : _device(device),
         _tree(device->get_tree()),
+        _has_ducs(not device->find_blocks(DUC_BLOCK_NAME).empty()),
+        _has_ddcs(not device->find_blocks(DDC_BLOCK_NAME).empty()),
+        _has_dmafifo(not device->find_blocks(DFIFO_BLOCK_NAME).empty()),
         _num_mboards(_tree->list("/mboards").size()),
         _num_radios_per_board(device->find_blocks<radio_ctrl>("0/Radio").size()), // These might throw, maybe we catch that and provide a nicer error message.
-        _num_tx_chans_per_radio(_tree->list("/mboards/0/xbar/Radio_0/ports/in").size()),
-        _num_rx_chans_per_radio(_tree->list("/mboards/0/xbar/Radio_0/ports/out").size()),
-        _has_ducs(not device->find_blocks<radio_ctrl>(DUC_BLOCK_NAME).empty()),
-        _has_ddcs(not device->find_blocks<radio_ctrl>(DDC_BLOCK_NAME).empty()),
-        _has_dmafifo(not device->find_blocks<radio_ctrl>(DFIFO_BLOCK_NAME).empty()),
+        _num_tx_chans_per_radio(_has_ducs ?
+                std::min(num_ports(_tree, RADIO_BLOCK_NAME, "in"), num_ports(_tree, DUC_BLOCK_NAME, "in"))
+                : num_ports(_tree, RADIO_BLOCK_NAME, "in")),
+        _num_rx_chans_per_radio(_has_ddcs ?
+                std::min(num_ports(_tree, RADIO_BLOCK_NAME, "out"), num_ports(_tree, DDC_BLOCK_NAME, "out"))
+                : num_ports(_tree, RADIO_BLOCK_NAME, "out")),
         _spp(get_block_ctrl<radio_ctrl>(0, RADIO_BLOCK_NAME, 0)->get_arg<int>("spp")),
         _rx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board)),
         _tx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board))
@@ -76,6 +89,17 @@ public:
         check_available_periphs(); // Throws if invalid configuration.
         setup_prop_tree();
         connect_blocks();
+        if (not _has_ddcs) {
+            UHD_MSG(warning)
+                << "[legacy_compat] No DDCs detected. You will only be able to receive at the master clock rate."
+                << std::endl;
+        }
+        if (not _has_ducs) {
+            UHD_MSG(warning) << "[legacy_compat] No DUCs detected. You will only be able to transmit at the master clock rate." << std::endl;
+        }
+        if (not _has_dmafifo) {
+            UHD_MSG(warning) << "[legacy_compat] No DMA FIFO detected. You will only be able to transmit at slow rates." << std::endl;
+        }
 
         for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
             for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
@@ -366,15 +390,17 @@ private: // methods
                         if (_has_dmafifo) {
                             // We have DMA FIFO *and* DUCs
                             _graph->connect(
-                                block_id_t(mboard, DFIFO_BLOCK_NAME, 0), radio * _num_radios_per_board + chan,
-                                block_id_t(mboard, DUC_BLOCK_NAME, radio), chan
+                                block_id_t(mboard, DFIFO_BLOCK_NAME, 0), radio,
+                                block_id_t(mboard, DUC_BLOCK_NAME, radio), chan,
+                                _spp
                             );
                         }
                     } else if (_has_dmafifo) {
                             // We have DMA FIFO, *no* DUCs
                             _graph->connect(
-                                block_id_t(mboard, DFIFO_BLOCK_NAME,   0), radio * _num_radios_per_board + chan,
-                                block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan
+                                block_id_t(mboard, DFIFO_BLOCK_NAME,   0), radio,
+                                block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
+                                _spp
                             );
                     }
                 }
@@ -382,8 +408,9 @@ private: // methods
                 for (size_t chan = 0; chan < _num_rx_chans_per_radio; chan++) {
                     if (_has_ddcs) {
                         _graph->connect(
+                            block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
                             block_id_t(mboard, DDC_BLOCK_NAME,   radio), chan,
-                            block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan
+                            _spp
                         );
                     }
                 }
@@ -461,13 +488,13 @@ private: // attributes
     uhd::device3::sptr _device;
     uhd::property_tree::sptr _tree;
 
+    const bool _has_ducs;
+    const bool _has_ddcs;
+    const bool _has_dmafifo;
     const size_t _num_mboards;
     const size_t _num_radios_per_board;
     const size_t _num_tx_chans_per_radio;
     const size_t _num_rx_chans_per_radio;
-    const bool _has_ducs;
-    const bool _has_ddcs;
-    const bool _has_dmafifo;
     size_t _spp;
 
     chan_map_t _rx_channel_map;
