@@ -1359,6 +1359,8 @@ x300_impl::both_xports_t x300_impl::make_transport(
 
         fs_path mboard_path = fs_path("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate");
 
+        UHD_ASSERT_THROW(mb.loaded_fpga_image.size() >= 2);
+
         if (mb.loaded_fpga_image.substr(0,2) == "HG") {
             size_t max_link_rate = 0;
             if (config.iface_index == X300_IFACE_ETH0) {
