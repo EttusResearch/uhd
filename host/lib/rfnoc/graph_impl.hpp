@@ -45,7 +45,8 @@ public:
             const block_id_t &src_block,
             size_t src_block_port,
             const block_id_t &dst_block,
-            size_t dst_block_port
+            size_t dst_block_port,
+            const size_t pkt_size = 0
     );
 
     void connect(

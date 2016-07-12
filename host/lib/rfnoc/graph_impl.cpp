@@ -43,7 +43,8 @@ void graph_impl::connect(
         const block_id_t &src_block,
         size_t src_block_port,
         const block_id_t &dst_block,
-        size_t dst_block_port
+        size_t dst_block_port,
+        const size_t pkt_size_
 ) {
     device3::sptr device_ptr = _device_ptr.lock();
     if (not device_ptr) {
@@ -84,19 +85,23 @@ void graph_impl::connect(
     dst->set_upstream_port(actual_dst_block_port, actual_src_block_port);
     // At this point, ports are locked and no one else can simply connect
     // into them.
+    UHD_MSG(status)
+        << "[" << _name << "] Connecting "
+        << src_block << ":" << actual_src_block_port << " --> "
+        << dst_block << ":" << actual_dst_block_port << std::endl;
 
     /********************************************************************
      * 2. Check IO signatures match
      ********************************************************************/
     if (not rfnoc::stream_sig_t::is_compatible(
-                src->get_output_signature(src_block_port),
-                dst->get_input_signature(dst_block_port)
+                src->get_output_signature(actual_src_block_port),
+                dst->get_input_signature(actual_dst_block_port)
         )) {
         throw uhd::runtime_error(str(
             boost::format("Can't connect block %s to %s: IO signature mismatch\n(%s is incompatible with %s).")
             % src->get_block_id().get() % dst->get_block_id().get()
-            % src->get_output_signature(src_block_port)
-            % dst->get_input_signature(dst_block_port)
+            % src->get_output_signature(actual_src_block_port)
+            % dst->get_input_signature(actual_dst_block_port)
         ));
     }
 
@@ -113,8 +118,7 @@ void graph_impl::connect(
     /********************************************************************
      * 4. Configure flow control
      ********************************************************************/
-    rfnoc::stream_sig_t output_sig = src->get_output_signature(src_block_port);
-    size_t pkt_size = output_sig.packet_size;
+    size_t pkt_size = (pkt_size_ != 0) ? pkt_size_ : src->get_output_signature(src_block_port).packet_size;
     if (pkt_size == 0) { // Unspecified packet rate. Assume max packet size.
         UHD_MSG(status) << "Assuming max packet size for " << src->get_block_id() << std::endl;
         pkt_size = uhd::rfnoc::MAX_PACKET_SIZE;
