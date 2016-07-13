@@ -363,8 +363,8 @@ void x300_radio_ctrl_impl::self_test_adc(boost::uint32_t ramp_time_ms)
     //Turn on ramp pattern test
     _adc->set_test_word("ramp", "ramp");
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
-    //Short sleep to allow ramp to propogate through ADC
-    boost::this_thread::sleep(boost::posix_time::microsec(1));
+    //Sleep added for SPI transactions to finish and ramp to start before checker is enabled.
+    boost::this_thread::sleep(boost::posix_time::microsec(1000));
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
 
     boost::this_thread::sleep(boost::posix_time::milliseconds(ramp_time_ms));
@@ -390,10 +390,10 @@ void x300_radio_ctrl_impl::self_test_adc(boost::uint32_t ramp_time_ms)
     //Return to normal mode
     _adc->set_test_word("normal", "normal");
 
-//    if ((i_status != "Good") or (q_status != "Good")) {
-//        throw uhd::runtime_error(
-//            (boost::format("ADC self-test failed for %s. Ramp checker status: {ADC_A=%s, ADC_B=%s}")%unique_id()%i_status%q_status).str());
-//    }
+    if ((i_status != "Good") or (q_status != "Good")) {
+        throw uhd::runtime_error(
+            (boost::format("ADC self-test failed for %s. Ramp checker status: {ADC_A=%s, ADC_B=%s}")%unique_id()%i_status%q_status).str());
+    }
 
     //Restore front-end corrections
     for (size_t i = 0; i < _get_num_radios(); i++) {
