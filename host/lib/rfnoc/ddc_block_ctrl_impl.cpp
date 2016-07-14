@@ -119,6 +119,21 @@ public:
         }
     }
 
+    void set_rx_streamer(bool active, const size_t port)
+    {
+        UHD_MSG(status) << "[" << unique_id() << "] ddc_block_ctrl::set_rx_streamer() " << active << std::endl;
+        if (list_upstream_nodes().count(port)) {
+            source_node_ctrl::sptr this_upstream_block_ctrl =
+                boost::dynamic_pointer_cast<source_node_ctrl>(list_upstream_nodes().at(port).lock());
+            if (this_upstream_block_ctrl) {
+                this_upstream_block_ctrl->set_rx_streamer(
+                        active,
+                        get_upstream_port(port)
+                );
+            }
+        }
+    }
+
 private:
 
     //! Set the CORDIC frequency shift the signal to \p requested_freq
