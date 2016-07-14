@@ -62,7 +62,7 @@ static int tx_pga0_gain_to_iobits(double &gain){
             (attn_code &  8 ? 0 : TX_ATTN_8) |
             (attn_code &  4 ? 0 : TX_ATTN_4) |
             (attn_code &  2 ? 0 : TX_ATTN_2) |
-            (attn_code &  1 ? 0 : TX_ATTN_1) 
+            (attn_code &  1 ? 0 : TX_ATTN_1)
         ) & TX_ATTN_MASK;
 
     UHD_LOGV(often) << boost::format(
@@ -227,14 +227,13 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
 
     double reference_freq = self_base->get_iface()->get_clock_rate(unit);
     //The mixer has a divide-by-2 stage on the LO port so the synthesizer
-    //frequency must 2x the target frequency
+    //frequency must 2x the target frequency.  This introduces a 180 degree
+    //phase ambiguity
     double synth_target_freq = target_freq * 2;
-    //TODO: Document why the following has to be true
-    bool div_resync_enabled = (target_freq > reference_freq);
 
     adf4350_regs_t::prescaler_t prescaler =
         synth_target_freq > 3e9 ? adf4350_regs_t::PRESCALER_8_9 : adf4350_regs_t::PRESCALER_4_5;
-    
+
     adf435x_tuning_constraints tuning_constraints;
     tuning_constraints.force_frac0 = is_int_n;
     tuning_constraints.band_sel_freq_max = 100e3;
@@ -242,9 +241,13 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     tuning_constraints.int_range = uhd::range_t(prescaler_to_min_int_div[prescaler], 4095);
     tuning_constraints.pfd_freq_max = 25e6;
     tuning_constraints.rf_divider_range = uhd::range_t(1, 16);
-    //When divider resync is enabled, a 180 deg phase error is introduced when syncing
-    //multiple WBX boards. Switching to fundamental mode works arounds this issue.
-    tuning_constraints.feedback_after_divider = div_resync_enabled;
+    //The feedback of the divided frequency must be disabled whenever the target frequency
+    //divided by the minimum PFD frequency cannot meet the minimum integer divider (N) value.
+    //If it is disabled, additional phase ambiguity will be introduced.  With a minimum PFD
+    //frequency of 10 MHz, synthesizer frequencies below 230 MHz (LO frequencies below 115 MHz)
+    //will have too much ambiguity to synchronize.
+    tuning_constraints.feedback_after_divider =
+        (int(synth_target_freq / 10e6) >= prescaler_to_min_int_div[prescaler]);
 
     double synth_actual_freq = 0;
     adf435x_tuning_settings tuning_settings = tune_adf435x_synth(
@@ -271,7 +274,7 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     regs.feedback_select        = tuning_constraints.feedback_after_divider ?
                                     adf4350_regs_t::FEEDBACK_SELECT_DIVIDED :
                                     adf4350_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
-    regs.clock_div_mode         = div_resync_enabled ?
+    regs.clock_div_mode         = tuning_constraints.feedback_after_divider ?
                                     adf4350_regs_t::CLOCK_DIV_MODE_RESYNC_ENABLE :
                                     adf4350_regs_t::CLOCK_DIV_MODE_FAST_LOCK;
     regs.prescaler              = prescaler;
