@@ -203,7 +203,7 @@ private:
     std::map<size_t, bool> _rx_streamers_active;
     std::map<size_t, bool> _tx_streamers_active;
 
-    std::map<size_t, bool> _continuous_streaming;
+    std::vector<bool> _continuous_streaming;
 }; /* class radio_ctrl_impl */
 
 }} /* namespace uhd::rfnoc */

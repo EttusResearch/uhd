@@ -41,6 +41,7 @@ radio_ctrl_impl::radio_ctrl_impl() :
 {
     _num_rx_channels = get_output_ports().size();
     _num_tx_channels = get_input_ports().size();
+    _continuous_streaming = std::vector<bool>(2, false);
 
     for (size_t i = 0; i < _num_rx_channels; i++) {
         _rx_streamers_active[i] = false;
@@ -241,7 +242,7 @@ double radio_ctrl_impl::get_rx_gain(const size_t chan) /* const */
 void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan)
 {
     boost::mutex::scoped_lock lock(_mutex);
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << " " << stream_cmd.stream_mode << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << " " << char(stream_cmd.stream_mode) << std::endl;
     UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
     _continuous_streaming[chan] = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
 
