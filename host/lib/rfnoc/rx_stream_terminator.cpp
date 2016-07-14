@@ -88,7 +88,11 @@ void rx_stream_terminator::handle_overrun(boost::weak_ptr<uhd::rx_streamer> stre
     }
 
     if (num_channels == 1 and in_continuous_streaming_mode) {
-        const size_t port = upstream_radio_nodes[0]->get_active_rx_ports().at(0);
+        std::vector<size_t> active_rx_ports = upstream_radio_nodes[0]->get_active_rx_ports();
+        if (active_rx_ports.empty()) {
+            return;
+        }
+        const size_t port = active_rx_ports[0];
         upstream_radio_nodes[0]->issue_stream_cmd(stream_cmd_t::STREAM_MODE_START_CONTINUOUS, port);
         return;
     }
@@ -113,7 +117,6 @@ void rx_stream_terminator::handle_overrun(boost::weak_ptr<uhd::rx_streamer> stre
 
         BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> &node, upstream_radio_nodes) {
             BOOST_FOREACH(const size_t port, node->get_active_rx_ports()) {
-                node->issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS, port);
                 node->issue_stream_cmd(stream_cmd, port);
             }
         }
