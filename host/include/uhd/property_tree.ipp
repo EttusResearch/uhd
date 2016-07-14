@@ -97,7 +97,9 @@ public:
     }
 
     const T get(void) const{
-        if (empty()) throw uhd::runtime_error("Cannot get() on an uninitialized (empty) property");
+        if (empty()) {
+            throw uhd::runtime_error("Cannot get() on an uninitialized (empty) property");
+        }
         if (not _publisher.empty()) {
             return _publisher();
         } else {
