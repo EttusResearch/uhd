@@ -338,6 +338,12 @@ void block_ctrl_base::set_command_time(
         const time_spec_t &time_spec,
         const size_t port
 ) {
+    if (port == ANY_PORT) {
+        BOOST_FOREACH(const size_t specific_port, get_ctrl_ports()) {
+            set_command_time(time_spec, specific_port);
+        }
+        return;
+    }
     boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
         boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
     if (not iface_sptr) {
@@ -369,6 +375,12 @@ void block_ctrl_base::set_command_tick_rate(
         const double tick_rate,
         const size_t port
 ) {
+    if (port == ANY_PORT) {
+        BOOST_FOREACH(const size_t specific_port, get_ctrl_ports()) {
+            set_command_tick_rate(tick_rate, specific_port);
+        }
+        return;
+    }
     boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
         boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
     if (not iface_sptr) {

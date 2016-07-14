@@ -28,6 +28,7 @@
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/stream_sig.hpp>
 #include <uhd/rfnoc/blockdef.hpp>
+#include <uhd/rfnoc/constants.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
@@ -258,7 +259,7 @@ public:
      * \throws uhd::assertion_error if the underlying interface does not
      *         actually support timing.
      */
-    void set_command_time(const time_spec_t &time_spec, const size_t port = 0);
+    void set_command_time(const time_spec_t &time_spec, const size_t port = ANY_PORT);
 
     /*! Returns the current command time for all future command packets.
      *
@@ -270,7 +271,7 @@ public:
      *
      * \param the tick rate in Hz
      */
-    void set_command_tick_rate(const double tick_rate, const size_t port = 0);
+    void set_command_tick_rate(const double tick_rate, const size_t port = ANY_PORT);
 
     /*! Resets the command time.
      * Any command packet after this call will no longer have a time associated
