@@ -35,7 +35,7 @@ namespace uhd {
         static const size_t MAX_ITER = 20;
         size_t iters = 0;
         // List of return values:
-        std::vector< T_sptr > results;
+        std::set< T_sptr > results_s;
         // To avoid cycles:
         std::set< sptr > explored;
         // Initialize our search queue with ourself:
@@ -63,7 +63,7 @@ namespace uhd {
                         }
                         T_sptr next_node_sptr = boost::dynamic_pointer_cast<T>(one_next_node);
                         if (next_node_sptr) {
-                            results.push_back(next_node_sptr);
+                            results_s.insert(next_node_sptr);
                         } else {
                             next_nodes.insert(one_next_node);
                         }
@@ -80,6 +80,7 @@ namespace uhd {
             search_q = next_q;
         }
 
+        std::vector< T_sptr > results(results_s.begin(), results_s.end());
         return results;
     }
 
