@@ -104,7 +104,7 @@ public:
             const uhd::stream_cmd_t &stream_cmd_,
             const size_t chan
     ) {
-        UHD_RFNOC_BLOCK_TRACE() << "ddc_block_ctrl_base::issue_stream_cmd()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "duc_block_ctrl_base::issue_stream_cmd()" << std::endl;
 
         uhd::stream_cmd_t stream_cmd = stream_cmd_;
         if (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE or
@@ -235,7 +235,7 @@ private:
         const int32_t actual_scalar = boost::math::iround(target_scalar);
         // Calculate the error introduced by using integer representation for the scalar, can be corrected in host later.
         const double scalar_correction =
-            target_scalar / actual_scalar / double(1 << 15) // Rounding error, normalized to 1.0
+            target_scalar / actual_scalar * double(1 << 15) // Rounding error, normalized to 1.0
             * get_arg<double>("fullscale"); // Scaling requested by host
         set_arg<double>("scalar_correction", scalar_correction, chan);
         // Write DUC with scaling correction for CIC and CORDIC that maximizes dynamic range in 32/16/12/8bits.
