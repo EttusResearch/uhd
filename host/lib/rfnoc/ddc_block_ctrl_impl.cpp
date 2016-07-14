@@ -36,6 +36,11 @@ static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path pr
     return tree->access<double>(prop).set(value).get();
 }
 
+static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path prop)
+{
+    return tree->access<double>(prop).get();
+}
+
 class ddc_block_ctrl_impl : public ddc_block_ctrl
 {
 public:
@@ -65,12 +70,14 @@ public:
             // Legacy properties
             _tree->create<double>(dsp_base_path / "rate/value")
                 .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan), _1))
+                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan)))
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "rate/range")
                 .set_publisher(boost::bind(&ddc_block_ctrl_impl::get_output_rates, this))
             ;
             _tree->create<double>(dsp_base_path / "freq/value")
                 .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("freq/value", chan), _1))
+                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("freq/value", chan)))
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "freq/range")
                 .set_publisher(boost::bind(&ddc_block_ctrl_impl::get_freq_range, this))

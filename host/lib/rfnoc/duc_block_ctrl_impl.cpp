@@ -36,6 +36,11 @@ static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path pr
     return tree->access<double>(prop).set(value).get();
 }
 
+static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path prop)
+{
+    return tree->access<double>(prop).get();
+}
+
 class duc_block_ctrl_impl : public duc_block_ctrl
 {
 public:
@@ -66,12 +71,14 @@ public:
             // Legacy properties
             _tree->create<double>(dsp_base_path / "rate/value")
                 .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan), _1))
+                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan)))
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "rate/range")
                 .set_publisher(boost::bind(&duc_block_ctrl_impl::get_input_rates, this))
             ;
             _tree->create<double>(dsp_base_path / "freq/value")
                 .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("freq/value", chan), _1))
+                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("freq/value", chan)))
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "freq/range")
                 .set_publisher(boost::bind(&duc_block_ctrl_impl::get_freq_range, this))
@@ -82,6 +89,7 @@ public:
             sr_write("M", 1, chan);
             sr_write("CONFIG", 1, chan); // Enable clear EOB
         }
+        UHD_HERE();
     } // end ctor
     virtual ~duc_block_ctrl_impl() {};
 
@@ -105,6 +113,7 @@ public:
             const size_t chan
     ) {
         UHD_RFNOC_BLOCK_TRACE() << "duc_block_ctrl_base::issue_stream_cmd()" << std::endl;
+        UHD_HERE();
 
         uhd::stream_cmd_t stream_cmd = stream_cmd_;
         if (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE or
@@ -220,10 +229,12 @@ private:
     //! Set frequency and interpolation again
     void set_output_rate(const double /* rate */, const size_t chan)
     {
+        UHD_HERE();
         const double desired_freq = _tree->access<double>(get_arg_path("freq", chan) / "value").get_desired();
         set_arg<double>("freq", desired_freq, chan);
         const double desired_input_rate = _tree->access<double>(get_arg_path("input_rate", chan) / "value").get_desired();
         set_arg<double>("input_rate", desired_input_rate, chan);
+        UHD_HERE();
     }
 
     // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
