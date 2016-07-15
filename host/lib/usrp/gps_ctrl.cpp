@@ -28,6 +28,7 @@
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include "boost/tuple/tuple.hpp"
 #include "boost/foreach.hpp"
@@ -49,8 +50,10 @@ gps_ctrl::~gps_ctrl(void){
 class gps_ctrl_impl : public gps_ctrl{
 private:
   std::map<std::string, boost::tuple<std::string, boost::system_time, bool> > sensors;
+    boost::mutex cache_mutex;
 
   std::string get_cached_sensor(const std::string sensor, const int freshness, const bool once, const bool touch=true) {
+    boost::mutex::scoped_lock lock(cache_mutex);
     boost::system_time time = boost::get_system_time();
     try {
       // this is nasty ...
