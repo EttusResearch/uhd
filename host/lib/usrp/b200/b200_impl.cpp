@@ -466,7 +466,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // Local control endpoint
     ////////////////////////////////////////////////////////////////////
-    _local_ctrl = radio_ctrl_core_3000::make(false/*lilE*/, _ctrl_transport, zero_copy_if::sptr()/*null*/, B200_LOCAL_CTRL_SID);
+    _local_ctrl = b200_radio_ctrl_core::make(false/*lilE*/, _ctrl_transport, zero_copy_if::sptr()/*null*/, B200_LOCAL_CTRL_SID);
     _local_ctrl->hold_task(_async_task);
     _async_task_data->local_ctrl = _local_ctrl; //weak
     this->check_fpga_compat();
@@ -752,7 +752,7 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // radio control
     ////////////////////////////////////////////////////////////////////
-    perif.ctrl = radio_ctrl_core_3000::make(
+    perif.ctrl = b200_radio_ctrl_core::make(
             false/*lilE*/,
             _ctrl_transport,
             zero_copy_if::sptr()/*null*/,
@@ -760,9 +760,9 @@ void b200_impl::setup_radio(const size_t dspno)
     perif.ctrl->hold_task(_async_task);
     _async_task_data->radio_ctrl[dspno] = perif.ctrl; //weak
     _tree->access<time_spec_t>(mb_path / "time" / "cmd")
-        .add_coerced_subscriber(boost::bind(&radio_ctrl_core_3000::set_time, perif.ctrl, _1));
+        .add_coerced_subscriber(boost::bind(&b200_radio_ctrl_core::set_time, perif.ctrl, _1));
     _tree->access<double>(mb_path / "tick_rate")
-        .add_coerced_subscriber(boost::bind(&radio_ctrl_core_3000::set_tick_rate, perif.ctrl, _1));
+        .add_coerced_subscriber(boost::bind(&b200_radio_ctrl_core::set_tick_rate, perif.ctrl, _1));
     this->register_loopback_self_test(perif.ctrl);
 
     ////////////////////////////////////////////////////////////////////
