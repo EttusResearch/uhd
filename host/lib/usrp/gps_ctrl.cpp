@@ -49,26 +49,68 @@ gps_ctrl::~gps_ctrl(void){
 
 class gps_ctrl_impl : public gps_ctrl{
 private:
-  std::map<std::string, boost::tuple<std::string, boost::system_time, bool> > sensors;
+    std::map<std::string, boost::tuple<std::string, boost::system_time, bool> > sentences;
     boost::mutex cache_mutex;
+    boost::system_time _last_cache_update;
 
-  std::string get_cached_sensor(const std::string sensor, const int freshness, const bool once, const bool touch=true) {
-    boost::mutex::scoped_lock lock(cache_mutex);
-    boost::system_time time = boost::get_system_time();
-    try {
-      // this is nasty ...
-      //std::cout << boost::format("Requested %s - seen? ") % sensor << sensors[sensor].get<2>() << " once? " << once << std::endl;
-      if(time - sensors[sensor].get<1>() < milliseconds(freshness) && (!once or !sensors[sensor].get<2>())) {
-        sensors[sensor] = boost::make_tuple(sensors[sensor].get<0>(), sensors[sensor].get<1>(), touch);
-        return sensors[sensor].get<0>();
-      } else {
-          return update_cached_sensors(sensor);
-      }
-    } catch(std::exception &e) {
-      UHD_MSG(warning) << "get_cached_sensor: " << e.what();
+    std::string get_sentence(const std::string which, const int max_age_ms, const int timeout, const bool wait_for_next = false)
+    {
+        std::string sentence;
+        boost::system_time now = boost::get_system_time();
+        boost::system_time exit_time = now + milliseconds(timeout);
+        boost::posix_time::time_duration age;
+
+        if (wait_for_next)
+        {
+            boost::lock_guard<boost::mutex> lock(cache_mutex);
+            update_cache();
+            //mark sentence as touched
+            if (sentences.find(which) != sentences.end())
+                sentences[which].get<2>() = true;
+        }
+        while (1)
+        {
+            try
+            {
+                boost::lock_guard<boost::mutex> lock(cache_mutex);
+
+                // update cache if older than a millisecond
+                if (now - _last_cache_update > milliseconds(1))
+                {
+                    update_cache();
+                }
+
+                if (sentences.find(which) == sentences.end())
+                {
+                    age = milliseconds(max_age_ms);
+                } else {
+                    age = boost::get_system_time() - sentences[which].get<1>();
+                }
+                if (age < milliseconds(max_age_ms) and (not (wait_for_next and sentences[which].get<2>())))
+                {
+                    sentence = sentences[which].get<0>();
+                    sentences[which].get<2>() = true;
+                }
+            } catch(std::exception &e) {
+                UHD_MSG(warning) << "get_sentence: " << e.what();
+            }
+
+            if (not sentence.empty() or now > exit_time)
+            {
+                break;
+            }
+
+            sleep(boost::posix_time::milliseconds(1));
+            now = boost::get_system_time();
+        }
+
+        if (sentence.empty())
+        {
+            throw uhd::value_error("gps ctrl: No " + which + " message found");
+        }
+
+        return sentence;
     }
-    return std::string();
-  }
 
     static bool is_nmea_checksum_ok(std::string nmea)
     {
@@ -91,33 +133,39 @@ private:
         return (string_crc == calculated_crc);
     }
 
-  std::string update_cached_sensors(const std::string sensor) {
-    if(not gps_detected() || (gps_type != GPS_TYPE_INTERNAL_GPSDO)) {
+  void update_cache() {
+    if(not gps_detected() or (_gps_type != GPS_TYPE_INTERNAL_GPSDO)) {
         UHD_MSG(error) << "get_stat(): unsupported GPS or no GPS detected";
-        return std::string();
+        return;
     }
 
-    const std::list<std::string> list = boost::assign::list_of("GPGGA")("GPRMC")("SERVO");
-    static const boost::regex status_regex("\\d\\d-\\d\\d-\\d\\d");
+    const std::list<std::string> keys = boost::assign::list_of("GPGGA")("GPRMC")("SERVO");
+    static const boost::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
     static const boost::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
     std::map<std::string,std::string> msgs;
 
     // Get all GPSDO messages available
     // Creating a map here because we only want the latest of each message type
-    for (std::string msg = _recv(); msg.length(); msg = _recv())
+    for (std::string msg = _recv(0); not msg.empty(); msg = _recv(0))
     {
         // Strip any end of line characters
         erase_all(msg, "\r");
         erase_all(msg, "\n");
 
+        if (msg.empty())
+        {
+            // Ignore empty strings
+            continue;
+        }
+
         if (msg.length() < 6)
         {
-            UHD_LOGV(regularly) << __FUNCTION__ << ": Short NMEA string: " << msg << std::endl;
+            UHD_LOGV(regularly) << __FUNCTION__ << ": Short GPSDO string: " << msg << std::endl;
             continue;
         }
 
         // Look for SERVO message
-        if (boost::regex_search(msg, status_regex, boost::regex_constants::match_continuous))
+        if (boost::regex_search(msg, servo_regex, boost::regex_constants::match_continuous))
         {
             msgs["SERVO"] = msg;
         }
@@ -127,62 +175,63 @@ private:
         }
         else
         {
-            UHD_LOGV(regularly) << __FUNCTION__ << ": Malformed NMEA string: " << msg << std::endl;
+            UHD_LOGV(regularly) << __FUNCTION__ << ": Malformed GPSDO string: " << msg << std::endl;
         }
     }
 
     boost::system_time time = boost::get_system_time();
 
-    // Update sensors with newly read data
-    BOOST_FOREACH(std::string key, list) {
-        if (msgs[key].length())
-            sensors[key] = boost::make_tuple(msgs[key], time, !sensor.compare(key));
+    // Update sentences with newly read data
+    BOOST_FOREACH(std::string key, keys)
+    {
+        if (not msgs[key].empty())
+        {
+            sentences[key] = boost::make_tuple(msgs[key], time, false);
+        }
     }
 
-    // Return requested sensor if it was updated
-    if (msgs[sensor].length())
-        return msgs[sensor];
-
-    return std::string();
+    _last_cache_update = time;
   }
 
 public:
-  gps_ctrl_impl(uart_iface::sptr uart){
-    _uart = uart;
-
+  gps_ctrl_impl(uart_iface::sptr uart) :
+      _uart(uart),
+      _gps_type(GPS_TYPE_NONE)
+  {
 
     std::string reply;
     bool i_heard_some_nmea = false, i_heard_something_weird = false;
-    gps_type = GPS_TYPE_NONE;
 
     //first we look for an internal GPSDO
     _flush(); //get whatever junk is in the rx buffer right now, and throw it away
-    _send("HAAAY GUYYYYS\n"); //to elicit a response from the GPSDO
-
-    //wait for _send(...) to return
-    sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
+    _send("*IDN?\r\n"); //request identity from the GPSDO
 
     //then we loop until we either timeout, or until we get a response that indicates we're a JL device
     const boost::system_time comm_timeout = boost::get_system_time() + milliseconds(GPS_COMM_TIMEOUT_MS);
     while(boost::get_system_time() < comm_timeout) {
       reply = _recv();
-      if(reply.find("Command Error") != std::string::npos) {
-        gps_type = GPS_TYPE_INTERNAL_GPSDO;
+      //known devices are JL "FireFly" and "LC_XO"
+      if(reply.find("FireFly") != std::string::npos or reply.find("LC_XO") != std::string::npos) {
+        _gps_type = GPS_TYPE_INTERNAL_GPSDO;
         break;
+      } else if(reply.substr(0, 3) == "$GP") {
+          i_heard_some_nmea = true; //but keep looking
+      } else if(not reply.empty()) {
+          i_heard_something_weird = true; //probably wrong baud rate
       }
-      else if(reply.substr(0, 3) == "$GP") i_heard_some_nmea = true; //but keep looking for that "Command Error" response
-      else if(reply.length() != 0) i_heard_something_weird = true; //probably wrong baud rate
     }
 
-    if((i_heard_some_nmea) && (gps_type != GPS_TYPE_INTERNAL_GPSDO)) gps_type = GPS_TYPE_GENERIC_NMEA;
+    if((i_heard_some_nmea) && (_gps_type != GPS_TYPE_INTERNAL_GPSDO)) _gps_type = GPS_TYPE_GENERIC_NMEA;
 
-    if((gps_type == GPS_TYPE_NONE) && i_heard_something_weird) {
+    if((_gps_type == GPS_TYPE_NONE) && i_heard_something_weird) {
       UHD_MSG(error) << "GPS invalid reply \"" << reply << "\", assuming none available" << std::endl;
     }
 
-    switch(gps_type) {
+    switch(_gps_type) {
     case GPS_TYPE_INTERNAL_GPSDO:
-      UHD_MSG(status) << "Found an internal GPSDO" << std::endl;
+      erase_all(reply, "\r");
+      erase_all(reply, "\n");
+      UHD_MSG(status) << "Found an internal GPSDO: " << reply << std::endl;
       init_gpsdo();
       break;
 
@@ -196,6 +245,9 @@ public:
       break;
 
     }
+
+    // initialize cache
+    update_cache();
   }
 
   ~gps_ctrl_impl(void){
@@ -218,7 +270,7 @@ public:
     or key == "gps_gprmc") {
         return sensor_value_t(
                  boost::to_upper_copy(key),
-                 get_cached_sensor(boost::to_upper_copy(key.substr(4,8)), GPS_NMEA_NORMAL_FRESHNESS, false, false),
+                 get_sentence(boost::to_upper_copy(key.substr(4,8)), GPS_NMEA_NORMAL_FRESHNESS, GPS_TIMEOUT_DELAY_MS),
                  "");
     }
     else if(key == "gps_time") {
@@ -228,7 +280,10 @@ public:
         return sensor_value_t("GPS lock status", locked(), "locked", "unlocked");
     }
     else if(key == "gps_servo") {
-        return sensor_value_t("GPS servo status", get_servo(), "");
+        return sensor_value_t(
+                 boost::to_upper_copy(key),
+                 get_sentence(boost::to_upper_copy(key.substr(4,8)), GPS_SERVO_FRESHNESS, GPS_TIMEOUT_DELAY_MS),
+                 "");
     }
     else {
         throw uhd::value_error("gps ctrl get_sensor unknown key: " + key);
@@ -241,38 +296,18 @@ private:
     //none of these should issue replies so we don't bother looking for them
     //we have to sleep between commands because the JL device, despite not acking, takes considerable time to process each command.
      sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("SYST:COMM:SER:ECHO OFF\n");
+    _send("SYST:COMM:SER:ECHO OFF\r\n");
      sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("SYST:COMM:SER:PRO OFF\n");
+    _send("SYST:COMM:SER:PRO OFF\r\n");
      sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("GPS:GPGGA 1\n");
+    _send("GPS:GPGGA 1\r\n");
      sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("GPS:GGAST 0\n");
+    _send("GPS:GGAST 0\r\n");
      sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("GPS:GPRMC 1\n");
+    _send("GPS:GPRMC 1\r\n");
      sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("SERV:TRAC 0\n");
+    _send("SERV:TRAC 1\r\n");
      sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-  }
-
-  //retrieve a raw NMEA sentence
-  std::string get_nmea(std::string msgtype) {
-    std::string reply;
-
-    const boost::system_time comm_timeout = boost::get_system_time() + milliseconds(GPS_COMM_TIMEOUT_MS);
-    while(boost::get_system_time() < comm_timeout) {
-        if(!msgtype.compare("GPRMC")) {
-          reply = get_cached_sensor(msgtype, GPS_NMEA_FRESHNESS, true);
-        }
-        else {
-          reply = get_cached_sensor(msgtype, GPS_NMEA_LOW_FRESHNESS, false);
-        }
-        if(reply.size()) {
-          if(reply.substr(1, 5) == msgtype) return reply;
-        }
-        boost::this_thread::sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
-    }
-    throw uhd::value_error(str(boost::format("get_nmea(): no %s message found") % msgtype));
   }
 
   //helper function to retrieve a field from an NMEA sentence
@@ -289,12 +324,12 @@ private:
   }
 
   ptime get_time(void) {
-    _flush();
     int error_cnt = 0;
     ptime gps_time;
     while(error_cnt < 2) {
         try {
-            std::string reply = get_nmea("GPRMC");
+            // wait for next GPRMC string
+            std::string reply = get_sentence("GPRMC", GPS_NMEA_NORMAL_FRESHNESS, GPS_COMM_TIMEOUT_MS, true);
 
             std::string datestr = get_token(reply, 9);
             std::string timestr = get_token(reply, 1);
@@ -317,7 +352,6 @@ private:
 
         } catch(std::exception &e) {
             UHD_MSG(warning) << "get_time: " << e.what();
-            _flush();
             error_cnt++;
         }
     }
@@ -331,46 +365,24 @@ private:
   }
 
   bool gps_detected(void) {
-    return (gps_type != GPS_TYPE_NONE);
+    return (_gps_type != GPS_TYPE_NONE);
   }
 
   bool locked(void) {
     int error_cnt = 0;
     while(error_cnt < 3) {
         try {
-            std::string reply = get_cached_sensor("GPGGA", GPS_LOCK_FRESHNESS, false, false);
-            if(reply.size() <= 1) return false;
-
-            return (get_token(reply, 6) != "0");
+            std::string reply = get_sentence("GPGGA", GPS_LOCK_FRESHNESS, GPS_COMM_TIMEOUT_MS);
+            if(reply.empty())
+                error_cnt++;
+            else
+                return (get_token(reply, 6) != "0");
         } catch(std::exception &e) {
             UHD_MSG(warning) << "locked: " << e.what();
             error_cnt++;
         }
     }
-    throw uhd::value_error("Timeout after no valid message found");
-    return false;
-  }
-
-  std::string get_servo(void) {
-
-    //enable servo reporting
-    _send("SERV:TRAC 1\n");
-    sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-
-    std::string reply;
-
-    const boost::system_time comm_timeout = boost::get_system_time() + milliseconds(GPS_COMM_TIMEOUT_MS);
-    while(boost::get_system_time() < comm_timeout) {
-        reply = get_cached_sensor("SERVO", GPS_NMEA_LOW_FRESHNESS, false);
-        if(reply.size())
-        {
-            //disable it before leaving function
-            _send("SERV:TRAC 0\n");
-            return reply;
-        }
-        boost::this_thread::sleep(milliseconds(GPS_TIMEOUT_DELAY_MS));
-    }
-    throw uhd::value_error("get_stat(): no servo message found");
+    throw uhd::value_error("locked(): unable to determine GPS lock status");
   }
 
   uart_iface::sptr _uart;
@@ -393,13 +405,11 @@ private:
     GPS_TYPE_INTERNAL_GPSDO,
     GPS_TYPE_GENERIC_NMEA,
     GPS_TYPE_NONE
-  } gps_type;
+  } _gps_type;
 
   static const int GPS_COMM_TIMEOUT_MS = 1300;
-  static const int GPS_NMEA_FRESHNESS = 10;
-  static const int GPS_NMEA_LOW_FRESHNESS = 2500;
   static const int GPS_NMEA_NORMAL_FRESHNESS = 1000;
-  static const int GPS_SERVO_FRESHNESS = 2500;
+  static const int GPS_SERVO_FRESHNESS = 1000;
   static const int GPS_LOCK_FRESHNESS = 2500;
   static const int GPS_TIMEOUT_DELAY_MS = 200;
   static const int GPSDO_COMMAND_DELAY_MS = 200;
