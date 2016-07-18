@@ -132,6 +132,10 @@ struct x300_uart_iface : uart_iface
                 if (ch == '\r')
                     continue;
 
+                // avoid returning empty strings
+                if (ch == '\n' and _rxbuff.empty())
+                    continue;
+
                 // store character to buffer
                 _rxbuff += std::string(1, (char)ch);
 

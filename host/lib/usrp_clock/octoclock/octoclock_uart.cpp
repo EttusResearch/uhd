@@ -100,6 +100,7 @@ namespace uhd{
 
             for(char ch = _getchar(); ch != 0; ch = _getchar()){
                 if(ch == '\r') continue; //Skip carriage returns
+                if(ch == '\n' and _rxbuff.empty()) continue; //Skip empty lines
                 _rxbuff += ch;
 
                 //If newline found, return string

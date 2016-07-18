@@ -32,7 +32,7 @@ struct b200_uart_impl : b200_uart
         _xport(xport),
         _sid(sid),
         _count(0),
-        _char_queue(4096)
+        _line_queue(4096)
     {
         //this default baud divider is over 9000
         this->set_baud_divider(9001);
@@ -77,13 +77,7 @@ struct b200_uart_impl : b200_uart
     std::string read_uart(double timeout)
     {
         std::string line;
-        char ch = '\0';
-        while (_char_queue.pop_with_timed_wait(ch, timeout))
-        {
-            if (ch == '\r') continue;
-            line += std::string(&ch, 1);
-            if (ch == '\n') return line;
-        }
+        _line_queue.pop_with_timed_wait(line, timeout);
         return line;
     }
 
@@ -95,7 +89,15 @@ struct b200_uart_impl : b200_uart
         packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
         vrt::if_hdr_unpack_le(packet_buff, packet_info);
         const char ch = char(uhd::wtohx(packet_buff[packet_info.num_header_words32+1]));
-        _char_queue.push_with_pop_on_full(ch);
+        if (ch != '\r')
+            _line += ch;
+        if (ch == '\n')
+        {
+            // Don't store empty strings
+            if (_line.length() > 1)
+                _line_queue.push_with_pop_on_full(_line);
+            _line.clear();
+        }
     }
 
     void set_baud_divider(const double baud_div)
@@ -107,7 +109,8 @@ struct b200_uart_impl : b200_uart
     const boost::uint32_t _sid;
     size_t _count;
     size_t _baud_div;
-    bounded_buffer<char> _char_queue;
+    bounded_buffer<std::string> _line_queue;
+    std::string _line;
 };
 
 

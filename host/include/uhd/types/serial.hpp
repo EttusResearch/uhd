@@ -124,7 +124,7 @@ namespace uhd{
          */
         spi_config_t(edge_t edge = EDGE_RISE);
     };
-    
+
     /*!
      * The SPI interface class.
      * Provides routines to transact SPI and do other useful things which haven't been defined yet.
@@ -151,12 +151,12 @@ namespace uhd{
             size_t num_bits,
             bool readback
         ) = 0;
-        
+
         /*!
         * Read from the SPI bus.
         * \param which_slave the slave device number
         * \param config spi config args
-        * \param data the bits to write out (be sure to set write bit) 
+        * \param data the bits to write out (be sure to set write bit)
         * \param num_bits how many bits in data
         * \return spi data
         */
@@ -166,7 +166,7 @@ namespace uhd{
             boost::uint32_t data,
             size_t num_bits
         );
-        
+
         /*!
         * Write to the SPI bus.
         * \param which_slave the slave device number
@@ -183,7 +183,7 @@ namespace uhd{
     };
 
     /*!
-     * UART interface to write and read bytes.
+     * UART interface to write and read strings.
      */
     class UHD_API uart_iface{
     public:
@@ -198,10 +198,9 @@ namespace uhd{
         virtual void write_uart(const std::string &buf) = 0;
 
         /*!
-         * Read from a serial port.
-         * Reads until complete line or timeout.
+         * Read a line from a serial port.
          * \param timeout the timeout in seconds
-         * \return the data read from the serial port
+         * \return the line or empty string upon timeout
          */
         virtual std::string read_uart(double timeout) = 0;
     };
