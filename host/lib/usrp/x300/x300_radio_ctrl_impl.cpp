@@ -122,6 +122,11 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     const size_t default_spp = (_tree->access<size_t>("mtu/recv").get() - max_bytes_header)
                                / (2 * sizeof(int16_t));
     _tree->access<int>(get_arg_path("spp") / "value").set(default_spp);
+
+    ////////////////////////////////////////////////////////////////
+    // Set tick rate
+    ////////////////////////////////////////////////////////////////
+    set_rate(_radio_clk_rate);
 }
 
 x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
