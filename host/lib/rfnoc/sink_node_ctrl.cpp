@@ -33,10 +33,11 @@ size_t sink_node_ctrl::connect_upstream(
     return port;
 }
 
-void sink_node_ctrl::set_tx_streamer(bool active, const size_t /* port */)
+void sink_node_ctrl::set_tx_streamer(bool active, const size_t port)
 {
-    UHD_MSG(status) << "[" << unique_id() << "] sink_node_ctrl::set_tx_streamer() " << active << std::endl;
+    UHD_MSG(status) << "[" << unique_id() << "] sink_node_ctrl::set_tx_streamer() " << active << " " << port << std::endl;
 
+    /* Enable all downstream connections:
     BOOST_FOREACH(const node_ctrl_base::node_map_pair_t downstream_node, list_downstream_nodes()) {
         sptr curr_downstream_block_ctrl =
             boost::dynamic_pointer_cast<sink_node_ctrl>(downstream_node.second.lock());
@@ -47,6 +48,21 @@ void sink_node_ctrl::set_tx_streamer(bool active, const size_t /* port */)
             );
         }
     }
+    */
+
+    // Only enable 1:1
+    if (list_downstream_nodes().count(port)) {
+        sink_node_ctrl::sptr this_downstream_block_ctrl =
+            boost::dynamic_pointer_cast<sink_node_ctrl>(list_downstream_nodes().at(port).lock());
+        if (this_downstream_block_ctrl) {
+            this_downstream_block_ctrl->set_tx_streamer(
+                    active,
+                    get_downstream_port(port)
+            );
+        }
+    }
+
+    _tx_streamer_active[port] = active;
 }
 
 size_t sink_node_ctrl::_request_input_port(
