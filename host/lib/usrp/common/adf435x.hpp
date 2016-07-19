@@ -40,11 +40,15 @@ public:
 
     virtual ~adf435x_iface() = 0;
 
+    enum output_t { RF_OUTPUT_A, RF_OUTPUT_B };
+
     enum prescaler_t { PRESCALER_4_5, PRESCALER_8_9 };
 
     enum feedback_sel_t { FB_SEL_FUNDAMENTAL, FB_SEL_DIVIDED };
 
     enum output_power_t { OUTPUT_POWER_M4DBM, OUTPUT_POWER_M1DBM, OUTPUT_POWER_2DBM, OUTPUT_POWER_5DBM };
+
+    enum muxout_t { MUXOUT_3STATE, MUXOUT_DVDD, MUXOUT_DGND, MUXOUT_RDIV, MUXOUT_NDIV, MUXOUT_ALD, MUXOUT_DLD };
 
     virtual void set_reference_freq(double fref) = 0;
 
@@ -53,6 +57,10 @@ public:
     virtual void set_feedback_select(feedback_sel_t fb_sel) = 0;
 
     virtual void set_output_power(output_power_t power) = 0;
+
+    virtual void set_output_enable(output_t output, bool enable) = 0;
+
+    virtual void set_muxout_mode(muxout_t mode) = 0;
 
     virtual uhd::range_t get_int_range() = 0;
 
@@ -103,6 +111,32 @@ public:
             case OUTPUT_POWER_M1DBM: _regs.output_power = adf435x_regs_t::OUTPUT_POWER_M1DBM; break;
             case OUTPUT_POWER_2DBM:  _regs.output_power = adf435x_regs_t::OUTPUT_POWER_2DBM; break;
             case OUTPUT_POWER_5DBM:  _regs.output_power = adf435x_regs_t::OUTPUT_POWER_5DBM; break;
+            default: UHD_THROW_INVALID_CODE_PATH();
+        }
+    }
+
+    void set_output_enable(output_t output, bool enable)
+    {
+        switch (output) {
+            case RF_OUTPUT_A: _regs.rf_output_enable = enable ? adf435x_regs_t::RF_OUTPUT_ENABLE_ENABLED:
+                                                               adf435x_regs_t::RF_OUTPUT_ENABLE_DISABLED;
+                              break;
+            case RF_OUTPUT_B: _regs.aux_output_enable = enable ? adf435x_regs_t::AUX_OUTPUT_ENABLE_ENABLED:
+                                                                 adf435x_regs_t::AUX_OUTPUT_ENABLE_DISABLED;
+                              break;
+        }
+    }
+
+    void set_muxout_mode(muxout_t mode)
+    {
+        switch (mode) {
+            case MUXOUT_3STATE: _regs.muxout = adf435x_regs_t::MUXOUT_3STATE; break;
+            case MUXOUT_DVDD:   _regs.muxout = adf435x_regs_t::MUXOUT_DVDD; break;
+            case MUXOUT_DGND:   _regs.muxout = adf435x_regs_t::MUXOUT_DGND; break;
+            case MUXOUT_RDIV:   _regs.muxout = adf435x_regs_t::MUXOUT_RDIV; break;
+            case MUXOUT_NDIV:   _regs.muxout = adf435x_regs_t::MUXOUT_NDIV; break;
+            case MUXOUT_ALD:    _regs.muxout = adf435x_regs_t::MUXOUT_ANALOG_LD; break;
+            case MUXOUT_DLD:    _regs.muxout = adf435x_regs_t::MUXOUT_DLD; break;
             default: UHD_THROW_INVALID_CODE_PATH();
         }
     }
