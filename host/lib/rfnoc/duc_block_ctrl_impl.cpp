@@ -69,8 +69,8 @@ public:
             const uhd::fs_path dsp_base_path = _root_path / "legacy_api" / chan;
             // Legacy properties
             _tree->create<double>(dsp_base_path / "rate/value")
-                .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan), _1))
-                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan)))
+                .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("input_rate/value", chan), _1))
+                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("input_rate/value", chan)))
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "rate/range")
                 .set_publisher(boost::bind(&duc_block_ctrl_impl::get_input_rates, this))
@@ -88,22 +88,33 @@ public:
             sr_write("M", 1, chan);
             sr_write("CONFIG", 1, chan); // Enable clear EOB
         }
-        UHD_HERE();
     } // end ctor
     virtual ~duc_block_ctrl_impl() {};
 
     double get_input_scale_factor(size_t port=ANY_PORT)
     {
-        return get_arg<double>("scalar_correction", port == ANY_PORT ? 0 : port);
+        port = (port == ANY_PORT) ? 0 : port;
+        if (not (_tx_streamer_active.count(port) and _tx_streamer_active.at(port))) {
+            return SCALE_UNDEFINED;
+        }
+        return get_arg<double>("scalar_correction", port);
     }
 
     double get_input_samp_rate(size_t port=ANY_PORT)
     {
-        return get_arg<double>("input_rate", port == ANY_PORT ? 0 : port);
+        port = (port == ANY_PORT) ? 0 : port;
+        if (not (_tx_streamer_active.count(port) and _tx_streamer_active.at(port))) {
+            return RATE_UNDEFINED;
+        }
+        return get_arg<double>("input_rate", port);
     }
 
     double get_output_samp_rate(size_t port=ANY_PORT)
     {
+        port = (port == ANY_PORT) ? 0 : port;
+        if (not (_tx_streamer_active.count(port) and _tx_streamer_active.at(port))) {
+            return RATE_UNDEFINED;
+        }
         return get_arg<double>("output_rate", port == ANY_PORT ? 0 : port);
     }
 
@@ -112,7 +123,6 @@ public:
             const size_t chan
     ) {
         UHD_RFNOC_BLOCK_TRACE() << "duc_block_ctrl_base::issue_stream_cmd()" << std::endl;
-        UHD_HERE();
 
         uhd::stream_cmd_t stream_cmd = stream_cmd_;
         if (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE or
@@ -172,7 +182,7 @@ private:
 
     double set_input_rate(const int requested_rate, const size_t chan)
     {
-        const double output_rate = get_arg<double>("output_rate");
+        const double output_rate = get_arg<double>("output_rate", chan);
         const size_t interp_rate = boost::math::iround(output_rate/get_input_rates().clip(requested_rate, true));
         size_t interp = interp_rate;
 
@@ -228,12 +238,10 @@ private:
     //! Set frequency and interpolation again
     void set_output_rate(const double /* rate */, const size_t chan)
     {
-        UHD_HERE();
         const double desired_freq = _tree->access<double>(get_arg_path("freq", chan) / "value").get_desired();
         set_arg<double>("freq", desired_freq, chan);
         const double desired_input_rate = _tree->access<double>(get_arg_path("input_rate", chan) / "value").get_desired();
         set_arg<double>("input_rate", desired_input_rate, chan);
-        UHD_HERE();
     }
 
     // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
