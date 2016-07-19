@@ -160,11 +160,11 @@ protected: // TODO see what's protected and what's private
     inline bool _is_streamer_active(uhd::direction_t dir, const size_t chan) const {
         switch (dir) {
         case uhd::TX_DIRECTION:
-            return _tx_streamers_active.at(chan);
+            return _tx_streamer_active.at(chan);
         case uhd::RX_DIRECTION:
-            return _rx_streamers_active.at(chan);
+            return _rx_streamer_active.at(chan);
         case uhd::DX_DIRECTION:
-            return _rx_streamers_active.at(chan) and _tx_streamers_active.at(chan);
+            return _rx_streamer_active.at(chan) and _tx_streamer_active.at(chan);
         default:
             return false;
         }
@@ -199,9 +199,6 @@ private:
     std::map<size_t, double> _rx_freq;
     std::map<size_t, double> _tx_gain;
     std::map<size_t, double> _rx_gain;
-
-    std::map<size_t, bool> _rx_streamers_active;
-    std::map<size_t, bool> _tx_streamers_active;
 
     std::vector<bool> _continuous_streaming;
 }; /* class radio_ctrl_impl */

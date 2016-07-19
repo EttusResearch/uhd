@@ -44,10 +44,10 @@ radio_ctrl_impl::radio_ctrl_impl() :
     _continuous_streaming = std::vector<bool>(2, false);
 
     for (size_t i = 0; i < _num_rx_channels; i++) {
-        _rx_streamers_active[i] = false;
+        _rx_streamer_active[i] = false;
     }
     for (size_t i = 0; i < _num_tx_channels; i++) {
-        _tx_streamers_active[i] = false;
+        _tx_streamer_active[i] = false;
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -279,7 +279,7 @@ std::vector<size_t> radio_ctrl_impl::get_active_rx_ports()
 {
     std::vector<size_t> active_rx_ports;
     typedef std::map<size_t, bool> map_t;
-    BOOST_FOREACH(map_t::value_type &m, _rx_streamers_active) {
+    BOOST_FOREACH(map_t::value_type &m, _rx_streamer_active) {
         if (m.second) {
             active_rx_ports.push_back(m.first);
         }
@@ -299,7 +299,7 @@ void radio_ctrl_impl::set_rx_streamer(bool active, const size_t port)
             % unique_id() % port
         ));
     }
-    _rx_streamers_active[port] = active;
+    _rx_streamer_active[port] = active;
     if (not check_radio_config()) {
         throw std::runtime_error(str(
             boost::format("[%s]: Invalid radio configuration.")
@@ -317,7 +317,7 @@ void radio_ctrl_impl::set_tx_streamer(bool active, const size_t port)
             % unique_id() % port
         ));
     }
-    _tx_streamers_active[port] = active;
+    _tx_streamer_active[port] = active;
     if (not check_radio_config()) {
         throw std::runtime_error(str(
             boost::format("[%s]: Invalid radio configuration.")
