@@ -177,7 +177,7 @@ public:
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args_)
     {
         uhd::stream_args_t args(args_);
-        _update_stream_args_for_streaming(args, _rx_channel_map, DDC_BLOCK_NAME);
+        _update_stream_args_for_streaming<uhd::RX_DIRECTION>(args, _rx_channel_map);
         UHD_MSG(status) << "[legacy_compat] rx stream args: " << args.args.to_string() << std::endl;
         return _device->get_rx_stream(args);
     }
@@ -187,7 +187,7 @@ public:
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args_)
     {
         uhd::stream_args_t args(args_);
-        _update_stream_args_for_streaming(args, _tx_channel_map, DUC_BLOCK_NAME);
+        _update_stream_args_for_streaming<uhd::TX_DIRECTION>(args, _tx_channel_map);
         UHD_MSG(status) << "[legacy_compat] tx stream args: " << args.args.to_string() << std::endl;
         return _device->get_tx_stream(args);
     }
@@ -241,10 +241,10 @@ private: // methods
         return _device->get_block_ctrl<block_type>(block_id);
     }
 
+    template <uhd::direction_t dir>
     void _update_stream_args_for_streaming(
             uhd::stream_args_t &args,
-            chan_map_t &chan_map,
-            const std::string &dsp_block_name
+            chan_map_t &chan_map
     ) {
         const size_t args_spp = args.args.cast<size_t>("spp", _spp);
         if (args.args.has_key("spp") and args_spp != _spp) {
@@ -265,14 +265,40 @@ private: // methods
         for (size_t i = 0; i < args.channels.size(); i++) {
             UHD_ASSERT_THROW(mboard_idx < chan_map.size());
             const size_t &radio_index = chan_map[mboard_idx][chan_idx].radio_index;
-            const size_t &port_index = chan_map[mboard_idx][chan_idx].port_index;
-            block_id_t block_id(mboard_idx, _has_ddcs ? dsp_block_name : RADIO_BLOCK_NAME, radio_index);
-            args.args[str(boost::format("block_id%d") % i)] = block_id.to_string();
+            size_t port_index = chan_map[mboard_idx][chan_idx].port_index;
+            const std::string block_name = _get_streamer_block_id_and_port<dir>(mboard_idx, radio_index, port_index);
+            args.args[str(boost::format("block_id%d") % i)] = block_name;
             args.args[str(boost::format("block_port%d") % i)] = str(boost::format("%d") % port_index);
             chan_idx++;
             if (chan_idx > chan_map[mboard_idx].size()) {
                 chan_idx = 0;
                 mboard_idx++;
+            }
+        }
+    }
+
+    template <uhd::direction_t dir>
+    std::string _get_streamer_block_id_and_port(
+            const size_t mboard_idx,
+            const size_t radio_index,
+            size_t &port_index
+    ) {
+        if (dir == uhd::TX_DIRECTION) {
+            if (_has_dmafifo) {
+                port_index = radio_index;
+                return block_id_t(mboard_idx, DFIFO_BLOCK_NAME, 0).to_string();
+            } else {
+                if (_has_ducs) {
+                    return block_id_t(mboard_idx, DUC_BLOCK_NAME, radio_index).to_string();
+                } else {
+                    return block_id_t(mboard_idx, RADIO_BLOCK_NAME, radio_index).to_string();
+                }
+            }
+        } else {
+            if (_has_ddcs) {
+                return block_id_t(mboard_idx, DDC_BLOCK_NAME, radio_index).to_string();
+            } else {
+                return block_id_t(mboard_idx, RADIO_BLOCK_NAME, radio_index).to_string();
             }
         }
     }
