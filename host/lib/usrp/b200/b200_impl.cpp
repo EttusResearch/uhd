@@ -627,7 +627,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
             boost::bind(
                 &b200_radio_ctrl_core::poke32, perif.ctrl, TOREG(SR_CODEC_IDLE), _1
             ),
-            boost::bind(&b200_radio_ctrl_core::peek32, perif.ctrl, RB64_CODEC_READBACK)
+            boost::bind(&b200_radio_ctrl_core::peek64, perif.ctrl, RB64_CODEC_READBACK)
         );
     }
 
