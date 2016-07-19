@@ -85,10 +85,12 @@ void benchmark_rx_rate(
     const float burst_pkt_time = std::max(0.100, (2 * max_samps_per_packet/rate));
     float recv_timeout = burst_pkt_time + INIT_DELAY;
 
+    bool stop_called = false;
     while (true) {
-        //if (burst_timer_elapsed.load(boost::memory_order_relaxed)) {
-        if (burst_timer_elapsed) {
+        //if (burst_timer_elapsed.load(boost::memory_order_relaxed) and not stop_called) {
+        if (burst_timer_elapsed and not stop_called) {
             rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+            stop_called = true;
         }
         if (random_nsamps) {
             cmd.num_samps = rand() % max_samps_per_packet;
@@ -110,6 +112,10 @@ void benchmark_rx_rate(
             if (had_an_overflow){
                 had_an_overflow = false;
                 num_dropped_samps += (md.time_spec - last_time).to_ticks(rate);
+            }
+            if ((burst_timer_elapsed or stop_called) and md.end_of_burst)
+            {
+                return;
             }
             break;
 
