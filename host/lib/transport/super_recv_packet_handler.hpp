@@ -273,7 +273,7 @@ public:
             buffs, nsamps_per_buff, metadata, timeout
         );
 
-        if (one_packet){
+        if (one_packet or metadata.end_of_burst){
 #ifdef UHD_TXRX_DEBUG_PRINTS
             dbg_gather_data(nsamps_per_buff, accum_num_samps, metadata, timeout, one_packet);
 #endif
@@ -295,7 +295,13 @@ public:
                 _queue_error_for_next_call = true;
                 break;
             }
+
             accum_num_samps += num_samps;
+
+            //return immediately if end of burst
+            if (_queue_metadata.end_of_burst) {
+                break;
+            }
         }
 #ifdef UHD_TXRX_DEBUG_PRINTS
 		dbg_gather_data(nsamps_per_buff, accum_num_samps, metadata, timeout, one_packet);
@@ -629,7 +635,9 @@ private:
 
             case PACKET_TIMEOUT_ERROR:
                 std::swap(curr_info, next_info); //save progress from curr -> next
-                _props[index].handle_flowctrl(next_info[index].ifpi.packet_count);
+                if(_props[index].handle_flowctrl) {
+                    _props[index].handle_flowctrl(next_info[index].ifpi.packet_count);
+                }
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_TIMEOUT;
                 return;
 
