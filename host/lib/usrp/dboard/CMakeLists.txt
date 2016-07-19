@@ -39,5 +39,9 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/db_dbsrx2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_tvrx2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/db_e3x0.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/twinrx/twinrx_ctrl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/twinrx/twinrx_experts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/twinrx/twinrx_gain_tables.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/db_twinrx.cpp
 )
 
