@@ -113,6 +113,10 @@ void benchmark_rx_rate(
                 had_an_overflow = false;
                 num_dropped_samps += (md.time_spec - last_time).to_ticks(rate);
             }
+            if ((burst_timer_elapsed or stop_called) and md.end_of_burst)
+            {
+                return;
+            }
             break;
 
         // ERROR_CODE_OVERFLOW can indicate overflow or sequence error
