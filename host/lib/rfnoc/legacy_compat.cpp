@@ -259,6 +259,9 @@ private: // methods
         }
         size_t mboard_idx = 0;
         size_t chan_idx = 0;
+        if (args.channels.empty()) {
+            args.channels = std::vector<size_t>(1, 0);
+        }
         for (size_t i = 0; i < args.channels.size(); i++) {
             UHD_ASSERT_THROW(mboard_idx < chan_map.size());
             const size_t &radio_index = chan_map[mboard_idx][chan_idx].radio_index;
