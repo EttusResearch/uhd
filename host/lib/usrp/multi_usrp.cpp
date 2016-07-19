@@ -39,6 +39,7 @@ using namespace uhd;
 using namespace uhd::usrp;
 
 const std::string multi_usrp::ALL_GAINS = "";
+const std::string multi_usrp::ALL_LOS = "all";
 
 UHD_INLINE std::string string_vector_to_string(std::vector<std::string> values, std::string delimiter = std::string(" "))
 {
@@ -830,6 +831,166 @@ public:
 
     freq_range_t get_fe_rx_freq_range(size_t chan){
         return _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "freq" / "range").get();
+    }
+
+    std::vector<std::string> get_rx_lo_names(size_t chan = 0){
+        std::vector<std::string> lo_names;
+        if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+            BOOST_FOREACH(const std::string &name, _tree->list(rx_rf_fe_root(chan) / "los")) {
+                lo_names.push_back(name);
+            }
+        }
+        return lo_names;
+    }
+
+    void set_rx_lo_source(const std::string &src, const std::string &name = ALL_LOS, size_t chan = 0){
+        if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+            if (name == ALL_LOS) {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los" / ALL_LOS)) {
+                    //Special value ALL_LOS support atomically sets the source for all LOs
+                    _tree->access<std::string>(rx_rf_fe_root(chan) / "los" / ALL_LOS / "source" / "value").set(src);
+                } else {
+                    BOOST_FOREACH(const std::string &n, _tree->list(rx_rf_fe_root(chan) / "los")) {
+                        this->set_rx_lo_source(src, n, chan);
+                    }
+                }
+            } else {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+                    _tree->access<std::string>(rx_rf_fe_root(chan) / "los" / name / "source" / "value").set(src);
+                } else {
+                    throw uhd::runtime_error("Could not find LO stage " + name);
+                }
+            }
+        } else {
+            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+        }
+    }
+
+    const std::string get_rx_lo_source(const std::string &name = ALL_LOS, size_t chan = 0){
+        if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+            if (name == ALL_LOS) {
+                    //Special value ALL_LOS support atomically sets the source for all LOs
+                return _tree->access<std::string>(rx_rf_fe_root(chan) / "los" / ALL_LOS / "source" / "value").get();
+            } else {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+                    return _tree->access<std::string>(rx_rf_fe_root(chan) / "los" / name / "source" / "value").get();
+                } else {
+                    throw uhd::runtime_error("Could not find LO stage " + name);
+                }
+            }
+        } else {
+            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+        }
+    }
+
+    std::vector<std::string> get_rx_lo_sources(const std::string &name = ALL_LOS, size_t chan = 0) {
+        if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+            if (name == ALL_LOS) {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los" / ALL_LOS)) {
+                    //Special value ALL_LOS support atomically sets the source for all LOs
+                    return _tree->access< std::vector<std::string> >(rx_rf_fe_root(chan) / "los" / ALL_LOS / "source" / "options").get();
+                } else {
+                    return std::vector<std::string>();
+                }
+            } else {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+                    return _tree->access< std::vector<std::string> >(rx_rf_fe_root(chan) / "los" / name / "source" / "options").get();
+                } else {
+                    throw uhd::runtime_error("Could not find LO stage " + name);
+                }
+            }
+        } else {
+            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+        }
+    }
+
+    void set_rx_lo_export_enabled(bool enabled, const std::string &name = ALL_LOS, size_t chan = 0){
+        if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+            if (name == ALL_LOS) {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los" / ALL_LOS)) {
+                    //Special value ALL_LOS support atomically sets the source for all LOs
+                    _tree->access<bool>(rx_rf_fe_root(chan) / "los" / ALL_LOS / "export").set(enabled);
+                } else {
+                    BOOST_FOREACH(const std::string &n, _tree->list(rx_rf_fe_root(chan) / "los")) {
+                        this->set_rx_lo_export_enabled(enabled, n, chan);
+                    }
+                }
+            } else {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+                    _tree->access<bool>(rx_rf_fe_root(chan) / "los" / name / "export").set(enabled);
+                } else {
+                    throw uhd::runtime_error("Could not find LO stage " + name);
+                }
+            }
+        } else {
+            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+        }
+    }
+
+    bool get_rx_lo_export_enabled(const std::string &name = ALL_LOS, size_t chan = 0){
+        if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+            if (name == ALL_LOS) {
+                    //Special value ALL_LOS support atomically sets the source for all LOs
+                return _tree->access<bool>(rx_rf_fe_root(chan) / "los" / ALL_LOS / "export").get();
+            } else {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+                    return _tree->access<bool>(rx_rf_fe_root(chan) / "los" / name / "export").get();
+                } else {
+                    throw uhd::runtime_error("Could not find LO stage " + name);
+                }
+            }
+        } else {
+            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+        }
+    }
+
+    double set_rx_lo_freq(double freq, const std::string &name = ALL_LOS, size_t chan = 0){
+        if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+            if (name == ALL_LOS) {
+                throw uhd::runtime_error("LO frequency must be set for each stage individually");
+            } else {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+                    _tree->access<double>(rx_rf_fe_root(chan) / "los" / name / "freq" / "value").set(freq);
+                    return _tree->access<double>(rx_rf_fe_root(chan) / "los" / name / "freq" / "value").get();
+                } else {
+                    throw uhd::runtime_error("Could not find LO stage " + name);
+                }
+            }
+        } else {
+            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+        }
+    }
+
+    double get_rx_lo_freq(const std::string &name = ALL_LOS, size_t chan = 0){
+        if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+            if (name == ALL_LOS) {
+                throw uhd::runtime_error("LO frequency must be retrieved for each stage individually");
+            } else {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+                    return _tree->access<double>(rx_rf_fe_root(chan) / "los" / name / "freq" / "value").get();
+                } else {
+                    throw uhd::runtime_error("Could not find LO stage " + name);
+                }
+            }
+        } else {
+            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+        }
+    }
+
+    freq_range_t get_rx_lo_freq_range(const std::string &name = ALL_LOS, size_t chan = 0){
+        if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+            if (name == ALL_LOS) {
+                throw uhd::runtime_error("LO frequency range must be retrieved for each stage individually");
+            } else {
+                if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
+                    return _tree->access<freq_range_t>(rx_rf_fe_root(chan) / "los" / name / "freq" / "range").get();
+                } else {
+                    throw uhd::runtime_error("Could not find LO stage " + name);
+                }
+            }
+        } else {
+            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+        }
     }
 
     void set_rx_gain(double gain, const std::string &name, size_t chan){
