@@ -66,8 +66,7 @@ public:
             ;
 
             // Legacy properties (for backward compat w/ multi_usrp)
-            const size_t legacy_dsp_base_index = get_block_id().get_block_count() * 2; // 2 == num chans
-            const uhd::fs_path dsp_base_path = uhd::fs_path("tx_dsps") / (legacy_dsp_base_index + chan);
+            const uhd::fs_path dsp_base_path = _root_path / "legacy_api" / chan;
             // Legacy properties
             _tree->create<double>(dsp_base_path / "rate/value")
                 .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan), _1))
@@ -194,7 +193,7 @@ private:
         // What we can't cover with halfbands, we do with the CIC
         sr_write("INTERP_WORD", hb_enable_word | (interp & 0xff));
 
-	// Rate change = M/N
+        // Rate change = M/N
         sr_write("N", 1, chan);
         sr_write("M", std::pow(2.0, double(hb_enable)) * (interp & 0xff), chan);
 
