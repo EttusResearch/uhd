@@ -414,7 +414,8 @@ private: // methods
                     if (_has_ducs) {
                         _graph->connect(
                             block_id_t(mboard, DUC_BLOCK_NAME,   radio), chan,
-                            block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan
+                            block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
+                            _spp
                         );
                         if (_has_dmafifo) {
                             // We have DMA FIFO *and* DUCs
