@@ -1,5 +1,5 @@
 //
-// Copyright 2014-2015 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -46,7 +46,8 @@ void octoclock_eeprom_t::_load(){
     const octoclock_fw_eeprom_t *eeprom_in = reinterpret_cast<const octoclock_fw_eeprom_t*>(pkt_in->data);
 
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+    // To avoid replicating sequence numbers between sessions
+    pkt_out.sequence = boost::uint32_t(std::rand());
     size_t len = 0;
 
     UHD_OCTOCLOCK_SEND_AND_RECV(xport, SEND_EEPROM_CMD, pkt_out, len, octoclock_data);
@@ -94,7 +95,8 @@ void octoclock_eeprom_t::_store() const {
     const octoclock_packet_t *pkt_in = reinterpret_cast<const octoclock_packet_t *>(octoclock_data);
 
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+    // To avoid replicating sequence numbers between sessions
+    pkt_out.sequence = boost::uint32_t(std::rand());
     pkt_out.len = sizeof(octoclock_fw_eeprom_t);
     size_t len = 0;
 

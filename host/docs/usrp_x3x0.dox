@@ -17,7 +17,7 @@ More information:
 	- External PPS input & output
 	- External 10 MHz input & output
 	- Expandable via 2nd SFP+ interface
-	- Supported master clock rates: 200 MHz, 184.32 MHz, 120 MHz
+	- Supported master clock rates: 200 MHz and 184.32 MHz
 	- External GPIO Connector with UHD API control
 	- External USB Connection for built-in JTAG debugger
 	- Internal GPSDO option
@@ -546,6 +546,18 @@ Use Wireshark to monitor packets sent to and received from the device.
 When there is network traffic arriving at the Ethernet port, LEDs will light up.
 You can use this to make sure the network connection is correctly set up, e.g.
 by pinging the USRP and making sure the LEDs start to blink.
+
+\section x3x0_usage_problems Usage Problems
+
+\subsection x3x0_corrupt_eeprom Corrupt EEPROM
+
+This is a rare bug in which the X-Series device's on-board EEPROM becomes corrupt and reports an incorrect
+firmware and FPGA version. In this situation, UHD cannot properly use the device. To fix this bug, use
+the **usrp_burn_mb_eeprom** utility as follows:
+
+    usrp_burn_mb_eeprom --args="type=x300,recover_mb_eeprom,disable_adc_self_test" --values="revision=(NUM HERE)"
+
+Afterward, power-cycle your X-Series device for the changes to take effect.
 
 \section x3x0_hw_notes Hardware Notes
 

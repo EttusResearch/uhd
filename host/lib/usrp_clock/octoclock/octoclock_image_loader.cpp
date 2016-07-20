@@ -1,5 +1,5 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,9 +59,11 @@ typedef struct {
     std::string                 image_filepath;
     boost::uint16_t             crc;
     boost::uint16_t             num_blocks;
+    boost::uint32_t             sequence;
     udp_simple::sptr            ctrl_xport;
     udp_simple::sptr            fw_xport;
     boost::uint8_t              data_in[udp_simple::mtu];
+    boost::uint32_t             starting_firmware_version;
     std::vector<boost::uint8_t> image;
 } octoclock_session_t;
 
@@ -169,6 +171,19 @@ static void octoclock_setup_session(octoclock_session_t &session,
                                                     BOOST_STRINGIZE(OCTOCLOCK_UDP_CTRL_PORT));
     session.fw_xport   = udp_simple::make_connected(session.dev_addr["addr"],
                                                     BOOST_STRINGIZE(OCTOCLOCK_UDP_FW_PORT));
+    // To avoid replicating sequence numbers between sessions
+    session.sequence   = boost::uint32_t(std::rand());
+
+    // Query OctoClock again to get compat number
+    octoclock_packet_t pkt_out;
+    const octoclock_packet_t* pkt_in = reinterpret_cast<const octoclock_packet_t*>(session.data_in);
+    size_t len = 0;
+    UHD_OCTOCLOCK_SEND_AND_RECV(session.ctrl_xport, OCTOCLOCK_QUERY_CMD, pkt_out, len, session.data_in);
+    if(UHD_OCTOCLOCK_PACKET_MATCHES(OCTOCLOCK_QUERY_ACK, pkt_out, pkt_in, len)){
+        session.starting_firmware_version = uhd::htonx<boost::uint32_t>(pkt_in->proto_ver);
+    } else {
+        throw uhd::runtime_error("Failed to communicate with OctoClock.");
+    }
 }
 
 static void octoclock_reset_into_bootloader(octoclock_session_t &session){
@@ -177,15 +192,18 @@ static void octoclock_reset_into_bootloader(octoclock_session_t &session){
     if(session.dev_addr["type"] == "octoclock-bootloader")
         return;
 
+    // Force compat num to device's current, works around old firmware bug
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
-    const octoclock_packet_t* pkt_in = reinterpret_cast<const octoclock_packet_t*>(session.data_in);
-    size_t len;
+    pkt_out.sequence = uhd::htonx<boost::uint32_t>(++session.sequence);
+    pkt_out.proto_ver = uhd::htonx<boost::uint32_t>(session.starting_firmware_version);
+    pkt_out.code = RESET_CMD;
 
     std::cout << " -- Resetting into bootloader..." << std::flush;
-    UHD_OCTOCLOCK_SEND_AND_RECV(session.ctrl_xport, RESET_CMD, pkt_out, len, session.data_in);
-    if(UHD_OCTOCLOCK_PACKET_MATCHES(RESET_ACK, pkt_out, pkt_in, len)){
+    session.ctrl_xport->send(boost::asio::buffer(&pkt_out, sizeof(octoclock_packet_t))); \
+    size_t len = session.ctrl_xport->recv(boost::asio::buffer(session.data_in), 2);\
+    const octoclock_packet_t* pkt_in = reinterpret_cast<const octoclock_packet_t*>(session.data_in);
 
+    if(UHD_OCTOCLOCK_PACKET_MATCHES(RESET_ACK, pkt_out, pkt_in, len)){
         // Make sure this device is now in its bootloader
         boost::this_thread::sleep(boost::posix_time::milliseconds(500));
         uhd::device_addrs_t octoclocks = uhd::device::find(
@@ -217,7 +235,7 @@ static void octoclock_burn(octoclock_session_t &session){
     octoclock_reset_into_bootloader(session);
 
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = htonx<boost::uint32_t>(std::rand());
+    pkt_out.sequence = uhd::htonx<boost::uint32_t>(++session.sequence);
     const octoclock_packet_t* pkt_in = reinterpret_cast<const octoclock_packet_t*>(session.data_in);
 
     // Tell OctoClock to prepare for burn
@@ -237,7 +255,7 @@ static void octoclock_burn(octoclock_session_t &session){
 
     // Start burning
     for(size_t i = 0; i < session.num_blocks; i++){
-        pkt_out.sequence++;
+        pkt_out.sequence = uhd::htonx<boost::uint32_t>(++session.sequence);
         pkt_out.addr = i * OCTOCLOCK_BLOCK_SIZE;
 
         std::cout << str(boost::format("\r -- Loading firmware: %d%% (%d/%d blocks)")
@@ -260,16 +278,16 @@ static void octoclock_burn(octoclock_session_t &session){
 }
 
 static void octoclock_verify(octoclock_session_t &session){
-    
+
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = htonx<boost::uint32_t>(std::rand());
+    pkt_out.sequence = uhd::htonx<boost::uint32_t>(++session.sequence);
     const octoclock_packet_t* pkt_in = reinterpret_cast<const octoclock_packet_t*>(session.data_in);
     size_t len = 0;
 
     boost::uint8_t image_part[OCTOCLOCK_BLOCK_SIZE];
     boost::uint16_t cmp_len = 0;
     for(size_t i = 0; i < session.num_blocks; i++){
-        pkt_out.sequence++;
+        pkt_out.sequence = uhd::htonx<boost::uint32_t>(++session.sequence);
         pkt_out.addr = i * OCTOCLOCK_BLOCK_SIZE;
 
         std::cout << str(boost::format("\r -- Verifying firmware load: %d%% (%d/%d blocks)")
@@ -302,7 +320,7 @@ static void octoclock_verify(octoclock_session_t &session){
 static void octoclock_finalize(octoclock_session_t &session){
 
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = htonx<boost::uint32_t>(std::rand());
+    pkt_out.sequence = uhd::htonx<boost::uint32_t>(++session.sequence);
     const octoclock_packet_t* pkt_in = reinterpret_cast<const octoclock_packet_t*>(session.data_in);
     size_t len = 0;
 

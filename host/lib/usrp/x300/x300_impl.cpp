@@ -66,12 +66,25 @@ static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
     //Possible options:
     //1G  = {0:1G, 1:1G} w/ DRAM, HG  = {0:1G, 1:10G} w/ DRAM, XG  = {0:10G, 1:10G} w/ DRAM
     //1GS = {0:1G, 1:1G} w/ SRAM, HGS = {0:1G, 1:10G} w/ SRAM, XGS = {0:10G, 1:10G} w/ SRAM
+    //HA  = {0:1G, 1:Aurora} w/ DRAM, XA  = {0:10G, 1:Aurora} w/ DRAM
 
     std::string option;
-    bool eth0XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE0)) == 0x1);
-    bool eth1XG = (zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_ETH_TYPE1)) == 0x1);
-    option = (eth0XG && eth1XG) ? "XG" : (eth1XG ? "HG" : "1G");
+    uint32_t sfp0_type = zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_SFP0_TYPE));
+    uint32_t sfp1_type = zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_SFP1_TYPE));
 
+    if (sfp0_type == RB_SFP_1G_ETH  and sfp1_type == RB_SFP_1G_ETH) {
+        option = "1G";
+    } else if (sfp0_type == RB_SFP_1G_ETH  and sfp1_type == RB_SFP_10G_ETH) {
+        option = "HG";
+    } else if (sfp0_type == RB_SFP_10G_ETH  and sfp1_type == RB_SFP_10G_ETH) {
+        option = "XG";
+    } else if (sfp0_type == RB_SFP_1G_ETH  and sfp1_type == RB_SFP_AURORA) {
+        option = "HA";
+    } else if (sfp0_type == RB_SFP_10G_ETH  and sfp1_type == RB_SFP_AURORA) {
+        option = "XA";
+    } else {
+        option = "HG";  //Default
+    }
     if (not has_dram_buff(zpu_ctrl)) {
         option += "S";
     }
@@ -401,10 +414,19 @@ void x300_impl::mboard_members_t::discover_eth(
 
     // Index the MB EEPROM addresses
     std::vector<std::string> mb_eeprom_addrs;
-    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr0"]);
-    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr1"]);
-    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr2"]);
-    mb_eeprom_addrs.push_back(mb_eeprom["ip-addr3"]);
+    const size_t num_mb_eeprom_addrs = 4;
+    for (size_t i = 0; i < num_mb_eeprom_addrs; i++) {
+        const std::string key = "ip-addr" + boost::to_string(i);
+
+        // Show a warning if there exists duplicate addresses in the mboard eeprom
+        if (std::find(mb_eeprom_addrs.begin(), mb_eeprom_addrs.end(), mb_eeprom[key]) != mb_eeprom_addrs.end()) {
+            UHD_MSG(warning) << str(boost::format(
+                "Duplicate IP address %s found in mboard EEPROM. "
+                "Device may not function properly.\nView and reprogram the values "
+                "using the usrp_burn_mb_eeprom utility.\n") % mb_eeprom[key]);
+        }
+        mb_eeprom_addrs.push_back(mb_eeprom[key]);
+    }
 
     BOOST_FOREACH(const std::string& addr, ip_addrs) {
         x300_eth_conn_t conn_iface;
@@ -421,22 +443,38 @@ void x300_impl::mboard_members_t::discover_eth(
                 } else {
                     conn_iface.type = X300_IFACE_ETH1;
                 }
+                break;
             }
         }
 
-        // Check default IP addresses
-        if (addr == boost::asio::ip::address_v4(
-            boost::uint32_t(X300_DEFAULT_IP_ETH0_1G)).to_string()) {
-            conn_iface.type = X300_IFACE_ETH0;
-        } else if (addr == boost::asio::ip::address_v4(
-            boost::uint32_t(X300_DEFAULT_IP_ETH1_1G)).to_string()) {
-            conn_iface.type = X300_IFACE_ETH1;
-        } else if (addr == boost::asio::ip::address_v4(
-            boost::uint32_t(X300_DEFAULT_IP_ETH0_10G)).to_string()) {
-            conn_iface.type = X300_IFACE_ETH0;
-        } else if (addr == boost::asio::ip::address_v4(
-            boost::uint32_t(X300_DEFAULT_IP_ETH1_10G)).to_string()) {
-            conn_iface.type = X300_IFACE_ETH1;
+        // Check default IP addresses if we couldn't
+        // determine the IP from the mboard eeprom
+        if (conn_iface.type == X300_IFACE_NONE) {
+            UHD_MSG(warning) << str(boost::format(
+                "Address %s not found in mboard EEPROM. Address may be wrong or "
+                "the EEPROM may be corrupt.\n Attempting to continue with default "
+                "IP addresses.\n") % conn_iface.addr
+            );
+
+            if (addr == boost::asio::ip::address_v4(
+                boost::uint32_t(X300_DEFAULT_IP_ETH0_1G)).to_string()) {
+                conn_iface.type = X300_IFACE_ETH0;
+            } else if (addr == boost::asio::ip::address_v4(
+                boost::uint32_t(X300_DEFAULT_IP_ETH1_1G)).to_string()) {
+                conn_iface.type = X300_IFACE_ETH1;
+            } else if (addr == boost::asio::ip::address_v4(
+                boost::uint32_t(X300_DEFAULT_IP_ETH0_10G)).to_string()) {
+                conn_iface.type = X300_IFACE_ETH0;
+            } else if (addr == boost::asio::ip::address_v4(
+                boost::uint32_t(X300_DEFAULT_IP_ETH1_10G)).to_string()) {
+                conn_iface.type = X300_IFACE_ETH1;
+            } else {
+                throw uhd::assertion_error(str(boost::format(
+                    "X300 Initialization Error: Failed to match address %s with "
+                    "any addresses for the device. Please check the address.")
+                    % conn_iface.addr
+                ));
+            }
         }
 
         // Save to a vector of connections
@@ -458,7 +496,7 @@ void x300_impl::mboard_members_t::discover_eth(
             catch(std::exception &)
             {
                 throw uhd::io_error(str(boost::format(
-                    "X300 Initialization: Invalid address %s")
+                    "X300 Initialization Error: Invalid address %s")
                     % conn_iface.addr));
             }
             eth_conns.push_back(conn_iface);
@@ -576,7 +614,28 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
         // Detect the frame size on the path to the USRP
         try {
-            _max_frame_sizes = determine_max_frame_size(mb.get_pri_eth().addr, req_max_frame_size);
+            frame_size_t pri_frame_sizes = determine_max_frame_size(
+                eth_addrs.at(0), req_max_frame_size
+            );
+
+            _max_frame_sizes = pri_frame_sizes;
+            if (eth_addrs.size() > 1) {
+                frame_size_t sec_frame_sizes = determine_max_frame_size(
+                    eth_addrs.at(1), req_max_frame_size
+                );
+
+                // Choose the minimum of the max frame sizes
+                // to ensure we don't exceed any one of the links' MTU
+                _max_frame_sizes.recv_frame_size = std::min(
+                    pri_frame_sizes.recv_frame_size,
+                    sec_frame_sizes.recv_frame_size
+                );
+
+                _max_frame_sizes.send_frame_size = std::min(
+                    pri_frame_sizes.send_frame_size,
+                    sec_frame_sizes.send_frame_size
+                );
+            }
         } catch(std::exception &e) {
             UHD_MSG(error) << e.what() << std::endl;
         }
@@ -1176,6 +1235,8 @@ uhd::both_xports_t x300_impl::make_transport(
 
         fs_path mboard_path = fs_path("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate");
 
+        UHD_ASSERT_THROW(mb.loaded_fpga_image.size() >= 2);
+
         if (mb.loaded_fpga_image.substr(0,2) == "HG") {
             size_t max_link_rate = 0;
             if (xbar_src_dst == X300_XB_DST_E0) {
@@ -1186,9 +1247,14 @@ uhd::both_xports_t x300_impl::make_transport(
                 max_link_rate += X300_MAX_RATE_10GIGE;
             }
             _tree->access<double>(mboard_path).set(max_link_rate);
-        } else if (mb.loaded_fpga_image.substr(0,2) == "XG") {
+        } else if (mb.loaded_fpga_image.substr(0,2) == "XG" or mb.loaded_fpga_image.substr(0,2) == "XA") {
             eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
             size_t max_link_rate = X300_MAX_RATE_10GIGE;
+            max_link_rate *= mb.eth_conns.size();
+            _tree->access<double>(mboard_path).set(max_link_rate);
+        } else if (mb.loaded_fpga_image.substr(0,2) == "HA") {
+            eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
+            size_t max_link_rate = X300_MAX_RATE_1GIGE;
             max_link_rate *= mb.eth_conns.size();
             _tree->access<double>(mboard_path).set(max_link_rate);
         }

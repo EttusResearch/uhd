@@ -318,8 +318,10 @@ static void garp(void)
     count = 0;
     for (size_t e = 0; e < ethernet_ninterfaces(); e++)
     {
-        if (!ethernet_get_link_up(e)) continue;
-        u3_net_stack_send_arp_request(e, u3_net_stack_get_ip_addr(e));
+        if (wb_peek32(SR_ADDR(RB0_BASE, e == 0 ? RB_SFP0_TYPE : RB_SFP1_TYPE)) != RB_SFP_AURORA) {
+            if (!ethernet_get_link_up(e)) continue;
+            u3_net_stack_send_arp_request(e, u3_net_stack_get_ip_addr(e));
+        }
     }
 }
 
@@ -444,7 +446,7 @@ int main(void)
         {
             poll_sfpp_status(0); // Every so often poll XGE Phy to look for SFP+ hotplug events.
             poll_sfpp_status(1); // Every so often poll XGE Phy to look for SFP+ hotplug events.
-            handle_link_state(); //deal with router table update
+            //handle_link_state(); //deal with router table update
             handle_claim(); //deal with the host claim register
             update_leds(); //run the link and activity leds
             garp(); //send periodic garps

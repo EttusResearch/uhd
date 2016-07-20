@@ -259,6 +259,14 @@ private:
 
     void update_tick_rate(const double);
 
+    /*! Subscriber to the tick_rate property, updates DDCs after tick rate change.
+     */
+    void update_rx_dsp_tick_rate(const double, rx_dsp_core_3000::sptr, uhd::fs_path rx_dsp_path);
+
+    /*! Subscriber to the tick_rate property, updates DUCs after tick rate change.
+     */
+    void update_tx_dsp_tick_rate(const double, tx_dsp_core_3000::sptr, uhd::fs_path tx_dsp_path);
+
     /*! Check if \p tick_rate works with \p chan_count channels.
      *
      * Throws a uhd::value_error if not.

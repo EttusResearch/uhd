@@ -161,6 +161,22 @@ void b200_impl::update_tick_rate(const double new_tick_rate)
     }
 }
 
+void b200_impl::update_rx_dsp_tick_rate(const double tick_rate, rx_dsp_core_3000::sptr ddc, uhd::fs_path rx_dsp_path)
+{
+    ddc->set_tick_rate(tick_rate);
+    if (_tree->access<bool>(rx_dsp_path / "rate" / "set").get()) {
+        ddc->set_host_rate(_tree->access<double>(rx_dsp_path / "rate" / "value").get());
+    }
+}
+
+void b200_impl::update_tx_dsp_tick_rate(const double tick_rate, tx_dsp_core_3000::sptr duc, uhd::fs_path tx_dsp_path)
+{
+    duc->set_tick_rate(tick_rate);
+    if (_tree->access<bool>(tx_dsp_path / "rate" / "set").get()) {
+        duc->set_host_rate(_tree->access<double>(tx_dsp_path / "rate" / "value").get());
+    }
+}
+
 #define CHECK_RATE_AND_THROW(rate)  \
         if (uhd::math::fp_compare::fp_compare_delta<double>(rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) > \
             uhd::math::fp_compare::fp_compare_delta<double>(ad9361_device_t::AD9361_MAX_CLOCK_RATE, uhd::math::FREQ_COMPARISON_DELTA_HZ)) { \

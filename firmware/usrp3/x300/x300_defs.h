@@ -7,8 +7,8 @@
 #define CPU_CLOCK 166666667
 #define MAIN_RAM_BASE 0x0000
 #define PKT_RAM0_BASE 0x8000
-#define XGE0_BASE 0xC000
-#define XGE1_BASE 0xD000
+#define SFP0_MAC_BASE 0xC000
+#define SFP1_MAC_BASE 0xD000
 #define BOOT_LDR_BASE 0xFC00
 #define UART0_BASE 0xfd00
 #define UART0_BAUD 115200
@@ -20,9 +20,6 @@
 #define SET0_BASE 0xa000
 #define RB0_BASE 0xa000 //same as set
 #define SETXB_BASE 0xb000
-
-#define ETH1G
-//#define ETH10G 
 
 //eeprom map for mboard addrs
 #define MBOARD_EEPROM_ADDR 0x50
@@ -50,11 +47,11 @@ static const int LED_LINKACT = (1 << 0);
 static const int RB_COUNTER      = 0;
 static const int RB_SPI_RDY      = 1;
 static const int RB_SPI_DATA     = 2;
-static const int RB_ETH_TYPE0    = 4;
-static const int RB_ETH_TYPE1    = 5;
+static const int RB_SFP0_TYPE    = 4;
+static const int RB_SFP1_TYPE    = 5;
 static const int RB_FPGA_COMPAT  = 6;
-static const int RB_SFPP_STATUS0 = 8;
-static const int RB_SFPP_STATUS1 = 9;
+static const int RB_SFP0_STATUS  = 8;
+static const int RB_SFP1_STATUS  = 9;
 static const int RB_XBAR         = 128;
 
 // Bootloader Memory Map
@@ -74,5 +71,10 @@ static const int BL_DATA        = 1;
 #define ETH_FRAMER_DST_IP_ADDR 5
 #define ETH_FRAMER_DST_UDP_MAC 6
 #define ETH_FRAMER_DST_MAC_LO 7
+
+// SFP type constants
+#define RB_SFP_1G_ETH   0
+#define RB_SFP_10G_ETH  1
+#define RB_SFP_AURORA   2
 
 #endif /* INCLUDED_X300_DEFS_H */

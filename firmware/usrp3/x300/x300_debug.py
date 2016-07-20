@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import range
+from builtins import object
 #!/usr/bin/env python
 #
 # Copyright 2010-2014 Ettus Research LLC
@@ -16,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import optparse
+import argparse
 import math
 import socket
 import struct
@@ -61,7 +64,6 @@ def seq():
 ########################################################################
 # helper functions
 ########################################################################
-
 def unpack_reg_peek_poke_fmt(s):
     return struct.unpack(REG_PEEK_POKE_FMT,s) #(flags, seq, addr, data)
 
@@ -126,7 +128,7 @@ class ctrl_socket(object):
             print
         print
         print("Ingress Port")
-        print
+        print()
 
     def peek_print(self,peek_addr):
         peek_data = self.peek(peek_addr)
@@ -151,24 +153,22 @@ class ctrl_socket(object):
         (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
         if flags & X300_FW_COMMS_FLAGS_ERROR == X300_FW_COMMS_FLAGS_ERROR:
             raise Exception("X300 peek of address %d returns error code" % (addr))
-        return data
 
 
 ########################################################################
 # command line options
 ########################################################################
-def get_options():
-    parser = optparse.OptionParser()
-    parser.add_option("--addr", type="string", help="USRP-X300 device address", default='')
-    parser.add_option("--stats", action="store_true", help="Display RFNoC Crossbar Stats", default=False)
-    parser.add_option("--peek", type="int", help="Read from memory map", default=None)
-    parser.add_option("--poke", type="int", help="Write to memory map", default=None)
-    parser.add_option("--data", type="int", help="Data for poke", default=None)
-    parser.add_option("--blocks", help="List names of blocks (post-radio)", default=None)
-    parser.add_option("--ignore", help="List of ports to ignore", default=None)
-    (options, args) = parser.parse_args()
-    return options
+def auto_int(x):
+    return int(x, 0)
 
+def get_options():
+    parser = argparse.ArgumentParser(description='Debug utility for the USRP X3X0')
+    parser.add_argument('--addr', type=str, default=None, required=True, help='IP Address of USRP-X3X0 device')
+    parser.add_argument('--peek', type=auto_int, default=None, help='Read from memory map')
+    parser.add_argument('--poke', type=auto_int, default=None, help='Write to memory map')
+    parser.add_argument('--data', type=auto_int, default=None, help='Data for poke')
+    parser.add_argument('--stats', action='store_true', default=False, help='Display crossbar network Stats')
+    return parser.parse_args()
 
 ########################################################################
 # main
