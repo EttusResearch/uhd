@@ -9,40 +9,52 @@
   <!-- Registers -->
   <registers>
     <setreg>
-      <name>DECIM</name>
-      <address>129</address>
-    </setreg>
-    <setreg>
-      <name>OFFSET</name>
-      <address>130</address>
-    </setreg>
-    <setreg>
-      <name>SCALE</name>
-      <address>131</address>
-    </setreg>
-    <setreg>
-      <name>TRISE</name>
-      <address>132</address>
-    </setreg>
-    <setreg>
-      <name>TDECAY</name>
-      <address>133</address>
-    </setreg>
-    <setreg>
-      <name>ALPHA</name>
-      <address>134</address>
-    </setreg>
-    <setreg>
-      <name>EPSILON</name>
-      <address>135</address>
-    </setreg>
-    <setreg>
-      <name>RANDOM</name>
-      <address>136</address>
+      <name>ENABLE</name>
+      <address>160</address>
     </setreg>
     <setreg>
       <name>CLEAR</name>
-      <address>137</address>
+      <address>161</address>
+    </setreg>
+    <setreg>
+      <name>RANDOM</name>
+      <address>162</address>
+    </setreg>
+    <setreg>
+      <name>DECIM</name>
+      <address>168</address>
+    </setreg>
+    <setreg>
+      <name>OFFSET</name>
+      <address>170</address>
+    </setreg>
+    <setreg>
+      <name>SCALE</name>
+      <address>171</address>
+    </setreg>
+    <setreg>
+      <name>TRISE</name>
+      <address>172</address>
+    </setreg>
+    <setreg>
+      <name>TDECAY</name>
+      <address>173</address>
+    </setreg>
+    <setreg>
+      <name>ALPHA</name>
+      <address>174</address>
+    </setreg>
+    <setreg>
+      <name>EPSILON</name>
+      <address>175</address>
+    </setreg>
+    <setreg>
+      <name>WF_CTRL</name>
+      <address>176</address>
+    </setreg>
+    <setreg>
+      <name>WF_DECIM</name>
+      <address>177</address>
     </setreg>
   </registers>
   <!-- Args -->
@@ -51,6 +63,27 @@
       <name>spp</name>
       <type>int</type>
       <value>1024</value>
+    </arg>
+    <arg>
+      <name>enable</name>
+      <type>int</type>
+      <value>3</value>
+      <check>GE($enable, 0) AND LE($enable, 3)</check>
+      <check_message>"fosphor enable value must be within [0, 3]"</check_message>
+      <action>SR_WRITE("ENABLE", $enable)</action>
+    </arg>
+    <arg>
+      <name>clear</name>
+      <type>int</type>
+      <action>IF(NOT(EQUAL($clear, 0)), SR_WRITE("CLEAR", $clear))</action>
+    </arg>
+    <arg>
+      <name>random</name>
+      <type>int</type>
+      <value>3</value>
+      <check>GE($random, 0) AND LE($random, 3)</check>
+      <check_message>"fosphor random mode value must be within [0, 3]"</check_message>
+      <action>SR_WRITE("RANDOM", $random)</action>
     </arg>
     <arg>
       <name>decim</name>
@@ -109,17 +142,20 @@
       <action>SR_WRITE("EPSILON", $epsilon)</action>
     </arg>
     <arg>
-      <name>random</name>
+      <name>wf_ctrl</name>
       <type>int</type>
-      <value>1</value>
-      <check>GE($random, 0) AND LE($random, 3)</check>
-      <check_message>"fosphor random value must be within [0, 65535]"</check_message>
-      <action>SR_WRITE("RANDOM", $random)</action>
+      <value>0</value>
+      <check>GE($wf_ctrl, 0) AND LE($enable, 255)</check>
+      <check_message>"fosphor wf_ctrl value must be within [0, 255]"</check_message>
+      <action>SR_WRITE("WF_CTRL", $wf_ctrl)</action>
     </arg>
     <arg>
-      <name>clear</name>
+      <name>wf_decim</name>
       <type>int</type>
-      <action>IF(NOT(EQUAL($clear, 0)), SR_WRITE("CLEAR", $clear))</action>
+      <value>8</value>
+      <check>GE($wf_decim, 2) AND LE($wf_decim, 256)</check>
+      <check_message>fosphor wf_decim constant must be within [2, 256]</check_message>
+      <action>SR_WRITE("WF_DECIM", ADD($wf_decim, -2))</action>
     </arg>
   </args>
   <!--All the connections to the outside world are listed in 'ports':-->
@@ -131,10 +167,18 @@
       <pkt_size>%vlen</pkt_size>
     </sink>
     <source>
-      <name>out</name>
+      <name>out_hist</name>
       <type>u8</type>
       <vlen>$spp</vlen>
       <pkt_size>%vlen</pkt_size>
+      <port>0</port>
+    </source>
+    <source>
+      <name>out_wf</name>
+      <type>u8</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
+      <port>1</port>
     </source>
   </ports>
   <!--<components>-->
