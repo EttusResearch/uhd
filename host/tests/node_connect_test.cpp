@@ -116,14 +116,19 @@ BOOST_AUTO_TEST_CASE(test_fail)
 
 BOOST_AUTO_TEST_CASE(test_set_streamers)
 {
-    MAKE_SOURCE_NODE(node_A, 1);
+    MAKE_SOURCE_NODE(node_A, 0);
     MAKE_NODE(node_B);
-    MAKE_SINK_NODE(node_C, 2);
+    MAKE_SINK_NODE(node_C, 0);
 
     size_t src_port_A = node_A->connect_downstream(node_B, 0);
     size_t src_port_B = node_B->connect_downstream(node_C, 0);
     size_t dst_port_B = node_B->connect_upstream(node_A, 0);
     size_t dst_port_C = node_C->connect_upstream(node_B, 0);
+
+    std::cout << "src_port_A: " << src_port_A << std::endl;
+    std::cout << "src_port_B: " << src_port_B << std::endl;
+    std::cout << "dst_port_B: " << dst_port_B << std::endl;
+    std::cout << "dst_port_C: " << dst_port_C << std::endl;
 
     node_A->set_downstream_port(src_port_A, dst_port_B);
     node_B->set_upstream_port(dst_port_B, src_port_A);
