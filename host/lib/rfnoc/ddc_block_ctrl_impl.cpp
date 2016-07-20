@@ -112,6 +112,11 @@ public:
     ) {
         UHD_RFNOC_BLOCK_TRACE() << "ddc_block_ctrl_base::issue_stream_cmd()" << std::endl;
 
+        if (list_upstream_nodes().count(chan) == 0) {
+            UHD_MSG(status) << "No upstream blocks." << std::endl;
+            return;
+        }
+
         uhd::stream_cmd_t stream_cmd = stream_cmd_;
         if (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE or
             stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE) {
@@ -119,10 +124,13 @@ public:
             stream_cmd.num_samps *= decimation;
         }
 
-        BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, list_upstream_nodes()) {
-            source_node_ctrl::sptr this_upstream_block_ctrl =
-                boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
-            this_upstream_block_ctrl->issue_stream_cmd(stream_cmd, chan);
+        source_node_ctrl::sptr this_upstream_block_ctrl =
+                boost::dynamic_pointer_cast<source_node_ctrl>(list_upstream_nodes().at(chan).lock());
+        if (this_upstream_block_ctrl) {
+            this_upstream_block_ctrl->issue_stream_cmd(
+                    stream_cmd,
+                    get_upstream_port(chan)
+            );
         }
     }
 
