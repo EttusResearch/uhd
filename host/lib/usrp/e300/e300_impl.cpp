@@ -541,16 +541,6 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     UHD_MSG(status) << "OK" << std::endl;
 
     ////////////////////////////////////////////////////////////////////
-    // Compatibility layer for legacy subdev spec
-    ////////////////////////////////////////////////////////////////////
-    _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec");
-        //.add_coerced_subscriber(boost::bind(&device3_impl::update_subdev_spec, this, _1, RX_DIRECTION, 0))
-        //.set_publisher(boost::bind(&device3_impl::get_subdev_spec, this, RX_DIRECTION, 0));
-    _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec");
-        //.add_coerced_subscriber(boost::bind(&device3_impl::update_subdev_spec, this, _1, TX_DIRECTION, 0))
-        //.set_publisher(boost::bind(&device3_impl::get_subdev_spec, this, RX_DIRECTION, 0));
-
-    ////////////////////////////////////////////////////////////////////
     // Set up RFNoC blocks
     ////////////////////////////////////////////////////////////////////
     const size_t n_rfnoc_blocks = _global_regs->peek32(global_regs::RB32_CORE_NUM_CE);
@@ -582,18 +572,6 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _tree->access<double>(mb_path / "tick_rate")
         .set(device_addr.cast<double>("master_clock_rate", ad936x_manager::DEFAULT_TICK_RATE));
 
-    // subdev spec contains full width of selections
-    subdev_spec_t rx_spec, tx_spec;
-    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "rx_frontends"))
-    {
-        rx_spec.push_back(subdev_spec_pair_t("A", fe));
-    }
-    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "tx_frontends"))
-    {
-        tx_spec.push_back(subdev_spec_pair_t("A", fe));
-    }
-    _tree->access<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
-    _tree->access<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
     UHD_MSG(status) << "end of e300_impl()" << std::endl;
 }
 
