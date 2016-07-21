@@ -64,7 +64,7 @@ class UHD_API device3 : public uhd::device {
     bool has_block(const rfnoc::block_id_t &block_id) const
     {
         if (has_block(block_id)) {
-            return boost::dynamic_pointer_cast<T>(get_block_ctrl(block_id));
+            return bool(boost::dynamic_pointer_cast<T>(get_block_ctrl(block_id)));
         } else {
             return false;
         }
