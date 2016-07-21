@@ -27,12 +27,13 @@
 using namespace uhd;
 using namespace uhd::rfnoc;
 
+//TODO (Ashish): This should come from the framework
+static const double BUS_CLK_RATE = 166.67e6;
+
 class dma_fifo_block_ctrl_impl : public dma_fifo_block_ctrl
 {
 public:
     static const uint32_t DEFAULT_SIZE = 32*1024*1024;
-    //TODO (Ashish): This should come from the framework
-    static const double BUS_CLK_RATE = 166.67e6;
 
     UHD_RFNOC_BLOCK_CONSTRUCTOR(dma_fifo_block_ctrl)
     {
