@@ -65,7 +65,7 @@ uhd::time_spec_t wb_iface_adapter::get_time(void)
     return gettime_functor();
 }
 
-void wb_iface_adapter::set_time(const time_spec_t& t)
+void wb_iface_adapter::set_time(const uhd::time_spec_t& t)
 {
     settime_functor(t);
 }

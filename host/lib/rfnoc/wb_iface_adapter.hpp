@@ -30,8 +30,8 @@ class UHD_API wb_iface_adapter : public uhd::timed_wb_iface
 public:
     typedef boost::shared_ptr<wb_iface_adapter> sptr;
     typedef boost::function<void(wb_addr_type, uint32_t)> poke32_type;
-    typedef boost::function<uint32_t(wb_addr_type)> peek32_type;
-    typedef boost::function<uint64_t(wb_addr_type)> peek64_type;
+    typedef boost::function<boost::uint32_t(wb_addr_type)> peek32_type;
+    typedef boost::function<boost::uint64_t(wb_addr_type)> peek64_type;
     typedef boost::function<time_spec_t(void)> gettime_type;
     typedef boost::function<void(const time_spec_t&)> settime_type;
 
