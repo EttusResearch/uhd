@@ -26,6 +26,7 @@
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/msg.hpp>
+#include <uhd/transport/chdr.hpp>
 #include <boost/make_shared.hpp>
 
 using namespace uhd::rfnoc;
@@ -40,6 +41,9 @@ static const std::string RADIO_BLOCK_NAME = "Radio";
 static const std::string DFIFO_BLOCK_NAME = "DmaFIFO";
 static const std::string DDC_BLOCK_NAME = "DDC";
 static const std::string DUC_BLOCK_NAME = "DUC";
+static const size_t MAX_BYTES_PER_HEADER =
+        uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(uint64_t);
+static const size_t BYTES_PER_SAMPLE = 4; // We currently only support sc16
 
 /************************************************************************
  * Static helpers
@@ -407,6 +411,7 @@ private: // methods
     void connect_blocks()
     {
         _graph = _device->create_graph("legacy");
+        size_t bpp = _spp * BYTES_PER_SAMPLE + MAX_BYTES_PER_HEADER;
         for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
             for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
                 // Tx Channels
@@ -415,14 +420,14 @@ private: // methods
                         _graph->connect(
                             block_id_t(mboard, DUC_BLOCK_NAME,   radio), chan,
                             block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
-                            _spp
+                            bpp
                         );
                         if (_has_dmafifo) {
                             // We have DMA FIFO *and* DUCs
                             _graph->connect(
                                 block_id_t(mboard, DFIFO_BLOCK_NAME, 0), radio,
                                 block_id_t(mboard, DUC_BLOCK_NAME, radio), chan,
-                                _spp
+                                bpp
                             );
                         }
                     } else if (_has_dmafifo) {
@@ -430,7 +435,7 @@ private: // methods
                             _graph->connect(
                                 block_id_t(mboard, DFIFO_BLOCK_NAME,   0), radio,
                                 block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
-                                _spp
+                                bpp
                             );
                     }
                 }
@@ -440,7 +445,7 @@ private: // methods
                         _graph->connect(
                             block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
                             block_id_t(mboard, DDC_BLOCK_NAME,   radio), chan,
-                            _spp
+                            bpp
                         );
                     }
                 }
