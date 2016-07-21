@@ -61,9 +61,11 @@ BOOST_AUTO_TEST_CASE(test_simple_downstream_search)
     // We're still searching for test_node, so any downstream block will match
     std::vector< test_node::sptr > result = node_A->find_downstream_node<test_node>();
     BOOST_REQUIRE(result.size() == 2);
-    BOOST_CHECK_EQUAL(result[0]->get_test_id(), "node_B0");
-    BOOST_CHECK_EQUAL(result[0], node_B0);
-    BOOST_CHECK_EQUAL(result[1]->get_test_id(), "node_B1");
+    BOOST_CHECK(
+            (result[0]->get_test_id() == "node_B0" and result[1]->get_test_id() == "node_B1") or
+            (result[1]->get_test_id() == "node_B0" and result[0]->get_test_id() == "node_B1")
+    );
+    BOOST_CHECK(result[0] == node_B0 or result[0] == node_B1);
 }
 
 BOOST_AUTO_TEST_CASE(test_linear_downstream_search)
