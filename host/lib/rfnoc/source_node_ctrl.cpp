@@ -52,11 +52,9 @@ void source_node_ctrl::set_rx_streamer(bool active, const size_t port)
 
     // This only enables 1:1 (if output 1 is enabled, enable what's connected to input 1)
     if (list_upstream_nodes().count(port)) {
-        UHD_HERE();
         source_node_ctrl::sptr this_upstream_block_ctrl =
             boost::dynamic_pointer_cast<source_node_ctrl>(list_upstream_nodes().at(port).lock());
         if (this_upstream_block_ctrl) {
-            UHD_VAR(port);
             this_upstream_block_ctrl->set_rx_streamer(
                     active,
                     get_upstream_port(port)
