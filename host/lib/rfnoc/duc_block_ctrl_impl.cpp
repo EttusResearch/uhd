@@ -45,7 +45,7 @@ class duc_block_ctrl_impl : public duc_block_ctrl
 {
 public:
     static const size_t NUM_HALFBANDS = 2;
-    static const size_t CIC_MAX_INTERP = 255;
+    static const size_t CIC_MAX_INTERP = 128;
 
     UHD_RFNOC_BLOCK_CONSTRUCTOR(duc_block_ctrl)
     {
@@ -162,8 +162,6 @@ private:
         );
     }
 
-    // FIXME this misses a whole bunch of valid rates. Anything with CIC interp <= 255
-    // is OK.
     uhd::meta_range_t get_input_rates(void)
     {
         uhd::meta_range_t range;
@@ -216,21 +214,15 @@ private:
         }
 
         // Calculate algorithmic gain of CIC for a given interpolation
-        // For Ettus CIC R=interp, M=1, N=4. Gain = (R * M) ^ N
+        // For Ettus CIC R=interp, M=1, N=4. Gain = (R * M) ^ (N - 1)
         const int CIC_N = 4;
-        const double rate_pow = std::pow(double(interp), CIC_N);
-        // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
-        // gain compensation blocks already hardcoded in place in DUC (that provide simple 1/2^n gain compensation).
-        // CORDIC algorithmic gain limits asymptotically around 1.647 after many iterations.
-        static const double CORDIC_GAIN = 1.648;
-        //
-        // The polar rotation of [I,Q] = [1,1] by Pi/8 also yields max magnitude of SQRT(2) (~1.4142) however
-        // input to the CORDIC thats outside the unit circle can only be sourced from a saturated RF frontend.
-        // To provide additional dynamic range head room accordingly using scale factor applied at egress from DUC would
-        // cost us small signal performance, thus we do no provide compensation gain for a saturated front end and allow
-        // the signal to clip in the H/W as needed. If we wished to avoid the signal clipping in these circumstances then adjust code to read:
-        // _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(CORDIC_GAIN*rate_pow*1.415);
-        const double scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(CORDIC_GAIN*rate_pow);
+        const double rate_pow = std::pow(double(interp & 0xff), CIC_N - 1);
+
+	// Experimentally determined value to scale the output to [-1, 1]
+	// This must also encompass the CORDIC gain
+        static const double CONSTANT_GAIN = 1.1644;
+
+        const double scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(CONSTANT_GAIN*rate_pow);
         update_scalar(scaling_adjustment, chan);
         return output_rate/interp_rate;
     }
@@ -251,9 +243,9 @@ private:
     {
         const double target_scalar = (1 << 15) * scalar;
         const int32_t actual_scalar = boost::math::iround(target_scalar);
-        // Calculate the error introduced by using integer representation for the scalar, can be corrected in host later.
+        // Calculate the error introduced by using integer representation for the scalar
         const double scalar_correction =
-            target_scalar / actual_scalar * double(1 << 15) // Rounding error, normalized to 1.0
+            actual_scalar / target_scalar * (double(1 << 15) - 1.0) // Rounding error, normalized to 1.0
             * get_arg<double>("fullscale"); // Scaling requested by host
         set_arg<double>("scalar_correction", scalar_correction, chan);
         // Write DUC with scaling correction for CIC and CORDIC that maximizes dynamic range in 32/16/12/8bits.
