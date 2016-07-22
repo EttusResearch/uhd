@@ -181,6 +181,9 @@ public:
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args_)
     {
         uhd::stream_args_t args(args_);
+        if (args.otw_format.empty()) {
+            args.otw_format = "sc16";
+        }
         _update_stream_args_for_streaming<uhd::RX_DIRECTION>(args, _rx_channel_map);
         UHD_MSG(status) << "[legacy_compat] rx stream args: " << args.args.to_string() << std::endl;
         return _device->get_rx_stream(args);
@@ -191,6 +194,9 @@ public:
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args_)
     {
         uhd::stream_args_t args(args_);
+        if (args.otw_format.empty()) {
+            args.otw_format = "sc16";
+        }
         _update_stream_args_for_streaming<uhd::TX_DIRECTION>(args, _tx_channel_map);
         UHD_MSG(status) << "[legacy_compat] tx stream args: " << args.args.to_string() << std::endl;
         return _device->get_tx_stream(args);
