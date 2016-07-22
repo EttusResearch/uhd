@@ -42,7 +42,7 @@ struct x300_dboard_iface_config_t
     uhd::timed_wb_iface::sptr                   cmd_time_ctrl;
 };
 
-class x300_dboard_iface : public uhd::usrp::dboard_iface::dboard_iface
+class x300_dboard_iface : public uhd::usrp::dboard_iface
 {
 public:
     x300_dboard_iface(const x300_dboard_iface_config_t &config);
