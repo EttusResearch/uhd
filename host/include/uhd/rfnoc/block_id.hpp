@@ -17,10 +17,11 @@
 #ifndef INCLUDED_UHD_TYPES_BLOCK_ID_HPP
 #define INCLUDED_UHD_TYPES_BLOCK_ID_HPP
 
-#include <iostream>
 #include <uhd/config.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
+#include <iostream>
+#include <string>
 
 namespace uhd {
     struct fs_path;
