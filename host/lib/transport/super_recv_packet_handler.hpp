@@ -272,7 +272,9 @@ public:
         }
 
         //first recv had an error code set, return immediately
-        if (metadata.error_code != rx_metadata_t::ERROR_CODE_NONE) return accum_num_samps;
+        if (metadata.error_code != rx_metadata_t::ERROR_CODE_NONE) {
+            return accum_num_samps;
+        }
 
         //loop until buffer is filled or error code
         while(accum_num_samps < nsamps_per_buff){
@@ -295,7 +297,7 @@ public:
             }
         }
 #ifdef UHD_TXRX_DEBUG_PRINTS
-		dbg_gather_data(nsamps_per_buff, accum_num_samps, metadata, timeout, one_packet);
+        dbg_gather_data(nsamps_per_buff, accum_num_samps, metadata, timeout, one_packet);
 #endif
         return accum_num_samps;
     }
