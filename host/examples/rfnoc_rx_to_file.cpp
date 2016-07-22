@@ -349,7 +349,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         radio_ctrl->set_rx_antenna(ant, radio_chan);
     }
 
-    boost::this_thread::sleep_for(boost::chrono::milliseconds(long(setup_time*1000))); //allow for some setup time
+    boost::this_thread::sleep(boost::posix_time::milliseconds(long(setup_time*1000))); //allow for some setup time
+
 
     //check Ref and LO Lock detect
     if (not vm.count("skip-lo")){
