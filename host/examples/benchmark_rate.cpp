@@ -47,6 +47,7 @@ unsigned long long num_rx_samps = 0;
 unsigned long long num_tx_samps = 0;
 unsigned long long num_dropped_samps = 0;
 unsigned long long num_seq_errors = 0;
+unsigned long long num_late_commands = 0;
 unsigned long long num_timeouts = 0;
 
 /***********************************************************************
@@ -128,9 +129,16 @@ void benchmark_rx_rate(
                 num_overflows++;
             break;
 
+        case uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND:
+            std::cerr << "Receiver error: " << md.strerror() << ", restart streaming..."<< std::endl;
+            num_late_commands++;
+            // Radio core will be in the idle state. Issue stream command to restart streaming.
+            cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.05);
+            cmd.stream_now = (buffs.size() == 1);
+            rx_stream->issue_stream_cmd(cmd);
+            break;
+
         case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
-            // If we stopped the streamer, then we expect this at some point
-            //if (burst_timer_elapsed.load(boost::memory_order_relaxed)) {
             if (burst_timer_elapsed) {
                 return;
             }
@@ -417,7 +425,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //sleep for the required duration
     const long secs = long(duration);
     const long usecs = long((duration - secs)*1e6);
-    boost::this_thread::sleep(boost::posix_time::seconds(secs) + boost::posix_time::microseconds(usecs));
+    boost::this_thread::sleep(boost::posix_time::seconds(secs)
+            + boost::posix_time::microseconds(usecs)
+            + boost::posix_time::milliseconds(INIT_DELAY * 1000)
+    );
 
     //interrupt and join the threads
     //burst_timer_elapsed.store(true, boost::memory_order_relaxed);
@@ -433,11 +444,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         "  Num transmitted samples: %u\n"
         "  Num sequence errors:     %u\n"
         "  Num underflows detected: %u\n"
+        "  Num late commands:       %u\n"
         "  Num timeouts:            %u\n"
     ) % num_rx_samps % num_dropped_samps
       % num_overflows % num_tx_samps
       % num_seq_errors % num_underflows
-      % num_timeouts << std::endl;
+      % num_late_commands % num_timeouts
+      << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
