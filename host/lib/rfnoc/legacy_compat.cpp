@@ -546,6 +546,21 @@ private: // attributes
 
 legacy_compat::sptr legacy_compat::make(uhd::device3::sptr device)
 {
-    return boost::make_shared<legacy_compat_impl>(device);
+    UHD_ASSERT_THROW(bool(device));
+    static std::map<void *, boost::weak_ptr<legacy_compat> > legacy_cache;
+
+    if (legacy_cache.count(device.get())) {
+        legacy_compat::sptr legacy_compat_copy = legacy_cache.at(device.get()).lock();
+        if (not bool(legacy_compat_copy)) {
+            throw uhd::runtime_error("Reference to existing legacy compat object expired prematurely!");
+        }
+
+        UHD_MSG(status) << "[legacy_compat] Using existing legacy compat object for this device." << std::endl;
+        return legacy_compat_copy;
+    }
+
+    legacy_compat::sptr new_legacy_compat = boost::make_shared<legacy_compat_impl>(device);
+    legacy_cache[device.get()] = new_legacy_compat;
+    return new_legacy_compat;
 }
 
