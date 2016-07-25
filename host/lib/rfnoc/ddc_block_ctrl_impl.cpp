@@ -82,6 +82,17 @@ public:
             _tree->create<uhd::meta_range_t>(dsp_base_path / "freq/range")
                 .set_publisher(boost::bind(&ddc_block_ctrl_impl::get_freq_range, this))
             ;
+            _tree->access<uhd::time_spec_t>("time/cmd")
+                .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, chan))
+            ;
+            if (_tree->exists("tick_rate")) {
+                const double tick_rate = _tree->access<double>("tick_rate").get();
+                set_command_tick_rate(tick_rate, chan);
+                _tree->access<double>("tick_rate")
+                    .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_tick_rate, this, _1, chan))
+                ;
+            }
+
             // Rate 1:1 by default
             sr_write("N", 1, chan);
             sr_write("M", 1, chan);
