@@ -370,14 +370,27 @@ private: // methods
         for (size_t mboard_idx = 0; mboard_idx < _num_mboards; mboard_idx++) {
             uhd::fs_path root = mb_root(mboard_idx);
             // Subdev specs
-            _tree->create<subdev_spec_t>(root / "tx_subdev_spec")
-                .add_coerced_subscriber(boost::bind(&legacy_compat_impl::set_subdev_spec, this, _1, mboard_idx, uhd::TX_DIRECTION))
-                .set_publisher(boost::bind(&legacy_compat_impl::get_subdev_spec, this, mboard_idx, uhd::TX_DIRECTION))
-            ;
-            _tree->create<subdev_spec_t>(root / "rx_subdev_spec")
-                .add_coerced_subscriber(boost::bind(&legacy_compat_impl::set_subdev_spec, this, _1, mboard_idx, uhd::RX_DIRECTION))
-                .set_publisher(boost::bind(&legacy_compat_impl::get_subdev_spec, this, mboard_idx, uhd::RX_DIRECTION))
-            ;
+            if (_tree->exists(root / "tx_subdev_spec")) {
+                _tree->access<subdev_spec_t>(root / "tx_subdev_spec")
+                    .add_coerced_subscriber(boost::bind(&legacy_compat_impl::set_subdev_spec, this, _1, mboard_idx, uhd::TX_DIRECTION))
+                    .update()
+                    .set_publisher(boost::bind(&legacy_compat_impl::get_subdev_spec, this, mboard_idx, uhd::TX_DIRECTION));
+            } else {
+                _tree->create<subdev_spec_t>(root / "tx_subdev_spec")
+                    .add_coerced_subscriber(boost::bind(&legacy_compat_impl::set_subdev_spec, this, _1, mboard_idx, uhd::TX_DIRECTION))
+                    .set_publisher(boost::bind(&legacy_compat_impl::get_subdev_spec, this, mboard_idx, uhd::TX_DIRECTION));
+            }
+
+            if (_tree->exists(root / "rx_subdev_spec")) {
+                _tree->access<subdev_spec_t>(root / "rx_subdev_spec")
+                    .add_coerced_subscriber(boost::bind(&legacy_compat_impl::set_subdev_spec, this, _1, mboard_idx, uhd::RX_DIRECTION))
+                    .update()
+                    .set_publisher(boost::bind(&legacy_compat_impl::get_subdev_spec, this, mboard_idx, uhd::RX_DIRECTION));
+            } else {
+                 _tree->create<subdev_spec_t>(root / "rx_subdev_spec")
+                    .add_coerced_subscriber(boost::bind(&legacy_compat_impl::set_subdev_spec, this, _1, mboard_idx, uhd::RX_DIRECTION))
+                    .set_publisher(boost::bind(&legacy_compat_impl::get_subdev_spec, this, mboard_idx, uhd::RX_DIRECTION));
+            }
 
             if (not _has_ddcs or not _has_ducs) {
                 const uhd::fs_path dsp_base_path(uhd::fs_path("/stubs/dsp/") / mboard_idx);
