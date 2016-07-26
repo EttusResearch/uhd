@@ -71,12 +71,14 @@ public:
     /************************************************************************
      * Structors and Initialization
      ***********************************************************************/
-    legacy_compat_impl(uhd::device3::sptr device)
-      : _device(device),
+    legacy_compat_impl(
+            uhd::device3::sptr device,
+            const uhd::device_addr_t &args
+    ) : _device(device),
         _tree(device->get_tree()),
         _has_ducs(not device->find_blocks(DUC_BLOCK_NAME).empty()),
         _has_ddcs(not device->find_blocks(DDC_BLOCK_NAME).empty()),
-        _has_dmafifo(not device->find_blocks(DFIFO_BLOCK_NAME).empty()),
+        _has_dmafifo(not args.has_key("skip_dram") and not device->find_blocks(DFIFO_BLOCK_NAME).empty()),
         _num_mboards(_tree->list("/mboards").size()),
         _num_radios_per_board(device->find_blocks<radio_ctrl>("0/Radio").size()), // These might throw, maybe we catch that and provide a nicer error message.
         _num_tx_chans_per_radio(_has_ducs ?
@@ -101,7 +103,9 @@ public:
         if (not _has_ducs) {
             UHD_MSG(warning) << "[legacy_compat] No DUCs detected. You will only be able to transmit at the master clock rate." << std::endl;
         }
-        if (not _has_dmafifo) {
+        if (args.has_key("skip_dram")) {
+            UHD_MSG(status) << "[legacy_compat] Skipping DRAM by user request." << std::endl;
+        } else if (not _has_dmafifo) {
             UHD_MSG(warning) << "[legacy_compat] No DMA FIFO detected. You will only be able to transmit at slow rates." << std::endl;
         }
 
@@ -557,8 +561,10 @@ private: // attributes
     graph::sptr _graph;
 };
 
-legacy_compat::sptr legacy_compat::make(uhd::device3::sptr device)
-{
+legacy_compat::sptr legacy_compat::make(
+        uhd::device3::sptr device,
+        const device_addr_t &args
+) {
     UHD_ASSERT_THROW(bool(device));
     static std::map<void *, boost::weak_ptr<legacy_compat> > legacy_cache;
 
@@ -572,7 +578,7 @@ legacy_compat::sptr legacy_compat::make(uhd::device3::sptr device)
         return legacy_compat_copy;
     }
 
-    legacy_compat::sptr new_legacy_compat = boost::make_shared<legacy_compat_impl>(device);
+    legacy_compat::sptr new_legacy_compat = boost::make_shared<legacy_compat_impl>(device, args);
     legacy_cache[device.get()] = new_legacy_compat;
     return new_legacy_compat;
 }

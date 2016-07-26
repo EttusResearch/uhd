@@ -44,7 +44,10 @@ namespace uhd { namespace rfnoc {
 
         virtual uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args) = 0;
 
-        static sptr make(uhd::device3::sptr device);
+        static sptr make(
+                uhd::device3::sptr device,
+                const device_addr_t &args
+        );
     };
 
 }} /* namespace uhd::rfnoc */
