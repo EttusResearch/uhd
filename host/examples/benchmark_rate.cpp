@@ -427,7 +427,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     const long usecs = long((duration - secs)*1e6);
     boost::this_thread::sleep(boost::posix_time::seconds(secs)
             + boost::posix_time::microseconds(usecs)
-            + boost::posix_time::milliseconds(INIT_DELAY * 1000)
+            + boost::posix_time::milliseconds( (channel_nums.size() == 1) ? 0 : (INIT_DELAY * 1000))
     );
 
     //interrupt and join the threads
