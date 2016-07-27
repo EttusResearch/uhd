@@ -563,7 +563,7 @@ private: // attributes
 
 legacy_compat::sptr legacy_compat::make(
         uhd::device3::sptr device,
-        const device_addr_t &args
+        const uhd::device_addr_t &args
 ) {
     UHD_ASSERT_THROW(bool(device));
     static std::map<void *, boost::weak_ptr<legacy_compat> > legacy_cache;

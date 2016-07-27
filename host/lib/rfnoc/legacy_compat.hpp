@@ -46,7 +46,7 @@ namespace uhd { namespace rfnoc {
 
         static sptr make(
                 uhd::device3::sptr device,
-                const device_addr_t &args
+                const uhd::device_addr_t &args
         );
     };
 
