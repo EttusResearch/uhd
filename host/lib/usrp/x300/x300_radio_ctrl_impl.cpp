@@ -316,17 +316,34 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
 
     size_t rx_chan = 0, tx_chan = 0;
     BOOST_FOREACH(const std::string& fe, _db_manager->get_rx_frontends()) {
+        if (rx_chan >= _get_num_radios()) {
+            break;
+        }
         _rx_fe_map[rx_chan].db_fe_name = fe;
         db_iface->add_rx_fe(fe, _rx_fe_map[rx_chan].core);
+        const fs_path fe_path(db_path / "rx_frontends" / fe);
+        const std::string conn = _tree->access<std::string>(fe_path / "connection").get();
+        const double if_freq = (_tree->exists(fe_path / "if_freq/value")) ?
+                            _tree->access<double>(fe_path / "if_freq/value").get() : 0.0;
+        _rx_fe_map[rx_chan].core->set_fe_connection(usrp::fe_connection_t(conn, if_freq));
         rx_chan++;
     }
     BOOST_FOREACH(const std::string& fe, _db_manager->get_tx_frontends()) {
-        _tx_fe_map[tx_chan++].db_fe_name = fe;
+        if (tx_chan >= _get_num_radios()) {
+            break;
+        }
+        _tx_fe_map[tx_chan].db_fe_name = fe;
+        const fs_path fe_path(db_path / "tx_frontends" / fe);
+        const std::string conn = _tree->access<std::string>(fe_path / "connection").get();
+        _tx_fe_map[tx_chan].core->set_mux(conn);
+        tx_chan++;
     }
+    UHD_ASSERT_THROW(rx_chan or tx_chan);
 
     //now that dboard is created -- register into rx antenna event
-    if (_tree->exists(db_path / "rx_frontends" / _radio_slot / "antenna" / "value")) {
-        _tree->access<std::string>(db_path / "rx_frontends" / _radio_slot / "antenna" / "value")
+    if (not _rx_fe_map.empty()
+        and _tree->exists(db_path / "rx_frontends" / _rx_fe_map[0].db_fe_name / "antenna" / "value")) {
+        _tree->access<std::string>(db_path / "rx_frontends" / _rx_fe_map[0].db_fe_name / "antenna" / "value")
             .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::_update_atr_leds, this, _1));
     }
     _update_atr_leds(""); //init anyway, even if never called
