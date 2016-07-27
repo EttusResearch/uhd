@@ -83,7 +83,7 @@ void source_node_ctrl::_register_downstream_node(
                 % unique_id()
         ));
     }
-    if (_downstream_nodes.count(port)) {
+    if (_downstream_nodes.count(port) and not _downstream_nodes[port].expired()) {
         throw uhd::runtime_error(str(boost::format("On node %s, output port %d is already connected.") % unique_id() % port));
     }
     if (not boost::dynamic_pointer_cast<sink_node_ctrl>(downstream_node)) {

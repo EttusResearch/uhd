@@ -80,7 +80,7 @@ void sink_node_ctrl::_register_upstream_node(
     if (port == ANY_PORT) {
         throw uhd::type_error("Invalid input port number.");
     }
-    if (_upstream_nodes.count(port)) {
+    if (_upstream_nodes.count(port) and not _upstream_nodes[port].expired()) {
         throw uhd::runtime_error(str(boost::format("On node %s, input port %d is already connected.") % unique_id() % port));
     }
     if (not boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node)) {
