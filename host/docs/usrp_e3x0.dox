@@ -135,7 +135,7 @@ have custom UHD modifications.
 -# Setup your environment as described in \ref e3x0_sdk_usage
 -# Type the following in the build directory (assuming a build in host/build):
 
-        $ cmake -DCMAKE_TOOLCHAIN_FILE=../host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_E300=ON ..
+        $ cmake -DCMAKE_TOOLCHAIN_FILE=../host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_E300=ON -DENABLE_GPSD=ON ..
         $ make
 
 For instructions on building UHD on a PC to interact with your E-Series device, follow these instructions: \ref e3x0_uhd_build
