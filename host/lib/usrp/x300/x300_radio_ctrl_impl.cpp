@@ -771,6 +771,27 @@ void x300_radio_ctrl_impl::_check_adc(const boost::uint32_t val)
 }
 
 /****************************************************************************
+ * Helpers
+ ***************************************************************************/
+bool x300_radio_ctrl_impl::check_radio_config()
+{
+    UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::check_radio_config() " << std::endl;
+    const fs_path fe_path = fs_path("dboards" / _radio_slot / "rx_frontends");
+    for (size_t chan = 0; chan < _get_num_radios(); chan++) {
+        if (_tree->exists(fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")) {
+            const bool chan_active = _is_streamer_active(RX_DIRECTION, chan);
+            _tree->access<bool>(fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
+                .set(chan_active)
+            ;
+            UHD_VAR(chan);
+            UHD_VAR(chan_active);
+        }
+    }
+
+    return true;
+}
+
+/****************************************************************************
  * Register block
  ***************************************************************************/
 UHD_RFNOC_BLOCK_REGISTER(x300_radio_ctrl, "X300Radio");

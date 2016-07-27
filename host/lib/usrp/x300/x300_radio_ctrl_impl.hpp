@@ -88,6 +88,9 @@ public:
         boost::function<void(double)> wait_for_clk_locked,
         bool apply_delay);
 
+protected:
+    virtual bool check_radio_config();
+
 private:
     class radio_regmap_t : public uhd::soft_regmap_t {
     public:
