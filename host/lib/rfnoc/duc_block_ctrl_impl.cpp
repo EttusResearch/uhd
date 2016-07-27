@@ -157,7 +157,8 @@ private:
         double actual_freq;
         int32_t freq_word;
         get_freq_and_freq_word(requested_freq, output_rate, actual_freq, freq_word);
-        sr_write("CORDIC_FREQ", uint32_t(freq_word), chan);
+        // Xilinx CORDIC uses a different format for the phase increment, hence the divide-by-four:
+        sr_write("CORDIC_FREQ", uint32_t(freq_word/4), chan);
         return actual_freq;
     }
 
