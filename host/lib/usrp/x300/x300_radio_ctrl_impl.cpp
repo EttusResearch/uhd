@@ -155,7 +155,7 @@ x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
 /****************************************************************************
  * API calls
  ***************************************************************************/
-double x300_radio_ctrl_impl::set_rate(double rate)
+double x300_radio_ctrl_impl::set_rate(double /* rate */)
 {
     // On X3x0, tick rate can't actually be changed at runtime
     return get_rate();
@@ -259,6 +259,17 @@ std::string x300_radio_ctrl_impl::get_dboard_fe_from_chan(const size_t chan, con
 
 double x300_radio_ctrl_impl::get_output_samp_rate(size_t chan)
 {
+    // TODO: chan should never be ANY_PORT, but due to our current graph search
+    // method, this can actually happen:
+    if (chan == ANY_PORT) {
+        chan = 0;
+        for (size_t i = 0; i < _get_num_radios(); i++) {
+            if (_is_streamer_active(uhd::RX_DIRECTION, chan)) {
+                chan = i;
+                break;
+            }
+        }
+    }
     return _rx_fe_map.at(chan).core->get_output_rate();
 }
 
