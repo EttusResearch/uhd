@@ -48,7 +48,7 @@ static const size_t BYTES_PER_SAMPLE = 4; // We currently only support sc16
 /************************************************************************
  * Static helpers
  ***********************************************************************/
-uhd::fs_path mb_root(const size_t mboard)
+static uhd::fs_path mb_root(const size_t mboard)
 {
     return uhd::fs_path("/mboards") / mboard;
 }
@@ -62,6 +62,38 @@ size_t num_ports(const uhd::property_tree::sptr &tree, const std::string &block_
     ).size();
 }
 
+size_t calc_num_tx_chans_per_radio(
+    const uhd::property_tree::sptr &tree,
+    const size_t num_radios_per_board,
+    const bool has_ducs,
+    const bool has_dmafifo
+) {
+    const size_t num_radio_ports = num_ports(tree, RADIO_BLOCK_NAME, "in");
+    if (has_ducs) {
+        return std::min(
+            num_radio_ports,
+            num_ports(tree, DUC_BLOCK_NAME, "in")
+        );
+    }
+
+    const size_t num_dmafifo_ports_per_radio = num_ports(tree, DFIFO_BLOCK_NAME, "in") / num_radios_per_board;
+    UHD_ASSERT_THROW(num_dmafifo_ports_per_radio);
+
+    return std::min(
+        num_radio_ports,
+        num_dmafifo_ports_per_radio
+    );
+}
+
+double lambda_const_double(const double d)
+{
+    return d;
+}
+
+uhd::meta_range_t lambda_const_meta_range(const double start, const double stop, const double step)
+{
+    return uhd::meta_range_t(start, stop, step);
+}
 /************************************************************************
  * Class Definition
  ***********************************************************************/
@@ -76,14 +108,12 @@ public:
             const uhd::device_addr_t &args
     ) : _device(device),
         _tree(device->get_tree()),
-        _has_ducs(not device->find_blocks(DUC_BLOCK_NAME).empty()),
-        _has_ddcs(not device->find_blocks(DDC_BLOCK_NAME).empty()),
+        _has_ducs(not args.has_key("skip_duc") and not device->find_blocks(DUC_BLOCK_NAME).empty()),
+        _has_ddcs(not args.has_key("skip_ddc") and not device->find_blocks(DDC_BLOCK_NAME).empty()),
         _has_dmafifo(not args.has_key("skip_dram") and not device->find_blocks(DFIFO_BLOCK_NAME).empty()),
         _num_mboards(_tree->list("/mboards").size()),
         _num_radios_per_board(device->find_blocks<radio_ctrl>("0/Radio").size()), // These might throw, maybe we catch that and provide a nicer error message.
-        _num_tx_chans_per_radio(_has_ducs ?
-                std::min(num_ports(_tree, RADIO_BLOCK_NAME, "in"), num_ports(_tree, DUC_BLOCK_NAME, "in"))
-                : num_ports(_tree, RADIO_BLOCK_NAME, "in")),
+        _num_tx_chans_per_radio(calc_num_tx_chans_per_radio(_tree, _num_radios_per_board, _has_ducs, _has_dmafifo)),
         _num_rx_chans_per_radio(_has_ddcs ?
                 std::min(num_ports(_tree, RADIO_BLOCK_NAME, "out"), num_ports(_tree, DDC_BLOCK_NAME, "out"))
                 : num_ports(_tree, RADIO_BLOCK_NAME, "out")),
@@ -95,13 +125,17 @@ public:
         check_available_periphs(); // Throws if invalid configuration.
         setup_prop_tree();
         connect_blocks();
-        if (not _has_ddcs) {
+        if (args.has_key("skip_ddc")) {
+            UHD_MSG(status) << "[legacy_compat] Skipping DDCs by user request." << std::endl;
+        } else if (not _has_ddcs) {
             UHD_MSG(warning)
-                << "[legacy_compat] No DDCs detected. You will only be able to receive at the master clock rate."
+                << "[legacy_compat] No DDCs detected. You will only be able to receive at the radio frontend rate."
                 << std::endl;
         }
-        if (not _has_ducs) {
-            UHD_MSG(warning) << "[legacy_compat] No DUCs detected. You will only be able to transmit at the master clock rate." << std::endl;
+        if (args.has_key("skip_duc")) {
+            UHD_MSG(status) << "[legacy_compat] Skipping DUCs by user request." << std::endl;
+        } else if (not _has_ducs) {
+            UHD_MSG(warning) << "[legacy_compat] No DUCs detected. You will only be able to transmit at the radio frontend rate." << std::endl;
         }
         if (args.has_key("skip_dram")) {
             UHD_MSG(status) << "[legacy_compat] Skipping DRAM by user request." << std::endl;
@@ -125,12 +159,14 @@ public:
      ***********************************************************************/
     uhd::fs_path rx_dsp_root(const size_t mboard_idx, const size_t chan)
     {
-        if (not _has_ddcs) {
-            return uhd::fs_path("/stubs/dsp") / mboard_idx;
-        }
         // The DSP index is the same as the radio index
         size_t dsp_index = _rx_channel_map[mboard_idx][chan].radio_index;
         size_t port_index = _rx_channel_map[mboard_idx][chan].port_index;
+
+        if (not _has_ddcs) {
+            return mb_root(mboard_idx) / "rx_dsps" / dsp_index / port_index;
+        }
+
         return mb_root(mboard_idx) / "xbar" /
                str(boost::format("%s_%d") % DDC_BLOCK_NAME % dsp_index) /
                "legacy_api" / port_index;
@@ -138,12 +174,14 @@ public:
 
     uhd::fs_path tx_dsp_root(const size_t mboard_idx, const size_t chan)
     {
-        if (not _has_ducs) {
-            return uhd::fs_path("/stubs/dsp") / mboard_idx;
-        }
         // The DSP index is the same as the radio index
         size_t dsp_index = _tx_channel_map[mboard_idx][chan].radio_index;
         size_t port_index = _tx_channel_map[mboard_idx][chan].port_index;
+
+        if (not _has_ducs) {
+            return mb_root(mboard_idx) / "tx_dsps" / dsp_index / port_index;
+        }
+
         return mb_root(mboard_idx) / "xbar" /
                str(boost::format("%s_%d") % DUC_BLOCK_NAME % dsp_index) /
                "legacy_api" / port_index;
@@ -211,10 +249,19 @@ public:
         return _tree->access<double>(mb_root(mboard_idx) / "tick_rate").get();
     }
 
-    uhd::meta_range_t lambda_get_tick_rate_range(const size_t mboard_idx=0)
-    {
-        const double tick_rate = get_tick_rate(mboard_idx);
-        return uhd::meta_range_t(tick_rate, tick_rate, 0.0);
+    uhd::meta_range_t lambda_get_samp_rate_range(
+            const size_t mboard_idx,
+            const size_t radio_idx,
+            const size_t chan,
+            uhd::direction_t dir
+    ) {
+        radio_ctrl::sptr radio_sptr = get_block_ctrl<radio_ctrl>(mboard_idx, RADIO_BLOCK_NAME, radio_idx);
+        const double samp_rate = (dir == uhd::TX_DIRECTION) ?
+            radio_sptr->get_input_samp_rate(chan) :
+            radio_sptr->get_output_samp_rate(chan)
+        ;
+
+        return uhd::meta_range_t(samp_rate, samp_rate, 0.0);
     }
 
     void set_tick_rate(const double tick_rate, const size_t mboard_idx=0)
@@ -396,23 +443,71 @@ private: // methods
                     .set_publisher(boost::bind(&legacy_compat_impl::get_subdev_spec, this, mboard_idx, uhd::RX_DIRECTION));
             }
 
-            if (not _has_ddcs or not _has_ducs) {
-                const uhd::fs_path dsp_base_path(uhd::fs_path("/stubs/dsp/") / mboard_idx);
-                _tree->create<double>(dsp_base_path / "rate/value")
-                    .set(get_tick_rate(mboard_idx))
-                    .add_coerced_subscriber(boost::bind(&legacy_compat_impl::set_tick_rate, this, _1, mboard_idx))
-                    .set_publisher(boost::bind(&legacy_compat_impl::get_tick_rate, this, mboard_idx))
-                ;
-                _tree->create<uhd::meta_range_t>(dsp_base_path / "rate/range")
-                    .set(uhd::meta_range_t(get_tick_rate(), get_tick_rate(), 0.0))
-                    .set_publisher(boost::bind(&legacy_compat_impl::lambda_get_tick_rate_range, this, mboard_idx))
-                ;
-                _tree->create<double>(dsp_base_path / "freq/value")
-                    .set(0.0)
-                ;
-                _tree->create<uhd::meta_range_t>(dsp_base_path / "freq/range")
-                    .set(uhd::meta_range_t(0.0, 0.0, 0.0));
-                ;
+            if (not _has_ddcs) {
+                for (size_t radio_idx = 0; radio_idx < _num_radios_per_board; radio_idx++) {
+                    for (size_t chan = 0; chan < _num_rx_chans_per_radio; chan++) {
+                        const uhd::fs_path rx_dsp_base_path(mb_root(mboard_idx) / "rx_dsps" / radio_idx / chan);
+                        _tree->create<double>(rx_dsp_base_path / "rate/value")
+                            .set(0.0)
+                            .set_publisher(
+                                boost::bind(
+                                    &radio_ctrl::get_output_samp_rate,
+                                    get_block_ctrl<radio_ctrl>(mboard_idx, RADIO_BLOCK_NAME, radio_idx),
+                                    chan
+                                )
+                            )
+                        ;
+                        _tree->create<uhd::meta_range_t>(rx_dsp_base_path / "rate/range")
+                            .set_publisher(
+                                boost::bind(
+                                    &legacy_compat_impl::lambda_get_samp_rate_range,
+                                    this,
+                                    mboard_idx, radio_idx, chan,
+                                    uhd::RX_DIRECTION
+                                )
+                            )
+                        ;
+                        _tree->create<double>(rx_dsp_base_path / "freq/value")
+                            .set_publisher(boost::bind(&lambda_const_double, 0.0))
+                        ;
+                        _tree->create<uhd::meta_range_t>(rx_dsp_base_path / "freq/range")
+                            .set_publisher(boost::bind(&lambda_const_meta_range, 0.0, 0.0, 0.0))
+                        ;
+                    }
+                }
+            }
+            if (not _has_ducs) {
+                for (size_t radio_idx = 0; radio_idx < _num_radios_per_board; radio_idx++) {
+                    for (size_t chan = 0; chan < _num_tx_chans_per_radio; chan++) {
+                        const uhd::fs_path tx_dsp_base_path(mb_root(mboard_idx) / "tx_dsps" / radio_idx / chan);
+                        _tree->create<double>(tx_dsp_base_path / "rate/value")
+                            .set(0.0)
+                            .set_publisher(
+                                boost::bind(
+                                    &radio_ctrl::get_output_samp_rate,
+                                    get_block_ctrl<radio_ctrl>(mboard_idx, RADIO_BLOCK_NAME, radio_idx),
+                                    chan
+                                )
+                            )
+                        ;
+                        _tree->create<uhd::meta_range_t>(tx_dsp_base_path / "rate/range")
+                            .set_publisher(
+                                boost::bind(
+                                    &legacy_compat_impl::lambda_get_samp_rate_range,
+                                    this,
+                                    mboard_idx, radio_idx, chan,
+                                    uhd::TX_DIRECTION
+                                )
+                            )
+                        ;
+                        _tree->create<double>(tx_dsp_base_path / "freq/value")
+                            .set_publisher(boost::bind(&lambda_const_double, 0.0))
+                        ;
+                        _tree->create<uhd::meta_range_t>(tx_dsp_base_path / "freq/range")
+                            .set_publisher(boost::bind(&lambda_const_meta_range, 0.0, 0.0, 0.0))
+                        ;
+                    }
+                }
             }
         }
     }
@@ -536,12 +631,10 @@ private: // methods
             radio_sptr->set_rate(tick_rate);
             for (size_t chan = 0; chan < _num_rx_chans_per_radio and _has_ddcs; chan++) {
                 const double radio_output_rate = radio_sptr->get_output_samp_rate(chan);
-                UHD_VAR(radio_output_rate);
                 _device->get_block_ctrl(ddc_block_id)->set_arg<double>("input_rate", radio_output_rate, chan);
             }
             for (size_t chan = 0; chan < _num_tx_chans_per_radio and _has_ducs; chan++) {
                 const double radio_input_rate = radio_sptr->get_input_samp_rate(chan);
-                UHD_VAR(radio_input_rate);
                 _device->get_block_ctrl(duc_block_id)->set_arg<double>("output_rate", radio_input_rate, chan);
             }
         }
