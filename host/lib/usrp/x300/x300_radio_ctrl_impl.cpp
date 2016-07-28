@@ -776,15 +776,23 @@ void x300_radio_ctrl_impl::_check_adc(const boost::uint32_t val)
 bool x300_radio_ctrl_impl::check_radio_config()
 {
     UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::check_radio_config() " << std::endl;
-    const fs_path fe_path = fs_path("dboards" / _radio_slot / "rx_frontends");
+    const fs_path rx_fe_path = fs_path("dboards" / _radio_slot / "rx_frontends");
     for (size_t chan = 0; chan < _get_num_radios(); chan++) {
-        if (_tree->exists(fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")) {
+        if (_tree->exists(rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")) {
             const bool chan_active = _is_streamer_active(RX_DIRECTION, chan);
-            _tree->access<bool>(fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
+            _tree->access<bool>(rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
                 .set(chan_active)
             ;
-            UHD_VAR(chan);
-            UHD_VAR(chan_active);
+        }
+    }
+
+    const fs_path tx_fe_path = fs_path("dboards" / _radio_slot / "tx_frontends");
+    for (size_t chan = 0; chan < _get_num_radios(); chan++) {
+        if (_tree->exists(tx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")) {
+            const bool chan_active = _is_streamer_active(TX_DIRECTION, chan);
+            _tree->access<bool>(tx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
+                .set(chan_active)
+            ;
         }
     }
 
