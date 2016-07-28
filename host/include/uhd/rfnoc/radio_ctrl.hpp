@@ -46,7 +46,7 @@ public:
     /************************************************************************
      * API calls
      ***********************************************************************/
-    /*! Return the tick/sample rate on all channels (rx and tx).
+    /*! Return the tick rate on all channels (rx and tx).
      *
      * \return The tick rate.
      */
