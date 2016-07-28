@@ -220,7 +220,7 @@ private:
         UHD_ASSERT_THROW(hb_enable <= NUM_HALFBANDS);
         UHD_ASSERT_THROW(decim <= CIC_MAX_DECIM);
         // What we can't cover with halfbands, we do with the CIC
-        sr_write("DECIM_WORD", (hb_enable << 8) | (decim & 0xff));
+        sr_write("DECIM_WORD", (hb_enable << 8) | (decim & 0xff), chan);
 
         // Rate change = M/N
         sr_write("N", std::pow(2.0, double(hb_enable)) * (decim & 0xff), chan);

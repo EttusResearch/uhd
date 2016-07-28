@@ -210,7 +210,7 @@ private:
         }
         hb_enable_word <<= 8;
         // What we can't cover with halfbands, we do with the CIC
-        sr_write("INTERP_WORD", hb_enable_word | (interp & 0xff));
+        sr_write("INTERP_WORD", hb_enable_word | (interp & 0xff), chan);
 
         // Rate change = M/N
         sr_write("N", 1, chan);
@@ -229,8 +229,8 @@ private:
         const int CIC_N = 4;
         const double rate_pow = std::pow(double(interp & 0xff), CIC_N - 1);
 
-	// Experimentally determined value to scale the output to [-1, 1]
-	// This must also encompass the CORDIC gain
+        // Experimentally determined value to scale the output to [-1, 1]
+        // This must also encompass the CORDIC gain
         static const double CONSTANT_GAIN = 1.1644;
 
         const double scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(CONSTANT_GAIN*rate_pow);
