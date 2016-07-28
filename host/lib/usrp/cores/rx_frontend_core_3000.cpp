@@ -24,12 +24,12 @@
 
 using namespace uhd;
 
-#define REG_RX_FE_MAG_CORRECTION    _base + 0  //18 bits
-#define REG_RX_FE_PHASE_CORRECTION  _base + 4  //18 bits
-#define REG_RX_FE_OFFSET_I          _base + 8  //18 bits
-#define REG_RX_FE_OFFSET_Q          _base + 12 //18 bits
-#define REG_RX_FE_MAPPING           _base + 16
-#define REG_RX_FE_HET_CORDIC_PHASE  _base + 20
+#define REG_RX_FE_MAG_CORRECTION    (_base + 0 ) //18 bits
+#define REG_RX_FE_PHASE_CORRECTION  (_base + 4 ) //18 bits
+#define REG_RX_FE_OFFSET_I          (_base + 8 ) //18 bits
+#define REG_RX_FE_OFFSET_Q          (_base + 12) //18 bits
+#define REG_RX_FE_MAPPING           (_base + 16)
+#define REG_RX_FE_HET_CORDIC_PHASE  (_base + 20)
 
 #define FLAG_DSP_RX_MAPPING_SWAP_IQ     (1 << 0)
 #define FLAG_DSP_RX_MAPPING_REAL_MODE   (1 << 1)
@@ -158,6 +158,17 @@ public:
             .set(DEFAULT_IQ_BALANCE_VALUE)
             .add_coerced_subscriber(boost::bind(&rx_frontend_core_3000::set_iq_balance, this, _1))
         ;
+    }
+
+    double get_output_rate() {
+        switch (_fe_conn.get_sampling_mode()) {
+        case fe_connection_t::REAL:
+        case fe_connection_t::HETERODYNE:
+            return _tick_rate / 2;
+        default:
+            return _tick_rate;
+        }
+        return _tick_rate;
     }
 
 private:
