@@ -532,12 +532,17 @@ private: // methods
             radio_block_id.set_block_count(radio);
             duc_block_id.set_block_count(radio);
             ddc_block_id.set_block_count(radio);
-            _device->get_block_ctrl<radio_ctrl>(radio_block_id)->set_rate(tick_rate);
+            radio_ctrl::sptr radio_sptr = _device->get_block_ctrl<radio_ctrl>(radio_block_id);
+            radio_sptr->set_rate(tick_rate);
             for (size_t chan = 0; chan < _num_rx_chans_per_radio and _has_ddcs; chan++) {
-                _device->get_block_ctrl(ddc_block_id)->set_arg<double>("input_rate", tick_rate, chan);
+                const double radio_output_rate = radio_sptr->get_output_samp_rate(chan);
+                UHD_VAR(radio_output_rate);
+                _device->get_block_ctrl(ddc_block_id)->set_arg<double>("input_rate", radio_output_rate, chan);
             }
             for (size_t chan = 0; chan < _num_tx_chans_per_radio and _has_ducs; chan++) {
-                _device->get_block_ctrl(duc_block_id)->set_arg<double>("output_rate", tick_rate, chan);
+                const double radio_input_rate = radio_sptr->get_input_samp_rate(chan);
+                UHD_VAR(radio_input_rate);
+                _device->get_block_ctrl(duc_block_id)->set_arg<double>("output_rate", radio_input_rate, chan);
             }
         }
     }
