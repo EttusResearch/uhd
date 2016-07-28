@@ -126,7 +126,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     ////////////////////////////////////////////////////////////////
     // Set tick rate
     ////////////////////////////////////////////////////////////////
-    set_rate(_radio_clk_rate);
+    radio_ctrl_impl::set_rate(_radio_clk_rate);
 }
 
 x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
@@ -157,10 +157,8 @@ x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
  ***************************************************************************/
 double x300_radio_ctrl_impl::set_rate(double rate)
 {
-    for (size_t i = 0; i < _get_num_radios(); i++) {
-        _rx_fe_map[i].core->set_tick_rate(rate);
-    }
-    return radio_ctrl_impl::set_rate(rate);
+    // On X3x0, tick rate can't actually be changed at runtime
+    return get_rate();
 }
 
 void x300_radio_ctrl_impl::set_tx_antenna(const std::string &ant, const size_t chan)
@@ -257,6 +255,11 @@ std::string x300_radio_ctrl_impl::get_dboard_fe_from_chan(const size_t chan, con
         default:
             UHD_THROW_INVALID_CODE_PATH();
     }
+}
+
+double x300_radio_ctrl_impl::get_output_samp_rate(size_t chan)
+{
+    return _rx_fe_map.at(chan).core->get_output_rate();
 }
 
 /****************************************************************************

@@ -63,6 +63,8 @@ public:
     size_t get_chan_from_dboard_fe(const std::string &fe, const direction_t dir);
     std::string get_dboard_fe_from_chan(const size_t chan, const direction_t dir);
 
+    double get_output_samp_rate(size_t port);
+
     /************************************************************************
      * Hardware setup and control
      ***********************************************************************/
