@@ -124,6 +124,7 @@ public:
      * \param gdboard_id the id of the grand-dboard
      * \param iface the custom dboard interface
      * \param subtree the subtree to load with props
+     * \param bool defer initialising the daughterboards
      * \return an sptr to the new dboard manager
      */
     static sptr make(
@@ -131,10 +132,16 @@ public:
         dboard_id_t tx_dboard_id,
         dboard_id_t gdboard_id,
         dboard_iface::sptr iface,
-        property_tree::sptr subtree
+        property_tree::sptr subtree,
+        bool defer_db_init = false
     );
 
     virtual ~dboard_manager() {}
+
+    /*!
+     * Run dboard post constructor initializations if defered during make
+     */
+    virtual void initialize_dboards() = 0;
 
     /*!
      * Returns a vector of RX frontend (subdev) names
