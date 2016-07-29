@@ -182,7 +182,8 @@ public:
         dboard_id_t rx_dboard_id,
         dboard_id_t tx_dboard_id,
         dboard_iface::sptr iface,
-        property_tree::sptr subtree
+        property_tree::sptr subtree,
+        bool defer_db_init
     );
     virtual ~dboard_manager_impl(void);
 
@@ -194,13 +195,17 @@ public:
         return _tx_frontends;
     }
 
+    void initialize_dboards();
+
 private:
-    void init(dboard_id_t, dboard_id_t, property_tree::sptr);
+    void init(dboard_id_t, dboard_id_t, property_tree::sptr, bool);
     //list of rx and tx dboards in this dboard_manager
     //each dboard here is actually a subdevice proxy
     //the subdevice proxy is internal to the cpp file
     uhd::dict<std::string, dboard_base::sptr> _rx_dboards;
     uhd::dict<std::string, dboard_base::sptr> _tx_dboards;
+    std::vector<dboard_base::sptr>            _rx_containers;
+    std::vector<dboard_base::sptr>            _tx_containers;
     std::vector<std::string>                  _rx_frontends;
     std::vector<std::string>                  _tx_frontends;
     dboard_iface::sptr _iface;
@@ -215,13 +220,14 @@ dboard_manager::sptr dboard_manager::make(
     dboard_id_t tx_dboard_id,
     dboard_id_t gdboard_id,
     dboard_iface::sptr iface,
-    property_tree::sptr subtree
+    property_tree::sptr subtree,
+    bool defer_db_init
 ){
     return dboard_manager::sptr(
         new dboard_manager_impl(
             rx_dboard_id,
             (gdboard_id == dboard_id_t::none())? tx_dboard_id : gdboard_id,
-            iface, subtree
+            iface, subtree, defer_db_init
         )
     );
 }
@@ -233,12 +239,13 @@ dboard_manager_impl::dboard_manager_impl(
     dboard_id_t rx_dboard_id,
     dboard_id_t tx_dboard_id,
     dboard_iface::sptr iface,
-    property_tree::sptr subtree
+    property_tree::sptr subtree,
+    bool defer_db_init
 ):
     _iface(iface)
 {
     try{
-        this->init(rx_dboard_id, tx_dboard_id, subtree);
+        this->init(rx_dboard_id, tx_dboard_id, subtree, defer_db_init);
     }
     catch(const std::exception &e){
         UHD_MSG(error) << boost::format(
@@ -250,12 +257,12 @@ dboard_manager_impl::dboard_manager_impl(
         if (subtree->exists("rx_frontends")) subtree->remove("rx_frontends");
         if (subtree->exists("tx_frontends")) subtree->remove("tx_frontends");
         if (subtree->exists("iface"))        subtree->remove("iface");
-        this->init(dboard_id_t::none(), dboard_id_t::none(), subtree);
+        this->init(dboard_id_t::none(), dboard_id_t::none(), subtree, false);
     }
 }
 
 void dboard_manager_impl::init(
-    dboard_id_t rx_dboard_id, dboard_id_t tx_dboard_id, property_tree::sptr subtree
+    dboard_id_t rx_dboard_id, dboard_id_t tx_dboard_id, property_tree::sptr subtree, bool defer_db_init
 ){
     //find the dboard key matches for the dboard ids
     dboard_key_t rx_dboard_key, tx_dboard_key, xcvr_dboard_key;
@@ -327,7 +334,11 @@ void dboard_manager_impl::init(
 
         //initialize the container after all subdevs have been created
         if (container_ctor) {
-            db_ctor_args.rx_container->initialize();
+            if (defer_db_init) {
+                _rx_containers.push_back(db_ctor_args.rx_container);
+            } else {
+                db_ctor_args.rx_container->initialize();
+            }
         }
 
         //Populate frontend names in-order.
@@ -371,7 +382,11 @@ void dboard_manager_impl::init(
 
         //initialize the container after all subdevs have been created
         if (rx_cont_ctor) {
-            db_ctor_args.rx_container->initialize();
+            if (defer_db_init) {
+                _rx_containers.push_back(db_ctor_args.rx_container);
+            } else {
+                db_ctor_args.rx_container->initialize();
+            }
         }
 
         //force the tx key to the unknown board for bad combinations
@@ -406,13 +421,27 @@ void dboard_manager_impl::init(
 
         //initialize the container after all subdevs have been created
         if (tx_cont_ctor) {
-            db_ctor_args.tx_container->initialize();
+            if (defer_db_init) {
+                _tx_containers.push_back(db_ctor_args.tx_container);
+            } else {
+                db_ctor_args.tx_container->initialize();
+            }
         }
 
         //Populate frontend names in-order.
         //We cannot use _xx_dboards.keys() here because of the ordering requirement
         _rx_frontends = rx_subdevs;
         _tx_frontends = tx_subdevs;
+    }
+}
+
+void dboard_manager_impl::initialize_dboards(void) {
+    BOOST_FOREACH(dboard_base::sptr& _rx_container, _rx_containers) {
+        _rx_container->initialize();
+    }
+
+    BOOST_FOREACH(dboard_base::sptr& _tx_container, _tx_containers) {
+        _tx_container->initialize();
     }
 }
 
