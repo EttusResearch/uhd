@@ -150,6 +150,10 @@ private:
 
     void _check_adc(const boost::uint32_t val);
 
+    void set_rx_fe_corrections(const std::string &fe_name, const double lo_freq);
+    void set_tx_fe_corrections(const std::string &fe_name, const double lo_freq);
+
+private: // members
     enum radio_connection_t { PRIMARY, SECONDARY };
 
     radio_connection_t                  _radio_type;
@@ -179,6 +183,8 @@ private:
 
     std::map<size_t, rx_fe_perif>   _rx_fe_map;
     std::map<size_t, tx_fe_perif>   _tx_fe_map;
+
+    bool _ignore_cal_file;
 
 }; /* class radio_ctrl_impl */
 

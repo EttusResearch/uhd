@@ -20,6 +20,7 @@
 #include "x300_dboard_iface.hpp"
 #include "wb_iface_adapter.hpp"
 #include "gpio_atr_3000.hpp"
+#include "apply_corrections.hpp"
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
@@ -40,6 +41,7 @@ static const size_t IO_MASTER_RADIO = 0;
  * Structors
  ***************************************************************************/
 UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
+    , _ignore_cal_file(false)
 {
     UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::ctor() " << std::endl;
 
@@ -109,9 +111,13 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     for (size_t i = 0; i < _get_num_radios(); i++) {
         _rx_fe_map[i].core = rx_frontend_core_3000::make(_get_ctrl(i), regs::sr_addr(x300_regs::RX_RE_BASE));
         _rx_fe_map[i].core->set_tick_rate(_radio_clk_rate);
+        _rx_fe_map[i].core->set_dc_offset(rx_frontend_core_3000::DEFAULT_DC_OFFSET_VALUE);
+        _rx_fe_map[i].core->set_dc_offset_auto(rx_frontend_core_3000::DEFAULT_DC_OFFSET_ENABLE);
         _rx_fe_map[i].core->populate_subtree(_tree->subtree(_root_path / "rx_fe_corrections" / i));
 
         _tx_fe_map[i].core = tx_frontend_core_200::make(_get_ctrl(i), regs::sr_addr(x300_regs::TX_FE_BASE));
+        _tx_fe_map[i].core->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
+        _tx_fe_map[i].core->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
         _tx_fe_map[i].core->populate_subtree(_tree->subtree(_root_path / "tx_fe_corrections" / i));
     }
 
@@ -361,6 +367,36 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
             .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::_update_atr_leds, this, _1));
     }
     _update_atr_leds(""); //init anyway, even if never called
+
+    //bind frontend corrections to the dboard freq props
+    const fs_path db_tx_fe_path = db_path / "tx_frontends";
+    BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)) {
+        _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
+            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_tx_fe_corrections, this, _radio_slot, _1));
+    }
+    const fs_path db_rx_fe_path = db_path / "rx_frontends";
+    BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)) {
+        _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
+            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_rx_fe_corrections, this, _radio_slot, _1));
+    }
+}
+
+void x300_radio_ctrl_impl::set_rx_fe_corrections(
+        const std::string &slot_name,
+        const double lo_freq
+) {
+    if (not _ignore_cal_file) {
+        apply_rx_fe_corrections(_tree, slot_name, lo_freq);
+    }
+}
+
+void x300_radio_ctrl_impl::set_tx_fe_corrections(
+        const std::string &slot_name,
+        const double lo_freq
+) {
+    if (not _ignore_cal_file) {
+        apply_tx_fe_corrections(_tree, slot_name, lo_freq);
+    }
 }
 
 void x300_radio_ctrl_impl::reset_codec()
