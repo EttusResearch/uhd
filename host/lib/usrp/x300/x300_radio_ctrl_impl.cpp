@@ -325,7 +325,8 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
         _db_eeproms[RX_EEPROM_ADDR + DB_OFFSET].id,
         _db_eeproms[TX_EEPROM_ADDR + DB_OFFSET].id,
         _db_eeproms[GDB_EEPROM_ADDR + DB_OFFSET].id,
-        db_iface, _tree->subtree(db_path)
+        db_iface, _tree->subtree(db_path),
+        true // defer daughterboard intitialization
     );
 
     size_t rx_chan = 0, tx_chan = 0;
@@ -353,6 +354,9 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
         tx_chan++;
     }
     UHD_ASSERT_THROW(rx_chan or tx_chan);
+
+    // Initialize the daughterboards now that frontend cores and connections exist
+    _db_manager->initialize_dboards();
 
     //now that dboard is created -- register into rx antenna event
     if (not _rx_fe_map.empty()
