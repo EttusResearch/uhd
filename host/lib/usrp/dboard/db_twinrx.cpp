@@ -281,6 +281,7 @@ public:
         */
 
         _expert->debug_audit();
+        _expert->resolve_all(true);
     }
 
     static dboard_base::sptr make_twinrx_fe(dboard_base::ctor_args_t args)
