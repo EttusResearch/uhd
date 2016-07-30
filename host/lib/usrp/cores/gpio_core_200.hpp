@@ -77,6 +77,8 @@ public:
 
     static sptr make(uhd::wb_iface::sptr iface, const size_t);
 
+    virtual void set_ddr_reg() = 0;
+
     virtual void set_atr_reg(const atr_reg_t atr, const boost::uint32_t value) = 0;
 
     virtual void set_all_regs(const boost::uint32_t value) = 0;
