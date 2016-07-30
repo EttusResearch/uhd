@@ -32,7 +32,7 @@ namespace uhd {
  *
  * Every input is defined by a port definition (port_t).
  */
-class UHD_API sink_block_ctrl_base;
+class UHD_RFNOC_API sink_block_ctrl_base;
 class sink_block_ctrl_base : virtual public block_ctrl_base, virtual public sink_node_ctrl
 {
 public:

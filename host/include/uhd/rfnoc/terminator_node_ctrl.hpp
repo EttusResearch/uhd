@@ -36,7 +36,7 @@ namespace uhd {
  * Even if it's used for both, the data going into the radio block is not
  * the data coming out.
  */
-class UHD_API terminator_node_ctrl;
+class UHD_RFNOC_API terminator_node_ctrl;
 class terminator_node_ctrl : virtual public node_ctrl_base
 {
 public:

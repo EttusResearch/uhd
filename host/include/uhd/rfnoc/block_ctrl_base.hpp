@@ -102,7 +102,7 @@ struct make_args_t
  * from a class such as uhd::usrp::rfnoc::source_block_ctrl_base or
  * uhd::usrp::rfnoc::sink_block_ctrl_base which extends its functionality.
  */
-class UHD_API block_ctrl_base;
+class UHD_RFNOC_API block_ctrl_base;
 class block_ctrl_base : virtual public node_ctrl_base
 {
 public:

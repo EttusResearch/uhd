@@ -30,7 +30,7 @@ namespace uhd {
  * can be set by sr_write(). The default behaviour of functions is documented
  * in uhd::rfnoc::block_ctrl_base.
  */
-class UHD_API block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
+class UHD_RFNOC_API block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
 {
 public:
     // Required macro in RFNoC block classes

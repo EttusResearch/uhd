@@ -34,7 +34,7 @@ namespace uhd {
  * - Streaming terminators (these need to know the sampling rates
  *   to configure the connected streamers)
  */
-class UHD_API rate_node_ctrl;
+class UHD_RFNOC_API rate_node_ctrl;
 class rate_node_ctrl : virtual public node_ctrl_base
 {
 public:

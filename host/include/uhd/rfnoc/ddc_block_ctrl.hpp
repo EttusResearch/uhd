@@ -34,7 +34,7 @@ namespace uhd {
  *
  * It also includes a CORDIC component to shift signals in frequency.
  */
-class UHD_API ddc_block_ctrl :
+class UHD_RFNOC_API ddc_block_ctrl :
     public source_block_ctrl_base,
     public sink_block_ctrl_base,
     public rate_node_ctrl,

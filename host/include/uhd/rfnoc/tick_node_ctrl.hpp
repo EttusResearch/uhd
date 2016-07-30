@@ -31,7 +31,7 @@ namespace uhd {
  * - Radio Controls
  * - Data generating blocks that add time stamps
  */
-class UHD_API tick_node_ctrl;
+class UHD_RFNOC_API tick_node_ctrl;
 class tick_node_ctrl : virtual public node_ctrl_base
 {
 public:

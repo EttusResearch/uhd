@@ -34,7 +34,7 @@ namespace uhd {
  *   bank.
  *
  */
-class UHD_API dma_fifo_block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
+class UHD_RFNOC_API dma_fifo_block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(dma_fifo_block_ctrl)

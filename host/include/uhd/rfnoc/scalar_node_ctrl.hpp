@@ -34,7 +34,7 @@ namespace uhd {
  * - Radio Controls
  * - Potentially FFTs or FIRs, if they affect scaling
  */
-class UHD_API scalar_node_ctrl;
+class UHD_RFNOC_API scalar_node_ctrl;
 class scalar_node_ctrl : virtual public node_ctrl_base
 {
 public:

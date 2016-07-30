@@ -35,7 +35,7 @@ namespace uhd {
  * It will perform one FFT operation per incoming packet, treating it
  * as a vector of samples.
  */
-class UHD_API fir_block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
+class UHD_RFNOC_API fir_block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(fir_block_ctrl)

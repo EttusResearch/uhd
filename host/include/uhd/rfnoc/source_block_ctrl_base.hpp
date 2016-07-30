@@ -31,7 +31,7 @@ namespace uhd {
  * If a block has receive capabilities, this means we can receive
  * data *from* this block.
  */
-class UHD_API source_block_ctrl_base;
+class UHD_RFNOC_API source_block_ctrl_base;
 class source_block_ctrl_base : virtual public block_ctrl_base, virtual public source_node_ctrl
 {
 public:

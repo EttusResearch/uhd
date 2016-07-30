@@ -30,7 +30,7 @@ namespace uhd {
  *
  * Sink nodes can have upstream blocks.
  */
-class UHD_API sink_node_ctrl;
+class UHD_RFNOC_API sink_node_ctrl;
 class sink_node_ctrl : virtual public node_ctrl_base
 {
 public:

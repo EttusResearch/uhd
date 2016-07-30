@@ -36,7 +36,7 @@ namespace uhd {
 /*! \brief Abstract base class for streaming nodes.
  *
  */
-class UHD_API node_ctrl_base;
+class UHD_RFNOC_API node_ctrl_base;
 class node_ctrl_base : boost::noncopyable, public boost::enable_shared_from_this<node_ctrl_base>
 {
 public:

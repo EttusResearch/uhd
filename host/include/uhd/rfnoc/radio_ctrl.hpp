@@ -31,7 +31,7 @@ namespace uhd {
 
 /*! \brief Block controller for all RFNoC-based radio blocks
  */
-class UHD_API radio_ctrl :
+class UHD_RFNOC_API radio_ctrl :
     public source_block_ctrl_base,
     public sink_block_ctrl_base,
     public rate_node_ctrl,

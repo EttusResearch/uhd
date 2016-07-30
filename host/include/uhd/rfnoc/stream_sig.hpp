@@ -30,7 +30,7 @@ namespace uhd { namespace rfnoc {
  * so, some attributes may be left undefined (e.g., a FIFO block
  * works for any item type, so it doesn't need to set it).
  */
-class UHD_API stream_sig_t {
+class UHD_RFNOC_API stream_sig_t {
  public:
     /***********************************************************************
      * Structors

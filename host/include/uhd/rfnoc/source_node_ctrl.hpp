@@ -30,7 +30,7 @@ namespace uhd {
  *
  * Source nodes can have downstream blocks.
  */
-class UHD_API source_node_ctrl;
+class UHD_RFNOC_API source_node_ctrl;
 class source_node_ctrl : virtual public node_ctrl_base
 {
 public:
