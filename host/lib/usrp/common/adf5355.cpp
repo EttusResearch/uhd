@@ -314,8 +314,8 @@ public:
             _regs.prescaler = adf5355_regs_t::PRESCALER_4_5;
         }
 
-        /* ADI: Tests have shown that the optimal bleed set is the following:
-         * 4/N < IBLEED/ICP < 10/N */
+        // ADI: Tests have shown that the optimal bleed set is the following:
+        // 4/N < IBLEED/ICP < 10/N */
 /*
         boost::uint32_t cp_curr_ua =
             (static_cast<boost::uint32_t>(_regs.charge_pump_current) + 1) * 315;
