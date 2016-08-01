@@ -510,11 +510,16 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     for(size_t instance = 0; instance < fpga::NUM_RADIOS; instance++)
         this->_setup_radio(instance);
 
-    // Radio 0 loopback through AD9361
-    _codec_mgr->loopback_self_test(_radio_perifs[0].ctrl, radio::sr_addr(radio::CODEC_IDLE), radio::RB64_CODEC_READBACK);
-    // Radio 1 loopback through AD9361
-    _codec_mgr->loopback_self_test(_radio_perifs[1].ctrl, radio::sr_addr(radio::CODEC_IDLE), radio::RB64_CODEC_READBACK);
-
+    //now test each radio module's connection to the codec interface
+    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    {
+        _codec_mgr->loopback_self_test(
+            boost::bind(
+                &radio_ctrl_core_3000::poke32, perif.ctrl, radio::sr_addr(radio::CODEC_IDLE), _1
+            ),
+            boost::bind(&radio_ctrl_core_3000::peek64, perif.ctrl, radio::RB64_CODEC_READBACK)
+        );
+    }
     ////////////////////////////////////////////////////////////////////
     // internal gpios
     ////////////////////////////////////////////////////////////////////

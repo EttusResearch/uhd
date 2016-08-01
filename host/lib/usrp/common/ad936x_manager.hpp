@@ -80,9 +80,8 @@ public:
      * \throws a uhd::runtime_error if the loopback value didn't match.
      */
     virtual void loopback_self_test(
-            wb_iface::sptr iface,
-            wb_iface::wb_addr_type codec_idle_addr,
-            wb_iface::wb_addr_type codec_readback_addr
+            boost::function<void(uint32_t)> poker_functor,
+            boost::function<uint64_t()> peeker_functor
     ) = 0;
 
     /*! Determine a tick rate that will work with a given sampling rate
