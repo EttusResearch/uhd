@@ -31,7 +31,7 @@
 
 /*!
  * A macro to check UHD version at compile-time.
- * The value of this macro is MAJOR * 10000 + MINOR * 100 + PATCH
+ * The value of this macro is MAJOR * 1000000 + API * 10000 + ABI * 100 + PATCH
  * (e.g., for UHD 3.8.1 this is 30801).
  */
 #cmakedefine UHD_VERSION @UHD_VERSION_ADDED@
