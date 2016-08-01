@@ -624,13 +624,13 @@ public:
     }
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t chan){
-        if (is_device3()) {
-            mboard_chan_pair mcp = rx_chan_to_mcp(chan);
-            _legacy_compat->issue_stream_cmd(stream_cmd, mcp.mboard, mcp.chan);
-            return;
-        }
         if (chan != ALL_CHANS){
-            _tree->access<stream_cmd_t>(rx_dsp_root(chan) / "stream_cmd").set(stream_cmd);
+            if (is_device3()) {
+                mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+                _legacy_compat->issue_stream_cmd(stream_cmd, mcp.mboard, mcp.chan);
+            } else {
+                _tree->access<stream_cmd_t>(rx_dsp_root(chan) / "stream_cmd").set(stream_cmd);
+            }
             return;
         }
         for (size_t c = 0; c < get_rx_num_channels(); c++){
