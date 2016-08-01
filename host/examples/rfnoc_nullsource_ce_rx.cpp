@@ -68,7 +68,7 @@ template<typename samp_type> void recv_to_file(
     stream_cmd.num_samps = num_requested_samples;
     stream_cmd.stream_now = true;
     stream_cmd.time_spec = uhd::time_spec_t();
-    std::cout << "Issueing start stream cmd" << std::endl;
+    std::cout << "Issuing start stream cmd" << std::endl;
     // This actually goes to the null source; the processing block
     // should propagate it.
     rx_stream->issue_stream_cmd(stream_cmd);
@@ -136,7 +136,7 @@ template<typename samp_type> void recv_to_file(
     }
 
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
-    std::cout << "Issueing stop stream cmd" << std::endl;
+    std::cout << "Issuing stop stream cmd" << std::endl;
     rx_stream->issue_stream_cmd(stream_cmd);
     std::cout << "Done" << std::endl;
 
