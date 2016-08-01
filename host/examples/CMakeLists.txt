@@ -21,8 +21,6 @@
 SET(example_sources
     benchmark_rate.cpp
     network_relay.cpp
-    rfnoc_nullsource_ce_rx.cpp
-    rfnoc_rx_to_file.cpp
     rx_multi_samples.cpp
     rx_samples_to_file.cpp
     rx_samples_to_udp.cpp
@@ -39,6 +37,14 @@ SET(example_sources
     latency_test.cpp
     gpio.cpp
 )
+
+IF(ENABLE_RFNOC)
+    LIST(APPEND
+        example_sources
+        rfnoc_nullsource_ce_rx.cpp
+        rfnoc_rx_to_file.cpp
+    )
+ENDIF(ENABLE_RFNOC)
 
 IF(ENABLE_OCTOCLOCK)
     LIST(APPEND example_sources test_clock_synch.cpp)
