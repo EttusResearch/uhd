@@ -665,7 +665,7 @@ private:
         _convert_bytes_to_copy = bytes_to_copy;
 
         //perform N channels of conversion
-        for (size_t i = 0; i < buffs.size(); i++) {
+        for (size_t i = 0; i < this->size(); i++) {
             convert_to_out_buff(i);
         }
 
