@@ -412,9 +412,7 @@ static void handle_tx_async_msgs(
     //       Thing is, on X300, packet_type == 0, so that wouldn't work. But it seems it should.
     //The FC response and the burst ack are two indicators that the radio
     //consumed packets. Use them to update the FC metadata
-    if (metadata.event_code == DEVICE3_ASYNC_EVENT_CODE_FLOW_CTRL or
-        metadata.event_code == async_metadata_t::EVENT_CODE_BURST_ACK
-    ) {
+    if (metadata.event_code == DEVICE3_ASYNC_EVENT_CODE_FLOW_CTRL) {
         const size_t seq = metadata.user_payload[0];
         fc_cache->seq_queue.push_with_pop_on_full(seq);
     }
