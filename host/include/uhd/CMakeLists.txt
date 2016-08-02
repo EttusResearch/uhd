@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+ADD_SUBDIRECTORY(rfnoc)
 ADD_SUBDIRECTORY(transport)
 ADD_SUBDIRECTORY(types)
 ADD_SUBDIRECTORY(usrp)
@@ -32,6 +33,7 @@ UHD_INSTALL(FILES
     convert.hpp
     deprecated.hpp
     device.hpp
+    device3.hpp
     device_deprecated.ipp
     exception.hpp
     property_tree.ipp

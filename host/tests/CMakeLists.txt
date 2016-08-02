@@ -52,6 +52,19 @@ SET(test_sources
 #turn each test cpp file into an executable with an int main() function
 ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 
+IF(ENABLE_RFNOC)
+    LIST(APPEND test_sources
+        block_id_test.cpp
+        blockdef_test.cpp
+        device3_test.cpp
+        graph_search_test.cpp
+        node_connect_test.cpp
+        rate_node_test.cpp
+        stream_sig_test.cpp
+        tick_node_test.cpp
+    )
+ENDIF(ENABLE_RFNOC)
+
 IF(ENABLE_C_API)
     LIST(APPEND test_sources
         eeprom_c_test.c
@@ -71,6 +84,36 @@ FOREACH(test_source ${test_sources})
     UHD_ADD_TEST(${test_name} ${test_name})
     UHD_INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 ENDFOREACH(test_source)
+
+# Other tests that don't directly link with libuhd: (TODO find a nicer way to do this)
+INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/)
+ADD_EXECUTABLE(nocscript_expr_test
+    nocscript_expr_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
+)
+TARGET_LINK_LIBRARIES(nocscript_expr_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(nocscript_expr_test nocscript_expr_test)
+UHD_INSTALL(TARGETS nocscript_expr_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
+
+ADD_EXECUTABLE(nocscript_ftable_test
+    nocscript_ftable_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
+)
+TARGET_LINK_LIBRARIES(nocscript_ftable_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(nocscript_ftable_test nocscript_ftable_test)
+UHD_INSTALL(TARGETS nocscript_ftable_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
+
+ADD_EXECUTABLE(nocscript_parser_test
+    nocscript_parser_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/parser.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
+)
+TARGET_LINK_LIBRARIES(nocscript_parser_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(nocscript_parser_test nocscript_parser_test)
+UHD_INSTALL(TARGETS nocscript_parser_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 
 ########################################################################
 # demo of a loadable module

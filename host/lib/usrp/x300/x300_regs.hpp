@@ -22,41 +22,6 @@
 #include <stdint.h>
 #include <uhd/utils/soft_register.hpp>
 
-namespace uhd { namespace usrp { namespace radio {
-
-static UHD_INLINE uint32_t sr_addr(const uint32_t offset)
-{
-    return offset * 4;
-}
-
-static const uint32_t DACSYNC    = 5;
-static const uint32_t LOOPBACK   = 6;
-static const uint32_t TEST       = 7;
-static const uint32_t SPI        = 8;
-static const uint32_t GPIO       = 16;
-static const uint32_t MISC_OUTS  = 24;
-static const uint32_t READBACK   = 32;
-static const uint32_t TX_CTRL    = 64;
-static const uint32_t RX_CTRL    = 96;
-static const uint32_t TIME       = 128;
-static const uint32_t RX_DSP     = 144;
-static const uint32_t TX_DSP     = 184;
-static const uint32_t LEDS       = 195;
-static const uint32_t FP_GPIO    = 201;
-static const uint32_t RX_FRONT   = 208;
-static const uint32_t TX_FRONT   = 216;
-
-static const uint32_t RB32_GPIO            = 0;
-static const uint32_t RB32_SPI             = 4;
-static const uint32_t RB64_TIME_NOW        = 8;
-static const uint32_t RB64_TIME_PPS        = 16;
-static const uint32_t RB32_TEST            = 24;
-static const uint32_t RB32_RX              = 28;
-static const uint32_t RB32_FP_GPIO         = 32;
-static const uint32_t RB32_MISC_INS        = 36;
-
-}}} // namespace
-
 static const int BL_ADDRESS    = 0;
 static const int BL_DATA       = 1;
 
@@ -87,6 +52,7 @@ static const int ZPU_SR_DRAM_FIFO1 = 80;
 static const int ZPU_RB_SPI        = 2;
 static const int ZPU_RB_CLK_STATUS = 3;
 static const int ZPU_RB_COMPAT_NUM = 6;
+static const int ZPU_RB_NUM_CE     = 7;
 static const int ZPU_RB_SFP0_TYPE  = 4;
 static const int ZPU_RB_SFP1_TYPE  = 5;
 static const int ZPU_RB_DRAM_FIFO0 = 10;
@@ -247,49 +213,6 @@ namespace uhd { namespace usrp { namespace x300 {
         fw_regmap_t() : soft_regmap_t("fw_regmap") {
             add_to_map(clock_ctrl_reg, "clock_ctrl_reg", PUBLIC);
             add_to_map(clock_status_reg, "clock_status_reg", PUBLIC);
-        }
-    };
-
-    class radio_regmap_t : public uhd::soft_regmap_t {
-    public:
-        typedef boost::shared_ptr<radio_regmap_t> sptr;
-        class misc_outs_reg_t : public uhd::soft_reg32_wo_t {
-        public:
-            UHD_DEFINE_SOFT_REG_FIELD(DAC_ENABLED,          /*width*/ 1, /*shift*/ 0);  //[0]
-            UHD_DEFINE_SOFT_REG_FIELD(DAC_RESET_N,          /*width*/ 1, /*shift*/ 1);  //[1]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_RESET,            /*width*/ 1, /*shift*/ 2);  //[2]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_STB,     /*width*/ 1, /*shift*/ 3);  //[3]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_DATA_DLY_VAL,     /*width*/ 5, /*shift*/ 4);  //[8:4]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER_ENABLED,  /*width*/ 1, /*shift*/ 9);  //[9]
-
-            misc_outs_reg_t(): uhd::soft_reg32_wo_t(uhd::usrp::radio::sr_addr(uhd::usrp::radio::MISC_OUTS)) {
-                //Initial values
-                set(DAC_ENABLED, 0);
-                set(DAC_RESET_N, 0);
-                set(ADC_RESET, 0);
-                set(ADC_DATA_DLY_STB, 0);
-                set(ADC_DATA_DLY_VAL, 16);
-                set(ADC_CHECKER_ENABLED, 0);
-            }
-        } misc_outs_reg;
-
-        class misc_ins_reg_t : public uhd::soft_reg32_ro_t {
-        public:
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_Q_LOCKED, /*width*/ 1, /*shift*/ 0);  //[0]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_I_LOCKED, /*width*/ 1, /*shift*/ 1);  //[1]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_LOCKED, /*width*/ 1, /*shift*/ 2);  //[2]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_LOCKED, /*width*/ 1, /*shift*/ 3);  //[3]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_Q_ERROR,  /*width*/ 1, /*shift*/ 4);  //[4]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER0_I_ERROR,  /*width*/ 1, /*shift*/ 5);  //[5]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_ERROR,  /*width*/ 1, /*shift*/ 6);  //[6]
-            UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_ERROR,  /*width*/ 1, /*shift*/ 7);  //[7]
-
-            misc_ins_reg_t(): uhd::soft_reg32_ro_t(uhd::usrp::radio::RB32_MISC_INS) { }
-        } misc_ins_reg;
-
-        radio_regmap_t(int radio_num) : soft_regmap_t("radio" + boost::lexical_cast<std::string>(radio_num) + "_regmap") {
-            add_to_map(misc_outs_reg, "misc_outs_reg", PUBLIC);
-            add_to_map(misc_ins_reg, "misc_ins_reg", PUBLIC);
         }
     };
 

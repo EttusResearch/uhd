@@ -1,0 +1,157 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>fosphor</name>
+  <blockname>fosphor</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">666F</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <setreg>
+      <name>DECIM</name>
+      <address>129</address>
+    </setreg>
+    <setreg>
+      <name>OFFSET</name>
+      <address>130</address>
+    </setreg>
+    <setreg>
+      <name>SCALE</name>
+      <address>131</address>
+    </setreg>
+    <setreg>
+      <name>TRISE</name>
+      <address>132</address>
+    </setreg>
+    <setreg>
+      <name>TDECAY</name>
+      <address>133</address>
+    </setreg>
+    <setreg>
+      <name>ALPHA</name>
+      <address>134</address>
+    </setreg>
+    <setreg>
+      <name>EPSILON</name>
+      <address>135</address>
+    </setreg>
+    <setreg>
+      <name>RANDOM</name>
+      <address>136</address>
+    </setreg>
+    <setreg>
+      <name>CLEAR</name>
+      <address>137</address>
+    </setreg>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>1024</value>
+    </arg>
+    <arg>
+      <name>decim</name>
+      <type>int</type>
+      <value>2</value>
+      <check>GE($decim, 2) AND LE($decim, 1024)</check>
+      <check_message>fosphor decim constant must be within [2, 1024]</check_message>
+      <action>SR_WRITE("DECIM", ADD($decim, -2))</action>
+    </arg>
+    <arg>
+      <name>offset</name>
+      <type>int</type>
+      <value>0</value>
+      <check>GE($offset, 0) AND LE($offset, 65536)</check>
+      <check_message>"fosphor offset value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("OFFSET", $offset)</action>
+    </arg>
+    <arg>
+      <name>scale</name>
+      <type>int</type>
+      <value>256</value>
+      <check>GE($scale, 0) AND LE($scale, 65536)</check>
+      <check_message>"fosphor scale value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("SCALE", $scale)</action>
+    </arg>
+    <arg>
+      <name>trise</name>
+      <type>int</type>
+      <value>4096</value>
+      <check>GE($trise, 0) AND LE($trise, 65536)</check>
+      <check_message>"fosphor trise value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("TRISE", $trise)</action>
+    </arg>
+    <arg>
+      <name>tdecay</name>
+      <type>int</type>
+      <value>16384</value>
+      <check>GE($tdecay, 0) AND LE($tdecay, 65536)</check>
+      <check_message>"fosphor tdecay value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("TDECAY", $tdecay)</action>
+    </arg>
+    <arg>
+      <name>alpha</name>
+      <type>int</type>
+      <value>65280</value>
+      <check>GE($alpha, 0) AND LE($alpha, 65536)</check>
+      <check_message>"fosphor alpha value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("ALPHA", $alpha)</action>
+    </arg>
+    <arg>
+      <name>epsilon</name>
+      <type>int</type>
+      <value>1</value>
+      <check>GE($epsilon, 0) AND LE($epsilon, 65536)</check>
+      <check_message>"fosphor epsilon value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("EPSILON", $epsilon)</action>
+    </arg>
+    <arg>
+      <name>random</name>
+      <type>int</type>
+      <value>1</value>
+      <check>GE($random, 0) AND LE($random, 3)</check>
+      <check_message>"fosphor random value must be within [0, 65535]"</check_message>
+      <action>SR_WRITE("RANDOM", $random)</action>
+    </arg>
+    <arg>
+      <name>clear</name>
+      <type>int</type>
+      <action>IF(NOT(EQUAL($clear, 0)), SR_WRITE("CLEAR", $clear))</action>
+    </arg>
+  </args>
+  <!--All the connections to the outside world are listed in 'ports':-->
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>u8</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
+    </source>
+  </ports>
+  <!--<components>-->
+    <!--<component>-->
+      <!--<key revision="1">nocshell</key>-->
+    <!--</component>-->
+    <!--<component srbase="0">-->
+      <!--[>Will look for a component with this key:<]-->
+      <!--<key revision="1">componentname</key>-->
+    <!--</component>-->
+  <!--</components>-->
+  <!--<connection>-->
+    <!--<source port="0">nocshell</source>-->
+    <!--<sink port="0">componentname</sink>-->
+  <!--</connection>-->
+  <!--<connection>-->
+    <!--<source port="0">componentname</source>-->
+    <!--<sink port="0">nocshell</sink>-->
+  <!--</connection>-->
+</nocblock>

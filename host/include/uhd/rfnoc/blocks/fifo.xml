@@ -1,0 +1,34 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>FIFO</name>
+  <blockname>FIFO</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">F1F00000</id>
+  </ids>
+  <ports>
+    <sink>
+      <name>in0</name>
+    </sink>
+    <source>
+      <name>out0</name>
+    </source>
+  </ports>
+  <!--<components>-->
+    <!--<component>-->
+      <!--<key revision="1">nocshell</key>-->
+    <!--</component>-->
+    <!--<component srbase="0">-->
+      <!--[>Will look for a component with this key:<]-->
+      <!--<key revision="1">componentname</key>-->
+    <!--</component>-->
+  <!--</components>-->
+  <!--<connection>-->
+    <!--<source port="0">nocshell</source>-->
+    <!--<sink port="0">componentname</sink>-->
+  <!--</connection>-->
+  <!--<connection>-->
+    <!--<source port="0">componentname</source>-->
+    <!--<sink port="0">nocshell</sink>-->
+  <!--</connection>-->
+</nocblock>

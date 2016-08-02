@@ -33,6 +33,7 @@ static const int SR_SFPP_CTRL  = 4;
 static const int SR_SPI        = 32;
 static const int SR_ETHINT0    = 40;
 static const int SR_ETHINT1    = 56;
+static const int SR_RB_ADDR    = 128;
 
 //led shifts for SR_LEDS
 static const int LED_ACT1 = (1 << 5);
@@ -51,6 +52,7 @@ static const int RB_SFP1_TYPE    = 5;
 static const int RB_FPGA_COMPAT  = 6;
 static const int RB_SFP0_STATUS  = 8;
 static const int RB_SFP1_STATUS  = 9;
+static const int RB_XBAR         = 128;
 
 // Bootloader Memory Map
 static const int BL_ADDRESS     = 0;

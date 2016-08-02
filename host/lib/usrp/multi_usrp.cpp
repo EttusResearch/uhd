@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/utils/soft_register.hpp>
+#include "legacy_compat.hpp"
 #include <boost/assign/list_of.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
@@ -390,10 +391,26 @@ public:
     multi_usrp_impl(const device_addr_t &addr){
         _dev = device::make(addr, device::USRP);
         _tree = _dev->get_tree();
+        _is_device3 = bool(boost::dynamic_pointer_cast<uhd::device3>(_dev));
+
+        if (is_device3()) {
+            _legacy_compat = rfnoc::legacy_compat::make(get_device3(), addr);
+        }
     }
 
     device::sptr get_device(void){
         return _dev;
+    }
+
+    bool is_device3(void) {
+        return _is_device3;
+    }
+
+    device3::sptr get_device3(void) {
+        if (not is_device3()) {
+            throw uhd::type_error("Cannot call get_device3() on a non-generation 3 device.");
+        }
+        return boost::dynamic_pointer_cast<uhd::device3>(_dev);
     }
 
     dict<std::string, std::string> get_usrp_rx_info(size_t chan){
@@ -608,7 +625,12 @@ public:
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t chan){
         if (chan != ALL_CHANS){
-            _tree->access<stream_cmd_t>(rx_dsp_root(chan) / "stream_cmd").set(stream_cmd);
+            if (is_device3()) {
+                mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+                _legacy_compat->issue_stream_cmd(stream_cmd, mcp.mboard, mcp.chan);
+            } else {
+                _tree->access<stream_cmd_t>(rx_dsp_root(chan) / "stream_cmd").set(stream_cmd);
+            }
             return;
         }
         for (size_t c = 0; c < get_rx_num_channels(); c++){
@@ -743,6 +765,9 @@ public:
      ******************************************************************/
     rx_streamer::sptr get_rx_stream(const stream_args_t &args) {
         _check_link_rate(args, false);
+        if (is_device3()) {
+            return _legacy_compat->get_rx_stream(args);
+        }
         return this->get_device()->get_rx_stream(args);
     }
 
@@ -809,28 +834,10 @@ public:
     }
 
     tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
-        tune_request_t local_request = tune_request;
-
-        // If any mixer is driven by an external LO the daughterboard assumes that no CORDIC correction is
-        // necessary. Since the LO might be sourced from another daughterboard which would normally apply a
-        // cordic correction we must disable all DSP tuning to ensure identical configurations across daughterboards.
-        if (tune_request.dsp_freq_policy == tune_request.POLICY_AUTO and
-            tune_request.rf_freq_policy  == tune_request.POLICY_AUTO)
-        {
-            for (size_t c = 0; c < get_rx_num_channels(); c++) {
-                UHD_VAR(get_rx_lo_source(ALL_LOS, c));
-                if (get_rx_lo_source(ALL_LOS, c) == "external") {
-                    local_request.dsp_freq_policy = tune_request.POLICY_MANUAL;
-                    local_request.dsp_freq = 0;
-                    break;
-                }
-            }
-        }
-
         tune_result_t result = tune_xx_subdev_and_dsp(RX_SIGN,
                 _tree->subtree(rx_dsp_root(chan)),
                 _tree->subtree(rx_rf_fe_root(chan)),
-                local_request);
+                tune_request);
         //do_tune_freq_results_message(tune_request, result, get_rx_freq(chan), "RX");
         return result;
     }
@@ -920,7 +927,7 @@ public:
             }
         } else {
             // If the daughterboard doesn't expose it's LO(s) then it can only be internal
-            return std::vector<std::string> {1, "internal"};
+            return std::vector<std::string>(1, "internal");
         }
     }
 
@@ -1286,6 +1293,9 @@ public:
      ******************************************************************/
     tx_streamer::sptr get_tx_stream(const stream_args_t &args) {
         _check_link_rate(args, true);
+        if (is_device3()) {
+            return _legacy_compat->get_tx_stream(args);
+        }
         return this->get_device()->get_tx_stream(args);
     }
 
@@ -1680,6 +1690,8 @@ public:
 private:
     device::sptr _dev;
     property_tree::sptr _tree;
+    bool _is_device3;
+    uhd::rfnoc::legacy_compat::sptr _legacy_compat;
 
     struct mboard_chan_pair{
         size_t mboard, chan;
@@ -1732,6 +1744,10 @@ private:
     fs_path rx_dsp_root(const size_t chan)
     {
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        if (is_device3()) {
+            return _legacy_compat->rx_dsp_root(mcp.mboard, mcp.chan);
+        }
+
         if (_tree->exists(mb_root(mcp.mboard) / "rx_chan_dsp_mapping")) {
             std::vector<size_t> map = _tree->access<std::vector<size_t> >(mb_root(mcp.mboard) / "rx_chan_dsp_mapping").get();
             UHD_ASSERT_THROW(map.size() > mcp.chan);
@@ -1752,6 +1768,10 @@ private:
     fs_path tx_dsp_root(const size_t chan)
     {
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        if (is_device3()) {
+            return _legacy_compat->tx_dsp_root(mcp.mboard, mcp.chan);
+        }
+
         if (_tree->exists(mb_root(mcp.mboard) / "tx_chan_dsp_mapping")) {
             std::vector<size_t> map = _tree->access<std::vector<size_t> >(mb_root(mcp.mboard) / "tx_chan_dsp_mapping").get();
             UHD_ASSERT_THROW(map.size() > mcp.chan);
@@ -1771,6 +1791,9 @@ private:
     fs_path rx_fe_root(const size_t chan)
     {
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
+        if (is_device3()) {
+            return _legacy_compat->rx_fe_root(mcp.mboard, mcp.chan);
+        }
         try
         {
             const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
@@ -1785,6 +1808,9 @@ private:
     fs_path tx_fe_root(const size_t chan)
     {
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
+        if (is_device3()) {
+            return _legacy_compat->tx_fe_root(mcp.mboard, mcp.chan);
+        }
         try
         {
             const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);

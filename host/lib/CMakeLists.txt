@@ -90,11 +90,12 @@ LIBUHD_REGISTER_COMPONENT("OctoClock" ENABLE_OCTOCLOCK ON "ENABLE_LIBUHD" OFF OF
 INCLUDE_SUBDIRECTORY(ic_reg_maps)
 INCLUDE_SUBDIRECTORY(types)
 INCLUDE_SUBDIRECTORY(convert)
-INCLUDE_SUBDIRECTORY(transport)
+INCLUDE_SUBDIRECTORY(rfnoc)
 INCLUDE_SUBDIRECTORY(usrp)
 INCLUDE_SUBDIRECTORY(usrp_clock)
 INCLUDE_SUBDIRECTORY(utils)
 INCLUDE_SUBDIRECTORY(experts)
+INCLUDE_SUBDIRECTORY(transport)
 
 ########################################################################
 # Build info
@@ -121,6 +122,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_BINARY_DIR}/build_info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/deprecated.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/device3.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/image_loader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/stream.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exception.cpp

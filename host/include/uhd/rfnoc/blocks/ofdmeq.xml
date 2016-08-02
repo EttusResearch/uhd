@@ -1,0 +1,31 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>OFDM Equalizer</name>
+  <blockname>OFDMEq</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">FF42</id>
+  </ids>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>fftsize</name>
+      <type>int</type>
+      <value>64</value>
+    </arg>
+  </args>
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+      <vlen>$fftsize</vlen>
+      <pkt_size>%vlen</pkt_size>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>sc16</type>
+      <vlen>$fftsize</vlen>
+      <pkt_size>%vlen</pkt_size>
+    </source>
+  </ports>
+</nocblock>

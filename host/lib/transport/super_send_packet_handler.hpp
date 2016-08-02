@@ -28,6 +28,9 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#ifdef DEVICE3_STREAMER
+#  include "../rfnoc/tx_stream_terminator.hpp"
+#endif
 #include <boost/thread/thread.hpp>
 #include <boost/thread/thread_time.hpp>
 #include <boost/foreach.hpp>
@@ -101,6 +104,29 @@ public:
         _props.at(xport_chan).has_sid = has_sid;
         _props.at(xport_chan).sid = sid;
     }
+
+    ///////// RFNOC ///////////////////
+    //! Get the stream ID for a specific channel (or zero if no SID)
+    boost::uint32_t get_xport_chan_sid(const size_t xport_chan) const {
+        if (_props.at(xport_chan).has_sid) {
+            return _props.at(xport_chan).sid;
+        } else {
+            return 0;
+        }
+    }
+
+    #ifdef DEVICE3_STREAMER
+    void set_terminator(uhd::rfnoc::tx_stream_terminator::sptr terminator)
+    {
+        _terminator = terminator;
+    }
+
+    uhd::rfnoc::tx_stream_terminator::sptr get_terminator()
+    {
+        return _terminator;
+    }
+    #endif
+    ///////// RFNOC ///////////////////
 
     void set_enable_trailer(const bool enable)
     {
@@ -295,6 +321,10 @@ private:
     async_receiver_type _async_receiver;
     bool _cached_metadata;
     uhd::tx_metadata_t _metadata_cache;
+
+    #ifdef DEVICE3_STREAMER
+    uhd::rfnoc::tx_stream_terminator::sptr _terminator;
+    #endif
 
 #ifdef UHD_TXRX_DEBUG_PRINTS
     struct dbg_send_stat_t {

@@ -18,6 +18,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/version.hpp>
 #include <uhd/device.hpp>
+#include <uhd/device3.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/property_tree.hpp>
 #include <boost/algorithm/string.hpp> //for split
@@ -53,7 +54,7 @@ static std::string make_border(const std::string &text){
 static std::string get_dsp_pp_string(const std::string &type, property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("%s DSP: %s") % type % path.leaf() << std::endl;
-    //ss << std::endl;
+    ss << std::endl;
     meta_range_t freq_range = tree->access<meta_range_t>(path / "freq/range").get();
     ss << boost::format("Freq range: %.3f to %.3f MHz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;;
     return ss.str();
@@ -135,6 +136,16 @@ static std::string get_dboard_pp_string(const std::string &type, property_tree::
     return ss.str();
 }
 
+
+static std::string get_rfnoc_pp_string(property_tree::sptr tree, const fs_path &path){
+    std::stringstream ss;
+    ss << "RFNoC blocks on this device:" << std::endl << std::endl;
+    BOOST_FOREACH(const std::string &name, tree->list(path)){
+        ss << "* " << name << std::endl;
+    }
+    return ss.str();
+}
+
 static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("Mboard: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
@@ -149,6 +160,9 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path 
     if (tree->exists(path / "fpga_version")){
         ss << "FPGA Version: " << tree->access<std::string>(path / "fpga_version").get() << std::endl;
     }
+    if (tree->exists(path / "xbar")){
+        ss << "RFNoC capable: Yes" << std::endl;
+    }
     ss << std::endl;
     try {
         if (tree->exists(path / "time_source" / "options")){
@@ -160,18 +174,23 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path 
             ss << "Clock sources: " << prop_names_to_pp_string(clock_sources) << std::endl;
         }
         ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
-        BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
-            ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
+        if (tree->exists(path / "rx_dsps")){
+            BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
+                ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
+            }
         }
         BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
             ss << make_border(get_dboard_pp_string("RX", tree, path / "dboards" / name));
         }
-        BOOST_FOREACH(const std::string &name, tree->list(path / "tx_dsps")){
-            ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
+        if (tree->exists(path / "tx_dsps")){
+            BOOST_FOREACH(const std::string &name, tree->list(path / "tx_dsps")){
+                ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
+            }
         }
         BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
             ss << make_border(get_dboard_pp_string("TX", tree, path / "dboards" / name));
         }
+            ss << make_border(get_rfnoc_pp_string(tree, path / "xbar"));
     }
     catch (const uhd::lookup_error&) {
         /* nop */

@@ -1,0 +1,19 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>FIR Filter</name>
+  <blockname>FIR</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">F112</id>
+  </ids>
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+</nocblock>

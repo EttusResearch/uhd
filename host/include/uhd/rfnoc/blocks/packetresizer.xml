@@ -1,0 +1,55 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>Packet Resizer</name>
+  <blockname>PacketResizer</blockname>
+  <doc>
+    Block controller for the Packet Resizer RFNoC block.
+
+    The Packet Resizer RFNoC block changes the packet length of a stream. It can break large
+    packets into smaller packets or combine small packets into a single larger packet.
+  </doc>
+  <ids>
+    <id revision="0">12E5</id>
+  </ids>
+  <registers>
+    <setreg>
+      <name>SR_PKT_SIZE</name>
+      <address>129</address>
+    </setreg>
+  </registers>
+  <args>
+    <arg>
+      <name>pkt_size</name>
+      <type>int</type>
+      <value>32</value>
+      <check>GT($pkt_size, 0)</check>
+      <check_message>Packet size must be positive, non-zero.</check_message>
+      <action>SR_WRITE("SR_PKT_SIZE", $pkt_size)</action>
+    </arg>
+  </args>
+  <ports>
+    <sink>
+      <name>in</name>
+    </sink>
+    <source>
+      <name>out</name>
+    </source>
+  </ports>
+  <!--<components>-->
+    <!--<component>-->
+      <!--<key revision="1">nocshell</key>-->
+    <!--</component>-->
+    <!--<component srbase="0">-->
+      <!--[>Will look for a component with this key:<]-->
+      <!--<key revision="1">componentname</key>-->
+    <!--</component>-->
+  <!--</components>-->
+  <!--<connection>-->
+    <!--<source port="0">nocshell</source>-->
+    <!--<sink port="0">componentname</sink>-->
+  <!--</connection>-->
+  <!--<connection>-->
+    <!--<source port="0">componentname</source>-->
+    <!--<sink port="0">nocshell</sink>-->
+  <!--</connection>-->
+</nocblock>

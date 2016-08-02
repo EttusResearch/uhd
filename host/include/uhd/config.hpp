@@ -36,7 +36,7 @@
 # pragma warning(disable: 4275) // non dll-interface class ... used as base for dll-interface class ...
 //# pragma warning(disable: 4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
 //# pragma warning(disable: 4511) // 'class' : copy constructor could not be generated
-//# pragma warning(disable: 4250) // 'class' : inherits 'method' via dominance
+# pragma warning(disable: 4250) // 'class' : inherits 'method' via dominance
 # pragma warning(disable: 4200) // nonstandard extension used : zero-sized array in struct/union
 
 // define logical operators
@@ -97,6 +97,12 @@ typedef ptrdiff_t ssize_t;
 #else
     #define UHD_API UHD_IMPORT
 #endif // UHD_DLL_EXPORTS
+#ifdef UHD_RFNOC_ENABLED
+    #define UHD_RFNOC_API UHD_API
+#else
+    #define UHD_RFNOC_API
+#endif // UHD_RFNOC_ENABLED
+
 
 // Platform defines for conditional parts of headers:
 // Taken from boost/config/select_platform_config.hpp,

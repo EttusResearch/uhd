@@ -282,6 +282,8 @@ MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 ########################################################################
 # Additional settings for build environment
 ########################################################################
+# Note: RFNoC never gets fully disabled, but the public APIs do
+SET(ENABLE_RFNOC OFF CACHE BOOL "Export RFNoC includes and symbols")
 INCLUDE(UHDGlobalDefs)
 
 ########################################################################
@@ -329,8 +331,8 @@ UHD_INSTALL(FILES
 #{{{IMG_SECTION
 # This section is written automatically by /images/create_imgs_package.py
 # Any manual changes in here will be overwritten.
-SET(UHD_IMAGES_MD5SUM "d82c4b8bb779c1d5a810f0204815b84d")
-SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.git-197-g053111dc.zip")
+SET(UHD_IMAGES_MD5SUM "071d51a666ddc98d27c5f1c8d47c474e")
+SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.000.master-310-304-g47551428.zip")
 #}}}
 
 ########################################################################
@@ -360,8 +362,6 @@ ENDIF(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
 ########################################################################
 # Add the subdirectories
 ########################################################################
-ADD_SUBDIRECTORY(docs)
-
 IF(ENABLE_LIBUHD)
     ADD_SUBDIRECTORY(lib)
 ENDIF(ENABLE_LIBUHD)
@@ -379,6 +379,8 @@ ENDIF(ENABLE_TESTS)
 IF(ENABLE_UTILS)
     ADD_SUBDIRECTORY(utils)
 ENDIF(ENABLE_UTILS)
+
+ADD_SUBDIRECTORY(docs)
 
 ########################################################################
 # Create Pkg Config File
