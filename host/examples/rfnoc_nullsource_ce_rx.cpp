@@ -247,7 +247,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     bool bw_summary = vm.count("progress") > 0;
     bool stats = vm.count("stats") > 0;
-    bool null = vm.count("null") > 0 or vm.count("file") == 0;
     bool continue_on_bad_packet = vm.count("continue") > 0;
 
     // Check settings
