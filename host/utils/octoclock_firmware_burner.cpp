@@ -123,7 +123,7 @@ void print_image_loader_warning(const std::string &fw_path, const po::variables_
               << uhd_image_loader << std::endl
               << std::endl
               << "************************************************************************************************" << std::endl
-              << std::endl; 
+              << std::endl;
 }
 
 /*
@@ -144,7 +144,7 @@ device_addrs_t bootloader_find(const std::string &ip_addr){
     boost::system_time comm_timeout = boost::get_system_time() + boost::posix_time::milliseconds(3000);
 
     while(boost::get_system_time() < comm_timeout){
-        UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, OCTOCLOCK_QUERY_CMD, pkt_out, len, octoclock_data);
+        UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, OCTOCLOCK_FW_COMPAT_NUM, OCTOCLOCK_QUERY_CMD, pkt_out, len, octoclock_data);
         if(UHD_OCTOCLOCK_PACKET_MATCHES(OCTOCLOCK_QUERY_ACK, pkt_out, pkt_in, len) and
            pkt_in->proto_ver == OCTOCLOCK_BOOTLOADER_PROTO_VER){
             addrs.push_back(device_addr_t());
@@ -181,7 +181,7 @@ void burn_firmware(udp_simple::sptr udp_transport){
 
     //Tell OctoClock not to jump to application, wait for us instead
     std::cout << "Telling OctoClock to prepare for firmware download..." << std::flush;
-    UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, PREPARE_FW_BURN_CMD, pkt_out, len, octoclock_data);
+    UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, OCTOCLOCK_FW_COMPAT_NUM, PREPARE_FW_BURN_CMD, pkt_out, len, octoclock_data);
     if(UHD_OCTOCLOCK_PACKET_MATCHES(FW_BURN_READY_ACK, pkt_out, pkt_in, len)) std::cout << "ready." << std::endl;
     else{
         std::cout << std::endl;
@@ -206,7 +206,7 @@ void burn_firmware(udp_simple::sptr udp_transport){
 
         bool success = false;
         while(num_tries <= 5){
-            UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, FILE_TRANSFER_CMD, pkt_out, len, octoclock_data);
+            UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, OCTOCLOCK_FW_COMPAT_NUM, FILE_TRANSFER_CMD, pkt_out, len, octoclock_data);
             if(UHD_OCTOCLOCK_PACKET_MATCHES(FILE_TRANSFER_ACK, pkt_out, pkt_in, len)){
                 success = true;
                 break;
@@ -240,7 +240,7 @@ void verify_firmware(udp_simple::sptr udp_transport){
         std::cout << "\r * Progress: " << int(double(i)/double(num_blocks)*100)
                   << "% (" << (i+1) << "/" << num_blocks << " blocks)" << std::flush;
 
-        UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, READ_FW_CMD, pkt_out, len, octoclock_data);
+        UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, OCTOCLOCK_FW_COMPAT_NUM, READ_FW_CMD, pkt_out, len, octoclock_data);
         if(UHD_OCTOCLOCK_PACKET_MATCHES(READ_FW_ACK, pkt_out, pkt_in, len)){
             if(memcmp((void*)(pkt_in->data), &firmware_image[i*BLOCK_SIZE],
                       std::min(int(firmware_size-current_pos), BLOCK_SIZE))){
@@ -266,7 +266,7 @@ bool reset_octoclock(const std::string &ip_addr){
     pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
     size_t len;
 
-    UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, RESET_CMD, pkt_out, len, octoclock_data);
+    UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, OCTOCLOCK_FW_COMPAT_NUM, RESET_CMD, pkt_out, len, octoclock_data);
     if(not UHD_OCTOCLOCK_PACKET_MATCHES(RESET_ACK, pkt_out, pkt_in, len)){
         std::cout << std::endl;
         if(hex) fs::remove(actual_firmware_path);
@@ -283,7 +283,7 @@ void finalize(udp_simple::sptr udp_transport){
     pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
     size_t len = 0;
 
-    UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, FINALIZE_BURNING_CMD, pkt_out, len, octoclock_data);
+    UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, OCTOCLOCK_FW_COMPAT_NUM, FINALIZE_BURNING_CMD, pkt_out, len, octoclock_data);
     if(not UHD_OCTOCLOCK_PACKET_MATCHES(FINALIZE_BURNING_ACK, pkt_out, pkt_in, len)){
         std::cout << std::endl;
         if(hex) fs::remove(actual_firmware_path);

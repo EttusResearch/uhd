@@ -138,7 +138,7 @@ device_addrs_t octoclock_find(const device_addr_t &hint){
                                               new_addr["addr"],
                                               BOOST_STRINGIZE(OCTOCLOCK_UDP_CTRL_PORT)
                                           );
-            UHD_OCTOCLOCK_SEND_AND_RECV(ctrl_xport, OCTOCLOCK_QUERY_CMD, pkt_out, len, octoclock_data);
+            UHD_OCTOCLOCK_SEND_AND_RECV(ctrl_xport, OCTOCLOCK_FW_COMPAT_NUM, OCTOCLOCK_QUERY_CMD, pkt_out, len, octoclock_data);
             if(UHD_OCTOCLOCK_PACKET_MATCHES(OCTOCLOCK_QUERY_ACK, pkt_out, pkt_in, len)){
                 //If the OctoClock is in its bootloader, don't ask for details
                 if(pkt_in->proto_ver == OCTOCLOCK_BOOTLOADER_PROTO_VER){
@@ -149,7 +149,7 @@ device_addrs_t octoclock_find(const device_addr_t &hint){
                     new_addr["type"] = "octoclock";
 
                     if(pkt_in->proto_ver >= OCTOCLOCK_FW_MIN_COMPAT_NUM and pkt_in->proto_ver <= OCTOCLOCK_FW_COMPAT_NUM) {
-                        octoclock_eeprom_t oc_eeprom(ctrl_xport);
+                        octoclock_eeprom_t oc_eeprom(ctrl_xport, pkt_in->proto_ver);
                         new_addr["name"] = oc_eeprom["name"];
                         new_addr["serial"] = oc_eeprom["serial"];
                     } else {
@@ -226,21 +226,21 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////////
         // Check the firmware compatibility number
         ////////////////////////////////////////////////////////////////////
-        boost::uint32_t fw_version = _get_fw_version(oc);
-        if(fw_version < OCTOCLOCK_FW_MIN_COMPAT_NUM or fw_version > OCTOCLOCK_FW_COMPAT_NUM){
+        _proto_ver = _get_fw_version(oc);
+        if(_proto_ver < OCTOCLOCK_FW_MIN_COMPAT_NUM or _proto_ver > OCTOCLOCK_FW_COMPAT_NUM){
             throw uhd::runtime_error(str(boost::format(
                     "\n\nPlease update your OctoClock's firmware.\n"
                     "Expected firmware compatibility number %d, but got %d:\n"
                     "The firmware build is not compatible with the host code build.\n\n"
                     "%s\n"
-                ) % int(OCTOCLOCK_FW_COMPAT_NUM) % int(fw_version) % _get_images_help_message(addr)));
+                ) % int(OCTOCLOCK_FW_COMPAT_NUM) % int(_proto_ver) % _get_images_help_message(addr)));
         }
-        _tree->create<std::string>(oc_path / "fw_version").set(boost::lexical_cast<std::string>(int(fw_version)));
+        _tree->create<std::string>(oc_path / "fw_version").set(boost::lexical_cast<std::string>(int(_proto_ver)));
 
         ////////////////////////////////////////////////////////////////////
         // Set up EEPROM
         ////////////////////////////////////////////////////////////////////
-        _oc_dict[oc].eeprom = octoclock_eeprom_t(_oc_dict[oc].ctrl_xport);
+        _oc_dict[oc].eeprom = octoclock_eeprom_t(_oc_dict[oc].ctrl_xport, _proto_ver);
         _tree->create<octoclock_eeprom_t>(oc_path / "eeprom")
             .set(_oc_dict[oc].eeprom)
             .add_coerced_subscriber(boost::bind(&octoclock_impl::_set_eeprom, this, oc, _1));
@@ -272,7 +272,7 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
         _get_state(oc);
         if(_oc_dict[oc].state.gps_detected){
             try{
-                _oc_dict[oc].gps = gps_ctrl::make(octoclock_make_uart_iface(_oc_dict[oc].gpsdo_xport));
+                _oc_dict[oc].gps = gps_ctrl::make(octoclock_make_uart_iface(_oc_dict[oc].gpsdo_xport, _proto_ver));
 
                 if(_oc_dict[oc].gps and _oc_dict[oc].gps->gps_detected()){
                     BOOST_FOREACH(const std::string &name, _oc_dict[oc].gps->get_sensors()){
@@ -339,7 +339,7 @@ boost::uint32_t octoclock_impl::_get_fw_version(const std::string &oc){
     boost::uint8_t octoclock_data[udp_simple::mtu];
     const octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t*>(octoclock_data);
 
-    UHD_OCTOCLOCK_SEND_AND_RECV(_oc_dict[oc].ctrl_xport, OCTOCLOCK_QUERY_CMD, pkt_out, len, octoclock_data);
+    UHD_OCTOCLOCK_SEND_AND_RECV(_oc_dict[oc].ctrl_xport, OCTOCLOCK_FW_COMPAT_NUM, OCTOCLOCK_QUERY_CMD, pkt_out, len, octoclock_data);
     if(UHD_OCTOCLOCK_PACKET_MATCHES(OCTOCLOCK_QUERY_ACK, pkt_out, pkt_in, len)){
         return pkt_in->proto_ver;
     }
@@ -355,7 +355,7 @@ void octoclock_impl::_get_state(const std::string &oc){
     boost::uint8_t octoclock_data[udp_simple::mtu];
     const octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t*>(octoclock_data);
 
-    UHD_OCTOCLOCK_SEND_AND_RECV(_oc_dict[oc].ctrl_xport, SEND_STATE_CMD, pkt_out, len, octoclock_data);
+    UHD_OCTOCLOCK_SEND_AND_RECV(_oc_dict[oc].ctrl_xport, _proto_ver, SEND_STATE_CMD, pkt_out, len, octoclock_data);
     if(UHD_OCTOCLOCK_PACKET_MATCHES(SEND_STATE_ACK, pkt_out, pkt_in, len)){
         const octoclock_state_t *state = reinterpret_cast<const octoclock_state_t*>(pkt_in->data);
         _oc_dict[oc].state = *state;
