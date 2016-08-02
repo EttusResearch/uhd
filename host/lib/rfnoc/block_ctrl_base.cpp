@@ -18,7 +18,7 @@
 // This file contains the block control functions for block controller classes.
 // See block_ctrl_base_factory.cpp for discovery and factory functions.
 
-#include "radio_ctrl_core_3000.hpp"
+#include "ctrl_iface.hpp"
 #include "nocscript/block_iface.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
@@ -344,8 +344,8 @@ void block_ctrl_base::set_command_time(
         }
         return;
     }
-    boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
-        boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
+    boost::shared_ptr<ctrl_iface> iface_sptr =
+        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
     if (not iface_sptr) {
         throw uhd::assertion_error(str(
             boost::format("[%s] Cannot set command time on port '%d'")
@@ -359,8 +359,8 @@ void block_ctrl_base::set_command_time(
 time_spec_t block_ctrl_base::get_command_time(
         const size_t port
 ) {
-    boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
-        boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
+    boost::shared_ptr<ctrl_iface> iface_sptr =
+        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
     if (not iface_sptr) {
         throw uhd::assertion_error(str(
             boost::format("[%s] Cannot get command time on port '%d'")
@@ -381,8 +381,8 @@ void block_ctrl_base::set_command_tick_rate(
         }
         return;
     }
-    boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
-        boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
+    boost::shared_ptr<ctrl_iface> iface_sptr =
+        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
     if (not iface_sptr) {
         throw uhd::assertion_error(str(
             boost::format("[%s] Cannot set command time on port '%d'")
@@ -395,8 +395,8 @@ void block_ctrl_base::set_command_tick_rate(
 
 void block_ctrl_base::clear_command_time(const size_t port)
 {
-    boost::shared_ptr<radio_ctrl_core_3000> iface_sptr =
-        boost::dynamic_pointer_cast<radio_ctrl_core_3000>(get_ctrl_iface(port));
+    boost::shared_ptr<ctrl_iface> iface_sptr =
+        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
     if (not iface_sptr) {
         throw uhd::assertion_error(str(
             boost::format("[%s] Cannot set command time on port '%d'")

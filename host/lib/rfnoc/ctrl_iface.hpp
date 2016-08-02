@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2015 Ettus Research LLC
+// Copyright 2012-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_RADIO_CTRL_3000_HPP
-#define INCLUDED_LIBUHD_USRP_RADIO_CTRL_3000_HPP
+#ifndef INCLUDED_LIBUHD_RFNOC_CTRL_IFACE_HPP
+#define INCLUDED_LIBUHD_RFNOC_CTRL_IFACE_HPP
 
 #include <uhd/utils/msg_task.hpp>
 #include <uhd/types/time_spec.hpp>
@@ -26,15 +26,17 @@
 #include <boost/utility.hpp>
 #include <string>
 
+namespace uhd { namespace rfnoc {
+
 /*!
  * Provide access to peek, poke for the radio ctrl module
  */
-class radio_ctrl_core_3000 : public uhd::timed_wb_iface
+class ctrl_iface : public uhd::timed_wb_iface
 {
 public:
-    typedef boost::shared_ptr<radio_ctrl_core_3000> sptr;
+    typedef boost::shared_ptr<ctrl_iface> sptr;
 
-    virtual ~radio_ctrl_core_3000(void) = 0;
+    virtual ~ctrl_iface(void) = 0;
 
     //! Make a new control object
     static sptr make(
@@ -61,4 +63,6 @@ public:
     virtual void set_tick_rate(const double rate) = 0;
 };
 
-#endif /* INCLUDED_LIBUHD_USRP_RADIO_CTRL_3000_HPP */
+}} /* namespace uhd::rfnoc */
+
+#endif /* INCLUDED_LIBUHD_RFNOC_CTRL_IFACE_HPP */

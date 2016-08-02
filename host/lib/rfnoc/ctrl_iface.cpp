@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2015 Ettus Research LLC
+// Copyright 2012-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,14 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "radio_ctrl_core_3000.hpp"
+#include "ctrl_iface.hpp"
 #include "async_packet_handler.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
-#include <uhd/transport/vrt_if_packet.hpp>
+#include <uhd/types/sid.hpp>
+#include <uhd/transport/chdr.hpp>
+#include <uhd/rfnoc/constants.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
@@ -30,41 +32,46 @@
 #include <queue>
 
 using namespace uhd;
-using namespace uhd::usrp;
+using namespace uhd::rfnoc;
 using namespace uhd::transport;
 
 static const double ACK_TIMEOUT = 2.0; //supposed to be worst case practical timeout
 static const double MASSIVE_TIMEOUT = 10.0; //for when we wait on a timed command
 static const size_t SR_READBACK = 32;
 
-radio_ctrl_core_3000::~radio_ctrl_core_3000(void){
+ctrl_iface::~ctrl_iface(void){
     /* NOP */
 }
 
-class radio_ctrl_core_3000_impl: public radio_ctrl_core_3000
+class ctrl_iface_impl: public ctrl_iface
 {
 public:
 
-    radio_ctrl_core_3000_impl(const bool big_endian,
+    ctrl_iface_impl(const bool big_endian,
             uhd::transport::zero_copy_if::sptr ctrl_xport,
             uhd::transport::zero_copy_if::sptr resp_xport,
-            const boost::uint32_t sid, const std::string &name) :
-            _link_type(vrt::if_packet_info_t::LINK_TYPE_CHDR), _packet_type(
-                    vrt::if_packet_info_t::PACKET_TYPE_CONTEXT), _bige(
-                    big_endian), _ctrl_xport(ctrl_xport), _resp_xport(
-                    resp_xport), _sid(sid), _name(name), _seq_out(0), _timeout(
-                    ACK_TIMEOUT), _resp_queue(128/*max response msgs*/), _resp_queue_size(
-                    _resp_xport ? _resp_xport->get_num_recv_frames() : 3)
+            const boost::uint32_t sid, const std::string &name
+    ) :
+        _link_type(vrt::if_packet_info_t::LINK_TYPE_CHDR),
+        _packet_type(vrt::if_packet_info_t::PACKET_TYPE_CONTEXT),
+        _bige(big_endian),
+        _ctrl_xport(ctrl_xport), _resp_xport(resp_xport),
+        _sid(sid),
+        _name(name),
+        _seq_out(0),
+        _timeout(ACK_TIMEOUT),
+        _resp_queue(128/*max response msgs*/),
+        _resp_queue_size(_resp_xport ? _resp_xport->get_num_recv_frames() : 3),
+        _rb_address(uhd::rfnoc::SR_READBACK)
     {
-        if (resp_xport)
-        {
+        if (resp_xport) {
             while (resp_xport->get_recv_buff(0.0)) {} //flush
         }
         this->set_time(uhd::time_spec_t(0.0));
         this->set_tick_rate(1.0); //something possible but bogus
     }
 
-    ~radio_ctrl_core_3000_impl(void)
+    ~ctrl_iface_impl(void)
     {
         _timeout = ACK_TIMEOUT; //reset timeout to something small
         UHD_SAFE_CALL(
@@ -86,7 +93,7 @@ public:
     boost::uint32_t peek32(const wb_addr_type addr)
     {
         boost::mutex::scoped_lock lock(_mutex);
-        this->send_pkt(SR_READBACK, addr/8);
+        this->send_pkt(_rb_address, addr/8);
         const boost::uint64_t res = this->wait_for_ack(true);
         const boost::uint32_t lo = boost::uint32_t(res & 0xffffffff);
         const boost::uint32_t hi = boost::uint32_t(res >> 32);
@@ -96,7 +103,7 @@ public:
     boost::uint64_t peek64(const wb_addr_type addr)
     {
         boost::mutex::scoped_lock lock(_mutex);
-        this->send_pkt(SR_READBACK, addr/8);
+        this->send_pkt(_rb_address, addr/8);
         return this->wait_for_ack(true);
     }
 
@@ -238,32 +245,50 @@ private:
             try
             {
                 packet_info.link_type = _link_type;
-                if (_bige) vrt::if_hdr_unpack_be(pkt, packet_info);
-                else vrt::if_hdr_unpack_le(pkt, packet_info);
+                if (_bige) vrt::chdr::if_hdr_unpack_be(pkt, packet_info);
+                else vrt::chdr::if_hdr_unpack_le(pkt, packet_info);
             }
             catch(const std::exception &ex)
             {
-                UHD_MSG(error) << "Radio ctrl bad VITA packet: " << ex.what() << std::endl;
+                UHD_MSG(error) << "[" << _name << "] Radio ctrl bad VITA packet: " << ex.what() << std::endl;
                 if (buff){
                     UHD_VAR(buff->size());
+                    UHD_MSG(status) << boost::format("%08X") % pkt[0] << std::endl;
+                    UHD_MSG(status) << boost::format("%08X") % pkt[1] << std::endl;
+                    UHD_MSG(status) << boost::format("%08X") % pkt[2] << std::endl;
+                    UHD_MSG(status) << boost::format("%08X") % pkt[3] << std::endl;
                 }
                 else{
                     UHD_MSG(status) << "buff is NULL" << std::endl;
                 }
-                UHD_MSG(status) << std::hex << pkt[0] << std::dec << std::endl;
-                UHD_MSG(status) << std::hex << pkt[1] << std::dec << std::endl;
-                UHD_MSG(status) << std::hex << pkt[2] << std::dec << std::endl;
-                UHD_MSG(status) << std::hex << pkt[3] << std::dec << std::endl;
             }
 
             //check the buffer
             try
             {
                 UHD_ASSERT_THROW(packet_info.has_sid);
-                UHD_ASSERT_THROW(packet_info.sid == boost::uint32_t((_sid >> 16) | (_sid << 16)));
-                UHD_ASSERT_THROW(packet_info.packet_count == (seq_to_ack & 0xfff));
+                if (packet_info.sid != boost::uint32_t((_sid >> 16) | (_sid << 16))) {
+                    throw uhd::io_error(
+                        str(
+                            boost::format("Expected SID: %s  Received SID: %s")
+                            % uhd::sid_t(_sid).reversed().to_pp_string_hex()
+                            % uhd::sid_t(packet_info.sid).to_pp_string_hex()
+                        )
+                    );
+                }
+
+                if (packet_info.packet_count != (seq_to_ack & 0xfff)) {
+                    throw uhd::io_error(
+                        str(
+                            boost::format("Expected packet index: %d  Received index: %d")
+                            % packet_info.packet_count
+                            % (seq_to_ack & 0xfff)
+                        )
+                    );
+                }
+
                 UHD_ASSERT_THROW(packet_info.num_payload_words32 == 2);
-                UHD_ASSERT_THROW(packet_info.packet_type == _packet_type);
+                //UHD_ASSERT_THROW(packet_info.packet_type == _packet_type);
             }
             catch(const std::exception &ex)
             {
@@ -285,7 +310,7 @@ private:
     /*
      * If ctrl_core waits for a message that didn't arrive it can search for it in the dump queue.
      * This actually happens during shutdown.
-     * handle_async_task can't access radio_ctrl_cores queue anymore thus it returns the corresponding message.
+     * handle_async_task can't access queue anymore thus it returns the corresponding message.
      * msg_task class implements a dump_queue to store such messages.
      * With check_dump_queue we can check if a message we are waiting for got stranded there.
      * If a message got stuck we get it here and push it onto our own message_queue.
@@ -335,13 +360,18 @@ private:
     std::queue<size_t> _outstanding_seqs;
     bounded_buffer<resp_buff_type> _resp_queue;
     const size_t _resp_queue_size;
+
+    const size_t _rb_address;
 };
 
-radio_ctrl_core_3000::sptr radio_ctrl_core_3000::make(const bool big_endian,
-        zero_copy_if::sptr ctrl_xport, zero_copy_if::sptr resp_xport,
-        const boost::uint32_t sid, const std::string &name)
-{
-    return sptr(
-            new radio_ctrl_core_3000_impl(big_endian, ctrl_xport, resp_xport,
-                    sid, name));
+ctrl_iface::sptr ctrl_iface::make(
+        const bool big_endian,
+        zero_copy_if::sptr ctrl_xport,
+        zero_copy_if::sptr resp_xport,
+        const boost::uint32_t sid,
+        const std::string &name
+) {
+    return sptr(new ctrl_iface_impl(
+                big_endian, ctrl_xport, resp_xport, sid, name
+    ));
 }

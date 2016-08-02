@@ -28,6 +28,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/blockdef_xml_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/block_id.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ctrl_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graph_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/legacy_compat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/node_ctrl_base.cpp

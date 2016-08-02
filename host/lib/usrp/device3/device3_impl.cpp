@@ -127,13 +127,12 @@ void device3_impl::enumerate_rfnoc_blocks(
             transport_args
         );
         UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control for port #0 (SID: %s)...") % xport.send_sid.to_pp_string_hex());
-        radio_ctrl_core_3000::sptr ctrl = radio_ctrl_core_3000::make(
+        uhd::rfnoc::ctrl_iface::sptr ctrl = uhd::rfnoc::ctrl_iface::make(
                 endianness == ENDIANNESS_BIG,
                 xport.send,
                 xport.recv,
                 xport.send_sid,
-                str(boost::format("CE_%02d_Port_%02X") % i % ctrl_sid.get_dst_endpoint()),
-                true
+                str(boost::format("CE_%02d_Port_%02X") % i % ctrl_sid.get_dst_endpoint())
         );
         UHD_MSG(status) << "OK" << std::endl;
         uint64_t noc_id = ctrl->peek64(uhd::rfnoc::SR_READBACK_REG_ID);
@@ -157,13 +156,12 @@ void device3_impl::enumerate_rfnoc_blocks(
                 transport_args
             );
             UHD_MSG(status) << str(boost::format("Setting up NoC-Shell Control for port #%d (SID: %s)...") % port_number % xport1.send_sid.to_pp_string_hex());
-            radio_ctrl_core_3000::sptr ctrl1 = radio_ctrl_core_3000::make(
+            uhd::rfnoc::ctrl_iface::sptr ctrl1 = uhd::rfnoc::ctrl_iface::make(
                     endianness == ENDIANNESS_BIG,
                     xport1.send,
                     xport1.recv,
                     xport1.send_sid,
-                    str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint()),
-                    true
+                    str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint())
             );
             UHD_MSG(status) << "OK" << std::endl;
             make_args.ctrl_ifaces[port_number] = ctrl1;

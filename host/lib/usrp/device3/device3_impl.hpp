@@ -33,7 +33,7 @@
 #include <uhd/device3.hpp>
 #include "xports.hpp"
 // Common FPGA cores:
-#include "radio_ctrl_core_3000.hpp"
+#include "ctrl_iface.hpp"
 #include "rx_dsp_core_3000.hpp"
 #include "tx_dsp_core_3000.hpp"
 #include "rx_vita_core_3000.hpp"
