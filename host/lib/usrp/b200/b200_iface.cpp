@@ -142,7 +142,7 @@ public:
                            boost::uint16_t index,
                            unsigned char *buff,
                            boost::uint16_t length,
-                           boost::int32_t timeout = 0) {
+                           boost::uint32_t timeout = 0) {
         return _usb_ctrl->submit(VRT_VENDOR_OUT,        // bmReqeustType
                                    request,             // bRequest
                                    value,               // wValue
@@ -157,7 +157,7 @@ public:
                            boost::uint16_t index,
                            unsigned char *buff,
                            boost::uint16_t length,
-                           boost::int32_t timeout = 0) {
+                           boost::uint32_t timeout = 0) {
         return _usb_ctrl->submit(VRT_VENDOR_IN,         // bmReqeustType
                                    request,             // bRequest
                                    value,               // wValue

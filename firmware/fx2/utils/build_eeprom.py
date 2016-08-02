@@ -45,8 +45,8 @@ def build_eeprom_image (filename, rev):
     the EZ-USB FX2 Technical Reference Manual
     """
     # get the code we want to run
-    f = open(filename, 'rb')
-    bytes = f.read()
+    with open(filename, 'rb') as f:
+        out_bytes = f.read()
 
     devid = 4 #for compatibility
     start_addr = 0 #prove me wrong
@@ -72,8 +72,8 @@ def build_eeprom_image (filename, rev):
     # 4 byte header that indicates where to load
     # the immediately follow code bytes.
     code_header = [
-        msb (len (bytes)),
-        lsb (len (bytes)),
+        msb (len (out_bytes)),
+        lsb (len (out_bytes)),
         msb (start_addr),
         lsb (start_addr)
         ]
@@ -87,7 +87,7 @@ def build_eeprom_image (filename, rev):
         0x00
         ]
 
-    image = rom_header + code_header + [ord(c) for c in bytes] + trailer
+    image = rom_header + code_header + [ord(c) for c in out_bytes] + trailer
 
     assert (len (image) <= 256)
     return image 
@@ -111,6 +111,6 @@ if __name__ == '__main__':
 
     image = "".join(chr(c) for c in build_eeprom_image(infile, options.rev))
 
-    f = open(outfile, 'wb')
-    f.write(str(image))
-    f.close()  
+    # Opening in binary mode -> why converting image to str
+    with open(outfile, 'wb') as f:
+        f.write( str(image) )

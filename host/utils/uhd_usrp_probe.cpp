@@ -25,6 +25,7 @@
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/types/sensors.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
@@ -225,6 +226,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("string", po::value<std::string>(), "query a string value from the property tree")
         ("double", po::value<std::string>(), "query a double precision floating point value from the property tree")
         ("int", po::value<std::string>(), "query a integer value from the property tree")
+        ("sensor", po::value<std::string>(), "query a sensor value from the property tree")
         ("range", po::value<std::string>(), "query a range (gain, bandwidth, frequency, ...)  from the property tree")
         ("init-only", "skip all queries, only initialize device")
     ;
@@ -259,6 +261,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     if (vm.count("int")){
         std::cout << tree->access<int>(vm["int"].as<std::string>()).get() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    if (vm.count("sensor")){
+        std::cout << tree->access<uhd::sensor_value_t>(vm["sensor"].as<std::string>()).get().value << std::endl;
         return EXIT_SUCCESS;
     }
 

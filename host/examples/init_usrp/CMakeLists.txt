@@ -59,7 +59,7 @@ SET(CMAKE_BUILD_TYPE "Release")
 MESSAGE(STATUS "******************************************************************************")
 MESSAGE(STATUS "* NOTE: When building your own app, you probably need all kinds of different  ")
 MESSAGE(STATUS "* compiler flags. This is just an example, so it's unlikely these settings    ")
-MESSAGE(STATUS "* exactly matchh what you require. Make sure to double-check compiler and     ")
+MESSAGE(STATUS "* exactly match what you require. Make sure to double-check compiler and     ")
 MESSAGE(STATUS "* linker flags to make sure your specific requirements are included.          ")
 MESSAGE(STATUS "******************************************************************************")
 

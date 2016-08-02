@@ -400,7 +400,7 @@ private:
         _convert_if_packet_info = &if_packet_info;
 
         //perform N channels of conversion
-        for (size_t i = 0; i < buffs.size(); i++) {
+        for (size_t i = 0; i < this->size(); i++) {
             convert_to_in_buff(i);
         }
 

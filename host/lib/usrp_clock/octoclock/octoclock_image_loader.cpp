@@ -178,7 +178,7 @@ static void octoclock_setup_session(octoclock_session_t &session,
     octoclock_packet_t pkt_out;
     const octoclock_packet_t* pkt_in = reinterpret_cast<const octoclock_packet_t*>(session.data_in);
     size_t len = 0;
-    UHD_OCTOCLOCK_SEND_AND_RECV(session.ctrl_xport, OCTOCLOCK_QUERY_CMD, pkt_out, len, session.data_in);
+    UHD_OCTOCLOCK_SEND_AND_RECV(session.ctrl_xport, OCTOCLOCK_FW_COMPAT_NUM, OCTOCLOCK_QUERY_CMD, pkt_out, len, session.data_in);
     if(UHD_OCTOCLOCK_PACKET_MATCHES(OCTOCLOCK_QUERY_ACK, pkt_out, pkt_in, len)){
         session.starting_firmware_version = uhd::htonx<boost::uint32_t>(pkt_in->proto_ver);
     } else {
@@ -244,7 +244,7 @@ static void octoclock_burn(octoclock_session_t &session){
     std::cout << " -- Preparing OctoClock for firmware load..." << std::flush;
     pkt_out.len = session.image.size();
     pkt_out.crc = session.crc;
-    UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, PREPARE_FW_BURN_CMD, pkt_out, len, session.data_in);
+    UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, OCTOCLOCK_FW_COMPAT_NUM, PREPARE_FW_BURN_CMD, pkt_out, len, session.data_in);
     if(UHD_OCTOCLOCK_PACKET_MATCHES(FW_BURN_READY_ACK, pkt_out, pkt_in, len)){
         std::cout << "successful." << std::endl;
     }
@@ -265,7 +265,7 @@ static void octoclock_burn(octoclock_session_t &session){
 
         memset(pkt_out.data, 0, OCTOCLOCK_BLOCK_SIZE);
         memcpy((char*)pkt_out.data, &session.image[pkt_out.addr], OCTOCLOCK_BLOCK_SIZE);
-        UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, FILE_TRANSFER_CMD, pkt_out, len, session.data_in);
+        UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, OCTOCLOCK_FW_COMPAT_NUM, FILE_TRANSFER_CMD, pkt_out, len, session.data_in);
         if(not UHD_OCTOCLOCK_PACKET_MATCHES(FILE_TRANSFER_ACK, pkt_out, pkt_in, len)){
             std::cout << std::endl;
             throw uhd::runtime_error("Failed to load firmware.");
@@ -299,7 +299,7 @@ static void octoclock_verify(octoclock_session_t &session){
         memcpy((char*)image_part, &session.image[pkt_out.addr], OCTOCLOCK_BLOCK_SIZE);
         cmp_len = std::min<size_t>(OCTOCLOCK_BLOCK_SIZE, session.image.size() - size_t(pkt_out.addr));
 
-        UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, READ_FW_CMD, pkt_out, len, session.data_in);
+        UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, OCTOCLOCK_FW_COMPAT_NUM, READ_FW_CMD, pkt_out, len, session.data_in);
         if(UHD_OCTOCLOCK_PACKET_MATCHES(READ_FW_ACK, pkt_out, pkt_in, len)){
             if(memcmp(pkt_in->data, image_part, cmp_len)){
                 std::cout << std::endl;
@@ -325,7 +325,7 @@ static void octoclock_finalize(octoclock_session_t &session){
     size_t len = 0;
 
     std::cout << " -- Finalizing firmware load..." << std::flush;
-    UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, FINALIZE_BURNING_CMD, pkt_out, len, session.data_in);
+    UHD_OCTOCLOCK_SEND_AND_RECV(session.fw_xport, OCTOCLOCK_FW_COMPAT_NUM, FINALIZE_BURNING_CMD, pkt_out, len, session.data_in);
     if(UHD_OCTOCLOCK_PACKET_MATCHES(FINALIZE_BURNING_ACK, pkt_out, pkt_in, len)){
         std::cout << "successful." << std::endl;
     }

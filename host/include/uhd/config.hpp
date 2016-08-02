@@ -73,6 +73,14 @@ typedef ptrdiff_t ssize_t;
     #define UHD_DEPRECATED     __attribute__((deprecated))
     #define UHD_ALIGNED(x)     __attribute__((aligned(x)))
     #define UHD_UNUSED(x)      x __attribute__((unused))
+#elif defined(__clang__)
+    #define UHD_EXPORT         __attribute__((visibility("default")))
+    #define UHD_IMPORT         __attribute__((visibility("default")))
+    #define UHD_INLINE         inline __attribute__((always_inline))
+    #define UHD_FORCE_INLINE   inline __attribute__((always_inline))
+    #define UHD_DEPRECATED     __attribute__((deprecated))
+    #define UHD_ALIGNED(x)     __attribute__((aligned(x)))
+    #define UHD_UNUSED(x)      x __attribute__((unused))
 #else
     #define UHD_EXPORT
     #define UHD_IMPORT

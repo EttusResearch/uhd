@@ -50,7 +50,7 @@ void octoclock_eeprom_t::_load(){
     pkt_out.sequence = boost::uint32_t(std::rand());
     size_t len = 0;
 
-    UHD_OCTOCLOCK_SEND_AND_RECV(xport, SEND_EEPROM_CMD, pkt_out, len, octoclock_data);
+    UHD_OCTOCLOCK_SEND_AND_RECV(xport, _proto_ver, SEND_EEPROM_CMD, pkt_out, len, octoclock_data);
     if(UHD_OCTOCLOCK_PACKET_MATCHES(SEND_EEPROM_ACK, pkt_out, pkt_in, len)){
         //MAC address
         byte_vector_t mac_bytes(eeprom_in->mac_addr, eeprom_in->mac_addr+6);
@@ -144,7 +144,7 @@ void octoclock_eeprom_t::_store() const {
         eeprom_out->revision = (*this)["revision"][0]-'0';
     }
 
-    UHD_OCTOCLOCK_SEND_AND_RECV(xport, BURN_EEPROM_CMD, pkt_out, len, octoclock_data);
+    UHD_OCTOCLOCK_SEND_AND_RECV(xport, _proto_ver, BURN_EEPROM_CMD, pkt_out, len, octoclock_data);
     if(not UHD_OCTOCLOCK_PACKET_MATCHES(BURN_EEPROM_SUCCESS_ACK, pkt_out, pkt_in, len))
         throw uhd::runtime_error("Error writing to OctoClock EEPROM.");
 }
@@ -156,8 +156,9 @@ octoclock_eeprom_t::octoclock_eeprom_t(void){
     /* NOP */
 }
 
-octoclock_eeprom_t::octoclock_eeprom_t(udp_simple::sptr transport){
-    xport = transport;
+octoclock_eeprom_t::octoclock_eeprom_t(udp_simple::sptr transport, uint32_t proto_ver) :
+	xport(transport), _proto_ver(proto_ver)
+{
     _load();
 }
 
