@@ -277,6 +277,8 @@ MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 ########################################################################
 # Additional settings for build environment
 ########################################################################
+# Note: RFNoC never gets fully disabled, but the public APIs do
+SET(ENABLE_RFNOC ON CACHE BOOL "Export RFNoC includes and symbols")
 INCLUDE(UHDGlobalDefs)
 
 ########################################################################
@@ -336,8 +338,6 @@ LIBUHD_REGISTER_COMPONENT("LibUHD - C API" ENABLE_C_API ON "ENABLE_LIBUHD" OFF O
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF OFF)
-# Note: RFNoC never gets fully disabled, but the public APIs do
-LIBUHD_REGISTER_COMPONENT("RFNOC" ENABLE_RFNOC ON "ENABLE_LIBUHD" OFF OFF)
 
 ########################################################################
 # Check for fpga-src submodule
