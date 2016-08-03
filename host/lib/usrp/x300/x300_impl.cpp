@@ -54,14 +54,6 @@ using namespace uhd::usrp::gpio_atr;
 using namespace uhd::usrp::x300;
 namespace asio = boost::asio;
 
-static bool has_dram_buff(wb_iface::sptr zpu_ctrl) {
-    bool dramR0 = dma_fifo_core_3000::check(
-        zpu_ctrl, SR_ADDR(SET0_BASE, ZPU_SR_DRAM_FIFO0), SR_ADDR(SET0_BASE, ZPU_RB_DRAM_FIFO0));
-    bool dramR1 = dma_fifo_core_3000::check(
-        zpu_ctrl, SR_ADDR(SET0_BASE, ZPU_SR_DRAM_FIFO1), SR_ADDR(SET0_BASE, ZPU_RB_DRAM_FIFO1));
-    return (dramR0 and dramR1);
-}
-
 static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
     //Possible options:
     //1G  = {0:1G, 1:1G} w/ DRAM, HG  = {0:1G, 1:10G} w/ DRAM, XG  = {0:10G, 1:10G} w/ DRAM
@@ -84,9 +76,6 @@ static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
         option = "XA";
     } else {
         option = "HG";  //Default
-    }
-    if (not has_dram_buff(zpu_ctrl)) {
-        option += "S";
     }
     return option;
 }
@@ -890,35 +879,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, i), 0);
     }
 
-    ////////////////////////////////////////////////////////////////////
-    // DRAM FIFO initialization
-    ////////////////////////////////////////////////////////////////////
-    mb.has_dram_buff = has_dram_buff(mb.zpu_ctrl);
-    if (mb.has_dram_buff) {
-        for (size_t i = 0; i < 2; i++) {
-            static const size_t NUM_REGS = 8;
-            mb.dram_buff_ctrl[i] = dma_fifo_core_3000::make(
-                mb.zpu_ctrl,
-                SR_ADDR(SET0_BASE, ZPU_SR_DRAM_FIFO0+(i*NUM_REGS)),
-                SR_ADDR(SET0_BASE, ZPU_RB_DRAM_FIFO0+i));
-            mb.dram_buff_ctrl[i]->resize(X300_DRAM_FIFO_SIZE * i, X300_DRAM_FIFO_SIZE);
-
-            if (mb.dram_buff_ctrl[i]->ext_bist_supported()) {
-                UHD_MSG(status) << boost::format("Running BIST for DRAM FIFO %d... ") % i;
-                boost::uint32_t bisterr = mb.dram_buff_ctrl[i]->run_bist();
-                if (bisterr != 0) {
-                    throw uhd::runtime_error(str(boost::format("DRAM FIFO BIST failed! (code: %d)\n") % bisterr));
-                } else {
-                    double throughput = mb.dram_buff_ctrl[i]->get_bist_throughput(X300_BUS_CLOCK_RATE);
-                    UHD_MSG(status) << (boost::format("pass (Throughput: %.1fMB/s)") % (throughput/1e6)) << std::endl;
-                }
-            } else {
-                if (mb.dram_buff_ctrl[i]->run_bist() != 0) {
-                    throw uhd::runtime_error(str(boost::format("DRAM FIFO %d BIST failed!\n") % i));
-                }
-            }
-        }
-    }
 
     ////////////////////////////////////////////////////////////////////
     // setup time sources and properties

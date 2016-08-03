@@ -177,7 +177,6 @@ private:
 
         //perifs in each radio
         //! Return the index of a radio component, given a slot name. This means DSPs, radio_perifs
-        bool has_dram_buff;
         dma_fifo_core_3000::sptr dram_buff_ctrl[2];
 
         //other perifs on mboard
