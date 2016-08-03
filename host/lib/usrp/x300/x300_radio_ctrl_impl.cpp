@@ -50,7 +50,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     ////////////////////////////////////////////////////////////////////
     _radio_type = (get_block_id().get_block_count() == 0) ? PRIMARY : SECONDARY;
     _radio_slot = (get_block_id().get_block_count() == 0) ? "A" : "B";
-    _radio_clk_rate = _tree->access<double>("tick_rate").get();
+    _radio_clk_rate = _tree->access<double>("master_clock_rate").get();
 
     ////////////////////////////////////////////////////////////////////
     // Set up peripherals
@@ -128,11 +128,6 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     const size_t default_spp = (_tree->access<size_t>("mtu/recv").get() - max_bytes_header)
                                / (2 * sizeof(int16_t));
     _tree->access<int>(get_arg_path("spp") / "value").set(default_spp);
-
-    ////////////////////////////////////////////////////////////////
-    // Set tick rate
-    ////////////////////////////////////////////////////////////////
-    radio_ctrl_impl::set_rate(_radio_clk_rate);
 }
 
 x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
@@ -383,6 +378,16 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
             .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_rx_fe_corrections, this, _radio_slot, _1));
     }
+
+    ////////////////////////////////////////////////////////////////
+    // Set tick rate
+    ////////////////////////////////////////////////////////////////
+    const double tick_rate = get_output_samp_rate(0);
+    if (_radio_type==PRIMARY) {
+        // Slot A is the highlander timekeeper
+        _tree->access<double>("tick_rate").set(tick_rate);
+    }
+    radio_ctrl_impl::set_rate(tick_rate);
 }
 
 void x300_radio_ctrl_impl::set_rx_fe_corrections(

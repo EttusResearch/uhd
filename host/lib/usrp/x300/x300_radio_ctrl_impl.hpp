@@ -158,6 +158,8 @@ private: // members
 
     radio_connection_t                  _radio_type;
     std::string                         _radio_slot;
+    //! Radio clock rate is the rate at which the ADC and DAC are running at.
+    // Not necessarily this block's sampling rate (tick rate).
     double                              _radio_clk_rate;
 
     radio_regmap_t::sptr                _regs;
