@@ -457,6 +457,10 @@ void device3_impl::update_rx_streamers(double /* rate */)
             if (samp_rate == rfnoc::rate_node_ctrl::RATE_UNDEFINED) {
                 samp_rate = 1.0;
             }
+            // This formula is not derived by any scientific means -- we just need to
+            // increase the failure threshold as we increase rates. For 1 Msps, we use
+            // the default.
+            const size_t alignment_failure_factor = std::max(size_t(1), size_t(samp_rate * 1000 / tick_rate));
             double scaling = my_streamer->get_terminator()->get_output_scale_factor();
             if (scaling == rfnoc::scalar_node_ctrl::SCALE_UNDEFINED) {
                 scaling = 1/32767.;
@@ -465,6 +469,8 @@ void device3_impl::update_rx_streamers(double /* rate */)
 
             my_streamer->set_tick_rate(tick_rate);
             my_streamer->set_samp_rate(samp_rate);
+            // 1000 packets is the default alignment failure threshold
+            my_streamer->set_alignment_failure_threshold(1000 * alignment_failure_factor);
             my_streamer->set_scale_factor(scaling);
         }
     }
