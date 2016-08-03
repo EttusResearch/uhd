@@ -41,7 +41,7 @@ public:
 
     /*! Set the input sampling rate (i.e. ADC rate)
      */
-    virtual void set_tick_rate(const double rate) = 0;
+    virtual void set_adc_rate(const double rate) = 0;
 
     virtual void bypass_all(bool bypass_en) = 0;
 

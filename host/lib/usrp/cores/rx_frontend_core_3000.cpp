@@ -61,14 +61,16 @@ const std::complex<double> rx_frontend_core_3000::DEFAULT_IQ_BALANCE_VALUE = std
 class rx_frontend_core_3000_impl : public rx_frontend_core_3000{
 public:
     rx_frontend_core_3000_impl(wb_iface::sptr iface, const size_t base):
-        _i_dc_off(0), _q_dc_off(0), _tick_rate(0.0),
-        _fe_conn(fe_connection_t("IQ")), _iface(iface), _base(base)
+        _i_dc_off(0), _q_dc_off(0),
+        _adc_rate(0.0),
+        _fe_conn(fe_connection_t("IQ")),
+        _iface(iface), _base(base)
     {
         //NOP
     }
 
-    void set_tick_rate(const double rate) {
-        _tick_rate = rate;
+    void set_adc_rate(const double rate) {
+        _adc_rate = rate;
     }
 
     void bypass_all(bool bypass_en) {
@@ -97,25 +99,25 @@ public:
 
         _iface->poke32(REG_RX_FE_MAPPING, mapping_reg_val);
 
-        UHD_ASSERT_THROW(_tick_rate!=0.0)
+        UHD_ASSERT_THROW(_adc_rate!=0.0)
         double cordic_freq = 0.0, actual_cordic_freq = 0.0;
         if (fe_conn.get_sampling_mode() == fe_connection_t::HETERODYNE) {
             //1. Remember the sign of the IF frequency.
             //   It will be discarded in the next step
             int if_freq_sign = boost::math::sign(fe_conn.get_if_freq());
-            //2. Map IF frequency to the range [0, _tick_rate)
-            double if_freq = std::abs(std::fmod(fe_conn.get_if_freq(), _tick_rate));
-            //3. Map IF frequency to the range [-_tick_rate/2, _tick_rate/2)
+            //2. Map IF frequency to the range [0, _adc_rate)
+            double if_freq = std::abs(std::fmod(fe_conn.get_if_freq(), _adc_rate));
+            //3. Map IF frequency to the range [-_adc_rate/2, _adc_rate/2)
             //   This is the aliased frequency
-            if (if_freq > (_tick_rate / 2.0)) {
-                if_freq -= _tick_rate;
+            if (if_freq > (_adc_rate / 2.0)) {
+                if_freq -= _adc_rate;
             }
             //4. Set DSP offset to spin the signal in the opposite
             //   direction as the aliased frequency
             cordic_freq = if_freq * (-if_freq_sign);
         }
         int32_t freq_word;
-        get_freq_and_freq_word(cordic_freq, _tick_rate, actual_cordic_freq, freq_word);
+        get_freq_and_freq_word(cordic_freq, _adc_rate, actual_cordic_freq, freq_word);
         _iface->poke32(REG_RX_FE_HET_CORDIC_PHASE, boost::uint32_t(freq_word));
 
         _fe_conn = fe_conn;
@@ -164,16 +166,16 @@ public:
         switch (_fe_conn.get_sampling_mode()) {
         case fe_connection_t::REAL:
         case fe_connection_t::HETERODYNE:
-            return _tick_rate / 2;
+            return _adc_rate / 2;
         default:
-            return _tick_rate;
+            return _adc_rate;
         }
-        return _tick_rate;
+        return _adc_rate;
     }
 
 private:
     boost::int32_t  _i_dc_off, _q_dc_off;
-    double          _tick_rate;
+    double          _adc_rate;
     fe_connection_t _fe_conn;
     wb_iface::sptr  _iface;
     const size_t    _base;
