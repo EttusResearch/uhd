@@ -1,5 +1,5 @@
 //
-// Copyright 2012,2014 Ettus Research LLC
+// Copyright 2012,2014,20160 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #include <utility>
 #include <vector>
 
-#define SAMP_RATE 1e6
+static const double SAMP_RATE = 1e6;
 
 namespace po = boost::program_options;
 
@@ -39,8 +39,7 @@ typedef std::vector<std::pair<double, double> > pair_vector;
 ************************************************************************/
 
 std::string MHz_str(double freq){
-    std::string nice_string = std::string(str(boost::format("%5.2f MHz") % (freq / 1e6)));
-    return nice_string;
+    return std::string(str(boost::format("%5.2f MHz") % (freq / 1e6)));
 }
 
 std::string return_usrp_config_string(uhd::usrp::multi_usrp::sptr usrp, int chan, bool test_tx, bool test_rx, bool is_b2xx){
@@ -187,15 +186,16 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp, std::string type, in
         }
 
         //Testing for successful lock
-
-        if(has_sensor){
+        if (has_sensor) {
             bool is_locked = false;
             for(int i = 0; i < 1000; i++){
-                boost::this_thread::sleep(boost::posix_time::microseconds(1000));
-                if(usrp->get_tx_sensor("lo_locked",0).to_bool()){
-                    is_locked = true;
+                is_locked = (type == "TX") ?
+                    usrp->get_tx_sensor("lo_locked", 0).to_bool() :
+                    usrp->get_rx_sensor("lo_locked", 0).to_bool();
+                if (is_locked) {
                     break;
                 }
+                boost::this_thread::sleep(boost::posix_time::microseconds(1000));
             }
             if(is_locked){
                 if(verbose) std::cout << boost::format("LO successfully locked at %s frequency %s.")
