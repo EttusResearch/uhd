@@ -240,6 +240,11 @@ public:
         flush();
     }
 
+    ~dma_fifo_core_3000_impl()
+    {
+        flush();
+    }
+
     virtual void flush() {
         //Clear the FIFO and hold it in that state
         _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 1);
