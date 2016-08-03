@@ -262,6 +262,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
+    std::string rx_subdev, tx_subdev;
     double duration;
     double rx_rate, tx_rate;
     std::string rx_otw, tx_otw;
@@ -277,6 +278,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
         ("duration", po::value<double>(&duration)->default_value(10.0), "duration for the test in seconds")
+        ("rx_subdev", po::value<std::string>(&rx_subdev)->default_value(""), "specify the device subdev for RX")
+        ("tx_subdev", po::value<std::string>(&tx_subdev)->default_value(""), "specify the device subdev for TX")
         ("rx_rate", po::value<double>(&rx_rate), "specify to perform a RX rate test (sps)")
         ("tx_rate", po::value<double>(&tx_rate), "specify to perform a TX rate test (sps)")
         ("rx_otw", po::value<std::string>(&rx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for RX")
@@ -329,6 +332,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+
+    //always select the subdevice first, the channel mapping affects the other settings
+    if (vm.count("rx_subdev")) {
+        usrp->set_rx_subdev_spec(rx_subdev);
+    }
+    if (vm.count("tx_subdev")) {
+        usrp->set_tx_subdev_spec(tx_subdev);
+    }
+
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
     int num_mboards = usrp->get_num_mboards();
 
