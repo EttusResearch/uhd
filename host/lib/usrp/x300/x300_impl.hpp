@@ -199,22 +199,6 @@ private:
     //task for periodically reclaiming the device from others
     void claimer_loop(uhd::wb_iface::sptr);
 
-     /*! \brief Initialize the radio component on a given slot.
-      *
-      * Call this function once per slot (A and B) and motherboard to initialize all the radio components.
-      * This will:
-      * - Reset and init DACs and ADCs
-      * - Setup controls for DAC, ADC, SPI and LEDs
-      * - Self test ADC
-      * - Sync DACs (for MIMO)
-      * - Initialize the property tree for control objects etc. (gain, rate...)
-      * - Populate the radio ctrl object for RFNoC operation
-      *
-      * \param mb_i Motherboard index
-      * \param slot_name Slot name (A or B).
-      */
-    void setup_radio(const size_t, const std::string &slot_name, const uhd::device_addr_t &dev_addr);
-
     size_t _sid_framer;
 
     uhd::sid_t allocate_sid(
@@ -274,13 +258,7 @@ private:
 
     uhd::dict<std::string, uhd::usrp::dboard_manager::sptr> _dboard_managers;
 
-    void set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
-    void set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq);
     bool _ignore_cal_file;
-
-    void set_tick_rate(mboard_members_t &, const double);
-    //! Returns the tick rate for device with index \p mb_i
-    double _get_tick_rate(const size_t mb_i);
 
     void update_clock_control(mboard_members_t&);
     void initialize_clock_control(mboard_members_t &mb);
@@ -298,8 +276,6 @@ private:
 
     void check_fw_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
     void check_fpga_compat(const uhd::fs_path &mb_path, const mboard_members_t &members);
-
-    void update_atr_leds(uhd::usrp::gpio_atr::gpio_atr_3000::sptr, const std::string &ant);
 
     /// More IO stuff
     uhd::device_addr_t get_tx_hints(size_t mb_index);

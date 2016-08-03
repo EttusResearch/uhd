@@ -507,11 +507,6 @@ void x300_impl::mboard_members_t::discover_eth(
         throw uhd::assertion_error("X300 Initialization Error: No ethernet interfaces specified.");
 }
 
-double x300_impl::_get_tick_rate(size_t mb_i)
-{
-    return _mb[mb_i].clock->get_master_clock_rate();
-}
-
 void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 {
     const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
@@ -850,8 +845,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // create clock properties
     ////////////////////////////////////////////////////////////////////
-    _tree->create<double>(mb_path / "tick_rate")
-        .set_publisher(boost::bind(&x300_clock_ctrl::get_master_clock_rate, mb.clock));
+    _tree->create<double>(mb_path / "master_clock_rate")
+        .set_publisher(boost::bind(&x300_clock_ctrl::get_master_clock_rate, mb.clock))
+    ;
 
     UHD_MSG(status) << "Radio 1x clock:" << (mb.clock->get_master_clock_rate()/1e6)
         << std::endl;
@@ -962,11 +958,11 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         .add_coerced_subscriber(boost::bind(&x300_clock_ctrl::set_ref_out, mb.clock, _1));
 
     //initialize tick rate (must be done before setting time)
-    _tree->access<double>(mb_path / "tick_rate")
-        .add_coerced_subscriber(boost::bind(&x300_impl::set_tick_rate, this, boost::ref(mb), _1))
+    _tree->create<double>(mb_path / "tick_rate")
         .add_coerced_subscriber(boost::bind(&device3_impl::update_tx_streamers, this, _1))
         .add_coerced_subscriber(boost::bind(&device3_impl::update_rx_streamers, this, _1))
-        .set(mb.clock->get_master_clock_rate());
+        .set(mb.clock->get_master_clock_rate())
+    ;
 
     ////////////////////////////////////////////////////////////////////
     // and do the misc mboard sensors
@@ -1043,77 +1039,6 @@ x300_impl::~x300_impl(void)
     catch(...)
     {
         UHD_SAFE_CALL(throw;)
-    }
-}
-
-void x300_impl::setup_radio(const size_t mb_i, const std::string &slot_name, const uhd::device_addr_t &dev_addr)
-{
-//TODO: Ashish
-//    perif.rx_fe = rx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::RX_FRONT));
-//    perif.rx_fe->set_dc_offset(rx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
-//    perif.rx_fe->set_dc_offset_auto(rx_frontend_core_200::DEFAULT_DC_OFFSET_ENABLE);
-//    perif.tx_fe = tx_frontend_core_200::make(perif.ctrl, radio::sr_addr(radio::TX_FRONT));
-//    perif.tx_fe->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
-//    perif.tx_fe->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
-//    perif.ddc = rx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::RX_DSP));
-//    perif.ddc->set_link_rate(10e9/8); //whatever
-    //The DRAM FIFO is treated as in internal radio FIFO for flow control purposes
-//    tx_vita_core_3000::fc_monitor_loc fc_loc =
-//        mb.has_dram_buff ? tx_vita_core_3000::FC_PRE_FIFO : tx_vita_core_3000::FC_PRE_RADIO;
-//    perif.duc = tx_dsp_core_3000::make(perif.ctrl, radio::sr_addr(radio::TX_DSP));
-//    perif.duc->set_link_rate(10e9/8); //whatever
-
-//    //Capture delays are calibrated every time. The status is only printed is the user
-//    //asks to run the xfer self cal using "self_cal_adc_delay"
-//    self_cal_adc_capture_delay(mb, radio_index, dev_addr.has_key("self_cal_adc_delay"));
-
-//    perif.rx_fe->populate_subtree(_tree->subtree(mb_path / "rx_frontends" / slot_name));
-//    perif.tx_fe->populate_subtree(_tree->subtree(mb_path / "tx_frontends" / slot_name));
-
-//    const fs_path rx_dsp_path = mb_path / "rx_dsps" / str(boost::format("%u") % radio_index);
-//    perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
-//    _tree->access<double>(rx_dsp_path / "rate" / "value")
-//        .add_coerced_subscriber(boost::bind(&device3_impl::update_rx_streamers, this, _1))
-//    ;
-//    _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
-//        .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
-
-//    const fs_path tx_dsp_path = mb_path / "tx_dsps" / str(boost::format("%u") % radio_index);
-//    perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
-//    _tree->access<double>(tx_dsp_path / "rate" / "value")
-//        .add_coerced_subscriber(boost::bind(&device3_impl::update_tx_streamers, this, _1))
-//    ;
-
-//    //now that dboard is created -- register into rx antenna event
-//    const std::string fe_name = _tree->list(db_path / "rx_frontends").front();
-//    _tree->access<std::string>(db_path / "rx_frontends" / fe_name / "antenna" / "value")
-//        .add_coerced_subscriber(boost::bind(&x300_impl::update_atr_leds, this, mb.radio_perifs[radio_index].leds, _1));
-//    this->update_atr_leds(mb.radio_perifs[radio_index].leds, ""); //init anyway, even if never called
-//
-//    //bind frontend corrections to the dboard freq props
-//    const fs_path db_tx_fe_path = db_path / "tx_frontends";
-//    BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)) {
-//        _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
-//            .add_coerced_subscriber(boost::bind(&x300_impl::set_tx_fe_corrections, this, mb_path, slot_name, _1));
-//    }
-//    const fs_path db_rx_fe_path = db_path / "rx_frontends";
-//    BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)) {
-//        _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
-//            .add_coerced_subscriber(boost::bind(&x300_impl::set_rx_fe_corrections, this, mb_path, slot_name, _1));
-//    }
-}
-
-void x300_impl::set_rx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq)
-{
-    if(not _ignore_cal_file){
-        apply_rx_fe_corrections(this->get_tree()->subtree(mb_path), fe_name, lo_freq);
-    }
-}
-
-void x300_impl::set_tx_fe_corrections(const uhd::fs_path &mb_path, const std::string &fe_name, const double lo_freq)
-{
-    if(not _ignore_cal_file){
-        apply_tx_fe_corrections(this->get_tree()->subtree(mb_path), fe_name, lo_freq);
     }
 }
 
@@ -1391,34 +1316,9 @@ uhd::sid_t x300_impl::allocate_sid(
     return sid;
 }
 
-void x300_impl::update_atr_leds(gpio_atr_3000::sptr leds, const std::string &rx_ant)
-{
-    const bool is_txrx = (rx_ant == "TX/RX");
-    const int rx_led = (1 << 2);
-    const int tx_led = (1 << 1);
-    const int txrx_led = (1 << 0);
-    leds->set_atr_reg(ATR_REG_IDLE, 0);
-    leds->set_atr_reg(ATR_REG_RX_ONLY, is_txrx? txrx_led : rx_led);
-    leds->set_atr_reg(ATR_REG_TX_ONLY, tx_led);
-    leds->set_atr_reg(ATR_REG_FULL_DUPLEX, rx_led | tx_led);
-}
-
-void x300_impl::set_tick_rate(mboard_members_t &mb, const double rate)
-{
-//TODO: Ashish
-//    BOOST_FOREACH(radio_perifs_t &perif, mb.radio_perifs) {
-//        perif.ctrl->set_tick_rate(rate);
-//        perif.time64->set_tick_rate(rate);
-//        perif.framer->set_tick_rate(rate);
-//        perif.ddc->set_tick_rate(rate);
-//        perif.duc->set_tick_rate(rate);
-//    }
-}
-
 /***********************************************************************
  * clock and time control logic
  **********************************************************************/
-
 void x300_impl::set_time_source_out(mboard_members_t &mb, const bool enb)
 {
     mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_OUT_EN, enb?1:0);
