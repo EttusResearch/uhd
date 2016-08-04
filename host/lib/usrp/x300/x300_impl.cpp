@@ -943,8 +943,15 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //////////////// RFNOC /////////////////
 
     // If we have a radio, we must configure its codec control:
-    std::vector<rfnoc::block_id_t> radio_ids = find_blocks<rfnoc::x300_radio_ctrl_impl>("Radio");
-    if (radio_ids.size() >= 1 and radio_ids.size() <= 2) {
+    const std::string radio_blockid_hint = str(boost::format("%d/Radio") % mb_i);
+    std::vector<rfnoc::block_id_t> radio_ids =
+                find_blocks<rfnoc::x300_radio_ctrl_impl>(radio_blockid_hint);
+    if (not radio_ids.empty()) {
+        if (radio_ids.size() > 2) {
+            UHD_MSG(warning) << "Too many Radio Blocks found. Using only the first two." << std::endl;
+            radio_ids.resize(2);
+        }
+
         BOOST_FOREACH(const rfnoc::block_id_t &id, radio_ids) {
             rfnoc::x300_radio_ctrl_impl::sptr radio(get_block_ctrl<rfnoc::x300_radio_ctrl_impl>(id));
             mb.radios.push_back(radio);
@@ -969,10 +976,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 mb.radios.at(i)->self_test_adc();
             }
         }
-    } else if (radio_ids.size() == 0) {
-        UHD_MSG(status) << "No Radio Block found. Assuming radio-less operation." << std::endl;
     } else {
-        UHD_MSG(status) << "Too many Radio Blocks found. Using only the first two." << std::endl;
+        UHD_MSG(status) << "No Radio Block found. Assuming radio-less operation." << std::endl;
     }
 
     mb.initialization_done = true;
