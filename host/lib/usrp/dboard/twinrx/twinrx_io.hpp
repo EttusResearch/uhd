@@ -108,10 +108,9 @@ public:
         _db_iface->set_gpio_out(dboard_iface::UNIT_BOTH,
             (cpld::get_reg(addr) << shift(CPLD_FULL_ADDR)) | (data << shift(CPLD_DATA)),
             mask<boost::uint32_t>(CPLD_FULL_ADDR)|mask<boost::uint32_t>(CPLD_DATA));
-        //Sleep for 166ns to ensure that we don't toggle the enables to quickly
-        //nanosleep is not really accurate in userland and it is also not very
-        //cross-platform. So just sleep for the minimum amount of time in us.
-        boost::this_thread::sleep(boost::posix_time::microseconds(0));
+        //Sleep for 166ns to ensure that we don't toggle the enables too quickly
+        //The underlying sleep function rounds to microsecond precision.
+        _db_iface->sleep(boost::chrono::nanoseconds(166));
         //Step 2: Write the reg offset and data, and assert the necessary enable
         _db_iface->set_gpio_out(dboard_iface::UNIT_BOTH,
             (static_cast<boost::uint32_t>(addr) << shift(CPLD_FULL_ADDR)) | (data << shift(CPLD_DATA)),

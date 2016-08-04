@@ -24,6 +24,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/dboard_base.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dboard_eeprom.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dboard_id.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dboard_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gps_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mboard_eeprom.cpp
