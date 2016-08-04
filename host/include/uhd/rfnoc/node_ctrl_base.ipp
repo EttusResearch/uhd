@@ -113,7 +113,7 @@ namespace uhd {
             if (this_property != ret_val) {
                 throw uhd::runtime_error(
                     str(
-                        boost::format("Node %1% specifies %2%, node %3% specifies %4%.")
+                        boost::format("Node %1% specifies %2%, node %3% specifies %4%")
                             % first_node_id % ret_val % node->unique_id() % this_property
                     )
                 );
