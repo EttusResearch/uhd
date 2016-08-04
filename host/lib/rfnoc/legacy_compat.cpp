@@ -331,13 +331,13 @@ private: // methods
         }
         for (size_t i = 0; i < args.channels.size(); i++) {
             UHD_ASSERT_THROW(mboard_idx < chan_map.size());
-            const size_t &radio_index = chan_map[mboard_idx][chan_idx].radio_index;
+            const size_t radio_index = chan_map[mboard_idx][chan_idx].radio_index;
             size_t port_index = chan_map[mboard_idx][chan_idx].port_index;
             const std::string block_name = _get_streamer_block_id_and_port<dir>(mboard_idx, radio_index, port_index);
             args.args[str(boost::format("block_id%d") % i)] = block_name;
             args.args[str(boost::format("block_port%d") % i)] = str(boost::format("%d") % port_index);
             chan_idx++;
-            if (chan_idx > chan_map[mboard_idx].size()) {
+            if (chan_idx >= chan_map[mboard_idx].size()) {
                 chan_idx = 0;
                 mboard_idx++;
             }
