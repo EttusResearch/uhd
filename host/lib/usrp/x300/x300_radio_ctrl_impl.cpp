@@ -210,12 +210,12 @@ double x300_radio_ctrl_impl::set_tx_gain(const double gain, const size_t chan)
     fs_path path("dboards" / _radio_slot / "tx_frontends" / _tx_fe_map.at(chan).db_fe_name / "gains");
     std::vector<std::string> gain_stages = _tree->list(path);
     if (gain_stages.size() == 1) {
-        gain = _tree->access<double>(path / gain_stages[0] / "value").set(gain).get();
-        radio_ctrl_impl::set_tx_gain(gain, chan);
+        const double actual_gain = _tree->access<double>(path / gain_stages[0] / "value").set(gain).get();
+        radio_ctrl_impl::set_tx_gain(actual_gain, chan);
         return gain;
     } else {
         UHD_MSG(warning) << "set_tx_gain: could not apply gain for this daughterboard.";
-        radio_ctrl_impl::set_tx_gain(0.0);
+        radio_ctrl_impl::set_tx_gain(0.0, chan);
         return 0.0;
     }
 }
@@ -226,12 +226,12 @@ double x300_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
     fs_path path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name / "gains");
     std::vector<std::string> gain_stages = _tree->list(path);
     if (gain_stages.size() == 1) {
-        gain = _tree->access<double>(path / gain_stages[0] / "value").set(gain).get();
-        radio_ctrl_impl::set_rx_gain(gain, chan);
+        const double actual_gain = _tree->access<double>(path / gain_stages[0] / "value").set(gain).get();
+        radio_ctrl_impl::set_rx_gain(actual_gain, chan);
         return gain;
     } else {
         UHD_MSG(warning) << "set_rx_gain: could not apply gain for this daughterboard.";
-        radio_ctrl_impl::set_tx_gain(0.0);
+        radio_ctrl_impl::set_tx_gain(0.0, chan);
         return 0.0;
     }
 }
