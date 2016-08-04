@@ -936,7 +936,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         mb_i,
         n_rfnoc_blocks,
         X300_XB_DST_PCI + 1, /* base port */
-        uhd::sid_t(X300_SRC_ADDR0, 0, X300_DST_ADDR, 0),
+        uhd::sid_t(X300_SRC_ADDR0, 0, X300_DST_ADDR + mb_i, 0),
         dev_addr,
         mb.if_pkt_is_big_endian ? ENDIANNESS_BIG : ENDIANNESS_LITTLE
     );
