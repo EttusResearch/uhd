@@ -173,10 +173,6 @@ void device3_impl::enumerate_rfnoc_blocks(
         make_args.is_big_endian = (endianness == ENDIANNESS_BIG);
         _rfnoc_block_ctrl.push_back(uhd::rfnoc::block_ctrl_base::make(make_args, noc_id));
     }
-    UHD_MSG(status) << "========== Full list of RFNoC blocks: ============" << std::endl;
-    BOOST_FOREACH(uhd::rfnoc::block_ctrl_base::sptr this_block, _rfnoc_block_ctrl) {
-        UHD_MSG(status) << "* " << this_block->get_block_id() << std::endl;
-    }
 }
 
 
