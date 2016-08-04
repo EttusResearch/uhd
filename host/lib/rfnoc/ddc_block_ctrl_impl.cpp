@@ -103,17 +103,29 @@ public:
 
     double get_output_scale_factor(size_t port=ANY_PORT)
     {
-        return get_arg<double>("scalar_correction", port == ANY_PORT ? 0 : port);
+        port = port == ANY_PORT ? 0 : port;
+        if (not (_rx_streamer_active.count(port) and _rx_streamer_active.at(port))) {
+            return SCALE_UNDEFINED;
+        }
+        return get_arg<double>("scalar_correction", port);
     }
 
     double get_input_samp_rate(size_t port=ANY_PORT)
     {
-        return get_arg<double>("input_rate", port == ANY_PORT ? 0 : port);
+        port = port == ANY_PORT ? 0 : port;
+        if (not (_tx_streamer_active.count(port) and _tx_streamer_active.at(port))) {
+            return RATE_UNDEFINED;
+        }
+        return get_arg<double>("input_rate", port);
     }
 
     double get_output_samp_rate(size_t port=ANY_PORT)
     {
-        return get_arg<double>("output_rate", port == ANY_PORT ? 0 : port);
+        port = port == ANY_PORT ? 0 : port;
+        if (not (_rx_streamer_active.count(port) and _rx_streamer_active.at(port))) {
+            return RATE_UNDEFINED;
+        }
+        return get_arg<double>("output_rate", port);
     }
 
 
@@ -142,21 +154,6 @@ public:
                     stream_cmd,
                     get_upstream_port(chan)
             );
-        }
-    }
-
-    void set_rx_streamer(bool active, const size_t port)
-    {
-        UHD_MSG(status) << "[" << unique_id() << "] ddc_block_ctrl::set_rx_streamer() " << active << std::endl;
-        if (list_upstream_nodes().count(port)) {
-            source_node_ctrl::sptr this_upstream_block_ctrl =
-                boost::dynamic_pointer_cast<source_node_ctrl>(list_upstream_nodes().at(port).lock());
-            if (this_upstream_block_ctrl) {
-                this_upstream_block_ctrl->set_rx_streamer(
-                        active,
-                        get_upstream_port(port)
-                );
-            }
         }
     }
 
