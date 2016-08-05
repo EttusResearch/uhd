@@ -324,23 +324,31 @@ private: // methods
         } else {
             args.args["spp"] = str(boost::format("%d") % _spp);
         }
-        size_t mboard_idx = 0;
-        size_t chan_idx = 0;
         if (args.channels.empty()) {
             args.channels = std::vector<size_t>(1, 0);
         }
         for (size_t i = 0; i < args.channels.size(); i++) {
-            UHD_ASSERT_THROW(mboard_idx < chan_map.size());
-            const size_t radio_index = chan_map[mboard_idx][chan_idx].radio_index;
-            size_t port_index = chan_map[mboard_idx][chan_idx].port_index;
-            const std::string block_name = _get_streamer_block_id_and_port<dir>(mboard_idx, radio_index, port_index);
-            args.args[str(boost::format("block_id%d") % i)] = block_name;
-            args.args[str(boost::format("block_port%d") % i)] = str(boost::format("%d") % port_index);
-            chan_idx++;
-            if (chan_idx >= chan_map[mboard_idx].size()) {
-                chan_idx = 0;
+            const size_t stream_arg_chan_idx = args.channels[i];
+            // Determine which mboard, and on that mboard, which channel this is:
+            size_t mboard_idx = 0;
+            size_t this_mboard_chan_idx = stream_arg_chan_idx;
+            while (this_mboard_chan_idx >= chan_map[mboard_idx].size()) {
                 mboard_idx++;
+                this_mboard_chan_idx -= chan_map[mboard_idx].size();
             }
+            if (mboard_idx >= chan_map.size()) {
+                throw uhd::index_error(str(
+                    boost::format("[legacy_compat]: %s channel %u out of range for given frontend configuration.")
+                    % (dir == uhd::TX_DIRECTION ? "TX" : "RX")
+                    % stream_arg_chan_idx
+                ));
+            }
+            // Map that mboard and channel to a block:
+            const size_t radio_index = chan_map[mboard_idx][this_mboard_chan_idx].radio_index;
+            size_t port_index = chan_map[mboard_idx][this_mboard_chan_idx].port_index;
+            const std::string block_name = _get_streamer_block_id_and_port<dir>(mboard_idx, radio_index, port_index);
+            args.args[str(boost::format("block_id%d") % stream_arg_chan_idx)] = block_name;
+            args.args[str(boost::format("block_port%d") % stream_arg_chan_idx)] = str(boost::format("%d") % port_index);
         }
     }
 
