@@ -26,6 +26,7 @@
 #include <uhd/usrp/gpio_defs.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/thread/thread.hpp>
 #include <string>
 #include <vector>
 
@@ -297,6 +298,11 @@ public:
      */
     virtual void set_command_time(const uhd::time_spec_t& t) = 0;
 
+    /*!
+     * Sleep for a set time
+     * \param time time to sleep in nanoseconds
+     */
+    virtual void sleep(const boost::chrono::nanoseconds& time);
 };
 
 }} //namespace
