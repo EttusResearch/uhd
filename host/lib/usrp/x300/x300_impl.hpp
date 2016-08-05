@@ -42,6 +42,7 @@
 #include <boost/dynamic_bitset.hpp>
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
+static const std::string X300_DEFAULT_CLOCK_SOURCE  = "internal";
 
 static const double X300_DEFAULT_TICK_RATE          = 200e6;        //Hz
 static const double X300_DEFAULT_DBOARD_CLK_RATE    = 50e6;         //Hz

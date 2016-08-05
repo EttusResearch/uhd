@@ -829,7 +829,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //Initialize clock source to use internal reference and generate
     //a valid radio clock. This may change after configuration is done.
     //This will configure the LMK and wait for lock
-    update_clock_source(mb, "internal");
+    update_clock_source(mb, X300_DEFAULT_CLOCK_SOURCE);
 
     ////////////////////////////////////////////////////////////////////
     // create clock properties
@@ -898,7 +898,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // setup clock sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
-        .set("internal")
+        .set(X300_DEFAULT_CLOCK_SOURCE)
         .add_coerced_subscriber(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1));
 
     static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external")("gpsdo");
