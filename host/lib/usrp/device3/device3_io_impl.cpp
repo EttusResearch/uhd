@@ -117,7 +117,10 @@ void generate_channel_list(
             chan_args.push_back(args.args);
             chan_args.back().pop("block_id");
         } else {
-            throw uhd::runtime_error("Cannot create streamers: No block_id specified.");
+            throw uhd::runtime_error(str(
+                boost::format("Cannot create streamers: No block_id specified for channel %d.")
+                % chan_idx
+            ));
         }
         //// Find block port for this channel
         if (args.args.has_key(str(boost::format("block_port%d") % chan_idx))) {
