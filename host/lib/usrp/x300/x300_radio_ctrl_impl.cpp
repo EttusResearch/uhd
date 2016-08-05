@@ -437,6 +437,10 @@ void x300_radio_ctrl_impl::reset_codec()
         _regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 0);
         _regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 1);
         _regs->misc_outs_reg.flush();
+        UHD_ASSERT_THROW(bool(_adc));
+        UHD_ASSERT_THROW(bool(_dac));
+        _adc->reset();
+        _dac->reset();
     }
 }
 
