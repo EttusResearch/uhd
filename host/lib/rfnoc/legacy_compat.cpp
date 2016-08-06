@@ -321,7 +321,7 @@ private: // methods
                 }
             }
             _spp = args_spp;
-        } else {
+        } else if (dir == uhd::RX_DIRECTION) {
             args.args["spp"] = str(boost::format("%d") % _spp);
         }
         if (args.channels.empty()) {
