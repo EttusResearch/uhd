@@ -63,7 +63,11 @@ device_addr_t x300_impl::get_rx_hints(size_t mb_index)
 
 device_addr_t x300_impl::get_tx_hints(size_t mb_index)
 {
-    return _mb[mb_index].send_args;
+    device_addr_t tx_hints = _mb[mb_index].send_args;
+    if (_mb[mb_index].xport_path != "nirio") {
+        tx_hints["bpp"] = boost::lexical_cast<std::string>(X300_1GE_DATA_FRAME_MAX_SIZE);
+    }
+    return tx_hints;
 }
 
 void x300_impl::post_streamer_hooks(direction_t dir)
