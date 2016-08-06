@@ -510,6 +510,8 @@ public:
 
     /*!
      * Get the currently set LO source.
+     * Channels without controllable LO sources will return
+     * "internal"
      * \param name the name of the LO stage to query
      * \param chan the channel index 0 to N-1
      * \return the configured LO source
@@ -518,6 +520,8 @@ public:
 
     /*!
      * Get a list of possible LO sources.
+     * Channels which do not have controllable LO sources
+     * will return "internal".
      * \param name the name of the LO stage to query
      * \param chan the channel index 0 to N-1
      * \return a vector of strings for possible settings
@@ -552,6 +556,8 @@ public:
 
     /*!
      * Get the current RX LO frequency (Advanced).
+     * If the channel does not have independently configurable LOs
+     * the current rf frequency will be returned.
      * \param name the name of the LO stage to query
      * \param chan the channel index 0 to N-1
      * \return the configured LO frequency
@@ -560,6 +566,8 @@ public:
 
     /*!
      * Get the LO frequency range of the RX LO.
+     * If the channel does not have independently configurable LOs
+     * the rf frequency range will be returned.
      * \param name the name of the LO stage to query
      * \param chan the channel index 0 to N-1
      * \return a frequency range object
