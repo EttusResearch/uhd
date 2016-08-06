@@ -48,12 +48,6 @@ static const double X300_DEFAULT_TICK_RATE          = 200e6;        //Hz
 static const double X300_DEFAULT_DBOARD_CLK_RATE    = 50e6;         //Hz
 static const double X300_BUS_CLOCK_RATE             = 166.666667e6; //Hz
 
-static const size_t X300_TX_HW_BUFF_SIZE_SRAM       = 392*1024;      //384K SRAM buffer + 8K 2Clk FIFO
-static const size_t X300_TX_FC_RESPONSE_FREQ_SRAM   = 8;             //per flow-control window
-static const size_t X300_TX_HW_BUFF_SIZE_DRAM       = 128*1024;
-static const size_t X300_TX_FC_RESPONSE_FREQ_DRAM   = 32;
-static const boost::uint32_t X300_DRAM_FIFO_SIZE    = 32*1024*1024;
-
 static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
 static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
 
