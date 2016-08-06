@@ -237,6 +237,7 @@ ENDIF(WIN32)
 MESSAGE(STATUS "")
 MESSAGE(STATUS "Configuring Boost C++ Libraries...")
 SET(BOOST_REQUIRED_COMPONENTS
+    chrono
     date_time
     filesystem
     program_options
