@@ -736,7 +736,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         // To calculate the max number of samples per packet, we assume the maximum header length
         // to avoid fragmentation should the entire header be used.
-        const size_t bpp = xport.send->get_send_frame_size() - stream_options.tx_max_len_hdr;
+        const size_t bpp = tx_hints.cast<size_t>("bpp", xport.send->get_send_frame_size()) - stream_options.tx_max_len_hdr;
         const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
         const size_t spp = std::min(args.args.cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
         UHD_MSG(status) << "[TX Streamer] spp == " << spp << std::endl;
