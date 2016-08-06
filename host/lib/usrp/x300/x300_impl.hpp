@@ -28,7 +28,6 @@
 #include "x300_fw_common.h"
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include "i2c_core_100_wb32.hpp"
-#include "dma_fifo_core_3000.hpp"
 #include <boost/weak_ptr.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/transport/nirio/niusrprio_session.h>
@@ -169,10 +168,6 @@ private:
         uhd::wb_iface::sptr zpu_ctrl;
         spi_core_3000::sptr zpu_spi;
         i2c_core_100_wb32::sptr zpu_i2c;
-
-        //perifs in each radio
-        //! Return the index of a radio component, given a slot name. This means DSPs, radio_perifs
-        dma_fifo_core_3000::sptr dram_buff_ctrl[2];
 
         //other perifs on mboard
         x300_clock_ctrl::sptr clock;
