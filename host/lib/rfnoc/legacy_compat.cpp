@@ -29,6 +29,8 @@
 #include <uhd/transport/chdr.hpp>
 #include <boost/make_shared.hpp>
 
+#define UHD_LEGACY_LOG() UHD_MSG(status)
+
 using namespace uhd::rfnoc;
 using uhd::usrp::subdev_spec_t;
 using uhd::usrp::subdev_spec_pair_t;
@@ -132,19 +134,19 @@ public:
         setup_prop_tree();
         connect_blocks();
         if (args.has_key("skip_ddc")) {
-            UHD_MSG(status) << "[legacy_compat] Skipping DDCs by user request." << std::endl;
+            UHD_LEGACY_LOG() << "[legacy_compat] Skipping DDCs by user request." << std::endl;
         } else if (not _has_ddcs) {
             UHD_MSG(warning)
                 << "[legacy_compat] No DDCs detected. You will only be able to receive at the radio frontend rate."
                 << std::endl;
         }
         if (args.has_key("skip_duc")) {
-            UHD_MSG(status) << "[legacy_compat] Skipping DUCs by user request." << std::endl;
+            UHD_LEGACY_LOG() << "[legacy_compat] Skipping DUCs by user request." << std::endl;
         } else if (not _has_ducs) {
             UHD_MSG(warning) << "[legacy_compat] No DUCs detected. You will only be able to transmit at the radio frontend rate." << std::endl;
         }
         if (args.has_key("skip_dram")) {
-            UHD_MSG(status) << "[legacy_compat] Skipping DRAM by user request." << std::endl;
+            UHD_LEGACY_LOG() << "[legacy_compat] Skipping DRAM by user request." << std::endl;
         } else if (not _has_dmafifo) {
             UHD_MSG(warning) << "[legacy_compat] No DMA FIFO detected. You will only be able to transmit at slow rates." << std::endl;
         }
@@ -215,7 +217,7 @@ public:
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t mboard, size_t chan)
     {
-        UHD_MSG(status) << "[legacy_compat] issue_stream_cmd() " << std::endl;
+        UHD_LEGACY_LOG() << "[legacy_compat] issue_stream_cmd() " << std::endl;
         const size_t &radio_index = _rx_channel_map[mboard][chan].radio_index;
         const size_t &port_index  = _rx_channel_map[mboard][chan].port_index;
         if (_has_ddcs) {
@@ -233,7 +235,7 @@ public:
             args.otw_format = "sc16";
         }
         _update_stream_args_for_streaming<uhd::RX_DIRECTION>(args, _rx_channel_map);
-        UHD_MSG(status) << "[legacy_compat] rx stream args: " << args.args.to_string() << std::endl;
+        UHD_LEGACY_LOG() << "[legacy_compat] rx stream args: " << args.args.to_string() << std::endl;
         return _device->get_rx_stream(args);
     }
 
@@ -246,7 +248,7 @@ public:
             args.otw_format = "sc16";
         }
         _update_stream_args_for_streaming<uhd::TX_DIRECTION>(args, _tx_channel_map);
-        UHD_MSG(status) << "[legacy_compat] tx stream args: " << args.args.to_string() << std::endl;
+        UHD_LEGACY_LOG() << "[legacy_compat] tx stream args: " << args.args.to_string() << std::endl;
         return _device->get_tx_stream(args);
     }
 
@@ -686,7 +688,7 @@ legacy_compat::sptr legacy_compat::make(
             throw uhd::runtime_error("Reference to existing legacy compat object expired prematurely!");
         }
 
-        UHD_MSG(status) << "[legacy_compat] Using existing legacy compat object for this device." << std::endl;
+        UHD_LEGACY_LOG() << "[legacy_compat] Using existing legacy compat object for this device." << std::endl;
         return legacy_compat_copy;
     }
 

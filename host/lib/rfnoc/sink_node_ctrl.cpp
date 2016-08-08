@@ -35,7 +35,7 @@ size_t sink_node_ctrl::connect_upstream(
 
 void sink_node_ctrl::set_tx_streamer(bool active, const size_t port)
 {
-    UHD_MSG(status) << "[" << unique_id() << "] sink_node_ctrl::set_tx_streamer() " << active << " " << port << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "sink_node_ctrl::set_tx_streamer() " << active << " " << port << std::endl;
 
     /* Enable all downstream connections:
     BOOST_FOREACH(const node_ctrl_base::node_map_pair_t downstream_node, list_downstream_nodes()) {

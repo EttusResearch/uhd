@@ -35,7 +35,7 @@ size_t source_node_ctrl::connect_downstream(
 
 void source_node_ctrl::set_rx_streamer(bool active, const size_t port)
 {
-    UHD_MSG(status) << "[" << unique_id() << "] source_node_ctrl::set_rx_streamer() " << port << " -> " << active << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "source_node_ctrl::set_rx_streamer() " << port << " -> " << active << std::endl;
 
     /* This will enable all upstream blocks:
     BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, list_upstream_nodes()) {
