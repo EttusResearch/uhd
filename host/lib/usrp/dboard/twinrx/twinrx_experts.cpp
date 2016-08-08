@@ -589,7 +589,7 @@ void twinrx_settings_expert::_resolve_lox_freq(
         // hopping, then always write the frequency because other inputs might require
         // an LO re-commit
         const bool freq_update_request = (not hopping_enabled) or ch1_freq_d.is_dirty();
-        // As an additional layer of protection from unnecessarily commiting the LO, check
+        // As an additional layer of protection from unnecessarily committing the LO, check
         // if the frequency has actually changed.
         if (synth0_mapping == MAPPING_CH1 and freq_update_request) {
             ch1_freq_c = _set_lox_synth_freq(lo_stage, twinrx_ctrl::CH1, ch1_freq_d);
