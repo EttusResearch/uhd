@@ -418,7 +418,6 @@ blockdef::sptr blockdef::make_from_noc_id(boost::uint64_t noc_id)
     std::vector<fs::path> paths = blockdef_xml_impl::get_xml_paths();
     // Iterate over all paths
     BOOST_FOREACH(const fs::path &base_path, paths) {
-        UHD_VAR(base_path);
         fs::path this_path = base_path / XML_BLOCKS_SUBDIR;
         if (not fs::exists(this_path) or not fs::is_directory(this_path)) {
             continue;

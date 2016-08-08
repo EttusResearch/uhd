@@ -252,7 +252,6 @@ private:
             {
                 UHD_MSG(error) << "[" << _name << "] Radio ctrl bad VITA packet: " << ex.what() << std::endl;
                 if (buff){
-                    UHD_VAR(buff->size());
                     UHD_MSG(status) << boost::format("%08X") % pkt[0] << std::endl;
                     UHD_MSG(status) << boost::format("%08X") % pkt[1] << std::endl;
                     UHD_MSG(status) << boost::format("%08X") % pkt[2] << std::endl;
