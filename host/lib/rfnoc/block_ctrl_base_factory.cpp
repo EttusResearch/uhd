@@ -21,6 +21,8 @@
 #include <uhd/rfnoc/blockdef.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 
+#define UHD_FACTORY_LOG() UHD_MSG(status)
+
 using namespace uhd;
 using namespace uhd::rfnoc;
 
@@ -69,7 +71,7 @@ block_ctrl_base::sptr block_ctrl_base::make(
         const make_args_t &make_args_,
         boost::uint64_t noc_id
 ) {
-    UHD_MSG(status) << "[RFNoC Factory] block_ctrl_base::make() " << std::endl;
+    UHD_FACTORY_LOG() << "[RFNoC Factory] block_ctrl_base::make() " << std::endl;
     make_args_t make_args = make_args_;
 
     // Check if a block key was specified, in this case, we *must* either
@@ -88,7 +90,7 @@ block_ctrl_base::sptr block_ctrl_base::make(
         make_args.block_name = make_args.block_key;
     }
 
-    UHD_MSG(status) << "[RFNoC Factory] Using controller key '" << make_args.block_key << "' and block name '" << make_args.block_name << "'" << std::endl;
+    UHD_FACTORY_LOG() << "[RFNoC Factory] Using controller key '" << make_args.block_key << "' and block name '" << make_args.block_name << "'" << std::endl;
     return get_block_fcn_regs()[make_args.block_key](make_args);
 }
 

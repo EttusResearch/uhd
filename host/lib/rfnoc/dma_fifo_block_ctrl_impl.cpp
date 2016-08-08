@@ -64,7 +64,7 @@ public:
             _perifs[i].depth = DEFAULT_SIZE;
             _perifs[i].core = dma_fifo_core_3000::make(_perifs[i].ctrl, USER_SR_BASE, USER_RB_BASE);
             _perifs[i].core->resize(_perifs[i].base_addr, _perifs[i].depth);
-            UHD_MSG(status) << boost::format("[RFNoC DMA FIFO] Running BIST for FIFO %d... ") % i;
+            UHD_MSG(status) << boost::format("[DMA FIFO] Running BIST for FIFO %d... ") % i;
             if (_perifs[i].core->ext_bist_supported()) {
                 boost::uint32_t bisterr = _perifs[i].core->run_bist();
                 if (bisterr != 0) {

@@ -1,5 +1,5 @@
 //
-// Copyright 2014-2015 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,6 +29,8 @@
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
+#define UHD_BLOCK_LOG() UHD_MSG(status)
+
 using namespace uhd;
 using namespace uhd::rfnoc;
 using std::string;
@@ -50,13 +52,13 @@ block_ctrl_base::block_ctrl_base(
     _ctrl_ifaces(make_args.ctrl_ifaces),
     _base_address(make_args.base_address & 0xFFF0)
 {
-    UHD_MSG(status) << "block_ctrl_base()" << std::endl;
+    UHD_BLOCK_LOG() << "block_ctrl_base()" << std::endl;
 
     /*** Identify this block (NoC-ID, block-ID, and block definition) *******/
     // Read NoC-ID (name is passed in through make_args):
     boost::uint64_t noc_id = sr_read64(SR_READBACK_REG_ID);
     _block_def = blockdef::make_from_noc_id(noc_id);
-    if (_block_def) UHD_MSG(status) <<  "Found valid blockdef" << std::endl;
+    if (_block_def) UHD_BLOCK_LOG() <<  "Found valid blockdef" << std::endl;
     if (not _block_def)
         _block_def = blockdef::make_from_noc_id(DEFAULT_NOC_ID);
     UHD_ASSERT_THROW(_block_def);
@@ -66,7 +68,7 @@ block_ctrl_base::block_ctrl_base(
     while (_tree->exists("xbar/" + _block_id.get_local())) {
         _block_id++;
     }
-    UHD_MSG(status)
+    UHD_BLOCK_LOG()
         << "NOC ID: " << str(boost::format("0x%016X  ") % noc_id)
         << "Block ID: " << _block_id << std::endl;
 
@@ -224,7 +226,7 @@ std::vector<size_t> block_ctrl_base::get_ctrl_ports() const
 
 void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t data, const size_t port)
 {
-    //UHD_MSG(status) << "  ";
+    //UHD_BLOCK_LOG() << "  ";
     //UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%d, %08X, %d)") % reg % data % port << std::endl;
     if (not _ctrl_ifaces.count(port)) {
         throw uhd::key_error(str(boost::format("[%s] sr_write(): No such port: %d") % get_block_id().get() % port));
@@ -251,7 +253,7 @@ void block_ctrl_base::sr_write(const std::string &reg, const boost::uint32_t dat
         }
         reg_addr = boost::uint32_t(_tree->access<size_t>(_root_path / "registers" / "sr" / reg).get());
     }
-    UHD_MSG(status) << "  ";
+    UHD_BLOCK_LOG() << "  ";
     UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%s, %08X) ==> ") % reg % data << std::endl;
     return sr_write(reg_addr, data, port);
 }

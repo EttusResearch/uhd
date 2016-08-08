@@ -23,6 +23,8 @@
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
+#define UHD_NOCSCRIPT_LOG() UHD_MSG(status)
+
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::nocscript;
 
@@ -114,7 +116,7 @@ void block_iface::run_and_check(const std::string &code, const std::string &erro
 {
     boost::mutex::scoped_lock local_interpreter_lock(_lil_mutex);
 
-    UHD_MSG(status) << "[NocScript] Executing and asserting code: " << code << std::endl;
+    UHD_NOCSCRIPT_LOG() << "[NocScript] Executing and asserting code: " << code << std::endl;
     expression::sptr e = _parser->create_expr_tree(code);
     expression_literal result = e->eval();
     if (not result.to_bool()) {
@@ -141,7 +143,7 @@ expression_literal block_iface::_nocscript__sr_write(expression_container::expr_
     const boost::uint32_t reg_val = boost::uint32_t(args[1]->eval().get_int());
     bool result = true;
     try {
-        UHD_MSG(status) << "[NocScript] Executing SR_WRITE() " << std::endl;
+        UHD_NOCSCRIPT_LOG() << "[NocScript] Executing SR_WRITE() " << std::endl;
         _block_ptr->sr_write(reg_name, reg_val);
     } catch (const uhd::exception &e) {
         UHD_MSG(error) << boost::format("[NocScript] Error while executing SR_WRITE(%s, 0x%X):\n%s")
@@ -193,7 +195,7 @@ expression_literal block_iface::_nocscript__arg_set_int(const expression_contain
     if (args.size() == 3) {
         port = size_t(args[2]->eval().get_int());
     }
-    UHD_MSG(status) << "[NocScript] Setting $" << var_name << std::endl;
+    UHD_NOCSCRIPT_LOG() << "[NocScript] Setting $" << var_name << std::endl;
     _block_ptr->set_arg<int>(var_name, val, port);
     return expression_literal(true);
 }
@@ -206,7 +208,7 @@ expression_literal block_iface::_nocscript__arg_set_string(const expression_cont
     if (args.size() == 3) {
         port = size_t(args[2]->eval().get_int());
     }
-    UHD_MSG(status) << "[NocScript] Setting $" << var_name << std::endl;
+    UHD_NOCSCRIPT_LOG() << "[NocScript] Setting $" << var_name << std::endl;
     _block_ptr->set_arg<std::string>(var_name, val, port);
     return expression_literal(true);
 }
@@ -219,7 +221,7 @@ expression_literal block_iface::_nocscript__arg_set_double(const expression_cont
     if (args.size() == 3) {
         port = size_t(args[2]->eval().get_int());
     }
-    UHD_MSG(status) << "[NocScript] Setting $" << var_name << std::endl;
+    UHD_NOCSCRIPT_LOG() << "[NocScript] Setting $" << var_name << std::endl;
     _block_ptr->set_arg<double>(var_name, val, port);
     return expression_literal(true);
 }

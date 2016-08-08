@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ std::string node_ctrl_base::unique_id() const
 
 void node_ctrl_base::clear()
 {
-    UHD_MSG(status) << "node_ctrl_base::clear() " << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "node_ctrl_base::clear() " << std::endl;
     // Reset connections:
     _upstream_nodes.clear();
     _downstream_nodes.clear();
