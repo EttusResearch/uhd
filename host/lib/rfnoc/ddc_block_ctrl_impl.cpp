@@ -50,7 +50,7 @@ public:
     UHD_RFNOC_BLOCK_CONSTRUCTOR(ddc_block_ctrl)
     {
         // Argument/prop tree hooks
-        for (size_t chan = 0; chan < 2; chan++) {
+        for (size_t chan = 0; chan < get_input_ports().size(); chan++) {
             double default_freq = get_arg<double>("freq", chan);
             _tree->access<double>(get_arg_path("freq/value", chan))
                 .set_coercer(boost::bind(&ddc_block_ctrl_impl::set_freq, this, _1, chan))
@@ -193,7 +193,7 @@ private:
         for (int decim = 512; decim > 256; decim -= 4){
             range.push_back(uhd::range_t(input_rate/decim));
         }
-        for (int decim = 256; decim > 128; decim -= 2){
+        for (int decim = 256; decim > 128; decim -= 3){
             range.push_back(uhd::range_t(input_rate/decim));
         }
         for (int decim = 128; decim >= 1; decim -= 1){
