@@ -193,7 +193,7 @@ private:
         for (int decim = 512; decim > 256; decim -= 4){
             range.push_back(uhd::range_t(input_rate/decim));
         }
-        for (int decim = 256; decim > 128; decim -= 3){
+        for (int decim = 256; decim > 128; decim -= 2){
             range.push_back(uhd::range_t(input_rate/decim));
         }
         for (int decim = 128; decim >= 1; decim -= 1){
