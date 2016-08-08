@@ -25,33 +25,25 @@ include(UHDUnitTest)
 ########################################################################
 SET(test_sources
     addr_test.cpp
-    block_id_test.cpp
-    blockdef_test.cpp
     buffer_test.cpp
     byteswap_test.cpp
     cast_test.cpp
     chdr_test.cpp
     convert_test.cpp
-    device3_test.cpp
     dict_test.cpp
     error_test.cpp
     fp_compare_delta_test.cpp
     fp_compare_epsilon_test.cpp
     gain_group_test.cpp
-    graph_search_test.cpp
     math_test.cpp
     msg_test.cpp
-    node_connect_test.cpp
     property_test.cpp
     ranges_test.cpp
-    rate_node_test.cpp
     sid_t_test.cpp
     sph_recv_test.cpp
     sph_send_test.cpp
-    stream_sig_test.cpp
     subdev_spec_test.cpp
     time_spec_test.cpp
-    tick_node_test.cpp
     vrt_test.cpp
     expert_test.cpp
     fe_conn_test.cpp
@@ -59,6 +51,19 @@ SET(test_sources
 
 #turn each test cpp file into an executable with an int main() function
 ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
+
+IF(ENABLE_RFNOC)
+    LIST(APPEND test_sources
+        block_id_test.cpp
+        blockdef_test.cpp
+        device3_test.cpp
+        graph_search_test.cpp
+        node_connect_test.cpp
+        rate_node_test.cpp
+        stream_sig_test.cpp
+        tick_node_test.cpp
+    )
+ENDIF(ENABLE_RFNOC)
 
 IF(ENABLE_C_API)
     LIST(APPEND test_sources
