@@ -57,7 +57,6 @@ namespace asio = boost::asio;
 static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
     //Possible options:
     //1G  = {0:1G, 1:1G} w/ DRAM, HG  = {0:1G, 1:10G} w/ DRAM, XG  = {0:10G, 1:10G} w/ DRAM
-    //1GS = {0:1G, 1:1G} w/ SRAM, HGS = {0:1G, 1:10G} w/ SRAM, XGS = {0:10G, 1:10G} w/ SRAM
     //HA  = {0:1G, 1:Aurora} w/ DRAM, XA  = {0:10G, 1:Aurora} w/ DRAM
 
     std::string option;
@@ -240,7 +239,7 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
             //set these values as empty string so the device may still be found
             //and the filter's below can still operate on the discovered device
             if (not hint.has_key("fpga")) {
-                new_addr["fpga"] = "HGS";
+                new_addr["fpga"] = "HG";
             }
             new_addr["name"] = "";
             new_addr["serial"] = "";
@@ -539,10 +538,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         nifpga_lvbitx::sptr lvbitx;
         switch (get_mb_type_from_pcie(dev_addr["resource"], rpc_port_name)) {
             case USRP_X300_MB:
-                lvbitx.reset(new x300_lvbitx("RFNOC_" + dev_addr["fpga"]));
+                lvbitx.reset(new x300_lvbitx(dev_addr["fpga"]));
                 break;
             case USRP_X310_MB:
-                lvbitx.reset(new x310_lvbitx("RFNOC_" + dev_addr["fpga"]));
+                lvbitx.reset(new x310_lvbitx(dev_addr["fpga"]));
                 break;
             default:
                 nirio_status_to_exception(status, "Motherboard detection error. Please ensure that you \
@@ -1127,9 +1126,7 @@ uhd::both_xports_t x300_impl::make_transport(
 
         fs_path mboard_path = fs_path("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate");
 
-        UHD_ASSERT_THROW(mb.loaded_fpga_image.size() >= 2);
-
-        if (mb.loaded_fpga_image.substr(0,2) == "HG") {
+        if (mb.loaded_fpga_image == "HG") {
             size_t max_link_rate = 0;
             if (xbar_src_dst == X300_XB_DST_E0) {
                 eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
@@ -1139,12 +1136,12 @@ uhd::both_xports_t x300_impl::make_transport(
                 max_link_rate += X300_MAX_RATE_10GIGE;
             }
             _tree->access<double>(mboard_path).set(max_link_rate);
-        } else if (mb.loaded_fpga_image.substr(0,2) == "XG" or mb.loaded_fpga_image.substr(0,2) == "XA") {
+        } else if (mb.loaded_fpga_image == "XG" or mb.loaded_fpga_image == "XA") {
             eth_data_rec_frame_size = X300_10GE_DATA_FRAME_MAX_SIZE;
             size_t max_link_rate = X300_MAX_RATE_10GIGE;
             max_link_rate *= mb.eth_conns.size();
             _tree->access<double>(mboard_path).set(max_link_rate);
-        } else if (mb.loaded_fpga_image.substr(0,2) == "HA") {
+        } else if (mb.loaded_fpga_image == "HA") {
             eth_data_rec_frame_size = X300_1GE_DATA_FRAME_MAX_SIZE;
             size_t max_link_rate = X300_MAX_RATE_1GIGE;
             max_link_rate *= mb.eth_conns.size();
