@@ -923,7 +923,8 @@ public:
                 }
             }
         } else {
-            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+            // If the daughterboard doesn't expose it's LO(s) then it can only be internal
+            return "internal";
         }
     }
 
@@ -944,7 +945,8 @@ public:
                 }
             }
         } else {
-            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+            // If the daughterboard doesn't expose it's LO(s) then it can only be internal
+            return std::vector<std::string> {1, "internal"};
         }
     }
 
@@ -984,7 +986,8 @@ public:
                 }
             }
         } else {
-            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+            // If the daughterboard doesn't expose it's LO(s), assume it cannot export
+            return false;
         }
     }
 
@@ -1017,7 +1020,8 @@ public:
                 }
             }
         } else {
-            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+            // Return actual RF frequency if the daughterboard doesn't expose it's LO(s)
+            return _tree->access<double>(rx_rf_fe_root(chan) / "freq" /" value").get();
         }
     }
 
@@ -1033,7 +1037,8 @@ public:
                 }
             }
         } else {
-            throw uhd::runtime_error("This device does not support manual configuration of LOs");
+            // Return the actual RF range if the daughterboard doesn't expose it's LO(s)
+            return _tree->access<meta_range_t>(rx_rf_fe_root(chan) / "freq" / "range").get();
         }
     }
 
