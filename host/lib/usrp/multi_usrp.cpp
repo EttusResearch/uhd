@@ -1805,7 +1805,7 @@ private:
     {
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
         if (is_device3()) {
-            return _legacy_compat->rx_fe_root(mcp.mboard, mcp.chan);
+            return _legacy_compat->tx_fe_root(mcp.mboard, mcp.chan);
         }
         try
         {
