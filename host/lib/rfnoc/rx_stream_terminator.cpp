@@ -48,7 +48,7 @@ void rx_stream_terminator::set_tx_streamer(bool, const size_t)
 void rx_stream_terminator::set_rx_streamer(bool active, const size_t)
 {
     // TODO this is identical to source_node_ctrl::set_rx_streamer() -> factor out
-    UHD_MSG(status) << "[" << unique_id() << "] rx_stream_terminator::set_rx_streamer() " << active << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "rx_stream_terminator::set_rx_streamer() " << active << std::endl;
     BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
         source_node_ctrl::sptr curr_upstream_block_ctrl =
             boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
@@ -70,7 +70,7 @@ void rx_stream_terminator::handle_overrun(boost::weak_ptr<uhd::rx_streamer> stre
         return;
     }
 
-    UHD_MSG(status) << "[" << unique_id() << "] rx_stream_terminator::handle_overrun()" << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "rx_stream_terminator::handle_overrun()" << std::endl;
     boost::shared_ptr<uhd::transport::sph::recv_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<uhd::transport::sph::recv_packet_streamer>(streamer.lock());
     if (not my_streamer) return; //If the rx_streamer has expired then overflow handling makes no sense.
@@ -125,7 +125,7 @@ void rx_stream_terminator::handle_overrun(boost::weak_ptr<uhd::rx_streamer> stre
 
 rx_stream_terminator::~rx_stream_terminator()
 {
-    UHD_MSG(status) << "[" << unique_id() << "] rx_stream_terminator::~rx_stream_terminator() " << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "rx_stream_terminator::~rx_stream_terminator() " << std::endl;
     set_rx_streamer(false, 0);
 }
 

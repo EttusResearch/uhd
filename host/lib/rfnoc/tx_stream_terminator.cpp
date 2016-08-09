@@ -44,7 +44,7 @@ void tx_stream_terminator::set_rx_streamer(bool, const size_t)
 void tx_stream_terminator::set_tx_streamer(bool active, const size_t /* port */)
 {
     // TODO this is identical to sink_node_ctrl::set_tx_streamer() -> factor out
-    UHD_MSG(status) << "[" << unique_id() << "] tx_stream_terminator::set_tx_streamer() " << active << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "tx_stream_terminator::set_tx_streamer() " << active << std::endl;
     BOOST_FOREACH(const node_ctrl_base::node_map_pair_t downstream_node, _downstream_nodes) {
         sink_node_ctrl::sptr curr_downstream_block_ctrl =
             boost::dynamic_pointer_cast<sink_node_ctrl>(downstream_node.second.lock());
@@ -59,7 +59,7 @@ void tx_stream_terminator::set_tx_streamer(bool active, const size_t /* port */)
 
 tx_stream_terminator::~tx_stream_terminator()
 {
-    UHD_MSG(status) << "[" << unique_id() << "] tx_stream_terminator::~tx_stream_terminator() " << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "tx_stream_terminator::~tx_stream_terminator() " << std::endl;
     set_tx_streamer(false, 0);
 }
 
