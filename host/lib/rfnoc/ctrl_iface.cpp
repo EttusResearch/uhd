@@ -131,7 +131,7 @@ public:
     }
 
 private:
-    // This is the buffer type for messages in radio control core.
+    // This is the buffer type for response messages
     struct resp_buff_type
     {
         boost::uint32_t data[8];
@@ -140,7 +140,7 @@ private:
     /*******************************************************************
      * Primary control and interaction private methods
      ******************************************************************/
-    UHD_INLINE void send_pkt(const boost::uint32_t addr, const boost::uint32_t data = 0)
+    inline void send_pkt(const boost::uint32_t addr, const boost::uint32_t data = 0)
     {
         managed_send_buffer::sptr buff = _ctrl_xport->get_send_buff(0.0);
         if (not buff) {
@@ -207,7 +207,7 @@ private:
                 }
                 catch(const std::exception &ex)
                 {
-                    throw uhd::io_error(str(boost::format("Radio ctrl (%s) no response packet - %s") % _name % ex.what()));
+                    throw uhd::io_error(str(boost::format("Block ctrl (%s) no response packet - %s") % _name % ex.what()));
                 }
                 pkt = buff->cast<const boost::uint32_t *>();
                 packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
@@ -250,7 +250,7 @@ private:
             }
             catch(const std::exception &ex)
             {
-                UHD_MSG(error) << "[" << _name << "] Radio ctrl bad VITA packet: " << ex.what() << std::endl;
+                UHD_MSG(error) << "[" << _name << "] Block ctrl bad VITA packet: " << ex.what() << std::endl;
                 if (buff){
                     UHD_MSG(status) << boost::format("%08X") % pkt[0] << std::endl;
                     UHD_MSG(status) << boost::format("%08X") % pkt[1] << std::endl;
@@ -291,7 +291,7 @@ private:
             }
             catch(const std::exception &ex)
             {
-                throw uhd::io_error(str(boost::format("Radio ctrl (%s) packet parse error - %s") % _name % ex.what()));
+                throw uhd::io_error(str(boost::format("Block ctrl (%s) packet parse error - %s") % _name % ex.what()));
             }
 
             //return the readback value
