@@ -240,9 +240,8 @@ public:
         flush();
     }
 
-    ~dma_fifo_core_3000_impl()
+    virtual ~dma_fifo_core_3000_impl()
     {
-        flush();
     }
 
     virtual void flush() {
