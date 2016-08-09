@@ -946,7 +946,7 @@ public:
             }
         } else {
             // If the daughterboard doesn't expose it's LO(s) then it can only be internal
-            return std::vector<std::string> {1, "internal"};
+            return std::vector<std::string> (1, "internal");
         }
     }
 
