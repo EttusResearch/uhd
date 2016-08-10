@@ -863,9 +863,12 @@ bool x300_radio_ctrl_impl::check_radio_config()
     for (size_t chan = 0; chan < _get_num_radios(); chan++) {
         if (_tree->exists(rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")) {
             const bool chan_active = _is_streamer_active(RX_DIRECTION, chan);
-            _tree->access<bool>(rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
-                .set(chan_active)
-            ;
+            if (chan_active)
+            {
+                _tree->access<bool>(rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
+                    .set(chan_active)
+                ;
+            }
         }
     }
 
@@ -873,9 +876,12 @@ bool x300_radio_ctrl_impl::check_radio_config()
     for (size_t chan = 0; chan < _get_num_radios(); chan++) {
         if (_tree->exists(tx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")) {
             const bool chan_active = _is_streamer_active(TX_DIRECTION, chan);
-            _tree->access<bool>(tx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
-                .set(chan_active)
-            ;
+            if (chan_active)
+            {
+                _tree->access<bool>(tx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
+                    .set(chan_active)
+                ;
+            }
         }
     }
 
