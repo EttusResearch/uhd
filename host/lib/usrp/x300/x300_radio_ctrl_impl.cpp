@@ -391,12 +391,12 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
     const fs_path db_tx_fe_path = db_path / "tx_frontends";
     BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)) {
         _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
-            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_tx_fe_corrections, this, _radio_slot, _1));
+            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_tx_fe_corrections, this, db_path, _root_path / "tx_fe_corrections" / name, _1));
     }
     const fs_path db_rx_fe_path = db_path / "rx_frontends";
     BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)) {
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
-            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_rx_fe_corrections, this, _radio_slot, _1));
+            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_rx_fe_corrections, this, db_path, _root_path / "rx_fe_corrections" / name,_1));
     }
 
     ////////////////////////////////////////////////////////////////
@@ -411,20 +411,22 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
 }
 
 void x300_radio_ctrl_impl::set_rx_fe_corrections(
-        const std::string &slot_name,
+        const fs_path &db_path,
+        const fs_path &rx_fe_corr_path,
         const double lo_freq
 ) {
     if (not _ignore_cal_file) {
-        apply_rx_fe_corrections(_tree, slot_name, lo_freq);
+        apply_rx_fe_corrections(_tree, db_path, rx_fe_corr_path, lo_freq);
     }
 }
 
 void x300_radio_ctrl_impl::set_tx_fe_corrections(
-        const std::string &slot_name,
+        const fs_path &db_path,
+        const fs_path &tx_fe_corr_path,
         const double lo_freq
 ) {
     if (not _ignore_cal_file) {
-        apply_tx_fe_corrections(_tree, slot_name, lo_freq);
+        apply_tx_fe_corrections(_tree, db_path, tx_fe_corr_path, lo_freq);
     }
 }
 
