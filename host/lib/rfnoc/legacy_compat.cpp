@@ -126,13 +126,17 @@ public:
         _num_rx_chans_per_radio(_has_ddcs ?
                 std::min(num_ports(_tree, RADIO_BLOCK_NAME, "out"), num_ports(_tree, DDC_BLOCK_NAME, "out"))
                 : num_ports(_tree, RADIO_BLOCK_NAME, "out")),
-        _spp(get_block_ctrl<radio_ctrl>(0, RADIO_BLOCK_NAME, 0)->get_arg<int>("spp")),
+        _rx_spp(get_block_ctrl<radio_ctrl>(0, RADIO_BLOCK_NAME, 0)->get_arg<int>("spp")),
+        _tx_spp(_rx_spp),
         _rx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board)),
         _tx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board))
     {
         _device->clear();
         check_available_periphs(); // Throws if invalid configuration.
         setup_prop_tree();
+        if (_tree->exists("/mboards/0/mtu/send")) {
+            _tx_spp = (_tree->access<size_t>("/mboards/0/mtu/send").get() - MAX_BYTES_PER_HEADER) / BYTES_PER_SAMPLE;
+        }
         connect_blocks();
         if (args.has_key("skip_ddc")) {
             UHD_LEGACY_LOG() << "[legacy_compat] Skipping DDCs by user request." << std::endl;
@@ -316,17 +320,31 @@ private: // methods
             uhd::stream_args_t &args,
             chan_map_t &chan_map
     ) {
-        const size_t args_spp = args.args.cast<size_t>("spp", _spp);
-        if (args.args.has_key("spp") and args_spp != _spp) {
-            for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
-                for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
-                    get_block_ctrl<radio_ctrl>(mboard, RADIO_BLOCK_NAME, radio)->set_arg<int>("spp", args_spp);
+        // If the user provides spp, that value is always applied. If it's
+        // different from what we thought it was, we need to update the blocks.
+        // If it's not provided, we provide our own spp value.
+        const size_t args_spp = args.args.cast<size_t>("spp", 0);
+        if (dir == uhd::RX_DIRECTION) {
+            if (args.args.has_key("spp") and args_spp != _rx_spp) {
+                for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
+                    for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
+                        get_block_ctrl<radio_ctrl>(mboard, RADIO_BLOCK_NAME, radio)->set_arg<int>("spp", args_spp);
+                    }
                 }
+                _rx_spp = args_spp;
+                // TODO: Update flow control on the blocks
+            } else {
+                args.args["spp"] = str(boost::format("%d") % _rx_spp);
             }
-            _spp = args_spp;
-        } else if (dir == uhd::RX_DIRECTION) {
-            args.args["spp"] = str(boost::format("%d") % _spp);
+        } else {
+            if (args.args.has_key("spp") and args_spp != _tx_spp) {
+                _tx_spp = args_spp;
+                // TODO: Update flow control on the blocks
+            } else {
+                args.args["spp"] = str(boost::format("%d") % _tx_spp);
+            }
         }
+
         if (args.channels.empty()) {
             args.channels = std::vector<size_t>(1, 0);
         }
@@ -421,10 +439,10 @@ private: // methods
                 }
 
                 const size_t this_spp = get_block_ctrl<radio_ctrl>(i, RADIO_BLOCK_NAME, k)->get_arg<int>("spp");
-                if (this_spp != _spp) {
+                if (this_spp != _rx_spp) {
                     throw uhd::runtime_error(str(
                             boost::format("[legacy compat] Radios have differing spp values: %s has %d, others have %d")
-                            % radio_block_id.to_string() % this_spp % _spp
+                            % radio_block_id.to_string() % this_spp % _rx_spp
                     ));
                 }
             }
@@ -546,7 +564,8 @@ private: // methods
     void connect_blocks()
     {
         _graph = _device->create_graph("legacy");
-        size_t bpp = _spp * BYTES_PER_SAMPLE + MAX_BYTES_PER_HEADER;
+        const size_t rx_bpp = _rx_spp * BYTES_PER_SAMPLE + MAX_BYTES_PER_HEADER;
+        const size_t tx_bpp = _tx_spp * BYTES_PER_SAMPLE + MAX_BYTES_PER_HEADER;
         for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
             for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
                 // Tx Channels
@@ -555,14 +574,14 @@ private: // methods
                         _graph->connect(
                             block_id_t(mboard, DUC_BLOCK_NAME,   radio), chan,
                             block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
-                            bpp
+                            tx_bpp
                         );
                         if (_has_dmafifo) {
                             // We have DMA FIFO *and* DUCs
                             _graph->connect(
                                 block_id_t(mboard, DFIFO_BLOCK_NAME, 0), radio,
                                 block_id_t(mboard, DUC_BLOCK_NAME, radio), chan,
-                                bpp
+                                tx_bpp
                             );
                         }
                     } else if (_has_dmafifo) {
@@ -570,7 +589,7 @@ private: // methods
                             _graph->connect(
                                 block_id_t(mboard, DFIFO_BLOCK_NAME,   0), radio,
                                 block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
-                                bpp
+                                tx_bpp
                             );
                     }
                 }
@@ -580,7 +599,7 @@ private: // methods
                         _graph->connect(
                             block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
                             block_id_t(mboard, DDC_BLOCK_NAME,   radio), chan,
-                            bpp
+                            rx_bpp
                         );
                     }
                 }
@@ -668,7 +687,8 @@ private: // attributes
     const size_t _num_radios_per_board;
     const size_t _num_tx_chans_per_radio;
     const size_t _num_rx_chans_per_radio;
-    size_t _spp;
+    size_t _rx_spp;
+    size_t _tx_spp;
 
     chan_map_t _rx_channel_map;
     chan_map_t _tx_channel_map;
