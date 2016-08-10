@@ -85,10 +85,10 @@ void graph_impl::connect(
     dst->set_upstream_port(actual_dst_block_port, actual_src_block_port);
     // At this point, ports are locked and no one else can simply connect
     // into them.
-    UHD_MSG(status)
-        << "[" << _name << "] Connecting "
-        << src_block << ":" << actual_src_block_port << " --> "
-        << dst_block << ":" << actual_dst_block_port << std::endl;
+    //UHD_MSG(status)
+        //<< "[" << _name << "] Connecting "
+        //<< src_block << ":" << actual_src_block_port << " --> "
+        //<< dst_block << ":" << actual_dst_block_port << std::endl;
 
     /********************************************************************
      * 2. Check IO signatures match
