@@ -53,10 +53,9 @@ static const int ZPU_RB_SPI        = 2;
 static const int ZPU_RB_CLK_STATUS = 3;
 static const int ZPU_RB_COMPAT_NUM = 6;
 static const int ZPU_RB_NUM_CE     = 7;
+static const int ZPU_RB_GIT_HASH   = 10;
 static const int ZPU_RB_SFP0_TYPE  = 4;
 static const int ZPU_RB_SFP1_TYPE  = 5;
-static const int ZPU_RB_DRAM_FIFO0 = 10;
-static const int ZPU_RB_DRAM_FIFO1 = 11;
 
 static const uint32_t RB_SFP_1G_ETH  = 0;
 static const uint32_t RB_SFP_10G_ETH = 1;

@@ -82,6 +82,8 @@ Sensors:
 The DBSRX2 board has 1 quadrature frontend. It defaults to direct
 conversion, but can use a low IF through `lo_offset` in uhd::tune_request_t.
 
+Frequency Range: 800 MHz to 2.3 GHz
+
 Receive Antennas: **J3**
 
 -   **Frontend 0:** Complex baseband signal from antenna J3
@@ -93,7 +95,7 @@ Receive Gains:
 -   **GC1**, Range: 0-73dB
 -   **BBG**, Range: 0-15dB
 
-Bandwidth (Hz): 8 MHz -80 MHz
+Bandwidth (Hz): 8 MHz-80 MHz
 
 Sensors:
 
@@ -184,6 +186,8 @@ Features:
     -   Can be set to use Integer-N tuning for better spur performance
         with uhd::tune_request_t
 
+Frequency Range: 50 MHz to 2.2 GHz
+
 Transmit Antennas: **TX/RX**
 
 Receive Antennas: **TX/RX** or **RX2**
@@ -218,6 +222,8 @@ Features:
     -   Allows for full-duplex operation on different transmit and
         receive frequencies
     -   Can be set to use Integer-N tuning for better spur performance with uhd::tune_request_t
+
+Frequency Range: 400 MHz to 4.4 GHz
 
 Transmit Antennas: **TX/RX**
 
@@ -261,6 +267,8 @@ Features:
         receive frequencies
     -   Can be set to use Integer-N tuning for better spur performance with uhd::tune_request_t
 
+Frequency Range: 1.2 GHz to 6 GHz
+
 Transmit Antennas: **TX/RX**
 
 Receive Antennas: **TX/RX** or **RX2**
@@ -302,6 +310,8 @@ Features:
     -   Allows for full-duplex operation on different transmit and
         receive frequencies
     -   Can be set to use Integer-N tuning for better spur performance with uhd::tune_request_t
+
+Frequency Range: 10 MHz to 6 GHz
 
 Transmit Antennas: **TX/RX**
 
@@ -351,6 +361,8 @@ Bandwidth: 6 MHz
 \subsection dboards_tvrx2 TVRX2
 
 The TVRX2 board has 2 real-mode frontends. It is operated at a low IF.
+
+Frequency Range: 50 MHz to 860 MHz
 
 Receive Frontends:
 

@@ -648,7 +648,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         }
 
         _tree->create<size_t>(mb_path / "mtu/recv").set(_max_frame_sizes.recv_frame_size);
-        _tree->create<size_t>(mb_path / "mtu/send").set(_max_frame_sizes.send_frame_size);
+        _tree->create<size_t>(mb_path / "mtu/send").set(std::min(_max_frame_sizes.send_frame_size, X300_1GE_DATA_FRAME_MAX_SIZE));
         _tree->create<double>(mb_path / "link_max_rate").set(X300_MAX_RATE_10GIGE);
     }
 
@@ -1609,6 +1609,13 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t
     }
     _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));
+
+    const boost::uint32_t git_hash = members.zpu_ctrl->peek32(SR_ADDR(SET0_BASE,
+                                                              ZPU_RB_GIT_HASH));
+    _tree->create<std::string>(mb_path / "fpga_version_hash").set(
+        str(boost::format("%07x%s")
+        % (git_hash & 0x0FFFFFFF)
+        % ((git_hash & 0xF000000) ? "-dirty" : "")));
 }
 
 x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& resource, const std::string& rpc_port)
