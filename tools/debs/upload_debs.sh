@@ -45,7 +45,7 @@ ORIG_RELEASE=`head -1 host/cmake/debian/changelog | sed 's/.*) \(.*\);.*/\1/'`
 # Currently supported versions can be found here:
 # https://launchpad.net/ubuntu/+ppas
 #
-RELEASES="precise trusty vivid wily xenial"
+RELEASES="trusty vivid wily xenial"
 PPA=ppa:ettusresearch/uhd
 
 #
@@ -67,7 +67,7 @@ fi
 
 # Generate the TAR file to be uploaded.
 echo "Creating UHD source archive."
-tar --exclude='*git*' --exclude='./debian' --exclude='*.swp' --exclude='fpga-src' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' -cJf ../uhd_${VERSION}.orig.tar.xz .
+tar --exclude='.git*' --exclude='./debian' --exclude='*.swp' --exclude='fpga-src' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' -cJf ../uhd_${VERSION}.orig.tar.xz .
 if [ $? != 0 ]
 then
     echo "Failed to create UHD source archive."
