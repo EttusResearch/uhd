@@ -1671,9 +1671,8 @@ public:
             default:
                 throw uhd::assertion_error("multi_usrp::read_register - register has invalid bitwidth: " + path);
             }
-        } else {
-            throw uhd::not_implemented_error("multi_usrp::read_register - register IO not supported for this device");
         }
+        throw uhd::not_implemented_error("multi_usrp::read_register - register IO not supported for this device");
     }
 
     std::vector<std::string> enumerate_registers(const size_t mboard)

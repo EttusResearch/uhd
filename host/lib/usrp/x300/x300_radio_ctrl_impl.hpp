@@ -152,8 +152,8 @@ private:
 
     void _check_adc(const boost::uint32_t val);
 
-    void set_rx_fe_corrections(const std::string &fe_name, const double lo_freq);
-    void set_tx_fe_corrections(const std::string &fe_name, const double lo_freq);
+    void set_rx_fe_corrections(const uhd::fs_path &db_path, const uhd::fs_path &rx_fe_corr_path, const double lo_freq);
+    void set_tx_fe_corrections(const uhd::fs_path &db_path, const uhd::fs_path &tx_fe_corr_path, const double lo_freq);
 
 private: // members
     enum radio_connection_t { PRIMARY, SECONDARY };

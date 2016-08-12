@@ -60,7 +60,7 @@ static int tx_pga0_gain_to_iobits(double &gain){
             (attn_code &  8 ? 0 : TX_ATTN_8) |
             (attn_code &  4 ? 0 : TX_ATTN_4) |
             (attn_code &  2 ? 0 : TX_ATTN_2) |
-            (attn_code &  1 ? 0 : TX_ATTN_1) 
+            (attn_code &  1 ? 0 : TX_ATTN_1)
         ) & TX_ATTN_MASK;
 
     UHD_LOGV(often) << boost::format(
@@ -223,11 +223,14 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     lo_iface->set_prescaler(synth_target_freq > 3e9 ?
         adf435x_iface::PRESCALER_8_9 : adf435x_iface::PRESCALER_4_5);
 
-    //When divider resync is enabled, a 180 deg phase error is introduced when syncing
-    //multiple WBX boards. Switching to fundamental mode works arounds this issue.
-    //TODO: Document why the following has to be true
-    lo_iface->set_feedback_select((target_freq > reference_freq) ?
-        adf435x_iface::FB_SEL_DIVIDED : adf435x_iface::FB_SEL_FUNDAMENTAL);
+    //The feedback of the divided frequency must be disabled whenever the target frequency
+    //divided by the minimum PFD frequency cannot meet the minimum integer divider (N) value.
+    //If it is disabled, additional phase ambiguity will be introduced.  With a minimum PFD
+    //frequency of 10 MHz, synthesizer frequencies below 230 MHz (LO frequencies below 115 MHz)
+    //will have too much ambiguity to synchronize.
+    lo_iface->set_feedback_select(
+        (int(synth_target_freq / 10e6) >= lo_iface->get_int_range().start() ?
+            adf435x_iface::FB_SEL_DIVIDED : adf435x_iface::FB_SEL_FUNDAMENTAL));
 
     double synth_actual_freq = lo_iface->set_frequency(synth_target_freq, is_int_n);
 

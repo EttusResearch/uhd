@@ -243,6 +243,10 @@ void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, cons
 {
     boost::mutex::scoped_lock lock(_mutex);
     UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << " " << char(stream_cmd.stream_mode) << std::endl;
+    if (not _is_streamer_active(uhd::RX_DIRECTION, chan)) {
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() called on inactive channel. Skipping." << std::endl;
+        return;
+    }
     UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
     _continuous_streaming[chan] = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
 

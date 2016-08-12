@@ -391,12 +391,12 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
     const fs_path db_tx_fe_path = db_path / "tx_frontends";
     BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)) {
         _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
-            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_tx_fe_corrections, this, _radio_slot, _1));
+            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_tx_fe_corrections, this, db_path, _root_path / "tx_fe_corrections" / name, _1));
     }
     const fs_path db_rx_fe_path = db_path / "rx_frontends";
     BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)) {
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
-            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_rx_fe_corrections, this, _radio_slot, _1));
+            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_rx_fe_corrections, this, db_path, _root_path / "rx_fe_corrections" / name,_1));
     }
 
     ////////////////////////////////////////////////////////////////
@@ -411,20 +411,22 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_
 }
 
 void x300_radio_ctrl_impl::set_rx_fe_corrections(
-        const std::string &slot_name,
+        const fs_path &db_path,
+        const fs_path &rx_fe_corr_path,
         const double lo_freq
 ) {
     if (not _ignore_cal_file) {
-        apply_rx_fe_corrections(_tree, slot_name, lo_freq);
+        apply_rx_fe_corrections(_tree, db_path, rx_fe_corr_path, lo_freq);
     }
 }
 
 void x300_radio_ctrl_impl::set_tx_fe_corrections(
-        const std::string &slot_name,
+        const fs_path &db_path,
+        const fs_path &tx_fe_corr_path,
         const double lo_freq
 ) {
     if (not _ignore_cal_file) {
-        apply_tx_fe_corrections(_tree, slot_name, lo_freq);
+        apply_tx_fe_corrections(_tree, db_path, tx_fe_corr_path, lo_freq);
     }
 }
 
@@ -862,20 +864,24 @@ bool x300_radio_ctrl_impl::check_radio_config()
     const fs_path rx_fe_path = fs_path("dboards" / _radio_slot / "rx_frontends");
     for (size_t chan = 0; chan < _get_num_radios(); chan++) {
         if (_tree->exists(rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")) {
-            const bool chan_active = _is_streamer_active(RX_DIRECTION, chan);
-            _tree->access<bool>(rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
-                .set(chan_active)
-            ;
+            const bool chan_active = _is_streamer_active(uhd::RX_DIRECTION, chan);
+            if (chan_active) {
+                _tree->access<bool>(rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
+                    .set(chan_active)
+                ;
+            }
         }
     }
 
     const fs_path tx_fe_path = fs_path("dboards" / _radio_slot / "tx_frontends");
     for (size_t chan = 0; chan < _get_num_radios(); chan++) {
-        if (_tree->exists(tx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")) {
-            const bool chan_active = _is_streamer_active(TX_DIRECTION, chan);
-            _tree->access<bool>(tx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")
-                .set(chan_active)
-            ;
+        if (_tree->exists(tx_fe_path / _tx_fe_map.at(chan).db_fe_name / "enabled")) {
+            const bool chan_active = _is_streamer_active(uhd::TX_DIRECTION, chan);
+            if (chan_active) {
+                _tree->access<bool>(tx_fe_path / _tx_fe_map.at(chan).db_fe_name / "enabled")
+                    .set(chan_active)
+                ;
+            }
         }
     }
 

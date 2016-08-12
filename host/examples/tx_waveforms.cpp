@@ -213,20 +213,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
-    sensor_names = usrp->get_tx_sensor_names(0);
+    const size_t tx_sensor_chan = channel_list.empty() ? 0 : boost::lexical_cast<size_t>(channel_list[0]);
+    sensor_names = usrp->get_tx_sensor_names(tx_sensor_chan);
     if (std::find(sensor_names.begin(), sensor_names.end(), "lo_locked") != sensor_names.end()) {
-        uhd::sensor_value_t lo_locked = usrp->get_tx_sensor("lo_locked",0);
+        uhd::sensor_value_t lo_locked = usrp->get_tx_sensor("lo_locked", tx_sensor_chan);
         std::cout << boost::format("Checking TX: %s ...") % lo_locked.to_pp_string() << std::endl;
         UHD_ASSERT_THROW(lo_locked.to_bool());
     }
-    sensor_names = usrp->get_mboard_sensor_names(0);
+    const size_t mboard_sensor_idx = 0;
+    sensor_names = usrp->get_mboard_sensor_names(mboard_sensor_idx);
     if ((ref == "mimo") and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked") != sensor_names.end())) {
-        uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked",0);
+        uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked", mboard_sensor_idx);
         std::cout << boost::format("Checking TX: %s ...") % mimo_locked.to_pp_string() << std::endl;
         UHD_ASSERT_THROW(mimo_locked.to_bool());
     }
     if ((ref == "external") and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end())) {
-        uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked",0);
+        uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked", mboard_sensor_idx);
         std::cout << boost::format("Checking TX: %s ...") % ref_locked.to_pp_string() << std::endl;
         UHD_ASSERT_THROW(ref_locked.to_bool());
     }
