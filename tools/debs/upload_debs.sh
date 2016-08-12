@@ -67,7 +67,7 @@ fi
 
 # Generate the TAR file to be uploaded.
 echo "Creating UHD source archive."
-tar --exclude='*git*' --exclude='./debian' --exclude='*.swp' --exclude='fpga-src' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' -cJf ../uhd_${VERSION}.orig.tar.xz .
+tar --exclude='.git*' --exclude='./debian' --exclude='*.swp' --exclude='fpga-src' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' -cJf ../uhd_${VERSION}.orig.tar.xz .
 if [ $? != 0 ]
 then
     echo "Failed to create UHD source archive."
