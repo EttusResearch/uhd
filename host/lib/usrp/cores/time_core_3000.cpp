@@ -73,10 +73,10 @@ struct time_core_3000_impl : time_core_3000
 
         //useful warning for debugging actual rate
         const size_t ticks_elapsed = size_t(_tick_rate*approx_secs);
-        const size_t appox_rate = size_t(ticks_elapsed/(sleep_millis/1e3));
+        const size_t approx_rate = size_t(ticks_elapsed/(sleep_millis/1e3));
         if (test_fail) UHD_MSG(warning)
             << "Expecting clock rate: " << (_tick_rate/1e6) << " MHz\n"
-            << "Appoximate clock rate: " << (appox_rate/1e6) << " MHz\n"
+            << "Approximate clock rate: " << (approx_rate/1e6) << " MHz\n"
         << std::endl;
     }
 
