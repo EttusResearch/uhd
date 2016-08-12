@@ -31,7 +31,7 @@ SET(UHD_VERSION_MAJOR 003)
 SET(UHD_VERSION_API   010)
 SET(UHD_VERSION_ABI   000)
 SET(UHD_VERSION_PATCH 000)
-SET(UHD_VERSION_DEVEL TRUE)
+SET(UHD_VERSION_DEVEL FALSE)
 
 ########################################################################
 # If we're on a development branch, we skip the patch version
