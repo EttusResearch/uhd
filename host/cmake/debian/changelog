@@ -1,3 +1,27 @@
+uhd (3.10.0.0-0ubuntu1) trusty; urgency=low
+
+  - Changed version string to quadruplets (Major.API.ABI.Patch)
+  - Minimum dependencies bumped for gcc, Boost, CMake, clang and Python.
+  - TwinRX: Added support. Includes LO API for multi_usrp.
+  - N230: Added support
+  - Added expert framework
+  - X300: Completely restructured to use RFNoC
+  - X300: FPGA builds include git hash, dual 10GigE receive is now supported
+    (allows 2x200 Msps receive over 2x10GigE connections), DMA FIFO (over DRAM)
+    now part of builds, added Aurora support
+  - WBX: Fixed bug that prevented LO locking with 50 MHz ref clock
+  - pkg-config: Added boost_system
+  - Utils: uhd_usrp_probe can query sensors, query_gpsdo_sensors: minor fixes,
+    and cleanup
+  - Examples: Bugfixes in tx_waveforms, benchmark_rate measures timeouts,
+  - USB subsystem: Cleanups and minor bugfixes
+  - Added devtest infrastructure
+  - Converters: Added s8 and s16 data types
+  - Added more aggressive optimization strategies for FPGA builds
+  - Xilinx IP tool upgrade scripts cleaned up
+
+ -- Ettus Research <packages@ettus.com>  Thu, 11 Aug 2016 04:48:49 -0800
+
 uhd (3.9.4-0ubuntu1) trusty; urgency=low
 
   - GPIO control: Fix address mismatch for RX and full duplex.
