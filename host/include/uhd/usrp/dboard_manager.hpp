@@ -124,7 +124,7 @@ public:
      * \param gdboard_id the id of the grand-dboard
      * \param iface the custom dboard interface
      * \param subtree the subtree to load with props
-     * \param bool defer initialising the daughterboards
+     * \param defer_db_init initialising the daughterboards (DEPRECATED)
      * \return an sptr to the new dboard manager
      */
     static sptr make(
