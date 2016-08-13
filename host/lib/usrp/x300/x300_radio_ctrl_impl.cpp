@@ -109,7 +109,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     // create front-end objects
     ////////////////////////////////////////////////////////////////
     for (size_t i = 0; i < _get_num_radios(); i++) {
-        _rx_fe_map[i].core = rx_frontend_core_3000::make(_get_ctrl(i), regs::sr_addr(x300_regs::RX_RE_BASE));
+        _rx_fe_map[i].core = rx_frontend_core_3000::make(_get_ctrl(i), regs::sr_addr(x300_regs::RX_FE_BASE));
         _rx_fe_map[i].core->set_adc_rate(_radio_clk_rate);
         _rx_fe_map[i].core->set_dc_offset(rx_frontend_core_3000::DEFAULT_DC_OFFSET_VALUE);
         _rx_fe_map[i].core->set_dc_offset_auto(rx_frontend_core_3000::DEFAULT_DC_OFFSET_ENABLE);

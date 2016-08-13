@@ -45,6 +45,10 @@ IF(ENABLE_MANUAL)
     SET(DOXYGEN_DEP_COMPONENT "manual")
     SET(DOXYGEN_FPGA_MANUAL_REFERENCE "<a href=\"http://files.ettus.com/manual/md_fpga.html\">Part III: FPGA Manual</a>")
     SET(DOXYGEN_STRIP_EXTRA "")
+    SET(DOXYGEN_EXCLUDE_DIRS "")
+    IF(NOT ENABLE_RFNOC)
+        SET(DOXYGEN_EXCLUDE_DIRS "${DOXYGEN_EXCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/uhd/rfnoc")
+    ENDIF(NOT ENABLE_RFNOC)
     # Now, check if we have the FPGA sources as well.
     # If so, pull them in:
     IF(HAS_FPGA_SUBMODULE)

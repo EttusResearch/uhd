@@ -143,7 +143,7 @@ private:
 
     struct x300_regs {
         static const uint32_t TX_FE_BASE    = 224;
-        static const uint32_t RX_RE_BASE    = 232;
+        static const uint32_t RX_FE_BASE    = 232;
     };
 
     void _update_atr_leds(const std::string &rx_ant);

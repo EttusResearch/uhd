@@ -91,10 +91,13 @@ public:
      */
     virtual double get_tx_frequency(const size_t chan) /* const */ = 0;
 
-    /*! Tune the TX LO for channel \p.
+    /*! Tune the TX LO for channel \p chan.
      *
      * This function will attempt to tune as close as possible, and return a
      * coerced value of the actual tuning result.
+     *
+     * \param freq Frequency in Hz
+     * \param chan Channel to tune
      *
      * \return The actual LO frequency.
      */
