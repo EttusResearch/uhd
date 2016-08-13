@@ -327,10 +327,10 @@ class functable_mockup_impl : public function_table
 
     // We don't actually need this
     void register_function(
-            const std::string &name,
-            const function_table::function_ptr &ptr,
-            const expression::type_t return_type,
-            const expression_function::argtype_list_type &sig
+            const std::string &,
+            const function_table::function_ptr &,
+            const expression::type_t,
+            const expression_function::argtype_list_type &
     ) {};
 
 };
