@@ -186,6 +186,7 @@ public:
      *
      * \param reg The settings register to write to.
      * \param data New value of this register.
+     * \param port Port on which to write
      * \throw uhd::key_error if \p reg is not a valid register name
      *
      */
@@ -194,6 +195,7 @@ public:
     /*! Allows reading one register on the settings bus (64-Bit version).
      *
      * \param reg The settings register to be read.
+     * \param port Port on which to read
      *
      * Returns the readback value.
      */
@@ -202,6 +204,7 @@ public:
     /*! Allows reading one register on the settings bus (32-Bit version).
      *
      * \param reg The settings register to be read.
+     * \param port Port on which to read
      *
      * Returns the readback value.
      */
@@ -214,6 +217,7 @@ public:
      * with sr_read64().
      *
      * \param addr The user register address.
+     * \param port Port on which to read
      * \returns the readback value.
      */
     boost::uint64_t user_reg_read64(const boost::uint32_t addr, const size_t port = 0);
@@ -225,6 +229,7 @@ public:
      * defined in the block definition file.
      *
      * \param addr The user register address.
+     * \param port Port on which to read
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
      */
@@ -237,6 +242,7 @@ public:
      * with sr_read32().
      *
      * \param addr The user register address.
+     * \param port Port on which to read
      * \returns the readback value.
      */
     boost::uint32_t user_reg_read32(const boost::uint32_t addr, const size_t port = 0);
@@ -270,6 +276,7 @@ public:
     /*! Sets a tick rate for the command timebase.
      *
      * \param the tick rate in Hz
+     * \port port Port
      */
     void set_command_tick_rate(const double tick_rate, const size_t port = ANY_PORT);
 
@@ -358,7 +365,7 @@ protected:
      **********************************************************************/
     stream_sig_t _resolve_port_def(const blockdef::port_t &port_def) const;
 
-    //! Return the property tree path to a block argument \key on \p port
+    //! Return the property tree path to a block argument \p key on \p port
     uhd::fs_path get_arg_path(const std::string &key, size_t port = 0) const {
         return _root_path / "args" / port / key;
     };

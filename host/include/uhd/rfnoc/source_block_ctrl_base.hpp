@@ -87,6 +87,9 @@ public:
      **********************************************************************/
     /*! Configures data flowing from port \p output_block_port to go to \p next_address
      *
+     * \param next_address Address of the downstream block
+     * \param output_block_port Port for which this is valid
+     *
      * In the default implementation, this will write the value in \p next_address
      * to register SR_NEXT_DST of this blocks settings bus. The value will also
      * have bit 16 set to 1, since some blocks require this to respect this value.
