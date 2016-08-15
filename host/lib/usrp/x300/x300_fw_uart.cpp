@@ -30,28 +30,36 @@ using namespace uhd;
 struct x300_uart_iface : uart_iface
 {
     x300_uart_iface(wb_iface::sptr iface):
-        rxoffset(0), txoffset(0), txword32(0), rxpool(0), txpool(0), poolsize(0)
+        _iface(iface),
+        rxoffset(0),
+        txword32(0),
+        _last_device_rxoffset(0)
     {
-        _iface = iface;
-        rxoffset = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_RX_INDEX));
         txoffset = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_TX_INDEX));
         rxpool = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_RX_ADDR));
         txpool = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_TX_ADDR));
         poolsize = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_WORDS32));
         _rxcache.resize(poolsize);
-        _last_device_rxoffset = rxoffset;
         //this->write_uart("HELLO UART\n");
         //this->read_uart(0.1);
     }
 
     void putchar(const char ch)
     {
-        txoffset = (txoffset + 1) % (poolsize*4);
         const int shift = ((txoffset%4) * 8);
         if (shift == 0) txword32 = 0;
         txword32 |= boost::uint32_t(ch) << shift;
-        _iface->poke32(SR_ADDR(txpool, txoffset/4), txword32);
-        _iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_TX_INDEX), txoffset);
+        // Write out full 32 bit words or whatever we have if end of string
+        if (txoffset % 4 == 3 or ch == '\n')
+        {
+            _iface->poke32(SR_ADDR(txpool, txoffset/4), txword32);
+        }
+        txoffset = (txoffset + 1) % (poolsize*4);
+        if (ch == '\n')
+        {
+            // Tell the X300 to write the string
+            _iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_TX_INDEX), txoffset);
+        }
     }
 
     void write_uart(const std::string &buff)
@@ -59,7 +67,6 @@ struct x300_uart_iface : uart_iface
         boost::mutex::scoped_lock(_write_mutex);
         BOOST_FOREACH(const char ch, buff)
         {
-            if (ch == '\n') this->putchar('\r');
             this->putchar(ch);
         }
     }
@@ -128,22 +135,13 @@ struct x300_uart_iface : uart_iface
             // Get available characters
             for (int ch = this->getchar(); ch != -1; ch = this->getchar())
             {
-                // skip carriage returns
-                if (ch == '\r')
-                    continue;
-
-                // avoid returning empty strings
-                if (ch == '\n' and _rxbuff.empty())
-                    continue;
-
                 // store character to buffer
-                _rxbuff += std::string(1, (char)ch);
+                _rxbuff.append(1, ch);
 
                 // newline found - return string
                 if (ch == '\n')
                 {
-                    buff = _rxbuff;
-                    _rxbuff.clear();
+                    buff.swap(_rxbuff);
                     return buff;
                 }
             }
