@@ -232,8 +232,6 @@ public:
 
             //got a character -> process it
             if (ret == 1){
-                if (ch == '\r') continue;
-                if (ch == '\n' and _line.empty()) continue;
                 _line += ch;
                 if (ch == '\n')
                 {
