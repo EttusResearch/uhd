@@ -16,12 +16,14 @@
 //
 
 #include "b200_uart.hpp"
+#include "b200_impl.hpp"
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/exception.hpp>
+#include <boost/foreach.hpp>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -32,10 +34,10 @@ struct b200_uart_impl : b200_uart
         _xport(xport),
         _sid(sid),
         _count(0),
+        _baud_div(std::floor(B200_BUS_CLOCK_RATE/115200 + 0.5)),
         _line_queue(4096)
     {
-        //this default baud divider is over 9000
-        this->set_baud_divider(9001);
+        /*NOP*/
     }
 
     void send_char(const char ch)
@@ -67,10 +69,9 @@ struct b200_uart_impl : b200_uart
 
     void write_uart(const std::string &buff)
     {
-        for (size_t i = 0; i < buff.size(); i++)
+        BOOST_FOREACH(const char ch, buff)
         {
-            if (buff[i] == '\n') this->send_char('\r');
-            this->send_char(buff[i]);
+            this->send_char(ch);
         }
     }
 
@@ -89,20 +90,12 @@ struct b200_uart_impl : b200_uart
         packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
         vrt::if_hdr_unpack_le(packet_buff, packet_info);
         const char ch = char(uhd::wtohx(packet_buff[packet_info.num_header_words32+1]));
-        if (ch != '\r')
-            _line += ch;
+        _line += ch;
         if (ch == '\n')
         {
-            // Don't store empty strings
-            if (_line.length() > 1)
-                _line_queue.push_with_pop_on_full(_line);
+            _line_queue.push_with_pop_on_full(_line);
             _line.clear();
         }
-    }
-
-    void set_baud_divider(const double baud_div)
-    {
-        _baud_div = size_t(baud_div + 0.5);
     }
 
     const zero_copy_if::sptr _xport;
