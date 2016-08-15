@@ -115,13 +115,10 @@ public:
             //drain anything in current buffer
             while (_off < _len){
                 const char ch = _buf[_off++];
-                if (ch == '\r') continue;
-                if (ch == '\n' and _line.empty()) continue;
                 _line += ch;
                 if (ch == '\n')
                 {
-                    line = _line;
-                    _line.clear();
+                    line.swap(_line);
                     return line;
                 }
             }
