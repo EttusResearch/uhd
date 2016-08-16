@@ -46,6 +46,6 @@ MESSAGE(STATUS "Version: ${UHD_VERSION}")
 ########################################################################
 
 #tag the images with a version number (something identifiable)
-FILE(WRITE ${CMAKE_SOURCE_DIR}/images/${UHD_VERSION_MAJOR}.${UHD_VERSION_MINOR}.${UHD_VERSION_PATCH}.tag "${UHD_VERSION}\n${DATETIME_NOW}\n")
+FILE(WRITE ${CMAKE_SOURCE_DIR}/images/${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}.${UHD_VERSION_PATCH}.tag "${UHD_VERSION}\n${DATETIME_NOW}\n")
 INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/images DESTINATION share/uhd)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/../host/LICENSE DESTINATION share/uhd/images)
