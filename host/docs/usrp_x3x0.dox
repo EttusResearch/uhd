@@ -91,11 +91,11 @@ number, you will have to update the FPGA image before you can start using your U
    with UHD (see also \ref page_images).
 2. Use the `uhd_image_loader` utility to update the FPGA image. On the command line, run:
 
-          uhd_image_loader --args="type=x300,addr=192.168.10.2,fpga=HGS"
+          uhd_image_loader --args="type=x300,addr=192.168.10.2,fpga=HG"
 
   If you have installed the images to a non-standard location, you might need to run (change the filename according to your device):
 
-          uhd_image_loader --args="type=x300,addr=192.168.10.2" --fpga-path="<path_to_images>/usrp_x310_fpga_HGS.bit"
+          uhd_image_loader --args="type=x300,addr=192.168.10.2" --fpga-path="<path_to_images>/usrp_x310_fpga_HG.bit"
 
   The process of updating the FPGA image will take several minutes. Make sure the process of flashing the image does not get interrupted.
 
@@ -134,7 +134,7 @@ The LEDs on the front panel can be useful in debugging hardware and software iss
 ### Dual 10 Gigabit Ethernet
 
 In order to utilize the X-series USRP over dual 10 Gigabit Ethernet interfaces, ensure
-either the XG or XGS image is installed (see \ref x3x0_load_fpga_imgs_fpga_flavours).
+either the XG image is installed (see \ref x3x0_load_fpga_imgs_fpga_flavours).
 In addition to burning the prerequisite FPGA image, it may also be necessary
 to tune the network interface card (NIC) to eliminate drops (Ds) and reduce overflows (Os).
 This is done by increasing the number of RX descriptors (see \ref transport_udp_linux).
@@ -266,8 +266,12 @@ behavior of the above interfaces.
 
 |  FPGA Image Flavor  |  SFP+ Port 0 Interface |  SFP+ Port 1 Interface |
 |---------------------|------------------------|------------------------|
-|  HGS (Default)      |  1 Gigabit Ethernet    |  10 Gigabit Ethernet   |
-|  XGS                |  10 Gigabit Ethernet   |  10 Gigabit Ethernet   |
+|  HG (Default)       |  1 Gigabit Ethernet    |  10 Gigabit Ethernet   |
+|  XG                 |  10 Gigabit Ethernet   |  10 Gigabit Ethernet   |
+|  HA                 |  1 Gigabit Ethernet    |  Aurora                |
+|  XA                 |  10 Gigabit Ethernet   |  Aurora                |
+
+Note: The Aurora images need to be built manually from the FPGA source code.
 
 FPGA images are shipped in 2 formats:
 
@@ -276,7 +280,7 @@ FPGA images are shipped in 2 formats:
 
 To get the latest images, simply use the uhd_images_downloader script. On Unix systems, use this command:
 
-    sudo uhd_images_downloader
+    $ [sudo] uhd_images_downloader
 
 On Windows, use:
 
@@ -330,7 +334,7 @@ images.
     uhd_image_loader --args="type=x300,addr=<IP address>"
 
     Automatic FPGA path, select image type:
-    uhd_image_loader --args="type=x300,addr=<IP address>,fpga=<HGS or XGS>"
+    uhd_image_loader --args="type=x300,addr=<IP address>,fpga=<HG or XG>"
 
     Manual FPGA path:
     uhd_image_loader --args="type=x300,addr=<IP address>" --fpga-path="<path to FPGA image>"
@@ -341,7 +345,7 @@ images.
     uhd_image_loader --args="type=x300,resource=<NI-RIO resource>"
 
     Automatic FPGA path, select image type:
-    uhd_image_loader --args="type=x300,resource=<NI-RIO resource>,fpga=<HGS or XGS>"
+    uhd_image_loader --args="type=x300,resource=<NI-RIO resource>,fpga=<HG or XG>"
 
     Manual FPGA path:
     uhd_image_loader --args="type=x300,resource=<NI-RIO resource>" --fpga-path="<path to FPGA image>"
@@ -371,9 +375,9 @@ device to enable communication, as shown in the following table:
 
   Ethernet Interface | USRP Ethernet Port      |  Default USRP IP Address |  Host Static IP Address | Host Static Subnet Mask | Address EEPROM key
 ---------------------|-------------------------|--------------------------|-------------------------|-------------------------|-------------------
-  Gigabit            |  Port 0 (HGS Image)     |  192.168.10.2            | 192.168.10.1            | 255.255.255.0           | `ip-addr0`
-  Ten Gigabit        |  Port 0 (XGS Image)     |  192.168.30.2            | 192.168.30.1            | 255.255.255.0           | `ip-addr2`
-  Ten Gigabit        |  Port 1 (HGS/XGS Image) |  192.168.40.2            | 192.168.40.1            | 255.255.255.0           | `ip-addr3`
+  Gigabit            |  Port 0 (HG Image)      |  192.168.10.2            | 192.168.10.1            | 255.255.255.0           | `ip-addr0`
+  Ten Gigabit        |  Port 0 (XG Image)      |  192.168.30.2            | 192.168.30.1            | 255.255.255.0           | `ip-addr2`
+  Ten Gigabit        |  Port 1 (HG/XG Image)   |  192.168.40.2            | 192.168.40.1            | 255.255.255.0           | `ip-addr3`
 
 As you can see, the X300/X310 actually stores different IP addresses, which all address the device differently: Each combination of Ethernet port and interface type (i.e., Gigabit or Ten Gigabit) has its own IP address. As an example, when addressing the device through 1 Gigabit Ethernet on its first port (Port 0), the relevant IP address is the one stored in the EEPROM with key `ip-addr0`, or 192.168.10.2 by default.
 
