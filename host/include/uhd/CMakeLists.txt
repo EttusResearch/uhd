@@ -33,7 +33,6 @@ UHD_INSTALL(FILES
     convert.hpp
     deprecated.hpp
     device.hpp
-    device3.hpp
     device_deprecated.ipp
     exception.hpp
     property_tree.ipp
@@ -43,6 +42,14 @@ UHD_INSTALL(FILES
     DESTINATION ${INCLUDE_DIR}/uhd
     COMPONENT headers
 )
+
+IF(ENABLE_RFNOC)
+    UHD_INSTALL(FILES
+        device3.hpp
+        DESTINATION ${INCLUDE_DIR}/uhd
+        COMPONENT headers
+    )
+ENDIF(ENABLE_RFNOC)
 
 IF(ENABLE_C_API)
     UHD_INSTALL(FILES

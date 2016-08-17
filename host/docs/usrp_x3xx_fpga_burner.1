@@ -16,7 +16,7 @@ of that type and model, or a custom FPGA image path.
 --resource=\fI"Resource"\fR
 . IP "RPC Port:"
 --rpc-port=\fI"Port"\fR (default=5444)
-. IP "Image Type (1G, HGS, or XGS):"
+. IP "Image Type (1G, HG, or XG):"
 --type=\fI"Type"\fR
 . IP "Custom FPGA path:"
 --fpga-path=\fI"Path"\fR
@@ -33,7 +33,7 @@ of that type and model, or a custom FPGA image path.
 .sp
 usrp_x3xx_fpga_burner --addr=192.168.10.2 --type=1G
 .SS Burning a Hybrid image over PCIe
-usrp_x3xx_fpga_burner --resource=RIO0 --type=HGS
+usrp_x3xx_fpga_burner --resource=RIO0 --type=HG
 .SS Burning a custom FPGA image over Ethernet
 usrp_x3xx_fpga_burner --addr=192.168.10.2 --fpga=path="custom_image.bit"
 .ft
