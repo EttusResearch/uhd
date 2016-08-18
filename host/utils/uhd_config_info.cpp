@@ -17,6 +17,7 @@
 
 #include <uhd/build_info.hpp>
 #include <uhd/version.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_main.hpp>
 
 #include <boost/format.hpp>
@@ -37,6 +38,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
         ("install-prefix",     "Print install prefix")
         ("boost-version",      "Print Boost version")
         ("libusb-version",     "Print libusb version")
+        ("pkg-path",           "Print pkg path")
+        ("images-dir",         "Print images dir")
         ("print-all",          "Print everything")
         ("version",            "Print this UHD build's version")
         ("help",               "Print help message")
@@ -84,6 +87,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
     if(vm.count("libusb-version") > 0 or print_all) {
         std::string _libusb_version = uhd::build_info::libusb_version();
         std::cout << "Libusb version: " << (_libusb_version.empty() ? "N/A" : _libusb_version) << std::endl;
+    }
+    if(vm.count("pkg-path") > 0 or print_all) {
+        std::cout << "Package path: " << uhd::get_pkg_path() << std::endl;
+    }
+    if(vm.count("images-dir") > 0 or print_all) {
+        std::cout << "Images directory: " << uhd::get_images_dir("") << std::endl;
     }
 
     return EXIT_SUCCESS;

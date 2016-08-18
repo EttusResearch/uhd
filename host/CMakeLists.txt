@@ -50,6 +50,7 @@ IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     ELSE()
         MESSAGE(WARNING "\nCannot determine the version of the compiler selected to build UHD (GCC : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using GCC version ${GCC_MIN_VERSION} or more recent.")
     ENDIF()
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     EXECUTE_PROCESS(COMMAND
         ${CMAKE_CXX_COMPILER} -v
