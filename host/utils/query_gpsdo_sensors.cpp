@@ -112,12 +112,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   //Verify GPS sensors are present (i.e. EEPROM has been burnt)
   std::vector<std::string> sensor_names = usrp->get_mboard_sensor_names(0);
 
-  if(std::find(sensor_names.begin(), sensor_names.end(), "gps_locked") == sensor_names.end()) {
-    std::cout << boost::format("\ngps_locked sensor not found.  This could mean that you have not installed the GPSDO correctly.\n\n");
-    std::cout << boost::format("Visit one of these pages if the problem persists:\n");
-    std::cout << boost::format(" * N2X0/E1X0: http://files.ettus.com/manual/page_gpsdo.html");
-    std::cout << boost::format(" * X3X0: http://files.ettus.com/manual/page_gpsdo_x3x0.html\n\n");
-    exit(EXIT_FAILURE);
+  if (std::find(sensor_names.begin(), sensor_names.end(), "gps_locked") == sensor_names.end()) {
+      std::cout << boost::format("\ngps_locked sensor not found.  This could mean that you have not installed the GPSDO correctly.\n\n");
+      std::cout << boost::format("Visit one of these pages if the problem persists:\n");
+      std::cout << boost::format(" * N2X0/E1X0: http://files.ettus.com/manual/page_gpsdo.html\n");
+      std::cout << boost::format(" * X3X0: http://files.ettus.com/manual/page_gpsdo_x3x0.html\n\n");
+      return EXIT_FAILURE;
   }
 
   // Explicitly set time source to gpsdo
