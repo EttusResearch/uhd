@@ -1020,7 +1020,7 @@ uint32_t x300_impl::allocate_pcie_dma_chan(const uhd::sid_t &tx_sid, const xport
 
         if (_dma_chan_pool.count(raw_sid) == 0) {
             _dma_chan_pool[raw_sid] = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
-            UHD_MSG(status) << "[X300] Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid]
+            UHD_LOG << "[X300] Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid]
                             << " to SID " << tx_sid.to_pp_string_hex() << std::endl;
         }
 
