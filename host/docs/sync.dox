@@ -64,10 +64,10 @@ synchronize multiple pairs of devices.
 \section sync_time Synchronizing the Device Time
 
 The purpose of the PPS signal is to synchronously latch a time into the
-device. You can use the `set_time_next_pps(...)` function to either
+device. You can use the uhd::multi_usrp::set_time_next_pps() function to either
 initialize the sample time to 0 or an absolute time, such as GPS time or
 UTC time. For the purposes of synchronizing devices, it doesn't matter
-what time you initialize to when using `set_time_next_pps(...)`.
+what time you initialize to when using uhd::multi_usrp::set_time_next_pps().
 
 \subsection sync_time_reg Method 1 - poll the USRP time registers
 
@@ -100,15 +100,13 @@ PPS edge, and the user can also parse this string to determine GPS time:
     usrp->set_time_next_pps(uhd::time_spec_t(gps_time+1));
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-\subsection sync_time_internalgps Method 3 - internal GPSDO
+\subsection sync_time_mimocable Method 3 - MIMO cable
 
-USRP devices with internal GPSDOs properly configured will automatically
-configure themselves to set the VITA time to current UTC time. See \ref page_gpsdo
-for more details.
+Note: This only applies to USRP2 and N200/N210. This method does *not*
+require a separate PPS input to the devices, but it is limited to
+a total of 2 USRPs.
 
-\subsection sync_time_mimocable Method 4 - MIMO cable
-
-A USRP device can synchronize its time to another USRP device via the
+A USRP2 device can synchronize its time to another USRP device via the
 MIMO cable. Unlike the other methods, this does not use a real "pulse
 per second". Rather, the USRP device sends an encoded time message over
 the MIMO cable. The slave device will automatically synchronize to the
