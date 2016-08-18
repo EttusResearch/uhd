@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2014 Ettus Research LLC
+# Copyright 2010-2016 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -114,7 +114,7 @@ ENDIF()
 # Setup CPack General
 ########################################################################
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - USRP Hardware Driver")
-SET(CPACK_PACKAGE_VENDOR              "Ettus Research LLC")
+SET(CPACK_PACKAGE_VENDOR              "Ettus Research (National Instruments)")
 SET(CPACK_PACKAGE_CONTACT             "Ettus Research <support@ettus.com>")
 SET(CPACK_PACKAGE_VERSION "${UHD_VERSION}")
 SET(CPACK_RESOURCE_FILE_WELCOME ${CMAKE_SOURCE_DIR}/README.md)
