@@ -28,7 +28,7 @@
 #include "tx_vita_core_3000.hpp"
 #include "time_core_3000.hpp"
 #include "gpio_atr_3000.hpp"
-#include "b200_radio_ctrl_core.hpp"
+#include "radio_ctrl_core_3000.hpp"
 #include "rx_dsp_core_3000.hpp"
 #include "tx_dsp_core_3000.hpp"
 #include <uhd/device.hpp>
@@ -131,7 +131,7 @@ private:
 
     //controllers
     b200_iface::sptr _iface;
-    b200_radio_ctrl_core::sptr _local_ctrl;
+    radio_ctrl_core_3000::sptr _local_ctrl;
     uhd::usrp::ad9361_ctrl::sptr _codec_ctrl;
     uhd::usrp::ad936x_manager::sptr _codec_mgr;
     b200_local_spi_core::sptr _spi_iface;
@@ -154,8 +154,8 @@ private:
     struct AsyncTaskData
     {
         boost::shared_ptr<async_md_type> async_md;
-        boost::weak_ptr<b200_radio_ctrl_core> local_ctrl;
-        boost::weak_ptr<b200_radio_ctrl_core> radio_ctrl[2];
+        boost::weak_ptr<radio_ctrl_core_3000> local_ctrl;
+        boost::weak_ptr<radio_ctrl_core_3000> radio_ctrl[2];
         b200_uart::sptr gpsdo_uart;
     };
     boost::shared_ptr<AsyncTaskData> _async_task_data;
@@ -179,7 +179,7 @@ private:
     //perifs in the radio core
     struct radio_perifs_t
     {
-        b200_radio_ctrl_core::sptr ctrl;
+        radio_ctrl_core_3000::sptr ctrl;
         uhd::usrp::gpio_atr::gpio_atr_3000::sptr atr;
         uhd::usrp::gpio_atr::gpio_atr_3000::sptr fp_gpio;
         time_core_3000::sptr time64;
