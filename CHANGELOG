@@ -1,6 +1,21 @@
 Change Log for Releases
 ==============================
 
+## 003.009.005
+- B200: Update DSPs after changing tick rate
+- X300: Added option to disable ADC self test, prevent DAC from
+  underrunning
+- UBX: Fixed noise issues, reduced power consumption/heat, added codes for
+  upcoming board revisions, force RX LNAs on (reduces rx settling time)
+- WBX: Fixed rev2 and rev3 boards on X300
+- Utils/Examples: Cleaned up query_gpsdo_sensors, test_dboard_coercion,
+- Manual: Minor fixes and updates
+- CMake: Fix lib64 detection, better platform detection, Doxygen may use shorter
+  filenames
+- Octoclock: GPSDO-related fixes, sequence number consistency fixes, UART
+  fixes (off-by-one errors). uhd_usrp_probe will pick up an OC now,
+  added Wireshark dissector for OC packets
+
 ## 003.009.004
 - GPIO control: Fix address mismatch for RX and full duplex.
   This fixes full-duplex mode for most devices.
