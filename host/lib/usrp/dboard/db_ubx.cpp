@@ -154,6 +154,12 @@ static const dboard_id_t UBX_V1_40MHZ_TX_ID(0x77);
 static const dboard_id_t UBX_V1_40MHZ_RX_ID(0x78);
 static const dboard_id_t UBX_V1_160MHZ_TX_ID(0x79);
 static const dboard_id_t UBX_V1_160MHZ_RX_ID(0x7A);
+static const dboard_id_t UBX_V2_40MHZ_TX_ID(0x7B);
+static const dboard_id_t UBX_V2_40MHZ_RX_ID(0x7C);
+static const dboard_id_t UBX_V2_160MHZ_TX_ID(0x7D);
+static const dboard_id_t UBX_V2_160MHZ_RX_ID(0x7E);
+static const dboard_id_t UBX_LP_160MHZ_TX_ID(0x0200);
+static const dboard_id_t UBX_LP_160MHZ_RX_ID(0x0201);
 static const freq_range_t ubx_freq_range(10e6, 6.0e9);
 static const gain_range_t ubx_tx_gain_range(0, 31.5, double(0.5));
 static const gain_range_t ubx_rx_gain_range(0, 31.5, double(0.5));
@@ -221,19 +227,34 @@ public:
         _iface = get_iface();
         dboard_id_t rx_id = get_rx_id();
         dboard_id_t tx_id = get_tx_id();
-        if (rx_id == UBX_PROTO_V3_RX_ID and tx_id == UBX_PROTO_V3_TX_ID)
+        if (rx_id == UBX_PROTO_V3_RX_ID and tx_id == UBX_PROTO_V3_TX_ID) {
             _rev = 0;
-        else if (rx_id == UBX_PROTO_V4_RX_ID and tx_id == UBX_PROTO_V4_TX_ID)
+        }
+        else if (rx_id == UBX_PROTO_V4_RX_ID and tx_id == UBX_PROTO_V4_TX_ID) {
             _rev = 1;
-        else if (rx_id == UBX_V1_40MHZ_RX_ID and tx_id == UBX_V1_40MHZ_TX_ID)
+        }
+        else if (rx_id == UBX_V1_40MHZ_RX_ID and tx_id == UBX_V1_40MHZ_TX_ID) {
             _rev = 1;
-        else if (rx_id == UBX_V1_160MHZ_RX_ID and tx_id == UBX_V1_160MHZ_TX_ID)
-        {
+        }
+        else if (rx_id == UBX_V2_40MHZ_RX_ID and tx_id == UBX_V2_40MHZ_TX_ID) {
+            _rev = 2;
+        }
+        else if (rx_id == UBX_V1_160MHZ_RX_ID and tx_id == UBX_V1_160MHZ_TX_ID) {
             bw = 160e6;
             _rev = 1;
         }
-        else
+        else if (rx_id == UBX_V2_160MHZ_RX_ID and tx_id == UBX_V2_160MHZ_TX_ID) {
+            bw = 160e6;
+            _rev = 2;
+        }
+        else if (rx_id == UBX_LP_160MHZ_RX_ID and tx_id == UBX_LP_160MHZ_TX_ID) {
+            // The LP version behaves and looks like a regular UBX-160 v2
+            bw = 160e6;
+            _rev = 2;
+        }
+        else {
             UHD_THROW_INVALID_CODE_PATH();
+        }
 
         switch(_rev)
         {
@@ -243,6 +264,7 @@ public:
             pfd_freq_max = 25e6;
             break;
         case 1:
+        case 2:
             for (size_t i = 0; i < sizeof(ubx_v1_gpio_info) / sizeof(ubx_gpio_field_info_t); i++)
                 _gpio_map[ubx_v1_gpio_info[i].id] = ubx_v1_gpio_info[i];
             pfd_freq_max = 50e6;
@@ -355,7 +377,7 @@ public:
                 lo->set_ld_pin_mode(max287x_iface::LD_PIN_MODE_DLD);
             }
         }
-        else if (_rev == 1)
+        else if (_rev == 1 or _rev == 2)
         {
             _txlo1 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO1, _1));
             _txlo2 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO2, _1));
@@ -1242,8 +1264,11 @@ static dboard_base::sptr make_ubx(dboard_base::ctor_args_t args)
 
 UHD_STATIC_BLOCK(reg_ubx_dboards)
 {
-    dboard_manager::register_dboard(UBX_PROTO_V3_RX_ID, UBX_PROTO_V3_TX_ID, &make_ubx, "UBX v0.3");
-    dboard_manager::register_dboard(UBX_PROTO_V4_RX_ID, UBX_PROTO_V4_TX_ID, &make_ubx, "UBX v0.4");
-    dboard_manager::register_dboard(UBX_V1_40MHZ_RX_ID, UBX_V1_40MHZ_TX_ID, &make_ubx, "UBX-40 v1");
+    dboard_manager::register_dboard(UBX_PROTO_V3_RX_ID,  UBX_PROTO_V3_TX_ID,  &make_ubx, "UBX v0.3");
+    dboard_manager::register_dboard(UBX_PROTO_V4_RX_ID,  UBX_PROTO_V4_TX_ID,  &make_ubx, "UBX v0.4");
+    dboard_manager::register_dboard(UBX_V1_40MHZ_RX_ID,  UBX_V1_40MHZ_TX_ID,  &make_ubx, "UBX-40 v1");
     dboard_manager::register_dboard(UBX_V1_160MHZ_RX_ID, UBX_V1_160MHZ_TX_ID, &make_ubx, "UBX-160 v1");
+    dboard_manager::register_dboard(UBX_V2_40MHZ_RX_ID,  UBX_V2_40MHZ_TX_ID,  &make_ubx, "UBX-40 v2");
+    dboard_manager::register_dboard(UBX_V2_160MHZ_RX_ID, UBX_V2_160MHZ_TX_ID, &make_ubx, "UBX-160 v2");
+    dboard_manager::register_dboard(UBX_LP_160MHZ_RX_ID, UBX_LP_160MHZ_TX_ID, &make_ubx, "UBX-160-LP");
 }
