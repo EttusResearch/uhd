@@ -694,7 +694,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     mb.zpu_spi = spi_core_3000::make(mb.zpu_ctrl, SR_ADDR(SET0_BASE, ZPU_SR_SPI),
             SR_ADDR(SET0_BASE, ZPU_RB_SPI));
     mb.zpu_i2c = i2c_core_100_wb32::make(mb.zpu_ctrl, I2C1_BASE);
-    mb.zpu_i2c->set_clock_rate(X300_BUS_CLOCK_RATE);
+    mb.zpu_i2c->set_clock_rate(X300_BUS_CLOCK_RATE/2);
 
     ////////////////////////////////////////////////////////////////////
     // print network routes mapping
