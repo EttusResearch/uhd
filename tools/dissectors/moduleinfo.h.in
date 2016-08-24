@@ -1,9 +1,10 @@
 #ifdef PACKAGE
 #undef PACKAGE
 #endif
-#define PACKAGE "octo"
+#define PACKAGE "@ETTUS_DISSECTOR_NAME@" 
+
 #ifdef VERSION
 #undef VERSION
 #endif
-#define VERSION "0.0.0.1"
+#define VERSION "0.0.0.2"
 
