@@ -266,12 +266,16 @@ public:
     : experts::worker_node_t(prepend_ch("twinrx_nyquist_expert", ch)),
       _channel          (ch),
       _codec_conn       (ch=="0"?"II":"QQ"),    //Ch->ADC Port mapping
+      _lo1_freq_d       (db, prepend_ch("los/LO1/freq/desired", ch)),
+      _lo2_freq_d       (db, prepend_ch("los/LO2/freq/desired", ch)),
       _if_freq_d        (db, prepend_ch("if_freq/desired", ch)),
       _lo1_inj_side     (db, prepend_ch("ch/LO1/inj_side", ch)),
       _lo2_inj_side     (db, prepend_ch("ch/LO2/inj_side", ch)),
       _if_freq_c        (db, prepend_ch("if_freq/coerced", ch)),
       _db_iface         (db_iface)
     {
+        bind_accessor(_lo1_freq_d);
+        bind_accessor(_lo2_freq_d);
         bind_accessor(_if_freq_d);
         bind_accessor(_lo1_inj_side);
         bind_accessor(_lo2_inj_side);
@@ -284,6 +288,8 @@ private:
     //Inputs
     const std::string                                       _channel;
     const std::string                                       _codec_conn;
+    experts::data_reader_t<double>                          _lo1_freq_d;
+    experts::data_reader_t<double>                          _lo2_freq_d;
     experts::data_reader_t<double>                          _if_freq_d;
     experts::data_reader_t<lo_inj_side_t>                   _lo1_inj_side;
     experts::data_reader_t<lo_inj_side_t>                   _lo2_inj_side;
