@@ -626,10 +626,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         }
 
         if ((mb.recv_args.has_key("recv_frame_size"))
-                && (req_max_frame_size.recv_frame_size < _max_frame_sizes.recv_frame_size)) {
+                && (req_max_frame_size.recv_frame_size > _max_frame_sizes.recv_frame_size)) {
             UHD_MSG(warning)
                 << boost::format("You requested a receive frame size of (%lu) but your NIC's max frame size is (%lu).")
-                % req_max_frame_size.recv_frame_size << _max_frame_sizes.recv_frame_size << std::endl
+                % req_max_frame_size.recv_frame_size
+                % _max_frame_sizes.recv_frame_size
+                << std::endl
                 << boost::format("Please verify your NIC's MTU setting using '%s' or set the recv_frame_size argument appropriately.")
                 % mtu_tool << std::endl
                 << "UHD will use the auto-detected max frame size for this connection."
@@ -637,10 +639,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         }
 
         if ((mb.recv_args.has_key("send_frame_size"))
-                && (req_max_frame_size.send_frame_size < _max_frame_sizes.send_frame_size)) {
+                && (req_max_frame_size.send_frame_size > _max_frame_sizes.send_frame_size)) {
             UHD_MSG(warning)
                 << boost::format("You requested a send frame size of (%lu) but your NIC's max frame size is (%lu).")
-                % req_max_frame_size.send_frame_size << _max_frame_sizes.send_frame_size << std::endl
+                % req_max_frame_size.send_frame_size
+                % _max_frame_sizes.send_frame_size
+                << std::endl
                 << boost::format("Please verify your NIC's MTU setting using '%s' or set the send_frame_size argument appropriately.")
                 % mtu_tool << std::endl
                 << "UHD will use the auto-detected max frame size for this connection."
@@ -1494,10 +1498,11 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
     if (!(uhd::ntohx<boost::uint32_t>(request->flags) & X300_MTU_DETECT_ECHO_REPLY))
         throw uhd::not_implemented_error("Holler protocol not implemented");
 
+    //Reducing range of (min,max) by setting max value to 10gig max_frame_size as larger sizes are not supported
     size_t min_recv_frame_size = sizeof(x300_mtu_t);
-    size_t max_recv_frame_size = user_frame_size.recv_frame_size;
+    size_t max_recv_frame_size = std::min(user_frame_size.recv_frame_size, X300_10GE_DATA_FRAME_MAX_SIZE) & size_t(~3);
     size_t min_send_frame_size = sizeof(x300_mtu_t);
-    size_t max_send_frame_size = user_frame_size.send_frame_size;
+    size_t max_send_frame_size = std::min(user_frame_size.send_frame_size, X300_10GE_DATA_FRAME_MAX_SIZE) & size_t(~3);
 
     UHD_MSG(status) << "Determining maximum frame size... ";
     while (min_recv_frame_size < max_recv_frame_size)
