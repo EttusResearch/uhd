@@ -46,7 +46,7 @@ ORIG_RELEASE=`head -1 host/cmake/debian/changelog | sed 's/.*) \(.*\);.*/\1/'`
 # https://launchpad.net/ubuntu/+ppas
 #
 RELEASES="precise trusty vivid wily xenial"
-PPA=ppa:ettusresearch/uhd
+PPA=ppa:ettusresearch/uhd-3.9.lts
 
 #
 # Make sure this is the intended version.
