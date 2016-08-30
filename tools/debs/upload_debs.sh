@@ -144,6 +144,6 @@ then
     if [ "$response" = "yes" ]
     then
         cd ..
-        rm -r ${UHD_TOP_LEVEL}/debian uhd-${VERSION} uhd_${VERSION}.orig.tar.xz uhd*dsc uhd*changes uhd*debian.tar.xz uhd*_source.build uhd*.upload
+        rm -r ${UHD_TOP_LEVEL}/debian uhd-${VERSION} uhd_${VERSION}.orig.tar.xz uhd*dsc uhd*changes uhd*debian.tar.* uhd*_source.build uhd*.upload
     fi
 fi
