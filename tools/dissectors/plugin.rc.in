@@ -16,11 +16,11 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "Ettus Research\0"
+            VALUE "CompanyName", "Ettus Research (National Instruments)\0"
             VALUE "FileDescription", "@PACKAGE@ dissector\0"
             VALUE "FileVersion", "@MODULE_VERSION@\0"
             VALUE "InternalName", "@PACKAGE@ @MODULE_VERSION@\0"
-            VALUE "LegalCopyright", "Copyright © 2016 Ettus Research\0"
+            VALUE "LegalCopyright", "Copyright © 2013 Ettus Research (National Instruments)\0"
             VALUE "OriginalFilename", "@PLUGIN_NAME@.dll\0"
             VALUE "ProductName", "Wireshark\0"
             VALUE "ProductVersion", "@VERSION@\0"

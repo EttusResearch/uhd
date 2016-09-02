@@ -463,8 +463,13 @@ void proto_register_chdr(void)
 void proto_reg_handoff_chdr(void)
 {
     /* register heuristic dissector for use with USB */
+#if VERSION_MAJOR == 1
     heur_dissector_add("usb.bulk", heur_dissect_chdr, proto_chdr);
-
+#elif VERSION_MAJOR == 2
+    heur_dissector_add("usb.bulk", heur_dissect_chdr, "USB dissector", "usb_bulk", proto_chdr, HEURISTIC_ENABLE);
+#else
+#error Wireshark version not found or not compatible
+#endif
     /* register dissector for UDP packets */
     static dissector_handle_t chdr_handle;
     chdr_handle = create_dissector_handle(dissect_chdr, proto_chdr);
