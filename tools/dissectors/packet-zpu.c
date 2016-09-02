@@ -123,8 +123,13 @@ static void dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                 if (len >= 12)
                 {
                     proto_tree_add_item(zpu_tree, hf_zpu_addr, tvb, 8, 4, ENC_NA);
-
+#if VERSION_MAJOR == 1
                     guint8 *bytes = tvb_get_string(tvb, 8, 4);
+#elif VERSION_MAJOR == 2
+                    guint8 *bytes = tvb_get_string(wmem_packet_scope(), tvb, 8, 4);
+#else
+#error Wireshark version not found or not compatible
+#endif
                     unsigned int addr = 0;
                     memcpy(&addr, bytes, 4);
                     /* TODO proper endianness handling */

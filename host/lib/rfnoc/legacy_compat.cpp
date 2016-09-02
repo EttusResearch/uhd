@@ -38,7 +38,7 @@ using uhd::usrp::subdev_spec_pair_t;
 using uhd::stream_cmd_t;
 
 /************************************************************************
- * Constants
+ * Constants and globals
  ***********************************************************************/
 static const std::string RADIO_BLOCK_NAME = "Radio";
 static const std::string DFIFO_BLOCK_NAME = "DmaFIFO";
@@ -47,6 +47,7 @@ static const std::string DUC_BLOCK_NAME = "DUC";
 static const size_t MAX_BYTES_PER_HEADER =
         uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(uint64_t);
 static const size_t BYTES_PER_SAMPLE = 4; // We currently only support sc16
+static boost::mutex _make_mutex;
 
 /************************************************************************
  * Static helpers
@@ -700,15 +701,13 @@ legacy_compat::sptr legacy_compat::make(
         uhd::device3::sptr device,
         const uhd::device_addr_t &args
 ) {
+    boost::lock_guard<boost::mutex> lock(_make_mutex);
     UHD_ASSERT_THROW(bool(device));
     static std::map<void *, boost::weak_ptr<legacy_compat> > legacy_cache;
 
-    if (legacy_cache.count(device.get())) {
+    if (legacy_cache.count(device.get()) and not legacy_cache.at(device.get()).expired()) {
         legacy_compat::sptr legacy_compat_copy = legacy_cache.at(device.get()).lock();
-        if (not bool(legacy_compat_copy)) {
-            throw uhd::runtime_error("Reference to existing legacy compat object expired prematurely!");
-        }
-
+        UHD_ASSERT_THROW(bool(legacy_compat_copy));
         UHD_LEGACY_LOG() << "[legacy_compat] Using existing legacy compat object for this device." << std::endl;
         return legacy_compat_copy;
     }

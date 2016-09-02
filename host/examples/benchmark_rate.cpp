@@ -268,7 +268,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string rx_otw, tx_otw;
     std::string rx_cpu, tx_cpu;
     std::string mode, ref, pps;
-    std::string channel_list;
+    std::string channel_list, rx_channel_list, tx_channel_list;
     bool random_nsamps = false;
     atomic_bool burst_timer_elapsed(false);
 
@@ -291,6 +291,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("mode", po::value<std::string>(&mode), "DEPRECATED - use \"ref\" and \"pps\" instead (none, mimo)")
         ("random", "Run with random values of samples in send() and recv() to stress-test the I/O.")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("rx_channels", po::value<std::string>(&rx_channel_list), "which RX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("tx_channels", po::value<std::string>(&tx_channel_list), "which TX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -394,20 +396,45 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
        }
     }
 
-    //detect which channels to use
+    //check that the device has sufficient RX and TX channels available
     std::vector<std::string> channel_strings;
-    std::vector<size_t> channel_nums;
-    boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
-    for(size_t ch = 0; ch < channel_strings.size(); ch++){
-        size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
-        if(chan >= usrp->get_tx_num_channels() or chan >= usrp->get_rx_num_channels()){
-            throw std::runtime_error("Invalid channel(s) specified.");
+    std::vector<size_t> rx_channel_nums;
+    if (vm.count("rx_rate")) {
+        if (!vm.count("rx_channels")) {
+            rx_channel_list = channel_list;
         }
-        else channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+
+        boost::split(channel_strings, rx_channel_list, boost::is_any_of("\"',"));
+        for (size_t ch = 0; ch < channel_strings.size(); ch++) {
+            size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+            if (chan >= usrp->get_rx_num_channels()) {
+                throw std::runtime_error("Invalid channel(s) specified.");
+            } else {
+                rx_channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+            }
+        }
+    }
+
+    std::vector<size_t> tx_channel_nums;
+    if (vm.count("tx_rate")) {
+        if (!vm.count("tx_channels")) {
+            tx_channel_list = channel_list;
+        }
+
+        boost::split(channel_strings, tx_channel_list, boost::is_any_of("\"',"));
+        for (size_t ch = 0; ch < channel_strings.size(); ch++) {
+            size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+            if (chan >= usrp->get_tx_num_channels()) {
+                throw std::runtime_error("Invalid channel(s) specified.");
+            } else {
+                tx_channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+            }
+        }
     }
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-    if (pps == "mimo" or ref == "mimo" or channel_nums.size() == 1) {
+    bool sync_channels = (pps == "mimo" or ref == "mimo" or (rx_channel_nums.size() <= 1 and tx_channel_nums.size() <= 1));  
+    if (!sync_channels) {
        usrp->set_time_now(0.0);
     } else {
        usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
@@ -418,7 +445,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         usrp->set_rx_rate(rx_rate);
         //create a receive streamer
         uhd::stream_args_t stream_args(rx_cpu, rx_otw);
-        stream_args.channels = channel_nums;
+        stream_args.channels = rx_channel_nums;
         uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
         thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_stream, random_nsamps, boost::ref(burst_timer_elapsed)));
     }
@@ -428,7 +455,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         usrp->set_tx_rate(tx_rate);
         //create a transmit streamer
         uhd::stream_args_t stream_args(tx_cpu, tx_otw);
-        stream_args.channels = channel_nums;
+        stream_args.channels = tx_channel_nums;
         uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
         thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_stream, boost::ref(burst_timer_elapsed), random_nsamps));
         thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, tx_stream, boost::ref(burst_timer_elapsed)));
@@ -439,7 +466,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     const long usecs = long((duration - secs)*1e6);
     boost::this_thread::sleep(boost::posix_time::seconds(secs)
             + boost::posix_time::microseconds(usecs)
-            + boost::posix_time::milliseconds( (channel_nums.size() == 1) ? 0 : (INIT_DELAY * 1000))
+            + boost::posix_time::milliseconds( (rx_channel_nums.size() <= 1 and tx_channel_nums.size() <= 1) ? 0 : (INIT_DELAY * 1000))
     );
 
     //interrupt and join the threads

@@ -1,4 +1,4 @@
-# Copyright 2010-2016 Ettus Research LLC
+# Copyright 2010-2013 Ettus Research LLC
 # 
 # GNU Radio is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,10 +19,8 @@
 ########################################################################
 # Project setup
 ########################################################################
-cmake_minimum_required(VERSION 2.6)
-project(octoclock-dissector C)
-set(octoclock-dissector_VERSION_MAJOR 0)
-set(octoclock-dissector_VERSION_MINOR 7)
+cmake_minimum_required(VERSION 2.8)
+project(ettus-dissector C)
 enable_testing()
 
 #select the release build type by default to get optimization flags
@@ -57,40 +55,52 @@ endif()
 # Setup the include and linker paths
 ########################################################################
 include_directories(
+    ${CMAKE_BINARY_DIR}
     ${CMAKE_SOURCE_DIR}
     ${GLIB2_INCLUDE_DIRS}
     ${WIRESHARK_INCLUDE_DIRS}
 )
 
-#link_directories(
-#    ${Boost_LIBRARY_DIRS}
-#)
 set(CMAKE_INSTALL_LIBDIR ~/.wireshark)
 
 # Set component parameters
-set(octoclock_DISSECTOR_INCLUDE_DIRS ${CMAKE_SOURCE_DIR} CACHE INTERNAL "" FORCE)
+set(ETTUS_DISSECTOR_INCLUDE_DIRS ${CMAKE_SOURCE_DIR} CACHE INTERNAL "" FORCE)
+set(ETTUS_DISSECTOR_NAME "chdr" CACHE STRING "Select a dissector to build")
 
-set(octoclock_PLUGIN_SRC ${CMAKE_SOURCE_DIR}/packet-octoclock.c)
+function(generate_ettus_dissector DISSECTOR_NAME)
 
-set(PLUGIN_C_GENERATOR ${CMAKE_SOURCE_DIR}/make-dissector-reg.py)
-set(PLUGIN_C plugin.c)
+    set(ETTUS_PLUGIN_SRC ${CMAKE_SOURCE_DIR}/packet-${DISSECTOR_NAME}.c)
 
-add_custom_command(
-        OUTPUT ${PLUGIN_C}
-        DEPENDS ${octoclock_PLUGIN_SRC}
-        COMMAND ${PLUGIN_C_GENERATOR} ${CMAKE_SOURCE_DIR} plugin ${octoclock_PLUGIN_SRC}
-        COMMENT "Generating ${PLUGIN_C}"
-)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/moduleinfo.h.in
+        ${CMAKE_BINARY_DIR}/moduleinfo.h
+    )
 
-add_library(octoclock-plugin MODULE
-    ${PLUGIN_C}
-    moduleinfo.h
-    ${octoclock_PLUGIN_SRC}
-)
-set_target_properties(octoclock-plugin PROPERTIES PREFIX "")
-set_target_properties(octoclock-plugin PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
-target_link_libraries(octoclock-plugin wireshark)
+    set(PLUGIN_C_GENERATOR ${CMAKE_SOURCE_DIR}/make-dissector-reg.py)
+    set(PLUGIN_C plugin.c)
 
-install(TARGETS octoclock-plugin
-	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/plugins NAMELINK_SKIP
-)
+    add_custom_command(
+            OUTPUT ${PLUGIN_C}
+            DEPENDS ${ETTUS_PLUGIN_SRC}
+            COMMAND ${PLUGIN_C_GENERATOR} ${CMAKE_SOURCE_DIR} plugin ${ETTUS_PLUGIN_SRC}
+            COMMENT "Generating ${PLUGIN_C}"
+    )
+
+    set(ETTUS_TARGET_NAME "${DISSECTOR_NAME}-plugin")
+    add_library(${ETTUS_TARGET_NAME} MODULE
+        ${PLUGIN_C}
+        moduleinfo.h
+        ${ETTUS_PLUGIN_SRC}
+    )
+    set_target_properties(${ETTUS_TARGET_NAME} PROPERTIES PREFIX "")
+    set_target_properties(${ETTUS_TARGET_NAME} PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
+    target_link_libraries(${ETTUS_TARGET_NAME} wireshark)
+
+    install(TARGETS ${ETTUS_TARGET_NAME} 
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/plugins NAMELINK_SKIP
+    ) 
+
+endfunction(generate_ettus_dissector)
+
+generate_ettus_dissector("${ETTUS_DISSECTOR_NAME}")
+
