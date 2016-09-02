@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,12 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/types/sid.hpp>
+#include <uhd/exception.hpp>
+#include <uhd/utils/cast.hpp>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
-#include <uhd/exception.hpp>
-#include <uhd/types/sid.hpp>
-#include <uhd/utils/cast.hpp>
 
 using namespace uhd;
 
@@ -29,12 +29,12 @@ sid_t::sid_t()
 {
 }
 
-sid_t::sid_t(boost::uint32_t sid)
+sid_t::sid_t(uint32_t sid)
     : _sid(sid), _set(true)
 {
 }
 
-sid_t::sid_t(boost::uint8_t src_addr, boost::uint8_t src_ep, boost::uint8_t dst_addr, boost::uint8_t dst_ep)
+sid_t::sid_t(uint8_t src_addr, uint8_t src_ep, uint8_t dst_addr, uint8_t dst_ep)
     :  _sid(0x0000), _set(true)
 {
     set_src_addr(src_addr);
@@ -76,7 +76,7 @@ std::string sid_t::to_pp_string_hex() const
 }
 
 
-void sid_t::set_sid(boost::uint32_t new_sid)
+void sid_t::set_sid(uint32_t new_sid)
 {
     _set = true;
     _sid = new_sid;
@@ -107,41 +107,41 @@ void sid_t::set_from_str(const std::string &sid_str)
     throw uhd::value_error(str(boost::format("Invalid SID representation: %s") % sid_str));
 }
 
-void sid_t::set_src(boost::uint32_t new_addr) {
+void sid_t::set_src(uint32_t new_addr) {
     set_sid((_sid & 0x0000FFFF) | ((new_addr & 0xFFFF) << 16));
 }
 
-void sid_t::set_dst(boost::uint32_t new_addr) {
+void sid_t::set_dst(uint32_t new_addr) {
     set_sid((_sid & 0xFFFF0000) | (new_addr & 0xFFFF));
 }
 
-void sid_t::set_src_addr(boost::uint32_t new_addr) {
+void sid_t::set_src_addr(uint32_t new_addr) {
     set_sid((_sid & 0x00FFFFFF) | ((new_addr & 0xFF) << 24));
 }
 
-void sid_t::set_src_endpoint(boost::uint32_t new_addr) {
+void sid_t::set_src_endpoint(uint32_t new_addr) {
     set_sid((_sid & 0xFF00FFFF) | ((new_addr & 0xFF) << 16));
 }
 
-void sid_t::set_dst_addr(boost::uint32_t new_addr) {
+void sid_t::set_dst_addr(uint32_t new_addr) {
     set_sid((_sid & 0xFFFF00FF) | ((new_addr & 0xFF) << 8));
 }
 
-void sid_t::set_dst_endpoint(boost::uint32_t new_addr) {
+void sid_t::set_dst_endpoint(uint32_t new_addr) {
     set_sid((_sid & 0xFFFFFF00) | ((new_addr & 0xFF) << 0));
 }
 
-void sid_t::set_dst_xbarport(boost::uint32_t new_xbarport)
+void sid_t::set_dst_xbarport(uint32_t new_xbarport)
 {
     set_sid((_sid & 0xFFFFFF0F) | ((new_xbarport & 0xF) << 4));
 }
 
-void sid_t::set_dst_blockport(boost::uint32_t new_blockport)
+void sid_t::set_dst_blockport(uint32_t new_blockport)
 {
     set_sid((_sid & 0xFFFFFFF0) | ((new_blockport & 0xF) << 0));
 }
 
-sid_t sid_t::reversed()
+sid_t sid_t::reversed() const
 {
     return sid_t((get_dst() << 16) | get_src());
 }
