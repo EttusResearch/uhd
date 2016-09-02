@@ -16,12 +16,14 @@
 //
 
 #include "b200_uart.hpp"
+#include "b200_impl.hpp"
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/exception.hpp>
+#include <boost/foreach.hpp>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -32,10 +34,10 @@ struct b200_uart_impl : b200_uart
         _xport(xport),
         _sid(sid),
         _count(0),
-        _char_queue(4096)
+        _baud_div(std::floor(B200_BUS_CLOCK_RATE/115200 + 0.5)),
+        _line_queue(4096)
     {
-        //this default baud divider is over 9000
-        this->set_baud_divider(9001);
+        /*NOP*/
     }
 
     void send_char(const char ch)
@@ -67,23 +69,16 @@ struct b200_uart_impl : b200_uart
 
     void write_uart(const std::string &buff)
     {
-        for (size_t i = 0; i < buff.size(); i++)
+        BOOST_FOREACH(const char ch, buff)
         {
-            if (buff[i] == '\n') this->send_char('\r');
-            this->send_char(buff[i]);
+            this->send_char(ch);
         }
     }
 
     std::string read_uart(double timeout)
     {
         std::string line;
-        char ch = '\0';
-        while (_char_queue.pop_with_timed_wait(ch, timeout))
-        {
-            if (ch == '\r') continue;
-            line += std::string(&ch, 1);
-            if (ch == '\n') return line;
-        }
+        _line_queue.pop_with_timed_wait(line, timeout);
         return line;
     }
 
@@ -95,19 +90,20 @@ struct b200_uart_impl : b200_uart
         packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
         vrt::if_hdr_unpack_le(packet_buff, packet_info);
         const char ch = char(uhd::wtohx(packet_buff[packet_info.num_header_words32+1]));
-        _char_queue.push_with_pop_on_full(ch);
-    }
-
-    void set_baud_divider(const double baud_div)
-    {
-        _baud_div = size_t(baud_div + 0.5);
+        _line += ch;
+        if (ch == '\n')
+        {
+            _line_queue.push_with_pop_on_full(_line);
+            _line.clear();
+        }
     }
 
     const zero_copy_if::sptr _xport;
     const boost::uint32_t _sid;
     size_t _count;
     size_t _baud_div;
-    bounded_buffer<char> _char_queue;
+    bounded_buffer<std::string> _line_queue;
+    std::string _line;
 };
 
 

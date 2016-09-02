@@ -68,13 +68,12 @@ namespace uhd{
     }
 
     void octoclock_uart_iface::write_uart(const std::string &buf){
-        std::string to_send = boost::algorithm::replace_all_copy(buf, "\n", "\r\n");
         size_t len = 0;
 
         octoclock_packet_t pkt_out;
         pkt_out.sequence = uhd::htonx<boost::uint32_t>(++_sequence);
-        pkt_out.len = to_send.size();
-        memcpy(pkt_out.data, to_send.c_str(), to_send.size());
+        pkt_out.len = buf.size();
+        memcpy(pkt_out.data, buf.c_str(), buf.size());
 
         boost::uint8_t octoclock_data[udp_simple::mtu];
         const octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t*>(octoclock_data);
@@ -87,28 +86,26 @@ namespace uhd{
 
     std::string octoclock_uart_iface::read_uart(double timeout){
         std::string result;
-        bool first_time = true;
         boost::system_time exit_time = boost::get_system_time() + boost::posix_time::milliseconds(long(timeout*1e3));
 
-        while(boost::get_system_time() < exit_time){
-            if (first_time)
-                first_time = false;
-            else
-                boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-
+        while(true)
+        {
             _update_cache();
 
             for(char ch = _getchar(); ch != 0; ch = _getchar()){
-                if(ch == '\r') continue; //Skip carriage returns
                 _rxbuff += ch;
 
                 //If newline found, return string
                 if(ch == '\n'){
-                    result = _rxbuff;
-                    _rxbuff.clear();
+                    result.swap(_rxbuff);
                     return result;
                 }
             }
+            if (boost::get_system_time() > exit_time)
+            {
+                break;
+            }
+            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }
 
         return result;

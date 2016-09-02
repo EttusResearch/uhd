@@ -461,6 +461,10 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     _async_task_data.reset(new AsyncTaskData());
     _async_task_data->async_md.reset(new async_md_type(1000/*messages deep*/));
+    if (_gpsdo_capable)
+    {
+        _async_task_data->gpsdo_uart = b200_uart::make(_ctrl_transport, B200_TX_GPS_UART_SID);
+    }
     _async_task = uhd::msg_task::make(boost::bind(&b200_impl::handle_async_task, this, _ctrl_transport, _async_task_data));
 
     ////////////////////////////////////////////////////////////////////
@@ -481,10 +485,6 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     if (_gpsdo_capable)
     {
-        _async_task_data->gpsdo_uart = b200_uart::make(_ctrl_transport, B200_TX_GPS_UART_SID);
-        _async_task_data->gpsdo_uart->set_baud_divider(B200_BUS_CLOCK_RATE/115200);
-        _async_task_data->gpsdo_uart->write_uart("\n"); //cause the baud and response to be setup
-        boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for a little propagation
 
         if ((_local_ctrl->peek32(RB32_CORE_STATUS) & 0xff) != B200_GPSDO_ST_NONE)
         {
