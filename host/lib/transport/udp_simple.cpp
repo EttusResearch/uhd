@@ -114,9 +114,13 @@ public:
         do{
             //drain anything in current buffer
             while (_off < _len){
-                const char ch = _buf[_off]; _off++;
-                line += std::string(1, ch);
-                if (ch == '\n' or ch == '\r') return line;
+                const char ch = _buf[_off++];
+                _line += ch;
+                if (ch == '\n')
+                {
+                    line.swap(_line);
+                    return line;
+                }
             }
 
             //recv a new packet into the buffer
@@ -131,6 +135,7 @@ private:
     udp_simple::sptr _udp;
     size_t _len, _off;
     boost::uint8_t _buf[udp_simple::mtu];
+    std::string _line;
 };
 
 uhd::uart_iface::sptr udp_simple::make_uart(sptr udp){

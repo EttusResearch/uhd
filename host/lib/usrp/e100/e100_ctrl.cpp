@@ -232,10 +232,13 @@ public:
 
             //got a character -> process it
             if (ret == 1){
-                const bool flush  = ch == '\n' or ch == '\r';
-                if (flush and line.empty()) continue; //avoid flushing on empty lines
-                line += std::string(1, ch);
-                if (flush) break;
+                _line += ch;
+                if (ch == '\n')
+                {
+                    line = _line;
+                    _line.clear();
+                    break;
+                }
             }
 
             //didnt get a character, check the timeout
@@ -251,7 +254,9 @@ public:
         return line;
     }
 
-private: int _node_fd;
+private:
+    int _node_fd;
+    std::string _line;
 };
 
 uhd::uart_iface::sptr e100_ctrl::make_gps_uart_iface(const std::string &node){
