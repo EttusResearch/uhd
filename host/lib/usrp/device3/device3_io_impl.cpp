@@ -17,8 +17,6 @@
 
 // Provides streaming-related functions which are used by device3 objects.
 
-#define DEVICE3_STREAMER // For the super_*_packet_handlers
-
 #include "device3_impl.hpp"
 #include <uhd/rfnoc/constants.hpp>
 #include <uhd/rfnoc/source_block_ctrl_base.hpp>
