@@ -18,6 +18,7 @@
 #ifndef INCLUDED_LIBUHD_TRANSPORT_SUPER_RECV_PACKET_HANDLER_HPP
 #define INCLUDED_LIBUHD_TRANSPORT_SUPER_RECV_PACKET_HANDLER_HPP
 
+#include "../rfnoc/rx_stream_terminator.hpp"
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/convert.hpp>
@@ -28,9 +29,6 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#ifdef DEVICE3_STREAMER
-#  include "../rfnoc/rx_stream_terminator.hpp"
-#endif
 #include <boost/dynamic_bitset.hpp>
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
@@ -131,7 +129,6 @@ public:
         }
     }
 
-    #ifdef DEVICE3_STREAMER
     void set_terminator(uhd::rfnoc::rx_stream_terminator::sptr terminator)
     {
         _terminator = terminator;
@@ -141,7 +138,6 @@ public:
     {
         return _terminator;
     }
-    #endif
     ////////////////// RFNOC ///////////////////////////
 
     /*!
@@ -397,9 +393,7 @@ private:
     int recvd_packets;
     #endif
 
-    #ifdef DEVICE3_STREAMER
     uhd::rfnoc::rx_stream_terminator::sptr _terminator;
-    #endif
 
     /*******************************************************************
      * Get and process a single packet from the transport:

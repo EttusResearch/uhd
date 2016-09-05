@@ -15,8 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#define DEVICE3_STREAMER
-
 #include "x300_regs.hpp"
 #include "x300_impl.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
