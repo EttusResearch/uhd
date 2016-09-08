@@ -211,7 +211,9 @@ public:
     while(boost::get_system_time() < comm_timeout) {
       reply = _recv();
       //known devices are JL "FireFly" and "LC_XO"
-      if(reply.find("FireFly") != std::string::npos or reply.find("LC_XO") != std::string::npos) {
+      if(reply.find("FireFly") != std::string::npos
+         or reply.find("LC_XO") != std::string::npos
+         or reply.find("GPSTCXO") != std::string::npos) {
         _gps_type = GPS_TYPE_INTERNAL_GPSDO;
         break;
       } else if(reply.substr(0, 3) == "$GP") {
