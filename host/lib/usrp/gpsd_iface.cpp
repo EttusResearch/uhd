@@ -1,5 +1,5 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -65,8 +65,8 @@ public:
         _bthread.swap(t);
 
 
-        _sensors = boost::assign::list_of("gps_locked")("gps_time") \
-            ("gps_position")("gps_gpgga")("gps_gprmc");
+        _sensors = boost::assign::list_of<std::string>("gps_locked")("gps_time") \
+            ("gps_position")("gps_gpgga")("gps_gprmc").to_container(_sensors);
     }
 
     virtual ~gpsd_iface_impl(void)

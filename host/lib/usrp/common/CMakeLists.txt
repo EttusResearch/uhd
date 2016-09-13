@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2013 Ettus Research LLC
+# Copyright 2011-2013,2016 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,8 +19,6 @@
 # This file included, use CMake directory variables
 ########################################################################
 IF(ENABLE_USB)
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/../firmware/fx2/common)
-
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/fx2_ctrl.cpp
     )
@@ -31,7 +29,8 @@ INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/ad9361_driver")
 
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/adf4001_ctrl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/adf435x_common.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/adf435x.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/adf5355.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ad9361_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ad936x_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ad9361_driver/ad9361_device.cpp

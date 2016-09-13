@@ -161,8 +161,8 @@ ge_write_mdio(const uint32_t base, const uint32_t address, const uint32_t port, 
 
 static uint32_t read_mdio(const uint8_t eth, const uint32_t address, const uint32_t device, const uint32_t port)
 {
-    const uint32_t rb_addr = (eth==0) ? RB_ETH_TYPE0 : RB_ETH_TYPE1;
-    const uint32_t base = (eth==0) ? XGE0_BASE : XGE1_BASE;
+    const uint32_t rb_addr = (eth==0) ? RB_SFP0_TYPE : RB_SFP1_TYPE;
+    const uint32_t base = (eth==0) ? SFP0_MAC_BASE : SFP1_MAC_BASE;
     if (wb_peek32(SR_ADDR(RB0_BASE, rb_addr)) != 0)
     {
         return xge_read_mdio(base, address, device, port);
@@ -175,8 +175,8 @@ static uint32_t read_mdio(const uint8_t eth, const uint32_t address, const uint3
 
 static void write_mdio(const uint8_t eth, const uint32_t address, const uint32_t device, const uint32_t port, const uint32_t data)
 {
-    const uint32_t rb_addr = (eth==0) ? RB_ETH_TYPE0 : RB_ETH_TYPE1;
-    const uint32_t base = (eth==0) ? XGE0_BASE : XGE1_BASE;
+    const uint32_t rb_addr = (eth==0) ? RB_SFP0_TYPE : RB_SFP1_TYPE;
+    const uint32_t base = (eth==0) ? SFP0_MAC_BASE : SFP1_MAC_BASE;
     if (wb_peek32(SR_ADDR(RB0_BASE, rb_addr)) != 0)
     {
         return xge_write_mdio(base, address, device, port, data);
@@ -312,10 +312,9 @@ static void xge_mac_init(const uint32_t base)
 }
 
 // base is pointer to XGE MAC on Wishbone.
-static void xge_phy_init(const uint8_t eth, const uint32_t mdio_port_arg)
+static void xge_phy_init(const uint8_t eth, const uint32_t mdio_port)
 {
     int x;
-    uint32_t mdio_port = eth==0 ? 1 : mdio_port_arg;
     // Read LASI Ctrl register to capture state.
     //y = xge_read_mdio(0x9002,XGE_MDIO_DEVICE_PMA,XGE_MDIO_ADDR_PHY_A);
     UHD_FW_TRACE(DEBUG, "Begining XGE PHY init sequence.");
@@ -323,23 +322,24 @@ static void xge_phy_init(const uint8_t eth, const uint32_t mdio_port_arg)
     x = read_mdio(eth, 0x0, XGE_MDIO_DEVICE_PMA,mdio_port);
     x = x | (1 << 15);
     write_mdio(eth, 0x0,XGE_MDIO_DEVICE_PMA,mdio_port,x);
+    uint32_t loopCount = 0;
     while(x&(1<<15)) {
         x = read_mdio(eth, 0x0,XGE_MDIO_DEVICE_PMA,mdio_port);
+        if( loopCount++ > 200 ) break; // usually succeeds after 22 or 23 polls
     }
 }
 
-void update_eth_state(const uint32_t eth)
+void update_eth_state(const uint32_t eth, const uint32_t sfp_type)
 {
     const bool old_link_up = links_up[eth];
-    const uint32_t status_reg_addr = (eth==0) ? RB_SFPP_STATUS0 : RB_SFPP_STATUS1;
-    const bool is_10g = (wb_peek32(SR_ADDR(RB0_BASE, eth == 0 ? RB_ETH_TYPE0 : RB_ETH_TYPE1)) == 1);
+    const uint32_t status_reg_addr = (eth==0) ? RB_SFP0_STATUS : RB_SFP1_STATUS;
 
     uint32_t sfpp_status = wb_peek32(SR_ADDR(RB0_BASE, status_reg_addr)) & 0xFFFF;
     if ((sfpp_status & (SFPP_STATUS_RXLOS|SFPP_STATUS_TXFAULT|SFPP_STATUS_MODABS)) == 0) {
         //SFP+ pin state changed. Reinitialize PHY and MAC
-        if (is_10g) {
-            xge_mac_init((eth==0) ? XGE0_BASE : XGE1_BASE);
-            xge_phy_init(eth ,MDIO_PORT);
+        if (sfp_type == RB_SFP_10G_ETH) {
+            xge_mac_init((eth==0) ? SFP0_MAC_BASE : SFP1_MAC_BASE);
+            xge_phy_init(eth, MDIO_PORT);
         } else {
             //No-op for 1G
         }
@@ -347,7 +347,7 @@ void update_eth_state(const uint32_t eth)
         int8_t timeout = 100;
         bool link_up = false;
         do {
-            if (is_10g) {
+            if (sfp_type == RB_SFP_10G_ETH) {
                 link_up = ((read_mdio(eth, XGE_MDIO_STATUS1,XGE_MDIO_DEVICE_PMA,MDIO_PORT)) & (1 << 2)) != 0;
             } else {
                 link_up = ((wb_peek32(SR_ADDR(RB0_BASE, status_reg_addr)) >> 16) & 0x1) != 0;
@@ -362,54 +362,66 @@ void update_eth_state(const uint32_t eth)
     }
 
     if (!old_link_up && links_up[eth]) u3_net_stack_send_arp_request(eth, u3_net_stack_get_ip_addr(eth));
-    UHD_FW_TRACE_FSTR(INFO, "The link on eth port %u is %s", eth, links_up[eth]?"up":"down");
 }
 
-void poll_sfpp_status(const uint32_t eth)
+void poll_sfpp_status(const uint32_t sfp)
 {
-    uint32_t x;
-    // Has MODDET/MODAbS changed since we last looked?
-    x = wb_peek32(SR_ADDR(RB0_BASE, (eth==0) ? RB_SFPP_STATUS0 : RB_SFPP_STATUS1 ));
+    uint32_t type = wb_peek32(SR_ADDR(RB0_BASE, (sfp==0) ? RB_SFP0_TYPE : RB_SFP1_TYPE));
+    uint32_t status = wb_peek32(SR_ADDR(RB0_BASE, (sfp==0) ? RB_SFP0_STATUS : RB_SFP1_STATUS));
 
-    if (x & SFPP_STATUS_RXLOS_CHG)
-        UHD_FW_TRACE_FSTR(DEBUG, "eth%1d RXLOS changed state: %d", eth, (x & SFPP_STATUS_RXLOS));
-    if (x & SFPP_STATUS_TXFAULT_CHG)
-        UHD_FW_TRACE_FSTR(DEBUG, "eth%1d TXFAULT changed state: %d", eth, ((x & SFPP_STATUS_TXFAULT) >> 1));
-    if (x & SFPP_STATUS_MODABS_CHG)
-        UHD_FW_TRACE_FSTR(DEBUG, "eth%1d MODABS changed state: %d", eth, ((x & SFPP_STATUS_MODABS) >> 2));
-
-    //update the link up status
-    if ((x & SFPP_STATUS_RXLOS_CHG) || (x & SFPP_STATUS_TXFAULT_CHG) || (x & SFPP_STATUS_MODABS_CHG))
-    {
-        update_eth_state(eth);
-    }
-
-    if (x & SFPP_STATUS_MODABS_CHG) {
+    if (status & SFPP_STATUS_MODABS_CHG) {
         // MODDET has changed state since last checked
-        if (x & SFPP_STATUS_MODABS) {
+        if (status & SFPP_STATUS_MODABS) {
             // MODDET is high, module currently removed.
-            UHD_FW_TRACE_FSTR(INFO, "An SFP+ module has been removed from eth port %d.", eth);
+            UHD_FW_TRACE_FSTR(INFO, "An SFP+ module has been removed from eth port %d.", sfp);
         } else {
             // MODDET is low, module currently inserted.
             // Return status.
-            UHD_FW_TRACE_FSTR(INFO, "A new SFP+ module has been inserted into eth port %d.", eth);
-            xge_read_sfpp_type((eth==0) ? I2C0_BASE : I2C2_BASE,1);
+            UHD_FW_TRACE_FSTR(INFO, "A new SFP+ module has been inserted into eth port %d.", sfp);
+            if (type == RB_SFP_10G_ETH) {
+                xge_read_sfpp_type((sfp==0) ? I2C0_BASE : I2C2_BASE,1);
+            }
         }
+    }
+
+    if (status & SFPP_STATUS_RXLOS_CHG) {
+        UHD_FW_TRACE_FSTR(DEBUG, "SFP%1d RXLOS changed state: %d", sfp, (status & SFPP_STATUS_RXLOS));
+    }
+    if (status & SFPP_STATUS_TXFAULT_CHG) {
+        UHD_FW_TRACE_FSTR(DEBUG, "SFP%1d TXFAULT changed state: %d", sfp, ((status & SFPP_STATUS_TXFAULT) >> 1));
+    }
+    if (status & SFPP_STATUS_MODABS_CHG) {
+        UHD_FW_TRACE_FSTR(DEBUG, "SFP%1d MODABS changed state: %d", sfp, ((status & SFPP_STATUS_MODABS) >> 2));
+    }
+
+    //update the link up status
+    const bool old_link_up = links_up[sfp];
+    if (type == RB_SFP_AURORA) {
+        links_up[sfp] = ((wb_peek32(SR_ADDR(RB0_BASE, (sfp==0) ? RB_SFP0_STATUS : RB_SFP1_STATUS)) >> 16) & 0x1) != 0;
+    } else {
+        if ((status & SFPP_STATUS_RXLOS_CHG) ||
+            (status & SFPP_STATUS_TXFAULT_CHG) ||
+            (status & SFPP_STATUS_MODABS_CHG))
+        {
+            update_eth_state(sfp, type);
+        }
+    }
+    if (old_link_up != links_up[sfp]) {
+        UHD_FW_TRACE_FSTR(INFO, "The link on SFP port %u is %s", sfp, links_up[sfp]?"up":"down");
     }
 }
 
-void ethernet_init(const uint32_t eth)
+void ethernet_init(const uint32_t sfp)
 {
 #ifdef UHD_FW_TRACE_LEVEL
-    uint32_t x = wb_peek32(SR_ADDR(RB0_BASE, (eth==0) ? RB_SFPP_STATUS0 : RB_SFPP_STATUS1 ));
-    UHD_FW_TRACE_FSTR(DEBUG, "eth%1d SFP initial state: RXLOS: %d  TXFAULT: %d  MODABS: %d",
-        eth,
+    uint32_t x = wb_peek32(SR_ADDR(RB0_BASE, (sfp==0) ? RB_SFP0_STATUS : RB_SFP1_STATUS ));
+    UHD_FW_TRACE_FSTR(DEBUG, "SFP%1d SFP initial state: RXLOS: %d  TXFAULT: %d  MODABS: %d",
+        sfp,
         (x & SFPP_STATUS_RXLOS),
         ((x & SFPP_STATUS_TXFAULT) >> 1),
         ((x & SFPP_STATUS_MODABS) >> 2));
 #endif
-    links_up[eth] = false;
-    update_eth_state(eth);
+    update_eth_state(sfp, wb_peek32(SR_ADDR(RB0_BASE, (sfp==0) ? RB_SFP0_TYPE : RB_SFP1_TYPE)));
 }
 
 //

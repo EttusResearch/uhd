@@ -132,7 +132,9 @@ public:
      * \param unit the side of the daughterboard interface to configure (TX or RX)
      * \param value if value[i] is 1, the i'th bit is in ATR mode otherwise it is in GPIO mode
      */
-    virtual void set_pin_ctrl(const db_unit_t unit, const boost::uint16_t value) = 0;
+    virtual void set_pin_ctrl(const db_unit_t unit, const boost::uint32_t value, const boost::uint32_t mask) = 0;
+
+    virtual boost::uint32_t get_pin_ctrl(const db_unit_t unit) = 0;
 
     /*!
      * Configure the direction for all pins in the daughterboard connector
@@ -140,7 +142,9 @@ public:
      * \param unit the side of the daughterboard interface to configure (TX or RX)
      * \param value if value[i] is 1, the i'th bit is an output otherwise it is an input
      */
-    virtual void set_gpio_ddr(const db_unit_t unit, const boost::uint16_t value) = 0;
+    virtual void set_gpio_ddr(const db_unit_t unit, const boost::uint32_t value, const boost::uint32_t mask) = 0;
+
+    virtual boost::uint32_t get_gpio_ddr(const db_unit_t unit) = 0;
 
     /*!
      * Write the specified value to the ATR register (all bits)
@@ -149,7 +153,9 @@ public:
      * \param unit the side of the daughterboard interface to configure (TX or RX)
      * \param value the value to write
      */
-    virtual void set_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr, const boost::uint16_t value) = 0;
+    virtual void set_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr, const boost::uint32_t value, const boost::uint32_t mask) = 0;
+
+    virtual boost::uint32_t get_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr) = 0;
 
     /*!
      * Write the specified value to the GPIO register (all bits)
@@ -157,7 +163,9 @@ public:
      * \param atr the type of ATR register to write to {IDLE, RX, TX, FDX}
      * \param value the value to write
      */
-    virtual void set_gpio_out(const db_unit_t unit, const boost::uint16_t value) = 0;
+    virtual void set_gpio_out(const db_unit_t unit, const boost::uint32_t value, const boost::uint32_t mask) = 0;
+
+    virtual boost::uint32_t get_gpio_out(const db_unit_t unit) = 0;
 
     /*!
      * Read the state of the GPIO pins
@@ -167,7 +175,7 @@ public:
      * \param unit the side of the daughterboard interface to configure (TX or RX)
      * \return the value read back
      */
-    virtual boost::uint16_t read_gpio(const db_unit_t unit) = 0;
+    virtual boost::uint32_t read_gpio(const db_unit_t unit) = 0;
 };
 
 }}} //namespaces

@@ -147,7 +147,7 @@ STRIP_FROM_INC_PATH    = @CMAKE_SOURCE_DIR@/include
 # (but less readable) file names. This can be useful if your file system
 # doesn't support long names like on DOS, Mac, or CD-ROM.
 
-SHORT_NAMES            = NO
+SHORT_NAMES            = @DOXYGEN_SHORT_NAMES@
 
 # If the JAVADOC_AUTOBRIEF tag is set to YES then Doxygen
 # will interpret the first line (until the first dot) of a JavaDoc-style
@@ -958,7 +958,7 @@ HTML_COLORSTYLE_GAMMA  = 65
 # page will contain the date and time when the page was generated. Setting
 # this to NO can help when comparing the output of multiple runs.
 
-HTML_TIMESTAMP         = YES
+HTML_TIMESTAMP         = NO
 
 # If the HTML_DYNAMIC_SECTIONS tag is set to YES then the generated HTML
 # documentation will contain sections that can be hidden and shown after the
@@ -1686,7 +1686,7 @@ HIDE_UNDOC_RELATIONS   = YES
 # toolkit from AT&T and Lucent Bell Labs. The other options in this section
 # have no effect if this option is set to NO (the default)
 
-HAVE_DOT               = NO
+HAVE_DOT               = @DOXYGEN_HAVE_DOT@
 
 # The DOT_NUM_THREADS specifies the number of dot invocations doxygen is
 # allowed to run in parallel. When set to 0 (the default) doxygen will

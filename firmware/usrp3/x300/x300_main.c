@@ -246,18 +246,16 @@ static void handle_claim(void)
 /***********************************************************************
  * LED blinky logic and support utilities
  **********************************************************************/
-static uint32_t get_xbar_total(const uint8_t port)
+static uint32_t get_xbar_total(const uint32_t port)
 {
-    #define get_xbar_stat(in_prt, out_prt) \
-        wb_peek32(RB0_BASE+256+(((in_prt)*8+(out_prt))*4))
+    static const uint32_t NUM_PORTS = 16;
     uint32_t total = 0;
-    for (size_t i = 0; i < 8; i++)
+    for (uint32_t i = 0; i < NUM_PORTS; i++)
     {
-        total += get_xbar_stat(port, i);
-    }
-    for (size_t i = 0; i < 8; i++)
-    {
-        total += get_xbar_stat(i, port);
+        wb_poke32(SET0_BASE + SR_RB_ADDR*4, (NUM_PORTS*port + i));
+        total += wb_peek32(RB0_BASE + RB_XBAR*4);
+        wb_poke32(SET0_BASE + SR_RB_ADDR*4, (NUM_PORTS*i + port));
+        total += wb_peek32(RB0_BASE + RB_XBAR*4);
     }
     if (port < 2) //also netstack if applicable
     {
@@ -279,10 +277,10 @@ static size_t popcntll(uint64_t num)
 static void update_leds(void)
 {
     //update activity status for all ports
-    uint64_t activity_shreg[8];
-    for (size_t i = 0; i < 8; i++)
+    uint64_t activity_shreg[16];
+    for (uint32_t i = 0; i < 16; i++)
     {
-        static uint32_t last_total[8];
+        static uint32_t last_total[16];
         const uint32_t total = get_xbar_total(i);
         activity_shreg[i] <<= 1;
         activity_shreg[i] |= (total == last_total[i])? 0 : 1;
@@ -320,8 +318,10 @@ static void garp(void)
     count = 0;
     for (size_t e = 0; e < ethernet_ninterfaces(); e++)
     {
-        if (!ethernet_get_link_up(e)) continue;
-        u3_net_stack_send_arp_request(e, u3_net_stack_get_ip_addr(e));
+        if (wb_peek32(SR_ADDR(RB0_BASE, e == 0 ? RB_SFP0_TYPE : RB_SFP1_TYPE)) != RB_SFP_AURORA) {
+            if (!ethernet_get_link_up(e)) continue;
+            u3_net_stack_send_arp_request(e, u3_net_stack_get_ip_addr(e));
+        }
     }
 }
 
@@ -446,7 +446,7 @@ int main(void)
         {
             poll_sfpp_status(0); // Every so often poll XGE Phy to look for SFP+ hotplug events.
             poll_sfpp_status(1); // Every so often poll XGE Phy to look for SFP+ hotplug events.
-            handle_link_state(); //deal with router table update
+            //handle_link_state(); //deal with router table update
             handle_claim(); //deal with the host claim register
             update_leds(); //run the link and activity leds
             garp(); //send periodic garps

@@ -47,10 +47,7 @@ public:
         task_handler = task::make(boost::bind(&libusb_session_impl::libusb_event_handler_task, this, _context));
     }
 
-    ~libusb_session_impl(void){
-        task_handler.reset();
-        libusb_exit(_context);
-    }
+    virtual ~libusb_session_impl(void);
 
     libusb_context *get_context(void) const{
         return _context;
@@ -85,6 +82,11 @@ private:
         }
     }
 };
+
+libusb_session_impl::~libusb_session_impl(void){
+    task_handler.reset();
+    libusb_exit(_context);
+}
 
 libusb::session::sptr libusb::session::get_global_session(void){
     static boost::weak_ptr<session> global_session;
@@ -121,9 +123,7 @@ public:
         _dev = dev;
     }
 
-    ~libusb_device_impl(void){
-        libusb_unref_device(this->get());
-    }
+    virtual ~libusb_device_impl(void);
 
     libusb_device *get(void) const{
         return _dev;
@@ -133,6 +133,10 @@ private:
     libusb::session::sptr _session; //always keep a reference to session
     libusb_device *_dev;
 };
+
+libusb_device_impl::~libusb_device_impl(void){
+    libusb_unref_device(this->get());
+}
 
 /***********************************************************************
  * libusb device list
@@ -160,6 +164,8 @@ public:
         libusb_free_device_list(dev_list, false/*dont unref*/);
     }
 
+    virtual ~libusb_device_list_impl(void);
+
     size_t size(void) const{
         return _devs.size();
     }
@@ -171,6 +177,10 @@ public:
 private:
     std::vector<libusb::device::sptr> _devs;
 };
+
+libusb_device_list_impl::~libusb_device_list_impl(void){
+    /* NOP */
+}
 
 libusb::device_list::sptr libusb::device_list::make(void){
     return sptr(new libusb_device_list_impl());
@@ -190,6 +200,8 @@ public:
         UHD_ASSERT_THROW(libusb_get_device_descriptor(_dev->get(), &_desc) == 0);
     }
 
+    virtual ~libusb_device_descriptor_impl(void);
+
     const libusb_device_descriptor &get(void) const{
         return _desc;
     }
@@ -207,12 +219,12 @@ public:
         );
 
         unsigned char buff[512];
-        ssize_t ret = libusb_get_string_descriptor_ascii(
-            handle->get(), off, buff, sizeof(buff)
+        int ret = libusb_get_string_descriptor_ascii(
+            handle->get(), off, buff, int(sizeof(buff))
         );
         if (ret < 0) return ""; //on error, just return empty string
 
-        std::string string_descriptor((char *)buff, ret);
+        std::string string_descriptor((char *)buff, size_t(ret));
         byte_vector_t string_vec(string_descriptor.begin(), string_descriptor.end());
         std::string out;
         BOOST_FOREACH(boost::uint8_t byte, string_vec){
@@ -226,6 +238,10 @@ private:
     libusb::device::sptr _dev; //always keep a reference to device
     libusb_device_descriptor _desc;
 };
+
+libusb_device_descriptor_impl::~libusb_device_descriptor_impl(void){
+    /* NOP */
+}
 
 libusb::device_descriptor::sptr libusb::device_descriptor::make(device::sptr dev){
     return sptr(new libusb_device_descriptor_impl(dev));
@@ -245,13 +261,7 @@ public:
         UHD_ASSERT_THROW(libusb_open(_dev->get(), &_handle) == 0);
     }
 
-    ~libusb_device_handle_impl(void){
-        //release all claimed interfaces
-        for (size_t i = 0; i < _claimed.size(); i++){
-            libusb_release_interface(this->get(), _claimed[i]);
-        }
-        libusb_close(_handle);
-    }
+    virtual ~libusb_device_handle_impl(void);
 
     libusb_device_handle *get(void) const{
         return _handle;
@@ -282,6 +292,14 @@ private:
     libusb_device_handle *_handle;
     std::vector<int> _claimed;
 };
+
+libusb_device_handle_impl::~libusb_device_handle_impl(void){
+    //release all claimed interfaces
+    for (size_t i = 0; i < _claimed.size(); i++){
+        libusb_release_interface(this->get(), _claimed[i]);
+    }
+    libusb_close(_handle);
+}
 
 libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::sptr dev){
     static uhd::dict<libusb_device *, boost::weak_ptr<device_handle> > handles;
@@ -327,6 +345,8 @@ public:
         _dev = dev;
     }
 
+    virtual ~libusb_special_handle_impl(void);
+
     libusb::device::sptr get_device(void) const{
         return _dev;
     }
@@ -361,6 +381,10 @@ private:
     libusb::device::sptr _dev; //always keep a reference to device
 };
 
+libusb_special_handle_impl::~libusb_special_handle_impl(void){
+    /* NOP */
+}
+
 libusb::special_handle::sptr libusb::special_handle::make(device::sptr dev){
     return sptr(new libusb_special_handle_impl(dev));
 }
@@ -368,6 +392,10 @@ libusb::special_handle::sptr libusb::special_handle::make(device::sptr dev){
 /***********************************************************************
  * list device handles implementations
  **********************************************************************/
+usb_device_handle::~usb_device_handle(void) {
+    /* NOP */
+}
+
 std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(
     boost::uint16_t vid, boost::uint16_t pid
 ){

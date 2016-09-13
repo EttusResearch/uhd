@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TYPES_REF_VECTOR_HPP
 
 #include <uhd/config.hpp>
+#include <cstddef>
 
 namespace uhd{
 

@@ -20,6 +20,8 @@
 #include <uhd/utils/safe_call.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/date_time.hpp>
+#include <boost/thread.hpp>
 
 #define REG_FRAMER_MAXLEN    _base + 4*4 + 0
 #define REG_FRAMER_SID       _base + 4*4 + 4
@@ -63,13 +65,26 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
 
     void configure_flow_control(const size_t window_size)
     {
+        // The window needs to be disabled in the case where this object is
+        // uncleanly destroyed and the FC window is left enabled
+        _iface->poke32(REG_FC_ENABLE, 0);
+
+        // Sleep for a large amount of time to allow the source flow control
+        // module in the FPGA to flush all the packets buffered upstream.
+        // At 1 ms * 200 MHz = 200k cycles, 8 bytes * 200k cycles = 1.6 MB
+        // of flushed data, when the typical amount of data buffered
+        // is on the order of kilobytes
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1.0));
+
         _iface->poke32(REG_FC_WINDOW, window_size-1);
         _iface->poke32(REG_FC_ENABLE, window_size?1:0);
     }
 
     void clear(void)
     {
-        this->configure_flow_control(0); //disable fc
+        // FC should never be disabled, this will actually become
+        // impossible in the future
+        //this->configure_flow_control(0); //disable fc
     }
 
     void set_nsamps_per_packet(const size_t nsamps)

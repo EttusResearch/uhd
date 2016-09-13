@@ -38,20 +38,32 @@ public:
     virtual ~gpio_core_200(void) = 0;
 
     //! makes a new GPIO core from iface and slave base
-    static sptr make(uhd::wb_iface::sptr iface, const size_t base, const size_t rb_addr);
+    static sptr make(
+        uhd::wb_iface::sptr iface, const size_t base, const size_t rb_addr);
 
     //! 1 = ATR
-    virtual void set_pin_ctrl(const unit_t unit, const boost::uint16_t value) = 0;
+    virtual void set_pin_ctrl(
+        const unit_t unit, const boost::uint16_t value, const boost::uint16_t mask) = 0;
 
-    virtual void set_atr_reg(const unit_t unit, const atr_reg_t atr, const boost::uint16_t value) = 0;
+    virtual boost::uint16_t get_pin_ctrl(unit_t unit) = 0;
+
+    virtual void set_atr_reg(
+        const unit_t unit, const atr_reg_t atr, const boost::uint16_t value, const boost::uint16_t mask) = 0;
+
+    virtual boost::uint16_t get_atr_reg(unit_t unit, atr_reg_t reg) = 0;
 
     //! 1 = OUTPUT
-    virtual void set_gpio_ddr(const unit_t unit, const boost::uint16_t value) = 0;
+    virtual void set_gpio_ddr(
+        const unit_t unit, const boost::uint16_t value, const boost::uint16_t mask) = 0;
 
-    virtual void set_gpio_out(const unit_t unit, const boost::uint16_t value) = 0;
+    virtual boost::uint16_t get_gpio_ddr(unit_t unit) = 0;
+
+    virtual void set_gpio_out(
+        const unit_t unit, const boost::uint16_t value, const boost::uint16_t mask) = 0;
+
+    virtual boost::uint16_t get_gpio_out(unit_t unit) = 0;
 
     virtual boost::uint16_t read_gpio(const unit_t unit) = 0;
-
 };
 
 //! Simple wrapper for 32 bit write only
@@ -64,6 +76,8 @@ public:
     virtual ~gpio_core_200_32wo(void) = 0;
 
     static sptr make(uhd::wb_iface::sptr iface, const size_t);
+
+    virtual void set_ddr_reg() = 0;
 
     virtual void set_atr_reg(const atr_reg_t atr, const boost::uint32_t value) = 0;
 

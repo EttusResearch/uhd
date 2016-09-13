@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2010-2011 Ettus Research LLC
+# Copyright 2010-2014 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,32 +21,35 @@ import math
 import socket
 import struct
 
-
 ########################################################################
 # constants
 ########################################################################
 X300_FW_COMMS_UDP_PORT = 49152
 
-X300_FW_COMMS_FLAGS_ACK         = 0x00000001
-X300_FW_COMMS_FLAGS_POKE32      = 0x00000010
-X300_FW_COMMS_FLAGS_PEEK32      = 0x00000020
+X300_FW_COMMS_FLAGS_ACK = 1
+X300_FW_COMMS_FLAGS_ERROR = 2
+X300_FW_COMMS_FLAGS_POKE32 = 4
+X300_FW_COMMS_FLAGS_PEEK32 = 8
 
-X300_FW_COMMS_ERR_PKT_ERROR     = 0x80000000
-X300_FW_COMMS_ERR_CMD_ERROR     = 0x40000000
-X300_FW_COMMS_ERR_SIZE_ERROR    = 0x20000000
+X300_FIXED_PORTS = 5
 
-X300_FW_COMMS_ID = 0x0000ACE3
-X300_FW_COMMS_MAX_DATA_WORDS    = 16
+X300_ZPU_MISC_SR_BUS_OFFSET = 0xA000
+X300_ZPU_XBAR_SR_BUS_OFFSET = 0xB000
+
+# Settings register bus addresses (hangs off ZPU wishbone bus)
+# Multiple by 4 as ZPU wishbone bus is word aligned
+X300_SR_NUM_CE       = X300_ZPU_MISC_SR_BUS_OFFSET + 4*7
+X300_SR_RB_ADDR_XBAR = X300_ZPU_MISC_SR_BUS_OFFSET + 4*128
+# Readback addresses
+X300_RB_CROSSBAR     = X300_ZPU_MISC_SR_BUS_OFFSET + 4*128
 
 #UDP_CTRL_PORT = 49183
 UDP_MAX_XFER_BYTES = 1024
 UDP_TIMEOUT = 3
-#USRP2_FW_PROTO_VERSION = 11 #should be unused after r6
 
 #REG_ARGS_FMT = '!LLLLLB15x'
 #REG_IP_FMT = '!LLLL20x'
-REG_PEEK_POKE_FMT = '!LLLLL'
-
+REG_PEEK_POKE_FMT = '!LLLL'
 
 _seq = -1
 def seq():
@@ -58,33 +61,12 @@ def seq():
 ########################################################################
 # helper functions
 ########################################################################
-def fw_check_error(flags):
-    if flags & X300_FW_COMMS_ERR_PKT_ERROR == X300_FW_COMMS_ERR_PKT_ERROR:
-        raise Exception("The fiwmware operation returned a packet error")
-    if flags & X300_FW_COMMS_ERR_CMD_ERROR == X300_FW_COMMS_ERR_CMD_ERROR:
-        raise Exception("The fiwmware operation returned a command error")
-    if flags & X300_FW_COMMS_ERR_SIZE_ERROR == X300_FW_COMMS_ERR_SIZE_ERROR:
-        raise Exception("The fiwmware operation returned a size error")
+
+def unpack_reg_peek_poke_fmt(s):
+    return struct.unpack(REG_PEEK_POKE_FMT,s) #(flags, seq, addr, data)
 
 def pack_reg_peek_poke_fmt(flags, seq, addr, data):
-    num_words = 1
-    data_arr = [data]
-    buf = bytes()
-    buf = struct.pack('!LLLLL', X300_FW_COMMS_ID, flags, seq, num_words, addr)
-    for i in range(X300_FW_COMMS_MAX_DATA_WORDS):
-        if (i < num_words):
-            buf += struct.pack('!L', data_arr[i])
-        else:
-            buf += struct.pack('!L', 0)
-    return buf
-
-def unpack_reg_peek_poke_fmt(buf):
-    (id, flags, seq, num_words, addr) = struct.unpack_from('!LLLLL', buf)
-    fw_check_error(flags)
-    data = []
-    for i in xrange(20, len(buf), 4):
-        data.append(struct.unpack('!L', buf[i:i+4])[0])
-    return (flags, seq, addr, data[0])
+    return struct.pack(REG_PEEK_POKE_FMT, flags, seq, addr, data);
 
 ########################################################################
 # Burner class, holds a socket and send/recv routines
@@ -105,44 +87,71 @@ class ctrl_socket(object):
         self._sock.send(pkt)
         return self._sock.recv(UDP_MAX_XFER_BYTES)
 
-    def read_router_stats(self):
+    def read_router_stats(self, blocks=None, ignore=None):
+        # Readback number of CEs
+        num_ports = self.peek(X300_SR_NUM_CE) + X300_FIXED_PORTS
+        ports = ['eth0', 'eth1', 'pcie', 'radio0', 'radio1'] + ["Block{num}".format(num=x) for x in range(num_ports-X300_FIXED_PORTS)]
+        if blocks is None:
+            print("\nNote: Using default CE port names (use --blocks to specify)\n")
+        else:
+            user_ports = [x.strip() for x in blocks.split(",") if len(x.strip())]
+            for idx, user_port in enumerate(user_ports):
+                ports[idx + X300_FIXED_PORTS] = user_port
+        if ignore is None:
+            ignore = []
+        else:
+            ignore = [int(x.strip()) for x in ignore.split(",") if len(x.strip())]
+        print("Egress Port "),
+        # Write out xbar ports
+        PORT_MAX_LEN = 12
+        for idx, in_prt in enumerate(ports):
+            if idx in ignore:
+                continue
+            print "{spaces}{name}".format(spaces=(" "*max(0, PORT_MAX_LEN-len(in_prt))), name=in_prt),
         print
-        print("            "),
-        ports = ['        eth0','        eth1','      radio0','      radio1','    compute0','    compute1','    compute2','        pcie']
-        for in_prt in ports:
-            print("%s" % in_prt),
-        print("   Egress Port")
-        print("             "),
-        for in_prt in range (0, 8):
-            print("____________"),
+        print(" "*(PORT_MAX_LEN+1)),
+        for in_prt in range(num_ports-len(ignore)):
+            print("_" * (PORT_MAX_LEN-1) + " "),
         print
-        for in_prt in range (0, 8):
-            print("%s |" % ports[in_prt]),
-            for out_prt in range (0, 8):
-                out_pkt = pack_reg_peek_poke_fmt(X300_FW_COMMS_FLAGS_PEEK32|X300_FW_COMMS_FLAGS_ACK, seq(), 0xA000+256+((in_prt*8+out_prt)*4), 0)
-                in_pkt = self.send_and_recv(out_pkt)
-                (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
-                fw_check_error(flags)
+        for in_prt, port_name in enumerate(ports):
+            if in_prt in ignore:
+                continue
+            print "{spaces}{name} |".format(spaces=(" "*max(0, PORT_MAX_LEN-len(port_name))), name=port_name),
+            for out_prt in range(num_ports):
+                if out_prt in ignore:
+                    continue
+                self.poke(X300_SR_RB_ADDR_XBAR,(in_prt*num_ports+out_prt))
+                data = self.peek(X300_RB_CROSSBAR)
                 print("%10d  " % (data)),
             print
         print
         print("Ingress Port")
         print
 
+    def peek_print(self,peek_addr):
+        peek_data = self.peek(peek_addr)
+        print("PEEK of address %d(0x%x) reads %d(0x%x)" % (peek_addr,peek_addr,peek_data,peek_data))
+        return peek_data
 
     def peek(self,peek_addr):
         out_pkt = pack_reg_peek_poke_fmt(X300_FW_COMMS_FLAGS_PEEK32|X300_FW_COMMS_FLAGS_ACK, seq(), peek_addr, 0)
         in_pkt = self.send_and_recv(out_pkt)
         (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
-        fw_check_error(flags)
-        print("PEEK of address %d(0x%x) reads %d(0x%x)" % (addr,addr,data,data))
+        if flags & X300_FW_COMMS_FLAGS_ERROR == X300_FW_COMMS_FLAGS_ERROR:
+            raise Exception("X300 peek of address %d returns error code" % (addr))
+        return data
+
+    def poke_print(self,poke_addr,poke_data):
+        print("POKE of address %d(0x%x) with %d(0x%x)" % (poke_addr,poke_addr,poke_data,poke_data))
+        return(self.poke(poke_addr,poke_data))
 
     def poke(self,poke_addr,poke_data):
         out_pkt = pack_reg_peek_poke_fmt(X300_FW_COMMS_FLAGS_POKE32|X300_FW_COMMS_FLAGS_ACK, seq(), poke_addr, poke_data)
         in_pkt = self.send_and_recv(out_pkt)
         (flags, rxseq, addr, data) = unpack_reg_peek_poke_fmt(in_pkt)
-        fw_check_error(flags)
-        print("POKE of address %d(0x%x) with %d(0x%x)" % (poke_addr,poke_addr,poke_data,poke_data)  )
+        if flags & X300_FW_COMMS_FLAGS_ERROR == X300_FW_COMMS_FLAGS_ERROR:
+            raise Exception("X300 peek of address %d returns error code" % (addr))
+        return data
 
 
 ########################################################################
@@ -150,14 +159,14 @@ class ctrl_socket(object):
 ########################################################################
 def get_options():
     parser = optparse.OptionParser()
-    parser.add_option("--addr", type="string",              help="USRP-X300 device address",       default='')
-    parser.add_option("--list", action="store_true",        help="list possible network devices", default=False)
-    parser.add_option("--peek", type="int",                 help="Read from memory map",     default=None)
-    parser.add_option("--poke", type="int",                 help="Write to memory map",     default=None)
-    parser.add_option("--data", type="int",                 help="Data for poke",     default=None)
-    parser.add_option("--stats", action="store_true",        help="Display SuperMIMO Network Stats", default=False)
+    parser.add_option("--addr", type="string", help="USRP-X300 device address", default='')
+    parser.add_option("--stats", action="store_true", help="Display RFNoC Crossbar Stats", default=False)
+    parser.add_option("--peek", type="int", help="Read from memory map", default=None)
+    parser.add_option("--poke", type="int", help="Write to memory map", default=None)
+    parser.add_option("--data", type="int", help="Data for poke", default=None)
+    parser.add_option("--blocks", help="List names of blocks (post-radio)", default=None)
+    parser.add_option("--ignore", help="List of ports to ignore", default=None)
     (options, args) = parser.parse_args()
-
     return options
 
 
@@ -167,25 +176,18 @@ def get_options():
 if __name__=='__main__':
     options = get_options()
 
-
-    if options.list:
-        print('Possible network devices:')
-        print('  ' + '\n  '.join(enumerate_devices()))
-        exit()
-
     if not options.addr: raise Exception('no address specified')
 
     status = ctrl_socket(addr=options.addr)
 
     if options.stats:
-        status.read_router_stats()
-
+        status.read_router_stats(options.blocks, options.ignore)
 
     if options.peek is not None:
         addr = options.peek
-        status.peek(addr)
+        status.peek_print(addr)
 
     if options.poke is not None and options.data is not None:
         addr = options.poke
         data = options.data
-        status.poke(addr,data)
+        status.poke_print(addr,data)

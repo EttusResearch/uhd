@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@
 
 using namespace uhd;
 
-static const std::string arg_delim = ",";
-static const std::string pair_delim = "=";
+static const char* arg_delim = ",";
+static const char* pair_delim = "=";
 
 static std::string trim(const std::string &in){
     return boost::algorithm::trim_copy(in);
@@ -35,7 +35,7 @@ static std::string trim(const std::string &in){
 
 #define tokenizer(inp, sep) \
     boost::tokenizer<boost::char_separator<char> > \
-    (inp, boost::char_separator<char>(sep.c_str()))
+    (inp, boost::char_separator<char>(sep))
 
 device_addr_t::device_addr_t(const std::string &args){
     BOOST_FOREACH(const std::string &pair, tokenizer(args, arg_delim)){

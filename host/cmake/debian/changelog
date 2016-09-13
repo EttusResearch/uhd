@@ -1,3 +1,58 @@
+uhd (3.10.0.0-0ubuntu1) trusty; urgency=low
+
+  - Changed version string to quadruplets (Major.API.ABI.Patch)
+  - Minimum dependencies bumped for gcc, Boost, CMake, clang and Python.
+  - TwinRX: Added support. Includes LO API for multi_usrp.
+  - N230: Added support
+  - Added expert framework
+  - X300: Completely restructured to use RFNoC
+  - X300: FPGA builds include git hash, dual 10GigE receive is now supported
+    (allows 2x200 Msps receive over 2x10GigE connections), DMA FIFO (over DRAM)
+    now part of builds, added Aurora support
+  - WBX: Fixed bug that prevented LO locking with 50 MHz ref clock
+  - pkg-config: Added boost_system
+  - Utils: uhd_usrp_probe can query sensors, query_gpsdo_sensors: minor fixes,
+    and cleanup
+  - Examples: Bugfixes in tx_waveforms, benchmark_rate measures timeouts,
+  - USB subsystem: Cleanups and minor bugfixes
+  - Added devtest infrastructure
+  - Converters: Added s8 and s16 data types
+  - Added more aggressive optimization strategies for FPGA builds
+  - Xilinx IP tool upgrade scripts cleaned up
+
+ -- Ettus Research <packages@ettus.com>  Thu, 11 Aug 2016 04:48:49 -0800
+
+uhd (3.9.4-0ubuntu1) trusty; urgency=low
+
+  - GPIO control: Fix address mismatch for RX and full duplex.
+    This fixes full-duplex mode for most devices.
+  - B200: Fixed auto rate selection (can now select 61.44 Msps)
+  - UBX: Fix member declaration order which could cause
+    segfaults for debug builds
+  - Manual/Docs: Numerous fixes, use dot for graphs in manual
+  - Utils: multiple fixes for query_gpsdo_sensors, fixed floating point
+    comparison
+  - Windows: Include registry file in installation
+  - Converters: Improve NEON converters
+
+ -- Ettus Research <packages@ettus.com>  Thu, 05 May 2016 12:56:28 -0800
+
+uhd (3.9.3-0ubuntu1) trusty; urgency=low
+
+  * UBX: Fixed a phase synchronization issue on the sub-1GHz band
+  * USB: Fixed transport issue that crashed when multiple USB devices were
+    connected on a Windows machine, more graceful handling of USB disconnects,,
+    provided .cdf file for installing on Windows
+  * B200: Fixed memory growth/increasing tune times issue
+  * E300: Fixed memory leak with udev, fixed issue with autoboot value, fixes
+    to button behaviour
+  * usrp2, usrp3: Fixed IQ imbalance and DC bias in DDC chain
+  * CMake: Windows registry fixes
+  * Fixed several compiler warnings and minor bugs
+  * Examples: Updated benchmark_rate for improved thread safety
+
+ -- Ettus Research <packages@ettus.com>  Mon, 21 Mar 2016 11:40:26 -0800
+
 uhd (3.9.2-0ubuntu1) trusty; urgency=low
 
   * E310: Added support for Speedgrade 3

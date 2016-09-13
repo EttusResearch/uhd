@@ -24,11 +24,14 @@
 #include <uhd/stream.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <uhd/utils/atomic.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#ifdef DEVICE3_STREAMER
+#  include "../rfnoc/tx_stream_terminator.hpp"
+#endif
+#include <boost/thread/thread.hpp>
 #include <boost/thread/thread_time.hpp>
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
@@ -74,22 +77,15 @@ public:
     }
 
     ~send_packet_handler(void){
-        _task_barrier.interrupt();
-        _task_handlers.clear();
+        /* NOP */
     }
 
     //! Resize the number of transport channels
     void resize(const size_t size){
         if (this->size() == size) return;
-        _task_handlers.clear();
         _props.resize(size);
         static const boost::uint64_t zero = 0;
         _zero_buffs.resize(size, &zero);
-        _task_barrier.resize(size);
-        _task_handlers.resize(size);
-        for (size_t i = 1/*skip 0*/; i < size; i++){
-            _task_handlers[i] = task::make(boost::bind(&send_packet_handler::converter_thread_task, this, i));
-        };
     }
 
     //! Get the channel width of this handler
@@ -108,6 +104,29 @@ public:
         _props.at(xport_chan).has_sid = has_sid;
         _props.at(xport_chan).sid = sid;
     }
+
+    ///////// RFNOC ///////////////////
+    //! Get the stream ID for a specific channel (or zero if no SID)
+    boost::uint32_t get_xport_chan_sid(const size_t xport_chan) const {
+        if (_props.at(xport_chan).has_sid) {
+            return _props.at(xport_chan).sid;
+        } else {
+            return 0;
+        }
+    }
+
+    #ifdef DEVICE3_STREAMER
+    void set_terminator(uhd::rfnoc::tx_stream_terminator::sptr terminator)
+    {
+        _terminator = terminator;
+    }
+
+    uhd::rfnoc::tx_stream_terminator::sptr get_terminator()
+    {
+        return _terminator;
+    }
+    #endif
+    ///////// RFNOC ///////////////////
 
     void set_enable_trailer(const bool enable)
     {
@@ -303,6 +322,10 @@ private:
     bool _cached_metadata;
     uhd::tx_metadata_t _metadata_cache;
 
+    #ifdef DEVICE3_STREAMER
+    uhd::rfnoc::tx_stream_terminator::sptr _terminator;
+    #endif
+
 #ifdef UHD_TXRX_DEBUG_PRINTS
     struct dbg_send_stat_t {
         dbg_send_stat_t(long wc, size_t nspb, size_t nss, uhd::tx_metadata_t md, double to, double rate):
@@ -377,21 +400,23 @@ private:
         _convert_if_packet_info = &if_packet_info;
 
         //perform N channels of conversion
-        converter_thread_task(0);
+        for (size_t i = 0; i < this->size(); i++) {
+            convert_to_in_buff(i);
+        }
 
         _next_packet_seq++; //increment sequence after commits
         return nsamps_per_buff;
     }
 
-    /*******************************************************************
-     * Perform one thread's work of the conversion task.
-     * The entry and exit use a dual synchronization barrier,
-     * to wait for data to become ready and block until completion.
-     ******************************************************************/
-    UHD_INLINE void converter_thread_task(const size_t index)
+    /*! Run the conversion from the internal buffers to the user's input
+     *  buffer.
+     *
+     * - Calls the converter
+     * - Releases internal data buffers
+     * - Updates read/write pointers
+     */
+    UHD_INLINE void convert_to_in_buff(const size_t index)
     {
-        _task_barrier.wait();
-
         //shortcut references to local data structures
         managed_send_buffer::sptr &buff = _props[index].buff;
         vrt::if_packet_info_t if_packet_info = *_convert_if_packet_info;
@@ -419,13 +444,9 @@ private:
         const size_t num_vita_words32 = _header_offset_words32+if_packet_info.num_packet_words32;
         buff->commit(num_vita_words32*sizeof(boost::uint32_t));
         buff.reset(); //effectively a release
-
-        if (index == 0) _task_barrier.wait_others();
     }
 
     //! Shared variables for the worker threads
-    reusable_barrier _task_barrier;
-    std::vector<task::sptr> _task_handlers;
     size_t _convert_nsamps;
     const tx_streamer::buffs_type *_convert_buffs;
     size_t _convert_buffer_offset_bytes;

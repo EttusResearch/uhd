@@ -67,7 +67,7 @@ namespace libusb {
     public:
         typedef boost::shared_ptr<session> sptr;
 
-        virtual ~session(void) = 0;
+        virtual ~session(void);
 
         /*!
          *   Level 0: no messages ever printed by the library (default)
@@ -92,7 +92,7 @@ namespace libusb {
     public:
         typedef boost::shared_ptr<device> sptr;
 
-        virtual ~device(void) = 0;
+        virtual ~device(void);
 
         //! get the underlying device pointer
         virtual libusb_device *get(void) const = 0;
@@ -106,7 +106,7 @@ namespace libusb {
     public:
         typedef boost::shared_ptr<device_list> sptr;
 
-        virtual ~device_list(void) = 0;
+        virtual ~device_list(void);
 
         //! make a new device list
         static sptr make(void);
@@ -125,7 +125,7 @@ namespace libusb {
     public:
         typedef boost::shared_ptr<device_descriptor> sptr;
 
-        virtual ~device_descriptor(void) = 0;
+        virtual ~device_descriptor(void);
 
         //! make a new descriptor from a device reference
         static sptr make(device::sptr);
@@ -143,7 +143,7 @@ namespace libusb {
     public:
         typedef boost::shared_ptr<device_handle> sptr;
 
-        virtual ~device_handle(void) = 0;
+        virtual ~device_handle(void);
 
         //! get a cached handle or make a new one given the device
         static sptr get_cached_handle(device::sptr);
@@ -172,7 +172,7 @@ namespace libusb {
     public:
         typedef boost::shared_ptr<special_handle> sptr;
 
-        virtual ~special_handle(void) = 0;
+        virtual ~special_handle(void);
 
         //! make a new special handle from device
         static sptr make(device::sptr);

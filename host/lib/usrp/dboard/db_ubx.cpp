@@ -22,12 +22,14 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
+#include <uhd/types/direction.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -93,43 +95,43 @@ struct ubx_gpio_field_info_t
 {
     ubx_gpio_field_id_t id;
     dboard_iface::unit_t unit;
-    boost::uint32_t offset;
-    boost::uint32_t mask;
-    boost::uint32_t width;
+    uint32_t offset;
+    uint32_t mask;
+    uint32_t width;
     enum {OUTPUT,INPUT} direction;
     bool is_atr_controlled;
-    boost::uint32_t atr_idle;
-    boost::uint32_t atr_tx;
-    boost::uint32_t atr_rx;
-    boost::uint32_t atr_full_duplex;
+    uint32_t atr_idle;
+    uint32_t atr_tx;
+    uint32_t atr_rx;
+    uint32_t atr_full_duplex;
 };
 
 struct ubx_gpio_reg_t
 {
     bool dirty;
-    boost::uint32_t value;
-    boost::uint32_t mask;
-    boost::uint32_t ddr;
-    boost::uint32_t atr_mask;
-    boost::uint32_t atr_idle;
-    boost::uint32_t atr_tx;
-    boost::uint32_t atr_rx;
-    boost::uint32_t atr_full_duplex;
+    uint32_t value;
+    uint32_t mask;
+    uint32_t ddr;
+    uint32_t atr_mask;
+    uint32_t atr_idle;
+    uint32_t atr_tx;
+    uint32_t atr_rx;
+    uint32_t atr_full_duplex;
 };
 
 struct ubx_cpld_reg_t
 {
-    void set_field(ubx_cpld_field_id_t field, boost::uint32_t val)
+    void set_field(ubx_cpld_field_id_t field, uint32_t val)
     {
         UHD_ASSERT_THROW(val == (val & 0x1));
 
         if (val)
-            value |= boost::uint32_t(1) << field;
+            value |= uint32_t(1) << field;
         else
-            value &= ~(boost::uint32_t(1) << field);
+            value &= ~(uint32_t(1) << field);
     }
 
-    boost::uint32_t value;
+    uint32_t value;
 };
 
 enum spi_dest_t {
@@ -182,13 +184,13 @@ static const ubx_gpio_field_info_t ubx_v1_gpio_info[] = {
     {RX_ANT,        dboard_iface::UNIT_TX,   4,  0x1<<4,     1,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
     {TX_EN_N,       dboard_iface::UNIT_TX,   5,  0x1<<5,     1,  ubx_gpio_field_info_t::INPUT,  true,   1,  0,  1,  0},
     {RX_EN_N,       dboard_iface::UNIT_TX,   6,  0x1<<6,     1,  ubx_gpio_field_info_t::INPUT,  true,   1,  1,  0,  0},
-    {TXLO1_SYNC,    dboard_iface::UNIT_TX,   7,  0x1<<7,     1,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
-    {TXLO2_SYNC,    dboard_iface::UNIT_TX,   9,  0x1<<9,     1,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
+    {TXLO1_SYNC,    dboard_iface::UNIT_TX,   7,  0x1<<7,     1,  ubx_gpio_field_info_t::INPUT,  true,   0,  0,  0,  0},
+    {TXLO2_SYNC,    dboard_iface::UNIT_TX,   9,  0x1<<9,     1,  ubx_gpio_field_info_t::INPUT,  true,   0,  0,  0,  0},
     {TX_GAIN,       dboard_iface::UNIT_TX,   10, 0x3F<<10,   10, ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
     {RX_LO_LOCKED,  dboard_iface::UNIT_RX,   0,  0x1,        1,  ubx_gpio_field_info_t::OUTPUT, false,  0,  0,  0,  0},
     {TX_LO_LOCKED,  dboard_iface::UNIT_RX,   1,  0x1<<1,     1,  ubx_gpio_field_info_t::OUTPUT, false,  0,  0,  0,  0},
-    {RXLO1_SYNC,    dboard_iface::UNIT_RX,   5,  0x1<<5,     1,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
-    {RXLO2_SYNC,    dboard_iface::UNIT_RX,   7,  0x1<<7,     1,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
+    {RXLO1_SYNC,    dboard_iface::UNIT_RX,   5,  0x1<<5,     1,  ubx_gpio_field_info_t::INPUT,  true,   0,  0,  0,  0},
+    {RXLO2_SYNC,    dboard_iface::UNIT_RX,   7,  0x1<<7,     1,  ubx_gpio_field_info_t::INPUT,  true,   0,  0,  0,  0},
     {RX_GAIN,       dboard_iface::UNIT_RX,   10, 0x3F<<10,   10, ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0}
 };
 
@@ -349,7 +351,6 @@ public:
             BOOST_FOREACH(max287x_iface::sptr lo, los)
             {
                 lo->set_auto_retune(false);
-                lo->set_clock_divider_mode(max287x_iface::CLOCK_DIV_MODE_CLOCK_DIVIDER_OFF);
                 lo->set_muxout_mode(max287x_iface::MUXOUT_DLD);
                 lo->set_ld_pin_mode(max287x_iface::LD_PIN_MODE_DLD);
             }
@@ -364,13 +365,10 @@ public:
             BOOST_FOREACH(max287x_iface::sptr lo, los)
             {
                 lo->set_auto_retune(false);
-                lo->set_clock_divider_mode(max287x_iface::CLOCK_DIV_MODE_CLOCK_DIVIDER_OFF);
                 //lo->set_cycle_slip_mode(true);  // tried it - caused longer lock times
                 lo->set_charge_pump_current(max287x_iface::CHARGE_PUMP_CURRENT_5_12MA);
                 lo->set_muxout_mode(max287x_iface::MUXOUT_SYNC);
                 lo->set_ld_pin_mode(max287x_iface::LD_PIN_MODE_DLD);
-                lo->set_low_noise_and_spur(max287x_iface::LOW_NOISE_AND_SPUR_LOW_NOISE);
-                lo->set_phase(0);
             }
         }
         else
@@ -389,13 +387,23 @@ public:
         get_rx_subtree()->create<std::vector<std::string> >("power_mode/options")
             .set(ubx_power_modes);
         get_rx_subtree()->create<std::string>("power_mode/value")
-            .subscribe(boost::bind(&ubx_xcvr::set_power_mode, this, _1))
+            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_power_mode, this, _1))
             .set("performance");
         get_rx_subtree()->create<std::vector<std::string> >("xcvr_mode/options")
             .set(ubx_xcvr_modes);
         get_rx_subtree()->create<std::string>("xcvr_mode/value")
-            .subscribe(boost::bind(&ubx_xcvr::set_xcvr_mode, this, _1))
+            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_xcvr_mode, this, _1))
             .set("FDX");
+        get_tx_subtree()->create<std::vector<std::string> >("power_mode/options")
+            .set(ubx_power_modes);
+        get_tx_subtree()->create<std::string>("power_mode/value")
+            .add_coerced_subscriber(boost::bind(&uhd::property<std::string>::set, &get_rx_subtree()->access<std::string>("power_mode/value"), _1))
+            .set_publisher(boost::bind(&uhd::property<std::string>::get, &get_rx_subtree()->access<std::string>("power_mode/value")));
+        get_tx_subtree()->create<std::vector<std::string> >("xcvr_mode/options")
+            .set(ubx_xcvr_modes);
+        get_tx_subtree()->create<std::string>("xcvr_mode/value")
+            .add_coerced_subscriber(boost::bind(&uhd::property<std::string>::set, &get_rx_subtree()->access<std::string>("xcvr_mode/value"), _1))
+            .set_publisher(boost::bind(&uhd::property<std::string>::get, &get_rx_subtree()->access<std::string>("xcvr_mode/value")));
 
         ////////////////////////////////////////////////////////////////////
         // Register TX properties
@@ -404,20 +412,20 @@ public:
         get_tx_subtree()->create<device_addr_t>("tune_args")
             .set(device_addr_t());
         get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-            .publish(boost::bind(&ubx_xcvr::get_locked, this, "TXLO"));
+            .set_publisher(boost::bind(&ubx_xcvr::get_locked, this, "TXLO"));
         get_tx_subtree()->create<double>("gains/PGA0/value")
-            .coerce(boost::bind(&ubx_xcvr::set_tx_gain, this, _1)).set(0);
+            .set_coercer(boost::bind(&ubx_xcvr::set_tx_gain, this, _1)).set(0);
         get_tx_subtree()->create<meta_range_t>("gains/PGA0/range")
             .set(ubx_tx_gain_range);
         get_tx_subtree()->create<double>("freq/value")
-            .coerce(boost::bind(&ubx_xcvr::set_tx_freq, this, _1))
+            .set_coercer(boost::bind(&ubx_xcvr::set_tx_freq, this, _1))
             .set(ubx_freq_range.start());
         get_tx_subtree()->create<meta_range_t>("freq/range")
             .set(ubx_freq_range);
         get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
             .set(ubx_tx_antennas);
         get_tx_subtree()->create<std::string>("antenna/value")
-            .subscribe(boost::bind(&ubx_xcvr::set_tx_ant, this, _1))
+            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_tx_ant, this, _1))
             .set(ubx_tx_antennas.at(0));
         get_tx_subtree()->create<std::string>("connection")
             .set("QI");
@@ -429,6 +437,9 @@ public:
             .set(bw);
         get_tx_subtree()->create<meta_range_t>("bandwidth/range")
             .set(freq_range_t(bw, bw));
+        get_tx_subtree()->create<int64_t>("sync_delay")
+            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_sync_delay, this, true, _1))
+            .set(-8);
 
         ////////////////////////////////////////////////////////////////////
         // Register RX properties
@@ -437,21 +448,21 @@ public:
         get_rx_subtree()->create<device_addr_t>("tune_args")
             .set(device_addr_t());
         get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-            .publish(boost::bind(&ubx_xcvr::get_locked, this, "RXLO"));
+            .set_publisher(boost::bind(&ubx_xcvr::get_locked, this, "RXLO"));
         get_rx_subtree()->create<double>("gains/PGA0/value")
-            .coerce(boost::bind(&ubx_xcvr::set_rx_gain, this, _1))
+            .set_coercer(boost::bind(&ubx_xcvr::set_rx_gain, this, _1))
             .set(0);
         get_rx_subtree()->create<meta_range_t>("gains/PGA0/range")
             .set(ubx_rx_gain_range);
         get_rx_subtree()->create<double>("freq/value")
-            .coerce(boost::bind(&ubx_xcvr::set_rx_freq, this, _1))
+            .set_coercer(boost::bind(&ubx_xcvr::set_rx_freq, this, _1))
             .set(ubx_freq_range.start());
         get_rx_subtree()->create<meta_range_t>("freq/range")
             .set(ubx_freq_range);
         get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
             .set(ubx_rx_antennas);
         get_rx_subtree()->create<std::string>("antenna/value")
-            .subscribe(boost::bind(&ubx_xcvr::set_rx_ant, this, _1)).set("RX2");
+            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_rx_ant, this, _1)).set("RX2");
         get_rx_subtree()->create<std::string>("connection")
             .set("IQ");
         get_rx_subtree()->create<bool>("enabled")
@@ -462,33 +473,39 @@ public:
             .set(bw);
         get_rx_subtree()->create<meta_range_t>("bandwidth/range")
             .set(freq_range_t(bw, bw));
+        get_rx_subtree()->create<int64_t>("sync_delay")
+            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_sync_delay, this, false, _1))
+            .set(-8);
     }
 
-    ~ubx_xcvr(void)
+    virtual ~ubx_xcvr(void)
     {
-        // Shutdown synthesizers
-        _txlo1->shutdown();
-        _txlo2->shutdown();
-        _rxlo1->shutdown();
-        _rxlo2->shutdown();
+        UHD_SAFE_CALL
+        (
+            // Shutdown synthesizers
+            _txlo1->shutdown();
+            _txlo2->shutdown();
+            _rxlo1->shutdown();
+            _rxlo2->shutdown();
 
-        // Reset CPLD values
-        _cpld_reg.value = 0;
-        write_cpld_reg();
+            // Reset CPLD values
+            _cpld_reg.value = 0;
+            write_cpld_reg();
 
-        // Reset GPIO values
-        set_gpio_field(TX_GAIN, 0);
-        set_gpio_field(CPLD_RST_N, 0);
-        set_gpio_field(RX_ANT, 1);
-        set_gpio_field(TX_EN_N, 1);
-        set_gpio_field(RX_EN_N, 1);
-        set_gpio_field(SPI_ADDR, 0x7);
-        set_gpio_field(RX_GAIN, 0);
-        set_gpio_field(TXLO1_SYNC, 0);
-        set_gpio_field(TXLO2_SYNC, 0);
-        set_gpio_field(RXLO1_SYNC, 0);
-        set_gpio_field(RXLO1_SYNC, 0);
-        write_gpio();
+            // Reset GPIO values
+            set_gpio_field(TX_GAIN, 0);
+            set_gpio_field(CPLD_RST_N, 0);
+            set_gpio_field(RX_ANT, 1);
+            set_gpio_field(TX_EN_N, 1);
+            set_gpio_field(RX_EN_N, 1);
+            set_gpio_field(SPI_ADDR, 0x7);
+            set_gpio_field(RX_GAIN, 0);
+            set_gpio_field(TXLO1_SYNC, 0);
+            set_gpio_field(TXLO2_SYNC, 0);
+            set_gpio_field(RXLO1_SYNC, 0);
+            set_gpio_field(RXLO1_SYNC, 0);
+            write_gpio();
+        )
     }
 
 private:
@@ -497,22 +514,22 @@ private:
     /***********************************************************************
     * Helper Functions
     **********************************************************************/
-    void write_spi_reg(spi_dest_t dest, boost::uint32_t value)
+    void write_spi_reg(spi_dest_t dest, uint32_t value)
     {
         boost::mutex::scoped_lock lock(_spi_mutex);
         ROUTE_SPI(_iface, dest);
         WRITE_SPI(_iface, value);
     }
 
-    void write_spi_regs(spi_dest_t dest, std::vector<boost::uint32_t> values)
+    void write_spi_regs(spi_dest_t dest, std::vector<uint32_t> values)
     {
         boost::mutex::scoped_lock lock(_spi_mutex);
         ROUTE_SPI(_iface, dest);
-        BOOST_FOREACH(boost::uint32_t value, values)
+        BOOST_FOREACH(uint32_t value, values)
             WRITE_SPI(_iface, value);
     }
 
-    void set_cpld_field(ubx_cpld_field_id_t id, boost::uint32_t value)
+    void set_cpld_field(ubx_cpld_field_id_t id, uint32_t value)
     {
         _cpld_reg.set_field(id, value);
     }
@@ -526,7 +543,7 @@ private:
         }
     }
 
-    void set_gpio_field(ubx_gpio_field_id_t id, boost::uint32_t value)
+    void set_gpio_field(ubx_gpio_field_id_t id, uint32_t value)
     {
         // Look up field info
         std::map<ubx_gpio_field_id_t,ubx_gpio_field_info_t>::iterator entry = _gpio_map.find(id);
@@ -536,8 +553,8 @@ private:
         if (field_info.direction == ubx_gpio_field_info_t::OUTPUT)
             return;
         ubx_gpio_reg_t *reg = (field_info.unit == dboard_iface::UNIT_TX ? &_tx_gpio_reg : &_rx_gpio_reg);
-        boost::uint32_t _value = reg->value;
-        boost::uint32_t _mask = reg->mask;
+        uint32_t _value = reg->value;
+        uint32_t _mask = reg->mask;
 
         // Set field and mask
         _value &= ~field_info.mask;
@@ -553,7 +570,7 @@ private:
         }
     }
 
-    boost::uint32_t get_gpio_field(ubx_gpio_field_id_t id)
+    uint32_t get_gpio_field(ubx_gpio_field_id_t id)
     {
         // Look up field info
         std::map<ubx_gpio_field_id_t,ubx_gpio_field_info_t>::iterator entry = _gpio_map.find(id);
@@ -567,7 +584,7 @@ private:
         }
 
         // Read register
-        boost::uint32_t value = _iface->read_gpio(field_info.unit);
+        uint32_t value = _iface->read_gpio(field_info.unit);
         value &= field_info.mask;
         value >>= field_info.offset;
 
@@ -588,6 +605,61 @@ private:
             _iface->set_gpio_out(dboard_iface::UNIT_RX, _rx_gpio_reg.value, _rx_gpio_reg.mask);
             _rx_gpio_reg.dirty = false;
             _rx_gpio_reg.mask = 0;
+        }
+    }
+
+    void sync_phase(uhd::time_spec_t cmd_time, uhd::direction_t dir)
+    {
+        // Send phase sync signal only if the command time is set
+        if (cmd_time != uhd::time_spec_t(0.0))
+        {
+            // Delay 400 microseconds to allow LOs to lock
+            cmd_time += uhd::time_spec_t(0.0004);
+
+            // Phase synchronization for MAX2871 requires that the sync signal
+            // is at least 4/(N*PFD_freq) + 2.6ns before the rising edge of the
+            // ref clock and 4/(N*PFD_freq) after the rising edge of the ref clock.
+            // Since the ref clock, the radio clock, and the VITA time are all
+            // synchronized to the 10 MHz clock, use the time spec to move
+            // the rising edge of the sync signal away from the 10 MHz edge,
+            // which will move it away from the ref clock edge by the same amount.
+            // Since the MAX2871 requires the ref freq and PFD freq be the same
+            // for phase synchronization, the dboard clock rate is used as the PFD
+            // freq and the worst case value of 20 is used for the N value to
+            // calculate the offset.
+            double pfd_freq = _iface->get_clock_rate(dir == TX_DIRECTION ? dboard_iface::UNIT_TX : dboard_iface::UNIT_RX);
+            double tick_rate = _iface->get_codec_rate(dir == TX_DIRECTION ? dboard_iface::UNIT_TX : dboard_iface::UNIT_RX);
+            int64_t ticks = cmd_time.to_ticks(tick_rate);
+            ticks -= ticks % (int64_t)(tick_rate / 10e6);            // align to 10 MHz clock
+            ticks += dir == TX_DIRECTION ? _tx_sync_delay : _rx_sync_delay;
+            ticks += std::ceil(tick_rate*4/(20*pfd_freq));  // add required offset (using worst case N value of 20)
+            cmd_time = uhd::time_spec_t::from_ticks(ticks, tick_rate);
+            _iface->set_command_time(cmd_time);
+
+            // Assert SYNC
+            ubx_gpio_field_info_t lo1_field_info = _gpio_map.find(dir == TX_DIRECTION ? TXLO1_SYNC : RXLO1_SYNC)->second;
+            ubx_gpio_field_info_t lo2_field_info = _gpio_map.find(dir == TX_DIRECTION ? TXLO2_SYNC : RXLO2_SYNC)->second;
+            uint16_t value = (1 << lo1_field_info.offset) | (1 << lo2_field_info.offset);
+            uint16_t mask = lo1_field_info.mask | lo2_field_info.mask;
+            dboard_iface::unit_t unit = lo1_field_info.unit;
+            UHD_ASSERT_THROW(lo1_field_info.unit == lo2_field_info.unit);
+            _iface->set_atr_reg(unit, gpio_atr::ATR_REG_IDLE, value, mask);
+            cmd_time += uhd::time_spec_t(1/pfd_freq);
+            _iface->set_command_time(cmd_time);
+            _iface->set_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY, value, mask);
+            cmd_time += uhd::time_spec_t(1/pfd_freq);
+            _iface->set_command_time(cmd_time);
+            _iface->set_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY, value, mask);
+            cmd_time += uhd::time_spec_t(1/pfd_freq);
+            _iface->set_command_time(cmd_time);
+            _iface->set_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX, value, mask);
+
+            // De-assert SYNC
+            // Head of line blocking means the command time does not need to be set.
+            _iface->set_atr_reg(unit, gpio_atr::ATR_REG_IDLE, 0, mask);
+            _iface->set_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY, 0, mask);
+            _iface->set_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY, 0, mask);
+            _iface->set_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX, 0, mask);
         }
     }
 
@@ -626,13 +698,22 @@ private:
         //validate input
         assert_has(ubx_rx_antennas, ant, "ubx rx antenna name");
 
-        if(ant == "RX2")
-            set_gpio_field(RX_ANT, 1);
-        else if(ant == "TX/RX")
+        // Due to an issue with TX path into to the RF switch (U32), there
+        // is a long transient at the beginning of transmission when the RX
+        // antenna is set to RX2.  Forcing on the TX PA removes the transient,
+        // so it is forced on only when the RX2 antenna is selected.  It is
+        // cleared when the TX/RX antenna is selected to avoid a higher noise
+        // floor on RX.
+        if (ant == "TX/RX")
+        {
             set_gpio_field(RX_ANT, 0);
-        else if (ant == "CAL")
+            set_cpld_field(TXDRV_FORCEON, 0);   // Turn off PA in TDD mode
+        } else {
             set_gpio_field(RX_ANT, 1);
+            set_cpld_field(TXDRV_FORCEON, 1);   // Keep PA on
+        }
         write_gpio();
+        write_cpld_reg();
     }
 
     /***********************************************************************
@@ -709,6 +790,21 @@ private:
             _txlo2->power_up();
         else if (freq >= 500*fMHz and _power_mode == POWERSAVE)
             _txlo2->shutdown();
+
+        // Set up LOs for phase sync if command time is set
+        uhd::time_spec_t cmd_time = _iface->get_command_time();
+        if (cmd_time != uhd::time_spec_t(0.0))
+        {
+            _txlo1->config_for_sync(true);
+            if (not _txlo2->is_shutdown())
+                _txlo2->config_for_sync(true);
+        }
+        else
+        {
+            _txlo1->config_for_sync(false);
+            if (not _txlo2->is_shutdown())
+                _txlo2->config_for_sync(false);
+        }
 
         // Set up registers for the requested frequency
         if (freq < (500*fMHz))
@@ -798,24 +894,9 @@ private:
             break;
         }
 
-        if (_txlo1->can_sync())
+        if (cmd_time != uhd::time_spec_t(0.0) and _txlo1->can_sync())
         {
-            // Send phase sync signal only if the command time is set
-            uhd::time_spec_t cmd_time = _iface->get_command_time();
-            if (cmd_time != uhd::time_spec_t(0.0))
-            {
-                // Delay 400 microseconds to allow LOs to lock
-                cmd_time += uhd::time_spec_t(0.0004);
-                _iface->set_command_time(cmd_time);
-                set_gpio_field(TXLO1_SYNC, 1);
-                set_gpio_field(TXLO2_SYNC, 1);
-                write_gpio();
-                // De-assert SYNC
-                // Head of line blocking means the time does not need to be set.
-                set_gpio_field(TXLO1_SYNC, 0);
-                set_gpio_field(TXLO2_SYNC, 0);
-                write_gpio();
-            }
+            sync_phase(cmd_time, TX_DIRECTION);
         }
 
         _tx_freq = freq_lo1 - freq_lo2;
@@ -865,6 +946,21 @@ private:
             _rxlo2->power_up();
         else if (freq >= 500*fMHz and _power_mode == POWERSAVE)
             _rxlo2->shutdown();
+
+        // Set up LOs for phase sync if command time is set
+        uhd::time_spec_t cmd_time = _iface->get_command_time();
+        if (cmd_time != uhd::time_spec_t(0.0))
+        {
+            _rxlo1->config_for_sync(true);
+            if (not _rxlo2->is_shutdown())
+                _rxlo2->config_for_sync(true);
+        }
+        else
+        {
+            _rxlo1->config_for_sync(false);
+            if (not _rxlo2->is_shutdown())
+                _rxlo2->config_for_sync(false);
+        }
 
         // Work with frequencies
         if (freq < 100*fMHz)
@@ -994,24 +1090,9 @@ private:
             break;
         }
 
-        if (_rxlo1->can_sync())
+        if (cmd_time != uhd::time_spec_t(0.0) and _rxlo1->can_sync())
         {
-            // Send phase sync signal only if the command time is set
-            uhd::time_spec_t cmd_time = _iface->get_command_time();
-            if (cmd_time != uhd::time_spec_t(0.0))
-            {
-                // Delay 400 microseconds to allow LOs to lock
-                cmd_time += uhd::time_spec_t(0.0004);
-                _iface->set_command_time(cmd_time);
-                set_gpio_field(RXLO1_SYNC, 1);
-                set_gpio_field(RXLO2_SYNC, 1);
-                write_gpio();
-                // De-assert SYNC
-                // Head of line blocking means the time does not need to be set.
-                set_gpio_field(RXLO1_SYNC, 0);
-                set_gpio_field(RXLO2_SYNC, 0);
-                write_gpio();
-            }
+            sync_phase(cmd_time, RX_DIRECTION);
         }
 
         _rx_freq = freq_lo1 - freq_lo2;
@@ -1031,44 +1112,68 @@ private:
         boost::mutex::scoped_lock lock(_mutex);
         if (mode == "performance")
         {
-            // FIXME:  Response to ATR change is too slow for some components,
-            // so certain components are forced on here.  Force on does not
-            // necessarily mean immediately.  Some FORCEON lines are still gated
-            // by other bits in the CPLD register that are asserted during
-            // frequency tuning.
-            set_cpld_field(RXAMP_FORCEON, 1);
-            set_cpld_field(RXDEMOD_FORCEON, 1);
-            set_cpld_field(RXDRV_FORCEON, 1);
-            set_cpld_field(RXMIXER_FORCEON, 1);
-            set_cpld_field(RXLO1_FORCEON, 1);
-            set_cpld_field(RXLO2_FORCEON, 1);
+            // performance mode attempts to reduce tuning and settling time
+            // as much as possible without adding noise.
+
+            // RXLNA2 has a ~100ms warm up time, so the LNAs are forced on
+            // here to reduce the settling time as much as possible.  The
+            // force on signals are gated by the LNA selection so the LNAs
+            // are turned on/off during tuning.  Unfortunately, that means
+            // there is still a long settling time when tuning from the high
+            // band (>1.5 GHz) to the low band (<1.5 GHz).
             set_cpld_field(RXLNA1_FORCEON, 1);
             set_cpld_field(RXLNA2_FORCEON, 1);
-            set_cpld_field(TXDRV_FORCEON, 1);
-            set_cpld_field(TXMOD_FORCEON, 1);
-            set_cpld_field(TXMIXER_FORCEON, 1);
-            set_cpld_field(TXLO1_FORCEON, 1);
-            set_cpld_field(TXLO2_FORCEON, 1);
-            _power_mode = PERFORMANCE;
-        }
-        else if (mode == "powersave")
-        {
+
+            /*
+            // Placeholders in case some components need to be forced on to
+            // reduce settling time.  Note that some FORCEON lines are still gated
+            // by other bits in the CPLD register are are asserted during
+            // frequency tuning.
             set_cpld_field(RXAMP_FORCEON, 0);
             set_cpld_field(RXDEMOD_FORCEON, 0);
             set_cpld_field(RXDRV_FORCEON, 0);
             set_cpld_field(RXMIXER_FORCEON, 0);
             set_cpld_field(RXLO1_FORCEON, 0);
             set_cpld_field(RXLO2_FORCEON, 0);
-            set_cpld_field(RXLNA1_FORCEON, 0);
-            set_cpld_field(RXLNA2_FORCEON, 0);
-            set_cpld_field(TXDRV_FORCEON, 0);
+            //set_cpld_field(TXDRV_FORCEON, 1);  // controlled by RX antenna selection
             set_cpld_field(TXMOD_FORCEON, 0);
             set_cpld_field(TXMIXER_FORCEON, 0);
             set_cpld_field(TXLO1_FORCEON, 0);
             set_cpld_field(TXLO2_FORCEON, 0);
+            */
+            write_cpld_reg();
+
+            _power_mode = PERFORMANCE;
+        }
+        else if (mode == "powersave")
+        {
+            // powersave mode attempts to use the least amount of power possible
+            // by powering on components only when needed.  Longer tuning and
+            // settling times are expected.
+
+            // Clear the LNA force on bits.
+            set_cpld_field(RXLNA1_FORCEON, 0);
+            set_cpld_field(RXLNA2_FORCEON, 0);
+
+            /*
+            // Placeholders in case other force on bits need to be set or cleared.
+            set_cpld_field(RXAMP_FORCEON, 0);
+            set_cpld_field(RXDEMOD_FORCEON, 0);
+            set_cpld_field(RXDRV_FORCEON, 0);
+            set_cpld_field(RXMIXER_FORCEON, 0);
+            set_cpld_field(RXLO1_FORCEON, 0);
+            set_cpld_field(RXLO2_FORCEON, 0);
+            //set_cpld_field(TXDRV_FORCEON, 1);  // controlled by RX antenna selection
+            set_cpld_field(TXMOD_FORCEON, 0);
+            set_cpld_field(TXMIXER_FORCEON, 0);
+            set_cpld_field(TXLO1_FORCEON, 0);
+            set_cpld_field(TXLO2_FORCEON, 0);
+            */
+
+            write_cpld_reg();
+
             _power_mode = POWERSAVE;
         }
-        write_cpld_reg();
     }
 
     void set_xcvr_mode(std::string mode)
@@ -1080,6 +1185,14 @@ private:
         _xcvr_mode = mode;
     }
 
+    void set_sync_delay(bool is_tx, int64_t value)
+    {
+        if (is_tx)
+            _tx_sync_delay = value;
+        else
+            _rx_sync_delay = value;
+    }
+
     /***********************************************************************
     * Variables
     **********************************************************************/
@@ -1087,7 +1200,8 @@ private:
     boost::mutex _spi_mutex;
     boost::mutex _mutex;
     ubx_cpld_reg_t _cpld_reg;
-    boost::uint32_t _prev_cpld_value;
+    uint32_t _prev_cpld_value;
+    std::map<ubx_gpio_field_id_t,ubx_gpio_field_info_t> _gpio_map;
     boost::shared_ptr<max287x_iface> _txlo1;
     boost::shared_ptr<max287x_iface> _txlo2;
     boost::shared_ptr<max287x_iface> _rxlo1;
@@ -1112,9 +1226,10 @@ private:
     size_t _rev;
     double _prev_tx_freq;
     double _prev_rx_freq;
-    std::map<ubx_gpio_field_id_t,ubx_gpio_field_info_t> _gpio_map;
     ubx_gpio_reg_t _tx_gpio_reg;
     ubx_gpio_reg_t _rx_gpio_reg;
+    int64_t _tx_sync_delay;
+    int64_t _rx_sync_delay;
 };
 
 /***********************************************************************

@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2013 Ettus Research LLC
+// Copyright 2010-2013,2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -22,9 +22,11 @@
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <uhd/usrp/fe_connection.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/thread/thread.hpp>
 #include <string>
 #include <vector>
 
@@ -42,10 +44,10 @@ struct UHD_API dboard_iface_special_props_t{
 
     /*!
      * Mangle i2c addresses:
-     * When i2c is shared across multiple daugterboard slots,
+     * When i2c is shared across multiple daughterboard slots,
      * the i2c addresses will be mangled on the secondary slot
      * to avoid conflicts between slots in the i2c address space.
-     * The mangling is daguhterboard specific so the implementation
+     * The mangling is daughterboard specific so the implementation
      * needs to know whether it should use mangled addresses or not.
      */
     bool mangle_i2c_addrs;
@@ -64,8 +66,9 @@ public:
 
     //! tells the host which unit to use
     enum unit_t{
-        UNIT_RX = int('r'),
-        UNIT_TX = int('t')
+        UNIT_RX   = int('r'),
+        UNIT_TX   = int('t'),
+        UNIT_BOTH = int('b'),
     };
 
     //! aux dac selection enums (per unit)
@@ -83,6 +86,8 @@ public:
     };
 
     typedef uhd::usrp::gpio_atr::gpio_atr_reg_t atr_reg_t;
+
+    virtual ~dboard_iface(void) {};
 
     /*!
      * Get special properties information for this dboard slot.
@@ -118,8 +123,8 @@ public:
      * \param mask 16-bits, 0=do not change, 1=change value
      */
     virtual void set_pin_ctrl(
-        unit_t unit, boost::uint16_t value, boost::uint16_t mask = 0xffff
-    );
+        unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffff
+    ) = 0;
 
     /*!
      * Read back the pin control setting.
@@ -127,7 +132,7 @@ public:
      * \param unit which unit rx or tx
      * \return the 16-bit settings value
      */
-    virtual boost::uint16_t get_pin_ctrl(unit_t unit);
+    virtual boost::uint32_t get_pin_ctrl(unit_t unit) = 0;
 
     /*!
      * Set a daughterboard ATR register.
@@ -138,8 +143,8 @@ public:
      * \param mask 16-bits, 0=do not change, 1=change value
      */
     virtual void set_atr_reg(
-        unit_t unit, atr_reg_t reg, boost::uint16_t value, boost::uint16_t mask = 0xffff
-    );
+        unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask = 0xffff
+    ) = 0;
 
     /*!
      * Read back an ATR register setting.
@@ -148,7 +153,7 @@ public:
      * \param reg which ATR register
      * \return the 16-bit settings value
      */
-    virtual boost::uint16_t get_atr_reg(unit_t unit, atr_reg_t reg);
+    virtual boost::uint32_t get_atr_reg(unit_t unit, atr_reg_t reg) = 0;
 
     /*!
      * Set daughterboard GPIO data direction setting.
@@ -158,8 +163,8 @@ public:
      * \param mask 16-bits, 0=do not change, 1=change value
      */
     virtual void set_gpio_ddr(
-        unit_t unit, boost::uint16_t value, boost::uint16_t mask = 0xffff
-    );
+        unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffff
+    ) = 0;
 
     /*!
      * Read back the GPIO data direction setting.
@@ -167,7 +172,7 @@ public:
      * \param unit which unit rx or tx
      * \return the 16-bit settings value
      */
-    virtual boost::uint16_t get_gpio_ddr(unit_t unit);
+    virtual boost::uint32_t get_gpio_ddr(unit_t unit) = 0;
 
     /*!
      * Set daughterboard GPIO pin output setting.
@@ -177,8 +182,8 @@ public:
      * \param mask 16-bits, 0=do not change, 1=change value
      */
     virtual void set_gpio_out(
-        unit_t unit, boost::uint16_t value, boost::uint16_t mask = 0xffff
-    );
+        unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffff
+    ) = 0;
 
     /*!
      * Read back the GPIO pin output setting.
@@ -186,15 +191,7 @@ public:
      * \param unit which unit rx or tx
      * \return the 16-bit settings value
      */
-    virtual boost::uint16_t get_gpio_out(unit_t unit);
-
-    /*!
-     * Setup the GPIO debug mux.
-     *
-     * \param unit which unit rx or tx
-     * \param which which debug: 0, 1
-     */
-    virtual void set_gpio_debug(unit_t unit, int which) = 0;
+    virtual boost::uint32_t get_gpio_out(unit_t unit) = 0;
 
     /*!
      * Read daughterboard GPIO pin values.
@@ -202,7 +199,7 @@ public:
      * \param unit which unit rx or tx
      * \return the value of the gpio unit
      */
-    virtual boost::uint16_t read_gpio(unit_t unit) = 0;
+    virtual boost::uint32_t read_gpio(unit_t unit) = 0;
 
     /*!
      * Write data to SPI bus peripheral.
@@ -277,30 +274,35 @@ public:
     virtual double get_codec_rate(unit_t unit) = 0;
 
     /*!
+     * Configure the front-end connection parameters.
+     *
+     * \param unit which unit rx or tx
+     * \param fe_name name of the front-end to update
+     * \param fe_conn connection parameters class
+     */
+    virtual void set_fe_connection(
+        unit_t unit,
+        const std::string& fe_name,
+        const uhd::usrp::fe_connection_t& fe_conn
+    ) = 0;
+
+    /*!
      * Get the command time.
      * \return the command time
      */
-    virtual uhd::time_spec_t get_command_time(void);
+    virtual uhd::time_spec_t get_command_time(void) = 0;
 
     /*!
      * Set the command time.
      * \param t the time
      */
-    virtual void set_command_time(const uhd::time_spec_t& t);
+    virtual void set_command_time(const uhd::time_spec_t& t) = 0;
 
-private:
-    UHD_PIMPL_DECL(impl) _impl;
-
-    virtual void _set_pin_ctrl(unit_t unit, boost::uint16_t value) = 0;
-    virtual void _set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint16_t value) = 0;
-    virtual void _set_gpio_ddr(unit_t unit, boost::uint16_t value) = 0;
-    virtual void _set_gpio_out(unit_t unit, boost::uint16_t value) = 0;
-
-protected:
-    dboard_iface(void);
-public:
-    virtual ~dboard_iface(void);
-
+    /*!
+     * Sleep for a set time
+     * \param time time to sleep in nanoseconds
+     */
+    virtual void sleep(const boost::chrono::nanoseconds& time);
 };
 
 }} //namespace

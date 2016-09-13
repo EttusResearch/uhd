@@ -24,18 +24,19 @@
 #include <uhd/stream.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <uhd/utils/atomic.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#ifdef DEVICE3_STREAMER
+#  include "../rfnoc/rx_stream_terminator.hpp"
+#endif
 #include <boost/dynamic_bitset.hpp>
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/thread/barrier.hpp>
 #include <iostream>
 #include <vector>
 
@@ -92,22 +93,15 @@ public:
     }
 
     ~recv_packet_handler(void){
-        _task_barrier.interrupt();
-        _task_handlers.clear();
+        /* NOP */
     }
 
     //! Resize the number of transport channels
     void resize(const size_t size){
         if (this->size() == size) return;
-        _task_handlers.clear();
         _props.resize(size);
         //re-initialize all buffers infos by re-creating the vector
         _buffers_infos = std::vector<buffers_info_type>(4, buffers_info_type(size));
-        _task_barrier.resize(size);
-        _task_handlers.resize(size);
-        for (size_t i = 1/*skip 0*/; i < size; i++){
-            _task_handlers[i] = task::make(boost::bind(&recv_packet_handler::converter_thread_task, this, i));
-        };
     }
 
     //! Get the channel width of this handler
@@ -120,6 +114,35 @@ public:
         _vrt_unpacker = vrt_unpacker;
         _header_offset_words32 = header_offset_words32;
     }
+
+    ////////////////// RFNOC ///////////////////////////
+    //! Set the stream ID for a specific channel (or no SID)
+    void set_xport_chan_sid(const size_t xport_chan, const bool has_sid, const boost::uint32_t sid = 0){
+        _props.at(xport_chan).has_sid = has_sid;
+        _props.at(xport_chan).sid = sid;
+    }
+
+    //! Get the stream ID for a specific channel (or zero if no SID)
+    boost::uint32_t get_xport_chan_sid(const size_t xport_chan) const {
+        if (_props.at(xport_chan).has_sid) {
+            return _props.at(xport_chan).sid;
+        } else {
+            return 0;
+        }
+    }
+
+    #ifdef DEVICE3_STREAMER
+    void set_terminator(uhd::rfnoc::rx_stream_terminator::sptr terminator)
+    {
+        _terminator = terminator;
+    }
+
+    uhd::rfnoc::rx_stream_terminator::sptr get_terminator()
+    {
+        return _terminator;
+    }
+    #endif
+    ////////////////// RFNOC ///////////////////////////
 
     /*!
      * Set the threshold for alignment failure.
@@ -203,11 +226,12 @@ public:
     //! Overload call to issue stream commands
     void issue_stream_cmd(const stream_cmd_t &stream_cmd)
     {
-        if (stream_cmd.stream_now
-                and stream_cmd.stream_mode != stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS
-                and _props.size() > 1) {
-            throw uhd::runtime_error("Attempting to do multi-channel receive with stream_now == true will result in misaligned channels. Aborting.");
-        }
+        // RFNoC: This needs to be checked by the radio block, once it's done. TODO remove this.
+        //if (stream_cmd.stream_now
+                //and stream_cmd.stream_mode != stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS
+                //and _props.size() > 1) {
+            //throw uhd::runtime_error("Attempting to do multi-channel receive with stream_now == true will result in misaligned channels. Aborting.");
+        //}
 
         for (size_t i = 0; i < _props.size(); i++)
         {
@@ -240,7 +264,7 @@ public:
             buffs, nsamps_per_buff, metadata, timeout
         );
 
-        if (one_packet){
+        if (one_packet or metadata.end_of_burst){
 #ifdef UHD_TXRX_DEBUG_PRINTS
             dbg_gather_data(nsamps_per_buff, accum_num_samps, metadata, timeout, one_packet);
 #endif
@@ -248,7 +272,9 @@ public:
         }
 
         //first recv had an error code set, return immediately
-        if (metadata.error_code != rx_metadata_t::ERROR_CODE_NONE) return accum_num_samps;
+        if (metadata.error_code != rx_metadata_t::ERROR_CODE_NONE) {
+            return accum_num_samps;
+        }
 
         //loop until buffer is filled or error code
         while(accum_num_samps < nsamps_per_buff){
@@ -262,10 +288,16 @@ public:
                 _queue_error_for_next_call = true;
                 break;
             }
+
             accum_num_samps += num_samps;
+
+            //return immediately if end of burst
+            if (_queue_metadata.end_of_burst) {
+                break;
+            }
         }
 #ifdef UHD_TXRX_DEBUG_PRINTS
-		dbg_gather_data(nsamps_per_buff, accum_num_samps, metadata, timeout, one_packet);
+        dbg_gather_data(nsamps_per_buff, accum_num_samps, metadata, timeout, one_packet);
 #endif
         return accum_num_samps;
     }
@@ -289,6 +321,10 @@ private:
         handle_overflow_type handle_overflow;
         handle_flowctrl_type handle_flowctrl;
         size_t fc_update_window;
+	/////// RFNOC ///////////
+        bool has_sid;
+        boost::uint32_t sid;
+	/////// RFNOC ///////////
     };
     std::vector<xport_chan_props_type> _props;
     size_t _num_outputs;
@@ -361,6 +397,10 @@ private:
     int recvd_packets;
     #endif
 
+    #ifdef DEVICE3_STREAMER
+    uhd::rfnoc::rx_stream_terminator::sptr _terminator;
+    #endif
+
     /*******************************************************************
      * Get and process a single packet from the transport:
      * Receive a single packet at the given index.
@@ -427,6 +467,13 @@ private:
         const size_t expected_packet_count = _props[index].packet_count;
         _props[index].packet_count = (info.ifpi.packet_count + 1) & seq_mask;
         if (expected_packet_count != info.ifpi.packet_count){
+            //UHD_MSG(status) << "expected: " << expected_packet_count << " got: " << info.ifpi.packet_count << std::endl;
+            if (_props[index].handle_flowctrl) {
+                // Always update flow control in this case, because we don't
+                // know which packet was dropped and what state the upstream
+                // flow control is in.
+                _props[index].handle_flowctrl(info.ifpi.packet_count);
+            }
             return PACKET_SEQUENCE_ERROR;
         }
         #endif
@@ -442,6 +489,10 @@ private:
 
     void _flush_all(double timeout)
     {
+        get_prev_buffer_info().reset();
+        get_curr_buffer_info().reset();
+        get_next_buffer_info().reset();
+
         for (size_t i = 0; i < _props.size(); i++)
         {
             per_buffer_info_type prev_buffer_info, curr_buffer_info;
@@ -462,9 +513,6 @@ private:
                 curr_buffer_info.reset();
             }
         }
-        get_prev_buffer_info().reset();
-        get_curr_buffer_info().reset();
-        get_next_buffer_info().reset();
     }
 
     /*******************************************************************
@@ -530,10 +578,10 @@ private:
                 );
             }
 
-            //handle the case when the get packet throws
-            catch(const std::exception &e){
+            //handle the case where a bad header exists
+            catch(const uhd::value_error &e){
                 UHD_MSG(error) << boost::format(
-                    "The receive packet handler caught an exception.\n%s"
+                    "The receive packet handler caught a value exception.\n%s"
                 ) % e.what() << std::endl;
                 std::swap(curr_info, next_info); //save progress from curr -> next
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_BAD_PACKET;
@@ -562,20 +610,27 @@ private:
                 curr_info.metadata.time_spec = next_info[index].time;
                 curr_info.metadata.error_code = rx_metadata_t::error_code_t(get_context_code(next_info[index].vrt_hdr, next_info[index].ifpi));
                 if (curr_info.metadata.error_code == rx_metadata_t::ERROR_CODE_OVERFLOW){
+                    // Not sending flow control would cause timeouts due to source flow control locking up.
+                    // Send first as the overrun handler may flush the receive buffers which could contain
+                    // packets with sequence numbers after this packet's sequence number!
+                    if(_props[index].handle_flowctrl) {
+                        _props[index].handle_flowctrl(next_info[index].ifpi.packet_count);
+                    }
+
                     rx_metadata_t metadata = curr_info.metadata;
                     _props[index].handle_overflow();
                     curr_info.metadata = metadata;
                     UHD_MSG(fastpath) << "O";
-
-                    // Not sending flow control would cause timeouts due to source flow control locking up
-                    if(_props[index].handle_flowctrl) {
-                        _props[index].handle_flowctrl(next_info[index].ifpi.packet_count);
-                    }
                 }
+                curr_info[index].buff.reset();
+                curr_info[index].copy_buff = NULL;
                 return;
 
             case PACKET_TIMEOUT_ERROR:
                 std::swap(curr_info, next_info); //save progress from curr -> next
+                if(_props[index].handle_flowctrl) {
+                    _props[index].handle_flowctrl(next_info[index].ifpi.packet_count);
+                }
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_TIMEOUT;
                 return;
 
@@ -657,7 +712,9 @@ private:
         _convert_bytes_to_copy = bytes_to_copy;
 
         //perform N channels of conversion
-        converter_thread_task(0);
+        for (size_t i = 0; i < this->size(); i++) {
+            convert_to_out_buff(i);
+        }
 
         //update the copy buffer's availability
         info.data_bytes_to_copy -= bytes_to_copy;
@@ -670,15 +727,15 @@ private:
         return nsamps_to_copy_per_io_buff;
     }
 
-    /*******************************************************************
-     * Perform one thread's work of the conversion task.
-     * The entry and exit use a dual synchronization barrier,
-     * to wait for data to become ready and block until completion.
-     ******************************************************************/
-    UHD_INLINE void converter_thread_task(const size_t index)
+    /*! Run the conversion from the internal buffers to the user's output
+     *  buffer.
+     *
+     * - Calls the converter
+     * - Releases internal data buffers
+     * - Updates read/write pointers
+     */
+    inline void convert_to_out_buff(const size_t index)
     {
-        _task_barrier.wait();
-
         //shortcut references to local data structures
         buffers_info_type &buff_info = get_curr_buffer_info();
         per_buffer_info_type &info = buff_info[index];
@@ -702,13 +759,9 @@ private:
         if (buff_info.data_bytes_to_copy == _convert_bytes_to_copy){
             info.buff.reset(); //effectively a release
         }
-
-        if (index == 0) _task_barrier.wait_others();
     }
 
     //! Shared variables for the worker threads
-    reusable_barrier _task_barrier;
-    std::vector<task::sptr> _task_handlers;
     size_t _convert_nsamps;
     const rx_streamer::buffs_type *_convert_buffs;
     size_t _convert_buffer_offset_bytes;

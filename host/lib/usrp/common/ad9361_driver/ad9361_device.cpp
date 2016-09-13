@@ -1565,6 +1565,12 @@ void ad9361_device_t::initialize()
     _io_iface->poke8(0x000, 0x00);
     boost::this_thread::sleep(boost::posix_time::milliseconds(20));
 
+    /* Check device ID to make sure iface works */
+    boost::uint32_t device_id = (_io_iface->peek8(0x037) & 0x8);
+    if (device_id != 0x8) {
+        throw uhd::runtime_error(str(boost::format("[ad9361_device_t::initialize] Device ID readback failure. Expected: 0x8, Received: 0x%x") % device_id));
+    }
+
     /* There is not a WAT big enough for this. */
     _io_iface->poke8(0x3df, 0x01);
 
@@ -1774,6 +1780,10 @@ void ad9361_device_t::initialize()
     _io_iface->poke8(0x014, 0x21);
 }
 
+void ad9361_device_t::set_io_iface(ad9361_io::sptr io_iface)
+{
+    _io_iface = io_iface;
+}
 
 /* This function sets the RX / TX rate between AD9361 and the FPGA, and
  * thus determines the interpolation / decimation required in the FPGA to

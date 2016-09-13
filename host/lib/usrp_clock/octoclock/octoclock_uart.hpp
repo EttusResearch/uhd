@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 namespace uhd{
 class octoclock_uart_iface : public uhd::uart_iface{
 public:
-    octoclock_uart_iface(uhd::transport::udp_simple::sptr udp);
+    octoclock_uart_iface(uhd::transport::udp_simple::sptr udp, uint32_t proto_ver);
     ~octoclock_uart_iface(void) {};
 
     void write_uart(const std::string &buf);
@@ -45,12 +45,15 @@ private:
     gpsdo_cache_state_t _device_state;
     std::vector<boost::uint8_t> _cache;
     std::string _rxbuff;
+    boost::uint32_t _sequence;
+	boost::uint32_t _proto_ver;
+    boost::system_time _last_cache_update;
 
     void _update_cache();
     char _getchar();
 };
 
-uart_iface::sptr octoclock_make_uart_iface(uhd::transport::udp_simple::sptr udp);
+uart_iface::sptr octoclock_make_uart_iface(uhd::transport::udp_simple::sptr udp, uint32_t proto_ver);
 
 }
 

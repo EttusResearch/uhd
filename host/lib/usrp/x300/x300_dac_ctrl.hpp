@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2014 Ettus Research LLC
+// Copyright 2010-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -39,9 +39,6 @@ public:
 
     // ! Reset the DAC
     virtual void reset(void) = 0;
-
-    // ! Reset the DAC and resync
-    virtual void reset_and_resync(void) = 0;
 
     // ! Check for successful backend and frontend sync
     virtual void verify_sync(void) = 0;

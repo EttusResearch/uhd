@@ -1,0 +1,30 @@
+<nocblock>
+  <name>Null Source/Sink</name>
+  <blockname>NullSrcSink</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">0000000000000000</id>
+  </ids>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>line_rate</name>
+      <type>int</type>
+      <value>65535</value>
+    </arg>
+    <arg>
+      <name>bpp</name>
+      <type>int</type>
+      <value>256</value>
+    </arg>
+  </args>
+  <!-- Ports -->
+  <ports>
+    <sink>
+      <name>dump</name>
+    </sink>
+    <source>
+      <name>src</name>
+    </source>
+  </ports>
+</nocblock>

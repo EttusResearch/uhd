@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011,2014-2015 Ettus Research LLC
+// Copyright 2010-2011,2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 # pragma warning(disable: 4275) // non dll-interface class ... used as base for dll-interface class ...
 //# pragma warning(disable: 4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data
 //# pragma warning(disable: 4511) // 'class' : copy constructor could not be generated
-//# pragma warning(disable: 4250) // 'class' : inherits 'method' via dominance
+# pragma warning(disable: 4250) // 'class' : inherits 'method' via dominance
 # pragma warning(disable: 4200) // nonstandard extension used : zero-sized array in struct/union
 
 // define logical operators
@@ -73,6 +73,14 @@ typedef ptrdiff_t ssize_t;
     #define UHD_DEPRECATED     __attribute__((deprecated))
     #define UHD_ALIGNED(x)     __attribute__((aligned(x)))
     #define UHD_UNUSED(x)      x __attribute__((unused))
+#elif defined(__clang__)
+    #define UHD_EXPORT         __attribute__((visibility("default")))
+    #define UHD_IMPORT         __attribute__((visibility("default")))
+    #define UHD_INLINE         inline __attribute__((always_inline))
+    #define UHD_FORCE_INLINE   inline __attribute__((always_inline))
+    #define UHD_DEPRECATED     __attribute__((deprecated))
+    #define UHD_ALIGNED(x)     __attribute__((aligned(x)))
+    #define UHD_UNUSED(x)      x __attribute__((unused))
 #else
     #define UHD_EXPORT
     #define UHD_IMPORT
@@ -89,17 +97,23 @@ typedef ptrdiff_t ssize_t;
 #else
     #define UHD_API UHD_IMPORT
 #endif // UHD_DLL_EXPORTS
+#ifdef UHD_RFNOC_ENABLED
+    #define UHD_RFNOC_API UHD_API
+#else
+    #define UHD_RFNOC_API
+#endif // UHD_RFNOC_ENABLED
+
 
 // Platform defines for conditional parts of headers:
 // Taken from boost/config/select_platform_config.hpp,
 // however, we define macros, not strings for platforms.
-#if defined(linux) || defined(__linux) || defined(__linux__)
+#if (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GLIBC__)) && !defined(_CRAYC) && !defined(__FreeBSD_kernel__) && !defined(__GNU__)
     #define UHD_PLATFORM_LINUX
 #elif defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
     #define UHD_PLATFORM_WIN32
 #elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
     #define UHD_PLATFORM_MACOS
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD_kernel__)
     #define UHD_PLATFORM_BSD
 #endif
 

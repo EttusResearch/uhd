@@ -17,7 +17,7 @@ More information:
 	- External PPS input & output
 	- External 10 MHz input & output
 	- Expandable via 2nd SFP+ interface
-	- Supported master clock rates: 200 MHz, 184.32 MHz, 120 MHz
+	- Supported master clock rates: 200 MHz and 184.32 MHz
 	- External GPIO Connector with UHD API control
 	- External USB Connection for built-in JTAG debugger
 	- Internal GPSDO option
@@ -130,6 +130,23 @@ Installation instructions for this interface are available on the official Intel
 - The OS will automatically recognize the device (e.g. when running `uhd_find_devices`).
 
 The LEDs on the front panel can be useful in debugging hardware and software issues (see \ref x3x0_hw_fpanel)
+
+### Dual 10 Gigabit Ethernet
+
+In order to utilize the X-series USRP over dual 10 Gigabit Ethernet interfaces, ensure
+either the XG or XGS image is installed (see \ref x3x0_load_fpga_imgs_fpga_flavours).
+In addition to burning the prerequisite FPGA image, it may also be necessary
+to tune the network interface card (NIC) to eliminate drops (Ds) and reduce overflows (Os).
+This is done by increasing the number of RX descriptors (see \ref transport_udp_linux).
+
+The benchmark_rate tool can be used to test this capability.
+Run the following commands to test the X-series USRP over both 10 Gigabit
+Ethernet interfaces with the maximum rate of 200 Msps per channel:
+
+    cd <install-path>/lib/uhd/examples
+    ./benchmark_rate --args="type=x300,addr=<Primary IP>,second_addr=<secondary IP>" --channels="0,1" --rx_rate 200e6
+
+The second interface is specified by the extra argument <b>second_addr</b>.
 
 \subsection x3x0_hw_pcie PCI Express (Desktop)
 
@@ -529,6 +546,18 @@ Use Wireshark to monitor packets sent to and received from the device.
 When there is network traffic arriving at the Ethernet port, LEDs will light up.
 You can use this to make sure the network connection is correctly set up, e.g.
 by pinging the USRP and making sure the LEDs start to blink.
+
+\section x3x0_usage_problems Usage Problems
+
+\subsection x3x0_corrupt_eeprom Corrupt EEPROM
+
+This is a rare bug in which the X-Series device's on-board EEPROM becomes corrupt and reports an incorrect
+firmware and FPGA version. In this situation, UHD cannot properly use the device. To fix this bug, use
+the **usrp_burn_mb_eeprom** utility as follows:
+
+    usrp_burn_mb_eeprom --args="type=x300,recover_mb_eeprom,disable_adc_self_test" --values="revision=(NUM HERE)"
+
+Afterward, power-cycle your X-Series device for the changes to take effect.
 
 \section x3x0_hw_notes Hardware Notes
 

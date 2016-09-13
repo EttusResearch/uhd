@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2015 Ettus Research LLC
+# Copyright 2010-2016 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,55 @@ ENABLE_TESTING()
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
+# Check Compiler Version
+########################################################################
+# Full C++11 came with GCC 4.7.
+SET(GCC_MIN_VERSION "4.8.0")
+# for c++0x or c++11 support, require:
+#   Apple Clang >= 500
+# or
+#   Clang >= 3.3.0
+SET(CLANG_MIN_VERSION "3.3.0")
+SET(APPLECLANG_MIN_VERSION "500")
+
+IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    IF(DEFINED CMAKE_CXX_COMPILER_VERSION)
+        IF(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${GCC_MIN_VERSION})
+            MESSAGE(WARNING "\nThe compiler selected to build UHD (GCC version ${CMAKE_CXX_COMPILER_VERSION} : ${CMAKE_CXX_COMPILER}) is older than that officially supported (${GCC_MIN_VERSION} minimum). This build may or not work. We highly recommend using a more recent GCC version.")
+         ENDIF()
+    ELSE()
+        MESSAGE(WARNING "\nCannot determine the version of the compiler selected to build UHD (GCC : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using GCC version ${GCC_MIN_VERSION} or more recent.")
+    ENDIF()
+ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    EXECUTE_PROCESS(COMMAND
+        ${CMAKE_CXX_COMPILER} -v
+        RESULT_VARIABLE res ERROR_VARIABLE err
+        ERROR_STRIP_TRAILING_WHITESPACE)
+    IF(${res} STREQUAL "0")
+        # output is in error stream
+        STRING(REGEX MATCH "^Apple.*" IS_APPLE ${err})
+        IF("${IS_APPLE}" STREQUAL "")
+            SET(MIN_VERSION ${CLANG_MIN_VERSION})
+            SET(APPLE_STR "")
+            # retrieve the compiler's version from it
+            STRING(REGEX MATCH "clang version [0-9.]+" CLANG_OTHER_VERSION ${err})
+            STRING(REGEX MATCH "[0-9.]+" CLANG_VERSION ${CLANG_OTHER_VERSION})
+        ELSE()
+            SET(MIN_VERSION ${APPLECLANG_MIN_VERSION})
+            SET(APPLE_STR "Apple ")
+            # retrieve the compiler's version from it
+            STRING(REGEX MATCH "(clang-[0-9.]+)" CLANG_APPLE_VERSION ${err})
+            STRING(REGEX MATCH "[0-9.]+" CLANG_VERSION ${CLANG_APPLE_VERSION})
+        ENDIF()
+        IF(${CLANG_VERSION} VERSION_LESS "${MIN_VERSION}")
+            MESSAGE(WARNING "\nThe compiler selected to build UHD (${APPLE_STR}Clang version ${CLANG_VERSION} : ${CMAKE_CXX_COMPILER}) is older than that officially supported (${MIN_VERSION} minimum). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
+        ENDIF()
+    ELSE()
+        MESSAGE(WARNING "\nCannot determine the version of the compiler selected to build UHD (${APPLE_STR}Clang : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
+    ENDIF()
+ENDIF()
+
+########################################################################
 # Packaging Variables
 ########################################################################
 
@@ -48,6 +97,10 @@ INCLUDE(UHDPackage)   #setup cpack
 IF(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
     SET(LIB_SUFFIX 64)
 ENDIF()
+IF(CMAKE_INSTALL_LIBDIR MATCHES lib64)
+    SET(LIB_SUFFIX 64)
+ENDIF()
+
 SET(LIB_SUFFIX ${LIB_SUFFIX} CACHE STRING "lib directory suffix")
 SET(RUNTIME_DIR bin)
 SET(LIBRARY_DIR lib${LIB_SUFFIX})
@@ -75,9 +128,9 @@ OPTION(UHD_IMAGES_DIR "Path to installed UHD image binaries.")
 MESSAGE( STATUS "Using UHD Images Directory: ${UHD_IMAGES_DIR}" )
 ADD_DEFINITIONS(-DUHD_IMAGES_DIR=${UHD_IMAGES_DIR})
 
-IF(DEFINED USE_NIUSRP_WINREG_KEY)
-    ADD_DEFINITIONS(-DUSE_NIUSRP_WINREG_KEY)
-ENDIF(DEFINED USE_NIUSRP_WINREG_KEY)
+IF(DEFINED UHD_IMAGES_DIR_WINREG_KEY)
+    ADD_DEFINITIONS(-DUHD_IMAGES_DIR_WINREG_KEY=${UHD_IMAGES_DIR_WINREG_KEY})
+ENDIF(DEFINED UHD_IMAGES_DIR_WINREG_KEY)
 
 ########################################################################
 # Local Include Dir
@@ -134,7 +187,8 @@ SET(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "")
 #force UHD_RELEASE_MODE to be a string for cmake-gui
 SET(UHD_RELEASE_MODE "${UHD_RELEASE_MODE}" CACHE STRING "UHD Release Mode")
 
-IF(CMAKE_COMPILER_IS_GNUCXX)
+IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
+    ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     IF(STRIP_BINARIES)
         IF(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s")
@@ -151,7 +205,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
         UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
         UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility-inlines-hidden HAVE_VISIBILITY_INLINES_HIDDEN)
     ENDIF(NOT WIN32)
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+ENDIF()
 
 IF(MSVC)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/cmake/msvc)
@@ -162,6 +216,7 @@ IF(MSVC)
         -D_CRT_SECURE_NO_DEPRECATE
         -D_CRT_NONSTDC_NO_WARNINGS
         -D_CRT_NONSTDC_NO_DEPRECATE
+        -D_WINSOCK_DEPRECATED_NO_WARNINGS
     )
     ADD_DEFINITIONS(/MP) #multi-threaded build
     ADD_DEFINITIONS(/bigobj) #Increases the number of addressable sections in an .obj file.
@@ -184,14 +239,14 @@ option(BOOST_STATIC "Static linking of boost libraries" OFF)
 if (BOOST_STATIC)
 	# Boost libs to use, must be set before including boost.txt.
 	SET(project_boost_libs 
-	    date_time
-	    filesystem
-	    program_options
-	    regex
-	    system
-	    thread
-	    test
-	    serialization
+    chrono
+    date_time
+    filesystem
+    program_options
+    regex
+    thread
+    system
+    serialization
 	)
 	INCLUDE(${CMAKE_SOURCE_DIR}/cmake/boost.txt) 
 	SET(Boost_LIBRARIES ${LIBBOOST_LIBS})
@@ -208,50 +263,57 @@ if (BOOST_STATIC)
 	#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC") 
 	#SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC") 
 else()
-	MESSAGE(STATUS "")
-	MESSAGE(STATUS "Configuring Boost C++ Libraries...")
-	SET(BOOST_REQUIRED_COMPONENTS
-	    date_time
-	    filesystem
-	    program_options
-	    regex
-	    system
-	    thread
-	    unit_test_framework
-	    serialization
-	)
+  MESSAGE(STATUS "")
+  MESSAGE(STATUS "Configuring Boost C++ Libraries...")
+  SET(BOOST_REQUIRED_COMPONENTS
+      chrono
+      date_time
+      filesystem
+      program_options
+      regex
+      system
+      unit_test_framework
+      serialization
+  )
+  IF(MINGW)
+      LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
+  ELSE()
+      LIST(APPEND BOOST_REQUIRED_COMPONENTS thread)
+  ENDIF()
 
-	IF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
-	    LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
-	ENDIF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
+  IF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
+      LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
+  ENDIF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
 
-	IF(MSVC)
-	    SET(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
-	    IF(BOOST_ALL_DYN_LINK)
-		ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
-	    ELSE(BOOST_ALL_DYN_LINK)
-		SET(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
-	    ENDIF(BOOST_ALL_DYN_LINK)
-	ENDIF(MSVC)
+  IF(MSVC)
+      SET(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
+      IF(BOOST_ALL_DYN_LINK)
+          ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
+      ELSE(BOOST_ALL_DYN_LINK)
+          SET(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
+      ENDIF(BOOST_ALL_DYN_LINK)
+  ENDIF(MSVC)
 
-	SET(Boost_ADDITIONAL_VERSIONS
-	    "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
-	    "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
-	    "1.56.0" "1.56"
-	)
-	FIND_PACKAGE(Boost 1.46 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+  SET(Boost_ADDITIONAL_VERSIONS
+      "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
+      "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
+      "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60"
+  )
+  FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
-	INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-	LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
-	MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
-	MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
-	MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+  MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
+  MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
+  MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 endif()
 
 ########################################################################
 # Additional settings for build environment
 ########################################################################
+# Note: RFNoC never gets fully disabled, but the public APIs do
+SET(ENABLE_RFNOC OFF CACHE BOOL "Export RFNoC includes and symbols")
 INCLUDE(UHDGlobalDefs)
 
 ########################################################################
@@ -260,8 +322,8 @@ INCLUDE(UHDGlobalDefs)
 INCLUDE(UHDPython)
 
 PYTHON_CHECK_MODULE(
-    "Python version 2.6 or greater"
-    "platform" "platform.python_version() >= '2.6'"
+    "Python version 2.7 or greater"
+    "platform" "platform.python_version() >= '2.7'"
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
@@ -299,8 +361,8 @@ UHD_INSTALL(FILES
 #{{{IMG_SECTION
 # This section is written automatically by /images/create_imgs_package.py
 # Any manual changes in here will be overwritten.
-SET(UHD_IMAGES_MD5SUM "cb53211ebf0420ea6b619f305c6ab2d6")
-SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.git-118-g6c5d59cb.zip")
+SET(UHD_IMAGES_MD5SUM "26473d4f18d2c9a207062e107bda1d11")
+SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.000.000-release.zip")
 #}}}
 
 ########################################################################
@@ -330,8 +392,6 @@ ENDIF(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
 ########################################################################
 # Add the subdirectories
 ########################################################################
-ADD_SUBDIRECTORY(docs)
-
 IF(ENABLE_LIBUHD)
     ADD_SUBDIRECTORY(lib)
 ENDIF(ENABLE_LIBUHD)
@@ -349,6 +409,8 @@ ENDIF(ENABLE_TESTS)
 IF(ENABLE_UTILS)
     ADD_SUBDIRECTORY(utils)
 ENDIF(ENABLE_UTILS)
+
+ADD_SUBDIRECTORY(docs)
 
 ########################################################################
 # Create Pkg Config File
@@ -401,6 +463,12 @@ ENDFOREACH(Boost_Comp)
 IF(ENABLE_USB)
     LIST(APPEND UHD_LINK_LIST_STATIC "usb-1.0")
 ENDIF(ENABLE_USB)
+# UHDConfig.cmake also needs UHD_RFNOC_FOUND
+IF(ENABLE_RFNOC)
+    SET(UHD_RFNOC_FOUND "TRUE")
+ELSE()
+    SET(UHD_RFNOC_FOUND "FALSE")
+ENDIF(ENABLE_RFNOC)
 
 CONFIGURE_FILE(
     ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in
@@ -428,8 +496,9 @@ UHD_INSTALL(
 # Handle pre-built UHD Images for packaging
 ########################################################################
 IF(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
+    MESSAGE(STATUS "Reading images from directory `${UHD_IMAGES_SRC_DIR}'")
     FILE(GLOB_RECURSE _image_files "${UHD_IMAGES_SRC_DIR}/*")
-    MESSAGE(STATUS "Using images:")
+    MESSAGE(STATUS "These images files will be installed/packaged:")
     FOREACH(_img ${_image_files})
         MESSAGE(STATUS "  ${_img}")
     ENDFOREACH(_img)
@@ -452,7 +521,7 @@ ENDIF(LIBUHD_PKG)
 UHD_PRINT_COMPONENT_SUMMARY()
 IF(UHD_VERSION_DEVEL)
     MESSAGE(STATUS "******************************************************")
-    IF(UHD_VERSION_PATCH STREQUAL "git")
+    IF(UHD_GIT_BRANCH STREQUAL "master")
         MESSAGE(STATUS "* You are building the UHD development master branch.")
         MESSAGE(STATUS "* For production code, we recommend our stable,")
         MESSAGE(STATUS "* releases or using the release branch (maint).")
@@ -461,7 +530,7 @@ IF(UHD_VERSION_DEVEL)
         MESSAGE(STATUS "* These branches are designed to provide early access")
         MESSAGE(STATUS "* to UHD and USRP features, but should be considered")
         MESSAGE(STATUS "* unstable and/or experimental!")
-    ENDIF(UHD_VERSION_PATCH STREQUAL "git")
+    ENDIF(UHD_GIT_BRANCH STREQUAL "master")
     MESSAGE(STATUS "******************************************************")
 ENDIF(UHD_VERSION_DEVEL)
 MESSAGE(STATUS "Building version: ${UHD_VERSION}${PRINT_APPEND}")

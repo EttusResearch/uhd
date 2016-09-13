@@ -31,12 +31,20 @@ std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(boost::u
     return std::vector<usb_device_handle::sptr>(); //empty list
 }
 
-usb_control::sptr usb_control::make(usb_device_handle::sptr, const size_t){
+usb_control::sptr usb_control::make(
+        usb_device_handle::sptr,
+        const int
+) {
     throw uhd::not_implemented_error("no usb support -> usb_control::make not implemented");
 }
 
 usb_zero_copy::sptr usb_zero_copy::make(
-    usb_device_handle::sptr, const size_t, const size_t, const size_t, const size_t, const device_addr_t &
+    usb_device_handle::sptr,
+    const int,
+    const unsigned char,
+    const int,
+    const unsigned char,
+    const device_addr_t &
 ){
     throw uhd::not_implemented_error("no usb support -> usb_zero_copy::make not implemented");
 }

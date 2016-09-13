@@ -69,17 +69,17 @@ wbx_base::wbx_base(ctor_args_t args) : xcvr_dboard_base(args){
 
     this->get_rx_subtree()->create<device_addr_t>("tune_args").set(device_addr_t());
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .publish(boost::bind(&wbx_base::get_locked, this, dboard_iface::UNIT_RX));
+        .set_publisher(boost::bind(&wbx_base::get_locked, this, dboard_iface::UNIT_RX));
     BOOST_FOREACH(const std::string &name, wbx_rx_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
-            .coerce(boost::bind(&wbx_base::set_rx_gain, this, _1, name))
+            .set_coercer(boost::bind(&wbx_base::set_rx_gain, this, _1, name))
             .set(wbx_rx_gain_ranges[name].start());
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(wbx_rx_gain_ranges[name]);
     }
     this->get_rx_subtree()->create<std::string>("connection").set("IQ");
     this->get_rx_subtree()->create<bool>("enabled")
-        .subscribe(boost::bind(&wbx_base::set_rx_enabled, this, _1))
+        .add_coerced_subscriber(boost::bind(&wbx_base::set_rx_enabled, this, _1))
         .set(true); //start enabled
     this->get_rx_subtree()->create<bool>("use_lo_offset").set(false);
 
@@ -94,7 +94,7 @@ wbx_base::wbx_base(ctor_args_t args) : xcvr_dboard_base(args){
 
     this->get_tx_subtree()->create<device_addr_t>("tune_args").set(device_addr_t());
     this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .publish(boost::bind(&wbx_base::get_locked, this, dboard_iface::UNIT_TX));
+        .set_publisher(boost::bind(&wbx_base::get_locked, this, dboard_iface::UNIT_TX));
     this->get_tx_subtree()->create<std::string>("connection").set("IQ");
     this->get_tx_subtree()->create<bool>("use_lo_offset").set(false);
 
@@ -155,4 +155,10 @@ double wbx_base::set_rx_gain(double gain, const std::string &name){
 sensor_value_t wbx_base::get_locked(dboard_iface::unit_t unit){
     const bool locked = (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
     return sensor_value_t("LO", locked, "locked", "unlocked");
+}
+
+void wbx_base::wbx_versionx::write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs) {
+    BOOST_FOREACH(boost::uint32_t reg, regs) {
+        self_base->get_iface()->write_spi(unit, spi_config_t::EDGE_RISE, reg, 32);
+    }
 }

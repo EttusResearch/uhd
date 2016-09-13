@@ -24,8 +24,7 @@ The methods of loading images into the device vary among devices:
 
 Pre-built images are available for download.
 
-- <a href="http://files.ettus.com/binaries/master_images/">Master Branch images</a>
-- <a href="http://files.ettus.com/binaries/maint_images/">Maint Branch images</a>
+- <a href="http://files.ettus.com/binaries/images/">Images</a>
 
 The pre-built images come in two forms:
 

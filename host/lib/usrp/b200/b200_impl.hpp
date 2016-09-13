@@ -28,7 +28,7 @@
 #include "tx_vita_core_3000.hpp"
 #include "time_core_3000.hpp"
 #include "gpio_atr_3000.hpp"
-#include "radio_ctrl_core_3000.hpp"
+#include "b200_radio_ctrl_core.hpp"
 #include "rx_dsp_core_3000.hpp"
 #include "tx_dsp_core_3000.hpp"
 #include <uhd/device.hpp>
@@ -131,7 +131,7 @@ private:
 
     //controllers
     b200_iface::sptr _iface;
-    radio_ctrl_core_3000::sptr _local_ctrl;
+    b200_radio_ctrl_core::sptr _local_ctrl;
     uhd::usrp::ad9361_ctrl::sptr _codec_ctrl;
     uhd::usrp::ad936x_manager::sptr _codec_mgr;
     b200_local_spi_core::sptr _spi_iface;
@@ -154,8 +154,8 @@ private:
     struct AsyncTaskData
     {
         boost::shared_ptr<async_md_type> async_md;
-        boost::weak_ptr<radio_ctrl_core_3000> local_ctrl;
-        boost::weak_ptr<radio_ctrl_core_3000> radio_ctrl[2];
+        boost::weak_ptr<b200_radio_ctrl_core> local_ctrl;
+        boost::weak_ptr<b200_radio_ctrl_core> radio_ctrl[2];
         b200_uart::sptr gpsdo_uart;
     };
     boost::shared_ptr<AsyncTaskData> _async_task_data;
@@ -179,7 +179,7 @@ private:
     //perifs in the radio core
     struct radio_perifs_t
     {
-        radio_ctrl_core_3000::sptr ctrl;
+        b200_radio_ctrl_core::sptr ctrl;
         uhd::usrp::gpio_atr::gpio_atr_3000::sptr atr;
         uhd::usrp::gpio_atr::gpio_atr_3000::sptr fp_gpio;
         time_core_3000::sptr time64;
@@ -224,7 +224,6 @@ private:
     enum time_source_t {GPSDO=0,EXTERNAL=1,INTERNAL=2,NONE=3,UNKNOWN=4} _time_source;
 
     void update_gpio_state(void);
-    void reset_codec_dcm(void);
 
     void update_enables(void);
     void update_atrs(void);
@@ -259,6 +258,14 @@ private:
     );
 
     void update_tick_rate(const double);
+
+    /*! Subscriber to the tick_rate property, updates DDCs after tick rate change.
+     */
+    void update_rx_dsp_tick_rate(const double, rx_dsp_core_3000::sptr, uhd::fs_path rx_dsp_path);
+
+    /*! Subscriber to the tick_rate property, updates DUCs after tick rate change.
+     */
+    void update_tx_dsp_tick_rate(const double, tx_dsp_core_3000::sptr, uhd::fs_path tx_dsp_path);
 
     /*! Check if \p tick_rate works with \p chan_count channels.
      *

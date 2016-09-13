@@ -1,0 +1,116 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>FFT</name>
+  <blockname>FFT</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">FF70</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <!--Note: AXI config bus uses 129 & 130-->
+    <setreg>
+      <name>FFT_RESET</name>
+      <address>131</address>
+    </setreg>
+    <setreg>
+      <name>FFT_SIZE_LOG2</name>
+      <address>132</address>
+    </setreg>
+    <setreg>
+      <name>MAGNITUDE_OUT</name>
+      <address>133</address>
+    </setreg>
+    <readback>
+      <name>RB_FFT_RESET</name>
+      <address>0</address>
+    </readback>
+    <readback>
+      <name>RB_MAGNITUDE_OUT</name>
+      <address>1</address>
+    </readback>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+        <!--This controls only the fft shift part, so remember to also set the ctrl_word-->
+      <name>spp</name>
+      <type>int</type>
+      <value>256</value>
+      <check>GE($spp, 16) AND LE($spp, 4096) AND IS_PWR_OF_2($spp)</check>
+      <check_message>FFT size must be in [16, 4096] and a power of two.</check_message>
+      <action>SR_WRITE("FFT_SIZE_LOG2", LOG2($spp)) AND SR_WRITE("AXIS_CONFIG_BUS", ADD(873472, LOG2($spp)))</action>
+    </arg>
+    <arg>
+      <name>ctrl_word</name>
+      <type>int</type>
+      <value>873472</value>
+      <!--<check>EQUAL($otype, "sc16")</check>-->
+      <!--<check_message>Output data type must be sc16.</check_message>-->
+      <!--TODO: Check against mag-out value (requires GET() function) -->
+      <action>SR_WRITE("AXIS_CONFIG_BUS", ADD($ctrl_word, LOG2($spp)))</action>
+    </arg>
+    <arg>
+      <name>otype</name>
+      <type>string</type>
+      <value>sc16</value>
+      <check>EQUAL($otype, "sc16")</check>
+      <check_message>Output data type must be sc16.</check_message>
+      <!--TODO: Check against mag-out value (requires GET() function) -->
+    </arg>
+    <arg>
+      <name>reset</name>
+      <type>int</type>
+      <value>1</value>
+      <action>
+          IF(NOT(EQUAL($reset, 0)), SR_WRITE("FFT_RESET", 1) AND SR_WRITE("FFT_RESET", 0))
+      </action>
+      <!--TODO: Set to zero after setting, add publisher-->
+    </arg>
+    <arg>
+      <name>magnitude_out</name>
+      <type>string</type>
+      <value>COMPLEX</value>
+      <check>EQUAL($magnitude_out, "COMPLEX") OR EQUAL($magnitude_out, "MAGNITUDE") OR EQUAL($magnitude_out, "MAGNITUDE_SQUARED")</check>
+      <check_message>Output format must be one of: COMPLEX, MAGNITUDE, MAGNITUDE_SQUARED.</check_message>
+      <action>
+          IF(EQUAL($magnitude_out, "COMPLEX"),           SR_WRITE("MAGNITUDE_OUT", 0)) OR
+          IF(EQUAL($magnitude_out, "MAGNITUDE"),         SR_WRITE("MAGNITUDE_OUT", 1)) OR
+          IF(EQUAL($magnitude_out, "MAGNITUDE_SQUARED"), SR_WRITE("MAGNITUDE_OUT", 2))
+      </action>
+      <!--TODO: add publisher-->
+    </arg>
+  </args>
+  <!--All the connections to the outside world are listed in 'ports':-->
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>$otype</type> <!--TODO make this dependent on the output type -->
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
+    </source>
+  </ports>
+  <!--<components>-->
+    <!--<component>-->
+      <!--<key revision="1">nocshell</key>-->
+    <!--</component>-->
+    <!--<component srbase="0">-->
+      <!--[>Will look for a component with this key:<]-->
+      <!--<key revision="1">componentname</key>-->
+    <!--</component>-->
+  <!--</components>-->
+  <!--<connection>-->
+    <!--<source port="0">nocshell</source>-->
+    <!--<sink port="0">componentname</sink>-->
+  <!--</connection>-->
+  <!--<connection>-->
+    <!--<source port="0">componentname</source>-->
+    <!--<sink port="0">nocshell</sink>-->
+  <!--</connection>-->
+</nocblock>

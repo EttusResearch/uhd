@@ -471,14 +471,14 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     BOOST_FOREACH(const std::string &name, _sensor_manager->get_sensors())
     {
         _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-            .publish(boost::bind(&e300_sensor_manager::get_sensor, _sensor_manager, name));
+            .set_publisher(boost::bind(&e300_sensor_manager::get_sensor, _sensor_manager, name));
     }
 #ifdef E300_GPSD
     if (_gps) {
         BOOST_FOREACH(const std::string &name, _gps->get_sensors())
         {
             _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                .publish(boost::bind(&gpsd_iface::get_sensor, _gps, name));
+                .set_publisher(boost::bind(&gpsd_iface::get_sensor, _gps, name));
         }
     }
 #endif
@@ -488,7 +488,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(_eeprom_manager->get_mb_eeprom())  // set first...
-        .subscribe(boost::bind(
+        .add_coerced_subscriber(boost::bind(
             &e300_eeprom_manager::write_mb_eeprom,
             _eeprom_manager, _1));
 
@@ -496,9 +496,9 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     // clocking
     ////////////////////////////////////////////////////////////////////
     _tree->create<double>(mb_path / "tick_rate")
-        .coerce(boost::bind(&e300_impl::_set_tick_rate, this, _1))
-        .publish(boost::bind(&e300_impl::_get_tick_rate, this))
-        .subscribe(boost::bind(&e300_impl::_update_tick_rate, this, _1));
+        .set_coercer(boost::bind(&e300_impl::_set_tick_rate, this, _1))
+        .set_publisher(boost::bind(&e300_impl::_get_tick_rate, this))
+        .add_coerced_subscriber(boost::bind(&e300_impl::_update_tick_rate, this, _1));
 
     //default some chains on -- needed for setup purposes
     _codec_ctrl->set_active_chains(true, false, true, false);
@@ -510,11 +510,16 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     for(size_t instance = 0; instance < fpga::NUM_RADIOS; instance++)
         this->_setup_radio(instance);
 
-    // Radio 0 loopback through AD9361
-    _codec_mgr->loopback_self_test(_radio_perifs[0].ctrl, radio::sr_addr(radio::CODEC_IDLE), radio::RB64_CODEC_READBACK);
-    // Radio 1 loopback through AD9361
-    _codec_mgr->loopback_self_test(_radio_perifs[1].ctrl, radio::sr_addr(radio::CODEC_IDLE), radio::RB64_CODEC_READBACK);
-
+    //now test each radio module's connection to the codec interface
+    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    {
+        _codec_mgr->loopback_self_test(
+            boost::bind(
+                &radio_ctrl_core_3000::poke32, perif.ctrl, radio::sr_addr(radio::CODEC_IDLE), _1
+            ),
+            boost::bind(&radio_ctrl_core_3000::peek64, perif.ctrl, radio::RB64_CODEC_READBACK)
+        );
+    }
     ////////////////////////////////////////////////////////////////////
     // internal gpios
     ////////////////////////////////////////////////////////////////////
@@ -522,30 +527,30 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
         _tree->create<boost::uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
-            .subscribe(boost::bind(&gpio_atr_3000::set_gpio_attr, fp_gpio, attr.first, _1))
+            .add_coerced_subscriber(boost::bind(&gpio_atr_3000::set_gpio_attr, fp_gpio, attr.first, _1))
             .set(0);
     }
     _tree->create<boost::uint8_t>(mb_path / "gpio" / "INT0" / "READBACK")
-        .publish(boost::bind(&gpio_atr_3000::read_gpio, fp_gpio));
+        .set_publisher(boost::bind(&gpio_atr_3000::read_gpio, fp_gpio));
 
 
     ////////////////////////////////////////////////////////////////////
     // register the time keepers - only one can be the highlander
     ////////////////////////////////////////////////////////////////////
     _tree->create<time_spec_t>(mb_path / "time" / "now")
-        .publish(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
-        .subscribe(boost::bind(&e300_impl::_set_time, this, _1))
+        .set_publisher(boost::bind(&time_core_3000::get_time_now, _radio_perifs[0].time64))
+        .add_coerced_subscriber(boost::bind(&e300_impl::_set_time, this, _1))
         .set(0.0);
     //re-sync the times when the tick rate changes
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&e300_impl::_sync_times, this));
+        .add_coerced_subscriber(boost::bind(&e300_impl::_sync_times, this));
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
-        .publish(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64))
-        .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[0].time64, _1))
-        .subscribe(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[1].time64, _1));
+        .set_publisher(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64))
+        .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[0].time64, _1))
+        .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_next_pps, _radio_perifs[1].time64, _1));
     //setup time source props
     _tree->create<std::string>(mb_path / "time_source" / "value")
-        .subscribe(boost::bind(&e300_impl::_update_time_source, this, _1))
+        .add_coerced_subscriber(boost::bind(&e300_impl::_update_time_source, this, _1))
         .set(e300::DEFAULT_TIME_SRC);
 #ifdef E300_GPSD
     static const std::vector<std::string> time_sources = boost::assign::list_of("none")("internal")("external")("gpsdo");
@@ -555,7 +560,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
     //setup reference source props
     _tree->create<std::string>(mb_path / "clock_source" / "value")
-        .subscribe(boost::bind(&e300_impl::_update_clock_source, this, _1))
+        .add_coerced_subscriber(boost::bind(&e300_impl::_update_clock_source, this, _1))
         .set(e300::DEFAULT_CLOCK_SRC);
     static const std::vector<std::string> clock_sources = boost::assign::list_of("internal"); //external,gpsdo not supported
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_sources);
@@ -566,13 +571,13 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     dboard_eeprom_t db_eeprom;
     _tree->create<dboard_eeprom_t>(mb_path / "dboards" / "A" / "rx_eeprom")
         .set(_eeprom_manager->get_db_eeprom())
-        .subscribe(boost::bind(
+        .add_coerced_subscriber(boost::bind(
             &e300_eeprom_manager::write_db_eeprom,
             _eeprom_manager, _1));
 
     _tree->create<dboard_eeprom_t>(mb_path / "dboards" / "A" / "tx_eeprom")
         .set(_eeprom_manager->get_db_eeprom())
-        .subscribe(boost::bind(
+        .add_coerced_subscriber(boost::bind(
             &e300_eeprom_manager::write_db_eeprom,
             _eeprom_manager, _1));
 
@@ -605,10 +610,10 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
 
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
         .set(subdev_spec_t())
-        .subscribe(boost::bind(&e300_impl::_update_subdev_spec, this, "rx", _1));
+        .add_coerced_subscriber(boost::bind(&e300_impl::_update_subdev_spec, this, "rx", _1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
         .set(subdev_spec_t())
-        .subscribe(boost::bind(&e300_impl::_update_subdev_spec, this, "tx", _1));
+        .add_coerced_subscriber(boost::bind(&e300_impl::_update_subdev_spec, this, "tx", _1));
 
     ////////////////////////////////////////////////////////////////////
     // do some post-init tasks
@@ -1007,25 +1012,25 @@ void e300_impl::_setup_radio(const size_t dspno)
     // connect rx dsp control objects
     ////////////////////////////////////////////////////////////////////
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
-        .subscribe(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
+        .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::set_tick_rate, perif.framer, _1))
+        .add_coerced_subscriber(boost::bind(&rx_dsp_core_3000::set_tick_rate, perif.ddc, _1));
     const fs_path rx_dsp_path = mb_path / "rx_dsps" / str(boost::format("%u") % dspno);
     perif.ddc->populate_subtree(_tree->subtree(rx_dsp_path));
     _tree->access<double>(rx_dsp_path / "rate" / "value")
-        .subscribe(boost::bind(&e300_impl::_update_rx_samp_rate, this, dspno, _1))
+        .add_coerced_subscriber(boost::bind(&e300_impl::_update_rx_samp_rate, this, dspno, _1))
     ;
     _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd")
-        .subscribe(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
+        .add_coerced_subscriber(boost::bind(&rx_vita_core_3000::issue_stream_command, perif.framer, _1));
 
     ////////////////////////////////////////////////////////////////////
     // create tx dsp control objects
     ////////////////////////////////////////////////////////////////////
     _tree->access<double>(mb_path / "tick_rate")
-        .subscribe(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
+        .add_coerced_subscriber(boost::bind(&tx_dsp_core_3000::set_tick_rate, perif.duc, _1));
     const fs_path tx_dsp_path = mb_path / "tx_dsps" / str(boost::format("%u") % dspno);
     perif.duc->populate_subtree(_tree->subtree(tx_dsp_path));
     _tree->access<double>(tx_dsp_path / "rate" / "value")
-        .subscribe(boost::bind(&e300_impl::_update_tx_samp_rate, this, dspno, _1))
+        .add_coerced_subscriber(boost::bind(&e300_impl::_update_tx_samp_rate, this, dspno, _1))
     ;
 
     ////////////////////////////////////////////////////////////////////
@@ -1045,10 +1050,10 @@ void e300_impl::_setup_radio(const size_t dspno)
 
         // This will connect all the e300_impl-specific items
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
-            .publish(boost::bind(&e300_impl::_get_fe_pll_lock, this, dir == TX_DIRECTION))
+            .set_publisher(boost::bind(&e300_impl::_get_fe_pll_lock, this, dir == TX_DIRECTION))
         ;
         _tree->access<double>(rf_fe_path / "freq" / "value")
-            .subscribe(boost::bind(&e300_impl::_update_fe_lo_freq, this, key, _1))
+            .add_coerced_subscriber(boost::bind(&e300_impl::_update_fe_lo_freq, this, key, _1))
         ;
 
         // Antenna Setup
@@ -1056,7 +1061,7 @@ void e300_impl::_setup_radio(const size_t dspno)
             static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
-                .subscribe(boost::bind(&e300_impl::_update_antenna_sel, this, dspno, _1))
+                .add_coerced_subscriber(boost::bind(&e300_impl::_update_antenna_sel, this, dspno, _1))
                 .set("RX2");
         }
         else if (dir == TX_DIRECTION) {

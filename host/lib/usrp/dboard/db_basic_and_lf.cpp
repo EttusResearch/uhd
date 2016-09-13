@@ -50,7 +50,7 @@ static const uhd::dict<std::string, double> subdev_bandwidth_scalar = map_list_o
 class basic_rx : public rx_dboard_base{
 public:
     basic_rx(ctor_args_t args, double max_freq);
-    ~basic_rx(void);
+    virtual ~basic_rx(void);
 
 private:
     double _max_freq;
@@ -59,7 +59,7 @@ private:
 class basic_tx : public tx_dboard_base{
 public:
     basic_tx(ctor_args_t args, double max_freq);
-    ~basic_tx(void);
+    virtual ~basic_tx(void);
 
 private:
     double _max_freq;
@@ -121,7 +121,7 @@ basic_rx::basic_rx(ctor_args_t args, double max_freq) : rx_dboard_base(args){
 
     this->get_rx_subtree()->create<int>("gains"); //phony property so this dir exists
     this->get_rx_subtree()->create<double>("freq/value")
-        .publish(&always_zero_freq);
+        .set_publisher(&always_zero_freq);
     this->get_rx_subtree()->create<meta_range_t>("freq/range")
         .set(freq_range_t(-_max_freq, +_max_freq));
     this->get_rx_subtree()->create<std::string>("antenna/value")
@@ -176,7 +176,7 @@ basic_tx::basic_tx(ctor_args_t args, double max_freq) : tx_dboard_base(args){
 
     this->get_tx_subtree()->create<int>("gains"); //phony property so this dir exists
     this->get_tx_subtree()->create<double>("freq/value")
-        .publish(&always_zero_freq);
+        .set_publisher(&always_zero_freq);
     this->get_tx_subtree()->create<meta_range_t>("freq/range")
         .set(freq_range_t(-_max_freq, +_max_freq));
     this->get_tx_subtree()->create<std::string>("antenna/value")

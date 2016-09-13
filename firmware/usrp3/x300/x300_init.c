@@ -84,8 +84,8 @@ static void init_network(void)
     wb_i2c_read(I2C1_BASE, MBOARD_EEPROM_ADDR, (uint8_t *)(&eeprom_map), sizeof(eeprom_map));
 
     //determine interface number
-    const size_t eth0no = wb_peek32(SR_ADDR(RB0_BASE, RB_ETH_TYPE0))? 2 : 0;
-    const size_t eth1no = wb_peek32(SR_ADDR(RB0_BASE, RB_ETH_TYPE1))? 3 : 1;
+    const size_t eth0no = wb_peek32(SR_ADDR(RB0_BASE, RB_SFP0_TYPE))? 2 : 0;
+    const size_t eth1no = wb_peek32(SR_ADDR(RB0_BASE, RB_SFP1_TYPE))? 3 : 1;
 
     //pick the address from eeprom or default
     const eth_mac_addr_t *my_mac0 = (const eth_mac_addr_t *)pick_inited_field(&eeprom_map.mac_addr0, &default_map.mac_addr0, 6);
@@ -159,15 +159,19 @@ void x300_init(void)
     wb_poke32(SR_ADDR(SET0_BASE, SR_SW_RST), 0);
 
     //print network summary
-    for (uint8_t e = 0; e < ethernet_ninterfaces(); e++)
+    for (uint8_t sfp = 0; sfp < ethernet_ninterfaces(); sfp++)
     {
-        uint32_t offset = SR_ADDR(RB0_BASE, ((e==1)?RB_ETH_TYPE1:RB_ETH_TYPE0));
-        UHD_FW_TRACE_FSTR(INFO, "Ethernet Port %u:", (int)e);
-        UHD_FW_TRACE_FSTR(INFO, "-- PHY:    %s", ((wb_peek32(offset)==1) ? "10Gbps" : "1Gbps"));
-        UHD_FW_TRACE_FSTR(INFO, "-- MAC:    %s", mac_addr_to_str(u3_net_stack_get_mac_addr(e)));
-        UHD_FW_TRACE_FSTR(INFO, "-- IP:     %s", ip_addr_to_str(u3_net_stack_get_ip_addr(e)));
-        UHD_FW_TRACE_FSTR(INFO, "-- SUBNET: %s", ip_addr_to_str(u3_net_stack_get_subnet(e)));
-        UHD_FW_TRACE_FSTR(INFO, "-- BCAST:  %s", ip_addr_to_str(u3_net_stack_get_bcast(e)));
+        uint32_t sfp_type = wb_peek32(SR_ADDR(RB0_BASE, ((sfp==1) ? RB_SFP1_TYPE : RB_SFP0_TYPE)));
+        UHD_FW_TRACE_FSTR(INFO, "SFP+ Port %u:", (int)sfp);
+        if (sfp_type == RB_SFP_AURORA) {
+            UHD_FW_TRACE     (INFO, "-- PHY:    10Gbps Aurora");
+        } else {
+            UHD_FW_TRACE_FSTR(INFO, "-- PHY:    %s", (sfp_type == RB_SFP_10G_ETH) ? "10Gbps Ethernet" : "1Gbps Ethernet");
+            UHD_FW_TRACE_FSTR(INFO, "-- MAC:    %s", mac_addr_to_str(u3_net_stack_get_mac_addr(sfp)));
+            UHD_FW_TRACE_FSTR(INFO, "-- IP:     %s", ip_addr_to_str(u3_net_stack_get_ip_addr(sfp)));
+            UHD_FW_TRACE_FSTR(INFO, "-- SUBNET: %s", ip_addr_to_str(u3_net_stack_get_subnet(sfp)));
+            UHD_FW_TRACE_FSTR(INFO, "-- BCAST:  %s", ip_addr_to_str(u3_net_stack_get_bcast(sfp)));
+        }
     }
 
     // For eth interfaces, initialize the PHY's

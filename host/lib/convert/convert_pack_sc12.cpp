@@ -25,6 +25,11 @@ using namespace uhd::convert;
 
 typedef boost::uint32_t (*towire32_type)(boost::uint32_t);
 
+/* C language specification requires this to be packed
+ * (i.e., line0, line1, line2 will be in adjacent memory locations).
+ * If this was not true, we'd need compiler flags here to specify
+ * alignment/packing.
+ */
 struct item32_sc12_3x
 {
     item32_t line0;

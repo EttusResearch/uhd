@@ -5,7 +5,7 @@ Welcome to the NI Ettus Research USRP E310/E312 Firmware distribution.
 
 # Dependencies
 
-In order to build you'll *avr-gcc* and *avr-libc*.
+In order to build you'll *avr-gcc*, *avr-libc*, and *srec_cat*.
 
 # Building
 

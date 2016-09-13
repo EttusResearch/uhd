@@ -1,5 +1,5 @@
 //
-// Copyright 2015 National Instruments Corp.
+// Copyright 2015-2016 National Instruments Corp.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
         ("cxx-flags",          "Print C++ compiler flags")
         ("enabled-components", "Print built-time enabled components")
         ("install-prefix",     "Print install prefix")
+        ("boost-version",      "Print Boost version")
         ("libusb-version",     "Print libusb version")
         ("print-all",          "Print everything")
         ("version",            "Print this UHD build's version")

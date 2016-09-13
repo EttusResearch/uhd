@@ -237,6 +237,14 @@ BOOST_AUTO_TEST_CASE(double_greaterthanequals_operators) {
     BOOST_CHECK(double(alpha._value + 3.0008) >= alpha);
 }
 
+BOOST_AUTO_TEST_CASE(fp_compare_large_delta) {
+    BOOST_CHECK(fp_compare_delta<double>(61440000.047870710492, 0.1) == 61440000.000000000000);
+    BOOST_CHECK(fp_compare_delta<double>(61440000.047870710492, 0.1) <= 61440000.000000000000);
+    BOOST_CHECK(fp_compare_delta<double>(61440000.047870710492, 0.1) >= 61440000.000000000000);
+
+    BOOST_CHECK(fp_compare_delta<double>(1.0, 10.0) == 2.0);
+}
+
 BOOST_AUTO_TEST_CASE(frequency_compare_function) {
 
     BOOST_CHECK(uhd::math::frequencies_are_equal(6817333232.0, 6817333232.0));

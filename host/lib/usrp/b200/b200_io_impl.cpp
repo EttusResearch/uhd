@@ -82,9 +82,9 @@ void b200_impl::set_auto_tick_rate(
         num_chans = std::max(size_t(1), max_chan_count());
     }
     const double max_tick_rate = ad9361_device_t::AD9361_MAX_CLOCK_RATE/num_chans;
+    using namespace uhd::math;
     if (rate != 0.0 and
-        (uhd::math::fp_compare::fp_compare_delta<double>(rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) >
-         uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ))) {
+        (fp_compare::fp_compare_delta<double>(rate, FREQ_COMPARISON_DELTA_HZ) > max_tick_rate)) {
         throw uhd::value_error(str(
                 boost::format("Requested sampling rate (%.2f Msps) exceeds maximum tick rate of %.2f MHz.")
                 % (rate / 1e6) % (max_tick_rate / 1e6)
@@ -96,26 +96,25 @@ void b200_impl::set_auto_tick_rate(
     boost::uint32_t lcm_rate = (rate == 0) ? 1 : static_cast<boost::uint32_t>(floor(rate + 0.5));
     for (int i = 0; i < 2; i++) { // Loop through rx and tx
         std::string dir = (i == 0) ? "tx" : "rx";
-        // We have no way of knowing which DSPs are used, so we check them all.
+        // We assume all 'set' DSPs are being used.
         BOOST_FOREACH(const std::string &dsp_no, _tree->list(str(boost::format("/mboards/0/%s_dsps") % dir))) {
             fs_path dsp_path = str(boost::format("/mboards/0/%s_dsps/%s") % dir % dsp_no);
             if (dsp_path == tree_dsp_path) {
                 continue;
             }
+            if (not _tree->access<bool>(dsp_path / "rate/set").get()) {
+                continue;
+            }
             double this_dsp_rate = _tree->access<double>(dsp_path / "rate/value").get();
             // Check if the user selected something completely unreasonable:
-            if (uhd::math::fp_compare::fp_compare_delta<double>(this_dsp_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ) >
-                uhd::math::fp_compare::fp_compare_delta<double>(max_tick_rate, uhd::math::FREQ_COMPARISON_DELTA_HZ)) {
+            if (fp_compare::fp_compare_delta<double>(this_dsp_rate, FREQ_COMPARISON_DELTA_HZ) > max_tick_rate) {
                 throw uhd::value_error(str(
                         boost::format("Requested sampling rate (%.2f Msps) exceeds maximum tick rate of %.2f MHz.")
                         % (this_dsp_rate / 1e6) % (max_tick_rate / 1e6)
                 ));
             }
-            // If this_dsp_rate == 0.0, the sampling rate for this DSP hasn't been set, so
-            // we don't take that into consideration.
-            if (this_dsp_rate == 0.0) {
-                continue;
-            }
+            // Clean up floating point rounding errors if they crept in
+            this_dsp_rate = std::min(max_tick_rate, this_dsp_rate);
             lcm_rate = boost::math::lcm<boost::uint32_t>(
                     lcm_rate,
                     static_cast<boost::uint32_t>(floor(this_dsp_rate + 0.5))
@@ -159,6 +158,22 @@ void b200_impl::update_tick_rate(const double new_tick_rate)
         boost::shared_ptr<sph::send_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(perif.tx_streamer.lock());
         if (my_streamer) my_streamer->set_tick_rate(new_tick_rate);
+    }
+}
+
+void b200_impl::update_rx_dsp_tick_rate(const double tick_rate, rx_dsp_core_3000::sptr ddc, uhd::fs_path rx_dsp_path)
+{
+    ddc->set_tick_rate(tick_rate);
+    if (_tree->access<bool>(rx_dsp_path / "rate" / "set").get()) {
+        ddc->set_host_rate(_tree->access<double>(rx_dsp_path / "rate" / "value").get());
+    }
+}
+
+void b200_impl::update_tx_dsp_tick_rate(const double tick_rate, tx_dsp_core_3000::sptr duc, uhd::fs_path tx_dsp_path)
+{
+    duc->set_tick_rate(tick_rate);
+    if (_tree->access<bool>(tx_dsp_path / "rate" / "set").get()) {
+        duc->set_host_rate(_tree->access<double>(tx_dsp_path / "rate" / "value").get());
     }
 }
 
@@ -293,7 +308,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
 {
     managed_recv_buffer::sptr buff = xport->get_recv_buff();
     if (not buff or buff->size() < 8)
-        return uhd::msg_task::msg_type_t(0, uhd::msg_task::msg_payload_t());
+        return boost::none;
 
     const boost::uint32_t sid = uhd::wtohx(buff->cast<const boost::uint32_t *>()[1]);
     switch (sid) {
@@ -303,7 +318,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
     case B200_RESP1_MSG_SID:
     case B200_LOCAL_RESP_SID:
     {
-    	radio_ctrl_core_3000::sptr ctrl;
+    	b200_radio_ctrl_core::sptr ctrl;
         if (sid == B200_RESP0_MSG_SID) ctrl = data->radio_ctrl[0].lock();
         if (sid == B200_RESP1_MSG_SID) ctrl = data->radio_ctrl[1].lock();
         if (sid == B200_LOCAL_RESP_SID) ctrl = data->local_ctrl.lock();
@@ -357,7 +372,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
     default:
         UHD_MSG(error) << "Got a ctrl packet with unknown SID " << sid << std::endl;
     }
-    return uhd::msg_task::msg_type_t(0, uhd::msg_task::msg_payload_t());
+    return boost::none;
 }
 
 /***********************************************************************

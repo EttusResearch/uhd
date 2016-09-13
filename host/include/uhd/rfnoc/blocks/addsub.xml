@@ -1,0 +1,50 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <!--The Adder & Subtractor takes inputs from Block Ports 0 & 1 and-->
+  <!--outputs the addition / subtraction of the values on Block Ports 0 & 1.-->
+  <!--- Block Port 0 + Block Port 1 => Block Port 0-->
+  <!--- Block Port 0 - Block Port 1 => Block Port 1-->
+  <name>Adder &amp; Subtractor</name>
+  <blockname>AddSub</blockname>
+  <ids>
+    <id revision="0">ADD0</id>
+  </ids>
+  <!--Order matters. The first listed port is port 0, etc.-->
+  <ports>
+    <sink>
+      <name>in0</name>
+      <type>sc16</type>
+      <port>0</port>
+    </sink>
+    <sink>
+      <name>in1</name>
+      <type>sc16</type>
+      <port>1</port>
+    </sink>
+    <source>
+      <name>sum</name>
+      <type>sc16</type>
+    </source>
+    <source>
+      <name>diff</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+  <!--<components>-->
+    <!--<component>-->
+      <!--<key revision="1">nocshell</key>-->
+    <!--</component>-->
+    <!--<component srbase="0">-->
+      <!--[>Will look for a component with this key:<]-->
+      <!--<key revision="1">componentname</key>-->
+    <!--</component>-->
+  <!--</components>-->
+  <!--<connection>-->
+    <!--<source port="0">nocshell</source>-->
+    <!--<sink port="0">componentname</sink>-->
+  <!--</connection>-->
+  <!--<connection>-->
+    <!--<source port="0">componentname</source>-->
+    <!--<sink port="0">nocshell</sink>-->
+  <!--</connection>-->
+</nocblock>

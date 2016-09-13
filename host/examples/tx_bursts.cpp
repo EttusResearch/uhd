@@ -142,7 +142,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         size_t num_acc_samps = 0; //number of accumulated samples
         while(num_acc_samps < total_num_samps){
-            size_t samps_to_send = std::min(total_num_samps - num_acc_samps, spb);
+            size_t samps_to_send = total_num_samps - num_acc_samps;
+            if (samps_to_send > spb)
+            {
+                samps_to_send = spb;
+            } else {
+                md.end_of_burst = true;
+            }
 
             //send a single packet
             size_t num_tx_samps = tx_stream->send(
@@ -152,25 +158,37 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             md.has_time_spec = false;
             md.start_of_burst = false;
 
-            if (num_tx_samps < samps_to_send) std::cerr << "Send timeout..." << std::endl;
-            if(verbose) std::cout << boost::format("Sent packet: %u samples") % num_tx_samps << std::endl;
+            if (num_tx_samps < samps_to_send)
+            {
+                std::cerr << "Send timeout..." << std::endl;
+                if (stop_signal_called)
+                {
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            if(verbose)
+            {
+                std::cout << boost::format("Sent packet: %u samples") % num_tx_samps << std::endl;
+            }
 
             num_acc_samps += num_tx_samps;
         }
-
-        md.end_of_burst = true;
-        tx_stream->send(buffs, 0, md, timeout);
 
         time_to_send += rep_rate;
 
         std::cout << std::endl << "Waiting for async burst ACK... " << std::flush;
         uhd::async_metadata_t async_md;
-        bool got_async_burst_ack = false;
-        //loop through all messages for the ACK packet (may have underflow messages in queue)
-        while (not got_async_burst_ack and tx_stream->recv_async_msg(async_md, seconds_in_future)){
-            got_async_burst_ack = (async_md.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
+        size_t acks = 0;
+        //loop through all messages for the ACK packets (may have underflow messages in queue)
+        while (acks < channel_nums.size() and tx_stream->recv_async_msg(async_md, seconds_in_future))
+        {
+            if (async_md.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK)
+            {
+                acks++;
+            }
         }
-        std::cout << (got_async_burst_ack? "success" : "fail") << std::endl;
+        std::cout << (acks == channel_nums.size() ? "success" : "fail") << std::endl;
     } while (not stop_signal_called and repeat);
 
     //finished

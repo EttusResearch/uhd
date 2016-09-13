@@ -35,7 +35,7 @@ void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
 
     //Reinitialize and resync all DACs
     for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->dac->reset_and_resync();
+        radios[i]->dac->reset();
     }
 
     //Get a rough estimate of the cumulative command latency

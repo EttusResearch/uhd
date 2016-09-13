@@ -1,0 +1,116 @@
+<nocblock>
+  <name>Signal Generator</name>
+  <blockname>SigGen</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">5166311000000000</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <!-- Reg 128 used for FREQ -->
+    <setreg>
+      <name>FREQ</name>
+      <address>129</address>
+    </setreg>
+    <setreg>
+      <name>CARTESIAN</name>
+      <address>130</address>
+    </setreg>
+    <setreg>
+      <name>ENABLE</name>
+      <address>132</address>
+    </setreg>
+    <setreg>
+      <name>CONSTANT</name>
+      <address>138</address>
+    </setreg>
+    <setreg>
+      <name>GAIN</name>
+      <address>139</address>
+    </setreg>
+    <setreg>
+      <name>PKT_SIZE</name>
+      <address>140</address>
+    </setreg>
+    <setreg>
+      <name>WAVEFORM</name>
+      <address>142</address>
+    </setreg>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>enable</name>
+      <type>int</type>
+      <value>0</value>
+      <check>EQUAL($enable, 0) OR EQUAL($enable, 1)</check>
+      <check_message>Enable is either 0 or 1.</check_message>
+      <action>SR_WRITE("ENABLE", $enable)</action>
+    </arg>
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>256</value>
+      <action>SR_WRITE("PKT_SIZE", $spp)</action>
+    </arg>
+    <!-- Overall Gain -->
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <check>GE($gain, 0.0) AND LE($gain, 1.0)</check>
+      <check_message>Invalid gain.</check_message>
+      <action>
+        SR_WRITE("GAIN", IROUND(MULT(32767.0,$gain)))
+      </action>
+    </arg>
+    <!-- Sine Wave, Constant I / Q -->
+    <arg>
+      <name>amplitude_i</name>
+      <type>double</type>
+      <value>1.0</value>
+      <check>GE($amplitude_i, -1.0) AND LE($amplitude_i, 1.0)</check>
+      <check_message>Invalid amplitude.</check_message>
+    </arg>
+    <arg>
+      <name>amplitude_q</name>
+      <type>double</type>
+      <value>1.0</value>
+      <check>GE($amplitude_q, -1.0) AND LE($amplitude_q, 1.0)</check>
+      <check_message>Invalid amplitude.</check_message>
+      <action>
+          SR_WRITE("CONSTANT", ADD(MULT(65536,IROUND(MULT(32767.0, $amplitude_i))),IROUND(MULT(32767.0, $amplitude_q))))
+      </action>
+    </arg>
+    <arg>
+      <name>frequency</name>
+      <type>double</type>
+      <value>0.1</value>
+      <check>GE($frequency, -1.0) AND LE($frequency, 1.0)</check>
+      <check_message>Invalid frequency.</check_message>
+      <action>SR_WRITE("FREQ", IROUND(MULT(-8192.0, $frequency)))</action>
+    </arg>
+    <arg>
+      <name>waveform</name>
+      <type>string</type>
+      <value>CONSTANT</value>
+      <check>EQUAL($waveform, "CONSTANT") OR EQUAL($waveform, "SINE_WAVE") OR EQUAL($waveform, "NOISE")</check>
+      <check_message>Waveform type should be one of: CONSTANT, SINE WAVE, NOISE.</check_message>
+      <action>
+          IF(EQUAL($waveform, "CONSTANT"),  SR_WRITE("WAVEFORM", 0) AND SR_WRITE("CONSTANT",  ADD(MULT(65536,IROUND(MULT(32767.0, $amplitude_i))),IROUND(MULT(32767.0, $amplitude_q))))) OR
+          IF(EQUAL($waveform, "SINE_WAVE"), SR_WRITE("WAVEFORM", 1) AND SR_WRITE("CARTESIAN", MULT(65536,28000))) OR
+          IF(EQUAL($waveform, "NOISE"),     SR_WRITE("WAVEFORM", 2))
+      </action>
+    </arg>
+  </args>
+  <!-- Ports -->
+  <ports>
+    <sink>
+      <name>dump</name>
+    </sink>
+    <source>
+      <name>src</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+</nocblock>

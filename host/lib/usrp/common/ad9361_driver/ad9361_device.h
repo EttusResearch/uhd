@@ -75,6 +75,9 @@ public:
     /* Initialize the AD9361 codec. */
     void initialize();
 
+    /* Set SPI interface */
+    void set_io_iface(ad9361_io::sptr io_iface);
+
     /* This function sets the RX / TX rate between AD9361 and the FPGA, and
      * thus determines the interpolation / decimation required in the FPGA to
      * achieve the user's requested rate.

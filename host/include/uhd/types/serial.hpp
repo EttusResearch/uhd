@@ -118,13 +118,19 @@ namespace uhd{
         //! on what edge is the miso data valid?
         edge_t miso_edge;
 
+        //! Set the clock speed for this transaction
+        bool use_custom_divider;
+
+        //! Optionally set the SPI clock divider for this transaction
+        size_t divider;
+
         /*!
          * Create a new spi config.
          * \param edge the default edge for mosi and miso
          */
         spi_config_t(edge_t edge = EDGE_RISE);
     };
-    
+
     /*!
      * The SPI interface class.
      * Provides routines to transact SPI and do other useful things which haven't been defined yet.

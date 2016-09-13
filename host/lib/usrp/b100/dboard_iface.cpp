@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011,2015,2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -66,12 +66,16 @@ public:
     void write_aux_dac(unit_t, aux_dac_t, double);
     double read_aux_adc(unit_t, aux_adc_t);
 
-    void _set_pin_ctrl(unit_t, boost::uint16_t);
-    void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
-    void _set_gpio_ddr(unit_t, boost::uint16_t);
-    void _set_gpio_out(unit_t, boost::uint16_t);
-    void set_gpio_debug(unit_t, int);
-    boost::uint16_t read_gpio(unit_t);
+    void set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_pin_ctrl(unit_t unit);
+    void set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_atr_reg(unit_t unit, atr_reg_t reg);
+    void set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_gpio_ddr(unit_t unit);
+    void set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
+    boost::uint32_t get_gpio_out(unit_t unit);
+    boost::uint32_t read_gpio(unit_t unit);
+
     void set_command_time(const uhd::time_spec_t& t);
     uhd::time_spec_t get_command_time(void);
 
@@ -97,6 +101,7 @@ public:
     double get_clock_rate(unit_t);
     void set_clock_enabled(unit_t, bool);
     double get_codec_rate(unit_t);
+    void set_fe_connection(unit_t unit, const std::string&, const fe_connection_t& fe_conn);
 
 private:
     timed_wb_iface::sptr _wb_iface;
@@ -127,6 +132,7 @@ void b100_dboard_iface::set_clock_rate(unit_t unit, double rate){
     switch(unit){
     case UNIT_RX: return _clock->set_rx_dboard_clock_rate(rate);
     case UNIT_TX: return _clock->set_tx_dboard_clock_rate(rate);
+    case UNIT_BOTH: set_clock_rate(UNIT_RX, rate); set_clock_rate(UNIT_TX, rate); return;
     }
 }
 
@@ -142,14 +148,15 @@ double b100_dboard_iface::get_clock_rate(unit_t unit){
     switch(unit){
     case UNIT_RX: return _clock->get_rx_clock_rate();
     case UNIT_TX: return _clock->get_tx_clock_rate();
+    default: UHD_THROW_INVALID_CODE_PATH();
     }
-    UHD_THROW_INVALID_CODE_PATH();
 }
 
 void b100_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
     switch(unit){
     case UNIT_RX: return _clock->enable_rx_dboard_clock(enb);
     case UNIT_TX: return _clock->enable_tx_dboard_clock(enb);
+    case UNIT_BOTH: set_clock_enabled(UNIT_RX, enb); set_clock_enabled(UNIT_TX, enb); return;
     }
 }
 
@@ -160,28 +167,40 @@ double b100_dboard_iface::get_codec_rate(unit_t){
 /***********************************************************************
  * GPIO
  **********************************************************************/
-void b100_dboard_iface::_set_pin_ctrl(unit_t unit, boost::uint16_t value){
-    return _gpio->set_pin_ctrl(unit, value);
+void b100_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask){
+    _gpio->set_pin_ctrl(unit, static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask));
 }
 
-void b100_dboard_iface::_set_gpio_ddr(unit_t unit, boost::uint16_t value){
-    return _gpio->set_gpio_ddr(unit, value);
+boost::uint32_t b100_dboard_iface::get_pin_ctrl(unit_t unit){
+    return static_cast<boost::uint32_t>(_gpio->get_pin_ctrl(unit));
 }
 
-void b100_dboard_iface::_set_gpio_out(unit_t unit, boost::uint16_t value){
-    return _gpio->set_gpio_out(unit, value);
+void b100_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask){
+    _gpio->set_atr_reg(unit, reg, static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask));
 }
 
-boost::uint16_t b100_dboard_iface::read_gpio(unit_t unit){
+boost::uint32_t b100_dboard_iface::get_atr_reg(unit_t unit, atr_reg_t reg){
+    return static_cast<boost::uint32_t>(_gpio->get_atr_reg(unit, reg));
+}
+
+void b100_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask){
+    _gpio->set_gpio_ddr(unit, static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask));
+}
+
+boost::uint32_t b100_dboard_iface::get_gpio_ddr(unit_t unit){
+    return static_cast<boost::uint32_t>(_gpio->get_gpio_ddr(unit));
+}
+
+void b100_dboard_iface::set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask){
+    _gpio->set_gpio_out(unit, static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask));
+}
+
+boost::uint32_t b100_dboard_iface::get_gpio_out(unit_t unit){
+    return static_cast<boost::uint32_t>(_gpio->get_gpio_out(unit));
+}
+
+boost::uint32_t b100_dboard_iface::read_gpio(unit_t unit){
     return _gpio->read_gpio(unit);
-}
-
-void b100_dboard_iface::_set_atr_reg(unit_t unit, atr_reg_t atr, boost::uint16_t value){
-    return _gpio->set_atr_reg(unit, atr, value);
-}
-
-void b100_dboard_iface::set_gpio_debug(unit_t, int){
-    throw uhd::not_implemented_error("no set_gpio_debug implemented");
 }
 
 /***********************************************************************
@@ -196,8 +215,8 @@ static boost::uint32_t unit_to_otw_spi_dev(dboard_iface::unit_t unit){
     switch(unit){
     case dboard_iface::UNIT_TX: return B100_SPI_SS_TX_DB;
     case dboard_iface::UNIT_RX: return B100_SPI_SS_RX_DB;
+    default: UHD_THROW_INVALID_CODE_PATH();
     }
-    UHD_THROW_INVALID_CODE_PATH();
 }
 
 void b100_dboard_iface::write_spi(
@@ -267,4 +286,9 @@ void b100_dboard_iface::set_command_time(const uhd::time_spec_t& t)
 uhd::time_spec_t b100_dboard_iface::get_command_time(void)
 {
     return _wb_iface->get_time();
+}
+
+void b100_dboard_iface::set_fe_connection(unit_t, const std::string&, const fe_connection_t&)
+{
+    throw uhd::not_implemented_error("fe connection configuration support not implemented");
 }

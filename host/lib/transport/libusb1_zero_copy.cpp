@@ -125,19 +125,21 @@ public:
         _ctx(libusb::session::get_global_session()->get_context()),
         _lut(lut), _frame_size(frame_size) { /* NOP */ }
 
+    virtual ~libusb_zero_copy_mb(void);
+
     void release(void){
     	_release_cb(this);
     }
 
     UHD_INLINE void submit(void)
     {
-    	_lut->length = (_is_recv)? _frame_size : size(); //always set length
+        _lut->length = int((_is_recv)? _frame_size : size()); //always set length
 #ifdef UHD_TXRX_DEBUG_PRINTS
         result.start_time = boost::get_system_time().time_of_day().total_microseconds();
         result.buff_num = num();
         result.is_recv = _is_recv;
 #endif
-        const int ret = libusb_submit_transfer(_lut);
+	int ret = libusb_submit_transfer(_lut);
         if (ret != LIBUSB_SUCCESS)
 	  throw uhd::usb_error(ret, str(boost::format(
             "usb %s submit failed: %s") % _name % libusb_error_name(ret)));
@@ -149,10 +151,10 @@ public:
         if (wait_for_completion(timeout))
         {
             if (result.status != LIBUSB_TRANSFER_COMPLETED)
-                throw uhd::runtime_error(str(boost::format("usb %s transfer status: %d")
-                                             % _name % libusb_error_name(result.status)));
+                throw uhd::io_error(str(boost::format("usb %s transfer status: %d")
+                                        % _name % libusb_error_name(result.status)));
             result.completed = 0;
-            return make(reinterpret_cast<buffer_type *>(this), _lut->buffer, (_is_recv)? result.actual_length : _frame_size);
+            return make(reinterpret_cast<buffer_type *>(this), _lut->buffer, (_is_recv)? size_t(result.actual_length) : _frame_size);
         }
         return typename buffer_type::sptr();
     }
@@ -189,6 +191,10 @@ private:
     const size_t _frame_size;
 };
 
+libusb_zero_copy_mb::~libusb_zero_copy_mb(void) {
+    /* NOP */
+}
+
 /***********************************************************************
  * USB zero_copy device class
  **********************************************************************/
@@ -197,7 +203,7 @@ class libusb_zero_copy_single
 public:
     libusb_zero_copy_single(
         libusb::device_handle::sptr handle,
-        const size_t interface, const size_t endpoint,
+        const int interface, const unsigned char endpoint,
         const size_t num_frames, const size_t frame_size
     ):
         _handle(handle),
@@ -221,7 +227,7 @@ public:
                 _handle->get(), // dev_handle
                 endpoint, // endpoint
                 static_cast<unsigned char *>(buff),
-                sizeof(buff),
+                int(sizeof(buff)),
                 &transfered, //bytes xfered
                 10 //timeout ms
             );
@@ -243,7 +249,7 @@ public:
                 _handle->get(),                                         // dev_handle
                 endpoint,                                               // endpoint
                 static_cast<unsigned char *>(_buffer_pool->at(i)),      // buffer
-                this->get_frame_size(),                                 // length
+                int(this->get_frame_size()),                            // length
                 libusb_transfer_cb_fn(&libusb_async_cb),                // callback
                 static_cast<void *>(&_mb_pool.back()->result),          // user_data
                 0                                                       // timeout (ms)
@@ -372,10 +378,10 @@ struct libusb_zero_copy_impl : usb_zero_copy
 {
     libusb_zero_copy_impl(
         libusb::device_handle::sptr handle,
-        const size_t recv_interface,
-        const size_t recv_endpoint,
-        const size_t send_interface,
-        const size_t send_endpoint,
+        const int recv_interface,
+        const unsigned char recv_endpoint,
+        const int send_interface,
+        const unsigned char send_endpoint,
         const device_addr_t &hints
     ){
         _recv_impl.reset(new libusb_zero_copy_single(
@@ -387,6 +393,8 @@ struct libusb_zero_copy_impl : usb_zero_copy
             size_t(hints.cast<double>("num_send_frames", DEFAULT_NUM_XFERS)),
             size_t(hints.cast<double>("send_frame_size", DEFAULT_XFER_SIZE))));
     }
+
+    virtual ~libusb_zero_copy_impl(void);
 
     managed_recv_buffer::sptr get_recv_buff(double timeout)
     {
@@ -410,15 +418,26 @@ struct libusb_zero_copy_impl : usb_zero_copy
     boost::mutex _recv_mutex, _send_mutex;
 };
 
+libusb_zero_copy_impl::~libusb_zero_copy_impl(void) {
+    /* NOP */
+}
+
+/***********************************************************************
+ * USB zero_copy destructor
+ **********************************************************************/
+usb_zero_copy::~usb_zero_copy(void) {
+    /* NOP */
+}
+
 /***********************************************************************
  * USB zero_copy make functions
  **********************************************************************/
 usb_zero_copy::sptr usb_zero_copy::make(
     usb_device_handle::sptr handle,
-    const size_t recv_interface,
-    const size_t recv_endpoint,
-    const size_t send_interface,
-    const size_t send_endpoint,
+    const int recv_interface,
+    const unsigned char recv_endpoint,
+    const int send_interface,
+    const unsigned char send_endpoint,
     const device_addr_t &hints
 ){
     libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(

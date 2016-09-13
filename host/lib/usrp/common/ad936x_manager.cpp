@@ -93,14 +93,12 @@ class ad936x_manager_impl : public ad936x_manager
     // worst case conditions to stress the interface.
     //
     void loopback_self_test(
-            wb_iface::sptr iface,
-            wb_iface::wb_addr_type codec_idle_addr,
-            wb_iface::wb_addr_type codec_readback_addr
+            boost::function<void(uint32_t)> poker_functor,
+            boost::function<uint64_t()> peeker_functor
     ) {
         // Put AD936x in loopback mode
         _codec_ctrl->data_port_loopback(true);
         UHD_MSG(status) << "Performing CODEC loopback test... " << std::flush;
-        UHD_ASSERT_THROW(bool(iface));
         size_t hash = size_t(time(NULL));
 
         // Allow some time for AD936x to enter loopback mode.
@@ -118,10 +116,10 @@ class ad936x_manager_impl : public ad936x_manager
             const boost::uint32_t word32 = boost::uint32_t(hash) & 0xfff0fff0;
 
             // Write test word to codec_idle idle register (on TX side)
-            iface->poke32(codec_idle_addr, word32);
+            poker_functor(word32);
 
             // Read back values - TX is lower 32-bits and RX is upper 32-bits
-            const boost::uint64_t rb_word64 = iface->peek64(codec_readback_addr);
+            const boost::uint64_t rb_word64 = peeker_functor();
             const boost::uint32_t rb_tx = boost::uint32_t(rb_word64 >> 32);
             const boost::uint32_t rb_rx = boost::uint32_t(rb_word64 & 0xffffffff);
 
@@ -136,7 +134,7 @@ class ad936x_manager_impl : public ad936x_manager
         UHD_MSG(status) << "pass" << std::endl;
 
         // Zero out the idle data.
-        iface->poke32(codec_idle_addr, 0);
+        poker_functor(0);
 
         // Take AD936x out of loopback mode
         _codec_ctrl->data_port_loopback(false);
@@ -211,11 +209,11 @@ class ad936x_manager_impl : public ad936x_manager
 
         // Sensors
         subtree->create<sensor_value_t>("sensors/temp")
-            .publish(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl))
+            .set_publisher(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl))
         ;
         if (dir == RX_DIRECTION) {
             subtree->create<sensor_value_t>("sensors/rssi")
-                .publish(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key))
+                .set_publisher(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key))
             ;
         }
 
@@ -226,7 +224,7 @@ class ad936x_manager_impl : public ad936x_manager
                 .set(ad9361_ctrl::get_gain_range(key));
             subtree->create<double>(uhd::fs_path("gains") / name / "value")
                 .set(ad936x_manager::DEFAULT_GAIN)
-                .coerce(boost::bind(&ad9361_ctrl::set_gain, _codec_ctrl, key, _1))
+                .set_coercer(boost::bind(&ad9361_ctrl::set_gain, _codec_ctrl, key, _1))
             ;
         }
 
@@ -238,19 +236,19 @@ class ad936x_manager_impl : public ad936x_manager
         // Analog Bandwidths
         subtree->create<double>("bandwidth/value")
             .set(ad936x_manager::DEFAULT_BANDWIDTH)
-            .coerce(boost::bind(&ad9361_ctrl::set_bw_filter, _codec_ctrl, key, _1))
+            .set_coercer(boost::bind(&ad9361_ctrl::set_bw_filter, _codec_ctrl, key, _1))
         ;
         subtree->create<meta_range_t>("bandwidth/range")
-            .publish(boost::bind(&ad9361_ctrl::get_bw_filter_range, key))
+            .set_publisher(boost::bind(&ad9361_ctrl::get_bw_filter_range, key))
         ;
 
         // LO Tuning
         subtree->create<meta_range_t>("freq/range")
-            .publish(boost::bind(&ad9361_ctrl::get_rf_freq_range))
+            .set_publisher(boost::bind(&ad9361_ctrl::get_rf_freq_range))
         ;
         subtree->create<double>("freq/value")
-            .publish(boost::bind(&ad9361_ctrl::get_freq, _codec_ctrl, key))
-            .coerce(boost::bind(&ad9361_ctrl::tune, _codec_ctrl, key, _1))
+            .set_publisher(boost::bind(&ad9361_ctrl::get_freq, _codec_ctrl, key))
+            .set_coercer(boost::bind(&ad9361_ctrl::tune, _codec_ctrl, key, _1))
         ;
 
         // Frontend corrections
@@ -258,21 +256,21 @@ class ad936x_manager_impl : public ad936x_manager
         {
             subtree->create<bool>("dc_offset/enable" )
                 .set(ad936x_manager::DEFAULT_AUTO_DC_OFFSET)
-                .subscribe(boost::bind(&ad9361_ctrl::set_dc_offset_auto, _codec_ctrl, key, _1))
+                .add_coerced_subscriber(boost::bind(&ad9361_ctrl::set_dc_offset_auto, _codec_ctrl, key, _1))
             ;
             subtree->create<bool>("iq_balance/enable" )
                 .set(ad936x_manager::DEFAULT_AUTO_IQ_BALANCE)
-                .subscribe(boost::bind(&ad9361_ctrl::set_iq_balance_auto, _codec_ctrl, key, _1))
+                .add_coerced_subscriber(boost::bind(&ad9361_ctrl::set_iq_balance_auto, _codec_ctrl, key, _1))
             ;
 
             // AGC setup
             const std::list<std::string> mode_strings = boost::assign::list_of("slow")("fast");
             subtree->create<bool>("gain/agc/enable")
                 .set(DEFAULT_AGC_ENABLE)
-                .subscribe(boost::bind((&ad9361_ctrl::set_agc), _codec_ctrl, key, _1))
+                .add_coerced_subscriber(boost::bind((&ad9361_ctrl::set_agc), _codec_ctrl, key, _1))
             ;
             subtree->create<std::string>("gain/agc/mode/value")
-                .subscribe(boost::bind((&ad9361_ctrl::set_agc_mode), _codec_ctrl, key, _1)).set(mode_strings.front())
+                .add_coerced_subscriber(boost::bind((&ad9361_ctrl::set_agc_mode), _codec_ctrl, key, _1)).set(mode_strings.front())
             ;
             subtree->create< std::list<std::string> >("gain/agc/mode/options")
                 .set(mode_strings)
@@ -282,8 +280,8 @@ class ad936x_manager_impl : public ad936x_manager
         // Frontend filters
         BOOST_FOREACH(const std::string &filter_name, _codec_ctrl->get_filter_names(key)) {
             subtree->create<filter_info_base::sptr>(uhd::fs_path("filters") / filter_name / "value" )
-                .publish(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_name))
-                .subscribe(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_name, _1));
+                .set_publisher(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_name))
+                .add_coerced_subscriber(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_name, _1));
         }
     }
 

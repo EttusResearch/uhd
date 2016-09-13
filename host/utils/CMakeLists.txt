@@ -192,4 +192,18 @@ IF(ENABLE_USRP2)
 
 ENDIF(ENABLE_USRP2)
 
+########################################################################
+# Other files that are not utilities or executables
+########################################################################
+IF(WIN32)
+    SET(windows_extra_files
+        FastSendDatagramThreshold.reg
+    )
+    UHD_INSTALL(
+        FILES ${windows_extra_files}
+        DESTINATION ${PKG_DATA_DIR}
+        COMPONENT utilities
+    )
+ENDIF(WIN32)
+
 ADD_SUBDIRECTORY(latency)

@@ -60,7 +60,7 @@ static const uhd::dict<std::string, gain_range_t> dbsrx2_gain_ranges = map_list_
 class dbsrx2 : public rx_dboard_base{
 public:
     dbsrx2(ctor_args_t args);
-    ~dbsrx2(void);
+    virtual ~dbsrx2(void);
 
 private:
     double _lo_freq;
@@ -191,16 +191,16 @@ dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args){
     this->get_rx_subtree()->create<std::string>("name")
         .set("DBSRX2");
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .publish(boost::bind(&dbsrx2::get_locked, this));
+        .set_publisher(boost::bind(&dbsrx2::get_locked, this));
     BOOST_FOREACH(const std::string &name, dbsrx2_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
-            .coerce(boost::bind(&dbsrx2::set_gain, this, _1, name))
+            .set_coercer(boost::bind(&dbsrx2::set_gain, this, _1, name))
             .set(dbsrx2_gain_ranges[name].start());
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(dbsrx2_gain_ranges[name]);
     }
     this->get_rx_subtree()->create<double>("freq/value")
-        .coerce(boost::bind(&dbsrx2::set_lo_freq, this, _1))
+        .set_coercer(boost::bind(&dbsrx2::set_lo_freq, this, _1))
         .set(dbsrx2_freq_range.start());
     this->get_rx_subtree()->create<meta_range_t>("freq/range")
         .set(dbsrx2_freq_range);
@@ -218,7 +218,7 @@ dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args){
     double codec_rate = this->get_iface()->get_codec_rate(dboard_iface::UNIT_RX);
 
     this->get_rx_subtree()->create<double>("bandwidth/value")
-        .coerce(boost::bind(&dbsrx2::set_bandwidth, this, _1))
+        .set_coercer(boost::bind(&dbsrx2::set_bandwidth, this, _1))
         .set(2.0*(0.8*codec_rate/2.0)); //bandwidth in lowpass, convert to complex bandpass
                                         //default to anti-alias at different codec_rate
     this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")

@@ -53,10 +53,22 @@ def get_footer(uploader_name, uploader_email):
 if __name__ == "__main__":
 
     parser = OptionParser()
-    parser.add_option("--input-file",     type="string", help="Input UHD top-level changelog file")
-    parser.add_option("--output-file",    type="string", help="Output Debian changelog file (will append onto existing)")
-    parser.add_option("--uploader-name",  type="string", help="Uploader name (must match GPG key)")
-    parser.add_option("--uploader-email", type="string", help="Uploader email (must match GPG key)")
+    parser.add_option(
+        "--input-file",     type="string", default='CHANGELOG',
+        help="Input UHD top-level changelog file"
+    )
+    parser.add_option("--output-file",
+        type="string", default='host/cmake/debian/changelog',
+        help="Output Debian changelog file (will append onto existing)"
+    )
+    parser.add_option("--uploader-name",
+        type="string", default='Ettus Research',
+        help="Uploader name (must match GPG key)",
+    )
+    parser.add_option("--uploader-email",
+        type="string", default='packages@ettus.com',
+        help="Uploader email (must match GPG key)"
+    )
     parser.add_option("--last-version",   type="string", help="Manually specify last version (Debian format)", default="")
     (options, args) = parser.parse_args()
 

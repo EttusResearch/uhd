@@ -1,5 +1,5 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -201,7 +201,7 @@ static UHD_INLINE bool n200_response_matches(const n200_fw_update_data_t *pkt_in
                                              n200_fw_update_id_t pkt_code,
                                              size_t len){
     return (len > offsetof(n200_fw_update_data_t, data) and
-            ntohl(pkt_in->id) == pkt_code);
+            ntohl(pkt_in->id) == (unsigned)pkt_code);
 }
 
 static uhd::device_addr_t n200_find(const image_loader::image_loader_args_t &image_loader_args){

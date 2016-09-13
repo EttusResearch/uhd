@@ -62,8 +62,12 @@ private:
  **********************************************************************/
 class dummy_recv_xport_class{
 public:
-    dummy_recv_xport_class(const std::string &end){
+    dummy_recv_xport_class(const std::string &end) : io_status(true) {
         _end = end;
+    }
+
+    void set_io_status(bool status){
+        io_status = status;
     }
 
     void push_back_packet(
@@ -83,6 +87,7 @@ public:
     }
 
     uhd::transport::managed_recv_buffer::sptr get_recv_buff(double){
+        if (!io_status) throw uhd::io_error("IO error exception"); //simulate an IO error
         if (_mems.empty()) return uhd::transport::managed_recv_buffer::sptr(); //timeout
         _mrbs.push_back(boost::shared_ptr<dummy_mrb>(new dummy_mrb()));
         uhd::transport::managed_recv_buffer::sptr mrb = _mrbs.back()->get_new(_mems.front(), _lens.front());
@@ -96,6 +101,7 @@ private:
     std::list<size_t> _lens;
     std::vector<boost::shared_ptr<dummy_mrb> > _mrbs;
     std::string _end;
+    bool io_status;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -167,6 +173,10 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_normal){
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
+
+    //simulate the transport failing
+    dummy_recv_xport.set_io_status(false);
+    BOOST_REQUIRE_THROW(handler.recv(&buff.front(), buff.size(), metadata, 1.0, true), uhd::io_error);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -249,6 +259,10 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_sequence_error){
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
+
+    //simulate the transport failing
+    dummy_recv_xport.set_io_status(false);
+    BOOST_REQUIRE_THROW(handler.recv(&buff.front(), buff.size(), metadata, 1.0, true), uhd::io_error);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -341,6 +355,10 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_one_channel_inline_message){
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
+
+    //simulate the transport failing
+    dummy_recv_xport.set_io_status(false);
+    BOOST_REQUIRE_THROW(handler.recv(&buff.front(), buff.size(), metadata, 1.0, true), uhd::io_error);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -424,6 +442,12 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal){
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
 
+    //simulate the transport failing
+    for (size_t ch = 0; ch < NCHANNELS; ch++){
+        dummy_recv_xports[ch].set_io_status(false);
+    }
+
+    BOOST_REQUIRE_THROW(handler.recv(buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true), uhd::io_error);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -518,6 +542,13 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error){
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
+
+    //simulate the transport failing
+    for (size_t ch = 0; ch < NCHANNELS; ch++){
+        dummy_recv_xports[ch].set_io_status(false);
+    }
+
+    BOOST_REQUIRE_THROW(handler.recv(buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true), uhd::io_error);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -606,6 +637,82 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error){
         );
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
+
+    //simulate the transport failing
+    for (size_t ch = 0; ch < NCHANNELS; ch++){
+        dummy_recv_xports[ch].set_io_status(false);
+    }
+
+    BOOST_REQUIRE_THROW(handler.recv(buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true), uhd::io_error);
+}
+
+////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_exception){
+////////////////////////////////////////////////////////////////////////
+    uhd::convert::id_type id;
+    id.input_format = "sc16_item32_be";
+    id.num_inputs = 1;
+    id.output_format = "fc32";
+    id.num_outputs = 1;
+
+    uhd::transport::vrt::if_packet_info_t ifpi;
+    ifpi.packet_type = uhd::transport::vrt::if_packet_info_t::PACKET_TYPE_DATA;
+    ifpi.num_payload_words32 = 0;
+    ifpi.packet_count = 0;
+    ifpi.sob = true;
+    ifpi.eob = false;
+    ifpi.has_sid = false;
+    ifpi.has_cid = false;
+    ifpi.has_tsi = true;
+    ifpi.has_tsf = true;
+    ifpi.tsi = 0;
+    ifpi.tsf = 0;
+    ifpi.has_tlr = false;
+
+    static const double TICK_RATE = 100e6;
+    static const double SAMP_RATE = 10e6;
+    static const size_t NUM_PKTS_TO_TEST = 30;
+    static const size_t NUM_SAMPS_PER_BUFF = 20;
+    static const size_t NCHANNELS = 4;
+
+    std::vector<dummy_recv_xport_class> dummy_recv_xports(NCHANNELS, dummy_recv_xport_class("big"));
+
+    //generate a bunch of packets
+    for (size_t i = 0; i < NUM_PKTS_TO_TEST; i++){
+        ifpi.num_payload_words32 = 10 + i%10;
+        for (size_t ch = 0; ch < NCHANNELS; ch++){
+            dummy_recv_xports[ch].push_back_packet(ifpi);
+        }
+        ifpi.packet_count++;
+        ifpi.tsf += ifpi.num_payload_words32*size_t(TICK_RATE/SAMP_RATE);
+        if (i == NUM_PKTS_TO_TEST/2){
+            ifpi.tsf = 0; //simulate the user changing the time
+        }
+    }
+
+    //create the super receive packet handler
+    uhd::transport::sph::recv_packet_handler handler(NCHANNELS);
+    handler.set_vrt_unpacker(&uhd::transport::vrt::if_hdr_unpack_be);
+    handler.set_tick_rate(TICK_RATE);
+    handler.set_samp_rate(SAMP_RATE);
+    for (size_t ch = 0; ch < NCHANNELS; ch++){
+        handler.set_xport_chan_get_buff(ch, boost::bind(&dummy_recv_xport_class::get_recv_buff, &dummy_recv_xports[ch], _1));
+    }
+    handler.set_converter(id);
+
+    std::complex<float> mem[NUM_SAMPS_PER_BUFF*NCHANNELS];
+    std::vector<std::complex<float> *> buffs(NCHANNELS);
+    for (size_t ch = 0; ch < NCHANNELS; ch++){
+        buffs[ch] = &mem[ch*NUM_SAMPS_PER_BUFF];
+    }
+
+    // simulate a failure on a channel (the last one)
+    uhd::rx_metadata_t metadata;
+    dummy_recv_xports[NCHANNELS-1].set_io_status(false);
+
+    std::cout << "exception check" << std::endl;
+
+    BOOST_REQUIRE_THROW(handler.recv(buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true), uhd::io_error);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -701,4 +808,10 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment){
         BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_TIMEOUT);
     }
 
+    //simulate the transport failing
+    for (size_t ch = 0; ch < NCHANNELS; ch++){
+        dummy_recv_xports[ch].set_io_status(false);
+    }
+
+    BOOST_REQUIRE_THROW(handler.recv(buffs, NUM_SAMPS_PER_BUFF, metadata, 1.0, true), uhd::io_error);
 }

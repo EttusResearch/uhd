@@ -1,0 +1,47 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>Window</name>
+  <blockname>Window</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">D053</id>
+  </ids>
+  <args>
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>256</value>
+    </arg>
+  </args>
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>sc16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
+    </source>
+  </ports>
+  <!--<components>-->
+    <!--<component>-->
+      <!--<key revision="1">nocshell</key>-->
+    <!--</component>-->
+    <!--<component srbase="0">-->
+      <!--[>Will look for a component with this key:<]-->
+      <!--<key revision="1">componentname</key>-->
+    <!--</component>-->
+  <!--</components>-->
+  <!--<connection>-->
+    <!--<source port="0">nocshell</source>-->
+    <!--<sink port="0">componentname</sink>-->
+  <!--</connection>-->
+  <!--<connection>-->
+    <!--<source port="0">componentname</source>-->
+    <!--<sink port="0">nocshell</sink>-->
+  <!--</connection>-->
+</nocblock>

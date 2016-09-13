@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 Ettus Research LLC
+ * Copyright 2014-2016 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,14 +25,16 @@
  */
 #ifdef __cplusplus
 
-#define UHD_OCTOCLOCK_SEND_AND_RECV(xport, pkt_code, pkt_out, len, data) pkt_out.proto_ver = OCTOCLOCK_FW_COMPAT_NUM; \
-                                                                         pkt_out.code = pkt_code; \
-                                                                         xport->send(boost::asio::buffer(&pkt_out, sizeof(octoclock_packet_t))); \
-                                                                         len = xport->recv(boost::asio::buffer(data), 2);
+#define UHD_OCTOCLOCK_SEND_AND_RECV(xport, fw_version, pkt_code, pkt_out, len, data) do {\
+                                                                            pkt_out.proto_ver = fw_version; \
+                                                                            pkt_out.code = pkt_code; \
+                                                                            xport->send(boost::asio::buffer(&pkt_out, sizeof(octoclock_packet_t))); \
+                                                                            len = xport->recv(boost::asio::buffer(data), 2);\
+                                                                         } while(0)
 
-#define UHD_OCTOCLOCK_PACKET_MATCHES(pkt_code, pkt_out, pkt_in, len) (len > offsetof(octoclock_packet_t, data) and \
-                                                                      pkt_in->sequence == pkt_out.sequence and \
-                                                                      pkt_in->code == pkt_code)
+#define UHD_OCTOCLOCK_PACKET_MATCHES(pkt_code, pkt_out, pkt_in, len)    (len > offsetof(octoclock_packet_t, data) and \
+                                                                            pkt_in->sequence == pkt_out.sequence and \
+                                                                            pkt_in->code == pkt_code)
 
 extern "C" {
 #endif
@@ -44,7 +46,8 @@ extern "C" {
 
 // These values are placed in the octoclock_packet_t.proto_ver field
 #define OCTOCLOCK_BOOTLOADER_PROTO_VER 1234
-#define OCTOCLOCK_FW_COMPAT_NUM           3
+#define OCTOCLOCK_FW_MIN_COMPAT_NUM       2
+#define OCTOCLOCK_FW_COMPAT_NUM           4
 
 // UDP ports assigned for different tasks
 #define OCTOCLOCK_UDP_CTRL_PORT   50000

@@ -26,17 +26,17 @@ class UHD_API usb_control : boost::noncopyable {
 public:
     typedef boost::shared_ptr<usb_control> sptr;
 
-    virtual ~usb_control(void) = 0;
+    virtual ~usb_control(void);
 
     /*!
-     * Create a new usb control transport:
+     * Create a new USB control transport:
      * This transport is for sending and receiving control information from
      * the host to device using the Default Control Pipe.
      *
      * \param handle a device handle that uniquely identifies a USB device
      * \param interface the USB interface number for the control transport
      */
-    static sptr make(usb_device_handle::sptr handle, const size_t interface);
+    static sptr make(usb_device_handle::sptr handle, const int interface);
 
     /*!
      * Submit a USB device request:
@@ -56,13 +56,13 @@ public:
      * \param timeout      4-byte (timeout, default is infinite wait)
      * \return             number of bytes submitted or error code
      */
-    virtual ssize_t submit(boost::uint8_t request_type,
-                          boost::uint8_t request,
-                          boost::uint16_t value,
-                          boost::uint16_t index, 
-                          unsigned char *buff,
-                          boost::uint16_t length,
-                          boost::int32_t timeout = 0) = 0;
+    virtual int submit(boost::uint8_t request_type,
+                       boost::uint8_t request,
+                       boost::uint16_t value,
+                       boost::uint16_t index, 
+                       unsigned char *buff,
+                       boost::uint16_t length,
+                       boost::uint32_t timeout = 0) = 0;
 };
 
 }} //namespace

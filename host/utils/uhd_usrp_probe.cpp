@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2011,2015 Ettus Research LLC
+// Copyright 2010-2011,2015-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,12 +18,14 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/version.hpp>
 #include <uhd/device.hpp>
+#include <uhd/device3.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/property_tree.hpp>
 #include <boost/algorithm/string.hpp> //for split
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/types/sensors.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
@@ -52,7 +54,7 @@ static std::string make_border(const std::string &text){
 static std::string get_dsp_pp_string(const std::string &type, property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("%s DSP: %s") % type % path.leaf() << std::endl;
-    //ss << std::endl;
+    ss << std::endl;
     meta_range_t freq_range = tree->access<meta_range_t>(path / "freq/range").get();
     ss << boost::format("Freq range: %.3f to %.3f MHz") % (freq_range.start()/1e6) % (freq_range.stop()/1e6) << std::endl;;
     return ss.str();
@@ -134,6 +136,16 @@ static std::string get_dboard_pp_string(const std::string &type, property_tree::
     return ss.str();
 }
 
+
+static std::string get_rfnoc_pp_string(property_tree::sptr tree, const fs_path &path){
+    std::stringstream ss;
+    ss << "RFNoC blocks on this device:" << std::endl << std::endl;
+    BOOST_FOREACH(const std::string &name, tree->list(path)){
+        ss << "* " << name << std::endl;
+    }
+    return ss.str();
+}
+
 static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("Mboard: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
@@ -148,21 +160,40 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path 
     if (tree->exists(path / "fpga_version")){
         ss << "FPGA Version: " << tree->access<std::string>(path / "fpga_version").get() << std::endl;
     }
+    if (tree->exists(path / "xbar")){
+        ss << "RFNoC capable: Yes" << std::endl;
+    }
     ss << std::endl;
-    ss << "Time sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "time_source" / "options").get()) << std::endl;
-    ss << "Clock sources: " << prop_names_to_pp_string(tree->access<std::vector<std::string> >(path / "clock_source" / "options").get()) << std::endl;
-    ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
-    BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
-        ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
+    try {
+        if (tree->exists(path / "time_source" / "options")){
+            const std::vector< std::string > time_sources  = tree->access<std::vector<std::string> >(path / "time_source" / "options").get();
+            ss << "Time sources:  " << prop_names_to_pp_string(time_sources)  << std::endl;
+        }
+        if (tree->exists(path / "clock_source" / "options")){
+            const std::vector< std::string > clock_sources = tree->access<std::vector<std::string> >(path / "clock_source" / "options").get();
+            ss << "Clock sources: " << prop_names_to_pp_string(clock_sources) << std::endl;
+        }
+        ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
+        if (tree->exists(path / "rx_dsps")){
+            BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
+                ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
+            }
+        }
+        BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
+            ss << make_border(get_dboard_pp_string("RX", tree, path / "dboards" / name));
+        }
+        if (tree->exists(path / "tx_dsps")){
+            BOOST_FOREACH(const std::string &name, tree->list(path / "tx_dsps")){
+                ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
+            }
+        }
+        BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
+            ss << make_border(get_dboard_pp_string("TX", tree, path / "dboards" / name));
+        }
+            ss << make_border(get_rfnoc_pp_string(tree, path / "xbar"));
     }
-    BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
-        ss << make_border(get_dboard_pp_string("RX", tree, path / "dboards" / name));
-    }
-    BOOST_FOREACH(const std::string &name, tree->list(path / "tx_dsps")){
-        ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
-    }
-    BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
-        ss << make_border(get_dboard_pp_string("TX", tree, path / "dboards" / name));
+    catch (const uhd::lookup_error&) {
+        /* nop */
     }
     return ss.str();
 }
@@ -195,6 +226,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("string", po::value<std::string>(), "query a string value from the property tree")
         ("double", po::value<std::string>(), "query a double precision floating point value from the property tree")
         ("int", po::value<std::string>(), "query a integer value from the property tree")
+        ("sensor", po::value<std::string>(), "query a sensor value from the property tree")
         ("range", po::value<std::string>(), "query a range (gain, bandwidth, frequency, ...)  from the property tree")
         ("init-only", "skip all queries, only initialize device")
     ;
@@ -214,7 +246,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return EXIT_SUCCESS;
     }
 
-    device::sptr dev = device::make(vm["args"].as<std::string>(), device::USRP);
+    device::sptr dev = device::make(vm["args"].as<std::string>());
     property_tree::sptr tree = dev->get_tree();
 
     if (vm.count("string")){
@@ -229,6 +261,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     if (vm.count("int")){
         std::cout << tree->access<int>(vm["int"].as<std::string>()).get() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    if (vm.count("sensor")){
+        std::cout << tree->access<uhd::sensor_value_t>(vm["sensor"].as<std::string>()).get().value << std::endl;
         return EXIT_SUCCESS;
     }
 

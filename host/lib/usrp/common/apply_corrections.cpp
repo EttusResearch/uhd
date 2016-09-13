@@ -1,5 +1,5 @@
 //
-// Copyright 2011 Ettus Research LLC
+// Copyright 2011-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -144,6 +144,34 @@ static void apply_fe_corrections(
 /***********************************************************************
  * Wrapper routines with nice try/catch + print
  **********************************************************************/
+void uhd::usrp::apply_tx_fe_corrections( //overloading to work according to rfnoc tree struct
+    property_tree::sptr sub_tree, //starts at mboards/x
+    const uhd::fs_path db_path,
+    const uhd::fs_path tx_fe_corr_path,
+    const double lo_freq //actual lo freq
+){
+    boost::mutex::scoped_lock l(corrections_mutex);
+    try{
+        apply_fe_corrections(
+            sub_tree,
+            db_path + "/tx_eeprom",
+            tx_fe_corr_path + "/iq_balance/value",
+            "tx_iq_cal_v0.2_",
+            lo_freq
+        );
+        apply_fe_corrections(
+            sub_tree,
+            db_path + "/tx_eeprom",
+            tx_fe_corr_path + "/dc_offset/value",
+            "tx_dc_cal_v0.2_",
+            lo_freq
+        );
+    }
+    catch(const std::exception &e){
+        UHD_MSG(error) << "Failure in apply_tx_fe_corrections: " << e.what() << std::endl;
+    }
+}
+
 void uhd::usrp::apply_tx_fe_corrections(
     property_tree::sptr sub_tree, //starts at mboards/x
     const std::string &slot, //name of dboard slot
@@ -163,6 +191,27 @@ void uhd::usrp::apply_tx_fe_corrections(
             "dboards/" + slot + "/tx_eeprom",
             "tx_frontends/" + slot + "/dc_offset/value",
             "tx_dc_cal_v0.2_",
+            lo_freq
+        );
+    }
+    catch(const std::exception &e){
+        UHD_MSG(error) << "Failure in apply_tx_fe_corrections: " << e.what() << std::endl;
+    }
+}
+
+void uhd::usrp::apply_rx_fe_corrections( //overloading to work according to rfnoc tree struct
+    property_tree::sptr sub_tree, //starts at mboards/x
+    const uhd::fs_path db_path,
+    const uhd::fs_path rx_fe_corr_path,
+    const double lo_freq //actual lo freq
+){
+    boost::mutex::scoped_lock l(corrections_mutex);
+    try{
+        apply_fe_corrections(
+            sub_tree,
+            db_path + "/rx_eeprom",
+            rx_fe_corr_path + "/iq_balance/value",
+            "rx_iq_cal_v0.2_",
             lo_freq
         );
     }

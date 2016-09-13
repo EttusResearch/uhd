@@ -18,7 +18,12 @@
 ########################################################################
 # Setup Project
 ########################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+#OPTION(UHD_PATCH_OVERRIDE "Use this string to force a patch level version string." OFF)
+MESSAGE(STATUS ${UHD_PATCH_OVERRIDE})
+IF(DEFINED UHD_PATCH_OVERRIDE)
+    SET(UHD_VERSION_PATCH_OVERRIDE ${UHD_PATCH_OVERRIDE})
+ENDIF(DEFINED UHD_PATCH_OVERRIDE)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(UHD-images NONE)
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/../host/cmake/Modules)
 INCLUDE(UHDVersion) #sets version variables (used below)

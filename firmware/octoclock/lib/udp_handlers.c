@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Ettus Research LLC
+ * Copyright 2014,2016 Ettus Research LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,89 +36,86 @@ void handle_udp_ctrl_packet(
     pkt_out.proto_ver = OCTOCLOCK_FW_COMPAT_NUM;
     pkt_out.sequence = pkt_in->sequence;
 
-    // If the firmware is incompatible, only respond to queries
-    if(pkt_in->code == OCTOCLOCK_QUERY_CMD){
-        pkt_out.code = OCTOCLOCK_QUERY_ACK;
-        pkt_out.len = 0;
-        send_udp_pkt(OCTOCLOCK_UDP_CTRL_PORT, src, (void*)&pkt_out, sizeof(octoclock_packet_t));
-    }
-    else if(pkt_in->proto_ver == OCTOCLOCK_FW_COMPAT_NUM){
-        switch(pkt_in->code){
-            case SEND_EEPROM_CMD:
-                pkt_out.code = SEND_EEPROM_ACK;
-                pkt_out.len = sizeof(octoclock_fw_eeprom_t);
+    switch(pkt_in->code){
+        case OCTOCLOCK_QUERY_CMD:
+            pkt_out.code = OCTOCLOCK_QUERY_ACK;
+            pkt_out.len = 0;
+            break;
 
-                octoclock_fw_eeprom_t *eeprom_info = (octoclock_fw_eeprom_t*)pkt_out.data;
+        case RESET_CMD:
+            pkt_out.code = RESET_ACK;
+            send_udp_pkt(OCTOCLOCK_UDP_CTRL_PORT, src, (void*)&pkt_out, sizeof(octoclock_packet_t));
+            wdt_enable(WDTO_30MS);
+            while(1);
+            break;
 
-                // Read values from EEPROM into packet
-                eeprom_busy_wait();
-                eeprom_read_block(eeprom_info, 0, sizeof(octoclock_fw_eeprom_t));
+        case SEND_EEPROM_CMD:
+            pkt_out.code = SEND_EEPROM_ACK;
+            pkt_out.len = sizeof(octoclock_fw_eeprom_t);
 
-                // If EEPROM network fields are not fully populated, copy defaults
-                if(using_network_defaults){
-                    _MAC_ADDR(eeprom_info->mac_addr, 0x00,0x80,0x2F,0x11,0x22,0x33);
-                    eeprom_info->ip_addr = _IP(192,168,10,3);
-                    eeprom_info->dr_addr = _IP(192,168,10,1);
-                    eeprom_info->netmask = _IP(255,255,255,0);
-                }
+            octoclock_fw_eeprom_t *eeprom_info = (octoclock_fw_eeprom_t*)pkt_out.data;
 
-                // Check if strings or revision is empty
-                if(eeprom_info->revision == 0xFF) eeprom_info->revision = 0;
-                break;
+            // Read values from EEPROM into packet
+            eeprom_busy_wait();
+            eeprom_read_block(eeprom_info, 0, sizeof(octoclock_fw_eeprom_t));
 
-            case BURN_EEPROM_CMD:{
-                // Confirm length of data
-                if(pkt_in->len != sizeof(octoclock_fw_eeprom_t)){
-                    pkt_out.code = BURN_EEPROM_FAILURE_ACK;
-                    break;
-                }
+            // If EEPROM network fields are not fully populated, copy defaults
+            if(using_network_defaults){
+                _MAC_ADDR(eeprom_info->mac_addr, 0x00,0x80,0x2F,0x11,0x22,0x33);
+                eeprom_info->ip_addr = _IP(192,168,10,3);
+                eeprom_info->dr_addr = _IP(192,168,10,1);
+                eeprom_info->netmask = _IP(255,255,255,0);
+            }
 
-                /*
-                 * It is up to the host to make sure that the values that should be
-                 * preserved are present in the octoclock_fw_eeprom_t struct.
-                 */
-                const octoclock_fw_eeprom_t *eeprom_pkt = (octoclock_fw_eeprom_t*)pkt_in->data;
-                pkt_out.len = 0;
+            // Check if strings or revision is empty
+            if(eeprom_info->revision == 0xFF) eeprom_info->revision = 0;
+            break;
 
-                // Write EEPROM data from packet
-                eeprom_busy_wait();
-                eeprom_write_block(eeprom_pkt, 0, sizeof(octoclock_fw_eeprom_t));
-
-                // Read back and compare to packet to confirm successful write
-                uint8_t eeprom_contents[sizeof(octoclock_fw_eeprom_t)];
-                eeprom_busy_wait();
-                eeprom_read_block(eeprom_contents, 0, sizeof(octoclock_fw_eeprom_t));
-                uint8_t n = memcmp(eeprom_contents, eeprom_pkt, sizeof(octoclock_fw_eeprom_t));
-                pkt_out.code = n ? BURN_EEPROM_FAILURE_ACK
-                                 : BURN_EEPROM_SUCCESS_ACK;
+        case BURN_EEPROM_CMD:{
+            // Confirm length of data
+            if(pkt_in->len != sizeof(octoclock_fw_eeprom_t)){
+                pkt_out.code = BURN_EEPROM_FAILURE_ACK;
                 break;
             }
 
-            case SEND_STATE_CMD:
-                pkt_out.code = SEND_STATE_ACK;
-                pkt_out.len = sizeof(octoclock_state_t);
+            /*
+             * It is up to the host to make sure that the values that should be
+             * preserved are present in the octoclock_fw_eeprom_t struct.
+             */
+            const octoclock_fw_eeprom_t *eeprom_pkt = (octoclock_fw_eeprom_t*)pkt_in->data;
+            pkt_out.len = 0;
 
-                // Populate octoclock_state_t fields
-                octoclock_state_t *state = (octoclock_state_t*)pkt_out.data;
-                state->external_detected = g_ext_ref_present ? 1 : 0;
-                state->gps_detected      = g_gps_present     ? 1 : 0;
-                state->which_ref         = (uint8_t)g_ref;
-                state->switch_pos        = (uint8_t)g_switch_pos;
-                break;
+            // Write EEPROM data from packet
+            eeprom_busy_wait();
+            eeprom_write_block(eeprom_pkt, 0, sizeof(octoclock_fw_eeprom_t));
 
-            case RESET_CMD:
-                pkt_out.code = RESET_ACK;
-                send_udp_pkt(OCTOCLOCK_UDP_CTRL_PORT, src, (void*)&pkt_out, sizeof(octoclock_packet_t));
-                wdt_enable(WDTO_30MS);
-                while(1);
-                return;
-
-            default:
-                return;
+            // Read back and compare to packet to confirm successful write
+            uint8_t eeprom_contents[sizeof(octoclock_fw_eeprom_t)];
+            eeprom_busy_wait();
+            eeprom_read_block(eeprom_contents, 0, sizeof(octoclock_fw_eeprom_t));
+            uint8_t n = memcmp(eeprom_contents, eeprom_pkt, sizeof(octoclock_fw_eeprom_t));
+            pkt_out.code = n ? BURN_EEPROM_FAILURE_ACK
+                             : BURN_EEPROM_SUCCESS_ACK;
+            break;
         }
 
-        send_udp_pkt(OCTOCLOCK_UDP_CTRL_PORT, src, (void*)&pkt_out, sizeof(octoclock_packet_t));
+        case SEND_STATE_CMD:
+            pkt_out.code = SEND_STATE_ACK;
+            pkt_out.len = sizeof(octoclock_state_t);
+
+            // Populate octoclock_state_t fields
+            octoclock_state_t *state = (octoclock_state_t*)pkt_out.data;
+            state->external_detected = g_ext_ref_present ? 1 : 0;
+            state->gps_detected      = g_gps_present     ? 1 : 0;
+            state->which_ref         = (uint8_t)g_ref;
+            state->switch_pos        = (uint8_t)g_switch_pos;
+            break;
+
+        default:
+            return;
     }
+
+    send_udp_pkt(OCTOCLOCK_UDP_CTRL_PORT, src, (void*)&pkt_out, sizeof(octoclock_packet_t));
 }
 
 void handle_udp_gpsdo_packet(
@@ -130,35 +127,34 @@ void handle_udp_gpsdo_packet(
     pkt_out.proto_ver = OCTOCLOCK_FW_COMPAT_NUM;
     pkt_out.sequence = pkt_in->sequence;
 
-    if(pkt_in->proto_ver == OCTOCLOCK_FW_COMPAT_NUM){
-        switch(pkt_in->code){
-            case HOST_SEND_TO_GPSDO_CMD:
-                send_gpsdo_cmd((char*)pkt_in->data, pkt_in->len);
-                pkt_out.code = HOST_SEND_TO_GPSDO_ACK;
-                pkt_out.len = 0;
-                break;
+    switch(pkt_in->code){
+        case HOST_SEND_TO_GPSDO_CMD:
+            send_gpsdo_cmd((char*)pkt_in->data, pkt_in->len);
+            pkt_out.code = HOST_SEND_TO_GPSDO_ACK;
+            pkt_out.len = 0;
+            break;
 
-            case SEND_POOLSIZE_CMD:
-                pkt_out.code = SEND_POOLSIZE_ACK;
-                pkt_out.len = 0;
-                pkt_out.poolsize = POOLSIZE;
-                break;
+        case SEND_POOLSIZE_CMD:
+            pkt_out.code = SEND_POOLSIZE_ACK;
+            pkt_out.len = 0;
+            pkt_out.poolsize = POOLSIZE;
+            break;
 
-            case SEND_CACHE_STATE_CMD:
-                pkt_out.code = SEND_CACHE_STATE_ACK;
-                pkt_out.state = gpsdo_state;
-                break;
+        case SEND_CACHE_STATE_CMD:
+            pkt_out.code = SEND_CACHE_STATE_ACK;
+            pkt_out.state = gpsdo_state;
+            break;
 
-            case SEND_GPSDO_CACHE_CMD:
-                pkt_out.code = SEND_GPSDO_CACHE_ACK;
-                pkt_out.state = gpsdo_state;
-                memcpy(pkt_out.data, gpsdo_buf, POOLSIZE);
-                break;
+        case SEND_GPSDO_CACHE_CMD:
+            pkt_out.code = SEND_GPSDO_CACHE_ACK;
+            pkt_out.state = gpsdo_state;
+            pkt_out.len = POOLSIZE;
+            memcpy(pkt_out.data, gpsdo_buf, POOLSIZE);
+            break;
 
-            default:
-                return;
-        }
-
-        send_udp_pkt(OCTOCLOCK_UDP_GPSDO_PORT, src, (void*)&pkt_out, sizeof(octoclock_packet_t));
+        default:
+            return;
     }
+
+    send_udp_pkt(OCTOCLOCK_UDP_GPSDO_PORT, src, (void*)&pkt_out, sizeof(octoclock_packet_t));
 }
