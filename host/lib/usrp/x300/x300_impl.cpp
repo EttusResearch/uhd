@@ -1664,6 +1664,7 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& res
                 case X310_2943R_40MHz_PCIE_SSID_ADC_18:
                 case X310_2943R_120MHz_PCIE_SSID_ADC_18:
                 case X310_2944R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2945R_PCIE_SSID_ADC_18:
                 case X310_2950R_40MHz_PCIE_SSID_ADC_18:
                 case X310_2950R_120MHz_PCIE_SSID_ADC_18:
                 case X310_2952R_40MHz_PCIE_SSID_ADC_18:
@@ -1671,6 +1672,7 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& res
                 case X310_2953R_40MHz_PCIE_SSID_ADC_18:
                 case X310_2953R_120MHz_PCIE_SSID_ADC_18:
                 case X310_2954R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2955R_PCIE_SSID_ADC_18:
                     mb_type = USRP_X310_MB; break;
                 default:
                     mb_type = UNKNOWN;      break;
@@ -1721,6 +1723,7 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
             case X310_2943R_40MHz_PCIE_SSID_ADC_18:
             case X310_2943R_120MHz_PCIE_SSID_ADC_18:
             case X310_2944R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2945R_PCIE_SSID_ADC_18:
             case X310_2950R_40MHz_PCIE_SSID_ADC_18:
             case X310_2950R_120MHz_PCIE_SSID_ADC_18:
             case X310_2952R_40MHz_PCIE_SSID_ADC_18:
@@ -1728,6 +1731,7 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
             case X310_2953R_40MHz_PCIE_SSID_ADC_18:
             case X310_2953R_120MHz_PCIE_SSID_ADC_18:
             case X310_2954R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2955R_PCIE_SSID_ADC_18:
                 mb_type = USRP_X310_MB; break;
             default:
                 UHD_MSG(warning) << "X300 unknown product code in EEPROM: " << product_num << std::endl;

@@ -104,6 +104,7 @@ static const uint32_t X310_2942R_120MHz_PCIE_SSID_ADC_18 = 0x785C;
 static const uint32_t X310_2943R_40MHz_PCIE_SSID_ADC_18  = 0x7855;
 static const uint32_t X310_2943R_120MHz_PCIE_SSID_ADC_18 = 0x785D;
 static const uint32_t X310_2944R_40MHz_PCIE_SSID_ADC_18  = 0x7856;
+static const uint32_t X310_2945R_PCIE_SSID_ADC_18        = 0x78EF;
 static const uint32_t X310_2950R_40MHz_PCIE_SSID_ADC_18  = 0x7857;
 static const uint32_t X310_2950R_120MHz_PCIE_SSID_ADC_18 = 0x785E;
 static const uint32_t X310_2952R_40MHz_PCIE_SSID_ADC_18  = 0x7858;
@@ -111,6 +112,7 @@ static const uint32_t X310_2952R_120MHz_PCIE_SSID_ADC_18 = 0x785F;
 static const uint32_t X310_2953R_40MHz_PCIE_SSID_ADC_18  = 0x7859;
 static const uint32_t X310_2953R_120MHz_PCIE_SSID_ADC_18 = 0x7860;
 static const uint32_t X310_2954R_40MHz_PCIE_SSID_ADC_18  = 0x785A;
+static const uint32_t X310_2955R_PCIE_SSID_ADC_18        = 0x78F0;
 
 static const uint32_t FPGA_X3xx_SIG_VALUE   = 0x58333030;
 
