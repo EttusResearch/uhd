@@ -149,6 +149,9 @@ IF(LINUX)
         COMPONENT utilities
     )
 ENDIF(LINUX)
+IF(NOT HAVE_PYTHON_MODULE_REQUESTS)
+    MESSAGE(WARNING "Module requests not found -- uhd_images_downloader.py will not work without it.")
+ENDIF(NOT HAVE_PYTHON_MODULE_REQUESTS)
 
 IF(ENABLE_USRP2)
     SET(burners
