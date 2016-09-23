@@ -228,6 +228,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("int", po::value<std::string>(), "query a integer value from the property tree")
         ("sensor", po::value<std::string>(), "query a sensor value from the property tree")
         ("range", po::value<std::string>(), "query a range (gain, bandwidth, frequency, ...)  from the property tree")
+        ("vector", "when querying a string, interpret that as std::vector")
         ("init-only", "skip all queries, only initialize device")
     ;
 
@@ -250,7 +251,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     property_tree::sptr tree = dev->get_tree();
 
     if (vm.count("string")){
-        std::cout << tree->access<std::string>(vm["string"].as<std::string>()).get() << std::endl;
+        if (vm.count("vector")) {
+            std::vector<std::string> str_vector = tree->access< std::vector<std::string> >(vm["string"].as<std::string>()).get();
+            std::cout << "(";
+            BOOST_FOREACH(const std::string &str, str_vector) {
+                std::cout << str << ",";
+            }
+            std::cout << ")" << std::endl;
+        } else {
+            std::cout << tree->access<std::string>(vm["string"].as<std::string>()).get() << std::endl;
+        }
         return EXIT_SUCCESS;
     }
 
