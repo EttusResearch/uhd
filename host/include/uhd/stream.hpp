@@ -217,6 +217,10 @@ public:
      * the call will return after a single packet has been processed.
      * This may be useful to maintain packet boundaries in some cases.
      *
+     * Note on threading: recv() is *not* thread-safe, to avoid locking
+     * overhead. The application calling recv() is responsible for making
+     * sure that not more than one thread can call recv() at the same time.
+     *
      * \param buffs a vector of writable memory to fill with samples
      * \param nsamps_per_buff the size of each buffer in number of samples
      * \param metadata data to fill describing the buffer
