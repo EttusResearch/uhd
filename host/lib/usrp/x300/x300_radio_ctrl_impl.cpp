@@ -327,8 +327,8 @@ void x300_radio_ctrl_impl::setup_radio(
         //Add to tree
         _tree->create<dboard_eeprom_t>(db_path / EEPROM_PATHS[i])
             .set(_db_eeproms[addr])
-            .add_coerced_subscriber(boost::bind(&dboard_eeprom_t::store,
-                _db_eeproms[addr], boost::ref(*zpu_i2c), (BASE_ADDR | addr)));
+            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::_set_db_eeprom,
+                this, zpu_i2c, (BASE_ADDR | addr), _1));
     }
 
     //create a new dboard interface
@@ -858,6 +858,12 @@ void x300_radio_ctrl_impl::_check_adc(const boost::uint32_t val)
         throw uhd::runtime_error(
             (boost::format("ADC self-test failed for %s. (Exp=0x%x, Got=0x%x)")%unique_id()%val%adc_rb).str());
     }
+}
+
+void x300_radio_ctrl_impl::_set_db_eeprom(i2c_iface::sptr i2c, const size_t addr, const uhd::usrp::dboard_eeprom_t &db_eeprom)
+{
+    db_eeprom.store(*i2c, addr);
+    _db_eeproms[addr] = db_eeprom;
 }
 
 /****************************************************************************

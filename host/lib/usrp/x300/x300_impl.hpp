@@ -266,7 +266,6 @@ private:
     bool wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout);
     bool is_pps_present(mboard_members_t& mb);
 
-    void set_db_eeprom(uhd::i2c_iface::sptr i2c, const size_t, const uhd::usrp::dboard_eeprom_t &);
     void set_mb_eeprom(uhd::i2c_iface::sptr i2c, const uhd::usrp::mboard_eeprom_t &);
 
     void check_fw_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);

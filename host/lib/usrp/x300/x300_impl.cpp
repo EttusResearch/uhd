@@ -1445,11 +1445,6 @@ bool x300_impl::is_pps_present(mboard_members_t& mb)
  * eeprom
  **********************************************************************/
 
-void x300_impl::set_db_eeprom(i2c_iface::sptr i2c, const size_t addr, const uhd::usrp::dboard_eeprom_t &db_eeprom)
-{
-    db_eeprom.store(*i2c, addr);
-}
-
 void x300_impl::set_mb_eeprom(i2c_iface::sptr i2c, const mboard_eeprom_t &mb_eeprom)
 {
     i2c_iface::sptr eeprom16 = i2c->eeprom16();
