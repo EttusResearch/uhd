@@ -297,9 +297,14 @@ double x300_radio_ctrl_impl::get_output_samp_rate(size_t chan)
 /****************************************************************************
  * Radio control and setup
  ***************************************************************************/
-void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c, x300_clock_ctrl::sptr clock, bool verbose)
+void x300_radio_ctrl_impl::setup_radio(
+        uhd::i2c_iface::sptr zpu_i2c,
+        x300_clock_ctrl::sptr clock,
+        bool ignore_cal_file,
+        bool verbose)
 {
     _self_cal_adc_capture_delay(verbose);
+    _ignore_cal_file = ignore_cal_file;
 
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing

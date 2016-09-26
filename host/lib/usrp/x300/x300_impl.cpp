@@ -960,7 +960,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         BOOST_FOREACH(const rfnoc::block_id_t &id, radio_ids) {
             rfnoc::x300_radio_ctrl_impl::sptr radio(get_block_ctrl<rfnoc::x300_radio_ctrl_impl>(id));
             mb.radios.push_back(radio);
-            radio->setup_radio(mb.zpu_i2c, mb.clock, dev_addr.has_key("self_cal_adc_delay"));
+            radio->setup_radio(
+                    mb.zpu_i2c,
+                    mb.clock,
+                    dev_addr.has_key("ignore-cal-file"),
+                    dev_addr.has_key("self_cal_adc_delay")
+            );
         }
 
         ////////////////////////////////////////////////////////////////////

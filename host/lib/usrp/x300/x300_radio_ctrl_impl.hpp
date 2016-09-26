@@ -73,7 +73,11 @@ public:
     /*! Set up the radio. No API calls may be made before this one.
      */
     void setup_radio(
-        uhd::i2c_iface::sptr zpu_i2c, x300_clock_ctrl::sptr clock, bool verbose);
+        uhd::i2c_iface::sptr zpu_i2c,
+        x300_clock_ctrl::sptr clock,
+        bool ignore_cal_file,
+        bool verbose
+    );
 
     void reset_codec();
 
