@@ -119,17 +119,17 @@ public:
      * Search only goes downstream.
      */
     template <typename T>
-    UHD_INLINE std::vector< boost::shared_ptr<T> > find_downstream_node()
+    UHD_INLINE std::vector< boost::shared_ptr<T> > find_downstream_node(bool active_only = false)
     {
-        return _find_child_node<T, true>();
+        return _find_child_node<T, true>(active_only);
     }
 
     /*! Same as find_downstream_node(), but only search upstream.
      */
     template <typename T>
-    UHD_INLINE std::vector< boost::shared_ptr<T> > find_upstream_node()
+    UHD_INLINE std::vector< boost::shared_ptr<T> > find_upstream_node(bool active_only = false)
     {
-        return _find_child_node<T, false>();
+        return _find_child_node<T, false>(active_only);
     }
 
     /*! Checks if downstream nodes share a common, unique property.
@@ -186,6 +186,24 @@ protected:
     //! List of downstream nodes
     node_map_t _downstream_nodes;
 
+    /*! For every output port, store rx streamer activity.
+     *
+     * If _rx_streamer_active[0] == true, this means that an active rx
+     * streamer is operating on port 0. If it is false, or if the entry
+     * does not exist, there is no streamer.
+     * Values are toggled by set_rx_streamer().
+     */
+    std::map<size_t, bool> _rx_streamer_active;
+
+    /*! For every input port, store tx streamer activity.
+     *
+     * If _tx_streamer_active[0] == true, this means that an active tx
+     * streamer is operating on port 0. If it is false, or if the entry
+     * does not exist, there is no streamer.
+     * Values are toggled by set_tx_streamer().
+     */
+    std::map<size_t, bool> _tx_streamer_active;
+
     /***********************************************************************
      * Connections
      **********************************************************************/
@@ -221,7 +239,7 @@ private:
      * \param downstream Set to true if search goes downstream, false for upstream.
      */
     template <typename T, bool downstream>
-    std::vector< boost::shared_ptr<T> > _find_child_node();
+    std::vector< boost::shared_ptr<T> > _find_child_node(bool active_only = false);
 
     /*! Implements the search algorithm for find_downstream_unique_property() and
      * find_upstream_unique_property().
