@@ -64,10 +64,10 @@ synchronize multiple pairs of devices.
 \section sync_time Synchronizing the Device Time
 
 The purpose of the PPS signal is to synchronously latch a time into the
-device. You can use the uhd::multi_usrp::set_time_next_pps() function to either
+device. You can use the uhd::usrp::multi_usrp::set_time_next_pps() function to either
 initialize the sample time to 0 or an absolute time, such as GPS time or
 UTC time. For the purposes of synchronizing devices, it doesn't matter
-what time you initialize to when using uhd::multi_usrp::set_time_next_pps().
+what time you initialize to when using uhd::usrp::multi_usrp::set_time_next_pps().
 
 \subsection sync_time_reg Method 1 - poll the USRP time registers
 
@@ -80,6 +80,7 @@ determine that a PPS has occurred:
     while (last_pps_time == usrp->get_time_last_pps()){
         //sleep 100 milliseconds (give or take)
     }
+    // This command will be processed fairly soon after the last PPS edge:
     usrp->set_time_next_pps(uhd::time_spec_t(0.0));
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -97,8 +98,13 @@ PPS edge, and the user can also parse this string to determine GPS time:
 
     //call user's function to wait for NMEA message...
     //call user's function to parse the NMEA message...
+    gps_time = VALUE_IN_NMEA_MESSAGE;
+    // At the next PPS edge, set the device time to the GPS time:
     usrp->set_time_next_pps(uhd::time_spec_t(gps_time+1));
+    // Now the device time should be in sync with the GPS time.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Take a look at the `sync_to_gps` example for more detail.
 
 \subsection sync_time_mimocable Method 3 - MIMO cable
 
