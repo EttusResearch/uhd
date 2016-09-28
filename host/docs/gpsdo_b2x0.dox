@@ -69,5 +69,12 @@ using the **gps_gprmc**, and **gps_gpgga** sensors. Location
 information can be parsed out of the **gps_gpgga** sensor by using **gpsd**
 or another NMEA parser.
 
+\section gpsdob_power Using a power supply with the B2x0 and GPSDO
+
+The GPSDOs for the B2x0 draw extra power, and when running off of bus power
+only, brownouts are possible (although not guaranteed to happen).
+It is recommended to use a wall power connector when using a B2x0 in
+conjunction with a GPSDO.
+
 */
 // vim:ft=doxygen:
