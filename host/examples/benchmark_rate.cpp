@@ -47,6 +47,8 @@ unsigned long long num_rx_samps = 0;
 unsigned long long num_tx_samps = 0;
 unsigned long long num_dropped_samps = 0;
 unsigned long long num_seq_errors = 0;
+unsigned long long num_late_commands = 0;
+unsigned long long num_timeouts = 0;
 
 /***********************************************************************
  * Benchmark RX Rate
@@ -84,10 +86,12 @@ void benchmark_rx_rate(
     const float burst_pkt_time = std::max(0.100, (2 * max_samps_per_packet/rate));
     float recv_timeout = burst_pkt_time + INIT_DELAY;
 
+    bool stop_called = false;
     while (true) {
-        //if (burst_timer_elapsed.load(boost::memory_order_relaxed)) {
-        if (burst_timer_elapsed) {
+        //if (burst_timer_elapsed.load(boost::memory_order_relaxed) and not stop_called) {
+        if (burst_timer_elapsed and not stop_called) {
             rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+            stop_called = true;
         }
         if (random_nsamps) {
             cmd.num_samps = rand() % max_samps_per_packet;
@@ -110,6 +114,10 @@ void benchmark_rx_rate(
                 had_an_overflow = false;
                 num_dropped_samps += (md.time_spec - last_time).to_ticks(rate);
             }
+            if ((burst_timer_elapsed or stop_called) and md.end_of_burst)
+            {
+                return;
+            }
             break;
 
         // ERROR_CODE_OVERFLOW can indicate overflow or sequence error
@@ -121,12 +129,23 @@ void benchmark_rx_rate(
                 num_overflows++;
             break;
 
+        case uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND:
+            std::cerr << "Receiver error: " << md.strerror() << ", restart streaming..."<< std::endl;
+            num_late_commands++;
+            // Radio core will be in the idle state. Issue stream command to restart streaming.
+            cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.05);
+            cmd.stream_now = (buffs.size() == 1);
+            rx_stream->issue_stream_cmd(cmd);
+            break;
+
         case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
-            // If we stopped the streamer, then we expect this at some point
-            //if (burst_timer_elapsed.load(boost::memory_order_relaxed)) {
             if (burst_timer_elapsed) {
                 return;
             }
+            std::cerr << "Receiver error: " << md.strerror() << ", continuing..." << std::endl;
+            num_timeouts++;
+            break;
+
             // Otherwise, it's an error
         default:
             std::cerr << "Receiver error: " << md.strerror() << std::endl;
@@ -243,12 +262,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args;
+    std::string rx_subdev, tx_subdev;
     double duration;
     double rx_rate, tx_rate;
     std::string rx_otw, tx_otw;
     std::string rx_cpu, tx_cpu;
     std::string mode, ref, pps;
-    std::string channel_list;
+    std::string channel_list, rx_channel_list, tx_channel_list;
     bool random_nsamps = false;
     atomic_bool burst_timer_elapsed(false);
 
@@ -258,6 +278,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
         ("duration", po::value<double>(&duration)->default_value(10.0), "duration for the test in seconds")
+        ("rx_subdev", po::value<std::string>(&rx_subdev), "specify the device subdev for RX")
+        ("tx_subdev", po::value<std::string>(&tx_subdev), "specify the device subdev for TX")
         ("rx_rate", po::value<double>(&rx_rate), "specify to perform a RX rate test (sps)")
         ("tx_rate", po::value<double>(&tx_rate), "specify to perform a TX rate test (sps)")
         ("rx_otw", po::value<std::string>(&rx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for RX")
@@ -269,6 +291,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("mode", po::value<std::string>(&mode), "DEPRECATED - use \"ref\" and \"pps\" instead (none, mimo)")
         ("random", "Run with random values of samples in send() and recv() to stress-test the I/O.")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("rx_channels", po::value<std::string>(&rx_channel_list), "which RX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("tx_channels", po::value<std::string>(&tx_channel_list), "which TX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -310,6 +334,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+
+    //always select the subdevice first, the channel mapping affects the other settings
+    if (vm.count("rx_subdev")) {
+        usrp->set_rx_subdev_spec(rx_subdev);
+    }
+    if (vm.count("tx_subdev")) {
+        usrp->set_tx_subdev_spec(tx_subdev);
+    }
+
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
     int num_mboards = usrp->get_num_mboards();
 
@@ -363,20 +396,50 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
        }
     }
 
-    //detect which channels to use
+    //check that the device has sufficient RX and TX channels available
     std::vector<std::string> channel_strings;
-    std::vector<size_t> channel_nums;
-    boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
-    for(size_t ch = 0; ch < channel_strings.size(); ch++){
-        size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
-        if(chan >= usrp->get_tx_num_channels() or chan >= usrp->get_rx_num_channels()){
-            throw std::runtime_error("Invalid channel(s) specified.");
+    std::vector<size_t> rx_channel_nums;
+    if (vm.count("rx_rate")) {
+        if (!vm.count("rx_channels")) {
+            rx_channel_list = channel_list;
         }
-        else channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+
+        boost::split(channel_strings, rx_channel_list, boost::is_any_of("\"',"));
+        for (size_t ch = 0; ch < channel_strings.size(); ch++) {
+            size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+            if (chan >= usrp->get_rx_num_channels()) {
+                throw std::runtime_error("Invalid channel(s) specified.");
+            } else {
+                rx_channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+            }
+        }
+    }
+
+    std::vector<size_t> tx_channel_nums;
+    if (vm.count("tx_rate")) {
+        if (!vm.count("tx_channels")) {
+            tx_channel_list = channel_list;
+        }
+
+        boost::split(channel_strings, tx_channel_list, boost::is_any_of("\"',"));
+        for (size_t ch = 0; ch < channel_strings.size(); ch++) {
+            size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+            if (chan >= usrp->get_tx_num_channels()) {
+                throw std::runtime_error("Invalid channel(s) specified.");
+            } else {
+                tx_channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+            }
+        }
     }
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-    if (pps == "mimo" or ref == "mimo" or channel_nums.size() == 1) {
+    const bool sync_channels =
+            pps == "mimo" or
+            ref == "mimo" or
+            rx_channel_nums.size() > 1 or
+            tx_channel_nums.size() > 1
+    ;
+    if (!sync_channels) {
        usrp->set_time_now(0.0);
     } else {
        usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
@@ -387,7 +450,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         usrp->set_rx_rate(rx_rate);
         //create a receive streamer
         uhd::stream_args_t stream_args(rx_cpu, rx_otw);
-        stream_args.channels = channel_nums;
+        stream_args.channels = rx_channel_nums;
         uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
         thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_stream, random_nsamps, boost::ref(burst_timer_elapsed)));
     }
@@ -397,7 +460,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         usrp->set_tx_rate(tx_rate);
         //create a transmit streamer
         uhd::stream_args_t stream_args(tx_cpu, tx_otw);
-        stream_args.channels = channel_nums;
+        stream_args.channels = tx_channel_nums;
         uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
         thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_stream, boost::ref(burst_timer_elapsed), random_nsamps));
         thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, tx_stream, boost::ref(burst_timer_elapsed)));
@@ -406,7 +469,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //sleep for the required duration
     const long secs = long(duration);
     const long usecs = long((duration - secs)*1e6);
-    boost::this_thread::sleep(boost::posix_time::seconds(secs) + boost::posix_time::microseconds(usecs));
+    boost::this_thread::sleep(boost::posix_time::seconds(secs)
+            + boost::posix_time::microseconds(usecs)
+            + boost::posix_time::milliseconds( (rx_channel_nums.size() <= 1 and tx_channel_nums.size() <= 1) ? 0 : (INIT_DELAY * 1000))
+    );
 
     //interrupt and join the threads
     //burst_timer_elapsed.store(true, boost::memory_order_relaxed);
@@ -422,7 +488,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         "  Num transmitted samples: %u\n"
         "  Num sequence errors:     %u\n"
         "  Num underflows detected: %u\n"
-    ) % num_rx_samps % num_dropped_samps % num_overflows % num_tx_samps % num_seq_errors % num_underflows << std::endl;
+        "  Num late commands:       %u\n"
+        "  Num timeouts:            %u\n"
+    ) % num_rx_samps % num_dropped_samps
+      % num_overflows % num_tx_samps
+      % num_seq_errors % num_underflows
+      % num_late_commands % num_timeouts
+      << std::endl;
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
