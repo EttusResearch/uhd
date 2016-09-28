@@ -433,7 +433,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
-    bool sync_channels = (pps == "mimo" or ref == "mimo" or (rx_channel_nums.size() <= 1 and tx_channel_nums.size() <= 1));  
+    const bool sync_channels =
+            pps == "mimo" or
+            ref == "mimo" or
+            rx_channel_nums.size() > 1 or
+            tx_channel_nums.size() > 1
+    ;
     if (!sync_channels) {
        usrp->set_time_now(0.0);
     } else {
