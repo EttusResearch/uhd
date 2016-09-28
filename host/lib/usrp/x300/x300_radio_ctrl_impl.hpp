@@ -150,7 +150,7 @@ private:
         static const uint32_t RX_FE_BASE    = 232;
     };
 
-    void _update_atr_leds(const std::string &rx_ant);
+    void _update_atr_leds(const std::string &rx_ant, const size_t chan);
 
     void _self_cal_adc_capture_delay(bool print_status);
 
@@ -170,12 +170,12 @@ private: // members
     // Not necessarily this block's sampling rate (tick rate).
     double                              _radio_clk_rate;
 
-    radio_regmap_t::sptr                _regs;
-    usrp::gpio_atr::gpio_atr_3000::sptr _leds;
-    spi_core_3000::sptr                 _spi;
-    x300_adc_ctrl::sptr                 _adc;
-    x300_dac_ctrl::sptr                 _dac;
-    usrp::gpio_atr::gpio_atr_3000::sptr _fp_gpio;
+    radio_regmap_t::sptr                                    _regs;
+    std::map<size_t, usrp::gpio_atr::gpio_atr_3000::sptr>   _leds;
+    spi_core_3000::sptr                                     _spi;
+    x300_adc_ctrl::sptr                                     _adc;
+    x300_dac_ctrl::sptr                                     _dac;
+    usrp::gpio_atr::gpio_atr_3000::sptr                     _fp_gpio;
 
     std::map<size_t, usrp::dboard_eeprom_t> _db_eeproms;
     usrp::dboard_manager::sptr              _db_manager;

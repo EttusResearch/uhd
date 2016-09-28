@@ -76,8 +76,6 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     _spi = spi_core_3000::make(ctrl,
         radio_ctrl_impl::regs::sr_addr(radio_ctrl_impl::regs::SPI),
         radio_ctrl_impl::regs::RB_SPI);
-    _leds = gpio_atr::gpio_atr_3000::make_write_only(ctrl, regs::sr_addr(regs::LEDS));
-    _leds->set_atr_mode(usrp::gpio_atr::MODE_ATR, usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
     _adc = x300_adc_ctrl::make(_spi, DB_ADC_SEN);
     _dac = x300_dac_ctrl::make(_spi, DB_DAC_SEN, _radio_clk_rate);
 
@@ -109,6 +107,9 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     // create front-end objects
     ////////////////////////////////////////////////////////////////
     for (size_t i = 0; i < _get_num_radios(); i++) {
+        _leds[i] = gpio_atr::gpio_atr_3000::make_write_only(_get_ctrl(i), regs::sr_addr(regs::LEDS));
+        _leds[i]->set_atr_mode(usrp::gpio_atr::MODE_ATR, usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
+
         _rx_fe_map[i].core = rx_frontend_core_3000::make(_get_ctrl(i), regs::sr_addr(x300_regs::RX_FE_BASE));
         _rx_fe_map[i].core->set_adc_rate(_radio_clk_rate);
         _rx_fe_map[i].core->set_dc_offset(rx_frontend_core_3000::DEFAULT_DC_OFFSET_VALUE);
@@ -385,12 +386,16 @@ void x300_radio_ctrl_impl::setup_radio(
     _db_manager->initialize_dboards();
 
     //now that dboard is created -- register into rx antenna event
-    if (not _rx_fe_map.empty()
-        and _tree->exists(db_path / "rx_frontends" / _rx_fe_map[0].db_fe_name / "antenna" / "value")) {
-        _tree->access<std::string>(db_path / "rx_frontends" / _rx_fe_map[0].db_fe_name / "antenna" / "value")
-            .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::_update_atr_leds, this, _1));
+    if (not _rx_fe_map.empty()) {
+        for (size_t i = 0; i < _get_num_radios(); i++) {
+            if (_tree->exists(db_path / "rx_frontends" / _rx_fe_map[i].db_fe_name / "antenna" / "value")) {
+                // We need a desired subscriber for antenna/value because the experts don't coerce that property.
+                _tree->access<std::string>(db_path / "rx_frontends" / _rx_fe_map[i].db_fe_name / "antenna" / "value")
+                    .add_desired_subscriber(boost::bind(&x300_radio_ctrl_impl::_update_atr_leds, this, _1, i));
+            }
+            _update_atr_leds("", i); //init anyway, even if never called
+        }
     }
-    _update_atr_leds(""); //init anyway, even if never called
 
     //bind frontend corrections to the dboard freq props
     const fs_path db_tx_fe_path = db_path / "tx_frontends";
@@ -734,16 +739,18 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
 /****************************************************************************
  * Helpers
  ***************************************************************************/
-void x300_radio_ctrl_impl::_update_atr_leds(const std::string &rx_ant)
+void x300_radio_ctrl_impl::_update_atr_leds(const std::string &rx_ant, const size_t chan)
 {
-    const bool is_txrx = (rx_ant == "TX/RX");
-    const int rx_led = (1 << 2);
-    const int tx_led = (1 << 1);
-    const int txrx_led = (1 << 0);
-    _leds->set_atr_reg(gpio_atr::ATR_REG_IDLE, 0);
-    _leds->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY, is_txrx? txrx_led : rx_led);
-    _leds->set_atr_reg(gpio_atr::ATR_REG_TX_ONLY, tx_led);
-    _leds->set_atr_reg(gpio_atr::ATR_REG_FULL_DUPLEX, rx_led | tx_led);
+    // The "RX1" port is used by TwinRX and the "TX/RX" port is used by all
+    // other full-duplex dboards. We need to handle both here.
+    const bool is_txrx = (rx_ant == "TX/RX" or rx_ant == "RX1");
+    const int TXRX_RX = (1 << 0);
+    const int TXRX_TX = (1 << 1);
+    const int RX2_RX  = (1 << 2);
+    _leds.at(chan)->set_atr_reg(gpio_atr::ATR_REG_IDLE, 0);
+    _leds.at(chan)->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY, is_txrx ? TXRX_RX : RX2_RX);
+    _leds.at(chan)->set_atr_reg(gpio_atr::ATR_REG_TX_ONLY, TXRX_TX);
+    _leds.at(chan)->set_atr_reg(gpio_atr::ATR_REG_FULL_DUPLEX, RX2_RX | TXRX_TX);
 }
 
 void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
