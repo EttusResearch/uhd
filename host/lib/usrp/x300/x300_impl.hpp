@@ -92,8 +92,14 @@ static const size_t X300_RX_MAX_HDR_LEN             =           // bytes
     + sizeof(uhd::transport::vrt::if_packet_info_t().tsf); // Timestamp
 
 static const size_t X300_MAX_RATE_PCIE              = 800000000; // bytes/s
-static const size_t X300_MAX_RATE_10GIGE            = 800000000; // bytes/s
-static const size_t X300_MAX_RATE_1GIGE             = 100000000; // bytes/s
+static const size_t X300_MAX_RATE_10GIGE            = (size_t)(  // bytes/s
+        10e9 / 8 *                                               // wire speed multiplied by percentage of packets that is sample data
+        ( float(X300_10GE_DATA_FRAME_MAX_SIZE - 16 /* max CHDR len */) /
+          float(X300_10GE_DATA_FRAME_MAX_SIZE + 8 /* UDP header */ + 20 /* Ethernet header length */ )));
+static const size_t X300_MAX_RATE_1GIGE            = (size_t)(  // bytes/s
+        10e9 / 8 *                                               // wire speed multiplied by percentage of packets that is sample data
+        ( float(X300_1GE_DATA_FRAME_MAX_SIZE - 16 /* max CHDR len */) /
+          float(X300_1GE_DATA_FRAME_MAX_SIZE + 8 /* UDP header */ + 20 /* Ethernet header length */ )));
 
 #define X300_RADIO_DEST_PREFIX_TX 0
 #define X300_RADIO_DEST_PREFIX_CTRL 1
