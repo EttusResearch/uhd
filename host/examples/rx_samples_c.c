@@ -233,9 +233,9 @@ int main(int argc, char* argv[])
             time_t full_secs;
             double frac_secs;
             uhd_rx_metadata_time_spec(md, &full_secs, &frac_secs);
-            fprintf(stderr, "Received packet: %zu samples, %zu full secs, %f frac secs\n",
+            fprintf(stderr, "Received packet: %zu samples, %.f full secs, %f frac secs\n",
                     num_rx_samps,
-                    full_secs,
+                    difftime(full_secs, (time_t) 0),
                     frac_secs);
         }
 
