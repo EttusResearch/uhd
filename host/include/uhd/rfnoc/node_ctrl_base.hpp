@@ -65,6 +65,18 @@ public:
     node_map_t list_downstream_nodes() { return _downstream_nodes; };
     node_map_t list_upstream_nodes() { return _upstream_nodes; };
 
+    /*! Disconnect this node from all neighbouring nodes.
+     */
+    void disconnect();
+
+    /*! Identify \p output_port as unconnected
+     */
+    void disconnect_output_port(const size_t output_port);
+
+    /*! Identify \p input_port as unconnected
+     */
+    void disconnect_input_port(const size_t input_port);
+
     // TODO we need a more atomic connect procedure, this is too error-prone.
 
     /*! For an existing connection, store the remote port number.
@@ -156,8 +168,8 @@ protected:
     /***********************************************************************
      * Structors
      **********************************************************************/
-    node_ctrl_base(void) {};
-    virtual ~node_ctrl_base() {};
+    node_ctrl_base(void) {}
+    virtual ~node_ctrl_base() { disconnect(); }
 
     /***********************************************************************
      * Protected members
