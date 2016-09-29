@@ -824,6 +824,13 @@ void max287x<max287x_regs_t>::set_auto_retune(bool enabled)
     _regs.retune = enabled ? max287x_regs_t::RETUNE_ENABLED : max287x_regs_t::RETUNE_DISABLED;
 }
 
+template <>
+inline void max287x<max2871_regs_t>::set_auto_retune(bool enabled)
+{
+    _regs.retune = enabled ? max2871_regs_t::RETUNE_ENABLED : max2871_regs_t::RETUNE_DISABLED;
+    _regs.vas_dly = enabled ? max2871_regs_t::VAS_DLY_ENABLED : max2871_regs_t::VAS_DLY_DISABLED;
+}
+
 template <typename max287x_regs_t>
 void max287x<max287x_regs_t>::set_clock_divider_mode(clock_divider_mode_t mode)
 {

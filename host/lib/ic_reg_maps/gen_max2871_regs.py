@@ -74,6 +74,7 @@ counter_reset           0x02[3]         0       normal, reset
 vco                     0x03[26:31]     0
 ## VCO autoselect
 shutdown_vas            0x03[25]        0       enabled, disabled
+## should actually be called vas_temp ...
 retune                  0x03[24]        1       disabled, enabled
 res3                    0x3[19:23]      0
 csm                     0x3[18]         0       disabled, enabled
@@ -107,7 +108,9 @@ output_power            0x04[3:4]       3       m4dBm, m1dBm, 2dBm, 5dBm
 ## Misc
 ## Write only, default = 0x18400005
 ########################################################################
-res5_26_31              0x05[26:31]     0x18
+res5_31                 0x05[31]        0
+vas_dly                 0x05[29:30]     3       disabled, res0, res1, enabled
+res5_26_28              0x05[26:28]     0
 shutdown_pll            0x05[25]        0       enabled, disabled
 f01                     0x05[24]        1       frac_n, auto
 ld_pin_mode             0x05[22:23]     1       low, dld, ald, high
