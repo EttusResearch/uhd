@@ -21,16 +21,12 @@ namespace po = boost::program_options;
 /***********************************************************************
  * Transmit thread
  **********************************************************************/
-static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, const double tx_wave_freq, const double tx_wave_ampl)
+static void tx_thread(uhd::usrp::multi_usrp::sptr usrp, uhd::tx_streamer::sptr tx_stream, const double tx_wave_freq, const double tx_wave_ampl)
 {
     uhd::set_thread_priority_safe();
 
     // set max TX gain
     usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
-
-    //create a transmit streamer
-    uhd::stream_args_t stream_args("fc32"); //complex floats
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //setup variables and allocate buffer
     uhd::tx_metadata_t md;
@@ -144,9 +140,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     uhd::stream_args_t stream_args("fc32"); //complex floats
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
+    //create a transmit streamer
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+
     //create a transmitter thread
     boost::thread_group threads;
-    threads.create_thread(boost::bind(&tx_thread, usrp, tx_wave_freq, tx_wave_ampl));
+    threads.create_thread(boost::bind(&tx_thread, usrp, tx_stream, tx_wave_freq, tx_wave_ampl));
 
     //re-usable buffer for samples
     std::vector<samp_type> buff;
@@ -181,8 +180,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     std::cout << boost::format("Calibration frequency range: %d MHz -> %d MHz") % (freq_start/1e6) % (freq_stop/1e6) << std::endl;
 
+    size_t tx_error_count = 0;
     for (double tx_lo_i = freq_start; tx_lo_i <= freq_stop; tx_lo_i += freq_step)
     {
+
         const double tx_lo = tune_rx_and_tx(usrp, tx_lo_i, rx_offset);
 
         //frequency constants for this tune event
@@ -223,6 +224,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
                     //receive some samples
                     capture_samples(usrp, rx_stream, buff, nsamps);
+                    //check for TX errors in the current captured iteration
+                    if (has_tx_error(tx_stream)){
+                            std::cout
+                                << "[WARNING] TX error detected! "
+                                << "Repeating current iteration"
+                                << std::endl;
+                        // Undo ampl corr step
+                        ampl_corr -= ampl_corr_step;
+                        tx_error_count++;
+                        if (tx_error_count >= MAX_NUM_TX_ERRORS) {
+                            throw uhd::runtime_error(
+                                "Too many TX errors. Aborting calibration."
+                            );
+                        }
+                        continue;
+                    }
                     const double tone_dbrms = compute_tone_dbrms(buff, bb_tone_freq/actual_rx_rate);
                     const double imag_dbrms = compute_tone_dbrms(buff, bb_imag_freq/actual_rx_rate);
                     const double suppression = tone_dbrms - imag_dbrms;
@@ -235,7 +252,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
                     }
                 }
             }
-
             phase_corr_start = best_phase_corr - phase_corr_step;
             phase_corr_stop = best_phase_corr + phase_corr_step;
             phase_corr_step = (phase_corr_stop - phase_corr_start)/(num_search_steps+1);
@@ -243,7 +259,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             ampl_corr_stop = best_ampl_corr + ampl_corr_step;
             ampl_corr_step = (ampl_corr_stop - ampl_corr_start)/(num_search_steps+1);
         }
-
         if (best_suppression > initial_suppression) //keep result
         {
             result_t result;
@@ -258,6 +273,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             else
                 std::cout << "." << std::flush;
         }
+
+        // Reset underrun counts, start a new counter for the next frequency
+        tx_error_count = 0;
     }
     std::cout << std::endl;
 
