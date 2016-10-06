@@ -232,8 +232,10 @@ std::string e300_eeprom_manager::get_mb_type_string(void) const
         return "E3XX";
 
     case E310_SG1_MB_PID:
+        return "E3XX SG1";
+
     case E310_SG3_MB_PID:
-        return "E3XX";
+        return "E3XX SG3";
 
     default:
         return "UNKNOWN";
