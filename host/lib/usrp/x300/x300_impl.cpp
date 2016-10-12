@@ -986,9 +986,17 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 mb.radios.at(i)->self_test_adc();
             }
         }
+
+        ////////////////////////////////////////////////////////////////////
+        // Synchronize times (dboard initialization can desynchronize them)
+        ////////////////////////////////////////////////////////////////////
+        if (radio_ids.size() == 2) {
+            this->sync_times(mb, mb.radios[0]->get_time_now());
+        }
+
     } else {
         UHD_MSG(status) << "No Radio Block found. Assuming radio-less operation." << std::endl;
-    }
+    } /* end of radio block(s) initialization */
 
     mb.initialization_done = true;
 }
