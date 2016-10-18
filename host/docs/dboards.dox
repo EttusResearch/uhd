@@ -101,6 +101,9 @@ Sensors:
 
 -   **lo_locked**: boolean for LO lock state
 
+Notes:
+- When used in the X3x0, set the daughterboard clock rate to 100 MHz (see \ref config_devaddr)
+
 \subsection dboards_rfx RFX Series
 
 The RFX Series boards have 2 quadrature frontends: Transmit and Receive.
@@ -343,6 +346,12 @@ LEDs:
 -   **TX/RX RXD**: Receiving on TX/RX antenna port
 -   **RX2 RXD**: Receiving on RX2 antenna port
 
+
+Notes:
+- When used in the X300/X310 at frequencies below 1 GHz, it is necessary to
+  reduce the daughterboard clock rate to 20 MHz to achieve phase
+  synchronization and best RF performance (see \ref config_devaddr).
+
 \subsection dboards_tvrx TVRX
 
 The TVRX board has 1 real-mode frontend. It is operated at a low IF.
@@ -384,9 +393,28 @@ Sensors:
 -   **rssi**: float for measured RSSI in dBm
 -   **temperature**: float for measured temperature in degC
 
+Notes:
+
+- The TVRX2 requires a 64 MHz, 100 MHz or 200 MHz reference clock. On the X3x0,
+  set the daughterboard clock rate accordingly (see \ref config_devaddr), typically
+  to 100 MHz.
+
 \subsection dboards_e300 E310 MIMO XCVR board
 
 Please refer to \ref e3x0_dboard_e310.
+
+
+\subsection dboards_clock_rate Daughterboard reference clock
+
+The USRP motherboard provides a reference clock to the daughterboards, which
+the daughterboards will use to generate LO signals or anything else that
+requires a reference clock.
+
+The X3x0 has a programmable reference clock, which might have to be changed
+depending on various applications (see the daughterboard sections above).
+However, it can provide only one daughterboard clock per device, which can
+lead to conflicts. It might not be possible to use a specific daughterboard
+together with all others.
 
 \subsection dboards_dbsrxmod DBSRX - Modifying for other boards that USRP1
 
