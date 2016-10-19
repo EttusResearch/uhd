@@ -60,6 +60,8 @@ BOOST_AUTO_TEST_CASE(test_simplest_downstream_search)
     // Simplest possible scenario: Connect B downstream of A and let
     // it find B
     connect_nodes(node_A, node_B);
+    node_A->set_tx_streamer(true, 0);
+    node_B->set_rx_streamer(true, 0);
 
     double result_rate = node_A->get_tick_rate();
     BOOST_CHECK_EQUAL(result_rate, test_rate);
@@ -72,12 +74,13 @@ BOOST_AUTO_TEST_CASE(test_both_ways_search)
     MAKE_TICK_NODE(node_B);
     MAKE_TICK_SETTING_NODE(node_C, test_rate);
 
-    std::cout << "a->b" << std::endl;
     connect_nodes(node_A, node_B);
-    std::cout << "b->a" << std::endl;
     connect_nodes(node_B, node_C);
+    node_A->set_tx_streamer(true, 0);
+    node_B->set_tx_streamer(true, 0);
+    node_B->set_rx_streamer(true, 0);
+    node_C->set_rx_streamer(true, 0);
 
-    std::cout << "search" << std::endl;
     double result_rate = node_B->get_tick_rate();
     BOOST_CHECK_EQUAL(result_rate, test_rate);
 }
@@ -91,6 +94,10 @@ BOOST_AUTO_TEST_CASE(test_both_ways_search_reversed)
 
     connect_nodes(node_A, node_B);
     connect_nodes(node_B, node_C);
+    node_A->set_tx_streamer(true, 0);
+    node_B->set_tx_streamer(true, 0);
+    node_B->set_rx_streamer(true, 0);
+    node_C->set_rx_streamer(true, 0);
 
     double result_rate = node_B->get_tick_rate();
     BOOST_CHECK_EQUAL(result_rate, test_rate);
@@ -105,6 +112,10 @@ BOOST_AUTO_TEST_CASE(test_both_ways_search_fail)
 
     connect_nodes(node_A, node_B);
     connect_nodes(node_B, node_C);
+    node_A->set_tx_streamer(true, 0);
+    node_B->set_tx_streamer(true, 0);
+    node_B->set_rx_streamer(true, 0);
+    node_C->set_rx_streamer(true, 0);
 
     BOOST_CHECK_THROW(node_B->get_tick_rate(), uhd::runtime_error);
 }
