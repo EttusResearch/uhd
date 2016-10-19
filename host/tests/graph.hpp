@@ -43,8 +43,10 @@ private:
 
 void connect_nodes(uhd::rfnoc::source_node_ctrl::sptr A, uhd::rfnoc::sink_node_ctrl::sptr B)
 {
-    A->connect_downstream(B);
-    B->connect_upstream(A);
+    const size_t actual_src_port = A->connect_downstream(B);
+    const size_t actual_dst_port = B->connect_upstream(A);
+    A->set_downstream_port(actual_src_port, actual_dst_port);
+    B->set_upstream_port(actual_dst_port, actual_src_port);
 }
 
 #endif /* INCLUDED_TEST_GRAPH_HPP */
