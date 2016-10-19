@@ -299,9 +299,15 @@ PYTHON_CHECK_MODULE(
 )
 
 PYTHON_CHECK_MODULE(
-    "Mako templates 0.4 or greater"
+    "Mako templates 0.4.2 or greater"
     "mako" "mako.__version__ >= '0.4.2'"
     HAVE_PYTHON_MODULE_MAKO
+)
+
+PYTHON_CHECK_MODULE(
+    "requests 2.0 or greater"
+    "requests" "requests.__version__ >= '2.0'"
+    HAVE_PYTHON_MODULE_REQUESTS
 )
 
 ########################################################################
@@ -332,8 +338,8 @@ UHD_INSTALL(FILES
 #{{{IMG_SECTION
 # This section is written automatically by /images/create_imgs_package.py
 # Any manual changes in here will be overwritten.
-SET(UHD_IMAGES_MD5SUM "4f4a6c229f5a3906dc63533d3a505feb")
-SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.000.000-36-g967897e0.zip")
+SET(UHD_IMAGES_MD5SUM "586c6f48f65ecfaeec3403a8b2780d72")
+SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.001.000-rc1.zip")
 #}}}
 
 ########################################################################

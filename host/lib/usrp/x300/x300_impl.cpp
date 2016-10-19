@@ -960,7 +960,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         BOOST_FOREACH(const rfnoc::block_id_t &id, radio_ids) {
             rfnoc::x300_radio_ctrl_impl::sptr radio(get_block_ctrl<rfnoc::x300_radio_ctrl_impl>(id));
             mb.radios.push_back(radio);
-            radio->setup_radio(mb.zpu_i2c, mb.clock, dev_addr.has_key("self_cal_adc_delay"));
+            radio->setup_radio(
+                    mb.zpu_i2c,
+                    mb.clock,
+                    dev_addr.has_key("ignore-cal-file"),
+                    dev_addr.has_key("self_cal_adc_delay")
+            );
         }
 
         ////////////////////////////////////////////////////////////////////
@@ -981,9 +986,17 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 mb.radios.at(i)->self_test_adc();
             }
         }
+
+        ////////////////////////////////////////////////////////////////////
+        // Synchronize times (dboard initialization can desynchronize them)
+        ////////////////////////////////////////////////////////////////////
+        if (radio_ids.size() == 2) {
+            this->sync_times(mb, mb.radios[0]->get_time_now());
+        }
+
     } else {
         UHD_MSG(status) << "No Radio Block found. Assuming radio-less operation." << std::endl;
-    }
+    } /* end of radio block(s) initialization */
 
     mb.initialization_done = true;
 }
@@ -1440,11 +1453,6 @@ bool x300_impl::is_pps_present(mboard_members_t& mb)
  * eeprom
  **********************************************************************/
 
-void x300_impl::set_db_eeprom(i2c_iface::sptr i2c, const size_t addr, const uhd::usrp::dboard_eeprom_t &db_eeprom)
-{
-    db_eeprom.store(*i2c, addr);
-}
-
 void x300_impl::set_mb_eeprom(i2c_iface::sptr i2c, const mboard_eeprom_t &mb_eeprom)
 {
     i2c_iface::sptr eeprom16 = i2c->eeprom16();
@@ -1664,6 +1672,7 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& res
                 case X310_2943R_40MHz_PCIE_SSID_ADC_18:
                 case X310_2943R_120MHz_PCIE_SSID_ADC_18:
                 case X310_2944R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2945R_PCIE_SSID_ADC_18:
                 case X310_2950R_40MHz_PCIE_SSID_ADC_18:
                 case X310_2950R_120MHz_PCIE_SSID_ADC_18:
                 case X310_2952R_40MHz_PCIE_SSID_ADC_18:
@@ -1671,6 +1680,7 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& res
                 case X310_2953R_40MHz_PCIE_SSID_ADC_18:
                 case X310_2953R_120MHz_PCIE_SSID_ADC_18:
                 case X310_2954R_40MHz_PCIE_SSID_ADC_18:
+                case X310_2955R_PCIE_SSID_ADC_18:
                     mb_type = USRP_X310_MB; break;
                 default:
                     mb_type = UNKNOWN;      break;
@@ -1721,6 +1731,7 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
             case X310_2943R_40MHz_PCIE_SSID_ADC_18:
             case X310_2943R_120MHz_PCIE_SSID_ADC_18:
             case X310_2944R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2945R_PCIE_SSID_ADC_18:
             case X310_2950R_40MHz_PCIE_SSID_ADC_18:
             case X310_2950R_120MHz_PCIE_SSID_ADC_18:
             case X310_2952R_40MHz_PCIE_SSID_ADC_18:
@@ -1728,6 +1739,7 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
             case X310_2953R_40MHz_PCIE_SSID_ADC_18:
             case X310_2953R_120MHz_PCIE_SSID_ADC_18:
             case X310_2954R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2955R_PCIE_SSID_ADC_18:
                 mb_type = USRP_X310_MB; break;
             default:
                 UHD_MSG(warning) << "X300 unknown product code in EEPROM: " << product_num << std::endl;

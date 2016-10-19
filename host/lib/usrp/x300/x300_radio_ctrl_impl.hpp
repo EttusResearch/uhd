@@ -73,7 +73,11 @@ public:
     /*! Set up the radio. No API calls may be made before this one.
      */
     void setup_radio(
-        uhd::i2c_iface::sptr zpu_i2c, x300_clock_ctrl::sptr clock, bool verbose);
+        uhd::i2c_iface::sptr zpu_i2c,
+        x300_clock_ctrl::sptr clock,
+        bool ignore_cal_file,
+        bool verbose
+    );
 
     void reset_codec();
 
@@ -146,11 +150,13 @@ private:
         static const uint32_t RX_FE_BASE    = 232;
     };
 
-    void _update_atr_leds(const std::string &rx_ant);
+    void _update_atr_leds(const std::string &rx_ant, const size_t chan);
 
     void _self_cal_adc_capture_delay(bool print_status);
 
     void _check_adc(const boost::uint32_t val);
+
+    void _set_db_eeprom(uhd::i2c_iface::sptr i2c, const size_t, const uhd::usrp::dboard_eeprom_t &);
 
     void set_rx_fe_corrections(const uhd::fs_path &db_path, const uhd::fs_path &rx_fe_corr_path, const double lo_freq);
     void set_tx_fe_corrections(const uhd::fs_path &db_path, const uhd::fs_path &tx_fe_corr_path, const double lo_freq);
@@ -164,12 +170,12 @@ private: // members
     // Not necessarily this block's sampling rate (tick rate).
     double                              _radio_clk_rate;
 
-    radio_regmap_t::sptr                _regs;
-    usrp::gpio_atr::gpio_atr_3000::sptr _leds;
-    spi_core_3000::sptr                 _spi;
-    x300_adc_ctrl::sptr                 _adc;
-    x300_dac_ctrl::sptr                 _dac;
-    usrp::gpio_atr::gpio_atr_3000::sptr _fp_gpio;
+    radio_regmap_t::sptr                                    _regs;
+    std::map<size_t, usrp::gpio_atr::gpio_atr_3000::sptr>   _leds;
+    spi_core_3000::sptr                                     _spi;
+    x300_adc_ctrl::sptr                                     _adc;
+    x300_dac_ctrl::sptr                                     _dac;
+    usrp::gpio_atr::gpio_atr_3000::sptr                     _fp_gpio;
 
     std::map<size_t, usrp::dboard_eeprom_t> _db_eeproms;
     usrp::dboard_manager::sptr              _db_manager;

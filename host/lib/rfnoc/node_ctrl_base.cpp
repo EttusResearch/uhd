@@ -17,6 +17,7 @@
 
 #include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/utils/msg.hpp>
+#include <boost/range/adaptor/map.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -99,5 +100,51 @@ size_t node_ctrl_base::get_upstream_port(const size_t this_port)
         ));
     }
     return _upstream_ports[this_port];
+}
+
+void node_ctrl_base::disconnect()
+{
+    // Notify neighbours:
+    for (node_map_t::iterator i = _downstream_nodes.begin(); i != _downstream_nodes.end(); ++i) {
+        sptr downstream_node = i->second.lock();
+        if (not downstream_node) {
+            // Actually this is not OK
+            continue;
+        }
+        downstream_node->disconnect_input_port(_downstream_ports[i->first]);
+    }
+    for (node_map_t::iterator i = _upstream_nodes.begin(); i != _upstream_nodes.end(); ++i) {
+        sptr upstream_node = i->second.lock();
+        if (not upstream_node) {
+            // Actually this is not OK
+            continue;
+        }
+        upstream_node->disconnect_output_port(_upstream_ports[i->first]);
+    }
+    // Clear own maps:
+    _downstream_nodes.clear();
+    _downstream_ports.clear();
+    _upstream_nodes.clear();
+    _upstream_ports.clear();
+}
+
+void node_ctrl_base::disconnect_output_port(const size_t output_port)
+{
+    if (_downstream_nodes.count(output_port) == 0 or
+        _downstream_ports.count(output_port) == 0) {
+        throw uhd::assertion_error(str(boost::format("[%s] Attempting to disconnect output port %u, which is not registered as connected!") % unique_id() % output_port));
+    }
+    _downstream_nodes.erase(output_port);
+    _downstream_ports.erase(output_port);
+}
+
+void node_ctrl_base::disconnect_input_port(const size_t input_port)
+{
+    if (_upstream_nodes.count(input_port) == 0 or
+        _upstream_ports.count(input_port) == 0) {
+        throw uhd::assertion_error(str(boost::format("[%s] Attempting to disconnect input port %u, which is not registered as connected!") % unique_id() % input_port));
+    }
+    _upstream_nodes.erase(input_port);
+    _upstream_ports.erase(input_port);
 }
 

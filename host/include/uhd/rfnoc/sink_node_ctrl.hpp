@@ -75,15 +75,6 @@ public:
 
 protected:
 
-    /*! For every input port, store tx streamer activity.
-     *
-     * If _tx_streamer_active[0] == true, this means that an active tx
-     * streamer is operating on port 0. If it is false, or if the entry
-     * does not exist, there is no streamer.
-     * Values are toggled by set_tx_streamer().
-     */
-    std::map<size_t, bool> _tx_streamer_active;
-
     /*! Ask for a port number to connect an upstream block to.
      *
      * Typically, this will be overridden for custom behaviour.

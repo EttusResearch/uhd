@@ -501,7 +501,7 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t &args_)
     if (_tree->access<bool>("/mboards/0/auto_tick_rate").get()) {
         set_auto_tick_rate(0, "", args.channels.size());
     }
-    check_streamer_args(args, this->get_tick_rate(), "RX");
+    check_streamer_args(args, this->get_tick_rate(), "TX");
 
     boost::shared_ptr<sph::send_packet_streamer> my_streamer;
     for (size_t stream_i = 0; stream_i < args.channels.size(); stream_i++)

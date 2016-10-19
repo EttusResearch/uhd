@@ -85,11 +85,15 @@ void sink_block_ctrl_base::set_error_policy(
 ) {
     if (policy == "next_packet")
     {
-        sr_write(SR_ERROR_POLICY, (1 << 1) | 1);
+        sr_write(SR_ERROR_POLICY, (1 << 2) | 1);
     }
     else if (policy == "next_burst")
     {
-        sr_write(SR_ERROR_POLICY, (1 << 2) | 1);
+        sr_write(SR_ERROR_POLICY, (1 << 3) | 1);
+    }
+    else if (policy == "continue")
+    {
+        sr_write(SR_ERROR_POLICY, (1 << 1) | 1);
     }
     else if (policy == "wait")
     {

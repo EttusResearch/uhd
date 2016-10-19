@@ -149,13 +149,14 @@ IF(LINUX)
         COMPONENT utilities
     )
 ENDIF(LINUX)
+IF(NOT HAVE_PYTHON_MODULE_REQUESTS)
+    MESSAGE(WARNING "Module requests not found -- uhd_images_downloader.py will not work without it.")
+ENDIF(NOT HAVE_PYTHON_MODULE_REQUESTS)
 
 IF(ENABLE_USRP2)
     SET(burners
         usrp2_card_burner.py
-        usrp2_card_burner_gui.py
         usrp_n2xx_net_burner.py
-        usrp_n2xx_net_burner_gui.py
     )
 
     IF(WIN32 AND UHD_RELEASE_MODE) #include dd.exe

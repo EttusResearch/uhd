@@ -206,7 +206,7 @@ int main(int argc, char* argv[]){
 
     // Actual streaming
     uint64_t num_acc_samps = 0;
-    uint64_t num_samps_sent = 0;
+    size_t num_samps_sent = 0;
 
     while(1) {
         if (stop_signal_called) break;

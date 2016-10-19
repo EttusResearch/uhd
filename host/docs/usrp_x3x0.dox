@@ -18,6 +18,7 @@ More information:
 	- External 10 MHz input & output
 	- Expandable via 2nd SFP+ interface
 	- Supported master clock rates: 200 MHz and 184.32 MHz
+        - Variable daughterboard clock rates
 	- External GPIO Connector with UHD API control
 	- External USB Connection for built-in JTAG debugger
 	- Internal GPSDO option
@@ -429,6 +430,20 @@ Run the following commands:
     usrp_burn_mb_eeprom.exe --args=<optional device args> --values="ip-addr0=192.168.10.3"
 
 You must power-cycle the device before you can use this new address.
+
+\section x3x0_setup_clocking Setup Clocking
+
+\subsection x3x0_set_clocking_dboard Daughterboard clock
+
+The X3x0 provides a clock signal to the daughterboards which is used as a
+reference clock for synthesizers and other components that require clocks.
+There are daughterboards that require non-default clock values. See
+Section \ref config_devaddr on how to change the clock value, and \ref page_dboards
+for information specific to certain daughterboards.
+
+Not all combinations of daughterboards work within the same device, if
+daughterboard clock requirements conflict. Note that some daughterboards
+(e.g. the UBX) will try and set the daughterboard clock rate themself.
 
 \section x3x0_addressing Addressing the Device
 

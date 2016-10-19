@@ -143,10 +143,7 @@ bool test_burst_ack_message(uhd::usrp::multi_usrp::sptr, uhd::rx_streamer::sptr,
 
     //3 times max-sps guarantees a SOB, no burst, and EOB packet
     std::vector<std::complex<float> > buff(tx_stream->get_max_num_samps()*3);
-
-    tx_stream->send(
-        &buff.front(), buff.size(), md
-    );
+    tx_stream->send(&buff.front(), buff.size(), md);
 
     uhd::async_metadata_t async_md;
     if (not tx_stream->recv_async_msg(async_md)){
@@ -187,7 +184,8 @@ bool test_underflow_message(uhd::usrp::multi_usrp::sptr, uhd::rx_streamer::sptr,
     md.end_of_burst   = false;
     md.has_time_spec  = false;
 
-    tx_stream->send("", 0, md);
+    std::vector< std::complex<float> > buff(tx_stream->get_max_num_samps());
+    tx_stream->send(&buff.front(), buff.size(), md);
 
     uhd::async_metadata_t async_md;
     if (not tx_stream->recv_async_msg(async_md, 1)){
@@ -231,7 +229,8 @@ bool test_time_error_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streamer:
 
     usrp->set_time_now(uhd::time_spec_t(200.0)); //time at 200s
 
-    tx_stream->send("", 0, md);
+    std::vector< std::complex<float> > buff(tx_stream->get_max_num_samps());
+    tx_stream->send(&buff.front(), buff.size(), md);
 
     uhd::async_metadata_t async_md;
     if (not tx_stream->recv_async_msg(async_md)){
@@ -341,15 +340,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //print the result summary
+    bool any_failure = false;
     std::cout << std::endl << "Summary:" << std::endl << std::endl;
     BOOST_FOREACH(const std::string &key, tests.keys()){
         std::cout << boost::format(
             "%s   ->   %3u successes, %3u failures"
         ) % key % successes[key] % failures[key] << std::endl;
+        any_failure = any_failure or bool(failures[key]);
     }
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
 
-    return EXIT_SUCCESS;
+    return any_failure ? EXIT_FAILURE : EXIT_SUCCESS;
 }

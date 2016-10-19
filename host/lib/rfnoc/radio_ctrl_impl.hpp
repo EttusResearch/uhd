@@ -60,7 +60,6 @@ public:
     virtual double set_rx_frequency(const double freq, const size_t chan);
     virtual double set_tx_gain(const double gain, const size_t chan);
     virtual double set_rx_gain(const double gain, const size_t chan);
-    virtual void set_time_sync(const uhd::time_spec_t &time);
 
     virtual double get_rate() const;
     virtual std::string get_tx_antenna(const size_t chan) /* const */;
@@ -72,6 +71,7 @@ public:
 
     void set_time_now(const time_spec_t &time_spec);
     void set_time_next_pps(const time_spec_t &time_spec);
+    void set_time_sync(const uhd::time_spec_t &time);
     time_spec_t get_time_now();
     time_spec_t get_time_last_pps();
 

@@ -76,8 +76,8 @@ static void test_convert_types_sc16(
     //fill the input samples
     std::vector<sc16_t> input(nsamps), output(nsamps);
     BOOST_FOREACH(sc16_t &in, input) in = sc16_t(
-        short(((std::rand()/double(RAND_MAX/2)) - 1)*32767/extra_div),
-        short(((std::rand()/double(RAND_MAX/2)) - 1)*32767/extra_div)
+        short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div),
+        short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div)
     );
 
     //run the loopback and test
@@ -127,8 +127,8 @@ static void test_convert_types_for_floats(
     //fill the input samples
     std::vector<data_type> input(nsamps), output(nsamps);
     BOOST_FOREACH(data_type &in, input) in = data_type(
-        ((std::rand()/value_type(RAND_MAX/2)) - 1)*float(extra_scale),
-        ((std::rand()/value_type(RAND_MAX/2)) - 1)*float(extra_scale)
+        ((std::rand()/(value_type(RAND_MAX)/2)) - 1)*float(extra_scale),
+        ((std::rand()/(value_type(RAND_MAX)/2)) - 1)*float(extra_scale)
     );
 
     //run the loopback and test
