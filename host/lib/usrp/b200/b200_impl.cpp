@@ -1041,8 +1041,11 @@ void b200_impl::update_clock_source(const std::string &source)
         }
         _adf4001_iface->set_lock_to_ext_ref(true);
     }
-    else if (_gps and source == "gpsdo")
+    else if (source == "gpsdo")
     {
+        if (not _gps or not _gps->gps_detected()) {
+            throw uhd::key_error("update_clock_source: gpsdo selected, but no gpsdo detected!");
+        }
         if (_gpio_state.ref_sel != 1)
         {
             _gpio_state.ref_sel = 1;

@@ -37,9 +37,9 @@ double tick_node_ctrl::get_tick_rate(
     std::set< node_ctrl_base::sptr > explored_nodes(_explored_nodes);
     explored_nodes.insert(shared_from_this());
     // Here, we need all up- and downstream nodes
-    std::vector< sptr > neighbouring_tick_nodes = find_downstream_node<tick_node_ctrl>();
+    std::vector< sptr > neighbouring_tick_nodes = find_downstream_node<tick_node_ctrl>(true);
     {
-        std::vector< sptr > upstream_neighbouring_tick_nodes = find_upstream_node<tick_node_ctrl>();
+        std::vector< sptr > upstream_neighbouring_tick_nodes = find_upstream_node<tick_node_ctrl>(true);
         neighbouring_tick_nodes.insert(
                 neighbouring_tick_nodes.end(),
                 upstream_neighbouring_tick_nodes.begin(),

@@ -83,15 +83,6 @@ public:
 
 protected:
 
-    /*! For every output port, store rx streamer activity.
-     *
-     * If _rx_streamer_active[0] == true, this means that an active rx
-     * streamer is operating on port 0. If it is false, or if the entry
-     * does not exist, there is no streamer.
-     * Values are toggled by set_rx_streamer().
-     */
-    std::map<size_t, bool> _rx_streamer_active;
-
     /*! Ask for a port number to connect a downstream block to.
      *
      * See sink_node_ctrl::_request_input_port(). This is the same

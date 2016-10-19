@@ -29,7 +29,7 @@ namespace uhd {
     namespace rfnoc {
 
     template <typename T, bool downstream>
-    std::vector< boost::shared_ptr<T> > node_ctrl_base::_find_child_node()
+    std::vector< boost::shared_ptr<T> > node_ctrl_base::_find_child_node(bool active_only)
     {
         typedef boost::shared_ptr<T> T_sptr;
         static const size_t MAX_ITER = 20;
@@ -57,6 +57,11 @@ namespace uhd {
                         it != all_next_nodes.end();
                         ++it
                     ) {
+                        size_t our_port = it->first;
+                        if (active_only
+                            and not (downstream ? _tx_streamer_active[our_port] : _tx_streamer_active[our_port] )) {
+                            continue;
+                        }
                         sptr one_next_node = it->second.lock();
                         if (not one_next_node or explored.count(one_next_node)) {
                             continue;
