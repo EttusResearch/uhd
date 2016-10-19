@@ -23,11 +23,6 @@
 GR_PYTHON_INSTALL(
     FILES
     __init__.py
-    test_phasealignment.py DESTINATION ${GR_PYTHON_DIR}/usrptest/rts_tests
+    lv_control.py DESTINATION ${GR_PYTHON_DIR}/usrptest/labview_control
 )
 
-GR_PYTHON_INSTALL(
-    PROGRAMS
-    test_phasealignment.py
-    DESTINATION bin
-)

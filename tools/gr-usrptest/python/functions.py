@@ -54,18 +54,42 @@ def setup_tx_phase_alignment_parser(parser):
 
 
 def setup_rts_phase_alignment_parser(parser):
-    rts_group = parser.add_argument_group('RTS Phase alignment specific arguments')
+    rts_group = parser.add_argument_group(
+        'RTS Phase alignment specific arguments')
     rts_group.add_argument(
-        '-pd', '--phasedev',
+        '-pd',
+        '--phasedev',
         type=float,
         default=1.0,
-        help='maximum phase standard deviation of dphi in a run which is considered settled (in deg)')
+        help='maximum phase standard deviation of dphi in a run which is considered settled (in deg)'
+    )
     rts_group.add_argument(
         '-dp',
         '--dphi',
         type=float,
         default=2.0,
         help='maximum allowed d_phase deviation between runs (in deg)')
+    rts_group.add_argument(
+        '--freqlist',
+        type=str,
+        help='comma-separated list of frequencies to test')
+    rts_group.add_argument(
+        '--lv-host',
+        type=str,
+        help='specify this argument if running tests with vst/switch')
+    rts_group.add_argument('--lv-vst-name', type=str, help='vst device name')
+    rts_group.add_argument(
+        '--lv-switch-name', type=str, help='executive switch name')
+    rts_group.add_argument(
+        '--lv-basepath',
+        type=str,
+        help='basepath for LabVIEW VIs on Windows')
+    rts_group.add_argument(
+        '--tx-offset',
+        type=float,
+        help='transmitter frequency offset in VST')
+    rts_group.add_argument(
+        '--lv-switch-ports', type=str, help='comma-separated switch-port pair')
     return parser
 
 def setup_manual_phase_alignment_parser(parser):
