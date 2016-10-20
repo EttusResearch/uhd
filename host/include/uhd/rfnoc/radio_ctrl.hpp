@@ -109,11 +109,13 @@ public:
      */
     virtual double get_rx_frequency(const size_t chan) /* const */ = 0;
 
-    /*! Tune the RX LO for channel \p.
+    /*! Tune the RX LO for channel \p chan.
      *
      * This function will attempt to tune as close as possible, and return a
      * coerced value of the actual tuning result.
      *
+     * \param freq Requested LO frequency
+     * \param chan Channel number.
      * \return The actual LO frequency.
      */
     virtual double set_rx_frequency(const double freq, const size_t chan) = 0;

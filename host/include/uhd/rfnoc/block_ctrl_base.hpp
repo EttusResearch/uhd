@@ -177,6 +177,7 @@ public:
      *
      * \param reg The settings register to write to.
      * \param data New value of this register.
+     * \param port Destination port
      */
     void sr_write(const boost::uint32_t reg, const boost::uint32_t data, const size_t port = 0);
 
@@ -228,7 +229,7 @@ public:
      * instead of a numeric address. The register name must be
      * defined in the block definition file.
      *
-     * \param addr The user register address.
+     * \param reg The user register address.
      * \param port Port on which to read
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
@@ -254,6 +255,7 @@ public:
      * defined in the block definition file.
      *
      * \param reg The user register name.
+     * \param port Destination port.
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
      */
@@ -275,8 +277,8 @@ public:
 
     /*! Sets a tick rate for the command timebase.
      *
-     * \param the tick rate in Hz
-     * \port port Port
+     * \param tick_rate the tick rate in Hz
+     * \param port Port
      */
     void set_command_tick_rate(const double tick_rate, const size_t port = ANY_PORT);
 

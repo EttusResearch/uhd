@@ -60,6 +60,7 @@ public:
      * See also register_upstream_block().
      *
      * \param stream_cmd The stream command.
+     * \param chan Channel for which this command is meant (data shall be produced on this channel).
      */
     virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan=0);
 
@@ -109,7 +110,7 @@ public:
      * \param buf_size_pkts The size of the downstream block's input FIFO size in number of packets. Setting
      *                      this to zero disables flow control. The block will then produce data as fast as it can.
      *                     \b Warning: This can cause head-of-line blocking, and potentially lock up your device!
-     * \param Specify on which outgoing port this setting is valid.
+     * \param block_port Specify on which outgoing port this setting is valid.
      * \param sid The SID for which this is valid. This is meant for cases where the outgoing block port is
      *            not sufficient to set the flow control, and as such is rarely used.
      */
