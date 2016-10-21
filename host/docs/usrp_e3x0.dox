@@ -31,8 +31,8 @@ up and running.
 
 There are two different methods to connect to the device
 
-- using the onboard serial to usb connector
-- using the gigabit ethernet connector and a ssh client on your host computer
+- using the onboard Serial to USB connector
+- using the gigabit Ethernet connector and a ssh client on your host computer
 
 For the first boot, booting with the serial cable connected to the device
 is recommended, as it allows to review and modify the \ref e3xx_network_configuration
@@ -118,7 +118,7 @@ in order to build software for your device open a new shell and type:
 
     $ . <yoursdkinstallpath>/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
 
-This will modifiy the PATH, CC, CXX etc, environment variables and allow you to compile software for your USRP E310 device.
+This will modify the PATH, CC, CXX etc, environment variables and allow you to compile software for your USRP E310 device.
 To verify all went well you can try:
 
     $ $CC -dumpmachine
@@ -223,7 +223,7 @@ From the build directory run:
  $ sh ../meta-ettus/scripts/build-all.sh
 \endcode
 
-When the script finishes, the SD ard image files are in ./images and the sdk
+When the script finishes, the SD card image files are in ./images and the sdk
 is in tmp-glibc/deploy/sdk/ .
 
 -# Using the environment
@@ -237,9 +237,9 @@ again by:
 \section e3x0_upgrade_sd_card Upgrading / Writing image to sd card
 
 In order to upgrade or reinitialize a sd card for the first time, you can use the 'dd' tool.
-Make sure that you are using the right block device for your sd card as failing to do so can wipe your harddrive.
+Make sure that you are using the right block device for your sd card as failing to do so can wipe your hard drive.
 
-Replace `<yourimage>`.direct with your image file name and yoursdcard with your blockdevice e.g. /dev/mmcblk0 or /dev/sdb.
+Replace `<yourimage>`.direct with your image file name and `<yoursdcard>` with your blockdevice e.g. /dev/mmcblk0 or /dev/sdb.
 
     $ sudo dd if=<yourimage>.direct of=/dev/<yoursdcard> bs=1M
 
@@ -389,7 +389,7 @@ To test the accelerometer, run:
 
     $ RTIMULibDrive
 
-This will print the current acclerometer values on the console.
+This will print the current accelerometer values on the console.
 
 To launch the IMU calibration procedure, run:
 
@@ -518,7 +518,7 @@ The procedure for calibration is as follows:
 
 A faster (less accurate) calibration procedure is as follows:
 
-1. Completly charge battery
+1. Completely charge battery
 2. Type:
 
     $ echo 3200000 > /sys/class/power_supply/BAT/charge_now
@@ -573,7 +573,7 @@ Source code related to controlling the filter band and antenna switches resides 
 methods set the switches depending on the state of transmit and receive streams.
 
 The following sections provide switch setting tables for antenna and filter selection for frontends A & B receive and transmit paths.
-For futher details refer to the schematics. 
+For further details refer to the schematics. 
 
 \subsubsection e3x0_dboard_e310_frontend_a_switches Frontend Side A Filter and Antenna Switches
 

@@ -258,7 +258,7 @@ Many UHD developers first install UHD using MacPorts in order to get all of the 
 
 \b NOTE: We highly recommended that all dependencies be installed via the same package manager! When issues arise, they are much easier to track down, and updating to newer versions of UHD as well as dependencies is much easier.
 
-\b NOTE: Other package managers (e.g., Fink, HomeBrew) will require diffrent commands than the above to install all dependencies and then remove the UHD install. Please consult the specific package manager in use for how to do these commands properly; they will not be covered here.
+\b NOTE: Other package managers (e.g., Fink, HomeBrew) will require different commands than the above to install all dependencies and then remove the UHD install. Please consult the specific package manager in use for how to do these commands properly; they will not be covered here.
 
 #### Compiling UHD from Source
 
