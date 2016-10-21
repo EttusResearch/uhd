@@ -7,7 +7,7 @@
 \subsection coding_api_hilevel High-Level: The Multi-USRP
 
 The Multi-USRP class provides a high-level interface to a single USRP device
-with one or more channels, or multiple USRP devicess in a homogeneous
+with one or more channels, or multiple USRP devices in a homogeneous
 setup. See the documentation for uhd::usrp::multi_usrp.
 
 \subsection coding_api_hilevelclock High-Level: The Multi-USRP-Clock

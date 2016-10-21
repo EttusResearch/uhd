@@ -111,7 +111,7 @@ ready for development!
 
 - Prior to installing the module, the host PC can remain powered on.
 - Plug a 1 Gigabit SFP Transceiver into Ethernet Port 0 on the USRP X300/X310 device.
-- Use the Ethernet cable to connect the SFP+ transciever on the device to the host computer. For maximum throughput, Ettus Research recommends that you connect each device to its own dedicated Gigabit Ethernet interface on the host computer.
+- Use the Ethernet cable to connect the SFP+ transceiver on the device to the host computer. For maximum throughput, Ettus Research recommends that you connect each device to its own dedicated Gigabit Ethernet interface on the host computer.
 - Connect the AC/DC power supply to the device and plug the supply into a wall outlet.
 - The OS will automatically recognize the device (e.g. when running `uhd_find_devices`).
 
@@ -139,7 +139,7 @@ We will use the 'MXI' nomenclature for the rest of this manual.</b>
 ### Installing the PCIe Kernel Drivers
 
 In order to use the USRP X-Series on a PCIe-over-MXI connection, you need to
-install the NI RIO drivers on your system. Please follow the insructions here:
+install the NI RIO drivers on your system. Please follow the instructions here:
 \ref page_ni_rio_kernel
 
 ### Installing the PCI Express Interface Kit
@@ -180,7 +180,7 @@ We will use the 'MXI' nomenclature for the rest of this manual.</b>
 ### Installing the PCIe Kernel Drivers
 
 In order to use the USRP X-Series on a PCIe-over-MXI connection, you need to
-install the NI RIO drivers on your system. Please follow the insructions here:
+install the NI RIO drivers on your system. Please follow the instructions here:
 \ref page_ni_rio_kernel
 
 ### Installing the PCI Express Card
@@ -408,6 +408,20 @@ Run the following commands:
     usrp_burn_mb_eeprom.exe --args=<optional device args> --values="ip-addr0=192.168.10.3"
 
 You must power-cycle the device before you can use this new address.
+
+\section x3x0_setup_clocking Setup Clocking
+
+\subsection x3x0_set_clocking_dboard Daughterboard clock
+
+The X3x0 provides a clock signal to the daughterboards which is used as a
+reference clock for synthesizers and other components that require clocks.
+There are daughterboards that require non-default clock values. See
+Section \ref config_devaddr on how to change the clock value, and \ref page_dboards
+for information specific to certain daughterboards.
+
+Not all combinations of daughterboards work within the same device, if
+daughterboard clock requirements conflict. Note that some daughterboards
+(e.g. the UBX) will try and set the daughterboard clock rate themselves.
 
 \section x3x0_addressing Addressing the Device
 

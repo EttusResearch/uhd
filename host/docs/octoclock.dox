@@ -120,7 +120,7 @@ Device Address:
 
 \subsection eeprom Updating the device's EEPROM
 
-As a final step, the device's EEPROM will need to be updated. On the back of your device, you will see a label sticker with a serial number (labelled S/N) and a MAC address (labeled MAC). For later use, the MAC address will have to be used in a different format than is on the label. As an example, if the label lists the MAC address as <b>00802F112233</b>, you will need to format it as <b>00:80:2F:11:22:33</b>.
+As a final step, the device's EEPROM will need to be updated. On the back of your device, you will see a label sticker with a serial number (labeled S/N) and a MAC address (labeled MAC). For later use, the MAC address will have to be used in a different format than is on the label. As an example, if the label lists the MAC address as <b>00802F112233</b>, you will need to format it as <b>00:80:2F:11:22:33</b>.
 
 Update your device's EEPROM with the following command:
 

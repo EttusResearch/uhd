@@ -8,7 +8,7 @@
 
 A USRP device has two stages of tuning:
 
-- RF front-end: translates bewteen RF and IF
+- RF front-end: translates between RF and IF
 - DSP: translates between IF and baseband
 
 In a typical use-case, the user specifies an overall center frequency
@@ -99,7 +99,7 @@ clock selection, allowing a broader range of sample rate selections by applicati
 pages for more details.
 
 In many cases using USRPs with flexible master-clock rates, it is possible to achieve lower sample rates without running into
-the constraints of higher decimations, simply by choosing a lower master-clock rate to keep required decimation below 128.
+the constraints of higher decimation rates, simply by choosing a lower master-clock rate to keep required decimation below 128.
 
 \subsection general_sampleratenotes_automatic Automatic master-clock selection
 

@@ -6,7 +6,7 @@ Radio transport protocols are used to exchange samples (or other items) between 
 If one were to sniff Ethernet traffic between a USRP and a PC, the packets would conform to a
 radio transport protocol.
 
-For USRP devices, two radio transport protocols are relevent: VRT (the VITA Radio Transport protocol)
+For USRP devices, two radio transport protocols are relevant: VRT (the VITA Radio Transport protocol)
 and CVITA (compressed VITA), also known as CHDR. Generation-3 devices and the B200 use CHDR, the rest
 use VRT.
 
@@ -74,7 +74,7 @@ for Ethernet links as well as USB (e.g., for the B210).
 
 \section vrt_code Code
 
-Relevent code sections for the radio transport layer are:
+Relevant code sections for the radio transport layer are:
 * uhd::transport::vrt - Namespace for radio transport protocol related functions and definitions
 * uhd::transport::vrt::chdr - Sub-namespace specifically for CVITA/CHDR
 * uhd::sid_t - Datatype to represent SIDs
