@@ -613,6 +613,16 @@ uhd_error uhd_usrp_set_clock_source_out(
     )
 }
 
+uhd_error uhd_usrp_set_time_source_out(
+    uhd_usrp_handle h,
+    bool enb,
+    size_t mboard
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        USRP(h)->set_time_source_out(enb, mboard);
+    )
+}
+
 uhd_error uhd_usrp_get_num_mboards(
     uhd_usrp_handle h,
     size_t *num_mboards_out
@@ -1489,7 +1499,7 @@ uhd_error uhd_usrp_write_register(
     )
 }
 
-uhd_error uhd_usrp_write_register(
+uhd_error uhd_usrp_read_register(
     uhd_usrp_handle h,
     const char* path,
     uint32_t field,
