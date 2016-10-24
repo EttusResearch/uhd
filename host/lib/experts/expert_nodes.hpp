@@ -394,7 +394,7 @@ namespace uhd { namespace experts {
      * class worker_node_t
      *
      * A node class to implement a function that consumes
-     * zero or more input data nodes and emits zeroor more output
+     * zero or more input data nodes and emits zero or more output
      * data nodes. The worker can also operate on other non-expert
      * interfaces because worker_node_t is abstract and the client
      * is required to implement the "resolve" method in a subclass.
