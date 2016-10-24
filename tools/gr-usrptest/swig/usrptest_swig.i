@@ -8,6 +8,9 @@
 %include "usrptest_swig_doc.i"
 
 %{
+#include "usrptest/measurement_sink_f.h"
 %}
 
 
+%include "usrptest/measurement_sink_f.h"
+GR_SWIG_BLOCK_MAGIC2(usrptest, measurement_sink_f);

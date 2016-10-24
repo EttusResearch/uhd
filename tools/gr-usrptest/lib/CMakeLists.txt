@@ -26,6 +26,7 @@ include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 
 list(APPEND usrptest_sources
+    measurement_sink_f_impl.cc
 )
 
 set(usrptest_sources "${usrptest_sources}" PARENT_SCOPE)

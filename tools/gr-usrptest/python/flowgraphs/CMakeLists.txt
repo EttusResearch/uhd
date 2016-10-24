@@ -1,4 +1,4 @@
-# Copyright 2011,2012 Free Software Foundation, Inc.
+# Copyright 2011 Free Software Foundation, Inc.
 #
 # This file is part of GNU Radio
 #
@@ -18,9 +18,11 @@
 # Boston, MA 02110-1301, USA.
 
 ########################################################################
-# Install public header files
+# Install python sources
 ########################################################################
-install(FILES
-    api.h
-    measurement_sink_f.h DESTINATION include/usrptest
+GR_PYTHON_INSTALL(
+    FILES
+    __init__.py
+    selftest_fg.py
+    phasealignment_fg.py DESTINATION ${GR_PYTHON_DIR}/usrptest/flowgraphs
 )

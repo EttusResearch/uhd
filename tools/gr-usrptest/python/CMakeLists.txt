@@ -31,15 +31,21 @@ endif()
 GR_PYTHON_INSTALL(
     FILES
     __init__.py
-    parsers.py
-    selftest_fg.py
+    functions.py
     phase_calc_ccf.py DESTINATION ${GR_PYTHON_DIR}/usrptest
 )
+
+add_subdirectory(flowgraphs)
+add_subdirectory(labview_control)
+add_subdirectory(rts_tests)
 
 ########################################################################
 # Handle the unit tests
 ########################################################################
 include(GrTest)
 
+GR_ADD_TEST(qa_phasealignment ${PYTHON_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/qa_phasealignment.py)
 set(GR_TEST_TARGET_DEPS gnuradio-usrptest)
 set(GR_TEST_PYTHON_DIRS ${CMAKE_BINARY_DIR}/swig)
+GR_ADD_TEST(qa_measurement_sink_f ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_measurement_sink_f.py)
