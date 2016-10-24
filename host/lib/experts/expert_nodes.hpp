@@ -21,6 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/dirty_tracked.hpp>
+#include <uhd/types/time_spec.hpp>
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/recursive_mutex.hpp>
@@ -96,6 +97,12 @@ namespace uhd { namespace experts {
         static std::string print(const boost::uint8_t& val) {
             std::ostringstream os;
             os << int(val);
+            return os.str();
+        }
+
+        static std::string print(const time_spec_t time) {
+            std::ostringstream os;
+            os << time.get_real_secs();
             return os.str();
         }
     };
