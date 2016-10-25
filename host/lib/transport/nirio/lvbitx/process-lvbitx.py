@@ -39,14 +39,14 @@ if (len(args) < 1):
     sys.exit(1)
 
 lvbitx_filename = args[0]
-input_filename = os.path.abspath(lvbitx_filename)
-autogen_src_path = os.path.abspath(options.output_src_path) if (options.output_src_path is not None) else os.path.dirname(input_filename)
+input_filename = os.path.relpath(lvbitx_filename)
+autogen_src_path = os.path.relpath(options.output_src_path) if (options.output_src_path is not None) else os.path.dirname(input_filename)
 class_name = os.path.splitext(os.path.basename(input_filename))[0]
 
 if (not os.path.isfile(input_filename)):
     print('ERROR: FPGA File ' + input_filename + ' could not be accessed or is not a file.')
     sys.exit(1)
-if (options.merge_bin is not None and not os.path.isfile(os.path.abspath(options.merge_bin))):
+if (options.merge_bin is not None and not os.path.isfile(os.path.relpath(options.merge_bin))):
     print('ERROR: FPGA Bin File ' + options.merge_bin + ' could not be accessed or is not a file.')
     sys.exit(1)
 if (not os.path.exists(autogen_src_path)):
@@ -171,7 +171,7 @@ codegen_transform['in_fifo_list'] = in_fifo_list
 
 # Merge bitstream into LVBITX
 if (options.merge_bin is not None):
-    with open(os.path.abspath(options.merge_bin), 'rb') as bin_file:
+    with open(os.path.relpath(options.merge_bin), 'rb') as bin_file:
         bitstream = bin_file.read()
         bitstream_md5 = hashlib.md5(bitstream).hexdigest()
         bitstream_b64 = base64.b64encode(bitstream)
@@ -199,12 +199,12 @@ if (options.output_lvbitx_path is not None):
     tree.write(os.path.join(options.output_lvbitx_path, class_name + '_fpga.lvbitx'), encoding="utf-8", xml_declaration=True, default_namespace=None, method="xml")
 
 # Save HPP and CPP
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template_lvbitx.hpp'), 'r') as template_file:
+with open(os.path.join(os.path.dirname(os.path.relpath(__file__)), 'template_lvbitx.hpp'), 'r') as template_file:
     template_string = template_file.read()
 with open(os.path.join(autogen_src_path, class_name + '_lvbitx.hpp'), 'w') as source_file:
     source_file.write(template_string.format(**codegen_transform))
 
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'template_lvbitx.cpp'), 'r') as template_file:
+with open(os.path.join(os.path.dirname(os.path.relpath(__file__)), 'template_lvbitx.cpp'), 'r') as template_file:
     template_string = template_file.read()
 with open(os.path.join(autogen_src_path, class_name + '_lvbitx.cpp'), 'w') as source_file:
     source_file.write(template_string.format(**codegen_transform))
