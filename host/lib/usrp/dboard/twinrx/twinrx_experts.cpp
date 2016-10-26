@@ -594,10 +594,6 @@ void twinrx_settings_expert::_resolve_lox_freq(
             ch0_freq_c = _set_lox_synth_freq(lo_stage, twinrx_ctrl::CH2, ch0_freq_d);
         } else if (synth0_mapping == MAPPING_SHARED or synth1_mapping == MAPPING_SHARED) {
             // If any synthesizer is being shared then we are not in hopping mode
-            if (rf_freq_ppm_t(ch0_freq_d) != ch1_freq_d) {
-                UHD_MSG(warning) <<
-                    "Incompatible RF/LO frequencies for LO sharing. Using Ch0 settings for both channels.";
-            }
             twinrx_ctrl::channel_t ch = (synth0_mapping == MAPPING_SHARED) ? twinrx_ctrl::CH1 : twinrx_ctrl::CH2;
             ch0_freq_c = _set_lox_synth_freq(lo_stage, ch, ch0_freq_d);
             ch1_freq_c = ch0_freq_c;
@@ -621,10 +617,6 @@ void twinrx_settings_expert::_resolve_lox_freq(
             ch1_freq_c = _set_lox_synth_freq(lo_stage, twinrx_ctrl::CH2, ch1_freq_d);
         } else if (synth0_mapping == MAPPING_SHARED or synth1_mapping == MAPPING_SHARED) {
             // If any synthesizer is being shared then we are not in hopping mode
-            if (rf_freq_ppm_t(ch0_freq_d) != ch1_freq_d) {
-                UHD_MSG(warning) <<
-                    "Incompatible RF/LO frequencies for LO sharing. Using Ch0 settings for both channels.";
-            }
             twinrx_ctrl::channel_t ch = (synth0_mapping == MAPPING_SHARED) ? twinrx_ctrl::CH1 : twinrx_ctrl::CH2;
             ch0_freq_c = _set_lox_synth_freq(lo_stage, ch, ch0_freq_d);
             ch1_freq_c = ch0_freq_c;
