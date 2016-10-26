@@ -52,6 +52,38 @@ static const std::string lo_stage_str(lo_stage_t stage, bool lower = false) {
     return prefix + ((stage == STAGE_LO1) ? "1" : "2");
 }
 
+
+/*!---------------------------------------------------------
+ * twinrx_scheduling_expert
+ *
+ * This expert is responsible for scheduling time sensitive actions
+ * in other experts. It responds to changes in the command time and
+ * selectively causes experts to run in order to ensure a synchronized
+ * system.
+ *
+ * ---------------------------------------------------------
+ */
+class twinrx_scheduling_expert : public experts::worker_node_t {
+public:
+    twinrx_scheduling_expert(const experts::node_retriever_t& db, std::string ch)
+    : experts::worker_node_t(prepend_ch("twinrx_scheduling_expert", ch)),
+      _command_time     (db, prepend_ch("time/cmd", ch)),
+      _rx_frontend_time (db, prepend_ch("time/rx_frontend", ch))
+    {
+        bind_accessor(_command_time);
+        bind_accessor(_rx_frontend_time);
+    }
+
+private:
+    virtual void resolve();
+
+    //Inputs
+    experts::data_reader_t<time_spec_t>    _command_time;
+
+    //Outputs
+    experts::data_writer_t<time_spec_t>    _rx_frontend_time;
+};
+
 /*!---------------------------------------------------------
  * twinrx_freq_path_expert
  *
@@ -271,6 +303,7 @@ public:
       _if_freq_d        (db, prepend_ch("if_freq/desired", ch)),
       _lo1_inj_side     (db, prepend_ch("ch/LO1/inj_side", ch)),
       _lo2_inj_side     (db, prepend_ch("ch/LO2/inj_side", ch)),
+      _rx_frontend_time (db, prepend_ch("time/rx_frontend", ch)),
       _if_freq_c        (db, prepend_ch("if_freq/coerced", ch)),
       _db_iface         (db_iface)
     {
@@ -280,6 +313,7 @@ public:
         bind_accessor(_lo1_inj_side);
         bind_accessor(_lo2_inj_side);
         bind_accessor(_if_freq_c);
+        bind_accessor(_rx_frontend_time);
     }
 
 private:
@@ -293,9 +327,14 @@ private:
     experts::data_reader_t<double>                          _if_freq_d;
     experts::data_reader_t<lo_inj_side_t>                   _lo1_inj_side;
     experts::data_reader_t<lo_inj_side_t>                   _lo2_inj_side;
+    experts::data_reader_t<time_spec_t>                     _rx_frontend_time;
+
     //Outputs
     experts::data_writer_t<double>                          _if_freq_c;
     dboard_iface::sptr                                      _db_iface;
+
+    //Misc
+    time_spec_t  _cached_cmd_time;
 };
 
 /*!---------------------------------------------------------

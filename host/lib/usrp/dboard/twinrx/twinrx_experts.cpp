@@ -30,6 +30,17 @@ using namespace uhd::math;
 using namespace uhd::usrp::dboard::twinrx;
 
 /*!---------------------------------------------------------
+ * twinrx_scheduling_expert::resolve
+ * ---------------------------------------------------------
+ */
+void twinrx_scheduling_expert::resolve()
+{
+    // Currently a straight pass-through. To be expanded as needed
+    // when more advanced scheduling is needed
+    _rx_frontend_time = _command_time;
+}
+
+/*!---------------------------------------------------------
  * twinrx_freq_path_expert::resolve
  * ---------------------------------------------------------
  */
@@ -222,6 +233,19 @@ void twinrx_freq_coercion_expert::resolve()
  */
 void twinrx_nyquist_expert::resolve()
 {
+    // Do not execute when clear_command_time is called.
+    // This is a transition of the command time from non-zero to zero.
+    if (_rx_frontend_time == time_spec_t(0.0) and _cached_cmd_time != time_spec_t(0.0)) {
+        _cached_cmd_time = _rx_frontend_time;
+        return;
+    }
+
+    // Do not execute twice for the same command time unless untimed
+    if (_rx_frontend_time == _cached_cmd_time and _rx_frontend_time != time_spec_t(0.0)) {
+        return;
+    }
+    _cached_cmd_time = _rx_frontend_time;
+
     double if_freq_sign = 1.0;
     if (_lo1_inj_side == INJ_HIGH_SIDE) if_freq_sign *= -1.0;
     if (_lo2_inj_side == INJ_HIGH_SIDE) if_freq_sign *= -1.0;
