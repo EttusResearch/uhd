@@ -22,14 +22,15 @@ standard Berkeley sockets API using `send()`/`recv()`.
 
 The following parameters can be used to alter the transport's default
 behavior (these options can be passed to a USRP device as arguments
-at initialization time, see also \ref config_devaddr, or to a streamer,
-see uhd::stream_args_t::args):
+at initialization time, see also \ref config_devaddr):
 
 -   `recv_frame_size:` The size of a single receive buffer in bytes
 -   `num_recv_frames:` The number of receive buffers to allocate
 -   `send_frame_size:` The size of a single send buffer in bytes
 -   `num_send_frames:` The number of send buffers to allocate
 -   `recv_buff_fullness:` The targeted fullness factor of the the buffer (typically around 90%)
+-   `ups_per_sec`: USRP2 only. Flow control ACKs per second on TX.
+-   `ups_per_fifo`: USRP2 only. Flow control ACKs per total buffer size (in packets) on TX.
 
 <b>Notes:</b>
 - `num_recv_frames` does not affect performance.
