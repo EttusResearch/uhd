@@ -172,7 +172,6 @@ void device3_impl::enumerate_rfnoc_blocks(
         make_args.base_address = xport.send_sid.get_dst();
         make_args.device_index = device_index;
         make_args.tree = subtree;
-        make_args.is_big_endian = (xport.endianness == ENDIANNESS_BIG);
         _rfnoc_block_ctrl.push_back(uhd::rfnoc::block_ctrl_base::make(make_args, noc_id));
     }
 }

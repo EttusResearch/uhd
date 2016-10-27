@@ -87,7 +87,6 @@ class pseudo_device3_impl : public uhd::device3
         make_args.base_address = TEST_SID0.get_dst();
         make_args.device_index = 0;
         make_args.tree = _tree;
-        make_args.is_big_endian = false;
         std::cout << "[PSEUDO] Generating block controls 1/2:" << std::endl;
         _rfnoc_block_ctrl.push_back( block_ctrl_base::make(make_args) );
 

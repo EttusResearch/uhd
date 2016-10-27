@@ -46,7 +46,6 @@ struct make_args_t
 {
     make_args_t(const std::string &key="") :
         device_index(0),
-        is_big_endian(true),
         block_name(""),
         block_key(key)
     {}
@@ -61,7 +60,6 @@ struct make_args_t
     //  property tree is /mboards/0, pass a subtree starting at /mboards/0
     //  to the constructor.
     uhd::property_tree::sptr tree;
-    bool is_big_endian;
     //! The name of the block as it will be addressed
     std::string block_name;
     //! The key of the block, i.e. how it was registered
@@ -390,9 +388,6 @@ protected:
 
     //! Root node of this block's properties
     uhd::fs_path _root_path;
-
-    //! Endianness of underlying transport (for data transport)
-    bool _transport_is_big_endian;
 
     //! Block definition (stores info about the block such as ports)
     blockdef::sptr _block_def;

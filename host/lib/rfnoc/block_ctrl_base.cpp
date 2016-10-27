@@ -48,7 +48,6 @@ inline uint32_t _sr_to_addr64(uint32_t reg) { return reg * 8; }; // for peek64
 block_ctrl_base::block_ctrl_base(
         const make_args_t &make_args
 ) : _tree(make_args.tree),
-    _transport_is_big_endian(make_args.is_big_endian),
     _ctrl_ifaces(make_args.ctrl_ifaces),
     _base_address(make_args.base_address & 0xFFF0)
 {
