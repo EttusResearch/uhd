@@ -105,8 +105,7 @@ void device3_impl::enumerate_rfnoc_blocks(
         size_t n_blocks,
         size_t base_port,
         const uhd::sid_t &base_sid,
-        uhd::device_addr_t transport_args,
-        uhd::endianness_t endianness
+        uhd::device_addr_t transport_args
 ) {
     // entries that are already connected to this block
     uhd::sid_t ctrl_sid = base_sid;
@@ -131,7 +130,7 @@ void device3_impl::enumerate_rfnoc_blocks(
         );
         UHD_DEVICE3_LOG() << str(boost::format("Setting up NoC-Shell Control for port #0 (SID: %s)...") % xport.send_sid.to_pp_string_hex());
         uhd::rfnoc::ctrl_iface::sptr ctrl = uhd::rfnoc::ctrl_iface::make(
-                endianness == ENDIANNESS_BIG,
+                xport.endianness == uhd::ENDIANNESS_BIG,
                 xport.send,
                 xport.recv,
                 xport.send_sid,
@@ -160,7 +159,7 @@ void device3_impl::enumerate_rfnoc_blocks(
             );
             UHD_DEVICE3_LOG() << str(boost::format("Setting up NoC-Shell Control for port #%d (SID: %s)...") % port_number % xport1.send_sid.to_pp_string_hex());
             uhd::rfnoc::ctrl_iface::sptr ctrl1 = uhd::rfnoc::ctrl_iface::make(
-                    endianness == ENDIANNESS_BIG,
+                    xport1.endianness == uhd::ENDIANNESS_BIG,
                     xport1.send,
                     xport1.recv,
                     xport1.send_sid,
@@ -173,7 +172,7 @@ void device3_impl::enumerate_rfnoc_blocks(
         make_args.base_address = xport.send_sid.get_dst();
         make_args.device_index = device_index;
         make_args.tree = subtree;
-        make_args.is_big_endian = (endianness == ENDIANNESS_BIG);
+        make_args.is_big_endian = (xport.endianness == ENDIANNESS_BIG);
         _rfnoc_block_ctrl.push_back(uhd::rfnoc::block_ctrl_base::make(make_args, noc_id));
     }
 }

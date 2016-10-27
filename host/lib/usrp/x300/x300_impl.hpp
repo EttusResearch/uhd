@@ -277,9 +277,6 @@ private:
     /// More IO stuff
     uhd::device_addr_t get_tx_hints(size_t mb_index);
     uhd::device_addr_t get_rx_hints(size_t mb_index);
-    uhd::endianness_t get_transport_endianness(size_t mb_index) {
-        return _mb[mb_index].if_pkt_is_big_endian ? uhd::ENDIANNESS_BIG : uhd::ENDIANNESS_LITTLE;
-    };
 
     void post_streamer_hooks(uhd::direction_t dir);
 };

@@ -571,7 +571,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
 
         //init some streamer stuff
         std::string conv_endianness;
-        if (get_transport_endianness(mb_index) == ENDIANNESS_BIG) {
+        if (xport.endianness == ENDIANNESS_BIG) {
             my_streamer->set_vrt_unpacker(&vrt::chdr::if_hdr_unpack_be);
             conv_endianness = "be";
         } else {
@@ -624,7 +624,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
                 &handle_rx_flowctrl,
                 xport.send_sid,
                 xport.send,
-                get_transport_endianness(mb_index),
+                xport.endianness,
                 fc_cache,
                 _1
             ),
@@ -761,7 +761,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         //init some streamer stuff
         std::string conv_endianness;
-        if (get_transport_endianness(mb_index) == ENDIANNESS_BIG) {
+        if (xport.endianness == ENDIANNESS_BIG) {
             my_streamer->set_vrt_packer(&vrt::chdr::if_hdr_pack_be);
             conv_endianness = "be";
         } else {
@@ -809,7 +809,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
                     &handle_tx_async_msgs,
                     fc_cache,
                     xport.recv,
-                    get_transport_endianness(mb_index),
+                    xport.endianness,
                     tick_rate_retriever
                 )
         );

@@ -942,8 +942,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         n_rfnoc_blocks,
         X300_XB_DST_PCI + 1, /* base port */
         uhd::sid_t(X300_SRC_ADDR0, 0, X300_DST_ADDR + mb_i, 0),
-        dev_addr,
-        mb.if_pkt_is_big_endian ? ENDIANNESS_BIG : ENDIANNESS_LITTLE
+        dev_addr
     );
     //////////////// RFNOC /////////////////
 
@@ -1063,6 +1062,7 @@ uhd::both_xports_t x300_impl::make_transport(
     zero_copy_xport_params default_buff_args;
 
     both_xports_t xports;
+    xports.endianness = mb.if_pkt_is_big_endian ? ENDIANNESS_BIG : ENDIANNESS_LITTLE;
     if (mb.xport_path == "nirio") {
         xports.send_sid = this->allocate_sid(mb, address, X300_SRC_ADDR0, X300_XB_DST_PCI);
         xports.recv_sid = xports.send_sid.reversed();

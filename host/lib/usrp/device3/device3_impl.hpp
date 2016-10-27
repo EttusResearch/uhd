@@ -134,7 +134,6 @@ protected:
 
     virtual uhd::device_addr_t get_tx_hints(size_t) { return uhd::device_addr_t(); };
     virtual uhd::device_addr_t get_rx_hints(size_t) { return uhd::device_addr_t(); };
-    virtual uhd::endianness_t get_transport_endianness(size_t mb_index) = 0;
 
     //! Is called after a streamer is generated
     virtual void post_streamer_hooks(uhd::direction_t) {};
@@ -167,8 +166,7 @@ protected:
             size_t n_blocks,
             size_t base_port,
             const uhd::sid_t &base_sid,
-            uhd::device_addr_t transport_args,
-            uhd::endianness_t endianness
+            uhd::device_addr_t transport_args
     );
 
     /***********************************************************************
