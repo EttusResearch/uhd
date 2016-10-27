@@ -372,7 +372,7 @@ double xcvr2450::set_lo_freq_core(double target_freq){
     //variables used in the calculation below
     double scaler = xcvr2450::is_highband(target_freq)? (4.0/5.0) : (4.0/3.0);
     double ref_freq = this->get_iface()->get_clock_rate(dboard_iface::UNIT_TX);
-    int R, intdiv, fracdiv;
+    int R, intdiv = 131, fracdiv = 0;
 
     //loop through values until we get a match
     for(_ad9515div = 2; _ad9515div <= 3; _ad9515div++){
