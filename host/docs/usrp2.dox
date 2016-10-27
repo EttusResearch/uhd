@@ -102,7 +102,7 @@ indirectly to a USRP2 through a Gigabit Ethernet switch.
 
 \subsection usrp2_network_setuphost Setup the host interface
 
-The USRP2 communicates at the IP/UDP layer over the gigabit ethernet.
+The USRP2 communicates at the IP/UDP layer over the gigabit Ethernet.
 The default IP address of the USRP2 is **192.168.10.2**. You will need
 to configure the host's Ethernet interface with a static IP address to
 enable communication. An address of **192.168.10.1** and a subnet mask
@@ -189,7 +189,7 @@ IP address are in the previous section of this documentation.
 \subsection usrp2_commprob_firewall Firewall issues
 
 When the IP address is not specified, the device discovery broadcasts
-UDP packets from each ethernet interface. Many firewalls will block the
+UDP packets from each Ethernet interface. Many firewalls will block the
 replies to these broadcast packets. If disabling your system's firewall
 or specifying the IP address yields a discovered device, then your
 firewall may be blocking replies to UDP broadcast packets. If this is

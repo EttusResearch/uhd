@@ -19,11 +19,11 @@ re-apply the desired setting every time the LO is re-tuned.
 
 UHD software comes with the following calibration utilities:
 
--   **uhd_cal_rx_iq_balance:** - mimimizes RX IQ imbalance vs. LO
+-   **uhd_cal_rx_iq_balance:** - minimizes RX IQ imbalance vs. LO
     frequency
--   **uhd_cal_tx_dc_offset:** - mimimizes TX DC offset vs. LO
+-   **uhd_cal_tx_dc_offset:** - minimizes TX DC offset vs. LO
     frequency
--   **uhd_cal_tx_iq_balance:** - mimimizes TX IQ imbalance vs. LO
+-   **uhd_cal_tx_iq_balance:** - minimizes TX IQ imbalance vs. LO
     frequency
 
 The following RF frontends are supported by the self-calibration

@@ -8,7 +8,7 @@ A transport is the layer between the packet interface and a device IO
 interface. The advanced user can pass optional parameters into the
 underlying transport layer through the device address. These optional
 parameters control how the transport object allocates memory, resizes
-kernel buffers, spawns threads, etc. When not spcified, the transport
+kernel buffers, spawns threads, etc. When not specified, the transport
 layer will use values for these parameters that are known to perform
 well on a variety of systems. The transport parameters are defined below
 for the various transports in the UHD software:
@@ -22,14 +22,15 @@ standard Berkeley sockets API using `send()`/`recv()`.
 
 The following parameters can be used to alter the transport's default
 behavior (these options can be passed to a USRP device as arguments
-at initialization time, see also \ref config_devaddr, or to a streamer,
-see uhd::stream_args_t::args):
+at initialization time, see also \ref config_devaddr):
 
 -   `recv_frame_size:` The size of a single receive buffer in bytes
 -   `num_recv_frames:` The number of receive buffers to allocate
 -   `send_frame_size:` The size of a single send buffer in bytes
 -   `num_send_frames:` The number of send buffers to allocate
--   `recv_buff_fullness:` The targetted fullness factor of the the buffer (typically around 90%)
+-   `recv_buff_fullness:` The targeted fullness factor of the the buffer (typically around 90%)
+-   `ups_per_sec`: USRP2 only. Flow control ACKs per second on TX.
+-   `ups_per_fifo`: USRP2 only. Flow control ACKs per total buffer size (in packets) on TX.
 
 <b>Notes:</b>
 - `num_recv_frames` does not affect performance.
@@ -78,8 +79,8 @@ proportional to the sample rate. Therefore, to improve receive latency,
 configure the transport for a smaller frame size.
 
 <b>Note2:</b> For overall latency improvements, look for "Interrupt
-Coalescing" settings for your OS and ethernet chipset. It seems the
-Intel ethernet chipsets offer fine-grained control in Linux. Also,
+Coalescing" settings for your OS and Ethernet chipset. It seems the
+Intel Ethernet chipsets offer fine-grained control in Linux. Also,
 consult:
 
 -   <http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.prftungd/doc/prftungd/interrupt_coal.htm>
