@@ -16,6 +16,7 @@
 //
 
 #include "legacy_compat.hpp"
+#include "../usrp/device3/device3_impl.hpp"
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/radio_ctrl.hpp>
 #include <uhd/rfnoc/ddc_block_ctrl.hpp>
@@ -171,6 +172,13 @@ public:
     /************************************************************************
      * API Calls
      ***********************************************************************/
+    inline uhd::fs_path rx_dsp_root(const size_t mboard_idx, const size_t dsp_index, const size_t port_index)
+    {
+        return mb_root(mboard_idx) / "xbar" /
+               str(boost::format("%s_%d") % DDC_BLOCK_NAME % dsp_index) /
+               "legacy_api" / port_index;
+    }
+
     uhd::fs_path rx_dsp_root(const size_t mboard_idx, const size_t chan)
     {
         // The DSP index is the same as the radio index
@@ -181,8 +189,13 @@ public:
             return mb_root(mboard_idx) / "rx_dsps" / dsp_index / port_index;
         }
 
+        return rx_dsp_root(mboard_idx, dsp_index, port_index);
+    }
+
+    inline uhd::fs_path tx_dsp_root(const size_t mboard_idx, const size_t dsp_index, const size_t port_index)
+    {
         return mb_root(mboard_idx) / "xbar" /
-               str(boost::format("%s_%d") % DDC_BLOCK_NAME % dsp_index) /
+               str(boost::format("%s_%d") % DUC_BLOCK_NAME % dsp_index) /
                "legacy_api" / port_index;
     }
 
@@ -196,9 +209,7 @@ public:
             return mb_root(mboard_idx) / "tx_dsps" / dsp_index / port_index;
         }
 
-        return mb_root(mboard_idx) / "xbar" /
-               str(boost::format("%s_%d") % DUC_BLOCK_NAME % dsp_index) /
-               "legacy_api" / port_index;
+        return tx_dsp_root(mboard_idx, dsp_index, port_index);
     }
 
     uhd::fs_path rx_fe_root(const size_t mboard_idx, const size_t chan)
@@ -511,6 +522,20 @@ private: // methods
                         ;
                     }
                 }
+            } else {
+                for (size_t dsp_idx = 0; dsp_idx < _num_radios_per_board; dsp_idx++) {
+                    for (size_t chan = 0; chan < _num_rx_chans_per_radio; chan++) {
+                        _tree->access<double>(rx_dsp_root(mboard_idx, dsp_idx, chan) / "rate/value")
+                            .add_coerced_subscriber(
+                                boost::bind(
+                                    &uhd::usrp::device3_impl::update_rx_streamers,
+                                    boost::dynamic_pointer_cast<uhd::usrp::device3_impl>(_device),
+                                    _1
+                                )
+                            )
+                        ;
+                    }
+                }
             }
             if (not _has_ducs) {
                 for (size_t radio_idx = 0; radio_idx < _num_radios_per_board; radio_idx++) {
@@ -544,7 +569,21 @@ private: // methods
                         ;
                     }
                 }
-            }
+            } else {
+                for (size_t dsp_idx = 0; dsp_idx < _num_radios_per_board; dsp_idx++) {
+                    for (size_t chan = 0; chan < _num_tx_chans_per_radio; chan++) {
+                        _tree->access<double>(tx_dsp_root(mboard_idx, dsp_idx, chan) / "rate/value")
+                            .add_coerced_subscriber(
+                                boost::bind(
+                                    &uhd::usrp::device3_impl::update_tx_streamers,
+                                    boost::dynamic_pointer_cast<uhd::usrp::device3_impl>(_device),
+                                    _1
+                                )
+                            )
+                        ;
+                    }
+                }
+            } /* if not _has_ducs */
         }
     }
 
