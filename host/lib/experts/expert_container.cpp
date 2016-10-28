@@ -92,23 +92,28 @@ public:
         boost::lock_guard<boost::recursive_mutex> resolve_lock(_resolve_mutex);
         boost::lock_guard<boost::mutex> lock(_mutex);
         EX_LOG(0, str(boost::format("resolve_all(%s)") % (force?"force":"")));
+        // Do a full resolve of the graph
         _resolve_helper("", "", force);
     }
 
-    void resolve_from(const std::string& node_name)
+    void resolve_from(const std::string&)
     {
         boost::lock_guard<boost::recursive_mutex> resolve_lock(_resolve_mutex);
         boost::lock_guard<boost::mutex> lock(_mutex);
         EX_LOG(0, str(boost::format("resolve_from(%s)") % node_name));
-        _resolve_helper(node_name, "", false);
+        // Do a full resolve of the graph
+        // Not optimizing the traversal using node_name to reduce experts complexity
+        _resolve_helper("", "", false);
     }
 
-    void resolve_to(const std::string& node_name)
+    void resolve_to(const std::string&)
     {
         boost::lock_guard<boost::recursive_mutex> resolve_lock(_resolve_mutex);
         boost::lock_guard<boost::mutex> lock(_mutex);
         EX_LOG(0, str(boost::format("resolve_to(%s)") % node_name));
-        _resolve_helper("", node_name, false);
+        // Do a full resolve of the graph
+        // Not optimizing the traversal using node_name to reduce experts complexity
+        _resolve_helper("", "", false);
     }
 
     dag_vertex_t& retrieve(const std::string& name) const

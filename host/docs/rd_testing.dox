@@ -1,0 +1,95 @@
+/*! \page page_rdtesting R&D Testing Procedures
+
+All defined R&D test procedures are listed here. These tests are meant as a tool
+for Ettus R&D to enable faster and more reliable development. Note these tests
+are no replacement for manufacturing or production tests, and should not be
+treated as such. Instead, they are meant to catch common failure modes during
+development. As a result, test definitions are fairly light-weight.
+
+\section rdtesting_phase Phase Alignment Tests
+
+tbd
+
+\section rdtesting_gpsdo GPSDO Tests
+
+| Test Code        | Device    | Peripherals       | Manual Test Procedure        | Automatic Test Procedure  |
+|------------------|-----------|-------------------|------------------------------|---------------------------|
+| GPS-X310-TCXO-v1 | USRP X310 | Jackson Labs TCXO | \ref rdtesting_gpsdo_manual  | \ref rdtesting_gpsdo_auto |
+| GPS-X310-OCXO-v1 | USRP X310 | Jackson Labs OCXO | \ref rdtesting_gpsdo_manual  | \ref rdtesting_gpsdo_auto |
+| GPS-X300-TCXO-v1 | USRP X300 | Jackson Labs TCXO | \ref rdtesting_gpsdo_manual  | \ref rdtesting_gpsdo_auto |
+| GPS-X300-OCXO-v1 | USRP X300 | Jackson Labs OCXO | \ref rdtesting_gpsdo_manual  | \ref rdtesting_gpsdo_auto |
+| GPS-B200-TCXO-v1 | USRP B200 | Jackson Labs TCXO | \ref rdtesting_gpsdo_manual  | \ref rdtesting_gpsdo_auto |
+| GPS-B210-TCXO-v1 | USRP B210 | Jackson Labs TCXO | \ref rdtesting_gpsdo_manual  | \ref rdtesting_gpsdo_auto |
+
+
+\subsection rdtesting_gpsdo_recommendations Recommendations
+
+For cursory testing, not all tests within a device family are required (e.g.,
+only testing the OCXO on any X-Series, and testing the TCXO on any B-Series is
+sufficient).
+
+The following tests are recommended for a minimum test (N stands for the latest
+version of this test):
+- One of GPS-X310-OCXO-vN or GPS-X300-OCXO-vN
+- One of GPS-B210-TCXO-vN or GPS-B200-TCXO-vN
+
+\subsection rdtesting_gpsdo_requirements Requirements
+
+All of these tests require a device that is GPSDO capable (e.g., X3x0, B2x0,
+N2x0). For those devices that have a separate GPS component (such as the Jackson
+Labs GPSDOs), this component is also required (called the "peripheral" in the
+following).
+
+\subsection rdtesting_gpsdo_manual GPSDO: Manual Test Procedure
+
+1. Without connecting the peripheral to the device, run `uhd_usrp_probe` on the
+   device and verify that the lack of GPSDO is correctly reported. No warning
+   or error must be printed.
+2. This and the following tests are run with the peripheral connected: Run
+   `uhd_usrp_probe` and verify that the GPSDO is correctly reported. Power down
+   the device before connecting the peripheral. The GPSDO must be reported
+   found, and no error or warning must be printed.
+3. Without connecting the GPS antenna input, run `query_gpsdo_sensors`. To pass,
+   it must report the GPSDO as found, lock to the external reference, but then
+   report not being locked to GPS. The tool will report a valid GPS time, and
+   a string such as "GPS and UHD Device time are aligned" in case of success.
+4. Connect a GPS antenna to the input and make sure it is in a position to
+   receive GPS satellite data. Confirm that GPS lock is reported using
+   `query_gpsdo_sensors` within 20 minutes of connecting the antenna.
+   The tool `query_gpsdo_sensors` will print a string such as "GPS Locked" in
+   case of success.
+
+All of these tests must pass for a 'pass' validation.
+
+\subsection rdtesting_gpsdo_auto GPSDO: Automatic Test Procedure
+
+tbd
+
+\section rdtesting_defining Defining R&D Tests
+
+Tests can be added any time to define procedures for pass/fail validation. Any
+test must include the following:
+
+- An unambiguous test code. This code consists of three characters that
+  identify the test, a short description of the devices required, and a version
+  suffix. Example: `GPS-X310-OCXO-v1` is a GPS-related test, requires an X310
+  and an OCXO to run, and is version 1 of this test.
+- A manual testing procedure. This must unambiguously define a set of tasks,
+  and clearly identify whether or not a test has failed or passed. Tests do not
+  require any other defined outcome other than 'pass' and 'fail'.
+- Optional, but highly recommended: An automatic test procedure. This must
+  consist of a command, or a script, or a set of commands that can be
+  automatically executed, and that will report a failure condition by means of
+  returning a non-zero return value.
+
+Basic understanding of the operation of USRPs by the test operator should be
+assumed when authoring test procedures. The descriptions should be as short as
+possible to fully describe, unambiguously, how to reach a pass/fail conclusion.
+
+Test procedures may be updated at any time. If this happens, a new test code
+must be generated, with the version number increased. Old test codes are
+considered deprecated (if there exists a version 2 of a test, version 1 should
+not be run any more).
+
+*/
+// vim:ft=doxygen:
