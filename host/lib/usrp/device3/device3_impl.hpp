@@ -32,18 +32,6 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/device3.hpp>
 #include "xports.hpp"
-// Common FPGA cores:
-#include "ctrl_iface.hpp"
-#include "rx_dsp_core_3000.hpp"
-#include "tx_dsp_core_3000.hpp"
-#include "rx_vita_core_3000.hpp"
-#include "tx_vita_core_3000.hpp"
-#include "rx_frontend_core_200.hpp"
-#include "tx_frontend_core_200.hpp"
-#include "time_core_3000.hpp"
-#include "gpio_atr_3000.hpp"
-// RFNoC-specific includes:
-#include "radio_ctrl_impl.hpp"
 
 namespace uhd { namespace usrp {
 

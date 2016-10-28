@@ -17,6 +17,7 @@
 
 #include "device3_impl.hpp"
 #include "graph_impl.hpp"
+#include "ctrl_iface.hpp"
 #include <uhd/utils/msg.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 #include <boost/make_shared.hpp>
