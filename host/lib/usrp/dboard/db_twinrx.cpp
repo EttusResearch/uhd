@@ -75,6 +75,11 @@ public:
         get_rx_subtree()->create<meta_range_t>("bandwidth/range")
             .set(freq_range_t(BW, BW));
 
+        // Command Time
+        expert_factory::add_data_node<time_spec_t>(_expert, prepend_ch("time/rx_frontend", _ch_name), time_spec_t(0.0));
+        expert_factory::add_prop_node<time_spec_t>(_expert, get_rx_subtree(),
+            "time/cmd", prepend_ch("time/cmd", _ch_name), time_spec_t(0.0));
+
         //Frequency Specific
         get_rx_subtree()->create<meta_range_t>("freq/range")
             .set(freq_range_t(10e6, 6.0e9));
@@ -263,6 +268,7 @@ public:
             expert_factory::add_worker_node<twinrx_freq_path_expert>(_expert, _expert->node_retriever(), fe);
             expert_factory::add_worker_node<twinrx_freq_coercion_expert>(_expert, _expert->node_retriever(), fe);
             expert_factory::add_worker_node<twinrx_chan_gain_expert>(_expert, _expert->node_retriever(), fe);
+            expert_factory::add_worker_node<twinrx_scheduling_expert>(_expert, _expert->node_retriever(), fe);
             expert_factory::add_worker_node<twinrx_nyquist_expert>(_expert, _expert->node_retriever(), fe, _db_iface);
         }
 

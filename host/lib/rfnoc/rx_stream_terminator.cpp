@@ -58,6 +58,7 @@ void rx_stream_terminator::set_rx_streamer(bool active, const size_t)
                     get_upstream_port(upstream_node.first)
             );
         }
+        _rx_streamer_active[upstream_node.first] = active;
     }
 }
 

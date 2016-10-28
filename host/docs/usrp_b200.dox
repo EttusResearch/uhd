@@ -42,7 +42,7 @@ images:
 \section b200_mcr Changing the Master Clock Rate
 
 The master clock rate feeds the RF frontends and the DSP chains. Users
-may select non-default clock rates to acheive integer decimations or
+may select non-default clock rates to achieve integer decimation rates or
 interpolations in the DSP chains. The clock rate can be set to any value
 between 5 MHz and 61.44 MHz (or 30.72 MHz for dual-channel mode).
 Note that rates above 56 MHz are possible, but not recommended.

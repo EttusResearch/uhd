@@ -34,7 +34,7 @@ and possible more options.
  self_cal_adc_delay  | Run ADC transfer delay self-calibration.                                     | X3x0               | self_cal_adc_delay=1
  ext_adc_self_test   | Run an extended ADC self test (more than the usual)                          | X3x0               | ext_adc_self_test=1
  recover_mb_eeprom   | Disable version checks. Can damage hardware. Only recommended for recovering devices with corrupted EEPROMs. | X3x0, N230 | recover_mb_eeprom=1
- skip_dram           | Ignore DRAM FIFO block. Connect Tx streamers straight into DUC or radio.     | X3x0               | skip_dram=1
+ skip_dram           | Ignore DRAM FIFO block. Connect TX streamers straight into DUC or radio.     | X3x0               | skip_dram=1
  skip_ddc            | Ignore DDC block. Connect Rx streamers straight into radio.                  | X3x0               | skip_ddc=1
  skip_duc            | Ignore DUC block. Connect Rx streamers or DRAM straight into radio.          | X3x0               | skip_duc=1
 

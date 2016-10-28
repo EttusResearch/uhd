@@ -134,19 +134,6 @@ struct UHD_API stream_args_t{
      * - function: magnitude or phase/magnitude
      * - units: numeric units like counts or dBm
      *
-     * In addition, all the transport-related options explained on \ref page_transport can be set here.
-     * These options can be set either when creating the device (see also \ref config_devaddr),
-     * or when creating the streamer (when the options are given both times, the stream args
-     * take precedence):
-     *
-     * - recv_frame_size
-     * - send_frame_size
-     * - num_recv_frames
-     * - num_send_frames
-     * - ups_per_sec
-     * - ups_per_fifo
-     * - recv_buff_fullness
-     *
      * Other options are device-specific:
      * - port, addr: Alternative receiver streamer destination.
      */

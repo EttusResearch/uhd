@@ -54,7 +54,9 @@ void tx_stream_terminator::set_tx_streamer(bool active, const size_t /* port */)
                     get_downstream_port(downstream_node.first)
             );
         }
+        _tx_streamer_active[downstream_node.first] = active;
     }
+
 }
 
 tx_stream_terminator::~tx_stream_terminator()
