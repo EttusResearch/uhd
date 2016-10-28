@@ -9,7 +9,7 @@ Change Log for Releases
   now properly written. ignore-cal-file no longer ignored. Fixed case where too
   large recv_frame_size settings could break things. Reduced ZPU clock speed
   (helps FPGA timing). Added area constraints for AXI interconnect. Improved
-  halfband scaling in rx_frontend.
+  halfband scaling in rx_frontend. Improved PCIe streaming reliability
 - B2xx: Clear sequence numbers in idle state.
 - RFNoC: Nodes disconnect on destruction. Fixed setting of correct bits on
   sr_error_policy. DDC does no longer clear timed commands on EOB. DUC fixed
@@ -17,7 +17,7 @@ Change Log for Releases
   commands on multiple channels).
 - UBX: Changed default performance parameters
 - TwinRX: LEDs properly light up depending on channels. Fixed issue of multiple
-  (redundant) writes.
+  (redundant) writes. Simplified API steps for phase synchronization
 - XCVR: Query dboard clock instead of DAC clock. Helps in X3x0s.
 - GPS: Fixed message for case when no GPS is present. Fixed multiple GPS-related
   issues.
