@@ -55,13 +55,12 @@ ENDIF()
 ########################################################################
 # Setup package file name
 ########################################################################
-
 IF(DEBIAN AND LIBUHD_PKG)
-    SET(CPACK_PACKAGE_FILE_NAME "libuhd${UHD_VERSION_MAJOR}_${TRIMMED_UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+    SET(CPACK_PACKAGE_FILE_NAME "libuhd${UHD_VERSION_MAJOR}_${UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
 ELSEIF(DEBIAN AND LIBUHDDEV_PKG)
-    SET(CPACK_PACKAGE_FILE_NAME "libuhd-dev_${TRIMMED_UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+    SET(CPACK_PACKAGE_FILE_NAME "libuhd-dev_${UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
 ELSEIF(DEBIAN AND UHDHOST_PKG)
-    SET(CPACK_PACKAGE_FILE_NAME "uhd-host_${TRIMMED_UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
+    SET(CPACK_PACKAGE_FILE_NAME "uhd-host_${UHD_VERSION}_${CMAKE_SYSTEM_PROCESSOR}")
 ELSE()
     IF(DEBIAN OR REDHAT)
         FIND_PROGRAM(LSB_RELEASE_EXECUTABLE lsb_release)
@@ -124,7 +123,7 @@ SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/LICENSE)
 # Setup CPack Source
 ########################################################################
 
-SET(CPACK_SOURCE_PACKAGE_FILE_NAME "uhd-${TRIMMED_UHD_VERSION}")
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME "uhd-${UHD_VERSION}")
 SET(CPACK_SOURCE_IGNORE_FILES "\\\\.git*;\\\\.swp$")
 
 ########################################################################

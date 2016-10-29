@@ -27,7 +27,7 @@
  * The format is oldest API compatible release - ABI compat number.
  * The compatibility number allows pre-release ABI to be versioned.
  */
-#define UHD_VERSION_ABI_STRING "@TRIMMED_VERSION_MAJOR@.@TRIMMED_VERSION_API@.@TRIMMED_VERSION_ABI@"
+#define UHD_VERSION_ABI_STRING "@UHD_VERSION_MAJOR@.@UHD_VERSION_API@.@UHD_VERSION_ABI@"
 
 /*!
  * A macro to check UHD version at compile-time.
