@@ -48,7 +48,7 @@ public:
     radio_ctrl_core_3000_impl(const bool big_endian,
             uhd::transport::zero_copy_if::sptr ctrl_xport,
             uhd::transport::zero_copy_if::sptr resp_xport,
-            const boost::uint32_t sid, const std::string &name) :
+            const uint32_t sid, const std::string &name) :
             _link_type(vrt::if_packet_info_t::LINK_TYPE_CHDR), _packet_type(
                     vrt::if_packet_info_t::PACKET_TYPE_CONTEXT), _bige(
                     big_endian), _ctrl_xport(ctrl_xport), _resp_xport(
@@ -76,24 +76,24 @@ public:
     /*******************************************************************
      * Peek and poke 32 bit implementation
      ******************************************************************/
-    void poke32(const wb_addr_type addr, const boost::uint32_t data)
+    void poke32(const wb_addr_type addr, const uint32_t data)
     {
         boost::mutex::scoped_lock lock(_mutex);
         this->send_pkt(addr/4, data);
         this->wait_for_ack(false);
     }
 
-    boost::uint32_t peek32(const wb_addr_type addr)
+    uint32_t peek32(const wb_addr_type addr)
     {
         boost::mutex::scoped_lock lock(_mutex);
         this->send_pkt(SR_READBACK, addr/8);
-        const boost::uint64_t res = this->wait_for_ack(true);
-        const boost::uint32_t lo = boost::uint32_t(res & 0xffffffff);
-        const boost::uint32_t hi = boost::uint32_t(res >> 32);
+        const uint64_t res = this->wait_for_ack(true);
+        const uint32_t lo = uint32_t(res & 0xffffffff);
+        const uint32_t hi = uint32_t(res >> 32);
         return ((addr/4) & 0x1)? hi : lo;
     }
 
-    boost::uint64_t peek64(const wb_addr_type addr)
+    uint64_t peek64(const wb_addr_type addr)
     {
         boost::mutex::scoped_lock lock(_mutex);
         this->send_pkt(SR_READBACK, addr/8);
@@ -127,26 +127,26 @@ private:
     // This is the buffer type for messages in radio control core.
     struct resp_buff_type
     {
-        boost::uint32_t data[8];
+        uint32_t data[8];
     };
 
     /*******************************************************************
      * Primary control and interaction private methods
      ******************************************************************/
-    UHD_INLINE void send_pkt(const boost::uint32_t addr, const boost::uint32_t data = 0)
+    UHD_INLINE void send_pkt(const uint32_t addr, const uint32_t data = 0)
     {
         managed_send_buffer::sptr buff = _ctrl_xport->get_send_buff(0.0);
         if (not buff) {
             throw uhd::runtime_error("fifo ctrl timed out getting a send buffer");
         }
-        boost::uint32_t *pkt = buff->cast<boost::uint32_t *>();
+        uint32_t *pkt = buff->cast<uint32_t *>();
 
         //load packet info
         vrt::if_packet_info_t packet_info;
         packet_info.link_type = _link_type;
         packet_info.packet_type = _packet_type;
         packet_info.num_payload_words32 = 2;
-        packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(boost::uint32_t);
+        packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(uint32_t);
         packet_info.packet_count = _seq_out;
         packet_info.tsf = _time.to_ticks(_tick_rate);
         packet_info.sob = false;
@@ -168,12 +168,12 @@ private:
         //UHD_MSG(status) << boost::format("0x%08x, 0x%08x\n") % addr % data;
         //send the buffer over the interface
         _outstanding_seqs.push(_seq_out);
-        buff->commit(sizeof(boost::uint32_t)*(packet_info.num_packet_words32));
+        buff->commit(sizeof(uint32_t)*(packet_info.num_packet_words32));
 
         _seq_out++;//inc seq for next call
     }
 
-    UHD_INLINE boost::uint64_t wait_for_ack(const bool readback)
+    UHD_INLINE uint64_t wait_for_ack(const bool readback)
     {
         while (readback or (_outstanding_seqs.size() >= _resp_queue_size))
         {
@@ -186,7 +186,7 @@ private:
             vrt::if_packet_info_t packet_info;
             resp_buff_type resp_buff;
             memset(&resp_buff, 0x00, sizeof(resp_buff));
-            boost::uint32_t const *pkt = NULL;
+            uint32_t const *pkt = NULL;
             managed_recv_buffer::sptr buff;
 
             //get buffer from response endpoint - or die in timeout
@@ -202,8 +202,8 @@ private:
                 {
                     throw uhd::io_error(str(boost::format("Radio ctrl (%s) no response packet - %s") % _name % ex.what()));
                 }
-                pkt = buff->cast<const boost::uint32_t *>();
-                packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
+                pkt = buff->cast<const uint32_t *>();
+                packet_info.num_packet_words32 = buff->size()/sizeof(uint32_t);
             }
 
             //get buffer from response endpoint - or die in timeout
@@ -231,7 +231,7 @@ private:
                 }
 
                 pkt = resp_buff.data;
-                packet_info.num_packet_words32 = sizeof(resp_buff)/sizeof(boost::uint32_t);
+                packet_info.num_packet_words32 = sizeof(resp_buff)/sizeof(uint32_t);
             }
 
             //parse the buffer
@@ -260,7 +260,7 @@ private:
             try
             {
                 UHD_ASSERT_THROW(packet_info.has_sid);
-                UHD_ASSERT_THROW(packet_info.sid == boost::uint32_t((_sid >> 16) | (_sid << 16)));
+                UHD_ASSERT_THROW(packet_info.sid == uint32_t((_sid >> 16) | (_sid << 16)));
                 UHD_ASSERT_THROW(packet_info.packet_count == (seq_to_ack & 0xfff));
                 UHD_ASSERT_THROW(packet_info.num_payload_words32 == 2);
                 UHD_ASSERT_THROW(packet_info.packet_type == _packet_type);
@@ -273,8 +273,8 @@ private:
             //return the readback value
             if (readback and _outstanding_seqs.empty())
             {
-                const boost::uint64_t hi = (_bige)? uhd::ntohx(pkt[packet_info.num_header_words32+0]) : uhd::wtohx(pkt[packet_info.num_header_words32+0]);
-                const boost::uint64_t lo = (_bige)? uhd::ntohx(pkt[packet_info.num_header_words32+1]) : uhd::wtohx(pkt[packet_info.num_header_words32+1]);
+                const uint64_t hi = (_bige)? uhd::ntohx(pkt[packet_info.num_header_words32+0]) : uhd::wtohx(pkt[packet_info.num_header_words32+0]);
+                const uint64_t lo = (_bige)? uhd::ntohx(pkt[packet_info.num_header_words32+1]) : uhd::wtohx(pkt[packet_info.num_header_words32+1]);
                 return ((hi << 32) | lo);
             }
         }
@@ -292,7 +292,7 @@ private:
      */
     bool check_dump_queue(resp_buff_type& b) {
         const size_t min_buff_size = 8; // Same value as in b200_io_impl->handle_async_task
-        boost::uint32_t recv_sid = (((_sid)<<16)|((_sid)>>16));
+        uint32_t recv_sid = (((_sid)<<16)|((_sid)>>16));
         uhd::msg_task::msg_payload_t msg;
         do{
             msg = _async_task->get_msg_from_dump_queue(recv_sid);
@@ -306,7 +306,7 @@ private:
         return false;
     }
 
-    void push_response(const boost::uint32_t *buff)
+    void push_response(const uint32_t *buff)
     {
         resp_buff_type resp_buff;
         std::memcpy(resp_buff.data, buff, sizeof(resp_buff));
@@ -324,7 +324,7 @@ private:
     const uhd::transport::zero_copy_if::sptr _ctrl_xport;
     const uhd::transport::zero_copy_if::sptr _resp_xport;
     uhd::msg_task::sptr _async_task;
-    const boost::uint32_t _sid;
+    const uint32_t _sid;
     const std::string _name;
     boost::mutex _mutex;
     size_t _seq_out;
@@ -339,7 +339,7 @@ private:
 
 radio_ctrl_core_3000::sptr radio_ctrl_core_3000::make(const bool big_endian,
         zero_copy_if::sptr ctrl_xport, zero_copy_if::sptr resp_xport,
-        const boost::uint32_t sid, const std::string &name)
+        const uint32_t sid, const std::string &name)
 {
     return sptr(
             new radio_ctrl_core_3000_impl(big_endian, ctrl_xport, resp_xport,

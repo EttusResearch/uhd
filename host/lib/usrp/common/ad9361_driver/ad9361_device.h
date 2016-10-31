@@ -167,10 +167,10 @@ public:
     static const double DEFAULT_TX_FREQ;
 
 private:    //Methods
-    void _program_fir_filter(direction_t direction, int num_taps, boost::uint16_t *coeffs);
-    void _setup_tx_fir(size_t num_taps, boost::int32_t interpolation);
-    void _setup_rx_fir(size_t num_taps, boost::int32_t decimation);
-    void _program_fir_filter(direction_t direction, chain_t chain, int num_taps, boost::uint16_t *coeffs);
+    void _program_fir_filter(direction_t direction, int num_taps, uint16_t *coeffs);
+    void _setup_tx_fir(size_t num_taps, int32_t interpolation);
+    void _setup_rx_fir(size_t num_taps, int32_t decimation);
+    void _program_fir_filter(direction_t direction, chain_t chain, int num_taps, uint16_t *coeffs);
     void _setup_tx_fir(size_t num_taps);
     void _setup_rx_fir(size_t num_taps);
     void _calibrate_lock_bbpll();
@@ -197,8 +197,8 @@ private:    //Methods
     void _configure_bb_dc_tracking();
     void _configure_rx_iq_tracking();
     void _setup_agc(chain_t chain, gain_mode_t gain_mode);
-    void _set_fir_taps(direction_t direction, chain_t chain, const std::vector<boost::int16_t>& taps);
-    std::vector<boost::int16_t> _get_fir_taps(direction_t direction, chain_t chain);
+    void _set_fir_taps(direction_t direction, chain_t chain, const std::vector<int16_t>& taps);
+    std::vector<int16_t> _get_fir_taps(direction_t direction, chain_t chain);
     size_t _get_num_fir_taps(direction_t direction);
     size_t _get_fir_dec_int(direction_t direction);
     filter_info_base::sptr _get_filter_lp_tia_sec(direction_t direction);
@@ -214,13 +214,13 @@ private:    //Methods
 
 private:    //Members
     typedef struct {
-        boost::uint8_t vcodivs;
-        boost::uint8_t inputsel;
-        boost::uint8_t rxfilt;
-        boost::uint8_t txfilt;
-        boost::uint8_t bbpll;
-        boost::uint8_t bbftune_config;
-        boost::uint8_t bbftune_mode;
+        uint8_t vcodivs;
+        uint8_t inputsel;
+        uint8_t rxfilt;
+        uint8_t txfilt;
+        uint8_t bbpll;
+        uint8_t bbftune_config;
+        uint8_t bbftune_mode;
     } chip_regs_t;
 
     struct filter_query_helper
@@ -256,11 +256,11 @@ private:    //Members
     //  if another call to set_clock_rate() actually has the same value.
     double              _req_clock_rate;
     double              _req_coreclk;
-    boost::uint16_t     _rx_bbf_tunediv;
-    boost::uint8_t      _curr_gain_table;
+    uint16_t     _rx_bbf_tunediv;
+    uint8_t      _curr_gain_table;
     double              _rx1_gain, _rx2_gain, _tx1_gain, _tx2_gain;
-    boost::int32_t      _tfir_factor;
-    boost::int32_t      _rfir_factor;
+    int32_t      _tfir_factor;
+    int32_t      _rfir_factor;
     gain_mode_t         _rx1_agc_mode, _rx2_agc_mode;
     bool                _rx1_agc_enable, _rx2_agc_enable;
     //Register soft-copies

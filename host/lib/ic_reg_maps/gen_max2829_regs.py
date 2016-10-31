@@ -109,18 +109,18 @@ tx_vga_gain           12[0:5]       0
 # Template for methods in the body of the struct
 ########################################################################
 BODY_TMPL="""\
-boost::uint32_t get_reg(boost::uint8_t addr){
-    boost::uint16_t reg = 0;
+uint32_t get_reg(uint8_t addr){
+    uint16_t reg = 0;
     switch(addr){
     % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
     case ${addr}:
         % for reg in filter(lambda r: r.get_addr() == addr, regs):
-        reg |= (boost::uint16_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        reg |= (uint16_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
         % endfor
         break;
     % endfor
     }
-    return (boost::uint32_t(reg) << 4) | (addr & 0xf);
+    return (uint32_t(reg) << 4) | (addr & 0xf);
 }
 """
 

@@ -33,7 +33,7 @@ class adf435x_iface
 {
 public:
     typedef boost::shared_ptr<adf435x_iface> sptr;
-    typedef boost::function<void(std::vector<boost::uint32_t>)> write_fn_t;
+    typedef boost::function<void(std::vector<uint32_t>)> write_fn_t;
 
     static sptr make_adf4350(write_fn_t write);
     static sptr make_adf4351(write_fn_t write);
@@ -162,8 +162,8 @@ public:
         uhd::range_t int_range = get_int_range();
 
         double pfd_freq = 0;
-        boost::uint16_t R = 0, BS = 0, N = 0, FRAC = 0, MOD = 0;
-        boost::uint16_t RFdiv = static_cast<boost::uint16_t>(rf_divider_range.start());
+        uint16_t R = 0, BS = 0, N = 0, FRAC = 0, MOD = 0;
+        uint16_t RFdiv = static_cast<uint16_t>(rf_divider_range.start());
         bool D = false, T = false;
 
         //Reference doubler for 50% duty cycle
@@ -171,7 +171,7 @@ public:
 
         //increase RF divider until acceptable VCO frequency
         double vco_freq = target_freq;
-        while (vco_freq < VCO_FREQ_MIN && RFdiv < static_cast<boost::uint16_t>(rf_divider_range.stop())) {
+        while (vco_freq < VCO_FREQ_MIN && RFdiv < static_cast<uint16_t>(rf_divider_range.stop())) {
             vco_freq *= 2;
             RFdiv *= 2;
         }
@@ -202,10 +202,10 @@ public:
             if (pfd_freq > PFD_FREQ_MAX) continue;
 
             //First, ignore fractional part of tuning
-            N = boost::uint16_t(std::floor(feedback_freq/pfd_freq));
+            N = uint16_t(std::floor(feedback_freq/pfd_freq));
 
             //keep N > minimum int divider requirement
-            if (N < static_cast<boost::uint16_t>(int_range.start())) continue;
+            if (N < static_cast<uint16_t>(int_range.start())) continue;
 
             for(BS=1; BS <= 255; BS+=1){
                 //keep the band select frequency at or below band_sel_freq_max
@@ -217,7 +217,7 @@ public:
 
         //Fractional-N calculation
         MOD = 4095; //max fractional accuracy
-        FRAC = static_cast<boost::uint16_t>(boost::math::round((feedback_freq/pfd_freq - N)*MOD));
+        FRAC = static_cast<uint16_t>(boost::math::round((feedback_freq/pfd_freq - N)*MOD));
         if (int_n_mode) {
             if (FRAC > (MOD / 2)) { //Round integer such that actual freq is closest to target
                 N++;
@@ -247,7 +247,7 @@ public:
         _regs.frac_12_bit            = FRAC;
         _regs.int_16_bit             = N;
         _regs.mod_12_bit             = MOD;
-        _regs.clock_divider_12_bit   = std::max<boost::uint16_t>(1, boost::uint16_t(std::ceil(PHASE_RESYNC_TIME*pfd_freq/MOD)));
+        _regs.clock_divider_12_bit   = std::max<uint16_t>(1, uint16_t(std::ceil(PHASE_RESYNC_TIME*pfd_freq/MOD)));
         _regs.feedback_select        = _fb_after_divider ?
                                         adf435x_regs_t::FEEDBACK_SELECT_DIVIDED :
                                         adf435x_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
@@ -261,7 +261,7 @@ public:
         _regs.reference_doubler      = D ?
                                         adf435x_regs_t::REFERENCE_DOUBLER_ENABLED :
                                         adf435x_regs_t::REFERENCE_DOUBLER_DISABLED;
-        _regs.band_select_clock_div  = boost::uint8_t(BS);
+        _regs.band_select_clock_div  = uint8_t(BS);
         _regs.rf_divider_select      = static_cast<typename adf435x_regs_t::rf_divider_select_t>(_get_rfdiv_setting(RFdiv));
         _regs.ldf                    = int_n_mode ?
                                         adf435x_regs_t::LDF_INT_N :
@@ -277,16 +277,16 @@ public:
             << boost::format("ADF 435X Settings: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d"
             ) % R % BS % N % FRAC % MOD % T % D % RFdiv << std::endl;
 
-        UHD_ASSERT_THROW((_regs.frac_12_bit          & ((boost::uint16_t)~0xFFF)) == 0);
-        UHD_ASSERT_THROW((_regs.mod_12_bit           & ((boost::uint16_t)~0xFFF)) == 0);
-        UHD_ASSERT_THROW((_regs.clock_divider_12_bit & ((boost::uint16_t)~0xFFF)) == 0);
-        UHD_ASSERT_THROW((_regs.r_counter_10_bit     & ((boost::uint16_t)~0x3FF)) == 0);
+        UHD_ASSERT_THROW((_regs.frac_12_bit          & ((uint16_t)~0xFFF)) == 0);
+        UHD_ASSERT_THROW((_regs.mod_12_bit           & ((uint16_t)~0xFFF)) == 0);
+        UHD_ASSERT_THROW((_regs.clock_divider_12_bit & ((uint16_t)~0xFFF)) == 0);
+        UHD_ASSERT_THROW((_regs.r_counter_10_bit     & ((uint16_t)~0x3FF)) == 0);
 
         UHD_ASSERT_THROW(vco_freq >= VCO_FREQ_MIN and vco_freq <= VCO_FREQ_MAX);
-        UHD_ASSERT_THROW(RFdiv >= static_cast<boost::uint16_t>(rf_divider_range.start()));
-        UHD_ASSERT_THROW(RFdiv <= static_cast<boost::uint16_t>(rf_divider_range.stop()));
-        UHD_ASSERT_THROW(_regs.int_16_bit >= static_cast<boost::uint16_t>(int_range.start()));
-        UHD_ASSERT_THROW(_regs.int_16_bit <= static_cast<boost::uint16_t>(int_range.stop()));
+        UHD_ASSERT_THROW(RFdiv >= static_cast<uint16_t>(rf_divider_range.start()));
+        UHD_ASSERT_THROW(RFdiv <= static_cast<uint16_t>(rf_divider_range.stop()));
+        UHD_ASSERT_THROW(_regs.int_16_bit >= static_cast<uint16_t>(int_range.start()));
+        UHD_ASSERT_THROW(_regs.int_16_bit <= static_cast<uint16_t>(int_range.stop()));
 
         if (flush) commit();
         return actual_freq;
@@ -296,8 +296,8 @@ public:
     {
         //reset counters
         _regs.counter_reset = adf435x_regs_t::COUNTER_RESET_ENABLED;
-        std::vector<boost::uint32_t> regs;
-        regs.push_back(_regs.get_reg(boost::uint32_t(2)));
+        std::vector<uint32_t> regs;
+        regs.push_back(_regs.get_reg(uint32_t(2)));
         _write_fn(regs);
         _regs.counter_reset = adf435x_regs_t::COUNTER_RESET_DISABLED;
 
@@ -305,14 +305,14 @@ public:
         //correct power-up sequence to write registers (5, 4, 3, 2, 1, 0)
         regs.clear();
         for (int addr = 5; addr >= 0; addr--) {
-            regs.push_back(_regs.get_reg(boost::uint32_t(addr)));
+            regs.push_back(_regs.get_reg(uint32_t(addr)));
         }
         _write_fn(regs);
     }
 
 protected:
     uhd::range_t _get_rfdiv_range();
-    int _get_rfdiv_setting(boost::uint16_t div);
+    int _get_rfdiv_setting(uint16_t div);
 
     write_fn_t      _write_fn;
     adf435x_regs_t  _regs;
@@ -334,7 +334,7 @@ inline uhd::range_t adf435x_impl<adf4351_regs_t>::_get_rfdiv_range()
 }
 
 template <>
-inline int adf435x_impl<adf4350_regs_t>::_get_rfdiv_setting(boost::uint16_t div)
+inline int adf435x_impl<adf4350_regs_t>::_get_rfdiv_setting(uint16_t div)
 {
     switch (div) {
         case 1:  return int(adf4350_regs_t::RF_DIVIDER_SELECT_DIV1);
@@ -347,7 +347,7 @@ inline int adf435x_impl<adf4350_regs_t>::_get_rfdiv_setting(boost::uint16_t div)
 }
 
 template <>
-inline int adf435x_impl<adf4351_regs_t>::_get_rfdiv_setting(boost::uint16_t div)
+inline int adf435x_impl<adf4351_regs_t>::_get_rfdiv_setting(uint16_t div)
 {
     switch (div) {
         case 1:  return int(adf4351_regs_t::RF_DIVIDER_SELECT_DIV1);

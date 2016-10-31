@@ -31,7 +31,7 @@ namespace uhd { namespace usrp { namespace n230 {
 
 struct n230_uart_impl : n230_uart
 {
-    n230_uart_impl(zero_copy_if::sptr xport, const boost::uint32_t sid):
+    n230_uart_impl(zero_copy_if::sptr xport, const uint32_t sid):
         _xport(xport),
         _sid(sid),
         _count(0),
@@ -53,7 +53,7 @@ struct n230_uart_impl : n230_uart
         packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
         packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_CONTEXT;
         packet_info.num_payload_words32 = 2;
-        packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(boost::uint32_t);
+        packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(uint32_t);
         packet_info.packet_count = _count++;
         packet_info.sob = false;
         packet_info.eob = false;
@@ -64,11 +64,11 @@ struct n230_uart_impl : n230_uart
         packet_info.has_tsf = false;
         packet_info.has_tlr = false;
 
-        boost::uint32_t *packet_buff = buff->cast<boost::uint32_t *>();
+        uint32_t *packet_buff = buff->cast<uint32_t *>();
         vrt::if_hdr_pack_le(packet_buff, packet_info);
-        packet_buff[packet_info.num_header_words32+0] = uhd::htonx(boost::uint32_t(_baud_div));
-        packet_buff[packet_info.num_header_words32+1] = uhd::htonx(boost::uint32_t(ch));
-        buff->commit(packet_info.num_packet_words32*sizeof(boost::uint32_t));
+        packet_buff[packet_info.num_header_words32+0] = uhd::htonx(uint32_t(_baud_div));
+        packet_buff[packet_info.num_header_words32+1] = uhd::htonx(uint32_t(ch));
+        buff->commit(packet_info.num_packet_words32*sizeof(uint32_t));
     }
 
     void write_uart(const std::string &buff)
@@ -100,10 +100,10 @@ struct n230_uart_impl : n230_uart
         managed_recv_buffer::sptr buff = _xport->get_recv_buff();
         if (not buff)
             return;
-        const boost::uint32_t *packet_buff = buff->cast<const boost::uint32_t *>();
+        const uint32_t *packet_buff = buff->cast<const uint32_t *>();
         vrt::if_packet_info_t packet_info;
         packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
-        packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
+        packet_info.num_packet_words32 = buff->size()/sizeof(uint32_t);
         vrt::if_hdr_unpack_be(packet_buff, packet_info);
         const char ch = char(uhd::ntohx(packet_buff[packet_info.num_header_words32+1]));
         _char_queue.push_with_pop_on_full(ch);
@@ -115,7 +115,7 @@ struct n230_uart_impl : n230_uart
     }
 
     const zero_copy_if::sptr _xport;
-    const boost::uint32_t _sid;
+    const uint32_t _sid;
     size_t _count;
     size_t _baud_div;
     bounded_buffer<char> _char_queue;
@@ -123,7 +123,7 @@ struct n230_uart_impl : n230_uart
 };
 
 
-n230_uart::sptr n230_uart::make(zero_copy_if::sptr xport, const boost::uint32_t sid)
+n230_uart::sptr n230_uart::make(zero_copy_if::sptr xport, const uint32_t sid)
 {
     return n230_uart::sptr(new n230_uart_impl(xport, sid));
 }

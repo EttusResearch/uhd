@@ -18,7 +18,7 @@
 #define INCLUDED_UHD_TYPES_BLOCK_ID_HPP
 
 #include <uhd/config.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/shared_ptr.hpp>
 #include <iostream>
 #include <string>

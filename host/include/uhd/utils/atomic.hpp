@@ -40,31 +40,31 @@ namespace uhd{
         }
 
         //! Compare with cmp, swap with newval if same, return old value
-        UHD_INLINE boost::uint32_t cas(boost::uint32_t newval, boost::uint32_t cmp){
+        UHD_INLINE uint32_t cas(uint32_t newval, uint32_t cmp){
             return BOOST_IPC_DETAIL::atomic_cas32(&_num, newval, cmp);
         }
 
         //! Sets the atomic integer to a new value
-        UHD_INLINE void write(const boost::uint32_t newval){
+        UHD_INLINE void write(const uint32_t newval){
             BOOST_IPC_DETAIL::atomic_write32(&_num, newval);
         }
 
         //! Gets the current value of the atomic integer
-        UHD_INLINE boost::uint32_t read(void){
+        UHD_INLINE uint32_t read(void){
             return BOOST_IPC_DETAIL::atomic_read32(&_num);
         }
 
         //! Increment by 1 and return the old value
-        UHD_INLINE boost::uint32_t inc(void){
+        UHD_INLINE uint32_t inc(void){
             return BOOST_IPC_DETAIL::atomic_inc32(&_num);
         }
 
         //! Decrement by 1 and return the old value
-        UHD_INLINE boost::uint32_t dec(void){
+        UHD_INLINE uint32_t dec(void){
             return BOOST_IPC_DETAIL::atomic_dec32(&_num);
         }
 
-    private: volatile boost::uint32_t _num;
+    private: volatile uint32_t _num;
     };
 
     /*!
@@ -146,7 +146,7 @@ namespace uhd{
      */
     UHD_INLINE bool spin_wait_with_timeout(
         atomic_uint32_t &cond,
-        boost::uint32_t value,
+        uint32_t value,
         const double timeout
     ){
         if (cond.read() == value) return true;

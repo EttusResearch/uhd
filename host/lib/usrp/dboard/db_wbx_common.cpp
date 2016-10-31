@@ -65,7 +65,7 @@ wbx_base::wbx_base(ctor_args_t args) : xcvr_dboard_base(args){
     ////////////////////////////////////////////////////////////////////
     // Register RX and TX properties
     ////////////////////////////////////////////////////////////////////
-    boost::uint16_t rx_id = this->get_rx_id().to_uint16();
+    uint16_t rx_id = this->get_rx_id().to_uint16();
 
     this->get_rx_subtree()->create<device_addr_t>("tune_args").set(device_addr_t());
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
@@ -139,7 +139,7 @@ void wbx_base::set_rx_enabled(bool enb){
 double wbx_base::set_rx_gain(double gain, const std::string &name){
     assert_has(wbx_rx_gain_ranges.keys(), name, "wbx rx gain name");
     if(name == "PGA0"){
-        boost::uint16_t io_bits = rx_pga0_gain_to_iobits(gain);
+        uint16_t io_bits = rx_pga0_gain_to_iobits(gain);
         _rx_gains[name] = gain;
 
         //write the new gain to rx gpio outputs
@@ -157,8 +157,8 @@ sensor_value_t wbx_base::get_locked(dboard_iface::unit_t unit){
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }
 
-void wbx_base::wbx_versionx::write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs) {
-    BOOST_FOREACH(boost::uint32_t reg, regs) {
+void wbx_base::wbx_versionx::write_lo_regs(dboard_iface::unit_t unit, const std::vector<uint32_t> &regs) {
+    BOOST_FOREACH(uint32_t reg, regs) {
         self_base->get_iface()->write_spi(unit, spi_config_t::EDGE_RISE, reg, 32);
     }
 }

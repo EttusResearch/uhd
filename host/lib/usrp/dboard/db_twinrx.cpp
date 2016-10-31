@@ -171,13 +171,13 @@ public:
             prepend_ch("ch/preamp2", _ch_name), false);
         expert_factory::add_data_node<bool>(_expert,
             prepend_ch("ant/preamp2", _ch_name), false);
-        expert_factory::add_data_node<boost::uint8_t>(_expert,
+        expert_factory::add_data_node<uint8_t>(_expert,
             prepend_ch("ch/input_atten", _ch_name), 0);
-        expert_factory::add_data_node<boost::uint8_t>(_expert,
+        expert_factory::add_data_node<uint8_t>(_expert,
             prepend_ch("ant/input_atten", _ch_name), 0);
-        expert_factory::add_data_node<boost::uint8_t>(_expert,
+        expert_factory::add_data_node<uint8_t>(_expert,
             prepend_ch("ch/lb_atten", _ch_name), 0);
-        expert_factory::add_data_node<boost::uint8_t>(_expert,
+        expert_factory::add_data_node<uint8_t>(_expert,
             prepend_ch("ch/hb_atten", _ch_name), 0);
         expert_factory::add_data_node<twinrx_ctrl::lo_source_t>(_expert,
             prepend_ch("ch/LO1/source", _ch_name), twinrx_ctrl::LO_INTERNAL);

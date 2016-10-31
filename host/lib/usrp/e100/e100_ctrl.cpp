@@ -94,15 +94,15 @@ public:
         this->spi_sclk_gpio(1); //out of reset
     }
 
-    boost::uint32_t transact_spi(
+    uint32_t transact_spi(
         int, const spi_config_t &, //not used params
-        boost::uint32_t bits,
+        uint32_t bits,
         size_t num_bits,
         bool readback
     ){
         boost::mutex::scoped_lock lock(gpio_irq_resp_mutex);
 
-        boost::uint32_t rb_bits = 0;
+        uint32_t rb_bits = 0;
         this->spi_sen_gpio(0);
 
         for (size_t i = 0; i < num_bits; i++){
@@ -144,7 +144,7 @@ public:
         ::close(_node_fd);
     }
 
-    void write_i2c(boost::uint16_t addr, const byte_vector_t &bytes){
+    void write_i2c(uint16_t addr, const byte_vector_t &bytes){
         byte_vector_t rw_bytes(bytes);
 
         //setup the message
@@ -163,7 +163,7 @@ public:
         UHD_ASSERT_THROW(::ioctl(_node_fd, I2C_RDWR, &data) >= 0);
     }
 
-    byte_vector_t read_i2c(boost::uint16_t addr, size_t num_bytes){
+    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes){
         byte_vector_t bytes(num_bytes);
 
         //setup the message

@@ -20,7 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/thread.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/atomic.hpp>
@@ -44,7 +44,7 @@ namespace uhd{ namespace usrp{
             _xport(xport)
         {/*NOP*/}
 
-        transport::managed_recv_buffer::sptr get_recv_buff(const boost::uint32_t sid, const double timeout)
+        transport::managed_recv_buffer::sptr get_recv_buff(const uint32_t sid, const double timeout)
         {
             const time_spec_t exit_time = time_spec_t(timeout) + time_spec_t::get_system_time();
             transport::managed_recv_buffer::sptr buff;
@@ -59,7 +59,7 @@ namespace uhd{ namespace usrp{
             return buff;
         }
 
-        transport::managed_recv_buffer::sptr _internal_get_recv_buff(const boost::uint32_t sid, const double timeout)
+        transport::managed_recv_buffer::sptr _internal_get_recv_buff(const uint32_t sid, const double timeout)
         {
             transport::managed_recv_buffer::sptr buff;
 
@@ -99,7 +99,7 @@ namespace uhd{ namespace usrp{
                 buff = _xport->get_recv_buff(timeout);
                 if (buff)
                 {
-                    const boost::uint32_t new_sid = uhd::wtohx(buff->cast<const boost::uint32_t *>()[1]);
+                    const uint32_t new_sid = uhd::wtohx(buff->cast<const uint32_t *>()[1]);
                     if (new_sid != sid)
                     {
                         boost::mutex::scoped_lock l(mutex);
@@ -118,7 +118,7 @@ namespace uhd{ namespace usrp{
             return buff;
         }
 
-        void realloc_sid(const boost::uint32_t sid)
+        void realloc_sid(const uint32_t sid)
         {
             boost::mutex::scoped_lock l(mutex);
             while(not _queues[sid].empty()) //allocated and clears if already allocated
@@ -127,10 +127,10 @@ namespace uhd{ namespace usrp{
             }
         }
 
-        transport::zero_copy_if::sptr make_proxy(const boost::uint32_t sid);
+        transport::zero_copy_if::sptr make_proxy(const uint32_t sid);
 
         typedef std::queue<transport::managed_recv_buffer::sptr> queue_type_t;
-        std::map<boost::uint32_t, queue_type_t> _queues;
+        std::map<uint32_t, queue_type_t> _queues;
         transport::zero_copy_if::sptr _xport;
 #ifdef RECV_PACKET_DEMUXER_3000_THREAD_SAFE
         uhd::atomic_uint32_t _claimed;
@@ -141,7 +141,7 @@ namespace uhd{ namespace usrp{
 
     struct recv_packet_demuxer_proxy_3000 : transport::zero_copy_if
     {
-        recv_packet_demuxer_proxy_3000(recv_packet_demuxer_3000::sptr demux, transport::zero_copy_if::sptr xport, const boost::uint32_t sid):
+        recv_packet_demuxer_proxy_3000(recv_packet_demuxer_3000::sptr demux, transport::zero_copy_if::sptr xport, const uint32_t sid):
             _demux(demux), _xport(xport), _sid(sid)
         {
             _demux->realloc_sid(_sid); //causes clear
@@ -167,10 +167,10 @@ namespace uhd{ namespace usrp{
 
         recv_packet_demuxer_3000::sptr _demux;
         transport::zero_copy_if::sptr _xport;
-        const boost::uint32_t _sid;
+        const uint32_t _sid;
     };
 
-    inline transport::zero_copy_if::sptr recv_packet_demuxer_3000::make_proxy(const boost::uint32_t sid)
+    inline transport::zero_copy_if::sptr recv_packet_demuxer_3000::make_proxy(const uint32_t sid)
     {
         return transport::zero_copy_if::sptr(new recv_packet_demuxer_proxy_3000(this->shared_from_this(), _xport, sid));
     }

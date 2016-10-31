@@ -29,7 +29,7 @@ class n230_uart: boost::noncopyable, public uhd::uart_iface
 {
 public:
     typedef boost::shared_ptr<n230_uart> sptr;
-    static sptr make(uhd::transport::zero_copy_if::sptr, const boost::uint32_t sid);
+    static sptr make(uhd::transport::zero_copy_if::sptr, const uint32_t sid);
     virtual void set_baud_divider(const double baud_div) = 0;
 };
 

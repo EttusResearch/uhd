@@ -147,7 +147,7 @@ private:
 
     void vandal_conquest_loop(void);
 
-    void set_reg(const std::pair<boost::uint8_t, boost::uint32_t> &reg);
+    void set_reg(const std::pair<uint8_t, uint32_t> &reg);
 
     //handle the enables
     bool _rx_enabled, _tx_enabled;

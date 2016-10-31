@@ -46,14 +46,14 @@ struct UHD_API dboard_eeprom_t{
      * \param iface the serial interface with i2c
      * \param addr the i2c address for the eeprom
      */
-    void load(i2c_iface &iface, boost::uint8_t addr);
+    void load(i2c_iface &iface, uint8_t addr);
 
     /*!
      * Store the object to bytes in the eeprom.
      * \param iface the serial interface with i2c
      * \param addr the i2c address for the eeprom
      */
-    void store(i2c_iface &iface, boost::uint8_t addr) const;
+    void store(i2c_iface &iface, uint8_t addr) const;
 
 };
 

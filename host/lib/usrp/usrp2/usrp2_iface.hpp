@@ -45,10 +45,10 @@ public:
     static sptr make(uhd::transport::udp_simple::sptr ctrl_transport);
 
     //! poke a register in the virtual fw table
-    virtual void pokefw(wb_addr_type addr, boost::uint32_t data) = 0;
+    virtual void pokefw(wb_addr_type addr, uint32_t data) = 0;
 
     //! peek a register in the virtual fw table
-    virtual boost::uint32_t peekfw(wb_addr_type addr) = 0;
+    virtual uint32_t peekfw(wb_addr_type addr) = 0;
 
     //! The list of possible revision types
     enum rev_type {

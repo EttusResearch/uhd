@@ -40,13 +40,13 @@ public:
 private:
     uhd::transport::udp_simple::sptr _udp;
 
-    boost::uint16_t _poolsize;
+    uint16_t _poolsize;
     gpsdo_cache_state_t _state;
     gpsdo_cache_state_t _device_state;
-    std::vector<boost::uint8_t> _cache;
+    std::vector<uint8_t> _cache;
     std::string _rxbuff;
-    boost::uint32_t _sequence;
-	boost::uint32_t _proto_ver;
+    uint32_t _sequence;
+	uint32_t _proto_ver;
     boost::system_time _last_cache_update;
 
     void _update_cache();

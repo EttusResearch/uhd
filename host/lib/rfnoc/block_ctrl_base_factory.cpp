@@ -45,7 +45,7 @@ void block_ctrl_base::register_block(
 
 /*! Look up names for blocks in XML files using NoC ID.
  */
-static void lookup_block_key(boost::uint64_t noc_id, make_args_t &make_args)
+static void lookup_block_key(uint64_t noc_id, make_args_t &make_args)
 {
     try {
         blockdef::sptr bd = blockdef::make_from_noc_id(noc_id);
@@ -69,7 +69,7 @@ static void lookup_block_key(boost::uint64_t noc_id, make_args_t &make_args)
 
 block_ctrl_base::sptr block_ctrl_base::make(
         const make_args_t &make_args_,
-        boost::uint64_t noc_id
+        uint64_t noc_id
 ) {
     UHD_FACTORY_LOG() << "[RFNoC Factory] block_ctrl_base::make() " << std::endl;
     make_args_t make_args = make_args_;

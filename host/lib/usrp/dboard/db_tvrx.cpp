@@ -125,7 +125,7 @@ static uhd::dict<std::string, gain_range_t> get_tvrx_gain_ranges(void) {
 
 static const double opamp_gain = 1.22; //onboard DAC opamp gain
 static const double tvrx_if_freq = 43.75e6; //IF freq of TVRX module
-static const boost::uint16_t reference_divider = 640; //clock reference divider to use
+static const uint16_t reference_divider = 640; //clock reference divider to use
 static const double reference_freq = 4.0e6;
 
 /***********************************************************************
@@ -140,7 +140,7 @@ private:
     uhd::dict<std::string, double> _gains;
     double _lo_freq;
     tuner_4937di5_regs_t _tuner_4937di5_regs;
-    boost::uint8_t _tuner_4937di5_addr(void){
+    uint8_t _tuner_4937di5_addr(void){
         return (this->get_iface()->get_special_props().mangle_i2c_addrs)? 0x61 : 0x60; //ok really? we could rename that call
     };
 
@@ -271,7 +271,7 @@ static double gain_interp(double gain, const boost::array<double, 17>& db_vector
     double volts;
     gain = uhd::clip<double>(gain, db_vector.front(), db_vector.back()); //let's not get carried away here
 
-    boost::uint8_t gain_step = 0;
+    uint8_t gain_step = 0;
     //find which bin we're in
     for(size_t i = 0; i < db_vector.size()-1; i++) {
         if(gain >= db_vector[i] && gain <= db_vector[i+1]) gain_step = i;

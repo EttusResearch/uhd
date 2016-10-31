@@ -52,13 +52,13 @@ offset_pedestal_chB            0x76[5:0]       0
 # Template for methods in the body of the struct
 ########################################################################
 BODY_TMPL="""\
-boost::uint8_t get_reg(boost::uint8_t addr){
-    boost::uint8_t reg = 0;
+uint8_t get_reg(uint8_t addr){
+    uint8_t reg = 0;
     switch(addr){
     % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
     case ${addr}:
         % for reg in filter(lambda r: r.get_addr() == addr, regs):
-        reg |= (boost::uint8_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        reg |= (uint8_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
         % endfor
         break;
     % endfor
@@ -66,12 +66,12 @@ boost::uint8_t get_reg(boost::uint8_t addr){
     return reg;
 }
 
-boost::uint16_t get_write_reg(boost::uint8_t addr){
-    return (boost::uint16_t(addr) << 8) | get_reg(addr);
+uint16_t get_write_reg(uint8_t addr){
+    return (uint16_t(addr) << 8) | get_reg(addr);
 }
 
-boost::uint16_t get_read_reg(boost::uint8_t addr){
-    return (boost::uint16_t(addr) << 8) | (1 << 7);
+uint16_t get_read_reg(uint8_t addr){
+    return (uint16_t(addr) << 8) | (1 << 7);
 }
 """
 

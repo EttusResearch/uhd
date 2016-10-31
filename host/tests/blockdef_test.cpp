@@ -17,7 +17,7 @@
 
 #include <iostream>
 #include <map>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/assign/list_of.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
@@ -27,7 +27,7 @@
 using namespace uhd::rfnoc;
 
 BOOST_AUTO_TEST_CASE(test_lookup) {
-    std::map<boost::uint64_t, std::string> blocknames = boost::assign::list_of< std::pair<boost::uint64_t, std::string> >
+    std::map<uint64_t, std::string> blocknames = boost::assign::list_of< std::pair<uint64_t, std::string> >
         (0,                  "NullSrcSink")
         (0xFF70000000000000, "FFT")
         (0xF112000000000001, "FIR")
@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE(test_lookup) {
 
     std::cout << blocknames.size() << std::endl;
 
-    for (std::map<boost::uint64_t, std::string>::iterator it = blocknames.begin(); it != blocknames.end(); ++it) {
+    for (std::map<uint64_t, std::string>::iterator it = blocknames.begin(); it != blocknames.end(); ++it) {
         std::cout << "Testing " << it->second << " => " << str(boost::format("%016X") % it->first) << std::endl;
         blockdef::sptr block_definition = blockdef::make_from_noc_id(it->first);
         // If the previous function fails, it'll return a NULL pointer

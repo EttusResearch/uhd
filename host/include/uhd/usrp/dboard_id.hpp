@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_USRP_DBOARD_ID_HPP
 
 #include <uhd/config.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/operators.hpp>
 #include <string>
 
@@ -31,7 +31,7 @@ namespace uhd{ namespace usrp{
          * Create a dboard id from an integer.
          * \param id the integer representation
          */
-        dboard_id_t(boost::uint16_t id = 0xffff);
+        dboard_id_t(uint16_t id = 0xffff);
 
         /*!
          * Obtain a dboard id that represents no dboard.
@@ -44,13 +44,13 @@ namespace uhd{ namespace usrp{
          * \param uint16 an unsigned 16 bit integer
          * \return a new dboard id containing the integer
          */
-        static dboard_id_t from_uint16(boost::uint16_t uint16);
+        static dboard_id_t from_uint16(uint16_t uint16);
 
         /*!
          * Get the dboard id represented as an integer.
          * \return an unsigned 16 bit integer representation
          */
-        boost::uint16_t to_uint16(void) const;
+        uint16_t to_uint16(void) const;
 
         /*!
          * Create a new dboard id from a string representation.
@@ -79,7 +79,7 @@ namespace uhd{ namespace usrp{
         std::string to_pp_string(void) const;
 
     private:
-        boost::uint16_t _id; //internal representation
+        uint16_t _id; //internal representation
     };
 
     /*!

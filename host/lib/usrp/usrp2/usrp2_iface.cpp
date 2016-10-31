@@ -57,12 +57,12 @@ struct timeout_error : uhd::runtime_error
     }
 };
 
-static const boost::uint32_t MIN_PROTO_COMPAT_SPI = 7;
-static const boost::uint32_t MIN_PROTO_COMPAT_I2C = 7;
+static const uint32_t MIN_PROTO_COMPAT_SPI = 7;
+static const uint32_t MIN_PROTO_COMPAT_I2C = 7;
 // The register compat number must reflect the protocol compatibility
 // and the compatibility of the register mapping (more likely to change).
-static const boost::uint32_t MIN_PROTO_COMPAT_REG = 10;
-static const boost::uint32_t MIN_PROTO_COMPAT_UART = 7;
+static const uint32_t MIN_PROTO_COMPAT_REG = 10;
+static const uint32_t MIN_PROTO_COMPAT_UART = 7;
 
 class usrp2_iface_impl : public usrp2_iface{
 public:
@@ -110,15 +110,15 @@ public:
         //never assume lock with fpga image mismatch
         if ((this->peek32(U2_REG_COMPAT_NUM_RB) >> 16) != USRP2_FPGA_COMPAT_NUM) return false;
 
-        boost::uint32_t lock_time = this->peekfw(U2_FW_REG_LOCK_TIME);
-        boost::uint32_t lock_gpid = this->peekfw(U2_FW_REG_LOCK_GPID);
+        uint32_t lock_time = this->peekfw(U2_FW_REG_LOCK_TIME);
+        uint32_t lock_gpid = this->peekfw(U2_FW_REG_LOCK_GPID);
 
         //may not be the right tick rate, but this is ok for locking purposes
-        const boost::uint32_t lock_timeout_time = boost::uint32_t(3*100e6);
+        const uint32_t lock_timeout_time = uint32_t(3*100e6);
 
         //if the difference is larger, assume not locked anymore
         if ((lock_time & 1) == 0) return false; //bit0 says unlocked
-        const boost::uint32_t time_diff = this->get_curr_time() - lock_time;
+        const uint32_t time_diff = this->get_curr_time() - lock_time;
         if (time_diff >= lock_timeout_time) return false;
 
         //otherwise only lock if the device hash is different that ours
@@ -132,37 +132,37 @@ public:
         boost::this_thread::sleep(boost::posix_time::milliseconds(1500));
     }
 
-    boost::uint32_t get_curr_time(void){
+    uint32_t get_curr_time(void){
         return this->peek32(U2_REG_TIME64_LO_RB_IMM) | 1; //bit 1 says locked
     }
 
 /***********************************************************************
  * Peek and Poke
  **********************************************************************/
-    void poke32(const wb_addr_type addr, const boost::uint32_t data){
-        this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FPGA_POKE32>(addr, data);
+    void poke32(const wb_addr_type addr, const uint32_t data){
+        this->get_reg<uint32_t, USRP2_REG_ACTION_FPGA_POKE32>(addr, data);
     }
 
-    boost::uint32_t peek32(const wb_addr_type addr){
-        return this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FPGA_PEEK32>(addr);
+    uint32_t peek32(const wb_addr_type addr){
+        return this->get_reg<uint32_t, USRP2_REG_ACTION_FPGA_PEEK32>(addr);
     }
 
-    void poke16(const wb_addr_type addr, const boost::uint16_t data){
-        this->get_reg<boost::uint16_t, USRP2_REG_ACTION_FPGA_POKE16>(addr, data);
+    void poke16(const wb_addr_type addr, const uint16_t data){
+        this->get_reg<uint16_t, USRP2_REG_ACTION_FPGA_POKE16>(addr, data);
     }
 
-    boost::uint16_t peek16(const wb_addr_type addr){
-        return this->get_reg<boost::uint16_t, USRP2_REG_ACTION_FPGA_PEEK16>(addr);
+    uint16_t peek16(const wb_addr_type addr){
+        return this->get_reg<uint16_t, USRP2_REG_ACTION_FPGA_PEEK16>(addr);
     }
 
-    void pokefw(wb_addr_type addr, boost::uint32_t data)
+    void pokefw(wb_addr_type addr, uint32_t data)
     {
-        this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_POKE32>(addr, data);
+        this->get_reg<uint32_t, USRP2_REG_ACTION_FW_POKE32>(addr, data);
     }
 
-    boost::uint32_t peekfw(wb_addr_type addr)
+    uint32_t peekfw(wb_addr_type addr)
     {
-        return this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(addr);
+        return this->get_reg<uint32_t, USRP2_REG_ACTION_FW_PEEK32>(addr);
     }
 
     template <class T, usrp2_reg_action_t action>
@@ -171,7 +171,7 @@ public:
         usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_GET_THIS_REGISTER_FOR_ME_BRO);
         out_data.data.reg_args.addr = htonl(addr);
-        out_data.data.reg_args.data = htonl(boost::uint32_t(data));
+        out_data.data.reg_args.data = htonl(uint32_t(data));
         out_data.data.reg_args.action = action;
 
         //send and recv
@@ -183,10 +183,10 @@ public:
 /***********************************************************************
  * SPI
  **********************************************************************/
-    boost::uint32_t transact_spi(
+    uint32_t transact_spi(
         int which_slave,
         const spi_config_t &config,
-        boost::uint32_t data,
+        uint32_t data,
         size_t num_bits,
         bool readback
     ){
@@ -215,7 +215,7 @@ public:
 /***********************************************************************
  * I2C
  **********************************************************************/
-    void write_i2c(boost::uint16_t addr, const byte_vector_t &buf){
+    void write_i2c(uint16_t addr, const byte_vector_t &buf){
         //setup the out data
         usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_WRITE_THESE_I2C_VALUES_BRO);
@@ -233,7 +233,7 @@ public:
         UHD_ASSERT_THROW(ntohl(in_data.id) == USRP2_CTRL_ID_COOL_IM_DONE_I2C_WRITE_DUDE);
     }
 
-    byte_vector_t read_i2c(boost::uint16_t addr, size_t num_bytes){
+    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes){
         //setup the out data
         usrp2_ctrl_data_t out_data = usrp2_ctrl_data_t();
         out_data.id = htonl(USRP2_CTRL_ID_DO_AN_I2C_READ_FOR_ME_BRO);
@@ -259,8 +259,8 @@ public:
  **********************************************************************/
     usrp2_ctrl_data_t ctrl_send_and_recv(
         const usrp2_ctrl_data_t &out_data,
-        boost::uint32_t lo = USRP2_FW_COMPAT_NUM,
-        boost::uint32_t hi = USRP2_FW_COMPAT_NUM
+        uint32_t lo = USRP2_FW_COMPAT_NUM,
+        uint32_t hi = USRP2_FW_COMPAT_NUM
     ){
         boost::mutex::scoped_lock lock(_ctrl_mutex);
 
@@ -280,7 +280,7 @@ public:
 
     usrp2_ctrl_data_t ctrl_send_and_recv_internal(
         const usrp2_ctrl_data_t &out_data,
-        boost::uint32_t lo, boost::uint32_t hi,
+        uint32_t lo, uint32_t hi,
         const double timeout
     ){
         //fill in the seq number and send
@@ -290,12 +290,12 @@ public:
         _ctrl_transport->send(boost::asio::buffer(&out_copy, sizeof(usrp2_ctrl_data_t)));
 
         //loop until we get the packet or timeout
-        boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
+        uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
         const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
         while(true){
             size_t len = _ctrl_transport->recv(boost::asio::buffer(usrp2_ctrl_data_in_mem), timeout);
-            boost::uint32_t compat = ntohl(ctrl_data_in->proto_ver);
-            if(len >= sizeof(boost::uint32_t) and (hi < compat or lo > compat)){
+            uint32_t compat = ntohl(ctrl_data_in->proto_ver);
+            if(len >= sizeof(uint32_t) and (hi < compat or lo > compat)){
                 throw uhd::runtime_error(str(boost::format(
                     "\nPlease update the firmware and FPGA images for your device.\n"
                     "See the application notes for USRP2/N-Series for instructions.\n"
@@ -317,7 +317,7 @@ public:
     rev_type get_rev(void){
         std::string hw = mb_eeprom["hardware"];
         if (hw.empty()) return USRP_NXXX;
-        switch (boost::lexical_cast<boost::uint16_t>(hw)){
+        switch (boost::lexical_cast<uint16_t>(hw)){
         case 0x0300:
         case 0x0301: return USRP2_REV3;
         case 0x0400: return USRP2_REV4;
@@ -343,7 +343,7 @@ public:
     }
 
     const std::string get_fw_version_string(void){
-        boost::uint32_t minor = this->get_reg<boost::uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_VER_MINOR);
+        uint32_t minor = this->get_reg<uint32_t, USRP2_REG_ACTION_FW_PEEK32>(U2_FW_REG_VER_MINOR);
         return str(boost::format("%u.%u") % _protocol_compat % minor);
     }
 
@@ -415,8 +415,8 @@ private:
 
     //used in send/recv
     boost::mutex _ctrl_mutex;
-    boost::uint32_t _ctrl_seq_num;
-    boost::uint32_t _protocol_compat;
+    uint32_t _ctrl_seq_num;
+    uint32_t _protocol_compat;
 
     //lock thread stuff
     task::sptr _lock_task;

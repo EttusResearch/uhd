@@ -190,7 +190,7 @@ static void e300_codec_ctrl_tunnel(
             std::memcpy(out, in, sizeof(codec_xact_t));
 
             std::string which_str;
-            switch (uhd::ntohx<boost::uint32_t>(in->which)) {
+            switch (uhd::ntohx<uint32_t>(in->which)) {
             case codec_xact_t::CHAIN_TX1:
                 which_str = "TX1"; break;
             case codec_xact_t::CHAIN_TX2:
@@ -203,7 +203,7 @@ static void e300_codec_ctrl_tunnel(
                 which_str = ""; break;
             }
 
-            switch (uhd::ntohx<boost::uint32_t>(in->action)) {
+            switch (uhd::ntohx<uint32_t>(in->action)) {
             case codec_xact_t::ACTION_SET_GAIN:
                 out->gain = _codec_ctrl->set_gain(which_str, in->gain);
                 break;
@@ -212,10 +212,10 @@ static void e300_codec_ctrl_tunnel(
                 break;
             case codec_xact_t::ACTION_SET_ACTIVE_CHANS:
                 _codec_ctrl->set_active_chains(
-                    uhd::ntohx<boost::uint32_t>(in->bits) & (1<<0),
-                    uhd::ntohx<boost::uint32_t>(in->bits) & (1<<1),
-                    uhd::ntohx<boost::uint32_t>(in->bits) & (1<<2),
-                    uhd::ntohx<boost::uint32_t>(in->bits) & (1<<3));
+                    uhd::ntohx<uint32_t>(in->bits) & (1<<0),
+                    uhd::ntohx<uint32_t>(in->bits) & (1<<1),
+                    uhd::ntohx<uint32_t>(in->bits) & (1<<2),
+                    uhd::ntohx<uint32_t>(in->bits) & (1<<3));
                 break;
             case codec_xact_t::ACTION_TUNE:
                 out->freq = _codec_ctrl->tune(which_str, in->freq);
@@ -225,7 +225,7 @@ static void e300_codec_ctrl_tunnel(
                 break;
             case codec_xact_t::ACTION_SET_LOOPBACK:
                 _codec_ctrl->data_port_loopback(
-                    uhd::ntohx<boost::uint32_t>(in->bits) & 1);
+                    uhd::ntohx<uint32_t>(in->bits) & 1);
                 break;
             case codec_xact_t::ACTION_GET_RSSI:
                 out->rssi = _codec_ctrl->get_rssi(which_str).to_real();
@@ -254,7 +254,7 @@ static void e300_codec_ctrl_tunnel(
             default:
                 UHD_MSG(status) << "Got unknown request?!" << std::endl;
                 //Zero out actions to fail this request on client
-                out->action = uhd::htonx<boost::uint32_t>(0);
+                out->action = uhd::htonx<uint32_t>(0);
             }
 
             socket->send_to(asio::buffer(out_buff, 64), *endpoint);
@@ -298,11 +298,11 @@ static void e300_global_regs_tunnel(
             global_regs_transaction_t *in =
                 reinterpret_cast<global_regs_transaction_t *>(in_buff);
 
-            if(uhd::ntohx<boost::uint32_t>(in->is_poke)) {
-                regs->poke32(uhd::ntohx<boost::uint32_t>(in->addr), uhd::ntohx<boost::uint32_t>(in->data));
+            if(uhd::ntohx<uint32_t>(in->is_poke)) {
+                regs->poke32(uhd::ntohx<uint32_t>(in->addr), uhd::ntohx<uint32_t>(in->data));
             }
             else {
-                in->data = uhd::htonx<boost::uint32_t>(regs->peek32(uhd::ntohx<boost::uint32_t>(in->addr)));
+                in->data = uhd::htonx<uint32_t>(regs->peek32(uhd::ntohx<uint32_t>(in->addr)));
                 socket->send_to(asio::buffer(in_buff, 16), *endpoint);
             }
         }
@@ -347,10 +347,10 @@ static void e300_sensor_tunnel(
             if (uhd::ntohx(in->which) == ZYNQ_TEMP) {
                 sensor_value_t temp = sensor_manager->get_mb_temp();
                 // TODO: This is ugly ... use proper serialization
-                in->value = uhd::htonx<boost::uint32_t>(
+                in->value = uhd::htonx<uint32_t>(
                     e300_sensor_manager::pack_float_in_uint32_t(temp.to_real()));
             } else if (uhd::ntohx(in->which) == REF_LOCK) {
-                in->value = uhd::htonx<boost::uint32_t>(
+                in->value = uhd::htonx<uint32_t>(
                     sensor_manager->get_ref_lock().to_bool() ? 1 : 0);
             } else
                 UHD_MSG(status) << "Got unknown request?!" << std::endl;
@@ -401,9 +401,9 @@ static void e300_i2c_tunnel(
                 if(in->type & i2c::WRITE) {
                     i2c->set_i2c_reg8(
                         in->addr,
-                        uhd::ntohx<boost::uint16_t>(in->reg), in->data);
+                        uhd::ntohx<uint16_t>(in->reg), in->data);
                 } else {
-                    in->data = i2c->get_i2c_reg8(in->addr, uhd::ntohx<boost::uint16_t>(in->reg));
+                    in->data = i2c->get_i2c_reg8(in->addr, uhd::ntohx<uint16_t>(in->reg));
                     socket->send_to(asio::buffer(in_buff, sizeof(in_buff)), *endpoint);
                 }
 
@@ -412,9 +412,9 @@ static void e300_i2c_tunnel(
                 if(in->type & i2c::WRITE) {
                     i2c->set_i2c_reg16(
                         in->addr,
-                        uhd::ntohx<boost::uint16_t>(in->reg), in->data);
+                        uhd::ntohx<uint16_t>(in->reg), in->data);
                 } else {
-                    in->data = i2c->get_i2c_reg16(in->addr, uhd::ntohx<boost::uint16_t>(in->reg));
+                    in->data = i2c->get_i2c_reg16(in->addr, uhd::ntohx<uint16_t>(in->reg));
                     socket->send_to(asio::buffer(in_buff, sizeof(in_buff)), *endpoint);
                 }
 
@@ -571,7 +571,7 @@ network_server_impl::network_server_impl(const uhd::device_addr_t &device_addr)
         // Else load the FPGA image based on the product ID
         } else {
             //extract the FPGA path for the e300
-            const boost::uint16_t pid = boost::lexical_cast<boost::uint16_t>(
+            const uint16_t pid = boost::lexical_cast<uint16_t>(
                 _eeprom_manager->get_mb_eeprom()["product"]);
             std::string fpga_image;
             switch(e300_eeprom_manager::get_mb_type(pid)) {

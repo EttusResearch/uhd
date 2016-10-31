@@ -30,38 +30,38 @@ class usrp3_fw_ctrl_iface : public uhd::wb_iface
 public:
     usrp3_fw_ctrl_iface(
         uhd::transport::udp_simple::sptr udp_xport,
-        const boost::uint16_t product_id,
+        const uint16_t product_id,
         const bool verbose);
     virtual ~usrp3_fw_ctrl_iface();
 
     // -- uhd::wb_iface --
-    void poke32(const wb_addr_type addr, const boost::uint32_t data);
-    boost::uint32_t peek32(const wb_addr_type addr);
+    void poke32(const wb_addr_type addr, const uint32_t data);
+    uint32_t peek32(const wb_addr_type addr);
     void flush();
 
     static uhd::wb_iface::sptr make(
         uhd::transport::udp_simple::sptr udp_xport,
-        const boost::uint16_t product_id,
+        const uint16_t product_id,
         const bool verbose = true);
     // -- uhd::wb_iface --
 
     static std::vector<std::string> discover_devices(
         const std::string& addr_hint, const std::string& port,
-        boost::uint16_t product_id);
+        uint16_t product_id);
 
-    static boost::uint32_t get_iface_id(
+    static uint32_t get_iface_id(
         const std::string& addr, const std::string& port,
-        boost::uint16_t product_id);
+        uint16_t product_id);
 
 private:
-    void _poke32(const wb_addr_type addr, const boost::uint32_t data);
-    boost::uint32_t _peek32(const wb_addr_type addr);
+    void _poke32(const wb_addr_type addr, const uint32_t data);
+    uint32_t _peek32(const wb_addr_type addr);
     void _flush(void);
 
-    const boost::uint16_t               _product_id;
+    const uint16_t               _product_id;
     const bool                          _verbose;
     uhd::transport::udp_simple::sptr    _udp_xport;
-    boost::uint32_t                     _seq_num;
+    uint32_t                     _seq_num;
     boost::mutex                        _mutex;
 
     static const size_t NUM_RETRIES = 3;

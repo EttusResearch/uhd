@@ -75,20 +75,20 @@ public:
         close(_fd);
     }
 
-    boost::uint32_t transact_spi(int, const uhd::spi_config_t &,
-                                 boost::uint32_t data, size_t num_bits,
+    uint32_t transact_spi(int, const uhd::spi_config_t &,
+                                 uint32_t data, size_t num_bits,
                                  bool)
     {
         int ret(0);
         struct spi_ioc_transfer tr;
 
-        boost::uint8_t *tx_data = reinterpret_cast<boost::uint8_t *>(&data);
+        uint8_t *tx_data = reinterpret_cast<uint8_t *>(&data);
 
 
         UHD_ASSERT_THROW(num_bits == 24);
-        boost::uint8_t tx[] = {tx_data[2], tx_data[1], tx_data[0]};
+        uint8_t tx[] = {tx_data[2], tx_data[1], tx_data[0]};
 
-        boost::uint8_t rx[3];
+        uint8_t rx[3];
         tr.tx_buf = (unsigned long) &tx[0];
         tr.rx_buf = (unsigned long) &rx[0];
         tr.len = num_bits >> 3;
@@ -107,10 +107,10 @@ public:
 
 private:
     int _fd;
-    boost::uint8_t _mode;
-    boost::uint32_t _speed;
-    boost::uint8_t _bits;
-    boost::uint16_t _delay;
+    uint8_t _mode;
+    uint32_t _speed;
+    uint8_t _bits;
+    uint16_t _delay;
 };
 
 spi::sptr spi::make(const std::string &device)

@@ -55,9 +55,9 @@ enum xb_endpoint_t {
     N230_XB_DST_UART  = 5
 };
 
-static const boost::uint8_t RADIO_CTRL_SUFFIX = 0x00;
-static const boost::uint8_t RADIO_FC_SUFFIX   = 0x01;
-static const boost::uint8_t RADIO_DATA_SUFFIX = 0x02;
+static const uint8_t RADIO_CTRL_SUFFIX = 0x00;
+static const uint8_t RADIO_FC_SUFFIX   = 0x01;
+static const uint8_t RADIO_DATA_SUFFIX = 0x02;
 
 /*******************************************************************
  * Seting Register Base addresses

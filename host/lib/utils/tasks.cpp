@@ -115,7 +115,7 @@ public:
      * This might happen during shutdown when dtors are called.
      * See also: comments in b200_io_impl->handle_async_task
      */
-    msg_payload_t get_msg_from_dump_queue(boost::uint32_t sid)
+    msg_payload_t get_msg_from_dump_queue(uint32_t sid)
     {
         boost::mutex::scoped_lock lock(_mutex);
         msg_payload_t b;

@@ -37,7 +37,7 @@ static const func_id_t NIUSRPRIO_DOWNLOAD_FPGA_TO_FLASH     = NIUSRPRIO_FUNC_BAS
 //Function Args
 
 struct usrprio_device_info {
-    boost::uint32_t interface_num;
+    uint32_t interface_num;
     std::string     resource_name;
     std::string     pcie_serial_num;
     std::string     interface_path;
@@ -62,7 +62,7 @@ typedef std::vector<usrprio_device_info> usrprio_device_info_vtr;
     const std::string& resource,            \
     const std::string& path,                \
     const std::string& signature,           \
-    const boost::uint16_t& download_fpga
+    const uint16_t& download_fpga
 
 #define NIUSRPRIO_CLOSE_SESSION_ARGS    \
     const std::string& resource

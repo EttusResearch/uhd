@@ -33,10 +33,10 @@ public:
 
     b200_local_spi_core(uhd::wb_iface::sptr iface, perif_t default_perif);
 
-    virtual boost::uint32_t transact_spi(
+    virtual uint32_t transact_spi(
         int which_slave,
         const uhd::spi_config_t &config,
-        boost::uint32_t data,
+        uint32_t data,
         size_t num_bits,
         bool readback);
 

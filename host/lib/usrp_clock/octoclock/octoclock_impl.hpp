@@ -56,12 +56,12 @@ private:
         uhd::gps_ctrl::sptr gps;
     };
     uhd::dict<std::string, oc_container_type> _oc_dict;
-    boost::uint32_t _sequence;
-	boost::uint32_t _proto_ver;
+    uint32_t _sequence;
+	uint32_t _proto_ver;
 
     void _set_eeprom(const std::string &oc, const uhd::usrp_clock::octoclock_eeprom_t &oc_eeprom);
 
-    boost::uint32_t _get_fw_version(const std::string &oc);
+    uint32_t _get_fw_version(const std::string &oc);
 
     void _get_state(const std::string &oc);
 
@@ -73,7 +73,7 @@ private:
 
     uhd::sensor_value_t _switch_pos(const std::string &oc);
 
-    boost::uint32_t _get_time(const std::string &oc);
+    uint32_t _get_time(const std::string &oc);
 
     std::string _get_images_help_message(const std::string &addr);
 

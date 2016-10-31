@@ -114,7 +114,7 @@ static bool b200_image_loader(const image_loader::image_loader_args_t &image_loa
          * filename for us to use.
          */
         std::string product = mb_eeprom.get("product");
-        if(not B2XX_PRODUCT_ID.has_key(boost::lexical_cast<boost::uint16_t>(product))){
+        if(not B2XX_PRODUCT_ID.has_key(boost::lexical_cast<uint16_t>(product))){
             if(user_specified){
                 // The user specified a bad device but expects us to know what it is
                 throw uhd::runtime_error("Could not determine model. You must manually specify an FPGA image filename.");

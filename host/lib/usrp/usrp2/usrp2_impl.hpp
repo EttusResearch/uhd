@@ -52,8 +52,8 @@ static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
 static const double mimo_clock_delay_usrp_n2xx = 4.10e-9;
 static const size_t mimo_clock_sync_delay_cycles = 138;
 static const size_t USRP2_SRAM_BYTES = size_t(1 << 20);
-static const boost::uint32_t USRP2_TX_ASYNC_SID = 2;
-static const boost::uint32_t USRP2_RX_SID_BASE = 3;
+static const uint32_t USRP2_TX_ASYNC_SID = 2;
+static const uint32_t USRP2_RX_SID_BASE = 3;
 static const std::string USRP2_EEPROM_MAP_KEY = "N100";
 
 uhd::device_addrs_t usrp2_find(const uhd::device_addr_t &hint_);

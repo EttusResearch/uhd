@@ -26,7 +26,7 @@
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 #include <boost/assign.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>

@@ -26,13 +26,13 @@
 
 namespace uhd { namespace usrp { namespace dboard { namespace twinrx {
 
-static const boost::uint32_t SET_ALL_BITS = 0xFFFFFFFF;
+static const uint32_t SET_ALL_BITS = 0xFFFFFFFF;
 
 namespace cpld {
-static wb_iface::wb_addr_type addr(boost::uint8_t cpld_num, boost::uint8_t cpld_addr) {
+static wb_iface::wb_addr_type addr(uint8_t cpld_num, uint8_t cpld_addr) {
     //Decode CPLD addressing for the following bitmap:
     // {CPLD1_EN, CPLD2_EN, CPLD3_EN, CPLD4_EN, CPLD_ADDR[2:0]}
-    boost::uint8_t addr = 0;
+    uint8_t addr = 0;
     switch (cpld_num) {
         case 1: addr = 0x8 << 3; break;
         case 2: addr = 0x4 << 3; break;
@@ -43,8 +43,8 @@ static wb_iface::wb_addr_type addr(boost::uint8_t cpld_num, boost::uint8_t cpld_
     return static_cast<wb_iface::wb_addr_type>(addr | (cpld_addr & 0x7));
 }
 
-static boost::uint32_t get_reg(wb_iface::wb_addr_type addr) {
-    return static_cast<boost::uint32_t>(addr) & 0x7;
+static uint32_t get_reg(wb_iface::wb_addr_type addr) {
+    return static_cast<uint32_t>(addr) & 0x7;
 }
 }
 
@@ -84,37 +84,37 @@ public:
         _db_iface->set_gpio_ddr(dboard_iface::UNIT_BOTH, ~GPIO_OUTPUT_MASK, SET_ALL_BITS);
     }
 
-    void set_field(const uhd::soft_reg_field_t field, const boost::uint32_t value) {
+    void set_field(const uhd::soft_reg_field_t field, const uint32_t value) {
         boost::lock_guard<boost::mutex> lock(_mutex);
         using namespace soft_reg_field;
 
         _db_iface->set_gpio_out(dboard_iface::UNIT_BOTH,
             (value << shift(field)),
-            mask<boost::uint32_t>(field));
+            mask<uint32_t>(field));
     }
 
-    boost::uint32_t get_field(const uhd::soft_reg_field_t field) {
+    uint32_t get_field(const uhd::soft_reg_field_t field) {
         boost::lock_guard<boost::mutex> lock(_mutex);
         using namespace soft_reg_field;
-        return (_db_iface->read_gpio(dboard_iface::UNIT_BOTH) & mask<boost::uint32_t>(field)) >> shift(field);
+        return (_db_iface->read_gpio(dboard_iface::UNIT_BOTH) & mask<uint32_t>(field)) >> shift(field);
     }
 
     // CPLD register write-only interface
-    void poke32(const wb_addr_type addr, const boost::uint32_t data) {
+    void poke32(const wb_addr_type addr, const uint32_t data) {
         boost::lock_guard<boost::mutex> lock(_mutex);
         using namespace soft_reg_field;
 
         //Step 1: Write the reg offset and data to the GPIO bus and de-assert all enables
         _db_iface->set_gpio_out(dboard_iface::UNIT_BOTH,
             (cpld::get_reg(addr) << shift(CPLD_FULL_ADDR)) | (data << shift(CPLD_DATA)),
-            mask<boost::uint32_t>(CPLD_FULL_ADDR)|mask<boost::uint32_t>(CPLD_DATA));
+            mask<uint32_t>(CPLD_FULL_ADDR)|mask<uint32_t>(CPLD_DATA));
         //Sleep for 166ns to ensure that we don't toggle the enables too quickly
         //The underlying sleep function rounds to microsecond precision.
         _db_iface->sleep(boost::chrono::nanoseconds(166));
         //Step 2: Write the reg offset and data, and assert the necessary enable
         _db_iface->set_gpio_out(dboard_iface::UNIT_BOTH,
-            (static_cast<boost::uint32_t>(addr) << shift(CPLD_FULL_ADDR)) | (data << shift(CPLD_DATA)),
-            mask<boost::uint32_t>(CPLD_FULL_ADDR)|mask<boost::uint32_t>(CPLD_DATA));
+            (static_cast<uint32_t>(addr) << shift(CPLD_FULL_ADDR)) | (data << shift(CPLD_DATA)),
+            mask<uint32_t>(CPLD_FULL_ADDR)|mask<uint32_t>(CPLD_DATA));
     }
 
     // Timed command interface
@@ -128,8 +128,8 @@ public:
     }
 
 private:    //Members/definitions
-    static const boost::uint32_t GPIO_OUTPUT_MASK   = 0xFC06FE03;
-    static const boost::uint32_t GPIO_PINCTRL_MASK  = 0x00000000;
+    static const uint32_t GPIO_OUTPUT_MASK   = 0xFC06FE03;
+    static const uint32_t GPIO_PINCTRL_MASK  = 0x00000000;
 
     //Private GPIO fields
     UHD_DEFINE_SOFT_REG_FIELD(CPLD_FULL_ADDR, /*width*/ 7, /*shift*/  9);     //GPIO[15:9]

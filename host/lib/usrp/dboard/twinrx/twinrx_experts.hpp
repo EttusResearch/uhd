@@ -436,9 +436,9 @@ private:
     experts::data_reader_t<twinrx_ctrl::preselector_path_t> _hb_presel;
     experts::data_reader_t<twinrx_ctrl::antenna_mapping_t>  _ant_mapping;
     //Outputs
-    experts::data_writer_t<boost::uint8_t>                  _input_atten;
-    experts::data_writer_t<boost::uint8_t>                  _lb_atten;
-    experts::data_writer_t<boost::uint8_t>                  _hb_atten;
+    experts::data_writer_t<uint8_t>                  _input_atten;
+    experts::data_writer_t<uint8_t>                  _lb_atten;
+    experts::data_writer_t<uint8_t>                  _hb_atten;
     experts::data_writer_t<twinrx_ctrl::preamp_state_t>     _preamp1;
     experts::data_writer_t<bool>                            _preamp2;
 };
@@ -499,21 +499,21 @@ private:
 
     //Inputs
     experts::data_reader_t<twinrx_ctrl::antenna_mapping_t>  _ant_mapping;
-    experts::data_reader_t<boost::uint8_t>                  _ch0_input_atten;
+    experts::data_reader_t<uint8_t>                  _ch0_input_atten;
     experts::data_reader_t<twinrx_ctrl::preamp_state_t>     _ch0_preamp1;
     experts::data_reader_t<bool>                            _ch0_preamp2;
     experts::data_reader_t<bool>                            _ch0_lb_preamp_presel;
-    experts::data_reader_t<boost::uint8_t>                  _ch1_input_atten;
+    experts::data_reader_t<uint8_t>                  _ch1_input_atten;
     experts::data_reader_t<twinrx_ctrl::preamp_state_t>     _ch1_preamp1;
     experts::data_reader_t<bool>                            _ch1_preamp2;
     experts::data_reader_t<bool>                            _ch1_lb_preamp_presel;
 
     //Outputs
-    experts::data_writer_t<boost::uint8_t>                  _ant0_input_atten;
+    experts::data_writer_t<uint8_t>                  _ant0_input_atten;
     experts::data_writer_t<twinrx_ctrl::preamp_state_t>     _ant0_preamp1;
     experts::data_writer_t<bool>                            _ant0_preamp2;
     experts::data_writer_t<bool>                            _ant0_lb_preamp_presel;
-    experts::data_writer_t<boost::uint8_t>                  _ant1_input_atten;
+    experts::data_writer_t<uint8_t>                  _ant1_input_atten;
     experts::data_writer_t<twinrx_ctrl::preamp_state_t>     _ant1_preamp1;
     experts::data_writer_t<bool>                            _ant1_preamp2;
     experts::data_writer_t<bool>                            _ant1_lb_preamp_presel;
@@ -623,9 +623,9 @@ private:
         experts::data_reader_t<twinrx_ctrl::signal_path_t>      signal_path;
         experts::data_reader_t<twinrx_ctrl::preselector_path_t> lb_presel;
         experts::data_reader_t<twinrx_ctrl::preselector_path_t> hb_presel;
-        experts::data_reader_t<boost::uint8_t>                  input_atten;
-        experts::data_reader_t<boost::uint8_t>                  lb_atten;
-        experts::data_reader_t<boost::uint8_t>                  hb_atten;
+        experts::data_reader_t<uint8_t>                  input_atten;
+        experts::data_reader_t<uint8_t>                  lb_atten;
+        experts::data_reader_t<uint8_t>                  hb_atten;
         experts::data_reader_t<twinrx_ctrl::lo_source_t>        lo1_source;
         experts::data_reader_t<twinrx_ctrl::lo_source_t>        lo2_source;
         experts::data_reader_t<double>                          lo1_freq_d;

@@ -133,8 +133,8 @@ private:
 
     void update_atr(void);
     void spi_reset(void);
-    void send_reg(boost::uint8_t addr){
-        boost::uint32_t value = _max2829_regs.get_reg(addr);
+    void send_reg(uint8_t addr){
+        uint32_t value = _max2829_regs.get_reg(addr);
         UHD_LOGV(often) << boost::format(
             "XCVR2450: send reg 0x%02x, value 0x%05x"
         ) % int(addr) % value << std::endl;
@@ -221,7 +221,7 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     _max2829_regs.tx_upconv_linearity = max2829_regs_t::TX_UPCONV_LINEARITY_78;
 
     //send initial register settings
-    for(boost::uint8_t reg = 0x2; reg <= 0xC; reg++){
+    for(uint8_t reg = 0x2; reg <= 0xC; reg++){
         this->send_reg(reg);
     }
 

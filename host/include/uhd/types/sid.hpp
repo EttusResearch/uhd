@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_TYPES_SID_HPP
 
 #include <uhd/config.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/shared_ptr.hpp>
 #include <iostream>
 
@@ -82,9 +82,9 @@ namespace uhd {
         //! Create an unset SID
         sid_t();
         //! Create a sid_t object from a 32-Bit SID value
-        sid_t(boost::uint32_t sid);
+        sid_t(uint32_t sid);
         //! Create a sid_t object from its four components
-        sid_t(boost::uint8_t src_addr, boost::uint8_t src_ep, boost::uint8_t dst_addr, boost::uint8_t dst_ep);
+        sid_t(uint8_t src_addr, uint8_t src_ep, uint8_t dst_addr, uint8_t dst_ep);
         //! Convert a string representation of a SID into its numerical representation
         sid_t(const std::string &);
 
@@ -99,71 +99,71 @@ namespace uhd {
         // Getters
         //
         //! Alias for get_sid()
-        UHD_INLINE boost::uint32_t get() const { return get_sid(); };
+        UHD_INLINE uint32_t get() const { return get_sid(); };
         //! Returns a 32-Bit representation of the SID if set, or zero otherwise.
-        UHD_INLINE boost::uint32_t get_sid() const { return _set ? _sid : 0; };
+        UHD_INLINE uint32_t get_sid() const { return _set ? _sid : 0; };
         //! Return the 16-bit source address of this SID
-        UHD_INLINE boost::uint32_t get_src() const {
+        UHD_INLINE uint32_t get_src() const {
             return (_sid >> 16) & 0xFFFF;
         }
         //! Return the 16-bit destination address of this SID
-        UHD_INLINE boost::uint32_t get_dst() const {
+        UHD_INLINE uint32_t get_dst() const {
             return _sid & 0xFFFF;
         }
         //! Return 8-bit address of the source
-        UHD_INLINE boost::uint32_t get_src_addr() const {
+        UHD_INLINE uint32_t get_src_addr() const {
             return (get_src() >> 8) & 0xFF;
         }
         //! Return endpoint of the source
-        UHD_INLINE boost::uint32_t get_src_endpoint() const {
+        UHD_INLINE uint32_t get_src_endpoint() const {
             return get_src() & 0xFF;
         }
         //! Return crossbar port of the source
-        UHD_INLINE boost::uint32_t get_src_xbarport() const {
+        UHD_INLINE uint32_t get_src_xbarport() const {
             return (get_src_endpoint() >> 4) & 0xF;
         }
         //! Return block port of the source
-        UHD_INLINE boost::uint32_t get_src_blockport() const {
+        UHD_INLINE uint32_t get_src_blockport() const {
             return (get_src_endpoint()) & 0xF;
         }
         //! Return 8-bit address of the destination
-        UHD_INLINE boost::uint32_t get_dst_addr() const {
+        UHD_INLINE uint32_t get_dst_addr() const {
             return (get_dst() >> 8) & 0xFF;
         }
         //! Return endpoint of the destination
-        UHD_INLINE boost::uint32_t get_dst_endpoint() const {
+        UHD_INLINE uint32_t get_dst_endpoint() const {
             return get_dst() & 0xFF;
         }
         //! Return crossbar port of the source
-        UHD_INLINE boost::uint32_t get_dst_xbarport() const {
+        UHD_INLINE uint32_t get_dst_xbarport() const {
             return (get_dst_endpoint() >> 4) & 0xF;
         }
         //! Return block port of the source
-        UHD_INLINE boost::uint32_t get_dst_blockport() const {
+        UHD_INLINE uint32_t get_dst_blockport() const {
             return (get_dst_endpoint()) & 0xF;
         }
 
         // Setters
 
         //! Alias for set_sid()
-        void set(boost::uint32_t new_sid) { set_sid(new_sid); };
+        void set(uint32_t new_sid) { set_sid(new_sid); };
         //! Convert a string representation of a SID into a numerical one
         // Throws uhd::value_error if the string is not a valid SID
         // representation.
         void set_from_str(const std::string &);
-        void set_sid(boost::uint32_t new_sid);
+        void set_sid(uint32_t new_sid);
         //! Set the source address of this SID
         //  (the first 16 Bits)
-        void set_src(boost::uint32_t new_addr);
+        void set_src(uint32_t new_addr);
         //! Set the destination address of this SID
         //  (the last 16 Bits)
-        void set_dst(boost::uint32_t new_addr);
-        void set_src_addr(boost::uint32_t new_addr);
-        void set_src_endpoint(boost::uint32_t new_addr);
-        void set_dst_addr(boost::uint32_t new_addr);
-        void set_dst_endpoint(boost::uint32_t new_addr);
-        void set_dst_xbarport(boost::uint32_t new_xbarport);
-        void set_dst_blockport(boost::uint32_t new_blockport);
+        void set_dst(uint32_t new_addr);
+        void set_src_addr(uint32_t new_addr);
+        void set_src_endpoint(uint32_t new_addr);
+        void set_dst_addr(uint32_t new_addr);
+        void set_dst_endpoint(uint32_t new_addr);
+        void set_dst_xbarport(uint32_t new_xbarport);
+        void set_dst_blockport(uint32_t new_blockport);
 
         // Manipulators
 
@@ -175,7 +175,7 @@ namespace uhd {
 
         // Overloaded operators
 
-        sid_t operator = (boost::uint32_t new_sid) {
+        sid_t operator = (uint32_t new_sid) {
             set_sid(new_sid);
             return *this;
         }
@@ -194,7 +194,7 @@ namespace uhd {
             return (not _set and not sid.is_set()) or (_sid == sid.get_sid());
         }
 
-        bool operator == (boost::uint32_t sid) const {
+        bool operator == (uint32_t sid) const {
             return _set and _sid == sid;
         }
 
@@ -208,7 +208,7 @@ namespace uhd {
 
         //! If the SID is not set, always returns zero.
         //  Use is_set() to check if the return value is valid.
-        operator boost::uint32_t() const {
+        operator uint32_t() const {
             return get();
         }
 
@@ -217,7 +217,7 @@ namespace uhd {
         }
 
     private:
-        boost::uint32_t _sid;
+        uint32_t _sid;
         bool _set;
     };
 

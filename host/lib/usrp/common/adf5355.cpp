@@ -46,9 +46,9 @@ static const double ADF5355_MIN_OUTB_FREQ           = (3.4e9 * 2);
 
 static const double ADF5355_PHASE_RESYNC_TIME       = 400e-6;
 
-static const boost::uint32_t ADF5355_MOD1           = 16777216;
-static const boost::uint32_t ADF5355_MAX_MOD2       = 16384;
-static const boost::uint16_t ADF5355_MIN_INT_PRESCALER_89 = 75;
+static const uint32_t ADF5355_MOD1           = 16777216;
+static const uint32_t ADF5355_MAX_MOD2       = 16384;
+static const uint16_t ADF5355_MIN_INT_PRESCALER_89 = 75;
 
 class adf5355_impl : public adf5355_iface
 {
@@ -164,31 +164,31 @@ public:
             adf5355_regs_t::REFERENCE_DOUBLER_ENABLED :
             adf5355_regs_t::REFERENCE_DOUBLER_DISABLED;
         _regs.r_counter_10_bit = ref_div_factor;
-        UHD_ASSERT_THROW((_regs.r_counter_10_bit & ((boost::uint16_t)~0x3FF)) == 0);
+        UHD_ASSERT_THROW((_regs.r_counter_10_bit & ((uint16_t)~0x3FF)) == 0);
 
         //-----------------------------------------------------------
         //Set timeouts (code from ADI driver)
-        _regs.timeout = clamp<boost::uint16_t>(
-            static_cast<boost::uint16_t>(ceil(_pfd_freq / (20e3 * 30))), 1, 1023);
-        UHD_ASSERT_THROW((_regs.timeout & ((boost::uint16_t)~0x3FF)) == 0);
+        _regs.timeout = clamp<uint16_t>(
+            static_cast<uint16_t>(ceil(_pfd_freq / (20e3 * 30))), 1, 1023);
+        UHD_ASSERT_THROW((_regs.timeout & ((uint16_t)~0x3FF)) == 0);
         _regs.synth_lock_timeout =
-            static_cast<boost::uint8_t>(ceil((_pfd_freq * 2) / (100e3 * _regs.timeout)));
-        UHD_ASSERT_THROW((_regs.synth_lock_timeout & ((boost::uint16_t)~0x1F)) == 0);
+            static_cast<uint8_t>(ceil((_pfd_freq * 2) / (100e3 * _regs.timeout)));
+        UHD_ASSERT_THROW((_regs.synth_lock_timeout & ((uint16_t)~0x1F)) == 0);
         _regs.auto_level_timeout =
-            static_cast<boost::uint8_t>(ceil((_pfd_freq * 5) / (100e3 * _regs.timeout)));
+            static_cast<uint8_t>(ceil((_pfd_freq * 5) / (100e3 * _regs.timeout)));
 
         //-----------------------------------------------------------
         //Set VCO band divider
         _regs.vco_band_div =
-            static_cast<boost::uint8_t>(ceil(_pfd_freq / 2.4e6));
+            static_cast<uint8_t>(ceil(_pfd_freq / 2.4e6));
 
         //-----------------------------------------------------------
         //Set ADC delay (code from ADI driver)
         _regs.adc_enable = adf5355_regs_t::ADC_ENABLE_ENABLED;
         _regs.adc_conversion = adf5355_regs_t::ADC_CONVERSION_ENABLED;
-        _regs.adc_clock_divider = clamp<boost::uint8_t>(
-            static_cast<boost::uint8_t>(ceil(((_pfd_freq / 100e3) - 2) / 4)), 1, 255);
-        _wait_time_us = static_cast<boost::uint32_t>(
+        _regs.adc_clock_divider = clamp<uint8_t>(
+            static_cast<uint8_t>(ceil(((_pfd_freq / 100e3) - 2) / 4)), 1, 255);
+        _wait_time_us = static_cast<uint32_t>(
             ceil(16e6 / (_pfd_freq / ((4 * _regs.adc_clock_divider) + 2))));
 
         //-----------------------------------------------------------
@@ -196,7 +196,7 @@ public:
         _regs.phase_resync = adf5355_regs_t::PHASE_RESYNC_DISABLED; // Disabled during development
         _regs.phase_adjust = adf5355_regs_t::PHASE_ADJUST_DISABLED;
         _regs.sd_load_reset = adf5355_regs_t::SD_LOAD_RESET_ON_REG0_UPDATE;
-        _regs.phase_resync_clk_div = static_cast<boost::uint16_t>(
+        _regs.phase_resync_clk_div = static_cast<uint16_t>(
             floor(ADF5355_PHASE_RESYNC_TIME * _pfd_freq));
 
         _rewrite_regs = true;
@@ -247,14 +247,14 @@ public:
         if (target_freq > ADF5355_MAX_OUT_FREQ or target_freq < ADF5355_MIN_OUT_FREQ) {
             throw uhd::runtime_error("requested frequency out of range.");
         }
-        if ((boost::uint32_t) freq_resolution == 0) {
+        if ((uint32_t) freq_resolution == 0) {
             throw uhd::runtime_error("requested resolution cannot be less than 1.");
         }
 
         /* Calculate target VCOout frequency */
         //Increase RF divider until acceptable VCO frequency
         double target_vco_freq = target_freq;
-        boost::uint32_t rf_divider = 1;
+        uint32_t rf_divider = 1;
         while (target_vco_freq < ADF5355_MIN_VCO_FREQ && rf_divider < 64) {
             target_vco_freq *= 2;
             rf_divider *= 2;
@@ -278,17 +278,17 @@ public:
         }
 
         double N = prescaler_input_freq / _pfd_freq;
-        boost::uint16_t INT = static_cast<boost::uint16_t>(floor(N));
-        boost::uint32_t FRAC1 = static_cast<boost::uint32_t>(floor((N - INT) * ADF5355_MOD1));
+        uint16_t INT = static_cast<uint16_t>(floor(N));
+        uint32_t FRAC1 = static_cast<uint32_t>(floor((N - INT) * ADF5355_MOD1));
         double residue = ADF5355_MOD1 * (N - (INT + FRAC1 / ADF5355_MOD1));
 
         double gcd = boost::math::gcd(static_cast<int>(_pfd_freq), static_cast<int>(freq_resolution));
-        boost::uint16_t MOD2 = static_cast<boost::uint16_t>(floor(_pfd_freq / gcd));
+        uint16_t MOD2 = static_cast<uint16_t>(floor(_pfd_freq / gcd));
 
         if (MOD2 > ADF5355_MAX_MOD2) {
             MOD2 = ADF5355_MAX_MOD2;
         }
-        boost::uint16_t FRAC2 = ceil(residue * MOD2);
+        uint16_t FRAC2 = ceil(residue * MOD2);
 
         double coerced_vco_freq = _pfd_freq * (
             todbl(INT) + (
@@ -317,9 +317,9 @@ public:
         // ADI: Tests have shown that the optimal bleed set is the following:
         // 4/N < IBLEED/ICP < 10/N */
 /*
-        boost::uint32_t cp_curr_ua =
-            (static_cast<boost::uint32_t>(_regs.charge_pump_current) + 1) * 315;
-        _regs.cp_bleed_current = clamp<boost::uint8_t>(
+        uint32_t cp_curr_ua =
+            (static_cast<uint32_t>(_regs.charge_pump_current) + 1) * 315;
+        _regs.cp_bleed_current = clamp<uint8_t>(
             ceil((todbl(400)*cp_curr_ua) / (_regs.int_16_bit*375)), 1, 255);
         _regs.negative_bleed = adf5355_regs_t::NEGATIVE_BLEED_ENABLED;
         _regs.gated_bleed = adf5355_regs_t::GATED_BLEED_DISABLED;
@@ -335,7 +335,7 @@ public:
             //For a full state sync write registers in reverse order 12 - 0
             addr_vtr_t regs;
             for (int addr = 12; addr >= 0; addr--) {
-                regs.push_back(_regs.get_reg(boost::uint32_t(addr)));
+                regs.push_back(_regs.get_reg(uint32_t(addr)));
             }
             _write_fn(regs);
             _rewrite_regs = false;
@@ -359,12 +359,12 @@ public:
     }
 
 private: //Members
-    typedef std::vector<boost::uint32_t> addr_vtr_t;
+    typedef std::vector<uint32_t> addr_vtr_t;
 
     write_fn_t      _write_fn;
     adf5355_regs_t  _regs;
     bool            _rewrite_regs;
-    boost::uint32_t _wait_time_us;
+    uint32_t _wait_time_us;
     double          _ref_freq;
     double          _pfd_freq;
     double          _fb_after_divider;

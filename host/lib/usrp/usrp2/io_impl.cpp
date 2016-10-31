@@ -66,7 +66,7 @@ static const size_t vrt_send_header_offset_words32 = 1;
  **********************************************************************/
 class flow_control_monitor{
 public:
-    typedef boost::uint32_t seq_type;
+    typedef uint32_t seq_type;
     typedef boost::shared_ptr<flow_control_monitor> sptr;
 
     /*!
@@ -159,7 +159,7 @@ struct usrp2_impl::io_impl{
         managed_send_buffer::sptr buff = tx_xports[chan]->get_send_buff(timeout);
 
         //write the flow control word into the buffer
-        if (buff.get()) buff->cast<boost::uint32_t *>()[0] = uhd::htonx(fc_mon.get_curr_seq_out());
+        if (buff.get()) buff->cast<uint32_t *>()[0] = uhd::htonx(fc_mon.get_curr_seq_out());
 
         return buff;
     }
@@ -196,8 +196,8 @@ void usrp2_impl::io_impl::recv_pirate_loop(
         try{
             //extract the vrt header packet info
             vrt::if_packet_info_t if_packet_info;
-            if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
-            const boost::uint32_t *vrt_hdr = buff->cast<const boost::uint32_t *>();
+            if_packet_info.num_packet_words32 = buff->size()/sizeof(uint32_t);
+            const uint32_t *vrt_hdr = buff->cast<const uint32_t *>();
             vrt::if_hdr_unpack_be(vrt_hdr, if_packet_info);
 
             //handle a tx async report message
@@ -205,11 +205,11 @@ void usrp2_impl::io_impl::recv_pirate_loop(
 
                 //fill in the async metadata
                 async_metadata_t metadata;
-                load_metadata_from_buff(uhd::ntohx<boost::uint32_t>, metadata, if_packet_info, vrt_hdr, tick_rate, index);
+                load_metadata_from_buff(uhd::ntohx<uint32_t>, metadata, if_packet_info, vrt_hdr, tick_rate, index);
 
                 //catch the flow control packets and react
                 if (metadata.event_code == 0){
-                    boost::uint32_t fc_word32 = (vrt_hdr + if_packet_info.num_header_words32)[1];
+                    uint32_t fc_word32 = (vrt_hdr + if_packet_info.num_header_words32)[1];
                     fc_mon.update_fc_condition(uhd::ntohx(fc_word32));
                     continue;
                 }
@@ -374,8 +374,8 @@ void usrp2_impl::program_stream_dest(
 
     //program the stream command
     usrp2_stream_ctrl_t stream_ctrl = usrp2_stream_ctrl_t();
-    stream_ctrl.sequence = uhd::htonx(boost::uint32_t(0 /* don't care seq num */));
-    stream_ctrl.vrt_hdr = uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER));
+    stream_ctrl.sequence = uhd::htonx(uint32_t(0 /* don't care seq num */));
+    stream_ctrl.vrt_hdr = uhd::htonx(uint32_t(USRP2_INVALID_VRT_HEADER));
 
     //user has provided an alternative address and port for destination
     if (args.args.has_key("addr") and args.args.has_key("port")){
@@ -388,8 +388,8 @@ void usrp2_impl::program_stream_dest(
         asio::ip::udp::resolver resolver(io_service);
         asio::ip::udp::resolver::query query(asio::ip::udp::v4(), args.args["addr"], args.args["port"]);
         asio::ip::udp::endpoint endpoint = *resolver.resolve(query);
-        stream_ctrl.ip_addr = uhd::htonx(boost::uint32_t(endpoint.address().to_v4().to_ulong()));
-        stream_ctrl.udp_port = uhd::htonx(boost::uint32_t(endpoint.port()));
+        stream_ctrl.ip_addr = uhd::htonx(uint32_t(endpoint.address().to_v4().to_ulong()));
+        stream_ctrl.udp_port = uhd::htonx(uint32_t(endpoint.port()));
 
         for (size_t i = 0; i < 3; i++){
             UHD_MSG(status) << "ARP attempt " << i << std::endl;
@@ -399,8 +399,8 @@ void usrp2_impl::program_stream_dest(
             send_buff.reset();
             boost::this_thread::sleep(boost::posix_time::milliseconds(300));
             managed_recv_buffer::sptr recv_buff = xport->get_recv_buff(0.0);
-            if (recv_buff and recv_buff->size() >= sizeof(boost::uint32_t)){
-                const boost::uint32_t result = uhd::ntohx(recv_buff->cast<const boost::uint32_t *>()[0]);
+            if (recv_buff and recv_buff->size() >= sizeof(uint32_t)){
+                const uint32_t result = uhd::ntohx(recv_buff->cast<const uint32_t *>()[0]);
                 if (result == 0){
                     UHD_MSG(status) << "Success! " << std::endl;
                     return;
@@ -430,7 +430,7 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
 
     //calculate packet size
     static const size_t hdr_size = 0
-        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + vrt::max_if_hdr_words32*sizeof(uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
         - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
@@ -498,8 +498,8 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
 
     //calculate packet size
     static const size_t hdr_size = 0
-        + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
-        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + vrt_send_header_offset_words32*sizeof(uint32_t)
+        + vrt::max_if_hdr_words32*sizeof(uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
         - sizeof(vrt::if_packet_info_t().sid) //no stream id ever used

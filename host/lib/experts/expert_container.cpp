@@ -151,11 +151,11 @@ public:
             const dag_vertex_t& vertex = _get_vertex(*vi.first);
             if (vertex.get_class() != CLASS_WORKER) {
                 dot_str += str(boost::format(" %d [label=\"%s\",shape=%s,xlabel=\"%s\"];\n") %
-                               boost::uint32_t(*vi.first) % vertex.get_name() %
+                               uint32_t(*vi.first) % vertex.get_name() %
                                DATA_SHAPE % vertex.get_dtype());
             } else {
                 dot_str += str(boost::format(" %d [label=\"%s\",shape=%s];\n") %
-                               boost::uint32_t(*vi.first) % vertex.get_name() % WORKER_SHAPE);
+                               uint32_t(*vi.first) % vertex.get_name() % WORKER_SHAPE);
             }
         }
 
@@ -165,8 +165,8 @@ public:
              ++ei.first
         ) {
             dot_str += str(boost::format(" %d -> %d;\n") %
-                           boost::uint32_t(boost::source(*(ei.first), _expert_dag)) %
-                           boost::uint32_t(boost::target(*(ei.first), _expert_dag)));
+                           uint32_t(boost::source(*(ei.first), _expert_dag)) %
+                           uint32_t(boost::target(*(ei.first), _expert_dag)));
         }
         dot_str += "}\n";
         return dot_str;

@@ -31,7 +31,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/assign.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string/erase.hpp>

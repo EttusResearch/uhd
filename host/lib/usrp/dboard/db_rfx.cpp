@@ -86,7 +86,7 @@ private:
     const uhd::dict<dboard_iface::unit_t, bool> _div2;
     std::string  _rx_ant;
     uhd::dict<std::string, double> _rx_gains;
-    boost::uint16_t _power_up;
+    uint16_t _power_up;
 
     void set_rx_ant(const std::string &ant);
     void set_tx_ant(const std::string &ant);
@@ -241,7 +241,7 @@ rfx_xcvr::rfx_xcvr(
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
     //set the gpio directions and atr controls (identically)
-    boost::uint16_t output_enables = POWER_IO | ANTSW_IO | MIXER_IO;
+    uint16_t output_enables = POWER_IO | ANTSW_IO | MIXER_IO;
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_TX, output_enables);
     this->get_iface()->set_pin_ctrl(dboard_iface::UNIT_RX, output_enables);
     this->get_iface()->set_gpio_ddr(dboard_iface::UNIT_TX, output_enables);

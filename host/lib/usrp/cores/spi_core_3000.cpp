@@ -40,10 +40,10 @@ public:
         this->set_divider(30);
     }
 
-    boost::uint32_t transact_spi(
+    uint32_t transact_spi(
         int which_slave,
         const spi_config_t &config,
-        boost::uint32_t data,
+        uint32_t data,
         size_t num_bits,
         bool readback
     ){
@@ -64,7 +64,7 @@ public:
         }
 
         //load control word
-        boost::uint32_t ctrl_word = 0;
+        uint32_t ctrl_word = 0;
         ctrl_word |= ((which_slave & 0xffffff) << 0);
         ctrl_word |= ((num_bits & 0x3f) << 24);
         if (config.mosi_edge == spi_config_t::EDGE_FALL) ctrl_word |= (1 << 31);
@@ -78,7 +78,7 @@ public:
         }
 
         //load data word (must be in upper bits)
-        const boost::uint32_t data_out = data << (32 - num_bits);
+        const uint32_t data_out = data << (32 - num_bits);
 
         //send data word
         _iface->poke32(SPI_DATA, data_out);
@@ -113,7 +113,7 @@ private:
     wb_iface::sptr _iface;
     const size_t _base;
     const size_t _readback;
-    boost::uint32_t _ctrl_word_cache;
+    uint32_t _ctrl_word_cache;
     bool _shutdown_cache;
     boost::mutex _mutex;
     size_t _div;

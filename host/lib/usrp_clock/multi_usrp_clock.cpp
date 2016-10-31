@@ -61,10 +61,10 @@ public:
         return _tree->list("/mboards").size();
     }
 
-    boost::uint32_t get_time(size_t board){
+    uint32_t get_time(size_t board){
         std::string board_str = str(boost::format("/mboards/%d") % board);
 
-        return _tree->access<boost::uint32_t>(board_str / "time").get();
+        return _tree->access<uint32_t>(board_str / "time").get();
     }
 
     sensor_value_t get_sensor(const std::string &name, size_t board){

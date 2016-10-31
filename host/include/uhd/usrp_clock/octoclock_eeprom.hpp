@@ -42,7 +42,7 @@ public:
      * \param transport the UDP transport to the OctoClock
      * \param proto_ver firmware protocol version
      */
-    octoclock_eeprom_t(transport::udp_simple::sptr transport, boost::uint32_t proto_ver);
+    octoclock_eeprom_t(transport::udp_simple::sptr transport, uint32_t proto_ver);
 
     /*!
      * Write the contents of this object to the EEPROM.
@@ -51,7 +51,7 @@ public:
 
 private:
     transport::udp_simple::sptr xport;
-    boost::uint32_t _proto_ver;
+    uint32_t _proto_ver;
     void _load();
     void _store() const;
 

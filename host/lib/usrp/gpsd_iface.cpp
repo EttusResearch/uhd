@@ -21,7 +21,7 @@
 
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include "boost/date_time/gregorian/gregorian.hpp"
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -43,7 +43,7 @@ static const size_t CLICK_RATE = 250000;
 
 class gpsd_iface_impl : public virtual gpsd_iface {
 public:
-    gpsd_iface_impl(const std::string &addr, boost::uint16_t port)
+    gpsd_iface_impl(const std::string &addr, uint16_t port)
         : _detected(false), _bthread(), _timeout_cnt(0)
     {
         boost::unique_lock<boost::shared_mutex> l(_d_mutex);
@@ -182,9 +182,9 @@ private: // member functions
         if ((s.at(0) != '$'))
             return 0;
 
-        boost::uint8_t sum = '\0';
+        uint8_t sum = '\0';
         for (size_t i = 1; i < s.size(); i++)
-            sum ^= static_cast<boost::uint8_t>(s.at(i));
+            sum ^= static_cast<uint8_t>(s.at(i));
 
         return sum;
     }
@@ -303,7 +303,7 @@ private: // members
 
 using namespace uhd::usrp;
 
-gpsd_iface::sptr gpsd_iface::make(const std::string &addr, const boost::uint16_t port)
+gpsd_iface::sptr gpsd_iface::make(const std::string &addr, const uint16_t port)
 {
     return gpsd_iface::sptr(new gpsd_iface_impl(addr, port));
 }

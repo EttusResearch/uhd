@@ -58,18 +58,18 @@ radio_ctrl_impl::radio_ctrl_impl() :
         _perifs[i].ctrl = boost::make_shared<wb_iface_adapter>(
             // poke32 functor
             boost::bind(
-                static_cast< void (block_ctrl_base::*)(const boost::uint32_t, const boost::uint32_t, const size_t) >(&block_ctrl_base::sr_write),
+                static_cast< void (block_ctrl_base::*)(const uint32_t, const uint32_t, const size_t) >(&block_ctrl_base::sr_write),
                 this, _1, _2, i
             ),
             // peek32 functor
             boost::bind(
-                static_cast< boost::uint32_t (block_ctrl_base::*)(const boost::uint32_t, const size_t) >(&block_ctrl_base::user_reg_read32),
+                static_cast< uint32_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read32),
                 this,
                 _1, i
             ),
             // peek64 functor
             boost::bind(
-                static_cast< boost::uint64_t (block_ctrl_base::*)(const boost::uint32_t, const size_t) >(&block_ctrl_base::user_reg_read64),
+                static_cast< uint64_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read64),
                 this,
                 _1, i
             ),
@@ -142,11 +142,11 @@ void radio_ctrl_impl::_register_loopback_self_test(size_t chan)
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
-        sr_write(regs::TEST, boost::uint32_t(hash), chan);
-        boost::uint32_t result = user_reg_read32(regs::RB_TEST, chan);
-        if (result != boost::uint32_t(hash)) {
+        sr_write(regs::TEST, uint32_t(hash), chan);
+        uint32_t result = user_reg_read32(regs::RB_TEST, chan);
+        if (result != uint32_t(hash)) {
             UHD_MSG(status) << "fail" << std::endl;
-            UHD_MSG(status) << boost::format("expected: %x result: %x") % boost::uint32_t(hash) % result << std::endl;
+            UHD_MSG(status) << boost::format("expected: %x result: %x") % uint32_t(hash) % result << std::endl;
             return; // exit on any failure
         }
     }
@@ -265,18 +265,18 @@ void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, cons
     boost::tie(inst_reload, inst_chain, inst_samps, inst_stop) = mode_to_inst[stream_cmd.stream_mode];
 
     //calculate the word from flags and length
-    boost::uint32_t cmd_word = 0;
-    cmd_word |= boost::uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
-    cmd_word |= boost::uint32_t((inst_chain)?            1 : 0) << 30;
-    cmd_word |= boost::uint32_t((inst_reload)?           1 : 0) << 29;
-    cmd_word |= boost::uint32_t((inst_stop)?             1 : 0) << 28;
+    uint32_t cmd_word = 0;
+    cmd_word |= uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
+    cmd_word |= uint32_t((inst_chain)?            1 : 0) << 30;
+    cmd_word |= uint32_t((inst_reload)?           1 : 0) << 29;
+    cmd_word |= uint32_t((inst_stop)?             1 : 0) << 28;
     cmd_word |= (inst_samps)? stream_cmd.num_samps : ((inst_stop)? 0 : 1);
 
     //issue the stream command
-    const boost::uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(get_rate());
+    const uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(get_rate());
     sr_write(regs::RX_CTRL_CMD, cmd_word, chan);
-    sr_write(regs::RX_CTRL_TIME_HI, boost::uint32_t(ticks >> 32), chan);
-    sr_write(regs::RX_CTRL_TIME_LO, boost::uint32_t(ticks >> 0),  chan); //latches the command
+    sr_write(regs::RX_CTRL_TIME_HI, uint32_t(ticks >> 32), chan);
+    sr_write(regs::RX_CTRL_TIME_LO, uint32_t(ticks >> 0),  chan); //latches the command
 }
 
 std::vector<size_t> radio_ctrl_impl::get_active_rx_ports()

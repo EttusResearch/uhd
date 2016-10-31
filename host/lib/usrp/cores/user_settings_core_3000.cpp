@@ -34,40 +34,40 @@ public:
     {
     }
 
-    void poke64(const wb_addr_type offset, const boost::uint64_t value)
+    void poke64(const wb_addr_type offset, const uint64_t value)
     {
-        if (offset % sizeof(boost::uint64_t) != 0) throw uhd::value_error("poke64: Incorrect address alignment");
-        poke32(offset, static_cast<boost::uint32_t>(value));
-        poke32(offset + 4, static_cast<boost::uint32_t>(value >> 32));
+        if (offset % sizeof(uint64_t) != 0) throw uhd::value_error("poke64: Incorrect address alignment");
+        poke32(offset, static_cast<uint32_t>(value));
+        poke32(offset + 4, static_cast<uint32_t>(value >> 32));
     }
 
-    boost::uint64_t peek64(const wb_addr_type offset)
+    uint64_t peek64(const wb_addr_type offset)
     {
-        if (offset % sizeof(boost::uint64_t) != 0) throw uhd::value_error("peek64: Incorrect address alignment");
+        if (offset % sizeof(uint64_t) != 0) throw uhd::value_error("peek64: Incorrect address alignment");
 
         boost::unique_lock<boost::mutex> lock(_mutex);
         _iface->poke32(REG_USER_RB_ADDR, offset >> 3);  //Translate byte offset to 64-bit offset
         return _iface->peek64(_rb_reg_addr);
     }
 
-    void poke32(const wb_addr_type offset, const boost::uint32_t value)
+    void poke32(const wb_addr_type offset, const uint32_t value)
     {
-        if (offset % sizeof(boost::uint32_t) != 0) throw uhd::value_error("poke32: Incorrect address alignment");
+        if (offset % sizeof(uint32_t) != 0) throw uhd::value_error("poke32: Incorrect address alignment");
 
         boost::unique_lock<boost::mutex> lock(_mutex);
         _iface->poke32(REG_USER_SR_ADDR, offset >> 2);   //Translate byte offset to 64-bit offset
         _iface->poke32(REG_USER_SR_DATA, value);
     }
 
-    boost::uint32_t peek32(const wb_addr_type offset)
+    uint32_t peek32(const wb_addr_type offset)
     {
-        if (offset % sizeof(boost::uint32_t) != 0) throw uhd::value_error("peek32: Incorrect address alignment");
+        if (offset % sizeof(uint32_t) != 0) throw uhd::value_error("peek32: Incorrect address alignment");
 
-        boost::uint64_t value = peek64((offset >> 3) << 3);
+        uint64_t value = peek64((offset >> 3) << 3);
         if ((offset & 0x7) == 0) {
-            return static_cast<boost::uint32_t>(value);
+            return static_cast<uint32_t>(value);
         } else {
-            return static_cast<boost::uint32_t>(value >> 32);
+            return static_cast<uint32_t>(value >> 32);
         }
     }
 

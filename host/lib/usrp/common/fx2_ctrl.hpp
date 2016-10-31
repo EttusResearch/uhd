@@ -87,11 +87,11 @@ public:
      * \param buff buffer to place data
      * \return number of bytes read or error 
      */
-    virtual int usrp_control_read(boost::uint8_t request,
-                                  boost::uint16_t value,
-                                  boost::uint16_t index,
+    virtual int usrp_control_read(uint8_t request,
+                                  uint16_t value,
+                                  uint16_t index,
                                   unsigned char *buff,
-                                  boost::uint16_t length) = 0;
+                                  uint16_t length) = 0;
 
     /*!
      * Submit an OUT transfer 
@@ -101,11 +101,11 @@ public:
      * \param buff buffer of data to be sent 
      * \return number of bytes written or error 
      */
-    virtual int usrp_control_write(boost::uint8_t request,
-                                   boost::uint16_t value,
-                                   boost::uint16_t index,
+    virtual int usrp_control_write(uint8_t request,
+                                   uint16_t value,
+                                   uint16_t index,
                                    unsigned char *buff,
-                                   boost::uint16_t length) = 0;
+                                   uint16_t length) = 0;
 
     /*!
      * Perform an I2C write
@@ -115,9 +115,9 @@ public:
      * \return number of bytes written or error 
      */
 
-    virtual int usrp_i2c_write(boost::uint16_t i2c_addr,
+    virtual int usrp_i2c_write(uint16_t i2c_addr,
                                unsigned char *buf, 
-                               boost::uint16_t len) = 0;
+                               uint16_t len) = 0;
 
     /*!
      * Perform an I2C read
@@ -127,9 +127,9 @@ public:
      * \return number of bytes read or error 
      */
 
-    virtual int usrp_i2c_read(boost::uint16_t i2c_addr,
+    virtual int usrp_i2c_read(uint16_t i2c_addr,
                                unsigned char *buf, 
-                               boost::uint16_t len) = 0;
+                               uint16_t len) = 0;
 
     //! enable/disable the rx path
     virtual void usrp_rx_enable(bool on) = 0;

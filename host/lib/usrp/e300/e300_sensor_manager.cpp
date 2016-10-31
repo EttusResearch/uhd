@@ -55,7 +55,7 @@ public:
     {
         boost::mutex::scoped_lock(_mutex);
         sensor_transaction_t transaction;
-        transaction.which = uhd::htonx<boost::uint32_t>(ZYNQ_TEMP);
+        transaction.which = uhd::htonx<uint32_t>(ZYNQ_TEMP);
         {
             uhd::transport::managed_send_buffer::sptr buff
                 = _xport->get_send_buff(1.0);
@@ -80,7 +80,7 @@ public:
                 buff->cast<const void *>(),
                 sizeof(transaction));
         }
-        UHD_ASSERT_THROW(uhd::ntohx<boost::uint32_t>(transaction.which) == ZYNQ_TEMP);
+        UHD_ASSERT_THROW(uhd::ntohx<uint32_t>(transaction.which) == ZYNQ_TEMP);
         // TODO: Use proper serialization here ...
         return sensor_value_t(
             "temp",
@@ -93,7 +93,7 @@ public:
     {
         boost::mutex::scoped_lock(_mutex);
         sensor_transaction_t transaction;
-        transaction.which = uhd::htonx<boost::uint32_t>(REF_LOCK);
+        transaction.which = uhd::htonx<uint32_t>(REF_LOCK);
         {
             uhd::transport::managed_send_buffer::sptr buff
                 = _xport->get_send_buff(1.0);
@@ -118,7 +118,7 @@ public:
                 buff->cast<const void *>(),
                 sizeof(transaction));
         }
-        UHD_ASSERT_THROW(uhd::ntohx<boost::uint32_t>(transaction.which) == REF_LOCK);
+        UHD_ASSERT_THROW(uhd::ntohx<uint32_t>(transaction.which) == REF_LOCK);
         // TODO: Use proper serialization here ...
         return sensor_value_t("Ref", (uhd::ntohx(transaction.value) > 0), "locked", "unlocked");
     }
@@ -185,10 +185,10 @@ public:
         //PPSLOOP_LOCKED_MASK is asserted in the following cases:
         //- (Time source = GPS or External) AND (Loop is locked and is in fine adj mode)
         //- Time source is Internal
-        static const boost::uint32_t PPSLOOP_LOCKED_MASK = 0x04;
-        static const boost::uint32_t REFPLL_LOCKED_MASK = 0x20;
+        static const uint32_t PPSLOOP_LOCKED_MASK = 0x04;
+        static const uint32_t REFPLL_LOCKED_MASK = 0x20;
 
-        const boost::uint32_t status =
+        const uint32_t status =
             _global_regs->peek32(global_regs::RB32_CORE_MISC);
         bool ref_locked = (status & PPSLOOP_LOCKED_MASK) && (status & REFPLL_LOCKED_MASK);
 

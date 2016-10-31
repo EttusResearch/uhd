@@ -20,7 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <vector>
 
 namespace uhd{
@@ -28,7 +28,7 @@ namespace uhd{
     /*!
      * Byte vector typedef for passing data in and out of I2C interfaces.
      */
-    typedef std::vector<boost::uint8_t> byte_vector_t;
+    typedef std::vector<uint8_t> byte_vector_t;
 
     /*!
      * The i2c interface class:
@@ -57,7 +57,7 @@ namespace uhd{
          * \param buf the vector of bytes
          */
         virtual void write_i2c(
-            boost::uint16_t addr,
+            uint16_t addr,
             const byte_vector_t &buf
         ) = 0;
 
@@ -68,7 +68,7 @@ namespace uhd{
          * \return a vector of bytes
          */
         virtual byte_vector_t read_i2c(
-            boost::uint16_t addr,
+            uint16_t addr,
             size_t num_bytes
         ) = 0;
 
@@ -79,8 +79,8 @@ namespace uhd{
          * \param buf the vector of bytes
          */
         virtual void write_eeprom(
-            boost::uint16_t addr,
-            boost::uint16_t offset,
+            uint16_t addr,
+            uint16_t offset,
             const byte_vector_t &buf
         );
 
@@ -92,8 +92,8 @@ namespace uhd{
          * \return a vector of bytes
          */
         virtual byte_vector_t read_eeprom(
-            boost::uint16_t addr,
-            boost::uint16_t offset,
+            uint16_t addr,
+            uint16_t offset,
             size_t num_bytes
         );
     };
@@ -150,10 +150,10 @@ namespace uhd{
         * \param readback true to readback a value
         * \return spi data if readback set
         */
-        virtual boost::uint32_t transact_spi(
+        virtual uint32_t transact_spi(
             int which_slave,
             const spi_config_t &config,
-            boost::uint32_t data,
+            uint32_t data,
             size_t num_bits,
             bool readback
         ) = 0;
@@ -166,10 +166,10 @@ namespace uhd{
         * \param num_bits how many bits in data
         * \return spi data
         */
-        virtual boost::uint32_t read_spi(
+        virtual uint32_t read_spi(
             int which_slave,
             const spi_config_t &config,
-            boost::uint32_t data,
+            uint32_t data,
             size_t num_bits
         );
 
@@ -183,7 +183,7 @@ namespace uhd{
         virtual void write_spi(
             int which_slave,
             const spi_config_t &config,
-            boost::uint32_t data,
+            uint32_t data,
             size_t num_bits
         );
     };

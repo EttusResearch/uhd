@@ -131,7 +131,7 @@ rx_streamer::sptr e100_impl::get_rx_stream(const uhd::stream_args_t &args_){
 
     //calculate packet size
     static const size_t hdr_size = 0
-        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + vrt::max_if_hdr_words32*sizeof(uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
         - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
@@ -189,8 +189,8 @@ tx_streamer::sptr e100_impl::get_tx_stream(const uhd::stream_args_t &args_){
 
     //calculate packet size
     static const size_t hdr_size = 0
-        + vrt_send_header_offset_words32*sizeof(boost::uint32_t)
-        + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+        + vrt_send_header_offset_words32*sizeof(uint32_t)
+        + vrt::max_if_hdr_words32*sizeof(uint32_t)
         + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
         - sizeof(vrt::if_packet_info_t().sid) //no stream id ever used
         - sizeof(vrt::if_packet_info_t().cid) //no class id ever used

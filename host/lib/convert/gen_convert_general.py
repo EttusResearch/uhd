@@ -149,18 +149,18 @@ DECLARE_CONVERTER(${cpu_type}, ${width}, sc16_item16_usrp1, 1, PRIORITY_GENERAL)
     % for w in range(width):
     const ${cpu_type}_t *input${w} = reinterpret_cast<const ${cpu_type}_t *>(inputs[${w}]);
     % endfor
-    boost::uint16_t *output = reinterpret_cast<boost::uint16_t *>(outputs[0]);
+    uint16_t *output = reinterpret_cast<uint16_t *>(outputs[0]);
 
     for (size_t i = 0, j = 0; i < nsamps; i++){
         % for w in range(width):
-        output[j++] = ${to_wire}(boost::uint16_t(boost::int16_t(input${w}[i].real()${do_scale})));
-        output[j++] = ${to_wire}(boost::uint16_t(boost::int16_t(input${w}[i].imag()${do_scale})));
+        output[j++] = ${to_wire}(uint16_t(int16_t(input${w}[i].real()${do_scale})));
+        output[j++] = ${to_wire}(uint16_t(int16_t(input${w}[i].imag()${do_scale})));
         % endfor
     }
 }
 
 DECLARE_CONVERTER(sc16_item16_usrp1, 1, ${cpu_type}, ${width}, PRIORITY_GENERAL){
-    const boost::uint16_t *input = reinterpret_cast<const boost::uint16_t *>(inputs[0]);
+    const uint16_t *input = reinterpret_cast<const uint16_t *>(inputs[0]);
     % for w in range(width):
     ${cpu_type}_t *output${w} = reinterpret_cast<${cpu_type}_t *>(outputs[${w}]);
     % endfor
@@ -168,8 +168,8 @@ DECLARE_CONVERTER(sc16_item16_usrp1, 1, ${cpu_type}, ${width}, PRIORITY_GENERAL)
     for (size_t i = 0, j = 0; i < nsamps; i++){
         % for w in range(width):
         output${w}[i] = ${cpu_type}_t(
-            boost::int16_t(${to_host}(input[j+0]))${do_scale},
-            boost::int16_t(${to_host}(input[j+1]))${do_scale}
+            int16_t(${to_host}(input[j+0]))${do_scale},
+            int16_t(${to_host}(input[j+1]))${do_scale}
         );
         j += 2;
         % endfor
@@ -177,7 +177,7 @@ DECLARE_CONVERTER(sc16_item16_usrp1, 1, ${cpu_type}, ${width}, PRIORITY_GENERAL)
 }
 
 DECLARE_CONVERTER(sc8_item16_usrp1, 1, ${cpu_type}, ${width}, PRIORITY_GENERAL){
-    const boost::uint16_t *input = reinterpret_cast<const boost::uint16_t *>(inputs[0]);
+    const uint16_t *input = reinterpret_cast<const uint16_t *>(inputs[0]);
     % for w in range(width):
     ${cpu_type}_t *output${w} = reinterpret_cast<${cpu_type}_t *>(outputs[${w}]);
     % endfor
@@ -185,10 +185,10 @@ DECLARE_CONVERTER(sc8_item16_usrp1, 1, ${cpu_type}, ${width}, PRIORITY_GENERAL){
     for (size_t i = 0, j = 0; i < nsamps; i++){
         % for w in range(width):
         {
-        const boost::uint16_t num = ${to_host}(input[j++]);
+        const uint16_t num = ${to_host}(input[j++]);
         output${w}[i] = ${cpu_type}_t(
-            boost::int8_t(num)${do_scale},
-            boost::int8_t(num >> 8)${do_scale}
+            int8_t(num)${do_scale},
+            int8_t(num >> 8)${do_scale}
         );
         }
         % endfor

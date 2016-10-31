@@ -33,10 +33,10 @@ n230_core_spi_core::n230_core_spi_core(
     change_perif(default_perif);
 }
 
-boost::uint32_t n230_core_spi_core::transact_spi(
+uint32_t n230_core_spi_core::transact_spi(
     int which_slave,
     const spi_config_t &config,
-    boost::uint32_t data,
+    uint32_t data,
     size_t num_bits,
     bool readback)
 {

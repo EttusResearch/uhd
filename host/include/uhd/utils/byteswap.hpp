@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_UTILS_BYTESWAP_HPP
 
 #include <uhd/config.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 
 /*! \file byteswap.hpp
  *
@@ -29,13 +29,13 @@
 namespace uhd{
 
     //! perform a byteswap on a 16 bit integer
-    boost::uint16_t byteswap(boost::uint16_t);
+    uint16_t byteswap(uint16_t);
 
     //! perform a byteswap on a 32 bit integer
-    boost::uint32_t byteswap(boost::uint32_t);
+    uint32_t byteswap(uint32_t);
 
     //! perform a byteswap on a 64 bit integer
-    boost::uint64_t byteswap(boost::uint64_t);
+    uint64_t byteswap(uint64_t);
 
     //! network to host: short, long, or long-long
     template<typename T> T ntohx(T);

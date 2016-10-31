@@ -82,7 +82,7 @@ public:
     void reset_codec();
 
     void self_test_adc(
-        boost::uint32_t ramp_time_ms = 100);
+        uint32_t ramp_time_ms = 100);
 
     static void extended_adc_test(
         const std::vector<x300_radio_ctrl_impl::sptr>&, double duration_s);
@@ -154,7 +154,7 @@ private:
 
     void _self_cal_adc_capture_delay(bool print_status);
 
-    void _check_adc(const boost::uint32_t val);
+    void _check_adc(const uint32_t val);
 
     void _set_db_eeprom(uhd::i2c_iface::sptr i2c, const size_t, const uhd::usrp::dboard_eeprom_t &);
 

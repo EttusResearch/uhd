@@ -134,7 +134,7 @@ public:
 private:
     udp_simple::sptr _udp;
     size_t _len, _off;
-    boost::uint8_t _buf[udp_simple::mtu];
+    uint8_t _buf[udp_simple::mtu];
     std::string _line;
 };
 

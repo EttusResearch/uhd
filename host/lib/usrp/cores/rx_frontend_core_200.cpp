@@ -31,8 +31,8 @@ using namespace uhd;
 #define OFFSET_SET   (1ul << 30)
 #define FLAG_MASK (OFFSET_FIXED | OFFSET_SET)
 
-static boost::uint32_t fs_to_bits(const double num, const size_t bits){
-    return boost::int32_t(boost::math::round(num * (1 << (bits-1))));
+static uint32_t fs_to_bits(const double num, const size_t bits){
+    return int32_t(boost::math::round(num * (1 << (bits-1))));
 }
 
 rx_frontend_core_200::~rx_frontend_core_200(void){
@@ -69,7 +69,7 @@ public:
         return std::complex<double>(_i_dc_off/scaler, _q_dc_off/scaler);
     }
 
-    void set_dc_offset(const boost::uint32_t flags){
+    void set_dc_offset(const uint32_t flags){
         _iface->poke32(REG_RX_FE_OFFSET_I, flags | (_i_dc_off & ~FLAG_MASK));
         _iface->poke32(REG_RX_FE_OFFSET_Q, flags | (_q_dc_off & ~FLAG_MASK));
     }
@@ -96,7 +96,7 @@ public:
     }
 
 private:
-    boost::int32_t _i_dc_off, _q_dc_off;
+    int32_t _i_dc_off, _q_dc_off;
     wb_iface::sptr _iface;
     const size_t _base;
 };

@@ -19,7 +19,7 @@
 #include "x300_clock_ctrl.hpp"
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/math.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/format.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <stdexcept>
@@ -27,7 +27,7 @@
 #include <cstdlib>
 
 static const double X300_REF_CLK_OUT_RATE  = 10e6;
-static const boost::uint16_t X300_MAX_CLKOUT_DIV = 1045;
+static const uint16_t X300_MAX_CLKOUT_DIV = 1045;
 
 struct x300_clk_delays {
     x300_clk_delays() :
@@ -118,9 +118,9 @@ public:
     }
 
     void set_dboard_rate(const x300_clock_which_t which, double rate) {
-        boost::uint16_t div = boost::uint16_t(_vco_freq / rate);
-        boost::uint16_t *reg = NULL;
-        boost::uint8_t addr = 0xFF;
+        uint16_t div = uint16_t(_vco_freq / rate);
+        uint16_t *reg = NULL;
+        uint8_t addr = 0xFF;
 
         // Make sure requested rate is an even divisor of the VCO frequency
         if (not math::frequencies_are_equal(_vco_freq / div, rate))
@@ -234,16 +234,16 @@ public:
         this->write_regs(8);
     }
 
-    void write_regs(boost::uint8_t addr) {
-        boost::uint32_t data = _lmk04816_regs.get_reg(addr);
+    void write_regs(uint8_t addr) {
+        uint32_t data = _lmk04816_regs.get_reg(addr);
         _spiface->write_spi(_slaveno, spi_config_t::EDGE_RISE, data,32);
     }
 
     double set_clock_delay(const x300_clock_which_t which, const double delay_ns, const bool resync = true) {
         //All dividers have are delayed by 5 taps by default. The delay
         //set by this function is relative to the 5 tap delay
-        static const boost::uint16_t DDLY_MIN_TAPS  = 5;
-        static const boost::uint16_t DDLY_MAX_TAPS  = 522;  //Extended mode
+        static const uint16_t DDLY_MIN_TAPS  = 5;
+        static const uint16_t DDLY_MAX_TAPS  = 522;  //Extended mode
 
         //The resolution and range of the analog delay is fixed
         static const double ADLY_RES_NS = 0.025;
@@ -259,19 +259,19 @@ public:
         //A caveat here is that the analog delay starts at ADLY_MIN_NS, so we need to back off
         //by that much when coming up with the digital taps so that the difference can be made
         //up using the analog delay.
-        boost::uint16_t ddly_taps = 0;
+        uint16_t ddly_taps = 0;
         if (delay_ns < ADLY_MIN_NS) {
-            ddly_taps = static_cast<boost::uint16_t>(std::floor((delay_ns)/vco_period_ns));
+            ddly_taps = static_cast<uint16_t>(std::floor((delay_ns)/vco_period_ns));
         } else {
-            ddly_taps = static_cast<boost::uint16_t>(std::floor((delay_ns-ADLY_MIN_NS)/vco_period_ns));
+            ddly_taps = static_cast<uint16_t>(std::floor((delay_ns-ADLY_MIN_NS)/vco_period_ns));
         }
         double leftover_delay = delay_ns - (vco_period_ns * ddly_taps);
 
         //Compute settings
-        boost::uint16_t ddly_value    = ddly_taps + DDLY_MIN_TAPS;
+        uint16_t ddly_value    = ddly_taps + DDLY_MIN_TAPS;
         bool            adly_en       = false;
-        boost::uint8_t  adly_value    = 0;
-        boost::uint8_t  half_shift_en = 0;
+        uint8_t  adly_value    = 0;
+        uint8_t  half_shift_en = 0;
 
         if (ddly_value > DDLY_MAX_TAPS) {
             throw uhd::value_error("set_clock_delay: Requested delay is out of range.");
@@ -282,18 +282,18 @@ public:
             //The VCO is running too slowly for us to compensate the digital delay difference using
             //analog delay. Do the best we can.
             adly_en = true;
-            adly_value = static_cast<boost::uint8_t>(boost::math::round((ADLY_MAX_NS-ADLY_MIN_NS)/ADLY_RES_NS));
+            adly_value = static_cast<uint8_t>(boost::math::round((ADLY_MAX_NS-ADLY_MIN_NS)/ADLY_RES_NS));
             coerced_delay += ADLY_MAX_NS;
         } else if (leftover_delay >= ADLY_MIN_NS && leftover_delay <= ADLY_MAX_NS) {
             //The leftover delay can be compensated by the analog delay up to the analog delay resolution
             adly_en = true;
-            adly_value = static_cast<boost::uint8_t>(boost::math::round((leftover_delay-ADLY_MIN_NS)/ADLY_RES_NS));
+            adly_value = static_cast<uint8_t>(boost::math::round((leftover_delay-ADLY_MIN_NS)/ADLY_RES_NS));
             coerced_delay += ADLY_MIN_NS+(ADLY_RES_NS*adly_value);
         } else if (leftover_delay >= (ADLY_MIN_NS - half_vco_period_ns) && leftover_delay < ADLY_MIN_NS) {
             //The leftover delay if less than the minimum supported analog delay but if we move the digital
             //delay back by half a VCO cycle then it will be in the range of the analog delay. So do that!
             adly_en = true;
-            adly_value = static_cast<boost::uint8_t>(boost::math::round((leftover_delay+half_vco_period_ns-ADLY_MIN_NS)/ADLY_RES_NS));
+            adly_value = static_cast<uint8_t>(boost::math::round((leftover_delay+half_vco_period_ns-ADLY_MIN_NS)/ADLY_RES_NS));
             half_shift_en = 1;
             coerced_delay += ADLY_MIN_NS+(ADLY_RES_NS*adly_value)-half_vco_period_ns;
         } else {
@@ -600,10 +600,10 @@ private:
                 break;
         };
 
-        boost::uint16_t master_clock_div = static_cast<boost::uint16_t>(
+        uint16_t master_clock_div = static_cast<uint16_t>(
             std::ceil(_vco_freq / _master_clock_rate));
 
-        boost::uint16_t dboard_div = static_cast<boost::uint16_t>(
+        uint16_t dboard_div = static_cast<uint16_t>(
             std::ceil(_vco_freq / _dboard_clock_rate));
 
         /* Reset the LMK clock controller. */
@@ -632,7 +632,7 @@ private:
         // Register 5
         _lmk04816_regs.CLKout10_11_PD = lmk04816_regs_t::CLKOUT10_11_PD_NORMAL;
         _lmk04816_regs.CLKout10_11_DIV =
-            static_cast<boost::uint16_t>(std::ceil(_vco_freq / _system_ref_rate));
+            static_cast<uint16_t>(std::ceil(_vco_freq / _system_ref_rate));
 
         // Register 6
         _lmk04816_regs.CLKout0_TYPE = lmk04816_regs_t::CLKOUT0_TYPE_LVDS; //FPGA

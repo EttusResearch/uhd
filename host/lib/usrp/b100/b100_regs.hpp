@@ -18,7 +18,7 @@
 #ifndef INCLUDED_B100_REGS_HPP
 #define INCLUDED_B100_REGS_HPP
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 
 #define TOREG(x) ((x)*4)
 

@@ -29,9 +29,9 @@ static void pack_and_unpack(
 ){
     if (if_packet_info_in.num_payload_bytes == 0)
     {
-        if_packet_info_in.num_payload_bytes = if_packet_info_in.num_payload_words32 * sizeof(boost::uint32_t);
+        if_packet_info_in.num_payload_bytes = if_packet_info_in.num_payload_words32 * sizeof(uint32_t);
     }
-    boost::uint32_t packet_buff[2048];
+    uint32_t packet_buff[2048];
 
     //pack metadata into a vrt header
     vrt::if_hdr_pack_be(

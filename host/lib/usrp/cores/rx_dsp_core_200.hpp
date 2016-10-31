@@ -36,7 +36,7 @@ public:
     static sptr make(
         uhd::wb_iface::sptr iface,
         const size_t dsp_base, const size_t ctrl_base,
-        const boost::uint32_t sid, const bool lingering_packet = false
+        const uint32_t sid, const bool lingering_packet = false
     );
 
     virtual void clear(void) = 0;

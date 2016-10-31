@@ -19,7 +19,7 @@
 
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <stdexcept>

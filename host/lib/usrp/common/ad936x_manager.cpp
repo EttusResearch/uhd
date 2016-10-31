@@ -113,15 +113,15 @@ class ad936x_manager_impl : public ad936x_manager
         {
             // Create test word
             boost::hash_combine(hash, i);
-            const boost::uint32_t word32 = boost::uint32_t(hash) & 0xfff0fff0;
+            const uint32_t word32 = uint32_t(hash) & 0xfff0fff0;
 
             // Write test word to codec_idle idle register (on TX side)
             poker_functor(word32);
 
             // Read back values - TX is lower 32-bits and RX is upper 32-bits
-            const boost::uint64_t rb_word64 = peeker_functor();
-            const boost::uint32_t rb_tx = boost::uint32_t(rb_word64 >> 32);
-            const boost::uint32_t rb_rx = boost::uint32_t(rb_word64 & 0xffffffff);
+            const uint64_t rb_word64 = peeker_functor();
+            const uint32_t rb_tx = uint32_t(rb_word64 >> 32);
+            const uint32_t rb_rx = uint32_t(rb_word64 & 0xffffffff);
 
             // Compare TX and RX values to test word
             bool test_fail = word32 != rb_tx or word32 != rb_rx;

@@ -22,7 +22,7 @@
 #include <uhd/types/sensors.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/tokenizer.hpp>
@@ -118,8 +118,8 @@ private:
             return false;
 
         std::stringstream ss;
-        boost::uint32_t string_crc;
-        boost::uint32_t calculated_crc = 0;
+        uint32_t string_crc;
+        uint32_t calculated_crc = 0;
 
         // get crc from string
         ss << std::hex << nmea.substr(nmea.length()-2, 2);

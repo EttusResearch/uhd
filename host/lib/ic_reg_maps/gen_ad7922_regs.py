@@ -30,15 +30,15 @@ chn              0[13]          0
 # Template for methods in the body of the struct
 ########################################################################
 BODY_TMPL="""\
-boost::uint16_t get_reg(void){
-    boost::uint16_t reg = 0;
+uint16_t get_reg(void){
+    uint16_t reg = 0;
     % for reg in filter(lambda r: r.get_addr() == 0, regs):
-    reg |= (boost::uint32_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+    reg |= (uint32_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
     % endfor
     return reg;
 }
 
-void set_reg(boost::uint16_t reg){
+void set_reg(uint16_t reg){
     % for reg in filter(lambda r: r.get_addr() == 0, regs):
     ${reg.get_name()} = ${reg.get_type()}((reg >> ${reg.get_shift()}) & ${reg.get_mask()});
     % endfor

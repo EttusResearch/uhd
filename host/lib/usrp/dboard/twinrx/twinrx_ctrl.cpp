@@ -27,7 +27,7 @@ using namespace usrp;
 using namespace dboard::twinrx;
 typedef twinrx_cpld_regmap rm;
 
-static boost::uint32_t bool2bin(bool x) { return x ? 1 : 0; }
+static uint32_t bool2bin(bool x) { return x ? 1 : 0; }
 
 static const double TWINRX_DESIRED_REFERENCE_FREQ = 50e6;
 
@@ -224,7 +224,7 @@ public:
     void set_lb_preselector(channel_t ch, preselector_path_t path, bool commit = true)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
-        boost::uint32_t sw7val = 0, sw8val = 0;
+        uint32_t sw7val = 0, sw8val = 0;
         switch (path) {
             case PRESEL_PATH1: sw7val = 3; sw8val = 1; break;
             case PRESEL_PATH2: sw7val = 2; sw8val = 0; break;
@@ -246,7 +246,7 @@ public:
     void set_hb_preselector(channel_t ch, preselector_path_t path, bool commit = true)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
-        boost::uint32_t sw9ch1val = 0, sw10ch1val = 0, sw9ch2val = 0, sw10ch2val = 0;
+        uint32_t sw9ch1val = 0, sw10ch1val = 0, sw9ch2val = 0, sw10ch2val = 0;
         switch (path) {
             case PRESEL_PATH1: sw9ch1val = 3; sw10ch1val = 0; sw9ch2val = 0; sw10ch2val = 3; break;
             case PRESEL_PATH2: sw9ch1val = 1; sw10ch1val = 2; sw9ch2val = 1; sw10ch2val = 1; break;
@@ -266,7 +266,7 @@ public:
 
     }
 
-    void set_input_atten(channel_t ch, boost::uint8_t atten, bool commit = true)
+    void set_input_atten(channel_t ch, uint8_t atten, bool commit = true)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -278,7 +278,7 @@ public:
         if (commit) _commit();
     }
 
-    void set_lb_atten(channel_t ch, boost::uint8_t atten, bool commit = true)
+    void set_lb_atten(channel_t ch, uint8_t atten, bool commit = true)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -290,7 +290,7 @@ public:
         if (commit) _commit();
     }
 
-    void set_hb_atten(channel_t ch, boost::uint8_t atten, bool commit = true)
+    void set_hb_atten(channel_t ch, uint8_t atten, bool commit = true)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
@@ -502,9 +502,9 @@ private:    //Functions
         _cpld_regs->if0_reg2.flush();
     }
 
-    void _write_lo_spi(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs)
+    void _write_lo_spi(dboard_iface::unit_t unit, const std::vector<uint32_t> &regs)
     {
-        BOOST_FOREACH(boost::uint32_t reg, regs) {
+        BOOST_FOREACH(uint32_t reg, regs) {
              spi_config_t spi_config = spi_config_t(spi_config_t::EDGE_RISE);
              spi_config.use_custom_divider = true;
              spi_config.divider = 67;

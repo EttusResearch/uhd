@@ -39,7 +39,7 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 
 //! CVITA uses 12-Bit sequence numbers
-static const boost::uint32_t HW_SEQ_NUM_MASK = 0xfff;
+static const uint32_t HW_SEQ_NUM_MASK = 0xfff;
 
 
 /***********************************************************************
@@ -236,7 +236,7 @@ static void handle_rx_flowctrl(
     if (not buff) {
         throw uhd::runtime_error("handle_rx_flowctrl timed out getting a send buffer");
     }
-    boost::uint32_t *pkt = buff->cast<boost::uint32_t *>();
+    uint32_t *pkt = buff->cast<uint32_t *>();
 
     // Recover sequence number. The sequence numbers handled by the streamers
     // are 12 Bits, but we want to know the 32-Bit sequence number.
@@ -255,7 +255,7 @@ static void handle_rx_flowctrl(
     vrt::if_packet_info_t packet_info;
     packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_FC;
     packet_info.num_payload_words32 = RXFC_PACKET_LEN_IN_WORDS;
-    packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(boost::uint32_t);
+    packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(uint32_t);
     packet_info.packet_count = seq32;
     packet_info.sob = false;
     packet_info.eob = false;
@@ -270,14 +270,14 @@ static void handle_rx_flowctrl(
         // Load Header:
         vrt::chdr::if_hdr_pack_be(pkt, packet_info);
         // Load Payload: (the sequence number)
-        pkt[packet_info.num_header_words32+RXFC_CMD_CODE_OFFSET] = uhd::htonx<boost::uint32_t>(0);
-        pkt[packet_info.num_header_words32+RXFC_SEQ_NUM_OFFSET]  = uhd::htonx<boost::uint32_t>(seq32);
+        pkt[packet_info.num_header_words32+RXFC_CMD_CODE_OFFSET] = uhd::htonx<uint32_t>(0);
+        pkt[packet_info.num_header_words32+RXFC_SEQ_NUM_OFFSET]  = uhd::htonx<uint32_t>(seq32);
     } else {
         // Load Header:
         vrt::chdr::if_hdr_pack_le(pkt, packet_info);
         // Load Payload: (the sequence number)
-        pkt[packet_info.num_header_words32+RXFC_CMD_CODE_OFFSET] = uhd::htowx<boost::uint32_t>(0);
-        pkt[packet_info.num_header_words32+RXFC_SEQ_NUM_OFFSET]  = uhd::htowx<boost::uint32_t>(seq32);
+        pkt[packet_info.num_header_words32+RXFC_CMD_CODE_OFFSET] = uhd::htowx<uint32_t>(0);
+        pkt[packet_info.num_header_words32+RXFC_SEQ_NUM_OFFSET]  = uhd::htowx<uint32_t>(seq32);
     }
 
     //std::cout << "  SID=" << std::hex << sid << " hdr bits=" << packet_info.packet_type << " seq32=" << seq32 << std::endl;
@@ -290,7 +290,7 @@ static void handle_rx_flowctrl(
     //}
 
     //send the buffer over the interface
-    buff->commit(sizeof(boost::uint32_t)*(packet_info.num_packet_words32));
+    buff->commit(sizeof(uint32_t)*(packet_info.num_packet_words32));
 }
 
 /***********************************************************************
@@ -384,11 +384,11 @@ static void handle_tx_async_msgs(
 
     //extract packet info
     vrt::if_packet_info_t if_packet_info;
-    if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
-    const boost::uint32_t *packet_buff = buff->cast<const boost::uint32_t *>();
+    if_packet_info.num_packet_words32 = buff->size()/sizeof(uint32_t);
+    const uint32_t *packet_buff = buff->cast<const uint32_t *>();
 
     //unpacking can fail
-    boost::uint32_t (*endian_conv)(boost::uint32_t) = uhd::ntohx;
+    uint32_t (*endian_conv)(uint32_t) = uhd::ntohx;
     try
     {
         if (endianness == ENDIANNESS_BIG)

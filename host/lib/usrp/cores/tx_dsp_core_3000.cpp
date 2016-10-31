@@ -66,8 +66,8 @@ public:
     }
 
     void set_link_rate(const double rate){
-        //_link_rate = rate/sizeof(boost::uint32_t); //in samps/s
-        _link_rate = rate/sizeof(boost::uint16_t); //in samps/s (allows for 8sc)
+        //_link_rate = rate/sizeof(uint32_t); //in samps/s
+        _link_rate = rate/sizeof(uint16_t); //in samps/s (allows for 8sc)
     }
 
     uhd::meta_range_t get_host_rates(void){
@@ -127,7 +127,7 @@ public:
   // Further more factor in OTW format which adds further gain factor to weight output samples correctly.
     void update_scalar(void){
         const double target_scalar = (1 << 16)*_scaling_adjustment/_dsp_extra_scaling;
-        const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
+        const int32_t actual_scalar = boost::math::iround(target_scalar);
         _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
         _iface->poke32(REG_DSP_TX_SCALE_IQ, actual_scalar);
     }
@@ -140,7 +140,7 @@ public:
         double actual_freq;
         int32_t freq_word;
         get_freq_and_freq_word(requested_freq, _tick_rate, actual_freq, freq_word);
-        _iface->poke32(REG_DSP_TX_FREQ, boost::uint32_t(freq_word));
+        _iface->poke32(REG_DSP_TX_FREQ, uint32_t(freq_word));
         return actual_freq;
     }
 

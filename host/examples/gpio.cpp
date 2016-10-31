@@ -80,7 +80,7 @@
 #include <boost/assign.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/thread.hpp>
 #include <csignal>
 #include <iostream>

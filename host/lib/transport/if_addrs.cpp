@@ -17,7 +17,7 @@
 
 #include <uhd/transport/if_addrs.hpp>
 #include <boost/asio/ip/address_v4.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <iostream>
 
 /***********************************************************************
@@ -53,9 +53,9 @@ std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
             if (if_addr.inet == if_addr.bcast or sockaddr_to_ip_addr(iter->ifa_broadaddr) == boost::asio::ip::address_v4(0)){
                 //manually calculate broadcast address
                 //https://svn.boost.org/trac/boost/ticket/5198
-                const boost::uint32_t addr = sockaddr_to_ip_addr(iter->ifa_addr).to_ulong();
-                const boost::uint32_t mask = sockaddr_to_ip_addr(iter->ifa_netmask).to_ulong();
-                const boost::uint32_t bcast = (addr & mask) | ~mask;
+                const uint32_t addr = sockaddr_to_ip_addr(iter->ifa_addr).to_ulong();
+                const uint32_t mask = sockaddr_to_ip_addr(iter->ifa_netmask).to_ulong();
+                const uint32_t bcast = (addr & mask) | ~mask;
                 if_addr.bcast = boost::asio::ip::address_v4(bcast).to_string();
             }
 
@@ -93,9 +93,9 @@ std::vector<uhd::transport::if_addrs_t> uhd::transport::get_if_addrs(void){
 
     int nNumInterfaces = nBytesReturned / sizeof(INTERFACE_INFO);
     for (int i = 0; i < nNumInterfaces; ++i) {
-        boost::uint32_t iiAddress = ntohl(reinterpret_cast<sockaddr_in&>(InterfaceList[i].iiAddress).sin_addr.s_addr);
-        boost::uint32_t iiNetmask = ntohl(reinterpret_cast<sockaddr_in&>(InterfaceList[i].iiNetmask).sin_addr.s_addr);
-        boost::uint32_t iiBroadcastAddress = (iiAddress & iiNetmask) | ~iiNetmask;
+        uint32_t iiAddress = ntohl(reinterpret_cast<sockaddr_in&>(InterfaceList[i].iiAddress).sin_addr.s_addr);
+        uint32_t iiNetmask = ntohl(reinterpret_cast<sockaddr_in&>(InterfaceList[i].iiNetmask).sin_addr.s_addr);
+        uint32_t iiBroadcastAddress = (iiAddress & iiNetmask) | ~iiNetmask;
 
         if_addrs_t if_addr;
         if_addr.inet = boost::asio::ip::address_v4(iiAddress).to_string();

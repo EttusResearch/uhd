@@ -47,7 +47,7 @@ public:
 
     virtual void set_tick_rate(const double rate) = 0;
 
-    virtual void set_sid(const boost::uint32_t sid) = 0;
+    virtual void set_sid(const uint32_t sid) = 0;
 
     virtual void handle_overflow(void) = 0;
 

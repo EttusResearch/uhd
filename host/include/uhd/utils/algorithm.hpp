@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_UTILS_ALGORITHM_HPP
 
 #include <algorithm>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
 

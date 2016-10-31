@@ -18,7 +18,7 @@
 #ifndef INCLUDED_B200_REGS_HPP
 #define INCLUDED_B200_REGS_HPP
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 
 #define TOREG(x) ((x)*4)
 
@@ -61,64 +61,64 @@ static const double AD9361_SPI_RATE = 1e6;
 static const double ADF4001_SPI_RATE = 10e3; //slow for large time constant on spi lines
 
 /* ATR Control Bits */
-static const boost::uint32_t TX_ENABLE1 = (1 << 7);
-static const boost::uint32_t SFDX1_RX = (1 << 6);
-static const boost::uint32_t SFDX1_TX = (1 << 5);
-static const boost::uint32_t SRX1_RX = (1 << 4);
-static const boost::uint32_t SRX1_TX = (1 << 3);
-static const boost::uint32_t LED_RX1 = (1 << 2);
-static const boost::uint32_t LED_TXRX_RX1 = (1 << 1);
-static const boost::uint32_t LED_TXRX_TX1 = (1 << 0);
+static const uint32_t TX_ENABLE1 = (1 << 7);
+static const uint32_t SFDX1_RX = (1 << 6);
+static const uint32_t SFDX1_TX = (1 << 5);
+static const uint32_t SRX1_RX = (1 << 4);
+static const uint32_t SRX1_TX = (1 << 3);
+static const uint32_t LED_RX1 = (1 << 2);
+static const uint32_t LED_TXRX_RX1 = (1 << 1);
+static const uint32_t LED_TXRX_TX1 = (1 << 0);
 
-static const boost::uint32_t TX_ENABLE2 = (1 << 7);
-static const boost::uint32_t SFDX2_RX = (1 << 6);
-static const boost::uint32_t SFDX2_TX = (1 << 5);
-static const boost::uint32_t SRX2_RX = (1 << 4);
-static const boost::uint32_t SRX2_TX = (1 << 3);
-static const boost::uint32_t LED_RX2 = (1 << 2);
-static const boost::uint32_t LED_TXRX_RX2 = (1 << 1);
-static const boost::uint32_t LED_TXRX_TX2 = (1 << 0);
+static const uint32_t TX_ENABLE2 = (1 << 7);
+static const uint32_t SFDX2_RX = (1 << 6);
+static const uint32_t SFDX2_TX = (1 << 5);
+static const uint32_t SRX2_RX = (1 << 4);
+static const uint32_t SRX2_TX = (1 << 3);
+static const uint32_t LED_RX2 = (1 << 2);
+static const uint32_t LED_TXRX_RX2 = (1 << 1);
+static const uint32_t LED_TXRX_TX2 = (1 << 0);
 
 
 /* ATR State Definitions. */
-static const boost::uint32_t STATE_OFF = 0x00;
+static const uint32_t STATE_OFF = 0x00;
 
 ///////////////////////// side 1 ///////////////////////////////////
-static const boost::uint32_t STATE_RX1_RX2 = (SFDX1_RX
+static const uint32_t STATE_RX1_RX2 = (SFDX1_RX
                                                 | SFDX1_TX
                                                 | LED_RX1);
 
-static const boost::uint32_t STATE_RX1_TXRX = (SRX1_RX
+static const uint32_t STATE_RX1_TXRX = (SRX1_RX
                                                 | SRX1_TX
                                                 | LED_TXRX_RX1);
 
-static const boost::uint32_t STATE_FDX1_TXRX = (TX_ENABLE1
+static const uint32_t STATE_FDX1_TXRX = (TX_ENABLE1
                                                 | SFDX1_RX
                                                 | SFDX1_TX
                                                 | LED_TXRX_TX1
                                                 | LED_RX1);
 
-static const boost::uint32_t STATE_TX1_TXRX = (TX_ENABLE1
+static const uint32_t STATE_TX1_TXRX = (TX_ENABLE1
                                                 | SFDX1_RX
                                                 | SFDX1_TX
                                                 | LED_TXRX_TX1);
 
 ///////////////////////// side 2 ///////////////////////////////////
-static const boost::uint32_t STATE_RX2_RX2 = (SFDX2_RX
+static const uint32_t STATE_RX2_RX2 = (SFDX2_RX
                                                 | SRX2_TX
                                                 | LED_RX2);
 
-static const boost::uint32_t STATE_RX2_TXRX = (SRX2_TX
+static const uint32_t STATE_RX2_TXRX = (SRX2_TX
                                                 | SRX2_RX
                                                 | LED_TXRX_RX2);
 
-static const boost::uint32_t STATE_FDX2_TXRX = (TX_ENABLE2
+static const uint32_t STATE_FDX2_TXRX = (TX_ENABLE2
                                                 | SFDX2_RX
                                                 | SFDX2_TX
                                                 | LED_TXRX_TX2
                                                 | LED_RX2);
 
-static const boost::uint32_t STATE_TX2_TXRX = (TX_ENABLE2
+static const uint32_t STATE_TX2_TXRX = (TX_ENABLE2
                                                 | SFDX2_RX
                                                 | SFDX2_TX
                                                 | LED_TXRX_TX2);

@@ -30,8 +30,8 @@ COMMON_TMPL = """<% import time %>\
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
-#include <boost/cstdint.hpp>
 #include <set>
+#include <stdint.h>
 
 class ${name}_t{
 public:
@@ -145,7 +145,7 @@ class reg:
         return self._default
     def get_type(self):
         if self.get_enums(): return '%s_t'%self.get_name()
-        return 'boost::uint%d_t'%max(2**math.ceil(math.log(self.get_bit_width(), 2)), 8)
+        return 'uint%d_t'%max(2**math.ceil(math.log(self.get_bit_width(), 2)), 8)
     def get_shift(self): return self._addr_spec[0]
     def get_mask(self): return hex(int('1'*self.get_bit_width(), 2))
     def get_bit_width(self): return self._addr_spec[1] - self._addr_spec[0] + 1
@@ -166,7 +166,7 @@ class mreg:
     def get_regs(self): return self._regs
     def get_bit_width(self): return sum(map(reg.get_bit_width, self._regs))
     def get_type(self):
-        return 'boost::uint%d_t'%max(2**math.ceil(math.log(self.get_bit_width(), 2)), 8)
+        return 'uint%d_t'%max(2**math.ceil(math.log(self.get_bit_width(), 2)), 8)
 
 def generate(name, regs_tmpl, body_tmpl='', file=__file__, append=False):
     #evaluate the regs template and parse each line into a register

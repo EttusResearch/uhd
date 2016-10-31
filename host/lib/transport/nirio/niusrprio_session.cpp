@@ -77,7 +77,7 @@ nirio_status niusrprio_session::open(
         //That is why we need another identifier to qualify the signature. The BIN
         //checksum is a good candidate.
         std::string lvbitx_checksum(_lvbitx->get_bitstream_checksum());
-        boost::uint16_t download_fpga = (force_download || (_read_bitstream_checksum() != lvbitx_checksum)) ? 1 : 0;
+        uint16_t download_fpga = (force_download || (_read_bitstream_checksum() != lvbitx_checksum)) ? 1 : 0;
 
         nirio_status_chain(_ensure_fpga_ready(), status);
 
@@ -143,12 +143,12 @@ nirio_status niusrprio_session::_verify_signature()
 {
     //Validate the signature using the kernel proxy
     nirio_status status = NiRio_Status_Success;
-    boost::uint32_t sig_offset = 0;
+    uint32_t sig_offset = 0;
     nirio_status_chain(_riok_proxy->get_attribute(RIO_FPGA_DEFAULT_SIGNATURE_OFFSET, sig_offset), status);
     niriok_scoped_addr_space(_riok_proxy, FPGA, status);
     std::string signature;
-    for (boost::uint32_t i = 0; i < 8; i++) {
-        boost::uint32_t quarter_sig;
+    for (uint32_t i = 0; i < 8; i++) {
+        uint32_t quarter_sig;
         nirio_status_chain(_riok_proxy->peek(sig_offset, quarter_sig), status);
         signature += boost::str(boost::format("%08x") % quarter_sig);
     }
@@ -168,8 +168,8 @@ std::string niusrprio_session::_read_bitstream_checksum()
     nirio_status status = NiRio_Status_Success;
     niriok_scoped_addr_space(_riok_proxy, BUS_INTERFACE, status);
     std::string usr_signature;
-    for (boost::uint32_t i = 0; i < FPGA_USR_SIG_REG_SIZE; i+=4) {
-        boost::uint32_t quarter_sig;
+    for (uint32_t i = 0; i < FPGA_USR_SIG_REG_SIZE; i+=4) {
+        uint32_t quarter_sig;
         nirio_status_chain(_riok_proxy->peek(FPGA_USR_SIG_REG_BASE + i, quarter_sig), status);
         usr_signature += boost::str(boost::format("%08x") % quarter_sig);
     }
@@ -182,8 +182,8 @@ nirio_status niusrprio_session::_write_bitstream_checksum(const std::string& che
 {
     nirio_status status = NiRio_Status_Success;
     niriok_scoped_addr_space(_riok_proxy, BUS_INTERFACE, status);
-    for (boost::uint32_t i = 0; i < FPGA_USR_SIG_REG_SIZE; i+=4) {
-        boost::uint32_t quarter_sig;
+    for (uint32_t i = 0; i < FPGA_USR_SIG_REG_SIZE; i+=4) {
+        uint32_t quarter_sig;
         try {
             std::stringstream ss;
             ss << std::hex << checksum.substr(i*2,8);
@@ -203,14 +203,14 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
 
     //Verify that the Ettus FPGA loaded in the device. This may not be true if the
     //user is switching to UHD after using LabVIEW FPGA. In that case skip this check.
-    boost::uint32_t pcie_fpga_signature = 0;
+    uint32_t pcie_fpga_signature = 0;
     nirio_status_chain(_riok_proxy->peek(FPGA_PCIE_SIG_REG, pcie_fpga_signature), status);
     //@TODO: Remove X300 specific constants for future products
     if (pcie_fpga_signature != FPGA_X3xx_SIG_VALUE) {
         return status;
     }
 
-    boost::uint32_t reg_data = 0xffffffff;
+    uint32_t reg_data = 0xffffffff;
     nirio_status_chain(_riok_proxy->peek(FPGA_STATUS_REG, reg_data), status);
     if (nirio_status_not_fatal(status) && (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK))
     {

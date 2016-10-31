@@ -112,8 +112,8 @@ device_addrs_t usrp2_find(const device_addr_t &hint_){
 
     //send a hello control packet
     usrp2_ctrl_data_t ctrl_data_out = usrp2_ctrl_data_t();
-    ctrl_data_out.proto_ver = uhd::htonx<boost::uint32_t>(USRP2_FW_COMPAT_NUM);
-    ctrl_data_out.id = uhd::htonx<boost::uint32_t>(USRP2_CTRL_ID_WAZZUP_BRO);
+    ctrl_data_out.proto_ver = uhd::htonx<uint32_t>(USRP2_FW_COMPAT_NUM);
+    ctrl_data_out.id = uhd::htonx<uint32_t>(USRP2_CTRL_ID_WAZZUP_BRO);
     try
     {
         udp_transport->send(boost::asio::buffer(&ctrl_data_out, sizeof(ctrl_data_out)));
@@ -128,7 +128,7 @@ device_addrs_t usrp2_find(const device_addr_t &hint_){
     }
 
     //loop and recieve until the timeout
-    boost::uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
+    uint8_t usrp2_ctrl_data_in_mem[udp_simple::mtu]; //allocate max bytes for recv
     const usrp2_ctrl_data_t *ctrl_data_in = reinterpret_cast<const usrp2_ctrl_data_t *>(usrp2_ctrl_data_in_mem);
     while(true){
         size_t len = udp_transport->recv(asio::buffer(usrp2_ctrl_data_in_mem));
@@ -218,7 +218,7 @@ static mtu_result_t determine_mtu(const std::string &addr, const mtu_result_t &u
     //The FPGA offers 4K buffers, and the user may manually request this.
     //However, multiple simultaneous receives (2DSP slave + 2DSP master),
     //require that buffering to be used internally, and this is a safe setting.
-    std::vector<boost::uint8_t> buffer(std::max(user_mtu.recv_mtu, user_mtu.send_mtu));
+    std::vector<uint8_t> buffer(std::max(user_mtu.recv_mtu, user_mtu.send_mtu));
     usrp2_ctrl_data_t *ctrl_data = reinterpret_cast<usrp2_ctrl_data_t *>(&buffer.front());
     static const double echo_timeout = 0.020; //20 ms
 
@@ -302,9 +302,9 @@ static zero_copy_if::sptr make_xport(
     //Send a small data packet so the usrp2 knows the udp source port.
     //This setup must happen before further initialization occurs
     //or the async update packets will cause ICMP destination unreachable.
-    static const boost::uint32_t data[2] = {
-        uhd::htonx(boost::uint32_t(0 /* don't care seq num */)),
-        uhd::htonx(boost::uint32_t(USRP2_INVALID_VRT_HEADER))
+    static const uint32_t data[2] = {
+        uhd::htonx(uint32_t(0 /* don't care seq num */)),
+        uhd::htonx(uint32_t(USRP2_INVALID_VRT_HEADER))
     };
     transport::managed_send_buffer::sptr send_buff = xport->get_send_buff();
     std::memcpy(send_buff->cast<void*>(), &data, sizeof(data));
@@ -389,8 +389,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
         _tree->create<std::string>(mb_path / "fw_version").set(_mbc[mb].iface->get_fw_version_string());
 
         //check the fpga compatibility number
-        const boost::uint32_t fpga_compat_num = _mbc[mb].iface->peek32(U2_REG_COMPAT_NUM_RB);
-        boost::uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
+        const uint32_t fpga_compat_num = _mbc[mb].iface->peek32(U2_REG_COMPAT_NUM_RB);
+        uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
         if (fpga_major == 0){ //old version scheme
             fpga_major = fpga_minor;
             fpga_minor = 0;
@@ -520,7 +520,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
         ////////////////////////////////////////////////////////////////////
         // Create the GPSDO control
         ////////////////////////////////////////////////////////////////////
-        static const boost::uint32_t dont_look_for_gpsdo = 0x1234abcdul;
+        static const uint32_t dont_look_for_gpsdo = 0x1234abcdul;
 
         //disable check for internal GPSDO when not the following:
         switch(_mbc[mb].iface->get_rev()){

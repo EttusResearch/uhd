@@ -48,7 +48,7 @@ struct x300_uart_iface : uart_iface
     {
         const int shift = ((txoffset%4) * 8);
         if (shift == 0) txword32 = 0;
-        txword32 |= boost::uint32_t(ch) << shift;
+        txword32 |= uint32_t(ch) << shift;
         // Write out full 32 bit words or whatever we have if end of string
         if (txoffset % 4 == 3 or ch == '\n')
         {
@@ -82,15 +82,15 @@ struct x300_uart_iface : uart_iface
 
     void update_cache(void)
     {
-        boost::uint32_t device_rxoffset = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_RX_INDEX));
-        boost::uint32_t delta = device_rxoffset - rxoffset;
+        uint32_t device_rxoffset = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_RX_INDEX));
+        uint32_t delta = device_rxoffset - rxoffset;
 
         while (delta)
         {
             if (delta >= poolsize*4)
             {
                 // all the data is new - reload the entire cache
-                for (boost::uint32_t i = 0; i < poolsize; i++)
+                for (uint32_t i = 0; i < poolsize; i++)
                     _rxcache[i] = _iface->peek32(SR_ADDR(rxpool, i));
 
                 // set rxoffset to the end of the first string
@@ -104,7 +104,7 @@ struct x300_uart_iface : uart_iface
             else if (rxoffset == _last_device_rxoffset)
             {
                 // new data was added - refresh the portion of the cache that was updated
-                for (boost::uint32_t i = ((_last_device_rxoffset+1)/4) % poolsize; i != (((device_rxoffset)/4)+1) % poolsize; i = (i+1) % poolsize)
+                for (uint32_t i = ((_last_device_rxoffset+1)/4) % poolsize; i != (((device_rxoffset)/4)+1) % poolsize; i = (i+1) % poolsize)
                 {
                     _rxcache[i] = _iface->peek32(SR_ADDR(rxpool, i));
                 }
@@ -155,9 +155,9 @@ struct x300_uart_iface : uart_iface
     }
 
     wb_iface::sptr _iface;
-    boost::uint32_t rxoffset, txoffset, txword32, rxpool, txpool, poolsize;
-    boost::uint32_t _last_device_rxoffset;
-    std::vector<boost::uint32_t> _rxcache;
+    uint32_t rxoffset, txoffset, txword32, rxpool, txpool, poolsize;
+    uint32_t _last_device_rxoffset;
+    std::vector<uint32_t> _rxcache;
     std::string _rxbuff;
     boost::mutex _read_mutex;
     boost::mutex _write_mutex;

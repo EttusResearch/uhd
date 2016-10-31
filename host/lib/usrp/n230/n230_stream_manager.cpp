@@ -33,7 +33,7 @@ static const size_t N230_TX_MAX_ASYNC_MESSAGES    = 1000;
 static const size_t N230_TX_MAX_SPP               = 4092;
 static const size_t N230_TX_FC_RESPONSE_FREQ      = 10;       //per flow-control window
 
-static const boost::uint32_t N230_EVENT_CODE_FLOW_CTRL = 0;
+static const uint32_t N230_EVENT_CODE_FLOW_CTRL = 0;
 
 namespace uhd { namespace usrp { namespace n230 {
 
@@ -97,7 +97,7 @@ rx_streamer::sptr n230_stream_manager::get_rx_stream(const uhd::stream_args_t &a
 
         //calculate packet size
         static const size_t hdr_size = 0
-            + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+            + vrt::max_if_hdr_words32*sizeof(uint32_t)
             //+ sizeof(vrt::if_packet_info_t().tlr) //no longer using trailer
             - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
             - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
@@ -224,8 +224,8 @@ tx_streamer::sptr n230_stream_manager::get_tx_stream(const uhd::stream_args_t &a
 
         //calculate packet size
         static const size_t hdr_size = 0
-            + vrt::num_vrl_words32*sizeof(boost::uint32_t)
-            + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+            + vrt::num_vrl_words32*sizeof(uint32_t)
+            + vrt::max_if_hdr_words32*sizeof(uint32_t)
             //+ sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
             - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
             - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
@@ -424,7 +424,7 @@ void n230_stream_manager::_handle_rx_flowctrl(
     if (not buff) {
         throw uhd::runtime_error("handle_rx_flowctrl timed out getting a send buffer");
     }
-    boost::uint32_t *pkt = buff->cast<boost::uint32_t *>();
+    uint32_t *pkt = buff->cast<uint32_t *>();
 
     //recover seq32
     size_t& seq_sw = fc_cache->last_seq_in;
@@ -437,7 +437,7 @@ void n230_stream_manager::_handle_rx_flowctrl(
     vrt::if_packet_info_t packet_info;
     packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_CONTEXT;
     packet_info.num_payload_words32 = RXFC_PACKET_LEN_IN_WORDS;
-    packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(boost::uint32_t);
+    packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(uint32_t);
     packet_info.packet_count = seq_sw;
     packet_info.sob = false;
     packet_info.eob = false;
@@ -452,11 +452,11 @@ void n230_stream_manager::_handle_rx_flowctrl(
     _cvita_hdr_pack(pkt, packet_info);
 
     //load payload
-    pkt[packet_info.num_header_words32 + RXFC_CMD_CODE_OFFSET] = uhd::htonx<boost::uint32_t>(N230_EVENT_CODE_FLOW_CTRL);
-    pkt[packet_info.num_header_words32 + RXFC_SEQ_NUM_OFFSET] = uhd::htonx<boost::uint32_t>(seq_sw);
+    pkt[packet_info.num_header_words32 + RXFC_CMD_CODE_OFFSET] = uhd::htonx<uint32_t>(N230_EVENT_CODE_FLOW_CTRL);
+    pkt[packet_info.num_header_words32 + RXFC_SEQ_NUM_OFFSET] = uhd::htonx<uint32_t>(seq_sw);
 
     //send the buffer over the interface
-    buff->commit(sizeof(boost::uint32_t)*(packet_info.num_packet_words32));
+    buff->commit(sizeof(uint32_t)*(packet_info.num_packet_words32));
 }
 
 void n230_stream_manager::_handle_tx_async_msgs(
@@ -469,8 +469,8 @@ void n230_stream_manager::_handle_tx_async_msgs(
 
     //extract packet info
     vrt::if_packet_info_t if_packet_info;
-    if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
-    const boost::uint32_t *packet_buff = buff->cast<const boost::uint32_t *>();
+    if_packet_info.num_packet_words32 = buff->size()/sizeof(uint32_t);
+    const uint32_t *packet_buff = buff->cast<const uint32_t *>();
 
     //unpacking can fail
     uint32_t (*endian_conv)(uint32_t) = uhd::ntohx;
@@ -544,7 +544,7 @@ double n230_stream_manager::_get_tick_rate()
 }
 
 void n230_stream_manager::_cvita_hdr_unpack(
-    const boost::uint32_t *packet_buff,
+    const uint32_t *packet_buff,
     vrt::if_packet_info_t &if_packet_info)
 {
     if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
@@ -552,7 +552,7 @@ void n230_stream_manager::_cvita_hdr_unpack(
 }
 
 void n230_stream_manager::_cvita_hdr_pack(
-    boost::uint32_t *packet_buff,
+    uint32_t *packet_buff,
     vrt::if_packet_info_t &if_packet_info)
 {
     if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;

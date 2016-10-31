@@ -26,7 +26,7 @@
 class user_settings_core_200 : boost::noncopyable{
 public:
     typedef boost::shared_ptr<user_settings_core_200> sptr;
-    typedef std::pair<boost::uint8_t, boost::uint32_t> user_reg_t;
+    typedef std::pair<uint8_t, uint32_t> user_reg_t;
 
     virtual ~user_settings_core_200(void) = 0;
 

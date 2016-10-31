@@ -36,10 +36,10 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-const boost::uint16_t USRP1_VENDOR_ID  = 0xfffe;
-const boost::uint16_t USRP1_PRODUCT_ID = 0x0002;
-const boost::uint16_t FX2_VENDOR_ID    = 0x04b4;
-const boost::uint16_t FX2_PRODUCT_ID   = 0x8613;
+const uint16_t USRP1_VENDOR_ID  = 0xfffe;
+const uint16_t USRP1_PRODUCT_ID = 0x0002;
+const uint16_t FX2_VENDOR_ID    = 0x04b4;
+const uint16_t FX2_PRODUCT_ID   = 0x8613;
 static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
 
 const std::vector<usrp1_impl::dboard_slot_t> usrp1_impl::_dboard_slots = boost::assign::list_of
@@ -60,11 +60,11 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     //since an address and resource is intended for a different, non-USB, device.
     if (hint.has_key("addr") || hint.has_key("resource")) return usrp1_addrs;
 
-    boost::uint16_t vid, pid;
+    uint16_t vid, pid;
 
     if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "usrp1") {
-        vid = uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid"));
-        pid = uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"));
+        vid = uhd::cast::hexstr_cast<uint16_t>(hint.get("vid"));
+        pid = uhd::cast::hexstr_cast<uint16_t>(hint.get("pid"));
     } else {
         vid = USRP1_VENDOR_ID;
         pid = USRP1_PRODUCT_ID;
@@ -214,7 +214,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // create user-defined control objects
     ////////////////////////////////////////////////////////////////////
-    _tree->create<std::pair<boost::uint8_t, boost::uint32_t> >(mb_path / "user" / "regs")
+    _tree->create<std::pair<uint8_t, uint32_t> >(mb_path / "user" / "regs")
         .add_coerced_subscriber(boost::bind(&usrp1_impl::set_reg, this, _1));
 
     ////////////////////////////////////////////////////////////////////
@@ -432,22 +432,22 @@ usrp1_impl::~usrp1_impl(void){
  * +-----------------------------------------------+-+-----+-+-----+
  */
 size_t usrp1_impl::get_num_ddcs(void){
-    boost::uint32_t regval = _iface->peek32(FR_RB_CAPS);
+    uint32_t regval = _iface->peek32(FR_RB_CAPS);
     return (regval >> 0) & 0x0007;
 }
 
 size_t usrp1_impl::get_num_ducs(void){
-    boost::uint32_t regval = _iface->peek32(FR_RB_CAPS);
+    uint32_t regval = _iface->peek32(FR_RB_CAPS);
     return (regval >> 4) & 0x0007;
 }
 
 bool usrp1_impl::has_rx_halfband(void){
-    boost::uint32_t regval = _iface->peek32(FR_RB_CAPS);
+    uint32_t regval = _iface->peek32(FR_RB_CAPS);
     return (regval >> 3) & 0x0001;
 }
 
 bool usrp1_impl::has_tx_halfband(void){
-    boost::uint32_t regval = _iface->peek32(FR_RB_CAPS);
+    uint32_t regval = _iface->peek32(FR_RB_CAPS);
     return (regval >> 7) & 0x0001;
 }
 
@@ -489,8 +489,8 @@ void usrp1_impl::set_enb_rx_dc_offset(const std::string &db, const bool enb){
 }
 
 std::complex<double> usrp1_impl::set_rx_dc_offset(const std::string &db, const std::complex<double> &offset){
-    const boost::int32_t i_off = boost::math::iround(offset.real() * (1ul << 31));
-    const boost::int32_t q_off = boost::math::iround(offset.imag() * (1ul << 31));
+    const int32_t i_off = boost::math::iround(offset.real() * (1ul << 31));
+    const int32_t q_off = boost::math::iround(offset.imag() * (1ul << 31));
 
     if (db == "A"){
         _iface->poke32(FR_ADC_OFFSET_0, i_off);
@@ -505,7 +505,7 @@ std::complex<double> usrp1_impl::set_rx_dc_offset(const std::string &db, const s
     return std::complex<double>(double(i_off) * (1ul << 31), double(q_off) * (1ul << 31));
 }
 
-void usrp1_impl::set_reg(const std::pair<boost::uint8_t, boost::uint32_t> &reg)
+void usrp1_impl::set_reg(const std::pair<uint8_t, uint32_t> &reg)
 {
     _iface->poke32(reg.first, reg.second);
 }

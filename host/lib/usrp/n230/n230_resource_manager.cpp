@@ -89,7 +89,7 @@ n230_resource_manager::n230_resource_manager(
         n230_eth_conn_t conn_iface;
         conn_iface.ip_addr = addr;
 
-        boost::uint32_t iface_id = 0xFFFFFFFF;
+        uint32_t iface_id = 0xFFFFFFFF;
         try {
             iface_id = usrp3::usrp3_fw_ctrl_iface::get_iface_id(
                 conn_iface.ip_addr, BOOST_STRINGIZE(N230_FW_COMMS_UDP_PORT), N230_FW_PRODUCT_ID);
@@ -360,16 +360,16 @@ void n230_resource_manager::_initialize_radio(size_t instance)
     }
 }
 
-boost::uint8_t xb_ep_to_sid(fpga::xb_endpoint_t ep) {
-    return static_cast<boost::uint8_t>(ep) << 4;
+uint8_t xb_ep_to_sid(fpga::xb_endpoint_t ep) {
+    return static_cast<uint8_t>(ep) << 4;
 }
 
 const sid_t n230_resource_manager::_generate_sid(const n230_endpoint_t type, const n230_eth_port_t xport, size_t instance)
 {
     fpga::xb_endpoint_t xb_dest_ep;
-    boost::uint8_t sid_dest_ep = 0;
+    uint8_t sid_dest_ep = 0;
     fpga::xb_endpoint_t xb_ret_ep = (xport == ETH1) ? fpga::N230_XB_DST_E1 : fpga::N230_XB_DST_E0;
-    boost::uint8_t sid_ret_addr = (xport == ETH1) ? N230_HOST_SRC_ADDR_ETH1 : N230_HOST_SRC_ADDR_ETH0;
+    uint8_t sid_ret_addr = (xport == ETH1) ? N230_HOST_SRC_ADDR_ETH1 : N230_HOST_SRC_ADDR_ETH0;
 
     if (type == CORE or type == GPS_UART) {
         //Non-radio endpoints
@@ -399,10 +399,10 @@ const sid_t n230_resource_manager::_generate_sid(const n230_endpoint_t type, con
     _fw_ctrl->poke32(fw::reg_addr(fw::WB_SBRB_BASE, fw::SR_ZPU_XB_LOCAL), sid.get_dst_addr());
     // Program CAM entry for returning packets to us
     // This type of packet does not match the XB_LOCAL address and is looked up in the lower half of the CAM
-    _fw_ctrl->poke32(fw::reg_addr(fw::WB_XB_SBRB_BASE, sid.get_src_addr()), static_cast<boost::uint32_t>(xb_ret_ep));
+    _fw_ctrl->poke32(fw::reg_addr(fw::WB_XB_SBRB_BASE, sid.get_src_addr()), static_cast<uint32_t>(xb_ret_ep));
     // Program CAM entry for outgoing packets matching a N230 resource (for example a Radio)
     // This type of packet does matches the XB_LOCAL address and is looked up in the upper half of the CAM
-    _fw_ctrl->poke32(fw::reg_addr(fw::WB_XB_SBRB_BASE, 256 + sid.get_dst_endpoint()), static_cast<boost::uint32_t>(xb_dest_ep));
+    _fw_ctrl->poke32(fw::reg_addr(fw::WB_XB_SBRB_BASE, 256 + sid.get_dst_endpoint()), static_cast<uint32_t>(xb_dest_ep));
 
     return sid;
 }
@@ -434,8 +434,8 @@ void n230_resource_manager::_program_dispatcher(
     //Send a mini packet with SID into the ZPU
     //ZPU will reprogram the ethernet framer
     transport::managed_send_buffer::sptr buff = xport.get_send_buff();
-    buff->cast<boost::uint32_t *>()[0] = 0; //eth dispatch looks for != 0
-    buff->cast<boost::uint32_t *>()[1] = uhd::htonx(sid.get());
+    buff->cast<uint32_t *>()[0] = 0; //eth dispatch looks for != 0
+    buff->cast<uint32_t *>()[1] = uhd::htonx(sid.get());
     buff->commit(8);
     buff.reset();
 
@@ -466,8 +466,8 @@ bool n230_resource_manager::_radio_register_loopback_self_test(wb_iface::sptr if
     size_t hash = static_cast<size_t>(time(NULL));
     for (size_t i = 0; i < 100; i++) {
         boost::hash_combine(hash, i);
-        iface->poke32(fpga::sr_addr(fpga::SR_RADIO_TEST), boost::uint32_t(hash));
-        test_fail = iface->peek32(fpga::rb_addr(fpga::RB_RADIO_TEST)) != boost::uint32_t(hash);
+        iface->poke32(fpga::sr_addr(fpga::SR_RADIO_TEST), uint32_t(hash));
+        test_fail = iface->peek32(fpga::rb_addr(fpga::RB_RADIO_TEST)) != uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
     return !test_fail;
@@ -479,13 +479,13 @@ bool n230_resource_manager::_radio_data_loopback_self_test(wb_iface::sptr iface)
     size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++) {
         boost::hash_combine(hash, i);
-        const boost::uint32_t word32 = boost::uint32_t(hash) & (IF_DATA_I_MASK | IF_DATA_Q_MASK);
+        const uint32_t word32 = uint32_t(hash) & (IF_DATA_I_MASK | IF_DATA_Q_MASK);
         iface->poke32(fpga::sr_addr(fpga::SR_RADIO_CODEC_IDLE), word32);
         iface->peek64(fpga::rb_addr(fpga::RB_RADIO_CODEC_DATA)); //block until request completes
         boost::this_thread::sleep(boost::posix_time::microseconds(100)); //wait for loopback to propagate through codec
-        const boost::uint64_t rb_word64 = iface->peek64(fpga::rb_addr(fpga::RB_RADIO_CODEC_DATA));
-        const boost::uint32_t rb_tx = boost::uint32_t(rb_word64 >> 32);
-        const boost::uint32_t rb_rx = boost::uint32_t(rb_word64 & 0xffffffff);
+        const uint64_t rb_word64 = iface->peek64(fpga::rb_addr(fpga::RB_RADIO_CODEC_DATA));
+        const uint32_t rb_tx = uint32_t(rb_word64 >> 32);
+        const uint32_t rb_rx = uint32_t(rb_word64 & 0xffffffff);
         test_fail = word32 != rb_tx or word32 != rb_rx;
         if (test_fail)
             UHD_MSG(fastpath) << boost::format("mismatch (exp:%x, got:%x and %x)... ") % word32 % rb_tx % rb_rx;
@@ -514,7 +514,7 @@ std::string n230_resource_manager::_get_fpga_upgrade_msg() {
 
 void n230_resource_manager::_check_fw_compat()
 {
-    boost::uint32_t compat_num = _fw_ctrl->peek32(N230_FW_HOST_SHMEM_OFFSET(fw_compat_num));
+    uint32_t compat_num = _fw_ctrl->peek32(N230_FW_HOST_SHMEM_OFFSET(fw_compat_num));
     _fw_version.compat_major = compat_num >> 16;
     _fw_version.compat_minor = compat_num;
     _fw_version.version_hash = _fw_ctrl->peek32(N230_FW_HOST_SHMEM_OFFSET(fw_version_hash));
@@ -524,23 +524,23 @@ void n230_resource_manager::_check_fw_compat()
             "Expected firmware compatibility number %d.x, but got %d.%d\n"
             "The firmware build is not compatible with the host code build.\n"
             "%s"
-            ) % static_cast<boost::uint32_t>(N230_FW_COMPAT_NUM_MAJOR)
-              % static_cast<boost::uint32_t>(_fw_version.compat_major)
-              % static_cast<boost::uint32_t>(_fw_version.compat_minor)
+            ) % static_cast<uint32_t>(N230_FW_COMPAT_NUM_MAJOR)
+              % static_cast<uint32_t>(_fw_version.compat_major)
+              % static_cast<uint32_t>(_fw_version.compat_minor)
               % _get_fpga_upgrade_msg()));
     }
 }
 
 void n230_resource_manager::_check_fpga_compat()
 {
-    const boost::uint64_t compat = _core_ctrl->peek64(fpga::rb_addr(fpga::RB_CORE_SIGNATUE));
-    const boost::uint32_t signature = boost::uint32_t(compat >> 32);
-    const boost::uint16_t product_id = boost::uint8_t(compat >> 24);
-    _fpga_version.compat_major = static_cast<boost::uint8_t>(compat >> 16);
-    _fpga_version.compat_minor = static_cast<boost::uint16_t>(compat);
+    const uint64_t compat = _core_ctrl->peek64(fpga::rb_addr(fpga::RB_CORE_SIGNATUE));
+    const uint32_t signature = uint32_t(compat >> 32);
+    const uint16_t product_id = uint8_t(compat >> 24);
+    _fpga_version.compat_major = static_cast<uint8_t>(compat >> 16);
+    _fpga_version.compat_minor = static_cast<uint16_t>(compat);
 
-    const boost::uint64_t version_hash = _core_ctrl->peek64(fpga::rb_addr(fpga::RB_CORE_VERSION_HASH));
-    _fpga_version.version_hash = boost::uint32_t(version_hash);
+    const uint64_t version_hash = _core_ctrl->peek64(fpga::rb_addr(fpga::RB_CORE_VERSION_HASH));
+    _fpga_version.version_hash = uint32_t(version_hash);
 
     if (signature != 0x0ACE0BA5E || product_id != fpga::RB_N230_PRODUCT_ID)
         throw uhd::runtime_error("Signature check failed. Please contact support.");
@@ -559,9 +559,9 @@ void n230_resource_manager::_check_fpga_compat()
             "Expected FPGA compatibility number %d.x, but got %d.%d:\n"
             "The FPGA build is not compatible with the host code build.\n"
             "%s"
-            ) % static_cast<boost::uint32_t>(fpga::RB_N230_COMPAT_MAJOR)
-              % static_cast<boost::uint32_t>(_fpga_version.compat_major)
-              % static_cast<boost::uint32_t>(_fpga_version.compat_minor)
+            ) % static_cast<uint32_t>(fpga::RB_N230_COMPAT_MAJOR)
+              % static_cast<uint32_t>(_fpga_version.compat_major)
+              % static_cast<uint32_t>(_fpga_version.compat_minor)
               % _get_fpga_upgrade_msg()));
     }
 }
