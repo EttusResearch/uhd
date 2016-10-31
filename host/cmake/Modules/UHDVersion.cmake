@@ -74,28 +74,6 @@ IF(GIT_FOUND)
 ENDIF(GIT_FOUND)
 
 ########################################################################
-# Set up trimmed version numbers for DLL resource files and packages
-########################################################################
-FUNCTION(DEPAD_NUM input_num output_num)
-    EXECUTE_PROCESS(
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "print(int('${input_num}'))"
-        OUTPUT_VARIABLE depadded_num OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    SET(${output_num} ${depadded_num} PARENT_SCOPE)
-ENDFUNCTION(DEPAD_NUM)
-
-DEPAD_NUM(${UHD_VERSION_MAJOR} TRIMMED_VERSION_MAJOR)
-DEPAD_NUM(${UHD_VERSION_API}   TRIMMED_VERSION_API)
-DEPAD_NUM(${UHD_VERSION_ABI}   TRIMMED_VERSION_ABI)
-IF(UHD_VERSION_DEVEL)
-    SET(TRIMMED_VERSION_PATCH ${UHD_VERSION_PATCH})
-ELSE(UHD_VERSION_DEVEL)
-    DEPAD_NUM(${UHD_VERSION_PATCH} TRIMMED_VERSION_PATCH)
-ENDIF(UHD_VERSION_DEVEL)
-SET(TRIMMED_UHD_VERSION "${TRIMMED_VERSION_MAJOR}.${TRIMMED_VERSION_API}.${TRIMMED_VERSION_ABI}.${TRIMMED_VERSION_PATCH}")
-
-########################################################################
 # Version information discovery through git log
 ########################################################################
 

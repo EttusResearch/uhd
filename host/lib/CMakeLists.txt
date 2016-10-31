@@ -140,10 +140,10 @@ ENDIF(ENABLE_C_API)
 # Add DLL resource file to Windows build
 ########################################################################
 IF(MSVC)
-    MATH(EXPR TRIMMED_VERSION_MAJOR_API "${TRIMMED_VERSION_MAJOR} * 1000 + ${TRIMMED_VERSION_API}")
-    SET(RC_TRIMMED_VERSION_PATCH ${TRIMMED_VERSION_PATCH})
+    MATH(EXPR RC_VERSION_MAJOR_API "${UHD_VERSION_MAJOR} * 1000 + ${UHD_VERSION_API}")
+    SET(RC_VERSION_PATCH ${UHD_VERSION_PATCH})
     IF(UHD_VERSION_DEVEL)
-        SET(RC_TRIMMED_VERSION_PATCH "999")
+        SET(RC_VERSION_PATCH "999")
     ENDIF(UHD_VERSION_DEVEL)
 
     # Allow a custom .rc template file to be used
