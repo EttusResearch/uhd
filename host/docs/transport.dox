@@ -82,7 +82,7 @@ Coalescing" settings for your OS and Ethernet chipset. It seems the
 Intel Ethernet chipsets offer fine-grained control in Linux. Also,
 consult:
 
--   <http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.prftungd/doc/prftungd/interrupt_coal.htm>
+-   <http://www.ibm.com/support/knowledgecenter/SSQPD3_2.6.0/com.ibm.wllm.doc/batchingnic.html>
 
 \subsection transport_udp_linux Linux specific notes
 
