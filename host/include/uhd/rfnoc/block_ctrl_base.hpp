@@ -24,8 +24,9 @@
 
 namespace uhd {
     namespace rfnoc {
+        // Forward declarations
+        class ctrl_iface;
         namespace nocscript {
-            // Forward declaration
             class block_iface;
         }
 
@@ -39,8 +40,8 @@ struct make_args_t
         block_key(key)
     {}
 
-    //! A valid interface that allows us to do peeks and pokes
-    std::map<size_t, uhd::wb_iface::sptr> ctrl_ifaces;
+    //! A valid interface that allows us to read and write registers
+    std::map<size_t, boost::shared_ptr<ctrl_iface> > ctrl_ifaces;
     //! This block's base address (address of block port 0)
     uint32_t base_address;
     //! The device index (or motherboard index).
@@ -359,8 +360,7 @@ protected:
     };
 
     //! Get a control interface object for block port \p block_port
-    wb_iface::sptr get_ctrl_iface(const size_t block_port);
-
+    timed_wb_iface::sptr get_ctrl_iface(const size_t block_port);
 
     /***********************************************************************
      * Hooks & Derivables
@@ -397,11 +397,16 @@ private:
     //! Helper function to initialize the block args (used by ctor only)
     void _init_block_args();
 
+    //! Helper to create a lambda to read tick rate
+    double get_command_tick_rate(const size_t port);
+
     /***********************************************************************
      * Private members
      **********************************************************************/
     //! Objects to actually send and receive the commands
-    std::map<size_t, wb_iface::sptr> _ctrl_ifaces;
+    std::map<size_t, boost::shared_ptr<ctrl_iface> > _ctrl_ifaces;
+    std::map<size_t, time_spec_t> _cmd_timespecs;
+    std::map<size_t, double> _cmd_tickrates;
 
     //! The base address of this block (the address of block port 0)
     uint32_t _base_address;

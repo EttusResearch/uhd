@@ -45,29 +45,7 @@ radio_ctrl_impl::radio_ctrl_impl() :
     /////////////////////////////////////////////////////////////////////////
     for (size_t i = 0; i < _get_num_radios(); i++) {
         _register_loopback_self_test(i);
-        _perifs[i].ctrl = boost::make_shared<wb_iface_adapter>(
-            // poke32 functor
-            [this, i](const uint32_t addr, const uint32_t data){
-                this->sr_write(addr, data, i);
-            },
-            // peek32 functor
-            [this, i](const uint32_t addr){
-                return this->user_reg_read32(addr, i);
-            },
-            // peek64 functor
-            [this, i](const uint32_t addr){
-                return this->user_reg_read64(addr, i);
-            },
-            // get_time functor
-            [this, i](){
-                return this->get_command_time(i);
-            },
-            // set_time functor
-            [this, i](const time_spec_t& time_spec){
-                this->set_command_time(time_spec, i);
-            }
-        );
-
+        _perifs[i].ctrl = this->get_ctrl_iface(i);
         // FIXME there's currently no way to set the underflow policy
 
         if (i == 0) {

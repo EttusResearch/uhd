@@ -5,14 +5,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <exception>
-#include <iostream>
-#include <boost/test/unit_test.hpp>
+#include "../lib/rfnoc/ctrl_iface.hpp"
 #include <uhd/property_tree.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/device3.hpp>
 #include <uhd/rfnoc/block_ctrl.hpp>
 #include <uhd/rfnoc/graph.hpp>
+#include <boost/test/unit_test.hpp>
+#include <exception>
+#include <iostream>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -22,37 +23,33 @@ static const sid_t TEST_SID0 = 0x00000200; // 0.0.2.0
 static const sid_t TEST_SID1 = 0x00000210; // 0.0.2.F
 
 // Pseudo-wb-iface
-class pseudo_wb_iface_impl : public uhd::wb_iface
+class pseudo_ctrl_iface_impl : public ctrl_iface
 {
   public:
-    pseudo_wb_iface_impl() {};
-    ~pseudo_wb_iface_impl() {};
+    pseudo_ctrl_iface_impl() {};
+    ~pseudo_ctrl_iface_impl() {};
 
-    void poke64(const wb_addr_type addr, const uint64_t data) {
-        std::cout << str(boost::format("[PSEUDO] poke64 to addr: %016X, data == %016X") % addr % data) << std::endl;
-    };
-
-    uint64_t peek64(const wb_addr_type addr) {
-        std::cout << str(boost::format("[PSEUDO] peek64 to addr: %016X") % addr) << std::endl;
-        switch (addr) {
-            case SR_READBACK_REG_ID:
-                return TEST_NOC_ID;
-            case SR_READBACK_REG_FIFOSIZE:
-                return 0x000000000000000B;
-            case SR_READBACK_REG_USER:
-                return 0x0123456789ABCDEF;
-            default:
-                return 0;
+    uint64_t send_cmd_pkt(
+            const size_t addr,
+            const size_t data,
+            const bool readback=false,
+            const uint64_t timestamp=0
+    ) {
+        if (not readback) {
+            std::cout << str(boost::format("[PSEUDO] poke to addr: %016X, data == %016X") % addr % data) << std::endl;
+        } else {
+            std::cout << str(boost::format("[PSEUDO] peek64 to addr: %016X") % data) << std::endl;
+            switch (data) {
+                case SR_READBACK_REG_ID:
+                    return TEST_NOC_ID;
+                case SR_READBACK_REG_FIFOSIZE:
+                    return 0x000000000000000B;
+                case SR_READBACK_REG_USER:
+                    return 0x0123456789ABCDEF;
+                default:
+                    return 0;
+            }
         }
-        return 0;
-    }
-
-    void poke32(const wb_addr_type addr, const uint32_t data) {
-        std::cout << str(boost::format("poke32 to addr: %08X, data == %08X") % addr % data) << std::endl;
-    }
-
-    uint32_t peek32(const wb_addr_type addr) {
-        std::cout << str(boost::format("peek32 to addr: %08X") % addr) << std::endl;
         return 0;
     }
 };
@@ -67,8 +64,8 @@ class pseudo_device3_impl : public uhd::device3
         _tree->create<std::string>("/name").set("Test Pseudo-Device3");
 
         // We can re-use this:
-        std::map<size_t, wb_iface::sptr> ctrl_ifaces = boost::assign::map_list_of
-            (0, wb_iface::sptr(new pseudo_wb_iface_impl()))
+        std::map<size_t, ctrl_iface::sptr> ctrl_ifaces = boost::assign::map_list_of
+            (0, ctrl_iface::sptr(new pseudo_ctrl_iface_impl()))
         ;
 
         // Add two block controls:
