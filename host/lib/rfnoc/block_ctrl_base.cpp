@@ -16,6 +16,7 @@
 #include <uhd/rfnoc/constants.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <uhdlib/rfnoc/ctrl_iface.hpp>
+#include <uhdlib/rfnoc/wb_iface_adapter.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 
@@ -24,13 +25,6 @@
 using namespace uhd;
 using namespace uhd::rfnoc;
 using std::string;
-
-/***********************************************************************
- * Helpers
- **********************************************************************/
-//! Convert register to a peek/poke compatible address
-inline uint32_t _sr_to_addr(const uint32_t reg) { return reg * 4; };
-inline uint32_t _sr_to_addr64(const uint32_t reg) { return reg * 8; }; // for peek64
 
 /***********************************************************************
  * Structors
@@ -82,6 +76,9 @@ block_ctrl_base::block_ctrl_base(
     /*** Configure ports ****************************************************/
     size_t n_valid_input_buffers = 0;
     for(const size_t ctrl_port:  get_ctrl_ports()) {
+        // Set command times to sensible defaults
+        set_command_tick_rate(1.0, ctrl_port);
+        set_command_time(time_spec_t(0.0), ctrl_port);
         // Set source addresses:
         sr_write(SR_BLOCK_SID, get_address(ctrl_port), ctrl_port);
         // Set sink buffer sizes:
@@ -208,16 +205,21 @@ void block_ctrl_base::_init_block_args()
 /***********************************************************************
  * FPGA control & communication
  **********************************************************************/
-wb_iface::sptr block_ctrl_base::get_ctrl_iface(const size_t block_port)
+timed_wb_iface::sptr block_ctrl_base::get_ctrl_iface(const size_t block_port)
 {
-    return _ctrl_ifaces[block_port];
+    return boost::make_shared<wb_iface_adapter>(
+        _ctrl_ifaces[block_port],
+        boost::bind(&block_ctrl_base::get_command_tick_rate, this, block_port),
+        boost::bind(&block_ctrl_base::set_command_time, this, _1, block_port),
+        boost::bind(&block_ctrl_base::get_command_time, this, block_port)
+    );
 }
 
 std::vector<size_t> block_ctrl_base::get_ctrl_ports() const
 {
     std::vector<size_t> ctrl_ports;
     ctrl_ports.reserve(_ctrl_ifaces.size());
-    std::pair<size_t, wb_iface::sptr> it;
+    std::pair<size_t, ctrl_iface::sptr> it;
     for(auto it:  _ctrl_ifaces) {
         ctrl_ports.push_back(it.first);
     }
@@ -232,7 +234,10 @@ void block_ctrl_base::sr_write(const uint32_t reg, const uint32_t data, const si
         throw uhd::key_error(str(boost::format("[%s] sr_write(): No such port: %d") % get_block_id().get() % port));
     }
     try {
-        _ctrl_ifaces[port]->poke32(_sr_to_addr(reg), data);
+        _ctrl_ifaces[port]->send_cmd_pkt(
+            reg, data, false,
+            _cmd_timespecs[port].to_ticks(_cmd_tickrates[port])
+        );
     }
     catch(const std::exception &ex) {
         throw uhd::io_error(str(boost::format("[%s] sr_write() failed: %s") % get_block_id().get() % ex.what()));
@@ -263,7 +268,11 @@ uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg, const size_t po
         throw uhd::key_error(str(boost::format("[%s] sr_read64(): No such port: %d") % get_block_id().get() % port));
     }
     try {
-        return _ctrl_ifaces[port]->peek64(_sr_to_addr64(reg));
+        return _ctrl_ifaces[port]->send_cmd_pkt(
+                SR_READBACK, reg,
+                true,
+                _cmd_timespecs[port].to_ticks(_cmd_tickrates[port])
+        );
     }
     catch(const std::exception &ex) {
         throw uhd::io_error(str(boost::format("[%s] sr_read64() failed: %s") % get_block_id().get() % ex.what()));
@@ -276,7 +285,11 @@ uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg, const size_t po
         throw uhd::key_error(str(boost::format("[%s] sr_read32(): No such port: %d") % get_block_id().get() % port));
     }
     try {
-        return _ctrl_ifaces[port]->peek32(_sr_to_addr64(reg));
+        return uint32_t(_ctrl_ifaces[port]->send_cmd_pkt(
+                SR_READBACK, reg,
+                true,
+                _cmd_timespecs[port].to_ticks(_cmd_tickrates[port])
+        ));
     }
     catch(const std::exception &ex) {
         throw uhd::io_error(str(boost::format("[%s] sr_read32() failed: %s") % get_block_id().get() % ex.what()));
@@ -286,6 +299,7 @@ uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg, const size_t po
 uint64_t block_ctrl_base::user_reg_read64(const uint32_t addr, const size_t port)
 {
     try {
+        // TODO: When timed readbacks are used, time the second, but not the first
         // Set readback register address
         sr_write(SR_READBACK_ADDR, addr, port);
         // Read readback register via RFNoC
@@ -345,32 +359,15 @@ void block_ctrl_base::set_command_time(
         }
         return;
     }
-    boost::shared_ptr<ctrl_iface> iface_sptr =
-        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
-    if (not iface_sptr) {
-        throw uhd::assertion_error(str(
-            boost::format("[%s] Cannot set command time on port '%d'")
-            % unique_id() % port
-        ));
-    }
 
-    iface_sptr->set_time(time_spec);
+    _cmd_timespecs[port] = time_spec;
     _set_command_time(time_spec, port);
 }
 
 time_spec_t block_ctrl_base::get_command_time(
         const size_t port
 ) {
-    boost::shared_ptr<ctrl_iface> iface_sptr =
-        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
-    if (not iface_sptr) {
-        throw uhd::assertion_error(str(
-            boost::format("[%s] Cannot get command time on port '%d'")
-            % unique_id() % port
-        ));
-    }
-
-    return iface_sptr->get_time();
+    return _cmd_timespecs[port];
 }
 
 void block_ctrl_base::set_command_tick_rate(
@@ -383,30 +380,18 @@ void block_ctrl_base::set_command_tick_rate(
         }
         return;
     }
-    boost::shared_ptr<ctrl_iface> iface_sptr =
-        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
-    if (not iface_sptr) {
-        throw uhd::assertion_error(str(
-            boost::format("[%s] Cannot set command time on port '%d'")
-            % unique_id() % port
-        ));
-    }
 
-    iface_sptr->set_tick_rate(tick_rate);
+    _cmd_tickrates[port] = tick_rate;
+}
+
+double block_ctrl_base::get_command_tick_rate(const size_t port)
+{
+    return _cmd_tickrates[port];
 }
 
 void block_ctrl_base::clear_command_time(const size_t port)
 {
-    boost::shared_ptr<ctrl_iface> iface_sptr =
-        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
-    if (not iface_sptr) {
-        throw uhd::assertion_error(str(
-            boost::format("[%s] Cannot set command time on port '%d'")
-            % unique_id() % port
-        ));
-    }
-
-    iface_sptr->set_time(time_spec_t(0.0));
+    _cmd_timespecs[port] = time_spec_t(0.0);
 }
 
 void block_ctrl_base::clear()

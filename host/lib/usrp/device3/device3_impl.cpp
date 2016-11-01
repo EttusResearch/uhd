@@ -119,13 +119,10 @@ void device3_impl::enumerate_rfnoc_blocks(
         );
         UHD_DEVICE3_LOG() << str(boost::format("Setting up NoC-Shell Control for port #0 (SID: %s)...") % xport.send_sid.to_pp_string_hex());
         uhd::rfnoc::ctrl_iface::sptr ctrl = uhd::rfnoc::ctrl_iface::make(
-                xport.endianness == uhd::ENDIANNESS_BIG,
-                xport.send,
-                xport.recv,
-                xport.send_sid,
+                xport,
                 str(boost::format("CE_%02d_Port_%02X") % i % ctrl_sid.get_dst_endpoint())
         );
-        uint64_t noc_id = ctrl->peek64(uhd::rfnoc::SR_READBACK_REG_ID);
+        uint64_t noc_id = ctrl->send_cmd_pkt(uhd::rfnoc::SR_READBACK, uhd::rfnoc::SR_READBACK_REG_ID, true);
         UHD_DEVICE3_LOG() << str(boost::format("Port %d: Found NoC-Block with ID %016X.") % int(ctrl_sid.get_dst_endpoint()) % noc_id) ;
         uhd::rfnoc::make_args_t make_args;
         uhd::rfnoc::blockdef::sptr block_def = uhd::rfnoc::blockdef::make_from_noc_id(noc_id);
@@ -147,10 +144,7 @@ void device3_impl::enumerate_rfnoc_blocks(
             );
             UHD_DEVICE3_LOG() << str(boost::format("Setting up NoC-Shell Control for port #%d (SID: %s)...") % port_number % xport1.send_sid.to_pp_string_hex());
             uhd::rfnoc::ctrl_iface::sptr ctrl1 = uhd::rfnoc::ctrl_iface::make(
-                    xport1.endianness == uhd::ENDIANNESS_BIG,
-                    xport1.send,
-                    xport1.recv,
-                    xport1.send_sid,
+                    xport1,
                     str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint())
             );
             UHD_DEVICE3_LOG() << "OK" ;

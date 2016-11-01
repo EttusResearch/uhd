@@ -8,37 +8,57 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_CTRL_IFACE_HPP
 #define INCLUDED_LIBUHD_RFNOC_CTRL_IFACE_HPP
 
-#include <uhd/utils/msg_task.hpp>
-#include <uhd/types/time_spec.hpp>
-#include <uhd/transport/zero_copy.hpp>
-#include <uhd/types/wb_iface.hpp>
+#include "xports.hpp"
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
 #include <string>
 
 namespace uhd { namespace rfnoc {
 
 /*!
- * Provide access to peek, poke for the radio ctrl module
+ * Provide read/write access to registers on an RFNoC block via Noc-Shell.
  */
-class ctrl_iface : public uhd::timed_wb_iface
+class ctrl_iface
 {
 public:
     typedef boost::shared_ptr<ctrl_iface> sptr;
-
     virtual ~ctrl_iface(void) = 0;
 
-    //! Make a new control object
+    /*! Make a new control object
+     *
+     * \param xports Bidirectional transport object to the RFNoC block port.
+     * \param name Optional name for better identification in error messages.
+     */
     static sptr make(
-        const bool big_endian,
-        uhd::transport::zero_copy_if::sptr ctrl_xport,
-        uhd::transport::zero_copy_if::sptr resp_xport,
-        const uint32_t sid,
-        const std::string &name = "0"
+        const both_xports_t &xports,
+        const std::string &name="0"
     );
 
-    //! Set the tick rate (converting time into ticks)
-    virtual void set_tick_rate(const double rate) = 0;
+    /*! Send a command packet.
+     *
+     * \param addr Register address. This is the value that gets put into the
+     *             command packet, its interpretation is defined on the FPGA.
+     * \param data Register value to write.
+     * \param readback If true, assume the command packet is for a readback,
+     *                 and wait for a response packet to return. The return
+     *                 value will then be the 64-bit payload of that response
+     *                 packet. If false, the return value is the payload of
+     *                 any outstanding ACK packet.
+     * \param timestamp Optional timestamp. The command packet will include this
+     *                  timestamp. Depending on the block configuration, this
+     *                  can trigger timed commands.
+     *                  A value of zero indicates that no timestamp will be
+     *                  applied. It is not possible to request anything to
+     *                  happen at time zero.
+     *
+     * \throws uhd::io_error if the response is malformed; uhd::runtime_error if
+     *         no packet could be sent.
+     */
+    virtual uint64_t send_cmd_pkt(
+            const size_t addr,
+            const size_t data,
+            const bool readback=false,
+            const uint64_t timestamp=0
+    ) = 0;
 };
 
 }} /* namespace uhd::rfnoc */

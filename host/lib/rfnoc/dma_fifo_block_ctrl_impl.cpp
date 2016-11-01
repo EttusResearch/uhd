@@ -27,25 +27,7 @@ public:
     {
         _perifs.resize(get_input_ports().size());
         for(size_t i = 0; i < _perifs.size(); i++) {
-            _perifs[i].ctrl = boost::make_shared<wb_iface_adapter>(
-                // poke32 functor
-                boost::bind(
-                    static_cast< void (block_ctrl_base::*)(const uint32_t, const uint32_t, const size_t) >(&block_ctrl_base::sr_write),
-                    this, _1, _2, i
-                ),
-                // peek32 functor
-                boost::bind(
-                    static_cast< uint32_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read32),
-                    this,
-                    _1, i
-                ),
-                // peek64 functor
-                boost::bind(
-                    static_cast< uint64_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read64),
-                    this,
-                    _1, i
-                )
-            );
+            _perifs[i].ctrl = this->get_ctrl_iface(i);
             static const uint32_t USER_SR_BASE = 128*4;
             static const uint32_t USER_RB_BASE = 0;     //Don't care
             _perifs[i].base_addr = DEFAULT_SIZE*i;

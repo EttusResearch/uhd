@@ -10,6 +10,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/sid.hpp>
+#include <uhd/types/endianness.hpp>
 #include <uhd/transport/chdr.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <uhdlib/rfnoc/ctrl_iface.hpp>
@@ -17,6 +18,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <queue>
 
 using namespace uhd;
@@ -30,89 +32,53 @@ ctrl_iface::~ctrl_iface(void){
     /* NOP */
 }
 
+template <uhd::endianness_t _endianness>
 class ctrl_iface_impl: public ctrl_iface
 {
 public:
 
-    ctrl_iface_impl(const bool big_endian,
-            uhd::transport::zero_copy_if::sptr ctrl_xport,
-            uhd::transport::zero_copy_if::sptr resp_xport,
-            const uint32_t sid, const std::string &name
-    ) :
-        _link_type(vrt::if_packet_info_t::LINK_TYPE_CHDR),
-        _packet_type(vrt::if_packet_info_t::PACKET_TYPE_CONTEXT),
-        _bige(big_endian),
-        _ctrl_xport(ctrl_xport), _resp_xport(resp_xport),
-        _sid(sid),
+    ctrl_iface_impl(
+            const both_xports_t &xports,
+            const std::string &name
+    ) : _xports(xports),
         _name(name),
         _seq_out(0),
-        _timeout(ACK_TIMEOUT),
-        _resp_queue_size(_resp_xport->get_num_recv_frames()),
-        _rb_address(uhd::rfnoc::SR_READBACK)
+        _max_outstanding_acks(
+            std::min(
+                uhd::rfnoc::CMD_FIFO_SIZE / 3, // Max command packet size is 3 lines
+                _xports.recv->get_num_recv_frames()
+            )
+        )
     {
-        UHD_ASSERT_THROW(_ctrl_xport);
-        UHD_ASSERT_THROW(_resp_xport);
-        while (resp_xport->get_recv_buff(0.0)) {} //flush
-        this->set_time(uhd::time_spec_t(0.0));
-        this->set_tick_rate(1.0); //something possible but bogus
+        UHD_ASSERT_THROW(bool(_xports.send));
+        UHD_ASSERT_THROW(bool(_xports.recv));
+        // Flush the response transport in case we have something over:
+        while (_xports.recv->get_recv_buff(0.0)) {}
     }
 
     ~ctrl_iface_impl(void)
     {
-        _timeout = ACK_TIMEOUT; //reset timeout to something small
         UHD_SAFE_CALL(
-            this->peek32(0);//dummy peek with the purpose of ack'ing all packets
+            // dummy peek with the purpose of ack'ing all packets
+            this->send_cmd_pkt(0, 0, true);
         )
     }
 
     /*******************************************************************
-     * Peek and poke 32 bit implementation
+     * Get and set register implementation
      ******************************************************************/
-    void poke32(const wb_addr_type addr, const uint32_t data)
-    {
+    uint64_t send_cmd_pkt(
+            const size_t addr,
+            const size_t data,
+            const bool readback,
+            const uint64_t timestamp=0
+    ) {
         boost::mutex::scoped_lock lock(_mutex);
-        this->send_pkt(addr/4, data);
-        this->wait_for_ack(false);
-    }
-
-    uint32_t peek32(const wb_addr_type addr)
-    {
-        boost::mutex::scoped_lock lock(_mutex);
-        this->send_pkt(_rb_address, addr/8);
-        const uint64_t res = this->wait_for_ack(true);
-        const uint32_t lo = uint32_t(res & 0xffffffff);
-        const uint32_t hi = uint32_t(res >> 32);
-        return ((addr/4) & 0x1)? hi : lo;
-    }
-
-    uint64_t peek64(const wb_addr_type addr)
-    {
-        boost::mutex::scoped_lock lock(_mutex);
-        this->send_pkt(_rb_address, addr/8);
-        return this->wait_for_ack(true);
-    }
-
-    /*******************************************************************
-     * Update methods for time
-     ******************************************************************/
-    void set_time(const uhd::time_spec_t &time)
-    {
-        boost::mutex::scoped_lock lock(_mutex);
-        _time = time;
-        _use_time = _time != uhd::time_spec_t(0.0);
-        if (_use_time) _timeout = MASSIVE_TIMEOUT; //permanently sets larger timeout
-    }
-
-    uhd::time_spec_t get_time(void)
-    {
-        boost::mutex::scoped_lock lock(_mutex);
-        return _time;
-    }
-
-    void set_tick_rate(const double rate)
-    {
-        boost::mutex::scoped_lock lock(_mutex);
-        _tick_rate = rate;
+        this->send_pkt(addr, data, timestamp);
+        return this->wait_for_ack(
+                readback,
+                bool(timestamp) ? MASSIVE_TIMEOUT : ACK_TIMEOUT
+        );
     }
 
 private:
@@ -125,9 +91,12 @@ private:
     /*******************************************************************
      * Primary control and interaction private methods
      ******************************************************************/
-    inline void send_pkt(const uint32_t addr, const uint32_t data = 0)
-    {
-        managed_send_buffer::sptr buff = _ctrl_xport->get_send_buff(0.0);
+    inline void send_pkt(
+            const uint32_t addr,
+            const uint32_t data,
+            const uint64_t timestamp
+    ) {
+        managed_send_buffer::sptr buff = _xports.send->get_send_buff(0.0);
         if (not buff) {
             throw uhd::runtime_error("fifo ctrl timed out getting a send buffer");
         }
@@ -135,29 +104,33 @@ private:
 
         //load packet info
         vrt::if_packet_info_t packet_info;
-        packet_info.link_type = _link_type;
-        packet_info.packet_type = _packet_type;
+        packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
+        packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_CMD;
         packet_info.num_payload_words32 = 2;
         packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(uint32_t);
         packet_info.packet_count = _seq_out;
-        packet_info.tsf = _time.to_ticks(_tick_rate);
+        packet_info.tsf = timestamp;
         packet_info.sob = false;
         packet_info.eob = false;
-        packet_info.sid = _sid;
+        packet_info.sid = _xports.send_sid;
         packet_info.has_sid = true;
         packet_info.has_cid = false;
         packet_info.has_tsi = false;
-        packet_info.has_tsf = _use_time;
+        packet_info.has_tsf = bool(timestamp);
         packet_info.has_tlr = false;
 
-        //load header
-        if (_bige) vrt::if_hdr_pack_be(pkt, packet_info);
-        else vrt::if_hdr_pack_le(pkt, packet_info);
+        // Unpack header and load payload
+        if (_endianness == uhd::ENDIANNESS_BIG) { // This if statement gets compiled out
+            vrt::if_hdr_pack_be(pkt, packet_info);
+            pkt[packet_info.num_header_words32+0] = uhd::htonx(addr);
+            pkt[packet_info.num_header_words32+1] = uhd::htonx(data);
+        } else {
+            vrt::if_hdr_pack_le(pkt, packet_info);
+            pkt[packet_info.num_header_words32+0] = uhd::htowx(addr);
+            pkt[packet_info.num_header_words32+1] = uhd::htowx(data);
+        }
 
-        //load payload
-        pkt[packet_info.num_header_words32+0] = (_bige)? uhd::htonx(addr) : uhd::htowx(addr);
-        pkt[packet_info.num_header_words32+1] = (_bige)? uhd::htonx(data) : uhd::htowx(data);
-        //UHD_LOGGER_INFO("RFNOC") << boost::format("0x%08x, 0x%08x\n") % addr % data;
+        //UHD_LOGGER_TRACE("RFNOC") << boost::format("0x%08x, 0x%08x\n") % addr % data;
         //send the buffer over the interface
         _outstanding_seqs.push(_seq_out);
         buff->commit(sizeof(uint32_t)*(packet_info.num_packet_words32));
@@ -165,9 +138,9 @@ private:
         _seq_out++;//inc seq for next call
     }
 
-    UHD_INLINE uint64_t wait_for_ack(const bool readback)
+    inline uint64_t wait_for_ack(const bool readback, const double timeout)
     {
-        while (readback or (_outstanding_seqs.size() >= _resp_queue_size))
+        while (readback or (_outstanding_seqs.size() >= _max_outstanding_acks))
         {
             //get seq to ack from outstanding packets list
             UHD_ASSERT_THROW(not _outstanding_seqs.empty());
@@ -180,24 +153,29 @@ private:
             uint32_t const *pkt = NULL;
             managed_recv_buffer::sptr buff;
 
-            buff = _resp_xport->get_recv_buff(_timeout);
+            buff = _xports.recv->get_recv_buff(timeout);
             try {
                 UHD_ASSERT_THROW(bool(buff));
                 UHD_ASSERT_THROW(buff->size() > 0);
                 _outstanding_seqs.pop();
             }
             catch(const std::exception &ex) {
-                throw uhd::io_error(str(boost::format("Block ctrl (%s) no response packet - %s") % _name % ex.what()));
+                throw uhd::io_error(str(
+                    boost::format("Block ctrl (%s) no response packet - %s")
+                    % _name
+                    % ex.what()
+                ));
             }
             pkt = buff->cast<const uint32_t *>();
             packet_info.num_packet_words32 = buff->size()/sizeof(uint32_t);
 
             //parse the buffer
-            try
-            {
-                packet_info.link_type = _link_type;
-                if (_bige) vrt::chdr::if_hdr_unpack_be(pkt, packet_info);
-                else vrt::chdr::if_hdr_unpack_le(pkt, packet_info);
+            try {
+                if (_endianness == uhd::ENDIANNESS_BIG) {
+                    vrt::chdr::if_hdr_unpack_be(pkt, packet_info);
+                } else {
+                    vrt::chdr::if_hdr_unpack_le(pkt, packet_info);
+                }
             }
             catch(const std::exception &ex)
             {
@@ -214,14 +192,13 @@ private:
             }
 
             //check the buffer
-            try
-            {
+            try {
                 UHD_ASSERT_THROW(packet_info.has_sid);
-                if (packet_info.sid != uint32_t((_sid >> 16) | (_sid << 16))) {
+                if (packet_info.sid != _xports.recv_sid.get()) {
                     throw uhd::io_error(
                         str(
                             boost::format("Expected SID: %s  Received SID: %s")
-                            % uhd::sid_t(_sid).reversed().to_pp_string_hex()
+                            % _xports.recv_sid.to_pp_string_hex()
                             % uhd::sid_t(packet_info.sid).to_pp_string_hex()
                         )
                     );
@@ -239,18 +216,23 @@ private:
                 }
 
                 UHD_ASSERT_THROW(packet_info.num_payload_words32 == 2);
-                //UHD_ASSERT_THROW(packet_info.packet_type == _packet_type);
             }
-            catch(const std::exception &ex)
-            {
-                throw uhd::io_error(str(boost::format("Block ctrl (%s) packet parse error - %s") % _name % ex.what()));
+            catch (const std::exception &ex) {
+                throw uhd::io_error(str(
+                    boost::format("Block ctrl (%s) packet parse error - %s")
+                    % _name
+                    % ex.what()
+                ));
             }
 
             //return the readback value
-            if (readback and _outstanding_seqs.empty())
-            {
-                const uint64_t hi = (_bige)? uhd::ntohx(pkt[packet_info.num_header_words32+0]) : uhd::wtohx(pkt[packet_info.num_header_words32+0]);
-                const uint64_t lo = (_bige)? uhd::ntohx(pkt[packet_info.num_header_words32+1]) : uhd::wtohx(pkt[packet_info.num_header_words32+1]);
+            if (readback and _outstanding_seqs.empty()) {
+                const uint64_t hi = (_endianness == uhd::ENDIANNESS_BIG) ?
+                    uhd::ntohx(pkt[packet_info.num_header_words32+0])
+                    : uhd::wtohx(pkt[packet_info.num_header_words32+0]);
+                const uint64_t lo = (_endianness == uhd::ENDIANNESS_BIG) ?
+                    uhd::ntohx(pkt[packet_info.num_header_words32+1])
+                    : uhd::wtohx(pkt[packet_info.num_header_words32+1]);
                 return ((hi << 32) | lo);
             }
         }
@@ -258,33 +240,28 @@ private:
         return 0;
     }
 
-    const vrt::if_packet_info_t::link_type_t _link_type;
-    const vrt::if_packet_info_t::packet_type_t _packet_type;
-    const bool _bige;
-    const uhd::transport::zero_copy_if::sptr _ctrl_xport;
-    const uhd::transport::zero_copy_if::sptr _resp_xport;
-    const uint32_t _sid;
-    const std::string _name;
-    boost::mutex _mutex;
-    size_t _seq_out;
-    uhd::time_spec_t _time;
-    bool _use_time;
-    double _tick_rate;
-    double _timeout;
-    std::queue<size_t> _outstanding_seqs;
-    const size_t _resp_queue_size;
 
-    const size_t _rb_address;
+    const uhd::both_xports_t _xports;
+    const std::string _name;
+    size_t _seq_out;
+    std::queue<size_t> _outstanding_seqs;
+    const size_t _max_outstanding_acks;
+
+    boost::mutex _mutex;
 };
 
 ctrl_iface::sptr ctrl_iface::make(
-        const bool big_endian,
-        zero_copy_if::sptr ctrl_xport,
-        zero_copy_if::sptr resp_xport,
-        const uint32_t sid,
+        const both_xports_t &xports,
         const std::string &name
 ) {
-    return sptr(new ctrl_iface_impl(
-                big_endian, ctrl_xport, resp_xport, sid, name
-    ));
+    if (xports.endianness == uhd::ENDIANNESS_BIG) {
+        return boost::make_shared<ctrl_iface_impl<uhd::ENDIANNESS_BIG>>(
+            xports, name
+        );
+    } else {
+        return boost::make_shared<ctrl_iface_impl<uhd::ENDIANNESS_LITTLE>>(
+            xports, name
+        );
+    }
 }
+
