@@ -39,6 +39,7 @@ using namespace uhd::usrp::dboard::twinrx;
 using namespace uhd::experts;
 
 static const dboard_id_t TWINRX_V100_000_ID(0x91);
+static const dboard_id_t TWINRX_V100_100_ID(0x93);
 
 /*!
  * twinrx_rcvr_fe is the dbaord class (dboard_base) that
@@ -337,6 +338,14 @@ UHD_STATIC_BLOCK(reg_twinrx_dboards)
         TWINRX_V100_000_ID,
         &twinrx_rcvr::make_twinrx_fe,
         "TwinRX v1.0",
+        boost::assign::list_of("0")("1"),
+        &make_twinrx_container
+    );
+
+    dboard_manager::register_dboard_restricted(
+        TWINRX_V100_100_ID,
+        &twinrx_rcvr::make_twinrx_fe,
+        "TwinRX v1.1",
         boost::assign::list_of("0")("1"),
         &make_twinrx_container
     );
