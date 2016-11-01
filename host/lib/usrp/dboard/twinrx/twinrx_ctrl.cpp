@@ -106,6 +106,8 @@ public:
             _config_lo2_route(i==0?LO_CONFIG_CH1:LO_CONFIG_CH2);
             _lo1_iface[i]->set_output_power(adf5355_iface::OUTPUT_POWER_5DBM);
             _lo1_iface[i]->set_reference_freq(TWINRX_DESIRED_REFERENCE_FREQ);
+            // Divided feedback did not appear to be correctly implemented during bringup. Necessary for phase resync
+//            _lo1_iface[i]->set_feedback_select(adf5355_iface::FB_SEL_DIVIDED);
             _lo1_iface[i]->set_muxout_mode(adf5355_iface::MUXOUT_DLD);
             _lo1_iface[i]->set_frequency(3e9, 1.0e3);
             _lo2_iface[i]->set_feedback_select(adf435x_iface::FB_SEL_DIVIDED);
