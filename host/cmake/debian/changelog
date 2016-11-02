@@ -1,8 +1,5 @@
 uhd (3.10.1.0-0ubuntu1) trusty; urgency=low
 
-
- -- Ettus Research <packages@ettus.com>  Wed, 02 Nov 2016 01:20:07 -0800
-
   - Fixed multiple compiler warnings
   - Multiple documentation fixes
   - X300: RX strobe lines are always in sync on device initialization. DB EEPROM
