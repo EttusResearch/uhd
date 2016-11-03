@@ -103,34 +103,47 @@ void generate_channel_list(
         std::vector<device_addr_t> &chan_args
 ) {
     uhd::stream_args_t args = args_;
-    BOOST_FOREACH(const size_t chan_idx, args.channels) {
-        //// Find block ID for this channel:
-        if (args.args.has_key(str(boost::format("block_id%d") % chan_idx))) {
-            chan_list.push_back(
-                uhd::rfnoc::block_id_t(
-                    args.args.pop(str(boost::format("block_id%d") % chan_idx))
-                )
-            );
-            chan_args.push_back(args.args);
+    std::vector<uhd::rfnoc::block_id_t> chan_list_(args.channels.size());
+    std::vector<device_addr_t> chan_args_(args.channels.size());
+
+    for (size_t i = 0; i < args.channels.size(); i++)
+    {
+        // Extract block ID
+        size_t chan_idx = args.channels[i];
+        std::string key = str(boost::format("block_id%d") % chan_idx);
+        if (args.args.has_key(key)) {
+            chan_list_[i] = args.args.pop(key);
         } else if (args.args.has_key("block_id")) {
-            chan_list.push_back(args.args.get("block_id"));
-            chan_args.push_back(args.args);
-            chan_args.back().pop("block_id");
+            chan_list[i] = args.args["block_id"];
         } else {
             throw uhd::runtime_error(str(
                 boost::format("Cannot create streamers: No block_id specified for channel %d.")
                 % chan_idx
             ));
         }
-        //// Find block port for this channel
-        if (args.args.has_key(str(boost::format("block_port%d") % chan_idx))) {
-            chan_args.back()["block_port"] = args.args.pop(str(boost::format("block_port%d") % chan_idx));
-        } else if (args.args.has_key("block_port")) {
-            // We have to write it again, because the chan args from the
-            // property tree might have overwritten this
-            chan_args.back()["block_port"] = args.args.get("block_port");
+
+        // Split off known channel specific args
+        key = str(boost::format("block_port%d") % chan_idx);
+        if (args.args.has_key(key)) {
+            chan_args_[i]["block_port"] = args.args.pop(key);
+        }
+        key = str(boost::format("radio_id%d") % chan_idx);
+        if (args.args.has_key(key)) {
+            chan_args_[i]["radio_id"] = args.args.pop(key);
+        }
+        key = str(boost::format("radio_port%d") % chan_idx);
+        if (args.args.has_key(key)) {
+            chan_args_[i]["radio_port"] = args.args.pop(key);
         }
     }
+
+    // Add all remaining args to all channel args
+    BOOST_FOREACH(device_addr_t &chan_arg, chan_args_) {
+        chan_arg = chan_arg.to_string() + "," + args.args.to_string();
+    }
+
+    chan_list = chan_list_;
+    chan_args = chan_args_;
 }
 
 
@@ -803,11 +816,34 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         blk_ctrl->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.recv_sid.get_dst(), block_port);
         UHD_STREAMER_LOG() << "[TX Streamer] resp_in_dst_sid == " << boost::format("0x%04X") % xport.recv_sid.get_dst() << std::endl;
-        // Find all downstream radio nodes and set their response in SID to the host
-        std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
-        UHD_STREAMER_LOG() << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
-        BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, downstream_radio_nodes) {
-            node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), block_port);
+
+        // FIXME: Once there is a better way to map the radio block and port
+        // to the channel or another way to receive asynchronous messages that
+        // is not in-band, this should be removed.
+        if (args.args.has_key("radio_id") and args.args.has_key("radio_port"))
+        {
+            // Find downstream radio node and set the response SID to the host
+            uhd::rfnoc::block_id_t radio_id(args.args["radio_id"]);
+            size_t radio_port = args.args.cast<size_t>("radio_port", 0);
+            std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
+            UHD_STREAMER_LOG() << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
+            BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, downstream_radio_nodes) {
+                if (node->get_block_id() == radio_id) {
+                    node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), radio_port);
+                }
+            }
+        } else {
+            // FIXME:  This block is preserved for legacy behavior where the
+            // radio_id and radio_port are not provided.  It fails if more
+            // than one radio is visible downstream or the port on the radio
+            // is not the same as the block_port.  It should be removed as
+            // soon as possible.
+            // Find all downstream radio nodes and set their response SID to the host
+            std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
+            UHD_STREAMER_LOG() << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
+            BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, downstream_radio_nodes) {
+                node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), block_port);
+            }
         }
 
         //Give the streamer a functor to get the send buffer
