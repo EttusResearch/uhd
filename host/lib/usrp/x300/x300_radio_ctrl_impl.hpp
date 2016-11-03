@@ -161,7 +161,7 @@ private:
     void set_rx_fe_corrections(const uhd::fs_path &db_path, const uhd::fs_path &rx_fe_corr_path, const double lo_freq);
     void set_tx_fe_corrections(const uhd::fs_path &db_path, const uhd::fs_path &tx_fe_corr_path, const double lo_freq);
 
-    time_spec_t set_fe_cmd_time(const time_spec_t &time, const size_t chan);
+    void set_fe_cmd_time(const time_spec_t &time, const size_t chan);
 
 private: // members
     enum radio_connection_t { PRIMARY, SECONDARY };
