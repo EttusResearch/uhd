@@ -134,10 +134,8 @@ protected: // TODO see what's protected and what's private
      * Registers
      **********************************************************************/
     struct regs {
-        static inline uint32_t sr_addr(const uint32_t offset)
-        {
-            return offset * 4;
-        }
+        static inline uint32_t sr_addr(const uint32_t offset) { return offset * 4; }
+        static inline uint32_t rb_addr(const uint32_t offset) { return offset * 8; }
 
         static const uint32_t BASE       = 128;
 

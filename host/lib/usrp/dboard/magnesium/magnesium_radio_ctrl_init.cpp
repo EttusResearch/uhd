@@ -122,8 +122,9 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
         / "tx_lo";
     UHD_LOG_TRACE(unique_id(), "Initializing SPI core...");
     _spi = spi_core_3000::make(_get_ctrl(0),
-        radio_ctrl_impl::regs::sr_addr(radio_ctrl_impl::regs::SPI),
-        radio_ctrl_impl::regs::RB_SPI);
+        regs::sr_addr(regs::SPI),
+        regs::rb_addr(regs::RB_SPI)
+    );
 
     UHD_LOG_TRACE(unique_id(), "Initializing CPLD...");
     UHD_LOG_TRACE(unique_id(), "CPLD path: " << cpld_path);
@@ -199,7 +200,7 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
             usrp::gpio_atr::gpio_atr_3000::make(
                 _get_ctrl(radio_idx),
                 regs::sr_addr(regs::GPIO),
-                regs::RB_DB_GPIO
+                regs::rb_addr(regs::RB_DB_GPIO)
             )
         );
         // DSA and AD9371 gain bits do *not* toggle on ATR modes. If we ever
@@ -217,7 +218,10 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
     }
     UHD_LOG_TRACE(unique_id(), "Initializing front-panel GPIO control...")
     _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(
-            _get_ctrl(0), regs::sr_addr(regs::FP_GPIO), regs::RB_FP_GPIO);
+        _get_ctrl(0),
+        regs::sr_addr(regs::FP_GPIO),
+        regs::rb_addr(regs::RB_FP_GPIO)
+    );
 }
 
 void magnesium_radio_ctrl_impl::_init_frontend_subtree(

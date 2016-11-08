@@ -72,13 +72,9 @@ radio_ctrl_impl::radio_ctrl_impl() :
 
         if (i == 0) {
             time_core_3000::readback_bases_type time64_rb_bases;
-            time64_rb_bases.rb_now = regs::RB_TIME_NOW;
-            time64_rb_bases.rb_pps = regs::RB_TIME_PPS;
-            _time64 = time_core_3000::make(
-                _perifs[i].ctrl,
-                regs::sr_addr(regs::TIME),
-                time64_rb_bases
-            );
+            time64_rb_bases.rb_now = regs::rb_addr(regs::RB_TIME_NOW);
+            time64_rb_bases.rb_pps = regs::rb_addr(regs::RB_TIME_PPS);
+            _time64 = time_core_3000::make(_perifs[i].ctrl, regs::sr_addr(regs::TIME), time64_rb_bases);
             this->set_time_now(0.0);
         }
 

@@ -42,12 +42,12 @@ void wb_iface_adapter::poke32(const wb_addr_type addr, const uint32_t data)
 
 uint32_t wb_iface_adapter::peek32(const wb_addr_type addr)
 {
-    return peek32_functor(addr);
+    return peek32_functor(addr / 8);
 }
 
 uint64_t wb_iface_adapter::peek64(const wb_addr_type addr)
 {
-    return peek64_functor(addr);
+    return peek64_functor(addr / 8);
 }
 
 uhd::time_spec_t wb_iface_adapter::get_time(void)

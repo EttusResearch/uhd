@@ -64,13 +64,17 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     // Setup peripherals
     ////////////////////////////////////////////////////////////////
     _spi = spi_core_3000::make(ctrl,
-        radio_ctrl_impl::regs::sr_addr(radio_ctrl_impl::regs::SPI),
-        radio_ctrl_impl::regs::RB_SPI);
+        regs::sr_addr(radio_ctrl_impl::regs::SPI),
+        regs::rb_addr(radio_ctrl_impl::regs::RB_SPI)
+    );
     _adc = x300_adc_ctrl::make(_spi, DB_ADC_SEN);
     _dac = x300_dac_ctrl::make(_spi, DB_DAC_SEN, _radio_clk_rate);
 
     if (_radio_type==PRIMARY) {
-        _fp_gpio = gpio_atr::gpio_atr_3000::make(ctrl, regs::sr_addr(regs::FP_GPIO), regs::RB_FP_GPIO);
+        _fp_gpio = gpio_atr::gpio_atr_3000::make(ctrl,
+            regs::sr_addr(regs::FP_GPIO),
+            regs::rb_addr(regs::RB_FP_GPIO)
+        );
         for(const gpio_atr::gpio_attr_map_t::value_type attr:  gpio_atr::gpio_attr_map) {
             switch (attr.first){
                 case usrp::gpio_atr::GPIO_SRC:
@@ -641,7 +645,9 @@ void x300_radio_ctrl_impl::setup_radio(
     //create a new dboard interface
     x300_dboard_iface_config_t db_config;
     db_config.gpio = gpio_atr::db_gpio_atr_3000::make(_get_ctrl(IO_MASTER_RADIO),
-        radio_ctrl_impl::regs::sr_addr(radio_ctrl_impl::regs::GPIO), radio_ctrl_impl::regs::RB_DB_GPIO);
+        radio_ctrl_impl::regs::sr_addr(radio_ctrl_impl::regs::GPIO),
+        radio_ctrl_impl::regs::rb_addr(radio_ctrl_impl::regs::RB_DB_GPIO)
+    );
     db_config.spi = _spi;
     db_config.rx_spi_slaveno = DB_RX_SEN;
     db_config.tx_spi_slaveno = DB_TX_SEN;
