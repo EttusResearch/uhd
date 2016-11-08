@@ -21,7 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_array.hpp>
 #include <string>
@@ -151,10 +151,10 @@ namespace uhd{
     {
     protected:
         double _rate;
-        boost::uint32_t _interpolation;
-        boost::uint32_t _decimation;
+        uint32_t _interpolation;
+        uint32_t _decimation;
         tap_t _tap_full_scale;
-        boost::uint32_t _max_num_taps;
+        uint32_t _max_num_taps;
         std::vector<tap_t> _taps;
 
     public:

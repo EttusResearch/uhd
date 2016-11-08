@@ -28,18 +28,18 @@
 
 namespace uhd { namespace usrp { namespace e300 {
 
-static const boost::uint16_t E300_MB_PID = 0x77d1;
-static const boost::uint16_t E310_SG1_MB_PID = 0x77d2;
-static const boost::uint16_t E310_SG3_MB_PID = 0x77d3;
+static const uint16_t E300_MB_PID = 0x77d1;
+static const uint16_t E310_SG1_MB_PID = 0x77d2;
+static const uint16_t E310_SG3_MB_PID = 0x77d3;
 
-static const boost::uint16_t E300_DB_PID = 0x0100;
-static const boost::uint16_t E310_DB_PID = 0x0110;
+static const uint16_t E300_DB_PID = 0x0100;
+static const uint16_t E310_DB_PID = 0x0110;
 
-static const boost::uint16_t E310_MB_MAP_MAJOR = 0x0001;
-static const boost::uint16_t E310_MB_MAP_MINOR = 0x0000;
+static const uint16_t E310_MB_MAP_MAJOR = 0x0001;
+static const uint16_t E310_MB_MAP_MINOR = 0x0000;
 
-static const boost::uint16_t E310_DB_MAP_MAJOR = 0x0001;
-static const boost::uint16_t E310_DB_MAP_MINOR = 0x0000;
+static const uint16_t E310_DB_MAP_MAJOR = 0x0001;
+static const uint16_t E310_DB_MAP_MINOR = 0x0000;
 
 class e300_eeprom_manager : boost::noncopyable
 {
@@ -72,7 +72,7 @@ public:
     enum mboard_t {USRP_E300_MB, USRP_E310_SG1_MB, USRP_E310_SG3_MB, UNKNOWN};
 
     mboard_t get_mb_type(void) const;
-    static mboard_t get_mb_type(boost::uint16_t pid);
+    static mboard_t get_mb_type(uint16_t pid);
     std::string get_mb_type_string(void) const;
 
 private: // types
@@ -86,37 +86,37 @@ private: // types
     struct mb_eeprom_map_t
     {
         // Data format version
-        boost::uint16_t data_version_major;
-        boost::uint16_t data_version_minor;
+        uint16_t data_version_major;
+        uint16_t data_version_minor;
 
         // NIC mac address
-        boost::uint8_t mac_addr[6];
+        uint8_t mac_addr[6];
 
         // HW identification info
-        boost::uint16_t hw_product;
-        boost::uint16_t hw_revision;
+        uint16_t hw_product;
+        uint16_t hw_revision;
 
         // serial
-        boost::uint8_t serial[MB_SERIAL_LEN];
-        boost::uint8_t pad[20 - MB_SERIAL_LEN];
+        uint8_t serial[MB_SERIAL_LEN];
+        uint8_t pad[20 - MB_SERIAL_LEN];
 
         //User specific
-        boost::uint8_t user_name[MB_NAME_LEN];
+        uint8_t user_name[MB_NAME_LEN];
     };
 
     struct db_eeprom_map_t
     {
         // Data format version
-        boost::uint16_t data_version_major;
-        boost::uint16_t data_version_minor;
+        uint16_t data_version_major;
+        uint16_t data_version_minor;
 
         // HW identification info
-        boost::uint16_t hw_product;
-        boost::uint16_t hw_revision;
+        uint16_t hw_product;
+        uint16_t hw_revision;
 
         // serial
-        boost::uint8_t serial[DB_SERIAL_LEN];
-        boost::uint8_t pad[20 - DB_SERIAL_LEN];
+        uint8_t serial[DB_SERIAL_LEN];
+        uint8_t pad[20 - DB_SERIAL_LEN];
     };
 
 private: // members

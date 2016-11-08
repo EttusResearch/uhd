@@ -40,7 +40,7 @@ class max287x_iface
 public:
     typedef boost::shared_ptr<max287x_iface> sptr;
 
-    typedef boost::function<void(std::vector<boost::uint32_t>)> write_fn;
+    typedef boost::function<void(std::vector<uint32_t>)> write_fn;
 
     /**
      * LD Pin Modes
@@ -207,7 +207,7 @@ public:
      * Set phase
      * @param phase the phase offset
      */
-    virtual void set_phase(boost::uint16_t phase) = 0;
+    virtual void set_phase(uint16_t phase) = 0;
 
     /**
      * Write values configured by the set_* functions.
@@ -251,7 +251,7 @@ public:
     virtual void set_clock_divider_mode(clock_divider_mode_t mode);
     virtual void set_cycle_slip_mode(bool enabled);
     virtual void set_low_noise_and_spur(low_noise_and_spur_t mode);
-    virtual void set_phase(boost::uint16_t phase);
+    virtual void set_phase(uint16_t phase);
     virtual void commit();
     virtual bool can_sync();
     virtual void config_for_sync(bool enable);
@@ -877,7 +877,7 @@ void max287x<max287x_regs_t>::set_low_noise_and_spur(low_noise_and_spur_t mode)
 }
 
 template <typename max287x_regs_t>
-void max287x<max287x_regs_t>::set_phase(boost::uint16_t phase)
+void max287x<max287x_regs_t>::set_phase(uint16_t phase)
 {
     _regs.phase_12_bit = phase & 0xFFF;
 }
@@ -885,26 +885,26 @@ void max287x<max287x_regs_t>::set_phase(boost::uint16_t phase)
 template <typename max287x_regs_t>
 void max287x<max287x_regs_t>::commit()
 {
-    std::vector<boost::uint32_t> regs;
-    std::set<boost::uint32_t> changed_regs;
+    std::vector<uint32_t> regs;
+    std::set<uint32_t> changed_regs;
 
     // Get only regs with changes
     if (_write_all_regs)
     {
         for (int addr = 5; addr >= 0; addr--)
-            regs.push_back(_regs.get_reg(boost::uint32_t(addr)));
+            regs.push_back(_regs.get_reg(uint32_t(addr)));
     } else {
         try {
-            changed_regs = _regs.template get_changed_addrs<boost::uint32_t> ();
+            changed_regs = _regs.template get_changed_addrs<uint32_t> ();
             for (int addr = 5; addr >= 0; addr--)
             {
-                if (changed_regs.find(boost::uint32_t(addr)) != changed_regs.end())
-                    regs.push_back(_regs.get_reg(boost::uint32_t(addr)));
+                if (changed_regs.find(uint32_t(addr)) != changed_regs.end())
+                    regs.push_back(_regs.get_reg(uint32_t(addr)));
             }
         } catch (uhd::runtime_error&) {
             // No saved state - write all regs
             for (int addr = 5; addr >= 0; addr--)
-                regs.push_back(_regs.get_reg(boost::uint32_t(addr)));
+                regs.push_back(_regs.get_reg(uint32_t(addr)));
         }
     }
 

@@ -27,7 +27,7 @@ class b200_uart: boost::noncopyable, public uhd::uart_iface
 {
 public:
     typedef boost::shared_ptr<b200_uart> sptr;
-    static sptr make(uhd::transport::zero_copy_if::sptr, const boost::uint32_t sid);
+    static sptr make(uhd::transport::zero_copy_if::sptr, const uint32_t sid);
     virtual void handle_uart_packet(uhd::transport::managed_recv_buffer::sptr buff) = 0;
 };
 

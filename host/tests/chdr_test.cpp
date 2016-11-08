@@ -28,7 +28,7 @@ static void pack_and_unpack(
     if_packet_info_t &if_packet_info_in
 ){
     // Temp buffer for packed packet
-    boost::uint32_t packet_buff[2048] = {0};
+    uint32_t packet_buff[2048] = {0};
 
     // Check input (must not be lazy)
     BOOST_REQUIRE(
@@ -46,7 +46,7 @@ static void pack_and_unpack(
         packet_buff, if_packet_info_in
     );
     std::cout << std::endl;
-    boost::uint32_t header_bits = (uhd::ntohx(packet_buff[0]) >> 28);
+    uint32_t header_bits = (uhd::ntohx(packet_buff[0]) >> 28);
     std::cout << boost::format("header bits = 0b%d%d%d%d") % ((header_bits & 8) > 0)
                                                            % ((header_bits & 4) > 0)
                                                            % ((header_bits & 2) > 0)

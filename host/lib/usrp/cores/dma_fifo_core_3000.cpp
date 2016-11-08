@@ -36,12 +36,12 @@ protected:
     public:
         UHD_DEFINE_SOFT_REG_FIELD(ADDR, /*width*/ 3, /*shift*/ 0);  //[2:0]
 
-        static const boost::uint32_t RB_FIFO_STATUS     = 0;
-        static const boost::uint32_t RB_BIST_STATUS     = 1;
-        static const boost::uint32_t RB_BIST_XFER_CNT   = 2;
-        static const boost::uint32_t RB_BIST_CYC_CNT    = 3;
+        static const uint32_t RB_FIFO_STATUS     = 0;
+        static const uint32_t RB_BIST_STATUS     = 1;
+        static const uint32_t RB_BIST_XFER_CNT   = 2;
+        static const uint32_t RB_BIST_CYC_CNT    = 3;
 
-        rb_addr_reg_t(boost::uint32_t base):
+        rb_addr_reg_t(uint32_t base):
             soft_reg32_wo_t(base + 0)
         {
             //Initial values
@@ -56,7 +56,7 @@ protected:
         UHD_DEFINE_SOFT_REG_FIELD(BURST_TIMEOUT,        /*width*/ 12, /*shift*/  4);  //[15:4]
         UHD_DEFINE_SOFT_REG_FIELD(RD_SUPPRESS_THRESH,   /*width*/ 16, /*shift*/ 16);  //[31:16]
 
-        fifo_ctrl_reg_t(boost::uint32_t base):
+        fifo_ctrl_reg_t(uint32_t base):
             soft_reg32_wo_t(base + 4)
         {
             //Initial values
@@ -71,7 +71,7 @@ protected:
     public:
         UHD_DEFINE_SOFT_REG_FIELD(BASE_ADDR, /*width*/ 30, /*shift*/ 0);  //[29:0]
 
-        base_addr_reg_t(boost::uint32_t base):
+        base_addr_reg_t(uint32_t base):
             soft_reg32_wo_t(base + 8)
         {
             //Initial values
@@ -83,7 +83,7 @@ protected:
     public:
         UHD_DEFINE_SOFT_REG_FIELD(ADDR_MASK, /*width*/ 30, /*shift*/ 0);  //[29:0]
 
-        addr_mask_reg_t(boost::uint32_t base):
+        addr_mask_reg_t(uint32_t base):
             soft_reg32_wo_t(base + 12)
         {
             //Initial values
@@ -97,12 +97,12 @@ protected:
         UHD_DEFINE_SOFT_REG_FIELD(CONTINUOUS_MODE,  /*width*/ 1, /*shift*/ 1);  //[1]
         UHD_DEFINE_SOFT_REG_FIELD(TEST_PATT,        /*width*/ 2, /*shift*/ 4);  //[5:4]
 
-        static const boost::uint32_t TEST_PATT_ZERO_ONE     = 0;
-        static const boost::uint32_t TEST_PATT_CHECKERBOARD = 1;
-        static const boost::uint32_t TEST_PATT_COUNT        = 2;
-        static const boost::uint32_t TEST_PATT_COUNT_INV    = 3;
+        static const uint32_t TEST_PATT_ZERO_ONE     = 0;
+        static const uint32_t TEST_PATT_CHECKERBOARD = 1;
+        static const uint32_t TEST_PATT_COUNT        = 2;
+        static const uint32_t TEST_PATT_COUNT_INV    = 3;
 
-        bist_ctrl_reg_t(boost::uint32_t base):
+        bist_ctrl_reg_t(uint32_t base):
             soft_reg32_wo_t(base + 16)
         {
             //Initial values
@@ -118,7 +118,7 @@ protected:
         UHD_DEFINE_SOFT_REG_FIELD(MAX_PKT_SIZE,     /*width*/ 13, /*shift*/ 18); //[30:18]
         UHD_DEFINE_SOFT_REG_FIELD(PKT_SIZE_RAMP,    /*width*/ 1,  /*shift*/ 31); //[31]
 
-        bist_cfg_reg_t(boost::uint32_t base):
+        bist_cfg_reg_t(uint32_t base):
             soft_reg32_wo_t(base + 20)
         {
             //Initial values
@@ -133,7 +133,7 @@ protected:
         UHD_DEFINE_SOFT_REG_FIELD(TX_PKT_DELAY,     /*width*/ 16, /*shift*/ 0);  //[15:0]
         UHD_DEFINE_SOFT_REG_FIELD(RX_SAMP_DELAY,    /*width*/  8, /*shift*/ 16); //[23:16]
 
-        bist_delay_reg_t(boost::uint32_t base):
+        bist_delay_reg_t(uint32_t base):
             soft_reg32_wo_t(base + 24)
         {
             //Initial values
@@ -146,7 +146,7 @@ protected:
     public:
         UHD_DEFINE_SOFT_REG_FIELD(SID,     /*width*/ 32, /*shift*/ 0);  //[31:0]
 
-        bist_sid_reg_t(boost::uint32_t base):
+        bist_sid_reg_t(uint32_t base):
             soft_reg32_wo_t(base + 28)
         {
             //Initial values
@@ -169,13 +169,13 @@ public:
             return _iface->peek32(_rb_addr) & 0x80000000;
         }
 
-        boost::uint32_t get_occupied_cnt() {
+        uint32_t get_occupied_cnt() {
             boost::lock_guard<boost::mutex> lock(_mutex);
             _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_FIFO_STATUS);
             return _iface->peek32(_rb_addr) & 0x7FFFFFF;
         }
 
-        boost::uint32_t is_fifo_busy() {
+        uint32_t is_fifo_busy() {
             boost::lock_guard<boost::mutex> lock(_mutex);
             _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_FIFO_STATUS);
             return _iface->peek32(_rb_addr) & 0x40000000;
@@ -184,17 +184,17 @@ public:
         struct bist_status_t {
             bool running;
             bool finished;
-            boost::uint8_t error;
+            uint8_t error;
         };
 
         bist_status_t get_bist_status() {
             boost::lock_guard<boost::mutex> lock(_mutex);
             _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_BIST_STATUS);
-            boost::uint32_t st32 = _iface->peek32(_rb_addr) & 0xF;
+            uint32_t st32 = _iface->peek32(_rb_addr) & 0xF;
             bist_status_t status;
             status.running = st32 & 0x1;
             status.finished = st32 & 0x2;
-            status.error = static_cast<boost::uint8_t>((st32>>2) & 0x3);
+            status.error = static_cast<uint8_t>((st32>>2) & 0x3);
             return status;
         }
 
@@ -206,7 +206,7 @@ public:
 
         double get_xfer_ratio() {
             boost::lock_guard<boost::mutex> lock(_mutex);
-            boost::uint32_t xfer_cnt = 0, cyc_cnt = 0;
+            uint32_t xfer_cnt = 0, cyc_cnt = 0;
             _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_BIST_XFER_CNT);
             xfer_cnt = _iface->peek32(_rb_addr);
             _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_BIST_CYC_CNT);
@@ -252,10 +252,10 @@ public:
         _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 0);
     }
 
-    virtual void resize(const boost::uint32_t base_addr, const boost::uint32_t size) {
+    virtual void resize(const uint32_t base_addr, const uint32_t size) {
         //Validate parameters
         if (size < 8192) throw uhd::runtime_error("DMA FIFO must be larger than 8KiB");
-        boost::uint32_t size_mask = size - 1;
+        uint32_t size_mask = size - 1;
         if (size & size_mask) throw uhd::runtime_error("DMA FIFO size must be a power of 2");
 
         //Clear the FIFO and hold it in that state
@@ -268,7 +268,7 @@ public:
         flush();
     }
 
-    virtual boost::uint32_t get_bytes_occupied() {
+    virtual uint32_t get_bytes_occupied() {
         return _fifo_readback.get_occupied_cnt() * 8;
     }
 
@@ -276,16 +276,16 @@ public:
         return _fifo_readback.is_ext_bist_supported();
     }
 
-    virtual boost::uint8_t run_bist(bool finite = true, boost::uint32_t timeout_ms = 500) {
+    virtual uint8_t run_bist(bool finite = true, uint32_t timeout_ms = 500) {
         return run_ext_bist(finite, 0, 0, 0, timeout_ms);
     }
 
-    virtual boost::uint8_t run_ext_bist(
+    virtual uint8_t run_ext_bist(
         bool finite,
-        boost::uint32_t rx_samp_delay,
-        boost::uint32_t tx_pkt_delay,
-        boost::uint32_t sid,
-        boost::uint32_t timeout_ms = 500
+        uint32_t rx_samp_delay,
+        uint32_t tx_pkt_delay,
+        uint32_t sid,
+        uint32_t timeout_ms = 500
     ) {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
@@ -350,7 +350,7 @@ private:
         }
     }
 
-    void _wait_for_bist_done(boost::uint32_t timeout_ms, bool force_stop = false)
+    void _wait_for_bist_done(uint32_t timeout_ms, bool force_stop = false)
     {
         boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration elapsed;

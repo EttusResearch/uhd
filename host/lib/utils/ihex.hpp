@@ -20,7 +20,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -30,7 +30,7 @@ class ihex_reader
 {
 public:
     // Arguments are: lower address bits, upper address bits, buff, length
-    typedef boost::function<int(boost::uint16_t,boost::uint16_t,unsigned char*,boost::uint16_t)> record_handle_type;
+    typedef boost::function<int(uint16_t,uint16_t,unsigned char*,uint16_t)> record_handle_type;
 
     /*
      * \param ihex_filename Path to the *.ihx file
@@ -67,7 +67,7 @@ public:
      *
      * \throws uhd::io_error if the HEX file is corrupted or unreadable.
      */
-    std::vector<boost::uint8_t> to_vector(const size_t size_estimate = 0);
+    std::vector<uint8_t> to_vector(const size_t size_estimate = 0);
 
 private:
     const std::string _ihex_filename;

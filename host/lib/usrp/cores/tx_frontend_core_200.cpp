@@ -33,8 +33,8 @@ using namespace uhd;
 const std::complex<double> tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE = std::complex<double>(0.0, 0.0);
 const std::complex<double> tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE = std::complex<double>(0.0, 0.0);
 
-static boost::uint32_t fs_to_bits(const double num, const size_t bits){
-    return boost::int32_t(boost::math::round(num * (1 << (bits-1))));
+static uint32_t fs_to_bits(const double num, const size_t bits){
+    return int32_t(boost::math::round(num * (1 << (bits-1))));
 }
 
 tx_frontend_core_200::~tx_frontend_core_200(void){
@@ -50,7 +50,7 @@ public:
     }
 
     void set_mux(const std::string &mode){
-        static const uhd::dict<std::string, boost::uint32_t> mode_to_mux = boost::assign::map_list_of
+        static const uhd::dict<std::string, uint32_t> mode_to_mux = boost::assign::map_list_of
             ("IQ", (0x1 << 4) | (0x0 << 0)) //DAC0Q=DUC0Q, DAC0I=DUC0I
             ("QI", (0x0 << 4) | (0x1 << 0)) //DAC0Q=DUC0I, DAC0I=DUC0Q
             ("I",  (0xf << 4) | (0x0 << 0)) //DAC0Q=ZERO,  DAC0I=DUC0I
@@ -61,8 +61,8 @@ public:
 
     std::complex<double> set_dc_offset(const std::complex<double> &off){
         static const double scaler = double(1ul << 23);
-        const boost::int32_t i_dc_off = boost::math::iround(off.real()*scaler);
-        const boost::int32_t q_dc_off = boost::math::iround(off.imag()*scaler);
+        const int32_t i_dc_off = boost::math::iround(off.real()*scaler);
+        const int32_t q_dc_off = boost::math::iround(off.imag()*scaler);
 
         _iface->poke32(REG_TX_FE_DC_OFFSET_I, i_dc_off);
         _iface->poke32(REG_TX_FE_DC_OFFSET_Q, q_dc_off);

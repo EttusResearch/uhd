@@ -19,7 +19,7 @@
 #define INCLUDED_DBOARD_TWINRX_GAIN_TABLES_HPP
 
 #include <uhd/config.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <uhd/types/ranges.hpp>
 #include "twinrx_ctrl.hpp"
 
@@ -29,7 +29,7 @@ class twinrx_gain_config_t {
 public:
     twinrx_gain_config_t(
         size_t index_, double sys_gain_,
-        boost::uint8_t atten1_, boost::uint8_t atten2_,
+        uint8_t atten1_, uint8_t atten2_,
         bool amp1_, bool amp2_
     ): index(index_), sys_gain(sys_gain_), atten1(atten1_), atten2(atten2_),
        amp1(amp1_), amp2(amp2_)
@@ -49,8 +49,8 @@ public:
 
     size_t         index;
     double         sys_gain;
-    boost::uint8_t atten1;
-    boost::uint8_t atten2;
+    uint8_t atten1;
+    uint8_t atten2;
     bool           amp1;
     bool           amp2;
 };

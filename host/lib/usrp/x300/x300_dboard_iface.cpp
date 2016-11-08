@@ -126,47 +126,47 @@ double x300_dboard_iface::get_codec_rate(unit_t unit)
 /***********************************************************************
  * GPIO
  **********************************************************************/
-void x300_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask)
+void x300_dboard_iface::set_pin_ctrl(unit_t unit, uint32_t value, uint32_t mask)
 {
     _config.gpio->set_pin_ctrl(unit, value, mask);
 }
 
-boost::uint32_t x300_dboard_iface::get_pin_ctrl(unit_t unit)
+uint32_t x300_dboard_iface::get_pin_ctrl(unit_t unit)
 {
     return _config.gpio->get_pin_ctrl(unit);
 }
 
-void x300_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask)
+void x300_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t reg, uint32_t value, uint32_t mask)
 {
     _config.gpio->set_atr_reg(unit, reg, value, mask);
 }
 
-boost::uint32_t x300_dboard_iface::get_atr_reg(unit_t unit, atr_reg_t reg)
+uint32_t x300_dboard_iface::get_atr_reg(unit_t unit, atr_reg_t reg)
 {
     return _config.gpio->get_atr_reg(unit, reg);
 }
 
-void x300_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask)
+void x300_dboard_iface::set_gpio_ddr(unit_t unit, uint32_t value, uint32_t mask)
 {
     _config.gpio->set_gpio_ddr(unit, value, mask);
 }
 
-boost::uint32_t x300_dboard_iface::get_gpio_ddr(unit_t unit)
+uint32_t x300_dboard_iface::get_gpio_ddr(unit_t unit)
 {
     return _config.gpio->get_gpio_ddr(unit);
 }
 
-void x300_dboard_iface::set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask)
+void x300_dboard_iface::set_gpio_out(unit_t unit, uint32_t value, uint32_t mask)
 {
     _config.gpio->set_gpio_out(unit, value, mask);
 }
 
-boost::uint32_t x300_dboard_iface::get_gpio_out(unit_t unit)
+uint32_t x300_dboard_iface::get_gpio_out(unit_t unit)
 {
     return _config.gpio->get_gpio_out(unit);
 }
 
-boost::uint32_t x300_dboard_iface::read_gpio(unit_t unit)
+uint32_t x300_dboard_iface::read_gpio(unit_t unit)
 {
     return _config.gpio->read_gpio(unit);
 }
@@ -177,20 +177,20 @@ boost::uint32_t x300_dboard_iface::read_gpio(unit_t unit)
 void x300_dboard_iface::write_spi(
     unit_t unit,
     const spi_config_t &config,
-    boost::uint32_t data,
+    uint32_t data,
     size_t num_bits
 ){
-    boost::uint32_t slave = 0;
+    uint32_t slave = 0;
     if (unit == UNIT_TX) slave |= _config.tx_spi_slaveno;
     if (unit == UNIT_RX) slave |= _config.rx_spi_slaveno;
 
     _config.spi->write_spi(int(slave), config, data, num_bits);
 }
 
-boost::uint32_t x300_dboard_iface::read_write_spi(
+uint32_t x300_dboard_iface::read_write_spi(
     unit_t unit,
     const spi_config_t &config,
-    boost::uint32_t data,
+    uint32_t data,
     size_t num_bits
 ){
     if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
@@ -202,12 +202,12 @@ boost::uint32_t x300_dboard_iface::read_write_spi(
 /***********************************************************************
  * I2C
  **********************************************************************/
-void x300_dboard_iface::write_i2c(boost::uint16_t addr, const byte_vector_t &bytes)
+void x300_dboard_iface::write_i2c(uint16_t addr, const byte_vector_t &bytes)
 {
     return _config.i2c->write_i2c(addr, bytes);
 }
 
-byte_vector_t x300_dboard_iface::read_i2c(boost::uint16_t addr, size_t num_bytes)
+byte_vector_t x300_dboard_iface::read_i2c(uint16_t addr, size_t num_bytes)
 {
     return _config.i2c->read_i2c(addr, num_bytes);
 }
@@ -280,7 +280,7 @@ double x300_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which)
         unit_to_spi_adc[unit], config,
         ad7922_regs.get_reg(), 16
     );
-    ad7922_regs.set_reg(boost::uint16_t(_config.spi->read_spi(
+    ad7922_regs.set_reg(uint16_t(_config.spi->read_spi(
         unit_to_spi_adc[unit], config,
         ad7922_regs.get_reg(), 16
     )));

@@ -21,6 +21,7 @@
 #include <boost/thread.hpp> //sleep
 #include <iostream>
 #include <iomanip>
+#include <stdint.h>
 
 BOOST_AUTO_TEST_CASE(test_time_spec_compare){
     std::cout << "Testing time specification compare..." << std::endl;
@@ -102,7 +103,7 @@ BOOST_AUTO_TEST_CASE(test_time_spec_neg_values){
 BOOST_AUTO_TEST_CASE(test_time_large_ticks_to_time_spec)
 {
     std::cout << "sizeof(time_t) " << sizeof(time_t) << std::endl;
-    const boost::uint64_t ticks0 = boost::uint64_t(100e6*1360217663.739296);
+    const uint64_t ticks0 = uint64_t(100e6*1360217663.739296);
     const uhd::time_spec_t t0 = uhd::time_spec_t::from_ticks(ticks0, 100e6);
     std::cout << "t0.get_real_secs() " << t0.get_real_secs() << std::endl;
     std::cout << "t0.get_full_secs() " << t0.get_full_secs() << std::endl;

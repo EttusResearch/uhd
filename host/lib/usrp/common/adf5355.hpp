@@ -20,12 +20,13 @@
 
 #include <boost/function.hpp>
 #include <vector>
+#include <stdint.h>
 
 class adf5355_iface
 {
 public:
     typedef boost::shared_ptr<adf5355_iface> sptr;
-    typedef boost::function<void(std::vector<boost::uint32_t>)> write_fn_t;
+    typedef boost::function<void(std::vector<uint32_t>)> write_fn_t;
 
     static sptr make(write_fn_t write);
 

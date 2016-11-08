@@ -47,11 +47,11 @@
 
 namespace uhd{ namespace transport{ namespace sph{
 
-UHD_INLINE boost::uint32_t get_context_code(
-    const boost::uint32_t *vrt_hdr, const vrt::if_packet_info_t &if_packet_info
+UHD_INLINE uint32_t get_context_code(
+    const uint32_t *vrt_hdr, const vrt::if_packet_info_t &if_packet_info
 ){
     //extract the context word (we dont know the endianness so mirror the bytes)
-    boost::uint32_t word0 = vrt_hdr[if_packet_info.num_header_words32] |
+    uint32_t word0 = vrt_hdr[if_packet_info.num_header_words32] |
               uhd::byteswap(vrt_hdr[if_packet_info.num_header_words32]);
     return word0 & 0xff;
 }
@@ -71,8 +71,8 @@ public:
     typedef boost::function<managed_recv_buffer::sptr(double)> get_buff_type;
     typedef boost::function<void(const size_t)> handle_flowctrl_type;
     typedef boost::function<void(const stream_cmd_t&)> issue_stream_cmd_type;
-    typedef void(*vrt_unpacker_type)(const boost::uint32_t *, vrt::if_packet_info_t &);
-    //typedef boost::function<void(const boost::uint32_t *, vrt::if_packet_info_t &)> vrt_unpacker_type;
+    typedef void(*vrt_unpacker_type)(const uint32_t *, vrt::if_packet_info_t &);
+    //typedef boost::function<void(const uint32_t *, vrt::if_packet_info_t &)> vrt_unpacker_type;
 
     /*!
      * Make a new packet handler for receive
@@ -115,13 +115,13 @@ public:
 
     ////////////////// RFNOC ///////////////////////////
     //! Set the stream ID for a specific channel (or no SID)
-    void set_xport_chan_sid(const size_t xport_chan, const bool has_sid, const boost::uint32_t sid = 0){
+    void set_xport_chan_sid(const size_t xport_chan, const bool has_sid, const uint32_t sid = 0){
         _props.at(xport_chan).has_sid = has_sid;
         _props.at(xport_chan).sid = sid;
     }
 
     //! Get the stream ID for a specific channel (or zero if no SID)
-    boost::uint32_t get_xport_chan_sid(const size_t xport_chan) const {
+    uint32_t get_xport_chan_sid(const size_t xport_chan) const {
         if (_props.at(xport_chan).has_sid) {
             return _props.at(xport_chan).sid;
         } else {
@@ -319,7 +319,7 @@ private:
         size_t fc_update_window;
 	/////// RFNOC ///////////
         bool has_sid;
-        boost::uint32_t sid;
+        uint32_t sid;
 	/////// RFNOC ///////////
     };
     std::vector<xport_chan_props_type> _props;
@@ -338,7 +338,7 @@ private:
             copy_buff = NULL;
         }
         managed_recv_buffer::sptr buff;
-        const boost::uint32_t *vrt_hdr;
+        const uint32_t *vrt_hdr;
         vrt::if_packet_info_t ifpi;
         time_spec_t time;
         const char *copy_buff;
@@ -423,7 +423,7 @@ private:
         #endif
 
         //bounds check before extract
-        size_t num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
+        size_t num_packet_words32 = buff->size()/sizeof(uint32_t);
         if (num_packet_words32 <= _header_offset_words32){
             throw std::runtime_error("recv buffer smaller than vrt packet offset");
         }
@@ -431,7 +431,7 @@ private:
         //extract packet info
         per_buffer_info_type &info = curr_buffer_info;
         info.ifpi.num_packet_words32 = num_packet_words32 - _header_offset_words32;
-        info.vrt_hdr = buff->cast<const boost::uint32_t *>() + _header_offset_words32;
+        info.vrt_hdr = buff->cast<const uint32_t *>() + _header_offset_words32;
         _vrt_unpacker(info.vrt_hdr, info.ifpi);
         info.time = time_spec_t::from_ticks(info.ifpi.tsf, _tick_rate); //assumes has_tsf is true
         info.copy_buff = reinterpret_cast<const char *>(info.vrt_hdr + info.ifpi.num_header_words32);
@@ -633,7 +633,7 @@ private:
                 std::swap(curr_info, next_info); //save progress from curr -> next
                 curr_info.metadata.has_time_spec = prev_info.metadata.has_time_spec;
                 curr_info.metadata.time_spec = prev_info.metadata.time_spec + time_spec_t::from_ticks(
-                    prev_info[index].ifpi.num_payload_words32*sizeof(boost::uint32_t)/_bytes_per_otw_item, _samp_rate);
+                    prev_info[index].ifpi.num_payload_words32*sizeof(uint32_t)/_bytes_per_otw_item, _samp_rate);
                 curr_info.metadata.out_of_sequence = true;
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_OVERFLOW;
                 UHD_MSG(fastpath) << "D";

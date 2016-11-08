@@ -48,7 +48,7 @@ public:
         __flush();
     }
 
-    void poke32(const wb_addr_type addr, const boost::uint32_t data)
+    void poke32(const wb_addr_type addr, const uint32_t data)
     {
         for (size_t i = 1; i <= num_retries; i++)
         {
@@ -67,14 +67,14 @@ public:
         }
     }
 
-    boost::uint32_t peek32(const wb_addr_type addr)
+    uint32_t peek32(const wb_addr_type addr)
     {
         for (size_t i = 1; i <= num_retries; i++)
         {
             boost::mutex::scoped_lock lock(reg_access);
             try
             {
-                boost::uint32_t data = this->__peek32(addr);
+                uint32_t data = this->__peek32(addr);
                 return data;
             }
             catch(const uhd::io_error &ex)
@@ -91,8 +91,8 @@ public:
 protected:
     bool errors;
 
-    virtual void __poke32(const wb_addr_type addr, const boost::uint32_t data) = 0;
-    virtual boost::uint32_t __peek32(const wb_addr_type addr) = 0;
+    virtual void __poke32(const wb_addr_type addr, const uint32_t data) = 0;
+    virtual uint32_t __peek32(const wb_addr_type addr) = 0;
     virtual void __flush() = 0;
 
     boost::mutex reg_access;
@@ -116,12 +116,12 @@ public:
     }
 
 protected:
-    virtual void __poke32(const wb_addr_type addr, const boost::uint32_t data)
+    virtual void __poke32(const wb_addr_type addr, const uint32_t data)
     {
         //load request struct
         x300_fw_comms_t request = x300_fw_comms_t();
-        request.flags = uhd::htonx<boost::uint32_t>(X300_FW_COMMS_FLAGS_ACK | X300_FW_COMMS_FLAGS_POKE32);
-        request.sequence = uhd::htonx<boost::uint32_t>(seq++);
+        request.flags = uhd::htonx<uint32_t>(X300_FW_COMMS_FLAGS_ACK | X300_FW_COMMS_FLAGS_POKE32);
+        request.sequence = uhd::htonx<uint32_t>(seq++);
         request.addr = uhd::htonx(addr);
         request.data = uhd::htonx(data);
 
@@ -135,7 +135,7 @@ protected:
         if (nbytes == 0) throw uhd::io_error("x300 fw poke32 - reply timed out");
 
         //sanity checks
-        const size_t flags = uhd::ntohx<boost::uint32_t>(reply.flags);
+        const size_t flags = uhd::ntohx<uint32_t>(reply.flags);
         UHD_ASSERT_THROW(nbytes == sizeof(reply));
         UHD_ASSERT_THROW(not (flags & X300_FW_COMMS_FLAGS_ERROR));
         UHD_ASSERT_THROW(flags & X300_FW_COMMS_FLAGS_POKE32);
@@ -145,12 +145,12 @@ protected:
         UHD_ASSERT_THROW(reply.data == request.data);
     }
 
-    virtual boost::uint32_t __peek32(const wb_addr_type addr)
+    virtual uint32_t __peek32(const wb_addr_type addr)
     {
         //load request struct
         x300_fw_comms_t request = x300_fw_comms_t();
-        request.flags = uhd::htonx<boost::uint32_t>(X300_FW_COMMS_FLAGS_ACK | X300_FW_COMMS_FLAGS_PEEK32);
-        request.sequence = uhd::htonx<boost::uint32_t>(seq++);
+        request.flags = uhd::htonx<uint32_t>(X300_FW_COMMS_FLAGS_ACK | X300_FW_COMMS_FLAGS_PEEK32);
+        request.sequence = uhd::htonx<uint32_t>(seq++);
         request.addr = uhd::htonx(addr);
         request.data = 0;
 
@@ -164,7 +164,7 @@ protected:
         if (nbytes == 0) throw uhd::io_error("x300 fw peek32 - reply timed out");
 
         //sanity checks
-        const size_t flags = uhd::ntohx<boost::uint32_t>(reply.flags);
+        const size_t flags = uhd::ntohx<uint32_t>(reply.flags);
         UHD_ASSERT_THROW(nbytes == sizeof(reply));
         UHD_ASSERT_THROW(not (flags & X300_FW_COMMS_FLAGS_ERROR));
         UHD_ASSERT_THROW(flags & X300_FW_COMMS_FLAGS_PEEK32);
@@ -173,7 +173,7 @@ protected:
         UHD_ASSERT_THROW(reply.addr == request.addr);
 
         //return result!
-        return uhd::ntohx<boost::uint32_t>(reply.data);
+        return uhd::ntohx<uint32_t>(reply.data);
     }
 
     virtual void __flush(void)
@@ -202,14 +202,14 @@ public:
 
         //Verify that the Ettus FPGA loaded in the device. This may not be true if the
         //user is switching to UHD after using LabVIEW FPGA.
-        boost::uint32_t pcie_fpga_signature = 0;
+        uint32_t pcie_fpga_signature = 0;
         _drv_proxy->peek(FPGA_PCIE_SIG_REG, pcie_fpga_signature);
         if (pcie_fpga_signature != FPGA_X3xx_SIG_VALUE)
             throw uhd::io_error("cannot create x300_ctrl_iface_pcie. incorrect/no fpga image");
 
         //Also, poll on the ZPU_STATUS bit to ensure all the state machines in the FPGA are
         //ready to accept register transaction requests.
-        boost::uint32_t reg_data = 0xffffffff;
+        uint32_t reg_data = 0xffffffff;
         boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration elapsed;
 
@@ -232,10 +232,10 @@ public:
     }
 
 protected:
-    virtual void __poke32(const wb_addr_type addr, const boost::uint32_t data)
+    virtual void __poke32(const wb_addr_type addr, const uint32_t data)
     {
         nirio_status status = 0;
-        boost::uint32_t reg_data = 0xffffffff;
+        uint32_t reg_data = 0xffffffff;
         boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration elapsed;
 
@@ -257,10 +257,10 @@ protected:
             throw uhd::io_error("x300 fw poke32 - operation timed out");
     }
 
-    virtual boost::uint32_t __peek32(const wb_addr_type addr)
+    virtual uint32_t __peek32(const wb_addr_type addr)
     {
         nirio_status status = 0;
-        boost::uint32_t reg_data = 0xffffffff;
+        uint32_t reg_data = 0xffffffff;
         boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration elapsed;
 
@@ -292,8 +292,8 @@ protected:
 
 private:
     niriok_proxy::sptr _drv_proxy;
-    static const boost::uint32_t READ_TIMEOUT_IN_MS = 10;
-    static const boost::uint32_t INIT_TIMEOUT_IN_MS = 5000;
+    static const uint32_t READ_TIMEOUT_IN_MS = 10;
+    static const uint32_t INIT_TIMEOUT_IN_MS = 5000;
 };
 
 wb_iface::sptr x300_make_ctrl_iface_enet(uhd::transport::udp_simple::sptr udp, bool enable_errors = true)

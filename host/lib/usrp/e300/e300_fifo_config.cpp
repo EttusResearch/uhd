@@ -17,7 +17,7 @@
 
 #ifdef E300_NATIVE
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <uhd/config.hpp>
 
 // constants coded into the fpga parameters
@@ -141,15 +141,15 @@ struct __mem_addrz_t
 /***********************************************************************
  * peek n' poke mmapped space
  **********************************************************************/
-UHD_INLINE void zf_poke32(const boost::uint32_t addr, const boost::uint32_t data)
+UHD_INLINE void zf_poke32(const uint32_t addr, const uint32_t data)
 {
-    volatile boost::uint32_t *p = reinterpret_cast<boost::uint32_t *>(addr);
+    volatile uint32_t *p = reinterpret_cast<uint32_t *>(addr);
     *p = data;
 }
 
-UHD_INLINE boost::uint32_t zf_peek32(const boost::uint32_t addr)
+UHD_INLINE uint32_t zf_peek32(const uint32_t addr)
 {
-    volatile const boost::uint32_t *p = reinterpret_cast<const boost::uint32_t *>(addr);
+    volatile const uint32_t *p = reinterpret_cast<const uint32_t *>(addr);
     return *p;
 }
 
@@ -206,7 +206,7 @@ public:
         //UHD_MSG(status) << boost::format("data 0x%x") % addrs.data << std::endl;
         //UHD_MSG(status) << boost::format("ctrl 0x%x") % addrs.ctrl << std::endl;
 
-        const boost::uint32_t sig = zf_peek32(_addrs.ctrl + ARBITER_RD_SIG);
+        const uint32_t sig = zf_peek32(_addrs.ctrl + ARBITER_RD_SIG);
         UHD_ASSERT_THROW((sig >> 16) == 0xACE0);
 
         zf_poke32(_addrs.ctrl + ARBITER_WR_CLEAR, 1);
@@ -240,7 +240,7 @@ public:
         {
             if (zf_peek32(_addrs.ctrl + ARBITER_RB_STATUS_OCC))
             {
-                const boost::uint32_t sts = zf_peek32(_addrs.ctrl + ARBITER_RB_STATUS);
+                const uint32_t sts = zf_peek32(_addrs.ctrl + ARBITER_RB_STATUS);
                 UHD_ASSERT_THROW((sts >> 7) & 0x1); //assert OK
                 UHD_ASSERT_THROW((sts & 0xf) == _addrs.which); //expected tag
                 zf_poke32(_addrs.ctrl + ARBITER_WR_STS_RDY, 1); //pop from sts fifo

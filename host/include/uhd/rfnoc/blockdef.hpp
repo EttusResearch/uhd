@@ -18,7 +18,7 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_BLOCKDEF_HPP
 #define INCLUDED_LIBUHD_RFNOC_BLOCKDEF_HPP
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/enable_shared_from_this.hpp>
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -85,7 +85,7 @@ public:
      * Note: If nothing is found, returns an
      * empty sptr. Does not throw.
      */
-    static sptr make_from_noc_id(boost::uint64_t noc_id);
+    static sptr make_from_noc_id(uint64_t noc_id);
 
     //! Returns true if this represents a NoC block
     virtual bool is_block() const = 0;
@@ -100,7 +100,7 @@ public:
     virtual std::string get_name() const = 0;
 
     //! Return the one NoC that is valid for this block
-    virtual boost::uint64_t noc_id() const = 0;
+    virtual uint64_t noc_id() const = 0;
 
     virtual ports_t get_input_ports() = 0;
     virtual ports_t get_output_ports() = 0;

@@ -85,18 +85,18 @@ static const size_t E300_RX_FC_REQUEST_FREQ = 32; // per flow ctrl window
 static const size_t E300_TX_FC_RESPONSE_FREQ = 8; // per flow ctrl window
 
 // crossbar settings
-static const boost::uint8_t E300_RADIO_DEST_PREFIX_TX   = 0;
-static const boost::uint8_t E300_RADIO_DEST_PREFIX_CTRL = 1;
-static const boost::uint8_t E300_RADIO_DEST_PREFIX_RX   = 2;
+static const uint8_t E300_RADIO_DEST_PREFIX_TX   = 0;
+static const uint8_t E300_RADIO_DEST_PREFIX_CTRL = 1;
+static const uint8_t E300_RADIO_DEST_PREFIX_RX   = 2;
 
-static const boost::uint8_t E300_XB_DST_AXI = 0;
-static const boost::uint8_t E300_XB_DST_R0  = 1;
-static const boost::uint8_t E300_XB_DST_R1  = 2;
-static const boost::uint8_t E300_XB_DST_CE0 = 3;
-static const boost::uint8_t E300_XB_DST_CE1 = 4;
+static const uint8_t E300_XB_DST_AXI = 0;
+static const uint8_t E300_XB_DST_R0  = 1;
+static const uint8_t E300_XB_DST_R1  = 2;
+static const uint8_t E300_XB_DST_CE0 = 3;
+static const uint8_t E300_XB_DST_CE1 = 4;
 
-static const boost::uint8_t E300_DEVICE_THERE = 2;
-static const boost::uint8_t E300_DEVICE_HERE  = 0;
+static const uint8_t E300_DEVICE_THERE = 2;
+static const uint8_t E300_DEVICE_HERE  = 0;
 
 static const size_t E300_R0_CTRL_STREAM    = (0 << 2) | E300_RADIO_DEST_PREFIX_CTRL;
 static const size_t E300_R0_TX_DATA_STREAM = (0 << 2) | E300_RADIO_DEST_PREFIX_TX;
@@ -137,10 +137,10 @@ private: // types
     // sid convenience struct
     struct sid_config_t
     {
-        boost::uint8_t router_addr_there;
-        boost::uint8_t dst_prefix; //2bits
-        boost::uint8_t router_dst_there;
-        boost::uint8_t router_dst_here;
+        uint8_t router_addr_there;
+        uint8_t dst_prefix; //2bits
+        uint8_t router_dst_there;
+        uint8_t router_dst_here;
     };
 
     // perifs in the radio core
@@ -192,16 +192,16 @@ private: // types
             rx_bandsel_a(0), rx_bandsel_b(0), rx_bandsel_c(0)
         {}
 
-        boost::uint32_t pps_sel;
-        boost::uint32_t mimo;
-        boost::uint32_t codec_arst;
+        uint32_t pps_sel;
+        uint32_t mimo;
+        uint32_t codec_arst;
 
-        boost::uint32_t tx_bandsels;
-        boost::uint32_t rx_bandsel_a;
-        boost::uint32_t rx_bandsel_b;
-        boost::uint32_t rx_bandsel_c;
+        uint32_t tx_bandsels;
+        uint32_t rx_bandsel_a;
+        uint32_t rx_bandsel_b;
+        uint32_t rx_bandsel_c;
 
-        boost::uint32_t time_sync;
+        uint32_t time_sync;
 
         static const size_t PPS_SEL     = 0;
         static const size_t MIMO        = 2;
@@ -216,30 +216,30 @@ private: // types
 private: // methods
     void _register_loopback_self_test(uhd::wb_iface::sptr iface);
 
-    boost::uint32_t _get_version(compat_t which);
+    uint32_t _get_version(compat_t which);
     std::string _get_version_hash(void);
 
     void _setup_radio(const size_t which_radio);
 
-    boost::uint32_t _allocate_sid(const sid_config_t &config);
+    uint32_t _allocate_sid(const sid_config_t &config);
 
     void _setup_dest_mapping(
-        const boost::uint32_t sid,
+        const uint32_t sid,
         const size_t which_stream);
 
     size_t _get_axi_dma_channel(
-        boost::uint8_t destination,
-        boost::uint8_t prefix);
+        uint8_t destination,
+        uint8_t prefix);
 
-    boost::uint16_t _get_udp_port(
-        boost::uint8_t destination,
-        boost::uint8_t prefix);
+    uint16_t _get_udp_port(
+        uint8_t destination,
+        uint8_t prefix);
 
     both_xports_t _make_transport(
-        const boost::uint8_t &destination,
-        const boost::uint8_t &prefix,
+        const uint8_t &destination,
+        const uint8_t &prefix,
         const uhd::transport::zero_copy_xport_params &params,
-        boost::uint32_t &sid);
+        uint32_t &sid);
 
     double _get_tick_rate(void){return _tick_rate;}
     double _set_tick_rate(const double rate);

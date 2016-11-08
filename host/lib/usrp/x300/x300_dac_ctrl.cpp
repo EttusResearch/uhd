@@ -250,7 +250,7 @@ public:
 
     void _sleep_mode(bool sleep)
     {
-        boost::uint8_t sleep_val = sleep ? (1<<7) : 0x00;
+        uint8_t sleep_val = sleep ? (1<<7) : 0x00;
         //Set sleep word and default fullscale value
         write_ad9146_reg(0x41, sleep_val | 0x01);    //I DAC
         write_ad9146_reg(0x45, sleep_val | 0x01);    //Q DAC

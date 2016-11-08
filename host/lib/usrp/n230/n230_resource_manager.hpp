@@ -108,7 +108,7 @@ public:     //Methods
         }
     }
 
-    inline boost::uint32_t get_version(n230_ver_src_t src, n230_version_t type) {
+    inline uint32_t get_version(n230_ver_src_t src, n230_version_t type) {
         switch (src) {
             case FPGA:      return _fpga_version.get(type);
             case FIRMWARE:  return _fw_version.get(type);
@@ -210,11 +210,11 @@ public:     //Methods
 
 private:
     struct ver_info_t {
-        boost::uint8_t  compat_major;
-        boost::uint16_t compat_minor;
-        boost::uint32_t version_hash;
+        uint8_t  compat_major;
+        uint16_t compat_minor;
+        uint32_t version_hash;
 
-        boost::uint32_t get(n230_version_t type) {
+        uint32_t get(n230_version_t type) {
             switch (type) {
                 case COMPAT_MAJOR: return compat_major;
                 case COMPAT_MINOR: return compat_minor;
@@ -281,7 +281,7 @@ private:
     static boost::mutex             _claimer_mutex;  //All claims and checks in this process are serialized
 
     //Transport
-    boost::uint8_t                  _last_host_enpoint;
+    uint8_t                  _last_host_enpoint;
 
     //Radio settings interface
     radio_ctrl_core_3000::sptr      _core_ctrl;

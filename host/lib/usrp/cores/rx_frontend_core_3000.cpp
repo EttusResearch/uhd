@@ -46,8 +46,8 @@ using namespace uhd;
 
 using namespace uhd::usrp;
 
-static boost::uint32_t fs_to_bits(const double num, const size_t bits){
-    return boost::int32_t(boost::math::round(num * (1 << (bits-1))));
+static uint32_t fs_to_bits(const double num, const size_t bits){
+    return int32_t(boost::math::round(num * (1 << (bits-1))));
 }
 
 rx_frontend_core_3000::~rx_frontend_core_3000(void){
@@ -82,7 +82,7 @@ public:
     }
 
     void set_fe_connection(const fe_connection_t& fe_conn) {
-        boost::uint32_t mapping_reg_val = 0;
+        uint32_t mapping_reg_val = 0;
         switch (fe_conn.get_sampling_mode()) {
         case fe_connection_t::REAL:
         case fe_connection_t::HETERODYNE:
@@ -118,7 +118,7 @@ public:
         }
         int32_t freq_word;
         get_freq_and_freq_word(cordic_freq, _adc_rate, actual_cordic_freq, freq_word);
-        _iface->poke32(REG_RX_FE_HET_CORDIC_PHASE, boost::uint32_t(freq_word));
+        _iface->poke32(REG_RX_FE_HET_CORDIC_PHASE, uint32_t(freq_word));
 
         _fe_conn = fe_conn;
     }
@@ -137,7 +137,7 @@ public:
         return std::complex<double>(_i_dc_off/scaler, _q_dc_off/scaler);
     }
 
-    void _set_dc_offset(const boost::uint32_t flags) {
+    void _set_dc_offset(const uint32_t flags) {
         _iface->poke32(REG_RX_FE_OFFSET_I, flags | (_i_dc_off & ~FLAG_MASK));
         _iface->poke32(REG_RX_FE_OFFSET_Q, flags | (_q_dc_off & ~FLAG_MASK));
     }
@@ -174,7 +174,7 @@ public:
     }
 
 private:
-    boost::int32_t  _i_dc_off, _q_dc_off;
+    int32_t  _i_dc_off, _q_dc_off;
     double          _adc_rate;
     fe_connection_t _fe_conn;
     wb_iface::sptr  _iface;

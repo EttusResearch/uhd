@@ -42,7 +42,7 @@ nirio_status usrprio_rpc_client::niusrprio_enumerate(NIUSRPRIO_ENUMERATE_ARGS)
     usrprio_rpc::func_args_writer_t in_args;
     usrprio_rpc::func_args_reader_t out_args;
     nirio_status status = NiRio_Status_Success;
-    boost::uint32_t vtr_size = 0;
+    uint32_t vtr_size = 0;
 
     status = _boost_error_to_nirio_status(
         _rpc_client.call(NIUSRPRIO_ENUMERATE, in_args, out_args, _timeout));
@@ -68,7 +68,7 @@ nirio_status usrprio_rpc_client::niusrprio_open_session(NIUSRPRIO_OPEN_SESSION_A
     const std::string& resource,        \
     const std::string& path,            \
     const std::string& signature,       \
-    const boost::uint16_t& download_fpga
+    const uint16_t& download_fpga
 */
 {
     usrprio_rpc::func_args_writer_t in_args;
@@ -81,7 +81,7 @@ nirio_status usrprio_rpc_client::niusrprio_open_session(NIUSRPRIO_OPEN_SESSION_A
     in_args << download_fpga;
 
     //Open needs a longer timeout because the FPGA download can take upto 6 secs and the NiFpga libload can take 4.
-    static const boost::uint32_t OPEN_TIMEOUT = 15000;
+    static const uint32_t OPEN_TIMEOUT = 15000;
     status = _boost_error_to_nirio_status(
         _rpc_client.call(NIUSRPRIO_OPEN_SESSION, in_args, out_args, boost::posix_time::milliseconds(OPEN_TIMEOUT)));
 
@@ -163,7 +163,7 @@ nirio_status usrprio_rpc_client::niusrprio_get_interface_path(NIUSRPRIO_GET_INTE
 nirio_status usrprio_rpc_client::niusrprio_download_fpga_to_flash(NIUSRPRIO_DOWNLOAD_FPGA_TO_FLASH_ARGS)
 /*
 #define NIUSRPRIO_DOWNLOAD_FPGA_TO_FLASH_ARGS   \
-    const boost::uint32_t& interface_num,       \
+    const uint32_t& interface_num,       \
     const std::string& bitstream_path
 */
 {
@@ -174,7 +174,7 @@ nirio_status usrprio_rpc_client::niusrprio_download_fpga_to_flash(NIUSRPRIO_DOWN
     in_args << resource;
     in_args << bitstream_path;
 
-    static const boost::uint32_t DOWNLOAD_FPGA_TIMEOUT = 1200000;
+    static const uint32_t DOWNLOAD_FPGA_TIMEOUT = 1200000;
     status = _boost_error_to_nirio_status(
         _rpc_client.call(NIUSRPRIO_DOWNLOAD_FPGA_TO_FLASH, in_args, out_args,
             boost::posix_time::milliseconds(DOWNLOAD_FPGA_TIMEOUT)));

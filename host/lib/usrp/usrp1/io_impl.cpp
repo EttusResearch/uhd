@@ -115,7 +115,7 @@ private:
  * BS VRT packer/unpacker functions (since samples don't have headers)
  **********************************************************************/
 static void usrp1_bs_vrt_packer(
-    boost::uint32_t *,
+    uint32_t *,
     vrt::if_packet_info_t &if_packet_info
 ){
     if_packet_info.num_header_words32 = 0;
@@ -123,12 +123,12 @@ static void usrp1_bs_vrt_packer(
 }
 
 static void usrp1_bs_vrt_unpacker(
-    const boost::uint32_t *,
+    const uint32_t *,
     vrt::if_packet_info_t &if_packet_info
 ){
     if_packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_DATA;
     if_packet_info.num_payload_words32 = if_packet_info.num_packet_words32;
-    if_packet_info.num_payload_bytes = if_packet_info.num_packet_words32*sizeof(boost::uint32_t);
+    if_packet_info.num_payload_bytes = if_packet_info.num_packet_words32*sizeof(uint32_t);
     if_packet_info.num_header_words32 = 0;
     if_packet_info.packet_count = 0;
     if_packet_info.sob = false;
@@ -286,7 +286,7 @@ void usrp1_impl::vandal_conquest_loop(void){
 
     //start the polling loop...
     try{ while (not boost::this_thread::interruption_requested()){
-        boost::uint8_t underflow = 0, overflow = 0;
+        uint8_t underflow = 0, overflow = 0;
 
         //shutoff transmit if it has been too long since send() was called
         if (_tx_enabled and (boost::get_system_time() - _io_impl->last_send_time) > boost::posix_time::milliseconds(100)){
@@ -566,9 +566,9 @@ double usrp1_impl::update_rx_dsp_freq(const size_t dspno, const double freq_){
     //calculate the freq register word (signed)
     UHD_ASSERT_THROW(std::abs(freq) <= _master_clock_rate/2.0);
     static const double scale_factor = std::pow(2.0, 32);
-    const boost::int32_t freq_word = boost::int32_t(boost::math::round((freq / _master_clock_rate) * scale_factor));
+    const int32_t freq_word = int32_t(boost::math::round((freq / _master_clock_rate) * scale_factor));
 
-    static const boost::uint32_t dsp_index_to_reg_val[4] = {
+    static const uint32_t dsp_index_to_reg_val[4] = {
         FR_RX_FREQ_0, FR_RX_FREQ_1, FR_RX_FREQ_2, FR_RX_FREQ_3
     };
     _iface->poke32(dsp_index_to_reg_val[dspno], freq_word);

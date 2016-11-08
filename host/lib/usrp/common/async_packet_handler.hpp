@@ -31,11 +31,11 @@ namespace uhd{ namespace usrp{
         const to_host_type &to_host,
         async_metadata_t &metadata,
         const transport::vrt::if_packet_info_t &if_packet_info,
-        const boost::uint32_t *vrt_hdr,
+        const uint32_t *vrt_hdr,
         const double tick_rate,
         const size_t channel = 0
     ){
-        const boost::uint32_t *payload = vrt_hdr + if_packet_info.num_header_words32;
+        const uint32_t *payload = vrt_hdr + if_packet_info.num_header_words32;
 
         //load into metadata
         metadata.channel = channel;

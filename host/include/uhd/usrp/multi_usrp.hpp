@@ -405,7 +405,7 @@ public:
      * \param data 32-bit register value
      * \param mboard which motherboard to set the user register
      */
-    virtual void set_user_register(const boost::uint8_t addr, const boost::uint32_t data, size_t mboard = ALL_MBOARDS) = 0;
+    virtual void set_user_register(const uint8_t addr, const uint32_t data, size_t mboard = ALL_MBOARDS) = 0;
 
     /*******************************************************************
      * RX methods
@@ -1051,7 +1051,7 @@ public:
      * \param mask the bit mask to effect which pins are changed
      * \param mboard the motherboard index 0 to M-1
      */
-    virtual void set_gpio_attr(const std::string &bank, const std::string &attr, const boost::uint32_t value, const boost::uint32_t mask = 0xffffffff, const size_t mboard = 0) = 0;
+    virtual void set_gpio_attr(const std::string &bank, const std::string &attr, const uint32_t value, const uint32_t mask = 0xffffffff, const size_t mboard = 0) = 0;
 
     /*!
      * Get a GPIO attribute on a particular GPIO bank.
@@ -1069,7 +1069,7 @@ public:
      * \param mboard the motherboard index 0 to M-1
      * \return the value set for this attribute
      */
-    virtual boost::uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard = 0) = 0;
+    virtual uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard = 0) = 0;
 
     /*******************************************************************
      * Register IO methods
@@ -1102,7 +1102,7 @@ public:
      * \param value the value to write to the register field
      * \param mboard the motherboard index 0 to M-1
      */
-    virtual void write_register(const std::string &path, const boost::uint32_t field, const boost::uint64_t value, const size_t mboard = 0) = 0;
+    virtual void write_register(const std::string &path, const uint32_t field, const uint64_t value, const size_t mboard = 0) = 0;
 
     /*!
      * Read a low-level register field from a register in the USRP hardware
@@ -1111,7 +1111,7 @@ public:
      * \param mboard the motherboard index 0 to M-1
      * \return the value of the register field
      */
-    virtual boost::uint64_t read_register(const std::string &path, const boost::uint32_t field, const size_t mboard = 0) = 0;
+    virtual uint64_t read_register(const std::string &path, const uint32_t field, const size_t mboard = 0) = 0;
 
     /*******************************************************************
      * Filter API methods

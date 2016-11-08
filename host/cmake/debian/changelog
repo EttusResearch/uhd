@@ -1,3 +1,31 @@
+uhd (3.10.1.0-0ubuntu1) trusty; urgency=low
+
+  - Fixed multiple compiler warnings
+  - Multiple documentation fixes
+  - X300: RX strobe lines are always in sync on device initialization. DB EEPROM
+    now properly written. ignore-cal-file no longer ignored. Fixed case where too
+    large recv_frame_size settings could break things. Reduced ZPU clock speed
+    (helps FPGA timing). Added area constraints for AXI interconnect. Improved
+    halfband scaling in rx_frontend. Improved PCIe streaming reliability
+  - B2xx: Clear sequence numbers in idle state.
+  - RFNoC: Nodes disconnect on destruction. Fixed setting of correct bits on
+    sr_error_policy. DDC does no longer clear timed commands on EOB. DUC fixed
+    timed CORDIC tuning. Enable Noc-Shell response FIFOs (fixes simultaneous
+    commands on multiple channels).
+  - UBX: Changed default performance parameters
+  - TwinRX: LEDs properly light up depending on channels. Fixed issue of multiple
+    (redundant) writes. Simplified API steps for phase synchronization
+  - XCVR: Query dboard clock instead of DAC clock. Helps in X3x0s.
+  - GPS: Fixed message for case when no GPS is present. Fixed multiple GPS-related
+    issues.
+  - Converters: Fixed floating point rounding error in tests.
+  - Utils: uhd_usrp_probe can now query vectors
+  - Fixed issue that prevented soft_regs working on 32-bit systems
+  - Tools: Merged dissectors into common directory.
+  - CMake: -Og is the default now for gcc-based Debug builds.
+
+ -- Ettus Research <packages@ettus.com>  Wed, 02 Nov 2016 01:20:07 -0800
+
 uhd (3.10.0.0-0ubuntu1) trusty; urgency=low
 
   - Changed version string to quadruplets (Major.API.ABI.Patch)

@@ -21,7 +21,7 @@
 #include <uhd/transport/usb_control.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -35,7 +35,7 @@ using namespace uhd::usrp;
 
 static const bool load_img_msg = true;
 
-typedef boost::uint32_t hash_type;
+typedef uint32_t hash_type;
 
 /***********************************************************************
  * Helper Functions
@@ -259,7 +259,7 @@ public:
             file.read((char *)buf, sizeof(buf));
             const std::streamsize n = file.gcount();
             if(n == 0) continue;
-            int ret = usrp_control_write(VRQ_FPGA_LOAD, 0, FL_XFER, buf, boost::uint16_t(n));
+            int ret = usrp_control_write(VRQ_FPGA_LOAD, 0, FL_XFER, buf, uint16_t(n));
             if (ret < 0 or std::streamsize(ret) != n) {
                 throw uhd::io_error("usrp_load_fpga: fpga load error");
             }
@@ -281,7 +281,7 @@ public:
     {
         if (load_img_msg) UHD_MSG(status) << "Loading EEPROM image: " << filestring << "..." << std::flush;
         const char *filename = filestring.c_str();
-        const boost::uint16_t i2c_addr = 0x50;
+        const uint16_t i2c_addr = 0x50;
 
         unsigned int addr;
         unsigned char data[256];
@@ -381,11 +381,11 @@ public:
         UHD_ASSERT_THROW(usrp_control_write_cmd(VRQ_FPGA_SET_RESET, on, 0) >= 0);
     }
 
-    int usrp_control_write(boost::uint8_t request,
-                           boost::uint16_t value,
-                           boost::uint16_t index,
+    int usrp_control_write(uint8_t request,
+                           uint16_t value,
+                           uint16_t index,
                            unsigned char *buff,
-                           boost::uint16_t length)
+                           uint16_t length)
     {
         return _ctrl_transport->submit(VRT_VENDOR_OUT,     // bmReqeustType
                                        request,            // bRequest
@@ -396,11 +396,11 @@ public:
     }
 
 
-    int usrp_control_read(boost::uint8_t request,
-                          boost::uint16_t value,
-                          boost::uint16_t index,
+    int usrp_control_read(uint8_t request,
+                          uint16_t value,
+                          uint16_t index,
                           unsigned char *buff,
-                          boost::uint16_t length)
+                          uint16_t length)
     {
         return _ctrl_transport->submit(VRT_VENDOR_IN,      // bmReqeustType
                                        request,            // bRequest
@@ -411,26 +411,26 @@ public:
     }
 
 
-    int usrp_control_write_cmd(boost::uint8_t request, boost::uint16_t value, boost::uint16_t index)
+    int usrp_control_write_cmd(uint8_t request, uint16_t value, uint16_t index)
     {
         return usrp_control_write(request, value, index, 0, 0);
     }
 
     byte_vector_t read_eeprom(
-        boost::uint16_t addr,
-        boost::uint16_t offset,
+        uint16_t addr,
+        uint16_t offset,
         size_t num_bytes
     ){
-        this->write_i2c(addr, byte_vector_t(1, boost::uint8_t(offset)));
+        this->write_i2c(addr, byte_vector_t(1, uint8_t(offset)));
         return this->read_i2c(addr, num_bytes);
     }
 
-    int usrp_i2c_write(boost::uint16_t i2c_addr, unsigned char *buf, boost::uint16_t len)
+    int usrp_i2c_write(uint16_t i2c_addr, unsigned char *buf, uint16_t len)
     {
         return usrp_control_write(VRQ_I2C_WRITE, i2c_addr, 0, buf, len);
     }
 
-    int usrp_i2c_read(boost::uint16_t i2c_addr, unsigned char *buf, boost::uint16_t len)
+    int usrp_i2c_read(uint16_t i2c_addr, unsigned char *buf, uint16_t len)
     {
         return usrp_control_read(VRQ_I2C_READ, i2c_addr, 0, buf, len);
     }
@@ -438,7 +438,7 @@ public:
     static const bool iface_debug = false;
     static const size_t max_i2c_data_bytes = 64;
 
-    void write_i2c(boost::uint16_t addr, const byte_vector_t &bytes)
+    void write_i2c(uint16_t addr, const byte_vector_t &bytes)
     {
         UHD_ASSERT_THROW(bytes.size() < max_i2c_data_bytes);
 
@@ -448,7 +448,7 @@ public:
             uhd::runtime_error("USRP: failed i2c write");
     }
 
-    byte_vector_t read_i2c(boost::uint16_t addr, size_t num_bytes)
+    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes)
     {
       UHD_ASSERT_THROW(num_bytes < max_i2c_data_bytes);
 

@@ -65,16 +65,16 @@ public:
         //init I2C FPGA interface.
         _iface->poke16(REG_I2C_CTRL, 0x0000);
         //set prescalers to operate at 400kHz: WB_CLK is 64MHz...
-        static const boost::uint32_t i2c_datarate = 400000;
-        static const boost::uint32_t wishbone_clk = 64000000; //FIXME should go somewhere else
-        boost::uint16_t prescaler = wishbone_clk / (i2c_datarate*5) - 1;
+        static const uint32_t i2c_datarate = 400000;
+        static const uint32_t wishbone_clk = 64000000; //FIXME should go somewhere else
+        uint16_t prescaler = wishbone_clk / (i2c_datarate*5) - 1;
         _iface->poke16(REG_I2C_PRESCALER_LO, prescaler & 0xFF);
         _iface->poke16(REG_I2C_PRESCALER_HI, (prescaler >> 8) & 0xFF);
         _iface->poke16(REG_I2C_CTRL, I2C_CTRL_EN); //enable I2C core
     }
 
     void write_i2c(
-        boost::uint16_t addr,
+        uint16_t addr,
         const byte_vector_t &bytes
     ){
         _iface->poke16(REG_I2C_DATA, (addr << 1) | 0); //addr and read bit (0)
@@ -97,7 +97,7 @@ public:
     }
 
     byte_vector_t read_i2c(
-        boost::uint16_t addr,
+        uint16_t addr,
         size_t num_bytes
     ){
         byte_vector_t bytes;
@@ -116,7 +116,7 @@ public:
         for (size_t i = 0; i < num_bytes; i++) {
             _iface->poke16(REG_I2C_CMD_STATUS, I2C_CMD_RD | ((num_bytes == i+1) ? (I2C_CMD_STOP | I2C_CMD_NACK) : 0));
             i2c_wait();
-            bytes.push_back(boost::uint8_t(_iface->peek16(REG_I2C_DATA)));
+            bytes.push_back(uint8_t(_iface->peek16(REG_I2C_DATA)));
         }
         return bytes;
     }

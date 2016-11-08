@@ -48,10 +48,10 @@ public:
     spi_core_100_impl(wb_iface::sptr iface, const size_t base):
         _iface(iface), _base(base) { /* NOP */}
 
-    boost::uint32_t transact_spi(
+    uint32_t transact_spi(
         int which_slave,
         const spi_config_t &config,
-        boost::uint32_t data,
+        uint32_t data,
         size_t num_bits,
         bool readback
     ){
@@ -60,7 +60,7 @@ public:
         int edge_flags = ((config.miso_edge==spi_config_t::EDGE_FALL) ? SPI_CTRL_RXNEG : 0) |
                          ((config.mosi_edge==spi_config_t::EDGE_FALL) ? 0 : SPI_CTRL_TXNEG)
                          ;
-        boost::uint16_t ctrl = SPI_CTRL_ASS | (SPI_CTRL_CHAR_LEN_MASK & num_bits) | edge_flags;
+        uint16_t ctrl = SPI_CTRL_ASS | (SPI_CTRL_CHAR_LEN_MASK & num_bits) | edge_flags;
 
         spi_wait();
         _iface->poke16(REG_SPI_DIV, 0x0001); // = fpga_clk / 4

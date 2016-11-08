@@ -4,7 +4,7 @@
 
 #include <uhd/types/otw_type.hpp>
 #include <uhd/types/io_type.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <stdexcept>
 #include <complex>
 #include <vector>
@@ -33,8 +33,8 @@ static std::vector<size_t> get_tid_size_table(void){
     std::vector<size_t> table(128, 0);
     table[size_t(io_type_t::COMPLEX_FLOAT64)] = sizeof(std::complex<double>);
     table[size_t(io_type_t::COMPLEX_FLOAT32)] = sizeof(std::complex<float>);
-    table[size_t(io_type_t::COMPLEX_INT16)]   = sizeof(std::complex<boost::int16_t>);
-    table[size_t(io_type_t::COMPLEX_INT8)]    = sizeof(std::complex<boost::int8_t>);
+    table[size_t(io_type_t::COMPLEX_INT16)]   = sizeof(std::complex<int16_t>);
+    table[size_t(io_type_t::COMPLEX_INT8)]    = sizeof(std::complex<int8_t>);
     return table;
 }
 

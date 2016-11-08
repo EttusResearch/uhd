@@ -39,12 +39,12 @@ public:
         delete this;
     }
 
-    boost::uint32_t buff[10];
+    uint32_t buff[10];
 };
 
-static UHD_INLINE boost::uint32_t extract_sid(managed_recv_buffer::sptr &buff){
+static UHD_INLINE uint32_t extract_sid(managed_recv_buffer::sptr &buff){
     //ASSUME that the data is in little endian format
-    return uhd::wtohx(buff->cast<const boost::uint32_t *>()[1]);
+    return uhd::wtohx(buff->cast<const uint32_t *>()[1]);
 }
 
 recv_packet_demuxer::~recv_packet_demuxer(void){
@@ -56,7 +56,7 @@ public:
     recv_packet_demuxer_impl(
         transport::zero_copy_if::sptr transport,
         const size_t size,
-        const boost::uint32_t sid_base
+        const uint32_t sid_base
     ):
         _transport(transport), _sid_base(sid_base), _queues(size)
     {
@@ -92,19 +92,19 @@ public:
                 vrt::if_packet_info_t info;
                 info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_DATA;
                 info.num_payload_words32 = 1;
-                info.num_payload_bytes = info.num_payload_words32*sizeof(boost::uint32_t);
+                info.num_payload_bytes = info.num_payload_words32*sizeof(uint32_t);
                 info.has_sid = true;
                 info.sid = _sid_base + index;
                 vrt::if_hdr_pack_le(mrb->buff, info);
                 mrb->buff[info.num_header_words32] = rx_metadata_t::ERROR_CODE_OVERFLOW;
-                return mrb->make(mrb, mrb->buff, info.num_packet_words32*sizeof(boost::uint32_t));
+                return mrb->make(mrb, mrb->buff, info.num_packet_words32*sizeof(uint32_t));
             }
         }
     }
 
 private:
     transport::zero_copy_if::sptr _transport;
-    const boost::uint32_t _sid_base;
+    const uint32_t _sid_base;
     boost::mutex _mutex;
     struct channel_guts_type{
         channel_guts_type(void): wrapper(container){}
@@ -114,6 +114,6 @@ private:
     std::vector<channel_guts_type> _queues;
 };
 
-recv_packet_demuxer::sptr recv_packet_demuxer::make(transport::zero_copy_if::sptr transport, const size_t size, const boost::uint32_t sid_base){
+recv_packet_demuxer::sptr recv_packet_demuxer::make(transport::zero_copy_if::sptr transport, const size_t size, const uint32_t sid_base){
     return sptr(new recv_packet_demuxer_impl(transport, size, sid_base));
 }

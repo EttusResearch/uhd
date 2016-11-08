@@ -91,8 +91,8 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
 
     //load request struct
     x300_fw_comms_t request = x300_fw_comms_t();
-    request.flags = uhd::htonx<boost::uint32_t>(X300_FW_COMMS_FLAGS_ACK);
-    request.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+    request.flags = uhd::htonx<uint32_t>(X300_FW_COMMS_FLAGS_ACK);
+    request.sequence = uhd::htonx<uint32_t>(std::rand());
 
     //send request
     comm->send(asio::buffer(&request, sizeof(request)));
@@ -358,17 +358,17 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
 
     //load file into memory
     std::ifstream fw_file(file_name.c_str());
-    boost::uint32_t fw_file_buff[X300_FW_NUM_BYTES/sizeof(boost::uint32_t)];
+    uint32_t fw_file_buff[X300_FW_NUM_BYTES/sizeof(uint32_t)];
     fw_file.read((char *)fw_file_buff, sizeof(fw_file_buff));
     fw_file.close();
 
     //Poke the fw words into the WB boot loader
     fw_reg_ctrl->poke32(SR_ADDR(BOOT_LDR_BASE, BL_ADDRESS), 0);
-    for (size_t i = 0; i < X300_FW_NUM_BYTES; i+=sizeof(boost::uint32_t))
+    for (size_t i = 0; i < X300_FW_NUM_BYTES; i+=sizeof(uint32_t))
     {
         //@TODO: FIXME: Since x300_ctrl_iface acks each write and traps exceptions, the first try for the last word
         //              written will print an error because it triggers a FW reload and fails to reply.
-        fw_reg_ctrl->poke32(SR_ADDR(BOOT_LDR_BASE, BL_DATA), uhd::byteswap(fw_file_buff[i/sizeof(boost::uint32_t)]));
+        fw_reg_ctrl->poke32(SR_ADDR(BOOT_LDR_BASE, BL_DATA), uhd::byteswap(fw_file_buff[i/sizeof(uint32_t)]));
         if ((i & 0x1fff) == 0) UHD_MSG(status) << "." << std::flush;
     }
 
@@ -445,16 +445,16 @@ void x300_impl::mboard_members_t::discover_eth(
             );
 
             if (addr == boost::asio::ip::address_v4(
-                boost::uint32_t(X300_DEFAULT_IP_ETH0_1G)).to_string()) {
+                uint32_t(X300_DEFAULT_IP_ETH0_1G)).to_string()) {
                 conn_iface.type = X300_IFACE_ETH0;
             } else if (addr == boost::asio::ip::address_v4(
-                boost::uint32_t(X300_DEFAULT_IP_ETH1_1G)).to_string()) {
+                uint32_t(X300_DEFAULT_IP_ETH1_1G)).to_string()) {
                 conn_iface.type = X300_IFACE_ETH1;
             } else if (addr == boost::asio::ip::address_v4(
-                boost::uint32_t(X300_DEFAULT_IP_ETH0_10G)).to_string()) {
+                uint32_t(X300_DEFAULT_IP_ETH0_10G)).to_string()) {
                 conn_iface.type = X300_IFACE_ETH0;
             } else if (addr == boost::asio::ip::address_v4(
-                boost::uint32_t(X300_DEFAULT_IP_ETH1_10G)).to_string()) {
+                uint32_t(X300_DEFAULT_IP_ETH1_10G)).to_string()) {
                 conn_iface.type = X300_IFACE_ETH1;
             } else {
                 throw uhd::assertion_error(str(boost::format(
@@ -555,7 +555,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         nirio_status_to_exception(status, "x300_impl: Could not initialize RIO session.");
 
         //Tell the quirks object which FIFOs carry TX stream data
-        const boost::uint32_t tx_data_fifos[2] = {X300_RADIO_DEST_PREFIX_TX, X300_RADIO_DEST_PREFIX_TX + 3};
+        const uint32_t tx_data_fifos[2] = {X300_RADIO_DEST_PREFIX_TX, X300_RADIO_DEST_PREFIX_TX + 3};
         mb.rio_fpga_interface->get_kernel_proxy()->get_rio_quirks().register_tx_streams(tx_data_fifos, 2);
 
         _tree->create<size_t>(mb_path / "mtu/recv").set(X300_PCIE_RX_DATA_FRAME_SIZE);
@@ -849,7 +849,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // Create the GPSDO control
     ////////////////////////////////////////////////////////////////////
-    static const boost::uint32_t dont_look_for_gpsdo = 0x1234abcdul;
+    static const uint32_t dont_look_for_gpsdo = 0x1234abcdul;
 
     //otherwise if not disabled, look for the internal GPSDO
     if (mb.zpu_ctrl->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_GPSDO_STATUS)) != dont_look_for_gpsdo)
@@ -1048,8 +1048,8 @@ uint32_t x300_impl::allocate_pcie_dma_chan(const uhd::sid_t &tx_sid, const xport
     }
 }
 
-static boost::uint32_t extract_sid_from_pkt(void* pkt, size_t) {
-    return uhd::sid_t(uhd::wtohx(static_cast<const boost::uint32_t*>(pkt)[1])).get_dst();
+static uint32_t extract_sid_from_pkt(void* pkt, size_t) {
+    return uhd::sid_t(uhd::wtohx(static_cast<const uint32_t*>(pkt)[1])).get_dst();
 }
 
 uhd::both_xports_t x300_impl::make_transport(
@@ -1251,8 +1251,8 @@ uhd::both_xports_t x300_impl::make_transport(
         //YES, get a __send__ buffer from the __recv__ socket
         //-- this is the only way to program the framer for recv:
         managed_send_buffer::sptr buff = xports.recv->get_send_buff();
-        buff->cast<boost::uint32_t *>()[0] = 0; //eth dispatch looks for != 0
-        buff->cast<boost::uint32_t *>()[1] = uhd::htonx(xports.send_sid.get());
+        buff->cast<uint32_t *>()[0] = 0; //eth dispatch looks for != 0
+        buff->cast<uint32_t *>()[1] = uhd::htonx(xports.send_sid.get());
         buff->commit(8);
         buff.reset();
 
@@ -1413,7 +1413,7 @@ void x300_impl::sync_times(mboard_members_t &mb, const uhd::time_spec_t& t)
     mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 0);
 }
 
-bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout)
+bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, uint32_t which, double timeout)
 {
     boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(timeout * 1000.0);
     do {
@@ -1439,7 +1439,7 @@ bool x300_impl::is_pps_present(mboard_members_t& mb)
 {
     // The ZPU_RB_CLK_STATUS_PPS_DETECT bit toggles with each rising edge of the PPS.
     // We monitor it for up to 1.5 seconds looking for it to toggle.
-    boost::uint32_t pps_detect = mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT);
+    uint32_t pps_detect = mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT);
     for (int i = 0; i < 15; i++)
     {
         boost::this_thread::sleep(boost::posix_time::milliseconds(100));
@@ -1494,16 +1494,16 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
     udp_simple::sptr udp = udp_simple::make_connected(addr,
             BOOST_STRINGIZE(X300_MTU_DETECT_UDP_PORT));
 
-    std::vector<boost::uint8_t> buffer(std::max(user_frame_size.recv_frame_size, user_frame_size.send_frame_size));
+    std::vector<uint8_t> buffer(std::max(user_frame_size.recv_frame_size, user_frame_size.send_frame_size));
     x300_mtu_t *request = reinterpret_cast<x300_mtu_t *>(&buffer.front());
     static const double echo_timeout = 0.020; //20 ms
 
     //test holler - check if its supported in this fw version
-    request->flags = uhd::htonx<boost::uint32_t>(X300_MTU_DETECT_ECHO_REQUEST);
-    request->size = uhd::htonx<boost::uint32_t>(sizeof(x300_mtu_t));
+    request->flags = uhd::htonx<uint32_t>(X300_MTU_DETECT_ECHO_REQUEST);
+    request->size = uhd::htonx<uint32_t>(sizeof(x300_mtu_t));
     udp->send(boost::asio::buffer(buffer, sizeof(x300_mtu_t)));
     udp->recv(boost::asio::buffer(buffer), echo_timeout);
-    if (!(uhd::ntohx<boost::uint32_t>(request->flags) & X300_MTU_DETECT_ECHO_REPLY))
+    if (!(uhd::ntohx<uint32_t>(request->flags) & X300_MTU_DETECT_ECHO_REPLY))
         throw uhd::not_implemented_error("Holler protocol not implemented");
 
     //Reducing range of (min,max) by setting max value to 10gig max_frame_size as larger sizes are not supported
@@ -1517,8 +1517,8 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
     {
        size_t test_frame_size = (max_recv_frame_size/2 + min_recv_frame_size/2 + 3) & ~3;
 
-       request->flags = uhd::htonx<boost::uint32_t>(X300_MTU_DETECT_ECHO_REQUEST);
-       request->size = uhd::htonx<boost::uint32_t>(test_frame_size);
+       request->flags = uhd::htonx<uint32_t>(X300_MTU_DETECT_ECHO_REQUEST);
+       request->size = uhd::htonx<uint32_t>(test_frame_size);
        udp->send(boost::asio::buffer(buffer, sizeof(x300_mtu_t)));
 
        size_t len = udp->recv(boost::asio::buffer(buffer), echo_timeout);
@@ -1537,13 +1537,13 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
     {
         size_t test_frame_size = (max_send_frame_size/2 + min_send_frame_size/2 + 3) & ~3;
 
-        request->flags = uhd::htonx<boost::uint32_t>(X300_MTU_DETECT_ECHO_REQUEST);
-        request->size = uhd::htonx<boost::uint32_t>(sizeof(x300_mtu_t));
+        request->flags = uhd::htonx<uint32_t>(X300_MTU_DETECT_ECHO_REQUEST);
+        request->size = uhd::htonx<uint32_t>(sizeof(x300_mtu_t));
         udp->send(boost::asio::buffer(buffer, test_frame_size));
 
         size_t len = udp->recv(boost::asio::buffer(buffer), echo_timeout);
         if (len >= sizeof(x300_mtu_t))
-            len = uhd::ntohx<boost::uint32_t>(request->size);
+            len = uhd::ntohx<uint32_t>(request->size);
 
         if (len >= test_frame_size)
             min_send_frame_size = test_frame_size;
@@ -1571,9 +1571,9 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
 
 void x300_impl::check_fw_compat(const fs_path &mb_path, wb_iface::sptr iface)
 {
-    boost::uint32_t compat_num = iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_COMPAT_NUM));
-    boost::uint32_t compat_major = (compat_num >> 16);
-    boost::uint32_t compat_minor = (compat_num & 0xffff);
+    uint32_t compat_num = iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_COMPAT_NUM));
+    uint32_t compat_major = (compat_num >> 16);
+    uint32_t compat_minor = (compat_num & 0xffff);
 
     if (compat_major != X300_FW_COMPAT_MAJOR)
     {
@@ -1590,9 +1590,9 @@ void x300_impl::check_fw_compat(const fs_path &mb_path, wb_iface::sptr iface)
 
 void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t &members)
 {
-    boost::uint32_t compat_num = members.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_COMPAT_NUM));
-    boost::uint32_t compat_major = (compat_num >> 16);
-    boost::uint32_t compat_minor = (compat_num & 0xffff);
+    uint32_t compat_num = members.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_COMPAT_NUM));
+    uint32_t compat_major = (compat_num >> 16);
+    uint32_t compat_minor = (compat_num & 0xffff);
 
     if (compat_major != X300_FPGA_COMPAT_MAJOR)
     {
@@ -1623,7 +1623,7 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t
     _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));
 
-    const boost::uint32_t git_hash = members.zpu_ctrl->peek32(SR_ADDR(SET0_BASE,
+    const uint32_t git_hash = members.zpu_ctrl->peek32(SR_ADDR(SET0_BASE,
                                                               ZPU_RB_GIT_HASH));
     _tree->create<std::string>(mb_path / "fpga_version_hash").set(
         str(boost::format("%07x%s")
@@ -1637,7 +1637,7 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& res
 
     //Detect the PCIe product ID to distinguish between X300 and X310
     nirio_status status = NiRio_Status_Success;
-    boost::uint32_t pid;
+    uint32_t pid;
     niriok_proxy::sptr discovery_proxy =
         niusrprio_session::create_kernel_proxy(resource, rpc_port);
     if (discovery_proxy) {
@@ -1696,9 +1696,9 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
     x300_mboard_t mb_type = UNKNOWN;
     if (not mb_eeprom["product"].empty())
     {
-        boost::uint16_t product_num = 0;
+        uint16_t product_num = 0;
         try {
-            product_num = boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]);
+            product_num = boost::lexical_cast<uint16_t>(mb_eeprom["product"]);
         } catch (const boost::bad_lexical_cast &) {
             product_num = 0;
         }

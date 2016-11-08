@@ -42,18 +42,18 @@ public:
             _perifs[i].ctrl = boost::make_shared<wb_iface_adapter>(
                 // poke32 functor
                 boost::bind(
-                    static_cast< void (block_ctrl_base::*)(const boost::uint32_t, const boost::uint32_t, const size_t) >(&block_ctrl_base::sr_write),
+                    static_cast< void (block_ctrl_base::*)(const uint32_t, const uint32_t, const size_t) >(&block_ctrl_base::sr_write),
                     this, _1, _2, i
                 ),
                 // peek32 functor
                 boost::bind(
-                    static_cast< boost::uint32_t (block_ctrl_base::*)(const boost::uint32_t, const size_t) >(&block_ctrl_base::user_reg_read32),
+                    static_cast< uint32_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read32),
                     this,
                     _1, i
                 ),
                 // peek64 functor
                 boost::bind(
-                    static_cast< boost::uint64_t (block_ctrl_base::*)(const boost::uint32_t, const size_t) >(&block_ctrl_base::user_reg_read64),
+                    static_cast< uint64_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read64),
                     this,
                     _1, i
                 )
@@ -66,7 +66,7 @@ public:
             _perifs[i].core->resize(_perifs[i].base_addr, _perifs[i].depth);
             UHD_MSG(status) << boost::format("[DMA FIFO] Running BIST for FIFO %d... ") % i;
             if (_perifs[i].core->ext_bist_supported()) {
-                boost::uint32_t bisterr = _perifs[i].core->run_bist();
+                uint32_t bisterr = _perifs[i].core->run_bist();
                 if (bisterr != 0) {
                     throw uhd::runtime_error(str(boost::format("BIST failed! (code: %d)\n") % bisterr));
                 } else {

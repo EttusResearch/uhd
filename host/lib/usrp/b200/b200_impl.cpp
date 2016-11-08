@@ -130,7 +130,7 @@ std::string check_option_valid(
 b200_product_t get_b200_product(const usb_device_handle::sptr& handle, const mboard_eeprom_t &mb_eeprom)
 {
     // Try USB PID first
-    boost::uint16_t product_id = handle->get_product_id();
+    uint16_t product_id = handle->get_product_id();
     if (B2XX_PID_TO_PRODUCT.has_key(product_id))
         return B2XX_PID_TO_PRODUCT[product_id];
 
@@ -138,7 +138,7 @@ b200_product_t get_b200_product(const usb_device_handle::sptr& handle, const mbo
     if (mb_eeprom["product"].empty()) {
         throw uhd::runtime_error("B200: Missing product ID on EEPROM.");
     }
-    product_id = boost::lexical_cast<boost::uint16_t>(mb_eeprom["product"]);
+    product_id = boost::lexical_cast<uint16_t>(mb_eeprom["product"]);
     if (not B2XX_PRODUCT_ID.has_key(product_id)) {
         throw uhd::runtime_error(str(
             boost::format("B200 unknown product code: 0x%04x")
@@ -153,8 +153,8 @@ std::vector<usb_device_handle::sptr> get_b200_device_handles(const device_addr_t
     std::vector<usb_device_handle::vid_pid_pair_t> vid_pid_pair_list;
 
     if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "b200") {
-        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid")),
-                                                                      uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"))));
+        vid_pid_pair_list.push_back(usb_device_handle::vid_pid_pair_t(uhd::cast::hexstr_cast<uint16_t>(hint.get("vid")),
+                                                                      uhd::cast::hexstr_cast<uint16_t>(hint.get("pid"))));
     } else {
         vid_pid_pair_list = b200_vid_pid_pairs;
     }
@@ -292,20 +292,20 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     const fs_path mb_path = "/mboards/0";
 
     //try to match the given device address with something on the USB bus
-    boost::uint16_t vid = B200_VENDOR_ID;
-    boost::uint16_t pid = B200_PRODUCT_ID;
+    uint16_t vid = B200_VENDOR_ID;
+    uint16_t pid = B200_PRODUCT_ID;
     bool specified_vid = false;
     bool specified_pid = false;
 
     if (device_addr.has_key("vid"))
     {
-        vid = uhd::cast::hexstr_cast<boost::uint16_t>(device_addr.get("vid"));
+        vid = uhd::cast::hexstr_cast<uint16_t>(device_addr.get("vid"));
         specified_vid = true;
     }
 
     if (device_addr.has_key("pid"))
     {
-        pid = uhd::cast::hexstr_cast<boost::uint16_t>(device_addr.get("pid"));
+        pid = uhd::cast::hexstr_cast<uint16_t>(device_addr.get("pid"));
         specified_pid = true;
     }
 
@@ -425,7 +425,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         device_addr.has_key("fpga")? device_addr["fpga"] : default_file_name
     );
 
-    boost::uint32_t status = _iface->load_fpga(b200_fpga_image);
+    uint32_t status = _iface->load_fpga(b200_fpga_image);
 
     if(status != 0) {
         throw uhd::runtime_error(str(boost::format("fx3 is in state %1%") % status));
@@ -436,7 +436,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // Create control transport
     ////////////////////////////////////////////////////////////////////
-    boost::uint8_t usb_speed = _iface->get_usb_speed();
+    uint8_t usb_speed = _iface->get_usb_speed();
     UHD_MSG(status) << "Operating over USB " << (int) usb_speed << "." << std::endl;
     const std::string min_frame_size = (usb_speed == 3) ? "1024" : "512";
 
@@ -672,11 +672,11 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     _radio_perifs[0].fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
-            _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
+            _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
             .set(0)
             .add_coerced_subscriber(boost::bind(&gpio_atr_3000::set_gpio_attr, _radio_perifs[0].fp_gpio, attr.first, _1));
     }
-    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
+    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
         .set_publisher(boost::bind(&gpio_atr_3000::read_gpio, _radio_perifs[0].fp_gpio));
 
     ////////////////////////////////////////////////////////////////////
@@ -751,7 +751,7 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // Set up transport
     ////////////////////////////////////////////////////////////////////
-    const boost::uint32_t sid = (dspno == 0) ? B200_CTRL0_MSG_SID : B200_CTRL1_MSG_SID;
+    const uint32_t sid = (dspno == 0) ? B200_CTRL0_MSG_SID : B200_CTRL1_MSG_SID;
 
     ////////////////////////////////////////////////////////////////////
     // radio control
@@ -879,8 +879,8 @@ void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
-        iface->poke32(TOREG(SR_TEST), boost::uint32_t(hash));
-        test_fail = iface->peek32(RB32_TEST) != boost::uint32_t(hash);
+        iface->poke32(TOREG(SR_TEST), uint32_t(hash));
+        test_fail = iface->peek32(RB32_TEST) != uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
     UHD_MSG(status) << ((test_fail)? "fail" : "pass") << std::endl;
@@ -946,9 +946,9 @@ double b200_impl::set_tick_rate(const double new_tick_rate)
 
 void b200_impl::check_fw_compat(void)
 {
-    boost::uint16_t compat_num = _iface->get_compat_num();
-    boost::uint32_t compat_major = (boost::uint32_t) (compat_num >> 8);
-    boost::uint32_t compat_minor = (boost::uint32_t) (compat_num & 0xFF);
+    uint16_t compat_num = _iface->get_compat_num();
+    uint32_t compat_major = (uint32_t) (compat_num >> 8);
+    uint32_t compat_minor = (uint32_t) (compat_num & 0xFF);
 
     if (compat_major != B200_FW_COMPAT_NUM_MAJOR){
         throw uhd::runtime_error(str(boost::format(
@@ -964,14 +964,14 @@ void b200_impl::check_fw_compat(void)
 
 void b200_impl::check_fpga_compat(void)
 {
-    const boost::uint64_t compat = _local_ctrl->peek64(0);
-    const boost::uint32_t signature = boost::uint32_t(compat >> 32);
-    const boost::uint16_t compat_major = boost::uint16_t(compat >> 16);
-    const boost::uint16_t compat_minor = boost::uint16_t(compat & 0xffff);
+    const uint64_t compat = _local_ctrl->peek64(0);
+    const uint32_t signature = uint32_t(compat >> 32);
+    const uint16_t compat_major = uint16_t(compat >> 16);
+    const uint16_t compat_minor = uint16_t(compat & 0xffff);
     if (signature != 0xACE0BA5E) throw uhd::runtime_error(
         "b200::check_fpga_compat signature register readback failed");
 
-    const boost::uint16_t expected = ((_product == B200MINI or _product == B205MINI) ? B205_FPGA_COMPAT_NUM : B200_FPGA_COMPAT_NUM);
+    const uint16_t expected = ((_product == B200MINI or _product == B205MINI) ? B205_FPGA_COMPAT_NUM : B200_FPGA_COMPAT_NUM);
     if (compat_major != expected)
     {
         throw uhd::runtime_error(str(boost::format(
@@ -1090,7 +1090,7 @@ void b200_impl::set_time(const uhd::time_spec_t& t)
 {
     BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
         perif.time64->set_time_sync(t);
-    _local_ctrl->poke32(TOREG(SR_CORE_SYNC), 1 << 2 | boost::uint32_t(_time_source));
+    _local_ctrl->poke32(TOREG(SR_CORE_SYNC), 1 << 2 | uint32_t(_time_source));
     _local_ctrl->poke32(TOREG(SR_CORE_SYNC), _time_source);
 }
 
@@ -1145,7 +1145,7 @@ void b200_impl::update_bandsel(const std::string& which, double freq)
 
 void b200_impl::update_gpio_state(void)
 {
-    const boost::uint32_t misc_word = 0
+    const uint32_t misc_word = 0
         | (_gpio_state.swap_atr << 8)
         | (_gpio_state.tx_bandsel_a << 7)
         | (_gpio_state.tx_bandsel_b << 6)
@@ -1243,7 +1243,7 @@ sensor_value_t b200_impl::get_ref_locked(void)
 
 sensor_value_t b200_impl::get_fe_pll_locked(const bool is_tx)
 {
-    const boost::uint32_t st = _local_ctrl->peek32(RB32_CORE_PLL);
+    const uint32_t st = _local_ctrl->peek32(RB32_CORE_PLL);
     const bool locked = is_tx ? ((st & 0x1) > 0) : ((st & 0x2) > 0);
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }

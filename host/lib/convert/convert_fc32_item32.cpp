@@ -23,7 +23,7 @@
 
 using namespace uhd::convert;
 
-typedef boost::uint32_t (*to32_type)(boost::uint32_t);
+typedef uint32_t (*to32_type)(uint32_t);
 
 template <typename type, to32_type tohost>
 struct convert_fc32_item32_1_to_star_1 : public converter

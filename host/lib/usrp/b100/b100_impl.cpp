@@ -37,10 +37,10 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-const boost::uint16_t B100_VENDOR_ID  = 0x2500;
-const boost::uint16_t B100_PRODUCT_ID = 0x0002;
-const boost::uint16_t FX2_VENDOR_ID    = 0x04b4;
-const boost::uint16_t FX2_PRODUCT_ID   = 0x8613;
+const uint16_t B100_VENDOR_ID  = 0x2500;
+const uint16_t B100_PRODUCT_ID = 0x0002;
+const uint16_t FX2_VENDOR_ID    = 0x04b4;
+const uint16_t FX2_PRODUCT_ID   = 0x8613;
 static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
 
 /***********************************************************************
@@ -57,11 +57,11 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     //since an address and resource is intended for a different, non-USB, device.
     if (hint.has_key("addr") || hint.has_key("resource")) return b100_addrs;
 
-    boost::uint16_t vid, pid;
+    uint16_t vid, pid;
 
     if(hint.has_key("vid") && hint.has_key("pid") && hint.has_key("type") && hint["type"] == "b100") {
-        vid = uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("vid"));
-        pid = uhd::cast::hexstr_cast<boost::uint16_t>(hint.get("pid"));
+        vid = uhd::cast::hexstr_cast<uint16_t>(hint.get("vid"));
+        pid = uhd::cast::hexstr_cast<uint16_t>(hint.get("pid"));
     } else {
         vid = B100_VENDOR_ID;
         pid = B100_PRODUCT_ID;
@@ -261,7 +261,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
 
     //let packet padder know the LUT size in number of words32
     const size_t rx_lut_size = size_t(data_xport_args.cast<double>("recv_frame_size", 0.0));
-    _fifo_ctrl->poke32(TOREG(SR_PADDER+0), rx_lut_size/sizeof(boost::uint32_t));
+    _fifo_ctrl->poke32(TOREG(SR_PADDER+0), rx_lut_size/sizeof(uint32_t));
 
     _data_transport = usb_zero_copy_make_wrapper(
         usb_zero_copy::make(
@@ -526,7 +526,7 @@ b100_impl::~b100_impl(void){
 
 void b100_impl::check_fw_compat(void){
     unsigned char data[4]; //useless data buffer
-    const boost::uint16_t fw_compat_num = _fx2_ctrl->usrp_control_read(
+    const uint16_t fw_compat_num = _fx2_ctrl->usrp_control_read(
         VRQ_FW_COMPAT, 0, 0, data, sizeof(data)
     );
     if (fw_compat_num != B100_FW_COMPAT_NUM){
@@ -540,8 +540,8 @@ void b100_impl::check_fw_compat(void){
 }
 
 void b100_impl::check_fpga_compat(void){
-    const boost::uint32_t fpga_compat_num = _fifo_ctrl->peek32(REG_RB_COMPAT);
-    boost::uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
+    const uint32_t fpga_compat_num = _fifo_ctrl->peek32(REG_RB_COMPAT);
+    uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
     if (fpga_major == 0){ //old version scheme
         fpga_major = fpga_minor;
         fpga_minor = 0;

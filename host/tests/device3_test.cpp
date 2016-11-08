@@ -27,7 +27,7 @@
 using namespace uhd;
 using namespace uhd::rfnoc;
 
-static const boost::uint64_t TEST_NOC_ID = 0xAAAABBBBCCCCDDDD;
+static const uint64_t TEST_NOC_ID = 0xAAAABBBBCCCCDDDD;
 static const sid_t TEST_SID0 = 0x00000200; // 0.0.2.0
 static const sid_t TEST_SID1 = 0x00000210; // 0.0.2.F
 
@@ -38,11 +38,11 @@ class pseudo_wb_iface_impl : public uhd::wb_iface
     pseudo_wb_iface_impl() {};
     ~pseudo_wb_iface_impl() {};
 
-    void poke64(const wb_addr_type addr, const boost::uint64_t data) {
+    void poke64(const wb_addr_type addr, const uint64_t data) {
         std::cout << str(boost::format("[PSEUDO] poke64 to addr: %016X, data == %016X") % addr % data) << std::endl;
     };
 
-    boost::uint64_t peek64(const wb_addr_type addr) {
+    uint64_t peek64(const wb_addr_type addr) {
         std::cout << str(boost::format("[PSEUDO] peek64 to addr: %016X") % addr) << std::endl;
         switch (addr) {
             case SR_READBACK_REG_ID:
@@ -57,11 +57,11 @@ class pseudo_wb_iface_impl : public uhd::wb_iface
         return 0;
     }
 
-    void poke32(const wb_addr_type addr, const boost::uint32_t data) {
+    void poke32(const wb_addr_type addr, const uint32_t data) {
         std::cout << str(boost::format("poke32 to addr: %08X, data == %08X") % addr % data) << std::endl;
     }
 
-    boost::uint32_t peek32(const wb_addr_type addr) {
+    uint32_t peek32(const wb_addr_type addr) {
         std::cout << str(boost::format("peek32 to addr: %08X") % addr) << std::endl;
         return 0;
     }

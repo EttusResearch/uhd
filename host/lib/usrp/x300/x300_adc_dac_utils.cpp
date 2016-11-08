@@ -47,7 +47,7 @@ void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
         boost::posix_time::microsec_clock::local_time() - t_start;
 
     //Add 100% of headroom + uncertaintly to the command time
-    boost::uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 13000 /*Scheduler latency*/;
+    uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 13000 /*Scheduler latency*/;
 
     //Pick radios[0] as the time reference.
     uhd::time_spec_t sync_time =
@@ -71,9 +71,9 @@ void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
  * ADC: Self-test operations
  **********************************************************************/
 
-static void check_adc(uhd::wb_iface::sptr iface, const boost::uint32_t val, const boost::uint32_t i)
+static void check_adc(uhd::wb_iface::sptr iface, const uint32_t val, const uint32_t i)
 {
-    boost::uint32_t adc_rb = iface->peek32(uhd::usrp::radio::RB32_RX);
+    uint32_t adc_rb = iface->peek32(uhd::usrp::radio::RB32_RX);
     adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
     if (val != adc_rb) {
         throw uhd::runtime_error(
@@ -81,7 +81,7 @@ static void check_adc(uhd::wb_iface::sptr iface, const boost::uint32_t val, cons
     }
 }
 
-void x300_impl::self_test_adcs(mboard_members_t& mb, boost::uint32_t ramp_time_ms) {
+void x300_impl::self_test_adcs(mboard_members_t& mb, uint32_t ramp_time_ms) {
     for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
         radio_perifs_t &perif = mb.radio_perifs[r];
 
@@ -186,20 +186,20 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
     radio_perifs_t& perif = mb.radio_perifs[radio_i];
     if (print_status) UHD_MSG(status) << "Running ADC capture delay self-cal..." << std::flush;
 
-    static const boost::uint32_t NUM_DELAY_STEPS = 32;   //The IDELAYE2 element has 32 steps
-    static const boost::uint32_t NUM_RETRIES     = 2;    //Retry self-cal if it fails in warmup situations
-    static const boost::int32_t  MIN_WINDOW_LEN  = 4;
+    static const uint32_t NUM_DELAY_STEPS = 32;   //The IDELAYE2 element has 32 steps
+    static const uint32_t NUM_RETRIES     = 2;    //Retry self-cal if it fails in warmup situations
+    static const int32_t  MIN_WINDOW_LEN  = 4;
 
-    boost::int32_t win_start = -1, win_stop = -1;
-    boost::uint32_t iter = 0;
+    int32_t win_start = -1, win_stop = -1;
+    uint32_t iter = 0;
     while (iter++ < NUM_RETRIES) {
-        for (boost::uint32_t dly_tap = 0; dly_tap < NUM_DELAY_STEPS; dly_tap++) {
+        for (uint32_t dly_tap = 0; dly_tap < NUM_DELAY_STEPS; dly_tap++) {
             //Apply delay
             perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_VAL, dly_tap);
             perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 1);
             perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 0);
 
-            boost::uint32_t err_code = 0;
+            uint32_t err_code = 0;
 
             // -- Test I Channel --
             //Put ADC in ramp test mode. Tie the other channel to all ones.
@@ -270,7 +270,7 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
         throw uhd::runtime_error("self_cal_adc_capture_delay: Self calibration failed. Valid window too narrow.");
     }
 
-    boost::uint32_t ideal_tap = (win_stop + win_start) / 2;
+    uint32_t ideal_tap = (win_stop + win_start) / 2;
     perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_VAL, ideal_tap);
     perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 1);
     perif.regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 0);
@@ -304,7 +304,7 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
         double delay = mb.clock->set_clock_delay(X300_CLOCK_WHICH_ADC0, delay_incr*i + delay_start);
         wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, 0.1);
 
-        boost::uint32_t err_code = 0;
+        uint32_t err_code = 0;
         for (size_t r = 0; r < mboard_members_t::NUM_RADIOS; r++) {
             //Test each channel (I and Q) individually so as to not accidentally trigger
             //on the data from the other channel if there is a swap

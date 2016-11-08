@@ -26,7 +26,7 @@ namespace uhd{ namespace cast{
     //! Convert a hexadecimal string into a value.
     //
     // Example:
-    //     boost::uint16_t x = hexstr_cast<boost::uint16_t>("0xDEADBEEF");
+    //     uint16_t x = hexstr_cast<uint16_t>("0xDEADBEEF");
     // Uses stringstream.
     template<typename T> UHD_INLINE T hexstr_cast(const std::string &in)
     {

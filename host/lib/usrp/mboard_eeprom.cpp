@@ -42,36 +42,36 @@ static const size_t NAME_MAX_LEN = 32 - SERIAL_LEN;
 
 //! convert a string to a byte vector to write to eeprom
 static byte_vector_t string_to_uint16_bytes(const std::string &num_str){
-    const boost::uint16_t num = boost::lexical_cast<boost::uint16_t>(num_str);
+    const uint16_t num = boost::lexical_cast<uint16_t>(num_str);
     const byte_vector_t lsb_msb = boost::assign::list_of
-        (boost::uint8_t(num >> 0))(boost::uint8_t(num >> 8));
+        (uint8_t(num >> 0))(uint8_t(num >> 8));
     return lsb_msb;
 }
 
 //! convert a byte vector read from eeprom to a string
 static std::string uint16_bytes_to_string(const byte_vector_t &bytes){
-    const boost::uint16_t num = (boost::uint16_t(bytes.at(0)) << 0) | (boost::uint16_t(bytes.at(1)) << 8);
+    const uint16_t num = (uint16_t(bytes.at(0)) << 0) | (uint16_t(bytes.at(1)) << 8);
     return (num == 0 or num == 0xffff)? "" : boost::lexical_cast<std::string>(num);
 }
 
 /***********************************************************************
  * Implementation of N100 load/store
  **********************************************************************/
-static const boost::uint8_t N100_EEPROM_ADDR = 0x50;
+static const uint8_t N100_EEPROM_ADDR = 0x50;
 
 struct n100_eeprom_map{
-    boost::uint16_t hardware;
-    boost::uint8_t mac_addr[6];
-    boost::uint32_t subnet;
-    boost::uint32_t ip_addr;
-    boost::uint16_t _pad0;
-    boost::uint16_t revision;
-    boost::uint16_t product;
+    uint16_t hardware;
+    uint8_t mac_addr[6];
+    uint32_t subnet;
+    uint32_t ip_addr;
+    uint16_t _pad0;
+    uint16_t revision;
+    uint16_t product;
     unsigned char _pad1;
     unsigned char gpsdo;
     unsigned char serial[SERIAL_LEN];
     unsigned char name[NAME_MAX_LEN];
-    boost::uint32_t gateway;
+    uint32_t gateway;
 };
 
 enum n200_gpsdo_type{
@@ -112,7 +112,7 @@ static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     mb_eeprom["gateway"] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
 
     //gpsdo capabilities
-    boost::uint8_t gpsdo_byte = iface.read_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, gpsdo), 1).at(0);
+    uint8_t gpsdo_byte = iface.read_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, gpsdo), 1).at(0);
     switch(n200_gpsdo_type(gpsdo_byte)){
     case N200_GPSDO_INTERNAL: mb_eeprom["gpsdo"] = "internal"; break;
     case N200_GPSDO_ONBOARD: mb_eeprom["gpsdo"] = "onboard"; break;
@@ -184,7 +184,7 @@ static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
     //gpsdo capabilities
     if (mb_eeprom.has_key("gpsdo")){
-        boost::uint8_t gpsdo_byte = N200_GPSDO_NONE;
+        uint8_t gpsdo_byte = N200_GPSDO_NONE;
         if (mb_eeprom["gpsdo"] == "internal") gpsdo_byte = N200_GPSDO_INTERNAL;
         if (mb_eeprom["gpsdo"] == "onboard") gpsdo_byte = N200_GPSDO_ONBOARD;
         iface.write_eeprom(N100_EEPROM_ADDR, offsetof(n100_eeprom_map, gpsdo), byte_vector_t(1, gpsdo_byte));
@@ -206,7 +206,7 @@ static void store_n100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 /***********************************************************************
  * Implementation of X300 load/store
  **********************************************************************/
-static const boost::uint8_t X300_EEPROM_ADDR = 0x50;
+static const uint8_t X300_EEPROM_ADDR = 0x50;
 
 struct x300_eeprom_map
 {
@@ -214,19 +214,19 @@ struct x300_eeprom_map
     unsigned char revision[2];
     unsigned char product[2];
     unsigned char revision_compat[2];
-    boost::uint8_t _pad0[2];
+    uint8_t _pad0[2];
 
     //all the mac addrs
-    boost::uint8_t mac_addr0[6];
-    boost::uint8_t _pad1[2];
-    boost::uint8_t mac_addr1[6];
-    boost::uint8_t _pad2[2];
+    uint8_t mac_addr0[6];
+    uint8_t _pad1[2];
+    uint8_t mac_addr1[6];
+    uint8_t _pad2[2];
 
     //all the IP addrs
-    boost::uint32_t gateway;
-    boost::uint32_t subnet[4];
-    boost::uint32_t ip_addr[4];
-    boost::uint8_t _pad3[16];
+    uint32_t gateway;
+    uint32_t subnet[4];
+    uint32_t ip_addr[4];
+    uint8_t _pad3[16];
 
     //names and serials
     unsigned char name[NAME_MAX_LEN];
@@ -349,7 +349,7 @@ static void store_x300(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface)
 /***********************************************************************
  * Implementation of B000 load/store
  **********************************************************************/
-static const boost::uint8_t B000_EEPROM_ADDR = 0x50;
+static const uint8_t B000_EEPROM_ADDR = 0x50;
 static const size_t B000_SERIAL_LEN = 8;
 
 //use char array so we dont need to attribute packed
@@ -372,13 +372,13 @@ static void load_b000(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     ));
 
     //extract master clock rate as a 32-bit uint in Hz
-    boost::uint32_t master_clock_rate;
+    uint32_t master_clock_rate;
     const byte_vector_t rate_bytes = iface.read_eeprom(
         B000_EEPROM_ADDR, offsetof(b000_eeprom_map, mcr), sizeof(master_clock_rate)
     );
     std::copy(
         rate_bytes.begin(), rate_bytes.end(), //input
-        reinterpret_cast<boost::uint8_t *>(&master_clock_rate) //output
+        reinterpret_cast<uint8_t *>(&master_clock_rate) //output
     );
     master_clock_rate = ntohl(master_clock_rate);
     if (master_clock_rate > 1e6 and master_clock_rate < 1e9){
@@ -402,11 +402,11 @@ static void store_b000(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
     //store the master clock rate as a 32-bit uint in Hz
     if (mb_eeprom.has_key("mcr")){
-        boost::uint32_t master_clock_rate = boost::uint32_t(boost::lexical_cast<double>(mb_eeprom["mcr"]));
+        uint32_t master_clock_rate = uint32_t(boost::lexical_cast<double>(mb_eeprom["mcr"]));
         master_clock_rate = htonl(master_clock_rate);
         const byte_vector_t rate_bytes(
-            reinterpret_cast<const boost::uint8_t *>(&master_clock_rate),
-            reinterpret_cast<const boost::uint8_t *>(&master_clock_rate) + sizeof(master_clock_rate)
+            reinterpret_cast<const uint8_t *>(&master_clock_rate),
+            reinterpret_cast<const uint8_t *>(&master_clock_rate) + sizeof(master_clock_rate)
         );
         iface.write_eeprom(
             B000_EEPROM_ADDR, offsetof(b000_eeprom_map, mcr), rate_bytes
@@ -417,7 +417,7 @@ static void store_b000(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 /***********************************************************************
  * Implementation of B100 load/store
  **********************************************************************/
-static const boost::uint8_t B100_EEPROM_ADDR = 0x50;
+static const uint8_t B100_EEPROM_ADDR = 0x50;
 
 //use char array so we dont need to attribute packed
 struct b100_eeprom_map{
@@ -481,7 +481,7 @@ static void store_b100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
  **********************************************************************/
 /* On the B200, this field indicates the slave address. From the FX3, this
  * address is always 0. */
-static const boost::uint8_t B200_EEPROM_SLAVE_ADDR = 0x04;
+static const uint8_t B200_EEPROM_SLAVE_ADDR = 0x04;
 
 //use char array so we dont need to attribute packed
 struct b200_eeprom_map{
@@ -542,11 +542,11 @@ static void store_b200(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 /***********************************************************************
  * Implementation of E100 load/store
  **********************************************************************/
-static const boost::uint8_t E100_EEPROM_ADDR = 0x51;
+static const uint8_t E100_EEPROM_ADDR = 0x51;
 
 struct e100_eeprom_map{
-    boost::uint16_t vendor;
-    boost::uint16_t device;
+    uint16_t vendor;
+    uint16_t device;
     unsigned char revision;
     unsigned char content;
     unsigned char model[8];
@@ -591,12 +591,12 @@ static void store_e100(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
     if (mb_eeprom.has_key("vendor")) iface.write_eeprom(
         E100_EEPROM_ADDR, offsetof(e100_eeprom_map, vendor),
-        to_bytes(uhd::htonx(boost::lexical_cast<boost::uint16_t>(mb_eeprom["vendor"])))
+        to_bytes(uhd::htonx(boost::lexical_cast<uint16_t>(mb_eeprom["vendor"])))
     );
 
     if (mb_eeprom.has_key("device")) iface.write_eeprom(
         E100_EEPROM_ADDR, offsetof(e100_eeprom_map, device),
-        to_bytes(uhd::htonx(boost::lexical_cast<boost::uint16_t>(mb_eeprom["device"])))
+        to_bytes(uhd::htonx(boost::lexical_cast<uint16_t>(mb_eeprom["device"])))
     );
 
     if (mb_eeprom.has_key("revision")) iface.write_eeprom(

@@ -26,7 +26,7 @@
 #include <cmath>
 #include <cstring>
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>

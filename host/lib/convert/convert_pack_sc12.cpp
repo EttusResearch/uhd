@@ -23,7 +23,7 @@
 
 using namespace uhd::convert;
 
-typedef boost::uint32_t (*towire32_type)(boost::uint32_t);
+typedef uint32_t (*towire32_type)(uint32_t);
 
 /* C language specification requires this to be packed
  * (i.e., line0, line1, line2 will be in adjacent memory locations).
@@ -71,17 +71,17 @@ void convert_star_4_to_sc12_item32_3
     const double scalar
 )
 {
-    const item32_t i0 = boost::int32_t(type(in0.real()*scalar)) & 0xfff;
-    const item32_t q0 = boost::int32_t(type(in0.imag()*scalar)) & 0xfff;
+    const item32_t i0 = int32_t(type(in0.real()*scalar)) & 0xfff;
+    const item32_t q0 = int32_t(type(in0.imag()*scalar)) & 0xfff;
 
-    const item32_t i1 = boost::int32_t(type(in1.real()*scalar)) & 0xfff;
-    const item32_t q1 = boost::int32_t(type(in1.imag()*scalar)) & 0xfff;
+    const item32_t i1 = int32_t(type(in1.real()*scalar)) & 0xfff;
+    const item32_t q1 = int32_t(type(in1.imag()*scalar)) & 0xfff;
 
-    const item32_t i2 = boost::int32_t(type(in2.real()*scalar)) & 0xfff;
-    const item32_t q2 = boost::int32_t(type(in2.imag()*scalar)) & 0xfff;
+    const item32_t i2 = int32_t(type(in2.real()*scalar)) & 0xfff;
+    const item32_t q2 = int32_t(type(in2.imag()*scalar)) & 0xfff;
 
-    const item32_t i3 = boost::int32_t(type(in3.real()*scalar)) & 0xfff;
-    const item32_t q3 = boost::int32_t(type(in3.imag()*scalar)) & 0xfff;
+    const item32_t i3 = int32_t(type(in3.real()*scalar)) & 0xfff;
+    const item32_t q3 = int32_t(type(in3.imag()*scalar)) & 0xfff;
 
     const item32_t line0 = (i0 << 20) | (q0 << 8) | (i1 >> 4);
     const item32_t line1 = (i1 << 28) | (q1 << 16) | (i2 << 4) | (q2 >> 8);

@@ -20,7 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/shared_ptr.hpp>
 
 namespace uhd
@@ -30,7 +30,7 @@ class UHD_API wb_iface
 {
 public:
     typedef boost::shared_ptr<wb_iface> sptr;
-    typedef boost::uint32_t wb_addr_type;
+    typedef uint32_t wb_addr_type;
 
     virtual ~wb_iface(void);
 
@@ -39,42 +39,42 @@ public:
      * \param addr the address
      * \param data the 64bit data
      */
-    virtual void poke64(const wb_addr_type addr, const boost::uint64_t data);
+    virtual void poke64(const wb_addr_type addr, const uint64_t data);
 
     /*!
      * Read a register (64 bits)
      * \param addr the address
      * \return the 64bit data
      */
-    virtual boost::uint64_t peek64(const wb_addr_type addr);
+    virtual uint64_t peek64(const wb_addr_type addr);
 
     /*!
      * Write a register (32 bits)
      * \param addr the address
      * \param data the 32bit data
      */
-    virtual void poke32(const wb_addr_type addr, const boost::uint32_t data);
+    virtual void poke32(const wb_addr_type addr, const uint32_t data);
 
     /*!
      * Read a register (32 bits)
      * \param addr the address
      * \return the 32bit data
      */
-    virtual boost::uint32_t peek32(const wb_addr_type addr);
+    virtual uint32_t peek32(const wb_addr_type addr);
 
     /*!
      * Write a register (16 bits)
      * \param addr the address
      * \param data the 16bit data
      */
-    virtual void poke16(const wb_addr_type addr, const boost::uint16_t data);
+    virtual void poke16(const wb_addr_type addr, const uint16_t data);
 
     /*!
      * Read a register (16 bits)
      * \param addr the address
      * \return the 16bit data
      */
-    virtual boost::uint16_t peek16(const wb_addr_type addr);
+    virtual uint16_t peek16(const wb_addr_type addr);
 };
 
 class UHD_API timed_wb_iface : public wb_iface

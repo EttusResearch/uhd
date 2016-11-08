@@ -29,6 +29,7 @@
 #include <boost/units/detail/utility.hpp>
 #include <memory>
 #include <list>
+#include <stdint.h>
 
 namespace uhd { namespace experts {
 
@@ -94,7 +95,7 @@ namespace uhd { namespace experts {
             return os.str();
         }
 
-        static std::string print(const boost::uint8_t& val) {
+        static std::string print(const uint8_t& val) {
             std::ostringstream os;
             os << int(val);
             return os.str();

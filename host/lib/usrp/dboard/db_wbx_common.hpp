@@ -153,7 +153,7 @@ protected:
 
         adf435x_iface::sptr _txlo;
         adf435x_iface::sptr _rxlo;
-        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs);
+        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<uint32_t> &regs);
     };
 
 

@@ -123,11 +123,11 @@ private:
         size_t hw_buff_size);
 
     static void _cvita_hdr_unpack(
-        const boost::uint32_t *packet_buff,
+        const uint32_t *packet_buff,
         transport::vrt::if_packet_info_t &if_packet_info);
 
     static void _cvita_hdr_pack(
-        boost::uint32_t *packet_buff,
+        uint32_t *packet_buff,
         transport::vrt::if_packet_info_t &if_packet_info);
 
     const n230_device_args_t                  _dev_args;
@@ -143,7 +143,7 @@ private:
     stream_args_t                           _tx_stream_cached_args[fpga::NUM_RADIOS];
     stream_args_t                           _rx_stream_cached_args[fpga::NUM_RADIOS];
 
-    static const boost::uint32_t HW_SEQ_NUM_MASK    = 0xFFF;
+    static const uint32_t HW_SEQ_NUM_MASK    = 0xFFF;
 };
 
 }}} //namespace

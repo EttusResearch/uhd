@@ -23,7 +23,7 @@
 
 using namespace uhd::usrp;
 
-dboard_id_t::dboard_id_t(boost::uint16_t id){
+dboard_id_t::dboard_id_t(uint16_t id){
     _id = id;
 }
 
@@ -31,11 +31,11 @@ dboard_id_t dboard_id_t::none(void){
     return dboard_id_t();
 }
 
-dboard_id_t dboard_id_t::from_uint16(boost::uint16_t uint16){
+dboard_id_t dboard_id_t::from_uint16(uint16_t uint16){
     return dboard_id_t(uint16);
 }
 
-boost::uint16_t dboard_id_t::to_uint16(void) const{
+uint16_t dboard_id_t::to_uint16(void) const{
     return _id;
 }
 
@@ -52,11 +52,11 @@ template <class T> struct to_hex{
 dboard_id_t dboard_id_t::from_string(const std::string &string){
     if (string.substr(0, 2) == "0x"){
         std::stringstream interpreter(string);
-        to_hex<boost::uint16_t> hh;
+        to_hex<uint16_t> hh;
         interpreter >> hh;
         return dboard_id_t::from_uint16(hh);
     }
-    return dboard_id_t::from_uint16(boost::lexical_cast<boost::uint16_t>(string));
+    return dboard_id_t::from_uint16(boost::lexical_cast<uint16_t>(string));
 }
 
 std::string dboard_id_t::to_string(void) const{

@@ -23,7 +23,7 @@
 
 using namespace uhd::convert;
 
-typedef boost::uint32_t (*tohost32_type)(boost::uint32_t);
+typedef uint32_t (*tohost32_type)(uint32_t);
 
 /* C language specification requires this to be packed
  * (i.e., line0, line1, line2 will be in adjacent memory locations).
@@ -63,21 +63,21 @@ void convert_sc12_item32_3_to_star_4
     const item32_t line0 = tohost(input.line0);
     const item32_t line1 = tohost(input.line1);
     const item32_t line2 = tohost(input.line2);
-    const boost::uint64_t line01 = (boost::uint64_t(line0) << 32) | line1;
-    const boost::uint64_t line12 = (boost::uint64_t(line1) << 32) | line2;
+    const uint64_t line01 = (uint64_t(line0) << 32) | line1;
+    const uint64_t line12 = (uint64_t(line1) << 32) | line2;
 
     //step 1: shift out and mask off the individual numbers
-    const type i0 = type(boost::int16_t((line0 >> 16) & 0xfff0)*scalar);
-    const type q0 = type(boost::int16_t((line0 >> 4) & 0xfff0)*scalar);
+    const type i0 = type(int16_t((line0 >> 16) & 0xfff0)*scalar);
+    const type q0 = type(int16_t((line0 >> 4) & 0xfff0)*scalar);
 
-    const type i1 = type(boost::int16_t((line01 >> 24) & 0xfff0)*scalar);
-    const type q1 = type(boost::int16_t((line1 >> 12) & 0xfff0)*scalar);
+    const type i1 = type(int16_t((line01 >> 24) & 0xfff0)*scalar);
+    const type q1 = type(int16_t((line1 >> 12) & 0xfff0)*scalar);
 
-    const type i2 = type(boost::int16_t((line1 >> 0) & 0xfff0)*scalar);
-    const type q2 = type(boost::int16_t((line12 >> 20) & 0xfff0)*scalar);
+    const type i2 = type(int16_t((line1 >> 0) & 0xfff0)*scalar);
+    const type q2 = type(int16_t((line12 >> 20) & 0xfff0)*scalar);
 
-    const type i3 = type(boost::int16_t((line2 >> 8) & 0xfff0)*scalar);
-    const type q3 = type(boost::int16_t((line2 << 4) & 0xfff0)*scalar);
+    const type i3 = type(int16_t((line2 >> 8) & 0xfff0)*scalar);
+    const type q3 = type(int16_t((line2 << 4) & 0xfff0)*scalar);
 
     //step 2: load the outputs
     out0 = std::complex<type>(i0, q0);

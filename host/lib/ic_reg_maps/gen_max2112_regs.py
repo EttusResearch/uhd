@@ -130,21 +130,21 @@ adc                   0xD[0:2]      0       ool0, lock0, vaslock0, vaslock1, vas
 # Template for methods in the body of the struct
 ########################################################################
 BODY_TMPL="""\
-boost::uint8_t get_reg(boost::uint8_t addr){
-    boost::uint8_t reg = 0;
+uint8_t get_reg(uint8_t addr){
+    uint8_t reg = 0;
     switch(addr){
     % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
     case ${addr}:
         % for reg in filter(lambda r: r.get_addr() == addr, regs):
-        reg |= (boost::uint8_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        reg |= (uint8_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
         % endfor
         break;
     % endfor
     }
-    return boost::uint8_t(reg);
+    return uint8_t(reg);
 }
 
-void set_reg(boost::uint8_t addr, boost::uint8_t reg){
+void set_reg(uint8_t addr, uint8_t reg){
     switch(addr){
     % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
     case ${addr}:

@@ -30,14 +30,14 @@ namespace uhd { namespace usrprio_rpc {
 class rpc_client : private boost::noncopyable
 {
 public:
-    static const boost::uint32_t CURRENT_VERSION = 1;
-    static const boost::uint32_t OLDEST_COMPATIBLE_VERSION = 1;
+    static const uint32_t CURRENT_VERSION = 1;
+    static const uint32_t OLDEST_COMPATIBLE_VERSION = 1;
 
     rpc_client(
         const std::string& server,
         const std::string& port,
-        boost::uint32_t process_id,
-        boost::uint32_t host_id);
+        uint32_t process_id,
+        uint32_t host_id);
     ~rpc_client();
 
     const boost::system::error_code& call(

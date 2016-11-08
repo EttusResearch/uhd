@@ -184,9 +184,9 @@ namespace uhd { namespace usrp { namespace x300 {
             UHD_DEFINE_SOFT_REG_FIELD(GPSDO_PWR_EN, /*width*/ 1, /*shift*/ 6);  //[6]
             UHD_DEFINE_SOFT_REG_FIELD(TIME_SYNC,    /*width*/ 1, /*shift*/ 7);  //[7]
 
-            static const boost::uint32_t SRC_EXTERNAL = 0x0;
-            static const boost::uint32_t SRC_INTERNAL = 0x2;
-            static const boost::uint32_t SRC_GPSDO    = 0x3;
+            static const uint32_t SRC_EXTERNAL = 0x0;
+            static const uint32_t SRC_INTERNAL = 0x2;
+            static const uint32_t SRC_GPSDO    = 0x3;
 
             clk_ctrl_reg_t(): uhd::soft_reg32_wo_t(SR_ADDR(SET0_BASE, ZPU_SR_CLOCK_CTRL)) {
                 //Initial values

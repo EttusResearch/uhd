@@ -100,7 +100,7 @@ typedef enum {
 /*
  * Mapping revision numbers to names
  */
-static const uhd::dict<boost::uint32_t, std::string> n200_filename_map = boost::assign::map_list_of
+static const uhd::dict<uint32_t, std::string> n200_filename_map = boost::assign::map_list_of
     (0,      "n2xx")    // Is an N-Series, but the EEPROM value is invalid
     (0xa,    "n200_r3")
     (0x100a, "n200_r4")
@@ -112,20 +112,20 @@ static const uhd::dict<boost::uint32_t, std::string> n200_filename_map = boost::
  * Packet structure
  */
 typedef struct {
-    boost::uint32_t proto_ver;
-    boost::uint32_t id;
-    boost::uint32_t seq;
+    uint32_t proto_ver;
+    uint32_t id;
+    uint32_t seq;
     union {
-        boost::uint32_t ip_addr;
-        boost::uint32_t hw_rev;
+        uint32_t ip_addr;
+        uint32_t hw_rev;
         struct {
-            boost::uint32_t flash_addr;
-            boost::uint32_t length;
-            boost::uint8_t  data[256];
+            uint32_t flash_addr;
+            uint32_t length;
+            uint8_t  data[256];
         } flash_args;
         struct {
-            boost::uint32_t sector_size_bytes;
-            boost::uint32_t memory_size_bytes;
+            uint32_t sector_size_bytes;
+            uint32_t memory_size_bytes;
         } flash_info_args;
     } data;
 } n200_fw_update_data_t;
@@ -140,10 +140,10 @@ typedef struct {
     uhd::device_addr_t dev_addr;
     std::string        burn_type;
     std::string        filepath;
-    boost::uint8_t     data_in[udp_simple::mtu];
-    boost::uint32_t    size;
-    boost::uint32_t    max_size;
-    boost::uint32_t    flash_addr;
+    uint8_t     data_in[udp_simple::mtu];
+    uint32_t    size;
+    uint32_t    max_size;
+    uint32_t    flash_addr;
     udp_simple::sptr   xport;
 } n200_session_t;
 
@@ -190,9 +190,9 @@ static void print_usrp2_error(const image_loader::image_loader_args_t &image_loa
 static UHD_INLINE size_t n200_send_and_recv(udp_simple::sptr xport,
                                             n200_fw_update_id_t pkt_code,
                                             n200_fw_update_data_t *pkt_out,
-                                            boost::uint8_t* data){
-    pkt_out->proto_ver = htonx<boost::uint32_t>(USRP2_FW_COMPAT_NUM);
-    pkt_out->id = htonx<boost::uint32_t>(pkt_code);
+                                            uint8_t* data){
+    pkt_out->proto_ver = htonx<uint32_t>(USRP2_FW_COMPAT_NUM);
+    pkt_out->id = htonx<uint32_t>(pkt_code);
     xport->send(boost::asio::buffer(pkt_out, sizeof(*pkt_out)));
     return xport->recv(boost::asio::buffer(data, udp_simple::mtu), UDP_TIMEOUT);
 }
@@ -215,7 +215,7 @@ static uhd::device_addr_t n200_find(const image_loader::image_loader_args_t &ima
         uhd::device_addrs_t n200_found;
         udp_simple::sptr rev_xport;
         n200_fw_update_data_t pkt_out;
-        boost::uint8_t data_in[udp_simple::mtu];
+        uint8_t data_in[udp_simple::mtu];
         const n200_fw_update_data_t *pkt_in = reinterpret_cast<const n200_fw_update_data_t*>(data_in);
         size_t len = 0;
 
@@ -233,7 +233,7 @@ static uhd::device_addr_t n200_find(const image_loader::image_loader_args_t &ima
 
             len = n200_send_and_recv(rev_xport, GET_HW_REV_CMD, &pkt_out, data_in);
             if(n200_response_matches(pkt_in, GET_HW_REV_ACK, len)){
-                boost::uint32_t rev = ntohl(pkt_in->data.hw_rev);
+                uint32_t rev = ntohl(pkt_in->data.hw_rev);
                 std::string hw_rev = n200_filename_map.get(rev, "n2xx");
 
                 n200_found.push_back(dev);
@@ -291,7 +291,7 @@ static void n200_validate_firmware_image(n200_session_t &session){
 
     // File must have proper header
     std::ifstream image_file(session.filepath.c_str(), std::ios::binary);
-    boost::uint8_t test_bytes[4];
+    uint8_t test_bytes[4];
     image_file.seekg(0, std::ios::beg);
     image_file.read((char*)test_bytes,4);
     image_file.close();
@@ -320,7 +320,7 @@ static void n200_validate_fpga_image(n200_session_t &session){
 
     // File must have proper header
     std::ifstream image_file(session.filepath.c_str(), std::ios::binary);
-    boost::uint8_t test_bytes[63];
+    uint8_t test_bytes[63];
     image_file.seekg(0, std::ios::beg);
     image_file.read((char*)test_bytes, 63);
     bool is_good = false;
@@ -402,8 +402,8 @@ static void n200_erase_image(n200_session_t &session){
     const n200_fw_update_data_t *pkt_in = reinterpret_cast<const n200_fw_update_data_t*>(session.data_in);
 
     // Setting up UDP packet
-    pkt_out.data.flash_args.flash_addr = htonx<boost::uint32_t>(session.flash_addr);
-    pkt_out.data.flash_args.length = htonx<boost::uint32_t>(session.size);
+    pkt_out.data.flash_args.flash_addr = htonx<uint32_t>(session.flash_addr);
+    pkt_out.data.flash_args.length = htonx<uint32_t>(session.size);
 
     // Begin erasing
     size_t len = n200_send_and_recv(session.xport, ERASE_FLASH_CMD, &pkt_out, session.data_in);
@@ -452,10 +452,10 @@ static void n200_write_image(n200_session_t &session){
 
     // Write image
     std::ifstream image(session.filepath.c_str(), std::ios::binary);
-    boost::uint32_t current_addr = session.flash_addr;
-    pkt_out.data.flash_args.length = htonx<boost::uint32_t>(N200_FLASH_DATA_PACKET_SIZE);
+    uint32_t current_addr = session.flash_addr;
+    pkt_out.data.flash_args.length = htonx<uint32_t>(N200_FLASH_DATA_PACKET_SIZE);
     for(size_t i = 0; i < ((session.size/N200_FLASH_DATA_PACKET_SIZE)+1); i++){
-        pkt_out.data.flash_args.flash_addr = htonx<boost::uint32_t>(current_addr);
+        pkt_out.data.flash_args.flash_addr = htonx<uint32_t>(current_addr);
         memset(pkt_out.data.flash_args.data, 0x0, N200_FLASH_DATA_PACKET_SIZE);
         image.read((char*)pkt_out.data.flash_args.data, N200_FLASH_DATA_PACKET_SIZE);
 
@@ -502,15 +502,15 @@ static void n200_verify_image(n200_session_t &session){
 
     // Read and verify image
     std::ifstream image(session.filepath.c_str(), std::ios::binary);
-    boost::uint8_t image_part[N200_FLASH_DATA_PACKET_SIZE];
-    boost::uint32_t current_addr = session.flash_addr;
-    pkt_out.data.flash_args.length = htonx<boost::uint32_t>(N200_FLASH_DATA_PACKET_SIZE);
-    boost::uint16_t cmp_len = 0;
+    uint8_t image_part[N200_FLASH_DATA_PACKET_SIZE];
+    uint32_t current_addr = session.flash_addr;
+    pkt_out.data.flash_args.length = htonx<uint32_t>(N200_FLASH_DATA_PACKET_SIZE);
+    uint16_t cmp_len = 0;
     for(size_t i = 0; i < ((session.size/N200_FLASH_DATA_PACKET_SIZE)+1); i++){
         memset(image_part, 0x0, N200_FLASH_DATA_PACKET_SIZE);
         memset((void*)pkt_in->data.flash_args.data, 0x0, N200_FLASH_DATA_PACKET_SIZE);
 
-        pkt_out.data.flash_args.flash_addr = htonx<boost::uint32_t>(current_addr);
+        pkt_out.data.flash_args.flash_addr = htonx<uint32_t>(current_addr);
         image.read((char*)image_part, N200_FLASH_DATA_PACKET_SIZE);
         cmp_len = image.gcount();
 

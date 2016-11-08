@@ -30,16 +30,16 @@
 
 using namespace uhd::transport::vrt;
 
-static const boost::uint32_t HDR_FLAG_TSF = (1 << 29);
-static const boost::uint32_t HDR_FLAG_EOB = (1 << 28);
-static const boost::uint32_t HDR_FLAG_ERROR = (1 << 28);
+static const uint32_t HDR_FLAG_TSF = (1 << 29);
+static const uint32_t HDR_FLAG_EOB = (1 << 28);
+static const uint32_t HDR_FLAG_ERROR = (1 << 28);
 
 /***************************************************************************/
 /* Packing                                                                 */
 /***************************************************************************/
 /*! Translate the contents of \p if_packet_info into a 32-Bit word and return it.
  */
-UHD_INLINE boost::uint32_t _hdr_pack_chdr(
+UHD_INLINE uint32_t _hdr_pack_chdr(
         if_packet_info_t &if_packet_info
 ) {
     // Set fields in if_packet_info
@@ -48,9 +48,9 @@ UHD_INLINE boost::uint32_t _hdr_pack_chdr(
             if_packet_info.num_header_words32 +
             if_packet_info.num_payload_words32;
 
-    boost::uint16_t pkt_length =
+    uint16_t pkt_length =
         if_packet_info.num_payload_bytes + (4 * if_packet_info.num_header_words32);
-    boost::uint32_t chdr = 0
+    uint32_t chdr = 0
         // 2 Bits: Packet type
         | (if_packet_info.packet_type << 30)
         // 1 Bit: Has time
@@ -65,7 +65,7 @@ UHD_INLINE boost::uint32_t _hdr_pack_chdr(
 }
 
 void chdr::if_hdr_pack_be(
-        boost::uint32_t *packet_buff,
+        uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
 ) {
     // Write header and update if_packet_info
@@ -76,13 +76,13 @@ void chdr::if_hdr_pack_be(
 
     // Write time
     if (if_packet_info.has_tsf) {
-        packet_buff[2] = BE_MACRO(boost::uint32_t(if_packet_info.tsf >> 32));
-        packet_buff[3] = BE_MACRO(boost::uint32_t(if_packet_info.tsf >> 0));
+        packet_buff[2] = BE_MACRO(uint32_t(if_packet_info.tsf >> 32));
+        packet_buff[3] = BE_MACRO(uint32_t(if_packet_info.tsf >> 0));
     }
 }
 
 void chdr::if_hdr_pack_le(
-        boost::uint32_t *packet_buff,
+        uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
 ) {
     // Write header and update if_packet_info
@@ -93,8 +93,8 @@ void chdr::if_hdr_pack_le(
 
     // Write time
     if (if_packet_info.has_tsf) {
-        packet_buff[2] = LE_MACRO(boost::uint32_t(if_packet_info.tsf >> 32));
-        packet_buff[3] = LE_MACRO(boost::uint32_t(if_packet_info.tsf >> 0));
+        packet_buff[2] = LE_MACRO(uint32_t(if_packet_info.tsf >> 32));
+        packet_buff[3] = LE_MACRO(uint32_t(if_packet_info.tsf >> 0));
     }
 }
 
@@ -103,7 +103,7 @@ void chdr::if_hdr_pack_le(
 /* Unpacking                                                               */
 /***************************************************************************/
 UHD_INLINE void _hdr_unpack_chdr(
-        const boost::uint32_t chdr,
+        const uint32_t chdr,
         if_packet_info_t &if_packet_info
 ) {
     // Set constant members
@@ -143,11 +143,11 @@ UHD_INLINE void _hdr_unpack_chdr(
 }
 
 void chdr::if_hdr_unpack_be(
-        const boost::uint32_t *packet_buff,
+        const uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
 ) {
     // Read header and update if_packet_info
-    boost::uint32_t chdr = BE_MACRO(packet_buff[0]);
+    uint32_t chdr = BE_MACRO(packet_buff[0]);
     _hdr_unpack_chdr(chdr, if_packet_info);
 
     // Read SID
@@ -156,17 +156,17 @@ void chdr::if_hdr_unpack_be(
     // Read time (has_tsf was updated earlier)
     if (if_packet_info.has_tsf) {
         if_packet_info.tsf = 0
-            | boost::uint64_t(BE_MACRO(packet_buff[2])) << 32
+            | uint64_t(BE_MACRO(packet_buff[2])) << 32
             | BE_MACRO(packet_buff[3]);
     }
 }
 
 void chdr::if_hdr_unpack_le(
-        const boost::uint32_t *packet_buff,
+        const uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
 ) {
     // Read header and update if_packet_info
-    boost::uint32_t chdr = LE_MACRO(packet_buff[0]);
+    uint32_t chdr = LE_MACRO(packet_buff[0]);
     _hdr_unpack_chdr(chdr, if_packet_info);
 
     // Read SID
@@ -175,7 +175,7 @@ void chdr::if_hdr_unpack_le(
     // Read time (has_tsf was updated earlier)
     if (if_packet_info.has_tsf) {
         if_packet_info.tsf = 0
-            | boost::uint64_t(LE_MACRO(packet_buff[2])) << 32
+            | uint64_t(LE_MACRO(packet_buff[2])) << 32
             | LE_MACRO(packet_buff[3]);
     }
 }

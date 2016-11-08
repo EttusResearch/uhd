@@ -21,7 +21,7 @@
 #include "usrp2_clk_regs.hpp"
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/assert_has.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <iostream>
@@ -334,8 +334,8 @@ private:
      * Write a single register to the spi regs.
      * \param addr the address to write
      */
-    void write_reg(boost::uint8_t addr){
-        boost::uint32_t data = _ad9510_regs.get_write_reg(addr);
+    void write_reg(uint8_t addr){
+        uint32_t data = _ad9510_regs.get_write_reg(addr);
         _spiface->write_spi(SPI_SS_AD9510, spi_config_t::EDGE_RISE, data, 24);
     }
 

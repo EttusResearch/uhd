@@ -22,7 +22,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/exception.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/foreach.hpp>
 
 using namespace uhd;
@@ -58,7 +58,7 @@ public:
         _ad9777_regs.qdac_offset_adjust_lsb = 0;
         _ad9777_regs.qdac_offset_adjust_msb = 0;
         //write all regs
-        for(boost::uint8_t addr = 0; addr <= 0xC; addr++){
+        for(uint8_t addr = 0; addr <= 0xC; addr++){
             this->send_ad9777_reg(addr);
         }
         set_tx_mod_mode(0);
@@ -196,8 +196,8 @@ private:
     usrp2_iface::sptr _iface;
     uhd::spi_iface::sptr _spiface;
 
-    void send_ad9777_reg(boost::uint8_t addr){
-        boost::uint16_t reg = _ad9777_regs.get_write_reg(addr);
+    void send_ad9777_reg(uint8_t addr){
+        uint16_t reg = _ad9777_regs.get_write_reg(addr);
         UHD_LOGV(always) << "send_ad9777_reg: " << std::hex << reg << std::endl;
         _spiface->write_spi(
             SPI_SS_AD9777, spi_config_t::EDGE_RISE,
@@ -205,8 +205,8 @@ private:
         );
     }
 
-    void send_ads62p44_reg(boost::uint8_t addr) {
-        boost::uint16_t reg = _ads62p44_regs.get_write_reg(addr);
+    void send_ads62p44_reg(uint8_t addr) {
+        uint16_t reg = _ads62p44_regs.get_write_reg(addr);
         _spiface->write_spi(
             SPI_SS_ADS62P44, spi_config_t::EDGE_FALL,
             reg, 16

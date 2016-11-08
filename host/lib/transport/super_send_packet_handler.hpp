@@ -60,8 +60,8 @@ class send_packet_handler{
 public:
     typedef boost::function<managed_send_buffer::sptr(double)> get_buff_type;
     typedef boost::function<bool(uhd::async_metadata_t &, const double)> async_receiver_type;
-    typedef void(*vrt_packer_type)(boost::uint32_t *, vrt::if_packet_info_t &);
-    //typedef boost::function<void(boost::uint32_t *, vrt::if_packet_info_t &)> vrt_packer_type;
+    typedef void(*vrt_packer_type)(uint32_t *, vrt::if_packet_info_t &);
+    //typedef boost::function<void(uint32_t *, vrt::if_packet_info_t &)> vrt_packer_type;
 
     /*!
      * Make a new packet handler for send
@@ -82,7 +82,7 @@ public:
     void resize(const size_t size){
         if (this->size() == size) return;
         _props.resize(size);
-        static const boost::uint64_t zero = 0;
+        static const uint64_t zero = 0;
         _zero_buffs.resize(size, &zero);
     }
 
@@ -98,14 +98,14 @@ public:
     }
 
     //! Set the stream ID for a specific channel (or no SID)
-    void set_xport_chan_sid(const size_t xport_chan, const bool has_sid, const boost::uint32_t sid = 0){
+    void set_xport_chan_sid(const size_t xport_chan, const bool has_sid, const uint32_t sid = 0){
         _props.at(xport_chan).has_sid = has_sid;
         _props.at(xport_chan).sid = sid;
     }
 
     ///////// RFNOC ///////////////////
     //! Get the stream ID for a specific channel (or zero if no SID)
-    boost::uint32_t get_xport_chan_sid(const size_t xport_chan) const {
+    uint32_t get_xport_chan_sid(const size_t xport_chan) const {
         if (_props.at(xport_chan).has_sid) {
             return _props.at(xport_chan).sid;
         } else {
@@ -230,7 +230,7 @@ public:
 
             //TODO remove this code when sample counts of zero are supported by hardware
             #ifndef SSPH_DONT_PAD_TO_ONE
-                static const boost::uint64_t zero = 0;
+                static const uint64_t zero = 0;
                 _zero_buffs.resize(buffs.size(), &zero);
 
                 if (nsamps_per_buff == 0)
@@ -302,7 +302,7 @@ private:
         xport_chan_props_type(void):has_sid(false),sid(0){}
         get_buff_type get_buff;
         bool has_sid;
-        boost::uint32_t sid;
+        uint32_t sid;
         managed_send_buffer::sptr buff;
     };
     std::vector<xport_chan_props_type> _props;
@@ -378,7 +378,7 @@ private:
 
         //load the rest of the if_packet_info in here
         if_packet_info.num_payload_bytes = nsamps_per_buff*_num_inputs*_bytes_per_otw_item;
-        if_packet_info.num_payload_words32 = (if_packet_info.num_payload_bytes + 3/*round up*/)/sizeof(boost::uint32_t);
+        if_packet_info.num_payload_words32 = (if_packet_info.num_payload_bytes + 3/*round up*/)/sizeof(uint32_t);
         if_packet_info.packet_count = _next_packet_seq;
 
         //get a buffer for each channel or timeout
@@ -425,7 +425,7 @@ private:
         const ref_vector<const void *> in_buffs(io_buffs, _num_inputs);
 
         //pack metadata into a vrt header
-        boost::uint32_t *otw_mem = buff->cast<boost::uint32_t *>() + _header_offset_words32;
+        uint32_t *otw_mem = buff->cast<uint32_t *>() + _header_offset_words32;
         if_packet_info.has_sid = _props[index].has_sid;
         if_packet_info.sid = _props[index].sid;
         _vrt_packer(otw_mem, if_packet_info);
@@ -436,7 +436,7 @@ private:
 
         //commit the samples to the zero-copy interface
         const size_t num_vita_words32 = _header_offset_words32+if_packet_info.num_packet_words32;
-        buff->commit(num_vita_words32*sizeof(boost::uint32_t));
+        buff->commit(num_vita_words32*sizeof(uint32_t));
         buff.reset(); //effectively a release
     }
 

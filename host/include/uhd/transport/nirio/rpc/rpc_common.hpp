@@ -31,25 +31,26 @@
     #include <boost/archive/text_oarchive.hpp>
     #include <boost/archive/text_iarchive.hpp>
 #endif
+#include <stdint.h>
 
 namespace uhd { namespace usrprio_rpc {
 
 //[Over-the-wire] IDs
-typedef boost::int32_t  func_id_t;
-typedef boost::uint64_t client_id_t;
+typedef int32_t  func_id_t;
+typedef uint64_t client_id_t;
 
 #define build_client_id(host_id, process_id) \
-    ((static_cast<boost::uint64_t>(host_id) << 32) | static_cast<boost::uint64_t>(process_id))
+    ((static_cast<uint64_t>(host_id) << 32) | static_cast<uint64_t>(process_id))
 #define get_process_id_from_client_id(client_id) \
-    (static_cast<boost::int32_t>(client_id))
+    (static_cast<int32_t>(client_id))
 #define get_host_id_from_client_id(client_id) \
-    (static_cast<boost::uint32_t>(client_id >> 32))
+    (static_cast<uint32_t>(client_id >> 32))
 
 //[Over-the-wire] Handshake format
 struct hshake_args_t {
-    boost::uint32_t version;
-    boost::uint32_t oldest_comp_version;
-    boost::int32_t  boost_archive_version;
+    uint32_t version;
+    uint32_t oldest_comp_version;
+    int32_t  boost_archive_version;
     client_id_t     client_id;
 };
 
@@ -58,7 +59,7 @@ class func_args_header_t {
 public:
     func_id_t       func_id;
     client_id_t     client_id;
-    boost::uint32_t func_args_size;
+    uint32_t func_args_size;
 
     static bool match_function(const func_args_header_t& a, const func_args_header_t& b) {
         return ((a.func_id == b.func_id) && (a.client_id == b.client_id));
@@ -139,7 +140,7 @@ private:
 
 class boost_serialization_archive_utils {
 public:
-    static boost::int32_t get_version() {
+    static int32_t get_version() {
     #if (USE_BINARY_ARCHIVE)
         typedef boost::archive::binary_oarchive archive_t;
     #else
@@ -147,7 +148,7 @@ public:
     #endif
         std::ostringstream stream;
         archive_t dummy_archive(stream, boost::archive::no_header);
-        return static_cast<boost::int32_t>(dummy_archive.get_library_version());
+        return static_cast<int32_t>(dummy_archive.get_library_version());
     }
 };
 

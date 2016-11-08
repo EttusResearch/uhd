@@ -56,13 +56,13 @@ public:
      * \param timeout      4-byte (timeout, default is infinite wait)
      * \return             number of bytes submitted or error code
      */
-    virtual int submit(boost::uint8_t request_type,
-                       boost::uint8_t request,
-                       boost::uint16_t value,
-                       boost::uint16_t index, 
+    virtual int submit(uint8_t request_type,
+                       uint8_t request,
+                       uint16_t value,
+                       uint16_t index, 
                        unsigned char *buff,
-                       boost::uint16_t length,
-                       boost::uint32_t timeout = 0) = 0;
+                       uint16_t length,
+                       uint32_t timeout = 0) = 0;
 };
 
 }} //namespace

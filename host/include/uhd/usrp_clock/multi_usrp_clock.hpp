@@ -83,7 +83,7 @@ public:
     virtual size_t get_num_boards(void) = 0;
 
     //! Get time from device
-    virtual boost::uint32_t get_time(size_t board = 0) = 0;
+    virtual uint32_t get_time(size_t board = 0) = 0;
 
     /*!
      * Get a USRP Clock sensor value.

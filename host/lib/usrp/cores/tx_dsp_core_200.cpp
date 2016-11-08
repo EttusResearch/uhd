@@ -60,7 +60,7 @@ public:
     tx_dsp_core_200_impl(
         wb_iface::sptr iface,
         const size_t dsp_base, const size_t ctrl_base,
-        const boost::uint32_t sid
+        const uint32_t sid
     ):
         _iface(iface), _dsp_base(dsp_base), _ctrl_base(ctrl_base), _sid(sid)
     {
@@ -98,8 +98,8 @@ public:
     }
 
     void set_link_rate(const double rate){
-        //_link_rate = rate/sizeof(boost::uint32_t); //in samps/s
-        _link_rate = rate/sizeof(boost::uint16_t); //in samps/s (allows for 8sc)
+        //_link_rate = rate/sizeof(uint32_t); //in samps/s
+        _link_rate = rate/sizeof(uint16_t); //in samps/s (allows for 8sc)
     }
 
     uhd::meta_range_t get_host_rates(void){
@@ -154,7 +154,7 @@ public:
     void update_scalar(void){
         const double factor = 1.0 + std::max(ceil_log2(_scaling_adjustment), 0.0);
         const double target_scalar = (1 << 17)*_scaling_adjustment/_dsp_extra_scaling/factor;
-        const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
+        const int32_t actual_scalar = boost::math::iround(target_scalar);
         _fxpt_scalar_correction = target_scalar/actual_scalar*factor; //should be small
         _iface->poke32(REG_DSP_TX_SCALE_IQ, actual_scalar);
     }
@@ -167,7 +167,7 @@ public:
         double actual_freq;
         int32_t freq_word;
         get_freq_and_freq_word(requested_freq, _tick_rate, actual_freq, freq_word);
-        _iface->poke32(REG_DSP_TX_FREQ, boost::uint32_t(freq_word));
+        _iface->poke32(REG_DSP_TX_FREQ, uint32_t(freq_word));
         return actual_freq;
     }
 
@@ -214,9 +214,9 @@ private:
     const size_t _dsp_base, _ctrl_base;
     double _tick_rate, _link_rate;
     double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling, _fxpt_scalar_correction;
-    const boost::uint32_t _sid;
+    const uint32_t _sid;
 };
 
-tx_dsp_core_200::sptr tx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const boost::uint32_t sid){
+tx_dsp_core_200::sptr tx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const uint32_t sid){
     return sptr(new tx_dsp_core_200_impl(iface, dsp_base, ctrl_base, sid));
 }

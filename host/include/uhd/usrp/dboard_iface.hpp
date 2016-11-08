@@ -25,7 +25,7 @@
 #include <uhd/usrp/fe_connection.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/thread/thread.hpp>
 #include <string>
 #include <vector>
@@ -123,7 +123,7 @@ public:
      * \param mask 16-bits, 0=do not change, 1=change value
      */
     virtual void set_pin_ctrl(
-        unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffff
+        unit_t unit, uint32_t value, uint32_t mask = 0xffff
     ) = 0;
 
     /*!
@@ -132,7 +132,7 @@ public:
      * \param unit which unit rx or tx
      * \return the 16-bit settings value
      */
-    virtual boost::uint32_t get_pin_ctrl(unit_t unit) = 0;
+    virtual uint32_t get_pin_ctrl(unit_t unit) = 0;
 
     /*!
      * Set a daughterboard ATR register.
@@ -143,7 +143,7 @@ public:
      * \param mask 16-bits, 0=do not change, 1=change value
      */
     virtual void set_atr_reg(
-        unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask = 0xffff
+        unit_t unit, atr_reg_t reg, uint32_t value, uint32_t mask = 0xffff
     ) = 0;
 
     /*!
@@ -153,7 +153,7 @@ public:
      * \param reg which ATR register
      * \return the 16-bit settings value
      */
-    virtual boost::uint32_t get_atr_reg(unit_t unit, atr_reg_t reg) = 0;
+    virtual uint32_t get_atr_reg(unit_t unit, atr_reg_t reg) = 0;
 
     /*!
      * Set daughterboard GPIO data direction setting.
@@ -163,7 +163,7 @@ public:
      * \param mask 16-bits, 0=do not change, 1=change value
      */
     virtual void set_gpio_ddr(
-        unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffff
+        unit_t unit, uint32_t value, uint32_t mask = 0xffff
     ) = 0;
 
     /*!
@@ -172,7 +172,7 @@ public:
      * \param unit which unit rx or tx
      * \return the 16-bit settings value
      */
-    virtual boost::uint32_t get_gpio_ddr(unit_t unit) = 0;
+    virtual uint32_t get_gpio_ddr(unit_t unit) = 0;
 
     /*!
      * Set daughterboard GPIO pin output setting.
@@ -182,7 +182,7 @@ public:
      * \param mask 16-bits, 0=do not change, 1=change value
      */
     virtual void set_gpio_out(
-        unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffff
+        unit_t unit, uint32_t value, uint32_t mask = 0xffff
     ) = 0;
 
     /*!
@@ -191,7 +191,7 @@ public:
      * \param unit which unit rx or tx
      * \return the 16-bit settings value
      */
-    virtual boost::uint32_t get_gpio_out(unit_t unit) = 0;
+    virtual uint32_t get_gpio_out(unit_t unit) = 0;
 
     /*!
      * Read daughterboard GPIO pin values.
@@ -199,7 +199,7 @@ public:
      * \param unit which unit rx or tx
      * \return the value of the gpio unit
      */
-    virtual boost::uint32_t read_gpio(unit_t unit) = 0;
+    virtual uint32_t read_gpio(unit_t unit) = 0;
 
     /*!
      * Write data to SPI bus peripheral.
@@ -212,7 +212,7 @@ public:
     virtual void write_spi(
         unit_t unit,
         const spi_config_t &config,
-        boost::uint32_t data,
+        uint32_t data,
         size_t num_bits
     ) = 0;
 
@@ -225,10 +225,10 @@ public:
      * \param num_bits the number of bits in data
      * \return the data that was read
      */
-    virtual boost::uint32_t read_write_spi(
+    virtual uint32_t read_write_spi(
         unit_t unit,
         const spi_config_t &config,
-        boost::uint32_t data,
+        uint32_t data,
         size_t num_bits
     ) = 0;
 

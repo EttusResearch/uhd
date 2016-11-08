@@ -20,7 +20,7 @@
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <sstream>
 
 using namespace uhd;
@@ -49,7 +49,7 @@ mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
             int hex_num;
             std::istringstream iss(hex_str);
             iss >> std::hex >> hex_num;
-            bytes.push_back(boost::uint8_t(hex_num));
+            bytes.push_back(uint8_t(hex_num));
         }
 
     }
@@ -68,7 +68,7 @@ byte_vector_t mac_addr_t::to_bytes(void) const{
 
 std::string mac_addr_t::to_string(void) const{
     std::string addr = "";
-    BOOST_FOREACH(boost::uint8_t byte, this->to_bytes()){
+    BOOST_FOREACH(uint8_t byte, this->to_bytes()){
         addr += str(boost::format("%s%02x") % ((addr == "")?"":":") % int(byte));
     }
     return addr;

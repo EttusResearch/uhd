@@ -20,7 +20,7 @@
 
 #include <cmath>
 #include <uhd/config.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/numeric/conversion/bounds.hpp>
 
 namespace uhd {

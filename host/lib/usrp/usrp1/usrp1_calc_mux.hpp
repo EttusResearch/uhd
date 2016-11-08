@@ -47,7 +47,7 @@ static int calc_rx_mux_pair(int adc_for_i, int adc_for_q){
  * |      must be zero     | Q3| I3| Q2| I2| Q1| I1| Q0| I0|Z| NCH |
  * +-----------------------+-------+-------+-------+-------+-+-----+
  */
-static boost::uint32_t calc_rx_mux(const std::vector<mapping_pair_t> &mapping){
+static uint32_t calc_rx_mux(const std::vector<mapping_pair_t> &mapping){
     //create look-up-table for mapping dboard name and connection type to ADC flags
     static const int ADC0 = 0, ADC1 = 1, ADC2 = 2, ADC3 = 3;
     static const uhd::dict<std::string, uhd::dict<std::string, int> > name_to_conn_to_flag = boost::assign::map_list_of
@@ -108,7 +108,7 @@ static int calc_tx_mux_pair(int chn_for_i, int chn_for_q){
  * |                       | DAC1Q | DAC1I | DAC0Q | DAC0I |0| NCH |
  * +-----------------------------------------------+-------+-+-----+
  */
-static boost::uint32_t calc_tx_mux(const std::vector<mapping_pair_t> &mapping){
+static uint32_t calc_tx_mux(const std::vector<mapping_pair_t> &mapping){
     //create look-up-table for mapping channel number and connection type to flags
     static const int ENB = 1 << 3, CHAN_I0 = 0, CHAN_Q0 = 1, CHAN_I1 = 2, CHAN_Q1 = 3;
     static const uhd::dict<size_t, uhd::dict<std::string, int> > chan_to_conn_to_flag = boost::assign::map_list_of

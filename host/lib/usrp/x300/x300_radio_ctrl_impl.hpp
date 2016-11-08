@@ -82,7 +82,7 @@ public:
     void reset_codec();
 
     void self_test_adc(
-        boost::uint32_t ramp_time_ms = 100);
+        uint32_t ramp_time_ms = 100);
 
     static void extended_adc_test(
         const std::vector<x300_radio_ctrl_impl::sptr>&, double duration_s);
@@ -154,14 +154,14 @@ private:
 
     void _self_cal_adc_capture_delay(bool print_status);
 
-    void _check_adc(const boost::uint32_t val);
+    void _check_adc(const uint32_t val);
 
     void _set_db_eeprom(uhd::i2c_iface::sptr i2c, const size_t, const uhd::usrp::dboard_eeprom_t &);
 
     void set_rx_fe_corrections(const uhd::fs_path &db_path, const uhd::fs_path &rx_fe_corr_path, const double lo_freq);
     void set_tx_fe_corrections(const uhd::fs_path &db_path, const uhd::fs_path &tx_fe_corr_path, const double lo_freq);
 
-    time_spec_t set_fe_cmd_time(const time_spec_t &time, const size_t chan);
+    void set_fe_cmd_time(const time_spec_t &time, const size_t chan);
 
 private: // members
     enum radio_connection_t { PRIMARY, SECONDARY };

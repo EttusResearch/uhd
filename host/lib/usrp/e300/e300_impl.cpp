@@ -104,7 +104,7 @@ static std::vector<std::string> discover_ip_addrs(
 
     // loop for replies until timeout
     while (true) {
-        boost::uint8_t buff[sizeof(i2c_transaction_t)] = {};
+        uint8_t buff[sizeof(i2c_transaction_t)] = {};
         const size_t nbytes = udp_bcast_xport->recv(boost::asio::buffer(buff), 0.050);
         if (nbytes == 0)
             break; //No more responses
@@ -273,7 +273,7 @@ static device::sptr e300_make(const device_addr_t &device_addr)
 void get_e3x0_fpga_images(const uhd::device_addr_t &device_addr,
                           std::string &fpga_image,
                           std::string &idle_image){
-    const boost::uint16_t pid = boost::lexical_cast<boost::uint16_t>(
+    const uint16_t pid = boost::lexical_cast<uint16_t>(
             device_addr["product"]);
 
     //extract the FPGA path for the e300
@@ -526,11 +526,11 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     gpio_atr_3000::sptr fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
     BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
     {
-        _tree->create<boost::uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
+        _tree->create<uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
             .add_coerced_subscriber(boost::bind(&gpio_atr_3000::set_gpio_attr, fp_gpio, attr.first, _1))
             .set(0);
     }
-    _tree->create<boost::uint8_t>(mb_path / "gpio" / "INT0" / "READBACK")
+    _tree->create<uint8_t>(mb_path / "gpio" / "INT0" / "READBACK")
         .set_publisher(boost::bind(&gpio_atr_3000::read_gpio, fp_gpio));
 
 
@@ -639,7 +639,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
 
 uhd::sensor_value_t e300_impl::_get_fe_pll_lock(const bool is_tx)
 {
-    const boost::uint32_t st =
+    const uint32_t st =
         _global_regs->peek32(global_regs::RB32_CORE_PLL);
     const bool locked = is_tx ? ((st & 0x1) > 0) : ((st & 0x2) > 0);
     return sensor_value_t("LO", locked, "locked", "unlocked");
@@ -712,16 +712,16 @@ void e300_impl::_register_loopback_self_test(wb_iface::sptr iface)
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
-        iface->poke32(radio::sr_addr(radio::TEST), boost::uint32_t(hash));
-        test_fail = iface->peek32(radio::RB32_TEST) != boost::uint32_t(hash);
+        iface->poke32(radio::sr_addr(radio::TEST), uint32_t(hash));
+        test_fail = iface->peek32(radio::RB32_TEST) != uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
 }
 
-boost::uint32_t e300_impl::_get_version(compat_t which)
+uint32_t e300_impl::_get_version(compat_t which)
 {
-    const boost::uint16_t compat_num
+    const uint16_t compat_num
         = _global_regs->peek32(global_regs::RB32_CORE_COMPAT);
 
     switch(which) {
@@ -736,18 +736,18 @@ boost::uint32_t e300_impl::_get_version(compat_t which)
 
 std::string e300_impl::_get_version_hash(void)
 {
-    const boost::uint32_t git_hash
+    const uint32_t git_hash
         = _global_regs->peek32(global_regs::RB32_CORE_GITHASH);
     return str(boost::format("%7x%s")
         % (git_hash & 0x0FFFFFFF)
         % ((git_hash & 0xF000000) ? "-dirty" : ""));
 }
 
-boost::uint32_t e300_impl::_allocate_sid(const sid_config_t &config)
+uint32_t e300_impl::_allocate_sid(const sid_config_t &config)
 {
-    const boost::uint32_t stream = (config.dst_prefix | (config.router_dst_there << 2)) & 0xff;
+    const uint32_t stream = (config.dst_prefix | (config.router_dst_there << 2)) & 0xff;
 
-    const boost::uint32_t sid = 0
+    const uint32_t sid = 0
         | (E300_DEVICE_HERE << 24)
         | (_sid_framer << 16)
         | (config.router_addr_there << 8)
@@ -785,7 +785,7 @@ boost::uint32_t e300_impl::_allocate_sid(const sid_config_t &config)
     return sid;
 }
 
-void e300_impl::_setup_dest_mapping(const boost::uint32_t sid, const size_t which_stream)
+void e300_impl::_setup_dest_mapping(const uint32_t sid, const size_t which_stream)
 {
     UHD_LOG << boost::format("Setting up dest map for 0x%lx to be stream %d")
                                      % (sid & 0xff) % which_stream << std::endl;
@@ -825,44 +825,44 @@ void e300_impl::_sync_times()
 }
 
 size_t e300_impl::_get_axi_dma_channel(
-    boost::uint8_t destination,
-    boost::uint8_t prefix)
+    uint8_t destination,
+    uint8_t prefix)
 {
-    static const boost::uint32_t RADIO_GRP_SIZE = 4;
-    static const boost::uint32_t RADIO0_GRP     = 0;
-    static const boost::uint32_t RADIO1_GRP     = 1;
+    static const uint32_t RADIO_GRP_SIZE = 4;
+    static const uint32_t RADIO0_GRP     = 0;
+    static const uint32_t RADIO1_GRP     = 1;
 
-    boost::uint32_t radio_grp = (destination == E300_XB_DST_R0) ? RADIO0_GRP : RADIO1_GRP;
+    uint32_t radio_grp = (destination == E300_XB_DST_R0) ? RADIO0_GRP : RADIO1_GRP;
     return ((radio_grp * RADIO_GRP_SIZE) + prefix);
 }
 
-boost::uint16_t e300_impl::_get_udp_port(
-        boost::uint8_t destination,
-        boost::uint8_t prefix)
+uint16_t e300_impl::_get_udp_port(
+        uint8_t destination,
+        uint8_t prefix)
 {
     if (destination == E300_XB_DST_R0) {
         if (prefix == E300_RADIO_DEST_PREFIX_CTRL)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_CTRL_PORT0);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_CTRL_PORT0);
         else if (prefix == E300_RADIO_DEST_PREFIX_TX)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_TX_PORT0);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_TX_PORT0);
         else if (prefix == E300_RADIO_DEST_PREFIX_RX)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_RX_PORT0);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_RX_PORT0);
     } else if (destination == E300_XB_DST_R1) {
         if (prefix == E300_RADIO_DEST_PREFIX_CTRL)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_CTRL_PORT1);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_CTRL_PORT1);
         else if (prefix == E300_RADIO_DEST_PREFIX_TX)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_TX_PORT1);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_TX_PORT1);
         else if (prefix == E300_RADIO_DEST_PREFIX_RX)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_RX_PORT1);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_RX_PORT1);
     }
     throw uhd::value_error(str(boost::format("No UDP port defined for combination: %u %u") % destination % prefix));
 }
 
 e300_impl::both_xports_t e300_impl::_make_transport(
-    const boost::uint8_t &destination,
-    const boost::uint8_t &prefix,
+    const uint8_t &destination,
+    const uint8_t &prefix,
     const uhd::transport::zero_copy_xport_params &params,
-    boost::uint32_t &sid)
+    uint32_t &sid)
 {
     both_xports_t xports;
 
@@ -890,7 +890,7 @@ e300_impl::both_xports_t e300_impl::_make_transport(
     } else if (_xport_path == ETH) {
         // lookup which udp port we need
         // to use to create our transport
-        const boost::uint16_t port = _get_udp_port(
+        const uint16_t port = _get_udp_port(
             destination,
             prefix);
 
@@ -950,7 +950,7 @@ void e300_impl::_setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
 
     // make a transport, grab a sid
-    boost::uint32_t ctrl_sid;
+    uint32_t ctrl_sid;
     both_xports_t ctrl_xports = _make_transport(
        dspno ? E300_XB_DST_R1 : E300_XB_DST_R0,
        E300_RADIO_DEST_PREFIX_CTRL,
@@ -1102,7 +1102,7 @@ void e300_impl::_update_enables(void)
 
 void e300_impl::_update_gpio_state(void)
 {
-    boost::uint32_t misc_reg = 0
+    uint32_t misc_reg = 0
         | (_misc.pps_sel      << gpio_t::PPS_SEL)
         | (_misc.mimo         << gpio_t::MIMO)
         | (_misc.codec_arst   << gpio_t::CODEC_ARST)

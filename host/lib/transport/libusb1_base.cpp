@@ -208,7 +208,7 @@ public:
 
     std::string get_ascii_property(const std::string &what) const
     {
-        boost::uint8_t off = 0;
+        uint8_t off = 0;
         if (what == "serial") off = this->get().iSerialNumber;
         if (what == "product") off = this->get().iProduct;
         if (what == "manufacturer") off = this->get().iManufacturer;
@@ -227,7 +227,7 @@ public:
         std::string string_descriptor((char *)buff, size_t(ret));
         byte_vector_t string_vec(string_descriptor.begin(), string_descriptor.end());
         std::string out;
-        BOOST_FOREACH(boost::uint8_t byte, string_vec){
+        BOOST_FOREACH(uint8_t byte, string_vec){
             if (byte < 32 or byte > 127) return out;
             out += byte;
         }
@@ -363,11 +363,11 @@ public:
         return libusb::device_descriptor::make(this->get_device())->get_ascii_property("product");
     }
 
-    boost::uint16_t get_vendor_id(void) const{
+    uint16_t get_vendor_id(void) const{
         return libusb::device_descriptor::make(this->get_device())->get().idVendor;
     }
 
-    boost::uint16_t get_product_id(void) const{
+    uint16_t get_product_id(void) const{
         return libusb::device_descriptor::make(this->get_device())->get().idProduct;
     }
 
@@ -397,7 +397,7 @@ usb_device_handle::~usb_device_handle(void) {
 }
 
 std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(
-    boost::uint16_t vid, boost::uint16_t pid
+    uint16_t vid, uint16_t pid
 ){
     return usb_device_handle::get_device_list(std::vector<usb_device_handle::vid_pid_pair_t>(1,usb_device_handle::vid_pid_pair_t(vid,pid)));
 }

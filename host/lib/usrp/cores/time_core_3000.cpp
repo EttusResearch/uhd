@@ -82,37 +82,37 @@ struct time_core_3000_impl : time_core_3000
 
     uhd::time_spec_t get_time_now(void)
     {
-        const boost::uint64_t ticks = _iface->peek64(_readback_bases.rb_now);
+        const uint64_t ticks = _iface->peek64(_readback_bases.rb_now);
         return time_spec_t::from_ticks(ticks, _tick_rate);
     }
 
     uhd::time_spec_t get_time_last_pps(void)
     {
-        const boost::uint64_t ticks = _iface->peek64(_readback_bases.rb_pps);
+        const uint64_t ticks = _iface->peek64(_readback_bases.rb_pps);
         return time_spec_t::from_ticks(ticks, _tick_rate);
     }
 
     void set_time_now(const uhd::time_spec_t &time)
     {
-        const boost::uint64_t ticks = time.to_ticks(_tick_rate);
-        _iface->poke32(REG_TIME_HI, boost::uint32_t(ticks >> 32));
-        _iface->poke32(REG_TIME_LO, boost::uint32_t(ticks >> 0));
+        const uint64_t ticks = time.to_ticks(_tick_rate);
+        _iface->poke32(REG_TIME_HI, uint32_t(ticks >> 32));
+        _iface->poke32(REG_TIME_LO, uint32_t(ticks >> 0));
         _iface->poke32(REG_TIME_CTRL, CTRL_LATCH_TIME_NOW);
     }
 
     void set_time_sync(const uhd::time_spec_t &time)
     {
-        const boost::uint64_t ticks = time.to_ticks(_tick_rate);
-        _iface->poke32(REG_TIME_HI, boost::uint32_t(ticks >> 32));
-        _iface->poke32(REG_TIME_LO, boost::uint32_t(ticks >> 0));
+        const uint64_t ticks = time.to_ticks(_tick_rate);
+        _iface->poke32(REG_TIME_HI, uint32_t(ticks >> 32));
+        _iface->poke32(REG_TIME_LO, uint32_t(ticks >> 0));
         _iface->poke32(REG_TIME_CTRL, CTRL_LATCH_TIME_SYNC);
     }
 
     void set_time_next_pps(const uhd::time_spec_t &time)
     {
-        const boost::uint64_t ticks = time.to_ticks(_tick_rate);
-        _iface->poke32(REG_TIME_HI, boost::uint32_t(ticks >> 32));
-        _iface->poke32(REG_TIME_LO, boost::uint32_t(ticks >> 0));
+        const uint64_t ticks = time.to_ticks(_tick_rate);
+        _iface->poke32(REG_TIME_HI, uint32_t(ticks >> 32));
+        _iface->poke32(REG_TIME_LO, uint32_t(ticks >> 0));
         _iface->poke32(REG_TIME_CTRL, CTRL_LATCH_TIME_PPS);
     }
 
