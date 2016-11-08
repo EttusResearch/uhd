@@ -125,8 +125,8 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
     if (_master) {
         UHD_LOG_TRACE(unique_id(), "Initializing SPI core...");
         _spi = spi_core_3000::make(_get_ctrl(0),
-            radio_ctrl_impl::regs::sr_addr(radio_ctrl_impl::regs::SPI),
-            radio_ctrl_impl::regs::RB_SPI);
+            regs::sr_addr(regs::SPI),
+            regs::rb_addr(regs::RB_SPI));
     } else {
         UHD_LOG_TRACE(unique_id(), "Not a master radio, no SPI core.");
     }
@@ -210,7 +210,7 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
             usrp::gpio_atr::gpio_atr_3000::make(
                 _get_ctrl(radio_idx),
                 regs::sr_addr(regs::GPIO),
-                regs::RB_DB_GPIO
+                regs::rb_addr(regs::RB_DB_GPIO)
             )
         );
         // DSA and AD9371 gain bits do *not* toggle on ATR modes. If we ever
@@ -228,7 +228,10 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
     }
     UHD_LOG_TRACE(unique_id(), "Initializing front-panel GPIO control...")
     _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(
-            _get_ctrl(0), regs::sr_addr(regs::FP_GPIO), regs::RB_FP_GPIO);
+        _get_ctrl(0),
+        regs::sr_addr(regs::FP_GPIO),
+        regs::rb_addr(regs::RB_FP_GPIO)
+    );
 }
 
 void magnesium_radio_ctrl_impl::_init_frontend_subtree(
@@ -744,17 +747,10 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
 void magnesium_radio_ctrl_impl::_init_prop_tree()
 {
     const fs_path fe_base = fs_path("dboards") / _radio_slot;
-    this->_init_frontend_subtree(_tree->subtree(fe_base), 0);
-    // TODO: When we go to one radio per dboard, the above if statement goes
-    // away, and instead we have something like this:
-    /*
-     *for (chan_idx = 0; chan_idx < MAGNESIUM_NUM_CHANS; chan_idx++) {
-     *    this->_init_frontend_subtree(
-     *        _tree->get_subtree(fe_base), chan_idx);
-     *}
-     */
-
-
+    for (size_t chan_idx = 0; chan_idx < MAGNESIUM_NUM_CHANS; chan_idx++) {
+        this->_init_frontend_subtree(
+            _tree->subtree(fe_base), chan_idx);
+    }
 
     // EEPROM paths subject to change FIXME
     _tree->create<eeprom_map_t>(_root_path / "eeprom")

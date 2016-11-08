@@ -145,7 +145,7 @@ private:
             UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_ERROR,  /*width*/ 1, /*shift*/ 38);  //[6]
             UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_ERROR,  /*width*/ 1, /*shift*/ 39);  //[7]
 
-            misc_ins_reg_t(): uhd::soft_reg64_ro_t(regs::RB_MISC_IO) { }
+            misc_ins_reg_t(): uhd::soft_reg64_ro_t(regs::rb_addr(regs::RB_MISC_IO)) { }
         } misc_ins_reg;
 
         radio_regmap_t(int radio_num) : soft_regmap_t("radio" + std::to_string(radio_num) + "_regmap") {
