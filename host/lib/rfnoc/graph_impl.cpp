@@ -122,9 +122,9 @@ void graph_impl::connect(
         UHD_LOGGER_WARNING("RFNOC") << "Assuming max packet size for " << src->get_block_id() ;
         pkt_size = uhd::rfnoc::MAX_PACKET_SIZE;
     }
-    // FC window (in packets) depends on FIFO size...          ...and packet size.
-    size_t buf_size_pkts = dst->get_fifo_size(dst_block_port) / pkt_size;
-    if (buf_size_pkts == 0) {
+    // FC window (in bytes) depends on FIFO size.
+    size_t buf_size_bytes = dst->get_fifo_size(dst_block_port);
+    if (buf_size_bytes < pkt_size) {
         throw uhd::runtime_error(str(
             boost::format("Input FIFO for block %s is too small (%d kiB) for packets of size %d kiB\n"
                           "coming from block %s.")
@@ -132,19 +132,20 @@ void graph_impl::connect(
             % (pkt_size / 1024) % src->get_block_id().get()
         ));
     }
-    src->configure_flow_control_out(buf_size_pkts, src_block_port);
-    // On the same crossbar, use lots of FC packets
-    size_t pkts_per_ack = std::min(
-            uhd::rfnoc::DEFAULT_FC_XBAR_PKTS_PER_ACK,
-            buf_size_pkts - 1
+    src->configure_flow_control_out(
+            true, /* enable output */
+            buf_size_bytes,
+            0, /* no packet limit. We need to revisit this at some point. */
+            src_block_port
     );
+    // On the same crossbar, use lots of FC packets
+    size_t bytes_per_response = std::ceil<size_t>(buf_size_bytes / uhd::rfnoc::DEFAULT_FC_XBAR_RESPONSE_FREQ);
     // Over the network, use less or we'd flood the transport
     if (sid.get_src_addr() != sid.get_dst_addr()) {
-        pkts_per_ack = std::max<size_t>(buf_size_pkts / uhd::rfnoc::DEFAULT_FC_TX_RESPONSE_FREQ, 1);
+        bytes_per_response = std::ceil<size_t>(buf_size_bytes / uhd::rfnoc::DEFAULT_FC_TX_RESPONSE_FREQ);
     }
     dst->configure_flow_control_in(
-            0, // Default to not use cycles
-            pkts_per_ack,
+            bytes_per_response,
             dst_block_port
     );
 
@@ -209,7 +210,7 @@ void graph_impl::connect_src(
 void graph_impl::connect_sink(
         const block_id_t &sink_block,
         const size_t dst_block_port,
-        const size_t pkts_per_ack
+        const size_t bytes_per_ack
 ) {
     device3::sptr device_ptr = _device_ptr.lock();
     if (not device_ptr) {
@@ -222,11 +223,7 @@ void graph_impl::connect_sink(
 
     uhd::rfnoc::sink_block_ctrl_base::sptr dst =
         device_ptr->get_block_ctrl<rfnoc::sink_block_ctrl_base>(sink_block);
-    dst->configure_flow_control_in(
-            0,
-            pkts_per_ack,
-            dst_block_port
-    );
+    dst->configure_flow_control_in(bytes_per_ack, dst_block_port);
 
     /********************************************************************
      * 5. Configure error policy

@@ -108,6 +108,7 @@ private:
         packet_info.tsf = timestamp;
         packet_info.sob = false;
         packet_info.eob = false;
+        packet_info.fc_ack = false;
         packet_info.sid = _xports.send_sid;
         packet_info.has_sid = true;
         packet_info.has_cid = false;

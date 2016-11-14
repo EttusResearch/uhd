@@ -25,7 +25,7 @@ static const std::string XML_PATH_ENV = "UHD_RFNOC_DIR";
 //! If the block name can't be automatically detected, this name is used
 static const std::string DEFAULT_BLOCK_NAME = "Block";
 static const uint64_t DEFAULT_NOC_ID = 0xFFFFFFFFFFFFFFFF;
-static const size_t NOC_SHELL_COMPAT_MAJOR = 3;
+static const size_t NOC_SHELL_COMPAT_MAJOR = 4;
 static const size_t NOC_SHELL_COMPAT_MINOR = 0;
 
 static const size_t MAX_PACKET_SIZE = 8000; // bytes
@@ -35,7 +35,7 @@ static const size_t DEFAULT_PACKET_SIZE = 1456; // bytes
 static const size_t BYTES_PER_LINE = 8;
 
 //! For flow control within a single crossbar
-static const size_t DEFAULT_FC_XBAR_PKTS_PER_ACK = 2;
+static const size_t DEFAULT_FC_XBAR_RESPONSE_FREQ = 8;
 //! For flow control when data is flowing from device to host (rx)
 static const size_t DEFAULT_FC_RX_RESPONSE_FREQ = 64; // ACKs per flow control window
 //! For flow control when data is flowing from host to device (tx)
@@ -48,15 +48,15 @@ static const size_t DEFAULT_FC_TX_RESPONSE_FREQ = 8; // ACKs per flow control wi
 static const double DEFAULT_FC_RX_SW_BUFF_FULL_FACTOR = 0.80;
 
 // Common settings registers.
-static const uint32_t SR_FLOW_CTRL_CYCS_PER_ACK          = 0;
-static const uint32_t SR_FLOW_CTRL_PKTS_PER_ACK          = 1;
+static const uint32_t SR_FLOW_CTRL_BYTES_PER_ACK         = 1;
 static const uint32_t SR_FLOW_CTRL_WINDOW_SIZE           = 2;
-static const uint32_t SR_FLOW_CTRL_WINDOW_EN             = 3;
+static const uint32_t SR_FLOW_CTRL_EN                    = 3;
 static const uint32_t SR_ERROR_POLICY                    = 4;
 static const uint32_t SR_BLOCK_SID                       = 5; // TODO rename to SRC_SID
 static const uint32_t SR_NEXT_DST_SID                    = 6;
 static const uint32_t SR_RESP_IN_DST_SID                 = 7;
 static const uint32_t SR_RESP_OUT_DST_SID                = 8;
+static const uint32_t SR_FLOW_CTRL_PKT_LIMIT             = 9;
 
 static const uint32_t SR_READBACK_ADDR                   = 124;
 static const uint32_t SR_READBACK                        = 127;

@@ -67,12 +67,12 @@ public:
      *
      * \param sink_block Sink block ID
      * \param dst_block_port Destination (sink) block port
-     * \param pkts_per_ack Flow controlf frequency in packets
+     * \param bytes_per_ack Flow control frequency in bytes
      */
     virtual void connect_sink(
             const block_id_t &sink_block,
             const size_t dst_block_port,
-            const size_t pkts_per_ack
+            const size_t bytes_per_ack
     ) = 0;
 
     virtual std::string get_name() const = 0;

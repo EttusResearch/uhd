@@ -1231,8 +1231,8 @@ uhd::both_xports_t x300_impl::make_transport(
                 ? X300_PCIE_RX_DATA_FRAME_SIZE
                 : X300_PCIE_MSG_FRAME_SIZE;
 
-			default_buff_args.num_send_frames =
-				(xport_type == TX_DATA)
+            default_buff_args.num_send_frames =
+                (xport_type == TX_DATA)
                 ? X300_PCIE_TX_DATA_NUM_FRAMES
                 : X300_PCIE_MSG_NUM_FRAMES;
 

@@ -158,10 +158,10 @@ public:
             UHD_LOGGER_WARNING("RFNOC") << "[legacy_compat] No DUCs detected. You will only be able to transmit at the radio frontend rate." ;
         }
         if (args.has_key("skip_dram")) {
-            UHD_LEGACY_LOG() << "[legacy_compat] Skipping DRAM by user request." << std::endl;
+            UHD_LEGACY_LOG() << "[legacy_compat] Skipping DRAM by user request." ;
         }
         if (args.has_key("skip_sram")) {
-            UHD_LEGACY_LOG() << "[legacy_compat] Skipping SRAM by user request." << std::endl;
+            UHD_LEGACY_LOG() << "[legacy_compat] Skipping SRAM by user request.";
         }
         if (not _has_dmafifo and not _has_sramfifo) {
             UHD_LOGGER_WARNING("RFNOC") << "[legacy_compat] No FIFO detected. Higher transmit rates may encounter errors.";

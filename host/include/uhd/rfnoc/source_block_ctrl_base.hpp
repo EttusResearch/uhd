@@ -97,15 +97,23 @@ public:
      *
      * Override this function if your block has port-specific flow control settings.
      *
-     * \param buf_size_pkts The size of the downstream block's input FIFO size in number of packets. Setting
-     *                      this to zero disables flow control. The block will then produce data as fast as it can.
-     *                     \b Warning: This can cause head-of-line blocking, and potentially lock up your device!
+     * \param enable_output Enable flow control module's output. If disabled, no packets will be output
+     *                      regardless of flow control state.
+     * \param buf_size_bytes The size of the downstream block's input FIFO size in number of bytes. Setting
+     *                       this to zero disables byte based flow control. If both byte based flow control and
+     *                       the packet limit are set to zero, the block will then produce data as fast as it can.
+     *                       \b Warning: This can cause head-of-line blocking, and potentially lock up your device!
+     * \param pkt_limit Limit the maximum number of packets in flight. Setting this to zero disables packet limiting.
+     *                  Usually kept disabled except for special case connections (such as DMA) that support only
+     *                  a finite number of packets in flight.
      * \param block_port Specify on which outgoing port this setting is valid.
      * \param sid The SID for which this is valid. This is meant for cases where the outgoing block port is
      *            not sufficient to set the flow control, and as such is rarely used.
      */
     virtual void configure_flow_control_out(
-            size_t buf_size_pkts,
+            bool enable_output,
+            size_t buf_size_bytes,
+            size_t pkt_limit=0,
             size_t block_port=0,
             const uhd::sid_t &sid=uhd::sid_t()
      );

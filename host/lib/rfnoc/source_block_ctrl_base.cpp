@@ -77,25 +77,27 @@ void source_block_ctrl_base::set_destination(
 }
 
 void source_block_ctrl_base::configure_flow_control_out(
-            size_t buf_size_pkts,
+            bool enable_fc_output,
+            size_t buf_size_bytes,
+            size_t pkt_limit,
             size_t block_port,
             UHD_UNUSED(const uhd::sid_t &sid)
 ) {
-    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::configure_flow_control_out() buf_size_pkts==" << buf_size_pkts ;
-    if (buf_size_pkts < 2) {
+    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::configure_flow_control_out() buf_size_bytes==" << buf_size_bytes;
+    if (buf_size_bytes == 0) {
       throw uhd::runtime_error(str(
-              boost::format("Invalid window size %d for block %s. Window size must at least be 2.")
-              % buf_size_pkts % unique_id()
+              boost::format("Invalid window size %d for block %s. Window size cannot be 0 bytes.")
+              % buf_size_bytes % unique_id()
       ));
     }
 
-    //Disable the window and let all upstream data flush out
+    //Disable flow control entirely and let all upstream data flush out
     //We need to do this every time the window is changed because
     //a) We don't know what state the flow-control module was left in
     //   in the previous run (it should still be enabled)
     //b) Changing the window size where data is buffered upstream may
     //   result in stale packets entering the stream.
-    sr_write(SR_FLOW_CTRL_WINDOW_EN, 0, block_port);
+    sr_write(SR_FLOW_CTRL_EN, 0, block_port);
 
     //Wait for data to flush out.
     //In the FPGA we are guaranteed that all buffered packets are more-or-less consecutive.
@@ -107,13 +109,24 @@ void source_block_ctrl_base::configure_flow_control_out(
     //      module is done flushing.
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
+    //Enable source flow control module and conditionally enable byte based and/or packet count
+    //based flow control
+    const bool enable_byte_fc = (buf_size_bytes != 0);
+    const bool enable_pkt_cnt_fc = (pkt_limit != 0);
+    const size_t config = enable_fc_output + (enable_byte_fc << 1) + (enable_pkt_cnt_fc << 2);
+
     //Resize the FC window.
     //Precondition: No data can be buffered upstream.
-    sr_write(SR_FLOW_CTRL_WINDOW_SIZE, buf_size_pkts, block_port);
+    if (enable_byte_fc) {
+        sr_write(SR_FLOW_CTRL_WINDOW_SIZE, buf_size_bytes, block_port);
+    }
+    if (enable_pkt_cnt_fc) {
+        sr_write(SR_FLOW_CTRL_PKT_LIMIT, pkt_limit, block_port);
+    }
 
     //Enable the FC window.
-    //Precondition: The window size must be set.
-    sr_write(SR_FLOW_CTRL_WINDOW_EN, (buf_size_pkts != 0), block_port);
+    //Precondition: The window size and/or packet limit must be set.
+    sr_write(SR_FLOW_CTRL_EN, config, block_port);
 }
 
 /***********************************************************************

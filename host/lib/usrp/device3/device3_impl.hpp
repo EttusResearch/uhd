@@ -21,6 +21,10 @@
 #include <uhd/types/direction.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/device3.hpp>
+#include "../../transport/super_send_packet_handler.hpp"
+#include "../../transport/super_recv_packet_handler.hpp"
+#include <uhdlib/rfnoc/tx_stream_terminator.hpp>
+#include <uhdlib/rfnoc/rx_stream_terminator.hpp>
 #include <uhdlib/rfnoc/xports.hpp>
 
 namespace uhd { namespace usrp {
@@ -30,10 +34,82 @@ namespace uhd { namespace usrp {
  **********************************************************************/
 static const size_t DEVICE3_RX_FC_REQUEST_FREQ         = 32;    //per flow-control window
 static const size_t DEVICE3_TX_FC_RESPONSE_FREQ        = 8;
-static const size_t DEVICE3_TX_FC_RESPONSE_CYCLES      = 0;     // Cycles: Off.
+static const size_t DEVICE3_FC_PACKET_LEN_IN_WORDS32   = 2;
+static const size_t DEVICE3_FC_PACKET_COUNT_OFFSET     = 0;
+static const size_t DEVICE3_FC_BYTE_COUNT_OFFSET       = 1;
+static const size_t DEVICE3_LINE_SIZE                  = 8;
 
 static const size_t DEVICE3_TX_MAX_HDR_LEN             = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(uint64_t);    // Bytes
 static const size_t DEVICE3_RX_MAX_HDR_LEN             = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(uint64_t);    // Bytes
+
+// This class manages the lifetime of the TX async message handler task, transports, and terminator
+class device3_send_packet_streamer : public uhd::transport::sph::send_packet_streamer
+{
+public:
+    device3_send_packet_streamer(
+            const size_t max_num_samps,
+            const uhd::rfnoc::tx_stream_terminator::sptr terminator,
+            const both_xports_t data_xport,
+            const both_xports_t async_msg_xport
+    ) :
+        uhd::transport::sph::send_packet_streamer(max_num_samps),
+        _terminator(terminator),
+        _data_xport(data_xport),
+        _async_msg_xport(async_msg_xport)
+    {};
+
+    ~device3_send_packet_streamer()
+    {
+        // Make sure the async task is destroyed before the transports
+        _tx_async_msg_tasks.clear();
+    };
+
+    uhd::rfnoc::tx_stream_terminator::sptr get_terminator()
+    {
+        return _terminator;
+    }
+
+    void add_async_msg_task(task::sptr task)
+    {
+        _tx_async_msg_tasks.push_back(task);
+    }
+
+private:
+    uhd::rfnoc::tx_stream_terminator::sptr _terminator;
+    both_xports_t _data_xport;
+    both_xports_t _async_msg_xport;
+    std::vector<task::sptr> _tx_async_msg_tasks;
+};
+
+// This class manages the lifetime of the RX transports and terminator and provides access to both
+class device3_recv_packet_streamer : public uhd::transport::sph::recv_packet_streamer
+{
+public:
+    device3_recv_packet_streamer(
+            const size_t max_num_samps,
+            const uhd::rfnoc::rx_stream_terminator::sptr terminator,
+            const both_xports_t xport
+        ) :
+            uhd::transport::sph::recv_packet_streamer(max_num_samps),
+            _terminator(terminator),
+            _xport(xport) {};
+
+    ~device3_recv_packet_streamer() {};
+
+    both_xports_t get_xport()
+    {
+        return _xport;
+    }
+
+    uhd::rfnoc::rx_stream_terminator::sptr get_terminator()
+    {
+        return _terminator;
+    }
+
+private:
+    uhd::rfnoc::rx_stream_terminator::sptr _terminator;
+    both_xports_t _xport;
+};
 
 class device3_impl : public uhd::device3, public boost::enable_shared_from_this<device3_impl>
 {
@@ -64,14 +140,11 @@ public:
         size_t rx_fc_request_freq;
         //! How often the downstream block should send ACKs per one full FC window
         size_t tx_fc_response_freq;
-        //! How often the downstream block should send ACKs in cycles
-        size_t tx_fc_response_cycles;
         stream_options_t(void)
             : tx_max_len_hdr(DEVICE3_TX_MAX_HDR_LEN)
             , rx_max_len_hdr(DEVICE3_RX_MAX_HDR_LEN)
             , rx_fc_request_freq(DEVICE3_RX_FC_REQUEST_FREQ)
             , tx_fc_response_freq(DEVICE3_TX_FC_RESPONSE_FREQ)
-            , tx_fc_response_cycles(DEVICE3_TX_FC_RESPONSE_CYCLES)
         {};
     };
 

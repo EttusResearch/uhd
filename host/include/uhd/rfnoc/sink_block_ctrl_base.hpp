@@ -70,20 +70,17 @@ public:
      * send out ACKs, telling the upstream block which packets have been consumed,
      * so the upstream block can increase his flow control credit.
      *
-     * In the default implementation, this just sets registers
-     * SR_FLOW_CTRL_CYCS_PER_ACK and SR_FLOW_CTRL_PKTS_PER_ACK accordingly.
+     * In the default implementation, this just sets register SR_FLOW_CTRL_PKTS_PER_ACK
+     * accordingly.
      *
      * Override this function if your block has port-specific flow control settings.
      *
-     * \param cycles Send an ACK after this many clock cycles.
-     *               Setting this to zero disables this type of flow control acknowledgement.
-     * \param packets Send an ACK after this many packets have been consumed.
-     *               Setting this to zero disables this type of flow control acknowledgement.
+     * \param bytes Send an ACK after this many bytes have been consumed.
+     *              Setting this to zero disables flow control acknowledgement.
      * \param block_port Set up flow control for a stream coming in on this particular block port.
      */
     virtual void configure_flow_control_in(
-            size_t cycles,
-            size_t packets,
+            size_t bytes,
             size_t block_port=0
     );
 

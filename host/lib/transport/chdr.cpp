@@ -23,6 +23,7 @@ using namespace uhd::transport::vrt;
 static const uint32_t HDR_FLAG_TSF = (1 << 29);
 static const uint32_t HDR_FLAG_EOB = (1 << 28);
 static const uint32_t HDR_FLAG_ERROR = (1 << 28);
+static const uint32_t HDR_FLAG_FCACK = (1 << 28);
 
 /***************************************************************************/
 /* Packing                                                                 */
@@ -45,8 +46,8 @@ UHD_INLINE uint32_t _hdr_pack_chdr(
         | (if_packet_info.packet_type << 30)
         // 1 Bit: Has time
         | (if_packet_info.has_tsf ? HDR_FLAG_TSF : 0)
-        // 1 Bit: EOB or Error
-        | ((if_packet_info.eob or if_packet_info.error) ? HDR_FLAG_EOB : 0)
+        // 1 Bit: EOB or Error or FC ACK
+        | ((if_packet_info.eob or if_packet_info.error or if_packet_info.fc_ack) ? HDR_FLAG_EOB : 0)
         // 12 Bits: Sequence number
         | ((if_packet_info.packet_count & 0xFFF) << 16)
         // 16 Bits: Total packet length
@@ -111,6 +112,8 @@ UHD_INLINE void _hdr_unpack_chdr(
                          && ((chdr & HDR_FLAG_EOB) > 0);
     if_packet_info.error = (if_packet_info.packet_type == if_packet_info_t::PACKET_TYPE_RESP)
                          && ((chdr & HDR_FLAG_ERROR) > 0);
+    if_packet_info.fc_ack = (if_packet_info.packet_type == if_packet_info_t::PACKET_TYPE_FC)
+                         && ((chdr & HDR_FLAG_FCACK) > 0);
     if_packet_info.packet_count = (chdr >> 16) & 0xFFF;
 
     // Set packet length variables

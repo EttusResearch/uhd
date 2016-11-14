@@ -20,6 +20,7 @@ UHD_INSTALL(FILES
     usb_device_handle.hpp
     vrt_if_packet.hpp
     zero_copy.hpp
+    zero_copy_flow_ctrl.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/transport
     COMPONENT headers
 )

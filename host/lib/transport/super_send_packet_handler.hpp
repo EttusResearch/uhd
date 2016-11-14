@@ -12,7 +12,6 @@
 #include <uhd/exception.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/stream.hpp>
-#include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/thread.hpp>
@@ -49,6 +48,7 @@ namespace sph {
 class send_packet_handler{
 public:
     typedef boost::function<managed_send_buffer::sptr(double)> get_buff_type;
+    typedef boost::function<void(void)> post_send_cb_type;
     typedef boost::function<bool(uhd::async_metadata_t &, const double)> async_receiver_type;
     typedef void(*vrt_packer_type)(uint32_t *, vrt::if_packet_info_t &);
     //typedef boost::function<void(uint32_t *, vrt::if_packet_info_t &)> vrt_packer_type;
@@ -93,27 +93,6 @@ public:
         _props.at(xport_chan).sid = sid;
     }
 
-    ///////// RFNOC ///////////////////
-    //! Get the stream ID for a specific channel (or zero if no SID)
-    uint32_t get_xport_chan_sid(const size_t xport_chan) const {
-        if (_props.at(xport_chan).has_sid) {
-            return _props.at(xport_chan).sid;
-        } else {
-            return 0;
-        }
-    }
-
-    void set_terminator(uhd::rfnoc::tx_stream_terminator::sptr terminator)
-    {
-        _terminator = terminator;
-    }
-
-    uhd::rfnoc::tx_stream_terminator::sptr get_terminator()
-    {
-        return _terminator;
-    }
-    ///////// RFNOC ///////////////////
-
     void set_enable_trailer(const bool enable)
     {
         _has_tlr = enable;
@@ -136,6 +115,15 @@ public:
      */
     void set_xport_chan_get_buff(const size_t xport_chan, const get_buff_type &get_buff){
         _props.at(xport_chan).get_buff = get_buff;
+    }
+
+    /*!
+     * Set the callback function for post-send.
+     * \param xport_chan which transport channel
+     * \param cb post-send callback
+     */
+    void set_xport_chan_post_send_cb(const size_t xport_chan, const post_send_cb_type &cb){
+        _props.at(xport_chan).go_postal = cb;
     }
 
     //! Set the conversion routine for all channels
@@ -198,6 +186,7 @@ public:
         if_packet_info.tsf     = metadata.time_spec.to_ticks(_tick_rate);
         if_packet_info.sob     = metadata.start_of_burst;
         if_packet_info.eob     = metadata.end_of_burst;
+        if_packet_info.fc_ack  = false; //This is a data packet
 
         /*
          * Metadata is cached when we get a send requesting a start of burst with no samples.
@@ -291,6 +280,7 @@ private:
     struct xport_chan_props_type{
         xport_chan_props_type(void):has_sid(false),sid(0){}
         get_buff_type get_buff;
+        post_send_cb_type go_postal;
         bool has_sid;
         uint32_t sid;
         managed_send_buffer::sptr buff;
@@ -307,8 +297,6 @@ private:
     async_receiver_type _async_receiver;
     bool _cached_metadata;
     uhd::tx_metadata_t _metadata_cache;
-
-    uhd::rfnoc::tx_stream_terminator::sptr _terminator;
 
 #ifdef UHD_TXRX_DEBUG_PRINTS
     struct dbg_send_stat_t {
@@ -428,6 +416,11 @@ private:
         const size_t num_vita_words32 = _header_offset_words32+if_packet_info.num_packet_words32;
         buff->commit(num_vita_words32*sizeof(uint32_t));
         buff.reset(); //effectively a release
+
+        if (_props[index].go_postal)
+        {
+            _props[index].go_postal();
+        }
     }
 
     //! Shared variables for the worker threads

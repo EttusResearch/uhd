@@ -65,7 +65,7 @@ public:
     zero_copy_flow_ctrl_mrb(
         flow_ctrl_func flow_ctrl
     ) :
-        _mb(nullptr),
+        _mb(NULL),
         _flow_ctrl(flow_ctrl)
     {
         /* NOP */
@@ -80,8 +80,6 @@ public:
     {
         if (_mb)
         {
-            _mb->commit(size());
-            while (_flow_ctrl and not _flow_ctrl(_mb)) {}
             _mb.reset();
         }
     }
@@ -89,6 +87,7 @@ public:
     UHD_INLINE sptr get(sptr &mb)
     {
         _mb = mb;
+        while (_flow_ctrl and not _flow_ctrl(_mb)) {}
         return make(this, _mb->cast<void *>(), _mb->size());
     }
 

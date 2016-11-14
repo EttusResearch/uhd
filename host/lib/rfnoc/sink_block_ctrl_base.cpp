@@ -52,22 +52,17 @@ size_t sink_block_ctrl_base::get_fifo_size(size_t block_port) const {
 }
 
 void sink_block_ctrl_base::configure_flow_control_in(
-        size_t cycles,
-        size_t packets,
+        size_t bytes,
         size_t block_port
 ) {
-    UHD_RFNOC_BLOCK_TRACE() << boost::format("sink_block_ctrl_base::configure_flow_control_in(cycles=%d, packets=%d)") % cycles % packets ;
-    uint32_t cycles_word = 0;
-    if (cycles) {
-        cycles_word = (1<<31) | cycles;
-    }
-    sr_write(SR_FLOW_CTRL_CYCS_PER_ACK, cycles_word, block_port);
+    UHD_RFNOC_BLOCK_TRACE() << boost::format("sink_block_ctrl_base::configure_flow_control_in(bytes=%d)") % bytes;
 
-    uint32_t packets_word = 0;
-    if (packets) {
-        packets_word = (1<<31) | packets;
+    uint32_t bytes_word = 0;
+    if (bytes) {
+        // Bit 32 enables flow control
+        bytes_word = (1<<31) | bytes;
     }
-    sr_write(SR_FLOW_CTRL_PKTS_PER_ACK, packets_word, block_port);
+    sr_write(SR_FLOW_CTRL_BYTES_PER_ACK, bytes_word, block_port);
 }
 
 void sink_block_ctrl_base::set_error_policy(

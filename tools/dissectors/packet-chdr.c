@@ -41,6 +41,9 @@ static int hf_chdr_type = -1;
 static int hf_chdr_has_time = -1;
 static int hf_chdr_eob = -1;
 static int hf_chdr_error = -1;
+static int hf_chdr_fc_ack = -1;
+static int hf_chdr_fc_pktcount = -1;
+static int hf_chdr_fc_bytecount = -1;
 static int hf_chdr_sequence = -1;
 static int hf_chdr_packet_size = -1;
 static int hf_chdr_stream_id = -1;
@@ -53,6 +56,7 @@ static int hf_chdr_dst_blockport = -1;
 static int hf_chdr_timestamp = -1;
 static int hf_chdr_payload = -1;
 static int hf_chdr_ext_response = -1;
+static int hf_chdr_ext_fc = -1;
 static int hf_chdr_ext_status_code = -1;
 static int hf_chdr_ext_seq_num = -1;
 static int hf_chdr_cmd = -1;
@@ -63,6 +67,7 @@ static const value_string CHDR_PACKET_TYPES[] = {
     { 0, "Data" },
     { 1, "Data (End-of-Burst)" },
     { 4, "Flow Control" },
+    { 5, "Flow Control (ACK)" },
     { 8, "Command" },
     { 12, "Response" },
     { 13, "Error Response" },
@@ -72,6 +77,7 @@ static const value_string CHDR_PACKET_TYPES_SHORT[] = {
     { 0, "data" },
     { 1, "data" },
     { 4, "fc" },
+    { 5, "fc" },
     { 8, "cmd" },
     { 12, "resp" },
     { 13, "resp" },
@@ -87,6 +93,7 @@ static gint ett_chdr = -1;
 static gint ett_chdr_header = -1;
 static gint ett_chdr_id = -1;
 static gint ett_chdr_response = -1;
+static gint ett_chdr_fc = -1;
 static gint ett_chdr_cmd = -1;
 
 /* Forward-declare the dissector functions */
@@ -158,6 +165,8 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     proto_tree *response_tree;
     proto_item *cmd_item;
     proto_tree *cmd_tree;
+    proto_item *fc_item;
+    proto_tree *fc_tree;
     gint len;
 
     gint flag_offset;
@@ -170,6 +179,7 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     gboolean flag_is_resp = 0;
     gboolean flag_is_eob = 0;
     gboolean flag_is_error = 0;
+    gboolean flag_is_fcack = 0;
     uint64_t timestamp;
     gboolean is_network;
     gint endianness;
@@ -213,6 +223,7 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             flag_is_resp = (pkt_type == 3);
             flag_is_eob = flag_is_data && (hdr_bits & 0x1);
             flag_is_error = flag_is_resp && (hdr_bits & 0x1);
+            flag_is_fcack = flag_is_fc && (hdr_bits & 0x1);
             flag_has_time = hdr_bits & 0x2;
             if (flag_has_time) {
                 header_size += 8; // 64-bit timestamp.
@@ -245,6 +256,9 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             if (flag_is_resp) {
                 proto_tree_add_boolean(header_tree, hf_chdr_error, tvb, flag_offset, 1, flag_is_error);
                 /*proto_tree_add_boolean(header_tree, hf_chdr_error, tvb, flag_offset, 1, true);*/
+            }
+            if (flag_is_fc) {
+                proto_tree_add_boolean(header_tree, hf_chdr_fc_ack, tvb, flag_offset, 1, flag_is_fcack);
             }
 
             /* These lines add sequence, packet_size and stream ID */
@@ -306,6 +320,11 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                     proto_tree_add_item(response_tree, hf_chdr_ext_status_code, tvb, header_size, 4, endianness);
                     /* This will show the 12-bits of sequence ID in the last 2 bytes */
                     proto_tree_add_item(response_tree, hf_chdr_ext_seq_num, tvb, (header_size + 4 + (is_network ? 2 : 0)), 2, endianness);
+                } else if (flag_is_fc) {
+                    fc_item = proto_tree_add_item(chdr_tree, hf_chdr_ext_fc, tvb, header_size, 8, endianness);
+                    fc_tree = proto_item_add_subtree(fc_item, ett_chdr_fc);
+                    proto_tree_add_item(fc_tree, hf_chdr_fc_pktcount,  tvb, header_size,     4, endianness);
+                    proto_tree_add_item(fc_tree, hf_chdr_fc_bytecount, tvb, header_size + 4, 4, endianness);
                 } else if (show_raw_payload) {
                     proto_tree_add_item(chdr_tree, hf_chdr_payload, tvb, header_size, -1, ENC_NA);
                 }
@@ -347,6 +366,30 @@ void proto_register_chdr(void)
                 NULL, 0x10,
                 NULL, HFILL }
         },
+        { &hf_chdr_fc_ack,
+            { "FC ACK Flag", "chdr.hdr.fc_ack",
+                FT_BOOLEAN, BASE_NONE,
+                NULL, 0x10,
+                NULL, HFILL }
+        },
+        { &hf_chdr_ext_fc,
+            { "Flow Control", "chdr.fc",
+                FT_BYTES, BASE_NONE,
+                NULL, 0x0,
+                NULL, HFILL }
+        },
+	{ &hf_chdr_fc_bytecount,
+	    { "FC Byte Count", "chdr.hdr.fc.byte_count",
+		FT_UINT32, BASE_DEC,
+		NULL, 0x0,
+		NULL, HFILL }
+	},
+	{ &hf_chdr_fc_pktcount,
+	    { "FC Packet Count", "chdr.hdr.fc.pkt_count",
+		FT_UINT32, BASE_DEC,
+		NULL, 0x0,
+		NULL, HFILL }
+	},
         { &hf_chdr_sequence,
             { "Sequence ID", "chdr.seq",
                 FT_UINT16, BASE_DEC,
@@ -457,6 +500,7 @@ void proto_register_chdr(void)
         &ett_chdr_header,
         &ett_chdr_id,
         &ett_chdr_response,
+        &ett_chdr_fc,
         &ett_chdr_cmd
     };
 

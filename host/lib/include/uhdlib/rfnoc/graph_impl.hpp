@@ -55,7 +55,7 @@ public:
     void connect_sink(
             const block_id_t &sink_block,
             const size_t dst_block_port,
-            const size_t pkts_per_ack
+            const size_t bytes_per_ack
     );
 
     /************************************************************************
