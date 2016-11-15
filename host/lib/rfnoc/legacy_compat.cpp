@@ -29,7 +29,9 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/transport/chdr.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/assign.hpp>
 
 #define UHD_LEGACY_LOG() UHD_LOGV(never)
 
@@ -267,7 +269,11 @@ public:
         }
         _update_stream_args_for_streaming<uhd::RX_DIRECTION>(args, _rx_channel_map);
         UHD_LEGACY_LOG() << "[legacy_compat] rx stream args: " << args.args.to_string() << std::endl;
-        return _device->get_rx_stream(args);
+        uhd::rx_streamer::sptr streamer = _device->get_rx_stream(args);
+        BOOST_FOREACH(const size_t chan, args.channels) {
+            _rx_stream_cache[chan] = streamer;
+        }
+        return streamer;
     }
 
     //! Sets block_id<N> and block_port<N> in the streamer args, otherwise forwards the call.
@@ -280,7 +286,11 @@ public:
         }
         _update_stream_args_for_streaming<uhd::TX_DIRECTION>(args, _tx_channel_map);
         UHD_LEGACY_LOG() << "[legacy_compat] tx stream args: " << args.args.to_string() << std::endl;
-        return _device->get_tx_stream(args);
+        uhd::tx_streamer::sptr streamer = _device->get_tx_stream(args);
+        BOOST_FOREACH(const size_t chan, args.channels) {
+            _tx_stream_cache[chan] = streamer;
+        }
+        return streamer;
     }
 
     double get_tick_rate(const size_t mboard_idx=0)
@@ -307,6 +317,93 @@ public:
     {
         _tree->access<double>(mb_root(mboard_idx) / "tick_rate").set(tick_rate);
         update_tick_rate_on_blocks(tick_rate, mboard_idx);
+    }
+
+    void set_rx_rate(const double rate, const size_t chan)
+    {
+        if (not _has_ddcs) {
+            return;
+        }
+
+        // Set DDC values:
+        if (chan == uhd::usrp::multi_usrp::ALL_CHANS) {
+            for (size_t mboard_idx = 0; mboard_idx < _rx_channel_map.size(); mboard_idx++) {
+                for (size_t chan_idx = 0; chan_idx < _rx_channel_map[mboard_idx].size(); chan_idx++) {
+                    const size_t dsp_index  = _rx_channel_map[mboard_idx][chan_idx].radio_index;
+                    const size_t port_index = _rx_channel_map[mboard_idx][chan_idx].port_index;
+                    _tree->access<double>(rx_dsp_root(mboard_idx, dsp_index, port_index) / "rate/value")
+                        .set(rate)
+                    ;
+                }
+            }
+        } else {
+            std::set<size_t> chans_to_change = boost::assign::list_of(chan);
+            if (_rx_stream_cache.count(chan)) {
+                uhd::rx_streamer::sptr str_ptr = _rx_stream_cache[chan].lock();
+                if (str_ptr) {
+                    BOOST_FOREACH(const rx_stream_map_type::value_type &chan_streamer_pair, _rx_stream_cache) {
+                        if (chan_streamer_pair.second.lock() == str_ptr) {
+                            chans_to_change.insert(chan_streamer_pair.first);
+                        }
+                    }
+                }
+            }
+            BOOST_FOREACH(const size_t this_chan, chans_to_change) {
+                UHD_MSG(status) << "setting rate on chan " << this_chan << " " << rate << std::endl;
+                size_t mboard, mb_chan;
+                chan_to_mcp<uhd::RX_DIRECTION>(this_chan, _rx_channel_map, mboard, mb_chan);
+                const size_t dsp_index  = _rx_channel_map[mboard][mb_chan].radio_index;
+                const size_t port_index = _rx_channel_map[mboard][mb_chan].port_index;
+                _tree->access<double>(rx_dsp_root(mboard, dsp_index, port_index) / "rate/value")
+                    .set(rate)
+                ;
+            }
+        }
+        // Update streamers:
+        boost::dynamic_pointer_cast<uhd::usrp::device3_impl>(_device)->update_rx_streamers(rate);
+    }
+
+    void set_tx_rate(const double rate, const size_t chan)
+    {
+        if (not _has_ducs) {
+            return;
+        }
+
+        // Set DUC values:
+        if (chan == uhd::usrp::multi_usrp::ALL_CHANS) {
+            for (size_t mboard_idx = 0; mboard_idx < _tx_channel_map.size(); mboard_idx++) {
+                for (size_t chan_idx = 0; chan_idx < _tx_channel_map[mboard_idx].size(); chan_idx++) {
+                    const size_t dsp_index = _tx_channel_map[mboard_idx][chan_idx].radio_index;
+                    const size_t port_index  = _tx_channel_map[mboard_idx][chan_idx].port_index;
+                    _tree->access<double>(tx_dsp_root(mboard_idx, dsp_index, port_index) / "rate/value")
+                        .set(rate)
+                    ;
+                }
+            }
+        } else {
+            std::set<size_t> chans_to_change = boost::assign::list_of(chan);
+            if (_tx_stream_cache.count(chan)) {
+                uhd::tx_streamer::sptr str_ptr = _tx_stream_cache[chan].lock();
+                if (str_ptr) {
+                    BOOST_FOREACH(const tx_stream_map_type::value_type &chan_streamer_pair, _tx_stream_cache) {
+                        if (chan_streamer_pair.second.lock() == str_ptr) {
+                            chans_to_change.insert(chan_streamer_pair.first);
+                        }
+                    }
+                }
+            }
+            BOOST_FOREACH(const size_t this_chan, chans_to_change) {
+                size_t mboard, mb_chan;
+                chan_to_mcp<uhd::TX_DIRECTION>(this_chan, _tx_channel_map, mboard, mb_chan);
+                const size_t dsp_index  = _tx_channel_map[mboard][mb_chan].radio_index;
+                const size_t port_index = _tx_channel_map[mboard][mb_chan].port_index;
+                _tree->access<double>(tx_dsp_root(mboard, dsp_index, port_index) / "rate/value")
+                    .set(rate)
+                ;
+            }
+        }
+        // Update streamers:
+        boost::dynamic_pointer_cast<uhd::usrp::device3_impl>(_device)->update_tx_streamers(rate);
     }
 
 private: // types
@@ -339,6 +436,27 @@ private: // methods
     {
         block_id_t block_id(mboard_idx, name, block_count);
         return _device->get_block_ctrl<block_type>(block_id);
+    }
+
+    template <uhd::direction_t dir>
+    inline void chan_to_mcp(
+        const size_t chan, const chan_map_t &chan_map,
+        size_t &mboard_idx, size_t &mb_chan_idx
+    ) {
+        mboard_idx = 0;
+        mb_chan_idx = chan;
+        while (mb_chan_idx >= chan_map[mboard_idx].size()) {
+            mboard_idx++;
+            mb_chan_idx  -= chan_map[mboard_idx].size();
+        }
+        if (mboard_idx >= chan_map.size()) {
+            throw uhd::index_error(str(
+                boost::format("[legacy_compat]: %s channel %u out of range for given frontend configuration.")
+                % (dir == uhd::TX_DIRECTION ? "TX" : "RX")
+                % chan
+            ));
+        }
+
     }
 
     template <uhd::direction_t dir>
@@ -377,19 +495,8 @@ private: // methods
         for (size_t i = 0; i < args.channels.size(); i++) {
             const size_t stream_arg_chan_idx = args.channels[i];
             // Determine which mboard, and on that mboard, which channel this is:
-            size_t mboard_idx = 0;
-            size_t this_mboard_chan_idx = stream_arg_chan_idx;
-            while (this_mboard_chan_idx >= chan_map[mboard_idx].size()) {
-                mboard_idx++;
-                this_mboard_chan_idx -= chan_map[mboard_idx].size();
-            }
-            if (mboard_idx >= chan_map.size()) {
-                throw uhd::index_error(str(
-                    boost::format("[legacy_compat]: %s channel %u out of range for given frontend configuration.")
-                    % (dir == uhd::TX_DIRECTION ? "TX" : "RX")
-                    % stream_arg_chan_idx
-                ));
-            }
+            size_t mboard_idx, this_mboard_chan_idx;
+            chan_to_mcp<dir>(stream_arg_chan_idx, chan_map, mboard_idx, this_mboard_chan_idx);
             // Map that mboard and channel to a block:
             const size_t radio_index = chan_map[mboard_idx][this_mboard_chan_idx].radio_index;
             size_t port_index = chan_map[mboard_idx][this_mboard_chan_idx].port_index;
@@ -539,21 +646,7 @@ private: // methods
                         ;
                     }
                 }
-            } else {
-                for (size_t dsp_idx = 0; dsp_idx < _num_radios_per_board; dsp_idx++) {
-                    for (size_t chan = 0; chan < _num_rx_chans_per_radio; chan++) {
-                        _tree->access<double>(rx_dsp_root(mboard_idx, dsp_idx, chan) / "rate/value")
-                            .add_coerced_subscriber(
-                                boost::bind(
-                                    &uhd::usrp::device3_impl::update_rx_streamers,
-                                    boost::dynamic_pointer_cast<uhd::usrp::device3_impl>(_device),
-                                    _1
-                                )
-                            )
-                        ;
-                    }
-                }
-            }
+            } /* if not _has_ddcs */
             if (not _has_ducs) {
                 for (size_t radio_idx = 0; radio_idx < _num_radios_per_board; radio_idx++) {
                     for (size_t chan = 0; chan < _num_tx_chans_per_radio; chan++) {
@@ -583,20 +676,6 @@ private: // methods
                         ;
                         _tree->create<uhd::meta_range_t>(tx_dsp_base_path / "freq/range")
                             .set_publisher(boost::bind(&lambda_const_meta_range, 0.0, 0.0, 0.0))
-                        ;
-                    }
-                }
-            } else {
-                for (size_t dsp_idx = 0; dsp_idx < _num_radios_per_board; dsp_idx++) {
-                    for (size_t chan = 0; chan < _num_tx_chans_per_radio; chan++) {
-                        _tree->access<double>(tx_dsp_root(mboard_idx, dsp_idx, chan) / "rate/value")
-                            .add_coerced_subscriber(
-                                boost::bind(
-                                    &uhd::usrp::device3_impl::update_tx_streamers,
-                                    boost::dynamic_pointer_cast<uhd::usrp::device3_impl>(_device),
-                                    _1
-                                )
-                            )
                         ;
                     }
                 }
@@ -767,6 +846,13 @@ private: // attributes
 
     chan_map_t _rx_channel_map;
     chan_map_t _tx_channel_map;
+
+    //! Stores a weak pointer for every streamer that's generated through this API.
+    // Key is the channel number (same format as e.g. the set_rx_rate() call).
+    typedef std::map< size_t, boost::weak_ptr<uhd::rx_streamer> > rx_stream_map_type;
+    rx_stream_map_type _rx_stream_cache;
+    typedef std::map< size_t, boost::weak_ptr<uhd::tx_streamer> > tx_stream_map_type;
+    tx_stream_map_type _tx_stream_cache;
 
     graph::sptr _graph;
 };
