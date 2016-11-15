@@ -201,8 +201,8 @@ n230_impl::n230_impl(const uhd::device_addr_t& dev_addr)
 
     //Initialize addresses
     std::vector<std::string> ip_addrs(1, dev_addr["addr"]);
-    if (dev_addr.has_key("secondary-addr")) {
-        ip_addrs.push_back(dev_addr["secondary-addr"]);
+    if (dev_addr.has_key("second_addr")) {
+        ip_addrs.push_back(dev_addr["second_addr"]);
     }
 
     //Read EEPROM and perform version checks before talking to HW
