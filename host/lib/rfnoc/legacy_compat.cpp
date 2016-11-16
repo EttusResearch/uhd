@@ -103,6 +103,15 @@ uhd::meta_range_t lambda_const_meta_range(const double start, const double stop,
 {
     return uhd::meta_range_t(start, stop, step);
 }
+
+/*! Recreate passed property without bound subscribers. Maintains current property value.
+*/
+template <typename T>
+static void recreate_property(const uhd::fs_path &path, uhd::property_tree::sptr &tree) {
+    T temp = tree->access<T>(path).get();
+    tree->remove(path);
+    tree->create<T>(path).set(temp);
+}
 /************************************************************************
  * Class Definition
  ***********************************************************************/
@@ -167,6 +176,11 @@ public:
             const double tick_rate = _tree->access<double>(mb_root(mboard) / "tick_rate").get();
             update_tick_rate_on_blocks(tick_rate, mboard);
         }
+    }
+
+    ~legacy_compat_impl()
+    {
+       remove_prop_subscribers();
     }
 
     /************************************************************************
@@ -587,6 +601,24 @@ private: // methods
                     }
                 }
             } /* if not _has_ducs */
+        }
+    }
+
+
+    /*! Remove properties with bound functions in property tree and recreate
+     */
+    void remove_prop_subscribers()
+    {
+        for (size_t mboard_idx = 0; mboard_idx < _num_mboards; mboard_idx++) {
+            uhd::fs_path root = mb_root(mboard_idx);
+            // Subdev specs
+            if (_tree->exists(root / "tx_subdev_spec")) {
+               recreate_property<subdev_spec_t>(root / "tx_subdev_spec", _tree);
+            }
+
+            if (_tree->exists(root / "rx_subdev_spec")) {
+               recreate_property<subdev_spec_t>(root / "rx_subdev_spec", _tree);
+            }
         }
     }
 
