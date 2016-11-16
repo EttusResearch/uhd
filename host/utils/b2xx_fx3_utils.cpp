@@ -45,8 +45,8 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 struct vid_pid_t {
-    boost::uint16_t vid;
-    boost::uint16_t pid;
+    uint16_t vid;
+    uint16_t pid;
 };
 const static vid_pid_t known_vid_pids[] = {
     {FX3_VID, FX3_DEFAULT_PID},
@@ -60,17 +60,17 @@ const static vid_pid_t known_vid_pids[] = {
 const static std::vector<vid_pid_t> known_vid_pid_vector(known_vid_pids, known_vid_pids + (sizeof(known_vid_pids) / sizeof(known_vid_pids[0])));
 
 static const size_t EEPROM_INIT_VALUE_VECTOR_SIZE = 8;
-static uhd::byte_vector_t construct_eeprom_init_value_vector(boost::uint16_t vid, boost::uint16_t pid)
+static uhd::byte_vector_t construct_eeprom_init_value_vector(uint16_t vid, uint16_t pid)
 {
     uhd::byte_vector_t init_values(EEPROM_INIT_VALUE_VECTOR_SIZE);
     init_values.at(0) = 0x43;
     init_values.at(1) = 0x59;
     init_values.at(2) = 0x14;
     init_values.at(3) = 0xB2;
-    init_values.at(4) = static_cast<boost::uint8_t>(pid & 0xff);
-    init_values.at(5) = static_cast<boost::uint8_t>(pid >> 8);
-    init_values.at(6) = static_cast<boost::uint8_t>(vid & 0xff);
-    init_values.at(7) = static_cast<boost::uint8_t>(vid >> 8);
+    init_values.at(4) = static_cast<uint8_t>(pid & 0xff);
+    init_values.at(5) = static_cast<uint8_t>(pid >> 8);
+    init_values.at(6) = static_cast<uint8_t>(vid & 0xff);
+    init_values.at(7) = static_cast<uint8_t>(vid >> 8);
     return init_values;
 }
 
@@ -85,14 +85,14 @@ template <class T> struct to_hex{
 };
 
 //!parse hex-formatted ASCII text into an int
-boost::uint16_t atoh(const std::string &string){
+uint16_t atoh(const std::string &string){
     if (string.substr(0, 2) == "0x"){
         std::stringstream interpreter(string);
-        to_hex<boost::uint16_t> hh;
+        to_hex<uint16_t> hh;
         interpreter >> hh;
         return hh.value;
     }
-    return boost::lexical_cast<boost::uint16_t>(string);
+    return boost::lexical_cast<uint16_t>(string);
 }
 
 int reset_usb()
@@ -153,7 +153,7 @@ int reset_usb()
     return 0;
 }
 
-uhd::transport::usb_device_handle::sptr open_device(const boost::uint16_t vid, const boost::uint16_t pid, const bool user_supplied = false)
+uhd::transport::usb_device_handle::sptr open_device(const uint16_t vid, const uint16_t pid, const bool user_supplied = false)
 {
     std::vector<uhd::transport::usb_device_handle::sptr> handles;
     uhd::transport::usb_device_handle::sptr handle;
@@ -294,8 +294,8 @@ int erase_eeprom(b200_iface::sptr& b200)
     return 0;
 }
 
-boost::int32_t main(boost::int32_t argc, char *argv[]) {
-    boost::uint16_t vid, pid;
+int32_t main(int32_t argc, char *argv[]) {
+    uint16_t vid, pid;
     std::string pid_str, vid_str, fw_file, fpga_file, writevid_str, writepid_str;
     bool user_supplied_vid_pid = false;
 
@@ -540,11 +540,11 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
         return 0;
     }
 
-    boost::uint8_t data_buffer[16];
+    uint8_t data_buffer[16];
     memset(data_buffer, 0x0, sizeof(data_buffer));
 
     if (vm.count("speed")){
-        boost::uint8_t speed;
+        uint8_t speed;
         try {speed = b200->get_usb_speed();}
         catch (uhd::exception &e) {
             std::cerr << "Exception while getting USB speed: " << e.what() << std::endl;
@@ -569,7 +569,7 @@ boost::int32_t main(boost::int32_t argc, char *argv[]) {
 
     } else if (vm.count("load-fpga")) {
         std::cout << "Loading FPGA image (" << fpga_file << ")" << std::endl;
-        boost::uint32_t fx3_state;
+        uint32_t fx3_state;
         try {fx3_state = b200->load_fpga(fpga_file);} // returns 0 on success, or FX3 state on error
         catch (uhd::exception &e) {
             std::cerr << "Exception while loading FPGA: " << e.what() << std::endl;
