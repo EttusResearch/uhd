@@ -97,7 +97,7 @@ static const std::string        GPIO_DEFAULT_CTRL       = "0x0";    // all as us
 static const std::string        GPIO_DEFAULT_DDR        = "0x0";    // all as inputs
 static const std::string        GPIO_DEFAULT_OUT        = "0x0";
 
-static UHD_INLINE boost::uint32_t GPIO_BIT(const size_t x)
+static inline uint32_t GPIO_BIT(const size_t x)
 {
     return (1 << x);
 }
@@ -107,7 +107,7 @@ namespace po = boost::program_options;
 static bool stop_signal_called = false;
 void sig_int_handler(int){stop_signal_called = true;}
 
-std::string to_bit_string(boost::uint32_t val, const size_t num_bits)
+std::string to_bit_string(uint32_t val, const size_t num_bits)
 {
     std::string out;
     for (int i = num_bits - 1; i >= 0; i--)
@@ -132,7 +132,7 @@ void output_reg_values(
     BOOST_FOREACH(std::string &attr, attrs)
     {
         std::cout << (boost::format("%10s:%s")
-            % attr % to_bit_string(boost::uint32_t(usrp->get_gpio_attr(bank, attr)), num_bits))
+            % attr % to_bit_string(uint32_t(usrp->get_gpio_attr(bank, attr)), num_bits))
             << std::endl;
     }
 }
@@ -189,14 +189,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     output_reg_values(gpio, usrp, num_bits);
 
     //configure GPIO registers
-    boost::uint32_t ddr = strtoul(ddr_str.c_str(), NULL, 0);
-    boost::uint32_t out = strtoul(out_str.c_str(), NULL, 0);
-    boost::uint32_t ctrl = 0;
-    boost::uint32_t atr_idle = 0;
-    boost::uint32_t atr_rx = 0;
-    boost::uint32_t atr_tx = 0;
-    boost::uint32_t atr_duplex = 0;
-    boost::uint32_t mask = (1 << num_bits) - 1;
+    uint32_t ddr = strtoul(ddr_str.c_str(), NULL, 0);
+    uint32_t out = strtoul(out_str.c_str(), NULL, 0);
+    uint32_t ctrl = 0;
+    uint32_t atr_idle = 0;
+    uint32_t atr_rx = 0;
+    uint32_t atr_tx = 0;
+    uint32_t atr_duplex = 0;
+    uint32_t mask = (1 << num_bits) - 1;
 
     if (!vm.count("bitbang"))
     {
@@ -274,7 +274,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     double timeout = 0.01;
     uhd::time_spec_t dwell_time(dwell);
     int loop = 0;
-    boost::uint32_t rb, expected;
+    uint32_t rb, expected;
 
     //register signal handler
     std::signal(SIGINT, &sig_int_handler);

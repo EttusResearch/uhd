@@ -64,7 +64,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Variables to be set by command line options
     std::string clock_args, usrp_args;
-    boost::uint32_t max_interval, num_tests;
+    uint32_t max_interval, num_tests;
 
     //Set up program options
     po::options_description desc("Allowed options");
@@ -72,8 +72,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("help", "Display this help message")
         ("clock-args", po::value<std::string>(&clock_args), "Clock device arguments")
         ("usrp-args", po::value<std::string>(&usrp_args), "USRP device arguments")
-        ("max-interval", po::value<boost::uint32_t>(&max_interval)->default_value(10000), "Maximum interval between comparisons (in ms)")
-        ("num-tests", po::value<boost::uint32_t>(&num_tests)->default_value(10), "Number of times to compare device times")
+        ("max-interval", po::value<uint32_t>(&max_interval)->default_value(10000), "Maximum interval between comparisons (in ms)")
+        ("num-tests", po::value<uint32_t>(&num_tests)->default_value(10), "Number of times to compare device times")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -133,10 +133,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     srand((unsigned int)time(NULL));
 
     std::cout << boost::format("\nRunning %d comparisons at random intervals.") % num_tests << std::endl << std::endl;
-    boost::uint32_t num_matches = 0;
+    uint32_t num_matches = 0;
     for(size_t i = 0; i < num_tests; i++){
         //Wait random time before querying
-        boost::uint16_t wait_time = rand() % max_interval;
+        uint16_t wait_time = rand() % max_interval;
         boost::this_thread::sleep(boost::posix_time::milliseconds(wait_time));
 
         //Get all times before output

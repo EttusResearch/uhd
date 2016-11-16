@@ -136,8 +136,8 @@ private:
                 //perform sequence error detection on tx dsp data (can detect bad network cards)
                 /*
                 if (_port[4] == '7'){
-                    static boost::uint32_t next_seq;
-                    const boost::uint32_t this_seq = ntohl(reinterpret_cast<const boost::uint32_t *>(&buff.front())[0]);
+                    static uint32_t next_seq;
+                    const uint32_t this_seq = ntohl(reinterpret_cast<const uint32_t *>(&buff.front())[0]);
                     if (next_seq != this_seq and this_seq != 0) std::cout << "S" << std::flush;
                     next_seq = this_seq + 1;
                 }
