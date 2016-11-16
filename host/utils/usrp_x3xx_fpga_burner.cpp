@@ -95,17 +95,17 @@ void sig_int_handler(int){
 }
 
 typedef struct {
-    boost::uint32_t flags;
-    boost::uint32_t sector;
-    boost::uint32_t index;
-    boost::uint32_t size;
-    boost::uint16_t data[128];
+    uint32_t flags;
+    uint32_t sector;
+    uint32_t index;
+    uint32_t size;
+    uint16_t data[128];
 } x300_fpga_update_data_t;
 
-boost::uint8_t x300_data_in_mem[udp_simple::mtu];
-boost::uint8_t intermediary_packet_data[X300_PACKET_SIZE_BYTES];
+uint8_t x300_data_in_mem[udp_simple::mtu];
+uint8_t intermediary_packet_data[X300_PACKET_SIZE_BYTES];
 
-boost::uint8_t bitswap(uint8_t b){
+uint8_t bitswap(uint8_t b){
     b = ((b & 0xF0) >> 4) | ((b & 0x0F) << 4);
     b = ((b & 0xCC) >> 2) | ((b & 0x33) << 2);
     b = ((b & 0xAA) >> 1) | ((b & 0x55) << 1);
@@ -261,7 +261,7 @@ void print_image_loader_warning(const std::string &fpga_path, const po::variable
 }
 
 void ethernet_burn(udp_simple::sptr udp_transport, std::string fpga_path, bool verify){
-    boost::uint32_t max_size;
+    uint32_t max_size;
     std::vector<char> bitstream;
 
     if(fs::extension(fpga_path) == ".bit") max_size = X300_FPGA_BIT_MAX_SIZE_BYTES;
@@ -293,7 +293,7 @@ void ethernet_burn(udp_simple::sptr udp_transport, std::string fpga_path, bool v
     const x300_fpga_update_data_t *update_data_in = reinterpret_cast<const x300_fpga_update_data_t *>(x300_data_in_mem);
 
     x300_fpga_update_data_t ack_packet;
-    ack_packet.flags = htonx<boost::uint32_t>(X300_FPGA_PROG_FLAGS_ACK | X300_FPGA_PROG_FLAGS_INIT);
+    ack_packet.flags = htonx<uint32_t>(X300_FPGA_PROG_FLAGS_ACK | X300_FPGA_PROG_FLAGS_INIT);
     ack_packet.sector = 0;
     ack_packet.size = 0;
     ack_packet.index = 0;
@@ -328,11 +328,11 @@ void ethernet_burn(udp_simple::sptr udp_transport, std::string fpga_path, bool v
             send_packet.flags = X300_FPGA_PROG_FLAGS_ACK;
             if(verify) send_packet.flags |= X300_FPGA_PROG_FLAGS_VERIFY;
             if(j == i) send_packet.flags |= X300_FPGA_PROG_FLAGS_ERASE; //Erase the sector before writing
-            send_packet.flags = htonx<boost::uint32_t>(send_packet.flags);
+            send_packet.flags = htonx<uint32_t>(send_packet.flags);
 
-            send_packet.sector = htonx<boost::uint32_t>(X300_FPGA_SECTOR_START + (i/X300_FLASH_SECTOR_SIZE));
-            send_packet.index = htonx<boost::uint32_t>((j % X300_FLASH_SECTOR_SIZE) / 2);
-            send_packet.size = htonx<boost::uint32_t>(X300_PACKET_SIZE_BYTES / 2);
+            send_packet.sector = htonx<uint32_t>(X300_FPGA_SECTOR_START + (i/X300_FLASH_SECTOR_SIZE));
+            send_packet.index = htonx<uint32_t>((j % X300_FLASH_SECTOR_SIZE) / 2);
+            send_packet.size = htonx<uint32_t>(X300_PACKET_SIZE_BYTES / 2);
             memset(intermediary_packet_data,0,X300_PACKET_SIZE_BYTES);
             memset(send_packet.data,0,X300_PACKET_SIZE_BYTES);
             if(!is_lvbitx) current_pos = ftell(file);
@@ -342,7 +342,7 @@ void ethernet_burn(udp_simple::sptr udp_transport, std::string fpga_path, bool v
                     memcpy(intermediary_packet_data, (&bitstream[current_pos]), (bitstream.size()-current_pos+1));
                 }
                 else{
-                    size_t len = fread(intermediary_packet_data, sizeof(boost::uint8_t), (fpga_image_size-current_pos), file);
+                    size_t len = fread(intermediary_packet_data, sizeof(uint8_t), (fpga_image_size-current_pos), file);
                     if(len != (fpga_image_size-current_pos)){
                         throw std::runtime_error("Error reading from file!");
                     }
@@ -354,7 +354,7 @@ void ethernet_burn(udp_simple::sptr udp_transport, std::string fpga_path, bool v
                     current_pos += X300_PACKET_SIZE_BYTES;
                 }
                 else{
-                    size_t len = fread(intermediary_packet_data, sizeof(boost::uint8_t), X300_PACKET_SIZE_BYTES, file);
+                    size_t len = fread(intermediary_packet_data, sizeof(uint8_t), X300_PACKET_SIZE_BYTES, file);
                     if(len != X300_PACKET_SIZE_BYTES){
                         throw std::runtime_error("Error reading from file!");
                     }
@@ -368,7 +368,7 @@ void ethernet_burn(udp_simple::sptr udp_transport, std::string fpga_path, bool v
             memcpy(send_packet.data, intermediary_packet_data, X300_PACKET_SIZE_BYTES);
 
             for(size_t k = 0; k < (X300_PACKET_SIZE_BYTES/2); k++){
-                send_packet.data[k] = htonx<boost::uint16_t>(send_packet.data[k]);
+                send_packet.data[k] = htonx<uint16_t>(send_packet.data[k]);
             }
 
             udp_transport->send(boost::asio::buffer(&send_packet, sizeof(send_packet)));
@@ -387,7 +387,7 @@ void ethernet_burn(udp_simple::sptr udp_transport, std::string fpga_path, bool v
 
     //Send clean-up signal
     x300_fpga_update_data_t cleanup_packet;
-    cleanup_packet.flags = htonx<boost::uint32_t>(X300_FPGA_PROG_FLAGS_ACK | X300_FPGA_PROG_FLAGS_CLEANUP);
+    cleanup_packet.flags = htonx<uint32_t>(X300_FPGA_PROG_FLAGS_ACK | X300_FPGA_PROG_FLAGS_CLEANUP);
     cleanup_packet.sector = 0;
     cleanup_packet.size = 0;
     cleanup_packet.index = 0;
@@ -420,7 +420,7 @@ void pcie_burn(std::string resource, std::string rpc_port, std::string fpga_path
 
 bool configure_fpga(udp_simple::sptr udp_transport, std::string ip_addr){
     x300_fpga_update_data_t configure_packet;
-    configure_packet.flags = htonx<boost::uint32_t>(X300_FPGA_PROG_CONFIGURE | X300_FPGA_PROG_FLAGS_ACK);
+    configure_packet.flags = htonx<uint32_t>(X300_FPGA_PROG_CONFIGURE | X300_FPGA_PROG_FLAGS_ACK);
     configure_packet.sector = 0;
     configure_packet.size = 0;
     configure_packet.index = 0;
@@ -439,7 +439,7 @@ bool configure_fpga(udp_simple::sptr udp_transport, std::string ip_addr){
         boost::this_thread::sleep(boost::posix_time::milliseconds(5000));
 
         x300_fpga_update_data_t config_status_packet;
-        configure_packet.flags = htonx<boost::uint32_t>(X300_FPGA_PROG_CONFIG_STATUS);
+        configure_packet.flags = htonx<uint32_t>(X300_FPGA_PROG_CONFIG_STATUS);
         config_status_packet.sector = 0;
         config_status_packet.size = 0;
         config_status_packet.index = 0;

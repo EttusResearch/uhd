@@ -95,26 +95,26 @@ typedef enum {
 } usrp2_fw_update_id_t;
 
 typedef struct {
-    boost::uint32_t proto_ver;
-    boost::uint32_t id;
-    boost::uint32_t seq;
+    uint32_t proto_ver;
+    uint32_t id;
+    uint32_t seq;
     union {
-        boost::uint32_t ip_addr;
-        boost::uint32_t hw_rev;
+        uint32_t ip_addr;
+        uint32_t hw_rev;
         struct {
-            boost::uint32_t flash_addr;
-            boost::uint32_t length;
-            boost::uint8_t  data[256];
+            uint32_t flash_addr;
+            uint32_t length;
+            uint8_t  data[256];
         } flash_args;
         struct {
-            boost::uint32_t sector_size_bytes;
-            boost::uint32_t memory_size_bytes;
+            uint32_t sector_size_bytes;
+            uint32_t memory_size_bytes;
         } flash_info_args;
     } data;
 } usrp2_fw_update_data_t;
 
 //Mapping revision numbers to filenames
-uhd::dict<boost::uint32_t, std::string> filename_map = boost::assign::map_list_of
+uhd::dict<uint32_t, std::string> filename_map = boost::assign::map_list_of
     (0,      "N2XX")
     (0xa,    "n200_r3")
     (0x100a, "n200_r4")
@@ -122,9 +122,9 @@ uhd::dict<boost::uint32_t, std::string> filename_map = boost::assign::map_list_o
     (0x110a, "n210_r4")
 ;
 
-boost::uint8_t usrp2_update_data_in_mem[udp_simple::mtu];
-boost::uint8_t fpga_image[FPGA_IMAGE_SIZE_BYTES];
-boost::uint8_t fw_image[FW_IMAGE_SIZE_BYTES];
+uint8_t usrp2_update_data_in_mem[udp_simple::mtu];
+uint8_t fpga_image[FPGA_IMAGE_SIZE_BYTES];
+uint8_t fw_image[FW_IMAGE_SIZE_BYTES];
 
 /***********************************************************************
  * Signal handlers
@@ -151,11 +151,11 @@ void sig_int_handler(int){
 void list_usrps(){
     udp_simple::sptr udp_bc_transport;
     const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
-    boost::uint32_t hw_rev;
+    uint32_t hw_rev;
 
     usrp2_fw_update_data_t usrp2_ack_pkt = usrp2_fw_update_data_t();
-    usrp2_ack_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-    usrp2_ack_pkt.id = htonx<boost::uint32_t>(USRP2_QUERY);
+    usrp2_ack_pkt.proto_ver = htonx<uint32_t>(USRP2_FW_PROTO_VERSION);
+    usrp2_ack_pkt.id = htonx<uint32_t>(USRP2_QUERY);
 
     std::cout << "Available USRP N2XX devices:" << std::endl;
 
@@ -168,7 +168,7 @@ void list_usrps(){
 
         size_t len = udp_bc_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
         if(len > offsetof(usrp2_fw_update_data_t, data) and ntohl(update_data_in->id) == USRP2_ACK){
-            usrp2_ack_pkt.id = htonx<boost::uint32_t>(GET_HW_REV_CMD);
+            usrp2_ack_pkt.id = htonx<uint32_t>(GET_HW_REV_CMD);
             udp_bc_transport->send(boost::asio::buffer(&usrp2_ack_pkt, sizeof(usrp2_ack_pkt)));
 
             size_t len = udp_bc_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
@@ -237,21 +237,21 @@ void print_image_loader_warning(const std::string &fw_path,
 /***********************************************************************
  * Find USRP N2XX with specified IP address and return type
  **********************************************************************/
-boost::uint32_t find_usrp(udp_simple::sptr udp_transport, bool check_rev){
-    boost::uint32_t hw_rev;
+uint32_t find_usrp(udp_simple::sptr udp_transport, bool check_rev){
+    uint32_t hw_rev;
     bool found_it = false;
 
     // If the user chooses to not care about the rev, simply check
     // for the presence of a USRP N2XX.
-    boost::uint32_t cmd_id = (check_rev) ? GET_HW_REV_CMD
+    uint32_t cmd_id = (check_rev) ? GET_HW_REV_CMD
                                          : USRP2_QUERY;
-    boost::uint32_t ack_id = (check_rev) ? GET_HW_REV_ACK
+    uint32_t ack_id = (check_rev) ? GET_HW_REV_ACK
                                          : USRP2_ACK;
 
     const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
     usrp2_fw_update_data_t hw_info_pkt = usrp2_fw_update_data_t();
-    hw_info_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-    hw_info_pkt.id = htonx<boost::uint32_t>(cmd_id);
+    hw_info_pkt.proto_ver = htonx<uint32_t>(USRP2_FW_PROTO_VERSION);
+    hw_info_pkt.id = htonx<uint32_t>(cmd_id);
     udp_transport->send(boost::asio::buffer(&hw_info_pkt, sizeof(hw_info_pkt)));
 
     //Loop and receive until the timeout
@@ -322,7 +322,7 @@ int read_fpga_image(std::string& fpga_path){
     }
 
     //Check sequence of bytes in image before reading
-    boost::uint8_t fpga_test_bytes[63];
+    uint8_t fpga_test_bytes[63];
     fpga_file.seekg(0, std::ios::beg);
     fpga_file.read((char*)fpga_test_bytes,63);
     bool is_good = false;
@@ -357,7 +357,7 @@ int read_fw_image(std::string& fw_path){
     }
 
     //Check sequence of bytes in image before reading
-    boost::uint8_t fw_test_bytes[4];
+    uint8_t fw_test_bytes[4];
     fw_file.seekg(0, std::ios::beg);
     fw_file.read((char*)fw_test_bytes,4);
     for(int i = 0; i < 4; i++) if(fw_test_bytes[i] != 11) throw std::runtime_error("Not a valid firmware image.");
@@ -370,15 +370,15 @@ int read_fw_image(std::string& fw_path){
     return fw_image_size;
 }
 
-boost::uint32_t* get_flash_info(std::string& ip_addr){
+uint32_t* get_flash_info(std::string& ip_addr){
 
-    boost::uint32_t *flash_info = new boost::uint32_t[2];
+    uint32_t *flash_info = new uint32_t[2];
     const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
 
     udp_simple::sptr udp_transport = udp_simple::make_connected(ip_addr, BOOST_STRINGIZE(USRP2_UDP_UPDATE_PORT));
     usrp2_fw_update_data_t get_flash_info_pkt = usrp2_fw_update_data_t();
-    get_flash_info_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-    get_flash_info_pkt.id = htonx<boost::uint32_t>(GET_FLASH_INFO_CMD);
+    get_flash_info_pkt.proto_ver = htonx<uint32_t>(USRP2_FW_PROTO_VERSION);
+    get_flash_info_pkt.id = htonx<uint32_t>(GET_FLASH_INFO_CMD);
     udp_transport->send(boost::asio::buffer(&get_flash_info_pkt, sizeof(get_flash_info_pkt)));
 
     //Loop and receive until the timeout
@@ -399,13 +399,13 @@ boost::uint32_t* get_flash_info(std::string& ip_addr){
  * Image burning functions
  **********************************************************************/
 
-void erase_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint32_t memory_size, bool overwrite_safe){
+void erase_image(udp_simple::sptr udp_transport, bool is_fw, uint32_t memory_size, bool overwrite_safe){
 
-    boost::uint32_t image_location_addr = is_fw ? overwrite_safe ? SAFE_FW_IMAGE_LOCATION_ADDR
+    uint32_t image_location_addr = is_fw ? overwrite_safe ? SAFE_FW_IMAGE_LOCATION_ADDR
                                                                  : PROD_FW_IMAGE_LOCATION_ADDR
                                                 : overwrite_safe ? SAFE_FPGA_IMAGE_LOCATION_ADDR
                                                                  : PROD_FPGA_IMAGE_LOCATION_ADDR;
-    boost::uint32_t image_size = is_fw ? FW_IMAGE_SIZE_BYTES
+    uint32_t image_size = is_fw ? FW_IMAGE_SIZE_BYTES
                                        : FPGA_IMAGE_SIZE_BYTES;
 
     //Making sure this won't attempt to erase past end of device
@@ -416,10 +416,10 @@ void erase_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint32_t mem
 
     //Setting up UDP packet
     usrp2_fw_update_data_t erase_pkt = usrp2_fw_update_data_t();
-    erase_pkt.id = htonx<boost::uint32_t>(ERASE_FLASH_CMD);
-    erase_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-    erase_pkt.data.flash_args.flash_addr = htonx<boost::uint32_t>(image_location_addr);
-    erase_pkt.data.flash_args.length = htonx<boost::uint32_t>(image_size);
+    erase_pkt.id = htonx<uint32_t>(ERASE_FLASH_CMD);
+    erase_pkt.proto_ver = htonx<uint32_t>(USRP2_FW_PROTO_VERSION);
+    erase_pkt.data.flash_args.flash_addr = htonx<uint32_t>(image_location_addr);
+    erase_pkt.data.flash_args.length = htonx<uint32_t>(image_size);
 
     //Begin erasing
     udp_transport->send(boost::asio::buffer(&erase_pkt, sizeof(erase_pkt)));
@@ -434,7 +434,7 @@ void erase_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint32_t mem
     }
 
     //Check for erase completion
-    erase_pkt.id = htonx<boost::uint32_t>(CHECK_ERASING_DONE_CMD);
+    erase_pkt.id = htonx<uint32_t>(CHECK_ERASING_DONE_CMD);
     while(true){
         udp_transport->send(boost::asio::buffer(&erase_pkt, sizeof(erase_pkt)));
         size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
@@ -450,14 +450,14 @@ void erase_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint32_t mem
     }
 }
 
-void write_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* image,
-                 boost::uint32_t memory_size, int image_size, bool overwrite_safe){
+void write_image(udp_simple::sptr udp_transport, bool is_fw, uint8_t* image,
+                 uint32_t memory_size, int image_size, bool overwrite_safe){
 
-    boost::uint32_t begin_addr = is_fw ? overwrite_safe ? SAFE_FW_IMAGE_LOCATION_ADDR
+    uint32_t begin_addr = is_fw ? overwrite_safe ? SAFE_FW_IMAGE_LOCATION_ADDR
                                                         : PROD_FW_IMAGE_LOCATION_ADDR
                                        : overwrite_safe ? SAFE_FPGA_IMAGE_LOCATION_ADDR
                                                         : PROD_FPGA_IMAGE_LOCATION_ADDR;
-    boost::uint32_t current_addr = begin_addr;
+    uint32_t current_addr = begin_addr;
     std::string type = is_fw ? "firmware" : "FPGA";
 
     //Making sure this won't attempt to write past end of device
@@ -468,16 +468,16 @@ void write_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* ima
 
     //Setting up UDP packet
     usrp2_fw_update_data_t write_pkt = usrp2_fw_update_data_t();
-    write_pkt.id = htonx<boost::uint32_t>(WRITE_FLASH_CMD);
-    write_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-    write_pkt.data.flash_args.length = htonx<boost::uint32_t>(FLASH_DATA_PACKET_SIZE);
+    write_pkt.id = htonx<uint32_t>(WRITE_FLASH_CMD);
+    write_pkt.proto_ver = htonx<uint32_t>(USRP2_FW_PROTO_VERSION);
+    write_pkt.data.flash_args.length = htonx<uint32_t>(FLASH_DATA_PACKET_SIZE);
 
     for(int i = 0; i < ((image_size/FLASH_DATA_PACKET_SIZE)+1); i++){
         //Print progress
         std::cout << "\rWriting " << type << " image ("
                   << int((double(current_addr-begin_addr)/double(image_size))*100) << "%)." << std::flush;
 
-        write_pkt.data.flash_args.flash_addr = htonx<boost::uint32_t>(current_addr);
+        write_pkt.data.flash_args.flash_addr = htonx<uint32_t>(current_addr);
         std::copy(image+(i*FLASH_DATA_PACKET_SIZE), image+((i+1)*FLASH_DATA_PACKET_SIZE), write_pkt.data.flash_args.data);
 
         udp_transport->send(boost::asio::buffer(&write_pkt, sizeof(write_pkt)));
@@ -493,19 +493,19 @@ void write_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* ima
     std::cout << boost::format(" * Successfully wrote %d bytes.\n") % image_size;
 }
 
-void verify_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* image,
-                  boost::uint32_t memory_size, int image_size, bool overwrite_safe){
+void verify_image(udp_simple::sptr udp_transport, bool is_fw, uint8_t* image,
+                  uint32_t memory_size, int image_size, bool overwrite_safe){
 
     int current_index = 0;
-    boost::uint32_t begin_addr = is_fw ? overwrite_safe ? SAFE_FW_IMAGE_LOCATION_ADDR
+    uint32_t begin_addr = is_fw ? overwrite_safe ? SAFE_FW_IMAGE_LOCATION_ADDR
                                                         : PROD_FW_IMAGE_LOCATION_ADDR
                                        : overwrite_safe ? SAFE_FPGA_IMAGE_LOCATION_ADDR
                                                         : PROD_FPGA_IMAGE_LOCATION_ADDR;
-    boost::uint32_t current_addr = begin_addr;
+    uint32_t current_addr = begin_addr;
     std::string type = is_fw ? "firmware" : "FPGA";
 
     //Array size needs to be known at runtime, this constant is guaranteed to be larger than any firmware or FPGA image
-    boost::uint8_t from_usrp[FPGA_IMAGE_SIZE_BYTES];
+    uint8_t from_usrp[FPGA_IMAGE_SIZE_BYTES];
 
     //Making sure this won't attempt to read past end of device
     if(current_addr+image_size > memory_size) throw std::runtime_error("Cannot read past end of device.");
@@ -515,16 +515,16 @@ void verify_image(udp_simple::sptr udp_transport, bool is_fw, boost::uint8_t* im
 
     //Setting up UDP packet
     usrp2_fw_update_data_t verify_pkt = usrp2_fw_update_data_t();
-    verify_pkt.id = htonx<boost::uint32_t>(READ_FLASH_CMD);
-    verify_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
-    verify_pkt.data.flash_args.length = htonx<boost::uint32_t>(FLASH_DATA_PACKET_SIZE);
+    verify_pkt.id = htonx<uint32_t>(READ_FLASH_CMD);
+    verify_pkt.proto_ver = htonx<uint32_t>(USRP2_FW_PROTO_VERSION);
+    verify_pkt.data.flash_args.length = htonx<uint32_t>(FLASH_DATA_PACKET_SIZE);
 
     for(int i = 0; i < ((image_size/FLASH_DATA_PACKET_SIZE)+1); i++){
         //Print progress
         std::cout << "\rVerifying " << type << " image ("
                   << int((double(current_addr-begin_addr)/double(image_size))*100) << "%)." << std::flush;
 
-        verify_pkt.data.flash_args.flash_addr = htonx<boost::uint32_t>(current_addr);
+        verify_pkt.data.flash_args.flash_addr = htonx<uint32_t>(current_addr);
 
         udp_transport->send(boost::asio::buffer(&verify_pkt, sizeof(verify_pkt)));
         size_t len = udp_transport->recv(boost::asio::buffer(usrp2_update_data_in_mem), UDP_TIMEOUT);
@@ -550,8 +550,8 @@ void reset_usrp(udp_simple::sptr udp_transport){
 
     //Set up UDP packet
     usrp2_fw_update_data_t reset_pkt = usrp2_fw_update_data_t();
-    reset_pkt.id = htonx<boost::uint32_t>(RESET_USRP_CMD);
-    reset_pkt.proto_ver = htonx<boost::uint32_t>(USRP2_FW_PROTO_VERSION);
+    reset_pkt.id = htonx<uint32_t>(RESET_USRP_CMD);
+    reset_pkt.proto_ver = htonx<uint32_t>(USRP2_FW_PROTO_VERSION);
 
     //Reset USRP
     udp_transport->send(boost::asio::buffer(&reset_pkt, sizeof(reset_pkt)));
@@ -645,7 +645,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //Find USRP and establish connection
     std::cout << boost::format("Searching for USRP N2XX with IP address %s.\n") % ip_addr;
     udp_simple::sptr udp_transport = udp_simple::make_connected(ip_addr, BOOST_STRINGIZE(USRP2_UDP_UPDATE_PORT));
-    boost::uint32_t hw_rev = find_usrp(udp_transport, check_rev);
+    uint32_t hw_rev = find_usrp(udp_transport, check_rev);
 
     //Check validity of file locations and binaries before attempting burn
     std::cout << "Searching for specified images." << std::endl << std::endl;
@@ -687,7 +687,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if(burn_fpga) std::cout << boost::format(" * FPGA:     %s\n") % fpga_path;
     std::cout << std::endl;
 
-    boost::uint32_t* flash_info = get_flash_info(ip_addr);
+    uint32_t* flash_info = get_flash_info(ip_addr);
     std::cout << boost::format("Querying %s for flash information.\n") % filename_map[hw_rev];
     std::cout << boost::format(" * Flash size:  %3.2f\n") % flash_info[1];
     std::cout << boost::format(" * Sector size: %3.2f\n\n") % flash_info[0];

@@ -70,20 +70,20 @@ void sig_int_handler(int){
     }
 }
 
-boost::uint8_t firmware_image[MAX_FIRMWARE_SIZE];
+uint8_t firmware_image[MAX_FIRMWARE_SIZE];
 size_t firmware_size = 0;
-boost::uint8_t octoclock_data[udp_simple::mtu];
+uint8_t octoclock_data[udp_simple::mtu];
 octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t *>(octoclock_data);
 std::string firmware_path, actual_firmware_path;
 size_t num_blocks = 0;
 bool hex = true;
 
-static uint16_t calculate_crc(boost::uint8_t* buffer, boost::uint16_t len){
-    boost::uint16_t crc = 0xFFFF;
+static uint16_t calculate_crc(uint8_t* buffer, uint16_t len){
+    uint16_t crc = 0xFFFF;
 
     for(size_t i = 0; i < len; i++){
         crc ^= buffer[i];
-        for(boost::uint8_t j = 0; j < 8; ++j){
+        for(uint8_t j = 0; j < 8; ++j){
             if(crc & 1) crc = (crc >> 1) ^ 0xA001;
             else crc = (crc >> 1);
         }
@@ -134,7 +134,7 @@ device_addrs_t bootloader_find(const std::string &ip_addr){
     udp_simple::sptr udp_transport = udp_simple::make_connected(ip_addr, BOOST_STRINGIZE(OCTOCLOCK_UDP_CTRL_PORT));
 
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+    pkt_out.sequence = uhd::htonx<uint32_t>(std::rand());
     pkt_out.code = OCTOCLOCK_QUERY_CMD;
     pkt_out.len = 0;
     size_t len = 0;
@@ -174,8 +174,8 @@ void read_firmware(){
 
 void burn_firmware(udp_simple::sptr udp_transport){
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
-    pkt_out.len = (boost::uint16_t)firmware_size;
+    pkt_out.sequence = uhd::htonx<uint32_t>(std::rand());
+    pkt_out.len = (uint16_t)firmware_size;
     pkt_out.crc = calculate_crc(firmware_image, firmware_size);
     size_t len = 0, current_pos = 0;
 
@@ -231,7 +231,7 @@ void burn_firmware(udp_simple::sptr udp_transport){
 void verify_firmware(udp_simple::sptr udp_transport){
     octoclock_packet_t pkt_out;
     pkt_out.proto_ver = OCTOCLOCK_FW_COMPAT_NUM;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+    pkt_out.sequence = uhd::htonx<uint32_t>(std::rand());
     size_t len = 0, current_pos = 0;
 
     for(size_t i = 0; i < num_blocks; i++){
@@ -263,7 +263,7 @@ bool reset_octoclock(const std::string &ip_addr){
     udp_simple::sptr udp_transport = udp_simple::make_connected(ip_addr, BOOST_STRINGIZE(OCTOCLOCK_UDP_CTRL_PORT));
 
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+    pkt_out.sequence = uhd::htonx<uint32_t>(std::rand());
     size_t len;
 
     UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, OCTOCLOCK_FW_COMPAT_NUM, RESET_CMD, pkt_out, len, octoclock_data);
@@ -280,7 +280,7 @@ bool reset_octoclock(const std::string &ip_addr){
 void finalize(udp_simple::sptr udp_transport){
     octoclock_packet_t pkt_out;
     pkt_out.len = 0;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+    pkt_out.sequence = uhd::htonx<uint32_t>(std::rand());
     size_t len = 0;
 
     UHD_OCTOCLOCK_SEND_AND_RECV(udp_transport, OCTOCLOCK_FW_COMPAT_NUM, FINALIZE_BURNING_CMD, pkt_out, len, octoclock_data);
