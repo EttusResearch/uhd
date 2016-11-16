@@ -131,22 +131,22 @@ void init_buffers(
     if (buf_seed_mode == INC) {
         for (size_t i = 0; i < buf.size(); i++) {
             if (type == "sc8") {
-                init_inc_vector< std::complex<boost::int8_t> >(buf[i], n_items);
+                init_inc_vector< std::complex<int8_t> >(buf[i], n_items);
             } else if (type == "sc16") {
-                init_inc_vector< std::complex<boost::int16_t> >(buf[i], n_items);
+                init_inc_vector< std::complex<int16_t> >(buf[i], n_items);
             } else if (type == "sc32") {
-                init_inc_vector< std::complex<boost::int32_t> >(buf[i], n_items);
+                init_inc_vector< std::complex<int32_t> >(buf[i], n_items);
             } else if (type == "fc32") {
                 init_inc_vector< std::complex<float> >(buf[i], n_items);
             } else if (type == "fc64") {
                 init_inc_vector< std::complex<double> >(buf[i], n_items);
             } else if (type == "s8") {
-                init_inc_vector< boost::int8_t >(buf[i], n_items);
+                init_inc_vector< int8_t >(buf[i], n_items);
             } else if (type == "s16") {
-                init_inc_vector< boost::int16_t >(buf[i], n_items);
+                init_inc_vector< int16_t >(buf[i], n_items);
             } else if (type == "item32") {
-                init_inc_vector< boost::uint32_t >(buf[i], n_items);
-                init_random_vector_real_int<boost::uint32_t>(buf[i], n_items);
+                init_inc_vector< uint32_t >(buf[i], n_items);
+                init_random_vector_real_int<uint32_t>(buf[i], n_items);
             } else {
                 throw uhd::runtime_error(str(
                             boost::format("Cannot handle data type: %s") % type
@@ -162,21 +162,21 @@ void init_buffers(
     /// Fill with random data
     for (size_t i = 0; i < buf.size(); i++) {
         if (type == "sc8") {
-            init_random_vector_complex_int<boost::int8_t>(buf[i], n_items);
+            init_random_vector_complex_int<int8_t>(buf[i], n_items);
         } else if (type == "sc16") {
-            init_random_vector_complex_int<boost::int16_t>(buf[i], n_items);
+            init_random_vector_complex_int<int16_t>(buf[i], n_items);
         } else if (type == "sc32") {
-            init_random_vector_complex_int<boost::int32_t>(buf[i], n_items);
+            init_random_vector_complex_int<int32_t>(buf[i], n_items);
         } else if (type == "fc32") {
             init_random_vector_complex_float<float>(buf[i], n_items);
         } else if (type == "fc64") {
             init_random_vector_complex_float<double>(buf[i], n_items);
         } else if (type == "s8") {
-            init_random_vector_real_int<boost::int8_t>(buf[i], n_items);
+            init_random_vector_real_int<int8_t>(buf[i], n_items);
         } else if (type == "s16") {
-            init_random_vector_real_int<boost::int16_t>(buf[i], n_items);
+            init_random_vector_real_int<int16_t>(buf[i], n_items);
         } else if (type == "item32") {
-            init_random_vector_real_int<boost::uint32_t>(buf[i], n_items);
+            init_random_vector_real_int<uint32_t>(buf[i], n_items);
         } else {
             throw uhd::runtime_error(str(
                 boost::format("Cannot handle data type: %s") % type
@@ -240,11 +240,11 @@ std::string item_to_string(
     }
 
     if (type == "sc16") {
-        const std::complex<boost::int16_t> *ptr = reinterpret_cast<const std::complex<boost::int16_t> *>(v_ptr);
+        const std::complex<int16_t> *ptr = reinterpret_cast<const std::complex<int16_t> *>(v_ptr);
         return boost::lexical_cast<std::string>(ptr[index]);
     }
     else if (type == "sc8") {
-        const std::complex<boost::int8_t> *ptr = reinterpret_cast<const std::complex<boost::int8_t> *>(v_ptr);
+        const std::complex<int8_t> *ptr = reinterpret_cast<const std::complex<int8_t> *>(v_ptr);
         return boost::lexical_cast<std::string>(ptr[index]);
     }
     else if (type == "fc32") {
@@ -252,11 +252,11 @@ std::string item_to_string(
         return boost::lexical_cast<std::string>(ptr[index]);
     }
     else if (type == "item32") {
-        const boost::uint32_t *ptr = reinterpret_cast<const boost::uint32_t *>(v_ptr);
+        const uint32_t *ptr = reinterpret_cast<const uint32_t *>(v_ptr);
         return boost::lexical_cast<std::string>(ptr[index]);
     }
     else if (type == "s16") {
-        const boost::int16_t *ptr = reinterpret_cast<const boost::int16_t *>(v_ptr);
+        const int16_t *ptr = reinterpret_cast<const int16_t *>(v_ptr);
         return boost::lexical_cast<std::string>(ptr[index]);
     }
     else {
