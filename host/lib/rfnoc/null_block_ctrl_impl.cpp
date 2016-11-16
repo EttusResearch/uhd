@@ -42,12 +42,12 @@ public:
 
     void set_line_delay_cycles(int cycles)
     {
-        sr_write(SR_LINE_RATE, boost::uint32_t(cycles));
+        sr_write(SR_LINE_RATE, uint32_t(cycles));
     }
 
     void set_bytes_per_packet(int bpp)
     {
-        sr_write(SR_LINES_PER_PACKET, boost::uint32_t(bpp / BYTES_PER_LINE));
+        sr_write(SR_LINES_PER_PACKET, uint32_t(bpp / BYTES_PER_LINE));
     }
 
     double set_line_rate(double rate, double clock_rate)
@@ -69,7 +69,7 @@ public:
         return _line_rate_from_reg_val(get_arg<int>("line_rate"), clock_rate);
     }
 
-    double _line_rate_from_reg_val(boost::uint32_t reg_val, double clock_rate) const
+    double _line_rate_from_reg_val(uint32_t reg_val, double clock_rate) const
     {
         return clock_rate / (reg_val + 1);
     }
@@ -98,7 +98,7 @@ public:
     }
 
     void set_destination(
-            boost::uint32_t next_address,
+            uint32_t next_address,
             size_t output_block_port
     ) {
         uhd::sid_t sid(next_address);

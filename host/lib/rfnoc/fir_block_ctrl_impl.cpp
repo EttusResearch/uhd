@@ -24,15 +24,15 @@ using namespace uhd::rfnoc;
 class fir_block_ctrl_impl : public fir_block_ctrl
 {
 public:
-    static const boost::uint32_t RB_NUM_TAPS     = 0;
-    static const boost::uint32_t SR_RELOAD       = 128;
-    static const boost::uint32_t SR_RELOAD_TLAST = 129;
-    static const boost::uint32_t SR_CONFIG       = 130;
+    static const uint32_t RB_NUM_TAPS     = 0;
+    static const uint32_t SR_RELOAD       = 128;
+    static const uint32_t SR_RELOAD_TLAST = 129;
+    static const uint32_t SR_CONFIG       = 130;
 
     UHD_RFNOC_BLOCK_CONSTRUCTOR(fir_block_ctrl),
         _item_type("sc16") // We only support sc16 in this block
     {
-        _n_taps = boost::uint32_t(user_reg_read64(RB_NUM_TAPS));
+        _n_taps = uint32_t(user_reg_read64(RB_NUM_TAPS));
         UHD_MSG(status) << "fir_block::fir_block() n_taps ==" << _n_taps << std::endl;
         UHD_ASSERT_THROW(_n_taps);
 
@@ -64,10 +64,10 @@ public:
 
         // Write taps via the reload bus
         for (size_t i = 0; i < taps.size() - 1; i++) {
-            sr_write(SR_RELOAD, boost::uint32_t(taps[i]));
+            sr_write(SR_RELOAD, uint32_t(taps[i]));
         }
         // Assert tlast when sending the spinal tap (haha, it's actually the final tap).
-        sr_write(SR_RELOAD_TLAST, boost::uint32_t(taps.back()));
+        sr_write(SR_RELOAD_TLAST, uint32_t(taps.back()));
         // Send the configuration word to replace the existing coefficients with the new ones.
         // Note: This configuration bus does not require tlast
         sr_write(SR_CONFIG, 0);

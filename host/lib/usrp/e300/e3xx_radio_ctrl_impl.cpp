@@ -93,11 +93,11 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(e3xx_radio_ctrl)
     );
     BOOST_FOREACH(const usrp::gpio_atr::gpio_attr_map_t::value_type attr, usrp::gpio_atr::gpio_attr_map)
     {
-        _tree->create<boost::uint32_t>(fs_path("gpio") / "INT0" / attr.second)
+        _tree->create<uint32_t>(fs_path("gpio") / "INT0" / attr.second)
             .add_coerced_subscriber(boost::bind(&usrp::gpio_atr::gpio_atr_3000::set_gpio_attr, fp_gpio, attr.first, _1))
             .set(0);
     }
-    _tree->create<boost::uint8_t>(fs_path("gpio") / "INT0" / "READBACK")
+    _tree->create<uint8_t>(fs_path("gpio") / "INT0" / "READBACK")
         .set_publisher(boost::bind(&usrp::gpio_atr::gpio_atr_3000::read_gpio, fp_gpio));
 
     ////////////////////////////////////////////////////////////////////
@@ -239,12 +239,12 @@ void e3xx_radio_ctrl_impl::setup_radio(uhd::usrp::ad9361_ctrl::sptr safe_codec_c
     for (size_t chan = 0; chan < _get_num_radios(); chan++) {
         _codec_mgr->loopback_self_test(
             boost::bind(
-                static_cast< void (block_ctrl_base::*)(const boost::uint32_t, const boost::uint32_t, const size_t) >(&block_ctrl_base::sr_write),
+                static_cast< void (block_ctrl_base::*)(const uint32_t, const uint32_t, const size_t) >(&block_ctrl_base::sr_write),
                 this,
                 regs::CODEC_IDLE, _1, chan
             ),
             boost::bind(
-                static_cast< boost::uint64_t (block_ctrl_base::*)(const boost::uint32_t, const size_t port) >(&block_ctrl_base::user_reg_read64),
+                static_cast< uint64_t (block_ctrl_base::*)(const uint32_t, const size_t port) >(&block_ctrl_base::user_reg_read64),
                 this,
                 regs::RB_CODEC_READBACK, chan
             )
@@ -403,10 +403,10 @@ void e3xx_radio_ctrl_impl::_update_atrs(void)
         const bool tx_low_band = tx_freq < 2940.0e6;
 
         // VCRX
-        boost::uint32_t vcrx_v1_rxing = 1;
-        boost::uint32_t vcrx_v2_rxing = 0;
-        boost::uint32_t vcrx_v1_txing = 1;
-        boost::uint32_t vcrx_v2_txing = 0;
+        uint32_t vcrx_v1_rxing = 1;
+        uint32_t vcrx_v2_rxing = 0;
+        uint32_t vcrx_v1_txing = 1;
+        uint32_t vcrx_v2_txing = 0;
 
         if (rx_low_band) {
             vcrx_v1_rxing = rx_ant_rx2 ? 0 : 1;
@@ -421,10 +421,10 @@ void e3xx_radio_ctrl_impl::_update_atrs(void)
         }
 
         // VCTX
-        boost::uint32_t vctxrx_v1_rxing = 0;
-        boost::uint32_t vctxrx_v2_rxing = 1;
-        boost::uint32_t vctxrx_v1_txing = 0;
-        boost::uint32_t vctxrx_v2_txing = 1;
+        uint32_t vctxrx_v1_rxing = 0;
+        uint32_t vctxrx_v2_rxing = 1;
+        uint32_t vctxrx_v1_txing = 0;
+        uint32_t vctxrx_v2_txing = 1;
 
         if (tx_low_band) {
             vctxrx_v1_rxing = rx_ant_rx2 ? 1 : 0;
@@ -444,14 +444,14 @@ void e3xx_radio_ctrl_impl::_update_atrs(void)
             std::swap(vctxrx_v1_txing, vctxrx_v2_txing);
         }
 
-        boost::uint32_t tx_enable_a = (!tx_low_band) ? 1 : 0;
-        boost::uint32_t tx_enable_b = (tx_low_band) ? 1 : 0;
+        uint32_t tx_enable_a = (!tx_low_band) ? 1 : 0;
+        uint32_t tx_enable_b = (tx_low_band) ? 1 : 0;
 
         /* Set RX / TX band selects */
-        boost::uint32_t rx_band_select_a = 0;
-        boost::uint32_t rx_band_select_b = 0;
-        boost::uint32_t rx_band_select_c = 0;
-        boost::uint32_t tx_band_select = 0;
+        uint32_t rx_band_select_a = 0;
+        uint32_t rx_band_select_b = 0;
+        uint32_t rx_band_select_c = 0;
+        uint32_t tx_band_select = 0;
 
         if (instance == 0) {
             // RX
@@ -538,23 +538,23 @@ void e3xx_radio_ctrl_impl::_update_atrs(void)
         else // > 2940.0e6
             tx_band_select = 7; // 3'bXXX -- Don't care, set to lowest band
 
-        const boost::uint32_t rx_selects = 0
+        const uint32_t rx_selects = 0
             | (vcrx_v1_rxing << VCRX_V1)
             | (vcrx_v2_rxing << VCRX_V2)
             | (vctxrx_v1_rxing << VCTXRX_V1)
             | (vctxrx_v2_rxing << VCTXRX_V2)
         ;
-        const boost::uint32_t tx_selects = 0
+        const uint32_t tx_selects = 0
             | (vcrx_v1_txing << VCRX_V1)
             | (vcrx_v2_txing << VCRX_V2)
             | (vctxrx_v1_txing << VCTXRX_V1)
             | (vctxrx_v2_txing << VCTXRX_V2)
         ;
-        const boost::uint32_t tx_enables = 0
+        const uint32_t tx_enables = 0
             | (tx_enable_a << TX_ENABLEA)
             | (tx_enable_b << TX_ENABLEB)
         ;
-        const boost::uint32_t rxtx_band_selects = 0
+        const uint32_t rxtx_band_selects = 0
             | (rx_band_select_a << RX_BANDSEL)
             | (rx_band_select_b << RXB_BANDSEL)
             | (rx_band_select_c << RXC_BANDSEL)
@@ -562,10 +562,10 @@ void e3xx_radio_ctrl_impl::_update_atrs(void)
         ;
 
         // Form register values;
-        boost::uint32_t oo_reg = rx_selects | rxtx_band_selects;
-        boost::uint32_t rx_reg = rx_selects | rxtx_band_selects;
-        boost::uint32_t tx_reg = tx_selects | tx_enables | rxtx_band_selects;
-        boost::uint32_t fd_reg = tx_selects | tx_enables | rxtx_band_selects; //tx selects dominate in fd mode
+        uint32_t oo_reg = rx_selects | rxtx_band_selects;
+        uint32_t rx_reg = rx_selects | rxtx_band_selects;
+        uint32_t tx_reg = tx_selects | tx_enables | rxtx_band_selects;
+        uint32_t fd_reg = tx_selects | tx_enables | rxtx_band_selects; //tx selects dominate in fd mode
 
         //add tx enables based on fe enable
         tx_reg |= tx_enables;
@@ -595,11 +595,11 @@ void e3xx_radio_ctrl_impl::_update_atr_leds(usrp::gpio_atr::gpio_atr_3000::sptr 
 void e3xx_radio_ctrl_impl::_update_gpio_state(void)
 {
     UHD_RFNOC_BLOCK_TRACE() << "e3xx_radio_ctrl_impl::_update_gpio_state() " << std::endl;
-    boost::uint32_t misc_reg = 0
+    uint32_t misc_reg = 0
         | (_misc.pps_sel      << gpio_t::PPS_SEL)
         | (_misc.mimo         << gpio_t::MIMO)
         | (_misc.radio_rst    << gpio_t::RADIO_RST);
-    _tree->access<boost::uint32_t>("global_regs/misc").set(misc_reg);
+    _tree->access<uint32_t>("global_regs/misc").set(misc_reg);
 }
 
 void e3xx_radio_ctrl_impl::_update_enables(void)
@@ -667,7 +667,7 @@ void e3xx_radio_ctrl_impl::_update_time_source(const std::string &source)
 
 uhd::sensor_value_t e3xx_radio_ctrl_impl::_get_fe_pll_lock(const bool is_tx)
 {
-    const boost::uint32_t st = _tree->access<boost::uint32_t>("global_regs/pll").get();
+    const uint32_t st = _tree->access<uint32_t>("global_regs/pll").get();
     const bool locked = is_tx ? ((st & 0x1) > 0) : ((st & 0x2) > 0);
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }

@@ -28,7 +28,7 @@ public:
         _item_type("sc16"), // We only support sc16 in this block
         _bpi(uhd::convert::get_bytes_per_item("sc16"))
     {
-        _max_len = boost::uint32_t(user_reg_read64(RB_MAX_WINDOW_LEN));
+        _max_len = uint32_t(user_reg_read64(RB_MAX_WINDOW_LEN));
         UHD_MSG(status) << "window_block::window_block() max_len ==" << _max_len << std::endl;
         UHD_ASSERT_THROW(_max_len);
 
@@ -51,7 +51,7 @@ public:
 
         // Window block can take complex coefficients in sc16 format, but typical usage is
         // to have real(coeffs) == imag(coeffs)
-        std::vector<boost::uint32_t> coeffs_;
+        std::vector<uint32_t> coeffs_;
         for (size_t i = 0; i < window_len - 1; i++) {
             if (coeffs[i] > 32767 || coeffs[i] < -32768) {
                 throw uhd::value_error(str(

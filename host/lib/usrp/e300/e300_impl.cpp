@@ -593,7 +593,7 @@ e300_impl::~e300_impl(void)
         common::load_fpga_image(_idle_image);
 }
 
-void e300_impl::_register_loopback_self_test(wb_iface::sptr iface, boost::uint32_t w_addr, boost::uint32_t r_addr)
+void e300_impl::_register_loopback_self_test(wb_iface::sptr iface, uint32_t w_addr, uint32_t r_addr)
 {
     bool test_fail = false;
     UHD_MSG(status) << "Performing register loopback test... " << std::flush;

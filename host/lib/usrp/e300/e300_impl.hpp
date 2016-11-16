@@ -139,7 +139,7 @@ private: // methods
     /************************************************************************
      * Initialization
      ***********************************************************************/
-    void _register_loopback_self_test(wb_iface::sptr iface, boost::uint32_t w_addr, boost::uint32_t r_addr);
+    void _register_loopback_self_test(wb_iface::sptr iface, uint32_t w_addr, uint32_t r_addr);
 
     uint32_t _get_version(compat_t which);
     std::string _get_version_hash(void);
@@ -160,9 +160,9 @@ private: // methods
     size_t _get_axi_dma_channel_pair();
 
     // For network mode
-    boost::uint16_t _get_udp_port(
-        boost::uint8_t destination,
-        boost::uint8_t prefix);
+    uint16_t _get_udp_port(
+        uint8_t destination,
+        uint8_t prefix);
 
     uhd::both_xports_t make_transport(
         const uhd::sid_t &address,

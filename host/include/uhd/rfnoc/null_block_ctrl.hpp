@@ -49,11 +49,11 @@ public:
     UHD_RFNOC_BLOCK_OBJECT(null_block_ctrl)
 
     //! Set this register to number of lines per packet
-    static const boost::uint32_t SR_LINES_PER_PACKET = 129;
+    static const uint32_t SR_LINES_PER_PACKET = 129;
     //! Set this register to number of cycles between producing a line
-    static const boost::uint32_t SR_LINE_RATE = 130;
+    static const uint32_t SR_LINE_RATE = 130;
     //! Set this register to non-zero to start producing data
-    static const boost::uint32_t SR_ENABLE_STREAM = 131;
+    static const uint32_t SR_ENABLE_STREAM = 131;
 
     static const size_t DEFAULT_LINES_PER_PACKET = 32;
     static const size_t BYTES_PER_LINE = 8;
