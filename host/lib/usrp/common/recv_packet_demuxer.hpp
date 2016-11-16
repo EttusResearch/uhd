@@ -21,7 +21,7 @@
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 
 namespace uhd{ namespace usrp{
 
@@ -32,7 +32,7 @@ namespace uhd{ namespace usrp{
         virtual ~recv_packet_demuxer(void) = 0;
 
         //! Make a new demuxer from a transport and parameters
-        static sptr make(transport::zero_copy_if::sptr transport, const size_t size, const boost::uint32_t sid_base);
+        static sptr make(transport::zero_copy_if::sptr transport, const size_t size, const uint32_t sid_base);
 
         //! Get a buffer at the given index from the transport
         virtual transport::managed_recv_buffer::sptr get_recv_buff(const size_t index, const double timeout) = 0;

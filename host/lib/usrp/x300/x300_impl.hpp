@@ -266,7 +266,7 @@ private:
     void sync_times(mboard_members_t&, const uhd::time_spec_t&);
 
     uhd::sensor_value_t get_ref_locked(mboard_members_t& mb);
-    bool wait_for_clk_locked(mboard_members_t& mb, boost::uint32_t which, double timeout);
+    bool wait_for_clk_locked(mboard_members_t& mb, uint32_t which, double timeout);
     bool is_pps_present(mboard_members_t& mb);
 
     void set_mb_eeprom(uhd::i2c_iface::sptr i2c, const uhd::usrp::mboard_eeprom_t &);
@@ -277,9 +277,6 @@ private:
     /// More IO stuff
     uhd::device_addr_t get_tx_hints(size_t mb_index);
     uhd::device_addr_t get_rx_hints(size_t mb_index);
-    uhd::endianness_t get_transport_endianness(size_t mb_index) {
-        return _mb[mb_index].if_pkt_is_big_endian ? uhd::ENDIANNESS_BIG : uhd::ENDIANNESS_LITTLE;
-    };
 
     void post_streamer_hooks(uhd::direction_t dir);
 };

@@ -117,18 +117,18 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
         boost::tie(inst_reload, inst_chain, inst_samps, inst_stop) = mode_to_inst[stream_cmd.stream_mode];
 
         //calculate the word from flags and length
-        boost::uint32_t cmd_word = 0;
-        cmd_word |= boost::uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
-        cmd_word |= boost::uint32_t((inst_chain)?            1 : 0) << 30;
-        cmd_word |= boost::uint32_t((inst_reload)?           1 : 0) << 29;
-        cmd_word |= boost::uint32_t((inst_stop)?             1 : 0) << 28;
+        uint32_t cmd_word = 0;
+        cmd_word |= uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
+        cmd_word |= uint32_t((inst_chain)?            1 : 0) << 30;
+        cmd_word |= uint32_t((inst_reload)?           1 : 0) << 29;
+        cmd_word |= uint32_t((inst_stop)?             1 : 0) << 28;
         cmd_word |= (inst_samps)? stream_cmd.num_samps : ((inst_stop)? 0 : 1);
 
         //issue the stream command
         _iface->poke32(REG_CTRL_CMD, cmd_word);
-        const boost::uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(_tick_rate);
-        _iface->poke32(REG_CTRL_TIME_HI, boost::uint32_t(ticks >> 32));
-        _iface->poke32(REG_CTRL_TIME_LO, boost::uint32_t(ticks >> 0)); //latches the command
+        const uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(_tick_rate);
+        _iface->poke32(REG_CTRL_TIME_HI, uint32_t(ticks >> 32));
+        _iface->poke32(REG_CTRL_TIME_LO, uint32_t(ticks >> 0)); //latches the command
     }
 
     void set_tick_rate(const double rate)
@@ -136,7 +136,7 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
         _tick_rate = rate;
     }
 
-    void set_sid(const boost::uint32_t sid)
+    void set_sid(const uint32_t sid)
     {
         _iface->poke32(REG_FRAMER_SID, sid);
     }

@@ -61,13 +61,13 @@ using namespace uhd::transport;
  * Packet structure
  */
 typedef struct {
-    boost::uint32_t flags;
-    boost::uint32_t sector;
-    boost::uint32_t index;
-    boost::uint32_t size;
+    uint32_t flags;
+    uint32_t sector;
+    uint32_t index;
+    uint32_t size;
     union {
-        boost::uint8_t  data8[X300_PACKET_SIZE_BYTES];
-        boost::uint16_t data16[X300_PACKET_SIZE_BYTES/2];
+        uint8_t  data8[X300_PACKET_SIZE_BYTES];
+        uint16_t data16[X300_PACKET_SIZE_BYTES/2];
     };
 } x300_fpga_update_data_t;
 
@@ -86,10 +86,10 @@ typedef struct {
     std::string                      resource;
     std::string                      filepath;
     std::string                      rpc_port;
-    boost::uint32_t                  size;
+    uint32_t                  size;
     udp_simple::sptr                 xport;
     std::vector<char>                bitstream; // .bin image extracted from .lvbitx file
-    boost::uint8_t                   data_in[udp_simple::mtu];
+    uint8_t                   data_in[udp_simple::mtu];
 } x300_session_t;
 
 /*
@@ -139,7 +139,7 @@ static void x300_validate_image(x300_session_t &session){
         if(!session.ethernet) session.bitstream.clear();
     }
     else if(extension == ".bin" or extension == ".bit"){
-        boost::uint32_t max_size = (extension == ".bin") ? X300_FPGA_BIN_SIZE_BYTES
+        uint32_t max_size = (extension == ".bin") ? X300_FPGA_BIN_SIZE_BYTES
                                                          : X300_FPGA_BIT_SIZE_BYTES;
 
         session.size = fs::file_size(session.filepath);
@@ -221,10 +221,10 @@ static void x300_setup_session(x300_session_t &session,
  * Ethernet communication functions
  */
 static UHD_INLINE size_t x300_send_and_recv(udp_simple::sptr xport,
-                                            boost::uint32_t pkt_code,
+                                            uint32_t pkt_code,
                                             x300_fpga_update_data_t *pkt_out,
-                                            boost::uint8_t* data){
-    pkt_out->flags = uhd::htonx<boost::uint32_t>(pkt_code);
+                                            uint8_t* data){
+    pkt_out->flags = uhd::htonx<uint32_t>(pkt_code);
     xport->send(boost::asio::buffer(pkt_out, sizeof(*pkt_out)));
     return xport->recv(boost::asio::buffer(data, udp_simple::mtu), UDP_TIMEOUT);
 }
@@ -236,7 +236,7 @@ static UHD_INLINE bool x300_recv_ok(const x300_fpga_update_data_t *pkt_in,
 }
 
 // Image data needs to be bitswapped
-static UHD_INLINE void x300_bitswap(boost::uint8_t *num){
+static UHD_INLINE void x300_bitswap(uint8_t *num){
     *num = ((*num & 0xF0) >> 4) | ((*num & 0x0F) << 4);
     *num = ((*num & 0xCC) >> 2) | ((*num & 0x33) << 2);
     *num = ((*num & 0xAA) >> 1) | ((*num & 0x55) << 1);
@@ -249,7 +249,7 @@ static void x300_ethernet_load(x300_session_t &session){
     const x300_fpga_update_data_t *pkt_in = reinterpret_cast<const x300_fpga_update_data_t*>(session.data_in);
 
     // Initialize write session
-    boost::uint32_t flags = X300_FPGA_PROG_FLAGS_ACK | X300_FPGA_PROG_FLAGS_INIT;
+    uint32_t flags = X300_FPGA_PROG_FLAGS_ACK | X300_FPGA_PROG_FLAGS_INIT;
     size_t len = x300_send_and_recv(session.xport, flags, &pkt_out, session.data_in);
     if(x300_recv_ok(pkt_in, len)){
         std::cout << "-- Initializing FPGA loading..." << std::flush;
@@ -290,9 +290,9 @@ static void x300_ethernet_load(x300_session_t &session){
             if(session.verify) flags |= X300_FPGA_PROG_FLAGS_VERIFY;
 
             // Set burn location
-            pkt_out.sector = htonx<boost::uint32_t>(X300_FPGA_SECTOR_START + (i/X300_FLASH_SECTOR_SIZE));
-            pkt_out.index  = htonx<boost::uint32_t>((j % X300_FLASH_SECTOR_SIZE) / 2);
-            pkt_out.size   = htonx<boost::uint32_t>(X300_PACKET_SIZE_BYTES / 2);
+            pkt_out.sector = htonx<uint32_t>(X300_FPGA_SECTOR_START + (i/X300_FLASH_SECTOR_SIZE));
+            pkt_out.index  = htonx<uint32_t>((j % X300_FLASH_SECTOR_SIZE) / 2);
+            pkt_out.size   = htonx<uint32_t>(X300_PACKET_SIZE_BYTES / 2);
 
             // Read next piece of image
             memset(pkt_out.data8, 0, X300_PACKET_SIZE_BYTES);
@@ -309,7 +309,7 @@ static void x300_ethernet_load(x300_session_t &session){
                 x300_bitswap(&pkt_out.data8[k]);
             }
             for(size_t k = 0; k < (X300_PACKET_SIZE_BYTES/2); k++){
-                pkt_out.data16[k] = htonx<boost::uint16_t>(pkt_out.data16[k]);
+                pkt_out.data16[k] = htonx<uint16_t>(pkt_out.data16[k]);
             }
 
             len = x300_send_and_recv(session.xport, flags, &pkt_out, session.data_in);

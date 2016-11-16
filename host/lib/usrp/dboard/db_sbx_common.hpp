@@ -200,7 +200,7 @@ protected:
     private:
         adf435x_iface::sptr _txlo;
         adf435x_iface::sptr _rxlo;
-        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs);
+        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<uint32_t> &regs);
     };
 
     /*!
@@ -220,7 +220,7 @@ protected:
     private:
         adf435x_iface::sptr _txlo;
         adf435x_iface::sptr _rxlo;
-        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs);
+        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<uint32_t> &regs);
     };
 
     /*!
@@ -240,7 +240,7 @@ protected:
         /*! This is the registered instance of the wrapper class, sbx_base. */
         sbx_xcvr *self_base;
     private:
-        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<boost::uint32_t> &regs);
+        void write_lo_regs(dboard_iface::unit_t unit, const std::vector<uint32_t> &regs);
         max287x_iface::sptr _txlo;
         max287x_iface::sptr _rxlo;
     };

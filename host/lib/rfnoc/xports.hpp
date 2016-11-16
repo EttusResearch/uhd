@@ -16,6 +16,7 @@
 //
 
 #include <uhd/types/sid.hpp>
+#include <uhd/types/endianness.hpp>
 #include <uhd/transport/zero_copy.hpp>
 
 namespace uhd {
@@ -30,6 +31,7 @@ namespace uhd {
         size_t send_buff_size;
         uhd::sid_t send_sid;
         uhd::sid_t recv_sid;
+        uhd::endianness_t endianness;
     };
 
 };

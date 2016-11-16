@@ -41,18 +41,18 @@ public:
     gpio_core_200_impl(wb_iface::sptr iface, const size_t base, const size_t rb_addr):
         _iface(iface), _base(base), _rb_addr(rb_addr), _first_atr(true) { /* NOP */ }
 
-    void set_pin_ctrl(const unit_t unit, const boost::uint16_t value, const boost::uint16_t mask){
+    void set_pin_ctrl(const unit_t unit, const uint16_t value, const uint16_t mask){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
         shadow_it(_pin_ctrl[unit], value, mask);
         update(); //full update
     }
 
-    boost::uint16_t get_pin_ctrl(unit_t unit){
+    uint16_t get_pin_ctrl(unit_t unit){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
         return _pin_ctrl[unit];
     }
 
-    void set_atr_reg(const unit_t unit, const atr_reg_t atr, const boost::uint16_t value, const boost::uint16_t mask){
+    void set_atr_reg(const unit_t unit, const atr_reg_t atr, const uint16_t value, const uint16_t mask){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
         shadow_it(_atr_regs[unit][atr], value, mask);
         if (_first_atr)
@@ -65,39 +65,39 @@ public:
             update(atr);
     }
 
-    boost::uint16_t get_atr_reg(unit_t unit, atr_reg_t reg){
+    uint16_t get_atr_reg(unit_t unit, atr_reg_t reg){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
         return _atr_regs[unit][reg];
     }
 
-    void set_gpio_ddr(const unit_t unit, const boost::uint16_t value, const boost::uint16_t mask){
+    void set_gpio_ddr(const unit_t unit, const uint16_t value, const uint16_t mask){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
         shadow_it(_gpio_ddr[unit], value, mask);
         _iface->poke32(REG_GPIO_DDR, //update the 32 bit register
-            (boost::uint32_t(_gpio_ddr[dboard_iface::UNIT_RX]) << shift_by_unit(dboard_iface::UNIT_RX)) |
-            (boost::uint32_t(_gpio_ddr[dboard_iface::UNIT_TX]) << shift_by_unit(dboard_iface::UNIT_TX))
+            (uint32_t(_gpio_ddr[dboard_iface::UNIT_RX]) << shift_by_unit(dboard_iface::UNIT_RX)) |
+            (uint32_t(_gpio_ddr[dboard_iface::UNIT_TX]) << shift_by_unit(dboard_iface::UNIT_TX))
         );
     }
 
-    boost::uint16_t get_gpio_ddr(unit_t unit){
+    uint16_t get_gpio_ddr(unit_t unit){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
         return _gpio_ddr[unit];
     }
 
-    void set_gpio_out(const unit_t unit, const boost::uint16_t value, const boost::uint16_t mask){
+    void set_gpio_out(const unit_t unit, const uint16_t value, const uint16_t mask){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
         shadow_it(_gpio_out[unit], value, mask);
         this->update(); //full update
     }
 
-    boost::uint16_t get_gpio_out(unit_t unit){
+    uint16_t get_gpio_out(unit_t unit){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
         return _gpio_out[unit];
     }
 
-    boost::uint16_t read_gpio(const unit_t unit){
+    uint16_t read_gpio(const unit_t unit){
         if (unit == dboard_iface::UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported in gpio_core_200");
-        return boost::uint16_t(_iface->peek32(_rb_addr) >> shift_by_unit(unit));
+        return uint16_t(_iface->peek32(_rb_addr) >> shift_by_unit(unit));
     }
 
 private:
@@ -105,10 +105,10 @@ private:
     const size_t _base;
     const size_t _rb_addr;
     bool _first_atr;
-    uhd::dict<size_t, boost::uint32_t> _update_cache;
+    uhd::dict<size_t, uint32_t> _update_cache;
 
-    uhd::dict<unit_t, boost::uint16_t> _pin_ctrl, _gpio_out, _gpio_ddr;
-    uhd::dict<unit_t, uhd::dict<atr_reg_t, boost::uint16_t> > _atr_regs;
+    uhd::dict<unit_t, uint16_t> _pin_ctrl, _gpio_out, _gpio_ddr;
+    uhd::dict<unit_t, uhd::dict<atr_reg_t, uint16_t> > _atr_regs;
 
     unsigned shift_by_unit(const unit_t unit){
         return (unit == dboard_iface::UNIT_RX)? 0 : 16;
@@ -140,18 +140,18 @@ private:
         default:
             UHD_THROW_INVALID_CODE_PATH();
         }
-        const boost::uint32_t atr_val =
-            (boost::uint32_t(_atr_regs[dboard_iface::UNIT_RX][atr]) << shift_by_unit(dboard_iface::UNIT_RX)) |
-            (boost::uint32_t(_atr_regs[dboard_iface::UNIT_TX][atr]) << shift_by_unit(dboard_iface::UNIT_TX));
+        const uint32_t atr_val =
+            (uint32_t(_atr_regs[dboard_iface::UNIT_RX][atr]) << shift_by_unit(dboard_iface::UNIT_RX)) |
+            (uint32_t(_atr_regs[dboard_iface::UNIT_TX][atr]) << shift_by_unit(dboard_iface::UNIT_TX));
 
-        const boost::uint32_t gpio_val =
-            (boost::uint32_t(_gpio_out[dboard_iface::UNIT_RX]) << shift_by_unit(dboard_iface::UNIT_RX)) |
-            (boost::uint32_t(_gpio_out[dboard_iface::UNIT_TX]) << shift_by_unit(dboard_iface::UNIT_TX));
+        const uint32_t gpio_val =
+            (uint32_t(_gpio_out[dboard_iface::UNIT_RX]) << shift_by_unit(dboard_iface::UNIT_RX)) |
+            (uint32_t(_gpio_out[dboard_iface::UNIT_TX]) << shift_by_unit(dboard_iface::UNIT_TX));
 
-        const boost::uint32_t ctrl =
-            (boost::uint32_t(_pin_ctrl[dboard_iface::UNIT_RX]) << shift_by_unit(dboard_iface::UNIT_RX)) |
-            (boost::uint32_t(_pin_ctrl[dboard_iface::UNIT_TX]) << shift_by_unit(dboard_iface::UNIT_TX));
-        const boost::uint32_t val = (ctrl & atr_val) | ((~ctrl) & gpio_val);
+        const uint32_t ctrl =
+            (uint32_t(_pin_ctrl[dboard_iface::UNIT_RX]) << shift_by_unit(dboard_iface::UNIT_RX)) |
+            (uint32_t(_pin_ctrl[dboard_iface::UNIT_TX]) << shift_by_unit(dboard_iface::UNIT_TX));
+        const uint32_t val = (ctrl & atr_val) | ((~ctrl) & gpio_val);
         if (not _update_cache.has_key(addr) or _update_cache[addr] != val)
         {
             _iface->poke32(addr, val);
@@ -182,7 +182,7 @@ public:
     }
 
 
-    void set_atr_reg(const atr_reg_t atr, const boost::uint32_t value){
+    void set_atr_reg(const atr_reg_t atr, const uint32_t value){
         if (atr == gpio_atr::ATR_REG_IDLE)
             _iface->poke32(REG_GPIO_IDLE, value);
         else if (atr == gpio_atr::ATR_REG_TX_ONLY)
@@ -195,7 +195,7 @@ public:
             UHD_THROW_INVALID_CODE_PATH();
     }
 
-    void set_all_regs(const boost::uint32_t value){
+    void set_all_regs(const uint32_t value){
         set_atr_reg(gpio_atr::ATR_REG_IDLE,        value);
         set_atr_reg(gpio_atr::ATR_REG_TX_ONLY,     value);
         set_atr_reg(gpio_atr::ATR_REG_RX_ONLY,     value);

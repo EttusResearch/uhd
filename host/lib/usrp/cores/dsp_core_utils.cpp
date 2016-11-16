@@ -21,8 +21,8 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
 
-static const int32_t MAX_FREQ_WORD = boost::numeric::bounds<boost::int32_t>::highest();
-static const int32_t MIN_FREQ_WORD = boost::numeric::bounds<boost::int32_t>::lowest();
+static const int32_t MAX_FREQ_WORD = boost::numeric::bounds<int32_t>::highest();
+static const int32_t MIN_FREQ_WORD = boost::numeric::bounds<int32_t>::lowest();
 
 void get_freq_and_freq_word(
         const double requested_freq,

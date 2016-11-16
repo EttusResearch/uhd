@@ -32,18 +32,6 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/device3.hpp>
 #include "xports.hpp"
-// Common FPGA cores:
-#include "ctrl_iface.hpp"
-#include "rx_dsp_core_3000.hpp"
-#include "tx_dsp_core_3000.hpp"
-#include "rx_vita_core_3000.hpp"
-#include "tx_vita_core_3000.hpp"
-#include "rx_frontend_core_200.hpp"
-#include "tx_frontend_core_200.hpp"
-#include "time_core_3000.hpp"
-#include "gpio_atr_3000.hpp"
-// RFNoC-specific includes:
-#include "radio_ctrl_impl.hpp"
 
 namespace uhd { namespace usrp {
 
@@ -54,8 +42,8 @@ static const size_t DEVICE3_RX_FC_REQUEST_FREQ         = 32;    //per flow-contr
 static const size_t DEVICE3_TX_FC_RESPONSE_FREQ        = 8;
 static const size_t DEVICE3_TX_FC_RESPONSE_CYCLES      = 0;     // Cycles: Off.
 
-static const size_t DEVICE3_TX_MAX_HDR_LEN             = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(boost::uint64_t);    // Bytes
-static const size_t DEVICE3_RX_MAX_HDR_LEN             = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(boost::uint64_t);    // Bytes
+static const size_t DEVICE3_TX_MAX_HDR_LEN             = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(uint64_t);    // Bytes
+static const size_t DEVICE3_RX_MAX_HDR_LEN             = uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(uint64_t);    // Bytes
 
 class device3_impl : public uhd::device3, public boost::enable_shared_from_this<device3_impl>
 {
@@ -146,7 +134,6 @@ protected:
 
     virtual uhd::device_addr_t get_tx_hints(size_t) { return uhd::device_addr_t(); };
     virtual uhd::device_addr_t get_rx_hints(size_t) { return uhd::device_addr_t(); };
-    virtual uhd::endianness_t get_transport_endianness(size_t mb_index) = 0;
 
     //! Is called after a streamer is generated
     virtual void post_streamer_hooks(uhd::direction_t) {};
@@ -179,8 +166,7 @@ protected:
             size_t n_blocks,
             size_t base_port,
             const uhd::sid_t &base_sid,
-            uhd::device_addr_t transport_args,
-            uhd::endianness_t endianness
+            uhd::device_addr_t transport_args
     );
 
     /***********************************************************************

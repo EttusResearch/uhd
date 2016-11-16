@@ -82,11 +82,11 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     if (_radio_type==PRIMARY) {
         _fp_gpio = gpio_atr::gpio_atr_3000::make(ctrl, regs::sr_addr(regs::FP_GPIO), regs::RB_FP_GPIO);
         BOOST_FOREACH(const gpio_atr::gpio_attr_map_t::value_type attr, gpio_atr::gpio_attr_map) {
-            _tree->create<boost::uint32_t>(fs_path("gpio") / "FP0" / attr.second)
+            _tree->create<uint32_t>(fs_path("gpio") / "FP0" / attr.second)
                 .set(0)
                 .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr, _fp_gpio, attr.first, _1));
         }
-        _tree->create<boost::uint32_t>(fs_path("gpio") / "FP0" / "READBACK")
+        _tree->create<uint32_t>(fs_path("gpio") / "FP0" / "READBACK")
             .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _fp_gpio));
     }
 
@@ -125,9 +125,10 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
         // Bind the daughterboard command time to the motherboard level property
         ////////////////////////////////////////////////////////////////
 
-        if (_tree->exists(fs_path("time") / "cmd")) {
+        if (_tree->exists(fs_path("time") / "cmd") and
+                _tree->exists(fs_path("dboards" / _radio_slot /  "rx_frontends" / _rx_fe_map.at(i).db_fe_name / "time" / "cmd"))) {
             _tree->access<time_spec_t>(fs_path("time") / "cmd")
-                    .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_fe_cmd_time, this, _1, i));
+                .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_fe_cmd_time, this, _1, i));
         }
     }
 
@@ -172,11 +173,11 @@ double x300_radio_ctrl_impl::set_rate(double /* rate */)
     return get_rate();
 }
 
-time_spec_t x300_radio_ctrl_impl::set_fe_cmd_time(const time_spec_t &time, const size_t chan)
+void x300_radio_ctrl_impl::set_fe_cmd_time(const time_spec_t &time, const size_t chan)
 {
-    return _tree->access<time_spec_t>(
+    _tree->access<time_spec_t>(
             fs_path("dboards" / _radio_slot /  "rx_frontends" / _rx_fe_map.at(chan).db_fe_name / "time" / "cmd")
-    ).set(time).get();
+    ).set(time);
 }
 
 void x300_radio_ctrl_impl::set_tx_antenna(const std::string &ant, const size_t chan)
@@ -483,7 +484,7 @@ void x300_radio_ctrl_impl::reset_codec()
     _dac->reset();
 }
 
-void x300_radio_ctrl_impl::self_test_adc(boost::uint32_t ramp_time_ms)
+void x300_radio_ctrl_impl::self_test_adc(uint32_t ramp_time_ms)
 {
     //Bypass all front-end corrections
     for (size_t i = 0; i < _get_num_radios(); i++) {
@@ -602,7 +603,7 @@ void x300_radio_ctrl_impl::synchronize_dacs(const std::vector<x300_radio_ctrl_im
         boost::posix_time::microsec_clock::local_time() - t_start;
 
     //Add 100% of headroom + uncertaintly to the command time
-    boost::uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 13000 /*Scheduler latency*/;
+    uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 13000 /*Scheduler latency*/;
 
     //Pick radios[0] as the time reference.
     uhd::time_spec_t sync_time =
@@ -653,7 +654,7 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
         double delay = clock->set_clock_delay(X300_CLOCK_WHICH_ADC0, delay_incr*i + delay_start);
         wait_for_clk_locked(0.1);
 
-        boost::uint32_t err_code = 0;
+        uint32_t err_code = 0;
         for (size_t r = 0; r < radios.size(); r++) {
             //Test each channel (I and Q) individually so as to not accidentally trigger
             //on the data from the other channel if there is a swap
@@ -784,20 +785,20 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
 {
     if (print_status) UHD_MSG(status) << "Running ADC capture delay self-cal..." << std::flush;
 
-    static const boost::uint32_t NUM_DELAY_STEPS = 32;   //The IDELAYE2 element has 32 steps
-    static const boost::uint32_t NUM_RETRIES     = 2;    //Retry self-cal if it fails in warmup situations
-    static const boost::int32_t  MIN_WINDOW_LEN  = 4;
+    static const uint32_t NUM_DELAY_STEPS = 32;   //The IDELAYE2 element has 32 steps
+    static const uint32_t NUM_RETRIES     = 2;    //Retry self-cal if it fails in warmup situations
+    static const int32_t  MIN_WINDOW_LEN  = 4;
 
-    boost::int32_t win_start = -1, win_stop = -1;
-    boost::uint32_t iter = 0;
+    int32_t win_start = -1, win_stop = -1;
+    uint32_t iter = 0;
     while (iter++ < NUM_RETRIES) {
-        for (boost::uint32_t dly_tap = 0; dly_tap < NUM_DELAY_STEPS; dly_tap++) {
+        for (uint32_t dly_tap = 0; dly_tap < NUM_DELAY_STEPS; dly_tap++) {
             //Apply delay
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_VAL, dly_tap);
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 1);
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 0);
 
-            boost::uint32_t err_code = 0;
+            uint32_t err_code = 0;
 
             // -- Test I Channel --
             //Put ADC in ramp test mode. Tie the other channel to all ones.
@@ -868,7 +869,7 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
         throw uhd::runtime_error("self_cal_adc_capture_delay: Self calibration failed. Valid window too narrow.");
     }
 
-    boost::uint32_t ideal_tap = (win_stop + win_start) / 2;
+    uint32_t ideal_tap = (win_stop + win_start) / 2;
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_VAL, ideal_tap);
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 1);
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_DATA_DLY_STB, 0);
@@ -879,14 +880,14 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
     }
 }
 
-void x300_radio_ctrl_impl::_check_adc(const boost::uint32_t val)
+void x300_radio_ctrl_impl::_check_adc(const uint32_t val)
 {
     //Wait for previous control transaction to flush
     user_reg_read64(regs::RB_TEST);
     //Wait for ADC test pattern to propagate
     boost::this_thread::sleep(boost::posix_time::microsec(5));
     //Read value of RX readback register and verify
-    boost::uint32_t adc_rb = static_cast<boost::uint32_t>(user_reg_read64(regs::RB_TEST)>>32);
+    uint32_t adc_rb = static_cast<uint32_t>(user_reg_read64(regs::RB_TEST)>>32);
     adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
     if (val != adc_rb) {
         throw uhd::runtime_error(

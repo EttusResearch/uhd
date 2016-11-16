@@ -16,7 +16,7 @@
 //
 
 #include <boost/test/unit_test.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <uhd/utils/math.hpp>
 
 // NOTE: This is not the only math test case, see e.g. special tests

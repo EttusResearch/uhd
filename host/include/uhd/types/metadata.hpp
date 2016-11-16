@@ -20,7 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <string>
 
 namespace uhd{
@@ -199,7 +199,7 @@ namespace uhd{
         /*!
          * A special payload populated by custom FPGA fabric.
          */
-        boost::uint32_t user_payload[4];
+        uint32_t user_payload[4];
 
     };
 

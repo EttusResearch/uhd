@@ -141,13 +141,13 @@ reg2eeprom                   0xB03[0]                0
 # Template for methods in the body of the struct
 ########################################################################
 BODY_TMPL="""\
-boost::uint32_t get_reg(boost::uint16_t addr){
-    boost::uint32_t reg = 0;
+uint32_t get_reg(uint16_t addr){
+    uint32_t reg = 0;
     switch(addr){
     % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
     case ${addr}:
         % for reg in filter(lambda r: r.get_addr() == addr, regs):
-        reg |= (boost::uint8_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        reg |= (uint8_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
         % endfor
         break;
     % endfor
@@ -161,7 +161,7 @@ boost::uint32_t get_reg(boost::uint16_t addr){
     return reg;
 }
 
-void set_reg(boost::uint16_t addr, boost::uint32_t reg){
+void set_reg(uint16_t addr, uint32_t reg){
     switch(addr){
     % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
     case ${addr}:
@@ -173,12 +173,12 @@ void set_reg(boost::uint16_t addr, boost::uint32_t reg){
     }
 }
 
-boost::uint32_t get_write_reg(boost::uint16_t addr){
-    return (boost::uint32_t(addr) << 8) | get_reg(addr);
+uint32_t get_write_reg(uint16_t addr){
+    return (uint32_t(addr) << 8) | get_reg(addr);
 }
 
-boost::uint32_t get_read_reg(boost::uint16_t addr){
-    return (boost::uint32_t(addr) << 8) | (1 << 23);
+uint32_t get_read_reg(uint16_t addr){
+    return (uint32_t(addr) << 8) | (1 << 23);
 }
 
 """

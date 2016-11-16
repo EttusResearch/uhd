@@ -19,7 +19,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/assign.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
@@ -111,7 +111,7 @@ device_addrs_t octoclock_find(const device_addr_t &hint){
     octoclock_packet_t pkt_out;
     pkt_out.proto_ver = OCTOCLOCK_FW_COMPAT_NUM;
     // To avoid replicating sequence numbers between sessions
-    pkt_out.sequence = boost::uint32_t(std::rand());
+    pkt_out.sequence = uint32_t(std::rand());
     pkt_out.len = 0;
     pkt_out.code = OCTOCLOCK_QUERY_CMD;
     try{
@@ -124,7 +124,7 @@ device_addrs_t octoclock_find(const device_addr_t &hint){
         UHD_MSG(error) << "OctoClock network discovery unknown error" << std::endl;
     }
 
-    boost::uint8_t octoclock_data[udp_simple::mtu];
+    uint8_t octoclock_data[udp_simple::mtu];
     const octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t*>(octoclock_data);
 
     while(true){
@@ -191,7 +191,7 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
     _type = device::CLOCK;
     device_addrs_t device_args = separate_device_addr(_device_addr);
     // To avoid replicating sequence numbers between sessions
-    _sequence = boost::uint32_t(std::rand());
+    _sequence = uint32_t(std::rand());
 
     ////////////////////////////////////////////////////////////////////
     // Initialize the property tree
@@ -248,7 +248,7 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
         ////////////////////////////////////////////////////////////////////
         // Initialize non-GPSDO sensors
         ////////////////////////////////////////////////////////////////////
-        _tree->create<boost::uint32_t>(oc_path / "time")
+        _tree->create<uint32_t>(oc_path / "time")
             .set_publisher(boost::bind(&octoclock_impl::_get_time, this, oc));
         _tree->create<sensor_value_t>(oc_path / "sensors/ext_ref_detected")
             .set_publisher(boost::bind(&octoclock_impl::_ext_ref_detected, this, oc));
@@ -330,13 +330,13 @@ void octoclock_impl::_set_eeprom(const std::string &oc, const octoclock_eeprom_t
     _oc_dict[oc].eeprom.commit();
 }
 
-boost::uint32_t octoclock_impl::_get_fw_version(const std::string &oc){
+uint32_t octoclock_impl::_get_fw_version(const std::string &oc){
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(++_sequence);
+    pkt_out.sequence = uhd::htonx<uint32_t>(++_sequence);
     pkt_out.len = 0;
     size_t len;
 
-    boost::uint8_t octoclock_data[udp_simple::mtu];
+    uint8_t octoclock_data[udp_simple::mtu];
     const octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t*>(octoclock_data);
 
     UHD_OCTOCLOCK_SEND_AND_RECV(_oc_dict[oc].ctrl_xport, OCTOCLOCK_FW_COMPAT_NUM, OCTOCLOCK_QUERY_CMD, pkt_out, len, octoclock_data);
@@ -348,11 +348,11 @@ boost::uint32_t octoclock_impl::_get_fw_version(const std::string &oc){
 
 void octoclock_impl::_get_state(const std::string &oc){
     octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<boost::uint32_t>(++_sequence);
+    pkt_out.sequence = uhd::htonx<uint32_t>(++_sequence);
     pkt_out.len = 0;
     size_t len = 0;
 
-    boost::uint8_t octoclock_data[udp_simple::mtu];
+    uint8_t octoclock_data[udp_simple::mtu];
     const octoclock_packet_t *pkt_in = reinterpret_cast<octoclock_packet_t*>(octoclock_data);
 
     UHD_OCTOCLOCK_SEND_AND_RECV(_oc_dict[oc].ctrl_xport, _proto_ver, SEND_STATE_CMD, pkt_out, len, octoclock_data);
@@ -408,10 +408,10 @@ sensor_value_t octoclock_impl::_switch_pos(const std::string &oc){
     return sensor_value_t("Switch position", _switch_pos_strings[switch_pos_t(_oc_dict[oc].state.switch_pos)], "");
 }
 
-boost::uint32_t octoclock_impl::_get_time(const std::string &oc){
+uint32_t octoclock_impl::_get_time(const std::string &oc){
     if(_oc_dict[oc].state.gps_detected){
         std::string time_str = _oc_dict[oc].gps->get_sensor("gps_time").value;
-        return boost::lexical_cast<boost::uint32_t>(time_str);
+        return boost::lexical_cast<uint32_t>(time_str);
     }
     else throw uhd::runtime_error("This device cannot return a time.");
 }

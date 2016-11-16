@@ -36,12 +36,12 @@ using namespace uhd::usrp;
 class ad9361_io_spi : public ad9361_io
 {
 public:
-    ad9361_io_spi(uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num) :
+    ad9361_io_spi(uhd::spi_iface::sptr spi_iface, uint32_t slave_num) :
         _spi_iface(spi_iface), _slave_num(slave_num) { }
 
     virtual ~ad9361_io_spi() { }
 
-    virtual boost::uint8_t peek8(boost::uint32_t reg)
+    virtual uint8_t peek8(uint32_t reg)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
@@ -49,16 +49,16 @@ public:
         config.mosi_edge = uhd::spi_config_t::EDGE_FALL;
         config.miso_edge = uhd::spi_config_t::EDGE_FALL;    //TODO (Ashish): FPGA SPI workaround. This should be EDGE_RISE
 
-        boost::uint32_t rd_word = AD9361_SPI_READ_CMD |
-                           ((boost::uint32_t(reg) << AD9361_SPI_ADDR_SHIFT) & AD9361_SPI_ADDR_MASK);
+        uint32_t rd_word = AD9361_SPI_READ_CMD |
+                           ((uint32_t(reg) << AD9361_SPI_ADDR_SHIFT) & AD9361_SPI_ADDR_MASK);
 
-        boost::uint32_t val = (_spi_iface->read_spi(_slave_num, config, rd_word, AD9361_SPI_NUM_BITS));
+        uint32_t val = (_spi_iface->read_spi(_slave_num, config, rd_word, AD9361_SPI_NUM_BITS));
         val &= 0xFF;
 
-        return static_cast<boost::uint8_t>(val);
+        return static_cast<uint8_t>(val);
     }
 
-    virtual void poke8(boost::uint32_t reg, boost::uint8_t val)
+    virtual void poke8(uint32_t reg, uint8_t val)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
@@ -66,24 +66,24 @@ public:
         config.mosi_edge = uhd::spi_config_t::EDGE_FALL;
         config.miso_edge = uhd::spi_config_t::EDGE_FALL;    //TODO (Ashish): FPGA SPI workaround. This should be EDGE_RISE
 
-        boost::uint32_t wr_word = AD9361_SPI_WRITE_CMD |
-                           ((boost::uint32_t(reg) << AD9361_SPI_ADDR_SHIFT) & AD9361_SPI_ADDR_MASK) |
-                           ((boost::uint32_t(val) << AD9361_SPI_DATA_SHIFT) & AD9361_SPI_DATA_MASK);
+        uint32_t wr_word = AD9361_SPI_WRITE_CMD |
+                           ((uint32_t(reg) << AD9361_SPI_ADDR_SHIFT) & AD9361_SPI_ADDR_MASK) |
+                           ((uint32_t(val) << AD9361_SPI_DATA_SHIFT) & AD9361_SPI_DATA_MASK);
         _spi_iface->write_spi(_slave_num, config, wr_word, AD9361_SPI_NUM_BITS);
     }
 
 private:
     uhd::spi_iface::sptr    _spi_iface;
-    boost::uint32_t         _slave_num;
+    uint32_t         _slave_num;
     boost::mutex            _mutex;
 
-    static const boost::uint32_t AD9361_SPI_WRITE_CMD  = 0x00800000;
-    static const boost::uint32_t AD9361_SPI_READ_CMD   = 0x00000000;
-    static const boost::uint32_t AD9361_SPI_ADDR_MASK  = 0x003FFF00;
-    static const boost::uint32_t AD9361_SPI_ADDR_SHIFT = 8;
-    static const boost::uint32_t AD9361_SPI_DATA_MASK  = 0x000000FF;
-    static const boost::uint32_t AD9361_SPI_DATA_SHIFT = 0;
-    static const boost::uint32_t AD9361_SPI_NUM_BITS   = 24;
+    static const uint32_t AD9361_SPI_WRITE_CMD  = 0x00800000;
+    static const uint32_t AD9361_SPI_READ_CMD   = 0x00000000;
+    static const uint32_t AD9361_SPI_ADDR_MASK  = 0x003FFF00;
+    static const uint32_t AD9361_SPI_ADDR_SHIFT = 8;
+    static const uint32_t AD9361_SPI_DATA_MASK  = 0x000000FF;
+    static const uint32_t AD9361_SPI_DATA_SHIFT = 0;
+    static const uint32_t AD9361_SPI_NUM_BITS   = 24;
 };
 
 /***********************************************************************
@@ -98,13 +98,13 @@ public:
         _device.initialize();
     }
 
-    void set_timed_spi(uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num)
+    void set_timed_spi(uhd::spi_iface::sptr spi_iface, uint32_t slave_num)
     {
         _timed_spi = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
         _use_timed_spi();
     }
 
-    void set_safe_spi(uhd::spi_iface::sptr spi_iface, boost::uint32_t slave_num)
+    void set_safe_spi(uhd::spi_iface::sptr spi_iface, uint32_t slave_num)
     {
         _safe_spi = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
     }
@@ -327,7 +327,7 @@ private:
 ad9361_ctrl::sptr ad9361_ctrl::make_spi(
     ad9361_params::sptr client_settings,
     uhd::spi_iface::sptr spi_iface,
-    boost::uint32_t slave_num
+    uint32_t slave_num
 ) {
     boost::shared_ptr<ad9361_io_spi> spi_io_iface = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
     return sptr(new ad9361_ctrl_impl(client_settings, spi_io_iface));

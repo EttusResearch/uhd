@@ -201,8 +201,8 @@ n230_impl::n230_impl(const uhd::device_addr_t& dev_addr)
 
     //Initialize addresses
     std::vector<std::string> ip_addrs(1, dev_addr["addr"]);
-    if (dev_addr.has_key("secondary-addr")) {
-        ip_addrs.push_back(dev_addr["secondary-addr"]);
+    if (dev_addr.has_key("second_addr")) {
+        ip_addrs.push_back(dev_addr["second_addr"]);
     }
 
     //Read EEPROM and perform version checks before talking to HW
@@ -214,8 +214,8 @@ n230_impl::n230_impl(const uhd::device_addr_t& dev_addr)
                             "checks.\nOperating in this mode may cause hardware damage and unstable "
                             "radio performance!"<< std::endl;
     }
-    boost::uint16_t hw_rev = boost::lexical_cast<boost::uint16_t>(mb_eeprom["revision"]);
-    boost::uint16_t hw_rev_compat = boost::lexical_cast<boost::uint16_t>(mb_eeprom["revision_compat"]);
+    uint16_t hw_rev = boost::lexical_cast<uint16_t>(mb_eeprom["revision"]);
+    uint16_t hw_rev_compat = boost::lexical_cast<uint16_t>(mb_eeprom["revision_compat"]);
     if (not recover_mb_eeprom) {
         if (hw_rev_compat > N230_HW_REVISION_COMPAT) {
             throw uhd::runtime_error(str(boost::format(
@@ -411,25 +411,25 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
     //------------------------------------------------------------------
     // MiniSAS GPIO
     //------------------------------------------------------------------
-    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "DDR")
+    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "DDR")
         .set(0)
         .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
             _resource_mgr->get_minisas_gpio_ctrl_sptr(0), gpio_atr::GPIO_DDR, _1));
-    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP1" / "DDR")
+    _tree->create<uint32_t>(mb_path / "gpio" / "FP1" / "DDR")
         .set(0)
         .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
             _resource_mgr->get_minisas_gpio_ctrl_sptr(1), gpio_atr::GPIO_DDR, _1));
-    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "OUT")
+    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "OUT")
         .set(0)
         .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
             _resource_mgr->get_minisas_gpio_ctrl_sptr(0), gpio_atr::GPIO_OUT, _1));
-    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP1" / "OUT")
+    _tree->create<uint32_t>(mb_path / "gpio" / "FP1" / "OUT")
         .set(0)
         .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
             _resource_mgr->get_minisas_gpio_ctrl_sptr(1), gpio_atr::GPIO_OUT, _1));
-    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
+    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
         .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(0)));
-    _tree->create<boost::uint32_t>(mb_path / "gpio" / "FP1" / "READBACK")
+    _tree->create<uint32_t>(mb_path / "gpio" / "FP1" / "READBACK")
         .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(1)));
 
     //------------------------------------------------------------------

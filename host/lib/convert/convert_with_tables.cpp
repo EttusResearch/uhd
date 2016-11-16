@@ -24,7 +24,7 @@ using namespace uhd::convert;
 
 static const size_t sc16_table_len = size_t(1 << 16);
 
-typedef boost::uint16_t (*tohost16_type)(boost::uint16_t);
+typedef uint16_t (*tohost16_type)(uint16_t);
 
 /***********************************************************************
  * Implementation for sc16 to sc8 lookup table
@@ -37,8 +37,8 @@ public:
 
     void set_scalar(const double scalar){
         for (size_t i = 0; i < sc16_table_len; i++){
-            const boost::int16_t val = boost::uint16_t(i);
-            _table[i] = boost::int8_t(boost::math::iround(val * scalar / 32767.));
+            const int16_t val = uint16_t(i);
+            _table[i] = int8_t(boost::math::iround(val * scalar / 32767.));
         }
     }
 
@@ -59,20 +59,20 @@ public:
     item32_t lookup(const sc16_t &in0, const sc16_t &in1){
         if (swap){ //hope this compiles out, its a template constant
             return
-            (item32_t(_table[boost::uint16_t(in1.real())]) << 16) |
-            (item32_t(_table[boost::uint16_t(in1.imag())]) << 24) |
-            (item32_t(_table[boost::uint16_t(in0.real())]) << 0) |
-            (item32_t(_table[boost::uint16_t(in0.imag())]) << 8) ;
+            (item32_t(_table[uint16_t(in1.real())]) << 16) |
+            (item32_t(_table[uint16_t(in1.imag())]) << 24) |
+            (item32_t(_table[uint16_t(in0.real())]) << 0) |
+            (item32_t(_table[uint16_t(in0.imag())]) << 8) ;
         }
         return
-            (item32_t(_table[boost::uint16_t(in1.real())]) << 8) |
-            (item32_t(_table[boost::uint16_t(in1.imag())]) << 0) |
-            (item32_t(_table[boost::uint16_t(in0.real())]) << 24) |
-            (item32_t(_table[boost::uint16_t(in0.imag())]) << 16) ;
+            (item32_t(_table[uint16_t(in1.real())]) << 8) |
+            (item32_t(_table[uint16_t(in1.imag())]) << 0) |
+            (item32_t(_table[uint16_t(in0.real())]) << 24) |
+            (item32_t(_table[uint16_t(in0.imag())]) << 16) ;
     }
 
 private:
-    std::vector<boost::uint8_t> _table;
+    std::vector<uint8_t> _table;
 };
 
 /***********************************************************************
@@ -86,8 +86,8 @@ public:
 
     void set_scalar(const double scalar){
         for (size_t i = 0; i < sc16_table_len; i++){
-            const boost::uint16_t val = tohost(boost::uint16_t(i & 0xffff));
-            _table[i] = type(boost::int16_t(val)*scalar);
+            const uint16_t val = tohost(uint16_t(i & 0xffff));
+            _table[i] = type(int16_t(val)*scalar);
         }
     }
 
@@ -98,8 +98,8 @@ public:
         for (size_t i = 0; i < nsamps; i++){
             const item32_t item = input[i];
             output[i] = std::complex<type>(
-                _table[boost::uint16_t(item >> re_shift)],
-                _table[boost::uint16_t(item >> im_shift)]
+                _table[uint16_t(item >> re_shift)],
+                _table[uint16_t(item >> im_shift)]
             );
         }
     }
@@ -118,7 +118,7 @@ public:
     convert_sc8_item32_1_to_fcxx_1(void): _table(sc16_table_len){}
 
     //special case for sc16 type, 32767 undoes float normalization
-    static type conv(const boost::int8_t &num, const double scalar){
+    static type conv(const int8_t &num, const double scalar){
         if (sizeof(type) == sizeof(s16_t)){
             return type(boost::math::iround(num*scalar*32767));
         }
@@ -127,9 +127,9 @@ public:
 
     void set_scalar(const double scalar){
         for (size_t i = 0; i < sc16_table_len; i++){
-            const boost::uint16_t val = tohost(boost::uint16_t(i & 0xffff));
-            const type real = conv(boost::int8_t(val >> 8), scalar);
-            const type imag = conv(boost::int8_t(val >> 0), scalar);
+            const uint16_t val = tohost(uint16_t(i & 0xffff));
+            const type real = conv(int8_t(val >> 8), scalar);
+            const type imag = conv(int8_t(val >> 0), scalar);
             _table[i] = std::complex<type>(real, imag);
         }
     }
@@ -142,20 +142,20 @@ public:
 
         if ((size_t(inputs[0]) & 0x3) != 0){
             const item32_t item0 = *input++;
-            *output++ = _table[boost::uint16_t(item0 >> hi_shift)];
+            *output++ = _table[uint16_t(item0 >> hi_shift)];
             num_samps--;
         }
 
         const size_t num_pairs = num_samps/2;
         for (size_t i = 0, j = 0; i < num_pairs; i++, j+=2){
             const item32_t item_i = (input[i]);
-            output[j] = _table[boost::uint16_t(item_i >> lo_shift)];
-            output[j + 1] = _table[boost::uint16_t(item_i >> hi_shift)];
+            output[j] = _table[uint16_t(item_i >> lo_shift)];
+            output[j + 1] = _table[uint16_t(item_i >> hi_shift)];
         }
 
         if (num_samps != num_pairs*2){
             const item32_t item_n = input[num_pairs];
-            output[num_samps-1] = _table[boost::uint16_t(item_n >> lo_shift)];
+            output[num_samps-1] = _table[uint16_t(item_n >> lo_shift)];
         }
     }
 

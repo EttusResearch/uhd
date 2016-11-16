@@ -63,13 +63,13 @@ using namespace uhd::usrp;
 ////////////////////////////////////////////////////////////////////////
 
 //negative sum of bytes excluding checksum byte
-static boost::uint8_t checksum(const byte_vector_t &bytes){
+static uint8_t checksum(const byte_vector_t &bytes){
     int sum = 0;
     for (size_t i = 0; i < std::min(bytes.size(), size_t(DB_EEPROM_CHKSUM)); i++){
         sum -= int(bytes.at(i));
     }
     UHD_LOGV(often) << boost::format("sum: 0x%02x") % sum << std::endl;
-    return boost::uint8_t(sum);
+    return uint8_t(sum);
 }
 
 dboard_eeprom_t::dboard_eeprom_t(void){
@@ -77,7 +77,7 @@ dboard_eeprom_t::dboard_eeprom_t(void){
     serial = "";
 }
 
-void dboard_eeprom_t::load(i2c_iface &iface, boost::uint8_t addr){
+void dboard_eeprom_t::load(i2c_iface &iface, uint8_t addr){
     byte_vector_t bytes = iface.read_eeprom(addr, 0, DB_EEPROM_CLEN);
 
     std::ostringstream ss;
@@ -95,8 +95,8 @@ void dboard_eeprom_t::load(i2c_iface &iface, boost::uint8_t addr){
 
         //parse the ids
         id = dboard_id_t::from_uint16(0
-            | (boost::uint16_t(bytes[DB_EEPROM_ID_LSB]) << 0)
-            | (boost::uint16_t(bytes[DB_EEPROM_ID_MSB]) << 8)
+            | (uint16_t(bytes[DB_EEPROM_ID_LSB]) << 0)
+            | (uint16_t(bytes[DB_EEPROM_ID_MSB]) << 8)
         );
 
         //parse the serial
@@ -106,9 +106,9 @@ void dboard_eeprom_t::load(i2c_iface &iface, boost::uint8_t addr){
         );
 
         //parse the revision
-        const boost::uint16_t rev_num = 0
-            | (boost::uint16_t(bytes[DB_EEPROM_REV_LSB]) << 0)
-            | (boost::uint16_t(bytes[DB_EEPROM_REV_MSB]) << 8)
+        const uint16_t rev_num = 0
+            | (uint16_t(bytes[DB_EEPROM_REV_LSB]) << 0)
+            | (uint16_t(bytes[DB_EEPROM_REV_MSB]) << 8)
         ;
         if (rev_num != 0 and rev_num != 0xffff){
             revision = boost::lexical_cast<std::string>(rev_num);
@@ -120,13 +120,13 @@ void dboard_eeprom_t::load(i2c_iface &iface, boost::uint8_t addr){
     }
 }
 
-void dboard_eeprom_t::store(i2c_iface &iface, boost::uint8_t addr) const{
+void dboard_eeprom_t::store(i2c_iface &iface, uint8_t addr) const{
     byte_vector_t bytes(DB_EEPROM_CLEN, 0); //defaults to all zeros
     bytes[DB_EEPROM_MAGIC] = DB_EEPROM_MAGIC_VALUE;
 
     //load the id bytes
-    bytes[DB_EEPROM_ID_LSB] = boost::uint8_t(id.to_uint16() >> 0);
-    bytes[DB_EEPROM_ID_MSB] = boost::uint8_t(id.to_uint16() >> 8);
+    bytes[DB_EEPROM_ID_LSB] = uint8_t(id.to_uint16() >> 0);
+    bytes[DB_EEPROM_ID_MSB] = uint8_t(id.to_uint16() >> 8);
 
     //load the serial bytes
     byte_vector_t ser_bytes = string_to_bytes(serial, DB_EEPROM_SERIAL_LEN);
@@ -134,9 +134,9 @@ void dboard_eeprom_t::store(i2c_iface &iface, boost::uint8_t addr) const{
 
     //load the revision bytes
     if (not revision.empty()){
-        const boost::uint16_t rev_num = boost::lexical_cast<boost::uint16_t>(revision);
-        bytes[DB_EEPROM_REV_LSB] = boost::uint8_t(rev_num >> 0);
-        bytes[DB_EEPROM_REV_MSB] = boost::uint8_t(rev_num >> 8);
+        const uint16_t rev_num = boost::lexical_cast<uint16_t>(revision);
+        bytes[DB_EEPROM_REV_LSB] = uint8_t(rev_num >> 0);
+        bytes[DB_EEPROM_REV_MSB] = uint8_t(rev_num >> 8);
     }
 
     //load the checksum

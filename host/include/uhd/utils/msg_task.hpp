@@ -24,15 +24,15 @@
 #include <boost/function.hpp>
 #include <boost/utility.hpp>
 #include <boost/optional/optional.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <vector>
 
 namespace uhd{
 	class UHD_API msg_task : boost::noncopyable{
         public:
             typedef boost::shared_ptr<msg_task> sptr;
-            typedef std::vector<boost::uint8_t> msg_payload_t;
-            typedef std::pair<boost::uint32_t, msg_payload_t > msg_type_t;
+            typedef std::vector<uint8_t> msg_payload_t;
+            typedef std::pair<uint32_t, msg_payload_t > msg_type_t;
             typedef boost::function<boost::optional<msg_type_t>(void)> task_fcn_type;
 
             /*
@@ -40,15 +40,15 @@ namespace uhd{
              * Such stranded messages get pushed into a dump queue.
              * With this function radio_ctrl_core can check if one of the messages meant for it got stranded.
              */
-            virtual msg_payload_t get_msg_from_dump_queue(boost::uint32_t sid) = 0;
+            virtual msg_payload_t get_msg_from_dump_queue(uint32_t sid) = 0;
 
-            UHD_INLINE static std::vector<boost::uint8_t> buff_to_vector(boost::uint8_t* p, size_t n) {
+            UHD_INLINE static std::vector<uint8_t> buff_to_vector(uint8_t* p, size_t n) {
                 if(p and n > 0){
-                    std::vector<boost::uint8_t> v(n);
+                    std::vector<uint8_t> v(n);
                     memcpy(&v.front(), p, n);
                     return v;
                 }
-                return std::vector<boost::uint8_t>();
+                return std::vector<uint8_t>();
             }
 
             virtual ~msg_task(void) = 0;

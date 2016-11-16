@@ -192,7 +192,7 @@ public:
     }
 
     //! Matches a NoC ID through substring matching
-    static bool match_noc_id(const std::string &lhs_, boost::uint64_t rhs_)
+    static bool match_noc_id(const std::string &lhs_, uint64_t rhs_)
     {
         // Sanitize input: Make both values strings with all uppercase
         // characters and no leading 0x. Check inputs are valid.
@@ -213,7 +213,7 @@ public:
     }
 
     //! Open the file at filename and see if it's a block definition for the given NoC ID
-    static bool has_noc_id(boost::uint64_t noc_id, const fs::path &filename)
+    static bool has_noc_id(uint64_t noc_id, const fs::path &filename)
     {
         pt::ptree propt;
         try {
@@ -230,7 +230,7 @@ public:
         return false;
     }
 
-    blockdef_xml_impl(const fs::path &filename, boost::uint64_t noc_id, xml_repr_t type=DESCRIBES_BLOCK) :
+    blockdef_xml_impl(const fs::path &filename, uint64_t noc_id, xml_repr_t type=DESCRIBES_BLOCK) :
         _type(type),
         _noc_id(noc_id)
     {
@@ -282,7 +282,7 @@ public:
         return _pt.get<std::string>("nocblock.blockname");
     }
 
-    boost::uint64_t noc_id() const
+    uint64_t noc_id() const
     {
         return _noc_id;
     }
@@ -405,7 +405,7 @@ private:
     //! Tells us if is this for a NoC block, or a component.
     const xml_repr_t _type;
     //! The NoC-ID as reported (there may be several valid NoC IDs, this is the one used)
-    const boost::uint64_t _noc_id;
+    const uint64_t _noc_id;
 
     //! This is a boost property tree, not the same as
     // our property tree.
@@ -413,7 +413,7 @@ private:
 
 };
 
-blockdef::sptr blockdef::make_from_noc_id(boost::uint64_t noc_id)
+blockdef::sptr blockdef::make_from_noc_id(uint64_t noc_id)
 {
     std::vector<fs::path> paths = blockdef_xml_impl::get_xml_paths();
     // Iterate over all paths

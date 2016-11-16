@@ -20,7 +20,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <complex>
@@ -159,20 +159,20 @@ UHD_STATIC_BLOCK(convert_register_item_sizes){
     //register standard complex types
     convert::register_bytes_per_item("fc64", sizeof(std::complex<double>));
     convert::register_bytes_per_item("fc32", sizeof(std::complex<float>));
-    convert::register_bytes_per_item("sc64", sizeof(std::complex<boost::int64_t>));
-    convert::register_bytes_per_item("sc32", sizeof(std::complex<boost::int32_t>));
-    convert::register_bytes_per_item("sc16", sizeof(std::complex<boost::int16_t>));
-    convert::register_bytes_per_item("sc8", sizeof(std::complex<boost::int8_t>));
+    convert::register_bytes_per_item("sc64", sizeof(std::complex<int64_t>));
+    convert::register_bytes_per_item("sc32", sizeof(std::complex<int32_t>));
+    convert::register_bytes_per_item("sc16", sizeof(std::complex<int16_t>));
+    convert::register_bytes_per_item("sc8", sizeof(std::complex<int8_t>));
 
     //register standard real types
     convert::register_bytes_per_item("f64", sizeof(double));
     convert::register_bytes_per_item("f32", sizeof(float));
-    convert::register_bytes_per_item("s64", sizeof(boost::int64_t));
-    convert::register_bytes_per_item("s32", sizeof(boost::int32_t));
-    convert::register_bytes_per_item("s16", sizeof(boost::int16_t));
-    convert::register_bytes_per_item("s8", sizeof(boost::int8_t));
-    convert::register_bytes_per_item("u8", sizeof(boost::uint8_t));
+    convert::register_bytes_per_item("s64", sizeof(int64_t));
+    convert::register_bytes_per_item("s32", sizeof(int32_t));
+    convert::register_bytes_per_item("s16", sizeof(int16_t));
+    convert::register_bytes_per_item("s8", sizeof(int8_t));
+    convert::register_bytes_per_item("u8", sizeof(uint8_t));
 
     //register VITA types
-    convert::register_bytes_per_item("item32", sizeof(boost::int32_t));
+    convert::register_bytes_per_item("item32", sizeof(int32_t));
 }

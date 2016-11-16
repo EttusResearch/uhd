@@ -107,35 +107,35 @@ public:
     void write_aux_dac(unit_t, aux_dac_t, double);
     double read_aux_adc(unit_t, aux_adc_t);
 
-    void set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_pin_ctrl(unit_t unit);
-    void set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_atr_reg(unit_t unit, atr_reg_t reg);
-    void set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_gpio_ddr(unit_t unit);
-    void set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_gpio_out(unit_t unit);
-    boost::uint32_t read_gpio(unit_t unit);
+    void set_pin_ctrl(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
+    uint32_t get_pin_ctrl(unit_t unit);
+    void set_atr_reg(unit_t unit, atr_reg_t reg, uint32_t value, uint32_t mask = 0xffffffff);
+    uint32_t get_atr_reg(unit_t unit, atr_reg_t reg);
+    void set_gpio_ddr(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
+    uint32_t get_gpio_ddr(unit_t unit);
+    void set_gpio_out(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
+    uint32_t get_gpio_out(unit_t unit);
+    uint32_t read_gpio(unit_t unit);
 
-    void _set_pin_ctrl(unit_t, boost::uint16_t);
-    void _set_atr_reg(unit_t, atr_reg_t, boost::uint16_t);
-    void _set_gpio_ddr(unit_t, boost::uint16_t);
-    void _set_gpio_out(unit_t, boost::uint16_t);
+    void _set_pin_ctrl(unit_t, uint16_t);
+    void _set_atr_reg(unit_t, atr_reg_t, uint16_t);
+    void _set_gpio_ddr(unit_t, uint16_t);
+    void _set_gpio_out(unit_t, uint16_t);
 
     void set_command_time(const uhd::time_spec_t& t);
     uhd::time_spec_t get_command_time(void);
 
-    void write_i2c(boost::uint16_t, const byte_vector_t &);
-    byte_vector_t read_i2c(boost::uint16_t, size_t);
+    void write_i2c(uint16_t, const byte_vector_t &);
+    byte_vector_t read_i2c(uint16_t, size_t);
 
     void write_spi(unit_t unit,
                    const spi_config_t &config,
-                   boost::uint32_t data,
+                   uint32_t data,
                    size_t num_bits);
 
-    boost::uint32_t read_write_spi(unit_t unit,
+    uint32_t read_write_spi(unit_t unit,
                                    const spi_config_t &config,
-                                   boost::uint32_t data,
+                                   uint32_t data,
                                    size_t num_bits);
 
     void set_clock_rate(unit_t, double);
@@ -152,8 +152,8 @@ private:
     const usrp1_impl::dboard_slot_t _dboard_slot;
     const double &_master_clock_rate;
     const dboard_id_t _rx_dboard_id;
-    uhd::dict<unit_t, boost::uint16_t> _pin_ctrl, _gpio_out, _gpio_ddr;
-    uhd::dict<unit_t, uhd::dict<atr_reg_t, boost::uint16_t> > _atr_regs;
+    uhd::dict<unit_t, uint16_t> _pin_ctrl, _gpio_out, _gpio_ddr;
+    uhd::dict<unit_t, uhd::dict<atr_reg_t, uint16_t> > _atr_regs;
 };
 
 /***********************************************************************
@@ -238,41 +238,41 @@ static T shadow_it(T &shadow, const T &value, const T &mask){
     return shadow;
 }
 
-void usrp1_dboard_iface::set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask){
-    _set_pin_ctrl(unit, shadow_it(_pin_ctrl[unit], static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask)));
+void usrp1_dboard_iface::set_pin_ctrl(unit_t unit, uint32_t value, uint32_t mask){
+    _set_pin_ctrl(unit, shadow_it(_pin_ctrl[unit], static_cast<uint16_t>(value), static_cast<uint16_t>(mask)));
 }
 
-boost::uint32_t usrp1_dboard_iface::get_pin_ctrl(unit_t unit){
+uint32_t usrp1_dboard_iface::get_pin_ctrl(unit_t unit){
     return _pin_ctrl[unit];
 }
 
-void usrp1_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask){
-    _set_atr_reg(unit, reg, shadow_it(_atr_regs[unit][reg], static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask)));
+void usrp1_dboard_iface::set_atr_reg(unit_t unit, atr_reg_t reg, uint32_t value, uint32_t mask){
+    _set_atr_reg(unit, reg, shadow_it(_atr_regs[unit][reg], static_cast<uint16_t>(value), static_cast<uint16_t>(mask)));
 }
 
-boost::uint32_t usrp1_dboard_iface::get_atr_reg(unit_t unit, atr_reg_t reg){
+uint32_t usrp1_dboard_iface::get_atr_reg(unit_t unit, atr_reg_t reg){
     return _atr_regs[unit][reg];
 }
 
-void usrp1_dboard_iface::set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask){
-    _set_gpio_ddr(unit, shadow_it(_gpio_ddr[unit], static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask)));
+void usrp1_dboard_iface::set_gpio_ddr(unit_t unit, uint32_t value, uint32_t mask){
+    _set_gpio_ddr(unit, shadow_it(_gpio_ddr[unit], static_cast<uint16_t>(value), static_cast<uint16_t>(mask)));
 }
 
-boost::uint32_t usrp1_dboard_iface::get_gpio_ddr(unit_t unit){
+uint32_t usrp1_dboard_iface::get_gpio_ddr(unit_t unit){
     return _gpio_ddr[unit];
 }
 
-void usrp1_dboard_iface::set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask){
-    _set_gpio_out(unit, shadow_it(_gpio_out[unit], static_cast<boost::uint16_t>(value), static_cast<boost::uint16_t>(mask)));
+void usrp1_dboard_iface::set_gpio_out(unit_t unit, uint32_t value, uint32_t mask){
+    _set_gpio_out(unit, shadow_it(_gpio_out[unit], static_cast<uint16_t>(value), static_cast<uint16_t>(mask)));
 }
 
-boost::uint32_t usrp1_dboard_iface::get_gpio_out(unit_t unit){
+uint32_t usrp1_dboard_iface::get_gpio_out(unit_t unit){
     return _gpio_out[unit];
 }
 
-boost::uint32_t usrp1_dboard_iface::read_gpio(unit_t unit)
+uint32_t usrp1_dboard_iface::read_gpio(unit_t unit)
 {
-    boost::uint32_t out_value;
+    uint32_t out_value;
 
     if (_dboard_slot == usrp1_impl::DBOARD_SLOT_A)
         out_value = _iface->peek32(1);
@@ -283,15 +283,15 @@ boost::uint32_t usrp1_dboard_iface::read_gpio(unit_t unit)
 
     switch(unit) {
     case UNIT_RX:
-        return (boost::uint32_t)((out_value >> 16) & 0x0000ffff);
+        return (uint32_t)((out_value >> 16) & 0x0000ffff);
     case UNIT_TX:
-        return (boost::uint32_t)((out_value >>  0) & 0x0000ffff);
+        return (uint32_t)((out_value >>  0) & 0x0000ffff);
     default: UHD_THROW_INVALID_CODE_PATH();
     }
     UHD_ASSERT_THROW(false);
 }
 
-void usrp1_dboard_iface::_set_pin_ctrl(unit_t unit, boost::uint16_t value)
+void usrp1_dboard_iface::_set_pin_ctrl(unit_t unit, uint16_t value)
 {
     switch(unit) {
     case UNIT_RX:
@@ -310,7 +310,7 @@ void usrp1_dboard_iface::_set_pin_ctrl(unit_t unit, boost::uint16_t value)
     }
 }
 
-void usrp1_dboard_iface::_set_gpio_ddr(unit_t unit, boost::uint16_t value)
+void usrp1_dboard_iface::_set_gpio_ddr(unit_t unit, uint16_t value)
 {
     switch(unit) {
     case UNIT_RX:
@@ -329,7 +329,7 @@ void usrp1_dboard_iface::_set_gpio_ddr(unit_t unit, boost::uint16_t value)
     }
 }
 
-void usrp1_dboard_iface::_set_gpio_out(unit_t unit, boost::uint16_t value)
+void usrp1_dboard_iface::_set_gpio_out(unit_t unit, uint16_t value)
 {
     switch(unit) {
     case UNIT_RX:
@@ -349,7 +349,7 @@ void usrp1_dboard_iface::_set_gpio_out(unit_t unit, boost::uint16_t value)
 }
 
 void usrp1_dboard_iface::_set_atr_reg(unit_t unit,
-                                     atr_reg_t atr, boost::uint16_t value)
+                                     atr_reg_t atr, uint16_t value)
 {
     // Ignore unsupported states
     if ((atr == ATR_REG_IDLE) || (atr == ATR_REG_TX_ONLY))
@@ -397,7 +397,7 @@ void usrp1_dboard_iface::_set_atr_reg(unit_t unit,
  * \param slot the side (A or B) the dboard is attached
  * \return the slave device number
  */
-static boost::uint32_t unit_to_otw_spi_dev(dboard_iface::unit_t unit,
+static uint32_t unit_to_otw_spi_dev(dboard_iface::unit_t unit,
                                            usrp1_impl::dboard_slot_t slot)
 {
     switch(unit) {
@@ -423,16 +423,16 @@ static boost::uint32_t unit_to_otw_spi_dev(dboard_iface::unit_t unit,
 
 void usrp1_dboard_iface::write_spi(unit_t unit,
                                    const spi_config_t &config,
-                                   boost::uint32_t data,
+                                   uint32_t data,
                                    size_t num_bits)
 {
     _iface->write_spi(unit_to_otw_spi_dev(unit, _dboard_slot),
                          config, data, num_bits);
 }
 
-boost::uint32_t usrp1_dboard_iface::read_write_spi(unit_t unit,
+uint32_t usrp1_dboard_iface::read_write_spi(unit_t unit,
                                                    const spi_config_t &config,
-                                                   boost::uint32_t data,
+                                                   uint32_t data,
                                                    size_t num_bits)
 {
     return _iface->read_spi(unit_to_otw_spi_dev(unit, _dboard_slot),
@@ -442,13 +442,13 @@ boost::uint32_t usrp1_dboard_iface::read_write_spi(unit_t unit,
 /***********************************************************************
  * I2C
  **********************************************************************/
-void usrp1_dboard_iface::write_i2c(boost::uint16_t addr,
+void usrp1_dboard_iface::write_i2c(uint16_t addr,
                                    const byte_vector_t &bytes)
 {
     return _iface->write_i2c(addr, bytes);
 }
 
-byte_vector_t usrp1_dboard_iface::read_i2c(boost::uint16_t addr,
+byte_vector_t usrp1_dboard_iface::read_i2c(uint16_t addr,
                                            size_t num_bytes)
 {
     return _iface->read_i2c(addr, num_bytes);

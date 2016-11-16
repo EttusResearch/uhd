@@ -749,9 +749,9 @@ public:
         return _tree->list(mb_root(mboard) / "sensors");
     }
 
-    void set_user_register(const boost::uint8_t addr, const boost::uint32_t data, size_t mboard){
+    void set_user_register(const uint8_t addr, const uint32_t data, size_t mboard){
         if (mboard != ALL_MBOARDS){
-            typedef std::pair<boost::uint8_t, boost::uint32_t> user_reg_t;
+            typedef std::pair<uint8_t, uint32_t> user_reg_t;
             _tree->access<user_reg_t>(mb_root(mboard) / "user/regs").set(user_reg_t(addr, data));
             return;
         }
@@ -1544,13 +1544,13 @@ public:
         return banks;
     }
 
-    void set_gpio_attr(const std::string &bank, const std::string &attr, const boost::uint32_t value, const boost::uint32_t mask, const size_t mboard)
+    void set_gpio_attr(const std::string &bank, const std::string &attr, const uint32_t value, const uint32_t mask, const size_t mboard)
     {
         if (_tree->exists(mb_root(mboard) / "gpio" / bank))
         {
-            const boost::uint32_t current = _tree->access<boost::uint32_t>(mb_root(mboard) / "gpio" / bank / attr).get();
-            const boost::uint32_t new_value = (current & ~mask) | (value & mask);
-            _tree->access<boost::uint32_t>(mb_root(mboard) / "gpio" / bank / attr).set(new_value);
+            const uint32_t current = _tree->access<uint32_t>(mb_root(mboard) / "gpio" / bank / attr).get();
+            const uint32_t new_value = (current & ~mask) | (value & mask);
+            _tree->access<uint32_t>(mb_root(mboard) / "gpio" / bank / attr).set(new_value);
             return;
         }
         if (bank.size() > 2 and bank[1] == 'X')
@@ -1558,21 +1558,21 @@ public:
             const std::string name = bank.substr(2);
             const dboard_iface::unit_t unit = (bank[0] == 'R')? dboard_iface::UNIT_RX : dboard_iface::UNIT_TX;
             dboard_iface::sptr iface = _tree->access<dboard_iface::sptr>(mb_root(mboard) / "dboards" / name / "iface").get();
-            if (attr == "CTRL") iface->set_pin_ctrl(unit, boost::uint16_t(value), boost::uint16_t(mask));
-            if (attr == "DDR") iface->set_gpio_ddr(unit, boost::uint16_t(value), boost::uint16_t(mask));
-            if (attr == "OUT") iface->set_gpio_out(unit, boost::uint16_t(value), boost::uint16_t(mask));
-            if (attr == "ATR_0X") iface->set_atr_reg(unit, gpio_atr::ATR_REG_IDLE, boost::uint16_t(value), boost::uint16_t(mask));
-            if (attr == "ATR_RX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY, boost::uint16_t(value), boost::uint16_t(mask));
-            if (attr == "ATR_TX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY, boost::uint16_t(value), boost::uint16_t(mask));
-            if (attr == "ATR_XX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX, boost::uint16_t(value), boost::uint16_t(mask));
+            if (attr == "CTRL") iface->set_pin_ctrl(unit, uint16_t(value), uint16_t(mask));
+            if (attr == "DDR") iface->set_gpio_ddr(unit, uint16_t(value), uint16_t(mask));
+            if (attr == "OUT") iface->set_gpio_out(unit, uint16_t(value), uint16_t(mask));
+            if (attr == "ATR_0X") iface->set_atr_reg(unit, gpio_atr::ATR_REG_IDLE, uint16_t(value), uint16_t(mask));
+            if (attr == "ATR_RX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY, uint16_t(value), uint16_t(mask));
+            if (attr == "ATR_TX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY, uint16_t(value), uint16_t(mask));
+            if (attr == "ATR_XX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX, uint16_t(value), uint16_t(mask));
         }
     }
 
-    boost::uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard)
+    uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard)
     {
         if (_tree->exists(mb_root(mboard) / "gpio" / bank))
         {
-            return boost::uint32_t(_tree->access<boost::uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get());
+            return uint32_t(_tree->access<uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get());
         }
         if (bank.size() > 2 and bank[1] == 'X')
         {
@@ -1591,7 +1591,7 @@ public:
         return 0;
     }
 
-    void write_register(const std::string &path, const boost::uint32_t field, const boost::uint64_t value, const size_t mboard)
+    void write_register(const std::string &path, const uint32_t field, const uint64_t value, const size_t mboard)
     {
         if (_tree->exists(mb_root(mboard) / "registers"))
         {
@@ -1606,16 +1606,16 @@ public:
             switch (reg.get_bitwidth()) {
             case 16:
                 if (reg.is_readable())
-                    uhd::soft_register_base::cast<uhd::soft_reg16_rw_t>(reg).write(field, static_cast<boost::uint16_t>(value));
+                    uhd::soft_register_base::cast<uhd::soft_reg16_rw_t>(reg).write(field, static_cast<uint16_t>(value));
                 else
-                    uhd::soft_register_base::cast<uhd::soft_reg16_wo_t>(reg).write(field, static_cast<boost::uint16_t>(value));
+                    uhd::soft_register_base::cast<uhd::soft_reg16_wo_t>(reg).write(field, static_cast<uint16_t>(value));
             break;
 
             case 32:
                 if (reg.is_readable())
-                    uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).write(field, static_cast<boost::uint32_t>(value));
+                    uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).write(field, static_cast<uint32_t>(value));
                 else
-                    uhd::soft_register_base::cast<uhd::soft_reg32_wo_t>(reg).write(field, static_cast<boost::uint32_t>(value));
+                    uhd::soft_register_base::cast<uhd::soft_reg32_wo_t>(reg).write(field, static_cast<uint32_t>(value));
             break;
 
             case 64:
@@ -1634,7 +1634,7 @@ public:
         }
     }
 
-    boost::uint64_t read_register(const std::string &path, const boost::uint32_t field, const size_t mboard)
+    uint64_t read_register(const std::string &path, const uint32_t field, const size_t mboard)
     {
         if (_tree->exists(mb_root(mboard) / "registers"))
         {
@@ -1649,16 +1649,16 @@ public:
             switch (reg.get_bitwidth()) {
             case 16:
                 if (reg.is_writable())
-                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg16_rw_t>(reg).read(field));
+                    return static_cast<uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg16_rw_t>(reg).read(field));
                 else
-                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg16_ro_t>(reg).read(field));
+                    return static_cast<uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg16_ro_t>(reg).read(field));
             break;
 
             case 32:
                 if (reg.is_writable())
-                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).read(field));
+                    return static_cast<uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).read(field));
                 else
-                    return static_cast<boost::uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_ro_t>(reg).read(field));
+                    return static_cast<uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_ro_t>(reg).read(field));
             break;
 
             case 64:

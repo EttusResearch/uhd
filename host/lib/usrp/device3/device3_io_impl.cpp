@@ -39,7 +39,7 @@ using namespace uhd::usrp;
 using namespace uhd::transport;
 
 //! CVITA uses 12-Bit sequence numbers
-static const boost::uint32_t HW_SEQ_NUM_MASK = 0xfff;
+static const uint32_t HW_SEQ_NUM_MASK = 0xfff;
 
 
 /***********************************************************************
@@ -103,34 +103,47 @@ void generate_channel_list(
         std::vector<device_addr_t> &chan_args
 ) {
     uhd::stream_args_t args = args_;
-    BOOST_FOREACH(const size_t chan_idx, args.channels) {
-        //// Find block ID for this channel:
-        if (args.args.has_key(str(boost::format("block_id%d") % chan_idx))) {
-            chan_list.push_back(
-                uhd::rfnoc::block_id_t(
-                    args.args.pop(str(boost::format("block_id%d") % chan_idx))
-                )
-            );
-            chan_args.push_back(args.args);
+    std::vector<uhd::rfnoc::block_id_t> chan_list_(args.channels.size());
+    std::vector<device_addr_t> chan_args_(args.channels.size());
+
+    for (size_t i = 0; i < args.channels.size(); i++)
+    {
+        // Extract block ID
+        size_t chan_idx = args.channels[i];
+        std::string key = str(boost::format("block_id%d") % chan_idx);
+        if (args.args.has_key(key)) {
+            chan_list_[i] = args.args.pop(key);
         } else if (args.args.has_key("block_id")) {
-            chan_list.push_back(args.args.get("block_id"));
-            chan_args.push_back(args.args);
-            chan_args.back().pop("block_id");
+            chan_list[i] = args.args["block_id"];
         } else {
             throw uhd::runtime_error(str(
                 boost::format("Cannot create streamers: No block_id specified for channel %d.")
                 % chan_idx
             ));
         }
-        //// Find block port for this channel
-        if (args.args.has_key(str(boost::format("block_port%d") % chan_idx))) {
-            chan_args.back()["block_port"] = args.args.pop(str(boost::format("block_port%d") % chan_idx));
-        } else if (args.args.has_key("block_port")) {
-            // We have to write it again, because the chan args from the
-            // property tree might have overwritten this
-            chan_args.back()["block_port"] = args.args.get("block_port");
+
+        // Split off known channel specific args
+        key = str(boost::format("block_port%d") % chan_idx);
+        if (args.args.has_key(key)) {
+            chan_args_[i]["block_port"] = args.args.pop(key);
+        }
+        key = str(boost::format("radio_id%d") % chan_idx);
+        if (args.args.has_key(key)) {
+            chan_args_[i]["radio_id"] = args.args.pop(key);
+        }
+        key = str(boost::format("radio_port%d") % chan_idx);
+        if (args.args.has_key(key)) {
+            chan_args_[i]["radio_port"] = args.args.pop(key);
         }
     }
+
+    // Add all remaining args to all channel args
+    BOOST_FOREACH(device_addr_t &chan_arg, chan_args_) {
+        chan_arg = chan_arg.to_string() + "," + args.args.to_string();
+    }
+
+    chan_list = chan_list_;
+    chan_args = chan_args_;
 }
 
 
@@ -223,7 +236,7 @@ static void handle_rx_flowctrl(
     if (not buff) {
         throw uhd::runtime_error("handle_rx_flowctrl timed out getting a send buffer");
     }
-    boost::uint32_t *pkt = buff->cast<boost::uint32_t *>();
+    uint32_t *pkt = buff->cast<uint32_t *>();
 
     // Recover sequence number. The sequence numbers handled by the streamers
     // are 12 Bits, but we want to know the 32-Bit sequence number.
@@ -242,7 +255,7 @@ static void handle_rx_flowctrl(
     vrt::if_packet_info_t packet_info;
     packet_info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_FC;
     packet_info.num_payload_words32 = RXFC_PACKET_LEN_IN_WORDS;
-    packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(boost::uint32_t);
+    packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(uint32_t);
     packet_info.packet_count = seq32;
     packet_info.sob = false;
     packet_info.eob = false;
@@ -257,14 +270,14 @@ static void handle_rx_flowctrl(
         // Load Header:
         vrt::chdr::if_hdr_pack_be(pkt, packet_info);
         // Load Payload: (the sequence number)
-        pkt[packet_info.num_header_words32+RXFC_CMD_CODE_OFFSET] = uhd::htonx<boost::uint32_t>(0);
-        pkt[packet_info.num_header_words32+RXFC_SEQ_NUM_OFFSET]  = uhd::htonx<boost::uint32_t>(seq32);
+        pkt[packet_info.num_header_words32+RXFC_CMD_CODE_OFFSET] = uhd::htonx<uint32_t>(0);
+        pkt[packet_info.num_header_words32+RXFC_SEQ_NUM_OFFSET]  = uhd::htonx<uint32_t>(seq32);
     } else {
         // Load Header:
         vrt::chdr::if_hdr_pack_le(pkt, packet_info);
         // Load Payload: (the sequence number)
-        pkt[packet_info.num_header_words32+RXFC_CMD_CODE_OFFSET] = uhd::htowx<boost::uint32_t>(0);
-        pkt[packet_info.num_header_words32+RXFC_SEQ_NUM_OFFSET]  = uhd::htowx<boost::uint32_t>(seq32);
+        pkt[packet_info.num_header_words32+RXFC_CMD_CODE_OFFSET] = uhd::htowx<uint32_t>(0);
+        pkt[packet_info.num_header_words32+RXFC_SEQ_NUM_OFFSET]  = uhd::htowx<uint32_t>(seq32);
     }
 
     //std::cout << "  SID=" << std::hex << sid << " hdr bits=" << packet_info.packet_type << " seq32=" << seq32 << std::endl;
@@ -277,7 +290,7 @@ static void handle_rx_flowctrl(
     //}
 
     //send the buffer over the interface
-    buff->commit(sizeof(boost::uint32_t)*(packet_info.num_packet_words32));
+    buff->commit(sizeof(uint32_t)*(packet_info.num_packet_words32));
 }
 
 /***********************************************************************
@@ -371,11 +384,11 @@ static void handle_tx_async_msgs(
 
     //extract packet info
     vrt::if_packet_info_t if_packet_info;
-    if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
-    const boost::uint32_t *packet_buff = buff->cast<const boost::uint32_t *>();
+    if_packet_info.num_packet_words32 = buff->size()/sizeof(uint32_t);
+    const uint32_t *packet_buff = buff->cast<const uint32_t *>();
 
     //unpacking can fail
-    boost::uint32_t (*endian_conv)(boost::uint32_t) = uhd::ntohx;
+    uint32_t (*endian_conv)(uint32_t) = uhd::ntohx;
     try
     {
         if (endianness == ENDIANNESS_BIG)
@@ -558,7 +571,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
 
         //init some streamer stuff
         std::string conv_endianness;
-        if (get_transport_endianness(mb_index) == ENDIANNESS_BIG) {
+        if (xport.endianness == ENDIANNESS_BIG) {
             my_streamer->set_vrt_unpacker(&vrt::chdr::if_hdr_unpack_be);
             conv_endianness = "be";
         } else {
@@ -611,7 +624,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
                 &handle_rx_flowctrl,
                 xport.send_sid,
                 xport.send,
-                get_transport_endianness(mb_index),
+                xport.endianness,
                 fc_cache,
                 _1
             ),
@@ -748,7 +761,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         //init some streamer stuff
         std::string conv_endianness;
-        if (get_transport_endianness(mb_index) == ENDIANNESS_BIG) {
+        if (xport.endianness == ENDIANNESS_BIG) {
             my_streamer->set_vrt_packer(&vrt::chdr::if_hdr_pack_be);
             conv_endianness = "be";
         } else {
@@ -796,18 +809,41 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
                     &handle_tx_async_msgs,
                     fc_cache,
                     xport.recv,
-                    get_transport_endianness(mb_index),
+                    xport.endianness,
                     tick_rate_retriever
                 )
         );
 
         blk_ctrl->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.recv_sid.get_dst(), block_port);
         UHD_STREAMER_LOG() << "[TX Streamer] resp_in_dst_sid == " << boost::format("0x%04X") % xport.recv_sid.get_dst() << std::endl;
-        // Find all downstream radio nodes and set their response in SID to the host
-        std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
-        UHD_STREAMER_LOG() << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
-        BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, downstream_radio_nodes) {
-            node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), block_port);
+
+        // FIXME: Once there is a better way to map the radio block and port
+        // to the channel or another way to receive asynchronous messages that
+        // is not in-band, this should be removed.
+        if (args.args.has_key("radio_id") and args.args.has_key("radio_port"))
+        {
+            // Find downstream radio node and set the response SID to the host
+            uhd::rfnoc::block_id_t radio_id(args.args["radio_id"]);
+            size_t radio_port = args.args.cast<size_t>("radio_port", 0);
+            std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
+            UHD_STREAMER_LOG() << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
+            BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, downstream_radio_nodes) {
+                if (node->get_block_id() == radio_id) {
+                    node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), radio_port);
+                }
+            }
+        } else {
+            // FIXME:  This block is preserved for legacy behavior where the
+            // radio_id and radio_port are not provided.  It fails if more
+            // than one radio is visible downstream or the port on the radio
+            // is not the same as the block_port.  It should be removed as
+            // soon as possible.
+            // Find all downstream radio nodes and set their response SID to the host
+            std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
+            UHD_STREAMER_LOG() << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
+            BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, downstream_radio_nodes) {
+                node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), block_port);
+            }
         }
 
         //Give the streamer a functor to get the send buffer

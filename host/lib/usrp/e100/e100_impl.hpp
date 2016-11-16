@@ -50,10 +50,10 @@ static const double          E100_RX_LINK_RATE_BPS = 166e6/3/2*2;
 static const double          E100_TX_LINK_RATE_BPS = 166e6/3/1*2;
 static const std::string     E100_I2C_DEV_NODE = "/dev/i2c-3";
 static const std::string     E100_UART_DEV_NODE = "/dev/ttyO0";
-static const boost::uint16_t E100_FPGA_COMPAT_NUM = 11;
-static const boost::uint32_t E100_RX_SID_BASE = 30;
-static const boost::uint32_t E100_TX_ASYNC_SID = 10;
-static const boost::uint32_t E100_CTRL_MSG_SID = 20;
+static const uint16_t E100_FPGA_COMPAT_NUM = 11;
+static const uint32_t E100_RX_SID_BASE = 30;
+static const uint32_t E100_TX_ASYNC_SID = 10;
+static const uint32_t E100_CTRL_MSG_SID = 20;
 static const double          E100_DEFAULT_CLOCK_RATE = 64e6;
 static const std::string     E100_EEPROM_MAP_KEY = "E100";
 

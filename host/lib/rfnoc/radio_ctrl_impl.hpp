@@ -98,7 +98,7 @@ protected: // TODO see what's protected and what's private
      * Registers
      **********************************************************************/
     struct regs {
-        static inline boost::uint32_t sr_addr(const boost::uint32_t offset)
+        static inline uint32_t sr_addr(const uint32_t offset)
         {
             return offset * 4;
         }

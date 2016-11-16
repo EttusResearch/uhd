@@ -16,7 +16,6 @@
 //
 
 #include "ctrl_iface.hpp"
-#include "async_packet_handler.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/byteswap.hpp>
@@ -37,7 +36,6 @@ using namespace uhd::transport;
 
 static const double ACK_TIMEOUT = 2.0; //supposed to be worst case practical timeout
 static const double MASSIVE_TIMEOUT = 10.0; //for when we wait on a timed command
-static const size_t SR_READBACK = 32;
 
 ctrl_iface::~ctrl_iface(void){
     /* NOP */
@@ -50,7 +48,7 @@ public:
     ctrl_iface_impl(const bool big_endian,
             uhd::transport::zero_copy_if::sptr ctrl_xport,
             uhd::transport::zero_copy_if::sptr resp_xport,
-            const boost::uint32_t sid, const std::string &name
+            const uint32_t sid, const std::string &name
     ) :
         _link_type(vrt::if_packet_info_t::LINK_TYPE_CHDR),
         _packet_type(vrt::if_packet_info_t::PACKET_TYPE_CONTEXT),
@@ -60,13 +58,12 @@ public:
         _name(name),
         _seq_out(0),
         _timeout(ACK_TIMEOUT),
-        _resp_queue(128/*max response msgs*/),
-        _resp_queue_size(_resp_xport ? _resp_xport->get_num_recv_frames() : 3),
+        _resp_queue_size(_resp_xport->get_num_recv_frames()),
         _rb_address(uhd::rfnoc::SR_READBACK)
     {
-        if (resp_xport) {
-            while (resp_xport->get_recv_buff(0.0)) {} //flush
-        }
+        UHD_ASSERT_THROW(_ctrl_xport);
+        UHD_ASSERT_THROW(_resp_xport);
+        while (resp_xport->get_recv_buff(0.0)) {} //flush
         this->set_time(uhd::time_spec_t(0.0));
         this->set_tick_rate(1.0); //something possible but bogus
     }
@@ -76,31 +73,30 @@ public:
         _timeout = ACK_TIMEOUT; //reset timeout to something small
         UHD_SAFE_CALL(
             this->peek32(0);//dummy peek with the purpose of ack'ing all packets
-            _async_task.reset();//now its ok to release the task
         )
     }
 
     /*******************************************************************
      * Peek and poke 32 bit implementation
      ******************************************************************/
-    void poke32(const wb_addr_type addr, const boost::uint32_t data)
+    void poke32(const wb_addr_type addr, const uint32_t data)
     {
         boost::mutex::scoped_lock lock(_mutex);
         this->send_pkt(addr/4, data);
         this->wait_for_ack(false);
     }
 
-    boost::uint32_t peek32(const wb_addr_type addr)
+    uint32_t peek32(const wb_addr_type addr)
     {
         boost::mutex::scoped_lock lock(_mutex);
         this->send_pkt(_rb_address, addr/8);
-        const boost::uint64_t res = this->wait_for_ack(true);
-        const boost::uint32_t lo = boost::uint32_t(res & 0xffffffff);
-        const boost::uint32_t hi = boost::uint32_t(res >> 32);
+        const uint64_t res = this->wait_for_ack(true);
+        const uint32_t lo = uint32_t(res & 0xffffffff);
+        const uint32_t hi = uint32_t(res >> 32);
         return ((addr/4) & 0x1)? hi : lo;
     }
 
-    boost::uint64_t peek64(const wb_addr_type addr)
+    uint64_t peek64(const wb_addr_type addr)
     {
         boost::mutex::scoped_lock lock(_mutex);
         this->send_pkt(_rb_address, addr/8);
@@ -134,26 +130,26 @@ private:
     // This is the buffer type for response messages
     struct resp_buff_type
     {
-        boost::uint32_t data[8];
+        uint32_t data[8];
     };
 
     /*******************************************************************
      * Primary control and interaction private methods
      ******************************************************************/
-    inline void send_pkt(const boost::uint32_t addr, const boost::uint32_t data = 0)
+    inline void send_pkt(const uint32_t addr, const uint32_t data = 0)
     {
         managed_send_buffer::sptr buff = _ctrl_xport->get_send_buff(0.0);
         if (not buff) {
             throw uhd::runtime_error("fifo ctrl timed out getting a send buffer");
         }
-        boost::uint32_t *pkt = buff->cast<boost::uint32_t *>();
+        uint32_t *pkt = buff->cast<uint32_t *>();
 
         //load packet info
         vrt::if_packet_info_t packet_info;
         packet_info.link_type = _link_type;
         packet_info.packet_type = _packet_type;
         packet_info.num_payload_words32 = 2;
-        packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(boost::uint32_t);
+        packet_info.num_payload_bytes = packet_info.num_payload_words32*sizeof(uint32_t);
         packet_info.packet_count = _seq_out;
         packet_info.tsf = _time.to_ticks(_tick_rate);
         packet_info.sob = false;
@@ -175,12 +171,12 @@ private:
         //UHD_MSG(status) << boost::format("0x%08x, 0x%08x\n") % addr % data;
         //send the buffer over the interface
         _outstanding_seqs.push(_seq_out);
-        buff->commit(sizeof(boost::uint32_t)*(packet_info.num_packet_words32));
+        buff->commit(sizeof(uint32_t)*(packet_info.num_packet_words32));
 
         _seq_out++;//inc seq for next call
     }
 
-    UHD_INLINE boost::uint64_t wait_for_ack(const bool readback)
+    UHD_INLINE uint64_t wait_for_ack(const bool readback)
     {
         while (readback or (_outstanding_seqs.size() >= _resp_queue_size))
         {
@@ -193,53 +189,19 @@ private:
             vrt::if_packet_info_t packet_info;
             resp_buff_type resp_buff;
             memset(&resp_buff, 0x00, sizeof(resp_buff));
-            boost::uint32_t const *pkt = NULL;
+            uint32_t const *pkt = NULL;
             managed_recv_buffer::sptr buff;
 
-            //get buffer from response endpoint - or die in timeout
-            if (_resp_xport)
-            {
-                buff = _resp_xport->get_recv_buff(_timeout);
-                try
-                {
-                    UHD_ASSERT_THROW(bool(buff));
-                    UHD_ASSERT_THROW(buff->size() > 0);
-                }
-                catch(const std::exception &ex)
-                {
-                    throw uhd::io_error(str(boost::format("Block ctrl (%s) no response packet - %s") % _name % ex.what()));
-                }
-                pkt = buff->cast<const boost::uint32_t *>();
-                packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
+            buff = _resp_xport->get_recv_buff(_timeout);
+            try {
+                UHD_ASSERT_THROW(bool(buff));
+                UHD_ASSERT_THROW(buff->size() > 0);
             }
-
-            //get buffer from response endpoint - or die in timeout
-            else
-            {
-                /*
-                 * Couldn't get message with haste.
-                 * Now check both possible queues for messages.
-                 * Messages should come in on _resp_queue,
-                 * but could end up in dump_queue.
-                 * If we don't get a message --> Die in timeout.
-                 */
-                double accum_timeout = 0.0;
-                const double short_timeout = 0.005; // == 5ms
-                while(not ((_resp_queue.pop_with_haste(resp_buff))
-                        || (check_dump_queue(resp_buff))
-                        || (_resp_queue.pop_with_timed_wait(resp_buff, short_timeout))
-                        )){
-                    /*
-                     * If a message couldn't be received within a given timeout
-                     * --> throw AssertionError!
-                     */
-                    accum_timeout += short_timeout;
-                    UHD_ASSERT_THROW(accum_timeout < _timeout);
-                }
-
-                pkt = resp_buff.data;
-                packet_info.num_packet_words32 = sizeof(resp_buff)/sizeof(boost::uint32_t);
+            catch(const std::exception &ex) {
+                throw uhd::io_error(str(boost::format("Block ctrl (%s) no response packet - %s") % _name % ex.what()));
             }
+            pkt = buff->cast<const uint32_t *>();
+            packet_info.num_packet_words32 = buff->size()/sizeof(uint32_t);
 
             //parse the buffer
             try
@@ -266,7 +228,7 @@ private:
             try
             {
                 UHD_ASSERT_THROW(packet_info.has_sid);
-                if (packet_info.sid != boost::uint32_t((_sid >> 16) | (_sid << 16))) {
+                if (packet_info.sid != uint32_t((_sid >> 16) | (_sid << 16))) {
                     throw uhd::io_error(
                         str(
                             boost::format("Expected SID: %s  Received SID: %s")
@@ -297,8 +259,8 @@ private:
             //return the readback value
             if (readback and _outstanding_seqs.empty())
             {
-                const boost::uint64_t hi = (_bige)? uhd::ntohx(pkt[packet_info.num_header_words32+0]) : uhd::wtohx(pkt[packet_info.num_header_words32+0]);
-                const boost::uint64_t lo = (_bige)? uhd::ntohx(pkt[packet_info.num_header_words32+1]) : uhd::wtohx(pkt[packet_info.num_header_words32+1]);
+                const uint64_t hi = (_bige)? uhd::ntohx(pkt[packet_info.num_header_words32+0]) : uhd::wtohx(pkt[packet_info.num_header_words32+0]);
+                const uint64_t lo = (_bige)? uhd::ntohx(pkt[packet_info.num_header_words32+1]) : uhd::wtohx(pkt[packet_info.num_header_words32+1]);
                 return ((hi << 32) | lo);
             }
         }
@@ -306,49 +268,12 @@ private:
         return 0;
     }
 
-    /*
-     * If ctrl_core waits for a message that didn't arrive it can search for it in the dump queue.
-     * This actually happens during shutdown.
-     * handle_async_task can't access queue anymore thus it returns the corresponding message.
-     * msg_task class implements a dump_queue to store such messages.
-     * With check_dump_queue we can check if a message we are waiting for got stranded there.
-     * If a message got stuck we get it here and push it onto our own message_queue.
-     */
-    bool check_dump_queue(resp_buff_type& b) {
-        const size_t min_buff_size = 8; // Same value as in b200_io_impl->handle_async_task
-        boost::uint32_t recv_sid = (((_sid)<<16)|((_sid)>>16));
-        uhd::msg_task::msg_payload_t msg;
-        do{
-            msg = _async_task->get_msg_from_dump_queue(recv_sid);
-        }
-        while(msg.size() < min_buff_size && msg.size() != 0);
-
-        if(msg.size() >= min_buff_size) {
-            memcpy(b.data, &msg.front(), std::min(msg.size(), sizeof(b.data)));
-            return true;
-        }
-        return false;
-    }
-
-    void push_response(const boost::uint32_t *buff)
-    {
-        resp_buff_type resp_buff;
-        std::memcpy(resp_buff.data, buff, sizeof(resp_buff));
-        _resp_queue.push_with_haste(resp_buff);
-    }
-
-    void hold_task(uhd::msg_task::sptr task)
-    {
-        _async_task = task;
-    }
-
     const vrt::if_packet_info_t::link_type_t _link_type;
     const vrt::if_packet_info_t::packet_type_t _packet_type;
     const bool _bige;
     const uhd::transport::zero_copy_if::sptr _ctrl_xport;
     const uhd::transport::zero_copy_if::sptr _resp_xport;
-    uhd::msg_task::sptr _async_task;
-    const boost::uint32_t _sid;
+    const uint32_t _sid;
     const std::string _name;
     boost::mutex _mutex;
     size_t _seq_out;
@@ -357,7 +282,6 @@ private:
     double _tick_rate;
     double _timeout;
     std::queue<size_t> _outstanding_seqs;
-    bounded_buffer<resp_buff_type> _resp_queue;
     const size_t _resp_queue_size;
 
     const size_t _rb_address;
@@ -367,7 +291,7 @@ ctrl_iface::sptr ctrl_iface::make(
         const bool big_endian,
         zero_copy_if::sptr ctrl_xport,
         zero_copy_if::sptr resp_xport,
-        const boost::uint32_t sid,
+        const uint32_t sid,
         const std::string &name
 ) {
     return sptr(new ctrl_iface_impl(

@@ -18,18 +18,18 @@
 #ifndef INCLUDED_UHD_UTILS_PLATFORM_HPP
 #define INCLUDED_UHD_UTILS_PLATFORM_HPP
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 
 namespace uhd {
 
     /* Returns the process ID of the current process */
-    boost::int32_t get_process_id();
+    int32_t get_process_id();
 
     /* Returns a unique identifier for the current machine */
-    boost::uint32_t get_host_id();
+    uint32_t get_host_id();
 
     /* Get a unique identifier for the current machine and process */
-    boost::uint32_t get_process_hash();
+    uint32_t get_process_hash();
 
 } //namespace uhd
 

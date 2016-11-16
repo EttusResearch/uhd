@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_TRANSPORT_VRT_IF_PACKET_HPP
 
 #include <uhd/config.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <cstddef> //size_t
 
 namespace uhd{ namespace transport{
@@ -81,15 +81,15 @@ namespace vrt{
 
         //optional fields
         //! Stream ID (SID). See uhd::sid_t
-        bool has_sid; boost::uint32_t sid;
+        bool has_sid; uint32_t sid;
         //! Class ID.
-        bool has_cid; boost::uint64_t cid;
+        bool has_cid; uint64_t cid;
         //! Integer timestamp
-        bool has_tsi; boost::uint32_t tsi;
+        bool has_tsi; uint32_t tsi;
         //! Fractional timestamp
-        bool has_tsf; boost::uint64_t tsf;
+        bool has_tsf; uint64_t tsf;
         //! Trailer
-        bool has_tlr; boost::uint32_t tlr;
+        bool has_tlr; uint32_t tlr;
     };
 
     /*!
@@ -118,7 +118,7 @@ namespace vrt{
      * \param if_packet_info the if packet info (read/write)
      */
     UHD_API void if_hdr_pack_be(
-        boost::uint32_t *packet_buff,
+        uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
     );
 
@@ -156,7 +156,7 @@ namespace vrt{
      * \param if_packet_info the if packet info (read/write)
      */
     UHD_API void if_hdr_unpack_be(
-        const boost::uint32_t *packet_buff,
+        const uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
     );
 
@@ -169,7 +169,7 @@ namespace vrt{
      * \param if_packet_info the if packet info (read/write)
      */
     UHD_API void if_hdr_pack_le(
-        boost::uint32_t *packet_buff,
+        uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
     );
 
@@ -182,7 +182,7 @@ namespace vrt{
      * \param if_packet_info the if packet info (read/write)
      */
     UHD_API void if_hdr_unpack_le(
-        const boost::uint32_t *packet_buff,
+        const uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
     );
 

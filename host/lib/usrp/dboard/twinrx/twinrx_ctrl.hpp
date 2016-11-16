@@ -69,11 +69,11 @@ public:
 
     virtual void set_hb_preselector(channel_t ch, preselector_path_t path, bool commit = true) = 0;
 
-    virtual void set_input_atten(channel_t ch, boost::uint8_t atten, bool commit = true) = 0;
+    virtual void set_input_atten(channel_t ch, uint8_t atten, bool commit = true) = 0;
 
-    virtual void set_lb_atten(channel_t ch, boost::uint8_t atten, bool commit = true) = 0;
+    virtual void set_lb_atten(channel_t ch, uint8_t atten, bool commit = true) = 0;
 
-    virtual void set_hb_atten(channel_t ch, boost::uint8_t atten, bool commit = true) = 0;
+    virtual void set_hb_atten(channel_t ch, uint8_t atten, bool commit = true) = 0;
 
     virtual void set_lo1_source(channel_t ch, lo_source_t source, bool commit = true) = 0;
 

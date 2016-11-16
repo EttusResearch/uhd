@@ -49,17 +49,17 @@ public:
     /*!
      * Resize and rebase the DMA FIFO. Will clear all contents.
      */
-    virtual void resize(const boost::uint32_t base_addr, const boost::uint32_t size) = 0;
+    virtual void resize(const uint32_t base_addr, const uint32_t size) = 0;
 
     /*!
      * Get the (approx) number of bytes currently in the DMA FIFO
      */
-    virtual boost::uint32_t get_bytes_occupied() = 0;
+    virtual uint32_t get_bytes_occupied() = 0;
 
     /*!
      * Run the built-in-self-test routine for the DMA FIFO
      */
-    virtual boost::uint8_t run_bist(bool finite = true, boost::uint32_t timeout_ms = 500) = 0;
+    virtual uint8_t run_bist(bool finite = true, uint32_t timeout_ms = 500) = 0;
 
     /*!
      * Is extended BIST supported
@@ -69,12 +69,12 @@ public:
     /*!
      * Run the built-in-self-test routine for the DMA FIFO (extended BIST only)
      */
-    virtual boost::uint8_t run_ext_bist(
+    virtual uint8_t run_ext_bist(
         bool finite,
-        boost::uint32_t rx_samp_delay,
-        boost::uint32_t tx_pkt_delay,
-        boost::uint32_t sid,
-        boost::uint32_t timeout_ms = 500) = 0;
+        uint32_t rx_samp_delay,
+        uint32_t tx_pkt_delay,
+        uint32_t sid,
+        uint32_t timeout_ms = 500) = 0;
 
     /*!
      * Get the throughput measured from the last invocation of the BIST (extended BIST only)

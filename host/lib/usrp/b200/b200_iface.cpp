@@ -24,7 +24,7 @@
 #include <uhd/exception.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 #include <fstream>
@@ -45,42 +45,42 @@ using namespace uhd::transport;
 
 static const bool load_img_msg = true;
 
-const static boost::uint8_t FX3_FIRMWARE_LOAD = 0xA0;
-const static boost::uint8_t VRT_VENDOR_OUT = (LIBUSB_REQUEST_TYPE_VENDOR
+const static uint8_t FX3_FIRMWARE_LOAD = 0xA0;
+const static uint8_t VRT_VENDOR_OUT = (LIBUSB_REQUEST_TYPE_VENDOR
                                               | LIBUSB_ENDPOINT_OUT);
-const static boost::uint8_t VRT_VENDOR_IN = (LIBUSB_REQUEST_TYPE_VENDOR
+const static uint8_t VRT_VENDOR_IN = (LIBUSB_REQUEST_TYPE_VENDOR
                                              | LIBUSB_ENDPOINT_IN);
-const static boost::uint8_t B200_VREQ_FPGA_START = 0x02;
-const static boost::uint8_t B200_VREQ_FPGA_DATA = 0x12;
-const static boost::uint8_t B200_VREQ_GET_COMPAT = 0x15;
-const static boost::uint8_t B200_VREQ_SET_FPGA_HASH = 0x1C;
-const static boost::uint8_t B200_VREQ_GET_FPGA_HASH = 0x1D;
-const static boost::uint8_t B200_VREQ_SET_FW_HASH = 0x1E;
-const static boost::uint8_t B200_VREQ_GET_FW_HASH = 0x1F;
-const static boost::uint8_t B200_VREQ_LOOP = 0x22;
-const static boost::uint8_t B200_VREQ_FPGA_CONFIG = 0x55;
-const static boost::uint8_t B200_VREQ_FPGA_RESET = 0x62;
-const static boost::uint8_t B200_VREQ_GPIF_RESET = 0x72;
-const static boost::uint8_t B200_VREQ_GET_USB = 0x80;
-const static boost::uint8_t B200_VREQ_GET_STATUS = 0x83;
-const static boost::uint8_t B200_VREQ_FX3_RESET = 0x99;
-const static boost::uint8_t B200_VREQ_EEPROM_WRITE = 0xBA;
-const static boost::uint8_t B200_VREQ_EEPROM_READ = 0xBB;
+const static uint8_t B200_VREQ_FPGA_START = 0x02;
+const static uint8_t B200_VREQ_FPGA_DATA = 0x12;
+const static uint8_t B200_VREQ_GET_COMPAT = 0x15;
+const static uint8_t B200_VREQ_SET_FPGA_HASH = 0x1C;
+const static uint8_t B200_VREQ_GET_FPGA_HASH = 0x1D;
+const static uint8_t B200_VREQ_SET_FW_HASH = 0x1E;
+const static uint8_t B200_VREQ_GET_FW_HASH = 0x1F;
+const static uint8_t B200_VREQ_LOOP = 0x22;
+const static uint8_t B200_VREQ_FPGA_CONFIG = 0x55;
+const static uint8_t B200_VREQ_FPGA_RESET = 0x62;
+const static uint8_t B200_VREQ_GPIF_RESET = 0x72;
+const static uint8_t B200_VREQ_GET_USB = 0x80;
+const static uint8_t B200_VREQ_GET_STATUS = 0x83;
+const static uint8_t B200_VREQ_FX3_RESET = 0x99;
+const static uint8_t B200_VREQ_EEPROM_WRITE = 0xBA;
+const static uint8_t B200_VREQ_EEPROM_READ = 0xBB;
 
-const static boost::uint8_t FX3_STATE_UNDEFINED = 0x00;
-const static boost::uint8_t FX3_STATE_FPGA_READY = 0x01;
-const static boost::uint8_t FX3_STATE_CONFIGURING_FPGA = 0x02;
-const static boost::uint8_t FX3_STATE_BUSY = 0x03;
-const static boost::uint8_t FX3_STATE_RUNNING = 0x04;
-const static boost::uint8_t FX3_STATE_UNCONFIGURED = 0x05;
-const static boost::uint8_t FX3_STATE_ERROR = 0x06;
+const static uint8_t FX3_STATE_UNDEFINED = 0x00;
+const static uint8_t FX3_STATE_FPGA_READY = 0x01;
+const static uint8_t FX3_STATE_CONFIGURING_FPGA = 0x02;
+const static uint8_t FX3_STATE_BUSY = 0x03;
+const static uint8_t FX3_STATE_RUNNING = 0x04;
+const static uint8_t FX3_STATE_UNCONFIGURED = 0x05;
+const static uint8_t FX3_STATE_ERROR = 0x06;
 
 const static int VREQ_MAX_SIZE_USB2 = 64;
 const static int VREQ_MAX_SIZE_USB3 = 512;
 const static int VREQ_DEFAULT_SIZE  = VREQ_MAX_SIZE_USB2;
 const static int VREQ_MAX_SIZE      = VREQ_MAX_SIZE_USB3;
 
-typedef boost::uint32_t hash_type;
+typedef uint32_t hash_type;
 
 
 /***********************************************************************
@@ -137,12 +137,12 @@ public:
         //NOP
     }
 
-    int fx3_control_write(boost::uint8_t request,
-                           boost::uint16_t value,
-                           boost::uint16_t index,
+    int fx3_control_write(uint8_t request,
+                           uint16_t value,
+                           uint16_t index,
                            unsigned char *buff,
-                           boost::uint16_t length,
-                           boost::uint32_t timeout = 0) {
+                           uint16_t length,
+                           uint32_t timeout = 0) {
         return _usb_ctrl->submit(VRT_VENDOR_OUT,        // bmReqeustType
                                    request,             // bRequest
                                    value,               // wValue
@@ -152,12 +152,12 @@ public:
                                    timeout);            // timeout
     }
 
-    int fx3_control_read(boost::uint8_t request,
-                           boost::uint16_t value,
-                           boost::uint16_t index,
+    int fx3_control_read(uint8_t request,
+                           uint16_t value,
+                           uint16_t index,
                            unsigned char *buff,
-                           boost::uint16_t length,
-                           boost::uint32_t timeout = 0) {
+                           uint16_t length,
+                           uint32_t timeout = 0) {
         return _usb_ctrl->submit(VRT_VENDOR_IN,         // bmReqeustType
                                    request,             // bRequest
                                    value,               // wValue
@@ -167,21 +167,21 @@ public:
                                    timeout);            // timeout
     }
 
-    void write_i2c(UHD_UNUSED(boost::uint16_t addr), UHD_UNUSED(const byte_vector_t &bytes))
+    void write_i2c(UHD_UNUSED(uint16_t addr), UHD_UNUSED(const byte_vector_t &bytes))
     {
         throw uhd::not_implemented_error("b200 write i2c");
     }
 
 
-    byte_vector_t read_i2c(UHD_UNUSED(boost::uint16_t addr), UHD_UNUSED(size_t num_bytes))
+    byte_vector_t read_i2c(UHD_UNUSED(uint16_t addr), UHD_UNUSED(size_t num_bytes))
     {
         throw uhd::not_implemented_error("b200 read i2c");
     }
 
-    void write_eeprom(boost::uint16_t addr, boost::uint16_t offset,
+    void write_eeprom(uint16_t addr, uint16_t offset,
             const byte_vector_t &bytes) {
         int ret = fx3_control_write(B200_VREQ_EEPROM_WRITE,
-                          0, offset | (boost::uint16_t(addr) << 8),
+                          0, offset | (uint16_t(addr) << 8),
                           (unsigned char *) &bytes[0],
                           bytes.size());
 
@@ -192,12 +192,12 @@ public:
     }
 
     byte_vector_t read_eeprom(
-        boost::uint16_t addr,
-        boost::uint16_t offset,
+        uint16_t addr,
+        uint16_t offset,
         size_t num_bytes) {
         byte_vector_t recv_bytes(num_bytes);
         int bytes_read = fx3_control_read(B200_VREQ_EEPROM_READ,
-                         0, offset | (boost::uint16_t(addr) << 8),
+                         0, offset | (uint16_t(addr) << 8),
                          (unsigned char*) &recv_bytes[0],
                          num_bytes);
 
@@ -281,7 +281,7 @@ public:
         */
     }
 
-    boost::uint8_t get_usb_speed(void) {
+    uint8_t get_usb_speed(void) {
 
         unsigned char rx_data[1];
         memset(rx_data, 0x00, sizeof(rx_data));
@@ -293,10 +293,10 @@ public:
         else if (ret != bytes_to_recv)
             throw uhd::io_error((boost::format("Short read on get USB speed (expecting: %d, returned: %d)") % bytes_to_recv % ret).str());
 
-        return boost::lexical_cast<boost::uint8_t>(rx_data[0]);
+        return boost::lexical_cast<uint8_t>(rx_data[0]);
     }
 
-    boost::uint8_t get_fx3_status(void) {
+    uint8_t get_fx3_status(void) {
 
         unsigned char rx_data[1];
         memset(rx_data, 0x00, sizeof(rx_data));
@@ -308,10 +308,10 @@ public:
         else if (ret != bytes_to_recv)
             throw uhd::io_error((boost::format("Short read on get FX3 status (expecting: %d, returned: %d)") % bytes_to_recv % ret).str());
 
-        return boost::lexical_cast<boost::uint8_t>(rx_data[0]);
+        return boost::lexical_cast<uint8_t>(rx_data[0]);
     }
 
-    boost::uint16_t get_compat_num(void) {
+    uint16_t get_compat_num(void) {
 
         unsigned char rx_data[2];
         memset(rx_data, 0x00, sizeof(rx_data));
@@ -374,10 +374,10 @@ public:
             throw uhd::io_error((boost::format("Short write on set FPGA hash (expecting: %d, returned: %d)") % bytes_to_send % ret).str());
     }
 
-    boost::uint32_t load_fpga(const std::string filestring, bool force) {
+    uint32_t load_fpga(const std::string filestring, bool force) {
 
-        boost::uint8_t fx3_state = 0;
-        boost::uint32_t wait_count;
+        uint8_t fx3_state = 0;
+        uint32_t wait_count;
         int ret = 0;
         int bytes_to_xfer = 0;
 
@@ -476,7 +476,7 @@ public:
             if(n == 0)
                 continue;
 
-            boost::uint16_t transfer_count = boost::uint16_t(n);
+            uint16_t transfer_count = uint16_t(n);
 
             /* Send the data to the device. */
             int nwritten = fx3_control_write(B200_VREQ_FPGA_DATA, 0, 0, out_buff, transfer_count, 5000);
@@ -526,7 +526,7 @@ private:
 };
 
 
-std::string b200_iface::fx3_state_string(boost::uint8_t state)
+std::string b200_iface::fx3_state_string(uint8_t state)
 {
     switch (state)
     {

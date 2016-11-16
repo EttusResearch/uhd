@@ -27,7 +27,7 @@ usb_control::~usb_control(void){
     /* NOP */
 }
 
-std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(boost::uint16_t, boost::uint16_t){
+std::vector<usb_device_handle::sptr> usb_device_handle::get_device_list(uint16_t, uint16_t){
     return std::vector<usb_device_handle::sptr>(); //empty list
 }
 

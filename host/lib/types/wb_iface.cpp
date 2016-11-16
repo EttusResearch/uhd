@@ -25,32 +25,32 @@ wb_iface::~wb_iface(void)
     //NOP
 }
 
-void wb_iface::poke64(const wb_iface::wb_addr_type, const boost::uint64_t)
+void wb_iface::poke64(const wb_iface::wb_addr_type, const uint64_t)
 {
     throw uhd::not_implemented_error("poke64 not implemented");
 }
 
-boost::uint64_t wb_iface::peek64(const wb_iface::wb_addr_type)
+uint64_t wb_iface::peek64(const wb_iface::wb_addr_type)
 {
     throw uhd::not_implemented_error("peek64 not implemented");
 }
 
-void wb_iface::poke32(const wb_iface::wb_addr_type, const boost::uint32_t)
+void wb_iface::poke32(const wb_iface::wb_addr_type, const uint32_t)
 {
     throw uhd::not_implemented_error("poke32 not implemented");
 }
 
-boost::uint32_t wb_iface::peek32(const wb_iface::wb_addr_type)
+uint32_t wb_iface::peek32(const wb_iface::wb_addr_type)
 {
     throw uhd::not_implemented_error("peek32 not implemented");
 }
 
-void wb_iface::poke16(const wb_iface::wb_addr_type, const boost::uint16_t)
+void wb_iface::poke16(const wb_iface::wb_addr_type, const uint16_t)
 {
     throw uhd::not_implemented_error("poke16 not implemented");
 }
 
-boost::uint16_t wb_iface::peek16(const wb_iface::wb_addr_type)
+uint16_t wb_iface::peek16(const wb_iface::wb_addr_type)
 {
     throw uhd::not_implemented_error("peek16 not implemented");
 }

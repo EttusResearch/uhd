@@ -74,7 +74,7 @@ std::vector<size_t> source_block_ctrl_base::get_output_ports() const
  * FPGA Configuration
  **********************************************************************/
 void source_block_ctrl_base::set_destination(
-        boost::uint32_t next_address,
+        uint32_t next_address,
         size_t output_block_port
 ) {
     UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::set_destination() " << uhd::sid_t(next_address) << std::endl;

@@ -62,7 +62,7 @@ public:
     rx_dsp_core_200_impl(
         wb_iface::sptr iface,
         const size_t dsp_base, const size_t ctrl_base,
-        const boost::uint32_t sid, const bool lingering_packet
+        const uint32_t sid, const bool lingering_packet
     ):
         _iface(iface), _dsp_base(dsp_base), _ctrl_base(ctrl_base),  _sid(sid)
     {
@@ -128,22 +128,22 @@ public:
         boost::tie(inst_reload, inst_chain, inst_samps, inst_stop) = mode_to_inst[stream_cmd.stream_mode];
 
         //calculate the word from flags and length
-        boost::uint32_t cmd_word = 0;
-        cmd_word |= boost::uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
-        cmd_word |= boost::uint32_t((inst_chain)?            1 : 0) << 30;
-        cmd_word |= boost::uint32_t((inst_reload)?           1 : 0) << 29;
-        cmd_word |= boost::uint32_t((inst_stop)?             1 : 0) << 28;
+        uint32_t cmd_word = 0;
+        cmd_word |= uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
+        cmd_word |= uint32_t((inst_chain)?            1 : 0) << 30;
+        cmd_word |= uint32_t((inst_reload)?           1 : 0) << 29;
+        cmd_word |= uint32_t((inst_stop)?             1 : 0) << 28;
         cmd_word |= (inst_samps)? stream_cmd.num_samps : ((inst_stop)? 0 : 1);
 
         //issue the stream command
         _iface->poke32(REG_RX_CTRL_STREAM_CMD, cmd_word);
-        const boost::uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(_tick_rate);
-        _iface->poke32(REG_RX_CTRL_TIME_HI, boost::uint32_t(ticks >> 32));
-        _iface->poke32(REG_RX_CTRL_TIME_LO, boost::uint32_t(ticks >> 0)); //latches the command
+        const uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(_tick_rate);
+        _iface->poke32(REG_RX_CTRL_TIME_HI, uint32_t(ticks >> 32));
+        _iface->poke32(REG_RX_CTRL_TIME_LO, uint32_t(ticks >> 0)); //latches the command
     }
 
     void set_mux(const std::string &mode, const bool fe_swapped){
-        static const uhd::dict<std::string, boost::uint32_t> mode_to_mux = boost::assign::map_list_of
+        static const uhd::dict<std::string, uint32_t> mode_to_mux = boost::assign::map_list_of
             ("IQ", 0)
             ("QI", FLAG_DSP_RX_MUX_SWAP_IQ)
             ("I", FLAG_DSP_RX_MUX_REAL_MODE)
@@ -157,8 +157,8 @@ public:
     }
 
     void set_link_rate(const double rate){
-        //_link_rate = rate/sizeof(boost::uint32_t); //in samps/s
-        _link_rate = rate/sizeof(boost::uint16_t); //in samps/s (allows for 8sc)
+        //_link_rate = rate/sizeof(uint32_t); //in samps/s
+        _link_rate = rate/sizeof(uint16_t); //in samps/s (allows for 8sc)
     }
 
     uhd::meta_range_t get_host_rates(void){
@@ -214,7 +214,7 @@ public:
     void update_scalar(void){
         const double factor = 1.0 + std::max(ceil_log2(_scaling_adjustment), 0.0);
         const double target_scalar = (1 << 17)*_scaling_adjustment/_dsp_extra_scaling/factor;
-        const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
+        const int32_t actual_scalar = boost::math::iround(target_scalar);
         _fxpt_scalar_correction = target_scalar/actual_scalar*factor; //should be small
         _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);
     }
@@ -227,7 +227,7 @@ public:
         double actual_freq;
         int32_t freq_word;
         get_freq_and_freq_word(requested_freq, _tick_rate, actual_freq, freq_word);
-        _iface->poke32(REG_DSP_RX_FREQ, boost::uint32_t(freq_word));
+        _iface->poke32(REG_DSP_RX_FREQ, uint32_t(freq_word));
         return actual_freq;
     }
 
@@ -271,9 +271,9 @@ private:
     double _tick_rate, _link_rate;
     bool _continuous_streaming;
     double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling, _fxpt_scalar_correction;
-    const boost::uint32_t _sid;
+    const uint32_t _sid;
 };
 
-rx_dsp_core_200::sptr rx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const boost::uint32_t sid, const bool lingering_packet){
+rx_dsp_core_200::sptr rx_dsp_core_200::make(wb_iface::sptr iface, const size_t dsp_base, const size_t ctrl_base, const uint32_t sid, const bool lingering_packet){
     return sptr(new rx_dsp_core_200_impl(iface, dsp_base, ctrl_base, sid, lingering_packet));
 }

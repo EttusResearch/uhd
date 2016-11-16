@@ -150,7 +150,7 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     ////////////////////////////////////////////////////////////////////
     this->get_rx_subtree()->create<device_addr_t>("tune_args").set(device_addr_t());
 
-    boost::uint16_t rx_id = get_rx_id().to_uint16();
+    uint16_t rx_id = get_rx_id().to_uint16();
     if(rx_id == 0x0054) this->get_rx_subtree()->create<std::string>("name").set("SBXv3 RX");
     else if(rx_id == 0x0065) this->get_rx_subtree()->create<std::string>("name").set("SBXv4 RX");
     else if(rx_id == 0x0067) this->get_rx_subtree()->create<std::string>("name").set("CBX RX");
@@ -191,7 +191,7 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     ////////////////////////////////////////////////////////////////////
     this->get_tx_subtree()->create<device_addr_t>("tune_args").set(device_addr_t());
 
-    boost::uint16_t tx_id = get_tx_id().to_uint16();
+    uint16_t tx_id = get_tx_id().to_uint16();
     if(tx_id == 0x0055) this->get_tx_subtree()->create<std::string>("name").set("SBXv3 TX");
     else if(tx_id == 0x0064) this->get_tx_subtree()->create<std::string>("name").set("SBXv4 TX");
     else if(tx_id == 0x0066) this->get_tx_subtree()->create<std::string>("name").set("CBX TX");

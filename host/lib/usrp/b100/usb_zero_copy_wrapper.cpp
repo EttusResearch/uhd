@@ -60,9 +60,9 @@ public:
 
         //extract this packet's memory address and length in bytes
         char *mem = mrb->cast<char *>() + offset_bytes;
-        const boost::uint32_t *mem32 = reinterpret_cast<const boost::uint32_t *>(mem);
+        const uint32_t *mem32 = reinterpret_cast<const uint32_t *>(mem);
         const size_t words32 = (uhd::wtohx(mem32[0]) & 0xffff); //length in words32 (from VRT header)
-        const size_t len = words32*sizeof(boost::uint32_t); //length in bytes
+        const size_t len = words32*sizeof(uint32_t); //length in bytes
 
         //check if this receive buffer has been exhausted
         offset_bytes += len;
@@ -100,7 +100,7 @@ public:
         _ok_to_auto_flush = true;
 
         //get a reference to the VITA header before incrementing
-        const boost::uint32_t vita_header = reinterpret_cast<const boost::uint32_t *>(_mem_buffer_tip)[0];
+        const uint32_t vita_header = reinterpret_cast<const uint32_t *>(_mem_buffer_tip)[0];
 
         _bytes_in_buffer += size();
         _mem_buffer_tip += size();

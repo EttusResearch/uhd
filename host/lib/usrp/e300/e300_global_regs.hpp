@@ -24,10 +24,10 @@
 namespace uhd { namespace usrp { namespace e300 {
 
 struct global_regs_transaction_t {
-    boost::uint32_t is_poke;
-    boost::uint32_t addr;
-    boost::uint32_t data;
-    boost::uint32_t pad;
+    uint32_t is_poke;
+    uint32_t addr;
+    uint32_t data;
+    uint32_t pad;
 };
 
 class global_regs : boost::noncopyable, public virtual uhd::wb_iface
@@ -65,12 +65,12 @@ public:
     static const size_t PPS_EXT = 3;
 };
 
-UHD_INLINE boost::uint32_t XB_ADDR(const boost::uint32_t addr)
+UHD_INLINE uint32_t XB_ADDR(const uint32_t addr)
 {
     return global_regs::SR_CORE_XBAR + (addr << 2);
 }
 
-UHD_INLINE boost::uint32_t DST_ADDR(const boost::uint32_t addr)
+UHD_INLINE uint32_t DST_ADDR(const uint32_t addr)
 {
     return global_regs::SR_CORE_DST + (addr << 2);
 }

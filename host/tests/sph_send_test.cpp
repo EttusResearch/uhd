@@ -56,12 +56,12 @@ public:
     void pop_front_packet(
         uhd::transport::vrt::if_packet_info_t &ifpi
     ){
-        ifpi.num_packet_words32 = _lens.front()/sizeof(boost::uint32_t);
+        ifpi.num_packet_words32 = _lens.front()/sizeof(uint32_t);
         if (_end == "big"){
-            uhd::transport::vrt::if_hdr_unpack_be(reinterpret_cast<boost::uint32_t *>(_mems.front().get()), ifpi);
+            uhd::transport::vrt::if_hdr_unpack_be(reinterpret_cast<uint32_t *>(_mems.front().get()), ifpi);
         }
         if (_end == "little"){
-            uhd::transport::vrt::if_hdr_unpack_le(reinterpret_cast<boost::uint32_t *>(_mems.front().get()), ifpi);
+            uhd::transport::vrt::if_hdr_unpack_le(reinterpret_cast<uint32_t *>(_mems.front().get()), ifpi);
         }
         _mems.pop_front();
         _lens.pop_front();

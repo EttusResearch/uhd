@@ -101,7 +101,7 @@ static std::vector<std::string> discover_ip_addrs(
 
     // loop for replies until timeout
     while (true) {
-        boost::uint8_t buff[sizeof(i2c_transaction_t)] = {};
+        uint8_t buff[sizeof(i2c_transaction_t)] = {};
         const size_t nbytes = udp_bcast_xport->recv(boost::asio::buffer(buff), 0.050);
         if (nbytes == 0)
             break; //No more responses
@@ -270,7 +270,7 @@ static device::sptr e300_make(const device_addr_t &device_addr)
 void get_e3x0_fpga_images(const uhd::device_addr_t &device_addr,
                           std::string &fpga_image,
                           std::string &idle_image){
-    const boost::uint16_t pid = boost::lexical_cast<boost::uint16_t>(
+    const uint16_t pid = boost::lexical_cast<uint16_t>(
             device_addr["product"]);
 
     //extract the FPGA path for the e300
@@ -519,10 +519,10 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ////////////////////////////////////////////////////////////////////
     // Access to global regs
     ////////////////////////////////////////////////////////////////////
-    _tree->create<boost::uint32_t>(mb_path / "global_regs" / "misc")
+    _tree->create<uint32_t>(mb_path / "global_regs" / "misc")
         .add_coerced_subscriber(boost::bind(&global_regs::poke32, _global_regs, global_regs::SR_CORE_MISC, _1))
     ;
-    _tree->create<boost::uint32_t>(mb_path / "global_regs" / "pll")
+    _tree->create<uint32_t>(mb_path / "global_regs" / "pll")
         .set_publisher(boost::bind(&global_regs::peek32, _global_regs, global_regs::RB32_CORE_PLL))
     ;
 
@@ -601,16 +601,16 @@ void e300_impl::_register_loopback_self_test(wb_iface::sptr iface, boost::uint32
     for (size_t i = 0; i < 100; i++)
     {
         boost::hash_combine(hash, i);
-        iface->poke32(w_addr, boost::uint32_t(hash));
-        test_fail = iface->peek32(r_addr) != boost::uint32_t(hash);
+        iface->poke32(w_addr, uint32_t(hash));
+        test_fail = iface->peek32(r_addr) != uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
 }
 
-boost::uint32_t e300_impl::_get_version(compat_t which)
+uint32_t e300_impl::_get_version(compat_t which)
 {
-    const boost::uint16_t compat_num
+    const uint16_t compat_num
         = _global_regs->peek32(global_regs::RB32_CORE_COMPAT);
 
     switch(which) {
@@ -625,7 +625,7 @@ boost::uint32_t e300_impl::_get_version(compat_t which)
 
 std::string e300_impl::_get_version_hash(void)
 {
-    const boost::uint32_t git_hash
+    const uint32_t git_hash
         = _global_regs->peek32(global_regs::RB32_CORE_GITHASH);
     return str(boost::format("%7x%s")
         % (git_hash & 0x0FFFFFFF)
@@ -653,24 +653,24 @@ size_t e300_impl::_get_axi_dma_channel_pair()
     return first_free_pair;
 }
 
-boost::uint16_t e300_impl::_get_udp_port(
-        boost::uint8_t destination,
-        boost::uint8_t prefix)
+uint16_t e300_impl::_get_udp_port(
+        uint8_t destination,
+        uint8_t prefix)
 {
     if (destination == E300_XB_DST_RADIO) {
         if (prefix == E300_RADIO_DEST_PREFIX_CTRL)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_CTRL_PORT0);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_CTRL_PORT0);
         else if (prefix == E300_RADIO_DEST_PREFIX_TX)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_TX_PORT0);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_TX_PORT0);
         else if (prefix == E300_RADIO_DEST_PREFIX_RX)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_RX_PORT0);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_RX_PORT0);
     } else if (destination == E300_XB_DST_R1) {
         if (prefix == E300_RADIO_DEST_PREFIX_CTRL)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_CTRL_PORT1);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_CTRL_PORT1);
         else if (prefix == E300_RADIO_DEST_PREFIX_TX)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_TX_PORT1);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_TX_PORT1);
         else if (prefix == E300_RADIO_DEST_PREFIX_RX)
-            return boost::lexical_cast<boost::uint16_t>(E300_SERVER_RX_PORT1);
+            return boost::lexical_cast<uint16_t>(E300_SERVER_RX_PORT1);
     }
     throw uhd::value_error(str(boost::format("No UDP port defined for combination: %u %u") % destination % prefix));
 }

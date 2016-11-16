@@ -23,14 +23,14 @@
 #include <vector>
 
 #include <boost/assign.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 
 #include <uhd/config.hpp>
 
 namespace uhd{
 
     //! Byte vector used for I2C data passing and EEPROM parsing.
-    typedef std::vector<boost::uint8_t> byte_vector_t;
+    typedef std::vector<uint8_t> byte_vector_t;
 
     template<typename RangeSrc, typename RangeDst> UHD_INLINE
     void byte_copy(const RangeSrc &src, RangeDst &dst){

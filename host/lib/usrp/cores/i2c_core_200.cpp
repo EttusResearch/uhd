@@ -68,16 +68,16 @@ public:
         //init I2C FPGA interface.
         this->poke(REG_I2C_WR_CTRL, 0x0000);
         //set prescalers to operate at 400kHz: WB_CLK is 64MHz...
-        static const boost::uint32_t i2c_datarate = 400000;
-        static const boost::uint32_t wishbone_clk = 64000000; //FIXME should go somewhere else
-        boost::uint16_t prescaler = wishbone_clk / (i2c_datarate*5) - 1;
+        static const uint32_t i2c_datarate = 400000;
+        static const uint32_t wishbone_clk = 64000000; //FIXME should go somewhere else
+        uint16_t prescaler = wishbone_clk / (i2c_datarate*5) - 1;
         this->poke(REG_I2C_WR_PRESCALER_LO, prescaler & 0xFF);
         this->poke(REG_I2C_WR_PRESCALER_HI, (prescaler >> 8) & 0xFF);
         this->poke(REG_I2C_WR_CTRL, I2C_CTRL_EN); //enable I2C core
     }
 
     void write_i2c(
-        boost::uint16_t addr,
+        uint16_t addr,
         const byte_vector_t &bytes
     ){
         this->poke(REG_I2C_WR_DATA, (addr << 1) | 0); //addr and read bit (0)
@@ -100,7 +100,7 @@ public:
     }
 
     byte_vector_t read_i2c(
-        boost::uint16_t addr,
+        uint16_t addr,
         size_t num_bytes
     ){
         byte_vector_t bytes;
@@ -138,17 +138,17 @@ private:
         return (this->peek(REG_I2C_RD_ST) & I2C_ST_RXACK) == 0;
     }
 
-    void poke(const size_t what, const boost::uint8_t cmd)
+    void poke(const size_t what, const uint8_t cmd)
     {
         boost::mutex::scoped_lock lock(_mutex);
         _iface->poke32(_base, (what << 8) | cmd);
     }
 
-    boost::uint8_t peek(const size_t what)
+    uint8_t peek(const size_t what)
     {
         boost::mutex::scoped_lock lock(_mutex);
         _iface->poke32(_base, what << 8);
-        return boost::uint8_t(_iface->peek32(_readback));
+        return uint8_t(_iface->peek32(_readback));
     }
 
     wb_iface::sptr _iface;

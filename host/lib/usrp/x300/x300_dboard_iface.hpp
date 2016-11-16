@@ -38,7 +38,7 @@ struct x300_dboard_iface_config_t
     x300_clock_ctrl::sptr                       clock;
     x300_clock_which_t                          which_rx_clk;
     x300_clock_which_t                          which_tx_clk;
-    boost::uint8_t                              dboard_slot;
+    uint8_t                              dboard_slot;
     uhd::timed_wb_iface::sptr                   cmd_time_ctrl;
 };
 
@@ -59,21 +59,21 @@ public:
     void write_aux_dac(unit_t, aux_dac_t, double);
     double read_aux_adc(unit_t, aux_adc_t);
 
-    void set_pin_ctrl(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_pin_ctrl(unit_t unit);
-    void set_atr_reg(unit_t unit, atr_reg_t reg, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_atr_reg(unit_t unit, atr_reg_t reg);
-    void set_gpio_ddr(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_gpio_ddr(unit_t unit);
-    void set_gpio_out(unit_t unit, boost::uint32_t value, boost::uint32_t mask = 0xffffffff);
-    boost::uint32_t get_gpio_out(unit_t unit);
-    boost::uint32_t read_gpio(unit_t unit);
+    void set_pin_ctrl(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
+    uint32_t get_pin_ctrl(unit_t unit);
+    void set_atr_reg(unit_t unit, atr_reg_t reg, uint32_t value, uint32_t mask = 0xffffffff);
+    uint32_t get_atr_reg(unit_t unit, atr_reg_t reg);
+    void set_gpio_ddr(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
+    uint32_t get_gpio_ddr(unit_t unit);
+    void set_gpio_out(unit_t unit, uint32_t value, uint32_t mask = 0xffffffff);
+    uint32_t get_gpio_out(unit_t unit);
+    uint32_t read_gpio(unit_t unit);
 
     void set_command_time(const uhd::time_spec_t& t);
     uhd::time_spec_t get_command_time(void);
 
-    void write_i2c(boost::uint16_t, const uhd::byte_vector_t &);
-    uhd::byte_vector_t read_i2c(boost::uint16_t, size_t);
+    void write_i2c(uint16_t, const uhd::byte_vector_t &);
+    uhd::byte_vector_t read_i2c(uint16_t, size_t);
 
     void set_clock_rate(unit_t, double);
     double get_clock_rate(unit_t);
@@ -84,14 +84,14 @@ public:
     void write_spi(
         unit_t unit,
         const uhd::spi_config_t &config,
-        boost::uint32_t data,
+        uint32_t data,
         size_t num_bits
     );
 
-    boost::uint32_t read_write_spi(
+    uint32_t read_write_spi(
         unit_t unit,
         const uhd::spi_config_t &config,
-        boost::uint32_t data,
+        uint32_t data,
         size_t num_bits
     );
     void set_fe_connection(

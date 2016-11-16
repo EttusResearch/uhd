@@ -45,16 +45,16 @@ ProductID = "PID_0021"
 DeviceGUID = "{6960fcb7-8440-4271-a4e3-fef0cb9d01f7}"
 DeviceClassGUID = "{78a1c341-4539-11d3-b88d-00c04fad5171}"
 ; Date MUST be in MM/DD/YYYY format
-Date = "08/13/2015"
+Date = "03/29/2016"
 
 ; =====================================================
 ; ========== END USER CONFIGURABLE SECTION ============
 ; =====================================================
 
-ProviderName = "libusb 1.0"
+ProviderName = "Ettus Research"
 WinUSB_SvcDesc = "WinUSB Driver Service"
 DiskName = "libusb (WinUSB) Device Install Disk"
-ClassName = "libusb (WinUSB) devices"
+ClassName = "USRPs"
 
 ; ====================== Version ======================
 
@@ -64,7 +64,7 @@ Signature = "$Windows NT$"
 Class = %ClassName%
 ClassGuid = %DeviceClassGUID%
 Provider = %ProviderName%
-CatalogFile = libusb_device.cat
+CatalogFile = erllc_uhd.cat
 
 ; =================== Class section ===================
 

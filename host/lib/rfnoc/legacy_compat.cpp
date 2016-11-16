@@ -381,6 +381,9 @@ private: // methods
             const std::string block_name = _get_streamer_block_id_and_port<dir>(mboard_idx, radio_index, port_index);
             args.args[str(boost::format("block_id%d") % stream_arg_chan_idx)] = block_name;
             args.args[str(boost::format("block_port%d") % stream_arg_chan_idx)] = str(boost::format("%d") % port_index);
+            // Map radio to channel (for in-band response)
+            args.args[str(boost::format("radio_id%d") % stream_arg_chan_idx)] = block_id_t(mboard_idx, RADIO_BLOCK_NAME, radio_index).to_string();
+            args.args[str(boost::format("radio_port%d") % stream_arg_chan_idx)] = str(boost::format("%d") % chan_map[mboard_idx][this_mboard_chan_idx].port_index);
         }
     }
 

@@ -18,7 +18,7 @@
 #ifndef INCLUDED_UHD_UTILS_SOFT_REGISTER_HPP
 #define INCLUDED_UHD_UTILS_SOFT_REGISTER_HPP
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/noncopyable.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/exception.hpp>
@@ -83,7 +83,7 @@ UHD_INLINE bool unlikely(bool expr)
  * of this type because it will get optimized out by the compiler and
  * will result in zero memory overhead
  */
-typedef boost::uint32_t soft_reg_field_t;
+typedef uint32_t soft_reg_field_t;
 
 namespace soft_reg_field {
     UHD_INLINE size_t width(const soft_reg_field_t field) {
@@ -212,11 +212,11 @@ public:
             //out by the compiler because it is never read
             if (_flush_mode == ALWAYS_FLUSH || _soft_copy.is_dirty()) {
                 if (get_bitwidth() <= 16) {
-                    _iface->poke16(_wr_addr, static_cast<boost::uint16_t>(_soft_copy));
+                    _iface->poke16(_wr_addr, static_cast<uint16_t>(_soft_copy));
                 } else if (get_bitwidth() <= 32) {
-                    _iface->poke32(_wr_addr, static_cast<boost::uint32_t>(_soft_copy));
+                    _iface->poke32(_wr_addr, static_cast<uint32_t>(_soft_copy));
                 } else if (get_bitwidth() <= 64) {
-                    _iface->poke64(_wr_addr, static_cast<boost::uint64_t>(_soft_copy));
+                    _iface->poke64(_wr_addr, static_cast<uint64_t>(_soft_copy));
                 } else {
                     throw uhd::not_implemented_error("soft_register only supports up to 64 bits.");
                 }
@@ -380,26 +380,26 @@ private:
  */
 
 //16-bit shortcuts
-typedef soft_register_t<boost::uint16_t, false, true>       soft_reg16_wo_t;
-typedef soft_register_t<boost::uint16_t, true, false>       soft_reg16_ro_t;
-typedef soft_register_t<boost::uint16_t, true, true>        soft_reg16_rw_t;
-typedef soft_register_sync_t<boost::uint16_t, false, true>  soft_reg16_wo_sync_t;
-typedef soft_register_sync_t<boost::uint16_t, true, false>  soft_reg16_ro_sync_t;
-typedef soft_register_sync_t<boost::uint16_t, true, true>   soft_reg16_rw_sync_t;
+typedef soft_register_t<uint16_t, false, true>       soft_reg16_wo_t;
+typedef soft_register_t<uint16_t, true, false>       soft_reg16_ro_t;
+typedef soft_register_t<uint16_t, true, true>        soft_reg16_rw_t;
+typedef soft_register_sync_t<uint16_t, false, true>  soft_reg16_wo_sync_t;
+typedef soft_register_sync_t<uint16_t, true, false>  soft_reg16_ro_sync_t;
+typedef soft_register_sync_t<uint16_t, true, true>   soft_reg16_rw_sync_t;
 //32-bit shortcuts
-typedef soft_register_t<boost::uint32_t, false, true>       soft_reg32_wo_t;
-typedef soft_register_t<boost::uint32_t, true, false>       soft_reg32_ro_t;
-typedef soft_register_t<boost::uint32_t, true, true>        soft_reg32_rw_t;
-typedef soft_register_sync_t<boost::uint32_t, false, true>  soft_reg32_wo_sync_t;
-typedef soft_register_sync_t<boost::uint32_t, true, false>  soft_reg32_ro_sync_t;
-typedef soft_register_sync_t<boost::uint32_t, true, true>   soft_reg32_rw_sync_t;
+typedef soft_register_t<uint32_t, false, true>       soft_reg32_wo_t;
+typedef soft_register_t<uint32_t, true, false>       soft_reg32_ro_t;
+typedef soft_register_t<uint32_t, true, true>        soft_reg32_rw_t;
+typedef soft_register_sync_t<uint32_t, false, true>  soft_reg32_wo_sync_t;
+typedef soft_register_sync_t<uint32_t, true, false>  soft_reg32_ro_sync_t;
+typedef soft_register_sync_t<uint32_t, true, true>   soft_reg32_rw_sync_t;
 //64-bit shortcuts
-typedef soft_register_t<boost::uint64_t, false, true>       soft_reg64_wo_t;
-typedef soft_register_t<boost::uint64_t, true, false>       soft_reg64_ro_t;
-typedef soft_register_t<boost::uint64_t, true, true>        soft_reg64_rw_t;
-typedef soft_register_sync_t<boost::uint64_t, false, true>  soft_reg64_wo_sync_t;
-typedef soft_register_sync_t<boost::uint64_t, true, false>  soft_reg64_ro_sync_t;
-typedef soft_register_sync_t<boost::uint64_t, true, true>   soft_reg64_rw_sync_t;
+typedef soft_register_t<uint64_t, false, true>       soft_reg64_wo_t;
+typedef soft_register_t<uint64_t, true, false>       soft_reg64_ro_t;
+typedef soft_register_t<uint64_t, true, true>        soft_reg64_rw_t;
+typedef soft_register_sync_t<uint64_t, false, true>  soft_reg64_wo_sync_t;
+typedef soft_register_sync_t<uint64_t, true, false>  soft_reg64_ro_sync_t;
+typedef soft_register_sync_t<uint64_t, true, true>   soft_reg64_rw_sync_t;
 
 
 /*

@@ -175,7 +175,7 @@ void wbx_base::wbx_version3::set_tx_enabled(bool enb){
 double wbx_base::wbx_version3::set_tx_gain(double gain, const std::string &name){
     assert_has(wbx_v3_tx_gain_ranges.keys(), name, "wbx tx gain name");
     if(name == "PGA0"){
-        boost::uint16_t io_bits = tx_pga0_gain_to_iobits(gain);
+        uint16_t io_bits = tx_pga0_gain_to_iobits(gain);
 
         self_base->_tx_gains[name] = gain;
 

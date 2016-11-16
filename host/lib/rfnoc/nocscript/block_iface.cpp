@@ -140,7 +140,7 @@ void block_iface::run_and_check(const std::string &code, const std::string &erro
 expression_literal block_iface::_nocscript__sr_write(expression_container::expr_list_type args)
 {
     const std::string reg_name = args[0]->eval().get_string();
-    const boost::uint32_t reg_val = boost::uint32_t(args[1]->eval().get_int());
+    const uint32_t reg_val = uint32_t(args[1]->eval().get_int());
     bool result = true;
     try {
         UHD_NOCSCRIPT_LOG() << "[NocScript] Executing SR_WRITE() " << std::endl;

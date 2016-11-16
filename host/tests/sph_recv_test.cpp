@@ -72,18 +72,18 @@ public:
 
     void push_back_packet(
         uhd::transport::vrt::if_packet_info_t &ifpi,
-        const boost::uint32_t optional_msg_word = 0
+        const uint32_t optional_msg_word = 0
     ){
-        const size_t max_pkt_len = (ifpi.num_payload_words32 + uhd::transport::vrt::max_if_hdr_words32 + 1/*tlr*/)*sizeof(boost::uint32_t);
+        const size_t max_pkt_len = (ifpi.num_payload_words32 + uhd::transport::vrt::max_if_hdr_words32 + 1/*tlr*/)*sizeof(uint32_t);
         _mems.push_back(boost::shared_array<char>(new char[max_pkt_len]));
         if (_end == "big"){
-            uhd::transport::vrt::if_hdr_pack_be(reinterpret_cast<boost::uint32_t *>(_mems.back().get()), ifpi);
+            uhd::transport::vrt::if_hdr_pack_be(reinterpret_cast<uint32_t *>(_mems.back().get()), ifpi);
         }
         if (_end == "little"){
-            uhd::transport::vrt::if_hdr_pack_le(reinterpret_cast<boost::uint32_t *>(_mems.back().get()), ifpi);
+            uhd::transport::vrt::if_hdr_pack_le(reinterpret_cast<uint32_t *>(_mems.back().get()), ifpi);
         }
-        (reinterpret_cast<boost::uint32_t *>(_mems.back().get()) + ifpi.num_header_words32)[0] = optional_msg_word | uhd::byteswap(optional_msg_word);
-        _lens.push_back(ifpi.num_packet_words32*sizeof(boost::uint32_t));
+        (reinterpret_cast<uint32_t *>(_mems.back().get()) + ifpi.num_header_words32)[0] = optional_msg_word | uhd::byteswap(optional_msg_word);
+        _lens.push_back(ifpi.num_packet_words32*sizeof(uint32_t));
     }
 
     uhd::transport::managed_recv_buffer::sptr get_recv_buff(double){

@@ -38,13 +38,13 @@ public:
 
     virtual ~libusb_control_impl(void);
 
-    int submit(boost::uint8_t request_type,
-               boost::uint8_t request,
-               boost::uint16_t value,
-               boost::uint16_t index,
+    int submit(uint8_t request_type,
+               uint8_t request,
+               uint16_t value,
+               uint16_t index,
                unsigned char *buff,
-               boost::uint16_t length,
-               boost::uint32_t libusb_timeout = 0
+               uint16_t length,
+               uint32_t libusb_timeout = 0
     ){
         boost::mutex::scoped_lock lock(_mutex);
         return libusb_control_transfer(_handle->get(),

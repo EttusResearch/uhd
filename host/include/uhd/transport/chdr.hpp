@@ -59,7 +59,7 @@ namespace chdr{
      * \param if_packet_info the if packet info (read/write)
      */
     UHD_API void if_hdr_pack_be(
-        boost::uint32_t *packet_buff,
+        uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
     );
 
@@ -73,7 +73,7 @@ namespace chdr{
      * \param if_packet_info the if packet info (read/write)
      */
     UHD_API void if_hdr_unpack_be(
-        const boost::uint32_t *packet_buff,
+        const uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
     );
 
@@ -87,7 +87,7 @@ namespace chdr{
      * \param if_packet_info the if packet info (read/write)
      */
     UHD_API void if_hdr_pack_le(
-        boost::uint32_t *packet_buff,
+        uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
     );
 
@@ -101,7 +101,7 @@ namespace chdr{
      * \param if_packet_info the if packet info (read/write)
      */
     UHD_API void if_hdr_unpack_le(
-        const boost::uint32_t *packet_buff,
+        const uint32_t *packet_buff,
         if_packet_info_t &if_packet_info
     );
 

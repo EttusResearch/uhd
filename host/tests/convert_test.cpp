@@ -18,7 +18,7 @@
 #include <uhd/convert.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/foreach.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/assign/list_of.hpp>
 #include <complex>
 #include <vector>
@@ -28,7 +28,7 @@
 using namespace uhd;
 
 //typedefs for complex types
-typedef std::complex<boost::int16_t> sc16_t;
+typedef std::complex<int16_t> sc16_t;
 typedef std::complex<float> fc32_t;
 typedef std::complex<double> fc64_t;
 
@@ -51,7 +51,7 @@ template <typename Range> static void loopback(
     const int prio_out = -1
 ){
     //make this buffer large enough for all test types
-    std::vector<boost::uint64_t> interm(nsamps);
+    std::vector<uint64_t> interm(nsamps);
 
     std::vector<const void *> input0(1, &input[0]), input1(1, &interm[0]);
     std::vector<void *> output0(1, &interm[0]), output1(1, &output[0]);
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
         (std::rand()/float(RAND_MAX/2)) - 1,
         (std::rand()/float(RAND_MAX/2)) - 1
     );
-    std::vector<boost::uint32_t> interm(nsamps);
+    std::vector<uint32_t> interm(nsamps);
     std::vector<sc16_t> output(nsamps);
 
     std::vector<const void *> input0(1, &input[0]), input1(1, &interm[0]);
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
         std::rand()-(RAND_MAX/2),
         std::rand()-(RAND_MAX/2)
     );
-    std::vector<boost::uint32_t> interm(nsamps);
+    std::vector<uint32_t> interm(nsamps);
     std::vector<fc32_t> output(nsamps);
 
     std::vector<const void *> input0(1, &input[0]), input1(1, &interm[0]);
@@ -423,10 +423,10 @@ static void test_convert_types_u8(
     size_t nsamps, convert::id_type &id
 ){
     //fill the input samples
-    std::vector<boost::uint8_t> input(nsamps), output(nsamps);
-    BOOST_FOREACH(boost::uint8_t &in, input) in = boost::uint8_t(std::rand() & 0xFF);
-    //boost::uint32_t d = 48;
-    //BOOST_FOREACH(boost::uint8_t &in, input) in = d++;
+    std::vector<uint8_t> input(nsamps), output(nsamps);
+    BOOST_FOREACH(uint8_t &in, input) in = uint8_t(std::rand() & 0xFF);
+    //uint32_t d = 48;
+    //BOOST_FOREACH(uint8_t &in, input) in = d++;
 
     //run the loopback and test
     convert::id_type in_id = id;
@@ -463,8 +463,8 @@ static void test_convert_types_s8(
     size_t nsamps, convert::id_type &id
 ){
     //fill the input samples
-    std::vector<boost::int8_t> input(nsamps), output(nsamps);
-    BOOST_FOREACH(boost::int8_t &in, input) in = boost::int8_t(std::rand() & 0xFF);
+    std::vector<int8_t> input(nsamps), output(nsamps);
+    BOOST_FOREACH(int8_t &in, input) in = int8_t(std::rand() & 0xFF);
 
     //run the loopback and test
     convert::id_type in_id = id;
@@ -501,8 +501,8 @@ static void test_convert_types_s16(
     size_t nsamps, convert::id_type &id
 ){
     //fill the input samples
-    std::vector<boost::int16_t> input(nsamps), output(nsamps);
-    BOOST_FOREACH(boost::int16_t &in, input) in = boost::int16_t(std::rand() & 0xFFFF);
+    std::vector<int16_t> input(nsamps), output(nsamps);
+    BOOST_FOREACH(int16_t &in, input) in = int16_t(std::rand() & 0xFFFF);
 
     //run the loopback and test
     convert::id_type in_id = id;

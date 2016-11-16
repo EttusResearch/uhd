@@ -71,10 +71,10 @@ public:
 
     uhd::time_spec_t get_time_now(void){
         for (size_t i = 0; i < 3; i++){ //special algorithm because we cant read 64 bits synchronously
-            const boost::uint32_t ticks_hi = _iface->peek32(_readback_bases.rb_hi_now);
-            const boost::uint32_t ticks_lo = _iface->peek32(_readback_bases.rb_lo_now);
+            const uint32_t ticks_hi = _iface->peek32(_readback_bases.rb_hi_now);
+            const uint32_t ticks_lo = _iface->peek32(_readback_bases.rb_lo_now);
             if (ticks_hi != _iface->peek32(_readback_bases.rb_hi_now)) continue;
-            const boost::uint64_t ticks = (boost::uint64_t(ticks_hi) << 32) | ticks_lo;
+            const uint64_t ticks = (uint64_t(ticks_hi) << 32) | ticks_lo;
             return time_spec_t::from_ticks(ticks, _tick_rate);
         }
         throw uhd::runtime_error("time64_core_200: get time now timeout");
@@ -82,27 +82,27 @@ public:
 
     uhd::time_spec_t get_time_last_pps(void){
         for (size_t i = 0; i < 3; i++){ //special algorithm because we cant read 64 bits synchronously
-            const boost::uint32_t ticks_hi = _iface->peek32(_readback_bases.rb_hi_pps);
-            const boost::uint32_t ticks_lo = _iface->peek32(_readback_bases.rb_lo_pps);
+            const uint32_t ticks_hi = _iface->peek32(_readback_bases.rb_hi_pps);
+            const uint32_t ticks_lo = _iface->peek32(_readback_bases.rb_lo_pps);
             if (ticks_hi != _iface->peek32(_readback_bases.rb_hi_pps)) continue;
-            const boost::uint64_t ticks = (boost::uint64_t(ticks_hi) << 32) | ticks_lo;
+            const uint64_t ticks = (uint64_t(ticks_hi) << 32) | ticks_lo;
             return time_spec_t::from_ticks(ticks, _tick_rate);
         }
         throw uhd::runtime_error("time64_core_200: get time last pps timeout");
     }
 
     void set_time_now(const uhd::time_spec_t &time){
-        const boost::uint64_t ticks = time.to_ticks(_tick_rate);
-        _iface->poke32(REG_TIME64_TICKS_LO, boost::uint32_t(ticks >> 0));
+        const uint64_t ticks = time.to_ticks(_tick_rate);
+        _iface->poke32(REG_TIME64_TICKS_LO, uint32_t(ticks >> 0));
         _iface->poke32(REG_TIME64_IMM, FLAG_TIME64_LATCH_NOW);
-        _iface->poke32(REG_TIME64_TICKS_HI, boost::uint32_t(ticks >> 32)); //latches all 3
+        _iface->poke32(REG_TIME64_TICKS_HI, uint32_t(ticks >> 32)); //latches all 3
     }
 
     void set_time_next_pps(const uhd::time_spec_t &time){
-        const boost::uint64_t ticks = time.to_ticks(_tick_rate);
-        _iface->poke32(REG_TIME64_TICKS_LO, boost::uint32_t(ticks >> 0));
+        const uint64_t ticks = time.to_ticks(_tick_rate);
+        _iface->poke32(REG_TIME64_TICKS_LO, uint32_t(ticks >> 0));
         _iface->poke32(REG_TIME64_IMM, FLAG_TIME64_LATCH_NEXT_PPS);
-        _iface->poke32(REG_TIME64_TICKS_HI, boost::uint32_t(ticks >> 32)); //latches all 3
+        _iface->poke32(REG_TIME64_TICKS_HI, uint32_t(ticks >> 32)); //latches all 3
     }
 
     void set_time_source(const std::string &source){

@@ -39,7 +39,7 @@ public:
     }
 
 private:    //Functions
-    void _transact(const boost::uint32_t command);
+    void _transact(const uint32_t command);
     void _flush_xport();
 
 private:    //Members
@@ -47,7 +47,7 @@ private:    //Members
     transport::udp_simple::sptr _udp_xport;
     n230_flash_prog_t           _request;
     n230_flash_prog_t           _response;
-    boost::uint32_t             _seq_num;
+    uint32_t             _seq_num;
     boost::mutex                _mutex;
 
     static const double UDP_TIMEOUT_IN_SEC;

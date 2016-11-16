@@ -27,29 +27,29 @@
 namespace uhd { namespace usrp { namespace n230 {
 
 /* ATR Control Bits */
-static const boost::uint32_t TX_ENABLE      = (1 << 7);
-static const boost::uint32_t SFDX_RX        = (1 << 6);
-static const boost::uint32_t SFDX_TX        = (1 << 5);
-static const boost::uint32_t SRX_RX         = (1 << 4);
-static const boost::uint32_t SRX_TX         = (1 << 3);
-static const boost::uint32_t LED_RX         = (1 << 2);
-static const boost::uint32_t LED_TXRX_RX    = (1 << 1);
-static const boost::uint32_t LED_TXRX_TX    = (1 << 0);
+static const uint32_t TX_ENABLE      = (1 << 7);
+static const uint32_t SFDX_RX        = (1 << 6);
+static const uint32_t SFDX_TX        = (1 << 5);
+static const uint32_t SRX_RX         = (1 << 4);
+static const uint32_t SRX_TX         = (1 << 3);
+static const uint32_t LED_RX         = (1 << 2);
+static const uint32_t LED_TXRX_RX    = (1 << 1);
+static const uint32_t LED_TXRX_TX    = (1 << 0);
 
 /* ATR State Definitions. */
-static const boost::uint32_t STATE_OFF      = 0x00;
-static const boost::uint32_t STATE_RX_RX2   = (SFDX_RX
+static const uint32_t STATE_OFF      = 0x00;
+static const uint32_t STATE_RX_RX2   = (SFDX_RX
                                                 | SFDX_TX
                                                 | LED_RX);
-static const boost::uint32_t STATE_RX_TXRX  = (SRX_RX
+static const uint32_t STATE_RX_TXRX  = (SRX_RX
                                                 | SRX_TX
                                                 | LED_TXRX_RX);
-static const boost::uint32_t STATE_FDX_TXRX = (TX_ENABLE
+static const uint32_t STATE_FDX_TXRX = (TX_ENABLE
                                                 | SFDX_RX
                                                 | SFDX_TX
                                                 | LED_TXRX_TX
                                                 | LED_RX);
-static const boost::uint32_t STATE_TX_TXRX  = (TX_ENABLE
+static const uint32_t STATE_TX_TXRX  = (TX_ENABLE
                                                 | SFDX_RX
                                                 | SFDX_TX
                                                 | LED_TXRX_TX);

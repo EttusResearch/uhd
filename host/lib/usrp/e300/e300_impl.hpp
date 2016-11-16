@@ -74,19 +74,19 @@ static const size_t E300_RX_FC_REQUEST_FREQ = 5; // per flow ctrl window
 static const size_t E300_TX_FC_RESPONSE_FREQ = 8; // per flow ctrl window
 
 // crossbar settings
-static const boost::uint8_t E300_RADIO_DEST_PREFIX_TX   = 0;
-static const boost::uint8_t E300_RADIO_DEST_PREFIX_CTRL = 1;
-static const boost::uint8_t E300_RADIO_DEST_PREFIX_RX   = 2;
+static const uint8_t E300_RADIO_DEST_PREFIX_TX   = 0;
+static const uint8_t E300_RADIO_DEST_PREFIX_CTRL = 1;
+static const uint8_t E300_RADIO_DEST_PREFIX_RX   = 2;
 
-static const boost::uint8_t E300_XB_DST_AXI = 0;
-static const boost::uint8_t E300_XB_DST_RADIO  = 1;
-static const boost::uint8_t E300_XB_DST_R1  = 2;
+static const uint8_t E300_XB_DST_AXI = 0;
+static const uint8_t E300_XB_DST_RADIO  = 1;
+static const uint8_t E300_XB_DST_R1  = 2;
 // RFNoC blocks are connected to the first port
 // after the last radio (there might be less than 2
 // radios).
 
-static const boost::uint8_t E300_DEVICE_THERE = 2;
-static const boost::uint8_t E300_DEVICE_HERE  = 0;
+static const uint8_t E300_DEVICE_THERE = 2;
+static const uint8_t E300_DEVICE_HERE  = 0;
 
 static const size_t E300_R0_CTRL_STREAM    = (0 << 2) | E300_RADIO_DEST_PREFIX_CTRL;
 static const size_t E300_R0_TX_DATA_STREAM = (0 << 2) | E300_RADIO_DEST_PREFIX_TX;
@@ -141,7 +141,7 @@ private: // methods
      ***********************************************************************/
     void _register_loopback_self_test(wb_iface::sptr iface, boost::uint32_t w_addr, boost::uint32_t r_addr);
 
-    boost::uint32_t _get_version(compat_t which);
+    uint32_t _get_version(compat_t which);
     std::string _get_version_hash(void);
 
     /************************************************************************

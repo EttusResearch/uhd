@@ -35,8 +35,8 @@ using boost::asio::ip::tcp;
 rpc_client::rpc_client (
     const std::string& server,
     const std::string& port,
-    boost::uint32_t process_id,
-    boost::uint32_t host_id
+    uint32_t process_id,
+    uint32_t host_id
 ) : _socket(_io_service)
 {
     //Fill in handshake info

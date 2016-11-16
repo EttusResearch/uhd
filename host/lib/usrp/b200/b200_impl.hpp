@@ -47,37 +47,37 @@
 #include <boost/assign.hpp>
 #include <boost/weak_ptr.hpp>
 #include "recv_packet_demuxer_3000.hpp"
-static const boost::uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
-static const boost::uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
-static const boost::uint16_t B200_FPGA_COMPAT_NUM = 14;
-static const boost::uint16_t B205_FPGA_COMPAT_NUM = 5;
+static const uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
+static const uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
+static const uint16_t B200_FPGA_COMPAT_NUM = 14;
+static const uint16_t B205_FPGA_COMPAT_NUM = 5;
 static const double          B200_BUS_CLOCK_RATE = 100e6;
-static const boost::uint32_t B200_GPSDO_ST_NONE = 0x83;
+static const uint32_t B200_GPSDO_ST_NONE = 0x83;
 static const size_t B200_MAX_RATE_USB2              =  53248000; // bytes/s
 static const size_t B200_MAX_RATE_USB3              = 500000000; // bytes/s
 
 #define FLIP_SID(sid) (((sid)<<16)|((sid)>>16))
 
-static const boost::uint32_t B200_CTRL0_MSG_SID = 0x00000010;
-static const boost::uint32_t B200_RESP0_MSG_SID = FLIP_SID(B200_CTRL0_MSG_SID);
+static const uint32_t B200_CTRL0_MSG_SID = 0x00000010;
+static const uint32_t B200_RESP0_MSG_SID = FLIP_SID(B200_CTRL0_MSG_SID);
 
-static const boost::uint32_t B200_CTRL1_MSG_SID = 0x00000020;
-static const boost::uint32_t B200_RESP1_MSG_SID = FLIP_SID(B200_CTRL1_MSG_SID);
+static const uint32_t B200_CTRL1_MSG_SID = 0x00000020;
+static const uint32_t B200_RESP1_MSG_SID = FLIP_SID(B200_CTRL1_MSG_SID);
 
-static const boost::uint32_t B200_TX_DATA0_SID = 0x00000050;
-static const boost::uint32_t B200_TX_MSG0_SID = FLIP_SID(B200_TX_DATA0_SID);
+static const uint32_t B200_TX_DATA0_SID = 0x00000050;
+static const uint32_t B200_TX_MSG0_SID = FLIP_SID(B200_TX_DATA0_SID);
 
-static const boost::uint32_t B200_TX_DATA1_SID = 0x00000060;
-static const boost::uint32_t B200_TX_MSG1_SID = FLIP_SID(B200_TX_DATA1_SID);
+static const uint32_t B200_TX_DATA1_SID = 0x00000060;
+static const uint32_t B200_TX_MSG1_SID = FLIP_SID(B200_TX_DATA1_SID);
 
-static const boost::uint32_t B200_RX_DATA0_SID = 0x000000A0;
-static const boost::uint32_t B200_RX_DATA1_SID = 0x000000B0;
+static const uint32_t B200_RX_DATA0_SID = 0x000000A0;
+static const uint32_t B200_RX_DATA1_SID = 0x000000B0;
 
-static const boost::uint32_t B200_TX_GPS_UART_SID = 0x00000030;
-static const boost::uint32_t B200_RX_GPS_UART_SID = FLIP_SID(B200_TX_GPS_UART_SID);
+static const uint32_t B200_TX_GPS_UART_SID = 0x00000030;
+static const uint32_t B200_RX_GPS_UART_SID = FLIP_SID(B200_TX_GPS_UART_SID);
 
-static const boost::uint32_t B200_LOCAL_CTRL_SID = 0x00000040;
-static const boost::uint32_t B200_LOCAL_RESP_SID = FLIP_SID(B200_LOCAL_CTRL_SID);
+static const uint32_t B200_LOCAL_CTRL_SID = 0x00000040;
+static const uint32_t B200_LOCAL_RESP_SID = FLIP_SID(B200_LOCAL_CTRL_SID);
 
 static const unsigned char B200_USB_CTRL_RECV_INTERFACE = 4;
 static const unsigned char B200_USB_CTRL_RECV_ENDPOINT  = 8;
@@ -207,7 +207,7 @@ private:
     void handle_overflow(const size_t radio_index);
 
     struct gpio_state {
-        boost::uint32_t  tx_bandsel_a, tx_bandsel_b, rx_bandsel_a, rx_bandsel_b, rx_bandsel_c, mimo, ref_sel, swap_atr;
+        uint32_t  tx_bandsel_a, tx_bandsel_b, rx_bandsel_a, rx_bandsel_b, rx_bandsel_c, mimo, ref_sel, swap_atr;
 
         gpio_state() {
             tx_bandsel_a = 0;

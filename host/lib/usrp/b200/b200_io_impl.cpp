@@ -93,7 +93,7 @@ void b200_impl::set_auto_tick_rate(
 
     // See also the doxygen documentation for these steps in b200_impl.hpp
     // Step 1: Obtain LCM and max rate from all relevant dsps
-    boost::uint32_t lcm_rate = (rate == 0) ? 1 : static_cast<boost::uint32_t>(floor(rate + 0.5));
+    uint32_t lcm_rate = (rate == 0) ? 1 : static_cast<uint32_t>(floor(rate + 0.5));
     for (int i = 0; i < 2; i++) { // Loop through rx and tx
         std::string dir = (i == 0) ? "tx" : "rx";
         // We assume all 'set' DSPs are being used.
@@ -115,9 +115,9 @@ void b200_impl::set_auto_tick_rate(
             }
             // Clean up floating point rounding errors if they crept in
             this_dsp_rate = std::min(max_tick_rate, this_dsp_rate);
-            lcm_rate = boost::math::lcm<boost::uint32_t>(
+            lcm_rate = boost::math::lcm<uint32_t>(
                     lcm_rate,
-                    static_cast<boost::uint32_t>(floor(this_dsp_rate + 0.5))
+                    static_cast<uint32_t>(floor(this_dsp_rate + 0.5))
             );
         }
     }
@@ -266,7 +266,7 @@ void b200_impl::update_subdev_spec(const std::string &tx_rx, const uhd::usrp::su
 }
 
 static void b200_if_hdr_unpack_le(
-    const boost::uint32_t *packet_buff,
+    const uint32_t *packet_buff,
     vrt::if_packet_info_t &if_packet_info
 ){
     if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
@@ -274,7 +274,7 @@ static void b200_if_hdr_unpack_le(
 }
 
 static void b200_if_hdr_pack_le(
-    boost::uint32_t *packet_buff,
+    uint32_t *packet_buff,
     vrt::if_packet_info_t &if_packet_info
 ){
     if_packet_info.link_type = vrt::if_packet_info_t::LINK_TYPE_CHDR;
@@ -310,7 +310,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
     if (not buff or buff->size() < 8)
         return boost::none;
 
-    const boost::uint32_t sid = uhd::wtohx(buff->cast<const boost::uint32_t *>()[1]);
+    const uint32_t sid = uhd::wtohx(buff->cast<const uint32_t *>()[1]);
     switch (sid) {
 
     //if the packet is a control response
@@ -323,10 +323,10 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
         if (sid == B200_RESP1_MSG_SID) ctrl = data->radio_ctrl[1].lock();
         if (sid == B200_LOCAL_RESP_SID) ctrl = data->local_ctrl.lock();
         if (ctrl){
-        	ctrl->push_response(buff->cast<const boost::uint32_t *>());
+        	ctrl->push_response(buff->cast<const uint32_t *>());
         }
         else{
-            return std::make_pair(sid, uhd::msg_task::buff_to_vector(buff->cast<boost::uint8_t *>(), buff->size() ) );
+            return std::make_pair(sid, uhd::msg_task::buff_to_vector(buff->cast<uint8_t *>(), buff->size() ) );
         }
         break;
     }
@@ -346,8 +346,8 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
 
         //extract packet info
         vrt::if_packet_info_t if_packet_info;
-        if_packet_info.num_packet_words32 = buff->size()/sizeof(boost::uint32_t);
-        const boost::uint32_t *packet_buff = buff->cast<const boost::uint32_t *>();
+        if_packet_info.num_packet_words32 = buff->size()/sizeof(uint32_t);
+        const uint32_t *packet_buff = buff->cast<const uint32_t *>();
 
         //unpacking can fail
         try
@@ -362,7 +362,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
 
         //fill in the async metadata
         async_metadata_t metadata;
-        load_metadata_from_buff(uhd::wtohx<boost::uint32_t>, metadata, if_packet_info, packet_buff, _tick_rate, i);
+        load_metadata_from_buff(uhd::wtohx<uint32_t>, metadata, if_packet_info, packet_buff, _tick_rate, i);
         data->async_md->push_with_pop_on_full(metadata);
         standard_async_msg_prints(metadata);
         break;
@@ -403,11 +403,11 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t &args_)
         if (args.otw_format == "sc12") perif.ctrl->poke32(TOREG(SR_RX_FMT), 1);
         if (args.otw_format == "fc32") perif.ctrl->poke32(TOREG(SR_RX_FMT), 2);
         if (args.otw_format == "sc8") perif.ctrl->poke32(TOREG(SR_RX_FMT), 3);
-        const boost::uint32_t sid = radio_index ? B200_RX_DATA1_SID : B200_RX_DATA0_SID;
+        const uint32_t sid = radio_index ? B200_RX_DATA1_SID : B200_RX_DATA0_SID;
 
         //calculate packet size
         static const size_t hdr_size = 0
-            + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+            + vrt::max_if_hdr_words32*sizeof(uint32_t)
             //+ sizeof(vrt::if_packet_info_t().tlr) //no longer using trailer
             - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
             - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
@@ -516,7 +516,7 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         //calculate packet size
         static const size_t hdr_size = 0
-            + vrt::max_if_hdr_words32*sizeof(boost::uint32_t)
+            + vrt::max_if_hdr_words32*sizeof(uint32_t)
             //+ sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
             - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
             - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used

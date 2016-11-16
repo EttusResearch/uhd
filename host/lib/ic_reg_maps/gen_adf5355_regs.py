@@ -142,13 +142,13 @@ enum addr_t{
     ADDR_R12 = 12
 };
 
-boost::uint32_t get_reg(boost::uint8_t addr){
-    boost::uint32_t reg = addr & 0xF;
+uint32_t get_reg(uint8_t addr){
+    uint32_t reg = addr & 0xF;
     switch(addr){
     % for addr in range(12+1):
     case ${addr}:
         % for reg in filter(lambda r: r.get_addr() == addr, regs):
-        reg |= (boost::uint32_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        reg |= (uint32_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
         % endfor
         break;
     % endfor

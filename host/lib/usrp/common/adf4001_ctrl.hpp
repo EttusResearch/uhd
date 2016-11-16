@@ -25,7 +25,7 @@
 
 #include "spi_core_3000.hpp"
 #include <uhd/types/serial.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/thread/thread.hpp>
 
 namespace uhd { namespace usrp {
@@ -34,14 +34,14 @@ class adf4001_regs_t {
 public:
 
     /* Function prototypes */
-    boost::uint32_t get_reg(boost::uint8_t addr);
+    uint32_t get_reg(uint8_t addr);
     adf4001_regs_t(void);
 
     /* Register values / addresses */
-    boost::uint16_t ref_counter; //14 bits
-    boost::uint16_t n; //13 bits
-    boost::uint8_t charge_pump_current_1; //3 bits
-    boost::uint8_t charge_pump_current_2; //3 bits
+    uint16_t ref_counter; //14 bits
+    uint16_t n; //13 bits
+    uint8_t charge_pump_current_1; //3 bits
+    uint8_t charge_pump_current_2; //3 bits
 
     enum anti_backlash_width_t {
         ANTI_BACKLASH_WIDTH_2_9NS = 0,
@@ -133,7 +133,7 @@ private:
     adf4001_regs_t adf4001_regs;
 
     void program_regs(void);
-    void write_reg(boost::uint8_t addr);
+    void write_reg(uint8_t addr);
 };
 
 }}

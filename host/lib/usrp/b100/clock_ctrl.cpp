@@ -22,7 +22,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include "b100_regs.hpp" //spi slave constants
 #include <boost/assign/list_of.hpp>
 #include <boost/foreach.hpp>
@@ -119,8 +119,8 @@ static clock_settings_type get_clock_settings(double rate){
     //X = chan_div * vco_div * R
     //Y = P*B + A
 
-    const boost::uint64_t out_rate = boost::uint64_t(rate);
-    const boost::uint64_t ref_rate = boost::uint64_t(cs.get_ref_rate());
+    const uint64_t out_rate = uint64_t(rate);
+    const uint64_t ref_rate = uint64_t(cs.get_ref_rate());
     const size_t gcd = size_t(boost::math::gcd(ref_rate, out_rate));
 
     for (size_t i = 1; i <= 100; i++){
@@ -446,8 +446,8 @@ public:
     }
 
     bool get_locked(void){
-        static const boost::uint8_t addr = 0x01F;
-        boost::uint32_t reg = this->read_reg(addr);
+        static const uint8_t addr = 0x01F;
+        uint32_t reg = this->read_reg(addr);
         _ad9522_regs.set_reg(addr, reg);
         return _ad9522_regs.digital_lock_detect != 0;
     }
@@ -464,26 +464,26 @@ private:
         this->send_reg(0x232);
     }
 
-    void send_reg(boost::uint16_t addr){
-        boost::uint32_t reg = _ad9522_regs.get_write_reg(addr);
+    void send_reg(uint16_t addr){
+        uint32_t reg = _ad9522_regs.get_write_reg(addr);
         UHD_LOGV(often) << "clock control write reg: " << std::hex << reg << std::endl;
         byte_vector_t buf;
-        buf.push_back(boost::uint8_t(reg >> 16));
-        buf.push_back(boost::uint8_t(reg >> 8));
-        buf.push_back(boost::uint8_t(reg & 0xff));
+        buf.push_back(uint8_t(reg >> 16));
+        buf.push_back(uint8_t(reg >> 8));
+        buf.push_back(uint8_t(reg & 0xff));
 
         _iface->write_i2c(0x5C, buf);
     }
 
-    boost::uint8_t read_reg(boost::uint16_t addr){
+    uint8_t read_reg(uint16_t addr){
         byte_vector_t buf;
-        buf.push_back(boost::uint8_t(addr >> 8));
-        buf.push_back(boost::uint8_t(addr & 0xff));
+        buf.push_back(uint8_t(addr >> 8));
+        buf.push_back(uint8_t(addr & 0xff));
         _iface->write_i2c(0x5C, buf);
 
         buf = _iface->read_i2c(0x5C, 1);
 
-        return boost::uint32_t(buf[0] & 0xFF);
+        return uint32_t(buf[0] & 0xFF);
     }
 
     void calibrate_now(void){
@@ -495,10 +495,10 @@ private:
         this->send_reg(0x18);
         this->latch_regs();
         //wait for calibration done:
-        static const boost::uint8_t addr = 0x01F;
+        static const uint8_t addr = 0x01F;
         for (size_t ms10 = 0; ms10 < 100; ms10++){
             boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-            boost::uint32_t reg = read_reg(addr);
+            uint32_t reg = read_reg(addr);
             _ad9522_regs.set_reg(addr, reg);
             if (_ad9522_regs.vco_calibration_finished) goto wait_for_ld;
         }
@@ -507,7 +507,7 @@ private:
         //wait for digital lock detect:
         for (size_t ms10 = 0; ms10 < 100; ms10++){
             boost::this_thread::sleep(boost::posix_time::milliseconds(10));
-            boost::uint32_t reg = read_reg(addr);
+            uint32_t reg = read_reg(addr);
             _ad9522_regs.set_reg(addr, reg);
             if (_ad9522_regs.digital_lock_detect) return;
         }
@@ -525,7 +525,7 @@ private:
 
     void send_all_regs(void){
         //setup a list of register ranges to write
-        typedef std::pair<boost::uint16_t, boost::uint16_t> range_t;
+        typedef std::pair<uint16_t, uint16_t> range_t;
         static const std::vector<range_t> ranges = boost::assign::list_of
             (range_t(0x000, 0x000)) (range_t(0x010, 0x01F))
             (range_t(0x0F0, 0x0FD)) (range_t(0x190, 0x19B))
@@ -534,7 +534,7 @@ private:
 
         //write initial register values and latch/update
         BOOST_FOREACH(const range_t &range, ranges){
-            for(boost::uint16_t addr = range.first; addr <= range.second; addr++){
+            for(uint16_t addr = range.first; addr <= range.second; addr++){
                 this->send_reg(addr);
             }
         }

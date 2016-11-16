@@ -21,7 +21,7 @@
 #include <uhd/config.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <vector>
 
 namespace uhd { namespace transport {
@@ -41,7 +41,7 @@ namespace uhd { namespace transport {
 class UHD_API usb_device_handle : boost::noncopyable {
 public:
     typedef boost::shared_ptr<usb_device_handle> sptr;
-    typedef std::pair<boost::uint16_t, boost::uint16_t> vid_pid_pair_t;
+    typedef std::pair<uint16_t, uint16_t> vid_pid_pair_t;
 
     virtual ~usb_device_handle(void);
 
@@ -67,13 +67,13 @@ public:
      * Return the device's Vendor ID (usually assigned by the USB-IF)
      * \return a Vendor ID
      */
-    virtual boost::uint16_t get_vendor_id() const = 0;
+    virtual uint16_t get_vendor_id() const = 0;
 
     /*!
      * Return the device's Product ID (usually assigned by manufacturer)
      * \return a Product ID
      */
-    virtual boost::uint16_t get_product_id() const = 0;
+    virtual uint16_t get_product_id() const = 0;
 
     /*!
      * Test whether the firmware is loaded on the device.
@@ -85,7 +85,7 @@ public:
      * Return a vector of USB devices on this host
      * \return a vector of USB device handles that match vid and pid
      */
-    static std::vector<usb_device_handle::sptr> get_device_list(boost::uint16_t vid, boost::uint16_t pid);
+    static std::vector<usb_device_handle::sptr> get_device_list(uint16_t vid, uint16_t pid);
     static std::vector<usb_device_handle::sptr> get_device_list(const std::vector<usb_device_handle::vid_pid_pair_t>& vid_pid_pair_list);
 
 

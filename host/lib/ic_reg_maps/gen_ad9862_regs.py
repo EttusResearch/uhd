@@ -202,13 +202,13 @@ chip_id                63[0:7]            0
 # Header and Source templates below
 ########################################################################
 BODY_TMPL="""
-boost::uint8_t get_reg(boost::uint8_t addr){
-    boost::uint8_t reg = 0;
+uint8_t get_reg(uint8_t addr){
+    uint8_t reg = 0;
     switch(addr){
     % for addr in range(0, 63+1):
     case ${addr}:
         % for reg in filter(lambda r: r.get_addr() == addr, regs):
-        reg |= (boost::uint16_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
+        reg |= (uint16_t(${reg.get_name()}) & ${reg.get_mask()}) << ${reg.get_shift()};
         % endfor
         break;
     % endfor
@@ -216,7 +216,7 @@ boost::uint8_t get_reg(boost::uint8_t addr){
     return reg;
 }
 
-void set_reg(boost::uint8_t addr, boost::uint16_t reg){
+void set_reg(uint8_t addr, uint16_t reg){
     switch(addr){
     % for addr in sorted(set(map(lambda r: r.get_addr(), regs))):
     case ${addr}:
@@ -228,12 +228,12 @@ void set_reg(boost::uint8_t addr, boost::uint16_t reg){
     }
 }
 
-boost::uint16_t get_write_reg(boost::uint8_t addr){
-    return (boost::uint16_t(addr) << 8) | get_reg(addr);
+uint16_t get_write_reg(uint8_t addr){
+    return (uint16_t(addr) << 8) | get_reg(addr);
 }
 
-boost::uint16_t get_read_reg(boost::uint8_t addr){
-    return (boost::uint16_t(addr) << 8) | (1 << 15);
+uint16_t get_read_reg(uint8_t addr){
+    return (uint16_t(addr) << 8) | (1 << 15);
 }
 """
 

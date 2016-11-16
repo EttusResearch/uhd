@@ -74,7 +74,7 @@ private:
     uhd::dict<std::string, double> _gains;
     max2118_write_regs_t _max2118_write_regs;
     max2118_read_regs_t _max2118_read_regs;
-    boost::uint8_t _max2118_addr(void){
+    uint8_t _max2118_addr(void){
         return (this->get_iface()->get_special_props().mangle_i2c_addrs)? 0x65 : 0x67;
     };
 
@@ -82,12 +82,12 @@ private:
     double set_gain(double gain, const std::string &name);
     double set_bandwidth(double bandwidth);
 
-    void send_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
-        start_reg = boost::uint8_t(uhd::clip(int(start_reg), 0x0, 0x5));
-        stop_reg = boost::uint8_t(uhd::clip(int(stop_reg), 0x0, 0x5));
+    void send_reg(uint8_t start_reg, uint8_t stop_reg){
+        start_reg = uint8_t(uhd::clip(int(start_reg), 0x0, 0x5));
+        stop_reg = uint8_t(uhd::clip(int(stop_reg), 0x0, 0x5));
 
-        for(boost::uint8_t start_addr=start_reg; start_addr <= stop_reg; start_addr += sizeof(boost::uint32_t) - 1){
-            int num_bytes = int(stop_reg - start_addr + 1) > int(sizeof(boost::uint32_t)) - 1 ? sizeof(boost::uint32_t) - 1 : stop_reg - start_addr + 1;
+        for(uint8_t start_addr=start_reg; start_addr <= stop_reg; start_addr += sizeof(uint32_t) - 1){
+            int num_bytes = int(stop_reg - start_addr + 1) > int(sizeof(uint32_t)) - 1 ? sizeof(uint32_t) - 1 : stop_reg - start_addr + 1;
 
             //create buffer for register data (+1 for start address)
             byte_vector_t regs_vector(num_bytes + 1);
@@ -110,13 +110,13 @@ private:
         }
     }
 
-    void read_reg(boost::uint8_t start_reg, boost::uint8_t stop_reg){
-        static const boost::uint8_t status_addr = 0x0;
-        start_reg = boost::uint8_t(uhd::clip(int(start_reg), 0x0, 0x1));
-        stop_reg = boost::uint8_t(uhd::clip(int(stop_reg), 0x0, 0x1));
+    void read_reg(uint8_t start_reg, uint8_t stop_reg){
+        static const uint8_t status_addr = 0x0;
+        start_reg = uint8_t(uhd::clip(int(start_reg), 0x0, 0x1));
+        stop_reg = uint8_t(uhd::clip(int(stop_reg), 0x0, 0x1));
 
-        for(boost::uint8_t start_addr=start_reg; start_addr <= stop_reg; start_addr += sizeof(boost::uint32_t)){
-            int num_bytes = int(stop_reg - start_addr + 1) > int(sizeof(boost::uint32_t)) ? sizeof(boost::uint32_t) : stop_reg - start_addr + 1;
+        for(uint8_t start_addr=start_reg; start_addr <= stop_reg; start_addr += sizeof(uint32_t)){
+            int num_bytes = int(stop_reg - start_addr + 1) > int(sizeof(uint32_t)) ? sizeof(uint32_t) : stop_reg - start_addr + 1;
 
             //create buffer for register data
             byte_vector_t regs_vector(num_bytes);
@@ -126,7 +126,7 @@ private:
                 _max2118_addr(), num_bytes
             );
 
-            for(boost::uint8_t i=0; i < num_bytes; i++){
+            for(uint8_t i=0; i < num_bytes; i++){
                 if (i + start_addr >= status_addr){
                     _max2118_read_regs.set_reg(i + start_addr, regs_vector[i]);
                 }

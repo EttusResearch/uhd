@@ -97,7 +97,7 @@ public:
         return gain_bits/2;
     }
 
-    void set_test_word(const std::string &patterna, const std::string &patternb, const boost::uint32_t num)
+    void set_test_word(const std::string &patterna, const std::string &patternb, const uint32_t num)
     {
         _ads62p48_regs.custom_pattern_low = num & 0xff;
         _ads62p48_regs.custom_pattern_high = num >> 8;
@@ -131,9 +131,9 @@ private:
     uhd::spi_iface::sptr _iface;
     const size_t _slaveno;
 
-    void send_ads62p48_reg(boost::uint8_t addr)
+    void send_ads62p48_reg(uint8_t addr)
     {
-        boost::uint16_t reg = _ads62p48_regs.get_write_reg(addr);
+        uint16_t reg = _ads62p48_regs.get_write_reg(addr);
         _iface->write_spi(_slaveno, spi_config_t::EDGE_FALL, reg, 16);
     }
 };

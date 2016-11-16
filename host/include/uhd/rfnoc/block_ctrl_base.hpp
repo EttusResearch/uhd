@@ -29,7 +29,6 @@
 #include <uhd/rfnoc/stream_sig.hpp>
 #include <uhd/rfnoc/blockdef.hpp>
 #include <uhd/rfnoc/constants.hpp>
-#include <boost/cstdint.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 #include <stdint.h>
@@ -47,7 +46,6 @@ struct make_args_t
 {
     make_args_t(const std::string &key="") :
         device_index(0),
-        is_big_endian(true),
         block_name(""),
         block_key(key)
     {}
@@ -62,7 +60,6 @@ struct make_args_t
     //  property tree is /mboards/0, pass a subtree starting at /mboards/0
     //  to the constructor.
     uhd::property_tree::sptr tree;
-    bool is_big_endian;
     //! The name of the block as it will be addressed
     std::string block_name;
     //! The key of the block, i.e. how it was registered
@@ -142,7 +139,7 @@ public:
      * \param noc_id The 64-Bit NoC-ID.
      * \return a shared pointer to a new device instance
      */
-    static sptr make(const make_args_t &make_args, boost::uint64_t noc_id = ~0);
+    static sptr make(const make_args_t &make_args, uint64_t noc_id = ~0);
 
     /***********************************************************************
      * Block Communication and Control
@@ -152,7 +149,7 @@ public:
 
     /*! Returns the 16-Bit address for this block.
      */
-    boost::uint32_t get_address(size_t block_port=0);
+    uint32_t get_address(size_t block_port=0);
 
     /*! Returns the unique block ID for this block (e.g. "0/FFT_1").
      */
@@ -179,7 +176,7 @@ public:
      * \param data New value of this register.
      * \param port Destination port
      */
-    void sr_write(const boost::uint32_t reg, const boost::uint32_t data, const size_t port = 0);
+    void sr_write(const uint32_t reg, const uint32_t data, const size_t port = 0);
 
     /*! Allows setting one register on the settings bus.
      *
@@ -191,7 +188,7 @@ public:
      * \throw uhd::key_error if \p reg is not a valid register name
      *
      */
-    void sr_write(const std::string &reg, const boost::uint32_t data, const size_t port = 0);
+    void sr_write(const std::string &reg, const uint32_t data, const size_t port = 0);
 
     /*! Allows reading one register on the settings bus (64-Bit version).
      *
@@ -200,7 +197,7 @@ public:
      *
      * Returns the readback value.
      */
-    boost::uint64_t sr_read64(const settingsbus_reg_t reg, const size_t port = 0);
+    uint64_t sr_read64(const settingsbus_reg_t reg, const size_t port = 0);
 
     /*! Allows reading one register on the settings bus (32-Bit version).
      *
@@ -209,7 +206,7 @@ public:
      *
      * Returns the readback value.
      */
-    boost::uint32_t sr_read32(const settingsbus_reg_t reg, const size_t port = 0);
+    uint32_t sr_read32(const settingsbus_reg_t reg, const size_t port = 0);
 
     /*! Allows reading one user-defined register (64-Bit version).
      *
@@ -221,7 +218,7 @@ public:
      * \param port Port on which to read
      * \returns the readback value.
      */
-    boost::uint64_t user_reg_read64(const boost::uint32_t addr, const size_t port = 0);
+    uint64_t user_reg_read64(const uint32_t addr, const size_t port = 0);
 
     /*! Allows reading one user-defined register (64-Bit version).
      *
@@ -234,7 +231,7 @@ public:
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
      */
-    boost::uint64_t user_reg_read64(const std::string &reg, const size_t port = 0);
+    uint64_t user_reg_read64(const std::string &reg, const size_t port = 0);
 
     /*! Allows reading one user-defined register (32-Bit version).
      *
@@ -246,7 +243,7 @@ public:
      * \param port Port on which to read
      * \returns the readback value.
      */
-    boost::uint32_t user_reg_read32(const boost::uint32_t addr, const size_t port = 0);
+    uint32_t user_reg_read32(const uint32_t addr, const size_t port = 0);
 
     /*! Allows reading one user-defined register (32-Bit version).
      *
@@ -259,7 +256,7 @@ public:
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
      */
-    boost::uint32_t user_reg_read32(const std::string &reg, const size_t port = 0);
+    uint32_t user_reg_read32(const std::string &reg, const size_t port = 0);
 
 
     /*! Sets a command time for all future command packets.
@@ -393,9 +390,6 @@ protected:
 
     //! Root node of this block's properties
     uhd::fs_path _root_path;
-
-    //! Endianness of underlying transport (for data transport)
-    bool _transport_is_big_endian;
 
     //! Block definition (stores info about the block such as ports)
     blockdef::sptr _block_def;

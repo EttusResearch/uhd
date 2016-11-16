@@ -39,8 +39,8 @@ using std::string;
  * Helpers
  **********************************************************************/
 //! Convert register to a peek/poke compatible address
-inline boost::uint32_t _sr_to_addr(boost::uint32_t reg) { return reg * 4; };
-inline boost::uint32_t _sr_to_addr64(boost::uint32_t reg) { return reg * 8; }; // for peek64
+inline uint32_t _sr_to_addr(uint32_t reg) { return reg * 4; };
+inline uint32_t _sr_to_addr64(uint32_t reg) { return reg * 8; }; // for peek64
 
 /***********************************************************************
  * Structors
@@ -48,7 +48,6 @@ inline boost::uint32_t _sr_to_addr64(boost::uint32_t reg) { return reg * 8; }; /
 block_ctrl_base::block_ctrl_base(
         const make_args_t &make_args
 ) : _tree(make_args.tree),
-    _transport_is_big_endian(make_args.is_big_endian),
     _ctrl_ifaces(make_args.ctrl_ifaces),
     _base_address(make_args.base_address & 0xFFF0)
 {
@@ -56,7 +55,7 @@ block_ctrl_base::block_ctrl_base(
 
     /*** Identify this block (NoC-ID, block-ID, and block definition) *******/
     // Read NoC-ID (name is passed in through make_args):
-    boost::uint64_t noc_id = sr_read64(SR_READBACK_REG_ID);
+    uint64_t noc_id = sr_read64(SR_READBACK_REG_ID);
     _block_def = blockdef::make_from_noc_id(noc_id);
     if (_block_def) UHD_BLOCK_LOG() <<  "Found valid blockdef" << std::endl;
     if (not _block_def)
@@ -74,7 +73,7 @@ block_ctrl_base::block_ctrl_base(
 
     /*** Initialize property tree *******************************************/
     _root_path = "xbar/" + _block_id.get_local();
-    _tree->create<boost::uint64_t>(_root_path / "noc_id").set(noc_id);
+    _tree->create<uint64_t>(_root_path / "noc_id").set(noc_id);
 
     /*** Reset block state *******************************************/
     clear();
@@ -224,7 +223,7 @@ std::vector<size_t> block_ctrl_base::get_ctrl_ports() const
     return ctrl_ports;
 }
 
-void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t data, const size_t port)
+void block_ctrl_base::sr_write(const uint32_t reg, const uint32_t data, const size_t port)
 {
     //UHD_BLOCK_LOG() << "  ";
     //UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%d, %08X, %d)") % reg % data % port << std::endl;
@@ -239,9 +238,9 @@ void block_ctrl_base::sr_write(const boost::uint32_t reg, const boost::uint32_t 
     }
 }
 
-void block_ctrl_base::sr_write(const std::string &reg, const boost::uint32_t data, const size_t port)
+void block_ctrl_base::sr_write(const std::string &reg, const uint32_t data, const size_t port)
 {
-    boost::uint32_t reg_addr = 255;
+    uint32_t reg_addr = 255;
     if (DEFAULT_NAMED_SR.has_key(reg)) {
         reg_addr = DEFAULT_NAMED_SR[reg];
     } else {
@@ -251,14 +250,14 @@ void block_ctrl_base::sr_write(const std::string &reg, const boost::uint32_t dat
                     % reg
             ));
         }
-        reg_addr = boost::uint32_t(_tree->access<size_t>(_root_path / "registers" / "sr" / reg).get());
+        reg_addr = uint32_t(_tree->access<size_t>(_root_path / "registers" / "sr" / reg).get());
     }
     UHD_BLOCK_LOG() << "  ";
     UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%s, %08X) ==> ") % reg % data << std::endl;
     return sr_write(reg_addr, data, port);
 }
 
-boost::uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg, const size_t port)
+uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg, const size_t port)
 {
     if (not _ctrl_ifaces.count(port)) {
         throw uhd::key_error(str(boost::format("[%s] sr_read64(): No such port: %d") % get_block_id().get() % port));
@@ -271,7 +270,7 @@ boost::uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg, const si
     }
 }
 
-boost::uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg, const size_t port)
+uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg, const size_t port)
 {
     if (not _ctrl_ifaces.count(port)) {
         throw uhd::key_error(str(boost::format("[%s] sr_read32(): No such port: %d") % get_block_id().get() % port));
@@ -284,7 +283,7 @@ boost::uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg, const si
     }
 }
 
-boost::uint64_t block_ctrl_base::user_reg_read64(const boost::uint32_t addr, const size_t port)
+uint64_t block_ctrl_base::user_reg_read64(const uint32_t addr, const size_t port)
 {
     try {
         // Set readback register address
@@ -297,7 +296,7 @@ boost::uint64_t block_ctrl_base::user_reg_read64(const boost::uint32_t addr, con
     }
 }
 
-boost::uint64_t block_ctrl_base::user_reg_read64(const std::string &reg, const size_t port)
+uint64_t block_ctrl_base::user_reg_read64(const std::string &reg, const size_t port)
 {
     if (not _tree->exists(_root_path / "registers" / "rb" / reg)) {
         throw uhd::key_error(str(
@@ -305,12 +304,12 @@ boost::uint64_t block_ctrl_base::user_reg_read64(const std::string &reg, const s
                 % reg
         ));
     }
-    return user_reg_read64(boost::uint32_t(
+    return user_reg_read64(uint32_t(
         _tree->access<size_t>(_root_path / "registers" / "rb" / reg).get()
     ), port);
 }
 
-boost::uint32_t block_ctrl_base::user_reg_read32(const boost::uint32_t addr, const size_t port)
+uint32_t block_ctrl_base::user_reg_read32(const uint32_t addr, const size_t port)
 {
     try {
         // Set readback register address
@@ -323,7 +322,7 @@ boost::uint32_t block_ctrl_base::user_reg_read32(const boost::uint32_t addr, con
     }
 }
 
-boost::uint32_t block_ctrl_base::user_reg_read32(const std::string &reg, const size_t port)
+uint32_t block_ctrl_base::user_reg_read32(const std::string &reg, const size_t port)
 {
     if (not _tree->exists(_root_path / "registers" / "rb" / reg)) {
         throw uhd::key_error(str(
@@ -331,7 +330,7 @@ boost::uint32_t block_ctrl_base::user_reg_read32(const std::string &reg, const s
                 % reg
         ));
     }
-    return user_reg_read32(boost::uint32_t(
+    return user_reg_read32(uint32_t(
         _tree->access<size_t>(_root_path / "registers" / "sr" / reg).get()
     ), port);
 }
@@ -420,7 +419,7 @@ void block_ctrl_base::clear(const size_t /* port */)
     }
 }
 
-boost::uint32_t block_ctrl_base::get_address(size_t block_port) {
+uint32_t block_ctrl_base::get_address(size_t block_port) {
     UHD_ASSERT_THROW(block_port < 16);
     return (_base_address & 0xFFF0) | (block_port & 0xF);
 }

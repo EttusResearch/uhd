@@ -67,13 +67,13 @@ void sink_block_ctrl_base::configure_flow_control_in(
         size_t block_port
 ) {
     UHD_RFNOC_BLOCK_TRACE() << boost::format("sink_block_ctrl_base::configure_flow_control_in(cycles=%d, packets=%d)") % cycles % packets << std::endl;
-    boost::uint32_t cycles_word = 0;
+    uint32_t cycles_word = 0;
     if (cycles) {
         cycles_word = (1<<31) | cycles;
     }
     sr_write(SR_FLOW_CTRL_CYCS_PER_ACK, cycles_word, block_port);
 
-    boost::uint32_t packets_word = 0;
+    uint32_t packets_word = 0;
     if (packets) {
         packets_word = (1<<31) | packets;
     }

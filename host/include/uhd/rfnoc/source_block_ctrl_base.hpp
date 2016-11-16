@@ -96,7 +96,7 @@ public:
      * have bit 16 set to 1, since some blocks require this to respect this value.
      */
     virtual void set_destination(
-            boost::uint32_t next_address,
+            uint32_t next_address,
             size_t output_block_port = 0
     );
 

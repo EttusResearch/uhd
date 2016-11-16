@@ -51,10 +51,10 @@ typedef enum {
  * Interface timing
  */
 typedef struct {
-    boost::uint8_t rx_clk_delay;
-    boost::uint8_t rx_data_delay;
-    boost::uint8_t tx_clk_delay;
-    boost::uint8_t tx_data_delay;
+    uint8_t rx_clk_delay;
+    uint8_t rx_data_delay;
+    uint8_t tx_clk_delay;
+    uint8_t tx_data_delay;
 } digital_interface_delays_t;
 
 class ad9361_params {
@@ -76,8 +76,8 @@ public:
 
     virtual ~ad9361_io() {}
 
-    virtual boost::uint8_t peek8(boost::uint32_t reg) = 0;
-    virtual void poke8(boost::uint32_t reg, boost::uint8_t val) = 0;
+    virtual uint8_t peek8(uint32_t reg) = 0;
+    virtual void poke8(uint32_t reg, uint8_t val) = 0;
 };
 
 

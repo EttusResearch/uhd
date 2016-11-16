@@ -32,7 +32,7 @@ namespace uhd { namespace usrp { namespace usrp3 {
 //----------------------------------------------------------
 uhd::wb_iface::sptr usrp3_fw_ctrl_iface::make(
     uhd::transport::udp_simple::sptr udp_xport,
-    const boost::uint16_t product_id,
+    const uint16_t product_id,
     const bool verbose)
 {
     return wb_iface::sptr(new usrp3_fw_ctrl_iface(udp_xport, product_id, verbose));
@@ -44,7 +44,7 @@ uhd::wb_iface::sptr usrp3_fw_ctrl_iface::make(
 
 usrp3_fw_ctrl_iface::usrp3_fw_ctrl_iface(
     uhd::transport::udp_simple::sptr udp_xport,
-    const boost::uint16_t product_id,
+    const uint16_t product_id,
     const bool verbose) :
     _product_id(product_id), _verbose(verbose), _udp_xport(udp_xport),
     _seq_num(0)
@@ -64,7 +64,7 @@ void usrp3_fw_ctrl_iface::flush()
     _flush();
 }
 
-void usrp3_fw_ctrl_iface::poke32(const wb_addr_type addr, const boost::uint32_t data)
+void usrp3_fw_ctrl_iface::poke32(const wb_addr_type addr, const uint32_t data)
 {
     boost::mutex::scoped_lock lock(_mutex);
 
@@ -81,7 +81,7 @@ void usrp3_fw_ctrl_iface::poke32(const wb_addr_type addr, const boost::uint32_t 
     }
 }
 
-boost::uint32_t usrp3_fw_ctrl_iface::peek32(const wb_addr_type addr)
+uint32_t usrp3_fw_ctrl_iface::peek32(const wb_addr_type addr)
 {
     boost::mutex::scoped_lock lock(_mutex);
 
@@ -98,13 +98,13 @@ boost::uint32_t usrp3_fw_ctrl_iface::peek32(const wb_addr_type addr)
     return 0;
 }
 
-void usrp3_fw_ctrl_iface::_poke32(const wb_addr_type addr, const boost::uint32_t data)
+void usrp3_fw_ctrl_iface::_poke32(const wb_addr_type addr, const uint32_t data)
 {
     //Load request struct
     fw_comm_pkt_t request;
-    request.id = uhd::htonx<boost::uint32_t>(FW_COMM_GENERATE_ID(_product_id));
-    request.flags = uhd::htonx<boost::uint32_t>(FW_COMM_FLAGS_ACK | FW_COMM_CMD_POKE32);
-    request.sequence = uhd::htonx<boost::uint32_t>(_seq_num++);
+    request.id = uhd::htonx<uint32_t>(FW_COMM_GENERATE_ID(_product_id));
+    request.flags = uhd::htonx<uint32_t>(FW_COMM_FLAGS_ACK | FW_COMM_CMD_POKE32);
+    request.sequence = uhd::htonx<uint32_t>(_seq_num++);
     request.addr = uhd::htonx(addr);
     request.data_words = 1;
     request.data[0] = uhd::htonx(data);
@@ -119,7 +119,7 @@ void usrp3_fw_ctrl_iface::_poke32(const wb_addr_type addr, const boost::uint32_t
     if (nbytes == 0) throw uhd::io_error("udp fw poke32 - reply timed out");
 
     //Sanity checks
-    const size_t flags = uhd::ntohx<boost::uint32_t>(reply.flags);
+    const size_t flags = uhd::ntohx<uint32_t>(reply.flags);
     UHD_ASSERT_THROW(nbytes == sizeof(reply));
     UHD_ASSERT_THROW(not (flags & FW_COMM_FLAGS_ERROR_MASK));
     UHD_ASSERT_THROW(flags & FW_COMM_CMD_POKE32);
@@ -129,13 +129,13 @@ void usrp3_fw_ctrl_iface::_poke32(const wb_addr_type addr, const boost::uint32_t
     UHD_ASSERT_THROW(reply.data[0] == request.data[0]);
 }
 
-boost::uint32_t usrp3_fw_ctrl_iface::_peek32(const wb_addr_type addr)
+uint32_t usrp3_fw_ctrl_iface::_peek32(const wb_addr_type addr)
 {
     //Load request struct
     fw_comm_pkt_t request;
-    request.id = uhd::htonx<boost::uint32_t>(FW_COMM_GENERATE_ID(_product_id));
-    request.flags = uhd::htonx<boost::uint32_t>(FW_COMM_FLAGS_ACK | FW_COMM_CMD_PEEK32);
-    request.sequence = uhd::htonx<boost::uint32_t>(_seq_num++);
+    request.id = uhd::htonx<uint32_t>(FW_COMM_GENERATE_ID(_product_id));
+    request.flags = uhd::htonx<uint32_t>(FW_COMM_FLAGS_ACK | FW_COMM_CMD_PEEK32);
+    request.sequence = uhd::htonx<uint32_t>(_seq_num++);
     request.addr = uhd::htonx(addr);
     request.data_words = 1;
     request.data[0] = 0;
@@ -150,7 +150,7 @@ boost::uint32_t usrp3_fw_ctrl_iface::_peek32(const wb_addr_type addr)
     if (nbytes == 0) throw uhd::io_error("udp fw peek32 - reply timed out");
 
     //Sanity checks
-    const size_t flags = uhd::ntohx<boost::uint32_t>(reply.flags);
+    const size_t flags = uhd::ntohx<uint32_t>(reply.flags);
     UHD_ASSERT_THROW(nbytes == sizeof(reply));
     UHD_ASSERT_THROW(not (flags & FW_COMM_FLAGS_ERROR_MASK));
     UHD_ASSERT_THROW(flags & FW_COMM_CMD_PEEK32);
@@ -159,7 +159,7 @@ boost::uint32_t usrp3_fw_ctrl_iface::_peek32(const wb_addr_type addr)
     UHD_ASSERT_THROW(reply.addr == request.addr);
 
     //return result!
-    return uhd::ntohx<boost::uint32_t>(reply.data[0]);
+    return uhd::ntohx<uint32_t>(reply.data[0]);
 }
 
 void usrp3_fw_ctrl_iface::_flush(void)
@@ -172,7 +172,7 @@ void usrp3_fw_ctrl_iface::_flush(void)
 
 std::vector<std::string> usrp3_fw_ctrl_iface::discover_devices(
     const std::string& addr_hint, const std::string& port,
-    boost::uint16_t product_id)
+    uint16_t product_id)
 {
     std::vector<std::string> addrs;
 
@@ -190,9 +190,9 @@ std::vector<std::string> usrp3_fw_ctrl_iface::discover_devices(
 
     //Send dummy request
     fw_comm_pkt_t request;
-    request.id = uhd::htonx<boost::uint32_t>(FW_COMM_GENERATE_ID(product_id));
-    request.flags = uhd::htonx<boost::uint32_t>(FW_COMM_FLAGS_ACK|FW_COMM_CMD_ECHO);
-    request.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+    request.id = uhd::htonx<uint32_t>(FW_COMM_GENERATE_ID(product_id));
+    request.flags = uhd::htonx<uint32_t>(FW_COMM_FLAGS_ACK|FW_COMM_CMD_ECHO);
+    request.sequence = uhd::htonx<uint32_t>(std::rand());
     udp_bcast_xport->send(boost::asio::buffer(&request, sizeof(request)));
 
     //loop for replies until timeout
@@ -213,18 +213,18 @@ std::vector<std::string> usrp3_fw_ctrl_iface::discover_devices(
     return addrs;
 }
 
-boost::uint32_t usrp3_fw_ctrl_iface::get_iface_id(
+uint32_t usrp3_fw_ctrl_iface::get_iface_id(
     const std::string& addr, const std::string& port,
-    boost::uint16_t product_id)
+    uint16_t product_id)
 {
     uhd::transport::udp_simple::sptr udp_xport =
         uhd::transport::udp_simple::make_connected(addr, port);
 
     //Send dummy request
     fw_comm_pkt_t request;
-    request.id = uhd::htonx<boost::uint32_t>(FW_COMM_GENERATE_ID(product_id));
-    request.flags = uhd::htonx<boost::uint32_t>(FW_COMM_FLAGS_ACK|FW_COMM_CMD_ECHO);
-    request.sequence = uhd::htonx<boost::uint32_t>(std::rand());
+    request.id = uhd::htonx<uint32_t>(FW_COMM_GENERATE_ID(product_id));
+    request.flags = uhd::htonx<uint32_t>(FW_COMM_FLAGS_ACK|FW_COMM_CMD_ECHO);
+    request.sequence = uhd::htonx<uint32_t>(std::rand());
     udp_xport->send(boost::asio::buffer(&request, sizeof(request)));
 
     //loop for replies until timeout
@@ -237,7 +237,7 @@ boost::uint32_t usrp3_fw_ctrl_iface::get_iface_id(
         request.flags     == reply->flags &&
         request.sequence  == reply->sequence)
     {
-        return uhd::ntohx<boost::uint32_t>(reply->data[0]);
+        return uhd::ntohx<uint32_t>(reply->data[0]);
     } else {
         throw uhd::io_error("udp get_iface_id - bad response");
     }

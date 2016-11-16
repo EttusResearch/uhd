@@ -22,7 +22,7 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include <boost/tuple/tuple.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include "b100_regs.hpp" //spi slave constants
@@ -59,8 +59,8 @@ public:
 private:
     spi_iface::sptr _iface;
     ad9862_regs_t _ad9862_regs;
-    void send_reg(boost::uint8_t addr);
-    void recv_reg(boost::uint8_t addr);
+    void send_reg(uint8_t addr);
+    void recv_reg(uint8_t addr);
 };
 
 /***********************************************************************
@@ -109,7 +109,7 @@ b100_codec_ctrl_impl::b100_codec_ctrl_impl(spi_iface::sptr iface){
     _ad9862_regs.dll_mode = ad9862_regs_t::DLL_MODE_FAST;
 
     //write the register settings to the codec
-    for (boost::uint8_t addr = 0; addr <= 25; addr++){
+    for (uint8_t addr = 0; addr <= 25; addr++){
         this->send_reg(addr);
     }
 
@@ -185,8 +185,8 @@ double b100_codec_ctrl_impl::get_rx_pga_gain(char which){
 /***********************************************************************
  * Codec Control AUX ADC Methods
  **********************************************************************/
-static double aux_adc_to_volts(boost::uint8_t high, boost::uint8_t low){
-    return double((boost::uint16_t(high) << 2) | low)*3.3/0x3ff;
+static double aux_adc_to_volts(uint8_t high, uint8_t low){
+    return double((uint16_t(high) << 2) | low)*3.3/0x3ff;
 }
 
 double b100_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
@@ -227,19 +227,19 @@ double b100_codec_ctrl_impl::read_aux_adc(aux_adc_t which){
 void b100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
     //special case for aux dac d (aka sigma delta word)
     if (which == AUX_DAC_D){
-        boost::uint16_t dac_word = uhd::clip(boost::math::iround(volts*0xfff/3.3), 0, 0xfff);
-        _ad9862_regs.sig_delt_11_4 = boost::uint8_t(dac_word >> 4);
-        _ad9862_regs.sig_delt_3_0 = boost::uint8_t(dac_word & 0xf);
+        uint16_t dac_word = uhd::clip(boost::math::iround(volts*0xfff/3.3), 0, 0xfff);
+        _ad9862_regs.sig_delt_11_4 = uint8_t(dac_word >> 4);
+        _ad9862_regs.sig_delt_3_0 = uint8_t(dac_word & 0xf);
         this->send_reg(42);
         this->send_reg(43);
         return;
     }
 
     //calculate the dac word for aux dac a, b, c
-    boost::uint8_t dac_word = uhd::clip(boost::math::iround(volts*0xff/3.3), 0, 0xff);
+    uint8_t dac_word = uhd::clip(boost::math::iround(volts*0xff/3.3), 0, 0xff);
 
     //setup a lookup table for the aux dac params (reg ref, reg addr)
-    typedef boost::tuple<boost::uint8_t*, boost::uint8_t> dac_params_t;
+    typedef boost::tuple<uint8_t*, uint8_t> dac_params_t;
     uhd::dict<aux_dac_t, dac_params_t> aux_dac_to_params = boost::assign::map_list_of
         (AUX_DAC_A, dac_params_t(&_ad9862_regs.aux_dac_a, 36))
         (AUX_DAC_B, dac_params_t(&_ad9862_regs.aux_dac_b, 37))
@@ -248,7 +248,7 @@ void b100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
 
     //set the aux dac register
     UHD_ASSERT_THROW(aux_dac_to_params.has_key(which));
-    boost::uint8_t *reg_ref, reg_addr;
+    uint8_t *reg_ref, reg_addr;
     boost::tie(reg_ref, reg_addr) = aux_dac_to_params[which];
     *reg_ref = dac_word;
     this->send_reg(reg_addr);
@@ -257,8 +257,8 @@ void b100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
 /***********************************************************************
  * Codec Control SPI Methods
  **********************************************************************/
-void b100_codec_ctrl_impl::send_reg(boost::uint8_t addr){
-    boost::uint32_t reg = _ad9862_regs.get_write_reg(addr);
+void b100_codec_ctrl_impl::send_reg(uint8_t addr){
+    uint32_t reg = _ad9862_regs.get_write_reg(addr);
     UHD_LOGV(rarely) << "codec control write reg: " << std::hex << reg << std::endl;
     _iface->transact_spi(
         B100_SPI_SS_AD9862,
@@ -267,16 +267,16 @@ void b100_codec_ctrl_impl::send_reg(boost::uint8_t addr){
     );
 }
 
-void b100_codec_ctrl_impl::recv_reg(boost::uint8_t addr){
-    boost::uint32_t reg = _ad9862_regs.get_read_reg(addr);
+void b100_codec_ctrl_impl::recv_reg(uint8_t addr){
+    uint32_t reg = _ad9862_regs.get_read_reg(addr);
     UHD_LOGV(rarely) << "codec control read reg: " << std::hex << reg << std::endl;
-    boost::uint32_t ret = _iface->transact_spi(
+    uint32_t ret = _iface->transact_spi(
         B100_SPI_SS_AD9862,
         spi_config_t::EDGE_RISE,
         reg, 16, true /*rb*/
     );
-    UHD_LOGV(rarely) << "codec control read ret: " << std::hex << boost::uint16_t(ret & 0xFF) << std::endl;
-    _ad9862_regs.set_reg(addr, boost::uint8_t(ret&0xff));
+    UHD_LOGV(rarely) << "codec control read ret: " << std::hex << uint16_t(ret & 0xFF) << std::endl;
+    _ad9862_regs.set_reg(addr, uint8_t(ret&0xff));
 }
 
 /***********************************************************************

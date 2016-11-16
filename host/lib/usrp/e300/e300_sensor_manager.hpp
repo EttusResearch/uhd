@@ -16,7 +16,7 @@
 //
 
 #include <boost/noncopyable.hpp>
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/sensors.hpp>
@@ -30,10 +30,10 @@
 namespace uhd { namespace usrp { namespace e300 {
 
 struct sensor_transaction_t {
-    boost::uint32_t which;
+    uint32_t which;
     union {
-        boost::uint32_t value;
-        boost::uint32_t value64;
+        uint32_t value;
+        uint32_t value64;
     };
 };
 
@@ -59,13 +59,13 @@ public:
     static sptr make_local(global_regs::sptr global_regs);
 
     // Note: This is a hack
-    static boost::uint32_t pack_float_in_uint32_t(const float &v)
+    static uint32_t pack_float_in_uint32_t(const float &v)
     {
-        const boost::uint32_t *cast = reinterpret_cast<const boost::uint32_t*>(&v);
+        const uint32_t *cast = reinterpret_cast<const uint32_t*>(&v);
         return *cast;
     }
 
-    static float unpack_float_from_uint32_t(const boost::uint32_t &v)
+    static float unpack_float_from_uint32_t(const uint32_t &v)
     {
         const float *cast = reinterpret_cast<const float*>(&v);
         return *cast;

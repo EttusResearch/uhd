@@ -87,7 +87,7 @@ wbx_base::wbx_version4::wbx_version4(wbx_base *_self_wbx_base) {
     ////////////////////////////////////////////////////////////////////
     // Register RX properties
     ////////////////////////////////////////////////////////////////////
-    boost::uint16_t rx_id = _self_wbx_base->get_rx_id().to_uint16();
+    uint16_t rx_id = _self_wbx_base->get_rx_id().to_uint16();
 
     if(rx_id == 0x0063) this->get_rx_subtree()->create<std::string>("name").set("WBXv4 RX");
     else if(rx_id == 0x0081) this->get_rx_subtree()->create<std::string>("name").set("WBX-120 RX");
@@ -182,7 +182,7 @@ void wbx_base::wbx_version4::set_tx_enabled(bool enb) {
 double wbx_base::wbx_version4::set_tx_gain(double gain, const std::string &name) {
     assert_has(wbx_v4_tx_gain_ranges.keys(), name, "wbx tx gain name");
     if(name == "PGA0"){
-        boost::uint16_t io_bits = tx_pga0_gain_to_iobits(gain);
+        uint16_t io_bits = tx_pga0_gain_to_iobits(gain);
 
         self_base->_tx_gains[name] = gain;
 

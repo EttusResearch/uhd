@@ -43,21 +43,9 @@ public:
         const bool big_endian,
         uhd::transport::zero_copy_if::sptr ctrl_xport,
         uhd::transport::zero_copy_if::sptr resp_xport,
-        const boost::uint32_t sid,
+        const uint32_t sid,
         const std::string &name = "0"
     );
-
-    //! Hold a ref to a task thats feeding push response
-    virtual void hold_task(uhd::msg_task::sptr task) = 0;
-
-    //! Push a response externall (resp_xport is NULL)
-    virtual void push_response(const boost::uint32_t *buff) = 0;
-
-    //! Set the command time that will activate
-    virtual void set_time(const uhd::time_spec_t &time) = 0;
-
-    //! Get the command time that will activate
-    virtual uhd::time_spec_t get_time(void) = 0;
 
     //! Set the tick rate (converting time into ticks)
     virtual void set_tick_rate(const double rate) = 0;

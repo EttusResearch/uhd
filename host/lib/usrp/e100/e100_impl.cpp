@@ -183,8 +183,8 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     size_t hash = time(NULL);
     for (size_t i = 0; i < 100; i++){
         boost::hash_combine(hash, i);
-        _fifo_ctrl->poke32(TOREG(SR_MISC+0), boost::uint32_t(hash));
-        test_fail = _fifo_ctrl->peek32(REG_RB_CONFIG0) != boost::uint32_t(hash);
+        _fifo_ctrl->poke32(TOREG(SR_MISC+0), uint32_t(hash));
+        test_fail = _fifo_ctrl->peek32(REG_RB_CONFIG0) != uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
     UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
@@ -533,8 +533,8 @@ sensor_value_t e100_impl::get_ref_locked(void){
 }
 
 void e100_impl::check_fpga_compat(void){
-    const boost::uint32_t fpga_compat_num = _fifo_ctrl->peek32(REG_RB_COMPAT);
-    boost::uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
+    const uint32_t fpga_compat_num = _fifo_ctrl->peek32(REG_RB_COMPAT);
+    uint16_t fpga_major = fpga_compat_num >> 16, fpga_minor = fpga_compat_num & 0xffff;
     if (fpga_major == 0){ //old version scheme
         fpga_major = fpga_minor;
         fpga_minor = 0;
