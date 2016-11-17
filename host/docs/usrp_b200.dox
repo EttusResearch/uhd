@@ -126,9 +126,9 @@ Below is a table of the B200/B210 LED indicators and their meanings:
     <th>Component ID</th><th>Description</th><th>Details</th>
   </tr>
   <tr>
-    <td>LED600</td> <td>Power Indicator</td> <td>off = no power applied<br>
-                                                 red = external power applied<br>
-                                                 blue(red prior to rev 6) = USB power applied</td>
+    <td>LED600</td> <td>Power Indicator</td> <td>off = no power applied (before rev6, some rev6) / external power applied and not yet initialized (most rev6)<br>
+                                                 blue = USB power applied (before rev6) / power supplied (USB) OR power supplied (external) (rev6)<br/>
+						 red = external power applied (before rev6) / external power applied and device initialized (rev6)</td>
   </tr>
   <tr>
     <td>LED800</td> <td>Channel 2 RX2 Activity</td> <td>off = no power applied<br>
