@@ -105,8 +105,8 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
         const size_t nbytes = comm->recv(asio::buffer(buff), 0.050);
         if (nbytes == 0) break;
         const x300_fw_comms_t *reply = (const x300_fw_comms_t *)buff;
-        if (request.flags != reply->flags) break;
-        if (request.sequence != reply->sequence) break;
+        if (request.flags != reply->flags) continue;
+        if (request.sequence != reply->sequence) continue;
         device_addr_t new_addr;
         new_addr["type"] = "x300";
         new_addr["addr"] = comm->get_recv_addr();
