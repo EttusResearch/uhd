@@ -162,13 +162,11 @@ device::sptr device::make(const device_addr_t &hint, device_filter_t filter, siz
     static uhd::dict<size_t, boost::weak_ptr<device> > hash_to_device;
 
     //try to find an existing device
-    try{
-        UHD_ASSERT_THROW(hash_to_device.has_key(dev_hash));
-        UHD_ASSERT_THROW(not hash_to_device[dev_hash].expired());
+    if (hash_to_device.has_key(dev_hash) and not hash_to_device[dev_hash].expired()){
         return hash_to_device[dev_hash].lock();
     }
-    //create and register a new device
-    catch(const uhd::assertion_error &){
+    else {
+        //create and register a new device
         device::sptr dev = maker(dev_addr);
         hash_to_device[dev_hash] = dev;
         return dev;
