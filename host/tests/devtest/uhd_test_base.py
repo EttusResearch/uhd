@@ -209,6 +209,7 @@ class uhd_example_test_case(uhd_test_case):
         Calls run_test().
         """
         for test_name, test_args in self.test_params.iteritems():
+            time.sleep(15) # Wait for X300 devices to reclaim them
             if not test_args.has_key('products') or (self.usrp_info['product'] in test_args.get('products', [])):
                 run_results = self.run_test(test_name, test_args)
                 passed = bool(run_results)
