@@ -80,6 +80,22 @@ ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     ENDIF()
 ENDIF()
 
+
+IF(CMAKE_VERSION VERSION_LESS "3.1")
+    IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+        SET(CMAKE_CXX_FLAGS "--std=gnu++11 ${CMAKE_CXX_FLAGS}")
+    ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+        IF("${IS_APPLE}" STREQUAL "")
+            SET(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+        ELSE()
+            SET(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ ${CMAKE_CXX_FLAGS}")
+        ENDIF()
+    ENDIF()
+ELSE()
+    SET(CMAKE_CXX_STANDARD 11)
+ENDIF()
+
+
 ########################################################################
 # Packaging Variables
 ########################################################################
@@ -174,7 +190,7 @@ INCLUDE(CheckCXXCompilerFlag)
 MACRO(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
     CHECK_CXX_COMPILER_FLAG(${flag} ${have})
     IF(${have})
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
     ENDIF(${have})
 ENDMACRO(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG)
 
@@ -192,7 +208,7 @@ IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
     ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     IF(STRIP_BINARIES)
         IF(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s")
+            SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s")
         ENDIF(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     ENDIF(STRIP_BINARIES)
     ADD_DEFINITIONS(-Wall)
