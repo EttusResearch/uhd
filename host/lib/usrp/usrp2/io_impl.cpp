@@ -50,10 +50,6 @@ static UHD_INLINE pt::time_duration to_time_dur(double timeout){
     return pt::microseconds(long(timeout*1e6));
 }
 
-static UHD_INLINE double from_time_dur(const pt::time_duration &time_dur){
-    return 1e-6*time_dur.total_microseconds();
-}
-
 /***********************************************************************
  * constants
  **********************************************************************/
