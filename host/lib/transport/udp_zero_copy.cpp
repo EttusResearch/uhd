@@ -32,7 +32,7 @@ using namespace uhd::transport;
 namespace asio = boost::asio;
 
 //A reasonable number of frames for send/recv and async/sync
-static const size_t DEFAULT_NUM_FRAMES = 32;
+//static const size_t DEFAULT_NUM_FRAMES = 32;
 
 /***********************************************************************
  * Check registry for correct fast-path setting (windows only)
