@@ -1,6 +1,7 @@
 //
 // Copyright 2014-2016 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -11,8 +12,8 @@
 #include <uhd/device.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 #include <uhd/rfnoc/graph.hpp>
+#include <boost/core/demangle.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/units/detail/utility.hpp>
 #include <vector>
 
 namespace uhd {
@@ -97,8 +98,7 @@ public:
         } else {
             throw uhd::lookup_error(str(
                 boost::format("This device does not have a block of type %s with ID: %s")
-                % boost::units::detail::demangle(typeid(T).name())
-                % block_id.to_string()));
+                % boost::core::demangle(typeid(T).name()) % block_id.to_string()));
         }
     }
 

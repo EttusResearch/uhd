@@ -16,7 +16,7 @@
 #include <boost/function.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread.hpp>
-#include <boost/units/detail/utility.hpp>
+#include <boost/core/demangle.hpp>
 #include <memory>
 #include <list>
 #include <stdint.h>
@@ -133,7 +133,7 @@ namespace uhd { namespace experts {
         // Basic info
         virtual const std::string& get_dtype() const {
             static const std::string dtype(
-                boost::units::detail::demangle(typeid(data_t).name()));
+                boost::core::demangle(typeid(data_t).name()));
             return dtype;
         }
 
@@ -291,7 +291,7 @@ namespace uhd { namespace experts {
             _datanode = dynamic_cast< data_node_t<data_t>* >(&node());
             if (_datanode == NULL) {
                 throw uhd::type_error("Expected data type for node " + n +
-                                      " was " + boost::units::detail::demangle(typeid(data_t).name()) +
+                                      " was " + boost::core::demangle(typeid(data_t).name()) +
                                       " but got " + node().get_dtype());
             }
         }
