@@ -27,8 +27,6 @@
 
 using namespace uhd;
 
-static const bool verbose = false;
-
 static bool compare_by_step_size(
     const size_t &rhs, const size_t &lhs, std::vector<gain_fcns_t> &fcns
 ){
