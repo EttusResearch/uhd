@@ -212,11 +212,12 @@ public:
     }
 
     void update_scalar(void){
-        const double factor = 1.0 + std::max(ceil_log2(_scaling_adjustment), 0.0);
-        const double target_scalar = (1 << 17)*_scaling_adjustment/_dsp_extra_scaling/factor;
-        const boost::int32_t actual_scalar = boost::math::iround(target_scalar);
-        _fxpt_scalar_correction = target_scalar/actual_scalar*factor; //should be small
-        _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);
+        const double total_gain = (1 << 17)*_scaling_adjustment/_dsp_extra_scaling;
+        boost::int32_t bitgain = boost::math::iround(std::min(std::max(ceil_log2(total_gain/(1 << 17)), 0.0), 7.0));
+        const double target_scalar = total_gain/std::pow(2, bitgain);
+        boost::int32_t actual_scalar = boost::math::iround(target_scalar);
+        _fxpt_scalar_correction = target_scalar/actual_scalar; //should be small
+        _iface->poke32(REG_DSP_RX_SCALE_IQ, ((bitgain & 0x7) << 18) | (actual_scalar & 0x3ffff));
     }
 
     double get_scaling_adjustment(void){
@@ -245,13 +246,15 @@ public:
         unsigned format_word = 0;
         if (stream_args.otw_format == "sc16"){
             format_word = 0;
-            _dsp_extra_scaling = 1.0;
-            _host_extra_scaling = 1.0;
+	    double peak = stream_args.args.cast<double>("peak", 1.0);
+	    peak = std::max(peak, 1.0/128);
+            _dsp_extra_scaling = peak;
+            _host_extra_scaling = peak;
         }
         else if (stream_args.otw_format == "sc8"){
             format_word = (1 << 0);
             double peak = stream_args.args.cast<double>("peak", 1.0);
-            peak = std::max(peak, 1.0/256);
+            peak = std::max(peak, 1.0/256/128);
             _host_extra_scaling = peak*256;
             _dsp_extra_scaling = peak*256;
         }
