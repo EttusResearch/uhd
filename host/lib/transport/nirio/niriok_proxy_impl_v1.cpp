@@ -49,11 +49,11 @@ const uint32_t NIRIO_IOCTL_GET_IFACE_NUM =
             METHOD_BUFFERED,
             FILE_READ_DATA);    ///< Get the interface number for a device
 
-const uint32_t NIRIO_IOCTL_GET_SESSION =
-   CTL_CODE(FILE_DEVICE_UNKNOWN,
-            NIRIO_IOCTL_BASE + 8,
-            METHOD_BUFFERED,
-            FILE_READ_ACCESS);  ///< Gets a previously opened session to a device
+//const uint32_t NIRIO_IOCTL_GET_SESSION =
+   //CTL_CODE(FILE_DEVICE_UNKNOWN,
+            //NIRIO_IOCTL_BASE + 8,
+            //METHOD_BUFFERED,
+            //FILE_READ_ACCESS);  ///< Gets a previously opened session to a device
 
 const uint32_t NIRIO_IOCTL_POST_OPEN =
    CTL_CODE(FILE_DEVICE_UNKNOWN,

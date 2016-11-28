@@ -223,7 +223,7 @@ public:
 
 public:
     dma_fifo_core_3000_impl(wb_iface::sptr iface, const size_t base, const size_t readback):
-        _iface(iface), _base(base), _fifo_readback(iface, base, readback),
+        _iface(iface), _fifo_readback(iface, base, readback),
         _fifo_ctrl_reg(base), _base_addr_reg(base), _addr_mask_reg(base),
         _bist_ctrl_reg(base), _bist_cfg_reg(base), _bist_delay_reg(base), _bist_sid_reg(base)
     {
@@ -368,7 +368,6 @@ private:
 
 private:
     wb_iface::sptr  _iface;
-    const size_t    _base;
     boost::mutex    _mutex;
     bool            _has_ext_bist;
 

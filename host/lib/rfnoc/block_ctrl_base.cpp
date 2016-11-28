@@ -408,7 +408,7 @@ void block_ctrl_base::clear_command_time(const size_t port)
     iface_sptr->set_time(time_spec_t(0.0));
 }
 
-void block_ctrl_base::clear(const size_t /* port */)
+void block_ctrl_base::clear()
 {
     UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::clear() " << std::endl;
     // Call parent...

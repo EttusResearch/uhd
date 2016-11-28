@@ -1246,8 +1246,6 @@ private:
     power_mode_t _power_mode;
     std::string _xcvr_mode;
     size_t _rev;
-    double _prev_tx_freq;
-    double _prev_rx_freq;
     ubx_gpio_reg_t _tx_gpio_reg;
     ubx_gpio_reg_t _rx_gpio_reg;
     int64_t _tx_sync_delay;

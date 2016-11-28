@@ -23,4 +23,6 @@
 #cmakedefine UHD_VERSION_ABI   ${UHD_VERSION_ABI}
 #cmakedefine UHD_VERSION_PATCH ${UHD_VERSION_PATCH}
 #cmakedefine ENABLE_USB
+#ifndef UHD_VERSION
 #cmakedefine UHD_VERSION @UHD_VERSION_ADDED@
+#endif
