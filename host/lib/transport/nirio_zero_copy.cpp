@@ -75,7 +75,6 @@ private:
     nirio_fifo<fifo_data_t>&    _fifo;
     fifo_data_t*                _typed_buffer;
     const size_t                _frame_size;
-    size_t                      _num_frames;
 };
 
 class nirio_zero_copy_msb : public managed_send_buffer
@@ -116,7 +115,6 @@ private:
     nirio_fifo<fifo_data_t>&    _fifo;
     fifo_data_t*                _typed_buffer;
     const size_t                _frame_size;
-    size_t                      _num_frames;
 };
 
 class nirio_zero_copy_impl : public nirio_zero_copy {

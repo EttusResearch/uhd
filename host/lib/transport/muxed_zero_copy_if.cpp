@@ -106,7 +106,7 @@ private:
         stream_mrb(size_t size) : _buff(new char[size]) {}
 
         ~stream_mrb() {
-            delete _buff;
+            delete[] _buff;
         }
 
         void release() {}
@@ -118,7 +118,7 @@ private:
         }
 
     private:
-        char		*_buff;
+        char *_buff;
     };
 
     class stream_impl : public zero_copy_if

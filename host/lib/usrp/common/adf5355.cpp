@@ -34,21 +34,21 @@ double todbl(data_t val) {
 }
 
 static const double ADF5355_DOUBLER_MAX_REF_FREQ    = 60e6;
-static const double ADF5355_MAX_FREQ_PFD            = 125e6;
-static const double ADF5355_PRESCALER_THRESH        = 7e9;
+//static const double ADF5355_MAX_FREQ_PFD            = 125e6;
+//static const double ADF5355_PRESCALER_THRESH        = 7e9;
 
 static const double ADF5355_MIN_VCO_FREQ            = 3.4e9;
-static const double ADF5355_MAX_VCO_FREQ            = 6.8e9;
+//static const double ADF5355_MAX_VCO_FREQ            = 6.8e9;
 static const double ADF5355_MAX_OUT_FREQ            = 6.8e9;
 static const double ADF5355_MIN_OUT_FREQ            = (3.4e9 / 64);
-static const double ADF5355_MAX_OUTB_FREQ           = (6.8e9 * 2);
-static const double ADF5355_MIN_OUTB_FREQ           = (3.4e9 * 2);
+//static const double ADF5355_MAX_OUTB_FREQ           = (6.8e9 * 2);
+//static const double ADF5355_MIN_OUTB_FREQ           = (3.4e9 * 2);
 
 static const double ADF5355_PHASE_RESYNC_TIME       = 400e-6;
 
 static const uint32_t ADF5355_MOD1           = 16777216;
 static const uint32_t ADF5355_MAX_MOD2       = 16384;
-static const uint16_t ADF5355_MIN_INT_PRESCALER_89 = 75;
+//static const uint16_t ADF5355_MIN_INT_PRESCALER_89 = 75;
 
 class adf5355_impl : public adf5355_iface
 {

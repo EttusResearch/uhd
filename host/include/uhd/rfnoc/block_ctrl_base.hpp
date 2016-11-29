@@ -306,7 +306,7 @@ public:
      *
      * TODO: Find better name (it disconnects, clears FC...)
      */
-    void clear(const size_t port = 0/* reserved, currently not used */);
+    void clear();
 
     /***********************************************************************
      * Argument handling

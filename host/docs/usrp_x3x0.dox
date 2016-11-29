@@ -226,23 +226,16 @@ To connect to this JTAG device, simply connect your computer to the USB JTAG
 port on the front of the X3x0 device. You may now use the JTAG programmer in
 the same way you would use any other, including:
 
+- Vivado (standard workflow, see below)
 - <a href="http://www.xilinx.com/support/download/index.htm">Xilinx Programming Tools (ISE, iMPACT)</a>
 - <a href="http://www.xilinx.com/tools/cspro.htm">Xilinx Chipscope</a>
 - <a href="https://www.digilentinc.com/Products/Detail.cfm?NavPath=2,66,828&Prod=ADEPT2">Digilent ADEPT</a>
 
-In order to use the JTAG programmer with the Xilinx tools, the Digilent drivers and plugin have to be installed first.
-Although recent versions of ISE ship with the driver, it has to still be manually installed.
+In order to use the JTAG programmer with the Xilinx tools, the Digilent drivers and plugin have to be installed first. Although recent versions of Vivado ship with the driver, it has to still be manually installed.
 
-\b Note: Sometimes the ISE shipped versions are newer than the ones available via Digilent's website. It is therefore advisable to
-use the ISE provided plugin and drivers.
+To install first locate your Vivado installation path on a Linux system (default is `/opt/Xilinx/Vivado/<Version>`):
 
-To install first locate your ISE installation path on a Linux system (default is `/opt/Xilinx/<Version>`):
-
-    sudo <ise install path>/ISE_DS/common/bin/lin64/digilent/install_digilent.sh
-
-Afterwards either reboot or force udev to reload its rules by:
-
-    sudo udevadm control --reload
+    sudo `find /opt/Xilinx/Vivado/<Version> -name install_digilent.sh`
 
 The USRP-X series device should now be usable with all the tools mentioned above.
 
@@ -304,9 +297,16 @@ that the requested image is already loaded onto the FPGA then it will not reload
 \subsection x3x0_load_fpga_imgs_jtag Use JTAG to load FPGA images
 
 The USRP-X Series device features an on-board USB-JTAG programmer that can be accessed on the front-panel
-of the device. The iMPACT tool in the <a href="http://www.xilinx.com/support/download/index.htm">Xilinx Programming Tools (ISE, iMPACT)</a> package can be used to load an image over the JTAG interface. This can be useful for unbricking devices.
+of the device. There are multiple tools available to access the FPGA through the JTAG connector (see \ref x3x0_jtag).
 
-If you have iMPACT installed, you can use the `impact_jtag_programmer.sh` tool to install images. Make sure your X3x0 is powered on and connected to your computer using the front panel USB JTAG connector (USB 2.0 is fine for this). Then run the tool:
+If you have Vivado installed, we provide a command-line script to flash images. Make sure your X3x0 is powered on and connected to your computer using the front panel USB JTAG connector (USB 2.0 is fine for this). Head to the X3x0 FPGA directory, then run the following commands:
+
+    $ cd uhd/fpga-src/usrp3/top/x300 # Assuming this is where the FPGA code is checked out
+    $ source ./setupenv.sh
+    $ viv_jtag_program /path/to/bitfile.bit
+
+
+If you have iMPACT installed, you can use the `impact_jtag_programmer.sh` tool to install images. Then run the tool:
 
     <path_to_uhd_tools>/impact_jtag_programmer.sh --fpga-path=<fpga_image_path>
 
