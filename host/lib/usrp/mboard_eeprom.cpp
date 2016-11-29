@@ -564,7 +564,7 @@ template <typename T> static const byte_vector_t to_bytes(const T &item){
 }
 
 #define sizeof_member(struct_name, member_name) \
-    sizeof(reinterpret_cast<struct_name*>(NULL)->member_name)
+    sizeof(reinterpret_cast<struct_name*>(0)->member_name)
 
 static void load_e100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     const size_t num_bytes = offsetof(e100_eeprom_map, model);
