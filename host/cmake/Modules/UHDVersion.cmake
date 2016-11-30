@@ -38,7 +38,7 @@ SET(UHD_VERSION_DEVEL FALSE)
 FUNCTION(DEPAD_NUM input_num output_num)
     EXECUTE_PROCESS(
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "print(int('${input_num}'))"
+        COMMAND ${PYTHON_EXECUTABLE} -c "print(\"${input_num}\".lstrip(\"0\") or 0)"
         OUTPUT_VARIABLE depadded_num OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     SET(${output_num} ${depadded_num} PARENT_SCOPE)
