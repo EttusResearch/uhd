@@ -1119,7 +1119,7 @@ private:
             // frequency tuning.
             set_cpld_field(RXAMP_FORCEON, 1);
             set_cpld_field(RXDEMOD_FORCEON, 1);
-            set_cpld_field(RXDRV_FORCEON, 0);
+            set_cpld_field(RXDRV_FORCEON, 1);
             set_cpld_field(RXMIXER_FORCEON, 0);
             set_cpld_field(RXLO1_FORCEON, 1);
             set_cpld_field(RXLO2_FORCEON, 1);
