@@ -45,7 +45,7 @@ ORIG_RELEASE=`head -1 host/cmake/debian/changelog | sed 's/.*) \(.*\);.*/\1/'`
 # Currently supported versions can be found here:
 # https://launchpad.net/ubuntu/+ppas
 #
-RELEASES="precise trusty vivid wily xenial"
+RELEASES="precise trusty vivid wily xenial yakkety"
 PPA=ppa:ettusresearch/uhd-3.9.lts
 
 #
