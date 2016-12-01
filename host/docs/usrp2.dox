@@ -72,6 +72,12 @@ Use custom-built images:
 
     uhd_image_loader --args="type=usrp2,addr=<IP address>" --fw-path="<firmware path>" --fpga-path="<FPGA path>"
 
+If you immediately want to apply this image, add the `reset` argument:
+
+    uhd_image_loader --args="type=usrp2,addr=<IP address>,reset"
+
+The USRP will drop off the network for a brief moment and reboot.
+
 <b>Note:</b> Different hardware revisions require different FPGA images.
 Determine the revision number from the sticker on the rear of the
 chassis. Use this number to select the correct FPGA image for your
