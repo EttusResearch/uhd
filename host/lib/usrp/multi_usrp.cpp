@@ -816,6 +816,18 @@ public:
     }
 
     void set_rx_rate(double rate, size_t chan){
+        if (is_device3()) {
+            _legacy_compat->set_rx_rate(rate, chan);
+            if (chan == ALL_CHANS) {
+                for (size_t c = 0; c < get_rx_num_channels(); c++){
+                    do_samp_rate_warning_message(rate, get_rx_rate(c), "RX");
+                }
+            } else {
+                do_samp_rate_warning_message(rate, get_rx_rate(chan), "RX");
+            }
+            return;
+        }
+
         if (chan != ALL_CHANS){
             _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").set(rate);
             do_samp_rate_warning_message(rate, get_rx_rate(chan), "RX");
@@ -1362,6 +1374,18 @@ public:
     }
 
     void set_tx_rate(double rate, size_t chan){
+        if (is_device3()) {
+            _legacy_compat->set_tx_rate(rate, chan);
+            if (chan == ALL_CHANS) {
+                for (size_t c = 0; c < get_tx_num_channels(); c++){
+                    do_samp_rate_warning_message(rate, get_tx_rate(c), "TX");
+                }
+            } else {
+                do_samp_rate_warning_message(rate, get_tx_rate(chan), "TX");
+            }
+            return;
+        }
+
         if (chan != ALL_CHANS){
             _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").set(rate);
             do_samp_rate_warning_message(rate, get_tx_rate(chan), "TX");

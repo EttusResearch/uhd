@@ -28,6 +28,7 @@ SET(test_sources
     buffer_test.cpp
     byteswap_test.cpp
     cast_test.cpp
+    cal_container_test.cpp
     chdr_test.cpp
     convert_test.cpp
     dict_test.cpp

@@ -26,6 +26,8 @@ uhd_benchmark_rate_test.tests = {
         'chan': '0,1',
         'rate': 1e6,
         'acceptable-underruns': 500,
+        'tx_buffer': (0.1*1e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
+        'rx_buffer': 0.1*1e6,
     },
     'mimo_fast': {
         'duration': 1,
@@ -33,20 +35,26 @@ uhd_benchmark_rate_test.tests = {
         'chan': '0,1',
         'rate': 12.5e6,
         'acceptable-underruns': 500,
+        'tx_buffer': (0.1*12.5e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
+        'rx_buffer': 0.1*12.5e6,
     },
     'siso_chan0_slow': {
         'duration': 1,
         'direction': 'tx,rx',
         'chan': '0',
         'rate': 1e6,
-        'acceptable-underruns': 0,
+        'acceptable-underruns': 10,
+        'tx_buffer': (0.1*1e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
+        'rx_buffer': 0.1*1e6,
     },
     'siso_chan1_slow': {
         'duration': 1,
         'direction': 'tx,rx',
         'chan': '1',
         'rate': 1e6,
-        'acceptable-underruns': 0,
+        'acceptable-underruns': 10,
+        'tx_buffer': (0.1*1e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
+        'rx_buffer': 0.1*1e6,
     },
 }
 

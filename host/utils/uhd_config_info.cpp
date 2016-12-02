@@ -40,6 +40,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
         ("libusb-version",     "Print libusb version")
         ("pkg-path",           "Print pkg path")
         ("images-dir",         "Print images dir")
+        ("abi-version",        "Print ABI version string")
         ("print-all",          "Print everything")
         ("version",            "Print this UHD build's version")
         ("help",               "Print help message")
@@ -93,6 +94,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
     }
     if(vm.count("images-dir") > 0 or print_all) {
         std::cout << "Images directory: " << uhd::get_images_dir("") << std::endl;
+    }
+    if(vm.count("abi-version") > 0 or print_all) {
+        std::cout << "ABI version string: " << uhd::get_abi_string() << std::endl;
     }
 
     return EXIT_SUCCESS;
