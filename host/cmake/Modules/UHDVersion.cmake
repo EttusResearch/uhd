@@ -27,9 +27,9 @@ FIND_PACKAGE(Git QUIET)
 #  - Increment patch for bugfixes and docs
 #  - set UHD_VERSION_DEVEL to true for master and development branches
 ########################################################################
-SET(UHD_VERSION_MAJOR 004)
-SET(UHD_VERSION_API   000)
-SET(UHD_VERSION_ABI   000)
+SET(UHD_VERSION_MAJOR 4)
+SET(UHD_VERSION_API   0)
+SET(UHD_VERSION_ABI   0)
 SET(UHD_VERSION_PATCH rfnoc)
 SET(UHD_VERSION_DEVEL TRUE)
 
