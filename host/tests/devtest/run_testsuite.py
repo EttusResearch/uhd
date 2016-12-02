@@ -102,6 +102,7 @@ def main():
             ser=uhd_info.get('serial')
         ))
         print('--- This will take some time. Better grab a cup of tea.')
+        sys.stdout.flush()
         args_str = uhd_info['args']
         env['_UHD_TEST_ARGS_STR'] = args_str
         logfile_name = "log{}.log".format(
@@ -124,6 +125,7 @@ def main():
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         )
         print(proc.communicate()[0])
+        sys.stdout.flush()
         if proc.returncode != 0:
             tests_passed = False
     print('--- Done testing all attached devices.')
