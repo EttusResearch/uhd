@@ -549,8 +549,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         n_rfnoc_blocks,
         E300_XB_DST_AXI + 1, /* base port, rfnoc blocks come after the AXI connect */
         uhd::sid_t(E300_DEVICE_HERE, 0, E300_DEVICE_THERE, 0),
-        device_addr_t(),
-        ENDIANNESS_LITTLE
+        device_addr_t()
     );
 
     // If we have a radio, we must configure its codec control:
