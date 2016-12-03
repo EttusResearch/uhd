@@ -65,6 +65,10 @@ public:
     size_t get_chan_from_dboard_fe(const std::string &fe, const direction_t dir);
     std::string get_dboard_fe_from_chan(const size_t chan, const direction_t dir);
 
+    std::vector<std::string> get_gpio_banks() const;
+    void set_gpio_attr(const std::string &bank, const std::string &attr, const uint32_t value, const uint32_t mask);
+    uint32_t get_gpio_attr(const std::string &bank, const std::string &attr);
+
     double get_output_samp_rate(size_t port);
 
     /************************************************************************

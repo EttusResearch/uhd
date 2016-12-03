@@ -200,6 +200,36 @@ double e3xx_radio_ctrl_impl::get_rx_gain(const size_t chan)
     return _tree->access<double>(fs_path("dboards/A/rx_frontends/" + fe_side + "/gains/PGA/value")).get();
 }
 
+std::vector<std::string> e3xx_radio_ctrl_impl::get_gpio_banks() const
+{
+    std::vector<std::string> banks = boost::assign::list_of("INT0");
+    return banks;
+}
+
+void e3xx_radio_ctrl_impl::set_gpio_attr(
+        const std::string &bank,
+        const std::string &attr,
+        const uint32_t value,
+        const uint32_t mask
+) {
+    if (bank == "INT0") {
+        const uint32_t current = _tree->access<uint32_t>(fs_path("gpio") / bank / attr).get();
+        const uint32_t new_value = (current & ~mask) | (value & mask);
+        _tree->access<uint32_t>(fs_path("gpio") / bank / attr).set(new_value);
+        return;
+    }
+}
+
+uint32_t e3xx_radio_ctrl_impl::get_gpio_attr(
+        const std::string &bank,
+        const std::string &attr
+) {
+    if (bank == "INT0") {
+        return uint32_t(_tree->access<uint64_t>(fs_path("gpio") / bank / attr).get());
+    }
+    return 0;
+}
+
 size_t e3xx_radio_ctrl_impl::get_chan_from_dboard_fe(const std::string &fe, const direction_t)
 {
     return (fe == "A") ? 0 : 1;

@@ -188,6 +188,51 @@ public:
      */
     virtual time_spec_t get_time_last_pps() = 0;
 
+    /*! Returns the list of GPIO banks that are associated with this radio.
+     *
+     * \returns list of GPIO bank names
+     */
+    virtual std::vector<std::string> get_gpio_banks() const = 0;
+
+    /*!
+     * Set a GPIO attribute on a particular GPIO bank.
+     * Possible attribute names:
+     *  - CTRL - 1 for ATR mode 0 for GPIO mode
+     *  - DDR - 1 for output 0 for input
+     *  - OUT - GPIO output level (not ATR mode)
+     *  - ATR_0X - ATR idle state
+     *  - ATR_RX - ATR receive only state
+     *  - ATR_TX - ATR transmit only state
+     *  - ATR_XX - ATR full duplex state
+     * \param bank the name of a GPIO bank (e.g., FP0)
+     * \param attr the name of a GPIO attribute (e.g., CTRL)
+     * \param value the new value for this GPIO bank
+     * \param mask the bit mask to effect which pins are changed
+     */
+    virtual void set_gpio_attr(
+            const std::string &bank,
+            const std::string &attr,
+            const uint32_t value,
+            const uint32_t mask
+    ) = 0;
+
+    /*!
+     * Get a GPIO attribute on a particular GPIO bank.
+     * Possible attribute names:
+     *  - CTRL - 1 for ATR mode 0 for GPIO mode
+     *  - DDR - 1 for output 0 for input
+     *  - OUT - GPIO output level (not ATR mode)
+     *  - ATR_0X - ATR idle state
+     *  - ATR_RX - ATR receive only state
+     *  - ATR_TX - ATR transmit only state
+     *  - ATR_XX - ATR full duplex state
+     *  - READBACK - readback input GPIOs
+     * \param bank the name of a GPIO bank
+     * \param attr the name of a GPIO attribute
+     * \return the value set for this attribute
+     */
+    virtual uint32_t get_gpio_attr(const std::string &bank, const std::string &attr) = 0;
+
     /*! Given a frontend name, return the channel mapping.
      *
      * E.g.: For a TwinRX board, there's two frontends, '0' and '1', which
