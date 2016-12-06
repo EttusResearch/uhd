@@ -191,6 +191,19 @@ private:
         std::string current_refclk_src;
 
         std::vector<uhd::rfnoc::x300_radio_ctrl_impl::sptr> radios;
+
+        // PCIe specific components:
+
+        //! Maps SID -> DMA channel
+        std::map<uint32_t, uint32_t> _dma_chan_pool;
+        //! Control transport for one PCIe connection
+        uhd::transport::muxed_zero_copy_if::sptr ctrl_dma_xport;
+
+        /*! Allocate or return a previously allocated PCIe channel pair
+         *
+         * Note the SID is always the transmit SID (i.e. from host to device).
+         */
+        uint32_t allocate_pcie_dma_chan(const uhd::sid_t &tx_sid, const xport_type_t xport_type);
     };
     std::vector<mboard_members_t> _mb;
 
@@ -223,15 +236,6 @@ private:
      * switches etc. into account which might live between the device and the host.
      */
     frame_size_t determine_max_frame_size(const std::string &addr, const frame_size_t &user_mtu);
-
-    std::map<uint32_t, uint32_t> _dma_chan_pool;
-    uhd::transport::muxed_zero_copy_if::sptr _ctrl_dma_xport;
-
-    /*! Allocate or return a previously allocated PCIe channel pair
-     *
-     * Note the SID is always the transmit SID (i.e. from host to device).
-     */
-    uint32_t allocate_pcie_dma_chan(const uhd::sid_t &tx_sid, const xport_type_t xport_type);
 
     ////////////////////////////////////////////////////////////////////
     //
