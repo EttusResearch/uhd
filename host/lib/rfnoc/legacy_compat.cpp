@@ -446,8 +446,7 @@ private: // methods
         mboard_idx = 0;
         mb_chan_idx = chan;
         while (mb_chan_idx >= chan_map[mboard_idx].size()) {
-            mboard_idx++;
-            mb_chan_idx  -= chan_map[mboard_idx].size();
+            mb_chan_idx  -= chan_map[mboard_idx++].size();
         }
         if (mboard_idx >= chan_map.size()) {
             throw uhd::index_error(str(
