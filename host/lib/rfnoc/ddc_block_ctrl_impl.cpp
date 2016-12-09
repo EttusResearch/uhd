@@ -121,7 +121,15 @@ public:
 
     double get_output_samp_rate(size_t port=ANY_PORT)
     {
-        port = port == ANY_PORT ? 0 : port;
+        if (port == ANY_PORT) {
+            port = 0;
+            for (size_t i = 0; i < get_input_ports().size(); i++) {
+                if (_rx_streamer_active.count(i) and _rx_streamer_active.at(i)) {
+                    port = i;
+                    break;
+                }
+            }
+        }
         if (not (_rx_streamer_active.count(port) and _rx_streamer_active.at(port))) {
             return RATE_UNDEFINED;
         }
