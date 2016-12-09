@@ -95,6 +95,10 @@ ELSE()
     SET(CMAKE_CXX_STANDARD 11)
 ENDIF()
 
+IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    SET(CMAKE_EXE_LINKER_FLAGS "-lthr ${CMAKE_EXE_LINKER_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "-stdlib=libc++ ${CMAKE_CXX_FLAGS}")
+ENDIF()
 
 ########################################################################
 # Packaging Variables

@@ -95,16 +95,6 @@ size_t calc_num_tx_chans_per_radio(
     );
 }
 
-double lambda_const_double(const double d)
-{
-    return d;
-}
-
-uhd::meta_range_t lambda_const_meta_range(const double start, const double stop, const double step)
-{
-    return uhd::meta_range_t(start, stop, step);
-}
-
 /*! Recreate passed property without bound subscribers. Maintains current property value.
 */
 template <typename T>
@@ -113,6 +103,7 @@ static void recreate_property(const uhd::fs_path &path, uhd::property_tree::sptr
     tree->remove(path);
     tree->create<T>(path).set(temp);
 }
+
 /************************************************************************
  * Class Definition
  ***********************************************************************/
@@ -638,10 +629,10 @@ private: // methods
                             )
                         ;
                         _tree->create<double>(rx_dsp_base_path / "freq/value")
-                            .set_publisher(boost::bind(&lambda_const_double, 0.0))
+                            .set_publisher([](){ return 0.0; })
                         ;
                         _tree->create<uhd::meta_range_t>(rx_dsp_base_path / "freq/range")
-                            .set_publisher(boost::bind(&lambda_const_meta_range, 0.0, 0.0, 0.0))
+                            .set_publisher([](){ return uhd::meta_range_t(0.0, 0.0, 0.0); })
                         ;
                     }
                 }
@@ -671,10 +662,10 @@ private: // methods
                             )
                         ;
                         _tree->create<double>(tx_dsp_base_path / "freq/value")
-                            .set_publisher(boost::bind(&lambda_const_double, 0.0))
+                            .set_publisher([](){ return 0.0; })
                         ;
                         _tree->create<uhd::meta_range_t>(tx_dsp_base_path / "freq/range")
-                            .set_publisher(boost::bind(&lambda_const_meta_range, 0.0, 0.0, 0.0))
+                            .set_publisher([](){ return uhd::meta_range_t(0.0, 0.0, 0.0); })
                         ;
                     }
                 }

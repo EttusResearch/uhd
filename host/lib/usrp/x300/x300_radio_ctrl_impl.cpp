@@ -26,6 +26,7 @@
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/transport/chdr.hpp>
+#include <uhd/utils/math.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
@@ -168,10 +169,14 @@ x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
 /****************************************************************************
  * API calls
  ***************************************************************************/
-double x300_radio_ctrl_impl::set_rate(double /* rate */)
+double x300_radio_ctrl_impl::set_rate(double rate)
 {
+    const double actual_rate = get_rate();
+    if (not uhd::math::frequencies_are_equal(rate, actual_rate)) {
+        UHD_MSG(warning) << "[X300 Radio] Requesting invalid sampling rate from device: " << rate/1e6 << " MHz. Actual rate is: " << actual_rate/1e6 << " MHz." << std::endl;
+    }
     // On X3x0, tick rate can't actually be changed at runtime
-    return get_rate();
+    return actual_rate;
 }
 
 void x300_radio_ctrl_impl::set_fe_cmd_time(const time_spec_t &time, const size_t chan)
