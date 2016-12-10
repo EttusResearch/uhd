@@ -228,6 +228,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     //set data direction register (DDR)
     usrp->set_gpio_attr(gpio, "DDR", ddr, mask);
 
+    //set control register
+    usrp->set_gpio_attr(gpio, "CTRL", ctrl, mask);
+
     //set output values (OUT)
     usrp->set_gpio_attr(gpio, "OUT", out, mask);
 
@@ -236,9 +239,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     usrp->set_gpio_attr(gpio, "ATR_RX", atr_rx, mask);
     usrp->set_gpio_attr(gpio, "ATR_TX", atr_tx, mask);
     usrp->set_gpio_attr(gpio, "ATR_XX", atr_duplex, mask);
-
-    //set control register
-    usrp->set_gpio_attr(gpio, "CTRL", ctrl, mask);
 
     //print out initial state of FP GPIO
     std::cout << "\nConfigured GPIO values:" << std::endl;
