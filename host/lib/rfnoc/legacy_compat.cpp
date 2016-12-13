@@ -349,7 +349,6 @@ public:
                 }
             }
             BOOST_FOREACH(const size_t this_chan, chans_to_change) {
-                UHD_MSG(status) << "setting rate on chan " << this_chan << " " << rate << std::endl;
                 size_t mboard, mb_chan;
                 chan_to_mcp<uhd::RX_DIRECTION>(this_chan, _rx_channel_map, mboard, mb_chan);
                 const size_t dsp_index  = _rx_channel_map[mboard][mb_chan].radio_index;
