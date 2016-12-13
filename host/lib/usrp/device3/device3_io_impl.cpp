@@ -114,7 +114,7 @@ void generate_channel_list(
         if (args.args.has_key(key)) {
             chan_list_[i] = args.args.pop(key);
         } else if (args.args.has_key("block_id")) {
-            chan_list[i] = args.args["block_id"];
+            chan_list_[i] = args.args["block_id"];
         } else {
             throw uhd::runtime_error(str(
                 boost::format("Cannot create streamers: No block_id specified for channel %d.")
