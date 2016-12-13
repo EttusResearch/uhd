@@ -105,8 +105,8 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
         const size_t nbytes = comm->recv(asio::buffer(buff), 0.050);
         if (nbytes == 0) break;
         const x300_fw_comms_t *reply = (const x300_fw_comms_t *)buff;
-        if (request.flags != reply->flags) break;
-        if (request.sequence != reply->sequence) break;
+        if (request.flags != reply->flags) continue;
+        if (request.sequence != reply->sequence) continue;
         device_addr_t new_addr;
         new_addr["type"] = "x300";
         new_addr["addr"] = comm->get_recv_addr();
@@ -652,7 +652,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         }
 
         _tree->create<size_t>(mb_path / "mtu/recv").set(_max_frame_sizes.recv_frame_size);
-        _tree->create<size_t>(mb_path / "mtu/send").set(std::min(_max_frame_sizes.send_frame_size, X300_1GE_DATA_FRAME_MAX_SIZE));
+        _tree->create<size_t>(mb_path / "mtu/send").set(std::min(_max_frame_sizes.send_frame_size, X300_ETH_DATA_FRAME_MAX_TX_SIZE));
         _tree->create<double>(mb_path / "link_max_rate").set(X300_MAX_RATE_10GIGE);
     }
 
@@ -1024,14 +1024,14 @@ x300_impl::~x300_impl(void)
     }
 }
 
-uint32_t x300_impl::allocate_pcie_dma_chan(const uhd::sid_t &tx_sid, const xport_type_t xport_type)
+uint32_t x300_impl::mboard_members_t::allocate_pcie_dma_chan(const uhd::sid_t &tx_sid, const xport_type_t xport_type)
 {
     static const uint32_t CTRL_CHANNEL       = 0;
     static const uint32_t FIRST_DATA_CHANNEL = 1;
     if (xport_type == CTRL) {
         return CTRL_CHANNEL;
     } else {
-        // sid_t has no comparison defined
+        // sid_t has no comparison defined, so we need to convert it uint32_t
         uint32_t raw_sid = tx_sid.get();
 
         if (_dma_chan_pool.count(raw_sid) == 0) {
@@ -1067,10 +1067,10 @@ uhd::both_xports_t x300_impl::make_transport(
         xports.send_sid = this->allocate_sid(mb, address, X300_SRC_ADDR0, X300_XB_DST_PCI);
         xports.recv_sid = xports.send_sid.reversed();
 
-        uint32_t dma_channel_num = allocate_pcie_dma_chan(xports.send_sid, xport_type);
+        uint32_t dma_channel_num = mb.allocate_pcie_dma_chan(xports.send_sid, xport_type);
         if (xport_type == CTRL) {
             //Transport for control stream
-            if (_ctrl_dma_xport.get() == NULL) {
+            if (not mb.ctrl_dma_xport) {
                 //One underlying DMA channel will handle
                 //all control traffic
                 zero_copy_xport_params ctrl_buff_args;
@@ -1082,10 +1082,10 @@ uhd::both_xports_t x300_impl::make_transport(
                 zero_copy_if::sptr base_xport = nirio_zero_copy::make(
                     mb.rio_fpga_interface, dma_channel_num,
                     ctrl_buff_args, uhd::device_addr_t());
-                _ctrl_dma_xport = muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, X300_PCIE_MAX_MUXED_XPORTS);
+                mb.ctrl_dma_xport = muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, X300_PCIE_MAX_MUXED_XPORTS);
             }
             //Create a virtual control transport
-            xports.recv = _ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
+            xports.recv = mb.ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
         } else {
             //Transport for data stream
             default_buff_args.send_frame_size =
