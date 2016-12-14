@@ -255,50 +255,80 @@ ENDIF(WIN32)
 ########################################################################
 # Setup Boost
 ########################################################################
-MESSAGE(STATUS "")
-MESSAGE(STATUS "Configuring Boost C++ Libraries...")
-SET(BOOST_REQUIRED_COMPONENTS
+option(BOOST_STATIC "Static linking of boost libraries" OFF)
+
+if (BOOST_STATIC)
+	# Boost libs to use, must be set before including boost.txt.
+	SET(project_boost_libs 
     chrono
     date_time
     filesystem
     program_options
     regex
+    thread
     system
-    unit_test_framework
     serialization
-)
-IF(MINGW)
-    LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
-ELSE()
-    LIST(APPEND BOOST_REQUIRED_COMPONENTS thread)
-ENDIF()
+	)
+	INCLUDE(${CMAKE_SOURCE_DIR}/cmake/boost.txt) 
+	SET(Boost_LIBRARIES ${LIBBOOST_LIBS})
+	SET(Boost_FOUND 1)
+	SET(Boost_INCLUDE_DIRS $ENV{BOOST_ROOT})
+	SET(Boost_LIBRARY_DIRS ${LIBBOOST_DIRS})
 
-IF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
-    LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
-ENDIF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
+	INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+	LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
-IF(MSVC)
-    SET(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
-    IF(BOOST_ALL_DYN_LINK)
-        ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
-    ELSE(BOOST_ALL_DYN_LINK)
-        SET(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
-    ENDIF(BOOST_ALL_DYN_LINK)
-ENDIF(MSVC)
+	MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
+	MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
+	MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+	#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC") 
+	#SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC") 
+else()
+  MESSAGE(STATUS "")
+  MESSAGE(STATUS "Configuring Boost C++ Libraries...")
+  SET(BOOST_REQUIRED_COMPONENTS
+      chrono
+      date_time
+      filesystem
+      program_options
+      regex
+      system
+      unit_test_framework
+      serialization
+  )
+  IF(MINGW)
+      LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
+  ELSE()
+      LIST(APPEND BOOST_REQUIRED_COMPONENTS thread)
+  ENDIF()
 
-SET(Boost_ADDITIONAL_VERSIONS
-    "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
-    "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
-    "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60"
-)
-FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+  IF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
+      LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
+  ENDIF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
 
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+  IF(MSVC)
+      SET(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
+      IF(BOOST_ALL_DYN_LINK)
+          ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
+      ELSE(BOOST_ALL_DYN_LINK)
+          SET(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
+      ENDIF(BOOST_ALL_DYN_LINK)
+  ENDIF(MSVC)
 
-MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
-MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
-MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+  SET(Boost_ADDITIONAL_VERSIONS
+      "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
+      "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
+      "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60"
+  )
+  FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+  LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+
+  MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
+  MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
+  MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+endif()
 
 ########################################################################
 # Additional settings for build environment
