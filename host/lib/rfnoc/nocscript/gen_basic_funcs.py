@@ -452,9 +452,9 @@ def write_manual_file(output_filename):
     func_list = prep_function_list()
     func_list_tree = {}
     for func in func_list:
-        if not func_list_tree.has_key(func['category']):
+        if func['category'] not in func_list_tree:
             func_list_tree[func['category']] = {}
-        if not func_list_tree[func['category']].has_key(func['name']):
+        if func['name'] not in func_list_tree[func['category']]:
             func_list_tree[func['category']][func['name']] = []
         func_list_tree[func['category']][func['name']].append(func)
     open(output_filename, 'w').write(parse_tmpl(DOXY_TEMPLATE, func_list_tree=func_list_tree))
