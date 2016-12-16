@@ -100,7 +100,7 @@ public:
     {
         boost::lock_guard<boost::recursive_mutex> resolve_lock(_resolve_mutex);
         boost::lock_guard<boost::mutex> lock(_mutex);
-        EX_LOG(0, str(boost::format("resolve_from(%s)") % node_name));
+        EX_LOG(0, "resolve_from (overridden to resolve_all)");
         // Do a full resolve of the graph
         // Not optimizing the traversal using node_name to reduce experts complexity
         _resolve_helper("", "", false);
@@ -110,7 +110,7 @@ public:
     {
         boost::lock_guard<boost::recursive_mutex> resolve_lock(_resolve_mutex);
         boost::lock_guard<boost::mutex> lock(_mutex);
-        EX_LOG(0, str(boost::format("resolve_to(%s)") % node_name));
+        EX_LOG(0, "resolve_to (overridden to resolve_all)");
         // Do a full resolve of the graph
         // Not optimizing the traversal using node_name to reduce experts complexity
         _resolve_helper("", "", false);
