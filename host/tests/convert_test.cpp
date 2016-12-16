@@ -581,7 +581,7 @@ static void test_convert_types_f32(
 ){
     //fill the input samples
     std::vector<float> input(nsamps), output(nsamps);
-    BOOST_FOREACH(float &in, input) in = float((std::rand()/float(RAND_MAX/2)) - 1);
+    BOOST_FOREACH(float &in, input) in = float((float(std::rand())/float(RAND_MAX/2)) - 1);
 
     //run the loopback and test
     convert::id_type in_id = id;
