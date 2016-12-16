@@ -331,9 +331,9 @@ REGISTER_COMMANDS_TEMPLATE = """
     );"""
 
 DOXY_TEMPLATE = """/*! \page page_nocscript_funcs NocScript Function Reference
-% for cat, func_by_name in func_list_tree.iteritems():
+% for cat, func_by_name in func_list_tree.items():
 - ${cat}
-%   for func_name, func_info_list in func_by_name.iteritems():
+%   for func_name, func_info_list in func_by_name.items():
   - ${func_name}: ${func_info_list[0]['docstring']}
 %     for func_info in func_info_list:
     - ${func_info['arglist']} -> ${func_info['retval']}
