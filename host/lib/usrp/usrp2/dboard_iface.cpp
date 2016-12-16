@@ -182,7 +182,7 @@ void usrp2_dboard_iface::set_clock_enabled(unit_t unit, bool enb){
     switch(unit){
     case UNIT_RX:   _clock_ctrl->enable_rx_dboard_clock(enb); return;
     case UNIT_TX:   _clock_ctrl->enable_tx_dboard_clock(enb); return;
-    case UNIT_BOTH: set_clock_enabled(UNIT_RX, enb); set_clock_enabled(UNIT_TX, enb); return;
+    default: UHD_THROW_INVALID_CODE_PATH();
     }
 }
 

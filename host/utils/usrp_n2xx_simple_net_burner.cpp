@@ -326,7 +326,7 @@ int read_fpga_image(std::string& fpga_path){
     fpga_file.seekg(0, std::ios::beg);
     fpga_file.read((char*)fpga_test_bytes,63);
     bool is_good = false;
-    for(int i = 0; i < 63; i++){
+    for(int i = 0; i < 62; i++){
         if(fpga_test_bytes[i] == 255) continue;
         else if(fpga_test_bytes[i] == 170 and
                 fpga_test_bytes[i+1] == 153){

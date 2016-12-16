@@ -324,7 +324,7 @@ static void n200_validate_fpga_image(n200_session_t &session){
     image_file.seekg(0, std::ios::beg);
     image_file.read((char*)test_bytes, 63);
     bool is_good = false;
-    for(int i = 0; i < 63; i++){
+    for(int i = 0; i < 62; i++){
         if(test_bytes[i] == 255) continue;
         else if(test_bytes[i] == 170 and
                 test_bytes[i+1] == 153){
