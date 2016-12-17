@@ -285,8 +285,8 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
     const size_t nsamps = 13;
     std::vector<fc32_t> input(nsamps);
     BOOST_FOREACH(fc32_t &in, input) in = fc32_t(
-        (std::rand()/float(RAND_MAX/2)) - 1,
-        (std::rand()/float(RAND_MAX/2)) - 1
+        (std::rand()/(RAND_MAX/2.0)) - 1,
+        (std::rand()/(RAND_MAX/2.0)) - 1
     );
     std::vector<uint32_t> interm(nsamps);
     std::vector<sc16_t> output(nsamps);
