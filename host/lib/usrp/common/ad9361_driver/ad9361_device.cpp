@@ -996,8 +996,8 @@ void ad9361_device_t::_program_gain_table() {
         gain_table = gain_table_4000mhz_to_6000mhz;
         new_gain_table = 3;
     } else {
-        throw uhd::runtime_error("[ad9361_device_t] Wrong _rx_freq value");
         new_gain_table = 1;
+        throw uhd::runtime_error("[ad9361_device_t] Wrong _rx_freq value");
     }
 
     /* Only re-program the gain table if there has been a band change. */
