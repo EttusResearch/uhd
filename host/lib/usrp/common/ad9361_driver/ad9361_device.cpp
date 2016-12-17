@@ -491,8 +491,8 @@ double ad9361_device_t::_calibrate_secondary_tx_filter(double req_rfbw)
     } else if ((bbbw_mhz * 2) > 24) {
         reg0d0 = 0x57;
     } else {
-        throw uhd::runtime_error("[ad9361_device_t] Cal2ndTxFil: INVALID_CODE_PATH bad bbbw_mhz");
         reg0d0 = 0x00;
+        throw uhd::runtime_error("[ad9361_device_t] Cal2ndTxFil: INVALID_CODE_PATH bad bbbw_mhz");
     }
 
     /* Translate resistor values to register settings. */
