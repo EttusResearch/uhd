@@ -91,8 +91,12 @@ class uhd_images_downloader():
                     filesize_dl += len(buff)
                 if print_progress:
                     status = r"%05d kB / %05d kB (%03d%%)" % (int(math.ceil(filesize_dl/1000.)), int(math.ceil(filesize/1000.)), int(math.ceil(filesize_dl*100.)/filesize))
-                    status += chr(8)*(len(status)+1)
+                    if os.name == "nt":
+                        status += chr(8)*(len(status)+1)
+                    else:
+                        sys.stdout.write("\x1b[2K\r") #Clear previos line
                     sys.stdout.write(status)
+                    sys.stdout.flush()
         if print_progress:
             print('')
         return (filesize, filesize_dl)
