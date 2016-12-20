@@ -24,6 +24,7 @@ namespace uhd {
      */
     struct both_xports_t
     {
+        both_xports_t(): recv_buff_size(0), send_buff_size(0) {}
         uhd::transport::zero_copy_if::sptr recv;
         uhd::transport::zero_copy_if::sptr send;
         size_t recv_buff_size;
