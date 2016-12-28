@@ -148,6 +148,20 @@ public:
      */
     virtual double set_rx_gain(const double gain, const size_t chan) = 0;
 
+    /*! Return the analog filter bandwidth channel \p chan
+     *
+     * \return The actual bandwidth value
+     */
+    // virtual double get_rx_bandwidth(const double bandwidth, const size_t chan) = 0;
+
+    /*! Set the analog filter bandwidth channel \p chan
+     *
+     * This function will attempt to set the analog bandwidth.
+     *
+     * \return The actual bandwidth value
+     */
+    virtual double set_rx_bandwidth(const double bandwidth, const size_t chan) = 0;
+
     /*! Sets the time in the radio's timekeeper to the given value.
      *
      * Note that there is a non-deterministic delay between calling this

@@ -193,6 +193,11 @@ double radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
     return _rx_gain[chan] = gain;
 }
 
+double radio_ctrl_impl::set_rx_bandwidth(const double bandwidth, const size_t chan)
+{
+    return _rx_bandwidth[chan] = bandwidth;
+}
+
 void radio_ctrl_impl::set_time_sync(const uhd::time_spec_t &time)
 {
     _time64->set_time_sync(time);
@@ -231,6 +236,11 @@ double radio_ctrl_impl::get_tx_gain(const size_t chan) /* const */
 double radio_ctrl_impl::get_rx_gain(const size_t chan) /* const */
 {
     return _rx_gain[chan];
+}
+
+double radio_ctrl_impl::get_rx_bandwidth(const size_t chan) /* const */
+{
+    return _rx_bandwidth[chan];
 }
 
 /***********************************************************************
