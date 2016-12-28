@@ -188,6 +188,13 @@ double e3xx_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
     return radio_ctrl_impl::set_rx_gain(new_gain, chan);
 }
 
+double e3xx_radio_ctrl_impl::set_rx_bandwidth(const double bandwidth, const size_t chan)
+{
+    const std::string fe_side = (chan == 0) ? "A" : "B";
+    double new_bw = _tree->access<double>(fs_path("dboards/A/rx_frontends/" + fe_side + "/bandwidth/value")).set(bandwidth).get();
+    return radio_ctrl_impl::set_rx_bandwidth(new_bw, chan);
+}
+
 double e3xx_radio_ctrl_impl::get_tx_gain(const size_t chan)
 {
     const std::string fe_side = (chan == 0) ? "A" : "B";
@@ -198,6 +205,12 @@ double e3xx_radio_ctrl_impl::get_rx_gain(const size_t chan)
 {
     const std::string fe_side = (chan == 0) ? "A" : "B";
     return _tree->access<double>(fs_path("dboards/A/rx_frontends/" + fe_side + "/gains/PGA/value")).get();
+}
+
+double e3xx_radio_ctrl_impl::get_rx_bandwidth(const size_t chan)
+{
+    const std::string fe_side = (chan == 0) ? "A" : "B";
+    return _tree->access<double>(fs_path("dboards/A/rx_frontends/" + fe_side + "/bandwidth/value")).get();
 }
 
 std::vector<std::string> e3xx_radio_ctrl_impl::get_gpio_banks() const
