@@ -381,7 +381,7 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
     UHD_MSG(status) << " done!" << std::endl;
 }
 
-x300_impl::x300_impl(const uhd::device_addr_t &dev_addr) 
+x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
     : device3_impl()
     , _sid_framer(0)
 {
@@ -391,10 +391,23 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
 
     const device_addrs_t device_args = separate_device_addr(dev_addr);
     _mb.resize(device_args.size());
+
+    if (dev_addr.has_key("serialize_init") or device_args.size() == 1) {
+        for (size_t i = 0; i < device_args.size(); i++)
+        {
+            this->setup_mb(i, device_args[i]);
+        }
+        return;
+    }
+
+    boost::thread_group setup_threads;
     for (size_t i = 0; i < device_args.size(); i++)
     {
-        this->setup_mb(i, device_args[i]);
+        setup_threads.create_thread(
+            boost::bind(&x300_impl::setup_mb, this, i, device_args[i])
+        );
     }
+    setup_threads.join_all();
 }
 
 void x300_impl::mboard_members_t::discover_eth(
