@@ -18,9 +18,6 @@
 #ifndef INCLUDED_UHD_VERSION_HPP
 #define INCLUDED_UHD_VERSION_HPP
 
-#include <uhd/config.hpp>
-#include <string>
-
 /*!
  * The ABI version string that the client application builds against.
  * Call get_abi_string() to check this against the library build.
@@ -36,6 +33,10 @@
  */
 #cmakedefine UHD_VERSION @UHD_VERSION_ADDED@
 
+#ifdef __cplusplus
+#include <uhd/config.hpp>
+#include <string>
+
 namespace uhd{
 
     //! Get the version string (dotted version number + build info)
@@ -45,5 +46,6 @@ namespace uhd{
     UHD_API std::string get_abi_string(void);
 
 } //namespace uhd
+#endif
 
 #endif /* INCLUDED_UHD_VERSION_HPP */
