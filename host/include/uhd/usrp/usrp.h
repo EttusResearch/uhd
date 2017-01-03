@@ -30,6 +30,8 @@
 #include <uhd/usrp/mboard_eeprom.h>
 #include <uhd/usrp/dboard_eeprom.h>
 #include <uhd/usrp/subdev_spec.h>
+/* version.hpp is safe to include in C: */
+#include <uhd/version.hpp> /* Provides UHD_VERSION */
 
 #include <stdbool.h>
 #include <stdlib.h>
