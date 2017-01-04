@@ -116,8 +116,8 @@ SET_SOURCE_FILES_PROPERTIES(
 ########################################################################
 # Define UHD_PKG_DATA_PATH for paths.cpp
 ########################################################################
-FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX} UHD_PKG_PATH)
-STRING(REPLACE "\\" "\\\\" UHD_PKG_PATH ${UHD_PKG_PATH})
+FILE(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" UHD_PKG_PATH)
+STRING(REPLACE "\\" "\\\\" UHD_PKG_PATH "${UHD_PKG_PATH}")
 
 STRING(REGEX MATCH ".*/.*" SLASH "${LIB_SUFFIX}")
 IF(SLASH STREQUAL "")
