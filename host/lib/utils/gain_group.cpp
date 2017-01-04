@@ -39,7 +39,7 @@ static bool compare_by_step_size(
  *
  * Due to small doubleing-point inaccuracies:
  *     num = n*step + e, where e is a small inaccuracy.
- * When e is negative, floor would yeild (n-1)*step,
+ * When e is negative, floor would yield (n-1)*step,
  * despite that n*step is really the desired result.
  * This function is designed to mitigate that issue.
  *
@@ -49,7 +49,11 @@ static bool compare_by_step_size(
  * \return a multiple of step approximating num
  */
 template <typename T> static T floor_step(T num, T step, T e = T(0.001)){
-    return step*int(num/step + e);
+    if (num < T(0)) {
+        return step*int(num/step - e);
+    } else {
+        return step*int(num/step + e);
+    }
 }
 
 gain_group::~gain_group(void){
