@@ -62,6 +62,11 @@ public:
             taps.resize(_n_taps, 0);
         }
 
+        // Note- It appears the tap load process does not take affect until the NEXT time
+        // we write to SR_CONFIG. But, if we call SR_CONFIG before (and after) reloading taps,
+        // it seems to be happy. Not sure why. I'd be happy to find a different solution.
+        sr_write(SR_CONFIG, 0);
+
         // Write taps via the reload bus
         for (size_t i = 0; i < taps.size() - 1; i++) {
             sr_write(SR_RELOAD, uint32_t(taps[i]));
