@@ -129,9 +129,12 @@ public:
     void setup_mb(const size_t which, const uhd::device_addr_t &);
     ~x300_impl(void);
 
-    // used by x300_find_with_addr to find X300 devices.
-    static boost::mutex claimer_mutex;  //All claims and checks in this process are serialized
-    static bool is_claimed(uhd::wb_iface::sptr);
+    // device claim functions
+    enum claim_status_t {UNCLAIMED, CLAIMED_BY_US, CLAIMED_BY_OTHER};
+    static claim_status_t claim_status(uhd::wb_iface::sptr iface);
+    static void claim(uhd::wb_iface::sptr iface);
+    static bool try_to_claim(uhd::wb_iface::sptr iface, long timeout = 2000);
+    static void release(uhd::wb_iface::sptr iface);
 
     enum x300_mboard_t {
         USRP_X300_MB, USRP_X310_MB, UNKNOWN

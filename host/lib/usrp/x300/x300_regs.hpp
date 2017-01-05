@@ -33,6 +33,9 @@ static const int BL_DATA       = 1;
 #define I2C1_BASE     0xff00
 #define SR_ADDR(base, offset) ((base) + (offset)*4)
 
+//I2C1 device addresses
+#define MBOARD_EEPROM_ADDR  0x50
+
 static const int ZPU_SR_LEDS       = 00;
 static const int ZPU_SR_SW_RST     = 01;
 static const int ZPU_SR_CLOCK_CTRL = 02;
