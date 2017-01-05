@@ -14,20 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-""" Test for gpio. """
+""" Test for gpio --bitbang. """
 
 import re
 from uhd_test_base import uhd_example_test_case
 
-class gpio_test(uhd_example_test_case):
-    """ Run gpio. """
+class bitbang_test(uhd_example_test_case):
+    """ Run gpio --bitbang. """
     tests = {'default': {},}
 
     def setup_example(self):
         """
         Set args.
         """
-        self.test_params = gpio_test.tests
+        self.test_params = bitbang_test.tests
 
     def run_test(self, test_name, test_args):
         """ Run the app and scrape for the success message. """
@@ -35,12 +35,13 @@ class gpio_test(uhd_example_test_case):
         # Run example:
         args = [
             self.create_addr_args_str(),
+            '--bitbang',
         ]
         (app, run_results) = self.run_example('gpio', args)
         # Evaluate pass/fail:
         run_results['passed'] = all([
             app.returncode == 0,
-            re.search('All tests passed!', app.stdout) is not None,
+            # re.search('All tests passed!', app.stdout) is not None,
         ])
         self.report_example_results(test_name, run_results)
         return run_results
