@@ -149,6 +149,72 @@ As all these tests can be run unsupervised, they can be run automatically given
 the correct device setup. The return code of the tests can be used to check for
 pass/fail conditions (return code 0 means 'pass').
 
+\section rdtesting_fpga_testbenches FPGA: Testing through Simulations
+
+Test benches provide a faster way to verify the design through simulations.
+
+| Test Code        | Device    | Peripherals       | Manual Test Procedure        | Automatic Test Procedure  |
+|------------------|-----------|-------------------|------------------------------|---------------------------|
+| FPGATB-v1   | None      | None         | \ref rdtesting_fpga_testbenches_manual  | \ref rdtesting_fpga_testbenches_auto |
+
+\subsection rdtesting_fpga_testbenches_requirement: Requirements
+
+These tests are simulations and do not need any device. Vivado 15.4 should be installed.
+
+\subsection rdtesting_fpga_testbenches_manual: Manual Test Procedure
+
+1. Go to the fpga directory depending on which test needs to be run.
+
+  1. NoC block test benches:
+     Most of the NoC blocks have a test bench written in System Verilog that provides stimuli to the noc_block to verify it. The test bench for a block resides in <fpga-dir>/usrp3/lib/rfnoc/*_tb.
+
+  2. Running unit test benches:
+     A few sub-blocks like noc-shell and sine_tone are used within the bigger noc_blocks. They have their own test benches. Their test benches reside in <fpga-dir>/usrp3/lib/sim/rfnoc/*.
+
+  3. Radio test bench:
+     The radio test bench resides in <fpga-dir>/usrp3/lib/radio/noc_block_radio_core_tb/.
+
+  4. Device specific test benches:
+     IPs specific to a device have test benches that exist in <fpga-dir>/usrp3/top/x300/sim/*. e.g. DMA testbench, PCIe, etc.
+
+2. Setup the environment by running 'source <fpga-dir>/usrp3/top/<device>/setupenv.sh'.
+
+3. In the test bench directory and run the test bench by 'make xsim' or 'make vsim'.
+
+4. All of these tests must report no failure with a 'PASS' validation. Example testbench output:
+
+    ========================================================
+    TESTBENCH STARTED: noc_block_skeleton
+    ========================================================
+    [TEST CASE   1] (t=000000000) BEGIN: Wait for Reset...
+    [TEST CASE   1] (t=000001002) DONE... Passed
+    [TEST CASE   2] (t=000001002) BEGIN: Check NoC ID...
+    Read Skeleton NOC ID: 1234000000000000
+    [TEST CASE   2] (t=000001238) DONE... Passed
+    [TEST CASE   3] (t=000001238) BEGIN: Connect RFNoC blocks...
+    Connecting noc_block_tb (SID: 1:0) to noc_block_skeleton (SID: 0:0)
+    Connecting noc_block_skeleton (SID: 0:0) to noc_block_tb (SID: 1:0)
+    [TEST CASE   3] (t=000005457) DONE... Passed
+    [TEST CASE   4] (t=000005457) BEGIN: Write / readback user registers...
+    [TEST CASE   4] (t=000006888) DONE... Passed
+    [TEST CASE   5] (t=000006888) BEGIN: Test sequence...
+    [TEST CASE   5] (t=000007403) DONE... Passed
+    ========================================================
+    TESTBENCH FINISHED: noc_block_skeleton
+     - Time elapsed:   7500 ns             
+     - Tests Expected: 5
+     - Tests Run:      5
+     - Tests Passed:   5
+    Result: PASSED   
+    ========================================================
+
+Failing tests can be debugged by checking the waveform in a Vivado GUI by running 'make GUI=1 xsim'. More details on debugging https://kb.ettus.com/Debugging_FPGA_images
+
+\subsection rdtesting_fpga_testbenches_auto: Automatic Test Procedure
+
+ Go to <fpga-dir>/usrp3/ and run 'build.py xsim all'. All tests should report 'PASS'.
+
+
 \section rdtesting_defining Defining R&D Tests
 
 Tests can be added any time to define procedures for pass/fail validation. Any
