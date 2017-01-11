@@ -22,9 +22,9 @@
 
 namespace uhd{ namespace transport{ namespace vrt{
 
-/*! \brief CVITA/CHDR related function
+/*! \brief CHDR related function
  *
- * See \ref rtp_chdr for details on the CVITA/CHDR protocol.
+ * See \ref rtp_chdr for details on the CHDR protocol.
  *
  * All packers take the host format into account. Choose the _le functions
  * if the transport uses little endian format (e.g. PCIe) and the _be
@@ -46,7 +46,7 @@ namespace uhd{ namespace transport{ namespace vrt{
  */
 namespace chdr{
 
-    //! The maximum number of 64-bit words in a CVITA header
+    //! The maximum number of 64-bit words in a CHDR header
     static const size_t max_if_hdr_words64 = 2; // CHDR + tsf (fractional timestamp)
 
     /*!
