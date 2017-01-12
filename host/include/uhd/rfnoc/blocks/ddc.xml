@@ -5,7 +5,7 @@
   <key>DDC</key>
   <!--There can be several of these:-->
   <ids>
-    <id revision="0">DDC0</id>
+    <id revision="0">DDC0000000000000</id>
   </ids>
   <!-- Registers -->
   <registers>
