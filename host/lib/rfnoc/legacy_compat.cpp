@@ -467,17 +467,25 @@ private: // methods
         // If it's not provided, we provide our own spp value.
         const size_t args_spp = args.args.cast<size_t>("spp", 0);
         if (dir == uhd::RX_DIRECTION) {
+            size_t target_spp = _rx_spp;
             if (args.args.has_key("spp") and args_spp != _rx_spp) {
-                for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
-                    for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
-                        get_block_ctrl<radio_ctrl>(mboard, RADIO_BLOCK_NAME, radio)->set_arg<int>("spp", args_spp);
-                    }
-                }
-                _rx_spp = args_spp;
+                target_spp = args_spp;
                 // TODO: Update flow control on the blocks
             } else {
-                args.args["spp"] = str(boost::format("%d") % _rx_spp);
+                for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
+                    for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
+                        const size_t this_spp = get_block_ctrl<radio_ctrl>(mboard, RADIO_BLOCK_NAME, radio)->get_arg<int>("spp");
+                        target_spp = std::min(this_spp, target_spp);
+                    }
+                }
             }
+            for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
+                for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
+                    get_block_ctrl<radio_ctrl>(mboard, RADIO_BLOCK_NAME, radio)->set_arg<int>("spp", target_spp);
+                }
+            }
+            _rx_spp = target_spp;
+            args.args["spp"] = str(boost::format("%d") % _rx_spp);
         } else {
             if (args.args.has_key("spp") and args_spp != _tx_spp) {
                 _tx_spp = args_spp;
@@ -574,10 +582,10 @@ private: // methods
 
                 const size_t this_spp = get_block_ctrl<radio_ctrl>(i, RADIO_BLOCK_NAME, k)->get_arg<int>("spp");
                 if (this_spp != _rx_spp) {
-                    throw uhd::runtime_error(str(
-                            boost::format("[legacy compat] Radios have differing spp values: %s has %d, others have %d")
+                    UHD_LOG << str(
+                            boost::format("[legacy compat] Radios have differing spp values: %s has %d, others have %d. UHD will use smaller spp value for all connections. Performance might be not optimal.")
                             % radio_block_id.to_string() % this_spp % _rx_spp
-                    ));
+                    );
                 }
             }
         }
