@@ -812,8 +812,8 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
             //and count deviations from the expected value
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
-            //10ms @ 200MHz = 2 million samples
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            //5ms @ 200MHz = 1 million samples
+            boost::this_thread::sleep(boost::posix_time::milliseconds(5));
             if (_regs->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_I_LOCKED)) {
                 err_code += _regs->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_I_ERROR);
             } else {
@@ -827,8 +827,8 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
             //and count deviations from the expected value
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
-            //10ms @ 200MHz = 2 million samples
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            //5ms @ 200MHz = 1 million samples
+            boost::this_thread::sleep(boost::posix_time::milliseconds(5));
             if (_regs->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_Q_LOCKED)) {
                 err_code += _regs->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_Q_ERROR);
             } else {
