@@ -2,7 +2,7 @@ Change Log for Releases
 ==============================
 
 
-## 003.010.002.000
+## 003.010.001.001
 
 - Docs: The protocol for Gen-3 devices is now consistently referred to as CHDR.
 - X300: Fixed EEPROM corruption bug (happened when two processes would access
@@ -11,7 +11,7 @@ Change Log for Releases
   now more lenient in case one devices fails (others can still be found then).
   Improve PCIe behaviour. Fix timed commands for non-TwinRX dboards. Improve
   AXI Interconnect (faster, improved build timing).
-- N231: Use second_addr (like X300).
+- N230: Use second_addr (like X300).
 - C API: Added UHD_VERSION macro. Fixed online rate change.
 - Utils: Minor fixes to uhd_images_downloader.
 - Build/CMake: Fixed some Py3k build issues. Fixed many compiler warnings. Allow
