@@ -23,7 +23,7 @@
 #ifndef _USB_COMMON_H_
 #define _USB_COMMON_H_
 
-extern volatile bit _usb_got_SUDAV;
+extern volatile __bit _usb_got_SUDAV;
 
 // Provided by user application to handle VENDOR commands.
 // returns non-zero if it handled the command.
