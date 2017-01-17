@@ -31,6 +31,51 @@ ENABLE_TESTING()
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
+# Check Compiler Version
+########################################################################
+SET(GCC_MIN_VERSION "4.4.0")
+SET(CLANG_MIN_VERSION "3.1.0")
+SET(APPLECLANG_MIN_VERSION "500")
+
+IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    IF(DEFINED CMAKE_CXX_COMPILER_VERSION)
+        IF(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${GCC_MIN_VERSION})
+            MESSAGE(WARNING "\nThe compiler selected to build UHD (GCC version ${CMAKE_CXX_COMPILER_VERSION} : ${CMAKE_CXX_COMPILER}) is older than that officially supported (${GCC_MIN_VERSION} minimum). This build may or not work. We highly recommend using a more recent GCC version.")
+         ENDIF()
+    ELSE()
+        MESSAGE(WARNING "\nCannot determine the version of the compiler selected to build UHD (GCC : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using GCC version ${GCC_MIN_VERSION} or more recent.")
+    ENDIF()
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
+ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    EXECUTE_PROCESS(COMMAND
+        ${CMAKE_CXX_COMPILER} -v
+        RESULT_VARIABLE res ERROR_VARIABLE err
+        ERROR_STRIP_TRAILING_WHITESPACE)
+    IF(${res} STREQUAL "0")
+        # output is in error stream
+        STRING(REGEX MATCH "^Apple.*" IS_APPLE ${err})
+        IF("${IS_APPLE}" STREQUAL "")
+            SET(MIN_VERSION ${CLANG_MIN_VERSION})
+            SET(APPLE_STR "")
+            # retrieve the compiler's version from it
+            STRING(REGEX MATCH "clang version [0-9.]+" CLANG_OTHER_VERSION ${err})
+            STRING(REGEX MATCH "[0-9.]+" CLANG_VERSION ${CLANG_OTHER_VERSION})
+        ELSE()
+            SET(MIN_VERSION ${APPLECLANG_MIN_VERSION})
+            SET(APPLE_STR "Apple ")
+            # retrieve the compiler's version from it
+            STRING(REGEX MATCH "(clang-[0-9.]+)" CLANG_APPLE_VERSION ${err})
+            STRING(REGEX MATCH "[0-9.]+" CLANG_VERSION ${CLANG_APPLE_VERSION})
+        ENDIF()
+        IF(${CLANG_VERSION} VERSION_LESS "${MIN_VERSION}")
+            MESSAGE(WARNING "\nThe compiler selected to build UHD (${APPLE_STR}Clang version ${CLANG_VERSION} : ${CMAKE_CXX_COMPILER}) is older than that officially supported (${MIN_VERSION} minimum). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
+        ENDIF()
+    ELSE()
+        MESSAGE(WARNING "\nCannot determine the version of the compiler selected to build UHD (${APPLE_STR}Clang : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
+    ENDIF()
+ENDIF()
+
+########################################################################
 # Packaging Variables
 ########################################################################
 
@@ -118,7 +163,7 @@ IF(APPLE)
 ENDIF(APPLE)
 
 ########################################################################
-# Optional Compiler Flags
+# Optional Compiler and Linker Flags
 ########################################################################
 INCLUDE(CheckCXXCompilerFlag)
 MACRO(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
@@ -180,6 +225,10 @@ IF(WIN32)
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
 ENDIF(WIN32)
+
+IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    SET(CMAKE_EXE_LINKER_FLAGS "-lthr ${CMAKE_EXE_LINKER_FLAGS}")
+ENDIF()
 
 ########################################################################
 # Setup Boost
