@@ -28,7 +28,6 @@ More information:
 	- 2 TX DUC chain in FPGA
 	- Timed commands in FPGA
 	- Timed sampling in FPGA
-	- 16-bit and 8-bit sample modes (sc8 and sc16)
 	- Up to 120 MHz of RF bandwidth with 16-bit samples
 
 \section x3x0_getting_started Getting started
