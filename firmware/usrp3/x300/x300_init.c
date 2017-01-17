@@ -1,5 +1,4 @@
 #include "x300_init.h"
-#include "x300_defs.h"
 #include "ethernet.h"
 #include "cron.h"
 #include <wb_utils.h>
@@ -17,27 +16,7 @@
 
 static wb_pkt_iface64_config_t pkt_config;
 
-struct x300_eeprom_map
-{
-    //indentifying numbers
-    unsigned char revision[2];
-    unsigned char product[2];
-    uint8_t _pad0[4];
-
-    //all the mac addrs
-    uint8_t mac_addr0[6];
-    uint8_t _pad1[2];
-    uint8_t mac_addr1[6];
-    uint8_t _pad2[2];
-
-    //all the IP addrs
-    uint32_t gateway;
-    uint32_t subnet[4];
-    uint32_t ip_addr[4];
-    uint8_t _pad3[16];
-};
-
-static struct x300_eeprom_map default_map = {
+static x300_eeprom_map_t default_map = {
     .mac_addr0 = X300_DEFAULT_MAC_ADDR_0,
     .mac_addr1 = X300_DEFAULT_MAC_ADDR_1,
     .gateway = X300_DEFAULT_GATEWAY,
@@ -70,7 +49,7 @@ const void *pick_inited_field(const void *eeprom, const void *def, const size_t 
     return eeprom;
 }
 
-static void init_network(void)
+static void init_network(x300_eeprom_map_t *eeprom_map)
 {
     pkt_config = wb_pkt_iface64_init(PKT_RAM0_BASE, 0x1ffc);
     u3_net_stack_init(&pkt_config);
@@ -79,21 +58,20 @@ static void init_network(void)
 
     //read everything from eeprom
     static const uint8_t eeprom_cmd[2] = {0, 0}; //the command is 16 bits of address offset
-    struct x300_eeprom_map eeprom_map = default_map;
     wb_i2c_write(I2C1_BASE, MBOARD_EEPROM_ADDR, eeprom_cmd, 2);
-    wb_i2c_read(I2C1_BASE, MBOARD_EEPROM_ADDR, (uint8_t *)(&eeprom_map), sizeof(eeprom_map));
+    wb_i2c_read(I2C1_BASE, MBOARD_EEPROM_ADDR, (uint8_t *)(eeprom_map), sizeof(x300_eeprom_map_t));
 
     //determine interface number
     const size_t eth0no = wb_peek32(SR_ADDR(RB0_BASE, RB_SFP0_TYPE))? 2 : 0;
     const size_t eth1no = wb_peek32(SR_ADDR(RB0_BASE, RB_SFP1_TYPE))? 3 : 1;
 
     //pick the address from eeprom or default
-    const eth_mac_addr_t *my_mac0 = (const eth_mac_addr_t *)pick_inited_field(&eeprom_map.mac_addr0, &default_map.mac_addr0, 6);
-    const eth_mac_addr_t *my_mac1 = (const eth_mac_addr_t *)pick_inited_field(&eeprom_map.mac_addr1, &default_map.mac_addr1, 6);
-    const struct ip_addr *my_ip0 = (const struct ip_addr *)pick_inited_field(&eeprom_map.ip_addr[eth0no], &default_map.ip_addr[eth0no], 4);
-    const struct ip_addr *subnet0 = (const struct ip_addr *)pick_inited_field(&eeprom_map.subnet[eth0no], &default_map.subnet[eth0no], 4);
-    const struct ip_addr *my_ip1 = (const struct ip_addr *)pick_inited_field(&eeprom_map.ip_addr[eth1no], &default_map.ip_addr[eth1no], 4);
-    const struct ip_addr *subnet1 = (const struct ip_addr *)pick_inited_field(&eeprom_map.subnet[eth1no], &default_map.subnet[eth1no], 4);
+    const eth_mac_addr_t *my_mac0 = (const eth_mac_addr_t *)pick_inited_field(&eeprom_map->mac_addr0, &default_map.mac_addr0, 6);
+    const eth_mac_addr_t *my_mac1 = (const eth_mac_addr_t *)pick_inited_field(&eeprom_map->mac_addr1, &default_map.mac_addr1, 6);
+    const struct ip_addr *my_ip0 = (const struct ip_addr *)pick_inited_field(&eeprom_map->ip_addr[eth0no], &default_map.ip_addr[eth0no], 4);
+    const struct ip_addr *subnet0 = (const struct ip_addr *)pick_inited_field(&eeprom_map->subnet[eth0no], &default_map.subnet[eth0no], 4);
+    const struct ip_addr *my_ip1 = (const struct ip_addr *)pick_inited_field(&eeprom_map->ip_addr[eth1no], &default_map.ip_addr[eth1no], 4);
+    const struct ip_addr *subnet1 = (const struct ip_addr *)pick_inited_field(&eeprom_map->subnet[eth1no], &default_map.subnet[eth1no], 4);
 
     //init eth0
     u3_net_stack_init_eth(0, my_mac0, my_ip0, subnet0);
@@ -126,7 +104,7 @@ static uint32_t get_counter_val()
     return wb_peek32(SR_ADDR(RB0_BASE, RB_COUNTER));
 }
 
-void x300_init(void)
+void x300_init(x300_eeprom_map_t *eeprom_map)
 {
     //first - uart
     wb_uart_init(UART0_BASE, CPU_CLOCK/UART0_BAUD);
@@ -153,7 +131,7 @@ void x300_init(void)
     wb_poke32(SR_ADDR(SET0_BASE, SR_SW_RST), SW_RST_PHY);
 
     //setup net stack and eth state machines
-    init_network();
+    init_network(eeprom_map);
 
     //phy reset release
     wb_poke32(SR_ADDR(SET0_BASE, SR_SW_RST), 0);

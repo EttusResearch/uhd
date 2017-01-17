@@ -80,7 +80,6 @@ ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     ENDIF()
 ENDIF()
 
-
 IF(CMAKE_VERSION VERSION_LESS "3.1")
     IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
         SET(CMAKE_CXX_FLAGS "--std=gnu++11 ${CMAKE_CXX_FLAGS}")
@@ -289,7 +288,7 @@ ENDIF(MSVC)
 SET(Boost_ADDITIONAL_VERSIONS
     "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
     "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
-    "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60"
+    "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61"
 )
 FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
@@ -358,8 +357,8 @@ UHD_INSTALL(FILES
 #{{{IMG_SECTION
 # This section is written automatically by /images/create_imgs_package.py
 # Any manual changes in here will be overwritten.
-SET(UHD_IMAGES_MD5SUM "a3626ec5f123a4179552be08a50dccc2")
-SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.001.000-42-gd0a60fea.zip")
+SET(UHD_IMAGES_MD5SUM "9641027408a4bbd478ad221d3dae1cfd")
+SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.001.001-rc1.zip")
 #}}}
 
 ########################################################################

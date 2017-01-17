@@ -24,6 +24,7 @@
 namespace uhd { namespace usrp { namespace e300 {
 
 struct global_regs_transaction_t {
+    global_regs_transaction_t(): is_poke(0), addr(0), data(0), pad(0) {}
     uint32_t is_poke;
     uint32_t addr;
     uint32_t data;

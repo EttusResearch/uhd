@@ -4,7 +4,10 @@
 #ifndef INCLUDED_B250_INIT_H
 #define INCLUDED_B250_INIT_H
 
-void x300_init(void);
+#include "x300_defs.h"
+#include "x300_fw_common.h"
+
+void x300_init(x300_eeprom_map_t *eeprom_map);
 
 void x300_serial_loader_run1(void);
 

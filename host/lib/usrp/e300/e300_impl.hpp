@@ -189,7 +189,8 @@ private: // types
     {
         gpio_t() : pps_sel(global_regs::PPS_INT),
             mimo(0), codec_arst(0), tx_bandsels(0),
-            rx_bandsel_a(0), rx_bandsel_b(0), rx_bandsel_c(0)
+            rx_bandsel_a(0), rx_bandsel_b(0), rx_bandsel_c(0),
+            time_sync(0)
         {}
 
         uint32_t pps_sel;

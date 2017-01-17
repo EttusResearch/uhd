@@ -7,8 +7,8 @@ If one were to sniff Ethernet traffic between a USRP and a PC, the packets would
 radio transport protocol.
 
 For USRP devices, two radio transport protocols are relevant: VRT (the VITA Radio Transport protocol)
-and CVITA (compressed VITA), also known as CHDR. Generation-3 devices and the B200 use CHDR, the rest
-use VRT.
+and CHDR (compressed header, an Ettus-specific protocol).
+Generation-3 devices and the B200 use CHDR, the rest use VRT.
 
 \section rtp_vrt VRT
 
@@ -19,13 +19,12 @@ VRT is a very verbose standard, and only a subset is implemented in UHD/USRPs.
 The full standard is available from the VITA website: http://www.vita.com .
 
 
-\section rtp_chdr CVITA (CHDR)
+\section rtp_chdr CHDR
 
 For the third generation of Ettus devices, a new type transport protocol was designed.
 It reduces the complexity of the original standard and uses a fixed-length 64-Bit header
-for everything except the timestamp. Because this is a "compressed" form of VITA, it
-was dubbed "Compressed VITA" (CVITA). The compressed header is called CHDR, which is why
-the protocol is often called CHDR itself (pronounced like the cheese "cheddar").
+for everything except the timestamp. Because it is "compressed" into a 64-bit heaer, it
+was dubbed CHDR (pronounced like the cheese "cheddar").
 
 By compressing all information into a 64-bit line, the header can efficiently be parsed
 in newer FPGAs, where the common streaming protocol is 64-Bit AXI. The first line in a
@@ -33,7 +32,7 @@ packet already provides all necessary information to proceed.
 
 Some CHDR-specific functions can be found in: uhd::transport::vrt::chdr.
 
-The form of a CVITA packet is the following:
+The form of a CHDR packet is the following:
 
 Address (Bytes) | Length (Bytes) | Payload
 ----------------|----------------|----------------------------
@@ -76,7 +75,7 @@ for Ethernet links as well as USB (e.g., for the B210).
 
 Relevant code sections for the radio transport layer are:
 * uhd::transport::vrt - Namespace for radio transport protocol related functions and definitions
-* uhd::transport::vrt::chdr - Sub-namespace specifically for CVITA/CHDR
+* uhd::transport::vrt::chdr - Sub-namespace specifically for CHDR
 * uhd::sid_t - Datatype to represent SIDs
 
 */

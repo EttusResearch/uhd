@@ -57,7 +57,7 @@ namespace vrt{
             PACKET_TYPE_IF_EXT    = 0x1,
             PACKET_TYPE_CONTEXT   = 0x2, //extension context: has_sid = true
 
-            // CVITA language:
+            // CHDR language:
             //PACKET_TYPE_DATA      = 0x0, // Data
             PACKET_TYPE_FC        = 0x1, // Flow control
             PACKET_TYPE_ACK       = 0x1, // Flow control (ack)

@@ -504,7 +504,6 @@ std::string block_ctrl_base::get_arg(const std::string &key, const size_t port) 
     }
 
     UHD_THROW_INVALID_CODE_PATH();
-    return "";
 }
 
 std::string block_ctrl_base::get_arg_type(const std::string &key, const size_t port) const

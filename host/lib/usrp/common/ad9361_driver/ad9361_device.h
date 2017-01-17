@@ -40,7 +40,15 @@ public:
     enum chain_t { CHAIN_1, CHAIN_2, CHAIN_BOTH };
 
     ad9361_device_t(ad9361_params::sptr client, ad9361_io::sptr io_iface) :
-        _client_params(client), _io_iface(io_iface) {
+        _client_params(client), _io_iface(io_iface),
+        _bbpll_freq(0.0), _adcclock_freq(0.0), _req_clock_rate(0.0),
+        _req_coreclk(0.0), _rx_bbf_tunediv(0), _curr_gain_table(0),
+        _rx1_gain(0.0), _rx2_gain(0.0), _tx1_gain(0.0), _tx2_gain(0.0),
+        _tfir_factor(0), _rfir_factor(0),
+        _rx1_agc_mode(GAIN_MODE_MANUAL), _rx2_agc_mode(GAIN_MODE_MANUAL),
+        _rx1_agc_enable(false), _rx2_agc_enable(false),
+        _use_dc_offset_tracking(false), _use_iq_balance_tracking(false)
+    {
 
         /*
          * This Boost.Assign to_container() workaround is necessary because STL containers
@@ -213,7 +221,11 @@ private:    //Methods
     void _set_filter_lp_tia_sec(direction_t direction, filter_info_base::sptr filter);
 
 private:    //Members
-    typedef struct {
+    struct chip_regs_t
+    {
+        chip_regs_t():
+            vcodivs(0), inputsel(0), rxfilt(0), txfilt(0),
+            bbpll(0), bbftune_config(0), bbftune_mode(0) {}
         uint8_t vcodivs;
         uint8_t inputsel;
         uint8_t rxfilt;
@@ -221,7 +233,7 @@ private:    //Members
         uint8_t bbpll;
         uint8_t bbftune_config;
         uint8_t bbftune_mode;
-    } chip_regs_t;
+    };
 
     struct filter_query_helper
     {

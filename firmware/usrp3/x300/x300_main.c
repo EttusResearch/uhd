@@ -240,7 +240,7 @@ static void handle_claim(void)
     last_time = shmem[X300_FW_SHMEM_CLAIM_TIME];
 
     //the claim has timed out after 2 seconds
-    if (timeout > 2000) shmem[X300_FW_SHMEM_CLAIM_STATUS] = 0;
+    if (timeout > 200) shmem[X300_FW_SHMEM_CLAIM_STATUS] = 0;
 }
 
 /***********************************************************************
@@ -264,36 +264,17 @@ static uint32_t get_xbar_total(const uint32_t port)
     return total;
 }
 
-static size_t popcntll(uint64_t num)
-{
-    size_t total = 0;
-    for (size_t i = 0; i < sizeof(num)*8; i++)
-    {
-        total += (num >> i) & 0x1;
-    }
-    return total;
-}
-
 static void update_leds(void)
 {
-    //update activity status for all ports
-    uint64_t activity_shreg[16];
-    for (uint32_t i = 0; i < 16; i++)
-    {
-        static uint32_t last_total[16];
-        const uint32_t total = get_xbar_total(i);
-        activity_shreg[i] <<= 1;
-        activity_shreg[i] |= (total == last_total[i])? 0 : 1;
-        last_total[i] = total;
-    }
+    static uint32_t last_total0 = 0;
+    static uint32_t last_total1 = 0;
+    const uint32_t total0 = get_xbar_total(0);
+    const uint32_t total1 = get_xbar_total(1);
+    const bool act0 = (total0 != last_total0);
+    const bool act1 = (total1 != last_total1);
+    last_total0 = total0;
+    last_total1 = total1;
 
-    static uint32_t counter = 0;
-    counter++;
-
-    const size_t cnt0 = popcntll(activity_shreg[0]);
-    const size_t cnt1 = popcntll(activity_shreg[1]);
-    const bool act0 = cnt0*8 > (counter % 64);
-    const bool act1 = cnt1*8 > (counter % 64);
     const bool link0 = ethernet_get_link_up(0);
     const bool link1 = ethernet_get_link_up(1);
     const bool claimed = shmem[X300_FW_SHMEM_CLAIM_STATUS];
@@ -314,7 +295,7 @@ static void update_leds(void)
 static void garp(void)
 {
     static size_t count = 0;
-    if (count++ < 60000) return; //60 seconds
+    if (count++ < 3000) return; //30 seconds
     count = 0;
     for (size_t e = 0; e < ethernet_ninterfaces(); e++)
     {
@@ -428,7 +409,7 @@ static void handle_link_state(void)
  **********************************************************************/
 int main(void)
 {
-    x300_init();
+    x300_init((x300_eeprom_map_t *)&shmem[X300_FW_SHMEM_IDENT]);
     u3_net_stack_register_udp_handler(X300_FW_COMMS_UDP_PORT, &handle_udp_fw_comms);
     u3_net_stack_register_udp_handler(X300_VITA_UDP_PORT, &handle_udp_prog_framer);
     u3_net_stack_register_udp_handler(X300_FPGA_PROG_UDP_PORT, &handle_udp_fpga_prog);
@@ -438,10 +419,10 @@ int main(void)
 
     while(true)
     {
-        //jobs that happen once every ms
+        //jobs that happen once every 10ms
         const uint32_t ticks_now = wb_peek32(SR_ADDR(RB0_BASE, RB_COUNTER));
         const uint32_t ticks_passed = ticks_now - last_cronjob;
-        static const uint32_t tick_delta = CPU_CLOCK/1000;
+        static const uint32_t tick_delta = CPU_CLOCK/100;
         if (ticks_passed > tick_delta)
         {
             poll_sfpp_status(0); // Every so often poll XGE Phy to look for SFP+ hotplug events.
@@ -450,7 +431,7 @@ int main(void)
             handle_claim(); //deal with the host claim register
             update_leds(); //run the link and activity leds
             garp(); //send periodic garps
-            last_cronjob = wb_peek32(SR_ADDR(RB0_BASE, RB_COUNTER));
+            last_cronjob = ticks_now;
         }
 
         //run the network stack - poll and handle

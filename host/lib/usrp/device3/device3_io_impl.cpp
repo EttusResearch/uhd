@@ -38,7 +38,7 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-//! CVITA uses 12-Bit sequence numbers
+//! CHDR uses 12-Bit sequence numbers
 static const uint32_t HW_SEQ_NUM_MASK = 0xfff;
 
 
