@@ -84,5 +84,11 @@ add_custom_target(b100_eeprom ALL
     COMMAND ${PYTHON_EXECUTABLE} ${BUILD_EEPROM} -r2 b100_boot.bin b100_eeprom.bin
 )
 
+add_custom_target(b100_eeprom_header ALL
+    DEPENDS b100_eeprom
+    COMMAND xxd -i b100_eeprom.bin ${CMAKE_SOURCE_DIR}/../../host/utils/b100_eeprom.h
+    COMMAND sed -i 's/char/const char/' ${CMAKE_SOURCE_DIR}/../../host/utils/b100_eeprom.h
+)
+
 add_executable(b100_boot ${eeprom1p_sources})
 target_link_libraries(b100_boot libb100)

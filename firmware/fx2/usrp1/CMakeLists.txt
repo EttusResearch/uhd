@@ -80,5 +80,11 @@ add_custom_target(usrp1_eeprom ALL
     COMMAND ${PYTHON_EXECUTABLE} ${BUILD_EEPROM} -r1 usrp1_boot.bin usrp1_eeprom.bin
 )
 
+add_custom_target(usrp1_eeprom_header ALL
+    DEPENDS usrp1_eeprom
+    COMMAND xxd -i usrp1_eeprom.bin ${CMAKE_SOURCE_DIR}/../../host/utils/usrp1_eeprom.h
+    COMMAND sed -i 's/char/const char/' ${CMAKE_SOURCE_DIR}/../../host/utils/usrp1_eeprom.h
+)
+
 add_executable(usrp1_boot ${eeprom1_sources})
 target_link_libraries(usrp1_boot libusrp1)
