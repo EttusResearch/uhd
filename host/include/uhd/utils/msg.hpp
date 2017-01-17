@@ -57,12 +57,25 @@ namespace uhd{ namespace msg{
     typedef void (*handler_t)(type_t, const std::string &);
 
     /*!
+     * Default message handler for printing uhd system messages
+     * \param type message type, such as status, warning, or error
+     * \param msg contents of the system message as a string
+     */
+    void default_msg_handler(type_t type, const std::string &msg);
+
+    /*!
      * Register the handler for uhd system messages.
      * Only one handler can be registered at once.
      * This replaces the default std::cout/cerr handler.
      * \param handler a new handler callback function
      */
     UHD_API void register_handler(const handler_t &handler);
+
+    /*!
+     * Returns the current message handler for uhd system messages
+     * \returns the current message handler
+     */
+    UHD_API const handler_t& get_handler();
 
     //! Internal message object (called by UHD_MSG macro)
     class UHD_API _msg{

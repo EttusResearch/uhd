@@ -381,6 +381,32 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
     UHD_MSG(status) << " done!" << std::endl;
 }
 
+static const std::string thread_final_msg = "Finished multi-threaded initialization\n";
+
+static void thread_msg_handler(uhd::msg::type_t type, const std::string &msg)
+{
+    static boost::mutex msg_mutex;
+    boost::mutex::scoped_lock lock(msg_mutex);
+
+    typedef std::pair<uhd::msg::type_t, std::string> msg_pair_t;
+    typedef std::map<boost::thread::id, std::vector<msg_pair_t> > thread_map_t;
+
+    static thread_map_t thread_list;
+    thread_list[boost::this_thread::get_id()].push_back(msg_pair_t(type, msg));
+
+    if (msg == thread_final_msg)
+    {
+        BOOST_FOREACH(const thread_map_t::value_type &thread_pair, thread_list)
+        {
+            BOOST_FOREACH(const msg_pair_t &msg_pair, thread_pair.second)
+            {
+                // Forward the message to the default handler
+                uhd::msg::default_msg_handler(msg_pair.first, msg_pair.second);
+            }
+        }
+    }
+}
+
 x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
     : device3_impl()
     , _sid_framer(0)
@@ -392,6 +418,7 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
     const device_addrs_t device_args = separate_device_addr(dev_addr);
     _mb.resize(device_args.size());
 
+    // Serialize the initialization process
     if (dev_addr.has_key("serialize_init") or device_args.size() == 1) {
         for (size_t i = 0; i < device_args.size(); i++)
         {
@@ -400,6 +427,11 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
         return;
     }
 
+    // Setup a custom messenger handler
+    uhd::msg::handler_t current_handler = uhd::msg::get_handler();
+    uhd::msg::register_handler(&thread_msg_handler);
+
+    // Thread the initialization process
     boost::thread_group setup_threads;
     for (size_t i = 0; i < device_args.size(); i++)
     {
@@ -408,6 +440,10 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
         );
     }
     setup_threads.join_all();
+
+    // restore the original message handler
+    UHD_MSG(status) << thread_final_msg;
+    uhd::msg::register_handler(current_handler);
 }
 
 void x300_impl::mboard_members_t::discover_eth(
@@ -517,6 +553,16 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
     mboard_members_t &mb = _mb[mb_i];
     mb.initialization_done = false;
+
+    const std::string thread_id(
+        boost::lexical_cast<std::string>(boost::this_thread::get_id())
+    );
+    const std::string thread_msg(
+        "Thread ID " + thread_id + " for motherboard "
+        + boost::lexical_cast<std::string>(mb_i)
+    );
+    UHD_MSG(status) << std::endl;
+    UHD_MSG(status) << thread_msg << std::endl;
 
     std::vector<std::string> eth_addrs;
     // Not choosing eth0 based on resource might cause user issues
