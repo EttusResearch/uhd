@@ -65,6 +65,90 @@ All of these tests must pass for a 'pass' validation.
 
 tbd
 
+
+\section rdtesting_devtest Devtests
+
+| Test Code           | Device        | Peripherals | Manual Test Procedure         | Automatic Test Procedure    |
+|---------------------|---------------|-------------|-------------------------------|-----------------------------|
+| DEVTEST-X310-XG-v1  | USRP X310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X310-HG-v1  | USRP X310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X300-XG-v1  | USRP X300     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X300-HG-v1  | USRP X300     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-E310-SG1-v1 | USRP E310-SG1 | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-E310-SG3-v1 | USRP E310-SG3 | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B200-v1     | USRP B200     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B210-v1     | USRP B210     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B200m-v1    | USRP B200mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B205m-v1    | USRP B205mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+
+The devtests are hardware tests built in to the UHD make system. They can be run
+directly from the build directory and require no configuration.
+Devtests are designed to always run, regardless of the actual device
+configuration. This means, by definition, that devtests cannot require special
+cabling, specific daughtercards, etc.
+
+Note: The actual devtests can change, since they're part of the code. This does
+not require a version bump on the test code.
+
+\subsection rdtesting_devtest_requirements Requirements
+
+Devtests are only defined for some devices. When running a devtest, all
+peripherals must be disconnected (e.g., no daughterboards on the X-Series, no
+GPSDOs on the B- and X-Series).
+
+\subsection rdtesting_devtest_manual Devtest: Manual Test Procedure
+
+### X3x0 procedure
+
+1. Make sure no peripherals are connected to the device (no daughterboards, no
+   GSPDO, front panel GPIO is unconnected).
+2. When testing the HG image, run a test once for each connection (1 GigE and
+   10 GigE). When testing the XG image, a test on either connection (SFP0 or
+   SFP1) is sufficient. In both cases, also test via PCIe.
+3. When the device is connected, simply run `make test_x3x0` from the command
+   line in the build directory. Multiple devices connected will all get tested,
+   there is no requirement to only connect a single device at a time (because
+   devtest will run sequentially anyway).
+4. Devtest must report no failures for a 'pass' validation.
+
+### B2xx procedure
+
+Note: The test codes with an 'm' suffix refer to B200mini and B205mini,
+respectively.
+
+1. Make sure no peripherals are connected to the device (no GPSDO if applicable,
+   GPIO pins unconnected)
+2. Test once via USB3, once via USB2.
+3. Simply run `make test_b2xx`
+4. Devtest must report no failures for a 'pass' validation.
+
+### E310 procedure
+
+1. Make sure GPIO pins are unconnected.
+2. Tests need to be run natively on the device. If the build environment is
+   available on the device, running `make test_e3xx` is sufficient.
+3. In general, there is no build environment on the device (e.g. when doing a
+   typical sshfs mount of an environment). In this case, copy the contents of
+   the devtest directory onto the device, and run the following command (the
+   environment variables need to point to the location of the devtest code, the
+   location of the UHD examples such as benchmark_rate, and where you want to
+   store log files, respectively):
+
+       $DEVTEST_DIR/run_testsuite.py --src-dir $DEVTEST_DIR \
+                                     --devtest-pattern e3xx \
+                                     --build-type na \
+                                     --build-dir $EXAMPLES_DIR \
+                                     --device-filter e3x0 \
+                                     --log-dir $LOG_DIR
+
+4. Devtest must report no failures for a 'pass' validation.
+
+\subsection rdtesting_devtest_auto Devtest: Automatic Test Procedure
+
+As all these tests can be run unsupervised, they can be run automatically given
+the correct device setup. The return code of the tests can be used to check for
+pass/fail conditions (return code 0 means 'pass').
+
 \section rdtesting_defining Defining R&D Tests
 
 Tests can be added any time to define procedures for pass/fail validation. Any
