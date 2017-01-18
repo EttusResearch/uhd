@@ -142,9 +142,6 @@ respectively.
                                      --log-dir $LOG_DIR
 
 4. Devtest must report no failures for a 'pass' validation.
-5. This bullet point needs to be removed and is here to see if people are
-   actually reviewing this. Easter egg! First person to flag this gets a
-   surprise.
 
 \subsection rdtesting_devtest_auto Devtest: Automatic Test Procedure
 
