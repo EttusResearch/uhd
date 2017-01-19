@@ -41,7 +41,7 @@
 #define MASK_GPIO_FPGA_SB_SCL       (uint32_t)(1 << (GPIO_FPGA_SB_SCL - 0))
 #define MASK_GPIO_FPGA_SB_SDA       (uint32_t)(1 << (GPIO_FPGA_SB_SDA - 0))
 
-#define USB3_PACKETS_PER_BURST          (16)
+#define USB3_PACKETS_PER_BURST          (8) // Optimized value from Cypress AN86947
 #define USB2_PACKETS_PER_BURST          (1)
 #define DMA_SIZE_INFINITE               (0)
 
