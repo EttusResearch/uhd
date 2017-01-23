@@ -6,10 +6,6 @@ are no replacement for manufacturing or production tests, and should not be
 treated as such. Instead, they are meant to catch common failure modes during
 development. As a result, test definitions are fairly light-weight.
 
-\section rdtesting_phase Phase Alignment Tests
-
-tbd
-
 \section rdtesting_gpsdo GPSDO Tests
 
 | Test Code        | Device    | Peripherals       | Manual Test Procedure        | Automatic Test Procedure  |
@@ -65,6 +61,156 @@ All of these tests must pass for a 'pass' validation.
 
 tbd
 
+
+\section rdtesting_devtest Devtests
+
+| Test Code           | Device        | Peripherals | Manual Test Procedure         | Automatic Test Procedure    |
+|---------------------|---------------|-------------|-------------------------------|-----------------------------|
+| DEVTEST-X310-XG-v1  | USRP X310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X310-HG-v1  | USRP X310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X300-XG-v1  | USRP X300     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X300-HG-v1  | USRP X300     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-E310-SG1-v1 | USRP E310-SG1 | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-E310-SG3-v1 | USRP E310-SG3 | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B200-v1     | USRP B200     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B210-v1     | USRP B210     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B200m-v1    | USRP B200mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B205m-v1    | USRP B205mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+
+The devtests are hardware tests built in to the UHD make system. They can be run
+directly from the build directory and require no configuration.
+Devtests are designed to always run, regardless of the actual device
+configuration. This means, by definition, that devtests cannot require special
+cabling, specific daughtercards, etc.
+
+Note: The actual devtests can change, since they're part of the code. This does
+not require a version bump on the test code.
+
+\subsection rdtesting_devtest_requirements Requirements
+
+Devtests are only defined for some devices. When running a devtest, all
+peripherals must be disconnected (e.g., no daughterboards on the X-Series, no
+GPSDOs on the B- and X-Series).
+
+\subsection rdtesting_devtest_manual Devtest: Manual Test Procedure
+
+### X3x0 procedure
+
+1. Make sure no peripherals are connected to the device (no daughterboards, no
+   GSPDO, front panel GPIO is unconnected).
+2. When testing the HG image, run a test once for each connection (1 GigE and
+   10 GigE). When testing the XG image, a test on either connection (SFP0 or
+   SFP1) is sufficient. In both cases, also test via PCIe.
+3. When the device is connected, simply run `make test_x3x0` from the command
+   line in the build directory. Multiple devices connected will all get tested,
+   there is no requirement to only connect a single device at a time (because
+   devtest will run sequentially anyway).
+4. Devtest must report no failures for a 'pass' validation.
+
+### B2xx procedure
+
+Note: The test codes with an 'm' suffix refer to B200mini and B205mini,
+respectively.
+
+1. Make sure no peripherals are connected to the device (no GPSDO if applicable,
+   GPIO pins unconnected)
+2. Test once via USB3, once via USB2.
+3. Simply run `make test_b2xx`
+4. Devtest must report no failures for a 'pass' validation.
+
+### E310 procedure
+
+1. Make sure GPIO pins are unconnected.
+2. Tests need to be run natively on the device. If the build environment is
+   available on the device, running `make test_e3xx` is sufficient.
+3. In general, there is no build environment on the device (e.g. when doing a
+   typical sshfs mount of an environment). In this case, copy the contents of
+   the devtest directory onto the device, and run the following command (the
+   environment variables need to point to the location of the devtest code, the
+   location of the UHD examples such as benchmark_rate, and where you want to
+   store log files, respectively):
+
+       $DEVTEST_DIR/run_testsuite.py --src-dir $DEVTEST_DIR \
+                                     --devtest-pattern e3xx \
+                                     --build-type na \
+                                     --build-dir $EXAMPLES_DIR \
+                                     --device-filter e3x0 \
+                                     --log-dir $LOG_DIR
+
+4. Devtest must report no failures for a 'pass' validation.
+
+\subsection rdtesting_devtest_auto Devtest: Automatic Test Procedure
+
+As all these tests can be run unsupervised, they can be run automatically given
+the correct device setup. The return code of the tests can be used to check for
+pass/fail conditions (return code 0 means 'pass').
+
+\section rdtesting_fpga_testbenches FPGA: Testing through Simulations
+
+Test benches provide a faster way to verify the design through simulations.
+
+| Test Code        | Device    | Peripherals       | Manual Test Procedure        | Automatic Test Procedure  |
+|------------------|-----------|-------------------|------------------------------|---------------------------|
+| FPGATB-v1   | None      | None         | \ref rdtesting_fpga_testbenches_manual  | \ref rdtesting_fpga_testbenches_auto |
+
+\subsection rdtesting_fpga_testbenches_requirement: Requirements
+
+These tests are simulations and do not need any device. Vivado 15.4 should be installed.
+
+\subsection rdtesting_fpga_testbenches_manual: Manual Test Procedure
+
+1. Go to the fpga directory depending on which test needs to be run.
+
+  1. NoC block test benches:
+     Most of the NoC blocks have a test bench written in System Verilog that provides stimuli to the noc_block to verify it. The test bench for a block resides in <fpga-dir>/usrp3/lib/rfnoc/*_tb.
+
+  2. Running unit test benches:
+     A few sub-blocks like noc-shell and sine_tone are used within the bigger noc_blocks. They have their own test benches. Their test benches reside in <fpga-dir>/usrp3/lib/sim/rfnoc/*.
+
+  3. Radio test bench:
+     The radio test bench resides in <fpga-dir>/usrp3/lib/radio/noc_block_radio_core_tb/.
+
+  4. Device specific test benches:
+     IPs specific to a device have test benches that exist in <fpga-dir>/usrp3/top/x300/sim/*. e.g. DMA testbench, PCIe, etc.
+
+2. Setup the environment by running 'source <fpga-dir>/usrp3/top/<device>/setupenv.sh'.
+
+3. In the test bench directory and run the test bench by 'make xsim' or 'make vsim'.
+
+4. All of these tests must report no failure with a 'PASS' validation. Example testbench output:
+
+    ========================================================
+    TESTBENCH STARTED: noc_block_skeleton
+    ========================================================
+    [TEST CASE   1] (t=000000000) BEGIN: Wait for Reset...
+    [TEST CASE   1] (t=000001002) DONE... Passed
+    [TEST CASE   2] (t=000001002) BEGIN: Check NoC ID...
+    Read Skeleton NOC ID: 1234000000000000
+    [TEST CASE   2] (t=000001238) DONE... Passed
+    [TEST CASE   3] (t=000001238) BEGIN: Connect RFNoC blocks...
+    Connecting noc_block_tb (SID: 1:0) to noc_block_skeleton (SID: 0:0)
+    Connecting noc_block_skeleton (SID: 0:0) to noc_block_tb (SID: 1:0)
+    [TEST CASE   3] (t=000005457) DONE... Passed
+    [TEST CASE   4] (t=000005457) BEGIN: Write / readback user registers...
+    [TEST CASE   4] (t=000006888) DONE... Passed
+    [TEST CASE   5] (t=000006888) BEGIN: Test sequence...
+    [TEST CASE   5] (t=000007403) DONE... Passed
+    ========================================================
+    TESTBENCH FINISHED: noc_block_skeleton
+     - Time elapsed:   7500 ns             
+     - Tests Expected: 5
+     - Tests Run:      5
+     - Tests Passed:   5
+    Result: PASSED   
+    ========================================================
+
+Failing tests can be debugged by checking the waveform in a Vivado GUI by running 'make GUI=1 xsim'. More details on debugging https://kb.ettus.com/Debugging_FPGA_images
+
+\subsection rdtesting_fpga_testbenches_auto: Automatic Test Procedure
+
+ Go to <fpga-dir>/usrp3/ and run 'build.py xsim all'. All tests should report 'PASS'.
+
+
 \section rdtesting_defining Defining R&D Tests
 
 Tests can be added any time to define procedures for pass/fail validation. Any
@@ -90,6 +236,76 @@ Test procedures may be updated at any time. If this happens, a new test code
 must be generated, with the version number increased. Old test codes are
 considered deprecated (if there exists a version 2 of a test, version 1 should
 not be run any more).
+
+\section rdtesting_phasealignment Phase alignment tests
+
+| Test Code           | Device    | Peripherals        | Manual Test Procedure                | Automatic Test Procedure    |
+|---------------------|-----------|--------------------|--------------------------------------|-----------------------------|
+| PHASE-Twin-RX-v1    | 2xTwinRX  | 2xX3x0 + Octoclock + Signalgenerator + LOSharing cables | \ref rdtesting_phase_rx_twinrx | \ref rdtesting_phase_rx_twinrx |
+| PHASE-UBX-40-RX-v1  | 2xUBX-40  | 2xX3x0 + Octoclock + Signalgenerator  | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
+| PHASE-UBX-160-RX-v1  | 2xUBX-160  | 2xX3x0 + Octoclock + Signalgenerator | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
+| PHASE-SBX-40-RX-v1  | 2xSBX-40  | 2xX3x0 + Octoclock + Signalgenerator | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
+| PHASE-SBX-120-RX-v1  | 2xSBX-120  | 2xX3x0 + Octoclock + Signalgenerator | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
+| PHASE-N2x0-MIMO-v1 | 2x N2x0 + MIMO cable | 2x SBX + Signalgenerator | \ref rdtesting_phase_rx_N2x0_MIMO | \ref rdtesting_phase_rx_N2x0_MIMO |
+
+
+| Device \anchor phase_band_table        | Frequency Range         | Number of bands | 
+|---------------|-------------------------|-----------------|
+| TwinRX        | 10 - 6000 MHz           |      12         |
+| UBX-{160, 40} | 10 - 6000 MHz           |      12         |
+| SBX-{120, 40} | 400 - 4400 MHz          |      7          |
+
+Phase alignment testing is necessary to verify device synchronization across multiple daughter- and motherboards is working as expected for CBX, SBX and UBX daughterboards. To enable efficient Phase alignment testing a GNU Radio Out-of-Tree module gr-usrptest exists in tools/gr-usrptest. It is required for testing RX testcases and later may be required to perform TX testcases.
+
+To test phase alignment we measure phase offset between DUTs at an offset of 2 MHz offset from the selected center frequency. The phase difference for a given center frequency has to stay the same across retunes and power cycles of the DUT.
+
+Correct synchronization with PPS and 10 MHz references is required for these tests.
+
+\subsection rdtesting_phase_rx_manual Manual phase alignment testing (Receiver) 
+
+1. Get required peripherals and DUTs and additionally one splitter and enough coaxial cables. Provide a connection from host computer to USRPs. 
+2. Connect output of signal generator to the splitter and the output of splitter with each DUT.
+3. Make sure other outputs of the splitter are terminated with a 50 Ohms terminator.
+4. Connect USRPs with ethernet cables to the switch. Connect host computer with switch.
+5. Install gr-usrptest OOT-module on your host system (requires GNU Radio (>v3.7.10.1 recommended) and UHD already installed)
+6. Load correct FPGA images on X3x0 devices (via JTAG cable or with uhd_image_loader)
+7. Configure Network (USRPs and host interface)
+9. In tools/gr-usrptest/apps (or already in your $PATH if gr-usrptest is installed) run:
+
+       ./usrp_phasealignment.py
+                    --s 10e6 -runs 10 --duration 2.0 --plot --auto \ 
+                    --sync pps --time-source external --clock-source external \
+                    --args "addr0=<address first X3x0>,addr1=<address second X3x0>" \
+                    --channels <first channel, second channel (e.g. 0,2)> \
+                    -f <frequency> \
+                    --freq-bands <# frequency bands> \ 
+                    --start-freq <lowest daughterboard frequency> --stop-freq <highest daughterboard frequency> \
+
+9. Tune signal generator to displayed frequency + 2 MHz and start measurement
+11. Inspect error plot if phase difference stays the same across retunes. Drift over time must be significantely lower than 1 degree and deviation must be well below 2 degrees.
+12. Verify result with terminal output and note result for current test frequency.
+13. Repeat steps 9.-12. for remaining bands
+
+
+\subsection rdtesting_phase_rx_auto Automatic phase alignment testing (Receiver)
+
+tbd
+
+\subsection rdtesting_phase_rx_twinrx TwinRX specifics for phase alignment testing
+
+Phase alignment testing with TwinRX works as described above with additional test cases and commandline options.
+TwinRX offers LO sharing inside one board and across boards. For uhd_app and derived applications involving our tools and GNU Radio we have introduced `--lo-source {internal, companion, external}` and `--lo-export {True, False}` arguments to apply LO sharing feartures on TwinRX daughterboards.
+Two testcases have to pass:
+ - Phase alignment if sharing LO with companion receiver on a single daughterboard
+ - Phase alignment if sharing LO with external TwinRX daughterboard
+
+When testing TwinRX put 2 daughterboards in separate motherboards and connect LO sharing cables. Setup USRPs in a similar fashion as described above. Supply additional commandline arguments to `./usrp_phasealignment.py`. Use four receive channels `--channels 0,1,2,3` and therefore specify `--spec "A:0 A:1 B:0 B:1"` to address both receiver channels on each daughterboard.
+Also supply `--lo-export True,False,False,False` and `--lo-source internal,companion,external,external` if your LO sharing setup exports LOs from the first motherboard to the second otherwise adjust lo sharing arguments.
+
+\subsection rdtesting_phase_rx_N2x0_MIMO N2x0 with MIMO cable specifics for phase alignment testing
+
+Phase alignment testing with N210 and MIMO cable works like in the case with X3x0 devices but no Octoclock is needed for device synchronization. Instead two N210 devices are connected with a MIMO cable and only one N210 is connected with an ethernet cable to the host computer.
+Supply `--time-source internal,mimo` and `--clock-source internal,mimo` on the commandline to instruct the N2x0s to share time and clock over the MIMO cable.
 
 */
 // vim:ft=doxygen:

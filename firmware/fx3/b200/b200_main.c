@@ -228,7 +228,7 @@ typedef struct Config {
     int enable_as_superspeed;   // 1
     int pport_drive_strength;   // CY_U3P_DS_THREE_QUARTER_STRENGTH
     int dma_buffer_size;        // [USB3] (max)
-    int dma_buffer_count;       // [USB3] 1
+    int dma_buffer_count;       // [USB3] 2
     int manual_dma;             // 0
     int sb_baud_div;            // 434*2
 } CONFIG, *PCONFIG;
@@ -244,8 +244,8 @@ static CONFIG g_config = {
     0,      // disable_usb2
     1,      // enable_as_superspeed
     CY_U3P_DS_THREE_QUARTER_STRENGTH,   // pport_drive_strength
-    64512,  // dma_buffer_size 2**16-1, then aligned to next page boundary
-    1,      // dma_buffer_count
+    16*1024,  // dma_buffer_size - optimized value from Cypress AN86947
+    2,      // dma_buffer_count - optimized value from Cypress AN86947
     0,      // manual_dma
     434*2   // sb_baud_div
 };
@@ -1175,7 +1175,7 @@ void b200_fw_start(void) {
             data_buffer_size_from_host = data_buffer_size;
 
             g_vendor_req_buff_size = USB3_VREQ_BUF_SIZE;    // Max 512
-            num_packets_per_burst = USB3_PACKETS_PER_BURST*1+4*0; // 16
+            num_packets_per_burst = USB3_PACKETS_PER_BURST; // 8
             break;
 
         case CY_U3P_NOT_CONNECTED:
@@ -1529,7 +1529,7 @@ void event_usb_callback (CyU3PUsbEventType_t event_type, uint16_t event_data) {
  * of this function is to register that the event happened at all, so that the
  * application thread knows it can proceed.
  *
- * This function is also responsible for receiving vendor requests, and trigging
+ * This function is also responsible for receiving vendor requests, and triggering
  * the appropriate RTOS event to wake up the vendor request handler thread.
  */
 CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {

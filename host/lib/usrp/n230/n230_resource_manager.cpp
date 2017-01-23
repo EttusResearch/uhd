@@ -487,10 +487,11 @@ bool n230_resource_manager::_radio_data_loopback_self_test(wb_iface::sptr iface)
         const uint32_t rb_tx = uint32_t(rb_word64 >> 32);
         const uint32_t rb_rx = uint32_t(rb_word64 & 0xffffffff);
         test_fail = word32 != rb_tx or word32 != rb_rx;
-        if (test_fail)
+        if (test_fail){
             UHD_MSG(fastpath) << boost::format("mismatch (exp:%x, got:%x and %x)... ") % word32 % rb_tx % rb_rx;
             break; //exit loop on any failure
         }
+    }
 
     /* Zero out the idle data. */
     iface->poke32(fpga::sr_addr(fpga::SR_RADIO_CODEC_IDLE), 0);

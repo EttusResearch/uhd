@@ -15,25 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/types/sid.hpp>
-#include <uhd/types/endianness.hpp>
-#include <uhd/transport/zero_copy.hpp>
+#ifndef INCLUDED_X300_MB_EEPROM_HPP
+#define INCLUDED_X300_MB_EEPROM_HPP
 
-namespace uhd {
+#include <uhd/config.hpp>
+#include <uhd/types/serial.hpp>
+#include <boost/utility.hpp>
+#include <boost/shared_ptr.hpp>
+#include <uhd/types/wb_iface.hpp>
 
-    /*! Holds all necessary items for a bidirectional link
-     */
-    struct both_xports_t
-    {
-        both_xports_t(): recv_buff_size(0), send_buff_size(0) {}
-        uhd::transport::zero_copy_if::sptr recv;
-        uhd::transport::zero_copy_if::sptr send;
-        size_t recv_buff_size;
-        size_t send_buff_size;
-        uhd::sid_t send_sid;
-        uhd::sid_t recv_sid;
-        uhd::endianness_t endianness;
-    };
+class x300_mb_eeprom_iface : public uhd::i2c_iface
+{
+public:
+    typedef boost::shared_ptr<x300_mb_eeprom_iface> sptr;
 
+    virtual ~x300_mb_eeprom_iface(void) = 0;
+
+    static sptr make(uhd::wb_iface::sptr wb, uhd::i2c_iface::sptr i2c);
 };
 
+#endif /* INCLUDED_X300_MB_EEPROM_HPP */

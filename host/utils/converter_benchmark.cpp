@@ -82,8 +82,8 @@ void init_random_vector_complex_float(std::vector<char> &buf_ptr, const size_t n
     std::complex<T> * const buf = reinterpret_cast<std::complex<T> * const>(&buf_ptr[0]);
     for (size_t i = 0; i < n_items; i++) {
         buf[i] = std::complex<T>(
-            T((std::rand()/double(RAND_MAX/2)) - 1),
-            T((std::rand()/double(RAND_MAX/2)) - 1)
+            T(std::rand()/(RAND_MAX/2.0) - 1),
+            T(std::rand()/(RAND_MAX/2.0) - 1)
         );
     }
 }

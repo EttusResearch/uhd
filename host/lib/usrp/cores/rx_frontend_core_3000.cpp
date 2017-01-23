@@ -170,7 +170,6 @@ public:
         default:
             return _adc_rate;
         }
-        return _adc_rate;
     }
 
 private:

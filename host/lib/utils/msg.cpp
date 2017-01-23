@@ -78,7 +78,12 @@ void uhd::msg::register_handler(const handler_t &handler){
     msg_rs().handler = handler;
 }
 
-static void default_msg_handler(uhd::msg::type_t type, const std::string &msg){
+const uhd::msg::handler_t& uhd::msg::get_handler(){
+    boost::mutex::scoped_lock lock(msg_rs().mutex);
+    return msg_rs().handler;
+}
+
+void uhd::msg::default_msg_handler(uhd::msg::type_t type, const std::string &msg){
     static boost::mutex msg_mutex;
     boost::mutex::scoped_lock lock(msg_mutex);
     switch(type){
@@ -104,7 +109,7 @@ static void default_msg_handler(uhd::msg::type_t type, const std::string &msg){
 }
 
 UHD_STATIC_BLOCK(msg_register_default_handler){
-    uhd::msg::register_handler(&default_msg_handler);
+    uhd::msg::register_handler(&uhd::msg::default_msg_handler);
 }
 
 /***********************************************************************

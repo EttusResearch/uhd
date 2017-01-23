@@ -32,7 +32,7 @@ extern "C" {
 #define X300_REVISION_COMPAT 7
 #define X300_REVISION_MIN    2
 #define X300_FW_COMPAT_MAJOR 5
-#define X300_FW_COMPAT_MINOR 0
+#define X300_FW_COMPAT_MINOR 1
 #define X300_FPGA_COMPAT_MAJOR 0x21
 
 //shared memory sections - in between the stack and the program space
@@ -49,6 +49,9 @@ extern "C" {
 #define X300_FW_SHMEM_UART_WORDS32 10
 #define X300_FW_SHMEM_ROUTE_MAP_ADDR 11
 #define X300_FW_SHMEM_ROUTE_MAP_LEN 12
+#define X300_FW_SHMEM_IDENT 13 // (13-39) EEPROM values in use
+#define X300_FW_SHMEM_DEBUG 128
+#define X300_FW_SHMEM_ADDR(offset) X300_FW_SHMEM_BASE + (4 * (offset))
 
 #define X300_FW_NUM_BYTES (1 << 15) //64k
 #define X300_FW_COMMS_MTU (1 << 13) //8k
@@ -91,6 +94,30 @@ extern "C" {
 #define X300_MTU_DETECT_ECHO_REQUEST (1 << 0)
 #define X300_MTU_DETECT_ECHO_REPLY (1 << 1)
 #define X300_MTU_DETECT_ERROR (1 << 2)
+
+typedef struct
+{
+    //indentifying numbers
+    unsigned char revision[2];
+    unsigned char product[2];
+    uint8_t _pad0[4];
+
+    //all the mac addrs
+    uint8_t mac_addr0[6];
+    uint8_t _pad1[2];
+    uint8_t mac_addr1[6];
+    uint8_t _pad2[2];
+
+    //all the IP addrs
+    uint32_t gateway;
+    uint32_t subnet[4];
+    uint32_t ip_addr[4];
+    uint8_t _pad3[16];
+
+    //names and serials
+    unsigned char name[23];
+    unsigned char serial[9];
+} x300_eeprom_map_t;
 
 typedef struct
 {

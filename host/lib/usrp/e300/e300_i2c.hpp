@@ -27,6 +27,7 @@
 namespace uhd { namespace usrp { namespace e300 {
 
 struct i2c_transaction_t {
+    i2c_transaction_t(): reg(0), addr(0), data(0), type(0) {};
     uint16_t reg;
     uint8_t  addr;
     uint8_t  data;

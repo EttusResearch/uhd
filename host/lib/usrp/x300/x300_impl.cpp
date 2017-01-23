@@ -18,6 +18,7 @@
 #include "x300_impl.hpp"
 #include "x300_lvbitx.hpp"
 #include "x310_lvbitx.hpp"
+#include "x300_mb_eeprom.hpp"
 #include "apply_corrections.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -121,12 +122,16 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
                 false /* Suppress timeout errors */
             );
 
-            if (x300_impl::is_claimed(zpu_ctrl)) continue; //claimed by another process
             new_addr["fpga"] = get_fpga_option(zpu_ctrl);
 
             i2c_core_100_wb32::sptr zpu_i2c = i2c_core_100_wb32::make(zpu_ctrl, I2C1_BASE);
-            i2c_iface::sptr eeprom16 = zpu_i2c->eeprom16();
-            const mboard_eeprom_t mb_eeprom(*eeprom16, "X300");
+            x300_mb_eeprom_iface::sptr eeprom_iface = x300_mb_eeprom_iface::make(zpu_ctrl, zpu_i2c);
+            const mboard_eeprom_t mb_eeprom(*eeprom_iface, "X300");
+            if (mb_eeprom.size() == 0 or x300_impl::claim_status(zpu_ctrl) == x300_impl::CLAIMED_BY_OTHER)
+            {
+                // Skip device claimed by another process
+                continue;
+            }
             new_addr["name"] = mb_eeprom["name"];
             new_addr["serial"] = mb_eeprom["serial"];
             switch (x300_impl::get_mb_type_from_eeprom(mb_eeprom)) {
@@ -221,7 +226,6 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
                 //We don't put this zpu_ctrl in the registry because we need
                 //a persistent niriok_proxy associated with the object
             }
-            if (x300_impl::is_claimed(zpu_ctrl)) continue; //claimed by another process
 
             //Attempt to autodetect the FPGA type
             if (not hint.has_key("fpga")) {
@@ -229,8 +233,13 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
             }
 
             i2c_core_100_wb32::sptr zpu_i2c = i2c_core_100_wb32::make(zpu_ctrl, I2C1_BASE);
-            i2c_iface::sptr eeprom16 = zpu_i2c->eeprom16();
-            const mboard_eeprom_t mb_eeprom(*eeprom16, "X300");
+            x300_mb_eeprom_iface::sptr eeprom_iface = x300_mb_eeprom_iface::make(zpu_ctrl, zpu_i2c);
+            const mboard_eeprom_t mb_eeprom(*eeprom_iface, "X300");
+            if (mb_eeprom.size() == 0 or x300_impl::claim_status(zpu_ctrl) == x300_impl::CLAIMED_BY_OTHER)
+            {
+                // Skip device claimed by another process
+                continue;
+            }
             new_addr["name"] = mb_eeprom["name"];
             new_addr["serial"] = mb_eeprom["serial"];
         }
@@ -307,12 +316,7 @@ device_addrs_t x300_find(const device_addr_t &hint_)
         {
             UHD_MSG(error) << "X300 Network discovery unknown error " << std::endl;
         }
-        BOOST_FOREACH(const device_addr_t &reply_addr, reply_addrs)
-        {
-            device_addrs_t new_addrs = x300_find_with_addr(reply_addr);
-            addrs.insert(addrs.begin(), new_addrs.begin(), new_addrs.end());
-        }
-        return addrs;
+        return reply_addrs;
     }
 
     if (!hint.has_key("resource"))
@@ -377,7 +381,33 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
     UHD_MSG(status) << " done!" << std::endl;
 }
 
-x300_impl::x300_impl(const uhd::device_addr_t &dev_addr) 
+static const std::string thread_final_msg = "Finished multi-threaded initialization\n";
+
+static void thread_msg_handler(uhd::msg::type_t type, const std::string &msg)
+{
+    static boost::mutex msg_mutex;
+    boost::mutex::scoped_lock lock(msg_mutex);
+
+    typedef std::pair<uhd::msg::type_t, std::string> msg_pair_t;
+    typedef std::map<boost::thread::id, std::vector<msg_pair_t> > thread_map_t;
+
+    static thread_map_t thread_list;
+    thread_list[boost::this_thread::get_id()].push_back(msg_pair_t(type, msg));
+
+    if (msg == thread_final_msg)
+    {
+        BOOST_FOREACH(const thread_map_t::value_type &thread_pair, thread_list)
+        {
+            BOOST_FOREACH(const msg_pair_t &msg_pair, thread_pair.second)
+            {
+                // Forward the message to the default handler
+                uhd::msg::default_msg_handler(msg_pair.first, msg_pair.second);
+            }
+        }
+    }
+}
+
+x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
     : device3_impl()
     , _sid_framer(0)
 {
@@ -387,10 +417,33 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
 
     const device_addrs_t device_args = separate_device_addr(dev_addr);
     _mb.resize(device_args.size());
+
+    // Serialize the initialization process
+    if (dev_addr.has_key("serialize_init") or device_args.size() == 1) {
+        for (size_t i = 0; i < device_args.size(); i++)
+        {
+            this->setup_mb(i, device_args[i]);
+        }
+        return;
+    }
+
+    // Setup a custom messenger handler
+    uhd::msg::handler_t current_handler = uhd::msg::get_handler();
+    uhd::msg::register_handler(&thread_msg_handler);
+
+    // Thread the initialization process
+    boost::thread_group setup_threads;
     for (size_t i = 0; i < device_args.size(); i++)
     {
-        this->setup_mb(i, device_args[i]);
+        setup_threads.create_thread(
+            boost::bind(&x300_impl::setup_mb, this, i, device_args[i])
+        );
     }
+    setup_threads.join_all();
+
+    // restore the original message handler
+    UHD_MSG(status) << thread_final_msg;
+    uhd::msg::register_handler(current_handler);
 }
 
 void x300_impl::mboard_members_t::discover_eth(
@@ -500,6 +553,16 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
     mboard_members_t &mb = _mb[mb_i];
     mb.initialization_done = false;
+
+    const std::string thread_id(
+        boost::lexical_cast<std::string>(boost::this_thread::get_id())
+    );
+    const std::string thread_msg(
+        "Thread ID " + thread_id + " for motherboard "
+        + boost::lexical_cast<std::string>(mb_i)
+    );
+    UHD_MSG(status) << std::endl;
+    UHD_MSG(status) << thread_msg << std::endl;
 
     std::vector<std::string> eth_addrs;
     // Not choosing eth0 based on resource might cause user issues
@@ -671,6 +734,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                     mb.get_pri_eth().addr, BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT)));
     }
 
+    // Claim device
+    if (not try_to_claim(mb.zpu_ctrl)) {
+        throw uhd::runtime_error("Failed to claim device");
+    }
     mb.claimer_task = uhd::task::make(boost::bind(&x300_impl::claimer_loop, this, mb.zpu_ctrl));
 
     //extract the FW path for the X300
@@ -726,7 +793,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
     UHD_MSG(status) << "Loading values from EEPROM..." << std::endl;
-    i2c_iface::sptr eeprom16 = mb.zpu_i2c->eeprom16();
+    x300_mb_eeprom_iface::sptr eeprom16 = x300_mb_eeprom_iface::make(mb.zpu_ctrl, mb.zpu_i2c);
     if (dev_addr.has_key("blank_eeprom"))
     {
         UHD_MSG(warning) << "Obliterating the motherboard EEPROM..." << std::endl;
@@ -878,14 +945,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     }
 
     ////////////////////////////////////////////////////////////////////
-    //clear router?
-    ////////////////////////////////////////////////////////////////////
-    for (size_t i = 0; i < 512; i++) {
-        mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, i), 0);
-    }
-
-
-    ////////////////////////////////////////////////////////////////////
     // setup time sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "time_source" / "value")
@@ -1010,8 +1069,7 @@ x300_impl::~x300_impl(void)
             mb.claimer_task.reset();
             {   //Critical section
                 boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
-                mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), 0);
-                mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), 0);
+                release(mb.zpu_ctrl);
                 //If the process is killed, the entire registry will disappear so we
                 //don't need to worry about unclean shutdowns here.
                 get_pcie_zpu_iface_registry().pop(mb.get_pri_eth().addr);
@@ -1465,24 +1523,58 @@ void x300_impl::set_mb_eeprom(i2c_iface::sptr i2c, const mboard_eeprom_t &mb_eep
 
 void x300_impl::claimer_loop(wb_iface::sptr iface)
 {
-    {   //Critical section
-        boost::mutex::scoped_lock(claimer_mutex);
-        iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_TIME), uint32_t(time(NULL)));
-        iface->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC), get_process_hash());
-    }
+    claim(iface);
     boost::this_thread::sleep(boost::posix_time::milliseconds(1000)); //1 second
 }
 
-bool x300_impl::is_claimed(wb_iface::sptr iface)
+x300_impl::claim_status_t x300_impl::claim_status(wb_iface::sptr iface)
 {
-    boost::mutex::scoped_lock(claimer_mutex);
-
-    //If timed out then device is definitely unclaimed
-    if (iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_STATUS)) == 0)
-        return false;
+    //If timed out, then device is definitely unclaimed
+    if (iface->peek32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_STATUS)) == 0)
+        return UNCLAIMED;
 
     //otherwise check claim src to determine if another thread with the same src has claimed the device
-    return iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_CLAIM_SRC)) != get_process_hash();
+    uint32_t hash = iface->peek32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_SRC));
+    return (hash == get_process_hash() ? CLAIMED_BY_US : CLAIMED_BY_OTHER);
+}
+
+void x300_impl::claim(wb_iface::sptr iface)
+{
+    iface->poke32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_TIME), uint32_t(time(NULL)));
+    iface->poke32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_SRC), get_process_hash());
+}
+
+bool x300_impl::try_to_claim(wb_iface::sptr iface, long timeout)
+{
+    boost::system_time start_time = boost::get_system_time();
+    while (1)
+    {
+        claim_status_t status = claim_status(iface);
+        if (status == UNCLAIMED)
+        {
+            claim(iface);
+            // It takes the claimer 10ms to update status, so wait 20ms before verifying claim
+            boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+            continue;
+        }
+        if (status == CLAIMED_BY_US)
+        {
+            break;
+        }
+        if (boost::get_system_time() - start_time > boost::posix_time::milliseconds(timeout))
+        {
+            // Another process owns the device - give up
+            return false;
+        }
+        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+    }
+    return true;
+}
+
+void x300_impl::release(wb_iface::sptr iface)
+{
+    iface->poke32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_TIME), 0);
+    iface->poke32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_SRC), 0);
 }
 
 /***********************************************************************

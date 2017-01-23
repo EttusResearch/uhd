@@ -31,7 +31,7 @@ class function_table_impl : public function_table
         expression::type_t return_type;
         function_ptr function;
 
-        function_info() {};
+        function_info(): return_type(expression::TYPE_INT)  {};
         function_info(const expression::type_t return_type_, const function_ptr &function_)
             : return_type(return_type_), function(function_)
         {};

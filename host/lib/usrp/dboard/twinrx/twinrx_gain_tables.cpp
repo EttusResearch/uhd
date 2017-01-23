@@ -836,7 +836,6 @@ const twinrx_gain_table twinrx_gain_table::lookup_table
         }
     }
     throw runtime_error("NO GAIN TABLE SELECTED");
-    return twinrx_gain_table(HIGHBAND1_TABLE);
 }
 
 const twinrx_gain_config_t& twinrx_gain_table::find_by_index(size_t index) const {

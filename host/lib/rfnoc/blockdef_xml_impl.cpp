@@ -416,15 +416,30 @@ private:
 blockdef::sptr blockdef::make_from_noc_id(uint64_t noc_id)
 {
     std::vector<fs::path> paths = blockdef_xml_impl::get_xml_paths();
-    // Iterate over all paths
+    std::vector<fs::path> valid;
+
+    // Check if any of the paths exist
     BOOST_FOREACH(const fs::path &base_path, paths) {
         fs::path this_path = base_path / XML_BLOCKS_SUBDIR;
-        if (not fs::exists(this_path) or not fs::is_directory(this_path)) {
-            continue;
+        if (fs::exists(this_path) and fs::is_directory(this_path)) {
+            valid.push_back(this_path);
         }
+    }
+
+    if (valid.empty())
+    {
+        throw uhd::assertion_error(
+            "Failed to find a valid XML path for RFNoC blocks.\n"
+            "Try setting the enviroment variable UHD_RFNOC_DIR "
+            "to the correct location"
+        );
+    }
+
+    // Iterate over all paths
+    BOOST_FOREACH(const fs::path &path, valid) {
         // Iterate over all .xml files
         fs::directory_iterator end_itr;
-        for (fs::directory_iterator i(this_path); i != end_itr; ++i) {
+        for (fs::directory_iterator i(path); i != end_itr; ++i) {
             if (not fs::exists(*i) or fs::is_directory(*i) or fs::is_empty(*i)) {
                 continue;
             }
