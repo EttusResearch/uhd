@@ -6,10 +6,6 @@ are no replacement for manufacturing or production tests, and should not be
 treated as such. Instead, they are meant to catch common failure modes during
 development. As a result, test definitions are fairly light-weight.
 
-\section rdtesting_phase Phase Alignment Tests
-
-tbd
-
 \section rdtesting_gpsdo GPSDO Tests
 
 | Test Code        | Device    | Peripherals       | Manual Test Procedure        | Automatic Test Procedure  |
@@ -240,6 +236,76 @@ Test procedures may be updated at any time. If this happens, a new test code
 must be generated, with the version number increased. Old test codes are
 considered deprecated (if there exists a version 2 of a test, version 1 should
 not be run any more).
+
+\section rdtesting_phasealignment Phase alignment tests
+
+| Test Code           | Device    | Peripherals        | Manual Test Procedure                | Automatic Test Procedure    |
+|---------------------|-----------|--------------------|--------------------------------------|-----------------------------|
+| PHASE-Twin-RX-v1    | 2xTwinRX  | 2xX3x0 + Octoclock + Signalgenerator + LOSharing cables | \ref rdtesting_phase_rx_twinrx | \ref rdtesting_phase_rx_twinrx |
+| PHASE-UBX-40-RX-v1  | 2xUBX-40  | 2xX3x0 + Octoclock + Signalgenerator  | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
+| PHASE-UBX-160-RX-v1  | 2xUBX-160  | 2xX3x0 + Octoclock + Signalgenerator | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
+| PHASE-SBX-40-RX-v1  | 2xSBX-40  | 2xX3x0 + Octoclock + Signalgenerator | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
+| PHASE-SBX-120-RX-v1  | 2xSBX-120  | 2xX3x0 + Octoclock + Signalgenerator | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
+| PHASE-N2x0-MIMO-v1 | 2x N2x0 + MIMO cable | 2x SBX + Signalgenerator | \ref rdtesting_phase_rx_N2x0_MIMO | \ref rdtesting_phase_rx_N2x0_MIMO |
+
+
+| Device \anchor phase_band_table        | Frequency Range         | Number of bands | 
+|---------------|-------------------------|-----------------|
+| TwinRX        | 10 - 6000 MHz           |      12         |
+| UBX-{160, 40} | 10 - 6000 MHz           |      12         |
+| SBX-{120, 40} | 400 - 4400 MHz          |      7          |
+
+Phase alignment testing is necessary to verify device synchronization across multiple daughter- and motherboards is working as expected for CBX, SBX and UBX daughterboards. To enable efficient Phase alignment testing a GNU Radio Out-of-Tree module gr-usrptest exists in tools/gr-usrptest. It is required for testing RX testcases and later may be required to perform TX testcases.
+
+To test phase alignment we measure phase offset between DUTs at an offset of 2 MHz offset from the selected center frequency. The phase difference for a given center frequency has to stay the same across retunes and power cycles of the DUT.
+
+Correct synchronization with PPS and 10 MHz references is required for these tests.
+
+\subsection rdtesting_phase_rx_manual Manual phase alignment testing (Receiver) 
+
+1. Get required peripherals and DUTs and additionally one splitter and enough coaxial cables. Provide a connection from host computer to USRPs. 
+2. Connect output of signal generator to the splitter and the output of splitter with each DUT.
+3. Make sure other outputs of the splitter are terminated with a 50 Ohms terminator.
+4. Connect USRPs with ethernet cables to the switch. Connect host computer with switch.
+5. Install gr-usrptest OOT-module on your host system (requires GNU Radio (>v3.7.10.1 recommended) and UHD already installed)
+6. Load correct FPGA images on X3x0 devices (via JTAG cable or with uhd_image_loader)
+7. Configure Network (USRPs and host interface)
+9. In tools/gr-usrptest/apps (or already in your $PATH if gr-usrptest is installed) run:
+
+       ./usrp_phasealignment.py
+                    --s 10e6 -runs 10 --duration 2.0 --plot --auto \ 
+                    --sync pps --time-source external --clock-source external \
+                    --args "addr0=<address first X3x0>,addr1=<address second X3x0>" \
+                    --channels <first channel, second channel (e.g. 0,2)> \
+                    -f <frequency> \
+                    --freq-bands <# frequency bands> \ 
+                    --start-freq <lowest daughterboard frequency> --stop-freq <highest daughterboard frequency> \
+
+9. Tune signal generator to displayed frequency + 2 MHz and start measurement
+11. Inspect error plot if phase difference stays the same across retunes. Drift over time must be significantely lower than 1 degree and deviation must be well below 2 degrees.
+12. Verify result with terminal output and note result for current test frequency.
+13. Repeat steps 9.-12. for remaining bands
+
+
+\subsection rdtesting_phase_rx_auto Automatic phase alignment testing (Receiver)
+
+tbd
+
+\subsection rdtesting_phase_rx_twinrx TwinRX specifics for phase alignment testing
+
+Phase alignment testing with TwinRX works as described above with additional test cases and commandline options.
+TwinRX offers LO sharing inside one board and across boards. For uhd_app and derived applications involving our tools and GNU Radio we have introduced `--lo-source {internal, companion, external}` and `--lo-export {True, False}` arguments to apply LO sharing feartures on TwinRX daughterboards.
+Two testcases have to pass:
+ - Phase alignment if sharing LO with companion receiver on a single daughterboard
+ - Phase alignment if sharing LO with external TwinRX daughterboard
+
+When testing TwinRX put 2 daughterboards in separate motherboards and connect LO sharing cables. Setup USRPs in a similar fashion as described above. Supply additional commandline arguments to `./usrp_phasealignment.py`. Use four receive channels `--channels 0,1,2,3` and therefore specify `--spec "A:0 A:1 B:0 B:1"` to address both receiver channels on each daughterboard.
+Also supply `--lo-export True,False,False,False` and `--lo-source internal,companion,external,external` if your LO sharing setup exports LOs from the first motherboard to the second otherwise adjust lo sharing arguments.
+
+\subsection rdtesting_phase_rx_N2x0_MIMO N2x0 with MIMO cable specifics for phase alignment testing
+
+Phase alignment testing with N210 and MIMO cable works like in the case with X3x0 devices but no Octoclock is needed for device synchronization. Instead two N210 devices are connected with a MIMO cable and only one N210 is connected with an ethernet cable to the host computer.
+Supply `--time-source internal,mimo` and `--clock-source internal,mimo` on the commandline to instruct the N2x0s to share time and clock over the MIMO cable.
 
 */
 // vim:ft=doxygen:
