@@ -76,8 +76,9 @@ struct x300_uart_iface : uart_iface
         if (rxoffset == _last_device_rxoffset)
             return -1;
 
+        int ret = static_cast<int>(_rxcache[((rxoffset)/4) % poolsize] >> ((rxoffset%4)*8) & 0xFF);
         rxoffset++;
-        return static_cast<int>(_rxcache[(rxoffset/4) % poolsize] >> ((rxoffset%4)*8) & 0xFF);
+        return ret;
     }
 
     void update_cache(void)
@@ -91,29 +92,41 @@ struct x300_uart_iface : uart_iface
             {
                 // all the data is new - reload the entire cache
                 for (uint32_t i = 0; i < poolsize; i++)
+                {
                     _rxcache[i] = _iface->peek32(SR_ADDR(rxpool, i));
+                }
 
-                // set rxoffset to the end of the first string
-                rxoffset = device_rxoffset - (poolsize*4) + 1;
-                while (static_cast<char>((_rxcache[(rxoffset/4) % poolsize] >> ((rxoffset%4)*8) & 0xFF)) != '\n')
-                    ++rxoffset;
+                // set the head to the same character as the current device
+                // offset (tail) one loop earlier
+                rxoffset = device_rxoffset - (poolsize*4);
 
-                // clear the partial string in the buffer;
+                // set the tail to the current device offset
+                _last_device_rxoffset = device_rxoffset;
+
+                // the string at the head is a partial, so skip it
+                for (int c = getchar(); c != '\n' and c != -1; c = getchar()) {}
+
+                // clear the partial string in the buffer, if any
                 _rxbuff.clear();
             }
             else if (rxoffset == _last_device_rxoffset)
             {
                 // new data was added - refresh the portion of the cache that was updated
-                for (uint32_t i = ((_last_device_rxoffset+1)/4) % poolsize; i != (((device_rxoffset)/4)+1) % poolsize; i = (i+1) % poolsize)
+                for (uint32_t i = (_last_device_rxoffset/4) % poolsize;
+                        i != ((device_rxoffset/4)+1) % poolsize;
+                        i = (i+1) % poolsize)
                 {
                     _rxcache[i] = _iface->peek32(SR_ADDR(rxpool, i));
                 }
-            } else {
+
+                // set the tail to the current device offset
+                _last_device_rxoffset = device_rxoffset;
+            }
+            else
+            {
                 // there is new data, but we aren't done with what we have - check back later
                 break;
             }
-
-            _last_device_rxoffset = device_rxoffset;
 
             // check again to see if anything changed while we were updating the cache
             device_rxoffset = _iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_UART_RX_INDEX));
