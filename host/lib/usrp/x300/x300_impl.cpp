@@ -1478,13 +1478,32 @@ void x300_impl::claimer_loop(wb_iface::sptr iface)
 
 x300_impl::claim_status_t x300_impl::claim_status(wb_iface::sptr iface)
 {
-    //If timed out, then device is definitely unclaimed
-    if (iface->peek32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_STATUS)) == 0)
-        return UNCLAIMED;
+    claim_status_t claim_status = CLAIMED_BY_OTHER; // Default to most restrictive
+    boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::seconds(1);
+    while (boost::get_system_time() < timeout_time)
+    {
+        //If timed out, then device is definitely unclaimed
+        if (iface->peek32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_STATUS)) == 0)
+        {
+            claim_status = UNCLAIMED;
+            break;
+        }
 
-    //otherwise check claim src to determine if another thread with the same src has claimed the device
-    uint32_t hash = iface->peek32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_SRC));
-    return (hash == get_process_hash() ? CLAIMED_BY_US : CLAIMED_BY_OTHER);
+        //otherwise check claim src to determine if another thread with the same src has claimed the device
+        uint32_t hash = iface->peek32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_SRC));
+        if (hash == 0)
+        {
+            // A non-zero claim status and an empty hash means the claim might
+            // be in the process of being released.  This is possible because
+            // older firmware takes a long time to update the status.  Wait and
+            // check status again.
+            boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+            continue;
+        }
+        claim_status = (hash == get_process_hash() ? CLAIMED_BY_US : CLAIMED_BY_OTHER);
+        break;
+    }
+    return claim_status;
 }
 
 void x300_impl::claim(wb_iface::sptr iface)
