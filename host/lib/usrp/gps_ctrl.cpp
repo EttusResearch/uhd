@@ -92,7 +92,7 @@ private:
                     sentences[which].get<2>() = true;
                 }
             } catch(std::exception &e) {
-                UHD_MSG(warning) << "get_sentence: " << e.what();
+                UHD_LOGV(often) << "get_sentence: " << e.what();
             }
 
             if (not sentence.empty() or now > exit_time)
@@ -134,7 +134,7 @@ private:
     }
 
   void update_cache() {
-    if(not gps_detected() or (_gps_type != GPS_TYPE_INTERNAL_GPSDO)) {
+    if(not gps_detected()) {
         return;
     }
 
@@ -352,11 +352,11 @@ private:
             return gps_time;
 
         } catch(std::exception &e) {
-            UHD_MSG(warning) << "get_time: " << e.what();
+            UHD_LOGV(often) << "get_time: " << e.what();
             error_cnt++;
         }
     }
-    throw uhd::value_error("Timeout after no valid message found");
+    throw uhd::value_error("get_time: Timeout after no valid message found");
 
     return gps_time; //keep gcc from complaining
   }
@@ -379,7 +379,7 @@ private:
             else
                 return (get_token(reply, 6) != "0");
         } catch(std::exception &e) {
-            UHD_MSG(warning) << "locked: " << e.what();
+            UHD_LOGV(often) << "locked: " << e.what();
             error_cnt++;
         }
     }
