@@ -1,3 +1,21 @@
+uhd (3.9.6-0ubuntu1) trusty; urgency=low
+
+  - CMake/Builds: Many minor fixes. Better handle missing python-requests.
+  - Docs: Many minor fixes.
+  - UHD: Fixed compiler warnings and some general cleanup. Fixed floating point error
+    in converter tests.
+  - Examples: Fix GPIO example w.r.t. out register.  Fixed rx_samples_c.
+    Fixed test_messages. Added example to sync devices to GPS time.
+  - UBX: Change default settings to eliminate transient.
+  - XCVR: Fix ref clock value. Could cause issues on X3x0 otherwise.
+  - X3x0: GPSDO fixes.
+  - B2xx: More gracefully handle request to non-existant GPSDO and other GPSDO fixes.
+  - N2x0: GPSDO UART fixes.
+  - E3x0: Fix occasional unlocking of PLL when using PPS input.
+  - Octoclock: GPSDO UART fixes.
+
+ -- Ettus Research <packages@ettus.com>  Thu, 26 Jan 2017 03:43:12 -0800
+
 uhd (3.9.5-0ubuntu1) trusty; urgency=low
 
   - B200: Update DSPs after changing tick rate
