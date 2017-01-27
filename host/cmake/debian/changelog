@@ -1,3 +1,26 @@
+uhd (3.10.1.1-0ubuntu1) trusty; urgency=low
+
+  - Docs: The protocol for Gen-3 devices is now consistently referred to as CHDR.
+  - X300: Fixed EEPROM corruption bug (happened when two processes would access
+    find routines on the same device at the same time). Improved initialization
+    time. CE clock is now 214 MHz. Fixed channel list generation. Find routines
+    now more lenient in case one devices fails (others can still be found then).
+    Improve PCIe behaviour. Fix timed commands for non-TwinRX dboards. Improve
+    AXI Interconnect (faster, improved build timing).
+  - N230: Use second_addr (like X300).
+  - C API: Added UHD_VERSION macro. Fixed online rate change.
+  - Utils: Minor fixes to uhd_images_downloader.
+  - Build/CMake: Fixed some Py3k build issues. Fixed many compiler warnings. Allow
+    to specify package names.
+  - RFNoC: Fixed sampling rate mismatch error. Noc-Shell uses a non-cascaded 2-clk
+    FIFO. Increase default FIFO sizes on DUC and DDC blocks.
+  - UBX: Force on RX driver to eliminate transient.
+  - Transport code: Fixed memory leak.
+  - FPGA repository: Merged usrp3_rfnoc and usrp3 directories again. Cleaned up
+    superfluous files. Clean separation between Gen-3 and other devices in usrp3.
+
+ -- Ettus Research <packages@ettus.com>  Thu, 26 Jan 2017 04:15:56 -0800
+
 uhd (3.10.1.0-0ubuntu1) trusty; urgency=low
 
   - Fixed multiple compiler warnings
