@@ -217,30 +217,28 @@ void handle_udp_mtu_detect(
 /***********************************************************************
  * Deal with host claims and claim timeout
  **********************************************************************/
-static void handle_claim(void)
+static void handle_claim(uint32_t ticks_now)
 {
+    static const uint32_t CLAIM_TIMEOUT = 2*CPU_CLOCK;      // 2 seconds
+    static uint32_t ticks_last_claim = 0;
     static uint32_t last_time = 0;
-    static size_t timeout = 0;
 
-    //time is 0 if the claim was forfeit
-    if (shmem[X300_FW_SHMEM_CLAIM_TIME] == 0)
+    // Claim status can only change if the claim is active or the claim is renewed.
+    if (shmem[X300_FW_SHMEM_CLAIM_STATUS] != 0 &&
+            (shmem[X300_FW_SHMEM_CLAIM_TIME] == 0 ||
+            ticks_now - ticks_last_claim > CLAIM_TIMEOUT))
     {
-        shmem[X300_FW_SHMEM_CLAIM_STATUS] = 0;
+            // the claim was released or timed out
+            shmem[X300_FW_SHMEM_CLAIM_STATUS] = 0;
+            last_time = shmem[X300_FW_SHMEM_CLAIM_TIME];
     }
-    //if the time changes, reset timeout
     else if (last_time != shmem[X300_FW_SHMEM_CLAIM_TIME])
     {
+        // claim was renewed
         shmem[X300_FW_SHMEM_CLAIM_STATUS] = 1;
-        timeout = 0;
+        last_time = shmem[X300_FW_SHMEM_CLAIM_TIME];
+        ticks_last_claim = ticks_now;
     }
-    //otherwise increment for timeout
-    else timeout++;
-
-    //always stash the last seen time
-    last_time = shmem[X300_FW_SHMEM_CLAIM_TIME];
-
-    //the claim has timed out after 2 seconds
-    if (timeout > 200) shmem[X300_FW_SHMEM_CLAIM_STATUS] = 0;
 }
 
 /***********************************************************************
@@ -419,8 +417,14 @@ int main(void)
 
     while(true)
     {
-        //jobs that happen once every 10ms
         const uint32_t ticks_now = wb_peek32(SR_ADDR(RB0_BASE, RB_COUNTER));
+
+        // handle the claim every time because any packet processed could
+        // have claimed or released the device and we want the claim status
+        // to be updated immediately to make it atomic from the host perspective
+        handle_claim(ticks_now);
+
+        //jobs that happen once every 10ms
         const uint32_t ticks_passed = ticks_now - last_cronjob;
         static const uint32_t tick_delta = CPU_CLOCK/100;
         if (ticks_passed > tick_delta)
@@ -428,7 +432,6 @@ int main(void)
             poll_sfpp_status(0); // Every so often poll XGE Phy to look for SFP+ hotplug events.
             poll_sfpp_status(1); // Every so often poll XGE Phy to look for SFP+ hotplug events.
             //handle_link_state(); //deal with router table update
-            handle_claim(); //deal with the host claim register
             update_leds(); //run the link and activity leds
             garp(); //send periodic garps
             last_cronjob = ticks_now;

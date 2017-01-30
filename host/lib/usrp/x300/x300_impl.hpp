@@ -54,10 +54,7 @@ static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
 //where an element is 8 bytes. For best throughput ensure that the data frame fits in these buffers.
 //Also ensure that the kernel has enough frames to hold buffered TX and RX data
 static const size_t X300_PCIE_RX_DATA_FRAME_SIZE    = 8184;     //bytes
-//static const size_t X300_PCIE_TX_DATA_FRAME_SIZE    = 8192;     //bytes
-// This is a temporary solution: We're throttling PCIe MTU to avoid
-// underruns on Tx. Once we solve it on the FPGA side, need revert this commit.
-static const size_t X300_PCIE_TX_DATA_FRAME_SIZE    = 3000;     //bytes
+static const size_t X300_PCIE_TX_DATA_FRAME_SIZE    = 8184;     //bytes
 static const size_t X300_PCIE_DATA_NUM_FRAMES       = 2048;
 static const size_t X300_PCIE_MSG_FRAME_SIZE        = 256;      //bytes
 static const size_t X300_PCIE_MSG_NUM_FRAMES        = 64;
