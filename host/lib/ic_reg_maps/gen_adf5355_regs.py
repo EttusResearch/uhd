@@ -26,7 +26,7 @@ REGS_TMPL="""\
 ########################################################################
 int_16_bit              0[4:19]     0
 prescaler               0[20]       0       4_5, 8_9
-autocal_en              0[21]       0       disabled, enabled
+autocal_en              0[21]       1       disabled, enabled
 reg0_reserved0          0[22:31]    0x000
 ########################################################################
 ## address 1
@@ -53,13 +53,13 @@ counter_reset           4[4]        0       disabled, enabled
 cp_three_state          4[5]        0       disabled, enabled
 power_down              4[6]        0       disabled, enabled
 pd_polarity             4[7]        1       negative, positive
-mux_logic               4[8]        0       1_8V, 3_3V
+mux_logic               4[8]        1       1_8V, 3_3V
 ref_mode                4[9]        0       single, diff
 <% current_setting_enums = ', '.join(map(lambda x: '_'.join(("%0.2fma"%(round(x*31.27 + 31.27)/100)).split('.')), range(0,16))) %>\
 charge_pump_current     4[10:13]    0       ${current_setting_enums}
 double_buff_div         4[14]       0       disabled, enabled
 r_counter_10_bit        4[15:24]    0
-reference_divide_by_2   4[25]       1       disabled, enabled
+reference_divide_by_2   4[25]       0       disabled, enabled
 reference_doubler       4[26]       0       disabled, enabled
 muxout                  4[27:29]    1       3state, dvdd, dgnd, rdiv, ndiv, analog_ld, dld, reserved
 reg4_reserved0          4[30:31]    0
@@ -91,7 +91,7 @@ frac_n_ld_precision     7[5:6]      0       5ns, 6ns, 8ns, 12ns
 loss_of_lock_mode       7[7]        0       disabled, enabled
 ld_cyc_count            7[8:9]      0       1024, 2048, 4096, 8192
 reg7_reserved0          7[10:24]    0x0
-le_sync                 7[25]       0       disabled, le_synced_to_refin
+le_sync                 7[25]       1       disabled, le_synced_to_refin
 reg7_reserved1          7[26:31]    0x4
 ########################################################################
 ## address 8

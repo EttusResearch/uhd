@@ -62,42 +62,13 @@ public:
         _pfd_freq(0.0),
         _fb_after_divider(false)
     {
-        _regs.counter_reset = adf5355_regs_t::COUNTER_RESET_DISABLED;
-        _regs.cp_three_state = adf5355_regs_t::CP_THREE_STATE_DISABLED;
-        _regs.power_down = adf5355_regs_t::POWER_DOWN_DISABLED;
-        _regs.pd_polarity = adf5355_regs_t::PD_POLARITY_POSITIVE;
-        _regs.mux_logic = adf5355_regs_t::MUX_LOGIC_3_3V;
-        _regs.ref_mode = adf5355_regs_t::REF_MODE_SINGLE;
-        _regs.muxout = adf5355_regs_t::MUXOUT_DLD;
-        _regs.double_buff_div = adf5355_regs_t::DOUBLE_BUFF_DIV_DISABLED;
 
-        _regs.rf_out_a_enabled = adf5355_regs_t::RF_OUT_A_ENABLED_ENABLED;
-        _regs.rf_out_b_enabled = adf5355_regs_t::RF_OUT_B_ENABLED_DISABLED;
-        _regs.mute_till_lock_detect = adf5355_regs_t::MUTE_TILL_LOCK_DETECT_MUTE_DISABLED;
-        _regs.ld_mode = adf5355_regs_t::LD_MODE_FRAC_N;
-        _regs.frac_n_ld_precision = adf5355_regs_t::FRAC_N_LD_PRECISION_5NS;
-        _regs.ld_cyc_count = adf5355_regs_t::LD_CYC_COUNT_1024;
-        _regs.le_sync = adf5355_regs_t::LE_SYNC_LE_SYNCED_TO_REFIN;
-        _regs.phase_resync = adf5355_regs_t::PHASE_RESYNC_DISABLED;
-        _regs.reference_divide_by_2 = adf5355_regs_t::REFERENCE_DIVIDE_BY_2_DISABLED;
-        _regs.reference_doubler = adf5355_regs_t::REFERENCE_DOUBLER_DISABLED;
-
-        _regs.autocal_en = adf5355_regs_t::AUTOCAL_EN_ENABLED;
-        _regs.prescaler = adf5355_regs_t::PRESCALER_4_5;
+        // TODO This is a hardware specific value, but can be made the default in the ic_reg_map
         _regs.charge_pump_current = adf5355_regs_t::CHARGE_PUMP_CURRENT_0_94MA;
 
-        _regs.gated_bleed = adf5355_regs_t::GATED_BLEED_DISABLED;
-        _regs.negative_bleed = adf5355_regs_t::NEGATIVE_BLEED_ENABLED;
-        _regs.feedback_select = adf5355_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
-        _regs.output_power = adf5355_regs_t::OUTPUT_POWER_5DBM;
+        // TODO cleanup these magic numbers
         _regs.cp_bleed_current = 2;
         _regs.r_counter_10_bit = 8;
-
-
-        _regs.ld_cyc_count = adf5355_regs_t::LD_CYC_COUNT_1024;
-        _regs.loss_of_lock_mode = adf5355_regs_t::LOSS_OF_LOCK_MODE_DISABLED;
-        _regs.frac_n_ld_precision = adf5355_regs_t::FRAC_N_LD_PRECISION_5NS;
-        _regs.ld_mode = adf5355_regs_t::LD_MODE_FRAC_N;
 
         _regs.vco_band_div = 3;
         _regs.timeout = 11;
@@ -108,6 +79,14 @@ public:
         _regs.adc_conversion = adf5355_regs_t::ADC_CONVERSION_ENABLED;
         _regs.adc_enable = adf5355_regs_t::ADC_ENABLE_ENABLED;
 
+
+        // TODO Needs to be enabled for phase resync
+        _regs.phase_resync = adf5355_regs_t::PHASE_RESYNC_DISABLED;
+
+        // TODO Default should be divided, but there seems to be a bug preventing that. Needs rechecking
+        _regs.feedback_select = adf5355_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
+        
+        // TODO 0 is an invalid value for this field. Setting to 1 seemed to break phase sync, needs retesting.
         _regs.phase_resync_clk_div = 0;
     }
 
@@ -193,7 +172,9 @@ public:
 
         //-----------------------------------------------------------
         //Phase resync
-        _regs.phase_resync = adf5355_regs_t::PHASE_RESYNC_DISABLED; // Disabled during development
+        // TODO Renable here, in initialization, or through separate set_phase_resync(bool enable) function
+        _regs.phase_resync = adf5355_regs_t::PHASE_RESYNC_DISABLED;
+
         _regs.phase_adjust = adf5355_regs_t::PHASE_ADJUST_DISABLED;
         _regs.sd_load_reset = adf5355_regs_t::SD_LOAD_RESET_ON_REG0_UPDATE;
         _regs.phase_resync_clk_div = static_cast<uint16_t>(

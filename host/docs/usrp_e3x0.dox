@@ -18,7 +18,6 @@
 - FPGA Capabilities:
         - 2 RX DDC chains in FPGA
         - 2 TX DUC chain in FPGA
-	- Timed commands in FPGA
 	- Timed sampling in FPGA
 	- 16-bit fixed point sample mode (sc16)
 

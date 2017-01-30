@@ -126,8 +126,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
         // Bind the daughterboard command time to the motherboard level property
         ////////////////////////////////////////////////////////////////
 
-        if (_tree->exists(fs_path("time") / "cmd") and
-                _tree->exists(fs_path("dboards" / _radio_slot /  "rx_frontends" / _rx_fe_map.at(i).db_fe_name / "time" / "cmd"))) {
+        if (_tree->exists(fs_path("time") / "cmd")) {
             _tree->access<time_spec_t>(fs_path("time") / "cmd")
                 .add_coerced_subscriber(boost::bind(&x300_radio_ctrl_impl::set_fe_cmd_time, this, _1, i));
         }
@@ -180,9 +179,11 @@ double x300_radio_ctrl_impl::set_rate(double rate)
 
 void x300_radio_ctrl_impl::set_fe_cmd_time(const time_spec_t &time, const size_t chan)
 {
-    _tree->access<time_spec_t>(
-            fs_path("dboards" / _radio_slot /  "rx_frontends" / _rx_fe_map.at(chan).db_fe_name / "time" / "cmd")
-    ).set(time);
+    if (_tree->exists(fs_path("dboards" / _radio_slot /  "rx_frontends" / _rx_fe_map.at(chan).db_fe_name / "time" / "cmd"))) {
+        _tree->access<time_spec_t>(
+                fs_path("dboards" / _radio_slot /  "rx_frontends" / _rx_fe_map.at(chan).db_fe_name / "time" / "cmd")
+        ).set(time);
+    }
 }
 
 void x300_radio_ctrl_impl::set_tx_antenna(const std::string &ant, const size_t chan)
