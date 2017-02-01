@@ -203,13 +203,15 @@ public:
 
     //first we look for an internal GPSDO
     _flush(); //get whatever junk is in the rx buffer right now, and throw it away
+
     _send("*IDN?\r\n"); //request identity from the GPSDO
 
     //then we loop until we either timeout, or until we get a response that indicates we're a JL device
-    const boost::system_time comm_timeout = boost::get_system_time() + milliseconds(GPS_COMM_TIMEOUT_MS);
+    //maximum response time was measured at ~320ms, so we set the timeout at 650ms
+    const boost::system_time comm_timeout = boost::get_system_time() + milliseconds(650);
     while(boost::get_system_time() < comm_timeout) {
       reply = _recv();
-      //known devices are JL "FireFly" and "LC_XO"
+      //known devices are JL "FireFly", "GPSTCXO", and "LC_XO"
       if(reply.find("FireFly") != std::string::npos
          or reply.find("LC_XO") != std::string::npos
          or reply.find("GPSTCXO") != std::string::npos) {
@@ -218,14 +220,22 @@ public:
       } else if(reply.substr(0, 3) == "$GP") {
           i_heard_some_nmea = true; //but keep looking
       } else if(not reply.empty()) {
-          i_heard_something_weird = true; //probably wrong baud rate
+          // wrong baud rate or firmware still initializing
+          i_heard_something_weird = true;
+          _send("*IDN?\r\n");   //re-send identity request
+      } else {
+          // _recv timed out
+          _send("*IDN?\r\n");   //re-send identity request
       }
     }
 
-    if((i_heard_some_nmea) && (_gps_type != GPS_TYPE_INTERNAL_GPSDO)) _gps_type = GPS_TYPE_GENERIC_NMEA;
-
-    if((_gps_type == GPS_TYPE_NONE) && i_heard_something_weird) {
-      UHD_MSG(error) << "GPS invalid reply \"" << reply << "\", assuming none available" << std::endl;
+    if (_gps_type == GPS_TYPE_NONE)
+    {
+        if(i_heard_some_nmea) {
+            _gps_type = GPS_TYPE_GENERIC_NMEA;
+        } else if(i_heard_something_weird) {
+            UHD_MSG(error) << "GPS invalid reply \"" << reply << "\", assuming none available" << std::endl;
+        }
     }
 
     switch(_gps_type) {
