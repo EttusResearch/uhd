@@ -430,15 +430,23 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
     uhd::msg::handler_t current_handler = uhd::msg::get_handler();
     uhd::msg::register_handler(&thread_msg_handler);
 
-    // Thread the initialization process
-    boost::thread_group setup_threads;
-    for (size_t i = 0; i < device_args.size(); i++)
+    // Initialize groups of USRPs in parallel
+    size_t total_usrps = device_args.size();
+    size_t num_usrps   = 0;
+    while (num_usrps < total_usrps)
     {
-        setup_threads.create_thread(
-            boost::bind(&x300_impl::setup_mb, this, i, device_args[i])
-        );
+        size_t init_usrps = std::min(total_usrps - num_usrps, X300_MAX_INIT_THREADS);
+        boost::thread_group setup_threads;
+        for (size_t i = 0; i < init_usrps; i++)
+        {
+            size_t index = num_usrps + i;
+            setup_threads.create_thread(
+                boost::bind(&x300_impl::setup_mb, this, index, device_args[index])
+            );
+        }
+        setup_threads.join_all();
+        num_usrps += init_usrps;
     }
-    setup_threads.join_all();
 
     // restore the original message handler
     UHD_MSG(status) << thread_final_msg;

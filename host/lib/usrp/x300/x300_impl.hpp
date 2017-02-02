@@ -73,6 +73,9 @@ static const size_t X300_ETH_MSG_NUM_FRAMES         = 64;
 static const size_t X300_ETH_DATA_NUM_FRAMES        = 32;
 static const double X300_DEFAULT_SYSREF_RATE        = 10e6;
 
+// Limit the number of initialization threads
+static const size_t X300_MAX_INIT_THREADS           = 10;
+
 static const size_t X300_MAX_RATE_PCIE              = 800000000; // bytes/s
 static const size_t X300_MAX_RATE_10GIGE            = (size_t)(  // bytes/s
         10e9 / 8 *                                               // wire speed multiplied by percentage of packets that is sample data
