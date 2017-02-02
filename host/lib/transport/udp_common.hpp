@@ -35,6 +35,7 @@ namespace uhd{ namespace transport{
      * \return true when the socket is ready for receive
      */
     UHD_INLINE bool wait_for_recv_ready(int sock_fd, double timeout){
+#ifdef UHD_PLATFORM_WIN32 // select is more portable than poll unfortunately
         //setup timeval for timeout
         timeval tv;
         //If the tv_usec > 1 second on some platforms, select will
@@ -56,6 +57,17 @@ namespace uhd{ namespace transport{
 
         //call select with timeout on receive socket
         return TEMP_FAILURE_RETRY(::select(sock_fd+1, &rset, NULL, NULL, &tv)) > 0;
+#else
+        //calculate the total timeout in milliseconds (from seconds)
+        int total_timeout = int(timeout*1000);
+
+        pollfd pfd_read;
+        pfd_read.fd = sock_fd;
+        pfd_read.events = POLLIN;
+
+        //call poll with timeout on receive socket
+        return ::poll(&pfd_read, 1, total_timeout) > 0;
+#endif
     }
 
 }} //namespace uhd::transport
