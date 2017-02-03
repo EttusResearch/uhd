@@ -47,8 +47,8 @@ static const double ADF5355_MIN_OUT_FREQ            = (3.4e9 / 64);
 static const double ADF5355_PHASE_RESYNC_TIME       = 400e-6;
 
 static const uint32_t ADF5355_MOD1           = 16777216;
-static const uint32_t ADF5355_MAX_MOD2       = 16384;
-static const uint32_t ADF5355_MAX_FRAC2      = 16384;
+static const uint32_t ADF5355_MAX_MOD2       = 16383;
+static const uint32_t ADF5355_MAX_FRAC2      = 16383;
 //static const uint16_t ADF5355_MIN_INT_PRESCALER_89 = 75;
 
 class adf5355_impl : public adf5355_iface
