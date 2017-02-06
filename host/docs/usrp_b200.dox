@@ -268,7 +268,7 @@ Component ID            |  Description               | Details
 
 <sup>1</sup> Only on the B210
 
-<sup>2</sup> Only since rev. 6 (green board)
+<sup>2</sup> Only since rev. 6 (green board).  GPIO pinout is 1=GPIO_0, 2=GPIO_1, 3=GPIO_2, 4=GPIO_3, 5=GPIO_4, 6=GPIO_5, 7=GPIO_6, 8=GPIO_7, 9=GND, 10=GND
 
 Below is a table showing the B200mini on-board connectors and switches:
 
@@ -278,7 +278,7 @@ Component ID            |  Description               | Details
  J6<sup>1</sup>         |  GPIO Header               | Header connected to the FPGA for GPIO purposes.
  SW1                    |  FX3 Hard Reset Switch     | Resets the USB controller / System reset
 
- <sup>1</sup> GPIO pinout is 1=3.3V, 2=GPIO_0, 3=GPIO_1, 4=GPIO_2, 5=GPIO_3, 6=GND, 7=3.3V, 8=GPIO_4, 9=GPIO_5, 10=,GPIO_6 11=GPIO_7, 12=GND
+ <sup>1</sup> GPIO pinout is 1=3.3V, 2=GPIO_0, 3=GPIO_1, 4=GPIO_2, 5=GPIO_3, 6=GND, 7=3.3V, 8=GPIO_4, 9=GPIO_5, 10=GPIO_6, 11=GPIO_7, 12=GND
 
 */
 
