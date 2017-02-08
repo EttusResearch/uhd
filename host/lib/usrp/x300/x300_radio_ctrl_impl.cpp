@@ -22,7 +22,7 @@
 #include "gpio_atr_3000.hpp"
 #include "apply_corrections.hpp"
 #include <uhd/usrp/dboard_eeprom.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/transport/chdr.hpp>
@@ -44,7 +44,7 @@ static const size_t IO_MASTER_RADIO = 0;
 UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     , _ignore_cal_file(false)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::ctor() " << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::ctor() " ;
 
     ////////////////////////////////////////////////////////////////////
     // Set up basic info
@@ -171,7 +171,7 @@ double x300_radio_ctrl_impl::set_rate(double rate)
 {
     const double actual_rate = get_rate();
     if (not uhd::math::frequencies_are_equal(rate, actual_rate)) {
-        UHD_MSG(warning) << "[X300 Radio] Requesting invalid sampling rate from device: " << rate/1e6 << " MHz. Actual rate is: " << actual_rate/1e6 << " MHz." << std::endl;
+        UHD_LOGGER_WARNING("X300 RADIO") << "Requesting invalid sampling rate from device: " << rate/1e6 << " MHz. Actual rate is: " << actual_rate/1e6 << " MHz." ;
     }
     // On X3x0, tick rate can't actually be changed at runtime
     return actual_rate;
@@ -238,7 +238,7 @@ double x300_radio_ctrl_impl::set_tx_gain(const double gain, const size_t chan)
         radio_ctrl_impl::set_tx_gain(actual_gain, chan);
         return gain;
     } else {
-        UHD_MSG(warning) << "set_tx_gain: could not apply gain for this daughterboard.";
+        UHD_LOGGER_WARNING("X300 RADIO") << "set_tx_gain: could not apply gain for this daughterboard.";
         radio_ctrl_impl::set_tx_gain(0.0, chan);
         return 0.0;
     }
@@ -254,7 +254,7 @@ double x300_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
         radio_ctrl_impl::set_rx_gain(actual_gain, chan);
         return gain;
     } else {
-        UHD_MSG(warning) << "set_rx_gain: could not apply gain for this daughterboard.";
+        UHD_LOGGER_WARNING("X300 RADIO") << "set_rx_gain: could not apply gain for this daughterboard.";
         radio_ctrl_impl::set_tx_gain(0.0, chan);
         return 0.0;
     }
@@ -555,31 +555,26 @@ void x300_radio_ctrl_impl::self_test_adc(uint32_t ramp_time_ms)
 void x300_radio_ctrl_impl::extended_adc_test(const std::vector<x300_radio_ctrl_impl::sptr>& radios, double duration_s)
 {
     static const size_t SECS_PER_ITER = 5;
-    UHD_MSG(status) << boost::format("Running Extended ADC Self-Test (Duration=%.0fs, %ds/iteration)...\n")
+    UHD_LOGGER_INFO("X300 RADIO") << boost::format("Running Extended ADC Self-Test (Duration=%.0fs, %ds/iteration)...")
         % duration_s % SECS_PER_ITER;
 
     size_t num_iters = static_cast<size_t>(ceil(duration_s/SECS_PER_ITER));
     size_t num_failures = 0;
     for (size_t iter = 0; iter < num_iters; iter++) {
-        //Print date and time
-        boost::posix_time::time_facet *facet = new boost::posix_time::time_facet("%d-%b-%Y %H:%M:%S");
-        std::ostringstream time_strm;
-        time_strm.imbue(std::locale(std::locale::classic(), facet));
-        time_strm << boost::posix_time::second_clock::local_time();
         //Run self-test
-        UHD_MSG(status) << boost::format("-- [%s] Iteration %06d... ") % time_strm.str() % (iter+1);
+        UHD_LOGGER_INFO("X300 RADIO") << boost::format("Extended ADC Self-Test Iteration %06d... ") % (iter+1);
         try {
             for (size_t i = 0; i < radios.size(); i++) {
                 radios[i]->self_test_adc((SECS_PER_ITER*1000)/radios.size());
             }
-            UHD_MSG(status) << "passed" << std::endl;
+            UHD_LOGGER_INFO("X300 RADIO") << boost::format("Extended ADC Self-Test Iteration %06d passed ") % (iter+1);
         } catch(std::exception &e) {
             num_failures++;
-            UHD_MSG(status) << e.what() << std::endl;
+            UHD_LOGGER_ERROR("X300 RADIO") << e.what();
         }
     }
     if (num_failures == 0) {
-        UHD_MSG(status) << "Extended ADC Self-Test PASSED\n";
+        UHD_LOGGER_INFO("X300 RADIO") << "Extended ADC Self-Test PASSED";
     } else {
         throw uhd::runtime_error(
                 (boost::format("Extended ADC Self-Test FAILED!!! (%d/%d failures)\n") % num_failures % num_iters).str());
@@ -639,7 +634,7 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
     boost::function<void(double)> wait_for_clk_locked,
     bool apply_delay)
 {
-    UHD_MSG(status) << "Running ADC transfer delay self-cal: " << std::flush;
+    UHD_LOGGER_INFO("X300 RADIO") << "Running ADC transfer delay self-cal: ";
 
     //Effective resolution of the self-cal.
     static const size_t NUM_DELAY_STEPS = 100;
@@ -649,7 +644,6 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
     double delay_range = 2 * master_clk_period;
     double delay_incr = delay_range / NUM_DELAY_STEPS;
 
-    UHD_MSG(status) << "Measuring..." << std::flush;
     double cached_clk_delay = clock->get_clock_delay(X300_CLOCK_WHICH_ADC0);
     double fpga_clk_delay = clock->get_clock_delay(X300_CLOCK_WHICH_FPGA);
 
@@ -695,7 +689,7 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
                 err_code += 100;    //Increment error code by 100 to indicate no lock
             }
         }
-        //UHD_MSG(status) << (boost::format("XferDelay=%fns, Error=%d\n") % delay % err_code);
+        //UHD_LOGGER_INFO("X300 RADIO") << (boost::format("XferDelay=%fns, Error=%d") % delay % err_code);
         results.push_back(std::pair<double,bool>(delay, err_code==0));
     }
 
@@ -747,7 +741,6 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
     }
 
     if (apply_delay) {
-        UHD_MSG(status) << "Validating..." << std::flush;
         //Apply delay
         win_center = clock->set_clock_delay(X300_CLOCK_WHICH_ADC0, win_center);  //Sets ADC0 and ADC1
         wait_for_clk_locked(0.1);
@@ -765,7 +758,7 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
         radios[r]->_adc->set_test_word("normal", "normal");
         radios[r]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
     }
-    UHD_MSG(status) << (boost::format(" done (FPGA->ADC=%.3fns%s, Window=%.3fns)\n") %
+    UHD_LOGGER_INFO("X300 RADIO") << (boost::format("ADC transfer delay self-cal done (FPGA->ADC=%.3fns%s, Window=%.3fns)") %
         (win_center-fpga_clk_delay) % (cycle_slip?" +cyc":"") % win_length);
 
     return win_center;
@@ -789,7 +782,7 @@ void x300_radio_ctrl_impl::_update_atr_leds(const std::string &rx_ant, const siz
 
 void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
 {
-    if (print_status) UHD_MSG(status) << "Running ADC capture delay self-cal..." << std::flush;
+    if (print_status) UHD_LOGGER_INFO("X300 RADIO") << "Running ADC capture delay self-cal...";
 
     static const uint32_t NUM_DELAY_STEPS = 32;   //The IDELAYE2 element has 32 steps
     static const uint32_t NUM_RETRIES     = 2;    //Retry self-cal if it fails in warmup situations
@@ -852,7 +845,7 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
                     }
                 }
             }
-            //UHD_MSG(status) << (boost::format("CapTap=%d, Error=%d\n") % dly_tap % err_code);
+            //UHD_LOGGER_INFO("X300 RADIO") << (boost::format("CapTap=%d, Error=%d") % dly_tap % err_code);
         }
 
         //Retry the self-cal if it fails
@@ -882,7 +875,7 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
 
     if (print_status) {
         double tap_delay = (1.0e12 / _radio_clk_rate) / (2*32); //in ps
-        UHD_MSG(status) << boost::format(" done (Tap=%d, Window=%d, TapDelay=%.3fps, Iter=%d)\n") % ideal_tap % (win_stop-win_start) % tap_delay % iter;
+        UHD_LOGGER_INFO("X300 RADIO") << boost::format("ADC capture delay self-cal done (Tap=%d, Window=%d, TapDelay=%.3fps, Iter=%d)") % ideal_tap % (win_stop-win_start) % tap_delay % iter;
     }
 }
 
@@ -912,7 +905,7 @@ void x300_radio_ctrl_impl::_set_db_eeprom(i2c_iface::sptr i2c, const size_t addr
  ***************************************************************************/
 bool x300_radio_ctrl_impl::check_radio_config()
 {
-    UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::check_radio_config() " << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::check_radio_config() " ;
     const fs_path rx_fe_path = fs_path("dboards" / _radio_slot / "rx_frontends");
     for (size_t chan = 0; chan < _get_num_radios(); chan++) {
         if (_tree->exists(rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")) {

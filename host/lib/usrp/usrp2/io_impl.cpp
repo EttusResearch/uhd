@@ -23,7 +23,7 @@
 #include "usrp2_regs.hpp"
 #include "fw_common.h"
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/tasks.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
@@ -209,7 +209,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                     fc_mon.update_fc_condition(uhd::ntohx(fc_word32));
                     continue;
                 }
-                //else UHD_MSG(often) << "metadata.event_code " << metadata.event_code << std::endl;
+                //else UHD_LOGGER_DEBUG("USRP2") << "metadata.event_code " << metadata.event_code;
                 async_msg_fifo.push_with_pop_on_full(metadata);
 
                 standard_async_msg_prints(metadata);
@@ -218,7 +218,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
                 //TODO unknown received packet, may want to print error...
             }
         }catch(const std::exception &e){
-            UHD_MSG(error) << "Error in recv pirate loop: " << e.what() << std::endl;
+            UHD_LOGGER_ERROR("USRP2") << "Error in recv pirate loop: " << e.what() ;
         }
     }
 }
@@ -375,10 +375,10 @@ void usrp2_impl::program_stream_dest(
 
     //user has provided an alternative address and port for destination
     if (args.args.has_key("addr") and args.args.has_key("port")){
-        UHD_MSG(status) << boost::format(
-            "Programming streaming destination for custom address.\n"
-            "IPv4 Address: %s, UDP Port: %s\n"
-        ) % args.args["addr"] % args.args["port"] << std::endl;
+        UHD_LOGGER_INFO("USRP2") << boost::format(
+            "Programming streaming destination for custom address. "
+            "IPv4 Address: %s, UDP Port: %s"
+            ) % args.args["addr"] % args.args["port"];
 
         asio::io_service io_service;
         asio::ip::udp::resolver resolver(io_service);
@@ -388,7 +388,7 @@ void usrp2_impl::program_stream_dest(
         stream_ctrl.udp_port = uhd::htonx(uint32_t(endpoint.port()));
 
         for (size_t i = 0; i < 3; i++){
-            UHD_MSG(status) << "ARP attempt " << i << std::endl;
+            UHD_LOGGER_INFO("USRP2") << "ARP attempt " << i;
             managed_send_buffer::sptr send_buff = xport->get_send_buff();
             std::memcpy(send_buff->cast<void *>(), &stream_ctrl, sizeof(stream_ctrl));
             send_buff->commit(sizeof(stream_ctrl));
@@ -398,7 +398,7 @@ void usrp2_impl::program_stream_dest(
             if (recv_buff and recv_buff->size() >= sizeof(uint32_t)){
                 const uint32_t result = uhd::ntohx(recv_buff->cast<const uint32_t *>()[0]);
                 if (result == 0){
-                    UHD_MSG(status) << "Success! " << std::endl;
+                    UHD_LOGGER_INFO("USRP2") << "Success! ";
                     return;
                 }
             }

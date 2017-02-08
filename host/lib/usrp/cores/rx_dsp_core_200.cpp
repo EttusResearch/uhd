@@ -20,7 +20,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/math.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread/thread.hpp> //thread sleep
@@ -195,7 +195,7 @@ public:
 
         if (decim > 1 and hb0 == 0 and hb1 == 0)
         {
-            UHD_MSG(warning) << boost::format(
+            UHD_LOGGER_WARNING("CORES") << boost::format(
                 "The requested decimation is odd; the user should expect CIC rolloff.\n"
                 "Select an even decimation to ensure that a halfband filter is enabled.\n"
                 "decimation = dsp_rate/samp_rate -> %d = (%f MHz)/(%f MHz)\n"

@@ -19,7 +19,7 @@
 #include <uhd/exception.hpp>
 #include <boost/thread/thread.hpp> //sleep
 #include <uhd/utils/soft_register.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 
 using namespace uhd;
 

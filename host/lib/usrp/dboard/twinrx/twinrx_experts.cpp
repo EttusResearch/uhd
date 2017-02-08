@@ -18,6 +18,7 @@
 #include "twinrx_experts.hpp"
 #include "twinrx_gain_tables.hpp"
 #include <uhd/utils/math.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
@@ -481,7 +482,7 @@ void twinrx_ant_gain_expert::resolve()
             (_ch0_preamp2 != _ch1_preamp2) or
             (_ch0_lb_preamp_presel != _ch1_lb_preamp_presel))
         {
-            UHD_MSG(warning) << "incompatible gain settings for antenna sharing. temporarily using Ch0 settings for Ch1.";
+            UHD_LOGGER_WARNING("TWINRX") << "incompatible gain settings for antenna sharing. temporarily using Ch0 settings for Ch1.";
         }
         _ant0_input_atten       = _ch0_input_atten;
         _ant0_preamp1           = _ch0_preamp1;
@@ -499,7 +500,7 @@ void twinrx_ant_gain_expert::resolve()
             (_ch0_preamp2 != _ch1_preamp2) or
             (_ch0_lb_preamp_presel != _ch1_lb_preamp_presel))
         {
-            UHD_MSG(warning) << "incompatible gain settings for antenna sharing. temporarily using Ch0 settings for Ch1.";
+            UHD_LOGGER_WARNING("TWINRX") << "incompatible gain settings for antenna sharing. temporarily using Ch0 settings for Ch1.";
         }
         _ant1_input_atten       = _ch0_input_atten;
         _ant1_preamp1           = _ch0_preamp1;

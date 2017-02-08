@@ -31,7 +31,7 @@
 #include "e300_common.hpp"
 #include "e300_remote_codec_ctrl.hpp"
 
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/paths.hpp>
 
@@ -88,7 +88,7 @@ static void e300_recv_tunnel(
             //step 1 - get the buffer
             managed_recv_buffer::sptr buff = recver->get_recv_buff();
             if (not buff) continue;
-            if (E300_NETWORK_DEBUG) UHD_MSG(status) << name << " got " << buff->size() << std::endl;
+            if (E300_NETWORK_DEBUG) UHD_LOGGER_INFO("E300") << name << " got " << buff->size();
 
             //step 1.5 -- update endpoint
             {
@@ -102,13 +102,13 @@ static void e300_recv_tunnel(
     }
     catch(const std::exception &ex)
     {
-        UHD_MSG(error) << "e300_recv_tunnel exit " << name << " " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_recv_tunnel exit " << name << " " << ex.what();
     }
     catch(...)
     {
-        UHD_MSG(error) << "e300_recv_tunnel exit " << name << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_recv_tunnel exit " << name ;
     }
-    UHD_MSG(status) << "e300_recv_tunnel exit " << name << std::endl;
+    UHD_LOGGER_INFO("E300") << "e300_recv_tunnel exit " << name;
     *running = false;
 }
 
@@ -136,7 +136,7 @@ static void e300_send_tunnel(
             while (not wait_for_recv_ready(recver->native(), 100) and *running){}
             if (not *running) break;
             const size_t num_bytes = recver->receive_from(asio::buffer(buff->cast<void *>(), buff->size()), _rx_endpoint);
-            if (E300_NETWORK_DEBUG) UHD_MSG(status) << name << " got " << num_bytes << std::endl;
+            if (E300_NETWORK_DEBUG) UHD_LOGGER_INFO("E300") << name << " got " << num_bytes;
 
             //step 2.5 -- update endpoint
             {
@@ -150,13 +150,13 @@ static void e300_send_tunnel(
     }
     catch(const std::exception &ex)
     {
-        UHD_MSG(error) << "e300_send_tunnel exit " << name << " " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_send_tunnel exit " << name << " " << ex.what() ;
     }
     catch(...)
     {
-        UHD_MSG(error) << "e300_send_tunnel exit " << name << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_send_tunnel exit " << name ;
     }
-    UHD_MSG(status) << "e300_send_tunnel exit " << name << std::endl;
+    UHD_LOGGER_INFO("E300") << "e300_send_tunnel exit " << name;
     *running = false;
 }
 
@@ -252,7 +252,7 @@ static void e300_codec_ctrl_tunnel(
                 out->bw = _codec_ctrl->set_bw_filter(which_str, in->bw);
                 break;
             default:
-                UHD_MSG(status) << "Got unknown request?!" << std::endl;
+                UHD_LOGGER_INFO("E300") << "Got unknown request?!";
                 //Zero out actions to fail this request on client
                 out->action = uhd::htonx<uint32_t>(0);
             }
@@ -262,13 +262,13 @@ static void e300_codec_ctrl_tunnel(
     }
     catch(const std::exception &ex)
     {
-        UHD_MSG(error) << "e300_ctrl_tunnel exit " << name << " " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_ctrl_tunnel exit " << name << " " << ex.what() ;
     }
     catch(...)
     {
-        UHD_MSG(error) << "e300_ctrl_tunnel exit " << name << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_ctrl_tunnel exit " << name ;
     }
-    UHD_MSG(status) << "e300_ctrl_tunnel exit " << name << std::endl;
+    UHD_LOGGER_INFO("E300") << "e300_ctrl_tunnel exit " << name;
     *running = false;
 }
 
@@ -309,13 +309,13 @@ static void e300_global_regs_tunnel(
     }
     catch(const std::exception &ex)
     {
-        UHD_MSG(error) << "e300_gregs_tunnel exit " << name << " " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_gregs_tunnel exit " << name << " " << ex.what() ;
     }
     catch(...)
     {
-        UHD_MSG(error) << "e300_gregs_tunnel exit " << name << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_gregs_tunnel exit " << name ;
     }
-    UHD_MSG(status) << "e300_gregs_tunnel exit " << name << std::endl;
+    UHD_LOGGER_INFO("E300") << "e300_gregs_tunnel exit " << name;
     *running = false;
 }
 
@@ -353,20 +353,20 @@ static void e300_sensor_tunnel(
                 in->value = uhd::htonx<uint32_t>(
                     sensor_manager->get_ref_lock().to_bool() ? 1 : 0);
             } else
-                UHD_MSG(status) << "Got unknown request?!" << std::endl;
+                UHD_LOGGER_INFO("E300") << "Got unknown request?!";
 
             socket->send_to(asio::buffer(in_buff, sizeof(sensor_transaction_t)), *endpoint);
         }
     }
     catch(const std::exception &ex)
     {
-        UHD_MSG(error) << "e300_sensor_tunnel exit " << name << " " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_sensor_tunnel exit " << name << " " << ex.what() ;
     }
     catch(...)
     {
-        UHD_MSG(error) << "e300_sensor_tunnel exit " << name << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_sensor_tunnel exit " << name ;
     }
-    UHD_MSG(status) << "e300_sensor_tunnel exit " << name << std::endl;
+    UHD_LOGGER_INFO("E300") << "e300_sensor_tunnel exit " << name;
     *running = false;
 }
 
@@ -419,19 +419,19 @@ static void e300_i2c_tunnel(
                 }
 
             } else {
-                UHD_MSG(error) << "e300_i2c_tunnel could not handle message." << std::endl;
+                UHD_LOGGER_ERROR("E300") << "e300_i2c_tunnel could not handle message." ;
             }
         }
     }
     catch(const std::exception &ex)
     {
-        UHD_MSG(error) << "e300_i2c_tunnel exit " << name << " " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_i2c_tunnel exit " << name << " " << ex.what() ;
     }
     catch(...)
     {
-        UHD_MSG(error) << "e300_i2c_tunnel exit " << name << std::endl;
+        UHD_LOGGER_ERROR("E300") << "e300_i2c_tunnel exit " << name ;
     }
-    UHD_MSG(status) << "e300_i2c_tunnel exit " << name << std::endl;
+    UHD_LOGGER_INFO("E300") << "e300_i2c_tunnel exit " << name;
     *running = false;
 }
 
@@ -491,7 +491,7 @@ void network_server_impl::_run_server(
     //boost::shared_ptr<asio::ip::udp::acceptor> acceptor(new asio::ip::udp::acceptor(io_service, endpoint));
     while (not boost::this_thread::interruption_requested())
     {
-        UHD_MSG(status) << "e300 run server on port " << port << " for " << what << std::endl;
+        UHD_LOGGER_INFO("E300") << "e300 run server on port " << port << " for " << what;
         try
         {
             //while (not wait_for_recv_ready(acceptor->native(), 100))
@@ -501,7 +501,7 @@ void network_server_impl::_run_server(
             boost::shared_ptr<asio::ip::udp::socket> socket;
             socket.reset(new asio::ip::udp::socket(io_service, endpoint));
             //acceptor->accept(*socket);
-            UHD_MSG(status) << "e300 socket accept on port " << port << " for " << what << std::endl;
+            UHD_LOGGER_INFO("E300") << "e300 socket accept on port " << port << " for " << what;
             //asio::ip::udp::no_delay option(true);
             //socket->set_option(option);
             boost::thread_group tg;
@@ -586,8 +586,8 @@ network_server_impl::network_server_impl(const uhd::device_addr_t &device_addr)
                 break;
             case e300_eeprom_manager::UNKNOWN:
             default:
-                UHD_MSG(warning) << "Unknown motherboard type, loading e300 image."
-                                 << std::endl;
+                UHD_LOGGER_WARNING("E300") << "Unknown motherboard type, loading e300 image."
+                                 ;
                 fpga_image = find_image_path(E300_FPGA_FILE_NAME);
                 break;
             }

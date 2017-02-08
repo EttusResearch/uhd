@@ -44,7 +44,7 @@ public:
     UHD_INLINE void add_tx_fifo(uint32_t index) {
         if (_tx_stream_fifo_indices.find(index) != _tx_stream_fifo_indices.end()) {
             if (_tx_stream_count == 0) {
-                UHD_LOG << "NI-RIO RX FIFO Transfer Check Quirk Enabled.";
+                UHD_LOGGER_DEBUG("NIRIO") << "NI-RIO RX FIFO Transfer Check Quirk Enabled.";
             }
             _tx_stream_count++;
         }
@@ -54,7 +54,7 @@ public:
         if (_tx_stream_fifo_indices.find(index) != _tx_stream_fifo_indices.end()) {
             _tx_stream_count--;
             if (_tx_stream_count == 0) {
-                UHD_LOG << "NI-RIO RX FIFO Transfer Check Quirk Disabled.";
+                UHD_LOGGER_DEBUG("NIRIO") << "NI-RIO RX FIFO Transfer Check Quirk Disabled.";
             }
         }
     }

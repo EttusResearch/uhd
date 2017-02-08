@@ -81,7 +81,7 @@ static UHD_INLINE size_t ZF_STREAM_OFF(const size_t which)
 #include <fcntl.h> //open, close
 #include <poll.h> //poll
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp> //sleep
 #include <uhd/types/time_spec.hpp> //timeout
@@ -202,9 +202,9 @@ public:
         _index(0),
         _waiter(waiter)
     {
-        //UHD_MSG(status) << boost::format("phys 0x%x") % addrs.phys << std::endl;
-        //UHD_MSG(status) << boost::format("data 0x%x") % addrs.data << std::endl;
-        //UHD_MSG(status) << boost::format("ctrl 0x%x") % addrs.ctrl << std::endl;
+        //UHD_LOGGER_INFO("E300") << boost::format("phys 0x%x") % addrs.phys ;
+        //UHD_LOGGER_INFO("E300") << boost::format("data 0x%x") % addrs.data ;
+        //UHD_LOGGER_INFO("E300") << boost::format("ctrl 0x%x") % addrs.ctrl ;
 
         const uint32_t sig = zf_peek32(_addrs.ctrl + ARBITER_RD_SIG);
         UHD_ASSERT_THROW((sig >> 16) == 0xACE0);
@@ -341,7 +341,7 @@ public:
     virtual ~e300_fifo_interface_impl(void)
     {
         delete _waiter;
-        UHD_LOG << "cleanup: munmap" << std::endl;
+        UHD_LOGGER_DEBUG("E300")<< "cleanup: munmap" ;
         ::munmap(_buff, _config.ctrl_length + _config.buff_length);
         ::close(_fd);
     }

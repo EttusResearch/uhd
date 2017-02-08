@@ -259,7 +259,7 @@ void b100_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts){
  **********************************************************************/
 void b100_codec_ctrl_impl::send_reg(uint8_t addr){
     uint32_t reg = _ad9862_regs.get_write_reg(addr);
-    UHD_LOGV(rarely) << "codec control write reg: " << std::hex << reg << std::endl;
+    UHD_LOGGER_DEBUG("B100") << "codec control write reg: " << std::hex << reg ;
     _iface->transact_spi(
         B100_SPI_SS_AD9862,
         spi_config_t::EDGE_RISE,
@@ -269,13 +269,13 @@ void b100_codec_ctrl_impl::send_reg(uint8_t addr){
 
 void b100_codec_ctrl_impl::recv_reg(uint8_t addr){
     uint32_t reg = _ad9862_regs.get_read_reg(addr);
-    UHD_LOGV(rarely) << "codec control read reg: " << std::hex << reg << std::endl;
+    UHD_LOGGER_DEBUG("B100") << "codec control read reg: " << std::hex << reg ;
     uint32_t ret = _iface->transact_spi(
         B100_SPI_SS_AD9862,
         spi_config_t::EDGE_RISE,
         reg, 16, true /*rb*/
     );
-    UHD_LOGV(rarely) << "codec control read ret: " << std::hex << uint16_t(ret & 0xFF) << std::endl;
+    UHD_LOGGER_DEBUG("B100") << "codec control read ret: " << std::hex << uint16_t(ret & 0xFF) ;
     _ad9862_regs.set_reg(addr, uint8_t(ret&0xff));
 }
 

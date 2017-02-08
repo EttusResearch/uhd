@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <uhd/transport/nirio/nirio_fifo.h>
 #include <uhd/transport/buffer_pool.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/atomic.hpp>
 #include <boost/format.hpp>
@@ -131,11 +131,11 @@ public:
         _xport_params(xport_params),
         _next_recv_buff_index(0), _next_send_buff_index(0)
     {
-        UHD_LOG << boost::format("Creating PCIe transport for channel %d") % instance << std::endl;
-        UHD_LOG << boost::format("nirio zero-copy RX transport configured with frame size = %u, #frames = %u, buffer size = %u\n")
+        UHD_LOGGER_DEBUG("NIRIO") << boost::format("Creating PCIe transport for channel %d") % instance ;
+        UHD_LOGGER_DEBUG("NIRIO") << boost::format("nirio zero-copy RX transport configured with frame size = %u, #frames = %u, buffer size = %u\n")
                     % _xport_params.recv_frame_size % _xport_params.num_recv_frames %
                     (_xport_params.recv_frame_size * _xport_params.num_recv_frames);
-        UHD_LOG << boost::format("nirio zero-copy TX transport configured with frame size = %u, #frames = %u, buffer size = %u\n")
+        UHD_LOGGER_DEBUG("NIRIO") << boost::format("nirio zero-copy TX transport configured with frame size = %u, #frames = %u, buffer size = %u\n")
                     % _xport_params.send_frame_size % _xport_params.num_send_frames % (_xport_params.send_frame_size * _xport_params.num_send_frames);
 
         _recv_buffer_pool = buffer_pool::make(_xport_params.num_recv_frames, _xport_params.recv_frame_size);

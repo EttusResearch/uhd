@@ -21,7 +21,7 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/platform.hpp>
 #include <uhd/utils/paths.hpp>
 #include <boost/format.hpp>
@@ -80,8 +80,8 @@ n230_resource_manager::n230_resource_manager(
     _safe_mode(safe_mode),
     _last_host_enpoint(0)
 {
-    if (_safe_mode) UHD_MSG(warning) << "Initializing device in safe mode\n";
-    UHD_MSG(status) << "Setup basic communication...\n";
+    if (_safe_mode) UHD_LOGGER_WARNING("N230") << "Initializing device in safe mode\n";
+    UHD_LOGGER_INFO("N230") << "Setup basic communication...";
 
     //Discover ethernet interfaces
     bool dual_eth_expected = (ip_addrs.size() > 1);
@@ -145,7 +145,7 @@ n230_resource_manager::n230_resource_manager(
     }
     _check_fpga_compat();
 
-    UHD_MSG(status) << boost::format("Version signatures... Firmware:%s FPGA:%s...\n")
+    UHD_LOGGER_INFO("N230") << boost::format("Version signatures... Firmware:%s FPGA:%s...")
         % _fw_version.get_hash_str() % _fpga_version.get_hash_str();
 
     _core_radio_ctrl_reg.initialize(*_core_ctrl, true /*flush*/);
@@ -160,7 +160,7 @@ n230_resource_manager::n230_resource_manager(
     }
 
     //Create AD9361 interface
-    UHD_MSG(status) << "Initializing CODEC...\n";
+    UHD_LOGGER_INFO("N230") << "Initializing CODEC...";
     _codec_ctrl = ad9361_ctrl::make_spi(
         boost::make_shared<n230_ad9361_client_t>(), _core_spi_ctrl, fpga::AD9361_SPI_SLAVE_NUM);
     if (_codec_ctrl.get() == NULL) {
@@ -210,7 +210,7 @@ n230_resource_manager::n230_resource_manager(
 
     //Create GPSDO interface
     if (_core_status_reg.read(fpga::core_status_reg_t::GPSDO_STATUS) != fpga::GPSDO_ST_ABSENT) {
-        UHD_MSG(status) << "Detecting GPSDO.... " << std::flush;
+        UHD_LOGGER_INFO("N230") << "Detecting GPSDO.... ";
         try {
             const sid_t gps_uart_sid = _generate_sid(GPS_UART, _get_conn(PRI_ETH).type);
             transport::zero_copy_if::sptr gps_uart_xport =
@@ -221,7 +221,7 @@ n230_resource_manager::n230_resource_manager(
             boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for a little propagation
             _gps_ctrl = gps_ctrl::make(_gps_uart);
         } catch(std::exception &e) {
-            UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
+            UHD_LOGGER_ERROR("N230") << "An error occurred making GPSDO control: " << e.what() ;
         }
         if (not is_gpsdo_present()) {
             _core_ctrl->poke32(fpga::sr_addr(fpga::SR_CORE_GPSDO_ST), fpga::GPSDO_ST_ABSENT);
@@ -488,7 +488,7 @@ bool n230_resource_manager::_radio_data_loopback_self_test(wb_iface::sptr iface)
         const uint32_t rb_rx = uint32_t(rb_word64 & 0xffffffff);
         test_fail = word32 != rb_tx or word32 != rb_rx;
         if (test_fail){
-            UHD_MSG(fastpath) << boost::format("mismatch (exp:%x, got:%x and %x)... ") % word32 % rb_tx % rb_rx;
+            UHD_LOG_FASTPATH(boost::format("mismatch (exp:%x, got:%x and %x)... ") % word32 % rb_tx % rb_rx)
             break; //exit loop on any failure
         }
     }

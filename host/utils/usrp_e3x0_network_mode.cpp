@@ -19,7 +19,6 @@
 #include <uhd/device.hpp>
 #include <uhd/exception.hpp>
 
-#include <uhd/utils/msg.hpp>
 #include <uhd/transport/if_addrs.hpp>
 
 #include <boost/program_options.hpp>
@@ -69,11 +68,11 @@ int main(int argc, char *argv[])
         uhd::usrp::e300::network_server::sptr server = uhd::usrp::e300::network_server::make(args);
         server->run();
     } catch (uhd::assertion_error &e) {
-        UHD_MSG(error) << "This executable is supposed to run on the device, not on the host." << std::endl
+        std::cout << "This executable is supposed to run on the device, not on the host." << std::endl
                        << "Please refer to the manual section on operating your e3x0 device in network mode." << std::endl;
         return EXIT_FAILURE;
     } catch (uhd::runtime_error &e) {
-        UHD_MSG(error) << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

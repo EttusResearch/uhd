@@ -17,7 +17,7 @@
 
 #include "n230_clk_pps_ctrl.hpp"
 
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <stdint.h>
 #include <boost/format.hpp>
@@ -55,9 +55,9 @@ public:
 
     double set_tick_rate(const double rate)
     {
-        UHD_MSG(status) << "Configuring a tick rate of " << rate/1e6 << " MHz... ";
+        UHD_LOGGER_INFO("N230") << "Configuring a tick rate of " << rate/1e6 << " MHz... ";
         _tick_rate = _codec_ctrl->set_clock_rate(rate);
-        UHD_MSG(status) << "got " << _tick_rate/1e6 << " MHz\n";
+        UHD_LOGGER_INFO("N230") << "got " << _tick_rate/1e6 << " MHz\n";
 
         for(time_core_3000::sptr& time_core:  _time_cores) {
             time_core->set_tick_rate(_tick_rate);

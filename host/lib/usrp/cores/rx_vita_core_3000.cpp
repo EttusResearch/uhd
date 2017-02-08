@@ -16,7 +16,7 @@
 //
 
 #include "rx_vita_core_3000.hpp"
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -96,7 +96,7 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
     {
         if (not _is_setup)
         {
-            //UHD_MSG(warning) << "rx vita core 3000 issue stream command - not setup yet!";
+            //UHD_LOGGER_WARNING("CORES") << "rx vita core 3000 issue stream command - not setup yet!";
             return;
         }
         UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);

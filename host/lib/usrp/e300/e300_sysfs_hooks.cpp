@@ -32,7 +32,7 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 
 static const std::string E300_AXI_FPGA_SYSFS = "40000000.axi-fpga";

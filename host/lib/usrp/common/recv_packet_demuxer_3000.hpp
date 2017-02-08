@@ -22,7 +22,7 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <stdint.h>
 #include <boost/thread.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/atomic.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/byteswap.hpp>
@@ -103,9 +103,9 @@ namespace uhd{ namespace usrp{
                     if (new_sid != sid)
                     {
                         boost::mutex::scoped_lock l(mutex);
-                        if (_queues.count(new_sid) == 0) UHD_MSG(error)
+                        if (_queues.count(new_sid) == 0) UHD_LOGGER_ERROR("STREAMER")
                             << "recv packet demuxer unexpected sid 0x" << std::hex << new_sid << std::dec
-                            << std::endl;
+                            ;
                         else _queues[new_sid].push(buff);
                         buff.reset();
                     }

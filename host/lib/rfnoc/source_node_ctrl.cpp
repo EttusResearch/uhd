@@ -16,7 +16,7 @@
 //
 
 #include "utils.hpp"
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/source_node_ctrl.hpp>
 #include <uhd/rfnoc/sink_node_ctrl.hpp>
 
@@ -35,7 +35,7 @@ size_t source_node_ctrl::connect_downstream(
 
 void source_node_ctrl::set_rx_streamer(bool active, const size_t port)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "source_node_ctrl::set_rx_streamer() " << port << " -> " << active << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "source_node_ctrl::set_rx_streamer() " << port << " -> " << active ;
 
     /* This will enable all upstream blocks:
     for(const node_ctrl_base::node_map_pair_t upstream_node:  list_upstream_nodes()) {

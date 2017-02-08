@@ -21,7 +21,7 @@
 #define INCLUDED_LIBUHD_NODE_CTRL_BASE_IPP
 
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <boost/shared_ptr.hpp>
 #include <vector>
 

@@ -33,7 +33,7 @@
 #include "x300_impl.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/platform.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/thread.hpp>
 

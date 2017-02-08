@@ -18,7 +18,7 @@
 #include <uhd/transport/zero_copy_recv_offload.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/buffer_pool.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/format.hpp>
@@ -47,7 +47,7 @@ public:
         _inbox(transport->get_num_recv_frames()),
         _recv_done(false)
     {
-        UHD_LOG << "Created threaded transport" << std::endl;
+        UHD_LOGGER_DEBUG("XPORT") << "Created threaded transport" ;
 
         // Create the receive and send threads to offload
         // the system calls onto other threads

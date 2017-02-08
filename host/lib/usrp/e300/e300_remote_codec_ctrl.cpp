@@ -242,7 +242,7 @@ public:
     //! Write back a filter
     void set_filter(const std::string &, const std::string &, const filter_info_base::sptr)
     {
-        UHD_MSG(warning) << "Attempting to set filter on E300 in network mode." << std::endl;
+        UHD_LOGGER_WARNING("E300") << "Attempting to set filter on E300 in network mode." ;
     }
 
     void output_digital_test_tone(UHD_UNUSED(bool enb))

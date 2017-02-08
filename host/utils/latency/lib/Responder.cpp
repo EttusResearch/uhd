@@ -23,51 +23,33 @@
 #include <complex>
 #include <csignal>
 #include <cmath>
+#include <sstream>
 
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/filesystem.hpp>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/property_tree.hpp>
 
 const std::string _eth_file("eths_info.txt");
 
-// UHD screen handler during initialization. Error messages will be printed to log file
-static std::string uhd_error_msgs;
-static void screen_handler(uhd::msg::type_t type, const std::string& msg)
-{
-    printw( msg.c_str() );
-    //printw("\n");
-    refresh();
-    if(type == uhd::msg::error){
-        uhd_error_msgs.append(msg);
-        uhd_error_msgs.append("\n");
-    }
-}
 
-// UHD screen handler during test run. Error messages will be printed to log file
-static int s_late_count = 0;
-static Responder* s_responder; // needed here to have a way to inject uhd msg into Responder.
-// function is only called by UHD, if s_responder points to a valid instance.
-// this instance sets the function to be the output callback for UHD.
-static void _late_handler(uhd::msg::type_t type, const std::string& msg)
-{
-    s_responder->print_uhd_late_handler(type, msg);
-}
+// Redirect output to stderr
+struct cerr_redirect {
+    cerr_redirect( std::streambuf * new_buffer ) 
+        : old( std::cerr.rdbuf( new_buffer ) )
+    { }
 
-void Responder::print_uhd_late_handler(uhd::msg::type_t type, const std::string& msg)
-{
-    if (msg == "L") // This is just a test
-    {
-        ++s_late_count;
+    ~cerr_redirect( ) {
+        std::cerr.rdbuf( old );
     }
-    if(type == uhd::msg::error){
-        uhd_error_msgs.append(msg);
-        uhd_error_msgs.append("\n");
-        // Only print error messages. There will be very many 'L's due to the way the test works.
-        print_msg(msg);
-    }
-}
+
+private:
+    std::streambuf * old;
+};
+
+
 
 // Catch keyboard interrupts for clean manual abort
 static bool s_stop_signal_called = false;
@@ -132,7 +114,9 @@ Responder::Responder( Options& opt)
     _last_overrun_count(0)
 {
     time( &_dbginfo.start_time ); // for debugging
-    s_responder = this;
+
+    // Disable logging to console
+    uhd::log::set_console_level(uhd::log::off);
 
     if (uhd::set_thread_priority_safe(_opt.rt_priority, _opt.realtime) == false) // try to set realtime scheduling
     {
@@ -141,7 +125,6 @@ Responder::Responder( Options& opt)
 
     _return_code = calculate_dependent_values();
 
-    uhd::msg::register_handler(&screen_handler); // used to print USRP initialization status
 
     // From this point on, everything is written to a ncurses window!
     create_ncurses_window();
@@ -180,7 +163,9 @@ Responder::Responder( Options& opt)
     }
 
     // set up handlers for test run
-    uhd::msg::register_handler(&_late_handler); // capture UHD output.
+    // uhd::msg::register_handler(&_late_handler); // capture UHD output.
+
+    cerr_redirect(_ss_cerr.rdbuf());
     register_stop_signal_handler();
 }
 
@@ -1211,11 +1196,6 @@ Responder::write_log_file()
 
             write_debug_info(logs);
 
-            if(uhd_error_msgs.length() > 0)
-            {
-                logs << endl << "%% UHD ERROR MESSAGES %%" << endl;
-                logs << uhd_error_msgs;
-            }
         }
     }
     catch(...)

@@ -16,7 +16,7 @@
 //
 
 #include <uhd/utils/thread_priority.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -26,7 +26,7 @@ bool uhd::set_thread_priority_safe(float priority, bool realtime){
         set_thread_priority(priority, realtime);
         return true;
     }catch(const std::exception &e){
-        UHD_MSG(warning) << boost::format(
+        UHD_LOGGER_WARNING("UHD") << boost::format(
             "Unable to set the thread priority. Performance may be negatively affected.\n"
             "Please see the general application notes in the manual for instructions.\n"
             "%s\n"

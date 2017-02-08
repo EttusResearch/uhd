@@ -21,7 +21,6 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/msg.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <iostream>
@@ -303,9 +302,9 @@ static uhd::usrp::multi_usrp::sptr setup_usrp_for_cal(std::string &args, std::st
         usrp->set_tx_subdev_spec(subdev);
         usrp->set_rx_subdev_spec(subdev);
     }
-    UHD_MSG(status) << "Running calibration for " << usrp->get_tx_subdev_name(0) << std::endl;
+    std::cout << "Running calibration for " << usrp->get_tx_subdev_name(0);
     serial = get_serial(usrp, "tx");
-    UHD_MSG(status) << "Daughterboard serial: " << serial << std::endl;
+    std::cout << "Daughterboard serial: " << serial;
 
     //set the antennas to cal
     if (not uhd::has(usrp->get_rx_antennas(), "CAL") or not uhd::has(usrp->get_tx_antennas(), "CAL"))

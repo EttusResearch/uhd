@@ -20,7 +20,7 @@
 
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/thread.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>

@@ -17,7 +17,7 @@
 
 #include "dsp_core_utils.hpp"
 #include <uhd/rfnoc/duc_block_ctrl.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/types/ranges.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -132,7 +132,7 @@ public:
             const uhd::stream_cmd_t &stream_cmd_,
             const size_t chan
     ) {
-        UHD_RFNOC_BLOCK_TRACE() << "duc_block_ctrl_base::issue_stream_cmd()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "duc_block_ctrl_base::issue_stream_cmd()" ;
 
         uhd::stream_cmd_t stream_cmd = stream_cmd_;
         if (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE or
@@ -217,7 +217,7 @@ private:
         sr_write("M", std::pow(2.0, double(hb_enable)) * (interp & 0xff), chan);
 
         if (interp > 1 and hb_enable == 0) {
-            UHD_MSG(warning) << boost::format(
+            UHD_LOGGER_WARNING("RFNOC") << boost::format(
                 "The requested interpolation is odd; the user should expect passband CIC rolloff.\n"
                 "Select an even interpolation to ensure that a halfband filter is enabled.\n"
                 "interpolation = dsp_rate/samp_rate -> %d = (%f MHz)/(%f MHz)\n"

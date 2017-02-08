@@ -277,9 +277,9 @@ void usrp1_codec_ctrl_impl::send_reg(uint8_t addr)
 {
     uint32_t reg = _ad9862_regs.get_write_reg(addr);
 
-    UHD_LOGV(often)
+    UHD_LOGGER_DEBUG("USRP1")
         << "codec control write reg: 0x"
-        << std::setw(8) << std::hex << reg << std::endl
+        << std::setw(8) << std::hex << reg 
     ;
     _iface->write_spi(_spi_slave,
                          spi_config_t::EDGE_RISE, reg, 16);
@@ -289,17 +289,17 @@ void usrp1_codec_ctrl_impl::recv_reg(uint8_t addr)
 {
     uint32_t reg = _ad9862_regs.get_read_reg(addr);
 
-    UHD_LOGV(often)
+    UHD_LOGGER_DEBUG("USRP1")
         << "codec control read reg: 0x"
-        << std::setw(8) << std::hex << reg << std::endl
+        << std::setw(8) << std::hex << reg 
     ;
 
     uint32_t ret = _iface->read_spi(_spi_slave,
                                         spi_config_t::EDGE_RISE, reg, 16);
 
-    UHD_LOGV(often)
+    UHD_LOGGER_DEBUG("USRP1")
         << "codec control read ret: 0x"
-        << std::setw(8) << std::hex << ret << std::endl
+        << std::setw(8) << std::hex << ret 
     ;
 
     _ad9862_regs.set_reg(addr, uint16_t(ret));
@@ -389,13 +389,13 @@ void usrp1_codec_ctrl_impl::set_duc_freq(double freq, double rate)
     double coarse_freq = coarse_tune(codec_rate, freq);
     double fine_freq = fine_tune(codec_rate / 4, freq - coarse_freq);
 
-    UHD_LOG
-        << "ad9862 tuning result:" << std::endl
-        << "   requested:   " << freq << std::endl
-        << "   actual:      " << coarse_freq + fine_freq << std::endl
-        << "   coarse freq: " << coarse_freq << std::endl
-        << "   fine freq:   " << fine_freq << std::endl
-        << "   codec rate:  " << codec_rate << std::endl
+    UHD_LOGGER_DEBUG("USRP1")
+        << "ad9862 tuning result:" 
+        << "   requested:   " << freq 
+        << "   actual:      " << coarse_freq + fine_freq 
+        << "   coarse freq: " << coarse_freq 
+        << "   fine freq:   " << fine_freq 
+        << "   codec rate:  " << codec_rate 
     ;
 
     this->send_reg(20);

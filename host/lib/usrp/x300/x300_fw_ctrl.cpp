@@ -19,7 +19,7 @@
 #include "x300_fw_common.h"
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
@@ -61,7 +61,7 @@ public:
             {
                 std::string error_msg = str(boost::format(
                     "x300 fw communication failure #%u\n%s") % i % ex.what());
-                if (errors) UHD_MSG(error) << error_msg << std::endl;
+                if (errors) UHD_LOGGER_ERROR("X300") << error_msg ;
                 if (i == num_retries) throw uhd::io_error(error_msg);
             }
         }
@@ -81,7 +81,7 @@ public:
             {
                 std::string error_msg = str(boost::format(
                     "x300 fw communication failure #%u\n%s") % i % ex.what());
-                if (errors) UHD_MSG(error) << error_msg << std::endl;
+                if (errors) UHD_LOGGER_ERROR("X300") << error_msg ;
                 if (i == num_retries) throw uhd::io_error(error_msg);
             }
         }

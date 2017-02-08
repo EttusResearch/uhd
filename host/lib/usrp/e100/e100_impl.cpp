@@ -18,7 +18,7 @@
 #include "apply_corrections.hpp"
 #include "e100_impl.hpp"
 #include "e100_regs.hpp"
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/paths.hpp>
@@ -140,7 +140,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         e100_fpga_image = find_image_path(device_addr.get("fpga", default_fpga_file_name));
     }
     catch(...){
-        UHD_MSG(error) << boost::format("Could not find FPGA image. %s\n") % print_utility_error("uhd_images_downloader.py");
+        UHD_LOGGER_ERROR("E100") << boost::format("Could not find FPGA image. %s") % print_utility_error("uhd_images_downloader.py");
         throw;
     }
     e100_load_fpga(e100_fpga_image);
@@ -151,10 +151,10 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     bool dboard_clocks_diff = true;
     if      (mb_eeprom.get("revision", "0") == "3") dboard_clocks_diff = false;
     else if (mb_eeprom.get("revision", "0") == "4") dboard_clocks_diff = true;
-    else UHD_MSG(warning)
+    else UHD_LOGGER_WARNING("E100")
         << "Unknown E1XX revision number!\n"
         << "defaulting to differential dboard clocks to be safe.\n"
-        << std::endl;
+        ;
     const double master_clock_rate = device_addr.cast<double>("master_clock_rate", E100_DEFAULT_CLOCK_RATE);
     _aux_spi_iface = e100_ctrl::make_aux_spi_iface();
     _clock_ctrl = e100_clock_ctrl::make(_aux_spi_iface, master_clock_rate, dboard_clocks_diff);
@@ -179,7 +179,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
 
     //Perform wishbone readback tests, these tests also write the hash
     bool test_fail = false;
-    UHD_MSG(status) << "Performing control readback test... " << std::flush;
+    UHD_LOGGER_INFO("E100") << "Performing control readback test... ";
     size_t hash = time(NULL);
     for (size_t i = 0; i < 100; i++){
         boost::hash_combine(hash, i);
@@ -187,12 +187,12 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         test_fail = _fifo_ctrl->peek32(REG_RB_CONFIG0) != uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
-    UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
+    UHD_LOGGER_INFO("E100") << "Control readback test " << ((test_fail)? "failed" : "passed");
 
-    if (test_fail) UHD_MSG(error) << boost::format(
-        "The FPGA is either clocked improperly\n"
-        "or the FPGA build is not compatible.\n"
-        "Subsequent errors may follow...\n"
+    if (test_fail) UHD_LOGGER_ERROR("E100") << boost::format(
+        "The FPGA is either clocked improperly "
+        "or the FPGA build is not compatible. "
+        "Subsequent errors may follow..."
     );
 
     //check that the compatibility is correct
@@ -260,12 +260,12 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     static const fs::path GPSDO_VOLATILE_PATH("/media/ram/e100_internal_gpsdo.cache");
     if (not fs::exists(GPSDO_VOLATILE_PATH))
     {
-        UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
+        UHD_LOGGER_INFO("E100") << "Detecting internal GPSDO.... ";
         try{
             _gps = gps_ctrl::make(e100_ctrl::make_gps_uart_iface(E100_UART_DEV_NODE));
         }
         catch(std::exception &e){
-            UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
+            UHD_LOGGER_ERROR("E100") << "An error occurred making GPSDO control: " << e.what();
         }
         if (_gps and _gps->gps_detected())
         {
@@ -475,10 +475,10 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     //GPS installed: use external ref, time, and init time spec
     if (_gps and _gps->gps_detected()){
         _time64->enable_gpsdo();
-        UHD_MSG(status) << "Setting references to the internal GPSDO" << std::endl;
+        UHD_LOGGER_INFO("E100") << "Setting references to the internal GPSDO";
         _tree->access<std::string>(mb_path / "time_source/value").set("gpsdo");
         _tree->access<std::string>(mb_path / "clock_source/value").set("gpsdo");
-        UHD_MSG(status) << "Initializing time to the internal GPSDO" << std::endl;
+        UHD_LOGGER_INFO("E100") << "Initializing time to the internal GPSDO";
         _time64->set_time_next_pps(time_spec_t(time_t(_gps->get_sensor("gps_time").to_int()+1)));
     }
 

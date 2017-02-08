@@ -18,7 +18,7 @@
 #include <uhd/error.h>
 #include <uhd/utils/thread_priority.h>
 #include <uhd/utils/thread_priority.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <iostream>

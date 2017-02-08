@@ -335,7 +335,7 @@ static void handle_tx_async_msgs(boost::shared_ptr<e300_tx_fc_cache_t> fc_cache,
     }
     catch(const std::exception &ex)
     {
-        UHD_MSG(error) << "Error parsing async message packet: " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("E300") << "Error parsing async message packet: " << ex.what() ;
         return;
     }
 
@@ -482,9 +482,9 @@ rx_streamer::sptr e300_impl::get_rx_stream(const uhd::stream_args_t &args_)
             E300_RX_SW_BUFF_FULLNESS);
         const size_t fc_handle_window = std::max<size_t>(1, fc_window / E300_RX_FC_REQUEST_FREQ);
 
-        UHD_LOG << "RX Flow Control Window = " << fc_window
+        UHD_LOGGER_DEBUG("E300") << "RX Flow Control Window = " << fc_window
                 << ", RX Flow Control Handler Window = "
-                << fc_handle_window << std::endl;
+                << fc_handle_window ;
 
         perif.framer->configure_flow_control(fc_window);
         boost::shared_ptr<e300_rx_fc_cache_t> fc_cache(new e300_rx_fc_cache_t());
@@ -590,9 +590,9 @@ tx_streamer::sptr e300_impl::get_tx_stream(const uhd::stream_args_t &args_)
         const size_t fc_window = data_xports.send->get_num_send_frames();
         const size_t fc_handle_window = std::max<size_t>(1, fc_window/E300_TX_FC_RESPONSE_FREQ);
 
-        UHD_LOG << "TX Flow Control Window = " << fc_window
+        UHD_LOGGER_DEBUG("E300") << "TX Flow Control Window = " << fc_window
                 << ", TX Flow Control Handler Window = "
-                << fc_handle_window << std::endl;
+                << fc_handle_window ;
 
         perif.deframer->configure_flow_control(0/*cycs off*/, fc_handle_window/*pkts*/);
         boost::shared_ptr<e300_tx_fc_cache_t> fc_cache(new e300_tx_fc_cache_t());

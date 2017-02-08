@@ -303,9 +303,8 @@ public:
             //be close to what the client requested.
         }
 
-        UHD_LOGV(often)
-            << boost::format("x300_clock_ctrl::set_clock_delay: Which=%d, Requested=%f, Digital Taps=%d, Half Shift=%d, Analog Delay=%d (%s), Coerced Delay=%fns"
-            ) % which % delay_ns % ddly_value % (half_shift_en?"ON":"OFF") % ((int)adly_value) % (adly_en?"ON":"OFF") % coerced_delay << std::endl;
+        UHD_LOG_DEBUG("X300", boost::format("x300_clock_ctrl::set_clock_delay: Which=%d, Requested=%f, Digital Taps=%d, Half Shift=%d, Analog Delay=%d (%s), Coerced Delay=%fns"
+                          ) % which % delay_ns % ddly_value % (half_shift_en?"ON":"OFF") % ((int)adly_value) % (adly_en?"ON":"OFF") % coerced_delay)
 
         //Apply settings
         switch (which)

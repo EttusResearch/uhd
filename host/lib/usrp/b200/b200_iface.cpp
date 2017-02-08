@@ -19,7 +19,7 @@
 
 #include "../../utils/ihex.hpp"
 #include <uhd/config.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/functional/hash.hpp>
@@ -212,7 +212,7 @@ public:
     void load_firmware(const std::string filestring, UHD_UNUSED(bool force) = false)
     {
         if (load_img_msg)
-            UHD_MSG(status) << "Loading firmware image: "
+            UHD_LOGGER_INFO("B200") << "Loading firmware image: "
                             << filestring << "..." << std::flush;
 
         ihex_reader file_reader(filestring);
@@ -227,7 +227,7 @@ public:
             throw uhd::io_error(str(boost::format("Could not load firmware: \n%s") % e.what()));
         }
 
-        UHD_MSG(status) << std::endl;
+        UHD_LOGGER_INFO("B200") ;
 
         //TODO
         //usrp_set_firmware_hash(hash); //set hash before reset
@@ -446,7 +446,7 @@ public:
             wait_count++;
         } while(fx3_state != FX3_STATE_FPGA_READY);
 
-        if (load_img_msg) UHD_MSG(status) << "Loading FPGA image: " \
+        if (load_img_msg) UHD_LOGGER_INFO("B200") << "Loading FPGA image: " \
             << filestring << "..." << std::flush;
 
         bytes_to_xfer = 1;
@@ -487,13 +487,13 @@ public:
 
             if (load_img_msg)
             {
-                if (bytes_sent == 0) UHD_MSG(status) << "  0%" << std::flush;
+                if (bytes_sent == 0) UHD_LOGGER_INFO("B200") << "  0%" << std::flush;
                 const size_t percent_before = size_t((bytes_sent*100)/file_size);
                 bytes_sent += transfer_count;
                 const size_t percent_after = size_t((bytes_sent*100)/file_size);
                 if (percent_before != percent_after)
                 {
-                    UHD_MSG(status) << "\b\b\b\b" << std::setw(3) << percent_after << "%" << std::flush;
+                    UHD_LOGGER_INFO("B200") << "\b\b\b\b" << std::setw(3) << percent_after << "%" << std::flush;
                 }
             }
         }
@@ -516,7 +516,7 @@ public:
         usrp_set_fpga_hash(hash);
 
         if (load_img_msg)
-            UHD_MSG(status) << "\b\b\b\b done" << std::endl;
+            UHD_LOGGER_INFO("B200") << "\b\b\b\b done" ;
 
         return 0;
     }

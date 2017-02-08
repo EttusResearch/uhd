@@ -22,7 +22,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 
 namespace uhd{ namespace usrp{
 
@@ -55,14 +55,14 @@ namespace uhd{ namespace usrp{
         if (metadata.event_code &
             ( async_metadata_t::EVENT_CODE_UNDERFLOW
             | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
-        ) UHD_MSG(fastpath) << "U";
+            ) UHD_LOG_FASTPATH("U")
         else if (metadata.event_code &
             ( async_metadata_t::EVENT_CODE_SEQ_ERROR
             | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
-        ) UHD_MSG(fastpath) << "S";
+            ) UHD_LOG_FASTPATH("S")
         else if (metadata.event_code &
             async_metadata_t::EVENT_CODE_TIME_ERROR
-        ) UHD_MSG(fastpath) << "L";
+            ) UHD_LOG_FASTPATH("L")
     }
 
 

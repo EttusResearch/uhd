@@ -20,7 +20,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <stdint.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_array.hpp>
@@ -263,7 +263,7 @@ namespace uhd{
         {
             std::size_t num_taps = taps.size();
             if(num_taps < this->_max_num_taps){
-                UHD_MSG(warning) << "digital_filter_fir::set_taps not enough coefficients. Appending zeros";
+                UHD_LOGGER_WARNING("FILTERS") << "digital_filter_fir::set_taps not enough coefficients. Appending zeros";
                 std::vector<tap_t> coeffs;
                 for (size_t i = 0; i < this->_max_num_taps; i++)
                 {

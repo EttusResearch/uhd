@@ -35,7 +35,6 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <csignal>
-#include <uhd/utils/msg.hpp>
 
 namespace po = boost::program_options;
 

@@ -305,6 +305,7 @@ MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 # Note: RFNoC never gets fully disabled, but the public APIs do
 SET(ENABLE_RFNOC OFF CACHE BOOL "Export RFNoC includes and symbols")
 INCLUDE(UHDGlobalDefs)
+INCLUDE(UHDLog)
 
 ########################################################################
 # Check Python Modules

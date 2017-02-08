@@ -17,7 +17,7 @@
 
 #include "expert_container.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
@@ -513,7 +513,7 @@ private:
     {
         std::string indents;
         for (size_t i = 0; i < depth; i++) indents += "- ";
-        UHD_MSG(fastpath) << "[expert::" + _name + "] " << indents << str << std::endl;
+        UHD_LOG_DEBUG("EXPERT","[expert::" + _name + "] " << indents << str)
     }
 
 private:

@@ -16,7 +16,7 @@
 //
 
 #include <uhd/usrp/gps_ctrl.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/sensors.hpp>
@@ -91,7 +91,7 @@ private:
                     sentences[which].get<2>() = true;
                 }
             } catch(std::exception &e) {
-                UHD_LOGV(often) << "get_sentence: " << e.what();
+                UHD_LOGGER_DEBUG("GPS") << "get_sentence: " << e.what();
             }
 
             if (not sentence.empty() or now > exit_time)
@@ -158,7 +158,7 @@ private:
 
         if (msg.length() < 6)
         {
-            UHD_LOGV(regularly) << __FUNCTION__ << ": Short GPSDO string: " << msg << std::endl;
+            UHD_LOGGER_WARNING("GPS") << __FUNCTION__ << ": Short GPSDO string: " << msg ;
             continue;
         }
 
@@ -173,7 +173,7 @@ private:
         }
         else
         {
-            UHD_LOGV(regularly) << __FUNCTION__ << ": Malformed GPSDO string: " << msg << std::endl;
+            UHD_LOGGER_WARNING("GPS") << __FUNCTION__ << ": Malformed GPSDO string: " << msg ;
         }
     }
 
@@ -233,7 +233,7 @@ public:
         if(i_heard_some_nmea) {
             _gps_type = GPS_TYPE_GENERIC_NMEA;
         } else if(i_heard_something_weird) {
-            UHD_MSG(error) << "GPS invalid reply \"" << reply << "\", assuming none available" << std::endl;
+            UHD_LOGGER_ERROR("GPS") << "GPS invalid reply \"" << reply << "\", assuming none available";
         }
     }
 
@@ -241,17 +241,17 @@ public:
     case GPS_TYPE_INTERNAL_GPSDO:
       erase_all(reply, "\r");
       erase_all(reply, "\n");
-      UHD_MSG(status) << "Found an internal GPSDO: " << reply << std::endl;
+      UHD_LOGGER_INFO("GPS") << "Found an internal GPSDO: " << reply;
       init_gpsdo();
       break;
 
     case GPS_TYPE_GENERIC_NMEA:
-      UHD_MSG(status) << "Found a generic NMEA GPS device" << std::endl;
+        UHD_LOGGER_INFO("GPS") << "Found a generic NMEA GPS device";
       break;
 
     case GPS_TYPE_NONE:
     default:
-      UHD_MSG(status) << "No GPSDO found" << std::endl;
+        UHD_LOGGER_INFO("GPS") << "No GPSDO found";
       break;
 
     }
@@ -361,7 +361,7 @@ private:
             return gps_time;
 
         } catch(std::exception &e) {
-            UHD_LOGV(often) << "get_time: " << e.what();
+            UHD_LOGGER_DEBUG("GPS") << "get_time: " << e.what();
             error_cnt++;
         }
     }
@@ -388,7 +388,7 @@ private:
             else
                 return (get_token(reply, 6) != "0");
         } catch(std::exception &e) {
-            UHD_LOGV(often) << "locked: " << e.what();
+            UHD_LOGGER_DEBUG("GPS") << "locked: " << e.what();
             error_cnt++;
         }
     }

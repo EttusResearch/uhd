@@ -31,7 +31,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/dict.hpp>
@@ -153,9 +153,9 @@ private:
         //get the register data
         for(int i=0; i<4; i++){
             regs_vector[i] = _tuner_4937di5_regs.get_reg(i);
-            UHD_LOGV(often) << boost::format(
+            UHD_LOGGER_DEBUG("TVRX") << boost::format(
                 "tvrx: send reg 0x%02x, value 0x%04x"
-            ) % int(i) % int(regs_vector[i]) << std::endl;
+            ) % int(i) % int(regs_vector[i]) ;
         }
 
         //send the data
@@ -249,7 +249,7 @@ tvrx::~tvrx(void){
 static std::string get_band(double freq) {
     for(const std::string &band:  tvrx_freq_ranges.keys()) {
         if(freq >= tvrx_freq_ranges[band].start() && freq <= tvrx_freq_ranges[band].stop()){
-            UHD_LOGV(often) << "Band: " << band << std::endl;
+            UHD_LOGGER_DEBUG("TVRX") << "Band: " << band ;
             return band;
         }
     }
@@ -291,7 +291,7 @@ static double gain_interp(double gain, const boost::array<double, 17>& db_vector
     //use the volts per dB slope to find the final interpolated voltage
     volts = volts_vector[gain_step] + (slope * (gain - db_vector[gain_step]));
 
-    UHD_LOGV(often) << "Gain interp: gain: " << gain << ", gain_step: " << int(gain_step) << ", slope: " << slope << ", volts: " << volts << std::endl;
+    UHD_LOGGER_DEBUG("TVRX") << "Gain interp: gain: " << gain << ", gain_step: " << int(gain_step) << ", slope: " << slope << ", volts: " << volts ;
 
     return volts;
 }
@@ -317,9 +317,9 @@ static double rf_gain_to_voltage(double gain, double lo_freq){
 
     dac_volts = uhd::clip<double>(dac_volts, 0.0, 3.3);
 
-    UHD_LOGV(often) << boost::format(
+    UHD_LOGGER_DEBUG("TVRX") << boost::format(
         "tvrx RF AGC gain: %f dB, dac_volts: %f V"
-    ) % gain % dac_volts << std::endl;
+    ) % gain % dac_volts ;
 
     return dac_volts;
 }
@@ -340,9 +340,9 @@ static double if_gain_to_voltage(double gain){
 
     dac_volts = uhd::clip<double>(dac_volts, 0.0, 3.3);
 
-    UHD_LOGV(often) << boost::format(
+    UHD_LOGGER_DEBUG("TVRX") << boost::format(
         "tvrx IF AGC gain: %f dB, dac_volts: %f V"
-    ) % gain % dac_volts << std::endl;
+    ) % gain % dac_volts ;
 
     return dac_volts;
 }
@@ -396,7 +396,7 @@ double tvrx::set_freq(double freq) {
     //not FAR off, but we do this to be consistent
     if(prev_band != new_band) set_gain(_gains["RF"], "RF");
 
-    UHD_LOGV(often) << boost::format("set_freq: target LO: %f f_ref: %f divisor: %i actual LO: %f") % target_lo_freq % f_ref % divisor % actual_lo_freq << std::endl;
+    UHD_LOGGER_DEBUG("TVRX") << boost::format("set_freq: target LO: %f f_ref: %f divisor: %i actual LO: %f") % target_lo_freq % f_ref % divisor % actual_lo_freq ;
 
     _lo_freq = actual_lo_freq; //for rx props
 

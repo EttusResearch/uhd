@@ -18,7 +18,7 @@
 #include "n230_fw_ctrl_iface.hpp"
 
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
@@ -74,7 +74,7 @@ void n230_fw_ctrl_iface::poke32(const wb_addr_type addr, const uint32_t data)
         } catch(const std::exception &ex) {
             const std::string error_msg = str(boost::format(
                 "udp fw poke32 failure #%u\n%s") % i % ex.what());
-            if (_verbose) UHD_MSG(warning) << error_msg << std::endl;
+            if (_verbose) UHD_LOGGER_WARNING("N230") << error_msg ;
             if (i == NUM_RETRIES) throw uhd::io_error(error_msg);
         }
     }
@@ -90,7 +90,7 @@ uint32_t n230_fw_ctrl_iface::peek32(const wb_addr_type addr)
         } catch(const std::exception &ex) {
             const std::string error_msg = str(boost::format(
                 "udp fw peek32 failure #%u\n%s") % i % ex.what());
-            if (_verbose) UHD_MSG(warning) << error_msg << std::endl;
+            if (_verbose) UHD_LOGGER_WARNING("N230") << error_msg ;
             if (i == NUM_RETRIES) throw uhd::io_error(error_msg);
         }
     }
@@ -182,8 +182,8 @@ std::vector<std::string> n230_fw_ctrl_iface::discover_devices(
     try {
         udp_bcast_xport = uhd::transport::udp_simple::make_broadcast(addr_hint, port);
     } catch(const std::exception &e) {
-        UHD_MSG(error) << boost::format("Cannot open UDP transport on %s for discovery\n%s")
-        % addr_hint % e.what() << std::endl;
+        UHD_LOGGER_ERROR("N230") << boost::format("Cannot open UDP transport on %s for discovery\n%s")
+        % addr_hint % e.what() ;
         return addrs;
     }
 

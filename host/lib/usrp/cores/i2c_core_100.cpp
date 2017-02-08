@@ -17,7 +17,7 @@
 
 #include "i2c_core_100.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/thread/thread.hpp> //sleep
 
 #define REG_I2C_PRESCALER_LO _base + 0
@@ -127,7 +127,7 @@ private:
             if ((_iface->peek16(REG_I2C_CMD_STATUS) & I2C_ST_TIP) == 0) return;
             boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }
-        UHD_MSG(error) << "i2c_core_100: i2c_wait timeout" << std::endl;
+        UHD_LOGGER_ERROR("CORES") << "i2c_core_100: i2c_wait timeout" ;
     }
 
     bool wait_chk_ack(void){

@@ -22,7 +22,7 @@
 
 #include "adf4001_ctrl.hpp"
 
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <iostream>
 #include <iomanip>
 

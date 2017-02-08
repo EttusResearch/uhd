@@ -147,7 +147,7 @@ void x300_impl::self_test_adcs(mboard_members_t& mb, uint32_t ramp_time_ms) {
 void x300_impl::extended_adc_test(mboard_members_t& mb, double duration_s)
 {
     static const size_t SECS_PER_ITER = 5;
-    UHD_MSG(status) << boost::format("Running Extended ADC Self-Test (Duration=%.0fs, %ds/iteration)...\n")
+    UHD_LOGGER_INFO("X300") << boost::format("Running Extended ADC Self-Test (Duration=%.0fs, %ds/iteration)...")
         % duration_s % SECS_PER_ITER;
 
     size_t num_iters = static_cast<size_t>(ceil(duration_s/SECS_PER_ITER));
@@ -159,18 +159,18 @@ void x300_impl::extended_adc_test(mboard_members_t& mb, double duration_s)
         time_strm.imbue(std::locale(std::locale::classic(), facet));
         time_strm << boost::posix_time::second_clock::local_time();
         //Run self-test
-        UHD_MSG(status) << boost::format("-- [%s] Iteration %06d... ") % time_strm.str() % (iter+1);
+        UHD_LOGGER_INFO("X300") << boost::format("Running ADC Test Iteration %06d... ") % (iter+1);
         try {
             self_test_adcs(mb, SECS_PER_ITER*1000);
-            UHD_MSG(status) << "passed" << std::endl;
+            UHD_LOGGER_INFO("X300") << boost::format("ADC Test Iteration %06d passed") % (iter+1);
         } catch(std::exception &e) {
             num_failures++;
-            UHD_MSG(status) << e.what() << std::endl;
+            UHD_LOGGER_ERROR("X300") << e.what();
         }
 
     }
     if (num_failures == 0) {
-        UHD_MSG(status) << "Extended ADC Self-Test PASSED\n";
+        UHD_LOGGER_INFO("X300") << "Extended ADC Self-Test PASSED";
     } else {
         throw uhd::runtime_error(
                 (boost::format("Extended ADC Self-Test FAILED!!! (%d/%d failures)\n") % num_failures % num_iters).str());
@@ -184,7 +184,7 @@ void x300_impl::extended_adc_test(mboard_members_t& mb, double duration_s)
 void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t radio_i, bool print_status)
 {
     radio_perifs_t& perif = mb.radio_perifs[radio_i];
-    if (print_status) UHD_MSG(status) << "Running ADC capture delay self-cal..." << std::flush;
+    if (print_status) UHD_LOGGER_INFO("X300") << "Running ADC capture delay self-cal...";
 
     static const uint32_t NUM_DELAY_STEPS = 32;   //The IDELAYE2 element has 32 steps
     static const uint32_t NUM_RETRIES     = 2;    //Retry self-cal if it fails in warmup situations
@@ -247,7 +247,7 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
                     }
                 }
             }
-            //UHD_MSG(status) << (boost::format("CapTap=%d, Error=%d\n") % dly_tap % err_code);
+            //UHD_LOGGER_INFO("X300") << (boost::format("CapTap=%d, Error=%d") % dly_tap % err_code);
         }
 
         //Retry the self-cal if it fails
@@ -277,13 +277,13 @@ void x300_impl::self_cal_adc_capture_delay(mboard_members_t& mb, const size_t ra
 
     if (print_status) {
         double tap_delay = (1.0e12 / mb.clock->get_master_clock_rate()) / (2*32); //in ps
-        UHD_MSG(status) << boost::format(" done (Tap=%d, Window=%d, TapDelay=%.3fps, Iter=%d)\n") % ideal_tap % (win_stop-win_start) % tap_delay % iter;
+        UHD_LOGGER_INFO("X300") << boost::format(" ADC capture delay self-cal done (Tap=%d, Window=%d, TapDelay=%.3fps, Iter=%d)") % ideal_tap % (win_stop-win_start) % tap_delay % iter;
     }
 }
 
 double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay)
 {
-    UHD_MSG(status) << "Running ADC transfer delay self-cal: " << std::flush;
+    UHD_LOGGER_INFO("X300") << "Running ADC transfer delay self-cal: ";
 
     //Effective resolution of the self-cal.
     static const size_t NUM_DELAY_STEPS = 100;
@@ -293,7 +293,6 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
     double delay_range = 2 * master_clk_period;
     double delay_incr = delay_range / NUM_DELAY_STEPS;
 
-    UHD_MSG(status) << "Measuring..." << std::flush;
     double cached_clk_delay = mb.clock->get_clock_delay(X300_CLOCK_WHICH_ADC0);
     double fpga_clk_delay = mb.clock->get_clock_delay(X300_CLOCK_WHICH_FPGA);
 
@@ -339,7 +338,7 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
                 err_code += 100;    //Increment error code by 100 to indicate no lock
             }
         }
-        //UHD_MSG(status) << (boost::format("XferDelay=%fns, Error=%d\n") % delay % err_code);
+        //UHD_LOGGER_INFO("X300") << (boost::format("XferDelay=%fns, Error=%d") % delay % err_code);
         results.push_back(std::pair<double,bool>(delay, err_code==0));
     }
 
@@ -391,7 +390,6 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
     }
 
     if (apply_delay) {
-        UHD_MSG(status) << "Validating..." << std::flush;
         //Apply delay
         win_center = mb.clock->set_clock_delay(X300_CLOCK_WHICH_ADC0, win_center);  //Sets ADC0 and ADC1
         wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, 0.1);
@@ -407,7 +405,7 @@ double x300_impl::self_cal_adc_xfer_delay(mboard_members_t& mb, bool apply_delay
         mb.radio_perifs[r].adc->set_test_word("normal", "normal");
         mb.radio_perifs[r].regmap->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
     }
-    UHD_MSG(status) << (boost::format(" done (FPGA->ADC=%.3fns%s, Window=%.3fns)\n") %
+    UHD_LOGGER_INFO("X300") << (boost::format("ADC transfer delay self-cal done (FPGA->ADC=%.3fns%s, Window=%.3fns)") %
         (win_center-fpga_clk_delay) % (cycle_slip?" +cyc":"") % win_length);
 
     return win_center;

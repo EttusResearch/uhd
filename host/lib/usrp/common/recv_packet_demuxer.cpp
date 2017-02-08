@@ -16,7 +16,7 @@
 //
 
 #include "recv_packet_demuxer.hpp"
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/thread/mutex.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
@@ -87,7 +87,7 @@ public:
             if (rx_index < _queues.size()) _queues[rx_index].wrapper.push(buff);
             else
             {
-                UHD_MSG(error) << "Got a data packet with unknown SID " << extract_sid(buff) << std::endl;
+                UHD_LOGGER_ERROR("STREAMER") << "Got a data packet with unknown SID " << extract_sid(buff) ;
                 recv_pkt_demux_mrb *mrb = new recv_pkt_demux_mrb();
                 vrt::if_packet_info_t info;
                 info.packet_type = vrt::if_packet_info_t::PACKET_TYPE_DATA;

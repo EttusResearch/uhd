@@ -18,7 +18,7 @@
 #include "fifo_ctrl_excelsior.hpp"
 #include "async_packet_handler.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/safe_call.hpp>
@@ -97,7 +97,7 @@ public:
             vrt::if_hdr_unpack_le(pkt, packet_info);
         }
         catch(const std::exception &ex){
-            UHD_MSG(error) << "FIFO ctrl bad VITA packet: " << ex.what() << std::endl;
+            UHD_LOGGER_ERROR("UHD") << "FIFO ctrl bad VITA packet: " << ex.what();
         }
         if (packet_info.has_sid and packet_info.sid == _config.ctrl_sid_base){
             ctrl_result_t res = ctrl_result_t();
@@ -112,7 +112,7 @@ public:
             standard_async_msg_prints(metadata);
         }
         else{
-            UHD_MSG(error) << "FIFO ctrl got unknown SID: " << packet_info.sid << std::endl;
+            UHD_LOGGER_ERROR("UHD") << "FIFO ctrl got unknown SID: " << packet_info.sid ;
         }
     }
 

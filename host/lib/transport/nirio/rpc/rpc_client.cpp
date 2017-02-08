@@ -25,7 +25,7 @@
     if (status) { \
         status = (static_cast<size_t>((func)) == exp); \
     } else { \
-        UHD_LOG << "rpc_client operation skipped: " #func "\n"; \
+        UHD_LOGGER_DEBUG("NIRIO") << "rpc_client operation skipped: " #func "\n"; \
     } \
 
 namespace uhd { namespace usrprio_rpc {
@@ -57,7 +57,7 @@ rpc_client::rpc_client (
         tcp::resolver::iterator iterator = resolver.resolve(query);
         boost::asio::connect(_socket, iterator);
 
-        UHD_LOG << "rpc_client connected to server." << std::endl;
+        UHD_LOGGER_DEBUG("NIRIO") << "rpc_client connected to server." ;
 
         try {
             //Perform handshake
@@ -75,24 +75,24 @@ rpc_client::rpc_client (
                 _hshake_args_client.version >= _hshake_args_server.oldest_comp_version &&
                 status)
             {
-                UHD_LOG << "rpc_client bound to server." << std::endl;
+                UHD_LOGGER_DEBUG("NIRIO") << "rpc_client bound to server." ;
                 _wait_for_next_response_header();
 
                 //Spawn a thread for the io_service callback handler. This thread will run until rpc_client is destroyed.
                 _io_service_thread.reset(new boost::thread(boost::bind(&boost::asio::io_service::run, &_io_service)));
             } else {
-                UHD_LOG << "rpc_client handshake failed." << std::endl;
+                UHD_LOGGER_DEBUG("NIRIO") << "rpc_client handshake failed." ;
                 _exec_err.assign(boost::asio::error::connection_refused, boost::asio::error::get_system_category());
             }
-            UHD_LOG << boost::format("rpc_client archive = %d, rpc_server archive = %d\n.") %
+            UHD_LOGGER_DEBUG("NIRIO") << boost::format("rpc_client archive = %d, rpc_server archive = %d\n.") %
                 _hshake_args_client.boost_archive_version %
                 _hshake_args_server.boost_archive_version;
         } catch (boost::exception&) {
-            UHD_LOG << "rpc_client handshake aborted." << std::endl;
+            UHD_LOGGER_DEBUG("NIRIO") << "rpc_client handshake aborted." ;
             _exec_err.assign(boost::asio::error::connection_refused, boost::asio::error::get_system_category());
         }
     } catch (boost::exception&) {
-        UHD_LOG << "rpc_client connection request cancelled/aborted." << std::endl;
+        UHD_LOGGER_DEBUG("NIRIO") << "rpc_client connection request cancelled/aborted." ;
         _exec_err.assign(boost::asio::error::connection_aborted, boost::asio::error::get_system_category());
     }
 }
@@ -136,18 +136,18 @@ const boost::system::error_code& rpc_client::call(
         //Wait for response using condition variable
         if (status) {
             if (!_exec_gate.timed_wait(lock, timeout)) {
-                UHD_LOG << "rpc_client function timed out." << std::endl;
+                UHD_LOGGER_DEBUG("NIRIO") << "rpc_client function timed out." ;
                 _exec_err.assign(boost::asio::error::timed_out, boost::asio::error::get_system_category());
             }
         } else {
-            UHD_LOG << "rpc_client connection dropped." << std::endl;
+            UHD_LOGGER_DEBUG("NIRIO") << "rpc_client connection dropped." ;
             _exec_err.assign(boost::asio::error::connection_aborted, boost::asio::error::get_system_category());
             _stop_io_service();
         }
 
         //Verify that we are talking to the correct endpoint
         if ((_request.header.client_id != _response.header.client_id) && !_exec_err) {
-            UHD_LOG << "rpc_client confused about who its talking to." << std::endl;
+            UHD_LOGGER_DEBUG("NIRIO") << "rpc_client confused about who its talking to." ;
             _exec_err.assign(boost::asio::error::operation_aborted, boost::asio::error::get_system_category());
         }
 
@@ -180,7 +180,7 @@ void rpc_client::_handle_response_hdr(const boost::system::error_code& err, size
             }
         } else {
             //Unexpected response. Ignore it.
-            UHD_LOG << "rpc_client received garbage responses." << std::endl;
+            UHD_LOGGER_DEBUG("NIRIO") << "rpc_client received garbage responses." ;
             _exec_err.assign(boost::asio::error::operation_aborted, boost::asio::error::get_system_category());
 
             _wait_for_next_response_header();

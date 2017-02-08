@@ -17,7 +17,7 @@
 
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/msg_task.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
 #include <exception>
@@ -67,10 +67,10 @@ private:
     }
 
     void do_error_msg(const std::string &msg){
-        UHD_MSG(error)
-            << "An unexpected exception was caught in a task loop." << std::endl
-            << "The task loop will now exit, things may not work." << std::endl
-            << msg << std::endl
+        UHD_LOGGER_ERROR("UHD")
+            << "An unexpected exception was caught in a task loop." 
+            << "The task loop will now exit, things may not work." 
+            << msg 
         ;
     }
 
@@ -162,10 +162,10 @@ private:
     }
 
     void do_error_msg(const std::string &msg){
-        UHD_MSG(error)
-            << "An unexpected exception was caught in a task loop." << std::endl
-            << "The task loop will now exit, things may not work." << std::endl
-            << msg << std::endl
+        UHD_LOGGER_ERROR("UHD")
+            << "An unexpected exception was caught in a task loop." 
+            << "The task loop will now exit, things may not work." 
+            << msg 
         ;
     }
 

@@ -17,7 +17,7 @@
 
 #include "i2c_core_200.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/thread/thread.hpp> //sleep
 #include <boost/thread/mutex.hpp>
 
@@ -130,7 +130,7 @@ private:
             if ((this->peek(REG_I2C_RD_ST) & I2C_ST_TIP) == 0) return;
             boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }
-        UHD_MSG(error) << "i2c_core_200: i2c_wait timeout" << std::endl;
+        UHD_LOGGER_ERROR("CORES") << "i2c_core_200: i2c_wait timeout" ;
     }
 
     bool wait_chk_ack(void){

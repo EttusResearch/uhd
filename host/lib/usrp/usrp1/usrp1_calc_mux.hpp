@@ -83,7 +83,7 @@ static uint32_t calc_rx_mux(const std::vector<mapping_pair_t> &mapping){
     //    for all quadrature sources: Z = 0
     //    for mixed sources: warning + Z = 0
     int Z = (num_quads > 0)? 0 : 1;
-    if (num_quads != 0 and num_reals != 0) UHD_MSG(warning) << boost::format(
+    if (num_quads != 0 and num_reals != 0) UHD_LOGGER_WARNING("USRP1") << boost::format(
         "Mixing real and quadrature rx subdevices is not supported.\n"
         "The Q input to the real source(s) will be non-zero.\n"
     );

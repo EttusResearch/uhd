@@ -23,7 +23,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/stream.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/types/metadata.hpp>
@@ -460,7 +460,7 @@ private:
         const size_t expected_packet_count = _props[index].packet_count;
         _props[index].packet_count = (info.ifpi.packet_count + 1) & seq_mask;
         if (expected_packet_count != info.ifpi.packet_count){
-            //UHD_MSG(status) << "expected: " << expected_packet_count << " got: " << info.ifpi.packet_count << std::endl;
+            //UHD_LOGGER_INFO("STREAMER") << "expected: " << expected_packet_count << " got: " << info.ifpi.packet_count;
             if (_props[index].handle_flowctrl) {
                 // Always update flow control in this case, because we don't
                 // know which packet was dropped and what state the upstream
@@ -573,9 +573,9 @@ private:
 
             //handle the case where a bad header exists
             catch(const uhd::value_error &e){
-                UHD_MSG(error) << boost::format(
+                UHD_LOGGER_ERROR("STREAMER") << boost::format(
                     "The receive packet handler caught a value exception.\n%s"
-                ) % e.what() << std::endl;
+                    ) % e.what();
                 std::swap(curr_info, next_info); //save progress from curr -> next
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_BAD_PACKET;
                 return;
@@ -613,7 +613,7 @@ private:
                     rx_metadata_t metadata = curr_info.metadata;
                     _props[index].handle_overflow();
                     curr_info.metadata = metadata;
-                    UHD_MSG(fastpath) << "O";
+                    UHD_LOG_FASTPATH("O")
                 }
                 curr_info[index].buff.reset();
                 curr_info[index].copy_buff = nullptr;
@@ -635,18 +635,18 @@ private:
                     prev_info[index].ifpi.num_payload_words32*sizeof(uint32_t)/_bytes_per_otw_item, _samp_rate);
                 curr_info.metadata.out_of_sequence = true;
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_OVERFLOW;
-                UHD_MSG(fastpath) << "D";
+                UHD_LOG_FASTPATH("D")
                 return;
 
             }
 
             //too many iterations: detect alignment failure
             if (iterations++ > _alignment_failure_threshold){
-                UHD_MSG(error) << boost::format(
-                    "The receive packet handler failed to time-align packets.\n"
-                    "%u received packets were processed by the handler.\n"
-                    "However, a timestamp match could not be determined.\n"
-                ) % iterations << std::endl;
+                UHD_LOGGER_ERROR("STREAMER") << boost::format(
+                    "The receive packet handler failed to time-align packets. "
+                    "%u received packets were processed by the handler. "
+                    "However, a timestamp match could not be determined."
+                    ) % iterations;
                 std::swap(curr_info, next_info); //save progress from curr -> next
                 curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_ALIGNMENT;
                 _props[index].handle_overflow();

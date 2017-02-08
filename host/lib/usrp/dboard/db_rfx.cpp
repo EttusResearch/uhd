@@ -40,7 +40,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
@@ -339,9 +339,9 @@ double rfx_xcvr::set_lo_freq(
     dboard_iface::unit_t unit,
     double target_freq
 ){
-    UHD_LOGV(often) << boost::format(
+    UHD_LOGGER_DEBUG("RFX") << boost::format(
         "RFX tune: target frequency %f MHz"
-    ) % (target_freq/1e6) << std::endl;
+    ) % (target_freq/1e6) ;
 
     //clip the input
     target_freq = _freq_range.clip(target_freq);
@@ -396,9 +396,9 @@ double rfx_xcvr::set_lo_freq(
         }
     } done_loop:
 
-    UHD_LOGV(often) << boost::format(
+    UHD_LOGGER_DEBUG("RFX") << boost::format(
         "RFX tune: R=%d, BS=%d, P=%d, B=%d, A=%d, DIV2=%d"
-    ) % R % BS % P % B % A % int(_div2[unit] && (!is_rx_rfx400)) << std::endl;
+    ) % R % BS % P % B % A % int(_div2[unit] && (!is_rx_rfx400)) ;
 
     //load the register values
     adf4360_regs_t regs;
@@ -442,8 +442,8 @@ double rfx_xcvr::set_lo_freq(
 
     //return the actual frequency
     if (_div2[unit]) actual_freq /= 2;
-    UHD_LOGV(often) << boost::format(
+    UHD_LOGGER_DEBUG("RFX") << boost::format(
         "RFX tune: actual frequency %f MHz"
-    ) % (actual_freq/1e6) << std::endl;
+    ) % (actual_freq/1e6) ;
     return actual_freq;
 }

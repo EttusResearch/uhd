@@ -19,7 +19,7 @@
 #include "fw_common.h"
 #include "apply_corrections.hpp"
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/exception.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
@@ -105,7 +105,7 @@ device_addrs_t usrp2_find(const device_addr_t &hint_){
         udp_transport = udp_simple::make_broadcast(hint["addr"], BOOST_STRINGIZE(USRP2_UDP_CTRL_PORT));
     }
     catch(const std::exception &e){
-        UHD_MSG(error) << boost::format("Cannot open UDP transport on %s\n%s") % hint["addr"] % e.what() << std::endl;
+        UHD_LOGGER_ERROR("USRP2") << boost::format("Cannot open UDP transport on %s\n%s") % hint["addr"] % e.what() ;
         return usrp2_addrs; //dont throw, but return empty address so caller can insert
     }
 
@@ -119,11 +119,11 @@ device_addrs_t usrp2_find(const device_addr_t &hint_){
     }
     catch(const std::exception &ex)
     {
-        UHD_MSG(error) << "USRP2 Network discovery error " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("USRP2") << "USRP2 Network discovery error " << ex.what() ;
     }
     catch(...)
     {
-        UHD_MSG(error) << "USRP2 Network discovery unknown error " << std::endl;
+        UHD_LOGGER_ERROR("USRP2") << "USRP2 Network discovery unknown error " ;
     }
 
     //loop and recieve until the timeout
@@ -318,7 +318,7 @@ static zero_copy_if::sptr make_xport(
 usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
     device_addr(_device_addr)
 {
-    UHD_MSG(status) << "Opening a USRP2/N-Series device..." << std::endl;
+    UHD_LOGGER_INFO("USRP2") << "Opening a USRP2/N-Series device...";
 
     //setup the dsp transport hints (default to a large recv buff)
     if (not device_addr.has_key("recv_buff_size")){
@@ -355,8 +355,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
         device_addr["recv_frame_size"] = boost::lexical_cast<std::string>(mtu.recv_mtu);
         device_addr["send_frame_size"] = boost::lexical_cast<std::string>(mtu.send_mtu);
 
-        UHD_MSG(status) << boost::format("Current recv frame size: %d bytes") % mtu.recv_mtu << std::endl;
-        UHD_MSG(status) << boost::format("Current send frame size: %d bytes") % mtu.send_mtu << std::endl;
+        UHD_LOGGER_INFO("USRP2") << boost::format("Current recv frame size: %d bytes") % mtu.recv_mtu;
+        UHD_LOGGER_INFO("USRP2") << boost::format("Current send frame size: %d bytes") % mtu.send_mtu;
     }
     catch(const uhd::not_implemented_error &){
         //just ignore this error, makes older fw work...
@@ -411,7 +411,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
             // handle case where the MB EEPROM is not programmed
             if (fpga_major == USRP2_FPGA_COMPAT_NUM or fpga_major == N200_FPGA_COMPAT_NUM)
             {
-                UHD_MSG(warning)  << "Unable to identify device - assuming USRP2/N-Series device" << std::endl;
+                UHD_LOGGER_WARNING("USRP2")  << "Unable to identify device - assuming USRP2/N-Series device" ;
                 expected_fpga_compat_num = fpga_major;
             }
         }
@@ -432,19 +432,19 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
         ////////////////////////////////////////////////////////////////
         // construct transports for RX and TX DSPs
         ////////////////////////////////////////////////////////////////
-        UHD_LOG << "Making transport for RX DSP0..." << std::endl;
+        UHD_LOGGER_DEBUG("USRP2") << "Making transport for RX DSP0..." ;
         _mbc[mb].rx_dsp_xports.push_back(make_xport(
             addr, BOOST_STRINGIZE(USRP2_UDP_RX_DSP0_PORT), device_args_i, "recv"
         ));
-        UHD_LOG << "Making transport for RX DSP1..." << std::endl;
+        UHD_LOGGER_DEBUG("USRP2") << "Making transport for RX DSP1..." ;
         _mbc[mb].rx_dsp_xports.push_back(make_xport(
             addr, BOOST_STRINGIZE(USRP2_UDP_RX_DSP1_PORT), device_args_i, "recv"
         ));
-        UHD_LOG << "Making transport for TX DSP0..." << std::endl;
+        UHD_LOGGER_DEBUG("USRP2") << "Making transport for TX DSP0..." ;
         _mbc[mb].tx_dsp_xport = make_xport(
             addr, BOOST_STRINGIZE(USRP2_UDP_TX_DSP0_PORT), device_args_i, "send"
         );
-        UHD_LOG << "Making transport for Control..." << std::endl;
+        UHD_LOGGER_DEBUG("USRP2") << "Making transport for Control..." ;
         _mbc[mb].fifo_ctrl_xport = make_xport(
             addr, BOOST_STRINGIZE(USRP2_UDP_FIFO_CRTL_PORT), device_addr_t(), ""
         );
@@ -535,14 +535,14 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
         //otherwise if not disabled, look for the internal GPSDO
         if (_mbc[mb].iface->peekfw(U2_FW_REG_HAS_GPSDO) != dont_look_for_gpsdo)
         {
-            UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
+            UHD_LOGGER_INFO("USRP2") << "Detecting internal GPSDO.... ";
             try{
                 _mbc[mb].gps = gps_ctrl::make(udp_simple::make_uart(udp_simple::make_connected(
                     addr, BOOST_STRINGIZE(USRP2_UDP_UART_GPS_PORT)
                 )));
             }
             catch(std::exception &e){
-                UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
+                UHD_LOGGER_ERROR("USRP2") << "An error occurred making GPSDO control: " << e.what() ;
             }
             if (_mbc[mb].gps and _mbc[mb].gps->gps_detected())
             {
@@ -777,7 +777,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
         //GPS installed: use external ref, time, and init time spec
         if (_mbc[mb].gps and _mbc[mb].gps->gps_detected()){
             _mbc[mb].time64->enable_gpsdo();
-            UHD_MSG(status) << "Setting references to the internal GPSDO" << std::endl;
+            UHD_LOGGER_INFO("USRP2") << "Setting references to the internal GPSDO" ;
             _tree->access<std::string>(root / "time_source/value").set("gpsdo");
             _tree->access<std::string>(root / "clock_source/value").set("gpsdo");
         }
