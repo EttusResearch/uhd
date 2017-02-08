@@ -710,6 +710,7 @@ uhd::both_xports_t e300_impl::make_transport(
     const uhd::device_addr_t &)
 {
     uhd::both_xports_t xports;
+    xports.endianness = ENDIANNESS_LITTLE;
 
     const uhd::transport::zero_copy_xport_params params =
         (type == CTRL) ? _ctrl_xport_params : _data_xport_params;
