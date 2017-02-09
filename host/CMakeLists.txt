@@ -281,7 +281,9 @@ ENDIF(CYGWIN)
 IF(WIN32)
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
-ENDIF(WIN32)
+  ENDIF(WIN32)
+
+
 
 ########################################################################
 # Setup Boost
@@ -297,6 +299,10 @@ SET(BOOST_REQUIRED_COMPONENTS
     system
     unit_test_framework
     serialization
+    )
+
+SET(BOOST_OPTIONAL_COMPONENTS
+    python
 )
 IF(MINGW)
     LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
@@ -320,8 +326,14 @@ ENDIF(MSVC)
 SET(Boost_ADDITIONAL_VERSIONS
     "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
     "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
-    "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61"
+    "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61" "1.62" "1.63"
 )
+
+#Python API requirements
+MESSAGE(STATUS "Looking for optional Boost copmponents...")
+FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} OPTIONAL_COMPONENTS ${BOOST_OPTIONAL_COMPONENTS})
+
+MESSAGE(STATUS "Looking for required Boost copmponents...")
 FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
@@ -330,6 +342,7 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
 MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
 MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+
 
 ########################################################################
 # Additional settings for build environment
@@ -360,8 +373,16 @@ PYTHON_CHECK_MODULE(
     "requests 2.0 or greater"
     "requests" "requests.__version__ >= '2.0'"
     HAVE_PYTHON_MODULE_REQUESTS
-)
+    )
 
+PYTHON_CHECK_MODULE(
+    "numpy 1.7 or greater"
+    "numpy" "LooseVersion(numpy.__version__) >= LooseVersion('1.7')"
+    HAVE_PYTHON_MODULE_NUMPY
+    )
+
+SET(PYTHON_ADDITIONAL_VERSIONS 2.7 3.4 3.5)
+FIND_PACKAGE(PythonLibs)
 ########################################################################
 # Create Uninstall Target
 ########################################################################
@@ -389,9 +410,11 @@ UHD_INSTALL(FILES
 ########################################################################
 LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_MAKO" OFF ON)
 LIBUHD_REGISTER_COMPONENT("LibUHD - C API" ENABLE_C_API ON "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API ON "ENABLE_LIBUHD;Boost_PYTHON_FOUND;HAVE_PYTHON_MODULE_NUMPY;PythonLibs_FOUND" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF OFF)
+
 
 ########################################################################
 # Check for fpga-src submodule
@@ -430,6 +453,10 @@ IF(ENABLE_UTILS)
 ENDIF(ENABLE_UTILS)
 
 ADD_SUBDIRECTORY(docs)
+
+IF(ENABLE_PYTHON_API)
+    ADD_SUBDIRECTORY(python)
+ENDIF()
 
 ########################################################################
 # Create Pkg Config File

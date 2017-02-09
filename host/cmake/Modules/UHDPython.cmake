@@ -26,7 +26,7 @@ ELSE(PYTHON_EXECUTABLE)
 
     #and if that fails use the find program routine
     IF(NOT PYTHONINTERP_FOUND)
-        FIND_PROGRAM(PYTHON_EXECUTABLE NAMES python python2.7 python2.6)
+        FIND_PROGRAM(PYTHON_EXECUTABLE NAMES python python2.7)
         IF(PYTHON_EXECUTABLE)
             SET(PYTHONINTERP_FOUND TRUE)
         ENDIF(PYTHON_EXECUTABLE)
@@ -50,6 +50,7 @@ MACRO(PYTHON_CHECK_MODULE desc mod cmd have)
     EXECUTE_PROCESS(
         COMMAND ${PYTHON_EXECUTABLE} -c "
 #########################################
+from distutils.version import LooseVersion
 try: import ${mod}
 except: exit(1)
 try: assert ${cmd}
