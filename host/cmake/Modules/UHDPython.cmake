@@ -60,6 +60,7 @@ MACRO(PYTHON_CHECK_MODULE desc mod cmd have)
     EXECUTE_PROCESS(
         COMMAND ${PYTHON_EXECUTABLE} -c "
 #########################################
+from distutils.version import LooseVersion
 try: import ${mod}
 except: exit(1)
 try: assert ${cmd}
