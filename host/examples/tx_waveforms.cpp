@@ -23,7 +23,6 @@
 #include <uhd/exception.hpp>
 #include <boost/program_options.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
 #include <boost/lexical_cast.hpp>

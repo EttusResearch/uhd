@@ -47,7 +47,7 @@ namespace uhd { namespace rfnoc { namespace utils {
                     port++;
                 }
             } else {
-                BOOST_FOREACH(const size_t allowed_port, allowed_ports) {
+                for(const size_t allowed_port:  allowed_ports) {
                     if (not nodes.count(port)) {
                         return allowed_port;
                     }
@@ -65,7 +65,7 @@ namespace uhd { namespace rfnoc { namespace utils {
     template <typename T>
     static std::set<T> str_list_to_set(const std::vector<std::string> &list) {
         std::set<T> return_set;
-        BOOST_FOREACH(const std::string &S, list) {
+        for(const std::string &S:  list) {
             return_set.insert(boost::lexical_cast<T>(S));
         }
         return return_set;

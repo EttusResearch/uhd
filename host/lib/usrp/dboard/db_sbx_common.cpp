@@ -160,7 +160,7 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
 
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .set_publisher(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
-    BOOST_FOREACH(const std::string &name, sbx_rx_gain_ranges.keys()){
+    for(const std::string &name:  sbx_rx_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
             .set_coercer(boost::bind(&sbx_xcvr::set_rx_gain, this, _1, name))
             .set(sbx_rx_gain_ranges[name].start());
@@ -201,7 +201,7 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
 
     this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .set_publisher(boost::bind(&sbx_xcvr::get_locked, this, dboard_iface::UNIT_TX));
-    BOOST_FOREACH(const std::string &name, sbx_tx_gain_ranges.keys()){
+    for(const std::string &name:  sbx_tx_gain_ranges.keys()){
         this->get_tx_subtree()->create<double>("gains/"+name+"/value")
             .set_coercer(boost::bind(&sbx_xcvr::set_tx_gain, this, _1, name))
             .set(sbx_tx_gain_ranges[name].start());

@@ -87,10 +87,10 @@ public:
 
         //Initialize clocks and LO
         bool found_rate = false;
-        BOOST_FOREACH(double rate, _db_iface->get_clock_rates(dboard_iface::UNIT_TX)) {
+        for(double rate:  _db_iface->get_clock_rates(dboard_iface::UNIT_TX)) {
             found_rate |= uhd::math::frequencies_are_equal(rate, TWINRX_DESIRED_REFERENCE_FREQ);
         }
-        BOOST_FOREACH(double rate, _db_iface->get_clock_rates(dboard_iface::UNIT_RX)) {
+        for(double rate:  _db_iface->get_clock_rates(dboard_iface::UNIT_RX)) {
             found_rate |= uhd::math::frequencies_are_equal(rate, TWINRX_DESIRED_REFERENCE_FREQ);
         }
         if (not found_rate) {
@@ -506,7 +506,7 @@ private:    //Functions
 
     void _write_lo_spi(dboard_iface::unit_t unit, const std::vector<uint32_t> &regs)
     {
-        BOOST_FOREACH(uint32_t reg, regs) {
+        for(uint32_t reg:  regs) {
              spi_config_t spi_config = spi_config_t(spi_config_t::EDGE_RISE);
              spi_config.use_custom_divider = true;
              spi_config.divider = 67;

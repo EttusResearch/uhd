@@ -18,7 +18,6 @@
 #include "../lib/rfnoc/nocscript/function_table.hpp"
 #include <boost/test/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
-#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/format.hpp>

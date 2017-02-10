@@ -21,7 +21,6 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/paths.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
@@ -57,7 +56,7 @@ blockdef::port_t::port_t()
 {
     // This guarantees that we can access these keys
     // even if they were never initialized:
-    BOOST_FOREACH(const std::string &key, PORT_ARGS.keys()) {
+    for(const std::string &key:  PORT_ARGS.keys()) {
         set(key, PORT_ARGS[key]);
     }
 }
@@ -77,7 +76,7 @@ bool blockdef::port_t::is_keyword(const std::string &key) const
 bool blockdef::port_t::is_valid() const
 {
     // Check we have all the keys:
-    BOOST_FOREACH(const std::string &key, PORT_ARGS.keys()) {
+    for(const std::string &key:  PORT_ARGS.keys()) {
         if (not has_key(key)) {
             return false;
         }
@@ -90,7 +89,7 @@ bool blockdef::port_t::is_valid() const
 std::string blockdef::port_t::to_string() const
 {
     std::string result;
-    BOOST_FOREACH(const std::string &key, PORT_ARGS.keys()) {
+    for(const std::string &key:  PORT_ARGS.keys()) {
         if (has_key(key)) {
             result += str(boost::format("%s=%s,") % key % get(key));
         }
@@ -125,7 +124,7 @@ blockdef::arg_t::arg_t()
 {
     // This guarantees that we can access these keys
     // even if they were never initialized:
-    BOOST_FOREACH(const std::string &key, ARG_ARGS.keys()) {
+    for(const std::string &key:  ARG_ARGS.keys()) {
         set(key, ARG_ARGS[key]);
     }
 }
@@ -133,7 +132,7 @@ blockdef::arg_t::arg_t()
 bool blockdef::arg_t::is_valid() const
 {
     // 1. Check we have all the keys:
-    BOOST_FOREACH(const std::string &key, ARG_ARGS.keys()) {
+    for(const std::string &key:  ARG_ARGS.keys()) {
         if (not has_key(key)) {
             return false;
         }
@@ -151,7 +150,7 @@ bool blockdef::arg_t::is_valid() const
 std::string blockdef::arg_t::to_string() const
 {
     std::string result;
-    BOOST_FOREACH(const std::string &key, ARG_ARGS.keys()) {
+    for(const std::string &key:  ARG_ARGS.keys()) {
         if (has_key(key)) {
             result += str(boost::format("%s=%s,") % key % get(key));
         }
@@ -218,7 +217,7 @@ public:
         pt::ptree propt;
         try {
             read_xml(filename.string(), propt);
-            BOOST_FOREACH(pt::ptree::value_type &v, propt.get_child("nocblock.ids")) {
+            for(pt::ptree::value_type &v:  propt.get_child("nocblock.ids")) {
                 if (v.first == "id" and match_noc_id(v.second.data(), noc_id)) {
                     return true;
                 }
@@ -302,11 +301,11 @@ public:
         std::set<size_t> port_numbers;
         size_t n_ports = 0;
         ports_t ports;
-        BOOST_FOREACH(pt::ptree::value_type &v, _pt.get_child("nocblock.ports")) {
+        for(pt::ptree::value_type &v:  _pt.get_child("nocblock.ports")) {
             if (v.first != port_type) continue;
             // Now we have the correct sink or source node:
             port_t port;
-            BOOST_FOREACH(const std::string &key, port_t::PORT_ARGS.keys()) {
+            for(const std::string &key:  port_t::PORT_ARGS.keys()) {
                 port[key] = v.second.get(key, port_t::PORT_ARGS[key]);
             }
             // We have to be extra-careful with the port numbers:
@@ -338,10 +337,10 @@ public:
     std::vector<size_t> get_all_port_numbers()
     {
         std::set<size_t> set_ports;
-        BOOST_FOREACH(const port_t &port, get_input_ports()) {
+        for(const port_t &port:  get_input_ports()) {
             set_ports.insert(boost::lexical_cast<size_t>(port["port"]));
         }
-        BOOST_FOREACH(const port_t &port, get_output_ports()) {
+        for(const port_t &port:  get_output_ports()) {
             set_ports.insert(boost::lexical_cast<size_t>(port["port"]));
         }
         return std::vector<size_t>(set_ports.begin(), set_ports.end());
@@ -353,10 +352,10 @@ public:
         args_t args;
         bool is_valid = true;
         pt::ptree def;
-        BOOST_FOREACH(pt::ptree::value_type &v, _pt.get_child("nocblock.args", def)) {
+        for(pt::ptree::value_type &v: _pt.get_child("nocblock.args",  def)) {
             arg_t arg;
             if (v.first != "arg") continue;
-            BOOST_FOREACH(const std::string &key, arg_t::ARG_ARGS.keys()) {
+            for(const std::string &key:  arg_t::ARG_ARGS.keys()) {
                 arg[key] = v.second.get(key, arg_t::ARG_ARGS[key]);
             }
             if (arg["type"].empty()) {
@@ -391,7 +390,7 @@ public:
     {
         registers_t registers;
         pt::ptree def;
-        BOOST_FOREACH(pt::ptree::value_type &v, _pt.get_child("nocblock.registers", def)) {
+        for(pt::ptree::value_type &v: _pt.get_child("nocblock.registers",  def)) {
             if (v.first != reg_type) continue;
             registers[v.second.get<std::string>("name")] =
                 boost::lexical_cast<size_t>(v.second.get<size_t>("address"));
@@ -419,7 +418,7 @@ blockdef::sptr blockdef::make_from_noc_id(uint64_t noc_id)
     std::vector<fs::path> valid;
 
     // Check if any of the paths exist
-    BOOST_FOREACH(const fs::path &base_path, paths) {
+    for(const fs::path &base_path:  paths) {
         fs::path this_path = base_path / XML_BLOCKS_SUBDIR;
         if (fs::exists(this_path) and fs::is_directory(this_path)) {
             valid.push_back(this_path);
@@ -436,7 +435,7 @@ blockdef::sptr blockdef::make_from_noc_id(uint64_t noc_id)
     }
 
     // Iterate over all paths
-    BOOST_FOREACH(const fs::path &path, valid) {
+    for(const fs::path &path:  valid) {
         // Iterate over all .xml files
         fs::directory_iterator end_itr;
         for (fs::directory_iterator i(path); i != end_itr; ++i) {

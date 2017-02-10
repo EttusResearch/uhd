@@ -17,7 +17,6 @@
 
 #include "ad936x_manager.hpp"
 #include <uhd/utils/msg.hpp>
-#include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/thread/thread.hpp>
 
@@ -66,7 +65,7 @@ class ad936x_manager_impl : public ad936x_manager
      ***********************************************************************/
     void init_codec()
     {
-        BOOST_FOREACH(const std::string &rx_fe, _rx_frontends) {
+        for(const std::string &rx_fe:  _rx_frontends) {
             _codec_ctrl->set_gain(rx_fe, DEFAULT_GAIN);
             _codec_ctrl->set_bw_filter(rx_fe, DEFAULT_BANDWIDTH);
             _codec_ctrl->tune(rx_fe, DEFAULT_FREQ);
@@ -74,7 +73,7 @@ class ad936x_manager_impl : public ad936x_manager
             _codec_ctrl->set_iq_balance_auto(rx_fe, DEFAULT_AUTO_IQ_BALANCE);
             _codec_ctrl->set_agc(rx_fe, DEFAULT_AGC_ENABLE);
         }
-        BOOST_FOREACH(const std::string &tx_fe, _tx_frontends) {
+        for(const std::string &tx_fe:  _tx_frontends) {
             _codec_ctrl->set_gain(tx_fe, DEFAULT_GAIN);
             _codec_ctrl->set_bw_filter(tx_fe, DEFAULT_BANDWIDTH);
             _codec_ctrl->tune(tx_fe, DEFAULT_FREQ);
@@ -218,7 +217,7 @@ class ad936x_manager_impl : public ad936x_manager
         }
 
         // Gains
-        BOOST_FOREACH(const std::string &name, ad9361_ctrl::get_gain_names(key))
+        for(const std::string &name:  ad9361_ctrl::get_gain_names(key))
         {
             subtree->create<meta_range_t>(uhd::fs_path("gains") / name / "range")
                 .set(ad9361_ctrl::get_gain_range(key));
@@ -278,7 +277,7 @@ class ad936x_manager_impl : public ad936x_manager
         }
 
         // Frontend filters
-        BOOST_FOREACH(const std::string &filter_name, _codec_ctrl->get_filter_names(key)) {
+        for(const std::string &filter_name:  _codec_ctrl->get_filter_names(key)) {
             subtree->create<filter_info_base::sptr>(uhd::fs_path("filters") / filter_name / "value" )
                 .set_publisher(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_name))
                 .add_coerced_subscriber(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_name, _1));

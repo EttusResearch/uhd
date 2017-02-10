@@ -261,7 +261,7 @@ public:
         _update_stream_args_for_streaming<uhd::RX_DIRECTION>(args, _rx_channel_map);
         UHD_LEGACY_LOG() << "[legacy_compat] rx stream args: " << args.args.to_string() << std::endl;
         uhd::rx_streamer::sptr streamer = _device->get_rx_stream(args);
-        BOOST_FOREACH(const size_t chan, args.channels) {
+        for(const size_t chan:  args.channels) {
             _rx_stream_cache[chan] = streamer;
         }
         return streamer;
@@ -278,7 +278,7 @@ public:
         _update_stream_args_for_streaming<uhd::TX_DIRECTION>(args, _tx_channel_map);
         UHD_LEGACY_LOG() << "[legacy_compat] tx stream args: " << args.args.to_string() << std::endl;
         uhd::tx_streamer::sptr streamer = _device->get_tx_stream(args);
-        BOOST_FOREACH(const size_t chan, args.channels) {
+        for(const size_t chan:  args.channels) {
             _tx_stream_cache[chan] = streamer;
         }
         return streamer;
@@ -332,14 +332,14 @@ public:
             if (_rx_stream_cache.count(chan)) {
                 uhd::rx_streamer::sptr str_ptr = _rx_stream_cache[chan].lock();
                 if (str_ptr) {
-                    BOOST_FOREACH(const rx_stream_map_type::value_type &chan_streamer_pair, _rx_stream_cache) {
+                    for(const rx_stream_map_type::value_type &chan_streamer_pair:  _rx_stream_cache) {
                         if (chan_streamer_pair.second.lock() == str_ptr) {
                             chans_to_change.insert(chan_streamer_pair.first);
                         }
                     }
                 }
             }
-            BOOST_FOREACH(const size_t this_chan, chans_to_change) {
+            for(const size_t this_chan:  chans_to_change) {
                 size_t mboard, mb_chan;
                 chan_to_mcp<uhd::RX_DIRECTION>(this_chan, _rx_channel_map, mboard, mb_chan);
                 const size_t dsp_index  = _rx_channel_map[mboard][mb_chan].radio_index;
@@ -375,14 +375,14 @@ public:
             if (_tx_stream_cache.count(chan)) {
                 uhd::tx_streamer::sptr str_ptr = _tx_stream_cache[chan].lock();
                 if (str_ptr) {
-                    BOOST_FOREACH(const tx_stream_map_type::value_type &chan_streamer_pair, _tx_stream_cache) {
+                    for(const tx_stream_map_type::value_type &chan_streamer_pair:  _tx_stream_cache) {
                         if (chan_streamer_pair.second.lock() == str_ptr) {
                             chans_to_change.insert(chan_streamer_pair.first);
                         }
                     }
                 }
             }
-            BOOST_FOREACH(const size_t this_chan, chans_to_change) {
+            for(const size_t this_chan:  chans_to_change) {
                 size_t mboard, mb_chan;
                 chan_to_mcp<uhd::TX_DIRECTION>(this_chan, _tx_channel_map, mboard, mb_chan);
                 const size_t dsp_index  = _tx_channel_map[mboard][mb_chan].radio_index;

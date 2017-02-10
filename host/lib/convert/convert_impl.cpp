@@ -22,7 +22,6 @@
 #include <uhd/exception.hpp>
 #include <stdint.h>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <complex>
 
 using namespace uhd;
@@ -100,7 +99,7 @@ convert::function_type convert::get_converter(
 
     //find a matching priority
     priority_type best_prio = -1;
-    BOOST_FOREACH(priority_type prio_i, get_table()[id].keys()){
+    for(priority_type prio_i:  get_table()[id].keys()){
         if (prio_i == prio) {
             //----------------------------------------------------------------//
             UHD_LOGV(always) << "get_converter: For converter ID: " << id.to_pp_string() << std::endl

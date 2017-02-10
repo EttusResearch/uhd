@@ -20,7 +20,6 @@
 #include <utility>
 
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 
 #include <uhd/exception.hpp>
@@ -69,7 +68,7 @@ bool uhd::image_loader::load(const uhd::image_loader::image_loader_args_t &image
         else return get_image_loaders().at(type)(image_loader_args);
     }
     else{
-        BOOST_FOREACH(const loader_fcn_pair_t &loader_fcn_pair, get_image_loaders()){
+        for(const loader_fcn_pair_t &loader_fcn_pair:  get_image_loaders()){
             if(loader_fcn_pair.second(image_loader_args)) return true;
         }
         return false;

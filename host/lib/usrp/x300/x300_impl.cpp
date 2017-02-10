@@ -28,7 +28,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/transport/if_addrs.hpp>
-#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/functional/hash.hpp>
@@ -183,7 +182,7 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
     nirio_status status = niusrprio_session::enumerate(rpc_port_name, dev_info_vtr);
     if (explicit_query) nirio_status_to_exception(status, "x300_find_pcie: Error enumerating NI-RIO devices.");
 
-    BOOST_FOREACH(niusrprio_session::device_info &dev_info, dev_info_vtr)
+    for(niusrprio_session::device_info &dev_info:  dev_info_vtr)
     {
         device_addr_t new_addr;
         new_addr["type"] = "x300";
@@ -278,7 +277,7 @@ device_addrs_t x300_find(const device_addr_t &hint_)
     {
         device_addrs_t found_devices;
         std::string error_msg;
-        BOOST_FOREACH(const device_addr_t &hint_i, hints)
+        for(const device_addr_t &hint_i:  hints)
         {
             device_addrs_t found_devices_i = x300_find(hint_i);
             if (found_devices_i.size() != 1) error_msg += str(boost::format(
@@ -322,7 +321,7 @@ device_addrs_t x300_find(const device_addr_t &hint_)
     if (!hint.has_key("resource"))
     {
         //otherwise, no address was specified, send a broadcast on each interface
-        BOOST_FOREACH(const if_addrs_t &if_addrs, get_if_addrs())
+        for(const if_addrs_t &if_addrs:  get_if_addrs())
         {
             //avoid the loopback device
             if (if_addrs.inet == asio::ip::address_v4::loopback().to_string()) continue;
@@ -396,9 +395,9 @@ static void thread_msg_handler(uhd::msg::type_t type, const std::string &msg)
 
     if (msg == thread_final_msg)
     {
-        BOOST_FOREACH(const thread_map_t::value_type &thread_pair, thread_list)
+        for(const thread_map_t::value_type &thread_pair:  thread_list)
         {
-            BOOST_FOREACH(const msg_pair_t &msg_pair, thread_pair.second)
+            for(const msg_pair_t &msg_pair:  thread_pair.second)
             {
                 // Forward the message to the default handler
                 uhd::msg::default_msg_handler(msg_pair.first, msg_pair.second);
@@ -469,7 +468,7 @@ void x300_impl::mboard_members_t::discover_eth(
         mb_eeprom_addrs.push_back(mb_eeprom[key]);
     }
 
-    BOOST_FOREACH(const std::string& addr, ip_addrs) {
+    for(const std::string& addr:  ip_addrs) {
         x300_eth_conn_t conn_iface;
         conn_iface.addr = addr;
         conn_iface.type = X300_IFACE_NONE;
@@ -626,7 +625,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         _tree->create<double>(mb_path / "link_max_rate").set(X300_MAX_RATE_PCIE);
     }
 
-    BOOST_FOREACH(const std::string &key, dev_addr.keys())
+    for(const std::string &key:  dev_addr.keys())
     {
         if (key.find("recv") != std::string::npos) mb.recv_args[key] = dev_addr[key];
         if (key.find("send") != std::string::npos) mb.send_args[key] = dev_addr[key];
@@ -932,7 +931,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         }
         if (mb.gps and mb.gps->gps_detected())
         {
-            BOOST_FOREACH(const std::string &name, mb.gps->get_sensors())
+            for(const std::string &name:  mb.gps->get_sensors())
             {
                 _tree->create<sensor_value_t>(mb_path / "sensors" / name)
                     .set_publisher(boost::bind(&gps_ctrl::get_sensor, mb.gps, name));
@@ -1015,7 +1014,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             radio_ids.resize(2);
         }
 
-        BOOST_FOREACH(const rfnoc::block_id_t &id, radio_ids) {
+        for(const rfnoc::block_id_t &id:  radio_ids) {
             rfnoc::x300_radio_ctrl_impl::sptr radio(get_block_ctrl<rfnoc::x300_radio_ctrl_impl>(id));
             mb.radios.push_back(radio);
             radio->setup_radio(
@@ -1063,7 +1062,7 @@ x300_impl::~x300_impl(void)
 {
     try
     {
-        BOOST_FOREACH(mboard_members_t &mb, _mb)
+        for(mboard_members_t &mb:  _mb)
         {
             //kill the claimer task and unclaim the device
             mb.claimer_task.reset();
@@ -1432,7 +1431,7 @@ void x300_impl::update_clock_source(mboard_members_t &mb, const std::string &sou
         }
 
         // Reset ADCs and DACs
-        BOOST_FOREACH(rfnoc::x300_radio_ctrl_impl::sptr r, mb.radios) {
+        for(rfnoc::x300_radio_ctrl_impl::sptr r:  mb.radios) {
             r->reset_codec();
         }
     }
@@ -1464,7 +1463,7 @@ void x300_impl::update_time_source(mboard_members_t &mb, const std::string &sour
 void x300_impl::sync_times(mboard_members_t &mb, const uhd::time_spec_t& t)
 {
     std::vector<rfnoc::block_id_t> radio_ids = find_blocks<rfnoc::x300_radio_ctrl_impl>("Radio");
-    BOOST_FOREACH(const rfnoc::block_id_t &id, radio_ids) {
+    for(const rfnoc::block_id_t &id:  radio_ids) {
         get_block_ctrl<rfnoc::x300_radio_ctrl_impl>(id)->set_time_sync(t);
     }
 

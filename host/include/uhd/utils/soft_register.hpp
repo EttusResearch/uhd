@@ -27,7 +27,6 @@
 #include <boost/thread/locks.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/tokenizer.hpp>
-#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <list>
 
@@ -479,7 +478,7 @@ public:
      */
     void initialize(wb_iface& iface, bool sync = false) {
         boost::lock_guard<boost::mutex> lock(_mutex);
-        BOOST_FOREACH(soft_register_base* reg, _reglist) {
+        for(soft_register_base* reg:  _reglist) {
             reg->initialize(iface, sync);
         }
     }
@@ -491,7 +490,7 @@ public:
      */
     void flush() {
         boost::lock_guard<boost::mutex> lock(_mutex);
-        BOOST_FOREACH(soft_register_base* reg, _reglist) {
+        for(soft_register_base* reg:  _reglist) {
             reg->flush();
         }
     }
@@ -503,7 +502,7 @@ public:
      */
     void refresh() {
         boost::lock_guard<boost::mutex> lock(_mutex);
-        BOOST_FOREACH(soft_register_base* reg, _reglist) {
+        for(soft_register_base* reg:  _reglist) {
             reg->refresh();
         }
     }
@@ -527,7 +526,7 @@ public:
      */
     virtual std::vector<std::string> enumerate() const {
         std::vector<std::string> temp;
-        BOOST_FOREACH(const regmap_t::value_type& reg, _regmap) {
+        for(const regmap_t::value_type& reg:  _regmap) {
             temp.push_back(_name + "/" + reg.first);
         }
         return temp;
@@ -623,8 +622,8 @@ public:
     {
         //Turn the slash separated path string into tokens
         std::list<std::string> tokens;
-        BOOST_FOREACH(
-            const std::string& node,
+        for(
+            const std::string& node:
             boost::tokenizer< boost::char_separator<char> >(path, boost::char_separator<char>("/")))
         {
             tokens.push_back(node);
@@ -633,7 +632,7 @@ public:
             (tokens.size() > 1 && _name == "")) {               //If this is a top-level DB
             if (_name != "") tokens.pop_front();
             if (tokens.size() == 2) {                   //2 tokens => regmap/register path
-                BOOST_FOREACH(const soft_regmap_accessor_t* regmap, _regmaps) {
+                for(const soft_regmap_accessor_t* regmap:  _regmaps) {
                     if (regmap->get_name() == tokens.front()) {
                         return regmap->lookup(tokens.back());
                     }
@@ -642,11 +641,11 @@ public:
             } else if (not _regmap_dbs.empty()) {       //>2 tokens => <1 or more dbs>/regmap/register
                 //Reconstruct path from tokens
                 std::string newpath;
-                BOOST_FOREACH(const std::string& node, tokens) {
+                for(const std::string& node:  tokens) {
                     newpath += ("/" + node);
                 }
                 //Dispatch path to hierarchical DB
-                BOOST_FOREACH(const soft_regmap_accessor_t* db, _regmap_dbs) {
+                for(const soft_regmap_accessor_t* db:  _regmap_dbs) {
                     try {
                         return db->lookup(newpath.substr(1));
                     } catch (std::exception&) {
@@ -663,11 +662,11 @@ public:
      */
     virtual std::vector<std::string> enumerate() const {
         std::vector<std::string> paths;
-        BOOST_FOREACH(const soft_regmap_accessor_t* regmap, _regmaps) {
+        for(const soft_regmap_accessor_t* regmap:  _regmaps) {
             const std::vector<std::string>& regs = regmap->enumerate();
             paths.insert(paths.end(), regs.begin(), regs.end());
         }
-        BOOST_FOREACH(const soft_regmap_accessor_t* db, _regmap_dbs) {
+        for(const soft_regmap_accessor_t* db:  _regmap_dbs) {
             const std::vector<std::string>& regs = db->enumerate();
             paths.insert(paths.end(), regs.begin(), regs.end());
         }

@@ -18,7 +18,6 @@
 #include "expression.hpp"
 #include "function_table.hpp"
 #include <uhd/utils/cast.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/assign.hpp>
 #include <boost/algorithm/string.hpp>
@@ -77,7 +76,7 @@ expression_literal::expression_literal(
         std::string str_vec = _val.substr(1, _val.size()-2);
         std::vector<std::string> subtoken_list;
         boost::split(subtoken_list, str_vec, boost::is_any_of(", "), boost::token_compress_on);
-        BOOST_FOREACH(const std::string &t, subtoken_list) {
+        for(const std::string &t:  subtoken_list) {
             _int_vector_val.push_back(boost::lexical_cast<int>(t));
         }
         break;
@@ -299,7 +298,7 @@ expression_literal expression_container::eval()
     }
 
     expression_literal ret_val;
-    BOOST_FOREACH(const expression::sptr &sub_expr, _sub_exprs) {
+    for(const expression::sptr &sub_expr:  _sub_exprs) {
         ret_val = sub_expr->eval();
         if (_combiner == COMBINE_AND and ret_val.to_bool() == false) {
             return ret_val;
@@ -319,7 +318,7 @@ std::string expression_function::to_string(const std::string &name, const argtyp
 {
     std::string s = name;
     int arg_count = 0;
-    BOOST_FOREACH(const expression::type_t type, types) {
+    for(const expression::type_t type:  types) {
         if (arg_count == 0) {
             s += "(";
         } else {

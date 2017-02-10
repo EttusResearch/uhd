@@ -130,7 +130,7 @@ device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
     if (hints.size() > 1) {
         device_addrs_t found_devices;
         std::string err_msg;
-        BOOST_FOREACH(const device_addr_t &hint_i, hints)
+        for(const device_addr_t &hint_i:  hints)
         {
             device_addrs_t found_devices_i = e300_find(hint_i);
             if(found_devices_i.size() != 1)
@@ -165,7 +165,7 @@ device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
     if (not loopback_only) {
         // if no address or node has been specified, send a broadcast
         if ((not hint.has_key("addr")) and (not hint.has_key("node"))) {
-            BOOST_FOREACH(const if_addrs_t &if_addrs, get_if_addrs())
+            for(const if_addrs_t &if_addrs:  get_if_addrs())
             {
                 // avoid the loopback device
                 if (is_loopback(if_addrs))
@@ -187,7 +187,7 @@ device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
         std::vector<std::string> ip_addrs = discover_ip_addrs(
             hint["addr"], E300_SERVER_I2C_PORT);
 
-        BOOST_FOREACH(const std::string &ip_addr, ip_addrs)
+        for(const std::string &ip_addr:  ip_addrs)
         {
             device_addr_t new_addr;
             new_addr["type"] = "e3x0";
@@ -468,14 +468,14 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     // and do the misc mboard sensors
     ////////////////////////////////////////////////////////////////////
     _tree->create<int>(mb_path / "sensors");
-    BOOST_FOREACH(const std::string &name, _sensor_manager->get_sensors())
+    for(const std::string &name:  _sensor_manager->get_sensors())
     {
         _tree->create<sensor_value_t>(mb_path / "sensors" / name)
             .set_publisher(boost::bind(&e300_sensor_manager::get_sensor, _sensor_manager, name));
     }
 #ifdef E300_GPSD
     if (_gps) {
-        BOOST_FOREACH(const std::string &name, _gps->get_sensors())
+        for(const std::string &name:  _gps->get_sensors())
         {
             _tree->create<sensor_value_t>(mb_path / "sensors" / name)
                 .set_publisher(boost::bind(&gpsd_iface::get_sensor, _gps, name));
@@ -511,7 +511,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         this->_setup_radio(instance);
 
     //now test each radio module's connection to the codec interface
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         _codec_mgr->loopback_self_test(
             boost::bind(
@@ -524,7 +524,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     // internal gpios
     ////////////////////////////////////////////////////////////////////
     gpio_atr_3000::sptr fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
-    BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
+    for(const gpio_attr_map_t::value_type attr:  gpio_attr_map)
     {
         _tree->create<uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
             .add_coerced_subscriber(boost::bind(&gpio_atr_3000::set_gpio_attr, fp_gpio, attr.first, _1))
@@ -625,11 +625,11 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
 
     // subdev spec contains full width of selections
     subdev_spec_t rx_spec, tx_spec;
-    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "rx_frontends"))
+    for(const std::string &fe:  _tree->list(mb_path / "dboards" / "A" / "rx_frontends"))
     {
         rx_spec.push_back(subdev_spec_pair_t("A", fe));
     }
-    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "tx_frontends"))
+    for(const std::string &fe:  _tree->list(mb_path / "dboards" / "A" / "tx_frontends"))
     {
         tx_spec.push_back(subdev_spec_pair_t("A", fe));
     }
@@ -696,7 +696,7 @@ double e300_impl::_set_tick_rate(const double rate)
     _tick_rate = _codec_ctrl->set_clock_rate(rate);
     UHD_MSG(status) << "Actually got clock rate " << _tick_rate/1e6 << " MHz\n";
 
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         perif.time64->set_tick_rate(_tick_rate);
         perif.time64->self_test();
@@ -811,7 +811,7 @@ void e300_impl::_update_time_source(const std::string &source)
 
 void e300_impl::_set_time(const uhd::time_spec_t& t)
 {
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
         perif.time64->set_time_sync(t);
     _misc.time_sync = 1;
     _update_gpio_state();
@@ -1037,7 +1037,7 @@ void e300_impl::_setup_radio(const size_t dspno)
     // create RF frontend interfacing
     ////////////////////////////////////////////////////////////////////
     static const std::vector<direction_t> dirs = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
-    BOOST_FOREACH(direction_t dir, dirs) {
+    for(direction_t dir:  dirs) {
         const std::string x = (dir == RX_DIRECTION) ? "rx" : "tx";
         const std::string key = boost::to_upper_copy(x) + std::string(((dspno == FE0)? "1" : "2"));
         const fs_path rf_fe_path

@@ -260,7 +260,7 @@ namespace usrp {
         template<typename arg_t, typename data_t>
         static inline void _enforce_discrete(const arg_t& arg, const std::vector<data_t>& valid_values) {
             bool match = false;
-            BOOST_FOREACH(const data_t& val, valid_values) {
+            for(const data_t& val:  valid_values) {
                 if (val == arg.get()) {
                     match = true;
                     break;

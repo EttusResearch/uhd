@@ -33,7 +33,6 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
@@ -71,7 +70,7 @@ uhd::device_addrs_t n230_impl::n230_find(const uhd::device_addr_t &multi_dev_hin
     if (hints.size() > 1){
         device_addrs_t found_devices;
         std::string error_msg;
-        BOOST_FOREACH(const device_addr_t &hint_i, hints){
+        for(const device_addr_t &hint_i:  hints){
             device_addrs_t found_devices_i = n230_find(hint_i);
             if (found_devices_i.size() != 1) error_msg += str(boost::format(
                 "Could not resolve device hint \"%s\" to a single device."
@@ -98,7 +97,7 @@ uhd::device_addrs_t n230_impl::n230_find(const uhd::device_addr_t &multi_dev_hin
 
     //if no address was specified, send a broadcast on each interface
     if (not hint.has_key("addr")) {
-        BOOST_FOREACH(const if_addrs_t &if_addrs, get_if_addrs()) {
+        for(const if_addrs_t &if_addrs:  get_if_addrs()) {
             //avoid the loopback device
             if (if_addrs.inet == asio::ip::address_v4::loopback().to_string()) continue;
 
@@ -119,7 +118,7 @@ uhd::device_addrs_t n230_impl::n230_find(const uhd::device_addr_t &multi_dev_hin
         usrp3::usrp3_fw_ctrl_iface::discover_devices(
             hint["addr"], BOOST_STRINGIZE(N230_FW_COMMS_UDP_PORT), N230_FW_PRODUCT_ID);
 
-    BOOST_FOREACH(const std::string& addr, discovered_addrs)
+    for(const std::string& addr:  discovered_addrs)
     {
         device_addr_t new_addr;
         new_addr["type"] = "n230";
@@ -397,11 +396,11 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
     // Initialize subdev specs
     //------------------------------------------------------------------
     subdev_spec_t rx_spec, tx_spec;
-    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "rx_frontends"))
+    for(const std::string &fe:  _tree->list(mb_path / "dboards" / "A" / "rx_frontends"))
     {
         rx_spec.push_back(subdev_spec_pair_t("A", fe));
     }
-    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "tx_frontends"))
+    for(const std::string &fe:  _tree->list(mb_path / "dboards" / "A" / "tx_frontends"))
     {
         tx_spec.push_back(subdev_spec_pair_t("A", fe));
     }
@@ -437,7 +436,7 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
     //------------------------------------------------------------------
     if (_resource_mgr->is_gpsdo_present()) {
         uhd::gps_ctrl::sptr gps_ctrl = _resource_mgr->get_gps_ctrl();
-        BOOST_FOREACH(const std::string &name, gps_ctrl->get_sensors())
+        for(const std::string &name:  gps_ctrl->get_sensors())
         {
             _tree->create<sensor_value_t>(mb_path / "sensors" / name)
                 .set_publisher(boost::bind(&gps_ctrl::get_sensor, gps_ctrl, name));
@@ -499,7 +498,7 @@ void n230_impl::_initialize_radio_properties(const fs_path& mb_path, size_t inst
 
     //RF Frontend Interfacing
     static const std::vector<direction_t> data_directions = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
-    BOOST_FOREACH(direction_t direction, data_directions) {
+    for(direction_t direction:  data_directions) {
         const std::string dir_str = (direction == RX_DIRECTION) ? "rx" : "tx";
         const std::string key = boost::to_upper_copy(dir_str) + str(boost::format("%u") % (instance + 1));
         const fs_path rf_fe_path = mb_path / "dboards" / "A" / (dir_str + "_frontends") / ((instance==0)?"A":"B");

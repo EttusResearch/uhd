@@ -23,7 +23,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/exception.hpp>
 #include <stdint.h>
-#include <boost/foreach.hpp>
 
 using namespace uhd;
 

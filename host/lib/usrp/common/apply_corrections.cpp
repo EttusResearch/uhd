@@ -22,7 +22,6 @@
 #include <uhd/utils/csv.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
 #include <boost/thread/mutex.hpp>
 #include <cstdio>
 #include <complex>
@@ -114,7 +113,7 @@ static void apply_fe_corrections(
 
         bool read_data = false, skip_next = false;;
         std::vector<fe_cal_t> datas;
-        BOOST_FOREACH(const uhd::csv::row_type &row, rows){
+        for(const uhd::csv::row_type &row:  rows){
             if (not read_data and not row.empty() and row[0] == "DATA STARTS HERE"){
                 read_data = true;
                 skip_next = true;

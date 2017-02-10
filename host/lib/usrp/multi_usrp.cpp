@@ -30,7 +30,6 @@
 #include "legacy_compat.hpp"
 #include <boost/assign/list_of.hpp>
 #include <boost/thread.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <algorithm>
@@ -190,7 +189,7 @@ static meta_range_t make_overall_tune_range(
     const double bw
 ){
     meta_range_t range;
-    BOOST_FOREACH(const range_t &sub_range, fe_range){
+    for(const range_t &sub_range:  fe_range){
         range.push_back(range_t(
             sub_range.start() + std::max(dsp_range.start(), -bw/2),
             sub_range.stop() + std::min(dsp_range.stop(), bw/2),
@@ -873,7 +872,7 @@ public:
     std::vector<std::string> get_rx_lo_names(size_t chan = 0){
         std::vector<std::string> lo_names;
         if (_tree->exists(rx_rf_fe_root(chan) / "los")) {
-            BOOST_FOREACH(const std::string &name, _tree->list(rx_rf_fe_root(chan) / "los")) {
+            for(const std::string &name:  _tree->list(rx_rf_fe_root(chan) / "los")) {
                 lo_names.push_back(name);
             }
         }
@@ -887,7 +886,7 @@ public:
                     //Special value ALL_LOS support atomically sets the source for all LOs
                     _tree->access<std::string>(rx_rf_fe_root(chan) / "los" / ALL_LOS / "source" / "value").set(src);
                 } else {
-                    BOOST_FOREACH(const std::string &n, _tree->list(rx_rf_fe_root(chan) / "los")) {
+                    for(const std::string &n:  _tree->list(rx_rf_fe_root(chan) / "los")) {
                         this->set_rx_lo_source(src, n, chan);
                     }
                 }
@@ -950,7 +949,7 @@ public:
                     //Special value ALL_LOS support atomically sets the source for all LOs
                     _tree->access<bool>(rx_rf_fe_root(chan) / "los" / ALL_LOS / "export").set(enabled);
                 } else {
-                    BOOST_FOREACH(const std::string &n, _tree->list(rx_rf_fe_root(chan) / "los")) {
+                    for(const std::string &n:  _tree->list(rx_rf_fe_root(chan) / "los")) {
                         this->set_rx_lo_export_enabled(enabled, n, chan);
                     }
                 }
@@ -1536,12 +1535,12 @@ public:
         std::vector<std::string> banks;
         if (_tree->exists(mb_root(mboard) / "gpio"))
         {
-            BOOST_FOREACH(const std::string &name, _tree->list(mb_root(mboard) / "gpio"))
+            for(const std::string &name:  _tree->list(mb_root(mboard) / "gpio"))
             {
                 banks.push_back(name);
             }
         }
-        BOOST_FOREACH(const std::string &name, _tree->list(mb_root(mboard) / "dboards"))
+        for(const std::string &name:  _tree->list(mb_root(mboard) / "dboards"))
         {
             banks.push_back("RX"+name);
             banks.push_back("TX"+name);
@@ -1877,10 +1876,10 @@ private:
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
         const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
         gain_group::sptr gg = gain_group::make();
-        BOOST_FOREACH(const std::string &name, _tree->list(mb_root(mcp.mboard) / "rx_codecs" / spec.db_name / "gains")){
+        for(const std::string &name:  _tree->list(mb_root(mcp.mboard) / "rx_codecs" / spec.db_name / "gains")){
             gg->register_fcns("ADC-"+name, make_gain_fcns_from_subtree(_tree->subtree(mb_root(mcp.mboard) / "rx_codecs" / spec.db_name / "gains" / name)), 0 /* low prio */);
         }
-        BOOST_FOREACH(const std::string &name, _tree->list(rx_rf_fe_root(chan) / "gains")){
+        for(const std::string &name:  _tree->list(rx_rf_fe_root(chan) / "gains")){
             gg->register_fcns(name, make_gain_fcns_from_subtree(_tree->subtree(rx_rf_fe_root(chan) / "gains" / name)), 1 /* high prio */);
         }
         return gg;
@@ -1890,10 +1889,10 @@ private:
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
         const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
         gain_group::sptr gg = gain_group::make();
-        BOOST_FOREACH(const std::string &name, _tree->list(mb_root(mcp.mboard) / "tx_codecs" / spec.db_name / "gains")){
+        for(const std::string &name:  _tree->list(mb_root(mcp.mboard) / "tx_codecs" / spec.db_name / "gains")){
             gg->register_fcns("DAC-"+name, make_gain_fcns_from_subtree(_tree->subtree(mb_root(mcp.mboard) / "tx_codecs" / spec.db_name / "gains" / name)), 1 /* high prio */);
         }
-        BOOST_FOREACH(const std::string &name, _tree->list(tx_rf_fe_root(chan) / "gains")){
+        for(const std::string &name:  _tree->list(tx_rf_fe_root(chan) / "gains")){
             gg->register_fcns(name, make_gain_fcns_from_subtree(_tree->subtree(tx_rf_fe_root(chan) / "gains" / name)), 0 /* low prio */);
         }
         return gg;
@@ -1907,7 +1906,7 @@ private:
         size_t bytes_per_sample = convert::get_bytes_per_item(args.otw_format.empty() ? "sc16" : args.otw_format);
         double max_link_rate = 0;
         double sum_rate = 0;
-        BOOST_FOREACH(const size_t chan, args.channels) {
+        for(const size_t chan:  args.channels) {
             mboard_chan_pair mcp = is_tx ? tx_chan_to_mcp(chan) : rx_chan_to_mcp(chan);
             if (_tree->exists(mb_root(mcp.mboard) / "link_max_rate")) {
                 max_link_rate = std::max(

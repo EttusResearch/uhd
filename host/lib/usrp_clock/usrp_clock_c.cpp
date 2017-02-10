@@ -22,7 +22,6 @@
 
 #include <uhd/usrp_clock/usrp_clock.h>
 
-#include <boost/foreach.hpp>
 #include <boost/thread/mutex.hpp>
 
 #include <string.h>
@@ -64,7 +63,7 @@ uhd_error uhd_usrp_clock_find(
 
         uhd::device_addrs_t devs = uhd::device::find(std::string(args), uhd::device::CLOCK);
         devices_out->string_vector_cpp.clear();
-        BOOST_FOREACH(const uhd::device_addr_t &dev, devs){
+        for(const uhd::device_addr_t &dev:  devs){
             devices_out->string_vector_cpp.push_back(dev.to_string());
         }
     )

@@ -23,7 +23,6 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd;

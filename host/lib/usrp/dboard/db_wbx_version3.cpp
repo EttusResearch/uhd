@@ -96,7 +96,7 @@ wbx_base::wbx_version3::wbx_version3(wbx_base *_self_wbx_base) {
     // Register TX properties
     ////////////////////////////////////////////////////////////////////
     this->get_tx_subtree()->create<std::string>("name").set("WBXv3 TX");
-    BOOST_FOREACH(const std::string &name, wbx_v3_tx_gain_ranges.keys()){
+    for(const std::string &name:  wbx_v3_tx_gain_ranges.keys()){
         self_base->get_tx_subtree()->create<double>("gains/"+name+"/value")
             .set_coercer(boost::bind(&wbx_base::wbx_version3::set_tx_gain, this, _1, name))
             .set(wbx_v3_tx_gain_ranges[name].start());

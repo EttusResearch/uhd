@@ -20,7 +20,6 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/foreach.hpp>
 #include <algorithm>
 #include <iostream>
 

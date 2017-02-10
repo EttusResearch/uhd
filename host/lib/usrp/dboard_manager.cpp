@@ -26,7 +26,6 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 #include <boost/assign/list_of.hpp>
 
 using namespace uhd;
@@ -156,7 +155,7 @@ void dboard_manager::register_dboard_restricted(
 
 std::string dboard_id_t::to_cname(void) const{
     std::string cname;
-    BOOST_FOREACH(const dboard_key_t &key, get_id_to_args_map().keys()){
+    for(const dboard_key_t &key:  get_id_to_args_map().keys()){
         if (
             (not key.is_xcvr() and *this == key.xx_id()) or
             (key.is_xcvr() and (*this == key.rx_id() or *this == key.tx_id()))
@@ -266,7 +265,7 @@ void dboard_manager_impl::init(
 ){
     //find the dboard key matches for the dboard ids
     dboard_key_t rx_dboard_key, tx_dboard_key, xcvr_dboard_key;
-    BOOST_FOREACH(const dboard_key_t &key, get_id_to_args_map().keys()){
+    for(const dboard_key_t &key:  get_id_to_args_map().keys()){
         if (key.is_xcvr()){
             if (rx_dboard_id == key.rx_id() and tx_dboard_id == key.tx_id()) xcvr_dboard_key = key;
             if (rx_dboard_id == key.rx_id()) rx_dboard_key = key; //kept to handle warning
@@ -322,7 +321,7 @@ void dboard_manager_impl::init(
         db_ctor_args.tx_container = db_ctor_args.rx_container;  //Same TX and RX container
 
         //create the xcvr object for each subdevice
-        BOOST_FOREACH(const std::string &subdev, subdevs){
+        for(const std::string &subdev:  subdevs){
             db_ctor_args.sd_name = subdev;
             db_ctor_args.rx_subtree = subtree->subtree("rx_frontends/" + db_ctor_args.sd_name);
             db_ctor_args.tx_subtree = subtree->subtree("tx_frontends/" + db_ctor_args.sd_name);
@@ -373,7 +372,7 @@ void dboard_manager_impl::init(
         }
 
         //make the rx subdevs
-        BOOST_FOREACH(const std::string &subdev, rx_subdevs){
+        for(const std::string &subdev:  rx_subdevs){
             db_ctor_args.sd_name = subdev;
             db_ctor_args.rx_subtree = subtree->subtree("rx_frontends/" + db_ctor_args.sd_name);
             _rx_dboards[subdev] = rx_dboard_ctor(&db_ctor_args);
@@ -412,7 +411,7 @@ void dboard_manager_impl::init(
         }
 
         //make the tx subdevs
-        BOOST_FOREACH(const std::string &subdev, tx_subdevs){
+        for(const std::string &subdev:  tx_subdevs){
             db_ctor_args.sd_name = subdev;
             db_ctor_args.tx_subtree = subtree->subtree("tx_frontends/" + db_ctor_args.sd_name);
             _tx_dboards[subdev] = tx_dboard_ctor(&db_ctor_args);
@@ -436,11 +435,11 @@ void dboard_manager_impl::init(
 }
 
 void dboard_manager_impl::initialize_dboards(void) {
-    BOOST_FOREACH(dboard_base::sptr& _rx_container, _rx_containers) {
+    for(dboard_base::sptr& _rx_container:  _rx_containers) {
         _rx_container->initialize();
     }
 
-    BOOST_FOREACH(dboard_base::sptr& _tx_container, _tx_containers) {
+    for(dboard_base::sptr& _tx_container:  _tx_containers) {
         _tx_container->initialize();
     }
 }
@@ -457,7 +456,7 @@ void dboard_manager_impl::set_nice_dboard_if(void){
     ;
 
     //set nice settings on each unit
-    BOOST_FOREACH(dboard_iface::unit_t unit, units){
+    for(dboard_iface::unit_t unit:  units){
         _iface->set_gpio_ddr(unit, 0x0000); //all inputs
         _iface->set_gpio_out(unit, 0x0000); //all low
         _iface->set_pin_ctrl(unit, 0x0000); //all gpio

@@ -26,7 +26,6 @@
 #include <boost/bind.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>
 
 using namespace uhd;
@@ -43,7 +42,7 @@ static const uint32_t HW_SEQ_NUM_MASK = 0xfff;
 void e300_impl::_check_tick_rate_with_current_streamers(const double rate)
 {
     size_t max_tx_chan_count = 0, max_rx_chan_count = 0;
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         {
             boost::shared_ptr<sph::recv_packet_streamer> rx_streamer =
@@ -73,7 +72,7 @@ void e300_impl::_update_tick_rate(const double rate)
 {
     _check_tick_rate_with_current_streamers(rate);
 
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::recv_packet_streamer>(perif.rx_streamer.lock());
@@ -81,7 +80,7 @@ void e300_impl::_update_tick_rate(const double rate)
             my_streamer->set_tick_rate(rate);
         perif.framer->set_tick_rate(_tick_rate);
     }
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         boost::shared_ptr<sph::send_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(perif.tx_streamer.lock());

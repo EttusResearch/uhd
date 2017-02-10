@@ -18,7 +18,6 @@
 #include <uhd/types/mac_addr.hpp>
 #include <uhd/exception.hpp>
 #include <boost/tokenizer.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <stdint.h>
 #include <sstream>
@@ -45,7 +44,7 @@ mac_addr_t mac_addr_t::from_string(const std::string &mac_addr_str){
         //split the mac addr hex string at the colons
         boost::tokenizer<boost::char_separator<char> > hex_num_toks(
             mac_addr_str, boost::char_separator<char>(":"));
-        BOOST_FOREACH(const std::string &hex_str, hex_num_toks){
+        for(const std::string &hex_str:  hex_num_toks){
             int hex_num;
             std::istringstream iss(hex_str);
             iss >> std::hex >> hex_num;
@@ -68,7 +67,7 @@ byte_vector_t mac_addr_t::to_bytes(void) const{
 
 std::string mac_addr_t::to_string(void) const{
     std::string addr = "";
-    BOOST_FOREACH(uint8_t byte, this->to_bytes()){
+    for(uint8_t byte:  this->to_bytes()){
         addr += str(boost::format("%s%02x") % ((addr == "")?"":":") % int(byte));
     }
     return addr;

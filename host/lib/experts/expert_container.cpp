@@ -19,7 +19,6 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/msg.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
@@ -185,7 +184,7 @@ public:
             EX_LOG(1, "cycle check ... PASSED");
         } else {
             EX_LOG(1, "cycle check ... ERROR!!!");
-            BOOST_FOREACH(const std::string& e, back_edges) {
+            for(const std::string& e:  back_edges) {
                 EX_LOG(2, "back edge: " + e);
             }
         }
@@ -193,7 +192,7 @@ public:
 
         //Test 2: Check data node input and output edges
         std::vector<std::string> data_node_issues;
-        BOOST_FOREACH(const vertex_map_t::value_type& v, _datanode_map) {
+        for(const vertex_map_t::value_type& v:  _datanode_map) {
             size_t in_count = 0, out_count = 0;
             for (std::pair<edge_iter, edge_iter> ei = boost::edges(_expert_dag);
                  ei.first != ei.second;
@@ -238,7 +237,7 @@ public:
             EX_LOG(1, "data node check ... PASSED");
         } else {
             EX_LOG(1, "data node check ... WARNING!");
-            BOOST_FOREACH(const std::string& i, data_node_issues) {
+            for(const std::string& i:  data_node_issues) {
                 EX_LOG(2, i);
             }
         }
@@ -246,7 +245,7 @@ public:
 
         //Test 3: Check worker node input and output edges
         std::vector<std::string> worker_issues;
-        BOOST_FOREACH(const vertex_map_t::value_type& v, _worker_map) {
+        for(const vertex_map_t::value_type& v:  _worker_map) {
             size_t in_count = 0, out_count = 0;
             for (std::pair<edge_iter, edge_iter> ei = boost::edges(_expert_dag);
                  ei.first != ei.second;
@@ -268,7 +267,7 @@ public:
             EX_LOG(1, "worker check ... PASSED");
         } else {
             EX_LOG(1, "worker check ... WARNING!");
-            BOOST_FOREACH(const std::string& i, worker_issues) {
+            for(const std::string& i:  worker_issues) {
                 EX_LOG(2, i);
             }
         }
@@ -347,7 +346,7 @@ protected:
             _worker_map.insert(vertex_map_t::value_type(worker->get_name(), gr_node));
 
             //For each input, add an edge from the input to this node
-            BOOST_FOREACH(const std::string& node_name, worker->get_inputs()) {
+            for(const std::string& node_name:  worker->get_inputs()) {
                 vertex_map_t::const_iterator node = _datanode_map.find(node_name);
                 if (node != _datanode_map.end()) {
                     boost::add_edge((*node).second, gr_node, _expert_dag);
@@ -358,7 +357,7 @@ protected:
             }
 
             //For each output, add an edge from this node to the output
-            BOOST_FOREACH(const std::string& node_name, worker->get_outputs()) {
+            for(const std::string& node_name:  worker->get_outputs()) {
                 vertex_map_t::const_iterator node = _datanode_map.find(node_name);
                 if (node != _datanode_map.end()) {
                     boost::add_edge(gr_node, (*node).second, _expert_dag);
@@ -423,7 +422,7 @@ private:
             boost::depth_first_search(_expert_dag, boost::visitor(cdet_vis));
             if (not back_edges.empty()) {
                 std::string edges;
-                BOOST_FOREACH(const std::string& e, back_edges) {
+                for(const std::string& e:  back_edges) {
                     edges += "* " + e + "";
                 }
                 throw uhd::runtime_error("Cannot resolve expert because it has at least one cycle!\n"

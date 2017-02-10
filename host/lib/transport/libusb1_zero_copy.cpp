@@ -21,7 +21,6 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/utils/msg.hpp>
 #include <uhd/exception.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
@@ -274,19 +273,19 @@ public:
     ~libusb_zero_copy_single(void)
     {
         //cancel all transfers
-        BOOST_FOREACH(libusb_transfer *lut, _all_luts)
+        for(libusb_transfer *lut:  _all_luts)
         {
             libusb_cancel_transfer(lut);
         }
 
         //process all transfers until timeout occurs
-        BOOST_FOREACH(libusb_zero_copy_mb *mb, _enqueued)
+        for(libusb_zero_copy_mb *mb:  _enqueued)
         {
             mb->wait_for_completion(0.01);
         }
 
         //free all transfers
-        BOOST_FOREACH(libusb_transfer *lut, _all_luts)
+        for(libusb_transfer *lut:  _all_luts)
         {
             libusb_free_transfer(lut);
         }

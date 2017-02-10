@@ -21,7 +21,6 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/atomic.hpp>
-#include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>

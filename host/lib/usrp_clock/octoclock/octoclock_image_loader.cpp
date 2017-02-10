@@ -140,7 +140,7 @@ static void octoclock_setup_session(octoclock_session_t &session,
         std::string err_msg = "Could not resolve given args to a single OctoClock device.\n"
                               "Applicable devices:\n";
 
-        BOOST_FOREACH(const uhd::device_addr_t &dev, devs){
+        for(const uhd::device_addr_t &dev:  devs){
             std::string name = (dev["type"] == "octoclock") ? str(boost::format("OctoClock r%d")
                                                                   % dev.get("revision","4"))
                                                           : "OctoClock Bootloader";

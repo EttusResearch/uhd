@@ -68,7 +68,7 @@ std::vector<rfnoc::block_id_t> device3::find_blocks(const std::string &block_id_
 
 void device3::clear()
 {
-    BOOST_FOREACH(const block_ctrl_base::sptr &block, _rfnoc_block_ctrl) {
+    for(const block_ctrl_base::sptr &block:  _rfnoc_block_ctrl) {
         block->clear();
     }
 }

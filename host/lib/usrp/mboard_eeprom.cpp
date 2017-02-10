@@ -22,7 +22,6 @@
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/foreach.hpp>
 #include <algorithm>
 #include <iostream>
 #include <cstddef>

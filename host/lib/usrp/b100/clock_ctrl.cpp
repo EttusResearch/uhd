@@ -25,7 +25,6 @@
 #include <stdint.h>
 #include "b100_regs.hpp" //spi slave constants
 #include <boost/assign/list_of.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/math/common_factor_rt.hpp> //gcd
@@ -533,7 +532,7 @@ private:
         ;
 
         //write initial register values and latch/update
-        BOOST_FOREACH(const range_t &range, ranges){
+        for(const range_t &range:  ranges){
             for(uint16_t addr = range.first; addr <= range.second; addr++){
                 this->send_reg(addr);
             }

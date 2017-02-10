@@ -23,7 +23,6 @@
 #include <uhd/utils/dirty_tracked.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <boost/function.hpp>
-#include <boost/foreach.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread.hpp>
 #include <boost/units/detail/utility.hpp>
@@ -409,7 +408,7 @@ namespace uhd { namespace experts {
         // Worker node specific
         std::list<std::string> get_inputs() const {
             std::list<std::string> retval;
-            BOOST_FOREACH(data_accessor_t* acc, _inputs) {
+            for(data_accessor_t* acc:  _inputs) {
                 retval.push_back(acc->node().get_name());
             }
             return retval;
@@ -417,7 +416,7 @@ namespace uhd { namespace experts {
 
         std::list<std::string> get_outputs() const {
             std::list<std::string> retval;
-            BOOST_FOREACH(data_accessor_t* acc, _outputs) {
+            for(data_accessor_t* acc:  _outputs) {
                 retval.push_back(acc->node().get_name());
             }
             return retval;
@@ -442,14 +441,14 @@ namespace uhd { namespace experts {
         // Graph resolution specific
         virtual bool is_dirty() const {
             bool inputs_dirty = false;
-            BOOST_FOREACH(data_accessor_t* acc, _inputs) {
+            for(data_accessor_t* acc:  _inputs) {
                 inputs_dirty |= acc->node().is_dirty();
             }
             return inputs_dirty;
         }
 
         virtual void mark_clean() {
-            BOOST_FOREACH(data_accessor_t* acc, _inputs) {
+            for(data_accessor_t* acc:  _inputs) {
                 acc->node().mark_clean();
             }
         }

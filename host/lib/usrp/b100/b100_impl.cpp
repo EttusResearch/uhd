@@ -73,7 +73,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
 
     //find the usrps and load firmware
     size_t found = 0;
-    BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
+    for(usb_device_handle::sptr handle: usb_device_handle::get_device_list(vid,  pid)) {
         //extract the firmware path for the b100
         std::string b100_fw_image;
         try{
@@ -102,7 +102,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     //search for the device until found or timeout
     while (boost::get_system_time() < timeout_time and b100_addrs.empty() and found != 0)
     {
-        BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid))
+      for(usb_device_handle::sptr handle: usb_device_handle::get_device_list(vid,  pid))
         {
             usb_control::sptr control;
             try{control = usb_control::make(handle, 0);}
@@ -161,7 +161,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
 
     //locate the matching handle in the device list
     usb_device_handle::sptr handle;
-    BOOST_FOREACH(usb_device_handle::sptr dev_handle, device_list) {
+    for(usb_device_handle::sptr dev_handle:  device_list) {
         if (dev_handle->get_serial() == device_addr["serial"]){
             handle = dev_handle;
             break;
@@ -478,12 +478,12 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
 
     //bind frontend corrections to the dboard freq props
     const fs_path db_tx_fe_path = mb_path / "dboards" / "A" / "tx_frontends";
-    BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)){
+    for(const std::string &name:  _tree->list(db_tx_fe_path)){
         _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
             .add_coerced_subscriber(boost::bind(&b100_impl::set_tx_fe_corrections, this, _1));
     }
     const fs_path db_rx_fe_path = mb_path / "dboards" / "A" / "rx_frontends";
-    BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)){
+    for(const std::string &name:  _tree->list(db_rx_fe_path)){
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
             .add_coerced_subscriber(boost::bind(&b100_impl::set_rx_fe_corrections, this, _1));
     }
@@ -504,10 +504,10 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
         .add_coerced_subscriber(boost::bind(&b100_clock_ctrl::set_fpga_clock_rate, _clock_ctrl, _1));
 
     //reset cordic rates and their properties to zero
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
+    for(const std::string &name:  _tree->list(mb_path / "rx_dsps")){
         _tree->access<double>(mb_path / "rx_dsps" / name / "freq" / "value").set(0.0);
     }
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
+    for(const std::string &name:  _tree->list(mb_path / "tx_dsps")){
         _tree->access<double>(mb_path / "tx_dsps" / name / "freq" / "value").set(0.0);
     }
 

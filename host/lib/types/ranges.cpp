@@ -18,7 +18,6 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/exception.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <boost/foreach.hpp>
 #include <algorithm>
 #include <sstream>
 
@@ -93,7 +92,7 @@ meta_range_t::meta_range_t(
 double meta_range_t::start(void) const{
     check_meta_range_monotonic(*this);
     double min_start = this->front().start();
-    BOOST_FOREACH(const range_t &r, (*this)){
+    for(const range_t &r:  (*this)){
         min_start = std::min(min_start, r.start());
     }
     return min_start;
@@ -102,7 +101,7 @@ double meta_range_t::start(void) const{
 double meta_range_t::stop(void) const{
     check_meta_range_monotonic(*this);
     double max_stop = this->front().stop();
-    BOOST_FOREACH(const range_t &r, (*this)){
+    for(const range_t &r:  (*this)){
         max_stop = std::max(max_stop, r.stop());
     }
     return max_stop;
@@ -112,7 +111,7 @@ double meta_range_t::step(void) const{
     check_meta_range_monotonic(*this);
     std::vector<double> non_zero_steps;
     range_t last = this->front();
-    BOOST_FOREACH(const range_t &r, (*this)){
+    for(const range_t &r:  (*this)){
         //steps at each range
         if (r.step() > 0) non_zero_steps.push_back(r.step());
         //and steps in-between ranges
@@ -128,7 +127,7 @@ double meta_range_t::step(void) const{
 double meta_range_t::clip(double value, bool clip_step) const{
     check_meta_range_monotonic(*this);
     double last_stop = this->front().stop();
-    BOOST_FOREACH(const range_t &r, (*this)){
+    for(const range_t &r:  (*this)){
         //in-between ranges, clip to nearest
         if (value < r.start()){
             return (std::abs(value - r.start()) < std::abs(value - last_stop))?
@@ -147,7 +146,7 @@ double meta_range_t::clip(double value, bool clip_step) const{
 
 const std::string meta_range_t::to_pp_string(void) const{
     std::stringstream ss;
-    BOOST_FOREACH(const range_t &r, (*this)){
+    for(const range_t &r:  (*this)){
         ss << r.to_pp_string() << std::endl;
     }
     return ss.str();

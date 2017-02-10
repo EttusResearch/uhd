@@ -23,7 +23,6 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/exception.hpp>
-#include <boost/foreach.hpp>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -69,7 +68,7 @@ struct b200_uart_impl : b200_uart
 
     void write_uart(const std::string &buff)
     {
-        BOOST_FOREACH(const char ch, buff)
+        for(const char ch:  buff)
         {
             this->send_char(ch);
         }

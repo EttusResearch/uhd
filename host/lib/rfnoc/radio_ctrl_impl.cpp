@@ -16,7 +16,6 @@
 //
 
 #include "wb_iface_adapter.hpp"
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <uhd/convert.hpp>
@@ -283,7 +282,7 @@ std::vector<size_t> radio_ctrl_impl::get_active_rx_ports()
 {
     std::vector<size_t> active_rx_ports;
     typedef std::map<size_t, bool> map_t;
-    BOOST_FOREACH(map_t::value_type &m, _rx_streamer_active) {
+    for(map_t::value_type &m:  _rx_streamer_active) {
         if (m.second) {
             active_rx_ports.push_back(m.first);
         }

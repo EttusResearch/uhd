@@ -107,7 +107,7 @@ static const boost::array<double, 17> tvrx_gains_volts =
 
 static uhd::dict<std::string, gain_range_t> get_tvrx_gain_ranges(void) {
     double rfmax = 0.0, rfmin = FLT_MAX;
-    BOOST_FOREACH(const std::string range, tvrx_rf_gains_db.keys()) {
+    for(const std::string range:  tvrx_rf_gains_db.keys()) {
         double my_max = tvrx_rf_gains_db[range].back(); //we're assuming it's monotonic
         double my_min = tvrx_rf_gains_db[range].front(); //if it's not this is wrong wrong wrong
         if(my_max > rfmax) rfmax = my_max;
@@ -188,7 +188,7 @@ tvrx::tvrx(ctor_args_t args) : rx_dboard_base(args){
     this->get_rx_subtree()->create<std::string>("name")
         .set("TVRX");
     this->get_rx_subtree()->create<int>("sensors"); //phony property so this dir exists
-    BOOST_FOREACH(const std::string &name, get_tvrx_gain_ranges().keys()){
+    for(const std::string &name:  get_tvrx_gain_ranges().keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
             .set_coercer(boost::bind(&tvrx::set_gain, this, _1, name));
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
@@ -232,7 +232,7 @@ tvrx::tvrx(ctor_args_t args) : rx_dboard_base(args){
     this->get_rx_subtree()->access<double>("freq/value").set(tvrx_freq_range.start());
 
     //set default gains
-    BOOST_FOREACH(const std::string &name, get_tvrx_gain_ranges().keys()){
+    for(const std::string &name:  get_tvrx_gain_ranges().keys()){
         this->get_rx_subtree()->access<double>("gains/"+name+"/value")
             .set(get_tvrx_gain_ranges()[name].start());
     }
@@ -247,7 +247,7 @@ tvrx::~tvrx(void){
  */
 
 static std::string get_band(double freq) {
-    BOOST_FOREACH(const std::string &band, tvrx_freq_ranges.keys()) {
+    for(const std::string &band:  tvrx_freq_ranges.keys()) {
         if(freq >= tvrx_freq_ranges[band].start() && freq <= tvrx_freq_ranges[band].stop()){
             UHD_LOGV(often) << "Band: " << band << std::endl;
             return band;

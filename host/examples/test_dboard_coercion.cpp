@@ -102,7 +102,7 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp, std::string type, in
 
     std::cout << boost::format("\nTesting %s coercion...") % type << std::endl;
 
-    BOOST_FOREACH(const uhd::range_t &range, freq_ranges){
+    for(const uhd::range_t &range:  freq_ranges){
         double freq_begin = range.start();
         double freq_end = range.stop();
 
@@ -152,7 +152,7 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp, std::string type, in
 
     bool has_sensor = (std::find(dboard_sensor_names.begin(), dboard_sensor_names.end(), "lo_locked")) != dboard_sensor_names.end();
 
-    BOOST_FOREACH(double freq, freqs){
+    for(double freq:  freqs){
 
         //Testing for successful frequency tune
         if(type == "TX") usrp->set_tx_freq(freq,chan);
@@ -212,7 +212,7 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp, std::string type, in
 
             //Testing for successful gain tune
 
-            BOOST_FOREACH(double gain, gains){
+            for(double gain:  gains){
                 if(type == "TX") usrp->set_tx_gain(gain,chan);
                 else usrp->set_rx_gain(gain,chan);
 
@@ -266,7 +266,7 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp, std::string type, in
     }
     else{
         results += "USRP did not successfully tune to the following frequencies: ";
-        BOOST_FOREACH(double bad_freq, bad_tune_freqs){
+        for(double bad_freq:  bad_tune_freqs){
             if(bad_freq != *bad_tune_freqs.begin()) results += ", ";
             results += MHz_str(bad_freq);
         }
@@ -282,7 +282,7 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp, std::string type, in
         }
         else{
             results += "LO did not lock at the following frequencies: ";
-            BOOST_FOREACH(double bad_freq, no_lock_freqs){
+            for(double bad_freq:  no_lock_freqs){
                 if(bad_freq != *no_lock_freqs.begin()) results += ", ";
                 results += MHz_str(bad_freq);
             }
@@ -298,7 +298,7 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp, std::string type, in
         }
         else{
             results += "USRP did not successfully set gain under the following circumstances:";
-            BOOST_FOREACH(double_pair bad_pair, bad_gain_vals){
+            for(double_pair bad_pair:  bad_gain_vals){
                 double bad_freq = bad_pair.first;
                 double bad_gain = bad_pair.second;
                 results += str(boost::format("\nFrequency: %s, Gain: %5.2f") % MHz_str(bad_freq) % bad_gain);

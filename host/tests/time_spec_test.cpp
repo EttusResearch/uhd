@@ -17,7 +17,6 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/types/time_spec.hpp>
-#include <boost/foreach.hpp>
 #include <boost/thread.hpp> //sleep
 #include <iostream>
 #include <iomanip>

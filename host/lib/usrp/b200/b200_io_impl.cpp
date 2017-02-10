@@ -45,7 +45,7 @@ void b200_impl::check_tick_rate_with_current_streamers(double rate)
 size_t b200_impl::max_chan_count(const std::string &direction /* = "" */)
 {
     size_t max_count = 0;
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         if ((direction == "RX" or direction.empty()) and not perif.rx_streamer.expired()) {
             boost::shared_ptr<sph::recv_packet_streamer> rx_streamer =
@@ -97,7 +97,7 @@ void b200_impl::set_auto_tick_rate(
     for (int i = 0; i < 2; i++) { // Loop through rx and tx
         std::string dir = (i == 0) ? "tx" : "rx";
         // We assume all 'set' DSPs are being used.
-        BOOST_FOREACH(const std::string &dsp_no, _tree->list(str(boost::format("/mboards/0/%s_dsps") % dir))) {
+        for(const std::string &dsp_no:  _tree->list(str(boost::format("/mboards/0/%s_dsps") % dir))) {
             fs_path dsp_path = str(boost::format("/mboards/0/%s_dsps/%s") % dir % dsp_no);
             if (dsp_path == tree_dsp_path) {
                 continue;
@@ -146,14 +146,14 @@ void b200_impl::update_tick_rate(const double new_tick_rate)
 {
     check_tick_rate_with_current_streamers(new_tick_rate);
 
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::recv_packet_streamer>(perif.rx_streamer.lock());
         if (my_streamer) my_streamer->set_tick_rate(new_tick_rate);
         perif.framer->set_tick_rate(new_tick_rate);
     }
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         boost::shared_ptr<sph::send_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(perif.tx_streamer.lock());

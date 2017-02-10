@@ -22,7 +22,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 #include <boost/tokenizer.hpp>
@@ -98,7 +97,7 @@ static std::vector<std::string> get_env_paths(const std::string &var_name){
 
     //convert to full filesystem path, filter blank paths
     if (var_value.empty()) return paths;
-    BOOST_FOREACH(const std::string &path_string, path_tokenizer(var_value)){
+    for(const std::string &path_string:  path_tokenizer(var_value)){
         if (path_string.empty()) continue;
         paths.push_back(fs::system_complete(path_string).string());
     }
@@ -190,7 +189,7 @@ std::vector<fs::path> uhd::get_module_paths(void){
     std::vector<fs::path> paths;
 
     std::vector<std::string> env_paths = get_env_paths("UHD_MODULE_PATH");
-    BOOST_FOREACH(std::string &str_path, env_paths) {
+    for(std::string &str_path:  env_paths) {
         paths.push_back(str_path);
     }
 
@@ -272,7 +271,7 @@ std::string uhd::get_images_dir(const std::string &search_paths) {
     /* We will start by looking for a path indicated by the `UHD_IMAGES_DIR`
      * environment variable. */
     std::vector<std::string> env_paths = get_env_paths("UHD_IMAGES_DIR");
-    BOOST_FOREACH(possible_dir, env_paths) {
+    for(auto possible_dir:  env_paths) {
         if (fs::is_directory(fs::path(possible_dir))) {
                 return possible_dir;
         }
@@ -293,7 +292,7 @@ std::string uhd::get_images_dir(const std::string &search_paths) {
         std::vector<std::string> search_paths_vector;
 
         boost::split(search_paths_vector, _search_paths, boost::is_any_of(",;"));
-        BOOST_FOREACH(std::string& search_path, search_paths_vector) {
+        for(std::string& search_path:  search_paths_vector) {
 
             boost::algorithm::trim(search_path);
             if (search_path.empty()) continue;

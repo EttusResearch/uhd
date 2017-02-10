@@ -354,7 +354,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
                 boost::is_any_of(","), // Split at ,
                 boost::token_compress_on // Avoid empty results
         );
-        BOOST_FOREACH(const std::string &this_prio, prios_in_list) {
+        for(const std::string &this_prio:  prios_in_list) {
             size_t prio_index = boost::lexical_cast<size_t>(this_prio);
             converter::sptr conv_for_prio = get_converter(converter_id, prio_index)(); // Can throw a uhd::key_error
             conv_list[prio_index] = conv_for_prio;
@@ -384,7 +384,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     /// Final configurations to the converter:
     std::cout << "Configuring converters:" << std::endl;
-    BOOST_FOREACH(priority_type prio_i, conv_list.keys()) {
+    for(priority_type prio_i:  conv_list.keys()) {
         std::cout << "* [" << prio_i << "]: ";
         configure_conv(conv_list[prio_i], in_type, out_type);
     }
@@ -393,7 +393,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     std::cout << "{{{" << std::endl;
     if (not debug_mode) {
         std::cout << "prio,duration_ms,avg_duration_ms,n_samples,iterations" << std::endl;
-        BOOST_FOREACH(priority_type prio_i, conv_list.keys()) {
+        for(priority_type prio_i:  conv_list.keys()) {
             double duration = run_benchmark(
                     conv_list[prio_i],
                     input_buf_refs,

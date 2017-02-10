@@ -134,7 +134,7 @@ usrp2_dboard_iface::usrp2_dboard_iface(
     //reset the aux dacs
     _dac_regs[UNIT_RX] = ad5623_regs_t();
     _dac_regs[UNIT_TX] = ad5623_regs_t();
-    BOOST_FOREACH(unit_t unit, _dac_regs.keys()){
+    for(unit_t unit:  _dac_regs.keys()){
         _dac_regs[unit].data = 1;
         _dac_regs[unit].addr = ad5623_regs_t::ADDR_ALL;
         _dac_regs[unit].cmd  = ad5623_regs_t::CMD_RESET;

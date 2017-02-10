@@ -85,7 +85,7 @@ n230_resource_manager::n230_resource_manager(
 
     //Discover ethernet interfaces
     bool dual_eth_expected = (ip_addrs.size() > 1);
-    BOOST_FOREACH(const std::string& addr, ip_addrs) {
+    for(const std::string& addr:  ip_addrs) {
         n230_eth_conn_t conn_iface;
         conn_iface.ip_addr = addr;
 

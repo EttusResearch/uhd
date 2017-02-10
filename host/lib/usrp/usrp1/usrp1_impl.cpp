@@ -76,7 +76,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
 
     //find the usrps and load firmware
     size_t found = 0;
-    BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid)) {
+    for(usb_device_handle::sptr handle: usb_device_handle::get_device_list(vid,  pid)) {
         //extract the firmware path for the USRP1
         std::string usrp1_fw_image;
         try{
@@ -104,7 +104,7 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     //search for the device until found or timeout
     while (boost::get_system_time() < timeout_time and usrp1_addrs.empty() and found != 0)
     {
-        BOOST_FOREACH(usb_device_handle::sptr handle, usb_device_handle::get_device_list(vid, pid))
+      for(usb_device_handle::sptr handle: usb_device_handle::get_device_list(vid,  pid))
         {
             usb_control::sptr control;
             try{control = usb_control::make(handle, 0);}
@@ -159,7 +159,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
 
     //locate the matching handle in the device list
     usb_device_handle::sptr handle;
-    BOOST_FOREACH(usb_device_handle::sptr dev_handle, device_list) {
+    for(usb_device_handle::sptr dev_handle:  device_list) {
         if (dev_handle->get_serial() == device_addr["serial"]){
             handle = dev_handle;
             break;
@@ -251,7 +251,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // create codec control objects
     ////////////////////////////////////////////////////////////////////
-    BOOST_FOREACH(const std::string &db, _dbc.keys()){
+    for(const std::string &db:  _dbc.keys()){
         _dbc[db].codec = usrp1_codec_ctrl::make(_iface, (db == "A")? SPI_ENABLE_CODEC_A : SPI_ENABLE_CODEC_B);
         const fs_path rx_codec_path = mb_path / "rx_codecs" / db;
         const fs_path tx_codec_path = mb_path / "tx_codecs" / db;
@@ -284,7 +284,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         .set(subdev_spec_t())
         .add_coerced_subscriber(boost::bind(&usrp1_impl::update_tx_subdev_spec, this, _1));
 
-    BOOST_FOREACH(const std::string &db, _dbc.keys()){
+    for(const std::string &db:  _dbc.keys()){
         const fs_path rx_fe_path = mb_path / "rx_frontends" / db;
         _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
             .set_coercer(boost::bind(&usrp1_impl::set_rx_dc_offset, this, db, _1))
@@ -349,7 +349,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // create dboard control objects
     ////////////////////////////////////////////////////////////////////
-    BOOST_FOREACH(const std::string &db, _dbc.keys()){
+    for(const std::string &db:  _dbc.keys()){
 
         //read the dboard eeprom to extract the dboard ids
         dboard_eeprom_t rx_db_eeprom, tx_db_eeprom, gdb_eeprom;
@@ -400,7 +400,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     this->update_rates();
 
     //reset cordic rates and their properties to zero
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
+    for(const std::string &name:  _tree->list(mb_path / "rx_dsps")){
         _tree->access<double>(mb_path / "rx_dsps" / name / "freq" / "value").set(0.0);
     }
 

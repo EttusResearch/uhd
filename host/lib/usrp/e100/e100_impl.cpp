@@ -269,7 +269,7 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         }
         if (_gps and _gps->gps_detected())
         {
-            BOOST_FOREACH(const std::string &name, _gps->get_sensors())
+            for(const std::string &name:  _gps->get_sensors())
             {
                 _tree->create<sensor_value_t>(mb_path / "sensors" / name)
                     .set_publisher(boost::bind(&gps_ctrl::get_sensor, _gps, name));
@@ -434,12 +434,12 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
 
     //bind frontend corrections to the dboard freq props
     const fs_path db_tx_fe_path = mb_path / "dboards" / "A" / "tx_frontends";
-    BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)){
+    for(const std::string &name:  _tree->list(db_tx_fe_path)){
         _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
             .add_coerced_subscriber(boost::bind(&e100_impl::set_tx_fe_corrections, this, _1));
     }
     const fs_path db_rx_fe_path = mb_path / "dboards" / "A" / "rx_frontends";
-    BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)){
+    for(const std::string &name:  _tree->list(db_rx_fe_path)){
         _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
             .add_coerced_subscriber(boost::bind(&e100_impl::set_rx_fe_corrections, this, _1));
     }
@@ -460,10 +460,10 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
         .add_coerced_subscriber(boost::bind(&e100_clock_ctrl::set_fpga_clock_rate, _clock_ctrl, _1));
 
     //reset cordic rates and their properties to zero
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
+    for(const std::string &name:  _tree->list(mb_path / "rx_dsps")){
         _tree->access<double>(mb_path / "rx_dsps" / name / "freq" / "value").set(0.0);
     }
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
+    for(const std::string &name:  _tree->list(mb_path / "tx_dsps")){
         _tree->access<double>(mb_path / "tx_dsps" / name / "freq" / "value").set(0.0);
     }
 

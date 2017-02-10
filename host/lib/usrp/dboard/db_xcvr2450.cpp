@@ -234,7 +234,7 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
         .set_publisher(boost::bind(&xcvr2450::get_locked, this));
     this->get_rx_subtree()->create<sensor_value_t>("sensors/rssi")
         .set_publisher(boost::bind(&xcvr2450::get_rssi, this));
-    BOOST_FOREACH(const std::string &name, xcvr_rx_gain_ranges.keys()){
+    for(const std::string &name:  xcvr_rx_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
             .set_coercer(boost::bind(&xcvr2450::set_rx_gain, this, _1, name))
             .set(xcvr_rx_gain_ranges[name].start());
@@ -270,7 +270,7 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
         .set("XCVR2450 TX");
     this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .set_publisher(boost::bind(&xcvr2450::get_locked, this));
-    BOOST_FOREACH(const std::string &name, xcvr_tx_gain_ranges.keys()){
+    for(const std::string &name:  xcvr_tx_gain_ranges.keys()){
         this->get_tx_subtree()->create<double>("gains/"+name+"/value")
             .set_coercer(boost::bind(&xcvr2450::set_tx_gain, this, _1, name))
             .set(xcvr_tx_gain_ranges[name].start());

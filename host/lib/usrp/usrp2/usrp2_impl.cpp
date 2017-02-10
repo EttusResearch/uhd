@@ -29,7 +29,6 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <boost/assign/list_of.hpp>
@@ -54,7 +53,7 @@ device_addrs_t usrp2_find(const device_addr_t &hint_){
     if (hints.size() > 1){
         device_addrs_t found_devices;
         std::string error_msg;
-        BOOST_FOREACH(const device_addr_t &hint_i, hints){
+        for(const device_addr_t &hint_i:  hints){
             device_addrs_t found_devices_i = usrp2_find(hint_i);
             if (found_devices_i.size() != 1) error_msg += str(boost::format(
                 "Could not resolve device hint \"%s\" to a single device."
@@ -81,7 +80,7 @@ device_addrs_t usrp2_find(const device_addr_t &hint_){
 
     //if no address was specified, send a broadcast on each interface
     if (not hint.has_key("addr")){
-        BOOST_FOREACH(const if_addrs_t &if_addrs, get_if_addrs()){
+        for(const if_addrs_t &if_addrs:  get_if_addrs()){
             //avoid the loopback device
             if (if_addrs.inet == asio::ip::address_v4::loopback().to_string()) continue;
 
@@ -284,7 +283,7 @@ static zero_copy_if::sptr make_xport(
 
     //only copy hints that contain the filter word
     device_addr_t filtered_hints;
-    BOOST_FOREACH(const std::string &key, hints.keys()){
+    for(const std::string &key:  hints.keys()){
         if (key.find(filter) == std::string::npos) continue;
         filtered_hints[key] = hints[key];
     }
@@ -547,7 +546,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
             }
             if (_mbc[mb].gps and _mbc[mb].gps->gps_detected())
             {
-                BOOST_FOREACH(const std::string &name, _mbc[mb].gps->get_sensors())
+                for(const std::string &name:  _mbc[mb].gps->get_sensors())
                 {
                     _tree->create<sensor_value_t>(mb_path / "sensors" / name)
                         .set_publisher(boost::bind(&gps_ctrl::get_sensor, _mbc[mb].gps, name));
@@ -743,12 +742,12 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
 
         //bind frontend corrections to the dboard freq props
         const fs_path db_tx_fe_path = mb_path / "dboards" / "A" / "tx_frontends";
-        BOOST_FOREACH(const std::string &name, _tree->list(db_tx_fe_path)){
+        for(const std::string &name:  _tree->list(db_tx_fe_path)){
             _tree->access<double>(db_tx_fe_path / name / "freq" / "value")
                 .add_coerced_subscriber(boost::bind(&usrp2_impl::set_tx_fe_corrections, this, mb, _1));
         }
         const fs_path db_rx_fe_path = mb_path / "dboards" / "A" / "rx_frontends";
-        BOOST_FOREACH(const std::string &name, _tree->list(db_rx_fe_path)){
+        for(const std::string &name:  _tree->list(db_rx_fe_path)){
             _tree->access<double>(db_rx_fe_path / name / "freq" / "value")
                 .add_coerced_subscriber(boost::bind(&usrp2_impl::set_rx_fe_corrections, this, mb, _1));
         }
@@ -759,14 +758,14 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
 
     //do some post-init tasks
     this->update_rates();
-    BOOST_FOREACH(const std::string &mb, _mbc.keys()){
+    for(const std::string &mb:  _mbc.keys()){
         fs_path root = "/mboards/" + mb;
 
         //reset cordic rates and their properties to zero
-        BOOST_FOREACH(const std::string &name, _tree->list(root / "rx_dsps")){
+        for(const std::string &name:  _tree->list(root / "rx_dsps")){
             _tree->access<double>(root / "rx_dsps" / name / "freq" / "value").set(0.0);
         }
-        BOOST_FOREACH(const std::string &name, _tree->list(root / "tx_dsps")){
+        for(const std::string &name:  _tree->list(root / "tx_dsps")){
             _tree->access<double>(root / "tx_dsps" / name / "freq" / "value").set(0.0);
         }
 
@@ -787,7 +786,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
 }
 
 usrp2_impl::~usrp2_impl(void){UHD_SAFE_CALL(
-    BOOST_FOREACH(const std::string &mb, _mbc.keys()){
+    for(const std::string &mb:  _mbc.keys()){
         _mbc[mb].tx_dsp->set_updates(0, 0);
     }
 )}

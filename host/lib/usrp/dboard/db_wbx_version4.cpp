@@ -103,7 +103,7 @@ wbx_base::wbx_version4::wbx_version4(wbx_base *_self_wbx_base) {
     //get_tx_id() will always return GDB ID, so use RX ID to determine WBXv4 vs. WBX-120
     if(rx_id == 0x0063) this->get_tx_subtree()->create<std::string>("name").set("WBXv4 TX");
     else if(rx_id == 0x0081) this->get_tx_subtree()->create<std::string>("name").set("WBX-120 TX");
-    BOOST_FOREACH(const std::string &name, wbx_v4_tx_gain_ranges.keys()){
+    for(const std::string &name:  wbx_v4_tx_gain_ranges.keys()){
         self_base->get_tx_subtree()->create<double>("gains/"+name+"/value")
             .set_coercer(boost::bind(&wbx_base::wbx_version4::set_tx_gain, this, _1, name))
             .set(wbx_v4_tx_gain_ranges[name].start());

@@ -27,7 +27,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/thread.hpp>
-#include <boost/foreach.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>

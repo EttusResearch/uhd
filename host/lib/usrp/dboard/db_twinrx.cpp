@@ -265,7 +265,7 @@ public:
         // Add workers to expert
         //---------------------------------------------------------
         //Channel (front-end) specific
-        BOOST_FOREACH(const std::string& fe, _fe_names) {
+        for(const std::string& fe:  _fe_names) {
             expert_factory::add_worker_node<twinrx_freq_path_expert>(_expert, _expert->node_retriever(), fe);
             expert_factory::add_worker_node<twinrx_freq_coercion_expert>(_expert, _expert->node_retriever(), fe);
             expert_factory::add_worker_node<twinrx_chan_gain_expert>(_expert, _expert->node_retriever(), fe);

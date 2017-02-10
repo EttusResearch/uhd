@@ -30,7 +30,6 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/dynamic_bitset.hpp>
-#include <boost/foreach.hpp>
 #include <boost/function.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>

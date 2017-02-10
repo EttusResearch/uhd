@@ -17,7 +17,6 @@
 
 #include <uhd/convert.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/foreach.hpp>
 #include <stdint.h>
 #include <boost/assign/list_of.hpp>
 #include <complex>
@@ -75,7 +74,7 @@ static void test_convert_types_sc16(
 ){
     //fill the input samples
     std::vector<sc16_t> input(nsamps), output(nsamps);
-    BOOST_FOREACH(sc16_t &in, input) in = sc16_t(
+    for(sc16_t &in:  input) in = sc16_t(
         short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div),
         short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div)
     );
@@ -126,7 +125,7 @@ static void test_convert_types_for_floats(
 
     //fill the input samples
     std::vector<data_type> input(nsamps), output(nsamps);
-    BOOST_FOREACH(data_type &in, input) in = data_type(
+    for(data_type &in:  input) in = data_type(
         ((std::rand()/(value_type(RAND_MAX)/2)) - 1)*float(extra_scale),
         ((std::rand()/(value_type(RAND_MAX)/2)) - 1)*float(extra_scale)
     );
@@ -145,7 +144,7 @@ static void test_convert_types_for_floats(
     ;
 
     //loopback foreach prio combo (generic vs best)
-    BOOST_FOREACH(const int_pair_t &prio, prios){
+    for(const int_pair_t &prio:  prios){
         loopback(nsamps, in_id, out_id, input, output, prio.first, prio.second);
         for (size_t i = 0; i < nsamps; i++){
             MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(1./(1 << 14)));
@@ -284,7 +283,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_to_sc16){
 
     const size_t nsamps = 13;
     std::vector<fc32_t> input(nsamps);
-    BOOST_FOREACH(fc32_t &in, input) in = fc32_t(
+    for(fc32_t &in:  input) in = fc32_t(
         (std::rand()/(RAND_MAX/2.0)) - 1,
         (std::rand()/(RAND_MAX/2.0)) - 1
     );
@@ -329,7 +328,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_sc16_to_fc32){
 
     const size_t nsamps = 13;
     std::vector<sc16_t> input(nsamps);
-    BOOST_FOREACH(sc16_t &in, input) in = sc16_t(
+    for(sc16_t &in:  input) in = sc16_t(
         std::rand()-(RAND_MAX/2),
         std::rand()-(RAND_MAX/2)
     );
@@ -424,9 +423,9 @@ static void test_convert_types_u8(
 ){
     //fill the input samples
     std::vector<uint8_t> input(nsamps), output(nsamps);
-    BOOST_FOREACH(uint8_t &in, input) in = uint8_t(std::rand() & 0xFF);
+    for(uint8_t &in:  input) in = uint8_t(std::rand() & 0xFF);
     //uint32_t d = 48;
-    //BOOST_FOREACH(uint8_t &in, input) in = d++;
+    //for(uint8_t &in:  input) in = d++;
 
     //run the loopback and test
     convert::id_type in_id = id;
@@ -464,7 +463,7 @@ static void test_convert_types_s8(
 ){
     //fill the input samples
     std::vector<int8_t> input(nsamps), output(nsamps);
-    BOOST_FOREACH(int8_t &in, input) in = int8_t(std::rand() & 0xFF);
+    for(int8_t &in:  input) in = int8_t(std::rand() & 0xFF);
 
     //run the loopback and test
     convert::id_type in_id = id;
@@ -502,7 +501,7 @@ static void test_convert_types_s16(
 ){
     //fill the input samples
     std::vector<int16_t> input(nsamps), output(nsamps);
-    BOOST_FOREACH(int16_t &in, input) in = int16_t(std::rand() & 0xFFFF);
+    for(int16_t &in:  input) in = int16_t(std::rand() & 0xFFFF);
 
     //run the loopback and test
     convert::id_type in_id = id;
@@ -540,7 +539,7 @@ static void test_convert_types_fc32(
 ){
     //fill the input samples
     std::vector< std::complex<float> > input(nsamps), output(nsamps);
-    BOOST_FOREACH(fc32_t &in, input) in = fc32_t(
+    for(fc32_t &in:  input) in = fc32_t(
         (std::rand()/float(RAND_MAX/2)) - 1,
         (std::rand()/float(RAND_MAX/2)) - 1
     );
@@ -581,7 +580,7 @@ static void test_convert_types_f32(
 ){
     //fill the input samples
     std::vector<float> input(nsamps), output(nsamps);
-    BOOST_FOREACH(float &in, input) in = float((float(std::rand())/float(RAND_MAX/2)) - 1);
+    for(float &in:  input) in = float((float(std::rand())/float(RAND_MAX/2)) - 1);
 
     //run the loopback and test
     convert::id_type in_id = id;

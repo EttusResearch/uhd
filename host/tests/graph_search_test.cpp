@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(test_linear_downstream_search)
     std::cout << "size: " << result.size() << std::endl;
     BOOST_CHECK_EQUAL(result.size(), 1);
     BOOST_CHECK_EQUAL(result[0]->get_test_id(), "node_B");
-    BOOST_FOREACH(const result_node::sptr &node, result) {
+    for(const result_node::sptr &node:  result) {
         std::cout << node->get_test_id() << std::endl;
     }
 }
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(test_multi_iter_downstream_search)
     // This time, we search for result_node
     std::vector< result_node::sptr > result = node_A->find_downstream_node<result_node>();
     BOOST_REQUIRE(result.size() == 4);
-    BOOST_FOREACH(const result_node::sptr &node, result) {
+    for(const result_node::sptr &node:  result) {
         std::cout << node->get_test_id() << std::endl;
     }
 }
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(test_multi_iter_cycle_downstream_search)
     // This time, we search for result_node
     std::vector< result_node::sptr > result = node_A->find_downstream_node<result_node>();
     BOOST_REQUIRE(result.size() == 4);
-    BOOST_FOREACH(const result_node::sptr &node, result) {
+    for(const result_node::sptr &node:  result) {
         std::cout << node->get_test_id() << std::endl;
     }
 }

@@ -19,7 +19,6 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <string>
@@ -102,7 +101,7 @@ static void load_module_path(const fs::path &path){
  * Load all the modules given in the module paths.
  */
 UHD_STATIC_BLOCK(load_modules){
-    BOOST_FOREACH(const fs::path &path, uhd::get_module_paths()){
+    for(const fs::path &path:  uhd::get_module_paths()){
         load_module_path(path);
     }
 }
