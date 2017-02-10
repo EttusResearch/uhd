@@ -46,6 +46,25 @@ find_package(UHD "3.8.0" REQUIRED)
 #find_package(UHD 3.8.1 EXACT REQUIRED)
 
 ### Configure Compiler ########################################################
+IF(CMAKE_VERSION VERSION_LESS "3.1")
+    IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+        SET(CMAKE_CXX_FLAGS "--std=gnu++11 ${CMAKE_CXX_FLAGS}")
+    ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+        IF("${IS_APPLE}" STREQUAL "")
+            SET(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+        ELSE()
+            SET(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ ${CMAKE_CXX_FLAGS}")
+        ENDIF()
+    ENDIF()
+ELSE()
+    SET(CMAKE_CXX_STANDARD 11)
+ENDIF()
+
+IF(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    SET(CMAKE_EXE_LINKER_FLAGS "-lthr ${CMAKE_EXE_LINKER_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "-stdlib=libc++ ${CMAKE_CXX_FLAGS}")
+ENDIF()
+
 include_directories(
     ${Boost_INCLUDE_DIRS}
     ${UHD_INCLUDE_DIRS}
