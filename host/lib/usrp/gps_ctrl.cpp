@@ -31,7 +31,6 @@
 #include <boost/thread/mutex.hpp>
 
 #include "boost/tuple/tuple.hpp"
-#include "boost/foreach.hpp"
 
 using namespace uhd;
 using namespace boost::gregorian;
@@ -181,7 +180,7 @@ private:
     boost::system_time time = boost::get_system_time();
 
     // Update sentences with newly read data
-    BOOST_FOREACH(std::string key, keys)
+    for(std::string key:  keys)
     {
         if (not msgs[key].empty())
         {

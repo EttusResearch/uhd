@@ -138,7 +138,7 @@ void generate_channel_list(
     }
 
     // Add all remaining args to all channel args
-    BOOST_FOREACH(device_addr_t &chan_arg, chan_args_) {
+    for(device_addr_t &chan_arg:  chan_args_) {
         chan_arg = chan_arg.to_string() + "," + args.args.to_string();
     }
 
@@ -459,7 +459,7 @@ bool device3_impl::recv_async_msg(
  **********************************************************************/
 void device3_impl::update_rx_streamers(double /* rate */)
 {
-    BOOST_FOREACH(const std::string &block_id, _rx_streamers.keys()) {
+    for(const std::string &block_id:  _rx_streamers.keys()) {
         UHD_STREAMER_LOG() << "[Device3] updating RX streamer to " << block_id << std::endl;
         boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[block_id].lock());
@@ -547,7 +547,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         // Find all upstream radio nodes and set their response in SID to the host
         std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > upstream_radio_nodes = blk_ctrl->find_upstream_node<uhd::rfnoc::radio_ctrl>();
         UHD_STREAMER_LOG() << "[RX Streamer] Number of upstream radio nodes: " << upstream_radio_nodes.size() << std::endl;
-        BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, upstream_radio_nodes) {
+        for(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node:  upstream_radio_nodes) {
             node->sr_write(uhd::rfnoc::SR_RESP_OUT_DST_SID, xport.send_sid.get_src(), block_port);
         }
 
@@ -661,7 +661,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
  **********************************************************************/
 void device3_impl::update_tx_streamers(double /* rate */)
 {
-    BOOST_FOREACH(const std::string &block_id, _tx_streamers.keys()) {
+    for(const std::string &block_id:  _tx_streamers.keys()) {
         UHD_STREAMER_LOG() << "[Device3] updating TX streamer: " << block_id << std::endl;
         boost::shared_ptr<sph::send_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[block_id].lock());
@@ -822,7 +822,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
             size_t radio_port = args.args.cast<size_t>("radio_port", 0);
             std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
             UHD_STREAMER_LOG() << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
-            BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, downstream_radio_nodes) {
+            for(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node:  downstream_radio_nodes) {
                 if (node->get_block_id() == radio_id) {
                     node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), radio_port);
                 }
@@ -836,7 +836,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
             // Find all downstream radio nodes and set their response SID to the host
             std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
             UHD_STREAMER_LOG() << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
-            BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node, downstream_radio_nodes) {
+            for(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node:  downstream_radio_nodes) {
                 node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), block_port);
             }
         }

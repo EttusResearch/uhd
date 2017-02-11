@@ -26,7 +26,6 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/msg.hpp>
-#include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>
 
 using namespace uhd;
@@ -73,7 +72,7 @@ void x300_impl::post_streamer_hooks(direction_t dir)
 
     // Loop through all tx streamers. Find all radios connected to one
     // streamer. Sync those.
-    BOOST_FOREACH(const boost::weak_ptr<uhd::tx_streamer> &streamer_w, _tx_streamers.vals()) {
+    for(const boost::weak_ptr<uhd::tx_streamer> &streamer_w:  _tx_streamers.vals()) {
         const boost::shared_ptr<sph::send_packet_streamer> streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(streamer_w.lock());
         if (not streamer) {

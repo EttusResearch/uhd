@@ -17,7 +17,6 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/types/dict.hpp>
-#include <boost/foreach.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
@@ -98,7 +97,7 @@ public:
 
         node_type *parent = NULL;
         node_type *node = &_guts->root;
-        BOOST_FOREACH(const std::string &name, path_tokenizer(path)){
+        for(const std::string &name:  path_tokenizer(path)){
             if (not node->has_key(name)) throw_path_not_found(path);
             parent = node;
             node = &(*node)[name];
@@ -112,7 +111,7 @@ public:
         boost::mutex::scoped_lock lock(_guts->mutex);
 
         node_type *node = &_guts->root;
-        BOOST_FOREACH(const std::string &name, path_tokenizer(path)){
+        for(const std::string &name:  path_tokenizer(path)){
             if (not node->has_key(name)) return false;
             node = &(*node)[name];
         }
@@ -124,7 +123,7 @@ public:
         boost::mutex::scoped_lock lock(_guts->mutex);
 
         node_type *node = &_guts->root;
-        BOOST_FOREACH(const std::string &name, path_tokenizer(path)){
+        for(const std::string &name:  path_tokenizer(path)){
             if (not node->has_key(name)) throw_path_not_found(path);
             node = &(*node)[name];
         }
@@ -137,7 +136,7 @@ public:
         boost::mutex::scoped_lock lock(_guts->mutex);
 
         node_type *node = &_guts->root;
-        BOOST_FOREACH(const std::string &name, path_tokenizer(path)){
+        for(const std::string &name:  path_tokenizer(path)){
             if (not node->has_key(name)) (*node)[name] = node_type();
             node = &(*node)[name];
         }
@@ -150,7 +149,7 @@ public:
         boost::mutex::scoped_lock lock(_guts->mutex);
 
         node_type *node = &_guts->root;
-        BOOST_FOREACH(const std::string &name, path_tokenizer(path)){
+        for(const std::string &name:  path_tokenizer(path)){
             if (not node->has_key(name)) throw_path_not_found(path);
             node = &(*node)[name];
         }

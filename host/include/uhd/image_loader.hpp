@@ -21,6 +21,7 @@
 #include <string>
 
 #include <boost/function.hpp>
+#include <boost/noncopyable.hpp>
 
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>

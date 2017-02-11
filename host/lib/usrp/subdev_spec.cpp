@@ -20,7 +20,6 @@
 #include <boost/algorithm/string.hpp> //for split
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <sstream>
 #include <vector>
 
@@ -45,7 +44,7 @@ bool usrp::operator==(const subdev_spec_pair_t &lhs, const subdev_spec_pair_t &r
 }
 
 subdev_spec_t::subdev_spec_t(const std::string &markup){
-    BOOST_FOREACH(const std::string &pair, pair_tokenizer(markup)){
+    for(const std::string &pair:  pair_tokenizer(markup)){
         if (pair.empty()) continue;
         std::vector<std::string> db_sd; boost::split(db_sd, pair, boost::is_any_of(":"));
         switch(db_sd.size()){
@@ -62,7 +61,7 @@ std::string subdev_spec_t::to_pp_string(void) const{
     std::stringstream ss;
     size_t count = 0;
     ss << "Subdevice Specification:" << std::endl;
-    BOOST_FOREACH(const subdev_spec_pair_t &pair, *this){
+    for(const subdev_spec_pair_t &pair:  *this){
         ss << boost::format(
             "    Channel %d: Daughterboard %s, Subdevice %s"
         ) % (count++) % pair.db_name % pair.sd_name << std::endl;
@@ -73,7 +72,7 @@ std::string subdev_spec_t::to_pp_string(void) const{
 std::string subdev_spec_t::to_string(void) const{
     std::string markup;
     size_t count = 0;
-    BOOST_FOREACH(const subdev_spec_pair_t &pair, *this){
+    for(const subdev_spec_pair_t &pair:  *this){
         markup += ((count++)? " " : "") + pair.db_name + ":" + pair.sd_name;
     }
     return markup;

@@ -23,7 +23,6 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/program_options.hpp>
-#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <cstdlib>
@@ -330,7 +329,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //init result counts
     uhd::dict<std::string, size_t> failures, successes;
-    BOOST_FOREACH(const std::string &key, tests.keys()){
+    for(const std::string &key:  tests.keys()){
         failures[key] = 0;
         successes[key] = 0;
     }
@@ -352,7 +351,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //print the result summary
     bool any_failure = false;
     std::cout << std::endl << "Summary:" << std::endl << std::endl;
-    BOOST_FOREACH(const std::string &key, tests.keys()){
+    for(const std::string &key:  tests.keys()){
         std::cout << boost::format(
             "%s   ->   %3u successes, %3u failures"
         ) % key % successes[key] % failures[key] << std::endl;

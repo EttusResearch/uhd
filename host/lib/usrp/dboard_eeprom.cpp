@@ -19,7 +19,6 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <algorithm>

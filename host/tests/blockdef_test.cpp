@@ -21,7 +21,6 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <uhd/rfnoc/blockdef.hpp>
 
 using namespace uhd::rfnoc;

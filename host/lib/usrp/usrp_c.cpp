@@ -23,7 +23,6 @@
 #include <uhd/error.h>
 #include <uhd/usrp/usrp.h>
 
-#include <boost/foreach.hpp>
 #include <boost/thread/mutex.hpp>
 
 #include <string.h>
@@ -259,7 +258,7 @@ uhd_error uhd_usrp_find(
 
         uhd::device_addrs_t devs = uhd::device::find(std::string(args), uhd::device::USRP);
         (*strings_out)->string_vector_cpp.clear();
-        BOOST_FOREACH(const uhd::device_addr_t &dev, devs){
+        for(const uhd::device_addr_t &dev:  devs){
             (*strings_out)->string_vector_cpp.push_back(dev.to_string());
         }
     )

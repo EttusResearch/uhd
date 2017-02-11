@@ -19,7 +19,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/foreach.hpp>
 #include <boost/tokenizer.hpp>
 #include <sstream>
 #include <iostream>
@@ -35,7 +34,7 @@ static void msg_to_cout(const std::string &msg){
     std::stringstream ss;
 
     static bool just_had_a_newline = true;
-    BOOST_FOREACH(char ch, msg){
+    for(char ch:  msg){
         if (just_had_a_newline){
             just_had_a_newline = false;
             ss << "-- ";
@@ -53,7 +52,7 @@ static void msg_to_cerr(const std::string &title, const std::string &msg){
     std::stringstream ss;
 
     ss << std::endl << title << ":" << std::endl;
-    BOOST_FOREACH(const std::string &line, tokenizer(msg, "\n")){
+    for(const std::string &line: tokenizer(msg,  "\n")){
         ss << "    " << line << std::endl;
     }
 

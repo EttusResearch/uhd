@@ -439,7 +439,7 @@ void usrp1_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 
     //set the mux and set the number of rx channels
     std::vector<mapping_pair_t> mapping;
-    BOOST_FOREACH(const subdev_spec_pair_t &pair, spec){
+    for(const subdev_spec_pair_t &pair:  spec){
         const std::string conn = _tree->access<std::string>(str(boost::format(
             "/mboards/0/dboards/%s/rx_frontends/%s/connection"
         ) % pair.db_name % pair.sd_name)).get();
@@ -459,7 +459,7 @@ void usrp1_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
 
     //set the mux and set the number of tx channels
     std::vector<mapping_pair_t> mapping;
-    BOOST_FOREACH(const subdev_spec_pair_t &pair, spec){
+    for(const subdev_spec_pair_t &pair:  spec){
         const std::string conn = _tree->access<std::string>(str(boost::format(
             "/mboards/0/dboards/%s/tx_frontends/%s/connection"
         ) % pair.db_name % pair.sd_name)).get();
@@ -548,10 +548,10 @@ double usrp1_impl::update_tx_samp_rate(size_t dspno, const double samp_rate){
 void usrp1_impl::update_rates(void){
     const fs_path mb_path = "/mboards/0";
     this->update_tick_rate(_master_clock_rate);
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "rx_dsps")){
+    for(const std::string &name:  _tree->list(mb_path / "rx_dsps")){
         _tree->access<double>(mb_path / "rx_dsps" / name / "rate" / "value").update();
     }
-    BOOST_FOREACH(const std::string &name, _tree->list(mb_path / "tx_dsps")){
+    for(const std::string &name:  _tree->list(mb_path / "tx_dsps")){
         _tree->access<double>(mb_path / "tx_dsps" / name / "rate" / "value").update();
     }
 }

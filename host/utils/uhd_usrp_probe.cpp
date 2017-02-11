@@ -28,7 +28,6 @@
 #include <uhd/types/sensors.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -44,7 +43,7 @@ static std::string make_border(const std::string &text){
     std::vector<std::string> lines; boost::split(lines, text, boost::is_any_of("\n"));
     while (lines.back().empty()) lines.pop_back(); //strip trailing newlines
     if (lines.size()) lines[0] = "    " + lines[0]; //indent the title line
-    BOOST_FOREACH(const std::string &line, lines){
+    for(const std::string &line:  lines){
         ss << boost::format("|   %s") % line << std::endl;
     }
     //ss << boost::format(" \\_____________________________________________________") << std::endl;
@@ -62,7 +61,7 @@ static std::string get_dsp_pp_string(const std::string &type, property_tree::spt
 
 static std::string prop_names_to_pp_string(const std::vector<std::string> &prop_names){
     std::stringstream ss; size_t count = 0;
-    BOOST_FOREACH(const std::string &prop_name, prop_names){
+    for(const std::string &prop_name:  prop_names){
         ss << ((count++)? ", " : "") << prop_name;
     }
     return ss.str();
@@ -82,7 +81,7 @@ static std::string get_frontend_pp_string(const std::string &type, property_tree
 
     std::vector<std::string> gain_names = tree->list(path / "gains");
     if (gain_names.size() == 0) ss << "Gain Elements: None" << std::endl;
-    BOOST_FOREACH(const std::string &name, gain_names){
+    for(const std::string &name:  gain_names){
         meta_range_t gain_range = tree->access<meta_range_t>(path / "gains" / name / "range").get();
         ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % name % gain_range.start() % gain_range.stop() % gain_range.step() << std::endl;
     }
@@ -106,7 +105,7 @@ static std::string get_codec_pp_string(const std::string &type, property_tree::s
     ss << boost::format("Name: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
     std::vector<std::string> gain_names = tree->list(path / "gains");
     if (gain_names.size() == 0) ss << "Gain Elements: None" << std::endl;
-    BOOST_FOREACH(const std::string &name, gain_names){
+    for(const std::string &name:  gain_names){
         meta_range_t gain_range = tree->access<meta_range_t>(path / "gains" / name / "range").get();
         ss << boost::format("Gain range %s: %.1f to %.1f step %.1f dB") % name % gain_range.start() % gain_range.stop() % gain_range.step() << std::endl;
     }
@@ -129,7 +128,7 @@ static std::string get_dboard_pp_string(const std::string &type, property_tree::
             if (not gdb_eeprom.serial.empty()) ss << boost::format("Serial: %s") % gdb_eeprom.serial << std::endl;
         }
     }
-    BOOST_FOREACH(const std::string &name, tree->list(path / (prefix + "_frontends"))){
+    for(const std::string &name:  tree->list(path / (prefix + "_frontends"))){
         ss << make_border(get_frontend_pp_string(type, tree, path / (prefix + "_frontends") / name));
     }
     ss << make_border(get_codec_pp_string(type, tree, path.branch_path().branch_path() / (prefix + "_codecs") / path.leaf()));
@@ -140,7 +139,7 @@ static std::string get_dboard_pp_string(const std::string &type, property_tree::
 static std::string get_rfnoc_pp_string(property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << "RFNoC blocks on this device:" << std::endl << std::endl;
-    BOOST_FOREACH(const std::string &name, tree->list(path)){
+    for(const std::string &name:  tree->list(path)){
         ss << "* " << name << std::endl;
     }
     return ss.str();
@@ -151,7 +150,7 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path 
     ss << boost::format("Mboard: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
     //ss << std::endl;
     usrp::mboard_eeprom_t mb_eeprom = tree->access<usrp::mboard_eeprom_t>(path / "eeprom").get();
-    BOOST_FOREACH(const std::string &key, mb_eeprom.keys()){
+    for(const std::string &key:  mb_eeprom.keys()){
         if (not mb_eeprom[key].empty()) ss << boost::format("%s: %s") % key % mb_eeprom[key] << std::endl;
     }
     if (tree->exists(path / "fw_version")){
@@ -178,19 +177,19 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path 
         }
         ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
         if (tree->exists(path / "rx_dsps")){
-            BOOST_FOREACH(const std::string &name, tree->list(path / "rx_dsps")){
+            for(const std::string &name:  tree->list(path / "rx_dsps")){
                 ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
             }
         }
-        BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
+        for(const std::string &name:  tree->list(path / "dboards")){
             ss << make_border(get_dboard_pp_string("RX", tree, path / "dboards" / name));
         }
         if (tree->exists(path / "tx_dsps")){
-            BOOST_FOREACH(const std::string &name, tree->list(path / "tx_dsps")){
+            for(const std::string &name:  tree->list(path / "tx_dsps")){
                 ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
             }
         }
-        BOOST_FOREACH(const std::string &name, tree->list(path / "dboards")){
+        for(const std::string &name:  tree->list(path / "dboards")){
             ss << make_border(get_dboard_pp_string("TX", tree, path / "dboards" / name));
         }
             ss << make_border(get_rfnoc_pp_string(tree, path / "xbar"));
@@ -206,7 +205,7 @@ static std::string get_device_pp_string(property_tree::sptr tree){
     std::stringstream ss;
     ss << boost::format("Device: %s") % (tree->access<std::string>("/name").get()) << std::endl;
     //ss << std::endl;
-    BOOST_FOREACH(const std::string &name, tree->list("/mboards")){
+    for(const std::string &name:  tree->list("/mboards")){
         ss << make_border(get_mboard_pp_string(tree, "/mboards/" + name));
     }
     return ss.str();
@@ -214,7 +213,7 @@ static std::string get_device_pp_string(property_tree::sptr tree){
 
 void print_tree(const uhd::fs_path &path, uhd::property_tree::sptr tree){
     std::cout << path << std::endl;
-    BOOST_FOREACH(const std::string &name, tree->list(path)){
+    for(const std::string &name:  tree->list(path)){
         print_tree(path / name, tree);
     }
 }
@@ -257,7 +256,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if (vm.count("vector")) {
             std::vector<std::string> str_vector = tree->access< std::vector<std::string> >(vm["string"].as<std::string>()).get();
             std::cout << "(";
-            BOOST_FOREACH(const std::string &str, str_vector) {
+            for(const std::string &str:  str_vector) {
                 std::cout << str << ",";
             }
             std::cout << ")" << std::endl;

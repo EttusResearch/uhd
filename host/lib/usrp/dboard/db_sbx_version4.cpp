@@ -41,7 +41,7 @@ sbx_xcvr::sbx_version4::~sbx_version4(void){
 
 void sbx_xcvr::sbx_version4::write_lo_regs(dboard_iface::unit_t unit, const std::vector<uint32_t> &regs)
 {
-    BOOST_FOREACH(uint32_t reg, regs)
+    for(uint32_t reg:  regs)
     {
         self_base->get_iface()->write_spi(unit, spi_config_t::EDGE_RISE, reg, 32);
     }

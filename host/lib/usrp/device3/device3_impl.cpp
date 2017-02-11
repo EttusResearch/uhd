@@ -70,7 +70,7 @@ void device3_impl::merge_channel_defs(
     //    - All block indices that are in chan_ids may be overwritten in the channel definition
     //    - If the channels in chan_ids are not yet in the property tree channel list,
     //      they are appended.
-    BOOST_FOREACH(const std::string &chan_idx, curr_channels) {
+    for(const std::string &chan_idx:  curr_channels) {
         if (_tree->exists(chans_root / chan_idx)) {
             rfnoc::block_id_t chan_block_id = _tree->access<rfnoc::block_id_t>(chans_root / chan_idx).get();
             if (std::find(chan_ids.begin(), chan_ids.end(), chan_block_id) != chan_ids.end()) {
@@ -147,7 +147,7 @@ void device3_impl::enumerate_rfnoc_blocks(
         }
         UHD_ASSERT_THROW(block_def);
         make_args.ctrl_ifaces[0] = ctrl;
-        BOOST_FOREACH(const size_t port_number, block_def->get_all_port_numbers()) {
+        for(const size_t port_number:  block_def->get_all_port_numbers()) {
             if (port_number == 0) { // We've already set this up
                 continue;
             }

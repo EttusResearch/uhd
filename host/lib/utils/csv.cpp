@@ -16,7 +16,6 @@
 //
 
 #include <uhd/utils/csv.hpp>
-#include <boost/foreach.hpp>
 
 using namespace uhd;
 
@@ -29,7 +28,7 @@ csv::rows_type csv::to_rows(std::istream &input){
         bool in_quote = false;
         char last_ch, next_ch = ' ';
         //for each character in the line
-        BOOST_FOREACH(char ch, line){
+        for(char ch:  line){
             last_ch = next_ch;
             next_ch = ch;
             //catch a quote character and change the state

@@ -24,7 +24,6 @@
 #include <boost/bind.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/foreach.hpp>
 #include <boost/make_shared.hpp>
 
 static const double N230_RX_SW_BUFF_FULL_FACTOR   = 0.90;     //Buffer should ideally be 90% full.

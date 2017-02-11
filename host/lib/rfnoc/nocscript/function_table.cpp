@@ -18,7 +18,6 @@
 #include "function_table.hpp"
 #include "basic_functions.hpp"
 #include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <map>
 

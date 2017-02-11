@@ -129,7 +129,7 @@ void output_reg_values(
     for (int i = num_bits - 1; i >= 0; i--)
         std::cout << (boost::format(" %2d") % i);
     std::cout << std::endl;
-    BOOST_FOREACH(std::string &attr, attrs)
+    for(std::string &attr:  attrs)
     {
         std::cout << (boost::format("%10s:%s")
             % attr % to_bit_string(uint32_t(usrp->get_gpio_attr(bank, attr)), num_bits))

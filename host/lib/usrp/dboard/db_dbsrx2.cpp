@@ -192,7 +192,7 @@ dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args){
         .set("DBSRX2");
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .set_publisher(boost::bind(&dbsrx2::get_locked, this));
-    BOOST_FOREACH(const std::string &name, dbsrx2_gain_ranges.keys()){
+    for(const std::string &name:  dbsrx2_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
             .set_coercer(boost::bind(&dbsrx2::set_gain, this, _1, name))
             .set(dbsrx2_gain_ranges[name].start());

@@ -36,7 +36,7 @@ void source_block_ctrl_base::issue_stream_cmd(
         return;
     }
 
-    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
+    for(const node_ctrl_base::node_map_pair_t upstream_node:  _upstream_nodes) {
         source_node_ctrl::sptr this_upstream_block_ctrl =
             boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
         this_upstream_block_ctrl->issue_stream_cmd(stream_cmd, chan);
@@ -64,7 +64,7 @@ std::vector<size_t> source_block_ctrl_base::get_output_ports() const
 {
     std::vector<size_t> output_ports;
     output_ports.reserve(_tree->list(_root_path / "ports" / "out").size());
-    BOOST_FOREACH(const std::string port, _tree->list(_root_path / "ports" / "out")) {
+    for(const std::string port:  _tree->list(_root_path / "ports" / "out")) {
         output_ports.push_back(boost::lexical_cast<size_t>(port));
     }
     return output_ports;

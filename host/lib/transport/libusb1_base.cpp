@@ -24,7 +24,6 @@
 #include <uhd/types/serial.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <cstdlib>
 #include <iostream>
@@ -227,7 +226,7 @@ public:
         std::string string_descriptor((char *)buff, size_t(ret));
         byte_vector_t string_vec(string_descriptor.begin(), string_descriptor.end());
         std::string out;
-        BOOST_FOREACH(uint8_t byte, string_vec){
+        for(uint8_t byte:  string_vec){
             if (byte < 32 or byte > 127) return out;
             out += byte;
         }

@@ -205,7 +205,7 @@ dbsrx::dbsrx(ctor_args_t args) : rx_dboard_base(args){
         .set("DBSRX");
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
         .set_publisher(boost::bind(&dbsrx::get_locked, this));
-    BOOST_FOREACH(const std::string &name, dbsrx_gain_ranges.keys()){
+    for(const std::string &name:  dbsrx_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
             .set_coercer(boost::bind(&dbsrx::set_gain, this, _1, name))
             .set(dbsrx_gain_ranges[name].start());
@@ -266,7 +266,7 @@ double dbsrx::set_lo_freq(double target_freq){
     //choose refclock
     std::vector<double> clock_rates = this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX);
     const double max_clock_rate = uhd::sorted(clock_rates).back();
-    BOOST_FOREACH(ref_clock, uhd::reversed(uhd::sorted(clock_rates))){
+    for(auto ref_clock:  uhd::reversed(uhd::sorted(clock_rates))){
         //USRP1 feeds the DBSRX clock from a FPGA GPIO line.
         //make sure that this clock does not exceed rate limit.
         if (this->get_iface()->get_special_props().soft_clock_divider){
@@ -286,7 +286,7 @@ double dbsrx::set_lo_freq(double target_freq){
         if (m >= 32) continue;
 
         //choose R
-        for(r = 0; r <= 6; r += 1) {
+        for(auto r = 0; r <= 6; r += 1) {
             //compute divider from setting
             R = 1 << (r+1);
             UHD_LOGV(often) << boost::format("DBSRX R:%d\n") % R << std::endl;

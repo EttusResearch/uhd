@@ -21,7 +21,6 @@
 #include <uhd/utils/msg.hpp>
 #include <uhd/rfnoc/source_node_ctrl.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -49,7 +48,7 @@ void rx_stream_terminator::set_rx_streamer(bool active, const size_t)
 {
     // TODO this is identical to source_node_ctrl::set_rx_streamer() -> factor out
     UHD_RFNOC_BLOCK_TRACE() << "rx_stream_terminator::set_rx_streamer() " << active << std::endl;
-    BOOST_FOREACH(const node_ctrl_base::node_map_pair_t upstream_node, _upstream_nodes) {
+    for(const node_ctrl_base::node_map_pair_t upstream_node:  _upstream_nodes) {
         source_node_ctrl::sptr curr_upstream_block_ctrl =
             boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
         if (curr_upstream_block_ctrl) {
@@ -78,9 +77,9 @@ void rx_stream_terminator::handle_overrun(boost::weak_ptr<uhd::rx_streamer> stre
 
     bool in_continuous_streaming_mode = true;
     int num_channels = 0;
-    BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> &node, upstream_radio_nodes) {
+    for(const boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> &node:  upstream_radio_nodes) {
         num_channels += node->get_active_rx_ports().size();
-        BOOST_FOREACH(const size_t port, node->get_active_rx_ports()) {
+        for(const size_t port:  node->get_active_rx_ports()) {
             in_continuous_streaming_mode = in_continuous_streaming_mode && node->in_continuous_streaming_mode(port);
         }
     }
@@ -101,8 +100,8 @@ void rx_stream_terminator::handle_overrun(boost::weak_ptr<uhd::rx_streamer> stre
     /////////////////////////////////////////////////////////////
     // MIMO overflow recovery time
     /////////////////////////////////////////////////////////////
-    BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> &node, upstream_radio_nodes) {
-        BOOST_FOREACH(const size_t port, node->get_active_rx_ports()) {
+    for(const boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> &node:  upstream_radio_nodes) {
+        for(const size_t port:  node->get_active_rx_ports()) {
             // check all the ports on all the radios
             node->rx_ctrl_clear_cmds(port);
             node->issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS, port);
@@ -116,8 +115,8 @@ void rx_stream_terminator::handle_overrun(boost::weak_ptr<uhd::rx_streamer> stre
         stream_cmd.stream_now = false;
         stream_cmd.time_spec = upstream_radio_nodes[0]->get_time_now() + time_spec_t(0.05);
 
-        BOOST_FOREACH(const boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> &node, upstream_radio_nodes) {
-            BOOST_FOREACH(const size_t port, node->get_active_rx_ports()) {
+        for(const boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> &node:  upstream_radio_nodes) {
+            for(const size_t port:  node->get_active_rx_ports()) {
                 node->issue_stream_cmd(stream_cmd, port);
             }
         }

@@ -225,7 +225,7 @@ static uhd::device_addr_t n200_find(const image_loader::image_loader_args_t &ima
          * this query. If the user supplied specific arguments that
          * led to a USRP2, throw an error.
          */
-        BOOST_FOREACH(const uhd::device_addr_t &dev, found){
+        for(const uhd::device_addr_t &dev:  found){
             rev_xport = udp_simple::make_connected(
                             dev.get("addr"),
                             BOOST_STRINGIZE(N200_UDP_FW_UPDATE_PORT)
@@ -257,7 +257,7 @@ static uhd::device_addr_t n200_find(const image_loader::image_loader_args_t &ima
             std::string err_msg = "Could not resolve given args to a single N-Series device.\n"
                                   "Applicable devices:\n";
 
-            BOOST_FOREACH(const uhd::device_addr_t &dev, n200_found){
+            for(const uhd::device_addr_t &dev:  n200_found){
                 err_msg += str(boost::format("* %s (addr=%s)\n")
                                % dev.get("hw_rev")
                                % dev.get("addr"));

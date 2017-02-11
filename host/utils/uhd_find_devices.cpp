@@ -55,14 +55,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     for (auto it = device_addrs.begin(); it != device_addrs.end(); ++it) {
         std::string serial = (*it)["serial"];
         found_devices[serial] = device_multi_addrs_t();
-        BOOST_FOREACH (std::string key, it->keys()) {
+        for(std::string key: it->keys()) {
             if (key != "serial") {
                 found_devices[serial][key].insert(it->get(key));
             }
         }
         for (auto sit = it + 1; sit != device_addrs.end();) {
             if ((*sit)["serial"] == serial) {
-                BOOST_FOREACH (std::string key, sit->keys()) {
+              for(std::string key: sit->keys()) {
                     if (key != "serial") {
                         found_devices[serial][key].insert(sit->get(key));
                     }

@@ -167,7 +167,7 @@ static void x300_setup_session(x300_session_t &session,
         std::string err_msg = "Could not resolve given args to a single X-Series device.\n"
                               "Applicable devices:\n";
 
-        BOOST_FOREACH(const uhd::device_addr_t &dev, devs){
+        for(const uhd::device_addr_t &dev:  devs){
             std::string identifier = dev.has_key("addr") ? "addr"
                                                          : "resource";
 

@@ -26,7 +26,6 @@
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 #define UHD_BLOCK_LOG() UHD_MSG(status)
@@ -80,7 +79,7 @@ block_ctrl_base::block_ctrl_base(
 
     /*** Configure ports ****************************************************/
     size_t n_valid_input_buffers = 0;
-    BOOST_FOREACH(const size_t ctrl_port, get_ctrl_ports()) {
+    for(const size_t ctrl_port:  get_ctrl_ports()) {
         // Set source addresses:
         sr_write(SR_BLOCK_SID, get_address(ctrl_port), ctrl_port);
         // Set sink buffer sizes:
@@ -94,7 +93,7 @@ block_ctrl_base::block_ctrl_base(
 
     /*** Register names *****************************************************/
     blockdef::registers_t sregs = _block_def->get_settings_registers();
-    BOOST_FOREACH(const std::string &reg_name, sregs.keys()) {
+    for(const std::string &reg_name:  sregs.keys()) {
         if (DEFAULT_NAMED_SR.has_key(reg_name)) {
             throw uhd::runtime_error(str(
                     boost::format("Register name %s is already defined!")
@@ -105,7 +104,7 @@ block_ctrl_base::block_ctrl_base(
             .set(sregs.get(reg_name));
     }
     blockdef::registers_t rbacks = _block_def->get_readback_registers();
-    BOOST_FOREACH(const std::string &reg_name, rbacks.keys()) {
+    for(const std::string &reg_name:  rbacks.keys()) {
         _tree->create<size_t>(_root_path / "registers"/ "rb" / reg_name)
             .set(rbacks.get(reg_name));
     }
@@ -137,7 +136,7 @@ void block_ctrl_base::_init_port_defs(
             const size_t first_port_index
 ) {
     size_t port_index = first_port_index;
-    BOOST_FOREACH(const blockdef::port_t &port_def, ports) {
+    for(const blockdef::port_t &port_def:  ports) {
         fs_path port_path = _root_path / "ports" / direction / port_index;
         if (not _tree->exists(port_path)) {
             _tree->create<blockdef::port_t>(port_path);
@@ -154,12 +153,12 @@ void block_ctrl_base::_init_block_args()
 {
     blockdef::args_t args = _block_def->get_args();
     fs_path arg_path = _root_path / "args";
-    BOOST_FOREACH(const size_t port, get_ctrl_ports()) {
+    for(const size_t port:  get_ctrl_ports()) {
         _tree->create<std::string>(arg_path / port);
     }
 
     // First, create all nodes.
-    BOOST_FOREACH(const blockdef::arg_t &arg, args) {
+    for(const blockdef::arg_t &arg:  args) {
         fs_path arg_type_path = arg_path / arg["port"] / arg["name"] / "type";
         _tree->create<std::string>(arg_type_path).set(arg["type"]);
         fs_path arg_val_path  = arg_path / arg["port"] / arg["name"] / "value";
@@ -173,7 +172,7 @@ void block_ctrl_base::_init_block_args()
     // TODO: Add coercer
 #define _SUBSCRIBE_CHECK_AND_RUN(type, arg_tag, error_message) \
     _tree->access<type>(arg_val_path).add_coerced_subscriber(boost::bind((&nocscript::block_iface::run_and_check), _nocscript_iface, arg[#arg_tag], error_message))
-    BOOST_FOREACH(const blockdef::arg_t &arg, args) {
+    for(const blockdef::arg_t &arg:  args) {
         fs_path arg_val_path = arg_path / arg["port"] / arg["name"] / "value";
         if (not arg["check"].empty()) {
             if (arg["type"] == "string") { _SUBSCRIBE_CHECK_AND_RUN(string, check, arg["check_message"]); }
@@ -192,7 +191,7 @@ void block_ctrl_base::_init_block_args()
     }
 
     // Finally: Set the values. This will call subscribers, if we have any.
-    BOOST_FOREACH(const blockdef::arg_t &arg, args) {
+    for(const blockdef::arg_t &arg:  args) {
         fs_path arg_val_path = arg_path / arg["port"] / arg["name"] / "value";
         if (not arg["value"].empty()) {
             if (arg["type"] == "int_vector") { throw uhd::runtime_error("not yet implemented: int_vector"); }
@@ -217,7 +216,7 @@ std::vector<size_t> block_ctrl_base::get_ctrl_ports() const
     std::vector<size_t> ctrl_ports;
     ctrl_ports.reserve(_ctrl_ifaces.size());
     std::pair<size_t, wb_iface::sptr> it;
-    BOOST_FOREACH(it, _ctrl_ifaces) {
+    for(auto it:  _ctrl_ifaces) {
         ctrl_ports.push_back(it.first);
     }
     return ctrl_ports;
@@ -340,7 +339,7 @@ void block_ctrl_base::set_command_time(
         const size_t port
 ) {
     if (port == ANY_PORT) {
-        BOOST_FOREACH(const size_t specific_port, get_ctrl_ports()) {
+        for(const size_t specific_port:  get_ctrl_ports()) {
             set_command_time(time_spec, specific_port);
         }
         return;
@@ -377,7 +376,7 @@ void block_ctrl_base::set_command_tick_rate(
         const size_t port
 ) {
     if (port == ANY_PORT) {
-        BOOST_FOREACH(const size_t specific_port, get_ctrl_ports()) {
+        for(const size_t specific_port:  get_ctrl_ports()) {
             set_command_tick_rate(tick_rate, specific_port);
         }
         return;
@@ -414,7 +413,7 @@ void block_ctrl_base::clear()
     // Call parent...
     node_ctrl_base::clear();
     // ...then child
-    BOOST_FOREACH(const size_t port_index, get_ctrl_ports()) {
+    for(const size_t port_index:  get_ctrl_ports()) {
         _clear(port_index);
     }
 }
@@ -429,7 +428,7 @@ uint32_t block_ctrl_base::get_address(size_t block_port) {
  **********************************************************************/
 void block_ctrl_base::set_args(const uhd::device_addr_t &args, const size_t port)
 {
-    BOOST_FOREACH(const std::string &key, args.keys()) {
+    for(const std::string &key:  args.keys()) {
         if (_tree->exists(get_arg_path(key, port))) {
             set_arg(key, args.get(key), port);
         }
@@ -472,7 +471,7 @@ void block_ctrl_base::set_arg(const std::string &key, const std::string &val, co
 device_addr_t block_ctrl_base::get_args(const size_t port) const
 {
     device_addr_t args;
-    BOOST_FOREACH(const std::string &key, _tree->list(_root_path / "args" / port)) {
+    for(const std::string &key:  _tree->list(_root_path / "args" / port)) {
         args[key] = get_arg(key);
     }
     return args;

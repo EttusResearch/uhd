@@ -22,7 +22,6 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <boost/thread/thread.hpp>
 
 using namespace uhd;
@@ -65,7 +64,7 @@ struct x300_uart_iface : uart_iface
     void write_uart(const std::string &buff)
     {
         boost::mutex::scoped_lock(_write_mutex);
-        BOOST_FOREACH(const char ch, buff)
+        for(const char ch:  buff)
         {
             this->putchar(ch);
         }

@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/foreach.hpp>
 
 #include <uhd/types/byte_vector.hpp>
 
@@ -23,7 +22,7 @@ namespace uhd{
 
 std::string bytes_to_string(const byte_vector_t &bytes){
     std::string out;
-    BOOST_FOREACH(uint8_t byte, bytes){
+    for(uint8_t byte:  bytes){
         if (byte < 32 or byte > 127) return out;
         out += byte;
     }

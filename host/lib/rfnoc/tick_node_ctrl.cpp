@@ -47,7 +47,7 @@ double tick_node_ctrl::get_tick_rate(
         );
     } // neighbouring_tick_nodes is now initialized
     double ret_val = RATE_UNDEFINED;
-    BOOST_FOREACH(const sptr &node, neighbouring_tick_nodes) {
+    for(const sptr &node:  neighbouring_tick_nodes) {
         if (_explored_nodes.count(node)) {
             continue;
         }

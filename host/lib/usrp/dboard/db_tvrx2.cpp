@@ -962,7 +962,7 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
         .set_publisher(boost::bind(&tvrx2::get_rssi, this));
     this->get_rx_subtree()->create<sensor_value_t>("sensors/temperature")
         .set_publisher(boost::bind(&tvrx2::get_temp, this));
-    BOOST_FOREACH(const std::string &name, tvrx2_gain_ranges.keys()){
+    for(const std::string &name:  tvrx2_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
             .set_coercer(boost::bind(&tvrx2::set_gain, this, _1, name));
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
@@ -1066,7 +1066,7 @@ bool tvrx2::set_enabled(bool enable){
 
         test_rf_filter_robustness();
 
-        BOOST_FOREACH(const std::string &name, tvrx2_gain_ranges.keys()){
+        for(const std::string &name:  tvrx2_gain_ranges.keys()){
             this->get_rx_subtree()->access<double>("gains/"+name+"/value")
                 .set(tvrx2_gain_ranges[name].start());
         }
@@ -1271,14 +1271,14 @@ void tvrx2::tvrx2_tda18272_init_rfcal(void)
 
 
     // Loop through rfcal_log_* registers, initialize _rfcal_results
-    BOOST_FOREACH(const uint32_t &result, result_to_cal_regs.keys())
+    for(const uint32_t &result:  result_to_cal_regs.keys())
         _rfcal_results[result].delta_c = result_to_cal_regs[result] > 63 ? result_to_cal_regs[result] - 128 : result_to_cal_regs[result];
 
     /* read byte 0x26-0x2B */
     read_reg(0x26, 0x2B);
 
     // Loop through rfcal_byte_* registers, initialize _rfcal_coeffs
-    BOOST_FOREACH(const uint32_t &subband, _rfcal_coeffs.keys())
+    for(const uint32_t &subband:  _rfcal_coeffs.keys())
     {
         freq_range_t subband_freqs;
 
@@ -1473,7 +1473,7 @@ void tvrx2::test_rf_filter_robustness(void){
         ("UHFHigh_1", 0x43)
     ;
 
-    BOOST_FOREACH(const std::string &name, filter_cal_regs.keys()){
+    for(const std::string &name:  filter_cal_regs.keys()){
         uint8_t cal_result = _tda18272hnm_regs.get_reg(filter_cal_regs[name]);
         if (cal_result & 0x80) {
             _filter_ratings.set(name, "E");
@@ -1516,7 +1516,7 @@ void tvrx2::test_rf_filter_robustness(void){
 
     std::stringstream robustness_message;
     robustness_message << boost::format("TVRX2 (%s): RF Filter Robustness Results:") % (get_subdev_name()) << std::endl;
-    BOOST_FOREACH(const std::string &name, uhd::sorted(_filter_ratings.keys())){
+    for(const std::string &name:  uhd::sorted(_filter_ratings.keys())){
         robustness_message << boost::format("\t%s:\tMargin = %0.2f,\tRobustness = %c") % name % (_filter_margins[name]) % (_filter_ratings[name]) << std::endl;
     }
 

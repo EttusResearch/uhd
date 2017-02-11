@@ -22,7 +22,6 @@
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
-#include <boost/foreach.hpp>
 #include "fw_comm_protocol.h"
 
 namespace uhd { namespace usrp { namespace usrp3 {

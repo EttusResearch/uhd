@@ -18,7 +18,6 @@
 #include "validate_subdev_spec.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/assert_has.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd;
@@ -52,19 +51,19 @@ void uhd::usrp::validate_subdev_spec(
 
     //make a list of all possible specs
     subdev_spec_t all_specs;
-    BOOST_FOREACH(const std::string &db, tree->list(str(boost::format("/mboards/%s/dboards") % mb))){
-        BOOST_FOREACH(const std::string &sd, tree->list(str(boost::format("/mboards/%s/dboards/%s/%s_frontends") % mb % db % type))){
+    for(const std::string &db:  tree->list(str(boost::format("/mboards/%s/dboards") % mb))){
+        for(const std::string &sd:  tree->list(str(boost::format("/mboards/%s/dboards/%s/%s_frontends") % mb % db % type))){
             all_specs.push_back(subdev_spec_pair_t(db, sd));
         }
     }
 
     //validate that the spec is possible
-    BOOST_FOREACH(const subdev_spec_pair_t &pair, spec){
+    for(const subdev_spec_pair_t &pair:  spec){
         uhd::assert_has(all_specs, pair, str(boost::format("%s subdevice specification on mboard %s") % type % mb));
     }
 
     //enable selected frontends, disable others
-    BOOST_FOREACH(const subdev_spec_pair_t &pair, all_specs){
+    for(const subdev_spec_pair_t &pair:  all_specs){
         const bool enb = uhd::has(spec, pair);
         tree->access<bool>(str(boost::format(
             "/mboards/%s/dboards/%s/%s_frontends/%s/enabled"

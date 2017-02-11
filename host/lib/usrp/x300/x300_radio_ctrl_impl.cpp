@@ -83,7 +83,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
 
     if (_radio_type==PRIMARY) {
         _fp_gpio = gpio_atr::gpio_atr_3000::make(ctrl, regs::sr_addr(regs::FP_GPIO), regs::RB_FP_GPIO);
-        BOOST_FOREACH(const gpio_atr::gpio_attr_map_t::value_type attr, gpio_atr::gpio_attr_map) {
+        for(const gpio_atr::gpio_attr_map_t::value_type attr:  gpio_atr::gpio_attr_map) {
             _tree->create<uint32_t>(fs_path("gpio") / "FP0" / attr.second)
                 .set(0)
                 .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr, _fp_gpio, attr.first, _1));
@@ -150,7 +150,7 @@ x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
     _tree->remove(_root_path / "rx_fe_corrections");
     _tree->remove(_root_path / "tx_fe_corrections");
     if (_radio_type==PRIMARY) {
-        BOOST_FOREACH(const gpio_atr::gpio_attr_map_t::value_type attr, gpio_atr::gpio_attr_map) {
+        for(const gpio_atr::gpio_attr_map_t::value_type attr:  gpio_atr::gpio_attr_map) {
             _tree->remove(fs_path("gpio") / "FP0" / attr.second);
         }
         _tree->remove(fs_path("gpio") / "FP0" / "READBACK");
@@ -443,7 +443,7 @@ void x300_radio_ctrl_impl::setup_radio(
     );
 
     size_t rx_chan = 0, tx_chan = 0;
-    BOOST_FOREACH(const std::string& fe, _db_manager->get_rx_frontends()) {
+    for(const std::string& fe:  _db_manager->get_rx_frontends()) {
         if (rx_chan >= _get_num_radios()) {
             break;
         }
@@ -456,7 +456,7 @@ void x300_radio_ctrl_impl::setup_radio(
         _rx_fe_map[rx_chan].core->set_fe_connection(usrp::fe_connection_t(conn, if_freq));
         rx_chan++;
     }
-    BOOST_FOREACH(const std::string& fe, _db_manager->get_tx_frontends()) {
+    for(const std::string& fe:  _db_manager->get_tx_frontends()) {
         if (tx_chan >= _get_num_radios()) {
             break;
         }

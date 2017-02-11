@@ -17,7 +17,6 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
-#include <boost/foreach.hpp>
 #include <iostream>
 
 BOOST_AUTO_TEST_CASE(test_subdevice_spec){

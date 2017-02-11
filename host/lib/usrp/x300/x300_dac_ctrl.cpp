@@ -22,7 +22,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/exception.hpp>
-#include <boost/foreach.hpp>
 #include <boost/thread/thread.hpp> //sleep
 
 #define X300_DAC_FRONTEND_SYNC_FAILURE_FATAL

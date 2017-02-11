@@ -402,7 +402,7 @@ public:
             while (vco_freq < MIN_VCO_FREQ)
                 vco_freq *=2;
             uint8_t vco_index = 0xFF;
-            BOOST_FOREACH(const vco_map_t::value_type &vco, max2871_vco_map)
+            for(const vco_map_t::value_type &vco:  max2871_vco_map)
             {
                 if (uhd::math::fp_compare::fp_compare_epsilon<double>(vco_freq) < vco.second.stop())
                 {

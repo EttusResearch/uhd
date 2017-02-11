@@ -18,7 +18,6 @@
 #include <uhd/types/device_addr.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/tokenizer.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 #include <stdexcept>
@@ -38,10 +37,10 @@ static std::string trim(const std::string &in){
     (inp, boost::char_separator<char>(sep))
 
 device_addr_t::device_addr_t(const std::string &args){
-    BOOST_FOREACH(const std::string &pair, tokenizer(args, arg_delim)){
+  for(const std::string &pair: tokenizer(args,  arg_delim)){
         if (trim(pair) == "") continue;
         std::vector<std::string> toks;
-        BOOST_FOREACH(const std::string &tok, tokenizer(pair, pair_delim)){
+        for(const std::string &tok: tokenizer(pair,  pair_delim)){
             toks.push_back(tok);
         }
         if (toks.size() == 1) toks.push_back(""); //pad empty value
@@ -57,7 +56,7 @@ std::string device_addr_t::to_pp_string(void) const{
 
     std::stringstream ss;
     ss << "Device Address:" << std::endl;
-    BOOST_FOREACH(std::string key, this->keys()){
+    for(std::string key:  this->keys()){
         ss << boost::format("    %s: %s") % key % this->get(key) << std::endl;
     }
     return ss.str();
@@ -66,7 +65,7 @@ std::string device_addr_t::to_pp_string(void) const{
 std::string device_addr_t::to_string(void) const{
     std::string args_str;
     size_t count = 0;
-    BOOST_FOREACH(const std::string &key, this->keys()){
+    for(const std::string &key:  this->keys()){
         args_str += ((count++)? arg_delim : "") + key + pair_delim + this->get(key);
     }
     return args_str;
@@ -97,7 +96,7 @@ device_addrs_t uhd::separate_device_addr(const device_addr_t &dev_addr){
     //------------------------------------------------------------------
     device_addrs_t dev_addrs(1); //must be at least one (obviously)
     std::vector<std::string> global_keys; //keys that apply to all (no numerical suffix)
-    BOOST_FOREACH(const std::string &key, dev_addr.keys()){
+    for(const std::string &key:  dev_addr.keys()){
         boost::cmatch matches;
         if (not boost::regex_match(key.c_str(), matches, boost::regex("^(\\D+)(\\d*)$"))){
             throw std::runtime_error("unknown key format: " + key);
@@ -114,8 +113,8 @@ device_addrs_t uhd::separate_device_addr(const device_addr_t &dev_addr){
     }
 
     //copy the global settings across all device addresses
-    BOOST_FOREACH(device_addr_t &my_dev_addr, dev_addrs){
-        BOOST_FOREACH(const std::string &global_key, global_keys){
+    for(device_addr_t &my_dev_addr:  dev_addrs){
+        for(const std::string &global_key:  global_keys){
             my_dev_addr[global_key] = dev_addr[global_key];
         }
     }
@@ -125,7 +124,7 @@ device_addrs_t uhd::separate_device_addr(const device_addr_t &dev_addr){
 device_addr_t uhd::combine_device_addrs(const device_addrs_t &dev_addrs){
     device_addr_t dev_addr;
     for (size_t i = 0; i < dev_addrs.size(); i++){
-        BOOST_FOREACH(const std::string &key, dev_addrs[i].keys()){
+        for(const std::string &key:  dev_addrs[i].keys()){
             dev_addr[str(boost::format("%s%d") % key % i)] = dev_addrs[i][key];
         }
     }

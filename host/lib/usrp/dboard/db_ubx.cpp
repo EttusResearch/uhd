@@ -300,7 +300,7 @@ public:
             {
                 std::vector<double> rates = _iface->get_clock_rates(dboard_iface::UNIT_RX);
                 double highest_rate = 0.0;
-                BOOST_FOREACH(double rate, rates)
+                for(double rate:  rates)
                 {
                     if (rate <= pfd_freq_max and rate > highest_rate)
                         highest_rate = rate;
@@ -312,7 +312,7 @@ public:
             {
                 std::vector<double> rates = _iface->get_clock_rates(dboard_iface::UNIT_TX);
                 double highest_rate = 0.0;
-                BOOST_FOREACH(double rate, rates)
+                for(double rate:  rates)
                 {
                     if (rate <= pfd_freq_max and rate > highest_rate)
                         highest_rate = rate;
@@ -370,7 +370,7 @@ public:
             _rxlo1 = max287x_iface::make<max2870>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO1, _1));
             _rxlo2 = max287x_iface::make<max2870>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO2, _1));
             std::vector<max287x_iface::sptr> los = boost::assign::list_of(_txlo1)(_txlo2)(_rxlo1)(_rxlo2);
-            BOOST_FOREACH(max287x_iface::sptr lo, los)
+            for(max287x_iface::sptr lo:  los)
             {
                 lo->set_auto_retune(false);
                 lo->set_muxout_mode(max287x_iface::MUXOUT_DLD);
@@ -384,7 +384,7 @@ public:
             _rxlo1 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO1, _1));
             _rxlo2 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO2, _1));
             std::vector<max287x_iface::sptr> los = boost::assign::list_of(_txlo1)(_txlo2)(_rxlo1)(_rxlo2);
-            BOOST_FOREACH(max287x_iface::sptr lo, los)
+            for(max287x_iface::sptr lo:  los)
             {
                 lo->set_auto_retune(false);
                 //lo->set_cycle_slip_mode(true);  // tried it - caused longer lock times
@@ -547,7 +547,7 @@ private:
     {
         boost::mutex::scoped_lock lock(_spi_mutex);
         ROUTE_SPI(_iface, dest);
-        BOOST_FOREACH(uint32_t value, values)
+        for(uint32_t value:  values)
             WRITE_SPI(_iface, value);
     }
 

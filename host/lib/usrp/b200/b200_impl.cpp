@@ -172,7 +172,7 @@ static device_addrs_t b200_find(const device_addr_t &hint)
 
     //Return an empty list of addresses when an address or resource is specified,
     //since an address and resource is intended for a different, non-USB, device.
-    BOOST_FOREACH(device_addr_t hint_i, separate_device_addr(hint)) {
+    for(device_addr_t hint_i:  separate_device_addr(hint)) {
         if (hint_i.has_key("addr") || hint_i.has_key("resource")) return b200_addrs;
     }
 
@@ -182,7 +182,7 @@ static device_addrs_t b200_find(const device_addr_t &hint)
     // so that re-enumeration after fw load can occur successfully.
     // This requirement is a courtesy of libusb1.0 on windows.
     size_t found = 0;
-    BOOST_FOREACH(usb_device_handle::sptr handle, get_b200_device_handles(hint)) {
+    for(usb_device_handle::sptr handle:  get_b200_device_handles(hint)) {
         //extract the firmware path for the b200
         std::string b200_fw_image;
         try{
@@ -213,7 +213,7 @@ static device_addrs_t b200_find(const device_addr_t &hint)
     //search for the device until found or timeout
     while (boost::get_system_time() < timeout_time and b200_addrs.empty() and found != 0)
     {
-        BOOST_FOREACH(usb_device_handle::sptr handle, get_b200_device_handles(hint))
+        for(usb_device_handle::sptr handle:  get_b200_device_handles(hint))
         {
             usb_control::sptr control;
             try{control = usb_control::make(handle, 0);}
@@ -344,7 +344,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     std::vector<usb_device_handle::sptr> device_list = usb_device_handle::get_device_list(vid_pid_pair_list);
 
     //locate the matching handle in the device list
-    BOOST_FOREACH(usb_device_handle::sptr dev_handle, device_list) {
+    for(usb_device_handle::sptr dev_handle:  device_list) {
         try {
             if (dev_handle->get_serial() == device_addr["serial"]){
                 handle = dev_handle;
@@ -500,7 +500,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
             if (_gps and _gps->gps_detected())
             {
                 //UHD_MSG(status) << "found" << std::endl;
-                BOOST_FOREACH(const std::string &name, _gps->get_sensors())
+                for(const std::string &name:  _gps->get_sensors())
                 {
                     _tree->create<sensor_value_t>(mb_path / "sensors" / name)
                         .set_publisher(boost::bind(&gps_ctrl::get_sensor, _gps, name));
@@ -621,7 +621,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         this->setup_radio(i);
 
     //now test each radio module's connection to the codec interface
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         _codec_mgr->loopback_self_test(
             boost::bind(
@@ -641,7 +641,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         .add_coerced_subscriber(boost::bind(&b200_impl::sync_times, this));
     _tree->create<time_spec_t>(mb_path / "time" / "pps")
         .set_publisher(boost::bind(&time_core_3000::get_time_last_pps, _radio_perifs[0].time64));
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         _tree->access<time_spec_t>(mb_path / "time" / "pps")
             .add_coerced_subscriber(boost::bind(&time_core_3000::set_time_next_pps, perif.time64, _1));
@@ -670,7 +670,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // front panel gpio
     ////////////////////////////////////////////////////////////////////
     _radio_perifs[0].fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
-    BOOST_FOREACH(const gpio_attr_map_t::value_type attr, gpio_attr_map)
+    for(const gpio_attr_map_t::value_type attr:  gpio_attr_map)
     {
             _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
             .set(0)
@@ -701,11 +701,11 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
 
     //subdev spec contains full width of selections
     subdev_spec_t rx_spec, tx_spec;
-    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "rx_frontends"))
+    for(const std::string &fe:  _tree->list(mb_path / "dboards" / "A" / "rx_frontends"))
     {
         rx_spec.push_back(subdev_spec_pair_t("A", fe));
     }
-    BOOST_FOREACH(const std::string &fe, _tree->list(mb_path / "dboards" / "A" / "tx_frontends"))
+    for(const std::string &fe:  _tree->list(mb_path / "dboards" / "A" / "tx_frontends"))
     {
         tx_spec.push_back(subdev_spec_pair_t("A", fe));
     }
@@ -830,7 +830,7 @@ void b200_impl::setup_radio(const size_t dspno)
     // create RF frontend interfacing
     ////////////////////////////////////////////////////////////////////
     static const std::vector<direction_t> dirs = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
-    BOOST_FOREACH(direction_t dir, dirs) {
+    for(direction_t dir:  dirs) {
         const std::string x = (dir == RX_DIRECTION) ? "rx" : "tx";
         const std::string key = std::string(((dir == RX_DIRECTION) ? "RX" : "TX")) + std::string(((dspno == _fe1) ? "1" : "2"));
         const fs_path rf_fe_path
@@ -932,7 +932,7 @@ double b200_impl::set_tick_rate(const double new_tick_rate)
     _tick_rate = _codec_ctrl->set_clock_rate(new_tick_rate);
     UHD_MSG(status) << std::endl << (boost::format("Actually got clock rate %.6f MHz.") % (_tick_rate/1e6)) << std::endl;
 
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
     {
         perif.time64->set_tick_rate(_tick_rate);
         perif.time64->self_test();
@@ -1088,7 +1088,7 @@ void b200_impl::update_time_source(const std::string &source)
 
 void b200_impl::set_time(const uhd::time_spec_t& t)
 {
-    BOOST_FOREACH(radio_perifs_t &perif, _radio_perifs)
+    for(radio_perifs_t &perif:  _radio_perifs)
         perif.time64->set_time_sync(t);
     _local_ctrl->poke32(TOREG(SR_CORE_SYNC), 1 << 2 | uint32_t(_time_source));
     _local_ctrl->poke32(TOREG(SR_CORE_SYNC), _time_source);

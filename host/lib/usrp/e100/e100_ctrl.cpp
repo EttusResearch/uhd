@@ -27,7 +27,6 @@
 #include <boost/thread/thread.hpp> //sleep
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <fstream>
 
