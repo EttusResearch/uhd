@@ -57,7 +57,6 @@ class uhd_test_case(unittest.TestCase):
         if self.results_file and os.path.isfile(self.results_file):
             self.results = yaml.safe_load(open(self.results_file).read()) or {}
         self.args_str = os.getenv('_UHD_TEST_ARGS_STR', "")
-        time.sleep(15) # Wait for x300 devices to reclaim them
         self.usrp_info = get_usrp_list(self.args_str)[0]
         if not self.results.has_key(self.usrp_info['serial']):
             self.results[self.usrp_info['serial']] = {}
