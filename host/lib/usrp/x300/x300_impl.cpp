@@ -1072,7 +1072,9 @@ x300_impl::~x300_impl(void)
                 release(mb.zpu_ctrl);
                 //If the process is killed, the entire registry will disappear so we
                 //don't need to worry about unclean shutdowns here.
-                get_pcie_zpu_iface_registry().pop(mb.get_pri_eth().addr);
+                if (get_pcie_zpu_iface_registry().has_key(mb.get_pri_eth().addr)) {
+                    get_pcie_zpu_iface_registry().pop(mb.get_pri_eth().addr);
+                }
             }
         }
     }
