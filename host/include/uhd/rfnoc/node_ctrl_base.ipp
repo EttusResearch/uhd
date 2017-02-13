@@ -45,7 +45,7 @@ namespace uhd {
 
         while (iters++ < MAX_ITER) {
             next_q.clear();
-            for(const sptr &this_node:  search_q) {
+            BOOST_FOREACH(const sptr &this_node, search_q) {
                 // Add this node to the list of explored nodes
                 explored.insert(this_node);
                 // Create set of all child nodes of this_node that are not in explored:
@@ -98,7 +98,7 @@ namespace uhd {
         std::vector< boost::shared_ptr<T> > descendant_rate_nodes = _find_child_node<T, downstream>();
         value_type ret_val = NULL_VALUE;
         std::string first_node_id;
-        for(const boost::shared_ptr<T> &node:  descendant_rate_nodes) {
+        BOOST_FOREACH(const boost::shared_ptr<T> &node, descendant_rate_nodes) {
             if (exclude_nodes.count(node)) {
                 continue;
             }

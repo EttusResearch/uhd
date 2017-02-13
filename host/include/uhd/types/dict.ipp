@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_TYPES_DICT_IPP
 
 #include <uhd/exception.hpp>
+#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <typeinfo>
@@ -60,7 +61,7 @@ namespace uhd{
     template <typename Key, typename Val>
     std::vector<Key> dict<Key, Val>::keys(void) const{
         std::vector<Key> keys;
-        for(const pair_t &p:  _map){
+        BOOST_FOREACH(const pair_t &p, _map){
             keys.push_back(p.first);
         }
         return keys;
@@ -69,7 +70,7 @@ namespace uhd{
     template <typename Key, typename Val>
     std::vector<Val> dict<Key, Val>::vals(void) const{
         std::vector<Val> vals;
-        for(const pair_t &p:  _map){
+        BOOST_FOREACH(const pair_t &p, _map){
             vals.push_back(p.second);
         }
         return vals;
@@ -77,7 +78,7 @@ namespace uhd{
 
     template <typename Key, typename Val>
     bool dict<Key, Val>::has_key(const Key &key) const{
-        for(const pair_t &p:  _map){
+        BOOST_FOREACH(const pair_t &p, _map){
             if (p.first == key) return true;
         }
         return false;
@@ -85,7 +86,7 @@ namespace uhd{
 
     template <typename Key, typename Val>
     const Val &dict<Key, Val>::get(const Key &key, const Val &other) const{
-        for(const pair_t &p:  _map){
+        BOOST_FOREACH(const pair_t &p, _map){
             if (p.first == key) return p.second;
         }
         return other;
@@ -93,7 +94,7 @@ namespace uhd{
 
     template <typename Key, typename Val>
     const Val &dict<Key, Val>::get(const Key &key) const{
-        for(const pair_t &p:  _map){
+        BOOST_FOREACH(const pair_t &p, _map){
             if (p.first == key) return p.second;
         }
         throw key_not_found<Key, Val>(key);
@@ -106,7 +107,7 @@ namespace uhd{
 
     template <typename Key, typename Val>
     const Val &dict<Key, Val>::operator[](const Key &key) const{
-        for(const pair_t &p:  _map){
+        BOOST_FOREACH(const pair_t &p, _map){
             if (p.first == key) return p.second;
         }
         throw key_not_found<Key, Val>(key);
@@ -114,7 +115,7 @@ namespace uhd{
 
     template <typename Key, typename Val>
     Val &dict<Key, Val>::operator[](const Key &key){
-        for(pair_t &p:  _map){
+        BOOST_FOREACH(pair_t &p, _map){
             if (p.first == key) return p.second;
         }
         _map.push_back(std::make_pair(key, Val()));
@@ -137,7 +138,7 @@ namespace uhd{
     template <typename Key, typename Val>
     void dict<Key, Val>::update(const dict<Key, Val> &new_dict, bool fail_on_conflict)
     {
-        for(const Key &key:  new_dict.keys()) {
+        BOOST_FOREACH(const Key &key, new_dict.keys()) {
             if (fail_on_conflict and has_key(key) and get(key) != new_dict[key]) {
                 throw uhd::value_error(str(
                     boost::format("Option merge conflict: %s:%s != %s:%s")
