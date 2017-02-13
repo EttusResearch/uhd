@@ -17,7 +17,7 @@
 
 #include "n230_impl.hpp"
 
-#include "usrp3_fw_ctrl_iface.hpp"
+#include "n230_fw_ctrl_iface.hpp"
 #include "validate_subdev_spec.hpp"
 #include <uhd/utils/static.hpp>
 #include <uhd/transport/if_addrs.hpp>
@@ -41,7 +41,6 @@
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/make_shared.hpp>
 
-#include "../common/fw_comm_protocol.h"
 #include "n230_defaults.h"
 #include "n230_fpga_defs.h"
 #include "n230_fw_defs.h"
@@ -115,7 +114,7 @@ uhd::device_addrs_t n230_impl::n230_find(const uhd::device_addr_t &multi_dev_hin
     }
 
     std::vector<std::string> discovered_addrs =
-        usrp3::usrp3_fw_ctrl_iface::discover_devices(
+        n230_fw_ctrl_iface::discover_devices(
             hint["addr"], BOOST_STRINGIZE(N230_FW_COMMS_UDP_PORT), N230_FW_PRODUCT_ID);
 
     for(const std::string& addr:  discovered_addrs)
@@ -135,10 +134,10 @@ uhd::device_addrs_t n230_impl::n230_find(const uhd::device_addr_t &multi_dev_hin
         //connected communication can fail. Retry the following call to allow
         //the stack to update
         size_t first_conn_retries = 10;
-        usrp3::usrp3_fw_ctrl_iface::sptr fw_ctrl;
+        n230_fw_ctrl_iface::sptr fw_ctrl;
         while (first_conn_retries > 0) {
             try {
-                fw_ctrl = usrp3::usrp3_fw_ctrl_iface::make(ctrl_xport, N230_FW_PRODUCT_ID, false /*verbose*/);
+                fw_ctrl = n230_fw_ctrl_iface::make(ctrl_xport, N230_FW_PRODUCT_ID, false /*verbose*/);
                 break;
             } catch (uhd::io_error& ex) {
                 boost::this_thread::sleep(boost::posix_time::milliseconds(500));

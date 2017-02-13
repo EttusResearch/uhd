@@ -15,24 +15,24 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_LIBUHD_USRP_USRP3_UDP_FW_CTRL_IFACE_HPP
-#define INCLUDED_LIBUHD_USRP_USRP3_UDP_FW_CTRL_IFACE_HPP
+#ifndef INCLUDED_LIBUHD_USRP_N230_UDP_FW_CTRL_IFACE_HPP
+#define INCLUDED_LIBUHD_USRP_N230_UDP_FW_CTRL_IFACE_HPP
 
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <boost/thread/mutex.hpp>
 #include <vector>
 
-namespace uhd { namespace usrp { namespace usrp3 {
+namespace uhd { namespace usrp { namespace n230 {
 
-class usrp3_fw_ctrl_iface : public uhd::wb_iface
+class n230_fw_ctrl_iface : public uhd::wb_iface
 {
 public:
-    usrp3_fw_ctrl_iface(
+    n230_fw_ctrl_iface(
         uhd::transport::udp_simple::sptr udp_xport,
         const uint16_t product_id,
         const bool verbose);
-    virtual ~usrp3_fw_ctrl_iface();
+    virtual ~n230_fw_ctrl_iface();
 
     // -- uhd::wb_iface --
     void poke32(const wb_addr_type addr, const uint32_t data);
@@ -69,4 +69,4 @@ private:
 
 }}} //namespace
 
-#endif //INCLUDED_LIBUHD_USRP_USRP3_USRP3_UDP_FW_CTRL_HPP
+#endif // INCLUDED_LIBUHD_USRP_N230_UDP_FW_CTRL_IFACE_HPP

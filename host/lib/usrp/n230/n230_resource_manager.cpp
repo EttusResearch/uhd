@@ -17,7 +17,7 @@
 
 #include "n230_resource_manager.hpp"
 
-#include "usrp3_fw_ctrl_iface.hpp"
+#include "n230_fw_ctrl_iface.hpp"
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/utils/byteswap.hpp>
@@ -91,7 +91,7 @@ n230_resource_manager::n230_resource_manager(
 
         uint32_t iface_id = 0xFFFFFFFF;
         try {
-            iface_id = usrp3::usrp3_fw_ctrl_iface::get_iface_id(
+            iface_id = n230::n230_fw_ctrl_iface::get_iface_id(
                 conn_iface.ip_addr, BOOST_STRINGIZE(N230_FW_COMMS_UDP_PORT), N230_FW_PRODUCT_ID);
         } catch (uhd::io_error&) {
             throw uhd::io_error(str(boost::format(
@@ -118,7 +118,7 @@ n230_resource_manager::n230_resource_manager(
     }
 
     //Create firmware communication interface
-    _fw_ctrl = usrp3::usrp3_fw_ctrl_iface::make(
+    _fw_ctrl = n230::n230_fw_ctrl_iface::make(
         transport::udp_simple::make_connected(
             _get_conn(PRI_ETH).ip_addr, BOOST_STRINGIZE(N230_FW_COMMS_UDP_PORT)), N230_FW_PRODUCT_ID);
     if (_fw_ctrl.get() == NULL) {
@@ -276,7 +276,7 @@ transport::zero_copy_if::sptr n230_resource_manager::create_transport(
     return xport;
 }
 
-bool n230_resource_manager::is_device_claimed(uhd::usrp::usrp3::usrp3_fw_ctrl_iface::sptr fw_ctrl)
+bool n230_resource_manager::is_device_claimed(n230_fw_ctrl_iface::sptr fw_ctrl)
 {
     boost::mutex::scoped_lock(_claimer_mutex);
 

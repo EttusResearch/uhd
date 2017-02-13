@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "usrp3_fw_ctrl_iface.hpp"
+#include "n230_fw_ctrl_iface.hpp"
 
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/msg.hpp>
@@ -24,24 +24,24 @@
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include "fw_comm_protocol.h"
 
-namespace uhd { namespace usrp { namespace usrp3 {
+namespace uhd { namespace usrp { namespace n230 {
 
 //----------------------------------------------------------
 // Factory method
 //----------------------------------------------------------
-uhd::wb_iface::sptr usrp3_fw_ctrl_iface::make(
+uhd::wb_iface::sptr n230_fw_ctrl_iface::make(
     uhd::transport::udp_simple::sptr udp_xport,
     const uint16_t product_id,
     const bool verbose)
 {
-    return wb_iface::sptr(new usrp3_fw_ctrl_iface(udp_xport, product_id, verbose));
+    return wb_iface::sptr(new n230_fw_ctrl_iface(udp_xport, product_id, verbose));
 }
 
 //----------------------------------------------------------
 // udp_fw_ctrl_iface
 //----------------------------------------------------------
 
-usrp3_fw_ctrl_iface::usrp3_fw_ctrl_iface(
+n230_fw_ctrl_iface::n230_fw_ctrl_iface(
     uhd::transport::udp_simple::sptr udp_xport,
     const uint16_t product_id,
     const bool verbose) :
@@ -52,18 +52,18 @@ usrp3_fw_ctrl_iface::usrp3_fw_ctrl_iface(
     peek32(0);
 }
 
-usrp3_fw_ctrl_iface::~usrp3_fw_ctrl_iface()
+n230_fw_ctrl_iface::~n230_fw_ctrl_iface()
 {
     flush();
 }
 
-void usrp3_fw_ctrl_iface::flush()
+void n230_fw_ctrl_iface::flush()
 {
     boost::mutex::scoped_lock lock(_mutex);
     _flush();
 }
 
-void usrp3_fw_ctrl_iface::poke32(const wb_addr_type addr, const uint32_t data)
+void n230_fw_ctrl_iface::poke32(const wb_addr_type addr, const uint32_t data)
 {
     boost::mutex::scoped_lock lock(_mutex);
 
@@ -80,7 +80,7 @@ void usrp3_fw_ctrl_iface::poke32(const wb_addr_type addr, const uint32_t data)
     }
 }
 
-uint32_t usrp3_fw_ctrl_iface::peek32(const wb_addr_type addr)
+uint32_t n230_fw_ctrl_iface::peek32(const wb_addr_type addr)
 {
     boost::mutex::scoped_lock lock(_mutex);
 
@@ -97,7 +97,7 @@ uint32_t usrp3_fw_ctrl_iface::peek32(const wb_addr_type addr)
     return 0;
 }
 
-void usrp3_fw_ctrl_iface::_poke32(const wb_addr_type addr, const uint32_t data)
+void n230_fw_ctrl_iface::_poke32(const wb_addr_type addr, const uint32_t data)
 {
     //Load request struct
     fw_comm_pkt_t request;
@@ -128,7 +128,7 @@ void usrp3_fw_ctrl_iface::_poke32(const wb_addr_type addr, const uint32_t data)
     UHD_ASSERT_THROW(reply.data[0] == request.data[0]);
 }
 
-uint32_t usrp3_fw_ctrl_iface::_peek32(const wb_addr_type addr)
+uint32_t n230_fw_ctrl_iface::_peek32(const wb_addr_type addr)
 {
     //Load request struct
     fw_comm_pkt_t request;
@@ -161,7 +161,7 @@ uint32_t usrp3_fw_ctrl_iface::_peek32(const wb_addr_type addr)
     return uhd::ntohx<uint32_t>(reply.data[0]);
 }
 
-void usrp3_fw_ctrl_iface::_flush(void)
+void n230_fw_ctrl_iface::_flush(void)
 {
     char buff[FW_COMM_PROTOCOL_MTU] = {};
     while (_udp_xport->recv(boost::asio::buffer(buff), 0.0)) {
@@ -169,7 +169,7 @@ void usrp3_fw_ctrl_iface::_flush(void)
     }
 }
 
-std::vector<std::string> usrp3_fw_ctrl_iface::discover_devices(
+std::vector<std::string> n230_fw_ctrl_iface::discover_devices(
     const std::string& addr_hint, const std::string& port,
     uint16_t product_id)
 {
@@ -212,7 +212,7 @@ std::vector<std::string> usrp3_fw_ctrl_iface::discover_devices(
     return addrs;
 }
 
-uint32_t usrp3_fw_ctrl_iface::get_iface_id(
+uint32_t n230_fw_ctrl_iface::get_iface_id(
     const std::string& addr, const std::string& port,
     uint16_t product_id)
 {

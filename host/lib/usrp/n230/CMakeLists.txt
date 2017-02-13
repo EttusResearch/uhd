@@ -33,5 +33,6 @@ IF(ENABLE_N230)
         ${CMAKE_CURRENT_SOURCE_DIR}/n230_frontend_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/n230_uart.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/n230_image_loader.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/n230_fw_ctrl_iface.cpp
    )
 ENDIF(ENABLE_N230)
