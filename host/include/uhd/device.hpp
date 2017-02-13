@@ -105,13 +105,21 @@ public:
      */
     virtual tx_streamer::sptr get_tx_stream(const stream_args_t &args) = 0;
 
+    /*!
+     * Receive and asynchronous message from the device.
+     * \param async_metadata the metadata to be filled in
+     * \param timeout the timeout in seconds to wait for a message
+     * \return true when the async_metadata is valid, false for timeout
+     */
+    virtual bool recv_async_msg(
+        async_metadata_t &async_metadata, double timeout = 0.1
+    ) = 0;
+
     //! Get access to the underlying property structure
     uhd::property_tree::sptr get_tree(void) const;
 
     //! Get device type
     device_filter_t get_device_type() const;
-
-    #include <uhd/device_deprecated.ipp>
 
 protected:
     uhd::property_tree::sptr _tree;

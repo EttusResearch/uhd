@@ -34,7 +34,6 @@ UHD_INSTALL(FILES
     convert.hpp
     deprecated.hpp
     device.hpp
-    device_deprecated.ipp
     exception.hpp
     property_tree.ipp
     property_tree.hpp

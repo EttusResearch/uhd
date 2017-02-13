@@ -19,6 +19,7 @@
 #define INCLUDED_UHD_PROPERTY_TREE_IPP
 
 #include <uhd/exception.hpp>
+#include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <vector>
 
@@ -71,14 +72,14 @@ public:
 
     void _set_coerced(const T &value){
         init_or_set_value(_coerced_value, value);
-        for(typename property<T>::subscriber_type &csub:  _coerced_subscribers){
+        BOOST_FOREACH(typename property<T>::subscriber_type &csub, _coerced_subscribers){
             csub(get_value_ref(_coerced_value)); //let errors propagate
         }
     }
 
     property<T> &set(const T &value){
         init_or_set_value(_value, value);
-        for(typename property<T>::subscriber_type &dsub:  _desired_subscribers){
+        BOOST_FOREACH(typename property<T>::subscriber_type &dsub, _desired_subscribers){
             dsub(get_value_ref(_value)); //let errors propagate
         }
         if (not _coercer.empty()) {
