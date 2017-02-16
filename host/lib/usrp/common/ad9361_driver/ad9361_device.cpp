@@ -1583,11 +1583,11 @@ void ad9361_device_t::initialize()
 
     /* Enable clocks. */
     switch (_client_params->get_clocking_mode()) {
-    case AD9361_XTAL_N_CLK_PATH: {
+    case clocking_mode_t::AD9361_XTAL_N_CLK_PATH: {
         _io_iface->poke8(0x009, 0x17);
     } break;
 
-    case AD9361_XTAL_P_CLK_PATH: {
+    case clocking_mode_t::AD9361_XTAL_P_CLK_PATH: {
         _io_iface->poke8(0x009, 0x07);
         _io_iface->poke8(0x292, 0x08);
         _io_iface->poke8(0x293, 0x80);
