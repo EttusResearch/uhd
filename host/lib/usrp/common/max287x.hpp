@@ -23,6 +23,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <boost/assign.hpp>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
@@ -475,7 +476,10 @@ max287x<max287x_regs_t>::max287x(write_fn func) :
 template <typename max287x_regs_t>
 max287x<max287x_regs_t>::~max287x()
 {
-    shutdown();
+    UHD_SAFE_CALL
+    (
+        shutdown();
+    )
 }
 
 template <typename max287x_regs_t>
