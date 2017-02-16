@@ -378,6 +378,7 @@ uhd_error uhd_usrp_get_rx_info(
         uhd::dict<std::string, std::string> rx_info = USRP(h)->get_usrp_rx_info(chan);
 
         COPY_INFO_FIELD(info_out, rx_info, mboard_id);
+        COPY_INFO_FIELD(info_out, rx_info, mboard_name);
         COPY_INFO_FIELD(info_out, rx_info, mboard_serial);
         COPY_INFO_FIELD(info_out, rx_info, rx_id);
         COPY_INFO_FIELD(info_out, rx_info, rx_subdev_name);
@@ -396,6 +397,7 @@ uhd_error uhd_usrp_get_tx_info(
         uhd::dict<std::string, std::string> tx_info = USRP(h)->get_usrp_tx_info(chan);
 
         COPY_INFO_FIELD(info_out, tx_info, mboard_id);
+        COPY_INFO_FIELD(info_out, tx_info, mboard_name);
         COPY_INFO_FIELD(info_out, tx_info, mboard_serial);
         COPY_INFO_FIELD(info_out, tx_info, tx_id);
         COPY_INFO_FIELD(info_out, tx_info, tx_subdev_name);
