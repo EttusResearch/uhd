@@ -30,6 +30,9 @@
 #include <boost/thread/mutex.hpp>
 #include <ctime>
 #include <string>
+#if defined(WIN32) || defined(MINGW)
+#define timegm _mkgmtime
+#endif
 
 #include "boost/tuple/tuple.hpp"
 
@@ -356,7 +359,7 @@ private:
             raw_date->tm_hour = std::stoi(timestr.substr(0, 2));
             raw_date->tm_min = std::stoi(timestr.substr(2, 2));
             raw_date->tm_sec = std::stoi(timestr.substr(4,2));
-            std::time_t gps_date = mktime(raw_date) - timezone; // mktime creates time_t in localtime
+            std::time_t gps_date = timegm(raw_date); // GPS time is UTC
 
             gps_time = boost::posix_time::from_time_t(gps_date);
 
