@@ -162,18 +162,18 @@ These tests are simulations and do not need any device. Vivado 15.4 should be in
 1. Go to the fpga directory depending on which test needs to be run.
 
   1. NoC block test benches:
-     Most of the NoC blocks have a test bench written in System Verilog that provides stimuli to the noc_block to verify it. The test bench for a block resides in <fpga-dir>/usrp3/lib/rfnoc/*_tb.
+     Most of the NoC blocks have a test bench written in System Verilog that provides stimuli to the noc_block to verify it. The test bench for a block resides in `<fpga-dir>/usrp3/lib/rfnoc/&zwj;*_tb`.
 
   2. Running unit test benches:
-     A few sub-blocks like noc-shell and sine_tone are used within the bigger noc_blocks. They have their own test benches. Their test benches reside in <fpga-dir>/usrp3/lib/sim/rfnoc/*.
+     A few sub-blocks like noc-shell and sine_tone are used within the bigger noc_blocks. They have their own test benches. Their test benches reside in `<fpga-dir>/usrp3/lib/sim/rfnoc/&zwj;*`.
 
   3. Radio test bench:
-     The radio test bench resides in <fpga-dir>/usrp3/lib/radio/noc_block_radio_core_tb/.
+     The radio test bench resides in `<fpga-dir>/usrp3/lib/radio/noc_block_radio_core_tb/`.
 
   4. Device specific test benches:
-     IPs specific to a device have test benches that exist in <fpga-dir>/usrp3/top/x300/sim/*. e.g. DMA testbench, PCIe, etc.
+     IPs specific to a device have test benches that exist in `<fpga-dir>/usrp3/top/x300/sim/*`. e.g. DMA testbench, PCIe, etc.
 
-2. Setup the environment by running 'source <fpga-dir>/usrp3/top/<device>/setupenv.sh'.
+2. Setup the environment by running `source <fpga-dir>/usrp3/top/<device>/setupenv.sh`.
 
 3. In the test bench directory and run the test bench by 'make xsim' or 'make vsim'.
 
