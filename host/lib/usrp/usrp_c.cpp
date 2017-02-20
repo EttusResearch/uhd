@@ -840,10 +840,10 @@ uhd_error uhd_usrp_get_fe_rx_freq_range(
 UHD_API uhd_error uhd_usrp_get_rx_lo_names(
     uhd_usrp_handle h,
     size_t chan,
-    uhd_string_vector_handle rx_lo_names_out
+    uhd_string_vector_handle *rx_lo_names_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        rx_lo_names_out->string_vector_cpp = USRP(h)->get_rx_lo_names(chan);
+        (*rx_lo_names_out)->string_vector_cpp = USRP(h)->get_rx_lo_names(chan);
     )
 }
 
@@ -874,10 +874,10 @@ UHD_API uhd_error uhd_usrp_get_rx_lo_sources(
     uhd_usrp_handle h,
     const char* name,
     size_t chan,
-    uhd_string_vector_handle rx_lo_sources_out
+    uhd_string_vector_handle *rx_lo_sources_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        rx_lo_sources_out->string_vector_cpp = USRP(h)->get_rx_lo_sources(name, chan);
+        (*rx_lo_sources_out)->string_vector_cpp = USRP(h)->get_rx_lo_sources(name, chan);
     )
 }
 
