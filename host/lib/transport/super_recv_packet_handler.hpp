@@ -332,9 +332,9 @@ private:
         void reset()
         {
             buff.reset();
-            vrt_hdr = NULL;
+            vrt_hdr = nullptr;
             time = time_spec_t(0.0);
-            copy_buff = NULL;
+            copy_buff = nullptr;
         }
         managed_recv_buffer::sptr buff;
         const uint32_t *vrt_hdr;
@@ -409,7 +409,7 @@ private:
         //get a single packet from the transport layer
         managed_recv_buffer::sptr &buff = curr_buffer_info.buff;
         buff = _props[index].get_buff(timeout);
-        if (buff.get() == NULL) return PACKET_TIMEOUT_ERROR;
+        if (buff.get() == nullptr) return PACKET_TIMEOUT_ERROR;
 
         #ifdef  ERROR_INJECT_DROPPED_PACKETS
         if (++recvd_packets > 1000)
@@ -417,7 +417,7 @@ private:
             recvd_packets = 0;
             buff.reset();
             buff = _props[index].get_buff(timeout);
-            if (buff.get() == NULL) return PACKET_TIMEOUT_ERROR;
+            if (buff.get() == nullptr) return PACKET_TIMEOUT_ERROR;
         }
         #endif
 
@@ -616,7 +616,7 @@ private:
                     UHD_MSG(fastpath) << "O";
                 }
                 curr_info[index].buff.reset();
-                curr_info[index].copy_buff = NULL;
+                curr_info[index].copy_buff = nullptr;
                 return;
 
             case PACKET_TIMEOUT_ERROR:
