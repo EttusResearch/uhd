@@ -477,7 +477,7 @@ void n230_stream_manager::_handle_tx_async_msgs(
         _cvita_hdr_unpack(packet_buff, if_packet_info);
         endian_conv = uhd::ntohx;
     } catch(const std::exception &ex) {
-        UHD_MSG(error) << "Error parsing async message packet: " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("N230") << "Error parsing async message packet: " << ex.what() ;
         return;
     }
 

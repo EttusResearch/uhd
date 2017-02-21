@@ -84,7 +84,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>

@@ -31,7 +31,7 @@ public:
     udp_simple_impl(
         const std::string &addr, const std::string &port, bool bcast, bool connect
     ):_connected(connect){
-        UHD_LOG << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
+        UHD_LOGGER_DEBUG("UDP") << boost::format("Creating udp transport for %s %s") % addr % port ;
 
         //resolve the address
         asio::ip::udp::resolver resolver(_io_service);

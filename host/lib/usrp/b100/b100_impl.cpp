@@ -19,7 +19,7 @@
 #include "b100_impl.hpp"
 #include "b100_regs.hpp"
 #include <uhd/transport/usb_control.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/cast.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
@@ -80,10 +80,10 @@ static device_addrs_t b100_find(const device_addr_t &hint)
             b100_fw_image = find_image_path(hint.get("fw", B100_FW_FILE_NAME));
         }
         catch(...){
-            UHD_MSG(warning) << boost::format("Could not locate B100 firmware. %s\n") % print_utility_error("uhd_images_downloader.py");
+            UHD_LOGGER_WARNING("B100") << boost::format("Could not locate B100 firmware. %s\n") % print_utility_error("uhd_images_downloader.py");
             return b100_addrs;
         }
-        UHD_LOG << "the firmware image: " << b100_fw_image << std::endl;
+        UHD_LOGGER_DEBUG("B100") << "the firmware image: " << b100_fw_image ;
 
         usb_control::sptr control;
         try{control = usb_control::make(handle, 0);}
@@ -202,9 +202,9 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     //try reset once in the case of failure
     catch(const uhd::exception &ex){
         if (initialization_count > 1) throw;
-        UHD_MSG(warning) <<
+        UHD_LOGGER_WARNING("B100") <<
             "The control endpoint was left in a bad state.\n"
-            "Attempting endpoint re-enumeration...\n" << ex.what() << std::endl;
+            "Attempting endpoint re-enumeration...\n" << ex.what() ;
         _fifo_ctrl.reset();
         _ctrl_transport.reset();
         _fx2_ctrl->usrp_fx2_reset();
@@ -230,9 +230,9 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     //try reset once in the case of failure
     catch(const uhd::exception &){
         if (initialization_count > 1) throw;
-        UHD_MSG(warning) <<
+        UHD_LOGGER_WARNING("B100") <<
             "The control endpoint was left in a bad state.\n"
-            "Attempting endpoint re-enumeration...\n" << std::endl;
+            "Attempting endpoint re-enumeration...\n" ;
         _fifo_ctrl.reset();
         _ctrl_transport.reset();
         _fx2_ctrl->usrp_fx2_reset();

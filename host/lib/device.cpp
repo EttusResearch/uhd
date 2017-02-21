@@ -19,7 +19,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <boost/format.hpp>
@@ -73,7 +73,7 @@ void device::register_device(
     const make_t &make,
     const device_filter_t filter
 ){
-    UHD_LOGV(always) << "registering device" << std::endl;
+    UHD_LOGGER_TRACE("UHD") << "registering device";
     get_dev_fcn_regs().push_back(dev_fcn_reg_t(find, make, filter));
 }
 
@@ -101,7 +101,7 @@ device_addrs_t device::find(const device_addr_t &hint, device_filter_t filter){
             }
         }
         catch (const std::exception &e) {
-            UHD_MSG(error) << "Device discovery error: " << e.what() << std::endl;
+            UHD_LOGGER_ERROR("UHD") << "Device discovery error: " << e.what();
         }
     }
 
@@ -127,7 +127,7 @@ device::sptr device::make(const device_addr_t &hint, device_filter_t filter, siz
             }
         }
         catch(const std::exception &e){
-            UHD_MSG(error) << "Device discovery error: " << e.what() << std::endl;
+            UHD_LOGGER_ERROR("UHD") << "Device discovery error: " << e.what() ;
         }
     }
 
@@ -149,7 +149,7 @@ device::sptr device::make(const device_addr_t &hint, device_filter_t filter, siz
     device_addr_t dev_addr; make_t maker;
     boost::tie(dev_addr, maker) = dev_addr_makers.at(which);
     size_t dev_hash = hash_device_addr(dev_addr);
-    UHD_LOG << boost::format("Device hash: %u") % dev_hash << std::endl;
+    UHD_LOGGER_DEBUG("UHD") << boost::format("Device hash: %u") % dev_hash ;
 
     //copy keys that were in hint but not in dev_addr
     //this way, we can pass additional transport arguments

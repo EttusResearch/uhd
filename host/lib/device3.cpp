@@ -17,7 +17,7 @@
 
 #include <boost/format.hpp>
 #include <uhd/device3.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;

@@ -16,12 +16,12 @@
 //
 
 #include <boost/format.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/blockdef.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 
-#define UHD_FACTORY_LOG() UHD_MSG(status)
+#define UHD_FACTORY_LOG() UHD_LOGGER_TRACE("RFNOC")
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -59,7 +59,7 @@ static void lookup_block_key(uint64_t noc_id, make_args_t &make_args)
         make_args.block_name = bd->get_name();
         return;
     } catch (std::exception &e) {
-        UHD_MSG(warning) << str(boost::format("Error while looking up name for NoC-ID %016X.\n%s") % noc_id % e.what()) << std::endl;
+        UHD_LOGGER_WARNING("RFNOC") << str(boost::format("Error while looking up name for NoC-ID %016X.\n%s") % noc_id % e.what()) ;
     }
 
     make_args.block_key  = DEFAULT_BLOCK_NAME;
@@ -71,7 +71,7 @@ block_ctrl_base::sptr block_ctrl_base::make(
         const make_args_t &make_args_,
         uint64_t noc_id
 ) {
-    UHD_FACTORY_LOG() << "[RFNoC Factory] block_ctrl_base::make() " << std::endl;
+    UHD_FACTORY_LOG() << "[RFNoC Factory] block_ctrl_base::make() " ;
     make_args_t make_args = make_args_;
 
     // Check if a block key was specified, in this case, we *must* either
@@ -90,7 +90,7 @@ block_ctrl_base::sptr block_ctrl_base::make(
         make_args.block_name = make_args.block_key;
     }
 
-    UHD_FACTORY_LOG() << "[RFNoC Factory] Using controller key '" << make_args.block_key << "' and block name '" << make_args.block_name << "'" << std::endl;
+    UHD_FACTORY_LOG() << "[RFNoC Factory] Using controller key '" << make_args.block_key << "' and block name '" << make_args.block_name << "'" ;
     return get_block_fcn_regs()[make_args.block_key](make_args);
 }
 

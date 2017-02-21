@@ -17,7 +17,7 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
@@ -65,7 +65,7 @@ static void do_samp_rate_warning_message(
 ){
     static const double max_allowed_error = 1.0; //Sps
     if (std::abs(target_rate - actual_rate) > max_allowed_error){
-        UHD_MSG(warning) << boost::format(
+        UHD_LOGGER_WARNING("MULTI_USRP") << boost::format(
             "The hardware does not support the requested %s sample rate:\n"
             "Target sample rate: %f MSps\n"
             "Actual sample rate: %f MSps\n"
@@ -96,7 +96,7 @@ static void do_samp_rate_warning_message(
 
     if(requested_freq_success and target_freq_success and rf_lo_tune_success
             and dsp_tune_success) {
-        UHD_MSG(status) << boost::format(
+        UHD_LOGGER_INFO("MULTI_USRP") << boost::format(
                 "Successfully tuned to %f MHz\n\n")
                 % (actual_freq / 1e6);
     } else {
@@ -119,7 +119,7 @@ static void do_samp_rate_warning_message(
 
             results_string += rf_lo_message.str();
 
-            UHD_MSG(status) << results_string;
+            UHD_LOGGER_INFO("MULTI_USRP") << results_string;
 
             return;
         }
@@ -173,7 +173,7 @@ static void do_samp_rate_warning_message(
             results_string += failure_message.str();
         }
 
-        UHD_MSG(warning) << results_string << std::endl;
+        UHD_LOGGER_WARNING("MULTI_USRP") << results_string ;
     }
 }*/
 
@@ -458,7 +458,7 @@ public:
             if (_tree->exists(mb_root(mboard) / "auto_tick_rate")
                     and _tree->access<bool>(mb_root(mboard) / "auto_tick_rate").get()) {
                 _tree->access<bool>(mb_root(mboard) / "auto_tick_rate").set(false);
-                UHD_MSG(status) << "Setting master clock rate selection to 'manual'." << std::endl;
+                UHD_LOGGER_INFO("MULTI_USRP") << "Setting master clock rate selection to 'manual'.";
             }
             _tree->access<double>(mb_root(mboard) / "tick_rate").set(rate);
             return;
@@ -556,7 +556,7 @@ public:
     }
 
     void set_time_unknown_pps(const time_spec_t &time_spec){
-        UHD_MSG(status) << "    1) catch time transition at pps edge" << std::endl;
+        UHD_LOGGER_INFO("MULTI_USRP") << "    1) catch time transition at pps edge";
         boost::system_time end_time = boost::get_system_time() + boost::posix_time::milliseconds(1100);
         time_spec_t time_start_last_pps = get_time_last_pps();
         while (time_start_last_pps == get_time_last_pps())
@@ -572,7 +572,7 @@ public:
             boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }
 
-        UHD_MSG(status) << "    2) set times next pps (synchronously)" << std::endl;
+        UHD_LOGGER_INFO("MULTI_USRP") << "    2) set times next pps (synchronously)";
         set_time_next_pps(time_spec, ALL_MBOARDS);
         boost::this_thread::sleep(boost::posix_time::seconds(1));
 
@@ -581,7 +581,7 @@ public:
             time_spec_t time_0 = this->get_time_now(0);
             time_spec_t time_i = this->get_time_now(m);
             if (time_i < time_0 or (time_i - time_0) > time_spec_t(0.01)){ //10 ms: greater than RTT but not too big
-                UHD_MSG(warning) << boost::format(
+                UHD_LOGGER_WARNING("MULTI_USRP") << boost::format(
                     "Detected time deviation between board %d and board 0.\n"
                     "Board 0 time is %f seconds.\n"
                     "Board %d time is %f seconds.\n"
@@ -797,7 +797,7 @@ public:
             {
                 throw uhd::index_error(str(boost::format("multi_usrp::get_rx_subdev_spec(%u) failed to make default spec - %s") % mboard % e.what()));
             }
-            UHD_MSG(status) << "Selecting default RX front end spec: " << spec.to_pp_string() << std::endl;
+            UHD_LOGGER_INFO("MULTI_USRP") << "Selecting default RX front end spec: " << spec.to_pp_string();
         }
         return spec;
     }
@@ -1059,7 +1059,7 @@ public:
             if (_tree->exists(rx_rf_fe_root(chan) / "gain" / "agc")) {
                 bool agc = _tree->access<bool>(rx_rf_fe_root(chan) / "gain" / "agc" / "enable").get();
                 if(agc) {
-                    UHD_MSG(warning) << "AGC enabled for this channel. Setting will be ignored." << std::endl;
+                    UHD_LOGGER_WARNING("MULTI_USRP") << "AGC enabled for this channel. Setting will be ignored." ;
                 }
             }
         } else {
@@ -1067,7 +1067,7 @@ public:
                 if (_tree->exists(rx_rf_fe_root(c) / "gain" / "agc")) {
                     bool agc = _tree->access<bool>(rx_rf_fe_root(chan) / "gain" / "agc" / "enable").get();
                     if(agc) {
-                        UHD_MSG(warning) << "AGC enabled for this channel. Setting will be ignored." << std::endl;
+                        UHD_LOGGER_WARNING("MULTI_USRP") << "AGC enabled for this channel. Setting will be ignored." ;
                     }
                 }
             }
@@ -1097,7 +1097,7 @@ public:
             if (_tree->exists(rx_rf_fe_root(chan) / "gain" / "agc" / "enable")) {
                 _tree->access<bool>(rx_rf_fe_root(chan) / "gain" / "agc" / "enable").set(enable);
             } else {
-                UHD_MSG(warning) << "AGC is not available on this device." << std::endl;
+                UHD_LOGGER_WARNING("MULTI_USRP") << "AGC is not available on this device." ;
             }
             return;
         }
@@ -1186,7 +1186,7 @@ public:
                 /*For B2xx devices the dc-offset correction is implemented in the rf front-end*/
                 _tree->access<bool>(rx_rf_fe_root(chan) / "dc_offset" / "enable").set(enb);
             } else {
-                UHD_MSG(warning) << "Setting DC offset compensation is not possible on this device." << std::endl;
+                UHD_LOGGER_WARNING("MULTI_USRP") << "Setting DC offset compensation is not possible on this device." ;
             }
             return;
         }
@@ -1200,7 +1200,7 @@ public:
             if (_tree->exists(rx_fe_root(chan) / "dc_offset" / "value")) {
                 _tree->access<std::complex<double> >(rx_fe_root(chan) / "dc_offset" / "value").set(offset);
             } else {
-                UHD_MSG(warning) << "Setting DC offset is not possible on this device." << std::endl;
+                UHD_LOGGER_WARNING("MULTI_USRP") << "Setting DC offset is not possible on this device." ;
             }
             return;
         }
@@ -1214,7 +1214,7 @@ public:
             if (_tree->exists(rx_rf_fe_root(chan) / "iq_balance" / "enable")) {
                 _tree->access<bool>(rx_rf_fe_root(chan) / "iq_balance" / "enable").set(enb);
             } else {
-                UHD_MSG(warning) << "Setting IQ imbalance compensation is not possible on this device." << std::endl;
+                UHD_LOGGER_WARNING("MULTI_USRP") << "Setting IQ imbalance compensation is not possible on this device." ;
             }
             return;
         }
@@ -1228,7 +1228,7 @@ public:
             if (_tree->exists(rx_fe_root(chan) / "iq_balance" / "value")) {
                 _tree->access<std::complex<double> >(rx_fe_root(chan) / "iq_balance" / "value").set(offset);
             } else {
-                UHD_MSG(warning) << "Setting IQ balance is not possible on this device." << std::endl;
+                UHD_LOGGER_WARNING("MULTI_USRP") << "Setting IQ balance is not possible on this device." ;
             }
             return;
         }
@@ -1355,7 +1355,7 @@ public:
             {
                 throw uhd::index_error(str(boost::format("multi_usrp::get_tx_subdev_spec(%u) failed to make default spec - %s") % mboard % e.what()));
             }
-            UHD_MSG(status) << "Selecting default TX front end spec: " << spec.to_pp_string() << std::endl;
+            UHD_LOGGER_INFO("MULTI_USRP") << "Selecting default TX front end spec: " << spec.to_pp_string();
         }
         return spec;
     }
@@ -1523,7 +1523,7 @@ public:
             if (_tree->exists(tx_fe_root(chan) / "dc_offset" / "value")) {
                 _tree->access<std::complex<double> >(tx_fe_root(chan) / "dc_offset" / "value").set(offset);
             } else {
-                UHD_MSG(warning) << "Setting DC offset is not possible on this device." << std::endl;
+                UHD_LOGGER_WARNING("MULTI_USRP") << "Setting DC offset is not possible on this device." ;
             }
             return;
         }
@@ -1537,7 +1537,7 @@ public:
             if (_tree->exists(tx_fe_root(chan) / "iq_balance" / "value")) {
                 _tree->access<std::complex<double> >(tx_fe_root(chan) / "iq_balance" / "value").set(offset);
             } else {
-                UHD_MSG(warning) << "Setting IQ balance is not possible on this device." << std::endl;
+                UHD_LOGGER_WARNING("MULTI_USRP") << "Setting IQ balance is not possible on this device." ;
             }
             return;
         }
@@ -1937,10 +1937,10 @@ private:
         }
         sum_rate /= get_num_mboards();
         if (max_link_rate > 0 and (max_link_rate / bytes_per_sample) < sum_rate) {
-            UHD_MSG(warning) << boost::format(
+            UHD_LOGGER_WARNING("MULTI_USRP") << boost::format(
                 "The total sum of rates (%f MSps on %u channels) exceeds the maximum capacity of the connection.\n"
                 "This can cause %s."
-            ) % (sum_rate/1e6) % args.channels.size() % (is_tx ? "underruns (U)" : "overflows (O)")  << std::endl;
+            ) % (sum_rate/1e6) % args.channels.size() % (is_tx ? "underruns (U)" : "overflows (O)")  ;
             link_rate_is_ok = false;
         }
 
@@ -1956,6 +1956,6 @@ multi_usrp::~multi_usrp(void){
  * The Make Function
  **********************************************************************/
 multi_usrp::sptr multi_usrp::make(const device_addr_t &dev_addr){
-    UHD_LOG << "multi_usrp::make with args " << dev_addr.to_pp_string() << std::endl;
+    UHD_LOGGER_DEBUG("MULTI_USRP") << "multi_usrp::make with args " << dev_addr.to_pp_string() ;
     return sptr(new multi_usrp_impl(dev_addr));
 }

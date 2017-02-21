@@ -20,7 +20,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/math.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread/thread.hpp> //thread sleep
@@ -169,7 +169,7 @@ public:
             _iface->poke32(REG_DSP_RX_DECIM, (hb0 << 9) /*small HB */ | (hb1 << 8) /*large HB*/ | (decim & 0xff));
 
             if (decim > 1 and hb0 == 0 and hb1 == 0) {
-                UHD_MSG(warning) << boost::format(
+                UHD_LOGGER_WARNING("CORES") << boost::format(
                     "The requested decimation is odd; the user should expect CIC rolloff.\n"
                     "Select an even decimation to ensure that a halfband filter is enabled.\n"
                     "decimation = dsp_rate/samp_rate -> %d = (%f MHz)/(%f MHz)\n"
@@ -189,7 +189,7 @@ public:
             _iface->poke32(REG_DSP_RX_DECIM,  (hb_enable << 8) | (decim & 0xff));
 
             if (decim > 1 and hb0 == 0 and hb1 == 0 and hb2 == 0) {
-                UHD_MSG(warning) << boost::format(
+                UHD_LOGGER_WARNING("CORES") << boost::format(
                     "The requested decimation is odd; the user should expect passband CIC rolloff.\n"
                     "Select an even decimation to ensure that a halfband filter is enabled.\n"
                     "Decimations factorable by 4 will enable 2 halfbands, those factorable by 8 will enable 3 halfbands.\n"

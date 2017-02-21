@@ -135,9 +135,9 @@ void b200_impl::set_auto_tick_rate(
             _tree->access<double>("/mboards/0/tick_rate").set(new_rate);
         }
     } catch (const uhd::value_error &) {
-        UHD_MSG(warning)
-            << "Cannot automatically determine an appropriate tick rate for these sampling rates." << std::endl
-            << "Consider using different sampling rates, or manually specify a suitable master clock rate." << std::endl;
+        UHD_LOGGER_WARNING("B200")
+            << "Cannot automatically determine an appropriate tick rate for these sampling rates." 
+            << "Consider using different sampling rates, or manually specify a suitable master clock rate." ;
         return; // Let the others handle this
     }
 }
@@ -356,7 +356,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
         }
         catch(const std::exception &ex)
         {
-            UHD_MSG(error) << "Error parsing ctrl packet: " << ex.what() << std::endl;
+            UHD_LOGGER_ERROR("B200") << "Error parsing ctrl packet: " << ex.what();
             break;
         }
 
@@ -370,7 +370,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
 
     //doh!
     default:
-        UHD_MSG(error) << "Got a ctrl packet with unknown SID " << sid << std::endl;
+        UHD_LOGGER_ERROR("B200") << "Got a ctrl packet with unknown SID " << sid;
     }
     return boost::none;
 }

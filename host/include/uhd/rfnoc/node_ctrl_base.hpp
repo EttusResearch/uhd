@@ -32,7 +32,7 @@
 namespace uhd {
     namespace rfnoc {
 
-#define UHD_RFNOC_BLOCK_TRACE() UHD_MSG(status) << "[" << unique_id() << "] "
+#define UHD_RFNOC_BLOCK_TRACE() UHD_LOGGER_TRACE("RFNOC")
 
 /*! \brief Abstract base class for streaming nodes.
  *

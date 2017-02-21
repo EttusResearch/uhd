@@ -33,7 +33,7 @@
 #include <uhd/usrp_clock/octoclock_eeprom.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/paths.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 
@@ -117,10 +117,10 @@ device_addrs_t octoclock_find(const device_addr_t &hint){
         udp_transport->send(boost::asio::buffer(&pkt_out, sizeof(pkt_out)));
     }
     catch(const std::exception &ex){
-        UHD_MSG(error) << "OctoClock network discovery error - " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("OCTOCLOCK") << "OctoClock network discovery error - " << ex.what() ;
     }
     catch(...){
-        UHD_MSG(error) << "OctoClock network discovery unknown error" << std::endl;
+        UHD_LOGGER_ERROR("OCTOCLOCK") << "OctoClock network discovery unknown error" ;
     }
 
     uint8_t octoclock_data[udp_simple::mtu];
@@ -186,7 +186,7 @@ UHD_STATIC_BLOCK(register_octoclock_device){
  * Structors
  **********************************************************************/
 octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
-    UHD_MSG(status) << "Opening an OctoClock device..." << std::endl;
+    UHD_LOGGER_INFO("OCTOCLOCK") << "Opening an OctoClock device...";
     _type = device::CLOCK;
     device_addrs_t device_args = separate_device_addr(_device_addr);
     // To avoid replicating sequence numbers between sessions
@@ -264,9 +264,9 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
         std::string asterisk = (device_args.size() > 1) ? " * " : "";
 
         if(device_args.size() > 1){
-            UHD_MSG(status) << std::endl << "Checking status of " << addr << ":" << std::endl;
+            UHD_LOGGER_INFO("OCTOCLOCK") << "Checking status of " << addr;
         }
-        UHD_MSG(status) << boost::format("%sDetecting internal GPSDO...") % asterisk << std::flush;
+        UHD_LOGGER_INFO("OCTOCLOCK") << boost::format("%sDetecting internal GPSDO...") % asterisk;
 
         _get_state(oc);
         if(_oc_dict[oc].state.gps_detected){
@@ -282,26 +282,23 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
                 else{
                     //If GPSDO communication failed, set gps_detected to false
                     _oc_dict[oc].state.gps_detected = 0;
-                    UHD_MSG(warning) << "Device reports that it has a GPSDO, but we cannot communicate with it." << std::endl;
-                    std::cout << std::endl;
+                    UHD_LOGGER_WARNING("OCTOCLOCK") << "Device reports that it has a GPSDO, but we cannot communicate with it.";
                 }
             }
             catch(std::exception &e){
-                UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
+                UHD_LOGGER_ERROR("OCTOCLOCK") << "An error occurred making GPSDO control: " << e.what();
             }
         }
-        else UHD_MSG(status) << "No GPSDO found" << std::endl;
-        UHD_MSG(status) << boost::format("%sDetecting external reference...%s") % asterisk
-                                                                                % _ext_ref_detected(oc).value
-                        << std::endl;
-        UHD_MSG(status) << boost::format("%sDetecting switch position...%s") % asterisk
-                                                                             % _switch_pos(oc).value
-                        << std::endl;
+        else UHD_LOGGER_INFO("OCTOCLOCK") << "No GPSDO found";
+        UHD_LOGGER_INFO("OCTOCLOCK") << boost::format("%sDetecting external reference...%s") % asterisk
+            % _ext_ref_detected(oc).value;
+        UHD_LOGGER_INFO("OCTOCLOCK") << boost::format("%sDetecting switch position...%s") % asterisk
+            % _switch_pos(oc).value;
         std::string ref = _which_ref(oc).value;
-        if(ref == "none") UHD_MSG(status) << boost::format("%sDevice is not using any reference") % asterisk << std::endl;
-        else UHD_MSG(status) << boost::format("%sDevice is using %s reference") % asterisk
+        if(ref == "none") UHD_LOGGER_INFO("OCTOCLOCK") << boost::format("%sDevice is not using any reference") % asterisk;
+        else UHD_LOGGER_INFO("OCTOCLOCK") << boost::format("%sDevice is using %s reference") % asterisk
                                                                                 % _which_ref(oc).value
-                             << std::endl;
+                             ;
     }
 }
 

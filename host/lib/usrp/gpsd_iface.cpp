@@ -31,7 +31,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/types/dict.hpp>
 
 #include "gpsd_iface.hpp"

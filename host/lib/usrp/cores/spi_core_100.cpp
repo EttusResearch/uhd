@@ -17,7 +17,7 @@
 
 #include "spi_core_100.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/thread/thread.hpp> //sleep
 
 #define REG_SPI_TXRX0 _base + 0
@@ -80,7 +80,7 @@ private:
             if ((_iface->peek16(REG_SPI_CTRL) & SPI_CTRL_GO_BSY) == 0) return;
             boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }
-        UHD_MSG(error) << "spi_core_100: spi_wait timeout" << std::endl;
+        UHD_LOGGER_ERROR("CORES") << "spi_core_100: spi_wait timeout" ;
     }
 
     wb_iface::sptr _iface;

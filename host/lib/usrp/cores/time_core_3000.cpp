@@ -17,7 +17,7 @@
 
 #include "time_core_3000.hpp"
 #include <uhd/utils/safe_call.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/thread/thread.hpp>
 
 #define REG_TIME_HI       _base + 0
@@ -63,21 +63,21 @@ struct time_core_3000_impl : time_core_3000
     void self_test(void)
     {
         const size_t sleep_millis = 100;
-        UHD_MSG(status) << "Performing timer loopback test... " << std::flush;
+        UHD_LOGGER_INFO("CORES") << "Performing timer loopback test... ";
         const time_spec_t time0 = this->get_time_now();
         boost::this_thread::sleep(boost::posix_time::milliseconds(sleep_millis));
         const time_spec_t time1 = this->get_time_now();
         const double approx_secs = (time1 - time0).get_real_secs();
         const bool test_fail = (approx_secs > 0.15) or (approx_secs < 0.05);
-        UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
+        UHD_LOGGER_INFO("CORES") << "Timer loopback test " << ((test_fail)? "failed" : "passed");
 
         //useful warning for debugging actual rate
         const size_t ticks_elapsed = size_t(_tick_rate*approx_secs);
         const size_t approx_rate = size_t(ticks_elapsed/(sleep_millis/1e3));
-        if (test_fail) UHD_MSG(warning)
+        if (test_fail) UHD_LOGGER_WARNING("CORES")
             << "Expecting clock rate: " << (_tick_rate/1e6) << " MHz\n"
             << "Approximate clock rate: " << (approx_rate/1e6) << " MHz\n"
-        << std::endl;
+        ;
     }
 
     uhd::time_spec_t get_time_now(void)

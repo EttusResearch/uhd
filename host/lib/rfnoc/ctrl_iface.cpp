@@ -17,7 +17,7 @@
 
 #include "ctrl_iface.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
@@ -168,7 +168,7 @@ private:
         //load payload
         pkt[packet_info.num_header_words32+0] = (_bige)? uhd::htonx(addr) : uhd::htowx(addr);
         pkt[packet_info.num_header_words32+1] = (_bige)? uhd::htonx(data) : uhd::htowx(data);
-        //UHD_MSG(status) << boost::format("0x%08x, 0x%08x\n") % addr % data;
+        //UHD_LOGGER_INFO("RFNOC") << boost::format("0x%08x, 0x%08x\n") % addr % data;
         //send the buffer over the interface
         _outstanding_seqs.push(_seq_out);
         buff->commit(sizeof(uint32_t)*(packet_info.num_packet_words32));
@@ -212,15 +212,15 @@ private:
             }
             catch(const std::exception &ex)
             {
-                UHD_MSG(error) << "[" << _name << "] Block ctrl bad VITA packet: " << ex.what() << std::endl;
+                UHD_LOGGER_ERROR("RFNOC") << "[" << _name << "] Block ctrl bad VITA packet: " << ex.what() ;
                 if (buff){
-                    UHD_MSG(status) << boost::format("%08X") % pkt[0] << std::endl;
-                    UHD_MSG(status) << boost::format("%08X") % pkt[1] << std::endl;
-                    UHD_MSG(status) << boost::format("%08X") % pkt[2] << std::endl;
-                    UHD_MSG(status) << boost::format("%08X") % pkt[3] << std::endl;
+                    UHD_LOGGER_INFO("RFNOC") << boost::format("%08X") % pkt[0] ;
+                    UHD_LOGGER_INFO("RFNOC") << boost::format("%08X") % pkt[1] ;
+                    UHD_LOGGER_INFO("RFNOC") << boost::format("%08X") % pkt[2] ;
+                    UHD_LOGGER_INFO("RFNOC") << boost::format("%08X") % pkt[3] ;
                 }
                 else{
-                    UHD_MSG(status) << "buff is NULL" << std::endl;
+                    UHD_LOGGER_INFO("RFNOC") << "buff is NULL" ;
                 }
             }
 

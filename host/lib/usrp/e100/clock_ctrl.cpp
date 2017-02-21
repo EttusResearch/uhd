@@ -17,7 +17,7 @@
 
 #include "clock_ctrl.hpp"
 #include "ad9522_regs.hpp"
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <stdint.h>
@@ -136,11 +136,11 @@ static clock_settings_type get_clock_settings(double rate){
                 cs.chan_divider /= cs.vco_divider;
             }
 
-            UHD_LOGV(always)
-                << "gcd " << gcd << std::endl
-                << "X " << X << std::endl
-                << "Y " << Y << std::endl
-                << cs.to_pp_string() << std::endl
+            UHD_LOGGER_DEBUG("E100")
+                << "gcd: " << gcd
+                << " X: " << X
+                << " Y: " << Y
+                << cs.to_pp_string()
             ;
 
             //filter limits on the counters
@@ -154,7 +154,7 @@ static clock_settings_type get_clock_settings(double rate){
             if (cs.get_vco_rate() < 1400e6 + vco_bound_pad) continue;
             if (cs.get_out_rate() != rate) continue;
 
-            UHD_MSG(status) << "USRP-E100 clock control: " << i << std::endl << cs.to_pp_string() << std::endl;
+            UHD_LOGGER_INFO("E100") << "USRP-E100 clock control: " << i  << cs.to_pp_string() ;
             return cs;
         }
     }
@@ -194,7 +194,7 @@ public:
         this->use_internal_ref();
 
         //initialize the FPGA clock rate
-        UHD_MSG(status) << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) << std::endl;
+        UHD_LOGGER_INFO("E100") << boost::format("Initializing FPGA clock to %fMHz...") % (master_clock_rate/1e6) ;
         this->set_fpga_clock_rate(master_clock_rate);
 
         this->enable_test_clock(ENABLE_THE_TEST_OUT);
@@ -459,7 +459,7 @@ private:
 
     void send_reg(uint16_t addr){
         uint32_t reg = _ad9522_regs.get_write_reg(addr);
-        UHD_LOGV(often) << "clock control write reg: " << std::hex << reg << std::endl;
+        UHD_LOGGER_DEBUG("E100") << "clock control write reg: " << std::hex << reg ;
         _iface->write_spi(
             UE_SPI_SS_AD9522,
             spi_config_t::EDGE_RISE,
@@ -486,7 +486,7 @@ private:
             _ad9522_regs.set_reg(addr, reg);
             if (_ad9522_regs.vco_calibration_finished) goto wait_for_ld;
         }
-        UHD_MSG(error) << "USRP-E100 clock control: VCO calibration timeout" << std::endl;
+        UHD_LOGGER_ERROR("E100") << "USRP-E100 clock control: VCO calibration timeout" ;
         wait_for_ld:
         //wait for digital lock detect:
         for (size_t ms10 = 0; ms10 < 100; ms10++){
@@ -498,7 +498,7 @@ private:
             _ad9522_regs.set_reg(addr, reg);
             if (_ad9522_regs.digital_lock_detect) return;
         }
-        UHD_MSG(error) << "USRP-E100 clock control: lock detection timeout" << std::endl;
+        UHD_LOGGER_ERROR("E100") << "USRP-E100 clock control: lock detection timeout" ;
     }
 
     void soft_sync(void){

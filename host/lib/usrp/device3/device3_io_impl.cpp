@@ -23,7 +23,7 @@
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include "../common/async_packet_handler.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
@@ -32,7 +32,8 @@
 #include <uhd/rfnoc/rate_node_ctrl.hpp>
 #include <uhd/rfnoc/radio_ctrl.hpp>
 
-#define UHD_STREAMER_LOG() UHD_MSG(status)
+#define UHD_TX_STREAMER_LOG() UHD_LOGGER_TRACE("STREAMER")
+#define UHD_RX_STREAMER_LOG() UHD_LOGGER_TRACE("STREAMER")
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -249,7 +250,7 @@ static void handle_rx_flowctrl(
 
     // Super-verbose mode:
     //static size_t fc_pkt_count = 0;
-    //UHD_MSG(status) << "sending flow ctrl packet " << fc_pkt_count++ << ", acking " << str(boost::format("%04d\tseq_sw==0x%08x") % last_seq % seq32) << std::endl;
+    //UHD_LOGGER_INFO("STREAMER") << "sending flow ctrl packet " << fc_pkt_count++ << ", acking " << str(boost::format("%04d\tseq_sw==0x%08x") % last_seq % seq32) ;
 
     //load packet info
     vrt::if_packet_info_t packet_info;
@@ -404,7 +405,7 @@ static void handle_tx_async_msgs(
     }
     catch(const std::exception &ex)
     {
-        UHD_MSG(error) << "Error parsing async message packet: " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("STREAMER") << "Error parsing async message packet: " << ex.what() ;
         return;
     }
 
@@ -460,7 +461,7 @@ bool device3_impl::recv_async_msg(
 void device3_impl::update_rx_streamers(double /* rate */)
 {
     for(const std::string &block_id:  _rx_streamers.keys()) {
-        UHD_STREAMER_LOG() << "[Device3] updating RX streamer to " << block_id << std::endl;
+        UHD_RX_STREAMER_LOG() << "updating RX streamer to " << block_id;
         boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[block_id].lock());
         if (my_streamer) {
@@ -477,7 +478,7 @@ void device3_impl::update_rx_streamers(double /* rate */)
             if (scaling == rfnoc::scalar_node_ctrl::SCALE_UNDEFINED) {
                 scaling = 1/32767.;
             }
-            UHD_STREAMER_LOG() << "  New tick_rate == " << tick_rate << "  New samp_rate == " << samp_rate << " New scaling == " << scaling << std::endl;
+            UHD_RX_STREAMER_LOG() << "  New tick_rate == " << tick_rate << "  New samp_rate == " << samp_rate << " New scaling == " << scaling ;
 
             my_streamer->set_tick_rate(tick_rate);
             my_streamer->set_samp_rate(samp_rate);
@@ -506,7 +507,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
     for (size_t stream_i = 0; stream_i < chan_list.size(); stream_i++) {
         // Get block ID and mb index
         uhd::rfnoc::block_id_t block_id = chan_list[stream_i];
-        UHD_STREAMER_LOG() << "[RX Streamer] chan " << stream_i << " connecting to " << block_id << std::endl;
+        UHD_RX_STREAMER_LOG() << "chan " << stream_i << " connecting to " << block_id ;
         // Update args so args.args is always valid for this particular channel:
         args.args = chan_args[stream_i];
         size_t mb_index = block_id.get_device_no();
@@ -534,19 +535,19 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
 
         //allocate sid and create transport
         uhd::sid_t stream_address = blk_ctrl->get_address(block_port);
-        UHD_STREAMER_LOG() << "[RX Streamer] creating rx stream " << rx_hints.to_string() << std::endl;
+        UHD_RX_STREAMER_LOG() << "creating rx stream " << rx_hints.to_string() ;
         both_xports_t xport = make_transport(stream_address, RX_DATA, rx_hints);
-        UHD_STREAMER_LOG() << std::hex << "[RX Streamer] data_sid = " << xport.send_sid << std::dec << " actual recv_buff_size = " << xport.recv_buff_size << std::endl;
+        UHD_RX_STREAMER_LOG() << std::hex << "data_sid = " << xport.send_sid << std::dec << " actual recv_buff_size = " << xport.recv_buff_size ;
 
         // Configure the block
         blk_ctrl->set_destination(xport.send_sid.get_src(), block_port);
 
         blk_ctrl->sr_write(uhd::rfnoc::SR_RESP_OUT_DST_SID, xport.send_sid.get_src(), block_port);
-        UHD_STREAMER_LOG() << "[RX Streamer] resp_out_dst_sid == " << xport.send_sid.get_src() << std::endl;
+        UHD_RX_STREAMER_LOG() << "resp_out_dst_sid == " << xport.send_sid.get_src() ;
 
         // Find all upstream radio nodes and set their response in SID to the host
         std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > upstream_radio_nodes = blk_ctrl->find_upstream_node<uhd::rfnoc::radio_ctrl>();
-        UHD_STREAMER_LOG() << "[RX Streamer] Number of upstream radio nodes: " << upstream_radio_nodes.size() << std::endl;
+        UHD_RX_STREAMER_LOG() << "Number of upstream radio nodes: " << upstream_radio_nodes.size();
         for(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node:  upstream_radio_nodes) {
             node->sr_write(uhd::rfnoc::SR_RESP_OUT_DST_SID, xport.send_sid.get_src(), block_port);
         }
@@ -556,7 +557,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         const size_t bpp = xport.recv->get_recv_frame_size() - stream_options.rx_max_len_hdr; // bytes per packet
         const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
         const size_t spp = std::min(args.args.cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
-        UHD_STREAMER_LOG() << "[RX Streamer] spp == " << spp << std::endl;
+        UHD_RX_STREAMER_LOG() << "spp == " << spp ;
 
         //make the new streamer given the samples per packet
         if (not my_streamer)
@@ -585,7 +586,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         const size_t pkt_size = spp * bpi + stream_options.rx_max_len_hdr;
         const size_t fc_window = get_rx_flow_control_window(pkt_size, xport.recv_buff_size, rx_hints);
         const size_t fc_handle_window = std::max<size_t>(1, fc_window / stream_options.rx_fc_request_freq);
-        UHD_STREAMER_LOG()<< "[RX Streamer] Flow Control Window (minus one) = " << fc_window-1 << ", Flow Control Handler Window = " << fc_handle_window << std::endl;
+        UHD_RX_STREAMER_LOG()<< "Flow Control Window (minus one) = " << fc_window-1 << ", Flow Control Handler Window = " << fc_handle_window ;
         blk_ctrl->configure_flow_control_out(
                 fc_window-1, // Leave one space for overrun packets TODO make this obsolete
                 block_port
@@ -662,7 +663,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
 void device3_impl::update_tx_streamers(double /* rate */)
 {
     for(const std::string &block_id:  _tx_streamers.keys()) {
-        UHD_STREAMER_LOG() << "[Device3] updating TX streamer: " << block_id << std::endl;
+        UHD_TX_STREAMER_LOG() << "updating TX streamer: " << block_id;
         boost::shared_ptr<sph::send_packet_streamer> my_streamer =
             boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[block_id].lock());
         if (my_streamer) {
@@ -678,7 +679,7 @@ void device3_impl::update_tx_streamers(double /* rate */)
             if (scaling == rfnoc::scalar_node_ctrl::SCALE_UNDEFINED) {
                 scaling = 32767.;
             }
-            UHD_STREAMER_LOG() << "  New tick_rate == " << tick_rate << "  New samp_rate == " << samp_rate << " New scaling == " << scaling << std::endl;
+            UHD_TX_STREAMER_LOG() << "New tick_rate == " << tick_rate << "  New samp_rate == " << samp_rate << " New scaling == " << scaling ;
             my_streamer->set_tick_rate(tick_rate);
             my_streamer->set_samp_rate(samp_rate);
             my_streamer->set_scale_factor(scaling);
@@ -737,16 +738,16 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         //allocate sid and create transport
         uhd::sid_t stream_address = blk_ctrl->get_address(block_port);
-        UHD_STREAMER_LOG() << "[TX Streamer] creating tx stream " << tx_hints.to_string() << std::endl;
+        UHD_TX_STREAMER_LOG() << "creating tx stream " << tx_hints.to_string() ;
         both_xports_t xport = make_transport(stream_address, TX_DATA, tx_hints);
-        UHD_STREAMER_LOG() << std::hex << "[TX Streamer] data_sid = " << xport.send_sid << std::dec << std::endl;
+        UHD_TX_STREAMER_LOG() << std::hex << "data_sid = " << xport.send_sid << std::dec ;
 
         // To calculate the max number of samples per packet, we assume the maximum header length
         // to avoid fragmentation should the entire header be used.
         const size_t bpp = tx_hints.cast<size_t>("bpp", xport.send->get_send_frame_size()) - stream_options.tx_max_len_hdr;
         const size_t bpi = convert::get_bytes_per_item(args.otw_format); // bytes per item
         const size_t spp = std::min(args.args.cast<size_t>("spp", bpp/bpi), bpp/bpi); // samples per packet
-        UHD_STREAMER_LOG() << "[TX Streamer] spp == " << spp << std::endl;
+        UHD_TX_STREAMER_LOG() << "spp == " << spp ;
 
         //make the new streamer given the samples per packet
         if (not my_streamer)
@@ -780,7 +781,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
                 tx_hints // This can override the value reported by the block!
         );
         const size_t fc_handle_window = std::max<size_t>(1, fc_window / stream_options.tx_fc_response_freq);
-        UHD_STREAMER_LOG() << "[TX Streamer] Flow Control Window = " << fc_window << ", Flow Control Handler Window = " << fc_handle_window << std::endl;
+        UHD_TX_STREAMER_LOG() << "Flow Control Window = " << fc_window << ", Flow Control Handler Window = " << fc_handle_window ;
         blk_ctrl->configure_flow_control_in(
                 stream_options.tx_fc_response_cycles,
                 fc_handle_window, /*pkts*/
@@ -810,7 +811,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_RX_FC, 0xc1ea12, block_port);
         blk_ctrl->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.recv_sid.get_dst(), block_port);
-        UHD_STREAMER_LOG() << "[TX Streamer] resp_in_dst_sid == " << boost::format("0x%04X") % xport.recv_sid.get_dst() << std::endl;
+        UHD_TX_STREAMER_LOG() << "resp_in_dst_sid == " << boost::format("0x%04X") % xport.recv_sid.get_dst() ;
 
         // FIXME: Once there is a better way to map the radio block and port
         // to the channel or another way to receive asynchronous messages that
@@ -821,7 +822,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
             uhd::rfnoc::block_id_t radio_id(args.args["radio_id"]);
             size_t radio_port = args.args.cast<size_t>("radio_port", 0);
             std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
-            UHD_STREAMER_LOG() << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
+            UHD_TX_STREAMER_LOG() << "Number of downstream radio nodes: " << downstream_radio_nodes.size();
             for(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node:  downstream_radio_nodes) {
                 if (node->get_block_id() == radio_id) {
                     node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), radio_port);
@@ -835,7 +836,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
             // soon as possible.
             // Find all downstream radio nodes and set their response SID to the host
             std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl> > downstream_radio_nodes = blk_ctrl->find_downstream_node<uhd::rfnoc::radio_ctrl>();
-            UHD_STREAMER_LOG() << "[TX Streamer] Number of downstream radio nodes: " << downstream_radio_nodes.size() << std::endl;
+            UHD_TX_STREAMER_LOG() << "Number of downstream radio nodes: " << downstream_radio_nodes.size();
             for(const boost::shared_ptr<uhd::rfnoc::radio_ctrl> &node:  downstream_radio_nodes) {
                 node->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, xport.send_sid.get_src(), block_port);
             }

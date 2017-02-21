@@ -23,18 +23,13 @@
 #include <uhd/device.hpp>
 #include <uhd/image_loader.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 #include "e100_impl.hpp"
 #else //special case when this file is externally included
 #include <stdexcept>
 #include <iostream>
-#define UHD_MSG(type) std::cout
-namespace uhd{
-    typedef std::runtime_error os_error;
-    typedef std::runtime_error io_error;
-}
 #endif
 
 #include <sstream>
@@ -246,7 +241,7 @@ static void send_file_to_fpga(const std::string &file_name, gpio &error, gpio &d
 			throw uhd::os_error("INIT_B went high, error occured.");
 
 		if (!done.get_value())
-			UHD_MSG(status) << "Configuration complete." << std::endl;
+			UHD_LOGGER_INFO("E100") << "Configuration complete.";
 
 	} while (bitstream.gcount() == BUF_SIZE);
 }
@@ -260,20 +255,20 @@ void e100_load_fpga(const std::string &bin_file){
 	gpio gpio_init_b(INIT_B, IN);
 	gpio gpio_done  (DONE,   IN);
 
-	UHD_MSG(status) << "Loading FPGA image: " << bin_file << "... " << std::flush;
+	UHD_LOGGER_INFO("E100") << "Loading FPGA image: " << bin_file << "... ";
 
 //	if(std::system("/sbin/rmmod usrp_e") != 0){
-//		UHD_MSG(warning) << "USRP-E100 FPGA downloader: could not unload usrp_e module" << std::endl;
+//		UHD_LOGGER_WARNING("E100") << "USRP-E100 FPGA downloader: could not unload usrp_e module" ;
 //	}
 
 	prepare_fpga_for_configuration(gpio_prog_b, gpio_init_b);
 
-	UHD_MSG(status) << "done = " << gpio_done.get_value() << std::endl;
+	UHD_LOGGER_INFO("E100") << "done = " << gpio_done.get_value();
 
 	send_file_to_fpga(bin_file, gpio_init_b, gpio_done);
 
 //	if(std::system("/sbin/modprobe usrp_e") != 0){
-//		UHD_MSG(warning) << "USRP-E100 FPGA downloader: could not load usrp_e module" << std::endl;
+//		UHD_LOGGER_WARNING("E100") << "USRP-E100 FPGA downloader: could not load usrp_e module" ;
 //	}
 
 }

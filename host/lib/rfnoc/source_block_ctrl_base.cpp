@@ -17,7 +17,7 @@
 
 #include "utils.hpp"
 #include <uhd/rfnoc/source_block_ctrl_base.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/constants.hpp>
 
 using namespace uhd;
@@ -30,9 +30,9 @@ void source_block_ctrl_base::issue_stream_cmd(
         const uhd::stream_cmd_t &stream_cmd,
         const size_t chan
 ) {
-    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::issue_stream_cmd()" << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::issue_stream_cmd()" ;
     if (_upstream_nodes.empty()) {
-        UHD_MSG(warning) << "issue_stream_cmd() not implemented for " << get_block_id() << std::endl;
+        UHD_LOGGER_WARNING("RFNOC") << "issue_stream_cmd() not implemented for " << get_block_id() ;
         return;
     }
 
@@ -77,10 +77,10 @@ void source_block_ctrl_base::set_destination(
         uint32_t next_address,
         size_t output_block_port
 ) {
-    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::set_destination() " << uhd::sid_t(next_address) << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::set_destination() " << uhd::sid_t(next_address) ;
     sid_t new_sid(next_address);
     new_sid.set_src(get_address(output_block_port));
-    UHD_RFNOC_BLOCK_TRACE() << "  Setting SID: " << new_sid << std::endl << "  ";
+    UHD_RFNOC_BLOCK_TRACE() << "  Setting SID: " << new_sid  << "  ";
     sr_write(SR_NEXT_DST_SID, (1<<16) | next_address, output_block_port);
 }
 
@@ -89,7 +89,7 @@ void source_block_ctrl_base::configure_flow_control_out(
             size_t block_port,
             UHD_UNUSED(const uhd::sid_t &sid)
 ) {
-    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::configure_flow_control_out() buf_size_pkts==" << buf_size_pkts << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::configure_flow_control_out() buf_size_pkts==" << buf_size_pkts ;
     if (buf_size_pkts < 2) {
       throw uhd::runtime_error(str(
               boost::format("Invalid window size %d for block %s. Window size must at least be 2.")

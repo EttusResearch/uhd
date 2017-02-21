@@ -34,10 +34,10 @@ typedef enum {
 /*!
  * Clocking mode
  */
-typedef enum {
+enum class clocking_mode_t {
     AD9361_XTAL_P_CLK_PATH,
     AD9361_XTAL_N_CLK_PATH
-} clocking_mode_t;
+};
 
 /*!
  * Digital interface specific

@@ -80,10 +80,7 @@ void uhd::convert::register_converter(
     get_table()[id][prio] = fcn;
 
     //----------------------------------------------------------------//
-    UHD_LOGV(always) << "register_converter: " << id.to_pp_string() << std::endl
-        << "    prio: " << prio << std::endl
-        << std::endl
-    ;
+    UHD_LOG_TRACE("CONVERT", boost::format("register_converter: %s prio: %s") % id.to_string() % prio)
     //----------------------------------------------------------------//
 }
 
@@ -102,9 +99,8 @@ convert::function_type convert::get_converter(
     for(priority_type prio_i:  get_table()[id].keys()){
         if (prio_i == prio) {
             //----------------------------------------------------------------//
-            UHD_LOGV(always) << "get_converter: For converter ID: " << id.to_pp_string() << std::endl
-                << "Using prio: " << prio << std::endl
-                << std::endl
+            UHD_LOGGER_DEBUG("CONVERT") << "get_converter: For converter ID: " << id.to_pp_string()
+                                        << " Using prio: " << prio;
             ;
             //----------------------------------------------------------------//
             return get_table()[id][prio];
@@ -117,10 +113,8 @@ convert::function_type convert::get_converter(
         "Cannot find a conversion routine [with prio] for " + id.to_pp_string());
 
     //----------------------------------------------------------------//
-    UHD_LOGV(always) << "get_converter: For converter ID: " << id.to_pp_string() << std::endl
-        << "Using prio: " << best_prio << std::endl
-        << std::endl
-    ;
+    UHD_LOGGER_DEBUG("CONVERT") << "get_converter: For converter ID: " << id.to_pp_string()
+                                << " Using prio: " << best_prio;
     //----------------------------------------------------------------//
 
     //otherwise, return best prio

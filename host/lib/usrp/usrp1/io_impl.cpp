@@ -22,7 +22,7 @@
 #include "../../transport/super_send_packet_handler.hpp"
 #include "usrp1_calc_mux.hpp"
 #include "usrp1_impl.hpp"
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
@@ -305,19 +305,19 @@ void usrp1_impl::vandal_conquest_loop(void){
         if (_tx_enabled and underflow){
             async_metadata.time_spec = _soft_time_ctrl->get_time();
             _soft_time_ctrl->get_async_queue().push_with_pop_on_full(async_metadata);
-            UHD_MSG(fastpath) << "U";
+            UHD_LOG_FASTPATH("U")
         }
         if (_rx_enabled and overflow){
             inline_metadata.time_spec = _soft_time_ctrl->get_time();
             _soft_time_ctrl->get_inline_queue().push_with_pop_on_full(inline_metadata);
-            UHD_MSG(fastpath) << "O";
+            UHD_LOG_FASTPATH("O")
         }
 
         boost::this_thread::sleep(boost::posix_time::milliseconds(50));
     }}
     catch(const boost::thread_interrupted &){} //normal exit condition
     catch(const std::exception &e){
-        UHD_MSG(error) << "The vandal caught an unexpected exception " << e.what() << std::endl;
+        UHD_LOGGER_ERROR("USRP1") << "The vandal caught an unexpected exception " << e.what() ;
     }
 }
 
@@ -500,11 +500,11 @@ double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
     const size_t div = this->has_rx_halfband()? 2 : 1;
     const size_t rate = boost::math::iround(_master_clock_rate/this->get_rx_dsp_host_rates().clip(samp_rate, true));
 
-    if (rate < 8 and this->has_rx_halfband()) UHD_MSG(warning) <<
+    if (rate < 8 and this->has_rx_halfband()) UHD_LOGGER_WARNING("USRP1") <<
         "USRP1 cannot achieve decimations below 8 when the half-band filter is present.\n"
         "The usrp1_fpga_4rx.rbf file is a special FPGA image without RX half-band filters.\n"
         "To load this image, set the device address key/value pair: fpga=usrp1_fpga_4rx.rbf\n"
-    << std::endl;
+    ;
 
     if (dspno == 0){ //only care if dsp0 is set since its homogeneous
         bool s = this->disable_rx();

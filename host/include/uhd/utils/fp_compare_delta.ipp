@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils/msg.hpp>
+
 #include <cmath>
 #include <typeinfo>
 

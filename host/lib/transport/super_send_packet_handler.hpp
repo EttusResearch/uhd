@@ -23,7 +23,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/stream.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/types/metadata.hpp>

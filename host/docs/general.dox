@@ -219,7 +219,7 @@ registered at a time. Make **register_handler** your first call into
 the UHD library:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
-#include <uhd/utils/msg.hpp>
+
 
 void my_handler(uhd::msg::type_t type, const std::string &msg){
 //handle the message...

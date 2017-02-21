@@ -18,10 +18,10 @@
 #include "x300_dac_ctrl.hpp"
 #include "x300_regs.hpp"
 #include <uhd/types/time_spec.hpp>
-#include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/exception.hpp>
+#include <boost/format.hpp>
 #include <boost/thread/thread.hpp> //sleep
 
 #define X300_DAC_FRONTEND_SYNC_FAILURE_FATAL
@@ -242,7 +242,7 @@ public:
             if (failure_is_fatal) {
                 throw uhd::runtime_error(msg);
             } else {
-                UHD_MSG(warning) << msg;
+                UHD_LOGGER_WARNING("X300") << msg;
             }
         }
     }

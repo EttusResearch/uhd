@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 #include <uhd/image_loader.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 
@@ -39,7 +39,7 @@ void load_fpga_image(const std::string &path)
     if (not boost::filesystem::exists("/dev/xdevcfg"))
         ::system("mknod /dev/xdevcfg c 259 0");
 
-    UHD_MSG(status) << "Loading FPGA image: " << path << "..." << std::flush;
+    UHD_LOGGER_INFO("E300") << "Loading FPGA image: " << path << "...";
 
     std::ifstream fpga_file(path.c_str(), std::ios_base::binary);
     UHD_ASSERT_THROW(fpga_file.good());
@@ -57,7 +57,7 @@ void load_fpga_image(const std::string &path)
     fpga_file.close();
     std::fclose(wfile);
 
-    UHD_MSG(status) << " done" << std::endl;
+    UHD_LOGGER_INFO("E300") << "FPGA image loaded";
 }
 
 static bool e300_image_loader(const image_loader::image_loader_args_t &image_loader_args) {

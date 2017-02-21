@@ -16,7 +16,7 @@
 //
 
 #include <uhd/rfnoc/node_ctrl_base.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/range/adaptor/map.hpp>
 
 using namespace uhd::rfnoc;
@@ -30,7 +30,7 @@ std::string node_ctrl_base::unique_id() const
 
 void node_ctrl_base::clear()
 {
-    UHD_RFNOC_BLOCK_TRACE() << "node_ctrl_base::clear() " << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "node_ctrl_base::clear() " ;
     // Reset connections:
     _upstream_nodes.clear();
     _downstream_nodes.clear();

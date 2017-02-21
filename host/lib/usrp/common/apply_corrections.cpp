@@ -18,7 +18,7 @@
 #include "apply_corrections.hpp"
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/utils/paths.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/csv.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/filesystem.hpp>
@@ -132,7 +132,7 @@ static void apply_fe_corrections(
         }
         std::sort(datas.begin(), datas.end(), fe_cal_comp);
         fe_cal_cache[cal_data_path.string()] = datas;
-        UHD_MSG(status) << "Loaded " << cal_data_path.string() << std::endl;
+        UHD_LOGGER_INFO("CAL") << "Calibration data loaded: " << cal_data_path.string();
 
     }
 
@@ -167,7 +167,7 @@ void uhd::usrp::apply_tx_fe_corrections( //overloading to work according to rfno
         );
     }
     catch(const std::exception &e){
-        UHD_MSG(error) << "Failure in apply_tx_fe_corrections: " << e.what() << std::endl;
+        UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
     }
 }
 
@@ -194,7 +194,7 @@ void uhd::usrp::apply_tx_fe_corrections(
         );
     }
     catch(const std::exception &e){
-        UHD_MSG(error) << "Failure in apply_tx_fe_corrections: " << e.what() << std::endl;
+        UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
     }
 }
 
@@ -215,7 +215,7 @@ void uhd::usrp::apply_rx_fe_corrections( //overloading to work according to rfno
         );
     }
     catch(const std::exception &e){
-        UHD_MSG(error) << "Failure in apply_tx_fe_corrections: " << e.what() << std::endl;
+        UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
     }
 }
 
@@ -235,6 +235,6 @@ void uhd::usrp::apply_rx_fe_corrections(
         );
     }
     catch(const std::exception &e){
-        UHD_MSG(error) << "Failure in apply_rx_fe_corrections: " << e.what() << std::endl;
+        UHD_LOGGER_ERROR("CAL") << "Failure in apply_rx_fe_corrections: " << e.what();
     }
 }

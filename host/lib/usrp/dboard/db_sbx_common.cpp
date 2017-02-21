@@ -53,9 +53,9 @@ static int rx_pga0_gain_to_iobits(double &gain){
     int attn_code = int(floor(attn*2));
     int iobits = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
 
-    UHD_LOGV(often) << boost::format(
+    UHD_LOGGER_DEBUG("SBX") << boost::format(
         "SBX RX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
-    ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
+    ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK ;
 
     //the actual gain setting
     gain = sbx_rx_gain_ranges["PGA0"].stop() - double(attn_code)/2;
@@ -74,9 +74,9 @@ static int tx_pga0_gain_to_iobits(double &gain){
     int attn_code = int(floor(attn*2));
     int iobits = ((~attn_code) << TX_ATTN_SHIFT) & TX_ATTN_MASK;
 
-    UHD_LOGV(often) << boost::format(
+    UHD_LOGGER_DEBUG("SBX") << boost::format(
         "SBX TX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
-    ) % attn % attn_code % (iobits & TX_ATTN_MASK) % TX_ATTN_MASK << std::endl;
+    ) % attn % attn_code % (iobits & TX_ATTN_MASK) % TX_ATTN_MASK ;
 
     //the actual gain setting
     gain = sbx_tx_gain_ranges["PGA0"].stop() - double(attn_code)/2;
@@ -240,9 +240,9 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     //Initialize ATR registers after direction and pin ctrl configuration
     update_atr();
 
-    UHD_LOGV(often) << boost::format(
+    UHD_LOGGER_DEBUG("SBX") << boost::format(
         "SBX GPIO Direction: RX: 0x%08x, TX: 0x%08x"
-    ) % RXIO_MASK % TXIO_MASK << std::endl;
+    ) % RXIO_MASK % TXIO_MASK ;
 }
 
 sbx_xcvr::~sbx_xcvr(void){

@@ -17,7 +17,7 @@
 
 #include "n230_impl.hpp"
 
-#include "usrp3_fw_ctrl_iface.hpp"
+#include "n230_fw_ctrl_iface.hpp"
 #include "validate_subdev_spec.hpp"
 #include <uhd/utils/static.hpp>
 #include <uhd/transport/if_addrs.hpp>
@@ -25,7 +25,7 @@
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/direction.hpp>
@@ -41,7 +41,6 @@
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/make_shared.hpp>
 
-#include "../common/fw_comm_protocol.h"
 #include "n230_defaults.h"
 #include "n230_fpga_defs.h"
 #include "n230_fw_defs.h"
@@ -115,7 +114,7 @@ uhd::device_addrs_t n230_impl::n230_find(const uhd::device_addr_t &multi_dev_hin
     }
 
     std::vector<std::string> discovered_addrs =
-        usrp3::usrp3_fw_ctrl_iface::discover_devices(
+        n230_fw_ctrl_iface::discover_devices(
             hint["addr"], BOOST_STRINGIZE(N230_FW_COMMS_UDP_PORT), N230_FW_PRODUCT_ID);
 
     for(const std::string& addr:  discovered_addrs)
@@ -135,10 +134,10 @@ uhd::device_addrs_t n230_impl::n230_find(const uhd::device_addr_t &multi_dev_hin
         //connected communication can fail. Retry the following call to allow
         //the stack to update
         size_t first_conn_retries = 10;
-        usrp3::usrp3_fw_ctrl_iface::sptr fw_ctrl;
+        n230_fw_ctrl_iface::sptr fw_ctrl;
         while (first_conn_retries > 0) {
             try {
-                fw_ctrl = usrp3::usrp3_fw_ctrl_iface::make(ctrl_xport, N230_FW_PRODUCT_ID, false /*verbose*/);
+                fw_ctrl = n230_fw_ctrl_iface::make(ctrl_xport, N230_FW_PRODUCT_ID, false /*verbose*/);
                 break;
             } catch (uhd::io_error& ex) {
                 boost::this_thread::sleep(boost::posix_time::milliseconds(500));
@@ -191,7 +190,7 @@ device::sptr n230_impl::n230_make(const device_addr_t &device_addr)
  **********************************************************************/
 n230_impl::n230_impl(const uhd::device_addr_t& dev_addr)
 {
-    UHD_MSG(status) << "N230 initialization sequence..." << std::endl;
+    UHD_LOGGER_INFO("N230") << "N230 initialization sequence...";
     _dev_args.parse(dev_addr);
     _tree = uhd::property_tree::make();
 
@@ -209,9 +208,9 @@ n230_impl::n230_impl(const uhd::device_addr_t& dev_addr)
     const mboard_eeprom_t& mb_eeprom = _eeprom_mgr->get_mb_eeprom();
     bool recover_mb_eeprom = dev_addr.has_key("recover_mb_eeprom");
     if (recover_mb_eeprom) {
-        UHD_MSG(warning) << "UHD is operating in EEPROM Recovery Mode which disables hardware version "
+        UHD_LOGGER_WARNING("N230") << "UHD is operating in EEPROM Recovery Mode which disables hardware version "
                             "checks.\nOperating in this mode may cause hardware damage and unstable "
-                            "radio performance!"<< std::endl;
+                            "radio performance!";
     }
     uint16_t hw_rev = boost::lexical_cast<uint16_t>(mb_eeprom["revision"]);
     uint16_t hw_rev_compat = boost::lexical_cast<uint16_t>(mb_eeprom["revision_compat"]);
@@ -233,11 +232,11 @@ n230_impl::n230_impl(const uhd::device_addr_t& dev_addr)
     //Debug loopback mode
     switch(_dev_args.get_loopback_mode()) {
     case n230_device_args_t::LOOPBACK_RADIO:
-        UHD_MSG(status) << "DEBUG: Running in TX->RX Radio loopback mode.\n";
+        UHD_LOGGER_INFO("N230") << "DEBUG: Running in TX->RX Radio loopback mode.";
         _resource_mgr->get_frontend_ctrl().set_self_test_mode(LOOPBACK_RADIO);
         break;
     case n230_device_args_t::LOOPBACK_CODEC:
-        UHD_MSG(status) << "DEBUG: Running in TX->RX CODEC loopback mode.\n";
+        UHD_LOGGER_INFO("N230") << "DEBUG: Running in TX->RX CODEC loopback mode.";
         _resource_mgr->get_frontend_ctrl().set_self_test_mode(LOOPBACK_CODEC);
         break;
     default:

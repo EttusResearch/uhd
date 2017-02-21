@@ -24,7 +24,7 @@
 #include <uhd/rfnoc/scalar_node_ctrl.hpp>
 #include <uhd/rfnoc/terminator_node_ctrl.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp> // For the block macros
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -51,7 +51,7 @@ public:
 
     void issue_stream_cmd(const uhd::stream_cmd_t &, const size_t)
     {
-        UHD_RFNOC_BLOCK_TRACE() << "tx_stream_terminator::issue_stream_cmd()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "tx_stream_terminator::issue_stream_cmd()" ;
     }
 
     // If this is called, then by a send terminator at the other end

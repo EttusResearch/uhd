@@ -18,7 +18,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <uhd/rfnoc/blockdef.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
@@ -223,7 +223,7 @@ public:
                 }
             }
         } catch (std::exception &e) {
-            UHD_MSG(warning) << "has_noc_id(): caught exception " << e.what() << std::endl;
+            UHD_LOGGER_WARNING("RFNOC") << "has_noc_id(): caught exception " << e.what() ;
             return false;
         }
         return false;
@@ -233,7 +233,7 @@ public:
         _type(type),
         _noc_id(noc_id)
     {
-        UHD_MSG(status) << "Reading XML file: " << filename.string().c_str() << std::endl;
+        //UHD_LOGGER_INFO("RFNOC") << "Reading XML file: " << filename.string().c_str() ;
         read_xml(filename.string(), _pt);
         try {
             // Check key is valid
@@ -362,7 +362,7 @@ public:
                 arg["type"] = "string";
             }
             if (not arg.is_valid()) {
-                UHD_MSG(warning) << boost::format("Found invalid argument: %s") % arg.to_string() << std::endl;
+                UHD_LOGGER_WARNING("RFNOC") << boost::format("Found invalid argument: %s") % arg.to_string() ;
                 is_valid = false;
             }
             args.push_back(arg);

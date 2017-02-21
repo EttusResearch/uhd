@@ -142,7 +142,6 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/ihex.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/log.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/msg.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/platform.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/static.cpp

@@ -17,17 +17,17 @@
 
 #include <uhd/version.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/version.hpp>
 #include <iostream>
 
 #ifndef UHD_DONT_PRINT_SYSTEM_INFO
 UHD_STATIC_BLOCK(print_system_info){
-    std::cout
+    UHD_LOGGER_INFO("UHD")
         << BOOST_PLATFORM << "; "
         << BOOST_COMPILER << "; "
         << "Boost_" << BOOST_VERSION << "; "
         << "UHD_" << uhd::get_version_string()
-        << std::endl << std::endl
     ;
 }
 #endif

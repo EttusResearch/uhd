@@ -23,7 +23,7 @@
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/log.hpp>
 #include <boost/make_shared.hpp>
 

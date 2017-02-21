@@ -24,7 +24,6 @@
 #include <stdint.h>
 
 #include <uhd/usrp/multi_usrp.hpp>
-#include <uhd/utils/msg.hpp>
 
 using namespace std;
 
@@ -141,9 +140,6 @@ class Responder
         // Main entry point after constructor.
         int run();
 
-        // Public method to inject UHD messages in the main ncurses window.
-        void print_uhd_late_handler(uhd::msg::type_t type, const std::string& msg);
-
         int get_return_code(){return _return_code;}
 
     protected:
@@ -151,6 +147,7 @@ class Responder
         // These 2 variables are used for ncurses output.
         WINDOW* _window;
         std::stringstream _ss;
+        std::stringstream _ss_cerr;
 
         // struct which holds all arguments as constants settable from outside the class
         const Options _opt;

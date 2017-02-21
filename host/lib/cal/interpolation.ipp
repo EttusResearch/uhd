@@ -19,7 +19,7 @@
 #define INCLUDED_UHD_INTERPOLATION_IPP
 
 #include "interpolation.hpp"
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/lu.hpp>
@@ -175,9 +175,9 @@ CAL_INTERP_METHOD(const out_type, bl_interp, CONTAINER_T &data, const ARGS_T &ar
     // Fall back to 1D interpolation if the matrix is singular
     if (is_singular) {
         // Warn the user that the A matrix is singular
-        UHD_MSG(warning) << "Bilinear interpolation: singular matrix detected." << std::endl
-                         << "Performing 1D linear interpolation against the nearest measurements." << std::endl
-                         << "Provide calibration data with more measurements" << std::endl;
+        UHD_LOGGER_WARNING("CAL") << "Bilinear interpolation: singular matrix detected. "
+                         << "Performing 1D linear interpolation against the nearest measurements. "
+                         << "Provide calibration data with more measurements";
 
         output = (b[7] - b[6]) / 2.0;
         output += b[6];

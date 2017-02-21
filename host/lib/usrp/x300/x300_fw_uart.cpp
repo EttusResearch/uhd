@@ -18,7 +18,7 @@
 #include "x300_impl.hpp"
 #include <uhd/types/wb_iface.hpp>
 #include "x300_regs.hpp"
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>

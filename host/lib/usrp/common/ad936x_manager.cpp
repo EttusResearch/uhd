@@ -16,7 +16,7 @@
 //
 
 #include "ad936x_manager.hpp"
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/thread/thread.hpp>
 
@@ -97,7 +97,7 @@ class ad936x_manager_impl : public ad936x_manager
     ) {
         // Put AD936x in loopback mode
         _codec_ctrl->data_port_loopback(true);
-        UHD_MSG(status) << "Performing CODEC loopback test... " << std::flush;
+        UHD_LOGGER_INFO("AD936X") << "Performing CODEC loopback test... ";
         size_t hash = size_t(time(NULL));
 
         // Allow some time for AD936x to enter loopback mode.
@@ -126,11 +126,11 @@ class ad936x_manager_impl : public ad936x_manager
             bool test_fail = word32 != rb_tx or word32 != rb_rx;
             if(test_fail)
             {
-                UHD_MSG(status) << "fail" << std::endl;
+                UHD_LOGGER_INFO("AD936X") << "CODEC loopback test failed";
                 throw uhd::runtime_error("CODEC loopback test failed.");
             }
         }
-        UHD_MSG(status) << "pass" << std::endl;
+        UHD_LOGGER_INFO("AD936X") << "CODEC loopback test passed";
 
         // Zero out the idle data.
         poker_functor(0);
@@ -193,10 +193,10 @@ class ad936x_manager_impl : public ad936x_manager
     bool check_bandwidth(double rate, const std::string dir)
     {
         if (rate > _codec_ctrl->get_bw_filter_range(dir).stop()) {
-            UHD_MSG(warning)
+            UHD_LOGGER_WARNING("AD936X")
                 << "Selected " << dir << " bandwidth (" << (rate/1e6) << " MHz) exceeds\n"
                 << "analog frontend filter bandwidth (" << (_codec_ctrl->get_bw_filter_range(dir).stop()/1e6) << " MHz)."
-                << std::endl;
+                ;
             return false;
         }
         return true;

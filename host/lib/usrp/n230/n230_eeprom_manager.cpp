@@ -17,7 +17,7 @@
 
 #include "n230_eeprom.h"
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/mac_addr.hpp>
 #include <boost/format.hpp>

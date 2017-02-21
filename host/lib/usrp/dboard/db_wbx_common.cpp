@@ -21,7 +21,7 @@
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -42,9 +42,9 @@ static int rx_pga0_gain_to_iobits(double &gain){
     int attn_code = boost::math::iround(attn*2);
     int iobits = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
 
-    UHD_LOGV(often) << boost::format(
+    UHD_LOGGER_DEBUG("WBX") << boost::format(
         "WBX RX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
-    ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK << std::endl;
+    ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK ;
 
     //the actual gain setting
     gain = wbx_rx_gain_ranges["PGA0"].stop() - double(attn_code)/2;

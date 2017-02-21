@@ -38,5 +38,4 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/validate_subdev_spec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/recv_packet_demuxer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fifo_ctrl_excelsior.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/usrp3_fw_ctrl_iface.cpp
 )

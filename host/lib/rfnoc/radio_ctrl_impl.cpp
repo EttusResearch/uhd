@@ -19,7 +19,7 @@
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <uhd/convert.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/direction.hpp>
 #include "radio_ctrl_impl.hpp"
@@ -136,7 +136,6 @@ radio_ctrl_impl::radio_ctrl_impl() :
 
 void radio_ctrl_impl::_register_loopback_self_test(size_t chan)
 {
-    UHD_MSG(status) << "[RFNoC Radio] Performing register loopback test... " << std::flush;
     size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
@@ -144,12 +143,12 @@ void radio_ctrl_impl::_register_loopback_self_test(size_t chan)
         sr_write(regs::TEST, uint32_t(hash), chan);
         uint32_t result = user_reg_read32(regs::RB_TEST, chan);
         if (result != uint32_t(hash)) {
-            UHD_MSG(status) << "fail" << std::endl;
-            UHD_MSG(status) << boost::format("expected: %x result: %x") % uint32_t(hash) % result << std::endl;
+            UHD_LOGGER_ERROR("RFNOC RADIO") << "Register loopback test failed";
+            UHD_LOGGER_ERROR("RFNOC RADIO") << boost::format("expected: %x result: %x") % uint32_t(hash) % result ;
             return; // exit on any failure
         }
     }
-    UHD_MSG(status) << "pass" << std::endl;
+    UHD_LOGGER_INFO("RFNOC RADIO") << "Register loopback test passed";
 }
 
 /****************************************************************************
@@ -241,9 +240,9 @@ double radio_ctrl_impl::get_rx_gain(const size_t chan) /* const */
 void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan)
 {
     boost::mutex::scoped_lock lock(_mutex);
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << " " << char(stream_cmd.stream_mode) << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << " " << char(stream_cmd.stream_mode) ;
     if (not _is_streamer_active(uhd::RX_DIRECTION, chan)) {
-        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() called on inactive channel. Skipping." << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() called on inactive channel. Skipping." ;
         return;
     }
     UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
@@ -295,7 +294,7 @@ std::vector<size_t> radio_ctrl_impl::get_active_rx_ports()
  **********************************************************************/
 void radio_ctrl_impl::set_rx_streamer(bool active, const size_t port)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::set_rx_streamer() " << port << " -> " << active << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::set_rx_streamer() " << port << " -> " << active ;
     if (port > _num_rx_channels) {
         throw uhd::value_error(str(
             boost::format("[%s] Can't (un)register RX streamer on port %d (invalid port)")
@@ -313,7 +312,7 @@ void radio_ctrl_impl::set_rx_streamer(bool active, const size_t port)
 
 void radio_ctrl_impl::set_tx_streamer(bool active, const size_t port)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::set_tx_streamer() " << port << " -> " << active << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::set_tx_streamer() " << port << " -> " << active ;
     if (port > _num_tx_channels) {
         throw uhd::value_error(str(
             boost::format("[%s] Can't (un)register TX streamer on port %d (invalid port)")
@@ -334,11 +333,11 @@ void radio_ctrl_impl::set_tx_streamer(bool active, const size_t port)
 void radio_ctrl_impl::_update_spp(int spp)
 {
     boost::mutex::scoped_lock lock(_mutex);
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::_update_spp(): Requested spp: " << spp << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::_update_spp(): Requested spp: " << spp ;
     if (spp == 0) {
         spp = DEFAULT_PACKET_SIZE / BYTES_PER_SAMPLE;
     }
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::_update_spp(): Setting spp to: " << spp << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::_update_spp(): Setting spp to: " << spp ;
     for (size_t i = 0; i < _num_rx_channels; i++) {
         sr_write(regs::RX_CTRL_MAXLEN, uint32_t(spp), i);
     }

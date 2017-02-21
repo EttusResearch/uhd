@@ -18,7 +18,7 @@
 #include "radio_ctrl_core_3000.hpp"
 #include "async_packet_handler.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
@@ -165,7 +165,7 @@ private:
         //load payload
         pkt[packet_info.num_header_words32+0] = (_bige)? uhd::htonx(addr) : uhd::htowx(addr);
         pkt[packet_info.num_header_words32+1] = (_bige)? uhd::htonx(data) : uhd::htowx(data);
-        //UHD_MSG(status) << boost::format("0x%08x, 0x%08x\n") % addr % data;
+        //UHD_LOGGER_INFO("radio_ctrl") << boost::format("0x%08x, 0x%08x\n") % addr % data;
         //send the buffer over the interface
         _outstanding_seqs.push(_seq_out);
         buff->commit(sizeof(uint32_t)*(packet_info.num_packet_words32));
@@ -243,17 +243,17 @@ private:
             }
             catch(const std::exception &ex)
             {
-                UHD_MSG(error) << "Radio ctrl bad VITA packet: " << ex.what() << std::endl;
+                UHD_LOGGER_ERROR("radio_ctrl") << "Radio ctrl bad VITA packet: " << ex.what() ;
                 if (buff){
                     UHD_VAR(buff->size());
                 }
                 else{
-                    UHD_MSG(status) << "buff is NULL" << std::endl;
+                    UHD_LOGGER_INFO("radio_ctrl") << "buff is NULL" ;
                 }
-                UHD_MSG(status) << std::hex << pkt[0] << std::dec << std::endl;
-                UHD_MSG(status) << std::hex << pkt[1] << std::dec << std::endl;
-                UHD_MSG(status) << std::hex << pkt[2] << std::dec << std::endl;
-                UHD_MSG(status) << std::hex << pkt[3] << std::dec << std::endl;
+                UHD_LOGGER_INFO("radio_ctrl") << std::hex << pkt[0] << std::dec ;
+                UHD_LOGGER_INFO("radio_ctrl") << std::hex << pkt[1] << std::dec ;
+                UHD_LOGGER_INFO("radio_ctrl") << std::hex << pkt[2] << std::dec ;
+                UHD_LOGGER_INFO("radio_ctrl") << std::hex << pkt[3] << std::dec ;
             }
 
             //check the buffer

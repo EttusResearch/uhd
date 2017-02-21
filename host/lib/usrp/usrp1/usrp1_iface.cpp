@@ -49,10 +49,10 @@ public:
     {
         uint32_t swapped = uhd::htonx(value);
 
-        UHD_LOGV(always)
+        UHD_LOGGER_DEBUG("USRP1")
             << "poke32("
             << std::dec << std::setw(2) << addr << ", 0x"
-            << std::hex << std::setw(8) << value << ")" << std::endl
+            << std::hex << std::setw(8) << value << ")"
         ;
 
         uint8_t w_index_h = SPI_ENABLE_FPGA & 0xff;
@@ -70,9 +70,9 @@ public:
 
     uint32_t peek32(const uint32_t addr)
     {
-        UHD_LOGV(always)
+        UHD_LOGGER_DEBUG("USRP1")
             << "peek32("
-            << std::dec << std::setw(2) << addr << ")" << std::endl
+            << std::dec << std::setw(2) << addr << ")"
         ;
 
         uint32_t value_out;
@@ -129,12 +129,12 @@ public:
                                  size_t num_bits,
                                  bool readback)
     {
-        UHD_LOGV(always)
-            << "transact_spi: " << std::endl
-            << "  slave: " << which_slave << std::endl
-            << "  bits: " << bits << std::endl
-            << "  num_bits: " << num_bits << std::endl
-            << "  readback: " << readback << std::endl
+        UHD_LOGGER_DEBUG("USRP1")
+            << "transact_spi: "
+            << "  slave: " << which_slave
+            << "  bits: " << bits
+            << "  num_bits: " << num_bits
+            << "  readback: " << readback
         ;
         UHD_ASSERT_THROW((num_bits <= 32) && !(num_bits % 8));
         size_t num_bytes = num_bits / 8;

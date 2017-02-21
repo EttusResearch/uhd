@@ -17,7 +17,7 @@
 
 #include "n230_frontend_ctrl.hpp"
 
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
 #include <boost/format.hpp>

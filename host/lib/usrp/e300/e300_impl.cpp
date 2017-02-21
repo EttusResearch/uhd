@@ -26,7 +26,7 @@
 #include "e300_remote_codec_ctrl.hpp"
 #include "e3xx_radio_ctrl_impl.hpp"
 
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/paths.hpp>
@@ -72,11 +72,11 @@ static std::vector<std::string> discover_ip_addrs(
     try {
         udp_bcast_xport = uhd::transport::udp_simple::make_broadcast(addr_hint, port);
     } catch(const std::exception &e) {
-        UHD_MSG(error) << boost::format("Cannot open UDP transport on %s for discovery\n%s")
-        % addr_hint % e.what() << std::endl;
+        UHD_LOGGER_ERROR("E300") << boost::format("Cannot open UDP transport on %s for discovery%s")
+        % addr_hint % e.what() ;
         return addrs;
     } catch(...) {
-        UHD_MSG(error) << "E300 Network discovery unknown error" << std::endl;
+        UHD_LOGGER_ERROR("E300") << "E300 Network discovery unknown error";
         return addrs;
     }
 
@@ -92,10 +92,10 @@ static std::vector<std::string> discover_ip_addrs(
     try {
     udp_bcast_xport->send(boost::asio::buffer(&req, sizeof(req)));
     } catch (const std::exception &ex) {
-        UHD_MSG(error) << "E300 Network discovery error " << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("E300") << "E300 Network discovery error " << ex.what();
         return addrs;
     } catch(...) {
-        UHD_MSG(error) << "E300 Network discovery unknown error" << std::endl;
+        UHD_LOGGER_ERROR("E300") << "E300 Network discovery unknown error";
         return addrs;
     }
 
@@ -257,7 +257,7 @@ device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
  **********************************************************************/
 static device::sptr e300_make(const device_addr_t &device_addr)
 {
-    UHD_LOG << "e300_make with args " << device_addr.to_pp_string() << std::endl;
+    UHD_LOGGER_DEBUG("E300")<< "e300_make with args " << device_addr.to_pp_string() ;
     if(device_addr.has_key("server"))
         throw uhd::runtime_error(
             str(boost::format("Please run the server executable \"%s\"")
@@ -292,8 +292,8 @@ void get_e3x0_fpga_images(const uhd::device_addr_t &device_addr,
         break;
     case e300_eeprom_manager::UNKNOWN:
     default:
-        UHD_MSG(warning) << "Unknown motherboard type, loading e300 image."
-                             << std::endl;
+        UHD_LOGGER_WARNING("E300") << "Unknown motherboard type, loading e300 image."
+                             ;
         fpga_image = device_addr.cast<std::string>("fpga",
             find_image_path(E300_FPGA_FILE_NAME));
         idle_image = find_image_path(E3XX_SG1_FPGA_IDLE_FILE_NAME);
@@ -400,14 +400,14 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     }
 
 #ifdef E300_GPSD
-    UHD_MSG(status) << "Detecting internal GPSDO " << std::flush;
+    UHD_LOGGER_INFO("E300") << "Detecting internal GPSDO ";
     try {
         if (_xport_path == AXI)
             _gps = gpsd_iface::make("localhost", 2947);
         else
             _gps = gpsd_iface::make(device_addr["addr"], 2947);
     } catch (std::exception &e) {
-        UHD_MSG(error) << "An error occured making GPSDd interface: " << e.what() << std::endl;
+        UHD_LOGGER_ERROR("E300") << "An error occured making GPSDd interface: " << e.what();
     }
 
     if (_gps) {
@@ -421,12 +421,12 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
                 break;
             }
         }
-        UHD_MSG(status) << (_gps->gps_detected() ? "found" : "not found") << std::endl;
+        UHD_LOGGER_INFO("E300") << "GPSDO " << (_gps->gps_detected() ? "found" : "not found");
     }
 #endif
 
     // Verify we can talk to the e300 core control registers ...
-    UHD_MSG(status) << "Initializing core control (global registers)..." << std::endl;
+    UHD_LOGGER_INFO("E300") << "Initializing core control (global registers)..." << std::endl;
     this->_register_loopback_self_test(
         _global_regs,
         global_regs::SR_CORE_TEST,
@@ -535,10 +535,10 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ;
 
     //default some chains on -- needed for setup purposes
-    UHD_MSG(status) << "Initializing AD9361 using hard SPI core..." << std::flush;
+    UHD_LOGGER_ERROR("E300") << "Initializing AD9361 using hard SPI core..." << std::flush;
     codec_ctrl->set_active_chains(true, false, true, false);
     codec_ctrl->set_clock_rate(50e6);
-    UHD_MSG(status) << "OK" << std::endl;
+    UHD_LOGGER_DEBUG("E300") << "OK" << std::endl;
 
     ////////////////////////////////////////////////////////////////////
     // Set up RFNoC blocks
@@ -595,7 +595,7 @@ e300_impl::~e300_impl(void)
 void e300_impl::_register_loopback_self_test(wb_iface::sptr iface, uint32_t w_addr, uint32_t r_addr)
 {
     bool test_fail = false;
-    UHD_MSG(status) << "Performing register loopback test... " << std::flush;
+    UHD_LOGGER_INFO("E300") << "Performing register loopback test... ";
     size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
@@ -604,7 +604,7 @@ void e300_impl::_register_loopback_self_test(wb_iface::sptr iface, uint32_t w_ad
         test_fail = iface->peek32(r_addr) != uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
-    UHD_MSG(status) << ((test_fail)? " fail" : "pass") << std::endl;
+    UHD_LOGGER_INFO("E300") << "Register loopback test " << ((test_fail)? " failed" : "passed");
 }
 
 uint32_t e300_impl::_get_version(compat_t which)
@@ -636,7 +636,7 @@ void e300_impl::_setup_dest_mapping(
     const uhd::sid_t &sid,
     const size_t which_stream)
 {
-    UHD_MSG(status) << boost::format("[E300] Setting up dest map for host ep %lu to be stream %d")
+    UHD_LOGGER_DEBUG("E300") << boost::format("[E300] Setting up dest map for host ep %lu to be stream %d")
                                      % sid.get_src_endpoint() % which_stream << std::endl;
     _global_regs->poke32(DST_ADDR(sid.get_src_endpoint()), which_stream);
 }

@@ -19,7 +19,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/usb_control.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/cast.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
@@ -83,9 +83,9 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
             usrp1_fw_image = find_image_path(hint.get("fw", "usrp1_fw.ihx"));
         }
         catch(...){
-            UHD_MSG(warning) << boost::format("Could not locate USRP1 firmware. %s") % print_utility_error("uhd_images_downloader.py");
+            UHD_LOGGER_WARNING("USRP1") << boost::format("Could not locate USRP1 firmware. %s") % print_utility_error("uhd_images_downloader.py");
         }
-        UHD_LOG << "USRP1 firmware image: " << usrp1_fw_image << std::endl;
+        UHD_LOGGER_DEBUG("USRP1") << "USRP1 firmware image: " << usrp1_fw_image ;
 
         usb_control::sptr control;
         try{control = usb_control::make(handle, 0);}
@@ -144,14 +144,14 @@ UHD_STATIC_BLOCK(register_usrp1_device){
  * Structors
  **********************************************************************/
 usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
-    UHD_MSG(status) << "Opening a USRP1 device..." << std::endl;
+    UHD_LOGGER_INFO("USRP1") << "Opening a USRP1 device...";
     _type = device::USRP;
 
     //extract the FPGA path for the USRP1
     std::string usrp1_fpga_image = find_image_path(
         device_addr.get("fpga", "usrp1_fpga.rbf")
     );
-    UHD_LOG << "USRP1 FPGA image: " << usrp1_fpga_image << std::endl;
+    UHD_LOGGER_DEBUG("USRP1") << "USRP1 FPGA image: " << usrp1_fpga_image ;
 
     //try to match the given device address with something on the USB bus
     std::vector<usb_device_handle::sptr> device_list =
@@ -190,12 +190,12 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     _iface->poke32(FR_MODE, 0x00000000);
     _iface->poke32(FR_DEBUG_EN, 0x00000000);
 
-    UHD_LOG
-        << "USRP1 Capabilities" << std::endl
-        << "    number of duc's: " << get_num_ddcs() << std::endl
-        << "    number of ddc's: " << get_num_ducs() << std::endl
-        << "    rx halfband:     " << has_rx_halfband() << std::endl
-        << "    tx halfband:     " << has_tx_halfband() << std::endl
+    UHD_LOGGER_DEBUG("USRP1")
+        << "USRP1 Capabilities" 
+        << "    number of duc's: " << get_num_ddcs() 
+        << "    number of ddc's: " << get_num_ducs() 
+        << "    rx halfband:     " << has_rx_halfband() 
+        << "    tx halfband:     " << has_tx_halfband() 
     ;
 
     ////////////////////////////////////////////////////////////////////
@@ -232,7 +232,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
             _master_clock_rate = boost::lexical_cast<double>(device_addr["mcr"]);
         }
         catch(const std::exception &e){
-            UHD_MSG(error) << "Error parsing FPGA clock rate from device address: " << e.what() << std::endl;
+            UHD_LOGGER_ERROR("USRP1") << "Error parsing FPGA clock rate from device address: " << e.what() ;
         }
     }
     else if (not mb_eeprom["mcr"].empty()){
@@ -240,10 +240,10 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
             _master_clock_rate = boost::lexical_cast<double>(mb_eeprom["mcr"]);
         }
         catch(const std::exception &e){
-            UHD_MSG(error) << "Error parsing FPGA clock rate from EEPROM: " << e.what() << std::endl;
+            UHD_LOGGER_ERROR("USRP1") << "Error parsing FPGA clock rate from EEPROM: " << e.what() ;
         }
     }
-    UHD_MSG(status) << boost::format("Using FPGA clock rate of %fMHz...") % (_master_clock_rate/1e6) << std::endl;
+    UHD_LOGGER_INFO("USRP1") << boost::format("Using FPGA clock rate of %fMHz...") % (_master_clock_rate/1e6) ;
     _tree->create<double>(mb_path / "tick_rate")
         .add_coerced_subscriber(boost::bind(&usrp1_impl::update_tick_rate, this, _1))
         .set(_master_clock_rate);

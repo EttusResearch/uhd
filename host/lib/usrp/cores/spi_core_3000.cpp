@@ -17,7 +17,7 @@
 
 #include "spi_core_3000.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/thread/thread.hpp> //sleep
 
 #define SPI_DIV      _base + 0

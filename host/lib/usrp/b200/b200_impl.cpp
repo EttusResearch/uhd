@@ -19,7 +19,7 @@
 #include "b200_regs.hpp"
 #include <uhd/config.hpp>
 #include <uhd/transport/usb_control.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/cast.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
@@ -60,7 +60,7 @@ public:
         }
     }
     clocking_mode_t get_clocking_mode() {
-        return AD9361_XTAL_N_CLK_PATH;
+        return clocking_mode_t::AD9361_XTAL_N_CLK_PATH;
     }
     digital_interface_mode_t get_digital_interface_mode() {
         return AD9361_DDR_FDD_LVCMOS;
@@ -88,7 +88,7 @@ public:
         }
     }
     clocking_mode_t get_clocking_mode() {
-        return AD9361_XTAL_N_CLK_PATH;
+        return clocking_mode_t::AD9361_XTAL_N_CLK_PATH;
     }
     digital_interface_mode_t get_digital_interface_mode() {
         return AD9361_DDR_FDD_LVCMOS;
@@ -190,10 +190,10 @@ static device_addrs_t b200_find(const device_addr_t &hint)
             b200_fw_image = uhd::find_image_path(b200_fw_image, STR(UHD_IMAGES_DIR)); // FIXME
         }
         catch(uhd::exception &e){
-            UHD_MSG(warning) << e.what();
+            UHD_LOGGER_WARNING("B200") << e.what();
             return b200_addrs;
         }
-        UHD_LOG << "the firmware image: " << b200_fw_image << std::endl;
+        UHD_LOGGER_DEBUG("B200") << "the firmware image: " << b200_fw_image ;
 
         usb_control::sptr control;
         try{control = usb_control::make(handle, 0);}
@@ -261,7 +261,7 @@ static device::sptr b200_make(const device_addr_t &device_addr)
         return device::sptr(new b200_impl(device_addr, handle));
     }
     catch (const uhd::usb_error &) {
-        UHD_MSG(status) << "Detected bad USB state; resetting." << std::endl;
+        UHD_LOGGER_INFO("B200") << "Detected bad USB state; resetting." ;
         libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
             boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
         ));
@@ -390,7 +390,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         _revision = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
     }
 
-    UHD_MSG(status) << "Detected Device: " << B2XX_STR_NAMES[_product] << std::endl;
+    UHD_LOGGER_INFO("B200") << "Detected Device: " << B2XX_STR_NAMES[_product] ;
 
     _gpsdo_capable = (not (_product == B200MINI or _product == B205MINI));
 
@@ -437,7 +437,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // Create control transport
     ////////////////////////////////////////////////////////////////////
     uint8_t usb_speed = _iface->get_usb_speed();
-    UHD_MSG(status) << "Operating over USB " << (int) usb_speed << "." << std::endl;
+    UHD_LOGGER_INFO("B200") << "Operating over USB " << (int) usb_speed << "." ;
     const std::string min_frame_size = (usb_speed == 3) ? "1024" : "512";
 
     device_addr_t ctrl_xport_args;
@@ -488,18 +488,17 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
 
         if ((_local_ctrl->peek32(RB32_CORE_STATUS) & 0xff) != B200_GPSDO_ST_NONE)
         {
-            UHD_MSG(status) << "Detecting internal GPSDO.... " << std::flush;
+            UHD_LOGGER_INFO("B200") << "Detecting internal GPSDO.... " << std::flush;
             try
             {
                 _gps = gps_ctrl::make(_async_task_data->gpsdo_uart);
             }
             catch(std::exception &e)
             {
-                UHD_MSG(error) << "An error occurred making GPSDO control: " << e.what() << std::endl;
+                UHD_LOGGER_ERROR("B200") << "An error occurred making GPSDO control: " << e.what();
             }
             if (_gps and _gps->gps_detected())
             {
-                //UHD_MSG(status) << "found" << std::endl;
                 for(const std::string &name:  _gps->get_sensors())
                 {
                     _tree->create<sensor_value_t>(mb_path / "sensors" / name)
@@ -553,7 +552,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // Init codec - turns on clocks
     ////////////////////////////////////////////////////////////////////
-    UHD_MSG(status) << "Initialize CODEC control..." << std::endl;
+    UHD_LOGGER_INFO("B200") << "Initialize CODEC control..." ;
     ad9361_params::sptr client_settings;
     if (_product == B200MINI or _product == B205MINI) {
         client_settings = boost::make_shared<b2xxmini_ad9361_client_t>();
@@ -610,7 +609,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // setup radio control
     ////////////////////////////////////////////////////////////////////
-    UHD_MSG(status) << "Initialize Radio control..." << std::endl;
+    UHD_LOGGER_INFO("B200") << "Initialize Radio control..." ;
     const size_t num_radio_chains = ((_local_ctrl->peek32(RB32_CORE_STATUS) >> 8) & 0xff);
     UHD_ASSERT_THROW(num_radio_chains > 0);
     UHD_ASSERT_THROW(num_radio_chains <= 2);
@@ -692,7 +691,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // Init the clock rate and the auto mcr appropriately
     if (not device_addr.has_key("master_clock_rate")) {
-        UHD_MSG(status) << "Setting master clock rate selection to 'automatic'." << std::endl;
+        UHD_LOGGER_INFO("B200") << "Setting master clock rate selection to 'automatic'." ;
     }
     // We can automatically choose a master clock rate, but not if the user specifies one
     const double default_tick_rate = device_addr.cast<double>("master_clock_rate", ad936x_manager::DEFAULT_TICK_RATE);
@@ -874,7 +873,7 @@ void b200_impl::setup_radio(const size_t dspno)
 void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
 {
     bool test_fail = false;
-    UHD_MSG(status) << "Performing register loopback test... " << std::flush;
+    UHD_LOGGER_INFO("B200") << "Performing register loopback test... " << std::flush;
     size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
@@ -883,7 +882,7 @@ void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
         test_fail = iface->peek32(RB32_TEST) != uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
-    UHD_MSG(status) << ((test_fail)? "fail" : "pass") << std::endl;
+    UHD_LOGGER_INFO("B200") << ((test_fail)? "fail" : "pass") ;
 }
 
 /***********************************************************************
@@ -919,18 +918,18 @@ void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, co
 
 double b200_impl::set_tick_rate(const double new_tick_rate)
 {
-    UHD_MSG(status) << (boost::format("Asking for clock rate %.6f MHz... ") % (new_tick_rate/1e6)) << std::flush;
+    UHD_LOGGER_INFO("B200") << (boost::format("Asking for clock rate %.6f MHz... ") % (new_tick_rate/1e6)) << std::flush;
     check_tick_rate_with_current_streamers(new_tick_rate);   // Defined in b200_io_impl.cpp
 
     // Make sure the clock rate is actually changed before doing
     // the full Monty of setting regs and loopback tests etc.
     if (std::abs(new_tick_rate - _tick_rate) < 1.0) {
-        UHD_MSG(status) << "OK" << std::endl;
+        UHD_LOGGER_INFO("B200") << "OK" ;
         return _tick_rate;
     }
 
     _tick_rate = _codec_ctrl->set_clock_rate(new_tick_rate);
-    UHD_MSG(status) << std::endl << (boost::format("Actually got clock rate %.6f MHz.") % (_tick_rate/1e6)) << std::endl;
+    UHD_LOGGER_INFO("B200")  << (boost::format("Actually got clock rate %.6f MHz.") % (_tick_rate/1e6)) ;
 
     for(radio_perifs_t &perif:  _radio_perifs)
     {

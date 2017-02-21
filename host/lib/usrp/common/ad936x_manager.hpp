@@ -22,6 +22,7 @@
 #include <uhd/utils/math.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/direction.hpp>
+#include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
 #include "ad9361_ctrl.hpp"
 #include <stdint.h>

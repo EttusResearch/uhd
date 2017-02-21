@@ -19,7 +19,7 @@
 #include <uhd/usrp_clock/multi_usrp_clock.hpp>
 #include <uhd/usrp_clock/octoclock_eeprom.hpp>
 
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <boost/assign/list_of.hpp>
@@ -91,6 +91,6 @@ multi_usrp_clock::~multi_usrp_clock(void){
  * Multi USRP Clock factory function
  **********************************************************************/
 multi_usrp_clock::sptr multi_usrp_clock::make(const device_addr_t &dev_addr){
-    UHD_LOG << "multi_usrp_clock::make with args " << dev_addr.to_pp_string() << std::endl;
+    UHD_LOGGER_DEBUG("OCTOCLOCK") << "multi_usrp_clock::make with args " << dev_addr.to_pp_string() ;
     return sptr(new multi_usrp_clock_impl(dev_addr));
 }

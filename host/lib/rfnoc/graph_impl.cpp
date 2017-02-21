@@ -18,7 +18,7 @@
 #include "graph_impl.hpp"
 #include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -85,10 +85,10 @@ void graph_impl::connect(
     dst->set_upstream_port(actual_dst_block_port, actual_src_block_port);
     // At this point, ports are locked and no one else can simply connect
     // into them.
-    UHD_MSG(status)
-        << "[" << _name << "] Connecting "
-        << src_block << ":" << actual_src_block_port << " --> "
-        << dst_block << ":" << actual_dst_block_port << std::endl;
+    //UHD_LOGGER_INFO("RFNOC")
+        //<< "[" << _name << "] Connecting "
+        //<< src_block << ":" << actual_src_block_port << " --> "
+        //<< dst_block << ":" << actual_dst_block_port ;
 
     /********************************************************************
      * 2. Check IO signatures match
@@ -120,7 +120,7 @@ void graph_impl::connect(
      ********************************************************************/
     size_t pkt_size = (pkt_size_ != 0) ? pkt_size_ : src->get_output_signature(src_block_port).packet_size;
     if (pkt_size == 0) { // Unspecified packet rate. Assume max packet size.
-        UHD_MSG(status) << "Assuming max packet size for " << src->get_block_id() << std::endl;
+        UHD_LOGGER_INFO("RFNOC") << "Assuming max packet size for " << src->get_block_id() ;
         pkt_size = uhd::rfnoc::MAX_PACKET_SIZE;
     }
     // FC window (in packets) depends on FIFO size...          ...and packet size.

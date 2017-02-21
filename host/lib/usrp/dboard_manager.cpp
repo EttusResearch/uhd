@@ -17,7 +17,7 @@
 
 #include "dboard_ctor_args.hpp"
 #include <uhd/usrp/dboard_manager.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
@@ -96,7 +96,7 @@ static void register_dboard_key(
     const std::vector<std::string> &subdev_names,
     dboard_manager::dboard_ctor_t db_container_ctor
 ){
-    UHD_LOGV(always) << "registering: " << name << std::endl;
+    UHD_LOGGER_TRACE("DBMGR") << "registering: " << name;
     if (get_id_to_args_map().has_key(dboard_key)){
 
         if (dboard_key.is_xcvr()) throw uhd::key_error(str(boost::format(
@@ -247,11 +247,11 @@ dboard_manager_impl::dboard_manager_impl(
         this->init(rx_dboard_id, tx_dboard_id, subtree, defer_db_init);
     }
     catch(const std::exception &e){
-        UHD_MSG(error) << boost::format(
+        UHD_LOGGER_ERROR("DBMGR") << boost::format(
             "The daughterboard manager encountered a recoverable error in init.\n"
             "Loading the \"unknown\" daughterboard implementations to continue.\n"
             "The daughterboard cannot operate until this error is resolved.\n"
-        ) << e.what() << std::endl;
+        ) << e.what() ;
         //clean up the stuff added by the call above
         if (subtree->exists("rx_frontends")) subtree->remove("rx_frontends");
         if (subtree->exists("tx_frontends")) subtree->remove("tx_frontends");
@@ -279,7 +279,7 @@ void dboard_manager_impl::init(
 
     //warn for invalid dboard id xcvr combinations
     if (not xcvr_dboard_key.is_xcvr() and (rx_dboard_key.is_xcvr() or tx_dboard_key.is_xcvr())){
-        UHD_MSG(warning) << boost::format(
+        UHD_LOGGER_WARNING("DBMGR") << boost::format(
             "Unknown transceiver board ID combination.\n"
             "Is your daughter-board mounted properly?\n"
             "RX dboard ID: %s\n"

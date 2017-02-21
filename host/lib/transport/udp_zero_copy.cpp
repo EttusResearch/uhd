@@ -19,7 +19,7 @@
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/transport/buffer_pool.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/atomic.hpp>
 #include <boost/format.hpp>
@@ -50,11 +50,11 @@ static void check_registry_for_fast_send_threshold(const size_t mtu){
         reg_key.Open(HKEY_LOCAL_MACHINE, "System\\CurrentControlSet\\Services\\AFD\\Parameters", KEY_READ) != ERROR_SUCCESS or
         reg_key.QueryDWORDValue("FastSendDatagramThreshold", threshold) != ERROR_SUCCESS or threshold < mtu
     ){
-        UHD_MSG(warning) << boost::format(
+        UHD_LOGGER_WARNING("UDP") << boost::format(
             "The MTU (%d) is larger than the FastSendDatagramThreshold (%d)!\n"
             "This will negatively affect the transmit performance.\n"
             "See the transport application notes for more detail.\n"
-        ) % mtu % threshold << std::endl;
+        ) % mtu % threshold ;
         warned = true;
     }
     reg_key.Close();
@@ -175,7 +175,7 @@ public:
         _send_buffer_pool(buffer_pool::make(xport_params.num_send_frames, xport_params.send_frame_size)),
         _next_recv_buff_index(0), _next_send_buff_index(0)
     {
-        UHD_LOG << boost::format("Creating udp transport for %s %s") % addr % port << std::endl;
+        UHD_LOGGER_DEBUG("UDP") << boost::format("Creating udp transport for %s %s") % addr % port ;
 
         #ifdef CHECK_REG_SEND_THRESH
         check_registry_for_fast_send_threshold(this->get_send_frame_size());
@@ -279,11 +279,11 @@ template<typename Opt> static size_t resize_buff_helper(
     //resize the buffer if size was provided
     if (target_size > 0){
         actual_size = udp_trans->resize_buff<Opt>(target_size);
-        UHD_LOG << boost::format(
+        UHD_LOGGER_DEBUG("UDP") << boost::format(
             "Target %s sock buff size: %d bytes\n"
             "Actual %s sock buff size: %d bytes"
-        ) % name % target_size % name % actual_size << std::endl;
-        if (actual_size < target_size) UHD_MSG(warning) << boost::format(
+        ) % name % target_size % name % actual_size ;
+        if (actual_size < target_size) UHD_LOGGER_WARNING("UDP") << boost::format(
             "The %s buffer could not be resized sufficiently.\n"
             "Target sock buff size: %d bytes.\n"
             "Actual sock buff size: %d bytes.\n"

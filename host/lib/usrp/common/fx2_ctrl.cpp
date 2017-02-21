@@ -16,7 +16,7 @@
 //
 
 #include "fx2_ctrl.hpp"
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <boost/functional/hash.hpp>
@@ -177,7 +177,7 @@ public:
         unsigned char reset_n = 0;
 
         //hit the reset line
-        if (load_img_msg) UHD_MSG(status) << "Loading firmware image: " << filestring << "..." << std::flush;
+        if (load_img_msg) UHD_LOGGER_INFO("FX2") << "Loading firmware image: " << filestring << "...";
         usrp_control_write(FX2_FIRMWARE_LOAD, 0xe600, 0, &reset_y, 1);
 
         while (!file.eof()) {
@@ -205,7 +205,7 @@ public:
 
                 //wait for things to settle
                 boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-                if (load_img_msg) UHD_MSG(status) << " done" << std::endl;
+                if (load_img_msg) UHD_LOGGER_INFO("FX2") << "Firmware loaded";
                 return;
             }
             //type anything else is unhandled
@@ -242,7 +242,7 @@ public:
         const int ep0_size = 64;
         unsigned char buf[ep0_size];
 
-        if (load_img_msg) UHD_MSG(status) << "Loading FPGA image: " << filestring << "..." << std::flush;
+        if (load_img_msg) UHD_LOGGER_INFO("FX2") << "Loading FPGA image: " << filestring << "...";
         std::ifstream file;
         file.open(filename, std::ios::in | std::ios::binary);
         if (not file.good()) {
@@ -274,12 +274,12 @@ public:
         usrp_fpga_reset(false); //done loading, take fpga out of reset
 
         file.close();
-        if (load_img_msg) UHD_MSG(status) << " done" << std::endl;
+        if (load_img_msg) UHD_LOGGER_INFO("FX2") << "FPGA image loaded";
     }
 
     void usrp_load_eeprom(std::string filestring)
     {
-        if (load_img_msg) UHD_MSG(status) << "Loading EEPROM image: " << filestring << "..." << std::flush;
+        if (load_img_msg) UHD_LOGGER_INFO("FX2") << "Loading EEPROM image: " << filestring << "...";
         const char *filename = filestring.c_str();
         const uint16_t i2c_addr = 0x50;
 
@@ -315,7 +315,7 @@ public:
             boost::this_thread::sleep(boost::posix_time::milliseconds(100));
         }
         file.close();
-        if (load_img_msg) UHD_MSG(status) << " done" << std::endl;
+        if (load_img_msg) UHD_LOGGER_INFO("FX2") << "EEPROM image loaded";
     }
 
 

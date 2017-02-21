@@ -20,7 +20,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/exception.hpp>
 

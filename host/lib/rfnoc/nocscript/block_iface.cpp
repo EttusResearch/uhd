@@ -18,12 +18,12 @@
 #include "block_iface.hpp"
 #include "function_table.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/assign.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
-#define UHD_NOCSCRIPT_LOG() UHD_MSG(status)
+#define UHD_NOCSCRIPT_LOG() UHD_LOGGER_TRACE("RFNOC")
 
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::nocscript;
@@ -116,7 +116,7 @@ void block_iface::run_and_check(const std::string &code, const std::string &erro
 {
     boost::mutex::scoped_lock local_interpreter_lock(_lil_mutex);
 
-    UHD_NOCSCRIPT_LOG() << "[NocScript] Executing and asserting code: " << code << std::endl;
+    UHD_NOCSCRIPT_LOG() << "[NocScript] Executing and asserting code: " << code ;
     expression::sptr e = _parser->create_expr_tree(code);
     expression_literal result = e->eval();
     if (not result.to_bool()) {
@@ -143,12 +143,12 @@ expression_literal block_iface::_nocscript__sr_write(expression_container::expr_
     const uint32_t reg_val = uint32_t(args[1]->eval().get_int());
     bool result = true;
     try {
-        UHD_NOCSCRIPT_LOG() << "[NocScript] Executing SR_WRITE() " << std::endl;
+        UHD_NOCSCRIPT_LOG() << "[NocScript] Executing SR_WRITE() " ;
         _block_ptr->sr_write(reg_name, reg_val);
     } catch (const uhd::exception &e) {
-        UHD_MSG(error) << boost::format("[NocScript] Error while executing SR_WRITE(%s, 0x%X):\n%s")
+        UHD_LOGGER_ERROR("RFNOC") << boost::format("[NocScript] Error while executing SR_WRITE(%s, 0x%X):\n%s")
                           % reg_name % reg_val % e.what()
-                       << std::endl;
+                       ;
         result = false;
     }
 
@@ -195,7 +195,7 @@ expression_literal block_iface::_nocscript__arg_set_int(const expression_contain
     if (args.size() == 3) {
         port = size_t(args[2]->eval().get_int());
     }
-    UHD_NOCSCRIPT_LOG() << "[NocScript] Setting $" << var_name << std::endl;
+    UHD_NOCSCRIPT_LOG() << "[NocScript] Setting $" << var_name ;
     _block_ptr->set_arg<int>(var_name, val, port);
     return expression_literal(true);
 }
@@ -208,7 +208,7 @@ expression_literal block_iface::_nocscript__arg_set_string(const expression_cont
     if (args.size() == 3) {
         port = size_t(args[2]->eval().get_int());
     }
-    UHD_NOCSCRIPT_LOG() << "[NocScript] Setting $" << var_name << std::endl;
+    UHD_NOCSCRIPT_LOG() << "[NocScript] Setting $" << var_name ;
     _block_ptr->set_arg<std::string>(var_name, val, port);
     return expression_literal(true);
 }
@@ -221,7 +221,7 @@ expression_literal block_iface::_nocscript__arg_set_double(const expression_cont
     if (args.size() == 3) {
         port = size_t(args[2]->eval().get_int());
     }
-    UHD_NOCSCRIPT_LOG() << "[NocScript] Setting $" << var_name << std::endl;
+    UHD_NOCSCRIPT_LOG() << "[NocScript] Setting $" << var_name ;
     _block_ptr->set_arg<double>(var_name, val, port);
     return expression_literal(true);
 }
@@ -239,8 +239,8 @@ block_iface::sptr block_iface::make(uhd::rfnoc::block_ctrl_base* block_ptr)
 expression_literal block_iface::_nocscript__var_get(const expression_container::expr_list_type &args)
 {
     expression_literal expr = _vars[args[0]->eval().get_string()];
-    std::cout << "[NocScript] Getting var " << args[0]->eval().get_string() << " == " << expr << std::endl;
-    std::cout << "[NocScript] Type " << expr.infer_type() << std::endl;
+    //std::cout << "[NocScript] Getting var " << args[0]->eval().get_string() << " == " << expr ;
+    //std::cout << "[NocScript] Type " << expr.infer_type() ;
     //return _vars[args[0]->eval().get_string()];
     return expr;
 }
@@ -248,8 +248,8 @@ expression_literal block_iface::_nocscript__var_get(const expression_container::
 expression_literal block_iface::_nocscript__var_set(const expression_container::expr_list_type &args)
 {
     _vars[args[0]->eval().get_string()] = args[1]->eval();
-    std::cout << "[NocScript] Set var " << args[0]->eval().get_string() << " to " << _vars[args[0]->eval().get_string()] << std::endl;
-    std::cout << "[NocScript] Type " << _vars[args[0]->eval().get_string()].infer_type() << std::endl;
+    //std::cout << "[NocScript] Set var " << args[0]->eval().get_string() << " to " << _vars[args[0]->eval().get_string()] ;
+    //std::cout << "[NocScript] Type " << _vars[args[0]->eval().get_string()].infer_type() ;
     return expression_literal(true);
 }
 

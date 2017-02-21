@@ -16,11 +16,9 @@
 //
 
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/msg.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/paths.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/locks.hpp>
@@ -37,59 +35,99 @@ namespace ip = boost::interprocess;
  **********************************************************************/
 class log_resource_type{
 public:
-    uhd::_log::verbosity_t level;
+    uhd::log::severity_level level;
+    uhd::log::severity_level file_level;
+    uhd::log::severity_level console_level;
 
     log_resource_type(void){
 
         //file lock pointer must be null
         _file_lock = NULL;
 
+        //default to no file logging
+        this->file_logging = false;
+
         //set the default log level
-        level = uhd::_log::never;
+        this->level = uhd::log::off;
+        this->file_level = uhd::log::off;
+        this->console_level = uhd::log::off;
 
         //allow override from macro definition
-        #ifdef UHD_LOG_LEVEL
-        _set_log_level(BOOST_STRINGIZE(UHD_LOG_LEVEL));
-        #endif
+#ifdef UHD_LOG_MIN_LEVEL
+        this->level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_MIN_LEVEL));
+#endif
+#if defined(UHD_LOG_FILE_LEVEL) && defined(UHD_LOG_FILE_PATH)
+        this->file_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_FILE_LEVEL));
+#endif
+#ifdef UHD_LOG_CONSOLE_LEVEL
+        this->console_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_CONSOLE_LEVEL));
+#endif
+#ifdef UHD_LOG_FILE
+        this->log_file_target = BOOST_STRINGIZE(UHD_LOG_FILE);
+        this->file_logging = true;
+#endif
 
-        //allow override from environment variable
+        //allow override from environment variables
         const char * log_level_env = std::getenv("UHD_LOG_LEVEL");
-        if (log_level_env != NULL) _set_log_level(log_level_env);
+        if (log_level_env != NULL && log_level_env[0] != '\0') this->level = _get_log_level(log_level_env);
+
+        const char * log_file_level_env = std::getenv("UHD_LOG_FILE_LEVEL");
+        if (log_file_level_env != NULL && log_file_level_env[0] != '\0') this->file_level = _get_log_level(log_file_level_env);
+
+        const char * log_console_level_env = std::getenv("UHD_LOG_CONSOLE_LEVEL");
+        if (log_console_level_env != NULL && log_console_level_env[0] != '\0') this->console_level = _get_log_level(log_console_level_env);
+
+        const char* log_file_env = std::getenv("UHD_LOG_FILE");
+        if ((log_file_env != NULL) && (log_file_env[0] != '\0')) {
+            this->log_file_target = log_file_env;
+            this->file_logging = true;
+        }
     }
 
     ~log_resource_type(void){
-        boost::lock_guard<boost::mutex> lock(_mutex);
-        _file_stream.close();
-        if (_file_lock != NULL) delete _file_lock;
+        if (this->file_logging){
+            boost::lock_guard<boost::mutex> lock(_mutex);
+            _file_stream.close();
+            if (_file_lock != NULL) delete _file_lock;
+        }
     }
 
     void log_to_file(const std::string &log_msg){
-        boost::lock_guard<boost::mutex> lock(_mutex);
-        if (_file_lock == NULL){
-            const std::string log_path = (fs::path(uhd::get_tmp_path()) / "uhd.log").string();
-            _file_stream.open(log_path.c_str(), std::fstream::out | std::fstream::app);
-            _file_lock = new ip::file_lock(log_path.c_str());
+        if ( this->file_logging ){
+            boost::lock_guard<boost::mutex> lock(_mutex);
+            if (_file_lock == NULL){
+                _file_stream.open(this->log_file_target.c_str(), std::fstream::out | std::fstream::app);
+                _file_lock = new ip::file_lock(this->log_file_target.c_str());
+            }
+            _file_lock->lock();
+            _file_stream << log_msg << std::flush;
+            _file_lock->unlock();
         }
-        _file_lock->lock();
-        _file_stream << log_msg << std::flush;
-        _file_lock->unlock();
     }
 
 private:
     //! set the log level from a string that is either a digit or an enum name
-    void _set_log_level(const std::string &log_level_str){
-        const uhd::_log::verbosity_t log_level_num = uhd::_log::verbosity_t(log_level_str[0]-'0');
-        if (std::isdigit(log_level_str[0]) and log_level_num >= uhd::_log::always and log_level_num <= uhd::_log::never){
-            this->level = log_level_num;
-            return;
+    bool file_logging;
+    std::string log_file_target;
+    uhd::log::severity_level _get_log_level(const std::string &log_level_str){
+        if (std::isdigit(log_level_str[0])) {
+            const uhd::log::severity_level log_level_num =
+                uhd::log::severity_level(std::stoi(log_level_str));
+            if (log_level_num >= uhd::log::trace and
+                log_level_num <= uhd::log::fatal) {
+                return log_level_num;
+            }
         }
-        #define if_lls_equal(name) else if(log_level_str == #name) this->level = uhd::_log::name
-        if_lls_equal(always);
-        if_lls_equal(often);
-        if_lls_equal(regularly);
-        if_lls_equal(rarely);
-        if_lls_equal(very_rarely);
-        if_lls_equal(never);
+
+#define if_loglevel_equal(name)                                 \
+        else if (log_level_str == #name) return uhd::log::name
+        if_loglevel_equal(trace);
+        if_loglevel_equal(debug);
+        if_loglevel_equal(info);
+        if_loglevel_equal(warning);
+        if_loglevel_equal(error);
+        if_loglevel_equal(fatal);
+        return uhd::log::off;
     }
 
     //file stream and lock:
@@ -104,39 +142,55 @@ UHD_SINGLETON_FCN(log_resource_type, log_rs);
  * The logger object implementation
  **********************************************************************/
 //! get the relative file path from the host directory
-static std::string get_rel_file_path(const fs::path &file){
-    fs::path abs_path = file.parent_path();
-    fs::path rel_path = file.leaf();
-    while (not abs_path.empty() and abs_path.leaf() != "host"){
-        rel_path = abs_path.leaf() / rel_path;
-        abs_path = abs_path.parent_path();
-    }
-    return rel_path.string();
+
+inline std::string path_to_filename(std::string path)
+{
+    return path.substr(path.find_last_of("/\\") + 1);
 }
 
-
 uhd::_log::log::log(
-    const verbosity_t verbosity,
+    const uhd::log::severity_level verbosity,
     const std::string &file,
     const unsigned int line,
-    const std::string &function
+    const std::string &component,
+    const boost::thread::id id
     )
 {
     _log_it = (verbosity >= log_rs().level);
+    _log_file =(verbosity >= log_rs().file_level);
+    _log_console = (verbosity >= log_rs().console_level);
     if (_log_it)
     {
+        if (_log_file){
         const std::string time = pt::to_simple_string(pt::microsec_clock::local_time());
-        const std::string header1 = str(boost::format("-- %s - level %d") % time % int(verbosity));
-        const std::string header2 = str(boost::format("-- %s") % function).substr(0, 80);
-        const std::string header3 = str(boost::format("-- %s:%u") % get_rel_file_path(file) % line);
-        const std::string border = std::string(std::max(std::max(header1.size(), header2.size()), header3.size()), '-');
-        _ss << std::endl
-            << border << std::endl
-            << header1 << std::endl
-            << header2 << std::endl
-            << header3 << std::endl
-            << border << std::endl
+        _file
+            << time << ","
+            << "0x" << id << ","
+            << path_to_filename(file) << ":" << line << ","
+            << verbosity << ","
+            << component << ","
         ;
+        }
+#ifndef UHD_LOG_CONSOLE_DISABLE
+        if (_log_console){
+#ifdef UHD_LOG_CONSOLE_TIME
+            const std::string time = pt::to_simple_string(pt::microsec_clock::local_time());
+#endif
+            _console
+#ifdef UHD_LOG_CONSOLE_TIME
+                << "[" << time << "] "
+#endif
+#ifdef UHD_LOG_CONSOLE_THREAD
+                << "[0x" << id << "] "
+#endif
+#ifdef UHD_LOG_CONSOLE_SRC
+                << "[" << path_to_filename(file) << ":" << line << "] "
+#endif
+                << "[" << verbosity << "] "
+                << "[" << component << "] "
+                ;
+        }
+#endif
     }
 }
 
@@ -144,22 +198,44 @@ uhd::_log::log::~log(void)
 {
     if (not _log_it)
         return;
+#ifndef UHD_LOG_CONSOLE_DISABLE
+    if ( _log_console ){
+        std::clog << _console.str() << _ss.str() << std::endl;
+        }
+#endif
+    if ( _log_file){
+        _file << _ss.str() << std::endl;
+        try{
+            log_rs().log_to_file(_file.str());
+        }
+        catch(const std::exception &e){
+            /*!
+             * Critical behavior below.
+             * The following steps must happen in order to avoid a lock-up condition.
+             * This is because the message facility will call into the logging facility.
+             * Therefore we must disable the logger (level = never) before messaging.
+             */
+            log_rs().level = uhd::log::off;
+            std::cerr
+                << "Logging failed: " << e.what() << std::endl
+                << "Logging has been disabled for this process" << std::endl
+                ;
+        }
+       
+    }
+}
 
-    _ss << std::endl;
-    try{
-        log_rs().log_to_file(_ss.str());
-    }
-    catch(const std::exception &e){
-        /*!
-         * Critical behavior below.
-         * The following steps must happen in order to avoid a lock-up condition.
-         * This is because the message facility will call into the logging facility.
-         * Therefore we must disable the logger (level = never) before messaging.
-         */
-        log_rs().level = never;
-        UHD_MSG(error)
-            << "Logging failed: " << e.what() << std::endl
-            << "Logging has been disabled for this process" << std::endl
-        ;
-    }
+void
+uhd::_log::log::set_log_level(uhd::log::severity_level level){
+    log_rs().level = level;
+}
+
+void
+uhd::_log::log::set_console_level(uhd::log::severity_level level){
+    log_rs().console_level = level;
+}
+
+void
+uhd::_log::log::set_file_level(uhd::log::severity_level level){
+    log_rs().file_level = level;
 }

@@ -37,7 +37,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 
-#include "usrp3_fw_ctrl_iface.hpp"
+#include "n230_fw_ctrl_iface.hpp"
 #include "n230_clk_pps_ctrl.hpp"
 #include "n230_cores.hpp"
 #include "n230_fpga_defs.h"
@@ -98,7 +98,7 @@ public:     //Methods
     n230_resource_manager(const std::vector<std::string> ip_addrs, const bool safe_mode);
     virtual ~n230_resource_manager();
 
-    static bool is_device_claimed(uhd::usrp::usrp3::usrp3_fw_ctrl_iface::sptr fw_ctrl);
+    static bool is_device_claimed(n230_fw_ctrl_iface::sptr fw_ctrl);
 
     inline bool is_device_claimed() {
         if (_fw_ctrl.get()) {
@@ -276,12 +276,12 @@ private:
     ver_info_t                      _fpga_version;
 
     //Firmware register interface
-    uhd::usrp::usrp3::usrp3_fw_ctrl_iface::sptr   _fw_ctrl;
+    n230_fw_ctrl_iface::sptr        _fw_ctrl;
     uhd::task::sptr                 _claimer_task;
     static boost::mutex             _claimer_mutex;  //All claims and checks in this process are serialized
 
     //Transport
-    uint8_t                  _last_host_enpoint;
+    uint8_t                         _last_host_enpoint;
 
     //Radio settings interface
     radio_ctrl_core_3000::sptr      _core_ctrl;

@@ -25,7 +25,6 @@
 #include <boost/bind.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/msg.hpp>
 #include <boost/make_shared.hpp>
 
 using namespace uhd;
@@ -82,7 +81,7 @@ void x300_impl::post_streamer_hooks(direction_t dir)
         std::vector<rfnoc::x300_radio_ctrl_impl::sptr> radio_ctrl_blks =
             streamer->get_terminator()->find_downstream_node<rfnoc::x300_radio_ctrl_impl>();
         try {
-            //UHD_MSG(status) << "[X300] syncing " << radio_ctrl_blks.size() << " radios " << std::endl;
+            //UHD_LOGGER_INFO("X300") << "[X300] syncing " << radio_ctrl_blks.size() << " radios " ;
             rfnoc::x300_radio_ctrl_impl::synchronize_dacs(radio_ctrl_blks);
         }
         catch(const uhd::io_error &ex) {

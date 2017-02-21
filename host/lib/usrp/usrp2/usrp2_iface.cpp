@@ -20,7 +20,7 @@
 #include "fw_common.h"
 #include "usrp2_iface.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/paths.hpp>
@@ -268,10 +268,10 @@ public:
                 return ctrl_send_and_recv_internal(out_data, lo, hi, CTRL_RECV_TIMEOUT/CTRL_RECV_RETRIES);
             }
             catch(const timeout_error &e){
-                UHD_MSG(error)
+                UHD_LOGGER_ERROR("USRP2")
                     << "Control packet attempt " << i
                     << ", sequence number " << _ctrl_seq_num
-                    << ":\n" << e.what() << std::endl;
+                    << ":\n" << e.what() ;
             }
         }
         throw uhd::runtime_error("link dead: timeout waiting for control packet ACK");

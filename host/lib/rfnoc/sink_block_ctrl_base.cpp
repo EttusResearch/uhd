@@ -18,7 +18,7 @@
 #include "utils.hpp"
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/rfnoc/constants.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -66,7 +66,7 @@ void sink_block_ctrl_base::configure_flow_control_in(
         size_t packets,
         size_t block_port
 ) {
-    UHD_RFNOC_BLOCK_TRACE() << boost::format("sink_block_ctrl_base::configure_flow_control_in(cycles=%d, packets=%d)") % cycles % packets << std::endl;
+    UHD_RFNOC_BLOCK_TRACE() << boost::format("sink_block_ctrl_base::configure_flow_control_in(cycles=%d, packets=%d)") % cycles % packets ;
     uint32_t cycles_word = 0;
     if (cycles) {
         cycles_word = (1<<31) | cycles;

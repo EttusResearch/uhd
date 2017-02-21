@@ -23,6 +23,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <boost/assign.hpp>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
@@ -475,7 +476,10 @@ max287x<max287x_regs_t>::max287x(write_fn func) :
 template <typename max287x_regs_t>
 max287x<max287x_regs_t>::~max287x()
 {
-    shutdown();
+    UHD_SAFE_CALL
+    (
+        shutdown();
+    )
 }
 
 template <typename max287x_regs_t>
@@ -634,13 +638,13 @@ double max287x<max287x_regs_t>::set_frequency(
     //actual frequency calculation
     double actual_freq = double((N + (double(FRAC)/double(MOD)))*ref_freq*(1+int(D))/(R*(1+int(T)))) * fb_divisor / RFdiv;
 
-    UHD_LOGV(rarely)
+    UHD_LOGGER_DEBUG("MAX287X")
         << boost::format("MAX287x: Intermediates: ref=%0.2f, outdiv=%f, fbdiv=%f"
-            ) % ref_freq % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) << std::endl
+            ) % ref_freq % double(RFdiv*2) % double(N + double(FRAC)/double(MOD)) 
         << boost::format("MAX287x: tune: R=%d, BS=%d, N=%d, FRAC=%d, MOD=%d, T=%d, D=%d, RFdiv=%d, type=%s"
-            ) % R % BS % N % FRAC % MOD % T % D % RFdiv % ((is_int_n) ? "Integer-N" : "Fractional") << std::endl
+            ) % R % BS % N % FRAC % MOD % T % D % RFdiv % ((is_int_n) ? "Integer-N" : "Fractional") 
         << boost::format("MAX287x: Frequencies (MHz): REQ=%0.2f, ACT=%0.2f, VCO=%0.2f, PFD=%0.2f, BAND=%0.2f"
-            ) % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) << std::endl;
+            ) % (target_freq/1e6) % (actual_freq/1e6) % (vco_freq/1e6) % (pfd_freq/1e6) % (pfd_freq/BS/1e6) ;
 
     //load the register values
     _regs.rf_output_enable = max287x_regs_t::RF_OUTPUT_ENABLE_ENABLED;

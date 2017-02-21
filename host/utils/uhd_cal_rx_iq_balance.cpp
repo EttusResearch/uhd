@@ -20,7 +20,6 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/algorithm.hpp>
-#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
@@ -184,7 +183,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    UHD_MSG(status) << boost::format("Calibration frequency range: %d MHz -> %d MHz") % (freq_start/1e6) % (freq_stop/1e6) << std::endl;
+    std::cout << boost::format("Calibration frequency range: %d MHz -> %d MHz") % (freq_start/1e6) % (freq_stop/1e6) << std::endl;
 
     for (double rx_lo_i = freq_start; rx_lo_i <= freq_stop; rx_lo_i += freq_step)
     {

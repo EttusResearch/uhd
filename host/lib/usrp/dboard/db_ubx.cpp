@@ -27,7 +27,7 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/msg.hpp>
+
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/assign/list_of.hpp>
@@ -749,7 +749,7 @@ private:
         _ubx_tx_atten_val = ((attn_code & 0x3F) << 10);
         set_gpio_field(TX_GAIN, attn_code);
         write_gpio();
-        UHD_LOGV(rarely) << boost::format("UBX TX Gain: %f dB, Code: %d, IO Bits 0x%04x") % gain % attn_code % _ubx_tx_atten_val << std::endl;
+        UHD_LOGGER_DEBUG("UBX") << boost::format("UBX TX Gain: %f dB, Code: %d, IO Bits 0x%04x") % gain % attn_code % _ubx_tx_atten_val ;
         _tx_gain = gain;
         return gain;
     }
@@ -762,7 +762,7 @@ private:
         _ubx_rx_atten_val = ((attn_code & 0x3F) << 10);
         set_gpio_field(RX_GAIN, attn_code);
         write_gpio();
-        UHD_LOGV(rarely) << boost::format("UBX RX Gain: %f dB, Code: %d, IO Bits 0x%04x") % gain % attn_code % _ubx_rx_atten_val << std::endl;
+        UHD_LOGGER_DEBUG("UBX") << boost::format("UBX RX Gain: %f dB, Code: %d, IO Bits 0x%04x") % gain % attn_code % _ubx_rx_atten_val ;
         _rx_gain = gain;
         return gain;
     }
@@ -786,18 +786,18 @@ private:
         property_tree::sptr subtree = this->get_tx_subtree();
         device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
         is_int_n = boost::iequals(tune_args.get("mode_n",""), "integer");
-        UHD_LOGV(rarely) << boost::format("UBX TX: the requested frequency is %f MHz") % (freq/1e6) << std::endl;
+        UHD_LOGGER_DEBUG("UBX") << boost::format("UBX TX: the requested frequency is %f MHz") % (freq/1e6) ;
         double target_pfd_freq = _tx_target_pfd_freq;
         if (is_int_n and tune_args.has_key("int_n_step"))
         {
             target_pfd_freq = tune_args.cast<double>("int_n_step", _tx_target_pfd_freq);
             if (target_pfd_freq > _tx_target_pfd_freq)
             {
-                UHD_MSG(warning)
+                UHD_LOGGER_WARNING("UBX")
                     << boost::format("Requested int_n_step of %f MHz too large, clipping to %f MHz")
                     % (target_pfd_freq/1e6)
                     % (_tx_target_pfd_freq/1e6)
-                    << std::endl;
+                    ;
                 target_pfd_freq = _tx_target_pfd_freq;
             }
         }
@@ -925,7 +925,7 @@ private:
         _txlo1_freq = freq_lo1;
         _txlo2_freq = freq_lo2;
 
-        UHD_LOGV(rarely) << boost::format("UBX TX: the actual frequency is %f MHz") % (_tx_freq/1e6) << std::endl;
+        UHD_LOGGER_DEBUG("UBX") << boost::format("UBX TX: the actual frequency is %f MHz") % (_tx_freq/1e6) ;
 
         return _tx_freq;
     }
@@ -938,7 +938,7 @@ private:
         double ref_freq = _iface->get_clock_rate(dboard_iface::UNIT_RX);
         bool is_int_n = false;
 
-        UHD_LOGV(rarely) << boost::format("UBX RX: the requested frequency is %f MHz") % (freq/1e6) << std::endl;
+        UHD_LOGGER_DEBUG("UBX") << boost::format("UBX RX: the requested frequency is %f MHz") % (freq/1e6) ;
 
         property_tree::sptr subtree = this->get_rx_subtree();
         device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
@@ -949,11 +949,11 @@ private:
             target_pfd_freq = tune_args.cast<double>("int_n_step", _rx_target_pfd_freq);
             if (target_pfd_freq > _rx_target_pfd_freq)
             {
-                UHD_MSG(warning)
+                UHD_LOGGER_WARNING("UBX")
                     << boost::format("Requested int_n_step of %f Mhz too large, clipping to %f MHz")
                     % (target_pfd_freq/1e6)
                     % (_rx_target_pfd_freq/1e6)
-                    << std::endl;
+                    ;
                 target_pfd_freq = _rx_target_pfd_freq;
             }
         }
@@ -1121,7 +1121,7 @@ private:
         _rxlo1_freq = freq_lo1;
         _rxlo2_freq = freq_lo2;
 
-        UHD_LOGV(rarely) << boost::format("UBX RX: the actual frequency is %f MHz") % (_rx_freq/1e6) << std::endl;
+        UHD_LOGGER_DEBUG("UBX") << boost::format("UBX RX: the actual frequency is %f MHz") % (_rx_freq/1e6) ;
 
         return _rx_freq;
     }

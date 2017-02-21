@@ -17,7 +17,7 @@
 
 #include "dsp_core_utils.hpp"
 #include <uhd/rfnoc/ddc_block_ctrl.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/types/ranges.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -141,10 +141,10 @@ public:
             const uhd::stream_cmd_t &stream_cmd_,
             const size_t chan
     ) {
-        UHD_RFNOC_BLOCK_TRACE() << "ddc_block_ctrl_base::issue_stream_cmd()" << std::endl;
+        UHD_RFNOC_BLOCK_TRACE() << "ddc_block_ctrl_base::issue_stream_cmd()" ;
 
         if (list_upstream_nodes().count(chan) == 0) {
-            UHD_MSG(status) << "No upstream blocks." << std::endl;
+            UHD_LOGGER_INFO("RFNOC") << "No upstream blocks." ;
             return;
         }
 
@@ -232,7 +232,7 @@ private:
         sr_write("M", 1, chan);
 
         if (decim > 1 and hb_enable == 0) {
-            UHD_MSG(warning) << boost::format(
+            UHD_LOGGER_WARNING("RFNOC") << boost::format(
                 "The requested decimation is odd; the user should expect passband CIC rolloff.\n"
                 "Select an even decimation to ensure that a halfband filter is enabled.\n"
                 "Decimations factorable by 4 will enable 2 halfbands, those factorable by 8 will enable 3 halfbands.\n"
