@@ -765,7 +765,7 @@ public:
     rx_streamer::sptr get_rx_stream(const stream_args_t &args) {
         _check_link_rate(args, false);
         if (is_device3()) {
-            UHD_MSG(status) << "[multi_usrp] Getting rx streamer from legacy compat" << std::endl;
+            UHD_LOGGER_DEBUG("MULTI_USRP") << "[multi_usrp] Getting rx streamer from legacy compat" << std::endl;
             return _legacy_compat->get_rx_stream(args);
         }
         return this->get_device()->get_rx_stream(args);

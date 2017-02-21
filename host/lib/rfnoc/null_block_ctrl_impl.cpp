@@ -17,7 +17,7 @@
 
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/rfnoc/null_block_ctrl.hpp>
 
@@ -55,7 +55,7 @@ public:
         int cycs_between_lines = clock_rate / rate - 1;
         if (cycs_between_lines > 0xFFFF) {
             cycs_between_lines = 0xFFFF;
-            UHD_MSG(warning)
+            UHD_LOGGER_WARNING("RFNOC")
                 << str(boost::format("null_block_ctrl: Requested rate %f is larger than possible with the current clock rate (%.2f MHz).") % rate % (clock_rate / 1e6))
                 << std::endl;
         }

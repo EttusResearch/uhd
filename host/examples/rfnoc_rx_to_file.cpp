@@ -397,11 +397,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     //create a receive streamer
-    UHD_MSG(status) << "Samples per packet: " << spp << std::endl;
+    std::cout << "Samples per packet: " << spp << std::endl;
     uhd::stream_args_t stream_args(format, "sc16"); // We should read the wire format from the blocks
     stream_args.args = streamer_args;
     stream_args.args["spp"] = boost::lexical_cast<std::string>(spp);
-    UHD_MSG(status) << "Using streamer args: " << stream_args.args.to_string() << std::endl;
+    std::cout << "Using streamer args: " << stream_args.args.to_string() << std::endl;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     if (total_num_samps == 0) {

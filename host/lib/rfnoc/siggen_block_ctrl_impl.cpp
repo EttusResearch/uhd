@@ -17,7 +17,7 @@
 
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/rfnoc/siggen_block_ctrl.hpp>
 

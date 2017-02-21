@@ -535,7 +535,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     ;
 
     //default some chains on -- needed for setup purposes
-    UHD_LOGGER_ERROR("E300") << "Initializing AD9361 using hard SPI core..." << std::flush;
+    UHD_LOGGER_DEBUG("E300") << "Initializing AD9361 using hard SPI core..." << std::flush;
     codec_ctrl->set_active_chains(true, false, true, false);
     codec_ctrl->set_clock_rate(50e6);
     UHD_LOGGER_DEBUG("E300") << "OK" << std::endl;
@@ -555,13 +555,13 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     // If we have a radio, we must configure its codec control:
     std::vector<rfnoc::block_id_t> radio_ids = find_blocks<rfnoc::e3xx_radio_ctrl_impl>("Radio");
     if (radio_ids.size() > 0) {
-        UHD_MSG(status) << "Initializing Radio Block..." << std::endl;
+        UHD_LOGGER_DEBUG("E300") << "Initializing Radio Block..." << std::endl;
         get_block_ctrl<rfnoc::e3xx_radio_ctrl_impl>(radio_ids[0])->setup_radio(codec_ctrl);
         if (radio_ids.size() != 1) {
             UHD_MSG(warning) << "Too many Radio Blocks found. Using only " << radio_ids[0] << std::endl;
         }
     } else {
-        UHD_MSG(status) << "No Radio Block found. Assuming radio-less operation." << std::endl;
+        UHD_LOGGER_DEBUG("E300") << "No Radio Block found. Assuming radio-less operation." << std::endl;
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -583,7 +583,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     }
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec").set(rx_spec);
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec").set(tx_spec);
-    UHD_MSG(status) << "end of e300_impl()" << std::endl;
+    UHD_LOGGER_DEBUG("E300") << "end of e300_impl()" << std::endl;
 }
 
 e300_impl::~e300_impl(void)

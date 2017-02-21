@@ -19,9 +19,9 @@
 #include "e300_defaults.hpp"
 #include "e300_regs.hpp"
 #include <boost/make_shared.hpp>
-#include <uhd/utils/msg.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/rfnoc/node_ctrl_base.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/make_shared.hpp>
 
@@ -133,11 +133,11 @@ e3xx_radio_ctrl_impl::~e3xx_radio_ctrl_impl()
  ***************************************************************************/
 double e3xx_radio_ctrl_impl::set_rate(double rate)
 {
-    //UHD_MSG(status) << "Setting SPI divider to " << ceil(rate/AD9361_SPI_RATE) << "\n";
+    //UHD_LOGGER_DEBUG("E300") << "Setting SPI divider to " << ceil(rate/AD9361_SPI_RATE) << "\n";
     //_spi->set_divider(ceil(rate/AD9361_SPI_RATE)); // ceil() to prevent less than 1 rounding to 0
-    UHD_MSG(status) << "Asking for clock rate " << rate/1e6 << " MHz\n";
+    UHD_LOGGER_DEBUG("E300") << "Asking for clock rate " << rate/1e6 << " MHz\n";
     double actual_tick_rate = _codec_ctrl->set_clock_rate(rate);
-    UHD_MSG(status) << "Actually got clock rate " << actual_tick_rate/1e6 << " MHz\n";
+    UHD_LOGGER_DEBUG("E300") << "Actually got clock rate " << actual_tick_rate/1e6 << " MHz\n";
 
     actual_tick_rate = radio_ctrl_impl::set_rate(actual_tick_rate);
 
@@ -637,7 +637,7 @@ void e3xx_radio_ctrl_impl::_update_enables(void)
     boost::mutex::scoped_lock lock(_mutex);
     UHD_RFNOC_BLOCK_TRACE() << "e3xx_radio_ctrl_impl::_update_enables() " << std::endl;
     if (not _codec_ctrl) {
-        UHD_MSG(warning) << "Attempting to access CODEC controls before setting up the radios." << std::endl;
+        UHD_LOGGER_WARNING("E300") << "Attempting to access CODEC controls before setting up the radios." << std::endl;
         return;
     }
 
@@ -680,7 +680,7 @@ void e3xx_radio_ctrl_impl::_update_enables(void)
 void e3xx_radio_ctrl_impl::_update_time_source(const std::string &source)
 {
     boost::mutex::scoped_lock lock(_mutex);
-    UHD_MSG(status) << boost::format("Setting time source to %s") % source << std::endl;
+    UHD_LOGGER_DEBUG("E300") << boost::format("Setting time source to %s") % source << std::endl;
     if (source == "none" or source == "internal") {
         _misc.pps_sel = global_regs::PPS_INT;
 #ifdef E300_GPSD

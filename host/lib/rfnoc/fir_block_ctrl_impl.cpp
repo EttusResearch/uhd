@@ -17,7 +17,7 @@
 
 #include <uhd/rfnoc/fir_block_ctrl.hpp>
 #include <uhd/convert.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -33,7 +33,7 @@ public:
         _item_type("sc16") // We only support sc16 in this block
     {
         _n_taps = uint32_t(user_reg_read64(RB_NUM_TAPS));
-        UHD_MSG(status) << "fir_block::fir_block() n_taps ==" << _n_taps << std::endl;
+        UHD_LOGGER_DEBUG("RFNOC") << "fir_block::fir_block() n_taps ==" << _n_taps << std::endl;
         UHD_ASSERT_THROW(_n_taps);
 
         // Default to Dirac impulse

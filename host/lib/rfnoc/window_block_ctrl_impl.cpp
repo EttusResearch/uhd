@@ -17,7 +17,7 @@
 
 #include <uhd/rfnoc/window_block_ctrl.hpp>
 #include <uhd/convert.hpp>
-#include <uhd/utils/msg.hpp>
+#include <uhd/utils/log.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -29,7 +29,7 @@ public:
         _bpi(uhd::convert::get_bytes_per_item("sc16"))
     {
         _max_len = uint32_t(user_reg_read64(RB_MAX_WINDOW_LEN));
-        UHD_MSG(status) << "window_block::window_block() max_len ==" << _max_len << std::endl;
+        UHD_LOGGER_DEBUG("RFNOC") << "window_block::window_block() max_len ==" << _max_len << std::endl;
         UHD_ASSERT_THROW(_max_len);
 
         // TODO we need a coercer to check that spp on the prop tree doesn't get set to anything invalid

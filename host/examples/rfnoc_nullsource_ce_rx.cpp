@@ -380,7 +380,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     uhd::stream_args_t stream_args(format, "sc16");
     stream_args.args = stream_args_args;
     stream_args.args["spp"] = boost::lexical_cast<std::string>(spp);
-    UHD_MSG(status) << "Using streamer args: " << stream_args.args.to_string() << std::endl;
+    UHD_LOGGER_DEBUG("RFNOC") << "Using streamer args: " << stream_args.args.to_string() << std::endl;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
 #define recv_to_file_args() \
