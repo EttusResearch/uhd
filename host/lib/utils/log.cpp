@@ -39,7 +39,7 @@ public:
     uhd::log::severity_level file_level;
     uhd::log::severity_level console_level;
 
-    log_resource_type(void){
+    log_resource_type(void): level(uhd::log::info), file_level(uhd::log::info), console_level(uhd::log::info){
 
         //file lock pointer must be null
         _file_lock = NULL;
@@ -54,13 +54,13 @@ public:
 
         //allow override from macro definition
 #ifdef UHD_LOG_MIN_LEVEL
-        this->level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_MIN_LEVEL));
+        this->level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_MIN_LEVEL), this->level);
 #endif
 #if defined(UHD_LOG_FILE_LEVEL) && defined(UHD_LOG_FILE_PATH)
-        this->file_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_FILE_LEVEL));
+        this->file_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_FILE_LEVEL), this->file_level);
 #endif
 #ifdef UHD_LOG_CONSOLE_LEVEL
-        this->console_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_CONSOLE_LEVEL));
+        this->console_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_CONSOLE_LEVEL), this->console_level);
 #endif
 #ifdef UHD_LOG_FILE
         this->log_file_target = BOOST_STRINGIZE(UHD_LOG_FILE);
@@ -69,13 +69,13 @@ public:
 
         //allow override from environment variables
         const char * log_level_env = std::getenv("UHD_LOG_LEVEL");
-        if (log_level_env != NULL && log_level_env[0] != '\0') this->level = _get_log_level(log_level_env);
+        if (log_level_env != NULL && log_level_env[0] != '\0') this->level = _get_log_level(log_level_env, this->level);
 
         const char * log_file_level_env = std::getenv("UHD_LOG_FILE_LEVEL");
-        if (log_file_level_env != NULL && log_file_level_env[0] != '\0') this->file_level = _get_log_level(log_file_level_env);
+        if (log_file_level_env != NULL && log_file_level_env[0] != '\0') this->file_level = _get_log_level(log_file_level_env, this->file_level);
 
         const char * log_console_level_env = std::getenv("UHD_LOG_CONSOLE_LEVEL");
-        if (log_console_level_env != NULL && log_console_level_env[0] != '\0') this->console_level = _get_log_level(log_console_level_env);
+        if (log_console_level_env != NULL && log_console_level_env[0] != '\0') this->console_level = _get_log_level(log_console_level_env, this->console_level);
 
         const char* log_file_env = std::getenv("UHD_LOG_FILE");
         if ((log_file_env != NULL) && (log_file_env[0] != '\0')) {
@@ -109,13 +109,16 @@ private:
     //! set the log level from a string that is either a digit or an enum name
     bool file_logging;
     std::string log_file_target;
-    uhd::log::severity_level _get_log_level(const std::string &log_level_str){
+    uhd::log::severity_level _get_log_level(const std::string &log_level_str,
+                                            const uhd::log::severity_level &previous_level){
         if (std::isdigit(log_level_str[0])) {
             const uhd::log::severity_level log_level_num =
                 uhd::log::severity_level(std::stoi(log_level_str));
             if (log_level_num >= uhd::log::trace and
                 log_level_num <= uhd::log::fatal) {
                 return log_level_num;
+            }else{
+                return previous_level;
             }
         }
 
@@ -127,7 +130,8 @@ private:
         if_loglevel_equal(warning);
         if_loglevel_equal(error);
         if_loglevel_equal(fatal);
-        return uhd::log::off;
+        if_loglevel_equal(off);
+        return previous_level;
     }
 
     //file stream and lock:
