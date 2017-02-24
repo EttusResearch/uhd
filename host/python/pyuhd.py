@@ -24,15 +24,29 @@ class multi_usrp(object):
         self.usrp = lib.multi_usrp.multi_usrp.make(args)
 
     def __del__(self):
+        # Help the garbage collection
         self.usrp = None
 
-    def set_rx_rate(self, rate):
-        for chan in xrange(self.usrp.get_rx_num_channels()):
+    def set_rx_rate(self, rate, chan=None):
+        if chan is None:
+            for c in xrange(self.usrp.get_rx_num_channels()):
+                self.usrp.set_rx_rate(rate, c)
+        elif isinstance(chan, list):
+            for c in chan:
+                self.usrp.set_rx_rate(rate, c)
+        else:
             self.usrp.set_rx_rate(rate, chan)
 
-    def set_tx_rate(self, rate):
-        for chan in xrange(self.usrp.get_tx_num_channels()):
+    def set_tx_rate(self, rate, chan=None):
+        if chan is None:
+            for chan in xrange(self.usrp.get_tx_num_channels()):
+                self.usrp.set_tx_rate(rate, chan)
+        elif isinstance(chan, list):
+            for c in chan:
+                self.usrp.set_tx_rate(rate, c)
+        else:
             self.usrp.set_tx_rate(rate, chan)
+
 
     def recv_num_samps(self, num_samps, freq, rate=1e6, channels=[0], gain=10):
         result = np.empty((len(channels), num_samps), dtype=np.complex64)

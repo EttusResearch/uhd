@@ -15,6 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <uhd/types/dict.hpp>
+#include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/tune_result.hpp>
 #include <uhd/types/tune_request.hpp>
@@ -32,14 +34,14 @@ namespace bp = boost::python;
 
 
 size_t Pyrecv(uhd::rx_streamer* rx_stream, bp::object& np_array, uhd::rx_metadata_t& rx_metadata){
-    // Get a numpy array object from given python object no sanity checking
+    // Get a numpy array object from given python object !!no sanity checking possible!!
     PyObject* array_obj = PyArray_FROM_OF(np_array.ptr(),NPY_ARRAY_CARRAY);
     PyArrayObject* array_type_obj = reinterpret_cast<PyArrayObject*>(array_obj);
 
     // Get dimensions of the numpy array
     const size_t dims = PyArray_NDIM(array_type_obj);
     const npy_intp* shape = PyArray_SHAPE(array_type_obj);
-    // How many bytes to jump to get to the next element of this stride
+    // How many bytes to jump to get to the next element of this stride (next row)
     const npy_intp* strides = PyArray_STRIDES(array_type_obj);
     const size_t channels = rx_stream->get_num_channels();
 
@@ -75,7 +77,7 @@ size_t Pyrecv(uhd::rx_streamer* rx_stream, bp::object& np_array, uhd::rx_metadat
 };
 
 size_t Pysend(uhd::tx_streamer* tx_stream, bp::object& np_array, uhd::tx_metadata_t& tx_metadata){
-    // Get a numpy array object from given python object no sanity checking
+    // Get a numpy array object from given python object !!no sanity checking possible!!
     PyObject* array_obj = PyArray_FROM_OF(np_array.ptr(),NPY_ARRAY_CARRAY);
     PyArrayObject* array_type_obj = reinterpret_cast<PyArrayObject*>(array_obj);
 
@@ -116,7 +118,7 @@ size_t Pysend(uhd::tx_streamer* tx_stream, bp::object& np_array, uhd::tx_metadat
     return result;
 };
 
-// Manual wrapping beccause of non-standard overloading
+// Manual wrapping because of non-standard overloading
 void set_rx_gain_conv(uhd::usrp::multi_usrp* multi_usrp, double gain, size_t chan){
     multi_usrp->set_rx_gain(gain, chan);
 }
@@ -174,12 +176,39 @@ struct iterable_converter
 };
 
 
+template<typename Dtype1, typename Dtype2>
+struct uhd_to_python_dict
+{
+    static PyObject* convert(uhd::dict<Dtype1, Dtype2> const& input_dict)
+    {
+        bp::dict py_dict;
+        for (const auto& key: input_dict.keys()){
+            py_dict[key] = input_dict[key];
+        }
+        return bp::incref(py_dict.ptr());
+    }
+
+};
+
+template<typename Container>
+struct iterable_to_python_list
+{
+    static PyObject* convert(Container const& input)
+    {
+        bp::list py_list;
+        for (const auto& element: input){
+            py_list.append(element);
+        }
+        return bp::incref(py_list.ptr());
+    }
+};
+
+
 void export_multi_usrp(void)
 {
-    bp::object multi_usrp_module(bp::handle<>(bp::borrowed(PyImport_AddModule("pyuhd.multi_usrp"))));
-    // make "from mypackage import IO" work
+    //Register submodule multi_usrp
+    bp::object multi_usrp_module(bp::handle<>(bp::borrowed(PyImport_AddModule("libpyuhd.multi_usrp"))));
     bp::scope().attr("multi_usrp") = multi_usrp_module;
-    // set the current scope to the new sub-module
     bp::scope io_scope = multi_usrp_module;
 
     bp::class_<uhd::usrp::multi_usrp, boost::shared_ptr<uhd::usrp::multi_usrp>, boost::noncopyable>("multi_usrp", bp::no_init)
@@ -199,6 +228,106 @@ void export_multi_usrp(void)
         .def("set_tx_freq", &uhd::usrp::multi_usrp::set_tx_freq)
         .def("set_tx_gain", &set_tx_gain_conv)
         .def("set_tx_rate", &uhd::usrp::multi_usrp::set_tx_rate)
+        .def("get_usrp_rx_info", &uhd::usrp::multi_usrp::get_usrp_rx_info)
+        .def("get_usrp_tx_info", &uhd::usrp::multi_usrp::get_usrp_tx_info)
+        .def("set_master_clock_rate", &uhd::usrp::multi_usrp::set_master_clock_rate)
+        .def("get_master_clock_rate", &uhd::usrp::multi_usrp::get_master_clock_rate)
+        .def("get_pp_string", &uhd::usrp::multi_usrp::get_pp_string)
+        .def("get_mboard_name", &uhd::usrp::multi_usrp::get_mboard_name)
+        .def("get_time_now", &uhd::usrp::multi_usrp::get_time_now)
+        .def("get_time_last_pps", &uhd::usrp::multi_usrp::get_time_last_pps)
+        .def("set_time_now", &uhd::usrp::multi_usrp::set_time_now)
+        .def("set_time_next_pps", &uhd::usrp::multi_usrp::set_time_next_pps)
+        .def("set_time_unknown_pps", &uhd::usrp::multi_usrp::set_time_unknown_pps)
+        .def("get_time_synchronized", &uhd::usrp::multi_usrp::get_time_synchronized)
+        .def("set_command_time", &uhd::usrp::multi_usrp::set_command_time)
+        .def("clear_command_time", &uhd::usrp::multi_usrp::clear_command_time)
+        .def("issue_stream_cmd", &uhd::usrp::multi_usrp::issue_stream_cmd)
+        .def("set_clock_config", &uhd::usrp::multi_usrp::set_clock_config)
+        .def("set_time_source", &uhd::usrp::multi_usrp::set_time_source)
+        .def("get_time_source", &uhd::usrp::multi_usrp::get_time_source)
+        .def("get_time_sources", &uhd::usrp::multi_usrp::get_time_sources)
+        .def("set_clock_source", &uhd::usrp::multi_usrp::set_clock_source)
+        .def("get_clock_source", &uhd::usrp::multi_usrp::get_clock_source)
+        .def("get_clock_sources", &uhd::usrp::multi_usrp::get_clock_sources)
+        .def("set_clock_source_out", &uhd::usrp::multi_usrp::set_clock_source_out)
+        .def("set_time_source_out", &uhd::usrp::multi_usrp::set_time_source_out)
+        .def("get_num_mboards", &uhd::usrp::multi_usrp::get_num_mboards)
+        .def("get_mboard_sensor", &uhd::usrp::multi_usrp::get_mboard_sensor) // TODO sensor_value_t
+        .def("get_mboard_sensor_names", &uhd::usrp::multi_usrp::get_mboard_sensor_names)
+        .def("set_user_register", &uhd::usrp::multi_usrp::set_user_register)
+
+        // RX methods
+        .def("set_rx_subdev_spec", &uhd::usrp::multi_usrp::set_rx_subdev_spec) // TODO subdev_spec_t
+        .def("get_rx_subdev_spec", &uhd::usrp::multi_usrp::get_rx_subdev_spec) // TODO subdev_spec_t
+        .def("get_rx_subdev_name", &uhd::usrp::multi_usrp::get_rx_subdev_name)
+        .def("get_rx_rates", &uhd::usrp::multi_usrp::get_rx_rates)
+        .def("get_rx_freq_range", &uhd::usrp::multi_usrp::get_rx_freq_range)
+        .def("get_fe_rx_freq_range", &uhd::usrp::multi_usrp::get_fe_rx_freq_range)
+        .def("get_rx_lo_names", &uhd::usrp::multi_usrp::get_rx_lo_names)
+        .def("set_rx_lo_source", &uhd::usrp::multi_usrp::set_rx_lo_source)
+        .def("get_rx_lo_source", &uhd::usrp::multi_usrp::get_rx_lo_source)
+        .def("get_rx_lo_sources", &uhd::usrp::multi_usrp::get_rx_lo_sources)
+        .def("set_rx_lo_export_enabled", &uhd::usrp::multi_usrp::set_rx_lo_export_enabled)
+        .def("get_rx_lo_export_enabled", &uhd::usrp::multi_usrp::get_rx_lo_export_enabled)
+        .def("set_rx_lo_freq", &uhd::usrp::multi_usrp::set_rx_lo_freq)
+        .def("get_rx_lo_freq", &uhd::usrp::multi_usrp::get_rx_lo_freq)
+        .def("get_rx_lo_freq_range", &uhd::usrp::multi_usrp::get_rx_lo_freq_range)
+        .def("set_normalized_rx_gain", &uhd::usrp::multi_usrp::set_normalized_rx_gain)
+        .def("get_normalized_rx_gain", &uhd::usrp::multi_usrp::get_normalized_rx_gain)
+        .def("set_rx_agc", &uhd::usrp::multi_usrp::set_rx_agc)
+        //get_rx_gain (special wrapper)
+        //.def("get_rx_gain_range", &uhd::usrp::multi_usrp::get_rx_gain_range) // (special wrapper)
+        .def("get_rx_gain_names", &uhd::usrp::multi_usrp::get_rx_gain_names)
+        .def("set_rx_antenna", &uhd::usrp::multi_usrp::set_rx_antenna)
+        .def("get_rx_antenna", &uhd::usrp::multi_usrp::get_rx_antenna)
+        .def("get_rx_antennas", &uhd::usrp::multi_usrp::get_rx_antennas)
+        .def("set_rx_bandwidth", &uhd::usrp::multi_usrp::set_rx_bandwidth)
+        .def("get_rx_bandwidth", &uhd::usrp::multi_usrp::get_rx_bandwidth)
+        .def("get_rx_bandwidth_range", &uhd::usrp::multi_usrp::get_rx_bandwidth_range) 
+        .def("get_rx_dboard_iface", &uhd::usrp::multi_usrp::get_rx_dboard_iface) // TODO dboard_iface::sptr
+        .def("get_rx_sensor", &uhd::usrp::multi_usrp::get_rx_sensor) // TODO sensor_value_t
+        .def("get_rx_sensor_names", &uhd::usrp::multi_usrp::get_rx_sensor_names)
+        //set_rx_dc_offset (special wrapper)
+        //set_rx_iq_balance (special wrapper)
+
+        // TX methods
+        .def("set_tx_subdev_spec", &uhd::usrp::multi_usrp::set_tx_subdev_spec) // TODO subdev_spec_t
+        .def("get_tx_subdev_spec", &uhd::usrp::multi_usrp::get_tx_subdev_spec) // TODO subdev_spec_t
+        .def("get_tx_subdev_name", &uhd::usrp::multi_usrp::get_tx_subdev_name)
+        .def("get_tx_rates", &uhd::usrp::multi_usrp::get_tx_rates)
+        .def("get_tx_freq_range", &uhd::usrp::multi_usrp::get_tx_freq_range)
+        .def("get_fe_tx_freq_range", &uhd::usrp::multi_usrp::get_fe_tx_freq_range)
+        .def("set_normalized_tx_gain", &uhd::usrp::multi_usrp::set_normalized_tx_gain)
+        .def("get_normalized_tx_gain", &uhd::usrp::multi_usrp::get_normalized_tx_gain)
+        //get_tx_gain (special wrapper)
+        //.def("get_tx_gain_range", &uhd::usrp::multi_usrp::get_tx_gain_range) //(special wrapper)
+        .def("get_tx_gain_names", &uhd::usrp::multi_usrp::get_tx_gain_names)
+        .def("set_tx_antenna", &uhd::usrp::multi_usrp::set_tx_antenna)
+        .def("get_tx_antenna", &uhd::usrp::multi_usrp::get_tx_antenna)
+        .def("get_tx_antennas", &uhd::usrp::multi_usrp::get_tx_antennas)
+        .def("set_tx_bandwidth", &uhd::usrp::multi_usrp::set_tx_bandwidth)
+        .def("get_tx_bandwidth", &uhd::usrp::multi_usrp::get_tx_bandwidth)
+        .def("get_tx_bandwidth_range", &uhd::usrp::multi_usrp::get_tx_bandwidth_range) 
+        .def("get_tx_dboard_iface", &uhd::usrp::multi_usrp::get_tx_dboard_iface) // TODO dboard_iface::sptr
+        .def("get_tx_sensor", &uhd::usrp::multi_usrp::get_tx_sensor) // TODO sensor_value_t
+        .def("get_tx_sensor_names", &uhd::usrp::multi_usrp::get_tx_sensor_names)
+        //set_tx_dc_offset (special wrapper)
+        //set_tx_iq_balance (special wrapper)
+
+        // GPIO methods
+        .def("get_gpio_banks", &uhd::usrp::multi_usrp::get_gpio_banks)
+        .def("set_gpio_attr", &uhd::usrp::multi_usrp::set_gpio_attr)
+        .def("get_gpio_attr", &uhd::usrp::multi_usrp::get_gpio_attr)
+        .def("enumerate_registers", &uhd::usrp::multi_usrp::enumerate_registers)
+        .def("get_register_info", &uhd::usrp::multi_usrp::get_register_info) // TODO register_info_t
+        .def("write_register", &uhd::usrp::multi_usrp::write_register)
+        .def("read_register", &uhd::usrp::multi_usrp::read_register)
+
+        //Filter API methods
+        .def("get_filter_names", &uhd::usrp::multi_usrp::get_filter_names)
+        .def("get_filter", &uhd::usrp::multi_usrp::get_filter)
+        .def("set_filter", &uhd::usrp::multi_usrp::set_filter)
         ;
 
     bp::class_<uhd::rx_streamer, boost::shared_ptr<uhd::rx_streamer>, boost::noncopyable>("rx_streamer", bp::no_init)
@@ -218,11 +347,9 @@ void export_multi_usrp(void)
 
 void export_types(void)
 {
-
-    bp::object types_module(bp::handle<>(bp::borrowed(PyImport_AddModule("pyuhd.types"))));
-    // make "from mypackage import IO" work
+    //Register submodule types
+    bp::object types_module(bp::handle<>(bp::borrowed(PyImport_AddModule("libpyuhd.types"))));
     bp::scope().attr("types") = types_module;
-    // set the current scope to the new sub-module
     bp::scope io_scope = types_module;
 
     bp::implicitly_convertible<std::string, uhd::device_addr_t>();
@@ -298,20 +425,75 @@ void export_types(void)
     bp::class_<uhd::tune_result_t>("tune_result", bp::init<>())
         ;
 
+    bp::class_<uhd::range_t>("range", bp::init<double>())
+        .def(bp::init<double, double, double>())
+        .def("start", &uhd::range_t::start)
+        .def("stop", &uhd::range_t::stop)
+        .def("step", &uhd::range_t::step)
+        .def("__str__", &uhd::range_t::to_pp_string)
+        ;
+
+    bp::class_<uhd::meta_range_t>("meta_range", bp::init<>())
+        .def(bp::init<double, double, double>())
+        .def("start", &uhd::meta_range_t::start)
+        .def("stop", &uhd::meta_range_t::stop)
+        .def("step", &uhd::meta_range_t::step)
+        .def("clip", &uhd::meta_range_t::clip)
+        .def("__str__", &uhd::meta_range_t::to_pp_string)
+        ;
+}
+
+void export_filter()
+{
+    //Register submodule filter
+    bp::object filter_module(bp::handle<>(bp::borrowed(PyImport_AddModule("libpyuhd.filter"))));
+    bp::scope().attr("filter") = filter_module;
+    bp::scope io_scope = filter_module;
+
+    bp::enum_<uhd::filter_info_base::filter_type>("filter_type")
+        .value("analog_low_pass", uhd::filter_info_base::ANALOG_LOW_PASS)
+        .value("analog_band_pass", uhd::filter_info_base::ANALOG_BAND_PASS)
+        .value("digital_i16", uhd::filter_info_base::DIGITAL_I16)
+        .value("digital_fir_i16", uhd::filter_info_base::DIGITAL_FIR_I16)
+        ;
+
+    bp::class_<uhd::filter_info_base, boost::shared_ptr<uhd::filter_info_base> >("filter_info_base", bp::init<uhd::filter_info_base::filter_type, bool, size_t>())
+    .def("is_bypassed", &uhd::filter_info_base::is_bypassed)
+    .def("get_type", &uhd::filter_info_base::get_type)
+    .def("__str__", &uhd::filter_info_base::to_pp_string)
+    ;
+
+    bp::class_<uhd::analog_filter_base, boost::shared_ptr<uhd::analog_filter_base>, bp::bases<uhd::filter_info_base> >("analog_filter_base", bp::init< uhd::filter_info_base::filter_type, bool, size_t, std::string>())
+        .def("get_analog_type", &uhd::analog_filter_base::get_analog_type, bp::return_value_policy<bp::copy_const_reference>() )
+    ;
+
+    bp::class_<uhd::analog_filter_lp, boost::shared_ptr<uhd::analog_filter_lp>, bp::bases<uhd::analog_filter_base> >("analog_filter_lp", bp::init<uhd::filter_info_base::filter_type, bool, size_t, const std::string, double, double>())
+        .def("get_cutoff", &uhd::analog_filter_lp::get_cutoff)
+        .def("get_rolloff", &uhd::analog_filter_lp::get_rolloff)
+        .def("set_cutoff", &uhd::analog_filter_lp::set_cutoff)
+        ;
+
 }
 
 
 BOOST_PYTHON_MODULE(libpyuhd)
 {
     bp::object package = bp::scope();
-    package.attr("__path__") = "pyuhd";
+    package.attr("__path__") = "libpyuhd";
     iterable_converter()
         .from_python<std::vector<double> >()
         .from_python<std::vector<int> >()
         .from_python<std::vector<size_t> >()
         ;
+
+    bp::to_python_converter<uhd::dict<std::string, std::string>,
+                            uhd_to_python_dict<std::string, std::string>, false >();
+    bp::to_python_converter<std::vector<std::string>,
+                            iterable_to_python_list<std::vector<std::string> >, false >();
     export_multi_usrp();
     export_types();
+    export_filter();
+    //For numpy initialization
     import_array();
 }
 
