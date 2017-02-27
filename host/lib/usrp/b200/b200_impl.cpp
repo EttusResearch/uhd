@@ -886,7 +886,7 @@ void b200_impl::setup_radio(const size_t dspno)
 void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
 {
     bool test_fail = false;
-    UHD_LOGGER_INFO("B200") << "Performing register loopback test... " << std::flush;
+    UHD_LOGGER_INFO("B200") << "Performing register loopback test... ";
     size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
@@ -895,7 +895,7 @@ void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
         test_fail = iface->peek32(RB32_TEST) != uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
-    UHD_LOGGER_INFO("B200") << ((test_fail)? "fail" : "pass") ;
+    UHD_LOGGER_INFO("B200") << "Register loopback test " << ((test_fail)? "failed" : "passed") ;
 }
 
 /***********************************************************************
