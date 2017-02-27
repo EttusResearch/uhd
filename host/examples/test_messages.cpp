@@ -74,8 +74,8 @@ bool test_late_command_message(uhd::usrp::multi_usrp::sptr usrp, uhd::rx_streame
     default:
         std::cout << boost::format(
             "failed:\n"
-            "    Got unexpected error code 0x%x, nsamps %u.\n"
-        ) % md.error_code % nsamps << std::endl;
+            "    Got unexpected error code 0x%x (%s), nsamps %u.\n"
+        ) % md.error_code % md.strerror() % nsamps << std::endl;
         return false;
     }
 }
@@ -122,8 +122,8 @@ bool test_broken_chain_message(UHD_UNUSED(uhd::usrp::multi_usrp::sptr usrp), uhd
     default:
         std::cout << boost::format(
             "failed:\n"
-            "    Got unexpected error code 0x%x.\n"
-        ) % md.error_code << std::endl;
+            "    Got unexpected error code 0x%x (%s).\n"
+        ) % md.error_code % md.strerror() << std::endl;
         return false;
     }
 }
