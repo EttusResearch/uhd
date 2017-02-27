@@ -125,7 +125,6 @@ void device3_impl::enumerate_rfnoc_blocks(
                 xport.send_sid,
                 str(boost::format("CE_%02d_Port_%02X") % i % ctrl_sid.get_dst_endpoint())
         );
-        UHD_DEVICE3_LOG() << "OK" ;
         uint64_t noc_id = ctrl->peek64(uhd::rfnoc::SR_READBACK_REG_ID);
         UHD_DEVICE3_LOG() << str(boost::format("Port %d: Found NoC-Block with ID %016X.") % int(ctrl_sid.get_dst_endpoint()) % noc_id) ;
         uhd::rfnoc::make_args_t make_args;

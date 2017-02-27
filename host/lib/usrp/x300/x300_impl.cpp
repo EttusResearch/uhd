@@ -443,7 +443,7 @@ void x300_impl::mboard_members_t::discover_eth(
         if (std::find(mb_eeprom_addrs.begin(), mb_eeprom_addrs.end(), mb_eeprom[key]) != mb_eeprom_addrs.end()) {
             UHD_LOGGER_WARNING("X300") << str(boost::format(
                 "Duplicate IP address %s found in mboard EEPROM. "
-                "Device may not function properly.\nView and reprogram the values "
+                "Device may not function properly. View and reprogram the values "
                 "using the usrp_burn_mb_eeprom utility.") % mb_eeprom[key]);
         }
         mb_eeprom_addrs.push_back(mb_eeprom[key]);
@@ -473,8 +473,8 @@ void x300_impl::mboard_members_t::discover_eth(
         if (conn_iface.type == X300_IFACE_NONE) {
             UHD_LOGGER_WARNING("X300") << str(boost::format(
                 "Address %s not found in mboard EEPROM. Address may be wrong or "
-                "the EEPROM may be corrupt.\n Attempting to continue with default "
-                "IP addresses.\n") % conn_iface.addr
+                "the EEPROM may be corrupt. Attempting to continue with default "
+                "IP addresses.") % conn_iface.addr
             );
 
             if (addr == boost::asio::ip::address_v4(

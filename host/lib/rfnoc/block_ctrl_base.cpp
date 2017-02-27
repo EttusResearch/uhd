@@ -253,7 +253,6 @@ void block_ctrl_base::sr_write(const std::string &reg, const uint32_t data, cons
         }
         reg_addr = uint32_t(_tree->access<size_t>(_root_path / "registers" / "sr" / reg).get());
     }
-    UHD_BLOCK_LOG() << "  ";
     UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%s, %08X) ==> ") % reg % data ;
     return sr_write(reg_addr, data, port);
 }
