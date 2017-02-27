@@ -111,15 +111,13 @@ public:
             (_rb_size.num_rx_frames + _rb_size.num_tx_frames) * _frame_size;
 
         //print sizes summary
-        UHD_LOG
-            << "page_size:          " << page_size                   
-            << "frame_size:         " << _frame_size                 
-            << "num_pages_rx_flags: " << _rb_size.num_pages_rx_flags 
-            << "num_rx_frames:      " << _rb_size.num_rx_frames      
-            << "num_pages_tx_flags: " << _rb_size.num_pages_tx_flags 
-            << "num_tx_frames:      " << _rb_size.num_tx_frames      
-            << "map_size:           " << _map_size                   
-        ;
+        UHD_LOGGER_DEBUG("E100") << "page_size:          " << page_size;
+        UHD_LOGGER_DEBUG("E100") << "frame_size:         " << _frame_size;
+        UHD_LOGGER_DEBUG("E100") << "num_pages_rx_flags: " << _rb_size.num_pages_rx_flags;
+        UHD_LOGGER_DEBUG("E100") << "num_rx_frames:      " << _rb_size.num_rx_frames;
+        UHD_LOGGER_DEBUG("E100") << "num_pages_tx_flags: " << _rb_size.num_pages_tx_flags;
+        UHD_LOGGER_DEBUG("E100") << "num_tx_frames:      " << _rb_size.num_tx_frames;
+        UHD_LOGGER_DEBUG("E100") << "map_size:           " << _map_size;
 
         //call mmap to get the memory
         _mapped_mem = ::mmap(
@@ -134,12 +132,10 @@ public:
         size_t send_buff_off = send_info_off + (_rb_size.num_pages_tx_flags * page_size);
 
         //print offset summary
-        UHD_LOG
-            << "recv_info_off: " << recv_info_off 
-            << "recv_buff_off: " << recv_buff_off 
-            << "send_info_off: " << send_info_off 
-            << "send_buff_off: " << send_buff_off 
-        ;
+        UHD_LOGGER_DEBUG("E100") << "recv_info_off: " << recv_info_off;
+        UHD_LOGGER_DEBUG("E100") << "recv_buff_off: " << recv_buff_off;
+        UHD_LOGGER_DEBUG("E100") << "send_info_off: " << send_info_off;
+        UHD_LOGGER_DEBUG("E100") << "send_buff_off: " << send_buff_off;
 
         //pointers to sections in the mapped memory
         ring_buffer_info (*recv_info)[], (*send_info)[];
