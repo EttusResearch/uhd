@@ -14,6 +14,9 @@
 # Project setup
 ########################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+IF(POLICY CMP0048)
+  CMAKE_POLICY(SET CMP0048 NEW) # Suppress Version warnings
+ENDIF(POLICY CMP0048)
 PROJECT(UHD CXX C)
 ENABLE_TESTING()
 
