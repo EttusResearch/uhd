@@ -30,9 +30,7 @@
 #include <boost/thread/mutex.hpp>
 #include <ctime>
 #include <string>
-#if defined(WIN32) || defined(MINGW)
-#define timegm _mkgmtime
-#endif
+#include <boost/date_time.hpp>
 
 #include "boost/tuple/tuple.hpp"
 
@@ -351,18 +349,16 @@ private:
                 throw uhd::value_error(str(boost::format("Invalid response \"%s\"") % reply));
             }
 
-            time_t raw_time =  std::time(nullptr);
-            struct tm *raw_date = std::gmtime(&raw_time); // Initialize tm struct
-            raw_date->tm_year = std::stoi(datestr.substr(4, 2)) + 2000 - 1900; // years since 1900
-            raw_date->tm_mon = std::stoi(datestr.substr(2, 2)) - 1; // months since january (0-11)
-            raw_date->tm_mday = std::stoi(datestr.substr(0, 2)); // dom (1-31)
-            raw_date->tm_hour = std::stoi(timestr.substr(0, 2));
-            raw_date->tm_min = std::stoi(timestr.substr(2, 2));
-            raw_date->tm_sec = std::stoi(timestr.substr(4,2));
-            std::time_t gps_date = timegm(raw_date); // GPS time is UTC
+            struct tm raw_date;
+            raw_date.tm_year = std::stoi(datestr.substr(4, 2)) + 2000 - 1900; // years since 1900
+            raw_date.tm_mon = std::stoi(datestr.substr(2, 2)) - 1; // months since january (0-11)
+            raw_date.tm_mday = std::stoi(datestr.substr(0, 2)); // dom (1-31)
+            raw_date.tm_hour = std::stoi(timestr.substr(0, 2));
+            raw_date.tm_min = std::stoi(timestr.substr(2, 2));
+            raw_date.tm_sec = std::stoi(timestr.substr(4,2));
+            gps_time = boost::posix_time::ptime_from_tm(raw_date);
 
-            gps_time = boost::posix_time::from_time_t(gps_date);
-
+            UHD_LOG_TRACE("GPS", "GPS time: " + boost::posix_time::to_simple_string(gps_time));
             return gps_time;
 
         } catch(std::exception &e) {
