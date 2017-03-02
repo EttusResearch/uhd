@@ -67,12 +67,12 @@ class uhd_benchmark_rate_test(uhd_example_test_case):
             run_results['rel_tx_samples_error'] = 1.0 * abs(run_results['num_tx_samples'] - test_args.get('tx_buffer',0) - expected_samples) / expected_samples
         else:
             run_results['rel_tx_samples_error'] = 100
-        match = re.search(r'(Num sequence errors):\s*(.*)', app.stdout)
+        match = re.search(r'(Num sequence errors \(Tx\)):\s*(.*)', app.stdout)
         run_results['num_tx_seqerrs'] = int(match.group(2)) if match else -1
         match = re.search(r'(Num underflows detected):\s*(.*)', app.stdout)
         run_results['num_tx_underruns'] = int(match.group(2)) if match else -1
-        match = re.search(r'(Num timeouts):\s*(.*)', app.stdout)
-        run_results['num_timeouts'] = int(match.group(2)) if match else -1
+        match = re.search(r'(Num timeouts \(Rx\)):\s*(.*)', app.stdout)
+        run_results['num_timeouts_rx'] = int(match.group(2)) if match else -1
         run_results['passed'] = all([
             run_results['return_code'] == 0,
             run_results['num_rx_dropped'] == 0,
@@ -80,7 +80,7 @@ class uhd_benchmark_rate_test(uhd_example_test_case):
             run_results['num_tx_underruns'] <= test_args.get('acceptable-underruns', 0),
             run_results['num_rx_samples'] > 0,
             run_results['num_tx_samples'] > 0,
-            run_results['num_timeouts'] == 0,
+            run_results['num_timeouts_rx'] == 0,
             # run_results['rel_rx_samples_error'] < rel_samp_err_threshold,
             # run_results['rel_tx_samples_error'] < rel_samp_err_threshold,
         ])
