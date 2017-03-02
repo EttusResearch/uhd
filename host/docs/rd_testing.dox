@@ -162,18 +162,18 @@ These tests are simulations and do not need any device. Vivado 15.4 should be in
 1. Go to the fpga directory depending on which test needs to be run.
 
   1. NoC block test benches:
-     Most of the NoC blocks have a test bench written in System Verilog that provides stimuli to the noc_block to verify it. The test bench for a block resides in <fpga-dir>/usrp3/lib/rfnoc/*_tb.
+     Most of the NoC blocks have a test bench written in System Verilog that provides stimuli to the noc_block to verify it. The test bench for a block resides in `<fpga-dir>/usrp3/lib/rfnoc/&zwj;*_tb`.
 
   2. Running unit test benches:
-     A few sub-blocks like noc-shell and sine_tone are used within the bigger noc_blocks. They have their own test benches. Their test benches reside in <fpga-dir>/usrp3/lib/sim/rfnoc/*.
+     A few sub-blocks like noc-shell and sine_tone are used within the bigger noc_blocks. They have their own test benches. Their test benches reside in `<fpga-dir>/usrp3/lib/sim/rfnoc/&zwj;*`.
 
   3. Radio test bench:
-     The radio test bench resides in <fpga-dir>/usrp3/lib/radio/noc_block_radio_core_tb/.
+     The radio test bench resides in `<fpga-dir>/usrp3/lib/radio/noc_block_radio_core_tb/`.
 
   4. Device specific test benches:
-     IPs specific to a device have test benches that exist in <fpga-dir>/usrp3/top/x300/sim/*. e.g. DMA testbench, PCIe, etc.
+     IPs specific to a device have test benches that exist in `<fpga-dir>/usrp3/top/x300/sim/*`. e.g. DMA testbench, PCIe, etc.
 
-2. Setup the environment by running 'source <fpga-dir>/usrp3/top/<device>/setupenv.sh'.
+2. Setup the environment by running `source <fpga-dir>/usrp3/top/<device>/setupenv.sh`.
 
 3. In the test bench directory and run the test bench by 'make xsim' or 'make vsim'.
 
@@ -210,6 +210,214 @@ Failing tests can be debugged by checking the waveform in a Vivado GUI by runnin
 
  Go to <fpga-dir>/usrp3/ and run 'build.py xsim all'. All tests should report 'PASS'.
 
+\section rdtesting_fpgadspverif FPGA DSP Verification
+
+| Test Code                | Device        | Peripherals | Manual Test Procedure              | Automatic Test Procedure         |
+|--------------------------|---------------|-------------|------------------------------------|----------------------------------|
+| FPGADSPVERIF-X310-HG-v1  | USRP X310     | 2x UBX      | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
+| FPGADSPVERIF-X310-XG-v1  | USRP X300     | 2x UBX      | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
+| FPGADSPVERIF-X300-HG-v1  | USRP X310     | 2x UBX      | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
+| FPGADSPVERIF-X300-XG-v1  | USRP X300     | 2x UBX      | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
+| FPGADSPVERIF-E310-SG1-v1 | USRP E310 SG1 | None        | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
+| FPGADSPVERIF-E310-SG3-v1 | USRP E310 SG3 | None        | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
+
+\subsection rdtesting_fpgadspverif_requirements Requirements
+
+- Signal generator and spectrum analyzer
+- X300 & X310 with 2x UBX daughterboard
+- E310 SG1 & SG3 with SSH access
+
+\subsection rdtesting_fpgadspverif_manual FPGA DSP Verification: Manual Test Procedure
+
+This procedure tests the DDC and DUC signal quality and the block's capability
+to change sample rate while streaming.
+
+#### RX testing
+
+1. Run calibration on device, if applicable
+2. Using a signal generator, inject a sine tone into RX channel 0 at 915.5 MHz @
+   -40 dBm
+3. Inspect the received spectrum using `uhd_fft`
+  - X3x0: `uhd_fft -f 915e6 -s 10e6 -g 10`
+  - E3xx: `uhd_fft -f 915e6 -s 2e6 -g 50`
+  - Embedded devices will require either using network mode or using X
+    forwarding over ssh to run the app natively
+4. In the GUI, inspect the spectrum. There should be a strong tone at the test
+   tone frequency. There may be a small tone at the carrier frequency due to DC
+   offset and a quadrature image due to IQ imbalance.
+5. Check the input tone frequencies outlined below. The tone should shift from 
+   left to right as the frequency changes and may have some amplitude variation,
+   especially at the band edges.
+  - X3x0: 910 MHz to 920 MHz in 1 MHz steps
+  - E3xx: 914 MHz to 916 MHz in 200 kHz steps
+6. Set input tone back to 915.5 MHz. Check the sampling rate as outlined below.
+   The spectrum should reflect the change in sample rate.
+  - X3x0: 1, 5, 20, 33.333, 50, 66.666, 100, 200 MHz
+  - E3x0: 0.1, 0.5, 1, 1.143, 1.684 MHz
+7. Repeat on each RX channel of the device.
+8. This test fails if:
+  - DC offset and IQ imbalance tones are unusally large
+  - There are any other strong tones or spectrum distortion
+  - The spectrum changes significantly between frequencies or sample rates
+    - An initial transient distortion is acceptable
+    - Amplitude variation on the order of +/-10 dB is acceptable
+  - Console reports any of the following:
+    - Overruns 'O' if continuous and not due to host computer's lack of
+      processing performance
+    - Dropped packets 'D'
+    - Sequence number errors 'S'
+    - Timeouts
+
+#### TX testing
+
+1. Run calibration on device, if applicable
+2. Using `uhd_siggen_gui`, generate a sine tone TX channel 0 at 915.5 MHz:
+  - X3x0: `uhd_siggen_gui -f 915e6 -s 10e6 -g 10 -x 500e3 --sine`
+  - E3xx: `uhd_siggen_gui -f 915e6 -s 2e6 -g 50 -x 500e3 --sine`
+3. Using a spectrum analyzer, inspect the output spectrum. There should be a
+   strong tone at the test tone frequency. There may be a small tone at the
+   carrier frequency due to DC offset and a quadrature image due to IQ
+   imbalance.
+4. Using the GUI, test the follow offset frequencies. The tone should shift from
+   left to right as the frequency changes and may have some amplitude variation,
+   especially at the band edges.
+  - X3x0: -5 to +5 MHz in 1 MHz steps
+  - E3xx: -1 to +1 MHz in 200 kHz steps
+5. Set output tone offset back to 500e3. Change sampling rate as outlined below.
+   The spectrum should not significantly differ between sample rates.
+  - X3x0: 1, 5, 20, 33.333, 50, 66.666, 100, 200 MHz
+  - E3x0: 0.1, 0.5, 1, 1.143, 1.684 MHz
+6. Repeat on each TX channel of the device
+7. This test fails if:
+  - DC offset and IQ imbalance tones are unusually large
+  - There are any other strong tones or spectrum distortion
+  - The spectrum changes significantly between sample rates
+    - An initial transient distortion is acceptable
+  - Console reports any of the following:
+    - Underruns 'U' if continuous and not due to host computer's lack of
+      processing performance
+    - Late packets 'L'
+    - Sequence number errors 'S'
+
+\subsection rdtesting_fpgadspverif_auto FPGA DSP Verification: Automatic Test Procedure
+
+tbd
+
+\section rdtesting_fpgafuncverif FPGA Functional Verification
+
+| Test Code                 | Device        | Peripherals | Manual Test Procedure               | Automatic Test Procedure          |
+|---------------------------|---------------|-------------|-------------------------------------|-----------------------------------|
+| FPGAFUNCVERIF-X310-HG-v1  | USRP X310     | 2x UBX      | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-X310-XG-v1  | USRP X300     | 2x UBX      | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-X300-HG-v1  | USRP X310     | 2x UBX      | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-X300-XG-v1  | USRP X300     | 2x UBX      | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-E310-SG1-v1 | USRP E310 SG1 | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-E310-SG3-v1 | USRP E310 SG3 | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+
+The FPGA functional verification tests exercise the Digital Downconverter (DDC),
+Digital Upconverter (DUC), and Radio Core RFNoC blocks.
+
+\subsection rdtesting_fpgafuncverif_requirements Requirements
+
+- X300 & X310 with two daughterboards
+  - 2x UBX recommended
+  - HG tests require a single 10 GigE connection, XG requires two for the 2x RX
+    200 MSPS test
+  - 1 GigE and PCIe adapters and cabling for optional tests
+- E310 SG1 & SG3 with SSH access
+
+\subsection rdtesting_fpgafuncverif_manual FPGA Functional Verification: Manual Test Procedure
+
+This procedure verifies that the DDC, DUC, and Radio Core can run at various sample
+rates and channel configurations without any data flow issues.
+
+1. Run `benchmark_rate` using the parameters outlined in the tables below
+2. Unless otherwise noted, to pass each test:
+  - Benchmark rate must run without reporting any of the following:
+    - Underruns 'U'
+    - Overruns 'O'
+    - Dropped packets 'D'
+    - Sequence number errors 'S'
+    - Late commands 'L'
+    - Timeouts
+  - Appropriate TX/RX LEDs must be illuminated
+3. Unless specified in 'Notes' column, use default values for unlisted
+   parameters
+4. Example commands:
+  - X3x0: `benchmark_rate --tx_rate 1e6 --rx_rate 1e6 --channels 0,1 --duration 120`
+  - E3xx: `benchmark_rate --args="master_clock_rate=10e6" --tx_rate 1e6 --rx_rate 1e6 --channels 0,1 --duration 120`
+
+#### USRP X3x0: 10 GigE Interface
+
+- Required images to test: X310 HG
+- Optional images to test: X310 XG, X300 HG, X300 XG
+- Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
+
+| Channels      | Sample Rates             | Duration | Notes              |
+|---------------|--------------------------|----------|--------------------|
+| 1x RX         | 10e6, 50e6, 100e6, 200e6 | 60       | Test both channels |
+| 2x RX         | 10e6, 50e6, 100e6        | 60       |                    |
+| 2x RX         | 200e6                    | 60       | 2x 10G, XG only    |
+| 1x TX         | 10e6, 50e6, 100e6, 200e6 | 60       | Test both channels |
+| 2x TX         | 10e6, 50e6, 100e6        | 60       |                    |
+| 1x RX & 1x TX | 10e6, 50e6, 100e6        | 60       | Test both channels |
+| 1x RX & 1x TX | 200e6                    | 60       | Use channel 0      |
+| 2x RX & 2x TX | 10e6, 50e6               | 60       |                    |
+| 1x RX & 1x TX | 200e6                    | 3600     | Use channel 1      |
+| 2x RX & 2x TX | 100e6                    | 3600     |                    |
+
+#### USRP X3x0: 1 GigE Interface
+
+- Required images to test: None
+- Optional images to test: X310 HG, X310 XG, X300 HG, X300 XG
+- Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
+
+| Channels      | Sample Rates            | Duration |
+|---------------|-------------------------|----------|
+| 1x RX         | 1e6, 10e6, 25e6, 50e6   | 60       |
+| 2x RX         | 1e6, 10e6, 25e6         | 60       |
+| 1x TX         | 1e6, 10e6, 25e6, 50e6   | 60       |
+| 2x TX         | 1e6, 10e6, 25e6         | 60       |
+| 1x RX & 1x TX | 1e6, 10e6, 25e6, 50e6   | 60       |
+| 2x RX & 2x TX | 1e6, 10e6, 25e6         | 60       |
+
+#### USRP X3x0: PCIe Interface
+
+- Required images to test: None
+- Optional images to test: X310 HG, X310 XG, X300 HG, X300 XG
+- Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
+
+| Channels      | Sample Rates             | Duration |
+|---------------|--------------------------|----------|
+| 1x RX         | 10e6, 50e6, 100e6, 200e6 | 60       |
+| 2x RX         | 10e6, 50e6, 100e6        | 60       |
+| 1x TX         | 10e6, 50e6, 100e6, 200e6 | 60       |
+| 2x TX         | 10e6, 50e6, 100e6        | 60       |
+| 1x RX & 1x TX | 10e6, 50e6, 100e6        | 60       |
+| 1x RX & 1x TX | 200e6                    | 60       |
+| 2x RX & 2x TX | 10e6, 50e6               | 60       |
+
+Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
+
+#### USRP E3xx (SG3 Required, SG1 Optional)
+
+| Channels      | Master Clock Rates      | Sample Rate | Duration | Notes              |
+|---------------|-------------------------|-------------|----------|--------------------|
+| 1x RX         | 1e6, 10e6, 61.44e6      | 1e6         | 60       | Test both channels |
+| 1x TX         | 1e6, 10e6, 61.44e6      | 1e6         | 60       | Test both channels |
+| 2x RX         | 1e6, 10e6, 30.72e6      | 1e6         | 60       |                    |
+| 2x TX         | 1e6, 10e6, 30.72e6      | 1e6         | 60       |                    |
+| 1x RX & 1x TX | 1e6, 10e6, 61.44e6      | 1e6         | 60       | Test both channels |
+| 1x RX & 1x TX | 61.44e6                 | 1e6         | 60       | Use channel 1      |
+| 2x RX & 2x TX | 1e6, 10e6, 30.72e6      | 1e6         | 60       |                    |
+| 1x RX & 1x TX | 61.44e6                 | 1e6         | 3600     | Use channel 0      |
+| 2x RX & 2x TX | 30.72e6                 | 1e6         | 3600     |                    |
+
+Note: Any sample rate warnings can be ignored.
+
+\subsection rdtesting_fpgafuncverif_auto FPGA Functional Verification: Automatic Test Procedure
+
+tbd
 
 \section rdtesting_defining Defining R&D Tests
 

@@ -99,7 +99,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
                     std::cout << "LOCKED" << std::endl;
                 } else {
                     std::cout << "FAILED" << std::endl;
-                    throw uhd::runtime_error("Failed to lock to GPSDO 10 MHz Reference");
+                    std::cout << "Failed to lock to GPSDO 10 MHz Reference. Exiting." << std::endl;
+                    exit(EXIT_FAILURE);
                 }
             }
             else
