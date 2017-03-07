@@ -50,9 +50,11 @@ public:
 
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
+    double set_rx_bandwidth(const double bandwidth, const size_t chan);
 
     double get_tx_gain(const size_t chan);
     double get_rx_gain(const size_t chan);
+    double get_rx_bandwidth(const size_t chan);
 
     std::vector<std::string> get_gpio_banks() const;
     void set_gpio_attr(const std::string &bank, const std::string &attr, const uint32_t value, const uint32_t mask);
