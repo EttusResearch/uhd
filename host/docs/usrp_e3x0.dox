@@ -150,6 +150,7 @@ for the E3XX if you are doing custom GNU Radio development work.
 
 \code{.sh}
 $ mkdir build-arm
+$ cd build-arm
 $ cmake -Wno-dev -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/oe-sdk_cross.cmake \-DCMAKE_INSTALL_PREFIX=/usr -DENABLE_GR_VOCODER=OFF -DENABLE_GR_ATSC=OFF \
 -DENABLE_GR_DTV=OFF -DENABLE_DOXYGEN=OFF ../
 \endcode

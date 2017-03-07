@@ -271,6 +271,7 @@ public:
         return (~_atr_disable_reg.get()) >> compute_shift(unit);
     }
 
+    using gpio_atr_3000_impl::set_gpio_ddr;
     inline void set_gpio_ddr(const db_unit_t unit, const uint32_t value, const uint32_t mask)
     {
         gpio_atr_3000_impl::set_gpio_ddr(DDR_OUTPUT, compute_mask(unit, value&mask));
@@ -282,6 +283,7 @@ public:
         return _ddr_reg.get() >> compute_shift(unit);
     }
 
+    using gpio_atr_3000_impl::set_atr_reg;
     inline void set_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr, const uint32_t value, const uint32_t mask)
     {
         gpio_atr_3000_impl::set_atr_reg(atr, value << compute_shift(unit), compute_mask(unit, mask));
@@ -300,6 +302,7 @@ public:
         return (reg->get() & compute_mask(unit, MASK_SET_ALL)) >> compute_shift(unit);
     }
 
+    using gpio_atr_3000_impl::set_gpio_out;
     inline void set_gpio_out(const db_unit_t unit, const uint32_t value, const uint32_t mask)
     {
         gpio_atr_3000_impl::set_gpio_out(
@@ -312,6 +315,7 @@ public:
         return (_atr_idle_reg.get_gpio_out() & compute_mask(unit, MASK_SET_ALL)) >> compute_shift(unit);
     }
 
+    using gpio_atr_3000_impl::read_gpio;
     inline uint32_t read_gpio(const db_unit_t unit)
     {
         return (gpio_atr_3000_impl::read_gpio() & compute_mask(unit, MASK_SET_ALL)) >> compute_shift(unit);

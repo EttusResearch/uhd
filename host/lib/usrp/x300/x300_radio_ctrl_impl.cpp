@@ -229,6 +229,20 @@ double x300_radio_ctrl_impl::get_rx_frequency(const size_t chan)
     ).get();
 }
 
+double x300_radio_ctrl_impl::set_rx_bandwidth(const double bandwidth, const size_t chan)
+{
+    return _tree->access<double>(
+        fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name / "bandwidth" / "value")
+    ).set(bandwidth).get();
+}
+
+double x300_radio_ctrl_impl::get_rx_bandwidth(const size_t chan)
+{
+    return _tree->access<double>(
+        fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name / "bandwidth" / "value")
+    ).get();
+}
+
 double x300_radio_ctrl_impl::set_tx_gain(const double gain, const size_t chan)
 {
     //TODO: This is extremely hacky!

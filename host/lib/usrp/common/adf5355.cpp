@@ -47,7 +47,8 @@ static const double ADF5355_MIN_OUT_FREQ            = (3.4e9 / 64);
 static const double ADF5355_PHASE_RESYNC_TIME       = 400e-6;
 
 static const uint32_t ADF5355_MOD1           = 16777216;
-static const uint32_t ADF5355_MAX_MOD2       = 16384;
+static const uint32_t ADF5355_MAX_MOD2       = 16383;
+static const uint32_t ADF5355_MAX_FRAC2      = 16383;
 //static const uint16_t ADF5355_MIN_INT_PRESCALER_89 = 75;
 
 class adf5355_impl : public adf5355_iface
@@ -261,15 +262,11 @@ public:
         double N = prescaler_input_freq / _pfd_freq;
         uint16_t INT = static_cast<uint16_t>(floor(N));
         uint32_t FRAC1 = static_cast<uint32_t>(floor((N - INT) * ADF5355_MOD1));
-        double residue = ADF5355_MOD1 * (N - (INT + FRAC1 / ADF5355_MOD1));
+        double residue = (N - INT) * ADF5355_MOD1 - FRAC1;
 
         double gcd = boost::math::gcd(static_cast<int>(_pfd_freq), static_cast<int>(freq_resolution));
-        uint16_t MOD2 = static_cast<uint16_t>(floor(_pfd_freq / gcd));
-
-        if (MOD2 > ADF5355_MAX_MOD2) {
-            MOD2 = ADF5355_MAX_MOD2;
-        }
-        uint16_t FRAC2 = ceil(residue * MOD2);
+        uint16_t MOD2 = static_cast<uint16_t>(std::min(floor(_pfd_freq / gcd), static_cast<double>(ADF5355_MAX_MOD2)));
+        uint16_t FRAC2 = static_cast<uint16_t>(std::min(ceil(residue * MOD2), static_cast<double>(ADF5355_MAX_FRAC2)));
 
         double coerced_vco_freq = _pfd_freq * (
             todbl(INT) + (
