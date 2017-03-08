@@ -65,7 +65,7 @@ static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     // CHDR packet s
 static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     // CHDR packet size in bytes
 static const size_t X300_ETH_MSG_FRAME_SIZE         = uhd::transport::udp_simple::mtu;  //bytes
 // MTU throttling for ethernet/TX (see above):
-static const size_t X300_ETH_DATA_FRAME_MAX_TX_SIZE = 2000;
+static const size_t X300_ETH_DATA_FRAME_MAX_TX_SIZE = 8000;
 
 static const double X300_THREAD_BUFFER_TIMEOUT      = 0.1;   // Time in seconds
 
