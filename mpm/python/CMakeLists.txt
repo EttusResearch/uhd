@@ -1,0 +1,56 @@
+#
+# Copyright 2017 Ettus Research (National Instruments)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
+
+
+SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
+LIST(APPEND
+  pyusrp_periphs_sources
+  pyusrp_periphs.cpp
+  lib_periphs.cpp
+  n310_periphs.cpp
+  # tests_periphs.cpp
+  )
+
+ADD_LIBRARY(pyusrp_periphs SHARED ${pyusrp_periphs_sources})
+TARGET_INCLUDE_DIRECTORIES(pyusrp_periphs PUBLIC ${PYTHON_INCLUDE_DIRS} ${UHD_HOST_ROOT}/lib/usrp/common)
+TARGET_LINK_LIBRARIES(pyusrp_periphs ${Boost_PYTHON_LIBRARY} ${Boost_LIBRARIES} usrp-periphs)
+ADD_CUSTOM_COMMAND(TARGET pyusrp_periphs POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libpyusrp_periphs.so ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/libpyusrp_periphs.so)
+
+ADD_SUBDIRECTORY(usrp_mpm)
+
+SET(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
+SET(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
+SET(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
+
+CONFIGURE_FILE(${SETUP_PY_IN} ${SETUP_PY})
+
+ADD_CUSTOM_COMMAND(OUTPUT ${OUTPUT}
+    COMMAND ${CMAKE_COMMAND} -E copy ${USRP_MPM_FILES} ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm
+    COMMAND ${PYTHON} ${SETUP_PY} -q build
+    COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
+    DEPENDS ${USRP_MPM_FILES})
+ADD_CUSTOM_TARGET(usrp_mpm ALL DEPENDS ${OUTPUT} pyusrp_periphs)
+
+EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+    "from distutils import sysconfig; print sysconfig.get_python_lib(plat_specific=True, prefix='')"
+    OUTPUT_VARIABLE USRP_MPM_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/lib/usrp_mpm DESTINATION ${CMAKE_INSTALL_PREFIX}/${USRP_MPM_PYTHON_DIR})

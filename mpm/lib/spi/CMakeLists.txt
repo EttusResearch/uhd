@@ -1,0 +1,8 @@
+SET(SPI_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/spi_lock.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/spi_config.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mock_spi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/spidev_iface.cpp
+)
+
+USRP_PERIPHS_ADD_OBJECT(spi ${SPI_SOURCES})

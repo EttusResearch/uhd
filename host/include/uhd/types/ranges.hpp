@@ -7,7 +7,7 @@
 #ifndef INCLUDED_UHD_TYPES_RANGES_HPP
 #define INCLUDED_UHD_TYPES_RANGES_HPP
 
-#include <uhd/config.hpp>
+#include <../../host/include/uhd/config.hpp>
 #include <string>
 #include <vector>
 
