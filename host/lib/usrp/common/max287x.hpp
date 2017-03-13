@@ -900,6 +900,12 @@ void max287x<max287x_regs_t>::commit()
     } else {
         try {
             changed_regs = _regs.template get_changed_addrs<uint32_t> ();
+            // register 0 must be written to apply double buffered fields
+            if (changed_regs.size() > 0)
+            {
+                changed_regs.insert(0);
+            }
+
             for (int addr = 5; addr >= 0; addr--)
             {
                 if (changed_regs.find(uint32_t(addr)) != changed_regs.end())
