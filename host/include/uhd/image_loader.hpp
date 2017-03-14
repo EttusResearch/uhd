@@ -1,5 +1,5 @@
 //
-// Copyright 2014-2015 Ettus Research LLC
+// Copyright 2014-2017 Ettus Research
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,8 +36,10 @@ public:
         uhd::device_addr_t args;
         bool load_firmware;
         bool load_fpga;
+        bool download;
         std::string firmware_path;
         std::string fpga_path;
+        std::string out_path;
     } image_loader_args_t;
 
     //! Signature of an image loading function
