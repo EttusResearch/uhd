@@ -61,6 +61,7 @@ extern "C" {
 #define X300_GPSDO_UDP_PORT 49156
 #define X300_FPGA_PROG_UDP_PORT 49157
 #define X300_MTU_DETECT_UDP_PORT 49158
+#define X300_FPGA_READ_UDP_PORT 49159
 
 #define X300_DEFAULT_MAC_ADDR_0         {0x00, 0x50, 0xC2, 0x85, 0x3f, 0xff}
 #define X300_DEFAULT_MAC_ADDR_1         {0x00, 0x50, 0xC2, 0x85, 0x3f, 0x33}
@@ -90,6 +91,11 @@ extern "C" {
 #define X300_FPGA_PROG_FLAGS_VERIFY    (1 << 5)
 #define X300_FPGA_PROG_CONFIGURE       (1 << 6)
 #define X300_FPGA_PROG_CONFIG_STATUS   (1 << 7)
+
+#define X300_FPGA_READ_FLAGS_ACK       (1 << 0)
+#define X300_FPGA_READ_FLAGS_ERROR     (1 << 1)
+#define X300_FPGA_READ_FLAGS_INIT      (1 << 2)
+#define X300_FPGA_READ_FLAGS_CLEANUP   (1 << 3)
 
 #define X300_MTU_DETECT_ECHO_REQUEST (1 << 0)
 #define X300_MTU_DETECT_ECHO_REPLY (1 << 1)
@@ -140,6 +146,16 @@ typedef struct
 {
     uint32_t flags;
 } x300_fpga_prog_flags_t;
+
+typedef struct
+{
+    uint32_t flags;
+    uint32_t sector;
+    uint32_t index;
+    uint32_t size;
+} x300_fpga_read_t;
+
+typedef x300_fpga_prog_t x300_fpga_read_reply_t;
 
 typedef struct
 {
